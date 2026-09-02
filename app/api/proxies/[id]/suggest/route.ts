@@ -30,6 +30,14 @@ export async function POST(
     // this transition — inside the SAME locked transaction as the read, so a
     // concurrent status change (e.g. an approval) cannot race the precondition
     // check the way a separate read-then-write would.
+    //
+    // W2-B2-R4-404-CONTRACT-CORRECTION — this route's own frozen contract is
+    // that a proxy id outside the caller's organisation must read exactly
+    // like an unknown id (404), never a 403 that would confirm the id
+    // belongs to someone else's tenant. `hideCrossTenantAsNotFound: true` is
+    // a literal here, never derived from the request, and scopes the
+    // primitive's row lock to this session's own organisation so a
+    // cross-tenant (or global/system) proxy is never observed to exist.
     const outcome = await withOrganizationDatabaseContext(async () => {
       try {
         await updateFinancialProxyReviewStatusForContext(
@@ -38,6 +46,7 @@ export async function POST(
           'pending_review',
           undefined,
           'suggested',
+          true,
         )
         return 'ok' as const
       } catch (err) {

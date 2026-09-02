@@ -11,19 +11,35 @@
 // app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxyReviewStatus.action.ts).
 //
 // NODE TEST CONTRACT (frozen before implementation, per W2-B2-R3-NARROW-
-// REMEDIATION Phase 1):
-//   P1 — reachable authorized transition: live suggested -> pending_review,
-//        current version draft -> under_review.
+// REMEDIATION Phase 1, amended by W2-B2-R4-404-CONTRACT-CORRECTION):
+//   P1 — same-organization authorized transition (impact_manager+): live
+//        suggested -> pending_review, current version draft -> under_review, 200.
 //   P2 — the canonical mapping primitive is used, not a second
 //        implementation (static: the route contains no raw status literal
 //        write and imports only the shared primitive).
 //   P3 — live/version coupling holds at the (mocked) transaction commit.
 //   N1 — unauthenticated caller refused (401).
-//   N2 — authenticated but unauthorized actor (insufficient role) refused (403).
-//   N3 — cross-tenant mutation refused (403 at the application layer — RLS
-//        supplies an additional, separately-proven defense-in-depth barrier
-//        at the database layer, see tests/postgres/b2-remediation.pg.test.ts).
+//   N2 — same-organization but insufficient role refused (403) — existence
+//        of the proxy is not a secret from a fellow member of its own org.
+//   N3 — cross-tenant mutation on an EXISTING proxy owned by another
+//        organization is refused as 404, not 403: the frozen route
+//        contract is that an id outside the caller's tenant must read
+//        exactly like an unknown id, never confirm the id belongs to
+//        someone else's tenant (W2-B2-R4-404-CONTRACT-CORRECTION).
+//   MULTI-ORG — the same 404, specifically for an actor who ALSO holds
+//        active membership in the proxy's owning organization: the
+//        decision is keyed on the CURRENT session's organization context
+//        (ctx.organization.id) alone, never on "any org this user belongs
+//        to", so a second membership grants no visibility through this
+//        route while acting under the first.
 //   N4 — invalid source state (not currently 'suggested') refused (400).
+//   N5 — alias of N4 in this codebase's vocabulary (no separate "unknown
+//        proxy" vs "wrong state" distinction beyond not_found/already_submitted).
+//   N6 — a system/global proxy (organizationId NULL) presented through this
+//        organization-scoped route must not leak existence either: 404,
+//        via the same organization-scoped lock as N3/MULTI-ORG (NULL never
+//        equals a specific organization id).
+//   not_found — an unknown proxy id is refused as 404.
 //   A1 — atomicity: real transactional rollback is proven against real
 //        PostgreSQL (tests/postgres/b2-remediation.pg.test.ts, R-B2-10
 //        section) — a mocked, non-transactional `db.transaction` cannot
@@ -77,6 +93,26 @@ vi.mock('@/lib/audit/logger', async (importOriginal) => {
   return { ...actual, logAuditAction: vi.fn() }
 })
 
+// Same proven technique as tests/proxies.service.test.ts: recursively pull
+// the literal comparison values a drizzle eq()/and() condition embeds, so
+// the mock can actually filter instead of the WHERE clause being decorative.
+function extractEqValues(val: any): string[] {
+  if (!val) return []
+  if (typeof val === 'string') return [val]
+  if (Array.isArray(val)) return val.flatMap(extractEqValues)
+  const res: string[] = []
+  if (val.value !== undefined) {
+    if (typeof val.value === 'string') res.push(val.value)
+    else if (Array.isArray(val.value)) res.push(...val.value.flatMap(extractEqValues))
+    else res.push(...extractEqValues(val.value))
+  }
+  if (val.right !== undefined) res.push(...extractEqValues(val.right))
+  if (val.left !== undefined) res.push(...extractEqValues(val.left))
+  if (Array.isArray(val.conditions)) res.push(...val.conditions.flatMap(extractEqValues))
+  if (Array.isArray(val.queryChunks)) res.push(...val.queryChunks.flatMap(extractEqValues))
+  return res
+}
+
 // Same proven query-builder shape as tests/proxies.service.test.ts, trimmed
 // to the two tables this route's call graph touches.
 vi.mock('@/db/client', () => {
@@ -90,13 +126,29 @@ vi.mock('@/db/client', () => {
           : mockDbData.financialProxies
         let rows: any[] = dataToReturn
         const fromObj: any = {
-          where: vi.fn().mockImplementation(() => {
-            // financial_proxy_versions callers in this call graph
-            // (getLatestFinancialProxyVersion / updateCurrentFinancialProxyVersion)
-            // always target the single seeded proxy's versions in these
-            // tests, so no further filtering is needed to exercise the
-            // route's actual behaviour.
-            rows = dataToReturn
+          where: vi.fn().mockImplementation((cond: any) => {
+            if (tableName === 'financial_proxy_versions') {
+              // financial_proxy_versions callers in this call graph
+              // (getLatestFinancialProxyVersion / updateCurrentFinancialProxyVersion)
+              // always target the single seeded proxy's versions in these
+              // tests, so no further filtering is needed to exercise the
+              // route's actual behaviour.
+              rows = dataToReturn
+              return fromObj
+            }
+            // financial_proxies: withLockedFinancialProxy's SELECT is either
+            // eq(id, proxyId) or, when hideCrossTenantAsNotFound scopes it,
+            // and(eq(id, proxyId), eq(organizationId, orgId)). drizzle's
+            // rendered condition embeds the SQL operator text itself as
+            // string chunks (' = ', '(', ')'), which pollutes a raw literal
+            // COUNT — a bare eq() already extracts to 2 entries (' = ' plus
+            // the value), not 1. The literal ' and ' joiner is the reliable
+            // signal drizzle's and() adds that a bare eq() never does.
+            const wanted = extractEqValues(cond)
+            const isOrgScoped = wanted.includes(' and ')
+            rows = dataToReturn.filter((r) =>
+              wanted.includes(r.id) && (!isOrgScoped || wanted.includes(r.organizationId))
+            )
             return fromObj
           }),
           orderBy: vi.fn().mockImplementation(() => {
@@ -225,7 +277,7 @@ describe('POST /api/proxies/[id]/suggest — R-B2-10 (LIVE_VERSION_STATUS_COUPLI
     expect(mockDbData.lastVersionUpdateValues).toBeNull()
   })
 
-  it('N3: cross-tenant mutation is refused (403) — the organisation-boundary check inside the shared primitive fires independently of RLS', async () => {
+  it('N3: cross-tenant mutation on an EXISTING proxy owned by another organization reads as 404, never 403 — the id must not be confirmed to exist in someone else\'s tenant (W2-B2-R4-404-CONTRACT-CORRECTION)', async () => {
     vi.mocked(getCurrentOrganizationContext).mockResolvedValue(ctxWith('impact_manager', 'org-99'))
     vi.mocked(canApproveProxy).mockReturnValue(true)
     mockDbData.financialProxies = [
@@ -234,7 +286,41 @@ describe('POST /api/proxies/[id]/suggest — R-B2-10 (LIVE_VERSION_STATUS_COUPLI
 
     const response = await POST(makeRequest(), makeProps())
 
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(404)
+    expect(mockDbData.lastUpdateValues).toBeNull()
+    expect(mockDbData.lastVersionUpdateValues).toBeNull()
+  })
+
+  it('MULTI-ORG (adversarial): an actor with active membership in BOTH the requesting org and the proxy\'s owning org still gets 404 while acting under the requesting org\'s context', async () => {
+    // The membership that would grant visibility (org-3) exists for this
+    // user in the database, but the SESSION is scoped to org-99 (e.g. a
+    // second browser tab, a switched-context token). The route/primitive
+    // never consults "every org this user belongs to" — only
+    // ctx.organization.id, which is what a forged or stale request could
+    // never move to a different value than the session actually resolved.
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(ctxWith('impact_manager', 'org-99'))
+    vi.mocked(canApproveProxy).mockReturnValue(true)
+    mockDbData.financialProxies = [
+      { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'suggested' },
+    ]
+
+    const response = await POST(makeRequest(), makeProps())
+
+    expect(response.status).toBe(404)
+    expect(mockDbData.lastUpdateValues).toBeNull()
+    expect(mockDbData.lastVersionUpdateValues).toBeNull()
+  })
+
+  it('N6: a system/global proxy (organizationId NULL) presented through this organization-scoped route does not leak existence either (404)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(ctxWith('impact_manager'))
+    vi.mocked(canApproveProxy).mockReturnValue(true)
+    mockDbData.financialProxies = [
+      { id: PROXY_UUID, organizationId: null, reviewStatus: 'suggested' },
+    ]
+
+    const response = await POST(makeRequest(), makeProps())
+
+    expect(response.status).toBe(404)
     expect(mockDbData.lastUpdateValues).toBeNull()
     expect(mockDbData.lastVersionUpdateValues).toBeNull()
   })

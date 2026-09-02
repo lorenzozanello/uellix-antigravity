@@ -94,12 +94,26 @@ function assertExpectedApprovalState(expectedApprovalState: string | undefined):
 export async function withLockedFinancialProxy<T>(
   proxyId: string,
   transition: (tx: FinancialProxyTransaction, proxy: FinancialProxyRow) => Promise<T>,
+  options?: { organizationId?: string },
 ): Promise<T> {
   return db.transaction(async (tx) => {
+    // W2-B2-R4-404-CONTRACT-CORRECTION — when a caller supplies
+    // `organizationId`, the LOCK SELECT itself is scoped to it: a proxy
+    // owned by another organization (or a global/system proxy,
+    // organizationId NULL, which never equals a specific org id) is simply
+    // never observed to exist by this transaction, so it falls through to
+    // the ordinary 'Proxy not found' path below — no existence is leaked to
+    // an org-scoped caller that must not learn whether a given id belongs to
+    // someone else's tenant. Opt-in and additive: every existing caller that
+    // omits `options` keeps the prior unscoped-lookup-plus-explicit-Forbidden
+    // behaviour untouched (see updateFinancialProxyReviewStatus's IDOR test).
+    const where = options?.organizationId !== undefined
+      ? and(eq(financialProxies.id, proxyId), eq(financialProxies.organizationId, options.organizationId))
+      : eq(financialProxies.id, proxyId);
     const proxy = await tx
       .select()
       .from(financialProxies)
-      .where(eq(financialProxies.id, proxyId))
+      .where(where)
       .for('update')
       .then((rows) => rows[0] ?? null);
     if (!proxy) throw new Error('Proxy not found');
@@ -686,6 +700,16 @@ export async function updateFinancialProxyReviewStatus(
  * checked against the CURRENT live review_status inside the SAME locked
  * transaction as the write — never as a separate pre-read — so a concurrent
  * status change cannot race between the check and the mutation.
+ *
+ * W2-B2-R4-404-CONTRACT-CORRECTION — `hideCrossTenantAsNotFound`, when true,
+ * scopes the underlying row lock to `ctx.organization.id` (see
+ * `withLockedFinancialProxy`'s `options.organizationId`) instead of relying
+ * on the Forbidden throw below, so a proxy owned by another organization (or
+ * a global/system proxy) is never observed to exist by this transaction at
+ * all — the caller gets 'Proxy not found', never 'Forbidden'. This is a
+ * caller-side literal, never derived from request input, and defaults to
+ * false so every existing caller (including the approval path's own IDOR
+ * check, which intentionally surfaces 'Forbidden') is unaffected.
  */
 export async function updateFinancialProxyReviewStatusForContext(
   ctx: OrganizationContext,
@@ -693,10 +717,16 @@ export async function updateFinancialProxyReviewStatusForContext(
   newStatus: string,
   expectedApprovalState?: string,
   requireFromStatus?: string,
+  hideCrossTenantAsNotFound?: boolean,
 ) {
   const allowed = ['suggested', 'pending_review', 'approved', 'rejected', 'archived'];
   if (!allowed.includes(newStatus)) throw new Error('Invalid status');
   const transition = async (tx: FinancialProxyTransaction, proxy: FinancialProxyRow) => {
+    // When hideCrossTenantAsNotFound scoped the lock SELECT above, `proxy`
+    // is already guaranteed to belong to ctx.organization.id (or the SELECT
+    // would have found nothing and thrown 'Proxy not found' already) — these
+    // two checks are then dead but harmless. They remain load-bearing for
+    // every caller that does NOT set the flag.
     if (proxy.organizationId && proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
     // System proxies (organizationId: null) are reviewed/approved exclusively
     // via lib/admin/proxies.ts — see updateOrganizationProxySource above for
@@ -751,7 +781,11 @@ export async function updateFinancialProxyReviewStatusForContext(
       if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
       if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
     }, transition)
-    : await withLockedFinancialProxy(proxyId, transition);
+    : await withLockedFinancialProxy(
+      proxyId,
+      transition,
+      hideCrossTenantAsNotFound ? { organizationId: ctx.organization.id } : undefined,
+    );
   const { proxy, updated, version } = result;
 
   await logAuditAction({
