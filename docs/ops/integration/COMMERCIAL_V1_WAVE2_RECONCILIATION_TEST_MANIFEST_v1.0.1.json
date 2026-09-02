@@ -1,0 +1,491 @@
+{
+  "artifact_id": "COMMERCIAL_V1_WAVE2_RECONCILIATION_TEST_MANIFEST_v1.0.1",
+  "version": "1.0.1",
+  "hpo_mission_id": "COMMERCIAL-V1-WAVE2-RECONCILIATION-SUCCESSOR-REMEDIATION-R2",
+  "materialization_step": "HPO-ODS-W2-09",
+  "materialization_date": "2026-09-02",
+  "authority_v1_0_0": {
+    "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0.json",
+    "commit": "c2bfdb799d7e63c1f77cadc773cbf11e25f409de"
+  },
+  "authority_v1_0_1": {
+    "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1.json",
+    "commit": "9d90f9bde9dd98ab2cd9d2aa8490ac7d7a2a7b1f"
+  },
+  "pins": {
+    "PRODUCT_INTEGRATED_BASE": "d56d44a370abaafb105bf8e1169edea418aef913",
+    "WAVE2_SOURCE": "102a75cc044fb3e2c61249854f7f403cb066cab0",
+    "MERGE_BASE": "ba2f5fd2abb120885b3dce21c476203da1f1f151",
+    "MIGRATION_0061_TAG": "0061_fib_disposition_governance_function_execute_revocation",
+    "PREVIOUS_RECONCILED_TREE": "140c6dbc38a83304d3791b906beadd1e4f57521c",
+    "PREVIOUS_STOP_EVIDENCE_SHA256": "26cbf6c8e9aa151dad695d3bebbcb879d2286c0a8a90ee9a9db6d1f66e63b5e1",
+    "ACTUAL_CONFLICT_COUNT": 77,
+    "FINAL_CANONICAL_BASELINE_UNIT_COUNT": 74,
+    "FINAL_DRIZZLE_MIGRATION_UNIT_COUNT": 62,
+    "HISTORICALLY_CORROBORATED_UNIT_COUNT": 50,
+    "FINAL_EXPECTED_MISSING_UNIT_COUNT": 24
+  },
+  "actual_conflict_paths": [
+    "app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx",
+    "db/hosted/baseline-manifest.ts",
+    "db/migrations/meta/_journal.json",
+    "db/prepared/journal/001_0000_quick_husk.sql",
+    "db/prepared/journal/002_0001_noisy_chameleon.sql",
+    "db/prepared/journal/003_0002_huge_namorita.sql",
+    "db/prepared/journal/004_0003_curvy_tempest.sql",
+    "db/prepared/journal/005_0004_thick_mentor.sql",
+    "db/prepared/journal/006_0005_daffy_dreaming_celestial.sql",
+    "db/prepared/journal/007_0006_outstanding_vindicator.sql",
+    "db/prepared/journal/008_0007_black_imperial_guard.sql",
+    "db/prepared/journal/009_0008_bored_pretty_boy.sql",
+    "db/prepared/journal/010_0009_motionless_peter_parker.sql",
+    "db/prepared/journal/011_0010_crazy_warhawk.sql",
+    "db/prepared/journal/012_0011_sroi_results_report_foundation.sql",
+    "db/prepared/journal/013_0012_stella_interactions.sql",
+    "db/prepared/journal/014_0013_performance_indexes.sql",
+    "db/prepared/journal/015_0014_fine_blade.sql",
+    "db/prepared/journal/016_0015_misty_lorna_dane.sql",
+    "db/prepared/journal/017_0016_fat_mac_gargan.sql",
+    "db/prepared/journal/018_0017_striped_legion.sql",
+    "db/prepared/journal/019_0018_redundant_firebird.sql",
+    "db/prepared/journal/020_0019_lazy_overlord.sql",
+    "db/prepared/journal/021_0020_long_squadron_supreme.sql",
+    "db/prepared/journal/022_0021_glorious_sandman.sql",
+    "db/prepared/journal/023_0022_abandoned_karma.sql",
+    "db/prepared/journal/024_0023_faulty_silver_sable.sql",
+    "db/prepared/journal/025_0024_outstanding_enchantress.sql",
+    "db/prepared/journal/026_0025_shallow_mattie_franklin.sql",
+    "db/prepared/journal/027_0026_violet_selene.sql",
+    "db/prepared/journal/028_0027_little_midnight.sql",
+    "db/prepared/journal/029_0028_keen_iron_patriot.sql",
+    "db/prepared/journal/030_0029_integrity.sql",
+    "db/prepared/journal/031_0030_immutability.sql",
+    "db/prepared/journal/032_0031_rls_core.sql",
+    "db/prepared/journal/033_0032_rls_specialized.sql",
+    "db/prepared/journal/034_0033_public_api_grants.sql",
+    "db/prepared/journal/035_0034_phase3_white_label.sql",
+    "db/prepared/journal/036_0035_phase5_marketing_leads.sql",
+    "db/prepared/journal/037_0036_phase2_onboarding.sql",
+    "db/prepared/journal/038_0037_phase1_stripe.sql",
+    "db/prepared/journal/039_0038_sprint_a_gdpr_users.sql",
+    "db/prepared/journal/040_20260716000000_auth_trigger.sql",
+    "db/prepared/journal/041_20260716000001_storage_policies.sql",
+    "db/prepared/journal/042_0039_grant_rls_helper_execution.sql",
+    "db/prepared/journal/043_001_initial_auth_rls.sql",
+    "db/prepared/journal/044_002_stella_interactions_rls.sql",
+    "db/prepared/journal/045_003_signup_allowlist_rls.sql",
+    "db/prepared/journal/046_004_fx_tables_rls.sql",
+    "db/prepared/journal/047_005_theory_of_change_rls.sql",
+    "db/prepared/journal/048_006_methodology_review_rls.sql",
+    "db/prepared/journal/049_007_taxonomy_rls.sql",
+    "db/prepared/journal/050_008_marketing_leads_rls.sql",
+    "db/prepared/journal/051_0040_governed_model_registry.sql",
+    "db/prepared/journal/052_0041_pc01b_regime_boundary_backfill.sql",
+    "db/prepared/journal/053_0042_fib_audit_insert_policy.sql",
+    "db/prepared/journal/054_0043_fib_audit_project_id_fk.sql",
+    "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql",
+    "db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql",
+    "db/prepared/journal/057_0046_fib_run_version_identity.sql",
+    "db/prepared/journal/058_009_governed_model_registry_rls.sql",
+    "db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql",
+    "db/prepared/journal/060_0048_fib_evidence_versions.sql",
+    "db/prepared/journal/061_0049_fib_evidence_sensitivity_vocabulary.sql",
+    "db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql",
+    "db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql",
+    "db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql",
+    "tests/audit-action-contract.test.ts",
+    "tests/database-entrypoint-inventory.json",
+    "tests/database-runtime-entrypoints.test.ts",
+    "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+    "tests/eval/stella-release/hosted-baseline-gate.ts",
+    "tests/evidence-erasure-multiversion.service.test.ts",
+    "tests/hosted/baseline-journal-wrapper.test.ts",
+    "tests/hosted/baseline-manifest.test.ts",
+    "tests/hosted/operator-runner.test.ts",
+    "tests/run-detail-page.sufficiency-reachability.test.tsx"
+  ],
+  "execution_rules": {
+    "postgres": "UELLIX_PG_TESTS=1 with Docker only (tests/postgres/*.pg.test.ts, scripts/db-audit-disposable.ts, pnpm baseline:rehearsal:local). No hosted, staging or production database is touched; the SEC negative control mutates a disposable database inside a rolled-back transaction, never repository SQL.",
+    "classification": "RECONCILIATION_INTRODUCED | PREEXISTING_ENVIRONMENTAL | FLAKE | UNKNOWN; RECONCILIATION_INTRODUCED=0 and UNKNOWN=0 required; a flake is accepted only if the test passes in isolation; the live-catalog class is accepted only if identical to the already-proven pre-existing behaviour on the Product worktree.",
+    "no_weakening": "No expectation loosened, no assertion removed, no suppression added, no timeout changed."
+  },
+  "controls": [
+    {
+      "id": "R1",
+      "title": "Product security preservation",
+      "positive": [
+        "pnpm secrets:scan",
+        "tests/scan-secrets.test.ts",
+        "tests/security/sec-dev-01-secret-assertion-safety.test.ts",
+        "tests/database-role-safety.test.ts",
+        "tests/database-insert-policy-scope.test.ts",
+        "tests/hosted/managed-role-identities.test.ts",
+        "tests/hosted/hosted-managed-role-attributes.test.ts",
+        "blob identity of docs/ops/CREDENTIAL_HYGIENE.md, .github/workflows/ci.yml, 0044 vs the Product parent"
+      ],
+      "negative": [
+        "planted-credential fixtures inside the secret-scan suites"
+      ]
+    },
+    {
+      "id": "R2",
+      "title": "Tenant authorization preservation",
+      "positive": [
+        "tests/database-runtime-entrypoints.test.ts (allowlisted === 16)",
+        "tests/database-runtime-rls.test.ts",
+        "tests/proxy-security.test.ts",
+        "tests/proxy-suggest-route.test.ts",
+        "tests/postgres/b3-completeness.pg.test.ts PG-10/PG-11",
+        "tests/postgres/b2-remediation.pg.test.ts"
+      ],
+      "negative": [
+        "tests/postgres/b3-completeness.pg.test.ts MUT-PG-3"
+      ]
+    },
+    {
+      "id": "R3",
+      "title": "B0/CI repairs preservation",
+      "positive": [
+        "tests/hosted/checkpoint-b0.test.ts",
+        "pnpm b0:observation:verify",
+        "tests/hosted/global-catalog-seeds.test.ts",
+        "tests/hosted/baseline-postconditions.test.ts",
+        "tests/hosted/hosted-provisioning-runner.test.ts",
+        "tests/hosted/managed-compatibility.test.ts",
+        "tests/evidence-erasure-multiversion.service.test.ts (Product typed blob)",
+        "pnpm lint"
+      ],
+      "negative": [
+        "closed-world N4/N5/N6 + per-seeded-table N1/N2/N2b/M2 controls"
+      ]
+    },
+    {
+      "id": "R4",
+      "title": "Migrations 0057-0061 present exactly once and intact",
+      "positive": [
+        "tests/fib-audit-migrations.test.ts",
+        "tests/hosted/baseline-manifest.test.ts (74 units, ordinals 1..74, Drizzle discovery == manifest)",
+        "pnpm baseline:verify",
+        "pnpm journal:verify (75 wrappers)",
+        "tests/postgres/b3-completeness.pg.test.ts PG-1..PG-3, PG-15, PG-16",
+        "blob identity of 0053..0060 + snapshots + policy 010 vs the Wave2 source"
+      ],
+      "negative": [
+        "duplicate-number scan over db/migrations (0 duplicates)",
+        "manifest DUPLICATE_UNIT / ORDER_BROKEN checker controls"
+      ]
+    },
+    {
+      "id": "R5",
+      "title": "Methodology B2/B3 behaviour (FIBIU-08..13, MNB-1)",
+      "positive": [
+        "FIBIU-08: tests/financial-proxy-versions.service.test.ts, tests/assignment-version-immutability.test.ts, tests/review-status-mapping.test.ts",
+        "FIBIU-09: tests/financial-proxy-rubric.service.test.ts",
+        "FIBIU-10: tests/proxy-material-change.service.test.ts, tests/proxy-material-fields-registry.test.ts, tests/proxy-material-categories.service.test.ts, tests/proxy-editorial-noop.service.test.ts, tests/proxy-approval-race.service.test.ts, tests/proxies.service.test.ts",
+        "MNB-1: tests/admin-proxies.service.test.ts, tests/admin-proxies-page.reachability.test.tsx, tests/b2-remediation-sentinels.test.ts, tests/audit-action-contract.test.ts",
+        "FIBIU-11: tests/outcomes.service.test.ts",
+        "FIBIU-12: tests/sroi-calculation.service.test.ts, tests/b3-completeness.ui.test.tsx",
+        "FIBIU-13: tests/sroi-calculation.service.test.ts, tests/b3-completeness.no-ratio.test.ts"
+      ],
+      "negative": [
+        "tests/b2-remediation-sentinels.test.ts",
+        "tests/postgres/b3-completeness.pg.test.ts MUT-PG-1..3"
+      ]
+    },
+    {
+      "id": "R6",
+      "title": "Deterministic SROI calculation",
+      "positive": [
+        "tests/sroi-calculation.golden.test.ts",
+        "tests/sroi-calculation.service.test.ts",
+        "tests/sroi-parse-num.test.ts",
+        "tests/sroi-sensitivity.service.test.ts",
+        "tests/sroi-results.service.test.ts",
+        "tests/calculation-results.test.tsx",
+        "lib/pipeline/sroi-remediation-destinations.test.ts",
+        "blob identity: lib/pipeline/sroi-calculation.ts == oracle 140c6dbc:… (c83a86e9)"
+      ],
+      "negative": [
+        "golden fixtures; retired /app/proxies destination rejected"
+      ]
+    },
+    {
+      "id": "R7",
+      "title": "NULL/unknown != 0",
+      "positive": [
+        "tests/b3-completeness.no-ratio.test.ts",
+        "tests/sroi-calculation.service.test.ts",
+        "tests/sroi-results.service.test.ts"
+      ],
+      "negative": [
+        "0.00:1 / \"—\" never rendered"
+      ]
+    },
+    {
+      "id": "R8",
+      "title": "not_material exclusion",
+      "positive": [
+        "tests/sroi-calculation.service.test.ts",
+        "tests/outcomes.service.test.ts"
+      ],
+      "negative": [
+        "a not_material line reaching the sum fails"
+      ]
+    },
+    {
+      "id": "R9",
+      "title": "No-ratio behaviour",
+      "positive": [
+        "tests/b3-completeness.no-ratio.test.ts",
+        "tests/b3-completeness.ui.test.tsx"
+      ],
+      "negative": [
+        "fabricated ratio paths assert absence"
+      ]
+    },
+    {
+      "id": "R10",
+      "title": "Approved-run immutability",
+      "positive": [
+        "tests/sroi-calculation.service.test.ts",
+        "tests/postgres/b3-completeness.pg.test.ts PG-14 / PG-14b / PG-14c (with 0061 in the corpus)"
+      ],
+      "negative": [
+        "tests/postgres/b3-completeness.pg.test.ts MUT-PG-2"
+      ]
+    },
+    {
+      "id": "R11",
+      "title": "Outcome monetization dispositions",
+      "positive": [
+        "tests/sroi-calculation.service.test.ts",
+        "tests/run-detail-page.sufficiency-reachability.test.tsx",
+        "tests/b3-completeness.ui.test.tsx",
+        "tests/postgres/b3-completeness.pg.test.ts PG-4..PG-9, PG-12, PG-13"
+      ],
+      "negative": [
+        "tests/postgres/b3-completeness.pg.test.ts MUT-PG-1"
+      ]
+    },
+    {
+      "id": "R12",
+      "title": "Entrypoint inventory integrity",
+      "positive": [
+        "tests/database-runtime-entrypoints.test.ts (131/106/90/16; header 133/109)",
+        "tests/database-entrypoint-safety.test.ts"
+      ],
+      "negative": [
+        "header-reconciliation assertion"
+      ]
+    },
+    {
+      "id": "R13",
+      "title": "Generated artifacts",
+      "positive": [
+        "pnpm baseline:verify",
+        "pnpm hosted:verify",
+        "pnpm storage:verify",
+        "pnpm journal:verify",
+        "pnpm boundary:status:verify",
+        "pnpm apply:status:verify",
+        "pnpm probe:status:verify",
+        "pnpm b0:observation:verify",
+        "pnpm a1:status:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts",
+        "tests/hosted/hosted-package-manifest.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts (rehearsalFresh vs the 74-unit digest)"
+      ],
+      "negative": [
+        "each verify command fails on byte divergence"
+      ]
+    },
+    {
+      "id": "R14",
+      "title": "Wave2 closure evidence preservation",
+      "positive": [
+        "blob identity of docs/ops/wave2/*.json vs 102a75cc (9/9)",
+        "closure READY_FOR_B4=YES / 0 / 0 read from the artifact"
+      ],
+      "negative": [
+        "script fails on any byte difference"
+      ]
+    },
+    {
+      "id": "R15",
+      "title": "Historical evidence immutability",
+      "positive": [
+        "docs/ops/**, db/baseline/**, artifacts/** paths present in a parent differ from BOTH parents only for artifacts/baseline-rehearsal/latest.json (re-executed) and artifacts/hosted-a1-status.json (regenerated; corroboration blob unchanged)"
+      ],
+      "negative": [
+        "script fails on any other path"
+      ]
+    },
+    {
+      "id": "R16",
+      "title": "main/production immutability",
+      "positive": [
+        "git rev-parse of origin/main, origin/integration/commercial-v1, origin/codex/w2-methodology-objects-r1 before and after"
+      ],
+      "negative": [
+        "any SHA change is a STOP"
+      ]
+    },
+    {
+      "id": "SEC-1",
+      "title": "0061 applies on disposable PostgreSQL",
+      "positive": [
+        "pnpm baseline:rehearsal:local manifestApplied=74, manifestFailedAt=null",
+        "scripts/db-audit-disposable.ts setup SUCCESS over the 74-unit setup manifest; probe SEC-1-0061-applied-explicit-acl-present"
+      ]
+    },
+    {
+      "id": "SEC-2",
+      "title": "B0-17 passes",
+      "positive": [
+        "rehearsal B0 18/18 (B0-17-function-execute-grants PASS)",
+        "probe SEC-2-B0-17-no-PUBLIC-or-anon-EXECUTE-in-public"
+      ]
+    },
+    {
+      "id": "SEC-3",
+      "title": "PUBLIC has no effective EXECUTE on the two 0060 functions; no ordinary runtime exposure",
+      "positive": [
+        "probe SEC-3 (aclexplode PUBLIC rows = 0; has_function_privilege false for anon/authenticated/service_role/uellix_app/uellix_writer/uellix_auditor where present)"
+      ],
+      "negative": [
+        "probe SEC-3-NEG: transient GRANT EXECUTE … TO PUBLIC inside a transaction makes the B0-17 query return exactly the mutated function; ROLLBACK restores 0 — repository SQL never mutated"
+      ]
+    },
+    {
+      "id": "SEC-4",
+      "title": "Trigger behaviour preserved",
+      "positive": [
+        "tests/postgres/b3-completeness.pg.test.ts PG-14 / PG-14b / PG-14c with 0061 applied",
+        "probe SEC-4-trigger-definitions-intact-after-0061 (both 0060 triggers present, guard still SECURITY DEFINER)"
+      ]
+    },
+    {
+      "id": "SEC-5",
+      "title": "Wave2 PG suites unchanged",
+      "positive": [
+        "tests/postgres/b2-remediation.pg.test.ts 23/23",
+        "tests/postgres/b3-completeness.pg.test.ts 24/24"
+      ]
+    },
+    {
+      "id": "SEC-6",
+      "title": "0060 blob unchanged",
+      "positive": [
+        "git blob 600a8f0777198d07ed50070b2abd8a50a4a267e5 == Wave2 source; sha256 3d84ff12301b8b7b4b58128f16e0a5c959268aeb391265d0e125ea55c47572a2"
+      ]
+    },
+    {
+      "id": "SEC-7",
+      "title": "CREATE OR REPLACE does not restore PUBLIC exposure",
+      "positive": [
+        "probe SEC-7: re-executing pg_get_functiondef of both functions inside a transaction leaves PUBLIC/anon EXECUTE rows at 0; rolled back"
+      ]
+    },
+    {
+      "id": "LINT-1",
+      "title": "BLK-2 72 -> 0 no-explicit-any errors",
+      "positive": [
+        "pnpm exec eslint on the five files: 0 errors",
+        "pnpm lint: 0 errors"
+      ]
+    },
+    {
+      "id": "LINT-2",
+      "title": "No suppressions; assertion counts preserved",
+      "positive": [
+        "grep eslint-disable/ts-ignore/ts-nocheck over the five files = 0",
+        "it/expect counts per file unchanged (29/52, 5/24, 10/22, 13/36, 14/18)",
+        "the five suites 108/108"
+      ]
+    },
+    {
+      "id": "STATUS-1",
+      "title": "A1 derived status regenerated",
+      "positive": [
+        "pnpm a1:status:write then pnpm a1:status:verify PASS; recorded blocker reads 24 missing units (74 canonical - 50 historically corroborated)"
+      ],
+      "negative": [
+        "stale 14-unit text fails verify (measured before regeneration)"
+      ]
+    },
+    {
+      "id": "HIST-1",
+      "title": "Historical artifacts unchanged",
+      "positive": [
+        "artifacts/hosted-a1-corroboration.json blob 2e05381d… unchanged",
+        "artifacts/hosted-b0-status.json and artifacts/hosted-b0-observation.json untouched (HOSTED_B0_STATUS_PREEXISTING_DEBT=YES, out of scope)",
+        "docs/ops/wave2/** blob-identical to 102a75cc"
+      ]
+    },
+    {
+      "id": "MIG-1",
+      "title": "Migration metadata canonical",
+      "positive": [
+        "drizzle-kit generate --custom produced 0061 snapshot (chained to 0060 id 88e1ba5d…, no schema delta) and journal idx 61 tag 0061_fib_disposition_governance_function_execute_revocation",
+        "no duplicate migration numbers; tests/fib-audit-migrations.test.ts"
+      ]
+    },
+    {
+      "id": "CNT-1",
+      "title": "baseline count derives 74",
+      "positive": [
+        "BASELINE_ORDER.length measured 74 via tsx before pinning; tests/hosted/baseline-manifest.test.ts"
+      ]
+    },
+    {
+      "id": "CNT-2",
+      "title": "Drizzle count derives 62",
+      "positive": [
+        "BASELINE_UNITS.filter(kind === drizzle-migration).length measured 62; tests/hosted/baseline-manifest.test.ts"
+      ]
+    },
+    {
+      "id": "CNT-3",
+      "title": "ordinals derive through 74",
+      "positive": [
+        "tests/hosted/baseline-manifest.test.ts ordinals 1..74; tests/hosted/baseline-journal-wrapper.test.ts; tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "id": "CNT-4",
+      "title": "hosted release steps derive 75",
+      "positive": [
+        "planProvisioningPhase = 000_journal_bootstrap + one step per BASELINE_ORDER (db/hosted/hosted-provisioning-runner.ts) = 75; tests/eval/stella-release/hosted-baseline-gate.ts"
+      ]
+    },
+    {
+      "id": "CNT-5",
+      "title": "hosted manifest gate derives 74",
+      "positive": [
+        "evidence.unitCount === 74 / superuserFreeUnits 74; tests/eval/stella-release/hosted-baseline-gate.test.ts"
+      ]
+    }
+  ],
+  "control_count": 33,
+  "full_ci_equivalent": [
+    "pnpm install --frozen-lockfile",
+    "pnpm secrets:scan",
+    "pnpm authority:seal:verify",
+    "pnpm lint",
+    "pnpm typecheck",
+    "pnpm baseline:verify",
+    "pnpm hosted:verify",
+    "pnpm storage:verify",
+    "pnpm journal:verify",
+    "pnpm boundary:status:verify",
+    "pnpm apply:status:verify",
+    "pnpm probe:status:verify",
+    "pnpm test:unit",
+    "pnpm build (short-path mapping of the SAME worktree if Windows MAX_PATH bites)"
+  ],
+  "ods_gates": [
+    "ods:scope --base 9d90f9bd… --protected-authority HPO-ODS-W2-09 (+ the replayed W2-08 surface) --allow <exact changed surface>",
+    "ods:poststate with the same base/authority and the targeted suites; --clean"
+  ]
+}

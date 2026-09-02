@@ -53,6 +53,17 @@ export const AUDIT_ACTIONS = {
   FINANCIAL_PROXY_REVIEW_STATUS_CHANGED: 'financial_proxy.review_status_changed',
   FINANCIAL_PROXY_ARCHIVED: 'financial_proxy.archived',
 
+  // Financial proxy versions (FIBIU-08 — FIBC-002/010/012)
+  FINANCIAL_PROXY_VERSION_CREATED: 'financial_proxy_version.created',
+  FINANCIAL_PROXY_VERSION_REVIEW_STATUS_CHANGED: 'financial_proxy_version.review_status_changed',
+
+  // Financial proxy versions — rubric evaluation (FIBIU-09 — FIBC-011)
+  FINANCIAL_PROXY_VERSION_RUBRIC_EVALUATED: 'financial_proxy_version.rubric_evaluated',
+  FINANCIAL_PROXY_VERSION_EXCEPTIONAL_DETERMINATION_RECORDED: 'financial_proxy_version.exceptional_determination_recorded',
+
+  // Financial proxy versions — material change policy (FIBIU-10 — FIBC-013)
+  FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE: 'financial_proxy_version.invalidated_by_material_change',
+
   // Proxy assignments
   PROXY_ASSIGNMENT_CREATED: 'proxy_assignment.created',
   PROXY_ASSIGNMENT_ARCHIVED: 'proxy_assignment.archived',
@@ -84,6 +95,11 @@ export const AUDIT_ACTIONS = {
 
   // Outcomes
   OUTCOME_MATERIALITY_UPDATED: 'outcome.materiality_updated',
+  // FIBIU-11 (FIBC-015) — the explicit material/not_material classification,
+  // distinct from the legacy 1-5 score's own OUTCOME_MATERIALITY_UPDATED verb.
+  OUTCOME_MATERIALITY_CLASSIFIED: 'outcome.materiality_classified',
+  // FIBIU-12 (FIBC-016) — per-outcome-per-run monetization disposition.
+  OUTCOME_MONETIZATION_DISPOSITION_RECORDED: 'outcome_monetization_disposition.recorded',
 
   // Methodology review matrix (generalized across pipeline steps)
   METHODOLOGY_REVIEW_STARTED: 'methodology_review.started',

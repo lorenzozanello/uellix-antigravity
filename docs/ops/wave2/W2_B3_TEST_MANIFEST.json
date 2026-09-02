@@ -1,0 +1,99 @@
+{
+  "manifest_id": "W2-B3",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:109-118 (FIBC-015/016/017), :268-269 (FIBC-044), :297-299,369 (FIBDB-009/010/045; FIBDB-008 at :295), :757-764 (FIBIU-11/12/13); docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json (recommended_implementation_batches[batch_id=B3], targeted_test_map, database_migration_map)",
+  "dependencies": [
+    "FIBIU-03",
+    "W2-B1",
+    "W2-B2"
+  ],
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/journal/**"
+  ],
+  "protected_authority": "HPO-ODS-W2-01",
+  "postgres_requirements": null,
+  "sentinels": [],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "P-1",
+      "description": "FIBIU-11: an outcome can be explicitly classified materiality_classification='material' with justification, distinct from and independent of the legacy 1-5 materialityScore; the classification persists and is readable back.",
+      "test_file": "tests/outcomes.service.test.ts"
+    },
+    {
+      "id": "P-2",
+      "description": "FIBIU-11 (scope-corrected during mission-loop cycle 1 — FIBIU-11's own FILES_OR_DOMAINS registry entry names only db/schema.ts, lib/pipeline/outcomes.ts, and app/app/projects/[projectId]/pipeline/outcomes/**, not lib/pipeline/sroi-calculation.ts; numerator-exclusion wiring is FIBIU-19's eligibility composition, Wave 3): a 'not_material' classification (with justification) persists and is returned unchanged by listOutcomesForProject/getOutcomeByIdForProject, exactly like a 'material' one -- the value is never dropped, nulled, or specially filtered by the read path itself, so it remains available for later eligibility composition to consume.",
+      "test_file": "tests/outcomes.service.test.ts"
+    },
+    {
+      "id": "P-3",
+      "description": "FIBIU-12 (scope-corrected during mission-loop cycle 3 -- the numerator-exclusion claim below was dropped from the original wording; wiring dispositions into the calculation engine's own sum is not implemented this cycle, see N-2's correction): recordOutcomeMonetizationDisposition persists disposition='monetized' for an outcome on a calculation run with no reason/justification required, and persists disposition='not_monetized' only when both reason and justification are supplied; re-recording the same (outcome, run) updates the existing row (REUSE_EXISTING_VERSIONING via domain_object_versions) rather than duplicating it.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "P-4",
+      "description": "FIBIU-12: getMonetizationCoverage() buckets a run's recorded dispositions into monetized / material-not-monetized (crossing FIBIU-11's outcomes.materialityClassification) / not-yet-eligible / other-excluded, each outcome counted exactly once, with hasDefensibleMonetization exposed as the pure signal for a caller-side no-ratio decision.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "P-5",
+      "description": "FIBIU-13: getFilterJustificationIssues() reports no issue for a filter set where each of deadweight/attribution/displacement/drop_off/duration has an explicit value of 0 together with its own discrete justification column (0 does not exempt justification, and a justified 0 is not treated as missing).",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "FIBIU-11 (scope-corrected during mission-loop cycle 1 -- MATERIALITY_UNCLASSIFIED as an enforced eligibility-gate rejection is FIBIU-19's job, Wave 3, out of FIBIU-11's FILES_OR_DOMAINS): an outcome created or updated with only the legacy 1-5 materialityScore set never has materiality_classification silently populated by that write -- no code path in lib/pipeline/outcomes.ts derives/infers materiality_classification from materialityScore; the two fields are written by entirely separate, independently-invoked functions.",
+      "test_file": "tests/outcomes.service.test.ts"
+    },
+    {
+      "id": "N-2",
+      "description": "FIBIU-12 (scope-corrected during mission-loop cycle 3): the loadCalculationData upstream silent-drop defect named in FIBIU-12's own SERVICE_CHANGES text (an assignment lacking input/filterSet/proxy/outcome, dropped with no `else` branch and no record) is fixed -- every missing piece is itemized in loadSkipped, merged into calculateSroiPreview's and calculateAndPersistSroiRun's skippedAssignments. FIBC-016's literal 'if no outcome has defensible monetization, no SROI ratio is emitted' is NOT wired this cycle: sroiRatio is read directly (parseFloat/.toFixed with no null-guard in several call sites) from ~15 files outside sroi-calculation.ts (Stella prompt/context builders, PDF/report renderers, portfolio analytics, the public verify page, the run-comparison UI) -- making it nullable correctly requires auditing all of them, a genuine scope expansion beyond this node's own file. getMonetizationCoverage's hasDefensibleMonetization is the primitive a follow-up node would consume to wire this.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-3",
+      "description": "FIBIU-13 (scope-corrected during mission-loop cycle 2 -- wiring this into an actual approval/lock BLOCK is FIBIU-19's eligibility composition, Wave 3, out of FIBIU-13's own FILES_OR_DOMAINS, mirroring the FIBIU-11 P-2/N-1 correction above): getFilterJustificationIssues() reports FILTER_JUSTIFICATION_MISSING naming the specific filter when a value is present with no justification, and FILTER_VALUE_MISSING when the value itself is NULL -- the null check runs before any numeric coercion, so a NULL value is never silently read as a justified 0 on this function's path.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-4",
+      "description": "FIBIU-13: discount_rate_pct is deliberately excluded from the five-filter justification gate and never blocks eligibility for missing justification.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-5",
+      "description": "Audit action verb/object correspondence (FIBC-040): every new logAuditAction call this batch introduces (outcome.materiality_classified or equivalent, outcome_monetization_disposition.recorded) has an entityType whose prefix matches the governed action object, verified by the existing static scan.",
+      "test_file": "tests/audit-action-contract.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-1",
+      "description": "Deleting the outcomes_materiality_pair-style guard that keeps materiality_classification and its justification atomic (both NULL or both set) is caught: a write with one set and the other NULL fails.",
+      "test_file": "tests/outcomes.service.test.ts"
+    },
+    {
+      "id": "M-2",
+      "description": "Deleting the 'reason required when disposition=not_monetized' / 'justification required when reason is set' guard is caught at the OutcomeMonetizationDispositionSchema zod-refine level (which mirrors the DB's own outcome_monetization_dispositions_reason_required_check / _justification_pair_check exactly): a not_monetized write with no reason, or a reason with no justification, is rejected before any insert/update. DB-CHECK-level proof against live PostgreSQL not available this cycle (see M-1's same caveat).",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "M-3",
+      "description": "Reintroducing a parseNum(null)-style coercion inside getFilterJustificationIssues (checking the value with parseNum instead of an explicit null/undefined/empty-string test) is caught: a NULL filter value would silently report no issue or FILTER_JUSTIFICATION_MISSING-only instead of FILTER_VALUE_MISSING.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "targeted_tests"
+  ]
+}

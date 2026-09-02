@@ -88,6 +88,14 @@ const CORRESPONDENCE_SCAN_ROOTS = [
   'lib/pipeline',
   'lib/projects/service.ts',
   'lib/portfolios/service.ts',
+  // W2-B2 (FIBIU-08, MNB-1) — lib/admin/proxies.ts's four measured sites
+  // (createGlobalProxySource, createGlobalFinancialProxy,
+  // updateGlobalProxyReviewStatus, setGlobalProxyManualFxRate) logged every
+  // write as ORGANIZATION_UPDATED regardless of what actually changed; this
+  // scan previously never covered lib/admin at all, so the mismatch went
+  // undetected. Per W2_EXECUTION_MAPPING_v1.0.0.json's mnb1_ownership.
+  // scan_extension_required.
+  'lib/admin',
 ]
 
 // entityType -> allowed action object prefix, where they diverge by name.
@@ -204,6 +212,8 @@ const CONTENT_MODIFYING_SITES = [
   // exposure on the resulting value.
   { file: 'lib/pipeline/evidence.ts', action: 'evidence_version.sensitivity_classified' },
   { file: 'lib/pipeline/evidence.ts', action: 'evidence_version.treatment_recorded' },
+  // FIBIU-12 (FIBC-016) — the update branch of recordOutcomeMonetizationDisposition.
+  { file: 'lib/pipeline/sroi-calculation.ts', action: 'outcome_monetization_disposition.recorded' },
 ]
 
 describe('content-modifying audit coverage (FIBC-040)', () => {

@@ -102,6 +102,8 @@ SELECT jsonb_pretty(jsonb_build_object(
     UNION ALL
     SELECT 'public.financial_proxies' AS t, count(*) AS n FROM "public"."financial_proxies"
     UNION ALL
+    SELECT 'public.financial_proxy_versions' AS t, count(*) AS n FROM "public"."financial_proxy_versions"
+    UNION ALL
     SELECT 'public.funders' AS t, count(*) AS n FROM "public"."funders"
     UNION ALL
     SELECT 'public.fx_rates' AS t, count(*) AS n FROM "public"."fx_rates"
@@ -126,6 +128,8 @@ SELECT jsonb_pretty(jsonb_build_object(
     UNION ALL
     SELECT 'public.outcome_funder_allocations' AS t, count(*) AS n FROM "public"."outcome_funder_allocations"
     UNION ALL
+    SELECT 'public.outcome_monetization_dispositions' AS t, count(*) AS n FROM "public"."outcome_monetization_dispositions"
+    UNION ALL
     SELECT 'public.outcome_proxy_assignments' AS t, count(*) AS n FROM "public"."outcome_proxy_assignments"
     UNION ALL
     SELECT 'public.outcome_taxonomy_mappings' AS t, count(*) AS n FROM "public"."outcome_taxonomy_mappings"
@@ -137,6 +141,8 @@ SELECT jsonb_pretty(jsonb_build_object(
     SELECT 'public.project_investments' AS t, count(*) AS n FROM "public"."project_investments"
     UNION ALL
     SELECT 'public.projects' AS t, count(*) AS n FROM "public"."projects"
+    UNION ALL
+    SELECT 'public.proxy_material_fields_registry' AS t, count(*) AS n FROM "public"."proxy_material_fields_registry"
     UNION ALL
     SELECT 'public.proxy_sources' AS t, count(*) AS n FROM "public"."proxy_sources"
     UNION ALL

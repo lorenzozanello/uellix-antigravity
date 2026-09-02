@@ -69,9 +69,10 @@ const conforming = () => ({
   roles: ['postgres', 'anon', 'authenticated', 'service_role', 'uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor'],
   grants: [],
   // HPO-ODS-W2-04: a trustworthy observation is zero everywhere except the
-  // governed global-catalog seed, which holds exactly its declared count.
+  // governed global-catalog seeds, which hold exactly their declared count.
+  // HPO-ODS-W2-08: a table seeded by more than one unit holds the SUM.
   rowCounts: Object.fromEntries(
-    EXPECTED.tables.map((t) => [t, GLOBAL_CATALOG_SEED_SPECS.find((s) => s.table === t)?.expectedRowCount ?? 0]),
+    EXPECTED.tables.map((t) => [t, GLOBAL_CATALOG_SEED_SPECS.filter((s) => s.table === t).reduce((n, s) => n + s.expectedRowCount, 0)]),
   ),
   extensions: ['pgcrypto'],
   storageBuckets: ['uellix-evidence'],

@@ -2,7 +2,7 @@
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { spawnSync } from 'node:child_process'
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import {
   matchesPattern,
@@ -312,8 +312,8 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant', () => {
-    expect(PROTECTED_GRANTS.length).toBe(4)
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant', () => {
+    expect(PROTECTED_GRANTS.length).toBe(6)
     const w2_03 = PROTECTED_GRANTS[2]
     expect(w2_03.authorityId).toBe('HPO-ODS-W2-03')
     expect(w2_03.branch).toBe('codex/u0-u9-reengineering-resume-r1')
@@ -337,6 +337,41 @@ describe('resolveProtectedGrant — pure', () => {
       authorityId: 'HPO-ODS-W2-07',
       branch: 'codex/product-commercial-v1-pr-r1',
       patterns: ['db/prepared/checkpoint-b0/observation.sql'],
+    })
+    // HPO-ODS-W2-08 (docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0.json):
+    // the Commercial V1 / Wave2 reconciliation grant on the candidate branch.
+    // Exactly the 98 literal protected paths the two-parent merge differs by
+    // from either parent, no glob; the frozen authority artifact is the source
+    // of the list and the two must agree exactly.
+    const w2_08 = PROTECTED_GRANTS[4]
+    expect(w2_08.authorityId).toBe('HPO-ODS-W2-08')
+    expect(w2_08.branch).toBe('codex/commercial-v1-wave2-reconciliation-r1')
+    expect(w2_08.patterns.length).toBe(98)
+    expect(w2_08.patterns.every((p) => !p.includes('*'))).toBe(true)
+    const authority = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0.json'), 'utf8'),
+    ) as { protected_grant: { authorityId: string; branch: string; patterns: string[] } }
+    expect(w2_08).toEqual({
+      authorityId: authority.protected_grant.authorityId,
+      branch: authority.protected_grant.branch,
+      patterns: authority.protected_grant.patterns,
+    })
+    // HPO-ODS-W2-09 (docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1.json):
+    // the 0061 security-successor grant on the same candidate branch. Exactly
+    // four literal protected paths, no glob; the frozen v1.0.1 artifact is the
+    // source of the list and the two must agree exactly.
+    const w2_09 = PROTECTED_GRANTS[5]
+    expect(w2_09.authorityId).toBe('HPO-ODS-W2-09')
+    expect(w2_09.branch).toBe('codex/commercial-v1-wave2-reconciliation-r1')
+    expect(w2_09.patterns.length).toBe(4)
+    expect(w2_09.patterns.every((p) => !p.includes('*'))).toBe(true)
+    const authority101 = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1.json'), 'utf8'),
+    ) as { protected_grant: { authorityId: string; branch: string; patterns: string[] } }
+    expect(w2_09).toEqual({
+      authorityId: authority101.protected_grant.authorityId,
+      branch: authority101.protected_grant.branch,
+      patterns: authority101.protected_grant.patterns,
     })
   })
 

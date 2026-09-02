@@ -265,14 +265,18 @@ export async function compareCalculationRuns(projectId: string, runIdA: string, 
   const valB_gross = parseFloat(runB.grossSocialValue || '0');
   const valA_net = parseFloat(runA.netSocialValue || '0');
   const valB_net = parseFloat(runB.netSocialValue || '0');
-  const valA_ratio = parseFloat(runA.sroiRatio || '0');
-  const valB_ratio = parseFloat(runB.sroiRatio || '0');
+  // W2-B3 completeness (AG-B3-2, FIBC-016) — a run without a ratio has no
+  // ratio to subtract: the delta is null, never parseFloat(null || '0').
+  const sroiRatioDelta =
+    runA.sroiRatio === null || runA.sroiRatio === undefined || runB.sroiRatio === null || runB.sroiRatio === undefined
+      ? null
+      : parseFloat(runA.sroiRatio) - parseFloat(runB.sroiRatio);
 
   return {
     totalInvestment: valA_inv - valB_inv,
     grossSocialValue: valA_gross - valB_gross,
     netSocialValue: valA_net - valB_net,
-    sroiRatio: valA_ratio - valB_ratio,
+    sroiRatio: sroiRatioDelta,
     lineItemCount: lineItemsA.length - lineItemsB.length,
     version: runA.version - runB.version,
     status: runA.status,

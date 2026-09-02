@@ -67,7 +67,19 @@ export default async function PublicVerificationPage({
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Ratio SROI</p>
-                  <p className="font-bold text-indigo-700">{run.sroiRatio}:1</p>
+                  {/* FIBIU-12 (FIBC-016, W2-B3 completeness AG-B3-2) — a locked run
+                      whose sroi_ratio is NULL has NO ratio: never rendered as
+                      'null:1', '0:1' or any other fabricated figure. */}
+                  {run.sroiRatio === null || run.sroiRatio === undefined ? (
+                    <p className="font-semibold text-amber-800" data-testid="verify-no-ratio">
+                      Sin ratio SROI
+                      <span className="block text-[11px] font-normal text-slate-500">
+                        Ningún resultado tiene monetización defendible en esta corrida; se reportan los resultados sin ratio.
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="font-bold text-indigo-700">{run.sroiRatio}:1</p>
+                  )}
                 </div>
               </div>
             </div>

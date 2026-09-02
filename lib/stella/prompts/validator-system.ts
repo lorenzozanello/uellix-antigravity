@@ -58,7 +58,8 @@ export function buildValidatorUserMessage(context: StellaProjectContext): string
       approvedEvidenceItems: context.evidenceMetadata.filter((e) => e.status === 'approved').length,
       proxiesUsed: context.proxySummary.length,
       sroiCalculated: context.calculationSnapshot !== null,
-      sroiRatio: context.calculationSnapshot ? Number(context.calculationSnapshot.sroiRatio.toFixed(2)) : null,
+      // AG-B3-2 — null when the run persisted no ratio, never 0.
+      sroiRatio: context.calculationSnapshot && context.calculationSnapshot.sroiRatio !== null ? Number(context.calculationSnapshot.sroiRatio.toFixed(2)) : null,
       readinessScore: context.readinessScore ?? null,
     },
     outcomes: context.outcomesSnapshot.map((o) => sanitizeFreeText(o.name, 200)),

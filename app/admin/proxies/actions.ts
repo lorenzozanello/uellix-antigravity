@@ -24,6 +24,9 @@ function errorToSlug(message: string): string {
     'La tasa debe ser un número mayor a 0': 'invalid_rate',
     'Cannot approve a non-USD/COP proxy without a manual USD conversion': 'fx_rate_missing',
     'Cannot approve: COP→USD rate unavailable for the reference year': 'fx_rate_missing',
+    // FIBIU-08 (FIBC-010) — the recoverable-reference EXIT_GATE.
+    'Cannot approve without a recoverable reference (URL/DOI/dataset id/linked document)': 'missing_recoverable_reference',
+    'Cannot approve: proxy has no version to approve': 'missing_recoverable_reference',
   }
   return known[message] ?? 'unknown_error'
 }
@@ -62,6 +65,13 @@ export async function createGlobalFinancialProxyAction(formData: FormData) {
   const value = (formData.get('value') as string | null)?.trim()
   const unit = (formData.get('unit') as string | null)?.trim()
   const referenceYearRaw = formData.get('referenceYear') as string | null
+  // FIBIU-08 (FIBC-010) — full-provenance form fields. Optional at creation
+  // (only recoverableReference is a hard gate, and only at approval time).
+  const recoverableReference = (formData.get('recoverableReference') as string | null)?.trim() || undefined
+  const geographicContextualScope = (formData.get('geographicContextualScope') as string | null)?.trim() || undefined
+  const linkedOutcomeContext = (formData.get('linkedOutcomeContext') as string | null)?.trim() || undefined
+  const relevanceJustification = (formData.get('relevanceJustification') as string | null)?.trim() || undefined
+  const documentedTransformations = (formData.get('documentedTransformations') as string | null)?.trim() || undefined
 
   if (!sourceId || !name || !currency || !value || !unit || !referenceYearRaw) {
     redirect(`${PROXIES_PATH}?error=invalid_input`)
@@ -78,6 +88,11 @@ export async function createGlobalFinancialProxyAction(formData: FormData) {
         value,
         unit,
         referenceYear: Number(referenceYearRaw),
+        recoverableReference,
+        geographicContextualScope,
+        linkedOutcomeContext,
+        relevanceJustification,
+        documentedTransformations,
       })
     )
   } catch (err) {

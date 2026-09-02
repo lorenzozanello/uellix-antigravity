@@ -61,15 +61,26 @@ export default async function ComparePage({
   const runA = runs.find((r) => r.id === runAId);
   const runB = runs.find((r) => r.id === runBId);
 
-  function deltaColor(val: number) {
+  // W2-B3 completeness (AG-B3-2, FIBC-016) — a run without a ratio has no
+  // ratio to compare: null is rendered as an explicit no-ratio state, never
+  // as 0 and never as a fabricated delta.
+  const NO_RATIO_LABEL = 'Sin ratio SROI';
+
+  function deltaColor(val: number | null) {
+    if (val === null) return 'text-amber-800';
     if (val > 0) return 'text-emerald-700';
     if (val < 0) return 'text-red-700';
     return 'text-muted-foreground';
   }
 
-  function formatDelta(val: number, decimals = 2) {
+  function formatDelta(val: number | null, decimals = 2) {
+    if (val === null) return NO_RATIO_LABEL;
     const prefix = val > 0 ? '+' : '';
     return `${prefix}${val.toFixed(decimals)}`;
+  }
+
+  function formatSide(val: number | null, suffix: string) {
+    return val === null ? NO_RATIO_LABEL : `${val.toLocaleString()}${suffix}`;
   }
 
   return (
@@ -212,8 +223,8 @@ export default async function ComparePage({
                 {[
                   {
                     label: 'Ratio SROI',
-                    valA: runA.sroiRatio ? parseFloat(runA.sroiRatio) : 0,
-                    valB: runB.sroiRatio ? parseFloat(runB.sroiRatio) : 0,
+                    valA: runA.sroiRatio ? parseFloat(runA.sroiRatio) : null,
+                    valB: runB.sroiRatio ? parseFloat(runB.sroiRatio) : null,
                     delta: comparison.sroiRatio,
                     suffix: ':1',
                   },
@@ -249,16 +260,14 @@ export default async function ComparePage({
                   <TableRow key={label}>
                     <TableCell className="font-medium text-foreground">{label}</TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {valA.toLocaleString()}
-                      {suffix}
+                      {formatSide(valA, suffix)}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {valB.toLocaleString()}
-                      {suffix}
+                      {formatSide(valB, suffix)}
                     </TableCell>
                     <TableCell className={`text-right font-semibold ${deltaColor(delta)}`}>
                       {formatDelta(delta)}
-                      {suffix}
+                      {delta === null ? '' : suffix}
                     </TableCell>
                   </TableRow>
                 ))}

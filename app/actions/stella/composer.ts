@@ -221,9 +221,10 @@ export async function getStellaComposer(
               filter.displacementPct,
               filter.dropoffPct,
             ]),
+            // AG-B3-2 — a run without a ratio authorizes NO ratio claim.
             sroiRatios: context.calculationSnapshot
               ? [
-                  context.calculationSnapshot.sroiRatio,
+                  ...(context.calculationSnapshot.sroiRatio === null ? [] : [context.calculationSnapshot.sroiRatio]),
                   ...(context.calculationSnapshot.fundersBreakdown ?? []).map((funder) => funder.sroiRatio),
                 ]
               : [],

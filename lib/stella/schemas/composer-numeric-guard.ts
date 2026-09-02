@@ -69,7 +69,9 @@ export interface AuthorizedFunderRow {
 
 export interface AuthorizedNumbers {
   totals: AuthorizedTotals
-  ratio: string | number
+  // W2-B3 completeness (AG-B3-2) — null when the run has no SROI ratio: no
+  // ratio is authorized, so any ratio claim in the draft fails closed.
+  ratio: string | number | null
   funderBreakdown?: readonly AuthorizedFunderRow[]
   /**
    * Any other values the Composer legitimately saw in its context: filter
@@ -198,8 +200,10 @@ function collectAuthorized(authorized: AuthorizedNumbers | null): Decimal[] {
     authorized.totals.totalInvestment,
     authorized.totals.grossSocialValue,
     authorized.totals.netSocialValue,
-    authorized.ratio,
   ]
+  // AG-B3-2 — a null ratio contributes nothing (never a 0 the draft could cite).
+  const ratio = authorized.ratio
+  if (ratio !== null) raw.push(ratio)
   for (const row of authorized.funderBreakdown ?? []) {
     raw.push(row.investmentUsd, row.attributedNsvUsd, row.sroiRatio)
   }
@@ -692,7 +696,7 @@ export interface CalculationSnapshotLike {
   totalInvestment: number
   grossSocialValue: number
   netSocialValue: number
-  sroiRatio: number
+  sroiRatio: number | null
   lineItemCount?: number
   version?: number
   fundersBreakdown?: readonly {

@@ -1,0 +1,79 @@
+{
+  "registry_id": "ODS_PROGRAM_STATE_REGISTRY",
+  "version": "1.0.0",
+  "purpose": "Operational metadata for scripts/ods-program-state.ts (ODS-ACCEL-01, NODE 1). NOT new authority: it only points at repository-native evidence (git refs, tree paths, JSON fields inside already-frozen artifacts) so program-state derivation never hardcodes a conclusion like 'FIBIU-04=CLOSED' inside TypeScript logic. Adding, correcting, or extending a unit entry here is ordinary tooling maintenance, not an authority act.",
+  "units": [
+    {
+      "id": "W2-B1",
+      "description": "Wave 2 batch B1 (FIBIU-04/05/06/07) remediation authority, technical implementation, and adversarial audit — measured on codex/w2-methodology-objects-r1.",
+      "authority": {
+        "type": "json-field",
+        "ref": "d058b36007e584f48d8f3f860c532924229c636a",
+        "path": "docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json",
+        "field": "final_state",
+        "closedValues": [
+          "W2_B1_REMEDIATION_AUTHORITY_FROZEN_READY_FOR_IMPLEMENTATION"
+        ]
+      },
+      "implementation": {
+        "type": "paths-exist",
+        "ref": "d058b36007e584f48d8f3f860c532924229c636a",
+        "paths": [
+          "app/app/projects/[projectId]/pipeline/evidence/classifyEvidenceSensitivity.action.ts",
+          "app/app/projects/[projectId]/pipeline/evidence/requestEvidenceErasure.action.ts",
+          "app/app/projects/[projectId]/pipeline/calculation/runs/recordEvidenceSufficiencyDetermination.action.ts",
+          "lib/pipeline/evidence-sufficiency.ts"
+        ]
+      },
+      "audit": {
+        "type": "json-field",
+        "ref": "d058b36007e584f48d8f3f860c532924229c636a",
+        "path": "docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json",
+        "field": "source_audit_state.verdict",
+        "closedValues": [
+          "ACCEPTED"
+        ]
+      },
+      "integrationTargets": [
+        "codex/u0-u9-reengineering-resume-r1"
+      ],
+      "productBranch": "feature/sprint-0-foundation"
+    },
+    {
+      "id": "W2-B3",
+      "description": "Wave 2 batch B3 (FIBIU-11/12/13) completeness authority, cross-layer remediation, and focused closure audit — measured on codex/w2-methodology-objects-r1.",
+      "authority": {
+        "type": "json-field",
+        "ref": "codex/w2-methodology-objects-r1",
+        "path": "docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json",
+        "field": "final_state",
+        "closedValues": [
+          "W2_B3_COMPLETENESS_AUTHORITY_FROZEN_READY_FOR_TEST_MANIFEST_V2"
+        ]
+      },
+      "implementation": {
+        "type": "paths-exist",
+        "ref": "codex/w2-methodology-objects-r1",
+        "paths": [
+          "db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql",
+          "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts",
+          "tests/postgres/b3-completeness.pg.test.ts",
+          "docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json"
+        ]
+      },
+      "audit": {
+        "type": "json-field",
+        "ref": "codex/w2-methodology-objects-r1",
+        "path": "docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json",
+        "field": "source_audit_state.verdict",
+        "closedValues": [
+          "ACCEPTED"
+        ]
+      },
+      "integrationTargets": [
+        "codex/u0-u9-reengineering-resume-r1"
+      ],
+      "productBranch": "feature/sprint-0-foundation"
+    }
+  ]
+}

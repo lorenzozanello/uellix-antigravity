@@ -18,7 +18,10 @@ export type ProjectRunSummary = {
     currency: string
     totalInvestment: number
     netSocialValue: number
-    sroiRatio: number
+    // W2-B3 completeness (AG-B3-2, FIBC-016) — null when the run carries no
+    // SROI ratio (no defensibly monetized outcome). Never coerced to 0 and
+    // never recomputed as net/investment on this surface.
+    sroiRatio: number | null
   } | null
   readinessScore: number | null
 }
@@ -26,7 +29,7 @@ export type ProjectRunSummary = {
 export type ExcludedProject = {
   projectId: string
   projectName: string
-  reason: 'no_run' | 'non_usd_currency'
+  reason: 'no_run' | 'non_usd_currency' | 'no_sroi_ratio'
 }
 
 export type PortfolioAggregate = {
@@ -56,6 +59,14 @@ export function aggregatePortfolioSroi(projects: ProjectRunSummary[]): Portfolio
     }
     if (p.run.currency !== 'USD') {
       excluded.push({ projectId: p.projectId, projectName: p.projectName, reason: 'non_usd_currency' })
+      continue
+    }
+    // AG-B3-2 — a run without a ratio has nothing defensibly monetized:
+    // summing its investment into the denominator with a zero numerator
+    // would fabricate a "zero return" project inside the portfolio ratio.
+    // Excluded explicitly, with its own reason, never silently.
+    if (p.run.sroiRatio === null) {
+      excluded.push({ projectId: p.projectId, projectName: p.projectName, reason: 'no_sroi_ratio' })
       continue
     }
     totalInvestment = totalInvestment.plus(p.run.totalInvestment)
@@ -94,6 +105,31 @@ function toNumberOrNull(value: string | null): number | null {
   if (value === null) return null
   const n = Number(value)
   return Number.isFinite(n) ? n : null
+}
+
+/**
+ * Pure mapping of a latest-run row to the summary the aggregate consumes.
+ * W2-B3 completeness (AG-B3-2): the run's persisted sroi_ratio is the ONLY
+ * source of the project ratio — NULL stays null. The historical
+ * `?? (investment > 0 ? net / investment : 0)` fallback recomputed a ratio
+ * the authoritative run deliberately did not emit; it is gone.
+ */
+export function toProjectRunSummaryRun(run: {
+  currency: string | null
+  totalInvestment: string | null
+  netSocialValue: string | null
+  sroiRatio: string | null
+}): ProjectRunSummary['run'] {
+  const investment = toNumberOrNull(run.totalInvestment)
+  const net = toNumberOrNull(run.netSocialValue)
+  // A run without valid numeric totals can't be aggregated — treat as no run.
+  if (investment === null || net === null) return null
+  return {
+    currency: run.currency ?? 'USD',
+    totalInvestment: investment,
+    netSocialValue: net,
+    sroiRatio: toNumberOrNull(run.sroiRatio),
+  }
 }
 
 /**
@@ -182,22 +218,10 @@ export async function getPortfolioAnalytics(portfolioId: string) {
 
   const summaries: ProjectRunSummary[] = portfolioProjects.map((p) => {
     const run = latestRunByProject.get(p.id)
-    const investment = run ? toNumberOrNull(run.totalInvestment) : null
-    const net = run ? toNumberOrNull(run.netSocialValue) : null
-    // A run without valid numeric totals can't be aggregated — treat as no run.
-    const usableRun =
-      run && investment !== null && net !== null
-        ? {
-            currency: run.currency ?? 'USD',
-            totalInvestment: investment,
-            netSocialValue: net,
-            sroiRatio: toNumberOrNull(run.sroiRatio) ?? (investment > 0 ? net / investment : 0),
-          }
-        : null
     return {
       projectId: p.id,
       projectName: p.name,
-      run: usableRun,
+      run: run ? toProjectRunSummaryRun(run) : null,
       readinessScore: run ? readinessByRunId.get(run.id) ?? null : null,
     }
   })

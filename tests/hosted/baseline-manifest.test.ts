@@ -75,24 +75,36 @@ describe('the baseline manifest describes the corpus that is actually checked in
     expect([...BASELINE_UNITS].map((u) => u.file).sort()).toEqual(discovered().sort())
   })
 
-  // W2-B1-R1/R3 (R-B1-03/R-B1-04) — re-derived, not fitted: FIB Wave 2 B1
-  // (FIBIU-04/05/06/07) added exactly four Drizzle migrations (0048-0051),
-  // one per B1 commit, and W2-B1-R3's run-binding remediation added one
-  // more (0052). 48+4+1=53 Drizzle; Supabase and policy counts unchanged.
-  it('has 64 units: 53 Drizzle, 2 Supabase, 9 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(64)
+  // W2-B2 (FIBIU-08/09/10) — re-derived, not fitted: FIB Wave 2 B1 closure
+  // left 53 Drizzle units; FIBIU-08 added 0053 (53+1=54), FIBIU-09 added
+  // 0054's rubric CHECK constraints (54+1=55), FIBIU-10 added 0055's
+  // material-fields registry (55+1=56). Supabase and policy counts unchanged.
+  // W2-B2-R1 (R-B2-03) — re-derived: 67 at the audited B2 head + 0056
+  // (registry editability + 1.1.0 seed) = 68; 57 Drizzle. Supabase and
+  // policy counts unchanged (R-B2-07 adds policy 010 next).
+  // W2-B2-R1 (R-B2-07) — + policies unit 010 (registry RLS, AG-B2-2) = 69
+  // units, 10 policies.
+  // W2-B3 (FIBIU-11/12/13, 56ab26f/d0dd4ca/36e26d0) — + 0057/0058/0059 = 72 units, 60 Drizzle
+  // (those commits never updated this pin, so it failed against 72 at the B3
+  // completeness base fd6e252). W2-B3 completeness — + 0060 (successor to 0059:
+  // UPDATE policy + approved-run guard) = 73 units, 61 Drizzle.
+  // HPO-ODS-W2-09 (COMMERCIAL-V1-WAVE2-RECONCILIATION successor remediation) —
+  // + 0061_fib_disposition_governance_function_execute_revocation.sql, the
+  // REVOKE-only B0-17 security successor to sealed 0060 = 74 units, 62 Drizzle.
+  it('has 74 units: 62 Drizzle, 2 Supabase, 10 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(74)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(53)
+    expect(byKind('drizzle-migration')).toBe(62)
     expect(byKind('supabase-migration')).toBe(2)
-    expect(byKind('policy')).toBe(9)
+    expect(byKind('policy')).toBe(10)
   })
 
-  it('numbers ordinals 1..64 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..74 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 64 }, (_, i) => i + 1),
+      Array.from({ length: 74 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(64)
+    expect(new Set(BASELINE_ORDER).size).toBe(74)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
@@ -211,7 +223,7 @@ describe('A2 is almost entirely a re-application of A1', () => {
     expect(m32.filter((s) => !policies.has(s))).toEqual([])
   })
 
-  it('008 and 009 are the only policies carrying content the migration chain never applies', () => {
+  it('008, 009 and 010 are the only policies carrying content the migration chain never applies', () => {
     const chain = new Set(
       BASELINE_UNITS.filter((u) => u.kind !== 'policy').flatMap((u) => statementSet(readOrThrow(u.file))),
     )
@@ -222,12 +234,17 @@ describe('A2 is almost entirely a re-application of A1', () => {
     // 001…007 duplicate the Drizzle chain (equivalentTo); 008 and 009 are the
     // two independent A2-only policies — 008 pre-dates Wave 1, 009 is the one
     // Wave-1 policy claim (governed_model_registry, no Drizzle equivalent).
+    // W2-B2-R1 (R-B2-07): 010 is the third — RLS for
+    // proxy_material_fields_registry (AG-B2-2, stage A), the same three-
+    // statement shape as 009 and likewise with no Drizzle equivalent.
     expect(novel.map(([id]) => id)).toEqual([
       '008_marketing_leads_rls.sql',
       '009_governed_model_registry_rls.sql',
+      '010_proxy_material_fields_registry_rls.sql',
     ])
     expect(novel[0][1]).toHaveLength(4)
     expect(novel[1][1]).toHaveLength(3)
+    expect(novel[2][1]).toHaveLength(3)
   })
 
   it('re-applying 001..007 is safe because every CREATE POLICY is guarded — and 008 is not', () => {
@@ -298,7 +315,14 @@ describe('Phase 5 — data', () => {
   // the manifest's say-so. This is the explicit governance whitelist of
   // which migrations are PERMITTED to carry DML — extending it is a
   // statement about the corpus, never a number chased to pass.
-  it('0018, 0040, 0041, 0047 and 0048 are the only units with DML', () => {
+  // W2-B2 (FIBIU-10) — 0055 genuinely added: db/migrations/0055_fib_proxy_
+  // material_change_registry.sql's literal 39-row field->category seed,
+  // mirroring 0040's own global-catalog-seed treatment exactly (same
+  // governance whitelist reasoning as the 0048 entry above).
+  // W2-B2-R1 (R-B2-03) — 0056 genuinely added: two literal global-catalog
+  // seeds (70 registry rows as registry_version 1.1.0 + the governed model
+  // append), same class as 0040 and 0055.
+  it('0018, 0040, 0041, 0047, 0048, 0055 and 0056 are the only units with DML', () => {
     const withDml = BASELINE_UNITS.filter(
       (u) => scanBaselineSql(readOrThrow(u.file)).dmlStatements.length > 0,
     )
@@ -308,6 +332,8 @@ describe('Phase 5 — data', () => {
       '0041_pc01b_regime_boundary_backfill.sql',
       '0047_fib_taxonomy_mapping_governance_regime.sql',
       '0048_fib_evidence_versions.sql',
+      '0055_fib_proxy_material_change_registry.sql',
+      '0056_fib_proxy_material_fields_editability.sql',
     ])
 
     const facts0018 = scanBaselineSql(readOrThrow('db/migrations/0018_redundant_firebird.sql'))

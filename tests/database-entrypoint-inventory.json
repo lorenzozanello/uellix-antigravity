@@ -1,7 +1,7 @@
 {
   "description": "Versioned inventory of every checked server module that can reach the database, classified by tests/database-runtime-entrypoints.test.ts (AST scanner section). A new database-reaching module must be added here DELIBERATELY after wiring its identity context (or allowlisting it with a reason in the test).",
-  "checkedModules": 130,
-  "databaseReaching": 106,
+  "checkedModules": 133,
+  "databaseReaching": 109,
   "modules": {
     "app/(authenticated)/app/onboarding/actions.ts": "contextualized",
     "app/(authenticated)/app/onboarding/page.tsx": "allowlisted",
@@ -62,6 +62,7 @@
     "app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/runs/createSroiRunReview.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/runs/recordEvidenceSufficiencyDetermination.action.ts": "contextualized",
+    "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/runs/updateSroiRunReview.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/runs/upsertSroiRunReviewItem.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/setDiscountRate.action.ts": "contextualized",
@@ -89,7 +90,9 @@
     "app/app/projects/[projectId]/pipeline/proxies/assignProxyToOutcome.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/proxies/createFinancialProxy.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/proxies/createProxySource.action.ts": "contextualized",
+    "app/app/projects/[projectId]/pipeline/proxies/evaluateProxyRubric.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/proxies/page.tsx": "contextualized",
+    "app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxy.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxyReviewStatus.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/stakeholders.actions.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/stakeholders/page.tsx": "contextualized",

@@ -11,6 +11,9 @@ import { listCatalogsWithCodes, listOutcomeMappingsForProject } from '@/lib/taxo
 import { listFundersForCurrentOrganization } from '@/lib/pipeline/funders';
 import { OutcomeTaxonomyMapper } from '@/components/taxonomy/OutcomeTaxonomyMapper';
 import { fetchOutcomes, addOutcome, updateOutcomeMateriality } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
+// FIBIU-11 (FIBC-015, W2-B3 completeness AG-B3-3) — the human classification
+// write path, called from this page's own server action below.
+import { setOutcomeMaterialityClassification } from '@/lib/pipeline/outcomes';
 import { fetchStakeholders } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { OutcomeAllocationWrapper } from '@/app/components/allocation-form/OutcomeAllocationWrapper';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -58,6 +61,31 @@ export const materialityAction = async (formData: FormData) => {
   });
 };
 
+// FIBIU-11 (FIBC-015 / FIBDB-008 / FIBDB-045) — the explicit HUMAN
+// classification. Deliberately a separate write path from the legacy score:
+// the score is never read to derive the classification (NPDD-03), and no
+// Stella path reaches this action (Stella analyses and suggests, never
+// decides). Clearing the classification returns the outcome to 'unclassified'.
+export const materialityClassificationAction = async (formData: FormData) => {
+  'use server';
+  const projectId = formData.get('projectId') as string;
+  const outcomeId = formData.get('outcomeId') as string;
+  const rawClassification = (formData.get('materialityClassification') as string) || '';
+  const classification = rawClassification === 'material' || rawClassification === 'not_material' ? rawClassification : null;
+  const justification = (formData.get('materialityClassificationJustification') as string) || undefined;
+  await runWithOrganizationAccess(() =>
+    setOutcomeMaterialityClassification(projectId, outcomeId, {
+      materialityClassification: classification,
+      materialityClassificationJustification: justification,
+    }),
+  );
+};
+
+const MATERIALITY_CLASSIFICATION_LABEL: Record<string, string> = {
+  material: 'Material',
+  not_material: 'No material',
+};
+
 interface OutcomeRow {
   id: string;
   title: string;
@@ -65,6 +93,8 @@ interface OutcomeRow {
   description: string | null;
   materialityScore: number | null;
   materialityRationale: string | null;
+  materialityClassification: string | null;
+  materialityClassificationJustification: string | null;
 }
 
 interface StakeholderRow {
@@ -146,14 +176,81 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
                   {o.description && (
                     <p className="mt-2 text-sm text-muted-foreground">{o.description}</p>
                   )}
-                  <div className="mt-3 rounded-md border border-border/60 bg-muted/30 p-2">
+                  {/* FIBIU-11 (FIBC-015) — the determinative, human classification. */}
+                  <div
+                    className="mt-3 rounded-md border border-border bg-background p-2"
+                    data-testid={`materiality-classification-${o.id}`}
+                  >
                     <p className="text-xs font-medium text-foreground">
-                      Materialidad:{' '}
+                      Clasificación de materialidad (determinante):{' '}
+                      {o.materialityClassification === null ? (
+                        <span className="text-amber-800">Sin clasificar — pendiente de decisión humana</span>
+                      ) : (
+                        <span>
+                          {MATERIALITY_CLASSIFICATION_LABEL[o.materialityClassification] ?? o.materialityClassification}
+                          {o.materialityClassificationJustification ? ` — ${o.materialityClassificationJustification}` : ''}
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      Un resultado <strong>no material</strong> queda fuera del numerador SROI autoritativo y se conserva
+                      con su razón de exclusión. Un resultado <strong>sin clasificar</strong> puede entrar en cálculos
+                      preliminares, siempre de forma visible. La decisión es humana: Stella no clasifica.
+                    </p>
+                    <form action={materialityClassificationAction} className="mt-2 flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="projectId" value={projectId} />
+                      <input type="hidden" name="outcomeId" value={o.id} />
+                      <div>
+                        <label htmlFor={`materiality-classification-${o.id}`} className="block text-xs text-muted-foreground">
+                          Clasificación
+                        </label>
+                        <select
+                          id={`materiality-classification-${o.id}`}
+                          name="materialityClassification"
+                          defaultValue={o.materialityClassification ?? ''}
+                          className={`${INPUT_CLASS} h-8 text-xs`}
+                        >
+                          <option value="">Sin clasificar</option>
+                          <option value="material">Material</option>
+                          <option value="not_material">No material</option>
+                        </select>
+                      </div>
+                      <div className="flex-1 min-w-[200px]">
+                        <label htmlFor={`materiality-classification-justification-${o.id}`} className="block text-xs text-muted-foreground">
+                          Justificación metodológica
+                        </label>
+                        <input
+                          id={`materiality-classification-justification-${o.id}`}
+                          name="materialityClassificationJustification"
+                          defaultValue={o.materialityClassificationJustification ?? ''}
+                          placeholder="Obligatoria al clasificar"
+                          className={`${INPUT_CLASS} h-8 text-xs`}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="h-8 rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        Clasificar
+                      </button>
+                    </form>
+                  </div>
+                  <div className="mt-2 rounded-md border border-border/60 bg-muted/30 p-2">
+                    <p className="text-xs font-medium text-foreground">
+                      Score de materialidad (1-5){' '}
+                      <span className="rounded bg-muted px-1 py-0.5 text-[10px] font-normal text-muted-foreground">
+                        apoyo — no determinante
+                      </span>
+                      :{' '}
                       {o.materialityScore === null ? (
                         <span className="text-muted-foreground">Sin evaluar</span>
                       ) : (
                         <span>{o.materialityScore}/5 — {o.materialityRationale}</span>
                       )}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      El score es estructura de apoyo: no tiene umbral numérico, nunca incluye ni excluye por sí solo y
+                      nunca se convierte automáticamente en clasificación.
                     </p>
                     <form action={materialityAction} className="mt-2 flex flex-wrap items-end gap-2">
                       <input type="hidden" name="projectId" value={projectId} />

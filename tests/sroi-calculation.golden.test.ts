@@ -21,7 +21,7 @@ vi.mock('@/lib/audit/logger', async (importOriginal) => {
   return { ...actual, logAuditAction: vi.fn() }
 })
 
-import { runDeterministicCalc, parseNum } from '@/lib/pipeline/sroi-calculation'
+import { runDeterministicCalc, parseNum, applyMaterialityExclusion, type EngineOptions } from '@/lib/pipeline/sroi-calculation'
 import { convertToUsd } from '@/lib/pipeline/fx-math'
 import { scenarioFilterPct } from '@/lib/pipeline/sroi-sensitivity'
 import { applyDecimalConfig } from '@/lib/pipeline/decimal-config'
@@ -56,18 +56,29 @@ function line(opts: LineOpts = {}) {
       dropoffPct: opts.dropoffPct ?? null,
       durationYears: opts.durationYears ?? 1,
     },
-    proxy: { id: `proxy-${id}`, valueUsd: opts.proxyUsd ?? '100' },
+    // R-B2-05 (AG-B2-1) — the engine reads value_usd from the BOUND version
+    // only. The live row deliberately carries a different figure so a
+    // fallback to it would break every pinned golden string.
+    proxy: { id: `proxy-${id}`, valueUsd: '999999' },
+    proxyVersion: { id: `version-${id}`, financialProxyId: `proxy-${id}`, reviewStatus: 'approved', valueUsd: opts.proxyUsd ?? '100' },
     outcome: { id: opts.outcomeId ?? 'out-1' },
   } as any
 }
 
+// W2-B3 completeness (AG-B3-4): the engine now names its filter semantics.
+// These historical goldens build lines with NULL filters by default and pin
+// the legacy coercion — that is exactly the labelled 'preliminary' path
+// (calculateSroiPreview / calculateSroiScenarios). The 'authoritative' path
+// (calculateAndPersistSroiRun) refuses a NULL filter outright — pinned in
+// the "AG-B3-4 authoritative filter semantics" block below.
 const run = (
   investments: any[],
   lines: any[],
   allocations: any[] = [],
   funders: any[] = [],
   discountRatePct: string | null = null,
-) => runDeterministicCalc(investments, lines, allocations, funders, discountRatePct)
+  options: EngineOptions = { filterSemantics: 'preliminary' },
+) => runDeterministicCalc(investments, lines, allocations, funders, discountRatePct, options)
 
 // ── Golden scenarios (exact strings pinned) ──────────────────────────────────
 
@@ -186,7 +197,7 @@ describe('Property: ratio monotonicity in discount filters', () => {
     (key) => {
       const ratios = sweep(key)
       for (let i = 1; i < ratios.length; i++) {
-        expect(ratios[i]).toBeLessThan(ratios[i - 1])
+        expect(ratios[i]).toBeLessThan(ratios[i - 1]!)
       }
     },
   )
@@ -224,7 +235,7 @@ describe('Property: currency invariance (COP path vs direct USD)', () => {
     const exactUsd = new Decimal('10000000').div(rate) // full precision
     const viaCop = run([inv(amountUsd)], [line()])
     const direct = run([inv(exactUsd.toString())], [line()])
-    expect(Math.abs(viaCop.sroiRatio - direct.sroiRatio)).toBeLessThan(1e-4)
+    expect(Math.abs(viaCop.sroiRatio! - direct.sroiRatio!)).toBeLessThan(1e-4)
     expect(Math.abs(viaCop.totalInvestment - direct.totalInvestment)).toBeLessThan(1e-3)
   })
 })
@@ -291,5 +302,153 @@ describe('Property: drop-off is geometric', () => {
     let expected = new Decimal(0)
     for (let y = 0; y < 4; y++) expected = expected.plus(base.mul(new Decimal('0.75').pow(y)))
     expect(r.netSocialValueExact).toBe(expected.toFixed(4))
+  })
+})
+
+// ── W2-B3 completeness (docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json) ──────────
+// Materiality (AG-B3-1), no-ratio (AG-B3-2) and filter semantics (AG-B3-4)
+// pinned at the pure engine, exactly like the goldens above.
+
+const AUTHORITATIVE: EngineOptions = { filterSemantics: 'authoritative' }
+const PRELIMINARY: EngineOptions = { filterSemantics: 'preliminary' }
+const ZERO_FILTERS = { deadweightPct: '0', attributionPct: '0', displacementPct: '0', dropoffPct: '0', durationYears: 1 }
+
+const classified = (opts: LineOpts & { classification?: 'material' | 'not_material' | null }) => {
+  const l = line(opts)
+  l.outcome = { id: opts.outcomeId ?? 'out-1', materialityClassification: opts.classification ?? null }
+  return l
+}
+
+describe('AG-B3-1 materiality exclusion (P-MAT-1 / N-MAT-1 / N-MAT-2 / M-MAT-1)', () => {
+  it('P-MAT-1: a material outcome contributes exactly as before (golden strings unchanged)', () => {
+    const r = run([inv('1000')], [classified({ ...ZERO_FILTERS, classification: 'material' })], [], [], null, AUTHORITATIVE)
+    expect(r.grossSocialValueExact).toBe('1000.0000')
+    expect(r.netSocialValueExact).toBe('1000.0000')
+    expect(r.sroiRatioExact).toBe('1.000000')
+    expect(r.monetizedOutcomeIds).toEqual(['out-1'])
+    expect(r.materialityUnclassifiedOutcomeIds).toEqual([])
+    expect(r.skippedAssignments).toEqual([])
+  })
+
+  it('N-MAT-1 / M-MAT-1: a not_material outcome contributes exactly zero and is itemized with its reason (removing the exclusion changes gross/net/ratio and drops the skip entry)', () => {
+    const withExcluded = run(
+      [inv('1000')],
+      [
+        classified({ id: 'a1', outcomeId: 'out-1', ...ZERO_FILTERS, classification: 'material' }),
+        classified({ id: 'a2', outcomeId: 'out-2', quantity: '50', proxyUsd: '200', ...ZERO_FILTERS, classification: 'not_material' }),
+      ],
+      [], [], null, AUTHORITATIVE,
+    )
+    const without = run([inv('1000')], [classified({ id: 'a1', outcomeId: 'out-1', ...ZERO_FILTERS, classification: 'material' })], [], [], null, AUTHORITATIVE)
+    // Exactly the same numbers as if the not_material line never existed...
+    expect(withExcluded.grossSocialValueExact).toBe(without.grossSocialValueExact)
+    expect(withExcluded.netSocialValueExact).toBe(without.netSocialValueExact)
+    expect(withExcluded.sroiRatioExact).toBe(without.sroiRatioExact)
+    expect(withExcluded.sroiRatioExact).toBe('1.000000')
+    // ...but the exclusion is retained in traceability, never silently dropped.
+    expect(withExcluded.lineItems.map((li) => li.outcomeId)).toEqual(['out-1'])
+    expect(withExcluded.skippedAssignments).toEqual([{ outcomeId: 'out-2', reason: 'not_material' }])
+    expect(withExcluded.monetizedOutcomeIds).toEqual(['out-1'])
+    // Mutation sensitivity: had the not_material line been summed, the ratio
+    // would have been (1000 + 50*200)/1000 = 11.000000 - this pin catches it.
+    expect(withExcluded.sroiRatioExact).not.toBe('11.000000')
+  })
+
+  it('N-MAT-2: an unclassified (NULL) outcome may contribute but NEVER silently - it is itemized', () => {
+    const r = run([inv('1000')], [classified({ ...ZERO_FILTERS, classification: null })], [], [], null, AUTHORITATIVE)
+    expect(r.sroiRatioExact).toBe('1.000000')
+    expect(r.materialityUnclassifiedOutcomeIds).toEqual(['out-1'])
+    // A legacy line with no classification on its outcome row is unclassified too (never treated as material).
+    const legacy = run([inv('1000')], [line(ZERO_FILTERS)], [], [], null, AUTHORITATIVE)
+    expect(legacy.materialityUnclassifiedOutcomeIds).toEqual(['out-1'])
+  })
+
+  it('applyMaterialityExclusion is pure, never reads the legacy 1-5 score, and dedupes unclassified ids per outcome', () => {
+    const a = classified({ id: 'a1', outcomeId: 'out-x', classification: null })
+    const b = classified({ id: 'a2', outcomeId: 'out-x', classification: null })
+    ;(a.outcome as any).materialityScore = 5
+    const res = applyMaterialityExclusion([a, b])
+    expect(res.included).toHaveLength(2)
+    expect(res.materialityUnclassifiedOutcomeIds).toEqual(['out-x'])
+    expect(res.skipped).toEqual([])
+  })
+})
+
+describe('AG-B3-2 no-ratio state (P-RATIO-1 / N-RATIO-1 / M-RATIO-1)', () => {
+  it('P-RATIO-1: with >= 1 defensibly monetized line the ratio is emitted exactly as today', () => {
+    const r = run([inv('1000')], [classified({ ...ZERO_FILTERS, classification: 'material' })], [], [], null, AUTHORITATIVE)
+    expect(r.sroiRatio).toBe(1)
+    expect(r.sroiRatioExact).toBe('1.000000')
+    expect(r.noRatioReason).toBeUndefined()
+  })
+
+  it('N-RATIO-1 / M-RATIO-1: zero defensibly monetized outcomes => NO ratio (null, not 0.000000), no per-funder ratio, totals still reported', () => {
+    const r = run(
+      [inv('1000', 'funder-1')],
+      [classified({ id: 'a1', outcomeId: 'out-1', quantity: '10', proxyUsd: '100', ...ZERO_FILTERS, classification: 'not_material' })],
+      [{ outcomeId: 'out-1', funderId: 'funder-1', allocationPct: '100', status: 'active' }] as any,
+      [{ id: 'funder-1', name: 'F', funderType: 'foundation' }] as any,
+      null,
+      AUTHORITATIVE,
+    )
+    expect(r.lineItems).toEqual([])
+    expect(r.sroiRatio).toBeNull()
+    expect(r.sroiRatioExact).toBeNull()
+    expect(r.noRatioReason).toBe('NO_DEFENSIBLE_MONETIZATION')
+    expect(r.monetizedOutcomeIds).toEqual([])
+    // Results reporting remains permitted: investment and (zero) values are reported...
+    expect(r.totalInvestmentExact).toBe('1000.0000')
+    expect(r.netSocialValueExact).toBe('0.0000')
+    expect(r.grossSocialValueExact).toBe('0.0000')
+    expect(r.skippedAssignments).toEqual([{ outcomeId: 'out-1', reason: 'not_material' }])
+    // ...but no ratio is fabricated anywhere: not globally, not per funder.
+    expect(r.fundersBreakdown).toEqual([])
+    expect(r.unattributedNsvUsd).toBe('0.0000')
+    // Mutation sensitivity: the removed guard would have produced 0/1000 = '0.000000'.
+    expect(r.sroiRatioExact).not.toBe('0.000000')
+  })
+})
+
+describe('AG-B3-4 filter semantics (P-FILTER-1 / P-FILTER-2 / N-FILTER-1 / M-FILTER-1)', () => {
+  it('P-FILTER-1: explicit 0 for every governed filter under authoritative semantics is exactly 0 - identical strings to the legacy coercion path', () => {
+    const explicit = run([inv('1000')], [line({ quantity: '10', proxyUsd: '100', ...ZERO_FILTERS })], [], [], null, AUTHORITATIVE)
+    const legacy = run([inv('1000')], [line({ quantity: '10', proxyUsd: '100' })], [], [], null, PRELIMINARY)
+    expect(explicit.netSocialValueExact).toBe(legacy.netSocialValueExact)
+    expect(explicit.sroiRatioExact).toBe(legacy.sroiRatioExact)
+    expect(explicit.sroiRatioExact).toBe('1.000000')
+    expect(explicit.preliminaryFilterAssumptions).toEqual([])
+  })
+
+  it.each(['deadweightPct', 'attributionPct', 'displacementPct', 'dropoffPct'] as const)(
+    'N-FILTER-1: a NULL %s under authoritative semantics throws FILTER_VALUE_UNKNOWN naming the assignment and filter - no line, no ratio',
+    (key) => {
+      const l = line({ id: 'a-null', ...ZERO_FILTERS })
+      ;(l.filterSet as any)[key] = null
+      expect(() => run([inv('1000')], [l], [], [], null, AUTHORITATIVE)).toThrow(/FILTER_VALUE_UNKNOWN: assignment a-null .* has no (deadweight|attribution|displacement|dropoff) value/)
+    },
+  )
+
+  it('N-FILTER-1: a NULL duration under authoritative semantics throws too (duration is one of the five governed filters)', () => {
+    const l = line({ id: 'a-dur', ...ZERO_FILTERS })
+    ;(l.filterSet as any).durationYears = null
+    expect(() => run([inv('1000')], [l], [], [], null, AUTHORITATIVE)).toThrow(/FILTER_VALUE_UNKNOWN: assignment a-dur .* has no duration value/)
+  })
+
+  it('N-FILTER-1: an empty-string filter is unknown, not zero, on the authoritative path', () => {
+    const l = line({ id: 'a-empty', ...ZERO_FILTERS, deadweightPct: '' })
+    expect(() => run([inv('1000')], [l], [], [], null, AUTHORITATIVE)).toThrow(/FILTER_VALUE_UNKNOWN/)
+  })
+
+  it('P-FILTER-2 / M-FILTER-1: the preliminary path coerces AND itemizes every unknown filter (the legacy pins above stay green only because they run preliminary)', () => {
+    const r = run([inv('1000')], [line({ id: 'a1', quantity: '10', proxyUsd: '100', dropoffPct: '5' })], [], [], null, PRELIMINARY)
+    expect(r.sroiRatioExact).toBe('1.000000')
+    expect(r.preliminaryFilterAssumptions).toEqual([
+      { assignmentId: 'a1', outcomeId: 'out-1', filter: 'deadweight', assumedValue: 0 },
+      { assignmentId: 'a1', outcomeId: 'out-1', filter: 'attribution', assumedValue: 0 },
+      { assignmentId: 'a1', outcomeId: 'out-1', filter: 'displacement', assumedValue: 0 },
+    ])
+    // The same line under authoritative semantics is refused - restoring the
+    // parseNum(null) -> 0 coercion on that path would make this assertion fail.
+    expect(() => run([inv('1000')], [line({ id: 'a1', quantity: '10', proxyUsd: '100', dropoffPct: '5' })], [], [], null, AUTHORITATIVE)).toThrow(/FILTER_VALUE_UNKNOWN/)
   })
 })

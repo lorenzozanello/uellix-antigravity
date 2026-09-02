@@ -375,15 +375,25 @@ export function buildHostedBaselineGateEvidence(
     phaseSkipRefused: !skipped.ok && skipped.code === 'PROVISIONING_BASELINE_INCOMPLETE',
     sentinelAutomationRefused:
       !sentinelAutomated.ok && sentinelAutomated.code === 'PROVISIONING_SENTINEL_IS_NOT_A_MIGRATION',
-    // W2-B1-R1/R3 (R-B1-03/R-B1-04) — 65, NOT 64: unit ZERO creates the
-    // journal table, and it is a planned step rather than setup because a
-    // prerequisite nobody plans is one somebody skips. 64 baseline units +
-    // 1 journal bootstrap step. The count is asserted rather than loosened
-    // to `>= 64` — a plan that silently grew or shrank is exactly what
-    // this evidence exists to notice.
+    // W2-B2 (FIBIU-08/09/10) — 68, NOT 67: unit ZERO creates the journal
+    // table, and it is a planned step rather than setup because a
+    // prerequisite nobody plans is one somebody skips. 67 baseline units
+    // (64 + 1 for 0053_fib_proxy_versions_provenance.sql + 1 for
+    // 0054_fib_proxy_rubric_constraints.sql + 1 for 0055_fib_proxy_material_
+    // change_registry.sql) + 1 journal bootstrap step. The count is
+    // asserted rather than loosened to `>= 67` — a plan that silently grew
+    // or shrank is exactly what this evidence exists to notice.
+    // W2-B2-R1 (R-B2-03/07): 69 baseline units + 1 journal bootstrap step = 70.
+    // COMMERCIAL-V1-WAVE2-RECONCILIATION-R1 (HPO-ODS-W2-08) — re-derived on the
+    // reconciled corpus: W2-B3 added 0057/0058/0059 (72) and 0060 (73); the
+    // Product line added no unit (HPO-ODS-W2-03 only re-pinned 0044). 73
+    // baseline units + 1 journal bootstrap step = 74.
+    // HPO-ODS-W2-09: + 0061 (B0-17 security successor to sealed 0060) = 74
+    // baseline units + 1 journal bootstrap step = 75 — derived from
+    // planProvisioningPhase (000_journal_bootstrap + one step per BASELINE_ORDER).
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 65 &&
+      firstProvisioning.steps.length === 75 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -394,11 +404,16 @@ export function evaluateHostedBaselineGates(
   const gates: HostedBaselineGate[] = []
 
   /* 1 ---------------------------------------------------------------- */
-  // W2-B1-R1/R3 (R-B1-03/R-B1-04) — 64, re-derived: FIB Wave 2 B1 added
-  // exactly four Drizzle migrations (0048-0051), one per B1 commit
-  // (FIBIU-04/05/06/07), plus W2-B1-R3's run-binding remediation added one
-  // more (0052). 59 + 4 + 1 = 64.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 64
+  // W2-B2 (FIBIU-08/09/10) — 67, re-derived: FIB Wave 2 B1 closure left 64
+  // units; this batch adds three Drizzle migrations (0053_fib_proxy_versions_
+  // provenance.sql, 0054_fib_proxy_rubric_constraints.sql,
+  // 0055_fib_proxy_material_change_registry.sql). 64 + 3 = 67.
+  // W2-B2-R1 (R-B2-03): + 0056 = 68; (R-B2-07): + policies unit 010 = 69.
+  // COMMERCIAL-V1-WAVE2-RECONCILIATION-R1 (HPO-ODS-W2-08): + 0057/0058/0059
+  // (W2-B3) = 72; + 0060 (W2-B3 completeness) = 73. Same derivation as
+  // tests/hosted/baseline-manifest.test.ts, independently re-verified there.
+  // HPO-ODS-W2-09: + 0061 = 74.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 74
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,
@@ -431,12 +446,20 @@ export function evaluateHostedBaselineGates(
   // versions.sql's stage-B backfill (one v1 shell row per existing
   // evidence_items row, FIBIU-04) is genuine INSERT DML, verified in
   // tests/hosted/baseline-manifest.test.ts, not asserted here on trust.
+  // W2-B2 (FIBIU-10) — 0055 added: db/migrations/0055_fib_proxy_material_
+  // change_registry.sql's literal 39-row field->category seed, the SAME
+  // global-catalog-seed class as unit 51 (0040), also verified there.
   const EXPECTED_DML_UNITS = [
     '0018_redundant_firebird.sql',
     '0040_governed_model_registry.sql',
     '0041_pc01b_regime_boundary_backfill.sql',
     '0047_fib_taxonomy_mapping_governance_regime.sql',
     '0048_fib_evidence_versions.sql',
+    '0055_fib_proxy_material_change_registry.sql',
+    // W2-B2-R1 (R-B2-03) — 0056: two literal global-catalog seeds (registry
+    // 1.1.0 rows + the governed model append), verified in
+    // tests/hosted/baseline-manifest.test.ts.
+    '0056_fib_proxy_material_fields_editability.sql',
   ]
   if (
     evidence.dmlUnits.length !== EXPECTED_DML_UNITS.length ||
@@ -444,14 +467,18 @@ export function evaluateHostedBaselineGates(
   ) {
     managedProblems.push(`DML units changed: ${evidence.dmlUnits.join(', ') || 'none'}`)
   }
-  // Exactly 1, not 0: unit 51 (0040) carries a deliberate, literal, deploy-time
-  // seed of 8 fixed global-catalog rows (FIBC-003) — universal reference data,
-  // not tenant/production data. 0018, 0041 and 0047 still write zero rows on
-  // an empty database; a SECOND literal source, or a changed count, means
-  // either the seed grew or a new unit started writing literal rows
-  // unannounced.
-  if (evidence.literalRowSources !== 1) {
-    managedProblems.push(`${evidence.literalRowSources} DML statement(s) now insert literal rows, expected exactly 1 (unit 51's global-catalog seed)`)
+  // Exactly 2, not 0 or 1: unit 51 (0040) carries a deliberate, literal,
+  // deploy-time seed of 8 fixed global-catalog rows (FIBC-003); unit 67
+  // (0055) carries a second — 39 fixed field->category rows (FIBC-013) —
+  // universal reference data, not tenant/production data, same class. 0018,
+  // 0041 and 0047 still write zero rows on an empty database; a THIRD
+  // literal source, or a changed count, means either a seed grew or a new
+  // unit started writing literal rows unannounced.
+  // W2-B2-R1 (R-B2-03): unit 68 (0056) carries TWO further literal seeds —
+  // the 70-row registry_version 1.1.0 classification and the governed-model
+  // append — so exactly 4: 0040:1, 0055:1, 0056:2.
+  if (evidence.literalRowSources !== 4) {
+    managedProblems.push(`${evidence.literalRowSources} DML statement(s) now insert literal rows, expected exactly 4 (units 51, 67 and 68's global-catalog seeds)`)
   }
   if (evidence.mustNotRunUnits.length > 0) {
     managedProblems.push(`units classified must-not-run: ${evidence.mustNotRunUnits.join(', ')}`)
@@ -461,7 +488,7 @@ export function evaluateHostedBaselineGates(
     passed: managedProblems.length === 0,
     detail:
       managedProblems.length === 0
-        ? `all ${evidence.unitCount} units are free of superuser dependencies, role statements, ownership transfers and extensions; exactly one (0033) grants to service_role and it is recorded rather than hidden; five units (0018, 0040, 0041, 0047, 0048) carry DML — 0018, 0041, 0047 and 0048 write zero rows on an empty database, and 0040 writes exactly one literal deploy-time seed of 8 global-catalog rows (not tenant data)`
+        ? `all ${evidence.unitCount} units are free of superuser dependencies, role statements, ownership transfers and extensions; exactly one (0033) grants to service_role and it is recorded rather than hidden; seven units (0018, 0040, 0041, 0047, 0048, 0055, 0056) carry DML — 0018, 0041, 0047 and 0048 write zero rows on an empty database, and 0040, 0055 and 0056 write exactly four literal deploy-time global-catalog seeds (8 + 39 + 70 + 1 rows, not tenant data)`
         : `managed compatibility broken: ${managedProblems.join('; ')}`,
   })
 
@@ -477,7 +504,7 @@ export function evaluateHostedBaselineGates(
     id: 'hosted-baseline-rehearsal-ready',
     passed: rehearsalOk,
     detail: rehearsalOk
-      ? 'a rehearsal was EXECUTED against this exact manifest (digest matches): it watched the naive 0000…0039 order abort at 0039 with 42883, then applied all 64 units in manifest order, then passed every CHECKPOINT B0 postcondition. The phased planner separately produces a complete 64-unit PHASE_BASELINE plan and refuses PHASE_STELLA_CHAIN against a virgin target. LIMIT, and it is not a formality: the local Supabase stack applies supabase/migrations at container start and the rehearsal shims auth and storage as OUR objects, so this is a REGRESSION test and a DEFECT REPRODUCTION — never evidence of managed-Supabase compatibility'
+      ? 'a rehearsal was EXECUTED against this exact manifest (digest matches): it watched the naive 0000…0039 order abort at 0039 with 42883, then applied all 74 units in manifest order, then passed every CHECKPOINT B0 postcondition. The phased planner separately produces a complete 74-unit PHASE_BASELINE plan and refuses PHASE_STELLA_CHAIN against a virgin target. LIMIT, and it is not a formality: the local Supabase stack applies supabase/migrations at container start and the rehearsal shims auth and storage as OUR objects, so this is a REGRESSION test and a DEFECT REPRODUCTION — never evidence of managed-Supabase compatibility'
       : `rehearsalFresh=${evidence.rehearsalFresh} (a stale or absent artefact means no rehearsal has run against the CURRENT manifest), reproducedDefect=${evidence.rehearsalReproducedDefect}, appliedAll=${evidence.rehearsalAppliedAll}, postconditionsClean=${evidence.rehearsalPostconditionsClean}, firstProvisioningPlannable=${evidence.firstProvisioningPlannable}, phaseSkipRefused=${evidence.phaseSkipRefused}. Run \`pnpm baseline:rehearsal:local\`.`,
   })
 

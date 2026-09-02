@@ -16,6 +16,32 @@ type ProxyRow = {
   referenceYear: number
   valueUsd: string | null
   fxRateId: string | null
+  // FIBIU-08 (FIBC-010) — this fixture's single shared object stands in for
+  // BOTH financial_proxies and financial_proxy_versions (the mock does not
+  // discriminate by table — see the `select`/`update` mocks below), so the
+  // recoverable-reference field the approval gate reads lives here too.
+  recoverableReference: string
+  // R-B2-02 — assertApprovableProvenance now gates FIBC-010's ten items,
+  // read off this same shared object.
+  geographicContextualScope: string
+  linkedOutcomeContext: string
+  relevanceJustification: string
+  documentedTransformations: string
+  // FIBIU-09 (FIBC-011) — same reasoning: assertRubricApprovable reads its
+  // thirteen factors off this same shared object.
+  c1SourceQualityVerifiability: number
+  c2OutcomeCorrespondence: number
+  c3StakeholderPopulationFit: number
+  c4GeographicContextFit: number
+  c5TemporalFit: number
+  c6MethodologicalUnitComparability: number
+  r1ProvenanceRisk: number
+  r2SourceLimitationRisk: number
+  r3ConceptualFitRisk: number
+  r4GeographicPopulationTransferRisk: number
+  r5TemporalObsolescenceRisk: number
+  r6TransformationRisk: number
+  r7MethodologicalUncertaintyRisk: number
 }
 
 function deferred<T = void>() {
@@ -65,6 +91,12 @@ const mocks = vi.hoisted(() => {
         const query: any = {
           where: vi.fn(() => query),
           for: vi.fn(() => query),
+          // FIBIU-08 — updateCurrentFinancialProxyVersion's lookup chain adds
+          // .orderBy()/.limit(); this test's single-shared-row model doesn't
+          // discriminate by table (proving the financial_proxies row-lock
+          // race is the whole point here), so these stay no-ops like `where`.
+          orderBy: vi.fn(() => query),
+          limit: vi.fn(() => query),
           then: (callback: (rows: any[]) => unknown) => Promise.resolve(callback(state.current ? [state.current] : [])),
         }
         return query
@@ -81,6 +113,17 @@ const mocks = vi.hoisted(() => {
             return apply(values)
           }),
         })),
+      })),
+    })),
+    // FIBIU-10 — a material edit that finds the current version already
+    // approved now forks (createFinancialProxyVersion's own INSERT). This
+    // single-shared-row model doesn't model the fork as a real second row
+    // (that would defeat the point of proving the financial_proxies lock),
+    // it just returns a plausible new version so the caller doesn't crash;
+    // the assertions below check state.current (the LIVE row), unaffected.
+    insert: vi.fn(() => ({
+      values: vi.fn((vals: Record<string, unknown>) => ({
+        returning: vi.fn(async () => [{ id: 'forked-version', ordinal: (state.current?.ordinal ?? 1) + 1, ...vals }]),
       })),
     })),
   }
@@ -114,14 +157,10 @@ vi.mock('@/lib/auth/session', () => ({
   getCurrentOrganizationContext: vi.fn(),
 }))
 vi.mock('@/lib/auth/permissions', () => ({ canApproveProxy: vi.fn() }))
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-  AUDIT_ACTIONS: {
-    FINANCIAL_PROXY_REVIEW_STATUS_CHANGED: 'financial_proxy_review_status_changed',
-    FINANCIAL_PROXY_UPDATED: 'financial_proxy_updated',
-    ORGANIZATION_UPDATED: 'organization_updated',
-  },
-}))
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return { ...actual, logAuditAction: vi.fn() }
+})
 
 import { requireAdminAccess, requireOrganizationAccess } from '@/lib/auth/session'
 import { canApproveProxy } from '@/lib/auth/permissions'
@@ -147,8 +186,26 @@ function seedProxy(overrides: Partial<ProxyRow> = {}) {
     referenceYear: 2025,
     valueUsd: null,
     fxRateId: null,
+    recoverableReference: 'https://example.org/proof',
+    geographicContextualScope: 'Nacional',
+    linkedOutcomeContext: 'Ingreso',
+    relevanceJustification: 'Misma población',
+    documentedTransformations: 'none',
+    c1SourceQualityVerifiability: 3,
+    c2OutcomeCorrespondence: 3,
+    c3StakeholderPopulationFit: 3,
+    c4GeographicContextFit: 3,
+    c5TemporalFit: 3,
+    c6MethodologicalUnitComparability: 3,
+    r1ProvenanceRisk: 0,
+    r2SourceLimitationRisk: 0,
+    r3ConceptualFitRisk: 0,
+    r4GeographicPopulationTransferRisk: 0,
+    r5TemporalObsolescenceRisk: 0,
+    r6TransformationRisk: 0,
+    r7MethodologicalUncertaintyRisk: 0,
     ...overrides,
-  }
+  } as ProxyRow
 }
 
 beforeEach(() => {

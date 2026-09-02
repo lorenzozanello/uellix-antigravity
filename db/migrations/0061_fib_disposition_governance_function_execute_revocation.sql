@@ -1,0 +1,34 @@
+-- 0061_fib_disposition_governance_function_execute_revocation
+--
+-- COMMERCIAL-V1-WAVE2-RECONCILIATION successor security hardening
+-- (docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1.json,
+-- HPO-ODS-W2-09). Successor to the sealed, closed Wave2 B3 unit
+-- 0060_fib_outcome_monetization_dispositions_governance.sql, which remains
+-- IMMUTABLE: it is never edited, and this unit changes nothing 0060 defines.
+--
+-- WHY: 0060 created two functions in schema public —
+-- uellix_guard_disposition_run_approval() (SECURITY DEFINER, BEFORE
+-- INSERT/UPDATE/DELETE guard on outcome_monetization_dispositions) and
+-- uellix_lock_run_dispositions_on_approval() (approval-side trigger on
+-- sroi_run_reviews) — without revoking EXECUTE. PostgreSQL's default function
+-- ACL grants EXECUTE to PUBLIC, and a managed project's default privileges
+-- widen that to anon/authenticated/service_role. CHECKPOINT B0 postcondition
+-- B0-17-function-execute-grants ("NO function in public is EXECUTE-able by
+-- anon or PUBLIC; 0033 revokes, 042 restores for authenticated ONLY") was
+-- measured FAILING on the reconciled corpus by the disposable rehearsal.
+-- No unit after 0033 had created a public function until 0060, so this is
+-- the first time the 0033/042 discipline has to be re-applied by a successor.
+--
+-- WHAT: exactly two privilege statements, nothing else. No GRANT, no new
+-- function, no table/schema/RLS change, no methodology semantic change.
+-- Trigger behaviour is preserved: a trigger function fires regardless of the
+-- invoking role's EXECUTE privilege (EXECUTE is checked for the CREATOR at
+-- CREATE TRIGGER time only), so the Wave2 approved-run immutability guard and
+-- the approval-side lock keep firing for every runtime identity exactly as
+-- 0060 installed them.
+--
+-- Idempotent: REVOKE of a privilege not held is a no-op. Applied with
+-- psql -1 like every baseline unit.
+
+REVOKE EXECUTE ON FUNCTION public.uellix_guard_disposition_run_approval() FROM PUBLIC;--> statement-breakpoint
+REVOKE EXECUTE ON FUNCTION public.uellix_lock_run_dispositions_on_approval() FROM PUBLIC;

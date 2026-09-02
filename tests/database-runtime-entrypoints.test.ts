@@ -709,16 +709,40 @@ describe('every entry point that can reach the database opens an identity contex
     // exactly like their sibling actions in the same directories, so all
     // three are `contextualized`, not allowlisted.
     //
-    // 127 -> 128, 102 -> 103, contextualized 86 -> 87, allowlisted UNCHANGED
-    // at 16: app/app/organization/onboarding/page.tsx — already noted as
-    // "already unregistered in the shared inventory at the common base" in
-    // 72c6024's own commit message, i.e. a pre-existing gap this pinning
-    // never closed. ca30c2d rewrote it from a 'use client' form-only page
-    // into an async server component that calls requireOrganizationAccess()
-    // directly around its one read (membership.role); it is `contextualized`
-    // like its siblings, not allowlisted. Figures re-measured fresh against
-    // the current tree, matching the AST-layer inventory update below.
-    }).toEqual({ inventoried: 128, reaching: 103, contextualized: 87, allowlisted: 16 })
+    // 127 -> 128 / 102 -> 103 / contextualized 86 -> 87, allowlisted
+    // UNCHANGED at 16: W2-B2 (FIBIU-09/FIBC-011) adds one new .action.ts
+    // entry point — evaluateProxyRubric.action.ts, under pipeline/proxies/.
+    // It calls runWithOrganizationAccess around its one governed write,
+    // exactly like its sibling updateFinancialProxyReviewStatus.action.ts,
+    // so it is `contextualized`, not allowlisted.
+    //
+    // 128 -> 129 / 103 -> 104 / contextualized 87 -> 88, allowlisted
+    // UNCHANGED at 16: W2-B2 (FIBIU-10/FIBC-013) adds one new .action.ts
+    // entry point — updateFinancialProxy.action.ts, under pipeline/proxies/.
+    // Same runWithOrganizationAccess pattern as its siblings, so
+    // `contextualized`, not allowlisted.
+    //
+    // 129 -> 130 / 104 -> 105 / contextualized 88 -> 89, allowlisted
+    // UNCHANGED at 16: W2-B3 (FIBIU-12/FIBC-016) adds one new .action.ts
+    // entry point — calculation/runs/recordOutcomeMonetizationDisposition.action.ts.
+    // It calls runWithOrganizationAccess around its one governed write,
+    // exactly like its siblings in the same directory
+    // (createSroiRunReview.action.ts, recordEvidenceSufficiencyDetermination.action.ts),
+    // so it is `contextualized`, not allowlisted. Registered under
+    // docs/ops/wave2/W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY_v1.0.0.json.
+    //
+    // 130 -> 131, 105 -> 106, contextualized 89 -> 90, allowlisted UNCHANGED
+    // at 16: app/app/organization/onboarding/page.tsx (Product line, PR #48) —
+    // already noted as "already unregistered in the shared inventory at the
+    // common base" in 72c6024's own commit message, i.e. a pre-existing gap
+    // this pinning never closed. ca30c2d rewrote it from a 'use client'
+    // form-only page into an async server component that calls
+    // requireOrganizationAccess() directly around its one read
+    // (membership.role); it is `contextualized` like its siblings, not
+    // allowlisted. COMMERCIAL-V1-WAVE2-RECONCILIATION-R1 (HPO-ODS-W2-08):
+    // figures re-measured fresh against the reconciled tree, matching the
+    // AST-layer inventory update.
+    }).toEqual({ inventoried: 131, reaching: 106, contextualized: 90, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {
