@@ -37,6 +37,8 @@ const mockDb = {
   financialProxyVersions: [] as any[],
   sroiCalculationRuns: [] as any[],
   sroiCalculationLineItems: [] as any[],
+  sroiRunReviews: [] as any[],
+  outcomeMonetizationDispositions: [] as any[],
   evidenceItems: [] as any[],
   funders: [] as any[],
   outcomeFunderAllocations: [] as any[],
@@ -160,6 +162,9 @@ import {
   upsertSroiAssignmentInput,
   upsertSroiFilterSet,
   getFilterJustificationIssues,
+  recordOutcomeMonetizationDisposition,
+  getMonetizationCoverage,
+  loadCalculationData,
 } from '@/lib/pipeline/sroi-calculation';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -185,6 +190,8 @@ beforeEach(() => {
     financialProxyVersions: [],
     sroiCalculationRuns: [],
     sroiCalculationLineItems: [],
+    sroiRunReviews: [],
+    outcomeMonetizationDispositions: [],
     evidenceItems: [],
     funders: [],
     outcomeFunderAllocations: [],
@@ -1146,6 +1153,162 @@ describe('Persist calculation run', () => {
     mockDb.projectInvestments.push({ id: 'inv-1', projectId: PROJECT_ID, organizationId: ORG_ID, amount: '1000', currency: 'USD' });
     await expect(calculateAndPersistSroiRun(PROJECT_ID)).rejects.toThrow();
     expect(insertSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('FIBIU-12 (FIBC-016) — monetization disposition and coverage', () => {
+  describe('loadCalculationData itemizes assignments it cannot load (no silent drop)', () => {
+    it("N-2: an assignment missing its input/filterSet/proxy/outcome is reported in loadSkipped, not dropped", async () => {
+      const { proxy } = seedHappyData();
+      // A second, deliberately incomplete assignment -- the readiness/load
+      // TOCTOU race this simulates: readiness saw complete data a moment
+      // ago, but by the time loadCalculationData actually reads it, the
+      // filter set and outcome are both gone (e.g. concurrently archived).
+      const incompleteAssignment = {
+        id: 'assignment-incomplete',
+        projectId: PROJECT_ID,
+        organizationId: ORG_ID,
+        outcomeId: 'out-missing',
+        proxyId: proxy.id,
+        financialProxyVersionId: null,
+        assignmentStatus: 'active',
+      };
+      mockDb.outcomeProxyAssignments.push(incompleteAssignment);
+      // Deliberately no matching sroiAssignmentInputs / sroiFilterSets row,
+      // and 'out-missing' is not in mockDb.outcomes.
+
+      const { loadSkipped, assignmentData } = await loadCalculationData(PROJECT_ID, ORG_ID);
+
+      // The complete assignment still loads normally.
+      expect(assignmentData).toHaveLength(1);
+      // The incomplete one is itemized, once per missing piece, never silently dropped.
+      expect(loadSkipped).toContainEqual({ outcomeId: 'out-missing', reason: 'missing_input' });
+      expect(loadSkipped).toContainEqual({ outcomeId: 'out-missing', reason: 'missing_filter_set' });
+      expect(loadSkipped).toContainEqual({ outcomeId: 'out-missing', reason: 'missing_outcome' });
+      // proxy IS present here (same proxy as the happy assignment), so it must not be flagged missing.
+      expect(loadSkipped.find((s: any) => s.reason === 'missing_proxy')).toBeUndefined();
+    });
+
+    it('a fully unresolvable assignment reports missing_proxy too', async () => {
+      mockDb.projects.push({ id: PROJECT_ID, organizationId: ORG_ID });
+      mockDb.outcomeProxyAssignments.push({
+        id: 'assignment-orphan',
+        projectId: PROJECT_ID,
+        organizationId: ORG_ID,
+        outcomeId: 'out-orphan',
+        proxyId: 'proxy-does-not-exist',
+        financialProxyVersionId: null,
+        assignmentStatus: 'active',
+      });
+      const { loadSkipped, assignmentData } = await loadCalculationData(PROJECT_ID, ORG_ID);
+      expect(assignmentData).toHaveLength(0);
+      expect(loadSkipped).toContainEqual({ outcomeId: 'out-orphan', reason: 'missing_proxy' });
+    });
+  });
+
+  describe('recordOutcomeMonetizationDisposition', () => {
+    async function seedRun() {
+      seedHappyData();
+      const persisted = await calculateAndPersistSroiRun(PROJECT_ID);
+      return persisted.run.id as string;
+    }
+
+    it('P-3: records a monetized disposition with no reason/justification required', async () => {
+      const runId = await seedRun();
+      const saved = await recordOutcomeMonetizationDisposition(PROJECT_ID, 'out-1', runId, { disposition: 'monetized' });
+      expect(saved.disposition).toBe('monetized');
+      expect(saved.reason).toBeNull();
+    });
+
+    it('P-3: records a not_monetized disposition with reason + justification, both persisted', async () => {
+      const runId = await seedRun();
+      const saved = await recordOutcomeMonetizationDisposition(PROJECT_ID, 'out-1', runId, {
+        disposition: 'not_monetized',
+        reason: 'not_material',
+        justification: 'Outcome classified not_material by the analyst.',
+      });
+      expect(saved.disposition).toBe('not_monetized');
+      expect(saved.reason).toBe('not_material');
+      expect(saved.justification).toBe('Outcome classified not_material by the analyst.');
+    });
+
+    it('rejects not_monetized with no reason', async () => {
+      const runId = await seedRun();
+      await expect(
+        recordOutcomeMonetizationDisposition(PROJECT_ID, 'out-1', runId, { disposition: 'not_monetized' } as any)
+      ).rejects.toThrow();
+    });
+
+    it('rejects a reason with no justification', async () => {
+      const runId = await seedRun();
+      await expect(
+        recordOutcomeMonetizationDisposition(PROJECT_ID, 'out-1', runId, { disposition: 'not_monetized', reason: 'not_material' } as any)
+      ).rejects.toThrow();
+    });
+
+    it('re-recording the same (outcome, run) updates the existing row rather than duplicating it', async () => {
+      const runId = await seedRun();
+      await recordOutcomeMonetizationDisposition(PROJECT_ID, 'out-1', runId, { disposition: 'monetized' });
+      await recordOutcomeMonetizationDisposition(PROJECT_ID, 'out-1', runId, {
+        disposition: 'not_monetized',
+        reason: 'insufficient_evidence',
+        justification: 'Evidence withdrawn after initial recording.',
+      });
+      expect(mockDb.outcomeMonetizationDispositions).toHaveLength(1);
+      expect(mockDb.outcomeMonetizationDispositions[0].disposition).toBe('not_monetized');
+    });
+
+    it('M-2: refuses any write once the run has an approved review', async () => {
+      const runId = await seedRun();
+      mockDb.sroiRunReviews.push({ id: 'review-1', calculationRunId: runId, status: 'approved' });
+      await expect(
+        recordOutcomeMonetizationDisposition(PROJECT_ID, 'out-1', runId, { disposition: 'monetized' })
+      ).rejects.toThrow('already approved');
+    });
+
+    it('rejects when the outcome cannot be found for this project', async () => {
+      const runId = await seedRun();
+      // This suite's reflective db mock returns a table's full array regardless
+      // of the where() clause content (only domain_object_versions gets real
+      // filtering) -- emptying mockDb.outcomes after the run is already
+      // persisted is how "no matching row" is reproduced under that mock.
+      mockDb.outcomes = [];
+      await expect(
+        recordOutcomeMonetizationDisposition(PROJECT_ID, 'out-1', runId, { disposition: 'monetized' })
+      ).rejects.toThrow('Outcome not found for project');
+    });
+  });
+
+  describe('getMonetizationCoverage (pure)', () => {
+    it('P-4: buckets monetized, material-not-monetized, not-yet-eligible and other, each outcome counted once', () => {
+      const dispositions = [
+        { outcomeId: 'out-monetized', disposition: 'monetized' as const, reason: null },
+        { outcomeId: 'out-material', disposition: 'not_monetized' as const, reason: 'not_material' as const },
+        { outcomeId: 'out-not-eligible', disposition: 'not_monetized' as const, reason: 'no_defensible_proxy' as const },
+        { outcomeId: 'out-other', disposition: 'not_monetized' as const, reason: 'other_governed_reason' as const },
+      ];
+      const materiality = new Map<string, string | null>([
+        ['out-monetized', null],
+        ['out-material', 'material'],
+        ['out-not-eligible', 'not_material'],
+        ['out-other', 'not_material'],
+      ]);
+      const coverage = getMonetizationCoverage(dispositions, materiality);
+      const byCategory = Object.fromEntries(coverage.buckets.map((b) => [b.category, b.outcomeIds]));
+      expect(byCategory.monetized).toEqual(['out-monetized']);
+      expect(byCategory.material_not_monetized).toEqual(['out-material']);
+      expect(byCategory.not_yet_eligible).toEqual(['out-not-eligible']);
+      expect(byCategory.other_excluded).toEqual(['out-other']);
+      expect(coverage.hasDefensibleMonetization).toBe(true);
+    });
+
+    it('hasDefensibleMonetization is false when nothing is monetized', () => {
+      const coverage = getMonetizationCoverage(
+        [{ outcomeId: 'out-1', disposition: 'not_monetized' as const, reason: 'no_defensible_proxy' as const }],
+        new Map(),
+      );
+      expect(coverage.hasDefensibleMonetization).toBe(false);
+    });
   });
 });
 

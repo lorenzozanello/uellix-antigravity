@@ -212,6 +212,8 @@ const CONTENT_MODIFYING_SITES = [
   // exposure on the resulting value.
   { file: 'lib/pipeline/evidence.ts', action: 'evidence_version.sensitivity_classified' },
   { file: 'lib/pipeline/evidence.ts', action: 'evidence_version.treatment_recorded' },
+  // FIBIU-12 (FIBC-016) — the update branch of recordOutcomeMonetizationDisposition.
+  { file: 'lib/pipeline/sroi-calculation.ts', action: 'outcome_monetization_disposition.recorded' },
 ]
 
 describe('content-modifying audit coverage (FIBC-040)', () => {

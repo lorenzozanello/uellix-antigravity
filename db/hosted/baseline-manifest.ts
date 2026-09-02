@@ -1143,6 +1143,38 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'this table, and is out of scope for this unit.',
     expect: {},
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B3 (FIBIU-12, Wave 2 batch B3: Outcome and filters).                 *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 72,
+    id: '0059_fib_outcome_monetization_dispositions.sql',
+    kind: D,
+    file: 'db/migrations/0059_fib_outcome_monetization_dispositions.sql',
+    sha256: 'a6d64e7f30f6fa321040936c79e84339ff9130d13fd79c738bb7bde773ea8a01',
+    dependsOn: ['0058_fib_filter_set_justification_columns.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-12 stage A (FIBC-016/FIBDB-009/045). CREATE TABLE outcome_monetization_dispositions — ' +
+      'one append-only row per (outcome, calculation_run): disposition monetized/not_monetized, reason ' +
+      '(one of 7 governed values, required when not_monetized), justification (required whenever ' +
+      'reason is set). RLS: org-scoped SELECT, INSERT restricted to the same analyst+ floor ' +
+      'upsertSroiFilterSet/outcomes.ts already use for this pipeline (created_by = auth.uid()), no ' +
+      'UPDATE/DELETE policy — matches the evidence_sufficiency_determinations pattern (unit 62).',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing two policies are guarded but do not change the unit\'s overall class. No reverse script ' +
+      '— forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 2,
+      securitySurfaceDigest: 'b478a797ff4da24bae5a65dafa196892d14b636c420e016c29c2cbaafb358c0e',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

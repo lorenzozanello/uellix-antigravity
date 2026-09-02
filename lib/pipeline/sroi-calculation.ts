@@ -15,6 +15,8 @@ import {
   sroiFilterSets,
   sroiCalculationRuns,
   sroiCalculationLineItems,
+  sroiRunReviews,
+  outcomeMonetizationDispositions,
   outcomeProxyAssignments,
   financialProxies,
   financialProxyVersions,
@@ -403,6 +405,164 @@ export function getFilterJustificationIssues(
   return issues
 }
 
+// ─── Monetization disposition ───────────────────────────────────────────────
+
+const MONETIZATION_REASON_VALUES = [
+  'no_defensible_proxy', 'proxy_not_approved', 'insufficient_evidence',
+  'not_material', 'not_yet_eligible', 'superseded_version', 'other_governed_reason',
+] as const
+
+export const OutcomeMonetizationDispositionSchema = z.object({
+  disposition: z.enum(['monetized', 'not_monetized']),
+  reason: z.enum(MONETIZATION_REASON_VALUES).optional(),
+  justification: z.string().min(1).optional(),
+}).refine(
+  (data) => data.disposition !== 'not_monetized' || data.reason !== undefined,
+  { message: 'reason is required when disposition is not_monetized', path: ['reason'] },
+).refine(
+  (data) => data.reason === undefined || (data.justification !== undefined && data.justification.length > 0),
+  { message: 'justification is required when reason is set', path: ['justification'] },
+)
+export type OutcomeMonetizationDispositionInput = z.infer<typeof OutcomeMonetizationDispositionSchema>
+
+/**
+ * FIBIU-12 (FIBC-016, FIBDB-009/045) — explicit human disposition per
+ * outcome per calculation run: monetized | not_monetized, with reason +
+ * justification required when not_monetized. Create-or-update (FIBIU-12's
+ * versioning_reuse_map disposition is REUSE_EXISTING_VERSIONING, mirroring
+ * FIBIU-11's setOutcomeMaterialityClassification), but refuses any write —
+ * insert or update — once the run has an approved review: FIBDB-009's
+ * "immutable once the run is approved".
+ */
+export async function recordOutcomeMonetizationDisposition(
+  projectId: string,
+  outcomeId: string,
+  calculationRunId: string,
+  input: OutcomeMonetizationDispositionInput,
+) {
+  const ctx = await authorize(projectId)
+  const validated = OutcomeMonetizationDispositionSchema.parse(input)
+
+  const outcomeRows = await db.select().from(outcomes).where(and(eq(outcomes.id, outcomeId), eq(outcomes.projectId, projectId)))
+  if (outcomeRows.length === 0) throw new Error('Outcome not found for project')
+
+  const runRows = await db.select().from(sroiCalculationRuns).where(and(eq(sroiCalculationRuns.id, calculationRunId), eq(sroiCalculationRuns.projectId, projectId)))
+  if (runRows.length === 0) throw new Error('Calculation run not found for project')
+
+  const approvedReview = await db.select().from(sroiRunReviews).where(and(eq(sroiRunReviews.calculationRunId, calculationRunId), eq(sroiRunReviews.status, 'approved')))
+  if (approvedReview.length > 0) {
+    throw new Error('Cannot record monetization disposition: this calculation run is already approved')
+  }
+
+  const payload = {
+    disposition: validated.disposition,
+    reason: validated.reason ?? null,
+    justification: validated.reason ? (validated.justification ?? null) : null,
+  }
+
+  const existing = await db.select().from(outcomeMonetizationDispositions).where(and(eq(outcomeMonetizationDispositions.outcomeId, outcomeId), eq(outcomeMonetizationDispositions.calculationRunId, calculationRunId)))
+
+  let saved: typeof outcomeMonetizationDispositions.$inferSelect
+  if (existing.length > 0) {
+    await db.update(outcomeMonetizationDispositions).set(payload).where(eq(outcomeMonetizationDispositions.id, existing[0].id))
+    saved = await db.select().from(outcomeMonetizationDispositions).where(eq(outcomeMonetizationDispositions.id, existing[0].id)).then((r) => r[0])
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      projectId,
+      actorUserId: ctx.user.id,
+      entityType: 'outcome_monetization_disposition',
+      entityId: existing[0].id,
+      action: AUDIT_ACTIONS.OUTCOME_MONETIZATION_DISPOSITION_RECORDED,
+      contentModifying: true,
+      beforeJson: existing[0] as unknown as Record<string, unknown>,
+      afterJson: saved as unknown as Record<string, unknown>,
+    })
+  } else {
+    const inserted = await db.insert(outcomeMonetizationDispositions).values({
+      ...payload,
+      outcomeId,
+      calculationRunId,
+      organizationId: ctx.organization.id,
+      createdBy: ctx.user.id,
+    }).returning()
+    saved = inserted[0]
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      projectId,
+      actorUserId: ctx.user.id,
+      entityType: 'outcome_monetization_disposition',
+      entityId: saved.id,
+      action: AUDIT_ACTIONS.OUTCOME_MONETIZATION_DISPOSITION_RECORDED,
+      afterJson: saved as unknown as Record<string, unknown>,
+    })
+  }
+
+  await createDomainObjectVersion({
+    organizationId: ctx.organization.id,
+    objectType: 'outcome_monetization_disposition',
+    objectId: saved.id,
+    payload: saved as unknown as Record<string, unknown>,
+    actorId: ctx.user.id,
+  })
+
+  return saved
+}
+
+export type MonetizationCoverageCategory = 'monetized' | 'material_not_monetized' | 'not_yet_eligible' | 'other_excluded'
+export interface MonetizationCoverageBucket {
+  category: MonetizationCoverageCategory
+  outcomeIds: string[]
+}
+export interface MonetizationCoverage {
+  buckets: MonetizationCoverageBucket[]
+  // FIBC-016 — "if no outcome has defensible monetization, no SROI ratio is
+  // emitted": the pure signal a caller can act on before deciding whether
+  // to compute/display a ratio, without this function reaching into the
+  // calculation engine itself.
+  hasDefensibleMonetization: boolean
+}
+
+/**
+ * FIBIU-12 (FIBC-016) — pure aggregation of a run's recorded dispositions
+ * into the pre-approval coverage view required before an approval decision:
+ * monetized / material-not-monetized / not-yet-eligible / other exclusion,
+ * each outcome counted exactly once and never collapsed into one generic
+ * omission category (every row keeps its own `reason`, callers can read it
+ * off the bucketed dispositions). `materialityByOutcome` is supplied by the
+ * caller (FIBIU-11's outcomes.materialityClassification) rather than loaded
+ * here, keeping this function pure and independently testable.
+ */
+export function getMonetizationCoverage(
+  dispositions: Pick<typeof outcomeMonetizationDispositions.$inferSelect, 'outcomeId' | 'disposition' | 'reason'>[],
+  materialityByOutcome: Map<string, string | null>,
+): MonetizationCoverage {
+  const buckets: Record<MonetizationCoverageCategory, string[]> = {
+    monetized: [],
+    material_not_monetized: [],
+    not_yet_eligible: [],
+    other_excluded: [],
+  }
+
+  for (const d of dispositions) {
+    if (d.disposition === 'monetized') {
+      buckets.monetized.push(d.outcomeId)
+      continue
+    }
+    if (materialityByOutcome.get(d.outcomeId) === 'material') {
+      buckets.material_not_monetized.push(d.outcomeId)
+    } else if (d.reason === 'not_yet_eligible' || d.reason === 'no_defensible_proxy' || d.reason === 'proxy_not_approved' || d.reason === 'insufficient_evidence') {
+      buckets.not_yet_eligible.push(d.outcomeId)
+    } else {
+      buckets.other_excluded.push(d.outcomeId)
+    }
+  }
+
+  return {
+    buckets: (Object.keys(buckets) as MonetizationCoverageCategory[]).map((category) => ({ category, outcomeIds: buckets[category] })),
+    hasDefensibleMonetization: buckets.monetized.length > 0,
+  }
+}
+
 // ─── Internal data loader for calculation ───────────────────────────────────
 
 export interface AssignmentData {
@@ -425,12 +585,19 @@ export interface AssignmentData {
 // entry points (preview/scenarios/persist) opt into enforcement: THEY are the
 // boundary where a stale-but-approved-looking proxy would otherwise have its
 // value silently consumed.
-async function loadCalculationData(projectId: string, orgId: string, enforceApproval = false): Promise<{
+// Exported (mirrors runDeterministicCalc above) so FIBIU-12's loadSkipped
+// itemization can be unit-tested directly against a deliberately incomplete
+// assignment, without needing to first reproduce the readiness/loadCalculationData
+// TOCTOU race (two separate round trips, see the CL-2D comment below) that is
+// the only way this path is reachable through the public calculation entry points.
+export async function loadCalculationData(projectId: string, orgId: string, enforceApproval = false): Promise<{
   investments: (typeof projectInvestments.$inferSelect)[]
   assignmentData: AssignmentData[]
   allocations: (typeof outcomeFunderAllocations.$inferSelect)[]
   fundersList: (typeof funders.$inferSelect)[]
   discountRatePct: string | null
+  // FIBIU-12 (FIBC-016) — see SkippedAssignment's missing_* variants.
+  loadSkipped: SkippedAssignment[]
 }> {
   // Load ALL active investment contributions (Fase 1b — a project can have many).
   const investments = await db
@@ -452,7 +619,7 @@ async function loadCalculationData(projectId: string, orgId: string, enforceAppr
     .from(outcomeProxyAssignments)
     .where(and(eq(outcomeProxyAssignments.projectId, projectId), eq(outcomeProxyAssignments.organizationId, orgId), eq(outcomeProxyAssignments.assignmentStatus, 'active')))
 
-  if (assignments.length === 0) return { investments, assignmentData: [], allocations: [], fundersList: [], discountRatePct }
+  if (assignments.length === 0) return { investments, assignmentData: [], allocations: [], fundersList: [], discountRatePct, loadSkipped: [] }
 
   const assignmentIds = assignments.map(a => a.id)
   const proxyIds = assignments.map(a => a.proxyId)
@@ -477,6 +644,10 @@ async function loadCalculationData(projectId: string, orgId: string, enforceAppr
   const outcomeById = new Map(outcomesRows.map(o => [o.id, o]))
 
   const assignmentData: AssignmentData[] = []
+  // FIBIU-12 (FIBC-016) — every exclusion is itemized, including this
+  // upstream one: an assignment missing input/filterSet/proxy/outcome used
+  // to be dropped here with no `else` branch and no record at all.
+  const loadSkipped: SkippedAssignment[] = []
   for (const a of assignments) {
     const input = inputByAssignment.get(a.id)
     const filterSet = filterByAssignment.get(a.id)
@@ -513,6 +684,13 @@ async function loadCalculationData(projectId: string, orgId: string, enforceAppr
         )
       }
       assignmentData.push({ assignment: a, input, filterSet, proxy, proxyVersion, outcome })
+    } else {
+      // One entry per missing piece, so a single assignment lacking multiple
+      // things is never collapsed into one ambiguous skip reason.
+      if (!input) loadSkipped.push({ outcomeId: a.outcomeId, reason: 'missing_input' })
+      if (!filterSet) loadSkipped.push({ outcomeId: a.outcomeId, reason: 'missing_filter_set' })
+      if (!proxy) loadSkipped.push({ outcomeId: a.outcomeId, reason: 'missing_proxy' })
+      if (!outcome) loadSkipped.push({ outcomeId: a.outcomeId, reason: 'missing_outcome' })
     }
   }
 
@@ -527,7 +705,7 @@ async function loadCalculationData(projectId: string, orgId: string, enforceAppr
     ? await db.select().from(funders).where(inArray(funders.id, funderIds))
     : []
 
-  return { investments, assignmentData, allocations, fundersList, discountRatePct }
+  return { investments, assignmentData, allocations, fundersList, discountRatePct, loadSkipped }
 }
 
 // ─── Readiness ───────────────────────────────────────────────────────────────
@@ -878,7 +1056,16 @@ interface LineItemCalc {
 // surfaces here so previews, snapshots and audits can show what was excluded.
 export interface SkippedAssignment {
   outcomeId: string
-  reason: 'non_positive_quantity' | 'non_positive_proxy_value'
+  reason:
+    | 'non_positive_quantity'
+    | 'non_positive_proxy_value'
+    // FIBIU-12 (FIBC-016) — loadCalculationData's own completeness gate used
+    // to drop these silently (no `else` branch, no record). Every exclusion
+    // is now itemized, including this upstream one.
+    | 'missing_input'
+    | 'missing_filter_set'
+    | 'missing_proxy'
+    | 'missing_outcome'
 }
 
 export interface CalcResult {
@@ -1061,7 +1248,7 @@ export async function calculateSroiPreview(projectId: string) {
     return { canCalculate: false, readiness, result: null }
   }
 
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct, loadSkipped } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
@@ -1078,7 +1265,10 @@ export async function calculateSroiPreview(projectId: string) {
       lineItems: result.lineItems,
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
-      skippedAssignments: result.skippedAssignments,
+      // FIBIU-12 (FIBC-016) — loadSkipped (upstream, missing input/filter/
+      // proxy/outcome) merged with the engine's own non-positive-value skips,
+      // so the preview surfaces every excluded assignment, not just some.
+      skippedAssignments: [...loadSkipped, ...result.skippedAssignments],
       discountRatePct: discountRatePct,
       formulaNotes: discountRatePct && parseNum(discountRatePct) > 0
         ? `Values normalized to USD; multi-year outcomes present-valued at ${discountRatePct}% annual discount rate.`
@@ -1229,10 +1419,13 @@ export async function calculateAndPersistSroiRun(projectId: string) {
   // run if any of the three run version identities cannot be resolved.
   const runVersionIdentity = await resolveRunVersionIdentity()
 
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct, loadSkipped } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
+  // FIBIU-12 (FIBC-016) — merged once here; every downstream use (snapshot,
+  // audit log) reads this single itemized list.
+  const allSkippedAssignments = [...loadSkipped, ...result.skippedAssignments]
 
   // FIBIU-03 (FIBC-002/FIBC-045) — the frozen input-version fingerprint,
   // resolved before any DB write, same as the FIBIU-02 identity triple above.
@@ -1290,8 +1483,10 @@ export async function calculateAndPersistSroiRun(projectId: string) {
       })),
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
-      // U3 (WS4) — audit trail of lines the engine excluded (additive key).
-      skippedAssignments: result.skippedAssignments,
+      // U3 (WS4) / FIBIU-12 (FIBC-016) — audit trail of lines the engine
+      // excluded, upstream (missing input/filter/proxy/outcome) and
+      // engine-level (non-positive quantity/value) alike.
+      skippedAssignments: allSkippedAssignments,
       assignments: result.lineItems.map(li => ({
         assignmentId: li.assignmentId,
         outcomeId: li.outcomeId,

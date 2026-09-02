@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 25/71: 0024_outstanding_enchantress.sql
+-- GENERATED — DO NOT EDIT. Unit 25/72: 0024_outstanding_enchantress.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0024_outstanding_enchantress.sql

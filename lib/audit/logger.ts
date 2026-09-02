@@ -98,6 +98,8 @@ export const AUDIT_ACTIONS = {
   // FIBIU-11 (FIBC-015) — the explicit material/not_material classification,
   // distinct from the legacy 1-5 score's own OUTCOME_MATERIALITY_UPDATED verb.
   OUTCOME_MATERIALITY_CLASSIFIED: 'outcome.materiality_classified',
+  // FIBIU-12 (FIBC-016) — per-outcome-per-run monetization disposition.
+  OUTCOME_MONETIZATION_DISPOSITION_RECORDED: 'outcome_monetization_disposition.recorded',
 
   // Methodology review matrix (generalized across pipeline steps)
   METHODOLOGY_REVIEW_STARTED: 'methodology_review.started',

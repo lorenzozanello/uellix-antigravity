@@ -860,6 +860,31 @@ export const sroiCalculationLineItems = pgTable('sroi_calculation_line_items', {
   index('idx_sroi_line_items_assignment_id').on(table.assignmentId),
 ])
 
+// FIBIU-12 (FIBC-016, FIBDB-009/045). One disposition per (outcome, run):
+// monetized | not_monetized, with reason + justification required when
+// not_monetized. Snapshot-bound to the calculation run it was recorded
+// against, like sroi_calculation_line_items above — written once, never
+// updated (IMMUTABILITY: "immutable once the run is approved" is satisfied
+// trivially since no update path exists at all).
+export const outcomeMonetizationDispositions = pgTable('outcome_monetization_dispositions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  disposition: varchar('disposition', { length: 20 }).notNull(),
+  reason: varchar('reason', { length: 40 }),
+  justification: text('justification'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('outcome_monetization_dispositions_disposition_check', sql`${table.disposition} IN ('monetized', 'not_monetized')`),
+  check('outcome_monetization_dispositions_reason_check', sql`${table.reason} IS NULL OR ${table.reason} IN ('no_defensible_proxy', 'proxy_not_approved', 'insufficient_evidence', 'not_material', 'not_yet_eligible', 'superseded_version', 'other_governed_reason')`),
+  check('outcome_monetization_dispositions_reason_required_check', sql`${table.disposition} <> 'not_monetized' OR ${table.reason} IS NOT NULL`),
+  check('outcome_monetization_dispositions_justification_pair_check', sql`${table.reason} IS NULL OR ${table.justification} IS NOT NULL`),
+  uniqueIndex('uq_outcome_monetization_dispositions_outcome_run').on(table.outcomeId, table.calculationRunId),
+  index('idx_outcome_monetization_dispositions_run_id').on(table.calculationRunId),
+])
+
 export const sroiRunReviews = pgTable('sroi_run_reviews', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),

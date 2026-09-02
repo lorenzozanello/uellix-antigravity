@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 6/71: 0005_daffy_dreaming_celestial.sql
+-- GENERATED — DO NOT EDIT. Unit 6/72: 0005_daffy_dreaming_celestial.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0005_daffy_dreaming_celestial.sql
