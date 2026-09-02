@@ -584,3 +584,167 @@ describe('poststate protected-authority passthrough — real integration, dispos
     expect(stdout).toContain('ODS_SCOPE=PASS')
   })
 })
+
+// ---------------------------------------------------------------------------
+// COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json (M1).
+//
+// poststate does not resolve or union grants itself — it only has to widen
+// its own CLI/composition to forward every supplied id to the composed
+// ods:scope step, which remains the sole adjudicator. The deprecated
+// scalar `protectedAuthority` field keeps every PSA-* test above working
+// unchanged; `protectedAuthorities` is the new plural field, unioned with
+// the scalar (not overriding it) so nothing regresses.
+// ---------------------------------------------------------------------------
+
+describe('composeSteps — multi-grant --protected-authority passthrough, pure (M1)', () => {
+  it('M1-P1: a single id in the new plural field produces the exact same single flag as the deprecated scalar field', () => {
+    const viaScalar = composeSteps({ base: 'deadbeef', allow: ['x'], tests: [], requireClean: false, protectedAuthority: 'HPO-ODS-W2-01' })
+    const viaPlural = composeSteps({ base: 'deadbeef', allow: ['x'], tests: [], requireClean: false, protectedAuthorities: ['HPO-ODS-W2-01'] })
+    expect(viaPlural.find((s) => s.name === 'ods-scope')?.pnpmArgs).toEqual(viaScalar.find((s) => s.name === 'ods-scope')?.pnpmArgs)
+  })
+
+  it('M1-P2/M1-P3: every id in the plural list is forwarded as its OWN --protected-authority flag, in order', () => {
+    const steps = composeSteps({
+      base: 'deadbeef',
+      allow: ['x'],
+      tests: [],
+      requireClean: false,
+      protectedAuthorities: ['HPO-ODS-W2-08', 'HPO-ODS-W2-09'],
+    })
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    expect(scopeStep?.pnpmArgs).toEqual([
+      'run', 'ods:scope', '--', '--base', 'deadbeef', '--allow', 'x',
+      '--protected-authority', 'HPO-ODS-W2-08',
+      '--protected-authority', 'HPO-ODS-W2-09',
+    ])
+  })
+
+  it('M1-N3: a duplicated id in the plural list is forwarded twice, deterministically (ods:scope handles the union without double-counting)', () => {
+    const steps = composeSteps({
+      base: 'deadbeef', allow: ['x'], tests: [], requireClean: false,
+      protectedAuthorities: ['HPO-ODS-W2-01', 'HPO-ODS-W2-01'],
+    })
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    const occurrences = scopeStep!.pnpmArgs.filter((a) => a === 'HPO-ODS-W2-01').length
+    expect(occurrences).toBe(2)
+  })
+
+  it('the deprecated scalar and the new plural field are UNIONED, not one overriding the other', () => {
+    const steps = composeSteps({
+      base: 'deadbeef', allow: ['x'], tests: [], requireClean: false,
+      protectedAuthority: 'HPO-ODS-W2-08',
+      protectedAuthorities: ['HPO-ODS-W2-09'],
+    })
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    expect(scopeStep?.pnpmArgs).toEqual([
+      'run', 'ods:scope', '--', '--base', 'deadbeef', '--allow', 'x',
+      '--protected-authority', 'HPO-ODS-W2-08',
+      '--protected-authority', 'HPO-ODS-W2-09',
+    ])
+  })
+
+  it('omits --protected-authority entirely when neither field is supplied (preserves current behavior)', () => {
+    const steps = composeSteps({ base: 'deadbeef', allow: ['x'], tests: [], requireClean: false })
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    expect(scopeStep?.pnpmArgs).not.toContain('--protected-authority')
+  })
+
+  it('never forwards any plural-list identifier to any OTHER composed step', () => {
+    const steps = composeSteps({
+      base: 'deadbeef', allow: ['x'], tests: ['t.ts'], requireClean: true,
+      protectedAuthorities: ['HPO-ODS-W2-08', 'HPO-ODS-W2-09'],
+    })
+    for (const step of steps) {
+      if (step.name === 'ods-scope') continue
+      expect(step.pnpmArgs).not.toContain('--protected-authority')
+      expect(step.pnpmArgs).not.toContain('HPO-ODS-W2-08')
+      expect(step.pnpmArgs).not.toContain('HPO-ODS-W2-09')
+    }
+  })
+})
+
+describe('poststate --protected-authority CLI — repeated flag accumulates (M1)', () => {
+  const tsxCli = require.resolve('tsx/cli')
+  const run = (args: string[]) => spawnSync(process.execPath, [tsxCli, 'scripts/ods-poststate.ts', ...args], { cwd: REPO_ROOT, encoding: 'utf8' })
+
+  it('a single --protected-authority still behaves exactly as a usage error path when supplied without --base', () => {
+    const res = run(['--protected-authority', 'HPO-ODS-W2-08'])
+    expect(res.status).toBe(2)
+    expect(res.stdout).toContain('ODS_POSTSTATE=USAGE_ERROR')
+  })
+
+  it('two repeated --protected-authority flags without --base is still the same usage error (accumulation does not change the guard)', () => {
+    const res = run(['--protected-authority', 'HPO-ODS-W2-08', '--protected-authority', 'HPO-ODS-W2-09'])
+    expect(res.status).toBe(2)
+    expect(res.stdout).toContain('ODS_POSTSTATE=USAGE_ERROR')
+  })
+})
+
+describe('M1-E2E-POSTSTATE: ods:poststate forwards BOTH HPO-ODS-W2-08 and HPO-ODS-W2-09 to one canonical ods:scope invocation — real subprocess', () => {
+  let dir: string
+
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  /** Extracts the args composeSteps would compose for the ods-scope step, strips the 'run ods:scope --' wrapper, and runs the REAL ods-scope.ts against `cwd` — proving the exact composed multi-flag args, not just their shape. */
+  function runComposedOdsScopeDirectly(input: PoststateInput, cwd: string): { status: number | null; stdout: string } {
+    const steps = composeSteps(input)
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    if (!scopeStep) throw new Error('composeSteps produced no ods-scope step for this input')
+    const args = scopeStep.pnpmArgs.slice(3) // drop ['run', 'ods:scope', '--']
+    const tsxCli = require.resolve('tsx/cli')
+    const scriptAbsolutePath = path.join(REPO_ROOT, 'scripts', 'ods-scope.ts')
+    const res = spawnSync(process.execPath, [tsxCli, scriptAbsolutePath, ...args], { cwd, encoding: 'utf8' })
+    return { status: res.status, stdout: res.stdout }
+  }
+
+  it('composeSteps alone: --base + repeated --protected-authority produces the exact ods-scope subprocess args ods:scope needs for the union proof', () => {
+    const input: PoststateInput = {
+      base: 'deadbeef',
+      allow: ['a', 'b'],
+      tests: [],
+      requireClean: false,
+      protectedAuthorities: ['HPO-ODS-W2-08', 'HPO-ODS-W2-09'],
+    }
+    const steps = composeSteps(input)
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    expect(scopeStep?.pnpmArgs).toEqual([
+      'run', 'ods:scope', '--', '--base', 'deadbeef',
+      '--allow', 'a', '--allow', 'b',
+      '--protected-authority', 'HPO-ODS-W2-08',
+      '--protected-authority', 'HPO-ODS-W2-09',
+    ])
+  })
+
+  it('real ods:scope subprocess, invoked with the args composeSteps produced: the exact Wave2 reconciliation union PASSes in one poststate-composed run', () => {
+    const d = makeTempGitRepo()
+    const base = commitFile(d, 'README.md', 'seed\n')
+    git(d, ['checkout', '-b', 'codex/commercial-v1-wave2-reconciliation-r1'])
+    dir = d
+
+    // A representative subset from each grant, including the one path the
+    // real grants share (db/migrations/meta/_journal.json) — proves the
+    // composed multi-flag call authorizes a real cross-grant union, not
+    // just a single grant's own surface.
+    const paths = [
+      'db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql', // W2-08 only
+      'db/migrations/meta/_journal.json', // shared by both grants
+      'db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql', // W2-09 only
+    ]
+    for (const p of paths) {
+      mkdirSync(path.join(dir, path.dirname(p)), { recursive: true })
+      writeFileSync(path.join(dir, p), `-- fixture for ${p}\n`)
+    }
+    git(dir, ['add', '-A'])
+    git(dir, ['commit', '-q', '-m', 'representative cross-grant fixture'])
+
+    const input: PoststateInput = { base, allow: paths, tests: [], requireClean: false, protectedAuthorities: ['HPO-ODS-W2-08', 'HPO-ODS-W2-09'] }
+    const { status, stdout } = runComposedOdsScopeDirectly(input, dir)
+
+    expect(status).toBe(0)
+    expect(stdout).toContain('PROTECTED_AUTHORITY=HPO-ODS-W2-08,HPO-ODS-W2-09')
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATIONS=0')
+  })
+})
