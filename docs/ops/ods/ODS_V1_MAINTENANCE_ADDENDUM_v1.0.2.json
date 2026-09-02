@@ -1,0 +1,252 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.2",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2",
+  "authority_class": "ODS_MAINTENANCE_AUTHORITY_ADDENDUM",
+  "materialization_step": "ODS-M1D",
+  "materialization_date": "2026-08-31",
+  "supersedes": null,
+  "refines": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json",
+
+  "purpose": "Freeze, append-only and prospectively, the three final remediation decisions required to close the ODS-M1C independent audit's FAIL adjudication of the v1.0.1 maintenance, plus one mechanical CLI-hygiene authorization. This artifact ADDS authority; it implements nothing, remediates nothing, and revokes nothing.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. This addendum does not rewrite, supersede, reinterpret or restate docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json, docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, or any Wave 1 / FIB / PC-01B / IM-01B artifact. Those remain byte-identical and controlling. Where this addendum and any of them appear to disagree, they control. No product, runtime, database or FIB authority is changed. No dependency or lockfile change is authorized by any decision here.",
+
+  "anchors": {
+    "base_head": "a810b1ee8cb0173201fd4ef01863a75a0a8b527f",
+    "base_tree": "b367f57fb5afe6d2c27436bd01dec395cdafe2e6",
+    "branch": "ods/v1-development-operating-system-r1",
+    "v1_0_1_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json",
+    "v1_0_1_implementation_commits": [
+      "136da1a8702cf604ba5bbc2c17235a3fd4909551",
+      "a810b1ee8cb0173201fd4ef01863a75a0a8b527f"
+    ],
+    "operational_closure": "docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json",
+    "certified_wave1_anchor_commit": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc"
+  },
+
+  "source_audit": {
+    "audit_id": "ODS-M1C",
+    "audit_type": "INDEPENDENT_ADVERSARIAL_AUDIT_OF_V1_0_1_MAINTENANCE",
+    "adjudication": "ODS_V1_0_1_MAINTENANCE=FAIL",
+    "blocking_findings": 1,
+    "material_non_blocking_findings": 2,
+    "independently_validated_and_not_reopened": "The HPO-ODS-W2-01 protected-grant registry, its grant identity, its authorized branch and its authorized protected patterns were validated by ODS-M1C and are NOT reopened by this addendum.",
+    "findings_addressed_here": ["B-1", "M-1", "M-2"]
+  },
+
+  "hpo_decisions": {
+    "HPO-ODS-TOOLCHAIN-02": {
+      "title": "EXPLICIT_LOCAL_COMPILER_EXECUTION",
+      "status": "FROZEN",
+      "source_finding": "ODS-M1C B-1 (BLOCKING)",
+      "component_affected": "ODS-C3 (pnpm ods:poststate), governed typecheck step",
+      "relationship_to_v1_0_1": "REFINES HPO-ODS-TOOLCHAIN-01. Does not revoke it. TOOLCHAIN-01 established that a governed typecheck must fail closed without a local toolchain; TOOLCHAIN-02 establishes that proving the PACKAGE exists is not the same as proving the COMPILER THAT RAN was the local one.",
+
+      "measured_failure": {
+        "statement": "A genuine local node_modules/typescript package may exist while node_modules/.bin/tsc does not. In that state `pnpm run typecheck` can resolve an ambient/global tsc and return exit 0. Proving the TypeScript package EXISTS is therefore insufficient.",
+        "independently_reproduced_at_ods_m1d": {
+          "fixture": "A disposable directory containing node_modules/typescript/package.json declaring {\"name\":\"typescript\",\"version\":\"5.9.3\"}, with node_modules/.bin/tsc ABSENT and node_modules/typescript/bin/tsc ABSENT — i.e. no local compiler present at all.",
+          "v1_0_1_guard_verdict": "checkLocalProjectToolchain() returned {\"present\":true}.",
+          "actual_execution": "`pnpm run typecheck` in that same directory exited 0, compiled by an ambient tsc.",
+          "conclusion": "The v1.0.1 guard reports a green prerequisite for a worktree with no local compiler whatsoever, and the composed step it guards then succeeds against a global compiler. Confirmed by direct reproduction at ODS-M1D, not accepted on report. This is the same fail-open-by-absence class as the defects remediated in ODS-05-RM1: the check does not fail, it silently is not the check it claims to be."
+        }
+      },
+
+      "frozen_requirements": [
+        "The governed typecheck MUST NOT rely on ambient PATH resolution for tsc.",
+        "The governed typecheck MUST execute the compiler explicitly from the repository-local TypeScript package.",
+        "Preferred authorized mechanism: resolve repository root + node_modules/typescript/package.json + node_modules/typescript/bin/tsc; validate package metadata name == \"typescript\"; and require the compiler entry file to exist.",
+        "Execute the local compiler explicitly using the current Node runtime with repository root as cwd, semantically equivalent to: <process.execPath> <repoRoot>/node_modules/typescript/bin/tsc --noEmit.",
+        "Do NOT invoke bare `tsc`, `pnpm run typecheck`, or `pnpm exec tsc` as the governed compiler execution where their correctness depends on PATH or bin-shim resolution.",
+        "Successful output/evidence MUST make local compiler identity observable, at minimum through stable fields LOCAL_TYPESCRIPT_PACKAGE, LOCAL_TYPESCRIPT_VERSION and LOCAL_TYPESCRIPT_COMPILER, or equivalent.",
+        "If package metadata or the local compiler entry is missing, malformed or inconsistent: FAIL before typecheck.",
+        "Ambient/global tsc availability or success MUST be irrelevant to the outcome.",
+        "No dependency or lockfile change is authorized."
+      ],
+
+      "required_controls": [
+        { "id": "TC2-1", "condition": "node_modules absent", "required_result": "FAIL" },
+        { "id": "TC2-2", "condition": "typescript directory exists, package.json absent", "required_result": "FAIL" },
+        { "id": "TC2-3", "condition": "wrong or malformed package metadata", "required_result": "FAIL" },
+        { "id": "TC2-4", "condition": "fake package metadata only, no compiler entry file", "required_result": "FAIL" },
+        { "id": "TC2-5", "condition": "genuine local package + compiler present, .bin shim absent, global tsc available", "required_result": "governed typecheck MUST execute the LOCAL compiler, never the global one" },
+        { "id": "TC2-6", "condition": "global tsc returns 0 but local compiler unavailable", "required_result": "FAIL" },
+        { "id": "TC2-P", "condition": "normal pnpm install --frozen-lockfile", "required_result": "local compiler identified and executed successfully" }
+      ],
+
+      "implementation_note_measured_at_ods_m1d": "In this repository at the base commit, node_modules/typescript/bin/tsc and node_modules/typescript/bin/tsserver both exist and the package declares name \"typescript\", version \"5.9.3\" — so the preferred mechanism is materially available here and TC2-P is reachable without any dependency change."
+    },
+
+    "HPO-ODS-POSTSTATE-01": {
+      "title": "PROTECTED_AUTHORITY_PASSTHROUGH",
+      "status": "FROZEN",
+      "source_finding": "ODS-M1C M-1 (MATERIAL_NON_BLOCKING)",
+      "component_affected": "ODS-C3 (pnpm ods:poststate)",
+      "closes": "W2-GAP-1 at the standard poststate layer",
+
+      "measured_state": {
+        "statement": "ods:scope correctly accepts --protected-authority HPO-ODS-W2-01, but ods:poststate cannot express or forward that authority, so the standard governed poststate workflow cannot close an authorized Wave 2 migration task.",
+        "verified_at_ods_m1d": "grep of scripts/ods-poststate.ts finds no occurrence of --protected-authority or protectedAuthority; scripts/ods-scope.ts implements it. Confirmed by direct inspection, not assumed."
+      },
+
+      "frozen_requirements": [
+        "ods:poststate SHALL accept --protected-authority <authority-id>.",
+        "The value is caller-supplied only as an authority IDENTIFIER.",
+        "ods:poststate MUST NOT interpret or expand the grant itself.",
+        "It SHALL forward the exact identifier only to its composed ods:scope step.",
+        "ods:scope remains the SOLE grant adjudicator for authority validity, branch binding, protected-pattern binding, concrete path, and ordinary task --allow.",
+        "Missing operand or malformed protected-authority usage at the poststate level => USAGE ERROR, non-zero.",
+        "When no authority identifier is provided, preserve the current fail-closed protected-path behavior.",
+        "Normal task --allow remains mandatory.",
+        "This passthrough MUST NOT make protected authorization available to any other poststate sub-gate."
+      ],
+
+      "required_controls": [
+        { "id": "PSA-1", "condition": "migration path + ordinary allow but no protected authority", "required_result": "poststate FAIL" },
+        { "id": "PSA-2", "condition": "unknown protected authority", "required_result": "poststate FAIL" },
+        { "id": "PSA-3", "condition": "correct authority on wrong branch", "required_result": "poststate FAIL" },
+        { "id": "PSA-4", "condition": "correct authority but ungranted protected sibling", "required_result": "poststate FAIL" },
+        { "id": "PSA-5", "condition": "correct authority but missing normal task allow", "required_result": "poststate FAIL" },
+        { "id": "PSA-P", "condition": "correct branch + HPO-ODS-W2-01 + granted migration/journal path + normal task allow", "required_result": "ods:scope PASS inside ods:poststate; poststate may PASS if every other requested gate also passes" }
+      ]
+    },
+
+    "HPO-ODS-C4-CASE-01": {
+      "title": "CANONICAL_PROTECTED_PATH_CASING",
+      "status": "FROZEN",
+      "source_finding": "ODS-M1C M-2 (MATERIAL_NON_BLOCKING)",
+      "component_affected": "ODS-C4 (pnpm ods:scope), protected-surface classification",
+      "predates": "This behavior predates v1.0.1; it is recorded here as a now-known C4 protection gap, not as a v1.0.1 regression.",
+
+      "measured_state": {
+        "statement": "A Git path such as DB/migrations/craft.sql can avoid the lower-case db/migrations/** protected classifier on a case-sensitive host.",
+        "independently_reproduced_at_ods_m1d": {
+          "method": "Called matchesAnyPattern(path, DEFAULT_PROTECTED_PATTERNS) directly against the live implementation.",
+          "results": {
+            "db/migrations/x.sql": "PROTECTED",
+            "DB/migrations/x.sql": "NOT PROTECTED",
+            "db/Migrations/x.sql": "NOT PROTECTED",
+            "DB/prepared/journal/x.sql": "NOT PROTECTED",
+            "db/baseline/x.sql": "PROTECTED",
+            "DB/baseline/x.sql": "NOT PROTECTED"
+          },
+          "conclusion": "The bypass is real and is NOT limited to db/migrations/**: db/baseline/** — a surface no authority grants — is equally bypassable by case variant. This directly supports frozen requirement 7 below."
+        }
+      },
+
+      "frozen_requirements": [
+        "Protected-surface security classification MUST NOT be bypassable by case variants.",
+        "For security classification ONLY, detect case-insensitive equivalence to every protected surface.",
+        "The canonical repository casing remains the casing already declared by the protected patterns.",
+        "A concrete path that is case-insensitively within a protected surface but does not use canonical protected-surface casing is NON_CANONICAL_PROTECTED_PATH and MUST FAIL.",
+        "A non-canonical protected path MUST NOT become authorized even under a valid protected authority.",
+        "Do NOT solve this by lowercasing changed paths and then granting them. Detection may be case-insensitive; AUTHORIZATION remains bound to canonical concrete paths.",
+        "This decision applies to EVERY DEFAULT_PROTECTED_PATTERN, not only db/migrations/**.",
+        "Git-standard \"/\" path semantics remain controlling. Do not invent Windows \"\\\" repository paths."
+      ],
+
+      "required_controls": [
+        { "id": "CASE-1", "condition": "DB/migrations/file.sql", "required_result": "FAIL" },
+        { "id": "CASE-2", "condition": "db/Migrations/file.sql", "required_result": "FAIL" },
+        { "id": "CASE-3", "condition": "DB/prepared/journal/file.sql + valid HPO-ODS-W2-01 + ordinary allow", "required_result": "FAIL" },
+        { "id": "CASE-4", "condition": "canonical db/migrations/file.sql + valid HPO-ODS-W2-01 + ordinary allow", "required_result": "PASS" },
+        { "id": "CASE-5", "condition": "canonical unprotected path", "required_result": "behavior unchanged" }
+      ],
+
+      "fixture_note": "If the host filesystem cannot physically materialize a case-variant path, exercise classification through a deterministic unit fixture and, where possible, Git-index or disposable-repository evidence."
+    }
+  },
+
+  "cli_hygiene_authorization": {
+    "id": "PROTECTED_AUTHORITY_MISSING_OPERAND_HARDENING",
+    "status": "AUTHORIZED",
+    "classification": "MECHANICAL_CONSISTENCY_FIX",
+    "source": "discovered by ODS-M1C",
+    "requirement": "A trailing --protected-authority with no operand MUST return a usage error rather than silently becoming NONE. Applies to both ods:scope and, once it supports the flag, ods:poststate.",
+    "not_a_new_capability": "This authorizes no new authorization capability. It aligns --protected-authority with the trailing-operand rejection already applied to ods:prestate's value flags in ODS-05-RM1.",
+    "independently_reproduced_at_ods_m1d": "`pnpm run ods:scope -- --base <sha> --allow x --protected-authority` (trailing, no operand) printed PROTECTED_AUTHORITY=NONE, ODS_SCOPE=PASS and exited 0. Same fail-open-by-absence shape as the ODS-05 prestate defect: the malformed flag is silently not applied rather than refused.",
+    "duplicate_flags": "OUT OF SCOPE for this remediation unless implementation discovers a safety defect, in which case it must be reported rather than silently fixed."
+  },
+
+  "must_not_change": {
+    "rule": "The ODS-M1C audit independently validated the protected-grant registry. It is not reopened.",
+    "grant_identity_frozen_unchanged": {
+      "authority_id": "HPO-ODS-W2-01",
+      "authorized_branch": "codex/w2-methodology-objects-r1",
+      "authorized_protected_patterns": ["db/migrations/**", "db/prepared/journal/**"]
+    },
+    "explicitly_not_authorized": [
+      "db/baseline/**",
+      "db/prepared/** generally",
+      "generic caller-defined grant patterns",
+      "any additional grant entry"
+    ],
+    "also_must_not_change": [
+      "product / runtime / database / FIB authority",
+      "dependencies or lockfile"
+    ]
+  },
+
+  "authorized_implementation_surfaces_for_v1_0_2": {
+    "rule": "Indicative, not self-authorizing. The implementation step receives its own explicit authorized surface; nothing here grants write permission by itself.",
+    "expected": [
+      "scripts/ods-poststate.ts",
+      "scripts/ods-scope.ts",
+      "tests/ods/**",
+      "docs/ops/ods/**"
+    ]
+  },
+
+  "prohibited_by_this_addendum": [
+    "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json",
+    "docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json",
+    "docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json",
+    "docs/ops/fib/**",
+    "docs/ops/pc01b/**",
+    "docs/ops/im01b/**",
+    "db/**",
+    "lib/**",
+    "app/**",
+    "components/**",
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+
+  "negative_control_doctrine_binding": "The frozen ODS v1 negative-control doctrine applies unchanged to all three decisions: no mechanism here may be accepted as operational until its positive path is demonstrated AND every listed negative condition has been deliberately exercised and shown to FAIL as intended, on fixtures rather than real protected artifacts.",
+
+  "operational_state": {
+    "ODS_V1_OPERATIONAL": true,
+    "READY_FOR_LANE_A_WRITES": false,
+    "READY_FOR_LANE_B_WRITES": false,
+    "gating_reason": "The v1.0.1 maintenance was adjudicated FAIL by ODS-M1C with one blocking finding. Lane writes remain gated until this v1.0.2 remediation is implemented AND independently audited.",
+    "existing_read_only_evidence_remains_valid": ["W2-00 mapping", "RE-U0 reconciliation"],
+    "rerun_required": false
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS",
+    "protected_corpus_count": 9,
+    "protected_corpus_integrity": "PASS",
+    "transitive_attestation_count": 4,
+    "native_relationships": "PASS",
+    "files_changed_by_this_step": 1,
+    "implementation_performed": false,
+    "sealed_or_frozen_artifacts_modified": 0,
+    "grant_registry_modified": false,
+    "dependencies_or_lockfile_modified": false
+  },
+
+  "state_after_this_artifact": {
+    "ods_v1_operational": true,
+    "ready_for_final_maintenance_remediation": true,
+    "ready_for_lane_a_writes": false,
+    "ready_for_lane_b_writes": false,
+    "next_gate": "ODS_V1_FINAL_MAINTENANCE_REMEDIATION"
+  },
+
+  "final_state": "ODS_FINAL_MAINTENANCE_AUTHORITY_FROZEN_READY_FOR_REMEDIATION"
+}

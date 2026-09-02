@@ -11,10 +11,19 @@
 //
 // Source verified live 2026-07-04 (see the multi-funder design spec).
 
+// Pin the shared Decimal configuration first — determinism guard (WS4 U1).
+import './decimal-config'
 import Decimal from 'decimal.js'
 import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { fxRates } from '@/db/schema'
+
+/**
+ * The FX cache can be resolved through a caller-owned transaction. This keeps
+ * a proxy approval's material row lock, rate lookup/cache write, conversion,
+ * and approval update on the same database transaction when required.
+ */
+export type FxRateExecutor = Pick<typeof db, 'select' | 'insert'>
 
 // USD amounts carry 4 decimals, matching the numeric(20,4) money columns.
 const USD_DP = 4
@@ -40,6 +49,9 @@ export function convertFromUsd(amountUsd: string, rateToUsd: string): string {
 
 export const COP_TRM_ENDPOINT = 'https://www.datos.gov.co/resource/32sa-8pi3.json'
 export const COP_TRM_SOURCE = 'Superintendencia Financiera de Colombia — TRM oficial (datos.gov.co)'
+
+/** Upper bound on the TRM round trip. See the call site for why it exists. */
+export const COP_TRM_TIMEOUT_MS = 8_000
 
 export interface CopTrmResult {
   /** Units of COP per 1 USD, as returned by the TRM (e.g. "4158.1"). */
@@ -77,7 +89,9 @@ export async function fetchCopTrmRate(
     const where = `vigenciadesde <= '${stamp}' AND vigenciahasta >= '${stamp}'`
     const url = `${COP_TRM_ENDPOINT}?$where=${encodeURIComponent(where)}&$limit=1`
 
-    const res = await fetchImpl(url)
+    // BOUNDED — see the same note in lib/pipeline/fx-oracle.ts. Reachable from
+    // write paths that hold a transaction open.
+    const res = await fetchImpl(url, { signal: AbortSignal.timeout(COP_TRM_TIMEOUT_MS) })
     if (!res.ok) return null
 
     const rows: unknown = await res.json()
@@ -100,10 +114,11 @@ export async function fetchCopTrmRate(
  */
 export async function getOrCreateSharedCopRate(
   date: Date | string,
+  executor: FxRateExecutor = db,
 ): Promise<typeof fxRates.$inferSelect | null> {
   const iso = toIsoDate(date)
 
-  const cached = await db
+  const cached = await executor
     .select()
     .from(fxRates)
     .where(and(eq(fxRates.currency, 'COP'), eq(fxRates.rateDate, iso), isNull(fxRates.organizationId)))
@@ -114,7 +129,7 @@ export async function getOrCreateSharedCopRate(
   if (!fetched) return null
 
   try {
-    const inserted = await db
+    const inserted = await executor
       .insert(fxRates)
       .values({
         currency: 'COP',
@@ -130,7 +145,7 @@ export async function getOrCreateSharedCopRate(
   } catch {
     // Lost a race to another concurrent insert (partial unique index) — the row
     // now exists, so re-read it rather than fail.
-    const raced = await db
+    const raced = await executor
       .select()
       .from(fxRates)
       .where(and(eq(fxRates.currency, 'COP'), eq(fxRates.rateDate, iso), isNull(fxRates.organizationId)))

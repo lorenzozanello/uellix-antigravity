@@ -1,0 +1,584 @@
+{
+  "package_id": "RE_U4_COMMERCIAL_V1_JOURNEY_DELTA",
+  "version": "1.0.0",
+  "artifact_id": "RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0",
+  "authority_class": "DERIVED_COMMERCIAL_V1_JOURNEY_RECORD",
+  "materialization_step": "RE-U4-M",
+  "materialization_date": "2026-09-01",
+  "class": "B",
+  "mode": "JOURNEY_RECONCILIATION_AND_MATERIALIZATION",
+  "supersedes": null,
+
+  "purpose": "Materialize the Commercial V1 end-to-end user journeys as a delta between CURRENT_RUNTIME and the FROZEN_COMMERCIAL_V1_TARGET: functional sequence, actors, entry/exit states, human decision points, Stella boundaries, fail-closed states and technical dependencies.",
+
+  "scope_note": "DERIVED TRACKING RECORD. Creates no new product authority, implements no signup runtime, designs no high-fidelity screens, invents no FIB-owned technical contract, and reopens no product question (Q1-Q6 stay resolved as RE-U0 left them). Does not rewrite, supersede or restate any FIB, PC-01B, IM-01B, ODS, RE_U0, RE_U1 or RE_U3 artifact; those remain byte-identical and controlling.",
+
+  "authority_boundary": {
+    "creates_new_product_authority": false,
+    "reopens_frozen_decisions": false,
+    "reopens_q1_q6": false,
+    "decisions_readjudicated": 0,
+    "invents_fib_owned_technical_contracts": false,
+    "implements_signup_runtime": false,
+    "designs_high_fidelity_screens": false,
+    "governing_lane": "ODS_V1_AUTHORITY_v1.0.0.json :: product_and_wave_handoff.lane_b (Uellix product reengineering)"
+  },
+
+  "anchors": {
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "base_sha": "e29d1c55be30fc1a4d49eb7ef4f588bfe3007c34",
+    "base_tree": "b143a4b094f173eddbfa582f4f7dad3083b4bcfc",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS"
+  },
+
+  "source_artifacts": [
+    { "path": "docs/ops/reeng/RE_U0_DELTA_RECONCILIATION_v1.0.0.json", "role": "Q1-Q6 adjudication, parallelism classes" },
+    { "path": "docs/ops/reeng/RE_U1_UX_UI_DELTA_AUDIT_v1.0.0.json", "role": "measured findings, commercial_v1_journey_audit, U1-F04 blocker inventory" },
+    { "path": "docs/ops/reeng/RE_U3_INFORMATION_ARCHITECTURE_DELTA_v1.0.0.json", "role": "context model, onboarding two-phase disposition, IA node classifications" }
+  ],
+
+  "actors_capabilities": {
+    "source": "lib/auth/roles.ts (6 roles), lib/auth/permissions.ts (server-authoritative canX predicates)",
+    "roles_hierarchy": ["super_admin", "organization_admin", "impact_manager", "analyst", "reviewer", "viewer"],
+    "note_hierarchy_exceptions": "reviewer (rank 20) sits below analyst (rank 40) in ROLE_HIERARCHY but is included by SET INCLUSION (not threshold) in STELLA_ROLES and REVIEW_ROLES — the dedicated reviewing role is not simply 'lower privilege'.",
+    "capability_map": {
+      "read": { "predicate": "canViewOrganization", "min_role": "viewer", "applies_to": "any org data" },
+      "edit_project_evidence": { "predicate": "canUploadEvidence", "min_role": "analyst" },
+      "edit_organization": { "predicate": "canEditOrganization / canManageOrganization", "min_role": "organization_admin" },
+      "create_project": { "predicate": "canCreateProject", "min_role": "impact_manager" },
+      "review": { "predicate": "isInReviewSet (SET INCLUSION)", "roles": ["super_admin", "organization_admin", "impact_manager", "reviewer"] },
+      "approve_proxy": { "predicate": "canApproveProxy", "min_role": "impact_manager" },
+      "approve_run_methodology": { "predicate": "canApproveRunMethodology(role, isRunAuthor)", "roles": "review set MINUS the run's own author, server-authoritative isRunAuthor comparison" },
+      "generate_report": { "predicate": "canGenerateReport", "min_role": "impact_manager" },
+      "invite_users": { "predicate": "canInviteUsers", "min_role": "organization_admin" },
+      "erase_evidence_content": { "predicate": "canEraseEvidenceContent", "min_role": "organization_admin", "note": "FIBIU-07, deliberately admin-level not edit-level per NPDD-07" },
+      "determine_evidence_sufficiency": { "predicate": "canDetermineEvidenceSufficiency", "min_role": "impact_manager", "fib_ref": "FIBIU-06" },
+      "classify_evidence_sensitivity": { "predicate": "canClassifyEvidenceSensitivity", "min_role": "impact_manager", "fib_ref": "FIBIU-05" },
+      "publish_report_disclosure": { "predicate": "canPublishReportDisclosure", "min_role": "organization_admin" },
+      "use_stella": { "predicate": "canUseStella (SET INCLUSION)", "roles": ["super_admin", "organization_admin", "impact_manager", "analyst", "reviewer"], "excluded": ["viewer"] },
+      "access_admin_console": { "predicate": "canAccessAdmin", "role": "super_admin only" },
+      "create_organization": { "predicate": "canCreateOrganization", "role": "super_admin only (or allowlist-gated self-serve, Q4 pre-V1 constraint)" }
+    },
+    "no_roles_invented": true,
+    "implementation_gaps": [
+      { "gap": "primary navigation is role-blind (identical NAV_LINKS rendered to all six roles)", "authorization_status": "NOT_AFFECTED — every privileged action is still gated in-page/server-side/RLS", "classification": "IMPLEMENTATION_GAP, not a security gap", "owner_stage": "U4/U7 nav polish" }
+    ]
+  },
+
+  "golden_journey": [
+    {
+      "step": "PUBLIC_ENTRY",
+      "TARGET_REQUIRED": true,
+      "CURRENT_IMPLEMENTATION_STATE": "MATERIALIZED",
+      "ENTRY_CONDITION": "unauthenticated visitor",
+      "ACTOR": "Prospect",
+      "SYSTEM_ACTION": "render public marketing (/, /demo, legal pages)",
+      "HUMAN_ACTION": "browse, click entry CTA",
+      "EXIT_CONDITION": "navigates to /login or a future public signup entry",
+      "FAIL_CLOSED_STATE": "NONE — no auth required",
+      "REMEDIATION_PATH": null,
+      "TECHNICAL_DEPENDENCY": "NONE",
+      "READY_NOW_OR_WAIT": "READY_NOW"
+    },
+    {
+      "step": "SIGNUP_AUTHENTICATION",
+      "TARGET_REQUIRED": "self-service signup (Q4) for new prospects; login for returning users",
+      "CURRENT_IMPLEMENTATION_STATE": "PARTIAL — login/forgot-password/reset-password MATERIALIZED; public signup MISSING",
+      "ENTRY_CONDITION": "unauthenticated",
+      "ACTOR": "Prospect (new) or returning user",
+      "SYSTEM_ACTION": "Supabase auth identity creation/verification (target: identity creation is independent of any commercial/entitlement precondition — see commercial_entry.identity_vs_entitlement)",
+      "HUMAN_ACTION": "submit credentials or SSO",
+      "EXIT_CONDITION": "authenticated session, no organization yet",
+      "FAIL_CLOSED_STATE": "no public signup route exists — a prospect cannot self-serve today",
+      "REMEDIATION_PATH": "TARGET: build a public signup route (out of U4 scope — U4 defines the target only, does not implement it)",
+      "TECHNICAL_DEPENDENCY": "NONE for identity creation itself (Supabase auth already functions); the allowlist gate removal is a product/runtime decision, not FIB-owned",
+      "READY_NOW_OR_WAIT": "WAIT (signup runtime) / READY_NOW (login for existing users)"
+    },
+    {
+      "step": "ORGANIZATION_PROVISIONING",
+      "TARGET_REQUIRED": "autoprovisioning without manual technical intervention (Q4)",
+      "CURRENT_IMPLEMENTATION_STATE": "MATERIALIZED, gated — app/(authenticated)/app/onboarding (phase 1)",
+      "ENTRY_CONDITION": "authenticated user with no existing membership",
+      "ACTOR": "New org founder/admin",
+      "SYSTEM_ACTION": "createFirstOrganization writes organizations + admin organizationMembers row, subject to RLS (orgs_insert_super_admin, members_insert_admin) and lib/admin/signup-allowlist.ts",
+      "HUMAN_ACTION": "submit org name/slug/legalName/country/sector",
+      "EXIT_CONDITION": "Organization + admin membership created, onboardingCompleted=false",
+      "FAIL_CLOSED_STATE": "not_allowlisted — terminal-with-exit (sign out / contact hola@uellix.com), closed by RE-U5 (U1-F01)",
+      "REMEDIATION_PATH": "current: contact support / wait for invitation; TARGET: self-service autoprovisioning removes the allowlist gate entirely (Q4)",
+      "TECHNICAL_DEPENDENCY": "PRE_V1_OR_CURRENT_IMPLEMENTATION_CONSTRAINT (Q4) — allowlist must not become the final V1 mandatory journey",
+      "READY_NOW_OR_WAIT": "READY_NOW for allowlisted users / WAIT for autoprovisioning"
+    },
+    {
+      "step": "INITIAL_ONBOARDING",
+      "TARGET_REQUIRED": "mandatory post-provisioning operational calibration before workspace unlock",
+      "CURRENT_IMPLEMENTATION_STATE": "MATERIALIZED — app/app/organization/onboarding (phase 2)",
+      "ENTRY_CONDITION": "Organization + membership exist, onboardingCompleted=false",
+      "ACTOR": "organization_admin or super_admin (role-checked in completeOnboarding)",
+      "SYSTEM_ACTION": "components/auth/OnboardingCheck.tsx force-redirects all /app/** traffic here while incomplete; completeOnboarding writes country/sector/baseCurrency and flips onboardingCompleted=true",
+      "HUMAN_ACTION": "select country/sector/baseCurrency, submit",
+      "EXIT_CONDITION": "onboardingCompleted=true, redirected to /app/dashboard",
+      "FAIL_CLOSED_STATE": "completeOnboarding throws 'Only organization admins can complete onboarding' for a non-admin caller; OnboardingCheck would still force-redirect a non-admin member here if such a member existed in an uncalibrated org — a latent edge case, since in the measured normal flow no member can be invited before phase 2 completes (the inviter is also blocked by OnboardingCheck).",
+      "REMEDIATION_PATH": "non-admin trapped case: contact the organization_admin to complete calibration; not observed as reachable in the normal flow, recorded defensively",
+      "TECHNICAL_DEPENDENCY": "NONE",
+      "READY_NOW_OR_WAIT": "READY_NOW"
+    },
+    {
+      "step": "INVITATIONS_MEMBERSHIP",
+      "TARGET_REQUIRED": true,
+      "CURRENT_IMPLEMENTATION_STATE": "MATERIALIZED — lib/invitations/service.ts, /invite/accept",
+      "ENTRY_CONDITION": "organization_admin+ initiates; invitee authenticates then opens the accept link",
+      "ACTOR": "organization_admin (inviter), any prospective member (invitee)",
+      "SYSTEM_ACTION": "createInvitation (7-day TTL, sha256 token hash, best-effort Resend email deferred outside the write transaction); acceptInvitation validates token/status/expiry/email-match/no-existing-membership then inserts organizationMembers with the invited role",
+      "HUMAN_ACTION": "inviter enters email+role; invitee authenticates and accepts",
+      "EXIT_CONDITION": "active membership created with the assigned role, invitation status=accepted",
+      "FAIL_CLOSED_STATE": "see invitations_journey.fail_closed_branches",
+      "REMEDIATION_PATH": "see invitations_journey.fail_closed_branches",
+      "TECHNICAL_DEPENDENCY": "NONE",
+      "READY_NOW_OR_WAIT": "READY_NOW"
+    },
+    {
+      "step": "ROLE_AWARE_WORKSPACE",
+      "TARGET_REQUIRED": "workspace reflecting differentiated read/edit/review/approve capabilities",
+      "CURRENT_IMPLEMENTATION_STATE": "PARTIAL — server/RLS authorization complete; primary nav is role-blind (RE-U1 commercial_v1_journey_audit)",
+      "ENTRY_CONDITION": "authenticated member of a calibrated organization",
+      "ACTOR": "any of the six roles",
+      "SYSTEM_ACTION": "renders identical NAV_LINKS to all roles; gates privileged actions in-page and server-side/RLS",
+      "HUMAN_ACTION": "navigate; attempt a privileged action",
+      "EXIT_CONDITION": "n/a — ongoing context",
+      "FAIL_CLOSED_STATE": "unauthorized action attempt refused server-side (e.g. canInviteUsers throws 'Insufficient permissions to invite users')",
+      "REMEDIATION_PATH": "request an elevated role from an organization_admin",
+      "TECHNICAL_DEPENDENCY": "NONE — nav role-awareness is a recorded IMPLEMENTATION_GAP, not FIB-blocked",
+      "READY_NOW_OR_WAIT": "READY_NOW (authorization) / WAIT (nav-level role-awareness polish, non-blocking)"
+    },
+    {
+      "step": "MULTIPLE_PROJECTS",
+      "TARGET_REQUIRED": "multiple active projects per organization",
+      "CURRENT_IMPLEMENTATION_STATE": "MATERIALIZED_AND_REACHABLE",
+      "ENTRY_CONDITION": "calibrated org membership",
+      "ACTOR": "impact_manager+ (canCreateProject) to create; any member to view",
+      "SYSTEM_ACTION": "project CRUD, list at /app/projects",
+      "HUMAN_ACTION": "create/select/switch project",
+      "EXIT_CONDITION": "enters project context /app/projects/[projectId]",
+      "FAIL_CLOSED_STATE": "role below impact_manager cannot create a project",
+      "REMEDIATION_PATH": "request impact_manager+ role",
+      "TECHNICAL_DEPENDENCY": "NONE",
+      "READY_NOW_OR_WAIT": "READY_NOW"
+    },
+    {
+      "step": "MEASURE",
+      "TARGET_REQUIRED": "outcomes -> evidence -> proxies -> assumptions/filters -> calculation, complete for the committed journey",
+      "CURRENT_IMPLEMENTATION_STATE": "PARTIAL — 7 pipeline routes live; 0/8 probed Wave 2 methodology tables present; W2-B1 under remediation, B2+ open",
+      "ENTRY_CONDITION": "in project context",
+      "ACTOR": "analyst+ (canUploadEvidence) for evidence; impact_manager+ (canApproveProxy) for proxy approval",
+      "SYSTEM_ACTION": "deterministic SROI calculation engine, checkCalculationReadiness generates typed blockers",
+      "HUMAN_ACTION": "define outcomes/evidence/proxies/filters, trigger calculation",
+      "EXIT_CONDITION": "readiness blockers cleared -> calculation run created",
+      "FAIL_CLOSED_STATE": "12 typed blockers — see sroi_remediation_matrix",
+      "REMEDIATION_PATH": "see sroi_remediation_matrix (target destinations defined in this artifact, NOT repaired here)",
+      "TECHNICAL_DEPENDENCY": "WAIT_FOR_WAVE2 for the future methodology-object page templates (evidence sensitivity/sufficiency, proxy governance); current subset pages are SAFE_NOW",
+      "READY_NOW_OR_WAIT": "READY_NOW for the current subset / WAIT for Wave 2 methodology objects"
+    },
+    {
+      "step": "STELLA_CONTEXTUAL_ANALYSIS",
+      "TARGET_REQUIRED": "contextual analyze/consult/review/draft-suggest at governed points only",
+      "CURRENT_IMPLEMENTATION_STATE": "MATERIALIZED at project overview + 6 mounted pipeline steps; not yet at Reports/Trust/Portfolio/Evaluate",
+      "ENTRY_CONDITION": "canUseStella role, on a mounted surface, organization Stella-enabled",
+      "ACTOR": "super_admin/organization_admin/impact_manager/analyst/reviewer (not viewer)",
+      "SYSTEM_ACTION": "ticketed operation lifecycle (issue/retry), grounded/ungrounded evidence classification, quota + rate-limit enforcement",
+      "HUMAN_ACTION": "trigger Analizar/Consultar/Revisar; accept/edit/reject/undo any suggestion",
+      "EXIT_CONDITION": "decision recorded (SuggestionDecisionRecord) or answer reviewed — nothing auto-applied",
+      "FAIL_CLOSED_STATE": "DISABLED, RATE_LIMITED, GEMINI_ERROR, QUOTA_EXCEEDED, insufficient_evidence, contradictory_evidence — all explicit, non-silent (see stella_boundary)",
+      "REMEDIATION_PATH": "retry reuses the ticket at no extra charge; contact organization_admin for quota/enablement",
+      "TECHNICAL_DEPENDENCY": "NONE for current contexts; Wave 4 (FIBIU-21/22) for Reports/Trust/Portfolio/Evaluate hosting",
+      "READY_NOW_OR_WAIT": "READY_NOW (current contexts) / WAIT (future contexts)"
+    },
+    {
+      "step": "REVIEW",
+      "TARGET_REQUIRED": "distinct from editing; deterministic readiness score from a methodology checklist",
+      "CURRENT_IMPLEMENTATION_STATE": "MATERIALIZED — lib/pipeline/methodology-review.ts, CURRENT_IMPLEMENTATION_SUBSET of the future Evaluate journey",
+      "ENTRY_CONDITION": "a calculation run exists",
+      "ACTOR": "isInReviewSet: super_admin/organization_admin/impact_manager/reviewer",
+      "SYSTEM_ACTION": "deterministic 0-100 readiness score rolled up from per-item status (pass/warning/fail/not_applicable) via STATUS_CREDIT weighting",
+      "HUMAN_ACTION": "set matrix status draft -> reviewed; dispose high-risk findings (canDisposeHighRiskFinding)",
+      "EXIT_CONDITION": "matrix status = reviewed",
+      "FAIL_CLOSED_STATE": "role outside the review set is blocked",
+      "REMEDIATION_PATH": "request reviewer+ role",
+      "TECHNICAL_DEPENDENCY": "NONE",
+      "READY_NOW_OR_WAIT": "READY_NOW"
+    },
+    {
+      "step": "APPROVAL",
+      "TARGET_REQUIRED": "distinct human decision; self-approval forbidden",
+      "CURRENT_IMPLEMENTATION_STATE": "MATERIALIZED — sroi run reviews",
+      "ENTRY_CONDITION": "matrix reviewed; acting user isInReviewSet AND is not the run's own author",
+      "ACTOR": "reviewer+ excluding the run's calculator",
+      "SYSTEM_ACTION": "canApproveRunMethodology(role, isRunAuthor) — isRunAuthor is a server-authoritative comparison against the run row's calculated_by, never client-supplied",
+      "HUMAN_ACTION": "explicit approve action",
+      "EXIT_CONDITION": "matrix status = approved; run becomes the immutable basis for report generation",
+      "FAIL_CLOSED_STATE": "self-approval attempt blocked; role outside review set blocked",
+      "REMEDIATION_PATH": "request a different reviewer to approve",
+      "TECHNICAL_DEPENDENCY": "NONE",
+      "READY_NOW_OR_WAIT": "READY_NOW"
+    },
+    {
+      "step": "IMMUTABLE_VERSIONED_REPORT",
+      "TARGET_REQUIRED": "ReportVersion lineage, snapshot identity, verification/trust, governed public disclosure",
+      "CURRENT_IMPLEMENTATION_STATE": "PARTIAL — sroi_reports.snapshot_json plus draft/lock/print/pdf materialized; no ReportVersion lineage table; no report_disclosures/locator_token",
+      "ENTRY_CONDITION": "an approved run exists",
+      "ACTOR": "impact_manager+ (canGenerateReport)",
+      "SYSTEM_ACTION": "createReportDraftFromRun / updateReportSection / lockReportDraft — snapshot-based, not full version lineage",
+      "HUMAN_ACTION": "prepare and lock the report draft",
+      "EXIT_CONDITION": "current: report locked; target: an immutable ReportVersion is created",
+      "FAIL_CLOSED_STATE": "public /verify/[hash] fail-closed 404 (RE-U0-F1, correct-by-design, not a defect); no report_disclosures table means public disclosure is always unavailable today",
+      "REMEDIATION_PATH": "none needed for the fail-closed default itself; functional public verification is WAIT_FOR_LATER_FIB",
+      "TECHNICAL_DEPENDENCY": "WAIT_FOR_LATER_FIB — Wave 4+ (FIBIU-22..25) lineage, Wave 5 (FIBIU-26/31) disclosure, Wave 6 (FIBIU-30)",
+      "READY_NOW_OR_WAIT": "READY_NOW (current snapshot workspace) / WAIT (version lineage + public disclosure)",
+      "invariant_preserved": "reports != certification of impact — no rendered copy overclaims (RE-U1 trust_traceability_ux_matrix)"
+    },
+    {
+      "step": "PORTFOLIO",
+      "TARGET_REQUIRED": "multiple portfolios, project membership/comparison, cross-project governed aggregation",
+      "CURRENT_IMPLEMENTATION_STATE": "PARTIAL — index/new/detail routes materialized and NAV_ACTIVE_NOW (RE-U5); aggregation not implemented",
+      "ENTRY_CONDITION": "org member; primary nav 'Portafolios' entry",
+      "ACTOR": "canCreate = super_admin/organization_admin/impact_manager/analyst (app/app/portfolios/page.tsx:22); any member may view",
+      "SYSTEM_ACTION": "portfolio CRUD shell",
+      "HUMAN_ACTION": "create/select portfolio, associate projects, inspect",
+      "EXIT_CONDITION": "portfolio detail view, or return to project context",
+      "FAIL_CLOSED_STATE": "role below the create set cannot create a portfolio",
+      "REMEDIATION_PATH": "request analyst+ role",
+      "TECHNICAL_DEPENDENCY": "WAIT_FOR_LATER_FIB for governed aggregation/transversal intelligence (Wave 5 FIBIU-27, Wave 6 FIBIU-30); CRUD shell itself has NONE",
+      "READY_NOW_OR_WAIT": "READY_NOW (CRUD/reachability) / WAIT (aggregation)"
+    },
+    {
+      "step": "EVALUATE",
+      "TARGET_REQUIRED": "Subject -> AssessmentTemplateVersion -> Dimensions -> Criteria -> Inputs+Evidence -> Reviewer Assessments -> deterministic Score -> Divergence -> Stella Analysis -> Recommendation -> DecisionPolicy -> Human Decision",
+      "CURRENT_IMPLEMENTATION_STATE": "CURRENT_IMPLEMENTATION_SUBSET only (methodology-review, embedded in Measure) — not the complete Evaluate product",
+      "ENTRY_CONDITION": "target: a Subject requiring structured assessment exists",
+      "ACTOR": "analyst+ (Inputs+Evidence), reviewer+ (Reviewer Assessments), Stella (Analysis), an organization_admin+/DecisionPolicy-designated role (Human Decision)",
+      "SYSTEM_ACTION": "target: deterministic Score computed from Criteria; Divergence detected across Reviewer Assessments; Stella Analysis/Recommendation generated",
+      "HUMAN_ACTION": "target: submit Inputs+Evidence, complete Reviewer Assessments, render the Human Decision per DecisionPolicy",
+      "EXIT_CONDITION": "target: Human Decision recorded, immutable",
+      "FAIL_CLOSED_STATE": "target: insufficient evidence, contradictory evidence, unresolved Divergence",
+      "REMEDIATION_PATH": null,
+      "TECHNICAL_DEPENDENCY": "WAIT_FOR_WAVE3_CONTRACT (FIBIU-19, FIBIU-20)",
+      "READY_NOW_OR_WAIT": "WAIT",
+      "preserved_invariant": "INPUT != SCORE != RECOMMENDATION != DECISION",
+      "u4_action_taken": "target journey materialized as behavior only; no route placeholder created"
+    }
+  ],
+
+  "commercial_entry": {
+    "identity_vs_entitlement": {
+      "statement": "Account/auth identity creation (Supabase auth) is independent of any commercial/entitlement precondition. Preserved invariants: CommercialAccount != Organization; Payment != Activation; Release Flag != Entitlement != Authorization.",
+      "current_measured_state": "zero occurrences of entitlement or commercial_account in the codebase (RE-U0-F5); billing is coupled to Organization, not a separate CommercialAccount",
+      "u4_disposition": "U4 defines the target sequencing only (identity -> [future commercial/entitlement check] -> org provisioning -> membership -> app entry). It does not invent billing behavior, entitlement grants, or a CommercialAccount schema — those remain unbuilt and unspecified beyond the preserved invariants."
+    },
+    "target_sequence": ["public entry", "account/auth identity creation", "(future) commercial/entitlement precondition check", "Organization provisioning", "initial user membership/role", "application entry"],
+    "current_vs_target": "current sequence collapses the commercial/entitlement step entirely (none exists); Organization provisioning is gated by an allowlist rather than a commercial precondition"
+  },
+
+  "two_phase_onboarding": {
+    "preserved_from_re_u3": "PHASE 1 (/app/onboarding) = pre-membership organization provisioning. PHASE 2 (/app/organization/onboarding) = existing-organization setup/completeness.",
+    "phase_1": {
+      "entry_condition": "authenticated, no existing membership",
+      "completion_condition": "Organization + admin membership row created",
+      "required_or_optional": "REQUIRED — no path into the app without an Organization",
+      "fail_closed_behavior": "not_allowlisted terminal state, with exit (sign out / contact support) — closed by RE-U5"
+    },
+    "phase_2": {
+      "entry_condition": "Organization + membership exist, onboardingCompleted=false",
+      "completion_condition": "country/sector/baseCurrency set, onboardingCompleted flips to true",
+      "required_or_optional": "REQUIRED — components/auth/OnboardingCheck.tsx, mounted in app/app/layout.tsx, force-redirects every /app/** request until complete",
+      "fail_closed_behavior": "completeOnboarding refuses non-admin callers; see golden_journey.INITIAL_ONBOARDING for the latent non-admin-trapped edge case"
+    },
+    "transition": {
+      "trigger": "successful createFirstOrganization (phase 1) leaves onboardingCompleted=false by schema default, which OnboardingCheck immediately routes to phase 2 on the next /app/** request",
+      "defined": true
+    },
+    "residual_naming_clarity_debt": "Both routes are colloquially called 'onboarding' despite distinct phases (RE-U3 U3-DEBT-02). Recorded here again for journey completeness; NOT consolidated — repository behavior supports the two-phase split."
+  },
+
+  "invitations_journey": {
+    "invite_creation": { "actor": "organization_admin+ (canInviteUsers)", "action": "createInvitation — 7-day TTL, sha256 token hash, rejects a second pending invite to the same email" },
+    "invite_delivery": { "mechanism": "sendInvitationEmail via Resend, deferred outside the write transaction (best-effort)", "fallback": "raw token/accept URL also returned to the inviter for manual sharing if RESEND_API_KEY is absent or delivery fails" },
+    "invite_acceptance": { "actor": "invitee, authenticated via Supabase but not yet a member anywhere", "action": "acceptInvitation(rawToken)" },
+    "membership_creation": "organizationMembers row inserted with the invitation's role, status=active",
+    "assigned_role_capability": "exactly the role chosen at invite time (SUPER_ADMIN cannot be granted by invite — createInvitation explicitly rejects it)",
+    "fail_closed_branches": [
+      { "case": "invalid token", "message": "Invalid invitation", "remediation": "ask the inviter to resend a fresh invitation" },
+      { "case": "non-pending status (revoked/already accepted)", "message": "Invitation is no longer valid", "remediation": "ask the inviter to issue a new invitation" },
+      { "case": "expired (lazily flipped on read)", "message": "Invitation has expired", "remediation": "ask the inviter to resend" },
+      { "case": "email mismatch", "message": "This invitation was issued to a different email address", "remediation": "sign in with the invited email address" },
+      { "case": "already a member elsewhere / organization mismatch", "message": "You already belong to an organization", "remediation": "contact the current organization's admin to be removed before accepting a different invitation — schema enforces one active membership per user" }
+    ],
+    "no_explicit_ui_cta_for_remediation": "app/invite/accept/page.tsx renders these as error messages only; no dedicated remediation link is currently rendered for any branch — recorded as an observation, not fixed here.",
+    "no_email_infrastructure_invented": true
+  },
+
+  "multi_project_journey": {
+    "create_project": { "actor": "impact_manager+ (canCreateProject)", "route": "/app/projects/new" },
+    "select_switch_project": { "route": "/app/projects/[projectId]", "mechanism": "standard route navigation, no client-side project-switcher state machine measured" },
+    "project_context": "everything under /app/projects/[projectId]/** (pipeline, report)",
+    "return_to_project_list": { "route": "/app/projects" },
+    "portfolio_membership_relationship": {
+      "current": "a project can be associated with a portfolio (portfolioId), reachable conditionally from the project detail page when one already exists (RE-U1 navigation_reachability_matrix)",
+      "ownership_vs_access": "PRESERVED — a project's Organization-scoped ownership is unchanged by portfolio membership; a portfolio is a comparison/grouping construct, not an ownership transfer. Portfolio does not become project ownership in this journey."
+    }
+  },
+
+  "measure_journey": {
+    "steps": [
+      { "step": "project_setup_context", "node_class": "SEMANTIC_NODE_STABLE", "route": "/app/projects/[projectId]" },
+      { "step": "outcomes", "node_class": "SEMANTIC_NODE_STABLE", "route": ".../pipeline/outcomes" },
+      { "step": "evidence", "node_class": "TECHNICAL_PAGE_BINDING_WAIT_FOR_FIB", "route": ".../pipeline/evidence", "reason": "EvidenceVersion/sensitivity/sufficiency/erasure are Wave 2 objects; W2-B1 under remediation, B2+ open" },
+      { "step": "proxies", "node_class": "TECHNICAL_PAGE_BINDING_WAIT_FOR_FIB", "route": ".../pipeline/proxies", "reason": "proxy reference/use and proxy governance are Wave 2 objects" },
+      { "step": "assumptions_filters", "node_class": "TECHNICAL_PAGE_BINDING_WAIT_FOR_FIB", "route": ".../pipeline/calculation (filter sets)", "reason": "future assumptions/causality objects are Wave 2" },
+      { "step": "calculation", "node_class": "SEMANTIC_NODE_STABLE", "route": ".../pipeline/calculation", "note": "the SROI calculation engine itself is materialized and deterministic; only its future Wave-2-object inputs are page-template-pending" },
+      { "step": "review", "node_class": "SEMANTIC_NODE_STABLE", "surface": "lib/pipeline/methodology-review.ts" },
+      { "step": "approval", "node_class": "SEMANTIC_NODE_STABLE", "surface": "sroi run reviews, canApproveRunMethodology" },
+      { "step": "report_preparation", "node_class": "SEMANTIC_NODE_STABLE for the internal workspace; TECHNICAL_PAGE_BINDING_WAIT_FOR_FIB for version lineage", "route": ".../report" }
+    ],
+    "no_page_templates_prematurely_frozen": true,
+    "wave2_status_preserved": "W2-B1 currently under remediation/review; B2+ not yet closed — unresolved Wave 2 runtime is NOT treated as missing product authority, per instruction."
+  },
+
+  "stella_boundary": {
+    "may": {
+      "ANALYZE": "StellaContextualAdvisorPanel — examines existing content, returns findings + suggestions with a full accept/edit/reject/undo lifecycle",
+      "CONSULT": "StellaGroundedQueryPanel — answers a posed question via a caller-supplied, evidence-backed, citation-bound runQuery seam",
+      "REVIEW": "StellaValidatorPanel — reviews an SROI calculation for risk (evidence gaps, proxy risk, attribution risk, claim risk)",
+      "DRAFT_SUGGEST": "suggestion text proposed by the advisor panel, applied only via an explicit onApply callback the human triggers — never auto-written"
+    },
+    "may_not": [
+      "invent evidence — grounding-adapter.ts and the 4-way EvidenceSupportLevel (grounded/partially_grounded/insufficient_evidence/contradictory_evidence) constrain every claim to cited sources",
+      "approve proxies — canApproveProxy is a human, role-gated, server-side action; Stella has no write path to proxy approval status",
+      "approve reviews — canApproveRunMethodology explicitly excludes the run's own author and requires a human review-set role; Stella is not a role and cannot be the approver",
+      "certify impact — 'esta revisión no certifica, audita, aprueba ni garantiza el impacto' rendered verbatim in the validator panel's success and footer copy",
+      "silently change calculations — the SROI engine is deterministic and human/system-controlled; Stella panels are read-only advisors with no calculation write path",
+      "replace human decision — every panel ends in a human accept/edit/reject/undo/approve action, never an autonomous state transition"
+    ],
+    "insufficient_evidence_branch": { "behavior": "EXPLICIT refusal to propose text — 'Stella no tiene información suficiente para proponer un texto.'", "measured_in": "RE-U1 stella_governance_ux_matrix" },
+    "contradictory_evidence_branch": { "behavior": "surfaced via the 4-way EvidenceSupportLevel and StellaGroundingBadge, distinct from insufficient_evidence", "measured_in": "grounding-model.ts classifySuggestionSupport / classifyFindingSupport" },
+    "availability_fail_closed": "StellaAvailabilityNotice / DISABLED panel state renders when an organization is not Stella-enabled, instead of silently hiding the feature",
+    "governance_pattern_preserved": "AI proposes/analyzes; system controls/calculates; human decides/approves — CONFORMANT per RE-U1 stella_governance_ux_matrix"
+  },
+
+  "review_approval_matrix": [
+    { "activity": "editing", "who": "analyst+ (evidence), impact_manager+ (proxies)", "changes_status": "no formal status change — draft-level content edits", "immutable_after": "no" },
+    { "activity": "system_validation", "who": "system (checkCalculationReadiness)", "changes_status": "computes typed blockers; does not itself change any human-facing status", "immutable_after": "no" },
+    { "activity": "AI_recommendation", "who": "Stella (Analizar/Consultar/Revisar)", "changes_status": "NEVER changes status directly — produces a suggestion/finding a human must accept/edit/reject", "immutable_after": "no" },
+    { "activity": "review", "who": "isInReviewSet role", "changes_status": "matrix status draft -> reviewed; deterministic 0-100 readiness score computed", "immutable_after": "no — reviewed is not final" },
+    { "activity": "approval", "who": "isInReviewSet role, excluding the run's own author", "changes_status": "matrix status reviewed -> approved", "immutable_after": "yes — the approved run becomes the immutable basis for report generation" }
+  ],
+  "no_future_approval_states_invented": true,
+
+  "reports_trust_journey": {
+    "current_report_preparation_rendering": { "status": "MATERIALIZED", "surfaces": ["report/page.tsx (draft)", "report/[reportId]/page.tsx", "print/PrintButton.tsx", "[reportId]/pdf/route.ts"] },
+    "future_report_version": { "object": "ReportVersion", "status": "DESIGNED_NOT_IMPLEMENTED", "dependency": "WAIT_FOR_LATER_FIB (Wave 4+, FIBIU-22..25)" },
+    "approval_relationship": "a report draft is created FROM an approved run (createReportDraftFromRun); the report cannot precede approval",
+    "snapshot_version_identity": { "current": "sroi_reports.snapshot_json, no lineage table", "target": "immutable ReportVersion with lineage" },
+    "verification_trust": { "internal": "/app/trust-center, MATERIALIZED", "public": "/verify/[hash], fail-closed by design (RE-U0-F1), explanation surface closed by RE-U5, functional completeness WAIT_FOR_LATER_FIB" },
+    "public_disclosure": { "status": "MISSING", "dependency": "WAIT_FOR_LATER_FIB (Wave 5, FIBIU-26/31)" },
+    "current_vs_target": "current report runtime != final Commercial V1 report architecture — the internal draft/lock/render workspace is real and usable today; version lineage, verification completeness and public disclosure are all FIB-dependent",
+    "no_certification_overclaim": true
+  },
+
+  "portfolio_journey": {
+    "current": {
+      "enter_portfolio": "primary nav 'Portafolios' entry (NAV_ACTIVE_NOW, closed by RE-U5)",
+      "create_select_portfolio": "/app/portfolios/new, /app/portfolios (index)",
+      "associate_inspect_projects": "/app/portfolios/[portfolioId]; conditional entry also from project detail page when a portfolioId already exists",
+      "return_to_project_context": "standard navigation back to /app/projects/[projectId]"
+    },
+    "target_v1": ["compare multiple projects", "status", "evidence", "results", "performance", "cross-project intelligence"],
+    "not_implemented_in_u4": ["governed aggregation", "transversal intelligence computation"],
+    "target_intelligence_dependency": "WAIT_FOR_LATER_FIB (Wave 5 FIBIU-27, Wave 6 FIBIU-30)"
+  },
+
+  "evaluate_journey": {
+    "frozen_structured_journey_preserved": "Subject -> AssessmentTemplateVersion -> Dimensions -> Criteria -> Inputs + Evidence -> Reviewer Assessments -> deterministic Score -> Divergence -> Stella Analysis -> Recommendation -> DecisionPolicy -> Human Decision",
+    "preserved_invariant": "INPUT != SCORE != RECOMMENDATION != DECISION",
+    "current_implementation_subset": "lib/pipeline/methodology-review.ts is NOT this journey — it is a narrower, embedded review/approval step inside Measure with no Dimensions/Criteria/Divergence/DecisionPolicy objects",
+    "u4_action_taken": "target journey behavior materialized above (golden_journey.EVALUATE); no runtime route created",
+    "technical_dependency": "WAIT_FOR_WAVE3_CONTRACT (FIBIU-19, FIBIU-20)"
+  },
+
+  "fail_closed_matrix": [
+    { "branch": "unauthenticated", "stage": "any /app/** access", "remedy": "redirect to /login", "has_remedy": true },
+    { "branch": "not_entitled", "stage": "commercial_entry (target)", "remedy": "TARGET — no current runtime enforces this; recorded as a future gap, not invented", "has_remedy": "TARGET_ONLY" },
+    { "branch": "unauthorized (role)", "stage": "any privileged action", "remedy": "request the required role from an organization_admin", "has_remedy": true },
+    { "branch": "missing_organization", "stage": "post-auth, no membership", "remedy": "routed to /app/onboarding (phase 1)", "has_remedy": true },
+    { "branch": "incomplete_onboarding", "stage": "org exists, onboardingCompleted=false", "remedy": "routed to /app/organization/onboarding (phase 2)", "has_remedy": true },
+    { "branch": "invalid_invitation", "stage": "invite acceptance", "remedy": "ask inviter to resend", "has_remedy": true },
+    { "branch": "expired_invitation", "stage": "invite acceptance", "remedy": "ask inviter to resend", "has_remedy": true },
+    { "branch": "already_member_invitation", "stage": "invite acceptance", "remedy": "leave current org first (contact its admin)", "has_remedy": true },
+    { "branch": "missing_evidence / no_proxy_assignments", "stage": "Measure readiness", "remedy": "target = /app/projects/[id]/pipeline/evidence (already correct today)", "has_remedy": true },
+    { "branch": "insufficient_evidence (Stella)", "stage": "Stella contextual analysis", "remedy": "explicit refusal message; gather more evidence", "has_remedy": true },
+    { "branch": "contradictory_evidence (Stella)", "stage": "Stella contextual analysis", "remedy": "surfaced via grounding badge; human resolves the contradiction", "has_remedy": true },
+    { "branch": "missing_human_review", "stage": "APPROVAL", "remedy": "request a reviewer+ to review first", "has_remedy": true },
+    { "branch": "missing_approval / self-approval blocked", "stage": "APPROVAL", "remedy": "request a different reviewer to approve", "has_remedy": true },
+    { "branch": "stale/invalid_calculation (12 typed blockers)", "stage": "Measure calculation readiness", "remedy": "see sroi_remediation_matrix", "has_remedy": "PARTIAL — 8/10 destinations currently dead, target destinations defined here" },
+    { "branch": "report_not_released", "stage": "IMMUTABLE_VERSIONED_REPORT", "remedy": "N/A — no release mechanism exists yet; not invented here", "has_remedy": "TARGET_ONLY" },
+    { "branch": "verification_unavailable", "stage": "public /verify/[hash]", "remedy": "governed not-found explanation (closed by RE-U5); functional fix WAIT_FOR_LATER_FIB", "has_remedy": "PARTIAL" }
+  ],
+  "fail_closed_branch_count": 16,
+  "fail_closed_with_remedy_count": 13,
+  "fail_closed_no_state_invented_merely_for_completeness": true,
+
+  "human_decision_matrix": [
+    { "decision": "approve organization creation (allowlist bypass)", "who": "super_admin" },
+    { "decision": "complete organization calibration (phase 2)", "who": "organization_admin+" },
+    { "decision": "invite a member and assign role", "who": "organization_admin+" },
+    { "decision": "accept/decline an invitation", "who": "invitee" },
+    { "decision": "create a project", "who": "impact_manager+" },
+    { "decision": "approve a financial proxy", "who": "impact_manager+" },
+    { "decision": "accept/edit/reject/undo a Stella suggestion", "who": "any canUseStella role, contextually" },
+    { "decision": "review methodology (set matrix status to reviewed)", "who": "review set" },
+    { "decision": "approve run methodology (excludes the run's own author)", "who": "review set minus author" },
+    { "decision": "generate/lock a report", "who": "impact_manager+" },
+    { "decision": "publish a report disclosure (target)", "who": "organization_admin+ (canPublishReportDisclosure) — not yet reachable, no disclosure runtime exists" },
+    { "decision": "Evaluate Human Decision per DecisionPolicy (target)", "who": "TARGET_ONLY — DecisionPolicy role binding not yet implemented" }
+  ],
+
+  "ai_boundary_matrix": {
+    "see": "stella_boundary above — duplicated here as a flat matrix for artifact consumers that only read this key",
+    "rows": [
+      { "action": "ANALYZE", "allowed": true, "surface": "StellaContextualAdvisorPanel" },
+      { "action": "CONSULT", "allowed": true, "surface": "StellaGroundedQueryPanel" },
+      { "action": "REVIEW", "allowed": true, "surface": "StellaValidatorPanel" },
+      { "action": "DRAFT_SUGGEST", "allowed": true, "surface": "advisor suggestion lifecycle, human-applied only" },
+      { "action": "INVENT_EVIDENCE", "allowed": false },
+      { "action": "APPROVE_PROXY", "allowed": false },
+      { "action": "APPROVE_REVIEW", "allowed": false },
+      { "action": "CERTIFY_IMPACT", "allowed": false },
+      { "action": "SILENTLY_CHANGE_CALCULATION", "allowed": false },
+      { "action": "REPLACE_HUMAN_DECISION", "allowed": false }
+    ]
+  },
+
+  "current_vs_target_matrix": [
+    { "area": "signup", "current": "MISSING_PRE_V1 (allowlist-gated org creation only)", "target": "self-service, no manual intervention" },
+    { "area": "organization provisioning", "current": "MATERIALIZED, gated", "target": "autoprovisioning" },
+    { "area": "onboarding", "current": "MATERIALIZED, two-phase, confirmed non-duplicated", "target": "STILL_VALID as-is" },
+    { "area": "invitations", "current": "MATERIALIZED", "target": "STILL_VALID as-is" },
+    { "area": "roles/permissions", "current": "MATERIALIZED server-side; nav role-blind", "target": "STILL_VALID authorization; nav polish is a gap" },
+    { "area": "multi-project", "current": "MATERIALIZED_AND_REACHABLE", "target": "STILL_VALID as-is" },
+    { "area": "Measure", "current": "PARTIAL (Wave 2 objects absent)", "target": "COMPLETE_FOR_COMMITTED_JOURNEY" },
+    { "area": "Stella", "current": "MATERIALIZED, contextual, 7 mount points", "target": "STILL_VALID + later Wave-4 mount points" },
+    { "area": "review/approval", "current": "MATERIALIZED", "target": "STILL_VALID as-is" },
+    { "area": "report", "current": "PARTIAL (snapshot-based, no lineage)", "target": "immutable ReportVersion, trust, governed disclosure" },
+    { "area": "Portfolio", "current": "PARTIAL (reachable shell, no aggregation)", "target": "COMPLETE_FOR_COMMITTED_COMPARISON_AND_TRANSVERSAL_INTELLIGENCE" },
+    { "area": "Evaluate", "current": "CURRENT_IMPLEMENTATION_SUBSET only", "target": "COMPLETE_FOR_COMMITTED_STRUCTURED_EVALUATION_JOURNEY" }
+  ],
+
+  "technical_dependency_matrix": {
+    "SAFE_NOW": [
+      "golden journey definition for all 14 stages",
+      "actors/capabilities mapping",
+      "two-phase onboarding transition documentation",
+      "invitations fail-closed branch documentation",
+      "multi-project / Portfolio membership (ownership != access) documentation",
+      "Stella boundary matrix",
+      "review/approval separation matrix",
+      "SROI remediation-destination target definitions (not the repair itself)",
+      "current-vs-target matrix",
+      "Evaluate target journey materialization (behavior only, no route)"
+    ],
+    "WAIT_FOR_WAVE2": ["Measure evidence/proxies/assumptions page templates (FIBIU-04..18); W2-B1 remediation in progress, B2+ open"],
+    "WAIT_FOR_WAVE3": ["Evaluate runtime implementation (FIBIU-19, FIBIU-20)"],
+    "WAIT_FOR_LATER_FIB": [
+      "ReportVersion / trust lineage (Wave 4+, FIBIU-22..25)",
+      "later Stella mount points in Reports/Trust/Portfolio/Evaluate (Wave 4, FIBIU-21/22)",
+      "Portfolio governed aggregation (Wave 5 FIBIU-27, Wave 6 FIBIU-30)",
+      "public disclosure (Wave 5, FIBIU-26/31)",
+      "public verification functional completeness"
+    ],
+    "WAIT_FOR_VISUAL_EVIDENCE": ["exact public-entry CTA copy (U1-F17)", "verify banner exact treatment (U1-F21) — inherited from RE-U1/RE-U3, not re-adjudicated here"],
+    "counts": {
+      "SAFE_NOW_COUNT": 10,
+      "WAIT_FOR_WAVE2_COUNT": 1,
+      "WAIT_FOR_WAVE3_COUNT": 1,
+      "WAIT_FOR_LATER_FIB_COUNT": 5,
+      "WAIT_FOR_VISUAL_EVIDENCE_COUNT": 2
+    }
+  },
+
+  "sroi_remediation_matrix": {
+    "source": "lib/pipeline/sroi-calculation.ts checkCalculationReadiness, lines ~584-708 (re-read this session at base_sha)",
+    "verification_method": "grepped app/ and components/ for id=\"investment\"|id=\"sroi-inputs\"|id=\"sroi-filters\"|id=\"funder-attribution\" (zero matches, all four still absent) and confirmed app/app/proxies does not exist on disk, while app/app/projects/[projectId]/pipeline/proxies does — re-confirms RE-U1 U1-F04 is still open, not re-derived from the implementation report alone",
+    "blocker_source_page": "all four anchor targets AND the project-scoped proxies page are rendered on the SAME page as the readiness banner (app/app/projects/[projectId]/pipeline/calculation/page.tsx renders the blocker list at line ~436 and also renders InvestmentList/InvestmentRow, proxy assignment quantities, filter sets, and funder-attribution UI) — so the anchor CTAs are same-page scroll targets, not cross-page links",
+    "rows": [
+      { "message_key": "missing_investment", "current_action_path": "#investment", "current_action_label": "Ir a inversiones", "current_destination_valid": false, "target_semantic_destination": "investment section on the same calculation page", "actual_route_available_today": "app/app/projects/[projectId]/pipeline/calculation/page.tsx renders InvestmentList already — needs id=\"investment\" added to that section's wrapper", "dependency": "NONE", "runtime_repair_safe_now": true },
+      { "message_key": "invalid_investment_amount", "current_action_path": "#investment", "current_action_label": "Ir a inversiones", "current_destination_valid": false, "target_semantic_destination": "same investment section", "actual_route_available_today": "same as above", "dependency": "NONE", "runtime_repair_safe_now": true },
+      { "message_key": "investments_missing_usd", "current_action_path": "#investment", "current_action_label": "Revisar aportes", "current_destination_valid": false, "target_semantic_destination": "same investment section", "actual_route_available_today": "same as above", "dependency": "NONE", "runtime_repair_safe_now": true },
+      { "message_key": "no_proxy_assignments", "current_action_path": "/app/projects/${projectId}/pipeline/evidence", "current_action_label": "Ir a evidencia", "current_destination_valid": true, "target_semantic_destination": "already correct — no change needed", "actual_route_available_today": "app/app/projects/[projectId]/pipeline/evidence exists", "dependency": "NONE", "runtime_repair_safe_now": "NOT_APPLICABLE (not broken)" },
+      { "message_key": "missing_inputs", "current_action_path": "#sroi-inputs", "current_action_label": "Completar información", "current_destination_valid": false, "target_semantic_destination": "proxy-assignment quantity section on the calculation page", "actual_route_available_today": "same page — needs id=\"sroi-inputs\" added", "dependency": "NONE", "runtime_repair_safe_now": true },
+      { "message_key": "missing_filter_sets", "current_action_path": "#sroi-filters", "current_action_label": "Configurar filtros", "current_destination_valid": false, "target_semantic_destination": "filter-set (deadweight/displacement) section on the calculation page", "actual_route_available_today": "same page — needs id=\"sroi-filters\" added", "dependency": "NONE", "runtime_repair_safe_now": true },
+      { "message_key": "unapproved_proxies", "current_action_path": "/app/proxies", "current_action_label": "Revisar proxies", "current_destination_valid": false, "target_semantic_destination": "project-scoped proxies page (NOT a new /app/proxies route)", "actual_route_available_today": "app/app/projects/[projectId]/pipeline/proxies exists — actionPath needs the `/app/projects/${projectId}/pipeline/proxies` template", "dependency": "NONE", "runtime_repair_safe_now": true },
+      { "message_key": "outcomes_without_evidence", "current_action_path": "/app/projects/${projectId}/pipeline/evidence", "current_action_label": "Agregar evidencia", "current_destination_valid": true, "target_semantic_destination": "already correct — no change needed", "actual_route_available_today": "exists", "dependency": "NONE", "runtime_repair_safe_now": "NOT_APPLICABLE (not broken)" },
+      { "message_key": "invalid_quantities", "current_action_path": null, "current_action_label": null, "current_destination_valid": "NO_CTA_RENDERED", "target_semantic_destination": "same as missing_inputs (#sroi-inputs)", "actual_route_available_today": "same page", "dependency": "NONE", "runtime_repair_safe_now": "ADDITIVE — adding a CTA is safe but was absent, not dead" },
+      { "message_key": "invalid_filters", "current_action_path": null, "current_action_label": null, "current_destination_valid": "NO_CTA_RENDERED", "target_semantic_destination": "same as missing_filter_sets (#sroi-filters)", "actual_route_available_today": "same page", "dependency": "NONE", "runtime_repair_safe_now": "ADDITIVE — adding a CTA is safe but was absent, not dead" },
+      { "message_key": "proxies_missing_usd", "current_action_path": "/app/proxies", "current_action_label": "Revisar proxies", "current_destination_valid": false, "target_semantic_destination": "project-scoped proxies page (NOT a new /app/proxies route)", "actual_route_available_today": "app/app/projects/[projectId]/pipeline/proxies exists", "dependency": "NONE", "runtime_repair_safe_now": true },
+      { "message_key": "over_allocated_outcomes", "current_action_path": "#funder-attribution", "current_action_label": "Revisar atribución", "current_destination_valid": false, "target_semantic_destination": "funder-attribution section on the calculation page", "actual_route_available_today": "same page — needs id=\"funder-attribution\" added", "dependency": "NONE", "runtime_repair_safe_now": true }
+    ],
+    "app_proxies_not_invented": "Confirmed target destination is the existing project-scoped route app/app/projects/[projectId]/pipeline/proxies, NOT a new top-level /app/proxies route — per explicit instruction.",
+    "counts": {
+      "SROI_BLOCKERS_MAPPED": 12,
+      "SROI_DEAD_DESTINATIONS_CONFIRMED": 8,
+      "SROI_SAFE_NOW_REPAIRS": 8,
+      "SROI_ADDITIVE_CTA_GAPS": 2
+    },
+    "runtime_modified_in_u4": false,
+    "controls_next_batch": "RE_U1_F04_REMEDIATION_LINK_REPAIR"
+  },
+
+  "u5_u6_closure_references": {
+    "note": "no docs/ops/reeng/RE_U5_*.json or RE_U6_*.json artifact exists in this lineage; closure is evidenced by measured runtime state and by RE-U6-V (independent gate re-verification performed earlier this session at an identical base_sha/base_tree lineage)",
+    "u5_evidence": ["components/layout/nav-links.ts", "app/not-found.tsx", "app/app/layout.tsx#main-content skip link", "app/(authenticated)/app/onboarding/page.tsx sign-out/support header"],
+    "u6_evidence_commits": ["887ee59 refactor(ui): adopt governed brand tokens", "c5a0ca2 fix(ui): reconcile canonical brand typography and navy", "51c2037 fix(ui): improve form accessibility semantics", "698ee49 fix(ui): normalize product language and residual tokens"]
+  },
+
+  "u3_ia_consistency_assertions": {
+    "context_model_reused_verbatim": true,
+    "onboarding_disposition_reused_verbatim": "CONFIRMED_TWO_PHASE_SEPARATION carried forward unchanged from RE-U3",
+    "nav_disposition_reused": "PORTFOLIO/TRUST/ORGANIZATION NAV_ACTIVE_NOW, MEASURE/REPORTS SUBNAV_ONLY, EVALUATE NAV_RESERVED_FOR_FUTURE_RUNTIME, STELLA CONTEXTUAL_ONLY — all match RE-U3 primary_navigation_disposition with no contradiction found",
+    "evaluate_target_status_reused": "FIRST_CLASS_TARGET_NODE / WAIT_FOR_WAVE3_CONTRACT, unchanged from RE-U3",
+    "portfolio_target_status_reused": "FIRST_CLASS_TARGET_NODE / PARTIAL runtime, unchanged from RE-U3",
+    "no_contradiction_between_u3_and_measured_u4_evidence": true
+  },
+
+  "new_hpo_questions": {
+    "count": 0,
+    "statement": "No two controlling frozen authorities were found in genuine conflict during this materialization. Every classification resolves by citing an existing RE-U0/RE-U1/RE-U3/FIB fact."
+  },
+
+  "no_runtime_change": {
+    "runtime_files_changed": 0,
+    "statement": "No route evidence found during this audit contradicted RE-U3. All identified gaps (SROI dead anchors, invitation-remediation UI absence, nav role-blindness) are recorded as target deltas, not fixed here."
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "files_changed_by_this_step": 1,
+    "executable_surface_changed": false,
+    "product_runtime_changes": 0,
+    "database_changes": 0,
+    "dependencies_added": 0,
+    "lockfile_changed": false,
+    "sealed_authority_bytes_changed": 0,
+    "protected_corpus_changed": false,
+    "new_product_authority_created": false,
+    "fib_owned_contracts_invented": 0,
+    "q1_q6_reopened": false
+  },
+
+  "state_after_this_artifact": {
+    "journey_artifact_created": true,
+    "ready_for_u1_f04_repair": true,
+    "lanes_started_by_this_step": "NONE",
+    "next_gate": "RE_U1_F04_REMEDIATION_LINK_REPAIR"
+  },
+
+  "final_state": "COMMERCIAL_V1_JOURNEYS_MATERIALIZED_READY_FOR_REMEDIATION_LINK_REPAIR"
+}

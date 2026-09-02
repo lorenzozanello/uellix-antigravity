@@ -2,9 +2,20 @@
 // Sprint 9B: Stella Gemini adapter - server-only, request/response, no streaming
 // Dynamic import of @google/genai ensures this stays server-side only (never bundled client)
 
+import { redactSecrets } from '@/lib/security/redact-secrets'
 import { stellaConfig } from '../config'
 import { StellaParseError, StellaGeminiError, StellaTimeoutError } from '../errors'
-import type { StellaRequest, StellaResponse, StellaMockProvider, StellaAdapterConfig } from './types'
+import { assertPromptWithinLimit } from '../security/payload-limits'
+import { redactProviderRequest } from '../security/redact-model-bound'
+import {
+  classifyProviderFailure,
+  emitProviderCallCompleted,
+  emitProviderCallFailed,
+  emitProviderCallStarted,
+  newProviderInvocationId,
+  type ProviderCallScope,
+} from './provider-call-log'
+import type { StellaRequest, StellaResponse, StellaMockProvider, StellaAdapterConfig, StellaProviderMetadata } from './types'
 
 export class StellaGeminiAdapter {
   private config: StellaAdapterConfig
@@ -15,6 +26,8 @@ export class StellaGeminiAdapter {
       apiKey: config?.apiKey || stellaConfig.geminiApiKey,
       model: config?.model || stellaConfig.geminiModel,
       timeoutMs: config?.timeoutMs || stellaConfig.requestTimeoutMs,
+      maxOutputTokens: config?.maxOutputTokens ?? stellaConfig.maxOutputTokens,
+      maxPromptChars: config?.maxPromptChars ?? stellaConfig.maxPromptChars,
       mockProvider: config?.mockProvider,
     }
 
@@ -28,26 +41,120 @@ export class StellaGeminiAdapter {
    * Returns raw string output — caller is responsible for parsing and validation.
    */
   async generate(request: StellaRequest): Promise<StellaResponse> {
+    // Central input cap — enforced BEFORE any provider (mock or real) so an
+    // oversized payload can never reach the model or count against quota.
+    assertPromptWithinLimit(request, this.config.maxPromptChars)
+
+    // F-GB-01: THE MODEL BOUNDARY.
+    //
+    // Every path to a provider — the four Stella server actions, the
+    // contextual advisor pipeline and the offline eval harness — reaches the
+    // network through this method, so this is the one place where "no personal
+    // data and no credential leaves the application" can be stated as a fact
+    // about the system rather than as a rule each caller has to remember.
+    //
+    // It sits AHEAD of the mockProvider branch deliberately. A test provider
+    // must observe exactly the bytes Google would observe; if this moved below
+    // the branch, every redaction assertion written against a mock would go
+    // quietly vacuous while the live path leaked.
+    const safeRequest = redactProviderRequest(request)
+
+    // A redaction token can be longer than the value it replaced, so the cap
+    // is re-checked against what actually egresses rather than only against
+    // what the caller submitted.
+    assertPromptWithinLimit(safeRequest, this.config.maxPromptChars)
+
     // Tests inject a mock provider — no real Gemini calls ever happen in tests
     if (this.mockProvider) {
-      return this.mockProvider.generate(request)
+      return this.mockProvider.generate(safeRequest)
     }
 
     if (!this.config.apiKey) {
       throw new Error('GEMINI_API_KEY is required but not configured')
     }
 
-    return this.generateWithTimeout(request, this.config.timeoutMs)
+    return this.generateWithTimeout(safeRequest, this.config.timeoutMs)
   }
 
   private async generateWithTimeout(request: StellaRequest, timeoutMs: number): Promise<StellaResponse> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
+    // G1-B — THE PROVIDER INVOCATION COUNTER (see ./provider-call-log.ts).
+    //
+    // Declared OUT HERE, before the try, so the catch below can tell two cases
+    // apart that would otherwise look identical: an error raised BEFORE the SDK
+    // was invoked (the dynamic import, the client constructor) and one raised
+    // by the invocation itself. Only the second may emit a `failed` event, or
+    // the started/failed pairing the cardinality contract rests on would drift.
+    let scope: ProviderCallScope | null = null
+    let invocationStartedAt = 0
+    // Once an invocation has emitted `completed` OR `failed` it is settled and
+    // must never emit again. Without this, the empty-`rawOutput` StellaParseError
+    // below — raised AFTER the provider answered — would fall into the catch and
+    // file a `failed` next to its own `completed`, putting one invocation at
+    // started=1, completed=1, failed=1.
+    let invocationSettled = false
+
     try {
       // Dynamic import keeps @google/genai out of the client bundle
       const { GoogleGenAI } = await import('@google/genai')
       const ai = new GoogleGenAI({ apiKey: this.config.apiKey })
+
+      // G1-M0: NO SAMPLING PARAMETERS IN THIS OBJECT.
+      //
+      // `temperature` used to sit between maxOutputTokens and the schema. It is
+      // gone, and `topP`/`topK` were never here. temperature/top_p/top_k are
+      // deprecated for Gemini 3.6 Flash and must be omitted from the request —
+      // omitted, not sent as null: @google/genai copies these fields under a
+      // `!= null` guard (dist/index.mjs, tGenerateContentConfig), so an absent
+      // key produces no key in the wire body, while an explicit null would.
+      //
+      // What remains is the whole determinism contract, and it is structural
+      // rather than statistical: the trusted system instruction, a JSON-only
+      // response type, a bounded output, the provider-side JSON schema when the
+      // caller supplies one, and the abort signal.
+      //
+      // ─────────────────────────────────────────────────────────────────────
+      // THINKING: NO `thinkingConfig`, AND THAT IS A MEASUREMENT DECISION.
+      //
+      // gemini-3.6-flash runs at thinking level `medium` BY DEFAULT. This is the
+      // model's stated contract, not a possibility — so the absence of
+      // `thinkingConfig` here does not mean "no thinking", it means "the target's
+      // own default, unmodified".
+      //
+      // It is left unset ON PURPOSE for G1-A: the first real canary must measure
+      // the natural behaviour of the stable target before anyone tunes it.
+      // Setting `minimal`/`low`/`high` now would mean certifying a configuration
+      // nobody has evidence about, which is the failure this gate exists to
+      // avoid.
+      //
+      // TWO CONSEQUENCES G1-A MUST OBSERVE, because both are real and neither is
+      // visible from here:
+      //   * thinking tokens count toward `maxOutputTokens` (4096), so a
+      //     thinking-heavy response can truncate the JSON. That path fails
+      //     CLOSED — empty or unparseable text becomes StellaParseError, the
+      //     ticket aborts and nothing is charged — but it fails.
+      //   * thinking tokens are BILLED AS OUTPUT (lib/stella/cost-model.ts,
+      //     assumption 4), so they are the expensive direction.
+      //
+      // Tuning `thinkingConfig` is a post-G1-A decision, taken against measured
+      // thoughtsTokenCount / finish reasons — never as a guess.
+      // ─────────────────────────────────────────────────────────────────────
+      // THE COUNTER'S EMISSION POINT, and its position is the soundness
+      // argument. `started` is emitted with NO `await` between it and the call
+      // below, which makes it a NECESSARY CONDITION of the invocation:
+      //   0 started  =>  0 invocations
+      // — the direction G1-B's negative block depends on. See
+      // `emitProviderCallStarted` for why emitting after the SDK returns its
+      // Promise would break that implication.
+      scope = {
+        invocationId: newProviderInvocationId(),
+        role: request.role,
+        requestedModel: this.config.model,
+      }
+      invocationStartedAt = Date.now()
+      emitProviderCallStarted(scope)
 
       const response = await ai.models.generateContent({
         model: this.config.model,
@@ -55,10 +162,26 @@ export class StellaGeminiAdapter {
         config: {
           systemInstruction: request.systemPrompt,
           responseMimeType: 'application/json',
+          maxOutputTokens: this.config.maxOutputTokens,
           ...(request.responseJsonSchema ? { responseJsonSchema: request.responseJsonSchema } : {}),
           abortSignal: controller.signal,
         },
       })
+
+      // H2: additive observability. Read-only projection of counts, ids and
+      // one enum — see StellaProviderMetadata for what may never go in here.
+      // Nothing in the product consumes this; it exists for the G1-A evidence
+      // package, and its absence changes no behaviour. Computed here, once, and
+      // shared with the completed event so the log and the response object
+      // cannot disagree about what the provider reported.
+      const providerMetadata = extractProviderMetadata(response)
+
+      // SETTLED HERE, before any of our own contract checks run. The provider
+      // ANSWERED; whether its answer satisfies us is a separate question with a
+      // separate failure, and conflating them would make `completed` mean
+      // "Stella was happy" instead of "the SDK returned".
+      invocationSettled = true
+      emitProviderCallCompleted(scope, providerMetadata, Date.now() - invocationStartedAt)
 
       const rawOutput = response.text ?? ''
       if (!rawOutput) {
@@ -72,8 +195,18 @@ export class StellaGeminiAdapter {
         modelUsed: this.config.model,
         tokensUsed: response.usageMetadata?.totalTokenCount,
         timestamp: new Date(),
+        providerMetadata,
       }
     } catch (error) {
+      // Only an invocation that STARTED and has not settled may file `failed`.
+      // Both guards are load-bearing: the first excludes errors from the import
+      // and the client constructor, the second excludes our own post-response
+      // contract checks. Nothing about the error is read except its category.
+      if (scope !== null && !invocationSettled) {
+        invocationSettled = true
+        emitProviderCallFailed(scope, classifyProviderFailure(error), Date.now() - invocationStartedAt)
+      }
+
       if (error instanceof StellaParseError) throw error
       if (error instanceof StellaGeminiError) throw error
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -90,7 +223,16 @@ export class StellaGeminiAdapter {
         role: request.role,
         ...buildGeminiErrorLog(error, this.config.apiKey),
       })
-      throw new StellaGeminiError(error instanceof Error ? error.message : String(error))
+      // F-GB-02: the message is redacted at CONSTRUCTION, not at each of the
+      // places that later read it. A provider error routinely echoes the
+      // failing request — the key in the query string of a 403, a bearer token
+      // from a proxy, the request body on a 400 — and this object then travels
+      // to `reportStellaFailure` (Sentry) and into server logs. Redacting here
+      // means every downstream consumer inherits it, including ones written
+      // after this line.
+      throw new StellaGeminiError(
+        redactSecrets(error instanceof Error ? error.message : String(error), [this.config.apiKey])
+      )
     } finally {
       clearTimeout(timeoutId)
     }
@@ -118,15 +260,87 @@ export class StellaGeminiAdapter {
 }
 
 /**
+ * H2 — project the provider response down to numbers, ids and one enum.
+ *
+ * An ALLOWLIST by construction: every field is named explicitly, so a future
+ * @google/genai release that starts returning thought text, headers or the echoed
+ * request cannot widen what this returns. Copying `usageMetadata` wholesale
+ * would not have that property.
+ *
+ * `usageAvailable` records whether the provider reported usage AT ALL, so a
+ * missing `thoughtsTokenCount` can be told apart from a reported zero — the
+ * difference between "the model did not think" and "we were not told".
+ */
+export function extractProviderMetadata(response: {
+  modelVersion?: string
+  responseId?: string
+  usageMetadata?: unknown
+  candidates?: Array<{ finishReason?: unknown }>
+}): StellaProviderMetadata {
+  const raw = response.usageMetadata
+  // `usageAvailable` means "the provider reported a usage OBJECT". A string, a
+  // number, an array, null or undefined are all "did not report" — and nothing
+  // is coerced out of them, because a coerced count is an invented measurement.
+  const usageAvailable = Boolean(raw) && typeof raw === 'object' && !Array.isArray(raw)
+  const usage = usageAvailable ? (raw as Record<string, unknown>) : {}
+  const finishReason = response.candidates?.[0]?.finishReason
+  return {
+    ...(typeof response.modelVersion === 'string' ? { modelVersion: response.modelVersion } : {}),
+    ...(typeof response.responseId === 'string' ? { responseId: response.responseId } : {}),
+    // The SDK types this as an enum whose members are strings; anything else is
+    // dropped rather than coerced.
+    ...(typeof finishReason === 'string' ? { finishReason } : {}),
+    usage: {
+      ...counter('promptTokenCount', usage.promptTokenCount),
+      ...counter('candidatesTokenCount', usage.candidatesTokenCount),
+      ...counter('thoughtsTokenCount', usage.thoughtsTokenCount),
+      ...counter('totalTokenCount', usage.totalTokenCount),
+      ...counter('cachedContentTokenCount', usage.cachedContentTokenCount),
+    },
+    usageAvailable,
+  }
+}
+
+/**
+ * Keep a token counter only if it is a real, non-negative, finite number.
+ *
+ * NaN, Infinity, -Infinity and negatives are DROPPED HERE rather than carried
+ * forward to die at the checkpoint. The failure modes differ and only one is
+ * acceptable: dropping loses a metric the provider never meaningfully reported,
+ * while carrying forward would abort the whole evidence commit for a run whose
+ * model behaviour was fine. Dropping also cannot be mistaken for a measurement
+ * — an absent key with `usageAvailable: true` reads as "not reported", which is
+ * exactly what it is.
+ */
+function counter(name: string, value: unknown): Record<string, number> {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? { [name]: value } : {}
+}
+
+/**
  * Extract a safe, structured summary of a Gemini/@google/genai error for
- * server-side logging. Redacts the API key so it never lands in logs.
+ * server-side logging.
+ *
+ * F-GB-02: this used to redact by splitting the message on the CONFIGURED key
+ * — `apiKey ? rawMessage.split(apiKey).join('[REDACTED]') : rawMessage`. Two
+ * holes, both load-bearing:
+ *
+ *   1. It defended against exactly one value. A Postgres DSN echoed by a
+ *      driver, a bearer token in a proxy's 401, a session cookie in a captured
+ *      header all passed through untouched.
+ *   2. When `apiKey` is the empty string — the mock-provider and test
+ *      configuration, and any misconfigured deployment — the ternary forwards
+ *      the RAW message. The redaction disappeared exactly when the
+ *      configuration was already wrong.
+ *
+ * Now the pattern rules decide, and the configured key is passed as one more
+ * known value on top of them rather than as the mechanism.
  */
 export function buildGeminiErrorLog(
   error: unknown,
   apiKey: string
 ): { status?: number; message: string } {
   const rawMessage = error instanceof Error ? error.message : String(error)
-  const message = apiKey ? rawMessage.split(apiKey).join('[REDACTED]') : rawMessage
+  const message = redactSecrets(rawMessage, [apiKey])
 
   const statusValue = (error as { status?: unknown } | null)?.status
   const status = typeof statusValue === 'number' ? statusValue : undefined

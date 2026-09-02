@@ -5,6 +5,7 @@ import { createOutcome, listOutcomes, setOutcomeMateriality } from '@/lib/pipeli
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction } from '@/lib/audit/logger';
+import { createDomainObjectVersion } from '@/lib/pipeline/domain-object-versions';
 
 // Mock auth context
 vi.mock('@/lib/auth/session', () => ({
@@ -16,6 +17,7 @@ vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
   AUDIT_ACTIONS: {
     ORGANIZATION_CREATED: 'organization_created',
+    OUTCOME_CREATED: 'outcome.created',
     OUTCOME_MATERIALITY_UPDATED: 'outcome.materiality_updated',
   },
 }));
@@ -23,6 +25,10 @@ vi.mock('@/lib/audit/logger', () => ({
 // Mock permissions
 vi.mock('@/lib/auth/permissions', () => ({
   hasRole: vi.fn(),
+}));
+
+vi.mock('@/lib/pipeline/domain-object-versions', () => ({
+  createDomainObjectVersion: vi.fn(),
 }));
 
 // Global mock configuration for DB queries
@@ -126,6 +132,9 @@ describe('Outcome service', () => {
     const result = await createOutcome('proj-1', input);
     expect(result.id).toBe('out-1');
     expect(logAuditAction).toHaveBeenCalled();
+    expect(createDomainObjectVersion).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: 'org-1', objectType: 'outcome', objectId: 'out-1', actorId: 'u1' })
+    );
   });
 
   it('rejects creation with unauthorized role', async () => {
@@ -335,9 +344,15 @@ describe('Outcome service', () => {
     expect(result.materialityRationale).toBe('Highest-priority outcome for this cohort.');
     expect(logAuditAction).toHaveBeenCalledWith(
       expect.objectContaining({
+        contentModifying: true,
         beforeJson: { materialityScore: null, materialityRationale: null },
         afterJson: { materialityScore: 5, materialityRationale: 'Highest-priority outcome for this cohort.' },
       })
+    );
+    // W1-05-RM1 R-6: the materiality change is versioned — never rewrites
+    // the object's prior lineage, only appends the next entry.
+    expect(createDomainObjectVersion).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: 'org-1', objectType: 'outcome', objectId: 'out-1', actorId: 'u1' })
     );
   });
 

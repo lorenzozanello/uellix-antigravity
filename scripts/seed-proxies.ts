@@ -16,12 +16,21 @@
 // humana obligatoria"), a human must explicitly approve each one via
 // /admin/proxies before it can be used in an SROI calculation.
 //
-// Usage: pnpm db:seed:proxies
+// Usage: pnpm db:seed:local:proxies
 // Requires: at least one user with is_super_admin = true already exists
 // (used as createdBy — the proxies table has a NOT NULL FK to users).
+//
+// LOCAL ONLY, FAIL-CLOSED. This script used to `import 'dotenv/config'` and
+// then `import { db }` from db/client, which resolved `DATABASE_URL` — so a
+// remote connection string in `.env` (or exported in the shell) silently made
+// `pnpm db:seed:proxies` write synthetic fixtures to a managed database. It
+// now resolves this worktree's pinned local stack through
+// `createLocalDatabaseClient`, which ignores `DATABASE_URL` entirely and runs
+// the `local_seed` capability guard before any socket is opened. There is no
+// flag, env var or argument that lets this script reach a remote target.
 
-import 'dotenv/config'
-import { db } from '../db/client'
+import { createLocalDatabaseClient } from '../db/client'
+import { describeError } from '../db/safety/redact-error'
 import { users, proxySources, financialProxies } from '../db/schema'
 import { eq, isNull, and } from 'drizzle-orm'
 
@@ -80,11 +89,17 @@ const PROXIES: SeedProxy[] = [
 ]
 
 async function main() {
+  const client = createLocalDatabaseClient({ capability: 'local_seed' })
+  const { db } = client
+  for (const warning of client.warnings) console.warn(`[seed-proxies] ${warning}`)
+  console.log(`[seed-proxies] ${client.decision.auditLine}`)
+
   const [admin] = await db.select().from(users).where(eq(users.isSuperAdmin, true)).limit(1)
   if (!admin) {
     console.error(
       '[seed-proxies] No user with is_super_admin = true found. Create one before running this script.'
     )
+    await client.close()
     process.exit(1)
   }
 
@@ -162,10 +177,11 @@ async function main() {
   }
 
   console.log('[seed-proxies] Done. Review and approve seeded proxies at /admin/proxies before use.')
+  await client.close()
   process.exit(0)
 }
 
 main().catch((err) => {
-  console.error('[seed-proxies] Failed:', err)
+  console.error('[seed-proxies] Failed:', describeError(err))
   process.exit(1)
 })

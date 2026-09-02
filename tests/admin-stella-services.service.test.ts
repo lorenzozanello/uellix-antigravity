@@ -5,6 +5,9 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 const mockDbData = vi.hoisted(() => ({
   orgs: [] as any[],
   usageCounts: {} as Record<string, number>,
+  // SUM(tokens_used) mock: drizzle's sum() returns string | null from the
+  // driver, so the mock stores it exactly like that.
+  tokenSums: {} as Record<string, string | null>,
   updated: {} as any,
   beforeOrg: null as any,
 }));
@@ -13,9 +16,14 @@ vi.mock('@/lib/auth/session', () => ({
   requireAdminAccess: vi.fn(),
 }));
 
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-  AUDIT_ACTIONS: { STELLA_SERVICE_UPDATED: 'stella_service.updated' },
+// The audit logger is NOT mocked any more, and the absence is the assertion:
+// since RR-CAP-10-A the definer writes the change and its audit row in one
+// transaction, so a `logAuditAction` call from this module would be a SECOND
+// row for one decision. If the import came back, this file would fail to
+// resolve it rather than quietly double-count.
+vi.mock('@/lib/admin/organization-administration', () => ({
+  callAdminSetStellaService: vi.fn(),
+  OrganizationAdministrationError: class extends Error {},
 }));
 
 vi.mock('@/lib/stella/quota', () => ({
@@ -49,12 +57,24 @@ vi.mock('@/db/client', () => {
                     cb(mockDbData.beforeOrg ? [mockDbData.beforeOrg] : [])
                   );
                 }
+                // The read-back after the definer call: same field shape as the
+                // list query, but reached through .where().
+                if (isOrgListQuery) {
+                  return Promise.resolve(
+                    cb(mockDbData.updated && 'id' in mockDbData.updated ? [mockDbData.updated] : [])
+                  );
+                }
                 if (isCountQuery) {
                   // organizationId isn't accessible here since `where` args aren't
                   // threaded through this mock; tests that need per-org usage counts
                   // use a single org id ('org-1') to keep this simple.
                   return Promise.resolve(
-                    cb([{ value: mockDbData.usageCounts['org-1'] ?? 0 }])
+                    cb([
+                      {
+                        value: mockDbData.usageCounts['org-1'] ?? 0,
+                        tokens: mockDbData.tokenSums['org-1'] ?? null,
+                      },
+                    ])
                   );
                 }
                 return Promise.resolve(cb([]));
@@ -75,12 +95,15 @@ vi.mock('@/db/client', () => {
 });
 
 import { listOrganizationsWithStellaUsage, updateOrganizationStellaService } from '@/lib/admin/stella-services';
+import { callAdminSetStellaService } from '@/lib/admin/organization-administration';
 import { requireAdminAccess } from '@/lib/auth/session';
+import { estimateCostUsd } from '@/lib/stella/cost-model';
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockDbData.orgs = [];
   mockDbData.usageCounts = {};
+  mockDbData.tokenSums = {};
   mockDbData.updated = {};
   mockDbData.beforeOrg = null;
 });
@@ -117,69 +140,126 @@ describe('listOrganizationsWithStellaUsage', () => {
 
     expect(result[0].usedThisMonth).toBe(25);
   });
+
+  it('aggregates tokensThisMonth from SUM(tokens_used) and derives estimatedCostUsd via the cost model', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue({} as any);
+    mockDbData.orgs = [{ id: 'org-1', name: 'Acme', stellaMonthlyQuota: 50, stellaPlanLabel: 'Pro' }];
+    mockDbData.usageCounts = { 'org-1': 3 };
+    // Drizzle SUM comes back as a string from the pg driver.
+    mockDbData.tokenSums = { 'org-1': '1000000' };
+
+    const result = await listOrganizationsWithStellaUsage();
+
+    expect(result[0].tokensThisMonth).toBe(1_000_000);
+    expect(result[0].estimatedCostUsd).toBeCloseTo(estimateCostUsd(1_000_000), 10);
+    expect(result[0].estimatedCostUsd).toBeGreaterThan(0);
+  });
+
+  it('reports 0 tokens and 0 cost when SUM(tokens_used) is null (no rows / all-null tokens)', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue({} as any);
+    mockDbData.orgs = [{ id: 'org-1', name: 'Acme', stellaMonthlyQuota: 0, stellaPlanLabel: null }];
+    mockDbData.usageCounts = { 'org-1': 0 };
+    mockDbData.tokenSums = { 'org-1': null };
+
+    const result = await listOrganizationsWithStellaUsage();
+
+    expect(result[0].tokensThisMonth).toBe(0);
+    expect(result[0].estimatedCostUsd).toBe(0);
+  });
 });
 
-describe('updateOrganizationStellaService', () => {
-  it('requires admin access and updates quota/label', async () => {
-    vi.mocked(requireAdminAccess).mockResolvedValue({ id: 'admin-1' } as any);
-    mockDbData.beforeOrg = { stellaMonthlyQuota: 50, stellaPlanLabel: 'Pro' };
-    mockDbData.updated = { id: 'org-1', stellaMonthlyQuota: 100, stellaPlanLabel: 'Enterprise' };
+const ORG = '11111111-1111-4111-8111-111111111111';
 
-    const result = await updateOrganizationStellaService('org-1', {
+describe('updateOrganizationStellaService', () => {
+  it('requires admin access and moves the quota through the capability, not the ORM', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue({ id: 'admin-1' } as any);
+    mockDbData.updated = { id: ORG, name: 'Acme', stellaMonthlyQuota: 100, stellaPlanLabel: 'Enterprise' };
+
+    const result = await updateOrganizationStellaService(ORG, {
       planLabel: 'Enterprise',
       monthlyQuota: 100,
     });
 
     expect(requireAdminAccess).toHaveBeenCalled();
+    // The point of RR-CAP-10-A: the write goes through the definer. Since
+    // stella_0011 the ORM cannot reach these columns at all, so a db.update()
+    // here would be refused by the ACL for every caller, super_admin included.
+    expect(callAdminSetStellaService).toHaveBeenCalledWith(ORG, {
+      monthlyQuota: 100,
+      planLabel: 'Enterprise',
+    });
     expect(result.stellaMonthlyQuota).toBe(100);
   });
 
-  it('accepts null monthlyQuota (unlimited)', async () => {
+  it('never issues a direct UPDATE on organizations', async () => {
     vi.mocked(requireAdminAccess).mockResolvedValue({ id: 'admin-1' } as any);
-    mockDbData.beforeOrg = { stellaMonthlyQuota: 0, stellaPlanLabel: null };
-    mockDbData.updated = { id: 'org-1', stellaMonthlyQuota: null, stellaPlanLabel: 'Internal' };
+    mockDbData.updated = { id: ORG, name: 'Acme', stellaMonthlyQuota: 10, stellaPlanLabel: 'Pro' };
 
-    const result = await updateOrganizationStellaService('org-1', {
+    const { db } = await import('@/db/client');
+    await updateOrganizationStellaService(ORG, { planLabel: 'Pro', monthlyQuota: 10 });
+
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('writes no audit row of its own: the definer already wrote one', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue({ id: 'admin-1' } as any);
+    mockDbData.updated = { id: ORG, name: 'Acme', stellaMonthlyQuota: 10, stellaPlanLabel: 'Pro' };
+
+    await updateOrganizationStellaService(ORG, { planLabel: 'Pro', monthlyQuota: 10 });
+
+    // Read from the module source rather than a spy: a spy can only prove the
+    // mock was not called, and the risk here is that somebody re-adds the
+    // import. This proves the call site is gone.
+    const { readFileSync } = await import('node:fs');
+    // Comments stripped first: this file's own prose EXPLAINS why the ORM call
+    // is gone, and a naive match would find the explanation and call it the
+    // defect. The assertion is about code, so it has to read code.
+    const src = readFileSync('lib/admin/stella-services.ts', 'utf8')
+      .split(String.fromCharCode(10))
+      .filter((l) => !l.trim().startsWith('*') && !l.trim().startsWith('//') && !l.trim().startsWith('/*'))
+      .join(String.fromCharCode(10));
+    expect(src).not.toMatch(/logAuditAction\(/);
+    expect(src).not.toMatch(/\.update\(organizations\)/);
+  });
+
+  it('accepts null monthlyQuota, which the runtime reads as unlimited', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue({ id: 'admin-1' } as any);
+    mockDbData.updated = { id: ORG, name: 'Acme', stellaMonthlyQuota: null, stellaPlanLabel: 'Internal' };
+
+    const result = await updateOrganizationStellaService(ORG, {
       planLabel: 'Internal',
       monthlyQuota: null,
     });
 
+    expect(callAdminSetStellaService).toHaveBeenCalledWith(ORG, {
+      monthlyQuota: null,
+      planLabel: 'Internal',
+    });
     expect(result.stellaMonthlyQuota).toBeNull();
   });
 
-  it('rejects a negative quota', async () => {
+  it('rejects a negative quota before reaching the capability', async () => {
     vi.mocked(requireAdminAccess).mockResolvedValue({ id: 'admin-1' } as any);
 
     await expect(
-      updateOrganizationStellaService('org-1', { planLabel: 'Bad', monthlyQuota: -5 })
+      updateOrganizationStellaService(ORG, { planLabel: 'Bad', monthlyQuota: -5 })
     ).rejects.toThrow();
+    expect(callAdminSetStellaService).not.toHaveBeenCalled();
   });
 
-  it('records both stellaMonthlyQuota and stellaPlanLabel in the before/after audit snapshot', async () => {
+  it('propagates the capability refusal for an organisation that does not exist', async () => {
     vi.mocked(requireAdminAccess).mockResolvedValue({ id: 'admin-1' } as any);
-    mockDbData.beforeOrg = { stellaMonthlyQuota: 50, stellaPlanLabel: 'Pro' };
-    mockDbData.updated = { id: 'org-1', stellaMonthlyQuota: 100, stellaPlanLabel: 'Enterprise' };
-
-    await updateOrganizationStellaService('org-1', {
-      planLabel: 'Enterprise',
-      monthlyQuota: 100,
-    });
-
-    const { logAuditAction } = await import('@/lib/audit/logger');
-    expect(logAuditAction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        beforeJson: { stellaMonthlyQuota: 50, stellaPlanLabel: 'Pro' },
-        afterJson: { stellaMonthlyQuota: 100, stellaPlanLabel: 'Enterprise' },
-      })
+    vi.mocked(callAdminSetStellaService).mockRejectedValueOnce(
+      new Error('Organization administration refused: stella service')
     );
-  });
 
-  it('throws "Organization not found" when the organization does not exist', async () => {
-    vi.mocked(requireAdminAccess).mockResolvedValue({ id: 'admin-1' } as any);
-    mockDbData.beforeOrg = null;
-
+    // Uniform refusal by design: "no such organisation" is indistinguishable
+    // from "you are not a super_admin", so this endpoint cannot enumerate ids.
     await expect(
-      updateOrganizationStellaService('org-missing', { planLabel: 'Pro', monthlyQuota: 100 })
-    ).rejects.toThrow('Organization not found');
+      updateOrganizationStellaService('99999999-9999-4999-8999-999999999999', {
+        planLabel: 'Pro',
+        monthlyQuota: 100,
+      })
+    ).rejects.toThrow('Organization administration refused');
   });
 });

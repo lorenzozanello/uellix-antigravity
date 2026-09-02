@@ -22,6 +22,27 @@ describe('decodeProviderSourceRefIndexes', () => {
       expect(() => decodeProviderSourceRefIndexes(raw(indexes), paths)).toThrow(ProviderSourceRefIndexesError)
     })
   }
+  // U8: duplicate indexes are deduplicated silently; cardinality is capped.
+  it('deduplicates repeated indexes silently while preserving first-seen order', () => {
+    const decoded = decodeProviderSourceRefIndexes(raw([1, 0, 1, 0, 0]), paths)
+    expect(decoded.findings[0].sourceFields).toEqual(['outcomesSnapshot[0].id', 'narrativeSummary'])
+    expect(decoded.suggestions[0].sourceFields).toEqual(['outcomesSnapshot[0].id', 'narrativeSummary'])
+  })
+
+  it('rejects more than 8 distinct source references per item', () => {
+    const manyPaths = Array.from({ length: 12 }, (_, index) => `outcomesSnapshot[${index}].id`)
+    const nine = Array.from({ length: 9 }, (_, index) => index)
+    expect(() => decodeProviderSourceRefIndexes(raw(nine), manyPaths)).toThrow(ProviderSourceRefIndexesError)
+    const eight = Array.from({ length: 8 }, (_, index) => index)
+    expect(decodeProviderSourceRefIndexes(raw(eight), manyPaths).findings[0].sourceFields).toHaveLength(8)
+  })
+
+  it('applies the cap to distinct references — duplicates beyond 8 raw entries still decode', () => {
+    const manyPaths = Array.from({ length: 12 }, (_, index) => `outcomesSnapshot[${index}].id`)
+    const duplicated = [0, 1, 2, 3, 0, 1, 2, 3, 0, 1] // 10 raw, 4 distinct
+    expect(decodeProviderSourceRefIndexes(raw(duplicated), manyPaths).findings[0].sourceFields).toHaveLength(4)
+  })
+
   it('rejects provider sourceFields and additional properties', () => {
     expect(() => decodeProviderSourceRefIndexes({ ...raw([]), sourceFields: [] }, paths)).toThrow()
     expect(() => decodeProviderSourceRefIndexes({ ...raw([]), findings: [{ ...raw([]).findings[0], sourceFields: [] }] }, paths)).toThrow()

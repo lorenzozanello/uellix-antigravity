@@ -4,8 +4,9 @@
 
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { logAuditAction } from '@/lib/audit/logger';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
+import { requireOrganizationAccess, type OrganizationContext } from '@/lib/auth/session';
+import { isInReviewSet, canApproveRunMethodology, type Role } from '@/lib/auth/permissions';
 import {
   sroiCalculationRuns,
   sroiCalculationLineItems,
@@ -14,9 +15,18 @@ import {
   sroiReports,
   sroiReportSections,
   projects,
+  evidenceItems,
+  outcomeProxyAssignments,
 } from '@/db/schema';
+import { getLatestSufficiencyDeterminationsByOutcomeIds } from '@/lib/pipeline/evidence-sufficiency';
 import { z } from 'zod';
 import { getVariantSectionTypes } from '@/lib/reports/report-variants';
+import {
+  buildReportNumericAuthority,
+  validateReportNarrativeAuthority,
+  type ReportNumericAuthority,
+  type NarrativeReferenceAuthority,
+} from '@/lib/stella/schemas/composer-numeric-guard';
 
 // ---------------------------------------------------------------------------
 // Helper schemas
@@ -67,6 +77,115 @@ async function authorizeProject(projectId: string) {
     .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)));
   if (proj.length === 0) throw new Error('Project not found or not owned');
   return ctx;
+}
+
+// ---------------------------------------------------------------------------
+// CL-1 (MSC-02 HIGH-1) — report narrative numeric authority
+//
+// Every material numeric claim in persisted/locked report narrative must
+// validate server-side against the calculation snapshot belonging to THE RUN
+// THIS REPORT IS PINNED TO (report.calculationRunId) — never "whatever run
+// happens to be latest for the project", and never merely because the
+// Composer's own guard once approved a draft: a human can edit the text
+// freely (or type it from scratch) after that point. This is checked again
+// both when a section is saved and, independently, right before a report is
+// locked (content may have changed again since it was last saved-and-valid).
+// ---------------------------------------------------------------------------
+
+type PinnedReportRun = typeof sroiCalculationRuns.$inferSelect;
+
+async function getPinnedReportRun(
+  ctx: { organization: { id: string } },
+  report: { calculationRunId: string; projectId: string },
+): Promise<PinnedReportRun | null> {
+  return db
+    .select()
+    .from(sroiCalculationRuns)
+    .where(
+      and(
+        eq(sroiCalculationRuns.id, report.calculationRunId),
+        eq(sroiCalculationRuns.projectId, report.projectId),
+        eq(sroiCalculationRuns.organizationId, ctx.organization.id),
+      )
+    )
+    .then((rows) => rows[0] ?? null);
+}
+
+function getReportNumericAuthority(run: PinnedReportRun | null): ReportNumericAuthority {
+  if (!run) return buildReportNumericAuthority({});
+  const money: unknown[] = [run.totalInvestment, run.grossSocialValue, run.netSocialValue];
+  const percentages: unknown[] = [];
+  const sroiRatios: unknown[] = [run.sroiRatio];
+  const snapshot = run.snapshotJson;
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+    return buildReportNumericAuthority({ money, percentages, sroiRatios });
+  }
+  const snapshotRecord = snapshot as Record<string, unknown>;
+  money.push(snapshotRecord.unattributedNsvUsd);
+
+  const funders = snapshotRecord.fundersBreakdown;
+  if (Array.isArray(funders)) {
+    for (const funder of funders) {
+      if (!funder || typeof funder !== 'object' || Array.isArray(funder)) continue;
+      const row = funder as Record<string, unknown>;
+      money.push(row.investmentUsd, row.attributedNsvUsd);
+      sroiRatios.push(row.sroiRatio);
+    }
+  }
+
+  const assignments = snapshotRecord.assignments;
+  if (Array.isArray(assignments)) {
+    for (const assignment of assignments) {
+      if (!assignment || typeof assignment !== 'object' || Array.isArray(assignment)) continue;
+      const filters = (assignment as Record<string, unknown>).filters;
+      if (!filters || typeof filters !== 'object' || Array.isArray(filters)) continue;
+      const filterRecord = filters as Record<string, unknown>;
+      percentages.push(
+        filterRecord.deadweightPct,
+        filterRecord.attributionPct,
+        filterRecord.displacementPct,
+        filterRecord.dropoffPct,
+      );
+    }
+  }
+  return buildReportNumericAuthority({ money, percentages, sroiRatios });
+}
+
+async function getReportNarrativeReferenceAuthority(
+  ctx: { organization: { id: string } },
+  report: { calculationRunId: string; projectId: string },
+  pinnedRun: PinnedReportRun | null,
+): Promise<NarrativeReferenceAuthority> {
+  const evidence = await db
+    .select({ id: evidenceItems.id })
+    .from(evidenceItems)
+    .where(and(
+      eq(evidenceItems.projectId, report.projectId),
+      eq(evidenceItems.organizationId, ctx.organization.id),
+    ));
+  const snapshot = pinnedRun?.snapshotJson as Record<string, unknown> | null | undefined;
+  const assignments = snapshot?.assignments as Array<{ proxyId?: unknown }> | undefined;
+
+  return {
+    evidenceIds: evidence.map((item) => item.id),
+    proxyIds: (assignments ?? [])
+      .map((assignment) => assignment.proxyId)
+      .filter((proxyId): proxyId is string => typeof proxyId === 'string'),
+  };
+}
+
+/**
+ * Single deterministic report-boundary decision shared by save and lock. Its
+ * inputs are already derived on the server from the pinned run and project;
+ * callers never accept a client-provided snapshot or reference allowlist.
+ */
+function validateSectionNarrativeIntegrity(
+  title: string,
+  content: string,
+  numericAuthority: ReportNumericAuthority,
+  referenceAuthority: NarrativeReferenceAuthority,
+) {
+  return validateReportNarrativeAuthority({ title, content, numericAuthority, referenceAuthority });
 }
 
 // ---------------------------------------------------------------------------
@@ -167,10 +286,146 @@ export async function compareCalculationRuns(projectId: string, runIdA: string, 
 // 3. Methodological Reviews
 // ---------------------------------------------------------------------------
 
+/**
+ * FIBIU-29 (FIBC-041) / W1-05-RM1 R-5 — the single shared segregation-of-duties
+ * enforcement point for both the CREATE and UPDATE paths into an 'approved'
+ * review, so the invariant cannot drift between the two call sites the way it
+ * did before this remediation (createSroiRunReview never checked it at all).
+ *
+ * No-op unless targetStatus === 'approved'. Evaluates two DISTINCT invariants:
+ *
+ *   I1 — canApproveRunMethodology(actorRole, actorIsRunAuthor) must be true.
+ *        The ACTOR performing this call must not be the run's own author.
+ *   I2 — the resulting row must never have reviewer_id = run.calculated_by.
+ *        The REVIEW's own reviewerId field (who it is attributed to as
+ *        reviewer) must not equal the run's author, independent of who the
+ *        current actor is — updateSroiRunReview lets any review-set member
+ *        approve a review row that was created (and reviewer-attributed) by
+ *        someone else, so I1 alone cannot see this case.
+ *
+ * On denial, the FIBIU-29→FIBIU-28 governed denial event is written and
+ * awaited BEFORE the throw (FIBC-040 fail-closed): if the audit write itself
+ * fails, that exception propagates and the approval is rejected regardless.
+ */
+async function assertRunMethodologyApprovalAllowed(params: {
+  ctx: OrganizationContext
+  projectId: string
+  calculationRunId: string
+  targetStatus: string | undefined
+  reviewerId: string | undefined
+  path: 'create' | 'update'
+  beforeJson?: Record<string, unknown>
+}): Promise<void> {
+  const { ctx, projectId, calculationRunId, targetStatus, reviewerId, path, beforeJson } = params
+  if (targetStatus !== 'approved') return
+
+  const run = await db
+    .select({ calculatedBy: sroiCalculationRuns.calculatedBy })
+    .from(sroiCalculationRuns)
+    .where(
+      and(
+        eq(sroiCalculationRuns.id, calculationRunId),
+        eq(sroiCalculationRuns.projectId, projectId),
+        eq(sroiCalculationRuns.organizationId, ctx.organization.id)
+      )
+    );
+  const runAuthorUserId = run[0]?.calculatedBy ?? null;
+  const actorIsRunAuthor = runAuthorUserId !== null && runAuthorUserId === ctx.user.id;
+  const actorRole = ctx.membership.role as Role;
+
+  const i1Ok = canApproveRunMethodology(actorRole, actorIsRunAuthor);
+  const i2Ok = reviewerId === undefined || runAuthorUserId === null || reviewerId !== runAuthorUserId;
+  if (i1Ok && i2Ok) return;
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'sroi_calculation_run',
+    entityId: calculationRunId,
+    action: AUDIT_ACTIONS.SROI_CALCULATION_RUN_METHODOLOGY_APPROVAL_DENIED,
+    contentModifying: false,
+    reason:
+      'canApproveRunMethodology denegado (FIBC-041 / V-04): el aprobador no puede ser el autor de la corrida',
+    ...(beforeJson ? { beforeJson } : {}),
+    afterJson: {
+      deniedPermission: 'canApproveRunMethodology',
+      attemptedStatus: 'approved',
+      calculationRunId,
+      runAuthorUserId,
+      attemptedReviewerId: reviewerId ?? null,
+      actorRole,
+      path,
+      violatedInvariant: !i1Ok ? 'I1' : 'I2',
+    },
+  });
+
+  throw new Error('A reviewer cannot approve the methodology of their own run');
+}
+
+/**
+ * FIBIU-06 (FIBC-008) — "approval eligibility additionally requires ... an
+ * explicit human determination per monetized outcome". The existing
+ * "≥1 non-rejected evidence" gate (lib/pipeline/sroi-calculation.ts) is
+ * retained unchanged as the minimum for preliminary work; THIS is the hard
+ * block, at run-review approval, the same call-site shape as
+ * assertRunMethodologyApprovalAllowed. No-op unless targetStatus ===
+ * 'approved'. "Monetized" is approximated, as it already is at readiness,
+ * by an active proxy assignment — FIBIU-12's formal monetization
+ * disposition (FIBDB-009) is a later Wave 2 unit this one hard-depends on
+ * FIBIU-04 only, not FIBIU-12.
+ *
+ * W2-B1-R3 (R-B1-04, M-1) — FIBDB-014: "Per monetized outcome per run".
+ * calculationRunId is REQUIRED and is the run actually being approved
+ * (the review's own calculationRunId, never inferred). The lookup below is
+ * bound to that exact run — a determination made for a different run can
+ * never satisfy this approval, even for the same outcome.
+ */
+async function assertEvidenceSufficiencyForApproval(params: {
+  projectId: string;
+  calculationRunId: string;
+  targetStatus: string | undefined;
+}): Promise<void> {
+  const { projectId, calculationRunId, targetStatus } = params;
+  if (targetStatus !== 'approved') return;
+
+  const assignments = await db
+    .select({ outcomeId: outcomeProxyAssignments.outcomeId })
+    .from(outcomeProxyAssignments)
+    .where(
+      and(eq(outcomeProxyAssignments.projectId, projectId), eq(outcomeProxyAssignments.assignmentStatus, 'active'))
+    );
+  const activeOutcomeIds = [...new Set(assignments.map((a) => a.outcomeId))];
+  if (activeOutcomeIds.length === 0) return;
+
+  const [approvedEvidenceRows, determinationsByOutcome] = await Promise.all([
+    db
+      .select({ outcomeId: evidenceItems.outcomeId })
+      .from(evidenceItems)
+      .where(and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.status, 'approved'), inArray(evidenceItems.outcomeId, activeOutcomeIds))),
+    getLatestSufficiencyDeterminationsByOutcomeIds(activeOutcomeIds, calculationRunId),
+  ]);
+  const outcomesWithApprovedEvidence = new Set(approvedEvidenceRows.map((r) => r.outcomeId));
+
+  const undetermined: string[] = [];
+  for (const outcomeId of activeOutcomeIds) {
+    const determination = determinationsByOutcome.get(outcomeId);
+    const hasApprovedEvidence = outcomesWithApprovedEvidence.has(outcomeId);
+    if (!hasApprovedEvidence || !determination || determination.determination !== 'sufficient') {
+      undetermined.push(outcomeId);
+    }
+  }
+
+  if (undetermined.length > 0) {
+    throw new Error(
+      `EVIDENCE_SUFFICIENCY_UNDETERMINED: ${undetermined.length} monetized outcome(s) lack ≥1 approved evidence and/or a sufficient human determination`
+    );
+  }
+}
+
 export async function createSroiRunReview(projectId: string, runId: string, input: ReviewInput) {
   const ctx = await authorizeProject(projectId);
-  const allowed = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
-  if (!allowed.includes(ctx.membership.role)) throw new Error('Insufficient role to create review');
+  if (!isInReviewSet(ctx.membership.role as Role)) throw new Error('Insufficient role to create review');
 
   const run = await db
     .select()
@@ -185,6 +440,17 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
   if (run.length === 0) throw new Error('Run not found');
 
   const validated = ReviewInputSchema.parse(input);
+
+  await assertRunMethodologyApprovalAllowed({
+    ctx,
+    projectId,
+    calculationRunId: runId,
+    targetStatus: validated.status,
+    reviewerId: ctx.user.id,
+    path: 'create',
+  });
+  await assertEvidenceSufficiencyForApproval({ projectId, calculationRunId: runId, targetStatus: validated.status });
+
   const inserted = await db
     .insert(sroiRunReviews)
     .values({
@@ -203,10 +469,11 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_run_review',
     entityId: inserted[0].id,
-    action: 'sroi_run_review.created',
+    action: AUDIT_ACTIONS.SROI_RUN_REVIEW_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   });
   return inserted[0];
@@ -214,8 +481,7 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
 
 export async function updateSroiRunReview(projectId: string, reviewId: string, input: ReviewInput) {
   const ctx = await authorizeProject(projectId);
-  const allowed = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
-  if (!allowed.includes(ctx.membership.role)) throw new Error('Insufficient role to update review');
+  if (!isInReviewSet(ctx.membership.role as Role)) throw new Error('Insufficient role to update review');
 
   const review = await db
     .select()
@@ -231,6 +497,22 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
   if (review[0].status === 'archived') throw new Error('Cannot modify archived review');
 
   const validated = ReviewInputSchema.parse(input);
+
+  await assertRunMethodologyApprovalAllowed({
+    ctx,
+    projectId,
+    calculationRunId: review[0].calculationRunId,
+    targetStatus: validated.status,
+    reviewerId: review[0].reviewerId,
+    path: 'update',
+    beforeJson: { id: review[0].id, status: review[0].status, reviewerId: review[0].reviewerId },
+  });
+  await assertEvidenceSufficiencyForApproval({
+    projectId,
+    calculationRunId: review[0].calculationRunId,
+    targetStatus: validated.status,
+  });
+
   const updated = await db
     .update(sroiRunReviews)
     .set({
@@ -246,10 +528,13 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_run_review',
     entityId: reviewId,
-    action: 'sroi_run_review.updated',
+    action: AUDIT_ACTIONS.SROI_RUN_REVIEW_UPDATED,
+    contentModifying: true,
+    beforeJson: review[0] as unknown as Record<string, unknown>,
     afterJson: updated[0] as unknown as Record<string, unknown>,
   });
   return updated[0];
@@ -257,8 +542,7 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
 
 export async function upsertSroiRunReviewItem(projectId: string, reviewId: string, input: ReviewItemInput) {
   const ctx = await authorizeProject(projectId);
-  const allowed = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
-  if (!allowed.includes(ctx.membership.role)) throw new Error('Insufficient role to upsert review item');
+  if (!isInReviewSet(ctx.membership.role as Role)) throw new Error('Insufficient role to upsert review item');
 
   const review = await db
     .select()
@@ -315,10 +599,14 @@ export async function upsertSroiRunReviewItem(projectId: string, reviewId: strin
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_run_review_item',
     entityId: result[0].id,
-    action: 'sroi_run_review_item.upserted',
+    action: AUDIT_ACTIONS.SROI_RUN_REVIEW_ITEM_UPSERTED,
+    ...(existing.length > 0
+      ? { contentModifying: true, beforeJson: existing[0] as unknown as Record<string, unknown> }
+      : {}),
     afterJson: result[0] as unknown as Record<string, unknown>,
   });
   return result[0];
@@ -405,10 +693,11 @@ export async function createReportDraftFromRun(projectId: string, runId: string,
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_report',
     entityId: report[0].id,
-    action: 'sroi_report.created',
+    action: AUDIT_ACTIONS.SROI_REPORT_CREATED,
     afterJson: report[0] as unknown as Record<string, unknown>,
   });
   return report[0];
@@ -465,6 +754,40 @@ export async function updateReportSection(projectId: string, reportId: string, s
   if (report[0].status === 'locked') throw new Error('Report is locked');
 
   const validated = ReportSectionInputSchema.parse(input);
+
+  // CL-1C — the persisted content itself must be checked against the
+  // report's PINNED run: a human can freely edit the text after any
+  // Composer-time check ran (or type it from scratch, never touching
+  // Composer at all). Pure computation only — no AI, no network, no
+  // auto-correction; a violation refuses the write outright.
+  const pinnedRun = await getPinnedReportRun(ctx, report[0]);
+  const authority = getReportNumericAuthority(pinnedRun);
+  const referenceAuthority = await getReportNarrativeReferenceAuthority(ctx, report[0], pinnedRun);
+  const integrity = validateSectionNarrativeIntegrity(
+    validated.title,
+    validated.content ?? '',
+    authority,
+    referenceAuthority,
+  );
+  if (!integrity.numeric.ok) {
+    throw new Error(
+      'El contenido de la sección contiene cifras que no coinciden con la corrida de cálculo del reporte.'
+    );
+  }
+  if (!integrity.references.ok) {
+    throw new Error(
+      'El contenido de la sección contiene referencias que no coinciden con la autoridad del reporte.'
+    );
+  }
+
+  // FIBC-040 — the prior section state must be retained so the update can be
+  // reconstructed; this SELECT existed nowhere in this function before.
+  const existingSection = await db
+    .select()
+    .from(sroiReportSections)
+    .where(and(eq(sroiReportSections.id, sectionId), eq(sroiReportSections.reportId, reportId)));
+  if (existingSection.length === 0) throw new Error('Report section not found for this report');
+
   const updated = await db
     .update(sroiReportSections)
     .set({
@@ -480,16 +803,35 @@ export async function updateReportSection(projectId: string, reportId: string, s
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_report_section',
     entityId: sectionId,
-    action: 'sroi_report_section.updated',
+    action: AUDIT_ACTIONS.SROI_REPORT_SECTION_UPDATED,
+    contentModifying: true,
+    beforeJson: existingSection[0] as unknown as Record<string, unknown>,
     afterJson: updated[0] as unknown as Record<string, unknown>,
   });
   return updated[0];
 }
 
-export async function lockReportDraft(projectId: string, reportId: string) {
+export interface LockReportAttestation {
+  /**
+   * CL-1E (MSC-02 HIGH-1/HR-01) — the lock action must be an explicit human
+   * attestation that the CURRENT narrative was reviewed, not an automatic
+   * consequence of the calculation review being approved. There is no
+   * separate approval entity/table for this: the durable record of a
+   * successful attested transition is the existing lockedBy/lockedAt pair
+   * this function already sets once the lock actually goes through.
+   */
+  narrativeReviewed: boolean;
+}
+
+export async function lockReportDraft(
+  projectId: string,
+  reportId: string,
+  attestation: LockReportAttestation,
+) {
   const ctx = await authorizeProject(projectId);
   const allowed = ['super_admin', 'organization_admin', 'impact_manager'];
   if (!allowed.includes(ctx.membership.role)) throw new Error('Insufficient role to lock report');
@@ -506,6 +848,10 @@ export async function lockReportDraft(projectId: string, reportId: string) {
     );
   if (report.length === 0) throw new Error('Report not found');
   if (report[0].status === 'locked') throw new Error('Report already locked');
+
+  if (!attestation?.narrativeReviewed) {
+    throw new Error('Cannot lock: explicit narrative review attestation is required');
+  }
 
   // Human-review gate: a report cannot be finalized (locked/"audit-ready")
   // unless the calculation run it is built on carries an approved methodological
@@ -524,6 +870,38 @@ export async function lockReportDraft(projectId: string, reportId: string) {
     throw new Error('Cannot lock: the calculation run has no approved methodological review');
   }
 
+  // CL-1D — re-validate every CURRENTLY PERSISTED section against the
+  // report's pinned run before allowing the lock. A section may have passed
+  // updateReportSection's guard at save time and been edited again since (a
+  // second draft cycle, a direct DB fixup, a legacy row from before CL-1C
+  // existed) — the lock is the last point this can be caught before the
+  // content becomes the audit-anchored, hash-verifiable artifact.
+  const pinnedRun = await getPinnedReportRun(ctx, report[0]);
+  const authority = getReportNumericAuthority(pinnedRun);
+  const referenceAuthority = await getReportNarrativeReferenceAuthority(ctx, report[0], pinnedRun);
+  const sections = await db
+    .select()
+    .from(sroiReportSections)
+    .where(eq(sroiReportSections.reportId, reportId));
+  for (const section of sections) {
+    const integrity = validateSectionNarrativeIntegrity(
+      section.title ?? '',
+      section.content ?? '',
+      authority,
+      referenceAuthority,
+    );
+    if (!integrity.numeric.ok) {
+      throw new Error(
+        `Cannot lock: section "${section.title}" contains figures that do not match the report's calculation run.`
+      );
+    }
+    if (!integrity.references.ok) {
+      throw new Error(
+        `Cannot lock: section "${section.title}" references do not match the report's authority.`
+      );
+    }
+  }
+
   const locked = await db
     .update(sroiReports)
     .set({
@@ -539,10 +917,12 @@ export async function lockReportDraft(projectId: string, reportId: string) {
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_report',
     entityId: reportId,
-    action: 'sroi_report.locked',
+    action: AUDIT_ACTIONS.SROI_REPORT_LOCKED,
+    beforeJson: report[0] as unknown as Record<string, unknown>,
     afterJson: locked[0] as unknown as Record<string, unknown>,
   });
   return locked[0];

@@ -1,0 +1,10 @@
+{
+  "generatedBy": "pnpm b0:status:write — do not hand-edit; this file is derived from the observation",
+  "observationArtefact": "artifacts/hosted-b0-observation.json",
+  "observationPresent": true,
+  "projectRef": "bvyzblhqymxruxdguaee",
+  "checkCount": 18,
+  "passedCount": 18,
+  "checkpointPassed": true,
+  "failing": []
+}

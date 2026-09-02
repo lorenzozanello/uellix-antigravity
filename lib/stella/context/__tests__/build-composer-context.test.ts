@@ -30,6 +30,10 @@ const mockReport = {
   id: MOCK_REPORT_ID,
   organizationId: MOCK_ORG_ID,
   projectId: MOCK_PROJECT_ID,
+  // CL-1A — the report is pinned to a specific calculation run; the composer
+  // context builder must derive calculationSnapshot from THIS id, not from
+  // "latest calculated run for the project".
+  calculationRunId: 'run-001',
 }
 
 const mockNarrative = {
@@ -74,6 +78,16 @@ const mockEvidenceItems = [
     outcomeId: null,
     indicatorId: null,
   },
+]
+
+// FIBIU-05 (FIBC-007, W2-B1-R2) — buildComposerContext now looks up each
+// evidence item's current sensitivity classification and excludes anything
+// not explicitly 'non_sensitive'. Both classified here so existing
+// assertions keep exercising the same pre-R2 behavior; a dedicated test
+// below covers exclusion.
+const mockEvidenceVersions = [
+  { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+  { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
 ]
 
 const mockAssignments = [
@@ -134,6 +148,29 @@ function makeChain(resolvedValue: unknown) {
   return chain
 }
 
+// Walks a drizzle-orm condition tree (eq/and/inArray) and pulls out every
+// literal value it compares against — used below (CL-1A) to prove the
+// calc-run query filters by the report's PINNED calculationRunId rather than
+// "latest for project". Same shape as the equivalent helper in
+// tests/sroi-results.service.test.ts.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractEqValues(val: any): string[] {
+  if (!val) return []
+  if (typeof val === 'string') return [val]
+  if (Array.isArray(val)) return val.flatMap(extractEqValues)
+  const res: string[] = []
+  if (val.value !== undefined) {
+    if (typeof val.value === 'string') res.push(val.value)
+    else if (Array.isArray(val.value)) res.push(...val.value.flatMap(extractEqValues))
+    else res.push(...extractEqValues(val.value))
+  }
+  if (val.right !== undefined) res.push(...extractEqValues(val.right))
+  if (val.left !== undefined) res.push(...extractEqValues(val.left))
+  if (Array.isArray(val.conditions)) res.push(...val.conditions.flatMap(extractEqValues))
+  if (Array.isArray(val.queryChunks)) res.push(...val.queryChunks.flatMap(extractEqValues))
+  return res
+}
+
 // ---------------------------------------------------------------------------
 // Helper: set up full mock sequence for a successful composer context build
 // Query order matches buildComposerContext implementation exactly:
@@ -158,6 +195,9 @@ async function setupFullMockSequence(opts: {
   withCalcRun?: boolean
   withReview?: boolean
   sectionsRows?: typeof mockSections
+  stakeholderRows?: Array<{ id: string; type?: string | null }>
+  narrativeRow?: typeof mockNarrative
+  evidenceVersionRows?: typeof mockEvidenceVersions
 } = {}) {
   const {
     projectRow = mockProject,
@@ -165,6 +205,9 @@ async function setupFullMockSequence(opts: {
     withCalcRun = true,
     withReview = true,
     sectionsRows = mockSections,
+    stakeholderRows = mockStakeholders,
+    narrativeRow = mockNarrative,
+    evidenceVersionRows = mockEvidenceVersions,
   } = opts
 
   const { db } = await import('@/db/client')
@@ -173,11 +216,12 @@ async function setupFullMockSequence(opts: {
   const chain = selectMock
     .mockReturnValueOnce(makeChain([projectRow]) as never)                                       // 1. project
     .mockReturnValueOnce(makeChain([reportRow]) as never)                                        // 2. report
-    .mockReturnValueOnce(makeChain([mockNarrative]) as never)                                    // 3. narrative
-    .mockReturnValueOnce(makeChain(mockStakeholders) as never)                                   // 4. stakeholders
+    .mockReturnValueOnce(makeChain([narrativeRow]) as never)                                     // 3. narrative
+    .mockReturnValueOnce(makeChain(stakeholderRows) as never)                                    // 4. stakeholders
     .mockReturnValueOnce(makeChain(mockOutcomes) as never)                                       // 5. outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                                     // 6. indicators
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)                                  // 7. evidence
+    .mockReturnValueOnce(makeChain(evidenceVersionRows) as never)                                // 7b. evidence sensitivity (FIBIU-05)
     .mockReturnValueOnce(makeChain(mockAssignments) as never)                                    // 8. proxy assignments
     .mockReturnValueOnce(makeChain([{ id: 'src-1', name: 'HACT Database' }]) as never)          // 9. source
     .mockReturnValueOnce(makeChain(mockFilterSets) as never)                                     // 10. filter sets
@@ -359,6 +403,30 @@ describe('buildComposerContext', () => {
       expect(json).not.toContain('snapshotJson')
       expect(json).not.toContain('snapshot_json')
     })
+
+    // -----------------------------------------------------------------------
+    // CL-1A (MSC-02 HIGH-1) — the calc-run query must filter by the report's
+    // PINNED calculationRunId, never "latest calculated run for the project".
+    // -----------------------------------------------------------------------
+    it("CL-1A: queries the calculation run by the report's pinned calculationRunId", async () => {
+      const pinnedReport = { ...mockReport, calculationRunId: 'run-PINNED-001' }
+      await setupFullMockSequence({ reportRow: pinnedReport })
+      const { db } = await import('@/db/client')
+      const selectMock = vi.mocked(db.select)
+
+      await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+
+      // Query order (see setupFullMockSequence's numbered comment): the
+      // calc-run query is call #12 → index 11 (shifted by one since the
+      // FIBIU-05 evidence-sensitivity lookup was inserted as step 7b).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const calcRunChain = selectMock.mock.results[11]!.value as any
+      const whereArg = calcRunChain.where.mock.calls[0][0]
+      expect(extractEqValues(whereArg)).toContain('run-PINNED-001')
+      // No more "latest for project" ordering — filtering by a unique id
+      // already returns at most one row.
+      expect(calcRunChain.orderBy).not.toHaveBeenCalled()
+    })
   })
 
   // -------------------------------------------------------------------------
@@ -412,6 +480,31 @@ describe('buildComposerContext', () => {
       expect(ev?.contentHashTruncated?.length).toBe(8)
     })
 
+    // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01, NC-1/NC-3) — sensitive evidence
+    // must never enter the composer's Stella context by the mere fact of
+    // being linked; unclassified evidence is excluded the same way.
+    it('excludes evidence classified as sensitive from evidenceMetadata and evidenceTotal', async () => {
+      await setupFullMockSequence({
+        evidenceVersionRows: [
+          { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'personal_data' },
+          { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+        ],
+      })
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+
+      expect(ctx.evidenceTotal).toBe(1)
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-1')).toBeUndefined()
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-2')).toBeDefined()
+    })
+
+    it('excludes unclassified evidence — no version row is never treated as an implicit pass', async () => {
+      await setupFullMockSequence({ evidenceVersionRows: [] })
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+
+      expect(ctx.evidenceTotal).toBe(0)
+      expect(ctx.evidenceMetadata).toHaveLength(0)
+    })
+
     it('includes readinessScore from latest review', async () => {
       await setupFullMockSequence({ withReview: true })
       const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
@@ -451,6 +544,38 @@ describe('buildComposerContext', () => {
       const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
 
       expect(ctx.organizationId).toBe(MOCK_ORG_ID)
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // WS3c U1 (RK-08): sensitive-populations flag propagation
+  // -------------------------------------------------------------------------
+  describe('Sensitive populations flag (RK-08)', () => {
+    it('is present and false for non-sensitive metadata', async () => {
+      await setupFullMockSequence()
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+      expect(ctx.sensitivePopulations).toEqual({ detected: false, categories: [] })
+    })
+
+    it('flags refugees/displaced from a stakeholder group type', async () => {
+      await setupFullMockSequence({
+        stakeholderRows: [{ id: 'sh-1', type: 'población desplazada' }],
+      })
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('refugees_displaced')
+    })
+
+    it('flags minors from the narrative text', async () => {
+      await setupFullMockSequence({
+        narrativeRow: {
+          narrativeText: 'Programa de nutrición para niños de primera infancia.',
+          theoryOfChangeSummary: '',
+        },
+      })
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('minors')
     })
   })
 })

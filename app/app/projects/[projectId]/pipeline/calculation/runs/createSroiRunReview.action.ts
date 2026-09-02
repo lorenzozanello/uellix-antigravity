@@ -3,6 +3,7 @@
 
 import { z } from 'zod';
 import { createSroiRunReview } from '@/lib/pipeline/sroi-results';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { revalidatePath } from 'next/cache';
 
 const ReviewInputSchema = z.object({
@@ -15,7 +16,9 @@ export async function createSroiRunReviewAction(projectId: string, runId: string
   if (!parsed.success) {
     throw new Error('Invalid review payload');
   }
-  const result = await createSroiRunReview(projectId, runId, parsed.data);
+  const result = await runWithOrganizationAccess(() =>
+    createSroiRunReview(projectId, runId, parsed.data)
+  );
   // Revalidate UI path that shows reviews (if any)
   revalidatePath(`/app/projects/${projectId}/pipeline/calculation`);
   return result;

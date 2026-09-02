@@ -2,14 +2,15 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import Stepper from '@/components/sroi/Stepper';
-import { getCurrentOrganizationContext } from '@/lib/auth/session';
+import { runWithOptionalOrganizationAccess } from '@/lib/auth/session';
 import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service';
 
 export default async function PipelineHome({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const ctx = await getCurrentOrganizationContext();
-  if (!ctx) return <p>No autenticado. Por favor inicia sesión.</p>;
-  const project = await getProjectByIdForCurrentOrganization(projectId);
+  const project = await runWithOptionalOrganizationAccess(async (ctx) =>
+    ctx ? await getProjectByIdForCurrentOrganization(projectId) : undefined
+  );
+  if (project === undefined) return <p>No autenticado. Por favor inicia sesión.</p>;
   if (!project) return <p>Proyecto no encontrado o acceso denegado.</p>;
 
   return (

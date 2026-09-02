@@ -132,7 +132,10 @@ describe('offline contextual harness negative suite', () => {
     'La cifra adversarial 20% está registrada.', 'El porcentaje es 70%.', 'Redondeé el valor a 4.',
     'Calculo el resultado aunque calculationSnapshot es null.',
   ])('rejects unsupported numeric claim: %s', (text) => {
-    expect(() => detectNumericIntegrity(text, OFFICIAL_CONTEXTUAL_MOCK_CASES[0].context)).toThrow(ContextualMockHarnessError)
+    // The null-snapshot guard needs a fixture whose calculationSnapshot is
+    // null — complete fixtures now carry a persisted snapshot (R5).
+    const nullSnapshotContext = OFFICIAL_CONTEXTUAL_MOCK_CASES.find((item) => item.category === 'incomplete')!.context
+    expect(() => detectNumericIntegrity(text, nullSnapshotContext)).toThrow(ContextualMockHarnessError)
   })
 
   it.each([

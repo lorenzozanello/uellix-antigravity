@@ -1,8 +1,12 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { AuthContextError } from '@/lib/auth/database-context'
+import { rethrowNextControlFlow } from '@/lib/errors/next-control-flow'
 import { revalidatePath } from 'next/cache'
 import { createGlobalProxySource, createGlobalFinancialProxy, updateGlobalProxyReviewStatus, setGlobalProxyManualFxRate } from '@/lib/admin/proxies'
+import { requireAdminAccess } from '@/lib/auth/session'
+import { withSuperAdminDatabaseContext } from '@/lib/auth/database-context'
 
 const PROXIES_PATH = '/admin/proxies'
 
@@ -31,9 +35,19 @@ export async function createGlobalProxySourceAction(formData: FormData) {
 
   if (!name) redirect(`${PROXIES_PATH}?error=invalid_input`)
 
+  await requireAdminAccess()
+
   try {
-    await createGlobalProxySource({ name, description, url })
-  } catch {
+    await withSuperAdminDatabaseContext(() =>
+      createGlobalProxySource({ name, description, url })
+    )
+  } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${PROXIES_PATH}?error=not_authorized`)
     redirect(`${PROXIES_PATH}?error=invalid_input`)
   }
 
@@ -53,16 +67,26 @@ export async function createGlobalFinancialProxyAction(formData: FormData) {
     redirect(`${PROXIES_PATH}?error=invalid_input`)
   }
 
+  await requireAdminAccess()
+
   try {
-    await createGlobalFinancialProxy({
-      sourceId,
-      name,
-      currency,
-      value,
-      unit,
-      referenceYear: Number(referenceYearRaw),
-    })
-  } catch {
+    await withSuperAdminDatabaseContext(() =>
+      createGlobalFinancialProxy({
+        sourceId,
+        name,
+        currency,
+        value,
+        unit,
+        referenceYear: Number(referenceYearRaw),
+      })
+    )
+  } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${PROXIES_PATH}?error=not_authorized`)
     redirect(`${PROXIES_PATH}?error=invalid_input`)
   }
 
@@ -73,12 +97,23 @@ export async function createGlobalFinancialProxyAction(formData: FormData) {
 export async function updateGlobalProxyReviewStatusAction(formData: FormData) {
   const proxyId = formData.get('proxyId') as string | null
   const status = formData.get('status') as string | null
+  const expectedApprovalState = formData.get('expectedApprovalState') as string | null
 
-  if (!proxyId || !status) redirect(`${PROXIES_PATH}?error=invalid_input`)
+  if (!proxyId || !status || (status === 'approved' && !expectedApprovalState)) redirect(`${PROXIES_PATH}?error=invalid_input`)
+
+  await requireAdminAccess()
 
   try {
-    await updateGlobalProxyReviewStatus(proxyId, status)
+    await withSuperAdminDatabaseContext(() =>
+      updateGlobalProxyReviewStatus(proxyId, status, expectedApprovalState ?? undefined)
+    )
   } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${PROXIES_PATH}?error=not_authorized`)
     const message = err instanceof Error ? err.message : 'unknown_error'
     redirect(`${PROXIES_PATH}?error=${errorToSlug(message)}`)
   }
@@ -91,12 +126,23 @@ export async function setGlobalProxyManualFxRateAction(formData: FormData) {
   const proxyId = formData.get('proxyId') as string | null
   const rateToUsd = (formData.get('rateToUsd') as string | null)?.trim()
   const source = (formData.get('source') as string | null)?.trim()
+  const expectedApprovalState = formData.get('expectedApprovalState') as string | null
 
-  if (!proxyId || !rateToUsd || !source) redirect(`${PROXIES_PATH}?error=invalid_input`)
+  if (!proxyId || !rateToUsd || !source || !expectedApprovalState) redirect(`${PROXIES_PATH}?error=invalid_input`)
+
+  await requireAdminAccess()
 
   try {
-    await setGlobalProxyManualFxRate(proxyId, { rateToUsd, source })
+    await withSuperAdminDatabaseContext(() =>
+      setGlobalProxyManualFxRate(proxyId, { rateToUsd, source }, expectedApprovalState)
+    )
   } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${PROXIES_PATH}?error=not_authorized`)
     const message = err instanceof Error ? err.message : 'unknown_error'
     redirect(`${PROXIES_PATH}?error=${errorToSlug(message)}`)
   }
@@ -107,13 +153,22 @@ export async function setGlobalProxyManualFxRateAction(formData: FormData) {
 
 export async function promoteProxyToGlobalAction(formData: FormData) {
   const proxyId = formData.get('proxyId') as string | null
+  const expectedApprovalState = formData.get('expectedApprovalState') as string | null
 
-  if (!proxyId) redirect(`${PROXIES_PATH}?error=invalid_input`)
+  if (!proxyId || !expectedApprovalState) redirect(`${PROXIES_PATH}?error=invalid_input`)
+
+  await requireAdminAccess()
 
   try {
     const { promoteProxyToGlobal } = await import('@/lib/admin/proxies')
-    await promoteProxyToGlobal(proxyId)
+    await withSuperAdminDatabaseContext(() => promoteProxyToGlobal(proxyId, expectedApprovalState))
   } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${PROXIES_PATH}?error=not_authorized`)
     const message = err instanceof Error ? err.message : 'unknown_error'
     redirect(`${PROXIES_PATH}?error=${errorToSlug(message)}`)
   }

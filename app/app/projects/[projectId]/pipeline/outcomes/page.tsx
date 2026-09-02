@@ -1,11 +1,14 @@
 // app/app/projects/[projectId]/pipeline/outcomes/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaContextualAdvisorPanel } from '@/components/stella';
+// Server-only config read (READ-ONLY module) — availability passed as prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { listCatalogsWithCodes, listOutcomeMappingsForProject } from '@/lib/taxonomies/service';
+import { listFundersForCurrentOrganization } from '@/lib/pipeline/funders';
 import { OutcomeTaxonomyMapper } from '@/components/taxonomy/OutcomeTaxonomyMapper';
 import { fetchOutcomes, addOutcome, updateOutcomeMateriality } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { fetchStakeholders } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
@@ -76,14 +79,26 @@ const TEXTAREA_CLASS =
 
 export default async function OutcomesPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const { membership } = await requireOrganizationAccess();
-  const outcomes = await fetchOutcomes(projectId) as OutcomeRow[];
-  const stakeholders = await fetchStakeholders(projectId) as StakeholderRow[];
-  const [catalogs, allMappings] = await Promise.all([
-    listCatalogsWithCodes(),
-    listOutcomeMappingsForProject(projectId),
-  ]);
+  const { membership, outcomes, stakeholders, catalogs, allMappings, funders } =
+    await runWithOrganizationAccess(async ({ membership }) => {
+      const [catalogs, allMappings, fundersData] = await Promise.all([
+        listCatalogsWithCodes(),
+        listOutcomeMappingsForProject(projectId),
+        listFundersForCurrentOrganization(),
+      ]);
+      return {
+        membership,
+        outcomes: (await fetchOutcomes(projectId)) as OutcomeRow[],
+        stakeholders: (await fetchStakeholders(projectId)) as StakeholderRow[],
+        catalogs,
+        allMappings,
+        funders: fundersData.map((f) => ({ id: f.id, name: f.name })),
+      };
+    });
   const canMapTaxonomy = hasRole(membership.role, 'analyst');
+  // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;
   const mappingsByOutcome = new Map<string, typeof allMappings>();
   for (const m of allMappings) {
     const list = mappingsByOutcome.get(m.outcomeId) ?? [];
@@ -100,7 +115,14 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Resultados" highlightHint={!outcomes?.length} />
+      {/* U3: outcomes are a list of records with per-row edit forms — no
+          single apply target, so apply offers copy-to-clipboard. */}
+      <StellaContextualAdvisorPanel
+        projectId={projectId}
+        step="outcomes"
+        enabled={stellaAdvisorEnabled}
+        title="Stella — Asesoría contextual (Resultados)"
+      />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="outcomes" title="Revisión metodológica — Resultados" />
       )}
@@ -176,6 +198,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
                   <OutcomeAllocationWrapper
                     outcomeId={o.id}
                     projectId={projectId}
+                    funders={funders}
                   />
                   <OutcomeTaxonomyMapper
                     projectId={projectId}

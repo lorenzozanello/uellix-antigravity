@@ -1,0 +1,59 @@
+{
+  "trainId": "STELLA_TRAIN_5C2",
+  "measuredOn": "2026-08-07",
+  "measuredBy": "operator, manually, psql over the staging connection intended for PHASE_BASELINE",
+  "targetProjectRef": "bvyzblhqymxruxdguaee",
+  "identity": "psql apply identity — DISTINCT from the SQL Editor identity measured in 5C1. The two files are kept separate on purpose; neither result overwrites the other.",
+  "observed": {
+    "current_user": "postgres",
+    "session_user": "postgres",
+    "transaction_read_only": "on",
+    "is_member": false,
+    "inherits_privileges": false,
+    "can_set_role": false
+  },
+  "transactionReadOnlyNote": "RESOLVED 2026-08-07 (Train 5C2, capability-probe closure). The value was originally recorded UNCONFIRMED because the operator did not retain it from the probe output; it was neither inferred to be 'on' nor asserted to be false. The operator has now supplied it: transaction_read_only = on. The earlier UNCONFIRMED is left described rather than erased, because deleting it would delete the evidence that the gate refused an unretained value rather than guessing at it.",
+  "setLocalRole": {
+    "attempted": false,
+    "reason": "can_set_role = false refutes the branch by catalogue. Attempting an operation the grant forbids would teach nothing the catalogue has not already said."
+  },
+  "verdict": {
+    "branch": "B — SET_ROLE_PATH_REJECTED",
+    "basis": "MEMBER=false, USAGE=false, SET=false — no membership in any grade. PostgreSQL 16 split membership into three independent privileges; all three are absent, so there is no reading under which the SET ROLE path exists.",
+    "notRequiresRehearsal": "The catalogue answered. This is refutation, not an unknown."
+  },
+  "separateEarlierEvidence": {
+    "identity": "Supabase SQL Editor",
+    "file": "2026-08-07-uellix-staging.json",
+    "canCreateTriggerOnAuthUsers": true,
+    "ownsStorageObjects": false,
+    "evidenceBucketExists": false,
+    "note": "Never merge with the psql results above. Different identities, different questions."
+  },
+  "stillUnknown": [
+    "Whether the SQL Editor identity can CREATE POLICY on storage.objects. Its ownsStorageObjects probe also returned FALSE, and its current_user was never captured — so it may be the same postgres role, in which case Branch C collapses too.",
+    "transaction_read_only for the apply identity."
+  ],
+  "constraintsHonoured": [
+    "no DDL, no DML",
+    "no SET ROLE attempted",
+    "no GRANT, no ALTER OWNER",
+    "no service_role, no BYPASSRLS",
+    "no baseline applied, no bucket created, no sentinel written",
+    "no access to the production project",
+    "no provider calls"
+  ],
+  "queries": [
+    "BEGIN READ ONLY;",
+    "SELECT current_user, session_user, version(), current_setting('transaction_read_only');",
+    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER') AS is_member, pg_has_role(current_user, 'supabase_storage_admin', 'USAGE')  AS inherits_privileges, pg_has_role(current_user, 'supabase_storage_admin', 'SET')    AS can_set_role;",
+    "ROLLBACK;"
+  ],
+  "queriesProvenance": "REGISTERED 2026-08-07 on operator instruction: these are the literal statements executed for this probe, per docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md §2. This is an operator ATTESTATION that the specified block is the block that ran. It was deliberately NOT recorded earlier: the loader must never compose the expected text on the operator’s behalf, because the criterion that reads it exists to establish that the specified query was the one executed.",
+  "connectionHost": "aws-0-us-east-2.pooler.supabase.com",
+  "connectionHostProvenance": "Supplied by the operator 2026-08-07. HOSTNAME ONLY — no user, no password, no connection string, no token. This is the Supabase Session Pooler host, which is REGIONAL and shared across projects: the project ref lives in the pooler USERNAME (postgres.<ref>), not in the host. It therefore records WHERE the probe connected but cannot corroborate WHICH project — see connectionHostCorroborationNote.",
+  "connectionHostCorroborationNote": "target-identity-corroborated needs a second signal INDEPENDENT of the declaration. A pooler host cannot be it: aws-0-us-east-2.pooler.supabase.com is regional and shared, so every project in us-east-2 presents it. The Session Pooler puts the ref in the LOGIN ROLE instead — postgres.<ref> — and that is what actually routes the connection, which makes it a stronger second signal than the host, not a weaker one. It is a USERNAME: no password, no token, and the ref inside it is public.",
+  "poolerUser": "postgres.bvyzblhqymxruxdguaee",
+  "poolerUserProvenance": "Supplied by the operator 2026-08-07. LOGIN ROLE ONLY — a username. No password, no connection string, no host embedded, no token, no key. The ref inside it is public: it appears in every URL the project serves. projectRefFromPoolerUser refuses any value containing : @ / or whitespace rather than parsing around it, so a pasted DSN is rejected instead of stored.",
+  "poolerUserBearing": "THE SECOND INDEPENDENT SIGNAL. The pooler host aws-0-us-east-2.pooler.supabase.com is regional and shared — every project in us-east-2 presents it — so it names no project. The Session Pooler puts the ref in the LOGIN ROLE instead, and that is what actually routes the connection, which makes it a stronger corroboration than the host rather than a weaker one. It is independent of the DECLARATION, which is the only property signal 2 needs."
+}

@@ -11,7 +11,7 @@ import { z } from 'zod'
 import { requireOrganizationAccess, getCurrentOrganizationContext } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
 import { type Role } from '@/lib/auth/roles'
-import { logAuditAction } from '@/lib/audit/logger'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 
 export const PLACEHOLDER_FUNDER_NAME = 'Financiador no especificado'
 
@@ -64,7 +64,7 @@ export async function createFunderForCurrentOrganization(input: CreateFunderInpu
     actorUserId: user.id,
     entityType: 'funder',
     entityId: inserted[0].id,
-    action: 'funder.created',
+    action: AUDIT_ACTIONS.FUNDER_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   })
   return inserted[0]
@@ -90,7 +90,7 @@ export async function createFunder(name: string, funderType: typeof FUNDER_TYPES
     actorUserId: ctx.user.id,
     entityType: 'funder',
     entityId: inserted[0].id,
-    action: 'funder.created',
+    action: AUDIT_ACTIONS.FUNDER_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   })
   return inserted[0]

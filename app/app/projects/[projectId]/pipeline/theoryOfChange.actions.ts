@@ -11,13 +11,14 @@ import {
   createLink,
   archiveLink,
 } from '@/lib/pipeline/theory-of-change';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 
 export async function fetchToCNodes(projectId: string) {
-  return listNodesForProject(projectId);
+  return runWithOrganizationAccess(() => listNodesForProject(projectId));
 }
 
 export async function fetchToCLinks(projectId: string) {
-  return listLinksForProject(projectId);
+  return runWithOrganizationAccess(() => listLinksForProject(projectId));
 }
 
 export async function createToCNodeAction(formData: FormData) {
@@ -26,13 +27,15 @@ export async function createToCNodeAction(formData: FormData) {
   const outcomeId = (formData.get('outcomeId') as string | null) || undefined;
   const title = formData.get('title') as string;
   const description = (formData.get('description') as string | null) || undefined;
-  return createNode(projectId, { nodeType, outcomeId, title, description });
+  return runWithOrganizationAccess(() =>
+    createNode(projectId, { nodeType, outcomeId, title, description })
+  );
 }
 
 export async function archiveToCNodeAction(formData: FormData) {
   const projectId = formData.get('projectId') as string;
   const nodeId = formData.get('nodeId') as string;
-  return archiveNode(projectId, nodeId);
+  return runWithOrganizationAccess(() => archiveNode(projectId, nodeId));
 }
 
 export async function createToCLinkAction(formData: FormData) {
@@ -40,11 +43,13 @@ export async function createToCLinkAction(formData: FormData) {
   const fromNodeId = formData.get('fromNodeId') as string;
   const toNodeId = formData.get('toNodeId') as string;
   const assumption = (formData.get('assumption') as string | null) || undefined;
-  return createLink(projectId, { fromNodeId, toNodeId, assumption });
+  return runWithOrganizationAccess(() =>
+    createLink(projectId, { fromNodeId, toNodeId, assumption })
+  );
 }
 
 export async function archiveToCLinkAction(formData: FormData) {
   const projectId = formData.get('projectId') as string;
   const linkId = formData.get('linkId') as string;
-  return archiveLink(projectId, linkId);
+  return runWithOrganizationAccess(() => archiveLink(projectId, linkId));
 }

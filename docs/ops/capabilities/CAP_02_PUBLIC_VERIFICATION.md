@@ -1,0 +1,654 @@
+# CAP-02 — Verificación pública de reporte mediante hash
+
+**Estado:** DISEÑO. No aplicado. No habilitado.
+**Paquete:** `db/prepared/stella_0007_public_verification_capability.sql`
+**Rollback:** `db/prepared/stella_0007_rollback.sql`
+**Modelo común:** [`../DATABASE_CAPABILITY_MODEL.md`](../DATABASE_CAPABILITY_MODEL.md)
+
+---
+
+## 1. Inventario del flujo actual (FASE 2)
+
+| Aspecto | Realidad medida |
+|---|---|
+| Entry points | `app/(public)/verify/[hash]/page.tsx` y `app/(public)/verify/[hash]/pdf/route.ts` |
+| Actor | Visitante anónimo — típicamente un auditor, financiador o regulador |
+| Autenticación | **Ninguna**. No hay sesión, no hay `auth.uid()` |
+| Información disponible | Sólo el hash, en la ruta |
+| Contexto de BD | Ninguno: `getPublicVerifiedReport` llama a `db` sin abrir contexto |
+| Tablas consultadas | `sroi_reports`, `projects`, `organizations`, `sroi_calculation_runs`, `sroi_report_sections`, `evidence_items`, `methodology_review_matrix`, + catálogos de taxonomías |
+| Tablas modificadas | Ninguna |
+| Servicios llamados | Ninguno |
+| Efectos externos | Ninguno |
+| Respuesta actual | `notFound()` / 404 — porque la consulta devuelve cero filas |
+| **Por qué falla cerrado hoy** | Las cuatro tablas del `innerJoin` tienen policies `SELECT` acotadas por membresía y **ninguna policy anónima**. Como `uellix_app` llega sin claims, `current_user_org_ids()` es vacío y el `SELECT` devuelve cero filas. El comentario del módulo lo describe con exactitud: *el modelo se implementó en la aplicación y no lo hacía cumplir nada más, porque la conexión saltaba RLS*. |
+
+### 1.1 El problema real no es que esté cerrado — es lo que devolvería si se abriera
+
+`getPublicVerifiedReport` no devuelve una vista pública. Devuelve, para
+cualquiera que tenga el hash:
+
+* **la fila completa** de `sroi_reports` (incluidos `created_by`, `updated_by`,
+  `locked_by` — tres UUID de personas — y `summary`, que es texto interno);
+* **la fila completa** de `projects`;
+* **la fila completa** de `organizations` (incluidos `stripe_customer_id`,
+  `stripe_subscription_id`, `stella_monthly_quota` — datos de facturación);
+* **la fila completa** de `sroi_calculation_runs`;
+* **todas** las secciones del reporte;
+* **todos los `evidence_items` del PROYECTO** — no del reporte: del proyecto
+  entero, incluida evidencia que nunca formó parte de ningún reporte publicado;
+* la matriz de revisión metodológica y los cruces de taxonomías.
+
+Y el PDF público (`/verify/[hash]/pdf`) renderiza el manifiesto de evidencia,
+el rastro FX, los line items y los anexos por variante.
+
+> Restaurar esta capacidad "como estaba" sería la peor de las cinco decisiones
+> posibles en este diseño. **Que hoy esté rota es una suerte.**
+
+Por eso CAP-02 no es "devolver el acceso": es **rediseñar qué significa
+verificar públicamente**.
+
+---
+
+## 2. Actor y frontera de confianza
+
+```
+   Visitante anónimo (auditor, financiador, regulador, buscador)
+   ─────────────────────────────────────────────  frontera 1: HTTP
+   Runtime Next.js
+     · rate limit por IP
+     · sin sesión, sin identidad
+   ─────────────────────────────────────────────  frontera 2: conexión SQL
+   uellix_app  (sin claims)
+     · EXECUTE sobre verify_report(text) y record_verification_hit(text)
+   ─────────────────────────────────────────────  frontera 3: SECURITY DEFINER
+   uellix_cap_verification   (NOLOGIN, cero miembros)
+     · SELECT por columna sobre 3-4 tablas. Cero acceso a evidence_items.
+```
+
+La frontera 1 **no aporta identidad**. Toda la seguridad de CAP-02 vive en las
+fronteras 2 y 3: qué función existe, y qué columnas puede leer su definer.
+
+---
+
+## 3. La capability es el hash — y eso obliga a dos cambios
+
+El hash de verificación es un **bearer token**: quien lo tiene, lee. Ese modelo
+es correcto para un certificado que se comparte en un informe anual. Pero
+implica dos cosas que hoy no se cumplen:
+
+### 3.1 Estar `locked` no puede ser suficiente
+
+Hoy la condición es `status = 'locked'`. Bloquear un reporte es un acto
+**interno** — significa "esto ya no se edita" —, no un acto de publicación.
+Convertir "no se edita" en "el mundo puede leerlo" es un salto que nadie ha
+autorizado explícitamente.
+
+**El diseño introduce un acto de publicación separado y auditado:**
+
+```
+public.report_public_disclosures
+  report_id        uuid PRIMARY KEY REFERENCES public.sroi_reports(id)
+  approved_by      uuid NOT NULL REFERENCES public.users(id)
+  approved_at      timestamptz NOT NULL DEFAULT now()
+  revoked_at       timestamptz                       -- despublicar sin borrar
+  public_summary   text                              -- redactado para publicar
+  revoked_by       uuid REFERENCES public.users(id)  -- fijado a auth.uid() por policy
+  show_organization_name  boolean NOT NULL DEFAULT false
+  show_report_title       boolean NOT NULL DEFAULT false
+  show_headline_ratio     boolean NOT NULL DEFAULT false
+  show_totals             boolean NOT NULL DEFAULT false
+  show_issued_on          boolean NOT NULL DEFAULT false   -- ronda 2
+  show_report_variant     boolean NOT NULL DEFAULT false   -- ronda 2
+  disclosure_version      integer NOT NULL DEFAULT 1
+```
+
+**Sin fila → no verificable.** Con fila pero `revoked_at IS NOT NULL` → no
+verificable. Cada campo visible es un booleano que alguien tuvo que poner en
+`true`. **Los seis** nacen en `false`: el defecto es no publicar nada.
+
+**Son seis, no cuatro, y la diferencia es el hallazgo de la segunda ronda
+adversarial.** `issued_on` y `report_variant` se devolvían
+**incondicionalmente** mientras la cabecera del paquete afirmaba que todo campo
+visible estaba detrás de un booleano. La fecha de bloqueo de un reporte privado
+es una divulgación, y cuál de las tres variantes —*funder*, *methodological*,
+*audit*— se produjo también lo es. Añadir los dos booleanos fue la corrección;
+que el gate estático siguiera iterando **cuatro** nombres es la razón por la que
+un `DEFAULT true` en cualquiera de los dos nuevos habría pasado desapercibido.
+Ese punto ciego está cerrado por construcción, no contando hasta seis: el gate
+`cap02-flag-count` **deriva** la lista de columnas `show_*` del propio
+`CREATE TABLE` y la compara con `DISCLOSURE_FLAGS`, de modo que un séptimo
+booleano —con `DEFAULT true` o sin él— es una violación en cuanto aparece
+(mutación N-38). Y `cap02-flag-honoured` exige, **por columna**, que
+`verify_report` publique cada valor detrás de su `CASE WHEN d.<flag>`: fijar el
+DEFAULT no dice nada sobre si alguien lo lee (mutación N-39).
+
+Esto convierte la pregunta "¿qué se muestra?" (DP-CAP-04, DP-CAP-05) de una
+decisión de código a un dato por reporte, que además queda auditado.
+
+### 3.2 El PDF público no puede seguir existiendo tal cual
+
+`/verify/[hash]/pdf` llama a la misma función y renderiza el reporte completo.
+Con el diseño nuevo esa llamada devolvería sólo la disclosure, con lo que el
+PDF quedaría vacío de casi todo. **DP-CAP-06** decide entre retirarlo (defecto
+propuesto) o reconstruirlo sobre los campos publicados. Mientras no se decida,
+la ruta debe devolver 404 incondicionalmente.
+
+---
+
+## 4. Las dos RPC
+
+Dos funciones y no una, y la separación es deliberada.
+
+### 4.1 Lectura
+
+```
+uellix_capability.verify_report(p_hash text)
+  RETURNS TABLE (
+    verified              boolean,
+    organization_name     text,      -- NULL si show_organization_name = false
+    report_title          text,      -- NULL si show_report_title = false
+    public_summary        text,      -- NULL si no se redactó
+    issued_on             date,      -- fecha, NO timestamp
+    report_variant        text,
+    disclosure_version    integer,
+    headline_ratio        numeric,   -- NULL salvo show_headline_ratio
+    total_investment      numeric,   -- NULL salvo show_totals
+    net_social_value      numeric,   -- NULL salvo show_totals
+    currency              text       -- NULL salvo show_totals
+  )
+  LANGUAGE sql
+  SECURITY DEFINER
+  STABLE
+  SET search_path = ''
+```
+
+`STABLE` y `LANGUAGE sql`, no `plpgsql`. Las dos elecciones son sustantivas:
+
+* **`STABLE`** hace que PostgreSQL rechace cualquier escritura dentro de la
+  función. El camino de lectura pública es **estructuralmente** incapaz de
+  escribir; no depende de que nadie añada un `INSERT` por descuido más
+  adelante. Es la misma clase de garantía que el
+  `default_transaction_read_only` del script de auditoría.
+* **`LANGUAGE sql`** con un único `SELECT` significa que no hay ramas, ni
+  variables, ni bucles. El cuerpo entero es inspeccionable de un vistazo, y no
+  hay ningún camino de **error** que pueda diferir de otro: la función no
+  contiene un solo `RAISE`.
+
+  Lo que esto **no** hace es igualar el tiempo. Un plan compartido no es una
+  cantidad de trabajo compartida: un hash inexistente se corta en el índice
+  único y nunca sondea los otros dos. Se registra como **RR-CAP-02-E**, con la
+  misma severidad y el mismo tratamiento que RR-CAP-01-A en CAP-01 — sería
+  incoherente registrar allí una diferencia de una consulta y negar aquí una
+  equivalente.
+
+El cuerpo:
+
+```
+SELECT
+  true,
+  CASE WHEN d.show_organization_name THEN o.name END,
+  CASE WHEN d.show_report_title      THEN r.title END,
+  d.public_summary,
+  (r.locked_at AT TIME ZONE 'UTC')::date,
+  r.report_variant,
+  d.disclosure_version,
+  CASE WHEN d.show_headline_ratio THEN run.sroi_ratio END,
+  CASE WHEN d.show_totals THEN run.total_investment END,
+  CASE WHEN d.show_totals THEN run.net_social_value END,
+  CASE WHEN d.show_totals THEN run.currency END
+FROM public.sroi_reports r
+JOIN public.report_public_disclosures d ON d.report_id = r.id
+JOIN public.organizations o ON o.id = r.organization_id
+LEFT JOIN public.sroi_calculation_runs run ON run.id = r.calculation_run_id
+WHERE r.verification_hash = p_hash
+  AND r.status = 'locked'
+  AND d.revoked_at IS NULL
+```
+
+**Cero filas** cuando el hash no existe, cuando el reporte no está `locked`,
+cuando no hay disclosure, o cuando la disclosure está revocada. Los cuatro
+casos son **indistinguibles**: el llamante recibe un conjunto vacío y el
+endpoint responde 404. Eso no es una convención de la aplicación — es el
+resultado del `JOIN`.
+
+`issued_on` es **`date`, no `timestamp`**. Un `locked_at` con precisión de
+microsegundos es un identificador casi único que permite correlacionar dos
+reportes verificados por separado ("estos dos se bloquearon en el mismo
+segundo, luego son de la misma organización"). La fecha basta para el propósito
+— fechar el certificado — y no correlaciona.
+
+### 4.2 Contador
+
+```
+uellix_capability.record_verification_hit(p_hash text)
+  RETURNS void
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  VOLATILE
+  SET search_path = ''
+```
+
+Hace un `INSERT … ON CONFLICT (report_id, hit_date) DO UPDATE SET hit_count = hit_count + 1`
+sobre:
+
+```
+public.capability_verification_hits
+  report_id  uuid    REFERENCES public.sroi_reports(id)
+  hit_date   date    NOT NULL
+  hit_count  integer NOT NULL DEFAULT 1
+  PRIMARY KEY (report_id, hit_date)
+```
+
+**Cero PII**: no hay IP, ni user agent, ni referer, ni sesión. La granularidad
+es día × reporte. Se puede responder "¿cuántas veces se verificó este
+certificado?" sin poder responder "¿quién lo verificó?", y eso es exactamente
+la línea que se quiere.
+
+La función es *best-effort*: el endpoint la llama **después** de haber
+respondido la verificación, e ignora su error. Si el contador falla, la
+verificación funciona igual. Separarla de `verify_report` es lo que hace
+posible esa propiedad.
+
+---
+
+## 5. Grants mínimos
+
+```
+GRANT USAGE   ON SCHEMA uellix_capability TO uellix_app;
+GRANT EXECUTE ON FUNCTION uellix_capability.verify_report(text)            TO uellix_app;
+GRANT EXECUTE ON FUNCTION uellix_capability.record_verification_hit(text)  TO uellix_app;
+REVOKE ALL    ON FUNCTION uellix_capability.verify_report(text)            FROM PUBLIC;
+REVOKE ALL    ON FUNCTION uellix_capability.record_verification_hit(text)  FROM PUBLIC;
+```
+
+`uellix_cap_verification`, **por columna**:
+
+| Tabla | Priv. | Columnas |
+|---|---|---|
+| `public.sroi_reports` | `SELECT` | `id, organization_id, calculation_run_id, title, status, report_variant, verification_hash, locked_at` |
+| `public.report_public_disclosures` | `SELECT` | todas (la tabla existe sólo para esto) |
+| `public.organizations` | `SELECT` | `id, name` |
+| `public.sroi_calculation_runs` | `SELECT` | `id, sroi_ratio, total_investment, net_social_value, currency` |
+| `public.capability_verification_hits` | `SELECT, INSERT, UPDATE` | `report_id, hit_date, hit_count` |
+
+**Lo que NO está, y es el punto entero de la capacidad:**
+
+| Tabla | Acceso del definer |
+|---|---|
+| `public.evidence_items` | **ninguno** |
+| `public.sroi_report_sections` | **ninguno** |
+| `public.projects` | **ninguno** |
+| `public.sroi_calculation_line_items` | **ninguno** |
+| `public.organization_members` | **ninguno** |
+| `public.stella_interactions` | **ninguno** |
+| `public.methodology_review_matrix` | **ninguno** |
+| `organizations.stripe_*`, `stella_monthly_quota` | **ninguno** — el grant es por columna |
+| `sroi_reports.summary`, `created_by`, `locked_by` | **ninguno** — grant por columna |
+
+Un bug en el cuerpo de `verify_report` que intentara leer evidencia fallaría
+**en ejecución** con `42501`, no al crearse: PostgreSQL resuelve nombres y
+tipos en `CREATE FUNCTION`, pero las comprobaciones de ACL ocurren al arrancar
+el ejecutor. Para un endpoint público eso significa la primera petición. Lo que
+impide que se llegue ahí es la postcondición del paquete, que barre
+`has_any_column_privilege` sobre todas las relaciones de `public` y aborta la
+aplicación si el grant existe. (`STABLE` **sí** se comprueba al crear la
+función; confundir las dos cosas es de donde venía la afirmación anterior.)
+
+---
+
+## 6. Policies necesarias
+
+| Nombre | Tabla | Cmd | Cláusula |
+|---|---|---|---|
+| `cap_verification_select_reports` | `sroi_reports` | `SELECT` | `USING (status = 'locked')` |
+| `cap_verification_select_disclosures` | `report_public_disclosures` | `SELECT` | `USING (revoked_at IS NULL)` |
+| `cap_verification_select_orgs` | `organizations` | `SELECT` | `USING (true)` |
+| `cap_verification_select_runs` | `sroi_calculation_runs` | `SELECT` | `USING (true)` |
+| `cap_verification_write_hits` | `capability_verification_hits` | `ALL` | `USING (true) WITH CHECK (true)` |
+
+`USING (status = 'locked')` en la policy es redundante con el `WHERE` de la
+función y se pone igualmente: es la misma redundancia de dos capas que en
+CAP-01. Si alguien reescribe el cuerpo, la policy sigue impidiendo que un
+borrador se lea por esta vía.
+
+### 6.1 Las dos RESTRICTIVE
+
+| Nombre | Tabla | Cmd | Cláusula |
+|---|---|---|---|
+| `cap_verification_only_locked` | `sroi_reports` | `SELECT` | `USING (status = 'locked')` |
+| `cap_verification_only_live` | `report_public_disclosures` | `SELECT` | `USING (revoked_at IS NULL)` |
+| `cap_verification_only_published_org` | `organizations` | `SELECT` | `USING (EXISTS …)` — la fila sólo es legible si algún reporte **bloqueado** con disclosure **viva** apunta a ella |
+| `cap_verification_only_published_run` | `sroi_calculation_runs` | `SELECT` | `USING (EXISTS …)` — idéntica proposición, escrita para el cálculo |
+
+**Las dos últimas cierran RR-CAP-13**, y conviene decir exactamente qué era el
+riesgo y qué no. `cap_verification_select_orgs` y `cap_verification_select_runs`
+eran `USING (true)` y **no tenían compañera `RESTRICTIVE`**: la cota que ata esas
+filas a un reporte publicado vivía en el `JOIN` del cuerpo de `verify_report`, de
+modo que la frase «la policy acota esto aunque se reescriba el cuerpo» era cierta
+de `sroi_reports` y falsa de estas dos.
+
+El ACL por columna ya era estrecho (`id, name`; `id, currency, sroi_ratio,
+total_investment, net_social_value`), así que la exposición nunca fue la fila
+entera. Pero **una lista de columnas dice qué campos, nunca qué filas**: con
+`USING (true)` la identidad de verificación pública podía enumerar el nombre de
+todas las organizaciones de la plataforma y la ratio de todos los cálculos
+jamás ejecutados, publicados o no. Eso es la lista de clientes y los resultados
+no publicados, a un `SELECT` de un cuerpo que ya no tiene que cooperar.
+
+El predicado es la misma proposición que hace el `JOIN`, movida a donde no se
+reescribe editando una función. **No se concede ningún `SELECT` adicional para
+resolverlo**: las subconsultas leen exactamente las columnas que
+`uellix_cap_verification` ya tenía. Revocar una disclosure retira la
+organización y el cálculo del alcance de la capacidad en la misma sentencia que
+retira el reporte — las tres no pueden divergir porque son un predicado escrito
+tres veces.
+
+*Evidencia negativa viva:* `RR13-1..RR13-7` en `scripts/capability-dry-run.sql`
+(sólo una organización visible con dos reportes publicados; cero tras revocar
+todas las disclosures; el cálculo no vinculado nunca aparece).
+
+Mismo argumento que en CAP-01 §6.1: las permisivas se combinan con OR junto a
+las 101 policies `{public}` preexistentes, cuyos predicados resuelven al
+**llamante** dentro del definer porque `auth.uid()` es una GUC de sesión que
+`SECURITY DEFINER` no reinicia. Sin estas dos, un llamante org-admin anula por
+OR el `status = 'locked'` y el `revoked_at IS NULL`, y **un borrador se
+verificaría públicamente**. La mutación M-07 hace exactamente eso relajando el
+`USING` a `true`, y sobrevivía a la suite anterior porque el gate contaba dos
+policies `RESTRICTIVE` y nunca leyó su predicado.
+
+### 6.2 El camino interno: las tres `disclosures_*`, `TO uellix_app`
+
+`report_public_disclosures` necesita además las policies del camino **interno**
+—quién crea y revoca una disclosure—: un `organization_admin` de la
+organización dueña del reporte. Son del modelo normal, no de la capacidad, y el
+paquete las crea junto a la tabla. **No estaban en este documento**, y como no
+llevan el prefijo `cap_`, tampoco las contaba ningún gate: borrar
+`disclosures_update_admin` entera dejaba la suite en verde (M-11).
+
+| Nombre | Cmd | `TO` | Cláusula |
+|---|---|---|---|
+| `disclosures_select_member` | `SELECT` | `uellix_app` | `USING (EXISTS … r.organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin())` |
+| `disclosures_insert_admin` | `INSERT` | `uellix_app` | `WITH CHECK (approved_by = auth.uid() AND EXISTS … current_user_role_in_org(r.organization_id) IN ('super_admin','organization_admin') …)` |
+| `disclosures_update_admin` | `UPDATE` | `uellix_app` | `USING (…mismo EXISTS…) WITH CHECK ((revoked_by IS NULL OR revoked_by = auth.uid()) AND …mismo EXISTS…)` |
+
+Tres propiedades que ahora sí están fijadas:
+
+* **Nombran `TO uellix_app` explícitamente**, apartándose de las 101 policies
+  `{public}` preexistentes. Una policy sin `TO` es `TO PUBLIC` —el defecto que
+  `stella_0005c` tuvo que reparar— y nombrar el rol del runtime no cuesta nada.
+  El gate anterior comprobaba que la sentencia casara con `/TO \w+/`, expresión
+  que **`TO PUBLIC` satisface**: la mutación M-10 explota justo eso.
+* **La organización se deriva de `sroi_reports`, nunca la asevera el llamante.**
+  El `EXISTS` se evalúa además bajo la RLS del propio llamante, así que un
+  reporte de otro tenant es invisible para él y el predicado es falso: dos
+  cerrojos independientes en la misma puerta. Publicar entre organizaciones es
+  imposible por construcción, no por validación.
+* **`approved_by` y `revoked_by` se fijan a `auth.uid()`.** Sin ello, la
+  afirmación del `COMMENT` de la tabla —«cada fila es una decisión humana con su
+  autor»— sería algo que la tabla no puede sostener: un admin podría registrar a
+  un colega como aprobador o como revocador (M-09).
+
+**No hay policy `DELETE`, y es deliberado:** una disclosure se revoca
+(`revoked_at`), nunca se borra. Quién publicó qué, y cuándo, tiene que seguir
+siendo respondible.
+
+---
+
+## 7. Validaciones
+
+| Validación | Dónde |
+|---|---|
+| El hash tiene forma `^[0-9a-f]{64}$` | Endpoint (rechaza sin tocar BD) |
+| `status = 'locked'` | Función + policy |
+| Disclosure existe y no revocada | Función (`JOIN`) + policy |
+| Cada campo visible requiere su booleano | Función (`CASE`) |
+| Rate limit por IP | Endpoint |
+
+El chequeo de forma en el endpoint importa más de lo que parece: `verification_hash`
+es `varchar(255)`, así que sin él un atacante podría enviar 255 caracteres
+arbitrarios por petición. Rechazar por forma antes de llamar es la diferencia
+entre un índice consultado y un índice consultado con basura.
+
+---
+
+## 8. Idempotencia
+
+`verify_report` es `STABLE` y sin efectos: **la idempotencia es trivial y
+estructural**. `record_verification_hit` es idempotente por día
+(`ON CONFLICT DO UPDATE` incrementa; dos llamadas el mismo día producen 2, que
+es la semántica correcta de un contador).
+
+---
+
+## 9. Rate limiting
+
+| Límite | Valor propuesto | Ámbito |
+|---|---|---|
+| Peticiones por IP | 30 / min | Endpoint |
+| Peticiones globales a `/verify/*` | 600 / min | Endpoint (protege el índice) |
+| Rechazo por forma inválida | no consume cuota de BD | Endpoint |
+
+Igual que en CAP-01, **el rate limit no defiende contra adivinación**: el hash
+tiene 256 bits. Defiende contra (a) DoS sobre el índice único y (b) el uso del
+endpoint como oráculo masivo si alguna vez se filtrara una lista parcial de
+hashes.
+
+---
+
+## 10. Auditoría
+
+* **Agregada y sin PII**: `capability_verification_hits`, día × reporte.
+* **No** se escribe en `audit_logs`: una verificación pública no es un acto de
+  un actor identificado, y `audit_logs` exige `actor_user_id NOT NULL` desde
+  `stella_0005c`. Forzar un actor sintético ahí sería fabricar una identidad,
+  que es exactamente lo que el cutover prohibió.
+* **La creación, la revocación y cada cambio de visibilidad SÍ se auditan
+  ahora** (RR-CAP-02-F, cerrado 2026-08-04). Durante dos rondas esta línea
+  afirmó lo contrario de lo que el SQL hacía —en ambas direcciones— así que
+  aquí va el mecanismo, no la afirmación:
+
+  `public.uellix_audit_report_disclosure()` es un trigger **`AFTER INSERT OR
+  UPDATE FOR EACH ROW`** sobre `report_public_disclosures` que escribe una fila
+  en `audit_logs` por cada publicación, revocación, reactivación y cambio de
+  visibilidad. Cuatro transiciones con nombre propio
+  (`report.disclosure.published` / `.revoked` / `.reinstated` /
+  `.visibility_changed`), porque colapsarlas en «updated» deja la pregunta
+  «cuántos certificados se retiraron» sin respuesta salvo diferenciando filas.
+
+  **Atómico por construcción, no por convención.** Al ser `AFTER` dentro de la
+  misma transacción, un fallo de la escritura de auditoría —sin privilegio, por
+  policy, o porque el reporte no resuelve organización— aborta la publicación
+  con él. No existe orden de ejecución en el que la disclosure quede confirmada
+  y el evento no.
+
+  **No es `SECURITY DEFINER`, y eso es deliberado:** corre con los privilegios
+  del llamante y bajo la policy `audit_logs_insert_member_or_admin`, de modo que
+  `actor_user_id = auth.uid()` lo impone RLS y no la función. Un *definer* aquí
+  permitiría insertar filas de auditoría que el llamante no podría haber
+  insertado.
+
+  **Qué se guarda y qué no.** Los seis `show_*`, `disclosure_version`, si la
+  disclosure está viva, y `public_summary` **como digest SHA-256 y longitud —
+  nunca como texto**. `audit_logs` no lleva payload en ningún otro sitio de este
+  esquema y no va a empezar aquí; el digest responde igual a la pregunta que el
+  rastro existe para responder («¿lo que circuló es el mismo texto que hay ahora
+  en la fila?»), que la fila por sí sola no puede, porque `public_summary` es
+  actualizable.
+
+  **Append-only, en las dos tablas.** `audit_logs` ya lo era
+  (`trg_audit_logs_append_only`, `stella_0002b`) y ningún rol de runtime tiene
+  `UPDATE` ni `DELETE` sobre ella. `report_public_disclosures` lo es ahora
+  también: `trg_report_disclosures_append_only` y
+  `trg_report_disclosures_no_truncate` reutilizan
+  `public.uellix_forbid_mutation`, así que una decisión publicada no la borra
+  nadie — **tampoco el propietario de la tabla**. El rollback conserva esos dos
+  triggers y sólo retira el de auditoría: las filas sobreviven a la capacidad,
+  y su protección también.
+
+  *Evidencia negativa viva:* `RR02F-1..RR02F-9` en
+  `scripts/capability-dry-run.sql`, incluida `RR02F-6`, que hace imposible la
+  escritura de auditoría y comprueba que el cambio de visibilidad **se revierte
+  entero**.
+
+---
+
+## 11. Pruebas (suite `public-verification-capability`)
+
+### 11.1 Estáticas
+
+| # | Prueba |
+|---|---|
+| S1 | `verify_report` se declara `STABLE` (no `VOLATILE`, no `IMMUTABLE`) |
+| S2 | El cuerpo de `verify_report` **no menciona** `evidence_items`, `sroi_report_sections`, `projects`, `line_items`, `stella_` |
+| S3 | El paquete **no concede** ningún privilegio al definer sobre esas tablas |
+| S4 | Los grants sobre `organizations` y `sroi_reports` son por columna, y `stripe_`/`summary`/`created_by` no están en la lista |
+| S5 | `search_path = ''` en ambas funciones; todo cualificado |
+| S6 | `REVOKE ALL … FROM PUBLIC` para ambas |
+| S7 | `GRANT EXECUTE` sólo a `uellix_app` |
+| S8 | El paquete crea `report_public_disclosures` con **los seis** booleanos `NOT NULL DEFAULT false` (gate `cap02-flag-default`, sobre `DISCLOSURE_FLAGS`, longitud fijada en 6) |
+| S9 | `capability_verification_hits` no tiene ninguna columna de IP, UA o sesión |
+| S10 | Precondiciones y rollback simétricos |
+| S11 | Las **diez** policies del paquete coinciden exactamente con el contrato: tabla, `PERMISSIVE`/`RESTRICTIVE`, comando, `TO`, `USING` y `WITH CHECK` (gates `policy-*`). Incluye las tres `disclosures_*`, que son `TO uellix_app` y que el gate anterior —basado en el prefijo `cap_`— **no contaba** |
+| S12 | `disclosures_insert_admin` fija `approved_by = auth.uid()` y `disclosures_update_admin` fija `revoked_by`; ninguna de las dos puede reasignar la autoría de una publicación |
+| S13 | `verify_report` es `STABLE` y no escribe (gates `cap02-stable`, `cap02-readonly`) |
+
+### 11.2 Vivas (stack desechable)
+
+| # | Prueba | Debe |
+|---|---|---|
+| L1 | Reporte `locked` **sin** disclosure | 0 filas |
+| L2 | Reporte `draft` **con** disclosure | 0 filas |
+| L3 | Disclosure revocada | 0 filas |
+| L4 | Hash inexistente | 0 filas — **respuesta idéntica a L1, L2 y L3** |
+| L5 | Disclosure con todos los booleanos `false` | 1 fila con `verified=true` y **todo lo demás `NULL`** |
+| L6 | `show_totals=true` | aparecen los tres importes, y **sólo** esos |
+| L7 | El definer intenta `SELECT` sobre `evidence_items` | denegado |
+| L8 | El definer intenta `SELECT organizations.stripe_customer_id` | denegado por columna |
+| L9 | `anon` / `authenticated` intentan `EXECUTE` | denegado |
+| L10 | `uellix_app` intenta `SELECT` directo sobre `sroi_reports` | 0 filas |
+| L11 | `verify_report` intenta escribir (mutante) | falla por `STABLE` |
+| L12 | El contador no acepta más columnas que las tres | por esquema |
+
+---
+
+## 12. Rollout
+
+1. Dry-run en stack desechable; `L1..L12`.
+2. Aplicar en local de ensayo. **La capacidad queda creada pero sin uso**: no
+   existe todavía ninguna fila en `report_public_disclosures`, así que
+   `/verify/[hash]` sigue devolviendo 404 para todo.
+3. Resolver **DP-CAP-04**, **DP-CAP-05** y **DP-CAP-06**.
+4. Construir la UI interna de aprobación de disclosure (fuera de esta unidad).
+5. Reescribir `lib/reports/public-verify.ts` para llamar a la RPC.
+6. Decidir el destino de la ruta PDF; mientras tanto, 404 incondicional.
+
+**Propiedad importante del rollout:** aplicar el paquete **no publica nada**.
+La superficie pública sigue devolviendo 404 hasta que un humano apruebe una
+disclosure, reporte por reporte.
+
+## 13. Rollback
+
+Orden inverso: `REVOKE`, `DROP POLICY` ×5 (+ las internas), `DROP FUNCTION` ×2,
+`DROP TABLE capability_verification_hits`, `DROP ROLE`, `DROP SCHEMA` si vacío.
+
+`report_public_disclosures` **no se borra**: contiene decisiones humanas de
+publicación con su autor y su fecha. Borrarla destruiría la prueba de quién
+autorizó publicar qué. El rollback la deja con un `COMMENT` explicando que la
+capacidad que la leía ya no existe.
+
+Tras el rollback: `/verify/[hash]` vuelve a 404 para todo. Cero estado parcial.
+
+---
+
+## 14. Threat model (FASE 12)
+
+| Amenaza | Severidad | Mitigación | Residual |
+|---|---|---|---|
+| **Token (hash) theft** | Baja por diseño | El hash **es** un bearer token y se comparte a propósito. Lo que protege es *qué* revela: sólo la disclosure aprobada | El titular del hash ve lo publicado. Es el propósito |
+| **Replay** | Ninguna | Sin efectos | Ninguno |
+| **Brute force** | Baja | 256 bits; rate limit; forma validada | Ninguno realista |
+| **Enumeration** | **Crítica si se falla** | Los cuatro casos de fallo devuelven **el mismo conjunto vacío** por construcción del `JOIN`, no por una rama del código. Verificado en el dry run: hash inexistente, reporte sin disclosure, disclosure revocada y borrador con disclosure devuelven los cuatro cero filas | **RR-CAP-02-E — el tiempo NO está igualado.** Un plan no es una cantidad de trabajo: un hash inexistente se corta en el índice único de `verification_hash` y no llega a sondear `report_public_disclosures`. El *resultado* es indistinguible por construcción; la *latencia* no se ha igualado ni medido, y decir lo contrario sería más fuerte de lo que la construcción sostiene |
+| **Oráculo de existencia** | **Alta** | Un reporte `locked` sin disclosure es indistinguible de un hash inexistente. Publicar no confirma existir, y existir no confirma publicar | Ninguno |
+| **Cross-org** | **Alta** | La función no acepta ningún filtro salvo el hash. No hay `LIMIT`, `OFFSET`, ni predicado de organización que un llamante pueda inyectar. **Por eso no es una vista** | Ninguno |
+| **Confused deputy** | Media | El definer no puede leer nada que no esté en la lista de columnas | Ninguno |
+| **Privilege escalation** | Alta | `STABLE` impide escribir; sin `INSERT`/`UPDATE`/`DELETE` en ninguna tabla salvo el contador | Ninguno |
+| **Duplicate request** | Ninguna | Sin efectos | Ninguno |
+| **Timeout / partial failure** | Baja | Lectura pura; el contador es best-effort y va aparte | Ninguno |
+| **Log leakage** | Media | El hash **no es secreto** en el mismo sentido que un token de invitación: identifica un documento que se publicó a propósito. Aun así el endpoint no lo registra con la IP en la misma línea | Los logs de acceso HTTP del proveedor registran la ruta completa, que contiene el hash. **RR-CAP-02-A** |
+| **SQL injection** | Alta | Un solo `SELECT` parametrizado, cero dinámico | Ninguno |
+| **`search_path` injection** | Alta | `search_path=''`, todo cualificado | Ninguno |
+| **Payload amplification** | **Media** | El flujo actual devolvía toda la evidencia del proyecto. El nuevo devuelve ≤11 escalares. La amplificación pasa de "un reporte completo por petición" a "una fila" | Ninguno |
+| **Denial of service** | Media | Rate limit global y por IP; validación de forma antes de tocar el índice | Un ataque distribuido satura el endpoint HTTP, no la base |
+| **Abuse automation** | Baja | Sin oráculo, sin listado, sin paginación | Ninguno |
+
+### 14.1 RR-CAP-02-A — el hash viaja en la URL
+
+`/verify/<hash>` pone la capability en la ruta, luego aparece en los logs de
+acceso del proveedor, en el `Referer` si la página enlaza a un tercero, y en el
+historial del navegador. Es inherente a que el certificado sea un enlace
+compartible.
+
+Mitigaciones incorporadas al diseño: la página **no enlaza a terceros**
+(el único enlace saliente era el PDF, que DP-CAP-06 propone retirar), y se
+recomienda `Referrer-Policy: no-referrer` en esa ruta —
+`applySecurityHeaders` ya emite `strict-origin-when-cross-origin` globalmente,
+que **no basta** aquí porque el origen se envía igualmente.
+
+Severidad: **MINOR**, dado que lo que el hash desbloquea es, por diseño,
+material aprobado para publicación.
+
+---
+
+## 15. Riesgos residuales
+
+* **RR-CAP-02-A** — el hash en la URL (§14.1). MINOR.
+* **RR-CAP-02-B** — la ruta PDF queda huérfana hasta DP-CAP-06. Debe devolver
+  404 incondicional mientras tanto; si no se hace, seguirá llamando a la
+  función vieja. **Es la única parte de CAP-02 que exige un cambio de código
+  antes de aplicar el paquete.**
+* **RR-CAP-02-C** — los reportes ya bloqueados **no** obtienen disclosure
+  automáticamente. Los certificados emitidos antes dejarán de verificar hasta
+  que alguien los apruebe uno a uno. Es el comportamiento correcto (nadie
+  autorizó publicarlos) pero es una regresión visible y hay que comunicarla.
+* **RR-CAP-02-D** — `organizations.name` se publica si el booleano está en
+  `true`, y `name` es editable por la organización. Un nombre malicioso se
+  publicaría tal cual. Mitigación: la aprobación de disclosure es un acto
+  humano que ve el nombre en ese momento; no hay revalidación posterior.
+
+
+---
+
+## Cómo se lee este paquete (2026-08-04)
+
+El contrato estático de arriba lo evalúa un **lexer** con las reglas léxicas de
+PostgreSQL, no expresiones regulares sobre texto enmascarado. La diferencia es
+medible: una reauditoría independiente confirmó **ocho grafías válidas** que el
+lector anterior no veía —DDL dentro de un bloque `DO`, identificadores y
+*grantees* entre comillas dobles, `GRANT a, b TO c`,
+`DISABLE ROW LEVEL SECURITY`, un segundo `ALTER ROLE` que revierte atributos
+seguros, `REASSIGN OWNED`, `CREATE POLICY` con identificadores entrecomillados y
+comentarios de bloque **anidados**—. Ninguna era una propiedad nueva: eran ocho
+maneras de escribir propiedades que este documento ya declaraba.
+
+Consecuencias al editar este fichero `.sql`:
+
+* un `GRANT`, `CREATE POLICY` o `ALTER TABLE` emitido **desde dentro** de un
+  bloque `DO`, del cuerpo de una función o de un literal de `EXECUTE` cuenta
+  exactamente igual que uno escrito fuera;
+* `EXECUTE format(…)`, `EXECUTE <variable>` y `EXECUTE 'a' || b` **se rechazan**
+  con `unparsed-security-statement`: si un paquete necesita SQL dinámico, tiene
+  que ser un literal autocontenido;
+* `"Rol"` y `rol` son **roles distintos** — entrecomillar suprime el plegado a
+  minúsculas — y el contrato compara la forma normalizada.
+
+Detalle completo en
+[`ADVERSARIAL_FINDINGS_PARSER.md`](ADVERSARIAL_FINDINGS_PARSER.md).
+
+**Riesgos abiertos que alcanzan a esta capacidad:** **RR-CAP-02-F** (publicar y
+revocar no dejan rastro: ni `public_summary` ni el estado de los seis `show_*`
+en el momento de publicar; no bloquea *aplicar* `stella_0007`, sí bloquea
+**habilitar** la verificación pública) y **RR-CAP-13** (`sroi_calculation_runs`
+y `organizations` tienen `SELECT` `USING (true)` sin compañera `RESTRICTIVE`;
+la exposición real la acota el `GRANT` por columna, lo que falta es la defensa
+en profundidad).

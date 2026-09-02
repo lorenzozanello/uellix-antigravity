@@ -1,9 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { getAdminStats } from "@/lib/admin/stats";
+import { runWithAdminAccess } from "@/lib/auth/session";
 
 export default async function AdminPage() {
-  const stats = await getAdminStats();
+  const stats = await runWithAdminAccess(() => getAdminStats());
 
   return (
     <div className="space-y-8">

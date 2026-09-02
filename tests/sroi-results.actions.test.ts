@@ -15,6 +15,13 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
+// These actions now open an identity context before delegating. The wrapper is
+// a pass-through here: the suite is about input validation and delegation, and
+// the wrapper itself is proved in tests/authenticated-database-context.test.ts.
+vi.mock('@/lib/auth/session', () => ({
+  runWithOrganizationAccess: async (cb: (ctx: unknown) => unknown) => cb(undefined),
+}));
+
 import {
   createSroiRunReview,
   updateSroiRunReview,
@@ -126,11 +133,11 @@ describe('updateReportSectionAction', () => {
 });
 
 describe('lockReportDraftAction', () => {
-  it('delegates to service directly', async () => {
+  it('delegates to service directly, forwarding the narrative attestation', async () => {
     vi.mocked(lockReportDraft).mockResolvedValue({ id: REPORT_ID, status: 'locked' } as any);
 
-    const result = await lockReportDraftAction(PROJECT_ID, REPORT_ID);
+    const result = await lockReportDraftAction(PROJECT_ID, REPORT_ID, { narrativeReviewed: true });
     expect(result.status).toBe('locked');
-    expect(lockReportDraft).toHaveBeenCalledWith(PROJECT_ID, REPORT_ID);
+    expect(lockReportDraft).toHaveBeenCalledWith(PROJECT_ID, REPORT_ID, { narrativeReviewed: true });
   });
 });

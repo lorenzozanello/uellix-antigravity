@@ -8,6 +8,8 @@
 // an error). Kept pure so the attribution math is unit-tested in isolation from
 // the calculation engine and the database.
 
+// Pin the shared Decimal configuration first — determinism guard.
+import './decimal-config'
 import Decimal from 'decimal.js'
 
 const MONEY_DP = 4

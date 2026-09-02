@@ -3,6 +3,7 @@
 'use server';
 
 import { updateEvidenceReviewStatus } from '@/lib/pipeline/evidence';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { z } from 'zod';
 
 // Reuse the same schema defined in lib/pipeline/evidence.ts
@@ -13,5 +14,7 @@ const InputSchema = z.object({
 
 export async function updateEvidenceReviewStatusAction(projectId: string, evidenceId: string, rawInput: unknown) {
   const input = InputSchema.parse(rawInput);
-  return await updateEvidenceReviewStatus(projectId, evidenceId, input);
+  return runWithOrganizationAccess(() =>
+    updateEvidenceReviewStatus(projectId, evidenceId, input)
+  );
 }

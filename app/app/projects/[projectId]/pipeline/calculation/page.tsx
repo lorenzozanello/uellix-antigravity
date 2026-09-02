@@ -19,7 +19,9 @@ import {
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
-import { StellaAdvisorPanel, StellaValidatorPanel, StellaReviewerPanel } from '@/components/stella'
+import { StellaContextualAdvisorPanel, StellaValidatorPanel, StellaReviewerPanel } from '@/components/stella'
+// Server-only config read (READ-ONLY module) — availability passed as prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config'
 import {
   listSroiCalculationRuns,
   getSroiCalculationReadiness,
@@ -32,7 +34,7 @@ import { createFunderAction, addAllocationAction, archiveAllocationAction } from
 import { setDiscountRateAction } from './setDiscountRate.action'
 import { createInvestmentAction, updateInvestmentAction, deleteInvestmentAction } from './manageInvestment.action'
 import { listInvestments } from '@/lib/pipeline/investments'
-import { requireOrganizationAccess } from '@/lib/auth/session'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { db } from '@/db/client'
 import {
   outcomeProxyAssignments,
@@ -65,83 +67,119 @@ const SCENARIO_META: Record<string, { label: string; border: string }> = {
 
 export default async function CalculationPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
-  const ctx = await requireOrganizationAccess()
+  // ONE identity context for the whole data phase of this page. Everything
+  // below the closing brace is pure derivation and JSX, so the transaction is
+  // committed before anything streams.
+  const {
+    ctx,
+    readiness,
+    preview,
+    previewError,
+    scenarios,
+    runs,
+    investments,
+    assignmentsData,
+    inputs,
+    filterSets,
+    fundersList,
+    allocations,
+    projectRow,
+  } = await runWithOrganizationAccess(async (ctx) => {
+    const readiness = await getSroiCalculationReadiness(projectId)
+
+    // calculateSroiPreview only throws for genuine unexpected failures (e.g. a
+    // race condition where the investment row disappears between the readiness
+    // check and the calc). "Not ready yet" is a normal, non-throwing result
+    // (`canCalculate: false`). We must not conflate the two — silently
+    // swallowing a real error here would show an incomplete pipeline page with
+    // no signal that anything went wrong, which is worse than surfacing it.
+    let preview: Awaited<ReturnType<typeof calculateSroiPreview>> | null = null
+    let previewError: string | null = null
+    try {
+      preview = await calculateSroiPreview(projectId)
+    } catch (err) {
+      previewError = err instanceof Error ? err.message : 'Unknown error'
+    }
+
+    // Sensitivity band (non-persisted). Same non-throwing "not ready" contract.
+    let scenarios: Awaited<ReturnType<typeof calculateSroiScenarios>> | null = null
+    try {
+      scenarios = await calculateSroiScenarios(projectId)
+    } catch {
+      scenarios = null
+    }
+
+    return {
+      ctx,
+      readiness,
+      preview,
+      previewError,
+      scenarios,
+      runs: await listSroiCalculationRuns(projectId),
+      // Fetch all active investments for the project
+      investments: await db
+        .select()
+        .from(projectInvestments)
+        .where(
+          and(
+            eq(projectInvestments.projectId, projectId),
+            eq(projectInvestments.status, 'active')
+          )
+        )
+        .orderBy(projectInvestments.createdAt),
+      assignmentsData: await db
+        .select({
+          assignment: outcomeProxyAssignments,
+          outcome: outcomes,
+          proxy: financialProxies,
+        })
+        .from(outcomeProxyAssignments)
+        .innerJoin(outcomes, eq(outcomes.id, outcomeProxyAssignments.outcomeId))
+        .innerJoin(financialProxies, eq(financialProxies.id, outcomeProxyAssignments.proxyId))
+        .where(
+          and(
+            eq(outcomeProxyAssignments.projectId, projectId),
+            eq(outcomeProxyAssignments.organizationId, ctx.organization.id),
+            eq(outcomeProxyAssignments.assignmentStatus, 'active')
+          )
+        ),
+      inputs: await db
+        .select()
+        .from(sroiAssignmentInputs)
+        .where(eq(sroiAssignmentInputs.organizationId, ctx.organization.id)),
+      filterSets: await db
+        .select()
+        .from(sroiFilterSets)
+        .where(eq(sroiFilterSets.organizationId, ctx.organization.id)),
+      // Fase 1c — funders + funder↔outcome attribution.
+      fundersList: await listFundersForCurrentOrganization(),
+      allocations: await listAllocationsForProject(projectId),
+      // Fase 1e — project-level discount rate for present-valuing multi-year outcomes.
+      projectRow: await db
+        .select({ discountRatePct: projects.discountRatePct })
+        .from(projects)
+        .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)))
+        .limit(1)
+        .then((rows) => rows[0] ?? null),
+    }
+  })
+
   const canEdit = ctx && ['organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role)
 
-  const readiness = await getSroiCalculationReadiness(projectId)
-
-  // calculateSroiPreview only throws for genuine unexpected failures (e.g. a
-  // race condition where the investment row disappears between the readiness
-  // check and the calc). "Not ready yet" is a normal, non-throwing result
-  // (`canCalculate: false`). We must not conflate the two — silently
-  // swallowing a real error here would show an incomplete pipeline page with
-  // no signal that anything went wrong, which is worse than surfacing it.
-  let preview: Awaited<ReturnType<typeof calculateSroiPreview>> | null = null
-  let previewError: string | null = null
-  try {
-    preview = await calculateSroiPreview(projectId)
-  } catch (err) {
-    previewError = err instanceof Error ? err.message : 'Unknown error'
-  }
-
-  // Sensitivity band (non-persisted). Same non-throwing "not ready" contract.
-  let scenarios: Awaited<ReturnType<typeof calculateSroiScenarios>> | null = null
-  try {
-    scenarios = await calculateSroiScenarios(projectId)
-  } catch {
-    scenarios = null
-  }
-
-  const runs      = await listSroiCalculationRuns(projectId)
-
-  // Fetch all active investments for the project
-  const investments = await db
-    .select()
-    .from(projectInvestments)
-    .where(
-      and(
-        eq(projectInvestments.projectId, projectId),
-        eq(projectInvestments.status, 'active')
-      )
-    )
-    .orderBy(projectInvestments.createdAt)
+  // Mirror the corresponding server-action feature-flag gates (app/actions/stella/*).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella
+  const stellaValidatorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isValidatorEnabled && stellaState.canUseStella
+  const auditAssistantEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAuditAssistantEnabled && stellaState.canUseStella
 
   // For backward compatibility, also get the "primary" investment (first one)
   const investment = investments[0] ?? null
 
-  const assignmentsData = await db
-    .select({
-      assignment: outcomeProxyAssignments,
-      outcome: outcomes,
-      proxy: financialProxies,
-    })
-    .from(outcomeProxyAssignments)
-    .innerJoin(outcomes, eq(outcomes.id, outcomeProxyAssignments.outcomeId))
-    .innerJoin(financialProxies, eq(financialProxies.id, outcomeProxyAssignments.proxyId))
-    .where(
-      and(
-        eq(outcomeProxyAssignments.projectId, projectId),
-        eq(outcomeProxyAssignments.organizationId, ctx.organization.id),
-        eq(outcomeProxyAssignments.assignmentStatus, 'active')
-      )
-    )
-
-  const inputs = await db
-    .select()
-    .from(sroiAssignmentInputs)
-    .where(eq(sroiAssignmentInputs.organizationId, ctx.organization.id))
-
-  const filterSets = await db
-    .select()
-    .from(sroiFilterSets)
-    .where(eq(sroiFilterSets.organizationId, ctx.organization.id))
-
   const inputMap     = new Map(inputs.map((i) => [i.assignmentId, i]))
   const filterSetMap = new Map(filterSets.map((f) => [f.assignmentId, f]))
 
-  // Fase 1c — funders + funder↔outcome attribution.
-  const fundersList = await listFundersForCurrentOrganization()
-  const allocations = await listAllocationsForProject(projectId)
   // Outcomes that actually feed the calculation (unique, in assignment order).
   const calcOutcomes = Array.from(
     new Map(assignmentsData.map(({ outcome }) => [outcome.id, outcome])).values()
@@ -152,14 +190,6 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     list.push(a)
     allocationsByOutcome.set(a.outcomeId, list)
   }
-
-  // Fase 1e — project-level discount rate for present-valuing multi-year outcomes.
-  const projectRow = await db
-    .select({ discountRatePct: projects.discountRatePct })
-    .from(projects)
-    .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)))
-    .limit(1)
-    .then((rows) => rows[0] ?? null)
 
   // Lookup map for preview line items: assignmentId → display names
   const assignmentLookup = new Map(
@@ -420,14 +450,29 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
         </CardContent>
       </Card>
 
-      <StellaAdvisorPanel projectId={projectId} step="Cálculo" highlightHint={!readiness.hasInvestment} />
+      {/* U3: the calculation step is numeric/derived — no free-text apply
+          target, so apply offers copy-to-clipboard. */}
+      <StellaContextualAdvisorPanel
+        projectId={projectId}
+        step="calculation"
+        enabled={stellaAdvisorEnabled}
+        title="Stella — Asesoría contextual (Cálculo)"
+      />
 
-      <StellaValidatorPanel projectId={projectId} step="Cálculo" />
+      <StellaValidatorPanel projectId={projectId} step="Cálculo" enabled={stellaValidatorEnabled} />
 
-      <StellaReviewerPanel projectId={projectId} role="audit_assistant" title="Asistente de Auditoría (Stella)" />
+      <StellaReviewerPanel
+        projectId={projectId}
+        role="audit_assistant"
+        title="Asistente de Auditoría (Stella)"
+        enabled={auditAssistantEnabled}
+      />
 
       {/* Investment — Multi-row form (Task 11) */}
-      <Card>
+      {/* RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix: canonical scroll target
+          for the missing_investment / invalid_investment_amount /
+          investments_missing_usd readiness blockers (#investment). */}
+      <Card id="investment">
         <CardHeader>
           <CardTitle>Inversión del proyecto</CardTitle>
           <CardDescription>
@@ -507,7 +552,9 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       </Card>
 
       {/* Fase 1c — Funder attribution */}
-      <Card>
+      {/* RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix: canonical scroll target
+          for the over_allocated_outcomes readiness blocker (#funder-attribution). */}
+      <Card id="funder-attribution">
         <CardHeader>
           <CardTitle>Atribución por financiador</CardTitle>
           <CardDescription>
@@ -612,9 +659,16 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
           />
         ) : (
           <div className="space-y-4">
-            {assignmentsData.map(({ assignment, outcome, proxy }) => {
+            {assignmentsData.map(({ assignment, outcome, proxy }, index) => {
               const currentInput  = inputMap.get(assignment.id)
               const currentFilter = filterSetMap.get(assignment.id)
+              // RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix: quantities and
+              // filter sets repeat per assignment with no single wrapping
+              // section for "all inputs" vs "all filters" — the canonical
+              // scroll targets (#sroi-inputs, #sroi-filters) anchor to the
+              // first assignment card, which is visible together with every
+              // other card in this list.
+              const isFirstAssignment = index === 0
 
               return (
                 <Card key={assignment.id}>
@@ -629,7 +683,11 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                   <CardContent>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Quantities & Inputs */}
-                      <form action={handleUpsertAssignmentInput} className="space-y-3">
+                      <form
+                        id={isFirstAssignment ? 'sroi-inputs' : undefined}
+                        action={handleUpsertAssignmentInput}
+                        className="space-y-3"
+                      >
                         <p className="text-sm font-semibold text-foreground">Cantidades e insumos</p>
                         <input type="hidden" name="projectId" value={projectId} />
                         <input type="hidden" name="assignmentId" value={assignment.id} />
@@ -716,7 +774,11 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                       </form>
 
                       {/* SROI Filters */}
-                      <form action={handleUpsertFilterSet} className="space-y-3">
+                      <form
+                        id={isFirstAssignment ? 'sroi-filters' : undefined}
+                        action={handleUpsertFilterSet}
+                        className="space-y-3"
+                      >
                         <p className="text-sm font-semibold text-foreground">Filtros de impacto SROI</p>
                         <p className="text-xs text-muted-foreground">
                           Ajustes porcentuales que reflejan supuestos metodológicos sobre atribución de impacto.

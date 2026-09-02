@@ -6,8 +6,9 @@ repositorio — DSNs de PostgreSQL, claves de API, claves de servicio de Supabas
 JWTs, claves privadas — en código, documentación, tests, scripts y fixtures.
 **Módulos:** `scripts/scan-secrets.ts`, `tests/scan-secrets.test.ts`, el paso
 «Scan for credentials» de `.github/workflows/ci.yml`.
-**Fuente relacionada:** [`AUDIT_2026-07-06.md`](../AUDIT_2026-07-06.md) — el
-hallazgo original y su registro de remediación.
+**Fuente relacionada:** [`DATABASE_TARGET_SAFETY.md`](DATABASE_TARGET_SAFETY.md)
+(qué destino es legítimo), [`AUDIT_2026-07-06.md`](../AUDIT_2026-07-06.md)
+(el hallazgo original y su registro de remediación).
 
 ---
 
@@ -66,9 +67,10 @@ Dos propiedades importan más que la cobertura:
    prefijo basta para demostrar «este valor es el mismo que aquél» y es
    insuficiente para reconstruirlo.
 2. **Analiza estructura, no subcadenas.** Un `grep -E "127.0.0.1|localhost"`
-   acepta `localhost.attacker.example`, que es un host bajo control ajeno. El
-   DSN se parte en usuario, contraseña y host, y cada componente se juzga por
-   lo que es.
+   acepta `localhost.attacker.example` — la clase de bug que
+   [`ci-assert-local-targets.ts`](../../scripts/ci-assert-local-targets.ts) fue
+   escrito para eliminar. El DSN se parte en usuario, contraseña y host, y cada
+   componente se juzga por lo que es.
 
 ### Qué decide y qué sólo describe
 
@@ -77,12 +79,8 @@ La primera versión de este gate decidía **por el host**: un DSN apuntando a
 del 2026-08-15 lo cerró, porque tenía la polaridad invertida — dejaba que la
 mitad **pública** de una credencial avalara la mitad **secreta**. Sanear el
 hostname de un DSN filtrado conservando la contraseña es una edición de una
-línea que ningún revisor cuestionaría, y ese gate la habría aplaudido.
-
-El gate llega a `main` ya con la polaridad corregida: nunca hubo aquí una
-versión que decidiera por el host. En la rama de staging donde se detectó el
-defecto hubo que migrar 18 fixtures que vivían de esa exención; en este árbol el
-barrido no encontró ninguno.
+línea que ningún revisor cuestionaría, y ese gate la habría aplaudido. Se
+midieron 18 sitios del árbol que vivían de esa exención.
 
 Hoy **el veredicto lo toma el componente credencial**. Una contraseña, un token
 o una clave se ignoran sólo cuando:
@@ -91,6 +89,12 @@ o una clave se ignoran sólo cuando:
   plantilla sin expandir `${...}`, o un cuerpo que lleva un marcador como
   `not-a-real`, `placeholder`, `example`, `fake`, `synthetic`, `dummy`; o
 - **(b)** la línea lleva una anotación `secret-scan-ok: <motivo>` explícita.
+
+El código llega a esta integración ya con la polaridad corregida en los dos
+padres: ni la rama Product ni `main` conservan una versión que decida por el
+host. En la rama de staging donde se detectó el defecto original hubo que
+migrar 18 fixtures que vivían de esa exención; el barrido de ninguno de los dos
+árboles que se integran aquí encontró ninguno.
 
 El host se sigue parseando y `isSyntheticHost()` sigue existiendo, pero **sólo
 para etiquetar** el hallazgo (`host cannot resolve`) y acelerar el triaje. Nunca
@@ -262,11 +266,13 @@ decisión, sino la clasificación de la exposición:
    rewrite dejaría de existir, rompiendo el vínculo entre «qué está desplegado» y
    «qué hay en el repositorio». Esto sigue siendo el argumento decisivo, y es
    operativo, no contable.
-5. **Rompería anclajes de evidencia fuera de esta rama.** Una reescritura no es
-   una operación de `main`: reescribe el repositorio entero. Las ramas de
-   trabajo en curso anclan evidencia de auditoría en SHAs concretos, y varias
-   comprobaciones releen el `GIT_DIR` del snapshot que citan. El coste se paga
-   en todas ellas para no ganar nada en ésta.
+5. **Los anclajes de la evidencia gobernada siguen intactos por diseño, y una
+   reescritura los rompería más allá de esta rama.** La cadena T1–T10 y sus
+   certificaciones anclan SHAs concretos y varias releen el `GIT_DIR` del
+   snapshot. Una reescritura no es una operación de una sola rama: reescribe el
+   repositorio entero. Las ramas de trabajo en curso —incluida ésta— anclan
+   evidencia de auditoría en SHAs concretos, y el coste se pagaría en todas
+   ellas para no ganar nada en ninguna.
 
 **Clasificación resultante:**
 
@@ -293,18 +299,19 @@ la hizo la rotación.
 
 ## 6. GH013: el rechazo de GitHub Push Protection (2026-08-15)
 
-**Qué pasó.** El push de otra rama de trabajo, `codex/stella-staging`, fue
-rechazado con `GH013 / GITHUB PUSH PROTECTION`. **Ninguna referencia remota se
-actualizó.** GitHub clasificó varios literales de un archivo de tests de esa
-rama como *Supabase Personal Access Token*, y los detectó tanto en su tip como
-en commits históricos (`7ae6a5e`, `7e1730a`).
+**Qué pasó.** El push de `codex/stella-staging` —otra rama de trabajo, ni ésta
+ni `main`— fue rechazado con `GH013 / GITHUB PUSH PROTECTION`. **Ninguna
+referencia remota se actualizó.** GitHub clasificó varios literales de
+`tests/hosted/target-identity.test.ts` como *Supabase Personal Access Token*, y
+los detectó tanto en el tip de esa rama como en commits históricos (`7ae6a5e`,
+`7e1730a`).
 
-**Por qué figura aquí.** Los literales señalados no existen en esta rama —el
-barrido de este árbol encontró **cero** valores con prefijo `sbp_`—, pero la
-lección sí se hereda: el gate no tenía detector para esa clase, y el primero en
-avisar fue el servidor. Este documento registra el hallazgo y el detector viaja
-con él, de modo que el primer token que alguien escriba aquí se rechace en local
-y no en el push.
+**Por qué figura aquí.** Los literales señalados no existen en ninguno de los
+dos árboles que se integran en esta rama —el barrido de ambos encontró **cero**
+valores con prefijo `sbp_` reales—, pero la lección sí se hereda: el gate no
+tenía detector para esa clase, y el primero en avisar fue el servidor. Este
+documento registra el hallazgo y el detector viaja con él, de modo que el
+primer token que alguien escriba aquí se rechace en local y no en el push.
 
 **Qué demostró.** Que un control remoto atrapó una clase que el gate local no
 tenía. Eso es la polaridad equivocada para un gate cuyo trabajo es fallar
@@ -313,29 +320,31 @@ del servidor.
 
 **Auditoría de los literales señalados** — sin reproducir ninguno:
 
-| Huella (SHA-256:12) | Forma | Veredicto |
-| --- | --- | --- |
-| `8246ef07a213` | `sbp_` + 40 hex, 8 blobs | **Sintético.** Su cuerpo es la secuencia hex ascendente `0123456789abcdef` repetida; entropía 3,97 b/carácter. Ningún emisor produce eso. |
-| `2f54b13e0163` | `sbp_` + 32 hex, 1 blob | **Sintético**, misma construcción. |
+| Huella (SHA-256:12) | Sitios | Forma | Veredicto |
+| --- | --- | --- | --- |
+| `8246ef07a213` | `tests/hosted/target-identity.test.ts`, 8 blobs históricos | `sbp_` + 40 hex | **Sintético.** Su cuerpo es la secuencia hex ascendente `0123456789abcdef` repetida; entropía 3,97 b/carácter. Ningún emisor produce eso. |
+| `2f54b13e0163` | `tests/hosted/checkpoint-b0.test.ts`, 1 blob | `sbp_` + 32 hex | **Sintético**, misma construcción. |
 
 Un barrido independiente sobre **todos** los blobs de la historia del
-repositorio no encontró ningún otro literal con prefijo `sbp_`, y **cero** en el
-árbol de esta rama. **Ninguno es una credencial viva**, y ninguno fue emitido
-jamás por Supabase.
+repositorio no encontró ningún otro literal con prefijo `sbp_`. **Ninguno es
+una credencial viva**, y ninguno fue emitido jamás por Supabase. Ambos estaban
+en el árbol de `codex/stella-staging` en el momento del hallazgo, además de en
+su historia; ninguno de los dos padres que se integran en esta rama los
+conserva en su tip.
 
 **Qué se hizo.**
 
-1. Se añadió el detector `SUPABASE_PERSONAL_ACCESS_TOKEN`, con un umbral *más*
-   agresivo que el de GitHub —20 caracteres de token en lugar de exactamente 40
-   hex— para que una copia truncada, recapitalizada o partida por separadores
-   siga siendo un hallazgo. **Sin exención por directorio:** `tests/` no está
-   exento, y un test que lleve un token se rechaza como cualquier otro archivo.
+1. Se añadió el detector `SUPABASE_PERSONAL_ACCESS_TOKEN` al gate local, con un
+   umbral *más* agresivo que el de GitHub —20 caracteres de token en lugar de
+   exactamente 40 hex— para que una copia truncada, recapitalizada o partida por
+   separadores siga siendo un hallazgo. Sin exención por directorio: `tests/` no
+   está exento, y `tests/hosted/target-identity.test.ts` tampoco.
 2. En la rama donde existían, los fixtures con forma de PAT se sustituyeron por
-   valores que se delatan (`sbp_notARealPersonalAccessToken00`). Aquí no había
-   ninguno que sustituir.
+   valores que se delatan (`sbp_notARealPersonalAccessToken00`), que los
+   validadores y el redactor siguen reconociendo como credencial-shaped.
 3. La suite del gate construye su fixture con forma de PAT **en tiempo de
-   ejecución**, de modo que ningún blob de este repositorio llegue a contener la
-   forma que provocó el rechazo.
+   ejecución**, de modo que ningún blob de este repositorio vuelve a contener el
+   literal que provocó el rechazo.
 
 **Las detecciones históricas no se resuelven reescribiendo la historia.** Son
 material de fixture, sintético y confirmado como tal arriba. La vía prevista es,

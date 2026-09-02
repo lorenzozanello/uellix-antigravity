@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 import { upsertSroiFilterSet } from '../../../../../../lib/pipeline/sroi-calculation';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 
 // Validation schema for the incoming FormData
 const FilterSetSchema = z.object({
@@ -32,6 +33,8 @@ export async function upsertSroiFilterSetAction(formData: FormData) {
   const projectId = formData.get('projectId') as string;
   if (!projectId) throw new Error('projectId missing');
 
-  const result = await upsertSroiFilterSet(projectId, parsed.assignmentId, parsed);
+  const result = await runWithOrganizationAccess(() =>
+    upsertSroiFilterSet(projectId, parsed.assignmentId, parsed)
+  );
   return result;
 }

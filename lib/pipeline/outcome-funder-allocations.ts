@@ -7,7 +7,7 @@ import { outcomeFunderAllocations, funders, outcomes, projects } from '@/db/sche
 import { and, eq, ne, sum } from 'drizzle-orm'
 import { z } from 'zod'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
-import { logAuditAction } from '@/lib/audit/logger'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import Decimal from 'decimal.js'
 
 const CreateAllocationSchema = z.object({
@@ -111,7 +111,7 @@ export async function createAllocation(
   const validated = CreateAllocationSchema.parse({ outcomeId, funderId, allocationPct })
 
   // Verify outcome and funder belong to org
-  await verifyOutcomeAccess(validated.outcomeId, ctx)
+  const outcome = await verifyOutcomeAccess(validated.outcomeId, ctx)
   await verifyFunderAccess(validated.funderId, ctx)
 
   // Check that adding this allocation won't exceed 100%
@@ -140,10 +140,11 @@ export async function createAllocation(
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId: outcome.projectId,
     actorUserId: ctx.user.id,
     entityType: 'outcome_funder_allocation',
     entityId: allocation.id,
-    action: 'allocation.created',
+    action: AUDIT_ACTIONS.OUTCOME_FUNDER_ALLOCATION_CREATED,
     afterJson: { ...allocation, remainingPct },
   })
 
@@ -240,7 +241,8 @@ export async function updateAllocation(
     actorUserId: ctx.user.id,
     entityType: 'outcome_funder_allocation',
     entityId: allocationId,
-    action: 'allocation.updated',
+    action: AUDIT_ACTIONS.OUTCOME_FUNDER_ALLOCATION_UPDATED,
+    contentModifying: true,
     beforeJson: { allocationPct: oldPct },
     afterJson: { allocationPct: validated.allocationPct, remainingPct },
   })
@@ -282,7 +284,8 @@ export async function deleteAllocation(allocationId: string): Promise<void> {
     actorUserId: ctx.user.id,
     entityType: 'outcome_funder_allocation',
     entityId: allocationId,
-    action: 'allocation.deleted',
+    action: AUDIT_ACTIONS.OUTCOME_FUNDER_ALLOCATION_DELETED,
+    contentModifying: true,
     beforeJson: { allocationPct: deletedPct },
   })
 }

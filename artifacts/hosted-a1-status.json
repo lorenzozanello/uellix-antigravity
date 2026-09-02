@@ -1,0 +1,83 @@
+{
+  "generatedBy": "pnpm a1:status:write — do not hand-edit; this file is derived from the corroboration",
+  "checkpoint": "CHECKPOINT A1",
+  "corroborationArtefact": "artifacts/hosted-a1-corroboration.json",
+  "corroborationPresent": true,
+  "signals": [
+    {
+      "id": "SIGNAL_1_CONNECTION",
+      "pointer": "/connection/poolerUser",
+      "origin": "operator/client",
+      "projectRef": "bvyzblhqymxruxdguaee"
+    },
+    {
+      "id": "SIGNAL_2_DECLARATION",
+      "pointer": "/declaredProjectRef",
+      "origin": "explicit parameter",
+      "projectRef": "bvyzblhqymxruxdguaee"
+    },
+    {
+      "id": "SIGNAL_3_DATABASE",
+      "pointer": "/observation/sentinelObservation/projectRef",
+      "origin": "PostgreSQL, read from the sentinel ROW",
+      "projectRef": "bvyzblhqymxruxdguaee"
+    }
+  ],
+  "targetVerification": {
+    "ok": true,
+    "code": null,
+    "message": null,
+    "projectRef": "bvyzblhqymxruxdguaee",
+    "signals": [
+      "declared-environment",
+      "host-derived-project-ref",
+      "in-database-sentinel"
+    ],
+    "sentinelDeferred": false
+  },
+  "sentinelVerification": {
+    "id": true,
+    "rowCount": 1,
+    "projectRef": "bvyzblhqymxruxdguaee",
+    "environment": "staging",
+    "rr02Present": true,
+    "tablePresent": true,
+    "provisionedAt": "2026-08-09T15:15:43.514121+00:00",
+    "ownerSeparation": "auditable-obstacle: RR-02 applies, postgres retains ADMIN OPTION over uellix_owner",
+    "bootstrapVersion": "stella_hosted_0001"
+  },
+  "packageCount": 9,
+  "packageStates": {
+    "grounding_0002_document_versions": "ABSENT",
+    "grounding_0003_evidence_chunks": "ABSENT",
+    "grounding_0004_runtime_attestation": "ABSENT",
+    "stella_0013_grounded_query_quota": "ABSENT",
+    "stella_0014_operation_tickets": "ABSENT",
+    "stella_0015_project_bound_operation_tickets": "ABSENT",
+    "stella_0016_reserved_quota_semantics": "ABSENT",
+    "stella_0017_governed_stella_consumption": "ABSENT",
+    "stella_0018_category_bound_operation_tickets": "ABSENT"
+  },
+  "partialPackages": [],
+  "flags": {
+    "evaluated": 9,
+    "enabled": []
+  },
+  "chainPlan": {
+    "ok": false,
+    "code": "PROVISIONING_BASELINE_INCOMPLETE",
+    "message": "refused: 14 baseline unit(s) missing, starting with 0040_governed_model_registry.sql. Phases do not overlap and they do not get skipped.",
+    "stepCount": 0,
+    "steps": [],
+    "writesPermitted": false,
+    "sequenceComplete": false,
+    "nextAction": null
+  },
+  "blockers": [
+    "PROVISIONING_BASELINE_INCOMPLETE: refused: 14 baseline unit(s) missing, starting with 0040_governed_model_registry.sql. Phases do not overlap and they do not get skipped."
+  ],
+  "warnings": [
+    "this corroboration covers 9 of 11 chain packages; grounding_0005_claim_advisory_lock, stella_0019_storage_write_roles did not exist when it was measured and is therefore NOT covered by this verdict — unmeasured, which is not the same as absent. Re-measure the target to extend A1_OBSERVED_CHAIN; nothing here may extend it by inference"
+  ],
+  "checkpointPassed": false
+}

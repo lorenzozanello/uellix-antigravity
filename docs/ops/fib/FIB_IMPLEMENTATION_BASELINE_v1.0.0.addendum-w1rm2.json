@@ -1,0 +1,130 @@
+{
+  "package_id": "FIB_IMPLEMENTATION_BASELINE",
+  "version": "1.0.0",
+  "artifact_id": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.addendum-w1rm2",
+  "authority_class": "HUMAN_PRODUCT_OWNER_AUTHORITY_ADDENDUM",
+  "addendum_id": "W1-05-RM2",
+  "addendum_status": "RATIFIED",
+  "supersedes": null,
+
+  "purpose": "Resolve, by explicit human product-owner authority, the three authority gaps discovered AFTER the formal seal of FIB_IMPLEMENTATION_BASELINE v1.0.0 during the independent Wave 1 implementation audit and its remediation specification. This addendum adds authority; it does not modify, reopen, or reinterpret any sealed artifact.",
+
+  "discovery_source": {
+    "adjudication": "W1-05-RM1",
+    "adjudication_class": "WAVE_1_AUDIT_REMEDIATION_SPECIFICATION",
+    "upstream_audit": "W1-05",
+    "upstream_audit_verdict": "INDEPENDENT_VERDICT=FAIL",
+    "note": "W1-05-RM1 re-adjudicated every W1-05 finding against the sealed baseline and isolated exactly two decisions the sealed text could not determine (HPO-DEC-1, HPO-DEC-2) plus one naming correspondence correction (HPO-DEC-3). No other architecture choice was found to be materially required before Wave 1 remediation."
+  },
+
+  "audited_pre_addendum_head": "3f4562484dbcfafd00f610dd35088a8c9f825c3c",
+  "audited_pre_addendum_tree": "fe2f50862a13ceece188acc0951220d715986b9d",
+  "audited_branch": "codex/w1-integration-closure-r1",
+
+  "baseline_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+  "baseline_sha256": "5db735e572cee2aada48d22caa40b2fbfb172c58bda58875074fe8a6ec490d86",
+  "index_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+  "index_sha256": "55177a953b7e7705fe56317a4912eabb668d41e6473cdd0e0ec4c6f868d345b6",
+  "seal_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.seal.json",
+  "seal_state": "FORMALLY_SEALED",
+  "pc01b_authority_sha256": "03212c661f07200d128c2374173f7bbd996b8eab0f3eb1b59cd517187f159938",
+  "im01b_authority_sha256": "3b7e696cda64a28f155d740812f601eb20fabb40104ce4581a0568467ee026b4",
+
+  "decisions": [
+    {
+      "id": "HPO-DEC-1",
+      "title": "Governance regime activation",
+      "decision": "OWNER_UNIT_INCREMENTAL_REGIME_ACTIVATION",
+      "resolves_gap": "FIBDB-003 is titled 'projects and other governed objects' and never enumerates that set; FIBIU-01 declares 'lib/pipeline/** (regime stamping)' and the exit gate 'no new object is born without a regime', while FIBIU-30 independently declares DB_CHANGES 'FIBDB-042/003 (regime column and vocabulary)' in wave 6. The sealed text does not choose between the two readings.",
+      "authoritative_meaning": [
+        "Wave 1 shall apply governance_regime to every object whose governance regime is activated by a Wave 1 authority.",
+        "For FIBIU-01 this includes, at minimum: projects; outcome_taxonomy_mappings.",
+        "Objects governed by later owning units acquire governance_regime when their owning authority becomes active.",
+        "FIBIU-30 closes global governed-object regime coverage.",
+        "The FIBIU-01 statement 'no new object is born without a regime' applies to objects whose governed regime is active at that stage; it does not force Wave 1 to prematurely add governance_regime to every object whose owning governance unit remains intentionally deferred."
+      ],
+      "consequence": [
+        "G-1 becomes UNGATED.",
+        "Wave 1 remediation may create the additive migration required for outcome_taxonomy_mappings and any other object strictly and demonstrably owned by the active Wave 1 authority under this decision.",
+        "Wave 1 remediation MUST NOT opportunistically add governance_regime to all later-wave objects."
+      ],
+      "sealed_clauses_referenced": ["FIBC-004", "FIBDB-003", "FIBDB-042", "FIBDB-054", "FIBIU-01", "FIBIU-30"],
+      "creates_new_frozen_identifier": false
+    },
+    {
+      "id": "HPO-DEC-2",
+      "title": "Indicator / stakeholder lifecycle DB identity",
+      "decision": "FORM_ALPHA",
+      "resolves_gap": "FIBIU-03 carries the frozen DB_CHANGES list 'FIBDB-004' and simultaneously the exit gate 'indicators and stakeholder_groups gain lifecycle state and an archive path they lack today'. No FIBDB item in the 55-item registry names indicators or stakeholder_groups, so the physical form of that lifecycle state was left undetermined; sections 17.1 and 17.4 nevertheless assert DB_TARGET_COMPLETE and ZERO_MATERIALIZER_ARCHITECTURE_CHOICES_REMAINING. This addendum resolves that omission.",
+      "authoritative_meaning": [
+        "For indicators and stakeholder_groups, current operational lifecycle state is explicitly persisted through status, archived_by and archived_at, including the corresponding constrained status vocabulary and referential integrity required by the already materialized implementation.",
+        "domain_object_versions remains the append-only governed historical lineage.",
+        "The version lineage does NOT replace the current operational lifecycle projection.",
+        "Archive operations preserve both responsibilities: (1) operational current-state projection; and (2) governed append-only historical lineage.",
+        "Historical evidence and previously emitted audit records MUST NOT be rewritten."
+      ],
+      "consequence": [
+        "G-2 becomes UNGATED.",
+        "The sealed baseline omission identified in W1-05-RM1 is resolved by this HPO authority addendum.",
+        "No new frozen database identifier is created to number this decision."
+      ],
+      "sealed_clauses_referenced": ["FIBC-002", "FIBC-045", "FIBDB-004", "FIBIU-03"],
+      "creates_new_frozen_identifier": false
+    },
+    {
+      "id": "HPO-DEC-3",
+      "title": "Canonical SROI calculation audit action",
+      "decision": "RATIFIED_SROI_CALCULATION_RUN_CALCULATED",
+      "resolves_gap": "FIBC-001 names the audit verb 'sroi_run.calculated' while the Wave 1 implementation emits 'sroi_calculation_run.created', which matches neither the sealed literal nor the transition actually performed. FIBC-040 requires the verb to correspond to the object and the transition.",
+      "authoritative_meaning": [
+        "The canonical governed audit action for a successfully calculated SROI calculation run is 'sroi_calculation_run.calculated', with entityType 'sroi_calculation_run'.",
+        "The earlier FIBC-001 literal 'sroi_run.calculated' is superseded ONLY as a naming/correspondence correction for this audit action.",
+        "The substantive requirement that a successful SROI calculation emits a governed calculation audit event remains unchanged.",
+        "Historical audit rows are immutable and MUST NOT be rewritten."
+      ],
+      "consequence": [
+        "R-3 becomes UNGATED and is authorized to emit prospectively 'sroi_calculation_run.calculated'.",
+        "The verb/object correspondence invariant applies prospectively only."
+      ],
+      "sealed_clauses_referenced": ["FIBC-001", "FIBC-040", "FIBC-042", "FIBIU-02", "FIBIU-28"],
+      "creates_new_frozen_identifier": false
+    }
+  ],
+
+  "gate_status_after_addendum": {
+    "G-1": "UNGATED",
+    "G-2": "UNGATED",
+    "R-3_AUTHORITY": "UNGATED"
+  },
+
+  "invariants_preserved": {
+    "unaffected_frozen_authority_unchanged": true,
+    "sealed_artifacts_byte_identical": true,
+    "sealed_artifacts_verified_byte_identical": [
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.manifest.json",
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.ratification.json",
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.seal.json",
+      "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.md",
+      "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.md"
+    ],
+    "historical_evidence_immutable": true,
+    "historical_audit_rows_never_rewritten": true,
+    "append_only_protections_never_suspended": true,
+    "no_new_frozen_identifier_created": true,
+    "no_runtime_test_schema_migration_or_manifest_change_in_this_addendum": true
+  },
+
+  "state_after_addendum": {
+    "frozen_implementation_baseline": true,
+    "implementation_open": true,
+    "document_grounding_activated": false,
+    "stella_pilot_core_frozen": false,
+    "wave1_formally_closed": false,
+    "ready_for_wave2": false,
+    "ready_for_wave1_remediation_implementation": true
+  },
+
+  "scope_note": "This addendum grants authority only. It implements nothing. The Wave 1 remediation set frozen by W1-05-RM1 (R-1 through R-7, plus G-1 and G-2, now ungated) remains unexecuted at the audited head recorded above, and Wave 1 stays formally OPEN until an independent re-audit of the remediated tree passes."
+}

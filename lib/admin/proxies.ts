@@ -25,7 +25,11 @@
 
 import { db } from '@/db/client'
 import { proxySources, financialProxies, fxRates } from '@/db/schema'
-import { resolveProxyValueUsd } from '@/lib/pipeline/proxies'
+import {
+  deriveApprovedProxyAuthority,
+  withExpectedLockedFinancialProxy,
+  withLockedFinancialProxy,
+} from '@/lib/pipeline/proxies'
 import { convertToUsd } from '@/lib/pipeline/fx'
 import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
@@ -142,31 +146,37 @@ export async function createGlobalFinancialProxy(input: unknown) {
   return row
 }
 
-export async function updateGlobalProxyReviewStatus(proxyId: string, newStatus: string) {
+export async function updateGlobalProxyReviewStatus(
+  proxyId: string,
+  newStatus: string,
+  expectedApprovalState?: string,
+) {
   const admin = await requireAdminAccess()
   if (!REVIEW_STATUSES.includes(newStatus as (typeof REVIEW_STATUSES)[number])) {
     throw new Error('Invalid status')
   }
 
-  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then((r) => r[0])
-  if (!proxy) throw new Error('Proxy not found')
-  if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
+  const transition = async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0], proxy: typeof financialProxies.$inferSelect) => {
+    if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
 
-  let usdFields: { valueUsd: string; fxRateId: string | null } | Record<string, never> = {}
-  if (newStatus === 'approved') {
-    const required = ['value', 'currency', 'unit', 'referenceYear'] as const
-    for (const f of required) {
-      if (!proxy[f]) throw new Error(`Cannot approve without ${f}`)
+    let usdFields: { valueUsd: string; fxRateId: string | null } | Record<string, never> = {}
+    if (newStatus === 'approved') {
+      usdFields = await deriveApprovedProxyAuthority(tx, proxy)
     }
-    // Freeze the USD equivalent on approval (required by approved_proxy_check).
-    usdFields = await resolveProxyValueUsd(proxy)
+
+    const [updated] = await tx
+      .update(financialProxies)
+      .set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
+      .where(eq(financialProxies.id, proxyId))
+      .returning()
+    return { proxy, updated }
   }
 
-  const [updated] = await db
-    .update(financialProxies)
-    .set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
-    .where(eq(financialProxies.id, proxyId))
-    .returning()
+  const { proxy, updated } = newStatus === 'approved'
+    ? await withExpectedLockedFinancialProxy(proxyId, expectedApprovalState, (_tx, proxy) => {
+      if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
+    }, transition)
+    : await withLockedFinancialProxy(proxyId, transition)
 
   await logAuditAction({
     actorUserId: admin.id,
@@ -188,43 +198,52 @@ export async function updateGlobalProxyReviewStatus(proxyId: string, newStatus: 
  * citable action, so preserving every one is more useful for methodological
  * transparency than deduping them.
  */
-export async function setGlobalProxyManualFxRate(proxyId: string, input: { rateToUsd: string; source: string }) {
+export async function setGlobalProxyManualFxRate(
+  proxyId: string,
+  input: { rateToUsd: string; source: string },
+  expectedApprovalState: string,
+) {
   const admin = await requireAdminAccess()
   const validated = ManualFxRateInput.parse(input)
 
-  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then((r) => r[0])
-  if (!proxy) throw new Error('Proxy not found')
-  if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
-  if (!proxy.value || !proxy.currency) throw new Error('Cannot set an FX rate without value and currency')
-  if (proxy.currency === 'USD') throw new Error('USD proxies do not need an FX rate')
-
   const rateNum = Number(validated.rateToUsd)
   if (!Number.isFinite(rateNum) || rateNum <= 0) throw new Error('La tasa debe ser un número mayor a 0')
-
-  // Same lookup-date convention as the automatic path: Dec 31 of the proxy's
-  // reference year (proxies only carry a year, not an exact date).
-  const rateDate = proxy.referenceYear ? `${proxy.referenceYear}-12-31` : new Date().toISOString().slice(0, 10)
-
-  const [fxRate] = await db
-    .insert(fxRates)
-    .values({
-      currency: proxy.currency,
-      rateDate,
-      rateToUsd: validated.rateToUsd,
-      source: validated.source,
-      sourceType: 'manual',
-      organizationId: null,
-      createdBy: admin.id,
-    })
-    .returning()
-
-  const valueUsd = convertToUsd(proxy.value, validated.rateToUsd)
-
-  const [updated] = await db
-    .update(financialProxies)
-    .set({ valueUsd, fxRateId: fxRate.id, updatedAt: new Date() })
-    .where(eq(financialProxies.id, proxyId))
-    .returning()
+  const { proxy, updated } = await withExpectedLockedFinancialProxy(
+    proxyId,
+    expectedApprovalState,
+    (_tx, proxy) => {
+      if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
+      if (!proxy.value || !proxy.currency) throw new Error('Cannot set an FX rate without value and currency')
+      if (proxy.currency === 'USD') throw new Error('USD proxies do not need an FX rate')
+    },
+    async (tx, proxy) => {
+      const rateDate = proxy.referenceYear ? `${proxy.referenceYear}-12-31` : new Date().toISOString().slice(0, 10)
+      const [fxRate] = await tx
+        .insert(fxRates)
+        .values({
+          currency: proxy.currency!,
+          rateDate,
+          rateToUsd: validated.rateToUsd,
+          source: validated.source,
+          sourceType: 'manual',
+          organizationId: null,
+          createdBy: admin.id,
+        })
+        .returning()
+      const valueUsd = convertToUsd(proxy.value!, validated.rateToUsd)
+      const [updated] = await tx
+        .update(financialProxies)
+        .set({
+          valueUsd,
+          fxRateId: fxRate.id,
+          ...(proxy.reviewStatus === 'approved' ? { reviewStatus: 'pending_review' as const } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(financialProxies.id, proxyId))
+        .returning()
+      return { proxy, updated }
+    },
+  )
 
   await logAuditAction({
     actorUserId: admin.id,
@@ -247,60 +266,61 @@ export async function listPendingReviewProxies() {
     .where(eq(financialProxies.reviewStatus, 'pending_review'))
 }
 
-export async function promoteProxyToGlobal(proxyId: string) {
+export async function promoteProxyToGlobal(proxyId: string, expectedApprovalState: string) {
   const admin = await requireAdminAccess()
-  
-  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then((r) => r[0])
-  if (!proxy) throw new Error('Proxy not found')
-  if (!proxy.organizationId) throw new Error('Proxy is already global')
-  if (proxy.reviewStatus !== 'pending_review') throw new Error('Proxy is not pending review')
-
-  // Clone the source if it is org-scoped
-  const source = await db.select().from(proxySources).where(eq(proxySources.id, proxy.sourceId)).then((r) => r[0])
-  let globalSourceId = proxy.sourceId
-
-  if (source && source.organizationId) {
-    // Clone the source first
-    const [clonedSource] = await db.insert(proxySources).values({
-      organizationId: null,
-      name: source.name,
-      description: source.description,
-      url: source.url,
-      status: 'active',
-      createdBy: admin.id,
-    }).returning()
-    globalSourceId = clonedSource.id
-  }
-
-  // Clone the proxy
-  const [clonedProxy] = await db.insert(financialProxies).values({
-    organizationId: null,
-    sourceId: globalSourceId,
-    name: proxy.name,
-    description: proxy.description,
-    proxyType: proxy.proxyType,
-    country: proxy.country,
-    territory: proxy.territory,
-    currency: proxy.currency,
-    value: proxy.value,
-    valueUsd: proxy.valueUsd,
-    fxRateId: proxy.fxRateId,
-    unit: proxy.unit,
-    referenceYear: proxy.referenceYear,
-    thematicArea: proxy.thematicArea,
-    methodology: proxy.methodology,
-    confidenceLevel: proxy.confidenceLevel,
-    methodologicalRisk: proxy.methodologicalRisk,
-    reviewStatus: 'approved',
-    reviewerId: admin.id,
-    reviewedAt: new Date(),
-    createdBy: admin.id,
-  }).returning()
-
-  // Update the original proxy to show it was approved
-  await db.update(financialProxies)
-    .set({ reviewStatus: 'approved', updatedAt: new Date() })
-    .where(eq(financialProxies.id, proxyId))
-
-  return clonedProxy
+  return withExpectedLockedFinancialProxy(
+    proxyId,
+    expectedApprovalState,
+    (_tx, proxy) => {
+      if (!proxy.organizationId) throw new Error('Proxy is already global')
+      if (proxy.reviewStatus !== 'pending_review') throw new Error('Proxy is not pending review')
+    },
+    async (tx, proxy) => {
+      const usdFields = await deriveApprovedProxyAuthority(tx, proxy)
+      const source = await tx
+        .select()
+        .from(proxySources)
+        .where(eq(proxySources.id, proxy.sourceId))
+        .for('update')
+        .then((rows) => rows[0] ?? null)
+      let globalSourceId = proxy.sourceId
+      if (source?.organizationId) {
+        const [clonedSource] = await tx.insert(proxySources).values({
+          organizationId: null,
+          name: source.name,
+          description: source.description,
+          url: source.url,
+          status: 'active',
+          createdBy: admin.id,
+        }).returning()
+        globalSourceId = clonedSource.id
+      }
+      const [clonedProxy] = await tx.insert(financialProxies).values({
+        organizationId: null,
+        sourceId: globalSourceId,
+        name: proxy.name,
+        description: proxy.description,
+        proxyType: proxy.proxyType,
+        country: proxy.country,
+        territory: proxy.territory,
+        currency: proxy.currency,
+        value: proxy.value,
+        ...usdFields,
+        unit: proxy.unit,
+        referenceYear: proxy.referenceYear,
+        thematicArea: proxy.thematicArea,
+        methodology: proxy.methodology,
+        confidenceLevel: proxy.confidenceLevel,
+        methodologicalRisk: proxy.methodologicalRisk,
+        reviewStatus: 'approved',
+        reviewerId: admin.id,
+        reviewedAt: new Date(),
+        createdBy: admin.id,
+      }).returning()
+      await tx.update(financialProxies)
+        .set({ reviewStatus: 'approved', ...usdFields, reviewerId: admin.id, reviewedAt: new Date(), updatedAt: new Date() })
+        .where(eq(financialProxies.id, proxyId))
+      return clonedProxy
+    },
+  )
 }

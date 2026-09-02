@@ -12,13 +12,14 @@ import {
   type MethodologyReviewItemInput,
   type MethodologyReviewHeaderInput,
 } from '@/lib/pipeline/methodology-review'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 
 export async function getMethodologyReviewAction(projectId: string, step: PipelineReviewStep) {
-  return getMethodologyReview(projectId, step)
+  return runWithOrganizationAccess(() => getMethodologyReview(projectId, step))
 }
 
 export async function startMethodologyReviewAction(projectId: string, step: PipelineReviewStep) {
-  return startMethodologyReview(projectId, step)
+  return runWithOrganizationAccess(() => startMethodologyReview(projectId, step))
 }
 
 export async function upsertMethodologyReviewItemAction(
@@ -26,7 +27,9 @@ export async function upsertMethodologyReviewItemAction(
   step: PipelineReviewStep,
   input: MethodologyReviewItemInput
 ) {
-  return upsertMethodologyReviewItem(projectId, step, input)
+  return runWithOrganizationAccess(() =>
+    upsertMethodologyReviewItem(projectId, step, input)
+  )
 }
 
 export async function updateMethodologyReviewAction(
@@ -34,5 +37,7 @@ export async function updateMethodologyReviewAction(
   step: PipelineReviewStep,
   input: MethodologyReviewHeaderInput
 ) {
-  return updateMethodologyReview(projectId, step, input)
+  return runWithOrganizationAccess(() =>
+    updateMethodologyReview(projectId, step, input)
+  )
 }

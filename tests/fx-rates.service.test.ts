@@ -7,7 +7,26 @@ import { db } from '@/db/client';
 import Decimal from 'decimal.js';
 
 vi.mock('@/lib/auth/session');
-vi.mock('@/db/client');
+
+// Explicit factory instead of `vi.mock('@/db/client')` automock.
+//
+// db/client.ts no longer builds its client at import time — `db` is a lazy
+// proxy, so there is no live drizzle instance for the automocker to walk and
+// turn into mock methods. This suite calls `vi.mocked(db).select
+// .mockReturnValue(...)`, i.e. it needs the methods to already exist, so it
+// declares them. (tests/funders.service.test.ts and
+// tests/outcome-funder-allocations.service.test.ts assign their own mocks
+// onto `db` instead and are unaffected.) See docs/ops/DATABASE_TARGET_SAFETY.md.
+vi.mock('@/db/client', () => ({
+  db: {
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    execute: vi.fn(),
+    transaction: vi.fn(),
+  },
+}));
 
 describe('FX rates service', () => {
   beforeEach(() => {

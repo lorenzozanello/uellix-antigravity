@@ -1,0 +1,226 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.4",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.4",
+  "authority_class": "SUCCESSOR_PROVISIONING_REPAIR_PROTECTED_GRANT",
+  "materialization_step": "HPO-ODS-W2-03-R2",
+  "materialization_date": "2026-09-01",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Freeze, append-only, the HPO R2 decision that repairs the hosted baseline provisioning prerequisites: (D1) split managed-role IDENTITY creation out of stella_hosted_0001 into ONE new pre-baseline prepared unit; (D2) keep stella_hosted_0001 post-baseline as a consumer/verifier of those identities plus its existing ownership/grant bootstrap; (D3) keep 0042/0045 byte-identical inside PHASE_BASELINE; (D4) make 0044's stella_suggestion_decisions no-truncate trigger conditional on the relation existing; (D5) prove the corrected sequence on a DISPOSABLE ISOLATED PostgreSQL cluster. This artifact authorizes exactly the protected mutations listed below and nothing else. It integrates no product slice and does not reopen the audited 123-file B1 integration.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1/1.0.2/1.0.3, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, or any FIB / PC-01B / IM-01B artifact. Those remain byte-identical and controlling. HPO-ODS-W2-01 and HPO-ODS-W2-02 are FROZEN_UNCHANGED; HPO-ODS-W2-03 is an additional narrow grant, not a mutation of either.",
+
+  "predecessor_authorities": {
+    "ods_v1_0_3": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3.json",
+    "hpo_ods_w2_01": { "authority_id": "HPO-ODS-W2-01", "status": "FROZEN_UNCHANGED" },
+    "hpo_ods_w2_02": { "authority_id": "HPO-ODS-W2-02", "status": "FROZEN_UNCHANGED", "note": "The 75-path closed-B1 integration grant. Not used, not widened, not consumed by this artifact." },
+    "source_reconciliation": "BASELINE-REHEARSAL-0044-AUTHORITY-RECONCILIATION",
+    "source_failed_precheck": "HPO-ODS-W2-03-AUTH-AND-BASELINE-REPAIR (R1) — withdrawn: it proposed executing the WHOLE stella_hosted_0001 before PHASE_BASELINE, which is impossible because that package requires baseline objects (0012 stella_interactions, 0030 uellix_forbid_mutation(), 0031/0039 RLS helpers, organizations/projects/evidence_items/users)."
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "audited_head": "72c60243866c9c15c89b708f809a1c6e0cf93f6b",
+    "audited_tree": "87b597970a8b3cf89b42251bcb213a97856ef340",
+    "current_baseline_unit_count": 64,
+    "current_baseline_manifest_digest_before_repair": "3da044df81cd89493af086cdb1ff0c207e65a5cb9a7d4172ca2d607665a9240a",
+    "stale_rehearsal_artifact": { "path": "artifacts/baseline-rehearsal/latest.json", "manifestApplied": 50, "manifestDigest": "8f754f275d280e14130746b3271566d9073e4f3653b7780d47c943b60a7f050a" }
+  },
+
+  "phase_1_read_only_split_preflight": {
+    "source_file": "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+    "source_lf_sha256": "74b4a879de0e4d47d2263218c9ca257041fddbde53068731b4a4e1367e6e0aa6",
+    "ROLE_IDENTITY_SECTIONS": [
+      "§0 E1 — Supabase-shaped substrate: roles supabase_admin, supabase_auth_admin, supabase_storage_admin, authenticator, anon, authenticated, service_role; schemas auth, storage, extensions (platform only)",
+      "§0 E2 — current_user is NOT a superuser (platform only)",
+      "§0 E3 — current_user holds CREATEROLE (platform only; the CREATE-on-public half stays with the post-baseline package)",
+      "§0 E4 — uellix.bootstrap_environment must equal 'staging' in the same session",
+      "§2 — five literal CREATE ROLE / ALTER ROLE blocks: uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor",
+      "§2b — RR-02: GRANT uellix_owner TO postgres WITH INHERIT FALSE, SET TRUE (when current_user = postgres) and the SET-reachability assertion",
+      "COMMENT ON ROLE × 5",
+      "membership block — GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE; GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE",
+      "§6 (1)(2)(3) — five roles exist with no dangerous attribute; uellix_app reaches neither owner nor migrator; migrator holds owner WITH SET TRUE, INHERIT FALSE"
+    ],
+    "POST_BASELINE_SECTIONS": [
+      "§0 E5 / E5b — RLS helpers current_user_org_ids(), current_user_is_super_admin() and their owner's reach to auth.uid()",
+      "§0 E5c — installer reach to auth.uid() (kept post-baseline with the shim it protects)",
+      "§1 schema uellix_bootstrap",
+      "§2b-bis — GRANT USAGE/CREATE ON SCHEMA public (bootstrap surface for §2c)",
+      "§2c — ALTER TABLE public.stella_interactions OWNER TO uellix_owner",
+      "§3 shim public.uellix_auth_uid()",
+      "§4 uellix_bootstrap.staging_sentinel",
+      "§5 / 5b / 5c / 5d (E-01 prechain authority contract) / 5e",
+      "ALTER SCHEMA uellix_bootstrap OWNER TO uellix_owner",
+      "§6 (4)…(8)"
+    ],
+    "TABLE_DEPENDENCIES": ["public.stella_interactions (0012, ordinal 13)", "public.organizations", "public.projects", "public.evidence_items", "public.users"],
+    "FUNCTION_DEPENDENCIES": ["public.current_user_org_ids() (0031, ordinal 32; EXECUTE re-granted by 0039, ordinal 42)", "public.current_user_is_super_admin() (0031/0039)", "public.uellix_forbid_mutation() (0030, ordinal 31)", "auth.uid() (platform)"],
+    "MEMBERSHIP_DEPENDENCIES": ["uellix_owner → uellix_migrator (SET TRUE, INHERIT FALSE)", "uellix_writer → uellix_app (INHERIT TRUE, SET FALSE)", "uellix_owner → postgres (SET TRUE, INHERIT FALSE; RR-02, only when current_user = postgres)"],
+    "ROLE_SPLIT_MECHANICALLY_POSSIBLE": "YES",
+    "ROLE_IDENTITY_SINGLE_SOURCE_POSSIBLE": "YES",
+    "PRE_BASELINE_IDENTITY_SUBSET_REQUIRES_BASELINE_OBJECTS": "NO",
+    "pristine_substrate_probe": {
+      "image": "public.ecr.aws/supabase/postgres:17.6.1.143",
+      "measured": "standalone container, --network none: postgres is NOSUPERUSER, CREATEROLE, CREATEDB; superuser is supabase_admin; all seven platform roles present; database postgres owned by postgres with schemas auth/extensions/public/storage; template1 has only public; zero uellix_* roles; zero public tables; server_version_num 170006",
+      "consequence": "A fresh container of this image is a managed-faithful, role-pristine cluster. A new database inside it lacks auth/storage/extensions, so the repository shim (scripts/rehearsal/local-supabase-shim.sql) still applies and must additionally create schema extensions."
+    }
+  },
+
+  "hpo_decisions": {
+    "HPO-ODS-W2-03": {
+      "title": "SPLIT_MANAGED_ROLE_IDENTITY_BOOTSTRAP_AND_REPAIR_BASELINE_PREREQUISITES",
+      "status": "FROZEN",
+      "authoritative_sequence": [
+        "PLATFORM_SUBSTRATE",
+        "PHASE_MANAGED_ROLE_IDENTITIES  (new; the mission's PRE_BASELINE_MANAGED_ROLE_IDENTITIES, named per the repository's PHASE_* convention)",
+        "PHASE_BASELINE  (64 units in pinned order)",
+        "PHASE_STELLA_BOOTSTRAP  (stella_hosted_0001, unchanged position)",
+        "PHASE_STELLA_CHAIN"
+      ],
+      "D1_pre_baseline_managed_role_identities": {
+        "new_prepared_unit": "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql",
+        "new_rollback_unit": "db/prepared/stella_hosted_0000_rollback.sql",
+        "naming_rationale": "Family stella_hosted, numeric segment 0000 (sequences before 0001 in the same family), rollback name derived by the registry contract in tests/prepared-sql-source-of-truth.test.ts.",
+        "responsible_only_for": ["managed Uellix role creation", "role attributes", "canonical memberships that require no application table (owner→migrator SET, writer→app INHERIT, owner→postgres RR-02)"],
+        "must_not": ["reference any Uellix application table", "transfer table ownership", "grant table privileges", "depend on RLS helper functions", "depend on baseline migrations", "create application schema objects", "use dynamic EXECUTE"],
+        "derivation": "Verbatim subset of stella_hosted_0001 §0 E1–E4, §2, §2b, COMMENT ON ROLE, membership block, §6 (1)(2)(3); notices renamed to stella_hosted_0000. No new role semantics."
+      },
+      "D2_stella_hosted_0001_post_baseline": {
+        "keep_in": "PHASE_STELLA_BOOTSTRAP",
+        "refactor": ["remove role definitions (CREATE/ALTER ROLE, COMMENT ON ROLE, membership GRANTs, RR-02 GRANT)", "add a fail-closed E0 assertion that the five canonical roles exist with the canonical attributes and memberships established by stella_hosted_0000", "retain §1, §2b-bis, §2c ownership transfer, §3 shim, §4 sentinel, §5/5b/5c/5d/5e, §6 (4)…(8) and the E-01 prechain authority behaviour"],
+        "rollback": "stella_hosted_0001_rollback.sql stops dropping the five roles (they belong to stella_hosted_0000); it still REVOKEs the schema-public privileges it granted and asserts the bootstrap schema and shim are gone; stella_hosted_0000_rollback.sql owns membership revocation and role removal, refusing while uellix_bootstrap exists or any role owns objects.",
+        "single_source_of_truth": "stella_hosted_0000 for role identity; stella_hosted_0001 becomes consumer/verifier. Zero duplicated CREATE ROLE/ALTER ROLE between them (validated by test N5)."
+      },
+      "D3_baseline_0042_0045": { "keep_in": "PHASE_BASELINE", "MIGRATION_0042_CHANGED": "NO", "MIGRATION_0045_CHANGED": "NO", "note": "They succeed because canonical uellix_app exists from PHASE_MANAGED_ROLE_IDENTITIES. Their CREATE POLICY … TO uellix_app semantics are not altered." },
+      "D4_migration_0044": {
+        "file": "db/migrations/0044_fib_audit_hardening_supersession.sql",
+        "correction": "Wrap ONLY the stella_suggestion_decisions DROP TRIGGER IF EXISTS / CREATE TRIGGER pair in a DO $$ block guarded by to_regclass('public.stella_suggestion_decisions') IS NOT NULL; when absent, RAISE NOTICE and skip that one trigger deterministically. The five other DROP/CREATE TRIGGER pairs remain unconditional and byte-identical. No CREATE TABLE. No change to uellix_forbid_mutation().",
+        "static_consequences": "baseline scanner counts 5 unconditional triggers for the unit (the guarded one lives inside a DO statement); baseline-manifest expect.triggersCreatedCount for 0044 becomes 5; B0-06 derives its expected trigger set from the scanner and therefore does not demand the conditional trigger on a table-absent baseline; tests/fib-audit-migrations.test.ts keeps its six-name inventory and its statement allowlist admits the guard tokens.",
+        "MIGRATION_0044_CREATES_TABLE": "NO"
+      },
+      "D5_rehearsal_contract": {
+        "target": "DISPOSABLE ISOLATED PostgreSQL cluster: a fresh container of public.ecr.aws/supabase/postgres:17.6.1.143 started by the rehearsal itself with --network none, never a shared or pre-existing container (roles are cluster-scoped; a fresh DATABASE in a contaminated cluster proves nothing about uellix_* roles)",
+        "initial_state_required": ["0 uellix_* roles", "0 Uellix application tables"],
+        "sequence": ["install/verify governed platform substrate (image roles + repository shim per database)", "N1 control: manifest order WITHOUT role identities must fail at 0042 (42704)", "run stella_hosted_0000 as the non-superuser postgres installer with uellix.bootstrap_environment = 'staging'", "assert canonical topology and 0 application tables", "run all 64 baseline units in pinned order", "CHECKPOINT B0 observation", "run stella_hosted_0001 post-baseline and assert its S1 subset", "table-present control for 0044 in a separate database", "guard mutation control: the unconditional statement raises 42P01 on the table-absent database", "destroy the container; 0 leftovers"],
+        "naive_order_historic_control": "kept: Drizzle-only order must still fail at db/migrations/0039_grant_rls_helper_execution.sql"
+      }
+    }
+  },
+
+  "protected_grant": {
+    "authority_id": "HPO-ODS-W2-03",
+    "authorized_branch": "codex/u0-u9-reengineering-resume-r1",
+    "purpose": "BASELINE_PROVISIONING_REPAIR_ONLY",
+    "authorized_protected_path_count": 8,
+    "authorized_protected_paths": [
+      "db/migrations/0044_fib_audit_hardening_supersession.sql",
+      "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql",
+      "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql",
+      "db/prepared/stella_hosted_0000_rollback.sql",
+      "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+      "db/prepared/stella_hosted_0001_rollback.sql",
+      "db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql",
+      "db/prepared/README.md"
+    ],
+    "wildcard_patterns_used": 0,
+    "path_dispositions": {
+      "db/migrations/0044_fib_audit_hardening_supersession.sql": { "kind": "MODIFY", "pre_blob": "0e724c627206c407144cb857ee548a23992823d6", "pre_lf_sha256": "14149207639bb976105481db045b36ff0e8979a7d11cbf259210ac87929fdf4b" },
+      "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql": { "kind": "REGENERATE (pnpm journal:generate)", "pre_blob": "4836163d9d9d5c7cd5161649a5a12bf38352a887", "pre_lf_sha256": "1c882032e7abe3ac472d997086bc4b519ea3915bbb71212f065df7e794cfbc45" },
+      "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql": { "kind": "NEW" },
+      "db/prepared/stella_hosted_0000_rollback.sql": { "kind": "NEW" },
+      "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql": { "kind": "MODIFY", "pre_blob": "e81b1dc27919b1cb96a781d21d30b62f4ad26677", "pre_lf_sha256": "74b4a879de0e4d47d2263218c9ca257041fddbde53068731b4a4e1367e6e0aa6" },
+      "db/prepared/stella_hosted_0001_rollback.sql": { "kind": "MODIFY", "pre_blob": "a9d670ce6ecfc5bfbccd8344e4f3787d269cf930", "pre_lf_sha256": "f5a86826fa72f6a488ae6ef0ee9c464a3f1bba2b053e97eb55405ae2c4aedc65" },
+      "db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql": { "kind": "REGENERATE (pnpm hosted:generate; native-hosted passthrough)", "pre_blob": "e81b1dc27919b1cb96a781d21d30b62f4ad26677" },
+      "db/prepared/README.md": { "kind": "MODIFY (registry rows for stella_hosted_0000/0001 and the prechain order line)", "pre_blob": "823896062e6991b0c5925e0862e20a34f63ee01a" }
+    },
+    "not_authorized": ["db/migrations/0042_fib_audit_insert_policy.sql", "db/migrations/0045_fib_domain_object_version_lineage.sql", "db/migrations/0048..0052", "any other db/migrations/** path", "any other db/prepared/** path (journal wrappers other than 055, governed artefacts, stella_0003_suggestion_decisions.sql, storage/**)", "db/baseline/**", "docs/ops/fib/**", "docs/ops/pc01b/**", "docs/ops/im01b/**", "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"]
+  },
+
+  "unprotected_implementation_surfaces": {
+    "rule": "Indicative and bounded; ordinary --allow remains mandatory per task. No product runtime file.",
+    "expected": [
+      "db/hosted/managed-role-identities.ts (new: canonical roles, attributes, memberships, package pin)",
+      "db/hosted/hosted-provisioning-runner.ts (PHASE_MANAGED_ROLE_IDENTITIES before PHASE_BASELINE; role-probe refusals; PHASE_BASELINE requires exactly the five identity roles)",
+      "db/hosted/baseline-postconditions.ts (B0-09: exactly the five identity roles, no other uellix_* role, no capability role)",
+      "db/hosted/baseline-recovery.ts (decision branch for the new phase)",
+      "db/hosted/baseline-manifest.ts (0044 sha256 pin + expect.triggersCreatedCount 5 + prose)",
+      "db/hosted/hosted-package-manifest.ts (stella_hosted_0001 sourceSha256 repin; expectedObjects wording)",
+      "db/hosted/bootstrap-postconditions.ts (BOOTSTRAP_ROLES sourced from managed-role-identities)",
+      "scripts/baseline-rehearsal-local.ts (isolated cluster + D5 sequence)",
+      "scripts/rehearsal/local-supabase-shim.sql (schema extensions)",
+      "scripts/ods-scope.ts (register HPO-ODS-W2-03; no matcher change)",
+      "tests/ods/ods-scope.test.ts, tests/hosted/**, tests/prepared-stella-sql.test.ts, tests/fib-audit-migrations.test.ts, tests/stella-r3-4-fresh-chain.test.ts, tests/eval/stella-release/hosted-baseline-gate.ts (fixture role field only if required)",
+      "artifacts/baseline-rehearsal/latest.json (generated by the rehearsal only)"
+    ]
+  },
+
+  "prohibited_surfaces": ["db/baseline/**", "docs/ops/fib/**", "docs/ops/pc01b/**", "docs/ops/im01b/**", "db/prepared/stella_0003_suggestion_decisions.sql", "db/migrations/0042_fib_audit_insert_policy.sql", "db/migrations/0045_fib_domain_object_version_lineage.sql", "db/migrations/0048_* … 0052_*", "app/**", "lib/**", "components/**", "package.json", "pnpm-lock.yaml", "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json", "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json", "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json", "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3.json"],
+
+  "generated_artifact_regeneration": {
+    "rule": "Repository-native generators only; no hand-fabricated digests.",
+    "steps": ["pnpm journal:generate → db/prepared/journal/055_0044_… (only unit 55 changes)", "pnpm hosted:generate → db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql (passthrough)", "baseline-manifest sha256 for 0044 repinned from the value pnpm baseline:verify reports", "hosted-package-manifest sourceSha256 and the rollback pin repinned from sha256OfSql", "artifacts/baseline-rehearsal/latest.json written by pnpm baseline:rehearsal:local"]
+  },
+
+  "test_manifest": {
+    "positive": {
+      "P1": "pristine cluster starts with 0 uellix_* roles (rehearsal assertion + N3 refusal)",
+      "P2": "stella_hosted_0000 executes as the non-superuser postgres installer",
+      "P3": "role attributes/memberships equal db/hosted/managed-role-identities.ts (rehearsal topology check; tests/hosted/managed-role-identities.test.ts)",
+      "P4": "0 application tables after the identity package alone",
+      "P5": "all 64 baseline units execute (MANIFEST_APPLIED=64)",
+      "P6": "0042 succeeds with canonical uellix_app",
+      "P7": "0045 succeeds with canonical uellix_app",
+      "P8": "0044 succeeds with stella_suggestion_decisions absent",
+      "P9": "0044 does not create the table (rehearsal: relation absent afterwards; source-of-truth test: no CREATE/ALTER TABLE)",
+      "P10": "table-present control installs trg_stella_suggestion_decisions_no_truncate",
+      "P11": "post-baseline stella_hosted_0001 succeeds using the already-existing roles",
+      "P12": "post-baseline ownership/grant semantics remain valid (schema uellix_bootstrap and public.stella_interactions owned by uellix_owner; shim present)",
+      "P13": "0048..0052 all execute"
+    },
+    "negative": {
+      "N1": "manifest order without role identities fails at 0042 with 42704 (rehearsal control database)",
+      "N2": "identity package references no application table / RLS helper / baseline object (static test over stella_hosted_0000)",
+      "N3": "residual uellix_* role at pristine start → rehearsal refuses before writing anything",
+      "N4": "unconditional form against the table-absent database raises 42P01 (rehearsal guard-mutation control)",
+      "N5": "duplicate role-definition behaviour between 0000/0001 → validator fails (static test: 0001 executable text carries no CREATE/ALTER ROLE, COMMENT ON ROLE or role-membership GRANT)",
+      "N6": "attribute/membership drift from the governed definition → FAIL (managed-role-identities.test.ts compares the SQL literals against the TS table)"
+    },
+    "mutation": {
+      "M1": "remove creation of uellix_app from the identity package → N1-class failure (asserted statically: exactly five CREATE ROLE, including uellix_app, in 0000)",
+      "M2": "alter NOINHERIT/BYPASSRLS/LOGIN attribute → topology control fails (N6 test)",
+      "M3": "restore 0044's unconditional trigger → 42P01 reproduced (N4 rehearsal control)",
+      "M4": "remove table-present trigger behaviour → P10 control fails"
+    }
+  },
+
+  "stop_conditions": ["role identity subset requires baseline objects", "role semantics must be duplicated", "0042/0045 bytes need changes", "0044 must create stella_suggestion_decisions", "db/baseline/** must change", "stella_0003 must change", "any protected path outside the eight listed", "64-unit rehearsal still fails", "post-baseline stella_hosted_0001 cannot safely consume the split roles", "any new authority contradiction", "same semantic failure repeats twice"],
+
+  "focused_independent_audit_requirement": "Because this mission changes a protected historical migration, the provisioning phase order and the managed-role timing, the result is a CANDIDATE only. It requires HPO_ODS_W2_03_FOCUSED_ADVERSARIAL_REAUDIT before the baseline repair is certified; B1 evidence product integration remains CONDITIONAL until that audit passes. The 123-file B1 semantic audit is NOT reopened.",
+
+  "operational_state": {
+    "ODS_V1_OPERATIONAL": true,
+    "LANE_B_WRITE_DISPOSITION": "OPEN_FOR_HPO_ODS_W2_03_BASELINE_PROVISIONING_REPAIR_ONLY (in addition to the unchanged HPO-ODS-W2-02 disposition)",
+    "READY_FOR_B2_OR_B3_PROTECTED_WRITES": false
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS",
+    "protected_corpus_count": 9,
+    "sealed_or_frozen_artifacts_modified": 0,
+    "hpo_ods_w2_01_changed": false,
+    "hpo_ods_w2_02_changed": false,
+    "wildcard_grants_added": 0,
+    "implementation_performed_by_this_artifact": false
+  },
+
+  "state_after_this_artifact": {
+    "next_gate": "HARD_GATE_A_THEN_REGISTER_PROTECTED_GRANT",
+    "final_state_target": "BASELINE_PROVISIONING_REPAIR_R2_IMPLEMENTED_AND_REHEARSED_PENDING_FOCUSED_AUDIT"
+  },
+
+  "final_state": "HPO_ODS_W2_03_FROZEN_READY_FOR_GRANT_REGISTRATION"
+}

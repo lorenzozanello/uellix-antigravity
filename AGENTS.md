@@ -1,11 +1,15 @@
 # Guía para Agentes de IA en Uellix
 
-Para todo desarrollo en este repositorio, la fuente canónica de instrucciones y reglas de trabajo es:
-Consulte [ANTIGRAVITY.md](file:///c:/Users/Lorenzo/Documents/uellix-antigravity/ANTIGRAVITY.md).
+Para todo desarrollo en este repositorio, la guía operativa canónica es
+[CLAUDE.md](CLAUDE.md), en la raíz de este mismo repositorio.
+
+Esta reconciliación es prospectiva, bajo la autoridad HPO-ODS-01
+(`docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json`): no reescribe evidencia
+histórica ni reabre ninguna decisión previamente cerrada.
 
 ## Restricciones y Stack de Uellix:
-- **Herramientas Prohibidas:** No utilizar Claude Code ni Google AI Studio.
-- **Entorno de Desarrollo Autorizado:** Antigravity, GitHub y Vercel.
+- **Entorno de Desarrollo Autorizado:** Claude Code Desktop/CLI (primario, HPO-ODS-01), GitHub y Vercel. Antigravity puede seguir usándose como herramienta auxiliar acotada, nunca como ancla única de autoridad.
+- **No autorizado:** Google AI Studio como entorno de desarrollo, salvo adjudicación separada.
 - **Stack Tecnológico Aprobado:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, Supabase, Drizzle ORM, Gemini API, Vercel y GitHub.
 
 <!-- BEGIN:nextjs-agent-rules -->

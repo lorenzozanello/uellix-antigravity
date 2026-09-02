@@ -1,0 +1,88 @@
+{
+  "phase": "CHECKPOINT A1",
+  "sentinelExpected": "present",
+  "targetProjectRef": "bvyzblhqymxruxdguaee",
+  "verdict": "PASS",
+  "passedCount": 13,
+  "totalCount": 13,
+  "checks": [
+    {
+      "id": "S1-01",
+      "title": "schema uellix_bootstrap exists and is owned by uellix_owner",
+      "passed": true,
+      "detail": "owned by uellix_owner"
+    },
+    {
+      "id": "S1-02",
+      "title": "exactly the five roles exist",
+      "passed": true,
+      "detail": "5 roles: uellix_app, uellix_auditor, uellix_migrator, uellix_owner, uellix_writer"
+    },
+    {
+      "id": "S1-03",
+      "title": "no role this package created holds a dangerous attribute",
+      "passed": true,
+      "detail": "none is SUPERUSER, BYPASSRLS, CREATEROLE, CREATEDB or REPLICATION"
+    },
+    {
+      "id": "S1-04",
+      "title": "the membership graph is exactly the contract",
+      "passed": true,
+      "detail": "migrator->owner SET/NOINHERIT, app->writer INHERIT/NOSET"
+    },
+    {
+      "id": "S1-05",
+      "title": "the runtime cannot reach the owner or the migrator BY ANY PATH",
+      "passed": true,
+      "detail": "uellix_app reaches neither"
+    },
+    {
+      "id": "S1-06",
+      "title": "public.stella_interactions is owned by uellix_owner",
+      "passed": true,
+      "detail": "owned by uellix_owner"
+    },
+    {
+      "id": "S1-07",
+      "title": "all three bootstrap functions exist, with their exact signatures",
+      "passed": true,
+      "detail": "3 functions present"
+    },
+    {
+      "id": "S1-08",
+      "title": "every bootstrap function is owned by one and the same installer",
+      "passed": true,
+      "detail": "all owned by postgres"
+    },
+    {
+      "id": "S1-09",
+      "title": "the shim is SECURITY DEFINER, the other two are not, and all pin an empty search_path",
+      "passed": true,
+      "detail": "definer/invoker as contracted, empty search_path on all three"
+    },
+    {
+      "id": "S1-10",
+      "title": "the effective EXECUTE acl is exactly the contract on every function",
+      "passed": true,
+      "detail": "no PUBLIC, anon, authenticated or service_role; contract grantees intact"
+    },
+    {
+      "id": "S1-11",
+      "title": "on schema public, only uellix_owner holds CREATE, and all five hold USAGE",
+      "passed": true,
+      "detail": "USAGE x5, CREATE only for uellix_owner"
+    },
+    {
+      "id": "S1-12",
+      "title": "the staging sentinel TABLE exists",
+      "passed": true,
+      "detail": "present"
+    },
+    {
+      "id": "S1-13",
+      "title": "the sentinel ROW is where this phase requires it to be",
+      "passed": true,
+      "detail": "exactly one row, written by the operator"
+    }
+  ]
+}

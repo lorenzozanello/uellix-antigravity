@@ -3,12 +3,13 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, FileDown } from 'lucide-react'
 import { getReportDraft, getCalculationRunDetail } from '@/lib/pipeline/sroi-results'
 import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service'
-import { getCurrentOrganizationContext } from '@/lib/auth/session'
+import { runWithOptionalOrganizationAccess } from '@/lib/auth/session'
 import { SECTION_GROUPS, SECTION_META } from '@/lib/reports/report-sections'
 import { PrintButton } from './PrintButton'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { buildEvidenceManifest, extractFxTrail, extractLineItems, buildMethodologyReadiness } from '@/lib/reports/pdf/report-data'
 import { listMethodologyReviewsForProject } from '@/lib/pipeline/methodology-review'
 import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
@@ -37,25 +38,66 @@ export default async function ReportPrintPage({
 }) {
   const { projectId, reportId } = await params
 
-  const ctx = await getCurrentOrganizationContext()
-  if (!ctx) notFound()
+  // The whole data phase runs in one identity context. Everything after it is
+  // pure derivation and JSX, so nothing queries while the page streams.
+  const loaded = await runWithOptionalOrganizationAccess(async (ctx) => {
+    if (!ctx) return null
 
-  let report: Awaited<ReturnType<typeof getReportDraft>>
-  try {
-    report = await getReportDraft(projectId, reportId)
-  } catch {
-    notFound()
-  }
+    let report: Awaited<ReturnType<typeof getReportDraft>>
+    try {
+      report = await getReportDraft(projectId, reportId)
+    } catch {
+      return null
+    }
 
-  const [project, runDetail] = await Promise.all([
-    getProjectByIdForCurrentOrganization(projectId),
-    getCalculationRunDetail(projectId, report.calculationRunId).catch(() => null),
-  ])
+    const [project, runDetail] = await Promise.all([
+      getProjectByIdForCurrentOrganization(projectId),
+      getCalculationRunDetail(projectId, report.calculationRunId).catch(() => null),
+    ])
+
+    const variant = isReportVariant(report.reportVariant) ? report.reportVariant : 'audit'
+    const annexes = getVariantAnnexes(variant)
+
+    return {
+      organizationName: ctx.organization.name,
+      report,
+      project,
+      runDetail,
+      // Comparability crosswalks: dedupe codes within each catalog. Only
+      // rendered when mappings exist — never invented.
+      mappings: await listOutcomeMappingsForProject(projectId).catch(() => []),
+      methodologyReviews: annexes.methodologyReadiness
+        ? await listMethodologyReviewsForProject(projectId).catch(() => [])
+        : [],
+      // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — this is a governed
+      // REPORT/ANNEX surface. Only evidence explicitly classified
+      // 'non_sensitive' may reach the printable evidence manifest;
+      // unclassified (never-evaluated) evidence is excluded the same as
+      // classified-sensitive evidence, never an implicit pass. Inlined
+      // here (rather than a separate helper function) so both DB calls
+      // stay lexically inside this identity context —
+      // tests/database-runtime-entrypoints.test.ts's AST scanner does not
+      // trace calls across a function boundary to see that a helper is
+      // only ever invoked from inside a runWith* callback.
+      evidence: annexes.evidenceManifest
+        ? await (async () => {
+            const evidenceUnfiltered = await listEvidenceForProject(projectId).catch(() => [])
+            const versionsById = await getLatestEvidenceVersionsByEvidenceIds(
+              evidenceUnfiltered.map((e) => e.id)
+            )
+            return evidenceUnfiltered.filter(
+              (e) => versionsById.get(e.id)?.sensitivityClassification === 'non_sensitive'
+            )
+          })()
+        : [],
+    }
+  })
+
+  if (!loaded) notFound()
+  const { organizationName, report, project, runDetail, mappings, methodologyReviews, evidence } =
+    loaded
 
   const run = runDetail?.run ?? null
-  // Comparability crosswalks: dedupe codes within each catalog. Only rendered
-  // when mappings exist — never invented.
-  const mappings = await listOutcomeMappingsForProject(projectId).catch(() => [])
   const seenByCatalog = new Map<string, Set<string>>()
   const dedupedMappings = mappings.filter((m) => {
     const seen = seenByCatalog.get(m.catalogCode) ?? new Set<string>()
@@ -69,12 +111,12 @@ export default async function ReportPrintPage({
   const fxTrail = annexes.fxTrail ? extractFxTrail(report.snapshotJson) : null
   const lineItems = annexes.lineItems ? extractLineItems(report.snapshotJson) : null
   const methodologyReadiness = annexes.methodologyReadiness
-    ? buildMethodologyReadiness(await listMethodologyReviewsForProject(projectId).catch(() => []))
+    ? buildMethodologyReadiness(methodologyReviews)
     : null
   const mappingGroups = annexes.standards ? groupMappingsByCatalog(dedupedMappings) : []
   const evidenceManifest = annexes.evidenceManifest
     ? buildEvidenceManifest(
-        (await listEvidenceForProject(projectId).catch(() => [])).map((e) => ({
+        evidence.map((e) => ({
           title: e.title,
           type: e.type,
           status: e.status,
@@ -127,7 +169,7 @@ export default async function ReportPrintPage({
           <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-slate-700 sm:grid-cols-3">
             <div>
               <dt className="text-xs text-slate-500">Organización</dt>
-              <dd className="font-medium">{ctx.organization.name}</dd>
+              <dd className="font-medium">{organizationName}</dd>
             </div>
             <div>
               <dt className="text-xs text-slate-500">Proyecto</dt>

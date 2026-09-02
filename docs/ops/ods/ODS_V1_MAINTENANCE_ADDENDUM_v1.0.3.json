@@ -1,0 +1,243 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.3",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3",
+  "authority_class": "SUCCESSOR_INTEGRATION_PROTECTED_GRANT",
+  "materialization_step": "ODS-W2-02-AUTH",
+  "materialization_date": "2026-09-01",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Materialize the successor ODS authority already adjudicated by the independent RE-B1-INTEGRATION-AUTHORITY-CHECK: authorize exactly one narrow, one-purpose protected-write grant to transport the already-closed final Wave2-B1 state at SOURCE_B1_REF into TARGET_BRANCH, and authorize ONLY the exact 75 protected paths belonging to that closed B1 state. This artifact does not re-adjudicate whether the grant is necessary, does not integrate the 123 B1 files, and does not authorize B2, B3, any future migration or prepared-journal file, or any generic db/migrations/**, db/prepared/**, or db/baseline/** grant on any branch.",
+
+  "scope_note": "SUCCESSOR/ADDITIVE AUTHORITY. This addendum does not rewrite, supersede, reinterpret or restate docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json, docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, or any Wave 1 / FIB / PC-01B / IM-01B authority or evidence artifact. Those remain byte-identical and controlling. Where this addendum and any of them appear to disagree, they control. HPO-ODS-W2-01 is FROZEN_UNCHANGED: this artifact adds a second, independent grant entry (HPO-ODS-W2-02) to the protected-grant registry; it does not modify HPO-ODS-W2-01's authority id, branch, patterns, or semantics in any way.",
+
+  "predecessor_authorities": {
+    "ods_v1_0_2": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json",
+    "hpo_ods_w2_01": {
+      "artifact": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json",
+      "authority_id": "HPO-ODS-W2-01",
+      "authorized_branch": "codex/w2-methodology-objects-r1",
+      "authorized_protected_patterns": ["db/migrations/**", "db/prepared/journal/**"],
+      "status": "FROZEN_UNCHANGED",
+      "relationship_to_this_artifact": "HPO-ODS-W2-02 is a successor/additional narrow grant, not an expansion or mutation of W2-01. W2-01 remains scoped exclusively to branch codex/w2-methodology-objects-r1 and is unaffected by this artifact."
+    }
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "target_branch": "codex/u0-u9-reengineering-resume-r1",
+    "target_base_ref": "7e38458d138563c40f0f1287195bd4601f77a6d3",
+    "target_base_tree": "7c2da22ffe9980a5bcd602eba476220f83290fb9",
+    "source_b1_ref": "d058b36007e584f48d8f3f860c532924229c636a",
+    "source_b1_tree": "40d4f43a0b57b9344556b596e375d0fe18dd44c1",
+    "b1_common_baseline": "ba2f5fd2abb120885b3dce21c476203da1f1f151",
+    "b1_common_baseline_derivation": "git merge-base d058b36007e584f48d8f3f860c532924229c636a 7e38458d138563c40f0f1287195bd4601f77a6d3, independently re-derived at materialization time, not accepted on report.",
+    "source_authority": "HPO-ODS-W2-01"
+  },
+
+  "source_check": {
+    "check_id": "RE-B1-INTEGRATION-AUTHORITY-CHECK",
+    "check_type": "INDEPENDENT_ADVERSARIAL_CHECK",
+    "disposition": "SUCCESSOR_INTEGRATION_GRANT_REQUIRED",
+    "not_reopened_by_this_artifact": "This artifact materializes the disposition already reached by RE-B1-INTEGRATION-AUTHORITY-CHECK. It does not re-adjudicate whether the grant is necessary.",
+    "measurements_carried_forward": [
+      "123 total B1 integration files",
+      "75 protected paths",
+      "the same exact content fails ODS on the target branch without this grant",
+      "the same content passes only under the W2-01 branch binding (codex/w2-methodology-objects-r1), not on this branch",
+      "merge/cherry-pick/final-tree-port/byte-copy are all unauthorized under HPO-ODS-W2-01 alone",
+      "exact literal path grants are supported by the current ODS-C4 matcher",
+      "sibling/noncanonical negative controls fail correctly"
+    ],
+    "independently_reverified_at_materialization": {
+      "method": "git diff --name-only <b1_common_baseline> <source_b1_ref>, then classified every path through the live DEFAULT_PROTECTED_PATTERNS matcher in scripts/ods-scope.ts (matchesAnyPattern), not a manually transcribed list.",
+      "b1_integration_file_count": 123,
+      "b1_protected_file_count": 75,
+      "conclusion": "Matches the ODS-M1C/RE-B1-INTEGRATION-AUTHORITY-CHECK measurement exactly. No mismatch found."
+    }
+  },
+
+  "hpo_decisions": {
+    "HPO-ODS-W2-02": {
+      "title": "CLOSED_B1_PRODUCT_INTEGRATION_GRANT",
+      "status": "FROZEN",
+      "component_affected": "ODS-C4 (pnpm ods:scope), protected-grant registry (scripts/ods-scope.ts PROTECTED_GRANTS)",
+      "purpose": "CLOSED_WAVE2_B1_FINAL_STATE_INTEGRATION_ONLY",
+
+      "grant": {
+        "authority_id": "HPO-ODS-W2-02",
+        "authorized_branch": "codex/u0-u9-reengineering-resume-r1",
+        "authorized_protected_path_count": 75,
+        "authorized_protected_paths": [
+          "db/migrations/0048_fib_evidence_versions.sql",
+          "db/migrations/0049_fib_evidence_sensitivity_vocabulary.sql",
+          "db/migrations/0050_fib_evidence_sufficiency_determinations.sql",
+          "db/migrations/0051_fib_evidence_erasure_substrate.sql",
+          "db/migrations/0052_fib_evidence_sufficiency_run_binding.sql",
+          "db/migrations/meta/0048_snapshot.json",
+          "db/migrations/meta/0049_snapshot.json",
+          "db/migrations/meta/0050_snapshot.json",
+          "db/migrations/meta/0051_snapshot.json",
+          "db/migrations/meta/0052_snapshot.json",
+          "db/migrations/meta/_journal.json",
+          "db/prepared/journal/001_0000_quick_husk.sql",
+          "db/prepared/journal/002_0001_noisy_chameleon.sql",
+          "db/prepared/journal/003_0002_huge_namorita.sql",
+          "db/prepared/journal/004_0003_curvy_tempest.sql",
+          "db/prepared/journal/005_0004_thick_mentor.sql",
+          "db/prepared/journal/006_0005_daffy_dreaming_celestial.sql",
+          "db/prepared/journal/007_0006_outstanding_vindicator.sql",
+          "db/prepared/journal/008_0007_black_imperial_guard.sql",
+          "db/prepared/journal/009_0008_bored_pretty_boy.sql",
+          "db/prepared/journal/010_0009_motionless_peter_parker.sql",
+          "db/prepared/journal/011_0010_crazy_warhawk.sql",
+          "db/prepared/journal/012_0011_sroi_results_report_foundation.sql",
+          "db/prepared/journal/013_0012_stella_interactions.sql",
+          "db/prepared/journal/014_0013_performance_indexes.sql",
+          "db/prepared/journal/015_0014_fine_blade.sql",
+          "db/prepared/journal/016_0015_misty_lorna_dane.sql",
+          "db/prepared/journal/017_0016_fat_mac_gargan.sql",
+          "db/prepared/journal/018_0017_striped_legion.sql",
+          "db/prepared/journal/019_0018_redundant_firebird.sql",
+          "db/prepared/journal/020_0019_lazy_overlord.sql",
+          "db/prepared/journal/021_0020_long_squadron_supreme.sql",
+          "db/prepared/journal/022_0021_glorious_sandman.sql",
+          "db/prepared/journal/023_0022_abandoned_karma.sql",
+          "db/prepared/journal/024_0023_faulty_silver_sable.sql",
+          "db/prepared/journal/025_0024_outstanding_enchantress.sql",
+          "db/prepared/journal/026_0025_shallow_mattie_franklin.sql",
+          "db/prepared/journal/027_0026_violet_selene.sql",
+          "db/prepared/journal/028_0027_little_midnight.sql",
+          "db/prepared/journal/029_0028_keen_iron_patriot.sql",
+          "db/prepared/journal/030_0029_integrity.sql",
+          "db/prepared/journal/031_0030_immutability.sql",
+          "db/prepared/journal/032_0031_rls_core.sql",
+          "db/prepared/journal/033_0032_rls_specialized.sql",
+          "db/prepared/journal/034_0033_public_api_grants.sql",
+          "db/prepared/journal/035_0034_phase3_white_label.sql",
+          "db/prepared/journal/036_0035_phase5_marketing_leads.sql",
+          "db/prepared/journal/037_0036_phase2_onboarding.sql",
+          "db/prepared/journal/038_0037_phase1_stripe.sql",
+          "db/prepared/journal/039_0038_sprint_a_gdpr_users.sql",
+          "db/prepared/journal/040_20260716000000_auth_trigger.sql",
+          "db/prepared/journal/041_20260716000001_storage_policies.sql",
+          "db/prepared/journal/042_0039_grant_rls_helper_execution.sql",
+          "db/prepared/journal/043_001_initial_auth_rls.sql",
+          "db/prepared/journal/044_002_stella_interactions_rls.sql",
+          "db/prepared/journal/045_003_signup_allowlist_rls.sql",
+          "db/prepared/journal/046_004_fx_tables_rls.sql",
+          "db/prepared/journal/047_005_theory_of_change_rls.sql",
+          "db/prepared/journal/048_006_methodology_review_rls.sql",
+          "db/prepared/journal/049_007_taxonomy_rls.sql",
+          "db/prepared/journal/050_008_marketing_leads_rls.sql",
+          "db/prepared/journal/051_0040_governed_model_registry.sql",
+          "db/prepared/journal/052_0041_pc01b_regime_boundary_backfill.sql",
+          "db/prepared/journal/053_0042_fib_audit_insert_policy.sql",
+          "db/prepared/journal/054_0043_fib_audit_project_id_fk.sql",
+          "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql",
+          "db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql",
+          "db/prepared/journal/057_0046_fib_run_version_identity.sql",
+          "db/prepared/journal/058_009_governed_model_registry_rls.sql",
+          "db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql",
+          "db/prepared/journal/060_0048_fib_evidence_versions.sql",
+          "db/prepared/journal/061_0049_fib_evidence_sensitivity_vocabulary.sql",
+          "db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql",
+          "db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql",
+          "db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql"
+        ],
+        "wildcard_patterns_used": 0,
+        "no_glob_patterns": true
+      },
+
+      "not_authorized": [
+        "B2",
+        "B3",
+        "any future migration path not named in authorized_protected_paths above",
+        "any future prepared-journal path not named in authorized_protected_paths above",
+        "any new protected path",
+        "any change to B1 semantics beyond byte-identical transport",
+        "generic db/migrations/**",
+        "generic db/prepared/**",
+        "db/baseline/**",
+        "any other branch"
+      ],
+
+      "required_future_behavior": [
+        "Default protected behavior remains FAIL.",
+        "An ordinary --allow never overrides protected classification by itself.",
+        "This grant authorizes only the 75 exact literal paths listed above, on the exact branch codex/u0-u9-reengineering-resume-r1.",
+        "Normal task-specific --allow remains additionally mandatory for any granted path.",
+        "Wrong or missing authority ID, wrong branch, a non-granted path, or a missing normal allowlist entry => FAIL.",
+        "A grant may only narrow what a protected classification refuses; it must never widen the effective allowlist.",
+        "Unknown conditions fail closed.",
+        "No dynamic 'allow whatever changed' behavior is authorized, in any form.",
+        "This grant is not extensible by analogy, inheritance, or precedent to B2/B3 or any future migration."
+      ]
+    }
+  },
+
+  "lane_b_write_disposition": {
+    "value": "OPEN_FOR_HPO_ODS_W2_02_B1_INTEGRATION_ONLY",
+    "statement": "Prior artifacts (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json) still carry READY_FOR_LANE_B_WRITES=false at the generic level. This artifact does NOT convert that to a generic READY_FOR_LANE_B_WRITES=true. It freezes a narrow successor state: Lane B writes on codex/u0-u9-reengineering-resume-r1 are open ONLY for the closed-B1 integration authorized by HPO-ODS-W2-02 above, bounded jointly by (a) the exact branch, (b) the exact 75 protected paths, and (c) the exact integration purpose (transporting the already-closed final Wave2-B1 state). This is not a general Lane B write authorization and must not be read or cited as one.",
+    "does_not_authorize": [
+      "arbitrary Lane B writes",
+      "any protected path outside the 75 listed",
+      "any purpose other than closed-B1 integration"
+    ]
+  },
+
+  "authorized_implementation_surfaces_for_v1_0_3": {
+    "rule": "Indicative, not self-authorizing. The implementation step receives its own explicit authorized surface; nothing here grants write permission by itself.",
+    "expected": ["scripts/ods-scope.ts", "tests/ods/**", "docs/ops/ods/**"]
+  },
+
+  "prohibited_by_this_addendum": [
+    "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3.json",
+    "docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json",
+    "docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json",
+    "docs/ops/fib/**",
+    "docs/ops/pc01b/**",
+    "docs/ops/im01b/**",
+    "db/baseline/**",
+    "db/prepared/** generally, outside the 75 exact paths named above",
+    "db/migrations/** generally, outside the 75 exact paths named above",
+    "lib/**",
+    "app/**",
+    "components/**",
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+
+  "negative_control_doctrine_binding": "The frozen ODS v1 negative-control doctrine applies unchanged: this mechanism may not be accepted as operational until its positive path is demonstrated AND every one of the following negative conditions is deliberately exercised and shown to FAIL as intended, on fixtures rather than real protected artifacts: an ungranted sibling migration path; an ungranted sibling db/prepared path outside exact journal grants; a non-canonical casing variant of a granted path; HPO-ODS-W2-02 presented on the wrong branch; a hypothetical B2/future migration path not in the 75; and a regression check proving HPO-ODS-W2-01 is unaffected on its own branch.",
+
+  "integrity_assertions_at_this_freeze": {
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS",
+    "protected_corpus_count": 9,
+    "protected_corpus_integrity": "PASS",
+    "transitive_attestation_count": 4,
+    "native_relationships": "PASS",
+    "b1_integration_file_count": 123,
+    "b1_protected_file_count": 75,
+    "sealed_or_frozen_artifacts_modified": 0,
+    "hpo_ods_w2_01_changed": false,
+    "grant_registry_modified": true,
+    "wildcard_grants_added": 0,
+    "b1_files_integrated_by_this_artifact": 0,
+    "implementation_performed": "grant_registration_and_tests_only",
+    "dependencies_or_lockfile_modified": false
+  },
+
+  "state_after_this_artifact": {
+    "ods_v1_operational": true,
+    "ready_for_evidence_integration": true,
+    "ready_for_b2_or_b3_protected_writes": false,
+    "next_gate": "RE_B1_EVIDENCE_FINAL_TREE_INTEGRATION"
+  },
+
+  "final_state": "HPO_ODS_W2_02_FROZEN_READY_FOR_CLOSED_B1_INTEGRATION"
+}

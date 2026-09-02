@@ -1,7 +1,9 @@
 import { listAllOrganizations } from '@/lib/admin/organizations'
+import { runWithAdminAccess } from '@/lib/auth/session'
 import { setOrganizationStatusAction } from './actions'
 
 const ERROR_MESSAGES: Record<string, string> = {
+  not_authorized: 'No tenés permiso para esta operación, o tu sesión ya no es válida.',
   invalid_input: 'Datos inválidos.',
   update_failed: 'No se pudo actualizar la organización.',
 }
@@ -10,7 +12,7 @@ export default async function AdminOrganizationsPage(props: {
   searchParams: Promise<{ error?: string; success?: string }>
 }) {
   const searchParams = await props.searchParams
-  const organizations = await listAllOrganizations()
+  const organizations = await runWithAdminAccess(() => listAllOrganizations())
 
   const errorMessage = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? 'Ocurrió un error.' : null
 

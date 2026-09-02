@@ -1,16 +1,27 @@
 import { listOrganizationsWithStellaUsage } from '@/lib/admin/stella-services'
+import { runWithAdminAccess } from '@/lib/auth/session'
 import { updateOrganizationStellaServiceAction } from './actions'
 
 const ERROR_MESSAGES: Record<string, string> = {
+  not_authorized: 'No tenés permiso para esta operación, o tu sesión ya no es válida.',
   invalid_input: 'Datos inválidos. La cuota debe ser un número entero mayor o igual a 0, o vacía para ilimitado.',
   update_failed: 'No se pudo actualizar el servicio de esta organización.',
 }
+
+// es-LA (Latin American Spanish) formatting — BCP-47 tag es-419.
+const tokensFormat = new Intl.NumberFormat('es-419')
+const costFormat = new Intl.NumberFormat('es-419', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+})
 
 export default async function AdminServicesPage(props: {
   searchParams: Promise<{ error?: string; success?: string }>
 }) {
   const searchParams = await props.searchParams
-  const orgs = await listOrganizationsWithStellaUsage()
+  const orgs = await runWithAdminAccess(() => listOrganizationsWithStellaUsage())
 
   const errorMessage = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? 'Ocurrió un error.' : null
 
@@ -44,6 +55,8 @@ export default async function AdminServicesPage(props: {
               <th className="text-left px-4 py-3 font-medium">Plan</th>
               <th className="text-left px-4 py-3 font-medium">Cuota mensual</th>
               <th className="text-left px-4 py-3 font-medium">Uso este mes</th>
+              <th className="text-left px-4 py-3 font-medium">Tokens este mes</th>
+              <th className="text-left px-4 py-3 font-medium">Costo estimado (USD)</th>
               <th className="text-right px-4 py-3 font-medium">Actualizar</th>
             </tr>
           </thead>
@@ -56,6 +69,10 @@ export default async function AdminServicesPage(props: {
                   {org.stellaMonthlyQuota === null ? 'Ilimitado' : org.stellaMonthlyQuota}
                 </td>
                 <td className="px-4 py-3 text-slate-400">{org.usedThisMonth}</td>
+                <td className="px-4 py-3 text-slate-400">{tokensFormat.format(org.tokensThisMonth)}</td>
+                <td className="px-4 py-3 text-slate-400">
+                  {org.tokensThisMonth > 0 ? `≈ ${costFormat.format(org.estimatedCostUsd)}` : '—'}
+                </td>
                 <td className="px-4 py-3 text-right">
                   <form action={updateOrganizationStellaServiceAction} className="flex items-center justify-end gap-2">
                     <input type="hidden" name="organizationId" value={org.id} />
@@ -87,6 +104,13 @@ export default async function AdminServicesPage(props: {
           </tbody>
         </table>
       </div>
+
+      <p className="text-xs text-slate-500">
+        El costo es una <strong className="text-slate-400">estimación</strong> basada en una
+        heurística mixta input/output sobre el total de tokens (solo se registra el total por
+        interacción). Supuestos y precios en <code>lib/stella/cost-model.ts</code>; la
+        calibración contra la facturación real de Gemini es el gate G9.
+      </p>
     </div>
   )
 }

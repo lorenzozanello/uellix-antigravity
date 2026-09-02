@@ -7,9 +7,10 @@ import { createElement } from 'react'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { getReportDraft, getCalculationRunDetail } from '@/lib/pipeline/sroi-results'
 import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service'
-import { getCurrentOrganizationContext } from '@/lib/auth/session'
+import { getCurrentOrganizationContext, runWithOptionalOrganizationAccess } from '@/lib/auth/session'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import {
   extractFunderBreakdown,
   buildEvidenceManifest,
@@ -51,19 +52,45 @@ export async function GET(
   const ctx = await getCurrentOrganizationContext()
   if (!ctx) return new Response('No autenticado', { status: 401 })
 
-  let report: Awaited<ReturnType<typeof getReportDraft>>
-  try {
-    report = await getReportDraft(projectId, reportId)
-  } catch {
-    return new Response('Reporte no encontrado', { status: 404 })
-  }
+  // ALL reads in one transaction, and it closes before renderToBuffer(). PDF
+  // rendering is CPU-bound and takes hundreds of milliseconds; holding a
+  // database transaction open across it would tie up a pooled connection for
+  // the whole render.
+  const loaded = await runWithOptionalOrganizationAccess(async (inner) => {
+    if (!inner) return null
 
-  const [project, runDetail, mappings, evidence] = await Promise.all([
-    getProjectByIdForCurrentOrganization(projectId),
-    getCalculationRunDetail(projectId, report.calculationRunId).catch(() => null),
-    listOutcomeMappingsForProject(projectId).catch(() => []),
-    listEvidenceForProject(projectId).catch(() => []),
-  ])
+    let report: Awaited<ReturnType<typeof getReportDraft>>
+    try {
+      report = await getReportDraft(projectId, reportId)
+    } catch {
+      return null
+    }
+
+    const [project, runDetail, mappings, evidenceUnfiltered, methodologyReviews] = await Promise.all([
+      getProjectByIdForCurrentOrganization(projectId),
+      getCalculationRunDetail(projectId, report.calculationRunId).catch(() => null),
+      listOutcomeMappingsForProject(projectId).catch(() => []),
+      listEvidenceForProject(projectId).catch(() => []),
+      listMethodologyReviewsForProject(projectId).catch(() => []),
+    ])
+
+    // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — this is a governed EXPORT
+    // surface. Only evidence explicitly classified 'non_sensitive' may reach
+    // the PDF annex; unclassified (never-evaluated) evidence is excluded the
+    // same as classified-sensitive evidence, never treated as an implicit
+    // pass.
+    const evidenceVersionsById = await getLatestEvidenceVersionsByEvidenceIds(
+      evidenceUnfiltered.map((e) => e.id)
+    )
+    const evidence = evidenceUnfiltered.filter(
+      (e) => evidenceVersionsById.get(e.id)?.sensitivityClassification === 'non_sensitive'
+    )
+
+    return { report, project, runDetail, mappings, evidence, methodologyReviews }
+  })
+
+  if (!loaded) return new Response('Reporte no encontrado', { status: 404 })
+  const { report, project, runDetail, mappings, evidence, methodologyReviews } = loaded
   const run = runDetail?.run ?? null
 
   // Variant governs which annexes render (in addition to the funder include flag).
@@ -87,7 +114,7 @@ export async function GET(
   const fxTrail = annexes.fxTrail ? extractFxTrail(report.snapshotJson) : null
   const lineItems = annexes.lineItems ? extractLineItems(report.snapshotJson) : null
   const methodologyReadiness = annexes.methodologyReadiness
-    ? buildMethodologyReadiness(await listMethodologyReviewsForProject(projectId).catch(() => []))
+    ? buildMethodologyReadiness(methodologyReviews)
     : null
 
   // Dedupe codes within each catalog, then format one line per catalog.

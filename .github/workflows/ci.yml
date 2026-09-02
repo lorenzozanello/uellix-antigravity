@@ -11,8 +11,17 @@ jobs:
     name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 0 (full history) rather than actions/checkout@v4's
+      # default shallow clone. authority:seal:verify resolves historical
+      # blobs at the ODS-01 freeze commit and the certified Wave 1 commit
+      # (see scripts/authority-seal-verify.ts, ODS_AUTHORITY_FROZEN_COMMIT
+      # and authority_corpus.anchor_commit) — a depth-1 checkout cannot
+      # reach either, so the gate would fail closed for an infrastructure
+      # reason indistinguishable in the log from real authority drift.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -37,11 +46,34 @@ jobs:
       - name: Scan for credentials
         run: pnpm secrets:scan
 
+      # Fails fast, before the expensive test/build stages, if the frozen
+      # FIB/PC-01B/IM-01B authority corpus or the ODS v1 authority artifact
+      # that reads it has drifted. See scripts/authority-seal-verify.ts and
+      # docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json (HPO-ODS-03). This was
+      # previously established by hand every certification round; this step
+      # is the deterministic replacement, not an addition alongside it.
+      - name: Verify ODS authority
+        run: pnpm authority:seal:verify
+
       - name: Lint
         run: pnpm lint
 
       - name: Typecheck
         run: pnpm typecheck
+
+      # Every generated artefact regenerated and compared byte for byte. The unit
+      # suite already asserts most of this, but a check whose NAME says it is the
+      # enforcement mechanism should be the thing that runs — a reviewer looking
+      # for "where is this enforced" should not have to find it inside a test.
+      - name: Verify generated artefacts
+        run: |
+          pnpm baseline:verify
+          pnpm hosted:verify
+          pnpm storage:verify
+          pnpm journal:verify
+          pnpm boundary:status:verify
+          pnpm apply:status:verify
+          pnpm probe:status:verify
 
       - name: Test
         run: pnpm test:unit

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { FolderKanban, ShieldCheck, ArrowRight, Plus } from 'lucide-react'
-import { requireOrganizationAccess } from '@/lib/auth/session'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { ROLE_LABELS } from '@/lib/auth/roles'
 import { listProjectsForCurrentOrganization } from '@/lib/projects/service'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,8 +15,15 @@ const STATUS_BADGE: Record<string, { variant: 'neutral' | 'accent' | 'success'; 
 }
 
 export default async function DashboardPage() {
-  const { organization, membership } = await requireOrganizationAccess()
-  const projects = await listProjectsForCurrentOrganization()
+  // Data phase inside the identity context; the JSX below is built after it
+  // commits, so nothing queries during streaming.
+  const { organization, membership, projects } = await runWithOrganizationAccess(
+    async ({ organization, membership }) => ({
+      organization,
+      membership,
+      projects: await listProjectsForCurrentOrganization(),
+    })
+  )
 
   const roleLabel = ROLE_LABELS[membership.role] ?? membership.role
   const activeProjects = projects.filter((p) => p.status === 'active')

@@ -64,6 +64,18 @@ vi.mock('@/db/client', () => ({
   },
 }))
 
+// The identity context is a pass-through here: this suite proves the auth
+// helpers' branching, and it does so against the in-memory tables above. The
+// transaction, the claims and the rollback are proved against a live database
+// in tests/authenticated-database-context.test.ts.
+vi.mock('@/db/identity-context', () => ({
+  withDatabaseIdentityContext: async (
+    _identity: unknown,
+    callback: (db: unknown) => unknown
+  ) => callback(undefined),
+  getBoundDatabaseContext: () => undefined,
+}))
+
 // ---------------------------------------------------------------------------
 // Import after mocks are in place
 // ---------------------------------------------------------------------------
@@ -78,10 +90,10 @@ import {
   syncUserProfile,
 } from '@/lib/auth/session'
 
-const AUTH_USER = { id: 'auth-user-1', email: 'user@org.com' }
+const AUTH_USER = { id: '11111111-1111-4111-8111-111111111111', email: 'user@org.com' }
 
 const DB_USER = {
-  id: 'auth-user-1',
+  id: '11111111-1111-4111-8111-111111111111',
   email: 'user@org.com',
   fullName: 'Test User',
   avatarUrl: null,
@@ -89,15 +101,15 @@ const DB_USER = {
 }
 
 const DB_MEMBERSHIP = {
-  id: 'mem-1',
-  organizationId: 'org-1',
-  userId: 'auth-user-1',
+  id: '33333333-3333-4333-8333-333333333333',
+  organizationId: '22222222-2222-4222-8222-222222222222',
+  userId: '11111111-1111-4111-8111-111111111111',
   role: 'analyst',
   status: 'active',
 }
 
 const DB_ORG = {
-  id: 'org-1',
+  id: '22222222-2222-4222-8222-222222222222',
   name: 'Test Org',
   slug: 'test-org',
   legalName: null,
@@ -152,7 +164,7 @@ describe('getCurrentUser', () => {
     const result = await getCurrentUser()
 
     expect(result).toEqual({
-      id: 'auth-user-1',
+      id: '11111111-1111-4111-8111-111111111111',
       email: 'user@org.com',
       fullName: 'Test User',
       avatarUrl: null,
@@ -165,10 +177,18 @@ describe('getCurrentUser', () => {
 // getCurrentMembership
 // ---------------------------------------------------------------------------
 describe('getCurrentMembership', () => {
+  // getCurrentMembership no longer queries: it reads the request principal,
+  // which needs a verified session AND a readable users row. Both are set up
+  // here for every case in this block.
+  beforeEach(() => {
+    mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
+    mockDbData.users = [DB_USER]
+  })
+
   it('returns null when the user has no active membership row', async () => {
     mockDbData.organizationMembers = []
 
-    const result = await getCurrentMembership('auth-user-1')
+    const result = await getCurrentMembership('11111111-1111-4111-8111-111111111111')
 
     expect(result).toBeNull()
   })
@@ -176,7 +196,7 @@ describe('getCurrentMembership', () => {
   it('returns null when the stored role is not a recognized Role (defensive against DB drift)', async () => {
     mockDbData.organizationMembers = [{ ...DB_MEMBERSHIP, role: 'not-a-real-role' }]
 
-    const result = await getCurrentMembership('auth-user-1')
+    const result = await getCurrentMembership('11111111-1111-4111-8111-111111111111')
 
     expect(result).toBeNull()
   })
@@ -184,12 +204,12 @@ describe('getCurrentMembership', () => {
   it('returns the mapped Membership for a valid active row', async () => {
     mockDbData.organizationMembers = [DB_MEMBERSHIP]
 
-    const result = await getCurrentMembership('auth-user-1')
+    const result = await getCurrentMembership('11111111-1111-4111-8111-111111111111')
 
     expect(result).toEqual({
-      id: 'mem-1',
-      organizationId: 'org-1',
-      userId: 'auth-user-1',
+      id: '33333333-3333-4333-8333-333333333333',
+      organizationId: '22222222-2222-4222-8222-222222222222',
+      userId: '11111111-1111-4111-8111-111111111111',
       role: 'analyst',
       status: 'active',
     })
@@ -212,7 +232,7 @@ describe('requireAuth', () => {
 
     const result = await requireAuth()
 
-    expect(result.id).toBe('auth-user-1')
+    expect(result.id).toBe('11111111-1111-4111-8111-111111111111')
     expect(mockRedirect).not.toHaveBeenCalled()
   })
 })
@@ -224,7 +244,7 @@ describe('requireRole', () => {
   it('redirects to /app/dashboard when the user has no membership', async () => {
     mockDbData.organizationMembers = []
 
-    await expect(requireRole('auth-user-1', 'analyst')).rejects.toThrow(
+    await expect(requireRole('11111111-1111-4111-8111-111111111111', 'analyst')).rejects.toThrow(
       'REDIRECT:/app/dashboard'
     )
   })
@@ -232,15 +252,17 @@ describe('requireRole', () => {
   it('redirects to /app/dashboard when the membership role is below the threshold', async () => {
     mockDbData.organizationMembers = [{ ...DB_MEMBERSHIP, role: 'viewer' }]
 
-    await expect(requireRole('auth-user-1', 'organization_admin')).rejects.toThrow(
+    await expect(requireRole('11111111-1111-4111-8111-111111111111', 'organization_admin')).rejects.toThrow(
       'REDIRECT:/app/dashboard'
     )
   })
 
   it('returns the membership when the role meets the threshold', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
+    mockDbData.users = [DB_USER]
     mockDbData.organizationMembers = [{ ...DB_MEMBERSHIP, role: 'organization_admin' }]
 
-    const result = await requireRole('auth-user-1', 'analyst')
+    const result = await requireRole('11111111-1111-4111-8111-111111111111', 'analyst')
 
     expect(result.role).toBe('organization_admin')
     expect(mockRedirect).not.toHaveBeenCalled()
@@ -290,9 +312,9 @@ describe('requireOrganizationAccess', () => {
 
     const ctx = await requireOrganizationAccess()
 
-    expect(ctx.user.id).toBe('auth-user-1')
-    expect(ctx.membership.organizationId).toBe('org-1')
-    expect(ctx.organization.id).toBe('org-1')
+    expect(ctx.user.id).toBe('11111111-1111-4111-8111-111111111111')
+    expect(ctx.membership.organizationId).toBe('22222222-2222-4222-8222-222222222222')
+    expect(ctx.organization.id).toBe('22222222-2222-4222-8222-222222222222')
     expect(ctx.organization.name).toBe('Test Org')
     expect(ctx.organization).toMatchObject({
       baseCurrency: 'COP',
@@ -370,7 +392,7 @@ describe('getCurrentOrganizationContext', () => {
 
     const ctx = await getCurrentOrganizationContext()
 
-    expect(ctx?.organization.id).toBe('org-1')
+    expect(ctx?.organization.id).toBe('22222222-2222-4222-8222-222222222222')
     expect(ctx?.membership.role).toBe('analyst')
     expect(ctx?.organization.baseCurrency).toBe('COP')
     expect(ctx?.organization.onboardingCompleted).toBe(true)
@@ -389,14 +411,14 @@ describe('syncUserProfile', () => {
     vi.mocked(db.insert).mockReturnValue({ values: valuesSpy } as any)
 
     await syncUserProfile({
-      id: 'auth-user-1',
+      id: '11111111-1111-4111-8111-111111111111',
       email: 'user@org.com',
       user_metadata: { full_name: 'Test User', avatar_url: 'https://example.com/a.png' },
     })
 
     expect(valuesSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: 'auth-user-1',
+        id: '11111111-1111-4111-8111-111111111111',
         email: 'user@org.com',
         fullName: 'Test User',
         avatarUrl: 'https://example.com/a.png',
@@ -411,11 +433,11 @@ describe('syncUserProfile', () => {
     })
     vi.mocked(db.insert).mockReturnValue({ values: valuesSpy } as any)
 
-    await syncUserProfile({ id: 'auth-user-2' })
+    await syncUserProfile({ id: '44444444-4444-4444-8444-444444444444' })
 
     expect(valuesSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: 'auth-user-2',
+        id: '44444444-4444-4444-8444-444444444444',
         email: '',
         fullName: null,
         avatarUrl: null,

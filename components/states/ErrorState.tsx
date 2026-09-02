@@ -11,6 +11,8 @@ interface ErrorStateProps {
   }
   details?: string
   className?: string
+  /** Lets a caller point a field's aria-describedby at this block (RE-U1 U1-F12). */
+  id?: string
 }
 
 export function ErrorState({
@@ -19,9 +21,11 @@ export function ErrorState({
   action,
   details,
   className,
+  id,
 }: ErrorStateProps) {
   return (
     <div
+      id={id}
       className={cn(
         'rounded-lg border border-danger/20 bg-danger-light p-6',
         className

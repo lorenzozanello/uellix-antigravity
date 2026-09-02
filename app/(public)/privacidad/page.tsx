@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function PrivacidadPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:py-24">
-      <div className="mb-4 rounded-md border border-[#FF6A00]/30 bg-[#FF6A00]/5 px-4 py-3 text-sm text-[#0F172A]">
+      <div className="mb-4 rounded-md border border-[#FF6A00]/30 bg-[#FF6A00]/5 px-4 py-3 text-sm text-uellix-deep">
         <strong className="font-semibold">Borrador pendiente de revisión legal.</strong>{" "}
         Este documento describe de buena fe cómo maneja datos la plataforma hoy, pero
         todavía no fue revisado ni aprobado por un abogado especializado en protección
@@ -24,7 +24,7 @@ export default function PrivacidadPage() {
         confirme.
       </div>
 
-      <h1 className="text-3xl font-bold tracking-tight text-[#0F172A] font-sora">
+      <h1 className="text-3xl font-bold tracking-tight text-uellix-deep font-sora">
         Política de Privacidad
       </h1>
       <p className="mt-2 text-sm text-[#64748B]">
@@ -33,9 +33,9 @@ export default function PrivacidadPage() {
 
       <div
         className="mt-10 max-w-none space-y-5 text-[15px] leading-relaxed text-[#334155]
-          [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:font-sora [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-[#0F172A] [&_h2]:first:mt-0
-          [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1.5 [&_strong]:font-semibold [&_strong]:text-[#0F172A]
-          [&_a]:text-[#FF6A00] [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-[#e05e00]"
+          [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:font-sora [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-uellix-deep [&_h2]:first:mt-0
+          [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1.5 [&_strong]:font-semibold [&_strong]:text-uellix-deep
+          [&_a]:text-[#FF6A00] [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-uellix-orange-strong"
       >
         <h2>1. Quiénes somos</h2>
         <p>

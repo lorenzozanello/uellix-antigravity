@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
+import { createDomainObjectVersion } from '@/lib/pipeline/domain-object-versions';
 import { z } from 'zod';
 
 const outcomeInputSchema = z.object({
@@ -94,8 +95,16 @@ export async function createOutcomeForProject(
     actorUserId: ctx.user.id,
     entityType: 'outcome',
     entityId: created.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_CREATED,
+    action: AUDIT_ACTIONS.OUTCOME_CREATED,
     afterJson: created,
+  });
+  // FIBIU-03 (FIBC-002/FIBC-045) — first version of this object's lineage.
+  await createDomainObjectVersion({
+    organizationId: ctx.organization.id,
+    objectType: 'outcome',
+    objectId: created.id,
+    payload: created as unknown as Record<string, unknown>,
+    actorId: ctx.user.id,
   });
   return created;
 }
@@ -167,9 +176,26 @@ export async function setOutcomeMateriality(projectId: string, outcomeId: string
     entityType: 'outcome',
     entityId: outcomeId,
     action: AUDIT_ACTIONS.OUTCOME_MATERIALITY_UPDATED,
+    contentModifying: true,
     beforeJson: { materialityScore: previousScore, materialityRationale: previousRationale },
     afterJson: { materialityScore: after?.materialityScore ?? null, materialityRationale: after?.materialityRationale ?? null },
   })
+
+  // FIBIU-03 (FIBC-002/FIBC-045) — a materiality change is a new version of
+  // the object, not an in-place edit of the last one: createDomainObjectVersion
+  // only ever appends (the trigger forbids UPDATE/DELETE on the table it
+  // writes), so a version an approved run's fingerprint already points at is
+  // never rewritten — the run's snapshot keeps resolving to the version it
+  // was calculated against, and this call produces the next one.
+  if (after) {
+    await createDomainObjectVersion({
+      organizationId: ctx.organization.id,
+      objectType: 'outcome',
+      objectId: outcomeId,
+      payload: after as unknown as Record<string, unknown>,
+      actorId: ctx.user.id,
+    })
+  }
 
   return after
 }

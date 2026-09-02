@@ -8,6 +8,11 @@
 // delta uniformly across every filter gives a conservative/base/optimistic band
 // on the SROI ratio without re-eliciting per-assumption ranges.
 
+// Pin the shared Decimal configuration — this module is plain-number math
+// today, but it feeds runDeterministicCalc (decimal.js); importing the guard
+// here keeps the whole sensitivity path under the pinned configuration.
+import './decimal-config'
+
 export const SCENARIO_DELTA_PP = 10
 export type Scenario = 'conservative' | 'base' | 'optimistic'
 

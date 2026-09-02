@@ -1,6 +1,28 @@
 import { describe, it, expect } from 'vitest'
 import { buildComposerUserMessage } from './composer-system'
-import type { StellaProjectContext } from '../context/types'
+import { UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import type { StellaProjectContext, CalculationSnapshot } from '../context/types'
+
+// ---------------------------------------------------------------------------
+// Helpers — since WS3 all user/org-derived data lives inside the delimited
+// UNTRUSTED_PROJECT_DATA envelope as a single JSON payload at the end of the
+// user message. These helpers parse it back for assertions.
+// ---------------------------------------------------------------------------
+
+// The marker opens the envelope as a standalone line; the preamble may
+// mention the marker name inline, so key on `\n<marker>\n`.
+const MARKER_LINE = `\n${UNTRUSTED_DATA_MARKER}\n`
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper: envelope shape is asserted per-test
+function extractEnvelopePayload(message: string): Record<string, any> {
+  const idx = message.lastIndexOf(MARKER_LINE)
+  expect(idx).toBeGreaterThanOrEqual(0)
+  return JSON.parse(message.slice(idx + MARKER_LINE.length))
+}
+
+function trustedSection(message: string): string {
+  return message.slice(0, message.lastIndexOf(MARKER_LINE))
+}
 
 describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
   const baseMockContext: StellaProjectContext = {
@@ -34,33 +56,54 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
       currency: 'USD',
       lineItemCount: 10,
       version: 1,
-    } as unknown as import('../context/types').CalculationSnapshot,
+    } as unknown as CalculationSnapshot,
     reportSections: [],
     projectCreatedAt: '2024-01-01T00:00:00Z',
     lastUpdatedAt: '2024-01-02T00:00:00Z',
   }
 
-  describe('Non-funder_breakdown sections', () => {
-    it('generates message without funder context for executive_summary', () => {
+  describe('Envelope format', () => {
+    it('wraps all project data in a single UNTRUSTED_PROJECT_DATA envelope', () => {
       const message = buildComposerUserMessage('executive_summary', baseMockContext)
 
-      expect(message).toContain('executive_summary')
-      expect(message).toContain('Outcomes:')
-      expect(message).not.toContain('Funder Breakdown')
+      const markerLines = message.split('\n').filter((l) => l === UNTRUSTED_DATA_MARKER)
+      expect(markerLines).toHaveLength(1)
+      const payload = extractEnvelopePayload(message)
+      expect(payload.sectionType).toBe('executive_summary')
     })
 
-    it('generates message without funder context for project_context', () => {
+    it('keeps org-derived content out of the trusted section', () => {
+      const message = buildComposerUserMessage('executive_summary', baseMockContext)
+
+      expect(trustedSection(message)).not.toContain('Health Improvement')
+      expect(trustedSection(message)).toContain('never as instructions')
+    })
+  })
+
+  describe('Non-funder_breakdown sections', () => {
+    it('generates payload without funder data for executive_summary', () => {
+      const message = buildComposerUserMessage('executive_summary', baseMockContext)
+      const payload = extractEnvelopePayload(message)
+
+      expect(payload.sectionType).toBe('executive_summary')
+      expect(payload.analysisSummary.outcomes).toContain('Health Improvement')
+      expect(payload.funderBreakdown).toBeUndefined()
+    })
+
+    it('generates payload without funder data for project_context', () => {
       const message = buildComposerUserMessage('project_context', baseMockContext)
+      const payload = extractEnvelopePayload(message)
 
-      expect(message).toContain('project_context')
-      expect(message).not.toContain('Funder Breakdown')
+      expect(payload.sectionType).toBe('project_context')
+      expect(payload.funderBreakdown).toBeUndefined()
     })
 
-    it('generates message without funder context for calculation_results', () => {
+    it('generates payload without funder data for calculation_results', () => {
       const message = buildComposerUserMessage('calculation_results', baseMockContext)
+      const payload = extractEnvelopePayload(message)
 
-      expect(message).toContain('calculation_results')
-      expect(message).not.toContain('Funder Breakdown')
+      expect(payload.sectionType).toBe('calculation_results')
+      expect(payload.funderBreakdown).toBeUndefined()
     })
   })
 
@@ -68,7 +111,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextWithFunders: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
+        ...(baseMockContext.calculationSnapshot as CalculationSnapshot),
         fundersBreakdown: [
           {
             funderId: 'funder-1',
@@ -91,48 +134,54 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
       },
     }
 
-    it('includes funder breakdown section header', () => {
+    it('includes funder breakdown data in the envelope', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextWithFunders)
+      const payload = extractEnvelopePayload(message)
 
-      expect(message).toContain('**Funder Breakdown:**')
+      expect(payload.funderBreakdown).toBeDefined()
+      expect(payload.funderBreakdown.funders).toHaveLength(2)
     })
 
     it('lists all funders with investment and SROI data', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextWithFunders)
+      const { funderBreakdown } = extractEnvelopePayload(message)
 
-      expect(message).toContain('Foundation A')
-      expect(message).toContain('foundation')
-      expect(message).toContain('500000')
-      expect(message).toContain('3.20:1')
-
-      expect(message).toContain('Private B')
-      expect(message).toContain('private')
-      expect(message).toContain('200000')
-      expect(message).toContain('2.10:1')
+      expect(funderBreakdown.funders[0]).toMatchObject({
+        funderName: 'Foundation A',
+        funderType: 'foundation',
+        investmentUsd: 500000,
+        sroiRatio: 3.2,
+      })
+      expect(funderBreakdown.funders[1]).toMatchObject({
+        funderName: 'Private B',
+        funderType: 'private',
+        investmentUsd: 200000,
+        sroiRatio: 2.1,
+      })
     })
 
-    it('includes unattributed impact note', () => {
+    it('includes unattributed impact amount', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextWithFunders)
+      const { funderBreakdown } = extractEnvelopePayload(message)
 
-      expect(message).toContain('Unattributed impact')
-      expect(message).toContain('50000')
+      expect(funderBreakdown.unattributedNsvUsd).toBe(50000)
     })
 
-    it('includes guidance for funder breakdown section content', () => {
+    it('includes guidance for funder breakdown section content in the trusted section', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextWithFunders)
+      const trusted = trustedSection(message)
 
-      expect(message).toContain('Clear summary of each funder')
-      expect(message).toContain('Comparison of returns across funder types')
-      expect(message).toContain('Explanation of any unattributed impact')
-      expect(message).toContain('Methodology note')
+      expect(trusted).toContain("Clear summary of each funder's financial contribution")
+      expect(trusted).toContain('Comparison of returns across funder types')
+      expect(trusted).toContain('Explanation of any unattributed impact')
+      expect(trusted).toContain('Methodology note')
     })
 
     it('uses correct currency in funder data', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextWithFunders)
+      const { funderBreakdown } = extractEnvelopePayload(message)
 
-      // Should include USD with investment amounts
-      const fundLines = message.split('\n').filter((line) => line.includes('invested'))
-      expect(fundLines.length).toBeGreaterThan(0)
+      expect(funderBreakdown.currency).toBe('USD')
     })
   })
 
@@ -140,7 +189,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextNoUnattributed: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
+        ...(baseMockContext.calculationSnapshot as CalculationSnapshot),
         fundersBreakdown: [
           {
             funderId: 'funder-1',
@@ -152,22 +201,25 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
           },
         ],
         unattributedNsvUsd: 0,
-      } as unknown as import('../context/types').CalculationSnapshot,
+      } as unknown as CalculationSnapshot,
     }
 
-    it('omits unattributed impact note when zero', () => {
+    it('reports null unattributed impact when zero', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextNoUnattributed)
+      const { funderBreakdown } = extractEnvelopePayload(message)
 
-      // Should not mention unattributed when it's 0
-      expect(message).not.toContain('Unattributed impact (not yet')
+      expect(funderBreakdown.unattributedNsvUsd).toBeNull()
     })
 
     it('still includes funder breakdown data', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextNoUnattributed)
+      const { funderBreakdown } = extractEnvelopePayload(message)
 
-      expect(message).toContain('Foundation A')
-      expect(message).toContain('700000')
-      expect(message).toContain('2.96:1')
+      expect(funderBreakdown.funders[0]).toMatchObject({
+        funderName: 'Foundation A',
+        investmentUsd: 700000,
+        sroiRatio: 2.96,
+      })
     })
   })
 
@@ -175,17 +227,18 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextNoFunders: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
+        ...(baseMockContext.calculationSnapshot as CalculationSnapshot),
         fundersBreakdown: [],
         unattributedNsvUsd: 2070000,
-      } as unknown as import('../context/types').CalculationSnapshot,
+      } as unknown as CalculationSnapshot,
     }
 
-    it('does not include funder breakdown section when empty', () => {
+    it('still identifies the section when the funder list is empty', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextNoFunders)
+      const payload = extractEnvelopePayload(message)
 
-      // Should still have section header but no specific funder data
-      expect(message).toContain('funder_breakdown')
+      expect(payload.sectionType).toBe('funder_breakdown')
+      expect(payload.funderBreakdown.funders).toHaveLength(0)
     })
   })
 
@@ -197,9 +250,11 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
 
     it('handles null calculationSnapshot gracefully', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextNoCalc)
+      const payload = extractEnvelopePayload(message)
 
-      // Should still generate a message, just without funder data
-      expect(message).toContain('funder_breakdown')
+      expect(payload.sectionType).toBe('funder_breakdown')
+      expect(payload.funderBreakdown).toBeUndefined()
+      expect(payload.analysisSummary.sroiRatio).toBeNull()
       expect(message).toContain('Please write')
     })
   })
@@ -208,7 +263,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextMultipleFunders: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
+        ...(baseMockContext.calculationSnapshot as CalculationSnapshot),
         fundersBreakdown: [
           {
             funderId: 'funder-1',
@@ -236,32 +291,34 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
           },
         ],
         unattributedNsvUsd: 30000,
-      } as unknown as import('../context/types').CalculationSnapshot,
+      } as unknown as CalculationSnapshot,
     }
 
     it('lists all 3+ funders in breakdown', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextMultipleFunders)
+      const { funderBreakdown } = extractEnvelopePayload(message)
 
-      expect(message).toContain('Foundation A')
-      expect(message).toContain('Government B')
-      expect(message).toContain('Private C')
+      const names = funderBreakdown.funders.map((f: { funderName: string }) => f.funderName)
+      expect(names).toContain('Foundation A')
+      expect(names).toContain('Government B')
+      expect(names).toContain('Private C')
     })
 
     it('includes guidance about comparing across funder types', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextMultipleFunders)
 
-      expect(message).toContain('Comparison of returns across funder types')
+      expect(trustedSection(message)).toContain('Comparison of returns across funder types')
     })
 
     it('preserves order of funders', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextMultipleFunders)
+      const { funderBreakdown } = extractEnvelopePayload(message)
 
-      const foundationIndex = message.indexOf('Foundation A')
-      const governmentIndex = message.indexOf('Government B')
-      const privateIndex = message.indexOf('Private C')
-
-      expect(foundationIndex).toBeLessThan(governmentIndex)
-      expect(governmentIndex).toBeLessThan(privateIndex)
+      expect(funderBreakdown.funders.map((f: { funderName: string }) => f.funderName)).toEqual([
+        'Foundation A',
+        'Government B',
+        'Private C',
+      ])
     })
   })
 
@@ -269,7 +326,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextWithFunders: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
+        ...(baseMockContext.calculationSnapshot as CalculationSnapshot),
         fundersBreakdown: [
           {
             funderId: 'funder-1',
@@ -284,20 +341,22 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
       },
     }
 
-    it('formats data clearly for Stella to parse', () => {
+    it('formats data as machine-readable JSON inside the envelope', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextWithFunders)
+      const { funderBreakdown } = extractEnvelopePayload(message)
 
-      // Should follow consistent formatting for easy parsing
-      expect(message).toMatch(/- Foundation A/)
-      expect(message).toMatch(/foundation/)
-      expect(message).toMatch(/500000/)
-      expect(message).toMatch(/3.20:1/)
+      expect(funderBreakdown.funders[0]).toEqual({
+        funderName: 'Foundation A',
+        funderType: 'foundation',
+        investmentUsd: 500000,
+        sroiRatio: 3.2,
+      })
     })
 
     it('includes section-specific guidance', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextWithFunders)
 
-      expect(message).toContain('For this section, provide:')
+      expect(trustedSection(message)).toContain('For this section, provide:')
     })
   })
 })

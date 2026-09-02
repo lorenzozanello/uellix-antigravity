@@ -1,4 +1,4 @@
-import { getCurrentOrganizationContext } from '@/lib/auth/session';
+import { runWithOptionalOrganizationAccess } from '@/lib/auth/session';
 import { listPortfoliosForCurrentOrganization } from '@/lib/portfolios/service';
 import Link from 'next/link';
 import { Plus, Layers, ArrowRight } from 'lucide-react';
@@ -12,10 +12,12 @@ const STATUS_CONFIG: Record<string, { variant: 'success' | 'neutral'; label: str
 };
 
 export default async function PortfoliosPage() {
-  const ctx = await getCurrentOrganizationContext();
-  if (!ctx) return <p>No autenticado. Por favor inicia sesión.</p>;
-
-  const portfolios = await listPortfoliosForCurrentOrganization();
+  const data = await runWithOptionalOrganizationAccess(async (ctx) => {
+    if (!ctx) return null;
+    return { ctx, portfolios: await listPortfoliosForCurrentOrganization() };
+  });
+  if (!data) return <p>No autenticado. Por favor inicia sesión.</p>;
+  const { ctx, portfolios } = data;
 
   const canCreate = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role);
 

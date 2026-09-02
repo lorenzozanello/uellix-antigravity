@@ -16,12 +16,45 @@ import type { AdvisorContextualOutput } from '../schemas/advisor-contextual-outp
 import { buildContextualAdvisorRequest } from '../context/build-contextual-advisor-request'
 import { buildAdvisorContextualUserMessage } from '../prompts/advisor-contextual-system'
 import { decodeProviderSourceRefIndexes } from '../context/decode-provider-source-ref-indexes'
+import { ContextualIndexTokenLeakError } from '../context/validate-no-index-reference-tokens'
+import { buildContextualAdvisorFallback } from '../fallbacks'
 import { StellaTimeoutError, StellaGeminiError } from '../errors'
+import { StellaPayloadTooLargeError } from '../security/payload-limits'
 import type { StellaGeminiAdapter } from '../adapter/gemini-client'
 
 export type RunContextualAdvisorResult =
-  | { ok: true; data: AdvisorContextualOutput; modelUsed: string; tokensUsed?: number }
-  | { ok: false; error: 'PARSE_ERROR' | 'GEMINI_ERROR' | 'TIMEOUT'; message: string }
+  | {
+      ok: true
+      data: AdvisorContextualOutput
+      modelUsed: string
+      tokensUsed?: number
+      fallbackUsed?: true
+      /**
+       * RK-19: present (always `true`) when the provider answered with a step
+       * different from the requested one. The step is canonicalized to the
+       * trusted request either way — this flag only surfaces the drift for
+       * observability (console.warn + audit metadata in the action layer).
+       */
+      stepMismatch?: true
+    }
+  | { ok: false; error: 'PARSE_ERROR' | 'GEMINI_ERROR' | 'TIMEOUT' | 'PAYLOAD_TOO_LARGE'; message: string }
+
+/**
+ * U8: the safe contextual fallback replaces the provider response ONLY for
+ * index-token leaks in free text (ContextualIndexTokenLeakError) — the one
+ * PARSE-level citation failure where the response already passed structural,
+ * schema, and catalog-membership validation and only its prose hygiene
+ * failed. Substituting the claim-free fallback there is unambiguously safe.
+ *
+ * Everything else stays fail-closed as PARSE_ERROR: invalid/out-of-range
+ * sourceRefIndexes and catalog violations are citation-transport corruption
+ * (ambiguous about what the provider meant — and the authorized action path
+ * in app/actions/stella explicitly pins fail-closed behavior for them), and
+ * structural/schema/JSON failures are equally ambiguous.
+ */
+function isSafeFallbackFailure(error: unknown): boolean {
+  return error instanceof ContextualIndexTokenLeakError
+}
 
 export async function runContextualAdvisor(
   step: AdvisorPipelineStep,
@@ -30,17 +63,48 @@ export async function runContextualAdvisor(
 ): Promise<RunContextualAdvisorResult> {
   try {
     const request = buildContextualAdvisorRequest(step, context)
+    // RK-08: the per-step slice strips `sensitivePopulations` from the
+    // serialized payload (it is trusted-tier metadata, not citable data), so
+    // the flag is re-attached here only to let the user-message builder emit
+    // the heightened-care notice in the TRUSTED preamble.
+    const userMessageContext = context.sensitivePopulations
+      ? { ...request.serializedContext, sensitivePopulations: context.sensitivePopulations }
+      : request.serializedContext
     const response = await adapter.generate({
       role: 'advisor',
       systemPrompt: request.systemPrompt,
-      userMessage: buildAdvisorContextualUserMessage(step, request.serializedContext),
+      userMessage: buildAdvisorContextualUserMessage(step, userMessageContext),
       responseJsonSchema: request.responseJsonSchema,
     })
     const raw: unknown = JSON.parse(response.rawOutput)
-    const data = decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths, step)
-    return { ok: true, data, modelUsed: response.modelUsed, tokensUsed: response.tokensUsed }
+    try {
+      const data = decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths, step)
+      return {
+        ok: true,
+        data,
+        modelUsed: response.modelUsed,
+        tokensUsed: response.tokensUsed,
+        // RK-19: the decoder records the drift on a non-enumerable property
+        // (see decode-provider-source-ref-indexes.ts) — surface it here.
+        ...(data.stepMismatch === true ? { stepMismatch: true as const } : {}),
+      }
+    } catch (decodeError) {
+      if (isSafeFallbackFailure(decodeError)) {
+        return {
+          ok: true,
+          data: buildContextualAdvisorFallback(step),
+          modelUsed: response.modelUsed,
+          tokensUsed: response.tokensUsed,
+          fallbackUsed: true,
+        }
+      }
+      throw decodeError
+    }
   } catch (error) {
     if (error instanceof StellaTimeoutError) return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
+    if (error instanceof StellaPayloadTooLargeError) {
+      return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
+    }
     if (error instanceof StellaGeminiError) return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
     return { ok: false, error: 'PARSE_ERROR', message: 'Stella returned an unexpected response format.' }
   }

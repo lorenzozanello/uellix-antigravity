@@ -1,9 +1,13 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { AuthContextError } from '@/lib/auth/database-context'
+import { rethrowNextControlFlow } from '@/lib/errors/next-control-flow'
 import { revalidatePath } from 'next/cache'
 import { createInvitation, revokeInvitation } from '@/lib/invitations/service'
 import { removeMemberFromCurrentOrganization } from '@/lib/organizations/members'
+import { requireOrganizationAccess } from '@/lib/auth/session'
+import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 
 const MEMBERS_PATH = '/app/organization/members'
 
@@ -27,9 +31,22 @@ export async function inviteMemberAction(formData: FormData) {
     redirect(`${MEMBERS_PATH}?error=invalid_input`)
   }
 
+  await requireOrganizationAccess()
+
   try {
-    await createInvitation({ email, role })
+    // The email is sent AFTER the transaction commits: a token in an inbox
+    // whose hash was rolled back is a live link that resolves to nothing.
+    const { sendEmail } = await withOrganizationDatabaseContext(() =>
+      createInvitation({ email, role })
+    )
+    await sendEmail()
   } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${MEMBERS_PATH}?error=not_authorized`)
     const message = err instanceof Error ? err.message : 'unknown_error'
     redirect(`${MEMBERS_PATH}?error=${errorToSlug(message)}`)
   }
@@ -42,9 +59,17 @@ export async function revokeInvitationAction(formData: FormData) {
   const invitationId = formData.get('invitationId') as string | null
   if (!invitationId) redirect(`${MEMBERS_PATH}?error=invalid_input`)
 
+  await requireOrganizationAccess()
+
   try {
-    await revokeInvitation(invitationId)
+    await withOrganizationDatabaseContext(() => revokeInvitation(invitationId))
   } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${MEMBERS_PATH}?error=not_authorized`)
     const message = err instanceof Error ? err.message : 'unknown_error'
     redirect(`${MEMBERS_PATH}?error=${errorToSlug(message)}`)
   }
@@ -57,9 +82,19 @@ export async function removeMemberAction(formData: FormData) {
   const membershipId = formData.get('membershipId') as string | null
   if (!membershipId) redirect(`${MEMBERS_PATH}?error=invalid_input`)
 
+  await requireOrganizationAccess()
+
   try {
-    await removeMemberFromCurrentOrganization(membershipId)
+    await withOrganizationDatabaseContext(() =>
+      removeMemberFromCurrentOrganization(membershipId)
+    )
   } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${MEMBERS_PATH}?error=not_authorized`)
     const message = err instanceof Error ? err.message : 'unknown_error'
     redirect(`${MEMBERS_PATH}?error=${errorToSlug(message)}`)
   }

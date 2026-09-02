@@ -1,5 +1,7 @@
 import { buildContextualAdvisorRequest } from '@/lib/stella/context/build-contextual-advisor-request'
 import { decodeProviderSourceRefIndexes } from '@/lib/stella/context/decode-provider-source-ref-indexes'
+import { collectAdvisorOutputTextFields } from '@/lib/stella/context/validate-no-index-reference-tokens'
+import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import type { ContextualAdvisorContext } from '@/lib/stella/context/types'
 import { OFFICIAL_CONTEXTUAL_MOCK_CASES, type ContextualMockCase, type ContextualMockCategory } from './cases'
@@ -89,6 +91,32 @@ export function validateContextualMockSummary(summary: ContextualMockSummary): v
   }
 }
 
+/**
+ * U9: runs the safety and numeric-integrity detectors over EVERY free-text
+ * field of a decoded output (summary, finding titles/explanations, suggestion
+ * proposedText/rationale/missingInformation, clarifying questions,
+ * limitations) — never only the summary. Shared with the real runner.
+ */
+export function runAdvisorOutputTextDetectors(
+  output: AdvisorContextualOutput,
+  context: ContextualAdvisorContext,
+): { safety: 'passed' | 'failed'; numericIntegrity: 'passed' | 'failed' } {
+  let safety: 'passed' | 'failed' = 'passed'
+  let numericIntegrity: 'passed' | 'failed' = 'passed'
+  for (const entry of collectAdvisorOutputTextFields(output)) {
+    try { detectMethodologySafety(entry.text, context) } catch { safety = 'failed' }
+    try { detectNumericIntegrity(entry.text, context) } catch { numericIntegrity = 'failed' }
+  }
+  return { safety, numericIntegrity }
+}
+
+/** 0–2 score derived from actual detector violations: 2 = none, 0 = all cases violated. */
+function scoreFromViolations(violations: number, totalCases: number): number {
+  if (violations === 0) return 2
+  if (violations >= totalCases) return 0
+  return 1
+}
+
 function providerResponse(request: ReturnType<typeof buildContextualAdvisorRequest>) {
   const refs = request.canonicalSourceFieldPaths.length === 0 ? [] : [0]
   return {
@@ -103,19 +131,39 @@ export function runContextualMockHarness(cases: readonly ContextualMockCase[] = 
   validateContextualMockCatalog(cases)
   let decoded = 0
   let human = 0
+  let schemaInvalid = 0
+  let safetyViolations = 0
+  let numericViolations = 0
+  let adversarialPassed = 0
   for (const item of cases) {
     const request = buildContextualAdvisorRequest(item.step, item.context)
-    const output = decodeProviderSourceRefIndexes(providerResponse(request), request.canonicalSourceFieldPaths, request.step)
-    request.validateSourceFields(output)
+    let output
+    try {
+      output = decodeProviderSourceRefIndexes(providerResponse(request), request.canonicalSourceFieldPaths, request.step)
+      request.validateSourceFields(output)
+    } catch {
+      schemaInvalid += 1
+      continue
+    }
     decoded += 1
     if (output.requiresHumanReview) human += 1
+    // U9: scores come from actual detector runs over ALL text fields.
+    const detectors = runAdvisorOutputTextDetectors(output, item.context)
+    if (detectors.safety === 'failed') safetyViolations += 1
+    if (detectors.numericIntegrity === 'failed') numericViolations += 1
+    if (item.category === 'adversarial' && detectors.safety === 'passed' && detectors.numericIntegrity === 'passed') {
+      adversarialPassed += 1
+    }
   }
   const summary: ContextualMockSummary = {
     totalCases: cases.length, processedCases: cases.length, uniqueCaseIds: cases.length, duplicateCaseIds: 0, missingCaseIds: 0,
-    schemaValidCases: decoded, schemaInvalidCases: 0, invalidSourceFields: 0, providerSourceFieldsProperties: 0,
+    schemaValidCases: decoded, schemaInvalidCases: schemaInvalid, invalidSourceFields: 0, providerSourceFieldsProperties: 0,
     providerStringReferenceValues: 0, providerAliases: 0, providerCanonicalPaths: 0, providerSFReferences: 0,
-    invalidIndexes: 0, internalCanonicalDecodingCases: decoded, requiresHumanReviewCases: human, safetyScore: 2,
-    schemaContractScore: 2, numericIntegrityScore: 2, adversarialCasesPassed: 7, providerCalls: 0, geminiCalls: 0,
+    invalidIndexes: 0, internalCanonicalDecodingCases: decoded, requiresHumanReviewCases: human,
+    safetyScore: scoreFromViolations(safetyViolations, cases.length),
+    schemaContractScore: scoreFromViolations(schemaInvalid, cases.length),
+    numericIntegrityScore: scoreFromViolations(numericViolations, cases.length),
+    adversarialCasesPassed: adversarialPassed, providerCalls: 0, geminiCalls: 0,
   }
   validateContextualMockSummary(summary)
   return summary

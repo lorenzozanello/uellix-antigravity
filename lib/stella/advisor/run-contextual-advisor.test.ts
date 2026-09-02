@@ -92,6 +92,8 @@ describe('runContextualAdvisor — trusted step contract', () => {
     }
   })
 
+  // U8: fail-closed is preserved for citation-transport corruption — the
+  // authorized action path pins PARSE_ERROR for out-of-range indexes.
   it('fails closed on an out-of-range source reference index regardless of step canonicalization', async () => {
     const { adapter, generate } = mockAdapter(providerOutput('narrative', [99]))
 
@@ -102,6 +104,62 @@ describe('runContextualAdvisor — trusted step contract', () => {
     expect(generate).toHaveBeenCalledTimes(1)
   })
 
+  // U8: the safe contextual fallback (claim-free, findings-empty, human
+  // review required) replaces the response ONLY when its citations were
+  // fully valid and free text leaked an index token — the provider's
+  // content is discarded, never partially used.
+  it('substitutes the safe contextual fallback when free text leaks an index token', async () => {
+    const leaked = { ...providerOutput('narrative', [0]), summary: 'Como se ve en (0), falta evidencia.' }
+    const { adapter, generate } = mockAdapter(leaked)
+
+    const result = await runContextualAdvisor('narrative', context(), adapter)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.fallbackUsed).toBe(true)
+      expect(result.data.findings).toEqual([])
+      expect(result.data.suggestions).toEqual([])
+      expect(result.data.requiresHumanReview).toBe(true)
+      expect(result.data.step).toBe('narrative')
+      expect(result.data.summary).not.toContain('(0)')
+    }
+    expect(generate).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps failing closed on ambiguous structural failures (no fallback)', async () => {
+    const { adapter } = mockAdapter({ invalid: 'shape' })
+
+    const result = await runContextualAdvisor('narrative', context(), adapter)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error).toBe('PARSE_ERROR')
+  })
+
+  it('keeps failing closed on invalid JSON (no fallback)', async () => {
+    const generate = vi.fn().mockResolvedValue({
+      role: 'advisor',
+      rawOutput: 'not json at all',
+      parsedOutput: null,
+      modelUsed: 'mock-model',
+      timestamp: new Date(),
+    })
+    const adapter = { generate, parseResponse: vi.fn(), isReady: vi.fn().mockReturnValue(true) } as unknown as StellaGeminiAdapter
+
+    const result = await runContextualAdvisor('narrative', context(), adapter)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error).toBe('PARSE_ERROR')
+  })
+
+  it('does not flag fallbackUsed on a valid response', async () => {
+    const { adapter } = mockAdapter(providerOutput('narrative', []))
+
+    const result = await runContextualAdvisor('narrative', context(), adapter)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.fallbackUsed).toBeUndefined()
+  })
+
   it('never calls a real provider — only the injected adapter mock', async () => {
     const { adapter, generate } = mockAdapter(providerOutput('narrative', []))
 
@@ -109,6 +167,34 @@ describe('runContextualAdvisor — trusted step contract', () => {
 
     expect(generate).toHaveBeenCalledTimes(1)
     expect(generate.mock.calls[0][0]).toMatchObject({ role: 'advisor' })
+  })
+
+  // WS3c U2 (RK-19): step mismatches are canonicalized AND surfaced.
+  describe('stepMismatch observability (RK-19)', () => {
+    it('surfaces stepMismatch: true when the provider returned a different step', async () => {
+      const { adapter } = mockAdapter(providerOutput('narrativa', [0]))
+
+      const result = await runContextualAdvisor('narrative', context(), adapter)
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.stepMismatch).toBe(true)
+        // Canonicalization is unchanged — the trusted step wins.
+        expect(result.data.step).toBe('narrative')
+      }
+    })
+
+    it('does not set stepMismatch when the provider step matches', async () => {
+      const { adapter } = mockAdapter(providerOutput('narrative', [0]))
+
+      const result = await runContextualAdvisor('narrative', context(), adapter)
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.stepMismatch).toBeUndefined()
+        expect('stepMismatch' in result).toBe(false)
+      }
+    })
   })
 
   it('returns modelUsed and tokensUsed from the provider response for the audit trail', async () => {

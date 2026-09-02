@@ -1,0 +1,492 @@
+{
+  "package_id": "RE_U1_UX_UI_DELTA_AUDIT",
+  "version": "1.0.0",
+  "artifact_id": "RE_U1_UX_UI_DELTA_AUDIT_v1.0.0",
+  "authority_class": "DERIVED_UX_UI_DELTA_AUDIT_RECORD",
+  "materialization_step": "RE-U1-M",
+  "class": "C",
+  "mode": "DERIVED_AUDIT_MATERIALIZATION",
+  "supersedes": null,
+
+  "purpose": "Materialize, as a repository-native record, the RE-U1 read-only UX/UI delta audit performed against the current materialized product, per the controlling RE-U0 delta reconciliation. Records measured findings only; creates no product authority, implements nothing, reopens nothing.",
+
+  "scope_note": "DERIVED TRACKING RECORD. This artifact does not rewrite, supersede, reinterpret or restate any FIB, PC-01B, IM-01B, ODS or RE_U0 artifact; those remain byte-identical and controlling. It records the RE-U1 audit findings and a coordinator disposition layer only. It is not frozen product authority.",
+
+  "authority_boundary": {
+    "creates_new_product_authority": false,
+    "reopens_frozen_decisions": false,
+    "reopens_q1_q6": false,
+    "decisions_readjudicated": 0,
+    "converts_implementation_gaps_to_open_questions": false,
+    "governing_lane": "ODS_V1_AUTHORITY_v1.0.0.json :: product_and_wave_handoff.lane_b (Uellix product reengineering)",
+    "source_reconciliation": "docs/ops/reeng/RE_U0_DELTA_RECONCILIATION_v1.0.0.json"
+  },
+
+  "anchors": {
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "base_sha": "8e8cd2ce645e42bf99a2d6dcf4af7bac7b8ccd7b",
+    "base_tree": "cef3a2304aa1d5cde47ff66aff0fa6360296606d",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1"
+  },
+
+  "audit_summary": {
+    "surfaces_audited": 12,
+    "routes_audited": 41,
+    "route_files_audited": 63,
+    "total_findings": 21,
+    "p0_findings": 4,
+    "p1_findings": 6,
+    "p2_findings": 6,
+    "p3_findings": 5,
+    "new_hpo_question_count": 0,
+    "poststate_clean": true
+  },
+
+  "layer_separation": {
+    "CURRENT_REPO_REALITY": "What RE-U1 measured in the current materialized product at base_sha/base_tree.",
+    "PRESERVED_PRODUCT_TARGET": "The prior frozen product/brand/commercial decision that remains controlling as the target, per RE-U0 Q1-Q6 dispositions.",
+    "FIB_DEPENDENCY": "Findings whose functional completeness depends on a later FIB wave's technical contracts, not on UX/UI work in this lineage.",
+    "VISUAL_EVIDENCE_DEPENDENCY": "Findings that cannot be adjudicated to an exact screen treatment until the Q5 evidence-recovery backlog resolves.",
+    "COORDINATOR_ADJUDICATION": "A disposition layer added at materialization time that separates a SAFE_NOW explanation-surface delta from a WAIT_FOR_LATER_FIB functional dependency, without altering the original measured severity."
+  },
+
+  "surface_inventory": [
+    { "route": "/", "shell": "(public)/layout", "purpose": "Landing, 13 marketing sections", "reachability": "REACHABLE", "dependency": "Q5 PUBLIC family NOT_RECOVERED" },
+    { "route": "/demo, /privacidad, /privacy, /terminos, /terms", "shell": "(public)/layout", "purpose": "Demo request, legal", "reachability": "REACHABLE", "dependency": null },
+    { "route": "/login, /forgot-password, /reset-password", "shell": "(public)/layout", "purpose": "Auth", "reachability": "REACHABLE", "dependency": null },
+    { "route": "(public signup)", "shell": null, "purpose": "Self-service signup", "reachability": "MISSING", "dependency": "Q4 / Commercial V1" },
+    { "route": "/verify/[hash]", "shell": "(public)/layout", "purpose": "Public report verification", "reachability": "REACHABLE, fails to unbranded 404", "dependency": "RE-U0-F1 / WAIT_FOR_LATER_FIB" },
+    { "route": "/verify/[hash]/pdf", "shell": "route handler", "purpose": "Verified PDF", "reachability": "Same fail-closed path", "dependency": "WAIT_FOR_LATER_FIB" },
+    { "route": "/invite/accept", "shell": "root", "purpose": "Invitation acceptance", "reachability": "REACHABLE (email link)", "dependency": null },
+    { "route": "/app/onboarding", "shell": "(authenticated)/layout — no shell", "purpose": "Org creation", "reachability": "REACHABLE, terminal dead-end", "dependency": "Q4" },
+    { "route": "/app/dashboard", "shell": "app/app/layout", "purpose": "Workspace home", "reachability": "REACHABLE (nav)", "dependency": null },
+    { "route": "/app/projects, /projects/new, /projects/[id]", "shell": "app/app/layout", "purpose": "Multi-project", "reachability": "REACHABLE (nav)", "dependency": null },
+    { "route": "/app/projects/[id]/pipeline/* (8 routes)", "shell": "app/app/layout", "purpose": "Measure", "reachability": "REACHABLE", "dependency": "Wave 2 for methodology objects" },
+    { "route": "/app/projects/[id]/report, /report/[reportId], /print, /pdf", "shell": "app/app/layout", "purpose": "Reports", "reachability": "REACHABLE", "dependency": "WAIT_FOR_LATER_FIB (FIBIU-22..25, 30)" },
+    { "route": "/app/trust-center", "shell": "app/app/layout", "purpose": "Evidence ledger", "reachability": "REACHABLE (nav)", "dependency": null },
+    { "route": "/app/portfolios", "shell": "app/app/layout", "purpose": "Portfolio index", "reachability": "UNREACHABLE", "dependency": "U5" },
+    { "route": "/app/portfolios/new", "shell": "app/app/layout", "purpose": "Create portfolio", "reachability": "UNREACHABLE", "dependency": "U5" },
+    { "route": "/app/portfolios/[id]", "shell": "app/app/layout", "purpose": "Portfolio detail", "reachability": "CONDITIONAL only (projects/[id]/page.tsx:103, needs pre-existing portfolioId)", "dependency": "Aggregation -> Wave 5/6" },
+    { "route": "/app/organization/members, /billing", "shell": "app/app/layout", "purpose": "Org admin", "reachability": "REACHABLE (nav)", "dependency": null },
+    { "route": "/app/organization/settings", "shell": "app/app/layout", "purpose": "Org settings", "reachability": "UNREACHABLE (zero inbound links)", "dependency": "U5" },
+    { "route": "/app/organization/onboarding", "shell": "app/app/layout", "purpose": "Second onboarding surface", "reachability": "REACHABLE (3 refs)", "dependency": "U3 - duplication" },
+    { "route": "/app/proxies", "shell": null, "purpose": "Referenced by 2 blockers", "reachability": "DOES NOT EXIST", "dependency": "U7 defect" },
+    { "route": "/admin/* (6 sections)", "shell": "app/admin/layout", "purpose": "SuperAdmin console", "reachability": "REACHABLE, requireAdminAccess()", "dependency": "Q4 (allowlist)" },
+    { "route": "/api/health/*, /api/*", "shell": "route handlers", "purpose": "Ops / integrations", "reachability": "N/A", "dependency": null }
+  ],
+
+  "ux_ui_finding_register": [
+    {
+      "finding_id": "U1-F01",
+      "surface": "/app/onboarding",
+      "measured_behavior": "Zero links, zero sign-out control; non-allowlisted user is terminal.",
+      "required_behavior": "Every dead-end offers an exit.",
+      "evidence": "app/(authenticated)/app/onboarding/page.tsx has no href/signout; app/(authenticated)/app/onboarding/actions.ts:67 redirect(‘/app/onboarding?error=not_allowlisted’)",
+      "severity": "P0",
+      "owner_stage": "U5",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Add sign-out + support contact to the route group's own chrome."
+    },
+    {
+      "finding_id": "U1-F02",
+      "surface": "Portfolio",
+      "measured_behavior": "Index and /new have zero inbound links from primary navigation; portfolio select on project creation can only ever be empty.",
+      "required_behavior": "Portfolio V1 reachable.",
+      "evidence": "components/layout/Sidebar.tsx:8-14, components/layout/MobileNav.tsx:8-14 (identical 5-entry NAV_LINKS, no Portfolio entry); only inbound link is app/app/projects/[projectId]/page.tsx:103",
+      "severity": "P0",
+      "owner_stage": "U5+U3",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Add Portafolios to both NAV_LINKS arrays."
+    },
+    {
+      "finding_id": "U1-F03",
+      "surface": "Signup",
+      "measured_behavior": "No public signup route; self-serve org creation gated by SuperAdmin allowlist.",
+      "required_behavior": "Self-service B2B signup per Commercial V1 target.",
+      "evidence": "find app -ipath *signup* = 0 results; lib/admin/signup-allowlist.ts; app/(authenticated)/app/onboarding/actions.ts:55-67",
+      "severity": "P0",
+      "owner_stage": "U4 + COMMERCIAL_V1_MAPPING",
+      "dependency_class": "Q4 (RESOLVED_BY_COMMERCIAL_V1_HPO — allowlist may not become the final V1 mandatory journey)",
+      "safe_now": "SAFE_NOW for journey design",
+      "recommended_delta": "Design self-service journey; allowlist is a pre-V1 constraint, not the final flow."
+    },
+    {
+      "finding_id": "U1-F04",
+      "surface": "Measure / SROI calculation gate",
+      "measured_behavior": "8 of 10 blocker remediation CTAs are dead: #investment (x3), #sroi-inputs, #sroi-filters, #funder-attribution have no matching DOM id anywhere in app/ or components/; /app/proxies (x2) is not a route.",
+      "required_behavior": "Every fail-closed refusal has a working remediation link.",
+      "evidence": "lib/pipeline/sroi-calculation.ts:589-705 (actionPath definitions); exhaustive id= census across app/components found none of the four anchors; app/app/proxies does not exist on disk",
+      "severity": "P1",
+      "owner_stage": "U7 + RUNTIME_IMPLEMENTATION",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Add the missing section anchors; repoint /app/proxies to /app/projects/${projectId}/pipeline/proxies."
+    },
+    {
+      "finding_id": "U1-F05",
+      "surface": "Organization Settings",
+      "measured_behavior": "Route implemented and role-gated; zero inbound links from navigation.",
+      "required_behavior": "Reachable.",
+      "evidence": "app/app/organization/settings/page.tsx exists; only reference elsewhere is app/actions/organization.ts:45 revalidatePath('/app/organization/settings')",
+      "severity": "P1",
+      "owner_stage": "U5",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Add to nav or an organization sub-nav."
+    },
+    {
+      "finding_id": "U1-F06",
+      "surface": "All async routes",
+      "measured_behavior": "Zero loading.tsx segment files exist; components/states/LoadingState.tsx has zero consumers.",
+      "required_behavior": "Async segments show progress feedback.",
+      "evidence": "find app -name loading.tsx = 0; grep for LoadingState usage outside its own file = 0",
+      "severity": "P1",
+      "owner_stage": "U5+U7",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Wire the existing LoadingState primitive per route segment."
+    },
+    {
+      "finding_id": "U1-F07",
+      "surface": "Authenticated shell",
+      "measured_behavior": "No skip link; <main> in app/app/layout.tsx has no id.",
+      "required_behavior": "WCAG 2.4.1 Bypass Blocks.",
+      "evidence": "app/(public)/layout.tsx:55-67 has a skip link and id=\"main-content\"; app/app/layout.tsx has neither",
+      "severity": "P1",
+      "owner_stage": "U5",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Mirror the public skip link in the authenticated shell."
+    },
+    {
+      "finding_id": "U1-F08",
+      "surface": "Breadcrumbs",
+      "measured_behavior": "Can emit a link to /app/organization, which is not a route.",
+      "required_behavior": "No 404-producing links.",
+      "evidence": "components/layout/Breadcrumbs.tsx:60-80 links every non-last path segment",
+      "severity": "P1",
+      "owner_stage": "U5",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Render non-routable intermediate segments as plain text, not links."
+    },
+    {
+      "finding_id": "U1-F09",
+      "surface": "Typography / governed metadata",
+      "measured_behavior": "Governed metadata (hashes, IDs, timestamps, including the public verification hash) uses font-mono, which resolves to Geist Mono, not IBM Plex Mono.",
+      "required_behavior": "IBM Plex Mono only for governed metadata/provenance/IDs/timestamps.",
+      "evidence": "app/globals.css:20 --font-mono: var(--font-geist-mono); 13 font-mono usage sites all on governed IDs/hashes/timestamps; app/(public)/verify/[hash]/page.tsx:95",
+      "severity": "P1",
+      "owner_stage": "U6",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Set --font-mono: var(--font-ibm-plex-mono); retire Geist Mono as a fourth family."
+    },
+    {
+      "finding_id": "U1-F10",
+      "surface": "Navigation",
+      "measured_behavior": "NAV_LINKS array duplicated verbatim in two files.",
+      "required_behavior": "Single source of truth for primary navigation.",
+      "evidence": "components/layout/Sidebar.tsx:8-14 identical to components/layout/MobileNav.tsx:8-14",
+      "severity": "P2",
+      "owner_stage": "U5",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Extract a shared nav model consumed by both."
+    },
+    {
+      "finding_id": "U1-F11",
+      "surface": "Design tokens / Navy",
+      "measured_behavior": "86 literal #0F172A occurrences across 40 files bypass the existing --color-uellix-deep token.",
+      "required_behavior": "Token-mediated brand color; canonical target #172B49 per RE-U0 Q2.",
+      "evidence": "app/globals.css:28 --color-uellix-deep: #0F172A (token exists); grep census of 86 hardcoded occurrences across 40 files; #172B49 = 0 occurrences",
+      "severity": "P2",
+      "owner_stage": "U6",
+      "dependency_class": "Q2 (RESOLVED_BY_PRIOR_BRAND_HPO — reclassified DESIGN_SYSTEM_RECONCILIATION_DEBT, not an open colour decision)",
+      "safe_now": true,
+      "recommended_delta": "Migrate hardcoded literals to the token first; only then flip the token value to #172B49."
+    },
+    {
+      "finding_id": "U1-F12",
+      "surface": "Forms",
+      "measured_behavior": "aria-describedby = 0 occurrences against 27 htmlFor occurrences.",
+      "required_behavior": "Validation errors announced to assistive technology.",
+      "evidence": "repository-wide grep census",
+      "severity": "P2",
+      "owner_stage": "U6+U7",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Associate error text with its field via aria-describedby."
+    },
+    {
+      "finding_id": "U1-F13",
+      "surface": "Stella entry points",
+      "measured_behavior": "Three distinct entry verbs in use: 'Preguntar a Stella' (8), 'Consultar a Stella' (3), 'Revisar con Stella' (2).",
+      "required_behavior": "Consistent governed labeling pattern.",
+      "evidence": "label census across components/stella and app",
+      "severity": "P2",
+      "owner_stage": "U6",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Converge on one verb/preposition set per interaction type."
+    },
+    {
+      "finding_id": "U1-F14",
+      "surface": "Breadcrumbs",
+      "measured_behavior": "SEGMENT_LABELS map lacks entries for organization/settings/members/billing/verify.",
+      "required_behavior": "Every reachable segment has a human label.",
+      "evidence": "components/layout/Breadcrumbs.tsx:15-31",
+      "severity": "P2",
+      "owner_stage": "U5",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Extend SEGMENT_LABELS."
+    },
+    {
+      "finding_id": "U1-F15",
+      "surface": "Evaluate",
+      "measured_behavior": "No dedicated Evaluate surface; methodology review is embedded in the pipeline only.",
+      "required_behavior": "Structured Evaluate per preserved target model (Evaluation, AssessmentTemplateVersion, Dimensions, Criteria, Inputs, Evidence, Score, Reviewer Analysis, Stella Analysis/Recommendation, DecisionPolicy, Human Decision).",
+      "evidence": "zero files named evaluate; lib/pipeline/methodology-review.ts, db/policies/006_methodology_review_rls.sql present",
+      "severity": "P2",
+      "owner_stage": "U3 / U7",
+      "dependency_class": "Q1 (RESOLVED_BY_PRIOR_FROZEN_PRODUCT_ARCHITECTURE) + Wave 3 (FIBIU-19, FIBIU-20)",
+      "safe_now": "naming/IA reservation SAFE_NOW; full surface WAIT_FOR_LATER_FIB",
+      "recommended_delta": "Reserve an IA slot for the future structured Evaluate surface; do not invent its technical contract."
+    },
+    {
+      "finding_id": "U1-F16",
+      "surface": "/verify/[hash]",
+      "measured_behavior": "No not-found.tsx exists anywhere in the app tree; notFound() is called by 4 pages including the public verify route; the current failure surface is the unbranded Next.js default 404.",
+      "required_behavior": "Governed, branded fail-closed explanation for every notFound() call.",
+      "evidence": "find app -name not-found.tsx = 0; grep for notFound() = 4 callers; RE-U0-F1 (public verification is fail-closed after the runtime cutover, correct default behavior, not a live contradiction)",
+      "severity": "P0 (for the explanation surface)",
+      "owner_stage": "U5+U7",
+      "dependency_class": "coordinator-separated — see coordinator_adjudication.U1_F16_disposition below",
+      "safe_now": "SAFE_NOW for the explanation surface only",
+      "recommended_delta": "Add a governed, branded not-found.tsx. This does NOT restore public verification functionality, which remains WAIT_FOR_LATER_FIB."
+    },
+    {
+      "finding_id": "U1-F17",
+      "surface": "Public hero",
+      "measured_behavior": "Copy reads 'Convierte el impacto social...'; CTA reads 'Ver metodología'.",
+      "required_behavior": "Preserved target direction includes 'Convierte tu impacto social en evidencia defendible' and CTAs 'Solicitar demo' / 'Ver cómo funciona'.",
+      "evidence": "components/marketing/HeroSection.tsx",
+      "severity": "P3",
+      "owner_stage": "U8",
+      "dependency_class": "Q5 PUBLIC family (02-01-C, 02-02 B, 02-03 B, 02-04 B) NOT_RECOVERED",
+      "safe_now": false,
+      "recommended_delta": "WAIT_FOR_VISUAL_EVIDENCE. Do not adjudicate exact copy without recovered controlling artifact."
+    },
+    {
+      "finding_id": "U1-F18",
+      "surface": "Onboarding copy",
+      "measured_behavior": "not_allowlisted error message uses Rioplatense voseo ('esperás', 'pedile', 'contactá').",
+      "required_behavior": "Neutral LatAm Spanish register (es_LA / es-CO) consistent with the rest of the product.",
+      "evidence": "app/(authenticated)/app/onboarding/page.tsx:16; app/layout.tsx metadata.openGraph.locale = 'es_LA'; date formatting uses 'es-CO' elsewhere",
+      "severity": "P3",
+      "owner_stage": "U6",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Normalize to neutral LatAm register."
+    },
+    {
+      "finding_id": "U1-F19",
+      "surface": "Stella copy",
+      "measured_behavior": "Gender agreement inconsistency: 'habilitado' vs 'habilitada' across near-identical availability-notice strings.",
+      "required_behavior": "Grammatically consistent copy.",
+      "evidence": "copy census across components/stella",
+      "severity": "P3",
+      "owner_stage": "U6",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Fix agreement."
+    },
+    {
+      "finding_id": "U1-F20",
+      "surface": "Color tokens",
+      "measured_behavior": "Near-duplicate/orphan hex literals (#e05e00, #e65f00, #5B6472, #1E293B, #FBFAFC) alongside the governed palette.",
+      "required_behavior": "Tokenized palette with no orphan literals.",
+      "evidence": "color census across app/ and components/",
+      "severity": "P3",
+      "owner_stage": "U6",
+      "dependency_class": "NONE",
+      "safe_now": true,
+      "recommended_delta": "Fold orphans into the existing token scale or remove."
+    },
+    {
+      "finding_id": "U1-F21",
+      "surface": "/verify/[hash] banner",
+      "measured_behavior": "Banner text 'Reporte Audit-Ready Verificado' is potentially ambiguous between Uellix verifying registration/lock state versus verifying the impact claim itself.",
+      "required_behavior": "No overclaim of impact certification; preserved TRUST decisions govern exact treatment.",
+      "evidence": "app/(public)/verify/[hash]/page.tsx:27-31",
+      "severity": "P3",
+      "owner_stage": "U8",
+      "dependency_class": "Q5 TRUST family (S1-1-03-B, S1-1-05, S1-1-06) NOT_RECOVERED",
+      "safe_now": false,
+      "recommended_delta": "WAIT_FOR_VISUAL_EVIDENCE. Flag only; current copy does not present Uellix as certifying impact."
+    }
+  ],
+
+  "commercial_v1_journey_audit": [
+    { "step": "signup", "classification": "MISSING", "evidence": "no signup route found" },
+    { "step": "authentication", "classification": "IMPLEMENTED_AND_REACHABLE", "evidence": "login/forgot-password/reset-password/auth/callback/auth/signout" },
+    { "step": "organization creation / provisioning", "classification": "PARTIAL — gated and terminal dead-end", "evidence": "app/(authenticated)/app/onboarding/actions.ts:55-67; U1-F01" },
+    { "step": "onboarding", "classification": "PARTIAL — two surfaces", "evidence": "/app/onboarding and /app/organization/onboarding" },
+    { "step": "invitation acceptance", "classification": "IMPLEMENTED_AND_REACHABLE", "evidence": "/invite/accept" },
+    { "step": "role/permission-aware navigation", "classification": "PARTIAL — page-level gating present, nav itself is role-blind", "evidence": "app/app/portfolios/page.tsx:24, app/app/organization/settings/page.tsx:23 gate in-page; identical NAV_LINKS rendered for all six roles" },
+    { "step": "multiple projects", "classification": "IMPLEMENTED_AND_REACHABLE", "evidence": "projects CRUD routes" },
+    { "step": "Measure", "classification": "PARTIAL", "evidence": "8 pipeline routes live; 8/8 probed Wave 2 methodology tables absent; U1-F04" },
+    { "step": "Stella", "classification": "IMPLEMENTED_AND_REACHABLE", "evidence": "12 contextual panels" },
+    { "step": "review", "classification": "IMPLEMENTED_AND_REACHABLE", "evidence": "methodology review" },
+    { "step": "approval", "classification": "IMPLEMENTED_AND_REACHABLE", "evidence": "sroi run reviews" },
+    { "step": "report", "classification": "PARTIAL", "evidence": "render/print/pdf live; ReportVersion lineage BLOCKED_BY_FIB" },
+    { "step": "Portfolio", "classification": "IMPLEMENTED_BUT_UNREACHABLE", "evidence": "U1-F02" },
+    { "step": "Evaluate", "classification": "PARTIAL — CURRENT_IMPLEMENTATION_SUBSET", "evidence": "methodology review only; U1-F15" }
+  ],
+
+  "navigation_reachability_matrix": [
+    { "target": "/app/dashboard", "inbound_links": 20, "status": "REACHABLE" },
+    { "target": "/app/projects + children", "inbound_links": "5 + deep links", "status": "REACHABLE" },
+    { "target": "/app/trust-center", "inbound_links": 6, "status": "REACHABLE" },
+    { "target": "/app/organization/members", "inbound_links": 3, "status": "REACHABLE" },
+    { "target": "/app/organization/billing", "inbound_links": 2, "status": "REACHABLE" },
+    { "target": "/app/portfolios", "inbound_links": "2, both self-referential", "status": "UNREACHABLE" },
+    { "target": "/app/portfolios/new", "inbound_links": "2, both from unreachable index", "status": "UNREACHABLE" },
+    { "target": "/app/organization/settings", "inbound_links": 0, "status": "UNREACHABLE" },
+    { "target": "/app/organization", "inbound_links": "breadcrumb-generated", "status": "404_LINK" },
+    { "target": "/app/proxies", "inbound_links": "2 (blockers)", "status": "404_LINK" },
+    { "target": "#investment / #sroi-inputs / #sroi-filters / #funder-attribution", "inbound_links": "6 CTA instances", "status": "DEAD_ANCHOR" }
+  ],
+
+  "state_coverage_matrix": [
+    { "state": "EMPTY", "coverage": "GOOD — 14 surfaces", "evidence": "EmptyState adoption census" },
+    { "state": "ERROR (in-page)", "coverage": "PARTIAL — 6 surfaces", "evidence": "ErrorState adoption census" },
+    { "state": "ERROR (segment boundary)", "coverage": "WEAK — root only", "evidence": "app/error.tsx, app/global-error.tsx; 0 segment-level error.tsx" },
+    { "state": "LOADING", "coverage": "ABSENT", "evidence": "0 loading.tsx; LoadingState 0 consumers" },
+    { "state": "NOT_FOUND", "coverage": "ABSENT", "evidence": "0 not-found.tsx; 4 notFound() callers" },
+    { "state": "FAIL_CLOSED explanation", "coverage": "STRONG in copy, BROKEN in remediation", "evidence": "12 typed blockers in sroi-calculation.ts; 8/10 CTAs dead (U1-F04)" }
+  ],
+
+  "stella_governance_ux_matrix": {
+    "ai_proposes_system_calculates_human_decides": "CONFORMANT — 'Stella no resuelve este conflicto. Requiere resolución humana.'; 'revisión humana antes de guardar o publicar'",
+    "entry_points": "Contextual only — 12 panels, no global assistant, no avatar (confirms RE-U0-F6)",
+    "grounding_provenance": "STRONG — EvidenceSupportLevel is 4-way (grounded, partially_grounded, insufficient_evidence, contradictory_evidence); StellaGroundingBadge renders it",
+    "insufficient_evidence_behavior": "EXPLICIT — 'Stella no tiene información suficiente para proponer un texto.'",
+    "limitations_disclosure": "Declared — 'Stella no redactó esta respuesta: cada frase está copiada...'",
+    "availability_fail_closed": "StellaAvailabilityNotice present per surface",
+    "generic_chat_leakage": "NONE measured",
+    "label_consistency": "DELTA — see U1-F13",
+    "status": "CONFORMANT_WITH_COPY_DELTA"
+  },
+
+  "trust_traceability_ux_matrix": [
+    { "element": "snapshot", "present": true, "dependency": null, "evidence": "sroi_reports.snapshot_json" },
+    { "element": "version lineage", "present": false, "dependency": "WAIT_FOR_LATER_FIB (FIBIU-22..25)", "evidence": "no ReportVersion table" },
+    { "element": "approval status", "present": true, "dependency": null, "evidence": "run reviews, 5 states in trust-center" },
+    { "element": "calculation basis", "present": true, "dependency": null, "evidence": "run detail, compare view" },
+    { "element": "methodology", "present": true, "dependency": null, "evidence": "methodology review surface" },
+    { "element": "evidence", "present": true, "dependency": null, "evidence": "trust-center: SHA-256, tipo, estado, registrado" },
+    { "element": "provenance", "present": "PARTIAL — present, wrong typeface", "dependency": null, "evidence": "U1-F09" },
+    { "element": "hash / verification", "present": "PARTIAL — internal yes; public path renders bare 404", "dependency": "U1-F16 + LATER_FIB", "evidence": "RE-U0-F1" },
+    { "element": "public / private distinction", "present": "default-off, correct", "dependency": "WAIT_FOR_LATER_FIB (FIBIU-26/31)", "evidence": "no report_disclosures table" },
+    { "element": "certification overclaim", "present": "NOT PRESENT — copy says registered/locked for external review, not certified", "dependency": null, "evidence": "one ambiguity flagged as U1-F21" }
+  ],
+  "report_trust_ux_status": "INTERNALLY_SOUND_PUBLICLY_UNPRESENTABLE",
+
+  "design_system_delta_matrix": [
+    { "class": "TOKEN_DEBT", "finding": "86x #0F172A / 44x #FF6A00 / 17x #B85200 / 14x #64748B hardcoded across 40 files bypassing --color-uellix-* tokens. #172B49 = 0 occurrences (confirms RE-U0 Q2/RD-VIS-02). Orphans: #e05e00, #e65f00, #5B6472, #1E293B." },
+    { "class": "TYPOGRAPHY_DEBT", "finding": "Sora (23), Manrope (20), IBM Plex Mono (27) all adopted; Source Serif retired (0 occurrences, confirmed). Defect: --font-mono resolves to Geist Mono; 13 governed-metadata sites in the wrong face (U1-F09); Geist Mono is an ungoverned fourth family." },
+    { "class": "COMPONENT_DEBT", "finding": "NAV_LINKS duplicated (U1-F10); LoadingState orphaned (U1-F06); two onboarding surfaces; role-blind primary navigation." },
+    { "class": "ACCESSIBILITY_DEBT", "finding": "No skip link in authenticated shell (U1-F07); aria-describedby = 0 vs 27 htmlFor (U1-F12); aria-invalid = 2. Positives: 45 aria-label, 12 aria-live, 9 role=alert, 4 aria-current, mobile drawer role=dialog + aria-modal, 44px touch targets." }
+  ],
+
+  "accessibility_delta_matrix": [
+    { "criterion": "2.4.1 Bypass Blocks", "status": "FAIL (authenticated shell)", "finding_ref": "U1-F07" },
+    { "criterion": "3.3.1 / 3.3.3 Error Identification", "status": "PARTIAL FAIL", "finding_ref": "U1-F12" },
+    { "criterion": "2.4.4 Link Purpose", "status": "FAIL", "finding_ref": "U1-F08, dead anchors in U1-F04" },
+    { "criterion": "4.1.3 Status Messages", "status": "PASS", "finding_ref": "aria-live / role=alert census" },
+    { "criterion": "2.4.8 Location", "status": "PARTIAL", "finding_ref": "U1-F14" },
+    { "criterion": "2.5.5 Target Size", "status": "PASS", "finding_ref": "min-h-11 min-w-11 census" },
+    { "criterion": "1.4.3 Contrast", "status": "PARTIAL — full audit pending", "finding_ref": "WAIT_FOR_VISUAL_EVIDENCE" },
+    { "criterion": "1.1.1 Non-text", "status": "PASS", "finding_ref": "aria-hidden on icons, alt on logos" }
+  ],
+
+  "coordinator_adjudication": {
+    "statement": "This layer separates SAFE_NOW explanation-surface deltas from FIB-dependent functional completeness. It does not alter the original measured severity field of any finding, and it does not convert an implementation gap into an open HPO question.",
+    "U1_F16_disposition": {
+      "measured_facts_preserved": [
+        "public /verify/[hash] currently reaches fail-closed 404",
+        "there is no governed not-found.tsx anywhere in the app tree",
+        "the current user-facing failure surface is the unbranded Next.js default 404"
+      ],
+      "U1_F16_SAFE_NOW_SURFACE_DELTA": "ADD_GOVERNED_BRANDED_NOT_FOUND_EXPLANATION",
+      "PUBLIC_VERIFICATION_FUNCTIONAL_COMPLETENESS": "WAIT_FOR_LATER_FIB",
+      "binding_rule": "A U5 not-found.tsx improvement MUST NOT be recorded later as restoring public verification functionality. The underlying fail-closed behavior (RE-U0-F1) is correct and FIB-dependent; only the explanation surface is SAFE_NOW.",
+      "final_classification": "COMMERCIAL_TRUST_RELEASE_CONCERN_WITH_SAFE_NOW_EXPLANATION_DELTA_AND_LATER_FIB_FUNCTIONAL_DEPENDENCY",
+      "original_measured_severity_unchanged": "P0 (for the explanation surface)"
+    },
+    "commercial_v1_immediate_safe_now_blockers": ["U1-F01", "U1-F02", "U1-F03"]
+  },
+
+  "execution_disposition": {
+    "recommended_product_worktree_count": 1,
+    "no_new_parallel_worktrees": true,
+    "worktree_rationale": "U5 and U6 both write components/layout/*.tsx (Sidebar/MobileNav need both the nav fix and the token migration). U3/U4 are documentation-only. Measured shared write surface is small and overlapping; merge cost exceeds parallelism benefit.",
+    "SAFE_NOW_U5": ["U1-F01", "U1-F02", "U1-F05", "U1-F06", "U1-F07", "U1-F08", "U1-F10", "U1-F14", "U1-F16 (explanation surface only)"],
+    "SAFE_NOW_U6": ["U1-F09", "U1-F11", "U1-F12", "U1-F13", "U1-F18", "U1-F19", "U1-F20"],
+    "SAFE_NOW_U3": ["Evaluate IA reservation/naming (U1-F15 partial)", "onboarding-surface reconciliation"],
+    "SAFE_NOW_U4": ["self-service signup/autoprovisioning journey design (U1-F03)", "current onboarding dead-end remediation semantics (U1-F01 journey framing)"],
+    "SAFE_NOW_CROSS_STAGE": ["U1-F04 remediation-link repair"],
+    "WAIT_FOR_WAVE2": ["Measure page/template architecture dependent on FIBIU-04..18 methodology objects"],
+    "WAIT_FOR_LATER_FIB": [
+      "Evaluate technical surface contracts (Wave 3, FIBIU-19/20)",
+      "ReportVersion / trust (Wave 4+, FIBIU-22..25; Wave 6, FIBIU-30)",
+      "Portfolio governed aggregation (Wave 5, FIBIU-27; Wave 6, FIBIU-30)",
+      "public verification/disclosure functionality (Wave 5, FIBIU-26/31)"
+    ],
+    "WAIT_FOR_VISUAL_EVIDENCE": ["U1-F17", "U1-F21", "any exact screen treatment depending on unrecovered VECP/HPO artifacts (Q5 backlog, 16 not_recovered / 1 partially_identified)"]
+  },
+
+  "sequencing": {
+    "frozen_as": "derived execution guidance, not product authority",
+    "order": [
+      "1. U5 shell/reachability baseline",
+      "2. U6 token/typography/accessibility reconciliation",
+      "3. U3 IA delta materialization",
+      "4. U4 journey delta materialization",
+      "5. cross-stage U1-F04 remediation-link repair"
+    ],
+    "U6_navy_token_ordering": "First migrate hardcoded Navy usage (86 occurrences / 40 files) to the existing --color-uellix-deep token. Only after token adoption is complete, change the canonical Navy token value to #172B49. Do not perform a blind 40-file literal flip before token adoption."
+  },
+
+  "next_gates": {
+    "next_product_gate": "RE_U5_SHELL_AND_REACHABILITY_DELTA",
+    "following_product_gates": [
+      "RE_U6_DESIGN_SYSTEM_DELTA",
+      "RE_U3_IA_DELTA",
+      "RE_U4_JOURNEY_DELTA",
+      "RE_U1_F04_REMEDIATION_LINK_REPAIR"
+    ],
+    "worktree_note": "These run in ONE worktree with separate traceable commits. Do not create new worktrees."
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS",
+    "hpo_question_count": 0,
+    "q1_q6_reopened": false,
+    "visual_authority_recovery_pending": true
+  },
+
+  "state_after_this_artifact": {
+    "audit_artifact_created": true,
+    "ready_for_re_u5": true,
+    "lanes_started_by_this_step": "NONE",
+    "next_gate": "RE_U5_SHELL_AND_REACHABILITY_DELTA"
+  },
+
+  "final_state": "UX_UI_DELTA_AUDIT_MATERIALIZED_READY_FOR_U5"
+}

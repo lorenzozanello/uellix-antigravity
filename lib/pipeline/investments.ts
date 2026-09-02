@@ -14,7 +14,7 @@ import {
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
 import { type Role } from '@/lib/auth/roles'
-import { logAuditAction } from '@/lib/audit/logger'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 
 // ─── Input validation schemas ────────────────────────────────────────────────
@@ -168,7 +168,7 @@ export async function createInvestment(
     projectId,
     entityType: 'project_investments',
     entityId: investment[0].id,
-    action: 'project_investment.created',
+    action: AUDIT_ACTIONS.PROJECT_INVESTMENT_CREATED,
     afterJson: investment[0] as unknown as Record<string, unknown>,
   })
 
@@ -292,7 +292,8 @@ export async function updateInvestment(
     projectId: existing.projectId,
     entityType: 'project_investments',
     entityId: investmentId,
-    action: 'project_investment.updated',
+    action: AUDIT_ACTIONS.PROJECT_INVESTMENT_UPDATED,
+    contentModifying: true,
     beforeJson: existing as unknown as Record<string, unknown>,
     afterJson: updated[0] as unknown as Record<string, unknown>,
   })
@@ -328,7 +329,7 @@ export async function deleteInvestment(investmentId: string) {
     projectId: existing.projectId,
     entityType: 'project_investments',
     entityId: investmentId,
-    action: 'project_investment.archived',
+    action: AUDIT_ACTIONS.PROJECT_INVESTMENT_ARCHIVED,
     beforeJson: existing as unknown as Record<string, unknown>,
     afterJson: { status: 'archived' },
   })

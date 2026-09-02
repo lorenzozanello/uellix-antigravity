@@ -1,7 +1,7 @@
 // app/app/projects/[projectId]/pipeline/proxies/createFinancialProxy.action.ts
 'use server';
 import { z } from 'zod';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { createOrganizationFinancialProxy } from '@/lib/pipeline/proxies';
 
 const financialProxySchema = z.object({
@@ -22,10 +22,8 @@ const financialProxySchema = z.object({
 });
 
 export async function createFinancialProxyAction(projectId: string, input: unknown) {
-  // Ensure the user has organization access
-  await requireOrganizationAccess();
   // Validate input
   const data = financialProxySchema.parse(input);
-  // The underlying function handles organization context internally
-  return await createOrganizationFinancialProxy(data);
+  // The underlying function reads the organisation from the context below.
+  return runWithOrganizationAccess(() => createOrganizationFinancialProxy(data));
 }

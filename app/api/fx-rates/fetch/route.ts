@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getOrCreateFxRate } from '@/lib/pipeline/fx-rates'
 import { getOrCreateSharedCopRate } from '@/lib/pipeline/fx'
-import { getCurrentOrganizationContext } from '@/lib/auth/session'
+import { getCurrentOrganizationContext, runWithOptionalOrganizationAccess } from '@/lib/auth/session'
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,11 +28,14 @@ export async function POST(request: NextRequest) {
     // Fetch the rate
     let result = null
     try {
-      if (currency === 'COP') {
-        result = await getOrCreateSharedCopRate(date)
-      } else {
-        result = await getOrCreateFxRate(currency, date)
-      }
+      // The rate lookup/insert is one unit of work: an fx_rates row is
+      // upserted inside the service, so both halves belong to one transaction.
+      result = await runWithOptionalOrganizationAccess(async (inner) => {
+        if (!inner) return null
+        return currency === 'COP'
+          ? await getOrCreateSharedCopRate(date)
+          : await getOrCreateFxRate(currency, date)
+      })
     } catch (e) {
       // The service throws an error if it fails to auto-fetch and no manual rate is provided
       console.warn(`FX fetch failed for ${currency} on ${date}:`, e instanceof Error ? e.message : e)

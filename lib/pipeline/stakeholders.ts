@@ -1,10 +1,11 @@
 // lib/pipeline/stakeholders.ts
 import { db } from '@/db/client';
 import { stakeholderGroups, projects } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
+import { createDomainObjectVersion } from '@/lib/pipeline/domain-object-versions';
 import { z } from 'zod';
 
 const stakeholderInputSchema = z.object({
@@ -72,12 +73,90 @@ export async function createStakeholderForProject(
     actorUserId: ctx.user.id,
     entityType: 'stakeholder_group',
     entityId: created.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_CREATED,
+    action: AUDIT_ACTIONS.STAKEHOLDER_GROUP_CREATED,
     afterJson: created,
   });
+  // FIBIU-03 (FIBC-002/FIBC-045) — first version of this object's lineage.
+  await createDomainObjectVersion({
+    organizationId: ctx.organization.id,
+    objectType: 'stakeholder_group',
+    objectId: created.id,
+    payload: created as unknown as Record<string, unknown>,
+    actorId: ctx.user.id,
+  });
   return created;
+}
+
+/** Get a single stakeholder group by its ID (must belong to the project) */
+export async function getStakeholderByIdForProject(projectId: string, stakeholderGroupId: string) {
+  await verifyProjectAccess(projectId);
+  const group = await db
+    .select()
+    .from(stakeholderGroups)
+    .where(and(eq(stakeholderGroups.id, stakeholderGroupId), eq(stakeholderGroups.projectId, projectId)))
+    .then((rows) => rows[0] ?? null);
+  return group;
+}
+
+/**
+ * Archive a stakeholder group (FIBIU-03 / FIBC-045). Excludes it from future
+ * work without touching any history that already referenced it — this sets a
+ * lifecycle flag, it never deletes or rewrites the row.
+ */
+export async function archiveStakeholderForProject(projectId: string, stakeholderGroupId: string) {
+  const ctx = await verifyProjectAccess(projectId);
+  if (!hasRole(ctx.membership.role, 'analyst')) {
+    throw new Error('Insufficient permissions to archive stakeholder group');
+  }
+
+  const existing = await db
+    .select()
+    .from(stakeholderGroups)
+    .where(and(eq(stakeholderGroups.id, stakeholderGroupId), eq(stakeholderGroups.projectId, projectId)))
+    .then((rows) => rows[0] ?? null);
+  if (!existing) throw new Error('Stakeholder group not found for project');
+  if (existing.status === 'archived') return existing;
+
+  await db
+    .update(stakeholderGroups)
+    .set({ status: 'archived', archivedBy: ctx.user.id, archivedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(stakeholderGroups.id, stakeholderGroupId), eq(stakeholderGroups.projectId, projectId)));
+
+  const after = await db
+    .select()
+    .from(stakeholderGroups)
+    .where(and(eq(stakeholderGroups.id, stakeholderGroupId), eq(stakeholderGroups.projectId, projectId)))
+    .then((rows) => rows[0] ?? null);
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'stakeholder_group',
+    entityId: stakeholderGroupId,
+    action: AUDIT_ACTIONS.STAKEHOLDER_GROUP_ARCHIVED,
+    beforeJson: { status: existing.status },
+    afterJson: { status: after?.status ?? 'archived' },
+  });
+
+  // HPO-DEC-2 (W1-05-RM2, FORM_ALPHA): archive preserves BOTH the
+  // operational status/archivedBy/archivedAt projection above AND the
+  // governed append-only lineage — one does not replace the other.
+  if (after) {
+    await createDomainObjectVersion({
+      organizationId: ctx.organization.id,
+      objectType: 'stakeholder_group',
+      objectId: stakeholderGroupId,
+      payload: after as unknown as Record<string, unknown>,
+      actorId: ctx.user.id,
+    });
+  }
+
+  return after;
 }
 
 // Alias exports for test compatibility
 export const listStakeholderGroups = listStakeholdersForProject;
 export const createStakeholderGroup = createStakeholderForProject;
+export const getStakeholderGroup = getStakeholderByIdForProject;
+export const archiveStakeholderGroup = archiveStakeholderForProject;

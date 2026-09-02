@@ -1,5 +1,38 @@
 # Reporte de Diagnóstico P1A: Supabase Local, Integración y RLS
 
+> ## ⚠️ CORRECCIÓN — 2026-08-07 (Train 5C1)
+>
+> **Este documento llama «Staging» a un proyecto que es PRODUCCIÓN.**
+>
+> El host `db.ctaxtgujyyprgynmnvtq.supabase.co`, que §1 describe como «el entorno
+> de Staging remoto de Supabase», es el proyecto Supabase de **producción** de
+> Uellix. Confirmado por el operador desde el dashboard el 2026-08-07.
+> `docs/AUDIT_2026-07-06.md` ya lo describía correctamente como la «full
+> production database»; la etiqueta de este documento es la equivocada.
+>
+> **Lo que la corrección implica sobre el incidente que §1 narra.** El primer
+> `pnpm db:migrate` accidental no se conectó a un staging: se conectó a
+> **producción**. La verificación read-only que sigue —29 filas en
+> `drizzle."__drizzle_migrations"`, ninguna creada ese día, la última coincidiendo
+> con el journal local— conserva íntegro su valor probatorio y su conclusión
+> sigue en pie: **no hubo modificación**. Lo que cambia es la gravedad de lo que
+> estuvo a punto de ocurrir.
+>
+> **El nuevo Uellix Staging es un proyecto distinto**, `bvyzblhqymxruxdguaee`,
+> creado en agosto de 2026 y vacío. No tiene relación con el proyecto que este
+> documento examina.
+>
+> Ningún project ref es secreto: es público en toda URL que el proyecto sirve.
+> La contradicción entre los dos audits está registrada como **RR-24** en
+> [`STELLA_STAGING_RISK_REGISTER.md`](../ops/staging/STELLA_STAGING_RISK_REGISTER.md),
+> y `ctaxtgujyyprgynmnvtq` está ahora en
+> `KNOWN_PRODUCTION_IDENTIFIERS.projectRefs`, donde el veto lo rechaza antes que
+> cualquier otra comprobación.
+>
+> El texto original se conserva sin editar debajo. Reescribirlo borraría la
+> evidencia de que la etiqueta estuvo mal durante tres semanas, que es
+> precisamente lo que el próximo lector necesita saber.
+
 **Fecha:** 15 de julio de 2026
 **Auditor:** Responsable de Remediación Técnica (Antigravity)
 **Veredicto:** RECONSTRUCCIÓN LOCAL EXITOSA

@@ -25,6 +25,9 @@ export interface EvidenceMeta {
   createdAt: string
   outcomeId?: string
   indicatorId?: string
+  // Resolved linkage titles (metadata only — never file paths or raw content)
+  relatedOutcomeTitle?: string | null
+  relatedIndicatorName?: string | null
 }
 
 export interface ProxyRef {
@@ -95,6 +98,10 @@ export interface ContextualEvidenceMetadata {
   status: 'draft' | 'under_review' | 'approved' | 'rejected' | 'archived'
   createdAt: string
   description?: string | null
+  // Evidence ↔ outcome/indicator linkage: ids + resolved display names are
+  // metadata and stay in the contextual contract. NO filePath, NO raw content.
+  outcomeId?: string | null
+  indicatorId?: string | null
   relatedOutcomeTitle?: string | null
   relatedIndicatorName?: string | null
   mimeTypeGeneral?: string | null
@@ -135,6 +142,33 @@ export interface ContextualCalculationReadiness {
   warnings: readonly string[]
 }
 
+/**
+ * Normalized calculation-readiness summary for the Advisor context.
+ *
+ * Producing this value never computes anything: it is either injected by the
+ * authorized caller (which may consult the deterministic engine outside of
+ * lib/stella) or derived by buildAdvisorContext from persisted rows only.
+ * lib/stella must NEVER import lib/pipeline/sroi-calculation.
+ */
+export interface CalculationReadinessSummary extends ContextualCalculationReadiness {
+  source: 'injected' | 'derived_from_persisted'
+  latestCalculatedRunExists: boolean
+  activeProxyAssignmentCount: number
+  activeFilterSetCount: number
+}
+
+/**
+ * WS3c U1 (RK-08): sensitive-populations flag computed by the context
+ * builders from already-queried metadata (stakeholder group types/names,
+ * narrative, outcome titles). Metadata only — it activates a fixed
+ * heightened-care notice in the TRUSTED prompt tier and annotates audit
+ * logs; it is never serialized into the untrusted data envelope.
+ */
+export interface SensitivePopulationsFlag {
+  detected: boolean
+  categories: string[]
+}
+
 /** The explicit, provider-independent data contract for a contextual Advisor request. */
 export interface ContextualAdvisorContext {
   projectId: string
@@ -155,6 +189,23 @@ export interface ContextualAdvisorContext {
   reportSections?: readonly SectionRef[]
   projectCreatedAt?: string | null
   lastUpdatedAt?: string | null
+  /** RK-08: heightened-care flag (see SensitivePopulationsFlag). Never part
+   *  of the per-step untrusted slice — trusted prompt tier + audit only. */
+  sensitivePopulations?: SensitivePopulationsFlag
+}
+
+/**
+ * The advisor production context: StellaProjectContext plus every additional
+ * field of the ContextualAdvisorContext contract, all populated from
+ * persisted, org-scoped data. Returned by buildAdvisorContext so the
+ * contextual advisor receives real values instead of structural-subtyping
+ * placeholders.
+ */
+export interface AdvisorProjectContext extends StellaProjectContext {
+  projectName: string
+  stakeholdersSnapshot: ContextualStakeholderRef[]
+  activitiesSummary: ContextualActivityRef[]
+  calculationReadiness: CalculationReadinessSummary
 }
 
 export interface StellaProjectContext {
@@ -184,6 +235,10 @@ export interface StellaProjectContext {
   // Report
   reportSections: SectionRef[]
   readinessScore?: number
+
+  // RK-08: heightened-care flag computed from already-queried metadata.
+  // Activates the trusted-tier SENSITIVE_POPULATIONS_NOTICE + audit metadata.
+  sensitivePopulations?: SensitivePopulationsFlag
 
   // Timestamps
   projectCreatedAt: string

@@ -1,4 +1,4 @@
-import { getCurrentOrganizationContext } from '@/lib/auth/session';
+import { runWithOptionalOrganizationAccess } from '@/lib/auth/session';
 import { getPortfolioByIdForCurrentOrganization } from '@/lib/portfolios/service';
 import { getPortfolioAnalytics } from '@/lib/portfolios/analytics';
 import { listProjectsForPortfolio } from '@/lib/projects/service';
@@ -38,14 +38,22 @@ export default async function PortfolioDetailPage({
   params: Promise<{ portfolioId: string }>;
 }) {
   const { portfolioId } = await params;
-  const ctx = await getCurrentOrganizationContext();
-  if (!ctx) return <p>No autenticado. Por favor inicia sesión.</p>;
+  const data = await runWithOptionalOrganizationAccess(async (ctx) => {
+    if (!ctx) return { state: 'unauthenticated' as const };
+    const portfolio = await getPortfolioByIdForCurrentOrganization(portfolioId);
+    if (!portfolio) return { state: 'not-found' as const };
+    return {
+      state: 'ok' as const,
+      portfolio,
+      projects: await listProjectsForPortfolio(portfolioId),
+      analytics: await getPortfolioAnalytics(portfolioId),
+    };
+  });
 
-  const portfolio = await getPortfolioByIdForCurrentOrganization(portfolioId);
-  if (!portfolio) return <p>Portafolio no encontrado o acceso denegado.</p>;
+  if (data.state === 'unauthenticated') return <p>No autenticado. Por favor inicia sesión.</p>;
+  if (data.state === 'not-found') return <p>Portafolio no encontrado o acceso denegado.</p>;
 
-  const projects = await listProjectsForPortfolio(portfolioId);
-  const analytics = await getPortfolioAnalytics(portfolioId);
+  const { portfolio, projects, analytics } = data;
   const agg = analytics?.aggregate ?? null;
 
   const statusConfig = STATUS_CONFIG[portfolio.status] ?? { variant: 'neutral' as const, label: portfolio.status };

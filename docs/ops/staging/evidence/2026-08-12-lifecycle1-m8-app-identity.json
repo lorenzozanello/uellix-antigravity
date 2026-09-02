@@ -1,0 +1,14 @@
+{
+    "note": "Session identity for the M-8 runtime proof. No credential, connection string or user data is recorded here.",
+    "schema": "uellix.hosted.m8.app-identity/1",
+    "isSuper": false,
+    "canLogin": true,
+    "bypassRls": false,
+    "currentUser": "uellix_app",
+    "isRealLogin": true,
+    "sessionUser": "uellix_app",
+    "currentDatabase": "postgres",
+    "inheritsPrivileges": true,
+    "claimExecutableByMe": true,
+    "claimRoutinePresent": true
+}

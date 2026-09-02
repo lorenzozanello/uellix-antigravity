@@ -36,11 +36,11 @@ function TraceSpine() {
       className="absolute left-0 top-0 bottom-0 w-5 flex flex-col items-center"
     >
       <span className="mt-[26px] h-1.5 w-1.5 rounded-full bg-uellix-orange shrink-0 ring-2 ring-white" />
-      <span className="flex-1 w-px bg-gradient-to-b from-uellix-orange/50 via-[#0F172A]/12 to-[#0F172A]/12 transition-colors duration-[280ms] group-hover:via-uellix-orange/30 group-hover:to-uellix-orange/25" />
-      <span className="h-1.5 w-1.5 rounded-full bg-[#0F172A]/25 shrink-0 ring-2 ring-white transition-colors duration-[240ms] delay-[70ms] group-hover:bg-uellix-orange/70 motion-reduce:transition-none motion-reduce:delay-0" />
-      <span className="flex-1 w-px bg-[#0F172A]/12 transition-colors duration-[280ms] group-hover:bg-uellix-orange/25" />
-      <span className="h-1.5 w-1.5 rounded-full bg-[#0F172A]/25 shrink-0 ring-2 ring-white transition-colors duration-[240ms] delay-[140ms] group-hover:bg-uellix-orange/70 motion-reduce:transition-none motion-reduce:delay-0" />
-      <span className="flex-1 w-px bg-[#0F172A]/12 transition-colors duration-[280ms] group-hover:bg-uellix-orange/25" />
+      <span className="flex-1 w-px bg-gradient-to-b from-uellix-orange/50 via-uellix-deep/12 to-uellix-deep/12 transition-colors duration-[280ms] group-hover:via-uellix-orange/30 group-hover:to-uellix-orange/25" />
+      <span className="h-1.5 w-1.5 rounded-full bg-uellix-deep/25 shrink-0 ring-2 ring-white transition-colors duration-[240ms] delay-[70ms] group-hover:bg-uellix-orange/70 motion-reduce:transition-none motion-reduce:delay-0" />
+      <span className="flex-1 w-px bg-uellix-deep/12 transition-colors duration-[280ms] group-hover:bg-uellix-orange/25" />
+      <span className="h-1.5 w-1.5 rounded-full bg-uellix-deep/25 shrink-0 ring-2 ring-white transition-colors duration-[240ms] delay-[140ms] group-hover:bg-uellix-orange/70 motion-reduce:transition-none motion-reduce:delay-0" />
+      <span className="flex-1 w-px bg-uellix-deep/12 transition-colors duration-[280ms] group-hover:bg-uellix-orange/25" />
       <span className="mb-[18px] h-1.5 w-1.5 rounded-full bg-uellix-orange shrink-0 ring-2 ring-white" />
     </div>
   )
@@ -60,7 +60,7 @@ function DossierHeader() {
             Muestra
           </span>
         </div>
-        <h3 className="font-sora text-base font-semibold text-[#0F172A] leading-snug">
+        <h3 className="font-sora text-base font-semibold text-uellix-deep leading-snug">
           Proyecto de impacto social
         </h3>
         <p className="text-[11px] text-[#5B6472] mt-0.5 font-manrope">
@@ -80,7 +80,7 @@ function DossierHeader() {
  *  summary badge on mobile to keep the compact variant scannable. */
 function StellaRiskMini() {
   return (
-    <div className="rounded-lg border border-[#0F172A]/8 bg-[#FBFAFC]/80 backdrop-blur-sm p-3.5">
+    <div className="rounded-lg border border-uellix-deep/8 bg-[#FBFAFC]/80 backdrop-blur-sm p-3.5">
       <div className="flex items-center justify-between gap-3 mb-2.5 sm:mb-2.5">
         <div className="flex items-center gap-1.5">
           <ShieldAlert className="h-3.5 w-3.5 text-uellix-orange" />
@@ -135,26 +135,26 @@ export function EvidenceDossier() {
       {/* Depth: stacked expediente layers behind the main panel — slight
           rotation on the rearmost sheet reads as loose physical pages in a
           folder, not a flat drop-shadow trick. */}
-      <div className="absolute inset-0 translate-x-[14px] translate-y-[16px] rotate-[1.1deg] rounded-2xl border border-[#0F172A]/8 bg-white/35" />
-      <div className="absolute inset-0 translate-x-[7px] translate-y-[8px] rounded-2xl border border-[#0F172A]/9 bg-white/65" />
+      <div className="absolute inset-0 translate-x-[14px] translate-y-[16px] rotate-[1.1deg] rounded-2xl border border-uellix-deep/8 bg-white/35" />
+      <div className="absolute inset-0 translate-x-[7px] translate-y-[8px] rounded-2xl border border-uellix-deep/9 bg-white/65" />
 
       {/* Main panel — subtle glass + fine lines */}
-      <div className="relative rounded-2xl border border-[#0F172A]/10 bg-white/92 backdrop-blur-sm shadow-[0_32px_70px_-28px_rgba(15,23,42,0.32),0_2px_8px_rgba(15,23,42,0.06)] overflow-hidden">
+      <div className="relative rounded-2xl border border-uellix-deep/10 bg-white/92 backdrop-blur-sm shadow-[0_32px_70px_-28px_rgba(15,23,42,0.32),0_2px_8px_rgba(15,23,42,0.06)] overflow-hidden">
         {/* copper hairline top accent */}
         <div className="h-[3px] w-full bg-gradient-to-r from-uellix-orange via-[#C2703F] to-transparent" />
 
         <div className="relative pl-8 pr-5 sm:pl-9 sm:pr-6">
           <TraceSpine />
 
-          <div className="py-4 border-b border-[#0F172A]/8">
+          <div className="py-4 border-b border-uellix-deep/8">
             <DossierHeader />
           </div>
 
           {/* Stats — hairline divided */}
-          <div className="grid grid-cols-3 -mx-8 sm:-mx-9 px-8 sm:px-9 gap-px bg-[#0F172A]/8 border-b border-[#0F172A]/8">
+          <div className="grid grid-cols-3 -mx-8 sm:-mx-9 px-8 sm:px-9 gap-px bg-uellix-deep/8 border-b border-uellix-deep/8">
             {stats.map(({ label, value }) => (
               <div key={label} className="bg-white/90 px-2 sm:px-3 py-3">
-                <p className="font-sora text-2xl sm:text-[28px] font-semibold text-[#0F172A] leading-none">{value}</p>
+                <p className="font-sora text-2xl sm:text-[28px] font-semibold text-uellix-deep leading-none">{value}</p>
                 <p className="text-[9.5px] text-[#5B6472] mt-1.5 font-manrope leading-tight">{label}</p>
               </div>
             ))}
@@ -172,7 +172,7 @@ export function EvidenceDossier() {
                     key={indicador}
                     className={`border-b border-[#F1F5F9] last:border-0 ${i > 0 ? "hidden sm:table-row" : ""}`}
                   >
-                    <td className="py-2 pr-3 text-[11px] text-[#0F172A] font-medium font-manrope leading-snug">
+                    <td className="py-2 pr-3 text-[11px] text-uellix-deep font-medium font-manrope leading-snug">
                       {indicador}
                       <span className="block font-ibm-plex-mono text-[9px] text-[#5B6472] font-normal">{fuente}</span>
                     </td>
@@ -205,7 +205,7 @@ export function EvidenceDossier() {
         </div>
 
         {/* Traceability footer bar — the chain lights up left-to-right on hover */}
-        <div className="px-5 sm:px-6 py-3 bg-[#0F172A] flex items-center justify-between gap-3">
+        <div className="px-5 sm:px-6 py-3 bg-uellix-deep flex items-center justify-between gap-3">
           <span className="flex items-center gap-1.5 font-ibm-plex-mono text-[9px] tracking-wide uppercase">
             {chainStages.map(({ label, delay }, i) => (
               <React.Fragment key={label}>

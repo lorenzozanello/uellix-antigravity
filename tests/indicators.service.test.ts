@@ -5,6 +5,7 @@ import { createIndicator, listIndicators } from '@/lib/pipeline/indicators';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction } from '@/lib/audit/logger';
+import { createDomainObjectVersion } from '@/lib/pipeline/domain-object-versions';
 
 // Mock auth context
 vi.mock('@/lib/auth/session', () => ({
@@ -16,12 +17,21 @@ vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
   AUDIT_ACTIONS: {
     ORGANIZATION_CREATED: 'organization_created',
+    INDICATOR_CREATED: 'indicator.created',
+    INDICATOR_ARCHIVED: 'indicator.archived',
   },
 }));
 
 // Mock permissions
 vi.mock('@/lib/auth/permissions', () => ({
   hasRole: vi.fn(),
+}));
+
+// Mock domain-object-versions — createDomainObjectVersion has its own real
+// DB path (getLatestDomainObjectVersion + insert) not modeled by this file's
+// simplified @/db/client mock below.
+vi.mock('@/lib/pipeline/domain-object-versions', () => ({
+  createDomainObjectVersion: vi.fn(),
 }));
 
 // Global mock configuration for DB queries
@@ -98,6 +108,9 @@ describe('Indicator service', () => {
     const result = await createIndicator('proj-1', input);
     expect(result.id).toBe('ind-1');
     expect(logAuditAction).toHaveBeenCalled();
+    expect(createDomainObjectVersion).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: 'org-1', objectType: 'indicator', objectId: 'ind-1', actorId: 'u1' })
+    );
   });
 
   it('rejects creation with unauthorized role', async () => {

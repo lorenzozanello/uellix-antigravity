@@ -45,14 +45,14 @@ export function SocialProofSection() {
             {testimonials.map(({ quote, author, role, organization }) => (
               <figure
                 key={`${author}-${organization}`}
-                className="flex flex-col rounded-2xl border border-[#0F172A]/10 bg-white/80 backdrop-blur-sm p-6 card-lift"
+                className="flex flex-col rounded-2xl border border-uellix-deep/10 bg-white/80 backdrop-blur-sm p-6 card-lift"
               >
                 <Quote className="h-5 w-5 text-uellix-orange/60 mb-4" aria-hidden="true" />
-                <blockquote className="flex-1 text-[15px] leading-relaxed text-[#0F172A] font-manrope">
+                <blockquote className="flex-1 text-[15px] leading-relaxed text-uellix-deep font-manrope">
                   “{quote}”
                 </blockquote>
-                <figcaption className="mt-5 border-t border-[#0F172A]/8 pt-4">
-                  <p className="text-sm font-semibold text-[#0F172A] font-sora">{author}</p>
+                <figcaption className="mt-5 border-t border-uellix-deep/8 pt-4">
+                  <p className="text-sm font-semibold text-uellix-deep font-sora">{author}</p>
                   <p className="font-ibm-plex-mono text-[10px] uppercase tracking-[0.12em] text-[#5B6472] mt-0.5">
                     {role} · {organization}
                   </p>

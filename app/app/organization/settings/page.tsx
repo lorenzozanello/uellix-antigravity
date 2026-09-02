@@ -1,4 +1,4 @@
-import { getCurrentOrganizationContext } from '@/lib/auth/session';
+import { runWithOptionalOrganizationAccess } from '@/lib/auth/session';
 import { db } from '@/db/client';
 import { organizations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -7,16 +7,18 @@ import { SettingsForm } from './settings-form';
 import { hasRole } from '@/lib/auth/permissions';
 
 export default async function OrganizationSettingsPage() {
-  const ctx = await getCurrentOrganizationContext();
-  if (!ctx) redirect('/login');
+  const data = await runWithOptionalOrganizationAccess(async (ctx) => {
+    if (!ctx) return null;
+    const org = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, ctx.organization.id))
+      .then(r => r[0]);
+    return org ? { ctx, org } : null;
+  });
 
-  const org = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.id, ctx.organization.id))
-    .then(r => r[0]);
-
-  if (!org) redirect('/login');
+  if (!data) redirect('/login');
+  const { ctx, org } = data;
 
   const canEdit = hasRole(ctx.membership.role, 'organization_admin');
 

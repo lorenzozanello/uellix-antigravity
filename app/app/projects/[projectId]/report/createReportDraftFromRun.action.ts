@@ -3,6 +3,7 @@
 
 import { z } from 'zod';
 import { createReportDraftFromRun } from '@/lib/pipeline/sroi-results';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { revalidatePath } from 'next/cache';
 
 const ReportDraftInputSchema = z.object({
@@ -15,7 +16,9 @@ export async function createReportDraftFromRunAction(projectId: string, runId: s
   if (!parsed.success) {
     throw new Error('Invalid report draft payload');
   }
-  const result = await createReportDraftFromRun(projectId, runId, parsed.data);
+  const result = await runWithOrganizationAccess(() =>
+    createReportDraftFromRun(projectId, runId, parsed.data)
+  );
   // Revalidate the page showing reports for the project
   revalidatePath(`/app/projects/${projectId}/report`);
   return result;

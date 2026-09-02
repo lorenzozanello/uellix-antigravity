@@ -26,12 +26,14 @@ vi.mock('@/db/client', () => ({
   },
 }));
 
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-}));
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>();
+  return { ...actual, logAuditAction: vi.fn() };
+});
 
 import { createProjectForCurrentOrganization, listProjectsForPortfolio } from '@/lib/projects/service';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
+import { db } from '@/db/client';
 
 describe('Project service - create', () => {
   beforeEach(() => {
@@ -95,6 +97,32 @@ describe('Project service - create', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await expect(createProjectForCurrentOrganization(input as any)).rejects.toThrow(
       'Invalid portfolio reference'
+    );
+  });
+});
+
+describe('Project service - governance regime (FIBIU-01)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('stamps every newly created project with governanceRegime=pc01b through the authoritative creation path', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'user-1', email: 'test@example.com', fullName: null, avatarUrl: null, isSuperAdmin: false },
+      organization: { id: 'org-1', name: 'Test Org', slug: 'test-org', legalName: null, country: null, sector: null, status: 'active' },
+      membership: { id: 'mem-1', organizationId: 'org-1', userId: 'user-1', role: 'organization_admin', status: 'active' },
+    });
+
+    const input = { name: 'My Project', status: 'draft' };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await createProjectForCurrentOrganization(input as any);
+
+    // The mock's `db` shape is flat (values() lives directly on db, not
+    // chained off insert()'s real return type) — cast through `any` like the
+    // rest of this file does for its mocked input.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(vi.mocked((db as any).values)).toHaveBeenCalledWith(
+      expect.objectContaining({ governanceRegime: 'pc01b' })
     );
   });
 });

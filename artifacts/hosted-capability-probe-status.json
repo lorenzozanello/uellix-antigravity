@@ -1,0 +1,14 @@
+{
+  "generatedBy": "pnpm probe:status:write — do not hand-edit; a report quotes this file",
+  "policyName": "uellix_tmp_capability_probe_20260807",
+  "recordArtefact": "artifacts/hosted-capability-probe.json",
+  "recordPresent": true,
+  "timestampRecorded": false,
+  "state": "CAPABILITY_PROBE_COMPLETE",
+  "problems": [
+    "the deployed channel CAN create a policy on storage.objects. That is a fact about the channel and nothing else: the three Uellix policies call helpers PART A creates, filter on a bucket that does not exist yet, and have not been attempted. Capability is not correctness, and this record must never be cited as evidence that the storage surface is installed. Not complete until cleanup is verified.",
+    "CLEANUP VERIFIED: uellix_tmp_capability_probe_20260807 is absent from pg_policies and every policy recorded before the probe is still present. The channel is demonstrated; the three canonical Uellix policies remain NOT installed, and MANAGED_BOUNDARY_VERIFIED stays false until pg_policies shows their surface."
+  ],
+  "canonicalPoliciesProven": false,
+  "managementPlaneVerified": false
+}

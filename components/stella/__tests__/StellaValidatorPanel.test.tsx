@@ -4,6 +4,14 @@
 
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+/**
+ * The ticket issuer, mocked to the happy path. `vi.hoisted` because vitest
+ * hoists `vi.mock` factories above the const declarations they close over.
+ */
+const mockIssueTicket = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ status: 'issued', ticket: 'a'.repeat(64) }),
+)
 import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
 
 // ---------------------------------------------------------------------------
@@ -12,6 +20,12 @@ import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
 const mockGetStellaValidator = vi.fn()
 vi.mock('@/app/actions/stella/validator', () => ({
   getStellaValidator: (...args: unknown[]) => mockGetStellaValidator(...args),
+  // TRAIN 4.3. The panel now MINTS an operation ticket before it runs, and
+  // presents the SAME ticket on a retry — see components/stella/use-stella-operation.ts.
+  // The issuer is mocked to the happy path so the tests below stay about the
+  // panel's rendering, focus and error taxonomy; the ticket lifecycle itself is
+  // proved in the action suites and in the cross-workstream battery.
+  issueStellaValidatorTicket: (...args: unknown[]) => mockIssueTicket(...args),
 }))
 
 // Mock Button component to avoid @base-ui/react jsdom compatibility issues
@@ -178,7 +192,7 @@ describe('StellaValidatorPanel', () => {
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-abc', 'Calculation')
+        expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-abc', 'Calculation', 'a'.repeat(64))
       })
     })
 
@@ -201,7 +215,7 @@ describe('StellaValidatorPanel', () => {
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-1', 'Calculation')
+        expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-1', 'Calculation', 'a'.repeat(64))
       })
     })
 
@@ -472,25 +486,25 @@ describe('StellaValidatorPanel', () => {
   // Error state
   // -------------------------------------------------------------------------
   describe('Error state', () => {
-    it('shows error fallback message on GEMINI_ERROR', async () => {
+    it('shows the AI-service error message on GEMINI_ERROR (distinct taxonomy)', async () => {
       geminiError()
       render(<StellaValidatorPanel projectId="proj-1" />)
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/la revisión de stella no está disponible temporalmente/i)
+          screen.queryByText(/el servicio de ia de stella encontró un error/i)
         ).not.toBeNull()
       })
     })
 
-    it('shows "pipeline data is unaffected" in error message', async () => {
+    it('shows "calculation data is unaffected" in error message', async () => {
       geminiError()
       render(<StellaValidatorPanel projectId="proj-1" />)
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/los datos de tu pipeline no se ven afectados/i)).not.toBeNull()
+        expect(screen.queryByText(/los datos de tu cálculo no se ven afectados/i)).not.toBeNull()
       })
     })
 
@@ -511,7 +525,7 @@ describe('StellaValidatorPanel', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/la revisión de stella no está disponible temporalmente/i)
+          screen.queryByText(/el servicio de ia de stella encontró un error/i)
         ).not.toBeNull()
       })
 
@@ -525,7 +539,7 @@ describe('StellaValidatorPanel', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/la revisión de stella no está disponible temporalmente/i)
+          screen.queryByText(/stella no está disponible temporalmente/i)
         ).not.toBeNull()
       })
     })
@@ -544,24 +558,26 @@ describe('StellaValidatorPanel', () => {
   // Disabled state
   // -------------------------------------------------------------------------
   describe('Disabled state', () => {
-    it('renders null when action returns DISABLED', async () => {
+    it('stays mounted with an inert informative state when action returns DISABLED', async () => {
       disabled()
       const { container } = render(<StellaValidatorPanel projectId="proj-1" />)
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(container.firstChild).toBeNull()
+        expect(screen.queryByTestId('stella-validator-disabled')).not.toBeNull()
       })
+      expect(container.firstChild).not.toBeNull()
+      const btn = screen.getByText(/revisar con stella/i).closest('button')
+      expect(btn?.disabled).toBe(true)
     })
 
-    it('does not render any content when DISABLED', async () => {
-      disabled()
-      const { container } = render(<StellaValidatorPanel projectId="proj-1" />)
+    it('renders inert and never calls the action when enabled={false} (server-passed)', () => {
+      render(<StellaValidatorPanel projectId="proj-1" enabled={false} />)
+      expect(screen.queryByTestId('stella-validator-disabled')).not.toBeNull()
+      const btn = screen.getByText(/revisar con stella/i).closest('button')
+      expect(btn?.disabled).toBe(true)
       fireEvent.click(screen.getByText(/revisar con stella/i))
-
-      await waitFor(() => {
-        expect(container.innerHTML).toBe('')
-      })
+      expect(mockGetStellaValidator).not.toHaveBeenCalled()
     })
   })
 
@@ -576,18 +592,18 @@ describe('StellaValidatorPanel', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/se alcanzó el límite de solicitudes a stella validator/i)
+          screen.queryByText(/límite de solicitudes por hora/i)
         ).not.toBeNull()
       })
     })
 
-    it('shows reset time from error message', async () => {
+    it('shows a humanized reset time from the ISO server message (FIX 3)', async () => {
       rateLimited()
       render(<StellaValidatorPanel projectId="proj-1" />)
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/2026-06-26T15:00:00/)).not.toBeNull()
+        expect(screen.queryByText(/se restablece a las 15:00 \(UTC\)/i)).not.toBeNull()
       })
     })
 
@@ -618,7 +634,7 @@ describe('StellaValidatorPanel', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/se alcanzó el límite de solicitudes a stella validator/i)
+          screen.queryByText(/límite de solicitudes por hora/i)
         ).not.toBeNull()
       })
 
@@ -637,7 +653,7 @@ describe('StellaValidatorPanel', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/se alcanzó el límite de solicitudes a stella validator/i)
+          screen.queryByText(/límite de solicitudes por hora/i)
         ).not.toBeNull()
       })
 
@@ -650,11 +666,11 @@ describe('StellaValidatorPanel', () => {
   // -------------------------------------------------------------------------
   describe('Security invariants', () => {
     it('does not read GEMINI_API_KEY env var', () => {
-      expect(process.env.GEMINI_API_KEY).toBeUndefined()
+      expect('GEMINI_API_KEY' in process.env).toBe(false)
     })
 
     it('does not read NEXT_PUBLIC_GEMINI_API_KEY env var', () => {
-      expect(process.env.NEXT_PUBLIC_GEMINI_API_KEY).toBeUndefined()
+      expect('NEXT_PUBLIC_GEMINI_API_KEY' in process.env).toBe(false)
     })
 
     it('does not claim certification in rendered content', async () => {

@@ -89,15 +89,24 @@ export async function createInvitation(input: unknown) {
     afterJson: { email: normalizedEmail, role: data.role, expiresAt: expiresAt.toISOString() },
   })
 
-  await sendInvitationEmail({
+  // Sent AFTER the transaction that persisted the invitation has committed.
+  //
+  // The module header calls this best-effort: "a delivery failure never blocks
+  // or rolls back the invitation, since it's already persisted with a valid
+  // token by the time the email is attempted." That sentence stops being true
+  // the moment the send happens inside the transaction — the token could be in
+  // an inbox while its hash is rolled back, which is a live invite link that
+  // resolves to nothing. It also held row locks on `invitations` and
+  // `audit_logs` for a third-party round trip on every invite.
+  //
+  // `deferInvitationEmail` runs the send outside whatever context is open.
+  return { invitation, rawToken, sendEmail: () => sendInvitationEmail({
     email: normalizedEmail,
     organizationName: ctx.organization.name,
     role: data.role as Role,
     rawToken,
     inviterName: ctx.user.fullName || ctx.user.email,
-  })
-
-  return { invitation, rawToken }
+  }) }
 }
 
 /** List all invitations for the current organization (any active member may view). */

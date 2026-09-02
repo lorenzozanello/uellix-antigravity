@@ -2,6 +2,9 @@
 // Sprint 6B – Deterministic SROI Calculation Engine
 // No mocks. No placeholders. No FX conversion. No AI/Stella.
 
+// Pin the shared Decimal configuration (precision/rounding) before anything
+// else touches decimal.js — determinism guard, see decimal-config.ts.
+import '@/lib/pipeline/decimal-config'
 import { eq, and, inArray, sql } from 'drizzle-orm'
 import Decimal from 'decimal.js'
 import { db } from '@/db/client'
@@ -23,11 +26,16 @@ import {
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
 import { type Role } from '@/lib/auth/roles'
-import { logAuditAction } from '@/lib/audit/logger'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import { computeFundersBreakdown, type FunderBreakdownRow } from '@/lib/pipeline/sroi-funders'
 import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
 import { scenarioFilterPct, SCENARIO_DELTA_PP, type Scenario } from '@/lib/pipeline/sroi-sensitivity'
+import { resolveRunVersionIdentity } from '@/lib/pipeline/run-version-identity'
+import {
+  createDomainObjectVersion,
+  getLatestDomainObjectVersion,
+} from '@/lib/pipeline/domain-object-versions'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -76,10 +84,29 @@ async function authorize(projectId: string) {
   return ctx
 }
 
-function parseNum(val: string | null | undefined): number {
+// Matches the leading numeric token exactly as parseFloat would consume it:
+// optional sign, then Infinity | digits[.digits][exponent] | .digits[exponent].
+const LEADING_NUMBER_RE = /^[+-]?(?:Infinity|\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)/
+
+// Exported for characterization tests (tests/sroi-parse-num.test.ts) — the
+// accepted input formats are pinned there; keep them green if you touch this.
+//
+// Decimal-based replacement for the historical parseFloat implementation
+// (U1, WS4): same accepted formats — leading/trailing whitespace tolerated,
+// trailing garbage ignored, Infinity preserved, invalid input → 0 — but the
+// numeric interpretation now flows through the pinned Decimal configuration
+// instead of the platform float parser.
+export function parseNum(val: string | null | undefined): number {
   if (!val) return 0
-  const n = parseFloat(val)
-  return isNaN(n) ? 0 : n
+  const match = LEADING_NUMBER_RE.exec(val.trimStart())
+  if (!match) return 0
+  // decimal.js rejects a trailing bare dot ('5.'); parseFloat accepted it.
+  const token = match[0].endsWith('.') ? match[0].slice(0, -1) : match[0]
+  try {
+    return new Decimal(token).toNumber()
+  } catch {
+    return 0
+  }
 }
 
 function clamp(val: number, lo: number, hi: number) {
@@ -136,11 +163,23 @@ export async function upsertProjectInvestment(projectId: string, input: ProjectI
     const updated = await db.select().from(projectInvestments).where(eq(projectInvestments.id, existing[0].id))
     await logAuditAction({
       organizationId: ctx.organization.id,
+      projectId,
       actorUserId: ctx.user.id,
       entityType: 'project_investments',
       entityId: existing[0].id,
-      action: 'project_investment.updated',
+      action: AUDIT_ACTIONS.PROJECT_INVESTMENT_UPDATED,
+      contentModifying: true,
+      beforeJson: existing[0] as unknown as Record<string, unknown>,
       afterJson: updated[0] as unknown as Record<string, unknown>,
+    })
+    // FIBIU-03 (FIBC-002/FIBC-045) — a new version, never a rewrite of the
+    // one an already-calculated run's input fingerprint may point to.
+    await createDomainObjectVersion({
+      organizationId: ctx.organization.id,
+      objectType: 'project_investment',
+      objectId: existing[0].id,
+      payload: updated[0] as unknown as Record<string, unknown>,
+      actorId: ctx.user.id,
     })
     return updated[0]
   }
@@ -148,11 +187,20 @@ export async function upsertProjectInvestment(projectId: string, input: ProjectI
   const inserted = await db.insert(projectInvestments).values({ ...values, projectId, organizationId: ctx.organization.id, createdBy: ctx.user.id }).returning()
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project_investments',
     entityId: inserted[0].id,
-    action: 'project_investment.created',
+    action: AUDIT_ACTIONS.PROJECT_INVESTMENT_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
+  // FIBIU-03 (FIBC-002/FIBC-045) — first version of this object's lineage.
+  await createDomainObjectVersion({
+    organizationId: ctx.organization.id,
+    objectType: 'project_investment',
+    objectId: inserted[0].id,
+    payload: inserted[0] as unknown as Record<string, unknown>,
+    actorId: ctx.user.id,
   })
   return inserted[0]
 }
@@ -167,6 +215,11 @@ export async function setProjectDiscountRate(projectId: string, discountRatePct:
     if (isNaN(n) || n < 0 || n > 100) throw new Error('La tasa de descuento debe estar entre 0 y 100%')
     value = String(n)
   }
+  const existing = await db
+    .select({ discountRatePct: projects.discountRatePct })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)))
+
   await db
     .update(projects)
     .set({ discountRatePct: value, updatedAt: new Date() })
@@ -174,10 +227,13 @@ export async function setProjectDiscountRate(projectId: string, discountRatePct:
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project',
     entityId: projectId,
-    action: 'project.discount_rate_updated',
+    action: AUDIT_ACTIONS.PROJECT_DISCOUNT_RATE_UPDATED,
+    contentModifying: true,
+    beforeJson: { discountRatePct: existing[0]?.discountRatePct ?? null },
     afterJson: { discountRatePct: value },
   })
   return { discountRatePct: value }
@@ -195,12 +251,47 @@ export async function upsertSroiAssignmentInput(projectId: string, assignmentId:
   if (existing.length > 0) {
     await db.update(sroiAssignmentInputs).set({ ...validated, updatedAt: new Date() }).where(eq(sroiAssignmentInputs.id, existing[0].id))
     const updated = await db.select().from(sroiAssignmentInputs).where(eq(sroiAssignmentInputs.id, existing[0].id))
-    await logAuditAction({ organizationId: ctx.organization.id, actorUserId: ctx.user.id, entityType: 'sroi_assignment_inputs', entityId: existing[0].id, action: 'sroi_assignment_input.updated', afterJson: updated[0] as unknown as Record<string, unknown> })
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      projectId,
+      actorUserId: ctx.user.id,
+      entityType: 'sroi_assignment_inputs',
+      entityId: existing[0].id,
+      action: AUDIT_ACTIONS.SROI_ASSIGNMENT_INPUT_UPDATED,
+      contentModifying: true,
+      beforeJson: existing[0] as unknown as Record<string, unknown>,
+      afterJson: updated[0] as unknown as Record<string, unknown>,
+    })
+    // FIBIU-03 (FIBC-002/FIBC-045) — a new version, never a rewrite of the
+    // one an already-calculated run's input fingerprint may point to.
+    await createDomainObjectVersion({
+      organizationId: ctx.organization.id,
+      objectType: 'sroi_assignment_input',
+      objectId: existing[0].id,
+      payload: updated[0] as unknown as Record<string, unknown>,
+      actorId: ctx.user.id,
+    })
     return updated[0]
   }
 
   const inserted = await db.insert(sroiAssignmentInputs).values({ ...validated, assignmentId, organizationId: ctx.organization.id, createdBy: ctx.user.id }).returning()
-  await logAuditAction({ organizationId: ctx.organization.id, actorUserId: ctx.user.id, entityType: 'sroi_assignment_inputs', entityId: inserted[0].id, action: 'sroi_assignment_input.created', afterJson: inserted[0] as unknown as Record<string, unknown> })
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'sroi_assignment_inputs',
+    entityId: inserted[0].id,
+    action: AUDIT_ACTIONS.SROI_ASSIGNMENT_INPUT_CREATED,
+    afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
+  // FIBIU-03 (FIBC-002/FIBC-045) — first version of this object's lineage.
+  await createDomainObjectVersion({
+    organizationId: ctx.organization.id,
+    objectType: 'sroi_assignment_input',
+    objectId: inserted[0].id,
+    payload: inserted[0] as unknown as Record<string, unknown>,
+    actorId: ctx.user.id,
+  })
   return inserted[0]
 }
 
@@ -216,18 +307,36 @@ export async function upsertSroiFilterSet(projectId: string, assignmentId: strin
   if (existing.length > 0) {
     await db.update(sroiFilterSets).set({ ...validated, updatedAt: new Date() }).where(eq(sroiFilterSets.id, existing[0].id))
     const updated = await db.select().from(sroiFilterSets).where(eq(sroiFilterSets.id, existing[0].id))
-    await logAuditAction({ organizationId: ctx.organization.id, actorUserId: ctx.user.id, entityType: 'sroi_filter_sets', entityId: existing[0].id, action: 'sroi_filter_set.updated', afterJson: updated[0] as unknown as Record<string, unknown> })
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      projectId,
+      actorUserId: ctx.user.id,
+      entityType: 'sroi_filter_sets',
+      entityId: existing[0].id,
+      action: AUDIT_ACTIONS.SROI_FILTER_SET_UPDATED,
+      contentModifying: true,
+      beforeJson: existing[0] as unknown as Record<string, unknown>,
+      afterJson: updated[0] as unknown as Record<string, unknown>,
+    })
     return updated[0]
   }
 
   const inserted = await db.insert(sroiFilterSets).values({ ...validated, assignmentId, organizationId: ctx.organization.id, createdBy: ctx.user.id }).returning()
-  await logAuditAction({ organizationId: ctx.organization.id, actorUserId: ctx.user.id, entityType: 'sroi_filter_sets', entityId: inserted[0].id, action: 'sroi_filter_set.created', afterJson: inserted[0] as unknown as Record<string, unknown> })
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'sroi_filter_sets',
+    entityId: inserted[0].id,
+    action: AUDIT_ACTIONS.SROI_FILTER_SET_CREATED,
+    afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
   return inserted[0]
 }
 
 // ─── Internal data loader for calculation ───────────────────────────────────
 
-interface AssignmentData {
+export interface AssignmentData {
   assignment: typeof outcomeProxyAssignments.$inferSelect
   input: typeof sroiAssignmentInputs.$inferSelect
   filterSet: typeof sroiFilterSets.$inferSelect
@@ -235,7 +344,14 @@ interface AssignmentData {
   outcome: typeof outcomes.$inferSelect
 }
 
-async function loadCalculationData(projectId: string, orgId: string): Promise<{
+// CL-2D (SROI-01) — `enforceApproval` defaults to false because
+// getSroiCalculationReadiness() also calls this loader (just for investments/
+// allocations) and must keep reporting an unapproved proxy as a graceful
+// `blockingReasons` entry, never as a thrown exception. The actual calculation
+// entry points (preview/scenarios/persist) opt into enforcement: THEY are the
+// boundary where a stale-but-approved-looking proxy would otherwise have its
+// value silently consumed.
+async function loadCalculationData(projectId: string, orgId: string, enforceApproval = false): Promise<{
   investments: (typeof projectInvestments.$inferSelect)[]
   assignmentData: AssignmentData[]
   allocations: (typeof outcomeFunderAllocations.$inferSelect)[]
@@ -288,6 +404,20 @@ async function loadCalculationData(projectId: string, orgId: string): Promise<{
     const proxy = proxyById.get(a.proxyId)
     const outcome = outcomeById.get(a.outcomeId)
     if (input && filterSet && proxy && outcome) {
+      // CL-2D (SROI-01) — readiness already checked reviewStatus === 'approved',
+      // but that read and this one are two separate round trips, not one
+      // transaction: a concurrent edit/revocation between them could otherwise
+      // let a no-longer-approved proxy's value be silently consumed here. Fail
+      // the WHOLE calculation closed rather than quietly drop the line item —
+      // an SROI run that is missing a line item without saying so is exactly
+      // the silent-corruption failure mode this guards against. Only the real
+      // calculation entry points enforce this (see `enforceApproval` above) —
+      // readiness's own use of this loader must stay graceful.
+      if (enforceApproval && proxy.reviewStatus !== 'approved') {
+        throw new Error(
+          `Cannot calculate: proxy ${proxy.id} is not approved (reviewStatus=${proxy.reviewStatus})`
+        )
+      }
       assignmentData.push({ assignment: a, input, filterSet, proxy, outcome })
     }
   }
@@ -315,6 +445,194 @@ export interface ReadinessIssue {
   itemIds?: string[]
   actionPath?: string
   actionLabel?: string
+}
+
+/**
+ * Pure input for `buildReadinessIssues`, factored out of
+ * `getSroiCalculationReadiness` so the fail-closed blocker -> remediation-CTA
+ * contract (RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix) can be unit tested
+ * without a database. Every field here is already computed by
+ * `getSroiCalculationReadiness` before the issues array is built — this
+ * extraction changes nothing about WHAT is computed, only where the
+ * CTA-attachment logic lives.
+ */
+export interface ReadinessIssueInput {
+  projectId: string
+  hasInvestment: boolean
+  zeroOrInvalidInvestment: boolean
+  invalidInvestmentIds: string[]
+  investmentsMissingUsd: string[]
+  activeAssignmentsCount: number
+  missingInputs: string[]
+  missingFilterSets: string[]
+  unapprovedProxies: string[]
+  outcomesWithoutEvidence: string[]
+  invalidQuantities: string[]
+  invalidFilters: string[]
+  proxiesMissingUsd: string[]
+  overAllocatedOutcomes: string[]
+}
+
+/**
+ * Builds the fail-closed readiness issue list, each with the canonical
+ * remediation CTA frozen in RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json ::
+ * sroi_remediation_matrix. Project-scoped destinations use the REAL
+ * `/app/projects/${projectId}/pipeline/*` routes (never a hardcoded
+ * projectId, never an invented top-level `/app/proxies`); same-page
+ * destinations use the stable DOM anchors added to
+ * app/app/projects/[projectId]/pipeline/calculation/page.tsx (#investment,
+ * #sroi-inputs, #sroi-filters, #funder-attribution).
+ */
+export function buildReadinessIssues(input: ReadinessIssueInput): ReadinessIssue[] {
+  const {
+    projectId,
+    hasInvestment,
+    zeroOrInvalidInvestment,
+    invalidInvestmentIds,
+    investmentsMissingUsd,
+    missingInputs,
+    missingFilterSets,
+    unapprovedProxies,
+    outcomesWithoutEvidence,
+    invalidQuantities,
+    invalidFilters,
+    proxiesMissingUsd,
+    overAllocatedOutcomes,
+  } = input
+
+  const issues: ReadinessIssue[] = []
+
+  if (!hasInvestment) {
+    issues.push({
+      type: 'error',
+      messageKey: 'missing_investment',
+      message: 'El proyecto requiere al menos una inversión. Agrega un aporte en la sección "Inversión del proyecto".',
+      actionPath: `#investment`,
+      actionLabel: 'Ir a inversiones',
+    })
+  }
+
+  if (zeroOrInvalidInvestment && hasInvestment) {
+    issues.push({
+      type: 'error',
+      messageKey: 'invalid_investment_amount',
+      message: `El monto de la inversión debe ser mayor a 0. Revisa y actualiza los aportes.`,
+      itemIds: invalidInvestmentIds,
+      actionPath: `#investment`,
+      actionLabel: 'Ir a inversiones',
+    })
+  }
+
+  if (investmentsMissingUsd.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'investments_missing_usd',
+      message: `${investmentsMissingUsd.length} aporte(s) falta(n) conversión a USD. Verifica que las inversiones en monedas no-USD tengan tipos de cambio válidos.`,
+      itemIds: investmentsMissingUsd,
+      actionPath: `#investment`,
+      actionLabel: 'Revisar aportes',
+    })
+  }
+
+  if (input.activeAssignmentsCount === 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'no_proxy_assignments',
+      message: 'No hay asignaciones de proxy activas. Define resultados (outcomes) y vincula proxies financieros en el paso anterior.',
+      actionPath: `/app/projects/${projectId}/pipeline/evidence`,
+      actionLabel: 'Ir a evidencia',
+    })
+  }
+
+  if (missingInputs.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'missing_inputs',
+      message: `${missingInputs.length} asignación(es) falta(n) información de cantidad. Define la cantidad de beneficiarios o unidades para cada resultado.`,
+      itemIds: missingInputs,
+      actionPath: `#sroi-inputs`,
+      actionLabel: 'Completar información',
+    })
+  }
+
+  if (missingFilterSets.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'missing_filter_sets',
+      message: `${missingFilterSets.length} asignación(es) falta(n) filtros SROI (deadweight, displacement, etc). Define los supuestos metodológicos para cada resultado.`,
+      itemIds: missingFilterSets,
+      actionPath: `#sroi-filters`,
+      actionLabel: 'Configurar filtros',
+    })
+  }
+
+  if (unapprovedProxies.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'unapproved_proxies',
+      message: `${unapprovedProxies.length} proxy(ies) no aprobado(s). Todo proxy debe ser revisado y aprobado antes del cálculo. Accede a Proxies para revisar.`,
+      itemIds: unapprovedProxies,
+      actionPath: `/app/projects/${projectId}/pipeline/proxies`,
+      actionLabel: 'Revisar proxies',
+    })
+  }
+
+  if (outcomesWithoutEvidence.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'outcomes_without_evidence',
+      message: `${outcomesWithoutEvidence.length} resultado(s) sin evidencia vinculada. Toda variable que alimenta el cálculo SROI debe estar respaldada por evidencia verificable.`,
+      itemIds: outcomesWithoutEvidence,
+      actionPath: `/app/projects/${projectId}/pipeline/evidence`,
+      actionLabel: 'Agregar evidencia',
+    })
+  }
+
+  if (invalidQuantities.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'invalid_quantities',
+      message: `${invalidQuantities.length} elemento(s) con cantidad inválida (≤0). Las cantidades deben ser positivas.`,
+      itemIds: invalidQuantities,
+      actionPath: `#sroi-inputs`,
+      actionLabel: 'Revisar cantidades',
+    })
+  }
+
+  if (invalidFilters.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'invalid_filters',
+      message: `${invalidFilters.length} filtro(s) con valor(es) inválido(s). Los porcentajes deben estar entre 0-100, y la duración entre 1-50 años.`,
+      itemIds: invalidFilters,
+      actionPath: `#sroi-filters`,
+      actionLabel: 'Revisar filtros',
+    })
+  }
+
+  if (proxiesMissingUsd.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'proxies_missing_usd',
+      message: `${proxiesMissingUsd.length} proxy(ies) falta(n) conversión a USD. Verifica que los proxies tengan valores en USD.`,
+      itemIds: proxiesMissingUsd,
+      actionPath: `/app/projects/${projectId}/pipeline/proxies`,
+      actionLabel: 'Revisar proxies',
+    })
+  }
+
+  if (overAllocatedOutcomes.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'over_allocated_outcomes',
+      message: `${overAllocatedOutcomes.length} resultado(s) tiene(n) atribución de financiadores > 100%. Verifica que la suma de aportes por resultado no exceda 100%.`,
+      itemIds: overAllocatedOutcomes,
+      actionPath: `#funder-attribution`,
+      actionLabel: 'Revisar atribución',
+    })
+  }
+
+  return issues
 }
 
 export interface SroiReadiness {
@@ -438,6 +756,18 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
       if (!outcomesWithEvidence.has(outcomeId)) outcomesWithoutEvidence.push(outcomeId)
     }
   }
+  // W2-B1-R3 (R-B1-04, M-1) — the informational
+  // outcomesMissingSufficiencyDetermination signal B1 added here was
+  // removed: FIBDB-014 now binds every determination to an explicit
+  // calculationRunId, and readiness/preliminary work runs BEFORE a
+  // calculation run exists, so there is no run identity to check a
+  // determination against at this point without inventing one — exactly
+  // the "heuristic freshness" R-B1-04 forbids. The existing >=1-non-
+  // rejected-evidence gate above is untouched and remains the minimum for
+  // preliminary work, per FIBC-008's own text. The real, run-bound
+  // sufficiency check lives where a concrete run actually exists:
+  // lib/pipeline/sroi-results.ts's assertEvidenceSufficiencyForApproval.
+
   if (outcomesWithoutEvidence.length > 0) {
     blockingReasons.push(`${outcomesWithoutEvidence.length} outcome(s) with no supporting evidence`)
   }
@@ -448,134 +778,25 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
 
   const canCalculate = blockingReasons.length === 0
 
-  // Build detailed issues with actionable information
-  const issues: ReadinessIssue[] = []
-
-  if (!hasInvestment) {
-    issues.push({
-      type: 'error',
-      messageKey: 'missing_investment',
-      message: 'El proyecto requiere al menos una inversión. Agrega un aporte en la sección "Inversión del proyecto".',
-      actionPath: `#investment`,
-      actionLabel: 'Ir a inversiones',
-    })
-  }
-
-  if (zeroOrInvalidInvestment && hasInvestment) {
-    issues.push({
-      type: 'error',
-      messageKey: 'invalid_investment_amount',
-      message: `El monto de la inversión debe ser mayor a 0. Revisa y actualiza los aportes.`,
-      itemIds: investments.filter(i => parseNum(i.amount) <= 0).map(i => i.id),
-      actionPath: `#investment`,
-      actionLabel: 'Ir a inversiones',
-    })
-  }
-
-  if (investmentsMissingUsd.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'investments_missing_usd',
-      message: `${investmentsMissingUsd.length} aporte(s) falta(n) conversión a USD. Verifica que las inversiones en monedas no-USD tengan tipos de cambio válidos.`,
-      itemIds: investmentsMissingUsd,
-      actionPath: `#investment`,
-      actionLabel: 'Revisar aportes',
-    })
-  }
-
-  if (allAssignments.length === 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'no_proxy_assignments',
-      message: 'No hay asignaciones de proxy activas. Define resultados (outcomes) y vincula proxies financieros en el paso anterior.',
-      actionPath: `/app/projects/${projectId}/pipeline/evidence`,
-      actionLabel: 'Ir a evidencia',
-    })
-  }
-
-  if (missingInputs.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'missing_inputs',
-      message: `${missingInputs.length} asignación(es) falta(n) información de cantidad. Define la cantidad de beneficiarios o unidades para cada resultado.`,
-      itemIds: missingInputs,
-      actionPath: `#sroi-inputs`,
-      actionLabel: 'Completar información',
-    })
-  }
-
-  if (missingFilterSets.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'missing_filter_sets',
-      message: `${missingFilterSets.length} asignación(es) falta(n) filtros SROI (deadweight, displacement, etc). Define los supuestos metodológicos para cada resultado.`,
-      itemIds: missingFilterSets,
-      actionPath: `#sroi-filters`,
-      actionLabel: 'Configurar filtros',
-    })
-  }
-
-  if (unapprovedProxies.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'unapproved_proxies',
-      message: `${unapprovedProxies.length} proxy(ies) no aprobado(s). Todo proxy debe ser revisado y aprobado antes del cálculo. Accede a Proxies para revisar.`,
-      itemIds: unapprovedProxies,
-      actionPath: `/app/proxies`,
-      actionLabel: 'Revisar proxies',
-    })
-  }
-
-  if (outcomesWithoutEvidence.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'outcomes_without_evidence',
-      message: `${outcomesWithoutEvidence.length} resultado(s) sin evidencia vinculada. Toda variable que alimenta el cálculo SROI debe estar respaldada por evidencia verificable.`,
-      itemIds: outcomesWithoutEvidence,
-      actionPath: `/app/projects/${projectId}/pipeline/evidence`,
-      actionLabel: 'Agregar evidencia',
-    })
-  }
-
-  if (invalidQuantities.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'invalid_quantities',
-      message: `${invalidQuantities.length} elemento(s) con cantidad inválida (≤0). Las cantidades deben ser positivas.`,
-      itemIds: invalidQuantities,
-    })
-  }
-
-  if (invalidFilters.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'invalid_filters',
-      message: `${invalidFilters.length} filtro(s) con valor(es) inválido(s). Los porcentajes deben estar entre 0-100, y la duración entre 1-50 años.`,
-      itemIds: invalidFilters,
-    })
-  }
-
-  if (proxiesMissingUsd.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'proxies_missing_usd',
-      message: `${proxiesMissingUsd.length} proxy(ies) falta(n) conversión a USD. Verifica que los proxies tengan valores en USD.`,
-      itemIds: proxiesMissingUsd,
-      actionPath: `/app/proxies`,
-      actionLabel: 'Revisar proxies',
-    })
-  }
-
-  if (overAllocatedOutcomes.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'over_allocated_outcomes',
-      message: `${overAllocatedOutcomes.length} resultado(s) tiene(n) atribución de financiadores > 100%. Verifica que la suma de aportes por resultado no exceda 100%.`,
-      itemIds: overAllocatedOutcomes,
-      actionPath: `#funder-attribution`,
-      actionLabel: 'Revisar atribución',
-    })
-  }
+  // Fail-closed blocker -> remediation-CTA attachment lives in the pure,
+  // independently-unit-tested buildReadinessIssues (RE-U1 U1-F04 / RE-U4
+  // sroi_remediation_matrix). This computation above is unchanged.
+  const issues = buildReadinessIssues({
+    projectId,
+    hasInvestment,
+    zeroOrInvalidInvestment,
+    invalidInvestmentIds: investments.filter(i => parseNum(i.amount) <= 0).map(i => i.id),
+    investmentsMissingUsd,
+    activeAssignmentsCount: allAssignments.length,
+    missingInputs,
+    missingFilterSets,
+    unapprovedProxies,
+    outcomesWithoutEvidence,
+    invalidQuantities,
+    invalidFilters,
+    proxiesMissingUsd,
+    overAllocatedOutcomes,
+  })
 
   return {
     hasInvestment,
@@ -622,7 +843,16 @@ interface LineItemCalc {
   durationYears: number
 }
 
-interface CalcResult {
+// U3 (WS4) — a line the engine could not monetise is REPORTED, never silently
+// dropped. Readiness normally blocks these upstream (quantity ≤ 0 / proxy value
+// ≤ 0), but the engine no longer trusts that silently: any skipped assignment
+// surfaces here so previews, snapshots and audits can show what was excluded.
+export interface SkippedAssignment {
+  outcomeId: string
+  reason: 'non_positive_quantity' | 'non_positive_proxy_value'
+}
+
+export interface CalcResult {
   // currency is always 'USD' post Fase 1b — all inputs are normalized first.
   currency: string
   totalInvestment: number
@@ -636,6 +866,9 @@ interface CalcResult {
   lineItems: LineItemCalc[]
   fundersBreakdown: FunderBreakdownRow[]
   unattributedNsvUsd: string
+  // Additive (non-breaking): existing callers that destructure named fields
+  // are unaffected; new consumers can verify nothing was silently excluded.
+  skippedAssignments: SkippedAssignment[]
 }
 
 // Precision of the numeric DB columns (see manual-migration 003). Money and
@@ -653,7 +886,9 @@ function dec(v: string | number | null | undefined): Decimal {
   }
 }
 
-function runDeterministicCalc(
+// Exported (U2/U3, WS4) so golden/property tests can pin exact result strings
+// without a database. Production callers inside this module are unchanged.
+export function runDeterministicCalc(
   investments: (typeof projectInvestments.$inferSelect)[],
   assignmentData: AssignmentData[],
   allocations: (typeof outcomeFunderAllocations.$inferSelect)[],
@@ -677,11 +912,19 @@ function runDeterministicCalc(
   // Per-outcome net social value (USD) — drives the per-funder attribution.
   const outcomeNsv = new Map<string, Decimal>()
   const lineItems: LineItemCalc[] = []
+  const skippedAssignments: SkippedAssignment[] = []
 
   for (const { assignment, input, filterSet, proxy } of assignmentData) {
     const quantity = dec(input.quantity)
     const proxyValue = dec(proxy.valueUsd ?? '0') // USD-normalized proxy value
-    if (quantity.lte(0) || proxyValue.lte(0)) continue
+    if (quantity.lte(0) || proxyValue.lte(0)) {
+      // Report — never silently drop — a line the engine cannot monetise.
+      skippedAssignments.push({
+        outcomeId: assignment.outcomeId,
+        reason: quantity.lte(0) ? 'non_positive_quantity' : 'non_positive_proxy_value',
+      })
+      continue
+    }
 
     const deadweightPct = clamp(parseNum(filterSet.deadweightPct), 0, 100)
     const attributionPct = clamp(parseNum(filterSet.attributionPct), 0, 100)
@@ -755,6 +998,7 @@ function runDeterministicCalc(
     lineItems,
     fundersBreakdown,
     unattributedNsvUsd,
+    skippedAssignments,
   }
 }
 
@@ -768,7 +1012,7 @@ export async function calculateSroiPreview(projectId: string) {
     return { canCalculate: false, readiness, result: null }
   }
 
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
@@ -785,6 +1029,7 @@ export async function calculateSroiPreview(projectId: string) {
       lineItems: result.lineItems,
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
+      skippedAssignments: result.skippedAssignments,
       discountRatePct: discountRatePct,
       formulaNotes: discountRatePct && parseNum(discountRatePct) > 0
         ? `Values normalized to USD; multi-year outcomes present-valued at ${discountRatePct}% annual discount rate.`
@@ -815,7 +1060,7 @@ export async function calculateSroiScenarios(projectId: string, deltaPp: number 
     return { canCalculate: false as const, readiness, scenarios: null, deltaPp }
   }
 
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const scenarios: SroiScenarioResult[] = (['conservative', 'base', 'optimistic'] as const).map((sc) => {
@@ -843,6 +1088,84 @@ export async function calculateSroiScenarios(projectId: string, deltaPp: number 
   return { canCalculate: true as const, readiness, scenarios, deltaPp }
 }
 
+// ─── Input version fingerprint (FIBIU-03 / FIBC-002 / FIBC-045) ────────────
+
+/**
+ * One entry of a run's frozen input-version fingerprint (FIBIU-03). Recorded
+ * once, at calculation time, into snapshotJson.inputVersions — never
+ * persisted as a separate column or table (FIBC-023: eligibility-relevant
+ * facts are computed, not persisted as new state).
+ */
+export interface RunInputVersionFingerprintEntry {
+  objectType: string
+  objectId: string
+  /** null for a legacy object that has never been versioned through FIBIU-03 — never a synthesized v1. */
+  versionId: string | null
+  ordinal: number | null
+  contentHash: string | null
+}
+
+/**
+ * Resolves the CURRENT domain_object_versions row for each distinct
+ * (objectType, objectId) pair that actually participates in a run's inputs,
+ * sorted deterministically by (objectType, objectId) so the fingerprint is
+ * stable regardless of call-site ordering.
+ */
+async function buildRunInputVersionFingerprint(
+  objects: { objectType: string; objectId: string }[]
+): Promise<RunInputVersionFingerprintEntry[]> {
+  const uniqueByKey = new Map<string, { objectType: string; objectId: string }>()
+  for (const o of objects) uniqueByKey.set(`${o.objectType}:${o.objectId}`, o)
+  const sorted = Array.from(uniqueByKey.values()).sort((a, b) =>
+    a.objectType === b.objectType ? a.objectId.localeCompare(b.objectId) : a.objectType.localeCompare(b.objectType)
+  )
+  return Promise.all(
+    sorted.map(async (o) => {
+      const version = await getLatestDomainObjectVersion(o.objectType, o.objectId)
+      return {
+        objectType: o.objectType,
+        objectId: o.objectId,
+        versionId: version?.id ?? null,
+        ordinal: version?.ordinal ?? null,
+        contentHash: version?.contentHash ?? null,
+      }
+    })
+  )
+}
+
+/**
+ * FIBC-023: "computed from live governed state without mutating the
+ * immutable run" — this reads the run's OWN frozen fingerprint (never
+ * recomputes it) and compares each entry against the object's CURRENT
+ * governed version. An object created after the run was calculated was
+ * never in that fingerprint, so it can never itself cause drift — only a
+ * NEW version of an object the run actually depended on can. No eligibility
+ * reason set is assigned here (FIBIU-19, Wave 3, owns INPUTS_CHANGED_SINCE_RUN);
+ * this is the detection primitive that reason will consume.
+ */
+export async function detectRunInputDrift(run: {
+  snapshotJson: unknown
+}): Promise<{ hasDrift: boolean; driftedObjects: { objectType: string; objectId: string }[] }> {
+  const snapshot = run.snapshotJson as { inputVersions?: RunInputVersionFingerprintEntry[] } | null | undefined
+  const inputVersions = snapshot?.inputVersions
+  if (!inputVersions || inputVersions.length === 0) {
+    // A run predating this fingerprint (or one with no versioned inputs at
+    // all) has nothing recorded to compare against — never fabricated as
+    // drift, and never as "clean" beyond what is actually knowable.
+    return { hasDrift: false, driftedObjects: [] }
+  }
+
+  const driftedObjects: { objectType: string; objectId: string }[] = []
+  for (const entry of inputVersions) {
+    const current = await getLatestDomainObjectVersion(entry.objectType, entry.objectId)
+    const currentVersionId = current?.id ?? null
+    if (currentVersionId !== entry.versionId) {
+      driftedObjects.push({ objectType: entry.objectType, objectId: entry.objectId })
+    }
+  }
+  return { hasDrift: driftedObjects.length > 0, driftedObjects }
+}
+
 // ─── Persist calculation run ──────────────────────────────────────────────────
 
 export async function calculateAndPersistSroiRun(projectId: string) {
@@ -853,10 +1176,26 @@ export async function calculateAndPersistSroiRun(projectId: string) {
     throw new Error(`Cannot calculate: ${readiness.blockingReasons.join('; ')}`)
   }
 
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
+  // FIBIU-02 (FIBC-001) — resolved before any DB write: refuse to persist a
+  // run if any of the three run version identities cannot be resolved.
+  const runVersionIdentity = await resolveRunVersionIdentity()
+
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
+
+  // FIBIU-03 (FIBC-002/FIBC-045) — the frozen input-version fingerprint,
+  // resolved before any DB write, same as the FIBIU-02 identity triple above.
+  // Only the objects that actually fed this calculation: investments,
+  // outcomes and assignment inputs reached through the loaded assignments.
+  // Indicators and stakeholder_groups are versioned by FIBIU-03 but are not
+  // themselves calculation inputs, so they carry no fingerprint entry here.
+  const inputVersions = await buildRunInputVersionFingerprint([
+    ...investments.map((inv) => ({ objectType: 'project_investment', objectId: inv.id })),
+    ...assignmentData.map((d) => ({ objectType: 'outcome', objectId: d.outcome.id })),
+    ...assignmentData.map((d) => ({ objectType: 'sroi_assignment_input', objectId: d.input.id })),
+  ])
 
   const calculatedAt = new Date()
 
@@ -877,6 +1216,14 @@ export async function calculateAndPersistSroiRun(projectId: string) {
 
     const snapshotJson = {
       version,
+      // FIBIU-02 (FIBC-001) — the run version identity triple, mirrored from
+      // the run row into the snapshot.
+      methodologyVersion: runVersionIdentity.methodologyVersion,
+      calculationEngineVersion: runVersionIdentity.calculationEngineVersion,
+      buildIdentity: runVersionIdentity.buildIdentity,
+      // FIBIU-03 (FIBC-002/FIBC-045) — the frozen input-version fingerprint.
+      // Read back by detectRunInputDrift; never mutated after this write.
+      inputVersions,
       currency: result.currency,
       totalInvestment: result.totalInvestmentExact,
       grossSocialValue: result.grossSocialValueExact,
@@ -894,6 +1241,8 @@ export async function calculateAndPersistSroiRun(projectId: string) {
       })),
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
+      // U3 (WS4) — audit trail of lines the engine excluded (additive key).
+      skippedAssignments: result.skippedAssignments,
       assignments: result.lineItems.map(li => ({
         assignmentId: li.assignmentId,
         outcomeId: li.outcomeId,
@@ -932,6 +1281,9 @@ export async function calculateAndPersistSroiRun(projectId: string) {
         sroiRatio: result.sroiRatioExact,
         snapshotJson,
         status: 'calculated',
+        methodologyVersion: runVersionIdentity.methodologyVersion,
+        calculationEngineVersion: runVersionIdentity.calculationEngineVersion,
+        buildIdentity: runVersionIdentity.buildIdentity,
         calculatedBy: ctx.user.id,
         calculatedAt,
       })
@@ -967,10 +1319,13 @@ export async function calculateAndPersistSroiRun(projectId: string) {
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
-    entityType: 'sroi_calculation_runs',
+    // W1-05-RM2 (HPO-DEC-3): 'sroi_calculation_run' — singular, matching the
+    // AUDIT_ACTIONS verb's own object prefix.
+    entityType: 'sroi_calculation_run',
     entityId: run.id,
-    action: 'sroi_calculation_run.created',
+    action: AUDIT_ACTIONS.SROI_CALCULATION_RUN_CALCULATED,
     afterJson: { runId: run.id, version: run.version, sroiRatio: result.sroiRatio } as Record<string, unknown>,
   })
 

@@ -1,0 +1,9 @@
+{
+  "generatedBy": "pnpm boundary:status:write — do not hand-edit; the apply gate reads this file",
+  "recordArtefact": "artifacts/hosted-storage-boundary.json",
+  "recordPresent": true,
+  "unit41State": "UNIT_41_COMPLETE",
+  "surfaceVerified": true,
+  "managedBoundaryVerified": true,
+  "problems": []
+}

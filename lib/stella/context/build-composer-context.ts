@@ -21,7 +21,9 @@ import {
   sroiReportSections,
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './sanitize'
+import { detectSensitivePopulations } from '../security/sensitive-populations'
 import type {
   StellaProjectContext,
   OutcomeRef,
@@ -70,7 +72,12 @@ export async function buildComposerContext(
 
   // Report ownership check — must belong to this project and organization
   const report = await db
-    .select({ id: sroiReports.id, organizationId: sroiReports.organizationId, projectId: sroiReports.projectId })
+    .select({
+      id: sroiReports.id,
+      organizationId: sroiReports.organizationId,
+      projectId: sroiReports.projectId,
+      calculationRunId: sroiReports.calculationRunId,
+    })
     .from(sroiReports)
     .where(eq(sroiReports.id, reportId))
     .limit(1)
@@ -99,9 +106,10 @@ export async function buildComposerContext(
     .join(' ')
   const narrativeSummary = sanitizeNarrative(rawNarrative)
 
-  // Stakeholder count (no PII, no emails)
+  // Stakeholder count (no PII, no emails). `type` is group-level metadata
+  // read from the SAME query for the RK-08 sensitive-populations detector.
   const rawStakeholders = await db
-    .select({ id: stakeholderGroups.id })
+    .select({ id: stakeholderGroups.id, type: stakeholderGroups.type })
     .from(stakeholderGroups)
     .where(eq(stakeholderGroups.projectId, projectId))
 
@@ -144,7 +152,7 @@ export async function buildComposerContext(
   }))
 
   // Evidence metadata — filePath excluded, hash truncated to 8 chars
-  const rawEvidence = await db
+  const rawEvidenceUnfiltered = await db
     .select({
       id: evidenceItems.id,
       type: evidenceItems.type,
@@ -163,6 +171,17 @@ export async function buildComposerContext(
         eq(evidenceItems.organizationId, organizationId)
       )
     )
+
+  // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — same exclusion rule as
+  // buildValidatorContext/buildAdvisorContext: only an explicit
+  // 'non_sensitive' classification clears an item for this external model
+  // context; unclassified evidence is excluded, not implicitly safe.
+  const evidenceVersionsById = await getLatestEvidenceVersionsByEvidenceIds(
+    rawEvidenceUnfiltered.map((ev) => ev.id)
+  )
+  const rawEvidence = rawEvidenceUnfiltered.filter(
+    (ev) => evidenceVersionsById.get(ev.id)?.sensitivityClassification === 'non_sensitive'
+  )
 
   const evidenceMetadata: EvidenceMeta[] = rawEvidence.map((ev) => ({
     id: ev.id,
@@ -251,8 +270,12 @@ export async function buildComposerContext(
     durationYears: f.durationYears ?? undefined,
   }))
 
-  // Latest SROI calculation run — totals only, snapshotJson NEVER included directly
-  const latestRun = await db
+  // CL-1A (MSC-02 HIGH-1) — the numeric authority for THIS report is the run
+  // it is PINNED to (report.calculationRunId), never "whichever run happens
+  // to be latest for the project". A report must keep citing the numbers it
+  // was built from even after a newer run exists, or the guard below would
+  // authorize figures the report was never actually anchored to.
+  const pinnedRun = await db
     .select({
       id: sroiCalculationRuns.id,
       version: sroiCalculationRuns.version,
@@ -266,25 +289,24 @@ export async function buildComposerContext(
     .from(sroiCalculationRuns)
     .where(
       and(
+        eq(sroiCalculationRuns.id, report.calculationRunId),
         eq(sroiCalculationRuns.projectId, projectId),
         eq(sroiCalculationRuns.organizationId, organizationId),
-        eq(sroiCalculationRuns.status, 'calculated')
       )
     )
-    .orderBy(desc(sroiCalculationRuns.runDate))
     .limit(1)
     .then((rows) => rows[0] ?? null)
 
   let calculationSnapshot: CalculationSnapshot | null = null
 
-  if (latestRun) {
+  if (pinnedRun) {
     const lineItems = await db
       .select({ id: sroiCalculationLineItems.id })
       .from(sroiCalculationLineItems)
-      .where(eq(sroiCalculationLineItems.runId, latestRun.id))
+      .where(eq(sroiCalculationLineItems.runId, pinnedRun.id))
 
     // Extract funder breakdown from snapshotJson if available
-    const snapshot = latestRun.snapshotJson as Record<string, unknown> | null
+    const snapshot = pinnedRun.snapshotJson as Record<string, unknown> | null
     const fundersBreakdownRaw = snapshot?.fundersBreakdown as Array<{
       funderId: string
       funderName: string
@@ -309,13 +331,13 @@ export async function buildComposerContext(
     const unattributedNsvUsd = unattributedNsvUsdRaw ? parseFloat(unattributedNsvUsdRaw) : undefined
 
     calculationSnapshot = {
-      totalInvestment: parseFloat(latestRun.totalInvestment ?? '0'),
-      grossSocialValue: parseFloat(latestRun.grossSocialValue ?? '0'),
-      netSocialValue: parseFloat(latestRun.netSocialValue ?? '0'),
-      sroiRatio: parseFloat(latestRun.sroiRatio ?? '0'),
-      currency: latestRun.currency ?? 'USD',
+      totalInvestment: parseFloat(pinnedRun.totalInvestment ?? '0'),
+      grossSocialValue: parseFloat(pinnedRun.grossSocialValue ?? '0'),
+      netSocialValue: parseFloat(pinnedRun.netSocialValue ?? '0'),
+      sroiRatio: parseFloat(pinnedRun.sroiRatio ?? '0'),
+      currency: pinnedRun.currency ?? 'USD',
       lineItemCount: lineItems.length,
-      version: latestRun.version,
+      version: pinnedRun.version,
       fundersBreakdown,
       unattributedNsvUsd,
     }
@@ -355,6 +377,13 @@ export async function buildComposerContext(
     status: s.content && s.content.length > 0 ? 'in_progress' : 'draft',
   }))
 
+  // RK-08: sensitive-populations flag from data already queried above —
+  // stakeholder group types, narrative text, outcome titles. No new queries.
+  const sensitivePopulations = detectSensitivePopulations({
+    stakeholderTypes: rawStakeholders.map((s) => s.type ?? ''),
+    texts: [rawNarrative, ...rawOutcomes.map((o) => o.title)],
+  })
+
   return {
     projectId,
     organizationId,
@@ -369,6 +398,7 @@ export async function buildComposerContext(
     calculationSnapshot,
     reportSections,
     readinessScore: latestReview?.readinessScore ?? undefined,
+    sensitivePopulations,
     projectCreatedAt: project.createdAt.toISOString(),
     lastUpdatedAt: project.updatedAt.toISOString(),
   }

@@ -1,14 +1,23 @@
 // app/app/projects/[projectId]/pipeline/stakeholders/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaContextualAdvisorPanel } from '@/components/stella';
+// Server-only config read (READ-ONLY module) — availability passed as prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
-import { requireOrganizationAccess } from '@/lib/auth/session';
-import { fetchStakeholders, addStakeholder } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
+import { hasRole } from '@/lib/auth/permissions';
+import {
+  fetchStakeholders,
+  addStakeholder,
+  archiveStakeholder,
+} from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { z } from 'zod';
 import { EmptyState } from '@/components/states/EmptyState';
 import { Users } from 'lucide-react';
+import { revalidatePath } from 'next/cache';
 
 const stakeholderSchema = z.object({
   name: z.string().min(1),
@@ -37,12 +46,30 @@ interface StakeholderRow {
   name: string;
   type: string | null;
   description: string | null;
+  status: string;
 }
 
 export default async function StakeholdersPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const { membership } = await requireOrganizationAccess();
-  const stakeholders = await fetchStakeholders(projectId) as StakeholderRow[];
+  const { membership, stakeholders } = await runWithOrganizationAccess(async ({ membership }) => ({
+    membership,
+    stakeholders: (await fetchStakeholders(projectId)) as StakeholderRow[],
+  }));
+  // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;
+  // FIBIU-03 — lifecycle state: archived groups stay visible (history is
+  // never hidden) but are visually distinguished and excluded from the
+  // archive action.
+  const canArchive = hasRole(membership.role, 'analyst');
+
+  async function handleArchiveStakeholder(formData: FormData) {
+    'use server';
+    const stakeholderGroupId = formData.get('stakeholderGroupId') as string;
+    await archiveStakeholder(projectId, stakeholderGroupId);
+    revalidatePath(`/app/projects/${projectId}/pipeline/stakeholders`);
+  }
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
@@ -52,7 +79,14 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Grupos de interés" highlightHint={!stakeholders?.length} />
+      {/* U3: no single obvious editable target on this page (stakeholders are
+          a list of records) — apply shows a copy-to-clipboard affordance. */}
+      <StellaContextualAdvisorPanel
+        projectId={projectId}
+        step="stakeholders"
+        enabled={stellaAdvisorEnabled}
+        title="Stella — Asesoría contextual (Grupos de interés)"
+      />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="stakeholders" title="Revisión metodológica — Grupos de interés" />
       )}
@@ -64,14 +98,31 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
           <CardContent>
             <div className="space-y-3">
               {stakeholders.map((s) => (
-                <div key={s.id} className="rounded-lg border border-border bg-card p-3">
+                <div
+                  key={s.id}
+                  className={`rounded-lg border border-border bg-card p-3 ${s.status === 'archived' ? 'opacity-60' : ''}`}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground">{s.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">{s.name}</p>
+                        {s.status === 'archived' && <Badge variant="neutral">Archivado</Badge>}
+                      </div>
                       {s.type && (
                         <p className="mt-0.5 text-xs text-muted-foreground">Tipo: {s.type}</p>
                       )}
                     </div>
+                    {canArchive && s.status !== 'archived' && (
+                      <form action={handleArchiveStakeholder}>
+                        <input type="hidden" name="stakeholderGroupId" value={s.id} />
+                        <button
+                          type="submit"
+                          className="shrink-0 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        >
+                          Archivar
+                        </button>
+                      </form>
+                    )}
                   </div>
                   {s.description && (
                     <p className="mt-2 text-sm text-muted-foreground">{s.description}</p>

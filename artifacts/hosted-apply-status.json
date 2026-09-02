@@ -1,0 +1,43 @@
+{
+  "generatedBy": "pnpm apply:status:write — do not hand-edit; a report quotes this file",
+  "criterionCount": 19,
+  "satisfiedCount": 19,
+  "blockingCount": 0,
+  "blockingIds": [],
+  "baselineStartGate": {
+    "total": 17,
+    "satisfied": 17,
+    "blocking": []
+  },
+  "baselineCompletionGate": {
+    "total": 1,
+    "satisfied": 1,
+    "blocking": []
+  },
+  "stagingRuntimeGate": {
+    "total": 1,
+    "satisfied": 1,
+    "blocking": []
+  },
+  "applyAuthorized": true,
+  "baselineApplied": false,
+  "stagingApplied": false,
+  "hostedReady": false,
+  "providerReady": false,
+  "evidenceProblems": [],
+  "observed": {
+    "psql": {
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "transactionReadOnly": true,
+      "isMember": false,
+      "inheritsPrivileges": false,
+      "canSetRole": false
+    },
+    "sqlEditor": {
+      "ownsStorageObjects": false,
+      "evidenceBucketExists": true,
+      "canCreateTriggerOnAuthUsers": true
+    }
+  }
+}

@@ -1,6 +1,7 @@
 // app/app/projects/[projectId]/pipeline/narrative.actions.ts
 // No additional auth actions needed
 import { upsertNarrativeForProject, getNarrativeForProject } from '@/lib/pipeline/narratives';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { z } from 'zod';
 
 // Zod for server action input (mirrors service schema)
@@ -15,12 +16,12 @@ const narrativeInputSchema = z.object({
 /** Server Action: fetch narrative */
 export async function fetchNarrative(projectId: string) {
   'use server';
-  return await getNarrativeForProject(projectId);
+  return runWithOrganizationAccess(() => getNarrativeForProject(projectId));
 }
 
 /** Server Action: upsert narrative */
 export async function saveNarrative(projectId: string, input: unknown) {
   'use server';
   const parsed = narrativeInputSchema.parse(input);
-  return await upsertNarrativeForProject(projectId, parsed);
+  return runWithOrganizationAccess(() => upsertNarrativeForProject(projectId, parsed));
 }

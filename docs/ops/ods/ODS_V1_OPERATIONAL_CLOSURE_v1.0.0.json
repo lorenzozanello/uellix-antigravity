@@ -1,0 +1,172 @@
+{
+  "artifact_id": "ODS_V1_OPERATIONAL_CLOSURE_v1.0.0",
+  "package_id": "ODS_V1",
+  "version": "1.0.0",
+  "authority_class": "ODS_OPERATIONAL_CLOSURE",
+  "materialization_step": "ODS-06",
+  "materialization_date": "2026-08-31",
+  "supersedes": null,
+
+  "purpose": "Materializes the operational closure of the Uellix/Stella Development Operating System v1. This artifact records an adjudication that was already independently established by the ODS-05-R2 final clean-room adversarial re-audit; it does not perform, re-perform, or re-adjudicate that audit.",
+
+  "scope_note": "APPEND-ONLY EVIDENCE. This artifact creates no new authority, implements nothing, and remediates nothing. It does not rewrite, supersede, reinterpret or restate docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, or any Wave 1 authority/evidence artifact. Those remain byte-identical and controlling. Where this artifact and any of them appear to disagree, they control.",
+
+  "anchors": {
+    "ods_authority_freeze_commit": "2aecf625a49ec673fd4185052e71ec6e5c750edf",
+    "audited_implementation_head": "eb19875e992405cc6b62d8c5fae7239d76c2c286",
+    "audited_implementation_tree": "56f4c71947e054b16605860b1aa5aa3fbc78b930",
+    "audited_branch": "ods/v1-development-operating-system-r1",
+    "certified_wave1_anchor_commit": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc",
+    "certified_wave1_source_branch": "codex/w1-integration-closure-r1",
+    "note": "The audited implementation HEAD/TREE above is the state the ODS-05-R2 audit measured and this closure certifies. This closure artifact is committed on top of it."
+  },
+
+  "final_audit": {
+    "audit_id": "ODS-05-R2",
+    "audit_type": "FINAL_INDEPENDENT_CLEAN_ROOM_ADVERSARIAL_RE_AUDIT",
+    "mode": "READ_ONLY",
+    "final_state": "ODS_V1_ADVERSARIALLY_VALIDATED_READY_FOR_OPERATIONAL_CLOSURE",
+    "audit_invalidated": false,
+    "audited_worktree_writes": 0,
+    "audited_branch_commits_created": 0,
+    "audited_branch_head_changed": false,
+    "audited_tree_changed": false,
+    "supersedes_audit": "ODS-05 (superseded: it discovered the CI history-prerequisite and prestate fail-closed defects, and its auditor mutated the audited worktree during attack construction)",
+    "remediation_round_audited": "ODS-05-RM1"
+  },
+
+  "operational_state": {
+    "ODS_V1_OPERATIONAL": true,
+    "READY_FOR_WAVE2": true,
+    "READY_FOR_PRODUCT_REENGINEERING": true
+  },
+
+  "component_adjudications": {
+    "C1": { "name": "Explicit deterministic prestate gate", "command": "pnpm ods:prestate", "result": "PASS" },
+    "C2": { "name": "Broad active authority integrity gate", "command": "pnpm authority:seal:verify", "result": "PASS" },
+    "C3": { "name": "Deterministic poststate orchestrator", "command": "pnpm ods:poststate", "result": "PASS" },
+    "C4": { "name": "Forbidden-scope/diff gate", "command": "pnpm ods:scope", "result": "PASS" },
+    "C5": { "name": "Compact Claude development guidance", "surface": "CLAUDE.md", "result": "PASS" },
+    "C6": { "name": "Context/checkpoint standard", "surface": "docs/ops/ods/ODS_CONTEXT_CHECKPOINT_STANDARD_v1.0.0.md", "result": "PASS" }
+  },
+
+  "authority_integrity_at_closure": {
+    "AUTHORITY_SEAL_VERIFY": "PASS",
+    "PROTECTED_CORPUS_COUNT": 9,
+    "TRANSITIVE_ATTESTATION_COUNT": 4,
+    "NATIVE_RELATIONSHIP_COUNT": 23,
+    "non_circularity_basis": "Corpus and authority-input integrity are closed against two external content-addressed Git anchors (the ODS-01 freeze commit and the certified Wave 1 commit). ODS-05-R2 demonstrated in disposable clones that a coordinated internally-consistent forgery, a rewrite of the authority artifact own records, and a committed forgery all still FAIL."
+  },
+
+  "ci": {
+    "CI_INTEGRATION": "PASS",
+    "CI_FRESH_CHECKOUT_READINESS": "PASS",
+    "evidence_class": "STATIC_WORKFLOW_EVIDENCE + LOCAL_FRESH_CLONE_EXECUTION_EVIDENCE",
+    "no_hosted_run_claimed": "No hosted GitHub Actions run was executed for this adjudication and none is claimed. Readiness was established by workflow inspection plus disposable full-history and depth-1 clone execution.",
+    "history_prerequisite": "actions/checkout@v4 with fetch-depth: 0 on the checkout preceding the authority gate."
+  },
+
+  "negative_control_doctrine": {
+    "NEGATIVE_CONTROL_DOCTRINE": "PASS",
+    "NC1": { "status": "CLOSED", "subject": "untracked directory collapsing in git status" },
+    "NC2": { "status": "CLOSED", "subject": "git mv destination assumption in rename handling" },
+    "NC3": { "status": "CLOSED", "subject": "real-branch-coupled ods:scope positive fixture" },
+    "prestate_trailing_operand_defect": { "status": "CLOSED", "remediated_in": "ODS-05-RM1" },
+    "KNOWN_ODS_GATE_DEFECTS": 0,
+    "KNOWN_ODS_GATE_TEST_FIXTURE_DEFECTS": 0
+  },
+
+  "efficiency_and_routing": {
+    "EFFICIENCY_VALIDATION": "PASS",
+    "CLASS_B_ROUTING": "PASS",
+    "ODS_P1": "DEFER",
+    "SERENA_REOPEN": "NO",
+    "evidence_reference": "docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json (unchanged by this closure)",
+    "class_b_bound": "CLASS_B_ROUTING=PASS records repository-outcome validation under the frozen authority own stated bar (model_executor_routing.classes.B.validation_requirement). It is NOT a claim of cryptographically proven model identity, and machine gates remain mandatory regardless of executor class."
+  },
+
+  "findings_at_closure": {
+    "BLOCKING_FINDINGS": 0,
+    "MATERIAL_NON_BLOCKING_FINDINGS": 0,
+    "NEW_AUTHORITY_GAPS": 0,
+    "BOOKKEEPING_FINDINGS": 3,
+    "bookkeeping": [
+      {
+        "id": "BK-ODS05R2-1",
+        "classification": "BOOKKEEPING",
+        "surface": "scripts/ods-scope.ts, scripts/ods-poststate.ts",
+        "issue": "The sibling CLIs do not apply the malformed trailing value-flag rejection that ODS-05-RM1 added to scripts/ods-prestate.ts.",
+        "measured_behavior": "Fail-closed in every malformed case (usage error or crash, always non-zero). A dropped --allow can only make the scope gate stricter, never authorize a path; the one PASS case is an empty diff, reported honestly as CHANGED_FILE_COUNT=0.",
+        "executable_impact": "none on adjudication correctness",
+        "disposition": "OPTIONAL_FUTURE_CONSISTENCY_REMEDIATION",
+        "promoted_to_blocking_or_material": false
+      },
+      {
+        "id": "BK-ODS05R2-2",
+        "classification": "BOOKKEEPING",
+        "surface": "scripts/ods-prestate.ts",
+        "issue": "A duplicated value flag (for example --head A --head B) uses last-wins semantics without announcing it.",
+        "measured_behavior": "The assertion still executes and a mismatch still FAILS. Directionally opposite to the remediated ODS-05 defect, which dropped the assertion entirely.",
+        "executable_impact": "none on adjudication correctness",
+        "disposition": "OPTIONAL_FUTURE_CLI_HARDENING",
+        "promoted_to_blocking_or_material": false
+      },
+      {
+        "id": "BK-ODS05R2-3",
+        "classification": "BOOKKEEPING",
+        "surface": ".github/workflows/ci.yml",
+        "issue": "The explanatory comment states a shallow-checkout failure would be indistinguishable in the log from real authority drift; measured, the error names the unreachable commit and path.",
+        "measured_behavior": "Prose only. The remediation the comment documents (fetch-depth: 0) is correct and unaffected.",
+        "executable_impact": "none",
+        "disposition": "PROSE_ONLY_OPTIONAL_CORRECTION",
+        "promoted_to_blocking_or_material": false
+      }
+    ]
+  },
+
+  "wave1_carry_forward": {
+    "rule": "PRESERVED BY REFERENCE ONLY. This closure does not duplicate, re-scope, re-prioritize, remediate or re-adjudicate any Wave 1 carry-forward finding.",
+    "backlog_reference": "docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md",
+    "source_of_truth": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json",
+    "finding_ids_preserved_open": ["MNB-1", "BK-1", "BK-2", "BK-3", "BK-4"],
+    "count": 5,
+    "wave1_status": "CLOSED (unchanged by this artifact)"
+  },
+
+  "operational_constraints": {
+    "C2_GIT_ANCHOR_AVAILABILITY": {
+      "classification": "CARRY_FORWARD_OPERATIONAL_CONSTRAINT",
+      "not_a_defect": true,
+      "not_a_new_authority_gap": true,
+      "constraint": "ODS-C2 (authority:seal:verify) resolves historical blobs at two Git anchors. Both must remain available to CI: ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc (certified Wave 1 corpus anchor) and 2aecf625a49ec673fd4185052e71ec6e5c750edf (ODS authority freeze commit).",
+      "why_it_holds_today": "Both anchors are ancestors of every commit that carries the gate, so a full-history (fetch-depth: 0) checkout of any such commit reaches them.",
+      "required_forward_handling": "Before any future integration to main, preserve those objects through reachable remote history or a retained ref. Do NOT use a squash-and-delete workflow that would leave the required anchors unavailable, without first changing the authorized ODS-C2 design through an explicit authority update.",
+      "prohibited_shortcut": "Weakening, skipping or making optional the C2 anchor comparison in order to survive a history-losing merge strategy."
+    }
+  },
+
+  "integrity_assertions_at_this_closure": {
+    "ods_authority_artifact_changed": false,
+    "efficiency_artifact_changed": false,
+    "wave1_protected_corpus_changed": false,
+    "certified_wave1_source_branch_changed": false,
+    "certified_wave1_source_branch_head": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc",
+    "historical_evidence_rewritten": false,
+    "files_changed_by_this_step": 1,
+    "executable_surface_changed": false,
+    "dependencies_added": 0,
+    "product_runtime_changes": 0,
+    "database_changes": 0
+  },
+
+  "state_after_this_artifact": {
+    "ods_v1_operational": true,
+    "ready_for_wave2": true,
+    "ready_for_product_reengineering": true,
+    "parallel_lanes_authorized": true,
+    "lanes_started_by_this_step": "NONE",
+    "next_gate": "PARALLEL_LANES_OPENING"
+  },
+
+  "final_state": "ODS_V1_OPERATIONAL_MATERIALIZED_PARALLEL_LANES_AUTHORIZED"
+}

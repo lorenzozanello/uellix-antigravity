@@ -5,6 +5,7 @@ import { createStakeholderGroup, listStakeholderGroups } from '@/lib/pipeline/st
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction } from '@/lib/audit/logger';
+import { createDomainObjectVersion } from '@/lib/pipeline/domain-object-versions';
 
 // Mock auth context
 vi.mock('@/lib/auth/session', () => ({
@@ -16,12 +17,18 @@ vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
   AUDIT_ACTIONS: {
     ORGANIZATION_CREATED: 'organization_created',
+    STAKEHOLDER_GROUP_CREATED: 'stakeholder_group.created',
+    STAKEHOLDER_GROUP_ARCHIVED: 'stakeholder_group.archived',
   },
 }));
 
 // Mock permissions
 vi.mock('@/lib/auth/permissions', () => ({
   hasRole: vi.fn(),
+}));
+
+vi.mock('@/lib/pipeline/domain-object-versions', () => ({
+  createDomainObjectVersion: vi.fn(),
 }));
 
 // Global mock configuration for DB queries
@@ -96,6 +103,9 @@ describe('Stakeholder Group service', () => {
     const result = await createStakeholderGroup('proj-1', input);
     expect(result.id).toBe('sg-1');
     expect(logAuditAction).toHaveBeenCalled();
+    expect(createDomainObjectVersion).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: 'org-1', objectType: 'stakeholder_group', objectId: 'sg-1', actorId: 'u1' })
+    );
   });
 
   it('rejects creation with unauthorized role', async () => {

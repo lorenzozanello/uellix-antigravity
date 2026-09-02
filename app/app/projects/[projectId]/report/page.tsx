@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { ArrowLeft, ChevronRight, FileText, Plus } from 'lucide-react'
 import { listProjectReports, getRunList } from '@/lib/pipeline/sroi-results'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { createReportDraftFromRunAction } from './createReportDraftFromRun.action'
 import { REPORT_VARIANTS, REPORT_VARIANT_LABEL, REPORT_VARIANT_DESCRIPTION } from '@/lib/reports/report-variants'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -40,10 +41,9 @@ export default async function ReportListPage({
 }) {
   const { projectId } = await params
 
-  const [reports, runs] = await Promise.all([
-    listProjectReports(projectId),
-    getRunList(projectId),
-  ])
+  const [reports, runs] = await runWithOrganizationAccess(() =>
+    Promise.all([listProjectReports(projectId), getRunList(projectId)])
+  )
 
   const calculatedRuns = runs.filter((r) => r.status === 'calculated')
   const runById = new Map(runs.map((r) => [r.id, r]))

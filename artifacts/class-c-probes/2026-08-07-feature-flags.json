@@ -1,0 +1,36 @@
+{
+  "trainId": "STELLA_TRAIN_5C2",
+  "measuredOn": "2026-08-07",
+  "measuredBy": "operator, manually, Vercel project Environment Variables",
+  "targetProjectRef": "bvyzblhqymxruxdguaee",
+  "whatThisIs": "The inventory the feature-flags-false criterion asks for. The question is not 'what are the nine flags set to' in the abstract — it is 'are any of them true in an environment that resolves to THIS Supabase project'. The operator inspected the three Vercel scopes and found that none of them targets it.",
+  "environmentsPointingAtTarget": [],
+  "flags": {},
+  "scopesInspected": {
+    "Production": "does NOT point at bvyzblhqymxruxdguaee",
+    "Preview": "does NOT point at bvyzblhqymxruxdguaee",
+    "Development": "does NOT point at bvyzblhqymxruxdguaee"
+  },
+  "consequence": "With no deployment environment resolving to this project, no runtime can serve Stella against it, so none of the nine flags can be true AGAINST THIS TARGET. The criterion is vacuously satisfied and the evaluation says so in those words rather than reporting 'all nine false', which would claim an inventory nobody took.",
+  "pointInTime": "This is a fact about 2026-08-07. An environment created later, or repointed at this project, is a new fact that this attestation does not cover. CHECKPOINT B0 re-probes the flags after the baseline, which is where a change between now and then would surface.",
+  "flagNames": [
+    "STELLA_ENABLED",
+    "STELLA_ADVISOR_ENABLED",
+    "STELLA_COMPOSER_ENABLED",
+    "STELLA_VALIDATOR_ENABLED",
+    "STELLA_GROUNDED_QUERY_ENABLED",
+    "STELLA_DECISIONS_PERSISTENCE_ENABLED",
+    "STELLA_PROXY_REVIEWER_ENABLED",
+    "STELLA_EVIDENCE_REVIEWER_ENABLED",
+    "STELLA_AUDIT_ASSISTANT_ENABLED"
+  ],
+  "flagContract": "lib/stella/config.ts:25-36 compares `process.env.X === 'true'`, so ABSENT is equivalent to FALSE. The gate is deliberately stricter than the runtime: any value it does not recognise as off counts as on, so a typo cannot read as disabled.",
+  "query": "Vercel → Project → Settings → Environment Variables: for each scope (Production, Preview, Development), read NEXT_PUBLIC_SUPABASE_URL / DATABASE_URL and compare the project ref against bvyzblhqymxruxdguaee.",
+  "constraintsHonoured": [
+    "no variable modified",
+    "no production environment modified",
+    "no production secret inspected or altered",
+    "environments that point only at production were neither inspected nor reported",
+    "no secret value recorded here"
+  ]
+}

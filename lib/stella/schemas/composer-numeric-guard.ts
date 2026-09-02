@@ -1,0 +1,733 @@
+// lib/stella/schemas/composer-numeric-guard.ts
+// U4 (WS4) — pure numeric-integrity guard for Stella Composer output.
+//
+// The Composer drafts narrative from persisted run numbers. A hallucinated
+// figure in that narrative is an audit-integrity failure: every numeric token
+// in the model's free text must be traceable to a value the caller explicitly
+// authorized (run totals, the SROI ratio, the funder breakdown, and any extra
+// values the caller passes). This module is PURE and is NOT wired anywhere —
+// the coordinator wires it into app/actions/stella/composer.ts (see WIRING.md
+// in this directory).
+//
+// ── Allowlist (tokens never flagged) ─────────────────────────────────────────
+// NONE of the year/ordinal/section exemptions apply when the token sits in a
+// VALUE-CLAIMING context — preceded by a ratio/value keyword (SROI, ratio,
+// razón, retorno, valor, total, inversión) or a currency word/symbol (USD,
+// COP, EUR, $, €, £), followed by a value marker (":1", "x", "veces", a
+// currency word, "dólares", "pesos", "millones", "adicionales"), or carrying
+// a '%' suffix. A number participating in a quantitative claim must ALWAYS
+// trace to the authorized set, however small or year-like it looks:
+// "el SROI es 7", "$2050" and "recibió 2019 adicionales" are validated, not
+// exempted.
+// 1. Calendar years: a plain 4-digit integer in 1900–2100 (no separators, no
+//    decimals) outside value-claiming context. Covers "en 2026", "2025-2026".
+// 2. Small integers / list ordinals: plain integers 0–20 outside
+//    value-claiming context. Covers "3 outcomes", "paso 2", the "1" in
+//    "3.2:1".
+// 3. Section numbers: a short dotted token (e.g. "2.1", "3.4.1", 1–2 digit
+//    components) that either starts a line and is followed by whitespace and
+//    an UPPERCASE letter with no value marker after it ("2.1 Metodología" is
+//    a heading; "3.2 veces la inversión" is NOT), or is immediately preceded
+//    by the word "section"/"sección". A dotted token followed by ':' or '%'
+//    or in value-claiming context is NEVER treated as a section number.
+// 4. Identifier fragments: digits directly attached to a letter/underscore
+//    (or via '-', '/', '#' after an alphanumeric), e.g. "ev-123", "SDG8",
+//    "v2.3". These are references, not numeric claims. (validateComposer-
+//    References covers the structured id fields.)
+//
+// ── Formatting tolerance (how a token can match an authorized value) ─────────
+// - Thousands separators: "1,600,000.50" and "1.600.000,50" both normalize to
+//   1600000.50; ambiguous forms ("1,600" / "1.600") are tried BOTH as
+//   thousands-grouped and as decimal — matching either authorized value passes.
+// - Decimal truncation/rounding: a token with 0–6 decimal places matches if it
+//   equals the authorized value truncated OR half-up-rounded to that many
+//   places ("2.01" and "2.02" both match an authorized 2.015082; "1600000"
+//   matches "1600000.0000").
+// - Percentages: a token immediately followed by '%' (or "percent" /
+//   "por ciento") additionally matches when token/100 equals an authorized
+//   value ("20%" matches an authorized 0.2), on top of the plain comparison
+//   ("20%" also matches an authorized 20).
+
+// Pin the shared Decimal configuration — determinism guard (WS4 U1).
+import '@/lib/pipeline/decimal-config'
+import Decimal from 'decimal.js'
+import type { ComposerOutput } from './composer-output'
+
+// ── Public types ─────────────────────────────────────────────────────────────
+
+export interface AuthorizedTotals {
+  totalInvestment: string | number
+  grossSocialValue: string | number
+  netSocialValue: string | number
+}
+
+export interface AuthorizedFunderRow {
+  investmentUsd: string | number
+  attributedNsvUsd: string | number
+  sroiRatio: string | number
+}
+
+export interface AuthorizedNumbers {
+  totals: AuthorizedTotals
+  ratio: string | number
+  funderBreakdown?: readonly AuthorizedFunderRow[]
+  /**
+   * Any other values the Composer legitimately saw in its context: filter
+   * percentages, unattributed NSV, line-item count, run version, quantities…
+   * The guard is only as good as this set — pass everything the context held.
+   */
+  additional?: readonly (string | number)[]
+}
+
+export interface NumericViolation {
+  /** The raw token as it appeared in the text. */
+  token: string
+  /** Where it appeared, e.g. 'draft_content', 'assumptions[2]'. */
+  field: string
+}
+
+export interface NumericGuardResult {
+  ok: boolean
+  violations: NumericViolation[]
+}
+
+/**
+ * `report-strict` is deliberately narrower than the Composer drafting mode:
+ * persisted report prose must not turn an otherwise ordinary year or ordinal
+ * into an untraceable outcome claim. It retains only deterministic structural
+ * tokens (technical identifiers, headings, and an explicit SROI `:1`).
+ */
+export type NumericGuardMode = 'composer' | 'report-strict'
+
+export interface NumericGuardOptions {
+  mode?: NumericGuardMode
+}
+
+export interface ReferenceViolation {
+  id: string
+  field: string
+}
+
+export interface ReferenceGuardResult {
+  ok: boolean
+  violations: ReferenceViolation[]
+}
+
+/** Server-derived ids that a persisted report is allowed to cite. */
+export interface NarrativeReferenceAuthority {
+  evidenceIds: readonly string[]
+  proxyIds: readonly string[]
+}
+
+/**
+ * Report prose has a deliberately finite numeric grammar. These types keep
+ * money, percentage points, and SROI ratios from authorizing one another.
+ */
+export interface ReportMoneyAuthority {
+  kind: 'money'
+  currency: 'USD'
+  value: string
+}
+
+export interface ReportPercentAuthority {
+  kind: 'percent'
+  percentagePoints: string
+}
+
+export interface ReportSroiRatioAuthority {
+  kind: 'sroi_ratio'
+  numerator: string
+  denominator: '1'
+}
+
+export interface ReportNumericAuthority {
+  money: readonly ReportMoneyAuthority[]
+  percentages: readonly ReportPercentAuthority[]
+  sroiRatios: readonly ReportSroiRatioAuthority[]
+}
+
+export interface ReportNarrativeAuthorityInput {
+  title: string
+  content: string
+  numericAuthority: ReportNumericAuthority
+  referenceAuthority: NarrativeReferenceAuthority
+}
+
+export interface ReportNarrativeAuthorityResult {
+  ok: boolean
+  numeric: NumericGuardResult
+  references: ReferenceGuardResult
+}
+
+export interface ReportNumericAuthoritySource {
+  money?: readonly unknown[]
+  percentages?: readonly unknown[]
+  sroiRatios?: readonly unknown[]
+}
+
+/** Structural subset of StellaProjectContext the reference check needs. */
+export interface ComposerReferenceContext {
+  evidenceMetadata?: readonly { id: string }[]
+  proxySummary?: readonly { id: string }[]
+}
+
+// ── Internals ────────────────────────────────────────────────────────────────
+
+const YEAR_MIN = 1900
+const YEAR_MAX = 2100
+const MAX_ALLOWED_ORDINAL = 20
+const MAX_TOLERATED_DP = 6
+
+// Signed digit runs with optional '.'/',' groups: -12 · 3.2 ·
+// 1,600,000.50 · 2.1.3. The lookbehind keeps the numeric suffix of a
+// technical identifier such as `ev-123` out of the claim scanner.
+const NUMBER_TOKEN_RE = /(?<![A-Za-z0-9_+/-])[+-]?\d+(?:[.,]\d+)*/g
+
+function toDecimal(v: string | number): Decimal | null {
+  try {
+    const d = new Decimal(v)
+    return d.isFinite() ? d : null
+  } catch {
+    return null
+  }
+}
+
+function collectAuthorized(authorized: AuthorizedNumbers | null): Decimal[] {
+  if (!authorized) return []
+  const raw: (string | number)[] = [
+    authorized.totals.totalInvestment,
+    authorized.totals.grossSocialValue,
+    authorized.totals.netSocialValue,
+    authorized.ratio,
+  ]
+  for (const row of authorized.funderBreakdown ?? []) {
+    raw.push(row.investmentUsd, row.attributedNsvUsd, row.sroiRatio)
+  }
+  raw.push(...(authorized.additional ?? []))
+  const out: Decimal[] = []
+  for (const v of raw) {
+    const d = toDecimal(v)
+    if (d) out.push(d)
+  }
+  return out
+}
+
+/**
+ * Interpret a raw token under every plausible thousands/decimal-separator
+ * convention. Returns normalized numeric strings (dot-decimal, no grouping).
+ */
+function normalizationCandidates(token: string): string[] {
+  const candidates = new Set<string>()
+  const sign = token.startsWith('-') || token.startsWith('+') ? token[0] : ''
+  const unsignedToken = sign ? token.slice(1) : token
+  const withSign = (value: string) => `${sign}${value}`
+  const hasDot = unsignedToken.includes('.')
+  const hasComma = unsignedToken.includes(',')
+
+  if (hasDot && hasComma) {
+    // The LAST separator that appears is the decimal separator.
+    const lastDot = unsignedToken.lastIndexOf('.')
+    const lastComma = unsignedToken.lastIndexOf(',')
+    const decimalSep = lastDot > lastComma ? '.' : ','
+    const groupSep = decimalSep === '.' ? ',' : '.'
+    const cleaned = unsignedToken.split(groupSep).join('')
+    candidates.add(withSign(decimalSep === '.' ? cleaned : cleaned.replace(',', '.')))
+  } else if (hasComma) {
+    if (/^\d{1,3}(,\d{3})+$/.test(unsignedToken)) candidates.add(withSign(unsignedToken.split(',').join(''))) // thousands
+    if ((unsignedToken.match(/,/g) ?? []).length === 1) candidates.add(withSign(unsignedToken.replace(',', '.'))) // decimal comma
+  } else if (hasDot) {
+    if (/^\d{1,3}(\.\d{3})+$/.test(unsignedToken)) candidates.add(withSign(unsignedToken.split('.').join(''))) // es-LA thousands
+    if ((unsignedToken.match(/\./g) ?? []).length === 1) candidates.add(withSign(unsignedToken)) // plain decimal
+    // Multi-dot non-grouped tokens ("2.1.3") have no numeric interpretation.
+  } else {
+    candidates.add(withSign(unsignedToken))
+  }
+  return [...candidates]
+}
+
+function decimalPlaces(normalized: string): number {
+  const i = normalized.indexOf('.')
+  return i === -1 ? 0 : normalized.length - i - 1
+}
+
+function matchesAuthorizedValue(candidate: Decimal, dp: number, authorized: Decimal): boolean {
+  if (candidate.eq(authorized)) return true
+  if (dp > MAX_TOLERATED_DP) return false
+  return (
+    candidate.eq(authorized.toDecimalPlaces(dp, Decimal.ROUND_DOWN)) ||
+    candidate.eq(authorized.toDecimalPlaces(dp, Decimal.ROUND_HALF_UP))
+  )
+}
+
+function tokenMatchesAuthorized(
+  token: string,
+  isPercentContext: boolean,
+  authorizedValues: Decimal[],
+): boolean {
+  for (const normalized of normalizationCandidates(token)) {
+    const value = toDecimal(normalized)
+    if (!value) continue
+    const dp = decimalPlaces(normalized)
+    for (const authorized of authorizedValues) {
+      if (matchesAuthorizedValue(value, dp, authorized)) return true
+      if (isPercentContext && matchesAuthorizedValue(value.div(100), dp + 2, authorized)) return true
+    }
+  }
+  return false
+}
+
+const SECTION_TOKEN_RE = /^\d{1,2}(\.\d{1,2}){1,2}$/
+const SECTION_KEYWORD_RE = /(?:secci[oó]n|section)\s*$/i
+
+// Value-claiming context (audit FIX 1/2/3): a ratio/value keyword or currency
+// marker just before the token, or a value marker just after it. Tokens in
+// this context are NEVER exempted as years/ordinals/section numbers.
+const VALUE_CLAIM_BEFORE_RE =
+  /(?:\bSROI|\bratios?|\braz[oó]n|\bretornos?|\bvalor|\btotal|\binversi[oó]n|\bUSD|\bCOP|\bEUR|[$€£])\s*(?:de|del|es|era|fue|:|=)?\s*$/i
+const VALUE_CLAIM_AFTER_RE =
+  /^\s*(?::1\b|x\b|veces\b|USD\b|COP\b|EUR\b|d[oó]lares\b|pesos\b|millones\b|adicionales\b)/i
+
+interface TokenSite {
+  token: string
+  isPercent: boolean
+  allowlisted: boolean
+}
+
+function isExplicitSroiRatioDenominator(before: string, token: string): boolean {
+  if (token !== '1') return false
+  return /\b(?:sroi|ratios?|raz[oó]n|retornos?)\b[^\n]{0,80}[+-]?\d+(?:[.,]\d+)*:\s*$/i.test(before)
+}
+
+function extractTokens(text: string, mode: NumericGuardMode): TokenSite[] {
+  const sites: TokenSite[] = []
+  for (const match of text.matchAll(NUMBER_TOKEN_RE)) {
+    const token = match[0]
+    const start = match.index ?? 0
+    const end = start + token.length
+    const prev = start > 0 ? text[start - 1] : ''
+    const prevPrev = start > 1 ? text[start - 2] : ''
+    const next = end < text.length ? text[end] : ''
+    const after = text.slice(end)
+    const before = text.slice(0, start)
+
+    const isPercent = /^\s{0,2}(%|percent\b|por\s+ciento\b)/i.test(after)
+
+    // Value-claiming context — disables the year/ordinal/section exemptions.
+    const inValueClaim =
+      isPercent || VALUE_CLAIM_BEFORE_RE.test(before) || VALUE_CLAIM_AFTER_RE.test(after)
+
+    // (4) identifier fragment: "ev-123", "SDG8", "v2.3", "#4", "out/7"
+    const identifierAttached =
+      /[A-Za-z_]/.test(prev) ||
+      (['-', '/', '#'].includes(prev) && /[A-Za-z0-9_]/.test(prevPrev))
+
+    // (1) calendar year / (2) small integer — plain integers only, and never
+    // inside a value-claiming context ("$2050", "el SROI es 7").
+    const isPlainInt = /^\d+$/.test(token)
+    const intVal = isPlainInt ? parseInt(token, 10) : NaN
+    const isYear =
+      isPlainInt && !inValueClaim &&
+      token.length === 4 && intVal >= YEAR_MIN && intVal <= YEAR_MAX
+    const isOrdinal = isPlainInt && !inValueClaim && intVal <= MAX_ALLOWED_ORDINAL
+
+    // (3) section number — heading must start with an UPPERCASE letter and
+    // carry no value marker ("2.1 Metodología" yes, "3.2 veces" no).
+    const atLineStart = /(?:^|\n)\s*$/.test(before)
+    const headingFollows =
+      /^\s+[A-ZÁÉÍÓÚÑÜ]/.test(after) && !VALUE_CLAIM_AFTER_RE.test(after)
+    const isSectionNumber =
+      SECTION_TOKEN_RE.test(token) &&
+      next !== ':' &&
+      !inValueClaim &&
+      ((atLineStart && headingFollows) || SECTION_KEYWORD_RE.test(before))
+
+    const strictStructuralToken =
+      identifierAttached || isSectionNumber || isExplicitSroiRatioDenominator(before, token)
+
+    sites.push({
+      token,
+      isPercent,
+      allowlisted:
+        mode === 'report-strict'
+          ? strictStructuralToken
+          : identifierAttached || isYear || isOrdinal || isSectionNumber,
+    })
+  }
+  return sites
+}
+
+function freeTextFields(output: ComposerOutput): { field: string; text: string }[] {
+  const fields: { field: string; text: string }[] = [
+    { field: 'draft_title', text: output.draft_title },
+    { field: 'draft_content', text: output.draft_content },
+  ]
+  output.assumptions.forEach((text, i) => fields.push({ field: `assumptions[${i}]`, text }))
+  output.limitations.forEach((text, i) => fields.push({ field: `limitations[${i}]`, text }))
+  output.evidence_references.forEach((ref, i) => {
+    fields.push({ field: `evidence_references[${i}].title`, text: ref.title })
+    fields.push({ field: `evidence_references[${i}].context`, text: ref.context })
+  })
+  output.proxy_references.forEach((ref, i) => {
+    fields.push({ field: `proxy_references[${i}].name`, text: ref.name })
+    fields.push({ field: `proxy_references[${i}].context`, text: ref.context })
+  })
+  return fields
+}
+
+// ── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Flags every numeric token in the Composer's free text that is neither
+ * allowlisted (years, ordinals ≤ 20, section numbers, identifier fragments)
+ * nor traceable — under the documented formatting tolerance — to a value in
+ * the authorized set. `ok === false` means the draft contains at least one
+ * number the persisted run never produced.
+ */
+export function validateComposerNumbers(
+  output: ComposerOutput,
+  authorized: AuthorizedNumbers | null,
+  options: NumericGuardOptions = {},
+): NumericGuardResult {
+  const mode = options.mode ?? 'composer'
+  const authorizedValues = collectAuthorized(authorized)
+  const violations: NumericViolation[] = []
+
+  for (const { field, text } of freeTextFields(output)) {
+    if (!text) continue
+    for (const site of extractTokens(text, mode)) {
+      if (site.allowlisted) continue
+      if (tokenMatchesAuthorized(site.token, site.isPercent, authorizedValues)) continue
+      violations.push({ token: site.token, field })
+    }
+  }
+
+  return { ok: violations.length === 0, violations }
+}
+
+const UUID_TOKEN_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi
+const NARRATIVE_REFERENCE_LABEL_RE =
+  /\b(evidence|evidencia|proxy)\s+id\s*:\s*([^\s,.;)\]]+)/gi
+const LEGACY_NARRATIVE_REFERENCE_RE = /\b(?:ev|px)-[A-Za-z0-9][A-Za-z0-9_-]*\b/gi
+
+function isUuid(value: string): boolean {
+  UUID_TOKEN_RE.lastIndex = 0
+  return UUID_TOKEN_RE.test(value) && value.length === 36
+}
+
+function canonicalUuidIdentity(value: string): string {
+  return isUuid(value) ? value.toLowerCase() : value
+}
+
+function canonicalAuthorityDecimal(value: unknown): string | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null
+  if (typeof value === 'string' && value.trim() === '') return null
+  const decimal = toDecimal(value)
+  return decimal?.toFixed() ?? null
+}
+
+/**
+ * Constructs typed report authority from already server-derived persisted
+ * values. Invalid, absent, and null values deliberately contribute nothing.
+ */
+export function buildReportNumericAuthority(
+  source: ReportNumericAuthoritySource,
+): ReportNumericAuthority {
+  const money = (source.money ?? []).flatMap((value) => {
+    const canonical = canonicalAuthorityDecimal(value)
+    return canonical === null ? [] : [{ kind: 'money' as const, currency: 'USD' as const, value: canonical }]
+  })
+  const percentages = (source.percentages ?? []).flatMap((value) => {
+    const canonical = canonicalAuthorityDecimal(value)
+    return canonical === null ? [] : [{ kind: 'percent' as const, percentagePoints: canonical }]
+  })
+  const sroiRatios = (source.sroiRatios ?? []).flatMap((value) => {
+    const canonical = canonicalAuthorityDecimal(value)
+    return canonical === null ? [] : [{ kind: 'sroi_ratio' as const, numerator: canonical, denominator: '1' as const }]
+  })
+  return { money, percentages, sroiRatios }
+}
+
+/**
+ * A report citation is either a UUID anywhere in prose or an exact typed
+ * label. Bare UUIDs use the evidence/proxy union; typed labels retain type.
+ * Legacy ev-/px- forms are explicit unsupported citations and fail closed.
+ */
+export function validateNarrativeReferences(
+  fields: readonly { field: string; text: string }[],
+  authority: NarrativeReferenceAuthority,
+): ReferenceGuardResult {
+  const evidenceIds = new Set(authority.evidenceIds.map(canonicalUuidIdentity))
+  const proxyIds = new Set(authority.proxyIds.map(canonicalUuidIdentity))
+  const allowedIds = new Set([...evidenceIds, ...proxyIds])
+  const violations: ReferenceViolation[] = []
+  const seen = new Set<string>()
+
+  const reject = (id: string, field: string) => {
+    const key = `${field}:${id}`
+    if (seen.has(key)) return
+    seen.add(key)
+    violations.push({ id, field })
+  }
+
+  for (const { field, text } of fields) {
+    const labelledTypes = new Map<string, 'evidence' | 'proxy'>()
+    NARRATIVE_REFERENCE_LABEL_RE.lastIndex = 0
+    for (const match of text.matchAll(NARRATIVE_REFERENCE_LABEL_RE)) {
+      const id = match[2]
+      const type = /^(evidence|evidencia)$/i.test(match[1]) ? 'evidence' : 'proxy'
+      if (!isUuid(id)) {
+        reject(id, field)
+        continue
+      }
+      const canonicalId = canonicalUuidIdentity(id)
+      labelledTypes.set(canonicalId, type)
+      if (!(type === 'evidence' ? evidenceIds : proxyIds).has(canonicalId)) reject(id, field)
+    }
+
+    LEGACY_NARRATIVE_REFERENCE_RE.lastIndex = 0
+    for (const match of text.matchAll(LEGACY_NARRATIVE_REFERENCE_RE)) reject(match[0], field)
+
+    UUID_TOKEN_RE.lastIndex = 0
+    for (const match of text.matchAll(UUID_TOKEN_RE)) {
+      const id = match[0]
+      const canonicalId = canonicalUuidIdentity(id)
+      const typed = labelledTypes.get(canonicalId)
+      if (typed) {
+        if (!(typed === 'evidence' ? evidenceIds : proxyIds).has(canonicalId)) reject(id, field)
+      } else if (!allowedIds.has(canonicalId)) {
+        reject(id, field)
+      }
+    }
+  }
+
+  return { ok: violations.length === 0, violations }
+}
+
+const REPORT_MAGNITUDE_RE = /^(?:0|[1-9]\d{0,2}(?:,\d{3})*)(?:\.\d{1,2})?$/
+const REPORT_MONEY_RE = /^(?:-?\$[\d,.]+|USD -?[\d,.]+|-?[\d,.]+ USD)$/
+const REPORT_PERCENT_RE = /^(-?[\d,.]+)\s*%$/
+const REPORT_SROI_RE = /^(-?[\d,.]+):1$/
+const REPORT_NUMERICISH_RE = /\bUSD[ \t]*-?\d[\d,]*(?:\.\d+)?|[<>][ \t]*-?\d[\d,]*(?:\.\d+)?|\([ \t]*-?\d[\d,]*(?:\.\d+)?[ \t]*\)|-?\d[\d,]*(?:\.\d+)?[ \t]*[–-][ \t]*-?\d[\d,]*(?:\.\d+)?|-?\$?\d[\d,]*(?:\.\d+)?(?:[eE][+-]?\d+)?(?:[ \t]*(?:USD|%|:\s*1)|[ \t]+(?:beneficiaries?|beneficiarios?))?/g
+const ISO_DATE_RE = /\b(\d{4})-(\d{2})-(\d{2})\b/g
+const TECHNICAL_ID_RE = /\b(?:v\d+(?:\.\d+)*|SDG\d+)\b/gi
+// An ordinal must carry structural punctuation. Bare leading numbers such as
+// `17 USD` or `17 participants` are claims, not Markdown structure. A heading
+// section number may be hierarchical (`# 2.1 Metodología`); a list ordinal is
+// always terminated by a period (`1. Resultados`).
+const MARKDOWN_ORDINAL_RE = /^(?:\s{0,3}#{1,6}\s+(?:\d{1,2}\.\d{1,2}(?:\.\d{1,2})*|\d{1,2}\.)|\s{0,3}\d{1,2}\.)(?=\s+[A-ZÁÉÍÓÚÑÜ])/gm
+
+function maskMatches(
+  text: string,
+  re: RegExp,
+  shouldMask: (match: RegExpMatchArray, input: string) => boolean = () => true,
+): string {
+  const chars = text.split('')
+  re.lastIndex = 0
+  for (const match of text.matchAll(re)) {
+    if (!shouldMask(match, text)) continue
+    const start = match.index ?? 0
+    for (let i = start; i < start + match[0].length; i++) chars[i] = ' '
+  }
+  return chars.join('')
+}
+
+function isCalendarDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+}
+
+/** A structural token is never allowed to absorb a neighboring report claim. */
+function isAdjacentToNumericAuthorityMarker(match: RegExpMatchArray, text: string): boolean {
+  const start = match.index ?? 0
+  const before = text.slice(0, start)
+  const after = text.slice(start + match[0].length)
+  return /(?:USD\s*|\$)$/i.test(before) || /^[ \t]*(?:USD\b|%|:\s*1\b|\$)/i.test(after)
+}
+
+function isStandaloneValidIsoDate(match: RegExpMatchArray, text: string): boolean {
+  const [, rawYear, rawMonth, rawDay] = match
+  return !isAdjacentToNumericAuthorityMarker(match, text) && isCalendarDate(
+    Number(rawYear),
+    Number(rawMonth),
+    Number(rawDay),
+  )
+}
+
+function canonicalReportDecimal(value: string): Decimal | null {
+  if (!REPORT_MAGNITUDE_RE.test(value)) return null
+  const decimal = toDecimal(value.replaceAll(',', ''))
+  return decimal?.isFinite() ? decimal : null
+}
+
+function isNegativeZero(raw: string, value: Decimal): boolean {
+  return raw.startsWith('-') && value.isZero()
+}
+
+function reportValueAuthorized(
+  value: Decimal,
+  raw: string,
+  authorityValues: readonly string[],
+): boolean {
+  if (isNegativeZero(raw, value)) return false
+  return authorityValues.some((authorized) => {
+    const authorityDecimal = toDecimal(authorized)
+    return authorityDecimal !== null && value.eq(authorityDecimal.toDecimalPlaces(2, Decimal.ROUND_HALF_UP))
+  })
+}
+
+function validateCanonicalReportNumber(token: string, authority: ReportNumericAuthority): boolean {
+  if (REPORT_MONEY_RE.test(token)) {
+    const raw = token.startsWith('$') || token.startsWith('-$')
+      ? token.replace('$', '')
+      : token.startsWith('USD ')
+        ? token.slice(4)
+        : token.slice(0, -4)
+    const value = canonicalReportDecimal(raw.replace(/^-/, ''))
+    if (!value) return false
+    const signed = raw.startsWith('-') ? value.negated() : value
+    return reportValueAuthorized(signed, raw, authority.money.map((entry) => entry.value))
+  }
+
+  const percent = REPORT_PERCENT_RE.exec(token)
+  if (percent) {
+    const raw = percent[1]
+    const value = canonicalReportDecimal(raw.replace(/^-/, ''))
+    if (!value) return false
+    const signed = raw.startsWith('-') ? value.negated() : value
+    return reportValueAuthorized(signed, raw, authority.percentages.map((entry) => entry.percentagePoints))
+  }
+
+  const ratio = REPORT_SROI_RE.exec(token)
+  if (ratio) {
+    const raw = ratio[1]
+    const value = canonicalReportDecimal(raw.replace(/^-/, ''))
+    if (!value) return false
+    const signed = raw.startsWith('-') ? value.negated() : value
+    return reportValueAuthorized(signed, raw, authority.sroiRatios.map((entry) => entry.numerator))
+  }
+
+  return false
+}
+
+function validateReportNumericText(
+  field: string,
+  text: string,
+  authority: ReportNumericAuthority,
+): NumericGuardResult {
+  // UUIDs are reference candidates and must be recognized before numeric
+  // scanning so their hyphenated components cannot become numeric claims.
+  let scanText = maskMatches(text, UUID_TOKEN_RE)
+  // Structural exemptions are exact and conditional: only the structural
+  // token itself is removed, and never when it touches a material numeric
+  // marker. This keeps `v2.3` and valid standalone dates readable without
+  // allowing `v2.3 USD` or `2026-12-01 USD` to hide a claim.
+  scanText = maskMatches(scanText, ISO_DATE_RE, isStandaloneValidIsoDate)
+  scanText = maskMatches(scanText, TECHNICAL_ID_RE, (match, input) =>
+    !isAdjacentToNumericAuthorityMarker(match, input),
+  )
+  scanText = maskMatches(scanText, MARKDOWN_ORDINAL_RE, (match, input) =>
+    !isAdjacentToNumericAuthorityMarker(match, input),
+  )
+
+  const violations: NumericViolation[] = []
+  REPORT_NUMERICISH_RE.lastIndex = 0
+  for (const match of scanText.matchAll(REPORT_NUMERICISH_RE)) {
+    const token = match[0]
+    if (!validateCanonicalReportNumber(token, authority)) {
+      violations.push({ token, field })
+    }
+  }
+  return { ok: violations.length === 0, violations }
+}
+
+/**
+ * The one strict report-boundary validator. Save and lock call this exact
+ * primitive with authority derived only from the report's pinned server run.
+ */
+export function validateReportNarrativeAuthority(
+  input: ReportNarrativeAuthorityInput,
+): ReportNarrativeAuthorityResult {
+  const fields = [
+    { field: 'report_section.title', text: input.title },
+    { field: 'report_section.content', text: input.content },
+  ]
+  const numericViolations = fields.flatMap(({ field, text }) =>
+    validateReportNumericText(field, text, input.numericAuthority).violations,
+  )
+  const numeric = { ok: numericViolations.length === 0, violations: numericViolations }
+  const references = validateNarrativeReferences(fields, input.referenceAuthority)
+  return { ok: numeric.ok && references.ok, numeric, references }
+}
+
+/**
+ * Cross-checks the structured reference ids in the Composer output against
+ * the id sets that were actually present in the context sent to the model.
+ * A reference to an id the context never contained is a fabricated citation.
+ */
+export function validateComposerReferences(
+  output: ComposerOutput,
+  context: ComposerReferenceContext,
+): ReferenceGuardResult {
+  const evidenceIds = new Set((context.evidenceMetadata ?? []).map((e) => e.id))
+  const proxyIds = new Set((context.proxySummary ?? []).map((p) => p.id))
+  const violations: ReferenceViolation[] = []
+
+  output.evidence_references.forEach((ref, i) => {
+    if (!evidenceIds.has(ref.evidenceId)) {
+      violations.push({ id: ref.evidenceId, field: `evidence_references[${i}].evidenceId` })
+    }
+  })
+  output.proxy_references.forEach((ref, i) => {
+    if (!proxyIds.has(ref.proxyId)) {
+      violations.push({ id: ref.proxyId, field: `proxy_references[${i}].proxyId` })
+    }
+  })
+
+  return { ok: violations.length === 0, violations }
+}
+
+/** Structural subset of CalculationSnapshot (lib/stella/context/types.ts). */
+export interface CalculationSnapshotLike {
+  totalInvestment: number
+  grossSocialValue: number
+  netSocialValue: number
+  sroiRatio: number
+  lineItemCount?: number
+  version?: number
+  fundersBreakdown?: readonly {
+    investmentUsd: number
+    attributedNsvUsd: number
+    sroiRatio: number
+  }[]
+  unattributedNsvUsd?: number
+}
+
+/**
+ * Convenience builder: derives an AuthorizedNumbers set from the calculation
+ * snapshot the Composer context carries. Callers should extend `additional`
+ * with any other numeric context they included (filter percentages, counts…).
+ */
+export function authorizedNumbersFromSnapshot(
+  snapshot: CalculationSnapshotLike,
+  additional: readonly (string | number)[] = [],
+): AuthorizedNumbers {
+  const extra: (string | number)[] = [...additional]
+  if (snapshot.lineItemCount !== undefined) extra.push(snapshot.lineItemCount)
+  if (snapshot.version !== undefined) extra.push(snapshot.version)
+  if (snapshot.unattributedNsvUsd !== undefined) extra.push(snapshot.unattributedNsvUsd)
+  return {
+    totals: {
+      totalInvestment: snapshot.totalInvestment,
+      grossSocialValue: snapshot.grossSocialValue,
+      netSocialValue: snapshot.netSocialValue,
+    },
+    ratio: snapshot.sroiRatio,
+    funderBreakdown: snapshot.fundersBreakdown?.map((row) => ({
+      investmentUsd: row.investmentUsd,
+      attributedNsvUsd: row.attributedNsvUsd,
+      sroiRatio: row.sroiRatio,
+    })),
+    additional: extra,
+  }
+}

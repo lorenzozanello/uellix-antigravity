@@ -1,2 +1,26 @@
 *.pdf binary
 *.xlsx binary
+
+# Los artefactos de baseline se verifican por SHA-256 contra
+# db/baseline/MANIFEST.sha256. Con core.autocrlf=true un checkout en Windows los
+# reescribiría a CRLF y el manifiesto dejaría de cuadrar, así que el final de
+# línea queda fijado a LF en toda plataforma.
+db/baseline/** text eol=lf
+
+# Los paquetes SQL preparados se comparan carácter a carácter contra las
+# aserciones de las suites de capacidad, que anclan en «\n». Con
+# core.autocrlf=true el checkout en Windows los materializaba en CRLF y cuatro
+# suites fallaban aunque los blobs del repositorio ya estaban en LF
+# (CT-CAP-003). El final de línea queda fijado a LF en toda plataforma.
+db/prepared/** text eol=lf
+
+# bash no ejecuta un script con CRLF: falla con «\r: command not found».
+*.sh text eol=lf
+
+# Esta baseline y las autoridades PC-01B/IM-01B se verifican por SHA-256
+# contra el .md y .index.json sellados (docs/ops/fib, docs/ops/pc01b,
+# docs/ops/im01b). Con core.autocrlf=true un checkout en Windows los
+# reescribiría a CRLF y esos hashes dejarían de cuadrar contra los valores
+# congelados en los .seal.json/.manifest.json — el final de línea queda
+# fijado a LF en toda plataforma (FIB §16).
+docs/** text eol=lf

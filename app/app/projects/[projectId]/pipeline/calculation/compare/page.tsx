@@ -3,6 +3,7 @@ import {
   getRunList,
   compareCalculationRuns,
 } from '@/lib/pipeline/sroi-results';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -36,22 +37,26 @@ export default async function ComparePage({
   const { projectId } = await params;
   const { runA: runAId, runB: runBId } = await searchParams;
 
-  const runs = await getRunList(projectId);
+  const { runs, comparison, compareError } = await runWithOrganizationAccess(async () => {
+    const runs = await getRunList(projectId);
 
-  let comparison: Awaited<ReturnType<typeof compareCalculationRuns>> | null = null;
-  let compareError: string | null = null;
+    let comparison: Awaited<ReturnType<typeof compareCalculationRuns>> | null = null;
+    let compareError: string | null = null;
 
-  if (runAId && runBId) {
-    if (runAId === runBId) {
-      compareError = 'Selecciona dos corridas distintas para comparar.';
-    } else {
-      try {
-        comparison = await compareCalculationRuns(projectId, runAId, runBId);
-      } catch (e: unknown) {
-        compareError = e instanceof Error ? e.message : 'Error al comparar corridas.';
+    if (runAId && runBId) {
+      if (runAId === runBId) {
+        compareError = 'Selecciona dos corridas distintas para comparar.';
+      } else {
+        try {
+          comparison = await compareCalculationRuns(projectId, runAId, runBId);
+        } catch (e: unknown) {
+          compareError = e instanceof Error ? e.message : 'Error al comparar corridas.';
+        }
       }
     }
-  }
+
+    return { runs, comparison, compareError };
+  });
 
   const runA = runs.find((r) => r.id === runAId);
   const runB = runs.find((r) => r.id === runBId);

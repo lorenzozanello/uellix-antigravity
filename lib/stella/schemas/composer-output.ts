@@ -3,6 +3,14 @@
 
 import { z } from 'zod'
 
+/**
+ * WS6 contract version (docs/20_STELLA_ROLE_CONTRACTS.md). Semver: bump PATCH
+ * for doc-only description changes, MINOR for optional additions, MAJOR for
+ * any key removal/rename/type change. schema-versions.test.ts pins the key
+ * list so a shape change without a conscious bump fails the suite.
+ */
+export const COMPOSER_OUTPUT_SCHEMA_VERSION = '1.0.0'
+
 export const ComposerOutputSchema = z.object({
   section_key: z
     .string()

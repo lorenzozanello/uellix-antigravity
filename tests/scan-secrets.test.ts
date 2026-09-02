@@ -4,9 +4,9 @@
 //
 // A secret scanner fails in two directions and only one of them is loud. If it
 // misses a real credential nothing happens — which is precisely what happened
-// between `782ac5f` and the rotation six weeks later. If it flags the DSNs a
-// repository legitimately keeps — in runbooks, in `.env` templates, in tests —
-// it gets switched off inside a week and then misses the real one anyway.
+// between `782ac5f` and the rotation six weeks later. If it flags the hostile
+// DSNs that `db/safety/` exists to classify, it gets switched off inside a week
+// and then misses the real one anyway.
 //
 // The first version resolved that tension on the HOSTNAME, and this suite
 // asserted it: "the difference between them has to be the host and nothing
@@ -31,12 +31,14 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 import {
+  KNOWN_PRODUCTION_IDENTIFIERS,
+  KNOWN_STAGING_PROJECT_REF,
+} from '@/db/hosted/target-identity'
+import {
   assertAllowlistIsSynthetic,
   isSyntheticHost,
   isUnmistakablePlaceholder,
   scanText,
-  KNOWN_PRODUCTION_IDENTIFIERS,
-  KNOWN_STAGING_PROJECT_REF,
 } from '@/scripts/scan-secrets'
 
 /** Not a credential: 16 chars of keyboard mash, never issued anywhere. */
@@ -185,26 +187,28 @@ describe('scanText — Supabase personal access tokens, the GH013 parity gap', (
     expect(scanText(`key ${truncated}`, 'docs/x.md')).toHaveLength(1)
   })
 
+  it('does not exempt a path merely for being a test', () => {
+    // The rule the GH013 rejection turned on: the flagged literals were in a
+    // test file, and a directory-wide exemption would have hidden them.
+    expect(
+      scanText(`const t = '${PAT_SHAPED}'`, 'tests/hosted/target-identity.test.ts')
+    ).toHaveLength(1)
+  })
+
   it('permits a deliberate fixture carrying a reason', () => {
     const line = `const token = '${PAT_SHAPED}' // secret-scan-ok: synthetic, feeds the redactor`
 
-    expect(scanText(line, 'tests/some-suite.test.ts')).toEqual([])
+    expect(scanText(line, 'tests/hosted/target-identity.test.ts')).toEqual([])
   })
 
   it('does NOT permit one whose annotation carries no reason', () => {
     const line = `const token = '${PAT_SHAPED}' // secret-scan-ok:`
 
-    expect(scanText(line, 'tests/some-suite.test.ts')).toHaveLength(1)
+    expect(scanText(line, 'tests/hosted/target-identity.test.ts')).toHaveLength(1)
   })
 
-  it('permits a placeholder-bodied token, the shape a fixture should use instead', () => {
+  it('permits a placeholder-bodied token, which is what the fixtures migrated to', () => {
     expect(scanText("const token = 'sbp_notARealPersonalAccessToken00'", 'f.ts')).toEqual([])
-  })
-
-  it('does not exempt a path merely for being a test', () => {
-    // The rule the GH013 rejection turned on: the flagged literals were in a
-    // test file, and a directory-wide exemption would have hidden them.
-    expect(scanText(`const t = '${PAT_SHAPED}'`, 'tests/hosted/target-identity.test.ts')).toHaveLength(1)
   })
 
   it('never emits the candidate token, in any field of the finding', () => {

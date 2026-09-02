@@ -16,6 +16,7 @@ import {
 } from '@/db/schema'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
+import { currentGovernanceRegime } from '@/lib/pipeline/governance-regime'
 
 export type OutcomeMappingView = {
   id: string
@@ -177,6 +178,10 @@ export async function createOutcomeMapping(projectId: string, input: OutcomeMapp
       mappingConfidence: validated.mappingConfidence,
       rationale: validated.rationale,
       createdBy: ctx.user.id,
+      // W1-05-RM2 (HPO-DEC-1): stamped from the boundary, never derived from
+      // the parent project's own regime — a mapping created now is pc01b
+      // even when its project is legacy/pre_pc01b.
+      governanceRegime: currentGovernanceRegime(),
     })
     .returning()
     .then((r) => r[0])

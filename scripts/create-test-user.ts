@@ -1,6 +1,20 @@
+// scripts/create-test-user.ts
+//
+// LOCAL ONLY, FAIL-CLOSED. Creates or resets a synthetic auth user.
+//
+// The previous guard parsed the URL but fell back to substring matching when
+// parsing failed (`supabaseUrl.includes('localhost')`) — which is exactly the
+// bypass the central classifier exists to remove: `https://localhost.attacker
+// .example/` contains "localhost" and would have been accepted. The guard now
+// delegates to `assertSupabaseApiOperationAllowed`, which fails closed on any
+// URL it cannot classify and additionally pins the local API port.
+
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import path from 'path';
+import { assertSupabaseApiOperationAllowed } from '../db/safety/database-access';
+import { LOCAL_API_PORT, LOCAL_SUPABASE_API_URL } from '../db/safety/local-stack';
+import { describeError } from '../db/safety/redact-error';
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -14,34 +28,24 @@ async function main() {
     process.exit(1);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || LOCAL_SUPABASE_API_URL;
+
+  // The target is checked FIRST — before the credential is even read, and
+  // long before the admin client exists. Creating a user is a write.
+  // Throws DatabaseSafetyError (redacted host, stable code) on any non-local
+  // target, an unparseable URL, or a production environment.
+  const decision = assertSupabaseApiOperationAllowed({
+    url: supabaseUrl,
+    capability: 'local_seed',
+    expectedLocalPort: LOCAL_API_PORT,
+  });
+  console.log(`[create-test-user] ${decision.auditLine}`);
+
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
+  if (!serviceRoleKey) {
+    console.error('Missing SUPABASE_SERVICE_ROLE_KEY in .env.local');
     process.exit(1);
   }
-
-  // --- Production safety guard ---
-  let isLocal = false;
-  try {
-    const url = new URL(supabaseUrl);
-    isLocal = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(url.hostname);
-  } catch {
-    // Fallback string matching if URL parsing fails
-    isLocal = supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1') || supabaseUrl.includes('[::1]') || supabaseUrl.includes('::1');
-  }
-
-  if (!isLocal || process.env.NODE_ENV === 'production') {
-    console.error(
-      '🚨 SAFETY VIOLATION: This script is restricted to LOCAL loopback instances only.\n' +
-      `   Rejected URL: ${supabaseUrl}\n` +
-      `   NODE_ENV: ${process.env.NODE_ENV || '(not set)'}\n` +
-      '   Operation refused. You can only execute this script against localhost, 127.0.0.1, or ::1.'
-    );
-    process.exit(1);
-  }
-  // --- End production safety guard ---
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -78,4 +82,9 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  // Must exit non-zero: a refused target has to fail the caller's `&&` chain
+  // and any CI step, not just print to stderr.
+  console.error('[create-test-user] Failed:', describeError(err));
+  process.exit(1);
+});

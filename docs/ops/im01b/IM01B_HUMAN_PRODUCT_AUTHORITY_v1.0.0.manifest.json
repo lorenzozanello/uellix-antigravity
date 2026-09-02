@@ -1,0 +1,36 @@
+{
+  "package_id": "IM01B_HUMAN_PRODUCT_AUTHORITY",
+  "version": "1.0.0",
+  "authority_class": "HUMAN_PRODUCT_OWNER_AUTHORITY",
+  "phase": "POST_MSC07B_PILOT_CORE_CLOSEOUT",
+  "source_gate": "IM01A_IMPLEMENTATION_MAPPING",
+
+  "source_head": "c46caa83b780bf38a535244b490c277228e7760d",
+  "source_tree": "82f3e2fa10270dc34d79991d7913cdca7ed350ec",
+
+  "pc01b_authority_sha256": "03212c661f07200d128c2374173f7bbd996b8eab0f3eb1b59cd517187f159938",
+
+  "authority_file": "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.md",
+  "authority_file_sha256": "3b7e696cda64a28f155d740812f601eb20fabb40104ce4581a0568467ee026b4",
+
+  "npdd_count": 7,
+  "npdd_01_approved": true,
+  "npdd_02_approved": true,
+  "npdd_03_approved": true,
+  "npdd_04_approved": true,
+  "npdd_05_approved": true,
+  "npdd_06_approved": true,
+  "npdd_07_approved": true,
+
+  "human_product_design_decisions_complete": true,
+
+  "pc01b_human_authority_frozen": true,
+  "methodology_validated": true,
+
+  "ready_for_frozen_implementation_baseline": false,
+  "implementation_open": false,
+  "document_grounding_activated": false,
+  "stella_pilot_core_frozen": false,
+
+  "materialization_status": "CANDIDATE_REQUIRES_INDEPENDENT_AUDIT"
+}

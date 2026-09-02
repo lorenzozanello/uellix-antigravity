@@ -1,9 +1,17 @@
 import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service';
-import { getCurrentOrganizationContext } from '@/lib/auth/session';
+import { runWithOptionalOrganizationAccess } from '@/lib/auth/session';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Calendar, MapPin, FolderKanban } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+// PRODUCT-002 canonical mount (train 4). StellaGroundedQuerySection is the
+// typed server/client wrapper INTEGRATION built in train 3 and left
+// IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE: a grounded question has
+// project scope, not step scope, so it belongs here (the project overview),
+// not on any of the seven methodology pipeline pages. See
+// docs/ops/contracts/PRODUCT-002_grounded_query_orchestrator_entry_point.md
+// and the "Superficie canónica" note in docs/ops/workstreams/PRODUCT.md.
+import { StellaGroundedQuerySection } from './pipeline/StellaGroundedQuerySection';
 
 type ProjectStatus = 'draft' | 'active' | 'completed' | 'archived';
 
@@ -20,10 +28,10 @@ export default async function ProjectDetailPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  const ctx = await getCurrentOrganizationContext();
-  if (!ctx) return <p>No autenticado. Por favor inicia sesión.</p>;
-
-  const project = await getProjectByIdForCurrentOrganization(projectId);
+  const project = await runWithOptionalOrganizationAccess(async (ctx) =>
+    ctx ? await getProjectByIdForCurrentOrganization(projectId) : undefined
+  );
+  if (project === undefined) return <p>No autenticado. Por favor inicia sesión.</p>;
   if (!project) return <p>Proyecto no encontrado o acceso denegado.</p>;
 
   const statusConfig = STATUS_CONFIG[project.status as ProjectStatus] ?? {
@@ -111,6 +119,42 @@ export default async function ProjectDetailPage({
           </dl>
         </CardContent>
       </Card>
+
+      {/*
+        `step` IS INERT METADATA HERE. This is NOT a query limited to outcome
+        evidence, and the value must not be read as narrowing anything.
+
+        Traced end to end (and pinned by tests in
+        __tests__/grounded-query-mount.test.ts, "the step prop is inert"):
+
+          * it is NOT sent to the server. The bound action is
+            `runStellaGroundedQueryForProject.bind(null, projectId)` — one
+            bound argument, the project — and the client payload is
+            `StellaGroundedQueryRequest`, which has exactly one field,
+            `query`. `app/actions/stella/grounded-query.ts` contains no
+            `step` parameter and no `AdvisorPipelineStep` import;
+          * so it cannot reach retrieval, the scope the server derives, the
+            quota charge, the evidence set, or the audit record. Every one of
+            those is computed from the session and the bound project;
+          * it is never rendered. `StellaGroundedQueryPanel` reads it in
+            exactly one place, `emitDecision`, where it fills
+            `SuggestionDecisionRecord.step`;
+          * and `onDecision` is deliberately not wired at this mount, so that
+            record is built and handed to nobody.
+
+        It exists only because the panel shares `SuggestionDecisionRecord`
+        with the advisor, and that type's `step` is non-nullable. Widening it
+        would touch the advisor and its tests to express a field that is
+        currently unreachable — a cost paid in two other flows for no
+        behaviour.
+
+        The value is therefore a placeholder, not a claim. When INT-PR-001
+        closes and grounded decisions get a real key, this mount must stop
+        borrowing a methodology step: a grounded question is project-scoped,
+        and filing it under "outcomes" would then be a persisted falsehood
+        rather than an inert one.
+      */}
+      <StellaGroundedQuerySection projectId={project.id} step="outcomes" />
 
       <Link
         href={`/app/projects/${project.id}/pipeline`}

@@ -1,6 +1,21 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
+// G1-M0 — PARITY. The model target is READ FROM PRODUCTION CONFIG, never
+// re-stated here. This file used to fall back to its own hardcoded copy of the
+// default model id in three separate places (the run manifest, resume
+// validation, and the adapter construction), so a production model bump could
+// leave the harness certifying the previous model — silently, since all three
+// copies agreed with each other.
+//
+// The regression is pinned by lib/stella/__tests__/model-target.test.ts, which
+// asserts no model-id literal appears anywhere in this file — comments included.
+// That is why the old id is described here rather than quoted.
+//
+// Safe for --dry-run: lib/stella/config.ts imports nothing and only reads
+// environment variables, so importing it here does NOT pull in @google/genai.
+// The dry run's zero-network guarantee is unchanged.
+import { stellaConfig } from '@/lib/stella/config'
 import { OFFICIAL_CONTEXTUAL_MOCK_CASES } from '../stella-contextual/cases'
 import { createRunArtifacts, initializeRunManifest } from './artifacts'
 import { parseRealRunnerArgs, selectRealRunnerCases } from './guards'
@@ -37,7 +52,7 @@ async function main(): Promise<void> {
         head: currentRuntime.head,
         originMainSHA: currentRuntime.originMainSHA,
         providerMode: String(process.env.STELLA_PROVIDER_MODE ?? ''),
-        model: String(process.env.GEMINI_MODEL ?? 'gemini-2.5-flash'),
+        model: stellaConfig.geminiModel,
         caseCatalogHash: catalogHash,
         caseIds: selectedCaseIds,
         knownCaseIds: OFFICIAL_CONTEXTUAL_MOCK_CASES.map((item) => item.caseId),
@@ -66,7 +81,7 @@ async function main(): Promise<void> {
       originMainSHA: currentRuntime.originMainSHA,
       dirtyTrackedTree: false,
       providerMode: process.env.STELLA_PROVIDER_MODE,
-      model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+      model: stellaConfig.geminiModel,
       caseCatalogHash: catalogHash,
       caseIds: selectedCaseIds,
       expectedCalls: selectedCaseIds.length,
@@ -83,8 +98,53 @@ async function main(): Promise<void> {
   }
   const provider = args.dryRun ? undefined : await (async () => {
     const { getGeminiAdapter } = await import('@/lib/stella/adapter/gemini-client')
-    const adapter = getGeminiAdapter({ apiKey: process.env.GEMINI_API_KEY, model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash', timeoutMs: 60_000 })
-    return async (request: { systemPrompt: string; userMessage: string; responseJsonSchema: Record<string, unknown> }) => JSON.parse((await adapter.generate({ role: 'advisor', systemPrompt: request.systemPrompt, userMessage: request.userMessage, responseJsonSchema: request.responseJsonSchema })).rawOutput) as unknown
+    // G1-M0: same model as production, and NO sampling overrides — the adapter
+    // sends none, and `StellaAdapterConfig` no longer has a `temperature` field
+    // to pass one through. `timeoutMs: 60_000` is the ONE deliberate divergence
+    // that survives: G1-A measures model behaviour, not production latency; the
+    // real 15 s budget is exercised in G1-B.
+    const adapter = getGeminiAdapter({ apiKey: process.env.GEMINI_API_KEY, model: stellaConfig.geminiModel, timeoutMs: 60_000 })
+    // H2: latency is measured AROUND the adapter call, so it includes the
+    // redaction boundary and the JSON decode — the latency the PRODUCT would
+    // experience, not socket time. That meaning is unchanged.
+    //
+    // TWO CLOCKS, ON PURPOSE. The absolute timestamps come from `Date`, because
+    // an evidence artifact has to say WHEN. The DURATION comes from
+    // `performance.now()`, because subtracting two wall-clock readings measures
+    // elapsed time plus any clock adjustment in between — an NTP correction or
+    // a DST step during a 28-case run pacing at 10 s could produce a negative or
+    // absurd latency, and a negative one is rejected by the checkpoint. A
+    // monotonic delta cannot move backwards.
+    const monotonic = typeof performance?.now === 'function' ? () => performance.now() : () => Date.now()
+    return async (request: { systemPrompt: string; userMessage: string; responseJsonSchema: Record<string, unknown> }) => {
+      const requestStartedAt = new Date().toISOString()
+      const startedTick = monotonic()
+      const generated = await adapter.generate({
+        role: 'advisor',
+        systemPrompt: request.systemPrompt,
+        userMessage: request.userMessage,
+        responseJsonSchema: request.responseJsonSchema,
+      })
+      const latencyMs = Math.max(0, Math.round(monotonic() - startedTick))
+      const responseReceivedAt = new Date().toISOString()
+      const metadata = generated.providerMetadata
+      return {
+        response: JSON.parse(generated.rawOutput) as unknown,
+        telemetry: {
+          requestedModel: generated.modelUsed,
+          ...(metadata?.modelVersion !== undefined ? { providerModelVersion: metadata.modelVersion } : {}),
+          ...(metadata?.responseId !== undefined ? { responseId: metadata.responseId } : {}),
+          requestStartedAt,
+          responseReceivedAt,
+          latencyMs,
+          usage: metadata?.usage ?? {},
+          // Absent metadata is reported as "not available", never as zeros.
+          usageAvailable: metadata?.usageAvailable ?? false,
+          ...(metadata?.finishReason !== undefined ? { finishReason: metadata.finishReason } : {}),
+          outputChars: generated.rawOutput.length,
+        },
+      }
+    }
   })()
   const result = await runGuardedContextualEvaluation({
     cases: OFFICIAL_CONTEXTUAL_MOCK_CASES,
@@ -100,6 +160,7 @@ async function main(): Promise<void> {
     initialRawResponses: validatedResume?.rawResponses,
     initialDecodedResults: validatedResume?.decodedResults,
     initialErrors: validatedResume?.errors,
+    initialTelemetry: validatedResume?.telemetry,
     onCheckpoint: output
       ? async (checkpoint) => {
           await writeTransactionalCheckpoint({
@@ -111,6 +172,9 @@ async function main(): Promise<void> {
             rawResponses: checkpoint.rawResponses,
             decodedResults: checkpoint.decodedResults,
             errors: checkpoint.errors,
+            telemetry: checkpoint.telemetry,
+            sanitizedInputs: checkpoint.sanitizedInputs,
+            adversarialCaseIds: checkpoint.adversarialCaseIds,
             metrics: checkpoint.metrics,
             status: checkpoint.status,
             checkpointStatus: checkpoint.checkpointStatus,

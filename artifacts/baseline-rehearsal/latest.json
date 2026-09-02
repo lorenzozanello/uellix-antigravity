@@ -1,0 +1,69 @@
+{
+  "manifestDigest": "aa5ec637a0f01daf801a758c7f465aa7159657a4dd1fb64fe734b2f7e59e585a",
+  "naiveFailedAt": "db/migrations/0039_grant_rls_helper_execution.sql",
+  "manifestApplied": 64,
+  "manifestFailedAt": null,
+  "postconditionsPassed": 18,
+  "postconditionsTotal": 18,
+  "postconditionsFailed": [],
+  "shimmed": [
+    "schema auth (auth.users, auth.uid()) — owned by supabase_auth_admin on a real project",
+    "schema storage (storage.objects, storage.foldername()) — owned by supabase_storage_admin",
+    "schema extensions — provided by the platform on a real project",
+    "B0-15 (uellix-evidence bucket) is ASSERTED, not measured: a disposable cluster has no Storage",
+    "B0-14 (no SUPABASE_SERVICE_ROLE_KEY) is ASSERTED, not measured: no secret manager here",
+    "B0-18 (journal) is ASSERTED, not measured: the raw units are applied, not their journal wrappers",
+    "the stella_suggestion_decisions table in the PRESENT control is a one-column stand-in for the gate-managed table"
+  ],
+  "sequence": [
+    "PLATFORM_SUBSTRATE",
+    "PHASE_MANAGED_ROLE_IDENTITIES",
+    "PHASE_BASELINE",
+    "PHASE_STELLA_BOOTSTRAP"
+  ],
+  "cluster": {
+    "image": "public.ecr.aws/supabase/postgres:17.6.1.143",
+    "network": "none",
+    "pristine": "pristine: 0 uellix_* roles, non-superuser CREATEROLE installer, 7 platform roles",
+    "uellixRolesAtStart": []
+  },
+  "noRoleControl": {
+    "failedAt": "db/migrations/0042_fib_audit_insert_policy.sql",
+    "sqlstate": "42704",
+    "applied": 52
+  },
+  "identity": {
+    "package": "stella_hosted_0000_managed_role_identity_bootstrap",
+    "sha256": "871f382aead7b834daf556d7e54402055ed3656d9a1964a4f63138610d5b693d",
+    "applied": true,
+    "topologyCanonical": true,
+    "applicationTablesAfter": 0
+  },
+  "units": {
+    "0042": true,
+    "0044": true,
+    "0045": true,
+    "0048_fib_evidence_versions.sql": true,
+    "0049_fib_evidence_sensitivity_vocabulary.sql": true,
+    "0050_fib_evidence_sufficiency_determinations.sql": true,
+    "0051_fib_evidence_erasure_substrate.sql": true,
+    "0052_fib_evidence_sufficiency_run_binding.sql": true
+  },
+  "guard0044": {
+    "stellaSuggestionDecisionsPresent": false,
+    "unconditionalTriggersPresent": true,
+    "conditionalTriggerPresent": false,
+    "unconditionalFormSqlstate": "42P01"
+  },
+  "postBaselineBootstrap": {
+    "applied": true,
+    "bootstrapSchemaOwner": "uellix_owner",
+    "ledgerOwner": "uellix_owner",
+    "shimPresent": true,
+    "sentinelRows": 0
+  },
+  "tablePresentControl": {
+    "conditionalTriggerCreated": true
+  },
+  "leftovers": []
+}

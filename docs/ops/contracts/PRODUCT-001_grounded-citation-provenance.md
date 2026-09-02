@@ -1,0 +1,94 @@
+# PRODUCT-001 — Grounded citation & contradiction provenance
+
+**Línea solicitante:** PRODUCT
+**Línea propietaria:** GROUNDING
+**Estado:** `parcialmente satisfecho, pendiente de adaptador`
+(`PARTIALLY_SATISFIED_PENDING_ADAPTER`) — integración, tren 1, 2026-08-04.
+Abierto originalmente como `solicitado`; ver §Decisión al final.
+
+## Por qué
+
+[`components/stella/grounding-model.ts`](../../../components/stella/grounding-model.ts)
+(PRODUCT) modela `EvidenceSupportLevel` incluyendo `'contradictory_evidence'`,
+y `EvidenceReference` como una cita etiquetada. Hoy la única señal
+evidenciaria real es `AdvisorContextualOutput.findings[].sourceFields` /
+`.suggestions[].sourceFields` — rutas canónicas con puntos hacia el *objeto
+de contexto que PRODUCT ya envió*, no referencias a documentos o pasajes
+recuperados. No existe forma, con datos reales, de representar "esta
+afirmación contradice a esta otra" — el pipeline de
+retrieval/ranking/provenance de GROUNDING
+(`docs/ops/workstreams/GROUNDING.md`) todavía no publicó un contrato.
+
+Por eso, `classifyFindingSupport`/`classifySuggestionSupport` nunca producen
+`'contradictory_evidence'` — el tipo existe y `StellaGroundingBadge` puede
+renderizarlo, pero ningún mapper de este módulo lo fabrica. Es intencional:
+PRODUCT no va a declarar disponible una capacidad cuyo backend todavía no
+existe.
+
+## Forma solicitada (TypeScript, para que PRODUCT la consuma)
+
+```typescript
+interface GroundingCitation {
+  /** Id estable del documento/evidencia recuperado, NO una ruta de contexto. */
+  documentId: string
+  /** Extracto corto (ya truncado/redactado server-side) mostrado como cuerpo de la cita. */
+  excerpt: string
+  /** Dónde en el documento fuente vino este extracto (página, offset, sección — a criterio de GROUNDING). */
+  location: string
+  /** Confianza de GROUNDING en el match de retrieval, si la tiene. */
+  relevance?: 'high' | 'medium' | 'low'
+}
+
+interface GroundingContradiction {
+  claimId: string
+  conflictingCitations: [GroundingCitation, GroundingCitation]
+  description: string
+}
+```
+
+## Decisión
+
+**`PARTIALLY_SATISFIED_PENDING_ADAPTER`** — integración, tren 1, 2026-08-04.
+Ver [INTEGRATION-001](INTEGRATION-001_grounding_product_citation_adapter.md).
+
+GROUNDING entregó el mismo día, sin ver esta solicitud, un conjunto de
+contratos que **cubre la necesidad con una forma distinta y más estricta**:
+
+| Pedido aquí | Publicado por GROUNDING |
+|---|---|
+| `GroundingCitation.documentId` | `CitationReference.evidenceId` + `versionId` + `chunkId` |
+| `GroundingCitation.excerpt` | no existe en la cita — el texto vive en `GroundingChunk.text`; la cita lleva `quotedTextHash` |
+| `GroundingCitation.location: string` | `ChunkLocation` estructurado (`span` autoritativo, `page`, `sectionIndex`, `lineStart`/`lineEnd` derivados) |
+| `GroundingCitation.relevance` | `RetrievalCandidate.score: number` + `strategy` |
+| `GroundingContradiction` | `ContradictionMarker` (`sideA`/`sideB` no vacíos, `resolution: 'requires_human_resolution'`) |
+
+- **Satisfecho:** existe provenance a nivel documento/chunk y una señal
+  explícita de contradicción, ambas publicadas y probadas.
+- **Pendiente:** la forma exacta pedida aquí no se va a crear. Llega mediante
+  un **adaptador puro** de GROUNDING → presentación, que implementa PRODUCT en
+  el tren 2 bajo las siete reglas de INTEGRATION-001.
+
+Hasta entonces, `EvidenceSupportLevel: 'contradictory_evidence'` sigue sin
+productor real, y eso deja de ser una limitación temporal para convertirse en
+regla: sólo un `ContradictionMarker` puede producirlo, nunca una inferencia de
+un componente de UI.
+
+## Decisión de integración (tren 2, 2026-08-04)
+
+**`aceptado`.** El adaptador existe
+(`components/stella/grounding-adapter.ts`) y cumple las siete reglas de
+INTEGRATION-001, verificado con 331 pruebas focalizadas de `components/stella` y
+47 pruebas cruzadas en `tests/cross-workstream/`.
+
+La regla del párrafo anterior ya **no depende de este documento**: es un
+invariante comprobado. `supportForClaim` construye `contradictedChunkIds`
+exclusivamente desde `state.contradictions`, y hay una prueba que alimenta al
+adaptador los dos chunks con cifras opuestas **sin** marcador y exige que
+`contradictory_evidence` **no** aparezca. Con eso se cierra **A-F3** del tren 1.
+
+Una corrección sobre la fila `relevance` de la tabla: PRODUCT publicó en el tren
+2 sus propios umbrales (`product-relevance-v1`, 0.6 / 0.3) junto al score.
+Integración los **retiró**. La clasificación en `high | medium | low` es
+canónica de GROUNDING (`grounding-relevance-2026-08-local-1`, 0.4 / 0.2) y
+PRODUCT la consume; la UI conserva lenguaje, icono e intensidad visual, no la
+clasificación semántica. Ver INTEGRATION-001 §6-bis.

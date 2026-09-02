@@ -1,0 +1,37 @@
+{
+    "journal": {
+        "boundary": "ABSENT",
+        "partAApplied": true
+    },
+    "policies": [
+        {
+            "cmd": "DELETE",
+            "qual": "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))",
+            "roles": "{authenticated}",
+            "tablename": "objects",
+            "withCheck": null,
+            "policyname": "delete_evidence",
+            "schemaname": "storage"
+        },
+        {
+            "cmd": "INSERT",
+            "qual": null,
+            "roles": "{authenticated}",
+            "tablename": "objects",
+            "withCheck": "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))",
+            "policyname": "insert_evidence",
+            "schemaname": "storage"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "((bucket_id = 'uellix-evidence'::text) AND public.can_read_evidence_object(name, auth.uid()))",
+            "roles": "{authenticated}",
+            "tablename": "objects",
+            "withCheck": null,
+            "policyname": "select_evidence",
+            "schemaname": "storage"
+        }
+    ],
+    "projectRef": "bvyzblhqymxruxdguaee",
+    "helpersPresent": true
+}

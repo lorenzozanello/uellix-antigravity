@@ -1,0 +1,57 @@
+{
+  "package_id": "FIB_IMPLEMENTATION_BASELINE",
+  "version": "1.0.0",
+  "authority_class": "IMPLEMENTATION_BASELINE_CANDIDATE",
+  "phase": "POST_MSC07B_PILOT_CORE_CLOSEOUT",
+  "source_architecture_gate": "FIB01A_ARCHITECTURE_SYNTHESIS_COMPLETE_HARDENED",
+
+  "source_head": "1df1327b82919f38c2a6f4adbb3b2d043aa0a3fd",
+  "source_tree": "dd4b63886e2673ee38b75c11fa79f046eededb26",
+
+  "pc01b_authority_sha256": "03212c661f07200d128c2374173f7bbd996b8eab0f3eb1b59cd517187f159938",
+  "im01b_authority_sha256": "3b7e696cda64a28f155d740812f601eb20fabb40104ce4581a0568467ee026b4",
+
+  "baseline_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+  "baseline_file_sha256": "5db735e572cee2aada48d22caa40b2fbfb172c58bda58875074fe8a6ec490d86",
+
+  "index_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+  "index_file_sha256": "55177a953b7e7705fe56317a4912eabb668d41e6473cdd0e0ec4c6f868d345b6",
+
+  "total_human_authorities": 55,
+  "total_fib_contracts": 45,
+  "total_fib_db_changes": 55,
+  "total_fib_implementation_units": 32,
+  "total_implementation_waves": 6,
+  "readiness_criteria_count": 46,
+
+  "final_drizzle_count": 54,
+  "final_prepared_g2_count": 1,
+  "final_no_db_object_count": 0,
+
+  "legacy_speculative_backfills": 0,
+  "materializer_architecture_decisions_remaining": 0,
+
+  "fib_human_decision_required": false,
+
+  "authority_coverage_complete": true,
+  "contract_set_complete": true,
+  "db_target_complete": true,
+  "db_referential_integrity": true,
+  "db_source_of_truth_complete": true,
+  "no_db_track_collisions": true,
+  "migration_strategy_deploy_safe": true,
+  "implementation_unit_set_complete": true,
+  "implementation_units_fully_expanded": true,
+  "product_contract_baseline_complete": true,
+  "test_baseline_complete": true,
+  "dependency_dag_complete": true,
+
+  "ready_for_independent_fib_audit": true,
+
+  "frozen_implementation_baseline": false,
+  "implementation_open": false,
+  "document_grounding_activated": false,
+  "stella_pilot_core_frozen": false,
+
+  "materialization_status": "CANDIDATE_REQUIRES_INDEPENDENT_AUDIT"
+}

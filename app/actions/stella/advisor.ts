@@ -4,21 +4,55 @@
 // Security: feature-flagged, auth-gated, metadata-only context, audit-logged, no secret logging
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildAdvisorContext, StellaBuildContextError } from '@/lib/stella/context/build-advisor-context'
 import { buildContextHash } from '@/lib/stella/context/build-context-hash'
-import { buildAdvisorSystemPrompt, buildAdvisorUserMessage } from '@/lib/stella/prompts/advisor-system'
+import { buildAdvisorSystemPrompt, buildAdvisorUserMessage, resolveAdvisorStep } from '@/lib/stella/prompts/advisor-system'
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { AdvisorOutputSchema } from '@/lib/stella/schemas/advisor-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
-import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
-import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
-import { db } from '@/db/client'
-import { stellaInteractions } from '@/db/schema'
+import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits'
+import { nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
+import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
+import { logAuditAction, AUDIT_ACTIONS, type AuditLogEntry } from '@/lib/audit/logger'
+import { reportStellaFailure } from '@/lib/stella/observability'
+import {
+  governedRejectionPresentation,
+  runGovernedStellaOperation,
+} from '@/lib/stella/operation-ticket/governed-operation'
+import { issueGovernedStellaTicket } from '@/lib/stella/operation-ticket/issue-governed-ticket'
+import type { StellaTicketIssueResult } from '@/components/stella/operation-ticket'
 import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
 import { runContextualAdvisor } from '@/lib/stella/advisor/run-contextual-advisor'
+// App-layer only: lib/stella must never import the calculation engine
+// (anti-regression enforced); the action injects the readiness verdict.
+import { getSroiCalculationReadiness } from '@/lib/pipeline/sroi-calculation'
+
+/**
+ * TRAIN 4.3 — the category, as a module constant.
+ *
+ * BOTH advisor entry points charge under it. That is not a simplification: the
+ * contextual advisor and the step advisor are two prompt strategies for one
+ * capability, they draw on the same organization pool, and `stella_interactions`
+ * has always recorded both as `stella_role = 'advisor'`. Giving them separate
+ * categories would create a second pool for one product surface.
+ *
+ * They are still SEPARATE OPERATIONS: each mints its own ticket, so a
+ * contextual run and a step run are two units, and a ticket minted for one
+ * cannot settle the other — `requestParts` differ, so the bind digest differs
+ * and `U0107` refuses the substitution.
+ */
+const ADVISOR_CATEGORY = 'advisor' as const
+
+/**
+ * The quota provenance recorded on every charged advisor run. Square brackets,
+ * not parentheses — see the identical constant in validator.ts.
+ */
+const GOVERNED_QUOTA_LEDGER =
+  'charged via uellix_stella_ops.complete_operation_ticket -> uellix_stella.settle_reserved_quota [R6-INT closed, prepared stella_0017; reservation-aware, prepared stella_0016 / R1]'
 
 export type StellaAdvisorErrorCode =
   | 'DISABLED'
@@ -27,10 +61,14 @@ export type StellaAdvisorErrorCode =
   | 'RATE_LIMITED'
   | 'RATE_LIMIT_UNAVAILABLE'
   | 'QUOTA_EXCEEDED'
+  | 'PAYLOAD_TOO_LARGE'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
+  /** TRAIN 4.3 — retained, no longer reachable. See validator.ts for why. */
   | 'AUDIT_ERROR'
+  /** TRAIN 4.3 — already charged, answer not recoverable. NOT retryable. */
+  | 'ALREADY_COMPLETED_RESULT_UNAVAILABLE'
   | 'UNKNOWN_ERROR'
 
 export type StellaAdvisorResult =
@@ -41,6 +79,34 @@ export type StellaContextualAdvisorResult =
   | { ok: true; data: AdvisorContextualOutput }
   | { ok: false; error: StellaAdvisorErrorCode; message: string }
 
+// Fire-and-forget audit trail write (WS3b): an audit_logs failure must NEVER
+// change the user-facing result of a Stella call. Payloads are metadata-only
+// (ids/codes/counts) — never prompt, context or model response content.
+async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
+  try {
+    // Its own short transaction. Denial paths reach this with no context open,
+    // and the success path reaches it after the model call has already
+    // returned — either way the audit write must never share a transaction
+    // with the seconds-long provider round trip.
+    await withOrganizationDatabaseContext(() => logAuditAction(entry))
+  } catch (error) {
+    // The console line is the local trace; the Sentry report is the one an
+    // operator sees. G1-B PRECONDITIONS added the second half because the first
+    // was not enough: on the hosted staging project `audit_logs` has RLS
+    // enabled and NO INSERT policy (prepared stella_hosted_0008 closes that), so
+    // every governed Stella run has been swallowing an RLS denial here and
+    // reporting success. Fire-and-forget must stay fire-and-forget — an audit
+    // failure may never change a user-facing Stella result — but it must not
+    // stay INVISIBLE, or "audit event persisted" is a claim nobody can check.
+    console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
+    reportStellaFailure('advisor', 'AUDIT_ERROR', error, {
+      organizationId: entry.organizationId ?? null,
+      action: entry.action,
+      entityType: entry.entityType,
+    })
+  }
+}
+
 /**
  * Authorized contextual advisor path. Applies the exact same feature-flag,
  * auth, quota, project-ownership, rate-limit and audit guards as
@@ -50,9 +116,20 @@ export type StellaContextualAdvisorResult =
  * name a projectId, and buildAdvisorContext rejects it if it does not
  * belong to that session's organization.
  */
+export async function issueStellaAdvisorTicket(
+  projectId: string
+): Promise<StellaTicketIssueResult> {
+  // FLAG FIRST — zero auth, zero DB, zero ticket, zero observability when off.
+  if (!stellaConfig.isEnabled || !stellaConfig.isAdvisorEnabled || !stellaState.canUseStella) {
+    return { status: 'disabled' }
+  }
+  return issueGovernedStellaTicket(projectId, ADVISOR_CATEGORY)
+}
+
 export async function getStellaContextualAdvisor(
   projectId: string,
   step: AdvisorPipelineStep,
+  ticket: string,
 ): Promise<StellaContextualAdvisorResult> {
   // Feature flag gate — all flags default to false
   if (!stellaConfig.isEnabled || !stellaConfig.isAdvisorEnabled || !stellaState.canUseStella) {
@@ -67,72 +144,237 @@ export async function getStellaContextualAdvisor(
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
   }
 
-  // Quota check — enforced per org, per calendar month, DB-backed.
-  const quotaCheck = await checkStellaQuota(ctx.organization.id)
-  if (!quotaCheck.allowed) {
-    const message =
-      quotaCheck.reason === 'no_quota'
-        ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
-        : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
-    return { ok: false, error: 'QUOTA_EXCEEDED', message }
+  // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
+  if (!canUseStella(ctx.membership.role)) {
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_DENIED,
+      afterJson: { stellaRole: 'advisor', reason: 'ROLE_DENIED', membershipRole: ctx.membership.role },
+    })
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
-  try {
-    // Project ownership check happens inside buildAdvisorContext — throws
-    // UNAUTHORIZED if projectId does not belong to ctx.organization.id.
-    const context = await buildAdvisorContext(projectId, ctx.organization.id, step)
-    const contextHash = buildContextHash(context)
+  // NO `checkStellaQuota` — see validator.ts for the full statement of why an
+  // unlocked, reservation-blind count next to a direct INSERT was R1 and
+  // R6-INT in one shape. `bind` performs the canonical check under the same
+  // advisory lock the charge takes.
 
-    // Consume after context validation and immediately before the model attempt.
-    const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
-    if (!rateLimit.allowed) {
-      return rateLimit.reason === 'unavailable'
-        ? { ok: false, error: 'RATE_LIMIT_UNAVAILABLE', message: 'Stella rate limit service is temporarily unavailable.' }
-        : { ok: false, error: 'RATE_LIMITED', message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.` }
-    }
+  let contextHash: string | null = null
+  let sensitive: { detected: boolean; categories: string[] } = { detected: false, categories: [] }
+  let stepMismatch = false
 
-    const result = await runContextualAdvisor(step, context, getGeminiAdapter())
-    if (!result.ok) return result
+  const outcome = await runGovernedStellaOperation<AdvisorContextualOutput, StellaContextualAdvisorResult>({
+    category: ADVISOR_CATEGORY,
+    organizationId: ctx.organization.id,
+    projectId,
+    ticket,
+    // `'contextual'` DISCRIMINATES the two advisor strategies. Without it a
+    // ticket minted for the step advisor at the same step would produce the
+    // same digest and could settle a contextual run — one operation delivering
+    // the other's answer. The literal is this module's, never the caller's.
+    requestParts: ['contextual', step],
+    execute: async () => {
+      try {
+        // Live calculation readiness from the deterministic engine (app layer —
+        // lib/stella never imports it). Best-effort: on any failure we fall back
+        // to the derived-from-persisted summary inside buildAdvisorContext.
+        let liveReadiness: { ready: boolean; blockingReasons: string[]; warnings: string[] } | undefined
+        try {
+          const r = await withOrganizationDatabaseContext(() =>
+            getSroiCalculationReadiness(projectId)
+          )
+          liveReadiness = {
+            ready: r.canCalculate,
+            blockingReasons: r.blockingReasons,
+            warnings: r.issues.filter((i) => i.type === 'warning').map((i) => i.message),
+          }
+        } catch {
+          liveReadiness = undefined
+        }
 
-    // Audit insert — required for compliance and for quota measurement;
-    // surface failure rather than swallow (mirrors getStellaAdvisor below).
-    try {
-      await db.insert(stellaInteractions).values({
+        // Project ownership check happens inside buildAdvisorContext — throws
+        // UNAUTHORIZED if projectId does not belong to ctx.organization.id.
+        const context = liveReadiness
+          ? await withOrganizationDatabaseContext(() =>
+              buildAdvisorContext(projectId, ctx.organization.id, step, {
+                calculationReadiness: liveReadiness,
+              })
+            )
+          : await withOrganizationDatabaseContext(() =>
+              buildAdvisorContext(projectId, ctx.organization.id, step)
+            )
+        contextHash = buildContextHash(context)
+        sensitive = {
+          detected: context.sensitivePopulations?.detected ?? false,
+          categories: context.sensitivePopulations?.categories ?? [],
+        }
+
+        const result = await runContextualAdvisor(step, context, getGeminiAdapter())
+
+        // RK-19: provider step drift is canonicalized inside the pipeline, but
+        // it must be observable — warn (metadata only: the trusted step name)
+        // and tag the audit entry below.
+        if (result.ok && result.stepMismatch) {
+          console.warn('[stella] provider step mismatch', { step })
+          stepMismatch = true
+        }
+
+        if (!result.ok) {
+          // Model-path failure surfaced as a typed result — report to Sentry
+          // with codes/ids only (the typed messages are static, never prompt
+          // echoes).
+          if (result.error === 'GEMINI_ERROR' || result.error === 'TIMEOUT' || result.error === 'PARSE_ERROR') {
+            reportStellaFailure('advisor', result.error, new Error(`contextual advisor ${result.error}`), {
+              projectId,
+              step,
+              contextual: true,
+            })
+          }
+          // `no_result`, not `execution_failed`: the pipeline RAN and returned a
+          // typed refusal. Both release the unit and charge nothing; the
+          // distinction is for an operator reading `operation_tickets`.
+          return { ok: false, failure: result, abortReason: 'no_result' }
+        }
+
+        return {
+          ok: true,
+          data: result.data,
+          pipelineStep: step,
+          modelUsed: result.modelUsed ?? null,
+          tokensUsed: result.tokensUsed ?? null,
+        }
+      } catch (error) {
+        return {
+          ok: false,
+          failure: contextualAdvisorExecutionFailure(error, projectId, step),
+          abortReason: 'execution_failed',
+        }
+      }
+    },
+  })
+
+  switch (outcome.kind) {
+    case 'completed':
+      await logStellaAudit({
         organizationId: ctx.organization.id,
-        projectId,
-        createdBy: ctx.user.id,
-        stellaRole: 'advisor',
-        pipelineStep: step,
-        contextHash,
-        responseJson: result.data as unknown,
-        modelUsed: result.modelUsed,
-        tokensUsed: result.tokensUsed,
+        actorUserId: ctx.user.id,
+        entityType: 'project',
+        entityId: projectId,
+        action: AUDIT_ACTIONS.STELLA_INVOKED,
+        afterJson: {
+          stellaRole: ADVISOR_CATEGORY,
+          pipelineStep: step,
+          contextHash,
+          sensitivePopulations: sensitive.detected,
+          sensitivePopulationCategories: sensitive.categories,
+          // RK-19: only present when the provider answered a different step.
+          ...(stepMismatch ? { stepMismatch: true } : {}),
+          quotaLedger: GOVERNED_QUOTA_LEDGER,
+        },
       })
-    } catch {
-      return { ok: false, error: 'AUDIT_ERROR', message: 'Failed to record Stella interaction. Please try again.' }
+      return { ok: true, data: outcome.data }
+
+    case 'quota_exceeded': {
+      const message =
+        outcome.reason === 'no_quota'
+          ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
+          : `Alcanzaste el límite mensual de ${outcome.quota ?? 0} consultas a Stella (usadas: ${outcome.used ?? 0}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
+      await logStellaAudit({
+        organizationId: ctx.organization.id,
+        actorUserId: ctx.user.id,
+        entityType: 'project',
+        entityId: projectId,
+        action: AUDIT_ACTIONS.STELLA_DENIED,
+        afterJson: { stellaRole: ADVISOR_CATEGORY, reason: 'QUOTA_EXCEEDED', quotaReason: outcome.reason },
+      })
+      return { ok: false, error: 'QUOTA_EXCEEDED', message }
     }
 
-    return { ok: true, data: result.data }
-  } catch (error) {
-    if (error instanceof StellaBuildContextError) {
-      if (error.code === 'UNSUPPORTED_STEP') return { ok: false, error: 'UNSUPPORTED_STEP', message: error.message }
-      if (error.code === 'UNAUTHORIZED' || error.code === 'NOT_FOUND') return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
+    case 'quota_refused_after_execution':
+      return {
+        ok: false,
+        error: 'QUOTA_EXCEEDED',
+        message: `Alcanzaste el límite mensual de ${outcome.quota ?? 0} consultas a Stella (usadas: ${outcome.used ?? 0}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`,
+      }
+
+    case 'already_completed':
+      return {
+        ok: false,
+        error: 'ALREADY_COMPLETED_RESULT_UNAVAILABLE',
+        message:
+          'Esta operación ya se ejecutó y se contabilizó en tu cuota, pero la respuesta no pudo entregarse y no se conserva.',
+      }
+
+    case 'rejected': {
+      const presentation = governedRejectionPresentation(outcome.reason)
+      return { ok: false, error: presentation.code, message: presentation.message }
     }
-    return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
+
+    case 'settlement_failed':
+      return { ok: false, error: 'UNKNOWN_ERROR', message: 'Stella no pudo completar la operación.' }
+
+    case 'execution_failed':
+      return outcome.failure
   }
 }
 
+/** The contextual path's own error taxonomy, unchanged — only its call site moved. */
+function contextualAdvisorExecutionFailure(
+  error: unknown,
+  projectId: string,
+  step: AdvisorPipelineStep,
+): StellaContextualAdvisorResult {
+  if (error instanceof StellaBuildContextError) {
+    if (error.code === 'UNSUPPORTED_STEP') return { ok: false, error: 'UNSUPPORTED_STEP', message: error.message }
+    if (error.code === 'UNAUTHORIZED' || error.code === 'NOT_FOUND') return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
+  }
+  if (error instanceof StellaPayloadTooLargeError) {
+    return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
+  }
+  reportStellaFailure('advisor', 'UNKNOWN_ERROR', error, { projectId, step, contextual: true })
+  return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
+}
+
+/**
+ * THE LEGACY STEP ADVISOR. RETIRED AS A PRODUCT SURFACE.
+ *
+ * No page mounts it: `StellaAdvisorPanel` was deleted and the seven pipeline
+ * pages now mount only the contextual advisor, which covers the same seven
+ * steps with a strictly stronger contract (provider-side responseJsonSchema,
+ * `.strict()` Zod, validated citations, `requiresHumanReview: true`).
+ *
+ * It survives behind `STELLA_LEGACY_ADVISOR_ENABLED` — its OWN flag, DEFAULT
+ * FALSE — because it is the advisor category's representative in the governed
+ * multi-category quota harness. The flag is what makes "turning the contextual
+ * advisor on can never open this" a property rather than a habit.
+ */
 export async function getStellaAdvisor(
   projectId: string,
-  step: string
+  step: string,
+  ticket: string
 ): Promise<StellaAdvisorResult> {
-  // Feature flag gate — all flags default to false
-  if (!stellaConfig.isEnabled || !stellaConfig.isAdvisorEnabled || !stellaState.canUseStella) {
+  // Feature flag gate — all flags default to false. `isLegacyAdvisorEnabled` is
+  // FIRST because it is the narrowest and the one this surface exists under.
+  if (
+    !stellaConfig.isLegacyAdvisorEnabled ||
+    !stellaConfig.isEnabled ||
+    !stellaConfig.isAdvisorEnabled ||
+    !stellaState.canUseStella
+  ) {
     return {
       ok: false,
       error: 'DISABLED',
       message: 'Stella Advisor is not enabled.',
     }
+  }
+
+  // Step allowlist — reject out-of-vocabulary steps before any resource is
+  // consumed. An unknown step can never reach the system prompt tier.
+  if (!resolveAdvisorStep(step)) {
+    return { ok: false, error: 'UNSUPPORTED_STEP', message: 'Unsupported advisor step.' }
   }
 
   // Auth + org context — redirects if unauthenticated
@@ -147,105 +389,167 @@ export async function getStellaAdvisor(
     }
   }
 
-  // Quota check — enforced per org, per calendar month, DB-backed.
-  // Every org defaults to quota 0 (blocked) until a super_admin assigns one.
-  // Note: this check and the later audit insert (stella_interactions row)
-  // are not transactionally consistent — a request that straddles a UTC
-  // month rollover between this check and the insert could be counted
-  // against the new month instead of the one it was checked against. This
-  // is a narrow, low-severity race (sub-second window, once a month) and
-  // an accepted tradeoff, not a bug.
-  const quotaCheck = await checkStellaQuota(ctx.organization.id)
-  if (!quotaCheck.allowed) {
-    const message =
-      quotaCheck.reason === 'no_quota'
-        ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
-        : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
-    return { ok: false, error: 'QUOTA_EXCEEDED', message }
+  // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
+  if (!canUseStella(ctx.membership.role)) {
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_DENIED,
+      afterJson: { stellaRole: 'advisor', reason: 'ROLE_DENIED', membershipRole: ctx.membership.role },
+    })
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
-  // Build project context (validates project ownership, metadata only)
-  try {
-    const context = await buildAdvisorContext(projectId, ctx.organization.id, step)
+  // NO `checkStellaQuota` — see validator.ts. `bind` is the only quota check.
 
-    // Consume after context validation and immediately before the model attempt.
-    const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
-    if (!rateLimit.allowed) {
-      return rateLimit.reason === 'unavailable'
-        ? {
-            ok: false,
-            error: 'RATE_LIMIT_UNAVAILABLE',
-            message: 'Stella rate limit service is temporarily unavailable.',
-          }
-        : {
-            ok: false,
-            error: 'RATE_LIMITED',
-            message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.`,
-          }
+  let contextHash: string | null = null
+  let sensitive: { detected: boolean; categories: string[] } = { detected: false, categories: [] }
+
+  const outcome = await runGovernedStellaOperation<AdvisorOutput, StellaAdvisorResult>({
+    category: ADVISOR_CATEGORY,
+    organizationId: ctx.organization.id,
+    projectId,
+    ticket,
+    // `'step'` mirrors `'contextual'` above: two strategies of one capability
+    // must produce different digests for the same pipeline step.
+    requestParts: ['step', step],
+    execute: async () => {
+      try {
+        // Build project context (validates project ownership, metadata only)
+        const context = await withOrganizationDatabaseContext(() =>
+          buildAdvisorContext(projectId, ctx.organization.id, step)
+        )
+        contextHash = buildContextHash(context)
+        sensitive = {
+          detected: context.sensitivePopulations?.detected ?? false,
+          categories: context.sensitivePopulations?.categories ?? [],
+        }
+
+        const systemPrompt = buildAdvisorSystemPrompt(step)
+        const userMessage = buildAdvisorUserMessage(step, context)
+
+        const adapter = getGeminiAdapter()
+        const response = await adapter.generate({
+          role: 'advisor',
+          systemPrompt,
+          userMessage,
+          contextHash,
+        })
+
+        const data = await adapter.parseResponse(response.rawOutput, AdvisorOutputSchema)
+
+        return {
+          ok: true,
+          data,
+          pipelineStep: step,
+          modelUsed: response.modelUsed,
+          tokensUsed: response.tokensUsed ?? null,
+        }
+      } catch (error) {
+        return {
+          ok: false,
+          failure: advisorExecutionFailure(error, projectId),
+          abortReason: 'execution_failed',
+        }
+      }
+    },
+  })
+
+  switch (outcome.kind) {
+    case 'completed':
+      await logStellaAudit({
+        organizationId: ctx.organization.id,
+        actorUserId: ctx.user.id,
+        entityType: 'project',
+        entityId: projectId,
+        action: AUDIT_ACTIONS.STELLA_INVOKED,
+        afterJson: {
+          stellaRole: ADVISOR_CATEGORY,
+          pipelineStep: step,
+          contextHash,
+          sensitivePopulations: sensitive.detected,
+          sensitivePopulationCategories: sensitive.categories,
+          quotaLedger: GOVERNED_QUOTA_LEDGER,
+        },
+      })
+      return { ok: true, data: outcome.data }
+
+    case 'quota_exceeded': {
+      const message =
+        outcome.reason === 'no_quota'
+          ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
+          : `Alcanzaste el límite mensual de ${outcome.quota ?? 0} consultas a Stella (usadas: ${outcome.used ?? 0}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
+      await logStellaAudit({
+        organizationId: ctx.organization.id,
+        actorUserId: ctx.user.id,
+        entityType: 'project',
+        entityId: projectId,
+        action: AUDIT_ACTIONS.STELLA_DENIED,
+        afterJson: { stellaRole: ADVISOR_CATEGORY, reason: 'QUOTA_EXCEEDED', quotaReason: outcome.reason },
+      })
+      return { ok: false, error: 'QUOTA_EXCEEDED', message }
     }
 
-    // Build prompts from existing builders
-    const systemPrompt = buildAdvisorSystemPrompt(step)
-    const userMessage = buildAdvisorUserMessage(step, context)
-    const contextHash = buildContextHash(context)
-
-    // Generate via Gemini adapter (real or mock in tests)
-    const adapter = getGeminiAdapter()
-    const response = await adapter.generate({
-      role: 'advisor',
-      systemPrompt,
-      userMessage,
-      contextHash,
-    })
-
-    // Parse and validate output — throws StellaParseError on invalid JSON or schema mismatch
-    const data = await adapter.parseResponse(response.rawOutput, AdvisorOutputSchema)
-
-    // Audit insert — required for compliance and for quota measurement;
-    // surface failure rather than swallow (mirrors validator.ts).
-    try {
-      await db.insert(stellaInteractions).values({
-        organizationId: ctx.organization.id,
-        projectId,
-        createdBy: ctx.user.id,
-        stellaRole: 'advisor',
-        pipelineStep: step,
-        contextHash,
-        responseJson: data as unknown,
-        modelUsed: response.modelUsed,
-        tokensUsed: response.tokensUsed,
-      })
-    } catch {
+    case 'quota_refused_after_execution':
       return {
         ok: false,
-        error: 'AUDIT_ERROR',
-        message: 'Failed to record Stella interaction. Please try again.',
+        error: 'QUOTA_EXCEEDED',
+        message: `Alcanzaste el límite mensual de ${outcome.quota ?? 0} consultas a Stella (usadas: ${outcome.used ?? 0}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`,
       }
-    }
 
-    return { ok: true, data }
-  } catch (error) {
-    if (error instanceof StellaBuildContextError) {
-      if (error.code === 'UNSUPPORTED_STEP') {
-        return { ok: false, error: 'UNSUPPORTED_STEP', message: error.message }
+    case 'already_completed':
+      return {
+        ok: false,
+        error: 'ALREADY_COMPLETED_RESULT_UNAVAILABLE',
+        message:
+          'Esta operación ya se ejecutó y se contabilizó en tu cuota, pero la respuesta no pudo entregarse y no se conserva.',
       }
-      if (error.code === 'UNAUTHORIZED' || error.code === 'NOT_FOUND') {
-        return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
-      }
+
+    case 'rejected': {
+      const presentation = governedRejectionPresentation(outcome.reason)
+      return { ok: false, error: presentation.code, message: presentation.message }
     }
 
-    if (error instanceof StellaTimeoutError) {
-      return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
-    }
+    case 'settlement_failed':
+      return { ok: false, error: 'UNKNOWN_ERROR', message: 'Stella no pudo completar la operación.' }
 
-    if (error instanceof StellaParseError) {
-      return { ok: false, error: 'PARSE_ERROR', message: 'Stella returned an unexpected response format.' }
-    }
-
-    if (error instanceof StellaGeminiError) {
-      return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
-    }
-
-    return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
+    case 'execution_failed':
+      return outcome.failure
   }
+}
+
+/** The step advisor's own error taxonomy, unchanged — only its call site moved. */
+function advisorExecutionFailure(error: unknown, projectId: string): StellaAdvisorResult {
+  if (error instanceof StellaBuildContextError) {
+    if (error.code === 'UNSUPPORTED_STEP') {
+      return { ok: false, error: 'UNSUPPORTED_STEP', message: error.message }
+    }
+    if (error.code === 'UNAUTHORIZED' || error.code === 'NOT_FOUND') {
+      return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
+    }
+  }
+
+  if (error instanceof StellaTimeoutError) {
+    reportStellaFailure('advisor', 'TIMEOUT', error, { projectId })
+    return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
+  }
+
+  if (error instanceof StellaParseError) {
+    reportStellaFailure('advisor', 'PARSE_ERROR', error, { projectId })
+    return { ok: false, error: 'PARSE_ERROR', message: 'Stella returned an unexpected response format.' }
+  }
+
+  if (error instanceof StellaGeminiError) {
+    reportStellaFailure('advisor', 'GEMINI_ERROR', error, { projectId })
+    return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
+  }
+
+  if (error instanceof StellaPayloadTooLargeError) {
+    return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
+  }
+
+  reportStellaFailure('advisor', 'UNKNOWN_ERROR', error, { projectId })
+  return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
 }

@@ -29,7 +29,7 @@ export function getInvitationEmailTemplate(params: {
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
-      color: #0F172A;
+      color: #172B49;
       background-color: #F8FAFC;
       margin: 0;
       padding: 0;
@@ -43,7 +43,7 @@ export function getInvitationEmailTemplate(params: {
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     .header {
-      background-color: #0F172A;
+      background-color: #172B49;
       padding: 32px 40px;
       text-align: center;
     }
@@ -61,7 +61,7 @@ export function getInvitationEmailTemplate(params: {
       font-size: 18px;
       font-weight: 600;
       margin-bottom: 24px;
-      color: #0F172A;
+      color: #172B49;
     }
     .message {
       font-size: 16px;

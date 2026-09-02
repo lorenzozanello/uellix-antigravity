@@ -63,6 +63,9 @@ async function createResumeFixture(selectedCaseIds: string[] = [caseId]): Promis
     rawResponses: [],
     decodedResults: [],
     errors: [],
+    telemetry: [],
+    sanitizedInputs: [],
+    adversarialCaseIds: [],
     status: 'INITIALIZED',
     checkpointStatus: 'PARTIAL_CHECKPOINT',
     startedAt: timestamp,
@@ -327,9 +330,26 @@ describe('guarded resume artifacts', () => {
       initialRawResponses: validated.rawResponses,
       initialDecodedResults: validated.decodedResults,
       initialErrors: validated.errors,
+      initialTelemetry: validated.telemetry,
+      // INSTRUMENTED on purpose: this run reaches a FINAL commit, and a FINAL
+      // bundle must carry one telemetry row per provider call. An
+      // uninstrumented stub is rejected by the writer — which is the point of
+      // that gate, and is why this provider returns the measured shape.
       provider: async (request) => {
         calls.push(request.case.caseId)
-        return request.providerTemplate
+        return {
+          response: request.providerTemplate,
+          telemetry: {
+            requestedModel: 'gemini-3.6-flash',
+            requestStartedAt: timestamp,
+            responseReceivedAt: timestamp,
+            latencyMs: 1234,
+            usage: { promptTokenCount: 10, candidatesTokenCount: 5, thoughtsTokenCount: 7, totalTokenCount: 22 },
+            usageAvailable: true,
+            finishReason: 'STOP',
+            outputChars: 128,
+          },
+        }
       },
       onCheckpoint: async (checkpoint) => {
         await writeTransactionalCheckpoint({
@@ -338,6 +358,9 @@ describe('guarded resume artifacts', () => {
           scope: 'canary',
           selectedCaseIds: [caseId],
           caseState: checkpoint.caseState,
+          telemetry: checkpoint.telemetry,
+          sanitizedInputs: checkpoint.sanitizedInputs,
+          adversarialCaseIds: checkpoint.adversarialCaseIds,
           rawResponses: checkpoint.rawResponses,
           decodedResults: checkpoint.decodedResults,
           errors: checkpoint.errors,

@@ -1,9 +1,12 @@
 // app/app/projects/[projectId]/pipeline/narrative/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaContextualAdvisorField } from '@/components/stella';
+// Server-only config read (READ-ONLY module): Stella availability is resolved
+// here and passed down as a serializable prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { fetchNarrative, saveNarrative } from '@/app/app/projects/[projectId]/pipeline/narrative.actions';
 import { z } from 'zod';
 import { listOutcomesForProject } from '@/lib/pipeline/outcomes';
@@ -46,15 +49,20 @@ const TEXTAREA_CLASS =
 
 export default async function NarrativePage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const { membership } = await requireOrganizationAccess();
-  const narrative = await fetchNarrative(projectId);
+  const { membership, narrative, outcomes, nodes, links } = await runWithOrganizationAccess(
+    async ({ membership }) => {
+      const [outcomes, nodes, links] = await Promise.all([
+        listOutcomesForProject(projectId),
+        fetchToCNodes(projectId),
+        fetchToCLinks(projectId),
+      ]);
+      return { membership, narrative: await fetchNarrative(projectId), outcomes, nodes, links };
+    }
+  );
   const data = narrative ?? {};
-
-  const [outcomes, nodes, links] = await Promise.all([
-    listOutcomesForProject(projectId),
-    fetchToCNodes(projectId),
-    fetchToCLinks(projectId),
-  ]);
+  // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;
 
   const activities = nodes.filter((n) => n.nodeType === 'activity');
   const outputs = nodes.filter((n) => n.nodeType === 'output');
@@ -103,7 +111,6 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Narrativa" highlightHint={!narrative} />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="narrative" title="Revisión metodológica — Narrativa / Teoría de cambio" />
       )}
@@ -121,18 +128,21 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
             required
           />
         </div>
-        <div>
-          <label htmlFor="narrativeText" className="block text-sm font-medium text-foreground">
-            Texto narrativo
-          </label>
-          <textarea
-            id="narrativeText"
-            name="narrativeText"
-            defaultValue={data.narrativeText ?? ''}
-            className={TEXTAREA_CLASS}
-            rows={4}
-          />
-        </div>
+        {/* U3: obvious apply target — the contextual advisor is wired to this
+            controlled textarea via onApply inside the client wrapper. The
+            field keeps name="narrativeText", so the server-action form
+            submission is unchanged. NO automatic submission ever. */}
+        <StellaContextualAdvisorField
+          projectId={projectId}
+          step="narrative"
+          enabled={stellaAdvisorEnabled}
+          fieldName="narrativeText"
+          fieldId="narrativeText"
+          fieldLabel="Texto narrativo"
+          initialValue={data.narrativeText ?? ''}
+          rows={4}
+          panelTitle="Stella — Asesoría contextual (Narrativa)"
+        />
         <div>
           <label htmlFor="theoryOfChangeSummary" className="block text-sm font-medium text-foreground">
             Resumen de teoría del cambio

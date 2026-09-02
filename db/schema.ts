@@ -65,7 +65,10 @@ export const organizationMembers = pgTable('organization_members', {
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id),
-  projectId: uuid('project_id'), // Will reference projects.id later
+  // FIBDB-036 — FK added validate-then-add (stage B, NOT VALID in
+  // db/migrations/0043_fib_audit_project_id_fk.sql; VALIDATE CONSTRAINT is
+  // stage-E hardening, deferred to a later unit per FIB §6.2).
+  projectId: uuid('project_id').references(() => projects.id),
   actorUserId: uuid('actor_user_id').references(() => users.id),
   entityType: varchar('entity_type', { length: 100 }).notNull(),
   entityId: uuid('entity_id').notNull(),
@@ -115,6 +118,44 @@ export const portfolios = pgTable('portfolios', {
   index('idx_portfolios_organization_id').on(table.organizationId),
 ])
 
+// FIBIU-01 — governed model registry (FIBDB-002 / FIBC-003). One immutable row
+// per governed model version; a semantic change is a new row, never an update.
+// Seeded at deploy (see db/migrations for the seed INSERT), never backfilled.
+export const governedModelRegistry = pgTable('governed_model_registry', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  modelId: varchar('model_id', { length: 100 }).notNull(),
+  version: varchar('version', { length: 20 }).notNull(),
+  effectiveFrom: timestamp('effective_from').defaultNow().notNull(),
+  definitionHash: varchar('definition_hash', { length: 64 }).notNull(),
+}, (table) => [
+  unique('governed_model_registry_model_version_unique').on(table.modelId, table.version),
+])
+
+// FIBIU-03 — generic domain-object version lineage (FIBDB-004/FIBC-002/
+// FIBC-045). Append-only: a row is never updated once written (see the
+// uellix_forbid_mutation trigger reused from 0030_immutability.sql), so
+// history for a versioned object can never be silently rewritten. Ordinal +
+// supersedes_version_id together give a deterministic, walkable lineage per
+// (object_type, object_id) — the generic substrate FIBIU-04 (evidence) and
+// FIBIU-08 (proxies) specialize later; indicators and stakeholder_groups use
+// it directly (see lib/pipeline/domain-object-versions.ts).
+export const domainObjectVersions = pgTable('domain_object_versions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  objectType: varchar('object_type', { length: 100 }).notNull(),
+  objectId: uuid('object_id').notNull(),
+  ordinal: integer('ordinal').notNull(),
+  payloadJson: jsonb('payload_json').notNull(),
+  contentHash: varchar('content_hash', { length: 64 }).notNull(),
+  supersedesVersionId: uuid('supersedes_version_id'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('domain_object_versions_object_ordinal_unique').on(table.objectType, table.objectId, table.ordinal),
+  index('idx_domain_object_versions_object').on(table.objectType, table.objectId),
+  index('idx_domain_object_versions_organization_id').on(table.organizationId),
+])
+
 export const projects = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
@@ -132,6 +173,10 @@ export const projects = pgTable('projects', {
   // apply to prod any time; pre-1e code simply ignores it.
   discountRatePct: numeric('discount_rate_pct', { precision: 5, scale: 2 }),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
+  // PC-01B governance regime boundary (FIBDB-003/FIBC-004). Stamped at INSERT
+  // by the authoritative creation path, never updated. Nullable at stage A —
+  // NOT NULL is stage-E hardening, owned by a later unit.
+  governanceRegime: varchar('governance_regime', { length: 20 }),
   // Soft delete fields: tracks deletion requests and deletions with full audit trail
   deletionRequestedAt: timestamp('deletion_requested_at'),
   deletionRequestedBy: uuid('deletion_requested_by').references(() => users.id),
@@ -144,6 +189,7 @@ export const projects = pgTable('projects', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('status_check', sql`${table.status} IN ('draft', 'active', 'paused', 'completed', 'archived')`),
+  check('projects_governance_regime_check', sql`${table.governanceRegime} IN ('pre_pc01b', 'pc01b')`),
   check('projects_discount_rate_check', sql`${table.discountRatePct} IS NULL OR (${table.discountRatePct} >= 0 AND ${table.discountRatePct} <= 100)`),
   check('deletion_request_consistency_check', sql`(${table.deletionRequestedAt} IS NULL AND ${table.deletionRequestedBy} IS NULL AND ${table.deletionReason} IS NULL) OR (${table.deletionRequestedAt} IS NOT NULL AND ${table.deletionRequestedBy} IS NOT NULL AND ${table.deletionReason} IS NOT NULL)`),
   check('deletion_consistency_check', sql`(${table.deletedAt} IS NULL AND ${table.deletedBy} IS NULL AND ${table.deleteReason} IS NULL) OR (${table.deletedAt} IS NOT NULL AND ${table.deletedBy} IS NOT NULL AND ${table.deleteReason} IS NOT NULL)`),
@@ -174,9 +220,16 @@ export const stakeholderGroups = pgTable('stakeholder_groups', {
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   type: varchar('type', { length: 100 }),
+  // FIBIU-03 (FIBC-002/FIBC-045) — lifecycle state stakeholder groups lacked
+  // entirely: archiving excludes a group from future work without touching
+  // any history that already referenced it.
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  archivedBy: uuid('archived_by').references(() => users.id),
+  archivedAt: timestamp('archived_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
+  check('stakeholder_groups_status_check', sql`${table.status} IN ('active', 'archived')`),
   index('idx_stakeholder_groups_project_id').on(table.projectId),
 ])
 
@@ -215,10 +268,17 @@ export const indicators = pgTable('indicators', {
   dataSource: text('data_source'),
   measurementPeriod: varchar('measurement_period', { length: 100 }),
   confidenceLevel: varchar('confidence_level', { length: 50 }),
+  // FIBIU-03 (FIBC-002/FIBC-045) — lifecycle state indicators lacked
+  // entirely: archiving excludes an indicator from future work without
+  // touching any history that already referenced it.
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  archivedBy: uuid('archived_by').references(() => users.id),
+  archivedAt: timestamp('archived_at'),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
+  check('indicators_status_check', sql`${table.status} IN ('active', 'archived')`),
   index('idx_indicators_project_id').on(table.projectId),
   index('idx_indicators_outcome_id').on(table.outcomeId),
 ])
@@ -252,10 +312,119 @@ export const evidenceItems = pgTable('evidence_items', {
   check('evidence_items_type_check', sql`${table.type} IN ('file', 'url', 'text')`),
   check('evidence_items_status_check', sql`${table.status} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
   check('evidence_items_confidence_score_check', sql`${table.confidenceScore} IS NULL OR (${table.confidenceScore} >= 0 AND ${table.confidenceScore} <= 100)`),
+  // FIBIU-04 (FIBC-006/FIBDB-037) — SHA-256 hex format, added NOT VALID in
+  // migration (stage A): legacy rows are exempt, new writes are checked.
+  check('evidence_items_content_hash_format_check', sql`${table.contentHash} IS NULL OR ${table.contentHash} ~ '^[0-9a-f]{64}$'`),
   index('idx_evidence_items_project_id').on(table.projectId),
   index('idx_evidence_items_organization_id').on(table.organizationId),
   index('idx_evidence_items_outcome_id').on(table.outcomeId),
   index('idx_evidence_items_indicator_id').on(table.indicatorId),
+])
+
+// FIBIU-04 — evidence version lineage (FIBDB-005/FIBC-002/FIBC-006), the
+// dedicated FIBC-002 specialization for evidence — its own table, following
+// the same ordinal + supersedes_version_id lineage shape as
+// domain_object_versions, not a row inside that generic table. `content` is
+// populated only for text evidence (file keeps hashing the storage object;
+// url hashes the normalized reference — see lib/pipeline/evidence.ts), so
+// content_hash becomes re-verifiable exactly where it previously was not.
+// `sensitivity_classification`/`treatment` (FIBIU-05) and `erasure_state`
+// (FIBIU-07) are columns on this same physical table per FIBDB-005's field
+// list, but their vocabulary CHECKs and write paths are owned by those later
+// units — see 0049_fib_evidence_sensitivity_vocabulary.sql and
+// 0051_fib_evidence_erasure_substrate.sql. Stage-E approved/used-version
+// immutability is deferred (FIBDB-005 IMMUTABILITY note); this table is
+// mutable at stage A the same way evidence_items itself is.
+export const evidenceVersions = pgTable('evidence_versions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  evidenceId: uuid('evidence_id').references(() => evidenceItems.id).notNull(),
+  ordinal: integer('ordinal').notNull(),
+  content: text('content'),
+  contentHash: varchar('content_hash', { length: 64 }),
+  sensitivityClassification: varchar('sensitivity_classification', { length: 50 }),
+  treatment: varchar('treatment', { length: 50 }),
+  reviewStatus: varchar('review_status', { length: 50 }).default('draft').notNull(),
+  legacyContentUnverifiable: boolean('legacy_content_unverifiable').default(false).notNull(),
+  erasureState: varchar('erasure_state', { length: 50 }),
+  supersedesVersionId: uuid('supersedes_version_id'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('evidence_versions_evidence_ordinal_unique').on(table.evidenceId, table.ordinal),
+  check('evidence_versions_review_status_check', sql`${table.reviewStatus} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
+  // FIBIU-05 (FIBC-007/FIBDB-043) — sensitivity/treatment vocabulary.
+  check('evidence_versions_sensitivity_classification_check', sql`${table.sensitivityClassification} IS NULL OR ${table.sensitivityClassification} IN ('non_sensitive', 'personal_data', 'identifiable_restricted', 'confidential_third_party', 'special_category')`),
+  check('evidence_versions_treatment_check', sql`${table.treatment} IS NULL OR ${table.treatment} IN ('not_required', 'anonymized', 'pseudonymized', 'identifiable_restricted_access')`),
+  check('evidence_versions_treatment_required_check', sql`${table.sensitivityClassification} IS NULL OR ${table.sensitivityClassification} = 'non_sensitive' OR ${table.treatment} IS NOT NULL`),
+  // FIBIU-07 (FIBC-009/FIBDB-043) — erasure vocabulary. Forward-only
+  // advancement (never regressing from erasure_complete) is a service-layer
+  // invariant (lib/pipeline/evidence.ts), not expressible as a CHECK.
+  check('evidence_versions_erasure_state_check', sql`${table.erasureState} IS NULL OR ${table.erasureState} IN ('erasure_requested', 'erasure_in_progress', 'erasure_complete', 'erasure_partial', 'erasure_blocked')`),
+  index('idx_evidence_versions_evidence_id').on(table.evidenceId),
+  index('idx_evidence_versions_organization_id').on(table.organizationId),
+])
+
+// FIBIU-06 — evidence sufficiency determinations (FIBDB-014/FIBC-008). One
+// append-only row per governed human determination over an outcome's
+// evidence SET (never per evidence item) — count, individual status and
+// confidence_score are explicitly never a substitute (FIBC-008). A
+// re-determination is a new row (ordinal+1); this table has no UPDATE path.
+export const evidenceSufficiencyDeterminations = pgTable('evidence_sufficiency_determinations', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  // W2-B1-R3 (R-B1-04, M-1) — FIBDB-014 verbatim: "Per monetized outcome per
+  // run". A determination is bound to the exact calculation run it was made
+  // for; a determination recorded for run R1 must never satisfy approval of
+  // run R2 merely because outcomeId matches. Same FK convention as
+  // sroiRunReviews.calculationRunId / sroiReports.calculationRunId.
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  ordinal: integer('ordinal').notNull(),
+  determination: varchar('determination', { length: 20 }).notNull(),
+  rationale: text('rationale').notNull(),
+  actorUserId: uuid('actor_user_id').references(() => users.id).notNull(),
+  determinedAt: timestamp('determined_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  // Re-determination is ordinal+1 WITHIN the same (outcome, run) pair — a
+  // new run starts its own ordinal sequence for that outcome, never
+  // continuing a prior run's.
+  unique('evidence_sufficiency_determinations_outcome_run_ordinal_unique').on(table.outcomeId, table.calculationRunId, table.ordinal),
+  check('evidence_sufficiency_determinations_determination_check', sql`${table.determination} IN ('sufficient', 'insufficient')`),
+  index('idx_evidence_sufficiency_determinations_outcome_id').on(table.outcomeId),
+  index('idx_evidence_sufficiency_determinations_project_id').on(table.projectId),
+  index('idx_evidence_sufficiency_determinations_outcome_run').on(table.outcomeId, table.calculationRunId),
+])
+
+// FIBIU-07 — evidence tombstones (FIBDB-031/FIBC-009). Append-only record of
+// a governed, exceptional, irreversible erasure operation's terminal outcome
+// — distinct from `archived` and never a conventional DELETE. Transient
+// progress (erasure_requested/erasure_in_progress) lives on
+// evidence_versions.erasure_state; this table records only the terminal
+// state (erasure_complete/erasure_partial/erasure_blocked) an erasure
+// actually reached. Stage-A substrate only: the grant revocation and
+// DELETE-rejection trigger this vocabulary anticipates (FIBDB-032/
+// FIBDB-033) are Wave-2-deferred stage-E hardening, not created here.
+export const evidenceTombstones = pgTable('evidence_tombstones', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  evidenceId: uuid('evidence_id').references(() => evidenceItems.id).notNull(),
+  evidenceVersionId: uuid('evidence_version_id').references(() => evidenceVersions.id).notNull(),
+  erasureState: varchar('erasure_state', { length: 50 }).notNull(),
+  erasureReason: varchar('erasure_reason', { length: 50 }).notNull(),
+  rationale: text('rationale').notNull(),
+  contentHashPreserved: boolean('content_hash_preserved').default(true).notNull(),
+  contentHash: varchar('content_hash', { length: 64 }),
+  actorUserId: uuid('actor_user_id').references(() => users.id).notNull(),
+  occurredAt: timestamp('occurred_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('evidence_tombstones_erasure_state_check', sql`${table.erasureState} IN ('erasure_complete', 'erasure_partial', 'erasure_blocked')`),
+  check('evidence_tombstones_erasure_reason_check', sql`${table.erasureReason} IN ('privacy_or_data_subject_request', 'retention_policy', 'unauthorized_or_erroneous_upload', 'confidentiality_or_access_violation', 'legal_or_contractual_requirement', 'other_governed_reason')`),
+  index('idx_evidence_tombstones_evidence_id').on(table.evidenceId),
+  index('idx_evidence_tombstones_organization_id').on(table.organizationId),
 ])
 
 export const proxySources = pgTable('proxy_sources', {
@@ -415,6 +584,14 @@ export const sroiCalculationRuns = pgTable('sroi_calculation_runs', {
   snapshotJson: jsonb('snapshot_json'),
   runDate: timestamp('run_date').defaultNow().notNull(),
   status: varchar('status', { length: 50 }).default('calculated').notNull(),
+  // FIBIU-02 (FIBC-001/FIBDB-001) — the run version identity triple. Written
+  // once at INSERT (the existing 0030_immutability.sql trigger already
+  // forbids UPDATE on this table) and mirrored into snapshot_json. NULL on
+  // every run created before this unit — that NULL is permanent and means
+  // "predates versioning", never backfilled (IMPOSSIBLE_TO_BACKFILL).
+  methodologyVersion: varchar('methodology_version', { length: 20 }),
+  calculationEngineVersion: varchar('calculation_engine_version', { length: 20 }),
+  buildIdentity: varchar('build_identity', { length: 100 }),
   calculatedBy: uuid('calculated_by').references(() => users.id).notNull(),
   calculatedAt: timestamp('calculated_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -574,11 +751,18 @@ export const outcomeTaxonomyMappings = pgTable('outcome_taxonomy_mappings', {
   taxonomyCodeId: uuid('taxonomy_code_id').references(() => taxonomyCodes.id).notNull(),
   mappingConfidence: varchar('mapping_confidence', { length: 20 }).default('medium').notNull(),
   rationale: text('rationale'),
+  // W1-05-RM2 (HPO-DEC-1, owner-unit incremental regime activation) —
+  // FIBIU-01's regime boundary, extended to this object: FIBDB-054 requires
+  // the column to exist because it carries the mapping's governance fact
+  // with no separate field invented. Nullable at stage A — NOT NULL is
+  // stage-E hardening, same pattern as projects.governanceRegime.
+  governanceRegime: varchar('governance_regime', { length: 20 }),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('outcome_taxonomy_mappings_confidence_check', sql`${table.mappingConfidence} IN ('low', 'medium', 'high')`),
+  check('outcome_taxonomy_mappings_governance_regime_check', sql`${table.governanceRegime} IN ('pre_pc01b', 'pc01b')`),
   unique('outcome_taxonomy_mappings_outcome_code_unique').on(table.outcomeId, table.taxonomyCodeId),
   index('idx_outcome_taxonomy_mappings_outcome_id').on(table.outcomeId),
   index('idx_outcome_taxonomy_mappings_organization_id').on(table.organizationId),
@@ -626,7 +810,13 @@ export const stellaInteractions = pgTable('stella_interactions', {
   pipelineStep: varchar('pipeline_step', { length: 100 }).notNull(),
   contextHash: varchar('context_hash', { length: 64 }).notNull(),
   responseJson: jsonb('response_json').notNull(),
-  modelUsed: varchar('model_used', { length: 100 }).default('gemini-2.0-flash').notNull(),
+  // NO DEFAULT, and that is the contract — see prepared stella_0020. This
+  // column records WHICH MODEL ANSWERED; a default would be the database
+  // inventing a measurement. It carried 'gemini-2.0-flash' (migration 0012)
+  // long after Google retired that model, which made it a second, wrong source
+  // of truth next to STELLA_DEFAULT_GEMINI_MODEL. NOT NULL stays: a writer that
+  // supplies no model must fail, not be filled in.
+  modelUsed: varchar('model_used', { length: 100 }).notNull(),
   tokensUsed: integer('tokens_used'),
   riskLevel: varchar('risk_level', { length: 50 }),
   riskFlags: text('risk_flags').array(),

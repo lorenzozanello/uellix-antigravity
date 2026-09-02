@@ -54,12 +54,12 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
     paddingHorizontal: 56,
     fontSize: 10,
-    color: '#0f172a',
+    color: '#172b49',
     fontFamily: 'Helvetica',
     lineHeight: 1.5,
   },
   eyebrow: { fontSize: 8, letterSpacing: 1.5, color: '#64748b', textTransform: 'uppercase' },
-  title: { fontSize: 22, fontFamily: 'Helvetica-Bold', marginTop: 4, color: '#0f172a' },
+  title: { fontSize: 22, fontFamily: 'Helvetica-Bold', marginTop: 4, color: '#172b49' },
   headerRule: { borderBottomWidth: 1, borderBottomColor: '#cbd5e1', paddingBottom: 14, marginBottom: 18 },
   metaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
   metaItem: { width: '33%', marginBottom: 6 },
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   figureLabel: { fontSize: 7, color: '#64748b' },
-  figureValue: { fontSize: 13, fontFamily: 'Helvetica-Bold', marginTop: 2, color: '#0f172a' },
+  figureValue: { fontSize: 13, fontFamily: 'Helvetica-Bold', marginTop: 2, color: '#172b49' },
   disclaimer: {
     borderWidth: 1,
     borderColor: '#cbd5e1',
@@ -84,10 +84,10 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 18,
   },
-  disclaimerTitle: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#0f172a' },
+  disclaimerTitle: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#172b49' },
   disclaimerBody: { fontSize: 9, color: '#475569', marginTop: 4 },
   section: { marginBottom: 14 },
-  sectionTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#0f172a', marginBottom: 3 },
+  sectionTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#172b49', marginBottom: 3 },
   tableHeaderRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -356,7 +356,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
             </Text>
             {props.standards.map((s) => (
               <View key={s.catalogName} style={{ marginBottom: 3 }}>
-                <Text style={{ fontSize: 9.5, fontFamily: 'Helvetica-Bold', color: '#0f172a' }}>
+                <Text style={{ fontSize: 9.5, fontFamily: 'Helvetica-Bold', color: '#172b49' }}>
                   {s.catalogName}
                 </Text>
                 <Text style={styles.sectionBody}>{s.entries}</Text>

@@ -1,6 +1,6 @@
 // lib/admin/signup-allowlist.ts
 // SuperAdmin management of the signup allowlist that gates self-serve org
-// creation (see app/app/onboarding/actions.ts). Invited users bypass this
+// creation (see app/(authenticated)/app/onboarding/actions.ts). Invited users bypass this
 // entirely — acceptInvitation() is a separate code path.
 
 import { db } from '@/db/client'

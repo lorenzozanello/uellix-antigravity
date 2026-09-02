@@ -1,0 +1,116 @@
+{
+  "package_id": "RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_ADDENDUM",
+  "version": "1.0.1",
+  "artifact_id": "RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.1_ADDENDUM",
+  "authority_class": "DERIVED_JOURNEY_CORRECTION_ADDENDUM",
+  "materialization_step": "RE-SAFE-NOW-CM",
+  "materialization_date": "2026-09-01",
+  "class": "B",
+  "mode": "DERIVED_CLOSURE_MATERIALIZATION",
+  "supersedes": null,
+  "supersedes_scope": "PARTIAL_FINDING_ONLY",
+
+  "purpose": "Record an independently measured correction to a single reachability classification in RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json (golden_journey.INITIAL_ONBOARDING and fail_closed_matrix.incomplete_onboarding), identified by the independent RE_SAFE_NOW_INTEGRATION_REVIEW.",
+
+  "scope_note": "DERIVED TRACKING RECORD. This addendum does NOT edit, rewrite, or restate docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json, which remains byte-identical historical evidence of the earlier materialization. It supersedes ONLY the specific reachability classification identified below — not the entire RE-U4 artifact, not any other finding, not any Q1-Q6 disposition, and not any FIB/PC-01B/IM-01B/ODS authority. Creates no new product authority, implements no runtime remediation (see RE_U4_CF_01.owner_stage), and reopens no frozen decision.",
+
+  "authority_boundary": {
+    "creates_new_product_authority": false,
+    "reopens_frozen_decisions": false,
+    "reopens_q1_q6": false,
+    "decisions_readjudicated": 0,
+    "edits_original_re_u4_artifact": false,
+    "implements_runtime_remediation": false,
+    "governing_lane": "ODS_V1_AUTHORITY_v1.0.0.json :: product_and_wave_handoff.lane_b (Uellix product reengineering)"
+  },
+
+  "anchors": {
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "audited_head": "f282039391f1050ca7276b3579854e8a638db92e",
+    "audited_tree": "80eae8bf34ddd68d0d2c84a85b11831b066c4666",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS"
+  },
+
+  "correction_source": {
+    "independent_review": "RE_SAFE_NOW_INTEGRATION_REVIEW",
+    "review_result": "PASS_WITH_MATERIAL_FINDINGS",
+    "re_u4_review_disposition": "PASS_WITH_MATERIAL_FINDING",
+    "original_artifact_superseded_in_part": "docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json",
+    "original_finding_location": [
+      "golden_journey[3] (step=INITIAL_ONBOARDING).FAIL_CLOSED_STATE",
+      "golden_journey[3] (step=INITIAL_ONBOARDING).REMEDIATION_PATH",
+      "fail_closed_matrix[4] (branch=incomplete_onboarding).has_remedy"
+    ],
+    "original_reasoning_gap": "The original RE-U4 record considered forward invitation ordering (no member can be invited before phase 2 completes, because the inviter is itself blocked by OnboardingCheck) but did not consider organizations already affected by migration 0036 at the time it was applied — i.e. pre-existing organizations whose onboarding_completed defaulted to false with no backfill, and any non-admin member who already belonged to such an organization."
+  },
+
+  "RE_U4_CF_01": {
+    "id": "RE-U4-CF-01",
+    "canonical_name": "NON_ADMIN_PHASE2_ONBOARDING_TRAP",
+
+    "measured_facts": [
+      { "fact": "migration 0036 (db/migrations/0036_phase2_onboarding.sql) added organizations.onboarding_completed boolean DEFAULT false NOT NULL", "verified_this_session": true },
+      { "fact": "migration 0036 contains no backfill statement for pre-existing organizations; only two ALTER TABLE ADD COLUMN statements", "verified_this_session": true },
+      { "fact": "components/auth/OnboardingCheck.tsx redirects any authenticated org member whose onboardingCompleted is false to /app/organization/onboarding, unconditionally on role", "verified_this_session": true },
+      { "fact": "app/app/organization/onboarding/page.tsx (the Phase-2 page) performs no role check of its own — it renders the calibration form to any authenticated member OnboardingCheck routes there", "verified_this_session": true },
+      { "fact": "completeOnboarding (app/actions/onboarding.ts) calls requireOrganizationAccess() and then throws 'Only organization admins can complete onboarding' for any non-admin caller", "verified_this_session": true },
+      { "fact": "a non-admin member can therefore reach a form (Phase-2 onboarding) that they are authorized to view but not authorized to successfully submit", "verified_this_session": true },
+      { "fact": "the Phase-2 page currently renders no exit, sign-out, or support-contact affordance of its own (no href, no signout control) — confirmed by direct read of app/app/organization/onboarding/page.tsx this session", "verified_this_session": true },
+      { "fact": "server authorization in completeOnboarding remains correct: it refuses the write, it does not weaken the admin-only gate", "verified_this_session": true }
+    ],
+
+    "classification": "this is not an authorization bypass — the server-side gate holds — this is a reachable remediation/dead-end defect: a non-admin can be routed to a form with no way to complete it and no way to leave it",
+
+    "RE_U4_CF_01_STATUS": "CURRENTLY_REACHABLE_DEFECT",
+    "SEVERITY": "MATERIAL_NON_BLOCKING_SAFE_NOW",
+    "OWNER": "RE_U4_HARDENING",
+    "RUNTIME_SECURITY_IMPACT": "NO_AUTHORIZATION_WEAKENING",
+    "SAFE_NOW_CLOSURE_BLOCKED": "NO",
+
+    "corrected_golden_journey_INITIAL_ONBOARDING_fields": {
+      "FAIL_CLOSED_STATE": "completeOnboarding throws 'Only organization admins can complete onboarding' for a non-admin caller; OnboardingCheck force-redirects ANY member of an uncalibrated organization to this route regardless of role — this is REACHABLE, not merely latent, for organizations whose onboarding_completed defaulted to false under migration 0036 with no backfill, and for any org where a non-admin member already exists in an uncalibrated organization. The page renders no exit/support affordance of its own.",
+      "REMEDIATION_PATH": "non-admin trapped case: contact the organization_admin to complete calibration; owned by RE_U4_HARDENING for a minimal runtime remediation (e.g. exit/support affordance on the Phase-2 page, or a role-aware notice) — not implemented by this addendum"
+    },
+
+    "corrected_fail_closed_matrix_incomplete_onboarding": {
+      "branch": "incomplete_onboarding",
+      "stage": "org exists, onboardingCompleted=false",
+      "original_remedy_text": "routed to /app/organization/onboarding (phase 2)",
+      "original_has_remedy": true,
+      "corrected_meaning": {
+        "statement": "'has_remedy = true' in the original record is imprecise for a non-admin. Routing is not the same as a usable remedy when the destination cannot be completed or exited by the routed user.",
+        "ADMIN_USER": "has a reachable completion remedy — can submit the Phase-2 form and complete onboarding.",
+        "NON_ADMIN_USER": "does NOT currently have an effective completion or exit/support remedy on the Phase-2 page itself; the only remedy is out-of-band (ask an organization_admin to complete calibration, or navigate away manually)."
+      }
+    }
+  },
+
+  "no_runtime_change": {
+    "runtime_files_changed": 0,
+    "statement": "This addendum is a documentation-only correction. No route, component, server action, or database object was modified to produce it."
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "files_changed_by_this_step": 2,
+    "executable_surface_changed": false,
+    "product_runtime_changes": 0,
+    "database_changes": 0,
+    "dependencies_added": 0,
+    "lockfile_changed": false,
+    "sealed_authority_bytes_changed": 0,
+    "protected_corpus_changed": false,
+    "original_re_u4_artifact_bytes_changed": 0,
+    "new_product_authority_created": false,
+    "q1_q6_reopened": false
+  },
+
+  "state_after_this_artifact": {
+    "addendum_created": true,
+    "original_artifact_preserved_byte_identical": true,
+    "next_gate": "RE_U4_HARDENING"
+  },
+
+  "final_state": "RE_U4_CF_01_CORRECTION_MATERIALIZED_ROUTED_TO_RE_U4_HARDENING"
+}

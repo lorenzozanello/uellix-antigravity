@@ -1,0 +1,565 @@
+{
+  "package_id": "ODS_V1_DEVELOPMENT_OPERATING_SYSTEM_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "ODS_V1_AUTHORITY_v1.0.0",
+  "authority_class": "DEVELOPMENT_PROCESS_AUTHORITY_FREEZE",
+  "supersedes": null,
+
+  "purpose": "Freeze, append-only and prospectively, the human-product-owner ratification of the ODS v1 development operating system scope adjudicated from the ODS-00 read-only baseline and optimization mapping. This artifact governs DEVELOPMENT PROCESS only. It is not product architecture, it implements nothing, it remediates nothing, it modifies no sealed Wave 1 artifact, and it does not alter the FIB technical dependency graph.",
+
+  "hpo_ratification_date": "2026-08-31",
+  "ratification_authority": "HUMAN_PRODUCT_OWNER",
+  "source_gate": "ODS_00_MAPPING_READY_FOR_HPO_REVIEW",
+  "next_gate": "ODS_V1_IMPLEMENTATION",
+
+  "certified_source": {
+    "branch": "codex/w1-integration-closure-r1",
+    "base_commit": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc",
+    "base_tree": "44aaef572806b072961d1b657fd8327c06a3f578",
+    "wave1_closure_artifact": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json",
+    "wave1_closure_verdict": "WAVE1_ADVERSARIALLY_CLOSED_READY_FOR_ODS",
+    "wave1_closure_audit": "W1-07",
+    "certified_branch_mutation_allowed": false,
+    "note": "The certified Wave 1 branch remains the immutable closure lineage. ODS work occurs exclusively on the isolated ODS lineage declared below."
+  },
+
+  "ods_lineage": {
+    "branch": "ods/v1-development-operating-system-r1",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-ods-v1",
+    "base_commit": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc",
+    "base_tree": "44aaef572806b072961d1b657fd8327c06a3f578",
+    "namespace_rationale": "The ods/ namespace is deliberately outside codex/*, which denotes the certified implementation lineage. Reusing that prefix would blur the process/product boundary. The short worktree path also mitigates the MAX_PATH hazard measured on this platform."
+  },
+
+  "hpo_decisions": {
+    "HPO-ODS-01": {
+      "title": "DEVELOPMENT TOOL AUTHORITY",
+      "status": "RATIFIED_CLAUDE_CODE_AUTHORIZED",
+      "posture": {
+        "claude_code_desktop_and_cli": "AUTHORIZED_PRIMARY_DEVELOPMENT_ENVIRONMENT",
+        "git_github": "AUTHORIZED_SOURCE_OF_TRUTH_AND_VERSION_CONTROL",
+        "vercel": "AUTHORIZED_APPLICATION_PLATFORM_WITHIN_SEPARATELY_AUTHORIZED_DEPLOYMENT_GATES",
+        "antigravity": "AUXILIARY_SCOPED_TOOL_PERMITTED_BUT_NOT_SOLE_AUTHORITY_ANCHOR",
+        "google_ai_studio": "NOT_AUTHORIZED_UNLESS_SEPARATELY_ADJUDICATED"
+      },
+      "supersession": "The tracked AGENTS.md prohibition against Claude Code is prospectively SUPERSEDED for development work performed under ODS v1 and subsequent explicitly authorized Uellix/Stella development. The supersession is prospective only; it rewrites no historical evidence and revises no closed audit.",
+      "authority_debt": {
+        "id": "ODS-DEBT-1",
+        "classification": "ODS_AUTHORITY_DEBT_REQUIRING_RECONCILIATION",
+        "measured_condition": "AGENTS.md references ANTIGRAVITY.md by absolute path into a different worktree (file:///c:/Users/Lorenzo/Documents/uellix-antigravity/ANTIGRAVITY.md), so repository authority depends on a path outside this repository and does not resolve from this worktree.",
+        "rule_violated": "Repository authority MUST NOT depend on absolute paths into another worktree.",
+        "reconciliation_authorized_during": "ODS_V1_IMPLEMENTATION",
+        "edited_in_ods_01": false
+      }
+    },
+
+    "HPO-ODS-02": {
+      "title": "WORKTREE POLICY",
+      "status": "RATIFIED_GOVERNED_WORKTREE_PRUNING",
+      "pruning_authorized": true,
+      "bulk_deletion_in_ods_01": false,
+      "prerequisite_for_ods_v1_operational": false,
+      "measured_baseline_at_ods_00": {
+        "worktrees": 68,
+        "local_branches": 114,
+        "materialized_collision": "vitest.shared.ts BASE_EXCLUDE must exclude **/.claude/** because nested git worktrees created under .claude by spawned background sessions caused a second collection of the test suite."
+      },
+      "classification_taxonomy": ["ACTIVE", "CERTIFICATION_EVIDENCE", "SAFE_TO_PRUNE", "UNKNOWN"],
+      "rules": [
+        "Never prune a dirty worktree.",
+        "Never prune a worktree participating in an active development lane.",
+        "Never prune a worktree referenced by active certification evidence or an authority artifact unless its preservation has been explicitly adjudicated unnecessary.",
+        "Never use destructive force merely to reduce count.",
+        "UNKNOWN is fail-closed: preserve until classified.",
+        "Prefer Git-native worktree prune/removal semantics.",
+        "Preserve reachable commits even when a worktree is later removed.",
+        "A readable/machine-readable inventory must precede any governed bulk pruning action."
+      ],
+      "execution_status": "DEFERRED_UNTIL_ODS_V1_FOUNDATIONS_OPERATIONAL_AND_SEPARATELY_AUTHORIZED"
+    },
+
+    "HPO-ODS-03": {
+      "title": "AUTHORITY SEAL VERIFICATION SCOPE",
+      "status": "RATIFIED_BROAD_AUTHORITY_CORPUS",
+      "scope": "9_ACTIVE_WAVE1_AUTHORITY_ARTIFACTS",
+      "external_identity_anchor": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc",
+      "anti_circularity_rule": "The gate MUST NOT be a self-attesting hash scheme. Artifact identity is anchored to the corresponding certified Git blobs reachable from the certified commit, which is external to and independent of the artifacts' own declared hash fields.",
+      "required_proofs": {
+        "A_identity": "Current tracked artifact content/blob identity matches the certified authority corpus at the anchor commit.",
+        "B_native_relations": "Where a native manifest/seal hash relationship exists, that relationship is independently recomputed and shown to remain internally valid."
+      },
+      "no_silent_scope_change": "Future explicitly authorized append-only authority artifacts must be admitted through an explicit gate-version/authority update. The protected corpus may never be silently broadened or narrowed, and broad verification may not be weakened merely because an individual artifact lacks a self-contained SHA field."
+    }
+  },
+
+  "authority_corpus": {
+    "gate_corpus_version": "1.0.0",
+    "anchor_commit": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc",
+    "count": 9,
+    "hash_algorithms": {
+      "blob_sha1": "Git object id of the file content at the anchor commit (git rev-parse <commit>:<path>).",
+      "content_sha256": "SHA-256 over the certified blob bytes. docs/** is pinned to LF by .gitattributes (docs/** text eol=lf), so blob bytes and worktree bytes agree on every platform."
+    },
+    "artifacts": [
+      {
+        "n": 1,
+        "role": "FIB baseline",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+        "blob_sha1": "ffeecdda956fcc65fdc13c64026768c851335e1c",
+        "content_sha256": "5db735e572cee2aada48d22caa40b2fbfb172c58bda58875074fe8a6ec490d86",
+        "self_declared_sha_field": false
+      },
+      {
+        "n": 2,
+        "role": "FIB index",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+        "blob_sha1": "fd58b36c77138b65473790b565908281be6ef39d",
+        "content_sha256": "55177a953b7e7705fe56317a4912eabb668d41e6473cdd0e0ec4c6f868d345b6",
+        "self_declared_sha_field": false
+      },
+      {
+        "n": 3,
+        "role": "FIB manifest",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.manifest.json",
+        "blob_sha1": "6fb61dba3549afafc3609072993b3923a5f8f9fe",
+        "content_sha256": "ce719e1701e6d1136c1756175df543a9d28215d73bca83f0a3e94884ddde8611",
+        "self_declared_sha_field": false,
+        "attests": ["baseline_file_sha256", "index_file_sha256", "pc01b_authority_sha256", "im01b_authority_sha256"]
+      },
+      {
+        "n": 4,
+        "role": "FIB ratification",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.ratification.json",
+        "blob_sha1": "39fe3ec79a487ac161912de9b1dacb63f710f36d",
+        "content_sha256": "cdec5cc36ff6859ea7aad549da1f9851015c715433c68af22bd73d720d9e7921",
+        "self_declared_sha_field": false
+      },
+      {
+        "n": 5,
+        "role": "FIB seal",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.seal.json",
+        "blob_sha1": "2f5b8bb790f7d29a7b4a688bcc3ca313d4fce5e8",
+        "content_sha256": "6bab5701e2df09ad26f19ffa88234d7bc92a0da089976231f657aa1db8adbddc",
+        "self_declared_sha_field": false,
+        "attests": ["baseline_sha256", "index_sha256"]
+      },
+      {
+        "n": 6,
+        "role": "PC-01B seal",
+        "path": "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.seal.json",
+        "blob_sha1": "d5431a9807ca931b3dc54e7cb4d02e4502a6b07a",
+        "content_sha256": "52686c2855f4b683c1f9a09d3e95c99cc007dbbf6df2a8d9781ae75f2851d39c",
+        "self_declared_sha_field": false,
+        "attests": ["canonical_authority_sha256", "ratification_file_sha256"]
+      },
+      {
+        "n": 7,
+        "role": "IM-01B seal",
+        "path": "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.seal.json",
+        "blob_sha1": "d8bc7baa74a6e0983ecb594f8de5d8c7cb588222",
+        "content_sha256": "784422719f2be0943d7bdfa2dc3103724383614c388370c069caead468727535",
+        "self_declared_sha_field": false,
+        "attests": ["canonical_authority_sha256", "ratification_file_sha256", "pc01b_authority_sha256"]
+      },
+      {
+        "n": 8,
+        "role": "FIB RM2 addendum",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.addendum-w1rm2.json",
+        "blob_sha1": "e8ba9ef7154e4196d59e54b4193d0deb5d368e9f",
+        "content_sha256": "ec614e409fe96394f1e13f0f0a9e875bce81d8de76e8c253ed73911a3ada8c2f",
+        "self_declared_sha_field": false,
+        "addendum_id": "W1-05-RM2",
+        "addendum_status": "RATIFIED"
+      },
+      {
+        "n": 9,
+        "role": "Wave 1 closure artifact",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json",
+        "blob_sha1": "369208282d8acd6285ec41781c12da5754dc33eb",
+        "content_sha256": "21d379e1f6f7538a68bd5e63dc68d55dca25bdd7ec38b18edfa50bcede2b3172",
+        "self_declared_sha_field": false,
+        "attests": ["baseline_sha256", "index_sha256", "pc01b_authority_sha256", "im01b_authority_sha256", "addendum_sha256", "addendum_git_blob"]
+      }
+    ],
+
+    "transitively_attested_files": {
+      "rule": "These files are NOT members of the protected corpus, but proof B cannot be performed without recomputing their hashes, because protected corpus members attest them. The gate MUST read them. Admitting them to the protected corpus itself would require an explicit gate-corpus version increment under HPO-ODS-03.",
+      "files": [
+        "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.md",
+        "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.ratification.md",
+        "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.md",
+        "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.ratification.md"
+      ]
+    },
+
+    "relations_independently_confirmed_at_freeze": {
+      "method": "SHA-256 recomputed at ODS-01 from the certified blobs and compared against the values declared inside the attesting artifacts. Confirmation is non-circular because the compared inputs came from the anchor commit, not from the artifacts' own declarations.",
+      "confirmed": [
+        "FIB baseline content_sha256 == manifest.baseline_file_sha256 == seal.baseline_sha256 == wave1-closure.baseline_sha256",
+        "FIB index content_sha256 == manifest.index_file_sha256 == seal.index_sha256 == wave1-closure.index_sha256",
+        "RM2 addendum content_sha256 == wave1-closure.addendum_sha256",
+        "RM2 addendum blob_sha1 == wave1-closure.addendum_git_blob"
+      ],
+      "deferred_to_implementation": "The remaining relations (PC-01B and IM-01B canonical/ratification attestations, and the cross-authority pc01b_authority_sha256 appearing in three artifacts) are declared here and MUST be recomputed executably by ODS-C2. They are not asserted as verified by this freeze."
+    },
+
+    "measured_gap_closed_by_this_gate": {
+      "id": "GAP-1",
+      "measured_at": "ODS-00",
+      "finding": "No executable verifier recomputes any docs/ops authority digest. The literal 5db735e5... appears only inside docs/ops/fib/*.json and is self-referential. pnpm baseline:verify covers db/migrations/**, supabase/migrations/** and db/policies/** via db/hosted/baseline-manifest, which is a different object. CI never references docs/ops except in one comment.",
+      "partial_pin_that_exists": "lib/pipeline/governed-model-registry.ts pins PC01B_METHODOLOGY_AUTHORITY_SHA256 as a seeding constant, but nothing recomputes the file hash to confirm the constant still describes the file on disk.",
+      "existing_repo_precedent_for_the_fix": [
+        "tests/cross-workstream/ticket-idempotency.test.ts reads a docs/ops contract .md as source text.",
+        "db/hosted/authority/certification/governed-input.ts performs LF-normalized SHA-256 over file contents."
+      ],
+      "consequence_before_the_gate": "The invariant sealed_artifacts_byte_identical was established in every prior round by LLM reasoning and manual hashing rather than by a deterministic gate."
+    }
+  },
+
+  "ods_v1_frozen_scope": {
+    "scope_frozen": true,
+    "self_authorization_prohibited": "No component may be added to ODS v1 scope by an implementing session. Scope changes require an explicit HPO authority update.",
+    "components": [
+      {
+        "id": "ODS-C1",
+        "name": "Explicit deterministic prestate gate",
+        "decision": "ADOPT_NOW",
+        "command": "pnpm ods:prestate",
+        "executor_class": "D",
+        "required_checks": [
+          "expected branch where supplied",
+          "expected HEAD where supplied",
+          "expected tree where supplied",
+          "clean/dirty worktree state"
+        ],
+        "governance_rule": "Expected authority must be supplied as explicit governed input. The gate must never silently guess the expected branch, HEAD or tree.",
+        "failure_behavior": "BLOCK",
+        "negative_controls_required": ["wrong HEAD -> FAIL", "dirty worktree -> FAIL"],
+        "addresses_cost_driver": ["T3", "H4"]
+      },
+      {
+        "id": "ODS-C2",
+        "name": "Broad active authority integrity gate",
+        "decision": "ADOPT_NOW",
+        "command": "pnpm authority:seal:verify",
+        "executor_class": "D",
+        "protected_corpus": "authority_corpus.artifacts (9)",
+        "external_anchor": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc",
+        "must_verify": ["A_identity", "B_native_relations"],
+        "failure_behavior": "BLOCK",
+        "negative_controls_required": ["deliberate 1-byte mutation of a fixture copy -> FAIL"],
+        "ci_integration": "required",
+        "addresses_cost_driver": ["H4"],
+        "rigor_note": "This is the highest rigor gain in ODS v1: it converts a currently unguarded authority invariant into a deterministic machine check."
+      },
+      {
+        "id": "ODS-C3",
+        "name": "Explicit deterministic poststate orchestrator",
+        "decision": "ADOPT_NOW",
+        "command": "pnpm ods:poststate",
+        "executor_class": "D",
+        "composition_rule": "It must COMPOSE existing deterministic checks, never reimplement them.",
+        "orchestrates": [
+          "typecheck",
+          "targeted test selection supplied explicitly",
+          "secrets scan",
+          "authority seal verification (ODS-C2)",
+          "scope gate (ODS-C4)",
+          "final clean-state validation where appropriate"
+        ],
+        "explicit_prohibition": "Do NOT force the full test suite on every small task. The full suite plus build remains a CI/merge concern.",
+        "failure_behavior": "BLOCK",
+        "negative_controls_required": ["a failing composed sub-gate propagates failure to the orchestrator exit code"],
+        "addresses_cost_driver": ["E1", "E3"]
+      },
+      {
+        "id": "ODS-C4",
+        "name": "Explicit forbidden-scope / diff gate",
+        "decision": "ADOPT_NOW",
+        "command": "pnpm ods:scope",
+        "executor_class": "D",
+        "comparison_rule": "Must compare against an explicit base SHA and enforce a declared scope.",
+        "default_protected_surfaces": [
+          "docs/ops/fib/**",
+          "docs/ops/pc01b/**",
+          "docs/ops/im01b/**",
+          "db/migrations/**",
+          "db/prepared/**",
+          "db/baseline/**"
+        ],
+        "authorization_rule": "Allowing a protected surface requires an explicit scoped authorization. Permission must NEVER be inferred from the fact that a file changed.",
+        "failure_behavior": "BLOCK",
+        "negative_controls_required": ["protected-path mutation without authorization -> FAIL"],
+        "addresses_cost_driver": ["D3"],
+        "platform_note": "On this platform `git diff <REF> -- <path>` has been measured to diff against the working tree rather than the ref pair; the implementation must use an explicit two-endpoint comparison."
+      },
+      {
+        "id": "ODS-C5",
+        "name": "Root CLAUDE.md",
+        "decision": "ADOPT_NOW",
+        "authorized_by": "HPO-ODS-01",
+        "max_lines": 150,
+        "must_contain": [
+          "development tool authority",
+          "source-of-truth hierarchy",
+          "authority retrieval ORDER",
+          "links/paths to repo-native authorities",
+          "standard commands",
+          "fail-closed principles",
+          "exact worktree/branch discipline",
+          "Windows hazards",
+          "model/executor routing",
+          "context minimization",
+          "reporting contract"
+        ],
+        "must_not": "Copy tens of thousands of tokens of frozen authority into the file.",
+        "authority_retrieval_order": [
+          "1. compact machine-readable indexes/manifests",
+          "2. exact referenced sections/files",
+          "3. full long-form authority only when actually required"
+        ],
+        "measured_justification": {
+          "fib_baseline_estimated_tokens": 65979,
+          "pc01b_estimated_tokens": 21889,
+          "im01b_estimated_tokens": 14425,
+          "full_corpus_estimated_tokens": 102293,
+          "fib_index_estimated_tokens": 4836,
+          "available_compression_ratio": "approximately 21:1",
+          "method": "characters divided by four, measured at ODS-00 against the certified tree; declared as a proxy, not as telemetry"
+        },
+        "addresses_cost_driver": ["T2", "T4", "T5"]
+      },
+      {
+        "id": "ODS-C6",
+        "name": "Compact context/checkpoint standard",
+        "decision": "ADOPT_NOW",
+        "required_semantic_rule": ["RESULT", "EVIDENCE", "RISKS / OPEN FINDINGS", "NEXT AUTHORIZED ACTION"],
+        "must_cite_exactly": ["SHA", "TREE where material", "paths", "authority identifiers", "test evidence"],
+        "prohibition": "Do not paste whole authorities when a verified index/reference suffices.",
+        "addresses_cost_driver": ["T2", "H2"]
+      },
+      {
+        "id": "ODS-P1",
+        "name": "Plugin-profile optimization",
+        "decision": "PILOT",
+        "measured_baseline_at_ods_00": {
+          "enabled_plugins": 30,
+          "unrelated_to_uellix": "approximately 28",
+          "claude_code_version": "2.1.251"
+        },
+        "goal": "Measure whether a Uellix-focused Claude Code plugin profile materially reduces irrelevant session context and startup overhead.",
+        "hard_constraint": "Do NOT disable or alter user-level plugins during the authority-freeze step. Any user-level configuration mutation requires a separately explicit implementation instruction and before/after measurement.",
+        "mutated_in_ods_01": false,
+        "addresses_cost_driver": ["T1"]
+      }
+    ]
+  },
+
+  "deferred_from_ods_v1": {
+    "components": [
+      "custom Uellix skills as a class",
+      "permanent subagents",
+      "agent evals",
+      "AI PR review",
+      "Serena",
+      "automatic token-cost telemetry",
+      "implicit hooks",
+      "regression-loop frameworks",
+      "worktree bulk pruning"
+    ],
+    "reevaluation_criteria": {
+      "skills": "Promote only after a meaningful repeated procedure demonstrates >= 3 uses AND is not cheaper as a deterministic script or a short CLAUDE.md rule.",
+      "subagents": "Only after a real independent DAG or a validated specialized-review need exists.",
+      "serena": "Reopen only if, after ODS v1, code retrieval/navigation remains among the top 3 measured cost drivers.",
+      "ai_pr_review": "Reopen after GitHub integration is healthy, and only as a first-pass review, never as an authority replacement.",
+      "ai_pr_review_measured_blocker": "At ODS-00 the GitHub MCP server failed to connect (HTTP 400, malformed Authorization header)."
+    }
+  },
+
+  "rejected_for_ods_v1": {
+    "components": [
+      "full ECC installation",
+      "claude-mem or another broad persistent-memory layer",
+      "permanent subagent fleet",
+      "implicit/untraceable hook architecture",
+      "large framework installation for capabilities already implemented by repo-native gates",
+      "rewriting historical certification evidence"
+    ],
+    "ecc_patterns_adopted_conceptually": [
+      "verify-before-claim / negative-control requirement",
+      "context-budget discipline"
+    ],
+    "ecc_installation": false,
+    "hook_rationale": "Explicit invocable gates are preferred over implicit hooks for a governance reason rather than a cost reason: in an adversarial chain, a gate that fires invisibly is a gate that cannot be cited as evidence.",
+    "framework_rationale": "The repository already implements, repo-natively, the capabilities a framework would import: secrets scanning in CI before any step that could echo a file, seven byte-for-byte artefact verifiers, fail-closed blocked commands, a network guard loaded first in the vitest setup chain, and line-ending pins in .gitattributes."
+  },
+
+  "negative_control_doctrine": {
+    "frozen": true,
+    "rule": "NO NEW DETERMINISTIC GATE MAY BE ACCEPTED AS OPERATIONAL UNTIL (1) its positive path has been demonstrated AND (2) at least one relevant negative path has been deliberately exercised and shown to FAIL as intended.",
+    "rationale_measured_at_ods_00": "The MSC-07B chain records approximately ten successive re-audit rounds (R9H, R9L, R9N, R9S, R9X, R10C, R10I, R10K, R10N) whose recurring root cause was a verifier whose affirmative branch had never been exercised against reality. A gate that has never been seen to fail is an unmeasured assertion.",
+    "required_negative_controls": {
+      "ods:prestate": ["wrong HEAD -> FAIL", "dirty worktree -> FAIL"],
+      "authority:seal:verify": ["deliberately mutated fixture/artifact copy -> FAIL"],
+      "ods:scope": ["protected-path mutation without authorization -> FAIL"],
+      "ods:poststate": ["a failing composed sub-gate propagates failure"]
+    },
+    "fixture_rule": "Negative controls must operate on fixture copies. A negative control must never mutate a real protected authority artifact to prove that the gate detects mutation."
+  },
+
+  "model_executor_routing": {
+    "frozen": true,
+    "classes": {
+      "A": {
+        "scope": "New authority, architecture, material conflict adjudication, adversarial audit.",
+        "executor": "Highest-reasoning available model justified for the task.",
+        "current_policy": "Opus class, high reasoning effort."
+      },
+      "B": {
+        "scope": "Frozen, well-specified implementation and remediation.",
+        "executor": "Sonnet-class implementation model.",
+        "validation_requirement": "ODS v1 MUST validate this policy empirically on at least one governed implementation round using deterministic poststate evidence.",
+        "explicit_caution": "Model economy is NOT proof of adequacy. Asserting sufficiency without measurement would reproduce the exact failure mode the negative-control doctrine exists to prevent."
+      },
+      "C": {
+        "scope": "Mechanical, bounded, low-risk transformations and bookkeeping.",
+        "executor": "Cheapest reliable model available, or a deterministic script."
+      },
+      "D": {
+        "scope": "Branch, HEAD, TREE, dirty state, hashes, scope, manifest ordering and other deterministic facts.",
+        "executor": "NO LLM. Machine gate only.",
+        "rationale": "For class D a more expensive model is strictly worse: non-deterministic, non-citable and more costly."
+      }
+    }
+  },
+
+  "authorized_implementation_surfaces": {
+    "rule": "No other surface becomes authorized merely because ODS exists.",
+    "surfaces": [
+      { "path": "CLAUDE.md", "mode": "CREATE", "note": "root, <= 150 lines, ODS-C5" },
+      { "path": "AGENTS.md", "mode": "MODIFY_NARROW", "note": "ONLY for the exact authority reconciliation authorized by HPO-ODS-01 (ODS-DEBT-1)" },
+      { "path": "scripts/ods-prestate.ts", "mode": "CREATE" },
+      { "path": "scripts/ods-poststate.ts", "mode": "CREATE" },
+      { "path": "scripts/ods-scope.ts", "mode": "CREATE" },
+      { "path": "scripts/authority-seal-verify.ts", "mode": "CREATE" },
+      { "path": "package.json", "mode": "APPEND_MINIMAL", "note": "scripts block only" },
+      { "path": ".github/workflows/ci.yml", "mode": "ADDITIVE_ONLY", "note": "gate integration steps only" },
+      { "path": "tests/ods/**", "mode": "CREATE", "note": "includes negative-control fixtures" },
+      { "path": "docs/ops/ods/**", "mode": "CREATE_APPEND" }
+    ]
+  },
+
+  "prohibited_surfaces": {
+    "rule": "Prohibited during ODS implementation unless separately authorized by an explicit HPO instruction.",
+    "surfaces": [
+      "docs/ops/fib/**",
+      "docs/ops/pc01b/**",
+      "docs/ops/im01b/**",
+      "db/migrations/**",
+      "db/prepared/**",
+      "db/baseline/**",
+      "lib/**",
+      "app/**",
+      "components/**",
+      "existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment",
+      "historical evidence rewriting"
+    ]
+  },
+
+  "wave1_findings_carry_forward": {
+    "rule": "Preserved without re-adjudication. NOT remediated in ODS-01. Source of truth remains docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json.",
+    "findings": [
+      {
+        "id": "MNB-1",
+        "status": "DEFERRED_NON_BLOCKING",
+        "surface": "lib/admin/proxies.ts",
+        "measured_sites": [104, 142, 185, 252],
+        "issue": "ORGANIZATION_UPDATED emitted for proxy_source / financial_proxy methodological operations, where FIBC-040 requires domain-proper semantic correspondence between verb and object.",
+        "scan_coverage_gap": "The R-1 correspondence contract test scans lib/pipeline, lib/projects/service.ts and lib/portfolios/service.ts only, so lib/admin is not covered.",
+        "target_ownership": "Wave 2 entry-scope reconciliation unless superseded by a more precise owning unit.",
+        "remediated_in_ods_01": false
+      },
+      {
+        "id": "BK-1",
+        "status": "DEFERRED_CLASS_C",
+        "surface": "db/hosted/baseline-apply-authorization.ts",
+        "measured_site": 1097,
+        "issue": "Stale 58-unit prose after the corpus moved to 59 units; the sibling sourceArtifact field already reads 59.",
+        "executable_impact": "none",
+        "remediated_in_ods_01": false
+      },
+      {
+        "id": "BK-2",
+        "status": "DEFERRED",
+        "surface": "tests/audit-action-contract.test.ts",
+        "issue": "Additional semantic plural/singular correspondence exceptions in CORRESPONDENCE_EXCEPTIONS.",
+        "executable_impact": "none",
+        "remediated_in_ods_01": false
+      },
+      {
+        "id": "BK-3",
+        "status": "DEFERRED_CLASS_C",
+        "surface": "in-code W1-05-RM1 remediation labels",
+        "issue": "R-6 label collision between the FIBIU-03 lineage work and the regime remediation recorded as R-6/G-1.",
+        "executable_impact": "none",
+        "remediated_in_ods_01": false
+      },
+      {
+        "id": "BK-4",
+        "status": "DEFERRED_FUTURE_REVIEW",
+        "surface": "lib/pipeline/confidence-score.ts",
+        "measured_site": 81,
+        "issue": "A pre-existing best-effort catch wraps the whole recalculation including logAuditAction, so a content-modifying audit event can be lost while the underlying mutation persists.",
+        "remediated_in_ods_01": false
+      }
+    ],
+    "backlog_ownership_after_ods": "docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md, append-only, to be created during ODS implementation. It records ownership and sequencing only; it re-adjudicates nothing."
+  },
+
+  "product_and_wave_handoff": {
+    "gate_rule": "ODS v1 is the mandatory development-process gate before the next two lanes open.",
+    "until_ods_v1_operational": {
+      "ready_for_wave2": false,
+      "ready_for_product_reengineering": false
+    },
+    "lane_a": {
+      "name": "Wave 2 technical implementation",
+      "opens_after": "ODS_V1_OPERATIONAL=YES"
+    },
+    "lane_b": {
+      "name": "Uellix product reengineering",
+      "opens_after": "ODS_V1_OPERATIONAL=YES",
+      "method": "DELTA_RECONCILIATION",
+      "explicit_prohibition": "General vision/product alignment must NOT restart. Broad rediscovery is not authorized; the lane resumes from its existing checkpoint and reconciles prior reengineering decisions against the materialized FIB technical reality by delta.",
+      "boundary_rule": "Lane B may not introduce new authority over objects already frozen by FIB, PC-01B or IM-01B. Where it collides, it produces a delta for HPO adjudication."
+    },
+    "sequencing_note": "This is an operational development-sequencing decision. It does not alter the FIB technical dependency graph and is not a statement that any Wave 2 technical dependency is unmet."
+  },
+
+  "invariants_preserved_by_this_freeze": {
+    "certified_wave1_branch_mutated": false,
+    "sealed_authority_bytes_changed": 0,
+    "historical_evidence_immutable": true,
+    "historical_audit_rows_never_rewritten": true,
+    "append_only_protections_never_suspended": true,
+    "runtime_product_database_test_or_config_files_changed": 0,
+    "implementation_scripts_created": 0,
+    "user_level_claude_configuration_mutated": false,
+    "governance_principle_unchanged": "AI proposes, analyzes and implements inside authority. The system deterministically controls, checks and calculates where possible. Humans retain authority for governed decisions and approvals."
+  },
+
+  "readiness_state": {
+    "ods_v1_scope_frozen": true,
+    "negative_control_doctrine_frozen": true,
+    "model_routing_frozen": true,
+    "worktree_policy_frozen": true,
+    "authority_corpus_scope": "9_ACTIVE_WAVE1_AUTHORITY_ARTIFACTS",
+    "ready_for_ods_implementation": true,
+    "ods_v1_operational": false,
+    "ready_for_wave2": false,
+    "ready_for_product_reengineering": false,
+    "next_gate": "ODS_V1_IMPLEMENTATION"
+  },
+
+  "scope_note": "This artifact freezes development-process authority only. It implements nothing, remediates nothing and reopens nothing. MNB-1 and BK-1 through BK-4 are preserved unremediated. The certified Wave 1 lineage at ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc remains immutable."
+}

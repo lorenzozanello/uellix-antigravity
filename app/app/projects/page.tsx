@@ -1,15 +1,17 @@
 import Link from 'next/link'
 import { Plus, FolderKanban } from 'lucide-react'
-import { getCurrentOrganizationContext } from '@/lib/auth/session'
+import { runWithOptionalOrganizationAccess } from '@/lib/auth/session'
 import { listProjectsForCurrentOrganization } from '@/lib/projects/service'
 import { ProjectCard } from '@/components/projects/ProjectCard'
 import { EmptyState } from '@/components/states/EmptyState'
 
 export default async function ProjectsPage() {
-  const ctx = await getCurrentOrganizationContext()
-  if (!ctx) return <p>No autenticado. Por favor inicia sesión.</p>
-
-  const projects = await listProjectsForCurrentOrganization()
+  const data = await runWithOptionalOrganizationAccess(async (ctx) => {
+    if (!ctx) return null
+    return { ctx, projects: await listProjectsForCurrentOrganization() }
+  })
+  if (!data) return <p>No autenticado. Por favor inicia sesión.</p>
+  const { ctx, projects } = data
 
   const canCreate = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'].includes(
     ctx.membership.role

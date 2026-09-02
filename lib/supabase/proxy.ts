@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { assertSupabaseProjectCoherence } from './project-coherence'
 
 const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'X-Content-Type-Options': 'nosniff',
@@ -26,6 +27,17 @@ export function extractClientIp(request: NextRequest): string {
 }
 
 export async function updateSession(request: NextRequest) {
+  // SYS-03, and FIRST: this runs on every matched request, ahead of the session
+  // refresh and ahead of the redirect that decides whether a request reaches a
+  // protected route at all. It is the earliest common boundary in the request
+  // path, so an incoherent deployment fails here rather than after a user has
+  // been issued a session from the wrong project.
+  //
+  // A refusal is a thrown error, not a redirect: there is no page to send the
+  // request to. Every route is served by the wrong pair of resources, so the
+  // deployment is broken, and a 500 that says so is the honest outcome.
+  const { authUrl } = assertSupabaseProjectCoherence()
+
   let supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,
@@ -33,7 +45,7 @@ export async function updateSession(request: NextRequest) {
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    authUrl,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {

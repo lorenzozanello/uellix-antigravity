@@ -47,7 +47,7 @@ export function UseCasesSection() {
             <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
             Para quién
           </span>
-          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
+          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-uellix-deep">
             Para quienes generan impacto y deben demostrarlo.
           </h2>
         </div>
@@ -56,7 +56,7 @@ export function UseCasesSection() {
 
           {/* Featured segment — large */}
           <div className="lg:col-span-6">
-            <div className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[#0F172A]/10 bg-[var(--uellix-carbon)] p-8 sm:p-10 card-lift">
+            <div className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-uellix-deep/10 bg-[var(--uellix-carbon)] p-8 sm:p-10 card-lift">
               <div className="texture-grain" aria-hidden="true" />
               <div
                 aria-hidden="true"
@@ -87,24 +87,24 @@ export function UseCasesSection() {
 
           {/* Three editorial segments — hairline divided */}
           <div className="lg:col-span-6">
-            <div className="flex h-full flex-col rounded-2xl border border-[#0F172A]/10 bg-white/70 backdrop-blur-sm px-6 sm:px-8">
+            <div className="flex h-full flex-col rounded-2xl border border-uellix-deep/10 bg-white/70 backdrop-blur-sm px-6 sm:px-8">
               {segments.map(({ n, icon: Icon, title, description }, i) => (
                 <div
                   key={n}
                   className={`group grid grid-cols-[auto_1fr] gap-5 py-7 ${
-                    i !== 0 ? "border-t border-[#0F172A]/10" : ""
+                    i !== 0 ? "border-t border-uellix-deep/10" : ""
                   }`}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <span className="font-sora text-2xl font-semibold text-[#0F172A]/15 tabular-nums leading-none transition-premium group-hover:text-uellix-orange/60" aria-hidden="true">
+                    <span className="font-sora text-2xl font-semibold text-uellix-deep/15 tabular-nums leading-none transition-premium group-hover:text-uellix-orange/60" aria-hidden="true">
                       {n}
                     </span>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#0F172A]/10 bg-[var(--uellix-paper)] transition-premium group-hover:border-uellix-orange/30 group-hover:bg-uellix-orange/5">
-                      <Icon className="h-4 w-4 text-[#0F172A] transition-premium group-hover:text-uellix-orange" aria-hidden="true" />
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-uellix-deep/10 bg-[var(--uellix-paper)] transition-premium group-hover:border-uellix-orange/30 group-hover:bg-uellix-orange/5">
+                      <Icon className="h-4 w-4 text-uellix-deep transition-premium group-hover:text-uellix-orange" aria-hidden="true" />
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-sora text-lg font-semibold text-[#0F172A] mb-1.5">{title}</h3>
+                    <h3 className="font-sora text-lg font-semibold text-uellix-deep mb-1.5">{title}</h3>
                     <p className="text-sm text-[#5B6472] leading-relaxed font-manrope">{description}</p>
                   </div>
                 </div>

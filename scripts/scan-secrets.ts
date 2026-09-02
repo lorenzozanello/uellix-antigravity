@@ -17,10 +17,10 @@
 //    That prefix is enough to prove "this is the same value as that one" and far
 //    too little to reconstruct it.
 //
-// 2. It parses structure, it does not match substrings. A
-//    `grep -E "127.0.0.1|localhost"` accepts `localhost.attacker.example`. A
-//    DSN is therefore split into user, password and host, and each component
-//    is judged as what it is.
+// 2. It parses structure, it does not match substrings. `scripts/
+//    ci-assert-local-targets.ts` records why: a `grep -E "127.0.0.1|localhost"`
+//    accepts `localhost.attacker.example`. A DSN is therefore split into user,
+//    password and host, and each component is judged as what it is.
 //
 // ---------------------------------------------------------------------------
 // WHAT DECIDES, AND WHAT ONLY DESCRIBES
@@ -47,17 +47,14 @@
 // ---------------------------------------------------------------------------
 // PARITY WITH GITHUB PUSH PROTECTION
 // ---------------------------------------------------------------------------
-// On 2026-08-15 GitHub Push Protection rejected a push with GH013, having
-// classified `sbp_`-prefixed test literals as Supabase Personal Access Tokens
-// that the local gate had no detector for. A remote check caught a class the
-// local one could not, which is the wrong way round for a gate whose job is to
-// fail before the push. `SUPABASE_PERSONAL_ACCESS_TOKEN` closes the gap, and
-// deliberately at a lower threshold than GitHub's own 40-hex shape, so a
-// truncated or re-encoded token is still a finding.
-//
-// This branch carries no such literal — the audit that prompted the detector
-// found none anywhere in this tree. The detector is here so that the first one
-// written is refused locally rather than at the remote.
+// On 2026-08-15 a push of this branch was rejected with GH013: GitHub Push
+// Protection classified `sbp_`-prefixed literals in
+// `tests/hosted/target-identity.test.ts` as Supabase Personal Access Tokens.
+// This gate had no such detector — a remote check caught what the local one
+// did not, which is the wrong way round for a gate whose job is to fail before
+// the push. `SUPABASE_PERSONAL_ACCESS_TOKEN` closes the gap, and deliberately
+// at a lower threshold than GitHub's own 40-hex shape, so a truncated or
+// re-encoded token is still a finding.
 //
 // Usage:
 //   pnpm secrets:scan            scan every tracked file
@@ -67,32 +64,10 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
-/**
- * Identifiers that name REAL infrastructure, used by
- * `assertAllowlistIsSynthetic` as a tripwire on the fixture allowlist below.
- *
- * NOT SECRET, and deliberately so. A Supabase project ref is public in every
- * URL the project serves, and the hosts are the site's own domains. Listing
- * them adds nothing to this repository that an visitor could not read off a
- * network tab; what it buys is a scan that ABORTS if the synthetic allowlist
- * ever drifts onto something real.
- *
- * Declared here rather than imported: on the `codex/stella-staging` train these
- * live in `db/hosted/target-identity.ts` alongside the hosted provisioning
- * gates, and that module is not part of this branch. When the two lines
- * converge, this block is the one to delete in favour of that import — it is
- * the only intentional divergence between the two copies of this file.
- */
-export const KNOWN_PRODUCTION_IDENTIFIERS: {
-  readonly hosts: readonly string[]
-  readonly projectRefs: readonly string[]
-} = {
-  hosts: ['uellix-antigravity.vercel.app', 'app.uellix.com', 'uellix.com'],
-  projectRefs: ['ctaxtgujyyprgynmnvtq'],
-}
-
-/** The staging Supabase project. Public, and not a target this branch deploys to. */
-export const KNOWN_STAGING_PROJECT_REF = 'bvyzblhqymxruxdguaee'
+import {
+  KNOWN_PRODUCTION_IDENTIFIERS,
+  KNOWN_STAGING_PROJECT_REF,
+} from '../db/hosted/target-identity'
 
 /** A finding kind. Stable — the runbook and the tests cite these by name. */
 export type SecretFindingKind =

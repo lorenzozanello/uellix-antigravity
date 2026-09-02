@@ -1,14 +1,20 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
+import { isInReviewSet, canDetermineEvidenceSufficiency } from '@/lib/auth/permissions';
 import {
   getCalculationRunDetail,
   listSroiRunReviews,
 } from '@/lib/pipeline/sroi-results';
+import { detectRunInputDrift } from '@/lib/pipeline/sroi-calculation';
+import { getLatestSufficiencyDeterminationsByOutcomeIds } from '@/lib/pipeline/evidence-sufficiency';
+import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { createSroiRunReviewAction } from '../createSroiRunReview.action';
+import { recordEvidenceSufficiencyDeterminationAction } from '../recordEvidenceSufficiencyDetermination.action';
 import { revalidatePath } from 'next/cache';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -21,8 +27,6 @@ import { CalculationResultsCard } from '@/components/calculation-results/Calcula
 import { ArrowLeft } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
-
-const REVIEW_ROLES = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
 
 const RUN_STATUS_BADGE: Record<string, { variant: 'success' | 'warning' | 'danger' | 'neutral'; label: string }> = {
   calculated: { variant: 'success', label: 'Calculado' },
@@ -45,6 +49,13 @@ const REVIEW_ITEM_BADGE: Record<string, { variant: 'success' | 'danger' | 'warni
 
 const INPUT_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+const TEXTAREA_CLASS =
+  'mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y';
+
+const SUFFICIENCY_BADGE: Record<string, { variant: 'success' | 'danger' | 'neutral'; label: string }> = {
+  sufficient: { variant: 'success', label: 'Suficiente' },
+  insufficient: { variant: 'danger', label: 'Insuficiente' },
+};
 
 export default async function RunDetailPage({
   params,
@@ -53,19 +64,66 @@ export default async function RunDetailPage({
 }) {
   const { projectId, runId } = await params;
 
-  let detail: Awaited<ReturnType<typeof getCalculationRunDetail>>;
-  try {
-    detail = await getCalculationRunDetail(projectId, runId);
-  } catch {
-    notFound();
-  }
+  const loaded = await runWithOrganizationAccess(async (ctx) => {
+    let detail: Awaited<ReturnType<typeof getCalculationRunDetail>>;
+    try {
+      detail = await getCalculationRunDetail(projectId, runId);
+    } catch {
+      return null;
+    }
+    // R4 (R-B1-02, FIBIU-06) — the outcomes actually monetized BY THIS RUN,
+    // read from its own immutable line items rather than the project's
+    // current (possibly since-changed) proxy assignments. This is the
+    // run-unambiguous signal the sufficiency panel below is bound to.
+    const monetizedOutcomeIds = Array.from(
+      new Set(detail.lineItems.map((li) => li.outcomeId).filter((id): id is string => !!id))
+    );
+    return {
+      detail,
+      canReview: isInReviewSet(ctx.membership.role),
+      // FIBIU-29 (FIBC-041) / W1-05-RM1 R-5 — the author never sees the
+      // approve action, in addition to the server-side enforcement in
+      // assertRunMethodologyApprovalAllowed (lib/pipeline/sroi-results.ts),
+      // which remains authoritative regardless of what the UI renders.
+      canApproveThisRun: isInReviewSet(ctx.membership.role) && detail.run.calculatedBy !== ctx.user.id,
+      reviews: await listSroiRunReviews(projectId, runId),
+      // FIBIU-03 (FIBC-002/FIBC-045) / W1-05-RM1 R-6 — computed from the
+      // run's own frozen fingerprint (FIBC-023: never persisted, never
+      // mutates the immutable run); a legacy run with no fingerprint reads
+      // as no drift, never fabricated either way.
+      inputDrift: await detectRunInputDrift(detail.run),
+      canDetermineSufficiency: canDetermineEvidenceSufficiency(ctx.membership.role),
+      monetizedOutcomeIds,
+      outcomes: await fetchOutcomes(projectId),
+      sufficiencyByOutcome: await getLatestSufficiencyDeterminationsByOutcomeIds(monetizedOutcomeIds, runId),
+    };
+  });
 
-  const ctx = await requireOrganizationAccess();
-  const canReview = ctx && REVIEW_ROLES.includes(ctx.membership.role);
-
-  const reviews = await listSroiRunReviews(projectId, runId);
+  if (!loaded) notFound();
+  const {
+    detail,
+    canReview,
+    canApproveThisRun,
+    reviews,
+    inputDrift,
+    canDetermineSufficiency,
+    monetizedOutcomeIds,
+    outcomes,
+    sufficiencyByOutcome,
+  } = loaded;
 
   const { run, lineItems, snapshotJson } = detail;
+  const outcomeTitleById = new Map((outcomes ?? []).map((o) => [o.id, o.title]));
+
+  async function handleRecordSufficiency(formData: FormData) {
+    'use server';
+    const outcomeId = formData.get('outcomeId') as string;
+    await recordEvidenceSufficiencyDeterminationAction(projectId, outcomeId, runId, {
+      determination: formData.get('determination') as string,
+      rationale: formData.get('rationale') as string,
+    });
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation/runs/${runId}`);
+  }
 
   async function handleCreateReview(formData: FormData) {
     'use server';
@@ -201,6 +259,62 @@ export default async function RunDetailPage({
         </CardContent>
       </Card>
 
+      {/* Input drift (FIBIU-03 / FIBC-045) — never a mutation, never an error state. */}
+      {inputDrift.hasDrift && (
+        <div className="rounded-md border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-100">
+          <p className="font-medium">Esta corrida dejó de ser elegible; genere una nueva.</p>
+          <p className="mt-1 text-xs text-yellow-800 dark:text-yellow-200">
+            Los siguientes datos usados en este cálculo cambiaron desde entonces:
+          </p>
+          <ul className="mt-2 list-disc pl-5 text-xs">
+            {inputDrift.driftedObjects.map((o) => (
+              <li key={`${o.objectType}:${o.objectId}`}>
+                {o.objectType} ({o.objectId})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Run version identity triple (FIBIU-02 / FIBC-001) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Identidad de Versión de Corrida</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Identidades resueltas por el sistema al momento del cálculo — nunca editables.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground block text-xs">Metodología</span>
+            <span
+              className="font-medium text-foreground tabular-nums"
+              style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {run.methodologyVersion ?? '— (corrida heredada, anterior al versionado)'}
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-xs">Motor de Cálculo</span>
+            <span
+              className="font-medium text-foreground tabular-nums"
+              style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {run.calculationEngineVersion ?? '— (corrida heredada, anterior al versionado)'}
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-xs">Identidad de Build</span>
+            <span
+              className="font-medium text-foreground tabular-nums break-all"
+              style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {run.buildIdentity ?? '— (corrida heredada, anterior al versionado)'}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Line items */}
       <Card>
         <CardHeader>
@@ -282,6 +396,111 @@ export default async function RunDetailPage({
             >
               {JSON.stringify(snapshotJson, null, 2)}
             </pre>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Evidence sufficiency (FIBIU-06 / FIBC-008 / FIBDB-014) — a governed
+          human determination over each monetized outcome's evidence SET,
+          bound to THIS run (never inferred from count/status/confidence, and
+          never satisfied by a determination made for a different run). The
+          run is fixed via a hidden field, not user-editable, so the panel
+          can only ever record a determination for the run currently being
+          viewed. */}
+      {monetizedOutcomeIds.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Suficiencia de Evidencia</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Determinación humana, por resultado monetizado, de si la evidencia disponible es
+              suficiente para esta corrida específica. No se infiere de la cantidad ni del estado
+              de la evidencia.
+            </p>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Resultado</TableHead>
+                  <TableHead>Determinación actual</TableHead>
+                  {canDetermineSufficiency && <TableHead>Registrar determinación</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {monetizedOutcomeIds.map((outcomeId) => {
+                  const current = sufficiencyByOutcome.get(outcomeId);
+                  const currentConfig = current
+                    ? SUFFICIENCY_BADGE[current.determination] ?? {
+                        variant: 'neutral' as const,
+                        label: current.determination,
+                      }
+                    : null;
+                  const determinationSelectId = `sufficiency-determination-${outcomeId}`;
+                  const rationaleId = `sufficiency-rationale-${outcomeId}`;
+                  return (
+                    <TableRow key={outcomeId}>
+                      <TableCell className="font-medium text-foreground max-w-[220px]">
+                        <span className="line-clamp-1">
+                          {outcomeTitleById.get(outcomeId) ?? outcomeId}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {currentConfig ? (
+                          <div className="flex flex-col gap-1">
+                            <Badge variant={currentConfig.variant}>{currentConfig.label}</Badge>
+                            <span className="text-[10px] text-muted-foreground">
+                              {current!.rationale}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/60">Sin determinar</span>
+                        )}
+                      </TableCell>
+                      {canDetermineSufficiency && (
+                        <TableCell>
+                          <form action={handleRecordSufficiency} className="flex flex-col gap-1.5 max-w-xs">
+                            <input type="hidden" name="outcomeId" value={outcomeId} />
+                            <label htmlFor={determinationSelectId} className="sr-only">
+                              Determinación de suficiencia
+                            </label>
+                            <Select
+                              id={determinationSelectId}
+                              name="determination"
+                              defaultValue=""
+                              required
+                              className="h-7 text-xs"
+                            >
+                              <option value="" disabled>
+                                Determinar…
+                              </option>
+                              <option value="sufficient">Suficiente</option>
+                              <option value="insufficient">Insuficiente</option>
+                            </Select>
+                            <label htmlFor={rationaleId} className="sr-only">
+                              Justificación
+                            </label>
+                            <textarea
+                              id={rationaleId}
+                              name="rationale"
+                              rows={2}
+                              required
+                              placeholder="Justificación (requerida)"
+                              className={TEXTAREA_CLASS}
+                            />
+                            <button
+                              type="submit"
+                              className="inline-flex items-center justify-center rounded border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              Guardar determinación
+                            </button>
+                          </form>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       )}
@@ -377,7 +596,7 @@ export default async function RunDetailPage({
                   <select id="review-status" name="status" className={INPUT_CLASS}>
                     <option value="draft">Borrador</option>
                     <option value="reviewed">Revisado</option>
-                    <option value="approved">Aprobado</option>
+                    {canApproveThisRun && <option value="approved">Aprobado</option>}
                     <option value="flagged">Marcado</option>
                   </select>
                 </div>

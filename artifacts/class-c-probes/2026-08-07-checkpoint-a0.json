@@ -1,0 +1,50 @@
+{
+  "trainId": "STELLA_TRAIN_5C2",
+  "checkpoint": "CHECKPOINT A0 (pre-bootstrap, read-only)",
+  "measuredOn": "2026-08-07",
+  "measuredBy": "operator, manually, Uellix Staging, inside BEGIN READ ONLY / ROLLBACK",
+  "targetProjectRef": "bvyzblhqymxruxdguaee",
+  "whatThisIs": "RE-EXECUTION, 2026-08-07. The 2026-08-07 A0 run had passed but its literal SQL was never preserved and it never counted the relations in schema public. Both gaps are closed by this run: the canonical block CHECKPOINT_A0_SQL was executed verbatim and its output recorded below. Nothing here is transcribed from the earlier run.",
+  "source": "direct execution of CHECKPOINT_A0_SQL (db/hosted/measured-evidence.ts)",
+  "observed": {
+    "result": "PASS",
+    "sessionWasReadOnly": true,
+    "projectIsNew": true,
+    "stellaSurfaceAbsent": true,
+    "writesPerformed": 0,
+    "publicRelationCount": 0
+  },
+  "queries": [
+    "-- CHECKPOINT A0 — READ ONLY. Nothing here writes.\n-- Run against the STAGING project, in the identity that will apply the baseline.\nBEGIN READ ONLY;\n\nSELECT\n  current_setting('transaction_read_only')                    AS transaction_read_only,\n  current_user,\n  session_user,\n  version()                                                   AS postgres_version,\n  current_setting('server_version_num')::int >= 150000        AS postgres_compatible,\n\n  -- Schemas the corpus assumes exist.\n  to_regnamespace('auth')   IS NOT NULL                       AS auth_schema_present,\n  to_regnamespace('public') IS NOT NULL                       AS public_schema_present,\n  to_regprocedure('auth.uid()') IS NOT NULL                   AS auth_uid_present,\n\n  -- The Stella / Uellix surface must be ABSENT on a new project.\n  to_regnamespace('uellix_bootstrap') IS NULL                 AS uellix_bootstrap_absent,\n  to_regnamespace('uellix_stella')    IS NULL                 AS uellix_stella_absent,\n  to_regnamespace('uellix_provisioning') IS NULL              AS uellix_provisioning_absent,\n  to_regclass('public.stella_interactions') IS NULL           AS stella_interactions_absent,\n  to_regclass('uellix_bootstrap.staging_sentinel') IS NULL    AS staging_sentinel_absent,\n\n  -- THE ONE THE 2026-08-07 RUN DID NOT TAKE, and the only thing here that can\n  -- tell a new project from a restored dump: four absent names cannot.\n  (SELECT count(*) FROM pg_class c\n     JOIN pg_namespace n ON n.oid = c.relnamespace\n    WHERE n.nspname = 'public'\n      AND c.relkind IN ('r','p','v','m','f'))                 AS public_relation_count;\n\nROLLBACK;"
+  ],
+  "constraintsHonoured": [
+    "read-only session, verified by the query itself",
+    "zero writes",
+    "no secret value recorded",
+    "no access to the production project"
+  ],
+  "queriesProvenance": "The literal block executed, recorded verbatim. A test asserts it is byte-identical to CHECKPOINT_A0_SQL, so a later edit to the canonical query makes this artefact KNOWN STALE rather than silently mismatched.",
+  "observedRaw": {
+    "transaction_read_only": "on",
+    "current_user": "postgres",
+    "session_user": "postgres",
+    "postgres_version": "PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+    "postgres_compatible": true,
+    "auth_schema_present": true,
+    "public_schema_present": true,
+    "auth_uid_present": true,
+    "uellix_bootstrap_absent": true,
+    "uellix_stella_absent": true,
+    "uellix_provisioning_absent": true,
+    "stella_interactions_absent": true,
+    "staging_sentinel_absent": true,
+    "public_relation_count": 0
+  },
+  "derivation": {
+    "sessionWasReadOnly": "transaction_read_only = 'on'",
+    "projectIsNew": "public_relation_count = 0 AND every uellix_/stella_ object absent",
+    "stellaSurfaceAbsent": "uellix_bootstrap_absent AND uellix_stella_absent AND uellix_provisioning_absent AND stella_interactions_absent AND staging_sentinel_absent, all true",
+    "writesPerformed": "BEGIN READ ONLY … ROLLBACK, and transaction_read_only observed on",
+    "publicRelationCount": "public_relation_count = 0 — the observation that distinguishes a NEW project from a RESTORED dump; four absent names cannot."
+  }
+}

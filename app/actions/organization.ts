@@ -3,7 +3,7 @@
 import { db } from '@/db/client';
 import { organizations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { requireOrganizationAccess, runWithOrganizationAccess } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
@@ -30,15 +30,17 @@ export async function updateOrganizationSettings(input: z.infer<typeof SettingsS
     throw new Error('Logo must use the configured public Supabase Storage origin');
   }
 
-  await db
-    .update(organizations)
-    .set({
-      whiteLabelEnabled: data.whiteLabelEnabled,
-      brandColor: data.brandColor || null,
-      logoUrl: approvedLogoUrl,
-      updatedAt: new Date(),
-    })
-    .where(eq(organizations.id, organization.id));
+  await runWithOrganizationAccess(() =>
+    db
+      .update(organizations)
+      .set({
+        whiteLabelEnabled: data.whiteLabelEnabled,
+        brandColor: data.brandColor || null,
+        logoUrl: approvedLogoUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(organizations.id, organization.id))
+  );
 
   revalidatePath('/app/organization/settings');
   revalidatePath('/app/projects/[projectId]/report/[reportId]/pdf', 'page');

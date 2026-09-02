@@ -49,7 +49,7 @@ function NodeCircle({ n, kind, size }: Omit<Node, "label"> & { size: "lg" | "sm"
           ? "border-uellix-orange bg-uellix-orange text-white shadow-[0_8px_20px_-6px_rgba(255,106,0,0.65)]"
           : kind === "stella"
           ? "border-uellix-orange/40 bg-uellix-orange/10 text-[#B85200]"
-          : "border-[#0F172A]/14 bg-white text-[#0F172A] shadow-sm"
+          : "border-uellix-deep/14 bg-white text-uellix-deep shadow-sm"
       }`}
     >
       {kind === "output" ? (
@@ -78,7 +78,7 @@ export function PipelineSection() {
             <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
             Método · Mapa de trazabilidad
           </span>
-          <h2 className="font-sora text-[clamp(2.1rem,4.3vw,3.4rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
+          <h2 className="font-sora text-[clamp(2.1rem,4.3vw,3.4rem)] font-bold leading-[1.05] tracking-[-0.015em] text-uellix-deep">
             Un camino claro, rastreable y defendible.
           </h2>
           <p className="mt-6 text-base text-[#475569] max-w-xl leading-relaxed font-manrope">
@@ -99,7 +99,7 @@ export function PipelineSection() {
               <div
                 key={phase}
                 className={`relative flex flex-1 flex-col items-center ${
-                  gi !== 0 ? "border-l border-dashed border-[#0F172A]/12 pl-2" : ""
+                  gi !== 0 ? "border-l border-dashed border-uellix-deep/12 pl-2" : ""
                 }`}
               >
                 <p className="mb-5 font-ibm-plex-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#5B6472]">
@@ -140,7 +140,7 @@ export function PipelineSection() {
                   <li key={node.n} className="relative z-10 flex items-center gap-4 py-2">
                     <NodeCircle {...node} size="sm" />
                     <span
-                      className={`font-manrope text-sm font-medium ${node.kind ? "text-[#B85200]" : "text-[#0F172A]"}`}
+                      className={`font-manrope text-sm font-medium ${node.kind ? "text-[#B85200]" : "text-uellix-deep"}`}
                     >
                       {node.label}
                     </span>

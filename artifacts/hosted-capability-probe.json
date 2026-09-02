@@ -1,0 +1,49 @@
+{
+  "trainId": "STELLA_TRAIN_5C2",
+  "measuredBy": "operator, manually, Supabase Dashboard → Storage → Policies → OBJECTS, on Uellix Staging",
+  "whatThisIs": "The Dashboard capability probe: ONE temporary policy that depends on nothing, created and then removed, to answer the single question 'can this channel create a policy on storage.objects at all?'. It is NOT evidence about the three canonical Uellix policies, which call helpers unit 41 PART A has not created and filter on a bucket that does not exist.",
+  "precondition": {
+    "projectRef": "bvyzblhqymxruxdguaee",
+    "declaredEnvironment": "staging",
+    "tableExists": true,
+    "rlsEnabled": true,
+    "probeAlreadyPresent": false,
+    "existingPolicyCount": 0,
+    "existingPolicyNames": [],
+    "sessionObserved": {
+      "current_user": "postgres",
+      "session_user": "postgres",
+      "transaction_read_only": "on"
+    }
+  },
+  "record": {
+    "outcome": "CAPABILITY_PROBE_CREATE_SUCCEEDED",
+    "projectRef": "bvyzblhqymxruxdguaee",
+    "timestamp": "",
+    "timestampProvenance": "NOT SUPPLIED by the operator's report, and not invented here. The substantive evidence is the pg_policies observation below, which is what the postcondition compares; the timestamp is audit metadata and its absence is recorded rather than filled in."
+  },
+  "afterCreate": [
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "uellix_tmp_capability_probe_20260807",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "false",
+      "withCheck": null
+    }
+  ],
+  "cleanupChannel": "Dashboard → Storage → Policies → OBJECTS, the same channel that created it",
+  "afterCleanup": [],
+  "finalState": "storage.objects returned exactly to the precondition: 0 policies.",
+  "constraintsHonoured": [
+    "no canonical Uellix policies created",
+    "no uellix-evidence bucket created",
+    "no baseline applied",
+    "no Stella bootstrap applied",
+    "no sentinel written",
+    "no feature flags enabled",
+    "no access to the production project"
+  ]
+}

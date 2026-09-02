@@ -69,6 +69,16 @@ const mockEvidenceItems = [
   },
 ]
 
+// FIBIU-05 (FIBC-007) — buildAdvisorContext now looks up each evidence
+// item's current sensitivity classification and excludes anything not
+// explicitly 'non_sensitive'. Both fixture items are classified here so
+// existing assertions about evidence count/metadata keep exercising the
+// same pre-FIBIU-05 behavior; a dedicated test below covers exclusion.
+const mockEvidenceVersions = [
+  { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+  { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+]
+
 const mockAssignments = [
   {
     assignmentId: 'asgn-1',
@@ -77,6 +87,8 @@ const mockAssignments = [
     confidenceLevel: 'high',
     methodologicalRisk: 'low',
     sourceId: 'src-1',
+    value: '350.0000',
+    currency: 'USD',
   },
 ]
 
@@ -93,6 +105,7 @@ function makeChain(resolvedValue: unknown) {
   chain.where = vi.fn().mockReturnValue(chain)
   chain.limit = vi.fn().mockReturnValue(chain)
   chain.innerJoin = vi.fn().mockReturnValue(chain)
+  chain.orderBy = vi.fn().mockReturnValue(chain)
   chain.then = vi.fn().mockImplementation(
     (cb: (v: unknown) => unknown) => Promise.resolve(cb(resolvedValue))
   )
@@ -102,7 +115,15 @@ function makeChain(resolvedValue: unknown) {
 // ---------------------------------------------------------------------------
 // Helper: set up full mock sequence for a successful context build
 // ---------------------------------------------------------------------------
-async function setupFullMockSequence(projectRow = mockProject) {
+async function setupFullMockSequence(
+  projectRow = mockProject,
+  opts: {
+    stakeholderRows?: Array<{ id: string; name: string; type: string | null }>
+    narrativeRow?: typeof mockNarrative
+    outcomeRows?: typeof mockOutcomes
+    evidenceVersionRows?: typeof mockEvidenceVersions
+  } = {}
+) {
   const { db } = await import('@/db/client')
   const selectMock = vi.mocked(db.select)
 
@@ -113,17 +134,28 @@ async function setupFullMockSequence(projectRow = mockProject) {
   // 4. outcomes → array
   // 5. indicators → array
   // 6. evidence → array
+  // 6b. evidence sensitivity lookup (FIBIU-05, getLatestEvidenceVersionsByEvidenceIds) → array
   // 7. proxy assignments (innerJoin) → array
   // 8. source lookup → .then((rows) => rows[0] ?? null) → needs array
+  // 9. ToC activities → array
+  // 10. filter sets (innerJoin) → array
+  // 11. latest calculation run → [] here → calculationSnapshot null (no
+  //     line-item query happens in that case)
+  // 12. report sections → array
   selectMock
     .mockReturnValueOnce(makeChain([projectRow]) as never)                   // project
-    .mockReturnValueOnce(makeChain([mockNarrative]) as never)                // narrative
-    .mockReturnValueOnce(makeChain(mockStakeholders) as never)               // stakeholders
-    .mockReturnValueOnce(makeChain(mockOutcomes) as never)                   // outcomes
+    .mockReturnValueOnce(makeChain([opts.narrativeRow ?? mockNarrative]) as never) // narrative
+    .mockReturnValueOnce(makeChain(opts.stakeholderRows ?? mockStakeholders) as never) // stakeholders
+    .mockReturnValueOnce(makeChain(opts.outcomeRows ?? mockOutcomes) as never) // outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                 // indicators
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)              // evidence
+    .mockReturnValueOnce(makeChain(opts.evidenceVersionRows ?? mockEvidenceVersions) as never) // evidence sensitivity (FIBIU-05)
     .mockReturnValueOnce(makeChain(mockAssignments) as never)                // proxy assignments
     .mockReturnValueOnce(makeChain([{ id: 'src-1', name: 'HACT Database' }]) as never) // source
+    .mockReturnValueOnce(makeChain([]) as never)                             // activities
+    .mockReturnValueOnce(makeChain([]) as never)                             // filter sets
+    .mockReturnValueOnce(makeChain([]) as never)                             // latest run (none)
+    .mockReturnValueOnce(makeChain([]) as never)                             // report sections
 }
 
 // ---------------------------------------------------------------------------
@@ -273,6 +305,33 @@ describe('buildAdvisorContext', () => {
         }
       }
     })
+
+    // FIBIU-05 (FIBC-007) — "sensitive evidence never enters context by the
+    // mere fact of being linked". Two exclusion causes: an explicit
+    // non-non_sensitive classification, and no classification at all
+    // (unclassified is excluded the same as classified-sensitive, never
+    // treated as an implicit pass).
+    it('excludes evidence classified as sensitive from evidenceMetadata and evidenceTotal', async () => {
+      await setupFullMockSequence(mockProject, {
+        evidenceVersionRows: [
+          { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'personal_data' },
+          { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+        ],
+      })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'evidence')
+
+      expect(ctx.evidenceTotal).toBe(1)
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-1')).toBeUndefined()
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-2')).toBeDefined()
+    })
+
+    it('excludes unclassified evidence — no version row is never treated as an implicit pass', async () => {
+      await setupFullMockSequence(mockProject, { evidenceVersionRows: [] })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'evidence')
+
+      expect(ctx.evidenceTotal).toBe(0)
+      expect(ctx.evidenceMetadata).toHaveLength(0)
+    })
   })
 
   describe('Proxies step', () => {
@@ -285,13 +344,13 @@ describe('buildAdvisorContext', () => {
       expect(ctx.proxySummary[0].confidenceLevel).toBe('high')
     })
 
-    it('excludes proxy financial value and currency (Advisor role)', async () => {
+    it('includes registered proxy value and currency from the proxies table', async () => {
       await setupFullMockSequence()
       const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'proxies')
 
       for (const proxy of ctx.proxySummary) {
-        expect(proxy.value).toBe('')
-        expect(proxy.currency).toBe('')
+        expect(proxy.value).toBe('350.0000')
+        expect(proxy.currency).toBe('USD')
       }
     })
   })
@@ -320,11 +379,12 @@ describe('buildAdvisorContext', () => {
       expect(JSON.stringify(ctx)).not.toContain('"file_path"')
     })
 
-    it('calculationSnapshot is null (Advisor never touches calculation)', async () => {
+    it('calculationSnapshot is null when no persisted run exists (never computed)', async () => {
       await setupFullMockSequence()
       const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
 
       expect(ctx.calculationSnapshot).toBeNull()
+      expect(ctx.calculationReadiness.ready).toBe(false)
     })
 
     it('organizationId in context matches requesting org (no cross-org leakage)', async () => {
@@ -351,11 +411,58 @@ describe('buildAdvisorContext', () => {
         .mockReturnValueOnce(makeChain([]) as never)   // indicators
         .mockReturnValueOnce(makeChain([]) as never)   // evidence
         .mockReturnValueOnce(makeChain([]) as never)   // proxy assignments
+        .mockReturnValueOnce(makeChain([]) as never)   // activities
+        .mockReturnValueOnce(makeChain([]) as never)   // filter sets
+        .mockReturnValueOnce(makeChain([]) as never)   // latest run (none)
+        .mockReturnValueOnce(makeChain([]) as never)   // report sections
 
       const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
 
       expect(ctx.narrativeSummary).not.toContain('GEMINI_API_KEY')
       expect(ctx.narrativeSummary).not.toContain('sk_secret_abc123')
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // WS3c U1 (RK-08): sensitive-populations flag propagation
+  // -------------------------------------------------------------------------
+  describe('Sensitive populations flag (RK-08)', () => {
+    it('is present and false for non-sensitive metadata', async () => {
+      await setupFullMockSequence()
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
+      expect(ctx.sensitivePopulations).toEqual({ detected: false, categories: [] })
+    })
+
+    it('flags minors from a stakeholder group type', async () => {
+      await setupFullMockSequence(mockProject, {
+        stakeholderRows: [{ id: 'sh-1', name: 'Grupo A', type: 'niños y adolescentes' }],
+      })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('minors')
+    })
+
+    it('flags violence victims from the narrative text', async () => {
+      await setupFullMockSequence(mockProject, {
+        narrativeRow: {
+          narrativeText: 'Acompañamiento a víctimas de violencia intrafamiliar.',
+          theoryOfChangeSummary: '',
+        },
+      })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('violence_victims')
+    })
+
+    it('flags from an outcome title', async () => {
+      await setupFullMockSequence(mockProject, {
+        outcomeRows: [
+          { id: 'out-1', title: 'Reducción de la pobreza extrema', outcomeType: 'social', status: 'active' },
+        ],
+      })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('extreme_poverty')
     })
   })
 })

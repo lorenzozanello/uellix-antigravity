@@ -1,0 +1,338 @@
+{
+  "schema": "uellix.hosted.chain.observation/1",
+  "phase": "PRE_WRITE",
+  "attemptId": "att_6d9a8c1d514e97a563855de02db41e96",
+  "observationId": "obs_6d9a8c1d_staging_prewrite",
+  "corroboration": {
+    "declaredEnvironment": "staging",
+    "declaredProjectRef": "bvyzblhqymxruxdguaee",
+    "connection": {
+      "connectionHost": "aws-0-us-east-2.pooler.supabase.com",
+      "poolerUser": "postgres.bvyzblhqymxruxdguaee",
+      "connectionPort": 5432
+    },
+    "featureFlags": {
+      "STELLA_ENABLED": "false",
+      "STELLA_ADVISOR_ENABLED": "false",
+      "STELLA_COMPOSER_ENABLED": "false",
+      "STELLA_VALIDATOR_ENABLED": "false",
+      "STELLA_GROUNDED_QUERY_ENABLED": "false",
+      "STELLA_DECISIONS_PERSISTENCE_ENABLED": "false",
+      "STELLA_PROXY_REVIEWER_ENABLED": "false",
+      "STELLA_EVIDENCE_REVIEWER_ENABLED": "false",
+      "STELLA_AUDIT_ASSISTANT_ENABLED": "false"
+    },
+    "observation": {
+      "note": "Project refs are not secret. No credential, connection string or user data is recorded here. connectionHost and poolerUser are DELIBERATELY absent: they are client-side facts and this database cannot see them.",
+      "attemptId": "att_6d9a8c1d514e97a563855de02db41e96",
+      "measuredBy": "operator, psql session pooler, inside a READ ONLY transaction, from db/prepared/checkpoint-a1/corroboration.sql",
+      "baselineJournal": {
+        "units": [
+          {
+            "status": "APPLIED",
+            "packageId": "0000_quick_husk.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0001_noisy_chameleon.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0002_huge_namorita.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0003_curvy_tempest.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0004_thick_mentor.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0005_daffy_dreaming_celestial.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0006_outstanding_vindicator.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0007_black_imperial_guard.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0008_bored_pretty_boy.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0009_motionless_peter_parker.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "001_initial_auth_rls.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0010_crazy_warhawk.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0011_sroi_results_report_foundation.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0012_stella_interactions.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0013_performance_indexes.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0014_fine_blade.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0015_misty_lorna_dane.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0016_fat_mac_gargan.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0017_striped_legion.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0018_redundant_firebird.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0019_lazy_overlord.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "002_stella_interactions_rls.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0020_long_squadron_supreme.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0021_glorious_sandman.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0022_abandoned_karma.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0023_faulty_silver_sable.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0024_outstanding_enchantress.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0025_shallow_mattie_franklin.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0026_violet_selene.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0027_little_midnight.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0028_keen_iron_patriot.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0029_integrity.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "003_signup_allowlist_rls.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0030_immutability.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0031_rls_core.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0032_rls_specialized.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0033_public_api_grants.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0034_phase3_white_label.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0035_phase5_marketing_leads.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0036_phase2_onboarding.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0037_phase1_stripe.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0038_sprint_a_gdpr_users.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "0039_grant_rls_helper_execution.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "004_fx_tables_rls.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "005_theory_of_change_rls.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "006_methodology_review_rls.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "007_taxonomy_rls.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "008_marketing_leads_rls.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "20260716000000_auth_trigger.sql"
+          },
+          {
+            "status": "APPLIED",
+            "packageId": "20260716000001_storage_policies.sql"
+          }
+        ],
+        "projectRefs": [
+          "bvyzblhqymxruxdguaee"
+        ],
+        "environments": [
+          "staging"
+        ],
+        "tablePresent": true
+      },
+      "targetProjectRef": "bvyzblhqymxruxdguaee",
+      "packageObservations": [
+        {
+          "packageId": "grounding_0002_document_versions",
+          "witnesses": {
+            "schema:uellix_grounding": false,
+            "role:uellix_cap_grounding": false,
+            "regclass:public.evidence_document_versions": false,
+            "regprocedure:uellix_grounding.claim_active_document_version(uuid)": false
+          }
+        },
+        {
+          "packageId": "grounding_0003_evidence_chunks",
+          "witnesses": {
+            "regclass:public.evidence_chunks": false,
+            "regprocedure:uellix_grounding.chunks_in_scope(uuid,uuid,uuid)": false,
+            "regprocedure:uellix_grounding.insert_evidence_chunks(uuid,jsonb)": false,
+            "regprocedure:uellix_grounding.finalize_document_ingestion(uuid,integer)": false
+          }
+        },
+        {
+          "packageId": "grounding_0004_runtime_attestation",
+          "witnesses": {
+            "constraint:public.evidence_chunks.evidence_chunks_span_length_check": false,
+            "regprocedure:uellix_grounding.chunks_in_scope_attested(uuid,uuid,uuid)": false,
+            "constraint:public.evidence_chunks.evidence_chunks_chunk_id_derivation_check": false,
+            "constraint:public.evidence_chunks.evidence_chunks_content_hash_derivation_check": false
+          }
+        },
+        {
+          "packageId": "stella_0013_grounded_query_quota",
+          "witnesses": {
+            "schema:uellix_stella": false,
+            "role:uellix_cap_stella_quota": false,
+            "column:public.stella_interactions.idempotency_key": false,
+            "regprocedure:uellix_stella.consume_stella_quota(uuid,uuid,character varying,character)": false
+          }
+        },
+        {
+          "packageId": "stella_0014_operation_tickets",
+          "witnesses": {
+            "schema:uellix_stella_ops": false,
+            "role:uellix_cap_stella_ticket": false,
+            "regclass:uellix_stella_ops.operation_tickets": false,
+            "regprocedure:uellix_stella_ops.expire_operation_tickets(integer)": false
+          }
+        },
+        {
+          "packageId": "stella_0015_project_bound_operation_tickets",
+          "witnesses": {
+            "regprocedure:uellix_stella_ops.inspect_operation_ticket(character)": false,
+            "regprocedure:uellix_stella_ops.inspect_operation_ticket(character,uuid)": false,
+            "regprocedure:uellix_stella_ops.bind_operation_ticket(character,character)": false,
+            "regprocedure:uellix_stella_ops.complete_operation_ticket(character,character)": false,
+            "regprocedure:uellix_stella_ops.bind_operation_ticket(character,uuid,character)": false,
+            "regprocedure:uellix_stella_ops.abort_operation_ticket(character,character varying)": false,
+            "regprocedure:uellix_stella_ops.complete_operation_ticket(character,uuid,character)": false,
+            "regprocedure:uellix_stella_ops.abort_operation_ticket(character,uuid,character varying)": false
+          }
+        },
+        {
+          "packageId": "stella_0016_reserved_quota_semantics",
+          "witnesses": {
+            "regprocedure:uellix_stella.stella_capacity(uuid,character)": false,
+            "regprocedure:uellix_stella.consume_stella_capacity(uuid,uuid,character varying,character)": false,
+            "regprocedure:uellix_stella.settle_reserved_quota(uuid,uuid,character varying,character,character)": false
+          }
+        },
+        {
+          "packageId": "stella_0017_governed_stella_consumption",
+          "witnesses": {
+            "constraint:public.stella_interactions.stella_interactions_governed_identity_check": false,
+            "regprocedure:uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb)": false,
+            "regprocedure:uellix_stella.settle_reserved_quota(uuid,uuid,character varying,character,character,character varying,character,character varying,integer,jsonb)": false
+          }
+        },
+        {
+          "packageId": "stella_0018_category_bound_operation_tickets",
+          "witnesses": {
+            "regprocedure:uellix_stella_ops.bind_operation_ticket(character,uuid,character,character varying)": false
+          }
+        }
+      ],
+      "sentinelObservation": {
+        "id": true,
+        "rowCount": 1,
+        "projectRef": "bvyzblhqymxruxdguaee",
+        "environment": "staging",
+        "rr02Present": true,
+        "tablePresent": true,
+        "provisionedAt": "2026-08-09T15:15:43.514121+00:00",
+        "ownerSeparation": "auditable-obstacle: RR-02 applies, postgres retains ADMIN OPTION over uellix_owner",
+        "bootstrapVersion": "stella_hosted_0001"
+      },
+      "bootstrapSchemaPresent": true
+    }
+  },
+  "digest": "cfafa04b747d3315ce7bde2eebb6fd669da85556d2e5b76b46b5646a19e70d06"
+}

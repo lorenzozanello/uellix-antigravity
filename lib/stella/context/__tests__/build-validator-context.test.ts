@@ -70,6 +70,16 @@ const mockEvidenceItems = [
   },
 ]
 
+// FIBIU-05 (FIBC-007, W2-B1-R2) — buildValidatorContext now looks up each
+// evidence item's current sensitivity classification and excludes anything
+// not explicitly 'non_sensitive'. Both classified here so existing
+// assertions keep exercising the same pre-R2 behavior; a dedicated test
+// below covers exclusion.
+const mockEvidenceVersions = [
+  { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+  { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+]
+
 const mockAssignments = [
   {
     assignmentId: 'asgn-1',
@@ -144,11 +154,17 @@ async function setupFullMockSequence(opts: {
   projectRow?: typeof mockProject
   withCalcRun?: boolean
   withReview?: boolean
+  stakeholderRows?: Array<{ id: string; type?: string | null }>
+  narrativeRow?: typeof mockNarrative
+  evidenceVersionRows?: typeof mockEvidenceVersions
 } = {}) {
   const {
     projectRow = mockProject,
     withCalcRun = true,
     withReview = true,
+    stakeholderRows = mockStakeholders,
+    narrativeRow = mockNarrative,
+    evidenceVersionRows = mockEvidenceVersions,
   } = opts
 
   const { db } = await import('@/db/client')
@@ -156,11 +172,12 @@ async function setupFullMockSequence(opts: {
 
   const chain = selectMock
     .mockReturnValueOnce(makeChain([projectRow]) as never)                                       // 1. project
-    .mockReturnValueOnce(makeChain([mockNarrative]) as never)                                    // 2. narrative
-    .mockReturnValueOnce(makeChain(mockStakeholders) as never)                                   // 3. stakeholders
+    .mockReturnValueOnce(makeChain([narrativeRow]) as never)                                     // 2. narrative
+    .mockReturnValueOnce(makeChain(stakeholderRows) as never)                                    // 3. stakeholders
     .mockReturnValueOnce(makeChain(mockOutcomes) as never)                                       // 4. outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                                     // 5. indicators
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)                                  // 6. evidence
+    .mockReturnValueOnce(makeChain(evidenceVersionRows) as never)                                // 6b. evidence sensitivity (FIBIU-05)
     .mockReturnValueOnce(makeChain(mockAssignments) as never)                                    // 7. proxy assignments
     .mockReturnValueOnce(makeChain([{ id: 'src-1', name: 'HACT Database' }]) as never)          // 8. source
     .mockReturnValueOnce(makeChain(mockFilterSets) as never)                                     // 9. filter sets
@@ -426,6 +443,31 @@ describe('buildValidatorContext', () => {
       expect(ev?.contentHashTruncated?.length).toBe(8)
     })
 
+    // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01, NC-1/NC-3) — sensitive evidence
+    // must never enter the validator's Stella context by the mere fact of
+    // being linked; unclassified evidence is excluded the same way.
+    it('excludes evidence classified as sensitive from evidenceMetadata and evidenceTotal', async () => {
+      await setupFullMockSequence({
+        evidenceVersionRows: [
+          { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'personal_data' },
+          { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+        ],
+      })
+      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
+
+      expect(ctx.evidenceTotal).toBe(1)
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-1')).toBeUndefined()
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-2')).toBeDefined()
+    })
+
+    it('excludes unclassified evidence — no version row is never treated as an implicit pass', async () => {
+      await setupFullMockSequence({ evidenceVersionRows: [] })
+      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
+
+      expect(ctx.evidenceTotal).toBe(0)
+      expect(ctx.evidenceMetadata).toHaveLength(0)
+    })
+
     it('includes proxy confidence levels', async () => {
       await setupFullMockSequence()
       const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
@@ -477,6 +519,38 @@ describe('buildValidatorContext', () => {
 
       // snapshotJson is the raw column — the context only has calculationSnapshot with totals
       expect(JSON.stringify(ctx)).not.toContain('snapshotJson')
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // WS3c U1 (RK-08): sensitive-populations flag propagation
+  // -------------------------------------------------------------------------
+  describe('Sensitive populations flag (RK-08)', () => {
+    it('is present and false for non-sensitive metadata', async () => {
+      await setupFullMockSequence()
+      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
+      expect(ctx.sensitivePopulations).toEqual({ detected: false, categories: [] })
+    })
+
+    it('flags minors from a stakeholder group type', async () => {
+      await setupFullMockSequence({
+        stakeholderRows: [{ id: 'sh-1', type: 'niños y adolescentes' }],
+      })
+      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('minors')
+    })
+
+    it('flags health conditions from the narrative text', async () => {
+      await setupFullMockSequence({
+        narrativeRow: {
+          narrativeText: 'Apoyo psicosocial y salud mental para la comunidad.',
+          theoryOfChangeSummary: '',
+        },
+      })
+      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('health_conditions')
     })
   })
 })

@@ -281,6 +281,97 @@
       "when": 1784676746081,
       "tag": "0039_grant_rls_helper_execution",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1788191517267,
+      "tag": "0040_governed_model_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1788193000000,
+      "tag": "0041_pc01b_regime_boundary_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1788193100000,
+      "tag": "0042_fib_audit_insert_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1788194421538,
+      "tag": "0043_fib_audit_project_id_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1788194500000,
+      "tag": "0044_fib_audit_hardening_supersession",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1788195000000,
+      "tag": "0045_fib_domain_object_version_lineage",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1788199000000,
+      "tag": "0046_fib_run_version_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788208588130,
+      "tag": "0047_fib_taxonomy_mapping_governance_regime",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788261865674,
+      "tag": "0048_fib_evidence_versions",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1788261938597,
+      "tag": "0049_fib_evidence_sensitivity_vocabulary",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1788261976446,
+      "tag": "0050_fib_evidence_sufficiency_determinations",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1788262029098,
+      "tag": "0051_fib_evidence_erasure_substrate",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1788270743733,
+      "tag": "0052_fib_evidence_sufficiency_run_binding",
+      "breakpoints": true
     }
   ]
 }

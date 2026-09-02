@@ -1,0 +1,394 @@
+{
+  "package_id": "W2_EXECUTION_MAPPING",
+  "version": "1.0.0",
+  "artifact_id": "W2_EXECUTION_MAPPING_v1.0.0",
+  "authority_class": "DERIVED_EXECUTION_RECORD",
+  "supersedes": null,
+
+  "purpose": "Materializes the FIB Wave 2 (Methodology Objects) execution mapping established by the read-only W2-00 analysis in this session, and records the subsequent external ODS gate resolution that closes W2-GAP-1. This artifact is DERIVED TRACKING, not authority. It creates no new authority, implements no FIBIU, and does not modify, reinterpret or restate any sealed/frozen artifact. Where this record and any FIB/ODS authority artifact appear to disagree, the authority artifact controls.",
+
+  "identity": {
+    "task": "W2-01",
+    "predecessor_task": "W2-00 (read-only mapping, same session)",
+    "branch": "codex/w2-methodology-objects-r1",
+    "base_sha": "ba2f5fd2abb120885b3dce21c476203da1f1f151",
+    "base_tree": "15715174aa1ce8eb8f726b8b73816cd2d15b7a96"
+  },
+
+  "authority_references": {
+    "fib_baseline": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md (§12 Implementation Unit Registry, §13 Dependency DAG and Waves)",
+    "fib_index": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json (waves[id=\"2\"], fibiu[])",
+    "hpo_addendum_w1rm2": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.addendum-w1rm2.json (HPO-DEC-1, HPO-DEC-2, HPO-DEC-3)",
+    "wave1_closure": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json",
+    "ods_operational_closure": "docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json",
+    "ods_maintenance_v1_0_1": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json (HPO-ODS-W2-01 initial grant)",
+    "ods_maintenance_v1_0_2": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json (HPO-ODS-TOOLCHAIN-02, HPO-ODS-POSTSTATE-01, HPO-ODS-C4-CASE-01)",
+    "ods_carry_forward_backlog": "docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md (MNB-1, BK-1..BK-4, AG-1)",
+    "scope_gate_implementation": "scripts/ods-scope.ts (PROTECTED_GRANTS, resolveProtectedGrant)",
+    "poststate_gate_implementation": "scripts/ods-poststate.ts (--protected-authority passthrough)"
+  },
+
+  "wave2_unit_matrix": {
+    "unit_count": 15,
+    "unit_ids": ["FIBIU-04","FIBIU-05","FIBIU-06","FIBIU-07","FIBIU-08","FIBIU-09","FIBIU-10","FIBIU-11","FIBIU-12","FIBIU-13","FIBIU-14","FIBIU-15","FIBIU-16","FIBIU-17","FIBIU-18"],
+    "state_summary": { "MATERIALIZED": 0, "PARTIAL": 0, "MISSING": 15, "CONFLICT": 0, "UNKNOWN": 0 },
+    "units": [
+      { "id": "FIBIU-04", "name": "Evidence versions and content persistence", "fibc": ["FIBC-005","FIBC-006"], "fibdb": ["FIBDB-005","FIBDB-037"], "hard_dependencies": ["FIBIU-03"], "dependents": ["FIBIU-05","FIBIU-06","FIBIU-07"], "level": "2.1", "state": "MISSING", "measured_evidence": "evidence_items has no textual content column; content_hash computed over parsed.text and never persisted (lib/pipeline/evidence.ts)" },
+      { "id": "FIBIU-05", "name": "Evidence sensitivity and treatment", "fibc": ["FIBC-007"], "fibdb": ["FIBDB-005(col)","FIBDB-043"], "hard_dependencies": ["FIBIU-04"], "dependents": [], "level": "2.2", "state": "MISSING" },
+      { "id": "FIBIU-06", "name": "Human evidence sufficiency determination", "fibc": ["FIBC-008"], "fibdb": ["FIBDB-014"], "hard_dependencies": ["FIBIU-04"], "dependents": [], "level": "2.2", "state": "MISSING" },
+      { "id": "FIBIU-07", "name": "Governed evidence-content erasure; remove ambiguous DELETE", "fibc": ["FIBC-009"], "fibdb": ["FIBDB-031","FIBDB-032","FIBDB-033","FIBDB-043"], "hard_dependencies": ["FIBIU-04","FIBIU-29"], "dependents": [], "level": "2.2", "state": "MISSING", "measured_evidence": "GRANT ... DELETE ON public.evidence_items TO authenticated still present at db/migrations/0033_public_api_grants.sql:36", "opus_review_required": true },
+      { "id": "FIBIU-08", "name": "Proxy versions and provenance", "fibc": ["FIBC-010","FIBC-012"], "fibdb": ["FIBDB-006","FIBDB-039"], "hard_dependencies": ["FIBIU-03"], "dependents": ["FIBIU-09","FIBIU-10"], "level": "2.1", "state": "MISSING", "measured_evidence": "zero writes of reviewerId/reviewedAt in lib/pipeline/proxies.ts", "carries_mnb1": true },
+      { "id": "FIBIU-09", "name": "PROXY_DEFENDIBILITY_RUBRIC_v1.0.0", "fibc": ["FIBC-011"], "fibdb": ["FIBDB-006(col)","FIBDB-044"], "hard_dependencies": ["FIBIU-08","FIBIU-01"], "dependents": [], "level": "2.2", "state": "MISSING", "opus_review_required": true },
+      { "id": "FIBIU-10", "name": "Material change policy and proxy field registry", "fibc": ["FIBC-013"], "fibdb": ["FIBDB-007"], "hard_dependencies": ["FIBIU-08"], "dependents": [], "level": "2.2", "state": "MISSING", "opus_review_required": true },
+      { "id": "FIBIU-11", "name": "Outcome materiality", "fibc": ["FIBC-015"], "fibdb": ["FIBDB-008","FIBDB-045"], "hard_dependencies": ["FIBIU-03"], "dependents": ["FIBIU-12"], "level": "2.1", "state": "MISSING", "measured_evidence": "only legacy materialityScore (1-5) exists; no materiality_classification column" },
+      { "id": "FIBIU-12", "name": "Monetization disposition and coverage", "fibc": ["FIBC-016","FIBC-044"], "fibdb": ["FIBDB-009","FIBDB-045"], "hard_dependencies": ["FIBIU-11"], "dependents": [], "level": "2.2", "state": "MISSING" },
+      { "id": "FIBIU-13", "name": "Filter justification gate", "fibc": ["FIBC-017"], "fibdb": ["FIBDB-010"], "hard_dependencies": [], "dependents": [], "level": "2.1", "state": "MISSING", "measured_evidence": "sroi_filter_sets has a single shared justification column; parseNum(null) coercion still on authoritative path" },
+      { "id": "FIBIU-14", "name": "Counterfactual assessment", "fibc": ["FIBC-018"], "fibdb": ["FIBDB-011","FIBDB-046"], "hard_dependencies": ["FIBIU-15"], "dependents": [], "level": "2.2", "state": "MISSING" },
+      { "id": "FIBIU-15", "name": "Structured methodological assumptions", "fibc": ["FIBC-019"], "fibdb": ["FIBDB-012","FIBDB-013","FIBDB-047"], "hard_dependencies": ["FIBIU-03"], "dependents": ["FIBIU-14","FIBIU-16","FIBIU-17","FIBIU-18"], "level": "2.1", "state": "MISSING" },
+      { "id": "FIBIU-16", "name": "Causal chain sufficiency gate", "fibc": ["FIBC-020"], "fibdb": ["NO_DB_OBJECT (reasoned)"], "hard_dependencies": ["FIBIU-15"], "dependents": ["FIBIU-17"], "level": "2.2", "state": "MISSING", "measured_evidence": "getSroiCalculationReadiness never references theory_of_change tables" },
+      { "id": "FIBIU-17", "name": "SROI_READINESS_MODEL_v1.0.0", "fibc": ["FIBC-021"], "fibdb": ["FIBDB-015","FIBDB-016"], "hard_dependencies": ["FIBIU-01","FIBIU-15","FIBIU-16"], "dependents": [], "level": "2.3", "state": "MISSING", "measured_evidence": "46 criteria across D1..D10 confirmed enumerated in authority (4+5+4+5+6+4+4+5+4+5=46)" },
+      { "id": "FIBIU-18", "name": "SROI_SENSITIVITY_MODEL_v1.0.0", "fibc": ["FIBC-022"], "fibdb": ["FIBDB-017","FIBDB-018","FIBDB-048"], "hard_dependencies": ["FIBIU-15","FIBIU-01"], "dependents": [], "level": "2.3", "state": "MISSING", "measured_evidence": "lib/pipeline/sroi-sensitivity.ts is 27 lines, SCENARIO_DELTA_PP=10 uniform, superseded not extended", "opus_review_required": true }
+    ]
+  },
+
+  "wave2_execution_dag": {
+    "source": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md §13 (certified, DAG_ACYCLIC=YES, UNSAFE_PARALLELIZED_HARD_DEPENDENCIES=0)",
+    "execution_levels": {
+      "L2.1": ["FIBIU-04","FIBIU-08","FIBIU-11","FIBIU-13","FIBIU-15"],
+      "L2.2": ["FIBIU-05","FIBIU-06","FIBIU-07","FIBIU-09","FIBIU-10","FIBIU-12","FIBIU-14","FIBIU-16"],
+      "L2.3": ["FIBIU-17","FIBIU-18"]
+    },
+    "serial_dependencies": [
+      "FIBIU-04 -> {FIBIU-05, FIBIU-06, FIBIU-07}",
+      "FIBIU-08 -> {FIBIU-09, FIBIU-10}",
+      "FIBIU-11 -> FIBIU-12",
+      "FIBIU-15 -> {FIBIU-14, FIBIU-16}",
+      "{FIBIU-15, FIBIU-16} -> FIBIU-17",
+      "FIBIU-15 -> FIBIU-18",
+      "cross-wave (satisfied by Wave 1 closure): FIBIU-03 -> {04,08,11,15}; FIBIU-29 -> 07; FIBIU-01 -> {09,17,18}"
+    ],
+    "parallel_safe_groups": [
+      ["FIBIU-04","FIBIU-08","FIBIU-11","FIBIU-13","FIBIU-15"],
+      ["FIBIU-05","FIBIU-06","FIBIU-07","FIBIU-09","FIBIU-10","FIBIU-12","FIBIU-14","FIBIU-16"],
+      ["FIBIU-17","FIBIU-18"]
+    ]
+  },
+
+  "shared_surface_collisions": {
+    "note": "Edge-level parallelism (§13) is correct and not modified here. These are write-surface collisions inside declared parallel groups that the DAG's edge structure alone does not resolve; they constrain implementation sequencing within a batch.",
+    "shared_schema": [
+      { "object": "FIBDB-043 (evidence vocabularies)", "units": ["FIBIU-05 (classification)", "FIBIU-07 (erasure)"], "resolved_by_dag": false, "note": "both in L2.2 same parallel group; requires 05->07 sequencing inside batch B1" },
+      { "object": "FIBDB-005", "units": ["FIBIU-04 (creates)", "FIBIU-05 (columns)"], "resolved_by_dag": true },
+      { "object": "FIBDB-006", "units": ["FIBIU-08 (creates)", "FIBIU-09 (rubric columns)"], "resolved_by_dag": true },
+      { "object": "FIBDB-045", "units": ["FIBIU-11", "FIBIU-12"], "resolved_by_dag": true },
+      { "object": "FIBDB-016", "units": ["FIBIU-17 (stage B)", "FIBIU-30 (stage F, Wave 6)"], "resolved_by_dag": true, "note": "cross-wave, by stage" }
+    ],
+    "shared_file": [
+      { "file_range": "lib/pipeline/sroi-calculation.ts:382-486", "units": ["FIBIU-13 (436-445, subset)", "FIBIU-15 (382-486)", "FIBIU-06 (468-486, subset)", "FIBIU-16 (382-486)"], "note": "13 and 06 subranges overlap 15/16's declared range; 13 is L2.1, 15 is L2.1, 06/16 are L2.2 -- real overlap across groups" },
+      { "file": "lib/pipeline/evidence.ts", "units": ["FIBIU-05 (whole file)", "FIBIU-07 (146-161,213-228)"], "note": "same L2.2 parallel group" },
+      { "file_glob": "app/app/projects/[projectId]/pipeline/evidence/**", "units": ["FIBIU-05","FIBIU-06"], "note": "same L2.2 parallel group" },
+      { "file_glob": "app/app/projects/[projectId]/pipeline/calculation/**", "units": ["FIBIU-14 (whole glob)", "FIBIU-12 (page.tsx)"], "note": "same L2.2 parallel group" },
+      { "file": "db/schema.ts", "units": "12 of 15 Wave 2 units" },
+      { "file": "lib/audit/logger.ts", "units": "every unit adding a governed verb (closed union)" }
+    ],
+    "shared_test": [
+      { "file": "tests/audit-action-contract.test.ts", "units": "all 15, plus MNB-1 and BK-2 (CONTENT_MODIFYING_SITES is a literal array)" },
+      { "file": "tests/sroi-calculation.service.test.ts", "units": ["FIBIU-06","FIBIU-12","FIBIU-13","FIBIU-14","FIBIU-15","FIBIU-16","FIBIU-18"] },
+      { "file": "tests/evidence.service.test.ts", "units": ["FIBIU-04","FIBIU-05","FIBIU-06","FIBIU-07"] },
+      { "files": ["tests/admin-proxies.service.test.ts","tests/proxy-approval-race.service.test.ts","tests/proxy-security.test.ts"], "units": ["FIBIU-08","FIBIU-09","FIBIU-10"] }
+    ],
+    "integration_points": [
+      "FIBIU-19 (Wave 3) composes eligibility over FIBIU-06/09/11/12/13/14/15/16/17/18",
+      "FIBIU-24 (Wave 4) snapshots every methodology object Wave 2 produces",
+      "FIBIU-30 (Wave 6) closes FIBDB-016 stage F"
+    ]
+  },
+
+  "versioning_reuse_map": {
+    "authority": "FIBC-002: generic domain_object_versions (FIBIU-03) plus dedicated evidence_versions/financial_proxy_versions specializations owned by FIBIU-04/FIBIU-08.",
+    "substrate_measured": "domain_object_versions.object_type is varchar(100) with no CHECK (db/migrations/0045); createDomainObjectVersion(objectType: string) is open at the type level; module exports no update/delete function; append-only enforced by trg_domain_object_versions_append_only. Adding a new object_type is a service-layer change only, no migration required.",
+    "current_production_vocabulary": ["indicator","outcome","project_investment","sroi_assignment_input","stakeholder_group"],
+    "units": [
+      { "id": "FIBIU-04", "object": "evidence_versions", "disposition": "EXTEND_EXISTING_VERSIONING", "note": "authorized specialization per FIBC-002" },
+      { "id": "FIBIU-08", "object": "financial_proxy_versions", "disposition": "EXTEND_EXISTING_VERSIONING", "note": "authorized specialization per FIBC-002" },
+      { "id": "FIBIU-11", "object": "outcomes.materiality_classification", "disposition": "REUSE_EXISTING_VERSIONING", "note": "FIBDB-008: \"versioned via FIBDB-004\"" },
+      { "id": "FIBIU-15", "object": "methodological_assumptions", "disposition": "REUSE_EXISTING_VERSIONING", "note": "new objectType 'methodological_assumption', service-layer only" },
+      { "id": "FIBIU-12", "object": "outcome_monetization_dispositions", "disposition": "REUSE_EXISTING_VERSIONING" },
+      { "id": "FIBIU-13", "object": "sroi_filter_sets", "disposition": "REUSE_EXISTING_VERSIONING" },
+      { "id": "FIBIU-14", "object": "counterfactual_assessments", "disposition": "REUSE_EXISTING_VERSIONING" },
+      { "id": "FIBIU-06", "object": "evidence_sufficiency_determinations", "disposition": "NOT_APPLICABLE", "note": "append-only/immutable by design, no version lineage" },
+      { "id": "FIBIU-07", "object": "evidence_tombstones", "disposition": "NOT_APPLICABLE" },
+      { "id": "FIBIU-17", "object": "readiness_assessments", "disposition": "NOT_APPLICABLE", "note": "snapshot-immutable, versioned via readiness_model_version against governed_model_registry" },
+      { "id": "FIBIU-18", "object": "sensitivity_candidates/sensitivity_scenarios", "disposition": "NOT_APPLICABLE", "note": "append-only, no retrospective backfill" },
+      { "id": "FIBIU-09", "object": "rubric evaluation", "disposition": "NOT_APPLICABLE", "note": "versions via rubric_version against governed_model_registry (FIBDB-002), not domain_object_versions" },
+      { "id": "FIBIU-10", "object": "material change policy", "disposition": "NOT_APPLICABLE" },
+      { "id": "FIBIU-05", "object": "evidence sensitivity/treatment", "disposition": "REUSE_EXISTING_VERSIONING", "note": "columns on evidence_versions, riding FIBIU-04's specialization" },
+      { "id": "FIBIU-16", "object": "causal chain gate", "disposition": "NOT_APPLICABLE", "note": "no owned DB object" }
+    ],
+    "conclusion": "No parallel versioning infrastructure required or authorized anywhere in Wave 2."
+  },
+
+  "audit_correspondence_map": {
+    "authority": "FIBC-040: closed governed union, no DB-level CHECK (deliberate, to avoid a migration per new verb); contract test scans lib/** and app/** for the closed union plus explicit correspondence checks.",
+    "current_vocabulary_size": 82,
+    "scan_coverage_gap_measured": "CORRESPONDENCE_SCAN_ROOTS = ['lib/pipeline','lib/projects/service.ts','lib/portfolios/service.ts'] (tests/audit-action-contract.test.ts:87-91) does not include lib/admin.",
+    "units": [
+      { "id": "FIBIU-04", "entity_type": "evidence_version", "new_verbs": ["evidence_version.created","evidence_version.superseded","evidence_version.integrity_verified"] },
+      { "id": "FIBIU-05", "entity_type": "evidence_version", "new_verbs": ["evidence_version.sensitivity_classified","evidence_version.treatment_recorded"] },
+      { "id": "FIBIU-06", "entity_type": "evidence_sufficiency_determination", "new_verbs": ["evidence_sufficiency_determination.recorded"] },
+      { "id": "FIBIU-07", "entity_type": "evidence_tombstone", "new_verbs": ["evidence_tombstone.erasure_requested","evidence_tombstone.erasure_completed","evidence_tombstone.erasure_blocked"], "note": "plus explicit ordinary-DELETE denial path, never a silent 0-row result" },
+      { "id": "FIBIU-08", "entity_type": "financial_proxy_version", "new_verbs": ["financial_proxy_version.created","financial_proxy_version.review_status_changed"] },
+      { "id": "FIBIU-09", "entity_type": "financial_proxy_version", "new_verbs": ["financial_proxy_version.rubric_evaluated","financial_proxy_version.exceptional_determination_recorded"] },
+      { "id": "FIBIU-10", "entity_type": "financial_proxy_version", "new_verbs": ["financial_proxy_version.invalidated_by_material_change"] },
+      { "id": "FIBIU-11", "entity_type": "outcome", "new_verbs": [], "reuse": "outcome.materiality_updated (already exists, already in CONTENT_MODIFYING_SITES)" },
+      { "id": "FIBIU-12", "entity_type": "outcome_monetization_disposition", "new_verbs": ["outcome_monetization_disposition.recorded"] },
+      { "id": "FIBIU-13", "entity_type": "sroi_filter_set", "new_verbs": [], "reuse": "sroi_filter_set.updated (already exists)" },
+      { "id": "FIBIU-14", "entity_type": "counterfactual_assessment", "new_verbs": ["counterfactual_assessment.recorded"] },
+      { "id": "FIBIU-15", "entity_type": "methodological_assumption", "new_verbs": ["methodological_assumption.created","methodological_assumption.superseded"] },
+      { "id": "FIBIU-16", "entity_type": null, "new_verbs": [], "note": "no owned object; denial expressed through eligibility composition" },
+      { "id": "FIBIU-17", "entity_type": "readiness_assessment", "new_verbs": ["readiness_assessment.computed"] },
+      { "id": "FIBIU-18", "entity_type": "sensitivity_candidate / sensitivity_scenario", "new_verbs": ["sensitivity_candidate.disposed","sensitivity_scenario.created"] }
+    ]
+  },
+
+  "governance_regime_owner_map": {
+    "hpo_decision_preserved": "HPO-DEC-1 (OWNER_UNIT_INCREMENTAL_REGIME_ACTIVATION) -- governance_regime applies incrementally by owning unit, never opportunistically to later-wave objects.",
+    "current_state_measured": "governance_regime exists only on projects (db/schema.ts:179) and outcome_taxonomy_mappings (db/schema.ts:649) -- the Wave 1 minimum.",
+    "wave2_owning_units_for_governance_regime": [],
+    "conclusion": "No Wave 2 FIBDB item declares governance_regime. Full sweep of §4 (FIBDB-005..018,031-033,037,039,043-048) confirms zero regime mentions; the only FIBDB items mentioning regime at all are 003, 038, 040, 042, 051, 054 -- none owned by Wave 2. FIBIU-30 (Wave 6) remains the global closure.",
+    "hpo_dec_2_form_alpha_preserved": "Operational lifecycle fields (status/archived_by/archived_at) remain distinct from append-only domain_object_versions lineage; Wave 2 introduces no competing lifecycle architecture.",
+    "hpo_dec_3_preserved": "sroi_calculation_run.calculated confirmed present in the governed vocabulary; no superseded literal revived."
+  },
+
+  "database_migration_map": {
+    "current_migration_count": 48,
+    "next_migration_number": "0048",
+    "next_journal_wrapper_ordinal": "060",
+    "stage_rule": "Every Wave 2 DDL item is SCHEMA_STAGE=A (additive). Hardening (stage E) is prohibited before stage D (application cutover, post-Wave 3/4) per §6.1.",
+    "items": [
+      { "fibdb": "005", "owner": "FIBIU-04", "target": "evidence_versions NEW_TABLE", "stage": "A", "hardening": "E (approved-version immutability)" },
+      { "fibdb": "037", "owner": "FIBIU-04", "target": "content_hash format NOT VALID CHECK", "stage": "A", "hardening": "E (validates only pc01b regime; see W2-GAP-2)" },
+      { "fibdb": "043", "owner": "FIBIU-05 + FIBIU-07", "target": "4 vocabulary CHECKs", "stage": "A", "hardening": "E" },
+      { "fibdb": "014", "owner": "FIBIU-06", "target": "evidence_sufficiency_determinations NEW_TABLE", "stage": "A", "hardening": "E (immutable)" },
+      { "fibdb": "031", "owner": "FIBIU-07", "target": "evidence_tombstones NEW_TABLE", "stage": "A", "hardening": "-" },
+      { "fibdb": "032", "owner": "FIBIU-07", "target": "revoke evidence_items DELETE from authenticated", "stage": "-", "hardening": "E, must ship with 033" },
+      { "fibdb": "033", "owner": "FIBIU-07", "target": "explicit DELETE-rejection trigger", "stage": "-", "hardening": "E, must ship with 032" },
+      { "fibdb": "006", "owner": "FIBIU-08", "target": "financial_proxy_versions NEW_TABLE", "stage": "A", "hardening": "E" },
+      { "fibdb": "039", "owner": "FIBIU-08", "target": "outcome_proxy_assignments NEW_COLUMN (version link)", "stage": "A", "hardening": "E (NULL => ineligible)" },
+      { "fibdb": "044", "owner": "FIBIU-09", "target": "rubric ranges/derived-consistency CHECKs", "stage": "A", "hardening": "E" },
+      { "fibdb": "007", "owner": "FIBIU-10", "target": "proxy_material_fields_registry NEW_TABLE", "stage": "A", "hardening": "-" },
+      { "fibdb": "008", "owner": "FIBIU-11", "target": "outcomes.materiality_classification NEW_COLUMN", "stage": "A", "hardening": "-" },
+      { "fibdb": "045", "owner": "FIBIU-11 + FIBIU-12", "target": "materiality/monetization vocabularies", "stage": "A", "hardening": "E" },
+      { "fibdb": "009", "owner": "FIBIU-12", "target": "outcome_monetization_dispositions NEW_TABLE", "stage": "A", "hardening": "E (immutable post-approval)" },
+      { "fibdb": "010", "owner": "FIBIU-13", "target": "5 justification columns (form frozen R1)", "stage": "A", "hardening": "none by design (no DB hardening)" },
+      { "fibdb": "011", "owner": "FIBIU-14", "target": "counterfactual_assessments NEW_TABLE", "stage": "A", "hardening": "-" },
+      { "fibdb": "046", "owner": "FIBIU-14", "target": "counterfactual vocabulary", "stage": "A", "hardening": "E" },
+      { "fibdb": "012", "owner": "FIBIU-15", "target": "methodological_assumptions NEW_TABLE", "stage": "A", "hardening": "-" },
+      { "fibdb": "013", "owner": "FIBIU-15", "target": "assumption_object_links NEW_TABLE", "stage": "A", "hardening": "-" },
+      { "fibdb": "047", "owner": "FIBIU-15", "target": "assumption basis vocabulary", "stage": "A", "hardening": "-" },
+      { "fibdb": "015", "owner": "FIBIU-17", "target": "readiness_assessments NEW_TABLE", "stage": "A", "hardening": "-" },
+      { "fibdb": "016", "owner": "FIBIU-17 (+FIBIU-30)", "target": "sroi_run_reviews.readiness_score LEGACY_MARKING", "stage": "B", "hardening": "F (Wave 6)" },
+      { "fibdb": "017", "owner": "FIBIU-18", "target": "sensitivity_candidates NEW_TABLE", "stage": "A", "hardening": "E (append-only)" },
+      { "fibdb": "018", "owner": "FIBIU-18", "target": "sensitivity_scenarios NEW_TABLE", "stage": "A", "hardening": "E (append-only)" },
+      { "fibdb": "048", "owner": "FIBIU-18", "target": "sensitivity vocabulary", "stage": "A", "hardening": "E" },
+      { "fibdb": "NO_DB_OBJECT", "owner": "FIBIU-16", "target": "reasoned -- native ToC graph already the storage representation", "stage": "-", "hardening": "-" }
+    ],
+    "migration_dependencies": ["043 after 005/006", "044 after 006", "039 after 006", "033 must ship together with 032", "045 after 008+009"],
+    "hosted_manifest_and_journal_impact": "Every migration must be pinned in db/hosted/baseline-manifest.ts (BASELINE_UNITS, hash + security-surface digest) and given a db/prepared/journal/NNN_ wrapper, following the same procedure used for migrations 0040-0047 (pnpm db:generate -> _journal.json entry -> baseline-manifest.ts entry -> pnpm journal:generate -> pnpm journal:verify + pnpm baseline:verify).",
+    "snapshot_impact": "No Wave 2 unit writes the report snapshot. All declared fields become forward obligations for FIBIU-24 (Wave 4)."
+  },
+
+  "targeted_test_map": {
+    "rule": "Never the full pnpm test suite per unit; full suite + build remains a CI/merge-gate concern (ods:poststate explicit_prohibition).",
+    "units": [
+      { "id": "FIBIU-04", "unit_tests": ["tests/evidence.service.test.ts","new evidence-versions test"], "static_contract": ["tests/audit-action-contract.test.ts"], "negative_control": "legacy text -> legacy_content_unverifiable, never reconstructed" },
+      { "id": "FIBIU-05", "unit_tests": ["new sensitivity test"], "integration": ["lib/reports/report-variants.test.ts","Stella context tests"], "negative_control": "sensitive evidence absent from report/export/public surface" },
+      { "id": "FIBIU-06", "unit_tests": ["tests/confidence-score.service.test.ts","new sufficiency test"], "integration": ["tests/sroi-calculation.service.test.ts"], "negative_control": "sufficiency never inferred from count/status/score" },
+      { "id": "FIBIU-07", "integration": ["new erasure test (DB+I)"], "db": ["tests/append-only-error.test.ts"], "negative_control": "ordinary DELETE fails explicitly, never 0 rows; docs/19 not activated" },
+      { "id": "FIBIU-08", "unit_tests": ["tests/admin-proxies.service.test.ts"], "integration": ["tests/proxy-approval-race.service.test.ts","tests/proxy-security.test.ts"], "static_contract": ["tests/audit-action-contract.test.ts (+MNB-1)"], "negative_control": "unapproved proxy never reaches the engine" },
+      { "id": "FIBIU-09", "unit_tests": ["new rubric test, 13 factors, ceilings/floors"], "negative_control": "level contradicting ceiling/floor is rejected, not corrected" },
+      { "id": "FIBIU-10", "db": ["atomic invalidation, no window"], "negative_control": "editorial change does not invalidate" },
+      { "id": "FIBIU-11", "unit_tests": ["tests/outcomes.service.test.ts"], "static_contract": ["tests/audit-action-contract.test.ts"], "negative_control": "1-5 score never auto-classifies" },
+      { "id": "FIBIU-12", "unit_tests": ["tests/sroi-calculation.service.test.ts"], "integration": ["tests/sroi-calculation.golden.test.ts"], "negative_control": "no-ratio path; itemized exclusions with distinct reasons" },
+      { "id": "FIBIU-13", "unit_tests": ["tests/sroi-parse-num.test.ts"], "integration": ["tests/sroi-calculation.golden.test.ts"], "negative_control": "NULL never becomes 0 on authoritative path" },
+      { "id": "FIBIU-14", "unit_tests": ["new counterfactual test"], "negative_control": "indicators.baseline_value never auto-converts" },
+      { "id": "FIBIU-15", "unit_tests": ["new assumptions test"], "integration": ["tests/theory-of-change.service.test.ts"], "negative_control": "free text never auto-converts" },
+      { "id": "FIBIU-16", "unit_tests": ["tests/theory-of-change.service.test.ts"], "integration": ["tests/sroi-calculation.service.test.ts"], "negative_control": "activity->outcome rejected; unmapped document does not satisfy" },
+      { "id": "FIBIU-17", "unit_tests": ["new readiness test, 46 criteria"], "integration": ["lib/portfolios/analytics.test.ts","lib/pipeline/methodology-review.test.ts"], "negative_control": "readiness never gates approval; D8-4 vacuity resolution" },
+      { "id": "FIBIU-18", "unit_tests": ["tests/sroi-sensitivity.service.test.ts"], "integration": ["tests/sroi-calculation.golden.test.ts"], "db": ["append-only 018"], "negative_control": "uniform +/-10pp absent from every path; no retrospective backfill" }
+    ],
+    "cross_workstream_closure_only": ["tests/cross-workstream/**","lib/pipeline/governance-regime.test.ts","lib/pipeline/domain-object-versions.test.ts (substrate regression)"]
+  },
+
+  "model_routing_map": {
+    "authority": "FIB §12: IMPLEMENTATION_MODEL_RECOMMENDATION=SONNET_HIGH frozen for all 15 units; OPUS_HIGH_REVIEW reserved for wave-level review of the highest-risk units, never for implementation.",
+    "class_b_sonnet_implementation": ["FIBIU-04","FIBIU-05","FIBIU-06","FIBIU-07","FIBIU-08","FIBIU-09","FIBIU-10","FIBIU-11","FIBIU-12","FIBIU-13","FIBIU-14","FIBIU-15","FIBIU-16","FIBIU-17","FIBIU-18"],
+    "class_a_opus_required_review_only": ["FIBIU-07","FIBIU-10","FIBIU-18"],
+    "class_c_mechanical": ["MNB-1 (4 sites + scan-root array)","BK-1","BK-3"],
+    "machine_only_class_d": ["ods:prestate","ods:scope","ods:poststate","authority:seal:verify","journal:verify","baseline:verify"]
+  },
+
+  "mnb1_ownership": {
+    "owner": "FIBIU-08",
+    "batch": "B2",
+    "basis": "Wave 1 backlog: \"Wave 2 entry-scope reconciliation, unless a more precise owning unit is established.\" FIBIU-08's declared FILES_OR_DOMAINS names lib/admin/proxies.ts literally -- the only Wave 2 unit that does. authority_change_required=false at Wave 1 closure.",
+    "surface": "lib/admin/proxies.ts",
+    "measured_sites": [
+      { "line": 104, "function": "createGlobalProxySource", "entity_type": "proxy_source", "current_verb": "ORGANIZATION_UPDATED", "target_verb": "proxy_source.created" },
+      { "line": 142, "function": "createGlobalFinancialProxy", "entity_type": "financial_proxy", "current_verb": "ORGANIZATION_UPDATED", "target_verb": "financial_proxy.created" },
+      { "line": 185, "function": "updateGlobalProxyReviewStatus", "entity_type": "financial_proxy", "current_verb": "ORGANIZATION_UPDATED", "target_verb": "financial_proxy.review_status_changed" },
+      { "line": 252, "function": "setGlobalProxyManualFxRate", "entity_type": "financial_proxy", "current_verb": "ORGANIZATION_UPDATED", "target_verb": "financial_proxy.updated" }
+    ],
+    "no_new_audit_verbs_required": true,
+    "scan_extension_required": {
+      "file": "tests/audit-action-contract.test.ts",
+      "change": "CORRESPONDENCE_SCAN_ROOTS += 'lib/admin'",
+      "caveat": "If the extended scan discovers additional non-conforming sites in lib/admin/** beyond proxies.ts, they must be registered as a new finding, never silently absorbed into MNB-1 or hidden by loosening the test."
+    },
+    "implemented_in_this_task": false
+  },
+
+  "wave1_bookkeeping_disposition": [
+    { "id": "BK-1", "surface": "db/hosted/baseline-apply-authorization.ts:1097", "disposition": "closure-level Class C candidate", "note": "will re-rancify with every Wave 2 migration since evaluate() derives the unit count from BASELINE_UNITS.length; correct once at wave close, not per batch" },
+    { "id": "BK-2", "surface": "tests/audit-action-contract.test.ts (CORRESPONDENCE_EXCEPTIONS)", "disposition": "valid correspondence exceptions -- do not modify", "note": "adjudicated semantically valid at Wave 1 closure, not a FIBC-040 defect; shares a file with MNB-1, must not be touched by the MNB-1 remediation" },
+    { "id": "BK-3", "surface": "in-code W1-05-RM1 remediation labels", "disposition": "Class C, no Wave 2 owning unit" },
+    { "id": "BK-4", "surface": "lib/pipeline/confidence-score.ts:81", "disposition": "outside FIBIU-06 declared line surface (22-40), no Wave 2 ownership", "note": "adjacent to FIBIU-06 but the declared range excludes it; not absorbed" }
+  ],
+
+  "authority_gaps": {
+    "count": 2,
+    "gaps": [
+      {
+        "gap_id": "W2-GAP-1",
+        "affected_fibiu": "14 of 15 (all except FIBIU-16, which is NO_DB_OBJECT)",
+        "status": "CLOSED_BY_ODS_MAINTENANCE",
+        "original_conflict": "ODS-C4 (pnpm ods:scope) declared db/migrations/** and db/prepared/** as unconditionally protected with no --allow override mechanism, while its own frozen authority (ODS_V1_AUTHORITY_v1.0.0.json, ods_v1_frozen_scope.ODS-C4.authorization_rule) stated a protected surface could be authorized via \"explicit scoped authorization.\" Verified executable at W2-00 time: ods:scope --allow 'db/migrations/**' --allow '**' against a real historical migration diff returned ODS_SCOPE=FAIL with 64 PROTECTED_PATH_VIOLATIONS and --allow inert.",
+        "resolution_chain": [
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json -- HPO-ODS-W2-01 initial grant: authority_id=HPO-ODS-W2-01, branch=codex/w2-methodology-objects-r1, patterns=[db/migrations/**, db/prepared/journal/**]",
+          "ODS-M1C independent adversarial audit of the v1.0.1 implementation -- verdict FAIL (1 blocking, 2 material non-blocking; grant registry itself independently validated and not reopened)",
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json -- froze HPO-ODS-TOOLCHAIN-02 (explicit local compiler execution), HPO-ODS-POSTSTATE-01 (protected-authority passthrough into ods:poststate), HPO-ODS-C4-CASE-01 (case-canonical protected-path classification)",
+          "implementation commits f66e787 (explicit local tsc), de34ec4 (poststate passthrough), 1e6b4c9 (noncanonical-path rejection)",
+          "ODS-M1F final independent maintenance re-audit -- source of AG-1 (a separate, non-blocking finding; does not reopen this grant)",
+          "docs(ods): register final maintenance carry-forward (ba2f5fd) -- current HEAD"
+        ],
+        "independent_verification_performed_in_this_task": [
+          "pnpm ods:prestate and pnpm authority:seal:verify both PASS at current HEAD/TREE",
+          "read PROTECTED_GRANTS in scripts/ods-scope.ts directly: single static entry, authorityId=HPO-ODS-W2-01, branch=codex/w2-methodology-objects-r1 (current branch), patterns=[db/migrations/**, db/prepared/journal/**] -- matches the frozen grant exactly",
+          "read scripts/ods-poststate.ts: --protected-authority is parsed, validated, and forwarded only to the composed ods:scope call; not interpreted by poststate itself",
+          "executed pnpm ods:scope --base 5739ada --allow 'db/migrations/**' --allow 'db/prepared/journal/**' --allow '**' --protected-authority HPO-ODS-W2-01 against the same real historical diff used at W2-00: PROTECTED_AUTHORIZED_PATH_COUNT=62 (all migration/journal paths), residual PROTECTED_PATH_VIOLATIONS=2 limited to two files outside the granted pattern set (docs/ops/fib/...wave1-closure.json, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json) -- correct fail-closed behavior, not a defect",
+          "ran the targeted ODS gate suites (tests/ods/ods-scope.test.ts, tests/ods/ods-poststate.test.ts, tests/ods/ods-prestate.test.ts): 150/150 passed, including the CASE-*, PSA-*, and TC2-* negative controls frozen by v1.0.2"
+        ],
+        "conclusion": "W2-GAP-1 is closed for the concrete scope Wave 2 needs: a Wave 2 batch that adds only db/migrations/** and db/prepared/journal/** files (plus ordinary --allow for its non-protected surface) can pass pnpm ods:scope and the composed pnpm ods:poststate by supplying --protected-authority HPO-ODS-W2-01 on branch codex/w2-methodology-objects-r1. The grant is scoped exactly to this branch and these two patterns; it authorizes nothing else and does not generalize to any future wave."
+      },
+      {
+        "gap_id": "W2-GAP-2",
+        "affected_fibiu": "FIBIU-04 (FIBDB-037); shared with FIBIU-24 (FIBDB-038, Wave 4)",
+        "status": "DEFERRED",
+        "classification": "NOT_BLOCKING_WAVE2_STAGE_A",
+        "hpo_decision_required_now": false,
+        "detail": "§6.2 assigns FIBDB-037 hardening stage \"E (validates only the pc01b regime)\" and FIBDB-038 \"Legacy exempt by regime,\" but §4 declares no governance_regime column on either evidence_items or sroi_reports, and PostgreSQL VALIDATE CONSTRAINT has no partial/regime-scoped form. Stage A ships as NOT_VALID with a fully determined form; the regime-scoped VALIDATE mechanism is a stage-E (post-cutover) concern shared with FIBIU-24 in Wave 4, not a Wave 2 blocker."
+      }
+    ],
+    "wave1_bookkeeping_ag1_note": "AG-1 (ODS-M1F, recorded in ODS_CARRY_FORWARD_BACKLOG.md) is a distinct finding -- four post-v1.0 ODS artifacts are process-immutable but not mechanically protected by DEFAULT_PROTECTED_PATTERNS or the C2 corpus. Explicitly marked Lane A non-blocking, Lane B non-blocking, and \"does not affect Wave 2 authorized surfaces\" in its own source record. Not a Wave 2 authority gap; recorded here only for completeness."
+  },
+
+  "recommended_implementation_batches": [
+    {
+      "batch_id": "B1",
+      "name": "Evidence",
+      "fibius": ["FIBIU-04","FIBIU-05","FIBIU-06","FIBIU-07"],
+      "base_dependencies": ["Wave 1 (FIBIU-03, FIBIU-29)"],
+      "internal_sequencing": "FIBIU-04 first; FIBIU-05 and FIBIU-06 in parallel after 04; FIBIU-07 after 04, sequenced against FIBIU-05 for the shared FIBDB-043 vocabulary",
+      "authorized_surface": ["db/schema.ts","db/migrations/0048-005x","db/prepared/journal/060-06x","lib/pipeline/evidence.ts","lib/pipeline/confidence-score.ts","app/app/projects/[projectId]/pipeline/evidence/**","lib/audit/logger.ts","targeted tests"],
+      "model": "SONNET_HIGH (implementation); OPUS_HIGH_REVIEW at close for FIBIU-07",
+      "targeted_tests": ["tests/evidence.service.test.ts","tests/audit-action-contract.test.ts","tests/append-only-error.test.ts","tests/confidence-score.service.test.ts"],
+      "expected_output": "FIBDB-005/037/043/014/031 materialized; 032/033 deferred to stage E",
+      "integration_dependency": "none within Wave 2; feeds FIBIU-19 (Wave 3) and FIBIU-24 (Wave 4)",
+      "closure_gate": "pnpm ods:poststate --base <batch-base> --allow db/migrations/** --allow db/prepared/journal/** --protected-authority HPO-ODS-W2-01 --allow <batch app/lib surface> --test <targeted tests>"
+    },
+    {
+      "batch_id": "B2",
+      "name": "Proxy",
+      "fibius": ["FIBIU-08","FIBIU-09","FIBIU-10"],
+      "base_dependencies": ["Wave 1 (FIBIU-03, FIBIU-01)"],
+      "internal_sequencing": "FIBIU-08 first (includes MNB-1 remediation); FIBIU-09 and FIBIU-10 in parallel after 08",
+      "authorized_surface": ["db/schema.ts","db/migrations/**","db/prepared/journal/**","lib/pipeline/proxies.ts","lib/admin/proxies.ts","app/admin/proxies/**","tests/audit-action-contract.test.ts"],
+      "model": "SONNET_HIGH (implementation); OPUS_HIGH_REVIEW at close for FIBIU-10",
+      "targeted_tests": ["tests/admin-proxies.service.test.ts","tests/proxy-approval-race.service.test.ts","tests/proxy-security.test.ts","tests/audit-action-contract.test.ts"],
+      "expected_output": "FIBDB-006/039/044/007 materialized; MNB-1 closed",
+      "integration_dependency": "none within Wave 2",
+      "closure_gate": "pnpm ods:poststate --base <batch-base> --allow db/migrations/** --allow db/prepared/journal/** --protected-authority HPO-ODS-W2-01 --allow <batch app/lib surface> --test <targeted tests>"
+    },
+    {
+      "batch_id": "B3",
+      "name": "Outcome and filters",
+      "fibius": ["FIBIU-11","FIBIU-12","FIBIU-13"],
+      "base_dependencies": ["Wave 1 (FIBIU-03)"],
+      "internal_sequencing": "FIBIU-11 before FIBIU-12; FIBIU-13 independent (no hard dependency)",
+      "authorized_surface": ["db/schema.ts","db/migrations/**","db/prepared/journal/**","lib/pipeline/outcomes.ts","lib/pipeline/sroi-calculation.ts (231-350,436-445,672-749,964-965)","app/app/projects/[projectId]/pipeline/calculation/**"],
+      "model": "SONNET_HIGH",
+      "targeted_tests": ["tests/outcomes.service.test.ts","tests/sroi-calculation.service.test.ts","tests/sroi-calculation.golden.test.ts","tests/sroi-parse-num.test.ts"],
+      "expected_output": "FIBDB-008/045/009/010 materialized",
+      "integration_dependency": "none within Wave 2",
+      "closure_gate": "pnpm ods:poststate --base <batch-base> --allow db/migrations/** --allow db/prepared/journal/** --protected-authority HPO-ODS-W2-01 --allow <batch app/lib surface> --test <targeted tests>"
+    },
+    {
+      "batch_id": "B4",
+      "name": "Assumptions and causality",
+      "fibius": ["FIBIU-15","FIBIU-14","FIBIU-16"],
+      "base_dependencies": ["Wave 1 (FIBIU-03)"],
+      "internal_sequencing": "FIBIU-15 first; FIBIU-14 and FIBIU-16 in parallel after 15",
+      "authorized_surface": ["db/schema.ts","db/migrations/**","db/prepared/journal/**","lib/pipeline/narratives.ts","lib/pipeline/theory-of-change.ts","lib/pipeline/sroi-calculation.ts:382-486","app/app/projects/[projectId]/pipeline/narrative/**"],
+      "model": "SONNET_HIGH",
+      "targeted_tests": ["tests/theory-of-change.service.test.ts","tests/sroi-calculation.service.test.ts"],
+      "expected_output": "FIBDB-012/013/047/011/046 materialized; FIBIU-16 has no DDL",
+      "integration_dependency": "none within Wave 2",
+      "closure_gate": "pnpm ods:poststate --base <batch-base> --allow db/migrations/** --allow db/prepared/journal/** --protected-authority HPO-ODS-W2-01 --allow <batch app/lib surface> --test <targeted tests>"
+    },
+    {
+      "batch_id": "B5",
+      "name": "Governed models",
+      "fibius": ["FIBIU-17","FIBIU-18"],
+      "base_dependencies": ["B1, B2, B3, B4 complete (FIBIU-17 hard-depends on FIBIU-15 and FIBIU-16)"],
+      "internal_sequencing": "FIBIU-17 and FIBIU-18 independent of each other, both gated on B4",
+      "authorized_surface": ["db/schema.ts","db/migrations/**","db/prepared/journal/**","lib/pipeline/methodology-review.ts","lib/pipeline/sroi-results.ts","lib/pipeline/sroi-sensitivity.ts","lib/portfolios/analytics.ts","Stella context builders"],
+      "model": "SONNET_HIGH (implementation); OPUS_HIGH_REVIEW mandatory at close for FIBIU-18",
+      "targeted_tests": ["lib/portfolios/analytics.test.ts","lib/pipeline/methodology-review.test.ts","tests/sroi-sensitivity.service.test.ts","tests/sroi-calculation.golden.test.ts"],
+      "expected_output": "FIBDB-015/016/017/018/048 materialized",
+      "integration_dependency": "consumes B1-B4 outputs; feeds FIBIU-19 (Wave 3)",
+      "closure_gate": "pnpm ods:poststate --base <batch-base> --allow db/migrations/** --allow db/prepared/journal/** --protected-authority HPO-ODS-W2-01 --allow <batch app/lib surface> --test <targeted tests>"
+    }
+  ],
+
+  "wave_closure_step": "One Class C correction of BK-1 stale manifest prose, plus cross-workstream regression, at Wave 2 close (not per batch).",
+
+  "parallel_worktree_recommendation": {
+    "recommended": false,
+    "reason": "Seven global serialization surfaces are touched by every batch: (1) db/migrations/NNNN_ sequential numbering, (2) db/migrations/meta/_journal.json ordered append, (3) db/prepared/journal/NNN_ sequential ordinal, (4) db/hosted/baseline-manifest.ts (BASELINE_UNITS ordered list with pinned hashes), (5) db/schema.ts (12 of 15 units write it), (6) lib/audit/logger.ts (closed verb union), (7) tests/audit-action-contract.test.ts (CONTENT_MODIFYING_SITES literal array). Items 1-4 are deterministic ordered artifacts that a content merge cannot resolve -- they must be regenerated, which erases the parallelism gain. Recommendation: run B1 through B5 sequentially on codex/w2-methodology-objects-r1. Re-evaluate only if a future authority update grants per-batch migration number ranges."
+  },
+
+  "no_write_validation": {
+    "prestate_head": "ba2f5fd2abb120885b3dce21c476203da1f1f151",
+    "prestate_tree": "15715174aa1ce8eb8f726b8b73816cd2d15b7a96",
+    "ods_prestate_result": "PASS",
+    "authority_seal_verify_result": "PASS",
+    "targeted_ods_gate_tests_run": "tests/ods/ods-scope.test.ts, tests/ods/ods-poststate.test.ts, tests/ods/ods-prestate.test.ts -- 150/150 passed",
+    "no_fibiu_implemented": true,
+    "no_migration_created": true,
+    "no_fib_authority_modified": true
+  },
+
+  "state_after_this_artifact": {
+    "wave2_unit_count": 15,
+    "wave2_batch_count": 5,
+    "w2_gap_1_status": "CLOSED_BY_ODS_MAINTENANCE",
+    "w2_gap_2_status": "DEFERRED_NOT_BLOCKING_STAGE_A",
+    "mnb1_owner": "FIBIU-08",
+    "mnb1_batch": "B2",
+    "additional_wave2_worktrees_recommended": false,
+    "ready_for_wave2_implementation": true,
+    "next_gate": "W2_B1_EVIDENCE_IMPLEMENTATION"
+  },
+
+  "final_state": "WAVE2_EXECUTION_MAPPING_MATERIALIZED_READY_FOR_B1"
+}

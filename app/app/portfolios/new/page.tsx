@@ -1,5 +1,5 @@
 import { createPortfolioForCurrentOrganization } from '@/lib/portfolios/service';
-import { getCurrentOrganizationContext } from '@/lib/auth/session';
+import { getCurrentOrganizationContext, runWithOrganizationAccess } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,10 @@ export default async function NewPortfolioPage() {
       name: formData.get('name') as string,
       description: (formData.get('description') as string) || undefined,
     };
-    await createPortfolioForCurrentOrganization(input);
+    // The write runs inside the identity context; the redirect is issued AFTER
+    // it commits. `redirect()` throws, so calling it inside the callback would
+    // roll the insert back.
+    await runWithOrganizationAccess(() => createPortfolioForCurrentOrganization(input));
     redirect('/app/portfolios');
   }
 

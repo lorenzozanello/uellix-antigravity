@@ -45,3 +45,93 @@ next-env.d.ts
 # local agent/editor configuration
 /.agents/
 /.claude/settings.local.json
+
+# The pre-write probe is minted per attempt and carries that attempt id as a
+# SQL literal. It is transient by construction: committing one would invite
+# re-running last week's probe, which is the thing the freshness gate exists to
+# refuse. The ATTEMPT LEDGER beside it is the durable record and IS committed.
+artifacts/hosted-chain-pre-write-probe.sql
+# COMMIT 5.4. The same reasoning, for the two probes T1 additionally needs and
+# for the remediation's own witness probe. All three carry an attempt id as a
+# SQL literal and are rewritten by the next `open`.
+artifacts/hosted-chain-t1-remediation-probe.sql
+artifacts/hosted-chain-t1-prechain-probe.sql
+artifacts/hosted-remediation-witness-probe.sql
+# COMMIT 5.6 emitted two MORE per-attempt SQL files from the same `open` — the
+# installer identity probe and the guard prepended to the governed package — and
+# did not list them here. Both compile `att_<32 hex>` in as a literal, so both
+# are the exact class the paragraph above refuses: a guard on disk still naming
+# a spent attempt is a guard an operator can prepend tomorrow, and it would
+# assert the right role for the wrong measurement. Found by the post-install
+# validation gate, which asserts that every attempt-bound *.sql under artifacts/
+# is ignored.
+artifacts/hosted-chain-installer-identity-probe.sql
+artifacts/hosted-chain-installer-identity-guard.sql
+# COMMIT 5.6. The per-attempt WORKING documents an operator saves the probe
+# output into. Same reasoning one level on: they are rewritten by the next
+# attempt — the witness for att_34fd431f was lost exactly this way — so a copy
+# sitting here is a copy that has already stopped describing the current one.
+# What is worth keeping is promoted to docs/ops/staging/evidence/ under a name
+# carrying its attempt id. See that directory's README.
+artifacts/hosted-remediation-witness.json
+artifacts/hosted-chain-pre-write-probe.out
+artifacts/hosted-chain-pre-write-observation.json
+artifacts/t1-witness.json
+artifacts/t1-prechain.json
+# The identity documents the operator saved from the identity probe, and the
+# closing observation of the chain. Promoted, verbatim, to
+# docs/ops/staging/evidence/ under names carrying their attempt id; the copies
+# here are working files the next attempt overwrites.
+artifacts/installer-identity.json
+artifacts/installer-identity-recheck.json
+artifacts/hosted-chain-final-observation.json
+# F-PI-01. The posture probe, same class as every other attempt-bound *.sql: it
+# carries `att_<32 hex>` as a SQL literal and is rewritten by the next
+# `posture:observation`. The OBSERVATION an operator saves beside it is a working
+# file for the same reason one level on — the next attempt overwrites it — and
+# `posture:status:write` promotes it verbatim to docs/ops/staging/evidence/ under
+# a name carrying its attempt id. MEASURED: the copy left here after the closure
+# measurement was byte-identical to its promotion, which is exactly what makes it
+# a duplicate rather than a record.
+#
+# `artifacts/hosted-chain-posture-status.json` is deliberately NOT here. It is a
+# DERIVED VERDICT, like every other *-status.json under artifacts/, and it is
+# versioned so `posture:status:verify` has something to recompute against. A
+# status that nothing recomputes is a number that will eventually be wrong in the
+# direction that flatters the author.
+artifacts/hosted-chain-posture-probe.sql
+artifacts/hosted-chain-posture-observation.json
+# The same working document under the names later runs give it — the attempt-bound
+# one `-o` writes and the `-postcred` one. Both are duplicates of a promotion.
+artifacts/hosted-chain-posture-observation-*.json
+# M-8 RUNTIME CLOSEOUT. The working documents the operator saved from the M-8
+# probes, on both credential lifecycles. Same rule as every other measurement
+# under artifacts/: what is worth keeping was promoted VERBATIM to
+# docs/ops/staging/evidence/ under a name carrying its attempt, and the copies
+# here are duplicates. MEASURED before ignoring them: every promotion is
+# byte-identical to the file it came from.
+#
+# The four M-8 *.sql PROBES are deliberately NOT here, and the distinction is
+# the one H-1 draws. They compile no `att_<32 hex>` literal — the runtime proof
+# takes its attempt as `-v m8_attempt_id`, on purpose — so none of them is the
+# re-runnable-against-a-spent-attempt class this file exists to refuse. They are
+# the instruments that produced committed evidence, and an auditor who cannot
+# read the instrument is reading a number.
+artifacts/hosted-m8-app-identity.json
+artifacts/hosted-m8-claim-observation.json
+artifacts/hosted-m8-credential-authority.json
+artifacts/hosted-m8-credential-closure.json
+artifacts/hosted-m8-*-att_*.json
+artifacts/hosted-chain-posture-observation-postcred.json
+# Raw psql output of the post-T10 chain probe. Same class as
+# `hosted-chain-pre-write-probe.out` above: a transcript, rewritten by the next
+# probe. The POST_T10 canonical `chain:status` evidence is a DECLARED DEBT, not
+# something this transcript closes — see docs/ops/staging/M8_RUNTIME_CLOSEOUT.md.
+artifacts/hosted-chain-post-t10-probe.out
+# The FOUR ATTEMPT LEDGERS are the durable audit trail and ARE versioned, in
+# place, where the tools append to them. Listed here as a statement, not as a
+# rule: nothing below ignores them, and a future glob over artifacts/ must not.
+#   artifacts/hosted-chain-attempts.jsonl          VERSIONED
+#   artifacts/hosted-remediation-attempts.jsonl    VERSIONED
+#   artifacts/hosted-chain-posture-attempts.jsonl  VERSIONED
+#   artifacts/hosted-m8-runtime-attempts.jsonl     VERSIONED  (M-8 runtime)

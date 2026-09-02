@@ -5,5 +5,7 @@
 import { verifyFileEvidenceIntegrity } from '@/lib/pipeline/evidence';
 
 export async function verifyEvidenceIntegrityAction(projectId: string, evidenceId: string) {
-  return await verifyFileEvidenceIntegrity(projectId, evidenceId);
+  // NOT wrapped here: the service owns its contexts, with a full file download
+  // and re-hash between them. See createFileEvidence.action.ts.
+  return verifyFileEvidenceIntegrity(projectId, evidenceId);
 }

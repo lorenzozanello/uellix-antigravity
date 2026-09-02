@@ -4,6 +4,7 @@
 
 import { z } from 'zod'
 import { createInvestment, updateInvestment, deleteInvestment } from '@/lib/pipeline/investments'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 
 const CreateInvestmentSchema = z.object({
   funderId: z.string().uuid('Debes seleccionar un financiador válido'),
@@ -58,7 +59,7 @@ export async function createInvestmentAction(projectId: string, formData: FormDa
 
     if (!projectId) throw new Error('ID del proyecto faltante')
 
-    const result = await createInvestment(projectId, parsed)
+    const result = await runWithOrganizationAccess(() => createInvestment(projectId, parsed))
     return result
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -87,7 +88,9 @@ export async function updateInvestmentAction(investmentId: string, formData: For
 
     if (!investmentId) throw new Error('ID de inversión faltante')
 
-    const result = await updateInvestment(investmentId, parsed)
+    const result = await runWithOrganizationAccess(() =>
+      updateInvestment(investmentId, parsed)
+    )
     return result
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -104,6 +107,6 @@ export async function updateInvestmentAction(investmentId: string, formData: For
 export async function deleteInvestmentAction(investmentId: string) {
   if (!investmentId) throw new Error('investmentId missing')
 
-  const result = await deleteInvestment(investmentId)
+  const result = await runWithOrganizationAccess(() => deleteInvestment(investmentId))
   return result
 }
