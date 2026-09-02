@@ -1,0 +1,116 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.7",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.7",
+  "authority_class": "SUCCESSOR_INTEGRATION_CONFLICT_RECONCILIATION",
+  "materialization_step": "HPO-ODS-W2-06",
+  "materialization_date": "2026-09-02",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Freeze, append-only, the narrow conflict-resolution authority for reconciling the audited Product lineage (codex/u0-u9-reengineering-resume-r1 @ 7d8592a8) with a normal merge of origin/main (@ 067e8c2f) into a new successor integration branch, codex/product-main-integration-r1. This is a routine main-catch-up, not a re-audit: it does not reopen HPO-ODS-W2-01 through W2-05, the B0/B1 checkpoints, or any B1 evidence semantic audit. Its entire scope is the four paths where both lineages independently added the same file after their common ancestor (dd36a4e) and therefore conflict on a normal merge: .github/workflows/ci.yml, docs/ops/CREDENTIAL_HYGIENE.md, scripts/scan-secrets.ts, tests/scan-secrets.test.ts.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.6, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through W2-05 are FROZEN_UNCHANGED. Does not touch db/migrations/**, db/prepared/**, db/baseline/**, or any B1 evidence file — none of those paths are part of this merge's conflict set.",
+
+  "predecessor_authorities": {
+    "ods_v1_0_6": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.6.json",
+    "hpo_ods_w2_01_through_05": "FROZEN_UNCHANGED",
+    "source_closure": "PRODUCT_BASELINE_EVIDENCE_FORMALLY_CLOSED — audited Product HEAD 7d8592a8d2b6495333b3959c0815e6e647e1943b, tree 52b0651cd16942c81a4c8aa12f3ae03d7e49677d, verified clean prior to this artifact"
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "audited_product_branch": "codex/u0-u9-reengineering-resume-r1",
+    "audited_product_head": "7d8592a8d2b6495333b3959c0815e6e647e1943b",
+    "audited_product_tree": "52b0651cd16942c81a4c8aa12f3ae03d7e49677d",
+    "inbound_main_parent": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "merge_base": "dd36a4eca1f8d323c0ed2a57fb14844ea2f1d5f8",
+    "new_branch": "codex/product-main-integration-r1",
+    "prestate_gate": "PASS — branch/HEAD/tree/clean all verified exact against the task's expected values before any write"
+  },
+
+  "phase_1_read_only_fact_derivation": {
+    "method": "For each of the four candidate conflict paths: git diff --stat from the merge-base to both HEAD and origin/main (confirms both sides purely ADD the file, i.e. an add/add conflict, not a divergent edit of shared history); full content read of both sides; where a path references another module, existence and export-value verification of that module on both sides.",
+    "confirmed_four_paths_are_the_full_conflict_set": true,
+    "no_other_add_add_or_modify_modify_candidates_found": true,
+    "per_path_findings": {
+      ".github/workflows/ci.yml": "Both sides add the file from nothing. Product's version is a strict superset of main's: full-history checkout (fetch-depth: 0, required by authority:seal:verify per HPO-ODS-03), an authority-seal-verify step, and a 'Verify generated artefacts' step block (baseline/hosted/storage/journal/boundary/apply/probe verify) that main does not have. Every step main has (checkout, pnpm/node setup, install, secrets scan, lint, typecheck, test, build) is present in Product's version with equal or stronger configuration. No step reduction, no gate removal.",
+      "docs/ops/CREDENTIAL_HYGIENE.md": "Both sides add the file from nothing, describing the same 2026-08-15 credential incident and the same 2026-08-15 GH013 rejection on codex/stella-staging. Not contradictory: main's copy adds branch-scoped facts (a 'polarity already correct on main' note referencing the 18-fixture staging migration; an explicit statement that the GH013-flagged literals do not exist on main's own tree) that are additive detail, not competing claims, once read alongside Product's copy — Product's own current tree independently verified clean of the flagged sbp_ literal (tests/hosted/target-identity.test.ts and tests/hosted/checkpoint-b0.test.ts both already carry the self-declaring sbp_notARealPersonalAccessToken00 form, confirmed by direct read). Product's copy additionally references docs/ops/DATABASE_TARGET_SAFETY.md and scripts/ci-assert-local-targets.ts, both confirmed present in the merged tree.",
+      "scripts/scan-secrets.ts": "Both sides add the file from nothing, and the DETECTORS array — the mechanically load-bearing part — is byte-identical between the two: PG_DSN_EMBEDDED_PASSWORD, JWT_LIKE, GOOGLE_API_KEY, SUPABASE_SECRET_KEY, SUPABASE_PERSONAL_ACCESS_TOKEN, OPENAI_STYLE_KEY, PRIVATE_KEY_BLOCK, same patterns, same placeholder/fixture-marker logic, same annotation escape hatch, same EXEMPT_PATHS. The one structural difference: main declares KNOWN_PRODUCTION_IDENTIFIERS and KNOWN_STAGING_PROJECT_REF locally in this file, with its own comment stating 'Declared here rather than imported: on the codex/stella-staging train these live in db/hosted/target-identity.ts... When the two lines converge, this block is the one to delete in favour of that import.' Product's copy already does exactly that: it imports both constants from ../db/hosted/target-identity, which exists in the merged tree and exports the identical values (hosts: ['uellix-antigravity.vercel.app','app.uellix.com','uellix.com'], projectRefs: ['ctaxtgujyyprgynmnvtq'], KNOWN_STAGING_PROJECT_REF: 'bvyzblhqymxruxdguaee' — confirmed by direct read and diff against main's local copy). Product's version is main's own documented convergence target, not a competing implementation.",
+      "tests/scan-secrets.test.ts": "Both sides add the file from nothing. Same fixtures (FAKE_PASSWORD, PAT_SHAPED built at runtime, never a literal token), same describe blocks, near-identical assertions. Product's copy imports KNOWN_PRODUCTION_IDENTIFIERS/KNOWN_STAGING_PROJECT_REF from @/db/hosted/target-identity (matching scan-secrets.ts's own import), main's copy imports them from @/scripts/scan-secrets (matching main's local declaration there) — resolved by keeping Product's import shape, consistent with the scan-secrets.ts resolution above. One test exists only in main's copy and nowhere in Product's: 'does not exempt a path merely for being a test', asserting an UNANNOTATED PAT-shaped token placed in tests/hosted/target-identity.test.ts is still flagged (length 1) — a distinct, meaningful assertion (no directory-wide test exemption) not covered by any of Product's existing GH013-parity cases. Preserved verbatim into the merged file; no other assertion is unique to either side."
+    }
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-06": {
+      "title": "GOVERN_PRODUCT_MAIN_INTEGRATION_CONFLICT_RECONCILIATION",
+      "status": "FROZEN",
+      "rule": "Manual conflict resolution on the merge of origin/main into codex/product-main-integration-r1 is authorized ONLY for the four paths named above, no wildcard. For .github/workflows/ci.yml and scripts/scan-secrets.ts, resolution is INTENTIONALLY_REPLACED_BY_STRONGER_EQUIVALENT: take Product's version, which is a proven superset/convergence-target of main's. For docs/ops/CREDENTIAL_HYGIENE.md, resolution is a UNION: preserve every fact from both sides, add main's branch-scoped clarifications as additive paragraphs without deleting Product's more detailed per-file GH013 audit table, and correct only the minimum wording needed so a statement scoped to 'main' does not misdescribe the new integration branch it will also live on — no dates, incidents or dispositions may be invented or altered. For tests/scan-secrets.test.ts, resolution is a UNION: Product's file as the base (its import shape matches the resolved scan-secrets.ts), with main's one unique assertion ('does not exempt a path merely for being a test') inserted verbatim; no existing assertion from either side may be deleted or weakened to make the suite pass.",
+      "non_vacuity_requirement": "Post-merge, pnpm secrets:scan must still pass over the real repository (the suite's own 'passes over this repository' test exercises this), the DETECTOR union must still contain all seven kinds from both parents (mechanically the same set, confirmed identical pre-merge), and the newly-added 'does not exempt a path merely for being a test' assertion must be present and passing — proving the union is real, not merely asserted.",
+      "not_authorized": [
+        "any change to db/migrations/**, db/prepared/**, db/baseline/** as part of this merge",
+        "any change to HPO-ODS-W2-01 through W2-05 decisions or their implementation surfaces",
+        "any change to role topology, provisioning, or the 64-unit baseline rehearsal",
+        "a rehearsal artifact refresh (no provisioning/runtime SQL is touched by this merge)",
+        "manual conflict resolution on any path outside the four named above",
+        "weakening, removing, or skipping any secret detector, CI security gate, or scan-secrets assertion from either parent",
+        "restoring, quoting, or otherwise reproducing any credential material, real or historical",
+        "rewriting ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.6, or any FIB/PC-01B/IM-01B artifact",
+        "a squash, rebase, amend, or force-push of either the audited Product branch or the new integration branch",
+        "opening a pull request or beginning Wave 2 / B4 work"
+      ]
+    }
+  },
+
+  "protected_grant_required": false,
+  "protected_grant_rationale": "All four conflict-resolution surfaces (.github/workflows/ci.yml, docs/ops/CREDENTIAL_HYGIENE.md, scripts/scan-secrets.ts, tests/scan-secrets.test.ts) fall outside every DEFAULT_PROTECTED_PATTERN in scripts/ods-scope.ts (docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json). No HPO-ODS-W2-06 grant is registered; ordinary --allow governs this change.",
+
+  "test_manifest": {
+    "positive": {
+      "P1": "post-merge, pnpm secrets:scan exits 0 over the real repository tree",
+      "P2": "post-merge, all seven SecretFindingKind detectors remain present and independently exercised by tests/scan-secrets.test.ts",
+      "P3": "post-merge, KNOWN_PRODUCTION_IDENTIFIERS and KNOWN_STAGING_PROJECT_REF resolve, via the single import path (db/hosted/target-identity), to the same values both parents independently used",
+      "P4": "the merged tests/scan-secrets.test.ts contains main's unique 'does not exempt a path merely for being a test' assertion and it passes"
+    },
+    "negative": {
+      "N1": "no CONFLICT_MARKERS (<<<<<<<, =======, >>>>>>>) remain in any of the four resolved files",
+      "N2": "no path outside the four named above shows a conflict marker or manual resolution",
+      "N3": "no detector kind present in either parent's DETECTORS array is absent from the merged scan-secrets.ts"
+    },
+    "mutation": {
+      "M1": "reintroducing a raw sbp_-shaped literal (as opposed to the self-declaring sbp_notARealPersonalAccessToken00 form) anywhere in the merged tree must make pnpm secrets:scan fail — proving the union did not silently weaken the fixture-marker/annotation discipline either side already enforced"
+    }
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PENDING — run in PHASE_6/PHASE_8 of this reconciliation, after the merge commit",
+    "protected_corpus_count": 9,
+    "sealed_or_frozen_artifacts_modified": 0,
+    "hpo_ods_w2_01_through_05_changed": false,
+    "provisioning_runtime_changed": false,
+    "migrations_changed": false,
+    "b1_evidence_files_changed": false,
+    "rehearsal_artifact_changed": false,
+    "wildcard_grants_added": 0,
+    "audited_product_head_blob_shas": {
+      ".github/workflows/ci.yml": "d8b9b53c9360308c18f721f2bfd508bdaa7898d9",
+      "docs/ops/CREDENTIAL_HYGIENE.md": "b73f5078091cd7380bf94e2419464e5f7d8ba000",
+      "scripts/scan-secrets.ts": "0d3e601e1cb26dd8488a88596afd0d4081ee5eaa",
+      "tests/scan-secrets.test.ts": "e8c09e42ceacdf85deb9ca744f9541c4c209fb4b"
+    },
+    "origin_main_blob_shas": {
+      ".github/workflows/ci.yml": "1f4439e6fb1879b8a1025fcf1c5906f525e4dec7",
+      "docs/ops/CREDENTIAL_HYGIENE.md": "e2075a49157f7143b0c5c34f27cdfe32c25e04b3",
+      "scripts/scan-secrets.ts": "64599e51edcf855f615f438ba2e4f76e4153711a",
+      "tests/scan-secrets.test.ts": "8f619f3f1e0ab4806f2f826be0d34331e5374c37"
+    }
+  },
+
+  "state_after_this_artifact": {
+    "next_gate": "NORMAL_MERGE_THEN_FOUR_FILE_RECONCILIATION_THEN_MACHINE_VALIDATION",
+    "final_state_target": "PRODUCT_MAIN_INTEGRATION_CANDIDATE_READY_FOR_FOCUSED_AUDIT"
+  },
+
+  "final_state": "HPO_ODS_W2_06_FROZEN_READY_FOR_MERGE"
+}
