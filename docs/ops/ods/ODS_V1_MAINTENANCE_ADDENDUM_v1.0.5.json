@@ -1,0 +1,147 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.5",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.5",
+  "authority_class": "SUCCESSOR_POSTCONDITION_SEMANTICS_CORRECTION",
+  "materialization_step": "HPO-ODS-W2-04",
+  "materialization_date": "2026-09-01",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Freeze, append-only, the HPO correction to CHECKPOINT B0's B0-11-zero-production-data postcondition: 'zero production data' means no tenant/user/transactional/application-production data, NOT literally zero rows in every table. An explicitly governed baseline catalog seed is permitted ONLY when the baseline manifest classifies its migration dml as 'global-catalog', bound one-to-one to a deterministic seed specification. This is a narrow, closed-world exception — not a DML allowlist, not a table-name bypass, not an inferred future exemption. It resolves the sole remaining CHECKPOINT B0 red (17/18) found by the first complete 64-unit isolated-cluster rehearsal under HPO-ODS-W2-03, and does not reopen that provisioning repair, migration 0040, the B1 migrations, or the B1 evidence semantic audit.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1/1.0.2/1.0.3/1.0.4, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01, W2-02 and W2-03 are FROZEN_UNCHANGED.",
+
+  "predecessor_authorities": {
+    "ods_v1_0_4": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.4.json",
+    "hpo_ods_w2_01": { "authority_id": "HPO-ODS-W2-01", "status": "FROZEN_UNCHANGED" },
+    "hpo_ods_w2_02": { "authority_id": "HPO-ODS-W2-02", "status": "FROZEN_UNCHANGED" },
+    "hpo_ods_w2_03": { "authority_id": "HPO-ODS-W2-03", "status": "FROZEN_UNCHANGED", "note": "The managed-role identity split and 0044 conditional fix are not reopened. This artifact addresses the ONE finding that split left open: CHECKPOINT B0 17/18 on B0-11." }
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "audited_head": "cc3ef567c9ae82970550a7dbaaa521279c1e56a1",
+    "audited_tree": "1d68a038d6bb600cd88557427ac5aa773b4621a3",
+    "current_baseline_unit_count": 64,
+    "prior_rehearsal_checkpoint_b0": "17/18 PASS; B0-11-zero-production-data FAIL on public.governed_model_registry=8"
+  },
+
+  "phase_1_read_only_derivation": {
+    "method": "grep every `dml: '...'` literal in db/hosted/baseline-manifest.ts (64 units); independently confirmed by reading the one matching unit's actual migration SQL and counting its literal VALUES tuples.",
+    "GLOBAL_CATALOG_MANIFEST_UNIT_COUNT": 1,
+    "GLOBAL_CATALOG_MANIFEST_UNITS": [
+      {
+        "ordinal": 51,
+        "unit_id": "0040_governed_model_registry.sql",
+        "file": "db/migrations/0040_governed_model_registry.sql",
+        "manifest_sha256": "269a354c4cc487eb506b88313e7077f265530fb1464fc3e93e2e0f221430c48f",
+        "current_file_lf_sha256_independently_recomputed": "269a354c4cc487eb506b88313e7077f265530fb1464fc3e93e2e0f221430c48f",
+        "current_git_blob": "edc638580aaaf73a351033cb3fdfd45b76e933fb",
+        "insert_target": "public.governed_model_registry",
+        "insert_statement": "INSERT INTO \"governed_model_registry\" (\"model_id\", \"version\", \"definition_hash\") VALUES ... ON CONFLICT (\"model_id\", \"version\") DO NOTHING;",
+        "literal_values_tuple_count_mechanically_counted": 8,
+        "manifest_expect_block": "{ usesAuthenticated: true, dmlStatementCount: 1, literalRowSourceCount: 1 }",
+        "reapply_class": "destructive-on-reapply (CREATE TABLE); the seed insert itself is idempotent via ON CONFLICT DO NOTHING",
+        "conflict_key": ["model_id", "version"]
+      }
+    ],
+    "no_other_dml_classification_matches": "grep -oE \"dml: '[a-z-]+'\" over the full manifest returns exactly: 1 'global-catalog', 4 'structural-backfill', 59 'none' (65 counted lines incl. two inline P-kind entries whose dml is also 'none') — no ambiguity, no dynamic INSERT anywhere in the corpus.",
+    "b0_11_implementation_file": "db/hosted/baseline-postconditions.ts (id 'B0-11-zero-production-data')",
+    "b0_11_test_files": ["tests/hosted/baseline-postconditions.test.ts", "tests/hosted/checkpoint-b0.test.ts"],
+    "protected_path_check": "None of db/hosted/**, tests/hosted/**, scripts/baseline-rehearsal-local.ts, artifacts/baseline-rehearsal/latest.json are protected paths under scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, the frozen v1.0.0 authority file). No new protected grant is required; PHASE_3/COMMIT_2 are skipped.",
+    "hard_gate_p": {
+      "GLOBAL_CATALOG_MANIFEST_UNIT_COUNT_KNOWN": true,
+      "EVERY_GLOBAL_CATALOG_UNIT_HAS_DETERMINISTIC_SEED_IDENTITY": true,
+      "NO_AMBIGUOUS_DYNAMIC_INSERT": true,
+      "RESULT": "PASS"
+    }
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-04": {
+      "title": "GOVERN_BASELINE_GLOBAL_CATALOG_SEED_SEMANTICS",
+      "status": "FROZEN",
+      "b0_11_semantics_before": "requirement: 'Every probed table holds zero rows.' — literally zero, no exception, and its own detail message ('0018 is the baseline's only DML') was already stale against the manifest's own dml classification of 0040 as global-catalog (added 2026-08-31, predating this rehearsal).",
+      "b0_11_semantics_after": "requirement: every table the baseline creates holds ZERO rows, EXCEPT a table named by an explicitly governed global-catalog seed specification, which must hold EXACTLY its declared row count — no more, no fewer. The exception is closed-world and bijective: every manifest unit classified dml='global-catalog' must have exactly one seed specification, and every seed specification's declared unit must exist and still be classified dml='global-catalog', with its declared migration hash matching the manifest's own live-verified pin. A drift in either direction (an unregistered global-catalog unit, an orphaned seed spec, or a hash mismatch) is a FAILED postcondition, not a silent pass.",
+      "architecture": {
+        "new_module": "db/hosted/global-catalog-seeds.ts",
+        "exports": [
+          "GlobalCatalogSeedSpec interface: { unitId, file, table, expectedMigrationSha256, expectedRowCount }",
+          "GLOBAL_CATALOG_SEED_SPECS: readonly GlobalCatalogSeedSpec[] — exactly one entry, for 0040/public.governed_model_registry/8, pinned independently to the migration's own LF-normalized SHA-256",
+          "validateGlobalCatalogClosedWorld(units, specs): the bijection + hash-drift check, called BOTH by a dedicated static test and by B0-11 itself at evaluation time (defense in depth — the manifest classification is consulted live, never assumed)",
+          "expectedRowCountsFromClosedWorld(tables, specs): builds the per-table expected-row-count map B0-11 compares against (0 for every table not named by a spec)"
+        ],
+        "single_source_of_classification": "db/hosted/baseline-manifest.ts BASELINE_UNITS[*].dml remains the ONLY place a unit is classified global-catalog. global-catalog-seeds.ts never re-classifies; it only supplies the row-count/table identity a classified unit's DML doesn't otherwise carry, and refuses if the manifest disagrees with what it expects.",
+        "b0_11_change": "db/hosted/baseline-postconditions.ts: the B0-11 check first calls validateGlobalCatalogClosedWorld against the live BASELINE_UNITS; on failure it fails B0-11 naming the exact contract violation. It then compares every observed row count against the closed-world expectation (0 by default, spec.expectedRowCount for a spec's table) instead of against a flat zero, and fails on ANY mismatch in either direction."
+      },
+      "not_authorized": [
+        "a generic DML allowlist keyed by table name alone",
+        "a hardcoded row-count check disconnected from migration/hash identity",
+        "an exception inferred for any future migration not carrying dml='global-catalog' with a matching seed spec",
+        "any relaxation of B0-11 for organizations, projects, users, evidence, calculations, interactions, or any other tenant-scoped table",
+        "editing migration 0040",
+        "editing any HPO-ODS-W2-03 provisioning file",
+        "editing any B1 migration (0048..0052)",
+        "editing product or Stella runtime",
+        "editing docs/ops/fib/** sealed authority"
+      ]
+    }
+  },
+
+  "protected_grant_required": false,
+  "protected_grant_rationale": "All implementation surfaces (db/hosted/global-catalog-seeds.ts, db/hosted/baseline-postconditions.ts, tests/hosted/**, scripts/baseline-rehearsal-local.ts, artifacts/baseline-rehearsal/latest.json) fall outside every DEFAULT_PROTECTED_PATTERN in scripts/ods-scope.ts. No HPO-ODS-W2-04 grant is registered; ordinary --allow governs this change.",
+
+  "test_manifest": {
+    "positive": {
+      "P1": "the governed 0040 seed (public.governed_model_registry=8) — B0-11 PASS",
+      "P2": "every other baseline table at 0 rows — B0-11 PASS",
+      "P3": "closed-world bijection: 1 manifest global-catalog unit <-> 1 seed spec, both directions"
+    },
+    "negative": {
+      "N1": "public.governed_model_registry=9 (one extra row) — B0-11 FAIL",
+      "N2": "public.governed_model_registry=7 (one missing row) — B0-11 FAIL",
+      "N3": "any unrelated governed-zero table (e.g. public.organizations) holds 1 row — B0-11 FAIL",
+      "N4": "a hypothetical manifest unit classified global-catalog with no seed spec — validateGlobalCatalogClosedWorld FAIL",
+      "N5": "a seed spec whose declared unit is not classified global-catalog (or does not exist) — validateGlobalCatalogClosedWorld FAIL",
+      "N6": "a seed spec's pinned migration hash disagreeing with the manifest's live unit hash — validateGlobalCatalogClosedWorld FAIL"
+    },
+    "mutation": {
+      "M1": "revert B0-11 to flat zero-row semantics — the current legitimate 8-row catalog state must then fail, proving the old check was actually enforcing something and the new one is a deliberate, narrow relaxation",
+      "M2": "replace the exact governed-seed comparison with a bare 'this table may contain rows' allowance — N1 (the extra-row control) must still catch it",
+      "M3": "hardcode the expected row count with no hash binding — N6 (hash-drift control) must still catch a migration edit"
+    },
+    "real_postgres": {
+      "PG1": "corrected full 64-unit rehearsal on a fresh isolated cluster reaches CHECKPOINT B0 18/18",
+      "PG2": "observed governed_model_registry count/content matches the governed seed exactly",
+      "PG3": "a deliberate extra catalog row (in a disposable database) makes B0-11 fail",
+      "PG4": "a deliberate unrelated production row (in a disposable database) makes B0-11 fail"
+    }
+  },
+
+  "rehearsal_artifact_refresh": {
+    "rule": "Only after a genuinely green 18/18 CHECKPOINT B0 on the isolated cluster. artifacts/baseline-rehearsal/latest.json is written exclusively by scripts/baseline-rehearsal-local.ts — never hand-edited. Require rehearsalFresh=true against the current manifest digest, manifestApplied=64, manifestFailedAt=null, and the two historical rehearsalFresh failures resolved."
+  },
+
+  "focused_independent_audit_requirement": "This artifact resolves the sole finding left open by HPO-ODS-W2-03's focused-audit requirement. It does not itself certify the baseline repair: EVIDENCE_PRODUCT_INTEGRATION_STATUS remains CONDITIONAL_PENDING_FOCUSED_BASELINE_REPAIR_AUDIT until an independent adversarial reaudit covers both HPO-ODS-W2-03 and this correction together. The B1 evidence semantic audit (123-file integration) is not reopened.",
+
+  "integrity_assertions_at_this_freeze": {
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS",
+    "protected_corpus_count": 9,
+    "sealed_or_frozen_artifacts_modified": 0,
+    "hpo_ods_w2_01_changed": false,
+    "hpo_ods_w2_02_changed": false,
+    "hpo_ods_w2_03_changed": false,
+    "migration_0040_changed": false,
+    "wildcard_grants_added": 0
+  },
+
+  "state_after_this_artifact": {
+    "next_gate": "HARD_GATE_A_THEN_IMPLEMENTATION",
+    "final_state_target": "BASELINE_64_UNIT_REHEARSAL_GREEN_READY_FOR_FOCUSED_CLOSURE_AUDIT"
+  },
+
+  "final_state": "HPO_ODS_W2_04_FROZEN_READY_FOR_IMPLEMENTATION"
+}
