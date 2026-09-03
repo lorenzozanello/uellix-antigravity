@@ -1,0 +1,36 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.5",
+  "version": "1.0.5",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-CONTAINER-READINESS-RACE-HARDENING-R1",
+  "materialization_date": "2026-09-03",
+  "note": "TEST CONTRACT, written BEFORE the implementation commit. Statuses are PLANNED/REQUIRED until the acceptance run in EVIDENCE_v1.0.5.json marks them observed. Never faked as PASS here.",
+  "predecessor": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.4.json",
+  "authority": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.5.json",
+  "controls": [
+    { "id": "READY-P1", "title": "immediate semantic readiness (all 5 predicates true on first probe, 2 consecutive successes reached immediately) → PASS", "status": "REQUIRED" },
+    { "id": "READY-P2", "title": "transient psql failure(s) followed by full readiness within the bound → PASS", "status": "REQUIRED" },
+    { "id": "READY-P3", "title": "schemas progressively becoming available (auth, then storage, then extensions, then auth.uid()) followed by 2 consecutive full successes → PASS", "status": "REQUIRED" },
+    { "id": "READY-P4", "title": "one successful sample followed by a transient failure does NOT satisfy the 2-consecutive-success contract — must continue polling, not declare readiness early", "status": "REQUIRED" },
+    { "id": "READY-N1", "title": "persistent psql nonzero status until the deadline → FAIL, with diagnostic PSQL_NONZERO (never 'present natively')", "status": "REQUIRED" },
+    { "id": "READY-N2", "title": "persistent missing schema (auth/storage/extensions) until the deadline → FAIL, with diagnostic naming the missing schema(s)", "status": "REQUIRED" },
+    { "id": "READY-N3", "title": "persistent auth.uid() missing until the deadline → FAIL, with diagnostic AUTH_UID_MISSING", "status": "REQUIRED" },
+    { "id": "READY-N4", "title": "the poll loop is bounded by PLATFORM_READINESS_TIMEOUT_MS and cannot loop forever even if the injected probe sequence never resolves", "status": "REQUIRED" },
+    { "id": "READY-N5", "title": "after readiness has succeeded, a later actual phase failure (e.g. a deliberately-broken grant in a negative control) is NOT retried as if it were startup readiness — retry scope is limited to the readiness probe only", "status": "REQUIRED" }
+  ],
+  "self_test_design": {
+    "requirement": "Deterministic no-Docker controls for READY-P1..P4 and READY-N1..N5, using an injected probe-sequence/clock abstraction rather than real multi-second waits, so the self-tests themselves are fast and never flaky.",
+    "must_not_use_real_docker": true
+  },
+  "acceptance_criteria": {
+    "one_full_local_run": "pnpm m2:pg:gate must exit 0 with OVERALL=PASS. All 9 disposable containers (MAIN + 8 negative phases) must reach PLATFORM_READINESS=PASS. Raw M2 Vitest exactly 1 file/4 tests/4 PASS/0 skipped. Migration proof mechanically green (62/62, terminal 0061). All 8 negative controls reach their INTENDED negative assertion (not a readiness failure). FINAL:LABELLED-LEFTOVER-COUNT=PASS (0). Port free after.",
+    "no_iteration_by_weakening": "If any negative phase still fails at the readiness stage locally, STOP — do not weaken the readiness predicate or increase timeouts past the authorized envelope to force a PASS."
+  },
+  "controls_required_by_reference_unchanged": [
+    "ANSI-P1..N3 (v1.0.4)",
+    "MIG-P1..N1 (v1.0.4)",
+    "ENV-P1/N1/N2 (v1.0.4)",
+    "M2-P1/N1/P2/rollback-sanity (v1.0.0)",
+    "PRIV-P1..P7, PRIV-N1a..N1d/N2..N5 (v1.0.3)",
+    "port safety, teardown, FINAL:LABELLED-LEFTOVER-COUNT (v1.0.0)"
+  ]
+}

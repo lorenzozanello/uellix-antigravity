@@ -1,6 +1,7 @@
 // scripts/ods-scope.ts — ODS-C4, the explicit forbidden-scope/diff gate.
 //
 //   pnpm ods:scope --base <sha> --allow <path-or-pattern> [--allow ...]
+//                   [--protected-authority <id> ...]
 //
 // Deterministically proves a diff stays inside explicitly authorized
 // surfaces. Covers committed changes since --base, staged changes,
@@ -22,6 +23,16 @@
 // branch and an exact set of protected patterns; the ordinary --allow
 // list remains additionally mandatory for every granted path. Future
 // waves require their own explicit HPO grant entry, not a broader one.
+//
+// COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json (M1):
+// --protected-authority MAY be repeated. Every occurrence is resolved
+// independently against PROTECTED_GRANTS and the authorized protected
+// surface becomes the exact UNION of every id's own patterns — never "any
+// one supplied grant authorizes the whole diff". An id that fails to
+// resolve (unknown, or granted on a different branch) contributes zero
+// patterns to the union; it can never subtract from, or be papered over
+// by, another supplied id's grant. A single --protected-authority id
+// remains byte-for-byte compatible with prior single-grant behavior.
 
 import { spawnSync } from 'node:child_process'
 
@@ -95,16 +106,25 @@ export interface ScopeClassification {
 
 /**
  * Pure: classifies a deduplicated path list against protected + allowed
- * patterns, and an optional already-resolved protected-surface grant.
+ * patterns, and zero or more already-resolved protected-surface grants.
  *
- * `grant` must already be branch-validated by the caller (see
- * `resolveProtectedGrant`) — this function only checks whether the
- * CONCRETE path matches one of the grant's own patterns, never the
- * broader default protected pattern that made the path protected in the
- * first place. That is what keeps a grant for db/prepared/journal/**
- * from ever authorizing db/prepared/sibling.sql: the sibling matches
- * DEFAULT_PROTECTED_PATTERNS' db/prepared/** but not the grant's own
- * narrower db/prepared/journal/**.
+ * Every element of `grant` must already be branch-validated by the caller
+ * (see `resolveProtectedGrant`/`resolveProtectedGrants`) — this function
+ * only checks whether the CONCRETE path matches one of the SUPPLIED
+ * grants' own patterns (their exact union), never the broader default
+ * protected pattern that made the path protected in the first place. That
+ * is what keeps a grant for db/prepared/journal/** from ever authorizing
+ * db/prepared/sibling.sql: the sibling matches DEFAULT_PROTECTED_PATTERNS'
+ * db/prepared/** but not the grant's own narrower db/prepared/journal/**.
+ * Passing multiple grants authorizes their exact union — never "any one
+ * grant individually authorizes the whole diff" — and a path covered by
+ * more than one supplied grant is not double-counted (Set-deduplicated
+ * paths in, `.some()` union check, no per-grant counting).
+ *
+ * `grant` accepts a single `ProtectedGrant`, an array of them, or
+ * `undefined` — the single-grant form is preserved unchanged for every
+ * existing caller (e.g. scripts/audit-batch.ts) so this signature change
+ * is purely additive.
  *
  * Casing: a path that only enters a protected surface case-insensitively
  * (not via its canonical declared casing) is classified as
@@ -117,8 +137,9 @@ export function classifyPaths(
   paths: string[],
   protectedPatterns: string[],
   allowedPatterns: string[],
-  grant?: ProtectedGrant,
+  grant?: ProtectedGrant | ProtectedGrant[],
 ): ScopeClassification {
+  const grants: ProtectedGrant[] = grant === undefined ? [] : Array.isArray(grant) ? grant : [grant]
   const protectedViolations: string[] = []
   const unauthorized: string[] = []
   const ok: string[] = []
@@ -128,10 +149,10 @@ export function classifyPaths(
   for (const p of new Set(paths)) {
     if (matchesAnyPattern(p, protectedPatterns)) {
       // Protected by default (canonical casing). Authorized ONLY if the
-      // grant's own (narrower) patterns cover this exact path AND the
-      // ordinary task --allow also covers it — both mandatory, neither
-      // can stand in for the other.
-      const grantCovers = grant !== undefined && matchesAnyPattern(p, grant.patterns)
+      // UNION of the supplied grants' own (narrower) patterns covers this
+      // exact path AND the ordinary task --allow also covers it — both
+      // mandatory, neither can stand in for the other.
+      const grantCovers = grants.some((g) => matchesAnyPattern(p, g.patterns))
       const taskAllows = matchesAnyPattern(p, allowedPatterns)
       if (grantCovers && taskAllows) {
         ok.push(p)
@@ -468,6 +489,29 @@ export function resolveProtectedGrant(authorityId: string | undefined, currentBr
   return { grant, authorityId, reason: `"${authorityId}" resolved on branch "${currentBranch}"` }
 }
 
+/**
+ * COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json (M1):
+ * resolves zero or more --protected-authority ids, each INDEPENDENTLY via
+ * `resolveProtectedGrant` (no reimplemented resolution logic). Every
+ * resolution is returned for diagnostics; `grants` collects only the ones
+ * that actually resolved, in input order, WITHOUT deduplicating — a
+ * duplicate id resolves to the same grant twice, which `classifyPaths`'s
+ * `.some()` union check treats identically to resolving it once
+ * (deterministic, no double-counting). An id that fails to resolve
+ * contributes nothing to `grants`; it never broadens, narrows, or
+ * invalidates what any OTHER supplied id resolved. Passing a single id
+ * behaves exactly like the singular `resolveProtectedGrant` wrapped in a
+ * one-element array.
+ */
+export function resolveProtectedGrants(
+  authorityIds: string[],
+  currentBranch: string,
+): { resolutions: ProtectedGrantResolution[]; grants: ProtectedGrant[] } {
+  const resolutions = authorityIds.map((id) => resolveProtectedGrant(id, currentBranch))
+  const grants = resolutions.map((r) => r.grant).filter((g): g is ProtectedGrant => g !== undefined)
+  return { resolutions, grants }
+}
+
 // ---------------------------------------------------------------------------
 // NUL-delimited git output parsing. Robust against filenames with spaces —
 // a measured Windows/portability hazard for this project.
@@ -564,7 +608,8 @@ export function collectChangedPaths(cwd: string, base: string): string[] {
 interface ScopeArgs {
   base?: string
   allow: string[]
-  protectedAuthority?: string
+  /** Every --protected-authority occurrence, in input order, unresolved and undeduplicated. See resolveProtectedGrants. */
+  protectedAuthorities: string[]
 }
 
 // HPO-ODS-M1D CLI hygiene: recognized flags, used only to detect whether a
@@ -579,7 +624,7 @@ function looksLikeMissingProtectedAuthorityOperand(token: string | undefined): b
 }
 
 function parseArgs(argv: string[]): ScopeArgs {
-  const result: ScopeArgs = { allow: [] }
+  const result: ScopeArgs = { allow: [], protectedAuthorities: [] }
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--') continue // see scripts/ods-prestate.ts for why
@@ -592,7 +637,9 @@ function parseArgs(argv: string[]): ScopeArgs {
         process.exit(2)
       }
       i++
-      result.protectedAuthority = value
+      // Repeatable: each occurrence appends one id (M1). A single
+      // occurrence is byte-identical in effect to the prior scalar field.
+      result.protectedAuthorities.push(value)
     } else {
       console.error(`ods:scope: unrecognized argument "${arg}"`)
       process.exit(2)
@@ -611,17 +658,19 @@ function main(): void {
 
   const cwd = process.cwd()
   const currentBranch = getCurrentBranch(cwd)
-  const grantResolution = resolveProtectedGrant(args.protectedAuthority, currentBranch)
+  const { resolutions, grants } = resolveProtectedGrants(args.protectedAuthorities, currentBranch)
 
   const changed = collectChangedPaths(cwd, args.base)
   const unique = [...new Set(changed)]
-  const result = classifyPaths(unique, DEFAULT_PROTECTED_PATTERNS, args.allow, grantResolution.grant)
+  const result = classifyPaths(unique, DEFAULT_PROTECTED_PATTERNS, args.allow, grants)
 
   const lines: string[] = []
   lines.push(`SCOPE_BASE=${args.base}`)
   lines.push(`CHANGED_FILE_COUNT=${unique.length}`)
-  lines.push(`PROTECTED_AUTHORITY=${grantResolution.authorityId ?? 'NONE'}`)
-  if (args.protectedAuthority) lines.push(`  ${grantResolution.reason}`)
+  // Single-id invocations render byte-identically to prior versions
+  // (join of one element == that element; exactly one reason line).
+  lines.push(`PROTECTED_AUTHORITY=${resolutions.length > 0 ? resolutions.map((r) => r.authorityId ?? 'NONE').join(',') : 'NONE'}`)
+  for (const r of resolutions) lines.push(`  ${r.reason}`)
   lines.push(`PROTECTED_AUTHORIZED_PATH_COUNT=${result.grantAuthorized.length}`)
   for (const p of result.protectedViolations) lines.push(`PROTECTED_PATH_VIOLATION=${p}`)
   for (const p of result.nonCanonicalProtectedPaths) lines.push(`NON_CANONICAL_PROTECTED_PATH=${p}`)

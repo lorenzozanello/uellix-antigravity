@@ -1,0 +1,69 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.1",
+  "version": "1.0.1",
+  "authority_class": "BOUNDED_DETERMINISTIC_CI_COMPANION_REMEDIATION_AUTHORITY",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-CI-COMPANION-REMEDIATION-R1",
+  "materialization_date": "2026-09-02",
+  "append_only": true,
+  "supersedes": null,
+  "refines": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json",
+  "purpose": "v1.0.0's M2 correctly added tests/integration/function-execute-acl-guard.test.ts and correctly did NOT authorize any change to tests/database-entrypoint-safety.test.ts's closed-world integration inventory. That inventory is a mechanical consequence of which files exist under tests/integration/**, and adding a THIRD file to that directory made it stale by construction — proven live: the dispatched P1A Validation run (33681916900) against the v1.0.0 candidate (ad9c305) failed at the 'Database target safety suite' step, BEFORE Start Supabase Local / Run Integration Tests ever executed, so v1.0.0's own M2 test was never actually exercised on real Postgres in CI. This authority is the narrow, deterministic companion fix: update the closed-world inventory to reflect the file that already exists and is already correct, and nothing else.",
+  "hpo_decisions_frozen": {
+    "PREFLIGHT_MISSION": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-CI-COMPANION-REMEDIATION-R1",
+    "FAILED_P1A_RUN": "33681916900",
+    "FAILED_P1A_HEAD": "ad9c305eb2dc44016d450ecc3b036ad66c7aa953",
+    "P1A_FAILURE_CAUSE": "STALE_CLOSED_WORLD_INTEGRATION_TEST_INVENTORY",
+    "P1A_REACHED_REAL_PG_INTEGRATION_BEFORE_REMEDIATION": false,
+    "M1_M2_M3_IMPLEMENTATION_UNCHANGED": true,
+    "RUNTIME_CHANGE_REQUIRED": false,
+    "WORKFLOW_CHANGE_REQUIRED": false,
+    "DATABASE_BOOTSTRAP_CHANGE_REQUIRED": false
+  },
+  "pins": {
+    "PREDECESSOR_AUTHORITY_COMMIT": "c7b41b8fd858f66d0b658abcfbb4b1bf03aabae2",
+    "PREDECESSOR_CANDIDATE_HEAD": "ad9c305eb2dc44016d450ecc3b036ad66c7aa953",
+    "PREDECESSOR_CANDIDATE_TREE": "29f6f18136500f08b743c2208a52da28049c2d53",
+    "BASE_INTEGRATION_COMMIT": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "MAIN_FROZEN": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "SUCCESSOR_BRANCH": "codex/commercial-v1-post-integration-maintenance-r1"
+  },
+  "authorized_delta_paths": [
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.1.json",
+    "tests/database-entrypoint-safety.test.ts",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.1.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.1.json"
+  ],
+  "companion_contract": {
+    "file": "tests/database-entrypoint-safety.test.ts",
+    "required_changes": [
+      "'the INTEGRATION config still collects both integration files' -> exact three-file closed-world equality (tests/integration/function-execute-acl-guard.test.ts, tests/integration/investments.service.test.ts, tests/integration/rls.test.ts, sorted), renamed to no longer say 'both'",
+      "the it.each guard-first invariant (import './_guard' as the first import) extended to include tests/integration/function-execute-acl-guard.test.ts, preserving exact closed-world semantics (no glob, no directory scan)",
+      "'the integration suite still collects its 49 tests' -> mechanically re-derived count, with the test name and any comment referencing 49 updated to the freshly derived number"
+    ],
+    "must_preserve": [
+      "closed-world design (exact equality, never contains/includes, never a directory scan)",
+      "the DEFAULT config still collects zero tests/integration/** files (untouched by this remediation)",
+      "the fail-closed per-file guard invariant (each file's first import is './_guard')",
+      "the capability-variable / DATABASE_URL reaudit-M2 assertions (untouched)"
+    ]
+  },
+  "does_not_authorize": [
+    "scripts/ods-scope.ts, scripts/ods-poststate.ts, tests/ods/ods-scope.test.ts, tests/ods/ods-poststate.test.ts, tests/integration/function-execute-acl-guard.test.ts (M1/M2 implementation — frozen, unchanged)",
+    "vitest.integration.config.ts, tests/integration/_guard.ts",
+    ".github/workflows/**",
+    "package.json",
+    "db/**, migrations, runtime product code",
+    "any rewrite of COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json, _TEST_MANIFEST_v1.0.0.json, or _EVIDENCE_v1.0.0.json — those describe the v1.0.0 candidate and remain historical",
+    "test exclusion, glob weakening, assertion deletion, CI weakening",
+    "force push, amend, rebase, squash",
+    "any change to database bootstrap, migrations, or Supabase provisioning even if a later P1A run fails for one of those reasons — such a failure requires STOP_FOR_AUTHORITY_ADJUDICATION, not scope expansion under this authority"
+  ],
+  "expected_gates": [
+    "pnpm vitest run tests/database-target-safety.test.ts tests/database-entrypoint-safety.test.ts — 0 failed",
+    "vitest list --config vitest.integration.config.ts (same synthetic local capability env the existing test uses) — exactly 3 files, mechanically-derived test count",
+    "pnpm secrets:scan, pnpm authority:seal:verify, pnpm lint, pnpm typecheck",
+    "pnpm audit:batch --base 94f0923c... --head HEAD --target-branch integration/commercial-v1 --json",
+    "redispatch of both ci.yml and p1a-validation.yml via workflow_dispatch against the successor candidate head; p1a-validation.yml must get past 'Database target safety suite' and reach 'Start Supabase Local' / 'Run Integration Tests'",
+    "origin/integration/commercial-v1 and origin/main unchanged throughout"
+  ]
+}

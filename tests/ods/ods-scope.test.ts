@@ -15,6 +15,7 @@ import {
   allTouchedPaths,
   collectChangedPaths,
   resolveProtectedGrant,
+  resolveProtectedGrants,
   getCurrentBranch,
   PROTECTED_GRANTS,
   type ProtectedGrant,
@@ -1259,5 +1260,233 @@ describe('ods:scope --protected-authority HPO-ODS-W2-03 — real CLI, temporary-
     // surprise. Each grant stays independently bound to its own purpose.
     const overlap = w2_03.patterns.filter((p) => w2_02.patterns.includes(p))
     expect(overlap).toEqual(['db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql'])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json (M1).
+//
+// --protected-authority is now repeatable: every occurrence resolves
+// independently (resolveProtectedGrants) and the authorized protected
+// surface is the exact UNION of every valid supplied grant's patterns —
+// never "any one grant authorizes the whole diff", and an unknown id
+// contributes zero patterns without invalidating the OTHER supplied ids.
+// This is the canonical fix for the two-run workaround the Wave2
+// reconciliation needed (HPO-ODS-W2-08 + HPO-ODS-W2-09 could previously
+// only be proven via two separate ods:scope invocations plus a manual
+// union check — see COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json
+// gates.ODS_SCOPE).
+// ---------------------------------------------------------------------------
+
+describe('resolveProtectedGrants — pure, M1-P1..M1-N3 basis', () => {
+  it('M1-P1 basis: a single id behaves exactly like resolveProtectedGrant wrapped in a one-element array', () => {
+    const single = resolveProtectedGrant('HPO-ODS-W2-01', 'codex/w2-methodology-objects-r1')
+    const plural = resolveProtectedGrants(['HPO-ODS-W2-01'], 'codex/w2-methodology-objects-r1')
+    expect(plural.resolutions).toEqual([single])
+    expect(plural.grants).toEqual(single.grant ? [single.grant] : [])
+  })
+
+  it('M1-P2 basis: two disjoint valid ids resolve to both grants, in input order', () => {
+    const plural = resolveProtectedGrants(['HPO-ODS-W2-08', 'HPO-ODS-W2-09'], 'codex/commercial-v1-wave2-reconciliation-r1')
+    expect(plural.grants.map((g) => g.authorityId)).toEqual(['HPO-ODS-W2-08', 'HPO-ODS-W2-09'])
+  })
+
+  it('M1-N1 basis: one unknown id among valid ones resolves with an empty grant for that id only, never crashing or contaminating the others', () => {
+    const plural = resolveProtectedGrants(['HPO-ODS-W2-08', 'NOT-A-REAL-AUTHORITY', 'HPO-ODS-W2-09'], 'codex/commercial-v1-wave2-reconciliation-r1')
+    expect(plural.resolutions.length).toBe(3)
+    expect(plural.grants.map((g) => g.authorityId)).toEqual(['HPO-ODS-W2-08', 'HPO-ODS-W2-09'])
+    expect(plural.resolutions[1].grant).toBeUndefined()
+    expect(plural.resolutions[1].reason).toContain('unknown protected authority')
+  })
+
+  it('M1-N3 basis: a duplicated id resolves twice (undeduplicated) but classifyPaths treats the union identically either way', () => {
+    const once = resolveProtectedGrants(['HPO-ODS-W2-01'], 'codex/w2-methodology-objects-r1')
+    const twice = resolveProtectedGrants(['HPO-ODS-W2-01', 'HPO-ODS-W2-01'], 'codex/w2-methodology-objects-r1')
+    expect(twice.grants.length).toBe(2)
+    expect(twice.grants).toEqual([once.grants[0], once.grants[0]])
+
+    const path = 'db/prepared/journal/x.sql'
+    const resultOnce = classifyPaths([path], DEFAULT_PROTECTED_PATTERNS, [path], once.grants)
+    const resultTwice = classifyPaths([path], DEFAULT_PROTECTED_PATTERNS, [path], twice.grants)
+    expect(resultTwice).toEqual(resultOnce)
+    expect(resultTwice.grantAuthorized).toEqual([path]) // not doubled
+  })
+})
+
+describe('classifyPaths — multi-grant array, M1-P1..M1-P3 basis (pure)', () => {
+  it('M1-P1: classifyPaths(..., singleGrant) === classifyPaths(..., [singleGrant]) — signature change is purely additive', () => {
+    const grant: ProtectedGrant = {
+      authorityId: 'HPO-ODS-W2-01',
+      branch: 'codex/w2-methodology-objects-r1',
+      patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+    }
+    const path = 'db/prepared/journal/x.sql'
+    const asObject = classifyPaths([path], DEFAULT_PROTECTED_PATTERNS, [path], grant)
+    const asArray = classifyPaths([path], DEFAULT_PROTECTED_PATTERNS, [path], [grant])
+    expect(asArray).toEqual(asObject)
+  })
+
+  it('M1-P2: two DISJOINT synthetic grants authorize the exact union — neither alone would cover both paths', () => {
+    const grantA: ProtectedGrant = { authorityId: 'SYNTH-A', branch: 'x', patterns: ['db/migrations/0900_a.sql'] }
+    const grantB: ProtectedGrant = { authorityId: 'SYNTH-B', branch: 'x', patterns: ['db/migrations/0901_b.sql'] }
+    const paths = ['db/migrations/0900_a.sql', 'db/migrations/0901_b.sql']
+
+    const withOnlyA = classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, [grantA])
+    expect(withOnlyA.protectedViolations).toEqual(['db/migrations/0901_b.sql'])
+
+    const withBoth = classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, [grantA, grantB])
+    expect(withBoth.protectedViolations).toEqual([])
+    expect(withBoth.grantAuthorized.sort()).toEqual([...paths].sort())
+  })
+
+  it('M1-P3: two OVERLAPPING real grants (HPO-ODS-W2-08 + HPO-ODS-W2-09) authorize their union without double-counting the shared path', () => {
+    const w2_08 = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-08')!
+    const w2_09 = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-09')!
+    const shared = 'db/migrations/meta/_journal.json'
+    expect(w2_08.patterns).toContain(shared)
+    expect(w2_09.patterns).toContain(shared)
+
+    const onlyW208Path = 'db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql'
+    const onlyW209Path = 'db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql'
+    const paths = [onlyW208Path, shared, onlyW209Path]
+
+    const result = classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, [w2_08, w2_09])
+    expect(result.protectedViolations).toEqual([])
+    expect(result.grantAuthorized.sort()).toEqual([...paths].sort()) // shared path appears exactly once, not twice
+  })
+})
+
+describe('ods:scope --protected-authority (repeated) — real CLI, M1-N1/M1-N2/M1-N4/M1-E2E-SCOPE', () => {
+  let dir: string
+
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  function runRealCli(cwd: string, args: string[]): { status: number | null; stdout: string } {
+    const tsxCli = require.resolve('tsx/cli')
+    const scriptAbsolutePath = path.join(REPO_ROOT, 'scripts', 'ods-scope.ts')
+    const res = spawnSync(process.execPath, [tsxCli, scriptAbsolutePath, ...args], { cwd, encoding: 'utf8' })
+    return { status: res.status, stdout: res.stdout }
+  }
+
+  const RECONCILIATION_BRANCH = 'codex/commercial-v1-wave2-reconciliation-r1'
+
+  function makeReconciliationBranchRepo(): { dir: string; base: string } {
+    const d = makeTempGitRepo()
+    const base = commitFile(d, 'README.md', 'seed\n')
+    git(d, ['checkout', '-b', RECONCILIATION_BRANCH])
+    return { dir: d, base }
+  }
+
+  it('M1-N1 (NEGATIVE): one unknown id alongside one valid id still FAILs when the changed protected path is outside the valid id\'s grant', () => {
+    const g = makeReconciliationBranchRepo()
+    dir = g.dir
+    // db/baseline/** is protected by default but granted by NEITHER W2-08 nor
+    // any synthetic unknown id — the unknown id must not accidentally widen
+    // coverage, nor may it crash the invocation.
+    mkdirSync(path.join(dir, 'db', 'baseline'), { recursive: true })
+    commitFile(dir, 'db/baseline/x.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base', g.base,
+      '--allow', 'db/baseline/x.sql',
+      '--protected-authority', 'HPO-ODS-W2-08',
+      '--protected-authority', 'NOT-A-REAL-AUTHORITY',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('PROTECTED_AUTHORITY=HPO-ODS-W2-08,NOT-A-REAL-AUTHORITY')
+    expect(stdout).toContain('unknown protected authority "NOT-A-REAL-AUTHORITY"')
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/baseline/x.sql')
+  })
+
+  it('M1-N2 (NEGATIVE): two VALID grants together still FAIL a protected path outside the union of both', () => {
+    const g = makeReconciliationBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'baseline'), { recursive: true })
+    commitFile(dir, 'db/baseline/x.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base', g.base,
+      '--allow', 'db/baseline/x.sql',
+      '--protected-authority', 'HPO-ODS-W2-08',
+      '--protected-authority', 'HPO-ODS-W2-09',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/baseline/x.sql')
+  })
+
+  it('M1-N3 (real CLI): the same id supplied twice is deterministic and does not double-count the authorized path', () => {
+    const g = makeReconciliationBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base', g.base,
+      '--allow', 'db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql',
+      '--protected-authority', 'HPO-ODS-W2-09',
+      '--protected-authority', 'HPO-ODS-W2-09',
+    ])
+
+    expect(status).toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+    expect(stdout).toContain('PROTECTED_AUTHORIZED_PATH_COUNT=1')
+  })
+
+  it('M1-N4 (NEGATIVE): the union of two valid grants does not bypass the independent ordinary --allow requirement', () => {
+    const g = makeReconciliationBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base', g.base,
+      '--allow', 'README.md', // deliberately does NOT cover the changed protected path
+      '--protected-authority', 'HPO-ODS-W2-08',
+      '--protected-authority', 'HPO-ODS-W2-09',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql')
+  })
+
+  it('M1-E2E-SCOPE: HPO-ODS-W2-08 + HPO-ODS-W2-09 together, in ONE canonical invocation, authorize their exact union — the real reconciliation case, no two-run workaround', () => {
+    const w2_08 = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-08')!
+    const w2_09 = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-09')!
+    const unionPatterns = [...new Set([...w2_08.patterns, ...w2_09.patterns])]
+
+    const g = makeReconciliationBranchRepo()
+    dir = g.dir
+    for (const p of unionPatterns) {
+      mkdirSync(path.join(dir, path.dirname(p)), { recursive: true })
+      writeFileSync(path.join(dir, p), `-- fixture for ${p}\n`)
+    }
+    git(dir, ['add', '-A'])
+    git(dir, ['commit', '-q', '-m', 'materialize the exact union of HPO-ODS-W2-08 and HPO-ODS-W2-09'])
+
+    const args = ['--base', g.base, '--protected-authority', 'HPO-ODS-W2-08', '--protected-authority', 'HPO-ODS-W2-09']
+    for (const p of unionPatterns) args.push('--allow', p)
+    const { status, stdout } = runRealCli(dir, args)
+
+    expect(status).toBe(0)
+    expect(stdout).toContain('PROTECTED_AUTHORITY=HPO-ODS-W2-08,HPO-ODS-W2-09')
+    expect(stdout).toContain(`CHANGED_FILE_COUNT=${unionPatterns.length}`)
+    expect(stdout).toContain(`PROTECTED_AUTHORIZED_PATH_COUNT=${unionPatterns.length}`)
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATIONS=0')
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+
+    // Adding one sibling outside BOTH grants must still FAIL — the union
+    // is exact, never a blanket "any grant active => anything passes".
+    commitFile(dir, 'db/baseline/sibling.sql', 'select 1;\n')
+    const failResult = runRealCli(dir, [...args, '--allow', 'db/baseline/sibling.sql'])
+    expect(failResult.status).toBe(1)
+    expect(failResult.stdout).toContain('ODS_SCOPE=FAIL')
+    expect(failResult.stdout).toContain('PROTECTED_PATH_VIOLATION=db/baseline/sibling.sql')
   })
 })

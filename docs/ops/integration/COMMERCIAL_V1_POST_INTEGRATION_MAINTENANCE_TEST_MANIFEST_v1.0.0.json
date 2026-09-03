@@ -1,0 +1,174 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.0",
+  "version": "1.0.0",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-IMPLEMENTATION-R1",
+  "materialization_date": "2026-09-02",
+  "authority": {
+    "path": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json"
+  },
+  "pins": {
+    "BASE": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "AUTHORITY_COMMIT": "c7b41b8fd858f66d0b658abcfbb4b1bf03aabae2"
+  },
+  "execution_rules": {
+    "postgres": "M2 exercised exclusively via the repository-native disposable path (scripts/db-audit-disposable.ts / pnpm db:audit:disposable, postgres:16-alpine, ephemeral port, no bind mounts). The shared local Supabase dev stack (project uellix-stella-g2-local-rehearsal, port 56322) was intentionally left untouched for this mission's live verification, per explicit user direction mid-session.",
+    "classification": "RECONCILIATION_INTRODUCED | PREEXISTING_ENVIRONMENTAL | FLAKE | UNKNOWN; NEW_DETERMINISTIC_FAILURES=0 and UNKNOWN=0 required.",
+    "no_weakening": "No expectation loosened, no assertion removed, no suppression added, no timeout changed."
+  },
+  "controls": [
+    {
+      "id": "M1-P1",
+      "title": "Single-grant ODS invocation remains compatible",
+      "positive": [
+        "tests/ods/ods-scope.test.ts: 'M1-P1: classifyPaths(..., singleGrant) === classifyPaths(..., [singleGrant])'",
+        "tests/ods/ods-poststate.test.ts: 'M1-P1: a single id in the new plural field produces the exact same single flag as the deprecated scalar field'",
+        "all pre-existing PG-1..PG-7/PG-P and PSA-1..PSA-5/PSA-P1..P3 single-grant suites unchanged and passing"
+      ]
+    },
+    {
+      "id": "M1-P2",
+      "title": "Two disjoint grants union",
+      "positive": ["tests/ods/ods-scope.test.ts: 'M1-P2: two DISJOINT synthetic grants authorize the exact union'"]
+    },
+    {
+      "id": "M1-P3",
+      "title": "Two overlapping grants union, no double-count",
+      "positive": ["tests/ods/ods-scope.test.ts: 'M1-P3: two OVERLAPPING real grants (HPO-ODS-W2-08 + HPO-ODS-W2-09) authorize their union without double-counting the shared path'"]
+    },
+    {
+      "id": "M1-N1",
+      "title": "Unknown grant fails closed",
+      "positive": [
+        "tests/ods/ods-scope.test.ts: 'M1-N1 (NEGATIVE): one unknown id alongside one valid id still FAILs when the changed protected path is outside the valid id's grant'",
+        "tests/ods/ods-scope.test.ts: 'M1-N1 basis' (resolveProtectedGrants pure)"
+      ]
+    },
+    {
+      "id": "M1-N2",
+      "title": "Uncovered path fails",
+      "positive": ["tests/ods/ods-scope.test.ts: 'M1-N2 (NEGATIVE): two VALID grants together still FAIL a protected path outside the union of both'"]
+    },
+    {
+      "id": "M1-N3",
+      "title": "Duplicate authority id is deterministic, not double-counted",
+      "positive": [
+        "tests/ods/ods-scope.test.ts: 'M1-N3 basis' (pure) and 'M1-N3 (real CLI)'",
+        "tests/ods/ods-poststate.test.ts: 'M1-N3: a duplicated id in the plural list is forwarded twice, deterministically'"
+      ]
+    },
+    {
+      "id": "M1-N4",
+      "title": "Task allowlist enforcement remains independent",
+      "positive": ["tests/ods/ods-scope.test.ts: 'M1-N4 (NEGATIVE): the union of two valid grants does not bypass the independent ordinary --allow requirement'"]
+    },
+    {
+      "id": "M1-E2E-SCOPE",
+      "title": "Canonical one-invocation reconciliation scope PASS",
+      "positive": [
+        "tests/ods/ods-scope.test.ts: 'M1-E2E-SCOPE: HPO-ODS-W2-08 + HPO-ODS-W2-09 together, in ONE canonical invocation, authorize their exact union'",
+        "docs/ops/integration/COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json ods_composition_result: real historical diff, CHANGED_FILE_COUNT=206, PROTECTED_AUTHORIZED_PATH_COUNT=94, PROTECTED_PATH_VIOLATIONS=0"
+      ]
+    },
+    {
+      "id": "M1-E2E-POSTSTATE",
+      "title": "ods:poststate forwards both ids correctly",
+      "positive": [
+        "tests/ods/ods-poststate.test.ts: 'M1-E2E-POSTSTATE' describe block, both the composeSteps-args test and the real ods-scope subprocess test"
+      ]
+    },
+    {
+      "id": "M2-P1",
+      "title": "Current corpus: PUBLIC/anon hold no EXECUTE on the two 0060 functions",
+      "positive": [
+        "tests/integration/function-execute-acl-guard.test.ts: 'M2-P1' (typechecked; reuses B0_17.check/probeSql verbatim)",
+        "disposable-harness proof (this session): probe 'M2-P1-current-corpus-clean' ok=true over the full 74-unit corpus (pnpm db:audit:disposable, postgres:16-alpine)"
+      ]
+    },
+    {
+      "id": "M2-N1",
+      "title": "A transient GRANT EXECUTE TO PUBLIC (the DROP+CREATE end-state) is detected",
+      "positive": [
+        "tests/integration/function-execute-acl-guard.test.ts: 'M2-N1' (typechecked)",
+        "disposable-harness proof (this session): probe 'M2-N1-reopened-ACL-is-detected-then-rolled-back' ok=true; mutation performed and rolled back inside one transaction, never committed"
+      ]
+    },
+    {
+      "id": "M2-P2",
+      "title": "Explicit REVOKE repairs the ACL",
+      "positive": [
+        "tests/integration/function-execute-acl-guard.test.ts: 'M2-P2' (typechecked)",
+        "disposable-harness proof (this session): probe 'M2-P2-explicit-revoke-repairs-in-same-transaction' ok=true"
+      ]
+    },
+    {
+      "id": "M2-SANITY",
+      "title": "No mutation leaked past rollback",
+      "positive": [
+        "disposable-harness proof (this session): probe 'SANITY-rollbacks-left-no-trace' ok=true; harness teardown VERIFIED_GONE, 0 leftover containers"
+      ]
+    },
+    {
+      "id": "M3-P1",
+      "title": "Merge/tree/parents exact",
+      "positive": [
+        "docs/ops/integration/COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json merge_facts, verified via gh pr view 49 and git rev-parse 94f0923c^1/^2 (this session)"
+      ]
+    },
+    {
+      "id": "M3-P2",
+      "title": "Predecessor evidence immutable",
+      "positive": [
+        "docs/ops/integration/COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json predecessor_artifacts_immutable; no predecessor path in this mission's changed-file set"
+      ]
+    },
+    {
+      "id": "M3-P3",
+      "title": "One canonical multi-grant ODS poststate result PASS",
+      "positive": [
+        "docs/ops/integration/COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json ods_composition_result: PROTECTED_PATH_VIOLATIONS=0, ODS_SCOPE_PROTECTED_SURFACE_RESULT=PASS"
+      ]
+    },
+    {
+      "id": "M3-P4",
+      "title": "main frozen",
+      "positive": [
+        "git rev-parse origin/main (this session) == 067e8c2f3ac9b5e843de3a35575182907b4365d4 exactly"
+      ]
+    },
+    {
+      "id": "M3-P5",
+      "title": "Integration preview non-production, if externally verifiable",
+      "positive": [
+        "docs/ops/integration/COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json preview_deployment: Vercel preview URL (*.vercel.app), TARGET_IS_PRODUCTION=false"
+      ]
+    },
+    {
+      "id": "M4-DEFERRED",
+      "title": "Hosted B0 current status intentionally not refreshed",
+      "positive": [
+        "artifacts/hosted-b0-status.json and artifacts/hosted-b0-observation.json not in this mission's changed-file set (git diff --name-only)"
+      ]
+    },
+    {
+      "id": "M5-DEFERRED",
+      "title": "Wrapper denominator redesign intentionally not performed",
+      "positive": [
+        "db/prepared/journal/** and db/hosted/baseline-journal-wrapper.ts not in this mission's changed-file set (git diff --name-only)"
+      ]
+    }
+  ],
+  "control_count": 19,
+  "ci_equivalent": [
+    "pnpm secrets:scan",
+    "pnpm authority:seal:verify",
+    "pnpm lint",
+    "pnpm typecheck",
+    "pnpm test:unit (targeted: tests/ods/ods-scope.test.ts, tests/ods/ods-poststate.test.ts)",
+    "pnpm test:integration (tests/integration/function-execute-acl-guard.test.ts — will run for real on the next CI pass; not executed against the shared local stack in this session, per user direction)",
+    "pnpm build"
+  ],
+  "ods_gates": [
+    "pnpm ods:scope --base 94f0923c... --protected-authority HPO-ODS-W2-08 --protected-authority HPO-ODS-W2-09 (library-level proof this session; CLI-level proof requires the codex/commercial-v1-wave2-reconciliation-r1 checkout, already held by another worktree)",
+    "pnpm ods:poststate with the same repeated authority flags"
+  ]
+}

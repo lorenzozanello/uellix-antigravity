@@ -1,0 +1,99 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.4",
+  "version": "1.0.4",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-AUDIT-FINDINGS-HARDENING-R1",
+  "materialization_date": "2026-09-03",
+  "refines": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json",
+  "note": "Append-only. Does not rewrite v1.0.0/v1.0.1/v1.0.2/v1.0.3, all of which remain in force by reference.",
+  "predecessor": {
+    "head": "00b57f3a08d98990c1a8d492e2352aabe17e6f73",
+    "tree": "3e568f9efb40ffc6e44c65cefa97acffe66ecaed",
+    "pr_number": 50,
+    "pr_url": "https://github.com/lorenzozanello/uellix-antigravity/pull/50"
+  },
+  "triggering_machine_finding": {
+    "failed_pr_run": 33709987615,
+    "failed_pr_job": 100507202972,
+    "failed_pr_result": "failure",
+    "workflow": "m2-real-pg-gate.yml",
+    "event": "pull_request",
+    "raw_evidence": {
+      "db_migrate_local": "completed successfully (exit 0), disposable PostgreSQL container created/torn down for real",
+      "m2_vitest_raw_result": "M2_VITEST_RAW_RESULT=PASS_4_OF_4 — raw log lines: 'Test Files  1 passed (1)' and 'Tests  4 passed (4)'",
+      "gate_result": "M2_GATE_RESULT=FAIL_229_OF_230 — MAIN:M2-TEST-EXECUTION recorded FAIL, OVERALL=FAIL (229/230 checks), process exited 1",
+      "ansi_escapes_present": true
+    },
+    "machine_finding_classification": "ANSI_SENSITIVE_M2_TEST_SUMMARY_FALSE_NEGATIVE",
+    "root_cause": "ANSI_SENSITIVE_HUMAN_OUTPUT_PARSER — GitHub Actions' vitest output interleaves ANSI color escape codes directly around/inside the summary tokens (e.g. \\x1b[1m\\x1b[32m4 passed\\x1b[39m\\x1b[22m); this repository's own local runs (piped to a file, no TTY) never produce this decoration, so the original /\\b4 passed\\b/ regex matched locally but not in the GitHub Actions runner environment."
+  },
+  "authorized_hardening_paths": [
+    "scripts/m2-disposable-pg-bootstrap.ts",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.4.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.4.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.4.json"
+  ],
+  "not_authorized_unless_mechanically_required": [
+    ".github/workflows/m2-real-pg-gate.yml",
+    "package.json",
+    "tests/integration/function-execute-acl-guard.test.ts"
+  ],
+  "never_authorized": [
+    "db/**",
+    "supabase/**",
+    "scripts/db-migrate-local.ts",
+    "scripts/rotate-local-role-credentials.ts",
+    "pnpm-lock.yaml"
+  ],
+  "authorized_functional_changes": {
+    "A_M2_TEST_RESULT_PORTABILITY": {
+      "requirement": "Normalize terminal decoration (ANSI CSI color/style escapes) before interpreting the Vitest summary. No new dependency — a small deterministic stripAnsi() + order/decoration-agnostic per-line count parser. Must still require exactly: test files total=1/passed=1/failed=0/skipped=0, tests total=4/passed=4/failed=0/skipped=0. Must accept plain local output AND GitHub-ANSI-decorated output. Must reject 0 files, 2 files, 3/4 passed, 1 failed, 1 skipped. NO_COLOR alone is explicitly rejected as a sufficient fix — portability must live in the parser itself.",
+      "implemented_as": "stripAnsi(), parseSummaryLine(), parseVitestSummary(), isExactM2Result() in scripts/m2-disposable-pg-bootstrap.ts"
+    },
+    "B_M2_F2_MECHANICAL_MIGRATION_PROOF": {
+      "requirement": "Remove the unconditional record('MAIN:0061-APPLIED', true) supported only by migrate.status===0. Mechanically derive EXPECTED_MIGRATION_COUNT from the canonical Drizzle migration corpus (db/migrations/meta/_journal.json), require the actual drizzle.__drizzle_migrations journal count to equal it, and mechanically establish that migration 0061 is represented via Drizzle 0.45.2's own hashing semantics (sha256 of each migration .sql file's content, one row per applied migration in drizzle.__drizzle_migrations.hash — read directly from drizzle-orm/migrator.js's readMigrationFiles and drizzle-orm/pg-core/dialect.js's PgDialect.migrate, not guessed). Add a deliberate negative/mutation control proving the migration-proof logic can return FAIL.",
+      "mechanically_confirmed_semantics": {
+        "hash_algorithm": "crypto.createHash('sha256').update(fileContentUtf8).digest('hex'), read verbatim from node_modules/.pnpm/drizzle-orm@0.45.2.../drizzle-orm/migrator.js readMigrationFiles()",
+        "table_schema": "drizzle.__drizzle_migrations(id SERIAL PRIMARY KEY, hash text NOT NULL, created_at bigint) — one row per applied migration, in application order, read verbatim from drizzle-orm/pg-core/dialect.js PgDialect.migrate()",
+        "canonical_corpus_size_at_this_head": 62,
+        "terminal_migration_tag": "0061_fib_disposition_governance_function_execute_revocation"
+      },
+      "implemented_as": "deriveExpectedMigrationCorpus(), evaluateMigrationProof() (pure), checkMigrationProof() in scripts/m2-disposable-pg-bootstrap.ts; replaces MAIN:0061-APPLIED with MAIN:MIGRATION-JOURNAL-COUNT, MAIN:MIGRATION-CORPUS-PROOF, MAIN:0061-APPLIED (now mechanically derived)"
+    },
+    "C_M2_F3_EXCEPTION_SAFE_ENV_RESTORATION": {
+      "requirement": "Every credential-writing phase must use snapshot -> try { phase } finally { restore exact env state }, exception-safe against a thrown error between rotation and normal return, independent of and never blocking the container's own finally-guaranteed teardown. Add a deliberate injected-throw control. Never print env contents. Distinguish EXCEPTION_SAFE=YES (in-process throws) from HARD_PROCESS_TERMINATION_GUARANTEE (SIGKILL/host failure) — never claim the latter.",
+      "implemented_as": "withEnvRestore() wrapper (real try/finally) used by MAIN phase, runNegative(), and the PRIV-N4/PRIV-N5 inline blocks in scripts/m2-disposable-pg-bootstrap.ts; runEnvRestoreThrowSelfTest() proves it; installSignalCleanup() adds best-effort (NOT guaranteed) SIGINT/SIGTERM container cleanup, explicitly documented as HARD_PROCESS_TERMINATION_GUARANTEE=NO"
+    }
+  },
+  "historical_corrections_recorded_append_only": {
+    "GOV_F4": {
+      "finding": "v1.0.3's prior_evidence pointer referenced COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.2.json, which was authorized in v1.0.2's authority but never actually materialized as a file.",
+      "disposition": "Recorded as a dangling historical pointer. No fake v1.0.2 evidence artifact is created retrospectively. v1.0.3's own evidence file (EVIDENCE_v1.0.3.json) is the first materialized evidence artifact after v1.0.1's."
+    },
+    "GOV_F5": {
+      "finding": "The v1.0.3 audit:batch evidence recorded in EVIDENCE_v1.0.3.json was captured with --head HEAD resolving to 8538d1a130543ad64cc31507834fd2c326759c27 (the authority commit), not the eventual final candidate 00b57f3a08d98990c1a8d492e2352aabe17e6f73 produced two commits later.",
+      "disposition": "Recorded as a historical scope mismatch, not corrected retroactively in EVIDENCE_v1.0.3.json (append-only; history is not rewritten). A second audit:batch run was performed against the actual final HEAD 00b57f3a08d98990c1a8d492e2352aabe17e6f73 during that same mission and reported in that mission's FINAL_REPORT text (PARTIAL, cleanState=true) — that report is the authoritative record of the final-HEAD run, not a rewritten evidence file."
+    },
+    "ENV_F6": {
+      "finding": "Env-file-absence claims must only ever be recorded from a measurement taken in the exact run being described, never asserted generically.",
+      "disposition": "EVIDENCE_v1.0.4.json records, per env file, pre_exists/pre_sha256 (if present)/post_exists/post_sha256 (if present)/restoration result, measured in the actual acceptance run this authority gates — never restated from a prior run's claim."
+    }
+  },
+  "deferred_findings_preserved_not_fixed_here": {
+    "M1_F1": "authority prose overclaims unknown grant-id fail-closed behavior — source surface not modified by this authority.",
+    "GOV_F7": "historical v1.0.0 test-manifest ordering debt — preserved as historical fact; this authority's own manifest-before-implementation-commit ordering is a corrective practice going forward, not a rewrite of v1.0.0.",
+    "AG_M2_4": "P1A/local owner database CREATE gap — source surface not modified.",
+    "AG_M2_5": "stale migration transaction comment — source surface not modified.",
+    "OF_1": "hosted CREATEROLE lifetime debt — source surface not modified.",
+    "M3_staging_guc_semantics_debt": "not modified.",
+    "P1A_FULL_BOOTSTRAP_STATUS": "DEFERRED_SEPARATE_GOVERNED_NODE — not dispatched or modified by this authority."
+  },
+  "does_not_authorize": [
+    "marking PR #50 ready for review",
+    "merging, squashing, or rebasing PR #50",
+    "amending any existing commit",
+    "modifying main or integration/commercial-v1",
+    "any Production/Vercel promotion",
+    "manually re-running the historical failed run 33709987615 (immutable evidence, preserved as-is)",
+    "dispatching P1A Validation"
+  ]
+}

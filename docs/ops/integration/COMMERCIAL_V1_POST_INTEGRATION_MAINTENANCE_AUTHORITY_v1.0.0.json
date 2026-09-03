@@ -1,0 +1,120 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0",
+  "version": "1.0.0",
+  "authority_class": "BOUNDED_POST_INTEGRATION_TOOLING_SECURITY_EVIDENCE_MAINTENANCE_AUTHORITY",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-IMPLEMENTATION-R1",
+  "materialization_date": "2026-09-02",
+  "append_only": true,
+  "supersedes": null,
+  "refines": null,
+  "purpose": "Authorizes exactly three bounded, additive maintenance items identified by the read-only COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-PREFLIGHT-R1 mission run against integration/commercial-v1 @ 94f0923c (PR #49 merge): (M1) canonical multi-grant support in the ODS scope/poststate CLI so a single invocation can authorize the union of multiple valid --protected-authority grants; (M2) a deterministic real-PostgreSQL regression guard proving the existing B0-17 PUBLIC EXECUTE invariant on the two governed 0060 functions is exercised by ordinary CI, not only by manual/certification paths; (M3) append-only post-merge closure evidence for PR #49 filling the acknowledged 'post_merge: {}' gap left open in COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json. M4 (hosted-b0-status refresh) and M5 (journal wrapper denominator redesign) are explicitly deferred and NOT authorized by this artifact.",
+  "hpo_decisions_frozen": {
+    "PREFLIGHT_MISSION": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-PREFLIGHT-R1",
+    "M1_CLASSIFICATION": "PURE_TOOLING",
+    "M2_CLASSIFICATION": "SECURITY_GUARD",
+    "M3_CLASSIFICATION": "GOVERNANCE_ARTIFACT",
+    "M4_IN_SCOPE": false,
+    "M5_IN_SCOPE": false,
+    "M2_RUNTIME_CHANGE_REQUIRED": false,
+    "M2_MIGRATION_REQUIRED": false,
+    "M3_PREDECESSOR_ARTIFACTS_IMMUTABLE": true,
+    "M3_HISTORICAL_EVIDENCE_REWRITE": false,
+    "AUTONOMOUS_PROGRAM_CONTROLLER_IN_SCOPE": false,
+    "B4_IN_SCOPE": false,
+    "PRODUCTION_PROMOTION_IN_SCOPE": false
+  },
+  "pins": {
+    "BASE_INTEGRATION_COMMIT": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "BASE_INTEGRATION_TREE": "186f424db07270e71b4edf3880b90e3d262a2981",
+    "EXPECTED_PARENT_1": "d56d44a370abaafb105bf8e1169edea418aef913",
+    "EXPECTED_PARENT_2": "9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+    "PRODUCT_WAVE2_CANDIDATE": "9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+    "FROZEN_WAVE2": "102a75cc044fb3e2c61249854f7f403cb066cab0",
+    "MAIN_FROZEN": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "PR49": 49,
+    "PR49_MERGE_COMMIT": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "PR49_MANUAL_CI": "33665788571",
+    "PR49_PR_CI": "33671009026",
+    "SUCCESSOR_BRANCH": "codex/commercial-v1-post-integration-maintenance-r1",
+    "SUCCESSOR_WORKTREE": "C:/Users/Lorenzo/Documents/uellix-stella-commercial-v1-post-integration-maintenance-r1"
+  },
+  "authorized_implementation_paths": [
+    "scripts/ods-scope.ts",
+    "scripts/ods-poststate.ts",
+    "tests/ods/ods-scope.test.ts",
+    "tests/ods/ods-poststate.test.ts",
+    "tests/integration/function-execute-acl-guard.test.ts"
+  ],
+  "authorized_governance_paths": [
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.0.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.0.json",
+    "docs/ops/integration/COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json"
+  ],
+  "m1_contract": {
+    "defect": "scripts/ods-scope.ts and scripts/ods-poststate.ts each treat --protected-authority as a scalar (last-write-wins); a repeated flag silently overwrites the previous value instead of accumulating, so one canonical invocation cannot authorize the union of two valid additive grants (proven necessary by the Wave2 reconciliation's two-run HPO-ODS-W2-08 + HPO-ODS-W2-09 workaround recorded in COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json gates.ODS_SCOPE).",
+    "required_semantics": "protectedAuthorities: string[]; each --protected-authority <id> occurrence appends one id; resolve each id independently against the existing PROTECTED_GRANTS registry; union their exact path/pattern sets with de-duplication; any single unknown id fails the whole invocation closed; no wildcard broadening; --allow task-allowlist semantics remain fully independent and unweakened.",
+    "backward_compatibility": "A single --protected-authority X invocation must remain byte/semantically identical to current behavior. No externally-visible JSON schema break for the single-grant case unless no compatible alternative exists — if one is required, treat it as an authority-delta trigger, not a default choice.",
+    "poststate_requirement": "ods-poststate.ts does not import ods-scope.ts's resolution logic; it composes ods:scope as a subprocess step. Its own CLI parsing must independently accumulate --protected-authority the same way and forward every accumulated id to the ods:scope subprocess invocation it builds."
+  },
+  "m2_contract": {
+    "protected_functions": [
+      "public.uellix_guard_disposition_run_approval()",
+      "public.uellix_lock_run_dispositions_on_approval()"
+    ],
+    "known_hazard": "CREATE OR REPLACE FUNCTION preserves an existing revoked ACL; DROP FUNCTION + CREATE FUNCTION resets to the PostgreSQL default (PUBLIC EXECUTE restored). The existing B0-17 check (db/hosted/baseline-postconditions.ts, COALESCE(p.proacl, acldefault('f', p.proowner)) against pg_proc/pg_namespace) already correctly detects this end-state, but today only runs via manual/certification paths (pnpm baseline:rehearsal:local, pnpm b0:status:*) that are not invoked by .github/workflows/ci.yml or .github/workflows/p1a-validation.yml. tests/hosted/checkpoint-b0.test.ts runs in CI but only exercises the check function against synthetic fixtures, never real pg_proc.",
+    "required_change": "Add exactly one new test, tests/integration/function-execute-acl-guard.test.ts, placed so it is picked up by the real-Postgres path already provisioned by .github/workflows/p1a-validation.yml (tests/integration/** glob), applying the full migration chain against the ephemeral Postgres already started there and then reusing the existing exported B0-17 check/query logic (no duplication of the SQL invariant; no change to db/hosted/baseline-postconditions.ts).",
+    "preflight_required_before_writing": [
+      "confirm tests/integration/** is included by the real-PostgreSQL integration test command",
+      "confirm p1a-validation.yml (or current equivalent) actually executes that command",
+      "confirm the workflow trigger covers the intended development/PR path"
+    ],
+    "mutation_control": "M2-N1 negative mutation and M2-P2 repair must be exercised only inside disposable/local PostgreSQL (never committed as broken SQL in the repository); if an exact DROP+CREATE cannot be performed safely due to trigger/dependency CASCADE constraints, the narrowest equivalent mutation that restores PUBLIC EXECUTE on the target function may be substituted, with the substitution and its equivalence to the DROP+CREATE end-state documented in the test file and the evidence artifact.",
+    "runtime_invariant": "M2_RUNTIME_CHANGE_REQUIRED=NO; MIGRATIONS_CHANGED=0; RUNTIME_FILES_CHANGED=0; WORKFLOW_FILES_CHANGED=0."
+  },
+  "m3_contract": {
+    "artifact_path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json",
+    "predecessor_artifacts_immutable": [
+      "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0.json",
+      "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1.json",
+      "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_TEST_MANIFEST_v1.0.1.json",
+      "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json"
+    ],
+    "gap_closed": "COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json records post_merge: {} and ODS_POSTSTATE: 'see post_merge (run after the merge commit)' — this artifact materializes that post-merge record using the M1 canonical multi-grant capability (HPO-ODS-W2-08 + HPO-ODS-W2-09 in one invocation), not the historical two-run workaround.",
+    "required_pins": [
+      "PR_NUMBER=49",
+      "INTEGRATION_MERGE_COMMIT=94f0923c01f8863a71e1b8f991a3e4073aba2747",
+      "INTEGRATION_TREE=186f424db07270e71b4edf3880b90e3d262a2981",
+      "MERGE_PARENT_1=d56d44a370abaafb105bf8e1169edea418aef913",
+      "MERGE_PARENT_2=9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+      "CANDIDATE=9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+      "WAVE2_SOURCE=102a75cc044fb3e2c61249854f7f403cb066cab0",
+      "MAIN_FROZEN=067e8c2f3ac9b5e843de3a35575182907b4365d4",
+      "MANUAL_CI_RUN=33665788571",
+      "PR_CI_RUN=33671009026"
+    ],
+    "external_verification_policy": "GitHub CLI/API read-only verification preferred where available; if Vercel read access is unavailable, record EXTERNAL_VERIFICATION_UNAVAILABLE rather than inventing preview/production facts."
+  },
+  "does_not_authorize": [
+    "db/migrations/**, db/migrations/meta/**, db/prepared/journal/**",
+    "db/hosted/baseline-postconditions.ts, db/hosted/baseline-manifest.ts",
+    "artifacts/hosted-b0-status.json, artifacts/hosted-b0-observation.json",
+    "docs/ops/wave2/**, docs/ops/fib/**, docs/ops/reeng/**, docs/ops/ods/**",
+    "any edit to COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0.json, _AUTHORITY_v1.0.1.json, _EVIDENCE_v1.0.1.json, _TEST_MANIFEST_v1.0.1.json",
+    ".github/workflows/**",
+    "eslint.config.mjs",
+    "any runtime/product/schema change",
+    "production deployment or promotion",
+    "writes to integration/commercial-v1 or main",
+    "the Uellix Autonomous Program Controller and Wave2 B4"
+  ],
+  "expected_gates": [
+    "pnpm secrets:scan, pnpm authority:seal:verify, pnpm lint, pnpm typecheck, pnpm test:unit, pnpm build",
+    "canonical real-Postgres integration command including tests/integration/function-execute-acl-guard.test.ts",
+    "pnpm ods:scope and pnpm ods:poststate with repeated --protected-authority HPO-ODS-W2-08 --protected-authority HPO-ODS-W2-09 in one invocation, PASS",
+    "pnpm audit:batch against BASE=94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "authorized-path check: git diff --name-only 94f0923c01f8863a71e1b8f991a3e4073aba2747 is a subset of authorized_implementation_paths + authorized_governance_paths",
+    "NEW_DETERMINISTIC_FAILURES=0, UNKNOWN=0",
+    "no push to integration/commercial-v1 or main; candidate branch push only, non-force"
+  ]
+}

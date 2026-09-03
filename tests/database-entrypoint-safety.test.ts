@@ -199,15 +199,20 @@ describe('the integration suites cannot be run ungated', () => {
     expect(files.filter((f) => f.startsWith('tests/integration/'))).toEqual([])
   }, 120_000)
 
-  it('the INTEGRATION config still collects both integration files', () => {
+  it('the INTEGRATION config still collects exactly the governed integration files', () => {
     const files = collect('vitest.integration.config.ts').sort()
     expect(files).toEqual([
+      'tests/integration/function-execute-acl-guard.test.ts',
       'tests/integration/investments.service.test.ts',
       'tests/integration/rls.test.ts',
     ])
   }, 120_000)
 
-  it.each(['tests/integration/rls.test.ts', 'tests/integration/investments.service.test.ts'])(
+  it.each([
+    'tests/integration/rls.test.ts',
+    'tests/integration/investments.service.test.ts',
+    'tests/integration/function-execute-acl-guard.test.ts',
+  ])(
     '%s imports the per-file guard FIRST, so the gate does not depend on the config',
     (relative) => {
       const source = code(relative)
@@ -243,7 +248,7 @@ describe('the integration suites cannot be run ungated', () => {
     }
   )
 
-  it('the integration suite still collects its 49 tests — zero collection is a failure', () => {
+  it('the integration suite still collects its 53 tests — zero collection is a failure', () => {
     // "The config collects the two files" (asserted above) is necessary but
     // not sufficient: a file whose guard aborts at import time collects zero
     // TESTS while still being listed. Count the tests themselves.
@@ -269,7 +274,7 @@ describe('the integration suites cannot be run ungated', () => {
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line.includes(' > '))
-    expect(tests.length).toBe(49)
+    expect(tests.length).toBe(53)
   }, 120_000)
 })
 

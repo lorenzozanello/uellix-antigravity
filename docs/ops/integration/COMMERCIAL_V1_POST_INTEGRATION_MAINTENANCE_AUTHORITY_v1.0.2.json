@@ -1,0 +1,83 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.2",
+  "version": "1.0.2",
+  "authority_class": "SECURITY_NARROWING_IN_ISOLATED_TEST_FIXTURE",
+  "hpo_mission_id": "COMMERCIAL-V1-M2-ISOLATED-GATE-REMEDIATION-R1",
+  "hpo_decision": "OPTION_E",
+  "materialization_date": "2026-09-02",
+  "append_only": true,
+  "supersedes": null,
+  "refines": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.1.json",
+  "purpose": "Resolves AG-M2-1 (GOVERNED_ROLE_TOPOLOGY_CONTRADICTION between db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql granting uellix_migrator CREATEROLE and db/migrator.ts's assertMigratorSession() hard-refusing it). Authorizes, ONLY inside an isolated, disposable, non-persistent PostgreSQL fixture this same script creates and tears down: apply stella_hosted_0000 verbatim (including its own self-verification, which passes while uellix_migrator still carries CREATEROLE — that attribute is inert for anything this gate exercises), then narrow exactly ALTER ROLE uellix_migrator NOCREATEROLE before credential rotation, then proceed through the unchanged db:migrate:local and B0-17 entrypoints.",
+  "hpo_decisions_frozen": {
+    "AG_M2_1_RESOLUTION": "OPTION_E",
+    "SEQUENCE": [
+      "hosted_0000 VERBATIM",
+      "hosted_0000 SELF-VERIFY (PASS while CREATEROLE still true)",
+      "disposable-only ALTER ROLE uellix_migrator NOCREATEROLE",
+      "rotate credentials (scripts/rotate-local-role-credentials.ts, unchanged)",
+      "db:migrate:local (unchanged)",
+      "real PostgreSQL M2/B0-17 controls"
+    ],
+    "SCOPE_LIMITS": {
+      "DOES_NOT_DEFINE_OR_MODIFY": ["HOSTED_PRODUCTION_TOPOLOGY", "LOCAL_DEVELOPMENT_TOPOLOGY", "STAGING_TOPOLOGY", "PRODUCTION_TOPOLOGY"],
+      "DOES_NOT_AUTHORIZE": [
+        "partial stella_0001_role_topology_bootstrap.sql execution",
+        "modifying any db/prepared/** package",
+        "relaxing db/migrator.ts assertMigratorSession()",
+        "P1A full-stack bootstrap repair"
+      ]
+    },
+    "EXPLICIT_LIMITATIONS": [
+      "this fixture does NOT claim to prove PHASE_STELLA_CHAIN",
+      "this fixture does NOT claim installer<->owner production isolation — RR-02 remains outside M2 scope",
+      "uellix.bootstrap_environment='staging' is inherited package activation semantics already used by the governed disposable rehearsal path (scripts/baseline-rehearsal-local.ts) and is NOT evidence the container is actual staging",
+      "P1A full bootstrap remains deferred (P1A_FULL_BOOTSTRAP_STATUS=DEFERRED_SEPARATE_GOVERNED_NODE)"
+    ]
+  },
+  "pins": {
+    "PREDECESSOR_AUTHORITY_COMMIT_HEAD": "583f4b0ee7fbd7568a30b058b8ff5e718daf920c",
+    "PREDECESSOR_TREE": "0b1d8e1f7e08336516617b1167014ff6181a0b56",
+    "INTEGRATION_BASE": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "MAIN_FROZEN": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "FAILED_P1A": "33683502774",
+    "NORMAL_CI_PASS": "33683499357",
+    "SUPABASE_POSTGRES_IMAGE_TAG": "17.6.1.143",
+    "SUPABASE_POSTGRES_IMAGE_DIGEST": "sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453",
+    "SUPABASE_POSTGRES_IMAGE_IMMUTABLE_REF": "public.ecr.aws/supabase/postgres@sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453",
+    "IMAGE_RESOLUTION_METHOD": "docker pull public.ecr.aws/supabase/postgres:17.6.1.143 (registry-reported Digest) cross-checked against docker inspect --format='{{index .RepoDigests 0}}' — both agree exactly; not hand-transcribed"
+  },
+  "authorized_implementation_paths": [
+    ".github/workflows/m2-real-pg-gate.yml",
+    "scripts/m2-disposable-pg-bootstrap.ts",
+    "package.json",
+    "tests/integration/function-execute-acl-guard.test.ts"
+  ],
+  "authorized_governance_paths": [
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.2.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.2.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.2.json"
+  ],
+  "tests_integration_acl_guard_test_ts_authorization": "COMMENT_ONLY — no assertion, import, test body, helper, or behavioral change authorized; only the stale explanatory header comment claiming P1A already runs this test on every ordinary PR may be corrected.",
+  "env_safety_contract": {
+    "requirement": "scripts/rotate-local-role-credentials.ts is intentionally unmodified and writes .env.local, .env.migration.local, .env.audit.local (all gitignored, non-authority paths). The new bootstrap tool must snapshot each file's existence + exact bytes BEFORE rotation and restore that exact state (present-with-identical-bytes, or absent) AFTER the gate concludes, on both success and failure paths — without ever printing contents.",
+    "controls": ["ENV-P1", "ENV-N1", "ENV-P2"]
+  },
+  "does_not_authorize": [
+    "db/migrator.ts, scripts/db-migrate-local.ts, scripts/rotate-local-role-credentials.ts",
+    "db/prepared/**, db/migrations/**, db/hosted/**, db/safety/**",
+    "tests/integration/_guard.ts",
+    ".github/workflows/p1a-validation.yml, .github/workflows/ci.yml",
+    "pnpm-lock.yaml",
+    "any new migration, any new role package, any runtime code, any production topology change, any P1A repair",
+    "force push, amend, rebase, squash, merge into integration/commercial-v1 or main, production promotion"
+  ],
+  "expected_gates": [
+    "pnpm secrets:scan, pnpm authority:seal:verify, pnpm lint, pnpm typecheck",
+    "pnpm m2:pg:gate (full disposable proof, real Postgres, real narrowing, real migration, real B0-17 controls)",
+    "tests/integration/function-execute-acl-guard.test.ts executed against the disposable database with exactly its expected tests collected — zero skip, zero zero-collection false green",
+    "pnpm audit:batch --base 94f0923c... --head HEAD --target-branch integration/commercial-v1 --json",
+    "redispatch of ci.yml (unchanged) and the new m2-real-pg-gate.yml via workflow_dispatch against the successor candidate head; both must reach success, with the M2 workflow's real-Postgres step actually executed and passed",
+    "origin/integration/commercial-v1 and origin/main unchanged throughout"
+  ]
+}

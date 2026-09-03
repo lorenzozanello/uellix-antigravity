@@ -1,0 +1,74 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.1",
+  "version": "1.0.1",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-CI-COMPANION-REMEDIATION-R1",
+  "materialization_date": "2026-09-02",
+  "predecessor": {
+    "path": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.0.json",
+    "note": "All M1/M2/M3 controls from v1.0.0 remain in force by reference and are unchanged by this remediation. This manifest adds only the CI-companion controls below."
+  },
+  "authority": {
+    "path": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.1.json"
+  },
+  "pins": {
+    "PREDECESSOR_CANDIDATE_HEAD": "ad9c305eb2dc44016d450ecc3b036ad66c7aa953",
+    "FAILED_P1A_RUN": "33681916900",
+    "SUCCESSOR_AUTHORITY_COMMIT": "5a403799bcad7b27d05855c50387ba0834e7b944"
+  },
+  "controls": [
+    {
+      "id": "CI-COMP-P1",
+      "title": "Integration config exact file set = 3",
+      "positive": [
+        "tests/database-entrypoint-safety.test.ts: 'the INTEGRATION config still collects exactly the governed integration files' — exact array equality against ['tests/integration/function-execute-acl-guard.test.ts', 'tests/integration/investments.service.test.ts', 'tests/integration/rls.test.ts'] (sorted)",
+        "mechanically re-derived this session: vitest list --filesOnly --config vitest.integration.config.ts (CI=true, synthetic UELLIX_RUNTIME_DATABASE_URL) returns exactly these 3 files"
+      ]
+    },
+    {
+      "id": "CI-COMP-P2",
+      "title": "New ACL guard test participates in collection",
+      "positive": [
+        "tests/integration/function-execute-acl-guard.test.ts present in the CI-COMP-P1 exact-equality array — its ABSENCE would fail that test, its presence with an unexpected 4th file would also fail it (exact equality, not contains)"
+      ]
+    },
+    {
+      "id": "CI-COMP-P3",
+      "title": "All three integration tests obey the first-import ./_guard invariant",
+      "positive": [
+        "tests/database-entrypoint-safety.test.ts it.each(['tests/integration/rls.test.ts', 'tests/integration/investments.service.test.ts', 'tests/integration/function-execute-acl-guard.test.ts'])('%s imports the per-file guard FIRST...') — 3/3 pass",
+        "tests/integration/function-execute-acl-guard.test.ts's own first line, verified by direct read, is \"import './_guard'\""
+      ]
+    },
+    {
+      "id": "CI-COMP-P4",
+      "title": "Integration test count mechanically derives 53",
+      "positive": [
+        "mechanically re-derived this session: vitest list --config vitest.integration.config.ts (same synthetic env), lines containing ' > ', count = 53",
+        "tests/database-entrypoint-safety.test.ts: 'the integration suite still collects its 53 tests — zero collection is a failure' PASS"
+      ],
+      "derivation_note": "261 (pre-remediation baseline: 139 tests/database-target-safety.test.ts + 122 tests/database-entrypoint-safety.test.ts, per the failed P1A run's own log) + 1 (this remediation's new it.each entry extending the guard-first invariant to a third file) = 262 total in the two safety files after remediation — confirmed by running them together. The 53 figure is the SEPARATE, independent integration-suite-collection count (17 investments + 4 acl-guard + 32 rls), not to be confused with the 262 safety-suite count."
+    },
+    {
+      "id": "CI-COMP-N1",
+      "title": "Removing the new file from the expected closed-world inventory fails the safety test",
+      "verification_method": "Analytical, not executed against committed source (mutation controls performed via a temporary in-memory/copy fixture per authority; no broken source committed): reverting the CI-COMP-P1 exact-equality array to its predecessor two-file form while the third file still physically exists under tests/integration/** reproduces exactly the failure mode already observed live in P1A run 33681916900 ('the INTEGRATION config still collects both integration files' — actual collection contains a third, unexpected file). This is the exact defect this remediation fixes, and its reproducibility was the trigger for this mission.",
+      "confirmed": true
+    },
+    {
+      "id": "CI-COMP-N2",
+      "title": "Removing/bypassing the new file's first _guard import fails the safety invariant",
+      "verification_method": "Analytical: tests/integration/function-execute-acl-guard.test.ts's first import is import './_guard' (confirmed by direct read, first line of the file, before the file-level banner comment's own subsequent import statements). Were it not first, the it.each CI-COMP-P3 check (`guardIndex === firstImport`) would fail exactly as it does for the other two governed files under the same assertion — this is the same invariant already proven to fail-detect on rls.test.ts/investments.service.test.ts's own predecessor history; no new mechanism was added, only a third file added to the same existing loop.",
+      "confirmed": true
+    }
+  ],
+  "control_count": 6,
+  "ci_equivalent": [
+    "pnpm secrets:scan — PASS",
+    "pnpm authority:seal:verify — PASS",
+    "pnpm lint — PASS (0 errors, 63 pre-existing warnings, 0 new)",
+    "pnpm typecheck — PASS",
+    "pnpm exec vitest run tests/database-target-safety.test.ts tests/database-entrypoint-safety.test.ts — 262/262 PASS",
+    "pnpm exec vitest run tests/ods/ods-scope.test.ts tests/ods/ods-poststate.test.ts — 171/171 PASS (M1 implementation unchanged; confirms no regression)"
+  ],
+  "m2_note": "M2 implementation (tests/integration/function-execute-acl-guard.test.ts) was NOT modified in this remediation. Its disposable-harness mutation proof from the v1.0.0 evidence is not re-run here, per authority instruction — only its participation in the closed-world inventory changed."
+}

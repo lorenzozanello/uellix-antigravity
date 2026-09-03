@@ -3,6 +3,12 @@
 //
 //   pnpm ods:poststate --base <sha> --allow <pattern> [--allow ...]
 //                       [--test <path> ...] [--clean]
+//                       [--protected-authority <id> ...]
+//
+// COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json (M1):
+// --protected-authority may be repeated; every occurrence is forwarded as
+// its own flag to the composed ods:scope step (see composeSteps), which
+// remains the sole adjudicator of union/resolution semantics.
 //
 // One explicit endpoint that COMPOSES existing commands and the other ODS
 // gates. It never reimplements their logic — typecheck stays tsc, secrets
@@ -38,8 +44,23 @@ export interface PoststateInput {
    * ods:scope remains the sole adjudicator of authority validity, branch
    * binding, protected-pattern binding, the concrete changed path, and
    * ordinary task --allow.
+   *
+   * @deprecated kept only so existing single-id call sites/tests remain
+   * unchanged. Prefer `protectedAuthorities`. If both are given, this id
+   * is forwarded alongside every id in `protectedAuthorities` (union, not
+   * override) — see composeSteps.
    */
   protectedAuthority?: string
+  /**
+   * COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json (M1):
+   * zero or more bare identifiers, each forwarded verbatim as its own
+   * --protected-authority flag to the composed ods:scope step. poststate
+   * never interprets, expands, or unions them itself — ods:scope remains
+   * the sole adjudicator (resolveProtectedGrants + classifyPaths); this
+   * orchestrator only has to widen its own CLI to accumulate and forward
+   * every occurrence instead of the last one winning.
+   */
+  protectedAuthorities?: string[]
 }
 
 export interface ComposedStep {
@@ -66,7 +87,11 @@ export function composeSteps(input: PoststateInput): ComposedStep[] {
     for (const pattern of input.allow) scopeArgs.push('--allow', pattern)
     // Forwarded verbatim, only here — never to typecheck, tests, the
     // secrets scan, the authority verifier, or the clean-state step.
-    if (input.protectedAuthority) scopeArgs.push('--protected-authority', input.protectedAuthority)
+    // M1: the deprecated scalar and the new plural list are UNIONED (not
+    // one overriding the other) so no existing single-id call site's
+    // behavior changes when protectedAuthorities is simply absent.
+    const protectedAuthorityIds = [...(input.protectedAuthority ? [input.protectedAuthority] : []), ...(input.protectedAuthorities ?? [])]
+    for (const id of protectedAuthorityIds) scopeArgs.push('--protected-authority', id)
     steps.push({ name: 'ods-scope', pnpmArgs: scopeArgs })
   }
 
@@ -223,7 +248,10 @@ function looksLikeMissingProtectedAuthorityOperand(token: string | undefined): b
 }
 
 function parseArgs(argv: string[]): PoststateInput {
-  const input: PoststateInput = { allow: [], tests: [], requireClean: false }
+  // The real CLI only ever populates the plural protectedAuthorities list
+  // (M1); the deprecated scalar field exists solely for pre-existing
+  // pure-object test literals that construct a PoststateInput directly.
+  const input: PoststateInput = { allow: [], tests: [], requireClean: false, protectedAuthorities: [] }
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--') continue // see scripts/ods-prestate.ts for why
@@ -238,7 +266,9 @@ function parseArgs(argv: string[]): PoststateInput {
         process.exit(2)
       }
       i++
-      input.protectedAuthority = value
+      // Repeatable: each occurrence appends one id (M1). A single
+      // occurrence is byte-identical in effect to the prior scalar field.
+      input.protectedAuthorities!.push(value)
     } else {
       console.error(`ods:poststate: unrecognized argument "${arg}"`)
       process.exit(2)
@@ -250,7 +280,7 @@ function parseArgs(argv: string[]): PoststateInput {
 function main(): void {
   const input = parseArgs(process.argv.slice(2))
 
-  if (input.protectedAuthority && !input.base) {
+  if ((input.protectedAuthorities?.length ?? 0) > 0 && !input.base) {
     console.error('ods:poststate: --protected-authority requires --base (it configures the composed ods:scope step, which only runs when --base is supplied)')
     console.log('ODS_POSTSTATE=USAGE_ERROR')
     process.exit(2)
