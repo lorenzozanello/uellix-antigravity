@@ -1,0 +1,243 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.11",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11",
+  "authority_class": "APPEND_ONLY_PROTECTED_SURFACE_GRANT_AND_FUTURE_IMPLEMENTATION_SURFACE_AUTHORIZATION",
+  "materialization_step": "HPO-ODS-W2-12",
+  "GRANT_ID": "HPO-ODS-W2-12",
+  "hpo_mission_id": "W2-B4-AUTHORITY-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_id": "W2-B4-B5-SCOPE-ADJUDICATION-HPO-R1",
+  "materialization_date": "2026-09-03",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "node_authority": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json",
+  "node_test_manifest": "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+
+  "purpose": "Freeze, append-only, the narrow protected-surface grant and the bounded future implementation surface for Wave 2 batch B4 — FIBIU-15 (structured methodological assumptions), FIBIU-14 (counterfactual assessment) and FIBIU-16 (causal chain sufficiency gate). The node's scope adjudication, domain contracts, Stella boundary, security contracts, executor routing, P1A synchronization rule and audit requirement are frozen in docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json and are NOT restated here. This addendum's function inside the ODS lineage is twofold and no wider: (1) record HPO-ODS-W2-12 as the next unused identifier in the sequence, and (2) authorize the PROTECTED_GRANTS registry entry that makes db/migrations/** and db/prepared/journal/** reachable by the successor implementation mission on branch codex/w2-b4-r1 and by nothing else.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.10, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json's own contract, KNOWN_TEST_CONDITIONS_v1.0.0.json, P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through HPO-ODS-W2-11 are FROZEN_UNCHANGED. The frozen A/B/C/D executor taxonomy in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing is UNCHANGED and UNEXTENDED: no class B+, no CLASS_E, no additional executor class. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is UNCHANGED — this addendum adds a registry ENTRY, never a pattern, and never relaxes the classifier.",
+
+  "grant_id_semantics": {
+    "GRANT_ID": "HPO-ODS-W2-12",
+    "identifier_uniqueness": "Verified this session at BASE_SHA 12bea1e432f7de7a020f632431052e29624c6d6d, after a normal fetch and a clean fast-forward: a repository-wide search for 'HPO-ODS-W2-12' excluding node_modules and .git returned ZERO occurrences, and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json did not exist. The predecessor chain was verified in the same pass: ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json reports materialization_step HPO-ODS-W2-10, and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json reports materialization_step and GRANT_ID HPO-ODS-W2-11. HPO-ODS-W2-11 is the highest predecessor in use and is held by four artifacts (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json, P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json) plus its machine counterparts in scripts/ods-scope.ts and tests/ods/ods-scope.test.ts. HPO-ODS-W2-12 and version 1.0.11 are therefore the correct next unused identifiers in the sequence, not a reuse and not a guess. Had either been occupied, this mission's instruction was STOP_FOR_LINEAGE_RENUMBERING rather than selecting another id.",
+    "IS_PROTECTED_SURFACE_GRANT": true,
+    "clarification": "HPO-ODS-W2-12 IS a machine-enforced protected-surface grant, registered in the PROTECTED_GRANTS array of scripts/ods-scope.ts. It follows the mechanism of HPO-ODS-W2-01, W2-02, W2-03, W2-07, W2-08, W2-09 and W2-11. This is stated affirmatively because HPO-ODS-W2-10 used the OPPOSITE convention — its own artifact records it as an AUTHORITY identifier deliberately NOT registered as a grant — so the sequence alternates and a reader cannot infer treatment from position. The immediately preceding grant, W2-11, made the same clarification for the same reason.",
+    "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. Both remain mandatory. scripts/ods-scope.ts classifyPaths additionally checks the concrete path against the SUPPLIED grant's own patterns and never against the broader DEFAULT_PROTECTED_PATTERNS entry that made the path protected, which is what prevents this grant from ever authorizing a db/prepared sibling outside journal/."
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-w2-b4-r1",
+    "branch": "codex/w2-b4-r1",
+    "OLD_BRANCH_HEAD": "a4f4fa0369e6abd944248e2abf0edb50cb05e0ba",
+    "OLD_BRANCH_TREE": "ad398908c128ad763c8e0e300d904999a92e85be",
+    "BASE_SHA": "12bea1e432f7de7a020f632431052e29624c6d6d",
+    "BASE_TREE": "e843d12ff714fbb679caf89fdc059315080d4711",
+    "integration_baseline_sha": "12bea1e432f7de7a020f632431052e29624c6d6d",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "prestate_gate": "PASS — branch codex/w2-b4-r1, HEAD a4f4fa0369e6abd944248e2abf0edb50cb05e0ba, TREE ad398908c128ad763c8e0e300d904999a92e85be, working tree clean under --untracked-files=all, all verified BEFORE any history change. Branch proven to carry ZERO commits not already contained in origin/integration/commercial-v1 (git rev-list --count origin/integration/commercial-v1..HEAD == 0). Updated by clean git merge --ff-only origin/integration/commercial-v1 ONLY — no rebase, no destructive reset, no amend. HEAD and TREE verified exact afterwards, tree still clean, and origin/main verified unchanged at 067e8c2f3ac9b5e843de3a35575182907b4365d4.",
+    "fast_forward_result": "PASS — a4f4fa0..12bea1e fast-forward, adding exactly seven files from the Controller-authority and P1A-authority lanes: docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json, docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json, scripts/ods-scope.ts, tests/ods/ods-scope.test.ts. No FIB, PC-01B, IM-01B or wave2 artifact changed — verified by subtree hash: docs/ops/fib remained 832af86e8f6d9872eed13ade04f73cc03ba9b702 and docs/ops/wave2 remained 97123e05418697623b5ab340621e819249c11451 across the fast-forward."
+  },
+
+  "predecessor_authorities": {
+    "ods_v1_0_9": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json — materialization_step HPO-ODS-W2-10, verified present in integration at BASE_SHA.",
+    "ods_v1_0_10": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json — materialization_step and GRANT_ID HPO-ODS-W2-11, verified present in integration at BASE_SHA.",
+    "ods_controller_authority": "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json (HPO-ODS-W2-10) — read, not modified.",
+    "p1a_authority": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json (HPO-ODS-W2-11) — read, not modified.",
+    "hpo_ods_w2_01_through_11": "FROZEN_UNCHANGED",
+    "lineage_verified": "Mechanically verified before this node was permitted to pin its own identifiers: both predecessor addenda present with their declared materialization_step values, v1.0.11 absent, and HPO-ODS-W2-12 unused repository-wide.",
+    "b3_closure_source": "docs/ops/wave2/W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json closure.W2_B3 = CLOSED, closure.READY_FOR_B4 = YES, with closure.b4_authorization stating that READY_FOR_B4=YES records audit readiness ONLY and authorizes no W2-B4 implementation. docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json is that missing authority; this addendum is its ODS-lineage counterpart. Corroborated by pnpm ops:program-state --unit W2-B3 reporting AUTHORITY=CLOSED, IMPLEMENTATION=CLOSED, AUDIT=CLOSED."
+  },
+
+  "cross_lane_disposition": {
+    "W2_10_prohibition_scope": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json hpo_decision.HPO-ODS-W2-10.not_authorized includes 'any change to scripts/ods-scope.ts, including DEFAULT_PROTECTED_PATTERNS and the PROTECTED_GRANTS registry'. That item bounds the W2-10 AUTHORIZATION, whose rule text scopes it to branch codex/autonomous-program-controller-r1 and to the successor mission AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1. It is not a global freeze of scripts/ods-scope.ts and does not bind this node, which runs on branch codex/w2-b4-r1 under the distinct identifier HPO-ODS-W2-12. The P1A lane recorded the identical reasoning for HPO-ODS-W2-11 in ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json cross_lane_disposition.W2_10_prohibition_scope; this node FOLLOWS that established disposition rather than re-adjudicating it.",
+    "W2_10_UNCHANGED": true,
+    "W2_11_UNCHANGED": true,
+    "DEFAULT_PROTECTED_PATTERNS_UNCHANGED": true,
+    "controller_closed_world_obligation": "ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention.closed_world_requirement obliges the FUTURE Controller-v0 implementation mission to assert immutableByConvention as an EXACT-MEMBERSHIP set. That list is pinned at a4f4fa0369e6abd944248e2abf0edb50cb05e0ba and therefore contains NEITHER docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json NOR THIS artifact. tests/ods/ods-controller.test.ts does not exist at BASE_SHA (verified this session), so no test breaks now. The Controller-v0 implementation mission MUST include BOTH v1.0.10 AND v1.0.11 in its closed-world enumeration. Recorded so that mission treats both as known governed predecessors rather than unexpected artifacts. This statement authorizes NO Controller implementation and edits NO Controller authority artifact.",
+    "p1a_lane_independence": "The P1A lane (HPO-ODS-W2-11, branch codex/p1a-full-bootstrap-r1) owns the canonical LOCAL/CI clean-bootstrap surface. This node touches none of it. The two grants are disjoint by construction: W2-11 holds three exact literal db/prepared paths outside journal/, W2-12 holds db/migrations/** and db/prepared/journal/**. Neither can reach the other's paths, which tests/ods/ods-scope.test.ts asserts in both directions.",
+    "b4_implementation_depends_on_p1a_closure": "B4 AUTHORITY does not depend on P1A. B4 IMPLEMENTATION OF ANY KIND does: the sync point and the A-E closure prerequisite are frozen in docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json p1a_synchronization and are not restated here.",
+    "b4_implementation_gate_restated_for_disambiguation": {
+      "note": "Restated as explicit flags rather than left to prose, because the node authority and this addendum are read independently and a gap by silence in either is itself a defect. These values are IDENTICAL to docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json p1a_synchronization; that artifact remains the source of truth and this block must never diverge from it.",
+      "B4_AUTHORITY_MAY_MATERIALIZE_BEFORE_P1A_CLOSURE": true,
+      "B4_NON_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE": false,
+      "B4_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE": false,
+      "READY_FOR_B4_IMPLEMENTATION": "NO",
+      "rule": "NO B4 implementation of ANY kind — database, schema, service, domain logic, server action, UI, test harness or product test — begins before P1A_FULL_BOOTSTRAP_STATUS = CLOSED. There is no non-DB exception and no partially-unblocked surface. Authority, test-manifest, program-state and grant materialization is governance bookkeeping, not implementation, and was permitted before that closure for exactly that reason."
+    },
+    "AG1_STATUS": "OPEN_UNCHANGED",
+    "ag1_note": "This addendum does not close AG-1 and does not change ods:scope semantics. The measured gap — that docs/ops/ods/ artifacts other than ODS_V1_AUTHORITY_v1.0.0.json are unprotected by DEFAULT_PROTECTED_PATTERNS, so this very artifact is not machine-protected — remains as recorded in ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition and is mitigated only controller-locally. Global closure requires separate governed adjudication of scripts/ods-scope.ts and is out of scope here."
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-12": {
+      "title": "GRANT_NARROW_PROTECTED_SURFACE_AND_BOUNDED_IMPLEMENTATION_SURFACE_FOR_WAVE2_BATCH_B4_ASSUMPTIONS_AND_CAUSALITY",
+      "status": "FROZEN",
+      "rule": "On branch codex/w2-b4-r1 ONLY, and ONLY after P1A_FULL_BOOTSTRAP_STATUS = CLOSED as defined in docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json p1a_synchronization.P1A_CLOSURE_PREREQUISITE, the successor mission W2_B4_IMPLEMENTATION_R1 is authorized to change the two protected surfaces enumerated in protected_grant.patterns, and the unprotected paths enumerated in that authority's authorized_future_implementation_surface, and nothing else. Every decision, contract and control in docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json and docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json is a hard bound on that authorization. Exceeding any bound voids this grant for the change that exceeds it and requires new authority via STOP_FOR_AUTHORITY_DELTA.",
+      "scope_reference": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json W2_B4_SCOPE — FIBIU-15, FIBIU-14, FIBIU-16; internal DAG 15 → {14,16}. Not restated here.",
+      "fibdb_reference": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json B4_FIBDB_SCOPE — FIBDB-012, FIBDB-013, FIBDB-047, FIBDB-011, FIBDB-046; FIBIU-16 is NO_DB_OBJECT; FIBDB-015/016/017/018/048 explicitly excluded as W2-B5. Not restated here.",
+      "b5_boundary": "FIBIU-17 and FIBIU-18 are NOT in B4 and W2-B5 is NOT authorized. The certified FIB §13 WAVE 2 structure isolates them as their own PARALLEL_GROUP {17, 18} at LEVEL 2.3 and declares OPUS_REVIEW_REQUIRED: YES for FIBIU-18 specifically. B4 must not consume, discharge or pre-empt that review boundary; it belongs exclusively to W2-B5 close.",
+      "stage_boundary": "All B4 DDL is SCHEMA_STAGE=A additive. Stage-E hardening — including the FIBDB-046 A(+E) contract — is PROHIBITED before the governed application-cutover boundary of FIB §6.1. This grant authorizes the additive stage only.",
+      "db_boundary": "CONTROLLER_DB_EXECUTION = DISABLED, unchanged by this addendum. This grant authorizes database execution ONLY against disposable containers the harness creates itself and destroys unconditionally, bound to loopback with an ephemeral port and no bind mounts (pnpm db:audit:disposable). It authorizes NO staging write, NO Production write and NO arbitrary persistent local-dev write.",
+      "executor_boundary": "IMPLEMENTATION_CLASS=B, IMPLEMENTATION_MODEL=SONNET_HIGH, FABLE_ELIGIBLE=false. Closure requires an INDEPENDENT FOCUSED_OPUS_ADVERSARIAL_CLOSURE_AUDIT; implementation evidence can never establish its own verdict. Machine gates remain mandatory regardless of executor class.",
+      "not_authorized": [
+        "any change in THIS mission beyond the paths named in authorized_changed_paths_this_mission",
+        "any change to db/migrations/** or db/prepared/** in THIS mission, despite the grant existing",
+        "any B4 product, service, schema, UI or test implementation in THIS mission",
+        "any implementation of FIBIU-17 or FIBIU-18, or materialization of FIBDB-015/016/017/018/048, in this mission or the successor mission",
+        "moving FIBIU-17 or FIBIU-18 into B4 under any framing",
+        "declaring W2-B5 authorized, scoped or ready",
+        "consuming the FIBIU-18 OPUS_HIGH review boundary at B4 close",
+        "beginning B4 implementation of ANY kind — database, schema, service, domain logic, server action, UI, test harness or product test — before P1A_FULL_BOOTSTRAP_STATUS = CLOSED. There is no non-DB exception",
+        "treating the measured candidate slot 0062 as a frozen migration number rather than re-measuring at the sync point",
+        "any stage-E hardening before the governed application-cutover boundary",
+        "any change to db/baseline/**",
+        "any change to a db/prepared path outside db/prepared/journal/**",
+        "any change to db/prepared/stella_local_0000_local_role_identity_bootstrap.sql, db/prepared/stella_0001_role_topology_bootstrap.sql or db/prepared/README.md — the three paths HPO-ODS-W2-11 owns",
+        "any change to db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql or db/prepared/stella_hosted_0001_managed_role_bootstrap.sql — HPO-ODS-W2-03 and HPO-ODS-W2-05 remain frozen",
+        "any change to DEFAULT_PROTECTED_PATTERNS or to ods:scope classification semantics",
+        "broadening this grant to db/prepared/**, db/baseline/**, docs/ops/fib/** or any other glob",
+        "any change to HPO-ODS-W2-01 through HPO-ODS-W2-11 decisions or their implementation surfaces",
+        "any change to scripts/p1a-bootstrap-gate.ts, scripts/m2-disposable-pg-bootstrap.ts, db/safety/local-stack.ts or supabase/config.toml",
+        "any change to .github/workflows/p1a-bootstrap-gate.yml, .github/workflows/p1a-validation.yml, .github/workflows/m2-real-pg-gate.yml or .github/workflows/ci.yml",
+        "any change to scripts/ods-program-state.ts, scripts/ods-poststate.ts or scripts/ods-prestate.ts",
+        "any change to tests/database-target-safety.test.ts or tests/database-entrypoint-safety.test.ts",
+        "any new path under tests/integration/**",
+        "any modification or deletion of an artifact listed in ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention",
+        "any claim that AG-1 is globally closed",
+        "any Controller-v0 implementation, and any enabling of CONTROLLER_DB_EXECUTION",
+        "any P1A implementation, and any dispatch of a P1A workflow",
+        "weakening, removing, skipping or relaxing any existing test or machine gate to obtain a PASS",
+        "weakening a fixed-cardinality or exact-membership closed-world assertion into a >= or contains-at-least contract",
+        "waiving, deferring or softening the SEC-ACL-1 hosted ACL exit control",
+        "auto-converting impact_narratives.assumptions or theory_of_change_links.assumption into structured assumptions",
+        "auto-converting indicators.baseline_value into a counterfactual",
+        "any database execution against staging, Production or a persistent local-dev database",
+        "a squash, rebase, amend or force-push of main, integration/commercial-v1 or codex/w2-b4-r1",
+        "any write to main, any production promotion, any uellix.com cutover"
+      ]
+    }
+  },
+
+  "protected_grant_required": true,
+  "protected_grant_rationale": "Both patterns match DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts (db/migrations/** at line 86, db/prepared/** at line 87 — both unchanged by this addendum) and are therefore unconditionally protected absent a resolved grant. This addendum and docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json are the authority for the registry entry; the entry in scripts/ods-scope.ts is its machine-enforced counterpart, and the three must agree exactly — which tests/ods/ods-scope.test.ts asserts by reading protected_grant from the node authority, following the pattern already established for HPO-ODS-W2-08, W2-09 and W2-11. NO db/migrations and NO db/prepared file is changed by THIS mission: the grant is registered in advance precisely so the successor implementation mission cannot claim retroactive authorization from the fact that a path changed.",
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-12",
+    "branch": "codex/w2-b4-r1",
+    "patterns": [
+      "db/migrations/**",
+      "db/prepared/journal/**"
+    ],
+    "pattern_count": 2,
+    "contains_glob": true,
+    "glob_justification": "A glob rather than exact literals, deliberately and narrowly. The concrete migration ordinal, drizzle snapshot name and prepared-journal wrapper ordinal are determined by a mechanical re-measurement at the P1A sync point, so exact literals could not be written here without either being wrong or freezing a slot this node explicitly refuses to freeze (docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json p1a_synchronization.migration_slot_candidate.FROZEN = false). The two patterns are exactly the surfaces Wave 2 migrations and their journal wrappers occupy, and no third. This is mechanically identical in shape to HPO-ODS-W2-01, the original Wave 2 grant, which held the same two patterns on the historical Wave 2 branch. W2-01 is FROZEN_UNCHANGED and is NOT reused, because a grant is bound to exactly one branch and codex/w2-methodology-objects-r1 is not this node's branch.",
+    "narrowness_note": "Deliberately NOT db/prepared/** — that would reach every hosted and local bootstrap file the P1A and hosted lanes own, including the three paths HPO-ODS-W2-11 holds and the two stella_hosted_* files HPO-ODS-W2-03 and W2-05 hold. The grant reaches db/prepared/journal/** only. It grants nothing under db/baseline/**, docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** or docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json.",
+    "source_of_truth": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json protected_grant — the registry entry, that object and this object must all be equal, asserted mechanically in tests/ods/ods-scope.test.ts."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 6,
+    "paths": [
+      "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json",
+      "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts"
+    ],
+    "three_are_new_files": true,
+    "scripts_ods_scope_ts_change_scope": "PROTECTED_GRANTS registry entry addition ONLY. DEFAULT_PROTECTED_PATTERNS, patternToRegExp, matchesPattern, matchesAnyPattern, matchesPatternCaseInsensitive, matchesAnyPatternCaseInsensitive, classifyPaths, resolveProtectedGrant, resolveProtectedGrants, the CLI argument parser and every other function are byte-unchanged.",
+    "program_state_registry_change_scope": "ONE appended unit entry with id W2-B4. The existing W2-B1 and W2-B3 entries are byte-unchanged, no second registry is created, and scripts/ods-program-state.ts is NOT modified. The registry's own purpose field states that adding, correcting or extending a unit entry there is ordinary tooling maintenance, not an authority act — this change is exactly that.",
+    "program_state_parser_tolerance": "VERIFIED, not assumed. scripts/ods-program-state.ts loadRegistry performs JSON.parse(raw) as ProgramStateRegistry with no runtime schema validation and no additionalProperties rejection, and findUnit reads only .id; a TypeScript `as` cast on a JSON.parse result never triggers excess-property checking, so pnpm typecheck is unaffected by additive metadata. No test in the repository asserts the registry's unit count or exact membership. The additive controller metadata fields (dependsOn, externalPreconditions, executionClass, fableEligible, auditClass, dbWriting) are therefore tolerated and no STOP_FOR_AUTHORITY_DELTA arises.",
+    "ODS_SCOPE_TEST_DELTA_REQUIRED": "YES",
+    "ods_scope_test_delta_justification": "Measured at BASE_SHA, not preferred: tests/ods/ods-scope.test.ts:317 asserts expect(PROTECTED_GRANTS.length).toBe(7) — the value the P1A lane set when it registered the seventh grant. Registering an eighth grant makes that closed-world assertion false by construction. The authorized edit is limited to enumerating HPO-ODS-W2-12 in the existing closed-world and non-vacuity contract — the same treatment the file already gives W2-07, W2-08, W2-09 and W2-11 — plus the branch-binding and narrowness controls for W2-12 and a regression control proving W2-11 is unaffected. No unrelated test cleanup. No assertion weakening. No existing expectation removed. No fixed-cardinality or exact-membership assertion converted into a >= or contains-at-least contract.",
+    "no_implementation_code": true,
+    "no_db_file_changed": true,
+    "no_migration_changed": true,
+    "no_app_or_lib_file_changed": true,
+    "no_workflow_changed": true,
+    "no_package_json_change": true
+  },
+
+  "authorized_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR mission W2_B4_IMPLEMENTATION_R1 only, and only after P1A_FULL_BOOTSTRAP_STATUS = CLOSED. None of these paths is created or modified by THIS mission. Full roles, constraints and rationale are in docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json authorized_future_implementation_surface, which this list MIRRORS and does not extend.",
+    "protected": [
+      "db/migrations/**",
+      "db/prepared/journal/**"
+    ],
+    "unprotected": [
+      "db/schema.ts",
+      "db/hosted/baseline-manifest.ts",
+      "db/policies/<NNN>_*_rls.sql",
+      "lib/pipeline/narratives.ts",
+      "lib/pipeline/theory-of-change.ts",
+      "lib/pipeline/sroi-calculation.ts",
+      "lib/audit/logger.ts",
+      "app/app/projects/[projectId]/pipeline/theoryOfChange.actions.ts",
+      "app/app/projects/[projectId]/pipeline/narrative/**",
+      "app/app/projects/[projectId]/pipeline/calculation/**",
+      "tests/audit-action-contract.test.ts",
+      "tests/theory-of-change.service.test.ts",
+      "tests/sroi-calculation.service.test.ts",
+      "tests/sroi-calculation.golden.test.ts",
+      "tests/database-entrypoint-inventory.json",
+      "tests/database-runtime-entrypoints.test.ts",
+      "tests/hosted/baseline-manifest.test.ts",
+      "tests/hosted/baseline-journal-wrapper.test.ts",
+      "tests/hosted/operator-runner.test.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "tests/methodological-assumptions*.test.ts",
+      "tests/counterfactual-assessment*.test.ts",
+      "tests/causal-chain-sufficiency*.test.ts",
+      "tests/postgres/b4-*.ts",
+      "tests/postgres/b4-*.json",
+      "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "count_pin_enumeration_rationale": "The five hosted-baseline paths are enumerated because registering any new governed baseline unit MECHANICALLY falsifies hard cardinality assertions pinned at 74. Independently re-measured at BASE_SHA by exhaustive grep, not carried over from a report: tests/hosted/baseline-manifest.test.ts:95, :97 (byKind drizzle-migration = 62), :105-107; tests/hosted/baseline-journal-wrapper.test.ts:470-471; tests/hosted/operator-runner.test.ts:235; tests/eval/stella-release/hosted-baseline-gate.ts:416 (inside the GATE'S OWN LOGIC, so a stale pin makes the gate report a false negative rather than merely failing a test); tests/eval/stella-release/hosted-baseline-gate.test.ts:63-64. Full evidence in docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json authorized_future_implementation_surface.hosted_baseline_pin_remeasurement. Enumerating them removes a foreseeable authority gap that would otherwise force a STOP mid-implementation on a mechanically forced edit. The authorized edit at each is limited to advancing the count and its derivation comment; weakening any assertion, refactoring, or changing hosted security semantics is NOT authorized.",
+    "no_scripts_path_authorized": "MEASURED, correcting an assumption rather than inheriting it: scripts/hosted-baseline-gate.ts DOES NOT EXIST. An exhaustive find for hosted-baseline-gate* returns exactly two paths, both under tests/. No scripts/** path is mechanically required by the baseline-pin consequence, none is authorized in this surface, and the conditional coordinator authorization for a script path is therefore NOT consumed. The only scripts/ paths named anywhere in this node's future surface are in the prohibited list.",
+    "no_artifacts_path_authorized": "artifacts/baseline-rehearsal/latest.json also carries a manifestApplied count and is deliberately NOT authorized: it is stale by design at 50 and is the evidence_artifact of KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02, both PRE_EXISTING_DEFERRED. Refreshing it would silently close two deferred known conditions this node has no authority to close.",
+    "test_placement_constraint": "New tests are authorized at tests/ and tests/postgres/ and deliberately NOT under tests/integration/. Placing a test under tests/integration/** mechanically requires modifying the closed-world integration inventory at tests/database-entrypoint-safety.test.ts, which is NOT in this authorized surface. That exact stale-inventory class caused blocker B3-BLK-A. If a future test genuinely must live there, STOP_FOR_AUTHORITY_DELTA.",
+    "closed_world": "This list is exhaustive. A path not enumerated in protected[] or unprotected[] is NOT authorized for the successor mission, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP — never a retroactive scope inference from the fact that it changed."
+  },
+
+  "test_manifest": {
+    "note": "This mission is authority-only and writes no implementation code, so its own exit gates are deterministic and machine-checkable rather than semantic. The B4 node's behavioural contract — POS-15-*, POS-14-*, POS-16-*, POS-DAG-1, PG-POS-*, NEG-15-*, NEG-14-*, NEG-16-*, NEG-STELLA-B4, NEG-B5-1, SEC-N1..N4, SEC-ACL-1, NEG-STAGE-1, NEG-SCOPE-1 and mutation controls MUT-PG-1..4, MUT-ELIG-1, MUT-NOCONV-1, MUT-ENTRYPOINT-1 — is frozen in docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json and is owed by the successor mission, not by this one.",
+    "positive": {
+      "A1": "All three new JSON artifacts parse as valid JSON, and the amended docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json parses as valid JSON.",
+      "A2": "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json validates mechanically against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, including its additionalProperties:false constraints and the exit_gates enum. The validator used is proven non-vacuous by also passing W2_B3_TEST_MANIFEST_v2.json and P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json while rejecting a non-manifest artifact.",
+      "A3": "pnpm secrets:scan passes.",
+      "A4": "pnpm authority:seal:verify passes, confirming no sealed or certified artifact was disturbed.",
+      "A5": "pnpm lint and pnpm typecheck pass with the amended scripts/ods-scope.ts and tests/ods/ods-scope.test.ts.",
+      "A6": "pnpm ods:scope against BASE_SHA 12bea1e432f7de7a020f632431052e29624c6d6d, allowing exactly the six authorized paths, reports zero unauthorized paths, zero protected violations and zero non-canonical protected paths.",
+      "A7": "tests/ods/ods-scope.test.ts passes with PROTECTED_GRANTS.length == 8 and the HPO-ODS-W2-12 entry proven equal to protected_grant in docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json and in this addendum.",
+      "A8": "pnpm ods:poststate passes with the same allow list and a clean tree.",
+      "A9": "pnpm ops:program-state --unit W2-B4 resolves the authority dimension CLOSED against W2_B4_AUTHORITY_v1.0.0.json final_state."
+    },
+    "negative": {
+      "N1": "ACTUAL_CHANGED_PATH_COUNT == 6 and the changed set equals authorized_changed_paths_this_mission.paths exactly — no seventh path, authorized or otherwise.",
+      "N2": "No path under db/**, app/**, lib/** or .github/** is changed, and package.json and pnpm-lock.yaml are unchanged. In particular NO db/migrations and NO db/prepared file is changed by this mission, despite the grant existing.",
+      "N3": "No pre-existing artifact under docs/ops/ods/ is modified or deleted except the program-state registry's single appended unit. ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.10 and ODS_CONTROLLER_AUTHORITY_v1.0.0.json are byte-unchanged, as are docs/ops/p1a/** and every pre-existing docs/ops/wave2/** artifact.",
+      "N4": "The existing W2-B1 and W2-B3 entries in the program-state registry are byte-unchanged.",
+      "N5": "origin/main remains 067e8c2f3ac9b5e843de3a35575182907b4365d4 and no production promotion occurs.",
+      "N6": "GRANT NARROWNESS, direction one (B4-GRANT-N1): a representative canonical db/migrations path allowed by task scope is classified as a PROTECTED VIOLATION when --protected-authority HPO-ODS-W2-12 is NOT supplied, proving the grant is load-bearing rather than decorative.",
+      "N7": "GRANT NARROWNESS, direction two (B4-GRANT-N2): an unrelated protected path — db/prepared/unrelated.sql, outside journal/ — remains a PROTECTED VIOLATION even WITH HPO-ODS-W2-12 supplied, proving the grant did not silently widen to db/prepared/**.",
+      "N8": "BRANCH BINDING (B4-GRANT-N3): HPO-ODS-W2-12 resolves to no grant on any branch other than codex/w2-b4-r1 — main, integration/commercial-v1, codex/w2-methodology-objects-r1 and codex/p1a-full-bootstrap-r1 all resolve to undefined, exactly as an unknown id does.",
+      "N9": "DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is byte-unchanged and still contains exactly its seven original entries.",
+      "N10": "REGRESSION: HPO-ODS-W2-11 still resolves correctly on codex/p1a-full-bootstrap-r1 with its exact three literal patterns, its registry entry is unmodified by the W2-12 registration, and W2-12 cannot reach any of its three paths.",
+      "N11": "The implementation and audit dimensions of pnpm ops:program-state --unit W2-B4 are NON-CLOSED, because their future evidence artifacts do not exist. Fail-closed behaviour is required; the exact non-closed vocabulary the machine emits is not constrained by this artifact."
+    },
+    "mutation": {
+      "M1": "DEFERRED_TO_SUCCESSOR_MISSION for every runtime control. Meaningful mutation controls for B4 test its org-scoped RLS policies, its five CHECK vocabularies, its two conditional NOT NULL constraints, its three fail-closed eligibility reasons, its no-auto-conversion prohibitions, its EXECUTE revocations and its entrypoint inventory. None exists as executable code until the successor implements them. They are frozen as MUT-PG-1..4, MUT-ELIG-1, MUT-NOCONV-1 and MUT-ENTRYPOINT-1 in docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json and are mandatory for the successor mission. Asserting a runtime mutation control here would be vacuous, and vacuous controls are precisely what the ODS negative-control doctrine forbids.",
+      "M2": "NOT DEFERRED — the grant-narrowness controls N6, N7 and N8 above ARE this mission's real mutation controls, because they prove the registry entry changes classifier behaviour in exactly one direction and no further. They are executable at this node and are not deferred."
+    }
+  },
+
+  "final_state": "WAVE2_B4_ASSUMPTIONS_AND_CAUSALITY_PROTECTED_GRANT_AND_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_P1A_CLOSURE_AND_IMPLEMENTATION",
+  "W2_B4_IMPLEMENTATION_STATUS": "WAITING_FOR_P1A_FULL_CLOSURE",
+  "W2_B5_STATUS": "NOT_AUTHORIZED",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "next_gate": "W2_B4_IMPLEMENTATION_R1 (blocked until P1A_FULL_BOOTSTRAP_STATUS = CLOSED)"
+}

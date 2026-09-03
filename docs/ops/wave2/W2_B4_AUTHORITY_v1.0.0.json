@@ -1,0 +1,705 @@
+{
+  "package_id": "W2_B4_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "W2_B4_AUTHORITY_v1.0.0",
+  "authority_class": "APPEND_ONLY_NODE_AUTHORITY_AND_FUTURE_IMPLEMENTATION_SURFACE_AUTHORIZATION",
+  "materialization_step": "HPO-ODS-W2-12",
+  "GRANT_ID": "HPO-ODS-W2-12",
+  "hpo_mission_id": "W2-B4-AUTHORITY-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_id": "W2-B4-B5-SCOPE-ADJUDICATION-HPO-R1",
+  "materialization_date": "2026-09-03",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json",
+  "test_manifest": "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+
+  "purpose": "Freeze the scope, internal order, domain contracts, security contracts, executor routing, audit boundary and bounded future implementation surface for Wave 2 batch B4 — FIBIU-15 (structured methodological assumptions), FIBIU-14 (counterfactual assessment) and FIBIU-16 (causal chain sufficiency gate). This mission materializes AUTHORITY ONLY: it writes no schema, no migration, no journal wrapper, no service code, no UI and no test implementation. The certified FIB baseline remains the controlling source for every contract restated here by reference; where this artifact and any FIB/PC-01B/IM-01B artifact appear to disagree, the certified artifact controls.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate FIB_IMPLEMENTATION_BASELINE_v1.0.0 (.md/.index.json/.manifest.json/.seal.json/.ratification.json/.wave1-closure.json/.addendum-w1rm2.json), any PC-01B or IM-01B artifact, ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.10, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, or the W2-B1/W2-B2/W2-B3 authorities and audits. HPO-ODS-W2-01 through HPO-ODS-W2-11 are FROZEN_UNCHANGED. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is UNCHANGED — this node adds a PROTECTED_GRANTS registry ENTRY, never a pattern, and never relaxes the classifier. The frozen A/B/C/D executor taxonomy in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing is UNCHANGED and UNEXTENDED.",
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-w2-b4-r1",
+    "branch": "codex/w2-b4-r1",
+    "OLD_BRANCH_HEAD": "a4f4fa0369e6abd944248e2abf0edb50cb05e0ba",
+    "OLD_BRANCH_TREE": "ad398908c128ad763c8e0e300d904999a92e85be",
+    "BASE_SHA": "12bea1e432f7de7a020f632431052e29624c6d6d",
+    "BASE_TREE": "e843d12ff714fbb679caf89fdc059315080d4711",
+    "integration_baseline_sha": "12bea1e432f7de7a020f632431052e29624c6d6d",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "prestate_gate": "PASS — branch codex/w2-b4-r1, HEAD a4f4fa0369e6abd944248e2abf0edb50cb05e0ba, TREE ad398908c128ad763c8e0e300d904999a92e85be, working tree clean under --untracked-files=all, all verified BEFORE any history change. Branch proven to carry ZERO commits not already contained in origin/integration/commercial-v1 (git rev-list --count origin/integration/commercial-v1..HEAD == 0). Updated by clean git merge --ff-only origin/integration/commercial-v1 ONLY — no rebase, no destructive reset, no amend. HEAD and TREE verified exact afterwards, tree still clean, and origin/main verified unchanged at 067e8c2f3ac9b5e843de3a35575182907b4365d4.",
+    "fast_forward_result": "PASS — a4f4fa0..12bea1e fast-forward, adding exactly seven files across the Controller-authority and P1A-authority lanes: docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json, docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json, scripts/ods-scope.ts, tests/ods/ods-scope.test.ts."
+  },
+
+  "predecessor_authorities": {
+    "fib_baseline": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md — CONTROLLING CERTIFIED AUTHORITY. Sections read for this node: §3 contract E (line 121, FIBC-018), §3 contract F (line 126, FIBC-019), §3 contract G (line 131, FIBC-020), §4 FIBDB-011 (line 301), FIBDB-012 (line 303), FIBDB-013 (line 305), FIBDB-046 (line 371), FIBDB-047 (line 373), §12 unit registry FIBIU-14 (line 767), FIBIU-15 (line 770), FIBIU-16 (line 773), §13 WAVE 2 (lines 842-850).",
+    "fib_index": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json — fibiu[] hard_dependencies and topological_level, fibdb[] change_type/track/migration_stage, waves[id=\"2\"].levels.",
+    "w2_execution_mapping": "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json — DERIVED_EXECUTION_RECORD, not authority. Consulted for recommended_implementation_batches[batch_id=\"B4\"], shared_surface_collisions, database_migration_map, targeted_test_map, audit_correspondence_map, model_routing_map, parallel_worktree_recommendation.",
+    "w2_b3_closure": "docs/ops/wave2/W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json — closure.W2_B3 = CLOSED, closure.READY_FOR_B4 = YES, closure.BLOCKING_FINDINGS = 0. Its own closure.b4_authorization states that READY_FOR_B4=YES records audit readiness only and grants no W2-B4 implementation authority. THIS artifact is that missing authority.",
+    "w2_b3_completeness_authority": "docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json — source_audit_state.verdict = ACCEPTED. Not modified, not reopened.",
+    "w2_b1_authority": "docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json — FROZEN_UNCHANGED.",
+    "w2_b2_authority": "docs/ops/wave2/W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json and W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json — FROZEN_UNCHANGED.",
+    "p1a_authority": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json (HPO-ODS-W2-11) — the concurrent lane that owns the canonical LOCAL/CI clean-bootstrap surface. Read, not modified.",
+    "controller_authority": "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json (HPO-ODS-W2-10) — read, not modified.",
+    "hpo_ods_w2_01_through_11": "FROZEN_UNCHANGED"
+  },
+
+  "scope_adjudication": {
+    "predecessor_conflict": "A coordinator planning assumption had grouped W2-B4 as {FIBIU-14, 15, 16, 17, 18}. The read-only mapping mission measured that the repository partitions Wave 2 differently, and the scope-adjudication mission resolved the conflict from repository authority. This section records the adjudicated result; it invents nothing.",
+    "certified_evidence": {
+      "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md §13, WAVE 2 block, lines 842-850",
+      "TOPOLOGICAL_LEVELS": "LEVEL 2.1 — FIBIU-04, FIBIU-08, FIBIU-11, FIBIU-13, FIBIU-15 · LEVEL 2.2 — FIBIU-05, FIBIU-06, FIBIU-07, FIBIU-09, FIBIU-10, FIBIU-12, FIBIU-14, FIBIU-16 · LEVEL 2.3 — FIBIU-17, FIBIU-18",
+      "SERIAL_CONTRACTS": "04→{05,06,07} · 08→{09,10} · 11→12 · 15→{14,16} · {15,16}→17 · 15→18",
+      "PARALLEL_GROUPS": "{04, 08, 11, 13, 15} · {05, 06, 07, 09, 10, 12, 14, 16} · {17, 18}",
+      "OPUS_REVIEW_REQUIRED": "YES for FIBIU-07, FIBIU-10, FIBIU-18",
+      "reverified_at_base": "Re-read verbatim at BASE_SHA 12bea1e432f7de7a020f632431052e29624c6d6d. The docs/ops/fib subtree hash is 832af86e8f6d9872eed13ade04f73cc03ba9b702, byte-identical to its value at a4f4fa0369e6abd944248e2abf0edb50cb05e0ba — the fast-forward touched no FIB artifact."
+    },
+    "derived_evidence": "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json recommended_implementation_batches: B4 \"Assumptions and causality\" = [FIBIU-15, FIBIU-14, FIBIU-16]; B5 \"Governed models\" = [FIBIU-17, FIBIU-18] with base_dependencies \"B1, B2, B3, B4 complete (FIBIU-17 hard-depends on FIBIU-15 and FIBIU-16)\" and integration_dependency \"consumes B1-B4 outputs; feeds FIBIU-19 (Wave 3)\". state_after_this_artifact.wave2_batch_count = 5. The executed B1/B2/B3 lineage matches this partition exactly.",
+    "no_certified_batch_mandate": "A repository-wide search for the word \"batch\" in docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md and .index.json returns ZERO occurrences. No certified authority mandates any batch partition; the certified artifacts freeze waves and topological levels. Therefore no certified authority requires the five units to be one batch, and the only artifact that partitions Wave 2 places FIBIU-17/18 in a separate batch that the certified level structure independently isolates as its own PARALLEL_GROUP.",
+    "B4_B5_FUSION_AUTHORIZED": false,
+    "fusion_prohibition_reason": "Merging B4 and B5 would remove the B5 base_dependencies \"B4 complete\" boundary, collapse two independent adversarial audit cycles into one, and place the only RISK: HIGH unit of Wave 2 (FIBIU-18) in the same closure as three MEDIUM-risk units — dissolving the per-unit granularity of §13's OPUS_REVIEW_REQUIRED, which for Wave 2 is uniquely selective rather than whole-wave. No authority reason for the fusion exists. Fusing would be silent authority expansion.",
+    "W2_B5_SCOPE": ["FIBIU-17", "FIBIU-18"],
+    "b5_disposition": "NOT_AUTHORIZED. W2-B5 requires its own future authority artifact and its own test manifest, with precondition W2_B4 = CLOSED. No authority in THIS mission may move FIBIU-17 or FIBIU-18 into B4, and no control for FIBIU-17 or FIBIU-18 appears in this node's test manifest.",
+    "branch_disposition": "B4 proceeds on codex/w2-b4-r1 derived from the current integration baseline, NOT on the historical codex/w2-methodology-objects-r1. Measured, not preferred: 102a75cc044fb3e2c61249854f7f403cb066cab0 is a STRICT ANCESTOR of the integration baseline with ZERO commits of its own (git rev-list --count a4f4fa0..102a75c == 0), its last migration is 0060 with migration 0061 ABSENT, and its last journal wrapper is 073. Returning there would start B4 from a baseline missing the 0061 REVOKE-EXECUTE security successor, would allocate B4 to the already-occupied slot 0061, and would discard 63 integrated commits. The historical parallel_worktree_recommendation.recommended=false was written at base ba2f5fd2abb120885b3dce21c476203da1f1f151 and its stated reason is the seven global serialization surfaces; a single sequential lane anchored to the current integration head satisfies that reason in substance, because no concurrent Wave 2 worktree competes for the ordered artifacts."
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-12": {
+      "title": "AUTHORIZE_WAVE2_BATCH_B4_ASSUMPTIONS_AND_CAUSALITY_SCOPE_CONTRACTS_AND_BOUNDED_IMPLEMENTATION_SURFACE",
+      "status": "FROZEN",
+      "rule": "On branch codex/w2-b4-r1 ONLY, and ONLY after P1A_FULL_BOOTSTRAP_STATUS = CLOSED as defined in p1a_synchronization, the successor mission W2_B4_IMPLEMENTATION_R1 is authorized to implement FIBIU-15, FIBIU-14 and FIBIU-16 exactly as contracted here, changing the protected paths enumerated in protected_grant.patterns and the unprotected paths enumerated in authorized_future_implementation_surface, and nothing else. Every contract and control in this artifact and in docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json is a hard bound on that authorization. Exceeding any bound voids this grant for the change that exceeds it and requires new authority via STOP_FOR_AUTHORITY_DELTA.",
+      "not_authorized": [
+        "any change in THIS mission beyond the paths named in authorized_changed_paths_this_mission",
+        "any B4 product, service, schema, UI or test implementation in THIS mission",
+        "any migration, journal wrapper, snapshot or baseline-manifest change in THIS mission",
+        "any implementation of FIBIU-17 or FIBIU-18, or any materialization of FIBDB-015, FIBDB-016, FIBDB-017, FIBDB-018 or FIBDB-048, in this mission or the successor mission",
+        "moving FIBIU-17 or FIBIU-18 into B4 under any framing",
+        "declaring W2-B5 authorized, scoped or ready",
+        "consuming the FIBIU-18 OPUS_HIGH review boundary at B4 close",
+        "beginning B4 implementation of ANY kind — database, schema, service, domain logic, server action, UI, test harness or product test — before P1A_FULL_BOOTSTRAP_STATUS = CLOSED per p1a_synchronization. There is no non-DB exception",
+        "treating 0062 as the frozen migration number rather than a candidate to be re-measured",
+        "any stage-E hardening of FIBDB-046 or of any A(+E) contract before the governed application-cutover boundary of FIB §6.1",
+        "any change to DEFAULT_PROTECTED_PATTERNS or to ods:scope classification semantics",
+        "broadening HPO-ODS-W2-12 to db/prepared/**, db/baseline/**, docs/ops/fib/** or any other glob",
+        "any change to HPO-ODS-W2-01 through HPO-ODS-W2-11 decisions or their implementation surfaces",
+        "any change to P1A bootstrap files, P1A workflows, scripts/p1a-bootstrap-gate.ts, scripts/m2-disposable-pg-bootstrap.ts, db/safety/local-stack.ts or supabase/config.toml",
+        "any Controller-v0 implementation, and any enabling of CONTROLLER_DB_EXECUTION",
+        "any P1A implementation",
+        "weakening, removing, skipping or relaxing any existing test or machine gate to obtain a PASS",
+        "weakening a fixed-cardinality or exact-membership closed-world assertion into a >= or contains-at-least contract",
+        "auto-converting impact_narratives.assumptions or theory_of_change_links.assumption into structured assumptions",
+        "auto-converting indicators.baseline_value into a counterfactual",
+        "any database execution against staging, Production or a persistent local-dev database",
+        "a squash, rebase, amend or force-push of main, integration/commercial-v1 or codex/w2-b4-r1",
+        "any write to main, any production promotion, any uellix.com cutover"
+      ]
+    }
+  },
+
+  "W2_B4_SCOPE": {
+    "fibius": ["FIBIU-15", "FIBIU-14", "FIBIU-16"],
+    "unit_count": 3,
+    "batch_name": "Assumptions and causality",
+    "wave": 2,
+    "internal_dag": "FIBIU-15 → {FIBIU-14, FIBIU-16}",
+    "internal_sequencing": "FIBIU-15 FIRST. FIBIU-14 and FIBIU-16 only after FIBIU-15. Authority: FIB §13 SERIAL_CONTRACTS 15→{14,16}, and .index.json fibiu[] hard_dependencies where both FIBIU-14 and FIBIU-16 declare [FIBIU-15].",
+    "parallelism_caveat": "FIB §13 places FIBIU-14 and FIBIU-16 in the same PARALLEL_GROUP, which resolves DEPENDENCY EDGES only. It does NOT authorize concurrent writes to a shared file. W2_EXECUTION_MAPPING_v1.0.0.json shared_surface_collisions records that lib/pipeline/sroi-calculation.ts:382-486 is declared surface for BOTH FIBIU-15 and FIBIU-16, and that app/app/projects/[projectId]/pipeline/calculation/** is FIBIU-14 surface overlapping FIBIU-12's page.tsx. The successor mission MUST serialize write collisions mechanically, file by file, inside the batch.",
+    "levels": {
+      "FIBIU-15": "2.1",
+      "FIBIU-14": "2.2",
+      "FIBIU-16": "2.2"
+    },
+    "wave1_preconditions": "FIBIU-03 (hard dependency of FIBIU-15) is Wave 1 and CLOSED per docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json.",
+    "batch_preconditions": "W2-B1, W2-B2 and W2-B3 are CLOSED. W2-B3 closure verified mechanically: pnpm ops:program-state --unit W2-B3 reports AUTHORITY=CLOSED, IMPLEMENTATION=CLOSED, AUDIT=CLOSED."
+  },
+
+  "executor_routing": {
+    "IMPLEMENTATION_CLASS": "B",
+    "IMPLEMENTATION_MODEL": "SONNET_HIGH",
+    "FABLE_ELIGIBLE": false,
+    "routing_authority": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md §12 freezes IMPLEMENTATION_MODEL_RECOMMENDATION: SONNET_HIGH for FIBIU-14 (line 767), FIBIU-15 (line 770) and FIBIU-16 (line 773) individually. W2_EXECUTION_MAPPING_v1.0.0.json model_routing_map places all three in class_b_sonnet_implementation and none in class_a_opus_required_review_only.",
+    "fable_rationale": "FABLE_ELIGIBLE=false is affirmative, not an omission. The existing Wave 2 routing freezes Sonnet High implementation for these units and no new authority justifies selecting the conditional Fable variant for B4. Selecting it would be an unauthorized executor substitution, and model economy is never proof of adequacy on its own (CLAUDE.md §6).",
+    "machine_gates_unconditional": "Prestate, scope, poststate and authority-seal gates remain mandatory regardless of executor class.",
+    "B4_CLOSURE_AUDIT": "FOCUSED_OPUS_ADVERSARIAL_CLOSURE_AUDIT",
+    "closure_audit_rationale": "B4 is a bounded three-unit batch on a measured delta, so the focused re-audit form applies rather than a full-corpus audit. The audit is INDEPENDENT: implementation evidence can never establish its own verdict.",
+    "FIBIU_18_OPUS_HIGH_REVIEW": "B5_CLOSE_ONLY",
+    "fibiu_18_boundary_note": "FIB §13 WAVE 2 declares OPUS_REVIEW_REQUIRED: YES for FIBIU-07, FIBIU-10, FIBIU-18 — per unit, uniquely selective for Wave 2. B4 does not contain FIBIU-18, so B4 must not consume, discharge, pre-empt or claim that review boundary. It belongs exclusively to W2-B5 close. Recorded affirmatively because a reader could otherwise infer that a batch adjacent to FIBIU-18 partially satisfies it."
+  },
+
+  "p1a_synchronization": {
+    "B4_AUTHORITY_MAY_MATERIALIZE_BEFORE_P1A_CLOSURE": true,
+    "authority_materialization_rationale": "This mission's changed paths lie under docs/ops/wave2/, docs/ops/ods/, scripts/ods-scope.ts and tests/ods/ods-scope.test.ts. None is a database, bootstrap or P1A-owned surface, so materializing authority now cannot collide with the P1A lane.",
+    "B4_NON_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE": false,
+    "READY_FOR_B4_IMPLEMENTATION": "NO",
+    "no_implementation_of_any_kind_before_p1a_closure": "NO B4 implementation of ANY kind — database, schema, service, domain logic, server action, UI, or test — may begin before P1A_FULL_BOOTSTRAP_STATUS = CLOSED. This is the single binding rule; there is no non-DB exception and no partially-unblocked surface. It matches hpo_decision.HPO-ODS-W2-12.rule, which authorizes the successor mission ONLY after that closure.",
+    "authority_materialization_is_not_implementation": {
+      "note": "The six paths this AUTHORITY mission changed are recorded here to prevent a category error, NOT as an implementation surface that was unblocked early. Materializing an authority artifact, a test manifest, an ODS addendum, a program-state registry entry and a protected-grant registration is governance bookkeeping: it writes no schema, no migration, no service code, no UI and no product test, and it satisfies none of the B4 exit gates. It was permitted before P1A closure for exactly that reason. Nothing in this list may be read as authorizing B4 implementation work of any kind.",
+      "paths": [
+        "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json (this artifact)",
+        "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json",
+        "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json",
+        "scripts/ods-scope.ts",
+        "tests/ods/ods-scope.test.ts"
+      ],
+      "correction_of_record": "An earlier draft of this artifact set B4_NON_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE = true and labelled the list above a 'non-DB surface before P1A'. That conflated this mission's own authority-materialization paths with a B4 implementation surface, and it contradicted hpo_decision.HPO-ODS-W2-12.rule, which was already unconditional. Corrected before publication: the flag is false and the list is renamed to what it actually is."
+    },
+    "test_scaffolding_is_not_unblocked": "Writing B4 test harnesses, probe manifests or vitest wrappers ahead of P1A closure is ALSO prohibited. A harness is generated from db/hosted/baseline-manifest.ts BASELINE_UNITS in manifest order, so one written before the P1A-closed integration ref is fixed would encode a stale corpus and a stale unit count — a partial that cannot satisfy its own contract. It waits with everything else.",
+    "fibiu_16_is_not_parallelizable_before_fibiu_15": "AFFIRMATIVE CORRECTION OF RECORD. FIBIU-16 carries DB_CHANGES: NO_DB_OBJECT, which could invite the inference that its service work is parallelizable before the DB-blocked units. It is NOT. FIB §13 SERIAL_CONTRACTS freezes 15→16, and FIBIU-16's own EXIT_GATE (§12 line 773) requires that a material causal shortcut be documented as a structured assumption (FIBC-019) rather than a direct link — which depends on methodological_assumptions (FIBDB-012). Implementing FIBIU-16 before FIBIU-15 yields a partial that cannot satisfy its own exit gate, which is precisely the UNREGISTERED_PARTIAL_IMPLEMENTATION class. FIBIU-16 service code therefore belongs to the DB-blocked surface, not the parallelizable one.",
+    "B4_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE": false,
+    "db_blocked_rationale": "B4 materializes FIBDB-012, FIBDB-013, FIBDB-047, FIBDB-011 and FIBDB-046, all NEW_TABLE or NEW_ENUM_OR_CHECK on the DRIZZLE track. That change necessarily touches the four deterministic ordered artifacts P1A's canonical bootstrap consumes: db/migrations/NNNN_*, db/migrations/meta/_journal.json, db/prepared/journal/NNN_* and db/hosted/baseline-manifest.ts. A P1A gate that passed over a chain B4 then changed underneath it would not prove what it claims.",
+    "P1A_CLOSURE_PREREQUISITE": {
+      "note": "P1A_PASS is NOT defined by .github/workflows/p1a-validation.yml. That workflow is LEGACY, is owned by no lane in this node, and is untouched by B4. The canonical prerequisite is the conjunction of A through E below, all of which are required.",
+      "A": "P1A canonical implementation completed under docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, within its own closed-world authorized_future_implementation_surface.",
+      "B": "pnpm p1a:bootstrap:gate = PASS.",
+      "C": ".github/workflows/p1a-bootstrap-gate.yml = SUCCESS on the exact audited P1A candidate.",
+      "D": "FULL independent Opus adversarial P1A closure audit = PASS, per P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json audit_requirement.required_audit = FULL_OPUS_INDEPENDENT_ADVERSARIAL_CLOSURE_AUDIT.",
+      "E": "P1A closure integrated into integration/commercial-v1.",
+      "conjunction": "Only when A, B, C, D and E all hold does P1A_FULL_BOOTSTRAP_STATUS = CLOSED. Partial satisfaction never unblocks B4 database implementation."
+    },
+    "SYNC_POINT": {
+      "step_1": "P1A_FULL_BOOTSTRAP_STATUS = CLOSED, integrated at some integration ref R.",
+      "step_2": "codex/w2-b4-r1 updated to R by an explicitly governed NON-REWRITING integration update — clean fast-forward, or a governed merge. Never a rebase that rewrites this branch's authority history, never a destructive reset.",
+      "step_3": "Migration slots MECHANICALLY RE-MEASURED at R before any generation: the highest db/migrations/NNNN_ ordinal, the highest db/migrations/meta/_journal.json idx, the highest db/prepared/journal/NNN_ ordinal, the highest db/policies/NNN_ ordinal, and the db/hosted/baseline-manifest.ts BASELINE_UNITS tail.",
+      "step_4": "Only then may implementation generate migrations.",
+      "b4_never_dispatches_p1a": "B4 does not dispatch, trigger or re-run any P1A workflow. That action is not authorized to this node."
+    },
+    "migration_slot_candidate": {
+      "measured_at_base": "12bea1e432f7de7a020f632431052e29624c6d6d",
+      "highest_migration": "0061_fib_disposition_governance_function_execute_revocation.sql",
+      "highest_drizzle_journal_idx": 61,
+      "highest_prepared_journal_ordinal": "074_0061_fib_disposition_governance_function_execute_revocation.sql",
+      "highest_policies_ordinal": "010_proxy_material_fields_registry_rls.sql",
+      "CANDIDATE_MIGRATION_START": "0062",
+      "CANDIDATE_JOURNAL_WRAPPER_START": "075",
+      "CANDIDATE_POLICY_START": "011",
+      "collisions_at_base": 0,
+      "FROZEN": false,
+      "candidate_status": "CANDIDATE ONLY, explicitly NOT FROZEN. 0062 is the correct slot at this base and is recorded so a future auditor can see what was measured when. It must be re-measured at SYNC_POINT step 3, because the P1A lane and any other governed lane may legitimately consume slots first. Assuming 0062 at implementation time is a defect, not an optimization."
+    }
+  },
+
+  "B4_FIBDB_SCOPE": {
+    "included": [
+      {
+        "id": "FIBDB-012",
+        "object": "methodological_assumptions",
+        "change_type": "NEW_TABLE",
+        "owning_fibiu": "FIBIU-15",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "fib_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:303",
+        "fields": "Formulation, rationale, basis, basis_type, materiality, actor, version, links.",
+        "immutability": "versioned",
+        "backfill_class": "PROSPECTIVE_ONLY — free text never auto-converted",
+        "rls": "org-scoped"
+      },
+      {
+        "id": "FIBDB-013",
+        "object": "assumption_object_links",
+        "change_type": "NEW_TABLE",
+        "owning_fibiu": "FIBIU-15",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "fib_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:305",
+        "fields": "Assumption ↔ affected object/decision link.",
+        "immutability": "none beyond the assumption's own versioning",
+        "backfill_class": "PROSPECTIVE_ONLY",
+        "rls": "org-scoped",
+        "reuse_prohibition": "NOT reusable for any other purpose — see FIBDB-054 discretion sweep, FIB §17."
+      },
+      {
+        "id": "FIBDB-047",
+        "object": "assumption basis-type vocabulary",
+        "change_type": "NEW_ENUM_OR_CHECK",
+        "owning_fibiu": "FIBIU-15",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "fib_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:373",
+        "vocabularies": {
+          "methodological_assumptions.basis_type": ["evidence_or_external_source", "derived", "documented_human_judgement"],
+          "methodological_assumptions.materiality_flag": ["material", "non_material"]
+        },
+        "key_constraints": "Both CHECKs; provenance_reference NOT NULL ONLY when basis_type='evidence_or_external_source'.",
+        "immutability": "a material modification creates a new version",
+        "backfill_class": "BACKFILL_NOT_REQUIRED — prospective only; impact_narratives.assumptions and theory_of_change_links.assumption display as legacy free text, never converted",
+        "hardening_stage": "none declared"
+      },
+      {
+        "id": "FIBDB-011",
+        "object": "counterfactual_assessments",
+        "change_type": "NEW_TABLE",
+        "owning_fibiu": "FIBIU-14",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "fib_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:301",
+        "fields": "Per monetized outcome: basis, sources, rationale, baseline_availability, baseline value/period/source, actor, version.",
+        "immutability": "snapshot-bound",
+        "backfill_class": "PROSPECTIVE_ONLY — indicators.baseline_value is never auto-converted",
+        "rls": "org-scoped"
+      },
+      {
+        "id": "FIBDB-046",
+        "object": "counterfactual baseline-availability vocabulary",
+        "change_type": "NEW_ENUM_OR_CHECK",
+        "owning_fibiu": "FIBIU-14",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "hardening_stage": "E — DEFERRED, NOT AUTHORIZED IN B4",
+        "fib_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:371",
+        "vocabularies": {
+          "counterfactual_assessments.baseline_availability": ["available", "not_available", "not_applicable"],
+          "counterfactual_assessments.basis_kind": ["baseline_observation", "comparison_group", "historical_trend", "benchmark", "statistic", "literature", "stakeholder_evidence", "documented_assumption"],
+          "counterfactual_assessments.deadweight_support_state": ["supported", "unknown_or_insufficient"]
+        },
+        "key_constraints": "The three CHECKs; basis_kind NOT NULL always; value/period/source/context NOT NULL when baseline_availability='available'.",
+        "immutability": "linked to the snapshot, frozen with the approved run",
+        "backfill_class": "HUMAN_COMPLETION_REQUIRED — indicators.baseline_value never auto-converts",
+        "fail_closed_test": "deadweight_support_state='unknown_or_insufficient' ⇒ DEADWEIGHT_BASIS_INSUFFICIENT, usable in preliminary and blocking for approval; a supported deadweight=0 does approve."
+      }
+    ],
+    "FIBIU_16_DB": "NO_DB_OBJECT — reasoned. The native graph (theory_of_change_nodes, theory_of_change_links) is already the storage representation. FIBC-020 requires an external causal model to be MAPPED to the native graph, not stored as a document. No new table is created.",
+    "explicitly_excluded": {
+      "FIBDB-015": "readiness_assessments — FIBIU-17, belongs to W2-B5",
+      "FIBDB-016": "sroi_run_reviews.readiness_score LEGACY_MARKING — FIBIU-17 (+FIBIU-30, Wave 6), belongs to W2-B5",
+      "FIBDB-017": "sensitivity_candidates — FIBIU-18, belongs to W2-B5",
+      "FIBDB-018": "sensitivity_scenarios — FIBIU-18, belongs to W2-B5",
+      "FIBDB-048": "sensitivity vocabulary — FIBIU-18, belongs to W2-B5"
+    }
+  },
+
+  "B4_SCHEMA_STAGE": {
+    "stage": "A",
+    "rule": "Every B4 Wave 2 DDL item is SCHEMA_STAGE=A (additive). Authority: W2_EXECUTION_MAPPING_v1.0.0.json database_migration_map.stage_rule, quoting FIB §6.1 — hardening (stage E) is PROHIBITED before stage D (application cutover, post-Wave 3/4).",
+    "a_plus_e_contracts": "FIBDB-046 declares stages A and E. ONLY the additive stage A form is authorized in B4: the three CHECKs and the NOT NULL conditions ship in their fully determined form. The stage-E hardening remains deferred to its proper stage and is explicitly not authorized here.",
+    "no_hardening_authorized": true
+  },
+
+  "domain_contracts": {
+    "FIBIU-15": {
+      "name": "Structured methodological assumptions",
+      "contract": "FIBC-019",
+      "authorities_served": ["V-21", "F-08", "NPDD-04"],
+      "fib_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:126 (§3 contract F), :770 (§12 unit registry)",
+      "first_class_object_minimum_fields": [
+        "formulation",
+        "rationale",
+        "basis/provenance where it exists",
+        "basis_type",
+        "affected objects/decisions",
+        "materiality flag",
+        "actor",
+        "timestamp",
+        "version identity"
+      ],
+      "basis_type_vocabulary_preserved": ["evidence_or_external_source", "derived", "documented_human_judgement"],
+      "documented_human_judgement_contract": "documented_human_judgement remains a LEGITIMATE basis and must NOT require an invented or fabricated external source. No fictitious external source is demanded; the nature and limits of the basis must be explicit. provenance_reference is NOT NULL only when basis_type='evidence_or_external_source' (FIBDB-047).",
+      "versioning_contract": "A material modification creates a NEW VERSION. Where a material assumption affects the inputs of an APPROVED run, a NEW RUN is required.",
+      "approval_contract": "NO separate per-assumption approval is required by default. Material assumptions enter the run snapshot and the independent review package.",
+      "no_auto_conversion": "Existing legacy free text — impact_narratives.assumptions (db/schema.ts:208) and theory_of_change_links.assumption (db/schema.ts:1238) — is NEVER auto-converted into an authoritative structured assumption (NPDD-03). Human action remains required. The UI may OPTIONALLY seed creation by displaying the old free text for a person to re-author; display is not conversion.",
+      "fail_closed": "An unresolved material assumption blocks approval.",
+      "exit_gate": "An unresolved material assumption blocks approval."
+    },
+    "FIBIU-14": {
+      "name": "Counterfactual assessment",
+      "contract": "FIBC-018",
+      "authorities_served": ["V-20"],
+      "fib_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:121 (§3 contract E), :767 (§12 unit registry)",
+      "first_class_per_monetized_outcome": true,
+      "governed_states": ["available", "not_available", "not_applicable"],
+      "when_available_capture": ["value/observation", "period", "source", "context", "rationale", "actor", "version identity"],
+      "baseline_contract": "A baseline is a RELEVANT SOURCE WHEN IT EXISTS, explicitly NOT EQUIVALENT to the counterfactual and NOT numerically mandatory. indicators.baseline_value is NOT automatically a counterfactual and never auto-converts (NPDD-03); it is read-only input to this unit. Absent a baseline, deadweight may rest on comparisons, historical trends, benchmarks, statistics, literature, stakeholder evidence, or documented assumptions.",
+      "deadweight_support_contract": "supported vs unknown_or_insufficient must be EXPLICITLY DISTINGUISHED. Every deadweight, INCLUDING 0, needs justification and an identifiable counterfactual basis. A zero deadweight value is legitimate ONLY with an identifiable basis and rationale. unknown_or_insufficient is usable in preliminary work and FAILS CLOSED for approval/lock, surfacing as DEADWEIGHT_BASIS_INSUFFICIENT.",
+      "exit_gate": "Supported vs unknown deadweight are distinguished and the latter blocks."
+    },
+    "FIBIU-16": {
+      "name": "Causal chain sufficiency gate",
+      "contract": "FIBC-020",
+      "authorities_served": ["V-29", "F-08"],
+      "fib_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:131 (§3 contract G), :773 (§12 unit registry)",
+      "no_new_db_object": "The existing ToC graph remains the storage representation. No new table.",
+      "measured_gap": "getSroiCalculationReadiness (lib/pipeline/sroi-calculation.ts:1046) consults NEITHER theory_of_change_nodes NOR theory_of_change_links today, and an outcome can be monetized with zero nodes. Causal-chain sufficiency must become an ELIGIBILITY CONDITION for SROI run approval/readiness.",
+      "graph_status": "The native graph stays RECOMMENDED, NOT MANDATORY.",
+      "preserved_prohibition": "activity → outcome shortcuts remain forbidden when the required intermediate causal structure is absent. activity → output → outcome holds. Already correctly enforced at lib/pipeline/theory-of-change.ts:26-28,158-160 and declared satisfied as-is by FIB §12 — the successor mission must preserve it as a NON-REGRESSION, not reimplement it.",
+      "accepted_representations": "The native ToC graph, OR an external causal model (theory of change, logframe, results chain) SUFFICIENTLY MAPPED into the governed representation.",
+      "document_upload_insufficient": "Merely uploading a document, without mapping, does NOT satisfy causal sufficiency.",
+      "material_shortcut_contract": "A material causal shortcut must be represented through the FIBIU-15 structured assumption mechanism (FIBC-019), NEVER as a direct link and never as a bypass of the gate.",
+      "ordering_constraint": "Do NOT implement FIBIU-16 before FIBIU-15. See p1a_synchronization.fibiu_16_is_not_parallelizable_before_fibiu_15.",
+      "exit_gate": "A monetized outcome without a sufficient causal chain is ineligible."
+    }
+  },
+
+  "stella_boundary": {
+    "invariant": "AI proposes and analyzes. The system controls and calculates. Humans decide and approve.",
+    "stella_may": [
+      "analyze",
+      "identify gaps",
+      "compare sources",
+      "suggest",
+      "draft explanations",
+      "propose formulations, sources, considerations, estimates and representations for human review",
+      "detect contradictions, implicit assumptions and causal shortcuts"
+    ],
+    "stella_may_not": [
+      "approve an assumption",
+      "create an authoritative assumption without human action",
+      "declare an assumption sufficiently defensible",
+      "set or fix deadweight",
+      "approve deadweight",
+      "approve a counterfactual",
+      "invent counterfactual evidence",
+      "declare a causal relationship proven or demonstrated",
+      "remove a level from a causal chain",
+      "override any eligibility gate",
+      "calculate deterministic system outputs outside the system calculator"
+    ],
+    "fib_reference": "STELLA_CHANGES clauses of FIB §12 FIBIU-14 (:767), FIBIU-15 (:770), FIBIU-16 (:773). Numeric application belongs to the deterministic engine."
+  },
+
+  "security_and_tenancy_contract": {
+    "rls_required": "EVERY new B4 table — methodological_assumptions, assumption_object_links, counterfactual_assessments — must have ORGANIZATION-SCOPED RLS. Authority: FIBDB-011/012/013 each declare RLS: org-scoped.",
+    "cross_tenant_negative_controls": "REAL PostgreSQL negative cross-tenant controls are REQUIRED for SELECT, INSERT and UPDATE as applicable to each table. A mock never observes a CHECK, an RLS policy, a trigger or an advisory lock; the committed DB-free suite cannot discharge this.",
+    "function_execution_surface": "Every new SECURITY DEFINER or function-execution surface must EXPLICITLY PROVE that PUBLIC EXECUTE is absent and that only authorized roles hold EXECUTE. Default-privilege assumptions are not evidence: the measured precedent is that service_role receives EXECUTE by default ACL and nothing revokes it, which is exactly what migration 0061 exists to correct.",
+    "no_default_privilege_reliance": true,
+    "postgres_execution_boundary": "Database verification runs ONLY through the canonical disposable harness (pnpm db:audit:disposable, scripts/db-audit-disposable.ts): throwaway container bound to 127.0.0.1, ephemeral port, no bind mounts, teardown in finally, leftover check. NEVER staging. NEVER Production. NEVER the canonical local stack."
+  },
+
+  "hosted_acl_debt_disposition": {
+    "finding_id": "B4-MAT-B",
+    "inherited_from": "W2-B3 — the measured absence of a hosted/runtime ACL disposition for tables introduced after the historical hosted bootstrap (post stella_hosted_0007).",
+    "silent_inheritance_prohibited": true,
+    "required_control": "SEC-ACL-1",
+    "control_status": "REQUIRED B4 EXIT CONTROL",
+    "obligation": "For EACH of methodological_assumptions, assumption_object_links and counterfactual_assessments, the B4 implementation must PROVE an explicit hosted/runtime ACL disposition consistent with the governed role topology. Absence of proof is a failure, not a default.",
+    "stop_condition": "If repository inspection during implementation proves the current hosted prepared chain cannot express the required ACL without a NEW protected surface outside this authority, the successor mission must STOP_FOR_AUTHORITY_DELTA.",
+    "waiver_prohibited": "The control may NOT be waived, deferred, softened, or marked non-blocking by the implementation mission. Only new HPO authority may change it."
+  },
+
+  "entrypoint_closed_world_sentinel": {
+    "sentinel_id": "SENT-ENTRYPOINT",
+    "precedent": "W2-B3 blocker B3-BLK-A: a new server action was not registered in the closed-world database entrypoint inventory, and the B3 focused closure audit returned FAIL on exactly that.",
+    "obligation": "EVERY new server action or database-reaching entrypoint introduced by B4 must be represented in the applicable existing closed-world inventory.",
+    "inventory_paths": [
+      "tests/database-entrypoint-inventory.json",
+      "tests/database-runtime-entrypoints.test.ts"
+    ],
+    "surface_note": "Both paths are part of the future B4 implementation surface precisely because a new entrypoint mechanically requires them. tests/database-runtime-entrypoints.test.ts carries per-line closed-world counts that a new .action.ts moves.",
+    "weakening_prohibited": "Closed-world enumeration must NOT be weakened, relaxed, or converted into a lower-bound assertion to accommodate B4."
+  },
+
+  "determinism_and_regression_sentinels": {
+    "engine_semantics": "B4 must NOT alter deterministic SROI numeric engine semantics unless explicitly required by certified FIB authority. No FIBIU-15/14/16 contract requires a numeric change to the engine: FIBIU-15 and FIBIU-14 add governed methodology objects and fail-closed eligibility reasons; FIBIU-16 adds an eligibility condition. None changes a computed ratio.",
+    "golden_sentinel": "Existing SROI golden numeric outputs UNCHANGED — tests/sroi-calculation.golden.test.ts.",
+    "decimal_configuration": "lib/pipeline/decimal-config pinned configuration remains in force on every touched path.",
+    "carried_sentinels": {
+      "SENT-B1": "W2-B1 evidence surfaces (FIBIU-04/05/06/07) not reopened.",
+      "SENT-B2": "W2-B2 proxy surfaces (FIBIU-08/09/10), the canonical live/version review-status mapping and the coupling invariant not reopened.",
+      "SENT-B3": "W2-B3 outcome materiality, monetization disposition and filter justification surfaces (FIBIU-11/12/13) not reopened.",
+      "SENT-MNB-1": "MNB-1 audit verb/object correspondence: tests/audit-action-contract.test.ts static scan stays green; B4 adds no mismatched (entityType, action) pair.",
+      "SENT-ENTRYPOINT": "See entrypoint_closed_world_sentinel — the highest-probability repeat failure for this batch."
+    },
+    "closed_surfaces_not_reopened": "No already-closed methodology surface may be reopened by B4."
+  },
+
+  "audit_verb_contract": {
+    "authority": "FIBC-040 closed governed union, no DB-level CHECK. The contract test scans lib/** and app/** for the closed union plus explicit correspondence checks. Current vocabulary size measured at 82 by W2_EXECUTION_MAPPING_v1.0.0.json audit_correspondence_map.",
+    "new_verbs": {
+      "FIBIU-15": {
+        "entity_type": "methodological_assumption",
+        "verbs": ["methodological_assumption.created", "methodological_assumption.superseded"]
+      },
+      "FIBIU-14": {
+        "entity_type": "counterfactual_assessment",
+        "verbs": ["counterfactual_assessment.recorded"]
+      },
+      "FIBIU-16": {
+        "entity_type": null,
+        "verbs": [],
+        "note": "No owned object; denial is expressed through eligibility composition."
+      }
+    },
+    "closed_union_surface": "lib/audit/logger.ts AUDIT_ACTIONS (lines 8-243) is the closed union and is part of the future implementation surface."
+  },
+
+  "migration_and_postgres_contract": {
+    "mechanical_numbering": "The successor mission must DERIVE migration numbering mechanically at SYNC_POINT step 3, never from this artifact's candidate values.",
+    "required_registration_chain": "pnpm db:generate → db/migrations/meta/_journal.json entry → db/hosted/baseline-manifest.ts BASELINE_UNITS entry (hash + security-surface digest, correct dependsOn) → pnpm journal:generate → pnpm journal:verify + pnpm baseline:verify. Same procedure used for migrations 0040-0061.",
+    "ordering_and_hashes_preserved": "The four deterministic ordered artifacts must be REGENERATED, never content-merged: db/migrations/NNNN_*, db/migrations/meta/_journal.json, db/prepared/journal/NNN_*, db/hosted/baseline-manifest.ts.",
+    "internal_migration_dependency": "FIBDB-012/013/047 (FIBIU-15) must precede FIBDB-011/046 (FIBIU-14), mirroring the certified SERIAL_CONTRACT 15→14. FIBDB-013 depends on FIBDB-012.",
+    "disposable_postgres_only": "pnpm db:audit:disposable. Never staging. Never Production. Never the canonical local stack.",
+    "mutation_control_requirement": "Any new policy, CHECK or ACL assertion must have a DELIBERATE mutation control whose removal or alteration makes the corresponding probe FAIL. A probe that passes with its guarantee removed is vacuous, and vacuous controls are what the ODS negative-control doctrine forbids.",
+    "count_pin_consequence": "MEASURED AND ENUMERATED, not left as a surprise: registering any new baseline unit moves the hosted baseline unit-count pins currently fixed at 74. The affected paths are enumerated in authorized_future_implementation_surface.unprotected precisely so the successor mission does not hit an UNEXPECTED_CHANGED_PATH stop on a mechanically forced edit."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 6,
+    "paths": [
+      "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json",
+      "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts"
+    ],
+    "three_are_new_files": true,
+    "new_files": [
+      "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json"
+    ],
+    "scripts_ods_scope_ts_change_scope": "PROTECTED_GRANTS registry entry addition ONLY. DEFAULT_PROTECTED_PATTERNS, patternToRegExp, matchesPattern, matchesAnyPattern, matchesPatternCaseInsensitive, classifyPaths, resolveProtectedGrant, resolveProtectedGrants, the CLI argument parser and every other function are byte-unchanged.",
+    "program_state_registry_change_scope": "ONE appended unit entry with id W2-B4. The existing W2-B1 and W2-B3 entries are byte-unchanged. No second registry is created. The registry's own purpose field declares that adding or extending a unit entry there is ordinary tooling maintenance, not an authority act.",
+    "program_state_parser_tolerance": "VERIFIED, not assumed: scripts/ods-program-state.ts loadRegistry performs JSON.parse(raw) as ProgramStateRegistry with no runtime schema validation and no additionalProperties rejection, and findUnit reads only .id. A TypeScript `as` cast on a JSON.parse result never triggers excess-property checking, so pnpm typecheck is unaffected by additive metadata. No test asserts the registry's unit count or exact membership. Therefore the additive controller metadata fields are tolerated and no STOP_FOR_AUTHORITY_DELTA arises. scripts/ods-program-state.ts is NOT modified by this mission.",
+    "ODS_SCOPE_TEST_DELTA_REQUIRED": "YES",
+    "ods_scope_test_delta_justification": "Measured at BASE_SHA, not preferred: tests/ods/ods-scope.test.ts:317 asserts expect(PROTECTED_GRANTS.length).toBe(7) after the P1A lane registered the seventh grant. Registering an eighth grant makes that closed-world assertion false by construction. The authorized edit is limited to enumerating HPO-ODS-W2-12 in the existing closed-world and non-vacuity contract — the same treatment the file already gives W2-07, W2-08, W2-09 and W2-11 — plus branch-binding and narrowness controls for W2-12. No unrelated test cleanup. No assertion weakening. No existing expectation removed. No fixed-cardinality or exact-membership assertion converted into a >= or contains-at-least contract.",
+    "no_implementation_code": true,
+    "no_migration_changed": true,
+    "no_db_file_changed": true,
+    "no_app_or_lib_file_changed": true,
+    "no_package_json_change": true
+  },
+
+  "authorized_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR mission W2_B4_IMPLEMENTATION_R1 only, and only after P1A_FULL_BOOTSTRAP_STATUS = CLOSED. None of these paths is created or modified by THIS mission. This list is CLOSED-WORLD.",
+    "enumeration_principle": "Exact existing paths are enumerated exactly. A pattern appears ONLY where the concrete path cannot exist yet — because its ordinal is re-measured at SYNC_POINT step 3 — and then only in the narrowest semantically justified form.",
+    "protected": {
+      "patterns": ["db/migrations/**", "db/prepared/journal/**"],
+      "grant": "HPO-ODS-W2-12",
+      "why_pattern_not_exact": "The migration ordinal, the drizzle snapshot name, and the prepared-journal wrapper ordinal are all determined by a mechanical re-measurement at SYNC_POINT step 3. Freezing exact filenames here would either be wrong or would freeze a slot this authority explicitly refuses to freeze. The pattern set is exactly the two surfaces B4 needs and no third.",
+      "expected_concrete_shape": "db/migrations/<NNNN>_fib_methodological_assumptions*.sql and db/migrations/<NNNN>_fib_counterfactual_assessments*.sql with their db/migrations/meta/<NNNN>_snapshot.json and the db/migrations/meta/_journal.json append; db/prepared/journal/<NNN>_<NNNN>_*.sql wrappers for each. Recorded as EXPECTATION, not authorization: the grant is the two patterns above.",
+      "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. Both remain mandatory."
+    },
+    "unprotected": {
+      "schema_and_policy": [
+        "db/schema.ts",
+        "db/hosted/baseline-manifest.ts"
+      ],
+      "policy_pattern": {
+        "pattern": "db/policies/<NNN>_*_rls.sql",
+        "why_pattern": "The policy ordinal continues an existing sequence whose next free value (011 at this base) is re-measured at SYNC_POINT step 3. db/policies/** is NOT in DEFAULT_PROTECTED_PATTERNS, so it needs --allow only, never the grant."
+      },
+      "domain_logic": [
+        "lib/pipeline/narratives.ts",
+        "lib/pipeline/theory-of-change.ts",
+        "lib/pipeline/sroi-calculation.ts",
+        "lib/audit/logger.ts"
+      ],
+      "product_surface": [
+        "app/app/projects/[projectId]/pipeline/theoryOfChange.actions.ts",
+        "app/app/projects/[projectId]/pipeline/narrative/page.tsx",
+        "app/app/projects/[projectId]/pipeline/calculation/page.tsx"
+      ],
+      "product_surface_patterns": {
+        "app/app/projects/[projectId]/pipeline/narrative/**": "New FIBIU-15 server actions for structured assumption creation and versioning. Only page.tsx exists today; the action files do not yet exist, so a narrow directory pattern is the narrowest justified form.",
+        "app/app/projects/[projectId]/pipeline/calculation/**": "New FIBIU-14 server actions for counterfactual assessment recording. Declared FIBIU-14 surface in FIB §12:767."
+      },
+      "existing_tests": [
+        "tests/audit-action-contract.test.ts",
+        "tests/theory-of-change.service.test.ts",
+        "tests/sroi-calculation.service.test.ts",
+        "tests/sroi-calculation.golden.test.ts",
+        "tests/database-entrypoint-inventory.json",
+        "tests/database-runtime-entrypoints.test.ts",
+        "tests/hosted/baseline-manifest.test.ts",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+      ],
+      "existing_tests_rationale": "The first five are the declared targeted tests and closed-world inventories for FIBIU-14/15/16. tests/sroi-calculation.golden.test.ts appears as a NON-REGRESSION sentinel: it is expected to stay green with unchanged numeric outputs, and is enumerated only because a genuinely required comment or fixture addition would otherwise trip the exact-delta gate. The five hosted-baseline paths are enumerated because of the mechanically forced cardinality pins independently re-measured in hosted_baseline_pin_remeasurement below.",
+      "hosted_baseline_pin_remeasurement": {
+        "method": "Independently re-measured at BASE_SHA 12bea1e432f7de7a020f632431052e29624c6d6d by exhaustive repository grep for every hard assertion on BASELINE_UNITS / BASELINE_ORDER cardinality, evidence.unitCount, evidence.superuserFreeUnits and byKind() counts, over all *.ts and *.tsx excluding node_modules and .git. Not carried over from a prior report.",
+        "forced_pins": [
+          "tests/hosted/baseline-manifest.test.ts:95 — expect(BASELINE_UNITS).toHaveLength(74)",
+          "tests/hosted/baseline-manifest.test.ts:97 — expect(byKind('drizzle-migration')).toBe(62)",
+          "tests/hosted/baseline-manifest.test.ts:105-107 — ordinals asserted contiguous 1..74 and expect(new Set(BASELINE_ORDER).size).toBe(74)",
+          "tests/hosted/baseline-journal-wrapper.test.ts:470-471 — expect(BASELINE_UNITS).toHaveLength(74) and expect(BASELINE_ORDER).toHaveLength(74)",
+          "tests/hosted/operator-runner.test.ts:235 — expect(BASELINE_UNITS).toHaveLength(74)",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:416 — const manifestOk = ... && evidence.unitCount === 74 (GATE LOGIC, not a test assertion)",
+          "tests/eval/stella-release/hosted-baseline-gate.test.ts:63-64 — expect(evidence.unitCount).toBe(74) and expect(evidence.superuserFreeUnits).toBe(74)"
+        ],
+        "mechanically_unavoidable": "YES for every pin listed. Each is a hard equality on the cardinality of db/hosted/baseline-manifest.ts BASELINE_UNITS or on a value derived from it. Appending even one governed baseline unit makes each false by construction. tests/eval/stella-release/hosted-baseline-gate.ts:416 is the strongest case: the 74 lives inside the GATE'S OWN LOGIC, so a stale pin does not merely fail a test, it makes the hosted-baseline gate report a false negative. The byKind('drizzle-migration') pin at :97 moves too, because B4's units are Drizzle migrations.",
+        "scripts_path_measured_absent": "MEASURED, and it corrects a coordinator assumption: scripts/hosted-baseline-gate.ts DOES NOT EXIST in this repository. `ls scripts/hosted-baseline-gate.ts` returns no such file, and an exhaustive `find` for hosted-baseline-gate* returns exactly two paths, BOTH under tests/: tests/eval/stella-release/hosted-baseline-gate.ts and tests/eval/stella-release/hosted-baseline-gate.test.ts. No scripts/** path is therefore mechanically required, none is authorized here, and the conditional coordinator authorization for a script path is NOT consumed. AUTHORIZED scripts/** entries in this surface: ZERO — the only scripts/ paths this artifact names are in explicitly_prohibited.",
+        "artifacts_path_deliberately_excluded": "artifacts/baseline-rehearsal/latest.json also carries a manifestApplied count, and it is deliberately NOT authorized. It is stale by design at manifestApplied=50 and is the evidence_artifact of KNOWN_TEST_CONDITIONS_v1.0.0.json conditions KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02, both PRE_EXISTING_DEFERRED. Refreshing it is a rehearsal act against a real stack, not a B4 concern, and doing so would silently close two deferred known conditions this node has no authority to close.",
+        "authorized_edit_scope": "At each forced pin: advance the cardinality and its derivation comment to the value implied by the units B4 actually registers, and nothing else. No refactor. No weakening of any assertion into a lower-bound or contains-at-least form. No unrelated cleanup. No change to hosted security semantics — the gate's DML, serviceRoleGranters, superuser-free and row-source contracts stay exactly as they are, with only their counts advanced. If any of these files needs a change that is not a forced count advance, that is a STOP_FOR_AUTHORITY_DELTA, not a licence."
+      },
+      "new_tests": {
+        "patterns": [
+          "tests/methodological-assumptions*.test.ts",
+          "tests/counterfactual-assessment*.test.ts",
+          "tests/causal-chain-sufficiency*.test.ts",
+          "tests/postgres/b4-*.ts",
+          "tests/postgres/b4-*.json"
+        ],
+        "rationale": "New unit tests for the three units, plus the disposable-PostgreSQL harness, probes and vitest wrapper following the tests/postgres/b3-completeness* pattern. These files do not exist, so narrow name patterns are the narrowest justified form.",
+        "placement_constraint": "New tests are authorized at tests/ and tests/postgres/ and deliberately NOT under tests/integration/**. Placing a test under tests/integration/** mechanically requires modifying a closed-world integration inventory that is not authorized here. If a future test genuinely must live there, STOP_FOR_AUTHORITY_DELTA."
+      },
+      "evidence": [
+        "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+      ]
+    },
+    "explicitly_prohibited": [
+      "db/prepared/** other than db/prepared/journal/**",
+      "db/baseline/**",
+      "db/safety/local-stack.ts",
+      "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql",
+      "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql",
+      "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+      "scripts/p1a-bootstrap-gate.ts",
+      "scripts/m2-disposable-pg-bootstrap.ts",
+      ".github/workflows/p1a-bootstrap-gate.yml",
+      ".github/workflows/p1a-validation.yml",
+      ".github/workflows/m2-real-pg-gate.yml",
+      ".github/workflows/ci.yml",
+      "supabase/config.toml",
+      "tests/database-target-safety.test.ts",
+      "tests/database-entrypoint-safety.test.ts",
+      "tests/integration/**",
+      "scripts/ods-program-state.ts",
+      "scripts/ods-poststate.ts",
+      "scripts/ods-prestate.ts",
+      "package.json",
+      "docs/ops/fib/**",
+      "docs/ops/pc01b/**",
+      "docs/ops/im01b/**",
+      "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+      "docs/ops/p1a/**",
+      "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json",
+      "lib/pipeline/methodology-review.ts",
+      "lib/pipeline/sroi-results.ts",
+      "lib/pipeline/sroi-sensitivity.ts",
+      "lib/portfolios/analytics.ts",
+      "lib/stella/context/build-composer-context.ts",
+      "lib/stella/context/build-validator-context.ts",
+      "main",
+      "Production"
+    ],
+    "prohibited_rationale": {
+      "p1a_paths": "Owned by the concurrent P1A lane under HPO-ODS-W2-11. B4 never touches them.",
+      "fibiu_17_18_surfaces": "lib/pipeline/methodology-review.ts, lib/pipeline/sroi-results.ts, lib/pipeline/sroi-sensitivity.ts, lib/portfolios/analytics.ts and the two Stella context builders are FIBIU-17/FIBIU-18 surfaces per FIB §12:776 and §12 FIBIU-18. They are NOT shared with FIBIU-14/15/16 and belong to W2-B5. Their appearance in a B4 diff is an UNEXPECTED_CHANGED_PATH stop.",
+      "ods_gate_scripts": "scripts/ods-program-state.ts, ods-poststate.ts and ods-prestate.ts are the machine gates themselves. A node never edits its own referee."
+    },
+    "closed_world": "This list is EXHAUSTIVE. A path not enumerated in protected or unprotected is NOT authorized for the successor mission, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP — never a retroactive scope inference from the fact that it changed."
+  },
+
+  "future_evidence_and_audit_contract": {
+    "implementation_evidence_path": "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+    "independent_audit_path": "docs/ops/wave2/W2_B4_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+    "self_certification_prohibited": "Implementation evidence CANNOT self-certify closure. Only the independent audit artifact may establish the audit verdict. This mirrors the constraint the W2-B3 closure audit states about itself and the constraint COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_PR50_POST_MERGE_CLOSURE_v1.0.0.json states as closure_semantics.self_referential_claim_prohibition.",
+    "required_audit": "FOCUSED_OPUS_ADVERSARIAL_CLOSURE_AUDIT",
+    "audit_independence": "The audit must be an independent adversarial pass, not a self-review by the implementing executor.",
+    "final_closure_requires_all_of": [
+      "B4 authority frozen (this artifact, merged into integration/commercial-v1)",
+      "P1A_FULL_BOOTSTRAP_STATUS = CLOSED per p1a_synchronization.P1A_CLOSURE_PREREQUISITE A-E",
+      "B4 implementation complete within the closed-world authorized surface",
+      "every machine gate in docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json exit_gates = PASS",
+      "independent focused Opus adversarial closure audit = PASS",
+      "integration closure into integration/commercial-v1"
+    ]
+  },
+
+  "cross_lane_disposition": {
+    "controller_successor_obligation": "The Controller authority (docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json, HPO-ODS-W2-10) was pinned at a4f4fa0369e6abd944248e2abf0edb50cb05e0ba, BEFORE both docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json existed. Its ag1_disposition.immutableByConvention closed_world_requirement obliges the FUTURE Controller-v0 implementation mission to assert immutableByConvention as an EXACT-MEMBERSHIP set. That mission MUST therefore include BOTH v1.0.10 AND v1.0.11 in its closed-world enumeration, treating them as known immutable-by-convention governance predecessors rather than unexpected artifacts. Recorded affirmatively rather than by silence, because the absence of such a statement would leave a future auditor to infer a conflict that does not exist.",
+    "does_not_authorize_controller_implementation": "This statement does NOT authorize any Controller implementation, and this mission edits no Controller authority artifact.",
+    "CONTROLLER_DB_EXECUTION": "DISABLED — unchanged by this addendum-companion authority.",
+    "W2_10_prohibition_scope": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json hpo_decision.HPO-ODS-W2-10.not_authorized includes any change to scripts/ods-scope.ts including PROTECTED_GRANTS. That item bounds the W2-10 AUTHORIZATION, scoped by its own rule text to branch codex/autonomous-program-controller-r1 and to the successor mission AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1. It is not a global freeze of scripts/ods-scope.ts and does not bind this node, which runs on branch codex/w2-b4-r1 under the distinct identifier HPO-ODS-W2-12. The P1A lane recorded the identical reasoning for HPO-ODS-W2-11 in ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json cross_lane_disposition.W2_10_prohibition_scope; this node follows that established disposition rather than re-adjudicating it.",
+    "p1a_lane_independence": "P1A implementation may proceed separately and concurrently. B4 authority materialization neither blocks it nor depends on it. B4 IMPLEMENTATION OF ANY KIND does depend on P1A closure — see p1a_synchronization.",
+    "controller_selection_guard": {
+      "obligation": "No automated selector — Controller-v0 or any successor — may select W2-B4 as executable while P1A_FULL_BOOTSTRAP_STATUS is not CLOSED. The precondition is carried machine-readably, not in prose, as externalPreconditions: [\"P1A_FULL_BOOTSTRAP_CLOSED\"] on the W2-B4 unit in docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, alongside dependsOn: [\"W2-B3\"], executionClass: \"B\", fableEligible: false, auditClass: \"FOCUSED_OPUS\" and dbWriting: true.",
+      "enforcement_boundary_measured": "STATED PRECISELY RATHER THAN OVERCLAIMED. scripts/ods-program-state.ts does not today interpret externalPreconditions: loadRegistry performs JSON.parse(raw) as ProgramStateRegistry with no runtime schema validation, and the CLI reports only the authority/implementation/audit/integration/productBinding dimensions. The field is therefore a DECLARATION that a consumer must honour, not a gate that the current tool enforces. This node does not modify scripts/ods-program-state.ts — doing so is explicitly outside its authorized surface.",
+      "why_this_is_not_a_stop": "No STOP_FOR_AUTHORITY_DELTA is raised, on two measured grounds. First, the precondition IS encodable and IS encoded machine-readably, which is what the requirement asks; relying on prose alone would have been the failure mode. Second, no consumer exists that could mis-select B4 today: tests/ods/ods-controller.test.ts does not exist and Controller-v0 is unimplemented. The residual risk is bounded and named, not silent.",
+      "controller_v0_mission_obligation": "The Controller-v0 implementation mission MUST treat externalPreconditions as a HARD selection gate — an unsatisfied entry makes the unit non-selectable regardless of every other dimension — and MUST implement it as fail-closed: an unrecognized or unresolvable precondition token blocks selection rather than being ignored. If that mission chooses instead to interpret the field only advisorily, it must say so explicitly and re-adjudicate this clause; it may not silently narrow it."
+    },
+    "AG1_STATUS": "OPEN_UNCHANGED",
+    "ag1_note": "AG-1 remains OPEN: docs/ops/ods/ artifacts other than ODS_V1_AUTHORITY_v1.0.0.json are unprotected by DEFAULT_PROTECTED_PATTERNS, so this authority's own companion addendum is not machine-protected. Unchanged by this node, mitigated only controller-locally. Global closure requires separate governed adjudication of scripts/ods-scope.ts and is out of scope here.",
+    "B4_MAT_A_RESOLVED": "The branch-disposition finding raised by the mapping mission is resolved by scope_adjudication.branch_disposition.",
+    "B4_MAT_B_OPEN_AND_BOUND": "The hosted ACL debt finding remains OPEN and is bound to the successor mission as required control SEC-ACL-1. See hosted_acl_debt_disposition."
+  },
+
+  "protected_grant_required": true,
+  "protected_grant_rationale": "Both patterns match DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts (db/migrations/** at line 86 and db/prepared/** at line 87, both unchanged by this node) and are therefore unconditionally protected absent a resolved grant. This artifact and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json are the authority for the registry entry; the entry in scripts/ods-scope.ts is its machine-enforced counterpart, and the three must agree exactly — which tests/ods/ods-scope.test.ts asserts by reading protected_grant from this file, following the pattern already established for HPO-ODS-W2-08, W2-09 and W2-11. The grant is registered IN ADVANCE precisely so the successor implementation mission cannot claim retroactive authorization from the fact that a path changed. NO db/migrations or db/prepared file is changed by THIS mission.",
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-12",
+    "branch": "codex/w2-b4-r1",
+    "patterns": [
+      "db/migrations/**",
+      "db/prepared/journal/**"
+    ],
+    "pattern_count": 2,
+    "narrowness_note": "Deliberately NOT db/prepared/** — that would reach every hosted and local bootstrap file the P1A and hosted lanes own. The grant reaches db/prepared/journal/** only, which is the exact subsurface Wave 2 journal wrappers occupy. It grants nothing under db/baseline/**, docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** or docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json.",
+    "precedent": "Mechanically identical in shape to HPO-ODS-W2-01, the original Wave 2 grant, which held the same two patterns on the historical Wave 2 branch. W2-01 is FROZEN_UNCHANGED and is NOT reused, because a grant is bound to exactly one branch and codex/w2-methodology-objects-r1 is not this node's branch.",
+    "source_of_truth": "This object. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json protected_grant and the scripts/ods-scope.ts PROTECTED_GRANTS entry must both equal it, asserted mechanically in tests/ods/ods-scope.test.ts."
+  },
+
+  "test_manifest_contract": {
+    "path": "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+    "schema": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+    "scope": "FIBIU-15, FIBIU-14, FIBIU-16 ONLY. No FIBIU-17 or FIBIU-18 control appears in it.",
+    "pre_implementation_commitment": "The manifest is frozen BEFORE implementation and is a COMMITMENT, not a report. test_file values are \"UNKNOWN\" wherever the file does not yet exist, so a validator fails closed rather than treating a missing key as satisfied.",
+    "exit_gates": [
+      "typecheck",
+      "secrets_scan",
+      "authority_seal_verify",
+      "ods_scope",
+      "ods_poststate",
+      "journal_verify",
+      "baseline_verify",
+      "postgres_disposable_probe",
+      "targeted_tests"
+    ],
+    "gate_weakening_prohibited": "No exit gate may be removed, skipped or softened to obtain a PASS."
+  },
+
+  "this_mission_controls": {
+    "note": "This mission is authority-only and writes no implementation code, so its own controls are deterministic and machine-checkable rather than semantic. The B4 node's behavioural contract is frozen in docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json and is owed by the successor mission, not by this one.",
+    "positive": {
+      "A1": "All three new JSON artifacts parse as valid JSON, and the amended program-state registry parses as valid JSON.",
+      "A2": "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json validates mechanically against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, including additionalProperties:false and the exit_gates enum.",
+      "A3": "pnpm secrets:scan passes.",
+      "A4": "pnpm authority:seal:verify passes, confirming no sealed or certified artifact was disturbed.",
+      "A5": "pnpm lint and pnpm typecheck pass with the amended scripts/ods-scope.ts and tests/ods/ods-scope.test.ts.",
+      "A6": "pnpm ods:scope against BASE_SHA 12bea1e432f7de7a020f632431052e29624c6d6d, allowing exactly the six authorized paths, reports zero unauthorized paths, zero protected violations and zero non-canonical protected paths.",
+      "A7": "tests/ods/ods-scope.test.ts passes with PROTECTED_GRANTS.length == 8 and the HPO-ODS-W2-12 entry proven equal to protected_grant in this artifact and in the v1.0.11 addendum.",
+      "A8": "pnpm ods:poststate passes with the same allow list and a clean tree.",
+      "A9": "pnpm ops:program-state --unit W2-B4 resolves the authority dimension CLOSED against this artifact's final_state."
+    },
+    "negative": {
+      "B1": "ACTUAL_CHANGED_PATH_COUNT == 6 and the changed set equals authorized_changed_paths_this_mission.paths exactly — no seventh path, authorized or otherwise.",
+      "B2": "No path under db/**, app/**, lib/** or .github/** is changed, and package.json and pnpm-lock.yaml are unchanged. In particular NO db/migrations and NO db/prepared file is changed by this mission, despite the grant existing.",
+      "B3": "No pre-existing artifact under docs/ops/fib/, docs/ops/pc01b/, docs/ops/im01b/, docs/ops/p1a/ or docs/ops/wave2/ is modified or deleted, and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json plus ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.10 plus ODS_CONTROLLER_AUTHORITY_v1.0.0.json are byte-unchanged.",
+      "B4": "The existing W2-B1 and W2-B3 entries in the program-state registry are byte-unchanged, and scripts/ods-program-state.ts is unchanged.",
+      "B5": "origin/main remains 067e8c2f3ac9b5e843de3a35575182907b4365d4 and no production promotion occurs.",
+      "B6": "GRANT NARROWNESS, direction one (B4-GRANT-N1): a representative canonical db/migrations path is classified as a PROTECTED VIOLATION when --protected-authority HPO-ODS-W2-12 is NOT supplied, proving the grant is load-bearing rather than decorative.",
+      "B7": "GRANT NARROWNESS, direction two (B4-GRANT-N2): an unrelated protected path such as db/prepared/unrelated.sql remains a PROTECTED VIOLATION even WITH HPO-ODS-W2-12 supplied, proving the grant did not silently widen to db/prepared/**.",
+      "B8": "BRANCH BINDING (B4-GRANT-N3): HPO-ODS-W2-12 resolves to no grant on any branch other than codex/w2-b4-r1, exactly as an unknown id does.",
+      "B9": "DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is byte-unchanged and still contains exactly its seven original entries.",
+      "B10": "REGRESSION: HPO-ODS-W2-11 still resolves correctly on codex/p1a-full-bootstrap-r1 with its exact three patterns, and its registry entry is unmodified by the W2-12 registration.",
+      "B11": "The implementation and audit dimensions of pnpm ops:program-state --unit W2-B4 are NON-CLOSED, because their future evidence artifacts do not exist. Fail-closed behaviour is required; the exact non-closed vocabulary the machine emits is not constrained by this artifact."
+    },
+    "mutation": {
+      "M1": "DEFERRED_TO_SUCCESSOR_MISSION for every runtime control. Meaningful mutation controls for B4 test its RLS policies, its CHECK constraints, its fail-closed eligibility reasons and its hosted ACL disposition. None exists as executable code until the successor implements them. They are frozen in docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json mutation_controls and are mandatory for that mission. Asserting a runtime mutation control here would be vacuous, and vacuous controls are precisely what the ODS negative-control doctrine forbids.",
+      "M2": "NOT DEFERRED — the grant-narrowness controls B6, B7 and B8 ARE this mission's real mutation controls, because they prove the registry entry changes classifier behaviour in exactly one direction and no further. They are executable at this node."
+    }
+  },
+
+  "risks_and_open_findings": {
+    "R1": "B4-MAT-B hosted ACL debt is OPEN and inherited. It is bound as required exit control SEC-ACL-1 and may not be waived. See hosted_acl_debt_disposition.",
+    "R2": "AG-1 remains OPEN. This artifact and its companion addendum are not machine-protected by DEFAULT_PROTECTED_PATTERNS. Unchanged by this node.",
+    "R3": "The migration slot candidate 0062 is measured at this base and explicitly NOT frozen (MIGRATION_SLOT_FROZEN = NO). A successor mission that assumes it rather than re-measuring at SYNC_POINT step 3 commits a defect. The string 0062 appears in exactly one other place in this node's delta — tests/ods/ods-scope.test.ts, as a path-classification FIXTURE for the grant non-vacuity controls — where it exercises the db/migrations/** pattern and asserts nothing about which slot B4 will actually consume. That file carries an inline comment saying so.",
+    "R4": "W2-GAP-2 (FIBDB-037/038 regime-scoped VALIDATE) remains DEFERRED and is not a B4 concern: no B4 FIBDB item declares a regime-scoped validation.",
+    "R5": "Wave 2 close carries a separate Class C correction of BK-1 stale manifest prose plus cross-workstream regression, at WAVE close and explicitly NOT per batch (W2_EXECUTION_MAPPING_v1.0.0.json wave_closure_step). B4 closure does not discharge it.",
+    "R6": "KNOWN_TEST_CONDITIONS_v1.0.0.json conditions KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02 were active at W2-B3 and are carried into the B4 manifest as known_conditions. They are not re-adjudicated here.",
+    "R7": "The Controller-v0 closed-world immutableByConvention set does not yet contain ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json or v1.0.11.json. Harmless now — tests/ods/ods-controller.test.ts does not exist — but the Controller-v0 implementation mission must include both. See cross_lane_disposition.controller_successor_obligation.",
+    "R8": "The externalPreconditions selection guard is declarative, not tool-enforced. See cross_lane_disposition.controller_selection_guard.enforcement_boundary_measured. Bounded because no selector consumer exists yet; binding on the Controller-v0 mission."
+  },
+
+  "final_state": "W2_B4_AUTHORITY_FROZEN_WAITING_FOR_P1A_AND_IMPLEMENTATION",
+  "W2_B4_IMPLEMENTATION_STATUS": "WAITING_FOR_P1A_FULL_CLOSURE",
+  "W2_B5_STATUS": "NOT_AUTHORIZED",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": true,
+  "next_gate": "W2_B4_IMPLEMENTATION_R1 (blocked until P1A_FULL_BOOTSTRAP_STATUS = CLOSED)"
+}

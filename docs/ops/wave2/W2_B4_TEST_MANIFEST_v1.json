@@ -1,0 +1,253 @@
+{
+  "manifest_id": "W2-B4-ASSUMPTIONS-AND-CAUSALITY",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json (HPO-ODS-W2-12, base 12bea1e432f7de7a020f632431052e29624c6d6d / tree e843d12ff714fbb679caf89fdc059315080d4711, branch codex/w2-b4-r1), companion docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json. Certified source: docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md :121 (FIBC-018), :126 (FIBC-019), :131 (FIBC-020), :301 (FIBDB-011), :303 (FIBDB-012), :305 (FIBDB-013), :371 (FIBDB-046), :373 (FIBDB-047), :767 (FIBIU-14), :770 (FIBIU-15), :773 (FIBIU-16), :842-850 (§13 WAVE 2 SERIAL_CONTRACTS 15→{14,16}). Derived: docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json recommended_implementation_batches[batch_id=B4], targeted_test_map, audit_correspondence_map. SCOPE IS FIBIU-15/14/16 ONLY — no FIBIU-17 or FIBIU-18 control appears in this manifest; those belong to a future W2-B5 manifest.",
+  "dependencies": ["W2-B1", "W2-B2", "W2-B3", "FIBIU-03", "P1A_FULL_BOOTSTRAP_CLOSED"],
+  "protected_surfaces": ["db/migrations/**", "db/prepared/journal/**"],
+  "protected_authority": "HPO-ODS-W2-12",
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN — a B4 generator under tests/postgres/b4-*.ts following the tests/postgres/b3-completeness-harness.ts pattern, emitting the setup JSON at run time from db/hosted/baseline-manifest.ts BASELINE_UNITS in manifest order (role topology mirrored from db/baseline/stella_g2_roles.sql and scripts/rehearsal/local-supabase-shim.sql, hosted-fidelity block, two-tenant fixture). Path is UNKNOWN because the file does not exist at manifest-freeze time.",
+    "probe_manifest": "UNKNOWN — a B4 probe manifest under tests/postgres/b4-*.json following tests/postgres/b3-completeness.probes.json. UNKNOWN rather than omitted so a validator fails closed instead of treating the absence as satisfied.",
+    "rationale": "B4 creates three new tables with org-scoped RLS (FIBDB-011/012/013), five CHECK-constraint vocabularies (FIBDB-046 three CHECKs plus conditional NOT NULLs, FIBDB-047 two CHECKs plus a conditional NOT NULL) and new fail-closed eligibility reasons. The committed vitest suite is DB-free by construction: no mock observes a CHECK, an RLS policy, a trigger or an advisory lock — the exact gap that produced B3-BLK-3. Every PG-* and MUT-PG-* control below therefore runs ONLY through pnpm db:audit:disposable (scripts/db-audit-disposable.ts: throwaway postgres:16-alpine bound to 127.0.0.1, ephemeral port, no bind mounts, teardown in finally, leftover check). NEVER staging, NEVER Production, NEVER the canonical local stack. The vitest wrapper is gated by UELLIX_PG_TESTS=1 and must SKIP visibly, never silently pass."
+  },
+  "sentinels": [
+    {
+      "id": "SENT-ENTRYPOINT",
+      "purpose": "Closed-world entrypoint enumeration stays exact. Every new server action or database-reaching entrypoint B4 introduces is represented in tests/database-entrypoint-inventory.json and in the tests/database-runtime-entrypoints.test.ts counts. This is the highest-probability repeat failure for this batch: the identical omission was blocker B3-BLK-A. Enumeration must never be weakened into a lower-bound assertion to accommodate B4."
+    },
+    {
+      "id": "SENT-B1",
+      "purpose": "W2-B1 evidence surfaces (FIBIU-04/05/06/07) are not reopened: the evidence version, sensitivity, sufficiency and erasure suites stay green with no change to lib/pipeline/evidence.ts or lib/pipeline/evidence-sufficiency.ts."
+    },
+    {
+      "id": "SENT-B2",
+      "purpose": "W2-B2 proxy surfaces (FIBIU-08/09/10) are not reopened: the canonical live/version review-status mapping and the coupling invariant stay green with no change to lib/pipeline/financial-proxy-versions.ts or lib/pipeline/proxies.ts, and the FIBIU-09 rubric derivation digest is unchanged."
+    },
+    {
+      "id": "SENT-B3",
+      "purpose": "W2-B3 surfaces (FIBIU-11/12/13) are not reopened: outcome materiality classification, monetization disposition governance and the five per-filter justification columns stay green, and migrations 0057-0061 are not edited."
+    },
+    {
+      "id": "SENT-MNB-1",
+      "purpose": "MNB-1 audit verb/object correspondence holds: tests/audit-action-contract.test.ts static scan over lib/pipeline and lib/admin stays green, and the three new B4 verbs (methodological_assumption.created, methodological_assumption.superseded, counterfactual_assessment.recorded) add no mismatched (entityType, action) pair to the FIBC-040 closed union."
+    },
+    {
+      "id": "SENT-GOLDEN",
+      "purpose": "Deterministic SROI numeric engine semantics unchanged: tests/sroi-calculation.golden.test.ts produces byte-identical numeric outputs. No B4 contract requires an engine numeric change; a moved golden value is a defect, not an expected consequence."
+    },
+    {
+      "id": "SENT-B5-BOUNDARY",
+      "purpose": "The W2-B5 boundary is not consumed: no FIBIU-17 or FIBIU-18 surface is touched (lib/pipeline/methodology-review.ts, lib/pipeline/sroi-results.ts, lib/pipeline/sroi-sensitivity.ts, lib/portfolios/analytics.ts, lib/stella/context/build-composer-context.ts, lib/stella/context/build-validator-context.ts), FIBDB-015/016/017/018/048 remain unmaterialized, and the FIBIU-18 OPUS_HIGH review boundary is not claimed, discharged or pre-empted at B4 close."
+    }
+  ],
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+  "positive_controls": [
+    {
+      "id": "POS-15-1",
+      "description": "STRUCTURED ASSUMPTION PERSISTENCE. A first-class methodological assumption persists all nine contracted elements: formulation, rationale, basis/provenance where it exists, basis_type, affected objects/decisions, materiality flag, actor, timestamp and version identity. Round-trips through methodological_assumptions and assumption_object_links with the affected-object link resolvable in both directions.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-15-2",
+      "description": "MATERIAL SUPERSESSION, VERSIONING AND NEW-RUN BEHAVIOUR. A material modification creates a NEW VERSION rather than mutating the prior row, the prior version remains readable as history, and where the modified material assumption affects the inputs of an APPROVED run the system requires a NEW RUN rather than silently re-pointing the approved one. Emits methodological_assumption.superseded.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-15-3",
+      "description": "DOCUMENTED HUMAN JUDGEMENT IS A LEGITIMATE BASIS. basis_type='documented_human_judgement' is accepted with NO external source and NO fabricated provenance_reference. Per FIBDB-047, provenance_reference is NOT NULL only when basis_type='evidence_or_external_source'; the other two basis types must persist with it NULL and must not be coerced into inventing one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-15-4",
+      "description": "MATERIAL ASSUMPTIONS REACH THE REVIEW PACKAGE. An assumption with materiality_flag='material' enters the run snapshot and the independent review package, and does so WITHOUT requiring a separate per-assumption approval step — the default contract is no per-assumption approval.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-14-1",
+      "description": "COUNTERFACTUAL THREE-STATE MODEL. A counterfactual assessment persists per monetized outcome in each of baseline_availability ∈ {available, not_available, not_applicable}. When 'available', value/observation, period, source and context are all present and enforced NOT NULL by FIBDB-046; when 'not_available' or 'not_applicable' those may be NULL while basis_kind stays NOT NULL in every state.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-14-2",
+      "description": "SUPPORTED ZERO DEADWEIGHT WITH BASIS AND RATIONALE. deadweight=0 with an identifiable counterfactual basis and a rationale yields deadweight_support_state='supported' and DOES approve. A supported zero is a legitimate methodological result, not a missing value.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-14-3",
+      "description": "NON-BASELINE BASIS KINDS ARE ACCEPTED. Absent a baseline, a counterfactual is supportable through each of the remaining FIBDB-046 basis_kind values — comparison_group, historical_trend, benchmark, statistic, literature, stakeholder_evidence, documented_assumption — and each round-trips and satisfies the support contract. The baseline is a relevant source when it exists, never a numeric requirement.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-16-1",
+      "description": "COMPLETE GOVERNED CAUSAL CHAIN SATISFIES ELIGIBILITY. A monetized outcome with an explicit, traceable activity → output → outcome chain in the native theory_of_change graph satisfies the new causal-sufficiency eligibility condition, and getSroiCalculationReadiness reports no CAUSAL_CHAIN_INSUFFICIENT reason for it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-16-2",
+      "description": "SUFFICIENTLY MAPPED EXTERNAL CAUSAL MODEL MAY SATISFY ELIGIBILITY. An external theory of change, logframe or results chain that is SUFFICIENTLY MAPPED into the governed native representation satisfies the eligibility condition. The native graph stays recommended, not mandatory — an accepted external model must not be forced through a native-only path.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-DAG-1",
+      "description": "CERTIFIED INTERNAL ORDER HELD. FIBDB-012/013/047 (FIBIU-15) are registered before FIBDB-011/046 (FIBIU-14) in migration order, FIBDB-013 depends on FIBDB-012, and the baseline-manifest dependsOn chain reflects the certified SERIAL_CONTRACT 15→{14,16}. Asserted statically over db/migrations/meta/_journal.json and db/hosted/baseline-manifest.ts.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PG-POS-1",
+      "description": "REAL POSTGRESQL — ORG-SCOPED RLS PERMITS SAME-TENANT ACCESS. Under the two-tenant disposable fixture, a same-organization analyst-or-above role can SELECT and INSERT its own organization's rows in methodological_assumptions, assumption_object_links and counterfactual_assessments, proving the policies are permissive in the intended direction and the negative controls below are not passing by universal denial.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "PG-POS-2",
+      "description": "REAL POSTGRESQL — EVERY CONTRACTED CHECK EXISTS AND ACCEPTS ITS VOCABULARY. Each of the five FIBDB-046/047 vocabularies is present as a CHECK in pg_constraint and accepts every enumerated value: baseline_availability (3), basis_kind (8), deadweight_support_state (2), basis_type (3), materiality_flag (2).",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NEG-15-1",
+      "description": "LEGACY FREE TEXT NEVER AUTO-CONVERTS. Neither impact_narratives.assumptions (db/schema.ts:208) nor theory_of_change_links.assumption (db/schema.ts:1238) is converted, migrated, backfilled or promoted into an authoritative structured assumption by any path — service, migration, action or Stella (NPDD-03, FIBDB-047 BACKFILL_NOT_REQUIRED). A project carrying legacy free text and zero structured assumptions must report zero structured assumptions. Displaying the old text to seed human re-authoring is permitted and must be proven distinct from conversion.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-15-2",
+      "description": "UNRESOLVED MATERIAL ASSUMPTION BLOCKS APPROVAL. Where the governing contract requires resolution, an unresolved assumption with materiality_flag='material' makes the run non-approvable and surfaces ASSUMPTION_UNRESOLVED. The blocked state must identify WHICH assumption blocks, never a bare boolean.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-15-3",
+      "description": "PROVENANCE IS ENFORCED ONLY WHERE CONTRACTED. basis_type='evidence_or_external_source' with a NULL provenance_reference is REFUSED at the database level by the FIBDB-047 conditional NOT NULL. The refusal must come from the constraint, not only from service validation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-14-1",
+      "description": "BASELINE VALUE NEVER AUTO-CONVERTS TO A COUNTERFACTUAL. indicators.baseline_value is read-only to this unit and is never converted, copied-as-authoritative, or defaulted into counterfactual_assessments by any path (NPDD-03, FIBDB-011 PROSPECTIVE_ONLY, FIBDB-046 HUMAN_COMPLETION_REQUIRED). An outcome whose indicator has a baseline_value and no counterfactual assessment must report COUNTERFACTUAL_MISSING.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-14-2",
+      "description": "UNKNOWN OR INSUFFICIENT DEADWEIGHT BASIS CANNOT PASS APPROVAL BUT REMAINS VISIBLE IN PRELIMINARY. deadweight_support_state='unknown_or_insufficient' surfaces DEADWEIGHT_BASIS_INSUFFICIENT, blocks approval and lock, and is STILL usable and visible in preliminary analysis. Both halves are asserted: a state that blocked preliminary too would violate the contract as surely as one that approved.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-14-3",
+      "description": "UNJUSTIFIED ZERO DEADWEIGHT IS REFUSED. deadweight=0 WITHOUT an identifiable basis and rationale does not qualify as 'supported' and does not approve. A supported zero and an unknown zero must be distinguishable at every surface — the distinction, not the numeral, is the contract.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-16-1",
+      "description": "ACTIVITY→OUTCOME SHORTCUT REJECTED. A direct activity → outcome link is refused when the required intermediate causal structure is absent. This is a NON-REGRESSION control over the enforcement already present at lib/pipeline/theory-of-change.ts:26-28,158-160 and declared satisfied as-is by FIB §12 — B4 must preserve it, not reimplement it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-16-2",
+      "description": "MONETIZED OUTCOME WITHOUT A SUFFICIENT CHAIN IS INELIGIBLE. A monetized outcome with zero causal nodes, or with a chain missing the intermediate level, makes the run non-approvable and surfaces CAUSAL_CHAIN_INSUFFICIENT. This closes the measured gap that getSroiCalculationReadiness consults neither theory_of_change table today.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-16-3",
+      "description": "UNMAPPED UPLOADED DOCUMENT DOES NOT SATISFY THE CHAIN. An uploaded external theory-of-change document with no mapping into the governed representation does NOT satisfy causal sufficiency. Presence of an attachment must never be read as presence of a causal chain.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-16-4",
+      "description": "MATERIAL CAUSAL SHORTCUT REQUIRES A STRUCTURED ASSUMPTION, NOT A BYPASS. A material causal shortcut is representable ONLY through the FIBIU-15 structured assumption mechanism (FIBC-019). It may never be recorded as a direct link, and recording the assumption must not silently clear the eligibility condition by a route that skips the gate — the assumption documents the shortcut, it does not launder it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-STELLA-B4",
+      "description": "STELLA CANNOT CROSS ANY HUMAN OR SYSTEM DECISION BOUNDARY. For all three units: Stella cannot approve an assumption, cannot create an authoritative assumption without human action, cannot declare an assumption sufficiently defensible, cannot set or approve deadweight, cannot approve a counterfactual, cannot invent counterfactual evidence, cannot declare a causal relationship proven, cannot remove a level from a causal chain, cannot override any eligibility gate, and cannot calculate deterministic outputs outside the system calculator. Asserted as refusals at the write boundary, not as absent UI affordances.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-B5-1",
+      "description": "B4 DOES NOT MATERIALIZE B5. FIBDB-015, FIBDB-016, FIBDB-017, FIBDB-018 and FIBDB-048 remain unmaterialized: no readiness_assessments, sensitivity_candidates or sensitivity_scenarios table exists, sroi_run_reviews.readiness_score carries no legacy marking, and lib/pipeline/sroi-sensitivity.ts is byte-unchanged with SCENARIO_DELTA_PP still present. Asserted so a B4 diff cannot quietly annex B5 scope.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "SEC-N1",
+      "description": "REAL POSTGRESQL — CROSS-TENANT SELECT DENIED. Under the two-tenant fixture, organization A's role cannot SELECT organization B's rows in methodological_assumptions, assumption_object_links or counterfactual_assessments. Measured as denial or zero rows under RLS, per table.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "SEC-N2",
+      "description": "REAL POSTGRESQL — CROSS-TENANT INSERT DENIED. Organization A's role cannot INSERT a row bound to organization B in any of the three tables.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "SEC-N3",
+      "description": "REAL POSTGRESQL — CROSS-TENANT UPDATE DENIED WHERE UPDATE EXISTS. For any of the three tables that expose UPDATE, organization A's role cannot UPDATE organization B's rows. The B3 precedent is explicit: PostgreSQL applies the SELECT policy to an UPDATE's WHERE clause, so an UPDATE policy that looks org-scoped can still be vacuous — this control must distinguish real denial from zero-rows-by-accident.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "SEC-N4",
+      "description": "NO PUBLIC EXECUTE ON ANY NEW FUNCTION SURFACE. Every new function or SECURITY DEFINER surface B4 introduces proves PUBLIC EXECUTE is ABSENT and only authorized roles hold EXECUTE, measured from pg_proc/aclexplode rather than inferred. Default-privilege assumptions are not evidence: the measured precedent is that service_role receives EXECUTE by default ACL and nothing revokes it, which is what migration 0061 exists to correct. If B4 introduces no function surface, this control is satisfied by proving that emptiness explicitly, never by silent omission.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "SEC-ACL-1",
+      "description": "HOSTED ACL DISPOSITION PROVEN PER NEW TABLE — REQUIRED, NON-WAIVABLE. For EACH of methodological_assumptions, assumption_object_links and counterfactual_assessments, an explicit hosted/runtime ACL disposition consistent with the governed role topology is PROVEN. This discharges the inherited B4-MAT-B debt for B4's own tables and may not be waived, deferred or marked non-blocking by the implementation mission. If the current hosted prepared chain cannot express the required ACL without a new protected surface outside HPO-ODS-W2-12, the mission must STOP_FOR_AUTHORITY_DELTA rather than ship without it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-STAGE-1",
+      "description": "NO STAGE-E HARDENING SHIPS IN B4. FIBDB-046 declares stages A and E; only the additive stage-A form ships. No approved-version immutability trigger, no VALIDATE of a NOT VALID constraint, and no other stage-E hardening appears in a B4 migration. FIB §6.1 prohibits stage E before stage D.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-SCOPE-1",
+      "description": "CLOSED-WORLD IMPLEMENTATION SURFACE HELD. The B4 implementation diff contains no path outside docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json authorized_future_implementation_surface, and touches none of its explicitly_prohibited entries — in particular no db/prepared path outside db/prepared/journal/**, no db/baseline path, no P1A-owned path, no workflow, no package.json, and no ODS gate script.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MUT-PG-1",
+      "description": "RLS NON-VACUITY. Removing or org-unscoping the SELECT policy on each of the three new tables makes SEC-N1 FAIL. Asserted per table, so one genuinely scoped policy cannot mask two vacuous ones.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-PG-2",
+      "description": "CHECK NON-VACUITY. Dropping each of the five FIBDB-046/047 CHECK constraints individually makes its corresponding vocabulary probe FAIL. Five separate mutations, not one aggregate — an aggregate mutation cannot distinguish five live constraints from one live and four decorative.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-PG-3",
+      "description": "CONDITIONAL NOT NULL NON-VACUITY. Dropping the FIBDB-046 'value/period/source/context NOT NULL when baseline_availability=available' condition makes POS-14-1 FAIL, and dropping the FIBDB-047 'provenance_reference NOT NULL when basis_type=evidence_or_external_source' condition makes NEG-15-3 FAIL.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-PG-4",
+      "description": "EXECUTE REVOCATION NON-VACUITY. Removing any REVOKE EXECUTE ... FROM PUBLIC that B4 introduces makes SEC-N4 FAIL. If B4 introduces no function surface, this control is explicitly recorded as VACUOUS-BY-ABSENCE with that absence itself asserted, never silently dropped.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-ELIG-1",
+      "description": "ELIGIBILITY GATE NON-VACUITY. Removing the CAUSAL_CHAIN_INSUFFICIENT arm makes NEG-16-2 FAIL; removing the DEADWEIGHT_BASIS_INSUFFICIENT arm makes NEG-14-2 FAIL; removing the ASSUMPTION_UNRESOLVED arm makes NEG-15-2 FAIL. Each fail-closed reason is proven load-bearing on its own.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-NOCONV-1",
+      "description": "NO-AUTO-CONVERSION NON-VACUITY. Introducing a deliberate conversion path from impact_narratives.assumptions into methodological_assumptions makes NEG-15-1 FAIL, and introducing one from indicators.baseline_value into counterfactual_assessments makes NEG-14-1 FAIL. This proves the prohibition is tested rather than merely true by the absence of any code that would violate it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-ENTRYPOINT-1",
+      "description": "ENTRYPOINT SENTINEL NON-VACUITY. Removing any one new B4 server action from tests/database-entrypoint-inventory.json makes the closed-world enumeration test FAIL. This is the direct mutation control for the B3-BLK-A failure class, and its absence is what allowed that blocker to reach an audit."
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}

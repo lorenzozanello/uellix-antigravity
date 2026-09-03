@@ -74,6 +74,49 @@
         "codex/u0-u9-reengineering-resume-r1"
       ],
       "productBranch": "feature/sprint-0-foundation"
+    },
+    {
+      "id": "W2-B4",
+      "description": "Wave 2 batch B4 — FIBIU-15/14/16 assumptions and causality.",
+      "authority": {
+        "type": "json-field",
+        "ref": "codex/w2-b4-r1",
+        "path": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json",
+        "field": "final_state",
+        "closedValues": [
+          "W2_B4_AUTHORITY_FROZEN_WAITING_FOR_P1A_AND_IMPLEMENTATION"
+        ]
+      },
+      "implementation": {
+        "type": "paths-exist",
+        "ref": "codex/w2-b4-r1",
+        "paths": [
+          "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+        ]
+      },
+      "audit": {
+        "type": "json-field",
+        "ref": "codex/w2-b4-r1",
+        "path": "docs/ops/wave2/W2_B4_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+        "field": "closure.W2_B4",
+        "closedValues": [
+          "CLOSED"
+        ]
+      },
+      "integrationTargets": [
+        "integration/commercial-v1"
+      ],
+      "productBranch": "feature/sprint-0-foundation",
+      "dependsOn": [
+        "W2-B3"
+      ],
+      "externalPreconditions": [
+        "P1A_FULL_BOOTSTRAP_CLOSED"
+      ],
+      "executionClass": "B",
+      "fableEligible": false,
+      "auditClass": "FOCUSED_OPUS",
+      "dbWriting": true
     }
   ]
 }
