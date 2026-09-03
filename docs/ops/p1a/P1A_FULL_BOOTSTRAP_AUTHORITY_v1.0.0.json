@@ -1,0 +1,606 @@
+{
+  "package_id": "P1A_FULL_BOOTSTRAP_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0",
+  "authority_class": "APPEND_ONLY_CANONICAL_BOOTSTRAP_TOPOLOGY_AND_FUTURE_IMPLEMENTATION_SURFACE_AUTHORIZATION",
+  "materialization_step": "HPO-ODS-W2-11",
+  "GRANT_ID": "HPO-ODS-W2-11",
+  "hpo_mission_id": "P1A-FULL-BOOTSTRAP-AUTHORITY-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_id": "P1A-FULL-BOOTSTRAP-CANONICAL-TOPOLOGY-HPO-R1",
+  "materialization_date": "2026-09-03",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json",
+  "test_manifest": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json",
+
+  "purpose": "Freeze the canonical LOCAL/CI clean-bootstrap-from-zero topology for this repository, and the exact bounded implementation surface the successor mission may touch to build its machine gate. This mission materializes authority ONLY: it writes no bootstrap SQL, no gate script, no workflow, and changes no db/prepared/** file. Its function is to fix, in advance, the topology decisions, the second-run contract, the env lifecycle contract, the control set and the closed-world implementation surface, so that the successor implementation mission cannot widen its own scope by asserting that a path 'changed anyway'.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.9, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through HPO-ODS-W2-10 are FROZEN_UNCHANGED. The HOSTED managed-Supabase role identity topology (db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql, db/prepared/stella_hosted_0001_managed_role_bootstrap.sql, HPO-ODS-W2-03, HPO-ODS-W2-05) is a SEPARATE surface and is UNCHANGED and UNTOUCHED by this authority and by its successor implementation mission.",
+
+  "cross_lane_note": {
+    "statement": "HPO-ODS-W2-10 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json) enumerates in its hpo_decision.not_authorized list, among other items, 'any change to scripts/ods-scope.ts, including DEFAULT_PROTECTED_PATTERNS and the PROTECTED_GRANTS registry'. That prohibition is scoped by its own rule text to branch codex/autonomous-program-controller-r1 and to the successor mission AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1. It is a bound on THAT authorization, on THAT branch, and does not bind this node, which operates on branch codex/p1a-full-bootstrap-r1 under the distinct identifier HPO-ODS-W2-11. This is recorded affirmatively rather than left to inference, because a reader could otherwise reasonably conclude that scripts/ods-scope.ts had been globally frozen by W2-10.",
+    "W2_10_UNCHANGED": true,
+    "W2_10_PROHIBITION_APPLIES_TO_THIS_NODE": false,
+    "controller_immutable_by_convention_interaction": "ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention.closed_world_requirement obliges the FUTURE Controller-v0 implementation mission to assert immutableByConvention as an exact-membership set. That list, pinned at BASE_SHA a4f4fa0369e6abd944248e2abf0edb50cb05e0ba, necessarily does not contain docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json, which this node creates. tests/ods/ods-controller.test.ts does not exist at this node's base (verified this session), so nothing breaks now. The Controller-v0 implementation mission MUST include v1.0.10 in its closed-world enumeration. Recorded here so that mission treats it as a known, governed predecessor artifact rather than an unexpected one, and so it does not need to re-derive the fact.",
+    "no_addendum_renumbering_performed": "P1A_ODS_ADDENDUM_VERSION=1.0.10 and P1A_AUTHORITY_ID=HPO-ODS-W2-11 were not assumed. Both were verified free at this node's base: docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json does not exist, and a repository-wide search for HPO-ODS-W2-11 (excluding node_modules) returned zero occurrences. HPO-ODS-W2-10 is in use by exactly two artifacts, both under docs/ops/ods/."
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-p1a-full-bootstrap-r1",
+    "branch": "codex/p1a-full-bootstrap-r1",
+    "OLD_BRANCH_HEAD": "a4f4fa0369e6abd944248e2abf0edb50cb05e0ba",
+    "BASE_SHA": "a0d783fea4b941d352a92ca55e185d13f5b50d06",
+    "BASE_TREE": "e6711501f1d95d452efabd52b7e612e26f25bc44",
+    "integration_baseline_sha": "a0d783fea4b941d352a92ca55e185d13f5b50d06",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "controller_authority_head": "96610f0876e8aceebee8f6121fbe9bc5733de7e7",
+    "prestate_gate": "PASS — branch codex/p1a-full-bootstrap-r1, HEAD a4f4fa0369e6abd944248e2abf0edb50cb05e0ba and working tree clean under --untracked-files=all verified BEFORE any history change; branch proven to carry ZERO commits not already contained in origin/integration/commercial-v1 (git rev-list --count HEAD ^origin/integration/commercial-v1 == 0); updated by clean git merge --ff-only origin/integration/commercial-v1 only, no rebase and no destructive reset; HEAD/TREE verified exact afterwards and tree still clean.",
+    "fast_forward_result": "PASS — a4f4fa0..a0d783f, fast-forward, two new files (docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json)."
+  },
+
+  "predecessor_authorities": {
+    "ods_v1_0_9": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json",
+    "ods_controller_authority": "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json",
+    "hpo_ods_w2_01_through_10": "FROZEN_UNCHANGED",
+    "deferral_source": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json final_state.P1A_FULL_BOOTSTRAP_STATUS = DEFERRED_SEPARATE_GOVERNED_NODE, and .github/workflows/m2-real-pg-gate.yml lines 6-11, which declare P1A's legacy full-stack bootstrap a separate deferred governed node. This authority is the adjudication of that deferred node's TOPOLOGY. It does not itself close the node; closure requires implementation plus an independent audit.",
+    "pre_existing_gap_of_record": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json open_findings.AG_M2_4, verbatim: 'local/P1A topology (stella_0001_role_topology_bootstrap.sql) also lacks owner database-level CREATE required by db:migrate:local's drizzle bookkeeping schema — a pre-existing gap in the LOCAL topology, out of scope for this disposable-fixture authority.' That frozen finding is the predecessor authority's own statement of the exact gap this node adjudicates. It is read, not restated as new, and AUTHORITY_v1.0.3 is not modified."
+  },
+
+  "reproduced_current_bootstrap_blockers": {
+    "note": "Reproduced mechanically at BASE_SHA by the predecessor HPO mission and re-verified at this node's base before writing. Anchors are exact file:line. These are the ENTRY CONDITIONS this node exists to resolve, not defects in the artifacts named.",
+    "A_env_migration_local_is_a_precondition_today": {
+      "verdict": "CONFIRMED",
+      "anchors": [
+        "scripts/db-migrate-local.ts:40 — MIGRATION_ENV_FILE = resolve(REPO_ROOT, '.env.migration.local')",
+        "scripts/db-migrate-local.ts:51-59 — if (!existsSync(MIGRATION_ENV_FILE)) { console.error(...); process.exit(1) }",
+        "scripts/db-migrate-local.ts:122 — loadMigrationEnv() runs before command dispatch, so the precondition is unconditional",
+        ".gitignore:34 — .env* is gitignored, so the file never exists on a fresh checkout",
+        "db/safety/resolve-capability-database-url.ts:48,120-136 — DATABASE_URL is deliberately not consulted; DB_CAPABILITY_URL_MISSING has no fallback"
+      ]
+    },
+    "B_migration_session_must_be_uellix_migrator": {
+      "verdict": "CONFIRMED",
+      "anchors": [
+        "scripts/db-migrate-local.ts:85 — await assertMigratorSession(client.sql)",
+        "db/migrator.ts:99-119 — DB_MIGRATOR_WRONG_SESSION_ROLE when session_user is not the migrator; DB_MIGRATOR_OVERPRIVILEGED when it carries superuser, BYPASSRLS or CREATEROLE",
+        "db/safety/database-role.ts:27 — MIGRATOR_DATABASE_ROLE = 'uellix_migrator'",
+        "db/safety/resolve-capability-database-url.ts:209-213 — resolveMigratorDatabaseUrl requires the URL userinfo to declare the role before a socket opens"
+      ]
+    },
+    "C_migration_path_set_roles_to_uellix_owner": {
+      "verdict": "CONFIRMED",
+      "anchors": [
+        "scripts/db-migrate-local.ts:86 — SET ROLE uellix_owner, session-scoped by documented exception at :71-81",
+        "scripts/db-migrate-local.ts:87 — assertOwnerRoleActive",
+        "db/migrator.ts:130-148 — asserts current_user == uellix_owner AND session_user == uellix_migrator",
+        "scripts/db-migrate-local.ts:115 — RESET ROLE in finally",
+        "db/safety/database-role.ts:24 — owner is NOLOGIN, reachable only via SET ROLE"
+      ]
+    },
+    "D_credential_rotation_coupled_to_a_historical_worktree_token": {
+      "verdict": "CONFIRMED_WITH_MATERIAL_NUANCE",
+      "anchors": [
+        "db/safety/local-stack.ts:21 — LOCAL_PROJECT_ID = 'uellix-stella-g2-local-rehearsal'",
+        "db/safety/local-stack.ts:55 — LOCAL_CREDENTIAL_ROTATION_CONFIRMATION = 'rotate-local-credentials:' + LOCAL_PROJECT_ID",
+        "scripts/rotate-local-role-credentials.ts:183-192 — refuses without the exact token",
+        "scripts/db-migrate-local.ts:55-56 — the literal token string is hardcoded a second time, in prose"
+      ],
+      "nuance": "The token is NOT derived from the working directory at runtime. It is a committed constant, cross-checked against committed supabase/config.toml:8 (project_id = \"uellix-stella-g2-local-rehearsal\") by tests/database-target-safety.test.ts:90. It is therefore stable across worktrees and hosts. The coupling is to a HISTORICAL NAME, not to a CURRENT DIRECTORY: a naming-truth and legibility defect, NOT a fresh-machine functional blocker. This is why decision F below DEFERS the rename rather than folding it into a topology adjudication.",
+      "distinct_fresh_machine_hazard": "db/safety/local-stack.ts:27 LOCAL_DB_PORT = 56322 is a fixed port consumed by rotation (scripts/rotate-local-role-credentials.ts:244), by the local URL default (db/safety/resolve-local-database-url.ts:86), by both drizzle configs, and by the M2 fixture, which must bind that exact port precisely because the two entry points are unmodified (scripts/m2-disposable-pg-bootstrap.ts:47-55). A host where 56322 is occupied fails closed. The future gate must preserve that fail-closed behaviour and must never seize a port it did not prove free."
+    },
+    "E_m2_uses_four_fixture_specific_bootstrap_capabilities": {
+      "verdict": "CONFIRMED",
+      "anchors": [
+        "STEP 3 temporary GRANT CREATE ON DATABASE postgres TO uellix_owner — scripts/m2-disposable-pg-bootstrap.ts:629-632, revoked at :773-778",
+        "STEP 4 GRANT CREATE ON SCHEMA public TO uellix_owner — scripts/m2-disposable-pg-bootstrap.ts:635-638",
+        "STEP 5 GRANT USAGE ON SCHEMA auth TO uellix_owner, actor supabase_admin — scripts/m2-disposable-pg-bootstrap.ts:645-656",
+        "STEP 6 Part-A helper prerequisite, SHA-pinned — scripts/m2-disposable-pg-bootstrap.ts:658-672, path and expected digest at :95-96",
+        "script's own rationale — scripts/m2-disposable-pg-bootstrap.ts:21-31"
+      ]
+    }
+  },
+
+  "decisive_finding": {
+    "title": "TWO_OF_THE_FOUR_M2_FIXTURE_STEPS_ARE_ALREADY_GOVERNED_CANONICAL_LOCAL_SQL",
+    "statement": "The M2 fixture applied db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql — the MANAGED-Supabase identity package — to a LOCAL disposable container. That package by design 'transfers NO ownership and grants NO table privilege' (its header, lines 33-38) and establishes no schema privilege at all. The LOCAL analogue, db/prepared/stella_0001_role_topology_bootstrap.sql, ALREADY contains two of the three ad-hoc GRANTs as committed, governed SQL.",
+    "measured_evidence": [
+      "db/prepared/stella_0001_role_topology_bootstrap.sql:176 — GRANT CREATE ON SCHEMA public TO uellix_owner;  ==  M2 STEP 4",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql:181 — GRANT USAGE ON SCHEMA auth TO uellix_owner;    ==  M2 STEP 5",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql — contains no ON DATABASE grant anywhere; M2 STEP 3 is therefore a genuine, still-open gap, exactly as AUTHORITY v1.0.3 AG_M2_4 already recorded"
+    ],
+    "why_stella_0001_cannot_be_the_pre_baseline_package": [
+      "db/prepared/stella_0001_role_topology_bootstrap.sql:27-31 — requires a raw local administrative superuser session with no SET ROLE in effect",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql:33-39 — requires pre-existing Supabase roles anon, authenticated, service_role, postgres",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql:189-192 — GRANT REFERENCES on public.organizations, public.projects, public.users, public.stella_interactions, which do not exist on a pristine database",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql:202 — GRANT EXECUTE ON FUNCTION public.uellix_forbid_mutation(), created by db/migrations/0030_immutability.sql",
+      "public.stella_interactions is created by db/migrations/0012_stella_interactions.sql"
+    ],
+    "why_roles_must_nevertheless_exist_before_migration_0042": [
+      "grep -l over db/migrations/*.sql for uellix_ role references returns exactly three files: 0042_fib_audit_insert_policy.sql, 0045_fib_domain_object_version_lineage.sql, 0060_fib_outcome_monetization_dispositions_governance.sql",
+      "CREATE POLICY resolves role names at DDL time, so a role-pristine cluster fails at the earliest of those units — the identical failure documented in db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql header lines 9-13"
+    ],
+    "conclusion": "The LOCAL path carries the SAME ordering conflict that the HOSTED path resolved by the HPO-ODS-W2-03 identity/privilege split, and locally that conflict is UNSOLVED. Resolving it — by introducing a local pre-baseline identity package that references no application table — is the architectural content of P1A. Two of the four M2 'fixture' steps are therefore MOVED into that package, not invented by it."
+  },
+
+  "fixture_vs_canonical_decisions": {
+    "M2_STEP_3_database_create": {
+      "verdict": "CANONICAL_GOVERNED_BOOTSTRAP_STEP",
+      "temporariness_is_canonical": true,
+      "rationale": "Required by Drizzle's own bookkeeping schema creation, which is a property of the migration tool and not of the fixture. Any clean bootstrap of this corpus needs it. The canonical form is a SCOPED GRANT/REVOKE window around the migration run, not a standing privilege: scripts/m2-disposable-pg-bootstrap.ts:798 already asserts has_database_privilege(owner,'CREATE') == false in the final contract."
+    },
+    "M2_STEP_4_public_schema_create": {
+      "verdict": "CANONICAL_GOVERNED_BOOTSTRAP_STEP_ALREADY_MATERIALIZED",
+      "already_at": "db/prepared/stella_0001_role_topology_bootstrap.sql:176",
+      "rationale": "Not authored anew. Moved verbatim into the pre-baseline package, with stella_0001 converted to ASSERT it rather than re-grant it — the exact split pattern stella_hosted_0000 / stella_hosted_0001 already established, where the successor asserts what the predecessor created."
+    },
+    "M2_STEP_5_auth_schema_usage": {
+      "verdict": "CANONICAL_GOVERNED_BOOTSTRAP_STEP_ALREADY_MATERIALIZED",
+      "already_at": "db/prepared/stella_0001_role_topology_bootstrap.sql:181",
+      "actor_note": "The supabase_admin actor is canonical for BOTH the local Supabase CLI stack and the pinned CI container image, because in neither does the postgres role own schema auth. What is fixture-specific is only the psqlAs mechanism scripts/m2-disposable-pg-bootstrap.ts uses to reach that actor, never the actor itself. The single-privilege-write invariant at scripts/m2-disposable-pg-bootstrap.ts:645-654 is canonical and is inherited as P1A-N7."
+    },
+    "M2_STEP_6_part_a_helpers": {
+      "verdict": "JUSTIFIED_FIXTURE_ONLY_EXCEPTION_AS_M2_SEQUENCES_IT_UNDERLYING_NEED_IS_CANONICAL",
+      "rationale": "db/prepared/storage/20260716000001_part_a_helpers.psql.sql is baseline unit 41 of the 64-unit governed baseline, not a bootstrap artifact. M2 hoists it out of baseline order because migration 0039 needs the two evidence-access functions it creates. The canonical P1A answer is NOT to re-hoist it inside a script: it is to declare it a NAMED ORDERED PHASE (PHASE_PART_A_PREREQUISITE) applied VERBATIM and SHA-verified. The canonical topology has phases; it does not have loose SQL.",
+      "file_is_not_modified": true
+    }
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-11": {
+      "title": "FREEZE_CANONICAL_LOCAL_CI_CLEAN_BOOTSTRAP_TOPOLOGY_AND_BOUNDED_P1A_IMPLEMENTATION_SURFACE",
+      "status": "FROZEN",
+      "rule": "On branch codex/p1a-full-bootstrap-r1 (or a successor branch explicitly based on this authority), the successor mission P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1 is authorized to implement the canonical LOCAL/CI clean bootstrap within EXACTLY the surface enumerated in authorized_future_implementation_surface below, following exactly the topology frozen in canonical_topology, the second-run contract in second_run_contract, the env lifecycle contract in env_lifecycle_contract, and the reuse strategy in m2_reuse_decision. Every enumerated bound is a hard limit on that authorization, not advisory guidance. Exceeding any of them voids this grant for the change that exceeds it and requires new authority via STOP_FOR_AUTHORITY_DELTA.",
+      "binding_decisions": {
+        "A": "P1A is the LOCAL/CI clean bootstrap from zero. Its target substrate is a fresh disposable PostgreSQL 17 / Supabase-compatible container the gate itself creates and destroys.",
+        "B": "Hosted Supabase and Production role identity are a SEPARATE surface and are unchanged. db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql and db/prepared/stella_hosted_0001_managed_role_bootstrap.sql are not modified, not superseded and not reinterpreted.",
+        "C": "Use a NEW local pre-baseline identity package: db/prepared/stella_local_0000_local_role_identity_bootstrap.sql.",
+        "D": "M2_REUSE_STRATEGY = MINIMAL_EXPORT_WIDENING. Do NOT extract or relocate the certified M2 implementation into a new shared library unless mechanical necessity disproves minimal export widening, in which case STOP_FOR_AUTHORITY_DELTA.",
+        "E": "Do NOT modify any db/migrations/** file.",
+        "F": "Do NOT rename LOCAL_PROJECT_ID or its related surfaces. db/safety/local-stack.ts, supabase/config.toml and tests/database-target-safety.test.ts are all out of scope. Rationale: the coupling is a naming-truth defect, not a functional blocker (see reproduced_current_bootstrap_blockers.D.nuance), and folding a broad cosmetic rename into a topology adjudication mixes two unrelated risk classes. A rename is a separate governed node.",
+        "G": "Do NOT modify legacy .github/workflows/p1a-validation.yml. It is additionally protected by frozen predecessor authority: COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.2.json and v1.0.3.json both list it as not_authorized.",
+        "H": "Create a NEW canonical machine gate pnpm p1a:bootstrap:gate implemented at scripts/p1a-bootstrap-gate.ts, and a NEW workflow .github/workflows/p1a-bootstrap-gate.yml.",
+        "I": "P1A-N5 closes R2-F2 for SIGINT/SIGTERM best-effort userland env restoration, using a REAL signal-path control.",
+        "J": "SIGKILL and host-loss restoration is NOT guaranteed and must never be claimed."
+      },
+      "legacy_p1a_validation_disposition": {
+        "path": ".github/workflows/p1a-validation.yml",
+        "action": "UNTOUCHED",
+        "measured_state": "Cannot pass at this node's base, for two independent mechanical reasons: line 74 exports db.url as DATABASE_URL, a variable every local entry point deliberately ignores (db/safety/resolve-capability-database-url.ts:48,120-126 and db/safety/resolve-local-database-url.ts:57-66); and line 101 runs pnpm db:migrate:local with no step that creates .env.migration.local, so it exits 1 at scripts/db-migrate-local.ts:51-59. Two failed runs are already of record: 33681916900 and 33683502774 (COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.1.json and v1.0.2.json).",
+        "why_not_repaired_here": "Repairing or retiring it is neither authority materialization nor P1A implementation. It is a third, separate decision, and this authority explicitly does not make it. The new gate is created alongside it, not on top of it.",
+        "successor_must_not": "reuse the name p1a-validation, edit that file, or delete it."
+      },
+      "db_boundary": "CONTROLLER_DB_EXECUTION = DISABLED, unchanged. This authority grants NO database execution against any persistent database. The successor implementation mission executes database statements ONLY against disposable containers the gate itself creates and unconditionally destroys. No staging write, no Production write, no arbitrary persistent local-dev write. P1A closure will establish the PREREQUISITE for a later policy decision about governed DB-writing development nodes against authorized disposable environments; it does not itself make that decision and does not grant it.",
+      "not_authorized": [
+        "any change in THIS mission beyond the paths named in authorized_changed_paths_this_mission",
+        "any change to db/migrations/** in this mission or the successor mission",
+        "any change to db/baseline/**",
+        "any change to db/prepared/storage/20260716000001_part_a_helpers.psql.sql — it is applied VERBATIM and SHA-verified, never edited",
+        "any change to db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql or db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+        "any change to .github/workflows/p1a-validation.yml or .github/workflows/ci.yml",
+        "any change to .github/workflows/m2-real-pg-gate.yml",
+        "any change to db/safety/local-stack.ts, supabase/config.toml, or tests/database-target-safety.test.ts",
+        "any rename of LOCAL_PROJECT_ID, LOCAL_DB_PORT, LOCAL_API_PORT, LOCAL_RESET_CONFIRMATION or LOCAL_CREDENTIAL_ROTATION_CONFIRMATION",
+        "any change to app/** or lib/** runtime application code",
+        "any new script under scripts/lib/** — expressly excluded by the MINIMAL_EXPORT_WIDENING strategy",
+        "relocation, semantic rewrite, deletion, check-id change, expected-check-count change or security-semantics change in scripts/m2-disposable-pg-bootstrap.ts",
+        "any change to HPO-ODS-W2-01 through HPO-ODS-W2-10 decisions or their implementation surfaces",
+        "any modification or deletion of an artifact listed in ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention",
+        "any change to docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, including DEFAULT_PROTECTED_PATTERNS semantics or model_executor_routing",
+        "broadening the protected grant to db/prepared/**, db/migrations/**, or any other glob",
+        "weakening, removing, skipping or relaxing any existing test or machine gate to obtain a PASS",
+        "any database execution against staging, Production, or a persistent local-dev database",
+        "any P1A runtime implementation in THIS mission",
+        "a squash, rebase, amend, or force-push of main, integration/commercial-v1, or codex/p1a-full-bootstrap-r1",
+        "any write to main, any production promotion, any uellix.com cutover"
+      ]
+    }
+  },
+
+  "canonical_topology": {
+    "scope": "LOCAL_CI_BOOTSTRAP",
+    "explicitly_separate_and_unchanged": "HOSTED_SUPABASE_ROLE_IDENTITY",
+    "phases": [
+      {
+        "ordinal": 1,
+        "phase": "PHASE_PLATFORM_SUBSTRATE",
+        "requires": "PostgreSQL 17+; Supabase roles anon, authenticated, service_role, postgres present; schemas auth, storage, extensions present; a real auth.uid() resolvable",
+        "reuse": "waitForPlatformReadiness and its nine self-controls in scripts/m2-disposable-pg-bootstrap.ts. Semantic readiness, never a bare port probe. The retry scope stays limited to the readiness probe: the structural self-control SELFTEST:READY-N5 asserts waitForPlatformReadiness has exactly one production call site, and that property must be preserved.",
+        "creates_nothing": true
+      },
+      {
+        "ordinal": 2,
+        "phase": "PHASE_LOCAL_ROLE_IDENTITY",
+        "new_governed_artifact": "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+        "responsibilities": [
+          "create and configure the five governed Uellix roles: uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor",
+          "establish memberships: uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE; uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE",
+          "reference NO application table — this is the property that makes the pre-baseline split possible at all",
+          "pristine-state precondition, refusing before any privilege mutation",
+          "explicit environment guard with NO default, following the db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql:111-117 pattern",
+          "self-verification block at the end, asserting attributes, memberships and the absence of any SET path from uellix_app to uellix_owner or uellix_migrator"
+        ],
+        "must_not": [
+          "reference any application table, function, type or policy",
+          "transfer ownership of anything",
+          "grant any table privilege",
+          "depend on any RLS helper or baseline migration",
+          "create any application schema object",
+          "add LOGIN to uellix_owner or uellix_writer",
+          "grant SUPERUSER, BYPASSRLS, CREATEDB or REPLICATION to any role it creates"
+        ]
+      },
+      {
+        "ordinal": 3,
+        "phase": "PHASE_BOOTSTRAP_PRIVILEGE",
+        "hosted_in": "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+        "permanent_local_topology": [
+          "GRANT USAGE, CREATE ON SCHEMA public TO uellix_owner",
+          "REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC",
+          "GRANT USAGE ON SCHEMA auth TO uellix_owner, issued through the legitimate local schema owner/issuer"
+        ],
+        "provenance": "The first two are moved verbatim from db/prepared/stella_0001_role_topology_bootstrap.sql:175-177; the third from :181. They are canonical local topology already, not new privilege.",
+        "actor_note": "The auth-schema grant must be issued by the role that actually owns schema auth on the substrate — supabase_admin on both the Supabase CLI local stack and the pinned CI image. The postgres role does not own it. This is the ONE governed privilege write performed under that actor, and the single-write invariant is P1A-N7."
+      },
+      {
+        "ordinal": 4,
+        "phase": "PHASE_PART_A_PREREQUISITE",
+        "existing_artifact_used_verbatim": "db/prepared/storage/20260716000001_part_a_helpers.psql.sql",
+        "file_is_modified": false,
+        "application": "Applied as uellix_migrator with SET ROLE uellix_owner active, in ONE continuous session, SHA-verified before every application, with a fail-closed assertion that SET ROLE actually took effect before the file's own statements run.",
+        "why_a_named_phase": "It is baseline unit 41, needed by migration 0039. Treating it as a named ordered phase rather than ad-hoc copied SQL is the difference between a governed topology and a fixture. The gate copies nothing: it reads the committed file and executes it verbatim.",
+        "postcondition": "Both public.can_read_evidence_object and public.can_write_evidence_object exist and are owned by uellix_owner — the existing PRIV-P7 check, inherited as P1A-P5."
+      },
+      {
+        "ordinal": 5,
+        "phase": "PHASE_MIGRATION_WINDOW",
+        "sequence": [
+          "GRANT CREATE ON DATABASE <disposable-db> TO uellix_owner  — TEMPORARY",
+          "credential rotation via the unmodified scripts/rotate-local-role-credentials.ts, inside one bounded credential window",
+          "pnpm db:migrate:local — the canonical, UNMODIFIED entry point",
+          "REVOKE CREATE ON DATABASE <disposable-db> FROM uellix_owner — ALWAYS, on every path"
+        ],
+        "always_means": "The REVOKE is unconditional: it runs on success, on ordinary failure, and on a thrown exception. A path that can skip it is a defect, not an optimisation.",
+        "credential_window_is_single": "Rotation, migration, the corpus proof, the privilege and ownership postconditions and any test that reads the rotated credentials must all sit INSIDE one restoration window. Restoring env files immediately after migrate() and before the tests leaves the tests on pre-rotation credentials and fails with a password-authentication error — measured and documented at scripts/m2-disposable-pg-bootstrap.ts:857-864.",
+        "migrator_narrowing_precondition": "uellix_migrator must hold NOCREATEROLE, NOSUPERUSER and NOBYPASSRLS before migration, and the narrowing must survive credential rotation. Existing controls: scripts/m2-disposable-pg-bootstrap.ts:617-626 and the NARROWING-SURVIVES-ROTATION check."
+      },
+      {
+        "ordinal": 6,
+        "phase": "PHASE_LOCAL_PREPARED_CHAIN",
+        "existing_surface_unchanged": "db/r3-4-governed-runner.ts R3_4_LOCAL_PHASES and scripts/stella-r3-4-local-runner.ts",
+        "env_dependency_disposition": "scripts/stella-r3-4-local-runner.ts:24,45-48 requires UELLIX_LOCAL_ADMIN_DATABASE_URL for its fixed administrative phases. If the future gate exercises this phase, it MUST supply that variable deterministically from its OWN disposable environment, for the duration of the run only. It must NOT become a preexisting host env dependency, and it must NOT be read from an operator's shell or a CI secret. If supplying it deterministically proves impossible without editing scripts/stella-r3-4-local-runner.ts, that is a STOP_FOR_AUTHORITY_DELTA, because that file is not in the authorized surface.",
+        "may_be_out_of_minimum_invariant": "This phase is NOT part of the minimum gate invariant. The successor mission may exercise it or may explicitly declare it out of the gate's scope with a recorded reason. What it may not do is depend on a host-provided value."
+      },
+      {
+        "ordinal": 7,
+        "phase": "PHASE_POSTCONDITIONS",
+        "must_prove": [
+          "ownership — every application object in public and drizzle owned by uellix_owner",
+          "ACL — nothing newly reachable by PUBLIC",
+          "security — B0 postconditions on real pg_proc state, not synthetic fixtures",
+          "migration corpus — count, hash sequence in application order, terminal entry",
+          "journal — mechanically derived from db/migrations/meta/_journal.json, never asserted by prose",
+          "privilege narrowing — the final privilege contract, with database CREATE proven revoked",
+          "teardown — unconditional, zero labelled leftovers",
+          "env restoration — exact bytes or exact absence, sha256-verified"
+        ]
+      }
+    ],
+    "canonical_privilege_sequence": [
+      { "step": 1, "statement": "CREATE ROLE x5 with attributes and memberships", "actor": "local administrative superuser", "lifetime": "permanent" },
+      { "step": 2, "statement": "GRANT USAGE, CREATE ON SCHEMA public TO uellix_owner", "actor": "local administrative superuser", "lifetime": "permanent" },
+      { "step": 3, "statement": "REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC", "actor": "local administrative superuser", "lifetime": "permanent" },
+      { "step": 4, "statement": "GRANT USAGE ON SCHEMA auth TO uellix_owner", "actor": "owner of schema auth (supabase_admin) — the ONE governed privilege write under that actor", "lifetime": "permanent" },
+      { "step": 5, "statement": "Part-A helpers, verbatim", "actor": "uellix_migrator with SET ROLE uellix_owner", "lifetime": "permanent" },
+      { "step": 6, "statement": "GRANT CREATE ON DATABASE <disposable-db> TO uellix_owner", "actor": "local administrative superuser", "lifetime": "TEMPORARY" },
+      { "step": 7, "statement": "pnpm db:migrate:local", "actor": "uellix_migrator then SET ROLE uellix_owner", "lifetime": "n/a" },
+      { "step": 8, "statement": "REVOKE CREATE ON DATABASE <disposable-db> FROM uellix_owner", "actor": "local administrative superuser", "lifetime": "closes the window" }
+    ],
+    "final_privilege_invariant": {
+      "uellix_owner": "db_create=f pub_usage=t pub_create=t auth_usage=t createrole=f super=f bypassrls=f",
+      "uellix_migrator": "db_create=f pub_create=f auth_usage=f createrole=f super=f bypassrls=f",
+      "uellix_app_writer_auditor": "no super, no bypassrls, no createrole, no createdb",
+      "reuse": "computeFinalPrivilegeContract / checkFinalPrivilegeContract in scripts/m2-disposable-pg-bootstrap.ts:790-829"
+    }
+  },
+
+  "stella_0001_successor_contract": {
+    "path": "db/prepared/stella_0001_role_topology_bootstrap.sql",
+    "authorized_change": "ONLY the conversion of the two already-existing canonical grants — CREATE ON SCHEMA public (line 176) and USAGE ON SCHEMA auth (line 181) — from grant-producing behaviour into ASSERTIONS that db/prepared/stella_local_0000_local_role_identity_bootstrap.sql already established them.",
+    "assertion_semantics": "The assertions must FAIL CLOSED: if the pre-baseline package did not establish the privilege, stella_0001 must raise, never silently continue and never re-grant as a fallback. A fallback grant would recreate exactly the ambiguity this split exists to remove.",
+    "everything_else_unchanged": true,
+    "no_silent_cleanup_or_refactor": "No reformatting, no comment rewriting beyond what the two converted blocks require, no reordering of sections, no incidental tidying of neighbouring statements.",
+    "additional_change_rule": "Any further change to this file requires an EXACT mechanical dependency, explicitly enumerated in the successor mission's evidence artifact with the failing command that establishes the necessity. Absent that, it is an unauthorized delta.",
+    "preserved_invariants": "stella_0001's own verification blocks — notably the assertions at :301 (uellix_app has no SET path to uellix_owner), :307 (app/migrator/auditor hold no effective CREATE on public), :328 (no PUBLIC CREATE grant on public) and :335 (no Uellix role granted access to auth.users) — must all continue to pass unchanged after the conversion."
+  },
+
+  "second_run_contract": {
+    "P1A_GATE_SECOND_RUN": "IDEMPOTENT_SUCCESS_BY_FRESH_DISPOSABLE_ENVIRONMENT",
+    "gate_meaning": "Each full pnpm p1a:bootstrap:gate invocation creates a fresh disposable environment and tears it down unconditionally. Two consecutive invocations both succeed.",
+    "causal_invariant": "It must be idempotent BECAUSE it provisions a fresh environment each time, never because it detects and tolerates residue. A second run that passes by REUSING state is a contract FAILURE even if every check reports green. The successor mission must be able to point at the mechanism, not merely at the green result.",
+    "SECOND_BOOTSTRAP_SAME_DATABASE": "DETERMINISTIC_SAFE_REJECTION",
+    "rejection_point": "The pristine-role precondition, BEFORE any privilege mutation. Existing mechanism: checkPristineRoles in scripts/m2-disposable-pg-bootstrap.ts:598-602 requires exactly zero roles matching uellix\\_% .",
+    "rejection_semantics": "Non-zero exit, zero mutation, env files untouched, and a diagnostic naming the residue found.",
+    "explicitly_not_idempotent_convergence": "The bootstrap is NOT authorized to be 'idempotent with respect to its own end state'. The repository's own evidence is db/prepared/README.md, which documents that grounding_0003 re-applied alone silently reverts grounding_0004's two security repairs while its own self-verification still passes: a missing GRANT raises, a missing POLICY is silent. Convergence-style idempotence is therefore forbidden here by measured precedent, not by preference."
+  },
+
+  "env_lifecycle_contract": {
+    "fresh_machine_requires_no_preexisting_env": {
+      "files": [".env.local", ".env.migration.local", ".env.audit.local"],
+      "measured_basis": "scripts/rotate-local-role-credentials.ts requires no env file: db/safety/resolve-local-database-url.ts:86 falls back to the pinned LOCAL_DATABASE_URL constant. The rotation script contains no existsSync precondition on any env file. It WRITES all three (scripts/rotate-local-role-credentials.ts:70-89 and :264-266) and removes the legacy DATABASE_URL from .env.local (:275-278).",
+      "consequence": ".env.migration.local is a PRODUCT of the canonical path, never a precondition of it. Blocker A is an ORDERING constraint, not a design constraint, and the canonical order — bootstrap roles, rotate, migrate — satisfies it by construction."
+    },
+    "no_new_env_precondition": "The successor mission may not introduce any new environment-variable or env-file precondition on the host. See canonical_topology phase 6 for the UELLIX_LOCAL_ADMIN_DATABASE_URL disposition.",
+    "single_bounded_credential_window": true,
+    "exact_restoration": {
+      "existing_file": "restored byte-identical, verified by sha256 comparison against the pre-run snapshot",
+      "initially_absent_file": "absent after the gate — deleted, not left behind",
+      "reuse": "snapshotEnvFiles / restoreEnvFiles / withEnvRestore in scripts/m2-disposable-pg-bootstrap.ts:691-716 and :271-284",
+      "never_printed": "No env file content and no credential may be printed, logged or included in any diagnostic. Evidence is limited to truncated digests."
+    },
+    "EXCEPTION_SAFE": "YES",
+    "SIGINT_SIGTERM_RESTORE": "BEST_EFFORT_USERLAND",
+    "HARD_PROCESS_TERMINATION_GUARANTEE": "NO",
+    "R2_F2_closure_requirement": {
+      "measured_gap_at_base": "installSignalCleanup in scripts/m2-disposable-pg-bootstrap.ts:317-334 performs container removal ONLY and then calls process.exit(130). It does not call restoreEnvFiles, and process.exit does not run the pending finally block of the suspended async frame. A SIGTERM arriving between rotation and window close therefore leaves rotated credentials on disk at this node's base.",
+      "required_of_successor": [
+        "maintain a live registry of the active env snapshot, analogous to the existing activeContainers set",
+        "attempt EXACT restoration (same bytes, or same absence, sha256-verified) from the SIGINT and SIGTERM handlers, before process exit",
+        "record the signal-path restoration as its own check id with its own verdict",
+        "declare EXCEPTION_SAFE=YES for in-process throws, SIGINT_SIGTERM_RESTORE=BEST_EFFORT_USERLAND, and HARD_PROCESS_TERMINATION_GUARANTEE=NO",
+        "never claim restoration under SIGKILL or host loss"
+      ],
+      "control_must_be_real": "P1A-N5 must deliver a REAL signal to a REAL process and observe the resulting on-disk state. A mocked handler, a label-only assertion, or a test that merely checks a handler was registered is VACUOUS and does not satisfy this requirement."
+    }
+  },
+
+  "p1a_machine_gate": {
+    "command": "pnpm p1a:bootstrap:gate",
+    "implementation": "scripts/p1a-bootstrap-gate.ts",
+    "workflow": ".github/workflows/p1a-bootstrap-gate.yml",
+    "workflow_model": ".github/workflows/m2-real-pg-gate.yml — same shape: checkout, pnpm setup, node setup, frozen-lockfile install, one gate command.",
+    "must_not_reuse_or_edit": ".github/workflows/p1a-validation.yml",
+    "target_invariant": [
+      "fresh disposable PostgreSQL / Supabase-compatible substrate, own container, port proven free, no spurious mounts",
+      "semantic readiness, not a bare port probe",
+      "pristine state",
+      "canonical local identity bootstrap from a governed artifact",
+      "canonical privileges",
+      "Part-A prerequisite, verbatim and SHA-verified",
+      "credential generation with no preexisting env dependency",
+      "a real uellix_migrator session",
+      "SET ROLE uellix_owner, proven effective",
+      "pnpm db:migrate:local, unmodified",
+      "migrations 0000..0061",
+      "exact journal and corpus proof",
+      "terminal 0061 proof",
+      "B0, security, ownership and privilege postconditions",
+      "second-run contract, both levels",
+      "env restoration, including the signal path",
+      "unconditional teardown",
+      "zero labelled leftovers"
+    ],
+    "prohibited_targets": ["no persistent development database", "no staging", "no Production"],
+    "cheap_controls_first": "Every no-Docker self-control must run and be green BEFORE any container starts, following the existing precedent at scripts/m2-disposable-pg-bootstrap.ts:1071-1078. A broken parser or proof helper must never be discovered only after minutes of container work.",
+    "migration_corpus_count_at_base": 62,
+    "migration_corpus_derivation": "Mechanically from db/migrations/meta/_journal.json entries plus sha256 of each named .sql file, matching drizzle-orm's own readMigrationFiles, compared against the hash column of drizzle.__drizzle_migrations in application order. Never a hardcoded count and never a prose claim. Reuse deriveExpectedMigrationCorpus / evaluateMigrationProof / checkMigrationProof."
+  },
+
+  "m2_reuse_decision": {
+    "M2_REUSE_STRATEGY": "MINIMAL_EXPORT_WIDENING",
+    "authorized_modification_of": "scripts/m2-disposable-pg-bootstrap.ts",
+    "authorized_modification_scope": "ONLY adding the export keyword to existing pure or reusable helpers that P1A requires. Nothing else.",
+    "measured_necessity": "The reusable helpers in that file are module-scoped and not exported; the file is a script guarded by an invokedDirectly check at :1095. Importing them therefore requires widening their visibility. This is the smallest change that achieves reuse without relocation.",
+    "explicitly_forbidden": [
+      "relocation of any helper to another file",
+      "any semantic rewrite",
+      "any deletion",
+      "any change to an M2 check id",
+      "any change to the M2 expected check count",
+      "any change to M2 security semantics",
+      "creating scripts/lib/** or any other shared-library path"
+    ],
+    "required_regression_control": "A control proving pnpm m2:pg:gate continues to produce the governed PASS semantics unchanged after export widening: the set of recorded check ids and the total check count must be identical to the pre-change baseline. This is control P1A-M1 in the test manifest.",
+    "escalation": "If simple export widening proves technically impossible, STOP_FOR_AUTHORITY_DELTA. The successor mission may NOT silently choose EXTRACT_SHARED.",
+    "reusable_surfaces": [
+      { "capability": "docker runner, port precheck, mount check, teardown, leftover verification", "source": "scripts/db-audit-disposable.ts (realDockerRunner, parseAssignedPort, redactSecret, hasOnlyAcceptableMounts)", "already_exported": true },
+      { "capability": "semantic platform readiness and its nine self-controls", "source": "scripts/m2-disposable-pg-bootstrap.ts waitForPlatformReadiness, diagnosePlatformReadinessFailure, runPlatformReadinessSelfTest", "already_exported": false },
+      { "capability": "migration corpus proof and its self-controls", "source": "scripts/m2-disposable-pg-bootstrap.ts deriveExpectedMigrationCorpus, evaluateMigrationProof, checkMigrationProof, runMigrationProofSelfTest", "already_exported": false },
+      { "capability": "env snapshot, restore and exception-safe window", "source": "scripts/m2-disposable-pg-bootstrap.ts snapshotEnvFiles, restoreEnvFiles, withEnvRestore", "already_exported": false },
+      { "capability": "privilege and ownership contracts", "source": "scripts/m2-disposable-pg-bootstrap.ts checkPreMigrationContract, computeFinalPrivilegeContract, checkOwnershipPostcondition, checkPristineRoles", "already_exported": false },
+      { "capability": "ANSI-tolerant vitest summary parsing", "source": "scripts/m2-disposable-pg-bootstrap.ts stripAnsi, parseVitestSummary", "already_exported": false },
+      { "capability": "B0 security postconditions", "source": "db/hosted/baseline-postconditions.ts, pnpm b0:status:verify, tests/hosted/checkpoint-b0.test.ts", "already_exported": true }
+    ]
+  },
+
+  "positive_controls": {
+    "P1A-P1": "Semantic platform readiness: a fresh disposable container reaches auth, storage and extensions present with a resolvable auth.uid(), proven by two consecutive successful samples, within a bounded poll that terminates.",
+    "P1A-P2": "Zero preexisting roles matching uellix\\_% before bootstrap.",
+    "P1A-P3": "The local identity package is applied verbatim and its pinned sha256 is verified before application; its own self-verification block passes.",
+    "P1A-P4": "Pre-migration privilege contract: owner has database CREATE, public USAGE and CREATE, auth USAGE; migrator has no CREATEROLE, no SUPERUSER, no BYPASSRLS; the owner membership is set_option=true with inherit_option=false.",
+    "P1A-P5": "Both Part-A helper functions exist and are owned by uellix_owner.",
+    "P1A-P6": "Credential rotation succeeds starting from NO preexisting env files, mints three distinct secrets, and real role possession is verified by opening an actual connection with each minted credential and confirming session_user equals the expected role. No credential is printed.",
+    "P1A-P7": "pnpm db:migrate:local exits 0, and the mechanically derived corpus proof passes on all three sub-checks: count equals the journal-derived count, the hash sequence matches in application order, and the terminal 0061 hash is present.",
+    "P1A-P8": "Ownership postcondition: zero application objects in public or drizzle owned by anything other than uellix_owner; and the final privilege contract passes with database CREATE proven revoked.",
+    "P1A-P9": "B0 and security postconditions pass against real disposable PostgreSQL state, exercised through the real check path rather than synthetic fixtures.",
+    "P1A-P10": "Unconditional teardown, zero labelled leftover containers, and exact env restoration — existing files byte-identical, initially absent files absent."
+  },
+
+  "negative_controls": {
+    "inherited_by_reference": {
+      "note": "Semantically identical existing M2 controls are inherited BY REFERENCE, not duplicated. The successor mission re-points their construction path at the canonical local package and preserves the pattern and the check-id shape.",
+      "PRIV-N1a": "scripts/m2-disposable-pg-bootstrap.ts:937-938 — STEP 3 omitted entirely; the gap is proven absent by direct SQL before the migration is proven to refuse",
+      "PRIV-N1b": "scripts/m2-disposable-pg-bootstrap.ts:940-941 — STEP 4 omitted",
+      "PRIV-N1c": "scripts/m2-disposable-pg-bootstrap.ts:943-944 — STEP 5 omitted",
+      "PRIV-N1d": "scripts/m2-disposable-pg-bootstrap.ts:946-950 — STEP 6 omitted",
+      "PRIV-N2": "scripts/m2-disposable-pg-bootstrap.ts:952-956 — database CREATE granted to uellix_migrator only, never to uellix_owner; SET ROLE uellix_owner still lacks it",
+      "PRIV-N3": "scripts/m2-disposable-pg-bootstrap.ts:958-982 — a deliberate extra privilege must be CAUGHT by the final contract probe",
+      "PRIV-N4": "scripts/m2-disposable-pg-bootstrap.ts:984-1015 — CREATEROLE re-granted to uellix_migrator before migration must be refused",
+      "PRIV-N5": "scripts/m2-disposable-pg-bootstrap.ts:1017-1019 — migration credential pointed at the superuser instead of uellix_migrator must be refused",
+      "non_vacuity_pattern": "Each control's real proof is a direct SQL query confirming the specific privilege gap is absent, deterministic and independent of error-message text, PLUS a non-zero exit from the migration entry point. Pattern-matching a diagnostic string is not acceptable, because scripts/db-migrate-local.ts does not guarantee the underlying PostgreSQL error text reaches its output."
+    },
+    "P1A-N1": "With NO preexisting .env.local, .env.migration.local or .env.audit.local — verified absent by the snapshot recording existed=false for all three — the canonical full path still succeeds end to end, and final restoration leaves all three ABSENT.",
+    "P1A-N2": "Wrong migration session role is REJECTED with ZERO migration advancement: the credential is pointed at the superuser, the entry point exits non-zero, and drizzle.__drizzle_migrations gains no row. The row-count assertion is mandatory — a non-zero exit alone does not prove nothing advanced.",
+    "P1A-N3": "SET ROLE ineffective is REJECTED and leaves NO incorrect ownership: the owner membership or its set_option is removed before migrating, the entry point fails with the set-role diagnostic, and a direct query proves no object was created owned by anything other than uellix_owner.",
+    "P1A-N4": "Journal and corpus mutation is REJECTED, on TWO distinct vectors: (a) terminal entry removed — all three sub-checks fail; (b) SAME CARDINALITY but two hashes reordered — the count check passes while the corpus-order check FAILS. Vector (b) does not exist at this node's base and is what proves the verification is order-sensitive rather than merely cardinality-sensitive. Both mutations must be disposable and in-memory; neither may write to db/migrations/** .",
+    "P1A-N5": "A REAL SIGTERM delivered to a REAL gate process during the credential window results in best-effort EXACT env restoration: after exit, all three files match their pre-run bytes or pre-run absence, sha256-verified. Mocked or label-only is vacuous and does not satisfy this control.",
+    "P1A-N6": "Bootstrap repeated against the SAME non-pristine database is deterministically REJECTED BEFORE any privilege write: the second application fails at the pristine-role precondition, and a direct query proves no privilege changed between the two attempts.",
+    "P1A-N7": "No unauthorized privilege write under supabase_admin outside the one explicitly governed auth-schema capability: a per-container call-count invariant proves exactly one such write per fixture.",
+    "non_vacuity_requirement": "Every negative control must be non-vacuous: it must be demonstrated that the control FAILS when the guarantee it protects is removed. A control that passes both with and against the guarantee proves nothing and is forbidden."
+  },
+
+  "mutation_controls": {
+    "P1A-M1": "M2 regression: after export widening, pnpm m2:pg:gate produces an identical set of recorded check ids and an identical total check count to its pre-change baseline. A changed id or count is a FAIL, not a rebaseline.",
+    "P1A-M2": "Removing the unconditional REVOKE of database CREATE causes the final privilege contract to FAIL — proving the revoke is load-bearing and not decorative.",
+    "P1A-M3": "Removing the finally-guaranteed teardown or the finally-guaranteed env restoration causes a control to FAIL — proving both guarantees are enforced rather than merely present."
+  },
+
+  "protected_grant_required": true,
+  "protected_grant_rationale": "The three future db/prepared paths this authority authorizes all match DEFAULT_PROTECTED_PATTERNS' db/prepared/** in scripts/ods-scope.ts (lines 82-90) and are therefore unconditionally protected absent a resolved grant. This authority is the source of that grant, and the registry entry below is its machine-enforced counterpart. The grant authorizes ONLY the exact union of its own literal patterns — never the broader db/prepared/** that made the paths protected in the first place (scripts/ods-scope.ts classifyPaths, lines 107-135). The ordinary --allow list remains ADDITIONALLY mandatory for every granted path: a protected grant does not replace --allow, and neither substitutes for the other. Note that NO db/prepared file is actually changed by THIS mission; the grant is registered in advance so the successor implementation mission cannot claim retroactive authorization.",
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-11",
+    "branch": "codex/p1a-full-bootstrap-r1",
+    "patterns": [
+      "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql",
+      "db/prepared/README.md"
+    ]
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 5,
+    "paths": [
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts"
+    ],
+    "fifth_path_is_conditional": true,
+    "fifth_path_condition": "tests/ods/ods-scope.test.ts is authorized ONLY because adding HPO-ODS-W2-11 mechanically breaks an existing closed-world registry assertion. Measured at this node's base: tests/ods/ods-scope.test.ts:317 asserts expect(PROTECTED_GRANTS.length).toBe(6). A seventh grant makes that assertion false by construction. ODS_SCOPE_TEST_DELTA_REQUIRED=YES is therefore determined by measurement, not by preference. The authorized edit is limited to enumerating the new grant in the existing closed-world and non-vacuity contract. No unrelated test cleanup.",
+    "no_implementation_code": true,
+    "no_db_prepared_file_changed": true,
+    "no_migration_changed": true
+  },
+
+  "authorized_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR mission P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1 only. None of these paths is created or modified by THIS mission. This list is CLOSED-WORLD.",
+    "protected": [
+      {
+        "path": "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+        "status": "TO_BE_CREATED",
+        "role": "PHASE_LOCAL_ROLE_IDENTITY and PHASE_BOOTSTRAP_PRIVILEGE. The single mutating authority for the local pre-baseline role identity and bootstrap privileges. References no application table.",
+        "requires_grant": "HPO-ODS-W2-11"
+      },
+      {
+        "path": "db/prepared/stella_0001_role_topology_bootstrap.sql",
+        "status": "TO_BE_MODIFIED",
+        "role": "Successor contract only — convert the two existing canonical grants at lines 176 and 181 into fail-closed assertions. See stella_0001_successor_contract.",
+        "requires_grant": "HPO-ODS-W2-11"
+      },
+      {
+        "path": "db/prepared/README.md",
+        "status": "TO_BE_MODIFIED",
+        "role": "Register the new prepared package in the authoritative registry this file maintains, as tests/prepared-sql-source-of-truth.test.ts requires. Registry entry only.",
+        "requires_grant": "HPO-ODS-W2-11"
+      }
+    ],
+    "unprotected": [
+      {
+        "path": "scripts/p1a-bootstrap-gate.ts",
+        "status": "TO_BE_CREATED",
+        "role": "The canonical P1A machine gate. Orchestration only: every governed truth it applies comes from an existing, unmodified repository file executed verbatim.",
+        "line_ceiling": null,
+        "ceiling_note": "No line ceiling. The gate's job is proof coverage, and capping its length would create a direct incentive to drop controls."
+      },
+      {
+        "path": "scripts/m2-disposable-pg-bootstrap.ts",
+        "status": "TO_BE_MODIFIED",
+        "role": "Export widening ONLY. See m2_reuse_decision.",
+        "narrowness": "Adding the export keyword to existing helpers. No other change of any kind."
+      },
+      {
+        "path": "package.json",
+        "status": "TO_BE_MODIFIED",
+        "role": "Exactly ONE added entry in the scripts object: \"p1a:bootstrap:gate\": \"tsx scripts/p1a-bootstrap-gate.ts\", matching the existing m2:pg:gate convention.",
+        "narrowness": "Limited to that single script entry. No dependency addition, removal or version change is authorized. Any dependency change requires separate authority. If an exact existing command mechanically requires another entry, it must be explicitly authorized by an authority delta before being added."
+      },
+      {
+        "path": ".github/workflows/p1a-bootstrap-gate.yml",
+        "status": "TO_BE_CREATED",
+        "role": "Dedicated CI gate, modelled on .github/workflows/m2-real-pg-gate.yml."
+      },
+      {
+        "path": "tests/p1a-bootstrap-gate.test.ts",
+        "status": "TO_BE_CREATED",
+        "role": "Pure, no-Docker self-controls and closed-world enumeration assertions for the gate's own logic.",
+        "placement_constraint": "Deliberately at tests/ and NOT under tests/integration/. Placing it under tests/integration/** mechanically requires modifying the closed-world integration inventory at tests/database-entrypoint-safety.test.ts:202-214, which is NOT in this authorized surface. That exact class of stale closed-world inventory caused the failed P1A run 33681916900 of record. If a future test genuinely must live under tests/integration/**, that is STOP_FOR_AUTHORITY_DELTA; the preferred implementation avoids the extra surface entirely."
+      },
+      {
+        "path": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0.json",
+        "status": "TO_BE_CREATED",
+        "role": "Evidence artifact. Written ONLY after implementation and after the gates have actually run, recording measured results — never a pre-declaration of expected outcomes."
+      }
+    ],
+    "explicitly_not_authorized": [
+      "db/migrations/**",
+      "db/baseline/**",
+      "db/prepared/storage/20260716000001_part_a_helpers.psql.sql",
+      "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql",
+      "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+      ".github/workflows/p1a-validation.yml",
+      ".github/workflows/ci.yml",
+      ".github/workflows/m2-real-pg-gate.yml",
+      "db/safety/local-stack.ts",
+      "supabase/config.toml",
+      "tests/database-target-safety.test.ts",
+      "tests/database-entrypoint-safety.test.ts",
+      "scripts/db-migrate-local.ts",
+      "scripts/rotate-local-role-credentials.ts",
+      "scripts/stella-r3-4-local-runner.ts",
+      "db/r3-4-governed-runner.ts",
+      "db/migrator.ts",
+      "scripts/lib/**",
+      "app/**",
+      "lib/**"
+    ],
+    "closed_world": "This list is exhaustive. A path not enumerated in protected[] or unprotected[] is NOT authorized for the successor mission, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP — never a retroactive scope inference from the fact that it changed."
+  },
+
+  "audit_requirement": {
+    "required_audit": "FULL_OPUS_INDEPENDENT_ADVERSARIAL_CLOSURE_AUDIT",
+    "when": "After the successor implementation mission, before P1A may be declared CLOSED.",
+    "independence_conditions": [
+      "a clean conversation carrying no implementation context",
+      "an independent worktree",
+      "no reuse of the implementer's own evidence claims as proof"
+    ],
+    "must_specifically_challenge": [
+      "non-vacuity of every negative control, especially P1A-N4 vector (b) and the real-signal requirement of P1A-N5",
+      "that the second-run success is caused by fresh provisioning and not by residue tolerance",
+      "that the M2 export widening changed no check id, no check count and no security semantic",
+      "that the stella_0001 assertions fail closed and never fall back to re-granting",
+      "that no path outside the closed-world surface changed",
+      "that no persistent database was touched"
+    ],
+    "IMPLEMENTATION_MODEL": "SONNET_CLASS",
+    "implementation_model_rationale": "The topology is frozen and well specified by this artifact, which is the ODS class-B condition. The machine gates remain mandatory regardless of executor, and model economy is never on its own proof of adequacy.",
+    "AUDIT_MODEL": "OPUS_FULL",
+    "AUDIT_CLASS": "FULL_INDEPENDENT_ADVERSARIAL_CLOSURE_AUDIT"
+  },
+
+  "risks_and_open_findings": {
+    "R1": "The fixed port 56322 remains a host-level precondition for any path that reuses the unmodified rotation and migration entry points. The gate must fail closed when the port is occupied and must never seize it. Not closed by this authority; bounded by decision F.",
+    "R2": "LOCAL_PROJECT_ID still names a historical worktree. Deferred by decision F to a separate governed node. Recorded as a naming-truth defect, not a functional blocker.",
+    "R3": ".github/workflows/p1a-validation.yml remains red and untouched. Its repair or retirement is a separate decision this authority does not make.",
+    "R4": "AG-1 remains OPEN: docs/ops/ods/ artifacts other than ODS_V1_AUTHORITY_v1.0.0.json are unprotected by DEFAULT_PROTECTED_PATTERNS, so this authority's own companion addendum is not machine-protected. Unchanged by this node, mitigated only controller-locally per ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition. Global closure requires separate governed adjudication.",
+    "R5": "The Controller-v0 closed-world immutableByConvention set does not yet contain ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json. Harmless now — tests/ods/ods-controller.test.ts does not exist — but the Controller-v0 implementation mission must include it. See cross_lane_note.",
+    "R6": "The MINIMAL_EXPORT_WIDENING strategy has not been executed. Its technical feasibility is inferred from reading the module structure, not proven by running it. If it proves impossible, the successor must STOP_FOR_AUTHORITY_DELTA rather than fall back to EXTRACT_SHARED."
+  },
+
+  "final_state": "P1A_CANONICAL_LOCAL_CI_BOOTSTRAP_TOPOLOGY_FROZEN_AND_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_IMPLEMENTATION",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "next_gate": "P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1"
+}

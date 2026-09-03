@@ -1,0 +1,190 @@
+{
+  "manifest_id": "P1A-FULL-BOOTSTRAP",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json (HPO-ODS-W2-11); companion docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json. Frozen BEFORE implementation at BASE_SHA a0d783fea4b941d352a92ca55e185d13f5b50d06, BASE_TREE e6711501f1d95d452efabd52b7e612e26f25bc44, branch codex/p1a-full-bootstrap-r1, main frozen at 067e8c2f3ac9b5e843de3a35575182907b4365d4. This manifest is a COMMITMENT, not a report: the controls below declare what the successor implementation mission must prove, and none of them has yet been executed. The exit_gates array names the gates for THIS authority-only node, which writes no implementation code; the controls name the contract owed by P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1.",
+  "dependencies": [
+    "HPO-ODS-W2-03",
+    "HPO-ODS-W2-05",
+    "HPO-ODS-W2-09",
+    "HPO-ODS-W2-10"
+  ],
+  "protected_surfaces": [
+    "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+    "db/prepared/stella_0001_role_topology_bootstrap.sql",
+    "db/prepared/README.md"
+  ],
+  "protected_authority": "HPO-ODS-W2-11",
+  "postgres_requirements": {
+    "setup_manifest": "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+    "probe_manifest": "scripts/p1a-bootstrap-gate.ts",
+    "rationale": "The successor implementation genuinely requires real PostgreSQL, and this key is present rather than omitted so that requirement is explicit rather than silent. DEVIATION RECORDED HONESTLY: the probe is not a pnpm db:audit:disposable manifest pair. It is the governed disposable fixture pattern already established and certified by scripts/m2-disposable-pg-bootstrap.ts and .github/workflows/m2-real-pg-gate.yml — a container the gate creates itself, bound to loopback only, with the port proven free beforehand and unconditional teardown afterwards. The setup_manifest field names the governed SQL artifact that establishes the substrate rather than a harness manifest file, for the same reason. Neither field points at a persistent, local-dev, staging or Production database, and no such database is touched: db/prepared/README.md Rule 1 remains authoritative there. Both paths are TO_BE_CREATED at the time this manifest is frozen."
+  },
+  "sentinels": [
+    {
+      "id": "P1A-SENTINEL-CRED-NEVER-PRINTED",
+      "purpose": "A synthetic marker planted in place of a rotated credential proves no credential value reaches gate stdout, stderr, a check detail string, a CI log or an evidence artifact. Only truncated sha256 fingerprints may be emitted. This mirrors the existing discipline in scripts/rotate-local-role-credentials.ts, which prints a 12-hex-character digest and never a secret. Never a real credential."
+    },
+    {
+      "id": "P1A-SENTINEL-ENV-INJECTED-MUTATION",
+      "purpose": "A fictional assignment line written into an env file inside the credential window proves the restoration path replaces it with the exact pre-run bytes, or removes the file when it did not previously exist. Extends the existing SELFTEST:ENV-N2 pattern to the signal path required by P1A-N5. Never a real credential."
+    }
+  ],
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+  "positive_controls": [
+    {
+      "id": "P1A-P1",
+      "description": "Semantic platform readiness: a fresh disposable container reaches schemas auth, storage and extensions present with a resolvable auth.uid(), proven by two consecutive successful samples inside a bounded poll that provably terminates. Reuses waitForPlatformReadiness and its nine self-controls; the structural property that it has exactly one production call site (SELFTEST:READY-N5) must be preserved so retry scope never leaks into another phase.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P2",
+      "description": "Pristine state: exactly zero roles matching uellix\\_% exist before bootstrap, asserted before any privilege mutation.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P3",
+      "description": "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql is applied VERBATIM, its pinned sha256 verified before application, and its own self-verification block passes: five roles created, no role holding SUPERUSER/BYPASSRLS/CREATEDB/REPLICATION, owner NOLOGIN, and no SET path from uellix_app to uellix_owner or uellix_migrator.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P4",
+      "description": "Pre-migration privilege contract: uellix_owner holds database CREATE, public USAGE and CREATE, and auth USAGE; uellix_migrator holds no CREATEROLE, no SUPERUSER and no BYPASSRLS; the uellix_owner membership held by uellix_migrator is set_option=true with inherit_option=false. Reuses checkPreMigrationContract.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P5",
+      "description": "Part-A prerequisite: public.can_read_evidence_object and public.can_write_evidence_object both exist and are owned by uellix_owner, after db/prepared/storage/20260716000001_part_a_helpers.psql.sql is applied verbatim and SHA-verified as uellix_migrator with SET ROLE uellix_owner proven effective in one continuous session. The file itself is not modified.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P6",
+      "description": "Credential rotation succeeds starting from NO preexisting .env.local, .env.migration.local or .env.audit.local, mints three distinct secrets, and proves real role possession by opening an actual connection with each minted credential and confirming session_user equals the expected role. No credential value is printed anywhere; only truncated digests. Uses the unmodified scripts/rotate-local-role-credentials.ts.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P7",
+      "description": "pnpm db:migrate:local (unmodified) exits 0 and the mechanically derived corpus proof passes on all three sub-checks: the applied count equals the count derived from db/migrations/meta/_journal.json (62 at BASE_SHA), the hash sequence matches the repository corpus in application order, and the terminal 0061 hash is present in drizzle.__drizzle_migrations. No hardcoded count and no prose claim.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P8",
+      "description": "Ownership and narrowing: zero application objects in schemas public or drizzle owned by anything other than uellix_owner; and the final privilege contract passes with uellix_owner database CREATE proven REVOKED (db_create=f pub_usage=t pub_create=t auth_usage=t createrole=f super=f bypassrls=f), uellix_migrator fully narrowed, and no escalation on uellix_app, uellix_writer or uellix_auditor.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P9",
+      "description": "B0 and security postconditions pass against REAL disposable PostgreSQL state, exercised through the existing exported check path in db/hosted/baseline-postconditions.ts rather than against synthetic fixtures. The B0-17 function-execute-grants invariant is reused, never duplicated.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P10",
+      "description": "Unconditional teardown with zero labelled leftover containers, and exact env restoration: files that existed are byte-identical by sha256, files that were absent are absent. Both guaranteed by finally, independent of each other, and neither blocking the other.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-P11",
+      "description": "Second run of pnpm p1a:bootstrap:gate succeeds, and the success is demonstrably caused by provisioning a FRESH disposable environment rather than by tolerating residue from the first run. The demonstration must name the mechanism, not merely report green checks.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "PRIV-N1a",
+      "description": "INHERITED BY REFERENCE from scripts/m2-disposable-pg-bootstrap.ts:937-938, re-pointed at the canonical local package. Database CREATE omitted entirely: the gap is proven absent by direct SQL, then pnpm db:migrate:local is proven to exit non-zero. Not duplicated.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "PRIV-N1b",
+      "description": "INHERITED BY REFERENCE from scripts/m2-disposable-pg-bootstrap.ts:940-941. Public schema CREATE omitted; gap proven absent by direct SQL, migration proven to refuse.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "PRIV-N1c",
+      "description": "INHERITED BY REFERENCE from scripts/m2-disposable-pg-bootstrap.ts:943-944. Auth schema USAGE omitted; gap proven absent by direct SQL, migration proven to refuse.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "PRIV-N1d",
+      "description": "INHERITED BY REFERENCE from scripts/m2-disposable-pg-bootstrap.ts:946-950. Part-A prerequisite omitted; absence proven directly, migration proven to refuse.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-N1",
+      "description": "With NO preexisting .env.local, .env.migration.local or .env.audit.local — absence verified by the snapshot recording existed=false for all three — the canonical full path still SUCCEEDS end to end, and final restoration leaves all three ABSENT. This is the control that proves .env.migration.local is a product of the canonical path and never a precondition of it.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-N2",
+      "description": "Wrong migration session identity is REJECTED with ZERO migration advancement: the migration credential is pointed at the superuser instead of uellix_migrator, the entry point exits non-zero (DB_MIGRATOR_WRONG_SESSION_ROLE or DB_MIGRATOR_OVERPRIVILEGED), AND a direct query proves drizzle.__drizzle_migrations gained no row. The row-count assertion is MANDATORY: a non-zero exit alone does not prove nothing advanced.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-N3",
+      "description": "SET ROLE ineffective is REJECTED and leaves NO incorrect ownership: the uellix_owner membership or its set_option is removed before migrating, the entry point fails with DB_MIGRATOR_SET_ROLE_FAILED, and a direct query proves no object was created owned by anything other than uellix_owner. Proving the refusal without proving the absence of mis-owned objects would leave the actual hazard unmeasured.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-N4",
+      "description": "Journal and corpus mutation is REJECTED on TWO distinct vectors. Vector (a): the terminal journal entry is removed and all three sub-checks (count, corpus order, terminal presence) fail. Vector (b): the SAME CARDINALITY is preserved but two hashes are reordered, so the count check PASSES while the corpus-order check FAILS. Vector (b) does not exist at BASE_SHA and is the control that proves the verification is order-sensitive rather than merely cardinality-sensitive. Both mutations must be disposable and in-memory; neither may write to db/migrations/**.",
+      "test_file": "tests/p1a-bootstrap-gate.test.ts"
+    },
+    {
+      "id": "P1A-N5",
+      "description": "A REAL SIGTERM delivered to a REAL gate process during the credential window results in best-effort EXACT env restoration: after process exit, all three env files match their pre-run bytes or their pre-run absence, sha256-verified. Closes R2-F2, the measured gap where installSignalCleanup (scripts/m2-disposable-pg-bootstrap.ts:317-334) removes containers and calls process.exit(130) without restoring env, and process.exit does not run the suspended frame's finally. A mocked handler, a label-only assertion, or a test that merely checks a handler was registered is VACUOUS and does not satisfy this control. SIGKILL and host loss are explicitly out of scope and must never be claimed as restored.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-N6",
+      "description": "Bootstrap repeated against the SAME non-pristine database is deterministically REJECTED BEFORE any privilege write: the second application fails at the pristine-role precondition, and a direct query proves no privilege changed between the two attempts. This is DETERMINISTIC_SAFE_REJECTION and explicitly NOT idempotent convergence.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-N7",
+      "description": "No unauthorized privilege write under supabase_admin outside the one explicitly governed auth-schema capability: a per-container call-count invariant proves exactly one such write per disposable fixture. Inherited pattern from scripts/m2-disposable-pg-bootstrap.ts:645-654, counted per phase and not as a script-lifetime total.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-N8",
+      "description": "The protected grant HPO-ODS-W2-11 is NARROW and NON-VACUOUS, proven in two directions. (i) One of the three exact granted db/prepared paths is classified as a protected violation WITHOUT --protected-authority HPO-ODS-W2-11, and as grant-authorized WITH it. (ii) An unrelated db/prepared path not in the grant's pattern list remains a protected violation even WITH HPO-ODS-W2-11 supplied. Direction (ii) is what proves the grant did not silently widen to db/prepared/**.",
+      "test_file": "tests/ods/ods-scope.test.ts"
+    },
+    {
+      "id": "P1A-N9",
+      "description": "No path outside authorized_future_implementation_surface changes. Specifically: no file under db/migrations/**, db/baseline/**, app/** or lib/**; not db/prepared/storage/20260716000001_part_a_helpers.psql.sql; not either stella_hosted_* package; not .github/workflows/p1a-validation.yml, ci.yml or m2-real-pg-gate.yml; not db/safety/local-stack.ts, supabase/config.toml, tests/database-target-safety.test.ts or tests/database-entrypoint-safety.test.ts; and nothing under scripts/lib/**. Enforced by pnpm ods:scope with the exact --allow list, not by inspection.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "P1A-M1",
+      "description": "M2 REGRESSION CONTROL for MINIMAL_EXPORT_WIDENING: after export widening, pnpm m2:pg:gate produces an identical SET of recorded check ids and an identical TOTAL check count compared with its pre-change baseline. A changed id or count is a FAIL, never a rebaseline. This is the control that makes the reuse strategy safe rather than merely convenient.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P1A-M2",
+      "description": "Removing the unconditional REVOKE of database CREATE causes the final privilege contract to FAIL, proving the revoke is load-bearing rather than decorative and that the temporary privilege window really closes.",
+      "test_file": "scripts/p1a-bootstrap-gate.ts"
+    },
+    {
+      "id": "P1A-M3",
+      "description": "Removing the finally-guaranteed teardown, or the finally-guaranteed env restoration, causes a control to FAIL — proving both guarantees are enforced rather than merely present in the source.",
+      "test_file": "tests/p1a-bootstrap-gate.test.ts"
+    },
+    {
+      "id": "P1A-M4",
+      "description": "Converting the stella_0001 assertions into a silent fallback that re-grants the privilege instead of raising causes a control to FAIL. This protects the successor contract's fail-closed requirement, which is the whole point of the grant-to-assertion conversion.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "secrets_scan",
+    "authority_seal_verify",
+    "typecheck",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}
