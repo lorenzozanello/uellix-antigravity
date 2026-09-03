@@ -484,6 +484,21 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/README.md',
     ],
   },
+  // HPO-ODS-W2-12 (docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json, companion
+  // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json): Wave 2 batch B4
+  // — FIBIU-15/14/16 assumptions and causality — on its own branch. Two
+  // patterns, mechanically identical in shape to HPO-ODS-W2-01 because B4
+  // occupies the same two Wave 2 surfaces; W2-01 is frozen and NOT reused,
+  // since a grant is bound to exactly one branch. Deliberately NOT
+  // db/prepared/** — that would reach the hosted and local bootstrap files
+  // HPO-ODS-W2-03, W2-05 and W2-11 own. The concrete migration ordinals
+  // cannot be literals here: W2_B4_AUTHORITY_v1.0.0.json refuses to freeze a
+  // slot before its P1A sync point re-measures it.
+  {
+    authorityId: 'HPO-ODS-W2-12',
+    branch: 'codex/w2-b4-r1',
+    patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+  },
 ]
 
 export interface ProtectedGrantResolution {
