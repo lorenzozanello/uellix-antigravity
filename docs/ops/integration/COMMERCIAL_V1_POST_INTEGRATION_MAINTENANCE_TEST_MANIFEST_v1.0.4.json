@@ -1,0 +1,31 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.4",
+  "version": "1.0.4",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-AUDIT-FINDINGS-HARDENING-R1",
+  "materialization_date": "2026-09-03",
+  "note": "This is a TEST CONTRACT, written BEFORE the implementation commit lands in git history, per this mission's explicit ordering requirement (a corrective practice against the historical GOV-F7 ordering debt). Statuses below are PLANNED/REQUIRED until the acceptance run in EVIDENCE_v1.0.4.json marks them observed. Never faked as PASS here.",
+  "predecessor": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.3.json",
+  "authority": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.4.json",
+  "controls": [
+    { "id": "ANSI-P1", "title": "plain Vitest 1/4/4/0 output accepted", "status": "REQUIRED" },
+    { "id": "ANSI-P2", "title": "GitHub ANSI-decorated 1/4/4/0 output accepted (the exact PR #50 run 33709987615 false-negative pattern)", "status": "REQUIRED" },
+    { "id": "ANSI-N1", "title": "3 passed / 1 failed rejected", "status": "REQUIRED" },
+    { "id": "ANSI-N2", "title": "3 passed / 1 skipped rejected", "status": "REQUIRED" },
+    { "id": "ANSI-N3", "title": "zero/incorrect collection rejected", "status": "REQUIRED" },
+    { "id": "MIG-P1", "title": "canonical migration expected count mechanically derived from db/migrations/meta/_journal.json", "status": "REQUIRED" },
+    { "id": "MIG-P2", "title": "actual drizzle.__drizzle_migrations journal count equals the mechanically derived expected count", "status": "REQUIRED" },
+    { "id": "MIG-P3", "title": "0061 journal/corpus proof mechanically established via Drizzle 0.45.2's own sha256(file content) hashing semantics, read directly from drizzle-orm/migrator.js and drizzle-orm/pg-core/dialect.js", "status": "REQUIRED" },
+    { "id": "MIG-N1", "title": "deliberately missing/altered terminal migration proof fails (all three sub-checks: count/corpus/terminal)", "status": "REQUIRED" },
+    { "id": "ENV-P1", "title": "success restores exact bytes/absence (via withEnvRestore, exercised in the MAIN phase and every negative phase's success path)", "status": "REQUIRED" },
+    { "id": "ENV-N1", "title": "ordinary (non-throwing) failure restores exact bytes/absence (via withEnvRestore's finally, exercised whenever rotate/migrate fails)", "status": "REQUIRED" },
+    { "id": "ENV-N2", "title": "an injected thrown exception mid-window still restores exact bytes/absence (withEnvRestore's finally fires on a throw, independent of container teardown's own finally)", "status": "REQUIRED" },
+    { "id": "PRIV-P1..P7", "title": "pre-migration privilege contract (unchanged from v1.0.3, remains required by reference)", "status": "REQUIRED" },
+    { "id": "PRIV-N1a..N1d,N2..N5", "title": "8 negative privilege controls (unchanged from v1.0.3, remain required by reference)", "status": "REQUIRED" },
+    { "id": "M2-P1,M2-N1,M2-P2,rollback-sanity", "title": "real M2 vitest integration test controls (unchanged from v1.0.0, remain required by reference)", "status": "REQUIRED" },
+    { "id": "FINAL:LABELLED-LEFTOVER-COUNT", "title": "zero labelled containers left after the full run (unchanged, remains required by reference)", "status": "REQUIRED" }
+  ],
+  "acceptance_criteria": {
+    "one_full_local_run": "pnpm m2:pg:gate must exit 0 with OVERALL=PASS, raw M2 Vitest exactly 1 file/4 tests/4 PASS/0 failed/0 skipped, migration proof controls green, all injected negative controls green, FINAL:LABELLED-LEFTOVER-COUNT=PASS (0), env poststate equal prestate.",
+    "no_iteration_by_weakening": "If the full run fails, the mission requires STOP rather than loosening any control to force a PASS."
+  }
+}
