@@ -1,0 +1,349 @@
+{
+  "package_id": "P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_SUCCESSOR_DISPOSITION_AND_BOUNDED_IMPLEMENTATION_SURFACE_WIDENING",
+  "materialization_step": "HPO-ODS-W2-13",
+  "GRANT_ID": "HPO-ODS-W2-13",
+  "hpo_mission_id": "P1A-PREPARED-PACKAGE-AUTHORITY-DELTA-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_ids": [
+    "P1A-PREPARED-PACKAGE-ROLLBACK-AUTHORITY-GAP-HPO-R1",
+    "P1A-R3-4-R3-5-SUCCESSOR-DISPOSITION-HPO-R1"
+  ],
+  "materialization_date": "2026-09-03",
+
+  "amends": {
+    "predecessor_authority": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json",
+    "predecessor_grant_id": "HPO-ODS-W2-11",
+    "relationship": "APPEND_ONLY_AMENDMENT",
+    "predecessor_bytes_unchanged": true,
+    "statement": "This amendment does NOT edit, rewrite, restate or reinterpret P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json. That artifact remains byte-identical and controlling for everything this amendment does not explicitly extend. Where this amendment widens the v1.0.0 closed-world implementation surface, it does so through the exact escape mechanism v1.0.0 itself designated, quoted verbatim under authority_delta_basis below — never by silent reinterpretation.",
+    "supersedes": null,
+    "refines": {
+      "P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json": [
+        "authorized_future_implementation_surface.unprotected (extended, closed-world preserved)",
+        "canonical_topology.phases[6].env_dependency_disposition (its STOP_FOR_AUTHORITY_DELTA branch is hereby taken)",
+        "p1a_machine_gate negative control P1A-N7 (single supabase_admin privilege write -> exactly three enumerated writes)"
+      ]
+    }
+  },
+
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json",
+  "test_manifest": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json",
+
+  "purpose": "Freeze, append-only, the adjudicated successor disposition for the P1A prepared package: explicit forward-only semantics with NO rollback file, a deterministic pre-mutation preflight for the R3.4 apply path, byte-identical preservation of the historical R3.5 PostgreSQL 17 certification evidence, the canonical supabase_admin grantor for the local role memberships, and the exact bounded widening of the v1.0.0 future implementation surface that these dispositions mechanically require.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Creates no implementation code, no SQL, no test and no dependency change. Touches no db/prepared file, no migration, no baseline, no package.json and no lockfile. Has no effect on origin/main and no production effect.",
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-p1a-prepared-authority-hpo-r1",
+    "branch": "codex/p1a-prepared-authority-delta-r1",
+    "BASE_SHA": "390aa4531fb5ab5c3dd2502183b9fed0df447da5",
+    "BASE_TREE": "7dde07c43ca89f97a7da89b0edd31e40267fccc2",
+    "integration_baseline_ref": "origin/integration/commercial-v1",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "controller_audited_head": "c411e2e27c2e88d41af83b395ec2296e0884ade3",
+    "controller_status": "CLOSED_AUDITED_INTEGRATED",
+    "controller_integration_evidence": "git log -1 --format=%P 390aa453 == '547ac36405c47b1be386d37ba1f387173c867252 c411e2e27c2e88d41af83b395ec2296e0884ade3'. The audited Controller-v0 object is the SECOND PARENT of the integration base, and git merge-base --is-ancestor c411e2e 390aa453 returns true. Controller integration is therefore proven by merge topology, not by a prose claim.",
+    "branch_creation": "codex/p1a-prepared-authority-delta-r1 did not exist locally or remotely at mission start (git rev-parse --verify returned 'Needed a single revision' for both). Created by git checkout -b from the exact BASE_SHA. No rebase, no force push, no history rewrite.",
+    "prestate_gate": "PASS — origin fetched; origin/integration/commercial-v1 == 390aa4531fb5ab5c3dd2502183b9fed0df447da5 with tree 7dde07c43ca89f97a7da89b0edd31e40267fccc2; origin/main == 067e8c2f3ac9b5e843de3a35575182907b4365d4; working tree clean under --untracked-files=all before any change."
+  },
+
+  "authority_delta_basis": {
+    "statement": "The v1.0.0 closed-world implementation surface is widened here under the branch v1.0.0 itself specified. This is recorded affirmatively because a reader could otherwise conclude that scripts/stella-r3-4-local-runner.ts had been permanently frozen out of the P1A surface.",
+    "verbatim_v1_0_0_clause": "If supplying it deterministically proves impossible without editing scripts/stella-r3-4-local-runner.ts, that is a STOP_FOR_AUTHORITY_DELTA, because that file is not in the authorized surface.",
+    "clause_location": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json:271 (canonical_topology.phases[6].env_dependency_disposition)",
+    "explicitly_not_authorized_interaction": "scripts/stella-r3-4-local-runner.ts also appears in v1.0.0 authorized_future_implementation_surface.explicitly_not_authorized (line 561). That listing is NOT a permanent prohibition: the SAME artifact designates STOP_FOR_AUTHORITY_DELTA as the governed remedy for exactly this file at line 271. This amendment IS that delta. The two statements are consistent: the file was outside the surface v1.0.0 authorized, and v1.0.0 named the mechanism by which a later governed authority could bring it in.",
+    "what_this_is_not": "This is not a retroactive scope inference from an observed diff. No implementation has been written. The widening is prospective, enumerated, closed-world, and justified below by measurement at BASE_SHA."
+  },
+
+  "prior_hpo_dispositions_reverified": {
+    "method": "Each coordinator-supplied disposition was re-derived from repository truth at BASE_SHA before being frozen here. Where repository truth proved a disposition STRONGER than its prose, the stronger mechanical form is recorded. Where it proved a disposition unnecessary, that is recorded as a finding rather than silently ratified.",
+    "result": "YES — all reverified; zero contradictions with current repository authority.",
+
+    "D1_forward_only": {
+      "disposition": "EXPLICIT_FORWARD_ONLY",
+      "rollback_file_required": "NO",
+      "rollback_file_forbidden": "YES",
+      "verdict": "CONFIRMED_AND_STRENGTHENED",
+      "measured_evidence": [
+        "tests/prepared-sql-source-of-truth.test.ts:186-229 — every prepared forward script must have a matching _rollback.sql, resolved through ROLLBACK_BY_FORWARD or the <family>_<NNNN>_rollback.sql convention",
+        "tests/prepared-sql-source-of-truth.test.ts:210-211 — the requirement is bypassed if and only if forwardOnlyPackage(<basename>) is non-null, i.e. the package is enumerated in db/hosted/forward-only-packages.ts",
+        "tests/prepared-sql-source-of-truth.test.ts:214 — the forward-only reason must exceed 200 characters ('too short to be one')",
+        "tests/prepared-sql-source-of-truth.test.ts:215 — reversalPath must exceed 40 characters",
+        "tests/prepared-sql-source-of-truth.test.ts:217-222 — a package declared forward-only MUST NOT ship a rollback script; existsSync(<family>_rollback.sql) is asserted false with the message 'is declared forward-only and must NOT ship a rollback script'"
+      ],
+      "strengthening": "The prior HPO recorded the rollback file as NOT REQUIRED. Repository mechanics prove the stronger property: under EXPLICIT_FORWARD_ONLY the rollback file is FORBIDDEN. The two branches are mutually exclusive and machine-enforced. Creating db/prepared/stella_local_0000_rollback.sql would therefore not merely be unnecessary — it would make tests/prepared-sql-source-of-truth.test.ts fail.",
+      "hosted_twin_is_not_a_contradiction": "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql DOES ship db/prepared/stella_hosted_0000_rollback.sql. This was examined and is not a counter-authority: it is the other branch of the same exclusive-or, taken for a package whose roles sit beneath an installed hosted chain. Its rollback is refusal-first by construction (stella_hosted_0000_rollback.sql:5-13). The local pre-baseline package is a different artifact in a different lifecycle, and the registry exists precisely so that choice is declared with a reason rather than inferred from an absent file.",
+      "not_authorized": "db/prepared/stella_local_0000_rollback.sql — NOT authorized, NOT to be created, by this amendment or by the successor implementation mission.",
+      "registry_entry_obligation": "The successor mission MUST add stella_local_0000_local_role_identity_bootstrap to FORWARD_ONLY_PACKAGES in db/hosted/forward-only-packages.ts, with a reason exceeding 200 characters and a reversalPath exceeding 40 characters, both substantive. A reason written to satisfy the length check rather than to state the decision is the exact failure mode that file's own header (lines 38-42) names."
+    },
+
+    "D2_r3_4_plan_local": {
+      "disposition": "OPERATIONAL_UNCHANGED",
+      "verdict": "CONFIRMED",
+      "measured_evidence": [
+        "scripts/stella-r3-4-local-runner.ts:113-118 — main() dispatches mode 'plan' to printPlan() and RETURNS before loadMigrationEnv() is ever called",
+        "scripts/stella-r3-4-local-runner.ts:101-110 — printPlan() reads only committed files resolved from the frozen R3_4_LOCAL_PHASES manifest and computes sha256; it opens no database connection and reads no environment variable"
+      ],
+      "conclusion": "plan:local requires no environment, no credentials and no database. It is unaffected by P1A and must remain so. The successor's preflight must NOT be introduced into the plan path."
+    },
+
+    "D3_r3_4_apply_local": {
+      "disposition": "OPERATIONAL_UNDER_SUCCESSOR_CHAIN_WITH_DETERMINISTIC_PRE_MUTATION_PREFLIGHT",
+      "verdict": "CONFIRMED — the hazard is real and measured, not hypothetical",
+      "measured_hazard": [
+        "scripts/stella-r3-4-local-runner.ts:120-127 — apply iterates R3_4_LOCAL_PHASES in order with NO enclosing transaction across phases",
+        "scripts/stella-r3-4-local-runner.ts:83-91 — runAdministrativePhase COMMITS its own client.sql.begin() block and logs 'committed administrative phase' per phase",
+        "scripts/stella-r3-4-local-runner.ts:94-99 — runMigratorPhase COMMITS via applyPreparedScript and logs 'committed migrator phase' per phase",
+        "db/r3-4-governed-runner.ts:26-42 — stella_0001_role_topology_bootstrap.sql is the THIRD phase, preceded by two already-committing administrative phases (stella_0002_interactions_hardening.sql, stella_0002b_append_only_truncate_hardening.sql)"
+      ],
+      "why_this_is_the_defect": "Because each phase commits independently, a stella_0001 failure caused by absent successor preconditions occurs AFTER two prepared phases have already committed. The run is then neither applied nor clean. This is exactly the condition the successor contract must make unreachable.",
+      "required_invariant": "SUCCESSOR PRECONDITIONS ABSENT -> non-zero exit -> ZERO prepared mutation occurred.",
+      "placement_requirement": "The precondition probe must execute BEFORE the phase loop begins — before the first prepared mutation of any phase, not before stella_0001 only.",
+      "narrowness_requirement": "Prefer a narrow, repository-native precondition probe. Do NOT duplicate every stella_0001 assertion. The probe must cover the minimal set stella_0001 mechanically requires under the successor contract, which per D5 includes the canonical role memberships and grantor facts and NOT only the two schema privileges. A probe that checks two schema privileges and nothing else does not satisfy this invariant.",
+      "fail_closed_requirement": "The probe fails closed. On an indeterminate result it must refuse, never proceed. It must not repair, re-grant or provision anything — it observes and refuses."
+    },
+
+    "D4_r3_5_historical_certification": {
+      "disposition": "PRESERVE_HISTORICAL_PROOF_BYTE_IDENTICAL",
+      "HISTORICAL_EVIDENCE_IMMUTABLE": "YES",
+      "verdict": "CONFIRMED — the pin is live at BASE_SHA and will break by construction",
+      "measured_evidence": [
+        "db/r3-5-pg17-certification-inputs.ts:56 — R3_5_PG17_CERTIFICATION_PACKAGE_HASHES pins stella_0001_role_topology_bootstrap.sql = 9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3",
+        "MEASURED at BASE_SHA: sha256 of db/prepared/stella_0001_role_topology_bootstrap.sql == 9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3 — the pin currently MATCHES HEAD, so it is live and not already stale",
+        "scripts/stella-r3-5-pg17-certify.ts:1014 — on divergence the command THROWS 'R3.5 PG17 certification baseline SHA-256 mismatch for <file>'",
+        "tests/stella-r3-5-pg17-certification.test.ts:155-160 — recomputes sha256 of every file in EXPECTED_HASHES from db/prepared and asserts equality against the pin",
+        "tests/stella-r3-5-pg17-certification.test.ts:144 — asserts R3_5_PG17_CERTIFICATION_PACKAGE_HASHES toEqual EXPECTED_HASHES"
+      ],
+      "consequence": "The P1A successor contract modifies db/prepared/stella_0001_role_topology_bootstrap.sql (converting the canonical grants at :176 and :181 into fail-closed assertions). That changes its bytes, so the live pin will no longer match current HEAD.",
+      "FORBIDDEN": "db/r3-5-pg17-certification-inputs.ts MUST NOT be repinned, edited or regenerated to match the new bytes. Updating a historical hash to agree with bytes the historical run never executed would manufacture a false certification. It is not in the authorized surface of this amendment and is not authorized by any other clause here.",
+      "REQUIRED": "The current R3.5 command and its test must explicitly report SUPERSEDED for current HEAD where the historical pin no longer matches, rather than throwing an undifferentiated SHA mismatch or silently repinning. SUPERSEDED must be distinguishable from both PASS and an ordinary integrity failure.",
+      "successor_relationship": "P1A is a SUCCESSOR_OF the historical R3.5 PostgreSQL 17 certification. Successor is not equivalence: it records that the historical proof covered the predecessor bytes and that the successor bytes are a distinct object requiring their own proof."
+    },
+
+    "D5_b2_grantor": {
+      "disposition": "MEMBERSHIPS_GRANTED_BY_CANONICAL_SUPABASE_ADMIN_BOOTSTRAP_AUTHORITY",
+      "verdict": "CONFIRMED by repository baseline truth, and mechanically necessary rather than stylistic",
+      "required_memberships": [
+        "uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE",
+        "uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE"
+      ],
+      "measured_evidence": [
+        "db/baseline/stella_g2_roles.sql:39 — ALTER ROLE postgres WITH NOSUPERUSER ... : the postgres role is NOT a superuser on this substrate",
+        "db/baseline/stella_g2_roles.sql:47 — ALTER ROLE supabase_admin WITH SUPERUSER ... : supabase_admin IS the superuser",
+        "db/baseline/stella_g2_schema.sql:38 — ALTER SCHEMA auth OWNER TO supabase_admin : supabase_admin owns schema auth; postgres does not",
+        "db/baseline/stella_g2_roles.sql:201-218 — every canonical Supabase role membership is issued GRANTED BY supabase_admin; that is the substrate's own established grantor pattern for memberships",
+        "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql:46-47,185-187 — a NON-superuser with CREATEROLE receives ADMIN OPTION (but not set_option) over roles IT creates; that is how the hosted package can grant memberships as postgres",
+        "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql:298 — residual risk RR-02: that installer consequently RETAINS ADMIN OPTION over every role it created, making the hosted separation 'an auditable obstacle, not a barrier'"
+      ],
+      "why_the_grantor_cannot_be_postgres_locally": "GRANT <role> TO <role> requires the grantor to hold ADMIN OPTION on the granted role or to be a superuser. The local package must issue GRANT USAGE ON SCHEMA auth TO uellix_owner, and only the owner of schema auth (supabase_admin) or a superuser can do so — postgres is neither. Once the five roles are created under supabase_admin, postgres holds no ADMIN OPTION over them and a membership GRANT attempted as postgres FAILS. The grantor must therefore be consistent across the identity writes; splitting it produces an incorrect-grantor failure, not a stylistic inconsistency.",
+      "secondary_benefit": "Issuing the memberships under supabase_admin also avoids reproducing RR-02 locally: postgres does not accumulate ADMIN OPTION over the governed roles, so the local separation is a barrier rather than an auditable obstacle. This is consistent with stella_hosted_0000:98-99, which directs superuser-reachable databases to the local topology precisely because 'it gives a strictly stronger separation'.",
+      "local_administrative_superuser_identity": "Wherever v1.0.0 canonical_privilege_sequence names the actor 'local administrative superuser', repository truth resolves that role to supabase_admin, because db/baseline/stella_g2_roles.sql:39/47 make supabase_admin the only SUPERUSER on this substrate. Recorded so the successor does not resolve it to postgres by habit."
+    },
+
+    "D6_p1a_n7": {
+      "previous_rule": "P1A-N7 as frozen in v1.0.0 (line 448) and in the test manifest: 'No unauthorized privilege write under supabase_admin outside the one explicitly governed auth-schema capability: a per-container call-count invariant proves exactly one such write per fixture.'",
+      "amended_rule": "EXACTLY THREE enumerated supabase_admin privilege writes, and no others.",
+      "P1A_N7_NEW_EXACT_COUNT": 3,
+      "enumerated_writes": [
+        {
+          "ordinal": 1,
+          "statement": "GRANT USAGE ON SCHEMA auth TO uellix_owner",
+          "status": "PREEXISTING_AUTHORIZED",
+          "basis": "v1.0.0 canonical_topology PHASE_BOOTSTRAP_PRIVILEGE and canonical_privilege_sequence step 4; inherited from scripts/m2-disposable-pg-bootstrap.ts:645-656",
+          "reason_actor_is_supabase_admin": "supabase_admin owns schema auth (db/baseline/stella_g2_schema.sql:38)"
+        },
+        {
+          "ordinal": 2,
+          "statement": "GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE",
+          "status": "NEW_UNDER_THIS_AMENDMENT",
+          "basis": "D5_b2_grantor",
+          "reason_actor_is_supabase_admin": "canonical membership grantor on this substrate (db/baseline/stella_g2_roles.sql:201-218); postgres holds no ADMIN OPTION over roles created by supabase_admin"
+        },
+        {
+          "ordinal": 3,
+          "statement": "GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE",
+          "status": "NEW_UNDER_THIS_AMENDMENT",
+          "basis": "D5_b2_grantor",
+          "reason_actor_is_supabase_admin": "same as ordinal 2"
+        }
+      ],
+      "no_wildcard": "This is a CLOSED-WORLD enumeration of exactly three statements. No wildcard, general-purpose or category-level supabase_admin write authority is granted. A fourth privilege write under the supabase_admin actor is a STOP, never a retroactive inference from the fact that the implementation issued it.",
+      "counting_semantics": "P1A-N7 counts STATEMENTS issued under the supabase_admin actor, not psql invocations. The three statements may legitimately be carried in ONE session applying db/prepared/stella_local_0000_local_role_identity_bootstrap.sql. A gate that counts sessions would report 1 and prove nothing about the third statement; a gate that counts statements is the control this rule requires.",
+      "m2_invariant_untouched": "The existing per-container call-count invariant at scripts/m2-disposable-pg-bootstrap.ts:645-656 governs the M2 fixture's OWN path and is NOT amended, relaxed or renumbered by this clause. M2 remains authorized for MINIMAL_EXPORT_WIDENING only (v1.0.0 m2_reuse_decision). P1A-N7 as amended is enforced by the P1A gate (scripts/p1a-bootstrap-gate.ts), which is a new artifact. If the successor finds that satisfying amended P1A-N7 mechanically requires changing an M2 check id, count or security semantic, that is STOP_FOR_AUTHORITY_DELTA."
+    },
+
+    "D7_r7_residual": {
+      "R7_RESIDUAL_RECORDED": "YES",
+      "statement": "The historical R3.5 / MSC-07B negative-authority evidence chain is proof about the exact predecessor bytes it certified, pinned by R3_5_PG17_CERTIFICATION_PACKAGE_HASHES. It is NOT automatically proof about the P1A successor bytes.",
+      "no_silent_parity": "Parity between the historical negative-authority matrix and the successor bytes MUST NOT be claimed, implied or inherited. Establishing it requires an explicit, separately adjudicated successor certification that actually executes against the successor bytes. Until then the successor bytes carry NO negative-authority certification.",
+      "identifier_qualification": "Measured at BASE_SHA: the literal token 'R7' is NOT a live symbol in scripts/stella-r3-5-pg17-certify.ts, db/r3-5-pg17-certification-inputs.ts or tests/stella-r3-5-pg17-certification.test.ts. The nearest in-repo reference is db/r3-5-pg17-certification-inputs.ts:17, which cites 'MSC-07B.8-R7A' as the observation source for the pinned image id, and db/r3-5-pg17-certification-inputs.ts:15,52 which name the R8 terminal phase and the R8 matrix. This residual is therefore recorded against the HISTORICAL MSC-07B evidence chain, not against a current code symbol. Recorded explicitly so that no future reader assumes a live R7 control exists in the certification surface."
+    }
+  },
+
+  "authorized_additional_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR mission P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1 only. None of these paths is created or modified by THIS mission. This list EXTENDS v1.0.0 authorized_future_implementation_surface and does not replace it; the v1.0.0 protected[] and unprotected[] entries remain in force verbatim. The combined surface remains CLOSED-WORLD.",
+    "protected": [],
+    "protected_note": "NO new protected path and NO new protected grant. The already-authorized protected bootstrap path db/prepared/stella_local_0000_local_role_identity_bootstrap.sql remains under HPO-ODS-W2-11, which is NOT widened by this amendment.",
+    "unprotected": [
+      {
+        "path": "db/hosted/forward-only-packages.ts",
+        "status": "TO_BE_MODIFIED",
+        "requirement": "MECHANICALLY_REQUIRED",
+        "role": "Add exactly one FORWARD_ONLY_PACKAGES entry for stella_local_0000_local_role_identity_bootstrap, with a substantive reason (>200 chars) and reversalPath (>40 chars).",
+        "measured_justification": "tests/prepared-sql-source-of-truth.test.ts:210-222 — this registry is the ONLY governed way to take the forward-only branch, and it forbids the rollback file when taken.",
+        "narrowness": "One registry entry. No change to the ForwardOnlyPackage interface, to forwardOnlyReasonOf, or to any existing entry."
+      },
+      {
+        "path": "scripts/stella-r3-4-local-runner.ts",
+        "status": "TO_BE_MODIFIED",
+        "requirement": "MECHANICALLY_REQUIRED",
+        "role": "Introduce the deterministic PRE-MUTATION preflight of D3, executing before the phase loop and therefore before the first prepared mutation.",
+        "measured_justification": "scripts/stella-r3-4-local-runner.ts:120-127 with :83-91 and :94-99 — phases commit independently, so a late stella_0001 failure cannot be undone. See authority_delta_basis for why this path may be widened at all.",
+        "narrowness": "The preflight and its wiring only. The plan path must remain env-free and DB-free per D2. No change to R3_4_LOCAL_PHASES, to the fixed manifest, to the database identity resolution, or to the runner's refusal to target a remote database."
+      },
+      {
+        "path": "scripts/stella-r3-5-pg17-certify.ts",
+        "status": "TO_BE_MODIFIED",
+        "requirement": "MECHANICALLY_REQUIRED",
+        "role": "Report SUPERSEDED for current HEAD where the historical pin no longer matches, distinguishably from PASS and from an ordinary integrity failure.",
+        "measured_justification": "scripts/stella-r3-5-pg17-certify.ts:1014 throws an undifferentiated SHA-256 mismatch once stella_0001 bytes change.",
+        "narrowness": "Adds the SUPERSEDED disposition. MUST NOT repin, edit or regenerate db/r3-5-pg17-certification-inputs.ts, and MUST NOT weaken or bypass the mismatch detection itself."
+      },
+      {
+        "path": "tests/prepared-stella-sql.test.ts",
+        "status": "TO_BE_MODIFIED",
+        "requirement": "MECHANICALLY_REQUIRED",
+        "role": "Absorb the new prepared package into the cross-cutting stella_* invariants and update the tripwire inventory.",
+        "measured_justification": "tests/prepared-stella-sql.test.ts:210-212 — stellaScripts = readdirSync(PREPARED).filter(/^stella_.*\\.sql$/). This is a genuine directory sweep, and the file's own comment at :214-215 states the it.each iterates the directory listing so a new script is picked up automatically. stella_local_0000_local_role_identity_bootstrap.sql matches that pattern and therefore enters the sweep and breaks the tripwire inventory by construction.",
+        "narrowness": "Inventory update and whatever the new package genuinely requires under the existing invariants. No relaxation of any existing invariant to accommodate it."
+      },
+      {
+        "path": "tests/stella-r3-5-pg17-certification.test.ts",
+        "status": "TO_BE_MODIFIED",
+        "requirement": "MECHANICALLY_REQUIRED",
+        "role": "Encode the SUPERSEDED semantics of D4 without repinning history.",
+        "measured_justification": "tests/stella-r3-5-pg17-certification.test.ts:155-160 recomputes sha256 from db/prepared and asserts equality with the pin; it fails by construction once stella_0001 bytes change.",
+        "narrowness": "The test must continue to prove the historical pin is byte-identical to the HISTORICAL bytes. It may add a SUPERSEDED expectation for current HEAD. It MUST NOT change EXPECTED_HASHES to current bytes."
+      },
+      {
+        "path": "tests/stella-insert-policy-probe-doctrine.test.ts",
+        "status": "TO_BE_MODIFIED",
+        "requirement": "CONDITIONALLY_AUTHORIZED",
+        "condition": "Authorized ONLY IF the successor implementation mechanically breaks this suite. MEASURED AT BASE_SHA: it does NOT. tests/stella-insert-policy-probe-doctrine.test.ts:70-77 defines SIX_PACKAGES as a HARDCODED six-member list (stella_0003, stella_0004, stella_0005, stella_0005_rollback, stella_0005c, stella_0005c_rollback). It contains neither stella_0001_role_topology_bootstrap.sql (which P1A modifies) nor any stella_local_* name. EXPECTED_SITE_COUNT (:79-86) is keyed to that same list, the total===8 assertion (:164-169) sums only over it, and every diff-based guard (T27/T28, :314-364) names explicit files rather than sweeping db/prepared. Adding stella_local_0000 and modifying stella_0001 therefore break nothing here.",
+        "rule": "If the successor's actual implementation does not break this suite, this path MUST NOT be touched, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP. If it IS broken, the breakage must be demonstrated by a measured failing assertion (file:line and message) BEFORE the edit is made — never justified after the fact by 'it changed anyway'.",
+        "precedent": "This conditional shape follows the repository's own established pattern at v1.0.0 authorized_changed_paths_this_mission.fifth_path_is_conditional / fifth_path_condition, where a path was authorized only because a measurement proved an existing closed-world assertion broke.",
+        "why_not_dropped": "The path is retained rather than removed because the coordinator-adjudicated prior HPO input named it and the successor implementation is not yet written. Retaining it under a measured, falsifiable condition is more truthful than either silently authorizing it or silently narrowing a prior adjudication."
+      }
+    ],
+    "explicitly_still_not_authorized": [
+      "db/prepared/stella_local_0000_rollback.sql — see D1; forbidden, not merely unrequired",
+      "db/r3-5-pg17-certification-inputs.ts — see D4; historical evidence, immutable",
+      "scripts/ods-scope.ts — see protected_grant_disposition; no registry change is required",
+      "tests/ods/ods-scope.test.ts — same",
+      "scripts/ods-controller.ts — see controller_cross_lane_disposition; NOT edited by this mission",
+      "tests/ods/ods-controller.test.ts — same",
+      "everything enumerated in v1.0.0 authorized_future_implementation_surface.explicitly_not_authorized EXCEPT scripts/stella-r3-4-local-runner.ts, which is brought in above under authority_delta_basis"
+    ],
+    "closed_world": "The combined v1.0.0 + v1.0.1 surface is exhaustive. A path enumerated in neither is NOT authorized, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP. If repository mechanics prove a further path genuinely necessary — protected or unprotected — that is STOP_FOR_AUTHORITY_DELTA, never a silent widening."
+  },
+
+  "protected_grant_disposition": {
+    "NEW_PROTECTED_GRANT_REQUIRED": "NO",
+    "ODS_SCOPE_REGISTRY_CHANGED": "NO",
+    "HPO_ODS_W2_11_WIDENED": "NO",
+    "measured_evidence": [
+      "scripts/ods-scope.ts:82-90 — DEFAULT_PROTECTED_PATTERNS = docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+      "Neither docs/ops/p1a/** nor docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_*.json matches any of those patterns; only ODS_V1_AUTHORITY_v1.0.0.json is protected within docs/ops/ods/",
+      "Both paths written by this mission are therefore UNPROTECTED and need no --protected-authority flag",
+      "tests/ods/ods-scope.test.ts:317 — expect(PROTECTED_GRANTS.length).toBe(8); this mission adds no grant, so the assertion is untouched"
+    ],
+    "residual_AG_1": "This amendment's own two artifacts are NOT machine-protected by DEFAULT_PROTECTED_PATTERNS. This is v1.0.0 risk R4 (AG-1), unchanged and still OPEN. It is mitigated only Controller-locally via the immutableByConvention closed world — and see controller_cross_lane_disposition, because that mitigation does not yet extend to v1.0.12."
+  },
+
+  "controller_cross_lane_disposition": {
+    "CONTROLLER_V1_0_12_EFFECT": "BOUNDED_SUCCESSOR_MAINTENANCE_REQUIRED",
+    "controller_edited_by_this_mission": false,
+    "breaks_anything_now": false,
+    "measured_evidence": [
+      "scripts/ods-controller.ts:49 — comment: 'ag1_disposition.immutableByConvention.entries (20) + v1.0.10 + v1.0.11. EXACT membership — never a subset test.'",
+      "scripts/ods-controller.ts:50-72 — IMMUTABLE_BY_CONVENTION enumerates ODS addenda v1.0.1 through v1.0.11; it does NOT contain v1.0.12",
+      "tests/ods/ods-controller.test.ts:92-93 — expect(IMMUTABLE_BY_CONVENTION.length).toBe(22) and the Set size assertion; both are HARDCODED constants",
+      "tests/ods/ods-controller.test.ts contains ZERO filesystem reads (no node:fs import, no readFileSync, no readdirSync) — the closed world is NOT derived from the directory",
+      "scripts/ods-controller.ts:245,248 — the guard blocks a unit whose writePaths target an immutableByConvention artifact (PROTECTED_SURFACE_CHANGE) or match it non-canonically (NONCANONICAL_PROTECTED_PATH)"
+    ],
+    "why_nothing_breaks_now": "Because the count is a hardcoded 22 rather than a directory sweep, creating ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json does not fail any Controller test. CI remains green on this mission's PR.",
+    "why_maintenance_is_nevertheless_MANDATORY": "The convention established by ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention is that every governed docs/ops/ods/ artifact belongs to the exact-membership immutable closed world, with exactly one documented exclusion (ODS_CARRY_FORWARD_BACKLOG.md, excluded_by_design). v1.0.10 and v1.0.11 were both added on exactly this basis. Until v1.0.12 is added, the Controller would NOT classify a write targeting it as PROTECTED_SURFACE_CHANGE — a silent coverage gap in the guard, not a test failure. A guard that silently under-covers is the failure mode the exact-membership rule exists to prevent.",
+    "exact_minimal_future_surface": [
+      {
+        "path": "scripts/ods-controller.ts",
+        "change": "Add 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json' to IMMUTABLE_BY_CONVENTION (22 -> 23 members) and update the count comment at :49."
+      },
+      {
+        "path": "tests/ods/ods-controller.test.ts",
+        "change": "Update the two count assertions at :92-93 from 22 to 23, update the describe title at :91, and add a toContain assertion for v1.0.12 mirroring :94-95."
+      }
+    ],
+    "prohibition": "The immutable closed-world guard MUST NOT be weakened. It must remain an EXACT-membership check and must never be relaxed into a subset test, a prefix match or a directory sweep in order to absorb future addenda automatically. The maintenance obligation is the intended cost of that strictness.",
+    "precedent": "This is structurally identical to v1.0.0 risk R5, which recorded the same obligation for v1.0.10 when tests/ods/ods-controller.test.ts did not yet exist. Recorded here so the maintenance node treats v1.0.12 as a known governed predecessor artifact rather than an unexpected one, and does not need to re-derive the fact.",
+    "not_done_here_because": "Editing the Controller is outside this mission's authorized write surface. Doing it opportunistically would make ACTUAL_CHANGED_PATH_COUNT 4 and would mix an authority materialization with an implementation change in one commit."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json"
+    ],
+    "no_implementation_code": true,
+    "no_sql": true,
+    "no_tests": true,
+    "no_package_json": true,
+    "no_lockfile": true,
+    "no_controller_edit": true,
+    "no_db_prepared_file_changed": true,
+    "no_migration_changed": true,
+    "third_path_rule": "Any third changed path is a STOP unless a genuine new authority contradiction requires coordinator adjudication."
+  },
+
+  "audit_requirement": {
+    "required_audit": "P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1",
+    "when": "Before this amendment may be merged and before the successor implementation mission opens.",
+    "independence_conditions": [
+      "a clean conversation carrying no materialization context",
+      "an independent worktree",
+      "no reuse of this mission's own evidence claims as proof"
+    ],
+    "must_specifically_challenge": [
+      "that widening to scripts/stella-r3-4-local-runner.ts is genuinely licensed by v1.0.0:271 and is not a reinterpretation of v1.0.0:561",
+      "that the forward-only branch is mechanically exclusive with the rollback file, by re-reading tests/prepared-sql-source-of-truth.test.ts:210-222 directly",
+      "that the R3.4 apply path really commits per phase, by re-reading the runner rather than trusting D3",
+      "that the R3.5 pin is live at BASE_SHA and that no historical hash was altered",
+      "that the D5 grantor argument holds under actual PostgreSQL 16+ ADMIN OPTION semantics, not only under the baseline SQL cited",
+      "the CONDITIONALLY_AUTHORIZED status of tests/stella-insert-policy-probe-doctrine.test.ts — specifically whether SIX_PACKAGES really is hardcoded and really excludes stella_0001",
+      "that CONTROLLER_V1_0_12_EFFECT is BOUNDED_SUCCESSOR_MAINTENANCE_REQUIRED and not NO_RUNTIME_CHANGE_REQUIRED",
+      "that exactly two paths changed and that no protected surface was touched"
+    ],
+    "AUDIT_MODEL": "OPUS_FULL",
+    "AUDIT_CLASS": "FOCUSED_INDEPENDENT_AUTHORITY_AUDIT"
+  },
+
+  "risks_and_open_findings": {
+    "A1": "tests/stella-insert-policy-probe-doctrine.test.ts is NOT mechanically required at BASE_SHA (SIX_PACKAGES is a hardcoded list excluding stella_0001 and any stella_local_* name). It is retained as CONDITIONALLY_AUTHORIZED with a falsifiable condition rather than authorized outright. MATERIAL, NON-BLOCKING.",
+    "A2": "AG-1 / v1.0.0 R4 remains OPEN: this amendment and its companion addendum are not machine-protected by DEFAULT_PROTECTED_PATTERNS. Unchanged by this node.",
+    "A3": "The Controller immutableByConvention closed world does not yet contain v1.0.12. Harmless to CI now (the count is hardcoded, not filesystem-derived) but a real coverage gap until the bounded maintenance node lands. See controller_cross_lane_disposition.",
+    "A4": "The successor bytes of stella_0001_role_topology_bootstrap.sql will carry NO negative-authority certification until an explicit successor certification is adjudicated and executed. See D7. No parity may be claimed in the interim.",
+    "A5": "The literal identifier 'R7' is not a live symbol in the current certification surface. The residual is recorded against the historical MSC-07B evidence chain. If a future mission expects a live R7 control, it must first establish that one exists.",
+    "A6": "D5's grantor argument is derived from committed baseline SQL and PostgreSQL role-grant semantics, NOT from an executed probe against a live substrate — no database was contacted by this authority mission. The successor implementation must prove the grantor contract at runtime rather than inherit it as established fact.",
+    "A7": "v1.0.0 risks R1 (fixed port 56322), R2 (LOCAL_PROJECT_ID naming truth), R3 (.github/workflows/p1a-validation.yml red), and R6 (MINIMAL_EXPORT_WIDENING unproven) are all carried forward UNCHANGED. This amendment closes none of them."
+  },
+
+  "final_state": "P1A_PREPARED_PACKAGE_SUCCESSOR_DISPOSITION_FROZEN_AND_ADDITIONAL_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_INDEPENDENT_AUTHORITY_AUDIT",
+  "MAIN_EFFECT": "NONE",
+  "PRODUCTION_PROMOTION": "NO",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "READY_FOR_MERGE": "NO",
+  "next_gate": "P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1"
+}

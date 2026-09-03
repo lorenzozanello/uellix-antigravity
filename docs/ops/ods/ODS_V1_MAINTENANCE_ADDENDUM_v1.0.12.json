@@ -1,0 +1,144 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.12",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12",
+  "authority_class": "APPEND_ONLY_SUCCESSOR_DISPOSITION_AND_BOUNDED_IMPLEMENTATION_SURFACE_WIDENING",
+  "materialization_step": "HPO-ODS-W2-13",
+  "GRANT_ID": "HPO-ODS-W2-13",
+  "hpo_mission_id": "P1A-PREPARED-PACKAGE-AUTHORITY-DELTA-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_ids": [
+    "P1A-PREPARED-PACKAGE-ROLLBACK-AUTHORITY-GAP-HPO-R1",
+    "P1A-R3-4-R3-5-SUCCESSOR-DISPOSITION-HPO-R1"
+  ],
+  "materialization_date": "2026-09-03",
+
+  "supersedes": null,
+  "refines": {
+    "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json": "Extended, append-only, by docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json. The v1.0.0 bytes are unchanged."
+  },
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "node_authority": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "node_test_manifest": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json",
+
+  "purpose": "Record, append-only, the ODS lineage entry for the P1A prepared-package successor disposition: explicit forward-only semantics with no rollback file, a deterministic pre-mutation preflight on the R3.4 apply path, byte-identical preservation of the historical R3.5 PostgreSQL 17 certification evidence, the canonical supabase_admin grantor for the local role memberships, the expansion of P1A-N7 from one to exactly three enumerated supabase_admin privilege writes, and the bounded widening of the P1A future implementation surface these require.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, or any frozen FIB/PC-01B/IM-01B artifact. Creates no implementation code, no SQL and no test. No effect on origin/main and no production effect.",
+
+  "grant_id_semantics": {
+    "GRANT_ID": "HPO-ODS-W2-13",
+    "is_a_protected_surface_grant": false,
+    "statement": "HPO-ODS-W2-13 is a LINEAGE / materialization-step identifier for this authority node. It is deliberately NOT an entry in the PROTECTED_GRANTS registry of scripts/ods-scope.ts, because this node writes no protected path and therefore requires no protected-surface authorization. Recorded explicitly so that no reader infers a missing registry entry from the presence of a W2-series identifier.",
+    "lineage_verification": "Verified free at BASE_SHA before use. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json did not exist, and a repository-wide search for HPO-ODS-W2-13 (excluding node_modules) returned ZERO occurrences. HPO-ODS-W2-12 is in use by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json, docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json, docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json, scripts/ods-scope.ts and tests/ods/ods-scope.test.ts. Neither the addendum version nor the grant id was assumed."
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-p1a-prepared-authority-hpo-r1",
+    "branch": "codex/p1a-prepared-authority-delta-r1",
+    "BASE_SHA": "390aa4531fb5ab5c3dd2502183b9fed0df447da5",
+    "BASE_TREE": "7dde07c43ca89f97a7da89b0edd31e40267fccc2",
+    "integration_baseline_ref": "origin/integration/commercial-v1",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "controller_audited_head": "c411e2e27c2e88d41af83b395ec2296e0884ade3",
+    "controller_status": "CLOSED_AUDITED_INTEGRATED",
+    "prestate_gate": "PASS — origin/integration/commercial-v1, its tree, and origin/main all verified exact; working tree clean under --untracked-files=all before any change; target branch created from the exact BASE_SHA with no rebase, no force push and no history rewrite."
+  },
+
+  "predecessor_authorities": {
+    "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json": "HPO-ODS-W2-11 — the canonical P1A bootstrap topology and original closed-world implementation surface. Unchanged.",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json": "HPO-ODS-W2-11 companion. Unchanged.",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json": "HPO-ODS-W2-12 — W2-B4 grant and surface. Unchanged.",
+    "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json": "HPO-ODS-W2-10 — Controller v0, now CLOSED_AUDITED_INTEGRATED at c411e2e. Unchanged."
+  },
+
+  "hpo_decision": {
+    "FORWARD_ONLY_DISPOSITION": "EXPLICIT_FORWARD_ONLY",
+    "ROLLBACK_FILE_REQUIRED": "NO",
+    "ROLLBACK_FILE_FORBIDDEN": "YES",
+    "R3_4_PLAN_LOCAL": "OPERATIONAL_UNCHANGED",
+    "R3_4_APPLY_LOCAL": "OPERATIONAL_UNDER_SUCCESSOR_CHAIN_WITH_DETERMINISTIC_PRE_MUTATION_PREFLIGHT",
+    "R3_4_PREMUTATION_INVARIANT": "SUCCESSOR PRECONDITIONS ABSENT -> non-zero exit -> ZERO prepared mutation occurred",
+    "R3_5_HISTORICAL_IMMUTABILITY": "HISTORICAL_EVIDENCE_IMMUTABLE=YES",
+    "R3_5_SUCCESSOR_RELATIONSHIP": "P1A is SUCCESSOR_OF the historical R3.5 PG17 certification; successor is not equivalence",
+    "B2_DISPOSITION": "MEMBERSHIPS_GRANTED_BY_CANONICAL_SUPABASE_ADMIN_BOOTSTRAP_AUTHORITY",
+    "P1A_N7_NEW_EXACT_COUNT": 3,
+    "NEW_PROTECTED_GRANT_REQUIRED": "NO",
+    "ODS_SCOPE_REGISTRY_CHANGED": "NO",
+    "HPO_ODS_W2_11_WIDENED": "NO",
+    "CONTROLLER_V1_0_12_EFFECT": "BOUNDED_SUCCESSOR_MAINTENANCE_REQUIRED",
+    "detail_authority": "Every decision above is recorded with its exact measured evidence in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json under prior_hpo_dispositions_reverified. It is NOT restated here; this addendum is the ODS lineage entry, not a second copy of the node authority."
+  },
+
+  "cross_lane_disposition": {
+    "controller_v1_0_12_effect": "BOUNDED_SUCCESSOR_MAINTENANCE_REQUIRED",
+    "controller_edited_by_this_node": false,
+    "breaks_ci_now": false,
+    "statement": "scripts/ods-controller.ts:50-72 defines IMMUTABLE_BY_CONVENTION as an EXACT-membership closed world (:49 — 'EXACT membership — never a subset test') enumerating ODS addenda v1.0.1 through v1.0.11. It does not contain v1.0.12. tests/ods/ods-controller.test.ts:92-93 asserts length 22 as a HARDCODED constant and performs zero filesystem reads, so creating v1.0.12 fails no test today. The obligation is nevertheless mandatory: until v1.0.12 is enumerated, the Controller would not classify a write targeting it as PROTECTED_SURFACE_CHANGE, leaving a silent coverage gap in a guard whose whole value is exact coverage.",
+    "exact_minimal_future_surface": [
+      "scripts/ods-controller.ts — add docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json to IMMUTABLE_BY_CONVENTION (22 -> 23) and update the count comment at :49",
+      "tests/ods/ods-controller.test.ts — update the count assertions at :92-93 from 22 to 23, update the describe title at :91, and add a toContain assertion for v1.0.12 mirroring :94-95"
+    ],
+    "prohibition": "The immutable closed-world guard MUST NOT be weakened, and must never be relaxed into a subset test, prefix match or directory sweep to absorb future addenda automatically.",
+    "precedent": "Structurally identical to docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json risk R5, which recorded the same obligation for v1.0.10.",
+    "W2_10_UNCHANGED": true,
+    "W2_11_UNCHANGED": true,
+    "W2_12_UNCHANGED": true
+  },
+
+  "protected_grant_required": false,
+  "protected_grant_rationale": "Neither authorized path matches DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts:82-90. docs/ops/p1a/** is not a protected pattern, and within docs/ops/ods/ only ODS_V1_AUTHORITY_v1.0.0.json is protected — the maintenance addenda are not. Both paths are therefore UNPROTECTED and require no --protected-authority flag. tests/ods/ods-scope.test.ts:317 (PROTECTED_GRANTS.length === 8) is untouched because this node adds no grant.",
+  "protected_grant": null,
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json"
+    ],
+    "no_implementation_code": true,
+    "no_sql": true,
+    "no_tests": true,
+    "no_package_json": true,
+    "no_lockfile": true,
+    "no_controller_edit": true,
+    "no_ods_scope_change": true,
+    "no_db_prepared_file_changed": true,
+    "no_migration_changed": true,
+    "third_path_rule": "Any third changed path is a STOP unless a genuine new authority contradiction requires coordinator adjudication."
+  },
+
+  "authorized_future_implementation_surface": {
+    "note": "Enumerated in full, with per-path measured justification, in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json under authorized_additional_future_implementation_surface. Summarised here for ODS lineage only; the node authority is controlling in any discrepancy.",
+    "new_protected_paths": [],
+    "new_unprotected_paths_mechanically_required": [
+      "db/hosted/forward-only-packages.ts",
+      "scripts/stella-r3-4-local-runner.ts",
+      "scripts/stella-r3-5-pg17-certify.ts",
+      "tests/prepared-stella-sql.test.ts",
+      "tests/stella-r3-5-pg17-certification.test.ts"
+    ],
+    "new_unprotected_paths_conditionally_authorized": [
+      "tests/stella-insert-policy-probe-doctrine.test.ts"
+    ],
+    "conditional_note": "tests/stella-insert-policy-probe-doctrine.test.ts is NOT mechanically required at BASE_SHA: SIX_PACKAGES (:70-77) is a hardcoded six-member list excluding stella_0001_role_topology_bootstrap.sql and any stella_local_* name, and every diff-based guard names explicit files. It is authorized ONLY if the successor implementation demonstrably breaks it, proven by a measured failing assertion BEFORE the edit.",
+    "widening_basis": "scripts/stella-r3-4-local-runner.ts appears in v1.0.0 explicitly_not_authorized (:561) AND is the subject of v1.0.0's own STOP_FOR_AUTHORITY_DELTA clause (:271). This node IS that delta. The widening is governed and prospective, never a retroactive inference from an observed diff.",
+    "closed_world": "The combined v1.0.0 + amendment v1.0.1 surface is exhaustive. A further path — protected or unprotected — is STOP_FOR_AUTHORITY_DELTA, never a silent widening."
+  },
+
+  "risks_and_open_findings": {
+    "A1": "tests/stella-insert-policy-probe-doctrine.test.ts is not mechanically required at BASE_SHA; retained as CONDITIONALLY_AUTHORIZED. MATERIAL, NON-BLOCKING.",
+    "A2": "AG-1 remains OPEN: this addendum is itself unprotected by DEFAULT_PROTECTED_PATTERNS. Unchanged by this node; global closure still requires separate governed adjudication.",
+    "A3": "The Controller immutableByConvention closed world does not yet contain v1.0.12. Harmless to CI now, a real coverage gap until the bounded maintenance node lands.",
+    "A4": "The P1A successor bytes carry NO negative-authority certification until an explicit successor certification is adjudicated and executed.",
+    "A5": "No database was contacted by this authority mission. The B-2 grantor contract is derived from committed baseline SQL and PostgreSQL role-grant semantics, and must be proven at runtime by the successor implementation rather than inherited as established fact."
+  },
+
+  "final_state": "P1A_PREPARED_PACKAGE_SUCCESSOR_DISPOSITION_FROZEN_AND_ADDITIONAL_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_INDEPENDENT_AUTHORITY_AUDIT",
+  "P1A_FULL_BOOTSTRAP_STATUS": "NOT_CLOSED",
+  "W2_B4_IMPLEMENTATION_STATUS": "WAITING_FOR_P1A_FULL_CLOSURE",
+  "W2_B5_STATUS": "NOT_AUTHORIZED",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_EFFECT": "NONE",
+  "READY_FOR_MERGE": "NO",
+  "next_gate": "P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1"
+}
