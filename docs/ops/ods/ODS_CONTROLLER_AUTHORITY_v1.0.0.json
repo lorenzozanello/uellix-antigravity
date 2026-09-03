@@ -1,0 +1,323 @@
+{
+  "package_id": "ODS_CONTROLLER_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "ODS_CONTROLLER_AUTHORITY_v1.0.0",
+  "authority_class": "APPEND_ONLY_CONTROLLER_DESIGN_AND_ROUTING_AUTHORITY",
+  "materialization_step": "HPO-ODS-W2-10",
+  "hpo_mission_id": "AUTONOMOUS-PROGRAM-CONTROLLER-V0-AUTHORITY-R1",
+  "materialization_date": "2026-09-03",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Freeze, append-only, the design envelope, executor-routing disposition, stop taxonomy and defensive mutation guard for a future Autonomous Program Controller v0 — a thin deterministic node selector/router over the ODS machine gates that already exist in this repository. This artifact authorizes NO implementation code and NO database execution. It fixes what Controller v0 is permitted to be before any line of it is written, so that the implementation mission cannot silently widen its own envelope.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.8, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through W2-09 are FROZEN_UNCHANGED. This mission changes exactly two paths, both new files under docs/ops/ods/: this artifact and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json. No implementation code, no scripts/**, no tests/**, no db/**, no app/**, no lib/**, and no package.json change is made by this mission.",
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-autonomous-program-controller-r1",
+    "branch": "codex/autonomous-program-controller-r1",
+    "BASE_SHA": "a4f4fa0369e6abd944248e2abf0edb50cb05e0ba",
+    "BASE_TREE": "ad398908c128ad763c8e0e300d904999a92e85be",
+    "integration_baseline_ref": "origin/integration/commercial-v1",
+    "integration_baseline_sha": "a4f4fa0369e6abd944248e2abf0edb50cb05e0ba",
+    "main_frozen_ref": "origin/main",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "prestate_gate": "PASS — branch, HEAD, TREE verified exact against the mission's expected values; git status --porcelain --untracked-files=all empty; .git/MERGE_HEAD absent; origin/integration/commercial-v1 and origin/main verified exact after a normal fetch, all before any write."
+  },
+
+  "production_freeze_invariant": {
+    "MAIN_UNCHANGED": true,
+    "MAIN_MUTATION": "PROHIBITED",
+    "PRODUCTION_PROMOTION": "NO",
+    "UELLIX_COM_CUTOVER": "NO",
+    "rule": "Controller v0 may never write to, merge into, rebase, force-push, or open a pull request against main. Reaching the production boundary is a terminal STOP class (PRODUCTION_BOUNDARY_REACHED), never an autonomous action.",
+    "verification": "git rev-parse origin/main (this session, post-fetch) == 067e8c2f3ac9b5e843de3a35575182907b4365d4 exactly"
+  },
+
+  "authority_precondition_verified": {
+    "POST_INTEGRATION_MAINTENANCE": "CLOSED",
+    "closure_basis": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_MERGE_CLOSURE_AUTHORITY_v1.0.0.json closure_semantics.condition, every conjunct mechanically corroborated this session: authority commit 237a16f precedes evidence commit e3f1858 (git merge-base --is-ancestor 237a16f e3f1858 exit 0); the successor branch delta 3200ddb..e3f1858 is exactly the two authorized docs/ops/integration files and nothing else (git diff --name-only); and the docs-only successor PR #51 merged into integration/commercial-v1 as a4f4fa0369e6abd944248e2abf0edb50cb05e0ba with parents 3200ddb03fb1b838ea553ea376bb02d06a7e9f76 (premerge integration head) and e3f18587edcb50362c2d7ed48cc0236836935ee7 (successor head) exactly, and origin/integration/commercial-v1 == a4f4fa0 post-fetch. The governing authority's self_referential_claim_prohibition is respected: the CLOSED declaration is made here, after that successor PR merged, not by the pre-merge evidence artifact itself.",
+    "M1": "CLOSED",
+    "M2": "CLOSED",
+    "M3": "CLOSED",
+    "CONTROLLER_IMPLEMENTATION_AFTER_MAINTENANCE_CLOSURE": "AUTHORIZED",
+    "CONTROLLER_DB_EXECUTION": "NOT_AUTHORIZED",
+    "deferred_db_boundary_source": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_PR50_POST_MERGE_CLOSURE_v1.0.0.json deferred_db_boundary — read, not restated: P1A_FULL_BOOTSTRAP_STATUS=DEFERRED_SEPARATE_GOVERNED_NODE, CONTROLLER_IMPLEMENTATION_AFTER_MAINTENANCE_CLOSURE=AUTHORIZED, CONTROLLER_DB_EXECUTION=NOT_AUTHORIZED",
+    "frozen_routing_verified": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing.frozen == true with exactly classes A, B, C, D present (read this session, unmodified by this mission; blob 9a99ece52b4354605b06443f90b654f906b9eba1)"
+  },
+
+  "mc1_disposition": {
+    "MC1_DECISION": "R1",
+    "binding": true,
+    "FROZEN_CLASS_TAXONOMY_CHANGED": "NO",
+    "rule": "The frozen A/B/C/D executor taxonomy in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing remains unchanged and unextended. No class B+, no CLASS_E, and no additional executor class is created by this or any successor artifact under this authority.",
+    "prohibited_taxonomy_mutations": [
+      "creating a class B+",
+      "creating a CLASS_E",
+      "creating any additional executor class",
+      "renaming, resplitting, merging or reordering classes A/B/C/D",
+      "editing model_executor_routing in ODS_V1_AUTHORITY_v1.0.0.json"
+    ],
+    "fable_disposition": {
+      "FABLE_CLASS": "B",
+      "FABLE_DEFAULT": "NO",
+      "class_b_default_executor": "SONNET",
+      "status": "CONDITIONAL_EXECUTOR_VARIANT_WITHIN_CLASS_B",
+      "rule": "FABLE_5_1 is authorized only as a conditional executor variant inside the existing Class B. It is not a new class, not a Class B default, and not a Class A substitute. It may be selected only when a machine-readable node/policy field explicitly permits it AND the task independently satisfies the Class-B authority envelope (frozen, well-specified implementation or remediation). Failing either condition, the Class B executor is SONNET.",
+      "policy_field": {
+        "name": "fableEligible",
+        "type": "boolean",
+        "default": false,
+        "rule": "fableEligible defaults to false. Absence of the field is read as false, never as permission. Controller v0 may READ this field; Controller v0 may NEVER author, infer, default, promote or otherwise set fableEligible=true. Setting it true is an authoring act reserved to governed authority outside the controller."
+      },
+      "eligibility_may_be_true_only_for": [
+        "long bounded mission loop",
+        "tightly coupled cross-layer implementation",
+        "substantial product+code integration",
+        "Golden E2E work",
+        "work where splitting materially increases total cost or risk"
+      ],
+      "must_not_be_selected_merely_because": [
+        "the prompt is large",
+        "the token count is high",
+        "the task touches many files",
+        "the model is perceived as stronger"
+      ],
+      "optimization_criterion": "MARGINAL_TOTAL_COST_PER_CORRECT_CLOSURE",
+      "criterion_note": "The objective is the marginal total cost per CORRECT closure, not per response, per token, or per apparent completion. A cheaper executor that produces a closure later reversed by audit is more expensive under this criterion, and a more expensive executor chosen without an interdependence justification is also more expensive under it.",
+      "class_b_validation_requirements_preserved": "Every existing Class-B empirical validation requirement in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing.classes.B remains applicable and unweakened, including validation_requirement (empirical validation on at least one governed implementation round using deterministic poststate evidence) and explicit_caution (model economy is NOT proof of adequacy). Selecting the Fable variant does not discharge, substitute for, or shortcut any of them, and the machine gates remain mandatory regardless of executor."
+    }
+  },
+
+  "model_and_audit_routing": {
+    "frozen": true,
+    "derivation_note": "This block ROUTES against the frozen taxonomy in ODS_V1_AUTHORITY_v1.0.0.json; it does not redefine, restate or supersede it. On any divergence between this block and that artifact, ODS_V1_AUTHORITY_v1.0.0.json controls and the controller STOPs with AUTHORITY_CONFLICT.",
+    "executor_routing": {
+      "CLASS_D": "MACHINE — deterministic facts only (branch, HEAD, TREE, dirty state, hashes, scope, manifest ordering). No LLM.",
+      "CLASS_C": "Lowest authorized bounded executor, or a deterministic script.",
+      "CLASS_B": "Default SONNET. Conditional FABLE_5_1 variant only under mc1_disposition.fable_disposition.",
+      "CLASS_A": "OPUS."
+    },
+    "audit_routing": {
+      "modes": [
+        "MACHINE_ONLY",
+        "FOCUSED_OPUS",
+        "FULL_OPUS"
+      ],
+      "self_certification_prohibition": "Controller v0 cannot self-certify the boundary between MACHINE_ONLY, FOCUSED_OPUS and FULL_OPUS. It may route to a mode a node's authority already declares, and it may ESCALATE to a stricter mode, but it may never de-escalate, and it may never declare on its own judgment that a node needs less audit than its authority specifies. An undeclared or ambiguous boundary is a STOP (REQUIRED_INDEPENDENT_AUDIT or AUTHORITY_GAP), not a controller decision."
+    }
+  },
+
+  "controller_v0_design": {
+    "definition": "Controller v0 is a thin deterministic node selector and router over machine gates that already exist in this repository. It selects the next authorized node, routes it to an executor class and an audit mode, invokes existing gates, classifies their output, and either advances or STOPs. It performs no semantic judgment that an existing gate already answers deterministically.",
+    "reuse_not_duplicate": {
+      "rule": "Controller v0 MUST reuse the following existing surfaces rather than reimplement, fork, wrap-with-divergent-semantics, or duplicate their logic. Every entry below was verified to exist in package.json scripts at BASE_SHA this session.",
+      "surfaces": [
+        { "command": "pnpm ops:program-state", "implementation": "scripts/ods-program-state.ts", "role": "measured node/unit closure state" },
+        { "command": "pnpm audit:batch", "implementation": "scripts/audit-batch.ts", "role": "batch audit packet derivation" },
+        { "command": "pnpm ods:prestate", "implementation": "scripts/ods-prestate.ts", "role": "branch/HEAD/tree/clean prestate gate" },
+        { "command": "pnpm ods:scope", "implementation": "scripts/ods-scope.ts", "role": "changed-path classification against protected and allowed patterns" },
+        { "command": "pnpm ods:poststate", "implementation": "scripts/ods-poststate.ts", "role": "poststate gate" },
+        { "command": "pnpm ops:integration-plan", "implementation": "scripts/ods-integration-plan.ts", "role": "integration sequencing" },
+        { "command": "pnpm ops:test-diff", "implementation": "scripts/ods-test-diff.ts", "role": "test delta derivation" },
+        { "command": "existing Claude skills", "implementation": ".claude/skills/** as already installed", "role": "mission execution patterns (uellix-preflight, uellix-mission-loop, uellix-test-manifest, uellix-focused-reaudit, uellix-product-vertical, uellix-golden-e2e)" }
+      ],
+      "duplication_prohibition": "If Controller v0 needs a deterministic fact that one of the surfaces above already produces, it MUST invoke that surface and consume its output. Reimplementing the fact inside the controller is a design violation, because it creates a second source of truth that can silently diverge from the gate the rest of the program is audited against."
+    },
+    "complexity_ceiling": {
+      "frozen": true,
+      "one_controller_script_max_lines": 400,
+      "daemons": 0,
+      "services": 0,
+      "database": 0,
+      "ui": 0,
+      "new_orchestration_frameworks": 0,
+      "second_state_stores": 0,
+      "rule": "Controller v0 is exactly one script of at most 400 lines, plus its tests. It introduces no daemon, no long-running service, no database, no UI, no new orchestration framework, and no second state store. Program state is read from the existing registry and gates; the controller does not maintain a parallel copy of it. Exceeding any ceiling is a scope expansion requiring new authority, not a judgment call for the implementation mission.",
+      "rationale": "Every ceiling above exists because its violation would convert a citable, replayable, deterministic gate chain into an opaque stateful system. A second state store in particular reintroduces exactly the divergence class that ODS's machine gates were built to eliminate."
+    },
+    "db_execution": {
+      "CONTROLLER_DB_EXECUTION": "DISABLED",
+      "initial_state": "DISABLED",
+      "rule": "Controller v0 executes no database statement of any kind — no migration, no seed, no rehearsal, no read probe against a live cluster. Any node whose advancement would require database execution is a terminal STOP with DATABASE_AUTHORITY_REQUIRED. Enabling database execution requires separate governed authority (see the deferred P1A_FULL_BOOTSTRAP_STATUS node) and is explicitly out of scope for Controller v0."
+    },
+    "state_model": {
+      "frozen": true,
+      "states": [
+        "READY",
+        "PREFLIGHT",
+        "EXECUTING",
+        "GATE",
+        "AUDIT_REQUIRED",
+        "CLOSED",
+        "STOPPED"
+      ],
+      "terminal_states": [
+        "CLOSED",
+        "STOPPED"
+      ],
+      "disambiguation": "These are CONTROLLER RUN states. They are distinct from, and do not redefine, the per-unit closure evidence vocabulary of ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (whose units are probed via json-field / paths-exist closedValues). The controller READS that registry's unit evidence; it does not rewrite the registry's semantics into its own run states, and it does not write to that registry."
+    },
+    "stop_classes": {
+      "frozen": true,
+      "origin": "Established by the planning HPO and frozen here.",
+      "classes": [
+        "AUTHORITY_GAP",
+        "AUTHORITY_CONFLICT",
+        "UNKNOWN_EVIDENCE",
+        "PARTIAL_WHERE_PASS_REQUIRED",
+        "SHA_MISMATCH",
+        "TREE_MISMATCH",
+        "DIRTY_PRESTATE",
+        "UNEXPECTED_CHANGED_PATH",
+        "PROTECTED_SURFACE_CHANGE",
+        "NONCANONICAL_PROTECTED_PATH",
+        "MIGRATION_AMBIGUITY",
+        "DATABASE_AUTHORITY_REQUIRED",
+        "SECURITY_ESCALATION",
+        "INTEGRATION_CONFLICT",
+        "AUDITED_OBJECT_MOVED",
+        "MACHINE_GATE_NONDETERMINISTIC",
+        "REPEATED_LOCAL_FAILURE",
+        "REQUIRED_INDEPENDENT_AUDIT",
+        "MAX_MISSION_CYCLES_REACHED",
+        "PRODUCTION_BOUNDARY_REACHED",
+        "MAIN_MUTATION_ATTEMPT",
+        "FLAKE_SUSPECTED"
+      ],
+      "fail_closed_rule": "Every stop class above halts the controller and escalates. The controller never reconciles, never infers past, and never downgrades a stop into a warning to keep advancing.",
+      "rerun_policy": {
+        "rule": "Only FLAKE_SUSPECTED may receive exactly one isolated autonomous rerun. Every other stop class is terminal on first occurrence.",
+        "isolated_rerun_max": 1,
+        "deterministic_repeat_rule": "The same deterministic failure observed twice is a STOP (REPEATED_LOCAL_FAILURE). A second occurrence may never be reclassified as a flake to obtain another rerun.",
+        "rationale": "This is the anti-laundering rule: without it, any deterministic failure can be relabelled FLAKE_SUSPECTED indefinitely until it happens to pass, which converts a real defect into a green run."
+      },
+      "cycle_ceiling": {
+        "max_autonomous_cycles": 5,
+        "on_exhaustion": "STOP with MAX_MISSION_CYCLES_REACHED"
+      }
+    }
+  },
+
+  "ag1_disposition": {
+    "AG1_STATUS": "PRESERVED_WITH_CONTROLLER_LOCAL_GUARD",
+    "AG1_CONTROLLER_GUARD": "AUTHORIZED",
+    "AG1_GLOBAL_STATUS": "OPEN — NOT CLOSED BY THIS ARTIFACT",
+    "measured_gap": "Verified this session by reading scripts/ods-scope.ts at BASE_SHA: DEFAULT_PROTECTED_PATTERNS (lines 82-90) is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. Of the 19 tracked artifacts under docs/ops/ods/, exactly ONE (ODS_V1_AUTHORITY_v1.0.0.json) is protected by default. The remaining 18 — including every ODS_V1_MAINTENANCE_ADDENDUM, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json and ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json — would be accepted by an ordinary `pnpm ods:scope --allow docs/ops/ods/**` with no protected-grant resolution required.",
+    "measured_probe": {
+      "method": "Disposable read-only probe executed OUTSIDE the repository (in the session scratchpad, never created inside the worktree and never committed). It imported the repository's own pure classifier, classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, ['docs/ops/ods/**'], []) from scripts/ods-scope.ts at BASE_SHA, and classified a sample of 8 real ODS governance artifacts against an ordinary, non-malicious allowlist. The probe mutated nothing and wrote nothing into the repository; git status remained exactly the two authorized paths before and after.",
+      "ALLOW_PATTERN": "docs/ops/ods/**",
+      "PROBED_ARTIFACTS": 8,
+      "PROTECTED_VIOLATIONS": 1,
+      "protected_violation_paths": [
+        "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"
+      ],
+      "UNAUTHORIZED": 0,
+      "ACCEPTED_OK": 7,
+      "accepted_paths": [
+        "docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json",
+        "docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json",
+        "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json",
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json",
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.8.json",
+        "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json",
+        "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json"
+      ],
+      "AG1_MEASURED": "GAP_CONFIRMED",
+      "interpretation": "7 of 8 probed ODS governance artifacts are ACCEPTED for mutation by an ordinary --allow docs/ops/ods/**, with zero protected-grant resolution required; only ODS_V1_AUTHORITY_v1.0.0.json raises a protected violation. AG-1 is therefore a MEASURED gap in this repository's classifier, not an inference from reading source, and the immutableByConvention guard is demonstrably non-vacuous: absent it, Controller v0 routing a node under such an allowlist would receive ODS_SCOPE=PASS while mutating frozen authority."
+    },
+    "explicit_non_claims": [
+      "This artifact does NOT attempt to solve the historical AG-1 debt globally.",
+      "This artifact does NOT modify scripts/ods-scope.ts, DEFAULT_PROTECTED_PATTERNS, PROTECTED_GRANTS, or any existing ods:scope semantics.",
+      "This artifact does NOT change what any historical ods:scope invocation accepted or rejected, and does not retroactively reclassify any past run.",
+      "This artifact does NOT declare AG-1 closed. AG-1 remains an open carry-forward finding for separate governed adjudication."
+    ],
+    "controller_local_rule": {
+      "field": "ODS_CONTROLLER_POLICY.immutableByConvention",
+      "requirement": "The future ODS_CONTROLLER_POLICY MUST carry an explicit immutableByConvention[] array enumerating existing ODS authority, addendum and governance artifacts that Controller v0 must never mutate merely because ods:scope would accept an ordinary --allow covering them.",
+      "enforcement": "When a controller-selected node targets any immutableByConvention entry for modification or deletion, Controller v0 MUST STOP with PROTECTED_SURFACE_CHANGE (or an equivalent fail-closed class). It must not proceed on the basis that ods:scope returned OK for that path.",
+      "defense_in_depth_note": "This guard is ADDITIVE. It is a second, controller-local check layered on top of ods:scope, not a replacement for it and not a claim about it. ods:scope remains the authority for protected-surface classification; the controller simply refuses a class of mutation that ods:scope alone would not currently catch. A path may therefore be OK under ods:scope and still STOP the controller — that asymmetry is intentional.",
+      "precedence": "If ods:scope and immutableByConvention disagree, the STRICTER outcome governs. The controller never uses an ods:scope OK to override immutableByConvention, and never uses immutableByConvention to authorize something ods:scope rejected."
+    },
+    "immutableByConvention": {
+      "note": "Enumerated and blob-pinned at BASE_SHA a4f4fa0369e6abd944248e2abf0edb50cb05e0ba (git ls-files -s, this session). The pin is evidence of the exact bytes this list refers to; it is not a seal and does not itself prevent mutation.",
+      "entries": [
+        { "path": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json", "blob": "9a99ece52b4354605b06443f90b654f906b9eba1", "already_in_default_protected_patterns": true },
+        { "path": "docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json", "blob": "7ded27651de23332583362c09abec84343c3adce", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json", "blob": "f213de3cd563601e81ab63bf70c25c1da0a5c411", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json", "blob": "207a7640a281622272436d69b9ddf9cbe996913b", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json", "blob": "a715cb02e9ff5c867ba0b070c0184c4e306b3e85", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json", "blob": "190540884fee3d73709c065b1cb91ef041c9eb94", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3.json", "blob": "80dbe319f7058f85fe7fd5b3963b270ec793a99b", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.4.json", "blob": "f9ab62f69e968caed3e6ff05ea687cd43457434d", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.5.json", "blob": "b3fd64afd8a0bef9fa9c9b22c6ff03824199010b", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.6.json", "blob": "6bab0d77dcffb891542f78217a97b0315cd9b430", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.7.json", "blob": "4129a48d9f39dfa15269a7ec526e3aaa32bbc258", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.8.json", "blob": "1b5dfc444b02c809d0fea48d7ce91fc96fe1e305", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json", "blob": "7d27af2a285ceeece51604b057a6925575446c60", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_CONTEXT_CHECKPOINT_STANDARD_v1.0.0.md", "blob": "9c7cef2861e5553e278dd77abd98655ca4c3e7b4", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/UELLIX_DEV_OS_OPERATING_MODEL_v1.0.0.md", "blob": "96e70f2daa42c73e702d3102d590009f3976e42a", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/UELLIX_DEV_OS_PROMPT_EXAMPLES_v1.0.0.md", "blob": "6f9c7776e8f2993625d962d6acea7ef7187460f7", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json", "blob": "647ae2877606b4c6b449ee0783da9fcdb8efdf50", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json", "blob": "7b52750021cb60e048e1a0a6889491e8c012becc", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json", "blob": "SELF — pinned by this mission's authority commit", "already_in_default_protected_patterns": false },
+        { "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json", "blob": "COMPANION — pinned by this mission's authority commit", "already_in_default_protected_patterns": false }
+      ],
+      "excluded_by_design": {
+        "path": "docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md",
+        "blob": "1c4cf18015f5f852f1cfe200642ce6f425286540",
+        "reason": "This file is an append-only working backlog whose stated function is to accumulate open findings over time. Freezing it as immutable would prevent legitimate governed appends. Excluding it is a deliberate, narrow decision and is recorded here rather than left as a silent omission. It is NOT a general precedent: no other docs/ops/ods/ artifact may be excluded from immutableByConvention without new authority."
+      },
+      "closed_world_requirement": "The Controller-v0 implementation mission MUST assert immutableByConvention as a closed-world set (an exact-membership test, not a subset test), so that a future artifact silently dropping out of the list fails a test rather than passing unnoticed."
+    }
+  },
+
+  "authorized_write_scope_this_mission": {
+    "AUTHORIZED_PATH_COUNT": 2,
+    "paths": [
+      "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json"
+    ],
+    "forbidden_paths": [
+      "scripts/**",
+      "tests/**",
+      "db/**",
+      "app/**",
+      "lib/**",
+      "package.json",
+      "every historical authority artifact, including all entries in ag1_disposition.immutableByConvention other than this artifact and its companion addendum"
+    ],
+    "forbidden_actions": [
+      "implementing Controller v0 code in this mission",
+      "opening a production pull request",
+      "any write to main",
+      "any merge, rebase, squash, amend or force-push of main, integration/commercial-v1, or this branch",
+      "any database execution"
+    ],
+    "protected_grant_required": false,
+    "protected_grant_rationale": "Neither authorized path matches DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts at BASE_SHA. docs/ops/ods/ is protected only at the single-file granularity of docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, which this mission does not touch. Therefore NO entry in the PROTECTED_GRANTS registry is created, required, or implied, and scripts/ods-scope.ts is not modified. HPO-ODS-W2-10 is an AUTHORITY identifier recorded in the companion addendum — it is deliberately NOT a machine-enforced protected-surface grant, and must not be read or cited as one."
+  },
+
+  "exit_criteria_for_controller_v0_implementation": {
+    "note": "These are the gates the FUTURE implementation mission must satisfy. This mission satisfies none of them, because it writes no implementation code.",
+    "E1": "Exactly one controller script, at most 400 lines, reusing every surface in controller_v0_design.reuse_not_duplicate.surfaces rather than reimplementing it.",
+    "E2": "ODS_CONTROLLER_POLICY carries immutableByConvention[] with the exact closed-world membership frozen in ag1_disposition.immutableByConvention.entries.",
+    "E3": "A negative control proves the guard is non-vacuous: a disposable attempt to route a node that targets an immutableByConvention artifact must STOP with PROTECTED_SURFACE_CHANGE (or an equivalent fail-closed class), and must NOT be committed.",
+    "E4": "A negative control proves the rerun policy is non-vacuous: the same deterministic failure presented twice must STOP with REPEATED_LOCAL_FAILURE rather than consume a second FLAKE_SUSPECTED rerun.",
+    "E5": "A negative control proves CONTROLLER_DB_EXECUTION=DISABLED is non-vacuous: a node requiring database execution must STOP with DATABASE_AUTHORITY_REQUIRED.",
+    "E6": "A negative control proves fableEligible cannot be self-granted: a node with fableEligible absent or false must route Class B to SONNET, and the controller must expose no code path that writes fableEligible=true.",
+    "E7": "The stop-class list is asserted as a closed-world set matching controller_v0_design.stop_classes.classes exactly.",
+    "E8": "No test is weakened, deleted or skipped to obtain a PASS, and no gate is relaxed."
+  },
+
+  "risks_and_open_findings": {
+    "AG-1": "OPEN. ODS governance artifacts other than ODS_V1_AUTHORITY_v1.0.0.json remain unprotected by DEFAULT_PROTECTED_PATTERNS. Mitigated only controller-locally by this artifact. Global closure requires separate governed adjudication of scripts/ods-scope.ts.",
+    "P1A_FULL_BOOTSTRAP": "DEFERRED_SEPARATE_GOVERNED_NODE. Controller v0 cannot advance any node depending on it.",
+    "R2-F1": "PRESERVED_NONBLOCKING_DEBT (READY-N5 label/proof precision), carried forward unremediated from the PR50 closure evidence.",
+    "R2-F2": "PRESERVED_NONBLOCKING_DEBT (SIGINT/SIGTERM env-restoration hygiene), carried forward unremediated from the PR50 closure evidence.",
+    "CONTROLLER_UNIMPLEMENTED": "Controller v0 does not exist as code at this artifact's materialization. Every guarantee here is an authority constraint on a future mission, not an observed runtime property."
+  },
+
+  "final_state": "AUTONOMOUS_PROGRAM_CONTROLLER_V0_AUTHORITY_FROZEN_READY_FOR_IMPLEMENTATION",
+  "next_gate": "AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1"
+}
