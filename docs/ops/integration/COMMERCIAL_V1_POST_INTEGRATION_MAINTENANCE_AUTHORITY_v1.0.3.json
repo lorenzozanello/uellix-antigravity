@@ -1,0 +1,142 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3",
+  "version": "1.0.3",
+  "authority_class": "M2_DISPOSABLE_MIGRATION_PRIVILEGE_WINDOW",
+  "hpo_mission_id": "COMMERCIAL-V1-M2-PRIVILEGE-CLOSURE-REMEDIATION-R1",
+  "hpo_decision": "PASS_FOR_M2_PRIVILEGE_REMEDIATION",
+  "materialization_date": "2026-09-02",
+  "append_only": true,
+  "supersedes": null,
+  "refines": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.2.json",
+  "purpose": "Resolves BF-1/AG-M2-2/AG-M2-3: after Option E's CREATEROLE narrowing (v1.0.2), db:migrate:local still failed because uellix_owner has no privilege to CREATE the drizzle bookkeeping schema, no CREATE on schema public, no USAGE on schema auth, and migration 0039 needs two functions (Part A of unit 41) that no governed disposable step yet creates. This authority closes all four gaps with the SMALLEST possible temporary/permanent grant set, entirely inside this disposable, non-persistent fixture. v1.0.2 remains in force and unmodified; this authority is strictly additive.",
+  "hpo_decisions_frozen": {
+    "AG_M2_2_AG_M2_3_BF_1_RESOLUTION": "M2_DISPOSABLE_MIGRATION_PRIVILEGE_WINDOW",
+    "NOT_PERSISTENT_TOPOLOGY": true,
+    "SCOPE": "This fixture-only privilege window applies EXCLUSIVELY inside a disposable, non-persistent PostgreSQL container this same script creates and tears down. It does not define, modify, or claim to represent hosted, local-development, staging, or production role topology."
+  },
+  "pins": {
+    "PREDECESSOR_AUTHORITY_COMMIT_HEAD": "30d5249d5cdf9f4aeb1b7c0d42c9d61a8b8ea186",
+    "PREDECESSOR_TREE": "78b8a9420f16e2a590d8e4a6174e6d6c8163fec8",
+    "INTEGRATION_BASE": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "MAIN_FROZEN": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "HOSTED_0000_SHA256": "871f382aead7b834daf556d7e54402055ed3656d9a1964a4f63138610d5b693d",
+    "PART_A_HELPERS_SHA256": "078a10e091280fab7f2cf147d866e61d4edaa0af8f7eec82ef3401845bda8cb8",
+    "DRIZZLE_ORM_VERSION": "0.45.2",
+    "SUPABASE_POSTGRES_IMAGE_TAG": "17.6.1.143",
+    "SUPABASE_POSTGRES_IMAGE_IMMUTABLE_REF": "public.ecr.aws/supabase/postgres@sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453",
+    "PIN_VERIFICATION_METHOD": "sha256sum on both files, docker inspect --format='{{index .RepoDigests 0}}' on the image, node -e require(drizzle-orm/package.json).version — all re-measured this session, all matched the expected values exactly, nothing hand-transcribed",
+    "AUTH_USAGE_GRANT_ISSUER": "supabase_admin"
+  },
+  "authorized_pre_migration_sequence": [
+    {
+      "step": 0,
+      "name": "PLATFORM_ROLE_PACKAGE",
+      "action": "Apply db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql VERBATIM (governed disposable invocation semantics: SET uellix.bootstrap_environment='staging' in the same session, then the file). Require its own self-verification PASS. No fragment extraction, no modification."
+    },
+    {
+      "step": 1,
+      "name": "OPTION_E_ROLE_NARROWING",
+      "action": "ALTER ROLE uellix_migrator NOCREATEROLE; (unchanged from v1.0.2). Require rolcreaterole true->false; preserve migrator->owner SET-only membership."
+    },
+    {
+      "step": 2,
+      "name": "EPHEMERAL_CREDENTIAL_ROTATION",
+      "action": "scripts/rotate-local-role-credentials.ts UNCHANGED. Gitignored env files snapshotted before, restored byte-for-byte after (success or failure), never printed."
+    },
+    {
+      "step": 3,
+      "name": "TEMPORARY_DATABASE_CREATE_WINDOW",
+      "actor": "postgres",
+      "action": "GRANT CREATE ON DATABASE postgres TO uellix_owner;",
+      "classification": "TEMPORARY_DISPOSABLE_MIGRATION_PRIVILEGE",
+      "must_revoke_after_migrate": true
+    },
+    {
+      "step": 4,
+      "name": "GOVERNED_OWNER_PUBLIC_SCHEMA_CAPABILITY",
+      "actor": "postgres",
+      "action": "GRANT CREATE ON SCHEMA public TO uellix_owner;",
+      "classification": "PERMANENT_FOR_THIS_FIXTURE — matches the governed local owner topology (db/prepared/stella_0001_role_topology_bootstrap.sql:176); NOT revoked at the end of M2."
+    },
+    {
+      "step": 5,
+      "name": "GOVERNED_OWNER_AUTH_SCHEMA_USAGE",
+      "actor": "supabase_admin",
+      "action": "GRANT USAGE ON SCHEMA auth TO uellix_owner;",
+      "classification": "THE ONLY privilege-changing statement this gate may execute as supabase_admin. No other GRANT/REVOKE/ALTER/CREATE/DROP/ownership operation may run as supabase_admin. Read-only verification as supabase_admin is allowed. The script must assert this one-write-operation invariant mechanically. No postgres fallback for this specific statement."
+    },
+    {
+      "step": 6,
+      "name": "CORPUS_PREREQUISITE_PART_A",
+      "action": "Apply the COMPLETE, unmodified db/prepared/storage/20260716000001_part_a_helpers.psql.sql (SHA256 verified against the pin above before execution) in one continuous psql/session context, authenticated as session_user=uellix_migrator with active current_user=uellix_owner (via SET ROLE, verified to have taken effect before the file executes — fail closed otherwise). No fragment extraction, no Part B, no full Supabase migration, no file modification. Establishes control PRIV-P7: public.can_read_evidence_object(text,uuid) and public.can_write_evidence_object(text,uuid) both exist and are owned by uellix_owner before db:migrate:local runs."
+    }
+  ],
+  "db_migrate_local_contract": {
+    "unchanged_files": ["scripts/db-migrate-local.ts", "db/migrator.ts", "drizzle-orm", "every db/migrations/*.sql"],
+    "required_session_state_before_migrate": {
+      "session_user": "uellix_migrator",
+      "current_user_after_set_role": "uellix_owner",
+      "current_role": "uellix_owner"
+    },
+    "required_result": "assertMigratorSession PASS; exactly 62 migrations applied, 0000 through 0061"
+  },
+  "pre_migration_effective_privilege_contract": {
+    "database_postgres": { "CREATE": true },
+    "schema_public": { "USAGE": true, "CREATE": true },
+    "schema_auth": { "USAGE": true },
+    "uellix_migrator": { "CREATEROLE": false, "SUPERUSER": false, "BYPASSRLS": false },
+    "migrator_to_owner_membership": { "SET_OPTION": true, "INHERIT_OPTION": false },
+    "no_additional_elevation_beyond_this_authority": true
+  },
+  "post_migration_narrowing": {
+    "action": "REVOKE CREATE ON DATABASE postgres FROM uellix_owner;",
+    "actor": "postgres",
+    "required": "effective revocation, mechanically verified",
+    "does_not_revoke": ["CREATE ON SCHEMA public FROM uellix_owner", "USAGE ON SCHEMA auth FROM uellix_owner"],
+    "reason_not_revoked": "this authority deliberately preserves the governed owner topology (public CREATE, auth USAGE) for the lifetime of this fixture — matching the local owner topology's own intent, not merely a migration-time convenience"
+  },
+  "final_fixture_privilege_contract": {
+    "uellix_owner": { "database_postgres_CREATE": false, "public_USAGE": true, "public_CREATE": true, "auth_USAGE": true, "CREATEROLE": false, "SUPERUSER": false, "BYPASSRLS": false },
+    "uellix_migrator": { "database_CREATE": false, "public_CREATE": false, "auth_USAGE": false, "CREATEROLE": false, "SUPERUSER": false, "BYPASSRLS": false },
+    "uellix_app_writer_auditor": "no unauthorized escalation beyond stella_hosted_0000's own grants",
+    "final_probe_requirement": "must FAIL if any role holds a privilege outside this exact declared contract"
+  },
+  "authorized_implementation_paths": [
+    ".github/workflows/m2-real-pg-gate.yml",
+    "scripts/m2-disposable-pg-bootstrap.ts",
+    "package.json",
+    "tests/integration/function-execute-acl-guard.test.ts"
+  ],
+  "authorized_governance_paths": [
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.3.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.3.json"
+  ],
+  "tests_integration_acl_guard_test_ts_authorization": "COMMENT_ONLY — correct only the stale header comment claiming P1A already runs this test on every ordinary PR; state that m2-real-pg-gate.yml is the dedicated real-Postgres CI gate, P1A full bootstrap remains a separate deferred governed node, and B0-17 is reused not duplicated. Zero executable-line changes; must be mechanically provable (diff of executable lines = empty).",
+  "deferred_findings_recorded_not_repaired": {
+    "AG_M2_4": "local/P1A topology (stella_0001_role_topology_bootstrap.sql) also lacks owner database-level CREATE required by db:migrate:local's drizzle bookkeeping schema — a pre-existing gap in the LOCAL topology, out of scope for this disposable-fixture authority.",
+    "AG_M2_5": "scripts/db-migrate-local.ts:74-80's comment about SET ROLE being session-scoped may be stale relative to Drizzle 0.45.2's actual transaction behavior — not verified or repaired here.",
+    "OF_1": "hosted CREATEROLE lifetime debt (RR-02: postgres retains ADMIN OPTION over every role it creates) — pre-existing, deferred.",
+    "M3": "uellix.bootstrap_environment='staging' disposable-semantics debt — pre-existing, deferred (see v1.0.2).",
+    "P1A_FULL_BOOTSTRAP_STATUS": "DEFERRED_SEPARATE_GOVERNED_NODE"
+  },
+  "does_not_authorize": [
+    "any modification to db/migrator.ts, scripts/db-migrate-local.ts, scripts/rotate-local-role-credentials.ts",
+    "any modification to db/prepared/**, db/migrations/**, db/hosted/**, db/safety/**, supabase/migrations/**",
+    "any modification to tests/integration/_guard.ts",
+    "any modification to .github/workflows/p1a-validation.yml, .github/workflows/ci.yml",
+    "pnpm-lock.yaml changes",
+    "any privilege-changing operation as supabase_admin beyond the single step 5 GRANT USAGE ON SCHEMA auth",
+    "any new migration, any new role package, any runtime code, any production/staging/hosted/local topology change, any P1A repair",
+    "force push, amend, rebase, squash, merge into integration/commercial-v1 or main, production promotion",
+    "a workflow_dispatch run of the new m2-real-pg-gate.yml in this mission — its authoritative GitHub execution occurs on a subsequent draft PR"
+  ],
+  "expected_gates": [
+    "pnpm secrets:scan, pnpm authority:seal:verify, pnpm lint, pnpm typecheck",
+    "pnpm m2:pg:gate — the complete real-Postgres proof, run locally in this mission",
+    "tests/integration/function-execute-acl-guard.test.ts: 1 file, 4 tests, 4 executed, 4 PASS, 0 skip",
+    "pnpm audit:batch --base 94f0923c... --head HEAD --target-branch integration/commercial-v1 --json",
+    "normal CI (ci.yml, unchanged) dispatched/run on the final successor SHA — success required",
+    "origin/integration/commercial-v1 and origin/main unchanged throughout"
+  ]
+}
