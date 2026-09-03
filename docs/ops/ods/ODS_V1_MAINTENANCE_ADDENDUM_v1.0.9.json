@@ -1,0 +1,136 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.9",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9",
+  "authority_class": "APPEND_ONLY_FUTURE_IMPLEMENTATION_SURFACE_AUTHORIZATION",
+  "materialization_step": "HPO-ODS-W2-10",
+  "GRANT_ID": "HPO-ODS-W2-10",
+  "hpo_mission_id": "AUTONOMOUS-PROGRAM-CONTROLLER-V0-AUTHORITY-R1",
+  "materialization_date": "2026-09-03",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json",
+
+  "purpose": "Freeze, append-only, the bounded future implementation surface for Autonomous Program Controller v0 — and only that surface. This addendum authorizes NO change in this mission. Its sole function is to fix, in advance, exactly which paths the successor implementation mission (AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1) may touch, so that mission cannot widen its own scope by asserting that a path 'changed anyway'. The controller's design envelope, executor routing, stop taxonomy and immutable-by-convention guard are frozen separately in ODS_CONTROLLER_AUTHORITY_v1.0.0.json and are not restated here.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.8, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through HPO-ODS-W2-09 are FROZEN_UNCHANGED. The frozen A/B/C/D executor taxonomy in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing is UNCHANGED and UNEXTENDED by this addendum: no class B+, no CLASS_E, no additional executor class. This mission itself writes exactly two new files under docs/ops/ods/ (this addendum and ODS_CONTROLLER_AUTHORITY_v1.0.0.json) and no implementation code whatsoever.",
+
+  "grant_id_semantics": {
+    "GRANT_ID": "HPO-ODS-W2-10",
+    "identifier_uniqueness": "Verified this session: `git grep -l 'HPO-ODS-W2-10' a4f4fa0 -- docs scripts tests` returns nothing, and HPO-ODS-W2-09 is the highest predecessor in use (docs/ops/integration/**). HPO-ODS-W2-10 is therefore the correct next unused identifier in the sequence, not a reuse.",
+    "IS_PROTECTED_SURFACE_GRANT": false,
+    "clarification": "HPO-ODS-W2-10 is an AUTHORITY identifier. It is deliberately NOT an entry in the PROTECTED_GRANTS registry of scripts/ods-scope.ts, and must never be cited as machine-enforced protected-surface authorization. No path authorized by this addendum matches DEFAULT_PROTECTED_PATTERNS at BASE_SHA (verified below), so no protected-surface grant is required, created, or implied. This distinction is recorded explicitly because prior grants in this family (HPO-ODS-W2-01, W2-02, W2-03, W2-07) WERE registry entries, and a reader could otherwise reasonably infer the same mechanism here."
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-autonomous-program-controller-r1",
+    "branch": "codex/autonomous-program-controller-r1",
+    "BASE_SHA": "a4f4fa0369e6abd944248e2abf0edb50cb05e0ba",
+    "BASE_TREE": "ad398908c128ad763c8e0e300d904999a92e85be",
+    "integration_baseline_sha": "a4f4fa0369e6abd944248e2abf0edb50cb05e0ba",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "prestate_gate": "PASS — branch, HEAD, TREE exact; working tree clean under --untracked-files=all; .git/MERGE_HEAD absent; origin/integration/commercial-v1 and origin/main verified exact after a normal fetch, all before any write."
+  },
+
+  "predecessor_authorities": {
+    "ods_v1_0_8": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.8.json",
+    "hpo_ods_w2_01_through_09": "FROZEN_UNCHANGED",
+    "source_closure": "POST_INTEGRATION_MAINTENANCE=CLOSED. Established by satisfaction of the post-merge condition in docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_MERGE_CLOSURE_AUTHORITY_v1.0.0.json closure_semantics.condition: the docs-only successor PR #51 merged into integration/commercial-v1 as a4f4fa0369e6abd944248e2abf0edb50cb05e0ba (parents 3200ddb03fb1b838ea553ea376bb02d06a7e9f76 and e3f18587edcb50362c2d7ed48cc0236836935ee7, verified by git log -1 --format='%H %P' this session), with origin/integration/commercial-v1 == a4f4fa0 post-fetch. M1=CLOSED, M2=CLOSED, M3=CLOSED.",
+    "enabling_disposition": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_PR50_POST_MERGE_CLOSURE_v1.0.0.json deferred_db_boundary — CONTROLLER_IMPLEMENTATION_AFTER_MAINTENANCE_CLOSURE=AUTHORIZED and CONTROLLER_DB_EXECUTION=NOT_AUTHORIZED. Read, not restated, and not modified by this mission."
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-10": {
+      "title": "AUTHORIZE_BOUNDED_AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_SURFACE",
+      "status": "FROZEN",
+      "rule": "On branch codex/autonomous-program-controller-r1 (or a successor branch explicitly based on this authority), the successor mission AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1 is authorized to create Controller v0 within EXACTLY the implementation surface enumerated in authorized_future_implementation_surface below, and within the design ceilings frozen in ODS_CONTROLLER_AUTHORITY_v1.0.0.json controller_v0_design. Every ceiling in that artifact — one script at most 400 lines, zero daemon, zero service, zero DB, zero UI, zero new orchestration framework, zero second state store — is a hard bound on that authorization, not advisory guidance. Exceeding any of them voids this grant for the change that exceeds it and requires new authority.",
+      "db_boundary": "CONTROLLER_DB_EXECUTION=DISABLED. This grant authorizes no database execution of any kind — no migration, no seed, no rehearsal, no live-cluster read probe. A node whose advancement would require database execution is a terminal STOP with DATABASE_AUTHORITY_REQUIRED. P1A_FULL_BOOTSTRAP remains DEFERRED_SEPARATE_GOVERNED_NODE.",
+      "taxonomy_boundary": "This grant authorizes implementation of the ROUTER, not amendment of what it routes to. The successor mission may not create a class B+, a CLASS_E, or any additional executor class; may not edit model_executor_routing in ODS_V1_AUTHORITY_v1.0.0.json; and may not author, infer, default or promote fableEligible=true anywhere. Class B's default executor remains SONNET, with FABLE_5_1 available only as a conditional variant under ODS_CONTROLLER_AUTHORITY_v1.0.0.json mc1_disposition.fable_disposition.",
+      "not_authorized": [
+        "any change in THIS mission beyond the two docs/ops/ods/ files named in authorized_changed_paths_this_mission",
+        "any change to db/migrations/**, db/baseline/**, db/prepared/**, or any other db/** path, in this mission or the successor mission",
+        "any change to app/** or lib/** runtime application code",
+        "any change to scripts/ods-scope.ts, including DEFAULT_PROTECTED_PATTERNS and the PROTECTED_GRANTS registry",
+        "any change to scripts/ods-prestate.ts, scripts/ods-poststate.ts, scripts/ods-program-state.ts, scripts/ods-integration-plan.ts, scripts/ods-test-diff.ts, or scripts/audit-batch.ts",
+        "any change to HPO-ODS-W2-01 through HPO-ODS-W2-09 decisions or their implementation surfaces",
+        "any modification or deletion of an artifact listed in ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention",
+        "any claim that AG-1 is globally closed",
+        "weakening, removing, skipping or relaxing any existing test or machine gate to obtain a PASS",
+        "creating a daemon, service, UI, second state store, or new orchestration framework",
+        "any database execution",
+        "a squash, rebase, amend, or force-push of main, integration/commercial-v1, or codex/autonomous-program-controller-r1",
+        "any write to main, any production promotion, any uellix.com cutover",
+        "opening a pull request in this mission"
+      ]
+    }
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json"
+    ],
+    "both_are_new_files": true,
+    "no_implementation_code": true
+  },
+
+  "authorized_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR mission only. None of these paths is created, modified or touched by this mission. Naming follows existing repository convention (scripts/ods-*.ts with a matching tests/ods/ods-*.test.ts), verified against the directory listings at BASE_SHA this session.",
+    "paths": [
+      {
+        "path": "scripts/ods-controller.ts",
+        "status": "TO_BE_CREATED",
+        "role": "The single Controller v0 script. At most 400 lines. Thin deterministic node selector/router that invokes the existing gates listed in ODS_CONTROLLER_AUTHORITY_v1.0.0.json controller_v0_design.reuse_not_duplicate.surfaces and classifies their output into the frozen state model and stop taxonomy.",
+        "hosts_controller_policy": "Yes. ODS_CONTROLLER_POLICY — including its required immutableByConvention[] array — is an exported const in this script, mirroring the existing precedent of DEFAULT_PROTECTED_PATTERNS and PROTECTED_GRANTS in scripts/ods-scope.ts. Hosting the policy here rather than in a new data file is deliberate: it satisfies the zero-second-state-store ceiling and keeps the policy testable by the same closed-world enumeration pattern already used for PROTECTED_GRANTS in tests/ods/ods-scope.test.ts.",
+        "line_ceiling": 400
+      },
+      {
+        "path": "tests/ods/ods-controller.test.ts",
+        "status": "TO_BE_CREATED",
+        "role": "Tests for Controller v0, including the mandatory non-vacuity negative controls E3 through E7 in ODS_CONTROLLER_AUTHORITY_v1.0.0.json exit_criteria_for_controller_v0_implementation, and the closed-world enumeration assertions for immutableByConvention[] and the stop-class list.",
+        "line_ceiling": null,
+        "ceiling_note": "The 400-line ceiling constrains the controller script only. Tests are not capped, because capping test volume would create a direct incentive to under-test the guard."
+      },
+      {
+        "path": "package.json",
+        "status": "TO_BE_MODIFIED",
+        "role": "Exactly ONE added entry in the scripts object, of the form \"ops:controller\": \"tsx scripts/ods-controller.ts\", matching the existing ops:* convention (ops:program-state, ops:integration-plan, ops:test-diff).",
+        "narrowness": "This authorization is limited to adding that single script entry. No dependency addition, removal, or version change is authorized under this grant. Any dependency change requires separate authority."
+      }
+    ],
+    "closed_world": "This list is exhaustive. A path not enumerated here is NOT authorized for the successor mission, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP — never a retroactive scope inference from the fact that it changed."
+  },
+
+  "protected_grant_required": false,
+  "protected_grant_rationale": "Verified this session by reading scripts/ods-scope.ts at BASE_SHA: DEFAULT_PROTECTED_PATTERNS (lines 82-90) is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. Neither this mission's two authorized paths nor any path in authorized_future_implementation_surface matches any of those patterns — docs/ops/ods/ is protected only at the single-file granularity of ODS_V1_AUTHORITY_v1.0.0.json, which is untouched. Therefore no PROTECTED_GRANTS registry entry is created and scripts/ods-scope.ts is not modified by this mission or authorized to be modified by the successor mission. This is stated affirmatively rather than by silence, because the absence of a registry entry is itself a fact a future auditor must be able to confirm rather than infer.",
+
+  "ag1_note": {
+    "AG1_STATUS": "PRESERVED_WITH_CONTROLLER_LOCAL_GUARD",
+    "AG1_GLOBAL_STATUS": "OPEN",
+    "statement": "This addendum does NOT close AG-1 and does NOT change ods:scope semantics. The measured gap — that 18 of 19 tracked docs/ops/ods/ artifacts are unprotected by DEFAULT_PROTECTED_PATTERNS and would be accepted by an ordinary --allow docs/ops/ods/** — is recorded in ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition and mitigated only inside Controller v0, as additive defense-in-depth. Global closure of AG-1 requires separate governed adjudication of scripts/ods-scope.ts and is explicitly out of scope for both this mission and the successor implementation mission."
+  },
+
+  "test_manifest": {
+    "note": "This mission is authority-only and writes no implementation code, so its exit gates are deterministic and machine-checkable rather than semantic. The controller's own behavioural test contract is frozen as exit criteria E1 through E8 in ODS_CONTROLLER_AUTHORITY_v1.0.0.json and is owed by the successor mission, not by this one.",
+    "positive": {
+      "P1": "Both authorized artifacts parse as valid JSON.",
+      "P2": "pnpm authority:seal:verify passes, confirming no sealed or certified artifact was disturbed by these two new files.",
+      "P3": "pnpm ods:scope against BASE_SHA, allowing exactly the two authorized paths, reports zero unauthorized paths, zero protected violations and zero non-canonical protected paths.",
+      "P4": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json is byte-unchanged at blob 9a99ece52b4354605b06443f90b654f906b9eba1, and model_executor_routing still reports frozen=true with exactly classes A, B, C, D."
+    },
+    "negative": {
+      "N1": "ACTUAL_CHANGED_PATH_COUNT == 2 and the changed set equals authorized_changed_paths_this_mission.paths exactly — no third path, authorized or otherwise.",
+      "N2": "No path under scripts/**, tests/**, db/**, app/** or lib/**, and not package.json, is changed by this mission.",
+      "N3": "No pre-existing artifact under docs/ops/ods/ is modified or deleted; both changed paths are additions.",
+      "N4": "origin/main remains 067e8c2f3ac9b5e843de3a35575182907b4365d4 and no pull request is opened.",
+      "N5": "No entry is added to the PROTECTED_GRANTS registry in scripts/ods-scope.ts, and that file is byte-unchanged."
+    },
+    "mutation": {
+      "M1": "DEFERRED_TO_SUCCESSOR_MISSION. Meaningful mutation controls for this authority test its guards — immutableByConvention enforcement, the single-rerun flake ceiling, the DB-execution refusal, and the fableEligible self-grant prohibition — none of which exist as executable code until Controller v0 is implemented. They are frozen as exit criteria E3 through E6 in ODS_CONTROLLER_AUTHORITY_v1.0.0.json and are mandatory for the successor mission. Asserting a mutation control here would be vacuous, and vacuous controls are precisely what the ODS negative-control doctrine forbids."
+    }
+  },
+
+  "final_state": "AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_IMPLEMENTATION",
+  "next_gate": "AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1"
+}
