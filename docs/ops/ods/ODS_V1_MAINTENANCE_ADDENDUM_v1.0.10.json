@@ -1,0 +1,181 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.10",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10",
+  "authority_class": "APPEND_ONLY_PROTECTED_SURFACE_GRANT_AND_FUTURE_IMPLEMENTATION_SURFACE_AUTHORIZATION",
+  "materialization_step": "HPO-ODS-W2-11",
+  "GRANT_ID": "HPO-ODS-W2-11",
+  "hpo_mission_id": "P1A-FULL-BOOTSTRAP-AUTHORITY-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-03",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "node_authority": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json",
+  "node_test_manifest": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json",
+
+  "purpose": "Freeze, append-only, the narrow protected-surface grant and the bounded future implementation surface for the P1A canonical LOCAL/CI clean bootstrap node. The node's topology decisions, second-run contract, env lifecycle contract, control set and audit requirement are frozen in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json and are NOT restated here. This addendum's function inside the ODS lineage is twofold and no wider: (1) record HPO-ODS-W2-11 as the next unused identifier in the sequence, and (2) authorize the PROTECTED_GRANTS registry entry that makes the three db/prepared paths reachable by the successor implementation mission and by nothing else.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.9, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, KNOWN_TEST_CONDITIONS_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through HPO-ODS-W2-10 are FROZEN_UNCHANGED. The frozen A/B/C/D executor taxonomy in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing is UNCHANGED and UNEXTENDED: no class B+, no CLASS_E, no additional executor class. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is UNCHANGED — this addendum adds a registry ENTRY, never a pattern, and never relaxes the classifier.",
+
+  "grant_id_semantics": {
+    "GRANT_ID": "HPO-ODS-W2-11",
+    "identifier_uniqueness": "Verified this session at BASE_SHA a0d783fea4b941d352a92ca55e185d13f5b50d06, after a normal fetch and a clean fast-forward: a repository-wide search for 'HPO-ODS-W2-11' excluding node_modules returned ZERO occurrences, and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json did not exist. HPO-ODS-W2-10 is the highest predecessor in use and is held by exactly two artifacts, both under docs/ops/ods/ (ODS_CONTROLLER_AUTHORITY_v1.0.0.json and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json). HPO-ODS-W2-11 and version 1.0.10 are therefore the correct next unused identifiers in the sequence, not a reuse and not a guess. Had either been occupied, this mission's instruction was STOP_FOR_LINEAGE_RENUMBERING rather than selecting another id.",
+    "IS_PROTECTED_SURFACE_GRANT": true,
+    "clarification": "Unlike HPO-ODS-W2-10 — which its own artifact records explicitly as an AUTHORITY identifier and deliberately NOT a registry entry — HPO-ODS-W2-11 IS a machine-enforced protected-surface grant, registered in the PROTECTED_GRANTS array of scripts/ods-scope.ts. It follows the mechanism of HPO-ODS-W2-01, W2-02, W2-03, W2-07, W2-08 and W2-09. This distinction is stated affirmatively because the immediately preceding grant in the sequence used the opposite convention, and a reader moving from v1.0.9 to v1.0.10 could otherwise reasonably infer the same non-registry treatment here.",
+    "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. Both remain mandatory. scripts/ods-scope.ts classifyPaths additionally checks the concrete path against the SUPPLIED grant's own patterns and never against the broader DEFAULT_PROTECTED_PATTERNS entry that made the path protected, which is what prevents this grant from ever authorizing a db/prepared sibling it does not name."
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-p1a-full-bootstrap-r1",
+    "branch": "codex/p1a-full-bootstrap-r1",
+    "OLD_BRANCH_HEAD": "a4f4fa0369e6abd944248e2abf0edb50cb05e0ba",
+    "BASE_SHA": "a0d783fea4b941d352a92ca55e185d13f5b50d06",
+    "BASE_TREE": "e6711501f1d95d452efabd52b7e612e26f25bc44",
+    "integration_baseline_sha": "a0d783fea4b941d352a92ca55e185d13f5b50d06",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "prestate_gate": "PASS — branch codex/p1a-full-bootstrap-r1, HEAD a4f4fa0369e6abd944248e2abf0edb50cb05e0ba, working tree clean under --untracked-files=all, all verified BEFORE any history change. Branch proven to carry ZERO commits not already contained in origin/integration/commercial-v1 (git rev-list --count HEAD ^origin/integration/commercial-v1 == 0, and the corresponding git log listing empty). Updated by clean git merge --ff-only origin/integration/commercial-v1 ONLY — no rebase, no destructive reset. HEAD and TREE verified exact afterwards, tree still clean, and origin/main verified unchanged at 067e8c2f3ac9b5e843de3a35575182907b4365d4.",
+    "fast_forward_result": "PASS — a4f4fa0..a0d783f fast-forward, adding exactly two files: docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json."
+  },
+
+  "predecessor_authorities": {
+    "ods_v1_0_9": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json",
+    "ods_controller_authority": "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json",
+    "hpo_ods_w2_01_through_10": "FROZEN_UNCHANGED",
+    "controller_lineage_verified": "Mechanically verified present in integration at BASE_SHA: docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json, the latter reporting version 1.0.9, artifact_id ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9 and materialization_step HPO-ODS-W2-10 exactly as required before this node was permitted to pin its own identifiers.",
+    "deferral_source": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json final_state.P1A_FULL_BOOTSTRAP_STATUS = DEFERRED_SEPARATE_GOVERNED_NODE, reaffirmed by ODS_CONTROLLER_AUTHORITY_v1.0.0.json risks_and_open_findings.P1A_FULL_BOOTSTRAP. This node adjudicates that deferred node's TOPOLOGY and authorizes its implementation surface. It does not close the node.",
+    "pre_existing_gap_of_record": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json open_findings.AG_M2_4 already recorded that the LOCAL topology in db/prepared/stella_0001_role_topology_bootstrap.sql lacks owner database-level CREATE required by db:migrate:local's drizzle bookkeeping schema, explicitly out of scope for that disposable-fixture authority. Read, not restated as new; AUTHORITY_v1.0.3 is not modified."
+  },
+
+  "cross_lane_disposition": {
+    "W2_10_prohibition_scope": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json hpo_decision.HPO-ODS-W2-10.not_authorized includes 'any change to scripts/ods-scope.ts, including DEFAULT_PROTECTED_PATTERNS and the PROTECTED_GRANTS registry'. That item bounds the W2-10 AUTHORIZATION, whose rule text scopes it to branch codex/autonomous-program-controller-r1 and to the successor mission AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1. It is not a global freeze of scripts/ods-scope.ts and does not bind this node, which runs on branch codex/p1a-full-bootstrap-r1 under the distinct identifier HPO-ODS-W2-11. Recorded affirmatively rather than by silence, because the absence of such a statement would leave a future auditor to infer a conflict that does not exist.",
+    "W2_10_UNCHANGED": true,
+    "DEFAULT_PROTECTED_PATTERNS_UNCHANGED": true,
+    "controller_closed_world_obligation": "ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention.closed_world_requirement obliges the FUTURE Controller-v0 implementation mission to assert immutableByConvention as an exact-membership set. That list is pinned at a4f4fa0369e6abd944248e2abf0edb50cb05e0ba and therefore does not contain THIS artifact. tests/ods/ods-controller.test.ts does not exist at BASE_SHA (verified this session), so no test breaks now. The Controller-v0 implementation mission MUST include docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json in its closed-world enumeration. Recorded here so that mission treats this artifact as a known governed predecessor rather than an unexpected one.",
+    "AG1_STATUS": "OPEN_UNCHANGED",
+    "ag1_note": "This addendum does not close AG-1 and does not change ods:scope semantics. The measured gap — that docs/ops/ods/ artifacts other than ODS_V1_AUTHORITY_v1.0.0.json are unprotected by DEFAULT_PROTECTED_PATTERNS, so this very artifact is not machine-protected — remains as recorded in ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition and is mitigated only controller-locally. Global closure requires separate governed adjudication of scripts/ods-scope.ts and is out of scope here."
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-11": {
+      "title": "GRANT_NARROW_PROTECTED_SURFACE_AND_BOUNDED_IMPLEMENTATION_SURFACE_FOR_P1A_CANONICAL_LOCAL_CI_BOOTSTRAP",
+      "status": "FROZEN",
+      "rule": "On branch codex/p1a-full-bootstrap-r1 ONLY, the successor mission P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1 is authorized to change the three protected db/prepared paths enumerated in protected_grant.patterns, and the unprotected paths enumerated in authorized_future_implementation_surface, and nothing else. Every decision, contract and control in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json is a hard bound on that authorization. Exceeding any bound voids this grant for the change that exceeds it and requires new authority via STOP_FOR_AUTHORITY_DELTA.",
+      "topology_reference": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json canonical_topology — PHASE_PLATFORM_SUBSTRATE, PHASE_LOCAL_ROLE_IDENTITY, PHASE_BOOTSTRAP_PRIVILEGE, PHASE_PART_A_PREREQUISITE, PHASE_MIGRATION_WINDOW, PHASE_LOCAL_PREPARED_CHAIN, PHASE_POSTCONDITIONS. Not restated here.",
+      "hosted_boundary": "The HOSTED managed-Supabase role identity surface is SEPARATE and UNCHANGED. db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql and db/prepared/stella_hosted_0001_managed_role_bootstrap.sql are not modified, not superseded and not reinterpreted, and HPO-ODS-W2-03 and HPO-ODS-W2-05 remain frozen.",
+      "db_boundary": "CONTROLLER_DB_EXECUTION = DISABLED, unchanged by this addendum. This grant authorizes database execution ONLY against disposable containers the future gate creates itself and destroys unconditionally, bound to loopback, with the port proven free beforehand. It authorizes NO staging write, NO Production write and NO arbitrary persistent local-dev write. P1A closure will establish the PREREQUISITE for a later policy decision about governed DB-writing development nodes against authorized disposable environments; it does not make that decision and does not grant it.",
+      "not_authorized": [
+        "any change in THIS mission beyond the paths named in authorized_changed_paths_this_mission",
+        "any change to db/migrations/** in this mission or the successor mission",
+        "any change to db/baseline/**",
+        "any change to db/prepared/storage/20260716000001_part_a_helpers.psql.sql",
+        "any change to db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql or db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+        "any change to any db/prepared path other than the exactly three in protected_grant.patterns",
+        "any change to DEFAULT_PROTECTED_PATTERNS or to ods:scope classification semantics",
+        "any change to .github/workflows/p1a-validation.yml, ci.yml or m2-real-pg-gate.yml",
+        "any change to db/safety/local-stack.ts, supabase/config.toml or tests/database-target-safety.test.ts",
+        "any change to tests/database-entrypoint-safety.test.ts or its closed-world integration inventory",
+        "any change to scripts/db-migrate-local.ts, scripts/rotate-local-role-credentials.ts, scripts/stella-r3-4-local-runner.ts, db/r3-4-governed-runner.ts or db/migrator.ts",
+        "any change to app/** or lib/** runtime application code",
+        "any new path under scripts/lib/**",
+        "relocation, semantic rewrite, deletion, check-id change, expected-check-count change or security-semantics change in scripts/m2-disposable-pg-bootstrap.ts",
+        "any change to HPO-ODS-W2-01 through HPO-ODS-W2-10 decisions or their implementation surfaces",
+        "any modification or deletion of an artifact listed in ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention",
+        "any claim that AG-1 is globally closed",
+        "broadening this grant to db/prepared/**, db/migrations/** or any other glob",
+        "weakening, removing, skipping or relaxing any existing test or machine gate to obtain a PASS",
+        "any database execution against staging, Production or a persistent local-dev database",
+        "any P1A runtime implementation in THIS mission",
+        "a squash, rebase, amend or force-push of main, integration/commercial-v1 or codex/p1a-full-bootstrap-r1",
+        "any write to main, any production promotion, any uellix.com cutover"
+      ]
+    }
+  },
+
+  "protected_grant_required": true,
+  "protected_grant_rationale": "All three paths match DEFAULT_PROTECTED_PATTERNS' db/prepared/** entry in scripts/ods-scope.ts (lines 82-90, unchanged by this addendum) and are therefore unconditionally protected absent a resolved grant. This addendum is the authority for the registry entry; the entry in scripts/ods-scope.ts is its machine-enforced counterpart, and the two must agree exactly — which tests/ods/ods-scope.test.ts asserts by reading protected_grant from docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, following the pattern already established for HPO-ODS-W2-08 and HPO-ODS-W2-09. The patterns are three exact literal paths with no glob syntax, so the grant cannot reach a db/prepared sibling it does not name. NO db/prepared file is changed by THIS mission: the grant is registered in advance precisely so the successor implementation mission cannot claim retroactive authorization from the fact that a path changed.",
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-11",
+    "branch": "codex/p1a-full-bootstrap-r1",
+    "patterns": [
+      "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql",
+      "db/prepared/README.md"
+    ],
+    "pattern_count": 3,
+    "contains_glob": false,
+    "source_of_truth": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json protected_grant — the registry entry and that object must be equal, asserted mechanically."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 5,
+    "paths": [
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts"
+    ],
+    "three_are_new_files": true,
+    "scripts_ods_scope_ts_change_scope": "PROTECTED_GRANTS registry entry addition ONLY. DEFAULT_PROTECTED_PATTERNS, patternToRegExp, matchesPattern, classifyPaths, resolveProtectedGrant, resolveProtectedGrants, the CLI argument parser and every other function are byte-unchanged.",
+    "ODS_SCOPE_TEST_DELTA_REQUIRED": "YES",
+    "ods_scope_test_delta_justification": "Measured at BASE_SHA, not preferred: tests/ods/ods-scope.test.ts:317 asserts expect(PROTECTED_GRANTS.length).toBe(6). Registering a seventh grant makes that closed-world assertion false by construction. The authorized edit is limited to enumerating HPO-ODS-W2-11 in the existing closed-world and non-vacuity contract — the same treatment the file already gives W2-07, W2-08 and W2-09. No unrelated test cleanup, no assertion weakening, no removal of any existing expectation.",
+    "no_implementation_code": true,
+    "no_db_prepared_file_changed": true,
+    "no_migration_changed": true
+  },
+
+  "authorized_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR mission P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1 only. None of these paths is created or modified by THIS mission. Full roles and constraints are in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json authorized_future_implementation_surface, which this list mirrors and does not extend.",
+    "protected": [
+      "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql",
+      "db/prepared/README.md"
+    ],
+    "unprotected": [
+      "scripts/p1a-bootstrap-gate.ts",
+      "scripts/m2-disposable-pg-bootstrap.ts",
+      "package.json",
+      ".github/workflows/p1a-bootstrap-gate.yml",
+      "tests/p1a-bootstrap-gate.test.ts",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0.json"
+    ],
+    "m2_reuse_strategy": "MINIMAL_EXPORT_WIDENING — scripts/m2-disposable-pg-bootstrap.ts may be modified ONLY by adding the export keyword to existing pure or reusable helpers P1A requires. No relocation, no semantic rewrite, no deletion, no check-id change, no expected-check-count change, no security-semantics change. A regression control must prove pnpm m2:pg:gate still produces an identical check-id set and total count. If simple export widening proves technically impossible, STOP_FOR_AUTHORITY_DELTA — the successor may NOT silently choose EXTRACT_SHARED, and scripts/lib/** is expressly excluded.",
+    "package_json_narrowness": "Exactly ONE added entry in the scripts object: \"p1a:bootstrap:gate\": \"tsx scripts/p1a-bootstrap-gate.ts\". No dependency addition, removal or version change is authorized under this grant.",
+    "test_placement_constraint": "tests/p1a-bootstrap-gate.test.ts is authorized at tests/ and deliberately NOT under tests/integration/. Placing a test under tests/integration/** mechanically requires modifying the closed-world integration inventory at tests/database-entrypoint-safety.test.ts:202-214, which is NOT authorized. That exact stale-inventory class caused the failed P1A run 33681916900 of record. If a future test genuinely must live there, STOP_FOR_AUTHORITY_DELTA.",
+    "closed_world": "This list is exhaustive. A path not enumerated here is NOT authorized, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP — never a retroactive scope inference from the fact that it changed."
+  },
+
+  "test_manifest": {
+    "note": "This mission is authority-only and writes no implementation code, so its own exit gates are deterministic and machine-checkable rather than semantic. The P1A node's behavioural contract — P1A-P1..P11, P1A-N1..N9, PRIV-N1a..N1d inherited by reference, and mutation controls P1A-M1..M4 — is frozen in docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json and is owed by the successor mission, not by this one.",
+    "positive": {
+      "P1": "All three new JSON artifacts parse as valid JSON.",
+      "P2": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json validates mechanically against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, including its additionalProperties:false constraints and the exit_gates enum.",
+      "P3": "pnpm secrets:scan passes.",
+      "P4": "pnpm authority:seal:verify passes, confirming no sealed or certified artifact was disturbed.",
+      "P5": "pnpm typecheck passes with the amended scripts/ods-scope.ts and tests/ods/ods-scope.test.ts.",
+      "P6": "pnpm ods:scope against BASE_SHA a0d783fea4b941d352a92ca55e185d13f5b50d06, allowing exactly the five authorized paths, reports zero unauthorized paths, zero protected violations and zero non-canonical protected paths.",
+      "P7": "tests/ods/ods-scope.test.ts passes with PROTECTED_GRANTS.length == 7 and the HPO-ODS-W2-11 entry proven equal to protected_grant in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json.",
+      "P8": "pnpm ods:poststate passes with the same allow list and a clean tree."
+    },
+    "negative": {
+      "N1": "ACTUAL_CHANGED_PATH_COUNT == 5 and the changed set equals authorized_changed_paths_this_mission.paths exactly — no sixth path, authorized or otherwise.",
+      "N2": "No path under db/**, app/**, lib/**, .github/** is changed, and package.json is unchanged. In particular NO db/prepared file is changed by this mission, despite the grant existing.",
+      "N3": "No pre-existing artifact under docs/ops/ods/ is modified or deleted. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json and ODS_CONTROLLER_AUTHORITY_v1.0.0.json are byte-unchanged, and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json is byte-unchanged.",
+      "N4": "origin/main remains 067e8c2f3ac9b5e843de3a35575182907b4365d4 and no production promotion occurs.",
+      "N5": "GRANT NARROWNESS, direction one: one of the three exact granted db/prepared paths is classified as a PROTECTED VIOLATION when --protected-authority HPO-ODS-W2-11 is NOT supplied, proving the grant is load-bearing rather than decorative.",
+      "N6": "GRANT NARROWNESS, direction two: an unrelated db/prepared path that the grant does not name remains a PROTECTED VIOLATION even WITH --protected-authority HPO-ODS-W2-11 supplied, proving the grant did not silently widen to db/prepared/**.",
+      "N7": "The grant resolves ONLY on branch codex/p1a-full-bootstrap-r1: supplying HPO-ODS-W2-11 on any other branch resolves to no grant, exactly as an unknown id does.",
+      "N8": "DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is byte-unchanged and still contains exactly its seven original entries."
+    },
+    "mutation": {
+      "M1": "DEFERRED_TO_SUCCESSOR_MISSION. Meaningful mutation controls for the P1A node test its runtime guards — the unconditional database-CREATE revoke, the finally-guaranteed teardown and env restoration, the signal-path restoration, the order-sensitivity of the corpus proof, the fail-closed stella_0001 assertions, and the M2 check-id/count invariance under export widening. None of those exists as executable code until the successor implements the gate. They are frozen as P1A-M1 through P1A-M4 plus P1A-N4 vector (b) and P1A-N5 in docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json and are mandatory for the successor mission. Asserting a runtime mutation control here would be vacuous, and vacuous controls are precisely what the ODS negative-control doctrine forbids.",
+      "M2": "NOT DEFERRED — the grant-narrowness controls N5 and N6 above ARE this mission's real mutation controls, because they prove the registry entry changes classifier behaviour in exactly one direction and no further. They are executable at this node and are not deferred."
+    }
+  },
+
+  "final_state": "P1A_CANONICAL_LOCAL_CI_BOOTSTRAP_PROTECTED_GRANT_AND_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_IMPLEMENTATION",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "next_gate": "P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1"
+}

@@ -313,8 +313,8 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant', () => {
-    expect(PROTECTED_GRANTS.length).toBe(6)
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant', () => {
+    expect(PROTECTED_GRANTS.length).toBe(7)
     const w2_03 = PROTECTED_GRANTS[2]
     expect(w2_03.authorityId).toBe('HPO-ODS-W2-03')
     expect(w2_03.branch).toBe('codex/u0-u9-reengineering-resume-r1')
@@ -374,6 +374,74 @@ describe('resolveProtectedGrant — pure', () => {
       branch: authority101.protected_grant.branch,
       patterns: authority101.protected_grant.patterns,
     })
+    // HPO-ODS-W2-11 (docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json,
+    // companion docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json): the
+    // P1A canonical LOCAL/CI clean-bootstrap node, on its own branch. Exactly
+    // three literal protected paths, no glob; the frozen authority artifact is
+    // the source of the list and the two must agree exactly. Note W2-10 is
+    // absent from this registry BY DESIGN — its own artifact records it as an
+    // authority identifier that is deliberately not a protected-surface grant.
+    const w2_11 = PROTECTED_GRANTS[6]
+    expect(w2_11.authorityId).toBe('HPO-ODS-W2-11')
+    expect(w2_11.branch).toBe('codex/p1a-full-bootstrap-r1')
+    expect(w2_11.patterns.length).toBe(3)
+    expect(w2_11.patterns.every((p) => !p.includes('*'))).toBe(true)
+    const authorityP1a = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json'), 'utf8'),
+    ) as { protected_grant: { authorityId: string; branch: string; patterns: string[] } }
+    expect(w2_11).toEqual({
+      authorityId: authorityP1a.protected_grant.authorityId,
+      branch: authorityP1a.protected_grant.branch,
+      patterns: authorityP1a.protected_grant.patterns,
+    })
+    // The companion ODS addendum must declare the SAME grant. Two artifacts
+    // stating a grant is one more place it can drift, so the agreement is
+    // asserted rather than assumed.
+    const addendumP1a = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json'), 'utf8'),
+    ) as { GRANT_ID: string; protected_grant: { authorityId: string; branch: string; patterns: string[] } }
+    expect(addendumP1a.GRANT_ID).toBe('HPO-ODS-W2-11')
+    expect(addendumP1a.protected_grant.authorityId).toBe(w2_11.authorityId)
+    expect(addendumP1a.protected_grant.branch).toBe(w2_11.branch)
+    expect(addendumP1a.protected_grant.patterns).toEqual(w2_11.patterns)
+  })
+
+  // HPO-ODS-W2-11 non-vacuity, both directions. A grant that authorizes
+  // nothing new, or that authorizes more than it names, is equally useless;
+  // these two controls pin it from both sides.
+  it('NON-VACUITY (P1A-N8 direction i): a granted P1A path is a protected violation WITHOUT HPO-ODS-W2-11 and grant-authorized WITH it', () => {
+    const P1A_BRANCH = 'codex/p1a-full-bootstrap-r1'
+    const granted = ['db/prepared/stella_local_0000_local_role_identity_bootstrap.sql']
+
+    const withoutGrant = classifyPaths(granted, DEFAULT_PROTECTED_PATTERNS, granted, [])
+    expect(withoutGrant.protectedViolations).toEqual(granted)
+    expect(withoutGrant.grantAuthorized).toEqual([])
+
+    const resolved = resolveProtectedGrant('HPO-ODS-W2-11', P1A_BRANCH)
+    expect(resolved.grant).toBeDefined()
+    const withGrant = classifyPaths(granted, DEFAULT_PROTECTED_PATTERNS, granted, [resolved.grant!])
+    expect(withGrant.protectedViolations).toEqual([])
+    expect(withGrant.grantAuthorized).toEqual(granted)
+  })
+
+  it('NON-VACUITY (P1A-N8 direction ii): an unrelated db/prepared path stays a protected violation even WITH HPO-ODS-W2-11', () => {
+    const P1A_BRANCH = 'codex/p1a-full-bootstrap-r1'
+    // A real sibling under the same default-protected db/prepared/** surface
+    // that HPO-ODS-W2-11 does not name. If this were authorized, the grant
+    // would have silently widened to db/prepared/**.
+    const unrelated = ['db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql']
+
+    const resolved = resolveProtectedGrant('HPO-ODS-W2-11', P1A_BRANCH)
+    expect(resolved.grant).toBeDefined()
+    const result = classifyPaths(unrelated, DEFAULT_PROTECTED_PATTERNS, unrelated, [resolved.grant!])
+    expect(result.protectedViolations).toEqual(unrelated)
+    expect(result.grantAuthorized).toEqual([])
+  })
+
+  it('NON-VACUITY (P1A-N8 branch binding): HPO-ODS-W2-11 resolves to no grant on any other branch', () => {
+    expect(resolveProtectedGrant('HPO-ODS-W2-11', 'main').grant).toBeUndefined()
+    expect(resolveProtectedGrant('HPO-ODS-W2-11', 'integration/commercial-v1').grant).toBeUndefined()
+    expect(resolveProtectedGrant('HPO-ODS-W2-11', AUTHORIZED_BRANCH).grant).toBeUndefined()
   })
 
   it('resolves the known authority on its granted branch', () => {

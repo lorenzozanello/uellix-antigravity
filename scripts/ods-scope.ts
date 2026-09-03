@@ -460,6 +460,30 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql',
     ],
   },
+  // HPO-ODS-W2-11 (docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json,
+  // companion docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json,
+  // HPO mission P1A-FULL-BOOTSTRAP-AUTHORITY-MATERIALIZATION-R1): the
+  // canonical LOCAL/CI clean-bootstrap-from-zero node. Exactly three literal
+  // protected paths, no glob: the NEW local pre-baseline role identity
+  // package, the EXISTING local role topology package (authorized only to
+  // convert its two already-canonical grants at lines 176 and 181 into
+  // fail-closed assertions), and the prepared-SQL registry that
+  // tests/prepared-sql-source-of-truth.test.ts checks.
+  //
+  // Deliberately NOT db/prepared/** and NOT db/migrations/**. The HOSTED
+  // managed-role packages (stella_hosted_0000/0001) are a separate surface
+  // and are absent here on purpose, as is baseline unit 41
+  // (db/prepared/storage/20260716000001_part_a_helpers.psql.sql), which the
+  // future gate applies VERBATIM and SHA-verified rather than editing.
+  {
+    authorityId: 'HPO-ODS-W2-11',
+    branch: 'codex/p1a-full-bootstrap-r1',
+    patterns: [
+      'db/prepared/stella_local_0000_local_role_identity_bootstrap.sql',
+      'db/prepared/stella_0001_role_topology_bootstrap.sql',
+      'db/prepared/README.md',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
