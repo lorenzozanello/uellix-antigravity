@@ -1,0 +1,90 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_PR50_POST_MERGE_CLOSURE_v1.0.0",
+  "version": "1.0.0",
+  "authority_class": "APPEND_ONLY_POST_MERGE_CLOSURE_EVIDENCE",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-M3-PR50-MERGE-CLOSURE-MATERIALIZATION-R1",
+  "governed_by": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_MERGE_CLOSURE_AUTHORITY_v1.0.0.json",
+  "materialization_date": "2026-09-03",
+  "append_only": true,
+  "purpose": "Materializes the post-merge closure evidence for PR #50, which the merge-closure authority above newly authorizes. PR #50 was audited pre-merge at head 832cc46 (AUDITED_PR50_HEAD/AUDITED_PR50_TREE) and merged into integration/commercial-v1 as merge commit 3200ddb0. This artifact records the mechanically re-derived merge facts and machine-gate attribution for that merge, and closes the PREMERGE_INTEGRATION_HEAD=94f0923c gap left open by the maintenance authority's m3_contract (which is pinned to the earlier PR #49 / 94f0923c integration).",
+  "merge_facts": {
+    "PR_NUMBER": 50,
+    "PR_URL": "https://github.com/lorenzozanello/uellix-antigravity/pull/50",
+    "PR_TITLE": "Commercial V1: close post-integration maintenance M1-M3",
+    "PR_MERGED": true,
+    "PR_MERGED_AT": "2026-09-03T10:52:01Z",
+    "PR_MERGED_BY": "lorenzozanello",
+    "PR_BASE_REF": "integration/commercial-v1",
+    "PR_HEAD_REF": "codex/commercial-v1-post-integration-maintenance-r1",
+    "verification_method": "gh pr view 50 --json number,title,mergeCommit,mergedAt,mergedBy,baseRefName,headRefName,headRefOid,url,state (read-only, this session)",
+    "AUDITED_HEAD": "832cc46df607f547a347f6593d65fa7a402b9084",
+    "AUDITED_TREE": "865b43b048b6df4a8fa75c641c6bbae54ca56b17",
+    "PREMERGE_INTEGRATION_HEAD": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "MERGE_COMMIT": "3200ddb03fb1b838ea553ea376bb02d06a7e9f76",
+    "MERGE_COMMIT_PARENTS_VERIFIED": "git log -1 --format='%H %P' 3200ddb0 (this session) == parent1 94f0923c01f8863a71e1b8f991a3e4073aba2747, parent2 832cc46df607f547a347f6593d65fa7a402b9084 exactly",
+    "POSTMERGE_INTEGRATION_HEAD": "3200ddb03fb1b838ea553ea376bb02d06a7e9f76",
+    "POSTMERGE_INTEGRATION_TREE": "865b43b048b6df4a8fa75c641c6bbae54ca56b17",
+    "MERGE_TREE_EQUALS_AUDITED_HEAD_TREE": true,
+    "tree_verification": "git rev-parse 3200ddb0^{tree} == git rev-parse 832cc46^{tree} == 865b43b048b6df4a8fa75c641c6bbae54ca56b17 (this session); git diff --name-only 832cc46 3200ddb0 == empty (this session)",
+    "AUDITED_HEAD_ANCESTOR_OF_INTEGRATION": "PASS",
+    "PREVIOUS_INTEGRATION_HEAD_ANCESTOR_OF_INTEGRATION": "PASS",
+    "ancestry_verification": "3200ddb0's recorded parents are 94f0923c (PREMERGE_INTEGRATION_HEAD) and 832cc46 (AUDITED_HEAD) exactly, per git log -1 --format='%P' above; both are therefore direct-parent ancestors of origin/integration/commercial-v1 at 3200ddb0."
+  },
+  "ci_runs": {
+    "note": "CI and M2 results below are attributed to headSha 832cc46df607f547a347f6593d65fa7a402b9084 (event: pull_request), NOT to merge commit 3200ddb03fb1b838ea553ea376bb02d06a7e9f76. The CI workflow (.github/workflows/ci.yml) push trigger is branches:[main] only; it does not run on push/merge to integration/commercial-v1. No merge-commit-specific CI run exists and none is fabricated here.",
+    "FINAL_CI_RUN": "33743565715",
+    "FINAL_CI_RESULT": "success",
+    "FINAL_CI_HEAD_SHA": "832cc46df607f547a347f6593d65fa7a402b9084",
+    "FINAL_CI_WORKFLOW": "CI",
+    "FINAL_CI_EVENT": "pull_request",
+    "FINAL_CI_URL": "https://github.com/lorenzozanello/uellix-antigravity/actions/runs/33743565715",
+    "FINAL_M2_RUN": "33743565573",
+    "FINAL_M2_RESULT": "success",
+    "FINAL_M2_HEAD_SHA": "832cc46df607f547a347f6593d65fa7a402b9084",
+    "FINAL_M2_WORKFLOW": "M2 Real PostgreSQL Gate",
+    "FINAL_M2_EVENT": "pull_request",
+    "FINAL_M2_URL": "https://github.com/lorenzozanello/uellix-antigravity/actions/runs/33743565573",
+    "FINAL_M2_OVERALL": "PASS_252_OF_252",
+    "verification_method": "gh run view 33743565715 --json databaseId,headSha,headBranch,conclusion,event,workflowName,url AND gh run view 33743565573 --json databaseId,headSha,headBranch,conclusion,event,workflowName,url AND gh pr checks 50 (all read-only, this session)",
+    "POSTMERGE_MERGE_COMMIT_HAS_OWN_CI_RUN": false,
+    "reason": "repository CI push trigger does not run on integration/commercial-v1"
+  },
+  "independent_audit": {
+    "result": "PASS",
+    "provenance": "HPO_ASSERTION",
+    "discoverable_reference_found_in_pr50": false,
+    "verification_method": "gh pr view 50 --json comments,reviews (read-only, this session): reviews == [] (empty); comments == [1 Vercel bot deployment-status comment only, no audit reference]. No PR #50 comment, review, or check run referencing an independent audit was found.",
+    "note": "Recorded per repository precedent (docs/ops/integration/COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json independent_audit block) and CLAUDE.md's fail-closed convention: the audit result is recorded as an HPO/governance assertion, not upgraded to a fabricated GitHub citation."
+  },
+  "r2_debt": {
+    "R2-F1": {
+      "title": "READY-N5 label/proof precision debt",
+      "classification": "PRESERVED_NONBLOCKING_DEBT",
+      "closure_impact": "NONE",
+      "remediated": false
+    },
+    "R2-F2": {
+      "title": "SIGINT/SIGTERM env-restoration hygiene debt",
+      "classification": "PRESERVED_NONBLOCKING_DEBT",
+      "closure_impact": "NONE",
+      "remediated": false
+    }
+  },
+  "deferred_db_boundary": {
+    "P1A_FULL_BOOTSTRAP_STATUS": "DEFERRED_SEPARATE_GOVERNED_NODE",
+    "CONTROLLER_IMPLEMENTATION_AFTER_MAINTENANCE_CLOSURE": "AUTHORIZED",
+    "CONTROLLER_DB_EXECUTION": "NOT_AUTHORIZED"
+  },
+  "production_freeze_invariant": {
+    "MAIN_HEAD": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "MAIN_UNCHANGED": true,
+    "verification": "git rev-parse origin/main (this session, post-fetch) == 067e8c2f3ac9b5e843de3a35575182907b4365d4 exactly",
+    "PRODUCTION_PROMOTION": "NO",
+    "UELLIX_COM_CUTOVER": "NO"
+  },
+  "closure_contract_status": {
+    "CLOSURE_CONTRACT_SATISFIED_PREMERGE": "PENDING",
+    "note": "This artifact is materialized on the docs-only successor branch (codex/commercial-v1-m3-pr50-merge-closure-r1) prior to that branch's own PR merging. Per the governing authority's closure_semantics.self_referential_claim_prohibition, this evidence does not itself declare POST_INTEGRATION_MAINTENANCE=CLOSED. That declaration belongs exclusively to the post-merge mission report, issued only after this successor PR merges into integration/commercial-v1."
+  },
+  "final_state": "PR50_POST_MERGE_CLOSURE_EVIDENCE_MATERIALIZED_PENDING_SUCCESSOR_PR_MERGE"
+}
