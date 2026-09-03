@@ -1,0 +1,112 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.5",
+  "version": "1.0.5",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-CONTAINER-READINESS-RACE-HARDENING-R1",
+  "materialization_date": "2026-09-03",
+  "refines": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.4.json",
+  "note": "Append-only. Does not rewrite v1.0.0-v1.0.4, all of which remain in force by reference.",
+  "predecessor": {
+    "head": "c526f073ea025cfebde2e6ee37419c36a3e1d88d",
+    "tree": "376bfea3fa4ba8900660ed8c7a70a8fcb081947c",
+    "pr_number": 50
+  },
+
+  "triggering_machine_finding": {
+    "failed_pr_run": 33712706673,
+    "failed_pr_result": "failure",
+    "failed_pr_overall": "FAIL (172/177 checks)",
+    "confirmed_passing_on_this_run": {
+      "MAIN:MIGRATE": "PASS",
+      "MAIN:MIGRATION-JOURNAL-COUNT": "PASS (expected=62 actual=62)",
+      "MAIN:MIGRATION-CORPUS-PROOF": "PASS",
+      "MAIN:0061-APPLIED": "PASS",
+      "MAIN:M2-TEST-EXECUTION": "PASS (raw Vitest: Test Files 1 passed (1) / Tests 4 passed (4))",
+      "MAIN:ENV-RESTORE-EXCEPTION-SAFE": "PASS",
+      "MAIN:TEARDOWN": "PASS",
+      "normal_pr_ci_run_33712706688": "success"
+    },
+    "note": "v1.0.4's two hardening fixes (ANSI-tolerant summary parsing, mechanical migration proof) are CONFIRMED CLOSED with real GitHub-hosted evidence on this run — this authority does not reopen either.",
+    "failed_phases": ["PRIV-N1a", "PRIV-N1b", "PRIV-N1d", "PRIV-N3", "PRIV-N5"],
+    "passing_phases": ["MAIN", "PRIV-N1c", "PRIV-N2", "PRIV-N4"],
+    "observed_failing_check": "PLATFORM-SUBSTRATE-CHECK",
+    "final_labelled_leftover_count": 0,
+    "machine_finding_classification": "INTERMITTENT_PLATFORM_SUBSTRATE_READINESS_FAILURE",
+    "blocker_id": "M2-CONTAINER-READINESS-01",
+    "blocker_class": "DISPOSABLE_FIXTURE_MACHINE_RELIABILITY",
+    "explicitly_not": ["product runtime defect", "migration privilege defect", "0061 defect", "B0-17 defect", "persistent database topology defect"]
+  },
+
+  "latent_preexisting_readiness_defect": {
+    "value": true,
+    "mechanical_proof": "git diff 00b57f3a08d98990c1a8d492e2352aabe17e6f73 c526f073ea025cfebde2e6ee37419c36a3e1d88d -- scripts/m2-disposable-pg-bootstrap.ts: checkPlatformSubstrate() is byte-identical between the two commits; createContainer() differs by exactly one added line (`activeContainers.add(handle)`, a Set bookkeeping call with no I/O or timing effect). The pg_isready polling loop, the 750ms fixed settle sleep, and PORT-BOUND-CHECK are unchanged. v1.0.4 did not alter this lifecycle's timing or logic in any way.",
+    "prior_run_context": "The one earlier GitHub-hosted PR run (33709987615, pre-v1.0.4) recorded PLATFORM-SUBSTRATE-CHECK=PASS on all 9/9 phases — this is the first observed manifestation of the race, not a v1.0.4 regression."
+  },
+
+  "diagnostic_limitation": {
+    "exact_transient_micromechanism": "INSUFFICIENTLY_INSTRUMENTED",
+    "reason": "checkPlatformSubstrate()'s record() call selects its detail text purely from `missing.length` (`missing.length > 0 ? 'missing schema(s): X' : 'auth/storage/extensions present natively'`), while its boolean is `substrate.status === 0 && missing.length === 0`. A nonzero psql exit status with empty stdout (e.g. a transient connection failure) produces the exact same misleading 'present natively' detail text as a genuine pass, even though the check recorded FAIL. Current logs from run 33712706673 cannot mechanically distinguish PSQL_NONZERO from a genuinely missing schema. This authority does not fabricate that distinction — it requires the v1.0.5 implementation to make it observable going forward, and treats it as currently unproven."
+  },
+
+  "authorized_hardening_paths": [
+    "scripts/m2-disposable-pg-bootstrap.ts",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.5.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.5.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.5.json"
+  ],
+  "never_authorized": [
+    ".github/workflows/m2-real-pg-gate.yml",
+    "package.json",
+    "pnpm-lock.yaml",
+    "tests/integration/function-execute-acl-guard.test.ts",
+    "db/**",
+    "supabase/**",
+    "scripts/db-migrate-local.ts",
+    "scripts/rotate-local-role-credentials.ts"
+  ],
+
+  "authorized_design": {
+    "requirement": "Replace the fixed-sleep readiness assumption with a BOUNDED_SEMANTIC_PLATFORM_READINESS_PROBE. Not a longer fixed sleep — a readiness predicate over the fixture's actual semantic preconditions, polled with a bound.",
+    "readiness_predicate": [
+      "PostgreSQL responds successfully to the probe (status 0)",
+      "schema auth exists",
+      "schema storage exists",
+      "schema extensions exists",
+      "auth.uid() exists"
+    ],
+    "bounded_policy": {
+      "PLATFORM_READINESS_TIMEOUT_MS": 20000,
+      "PLATFORM_READINESS_POLL_MS": 300,
+      "REQUIRED_CONSECUTIVE_SUCCESSES": 2,
+      "envelope_note": "Within the mission's authorized envelope (timeout 15000-30000ms, poll 200-500ms, consecutive successes 2). Chosen conservatively: 20s timeout gives ~66 poll attempts at 300ms, comfortably bounding a runner-under-load scenario without approaching the workflow's own 30-minute job timeout."
+    },
+    "retry_scope": "Retries are authorized ONLY within the platform-readiness probe. Once readiness is declared, every subsequent phase failure (migration privilege checks, negative-control assertions, ownership postconditions, the M2 test) remains an ordinary fail-closed failure with zero retry — this authority does not introduce retries anywhere else in the script.",
+    "no_special_casing": "Every MAIN and PRIV disposable container passes through the identical semantic readiness contract before any governed fixture mutation begins. Negative phases are not treated differently.",
+    "no_false_green": "If a required schema/function never appears by the bounded deadline, or psql remains unavailable by the deadline, the probe FAILS — the wait loop never silently downgrades a readiness failure to a warning, and never creates schemas/functions itself to force a pass (the probe is strictly non-mutating, observing only the pinned image's native platform substrate).",
+    "diagnostic_contract": "The probe returns structured information (status, missingSchemas, authUidPresent, stderrClass) rather than a single ambiguous boolean+detail pair. On final timeout, the emitted diagnostic truthfully distinguishes PSQL_NONZERO from MISSING_SCHEMA_auth/storage/extensions from AUTH_UID_MISSING (or a combination) — never 'present natively' when the probe itself failed to run. No secrets or raw stderr are ever printed; only bounded, sanitized diagnostic text."
+  },
+
+  "removed_load_bearing_element": {
+    "fixed_750ms_sleep": "No longer load-bearing for readiness. May be removed — semantic readiness is now established by the bounded predicate above, not by a fixed delay after pg_isready."
+  },
+
+  "deferred_findings_preserved_not_fixed_here": {
+    "M1_F1": "preserved",
+    "GOV_F7": "preserved as historical fact",
+    "AG_M2_4": "preserved",
+    "AG_M2_5": "preserved",
+    "OF_1": "preserved",
+    "M3_staging_guc_semantics_debt": "preserved",
+    "P1A_FULL_BOOTSTRAP_STATUS": "DEFERRED_SEPARATE_GOVERNED_NODE"
+  },
+
+  "does_not_authorize": [
+    "marking PR #50 ready for review",
+    "merging, squashing, or rebasing PR #50",
+    "amending any existing commit",
+    "modifying main or integration/commercial-v1",
+    "any Production/Vercel promotion",
+    "manually re-running the historical failed runs 33709987615 or 33712706673 (both immutable evidence, preserved as-is)",
+    "dispatching P1A Validation",
+    "looping/re-dispatching the new PR-triggered M2 run if it fails again — a single failure after this hardening must be inspected once and reported, not retried until green"
+  ]
+}
