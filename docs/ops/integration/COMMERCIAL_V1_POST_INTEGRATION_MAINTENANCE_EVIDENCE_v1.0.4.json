@@ -1,0 +1,109 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.4",
+  "version": "1.0.4",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-AUDIT-FINDINGS-HARDENING-R1",
+  "predecessor_evidence": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.3.json",
+  "authority": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.4.json",
+  "authority_commit": "831f52dd828bd606963af37285915702c1d4f932",
+  "implementation_commit": "dec179096181af3cc9e5a993e09b19a8d8abafdc",
+
+  "historical_machine_failure_preserved_never_reinterpreted": {
+    "pr_number": 50,
+    "run": 33709987615,
+    "job": 100507202972,
+    "workflow": "m2-real-pg-gate.yml",
+    "event": "pull_request",
+    "result": "failure",
+    "M2_VITEST_RAW_RESULT": "PASS_4_OF_4",
+    "raw_evidence": "Test Files 1 passed (1) / Tests 4 passed (4), db:migrate:local completed successfully, real disposable Postgres container created and torn down",
+    "M2_GATE_RESULT": "FAIL_229_OF_230",
+    "root_cause": "ANSI_SENSITIVE_M2_TEST_SUMMARY_FALSE_NEGATIVE / ANSI_SENSITIVE_HUMAN_OUTPUT_PARSER",
+    "note": "This historical run and its FAILURE conclusion are preserved as-is and never re-run or reinterpreted as success. The successor gate is proven separately below and, later, on GitHub via a new PR-triggered run on a new SHA."
+  },
+
+  "local_hardened_acceptance_run": {
+    "command": "pnpm m2:pg:gate",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-commercial-v1-post-integration-maintenance-r1",
+    "attempts_before_acceptance": [
+      {
+        "attempt": 1,
+        "result": "OVERALL=FAIL (13/23 checks)",
+        "cause": "port 56322 occupied by a leftover container from an earlier truncated (`timeout 25`) diagnostic invocation during development — confirmed this session's own artifact, removed with `docker rm -f -v`, not a script defect. Notably: the OS-level `timeout` kill did not reach the new SIGTERM handler in time to run userland cleanup — live confirmation of this authority's own EXCEPTION_SAFE=YES vs HARD_PROCESS_TERMINATION_GUARANTEE=NO distinction."
+      },
+      {
+        "attempt": 2,
+        "result": "OVERALL=FAIL — MAIN:M2-TEST-EXECUTION=FAIL, real vitest failure: 'PostgresError: password authentication failed for user \"uellix_migrator\"'",
+        "cause": "A real regression in the first hardening draft: withEnvRestore's finally restored the env files (containing the just-rotated uellix_migrator credentials) immediately after db:migrate:local returned, before the M2 vitest test ran — but that test reads .env.local/.env.migration.local for its own connection string and needs the rotated credentials still in place. Fixed by extending the withEnvRestore window to cover rotate + migrate + migration-proof + ownership/privilege postconditions + the M2 test itself, restoring only once at the end of that combined window."
+      },
+      {
+        "attempt": 3,
+        "result": "OVERALL=PASS (252/252 checks)",
+        "accepted": true
+      }
+    ],
+    "accepted_run": {
+      "overall": "PASS (252/252 checks)",
+      "process_exit_code": 0,
+      "self_controls": {
+        "ANSI-P1": "PASS", "ANSI-P2": "PASS", "ANSI-N1": "PASS", "ANSI-N2": "PASS", "ANSI-N3": "PASS",
+        "MIG-P1": "PASS — canonical count = 62", "MIG-P2-P3-POSITIVE": "PASS", "MIG-N1": "PASS",
+        "ENV-N2-INJECTED-THROW-RESTORE": "PASS"
+      },
+      "migration_proof": {
+        "MIGRATION-JOURNAL-COUNT": "PASS — expected=62 actual=62",
+        "MIGRATION-CORPUS-PROOF": "PASS — all 62 migration hashes match the repository corpus, in application order",
+        "0061-APPLIED": "PASS — terminal migration 0061_fib_disposition_governance_function_execute_revocation hash mechanically confirmed present in drizzle.__drizzle_migrations"
+      },
+      "m2_test_execution": "PASS — 1 file, 4 tests, 4 executed, 4 PASS, 0 skip (ANSI-tolerant parse)",
+      "negative_controls": "all 8 (PRIV-N1a..N1d, N2..N5) PASS, unchanged from v1.0.3",
+      "final_labelled_leftover_count": 0,
+      "post_run_docker_check": "docker ps -a --filter name=uellix-m2-pg-gate → empty"
+    },
+    "post_acceptance_edit": {
+      "change": "removed a stale `// eslint-disable-next-line no-control-regex` comment above stripAnsi() — eslint reported it as an unused-directive warning (the rule never fired on this pattern in this project's config)",
+      "behavior_change": "none — pure comment removal",
+      "reverification": "pnpm run typecheck and `pnpm exec eslint scripts/m2-disposable-pg-bootstrap.ts` both clean after the edit; the acceptance run's 252/252 PASS result is unaffected since no logic changed",
+      "full_gate_rerun_after_this_edit": "not performed — a full rerun for a no-op comment deletion would contradict this mission's own 'do not iterate by weakening controls / do not repeatedly execute the full gate' guidance; typecheck+lint reverification is the proportionate control here"
+    }
+  },
+
+  "env_file_measurements": {
+    "note": "Existence and sha256 fingerprint only. Contents are never recorded, per this repository's standing safety contract.",
+    "measured_in": "the accepted local_hardened_acceptance_run above",
+    "files": [
+      { "path": ".env.local", "pre_exists": false, "pre_sha256": null, "post_exists": false, "post_sha256": null, "restoration_result": "PASS — absent, as before" },
+      { "path": ".env.migration.local", "pre_exists": false, "pre_sha256": null, "post_exists": false, "post_sha256": null, "restoration_result": "PASS — absent, as before" },
+      { "path": ".env.audit.local", "pre_exists": false, "pre_sha256": null, "post_exists": false, "post_sha256": null, "restoration_result": "PASS — absent, as before" }
+    ]
+  },
+
+  "static_governance_gates": {
+    "secrets_scan": "PASS — no credential material found",
+    "authority_seal_verify": "PASS",
+    "lint": "PASS — 0 errors, 0 warnings on scripts/m2-disposable-pg-bootstrap.ts; repository-wide unchanged pre-existing warning baseline otherwise",
+    "typecheck": "PASS",
+    "note": "A second full pnpm test:unit run was deliberately not repeated for this scripts+docs-only delta — the mandatory PR CI on the pushed successor SHA runs the complete suite."
+  },
+
+  "gov_f4_f5_env_f6_historical_corrections": {
+    "reference": "See docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.4.json's historical_corrections_recorded_append_only for the full GOV-F4/GOV-F5/ENV-F6 text — not duplicated verbatim here to avoid drift between the two append-only artifacts."
+  },
+
+  "deferred_findings_preserved_not_fixed_here": {
+    "M1_F1": "preserved, source surface not modified",
+    "GOV_F7": "preserved as historical fact",
+    "AG_M2_4": "preserved, source surface not modified",
+    "AG_M2_5": "preserved, source surface not modified",
+    "OF_1": "preserved, source surface not modified",
+    "M3_staging_guc_semantics_debt": "preserved, not modified",
+    "P1A_FULL_BOOTSTRAP_STATUS": "DEFERRED_SEPARATE_GOVERNED_NODE"
+  },
+
+  "audit_batch_precision_note": {
+    "policy": "Per AUTHORITY_v1.0.4's GOV-F5 correction, this evidence file does NOT claim any audit:batch run against a HEAD that did not yet exist when the run was executed. The authoritative post-commit-3 audit:batch run (against the true final successor HEAD) is recorded in this mission's own FINAL_REPORT text delivered to the user, not retrofitted into this file."
+  },
+
+  "github_hosted_m2_gate_successor_result": {
+    "policy": "This evidence file is written and committed BEFORE the successor push/PR-CI/M2-gate cycle completes, per AUTHORITY_v1.0.4's ordering. The new GitHub-hosted M2 Real PostgreSQL Gate run's result (on the new successor SHA, PR #50 unchanged) is recorded in this mission's FINAL_REPORT text, not retrofitted into this file — avoiding the exact self-reference trap GOV-F5 already identified once."
+  }
+}
