@@ -85,9 +85,9 @@ const REPO_ROOT = resolve(import.meta.dirname, '..')
 // Immutable digest, resolved and cross-checked this session (docker pull +
 // docker inspect RepoDigests, in agreement) against the tag the governed
 // disposable rehearsal path already pins — see AUTHORITY v1.0.3 pins.
-const IMAGE_TAG = 'public.ecr.aws/supabase/postgres:17.6.1.143'
-const IMAGE_DIGEST = 'sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453'
-const IMAGE = `public.ecr.aws/supabase/postgres@${IMAGE_DIGEST}`
+export const IMAGE_TAG = 'public.ecr.aws/supabase/postgres:17.6.1.143'
+export const IMAGE_DIGEST = 'sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453'
+export const IMAGE = `public.ecr.aws/supabase/postgres@${IMAGE_DIGEST}`
 const CONTAINER_LABEL_PREFIX = 'uellix-m2-pg-gate'
 
 const ROLE_IDENTITY_PATH = resolve(REPO_ROOT, 'db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql')
@@ -136,7 +136,7 @@ function stripAnsi(text: string): string {
   return text.replace(/\x1b\[[0-9;]*m/g, '')
 }
 
-interface VitestSummaryLine { failed: number; passed: number; skipped: number; total: number }
+export interface VitestSummaryLine { failed: number; passed: number; skipped: number; total: number }
 
 /** Order/decoration-agnostic: extracts each named count independently, defaulting an absent segment to 0, and reads the trailing "(<total>)". */
 function parseSummaryLine(line: string): VitestSummaryLine | null {
@@ -148,9 +148,9 @@ function parseSummaryLine(line: string): VitestSummaryLine | null {
   return { failed, passed, skipped, total: Number(totalMatch[1]) }
 }
 
-interface VitestSummary { testFiles: VitestSummaryLine; tests: VitestSummaryLine }
+export interface VitestSummary { testFiles: VitestSummaryLine; tests: VitestSummaryLine }
 
-function parseVitestSummary(rawCombined: string): VitestSummary | null {
+export function parseVitestSummary(rawCombined: string): VitestSummary | null {
   const clean = stripAnsi(rawCombined)
   const lines = clean.split('\n')
   const testFilesLine = lines.find((l) => /^\s*Test Files\s/.test(l))
@@ -163,7 +163,7 @@ function parseVitestSummary(rawCombined: string): VitestSummary | null {
 }
 
 /** The exact M2 contract: 1 file, that file passed, 4 tests, all 4 passed, 0 failed, 0 skipped — for both files and tests. */
-function isExactM2Result(summary: VitestSummary | null): boolean {
+export function isExactM2Result(summary: VitestSummary | null): boolean {
   if (!summary) return false
   const f = summary.testFiles
   const t = summary.tests
@@ -203,10 +203,10 @@ function runAnsiParserSelfTest(): boolean {
 // per applied migration, hash = that same sha256, in application order).
 // ---------------------------------------------------------------------------
 
-interface ExpectedMigrationEntry { tag: string; when: number; hash: string }
-interface ExpectedMigrationCorpus { count: number; entries: ExpectedMigrationEntry[]; terminal: ExpectedMigrationEntry }
+export interface ExpectedMigrationEntry { tag: string; when: number; hash: string }
+export interface ExpectedMigrationCorpus { count: number; entries: ExpectedMigrationEntry[]; terminal: ExpectedMigrationEntry }
 
-function deriveExpectedMigrationCorpus(): ExpectedMigrationCorpus {
+export function deriveExpectedMigrationCorpus(): ExpectedMigrationCorpus {
   const journal = JSON.parse(readFileSync(MIGRATIONS_JOURNAL_PATH, 'utf8')) as { entries: { tag: string; when: number }[] }
   const entries = journal.entries.map((e) => ({
     tag: e.tag,
@@ -217,10 +217,10 @@ function deriveExpectedMigrationCorpus(): ExpectedMigrationCorpus {
   return { count: entries.length, entries, terminal: entries[entries.length - 1] }
 }
 
-interface MigrationProofResult { countOk: boolean; corpusOk: boolean; terminalOk: boolean }
+export interface MigrationProofResult { countOk: boolean; corpusOk: boolean; terminalOk: boolean }
 
 /** Pure comparison, no recording — reused by both the live post-migration check and the cheap MIG-N1 self-test. */
-function evaluateMigrationProof(actualHashesInOrder: string[], expected: ExpectedMigrationCorpus): MigrationProofResult {
+export function evaluateMigrationProof(actualHashesInOrder: string[], expected: ExpectedMigrationCorpus): MigrationProofResult {
   const expectedHashesInOrder = expected.entries.map((e) => e.hash)
   const countOk = actualHashesInOrder.length === expected.count
   const corpusOk = countOk && expectedHashesInOrder.every((h, i) => h === actualHashesInOrder[i])
@@ -228,7 +228,7 @@ function evaluateMigrationProof(actualHashesInOrder: string[], expected: Expecte
   return { countOk, corpusOk, terminalOk }
 }
 
-function checkMigrationProof(runner: DockerRunner, container: string, phase: string): boolean {
+export function checkMigrationProof(runner: DockerRunner, container: string, phase: string): boolean {
   const expected = deriveExpectedMigrationCorpus()
   const q = psql(runner, container, `SELECT hash FROM drizzle.__drizzle_migrations ORDER BY created_at;`)
   const actualHashesInOrder = (q.stdout || '').trim().split('\n').filter(Boolean)
@@ -240,7 +240,7 @@ function checkMigrationProof(runner: DockerRunner, container: string, phase: str
 }
 
 /** Cheap, no-Docker self-controls (MIG-P1/P2/P3 positive, MIG-N1 negative) — must be green before any disposable container starts. */
-function runMigrationProofSelfTest(): boolean {
+export function runMigrationProofSelfTest(): boolean {
   const expected = deriveExpectedMigrationCorpus()
   const p1 = record('SELFTEST:MIG-P1', expected.count > 0, `canonical migration count mechanically derived from db/migrations/meta/_journal.json = ${expected.count}`)
 
@@ -267,7 +267,7 @@ function runMigrationProofSelfTest(): boolean {
 // own finally-guaranteed teardown.
 // ---------------------------------------------------------------------------
 
-async function withEnvRestore<T>(labelPrefix: string, fn: () => Promise<T> | T): Promise<T> {
+export async function withEnvRestore<T>(labelPrefix: string, fn: () => Promise<T> | T): Promise<T> {
   const snapshot = snapshotEnvFiles()
   let threw = false
   try {
@@ -360,9 +360,9 @@ async function isPortFree(runner: DockerRunner, port: number): Promise<boolean> 
 // Docker / psql plumbing.
 // ---------------------------------------------------------------------------
 
-interface SqlResult { status: number; stdout: string; stderr: string }
+export interface SqlResult { status: number; stdout: string; stderr: string }
 
-function psqlAs(runner: DockerRunner, container: string, role: string, sql: string): SqlResult {
+export function psqlAs(runner: DockerRunner, container: string, role: string, sql: string): SqlResult {
   // -h 127.0.0.1 forces TCP, never the local Unix socket. Measured directly:
   // a socket connection uses PostgreSQL's peer authentication, which checks
   // the OS user against the role name — `uellix_migrator` is not a real OS
@@ -376,11 +376,11 @@ function psqlAs(runner: DockerRunner, container: string, role: string, sql: stri
   return { status: res.status, stdout: res.stdout, stderr: res.stderr }
 }
 
-function psql(runner: DockerRunner, container: string, sql: string): SqlResult {
+export function psql(runner: DockerRunner, container: string, sql: string): SqlResult {
   return psqlAs(runner, container, 'postgres', sql)
 }
 
-function runPnpm(args: string[]): { status: number; combined: string } {
+export function runPnpm(args: string[]): { status: number; combined: string } {
   // pnpm is a .cmd shim on Windows: spawnSync with an args array and no shell
   // fails with ENOENT. shell:true with an ARGS ARRAY triggers Node's DEP0190
   // warning; a single pre-quoted command string does not.
@@ -533,13 +533,13 @@ async function waitForPlatformReadiness(
   return { ready: false, lastResult, consecutiveReached: consecutive }
 }
 
-async function checkPlatformSubstrate(runner: DockerRunner, container: string, phase: string): Promise<boolean> {
+export async function checkPlatformSubstrate(runner: DockerRunner, container: string, phase: string): Promise<boolean> {
   const { ready, lastResult } = await waitForPlatformReadiness(() => probePlatformReadiness(runner, container))
   return record(`${phase}:PLATFORM-READINESS`, ready, ready ? `auth/storage/extensions present, auth.uid() present, ${PLATFORM_READINESS_REQUIRED_CONSECUTIVE_SUCCESSES} consecutive successful probes` : diagnosePlatformReadinessFailure(lastResult))
 }
 
 /** Cheap, no-Docker self-controls (READY-P1..P4, READY-N1..N4) for waitForPlatformReadiness — a fake clock + scripted/cycling probe sequence, no real Docker and no real multi-second waits. */
-async function runPlatformReadinessSelfTest(): Promise<boolean> {
+export async function runPlatformReadinessSelfTest(): Promise<boolean> {
   const OK: PlatformReadinessProbeResult = { ready: true, psqlOk: true, missingSchemas: [], authUidPresent: true }
   const PSQL_DOWN: PlatformReadinessProbeResult = { ready: false, psqlOk: false, missingSchemas: [], authUidPresent: false }
   const MISSING_AUTH: PlatformReadinessProbeResult = { ready: false, psqlOk: true, missingSchemas: ['auth'], authUidPresent: false }
@@ -600,13 +600,13 @@ async function runPlatformReadinessSelfTest(): Promise<boolean> {
   return p1 && p2 && p3 && p4 && n1 && n2 && n3 && n4 && n5
 }
 
-function checkPristineRoles(runner: DockerRunner, container: string, phase: string): boolean {
+export function checkPristineRoles(runner: DockerRunner, container: string, phase: string): boolean {
   const preRoles = psql(runner, container, `SELECT count(*) FROM pg_roles WHERE rolname LIKE 'uellix\\_%' ESCAPE '\\';`)
   const count = Number((preRoles.stdout || '0').trim())
   return record(`${phase}:PRISTINE-STATE-ASSERTION`, count === 0, `${count} uellix_* roles before bootstrap`)
 }
 
-function verifyPinnedSha(phase: string, id: string, actual: string, expected: string): boolean {
+export function verifyPinnedSha(phase: string, id: string, actual: string, expected: string): boolean {
   return record(`${phase}:${id}`, actual === expected, actual === expected ? `sha256 matches ${expected}` : `sha256 MISMATCH: actual=${actual} expected=${expected}`)
 }
 
@@ -626,7 +626,7 @@ function narrowMigrator(runner: DockerRunner, container: string, phase: string):
 }
 
 /** STEP 3: temporary, revoked after migrate(). Actor: postgres. */
-function grantDatabaseCreate(runner: DockerRunner, container: string, phase: string): boolean {
+export function grantDatabaseCreate(runner: DockerRunner, container: string, phase: string): boolean {
   const grant = psql(runner, container, 'GRANT CREATE ON DATABASE postgres TO uellix_owner;')
   return record(`${phase}:STEP3-DATABASE-CREATE-GRANT`, grant.status === 0, 'GRANT CREATE ON DATABASE postgres TO uellix_owner (actor: postgres; TEMPORARY_DISPOSABLE_MIGRATION_PRIVILEGE)')
 }
@@ -656,7 +656,7 @@ function grantAuthSchemaUsage(runner: DockerRunner, container: string, phase: st
 }
 
 /** STEP 6: Part A, verbatim, SHA-verified, applied as uellix_migrator with SET ROLE uellix_owner active in one continuous session. */
-function applyPartAHelpers(runner: DockerRunner, container: string, phase: string): boolean {
+export function applyPartAHelpers(runner: DockerRunner, container: string, phase: string): boolean {
   if (!verifyPinnedSha(phase, 'PART-A-SHA-VERIFY', PART_A_SHA256_ACTUAL, PART_A_SHA256_EXPECTED)) return false
   const sql = `
 SET ROLE uellix_owner;
@@ -671,7 +671,7 @@ ${PART_A_SQL}
   return record(`${phase}:STEP6-PART-A-APPLIED`, applied.status === 0, applied.status === 0 ? 'Part A applied verbatim as uellix_migrator with SET ROLE uellix_owner active, in one continuous session' : applied.stderr || applied.stdout)
 }
 
-function checkPrivP7(runner: DockerRunner, container: string, phase: string): boolean {
+export function checkPrivP7(runner: DockerRunner, container: string, phase: string): boolean {
   const q = psql(runner, container, `SELECT p.proname||'|'||pg_get_userbyid(p.proowner) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname IN ('can_read_evidence_object','can_write_evidence_object') ORDER BY p.proname;`)
   const rows = (q.stdout || '').trim().split('\n').filter(Boolean)
   const ok = rows.length === 2 && rows.every((r) => r.endsWith('|uellix_owner'))
@@ -682,13 +682,13 @@ function checkPrivP7(runner: DockerRunner, container: string, phase: string): bo
 // ENV snapshot / restore.
 // ---------------------------------------------------------------------------
 
-interface EnvSnapshot { path: string; existed: boolean; hash: string | null; bytes: Buffer | null }
+export interface EnvSnapshot { path: string; existed: boolean; hash: string | null; bytes: Buffer | null }
 
 function fingerprint(bytes: Buffer): string {
   return createHash('sha256').update(bytes).digest('hex')
 }
 
-function snapshotEnvFiles(): EnvSnapshot[] {
+export function snapshotEnvFiles(): EnvSnapshot[] {
   return ENV_FILES.map((path) => {
     if (existsSync(path)) {
       const bytes = readFileSync(path)
@@ -698,7 +698,7 @@ function snapshotEnvFiles(): EnvSnapshot[] {
   })
 }
 
-function restoreEnvFiles(snapshots: EnvSnapshot[], label: string): boolean {
+export function restoreEnvFiles(snapshots: EnvSnapshot[], label: string): boolean {
   let allOk = true
   for (const snap of snapshots) {
     if (snap.existed && snap.bytes) {
@@ -720,7 +720,7 @@ function restoreEnvFiles(snapshots: EnvSnapshot[], label: string): boolean {
 // Pre-migration privilege contract (PRIV-P1..P6) + post-migration checks.
 // ---------------------------------------------------------------------------
 
-function checkPreMigrationContract(runner: DockerRunner, container: string, phase: string): boolean {
+export function checkPreMigrationContract(runner: DockerRunner, container: string, phase: string): boolean {
   const q = psql(
     runner, container,
     `SELECT
@@ -743,7 +743,7 @@ function checkPreMigrationContract(runner: DockerRunner, container: string, phas
   return record(`${phase}:PRIV-P5-OWNER-MEMBERSHIP`, setOpt === 't' && inheritOpt === 'f', `set=${setOpt} inherit=${inheritOpt}`)
 }
 
-function checkOwnershipPostcondition(runner: DockerRunner, container: string, phase: string): boolean {
+export function checkOwnershipPostcondition(runner: DockerRunner, container: string, phase: string): boolean {
   const nonOwner = psql(
     runner, container,
     `SELECT count(*) FROM (
@@ -771,14 +771,14 @@ function checkOwnershipPostcondition(runner: DockerRunner, container: string, ph
   return record(`${phase}:0061-FUNCTIONS-OWNED-BY-OWNER`, (functionsFrom0061.stdout || '').trim() === 'uellix_owner')
 }
 
-function revokeDatabaseCreate(runner: DockerRunner, container: string, phase: string): boolean {
+export function revokeDatabaseCreate(runner: DockerRunner, container: string, phase: string): boolean {
   const revoke = psql(runner, container, 'REVOKE CREATE ON DATABASE postgres FROM uellix_owner;')
   if (!record(`${phase}:STEP9-DATABASE-CREATE-REVOKE`, revoke.status === 0, 'REVOKE CREATE ON DATABASE postgres FROM uellix_owner (actor: postgres)')) return false
   const verify = psql(runner, container, `SELECT has_database_privilege('uellix_owner','postgres','CREATE');`)
   return record(`${phase}:DATABASE-CREATE-REVOKED-VERIFIED`, (verify.stdout || '').trim() === 'f')
 }
 
-interface PrivilegeContractComputation {
+export interface PrivilegeContractComputation {
   ownerOk: boolean
   ownerDetail: string
   migratorOk: boolean
@@ -788,7 +788,7 @@ interface PrivilegeContractComputation {
 }
 
 /** Pure computation, no recording — reused by both the MAIN-phase recorded check and PRIV-N3's deliberately-failing negative probe (which must NOT have its expected-to-fail sub-checks counted against the script's overall pass tally). */
-function computeFinalPrivilegeContract(runner: DockerRunner, container: string): PrivilegeContractComputation {
+export function computeFinalPrivilegeContract(runner: DockerRunner, container: string): PrivilegeContractComputation {
   const owner = psql(
     runner, container,
     `SELECT has_database_privilege('uellix_owner','postgres','CREATE'), has_schema_privilege('uellix_owner','public','USAGE'),
@@ -820,7 +820,7 @@ function computeFinalPrivilegeContract(runner: DockerRunner, container: string):
   return { ownerOk, ownerDetail, migratorOk, migratorDetail, othersOk, othersDetail }
 }
 
-function checkFinalPrivilegeContract(runner: DockerRunner, container: string, phase: string): boolean {
+export function checkFinalPrivilegeContract(runner: DockerRunner, container: string, phase: string): boolean {
   const c = computeFinalPrivilegeContract(runner, container)
   record(`${phase}:FINAL-CONTRACT-OWNER`, c.ownerOk, c.ownerDetail)
   record(`${phase}:FINAL-CONTRACT-MIGRATOR`, c.migratorOk, c.migratorDetail)
