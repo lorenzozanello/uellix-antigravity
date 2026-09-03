@@ -367,12 +367,28 @@ describe('already-closed disposition', () => {
     expect(decision.stopClass).toBeUndefined()
   })
 
-  it('REAL REGISTRY: W2-B3 (fully closed authority+implementation+audit) is not misselected as executable', () => {
+  it('REAL REGISTRY: W2-B3 is never misselected as executable', () => {
+    // W2-B3's own evidence lives on codex/w2-methodology-objects-r1. A
+    // checkout that has fetched that branch (a full local clone) resolves
+    // it CLOSED (verified this session via `pnpm ops:program-state --unit
+    // W2-B3`), so decideSelection short-circuits with alreadyClosed=true —
+    // W2-B3 must never be reported as a next-executable node merely because
+    // its own dependents are satisfied. A checkout that has not fetched
+    // that branch (e.g. CI's default-branch-only checkout) reads UNKNOWN
+    // evidence instead, correctly declines to assume "already closed" from
+    // unreadable evidence (CTRL-M1), and falls through to a different but
+    // still fail-closed stop (AUTHORITY_GAP, since W2-B3 declares no
+    // writePaths). What must hold in EVERY environment is selectable=false
+    // — never a false SELECTABLE=true.
     const registry = loadRegistry(path.join(REPO_ROOT, DEFAULT_REGISTRY_RELATIVE_PATH))
     const decision = selectNode(REPO_ROOT, registry, 'W2-B3')
     expect(decision.selectable).toBe(false)
-    expect(decision.alreadyClosed).toBe(true)
-    expect(decision.stopClass).toBeUndefined()
+    if (decision.alreadyClosed) {
+      expect(decision.stopClass).toBeUndefined()
+    } else {
+      expect(decision.stopClass).toBeDefined()
+      expect(STOP_CLASSES).toContain(decision.stopClass)
+    }
   })
 })
 
