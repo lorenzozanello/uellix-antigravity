@@ -107,6 +107,9 @@ const PART_A_SHA256_ACTUAL = sha256(PART_A_SQL)
 
 const ENV_FILES = ['.env.local', '.env.migration.local', '.env.audit.local'].map((f) => resolve(REPO_ROOT, f))
 
+const MIGRATIONS_DIR = resolve(REPO_ROOT, 'db/migrations')
+const MIGRATIONS_JOURNAL_PATH = resolve(MIGRATIONS_DIR, 'meta/_journal.json')
+
 interface StepResult { id: string; ok: boolean; detail?: string }
 
 const results: StepResult[] = []
@@ -114,6 +117,220 @@ function record(id: string, ok: boolean, detail?: string): boolean {
   results.push({ id, ok, detail })
   console.log(`[m2-pg-gate] ${id}=${ok ? 'PASS' : 'FAIL'}${detail ? ` — ${detail}` : ''}`)
   return ok
+}
+
+// ---------------------------------------------------------------------------
+// AUTHORITY v1.0.4 / M2-F2-class hardening: ANSI-tolerant Vitest summary
+// parsing. Measured live in PR #50 run 33709987615: GitHub Actions' runner
+// makes vitest emit its summary with ANSI color escapes interleaved around
+// the very tokens a naive `/\b4 passed\b/` regex expects adjacent
+// ("\x1b[1m\x1b[32m4 passed\x1b[39m\x1b[22m"), which this repository's local
+// (non-TTY, piped-to-file) runs never produce — causing a FALSE NEGATIVE
+// (raw Vitest: 1 file/4 tests/4 passed/0 skip; gate's own check: FAIL).
+// This normalizes decoration BEFORE interpreting the summary, rather than
+// relying on NO_COLOR alone (CI environments are not guaranteed to honor it,
+// and a parser that only works undecorated is still brittle).
+// ---------------------------------------------------------------------------
+
+function stripAnsi(text: string): string {
+  return text.replace(/\x1b\[[0-9;]*m/g, '')
+}
+
+interface VitestSummaryLine { failed: number; passed: number; skipped: number; total: number }
+
+/** Order/decoration-agnostic: extracts each named count independently, defaulting an absent segment to 0, and reads the trailing "(<total>)". */
+function parseSummaryLine(line: string): VitestSummaryLine | null {
+  const totalMatch = line.match(/\((\d+)\)\s*$/)
+  if (!totalMatch) return null
+  const failed = Number(line.match(/(\d+)\s*failed/)?.[1] ?? 0)
+  const passed = Number(line.match(/(\d+)\s*passed/)?.[1] ?? 0)
+  const skipped = Number(line.match(/(\d+)\s*skipped/)?.[1] ?? 0)
+  return { failed, passed, skipped, total: Number(totalMatch[1]) }
+}
+
+interface VitestSummary { testFiles: VitestSummaryLine; tests: VitestSummaryLine }
+
+function parseVitestSummary(rawCombined: string): VitestSummary | null {
+  const clean = stripAnsi(rawCombined)
+  const lines = clean.split('\n')
+  const testFilesLine = lines.find((l) => /^\s*Test Files\s/.test(l))
+  const testsLine = lines.find((l) => /^\s*Tests\s/.test(l))
+  if (!testFilesLine || !testsLine) return null
+  const testFiles = parseSummaryLine(testFilesLine)
+  const tests = parseSummaryLine(testsLine)
+  if (!testFiles || !tests) return null
+  return { testFiles, tests }
+}
+
+/** The exact M2 contract: 1 file, that file passed, 4 tests, all 4 passed, 0 failed, 0 skipped — for both files and tests. */
+function isExactM2Result(summary: VitestSummary | null): boolean {
+  if (!summary) return false
+  const f = summary.testFiles
+  const t = summary.tests
+  return f.total === 1 && f.passed === 1 && f.failed === 0 && f.skipped === 0 && t.total === 4 && t.passed === 4 && t.failed === 0 && t.skipped === 0
+}
+
+/** Cheap, no-Docker self-controls (ANSI-P1/P2/N1/N2/N3) — must be green before any disposable container starts. */
+function runAnsiParserSelfTest(): boolean {
+  const plain = ' Test Files  1 passed (1)\n      Tests  4 passed (4)\n'
+  const ansiDecorated =
+    '\x1b[2m Test Files \x1b[22m \x1b[1m\x1b[32m1 passed\x1b[39m\x1b[22m\x1b[90m (1)\x1b[39m\n' +
+    '\x1b[2m      Tests \x1b[22m \x1b[1m\x1b[32m4 passed\x1b[39m\x1b[22m\x1b[90m (4)\x1b[39m\n'
+  const threeOneFailed = ' Test Files  1 passed (1)\n      Tests  1 failed | 3 passed (4)\n'
+  const threeOneSkipped = ' Test Files  1 passed (1)\n      Tests  3 passed | 1 skipped (4)\n'
+  const zeroCollected = ' Test Files  0 passed (0)\n      Tests  no tests\n'
+
+  const p1 = record('SELFTEST:ANSI-P1', isExactM2Result(parseVitestSummary(plain)), 'plain 1/4/4/0 output accepted')
+  const p2 = record('SELFTEST:ANSI-P2', isExactM2Result(parseVitestSummary(ansiDecorated)), 'GitHub-ANSI-decorated 1/4/4/0 output accepted (the exact PR #50 run 33709987615 false-negative pattern)')
+  const n1 = record('SELFTEST:ANSI-N1', !isExactM2Result(parseVitestSummary(threeOneFailed)), '3 passed / 1 failed correctly rejected')
+  const n2 = record('SELFTEST:ANSI-N2', !isExactM2Result(parseVitestSummary(threeOneSkipped)), '3 passed / 1 skipped correctly rejected')
+  const n3 = record('SELFTEST:ANSI-N3', !isExactM2Result(parseVitestSummary(zeroCollected)), 'zero/incorrect collection correctly rejected')
+  return p1 && p2 && n1 && n2 && n3
+}
+
+// ---------------------------------------------------------------------------
+// AUTHORITY v1.0.4 / M2-F2-class hardening: mechanical migration-corpus
+// proof. Previously MAIN:0061-APPLIED was `record(..., true)` unconditionally
+// once `pnpm db:migrate:local` exited 0 — a real proof of "the process
+// succeeded", but only a PROSE claim that all 62 migrations 0000..0061 were
+// actually applied. This derives the expected corpus mechanically from the
+// same db/migrations/meta/_journal.json and per-migration .sql files Drizzle
+// 0.45.2's own migrator reads (db/migrations/meta/_journal.json entries +
+// sha256(file content) per entry, exactly matching
+// drizzle-orm/migrator.js's readMigrationFiles — verified by reading that
+// file directly), then compares against drizzle.__drizzle_migrations's own
+// `hash` column (drizzle-orm/pg-core/dialect.js's PgDialect.migrate: one row
+// per applied migration, hash = that same sha256, in application order).
+// ---------------------------------------------------------------------------
+
+interface ExpectedMigrationEntry { tag: string; when: number; hash: string }
+interface ExpectedMigrationCorpus { count: number; entries: ExpectedMigrationEntry[]; terminal: ExpectedMigrationEntry }
+
+function deriveExpectedMigrationCorpus(): ExpectedMigrationCorpus {
+  const journal = JSON.parse(readFileSync(MIGRATIONS_JOURNAL_PATH, 'utf8')) as { entries: { tag: string; when: number }[] }
+  const entries = journal.entries.map((e) => ({
+    tag: e.tag,
+    when: e.when,
+    hash: sha256(readFileSync(resolve(MIGRATIONS_DIR, `${e.tag}.sql`), 'utf8')),
+  }))
+  if (entries.length === 0) throw new Error('deriveExpectedMigrationCorpus: db/migrations/meta/_journal.json has zero entries')
+  return { count: entries.length, entries, terminal: entries[entries.length - 1] }
+}
+
+interface MigrationProofResult { countOk: boolean; corpusOk: boolean; terminalOk: boolean }
+
+/** Pure comparison, no recording — reused by both the live post-migration check and the cheap MIG-N1 self-test. */
+function evaluateMigrationProof(actualHashesInOrder: string[], expected: ExpectedMigrationCorpus): MigrationProofResult {
+  const expectedHashesInOrder = expected.entries.map((e) => e.hash)
+  const countOk = actualHashesInOrder.length === expected.count
+  const corpusOk = countOk && expectedHashesInOrder.every((h, i) => h === actualHashesInOrder[i])
+  const terminalOk = actualHashesInOrder.includes(expected.terminal.hash)
+  return { countOk, corpusOk, terminalOk }
+}
+
+function checkMigrationProof(runner: DockerRunner, container: string, phase: string): boolean {
+  const expected = deriveExpectedMigrationCorpus()
+  const q = psql(runner, container, `SELECT hash FROM drizzle.__drizzle_migrations ORDER BY created_at;`)
+  const actualHashesInOrder = (q.stdout || '').trim().split('\n').filter(Boolean)
+  const r = evaluateMigrationProof(actualHashesInOrder, expected)
+  record(`${phase}:MIGRATION-JOURNAL-COUNT`, r.countOk, `expected=${expected.count} (mechanically derived from db/migrations/meta/_journal.json) actual=${actualHashesInOrder.length}`)
+  record(`${phase}:MIGRATION-CORPUS-PROOF`, r.corpusOk, r.corpusOk ? `all ${expected.count} migration hashes match the repository corpus, in application order` : 'hash sequence mismatch between the repository corpus and drizzle.__drizzle_migrations')
+  record(`${phase}:0061-APPLIED`, r.terminalOk, r.terminalOk ? `terminal migration ${expected.terminal.tag} hash mechanically confirmed present in drizzle.__drizzle_migrations` : `terminal migration hash NOT found (expected sha256=${expected.terminal.hash})`)
+  return r.countOk && r.corpusOk && r.terminalOk
+}
+
+/** Cheap, no-Docker self-controls (MIG-P1/P2/P3 positive, MIG-N1 negative) — must be green before any disposable container starts. */
+function runMigrationProofSelfTest(): boolean {
+  const expected = deriveExpectedMigrationCorpus()
+  const p1 = record('SELFTEST:MIG-P1', expected.count > 0, `canonical migration count mechanically derived from db/migrations/meta/_journal.json = ${expected.count}`)
+
+  const validHashesInOrder = expected.entries.map((e) => e.hash)
+  const good = evaluateMigrationProof(validHashesInOrder, expected)
+  const p2p3 = record('SELFTEST:MIG-P2-P3-POSITIVE', good.countOk && good.corpusOk && good.terminalOk, `valid full corpus (${expected.count} entries, terminal=${expected.terminal.tag}) correctly accepted`)
+
+  const truncated = validHashesInOrder.slice(0, -1)
+  const bad = evaluateMigrationProof(truncated, expected)
+  const n1 = record('SELFTEST:MIG-N1', !bad.countOk && !bad.corpusOk && !bad.terminalOk, 'deliberately missing terminal migration correctly rejected by all three sub-checks')
+
+  return p1 && p2p3 && n1
+}
+
+// ---------------------------------------------------------------------------
+// AUTHORITY v1.0.4 / M2-F3-class hardening: exception-safe env restoration.
+// Previously every phase called restoreEnvFiles(...) at each explicit
+// `return` point after a rotation — correct for every code path THIS SCRIPT
+// enumerates, but not exception-safe: a thrown error between rotation and
+// the next explicit check would skip restoration entirely. withEnvRestore
+// wraps the credential-writing window in a real try/finally so restoration
+// is guaranteed on normal return, an ordinary (non-throwing) failure, AND a
+// thrown exception — independent of, and never blocking, the container's
+// own finally-guaranteed teardown.
+// ---------------------------------------------------------------------------
+
+async function withEnvRestore<T>(labelPrefix: string, fn: () => Promise<T> | T): Promise<T> {
+  const snapshot = snapshotEnvFiles()
+  let threw = false
+  try {
+    return await fn()
+  } catch (err) {
+    threw = true
+    throw err
+  } finally {
+    const restored = restoreEnvFiles(snapshot, `${labelPrefix}-ENV-RESTORE`)
+    record(`${labelPrefix}:ENV-RESTORE-EXCEPTION-SAFE`, restored, threw ? 'restored via finally after a thrown exception' : 'restored via finally after normal return')
+  }
+}
+
+/** Cheap, no-Docker self-control (ENV-N2) proving withEnvRestore's finally actually fires and restores exact bytes/absence even when the wrapped work throws mid-window. Uses the real ENV_FILES snapshot/restore pipeline (the same one every phase relies on), not a synthetic stand-in. */
+async function runEnvRestoreThrowSelfTest(): Promise<boolean> {
+  const probePath = ENV_FILES[0]
+  const before = existsSync(probePath) ? readFileSync(probePath) : null
+
+  let caughtExpected = false
+  try {
+    await withEnvRestore('SELFTEST-ENV-N2', () => {
+      writeFileSync(probePath, Buffer.from('SELFTEST_INJECTED_MUTATION_NEVER_PERSISTED=1\n'))
+      throw new Error('SELFTEST-ENV-N2-DELIBERATE-THROW')
+    })
+  } catch (err) {
+    caughtExpected = err instanceof Error && err.message === 'SELFTEST-ENV-N2-DELIBERATE-THROW'
+  }
+
+  const after = existsSync(probePath) ? readFileSync(probePath) : null
+  const restoredCorrectly = before === null ? after === null : after !== null && fingerprint(after) === fingerprint(before)
+  return record('SELFTEST:ENV-N2-INJECTED-THROW-RESTORE', caughtExpected && restoredCorrectly, restoredCorrectly ? 'exact byte/absence state restored despite a thrown exception mid-window' : 'restoration FAILED after injected throw')
+}
+
+// ---------------------------------------------------------------------------
+// AUTHORITY v1.0.4: best-effort SIGINT/SIGTERM container cleanup. This is
+// EXCEPTION_SAFE=YES for JS-level throws (via withEnvRestore/try-finally
+// above) but explicitly NOT a HARD_PROCESS_TERMINATION_GUARANTEE — a SIGKILL
+// or host failure cannot run any userland handler, Node or otherwise, and
+// this script never claims otherwise.
+// ---------------------------------------------------------------------------
+
+const activeContainers = new Set<{ runner: DockerRunner; name: string; created: boolean }>()
+
+let signalCleanupInProgress = false
+function installSignalCleanup(): void {
+  const handler = (signal: string) => {
+    if (signalCleanupInProgress) return
+    signalCleanupInProgress = true
+    console.error(`[m2-pg-gate] received ${signal} — best-effort container cleanup (EXCEPTION_SAFE=YES for in-process throws; this signal path is HARD_PROCESS_TERMINATION_GUARANTEE=NO)`)
+    const pending = [...activeContainers]
+    void (async () => {
+      for (const handle of pending) {
+        try {
+          handle.runner.run(['rm', '-f', '-v', handle.name])
+        } catch {
+          // best-effort only — see comment above.
+        }
+      }
+      process.exit(130)
+    })()
+  }
+  process.on('SIGINT', () => handler('SIGINT'))
+  process.on('SIGTERM', () => handler('SIGTERM'))
 }
 
 // ---------------------------------------------------------------------------
@@ -192,6 +409,7 @@ async function createContainer(runner: DockerRunner, phase: string): Promise<Con
 
   const created = runner.run(['run', '-d', '--name', name, '-p', `127.0.0.1:${LOCAL_DB_PORT}:5432`, '-e', 'POSTGRES_PASSWORD=postgres', '-e', 'POSTGRES_DB=postgres', IMAGE])
   handle.created = true
+  activeContainers.add(handle)
   if (!record(`${phase}:CONTAINER-CREATE`, created.status === 0, created.status === 0 ? name : created.stderr || created.stdout)) return handle
 
   const mounts = runner.run(['inspect', '-f', '{{json .Mounts}}', name])
@@ -216,6 +434,7 @@ async function createContainer(runner: DockerRunner, phase: string): Promise<Con
 }
 
 async function teardownContainer(handle: ContainerHandle, phase: string): Promise<void> {
+  activeContainers.delete(handle)
   if (!handle.created) return
   const removed = handle.runner.run(['rm', '-f', '-v', handle.name])
   const leftover = handle.runner.run(['ps', '-a', '--filter', `name=^${handle.name}$`, '--format', '{{.Names}}'])
@@ -492,36 +711,37 @@ async function runMainPhase(runner: DockerRunner): Promise<void> {
     if (!checkPrivP7(runner, handle.name, phase)) return
     if (!checkPreMigrationContract(runner, handle.name, phase)) return
 
-    const snapshot = snapshotEnvFiles()
-    const rotate = runPnpm(['tsx', 'scripts/rotate-local-role-credentials.ts', LOCAL_CREDENTIAL_ROTATION_CONFIRMATION])
-    if (!record(`${phase}:ROTATE-CREDENTIALS`, rotate.status === 0, 'scripts/rotate-local-role-credentials.ts (unchanged); credentials never printed')) {
-      restoreEnvFiles(snapshot, 'ENV-N1')
-      return
-    }
+    // The whole credential-dependent window — rotate, migrate, the mechanical
+    // migration proof, ownership/privilege postconditions, and the real M2
+    // vitest test (which itself reads .env.local/.env.migration.local for
+    // its connection string) — must stay INSIDE one withEnvRestore window.
+    // Restoring the env files right after migrate() (an earlier version of
+    // this refactor did exactly that) leaves the M2 test running against the
+    // pre-rotation credentials and fails with "password authentication
+    // failed for user uellix_migrator" — measured directly in this session.
+    await withEnvRestore(phase, () => {
+      const rotate = runPnpm(['tsx', 'scripts/rotate-local-role-credentials.ts', LOCAL_CREDENTIAL_ROTATION_CONFIRMATION])
+      if (!record(`${phase}:ROTATE-CREDENTIALS`, rotate.status === 0, 'scripts/rotate-local-role-credentials.ts (unchanged); credentials never printed')) return
 
-    const stillNarrow = psql(runner, handle.name, `SELECT rolcreaterole FROM pg_roles WHERE rolname = 'uellix_migrator';`)
-    record(`${phase}:NARROWING-SURVIVES-ROTATION`, (stillNarrow.stdout || '').trim() === 'f')
+      const stillNarrow = psql(runner, handle.name, `SELECT rolcreaterole FROM pg_roles WHERE rolname = 'uellix_migrator';`)
+      record(`${phase}:NARROWING-SURVIVES-ROTATION`, (stillNarrow.stdout || '').trim() === 'f')
 
-    const migrate = runPnpm(['db:migrate:local'])
-    if (!record(`${phase}:MIGRATE`, migrate.status === 0, migrate.status === 0 ? 'pnpm db:migrate:local (unchanged): assertMigratorSession PASS, SET ROLE uellix_owner, 62 migrations 0000..0061 applied, internal ownership/ACL verification PASS' : 'pnpm db:migrate:local exited non-zero')) {
-      restoreEnvFiles(snapshot, 'ENV-N1')
-      return
-    }
-    record(`${phase}:0061-APPLIED`, true)
+      const migrate = runPnpm(['db:migrate:local'])
+      if (!record(`${phase}:MIGRATE`, migrate.status === 0, migrate.status === 0 ? 'pnpm db:migrate:local (unchanged): assertMigratorSession PASS, SET ROLE uellix_owner, migration run exited 0 — see MIGRATION-JOURNAL-COUNT/CORPUS-PROOF/0061-APPLIED below for the mechanical proof of what was actually applied' : 'pnpm db:migrate:local exited non-zero')) return
 
-    if (!checkOwnershipPostcondition(runner, handle.name, phase)) { restoreEnvFiles(snapshot, 'ENV-N1'); return }
-    if (!revokeDatabaseCreate(runner, handle.name, phase)) { restoreEnvFiles(snapshot, 'ENV-N1'); return }
-    if (!checkFinalPrivilegeContract(runner, handle.name, phase)) { restoreEnvFiles(snapshot, 'ENV-N1'); return }
+      if (!checkMigrationProof(runner, handle.name, phase)) return
+      if (!checkOwnershipPostcondition(runner, handle.name, phase)) return
+      if (!revokeDatabaseCreate(runner, handle.name, phase)) return
+      if (!checkFinalPrivilegeContract(runner, handle.name, phase)) return
 
-    // --- Real M2 test execution: the actual vitest integration test, --------
-    // against this disposable database, via the unmodified guard/config path.
-    const m2Test = runPnpm(['exec', 'vitest', 'run', '--config', 'vitest.integration.config.ts', 'tests/integration/function-execute-acl-guard.test.ts'])
-    const fourPassed = /\b4 passed\b/.test(m2Test.combined)
-    const zeroFailed = !/\bfailed\b/i.test(m2Test.combined) || /0 failed/.test(m2Test.combined)
-    record(`${phase}:M2-TEST-EXECUTION`, m2Test.status === 0 && fourPassed && zeroFailed, m2Test.status === 0 && fourPassed ? '1 file, 4 tests, 4 executed, 4 PASS, 0 skip' : 'did not match the required 1-file/4-test/4-pass/0-skip result')
-
-    const envP1 = restoreEnvFiles(snapshot, 'ENV-P1')
-    record('ENV-P1-OVERALL', envP1)
+      // --- Real M2 test execution: the actual vitest integration test, ------
+      // against this disposable database, via the unmodified guard/config
+      // path — still using the rotated credentials this window holds.
+      const m2Test = runPnpm(['exec', 'vitest', 'run', '--config', 'vitest.integration.config.ts', 'tests/integration/function-execute-acl-guard.test.ts'])
+      const summary = parseVitestSummary(m2Test.combined)
+      const exact = isExactM2Result(summary)
+      record(`${phase}:M2-TEST-EXECUTION`, m2Test.status === 0 && exact, m2Test.status === 0 && exact ? '1 file, 4 tests, 4 executed, 4 PASS, 0 skip (ANSI-tolerant parse)' : `did not match the required 1-file/4-test/4-pass/0-skip result${summary ? ` (parsed: files=${JSON.stringify(summary.testFiles)} tests=${JSON.stringify(summary.tests)})` : ' (summary lines not found)'}`)
+    })
   } finally {
     await teardownContainer(handle, phase)
   }
@@ -558,13 +778,13 @@ async function runNegative(
     if (!build(realDockerRunner, handle.name, id)) return
     if (!proveGapAbsent(realDockerRunner, handle.name, id)) return
 
-    const snapshot = snapshotEnvFiles()
-    const rotate = runPnpm(['tsx', 'scripts/rotate-local-role-credentials.ts', LOCAL_CREDENTIAL_ROTATION_CONFIRMATION])
-    if (!record(`${id}:ROTATE-FOR-NEGATIVE-PROBE`, rotate.status === 0)) { restoreEnvFiles(snapshot, `${id}-ENV-RESTORE`); return }
+    await withEnvRestore(id, () => {
+      const rotate = runPnpm(['tsx', 'scripts/rotate-local-role-credentials.ts', LOCAL_CREDENTIAL_ROTATION_CONFIRMATION])
+      if (!record(`${id}:ROTATE-FOR-NEGATIVE-PROBE`, rotate.status === 0)) return
 
-    const migrate = runPnpm(['db:migrate:local'])
-    record(id, migrate.status !== 0, migrate.status !== 0 ? 'db:migrate:local correctly refused (deterministic privilege gap already proven absent above)' : 'db:migrate:local unexpectedly SUCCEEDED despite the proven-absent privilege')
-    restoreEnvFiles(snapshot, `${id}-ENV-RESTORE`)
+      const migrate = runPnpm(['db:migrate:local'])
+      record(id, migrate.status !== 0, migrate.status !== 0 ? 'db:migrate:local correctly refused (deterministic privilege gap already proven absent above)' : 'db:migrate:local unexpectedly SUCCEEDED despite the proven-absent privilege')
+    })
   } finally {
     await teardownContainer(handle, id)
   }
@@ -640,14 +860,13 @@ async function runAllNegatives(): Promise<void> {
             const g4 = applyPartAHelpers(realDockerRunner, handle.name, id)
             const regrant = psql(realDockerRunner, handle.name, 'ALTER ROLE uellix_migrator CREATEROLE;')
             if (g1 && g2 && g3 && g4 && record(`${id}:REGRANT-CREATEROLE`, regrant.status === 0)) {
-              const snapshot = snapshotEnvFiles()
-              const rotate = runPnpm(['tsx', 'scripts/rotate-local-role-credentials.ts', LOCAL_CREDENTIAL_ROTATION_CONFIRMATION])
-              if (record(`${id}:ROTATE-FOR-NEGATIVE-PROBE`, rotate.status === 0)) {
+              await withEnvRestore(id, () => {
+                const rotate = runPnpm(['tsx', 'scripts/rotate-local-role-credentials.ts', LOCAL_CREDENTIAL_ROTATION_CONFIRMATION])
+                if (!record(`${id}:ROTATE-FOR-NEGATIVE-PROBE`, rotate.status === 0)) return
                 const migrate = runPnpm(['db:migrate:local'])
                 const matched = /DB_MIGRATOR_OVERPRIVILEGED/.test(migrate.combined)
                 record(id, migrate.status !== 0 && matched, matched ? 'correctly refused: DB_MIGRATOR_OVERPRIVILEGED' : `expected DB_MIGRATOR_OVERPRIVILEGED, got exit ${migrate.status}`)
-              }
-              restoreEnvFiles(snapshot, `${id}-ENV-RESTORE`)
+              })
             }
           }
         }
@@ -670,9 +889,9 @@ async function runAllNegatives(): Promise<void> {
             const g3 = grantAuthSchemaUsage(realDockerRunner, handle.name, id)
             const g4 = applyPartAHelpers(realDockerRunner, handle.name, id)
             if (g1 && g2 && g3 && g4) {
-              const snapshot = snapshotEnvFiles()
-              const rotate = runPnpm(['tsx', 'scripts/rotate-local-role-credentials.ts', LOCAL_CREDENTIAL_ROTATION_CONFIRMATION])
-              if (record(`${id}:ROTATE-FOR-NEGATIVE-PROBE`, rotate.status === 0)) {
+              await withEnvRestore(id, () => {
+                const rotate = runPnpm(['tsx', 'scripts/rotate-local-role-credentials.ts', LOCAL_CREDENTIAL_ROTATION_CONFIRMATION])
+                if (!record(`${id}:ROTATE-FOR-NEGATIVE-PROBE`, rotate.status === 0)) return
                 // Deliberately corrupt the migration credential to point at the
                 // superuser-equivalent role instead of uellix_migrator — the
                 // existing fail-closed capability/role guard must reject it
@@ -690,8 +909,7 @@ async function runAllNegatives(): Promise<void> {
                 // fail-closed property than the runtime session check.
                 const matched = /DB_CAPABILITY_URL_WRONG_ROLE/.test(migrate.combined)
                 record(id, migrate.status !== 0 && matched, matched ? 'correctly refused: DB_CAPABILITY_URL_WRONG_ROLE (rejected by declared-role URL validation before any connection attempt)' : `expected DB_CAPABILITY_URL_WRONG_ROLE, got exit ${migrate.status}`)
-              }
-              restoreEnvFiles(snapshot, `${id}-ENV-RESTORE`)
+              })
             }
           }
         }
@@ -708,7 +926,20 @@ async function runAllNegatives(): Promise<void> {
 
 async function main(): Promise<void> {
   const runner = realDockerRunner
+  installSignalCleanup()
   console.log(`[m2-pg-gate] image tag=${IMAGE_TAG} immutable-ref=${IMAGE}`)
+
+  // AUTHORITY v1.0.4: cheap, no-Docker self-controls first. All must be
+  // green before any of the 9 disposable containers start — a broken parser
+  // or migration-proof helper must never be discovered only after minutes of
+  // real container work.
+  const selfTestsOk = runAnsiParserSelfTest() && runMigrationProofSelfTest() && (await runEnvRestoreThrowSelfTest())
+  if (!selfTestsOk) {
+    console.log(`\n[m2-pg-gate] OVERALL=FAIL (${results.filter((r) => r.ok).length}/${results.length} checks) — cheap self-controls failed; refusing to start any disposable container`)
+    process.exitCode = 1
+    return
+  }
+
   try {
     await runMainPhase(runner)
     await runAllNegatives()
