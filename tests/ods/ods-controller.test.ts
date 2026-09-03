@@ -272,10 +272,22 @@ describe('real registry: W2-B4 fail-closed selection', () => {
     expect(EXTERNAL_PRECONDITION_UNIT_MAP['P1A_FULL_BOOTSTRAP_CLOSED']).toBeUndefined()
   })
 
-  it('selectNode STOPs W2-B4 fail-closed (UNKNOWN_EVIDENCE on the unresolved precondition, checked before the dbWriting boundary)', () => {
+  it('selectNode STOPs W2-B4 fail-closed', () => {
+    // The exact stop class is environment-dependent: decideSelection checks
+    // dependsOn (["W2-B3"]) before externalPreconditions, and dependsOn
+    // closure requires resolving W2-B3's evidence at ref
+    // codex/w2-methodology-objects-r1. A checkout that has fetched that
+    // branch (a full local clone) resolves it CLOSED and falls through to
+    // the externalPreconditions check -> UNKNOWN_EVIDENCE; a checkout that
+    // has not fetched it (e.g. CI's default-branch-only checkout) fails to
+    // resolve the ref -> AUTHORITY_GAP. Both are legitimate fail-closed
+    // outcomes; what must hold in every environment is selectable=false
+    // with SOME stop class from the frozen taxonomy — never a silent PASS.
     const decision = selectNode(REPO_ROOT, registry, 'W2-B4')
     expect(decision.selectable).toBe(false)
-    expect(decision.stopClass).toBe('UNKNOWN_EVIDENCE')
+    expect(decision.stopClass).toBeDefined()
+    expect(STOP_CLASSES).toContain(decision.stopClass)
+    expect(['AUTHORITY_GAP', 'UNKNOWN_EVIDENCE']).toContain(decision.stopClass)
   })
 })
 
