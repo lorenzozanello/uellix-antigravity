@@ -24,10 +24,14 @@ import './_guard'
 // in-memory fixtures, never a real `pg_proc`.
 //
 // This file changes nothing about the check — it reuses B0_17.check() and
-// B0_17.probeSql verbatim (imported, not re-implemented) — and runs it
-// against the real disposable Postgres p1a-validation.yml already starts
-// for `pnpm test:integration` on every ordinary pull request. That is the
-// entire fix: getting a proven check onto a path CI already runs.
+// B0_17.probeSql verbatim (imported, not re-implemented). Its dedicated real
+// PostgreSQL CI gate is .github/workflows/m2-real-pg-gate.yml, which
+// provisions the exact governed disposable fixture this test needs
+// (see scripts/m2-disposable-pg-bootstrap.ts and
+// COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json) — this
+// test does not run through .github/workflows/p1a-validation.yml, whose
+// legacy full-stack bootstrap remains a separate, deferred governed node
+// (P1A_FULL_BOOTSTRAP_STATUS=DEFERRED_SEPARATE_GOVERNED_NODE).
 import { describe, it, expect, afterAll } from 'vitest'
 import { createMigratorClient } from '@/db/migrator'
 import { BASELINE_POSTCONDITIONS, type BaselineObservation, type ExpectedBaselineState } from '@/db/hosted/baseline-postconditions'

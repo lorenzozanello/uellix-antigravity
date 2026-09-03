@@ -27,6 +27,7 @@
     "db:reset:local": "pnpm db:guard:local-reset && pnpm supabase stop --no-backup && pnpm supabase start && pnpm db:setup:local",
     "db:audit:readonly": "tsx scripts/db-audit-readonly.ts",
     "db:audit:disposable": "tsx scripts/db-audit-disposable.ts",
+    "m2:pg:gate": "tsx scripts/m2-disposable-pg-bootstrap.ts",
     "db:seed:local": "tsx scripts/seed-local.ts",
     "db:seed:stella-local": "tsx scripts/seed-stella-local.ts",
     "db:seed:local:proxies": "tsx scripts/seed-proxies.ts",
