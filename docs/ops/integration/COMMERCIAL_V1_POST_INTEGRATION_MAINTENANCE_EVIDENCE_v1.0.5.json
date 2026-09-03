@@ -1,0 +1,107 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.5",
+  "version": "1.0.5",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-CONTAINER-READINESS-RACE-HARDENING-R1",
+  "predecessor_evidence": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.4.json",
+  "authority": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.5.json",
+  "authority_commit": "63cf591a87f7afd67952f772cbd3f5a7997f32e0",
+  "implementation_commit": "730500648eac24937999cab48345a74322177c77",
+
+  "historical_machine_runs_preserved_never_reinterpreted": [
+    {
+      "pr_number": 50,
+      "run": 33709987615,
+      "result": "failure",
+      "root_cause": "ANSI_SENSITIVE_M2_TEST_SUMMARY_FALSE_NEGATIVE",
+      "note": "Closed by v1.0.4. Preserved as historical fact."
+    },
+    {
+      "pr_number": 50,
+      "run": 33712706673,
+      "result": "failure",
+      "overall": "FAIL (172/177 checks)",
+      "main_phase_confirmed_passing": {
+        "MAIN:MIGRATE": "PASS",
+        "MAIN:MIGRATION-JOURNAL-COUNT": "PASS (expected=62 actual=62)",
+        "MAIN:MIGRATION-CORPUS-PROOF": "PASS",
+        "MAIN:0061-APPLIED": "PASS",
+        "MAIN:M2-TEST-EXECUTION": "PASS (raw Vitest: Test Files 1 passed (1) / Tests 4 passed (4))",
+        "normal_pr_ci_run_33712706688": "success"
+      },
+      "note": "v1.0.4's two fixes (ANSI parsing, mechanical migration proof) confirmed closed with real GitHub-hosted evidence on this run. The failure is unrelated to either fix.",
+      "failed_phases": ["PRIV-N1a", "PRIV-N1b", "PRIV-N1d", "PRIV-N3", "PRIV-N5"],
+      "passing_phases": ["MAIN", "PRIV-N1c", "PRIV-N2", "PRIV-N4"],
+      "observed_failing_check": "PLATFORM-SUBSTRATE-CHECK",
+      "final_labelled_leftover_count": 0,
+      "classification_at_time_of_this_run": "INTERMITTENT_PLATFORM_SUBSTRATE_READINESS_FAILURE"
+    }
+  ],
+
+  "latent_preexisting_readiness_defect": {
+    "value": true,
+    "mechanical_proof": "git diff 00b57f3a08d98990c1a8d492e2352aabe17e6f73 c526f073ea025cfebde2e6ee37419c36a3e1d88d -- scripts/m2-disposable-pg-bootstrap.ts: checkPlatformSubstrate() byte-identical; createContainer() differs by exactly one inert bookkeeping line (activeContainers.add(handle)). The failing run (33712706673) exercised the SAME unmodified readiness logic that passed 9/9 on the earlier run (33709987615) — a preexisting intermittent race, not a v1.0.4 regression."
+  },
+
+  "diagnostic_limitation_at_time_of_failing_run": {
+    "exact_transient_micromechanism": "INSUFFICIENTLY_INSTRUMENTED",
+    "reason": "At the time run 33712706673 executed, checkPlatformSubstrate()'s detail text was derived only from missing.length, unable to distinguish a nonzero psql exit status from a genuinely missing schema. This evidence file does not retroactively assert which one actually occurred on that historical run — it records the limitation honestly and notes that the v1.0.5 implementation now makes this distinction observable for all future runs (see diagnostic_contract below)."
+  },
+
+  "v1_0_5_design": {
+    "removed": "the fixed 750ms settle sleep in createContainer() after pg_isready — no longer load-bearing for readiness",
+    "added": {
+      "probePlatformReadiness": "non-mutating semantic predicate: psql reachable (status 0), auth/storage/extensions schemas present, auth.uid() present",
+      "waitForPlatformReadiness": "bounded poll requiring 2 consecutive successful samples before declaring readiness, injectable clock/probe for deterministic self-testing",
+      "diagnosePlatformReadinessFailure": "truthful structured diagnostic on failure: PSQL_NONZERO / MISSING_SCHEMA_<name> / AUTH_UID_MISSING, never 'present natively' on a probe failure",
+      "bounded_policy": { "PLATFORM_READINESS_TIMEOUT_MS": 20000, "PLATFORM_READINESS_POLL_MS": 300, "REQUIRED_CONSECUTIVE_SUCCESSES": 2 }
+    },
+    "retry_scope_proof": "SELFTEST:READY-N5 mechanically confirms waitForPlatformReadiness is called exactly once in production code (inside checkPlatformSubstrate), by scanning the script's own source excluding the self-test function body — retry scope cannot leak into any other phase."
+  },
+
+  "cheap_self_controls": {
+    "READY-P1": "PASS — immediate semantic readiness accepted",
+    "READY-P2": "PASS — transient psql failures then full readiness within the bound accepted",
+    "READY-P3": "PASS — progressively available schemas/auth.uid() then 2 consecutive successes accepted",
+    "READY-P4": "PASS — a lone success immediately followed by a transient failure, repeated, never satisfies 2-consecutive-success",
+    "READY-N1": "PASS — persistent psql nonzero until deadline correctly FAILs",
+    "READY-N2": "PASS — persistent missing schema until deadline correctly FAILs with truthful diagnostic MISSING_SCHEMA_auth",
+    "READY-N3": "PASS — persistent auth.uid() missing until deadline correctly FAILs with truthful diagnostic AUTH_UID_MISSING",
+    "READY-N4": "PASS — bounded poll terminated after 67 samples (bound 68) — never loops forever",
+    "READY-N5": "PASS — waitForPlatformReadiness called exactly once in production code"
+  },
+
+  "local_hardened_acceptance_run": {
+    "command": "pnpm m2:pg:gate",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-commercial-v1-post-integration-maintenance-r1",
+    "result": "OVERALL=PASS (252/252 checks)",
+    "process_exit_code": 0,
+    "platform_readiness_all_9_containers": {
+      "MAIN": "PASS", "PRIV-N1a": "PASS", "PRIV-N1b": "PASS", "PRIV-N1c": "PASS", "PRIV-N1d": "PASS",
+      "PRIV-N2": "PASS", "PRIV-N3": "PASS", "PRIV-N4": "PASS", "PRIV-N5": "PASS"
+    },
+    "migration_proof": "MAIN:MIGRATION-JOURNAL-COUNT/CORPUS-PROOF/0061-APPLIED all PASS (62/62, terminal 0061 confirmed)",
+    "m2_test_execution": "PASS — 1 file, 4 tests, 4 executed, 4 PASS, 0 skip",
+    "negative_controls": "all 8 (PRIV-N1a..N1d, N2..N5) reached their intended negative assertion, none failed at the readiness stage",
+    "final_labelled_leftover_count": 0,
+    "post_run_docker_check": "docker ps -a --filter name=uellix-m2-pg-gate → empty",
+    "attempts_before_acceptance": 1,
+    "note": "Accepted on the first full run after implementation — no weakening of the readiness predicate or timeout envelope was needed."
+  },
+
+  "static_governance_gates": {
+    "secrets_scan": "PASS",
+    "authority_seal_verify": "PASS",
+    "lint": "PASS — 0 errors, 63 warnings (unchanged pre-existing baseline)",
+    "typecheck": "PASS"
+  },
+
+  "deferred_findings_preserved_not_fixed_here": {
+    "M1_F1": "preserved", "GOV_F7": "preserved", "AG_M2_4": "preserved", "AG_M2_5": "preserved",
+    "OF_1": "preserved", "M3_staging_guc_semantics_debt": "preserved",
+    "P1A_FULL_BOOTSTRAP_STATUS": "DEFERRED_SEPARATE_GOVERNED_NODE"
+  },
+
+  "audit_batch_and_github_result_policy": {
+    "policy": "Per the GOV-F5 self-reference discipline already established in v1.0.4's evidence, this file does not claim any audit:batch or GitHub-hosted M2 gate result for a HEAD that did not exist when this file was written. Both the post-commit-3 audit:batch run (against the true final successor HEAD) and the new PR-triggered M2 gate run's result are recorded in this mission's FINAL_REPORT text delivered to the user, not retrofitted here."
+  }
+}
