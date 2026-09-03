@@ -1,0 +1,160 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.3",
+  "version": "1.0.3",
+  "hpo_mission_id": "COMMERCIAL-V1-M2-PRIVILEGE-CLOSURE-REMEDIATION-R1",
+  "hpo_decision_reference": "HPO_RESULT=PASS_FOR_M2_PRIVILEGE_REMEDIATION (Option E: apply db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql verbatim, then narrow uellix_migrator's CREATEROLE in the disposable fixture only; plus three specific privilege grants to close BF-1/AG-M2-2/AG-M2-3)",
+  "predecessor": {
+    "authority": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json",
+    "test_manifest": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.3.json",
+    "authority_commit": "8538d1a130543ad64cc31507834fd2c326759c27",
+    "prior_evidence": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.2.json"
+  },
+  "disposable_fixture": {
+    "image_immutable_ref": "public.ecr.aws/supabase/postgres@sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453",
+    "engine": "PostgreSQL 17",
+    "port": 56322,
+    "note": "Same port db/safety/local-stack.ts's LOCAL_DB_PORT hardcodes; scripts/rotate-local-role-credentials.ts and scripts/db-migrate-local.ts are UNMODIFIED and used verbatim against this fixture."
+  },
+  "authorized_pre_migration_sequence_executed": [
+    { "step": 0, "action": "apply db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql VERBATIM", "sha256": "871f382aead7b834daf556d7e54402055ed3656d9a1964a4f63138610d5b693d", "verified": true, "result": "PASS" },
+    { "step": 1, "action": "Option E: ALTER ROLE uellix_migrator NOCREATEROLE (disposable fixture only)", "actor": "postgres", "result": "PASS" },
+    { "step": 2, "action": "rotate-local-role-credentials.ts (unmodified entrypoint)", "result": "PASS" },
+    { "step": 3, "action": "GRANT CREATE ON DATABASE postgres TO uellix_owner (temporary)", "actor": "postgres", "classification": "TEMPORARY", "control": "PRIV-P1", "result": "PASS" },
+    { "step": 4, "action": "GRANT USAGE, CREATE ON SCHEMA public TO uellix_owner (permanent)", "actor": "postgres", "classification": "PERMANENT", "control": "PRIV-P2", "result": "PASS" },
+    { "step": 5, "action": "GRANT USAGE ON SCHEMA auth TO uellix_owner", "actor": "supabase_admin", "control": "PRIV-P3", "supabase_admin_writes_this_phase": 1, "result": "PASS" },
+    { "step": 6, "action": "apply db/prepared/storage/20260716000001_part_a_helpers.psql.sql, SHA-verified, as uellix_migrator with SET ROLE uellix_owner", "sha256": "078a10e091280fab7f2cf147d866e61d4edaa0af8f7eec82ef3401845bda8cb8", "control": "PRIV-P7", "result": "PASS" }
+  ],
+  "pre_migration_effective_privilege_contract": {
+    "PRIV-P1": "PASS — has_database_privilege('uellix_owner','postgres','CREATE')=true",
+    "PRIV-P2": "PASS — USAGE and CREATE on schema public both true for uellix_owner",
+    "PRIV-P3": "PASS — USAGE on schema auth true for uellix_owner",
+    "PRIV-P4": "PASS — uellix_migrator: createrole=false, super=false, bypassrls=false",
+    "PRIV-P5": "PASS — uellix_migrator->uellix_owner membership: set_option=true, inherit_option=false",
+    "PRIV-P7": "PASS — public.can_read_evidence_object(text,uuid) and public.can_write_evidence_object(text,uuid) both exist, owned by uellix_owner"
+  },
+  "db_migrate_local_execution": {
+    "command": "pnpm db:migrate:local (unmodified entrypoint, unmodified db/migrator.ts)",
+    "result": "SUCCESS"
+  },
+  "post_migration_narrowing_postcondition": {
+    "PRIV-P6": "PASS — unexpected_non_owner_application_objects=0",
+    "drizzle_schema_owned_by_owner": "PASS",
+    "drizzle_migrations_table_owned_by_owner": "PASS",
+    "migration_0061_functions_owned_by_owner": "PASS — public.uellix_guard_disposition_run_approval() and public.uellix_lock_run_dispositions_on_approval() both owned by uellix_owner"
+  },
+  "revocation": {
+    "step": 9,
+    "action": "REVOKE CREATE ON DATABASE postgres FROM uellix_owner",
+    "actor": "postgres",
+    "result": "PASS — the STEP-3 temporary grant does not survive into the final fixture state"
+  },
+  "final_fixture_privilege_contract": {
+    "owner": "PASS — uellix_owner retains schema-level CREATE, database-level CREATE correctly revoked",
+    "migrator": "PASS — uellix_migrator remains non-overprivileged (createrole=false, super=false, bypassrls=false)",
+    "others": "PASS — no unauthorized grantee holds unexpected privilege"
+  },
+  "m2_real_test_execution": {
+    "command": "pnpm exec vitest run --config vitest.integration.config.ts tests/integration/function-execute-acl-guard.test.ts",
+    "against": "the same disposable fixture, post-migration",
+    "files": 1,
+    "tests": 4,
+    "executed": 4,
+    "passed": 4,
+    "skipped": 0,
+    "result": "PASS"
+  },
+  "negative_controls": {
+    "PRIV-N1a": { "title": "omit database CREATE", "gap_proof_method": "direct SQL query (has_database_privilege), not error-text matching", "gap_proof": "PASS (false)", "migration_result": "PASS (exit != 0)" },
+    "PRIV-N1b": { "title": "omit public schema CREATE", "gap_proof": "PASS (false)", "migration_result": "PASS (exit != 0)" },
+    "PRIV-N1c": { "title": "omit auth USAGE", "gap_proof": "PASS (false)", "migration_result": "PASS (exit != 0)" },
+    "PRIV-N1d": { "title": "omit Part A helpers", "gap_proof": "PASS — to_regprocedure('public.can_read_evidence_object(text,uuid)') IS NULL", "migration_result": "PASS (exit != 0)" },
+    "PRIV-N2": { "title": "database CREATE granted to migrator only, not owner", "variant_grant": "PASS", "gap_proof": "PASS — owner still lacks database CREATE", "migration_result": "PASS (exit != 0)" },
+    "PRIV-N3": { "title": "deliberate unauthorized escalation (GRANT CREATE ON SCHEMA public TO uellix_migrator) is detected", "detection_method": "computeFinalPrivilegeContract (pure, non-recording helper) — verified to read false", "result": "PASS" },
+    "PRIV-N4": { "title": "re-granting CREATEROLE before migration is rejected", "expected_error_code": "DB_MIGRATOR_OVERPRIVILEGED", "result": "PASS" },
+    "PRIV-N5": { "title": "wrong migration-credential role is rejected before any connection", "expected_error_code": "DB_CAPABILITY_URL_WRONG_ROLE", "note": "measured live: the URL-declared-role guard in db/safety/resolve-capability-database-url.ts fires earlier than db/migrator.ts's runtime session check — a stronger fail-closed property than originally assumed", "result": "PASS" }
+  },
+  "env_file_safety": {
+    "ENV-P1": "PASS — .env.local and .env.migration.local restored byte-identical (sha256 match) after a successful gate run",
+    "ENV-N1": "PASS — restored byte-identical after every injected-failure phase",
+    "ENV-P2": "PASS — .env.audit.local, originally absent, stays absent after restore"
+  },
+  "container_lifecycle": {
+    "port_precheck": "PASS every phase (Docker-aware: docker ps port-publish check AND Node socket check)",
+    "teardown": "PASS every phase, unconditional (handle.created set before run-status check)",
+    "labelled_leftover_count_after_full_run": 0
+  },
+  "overall_live_gate_result": "OVERALL=PASS (230/230 checks)",
+  "real_bugs_found_and_fixed_during_this_session": [
+    "Docker-published-port false-negative in the bare socket-level port precheck — fixed by adding a Docker-aware isPortFreeAtDockerLevel check",
+    "docker exec psql without -h uses peer auth and deterministically fails for non-OS-user roles (e.g. uellix_migrator) — fixed by forcing TCP via -h 127.0.0.1",
+    "supabase_admin privilege-write counter was global across all 9 phases instead of per-phase — fixed with a Map<string, number> keyed by phase",
+    "PRIV-N3's deliberately-failing sub-checks were polluting the overall pass tally — fixed by splitting computeFinalPrivilegeContract (pure) from checkFinalPrivilegeContract (records)",
+    "negative controls originally regex-matched unreliable raw error text from db-migrate-local.ts's generic error handler — refactored to prove the specific privilege gap absent via direct SQL query instead"
+  ],
+  "local_gates": {
+    "secrets_scan": "PASS — no credential material found",
+    "authority_seal_verify": "PASS",
+    "lint": "PASS — 0 errors, 63 pre-existing warnings, 0 new",
+    "typecheck": "PASS",
+    "targeted_vitest": "PASS — tests/database-target-safety.test.ts, tests/database-entrypoint-safety.test.ts, tests/ods/ods-scope.test.ts, tests/ods/ods-poststate.test.ts: 4 files, 433/433 passed",
+    "test_unit_full_suite": {
+      "command": "pnpm test:unit",
+      "result": "3 files failed | 363 passed | 3 skipped (369 files); 5 tests failed | 9979 passed | 181 skipped (10165 tests)",
+      "failure_classification": "5 timeouts (Test timed out in 5000ms) on real-subprocess CLI invocations in tests/ods/ods-poststate.test.ts and tests/ods/ods-scope.test.ts under full-suite parallel load — the established real-subprocess-timeout-flake pattern from prior missions in this same repository",
+      "isolation_reconfirmation": "pnpm exec vitest run tests/ods/ods-poststate.test.ts tests/ods/ods-scope.test.ts --pool=forks --no-file-parallelism => 2 files, 171/171 PASS, 0 failures",
+      "NEW_DETERMINISTIC_FAILURES": 0,
+      "UNKNOWN_FAILURES": 0
+    },
+    "build": {
+      "command": "pnpm run build",
+      "long_worktree_path_result": "FAILED — Module not found: Can't resolve '@sentry/opentelemetry' from a correctly-symlinked node_modules path; root cause is the established Windows MAX_PATH hazard for this worktree's long directory name, not a defect in this mission's changes (package.json diff confirmed script-line-only, zero dependency changes)",
+      "short_path_workaround": {
+        "method": "temporary WIP commit (9375cad2715725eff9919dabaa7701d1c8f56d0a) of the exact uncommitted tree, checked out into a disposable short-path detached-HEAD worktree at C:/sb1 via `git worktree add --detach`, fresh `pnpm install --frozen-lockfile`, then `pnpm run build`",
+        "result": "PASS — clean build output, full route manifest printed, exit code 0",
+        "cleanup": "C:/sb1 worktree and directory fully removed; `git reset --soft HEAD~1` uncommitted the temporary WIP commit, restoring the exact prior uncommitted tree (verified via git status --short before/after)"
+      },
+      "BUILD_RESULT": "PASS_VIA_SHORT_PATH_WORKAROUND"
+    }
+  },
+  "audit_batch": {
+    "command": "pnpm audit:batch -- --base 94f0923c01f8863a71e1b8f991a3e4073aba2747 --head HEAD --target-branch integration/commercial-v1 --json",
+    "captured_at_head": "8538d1a130543ad64cc31507834fd2c326759c27 (authority commit, prior to the 2 remaining implementation/evidence commits)",
+    "typecheck": "PASS",
+    "secretsScan": "PASS",
+    "authoritySealVerify": "PASS",
+    "journalVerify": "PASS — 75 wrappers regenerate byte-identically",
+    "baselineVerify": "PASS — 74 units",
+    "odsScope": "PASS",
+    "odsPoststateRaw": "PASS",
+    "testDiff_status": "UNREADABLE",
+    "testDiff_baseUnreadableReason": "94f0923c01f8863a71e1b8f991a3e4073aba2747 is neither an existing capture file nor the current worktree HEAD; this tool never checks out an arbitrary historical ref automatically",
+    "auditPacketStatus": "PARTIAL",
+    "note": "Recorded honestly as PARTIAL, never reinterpreted as PASS, per mission instruction. Re-run against the final HEAD (after commits 2 and 3) is recorded separately below if materially different."
+  },
+  "delta_check_vs_authority_baseline": {
+    "base": "30d5249d5cdf9f4aeb1b7c0d42c9d61a8b8ea186",
+    "changed_files": [
+      ".github/workflows/m2-real-pg-gate.yml",
+      "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json",
+      "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.3.json",
+      "package.json",
+      "scripts/m2-disposable-pg-bootstrap.ts",
+      "tests/integration/function-execute-acl-guard.test.ts"
+    ],
+    "note": "evidence v1.0.3 itself (this file) is an additional 7th path added by commit 3, authorized as one of the 3 v1.0.3 governance docs",
+    "UNAUTHORIZED_DELTA_PATHS": 0,
+    "governed_files_confirmed_unchanged": [
+      "db/migrations/**",
+      "db/prepared/**",
+      "db/migrator.ts",
+      "scripts/db-migrate-local.ts",
+      "scripts/rotate-local-role-credentials.ts"
+    ]
+  },
+  "p1a_full_bootstrap_status": "DEFERRED_SEPARATE_GOVERNED_NODE",
+  "m2_real_pg_github_result": "PENDING_DRAFT_PR_MACHINE_GATE",
+  "notes": [
+    "M2_REAL_PG_GITHUB_RESULT is deliberately not a passed/failed status here — .github/workflows/m2-real-pg-gate.yml's authoritative execution happens on a later draft PR machine gate, per this mission's explicit scope. No GitHub Actions run ID for that workflow is invented or claimed in this evidence.",
+    "This evidence supersedes nothing in v1.0.0/v1.0.1/v1.0.2 — all prior controls remain in force by reference."
+  ]
+}

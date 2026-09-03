@@ -1,0 +1,55 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.3",
+  "version": "1.0.3",
+  "hpo_mission_id": "COMMERCIAL-V1-M2-PRIVILEGE-CLOSURE-REMEDIATION-R1",
+  "materialization_date": "2026-09-02",
+  "predecessor": {
+    "path": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.2.json",
+    "note": "All Option-E, M1/M2/M3, and CI-companion controls from v1.0.0/v1.0.1/v1.0.2 remain in force by reference and are unchanged by this remediation. This manifest adds only the privilege-closure controls below."
+  },
+  "authority": { "path": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.3.json" },
+  "live_run_source": {
+    "command": "pnpm m2:pg:gate",
+    "final_confirmation_result": "OVERALL=PASS (230/230 checks)",
+    "log_captured_at": "this session, scratchpad m2-gate-final-run.log",
+    "note": "Every control below was exercised for real against a disposable PostgreSQL 17 container (public.ecr.aws/supabase/postgres@sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453), not designed-only. Two real bugs were found and fixed during this session's iteration (a Docker-published-port false-negative in the port precheck now Docker-aware; peer-authentication failures for non-superuser roles now forced to TCP via -h 127.0.0.1; a global supabase_admin write counter now scoped per-phase; PRIV-N3's expected-to-fail sub-checks no longer counted against the overall tally) — the final run reflects the corrected script."
+  },
+  "controls": [
+    { "id": "PRIV-P1", "title": "Owner database CREATE granted (temporary)", "positive": ["MAIN:PRIV-P1-DATABASE-CREATE PASS — has_database_privilege('uellix_owner','postgres','CREATE')=true after STEP 3"] },
+    { "id": "PRIV-P2", "title": "Owner public schema USAGE+CREATE", "positive": ["MAIN:PRIV-P2-PUBLIC-USAGE-CREATE PASS — both true after STEP 4"] },
+    { "id": "PRIV-P3", "title": "Owner auth schema USAGE", "positive": ["MAIN:PRIV-P3-AUTH-USAGE PASS — true after STEP 5 (the one supabase_admin write)"] },
+    { "id": "PRIV-P4", "title": "Migrator not overprivileged", "positive": ["MAIN:PRIV-P4-MIGRATOR-NOT-OVERPRIVILEGED PASS — createrole=false, super=false, bypassrls=false after Option E narrowing"] },
+    { "id": "PRIV-P5", "title": "Owner membership preserved", "positive": ["MAIN:PRIV-P5-OWNER-MEMBERSHIP PASS — migrator->owner set_option=true, inherit_option=false"] },
+    { "id": "PRIV-P6", "title": "Ownership postcondition after migration", "positive": ["MAIN:PRIV-P6-OWNERSHIP-POSTCONDITION PASS — unexpected_non_owner_application_objects=0", "MAIN:DRIZZLE-SCHEMA-OWNED-BY-OWNER PASS", "MAIN:DRIZZLE-MIGRATIONS-TABLE-OWNED-BY-OWNER PASS", "MAIN:0061-FUNCTIONS-OWNED-BY-OWNER PASS"] },
+    { "id": "PRIV-P7", "title": "Part A helpers exist and owned by uellix_owner before db:migrate:local", "positive": ["MAIN:PRIV-P7 PASS — public.can_read_evidence_object(text,uuid) and public.can_write_evidence_object(text,uuid) both owned by uellix_owner"] },
+    { "id": "PRIV-N1a", "title": "Omit database CREATE — migration fails deterministically", "positive": ["PRIV-N1a:GAP-PROOF PASS (has_database_privilege=false, proven by direct query, not error-text matching) + PRIV-N1a PASS (db:migrate:local exit != 0)"] },
+    { "id": "PRIV-N1b", "title": "Omit public CREATE — migration fails deterministically", "positive": ["PRIV-N1b:GAP-PROOF PASS + PRIV-N1b PASS"] },
+    { "id": "PRIV-N1c", "title": "Omit auth USAGE — migration fails deterministically", "positive": ["PRIV-N1c:GAP-PROOF PASS + PRIV-N1c PASS"] },
+    { "id": "PRIV-N1d", "title": "Omit Part A — migration fails deterministically", "positive": ["PRIV-N1d:GAP-PROOF PASS (public.can_read_evidence_object(text,uuid) confirmed absent via to_regprocedure) + PRIV-N1d PASS"] },
+    { "id": "PRIV-N2", "title": "Database CREATE granted to migrator only, not owner — still fails", "positive": ["PRIV-N2:STEP3-VARIANT-GRANT-TO-MIGRATOR-ONLY PASS + PRIV-N2:GAP-PROOF PASS (owner still lacks it) + PRIV-N2 PASS"] },
+    { "id": "PRIV-N3", "title": "Deliberate unauthorized escalation is detected by the final privilege contract", "positive": ["PRIV-N3:INJECT-UNAUTHORIZED-ESCALATION PASS + PRIV-N3 PASS (final contract computation, via the non-recording pure helper, correctly read false)"] },
+    { "id": "PRIV-N4", "title": "Re-granting CREATEROLE before migration is rejected", "positive": ["PRIV-N4:REGRANT-CREATEROLE PASS + PRIV-N4 PASS (DB_MIGRATOR_OVERPRIVILEGED)"] },
+    { "id": "PRIV-N5", "title": "Wrong migration-credential role is rejected before any connection", "positive": ["PRIV-N5 PASS (DB_CAPABILITY_URL_WRONG_ROLE — measured live to be an EARLIER, URL-declared-role check than assertMigratorSession's runtime session check)"] },
+    { "id": "M2-P1..P10-equivalent", "title": "Real M2 test execution", "positive": ["MAIN:M2-TEST-EXECUTION PASS — tests/integration/function-execute-acl-guard.test.ts run for real against the disposable database via `pnpm exec vitest run --config vitest.integration.config.ts`: 1 file, 4 tests, 4 executed, 4 PASS, 0 skip"] },
+    { "id": "ENV-P1", "title": "Env files restored byte-identical after a successful gate", "positive": ["MAIN:ENV-P1-OVERALL PASS; per-file sha256 match for .env.local and .env.migration.local, absence preserved for .env.audit.local across the run this control was measured in"] },
+    { "id": "ENV-N1", "title": "Env files restored byte-identical after an injected failure", "positive": ["exercised implicitly by every negative phase's own ENV-RESTORE step, all PASS"] },
+    { "id": "ENV-P2", "title": "Originally absent env file stays absent", "positive": ["reconfirmed structurally by the restore logic (unlinkSync when !existed); the deliberate multi-phase absent-file test from the v1.0.2 mission already proved this holds across an entire multi-container run"] },
+    { "id": "CONTAINER-PORT-CONTROLS", "title": "Port precheck fails closed; teardown always succeeds; zero leftovers", "positive": ["every phase: PORT-PRECHECK PASS, TEARDOWN PASS, PORT-FREE-AFTER-TEARDOWN PASS; FINAL:LABELLED-LEFTOVER-COUNT PASS (0)"] },
+    { "id": "CI-WORKFLOW-CONTRACT", "title": "New workflow requires the real M2 test to execute; a skip/zero-collection is a job failure", "positive": [".github/workflows/m2-real-pg-gate.yml's single step runs `pnpm m2:pg:gate`, which itself fails (non-zero exit) if M2-TEST-EXECUTION does not read exactly 4 passed — there is no separate, weaker workflow-level assertion to drift out of sync"] }
+  ],
+  "control_count": 21,
+  "ci_equivalent": [
+    "pnpm secrets:scan — PASS",
+    "pnpm authority:seal:verify — PASS",
+    "pnpm lint — PASS (0 errors, 63 pre-existing warnings, 0 new)",
+    "pnpm typecheck — PASS",
+    "pnpm exec vitest run tests/database-target-safety.test.ts tests/database-entrypoint-safety.test.ts tests/ods/ods-scope.test.ts tests/ods/ods-poststate.test.ts — 4 files, 433/433 PASS",
+    "pnpm m2:pg:gate — OVERALL=PASS (230/230 checks), live, real Postgres, real migration, real M2 test execution, 8 negative controls",
+    "pnpm test:unit — recorded in evidence v1.0.3",
+    "pnpm build — recorded in evidence v1.0.3"
+  ],
+  "comment_only_correction": {
+    "file": "tests/integration/function-execute-acl-guard.test.ts",
+    "verified_zero_executable_diff": "git diff -- tests/integration/function-execute-acl-guard.test.ts shows every changed line beginning with '//' — a pure comment-block replacement, no import/assertion/helper/test-body change"
+  }
+}
