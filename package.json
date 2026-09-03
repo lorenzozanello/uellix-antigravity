@@ -110,6 +110,7 @@
     "ops:program-state": "tsx scripts/ods-program-state.ts",
     "ops:integration-plan": "tsx scripts/ods-integration-plan.ts",
     "ops:test-diff": "tsx scripts/ods-test-diff.ts",
+    "ops:controller": "tsx scripts/ods-controller.ts",
     "audit:batch": "tsx scripts/audit-batch.ts"
   },
   "dependencies": {
