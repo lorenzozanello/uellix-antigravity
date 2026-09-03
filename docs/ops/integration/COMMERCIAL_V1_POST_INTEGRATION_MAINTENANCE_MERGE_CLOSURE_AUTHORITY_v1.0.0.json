@@ -1,0 +1,92 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_MERGE_CLOSURE_AUTHORITY_v1.0.0",
+  "authority_family": "POST_INTEGRATION_MAINTENANCE_MERGE_CLOSURE",
+  "version": "1.0.0",
+  "authority_class": "DOCS_ONLY_POST_MERGE_CLOSURE_AUTHORITY",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-M3-PR50-MERGE-CLOSURE-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-03",
+  "purpose": "Authorizes materialization of the PR #50 post-merge closure evidence artifact. This is a NEW post-merge authority family, distinct from and successor to COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0-v1.0.5.json, which govern the PRE-merge PR #50 candidate lineage (m3_contract pinned to PR_NUMBER=49 / INTEGRATION_MERGE_COMMIT=94f0923c01f8863a71e1b8f991a3e4073aba2747) and do not authorize PR #50 / 3200ddb closure evidence. This artifact is anchored to an actual merge commit (3200ddb0) rather than a pre-merge candidate SHA.",
+  "authority_gap_verified": {
+    "existing_authority_path": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json",
+    "existing_authority_m3_contract_pins": {
+      "PR_NUMBER": 49,
+      "INTEGRATION_MERGE_COMMIT": "94f0923c01f8863a71e1b8f991a3e4073aba2747"
+    },
+    "EXISTING_AUTHORITY_AUTHORIZES_PR50_POST_MERGE_EVIDENCE": false,
+    "AUTHORITY_GAP_CONFIRMED": true,
+    "verification_method": "grep of m3_contract block in AUTHORITY_v1.0.0.json (this session) + grep -rl '3200ddb' and PR_NUMBER=50 across docs/ops/integration/ (this session): no match found in any existing artifact"
+  },
+  "merge_closure_pins": {
+    "MERGED_PR": 50,
+    "AUDITED_HEAD": "832cc46df607f547a347f6593d65fa7a402b9084",
+    "AUDITED_TREE": "865b43b048b6df4a8fa75c641c6bbae54ca56b17",
+    "PREMERGE_INTEGRATION_HEAD": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "MERGE_COMMIT": "3200ddb03fb1b838ea553ea376bb02d06a7e9f76",
+    "MERGE_TREE": "865b43b048b6df4a8fa75c641c6bbae54ca56b17",
+    "POSTMERGE_INTEGRATION_HEAD": "3200ddb03fb1b838ea553ea376bb02d06a7e9f76",
+    "MAIN_FROZEN": "067e8c2f3ac9b5e843de3a35575182907b4365d4"
+  },
+  "authorized_changed_paths": {
+    "AUTHORIZED_CHANGED_PATH_COUNT": 2,
+    "paths": [
+      "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_MERGE_CLOSURE_AUTHORITY_v1.0.0.json",
+      "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_PR50_POST_MERGE_CLOSURE_v1.0.0.json"
+    ]
+  },
+  "forbidden_paths": [
+    "scripts/**",
+    "tests/**",
+    ".github/**",
+    "package.json",
+    "pnpm-lock.yaml",
+    "db/**",
+    "supabase/**",
+    "application code",
+    "historical authority files",
+    "historical evidence files"
+  ],
+  "change_authorization": {
+    "CODE_CHANGES_AUTHORIZED": false,
+    "DB_CHANGES_AUTHORIZED": false,
+    "WORKFLOW_CHANGES_AUTHORIZED": false,
+    "PRODUCTION_PROMOTION_AUTHORIZED": false,
+    "UELLIX_COM_CUTOVER_AUTHORIZED": false
+  },
+  "ci_attribution_rule": {
+    "rule": "CI and M2 machine-gate results belong to headSha 832cc46df607f547a347f6593d65fa7a402b9084 (the PR #50 head, event pull_request), never to the merge commit 3200ddb03fb1b838ea553ea376bb02d06a7e9f76.",
+    "reason": "The CI workflow (.github/workflows/ci.yml) push trigger is branches:[main] only; it does not run on push to integration/commercial-v1. No merge-commit-specific CI run exists and none may be fabricated.",
+    "POSTMERGE_MERGE_COMMIT_HAS_OWN_CI_RUN": false
+  },
+  "r2_debt_definitions": {
+    "R2-F1": {
+      "title": "READY-N5 label/proof precision debt",
+      "classification": "PRESERVED_NONBLOCKING_DEBT",
+      "closure_impact": "NONE",
+      "note": "Defined here for the first time as a repository identifier; not a reference to a prior repository record. Not remediated by this authority."
+    },
+    "R2-F2": {
+      "title": "SIGINT/SIGTERM env-restoration hygiene debt",
+      "classification": "PRESERVED_NONBLOCKING_DEBT",
+      "closure_impact": "NONE",
+      "note": "Defined here for the first time as a repository identifier; not a reference to a prior repository record. Not remediated by this authority."
+    }
+  },
+  "deferred_db_boundary": {
+    "P1A_FULL_BOOTSTRAP_STATUS": "DEFERRED_SEPARATE_GOVERNED_NODE",
+    "CONTROLLER_IMPLEMENTATION_AFTER_MAINTENANCE_CLOSURE": "AUTHORIZED",
+    "CONTROLLER_DB_EXECUTION": "NOT_AUTHORIZED",
+    "note": "This authority does not broaden scope into P1A."
+  },
+  "closure_semantics": {
+    "condition": "IF authority commit precedes evidence commit; AND successor branch delta is exactly the two authorized files; AND all recorded facts are mechanically corroborated; AND deterministic docs/governance gates pass; AND automatic PR CI/M2 gates do not reveal a new blocker; AND the docs-only successor PR is merged to integration/commercial-v1; THEN M1=CLOSED, M2=CLOSED, M3=CLOSED, POST_INTEGRATION_MAINTENANCE=CLOSED. No new code/security audit required.",
+    "self_referential_claim_prohibition": "This authority and its accompanying evidence artifact, materialized on the docs-only successor branch prior to that branch's own PR merging, MAY record CLOSURE_CONTRACT_SATISFIED_PREMERGE=YES if mechanically true at materialization time, but MUST NOT themselves declare POST_INTEGRATION_MAINTENANCE=CLOSED. That final declaration belongs exclusively to the post-merge mission report, issued only after this successor PR itself has merged into integration/commercial-v1."
+  },
+  "independent_audit_provenance_convention": {
+    "rule": "Do not fabricate a GitHub PR review/comment citation for the independent audit. Mechanically verify whether PR #50 contains a discoverable audit reference; if none is found, record the audit result as an HPO/governance assertion per repository precedent (COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0.json), using provenance: HPO_ASSERTION and discoverable_reference_found_in_pr50 as mechanically determined. Do not invent a review id, comment id, URL, commit status, or workflow run for the audit."
+  },
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "predecessor_authority_immutable": [
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json",
+    "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.5.json"
+  ]
+}
