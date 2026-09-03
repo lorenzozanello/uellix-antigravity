@@ -1,12 +1,9 @@
 // scripts/ods-controller.ts — Autonomous Program Controller v0.
 //   pnpm ops:controller -- --unit <id> [--json]
-// Governed by ODS_CONTROLLER_AUTHORITY_v1.0.0.json (HPO-ODS-W2-10),
-// ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json, and the
-// AUTONOMOUS-PROGRAM-CONTROLLER-V0-AUDIT-REMEDIATION-R1 hardening pass
-// (CTRL-M1/M2/M3/M4/M6). Thin deterministic node selector/router over
-// existing machine gates — reuses pnpm ops:program-state for closure
-// evidence rather than reimplementing it. Zero daemon/service/database/UI/
-// second state store. Default CLI invocation is READ-ONLY.
+// Governed by ODS_CONTROLLER_AUTHORITY_v1.0.0.json (HPO-ODS-W2-10) plus the
+// CTRL-M1/M2/M3/M4/M6 and CTRL-R1/R2/R3 hardening passes. Thin deterministic
+// node selector/router reusing pnpm ops:program-state for closure evidence.
+// Zero daemon/service/database/UI/second state store. CLI is READ-ONLY.
 
 import path from 'node:path'
 import {
@@ -49,8 +46,7 @@ export const STOP_CLASSES = [
 ] as const
 export type StopClass = (typeof STOP_CLASSES)[number]
 
-// ag1_disposition.immutableByConvention.entries (20) + v1.0.10 + v1.0.11.
-// EXACT membership — never a subset test.
+// ag1_disposition.immutableByConvention.entries (20) + v1.0.10 + v1.0.11. EXACT membership — never a subset test.
 export const IMMUTABLE_BY_CONVENTION: readonly string[] = [
   'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
   'docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json',
@@ -85,20 +81,25 @@ export function normalizeRepoPath(rawPath: string): string {
     .join('/')
 }
 
-export interface ImmutableGuardResult {
-  violated: boolean
-  violatingPaths: string[]
-}
+/** nonCanonicalPaths: CTRL-R3 — matches an entry case-insensitively but not its canonical spelling; never silently lowercased, never PROTECTED_SURFACE_CHANGE. */
+export interface ImmutableGuardResult { violated: boolean; violatingPaths: string[]; nonCanonicalPaths: string[] }
 
-/** Pure. STOPs even when ods:scope alone would return OK for the same path. */
+const IMMUTABLE_BY_CONVENTION_LOWER = new Set(IMMUTABLE_BY_CONVENTION.map((p) => p.toLowerCase()))
+
+/** Pure. STOPs even when ods:scope alone would return OK for the same path. Canonical-exact match wins over a merely case-insensitive one. */
 export function checkImmutableGuard(changedPaths: string[]): ImmutableGuardResult {
-  const set = new Set(IMMUTABLE_BY_CONVENTION)
-  const violatingPaths = changedPaths.map(normalizeRepoPath).filter((p) => set.has(p))
-  return { violated: violatingPaths.length > 0, violatingPaths }
+  const canonical = new Set(IMMUTABLE_BY_CONVENTION)
+  const violatingPaths: string[] = []
+  const nonCanonicalPaths: string[] = []
+  for (const raw of changedPaths) {
+    const normalized = normalizeRepoPath(raw)
+    if (canonical.has(normalized)) violatingPaths.push(normalized)
+    else if (IMMUTABLE_BY_CONVENTION_LOWER.has(normalized.toLowerCase())) nonCanonicalPaths.push(normalized)
+  }
+  return { violated: violatingPaths.length > 0, violatingPaths, nonCanonicalPaths }
 }
 
-// Production/main boundary. CTRL-M4: exact literal ref aliases only — never
-// a substring/prefix match, so e.g. integration/commercial-v1 can never hit.
+// Production/main boundary. CTRL-M4: exact literal ref aliases only — never a substring/prefix match (integration/commercial-v1 can never hit).
 const MAIN_REF_ALIASES = new Set(['main', 'origin/main', 'refs/heads/main', 'refs/remotes/origin/main'])
 const PRODUCTION_REF_ALIASES = new Set(['production', 'origin/production', 'refs/heads/production', 'refs/remotes/origin/production'])
 
@@ -155,8 +156,7 @@ export function resolveAuditMode(declared: AuditMode, proposed: AuditMode): Audi
   return AUDIT_MODE_RANK[proposed] > AUDIT_MODE_RANK[declared] ? proposed : declared
 }
 
-// Node selection — dependsOn/externalPreconditions/dbWriting/
-// integrationTargets/writePaths/routing-metadata validity, fail-closed.
+// Node selection — dependsOn/externalPreconditions/dbWriting/integrationTargets/writePaths/routing-metadata validity, fail-closed.
 export type ClosureStatus = 'CLOSED' | 'OPEN' | 'UNKNOWN'
 export type PreconditionStatus = ClosureStatus | 'CONFLICT'
 
@@ -169,18 +169,17 @@ export interface ControllerUnit extends ProgramStateUnit {
   fableEligible?: unknown
   auditClass?: unknown
   dbWriting?: boolean
-  /** CTRL-M3: declared repository write surface. Absent = UNKNOWN (fails closed), never implicitly safe. */
-  writePaths?: string[]
+  /** CTRL-M3/R2: declared repository write surface. Absent = UNKNOWN (fails closed). Runtime JSON, not TS-trusted — validated by isValidWritePaths. */
+  writePaths?: unknown
 }
 
-export interface SelectionDecision {
-  unitId: string
-  selectable: boolean
-  stopClass?: StopClass
-  reason: string
-  /** True when the unit is already fully closed and therefore not a next-executable node — never fabricated as a stop-class error. */
-  alreadyClosed?: boolean
+/** CTRL-R2: malformed writePaths (non-array, or an array containing a non-string) must fail closed, never be treated as [] or thrown past. */
+export function isValidWritePaths(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((p) => typeof p === 'string')
 }
+
+/** alreadyClosed=true: the unit is already fully closed and not a next-executable node — never fabricated as a stop-class error. */
+export interface SelectionDecision { unitId: string; selectable: boolean; stopClass?: StopClass; reason: string; alreadyClosed?: boolean }
 
 /** CTRL-M1: preserves the ternary DimensionResult status rather than collapsing it to boolean. Any UNKNOWN dimension makes the aggregate UNKNOWN — never silently downgraded to OPEN by an unreadable ref. */
 export function aggregateClosureStatus(authority: DimensionResult, implementation: DimensionResult, audit: DimensionResult): ClosureStatus {
@@ -188,10 +187,8 @@ export function aggregateClosureStatus(authority: DimensionResult, implementatio
   return authority.status === 'CLOSED' && implementation.status === 'CLOSED' && audit.status === 'CLOSED' ? 'CLOSED' : 'OPEN'
 }
 
-// CTRL-M2: generic fail-closed resolver — a token is provided by a unit
-// whose id equals it, OR whose providesExternalPreconditions[] lists it. No
-// hard-coded per-token map. 0 providers=UNKNOWN, >1=AUTHORITY_CONFLICT,
-// exactly 1 derives closure via the same evaluateEvidence machinery.
+// CTRL-M2: generic fail-closed resolver — a token is provided by a unit whose id equals it, OR whose providesExternalPreconditions[] lists it. No
+// hard-coded per-token map. 0 providers=UNKNOWN, >1=AUTHORITY_CONFLICT, exactly 1 derives closure via the same evaluateEvidence machinery.
 export function resolveExternalPrecondition(cwd: string, registry: ProgramStateRegistry, token: string): PreconditionStatus {
   const providers = registry.units.filter((u) => u.id === token || ((u as ControllerUnit).providesExternalPreconditions ?? []).includes(token))
   if (providers.length === 0) return 'UNKNOWN'
@@ -200,10 +197,8 @@ export function resolveExternalPrecondition(cwd: string, registry: ProgramStateR
   return aggregateClosureStatus(evaluateEvidence(cwd, p.authority), evaluateEvidence(cwd, p.implementation), evaluateEvidence(cwd, p.audit))
 }
 
-// Pure: decides selectability given already-evaluated closure facts (never
-// does I/O — see selectNode). Gate order: already-closed short-circuit,
-// dependsOn, externalPreconditions, dbWriting, boundary (M4), write-surface
-// guard (M3), routing-metadata validity (M6).
+// Pure: decides selectability given already-evaluated closure facts (never does I/O — see selectNode). Gate order: own-closure short-circuit
+// (CLOSED/UNKNOWN, CTRL-R1), dependsOn, externalPreconditions, dbWriting, boundary (M4), write-surface guard (M3/R2/R3), routing metadata (M6).
 export function decideSelection(
   unit: ControllerUnit,
   ownClosureStatus: ClosureStatus,
@@ -212,6 +207,9 @@ export function decideSelection(
 ): SelectionDecision {
   if (ownClosureStatus === 'CLOSED') {
     return { unitId: unit.id, selectable: false, alreadyClosed: true, reason: 'unit is already fully closed (authority+implementation+audit); not a next-executable node' }
+  }
+  if (ownClosureStatus === 'UNKNOWN') {
+    return { unitId: unit.id, selectable: false, stopClass: 'UNKNOWN_EVIDENCE', reason: "unit's own authority/implementation/audit evidence could not be mechanically read" }
   }
 
   for (const dep of unit.dependsOn ?? []) {
@@ -239,9 +237,15 @@ export function decideSelection(
   if (unit.writePaths === undefined) {
     return { unitId: unit.id, selectable: false, stopClass: 'AUTHORITY_GAP', reason: 'writePaths is not declared; write surface is UNKNOWN' }
   }
+  if (!isValidWritePaths(unit.writePaths)) {
+    return { unitId: unit.id, selectable: false, stopClass: 'AUTHORITY_CONFLICT', reason: `writePaths is malformed — must be an array of strings (found ${JSON.stringify(unit.writePaths)})` }
+  }
   const guard = checkImmutableGuard(unit.writePaths)
   if (guard.violated) {
     return { unitId: unit.id, selectable: false, stopClass: 'PROTECTED_SURFACE_CHANGE', reason: `writePaths targets immutableByConvention artifact(s): ${guard.violatingPaths.join(', ')}` }
+  }
+  if (guard.nonCanonicalPaths.length > 0) {
+    return { unitId: unit.id, selectable: false, stopClass: 'NONCANONICAL_PROTECTED_PATH', reason: `writePaths matches immutableByConvention case-insensitively but not canonically: ${guard.nonCanonicalPaths.join(', ')}` }
   }
 
   if (!isValidExecutionClass(unit.executionClass)) {
@@ -286,17 +290,10 @@ export const MAX_AUTONOMOUS_CYCLES = 5
 export type CycleOutcome = { status: 'PASS' } | { status: 'STOP'; stopClass: StopClass; signature: string }
 export type CycleExecutor = (cycleIndex: number) => CycleOutcome
 
-export interface MissionRunResult {
-  cyclesRun: number
-  outcome: 'CLOSED' | 'STOPPED'
-  stopClass?: StopClass
-  flakeRerunsUsed: number
-}
+export interface MissionRunResult { cyclesRun: number; outcome: 'CLOSED' | 'STOPPED'; stopClass?: StopClass; flakeRerunsUsed: number }
 
-// Pure given `executor`. Only FLAKE_SUSPECTED may consume the single
-// isolated rerun; every other stop class is terminal on first occurrence.
-// A signature that already drew its rerun and recurs is reclassified
-// REPEATED_LOCAL_FAILURE (anti-laundering rule).
+// Pure given `executor`. Only FLAKE_SUSPECTED may consume the single isolated rerun; every other stop class is terminal on first occurrence.
+// A signature that already drew its rerun and recurs is reclassified REPEATED_LOCAL_FAILURE (anti-laundering rule).
 export function runMissionCycles(executor: CycleExecutor, maxCycles: number = MAX_AUTONOMOUS_CYCLES): MissionRunResult {
   let flakeRerunsUsed = 0
   const flakeRetriedSignatures = new Set<string>()
@@ -324,23 +321,14 @@ export function runMissionCycles(executor: CycleExecutor, maxCycles: number = MA
 }
 
 // Audit packet derivation — deterministic pure composition, no randomness.
-export interface AuditPacket {
-  unitId: string
-  baseSha: string
-  candidateSha: string
-  authorityPaths: string[]
-  testResults: string[]
-}
+export interface AuditPacket { unitId: string; baseSha: string; candidateSha: string; authorityPaths: string[]; testResults: string[] }
 
 export function buildAuditPacket(unitId: string, baseSha: string, candidateSha: string, authorityPaths: string[], testResults: string[]): AuditPacket {
   return { unitId, baseSha, candidateSha, authorityPaths: [...authorityPaths], testResults: [...testResults] }
 }
 
 // CLI — read-only routing report. No mutation, no DB, no daemon.
-interface ControllerArgs {
-  unit?: string
-  json: boolean
-}
+interface ControllerArgs { unit?: string; json: boolean }
 
 function parseArgs(argv: string[]): ControllerArgs {
   const args: ControllerArgs = { json: false }
@@ -386,9 +374,7 @@ function main(): void {
   process.exit(decision.selectable ? 0 : 1)
 }
 
-// Only when run as a script — tests/ods/ods-controller.test.ts imports the
-// pure functions above. See scripts/authority-seal-verify.ts for why argv
-// is checked rather than `import.meta.url`.
+// Only when run as a script — tests/ods/ods-controller.test.ts imports the pure functions above.
 const invokedDirectly = (process.argv[1] ?? '').replace(/\\/g, '/').endsWith('scripts/ods-controller.ts')
 
 if (invokedDirectly) main()

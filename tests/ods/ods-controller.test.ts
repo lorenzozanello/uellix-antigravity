@@ -2,9 +2,10 @@
 // positive, negative, mutation and closed-world controls.
 //
 // Governed by docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json
-// exit_criteria_for_controller_v0_implementation (E1..E8) and the
+// exit_criteria_for_controller_v0_implementation (E1..E8), the
 // AUTONOMOUS-PROGRAM-CONTROLLER-V0-AUDIT-REMEDIATION-R1 hardening pass
-// (CTRL-M1/M2/M3/M4/M6). Synthetic fixtures live only in this file.
+// (CTRL-M1/M2/M3/M4/M6), and the CONTROLLER-V0-TARGET-EVIDENCE-TERNARY-
+// REMEDIATION-R1 pass (CTRL-R1/R2/R3). Synthetic fixtures live only here.
 
 import { describe, it, expect } from 'vitest'
 import path from 'node:path'
@@ -31,7 +32,7 @@ import {
   type ControllerUnit,
   type CycleOutcome,
 } from '../../scripts/ods-controller'
-import { loadRegistry, DEFAULT_REGISTRY_RELATIVE_PATH, type ProgramStateRegistry, type Evidence } from '../../scripts/ods-program-state'
+import { loadRegistry, evaluateEvidence, DEFAULT_REGISTRY_RELATIVE_PATH, type ProgramStateRegistry, type Evidence } from '../../scripts/ods-program-state'
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..')
 
@@ -258,6 +259,52 @@ describe('CTRL-M1: UNKNOWN vs OPEN determinism', () => {
 })
 
 // ---------------------------------------------------------------------------
+// CTRL-R1 — the TARGET unit's own evidence uses the same ternary discipline
+// as dependencies. UNKNOWN must never fall through to writePaths/dependsOn,
+// never become AUTHORITY_GAP, never become selectable.
+// ---------------------------------------------------------------------------
+
+describe('CTRL-R1: target own-evidence ternary', () => {
+  it('target own CLOSED -> alreadyClosed=true, selectable=false, no stopClass', () => {
+    const decision = decideSelection(baseUnit({ dependsOn: ['ANYTHING'] }), 'CLOSED', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.alreadyClosed).toBe(true)
+    expect(decision.stopClass).toBeUndefined()
+  })
+
+  it('target own OPEN continues into dependency/precondition/write/routing checks (does not short-circuit)', () => {
+    const decision = decideSelection(baseUnit({ dependsOn: ['DEP-X'] }), 'OPEN', { 'DEP-X': 'OPEN' }, {})
+    // Reaching the dependsOn stop class proves OPEN fell through into the
+    // ordinary pipeline rather than being treated as closed or unreadable.
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('AUTHORITY_GAP')
+  })
+
+  it('MUTATION CONTROL (non-vacuous): target own UNKNOWN STOPs with UNKNOWN_EVIDENCE and never becomes selectable', () => {
+    // This node has NO other blocker at all (no dependsOn, no
+    // externalPreconditions, dbWriting absent, valid writePaths/
+    // executionClass/auditClass from baseUnit's defaults) — if the
+    // own-UNKNOWN branch were removed from decideSelection, it would fall
+    // all the way through to selectable=true. That is exactly what this
+    // assertion catches.
+    const decision = decideSelection(baseUnit({}), 'UNKNOWN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('UNKNOWN_EVIDENCE')
+    expect(decision.alreadyClosed).toBeUndefined()
+  })
+
+  it('real selection path: selectNode STOPs with UNKNOWN_EVIDENCE when the target\'s own evidence ref cannot resolve — never AUTHORITY_GAP', () => {
+    const registry: ProgramStateRegistry = {
+      units: [{ id: 'TARGET-UNKNOWN', authority: UNKNOWN_EVIDENCE, implementation: UNKNOWN_EVIDENCE, audit: UNKNOWN_EVIDENCE, integrationTargets: [] }],
+    }
+    const decision = selectNode(REPO_ROOT, registry, 'TARGET-UNKNOWN')
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('UNKNOWN_EVIDENCE')
+    expect(decision.alreadyClosed).toBeUndefined()
+  })
+})
+
+// ---------------------------------------------------------------------------
 // CTRL-M2 — generic external-precondition resolution, no hard-coded map.
 // ---------------------------------------------------------------------------
 
@@ -367,27 +414,34 @@ describe('already-closed disposition', () => {
     expect(decision.stopClass).toBeUndefined()
   })
 
-  it('REAL REGISTRY: W2-B3 is never misselected as executable', () => {
-    // W2-B3's own evidence lives on codex/w2-methodology-objects-r1. A
-    // checkout that has fetched that branch (a full local clone) resolves
-    // it CLOSED (verified this session via `pnpm ops:program-state --unit
-    // W2-B3`), so decideSelection short-circuits with alreadyClosed=true —
-    // W2-B3 must never be reported as a next-executable node merely because
-    // its own dependents are satisfied. A checkout that has not fetched
-    // that branch (e.g. CI's default-branch-only checkout) reads UNKNOWN
-    // evidence instead, correctly declines to assume "already closed" from
-    // unreadable evidence (CTRL-M1), and falls through to a different but
-    // still fail-closed stop (AUTHORITY_GAP, since W2-B3 declares no
-    // writePaths). What must hold in EVERY environment is selectable=false
-    // — never a false SELECTABLE=true.
+  it('REAL REGISTRY: W2-B3 result matches the actual measured own-evidence condition exactly', () => {
+    // First inspect the real machine evidence condition (the SAME
+    // evaluateEvidence + aggregateClosureStatus primitives selectNode uses
+    // internally), THEN assert the one exact result CTRL-R1 requires for
+    // that condition — never an OR-any-stop-class or STOP_CLASSES.includes
+    // substitute, and AUTHORITY_GAP is never accepted for unreadable
+    // target-own evidence.
     const registry = loadRegistry(path.join(REPO_ROOT, DEFAULT_REGISTRY_RELATIVE_PATH))
+    const unit = registry.units.find((u) => u.id === 'W2-B3')!
+    const ownStatus = aggregateClosureStatus(
+      evaluateEvidence(REPO_ROOT, unit.authority),
+      evaluateEvidence(REPO_ROOT, unit.implementation),
+      evaluateEvidence(REPO_ROOT, unit.audit),
+    )
     const decision = selectNode(REPO_ROOT, registry, 'W2-B3')
-    expect(decision.selectable).toBe(false)
-    if (decision.alreadyClosed) {
+    if (ownStatus === 'CLOSED') {
+      // Full checkout: codex/w2-methodology-objects-r1 fetched, all three
+      // dimensions read CLOSED (verified via `pnpm ops:program-state --unit W2-B3`).
+      expect(decision.selectable).toBe(false)
+      expect(decision.alreadyClosed).toBe(true)
       expect(decision.stopClass).toBeUndefined()
     } else {
-      expect(decision.stopClass).toBeDefined()
-      expect(STOP_CLASSES).toContain(decision.stopClass)
+      // Shallow/CI checkout: that branch is unfetched, so all three
+      // dimensions read UNKNOWN. CTRL-R1 requires exactly UNKNOWN_EVIDENCE.
+      expect(ownStatus).toBe('UNKNOWN')
+      expect(decision.selectable).toBe(false)
+      expect(decision.alreadyClosed).toBeUndefined()
+      expect(decision.stopClass).toBe('UNKNOWN_EVIDENCE')
     }
   })
 })
@@ -519,6 +573,83 @@ describe('E4: rerun policy — single isolated flake rerun, repeated failure STO
       return { status: 'STOP', stopClass: 'FLAKE_SUSPECTED', signature: `s-${calls}` }
     }, 5)
     expect(calls).toBeLessThanOrEqual(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// CTRL-R2 — malformed writePaths (runtime JSON, not TS-trusted) fails
+// closed rather than crashing or being treated as [] or authorized.
+// ---------------------------------------------------------------------------
+
+describe('CTRL-R2: malformed writePaths fails closed', () => {
+  it('a string instead of an array -> AUTHORITY_CONFLICT, never interpreted as [] or an exception', () => {
+    const decision = decideSelection(baseUnit({ writePaths: 'not-an-array' }), 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('AUTHORITY_CONFLICT')
+  })
+
+  it('an object instead of an array -> AUTHORITY_CONFLICT', () => {
+    const decision = decideSelection(baseUnit({ writePaths: { path: 'lib/x.ts' } }), 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('AUTHORITY_CONFLICT')
+  })
+
+  it('an array containing a non-string element -> AUTHORITY_CONFLICT', () => {
+    const decision = decideSelection(baseUnit({ writePaths: ['lib/x.ts', 42] }), 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('AUTHORITY_CONFLICT')
+  })
+
+  it('MUTATION CONTROL: a genuinely valid array of strings is not blocked (proves the validator, not the fixture, rejects malformed input)', () => {
+    expect(decideSelection(baseUnit({ writePaths: ['lib/x.ts'] }), 'OPEN', {}, {}).selectable).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// CTRL-R3 — noncanonical protected-path spelling (case bypass) is caught
+// and classified distinctly from a canonical-exact protected hit.
+// ---------------------------------------------------------------------------
+
+describe('CTRL-R3: noncanonical protected path spelling', () => {
+  const CANONICAL = 'docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json'
+
+  it('canonical exact path -> violated (PROTECTED_SURFACE_CHANGE territory)', () => {
+    const result = checkImmutableGuard([CANONICAL])
+    expect(result.violated).toBe(true)
+    expect(result.nonCanonicalPaths).toEqual([])
+  })
+
+  it('./canonical (redundant dot segment) normalizes and still violates', () => {
+    expect(checkImmutableGuard([`./${CANONICAL}`]).violated).toBe(true)
+  })
+
+  it('backslash canonical normalizes and still violates', () => {
+    expect(checkImmutableGuard([CANONICAL.replace(/\//g, '\\')]).violated).toBe(true)
+  })
+
+  it('a case-mutated equivalent is NOT violated — it is nonCanonical instead, never PROTECTED_SURFACE_CHANGE', () => {
+    const mutated = CANONICAL.toUpperCase()
+    const result = checkImmutableGuard([mutated])
+    expect(result.violated).toBe(false)
+    expect(result.nonCanonicalPaths).toEqual([mutated])
+  })
+
+  it('an unrelated differently-cased non-protected path is never treated as immutable', () => {
+    const result = checkImmutableGuard(['LIB/SOME-MODULE.TS'])
+    expect(result.violated).toBe(false)
+    expect(result.nonCanonicalPaths).toEqual([])
+  })
+
+  it('real selection path: case-mutated writePaths -> NONCANONICAL_PROTECTED_PATH via decideSelection', () => {
+    const decision = decideSelection(baseUnit({ writePaths: [CANONICAL.toUpperCase()] }), 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  it('real selection path: canonical-exact writePaths -> PROTECTED_SURFACE_CHANGE via decideSelection (never NONCANONICAL)', () => {
+    const decision = decideSelection(baseUnit({ writePaths: [CANONICAL] }), 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
   })
 })
 
