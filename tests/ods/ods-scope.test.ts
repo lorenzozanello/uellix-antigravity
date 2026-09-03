@@ -440,6 +440,11 @@ describe('resolveProtectedGrant — pure', () => {
   const B4_BRANCH = 'codex/w2-b4-r1'
 
   it('NON-VACUITY (B4-GRANT-N1/B4-GRANT-P1): a canonical db/migrations path is a protected violation WITHOUT HPO-ODS-W2-12 and grant-authorized WITH it', () => {
+    // The 0062 filename here is a path-classification FIXTURE exercising the
+    // db/migrations/** pattern. It asserts nothing about which migration slot
+    // B4 will actually consume: that slot is a CANDIDATE only, explicitly not
+    // frozen, and is re-measured mechanically at the P1A sync point (see
+    // W2_B4_AUTHORITY_v1.0.0.json p1a_synchronization.migration_slot_candidate).
     const granted = ['db/migrations/0062_fib_methodological_assumptions.sql']
 
     const withoutGrant = classifyPaths(granted, DEFAULT_PROTECTED_PATTERNS, granted, [])

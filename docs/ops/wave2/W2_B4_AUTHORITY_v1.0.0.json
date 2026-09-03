@@ -76,7 +76,7 @@
         "moving FIBIU-17 or FIBIU-18 into B4 under any framing",
         "declaring W2-B5 authorized, scoped or ready",
         "consuming the FIBIU-18 OPUS_HIGH review boundary at B4 close",
-        "beginning B4 database implementation before P1A_FULL_BOOTSTRAP_STATUS = CLOSED per p1a_synchronization",
+        "beginning B4 implementation of ANY kind — database, schema, service, domain logic, server action, UI, test harness or product test — before P1A_FULL_BOOTSTRAP_STATUS = CLOSED per p1a_synchronization. There is no non-DB exception",
         "treating 0062 as the frozen migration number rather than a candidate to be re-measured",
         "any stage-E hardening of FIBDB-046 or of any A(+E) contract before the governed application-cutover boundary of FIB §6.1",
         "any change to DEFAULT_PROTECTED_PATTERNS or to ods:scope classification semantics",
@@ -129,15 +129,22 @@
   "p1a_synchronization": {
     "B4_AUTHORITY_MAY_MATERIALIZE_BEFORE_P1A_CLOSURE": true,
     "authority_materialization_rationale": "This mission's changed paths lie under docs/ops/wave2/, docs/ops/ods/, scripts/ods-scope.ts and tests/ods/ods-scope.test.ts. None is a database, bootstrap or P1A-owned surface, so materializing authority now cannot collide with the P1A lane.",
-    "B4_NON_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE": true,
-    "non_db_surface_before_p1a": [
-      "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json (this artifact)",
-      "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
-      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json",
-      "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json",
-      "scripts/ods-scope.ts",
-      "tests/ods/ods-scope.test.ts"
-    ],
+    "B4_NON_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE": false,
+    "READY_FOR_B4_IMPLEMENTATION": "NO",
+    "no_implementation_of_any_kind_before_p1a_closure": "NO B4 implementation of ANY kind — database, schema, service, domain logic, server action, UI, or test — may begin before P1A_FULL_BOOTSTRAP_STATUS = CLOSED. This is the single binding rule; there is no non-DB exception and no partially-unblocked surface. It matches hpo_decision.HPO-ODS-W2-12.rule, which authorizes the successor mission ONLY after that closure.",
+    "authority_materialization_is_not_implementation": {
+      "note": "The six paths this AUTHORITY mission changed are recorded here to prevent a category error, NOT as an implementation surface that was unblocked early. Materializing an authority artifact, a test manifest, an ODS addendum, a program-state registry entry and a protected-grant registration is governance bookkeeping: it writes no schema, no migration, no service code, no UI and no product test, and it satisfies none of the B4 exit gates. It was permitted before P1A closure for exactly that reason. Nothing in this list may be read as authorizing B4 implementation work of any kind.",
+      "paths": [
+        "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json (this artifact)",
+        "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json",
+        "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json",
+        "scripts/ods-scope.ts",
+        "tests/ods/ods-scope.test.ts"
+      ],
+      "correction_of_record": "An earlier draft of this artifact set B4_NON_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE = true and labelled the list above a 'non-DB surface before P1A'. That conflated this mission's own authority-materialization paths with a B4 implementation surface, and it contradicted hpo_decision.HPO-ODS-W2-12.rule, which was already unconditional. Corrected before publication: the flag is false and the list is renamed to what it actually is."
+    },
+    "test_scaffolding_is_not_unblocked": "Writing B4 test harnesses, probe manifests or vitest wrappers ahead of P1A closure is ALSO prohibited. A harness is generated from db/hosted/baseline-manifest.ts BASELINE_UNITS in manifest order, so one written before the P1A-closed integration ref is fixed would encode a stale corpus and a stale unit count — a partial that cannot satisfy its own contract. It waits with everything else.",
     "fibiu_16_is_not_parallelizable_before_fibiu_15": "AFFIRMATIVE CORRECTION OF RECORD. FIBIU-16 carries DB_CHANGES: NO_DB_OBJECT, which could invite the inference that its service work is parallelizable before the DB-blocked units. It is NOT. FIB §13 SERIAL_CONTRACTS freezes 15→16, and FIBIU-16's own EXIT_GATE (§12 line 773) requires that a material causal shortcut be documented as a structured assumption (FIBC-019) rather than a direct link — which depends on methodological_assumptions (FIBDB-012). Implementing FIBIU-16 before FIBIU-15 yields a partial that cannot satisfy its own exit gate, which is precisely the UNREGISTERED_PARTIAL_IMPLEMENTATION class. FIBIU-16 service code therefore belongs to the DB-blocked surface, not the parallelizable one.",
     "B4_DB_IMPLEMENTATION_MAY_BEGIN_BEFORE_P1A_CLOSURE": false,
     "db_blocked_rationale": "B4 materializes FIBDB-012, FIBDB-013, FIBDB-047, FIBDB-011 and FIBDB-046, all NEW_TABLE or NEW_ENUM_OR_CHECK on the DRIZZLE track. That change necessarily touches the four deterministic ordered artifacts P1A's canonical bootstrap consumes: db/migrations/NNNN_*, db/migrations/meta/_journal.json, db/prepared/journal/NNN_* and db/hosted/baseline-manifest.ts. A P1A gate that passed over a chain B4 then changed underneath it would not prove what it claims.",
@@ -499,7 +506,23 @@
         "tests/eval/stella-release/hosted-baseline-gate.ts",
         "tests/eval/stella-release/hosted-baseline-gate.test.ts"
       ],
-      "existing_tests_rationale": "The first five are the declared targeted tests and closed-world inventories for FIBIU-14/15/16. tests/sroi-calculation.golden.test.ts appears as a NON-REGRESSION sentinel: it is expected to stay green with unchanged numeric outputs, and is enumerated only because a genuinely required comment or fixture addition would otherwise trip the exact-delta gate. The six baseline/hosted paths are enumerated because registering a new baseline unit MECHANICALLY moves the unit-count pins currently fixed at 74 (tests/hosted/baseline-manifest.test.ts:94,107; tests/hosted/baseline-journal-wrapper.test.ts:469; tests/hosted/operator-runner.test.ts:234; tests/eval/stella-release/hosted-baseline-gate.ts:390-391,415-416,507; tests/eval/stella-release/hosted-baseline-gate.test.ts:62-64). Enumerating them is the opposite of scope creep: it removes a foreseeable authority gap that would otherwise force a STOP mid-implementation. The authorized edit at each is limited to advancing the count and its derivation comment — never weakening the assertion.",
+      "existing_tests_rationale": "The first five are the declared targeted tests and closed-world inventories for FIBIU-14/15/16. tests/sroi-calculation.golden.test.ts appears as a NON-REGRESSION sentinel: it is expected to stay green with unchanged numeric outputs, and is enumerated only because a genuinely required comment or fixture addition would otherwise trip the exact-delta gate. The five hosted-baseline paths are enumerated because of the mechanically forced cardinality pins independently re-measured in hosted_baseline_pin_remeasurement below.",
+      "hosted_baseline_pin_remeasurement": {
+        "method": "Independently re-measured at BASE_SHA 12bea1e432f7de7a020f632431052e29624c6d6d by exhaustive repository grep for every hard assertion on BASELINE_UNITS / BASELINE_ORDER cardinality, evidence.unitCount, evidence.superuserFreeUnits and byKind() counts, over all *.ts and *.tsx excluding node_modules and .git. Not carried over from a prior report.",
+        "forced_pins": [
+          "tests/hosted/baseline-manifest.test.ts:95 — expect(BASELINE_UNITS).toHaveLength(74)",
+          "tests/hosted/baseline-manifest.test.ts:97 — expect(byKind('drizzle-migration')).toBe(62)",
+          "tests/hosted/baseline-manifest.test.ts:105-107 — ordinals asserted contiguous 1..74 and expect(new Set(BASELINE_ORDER).size).toBe(74)",
+          "tests/hosted/baseline-journal-wrapper.test.ts:470-471 — expect(BASELINE_UNITS).toHaveLength(74) and expect(BASELINE_ORDER).toHaveLength(74)",
+          "tests/hosted/operator-runner.test.ts:235 — expect(BASELINE_UNITS).toHaveLength(74)",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:416 — const manifestOk = ... && evidence.unitCount === 74 (GATE LOGIC, not a test assertion)",
+          "tests/eval/stella-release/hosted-baseline-gate.test.ts:63-64 — expect(evidence.unitCount).toBe(74) and expect(evidence.superuserFreeUnits).toBe(74)"
+        ],
+        "mechanically_unavoidable": "YES for every pin listed. Each is a hard equality on the cardinality of db/hosted/baseline-manifest.ts BASELINE_UNITS or on a value derived from it. Appending even one governed baseline unit makes each false by construction. tests/eval/stella-release/hosted-baseline-gate.ts:416 is the strongest case: the 74 lives inside the GATE'S OWN LOGIC, so a stale pin does not merely fail a test, it makes the hosted-baseline gate report a false negative. The byKind('drizzle-migration') pin at :97 moves too, because B4's units are Drizzle migrations.",
+        "scripts_path_measured_absent": "MEASURED, and it corrects a coordinator assumption: scripts/hosted-baseline-gate.ts DOES NOT EXIST in this repository. `ls scripts/hosted-baseline-gate.ts` returns no such file, and an exhaustive `find` for hosted-baseline-gate* returns exactly two paths, BOTH under tests/: tests/eval/stella-release/hosted-baseline-gate.ts and tests/eval/stella-release/hosted-baseline-gate.test.ts. No scripts/** path is therefore mechanically required, none is authorized here, and the conditional coordinator authorization for a script path is NOT consumed. AUTHORIZED scripts/** entries in this surface: ZERO — the only scripts/ paths this artifact names are in explicitly_prohibited.",
+        "artifacts_path_deliberately_excluded": "artifacts/baseline-rehearsal/latest.json also carries a manifestApplied count, and it is deliberately NOT authorized. It is stale by design at manifestApplied=50 and is the evidence_artifact of KNOWN_TEST_CONDITIONS_v1.0.0.json conditions KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02, both PRE_EXISTING_DEFERRED. Refreshing it is a rehearsal act against a real stack, not a B4 concern, and doing so would silently close two deferred known conditions this node has no authority to close.",
+        "authorized_edit_scope": "At each forced pin: advance the cardinality and its derivation comment to the value implied by the units B4 actually registers, and nothing else. No refactor. No weakening of any assertion into a lower-bound or contains-at-least form. No unrelated cleanup. No change to hosted security semantics — the gate's DML, serviceRoleGranters, superuser-free and row-source contracts stay exactly as they are, with only their counts advanced. If any of these files needs a change that is not a forced count advance, that is a STOP_FOR_AUTHORITY_DELTA, not a licence."
+      },
       "new_tests": {
         "patterns": [
           "tests/methodological-assumptions*.test.ts",
@@ -581,7 +604,13 @@
     "does_not_authorize_controller_implementation": "This statement does NOT authorize any Controller implementation, and this mission edits no Controller authority artifact.",
     "CONTROLLER_DB_EXECUTION": "DISABLED — unchanged by this addendum-companion authority.",
     "W2_10_prohibition_scope": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json hpo_decision.HPO-ODS-W2-10.not_authorized includes any change to scripts/ods-scope.ts including PROTECTED_GRANTS. That item bounds the W2-10 AUTHORIZATION, scoped by its own rule text to branch codex/autonomous-program-controller-r1 and to the successor mission AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1. It is not a global freeze of scripts/ods-scope.ts and does not bind this node, which runs on branch codex/w2-b4-r1 under the distinct identifier HPO-ODS-W2-12. The P1A lane recorded the identical reasoning for HPO-ODS-W2-11 in ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json cross_lane_disposition.W2_10_prohibition_scope; this node follows that established disposition rather than re-adjudicating it.",
-    "p1a_lane_independence": "P1A implementation may proceed separately and concurrently. B4 authority materialization neither blocks it nor depends on it. B4 IMPLEMENTATION does depend on P1A closure — see p1a_synchronization.",
+    "p1a_lane_independence": "P1A implementation may proceed separately and concurrently. B4 authority materialization neither blocks it nor depends on it. B4 IMPLEMENTATION OF ANY KIND does depend on P1A closure — see p1a_synchronization.",
+    "controller_selection_guard": {
+      "obligation": "No automated selector — Controller-v0 or any successor — may select W2-B4 as executable while P1A_FULL_BOOTSTRAP_STATUS is not CLOSED. The precondition is carried machine-readably, not in prose, as externalPreconditions: [\"P1A_FULL_BOOTSTRAP_CLOSED\"] on the W2-B4 unit in docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, alongside dependsOn: [\"W2-B3\"], executionClass: \"B\", fableEligible: false, auditClass: \"FOCUSED_OPUS\" and dbWriting: true.",
+      "enforcement_boundary_measured": "STATED PRECISELY RATHER THAN OVERCLAIMED. scripts/ods-program-state.ts does not today interpret externalPreconditions: loadRegistry performs JSON.parse(raw) as ProgramStateRegistry with no runtime schema validation, and the CLI reports only the authority/implementation/audit/integration/productBinding dimensions. The field is therefore a DECLARATION that a consumer must honour, not a gate that the current tool enforces. This node does not modify scripts/ods-program-state.ts — doing so is explicitly outside its authorized surface.",
+      "why_this_is_not_a_stop": "No STOP_FOR_AUTHORITY_DELTA is raised, on two measured grounds. First, the precondition IS encodable and IS encoded machine-readably, which is what the requirement asks; relying on prose alone would have been the failure mode. Second, no consumer exists that could mis-select B4 today: tests/ods/ods-controller.test.ts does not exist and Controller-v0 is unimplemented. The residual risk is bounded and named, not silent.",
+      "controller_v0_mission_obligation": "The Controller-v0 implementation mission MUST treat externalPreconditions as a HARD selection gate — an unsatisfied entry makes the unit non-selectable regardless of every other dimension — and MUST implement it as fail-closed: an unrecognized or unresolvable precondition token blocks selection rather than being ignored. If that mission chooses instead to interpret the field only advisorily, it must say so explicitly and re-adjudicate this clause; it may not silently narrow it."
+    },
     "AG1_STATUS": "OPEN_UNCHANGED",
     "ag1_note": "AG-1 remains OPEN: docs/ops/ods/ artifacts other than ODS_V1_AUTHORITY_v1.0.0.json are unprotected by DEFAULT_PROTECTED_PATTERNS, so this authority's own companion addendum is not machine-protected. Unchanged by this node, mitigated only controller-locally. Global closure requires separate governed adjudication of scripts/ods-scope.ts and is out of scope here.",
     "B4_MAT_A_RESOLVED": "The branch-disposition finding raised by the mapping mission is resolved by scope_adjudication.branch_disposition.",
@@ -658,11 +687,12 @@
   "risks_and_open_findings": {
     "R1": "B4-MAT-B hosted ACL debt is OPEN and inherited. It is bound as required exit control SEC-ACL-1 and may not be waived. See hosted_acl_debt_disposition.",
     "R2": "AG-1 remains OPEN. This artifact and its companion addendum are not machine-protected by DEFAULT_PROTECTED_PATTERNS. Unchanged by this node.",
-    "R3": "The migration slot candidate 0062 is measured at this base and explicitly NOT frozen. A successor mission that assumes it rather than re-measuring at SYNC_POINT step 3 commits a defect.",
+    "R3": "The migration slot candidate 0062 is measured at this base and explicitly NOT frozen (MIGRATION_SLOT_FROZEN = NO). A successor mission that assumes it rather than re-measuring at SYNC_POINT step 3 commits a defect. The string 0062 appears in exactly one other place in this node's delta — tests/ods/ods-scope.test.ts, as a path-classification FIXTURE for the grant non-vacuity controls — where it exercises the db/migrations/** pattern and asserts nothing about which slot B4 will actually consume. That file carries an inline comment saying so.",
     "R4": "W2-GAP-2 (FIBDB-037/038 regime-scoped VALIDATE) remains DEFERRED and is not a B4 concern: no B4 FIBDB item declares a regime-scoped validation.",
     "R5": "Wave 2 close carries a separate Class C correction of BK-1 stale manifest prose plus cross-workstream regression, at WAVE close and explicitly NOT per batch (W2_EXECUTION_MAPPING_v1.0.0.json wave_closure_step). B4 closure does not discharge it.",
     "R6": "KNOWN_TEST_CONDITIONS_v1.0.0.json conditions KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02 were active at W2-B3 and are carried into the B4 manifest as known_conditions. They are not re-adjudicated here.",
-    "R7": "The Controller-v0 closed-world immutableByConvention set does not yet contain ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json or v1.0.11.json. Harmless now — tests/ods/ods-controller.test.ts does not exist — but the Controller-v0 implementation mission must include both. See cross_lane_disposition.controller_successor_obligation."
+    "R7": "The Controller-v0 closed-world immutableByConvention set does not yet contain ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json or v1.0.11.json. Harmless now — tests/ods/ods-controller.test.ts does not exist — but the Controller-v0 implementation mission must include both. See cross_lane_disposition.controller_successor_obligation.",
+    "R8": "The externalPreconditions selection guard is declarative, not tool-enforced. See cross_lane_disposition.controller_selection_guard.enforcement_boundary_measured. Bounded because no selector consumer exists yet; binding on the Controller-v0 mission."
   },
 
   "final_state": "W2_B4_AUTHORITY_FROZEN_WAITING_FOR_P1A_AND_IMPLEMENTATION",
