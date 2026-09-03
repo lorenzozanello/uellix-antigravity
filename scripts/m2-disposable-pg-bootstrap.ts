@@ -421,10 +421,15 @@ async function createContainer(runner: DockerRunner, phase: string): Promise<Con
     await new Promise((r) => setTimeout(r, 500))
   }
   if (!record(`${phase}:CONTAINER-READY`, ready)) return handle
-  // Extra settle margin: pg_isready can report ready fractionally before the
-  // server accepts every catalog query reliably (measured: one intermittent
-  // false-negative on a platform-substrate check in an earlier run).
-  await new Promise((r) => setTimeout(r, 750))
+  // AUTHORITY v1.0.5: the fixed 750ms settle margin that used to sit here is
+  // no longer load-bearing. It was a fixed-delay guess at how long
+  // pg_isready-true takes to become "every catalog query succeeds" —
+  // measured live (PR #50 run 33712706673) to be insufficient under
+  // GitHub Actions runner load on 5 of 9 disposable containers in one run,
+  // while the very same unmodified logic passed 9/9 on an earlier run.
+  // Readiness is now established by the bounded SEMANTIC probe in
+  // checkPlatformSubstrate() itself (waitForPlatformReadiness), which polls
+  // the fixture's actual preconditions instead of guessing a delay.
 
   const portResult = runner.run(['port', name, '5432/tcp'])
   const assignedPort = portResult.status === 0 ? parseAssignedPort(portResult.stdout) : null
@@ -454,12 +459,145 @@ function verifyZeroLabelledLeftovers(runner: DockerRunner): void {
 // Bootstrap building blocks — shared by MAIN and every negative phase.
 // ---------------------------------------------------------------------------
 
-function checkPlatformSubstrate(runner: DockerRunner, container: string, phase: string): boolean {
+// ---------------------------------------------------------------------------
+// AUTHORITY v1.0.5: bounded semantic platform-readiness probe. Replaces the
+// fixed-delay assumption with a real predicate over the fixture's actual
+// preconditions, polled with a bound — measured live (PR #50 run
+// 33712706673) to be necessary: the previous fixed 750ms settle sleep after
+// pg_isready passed 9/9 on one GitHub run and failed 5/9 on another,
+// against byte-identical container-lifecycle code.
+// ---------------------------------------------------------------------------
+
+interface PlatformReadinessProbeResult {
+  ready: boolean
+  psqlOk: boolean
+  missingSchemas: string[]
+  authUidPresent: boolean
+}
+
+/** Non-mutating: only observes the pinned image's native platform substrate. Never creates schemas/functions to force a pass. */
+function probePlatformReadiness(runner: DockerRunner, container: string): PlatformReadinessProbeResult {
   const substrate = psql(runner, container, `SELECT string_agg(s.name, ',' ORDER BY s.name) FROM (VALUES ('auth'),('storage'),('extensions')) AS s(name) WHERE NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = s.name);`)
-  const missing = (substrate.stdout || '').trim()
-  if (!record(`${phase}:PLATFORM-SUBSTRATE-CHECK`, substrate.status === 0 && missing.length === 0, missing.length > 0 ? `missing schema(s): ${missing}` : 'auth/storage/extensions present natively')) return false
+  if (substrate.status !== 0) return { ready: false, psqlOk: false, missingSchemas: [], authUidPresent: false }
+
+  const missingSchemas = (substrate.stdout || '').trim().split(',').filter(Boolean)
+  if (missingSchemas.length > 0) return { ready: false, psqlOk: true, missingSchemas, authUidPresent: false }
+
   const authUid = psql(runner, container, `SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'auth' AND p.proname = 'uid';`)
-  return record(`${phase}:AUTH-UID-CHECK`, authUid.status === 0 && (authUid.stdout || '').trim() === '1', 'auth.uid() present natively')
+  const authUidPresent = authUid.status === 0 && (authUid.stdout || '').trim() === '1'
+  return { ready: authUidPresent, psqlOk: true, missingSchemas: [], authUidPresent }
+}
+
+/** Truthful diagnostic — never claims "present natively" when the probe itself failed to run. */
+function diagnosePlatformReadinessFailure(r: PlatformReadinessProbeResult): string {
+  const parts: string[] = []
+  if (!r.psqlOk) parts.push('PSQL_NONZERO')
+  for (const schema of r.missingSchemas) parts.push(`MISSING_SCHEMA_${schema}`)
+  if (r.psqlOk && r.missingSchemas.length === 0 && !r.authUidPresent) parts.push('AUTH_UID_MISSING')
+  return parts.length > 0 ? parts.join(',') : 'UNKNOWN'
+}
+
+interface ReadinessClock { now: () => number; sleep: (ms: number) => Promise<void> }
+const REAL_READINESS_CLOCK: ReadinessClock = { now: () => Date.now(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)) }
+
+const PLATFORM_READINESS_TIMEOUT_MS = 20000
+const PLATFORM_READINESS_POLL_MS = 300
+const PLATFORM_READINESS_REQUIRED_CONSECUTIVE_SUCCESSES = 2
+
+interface WaitForReadinessResult { ready: boolean; lastResult: PlatformReadinessProbeResult; consecutiveReached: number }
+
+/**
+ * Bounded poll: requires REQUIRED_CONSECUTIVE_SUCCESSES consecutive ready
+ * probes before declaring readiness (a single lucky sample sandwiched
+ * between transient failures does not count), and never loops past
+ * timeoutMs. `probe` and `clock` are injectable so the self-controls below
+ * exercise this exact logic deterministically, with no real Docker and no
+ * real multi-second waits.
+ */
+async function waitForPlatformReadiness(
+  probe: () => PlatformReadinessProbeResult,
+  clock: ReadinessClock = REAL_READINESS_CLOCK,
+  timeoutMs = PLATFORM_READINESS_TIMEOUT_MS,
+  pollMs = PLATFORM_READINESS_POLL_MS,
+  requiredConsecutive = PLATFORM_READINESS_REQUIRED_CONSECUTIVE_SUCCESSES,
+): Promise<WaitForReadinessResult> {
+  const deadline = clock.now() + timeoutMs
+  let consecutive = 0
+  let lastResult: PlatformReadinessProbeResult = { ready: false, psqlOk: false, missingSchemas: [], authUidPresent: false }
+  while (clock.now() < deadline) {
+    lastResult = probe()
+    consecutive = lastResult.ready ? consecutive + 1 : 0
+    if (consecutive >= requiredConsecutive) return { ready: true, lastResult, consecutiveReached: consecutive }
+    await clock.sleep(pollMs)
+  }
+  return { ready: false, lastResult, consecutiveReached: consecutive }
+}
+
+async function checkPlatformSubstrate(runner: DockerRunner, container: string, phase: string): Promise<boolean> {
+  const { ready, lastResult } = await waitForPlatformReadiness(() => probePlatformReadiness(runner, container))
+  return record(`${phase}:PLATFORM-READINESS`, ready, ready ? `auth/storage/extensions present, auth.uid() present, ${PLATFORM_READINESS_REQUIRED_CONSECUTIVE_SUCCESSES} consecutive successful probes` : diagnosePlatformReadinessFailure(lastResult))
+}
+
+/** Cheap, no-Docker self-controls (READY-P1..P4, READY-N1..N4) for waitForPlatformReadiness — a fake clock + scripted/cycling probe sequence, no real Docker and no real multi-second waits. */
+async function runPlatformReadinessSelfTest(): Promise<boolean> {
+  const OK: PlatformReadinessProbeResult = { ready: true, psqlOk: true, missingSchemas: [], authUidPresent: true }
+  const PSQL_DOWN: PlatformReadinessProbeResult = { ready: false, psqlOk: false, missingSchemas: [], authUidPresent: false }
+  const MISSING_AUTH: PlatformReadinessProbeResult = { ready: false, psqlOk: true, missingSchemas: ['auth'], authUidPresent: false }
+  const MISSING_STORAGE: PlatformReadinessProbeResult = { ready: false, psqlOk: true, missingSchemas: ['storage'], authUidPresent: false }
+  const MISSING_EXT: PlatformReadinessProbeResult = { ready: false, psqlOk: true, missingSchemas: ['extensions'], authUidPresent: false }
+  const NO_AUTH_UID: PlatformReadinessProbeResult = { ready: false, psqlOk: true, missingSchemas: [], authUidPresent: false }
+
+  function fakeClock(): ReadinessClock {
+    let t = 0
+    return { now: () => t, sleep: async (ms: number) => { t += ms } }
+  }
+
+  /** Cycles through `sequence` forever — lets a bounded-timeout test prove the loop terminates even against a probe that never settles. */
+  function cyclingProbe(sequence: PlatformReadinessProbeResult[]): () => PlatformReadinessProbeResult {
+    let i = 0
+    return () => sequence[(i++) % sequence.length]
+  }
+
+  const p1 = record('SELFTEST:READY-P1', (await waitForPlatformReadiness(cyclingProbe([OK]), fakeClock(), 20000, 300, 2)).ready, 'immediate semantic readiness (2 consecutive OK samples right away) accepted')
+
+  const p2 = record('SELFTEST:READY-P2', (await waitForPlatformReadiness(cyclingProbe([PSQL_DOWN, PSQL_DOWN, OK, OK, OK]), fakeClock(), 20000, 300, 2)).ready, 'transient psql failures followed by full readiness within the bound accepted')
+
+  const p3 = record('SELFTEST:READY-P3', (await waitForPlatformReadiness(cyclingProbe([MISSING_AUTH, MISSING_STORAGE, MISSING_EXT, NO_AUTH_UID, OK, OK, OK]), fakeClock(), 20000, 300, 2)).ready, 'progressively available schemas/auth.uid(), then 2 consecutive successes, accepted')
+
+  // READY-P4: OK immediately followed by a transient failure, forever cycling — must NEVER satisfy the 2-consecutive contract (a lone success never short-circuits it), and must correctly time out FAIL.
+  const p4Result = await waitForPlatformReadiness(cyclingProbe([OK, PSQL_DOWN]), fakeClock(), 20000, 300, 2)
+  const p4 = record('SELFTEST:READY-P4', !p4Result.ready, 'a lone success immediately followed by a transient failure, repeated, never satisfies 2-consecutive-success — correctly does not declare readiness early')
+
+  const n1 = record('SELFTEST:READY-N1', !(await waitForPlatformReadiness(cyclingProbe([PSQL_DOWN]), fakeClock(), 20000, 300, 2)).ready, 'persistent psql nonzero until the deadline correctly FAILs')
+
+  const n2Result = await waitForPlatformReadiness(cyclingProbe([MISSING_AUTH]), fakeClock(), 20000, 300, 2)
+  const n2 = record('SELFTEST:READY-N2', !n2Result.ready && diagnosePlatformReadinessFailure(n2Result.lastResult) === 'MISSING_SCHEMA_auth', 'persistent missing schema until the deadline correctly FAILs with a truthful diagnostic (never "present natively")')
+
+  const n3Result = await waitForPlatformReadiness(cyclingProbe([NO_AUTH_UID]), fakeClock(), 20000, 300, 2)
+  const n3 = record('SELFTEST:READY-N3', !n3Result.ready && diagnosePlatformReadinessFailure(n3Result.lastResult) === 'AUTH_UID_MISSING', 'persistent auth.uid() missing until the deadline correctly FAILs with a truthful diagnostic')
+
+  // READY-N4: a probe that never resolves must still terminate at the bound, in a finite, expected number of samples.
+  let sampleCount = 0
+  const boundedProbe = () => { sampleCount++; return PSQL_DOWN }
+  const n4Result = await waitForPlatformReadiness(boundedProbe, fakeClock(), 20000, 300, 2)
+  const expectedMaxSamples = Math.ceil(20000 / 300) + 1
+  const n4 = record('SELFTEST:READY-N4', !n4Result.ready && sampleCount > 0 && sampleCount <= expectedMaxSamples, `bounded poll terminated after ${sampleCount} samples (bound: ${expectedMaxSamples}) — never loops forever`)
+
+  // READY-N5: structural — in PRODUCTION code (excluding this self-test's own
+  // deliberately-repeated test invocations below), waitForPlatformReadiness
+  // must be CALLED exactly once — from checkPlatformSubstrate — proving
+  // retry scope never leaked into any other phase (a migration check, a
+  // negative-control mutation, etc. re-treating its own failure as
+  // "startup readiness" and retrying it).
+  const selfPath = resolve(import.meta.dirname, 'm2-disposable-pg-bootstrap.ts')
+  const source = readFileSync(selfPath, 'utf8')
+  const selfTestMarker = '/** Cheap, no-Docker self-controls (READY-P1..P4, READY-N1..N4) for waitForPlatformReadiness'
+  const markerIndex = source.indexOf(selfTestMarker)
+  const productionSource = markerIndex >= 0 ? source.slice(0, markerIndex) : source
+  const productionCallSites = (productionSource.match(/await waitForPlatformReadiness\(/g) || []).length
+  const n5 = record('SELFTEST:READY-N5', markerIndex >= 0 && productionCallSites === 1, markerIndex >= 0 && productionCallSites === 1 ? 'waitForPlatformReadiness is called exactly once in production code (checkPlatformSubstrate) — retry scope confirmed limited to the readiness probe' : `expected exactly 1 production call site, found ${productionCallSites} (marker found: ${markerIndex >= 0})`)
+
+  return p1 && p2 && p3 && p4 && n1 && n2 && n3 && n4 && n5
 }
 
 function checkPristineRoles(runner: DockerRunner, container: string, phase: string): boolean {
@@ -700,7 +838,7 @@ async function runMainPhase(runner: DockerRunner): Promise<void> {
   if (!handle) return
   try {
     if (!handle.created || results.some((r) => r.id.startsWith(phase) && !r.ok)) return
-    if (!checkPlatformSubstrate(runner, handle.name, phase)) return
+    if (!(await checkPlatformSubstrate(runner, handle.name, phase))) return
     if (!checkPristineRoles(runner, handle.name, phase)) return
     if (!applyHostedRoleIdentity(runner, handle.name, phase)) return
     if (!narrowMigrator(runner, handle.name, phase)) return
@@ -771,7 +909,7 @@ async function runNegative(
   if (!handle) return
   try {
     if (!handle.created || results.some((r) => r.id.startsWith(id) && !r.ok)) return
-    if (!checkPlatformSubstrate(realDockerRunner, handle.name, id)) return
+    if (!(await checkPlatformSubstrate(realDockerRunner, handle.name, id))) return
     if (!checkPristineRoles(realDockerRunner, handle.name, id)) return
     if (!applyHostedRoleIdentity(realDockerRunner, handle.name, id)) return
     if (!narrowMigrator(realDockerRunner, handle.name, id)) return
@@ -824,7 +962,7 @@ async function runAllNegatives(): Promise<void> {
     if (handle) {
       try {
         if (handle.created && !results.some((r) => r.id.startsWith(id) && !r.ok)) {
-          if (checkPlatformSubstrate(realDockerRunner, handle.name, id) && checkPristineRoles(realDockerRunner, handle.name, id) && applyHostedRoleIdentity(realDockerRunner, handle.name, id) && narrowMigrator(realDockerRunner, handle.name, id)) {
+          if ((await checkPlatformSubstrate(realDockerRunner, handle.name, id)) && checkPristineRoles(realDockerRunner, handle.name, id) && applyHostedRoleIdentity(realDockerRunner, handle.name, id) && narrowMigrator(realDockerRunner, handle.name, id)) {
             const extra = psql(realDockerRunner, handle.name, 'GRANT CREATE ON SCHEMA public TO uellix_migrator;')
             record(`${id}:INJECT-UNAUTHORIZED-ESCALATION`, extra.status === 0)
             // Deliberately use the NON-recording pure computation here: the
@@ -853,7 +991,7 @@ async function runAllNegatives(): Promise<void> {
     if (handle) {
       try {
         if (handle.created && !results.some((r) => r.id.startsWith(id) && !r.ok)) {
-          if (checkPlatformSubstrate(realDockerRunner, handle.name, id) && checkPristineRoles(realDockerRunner, handle.name, id) && applyHostedRoleIdentity(realDockerRunner, handle.name, id) && narrowMigrator(realDockerRunner, handle.name, id)) {
+          if ((await checkPlatformSubstrate(realDockerRunner, handle.name, id)) && checkPristineRoles(realDockerRunner, handle.name, id) && applyHostedRoleIdentity(realDockerRunner, handle.name, id) && narrowMigrator(realDockerRunner, handle.name, id)) {
             const g1 = grantDatabaseCreate(realDockerRunner, handle.name, id)
             const g2 = grantPublicSchemaCreate(realDockerRunner, handle.name, id)
             const g3 = grantAuthSchemaUsage(realDockerRunner, handle.name, id)
@@ -883,7 +1021,7 @@ async function runAllNegatives(): Promise<void> {
     if (handle) {
       try {
         if (handle.created && !results.some((r) => r.id.startsWith(id) && !r.ok)) {
-          if (checkPlatformSubstrate(realDockerRunner, handle.name, id) && checkPristineRoles(realDockerRunner, handle.name, id) && applyHostedRoleIdentity(realDockerRunner, handle.name, id) && narrowMigrator(realDockerRunner, handle.name, id)) {
+          if ((await checkPlatformSubstrate(realDockerRunner, handle.name, id)) && checkPristineRoles(realDockerRunner, handle.name, id) && applyHostedRoleIdentity(realDockerRunner, handle.name, id) && narrowMigrator(realDockerRunner, handle.name, id)) {
             const g1 = grantDatabaseCreate(realDockerRunner, handle.name, id)
             const g2 = grantPublicSchemaCreate(realDockerRunner, handle.name, id)
             const g3 = grantAuthSchemaUsage(realDockerRunner, handle.name, id)
@@ -933,7 +1071,7 @@ async function main(): Promise<void> {
   // green before any of the 9 disposable containers start — a broken parser
   // or migration-proof helper must never be discovered only after minutes of
   // real container work.
-  const selfTestsOk = runAnsiParserSelfTest() && runMigrationProofSelfTest() && (await runEnvRestoreThrowSelfTest())
+  const selfTestsOk = runAnsiParserSelfTest() && runMigrationProofSelfTest() && (await runEnvRestoreThrowSelfTest()) && (await runPlatformReadinessSelfTest())
   if (!selfTestsOk) {
     console.log(`\n[m2-pg-gate] OVERALL=FAIL (${results.filter((r) => r.ok).length}/${results.length} checks) — cheap self-controls failed; refusing to start any disposable container`)
     process.exitCode = 1
