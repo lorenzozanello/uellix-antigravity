@@ -61,6 +61,7 @@
   "prior_hpo_dispositions_reverified": {
     "method": "Each coordinator-supplied disposition was re-derived from repository truth at BASE_SHA before being frozen here. Where repository truth proved a disposition STRONGER than its prose, the stronger mechanical form is recorded. Where it proved a disposition unnecessary, that is recorded as a finding rather than silently ratified.",
     "result": "YES — all reverified; zero contradictions with current repository authority.",
+    "remediation_record_R1": "This artifact was FAILED by P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1 (1 blocking, 1 unknown) and corrected here under P1A-AUTHORITY-DELTA-REMEDIATION-R1, on the SAME unmerged PR #56 candidate and the SAME lineage identifiers (HPO-ODS-W2-13, ODS addendum v1.0.12). The audit's B-1 (P1A-N7 closed world) and U-1 (pre-baseline actor premise) were adjudicated by P1A-N7-PREBASELINE-ACTOR-AND-MEMBERSHIP-HPO-R1 using direct runtime measurement against the exact pinned disposable image. OUTCOME: the count of 3 and its enumeration were CORRECT and are retained; D5's stated BASIS was wrong and is replaced; membership C is stella_0001-owned and is not a fourth write; the R3.5 throw-site citation was wrong and is corrected. No historical evidence was rewritten and docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json remains byte-identical.",
 
     "D1_forward_only": {
       "disposition": "EXPLICIT_FORWARD_ONLY",
@@ -102,7 +103,16 @@
       "why_this_is_the_defect": "Because each phase commits independently, a stella_0001 failure caused by absent successor preconditions occurs AFTER two prepared phases have already committed. The run is then neither applied nor clean. This is exactly the condition the successor contract must make unreachable.",
       "required_invariant": "SUCCESSOR PRECONDITIONS ABSENT -> non-zero exit -> ZERO prepared mutation occurred.",
       "placement_requirement": "The precondition probe must execute BEFORE the phase loop begins — before the first prepared mutation of any phase, not before stella_0001 only.",
-      "narrowness_requirement": "Prefer a narrow, repository-native precondition probe. Do NOT duplicate every stella_0001 assertion. The probe must cover the minimal set stella_0001 mechanically requires under the successor contract, which per D5 includes the canonical role memberships and grantor facts and NOT only the two schema privileges. A probe that checks two schema privileges and nothing else does not satisfy this invariant.",
+      "narrowness_requirement": "Prefer a narrow, repository-native precondition probe. Do NOT duplicate every stella_0001 assertion. The probe must cover exactly the minimal_preflight_facts enumerated below and nothing more. A probe that checks the two schema privileges and nothing else does NOT satisfy this invariant: the grantor and ADMIN-option facts are the load-bearing ones, and were the actual measured failure mode (see D5_b2_grantor.measured_prebaseline_probe control N).",
+      "minimal_preflight_facts": [
+        "1. The five uellix_* roles exist (uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor).",
+        "2. No relevant pg_auth_members row has grantor <> oid 10. RELEVANT means the same row set stella_0001's own canonical membership precondition selects: member IN (uellix_app, uellix_writer, uellix_migrator) OR roleid IN (uellix_app, uellix_writer, uellix_owner, uellix_migrator).",
+        "3. No relevant pg_auth_members row has admin_option = true.",
+        "4. has_schema_privilege('uellix_owner', 'public', 'CREATE') is true.",
+        "5. has_schema_privilege('uellix_owner', 'auth', 'USAGE') is true."
+      ],
+      "minimal_preflight_facts_basis": "Facts 2 and 3 are not stylistic. MEASURED against the exact pinned disposable image: running stella_0001's own precondition block verbatim against a topology installed by postgres raised 'stella_0001 FAILED: canonical membership precondition rejected unexpected relevant membership row (wrong grantor, flags or ADMIN escalation)' listing all seven rows — four ADMIN-option auto-grant rows plus three grantor=postgres(oid=16384) memberships. The same block exits 0 against a supabase_admin-installed topology. A preflight omitting facts 2-3 would let exactly that failure occur AFTER two prepared phases had already committed, which is the condition required_invariant exists to make unreachable.",
+      "probe_semantics": "READ ONLY. Executes BEFORE the first prepared mutation of any phase. FAIL CLOSED. NO REPAIR.",
       "fail_closed_requirement": "The probe fails closed. On an indeterminate result it must refuse, never proceed. It must not repair, re-grant or provision anything — it observes and refuses."
     },
 
@@ -113,65 +123,140 @@
       "measured_evidence": [
         "db/r3-5-pg17-certification-inputs.ts:56 — R3_5_PG17_CERTIFICATION_PACKAGE_HASHES pins stella_0001_role_topology_bootstrap.sql = 9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3",
         "MEASURED at BASE_SHA: sha256 of db/prepared/stella_0001_role_topology_bootstrap.sql == 9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3 — the pin currently MATCHES HEAD, so it is live and not already stale",
-        "scripts/stella-r3-5-pg17-certify.ts:1014 — on divergence the command THROWS 'R3.5 PG17 certification baseline SHA-256 mismatch for <file>'",
+        "db/r3-5-pg17-certification-inputs.ts:114 — THE prepared-package mismatch origin: assertR3_5Pg17CertificationSourceHashes THROWS 'R3.5 PG17 certification SHA-256 mismatch for <file>' when an observed hash differs from R3_5_PG17_CERTIFICATION_PACKAGE_HASHES",
+        "scripts/stella-r3-5-pg17-certify.ts:544 and :549 — the two call sites, inside loadVerifiedR3Sources(), that reach that throw for stella_0001_role_topology_bootstrap.sql",
+        "CITATION CORRECTION (independent audit R1): an earlier revision of this clause cited scripts/stella-r3-5-pg17-certify.ts:1014 and the message 'R3.5 PG17 certification baseline SHA-256 mismatch'. That is a DIFFERENT control — applyBaseline() iterating BASELINE_UNITS, the 50-unit db/baseline chain — and it is NOT the site reached when stella_0001 prepared bytes change. The corrected sites are the two immediately above. The disposition is unchanged; only the citation was wrong.",
         "tests/stella-r3-5-pg17-certification.test.ts:155-160 — recomputes sha256 of every file in EXPECTED_HASHES from db/prepared and asserts equality against the pin",
         "tests/stella-r3-5-pg17-certification.test.ts:144 — asserts R3_5_PG17_CERTIFICATION_PACKAGE_HASHES toEqual EXPECTED_HASHES"
       ],
       "consequence": "The P1A successor contract modifies db/prepared/stella_0001_role_topology_bootstrap.sql (converting the canonical grants at :176 and :181 into fail-closed assertions). That changes its bytes, so the live pin will no longer match current HEAD.",
       "FORBIDDEN": "db/r3-5-pg17-certification-inputs.ts MUST NOT be repinned, edited or regenerated to match the new bytes. Updating a historical hash to agree with bytes the historical run never executed would manufacture a false certification. It is not in the authorized surface of this amendment and is not authorized by any other clause here.",
       "REQUIRED": "The current R3.5 command and its test must explicitly report SUPERSEDED for current HEAD where the historical pin no longer matches, rather than throwing an undifferentiated SHA mismatch or silently repinning. SUPERSEDED must be distinguishable from both PASS and an ordinary integrity failure.",
+      "REQUIRED_PLACEMENT": "The throw itself lives in db/r3-5-pg17-certification-inputs.ts, which this amendment declares BYTE-IMMUTABLE and forbids editing. The SUPERSEDED disposition MUST therefore be classified in the authorized path — scripts/stella-r3-5-pg17-certify.ts, at or before the loadVerifiedR3Sources() call sites :544/:549 — BEFORE delegating into the historical mismatch throw. Classifying ahead of the delegation is not a bypass: assertR3_5Pg17CertificationSourceHashes stays byte-identical, keeps its full strength for every other file, and continues to fail closed for any divergence that is not the adjudicated SUPERSEDED case. Editing db/r3-5-pg17-certification-inputs.ts to add the disposition would be a repin of historical evidence by another name, and is NOT authorized.",
       "successor_relationship": "P1A is a SUCCESSOR_OF the historical R3.5 PostgreSQL 17 certification. Successor is not equivalence: it records that the historical proof covered the predecessor bytes and that the successor bytes are a distinct object requiring their own proof."
     },
 
     "D5_b2_grantor": {
       "disposition": "MEMBERSHIPS_GRANTED_BY_CANONICAL_SUPABASE_ADMIN_BOOTSTRAP_AUTHORITY",
-      "verdict": "CONFIRMED by repository baseline truth, and mechanically necessary rather than stylistic",
+      "B2_GRANTOR_DISPOSITION": "SUPABASE_ADMIN_REQUIRED",
+      "verdict": "CONFIRMED by direct runtime measurement against the exact pinned disposable image. No conditional premise remains.",
       "required_memberships": [
         "uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE",
         "uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE"
       ],
-      "measured_evidence": [
-        "db/baseline/stella_g2_roles.sql:39 — ALTER ROLE postgres WITH NOSUPERUSER ... : the postgres role is NOT a superuser on this substrate",
-        "db/baseline/stella_g2_roles.sql:47 — ALTER ROLE supabase_admin WITH SUPERUSER ... : supabase_admin IS the superuser",
-        "db/baseline/stella_g2_schema.sql:38 — ALTER SCHEMA auth OWNER TO supabase_admin : supabase_admin owns schema auth; postgres does not",
-        "db/baseline/stella_g2_roles.sql:201-218 — every canonical Supabase role membership is issued GRANTED BY supabase_admin; that is the substrate's own established grantor pattern for memberships",
-        "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql:46-47,185-187 — a NON-superuser with CREATEROLE receives ADMIN OPTION (but not set_option) over roles IT creates; that is how the hosted package can grant memberships as postgres",
-        "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql:298 — residual risk RR-02: that installer consequently RETAINS ADMIN OPTION over every role it created, making the hosted separation 'an auditable obstacle, not a barrier'"
+
+      "measured_prebaseline_probe": {
+        "why_this_supersedes_the_previous_basis": "The previous revision of this clause reasoned from db/baseline/stella_g2_roles.sql — POST-baseline bytes — while db/prepared/stella_local_0000_local_role_identity_bootstrap.sql executes PRE-baseline. That was an authority gap (independent audit R1, U-1). It is closed here by measurement, not by argument. The baseline files below are retained as CORROBORATION only; they are no longer the proof.",
+        "substrate": "Fresh disposable container from public.ecr.aws/supabase/postgres:17.6.1.143, image id sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453 — byte-identical to R3_5_PG17_CERTIFICATION_IMAGE_ID in db/r3-5-pg17-certification-inputs.ts. PostgreSQL 17.6. No baseline applied, zero uellix_* roles present. Containers destroyed at mission end; no repository evidence file was written.",
+        "PRE_BASELINE_NATIVE_SUBSTRATE": {
+          "postgres": "rolsuper=false, rolcreaterole=true, rolcreatedb=true, rolbypassrls=true, rolcanlogin=true, rolinherit=true, oid=16384",
+          "supabase_admin": "rolsuper=true, rolcreaterole=true, oid=10 — the PostgreSQL BOOTSTRAP SUPERUSER",
+          "auth_schema_owner": "supabase_admin",
+          "public_schema_owner": "pg_database_owner",
+          "database_postgres_owner": "postgres"
+        },
+        "key_finding": "postgres is ALREADY NOSUPERUSER in the native pre-baseline image. db/baseline/stella_g2_roles.sql:39 does not create that state; it re-asserts it. Pre-baseline and post-baseline attributes are therefore IDENTICAL for both actors, and supabase_admin is oid 10 at both instants."
+      },
+
+      "correction_postgres_can_grant": "RETRACTED CLAIM. The previous revision stated that 'a membership GRANT attempted as postgres FAILS'. That is FALSE and is withdrawn. MEASURED: postgres (NOSUPERUSER, CREATEROLE) successfully created all five uellix_* roles and successfully issued all three memberships, including uellix_writer TO postgres. PostgreSQL 16+ automatically grants the creating CREATEROLE role membership WITH ADMIN OPTION over every role it creates, which is sufficient. supabase_admin is required for the three reasons below, NOT because postgres is incapable.",
+
+      "three_measured_reasons_supabase_admin_is_required": [
+        "REASON 1 — GRANTOR PIN. db/prepared/stella_0001_role_topology_bootstrap.sql §2 pins the canonical grantor as oid 10 for the relevant membership rows and refuses any unexpected relevant row. MEASURED: supabase_admin IS oid 10, so a grant it issues records grantor=10; a grant issued by postgres records grantor=16384. Running stella_0001's precondition block VERBATIM against a postgres-installed topology raised 'stella_0001 FAILED: canonical membership precondition rejected unexpected relevant membership row (wrong grantor, flags or ADMIN escalation)' and exited 3. Against a supabase_admin-installed topology the same block exits 0.",
+        "REASON 2 — ADMIN-OPTION AUTO-GRANTS / RR-02. MEASURED: when postgres (CREATEROLE non-superuser) creates the five roles, PostgreSQL 16+ emits five automatic membership rows granting postgres each role WITH admin_option=true. When supabase_admin (a superuser) creates the same five roles, the auto-grant row count is ZERO. Those five rows are themselves rejected by stella_0001's precondition, and they reproduce RR-02 locally: MEASURED, postgres then granted itself uellix_owner WITH SET TRUE and SET ROLE uellix_owner succeeded. Under the supabase_admin installer the same attempt is refused with 'permission denied to grant role \"uellix_owner\" — Only roles with the ADMIN option on role \"uellix_owner\" may grant this role.' The local separation is a BARRIER under supabase_admin and merely an auditable obstacle under postgres.",
+        "REASON 3 — AUTH-SCHEMA FAIL-OPEN. MEASURED: GRANT USAGE ON SCHEMA auth TO uellix_owner issued as postgres emits 'WARNING: no privileges were granted for \"auth\"', prints GRANT, and EXITS 0 — while has_schema_privilege('uellix_owner','auth','USAGE') remains false. It is a silent no-op that ON_ERROR_STOP=1 cannot catch, because a WARNING is not an ERROR. Issued as supabase_admin (the owner of schema auth) the same statement succeeds and the privilege is present."
       ],
-      "why_the_grantor_cannot_be_postgres_locally": "GRANT <role> TO <role> requires the grantor to hold ADMIN OPTION on the granted role or to be a superuser. The local package must issue GRANT USAGE ON SCHEMA auth TO uellix_owner, and only the owner of schema auth (supabase_admin) or a superuser can do so — postgres is neither. Once the five roles are created under supabase_admin, postgres holds no ADMIN OPTION over them and a membership GRANT attempted as postgres FAILS. The grantor must therefore be consistent across the identity writes; splitting it produces an incorrect-grantor failure, not a stylistic inconsistency.",
-      "secondary_benefit": "Issuing the memberships under supabase_admin also avoids reproducing RR-02 locally: postgres does not accumulate ADMIN OPTION over the governed roles, so the local separation is a barrier rather than an auditable obstacle. This is consistent with stella_hosted_0000:98-99, which directs superuser-reachable databases to the local topology precisely because 'it gives a strictly stronger separation'.",
-      "local_administrative_superuser_identity": "Wherever v1.0.0 canonical_privilege_sequence names the actor 'local administrative superuser', repository truth resolves that role to supabase_admin, because db/baseline/stella_g2_roles.sql:39/47 make supabase_admin the only SUPERUSER on this substrate. Recorded so the successor does not resolve it to postgres by habit."
+
+      "corroborating_repository_evidence": [
+        "db/baseline/stella_g2_roles.sql:39 — ALTER ROLE postgres WITH NOSUPERUSER ... : corroborates the measured attribute post-baseline",
+        "db/baseline/stella_g2_roles.sql:47 — ALTER ROLE supabase_admin WITH SUPERUSER ... : same, for supabase_admin",
+        "db/baseline/stella_g2_schema.sql:38 — ALTER SCHEMA auth OWNER TO supabase_admin : corroborates the measured auth-schema owner",
+        "db/baseline/stella_g2_roles.sql:201-218 — every canonical Supabase role membership is issued GRANTED BY supabase_admin; the substrate's own established grantor pattern",
+        "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql:183-188 — states the PostgreSQL 16+ auto-ADMIN-OPTION rule in-repo, independently of this measurement",
+        "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql:298 — residual risk RR-02, the hosted-side statement of REASON 2"
+      ],
+
+      "actor_partition": {
+        "statement": "The previous revision resolved EVERY v1.0.0 'local administrative superuser' operation to supabase_admin. That over-resolved: it would have enlarged the supabase_admin write surface for zero catalog effect and made the P1A-N7 closed world indeterminate. The partition below is frozen instead, and it is what makes P1A_N7_EXACT_COUNT = 3 closed-world rather than 5.",
+        "supabase_admin_performs": [
+          "creation of the five uellix_* roles (CREATE ROLE x5)",
+          "membership A — GRANT uellix_owner TO uellix_migrator",
+          "membership B — GRANT uellix_writer TO uellix_app",
+          "GRANT USAGE ON SCHEMA auth TO uellix_owner"
+        ],
+        "postgres_retains": [
+          "GRANT USAGE, CREATE ON SCHEMA public TO uellix_owner",
+          "REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC"
+        ],
+        "why_postgres_retains_the_public_schema_acl": "MEASURED: schema public is owned by pg_database_owner, and the resulting ACL entry is byte-identical under both actors — uellix_owner=UC/pg_database_owner — because the grant is attributed to the schema owner, not to the issuing role. Routing these two statements through supabase_admin therefore produces NO catalog difference while enlarging the superuser surface. The single-write discipline P1A-N7 exists to enforce forbids that trade.",
+        "local_administrative_superuser_identity": "Wherever v1.0.0 canonical_privilege_sequence names the actor 'local administrative superuser', it resolves to supabase_admin ONLY for the operations enumerated in supabase_admin_performs above. It does NOT resolve to supabase_admin for the public-schema ACL operations, which postgres both can and must continue to issue."
+      }
     },
 
     "D6_p1a_n7": {
       "previous_rule": "P1A-N7 as frozen in v1.0.0 (line 448) and in the test manifest: 'No unauthorized privilege write under supabase_admin outside the one explicitly governed auth-schema capability: a per-container call-count invariant proves exactly one such write per fixture.'",
-      "amended_rule": "EXACTLY THREE enumerated supabase_admin privilege writes, and no others.",
+      "amended_rule": "EXACTLY THREE enumerated supabase_admin privilege writes in the local bootstrap package, and no others.",
       "P1A_N7_NEW_EXACT_COUNT": 3,
+
+      "SUPABASE_ADMIN_PRIVILEGE_WRITE_DEFINITION": "A statement executed with session_user AND current_user equal to supabase_admin that MUTATES THE PRIVILEGE GRAPH — that is, it inserts, updates or deletes a pg_auth_members row (role membership GRANT/REVOKE), or it modifies an object ACL (GRANT/REVOKE on a schema, table, function, database or other privilege-bearing object). This definition is the counting domain. It is stated explicitly because the previous revision said only 'STATEMENTS issued under the supabase_admin actor', which would have swept in CREATE ROLE and role-attribute statements and made the count indeterminate.",
+
       "enumerated_writes": [
         {
           "ordinal": 1,
-          "statement": "GRANT USAGE ON SCHEMA auth TO uellix_owner",
-          "status": "PREEXISTING_AUTHORIZED",
-          "basis": "v1.0.0 canonical_topology PHASE_BOOTSTRAP_PRIVILEGE and canonical_privilege_sequence step 4; inherited from scripts/m2-disposable-pg-bootstrap.ts:645-656",
-          "reason_actor_is_supabase_admin": "supabase_admin owns schema auth (db/baseline/stella_g2_schema.sql:38)"
+          "statement": "GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE, ADMIN FALSE",
+          "status": "NEW_UNDER_THIS_AMENDMENT",
+          "class": "pg_auth_members membership GRANT",
+          "basis": "D5_b2_grantor three_measured_reasons REASON 1 and REASON 2",
+          "reason_actor_is_supabase_admin": "grantor must be oid 10 for stella_0001's canonical precondition, and supabase_admin creation avoids the ADMIN-option auto-grant rows that same precondition rejects"
         },
         {
           "ordinal": 2,
-          "statement": "GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE",
+          "statement": "GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE, ADMIN FALSE",
           "status": "NEW_UNDER_THIS_AMENDMENT",
-          "basis": "D5_b2_grantor",
-          "reason_actor_is_supabase_admin": "canonical membership grantor on this substrate (db/baseline/stella_g2_roles.sql:201-218); postgres holds no ADMIN OPTION over roles created by supabase_admin"
+          "class": "pg_auth_members membership GRANT",
+          "basis": "D5_b2_grantor three_measured_reasons REASON 1 and REASON 2",
+          "reason_actor_is_supabase_admin": "same as ordinal 1"
         },
         {
           "ordinal": 3,
-          "statement": "GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE",
-          "status": "NEW_UNDER_THIS_AMENDMENT",
-          "basis": "D5_b2_grantor",
-          "reason_actor_is_supabase_admin": "same as ordinal 2"
+          "statement": "GRANT USAGE ON SCHEMA auth TO uellix_owner",
+          "status": "PREEXISTING_AUTHORIZED",
+          "class": "object ACL GRANT",
+          "basis": "v1.0.0 canonical_topology PHASE_BOOTSTRAP_PRIVILEGE and canonical_privilege_sequence step 4; inherited from scripts/m2-disposable-pg-bootstrap.ts:645-656; D5_b2_grantor three_measured_reasons REASON 3",
+          "reason_actor_is_supabase_admin": "supabase_admin owns schema auth; MEASURED, the same statement as postgres is a silent WARNING no-op that exits 0 and grants nothing"
         }
       ],
-      "no_wildcard": "This is a CLOSED-WORLD enumeration of exactly three statements. No wildcard, general-purpose or category-level supabase_admin write authority is granted. A fourth privilege write under the supabase_admin actor is a STOP, never a retroactive inference from the fact that the implementation issued it.",
-      "counting_semantics": "P1A-N7 counts STATEMENTS issued under the supabase_admin actor, not psql invocations. The three statements may legitimately be carried in ONE session applying db/prepared/stella_local_0000_local_role_identity_bootstrap.sql. A gate that counts sessions would report 1 and prove nothing about the third statement; a gate that counts statements is the control this rule requires.",
+
+      "explicitly_excluded_from_the_count": [
+        {
+          "excluded": "CREATE ROLE x5 (uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor), issued by supabase_admin",
+          "why": "MEASURED: a SUPERUSER creating a role emits ZERO pg_auth_members rows and no ACL — auto-grant row count was 0. It creates a principal, it does not mutate the privilege graph, so it falls outside SUPABASE_ADMIN_PRIVILEGE_WRITE_DEFINITION. (The contrast is exactly REASON 2: a CREATEROLE non-superuser creating the same roles emits five admin_option=true rows, which WOULD be privilege-graph mutations.)"
+        },
+        {
+          "excluded": "ALTER ROLE uellix_auditor SET default_transaction_read_only = on",
+          "why": "A per-role GUC default. It confers and removes no privilege and touches no ACL or membership row."
+        },
+        {
+          "excluded": "GRANT USAGE, CREATE ON SCHEMA public TO uellix_owner; and REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC;",
+          "why": "These ARE privilege-graph mutations, but they are NOT issued by supabase_admin. Per D5_b2_grantor actor_partition they remain with postgres, because the resulting ACL was MEASURED byte-identical under both actors (uellix_owner=UC/pg_database_owner, attributed to the pg_database_owner schema owner rather than the issuing role). Moving them under supabase_admin would add two supabase_admin privilege writes for zero catalog effect."
+        },
+        {
+          "excluded": "GRANT uellix_writer TO postgres WITH INHERIT TRUE, SET FALSE, ADMIN FALSE (membership C)",
+          "why": "Not issued by the local bootstrap package at all. It is owned by db/prepared/stella_0001_role_topology_bootstrap.sql §2 — see membership_c_disposition below. It is therefore NOT a fourth local-package supabase_admin privilege write."
+        }
+      ],
+
+      "membership_c_disposition": {
+        "membership": "uellix_writer TO postgres WITH INHERIT TRUE, SET FALSE, ADMIN FALSE",
+        "disposition": "MAY_BE_CREATED_BY_STELLA_0001 — STELLA_0001_OWNED",
+        "NOT_legacy": "It is part of the canonical reference topology: db/baseline/stella_g2_roles.sql:222 carries it as GRANT uellix_writer TO postgres WITH INHERIT TRUE, SET FALSE GRANTED BY supabase_admin. It gives postgres INHERITED writer rights and is a live element of the topology, not residue.",
+        "NOT_removed": "This amendment does not delete, deprecate or narrow it. It remains established by db/prepared/stella_0001_role_topology_bootstrap.sql §2, whose conditional REVOKE/re-GRANT pair is its single mutating authority.",
+        "NOT_part_of_local_package_N7": "MEASURED: stella_0001's canonical membership precondition is a 'no UNEXPECTED relevant row' guard, not an 'all expected rows present' guard. Running it verbatim against a supabase_admin-installed topology with membership C ABSENT exits 0. C therefore need not exist before stella_0001, and the local package must not establish it.",
+        "NOT_a_fourth_supabase_admin_write": "Because stella_0001 is applied under the R3.4 administrative identity, which asserts a superuser session and on this substrate resolves to supabase_admin (oid 10), C is issued with the grantor its own precondition expects on the next run. It is a stella_0001 statement, not a local-package statement, and it does not enter the P1A-N7 count.",
+        "grantor": "supabase_admin (oid 10)"
+      },
+
+      "no_wildcard": "This is a CLOSED-WORLD enumeration of exactly three statements in the local bootstrap package. No wildcard, general-purpose or category-level supabase_admin write authority is granted. A FOURTH local-bootstrap supabase_admin privilege write is a STOP, never a retroactive inference from the fact that the implementation issued it.",
+      "counting_semantics": "P1A-N7 counts STATEMENTS matching SUPABASE_ADMIN_PRIVILEGE_WRITE_DEFINITION, not psql invocations and not sessions. The three statements may legitimately be carried in ONE supabase_admin session. A gate that counts sessions would report 1 and prove nothing about the second and third statements; a gate that counts qualifying statements is the control this rule requires.",
       "m2_invariant_untouched": "The existing per-container call-count invariant at scripts/m2-disposable-pg-bootstrap.ts:645-656 governs the M2 fixture's OWN path and is NOT amended, relaxed or renumbered by this clause. M2 remains authorized for MINIMAL_EXPORT_WIDENING only (v1.0.0 m2_reuse_decision). P1A-N7 as amended is enforced by the P1A gate (scripts/p1a-bootstrap-gate.ts), which is a new artifact. If the successor finds that satisfying amended P1A-N7 mechanically requires changing an M2 check id, count or security semantic, that is STOP_FOR_AUTHORITY_DELTA."
     },
 
@@ -288,7 +373,12 @@
     ],
     "prohibition": "The immutable closed-world guard MUST NOT be weakened. It must remain an EXACT-membership check and must never be relaxed into a subset test, a prefix match or a directory sweep in order to absorb future addenda automatically. The maintenance obligation is the intended cost of that strictness.",
     "precedent": "This is structurally identical to v1.0.0 risk R5, which recorded the same obligation for v1.0.10 when tests/ods/ods-controller.test.ts did not yet exist. Recorded here so the maintenance node treats v1.0.12 as a known governed predecessor artifact rather than an unexpected one, and does not need to re-derive the fact.",
-    "not_done_here_because": "Editing the Controller is outside this mission's authorized write surface. Doing it opportunistically would make ACTUAL_CHANGED_PATH_COUNT 4 and would mix an authority materialization with an implementation change in one commit."
+    "not_done_here_because": "Editing the Controller is outside this mission's authorized write surface. Doing it opportunistically would make ACTUAL_CHANGED_PATH_COUNT 4 and would mix an authority materialization with an implementation change in one commit.",
+
+    "CONTROLLER_MAINTENANCE_AUTHORITY": "NEW_AUTHORITY_REQUIRED",
+    "why_new_authority_is_required": "The obligation to enumerate v1.0.12 is NOT itself permission to edit Controller code. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json authorized scripts/ods-controller.ts and tests/ods/ods-controller.test.ts under authorized_future_implementation_surface with the explicit note 'Authorized for the SUCCESSOR mission only' and status TO_BE_CREATED. That successor — AUTONOMOUS_PROGRAM_CONTROLLER_V0_IMPLEMENTATION_R1 — is CLOSED_AUDITED_INTEGRATED at c411e2e27c2e88d41af83b395ec2296e0884ade3, so that authorization is a consumed creation grant, not a standing maintenance grant. ODS_CONTROLLER_AUTHORITY_v1.0.0.json:269 ('no other docs/ops/ods/ artifact may be excluded from immutableByConvention without new authority') and :271 (the exact-membership closed_world_requirement) together make the maintenance MANDATORY, but neither grants a write scope to any open mission. A new bounded authority node must therefore authorize the two exact paths in exact_minimal_future_surface before that edit is made.",
+    "merge_order_disposition": "PR56 MAY merge before the Controller maintenance, provided the maintenance follows immediately through that new authority. The ordering is not merely permitted, it is FORCED: the maintenance enumerates docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json, which exists only on this branch. Because tests/ods/ods-controller.test.ts performs zero filesystem reads, an earlier edit would pass its assertions while enumerating an artifact absent from the tree — the same silent miscoverage the exact-membership rule exists to prevent, inverted.",
+    "transitional_gap_acceptability": "The interval in which v1.0.12 exists in integration while the Controller exact-membership guard still ends at v1.0.11 is an ACCEPTABLE governed transitional state: bounded, CI-green, no runtime effect, CONTROLLER_DB_EXECUTION=DISABLED, and directly precedented — v1.0.10 and v1.0.11 each recorded the identical obligation and were absorbed by a later mission."
   },
 
   "authorized_changed_paths_this_mission": {
@@ -309,7 +399,8 @@
   },
 
   "audit_requirement": {
-    "required_audit": "P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1",
+    "required_audit": "P1A_AUTHORITY_DELTA_FOCUSED_REAUDIT_R1",
+    "prior_audit": "P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1 — verdict FAIL (BLOCKING_FINDINGS=1, UNKNOWN_FINDINGS=1). Superseded by this remediation; see prior_hpo_dispositions_reverified.remediation_record_R1. The re-audit is a DELTA re-audit against that audit's own findings, not a fresh full audit: the R1 verdicts on authority widening, forward-only, the R3.4 hazard, R3.5 historical immutability, the conditional path and the two-path closed world were PASS and are not reopened absent new evidence.",
     "when": "Before this amendment may be merged and before the successor implementation mission opens.",
     "independence_conditions": [
       "a clean conversation carrying no materialization context",
@@ -321,10 +412,20 @@
       "that the forward-only branch is mechanically exclusive with the rollback file, by re-reading tests/prepared-sql-source-of-truth.test.ts:210-222 directly",
       "that the R3.4 apply path really commits per phase, by re-reading the runner rather than trusting D3",
       "that the R3.5 pin is live at BASE_SHA and that no historical hash was altered",
-      "that the D5 grantor argument holds under actual PostgreSQL 16+ ADMIN OPTION semantics, not only under the baseline SQL cited",
       "the CONDITIONALLY_AUTHORIZED status of tests/stella-insert-policy-probe-doctrine.test.ts — specifically whether SIX_PACKAGES really is hardcoded and really excludes stella_0001",
       "that CONTROLLER_V1_0_12_EFFECT is BOUNDED_SUCCESSOR_MAINTENANCE_REQUIRED and not NO_RUNTIME_CHANGE_REQUIRED",
       "that exactly two paths changed and that no protected surface was touched"
+    ],
+    "delta_reaudit_must_specifically_challenge": [
+      "that D5_b2_grantor no longer contains any claim that postgres CANNOT issue a membership GRANT, and that the retraction is explicit rather than silent deletion",
+      "that the three_measured_reasons are each independently sufficient and are stated as measurement rather than inference — and that a re-run of stella_0001's precondition block against both installer topologies would reproduce them",
+      "that the actor_partition is genuinely closed-world: that supabase_admin_performs plus postgres_retains together cover every privilege-bearing statement the local package issues, with nothing unassigned",
+      "that P1A_N7_EXACT_COUNT=3 follows from SUPABASE_ADMIN_PRIVILEGE_WRITE_DEFINITION applied to that partition, and that each of the four explicitly_excluded_from_the_count entries is excluded for a measured reason rather than to preserve the number",
+      "that membership C is recorded as stella_0001-owned WITHOUT being deleted, narrowed or treated as legacy, and that db/baseline/stella_g2_roles.sql:222 is correctly cited as its reference-topology basis",
+      "that the corrected R3.5 citation (db/r3-5-pg17-certification-inputs.ts:114 via scripts/stella-r3-5-pg17-certify.ts:544/:549) is accurate, and that REQUIRED_PLACEMENT does not authorize editing the byte-immutable inputs file",
+      "that the R3.4 minimal_preflight_facts select the SAME row set as stella_0001's own precondition, and that facts 2 and 3 are not droppable",
+      "that CONTROLLER_MAINTENANCE_AUTHORITY=NEW_AUTHORITY_REQUIRED is correct — specifically that ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json's Controller surface was successor-mission-only and status TO_BE_CREATED",
+      "that A8 records the ee91578 implementation incompatibility as PROSPECTIVE and that no implementation file was edited by this amendment"
     ],
     "AUDIT_MODEL": "OPUS_FULL",
     "AUDIT_CLASS": "FOCUSED_INDEPENDENT_AUTHORITY_AUDIT"
@@ -336,14 +437,15 @@
     "A3": "The Controller immutableByConvention closed world does not yet contain v1.0.12. Harmless to CI now (the count is hardcoded, not filesystem-derived) but a real coverage gap until the bounded maintenance node lands. See controller_cross_lane_disposition.",
     "A4": "The successor bytes of stella_0001_role_topology_bootstrap.sql will carry NO negative-authority certification until an explicit successor certification is adjudicated and executed. See D7. No parity may be claimed in the interim.",
     "A5": "The literal identifier 'R7' is not a live symbol in the current certification surface. The residual is recorded against the historical MSC-07B evidence chain. If a future mission expects a live R7 control, it must first establish that one exists.",
-    "A6": "D5's grantor argument is derived from committed baseline SQL and PostgreSQL role-grant semantics, NOT from an executed probe against a live substrate — no database was contacted by this authority mission. The successor implementation must prove the grantor contract at runtime rather than inherit it as established fact.",
+    "A6": "SUPERSEDED BY MEASUREMENT, no longer UNKNOWN. The earlier revision recorded that D5's grantor argument was derived from committed baseline SQL and PostgreSQL role-grant semantics rather than from an executed probe. That gap is CLOSED: the pre-baseline actor topology, the PostgreSQL 16+ auto-ADMIN-OPTION behaviour, the stella_0001 grantor-precondition outcome in both directions, the RR-02 escalation in both directions, and the auth-schema fail-open were all measured directly against the exact pinned disposable PostgreSQL 17.6 image (see D5_b2_grantor.measured_prebaseline_probe). The AUTHORITY DECISION is therefore settled. What remains required is RUNTIME RE-PROOF inside the P1A gates themselves — the gate must demonstrate the grantor contract on its own disposable substrate rather than cite this measurement — and that obligation is retained, not discharged, by this clause.",
+    "A8": "PROSPECTIVE IMPLEMENTATION FINDING, not a blocker to this authority. The P1A implementation measured on branch codex/p1a-full-bootstrap-r1 at ee915785ef4878eb172220a9b7a8f091320a92db installs the local roles as postgres (its own package hard-asserts session_user='postgres') and is therefore INCOMPATIBLE with the actor_partition frozen in D5. Consequences measured on that exact substrate: stella_0001's canonical membership precondition rejects the resulting topology, and postgres retains ADMIN OPTION over all five uellix roles and can self-escalate to SET ROLE uellix_owner (RR-02 reproduced locally). That implementation consequently declares PHASE_LOCAL_PREPARED_CHAIN out of its gate's minimum invariant, deferring the conflict rather than resolving it; its header calls the ADMIN-option rows 'unavoidable', which MEASUREMENT DISPROVES — supabase_admin is reachable on this substrate and creates the same five roles with zero auto-grant rows. The future implementation must adopt the exact actor_partition frozen in D5_b2_grantor. NO implementation file is edited by this amendment.",
     "A7": "v1.0.0 risks R1 (fixed port 56322), R2 (LOCAL_PROJECT_ID naming truth), R3 (.github/workflows/p1a-validation.yml red), and R6 (MINIMAL_EXPORT_WIDENING unproven) are all carried forward UNCHANGED. This amendment closes none of them."
   },
 
-  "final_state": "P1A_PREPARED_PACKAGE_SUCCESSOR_DISPOSITION_FROZEN_AND_ADDITIONAL_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_INDEPENDENT_AUTHORITY_AUDIT",
+  "final_state": "P1A_PREPARED_PACKAGE_SUCCESSOR_DISPOSITION_REMEDIATED_AND_ADDITIONAL_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_INDEPENDENT_DELTA_REAUDIT",
   "MAIN_EFFECT": "NONE",
   "PRODUCTION_PROMOTION": "NO",
   "CONTROLLER_DB_EXECUTION": "DISABLED",
   "READY_FOR_MERGE": "NO",
-  "next_gate": "P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1"
+  "next_gate": "P1A_AUTHORITY_DELTA_FOCUSED_REAUDIT_R1"
 }

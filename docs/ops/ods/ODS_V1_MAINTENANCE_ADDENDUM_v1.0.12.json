@@ -60,12 +60,36 @@
     "R3_5_HISTORICAL_IMMUTABILITY": "HISTORICAL_EVIDENCE_IMMUTABLE=YES",
     "R3_5_SUCCESSOR_RELATIONSHIP": "P1A is SUCCESSOR_OF the historical R3.5 PG17 certification; successor is not equivalence",
     "B2_DISPOSITION": "MEMBERSHIPS_GRANTED_BY_CANONICAL_SUPABASE_ADMIN_BOOTSTRAP_AUTHORITY",
+    "B2_GRANTOR_DISPOSITION": "SUPABASE_ADMIN_REQUIRED",
+    "PREBASELINE_SUBSTRATE_MEASURED": "YES",
+    "ACTOR_PARTITION": "supabase_admin performs CREATE ROLE x5, membership A, membership B and GRANT USAGE ON SCHEMA auth; postgres retains the two public-schema ACL operations, whose resulting ACL was MEASURED byte-identical under both actors. The partition is NOT 'every local administrative superuser operation resolves to supabase_admin'.",
     "P1A_N7_NEW_EXACT_COUNT": 3,
+    "MEMBERSHIP_C_DISPOSITION": "STELLA_0001_OWNED — uellix_writer TO postgres is established by db/prepared/stella_0001_role_topology_bootstrap.sql §2, not by the local bootstrap package. NOT legacy, NOT removed, NOT part of local-package N7, NOT a fourth supabase_admin write.",
     "NEW_PROTECTED_GRANT_REQUIRED": "NO",
     "ODS_SCOPE_REGISTRY_CHANGED": "NO",
     "HPO_ODS_W2_11_WIDENED": "NO",
     "CONTROLLER_V1_0_12_EFFECT": "BOUNDED_SUCCESSOR_MAINTENANCE_REQUIRED",
+    "CONTROLLER_MAINTENANCE_AUTHORITY": "NEW_AUTHORITY_REQUIRED",
     "detail_authority": "Every decision above is recorded with its exact measured evidence in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json under prior_hpo_dispositions_reverified. It is NOT restated here; this addendum is the ODS lineage entry, not a second copy of the node authority."
+  },
+
+  "remediation_record": {
+    "REMEDIATION_MISSION": "P1A-AUTHORITY-DELTA-REMEDIATION-R1",
+    "prior_audit": "P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1 — FAIL (BLOCKING_FINDINGS=1, UNKNOWN_FINDINGS=1)",
+    "adjudicating_hpo": "P1A-N7-PREBASELINE-ACTOR-AND-MEMBERSHIP-HPO-R1 — resolved by direct runtime measurement against public.ecr.aws/supabase/postgres:17.6.1.143 (image id sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453), disposable containers destroyed at mission end",
+    "measured_prebaseline_truth": "postgres: rolsuper=false, rolcreaterole=true, oid=16384. supabase_admin: rolsuper=true, oid=10 (bootstrap superuser). auth schema owner: supabase_admin. public schema owner: pg_database_owner. postgres is ALREADY NOSUPERUSER in the native pre-baseline image; db/baseline/stella_g2_roles.sql:39 re-asserts rather than creates that state.",
+    "what_changed": [
+      "D5 — the false claim that a membership GRANT attempted as postgres FAILS is explicitly RETRACTED; postgres was measured able to issue all three memberships. supabase_admin is required for three measured reasons instead: the stella_0001 grantor pin at oid 10, the ADMIN-option auto-grant rows (and the RR-02 self-escalation they enable), and the auth-schema fail-open WARNING no-op.",
+      "D5 — the blanket 'local administrative superuser resolves to supabase_admin' resolution is replaced by an explicit, closed actor_partition.",
+      "D6 — P1A_N7_EXACT_COUNT REMAINS 3 and the enumeration is retained; a precise SUPABASE_ADMIN_PRIVILEGE_WRITE definition and four measured exclusions are added so the closed world is derivable rather than asserted.",
+      "D6 — membership C recorded as stella_0001-owned.",
+      "D3 — the two-membership preflight framing replaced by five measured minimal facts, including the grantor and ADMIN-option facts.",
+      "D4 — the R3.5 throw-site citation corrected from scripts/stella-r3-5-pg17-certify.ts:1014 (a BASELINE_UNITS control) to db/r3-5-pg17-certification-inputs.ts:114 via certify.ts:544/:549, with SUPERSEDED classification required in the authorized certify.ts path ahead of the delegation.",
+      "controller_cross_lane_disposition — CONTROLLER_MAINTENANCE_AUTHORITY=NEW_AUTHORITY_REQUIRED added.",
+      "A6 — superseded by measurement; runtime re-proof retained as a gate obligation. A8 added as a prospective implementation finding."
+    ],
+    "what_did_not_change": "The P1A-N7 count (3) and its enumerated statements; the forward-only disposition; the R3.4 hazard; R3.5 historical immutability; the conditional path; the two-path closed world; the lineage identifiers. docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json remains BYTE-IDENTICAL. No historical evidence was rewritten and no hash was repinned.",
+    "lineage_identifiers_reused": "HPO-ODS-W2-13 and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12 are RETAINED. PR #56 was never merged, the candidate is the same, and both identifiers were re-verified free on origin/integration/commercial-v1 at remediation time."
   },
 
   "cross_lane_disposition": {
@@ -77,6 +101,9 @@
       "scripts/ods-controller.ts — add docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json to IMMUTABLE_BY_CONVENTION (22 -> 23) and update the count comment at :49",
       "tests/ods/ods-controller.test.ts — update the count assertions at :92-93 from 22 to 23, update the describe title at :91, and add a toContain assertion for v1.0.12 mirroring :94-95"
     ],
+    "controller_maintenance_authority": "NEW_AUTHORITY_REQUIRED",
+    "why_new_authority_is_required": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json authorized scripts/ods-controller.ts and tests/ods/ods-controller.test.ts 'for the SUCCESSOR mission only', status TO_BE_CREATED. That successor is CLOSED_AUDITED_INTEGRATED at c411e2e, so it is a consumed creation grant, not a standing maintenance grant. ODS_CONTROLLER_AUTHORITY_v1.0.0.json:269 and :271 make the maintenance MANDATORY but grant no write scope to any open mission. The obligation to add v1.0.12 is not itself permission to edit Controller code.",
+    "merge_order": "PR #56 MAY merge before the Controller maintenance, provided the maintenance follows immediately under that new authority. The ordering is forced: the maintenance enumerates an artifact that exists only on this branch, and the Controller test performs zero filesystem reads, so an earlier edit would assert coverage of an artifact absent from the tree. The interval in which v1.0.12 exists in integration while the guard still ends at v1.0.11 is an ACCEPTABLE governed transitional state — bounded, CI-green, no runtime effect, CONTROLLER_DB_EXECUTION=DISABLED, and precedented by v1.0.10 and v1.0.11.",
     "prohibition": "The immutable closed-world guard MUST NOT be weakened, and must never be relaxed into a subset test, prefix match or directory sweep to absorb future addenda automatically.",
     "precedent": "Structurally identical to docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json risk R5, which recorded the same obligation for v1.0.10.",
     "W2_10_UNCHANGED": true,
@@ -129,10 +156,11 @@
     "A2": "AG-1 remains OPEN: this addendum is itself unprotected by DEFAULT_PROTECTED_PATTERNS. Unchanged by this node; global closure still requires separate governed adjudication.",
     "A3": "The Controller immutableByConvention closed world does not yet contain v1.0.12. Harmless to CI now, a real coverage gap until the bounded maintenance node lands.",
     "A4": "The P1A successor bytes carry NO negative-authority certification until an explicit successor certification is adjudicated and executed.",
-    "A5": "No database was contacted by this authority mission. The B-2 grantor contract is derived from committed baseline SQL and PostgreSQL role-grant semantics, and must be proven at runtime by the successor implementation rather than inherited as established fact."
+    "A5": "SUPERSEDED BY MEASUREMENT. The B-2 grantor contract was measured directly against the exact pinned disposable PostgreSQL 17.6 image during P1A-N7-PREBASELINE-ACTOR-AND-MEMBERSHIP-HPO-R1; the authority decision is no longer UNKNOWN. Disposable containers were destroyed at mission end and no evidence file was committed. RUNTIME RE-PROOF inside the P1A gates remains REQUIRED — the gate must demonstrate the grantor contract on its own disposable substrate rather than cite that measurement.",
+    "A6": "PROSPECTIVE IMPLEMENTATION FINDING, not a PR56 blocker. The P1A implementation at ee915785ef4878eb172220a9b7a8f091320a92db (branch codex/p1a-full-bootstrap-r1) installs the local roles as postgres and is INCOMPATIBLE with the frozen actor_partition: stella_0001's canonical membership precondition rejects the resulting topology, and postgres retains ADMIN OPTION over all five uellix roles and can self-escalate to uellix_owner (RR-02 reproduced locally). The future implementation must adopt the frozen partition. No implementation file is edited by this node."
   },
 
-  "final_state": "P1A_PREPARED_PACKAGE_SUCCESSOR_DISPOSITION_FROZEN_AND_ADDITIONAL_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_INDEPENDENT_AUTHORITY_AUDIT",
+  "final_state": "P1A_PREPARED_PACKAGE_SUCCESSOR_DISPOSITION_REMEDIATED_AND_ADDITIONAL_IMPLEMENTATION_SURFACE_AUTHORIZED_PENDING_INDEPENDENT_DELTA_REAUDIT",
   "P1A_FULL_BOOTSTRAP_STATUS": "NOT_CLOSED",
   "W2_B4_IMPLEMENTATION_STATUS": "WAITING_FOR_P1A_FULL_CLOSURE",
   "W2_B5_STATUS": "NOT_AUTHORIZED",
@@ -140,5 +168,5 @@
   "PRODUCTION_PROMOTION": "NO",
   "MAIN_EFFECT": "NONE",
   "READY_FOR_MERGE": "NO",
-  "next_gate": "P1A_PREPARED_PACKAGE_AUTHORITY_DELTA_INDEPENDENT_AUDIT_R1"
+  "next_gate": "P1A_AUTHORITY_DELTA_FOCUSED_REAUDIT_R1"
 }
