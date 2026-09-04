@@ -398,9 +398,13 @@ export function buildHostedBaselineGateEvidence(
     // carrying the raw unit count 74 — did not surface it. Advanced as an exact
     // count, never loosened to `>= 77`: a plan that silently grew or shrank is
     // exactly what this evidence exists to notice.
+    // W2-B5 (FIBIU-17/18): + 0064_fib_readiness_assessments.sql and
+    // 0065_fib_sensitivity_model.sql = 78 baseline units + 1 journal bootstrap
+    // step = 79 — the same N+1 trap the B5 authority's own baseline_growth_contract
+    // named this exact line by number so a literal-76 sweep would not miss it.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 77 &&
+      firstProvisioning.steps.length === 79 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -421,7 +425,8 @@ export function evaluateHostedBaselineGates(
   // tests/hosted/baseline-manifest.test.ts, independently re-verified there.
   // HPO-ODS-W2-09: + 0061 = 74.
   // HPO-ODS-W2-12 (W2-B4 assumptions and causality): + 0062/0063 = 76.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 76
+  // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 78
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

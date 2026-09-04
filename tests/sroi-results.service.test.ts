@@ -224,7 +224,9 @@ describe('review services', () => {
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'reviewer' } } as any);
     const run = { id: 'run-1', projectId: PROJECT_ID, organizationId: ORG_ID };
     mockDb.sroiCalculationRuns.push(run);
-    const input = { status: 'draft', readinessScore: 80 } as any;
+    // FIBIU-17 (FIBC-021, W2-B5): readinessScore is REMOVED — no human path
+    // may write authoritative readiness (NEG-17-1).
+    const input = { status: 'draft' } as any;
     const rev = await createSroiRunReview(PROJECT_ID, 'run-1', input);
     expect(rev.projectId).toBe(PROJECT_ID);
     expect(rev.id).toBeDefined();
@@ -241,7 +243,7 @@ describe('review services', () => {
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'reviewer' } } as any);
     const rev = { id: 'rev-1', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft' };
     mockDb.sroiRunReviews.push(rev);
-    const updated = await updateSroiRunReview(PROJECT_ID, 'rev-1', { status: 'reviewed', readinessScore: 90 });
+    const updated = await updateSroiRunReview(PROJECT_ID, 'rev-1', { status: 'reviewed' });
     expect(updated.status).toBe('reviewed');
 
     // Archive it and try to update

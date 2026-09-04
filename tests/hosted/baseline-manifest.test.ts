@@ -95,20 +95,24 @@ describe('the baseline manifest describes the corpus that is actually checked in
   // + 0062_fib_methodological_assumptions.sql (FIBIU-15, FIBDB-012/013/047)
   // and 0063_fib_counterfactual_assessments.sql (FIBIU-14, FIBDB-011/046) =
   // 76 units, 64 Drizzle.
-  it('has 76 units: 64 Drizzle, 2 Supabase, 10 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(76)
+  // HPO-ODS-W2-17 (W2-B5 governed models) —
+  // + 0064_fib_readiness_assessments.sql (FIBIU-17, FIBDB-015) and
+  // 0065_fib_sensitivity_model.sql (FIBIU-18, FIBDB-017/018/048) =
+  // 78 units, 66 Drizzle.
+  it('has 78 units: 66 Drizzle, 2 Supabase, 10 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(78)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(64)
+    expect(byKind('drizzle-migration')).toBe(66)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(10)
   })
 
-  it('numbers ordinals 1..76 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..78 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 76 }, (_, i) => i + 1),
+      Array.from({ length: 78 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(76)
+    expect(new Set(BASELINE_ORDER).size).toBe(78)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {

@@ -204,7 +204,8 @@ const MOCK_CONTEXT: StellaProjectContext = {
     version: 1,
   },
   reportSections: [],
-  readinessScore: 87,
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): readinessScore is REMOVED —
+  // no builder in lib/stella/context/** populates it any more.
   projectCreatedAt: '2026-01-01T00:00:00.000Z',
   lastUpdatedAt: '2026-06-01T00:00:00.000Z',
 }

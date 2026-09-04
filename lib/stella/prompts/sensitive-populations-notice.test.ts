@@ -59,10 +59,12 @@ const reviewerContext = (flag?: { detected: boolean; categories: string[] }): Re
   ...baseContext,
   ...(flag ? { sensitivePopulations: flag } : {}),
   reviewerRole: 'audit_assistant',
+  // FIBIU-17 (W2-B5): latestReadinessScore removed from ReviewerRunReviewSummary
+  // — mechanically forced fixture update, unrelated to this file's own
+  // sensitive-populations-notice controls.
   runReviewSummary: {
     reviewCount: 0,
     latestStatus: null,
-    latestReadinessScore: null,
     latestReviewedAt: null,
   },
 })

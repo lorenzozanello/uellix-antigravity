@@ -62,8 +62,10 @@ describe('the six baseline gates', () => {
     // B0-17 security successor to sealed 0060, REVOKE-only, no DML) = 74; still no DML, still four literal row sources.
     // HPO-ODS-W2-12 (W2-B4 assumptions and causality): + 0062/0063 (FIBIU-15/14,
     // both RLS-only, no superuser dependency, no DML) = 76.
-    expect(evidence.unitCount).toBe(76)
-    expect(evidence.superuserFreeUnits).toBe(76)
+    // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 (FIBIU-17/18, both
+    // RLS-only, no superuser dependency, no DML) = 78.
+    expect(evidence.unitCount).toBe(78)
+    expect(evidence.superuserFreeUnits).toBe(78)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',

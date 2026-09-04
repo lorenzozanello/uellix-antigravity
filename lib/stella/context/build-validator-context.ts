@@ -16,7 +16,6 @@ import {
   sroiFilterSets,
   sroiCalculationRuns,
   sroiCalculationLineItems,
-  sroiRunReviews,
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
@@ -307,19 +306,10 @@ export async function buildValidatorContext(
     }
   }
 
-  // Readiness score from latest run review
-  const latestReview = await db
-    .select({ readinessScore: sroiRunReviews.readinessScore })
-    .from(sroiRunReviews)
-    .where(
-      and(
-        eq(sroiRunReviews.projectId, projectId),
-        eq(sroiRunReviews.organizationId, organizationId)
-      )
-    )
-    .orderBy(desc(sroiRunReviews.createdAt))
-    .limit(1)
-    .then((rows) => rows[0] ?? null)
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): the validator no longer reads
+  // sroi_run_reviews.readiness_score — that column is LEGACY_NON_AUTHORITATIVE
+  // (FIBDB-016 stage B). Canonical readiness is readiness_assessments; not
+  // repointed here (permitted, not required). ABSENT over a legacy value.
 
   // RK-08: sensitive-populations flag from data already queried above —
   // stakeholder group types, narrative text, outcome titles. No new queries.
@@ -341,7 +331,8 @@ export async function buildValidatorContext(
     filterSetsSummary,
     calculationSnapshot,
     reportSections: [],
-    readinessScore: latestReview?.readinessScore ?? undefined,
+    // FIBIU-17 (W2-B5): no longer sourced from sroi_run_reviews — see comment above.
+    readinessScore: undefined,
     sensitivePopulations,
     projectCreatedAt: project.createdAt.toISOString(),
     lastUpdatedAt: project.updatedAt.toISOString(),

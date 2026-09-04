@@ -1,7 +1,7 @@
 {
   "description": "Versioned inventory of every checked server module that can reach the database, classified by tests/database-runtime-entrypoints.test.ts (AST scanner section). A new database-reaching module must be added here DELIBERATELY after wiring its identity context (or allowlisting it with a reason in the test).",
-  "checkedModules": 137,
-  "databaseReaching": 113,
+  "checkedModules": 141,
+  "databaseReaching": 117,
   "modules": {
     "app/(authenticated)/app/onboarding/actions.ts": "contextualized",
     "app/(authenticated)/app/onboarding/page.tsx": "allowlisted",
@@ -115,6 +115,10 @@
     "app/auth/callback/route.ts": "allowlisted",
     "app/components/allocation-form/OutcomeAllocationWrapper.tsx": "contextualized",
     "app/invite/accept/page.tsx": "contextualized",
-    "components/stella/decision-adapter.ts": "contextualized"
+    "components/stella/decision-adapter.ts": "contextualized",
+    "app/app/projects/[projectId]/pipeline/calculation/runs/computeReadinessAssessment.action.ts": "contextualized",
+    "app/app/projects/[projectId]/pipeline/calculation/runs/registerSensitivityCandidates.action.ts": "contextualized",
+    "app/app/projects/[projectId]/pipeline/calculation/runs/dispositionSensitivityCandidate.action.ts": "contextualized",
+    "app/app/projects/[projectId]/pipeline/calculation/runs/recordSensitivityScenario.action.ts": "contextualized"
   }
 }

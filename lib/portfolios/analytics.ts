@@ -23,7 +23,13 @@ export type ProjectRunSummary = {
     // never recomputed as net/investment on this surface.
     sroiRatio: number | null
   } | null
-  readinessScore: number | null
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): renamed from readinessScore.
+  // Sourced from sroi_run_reviews.readiness_score, which is
+  // LEGACY_NON_AUTHORITATIVE from B5 forward (FIBDB-016 stage B). This
+  // field MAY continue to be read here, but is never labelled, aggregated
+  // or presented as the canonical FIBC-021 readiness — that is
+  // readiness_assessments, a FIBIU-27 (Wave 5) surface switch, frozen for B5.
+  legacyManualReadinessScore: number | null
 }
 
 export type ExcludedProject = {
@@ -40,8 +46,11 @@ export type PortfolioAggregate = {
   portfolioSroiRatio: number | null
   included: { projectId: string; projectName: string; sroiRatio: number }[]
   excluded: ExcludedProject[]
-  averageReadinessScore: number | null
-  readinessCoverage: number
+  // FIBIU-17 (W2-B5): renamed from averageReadinessScore/readinessCoverage —
+  // see ProjectRunSummary.legacyManualReadinessScore.
+  readinessSource: 'LEGACY_NON_AUTHORITATIVE'
+  averageLegacyManualReadinessScore: number | null
+  legacyManualReadinessCoverage: number
 }
 
 export function aggregatePortfolioSroi(projects: ProjectRunSummary[]): PortfolioAggregate {
@@ -72,8 +81,8 @@ export function aggregatePortfolioSroi(projects: ProjectRunSummary[]): Portfolio
     totalInvestment = totalInvestment.plus(p.run.totalInvestment)
     totalNet = totalNet.plus(p.run.netSocialValue)
     included.push({ projectId: p.projectId, projectName: p.projectName, sroiRatio: p.run.sroiRatio })
-    if (p.readinessScore !== null) {
-      readinessSum += p.readinessScore
+    if (p.legacyManualReadinessScore !== null) {
+      readinessSum += p.legacyManualReadinessScore
       readinessCoverage += 1
     }
   }
@@ -92,8 +101,9 @@ export function aggregatePortfolioSroi(projects: ProjectRunSummary[]): Portfolio
     portfolioSroiRatio,
     included,
     excluded,
-    averageReadinessScore: readinessCoverage > 0 ? readinessSum / readinessCoverage : null,
-    readinessCoverage,
+    readinessSource: 'LEGACY_NON_AUTHORITATIVE',
+    averageLegacyManualReadinessScore: readinessCoverage > 0 ? readinessSum / readinessCoverage : null,
+    legacyManualReadinessCoverage: readinessCoverage,
   }
 }
 
@@ -222,7 +232,7 @@ export async function getPortfolioAnalytics(portfolioId: string) {
       projectId: p.id,
       projectName: p.name,
       run: run ? toProjectRunSummaryRun(run) : null,
-      readinessScore: run ? readinessByRunId.get(run.id) ?? null : null,
+      legacyManualReadinessScore: run ? readinessByRunId.get(run.id) ?? null : null,
     }
   })
 
