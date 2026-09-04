@@ -1,0 +1,415 @@
+{
+  "package_id": "PORTFOLIO_COMMERCIAL_V1",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
+  "authority_class": "PRODUCT_AUTHORITY",
+  "materialization_step": "AUTHORITY_ONLY — no implementation, no migration, no DB write, no ODS identifier",
+  "GRANT_ID": null,
+  "hpo_mission_id": "PORTFOLIO-COMMERCIAL-V1-FINAL-AUTHORITY-HPO-AND-CONDITIONAL-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_id": "PORTFOLIO-COMMERCIAL-V1-GAP-TO-CLOSURE-ZERO-DISCOVERY-R1",
+  "materialization_date": "2026-09-04",
+  "supersedes": null,
+  "refines": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md — FIBC-038 and FIBIU-27, by freezing a bounded sequence successor for their non-readiness portion and by adding the product-composition surface FIB does not govern. Refines only; edits nothing.",
+  "governed_by": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md (FIBC-038, FIBC-041, FIBC-042, section 7 PORTFOLIO, section 10, FIBIU-27), docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_ods_addendum": null,
+  "test_manifest": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json",
+
+  "purpose": "Close every open product decision required for Portfolio to be complete against its committed Commercial V1 journeys, and freeze the exact future implementation surface. It authorizes no implementation in this mission and writes exactly two files. It resolves four questions FIB does not answer at all (portfolio composition, per-project comparison, deterministic evidence health, deterministic transversal intelligence), one question FIB answers but sequences later (the non-readiness portion of FIBIU-27), and one architectural direction that belongs to a future wave (the Stella operation-ticket subject successor).",
+
+  "scope_note": "APPEND-ONLY PRODUCT AUTHORITY. Does not rewrite, supersede, reinterpret or restate any FIB, PC-01B or IM-01B artifact; all remain byte-unchanged. Adds no entry to PROTECTED_GRANTS and no pattern to DEFAULT_PROTECTED_PATTERNS. Allocates no migration number, no ODS lineage identifier and no prepared-package ordinal. Creates no database object: FIBC-038 declares NO_DB_OBJECT for the Portfolio aggregate and this authority preserves that. Authorizes no change to the operation-ticket protocol, whose successor direction it freezes as direction only.",
+
+  "anchors": {
+    "base_integration_sha": "d082f6458e528e021e01a52b67fb9fb60ac29f95",
+    "base_integration_ref": "origin/integration/commercial-v1",
+    "branch": "codex/portfolio-v1-authority-r1",
+    "discovery_packet": "PORTFOLIO-COMMERCIAL-V1-GAP-TO-CLOSURE-ZERO-DISCOVERY-R1 (read-only, same base)",
+    "measured_completeness_at_base": "approximately 35 percent against the committed Commercial V1 journey set",
+    "concurrent_open_lane": "PR #62 (codex/w2-b4-r1, DRAFT) — Wave 2 batch B4, FIBIU-15/14/16. Consumed migrations 0062/0063 and journal wrappers 075/076. This authority creates no migration and therefore cannot collide; the shared-writer disposition is frozen under cross_lane_disposition."
+  },
+
+  "accepted_discovery": {
+    "P0_1": "The authoritative aggregate is computed over runs with status='calculated' (lib/portfolios/analytics.ts:160-171) and the review query does not select status at all (lib/portfolios/analytics.ts:181-196), so runs that were never methodologically approved enter a figure presented as defensible. This is the defect FIBC-038 names in its own text.",
+    "P0_2": "There is no way to add, remove or move a project after creation. No update statement anywhere writes projects.portfolio_id; the only assignment path is the select on app/app/projects/new/page.tsx. The portfolio detail empty state states the limitation in product copy.",
+    "P0_3": "There is no per-project comparison. aggregatePortfolioSroi computes included[].sroiRatio and no surface renders it.",
+    "formula_is_correct": "Sigma net social value / Sigma investment, computed with decimal.js, is the correct and frozen formula. Only the population is wrong.",
+    "no_db_object_required": "Confirmed. FIBC-038 DB_CHANGES is NO_DB_OBJECT, reasoned: a predicate and source change, not a schema change.",
+    "navigation_already_restored": "FIB section 7 and section 10 describe Portfolio as built but unreachable. That is no longer true at this base: RE-U5 added the primary navigation entry (components/layout/nav-links.ts:28), consumed by components/layout/Sidebar.tsx:32 and asserted by components/layout/__tests__/navigation-reachability.test.tsx. FIBIU-27's navigation clause is DISCHARGED. Recorded as a measured delta against a certified description, not as a change to it."
+  },
+
+  "fibiu27_sequence_disposition": {
+    "question": "May Commercial V1 bring forward the non-readiness portion of FIBIU-27 before Wave 5, whose stated precondition is Wave 4 complete?",
+    "decision": "YES for the population and traceability portion only, under the explicit bounded sequence successor frozen here. NO for the readiness portion, unconditionally.",
+    "partition": {
+      "A_approved_run_population": {
+        "owner": "FIBIU-27 (FIBC-038)",
+        "disposition": "BROUGHT_FORWARD under this sequence successor",
+        "why_it_does_not_need_its_stated_hard_dependencies": "FIBIU-27's HARD_DEPENDENCIES are FIBIU-19, FIBIU-20 and FIBIU-17. Measured, each is needed for a different portion. FIBIU-17 is needed only for the readiness swap (portion D). FIBIU-19 and FIBIU-20 harden WHAT approval requires — the twenty-four-reason eligibility composition and the high-finding disposition gate — but they do not change HOW an approval is recorded. The population predicate reads sroi_run_reviews.status='approved', a column that exists at this base and is already load-bearing for a stricter gate: lib/pipeline/sroi-results.ts:864-876 refuses to lock a report unless that exact row exists. Selecting the most recent run carrying an approved review is therefore correct today and STRICTLY IMPROVES as Wave 3 hardens approval, because the same predicate then admits a smaller, better-governed set. Nothing about the selection has to change when Wave 3 lands.",
+        "why_wave_4_is_not_a_barrier": "FIBC-038 states it directly: 'A locked report is not required for a run to participate — methodological approval of the run is the applicable requirement, decoupling Portfolio eligibility from the reporting pipeline entirely.' Wave 4 is Reports/Trust. The authority that places FIBIU-27 in Wave 5 is the same authority that decouples its population predicate from the reporting pipeline.",
+        "mandatory_companion": "The legacy exclusion (FIBC-042) is NOT optional and ships in the same node. Without it, a run approved under the pre-PC-01B regime would contribute to an authoritative aggregate, which FIBC-042 forbids in terms: a legacy object 'cannot, by itself, satisfy a new gate, produce a new authoritative run, contribute to an authoritative Portfolio aggregate'. Bringing A forward without the legacy exclusion is PROHIBITED."
+      },
+      "B_traceability_run_ids": {
+        "owner": "FIBC-038 ('Traceability records which run of each project fed each component')",
+        "disposition": "BROUGHT_FORWARD with A, in the same node",
+        "rationale": "It is the same read. Selecting the approved run and recording which run was selected are one operation; splitting them would ship an aggregate whose provenance cannot be inspected."
+      },
+      "C_navigation_and_comparison": {
+        "navigation": "DISCHARGED before this authority by RE-U5. Nothing to bring forward.",
+        "comparison": "NOT OWNED BY FIBIU-27 and not owned by any FIB contract. Per-project comparison is independent product composition, authorized here on product authority (PRD section 2, US-004/US-005, RE_U0 and RE_U4 target COMPLETE_FOR_COMMITTED_COMPARISON_AND_TRANSVERSAL_INTELLIGENCE)."
+      },
+      "D_readiness_assessments_consumption": {
+        "owner": "FIBIU-27, hard-dependent on FIBIU-17",
+        "disposition": "NOT BROUGHT FORWARD. BLOCKED until Wave 2 batch B5 (FIBIU-17) is CLOSED and integrated.",
+        "binding_prohibition": "No Portfolio node may read readiness_assessments before FIBIU-17 exists, and no Portfolio node may design against sroi_run_reviews.readiness_score as a future contract. Until B5 closes, the manual score continues to be displayed EXACTLY as it is today, unchanged, with its existing coverage counter — it is neither improved, nor re-labelled, nor extended. The certified FIB dependency is preserved in full."
+      }
+    },
+    "sequence_successor": {
+      "id": "PORTFOLIO_V1_FIBIU27_NON_READINESS_EARLY_EXECUTION",
+      "statement": "The population and traceability portion of FIBIU-27 (portions A and B, together with the FIBC-042 legacy exclusion) may execute before Wave 4 and Wave 5. FIBIU-27 as a unit REMAINS in Wave 5 with its preconditions and hard dependencies unchanged; what executes early is a bounded subset, and FIBIU-27's exit gate is only partially discharged by it.",
+      "residual_fibiu27_scope_remaining_in_wave_5": [
+        "Portion D — readiness_assessments consumption with coverage, replacing the manual score as a Portfolio input.",
+        "Any eligibility semantics that Wave 3 introduces beyond 'the run carries an approved review'.",
+        "The Stella context change (composer and validator read the run's review rather than the last review per project), which belongs with the Stella contract work."
+      ],
+      "what_this_successor_does_not_do": [
+        "It does not move FIBIU-27 out of Wave 5.",
+        "It does not alter Wave 4's or Wave 5's preconditions.",
+        "It does not weaken any FIB dependency; it records that a measured subset is independent of the dependencies FIB attached to the whole.",
+        "It does not authorize any other unit to execute early."
+      ]
+    }
+  },
+
+  "portfolio_cardinality": {
+    "decision": "A — one project belongs to zero or one portfolio for Commercial V1. The current schema (db/schema.ts:162, projects.portfolio_id nullable FK, with index idx_projects_portfolio_id) is SUFFICIENT and is preserved unchanged.",
+    "rationale": {
+      "committed_journeys": "PRD section 2 requires create a portfolio, associate projects, see progress, see aggregate readiness. US-004 and US-005 require creating a portfolio and associating a project to a portfolio. No committed journey requires one project to appear in two portfolios.",
+      "aggregation_semantics": "This is the decisive argument and it is not about implementation cost. Under many-to-many, a project contributes to the aggregate of every portfolio it belongs to, so any organization-level roll-up double-counts it, and the coverage figure FIBC-038 requires ('how many included, how many excluded, and why') stops being a partition of the organization's projects. Under zero-or-one, each project contributes to at most one aggregate and coverage is exact.",
+      "audit_complexity": "A move is one UPDATE with a before and an after value in one audit row. A bridge table introduces its own row lifecycle, its own soft-delete question, and its own tenancy policy, for a capability no committed journey requires.",
+      "ui_expectations": "The existing surfaces already assume it: app/app/projects/[projectId]/page.tsx:101-108 renders a single 'Ver portafolio' link or 'Sin asignar'.",
+      "migration_cost": "Zero. Preserves NO_DB_OBJECT for the whole of Commercial V1."
+    },
+    "post_v1_successor": {
+      "id": "PORTFOLIO_MANY_TO_MANY_MEMBERSHIP",
+      "shape": "A portfolio_projects bridge table (portfolio_id, project_id, organization_id, assigned_by, assigned_at) with a unique constraint on (portfolio_id, project_id), replacing the projects.portfolio_id column as the membership source while that column is marked legacy rather than dropped.",
+      "preconditions_before_it_may_be_considered": [
+        "A committed journey that actually requires a project in two portfolios.",
+        "An adjudicated answer to organization-level roll-up double counting.",
+        "A migration, therefore a protected surface and a protected grant, therefore an ODS addendum — none of which Commercial V1 needs."
+      ],
+      "status": "POST_V1. Frozen as a named successor so a future mission does not re-derive it, and explicitly NOT authorized here."
+    }
+  },
+
+  "portfolio_size_contract": {
+    "decision": "C — no hard product maximum on portfolio membership, AND mandatory server-side pagination of the per-project comparison with mandatory read-model batching. A hard cap was rejected: refusing an organization's two-hundred-and-first project is a product refusal invented to simplify an implementation, which this authority forbids.",
+    "measured_basis": {
+      "current_cost": "getPortfolioAnalytics issues three queries and no N+1: one portfolio row, one projects-by-portfolio scan, one runs scan with inArray(projectIds), plus one reviews scan with inArray(runIds). Cost is linear in member count with a constant number of round trips.",
+      "the_real_risk": "It is not the aggregate. It is the per-project comparison and evidence-health extension: reusing a per-project primitive such as the coverage logic inside lib/pipeline/sroi-results.ts assertEvidenceSufficiencyForApproval once per project would turn three queries into 3 + 4N. The read model exists to prevent exactly that.",
+      "bind_parameter_bound": "drizzle expands inArray(ids) into one bind parameter per id. PostgreSQL's wire protocol caps a statement at 65535 bind parameters. Chunking at 500 ids per statement leaves the parameter budget effectively untouched while keeping the round-trip count at ceil(N/500) per read, which is 1 for every realistic portfolio.",
+      "no_repository_precedent": "Measured: the repository contains no pagination anywhere (every .limit( in lib/ and app/ is limit(1) for a single-row scoped read; there is no offset, no page size, no cursor). These values therefore establish the first precedent and are justified by the mechanism each bounds, not by convention."
+    },
+    "frozen_values": {
+      "PORTFOLIO_COMPARISON_PAGE_SIZE": 25,
+      "page_size_rationale": "One page must be readable as a comparison table without scrolling past the point where comparison stops being possible, and must stay well inside a Server Component payload. Twenty-five rows of scalar columns is both.",
+      "PORTFOLIO_READ_MODEL_CHUNK_SIZE": 500,
+      "chunk_size_rationale": "Bounds bind parameters per statement as measured above.",
+      "PORTFOLIO_SOFT_SIZE_THRESHOLD": 250,
+      "soft_threshold_behaviour": "Above this member count the interface surfaces an informational notice that the comparison is paginated and that the aggregate covers all members. It NEVER refuses a write, never blocks an assignment, and never truncates the aggregate."
+    },
+    "aggregate_coverage_invariant": {
+      "statement": "The authoritative aggregate is ALWAYS computed over every member project of the portfolio, never over the current page.",
+      "mechanism": "The aggregate and the comparison page are two separate reads with two separate predicates. The aggregate read takes no page parameter and cannot receive one: its function signature accepts a portfolio id only. The paginated read returns rows for display and is never an input to aggregatePortfolioSroi.",
+      "proof_obligation": "Non-waivable. A negative control asserts that a portfolio with more members than one page yields an aggregate identical to the same portfolio read without pagination, and a mutation control asserts that feeding the paginated row set into the aggregate is caught.",
+      "coverage_reporting": "projectCount, includedCount and the excluded list continue to describe the WHOLE portfolio, as FIBC-038 requires, on every page."
+    }
+  },
+
+  "permissions": {
+    "canManagePortfolio": {
+      "definition": "canManagePortfolio(role) = hasRole(role, 'impact_manager')",
+      "resolves_to": ["super_admin", "organization_admin", "impact_manager"],
+      "governs": ["create", "rename", "update description", "archive", "assign project", "unassign project", "move project between portfolios"],
+      "location": "lib/auth/permissions.ts, beside the existing discrete permissions. The inline role arrays at lib/portfolios/service.ts:41, app/app/portfolios/page.tsx:22 and app/app/portfolios/new/page.tsx:18 are REMOVED and replaced by this helper. No inline array may survive implementation."
+    },
+    "analyst_adjudication": {
+      "decision": "EXCLUDED from portfolio management. This is a deliberate narrowing of current behaviour.",
+      "current_behaviour": "The inline arrays admit analyst (ROLE_HIERARCHY 40), so an analyst may create a portfolio today.",
+      "why_it_narrows": "canCreateProject requires impact_manager (lib/auth/permissions.ts:62-64). An analyst therefore cannot create a project but can today create the grouping that projects are organized into, and can determine which projects are compared against each other in a figure the organization presents as defensible. Portfolio composition is an organizational decision about how impact is reported, not an analytical task. Aligning the two at impact_manager makes the same role responsible for creating a project and for deciding which portfolio it is compared within.",
+      "direction_of_change": "Privilege reduction, which is the safe direction, but it IS user-visible: an analyst who can create portfolios today will not be able to after implementation. Flagged here so it is an adjudicated product decision rather than a silent regression, and a negative control pins it."
+    },
+    "read_level": {
+      "definition": "Any active member of the organization may read every portfolio surface: viewer and above, matching FIB section 7 PORTFOLIO ('role viewer+').",
+      "reviewer_and_viewer": "Read only. No composition, no create, no archive."
+    },
+    "no_approval_bypass": {
+      "statement": "No Portfolio surface may write to sroi_calculation_runs, sroi_run_reviews, sroi_reports, evidence_items, evidence_versions, evidence_sufficiency_determinations, outcome_monetization_dispositions or any other Measure object.",
+      "enforcement": "Portfolio's entire write surface is the portfolios table and the single column projects.portfolio_id. The prohibition is asserted structurally by a negative control that walks the Portfolio implementation paths and fails on any write to a Measure table, so approval semantics, segregation of duties and the review set stay exactly where FIBC-041 and FIBC-024 put them."
+    },
+    "super_admin": "Unchanged by this authority. Product routes require a tenant scope; /admin remains the unscoped control plane. Under multi-org the tenant-scope requirement is S1's, not Portfolio's."
+  },
+
+  "composition_contract": {
+    "create": {
+      "permission": "canManagePortfolio",
+      "behaviour": "Insert into portfolios with organization_id = the request scope, name required, description optional, status 'active', created_by = the caller.",
+      "audit_verb": "portfolio.created (exists, lib/audit/logger.ts:132)"
+    },
+    "rename_or_update": {
+      "permission": "canManagePortfolio",
+      "behaviour": "Update name and/or description of a portfolio in the caller's organization. Status is NOT updatable through this path.",
+      "audit_verb": "portfolio.updated (NEW)"
+    },
+    "archive": {
+      "permission": "canManagePortfolio",
+      "behaviour": "Set status='archived'. An archived portfolio remains readable, keeps its aggregate, and is READ-ONLY for composition: assign, unassign and move all refuse against it. Archiving does NOT unassign its member projects and does NOT archive them — a project's ownership is organization-level and a portfolio is a grouping construct, never an ownership transfer (RE_U4 ownership_vs_access, PRESERVED).",
+      "audit_verb": "portfolio.archived (NEW)",
+      "unarchive": "Out of scope for V1. Not authorized, and no path may perform it implicitly."
+    },
+    "assign_project": {
+      "permission": "canManagePortfolio",
+      "precondition": "The project and the portfolio both belong to the request-scope organization, verified in the same transaction as the write (the existing precedent is lib/projects/service.ts:74-82). The portfolio is not archived.",
+      "behaviour": "UPDATE projects SET portfolio_id = <portfolio> WHERE id = <project> AND organization_id = <scope> AND portfolio_id IS NULL",
+      "audit_verb": "project.portfolio_assigned (NEW)"
+    },
+    "unassign_project": {
+      "permission": "canManagePortfolio",
+      "behaviour": "UPDATE projects SET portfolio_id = NULL WHERE id = <project> AND organization_id = <scope> AND portfolio_id = <portfolio>. The project remains fully intact; only the grouping is removed.",
+      "audit_verb": "project.portfolio_unassigned (NEW)"
+    },
+    "move_project": {
+      "decision": "ONE ATOMIC UPDATE. Not an unassign followed by an assign.",
+      "rationale": "The pair produces two audit rows for one human decision and opens a window, however short, in which the project belongs to no portfolio and any concurrent aggregate read observes a state no one chose. A single UPDATE carrying beforeJson and afterJson is atomic, is one decision in the audit trail, and has no intermediate state.",
+      "behaviour": "UPDATE projects SET portfolio_id = <target> WHERE id = <project> AND organization_id = <scope> AND portfolio_id = <source>, with both portfolios verified to be in the scope organization and the target not archived. Zero rows updated means the source no longer matched and the operation is refused, not retried.",
+      "audit_verb": "project.portfolio_moved (NEW), carrying both endpoints"
+    },
+    "audit_verb_contract": {
+      "new_verbs": ["portfolio.updated", "portfolio.archived", "project.portfolio_assigned", "project.portfolio_unassigned", "project.portfolio_moved"],
+      "entity_types": "portfolio.* against entityType 'portfolio'; project.portfolio_* against entityType 'project'. Every verb's object prefix equals its entityType, so FIBC-040's contract holds with no exception added to tests/audit-action-contract.test.ts.",
+      "distinct_verbs_rationale": "Distinct verbs rather than one portfolio_changed verb with a payload, matching the repository's existing style (PROJECT_PAUSED, PROJECT_RESUMED and PROJECT_ARCHIVED are distinct rather than a single status_changed), so an operator can answer 'what moved between portfolios' without parsing JSON.",
+      "entrypoint_registration": "Every new server action is registered in tests/database-entrypoint-inventory.json in the same commit that introduces it. This is the exact omission that produced blocker B3-BLK-A and it is non-waivable here."
+    },
+    "same_org_validation": "Non-waivable on every composition path, in the same transaction as the write, and additionally enforced by RLS (projects_update_allowed_roles, portfolios_*). Application and database both refuse; neither is trusted alone."
+  },
+
+  "aggregate_contract": {
+    "population": "For each member project, THE MOST RECENT APPROVED ELIGIBLE RUN: a run with status='calculated' that has a row in sroi_run_reviews with status='approved' for that calculation_run_id and the same organization, ordered by run version DESC then calculated_at DESC.",
+    "formula": "portfolioSroiRatio = SUM(net_social_value) / SUM(total_investment) over the included population, computed with decimal.js. Never a simple or weighted average, sum, median or any other aggregation of individual project ratios. Numerator and denominator are drawn from the SAME universe; an excluded run contributes to neither.",
+    "exclusion_reasons": {
+      "no_run": "EXISTS TODAY — the project has no calculated run.",
+      "no_approved_run": "NEW — the project has a calculated run but none of its runs carries an approved review. The project stays visible.",
+      "non_usd_currency": "EXISTS TODAY — the run is not denominated in USD. Excluded, never converted; Portfolio performs no FX.",
+      "no_sroi_ratio": "EXISTS TODAY — the run's persisted sroi_ratio is NULL, meaning nothing was defensibly monetized. Its investment never enters the denominator (W2-B3, AG-B3-2).",
+      "legacy_non_authoritative": "NEW, mandatory — the run or its project is pre-PC-01B and cannot contribute to an authoritative aggregate (FIBC-042). Derived exclusively from persisted facts: projects.governance_regime='pre_pc01b' or sroi_calculation_runs.methodology_version IS NULL. Never inferred.",
+      "zero_or_invalid_investment": "NEW — a per-run positivity guard (FIBIU-27). A run whose total_investment is null, zero or negative is excluded with this reason rather than contributing a zero to the denominator."
+    },
+    "non_emission": "When no eligible run exists, or the aggregate denominator is zero, absent or methodologically invalid, NO authoritative portfolio SROI is emitted: portfolioSroiRatio is null and the impossibility is represented explicitly in the interface. Never a silent zero and never an omitted figure.",
+    "later_ineligible_runs": "A run more recent than the selected approved run MAY be surfaced as clearly differentiated operational information. It never substitutes for the approved run, never blends into the aggregate, and is never presented in the same figure.",
+    "descriptive_statistics": "Median, range and distribution over individual project ratios are permitted under their own correct names, visually and textually separated from the consolidated ratio, and never labelled as it.",
+    "report_lock": "NOT a prerequisite. Methodological approval of the run is the applicable requirement (FIBC-038). No Portfolio path reads sroi_reports.status as an eligibility input.",
+    "traceability_tuple": {
+      "statement": "Every included component carries its full provenance. No detached aggregate without source identifiers.",
+      "fields": ["projectId", "projectName", "runId", "runVersion", "reviewId", "methodologyVersion", "sroiRatio", "totalInvestment", "netSocialValue"],
+      "surface": "PortfolioAggregate.included[] is widened from its current three fields to this tuple, and each row drills to /app/projects/{projectId}/pipeline/calculation/runs/{runId}.",
+      "mixed_methodology_versions": "Permitted within the approved population and NOT a reason for exclusion, but every component reports its own methodologyVersion and the interface states when more than one is present in the aggregate."
+    },
+    "readiness_until_b5": "UNCHANGED. averageReadinessScore and readinessCoverage continue to read sroi_run_reviews.readiness_score exactly as today, with the existing coverage counter, and are neither improved nor re-labelled. The badge thresholds are also left unchanged until B5, because FIBC-021's bands (0-39, 40-69, 70-84, 85-100) describe the canonical score, not the manual one, and applying them to the manual score would present a legacy value under a canonical vocabulary."
+  },
+
+  "evidence_health": {
+    "principle": "Counts with an explicit denominator and source identifiers. No composite score, no AI-produced score, no manually maintained health value. Every indicator drills to the objects it counted. No evidence body, no content column and no audit log is ever loaded.",
+    "indicators": [
+      {"id": "EH-1", "name": "Evidence by state", "source": "evidence_items.status, vocabulary draft|under_review|approved|rejected|archived (db/schema.ts:321)", "shape": "count per state, per project", "drill": "/app/projects/{id}/pipeline/evidence"},
+      {"id": "EH-2", "name": "Outcomes with approved evidence", "source": "evidence_items.status='approved' joined to the active outcome set of the selected run", "shape": "count of covered outcomes over count of active outcomes", "drill": "outcome"},
+      {"id": "EH-3", "name": "Sufficiency determinations", "source": "evidence_sufficiency_determinations.determination, vocabulary sufficient|insufficient (db/schema.ts:403), read for the SELECTED run via the existing batch primitive getLatestSufficiencyDeterminationsByOutcomeIds(outcomeIds, calculationRunId)", "shape": "count sufficient / insufficient / undetermined over active outcomes", "drill": "outcome"},
+      {"id": "EH-4", "name": "Monetization dispositions", "source": "outcome_monetization_dispositions.disposition monetized|not_monetized with reason (db/schema.ts:880-881)", "shape": "count per disposition, and count per reason for not_monetized", "drill": "outcome"},
+      {"id": "EH-5", "name": "Approved proxy versions", "source": "financial_proxy_versions.review_status for the versions assigned in the selected run", "shape": "count approved over count assigned", "drill": "proxy version"},
+      {"id": "EH-6", "name": "Evidence newer than the selected run", "source": "evidence_items.updated_at compared to the selected run's calculated_at", "shape": "count, per project", "drill": "evidence item", "note": "A fact about timestamps, not a judgement about validity. Labelled as 'evidence updated after this run', never as 'stale' or 'invalid'."}
+    ],
+    "prohibited": [
+      "Any single number summarizing evidence health.",
+      "Any percentage without its denominator visible.",
+      "Loading evidence content or content bodies into a Portfolio read.",
+      "Deriving an indicator from a Stella output."
+    ]
+  },
+
+  "transversal_intelligence": {
+    "deterministic_v1_facts": [
+      {"id": "TI-1", "fact": "Projects with no approved run", "source": "the aggregate's own exclusion set, reason no_approved_run"},
+      {"id": "TI-2", "fact": "Projects with an approved run but no report", "source": "sroi_reports absence for the selected run"},
+      {"id": "TI-3", "fact": "Dispersion of individual project ratios: minimum, median, maximum", "source": "included[].sroiRatio, presented under its own name and never as the consolidated figure"},
+      {"id": "TI-4", "fact": "Frequency of each exclusion reason across the portfolio", "source": "the excluded set"},
+      {"id": "TI-5", "fact": "Outcomes without approved evidence, grouped by project", "source": "EH-2"},
+      {"id": "TI-6", "fact": "Proxy versions used by more than one member project", "source": "outcome_proxy_assignments joined across the portfolio's projects"},
+      {"id": "TI-7", "fact": "not_monetized dispositions aggregated by reason across the portfolio", "source": "EH-4"},
+      {"id": "TI-8", "fact": "Projects whose evidence was updated after the selected run", "source": "EH-6"}
+    ],
+    "later_facts_explicitly_not_required_for_v1": [
+      "Frequency of the twenty-four FIBC-023 eligibility reasons — naturally Wave 3, and not required for Commercial V1.",
+      "Patterns across the ten canonical readiness dimensions — requires FIBIU-17 (B5)."
+    ],
+    "boundary": "Every V1 fact above is computed by the server from persisted rows and is reproducible from them. Stella may later explain these facts; it may never produce them, and it may never produce a project result, an approval state or a readiness value."
+  },
+
+  "stella_protocol_successor_direction": {
+    "measured_blocker": "The governed operation ticket is welded to exactly one project. db/prepared/stella_0015_project_bound_operation_tickets.sql exists precisely because a ticket issued for project A1 could be bound under A2 and charged to A1; every verb takes p_expected_project_id, and lib/stella/operation-ticket/normalize-project-id.ts returns null for an empty subject, which the calling action turns into UNAUTHORIZED. stella_0015 is applied on the hosted chain and is forward-only.",
+    "fan_out_rejected": "Issuing N project-bound tickets for one portfolio question is REJECTED as the V1 architecture: it multiplies quota by member count, produces N audit rows for one human question, and is exactly the sequential per-project call pattern the performance contract forbids.",
+    "direction": "C — a generic subject-bound ticket successor.",
+    "shape": "The weld generalizes from a project to a SUBJECT: subject_type from a closed vocabulary (project | portfolio | organization) plus subject_id, welded at issue and re-verified at bind and at complete, exactly as p_expected_project_id is today. The verbs take p_expected_subject_type and p_expected_subject_id; subject_id must resolve to an object owned by the caller's organization under the membership ceiling and, after multi-org S1/S3, under the selected request scope.",
+    "why_not_the_alternatives": {
+      "A_organization_bound_with_portfolio_in_context": "REJECTED. It removes the weld rather than generalizing it, reintroducing at organization scope precisely the confusion stella_0015 was written to eliminate: work performed against one subject and charged against another. The portfolio id would live in unverified context rather than in the welded identity.",
+      "B_portfolio_bound": "REJECTED. It adds a second parallel weld dimension that answers Portfolio and nothing else. Evaluate is project-scoped, a future organization-level Portfolio question is neither, and each new subject kind would need its own package and its own G2 window.",
+      "D_other": "None identified that preserves the weld while remaining extensible."
+    },
+    "evaluation": {
+      "tenant_security": "Preserved and generalized. The weld property — a ticket is bound to exactly one subject at issue and re-verified at every later verb — is retained verbatim; only the subject's type becomes explicit.",
+      "future_evaluate": "Served without a further package: Evaluate is subject_type='project' today and could become another subject later without a new weld dimension.",
+      "future_org_level_portfolio": "Served by subject_type='organization'.",
+      "auditability": "stella_interactions gains subject_type and subject_id. project_id is RETAINED and is not rewritten; the backfill is derivable, not invented — every existing row is ('project', project_id) — which is a legitimate stage-B marking under FIB section 6.1.",
+      "category_closed_world": "Unchanged and still closed. The subject vocabulary is a NEW closed vocabulary enforced by a CHECK plus the package's own v_governed-style assertion, and it does not touch the six existing interaction categories.",
+      "g2_cost": "One window for one successor package, instead of one per subject kind.",
+      "minimal_migration": "Two nullable columns on stella_interactions with a derivable backfill, plus the successor prepared package. No table is created and no applied unit is edited in place (FIB section 6.3)."
+    },
+    "hpo_boundary": {
+      "not_authorized_here": "This authority freezes DIRECTION ONLY. It authorizes no SQL, no package, no migration, no column, no vocabulary and no G2 window.",
+      "owning_wave": "Wave 4 (FIBIU-21/22 mount Stella on the Portfolio surface), plus a governed G2 window for the successor package.",
+      "required_before_implementation": [
+        "A dedicated HPO authority for the ticket subject successor, with its own test manifest and its own protected grant for db/prepared/**.",
+        "A focused Opus pre-application audit, as every prepared package applied outside the plan's control requires.",
+        "Sequencing behind the FIBDB-053 (stella_0017b) lane so two successors do not contend for the same chain position."
+      ]
+    }
+  },
+
+  "stella_commercial_v1_requirement": {
+    "question": "Commercial V1 requires Portfolio transversal intelligence. Is Stella advisory part of that requirement, or a staged Wave 4 dependency?",
+    "decision": "DETERMINISTIC transversal intelligence is REQUIRED for Commercial V1. STELLA advisory on Portfolio is a STAGED WAVE 4 DEPENDENCY and is NOT required for Portfolio to be commercially complete.",
+    "basis_in_product_authority": {
+      "decisive": "FIB section 7, the certified PORTFOLIO journey, states 'STELLA_ACTIONS: none.' The certified journey for Portfolio contains no Stella action at all. A capability the certified journey does not contain cannot be a condition of that journey's completeness.",
+      "corroborating": [
+        "RE_U3 records Stella as not_mounted_at portfolios/* and attributes the mount to Wave 4 (FIBIU-21/22).",
+        "RE_U4 lists 'later Stella mount points in Reports/Trust/Portfolio/Evaluate (Wave 4, FIBIU-21/22)' among deferred items.",
+        "RE_SAFE_NOW_CLOSURE's gating rule sequences Portfolio aggregation to Wave 5/6 and Stella trust surfaces to Wave 4."
+      ],
+      "not_schedule_convenience": "The decision is taken from the certified journey's own STELLA_ACTIONS field, not from the state of the ticket protocol. The protocol blocker is the reason implementation would be hard; the journey definition is the reason it is not required."
+    },
+    "consequence": "Portfolio may be declared complete for Commercial V1 with deterministic transversal intelligence and no Stella surface, provided the interface makes no claim that an advisory capability exists there. When Wave 4 and the ticket successor land, Stella EXPLAINS these facts, cites projectId and object identifiers per claim, abstains with a structured reason when the facts do not support a conclusion, and never produces a result, an approval state or a readiness value."
+  },
+
+  "multi_org_dependency": {
+    "decision": "Portfolio implementation MAY begin and complete under the current single-organization membership ceiling. Multi-org S1 and S3 are REQUIRED before commercial launch, and are NOT Portfolio's work.",
+    "no_duplicated_work": {
+      "statement": "The Portfolio lane performs no multi-org work whatsoever.",
+      "the_one_coupling": "The three Portfolio pages call runWithOptionalOrganizationAccess and render the literal string 'No autenticado. Por favor inicia sesión.' when it returns null. Under multi-org that is the branch a user with more than one membership and no selection would reach, where the correct behaviour is a redirect to the organization selector.",
+      "ownership": "Those three call sites are S1-OWNED, not Portfolio-owned. The Portfolio lane must NOT change them: doing so would duplicate S1's decision, and would conflict with S1's branch. Recorded here so a Portfolio implementer does not 'fix' it in passing."
+    },
+    "what_s3_changes_for_portfolio": "Nothing in Portfolio's own code. S3 adds the request-scope conjunction to the policies Portfolio reads through (portfolios_select_member_or_admin, projects_select_member_or_admin, sroi_calculation_runs_select, sroi_run_reviews_select). Portfolio's queries are already organization-bound through ctx.organization.id and need no change.",
+    "launch_gate": "Commercial launch requires S1 and S3 CLOSED. Portfolio completion does not."
+  },
+
+  "golden_g5": {
+    "id": "G5_PORTFOLIO_MULTI_PROJECT",
+    "status": "FROZEN as a definition. Its implementation waits for the base commercial Golden journey, which does not exist at this base (only tests/e2e/g04-governed-evidence-journey.e2e.test.ts and the two Stella journeys exist). Portfolio implementation itself does NOT wait for it.",
+    "fixture": "One organization with at least three projects: P1 strong (calculated run, approved review, approved evidence, report present), P2 incomplete (no run, or a run with no approved review), P3 mixed (approved run, partially approved evidence, at least one not_monetized outcome).",
+    "assertions": [
+      "The portfolio view distinguishes the three states with the exact frozen exclusion reasons.",
+      "The aggregate reconciles EXACTLY with the sum over the runs it cites: P1 and P3 included, P2 excluded with reason no_approved_run.",
+      "Every included component drills to its run, and the run it drills to is the one whose review is approved.",
+      "A later calculated-but-unapproved run added to P1 does not change the aggregate.",
+      "Adding a project to the portfolio changes the aggregate; moving it to another portfolio moves its contribution atomically.",
+      "A cross-organization project can never be assigned and never appears.",
+      "An analyst cannot create, rename, archive or compose.",
+      "The aggregate over a portfolio with more members than one page equals the aggregate computed without pagination.",
+      "No Stella surface is claimed on the Portfolio view (V1)."
+    ],
+    "extension_rule": "Extends the base journey at its portfolio stage, retains every prior passing stage, adds at least one negative control, and introduces no test-only bypass, no direct database seed that skips the real mutation path, and no environment flag."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "exhaustive": true,
+    "paths": [
+      "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
+      "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json"
+    ],
+    "no_implementation": "This mission writes no TypeScript, no SQL, no test and no configuration."
+  },
+
+  "authorized_future_implementation_surface": {
+    "note": "Ordinary paths. None is protected; see protected_grant_required.",
+    "PF1_aggregate_and_traceability": [
+      "lib/portfolios/analytics.ts"
+    ],
+    "PF1_tests": [
+      "lib/portfolios/analytics.test.ts",
+      "tests/portfolios.analytics.service.test.ts (new)",
+      "tests/postgres/portfolio-aggregate.pg.test.ts (new)",
+      "tests/postgres/portfolio-aggregate.probes.json (new)"
+    ],
+    "PF2_composition_and_permissions": [
+      "lib/portfolios/service.ts",
+      "lib/projects/service.ts",
+      "lib/auth/permissions.ts",
+      "lib/audit/logger.ts",
+      "app/app/portfolios/page.tsx",
+      "app/app/portfolios/new/page.tsx",
+      "app/app/portfolios/[portfolioId]/page.tsx",
+      "app/app/portfolios/[portfolioId]/actions.ts (new)",
+      "tests/database-entrypoint-inventory.json",
+      "tests/portfolios.service.test.ts",
+      "tests/auth/permissions.test.ts",
+      "tests/postgres/portfolio-composition.pg.test.ts (new)"
+    ],
+    "PF3_comparison_health_and_intelligence": [
+      "lib/portfolios/read-model.ts (new)",
+      "lib/portfolios/evidence-health.ts (new)",
+      "lib/portfolios/intelligence.ts (new)",
+      "app/app/portfolios/[portfolioId]/page.tsx",
+      "components/portfolios/** (new)",
+      "lib/portfolios/read-model.test.ts (new)",
+      "lib/portfolios/evidence-health.test.ts (new)",
+      "lib/portfolios/intelligence.test.ts (new)",
+      "tests/postgres/portfolio-read-model.pg.test.ts (new)"
+    ],
+    "explicitly_not_authorized": [
+      "db/migrations/** — no migration is required or permitted; FIBC-038 is NO_DB_OBJECT.",
+      "db/schema.ts — no schema change.",
+      "db/prepared/** — no prepared package.",
+      "lib/stella/** and app/actions/stella/** — no Stella surface in V1.",
+      "The three Portfolio pages' runWithOptionalOrganizationAccess call sites — S1-owned.",
+      "Any Measure write path."
+    ],
+    "shared_writer_serialization": {
+      "risk": "lib/audit/logger.ts and tests/database-entrypoint-inventory.json are single-writer files that PR #62 (B4) and a future B5 also touch.",
+      "rule": "PF-2 OWNS both files for the Portfolio lane and is the only Portfolio node that may edit them. PF-1 and PF-3 must not. The Portfolio lane rebases onto integration after B4 merges rather than editing them concurrently, and a conflict there is resolved by re-applying Portfolio's five verbs on top of B4's, never by overwriting.",
+      "no_migration_collision": "Portfolio consumes no migration ordinal, no journal wrapper ordinal and no baseline unit ordinal, so it cannot collide with B4's 0062/0063 or with any successor lane."
+    }
+  },
+
+  "protected_grant_required": false,
+  "protected_grant_rationale": "Measured against the classifier, not asserted. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts contains docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and the single file docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. Neither docs/ops/portfolio/** nor any authorized future implementation path matches any of them. IMMUTABLE_BY_CONVENTION in scripts/ods-controller.ts contains only docs/ops/ods/ artifacts. No protected surface is touched by this mission or by the implementation surface it authorizes, so no protected grant and no companion ODS addendum is required. This is a measured absence; if a future Portfolio node acquires a protected path, that node needs its own grant and its own addendum.",
+
+  "ods_required": false,
+  "ods_rationale": "No protected surface, no new PROTECTED_GRANTS entry, no change to DEFAULT_PROTECTED_PATTERNS, and no Controller IMMUTABLE_BY_CONVENTION entry. An ODS addendum would be authority written for no measured obligation. The Controller's own pending 24-to-25 maintenance (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14) is unrelated to this artifact and is neither consumed nor discharged here.",
+
+  "this_mission_controls": {
+    "purity": "Two files written, both under docs/ops/portfolio/. No implementation, no test, no configuration, no migration, no database access.",
+    "gates": ["secrets_scan", "authority JSON well-formedness", "test manifest validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json"],
+    "typecheck_not_applicable": "No TypeScript is written or modified by this mission.",
+    "merge_prohibition": "This branch must NOT merge into integration/commercial-v1 while PR #62 (B4) is open."
+  },
+
+  "risks_and_open_findings": {
+    "R1": "The analyst permission narrowing is user-visible. An analyst who can create portfolios today will not be able to after PF-2. Adjudicated deliberately under permissions.analyst_adjudication and pinned by a negative control.",
+    "R2": "The FIBIU-27 early execution is a bounded sequence successor over a certified unit. The independent authority audit must verify that portion D was not smuggled in and that the FIBC-042 legacy exclusion shipped with portion A.",
+    "R3": "The page size, chunk size and soft threshold establish the repository's first pagination precedent. Each is justified by the mechanism it bounds, but none is validated against production data, which does not exist at this base.",
+    "R4": "The Stella subject successor direction is frozen without a package. A future Wave 4 mission must not treat this direction as authorization to write SQL.",
+    "R5": "Golden G5 cannot be implemented until a base commercial Golden journey exists. That gap is outside this authority and is not closed by it.",
+    "R6": "This authority is written while B4 is open. If B4's merge changes lib/audit/logger.ts or tests/database-entrypoint-inventory.json in a way that conflicts with the five frozen verbs, the resolution is re-application on top of B4, never overwriting."
+  },
+
+  "final_state": "PORTFOLIO_COMMERCIAL_V1_AUTHORITY_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "PORTFOLIO_IMPLEMENTATION_STATUS": "NOT_STARTED — no implementation is authorized by this mission",
+  "READY_FOR_MERGE": "NO — independent Opus authority audit required, and B4 (PR #62) must stabilize first",
+  "MAIN_UNCHANGED": true,
+  "next_gate": "Independent Opus authority audit of this artifact and its test manifest, after PR #62 (B4) is integrated."
+}

@@ -1,0 +1,288 @@
+{
+  "manifest_id": "PORTFOLIO-COMMERCIAL-V1",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
+  "dependencies": [],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "setup_manifest": "tests/postgres/portfolio-v1.setup.json",
+    "probe_manifest": "tests/postgres/portfolio-v1.probes.json",
+    "rationale": "The aggregate population predicate, the composition writes and the tenancy negatives are all row-level facts that a mocked database cannot prove. The approved-run selection depends on a real join between sroi_calculation_runs and sroi_run_reviews under RLS, and the cross-organization refusals depend on the policies themselves rather than on application code. Run exclusively through pnpm db:audit:disposable against a throwaway container; never staging, never production, never the canonical local stack."
+  },
+  "sentinels": [
+    {
+      "id": "SENT-PF-CROSS-ORG-PROJECT",
+      "purpose": "A project in a second organization, named with a recognizable synthetic marker, seeded so that every cross-tenant negative can assert on its ABSENCE by name. If the marker string ever appears in a portfolio read, an aggregate component, an evidence-health count or an intelligence fact, the tenancy boundary leaked."
+    },
+    {
+      "id": "SENT-PF-UNAPPROVED-RUN",
+      "purpose": "A calculated run with no approved review, carrying distinctive investment and net-value magnitudes, so that its contribution to any total is detectable arithmetically rather than only by inspection."
+    },
+    {
+      "id": "SENT-PF-LEGACY-RUN",
+      "purpose": "A pre-PC-01B run (methodology_version NULL) with distinctive magnitudes, proving the FIBC-042 legacy exclusion by arithmetic absence from both numerator and denominator."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "POS-AGG-1",
+      "description": "The aggregate selects, per member project, the most recent run whose review row has status='approved' — ordered by run version DESC then calculated_at DESC — and no other run.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-AGG-2",
+      "description": "portfolioSroiRatio equals SUM(net_social_value) / SUM(total_investment) over exactly the included population, computed with decimal.js, and equals neither the mean nor the median nor any weighted average of the individual project ratios (proved with a fixture where those four values are pairwise distinct).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-AGG-3",
+      "description": "Every included component carries the full traceability tuple projectId, projectName, runId, runVersion, reviewId, methodologyVersion, sroiRatio, totalInvestment, netSocialValue, and the runId it carries is the run whose reviewId is approved.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-AGG-4",
+      "description": "A portfolio mixing methodology versions across its approved runs still emits an aggregate, each component reports its own methodologyVersion, and the mixed state is reported rather than hidden.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-AGG-5",
+      "description": "Descriptive statistics over individual ratios (minimum, median, maximum) are computed and returned under their own names, distinct from portfolioSroiRatio.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-AGG-6",
+      "description": "A run whose project has a locked report and a run whose project has no report at all participate identically: report state is not an eligibility input (FIBC-038).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-SIZE-1",
+      "description": "For a portfolio with more members than one comparison page, the aggregate computed through the paginated surface is byte-identical to the aggregate computed with no pagination, and projectCount, includedCount and the excluded list describe the whole portfolio on every page.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-SIZE-2",
+      "description": "The read model issues a bounded number of statements independent of member count: chunked at PORTFOLIO_READ_MODEL_CHUNK_SIZE, the statement count is ceil(N/chunk) per read and never N.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-COMP-1",
+      "description": "canManagePortfolio resolves exactly to super_admin, organization_admin and impact_manager, and every composition path consults the helper rather than an inline array.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-COMP-2",
+      "description": "Create, rename, archive, assign, unassign and move each succeed for an impact_manager within their own organization and each emits its frozen audit verb with the correct entityType.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-COMP-3",
+      "description": "Moving a project from portfolio A to portfolio B is ONE UPDATE producing ONE audit row carrying both endpoints; no intermediate state in which the project belongs to no portfolio is ever observable, and no unassign verb is emitted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-COMP-4",
+      "description": "An archived portfolio remains readable and keeps its aggregate, while its member projects remain active and assigned — archiving groups, never ownership.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-EH-1",
+      "description": "Each of the six evidence-health indicators returns a count with an explicit denominator and the source identifiers needed to drill to the objects counted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-EH-2",
+      "description": "Sufficiency determinations are read for the SELECTED run through the existing batch primitive getLatestSufficiencyDeterminationsByOutcomeIds, so a determination recorded for another run never satisfies this one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-TI-1",
+      "description": "Each of the eight deterministic transversal facts is computed from persisted rows and is reproducible from them, with source identifiers attached.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "POS-PG-1",
+      "description": "Against a real disposable PostgreSQL, an impact_manager in organization A reads the portfolio, its aggregate and its evidence-health counts under uellix_app with the identity context open.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NEG-AGG-1",
+      "description": "A calculated run with NO approved review contributes to neither numerator nor denominator, and its project is excluded with reason no_approved_run while remaining visible. Asserted arithmetically via SENT-PF-UNAPPROVED-RUN.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-AGG-2",
+      "description": "A run more recent than the selected approved run does not replace it and does not alter any aggregate value.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-AGG-3",
+      "description": "A legacy run (projects.governance_regime='pre_pc01b' or sroi_calculation_runs.methodology_version IS NULL) is excluded with reason legacy_non_authoritative. Asserted arithmetically via SENT-PF-LEGACY-RUN.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-AGG-4",
+      "description": "A non-USD run is excluded with reason non_usd_currency and is never converted: no FX rate is read on any Portfolio path.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-AGG-5",
+      "description": "A run with sroi_ratio NULL is excluded with reason no_sroi_ratio and its investment never enters the denominator.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-AGG-6",
+      "description": "A run with total_investment null, zero or negative is excluded with reason zero_or_invalid_investment rather than contributing a zero to the denominator.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-AGG-7",
+      "description": "When every member is excluded, or the summed denominator is zero, portfolioSroiRatio is null and the impossibility is represented explicitly — never 0, never omitted, never a silent absence.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-AGG-8",
+      "description": "No descriptive statistic is ever returned under the name of the consolidated ratio, and the consolidated ratio is never returned as a descriptive statistic.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-READINESS-1",
+      "description": "No Portfolio path reads readiness_assessments before FIBIU-17 exists, and the manual readiness_score display is byte-unchanged from the base — same value, same coverage counter, same badge thresholds. Portion D of FIBIU-27 has not been smuggled in.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-PERM-1",
+      "description": "An analyst can neither create, rename, archive, assign, unassign nor move. This pins the deliberate narrowing recorded in the authority.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-PERM-2",
+      "description": "A viewer and a reviewer can read every Portfolio surface and can perform no composition.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-PERM-3",
+      "description": "No inline role array survives anywhere in the Portfolio implementation paths; every gate consults canManagePortfolio.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-TENANT-1",
+      "description": "A project belonging to organization B cannot be assigned to a portfolio in organization A: the write is refused by the application check and, independently, by RLS. Asserted with SENT-PF-CROSS-ORG-PROJECT.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-TENANT-2",
+      "description": "A portfolio in organization B is not readable from organization A, and its projects never appear in A's aggregate, evidence-health counts or transversal facts. The sentinel marker appears in no output.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-TENANT-3",
+      "description": "Every Portfolio query is organization-bound: no read or write omits the organization predicate.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-COMP-1",
+      "description": "Assign, unassign and move are all refused against an ARCHIVED portfolio.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-COMP-2",
+      "description": "A move whose source portfolio no longer matches updates zero rows and is refused, never retried and never silently converted into an assign.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-BYPASS-1",
+      "description": "No Portfolio path writes to sroi_calculation_runs, sroi_run_reviews, sroi_reports, evidence_items, evidence_versions, evidence_sufficiency_determinations or outcome_monetization_dispositions. Portfolio cannot become an approval bypass into Measure. Asserted structurally over the implementation paths.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-STELLA-1",
+      "description": "No Portfolio path calls a Stella action, builds a Stella context, or issues an operation ticket; and no Portfolio surface claims an advisory capability. V1 has no Stella on Portfolio.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-PERF-1",
+      "description": "No Portfolio read loads an evidence body, an evidence content column or any audit_logs row.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-SCOPE-1",
+      "description": "The Portfolio diff contains no migration, no db/schema.ts change, no db/prepared change and no edit to the three pages' runWithOptionalOrganizationAccess call sites, which are S1-owned.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-PG-1",
+      "description": "Against a real disposable PostgreSQL, a member of organization A with the identity context open reads zero rows of organization B's portfolios and projects.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "MUT-AGG-1",
+      "description": "Replacing the approved-run predicate with the base status='calculated' predicate makes NEG-AGG-1 fail. Proves the P0 correction is actually load-bearing.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-AGG-2",
+      "description": "Replacing SUM/SUM with the mean of the individual ratios makes POS-AGG-2 fail.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-AGG-3",
+      "description": "Removing the legacy exclusion makes NEG-AGG-3 fail.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-AGG-4",
+      "description": "Reintroducing any ratio fallback that recomputes net/investment when the persisted sroi_ratio is NULL makes NEG-AGG-5 fail.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-TRACE-1",
+      "description": "Dropping runId or reviewId from an included component makes POS-AGG-3 fail, so a detached aggregate without source identifiers cannot ship.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-SIZE-1",
+      "description": "Feeding the paginated row set into aggregatePortfolioSroi instead of the full member set makes POS-SIZE-1 fail. This is the control that prevents an aggregate silently covering only the current page.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-PERM-1",
+      "description": "Widening canManagePortfolio to analyst makes NEG-PERM-1 fail.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-COMP-1",
+      "description": "Implementing move as unassign followed by assign makes POS-COMP-3 fail on the audit-row count.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-TENANT-1",
+      "description": "Removing the organization predicate from the project lookup in assign makes NEG-TENANT-1 fail at the application layer while RLS still refuses, proving both layers are independently non-vacuous.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-ENTRYPOINT-1",
+      "description": "Adding a Portfolio server action without registering it in tests/database-entrypoint-inventory.json fails the closed-world entrypoint test. This is the exact omission that produced blocker B3-BLK-A.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "MUT-READINESS-1",
+      "description": "Pointing any Portfolio read at readiness_assessments, or re-labelling the manual score with the canonical FIBC-021 band vocabulary, makes NEG-READINESS-1 fail.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
