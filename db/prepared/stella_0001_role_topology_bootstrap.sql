@@ -8,8 +8,19 @@
 -- input to this package.
 --
 -- This is the SINGLE mutating authority for the governed local roles,
--- memberships, role-local defaults and schema privileges. stella_0004 verifies
--- this topology but does not recreate or mutate it.
+-- memberships and role-local defaults. stella_0004 verifies this topology but
+-- does not recreate or mutate it.
+--
+-- TWO SCHEMA PRIVILEGES ARE NOW ASSERTED HERE, NOT GRANTED (HPO-ODS-W2-11):
+-- CREATE ON SCHEMA public and USAGE ON SCHEMA auth, both TO uellix_owner, are
+-- established by db/prepared/stella_local_0000_local_role_identity_bootstrap.sql,
+-- which now runs BEFORE this package — `pnpm db:migrate:local` needs both
+-- ahead of this file's own place in the prepared chain (its own §3 grants
+-- REFERENCES on application tables the migration corpus creates). This file
+-- fail-closed VERIFIES them rather than re-granting: a fallback grant here
+-- would let it silently become a second possible origin for privilege the
+-- split exists to keep singular. See
+-- docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json stella_0001_successor_contract.
 
 SET search_path = public;
 
@@ -173,12 +184,32 @@ GRANT uellix_writer TO postgres        WITH INHERIT TRUE,  SET FALSE, ADMIN FALS
 -- 3. Schema and role-local default privilege posture
 -- ============================================================
 GRANT USAGE ON SCHEMA public TO uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor;
-GRANT CREATE ON SCHEMA public TO uellix_owner;
+
+-- ASSERTED, not granted (HPO-ODS-W2-11) — see the file header. Re-granting a
+-- privilege the pre-baseline package already established would be a silent
+-- fallback, not a harmless idempotent no-op: it would mean this file can
+-- independently re-establish the privilege even when the governed pre-baseline
+-- step did not run, which is exactly the ambiguity the split exists to remove.
+DO $$
+BEGIN
+  IF NOT has_schema_privilege('uellix_owner', 'public', 'CREATE') THEN
+    RAISE EXCEPTION 'stella_0001 aborted: uellix_owner lacks CREATE on schema public. Expected db/prepared/stella_local_0000_local_role_identity_bootstrap.sql to have already established it; it has not run, or did not succeed.';
+  END IF;
+END $$;
+
 REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC;
 
 -- The owner needs only schema lookup for auth.uid() inside the RLS helpers
 -- whose ownership 0004 reconciles. It receives no auth table privilege.
-GRANT USAGE ON SCHEMA auth TO uellix_owner;
+--
+-- ASSERTED, not granted (HPO-ODS-W2-11) — same rationale as the public-schema
+-- assertion above.
+DO $$
+BEGIN
+  IF NOT has_schema_privilege('uellix_owner', 'auth', 'USAGE') THEN
+    RAISE EXCEPTION 'stella_0001 aborted: uellix_owner lacks USAGE on schema auth. Expected db/prepared/stella_local_0000_local_role_identity_bootstrap.sql to have already established it; it has not run, or did not succeed.';
+  END IF;
+END $$;
 
 -- The decision-audit package (identity=migrator/current_user=owner) creates
 -- FOREIGN KEY constraints against these four pre-existing tables before 0004

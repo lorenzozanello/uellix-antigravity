@@ -181,6 +181,31 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'permission denied for table users, which is the state the F1 retest measured and the one ' +
       'this package was written to leave behind.',
   },
+  {
+    // P1A. db/prepared/stella_local_0000_local_role_identity_bootstrap.sql's
+    // own header (WHY THIS PACKAGE REFUSES A SECOND APPLICATION) already
+    // states the reason; this entry restates it here so the registry itself
+    // — not just the SQL file's prose — carries the decision.
+    id: 'stella_local_0000_local_role_identity_bootstrap',
+    reason:
+      'FORWARD-ONLY BY DESIGN, not by omission. This package is the LOCAL/CI pre-baseline role ' +
+      'IDENTITY bootstrap: it refuses outright if any uellix_* role already exists, BEFORE any ' +
+      'privilege mutation (its own §0 pristine-state precondition, E4). Unlike stella_hosted_0000 ' +
+      'and stella_0001, which are convergent/idempotent by design, this package is deliberately ' +
+      'NOT — the topology authority\'s own second-run contract requires a repeated bootstrap ' +
+      'against a non-pristine database to be a DETERMINISTIC_SAFE_REJECTION, and the ONLY database ' +
+      'this package is ever authorized to run against is a disposable container the gate script ' +
+      'itself just created. A rollback script implies "undo this on the SAME database", which has ' +
+      'no legitimate use case here: the only governed way to remove what this package established ' +
+      'is to destroy the disposable environment and provision a genuinely fresh one, which the gate ' +
+      'itself already does unconditionally on every invocation (P1A second_run_contract).',
+    reversalPath:
+      'There is none by script, and there must not be one. Destroy the disposable container and let ' +
+      'the gate provision a fresh one — the only environment this package is ever authorized to ' +
+      'target. A rollback script here would either be a no-op against a container about to be ' +
+      'destroyed anyway, or an attempt to reverse state on a persistent database this package is ' +
+      'never authorized to touch in the first place.',
+  },
 ]
 
 /** The ids, for a caller that only needs membership. */

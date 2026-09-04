@@ -453,6 +453,14 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // character for character — and grants nothing to anyone.
       'stella_hosted_0008_audit_log_write_capability.sql',
       'stella_hosted_0008_rollback.sql',
+      // P1A. The LOCAL/CI pre-baseline role IDENTITY bootstrap — see its own
+      // file header. FORWARD-ONLY (db/hosted/forward-only-packages.ts): no
+      // rollback ships for it, and the sweep this tripwire drives from
+      // therefore has no matching `stella_local_0000_rollback.sql` to also
+      // list — see the forward-only exemption branch, a few lines below in
+      // this same describe, which is what makes that absence expected
+      // rather than a T-series failure.
+      'stella_local_0000_local_role_identity_bootstrap.sql',
     ])
   })
 
@@ -3049,9 +3057,15 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R8W public sch
     )
   })
 
-  it('T9: §3 still grants CREATE on public to uellix_owner alone, unchanged', () => {
-    expect(code).toMatch(/GRANT CREATE ON SCHEMA public TO uellix_owner/i)
-    expect(code).not.toMatch(/GRANT CREATE ON SCHEMA public TO(?!\s*uellix_owner\b)/i)
+  it('T9: §3 ASSERTS (not grants) CREATE on public for uellix_owner alone — HPO-ODS-W2-11 successor contract', () => {
+    // stella_0001_successor_contract converted this from a grant-producing
+    // statement into a fail-closed ASSERTION that
+    // db/prepared/stella_local_0000_local_role_identity_bootstrap.sql already
+    // established the privilege — a re-grant here would reopen the exact
+    // ambiguity the split exists to remove. The bare GRANT this test
+    // previously expected is now the thing stella_0001 must NOT contain.
+    expect(raw).toMatch(/has_schema_privilege\('uellix_owner',\s*'public',\s*'CREATE'\)/)
+    expect(code).not.toMatch(/^\s*GRANT CREATE ON SCHEMA public TO uellix_owner/im)
   })
 
   it('T10: no 0003, 0004 or hosted package was touched by this remediation (byte-exact)', () => {
@@ -3288,9 +3302,18 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R9A REFERENCES
 
   it('T14: exact byte-pinned hashes for the two repinned packages (frozen at this gate)', () => {
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
+    // HPO-ODS-W2-11 successor contract (stella_0001_successor_contract):
+    // converts the two canonical grants at (then-)§3 into fail-closed
+    // ASSERTIONS that stella_local_0000 already established them — an
+    // authorized, single, enumerated byte change. This pin now tracks the
+    // SUCCESSOR bytes; the PREDECESSOR bytes remain separately, immutably
+    // pinned (never repinned) in db/r3-5-pg17-certification-inputs.ts as the
+    // historical R3.5 PostgreSQL 17 certification input.
     expect(sha256('stella_0001_role_topology_bootstrap.sql')).toBe(
-      '9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3',
+      'e50fe2e404c06ca181c2f517d8dfa9c2bc2f9a35def4856dedb48d6d481fcd35',
     )
+    // The rollback package is untouched by the successor contract — same
+    // pin as before.
     expect(sha256('stella_0001_role_topology_bootstrap_rollback.sql')).toBe(
       '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
     )
@@ -4001,4 +4024,119 @@ describe('db/prepared/stella_0002b_append_only_truncate_hardening.sql — M-4 ex
       expect(block).not.toMatch(/[0-9a-f]{64}/i)
     }
   })
+})
+
+// ---------------------------------------------------------------------------
+// P1A — docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json
+//   P1A-M4 (mutation): converting a stella_0001 fail-closed assertion into a
+//   silent fallback GRANT must FAIL a control. The manifest recorded
+//   test_file=UNKNOWN; this is the implemented witness. The mutation is
+//   IN-MEMORY only — the committed file is never modified.
+//   Membership C static witness (amendment v1.0.1 D6 membership_c_disposition).
+// ---------------------------------------------------------------------------
+
+describe('P1A-M4 — stella_0001 assertions are fail-closed, never a silent re-grant fallback (mutation control, no Docker)', () => {
+  const stella0001Raw = readFileSync(path.join(PREPARED, 'stella_0001_role_topology_bootstrap.sql'), 'utf8')
+  const executable = (sql: string) => sql.split('\n').filter((l) => !l.trimStart().startsWith('--')).join('\n')
+
+  // The control predicate. PASS iff, for BOTH successor-contract privileges:
+  //   (1) a fail-closed assertion exists (has_schema_privilege guarded by
+  //       IF NOT ... RAISE EXCEPTION), and
+  //   (2) NO grant-producing statement for that privilege exists anywhere
+  //       in executable code — not as a plain statement, not as an ELSE
+  //       fallback, not as EXECUTE'd dynamic SQL.
+  function assertsFailClosedNoFallback(sql: string): { ok: boolean; why: string[] } {
+    const code = executable(sql)
+    const why: string[] = []
+    const checks: Array<[string, RegExp, RegExp]> = [
+      [
+        'public CREATE',
+        /IF NOT has_schema_privilege\('uellix_owner',\s*'public',\s*'CREATE'\) THEN\s*RAISE EXCEPTION/,
+        /GRANT\s+(?:USAGE\s*,\s*)?CREATE\s+ON\s+SCHEMA\s+public\s+TO\s+uellix_owner/i,
+      ],
+      [
+        'auth USAGE',
+        /IF NOT has_schema_privilege\('uellix_owner',\s*'auth',\s*'USAGE'\) THEN\s*RAISE EXCEPTION/,
+        /GRANT\s+USAGE\s+ON\s+SCHEMA\s+auth\s+TO\s+uellix_owner/i,
+      ],
+    ]
+    for (const [name, assertion, grant] of checks) {
+      if (!assertion.test(code)) why.push(`${name}: fail-closed assertion missing`)
+      if (grant.test(code)) why.push(`${name}: grant-producing fallback present`)
+    }
+    return { ok: why.length === 0, why }
+  }
+
+  it('POSITIVE: the committed stella_0001 PASSES — both assertions present, zero grant-producing fallbacks', () => {
+    const r = assertsFailClosedNoFallback(stella0001Raw)
+    expect(r.why).toEqual([])
+    expect(r.ok).toBe(true)
+  })
+
+  it('P1A-M4 mutation (a): replacing the public-CREATE assertion with a bare GRANT FAILS the control', () => {
+    const mutated = stella0001Raw.replace(
+      /DO \$\$\s*BEGIN\s*IF NOT has_schema_privilege\('uellix_owner', 'public', 'CREATE'\) THEN[\s\S]*?END \$\$;/,
+      'GRANT CREATE ON SCHEMA public TO uellix_owner;',
+    )
+    expect(mutated).not.toBe(stella0001Raw)
+    const r = assertsFailClosedNoFallback(mutated)
+    expect(r.ok).toBe(false)
+    expect(r.why).toContain('public CREATE: fail-closed assertion missing')
+    expect(r.why).toContain('public CREATE: grant-producing fallback present')
+  })
+
+  it('P1A-M4 mutation (b): keeping the auth-USAGE assertion but adding an ELSE re-grant fallback FAILS the control', () => {
+    const mutated = stella0001Raw.replace(
+      /(IF NOT has_schema_privilege\('uellix_owner', 'auth', 'USAGE'\) THEN\s*RAISE EXCEPTION '(?:[^']|'')*';)\s*END IF;/,
+      "$1\n  ELSE\n    GRANT USAGE ON SCHEMA auth TO uellix_owner;\n  END IF;",
+    )
+    expect(mutated).not.toBe(stella0001Raw)
+    const r = assertsFailClosedNoFallback(mutated)
+    expect(r.ok).toBe(false)
+    expect(r.why).toEqual(['auth USAGE: grant-producing fallback present'])
+  })
+
+  it('P1A-M4 mutation (c): a dynamic EXECUTE re-grant fallback is also caught (the predicate is not fooled by quoting)', () => {
+    const mutated = stella0001Raw.replace(
+      /(IF NOT has_schema_privilege\('uellix_owner', 'public', 'CREATE'\) THEN)\s*RAISE EXCEPTION '(?:[^']|'')*';/,
+      "$1\n    EXECUTE 'GRANT CREATE ON SCHEMA public TO uellix_owner';",
+    )
+    expect(mutated).not.toBe(stella0001Raw)
+    const r = assertsFailClosedNoFallback(mutated)
+    expect(r.ok).toBe(false)
+    expect(r.why).toContain('public CREATE: fail-closed assertion missing')
+    expect(r.why).toContain('public CREATE: grant-producing fallback present')
+  })
+})
+
+describe('P1A membership C — uellix_writer -> postgres is established by stella_0001 ONLY, never by stella_local_0000 (static witness, no Docker)', () => {
+  const executable = (sql: string) => sql.split('\n').filter((l) => !l.trimStart().startsWith('--')).join('\n')
+  const local0000 = executable(readFileSync(path.join(PREPARED, 'stella_local_0000_local_role_identity_bootstrap.sql'), 'utf8'))
+  const stella0001 = executable(readFileSync(path.join(PREPARED, 'stella_0001_role_topology_bootstrap.sql'), 'utf8'))
+  const MEMBERSHIP_C = /GRANT\s+uellix_writer\s+TO\s+postgres\b/g
+
+  it('stella_local_0000 issues NO uellix_writer -> postgres membership in executable code (membership C is NOT a local-package supabase_admin write; N7 stays 3)', () => {
+    expect(local0000.match(MEMBERSHIP_C) ?? []).toHaveLength(0)
+  })
+
+  it('stella_0001 is the sole establisher: exactly ONE GRANT uellix_writer TO postgres, guarded by its own conditional REVOKE', () => {
+    expect(stella0001.match(MEMBERSHIP_C) ?? []).toHaveLength(1)
+    expect(stella0001).toMatch(/EXECUTE 'REVOKE uellix_writer FROM postgres'/)
+    expect(stella0001).toMatch(/GRANT uellix_writer TO postgres\s+WITH INHERIT TRUE,\s+SET FALSE,\s+ADMIN FALSE;/)
+  })
+
+  it('the local package establishes exactly the two migration-window memberships (A, B) and no other', () => {
+    const memberships = local0000.match(/^GRANT\s+uellix_\w+\s+TO\s+uellix_\w+\b/gm) ?? []
+    expect(memberships).toHaveLength(2)
+    expect(local0000).toMatch(/^GRANT uellix_owner\s+TO uellix_migrator/m)
+    expect(local0000).toMatch(/^GRANT uellix_writer TO uellix_app/m)
+  })
+
+  // RESIDUAL, recorded honestly: runtime CREATION of membership C by
+  // stella_0001 is not exercised by the canonical bootstrap gate
+  // (PHASE_LOCAL_PREPARED_CHAIN is out of its minimum invariant by explicit,
+  // recorded choice — see scripts/p1a-bootstrap-gate.ts header). The
+  // real-Docker witness in tests/p1a-bootstrap-gate.test.ts proves the
+  // catalog holds NO such row after stella_local_0000; creation by
+  // stella_0001 remains a source-level fact here.
 })
