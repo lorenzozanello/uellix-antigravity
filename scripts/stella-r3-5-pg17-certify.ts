@@ -1241,9 +1241,15 @@ export type R3_5CertificationClassification =
   | { readonly status: 'SUPERSEDED'; readonly divergedFiles: readonly R3_5Pg17CertificationSourceFile[] }
   | { readonly status: 'MISMATCH'; readonly divergedFiles: readonly R3_5Pg17CertificationSourceFile[] }
 
-/** Pure, read-only. No Docker, no filesystem write, no historical-input mutation. */
-export function classifyR3_5CertificationAgainstCurrentHead(): R3_5CertificationClassification {
-  const observed = collectR3_5Pg17CertificationSourceHashes()
+/**
+ * Pure three-way classifier over an OBSERVED hash set. Exported separately
+ * from the current-HEAD wrapper so every branch — CURRENT, SUPERSEDED,
+ * MISMATCH — can be exercised by a test without touching a prepared file
+ * or the byte-immutable historical inputs.
+ */
+export function classifyR3_5CertificationHashes(
+  observed: Readonly<Record<R3_5Pg17CertificationSourceFile, string>>,
+): R3_5CertificationClassification {
   const diverged = (Object.keys(R3_5_PG17_CERTIFICATION_PACKAGE_HASHES) as R3_5Pg17CertificationSourceFile[]).filter(
     (file) => observed[file] !== R3_5_PG17_CERTIFICATION_PACKAGE_HASHES[file],
   )
@@ -1259,6 +1265,11 @@ export function classifyR3_5CertificationAgainstCurrentHead(): R3_5Certification
       R3_5_KNOWN_SUCCESSOR_HASHES['stella_0001_role_topology_bootstrap.sql']
 
   return { status: isExactlyTheAuthorizedDivergence ? 'SUPERSEDED' : 'MISMATCH', divergedFiles: diverged }
+}
+
+/** Pure, read-only. No Docker, no filesystem write, no historical-input mutation. */
+export function classifyR3_5CertificationAgainstCurrentHead(): R3_5CertificationClassification {
+  return classifyR3_5CertificationHashes(collectR3_5Pg17CertificationSourceHashes())
 }
 
 export class R3_5CertificationSupersededError extends Error {

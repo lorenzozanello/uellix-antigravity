@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { basename, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { config as loadEnvFile } from 'dotenv'
 import type postgres from 'postgres'
 import { createDatabaseClient, type DatabaseClient } from '../db/client'
@@ -218,7 +219,21 @@ async function main(): Promise<void> {
   }
 }
 
-void main().catch((error: unknown) => {
-  console.error('[r3.4] failed:', error instanceof Error ? error.message : 'unknown error')
-  process.exitCode = 1
-})
+// Direct-execution guard — the same repository-native idiom
+// scripts/stella-r3-5-pg17-certify.ts already uses. Importing this module
+// (e.g. to unit-test runR3_4PreMutationPreflight) must NOT run main(): an
+// import used to parse the IMPORTING process's argv, fail the closed mode
+// check, and set process.exitCode = 1 as a side effect. CLI behaviour is
+// unchanged: `tsx scripts/stella-r3-4-local-runner.ts plan|apply` still
+// enters main() exactly as before.
+function isDirectExecution(): boolean {
+  const entry = process.argv[1]
+  return typeof entry === 'string' && pathToFileURL(resolve(entry)).href === import.meta.url
+}
+
+if (isDirectExecution()) {
+  void main().catch((error: unknown) => {
+    console.error('[r3.4] failed:', error instanceof Error ? error.message : 'unknown error')
+    process.exitCode = 1
+  })
+}

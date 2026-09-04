@@ -199,6 +199,61 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
     expect(error.message).not.toMatch(/parity/i)
   })
 
+  // Three-way classifier, every branch exercised against an OBSERVED hash
+  // set the test controls — no prepared file and no historical input is
+  // touched. The pure function is the same one the current-HEAD wrapper
+  // delegates to.
+  describe('R3.5 three-way classifier — CURRENT / SUPERSEDED / MISMATCH, each branch non-vacuous', () => {
+    const SECOND_FILE = 'stella_0004_role_separation.sql' as const
+
+    it('CURRENT: hashes identical to the historical pin (no divergence) classify CURRENT with zero diverged files', () => {
+      const c = executor.classifyR3_5CertificationHashes(EXPECTED_HASHES)
+      expect(c.status).toBe('CURRENT')
+      expect(c.divergedFiles).toEqual([])
+    })
+
+    it('SUPERSEDED: ONLY the exact authorized stella_0001 successor hash, and nothing else, classifies SUPERSEDED', () => {
+      const c = executor.classifyR3_5CertificationHashes({ ...EXPECTED_HASHES, [R3_5_SUPERSEDED_FILE]: R3_5_KNOWN_SUCCESSOR_HASH })
+      expect(c.status).toBe('SUPERSEDED')
+      expect(c.divergedFiles).toEqual([R3_5_SUPERSEDED_FILE])
+    })
+
+    it('MISMATCH (mutation control): the authorized divergence PLUS a second package drift is NOT SUPERSEDED — it is an ordinary integrity failure', () => {
+      const c = executor.classifyR3_5CertificationHashes({
+        ...EXPECTED_HASHES,
+        [R3_5_SUPERSEDED_FILE]: R3_5_KNOWN_SUCCESSOR_HASH,
+        [SECOND_FILE]: '0'.repeat(64),
+      })
+      expect(c.status).toBe('MISMATCH')
+      expect(c.divergedFiles).toHaveLength(2)
+      expect(c.divergedFiles).toContain(R3_5_SUPERSEDED_FILE)
+      expect(c.divergedFiles).toContain(SECOND_FILE)
+    })
+
+    it('MISMATCH: stella_0001 at an UNRECOGNIZED hash (not the known successor) is NOT SUPERSEDED — no broad catch', () => {
+      const c = executor.classifyR3_5CertificationHashes({ ...EXPECTED_HASHES, [R3_5_SUPERSEDED_FILE]: 'f'.repeat(64) })
+      expect(c.status).toBe('MISMATCH')
+      expect(c.divergedFiles).toEqual([R3_5_SUPERSEDED_FILE])
+    })
+
+    it('MISMATCH: a single non-stella_0001 drift alone is NOT SUPERSEDED', () => {
+      const c = executor.classifyR3_5CertificationHashes({ ...EXPECTED_HASHES, [SECOND_FILE]: '1'.repeat(64) })
+      expect(c.status).toBe('MISMATCH')
+      expect(c.divergedFiles).toEqual([SECOND_FILE])
+    })
+
+    it('harness binding: executeFixedCertification special-cases ONLY SUPERSEDED; CURRENT and MISMATCH both fall through to the unweakened historical assertion', () => {
+      const src = readHarnessSource()
+      const fn = src.slice(src.indexOf('function executeFixedCertification('))
+      const head = fn.slice(0, fn.indexOf('const sources = loadVerifiedR3Sources()'))
+      expect(head).toMatch(/classification\.status === 'SUPERSEDED'/)
+      expect(head).not.toMatch(/status === 'MISMATCH'/)
+      expect(head).not.toMatch(/status === 'CURRENT'/)
+      // The wrapper is a thin delegation — one classifier, no second logic path.
+      expect(src).toMatch(/return classifyR3_5CertificationHashes\(collectR3_5Pg17CertificationSourceHashes\(\)\)/)
+    })
+  })
+
   it('SUPERSEDED classification does not mutate or read db/r3-5-pg17-certification-inputs.ts differently — it stays byte-immutable', () => {
     const beforeHashes = { ...R3_5_PG17_CERTIFICATION_PACKAGE_HASHES }
     executor.classifyR3_5CertificationAgainstCurrentHead()
@@ -350,6 +405,7 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
       'assertPsqlRefusedWithReason',
       'certifiedSubstratePreflightQuery',
       'classifyR3_5CertificationAgainstCurrentHead',
+      'classifyR3_5CertificationHashes',
       'describeR3_5Pg17CertificationPlan',
       'parseR3_5Pg17CertificationArguments',
     ])
@@ -758,6 +814,7 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
       'assertPsqlRefusedWithReason',
       'certifiedSubstratePreflightQuery',
       'classifyR3_5CertificationAgainstCurrentHead',
+      'classifyR3_5CertificationHashes',
       'describeR3_5Pg17CertificationPlan',
       'parseR3_5Pg17CertificationArguments',
     ])
