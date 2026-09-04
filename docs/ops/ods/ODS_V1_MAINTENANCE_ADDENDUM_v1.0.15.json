@@ -1,0 +1,251 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.15",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15",
+  "authority_class": "APPEND_ONLY_FUTURE_IMPLEMENTATION_SURFACE_AUTHORIZATION",
+  "materialization_step": "HPO-ODS-W2-16",
+  "GRANT_ID": "HPO-ODS-W2-16",
+  "hpo_mission_id": "W2-B4-RC3-BINDING-RULING-AND-AUTHORITY-MATERIALIZATION-R2",
+  "predecessor_hpo_mission_id": "W2-B4-FAILED-AUDIT-MINIMAL-AUTHORITY-REMEDIATION-HPO-AND-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-04",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_wave2_authority": "docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "node_authority": null,
+  "node_test_manifest": null,
+  "node_authority_note": "DELIBERATELY NULL. The W2-B4 domain contract lives in docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json and its companion amendment v1.0.1, both left byte-unchanged by this addendum in the frozen case and appended-to in the amendment case. The Controller semantics live in docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json, byte-unchanged. This addendum carries its bounded scope inline, mirroring ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json, v1.0.13.json and v1.0.14.json.",
+
+  "purpose": "Serve three bounded functions and no wider. (A) Discharge the ODS product-test discipline for the two closed-world path corrections the W2-B4 failed audit exposed: ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment', and lib/pipeline/sroi-remediation-destinations.test.ts is such an existing product test — this addendum IS that explicit ODS instruction, for exactly two enumerated paths and exactly the mechanically forced adjustments described below. (B) Register ONE new branch-bound protected grant, HPO-ODS-W2-16, for exactly one exact literal path, db/prepared/checkpoint-b0/observation.sql, on branch codex/w2-b4-r1, so the W2-B4 remediation may run the canonical deterministic regenerator over a protected path. (C) Authorize, prospectively and append-only, the FUTURE bounded Controller maintenance required by this addendum's own arrival: exactly two paths, scripts/ods-controller.ts and tests/ods/ods-controller.test.ts, to take IMMUTABLE_BY_CONVENTION from 25 to 26 by enumerating this artifact. It authorizes no W2-B4 implementation in this mission, edits no sealed FIB artifact, edits no historical evidence, and refreshes no derived artifact here.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.14, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, KNOWN_TEST_CONDITIONS_v1.0.0.json, docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json, docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through HPO-ODS-W2-15 are FROZEN_UNCHANGED. HPO-ODS-W2-12 is NOT widened, NOT retrospectively amended and NOT reused. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is UNCHANGED. The frozen A/B/C/D executor taxonomy is UNCHANGED and UNEXTENDED. This mission writes authority and governance surface only, and no implementation code whatsoever.",
+
+  "binding_coordinator_ruling_ingested": {
+    "note": "Recorded verbatim in substance as the programme authority this addendum implements. The ruling resolved the RC-3 indeterminacy the predecessor mission stopped on. It is recorded here so a later reader can see WHY the rehearsal disposition changed without reading a conversation.",
+    "R1": "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02 remain valid HISTORICAL records, but are NOT applicable waivers to a current failure whose cause_fingerprint does not match. Their historical bytes are not rewritten.",
+    "R2": "The Wave-1 closure/deferral remains historically true and immutable. It records the state that existed at Wave-1 closure. It is NOT a permanent prohibition on prospectively refreshing a mutable current-state derived rehearsal artifact.",
+    "R3": "Wave 2 B4 MAY prospectively regenerate artifacts/baseline-rehearsal/latest.json under explicit authority so it represents the current 76-unit corpus. This does NOT retroactively modify or reopen Wave 1.",
+    "R4": "Target CI after B4 remediation is GREEN. No KTC-W2-B4-* condition may be invented to carry a red CI where deterministic regeneration can close the drift.",
+    "R5": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json and the historical KTC-01/02 records are NOT edited.",
+    "R6": "A KTC successor/closure artifact is created ONLY if repository doctrine mechanically requires one despite green CI. Default: NO new KTC artifact; the disposition is recorded in the W2-B4 authority amendment instead."
+  },
+
+  "primary_byte_recheck": {
+    "method": "Every clause below was re-read directly from the integration commit named in anchors.INTEGRATION_SHA, not carried over from a prior packet or from conversation.",
+    "ods_root_prohibited_surfaces_measured": "ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces.surfaces = ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','lib/**','app/**','components/**','existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment','historical evidence rewriting']. artifacts/** is ABSENT from this list, and so is any rehearsal-specific surface. No ODS-root clause prohibits prospectively regenerating artifacts/baseline-rehearsal/latest.json.",
+    "historical_evidence_rewriting_distinction": "'historical evidence rewriting' IS an ODS-root prohibited surface, so the classification of each artifact is load-bearing rather than cosmetic. The three artifacts this remediation regenerates are CURRENT-STATE GENERATED evidence, each produced by a canonical in-repository generator and each declaring itself derived. The HISTORICAL artifacts they are derived from — db/prepared/checkpoint-a1/corroboration.sql, artifacts/hosted-a1-corroboration.json, the Wave-1 closure record and the KTC-01/02 records — are NOT touched. See derived_artifact_classification.",
+    "wave1_closure_read_directly": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json#hosted_baseline_deferral reads: condition PRE_EXISTING_DEFERRED, failure_count 2, introduced_by_wave_1_remediation false, and a note recording that the rehearsal artefact reported manifestApplied=50 against a 50-unit-era manifest digest, 'so rehearsalFresh and rehearsalAppliedAll were already false at the authority commit', closing with 'Rehearsal deferment is unchanged by this closure.'",
+    "why_that_is_not_a_standing_prohibition": "MEASURED, not reinterpreted. Every verb in that clause is in the past or the present-at-closure tense and every number describes the 50-unit era. It records a STATE and declines to change it; it does not grant, withhold or reserve any future permission, and it names no future actor. Reading 'Rehearsal deferment is unchanged by this closure' as a permanent bar on ever re-running the rehearsal would convert a factual closure record into a standing prohibition it never expresses — precisely the reinterpretation this mission was instructed not to perform. The clause is left byte-unchanged and remains historically true.",
+    "repository_native_support_for_R3": "The gate's own source states the opposite of a freeze. tests/eval/stella-release/hosted-baseline-gate.ts, in the comment block immediately above the rehearsal read, explains that the gate 'reads what a completed run recorded, and checks the run was about THIS manifest — a result from before a manifest edit is not evidence about the manifest after it.' The artifact is therefore DESIGNED to be re-run whenever the manifest changes. Leaving it pinned to a superseded manifest is the defect the gate exists to detect, not a state the gate wants preserved.",
+    "conflict_search_result": "NO_CONFLICT. No clause in ODS_V1_AUTHORITY_v1.0.0.json, the sealed FIB baseline, the Wave-1 closure, KNOWN_TEST_CONDITIONS_v1.0.0.json or W2_B4_AUTHORITY_v1.0.0.json prohibits the prospective regeneration authorized here, and none of them is edited by this addendum.",
+    "w2_b4_authority_excluded_artifact_clause": "W2_B4_AUTHORITY_v1.0.0.json authorized_future_implementation_surface.unprotected.hosted_baseline_pin_remeasurement.artifacts_path_deliberately_excluded declines to authorize artifacts/baseline-rehearsal/latest.json for the ORIGINAL B4 mission, reasoning that it is 'stale by design at manifestApplied=50'. That premise is MEASURED FALSE at the integration commit: the live artifact records manifestApplied=74, manifestFailedAt=null and manifestDigest 7fb0697b908ce41de810f192d9c5089dc62ee3eba40ed9d43cfcac800b30631b. The clause is a SCOPING decision of the W2-B4 node made on a stale measurement, not a higher-level prohibition, and it is extended — never rewritten — by the companion amendment W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json under this addendum's authority."
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-w2-b4-remediation-authority-r1",
+    "branch": "codex/w2-b4-remediation-authority-r1",
+    "INTEGRATION_SHA": "d082f6458e528e021e01a52b67fb9fb60ac29f95",
+    "INTEGRATION_TREE": "83961ffe9a14cacbaf01092a687e66dfdb456da8",
+    "integration_branch": "integration/commercial-v1",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "b4_candidate_pr": 62,
+    "b4_candidate_head": "5035e7e1810543c7ca373c859237ae7301e4eb51",
+    "b4_candidate_tree": "fe2db9f9ceb72b2c6563b95f9b4ad2cf1db1ca2f",
+    "b4_candidate_state": "OPEN, isDraft=true, mergedAt=null — verified UNMERGED before any file was written",
+    "controller_live_immutable_count_at_INTEGRATION_SHA": 25,
+    "controller_status": "CLOSED_AUDITED_INTEGRATED at merge commit d082f6458e528e021e01a52b67fb9fb60ac29f95"
+  },
+
+  "grant_id_semantics": {
+    "GRANT_ID": "HPO-ODS-W2-16",
+    "identifier_uniqueness": "Derived mechanically at materialization time, never assumed. Verified this session at INTEGRATION_SHA d082f6458e528e021e01a52b67fb9fb60ac29f95: across ALL local heads and ALL 42 remote heads, (a) no tree contains docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json, (b) no ref contains the string HPO-ODS-W2-16 in any file, and (c) the highest occupied predecessors are ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json and HPO-ODS-W2-15, both held by the Controller v1.0.14 lineage now integrated. The single textual occurrence of the string 'v1.0.15' in the repository is the deliberate ABSENCE control in tests/ods/ods-controller.test.ts, which asserts non-membership and reserves nothing. Had either candidate been occupied, this mission's instruction was STOP_FOR_LINEAGE_COLLISION rather than silently selecting another id.",
+    "no_concurrent_reservation": "No identifier was carried forward from the W2-B5 pre-materialization packet, which deliberately allocated nothing, and none is reserved here for the Portfolio, Report Integrity or Multi-org lanes.",
+    "IS_PROTECTED_SURFACE_GRANT": true,
+    "clarification": "Unlike HPO-ODS-W2-10, W2-13, W2-14 and W2-15, this grant IS an entry in the PROTECTED_GRANTS array of scripts/ods-scope.ts, because the path it authorizes matches DEFAULT_PROTECTED_PATTERNS. The sequence alternates and a reader cannot infer treatment from position, so it is stated affirmatively."
+  },
+
+  "hpo_decision": {
+    "FUNCTION_A_PRODUCT_TEST_DISCIPLINE": {
+      "ODS_INSTRUCTION_GRANTED": "YES",
+      "paths": [
+        "lib/pipeline/sroi-remediation-destinations.test.ts",
+        "tests/w2-b4-governance.test.ts"
+      ],
+      "why_an_ODS_instruction_is_required": "ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment'. lib/pipeline/sroi-remediation-destinations.test.ts is an existing product test that predates W2-B4. tests/w2-b4-governance.test.ts is a NEW test file, but it is enumerated here in the same instruction because W2_B4_AUTHORITY_v1.0.0.json declares its authorized_future_implementation_surface CLOSED-WORLD, and a new test host outside every enumerated pattern is an unauthorized path under that closed world regardless of the ODS product-test clause.",
+      "classification_caution": "Neither path is classified PROTECTED. Requiring an explicit ODS instruction is NOT the same as matching DEFAULT_PROTECTED_PATTERNS. Neither lib/** nor tests/** appears in DEFAULT_PROTECTED_PATTERNS, so both paths need an ordinary --allow and NEITHER needs, nor receives, a protected grant. Only db/prepared/checkpoint-b0/observation.sql is protected in this remediation.",
+      "no_wildcard": "No lib/** or tests/** grant of any kind is created. No other existing product test is authorized. A third such test is a fresh STOP_FOR_AUTHORITY_DELTA."
+    },
+    "FUNCTION_B_PROTECTED_GRANT": {
+      "PROTECTED_GRANT_REQUIRED": "YES",
+      "path": "db/prepared/checkpoint-b0/observation.sql",
+      "why": "db/prepared/** is DEFAULT_PROTECTED_PATTERNS entry 5 in scripts/ods-scope.ts and is unchanged by this addendum, so the path is unconditionally protected absent a resolved grant. HPO-ODS-W2-12, the W2-B4 grant, deliberately reaches db/prepared/journal/** only and does NOT cover this path. That narrowness is correct and is preserved: W2-12 is not widened.",
+      "measured_necessity": "tests/hosted/checkpoint-b0.test.ts fails at the W2-B4 candidate head with two assertions — 'regenerates byte-identically from the corpus' and 'asks one row-count arm per table the corpus creates', the latter naming public.assumption_object_links. scripts/b0-observation-sql.ts states in its own header 'CONNECTS TO NOTHING. It reads the corpus and writes a file' and explains the file 'is generated rather than hand-written because rowCounts needs one arm per table'. W2-B4 added tables to the corpus, so the generated probe is stale by construction and the canonical regenerator is the only correct repair."
+    },
+    "FUNCTION_C_CONTROLLER_MAINTENANCE": {
+      "CONTROLLER_MAINTENANCE_REQUIRED": "YES",
+      "CONTROLLER_MAINTENANCE_AUTHORITY": "GRANTED_BY_THIS_ADDENDUM",
+      "measured_necessity": "scripts/ods-controller.ts at INTEGRATION_SHA defines IMMUTABLE_BY_CONVENTION as an EXACT-membership closed world holding exactly 25 entries, all of them docs/ops/ods/ artifacts, and it does not contain v1.0.15. tests/ods/ods-controller.test.ts asserts length 25 and Set size 25 as HARDCODED constants and performs ZERO filesystem reads, so v1.0.15 entering integration fails no test and CI stays green. The obligation is nevertheless mandatory: until v1.0.15 is enumerated, Controller v0 would NOT classify a write targeting it as PROTECTED_SURFACE_CHANGE, and because v1.0.15 is also absent from DEFAULT_PROTECTED_PATTERNS — which covers exactly ONE docs/ops/ods/ file, ODS_V1_AUTHORITY_v1.0.0.json — the artifact would be accepted for mutation by an ordinary `pnpm ods:scope --allow docs/ops/ods/**` with no guard at either layer.",
+      "why_new_authority_is_required": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json authorized scripts/ods-controller.ts and tests/ods/ods-controller.test.ts for its own successor maintenance mission only, with a frozen 24 -> 25 target. That mission is CLOSED_AUDITED_INTEGRATED at merge commit d082f6458e528e021e01a52b67fb9fb60ac29f95, so its grant is CONSUMED, not standing. ODS_CONTROLLER_AUTHORITY_v1.0.0.json makes the enumeration obligation MANDATORY while granting write scope to no open mission.",
+      "OLD_IMMUTABLE_COUNT": 25,
+      "NEW_IMMUTABLE_COUNT": 26,
+      "SELF_INCLUSION_FROZEN": "YES",
+      "CONTROLLER_AUTHORITY_EDITED": false
+    }
+  },
+
+  "derived_artifact_classification": {
+    "doctrine": "Each artifact this remediation regenerates is classified explicitly, because ODS_V1_AUTHORITY_v1.0.0.json prohibits 'historical evidence rewriting' and the difference between a derived current-state artifact and a historical record is the whole basis of the coordinator ruling.",
+    "artifacts/hosted-a1-status.json": {
+      "class": "CURRENT_STATE_GENERATED",
+      "evidence": "The file's own first field reads 'generatedBy: pnpm a1:status:write — do not hand-edit; this file is derived from the corroboration'.",
+      "historical_source_not_touched": "artifacts/hosted-a1-corroboration.json and db/prepared/checkpoint-a1/corroboration.sql are the historical measurement and are NOT regenerated, NOT edited and NOT authorized here.",
+      "uses_database_or_network": false
+    },
+    "db/prepared/checkpoint-b0/observation.sql": {
+      "class": "CURRENT_STATE_GENERATED",
+      "evidence": "scripts/b0-observation-sql.ts header: 'CONNECTS TO NOTHING. It reads the corpus and writes a file.' Its verify mode reports the file 'DIVERGED from the corpus. A hand-edited probe measures something the manifest does not describe.'",
+      "historical_source_not_touched": "Not applicable — the corpus (db/hosted/baseline-manifest.ts) is the source and is already authorized to W2-B4 under HPO-ODS-W2-12's unprotected surface.",
+      "uses_database_or_network": false
+    },
+    "artifacts/baseline-rehearsal/latest.json": {
+      "class": "CURRENT_STATE_GENERATED",
+      "evidence": "Written by scripts/baseline-rehearsal-local.ts as the record of a rehearsal RUN. tests/eval/stella-release/hosted-baseline-gate.ts reads it and checks 'the run was about THIS manifest', stating that 'a result from before a manifest edit is not evidence about the manifest after it'.",
+      "historical_source_not_touched": "The Wave-1 closure record and the KTC-01/02 records, which describe the 50-unit era, are NOT edited. Regenerating the artifact does not alter what those records say was true at their own time.",
+      "uses_database_or_network": true,
+      "isolation_contract": "scripts/baseline-rehearsal-local.ts starts its OWN fresh disposable container from a pinned image, never borrows a running supabase_db_* container, never opens/reads/writes any pre-existing container, and tears down with a leftover check. NEVER staging. NEVER Production. NEVER the canonical local stack."
+    }
+  },
+
+  "protected_grant_required": true,
+  "protected_grant_rationale": "db/prepared/checkpoint-b0/observation.sql matches DEFAULT_PROTECTED_PATTERNS entry 'db/prepared/**' in scripts/ods-scope.ts, unchanged by this addendum, and is therefore unconditionally protected absent a resolved grant.",
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-16",
+    "branch": "codex/w2-b4-r1",
+    "patterns": [
+      "db/prepared/checkpoint-b0/observation.sql"
+    ],
+    "pattern_count": 1,
+    "narrowness_note": "ONE exact literal path, no glob, no directory pattern. Deliberately NOT db/prepared/** and deliberately NOT db/prepared/checkpoint-b0/** — MEASURED: db/prepared/checkpoint-b0/ contains exactly one file, observation.sql, so a directory pattern would grant strictly more than the single generated companion the classifier can justify while looking identical in effect today. It grants nothing under db/migrations/**, db/baseline/**, db/prepared/journal/**, docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** or docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json.",
+    "no_inseparable_companion": "MEASURED at INTEGRATION_SHA by `git ls-tree -r db/prepared/checkpoint-b0/`, which returns exactly one path. The sibling checkpoint directory db/prepared/checkpoint-a1/ contains only corroboration.sql, which is HISTORICAL and is explicitly NOT granted.",
+    "precedent": "Mechanically identical in shape to HPO-ODS-W2-07, which is exactly the checkpoint-b0 observation-probe canonical-regeneration grant with the same single literal pattern, bound to branch codex/product-commercial-v1-pr-r1. W2-07 is FROZEN_UNCHANGED and is NOT reused, because a grant is bound to exactly one branch and codex/product-commercial-v1-pr-r1 is not the W2-B4 branch.",
+    "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. Both remain mandatory.",
+    "source_of_truth": "This object. The scripts/ods-scope.ts PROTECTED_GRANTS entry must equal it, asserted mechanically in tests/ods/ods-scope.test.ts."
+  },
+  "PROTECTED_GRANTS_CHANGED": true,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 8,
+  "PROTECTED_GRANTS_COUNT_AFTER": 9,
+  "W2_12_NOT_WIDENED": "HPO-ODS-W2-12 keeps its exact two patterns db/migrations/** and db/prepared/journal/** and its exact branch codex/w2-b4-r1. It is neither edited nor extended. The new grant is a SEPARATE ninth registry entry that happens to share a branch, which is permitted: resolveProtectedGrants resolves each --protected-authority id independently and unions the resolved pattern sets.",
+
+  "self_inclusion_rule": {
+    "RULE": "The implementation MUST enumerate EXACTLY ONE canonical path, taking IMMUTABLE_BY_CONVENTION from 25 to 26.",
+    "paths_to_enumerate": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json"
+    ],
+    "why_only_one": "MEASURED: the 25-entry list already contains v1.0.12, v1.0.13 and v1.0.14, so no predecessor gap remains to close. The only uncovered new docs/ops/ods/ artifact is this addendum itself. The companion docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json is NOT enumerated, because the Controller closed world enumerates docs/ops/ods/ artifacts exclusively — all 25 current entries begin with docs/ops/ods/ — and extending it to docs/ops/wave2/** would be a scope change to the Controller's own domain that is NOT authorized here.",
+    "why_self_inclusion_is_required": "This addendum is itself a docs/ops/ods/ artifact. ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention.excluded_by_design.reason states, of the sole recorded exclusion: 'It is NOT a general precedent: no other docs/ops/ods/ artifact may be excluded from immutableByConvention without new authority.' That clause binds THIS artifact identically, and no authority excludes it.",
+    "live_count_precondition": "If the live IMMUTABLE_BY_CONVENTION count at the start of the successor implementation is NOT 25, the implementation MUST STOP and rederive rather than assume this delta.",
+    "prospective_enumeration_note": "This addendum authorizes the future enumeration of its OWN canonical path prospectively. At the moment this artifact is committed the Controller list still holds 25 and this path is not yet enumerated; that transitional interval is bounded, CI-green, has no runtime effect, and ends when the successor implementation lands. It is the same governed transitional shape v1.0.10 through v1.0.14 each occupied, and is accepted for the same reasons: CONTROLLER_DB_EXECUTION is DISABLED and the guard has no production effect."
+  },
+
+  "controller_sequencing_rule": {
+    "FROZEN": "YES",
+    "controller_26_does_not_block_pr62": "The W2-B4 remediation implementation on codex/w2-b4-r1 MAY proceed and MAY merge while IMMUTABLE_BY_CONVENTION still holds 25, under the same bounded temporary-gap precedent that v1.0.10 through v1.0.14 each occupied. The two preconditions are stated as conditions, not assumptions, and both are measured true at INTEGRATION_SHA: CONTROLLER_DB_EXECUTION is DISABLED, and the Controller guard has no production effect.",
+    "controller_26_must_close_before_next_lineage_allocation": "MANDATORY AND BINDING. Controller 25 -> 26 MUST be materialized, audited and integrated BEFORE any further ODS lineage item is allocated — that is, before any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16 or HPO-ODS-W2-17 is derived by any mission in any lane.",
+    "why_that_boundary": "Allocating a second addendum while v1.0.15 is still unenumerated would open a SECOND simultaneous temporary gap. Every precedent gap has been single and immediately closed. Two concurrent gaps would make the live Controller count ambiguous as a precondition — a successor could no longer tell whether a live count of 25 means 'one gap open' or 'two gaps open, one already counted' — which is exactly the ambiguity the live_count_precondition exists to prevent.",
+    "enforcement": "A mission that finds v1.0.15 unenumerated in the live Controller and attempts to allocate v1.0.16 or HPO-ODS-W2-17 MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed."
+  },
+
+  "implementation_contract": {
+    "binding_on": "The successor W2-B4 remediation implementation mission on branch codex/w2-b4-r1, and the successor Controller-maintenance mission this addendum funds, and nothing else.",
+    "scripts/ods-controller.ts": {
+      "change": "Append EXACTLY the one canonical path in self_inclusion_rule.paths_to_enumerate to the IMMUTABLE_BY_CONVENTION array, preserving existing entry order and the `readonly string[] ... as const` shape. Update the count comment so it continues to describe the list truthfully.",
+      "count": "25 -> 26",
+      "line_ceiling": "The 400-line Controller ceiling from ODS_CONTROLLER_AUTHORITY_v1.0.0.json exit_criteria E1 remains in force. The file is 383 lines at INTEGRATION_SHA."
+    },
+    "tests/ods/ods-controller.test.ts": {
+      "change": "Update the describing title and the length and Set-cardinality assertions from 25 to 26, add an explicit toContain assertion for the new path mirroring the existing v1.0.13/v1.0.14 pattern, add the entry-specific decideSelection and case-mutation controls for v1.0.15, and re-point the explicit-absence control from the now-allocated v1.0.15 to the next unallocated addendum version.",
+      "no_line_ceiling": true
+    },
+    "must_preserve_byte_and_semantic_behavior_of": [
+      "normalizeRepoPath",
+      "checkImmutableGuard",
+      "case canonicalization, including canonical-exact match winning over a merely case-insensitive one",
+      "the NONCANONICAL_PROTECTED_PATH stop class and its distinction from PROTECTED_SURFACE_CHANGE",
+      "selection routing, rerun policy and audit routing, including the self-certification prohibition",
+      "the stop-class closed-world set",
+      "IMMUTABLE_BY_CONVENTION_LOWER derivation",
+      "DEFAULT_PROTECTED_PATTERNS",
+      "patternToRegExp, matchesPattern, matchesAnyPattern, matchesPatternCaseInsensitive, classifyPaths, resolveProtectedGrant, resolveProtectedGrants and the CLI argument parser in scripts/ods-scope.ts"
+    ],
+    "scripts_ods_scope_ts_change_scope": "PROTECTED_GRANTS registry entry addition ONLY, performed by THIS authority mission. No other function, constant or parser in the file is touched.",
+    "prohibitions": [
+      "no filesystem discovery of docs/ops/ods/ or any directory",
+      "no globs, no prefix matching, no directory sweep, no subset semantics in the Controller guard",
+      "no automatic inclusion of any future artifact",
+      "no extension of IMMUTABLE_BY_CONVENTION outside docs/ops/ods/",
+      "no weakening, relaxing, skipping or deleting of any existing test or machine gate to obtain a PASS",
+      "no change to DEFAULT_PROTECTED_PATTERNS",
+      "no widening or retrospective amendment of HPO-ODS-W2-12 or any other existing grant",
+      "no edit to docs/ops/fib/**, including FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json",
+      "no edit to the historical KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 or -02 records",
+      "no invention of a KTC-W2-B4-* condition to carry a red CI",
+      "no edit to any P1A authority artifact",
+      "no enabling of CONTROLLER_DB_EXECUTION",
+      "no production promotion and no write to main"
+    ]
+  },
+
+  "test_contract": {
+    "schema_reference": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+    "controls": {
+      "G1": "PROTECTED_GRANTS.length === 9 and the HPO-ODS-W2-16 entry is proven deep-equal to protected_grant in this artifact.",
+      "G2": "GRANT NARROWNESS, direction one: db/prepared/checkpoint-b0/observation.sql is classified a PROTECTED VIOLATION when --protected-authority HPO-ODS-W2-16 is NOT supplied, proving the grant is load-bearing rather than decorative.",
+      "G3": "GRANT NARROWNESS, direction two: an unrelated protected path such as db/prepared/stella_0001_role_topology_bootstrap.sql remains a PROTECTED VIOLATION even WITH HPO-ODS-W2-16 supplied, proving the grant did not silently widen to db/prepared/**.",
+      "G4": "BRANCH BINDING: HPO-ODS-W2-16 resolves to no grant on any branch other than codex/w2-b4-r1, exactly as an unknown id does.",
+      "G5": "HPO-ODS-W2-12 is proven byte-unchanged in the registry — same branch, same two patterns — so this addendum is shown not to have widened it.",
+      "G6": "The eight predecessor grants remain present and their cardinality assertions are advanced, never weakened into a contains-at-least form.",
+      "C_FUTURE": "Deferred to the Controller-maintenance successor: length 26, Set 26, toContain v1.0.15, absence control re-pointed, entry-specific decideSelection PROTECTED_SURFACE_CHANGE and case-mutation NONCANONICAL_PROTECTED_PATH for v1.0.15, and no widening beyond docs/ops/ods/."
+    },
+    "exit_gate": "All six G-controls green, the full existing tests/ods/ods-scope.test.ts and tests/ods/ods-controller.test.ts suites green, and ods:poststate clean against a base of INTEGRATION_SHA with an allowlist covering exactly the four authorized paths of this mission."
+  },
+
+  "authorized_changed_paths_this_mission": [
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json",
+    "docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "scripts/ods-scope.ts",
+    "tests/ods/ods-scope.test.ts"
+  ],
+  "authorized_changed_paths_note": "EXHAUSTIVE for this AUTHORITY mission. No db/**, app/**, lib/** or .github/** path is changed, package.json and pnpm-lock.yaml are unchanged, and NO derived artifact is refreshed here — A1, B0 and the rehearsal belong to the successor implementation mission.",
+
+  "authorized_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR W2-B4 remediation implementation mission on branch codex/w2-b4-r1 ONLY. None of these paths is created or modified by THIS mission. CLOSED-WORLD.",
+    "retention_only_no_content_change_required": [
+      "lib/pipeline/sroi-remediation-destinations.test.ts",
+      "tests/w2-b4-governance.test.ts"
+    ],
+    "regenerate_via_canonical_generator": [
+      "artifacts/hosted-a1-status.json",
+      "db/prepared/checkpoint-b0/observation.sql",
+      "artifacts/baseline-rehearsal/latest.json"
+    ],
+    "evidence_correction": [
+      "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "protected": {
+      "patterns": [
+        "db/prepared/checkpoint-b0/observation.sql"
+      ],
+      "grant": "HPO-ODS-W2-16"
+    },
+    "no_other_path": "No other W2-B4 implementation blob may change. Every previously-green implementation blob MUST remain byte-identical, which is the precondition of the focused re-audit class frozen in the companion amendment."
+  },
+
+  "final_state": "ODS_V1_MAINTENANCE_ADDENDUM_v1_0_15_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "W2_B4_REMEDIATION_IMPLEMENTATION_STATUS": "NOT_STARTED_NOT_AUTHORIZED_UNTIL_THIS_AUTHORITY_MERGES",
+  "CONTROLLER_MAINTENANCE_IMPLEMENTATION_STATUS": "NOT_STARTED",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": "YES — 067e8c2f3ac9b5e843de3a35575182907b4365d4",
+  "READY_FOR_MERGE": "NO — requires a NEW independent focused Opus authority audit in a clean conversation",
+  "next_gate": "W2_B4_REMEDIATION_AUTHORITY_INDEPENDENT_OPUS_AUDIT"
+}

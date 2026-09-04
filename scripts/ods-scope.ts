@@ -499,6 +499,20 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
     branch: 'codex/w2-b4-r1',
     patterns: ['db/migrations/**', 'db/prepared/journal/**'],
   },
+  // HPO-ODS-W2-16 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json): the
+  // W2-B4 remediation grant for the checkpoint-b0 observation probe. ONE exact
+  // literal path, no glob — db/prepared/checkpoint-b0/ holds exactly that one
+  // file, so even a directory pattern would grant strictly more than the
+  // classifier can justify. Same branch as W2-12 and deliberately a SEPARATE
+  // entry: W2-12 is FROZEN at its two patterns and is never widened, and
+  // resolveProtectedGrants unions only the ids a caller actually supplies.
+  // Mechanically identical in shape to HPO-ODS-W2-07, the same probe's
+  // regeneration grant on the Product PR-candidate branch.
+  {
+    authorityId: 'HPO-ODS-W2-16',
+    branch: 'codex/w2-b4-r1',
+    patterns: ['db/prepared/checkpoint-b0/observation.sql'],
+  },
 ]
 
 export interface ProtectedGrantResolution {

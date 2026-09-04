@@ -313,8 +313,8 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant, plus the HPO-ODS-W2-12 Wave 2 batch B4 grant', () => {
-    expect(PROTECTED_GRANTS.length).toBe(8)
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant, plus the HPO-ODS-W2-12 Wave 2 batch B4 grant, plus the HPO-ODS-W2-16 W2-B4 remediation checkpoint-b0 probe grant', () => {
+    expect(PROTECTED_GRANTS.length).toBe(9)
     const w2_03 = PROTECTED_GRANTS[2]
     expect(w2_03.authorityId).toBe('HPO-ODS-W2-03')
     expect(w2_03.branch).toBe('codex/u0-u9-reengineering-resume-r1')
@@ -432,6 +432,41 @@ describe('resolveProtectedGrant — pure', () => {
     expect(addendumB4.protected_grant.authorityId).toBe(w2_12.authorityId)
     expect(addendumB4.protected_grant.branch).toBe(w2_12.branch)
     expect(addendumB4.protected_grant.patterns).toEqual(w2_12.patterns)
+    // HPO-ODS-W2-16 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json,
+    // companion docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json): the
+    // W2-B4 remediation grant for the checkpoint-b0 observation probe. ONE
+    // exact literal path, no glob. It shares a branch with W2-12 and is
+    // deliberately a SEPARATE entry, because W2-12 is frozen at its two
+    // patterns and widening it retrospectively is prohibited.
+    const w2_16 = PROTECTED_GRANTS[8]
+    expect(w2_16.authorityId).toBe('HPO-ODS-W2-16')
+    expect(w2_16.branch).toBe('codex/w2-b4-r1')
+    expect(w2_16.patterns).toEqual(['db/prepared/checkpoint-b0/observation.sql'])
+    expect(w2_16.patterns.every((p) => !p.includes('*'))).toBe(true)
+    const addendumB4Remediation = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json'), 'utf8'),
+    ) as {
+      GRANT_ID: string
+      protected_grant: { authorityId: string; branch: string; patterns: string[] }
+      PROTECTED_GRANTS_COUNT_AFTER: number
+    }
+    expect(addendumB4Remediation.GRANT_ID).toBe('HPO-ODS-W2-16')
+    expect(w2_16).toEqual({
+      authorityId: addendumB4Remediation.protected_grant.authorityId,
+      branch: addendumB4Remediation.protected_grant.branch,
+      patterns: addendumB4Remediation.protected_grant.patterns,
+    })
+    // The addendum states the post-change cardinality itself, so a registry
+    // that grew by more than the one authorized entry is caught here too.
+    expect(addendumB4Remediation.PROTECTED_GRANTS_COUNT_AFTER).toBe(PROTECTED_GRANTS.length)
+    // W2-12 UNCHANGED by the arrival of W2-16 — same branch, same two
+    // patterns. Registering a second grant on a shared branch must not widen
+    // the first, and this is the assertion that would catch it if it did.
+    expect(PROTECTED_GRANTS[7]).toEqual({
+      authorityId: 'HPO-ODS-W2-12',
+      branch: 'codex/w2-b4-r1',
+      patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+    })
   })
 
   // HPO-ODS-W2-12 non-vacuity, both directions, plus branch binding. B4's
@@ -474,6 +509,62 @@ describe('resolveProtectedGrant — pure', () => {
     const result = classifyPaths(unrelated, DEFAULT_PROTECTED_PATTERNS, unrelated, [resolved.grant!])
     expect(result.protectedViolations).toEqual(unrelated)
     expect(result.grantAuthorized).toEqual([])
+  })
+
+  // HPO-ODS-W2-16 non-vacuity, both directions, plus branch binding. These are
+  // the W2-B4-remediation authority mission's real mutation controls: they
+  // prove the ninth registry entry changes classifier behaviour in exactly one
+  // direction and no further.
+  it('NON-VACUITY (B4R-GRANT-N1/B4R-GRANT-P1): the checkpoint-b0 probe is a protected violation WITHOUT HPO-ODS-W2-16 and grant-authorized WITH it', () => {
+    const granted = ['db/prepared/checkpoint-b0/observation.sql']
+
+    const withoutGrant = classifyPaths(granted, DEFAULT_PROTECTED_PATTERNS, granted, [])
+    expect(withoutGrant.protectedViolations).toEqual(granted)
+    expect(withoutGrant.grantAuthorized).toEqual([])
+
+    const resolved = resolveProtectedGrant('HPO-ODS-W2-16', B4_BRANCH)
+    expect(resolved.grant).toBeDefined()
+    const withGrant = classifyPaths(granted, DEFAULT_PROTECTED_PATTERNS, granted, [resolved.grant!])
+    expect(withGrant.protectedViolations).toEqual([])
+    expect(withGrant.grantAuthorized).toEqual(granted)
+  })
+
+  it('NON-VACUITY (B4R-GRANT-N2): HPO-ODS-W2-16 does not widen to db/prepared/** or to the checkpoint-b0 directory', () => {
+    // The grant names ONE literal file. A sibling invented inside the same
+    // directory must still fail, which is what distinguishes an exact-path
+    // grant from the directory pattern that was deliberately not written.
+    const unrelated = [
+      'db/prepared/checkpoint-b0/unrelated.sql',
+      'db/prepared/checkpoint-a1/corroboration.sql',
+      'db/prepared/stella_0001_role_topology_bootstrap.sql',
+      'db/prepared/journal/001_0000_quick_husk.sql',
+    ]
+
+    const resolved = resolveProtectedGrant('HPO-ODS-W2-16', B4_BRANCH)
+    expect(resolved.grant).toBeDefined()
+    const result = classifyPaths(unrelated, DEFAULT_PROTECTED_PATTERNS, unrelated, [resolved.grant!])
+    expect(result.protectedViolations).toEqual(unrelated)
+    expect(result.grantAuthorized).toEqual([])
+  })
+
+  it('BRANCH BINDING (B4R-GRANT-N3): HPO-ODS-W2-16 resolves to no grant on any other branch, exactly as an unknown id does', () => {
+    for (const branch of ['integration/commercial-v1', 'main', 'codex/w2-b5-r1', 'codex/w2-b4-remediation-authority-r1']) {
+      expect(resolveProtectedGrant('HPO-ODS-W2-16', branch).grant).toBeUndefined()
+    }
+    expect(resolveProtectedGrant('HPO-ODS-W2-16', B4_BRANCH).grant).toBeDefined()
+  })
+
+  it('SEPARATION (B4R-GRANT-N4): supplying HPO-ODS-W2-12 alone never authorizes the checkpoint-b0 probe, and W2-16 alone never authorizes a migration', () => {
+    // The two grants share a branch. Sharing a branch must not merge their
+    // pattern sets: a caller gets exactly the ids it supplies.
+    const probe = ['db/prepared/checkpoint-b0/observation.sql']
+    const migration = ['db/migrations/0062_fib_methodological_assumptions.sql']
+
+    const w2_12 = resolveProtectedGrant('HPO-ODS-W2-12', B4_BRANCH).grant!
+    const w2_16 = resolveProtectedGrant('HPO-ODS-W2-16', B4_BRANCH).grant!
+
+    expect(classifyPaths(probe, DEFAULT_PROTECTED_PATTERNS, probe, [w2_12]).protectedViolations).toEqual(probe)
+    expect(classifyPaths(migration, DEFAULT_PROTECTED_PATTERNS, migration, [w2_16]).protectedViolations).toEqual(migration)
   })
 
   it('NON-VACUITY (B4-GRANT-N2b): HPO-ODS-W2-12 does not reach db/baseline/** or docs/ops/fib/**', () => {
