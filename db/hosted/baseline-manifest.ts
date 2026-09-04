@@ -1242,6 +1242,74 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'exactly as 0060 installed them. No GRANT, no DDL, no DML, no policy, no auth./storage. reference.',
     expect: {},
   },
+
+  /* ---------------------------------------------------------------------- *
+   * Wave 2 batch B4 (FIBIU-15/14, HPO-ODS-W2-12,                            *
+   * docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json). Certified SERIAL_CONTRACT  *
+   * 15->{14,16}: FIBDB-012/013/047 (this unit) precede FIBDB-011/046        *
+   * (the next unit). FIBIU-16 materializes no unit here — NO_DB_OBJECT.     *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 75,
+    id: '0062_fib_methodological_assumptions.sql',
+    kind: D,
+    file: 'db/migrations/0062_fib_methodological_assumptions.sql',
+    sha256: '7b73b99ffc46a8d1ded7734d5625b59e1deb79e56018e37da9a287847fde4940',
+    dependsOn: ['0061_fib_disposition_governance_function_execute_revocation.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-15 stage A (FIBC-019/FIBDB-012/013/047). CREATE TABLE methodological_assumptions and ' +
+      'assumption_object_links. RLS: org-scoped SELECT on both; INSERT restricted to the same analyst+ ' +
+      'floor upsertSroiFilterSet/outcome_monetization_dispositions already use (created_by = auth.uid()); ' +
+      'methodological_assumptions additionally carries an org-scoped, same-floor UPDATE policy — unlike ' +
+      '0059\'s append-only precedent — because a material modification updates the row in place (its id ' +
+      'is the assumption\'s permanent identity) while lib/pipeline/domain-object-versions.ts preserves the ' +
+      'prior content as history; assumption_object_links has no UPDATE/DELETE policy (append-only, ' +
+      'FIBDB-013 "immutability: none beyond the assumption\'s own versioning"). SEC-ACL-1: no new ' +
+      'function or SECURITY DEFINER surface — the hosted disposition is RLS-only, identical in class to ' +
+      'unit 72; nothing here needs a service_role/anon/authenticated grant of any kind.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing policies are guarded but do not change the unit\'s overall class. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 2,
+      policiesCreatedCount: 5,
+      securitySurfaceDigest: '91d247fe13c6343bcaaadfb3828d095eb8375dcb487991d78fe8a420a764ad3b',
+    },
+  },
+  {
+    ordinal: 76,
+    id: '0063_fib_counterfactual_assessments.sql',
+    kind: D,
+    file: 'db/migrations/0063_fib_counterfactual_assessments.sql',
+    sha256: '66418b303421e3e9286b1b96d0eb03931f0d7c81a4caf67a4a1957af9497b188',
+    dependsOn: ['0062_fib_methodological_assumptions.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-14 stage A (FIBC-018/FIBDB-011/046). CREATE TABLE counterfactual_assessments — one row per ' +
+      '(outcome, calculation_run): baseline_availability/basis_kind/deadweight_support_state vocabularies, ' +
+      'baseline value/period/source/context required exactly when baseline_availability=available. RLS: ' +
+      'org-scoped SELECT, INSERT and UPDATE at the same analyst+ floor as unit 75 — UPDATE because this ' +
+      'object is refined create-or-update until the run is approved, mirroring ' +
+      'recordOutcomeMonetizationDisposition\'s own shape rather than FIBDB-013\'s append-only one. ' +
+      'SEC-ACL-1: no new function or SECURITY DEFINER surface — RLS-only, same class as unit 72/75.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing policies are guarded but do not change the unit\'s overall class. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 3,
+      securitySurfaceDigest: '38d7e1cd4f92aa38323d2228b6f7cc017431dbc9416a956b8343b97b0a3b7bd4',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

@@ -413,7 +413,8 @@ export function evaluateHostedBaselineGates(
   // (W2-B3) = 72; + 0060 (W2-B3 completeness) = 73. Same derivation as
   // tests/hosted/baseline-manifest.test.ts, independently re-verified there.
   // HPO-ODS-W2-09: + 0061 = 74.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 74
+  // HPO-ODS-W2-12 (W2-B4 assumptions and causality): + 0062/0063 = 76.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 76
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

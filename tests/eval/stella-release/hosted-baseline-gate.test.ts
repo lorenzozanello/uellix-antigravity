@@ -60,8 +60,10 @@ describe('the six baseline gates', () => {
     // HPO-ODS-W2-09 (COMMERCIAL-V1-WAVE2-RECONCILIATION successor remediation):
     // + 0061_fib_disposition_governance_function_execute_revocation.sql (the
     // B0-17 security successor to sealed 0060, REVOKE-only, no DML) = 74; still no DML, still four literal row sources.
-    expect(evidence.unitCount).toBe(74)
-    expect(evidence.superuserFreeUnits).toBe(74)
+    // HPO-ODS-W2-12 (W2-B4 assumptions and causality): + 0062/0063 (FIBIU-15/14,
+    // both RLS-only, no superuser dependency, no DML) = 76.
+    expect(evidence.unitCount).toBe(76)
+    expect(evidence.superuserFreeUnits).toBe(76)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',

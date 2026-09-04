@@ -91,20 +91,24 @@ describe('the baseline manifest describes the corpus that is actually checked in
   // HPO-ODS-W2-09 (COMMERCIAL-V1-WAVE2-RECONCILIATION successor remediation) —
   // + 0061_fib_disposition_governance_function_execute_revocation.sql, the
   // REVOKE-only B0-17 security successor to sealed 0060 = 74 units, 62 Drizzle.
-  it('has 74 units: 62 Drizzle, 2 Supabase, 10 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(74)
+  // HPO-ODS-W2-12 (W2-B4 assumptions and causality) —
+  // + 0062_fib_methodological_assumptions.sql (FIBIU-15, FIBDB-012/013/047)
+  // and 0063_fib_counterfactual_assessments.sql (FIBIU-14, FIBDB-011/046) =
+  // 76 units, 64 Drizzle.
+  it('has 76 units: 64 Drizzle, 2 Supabase, 10 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(76)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(62)
+    expect(byKind('drizzle-migration')).toBe(64)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(10)
   })
 
-  it('numbers ordinals 1..74 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..76 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 74 }, (_, i) => i + 1),
+      Array.from({ length: 76 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(74)
+    expect(new Set(BASELINE_ORDER).size).toBe(76)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
