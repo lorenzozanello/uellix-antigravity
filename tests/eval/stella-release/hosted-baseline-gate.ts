@@ -391,9 +391,16 @@ export function buildHostedBaselineGateEvidence(
     // HPO-ODS-W2-09: + 0061 (B0-17 security successor to sealed 0060) = 74
     // baseline units + 1 journal bootstrap step = 75 — derived from
     // planProvisioningPhase (000_journal_bootstrap + one step per BASELINE_ORDER).
+    // W2-B4 (FIBIU-15/14/16): + 0062_fib_methodological_assumptions.sql and
+    // 0063_fib_counterfactual_assessments.sql = 76 baseline units + 1 journal
+    // bootstrap step = 77. This is a DERIVED count (BASELINE_ORDER.length + 1),
+    // which is why the authority's forced-pin sweep — which enumerated pins
+    // carrying the raw unit count 74 — did not surface it. Advanced as an exact
+    // count, never loosened to `>= 77`: a plan that silently grew or shrank is
+    // exactly what this evidence exists to notice.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 75 &&
+      firstProvisioning.steps.length === 77 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
