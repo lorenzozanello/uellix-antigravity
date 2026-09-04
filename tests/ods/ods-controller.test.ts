@@ -548,10 +548,31 @@ describe('already-closed disposition', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Real repository proof: W2-B4 is not selectable while
-// P1A_FULL_BOOTSTRAP_CLOSED is unresolved — now a single deterministic
-// answer under CTRL-M1 (dependsOn UNKNOWN evidence and unresolved
-// externalPreconditions both map to UNKNOWN_EVIDENCE).
+// CTRL26-CLOSURE-TEST-R1 (binding coordinator ruling): W2-B4 closed on
+// 2026-09-04 (PR #62 merge 33c2347d81b16c9aafa5dad2db1647c0e4c3d684) — its own
+// authority/implementation/audit evidence is now mechanically CLOSED, not
+// UNKNOWN. The OLD assertion here (stopClass === 'UNKNOWN_EVIDENCE') tested a
+// premise that expired the moment B4 closed: decideSelection's
+// ownClosureStatus check runs FIRST and short-circuits to alreadyClosed=true
+// before dependsOn/externalPreconditions/dbWriting are ever consulted, so the
+// original rationale above ("dependsOn UNKNOWN evidence and unresolved
+// externalPreconditions both map to UNKNOWN_EVIDENCE") no longer describes
+// what this unit hits. UNKNOWN_EVIDENCE remains correct ONLY when the
+// required evidence/ref genuinely cannot be resolved — a materially
+// different condition, split into its own control below.
+//
+// Both controls are deterministic across checkout topology: neither depends
+// on whether the branch name "codex/w2-b4-r1" happens to be a locally known
+// git ref (true in a full checkout that fetched it; generally false in CI's
+// single-branch checkout, which is why the stale assertion above still
+// passed there — a checkout-topology accident, not a semantic proof).
+// CTRL-CLOSED-1 pins evidence to HEAD, which is trivially resolvable in any
+// checkout of this very branch, and the W2-B4 closure artifacts are
+// integrated into this branch's own ancestry. CTRL-UNKNOWN-1 pins evidence to
+// a ref that provably never exists, in any topology. Neither mocks a
+// condition the real selector cannot encounter — both run through the real
+// selectNode I/O path (evaluateEvidence + aggregateClosureStatus +
+// decideSelection), only the evidence ref differs.
 // ---------------------------------------------------------------------------
 
 describe('real registry: W2-B4 fail-closed selection', () => {
@@ -563,9 +584,34 @@ describe('real registry: W2-B4 fail-closed selection', () => {
     expect(unit?.dbWriting).toBe(true)
   })
 
-  it('selectNode STOPs W2-B4 fail-closed with UNKNOWN_EVIDENCE, deterministically', () => {
-    const decision = selectNode(REPO_ROOT, registry, 'W2-B4')
+  it('CTRL-CLOSED-1: with fully resolvable own evidence, selectNode short-circuits to alreadyClosed=true BEFORE dependsOn/externalPreconditions/dbWriting are ever consulted', () => {
+    // Same evidence type, path, field and closedValues the real registry
+    // declares for W2-B4 — only ref changes, from the branch name to HEAD, so
+    // resolution never depends on which branches this checkout fetched.
+    const realUnit = registry.units.find((u) => u.id === 'W2-B4') as ControllerUnit
+    const unit: ControllerUnit = {
+      ...realUnit,
+      authority: { ...realUnit.authority, ref: 'HEAD' },
+      implementation: { ...realUnit.implementation, ref: 'HEAD' },
+      audit: { ...realUnit.audit, ref: 'HEAD' },
+    }
+    const decision = selectNode(REPO_ROOT, { units: [unit] }, 'W2-B4')
     expect(decision.selectable).toBe(false)
+    expect(decision.alreadyClosed).toBe(true)
+    expect(decision.stopClass).toBeUndefined()
+  })
+
+  it('CTRL-UNKNOWN-1: with the required evidence/ref genuinely unresolvable, selectNode fails closed as UNKNOWN_EVIDENCE — never alreadyClosed', () => {
+    const realUnit = registry.units.find((u) => u.id === 'W2-B4') as ControllerUnit
+    const unresolvable: Evidence = {
+      type: 'paths-exist',
+      ref: 'refs/does-not-exist-xyz-w2-b4-closure-test',
+      paths: ['docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json'],
+    }
+    const unit: ControllerUnit = { ...realUnit, authority: unresolvable, implementation: unresolvable, audit: unresolvable }
+    const decision = selectNode(REPO_ROOT, { units: [unit] }, 'W2-B4')
+    expect(decision.selectable).toBe(false)
+    expect(decision.alreadyClosed).toBeUndefined()
     expect(decision.stopClass).toBe('UNKNOWN_EVIDENCE')
   })
 
