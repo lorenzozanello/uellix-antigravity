@@ -742,7 +742,16 @@ describe('every entry point that can reach the database opens an identity contex
     // allowlisted. COMMERCIAL-V1-WAVE2-RECONCILIATION-R1 (HPO-ODS-W2-08):
     // figures re-measured fresh against the reconciled tree, matching the
     // AST-layer inventory update.
-    }).toEqual({ inventoried: 131, reaching: 106, contextualized: 90, allowlisted: 16 })
+    //
+    // 131 -> 135, 106 -> 110, contextualized 90 -> 94, allowlisted UNCHANGED
+    // at 16: W2-B4 (HPO-ODS-W2-12, FIBIU-14/15) adds FOUR new .action.ts
+    // entry points — calculation/runs/recordCounterfactualAssessment.action.ts
+    // and narrative/{createMethodologicalAssumption,linkAssumptionToObject,
+    // updateMethodologicalAssumption}.action.ts. Each calls
+    // runWithOrganizationAccess around its one governed write, exactly like
+    // its siblings in the same directories, so all four are `contextualized`,
+    // not allowlisted: +4 inventoried, +4 reaching, +4 contextualized.
+    }).toEqual({ inventoried: 135, reaching: 110, contextualized: 94, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

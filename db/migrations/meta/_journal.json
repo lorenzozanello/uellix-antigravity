@@ -435,6 +435,20 @@
       "when": 1788370349425,
       "tag": "0061_fib_disposition_governance_function_execute_revocation",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1788533030412,
+      "tag": "0062_fib_methodological_assumptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1788533047578,
+      "tag": "0063_fib_counterfactual_assessments",
+      "breakpoints": true
     }
   ]
 }

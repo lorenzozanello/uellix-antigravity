@@ -25,6 +25,8 @@ import {
   evidenceItems,
   outcomeFunderAllocations,
   funders,
+  counterfactualAssessments,
+  indicators,
 } from '@/db/schema'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
@@ -35,6 +37,8 @@ import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
 import { scenarioFilterPct, SCENARIO_DELTA_PP, type Scenario } from '@/lib/pipeline/sroi-sensitivity'
 import { resolveRunVersionIdentity } from '@/lib/pipeline/run-version-identity'
+import { getCausalChainSufficiencyForOutcomes } from '@/lib/pipeline/theory-of-change'
+import { queryUnresolvedMaterialAssumptions } from '@/lib/pipeline/narratives'
 import {
   createDomainObjectVersion,
   getLatestDomainObjectVersion,
@@ -543,6 +547,194 @@ export async function recordOutcomeMonetizationDisposition(
   return saved
 }
 
+// ─── Counterfactual assessment (FIBIU-14) ──────────────────────────────────
+// FIBC-018, FIBDB-011/046. W2-B4 (HPO-ODS-W2-12,
+// docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json).
+
+export const COUNTERFACTUAL_BASELINE_AVAILABILITY_VALUES = ['available', 'not_available', 'not_applicable'] as const
+export type CounterfactualBaselineAvailability = (typeof COUNTERFACTUAL_BASELINE_AVAILABILITY_VALUES)[number]
+
+export const COUNTERFACTUAL_BASIS_KIND_VALUES = [
+  'baseline_observation', 'comparison_group', 'historical_trend', 'benchmark',
+  'statistic', 'literature', 'stakeholder_evidence', 'documented_assumption',
+] as const
+export type CounterfactualBasisKind = (typeof COUNTERFACTUAL_BASIS_KIND_VALUES)[number]
+
+export const DEADWEIGHT_SUPPORT_STATE_VALUES = ['supported', 'unknown_or_insufficient'] as const
+export type DeadweightSupportState = (typeof DEADWEIGHT_SUPPORT_STATE_VALUES)[number]
+
+// FIBDB-046: value/period/source/context NOT NULL exactly when
+// baselineAvailability='available'; basisKind is NOT NULL always. Every
+// deadweight, including a supported 0, needs a rationale — FIBC-018.
+export const CounterfactualAssessmentSchema = z.object({
+  baselineAvailability: z.enum(COUNTERFACTUAL_BASELINE_AVAILABILITY_VALUES),
+  basisKind: z.enum(COUNTERFACTUAL_BASIS_KIND_VALUES),
+  baselineValue: z.string().min(1).optional(),
+  baselinePeriod: z.string().min(1).optional(),
+  baselineSource: z.string().min(1).optional(),
+  baselineContext: z.string().min(1).optional(),
+  deadweightSupportState: z.enum(DEADWEIGHT_SUPPORT_STATE_VALUES),
+  sources: z.string().optional(),
+  rationale: z.string().min(1),
+}).refine(
+  (data) =>
+    data.baselineAvailability !== 'available' ||
+    (data.baselineValue !== undefined && data.baselinePeriod !== undefined && data.baselineSource !== undefined && data.baselineContext !== undefined),
+  {
+    message: 'baselineValue, baselinePeriod, baselineSource and baselineContext are all required when baselineAvailability is available',
+    path: ['baselineValue'],
+  },
+)
+export type CounterfactualAssessmentInput = z.infer<typeof CounterfactualAssessmentSchema>
+
+/**
+ * FIBIU-14 (FIBC-018) — the counterfactual/deadweight basis for a monetized
+ * outcome, run-bound. Create-or-update per (outcome, run) — mirroring
+ * recordOutcomeMonetizationDisposition's own shape exactly, including its
+ * refusal once the run carries an approved review (FIBDB-011
+ * "immutability: snapshot-bound"). Absent a baseline, deadweight may rest on
+ * any of the other FIBDB-046 basis kinds — the baseline is a relevant source
+ * when it exists, never a numeric requirement (baseline_contract).
+ */
+export async function recordCounterfactualAssessment(
+  projectId: string,
+  outcomeId: string,
+  calculationRunId: string,
+  input: CounterfactualAssessmentInput,
+) {
+  const ctx = await authorize(projectId)
+  const validated = CounterfactualAssessmentSchema.parse(input)
+
+  const outcomeRows = await db.select().from(outcomes).where(and(eq(outcomes.id, outcomeId), eq(outcomes.projectId, projectId)))
+  if (outcomeRows.length === 0) throw new Error('Outcome not found for project')
+
+  const runRows = await db.select().from(sroiCalculationRuns).where(and(eq(sroiCalculationRuns.id, calculationRunId), eq(sroiCalculationRuns.projectId, projectId)))
+  if (runRows.length === 0) throw new Error('Calculation run not found for project')
+
+  // Early, user-facing refusal — mirrors recordOutcomeMonetizationDisposition's
+  // own comment: the AUTHORITATIVE refusal is RLS (org-scoped UPDATE policy),
+  // this only spares a round trip.
+  const approvedReview = await db.select().from(sroiRunReviews).where(and(eq(sroiRunReviews.calculationRunId, calculationRunId), eq(sroiRunReviews.status, 'approved')))
+  if (approvedReview.length > 0) {
+    throw new Error('Cannot record counterfactual assessment: this calculation run is already approved')
+  }
+
+  const payload = {
+    baselineAvailability: validated.baselineAvailability,
+    basisKind: validated.basisKind,
+    baselineValue: validated.baselineAvailability === 'available' ? (validated.baselineValue ?? null) : null,
+    baselinePeriod: validated.baselineAvailability === 'available' ? (validated.baselinePeriod ?? null) : null,
+    baselineSource: validated.baselineAvailability === 'available' ? (validated.baselineSource ?? null) : null,
+    baselineContext: validated.baselineAvailability === 'available' ? (validated.baselineContext ?? null) : null,
+    deadweightSupportState: validated.deadweightSupportState,
+    sources: validated.sources ?? null,
+    rationale: validated.rationale,
+  }
+
+  const existing = await db.select().from(counterfactualAssessments).where(and(eq(counterfactualAssessments.outcomeId, outcomeId), eq(counterfactualAssessments.calculationRunId, calculationRunId)))
+
+  let saved: typeof counterfactualAssessments.$inferSelect
+  if (existing.length > 0) {
+    const updated = await db
+      .update(counterfactualAssessments)
+      .set(payload)
+      .where(eq(counterfactualAssessments.id, existing[0].id))
+      .returning()
+    if (updated.length === 0) {
+      throw new Error('Counterfactual assessment update affected no row (refused by row-level security or the approved-run guard) — nothing was recorded')
+    }
+    saved = updated[0]
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      projectId,
+      actorUserId: ctx.user.id,
+      entityType: 'counterfactual_assessment',
+      entityId: existing[0].id,
+      action: AUDIT_ACTIONS.COUNTERFACTUAL_ASSESSMENT_RECORDED,
+      contentModifying: true,
+      beforeJson: existing[0] as unknown as Record<string, unknown>,
+      afterJson: saved as unknown as Record<string, unknown>,
+    })
+  } else {
+    const inserted = await db.insert(counterfactualAssessments).values({
+      ...payload,
+      outcomeId,
+      calculationRunId,
+      organizationId: ctx.organization.id,
+      createdBy: ctx.user.id,
+    }).returning()
+    saved = inserted[0]
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      projectId,
+      actorUserId: ctx.user.id,
+      entityType: 'counterfactual_assessment',
+      entityId: saved.id,
+      action: AUDIT_ACTIONS.COUNTERFACTUAL_ASSESSMENT_RECORDED,
+      afterJson: saved as unknown as Record<string, unknown>,
+    })
+  }
+
+  return saved
+}
+
+/**
+ * FIBIU-14 (NEG-14-1) — outcomes whose indicator carries a baseline_value
+ * (a relevant source, never auto-converted — NPDD-03) but have NO
+ * counterfactual_assessments row for the given run: COUNTERFACTUAL_MISSING.
+ * indicators.baseline_value is read ONLY to select which outcomes to check;
+ * its value is never copied into, defaulted into, or otherwise fed to
+ * counterfactualAssessments by this or any other path. `outcomeIds` is the
+ * caller's already project-scoped candidate set (mirrors
+ * getSroiCalculationReadiness's own outcome-gathering); this function does
+ * not re-derive project scope on its own.
+ */
+export async function listOutcomesMissingCounterfactual(
+  calculationRunId: string,
+  outcomeIds: readonly string[],
+): Promise<string[]> {
+  if (outcomeIds.length === 0) return []
+  const withBaseline = await db
+    .select({ outcomeId: indicators.outcomeId })
+    .from(indicators)
+    .where(and(inArray(indicators.outcomeId, [...outcomeIds]), sql`${indicators.baselineValue} IS NOT NULL`))
+  const candidateOutcomeIds = [...new Set(withBaseline.map((r) => r.outcomeId))]
+  if (candidateOutcomeIds.length === 0) return []
+
+  const assessed = await db
+    .select({ outcomeId: counterfactualAssessments.outcomeId })
+    .from(counterfactualAssessments)
+    .where(and(inArray(counterfactualAssessments.outcomeId, candidateOutcomeIds), eq(counterfactualAssessments.calculationRunId, calculationRunId)))
+  const assessedIds = new Set(assessed.map((r) => r.outcomeId))
+
+  return candidateOutcomeIds.filter((id) => !assessedIds.has(id))
+}
+
+/**
+ * FIBIU-14 (NEG-14-2) — outcomes whose counterfactual_assessments row for
+ * this run carries deadweight_support_state='unknown_or_insufficient':
+ * DEADWEIGHT_BASIS_INSUFFICIENT. Usable and visible in preliminary analysis
+ * (this function never blocks anything on its own — see
+ * getSroiCalculationReadiness's own note on why FIBIU-14/15/16 signals are
+ * not wired into a live approval hook by B4); blocking for approval/lock is
+ * FIBIU-19's (Wave 3) composition to make.
+ */
+export async function listOutcomesWithInsufficientDeadweightBasis(
+  calculationRunId: string,
+  outcomeIds: readonly string[],
+): Promise<string[]> {
+  if (outcomeIds.length === 0) return []
+  const insufficient = await db
+    .select({ outcomeId: counterfactualAssessments.outcomeId })
+    .from(counterfactualAssessments)
+    .where(and(
+      inArray(counterfactualAssessments.outcomeId, [...outcomeIds]),
+      eq(counterfactualAssessments.calculationRunId, calculationRunId),
+      eq(counterfactualAssessments.deadweightSupportState, 'unknown_or_insufficient'),
+    ))
+  return [...new Set(insufficient.map((r) => r.outcomeId))]
+}
+
 /**
  * W2-B3 completeness (AG-B3-2, COVERAGE_COMPLETENESS) — one row per outcome
  * in the run's coverage view. `bucket` is the distinct governed state:
@@ -860,6 +1052,8 @@ export interface ReadinessIssueInput {
   invalidFilters: string[]
   proxiesMissingUsd: string[]
   overAllocatedOutcomes: string[]
+  causalChainInsufficientOutcomes: string[]
+  unresolvedMaterialAssumptions: string[]
 }
 
 /**
@@ -887,6 +1081,8 @@ export function buildReadinessIssues(input: ReadinessIssueInput): ReadinessIssue
     invalidFilters,
     proxiesMissingUsd,
     overAllocatedOutcomes,
+    causalChainInsufficientOutcomes,
+    unresolvedMaterialAssumptions,
   } = input
 
   const issues: ReadinessIssue[] = []
@@ -1021,6 +1217,33 @@ export function buildReadinessIssues(input: ReadinessIssueInput): ReadinessIssue
     })
   }
 
+  // FIBIU-16 (FIBC-020) — CAUSAL_CHAIN_INSUFFICIENT.
+  if (causalChainInsufficientOutcomes.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'causal_chain_insufficient',
+      message: `${causalChainInsufficientOutcomes.length} resultado(s) sin una cadena causal suficiente (actividad → producto → resultado). Modela la teoría de cambio o mapea un modelo causal externo para cada resultado monetizado.`,
+      itemIds: causalChainInsufficientOutcomes,
+      // The theory-of-change graph UI (theoryOfChange.actions.ts) is
+      // surfaced inside the narrative page — there is no separate route.
+      actionPath: `/app/projects/${projectId}/pipeline/narrative`,
+      actionLabel: 'Ir a teoría de cambio',
+    })
+  }
+
+  // FIBIU-15 (FIBC-019, NEG-15-2) — ASSUMPTION_UNRESOLVED. Names WHICH
+  // assumption blocks via itemIds, never a bare boolean.
+  if (unresolvedMaterialAssumptions.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'assumption_unresolved',
+      message: `${unresolvedMaterialAssumptions.length} supuesto(s) metodológico(s) material(es) sin objetos/decisiones afectados registrados. Vincula cada supuesto material con lo que afecta.`,
+      itemIds: unresolvedMaterialAssumptions,
+      actionPath: `/app/projects/${projectId}/pipeline/narrative`,
+      actionLabel: 'Ir a supuestos',
+    })
+  }
+
   return issues
 }
 
@@ -1038,6 +1261,8 @@ export interface SroiReadiness {
   proxiesMissingUsd: string[]
   overAllocatedOutcomes: string[]
   outcomesWithoutEvidence: string[]
+  causalChainInsufficientOutcomes: string[]
+  unresolvedMaterialAssumptions: string[]
   canCalculate: boolean
   blockingReasons: string[]
   issues: ReadinessIssue[]
@@ -1175,6 +1400,48 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     blockingReasons.push(`${outcomesWithoutEvidence.length} outcome(s) with no supporting evidence`)
   }
 
+  // FIBIU-16 (FIBC-020, W2-B4) — causal chain sufficiency. Run-independent
+  // (the ToC graph is a project-level fact, not tied to a calculation run).
+  // Measured gap this closes: before this unit, getSroiCalculationReadiness
+  // consulted neither theory_of_change_nodes nor theory_of_change_links, and
+  // an outcome could be monetized with zero nodes.
+  //
+  // DELIBERATELY NOT pushed to `blockingReasons`/`canCalculate`: those gate
+  // whether calculateAndPersistSroiRun may CALCULATE a run at all, which is
+  // the deterministic engine's own precondition set and is NOT what FIBC-020
+  // gates — its own text is "a monetized outcome without a sufficient chain
+  // is INELIGIBLE [for approval]" and "run not approvable while...". Wiring
+  // this into blockingReasons would make the native graph a de-facto
+  // MANDATORY precondition for every calculation, contradicting
+  // graph_status="RECOMMENDED, NOT MANDATORY" and altering deterministic
+  // engine semantics B4 must not touch (determinism_and_regression_sentinels).
+  // FIBIU-19 (Wave 3) composes this signal into the real approval gate; per
+  // this mission's own instruction, B4 must not touch a direct approval hook
+  // merely to enforce non-approvability. The array below is the visible,
+  // unresolved-issue-fact signal readiness surfaces for that future gate and
+  // for UI display (buildReadinessIssues), not a calculation blocker.
+  const causalChainInsufficientOutcomes: string[] = []
+  if (activeOutcomeIds.length > 0) {
+    const sufficiency = await getCausalChainSufficiencyForOutcomes(projectId, activeOutcomeIds)
+    for (const outcomeId of activeOutcomeIds) {
+      if (sufficiency.get(outcomeId)?.sufficient !== true) causalChainInsufficientOutcomes.push(outcomeId)
+    }
+  }
+
+  // FIBIU-15 (FIBC-019, NEG-15-2, W2-B4) — an unresolved material assumption.
+  // Also run-independent (assumption resolution is a project-level fact).
+  // Uses the auth-free query core — `ctx` above is already this function's
+  // own authorization, and calling the public listUnresolvedMaterialAssumptions
+  // would re-authorize via a different session accessor
+  // (getCurrentOrganizationContext vs requireOrganizationAccess) for no
+  // benefit. DELIBERATELY NOT pushed to `blockingReasons`/`canCalculate` —
+  // same reasoning as causalChainInsufficientOutcomes above: FIBC-019's own
+  // text is "an unresolved material assumption blocks APPROVAL", a later,
+  // separate step from calculation. The array names WHICH assumption is
+  // unresolved (never a bare boolean) for that future gate and for UI
+  // display.
+  const unresolvedMaterialAssumptions = (await queryUnresolvedMaterialAssumptions(ctx.organization.id, projectId)).map((a) => a.id)
+
   // Mixed currencies no longer block — everything is normalized to USD before
   // the ratio math (Fase 1b). Field kept (always false) for API compatibility.
   const currencyMismatch = false
@@ -1199,6 +1466,8 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     invalidFilters,
     proxiesMissingUsd,
     overAllocatedOutcomes,
+    causalChainInsufficientOutcomes,
+    unresolvedMaterialAssumptions,
   })
 
   return {
@@ -1215,6 +1484,8 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     proxiesMissingUsd,
     overAllocatedOutcomes,
     outcomesWithoutEvidence,
+    causalChainInsufficientOutcomes,
+    unresolvedMaterialAssumptions,
     canCalculate,
     blockingReasons,
     issues,

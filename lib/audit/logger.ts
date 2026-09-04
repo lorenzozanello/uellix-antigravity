@@ -101,6 +101,16 @@ export const AUDIT_ACTIONS = {
   // FIBIU-12 (FIBC-016) — per-outcome-per-run monetization disposition.
   OUTCOME_MONETIZATION_DISPOSITION_RECORDED: 'outcome_monetization_disposition.recorded',
 
+  // FIBIU-15 (FIBC-019, W2-B4, HPO-ODS-W2-12) — structured methodological
+  // assumptions. SUPERSEDED fires on a material modification, never on
+  // creation — the row's id is the assumption's permanent identity; the
+  // prior content is preserved separately in domainObjectVersions.
+  METHODOLOGICAL_ASSUMPTION_CREATED: 'methodological_assumption.created',
+  METHODOLOGICAL_ASSUMPTION_SUPERSEDED: 'methodological_assumption.superseded',
+
+  // FIBIU-14 (FIBC-018, W2-B4, HPO-ODS-W2-12) — counterfactual assessment.
+  COUNTERFACTUAL_ASSESSMENT_RECORDED: 'counterfactual_assessment.recorded',
+
   // Methodology review matrix (generalized across pipeline steps)
   METHODOLOGY_REVIEW_STARTED: 'methodology_review.started',
   METHODOLOGY_REVIEW_UPDATED: 'methodology_review.updated',

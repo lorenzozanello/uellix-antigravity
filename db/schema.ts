@@ -1266,3 +1266,105 @@ export const marketingLeads = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   }
 )
+
+// ─────────────────────────────────────────────────────────────────────────
+// Wave 2 Batch B4 — Assumptions and causality (HPO-ODS-W2-12,
+// docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json). FIBIU-15 structured
+// methodological assumptions (FIBC-019, FIBDB-012/013/047) and FIBIU-14
+// counterfactual assessment (FIBC-018, FIBDB-011/046). FIBIU-16 (causal
+// chain sufficiency) adds NO table — NO_DB_OBJECT, reasoned: it composes
+// theoryOfChangeNodes/theoryOfChangeLinks above into a new eligibility
+// condition in lib/pipeline/theory-of-change.ts instead.
+// ─────────────────────────────────────────────────────────────────────────
+
+// FIBIU-15 (FIBC-019, FIBDB-012/047). A first-class methodological
+// assumption. IMMUTABILITY: "versioned" — id is the assumption's permanent
+// identity and is never reissued on a material modification; each material
+// modification's PRIOR content is recorded by
+// lib/pipeline/domain-object-versions.ts as a new domainObjectVersions row
+// keyed by (objectType='methodological_assumption', objectId=id) — the same
+// mechanism recordOutcomeMonetizationDisposition already uses — so the
+// prior version remains independently readable as history without a second
+// row identity per version. basisType/materialityFlag vocabularies and the
+// conditional provenanceReference NOT NULL are FIBDB-047.
+export const methodologicalAssumptions = pgTable('methodological_assumptions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  formulation: text('formulation').notNull(),
+  rationale: text('rationale').notNull(),
+  basisType: varchar('basis_type', { length: 30 }).notNull(),
+  // NOT NULL only when basisType='evidence_or_external_source' (FIBDB-047).
+  // documented_human_judgement and derived persist with this NULL — no
+  // fictitious source is ever invented for a legitimate documented human
+  // judgement (FIBC-019 documented_human_judgement_contract).
+  provenanceReference: text('provenance_reference'),
+  materialityFlag: varchar('materiality_flag', { length: 20 }).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('methodological_assumptions_basis_type_check', sql`${table.basisType} IN ('evidence_or_external_source', 'derived', 'documented_human_judgement')`),
+  check('methodological_assumptions_materiality_flag_check', sql`${table.materialityFlag} IN ('material', 'non_material')`),
+  check('methodological_assumptions_provenance_reference_check', sql`${table.basisType} <> 'evidence_or_external_source' OR ${table.provenanceReference} IS NOT NULL`),
+  index('idx_methodological_assumptions_project_id').on(table.projectId),
+  index('idx_methodological_assumptions_organization_id').on(table.organizationId),
+])
+
+// FIBIU-15 (FIBC-019, FIBDB-013). Assumption <-> affected object/decision
+// link. Polymorphic by design — an assumption's "affected objects/decisions"
+// span outcomes, theory-of-change nodes/links, calculation runs, indicators
+// and whole projects, none of which share a single FK target — mirroring
+// domainObjectVersions' established (objectType, objectId) idiom rather than
+// inventing a second one. A material assumption with zero rows here is
+// UNRESOLVED for getSroiCalculationReadiness's ASSUMPTION_UNRESOLVED gate:
+// "affected objects/decisions" is one of FIBC-019's nine contracted minimum
+// fields, and this table is where it is proven present, not merely claimed.
+// NOT reusable for any other purpose (FIBDB-054 discretion sweep, FIB §17).
+export const assumptionObjectLinks = pgTable('assumption_object_links', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  assumptionId: uuid('assumption_id').references(() => methodologicalAssumptions.id).notNull(),
+  affectedObjectType: varchar('affected_object_type', { length: 40 }).notNull(),
+  affectedObjectId: uuid('affected_object_id').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('assumption_object_links_affected_type_check', sql`${table.affectedObjectType} IN ('outcome', 'theory_of_change_node', 'theory_of_change_link', 'sroi_calculation_run', 'indicator', 'project')`),
+  uniqueIndex('uq_assumption_object_links_assumption_object').on(table.assumptionId, table.affectedObjectType, table.affectedObjectId),
+  index('idx_assumption_object_links_assumption_id').on(table.assumptionId),
+  index('idx_assumption_object_links_organization_id').on(table.organizationId),
+])
+
+// FIBIU-14 (FIBC-018, FIBDB-011/046). Per monetized outcome, per calculation
+// run: the counterfactual/deadweight basis. IMMUTABILITY: "snapshot-bound" —
+// one row per (outcomeId, calculationRunId), mirroring
+// outcomeMonetizationDispositions exactly; calculationRunId is NOT NULL
+// (run-bound). No version column: unlike methodologicalAssumptions, this
+// object's version identity is inherited from the run it is snapshot-bound
+// to, never versioned on its own.
+export const counterfactualAssessments = pgTable('counterfactual_assessments', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  baselineAvailability: varchar('baseline_availability', { length: 20 }).notNull(),
+  basisKind: varchar('basis_kind', { length: 30 }).notNull(),
+  baselineValue: varchar('baseline_value', { length: 255 }),
+  baselinePeriod: varchar('baseline_period', { length: 100 }),
+  baselineSource: text('baseline_source'),
+  baselineContext: text('baseline_context'),
+  deadweightSupportState: varchar('deadweight_support_state', { length: 30 }).notNull(),
+  sources: text('sources'),
+  rationale: text('rationale').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('counterfactual_assessments_baseline_availability_check', sql`${table.baselineAvailability} IN ('available', 'not_available', 'not_applicable')`),
+  check('counterfactual_assessments_basis_kind_check', sql`${table.basisKind} IN ('baseline_observation', 'comparison_group', 'historical_trend', 'benchmark', 'statistic', 'literature', 'stakeholder_evidence', 'documented_assumption')`),
+  check('counterfactual_assessments_deadweight_support_state_check', sql`${table.deadweightSupportState} IN ('supported', 'unknown_or_insufficient')`),
+  check('counterfactual_assessments_baseline_available_fields_check', sql`${table.baselineAvailability} <> 'available' OR (${table.baselineValue} IS NOT NULL AND ${table.baselinePeriod} IS NOT NULL AND ${table.baselineSource} IS NOT NULL AND ${table.baselineContext} IS NOT NULL)`),
+  uniqueIndex('uq_counterfactual_assessments_outcome_run').on(table.outcomeId, table.calculationRunId),
+  index('idx_counterfactual_assessments_run_id').on(table.calculationRunId),
+])

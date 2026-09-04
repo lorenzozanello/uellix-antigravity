@@ -180,6 +180,79 @@ export async function createLink(projectId: string, input: CreateLinkInput) {
   return inserted[0]
 }
 
+// ─── FIBIU-16 — causal chain sufficiency gate ───────────────────────────────
+// FIBC-020, W2-B4 (HPO-ODS-W2-12). NO_DB_OBJECT: this graph is already the
+// storage representation — no new table. An external causal model
+// (theory of change, logframe, results chain) that has been SUFFICIENTLY
+// MAPPED into this same native graph satisfies the gate identically to a
+// natively-authored one; per authority, no new DB marker distinguishes the
+// two (docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json B4_FIBDB_SCOPE). Merely
+// uploading a document, with no such mapping, leaves this graph exactly as
+// empty as if nothing had been uploaded — document_upload_insufficient is a
+// consequence of this function's contract, not a special case inside it.
+
+export type CausalChainSufficiencyReason = 'sufficient' | 'no_outcome_node' | 'no_output_link' | 'no_activity_link'
+
+export interface CausalChainSufficiencyResult {
+  readonly sufficient: boolean
+  readonly reason: CausalChainSufficiencyReason
+}
+
+/**
+ * Pure: does an ACTIVE, traceable activity -> output -> outcome chain exist
+ * for `outcomeId` in the given node/link sets? Reuses isValidLinkTransition's
+ * already-enforced shape (a link can only ever be activity->output or
+ * output->outcome — see createLink above) rather than re-deriving it: this
+ * function only asks whether the two required hops are both PRESENT, never
+ * whether a present link is well-typed, because a badly-typed link cannot
+ * exist in the first place (NEG-16-1 non-regression).
+ *
+ * A material causal shortcut (an outcome the author believes is legitimately
+ * reachable without a full chain) is NEVER accepted here as an alternative
+ * path to "sufficient" — FIBC-020's material_shortcut_contract requires it
+ * to be documented as a FIBIU-15 structured assumption instead, and doing so
+ * must never silently clear this gate (NEG-16-4): this function has no
+ * knowledge of assumption_object_links at all, by design.
+ */
+export function checkCausalChainSufficiency(
+  nodes: readonly Pick<typeof theoryOfChangeNodes.$inferSelect, 'id' | 'nodeType' | 'outcomeId' | 'status'>[],
+  links: readonly Pick<typeof theoryOfChangeLinks.$inferSelect, 'fromNodeId' | 'toNodeId' | 'status'>[],
+  outcomeId: string,
+): CausalChainSufficiencyResult {
+  const activeNodesById = new Map(nodes.filter((n) => n.status === 'active').map((n) => [n.id, n]))
+  const activeLinks = links.filter((l) => l.status === 'active')
+
+  const outcomeNode = [...activeNodesById.values()].find((n) => n.nodeType === 'outcome' && n.outcomeId === outcomeId)
+  if (!outcomeNode) return { sufficient: false, reason: 'no_outcome_node' }
+
+  const outputParentIds = activeLinks
+    .filter((l) => l.toNodeId === outcomeNode.id)
+    .map((l) => l.fromNodeId)
+    .filter((id) => activeNodesById.get(id)?.nodeType === 'output')
+  if (outputParentIds.length === 0) return { sufficient: false, reason: 'no_output_link' }
+
+  const hasActivityParent = outputParentIds.some((outputId) =>
+    activeLinks.some((l) => l.toNodeId === outputId && activeNodesById.get(l.fromNodeId)?.nodeType === 'activity'),
+  )
+  if (!hasActivityParent) return { sufficient: false, reason: 'no_activity_link' }
+
+  return { sufficient: true, reason: 'sufficient' }
+}
+
+/** DB-backed: fetches this project's active graph once and checks every requested outcome against it. */
+export async function getCausalChainSufficiencyForOutcomes(
+  projectId: string,
+  outcomeIds: readonly string[],
+): Promise<Map<string, CausalChainSufficiencyResult>> {
+  const [nodes, links] = await Promise.all([
+    db.select().from(theoryOfChangeNodes).where(eq(theoryOfChangeNodes.projectId, projectId)),
+    db.select().from(theoryOfChangeLinks).where(eq(theoryOfChangeLinks.projectId, projectId)),
+  ])
+  const result = new Map<string, CausalChainSufficiencyResult>()
+  for (const outcomeId of outcomeIds) result.set(outcomeId, checkCausalChainSufficiency(nodes, links, outcomeId))
+  return result
+}
+
 export async function archiveLink(projectId: string, linkId: string) {
   const ctx = await authorizeWrite(projectId)
   const existing = await db.select().from(theoryOfChangeLinks).where(eq(theoryOfChangeLinks.id, linkId)).then((r) => r[0])
