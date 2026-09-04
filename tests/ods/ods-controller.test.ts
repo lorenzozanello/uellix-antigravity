@@ -88,14 +88,15 @@ describe('E7: closed-world stop taxonomy and state model', () => {
 // ---------------------------------------------------------------------------
 
 describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
-  it('is the exact 25-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14)', () => {
-    expect(IMMUTABLE_BY_CONVENTION.length).toBe(25)
-    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(25)
+  it('is the exact 26-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14 + v1.0.15)', () => {
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(26)
+    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(26)
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json')
   })
 
   it('excludes ODS_CARRY_FORWARD_BACKLOG.md by design (append-only working backlog)', () => {
@@ -111,14 +112,17 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     expect(IMMUTABLE_BY_CONVENTION.every((entry) => entry.startsWith('docs/ops/ods/'))).toBe(true)
   })
 
-  // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract): the closed
-  // world does not pre-include a later ODS successor artifact. This asserts
-  // ABSENCE only — it reserves no identifier and authorizes no future grant.
-  // per ods_lineage_serialization.no_future_ids_reserved, NEXT_ODS_LINEAGE is
-  // DERIVE_AT_MATERIALIZATION_TIME; the mechanically-next version number is
-  // used here purely as a negative-control literal, not an allocation.
+  // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract, carried
+  // forward by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json self_inclusion_rule):
+  // the closed world does not pre-include a later ODS successor artifact. The
+  // control ADVANCES with the list — v1.0.15 is now enumerated, so the absence
+  // assertion moves to the mechanically-next version. It asserts ABSENCE only:
+  // it reserves no identifier and authorizes no future grant. Per
+  // ods_lineage_serialization.no_future_ids_reserved, NEXT_ODS_LINEAGE is
+  // DERIVE_AT_MATERIALIZATION_TIME; the number below is a negative-control
+  // literal, never an allocation.
   it('does NOT pre-include the next unallocated ODS successor addendum (no automatic inclusion)', () => {
-    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json')
+    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json')
   })
 
   it('normalizeRepoPath canonicalizes backslashes and redundant "." segments', () => {
@@ -191,6 +195,37 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     const decision = decideSelection(unit, 'OPEN', {}, {})
     expect(decision.selectable).toBe(false)
     expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json self_inclusion_rule: the Controller
+  // must enumerate its own governing addendum. These controls prove the newly
+  // appended entry is actually wired into decideSelection, not merely present
+  // as a string — removing it from IMMUTABLE_BY_CONVENTION fails them
+  // independently of the length/Set assertions above.
+  it('a node targeting v1.0.15 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.15) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.15.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // Duplicate control: the closed world is a SET as well as an ordered list.
+  // A second copy of the new entry would satisfy a naive toContain check and
+  // would still be caught here, and by length === Set size, before it could
+  // make the live count ambiguous as a successor precondition.
+  it('the new entry appears exactly once, and the list carries no duplicates at all', () => {
+    const occurrences = IMMUTABLE_BY_CONVENTION.filter(
+      (entry) => entry === 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json',
+    ).length
+    expect(occurrences).toBe(1)
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(new Set(IMMUTABLE_BY_CONVENTION).size)
   })
 
   it('CTRL-M3: writePaths absent on an otherwise-executable node STOPs with AUTHORITY_GAP (unknown write surface, never implicitly safe)', () => {
@@ -513,10 +548,31 @@ describe('already-closed disposition', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Real repository proof: W2-B4 is not selectable while
-// P1A_FULL_BOOTSTRAP_CLOSED is unresolved — now a single deterministic
-// answer under CTRL-M1 (dependsOn UNKNOWN evidence and unresolved
-// externalPreconditions both map to UNKNOWN_EVIDENCE).
+// CTRL26-CLOSURE-TEST-R1 (binding coordinator ruling): W2-B4 closed on
+// 2026-09-04 (PR #62 merge 33c2347d81b16c9aafa5dad2db1647c0e4c3d684) — its own
+// authority/implementation/audit evidence is now mechanically CLOSED, not
+// UNKNOWN. The OLD assertion here (stopClass === 'UNKNOWN_EVIDENCE') tested a
+// premise that expired the moment B4 closed: decideSelection's
+// ownClosureStatus check runs FIRST and short-circuits to alreadyClosed=true
+// before dependsOn/externalPreconditions/dbWriting are ever consulted, so the
+// original rationale above ("dependsOn UNKNOWN evidence and unresolved
+// externalPreconditions both map to UNKNOWN_EVIDENCE") no longer describes
+// what this unit hits. UNKNOWN_EVIDENCE remains correct ONLY when the
+// required evidence/ref genuinely cannot be resolved — a materially
+// different condition, split into its own control below.
+//
+// Both controls are deterministic across checkout topology: neither depends
+// on whether the branch name "codex/w2-b4-r1" happens to be a locally known
+// git ref (true in a full checkout that fetched it; generally false in CI's
+// single-branch checkout, which is why the stale assertion above still
+// passed there — a checkout-topology accident, not a semantic proof).
+// CTRL-CLOSED-1 pins evidence to HEAD, which is trivially resolvable in any
+// checkout of this very branch, and the W2-B4 closure artifacts are
+// integrated into this branch's own ancestry. CTRL-UNKNOWN-1 pins evidence to
+// a ref that provably never exists, in any topology. Neither mocks a
+// condition the real selector cannot encounter — both run through the real
+// selectNode I/O path (evaluateEvidence + aggregateClosureStatus +
+// decideSelection), only the evidence ref differs.
 // ---------------------------------------------------------------------------
 
 describe('real registry: W2-B4 fail-closed selection', () => {
@@ -528,9 +584,34 @@ describe('real registry: W2-B4 fail-closed selection', () => {
     expect(unit?.dbWriting).toBe(true)
   })
 
-  it('selectNode STOPs W2-B4 fail-closed with UNKNOWN_EVIDENCE, deterministically', () => {
-    const decision = selectNode(REPO_ROOT, registry, 'W2-B4')
+  it('CTRL-CLOSED-1: with fully resolvable own evidence, selectNode short-circuits to alreadyClosed=true BEFORE dependsOn/externalPreconditions/dbWriting are ever consulted', () => {
+    // Same evidence type, path, field and closedValues the real registry
+    // declares for W2-B4 — only ref changes, from the branch name to HEAD, so
+    // resolution never depends on which branches this checkout fetched.
+    const realUnit = registry.units.find((u) => u.id === 'W2-B4') as ControllerUnit
+    const unit: ControllerUnit = {
+      ...realUnit,
+      authority: { ...realUnit.authority, ref: 'HEAD' },
+      implementation: { ...realUnit.implementation, ref: 'HEAD' },
+      audit: { ...realUnit.audit, ref: 'HEAD' },
+    }
+    const decision = selectNode(REPO_ROOT, { units: [unit] }, 'W2-B4')
     expect(decision.selectable).toBe(false)
+    expect(decision.alreadyClosed).toBe(true)
+    expect(decision.stopClass).toBeUndefined()
+  })
+
+  it('CTRL-UNKNOWN-1: with the required evidence/ref genuinely unresolvable, selectNode fails closed as UNKNOWN_EVIDENCE — never alreadyClosed', () => {
+    const realUnit = registry.units.find((u) => u.id === 'W2-B4') as ControllerUnit
+    const unresolvable: Evidence = {
+      type: 'paths-exist',
+      ref: 'refs/does-not-exist-xyz-w2-b4-closure-test',
+      paths: ['docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json'],
+    }
+    const unit: ControllerUnit = { ...realUnit, authority: unresolvable, implementation: unresolvable, audit: unresolvable }
+    const decision = selectNode(REPO_ROOT, { units: [unit] }, 'W2-B4')
+    expect(decision.selectable).toBe(false)
+    expect(decision.alreadyClosed).toBeUndefined()
     expect(decision.stopClass).toBe('UNKNOWN_EVIDENCE')
   })
 
