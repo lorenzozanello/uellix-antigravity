@@ -1,0 +1,197 @@
+{
+  "evidence_id": "P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0",
+  "document_class": "EVIDENCE_REPORT",
+  "is_authority": false,
+  "self_certification": "NONE — this file records measured outputs only. It does not certify P1A, does not mark PR59 ready, does not replace the independent full audit, and does not authorize any path.",
+  "authority_references": {
+    "primary": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json",
+    "amendment": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "test_manifest": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json",
+    "protected_authority": "HPO-ODS-W2-11",
+    "artifact_authorization": "This evidence artifact is the TO_BE_CREATED path already named by the authority and referenced by scripts/p1a-bootstrap-gate.ts and the ODS addendum; its creation adds no new filename."
+  },
+  "lineage": {
+    "branch": "codex/p1a-full-bootstrap-r1",
+    "pull_request": 59,
+    "pull_request_base": "integration/commercial-v1",
+    "immutable_predecessor_integration_head": "696243f702f0feab155b1bd7411bb211f50f5a89",
+    "mission_start_head": "103cc67390beb8d63c4e9d708c68c644c9ceb0b4",
+    "preserved_commits": ["16e2796", "ee91578", "f7adf00", "3a72403", "103cc67"],
+    "witness_commit": "4d733f9915ca5a42f0ed07e2b7a65d893b21d25e",
+    "witness_commit_tree": "9e5382eeec36915d2a9a9e3257132c71c335c656",
+    "note": "This artifact is committed in a successor commit on top of the witness commit; it cannot contain its own SHA."
+  },
+  "changed_paths_this_mission": {
+    "authorized": [
+      "scripts/stella-r3-4-local-runner.ts",
+      "scripts/stella-r3-5-pg17-certify.ts",
+      "tests/p1a-bootstrap-gate.test.ts",
+      "tests/prepared-stella-sql.test.ts",
+      "tests/stella-r3-5-pg17-certification.test.ts",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0.json"
+    ],
+    "unauthorized_new_paths": [],
+    "new_filenames": ["docs/ops/p1a/P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0.json"]
+  },
+  "pending_authority_path": {
+    "path": "tests/database-role-safety.test.ts",
+    "status": "MODIFIED_IN_103cc67_WITHOUT_P1A_PATH_AUTHORITY",
+    "disposition": "Left untouched by this mission (not reverted, not modified, not used as permission). Its authority is a separate lane (successor authority v1.0.2 or equivalent). It is the only UNAUTHORIZED_PATH reported by ods:scope over the full PR59 delta."
+  },
+  "environment": {
+    "os": "Windows 11 (win32), Docker Desktop",
+    "image": "public.ecr.aws/supabase/postgres:17.6.1.143",
+    "image_digest": "sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453",
+    "gate_port": 56322,
+    "witness_port": 56399,
+    "local_role_identity_sha256": "c15b08370940dcbfc388981ec2d1ea478c030ae0bbbae0c7ea5ca0eeceac94d9",
+    "stella_0001_sha256": "e50fe2e404c06ca181c2f517d8dfa9c2bc2f9a35def4856dedb48d6d481fcd35"
+  },
+  "gates": {
+    "typecheck": { "command": "pnpm exec tsc --noEmit -p tsconfig.json", "result": "PASS", "exit_code": 0 },
+    "lint": { "command": "pnpm exec eslint <five changed files>", "result": "PASS", "exit_code": 0 },
+    "secrets_scan": { "command": "pnpm secrets:scan", "result": "PASS", "output": "CURRENT_TREE: no credential material found." },
+    "authority_seal_verify": {
+      "command": "pnpm authority:seal:verify",
+      "result": "PASS",
+      "output": "ODS_AUTHORITY_INPUT_INTEGRITY=PASS PROTECTED_CORPUS_COUNT=9 PROTECTED_CORPUS_INTEGRITY=PASS TRANSITIVE_ATTESTATION_COUNT=4 NATIVE_RELATIONSHIPS=PASS AUTHORITY_SEAL_VERIFY=PASS"
+    },
+    "ods_scope_mission_delta": {
+      "command": "pnpm ods:scope -- --base 103cc67390beb8d63c4e9d708c68c644c9ceb0b4 --protected-authority HPO-ODS-W2-11 --allow <five changed files>",
+      "result": "PASS",
+      "output": "CHANGED_FILE_COUNT=5 PROTECTED_AUTHORIZED_PATH_COUNT=0 PROTECTED_PATH_VIOLATIONS=0 NON_CANONICAL_PROTECTED_PATHS=0 UNAUTHORIZED_PATHS=0 ODS_SCOPE=PASS",
+      "measured_at_head": "4d733f9915ca5a42f0ed07e2b7a65d893b21d25e"
+    },
+    "ods_scope_full_pr59_delta": {
+      "command": "pnpm ods:scope -- --base 696243f702f0feab155b1bd7411bb211f50f5a89 --protected-authority HPO-ODS-W2-11 --allow <14 authorized paths>",
+      "result": "FAIL_EXPECTED",
+      "output": "CHANGED_FILE_COUNT=15 PROTECTED_AUTHORIZED_PATH_COUNT=3 UNAUTHORIZED_PATH=tests/database-role-safety.test.ts PROTECTED_PATH_VIOLATIONS=0 NON_CANONICAL_PROTECTED_PATHS=0 UNAUTHORIZED_PATHS=1 ODS_SCOPE=FAIL",
+      "interpretation": "The single unauthorized path is the pending authority lane; no other path is outside authority."
+    },
+    "ods_poststate": { "result": "RECORDED_IN_MISSION_REPORT", "note": "Run on the final head after this artifact is committed; its output cannot be embedded here without self-reference." }
+  },
+  "p1a_bootstrap_gate": {
+    "command": "pnpm p1a:bootstrap:gate",
+    "result": "OVERALL=PASS (182/182 checks)",
+    "exit_code": 0,
+    "fail_count": 0,
+    "labelled_leftover_containers": 0,
+    "scenarios_recorded": {
+      "SELFTEST": 4, "MAIN-1": 21, "MAIN-2": 21, "PRIV-N2": 13, "PRIV-N3": 11, "PRIV-N4": 13,
+      "P1A-N2": 13, "P1A-N3": 14, "P1A-N6": 11, "FINAL": 1
+    },
+    "note": "Two fresh environments (MAIN-1, MAIN-2) plus negative scenarios, all on the pinned digest at 127.0.0.1:56322."
+  },
+  "targeted_tests": {
+    "cheap_no_docker": {
+      "command": "pnpm vitest run tests/p1a-bootstrap-gate.test.ts tests/prepared-stella-sql.test.ts tests/stella-r3-5-pg17-certification.test.ts",
+      "result": "3 files passed; 576 passed, 7 skipped (real-Docker opt-in), 0 failed"
+    },
+    "real_docker_durable_witnesses": {
+      "command": "P1A_GATE_REAL_DOCKER_TESTS=1 pnpm vitest run tests/p1a-bootstrap-gate.test.ts -t \"P1A durable witnesses\"",
+      "result": "6 passed, 0 failed, 0 leftover containers, 0 leftover env files",
+      "duration_seconds": 50
+    },
+    "sigterm_teardown_test": {
+      "status": "NOT_RUN_LOCALLY",
+      "reason": "On Windows child.kill('SIGTERM') is TerminateProcess and the handler never fires; this test is validated in CI on ubuntu (P1A Bootstrap Gate workflow, run 33834673147 on 103cc67)."
+    }
+  },
+  "witnesses": {
+    "R3_4_IMPORT_SAFE": {
+      "mechanism": "isDirectExecution() compares pathToFileURL(process.argv[1]).href with import.meta.url; main() runs only on direct execution.",
+      "proof": "Spawned `node --import tsx -e import(<file URL>)` prints IMPORT_OK exitCode=undefined preflight=function; plan with UELLIX_*/PG* stripped and no env files exits 0 with R3_4_LOCAL_PHASES.length lines; apply without env fails with 'Missing .env.migration.local' before any preflight text; wiring order printPlan < preflight < phase loop asserted from source.",
+      "result": "PASS"
+    },
+    "R3_4_PERSISTENT_NEGATIVES": {
+      "invokes": "runR3_4PreMutationPreflight (real exported function) against a live pinned-image cluster after stella_local_0000",
+      "positive": "resolves on the corrected topology (PASS)",
+      "negatives": {
+        "fact4_missing_public_CREATE": "THROWS 'R3.4 preflight FAILED (fact 4) … lacks CREATE on schema public'; restored; PASS again",
+        "fact5_missing_auth_USAGE": "THROWS 'R3.4 preflight FAILED (fact 5) … lacks USAGE on schema auth'; restored; PASS again",
+        "fact3_admin_option_true": "THROWS 'R3.4 preflight FAILED (facts 2/3)' naming uellix_app->uellix_writer granted-by=supabase_admin(oid=10) admin=true; restored; PASS again",
+        "fact2_wrong_grantor": "THROWS 'R3.4 preflight FAILED (facts 2/3)' naming uellix_migrator->uellix_owner granted-by=postgres(oid=16384)",
+        "fact1_missing_role": "THROWS 'R3.4 preflight FAILED (fact 1) … uellix_auditor'"
+      },
+      "result": "PASS"
+    },
+    "RR02_PERSISTENT": {
+      "refused_operations": {
+        "self_grant": "GRANT uellix_owner TO postgres WITH INHERIT FALSE, SET TRUE → ERROR permission denied to grant role \"uellix_owner\"",
+        "set_role": "SET ROLE uellix_owner → ERROR permission denied to set role \"uellix_owner\"",
+        "via_created_probe_role": "CREATE ROLE rr02_probe (allowed, CREATEROLE) then GRANT uellix_owner TO rr02_probe → ERROR permission denied to grant role \"uellix_owner\""
+      },
+      "catalog_state": "0 pg_auth_members rows with member=postgres over uellix_* before and after every refused attempt; pg_has_role('postgres','uellix_owner','SET')=f; ('USAGE')=f",
+      "result": "PASS"
+    },
+    "N7_PERSISTENT": {
+      "level": "EXECUTION (PostgreSQL statement log, log_statement=all, log_line_prefix='%u %a ', session isolated by PGAPPNAME=p1a-n7-witness)",
+      "measured_hazard": "The pinned image's init runs `alter role supabase_admin set log_statement = none`, a ROLE-level GUC that overrides ALTER SYSTEM; a witness that only set the system value counted 0 supabase_admin statements (observed). Both actors are pinned to 'all' at role level and SHOW log_statement is asserted before counting.",
+      "positive": "supabase_admin privilege writes = 3 exactly (membership A, membership B, GRANT USAGE ON SCHEMA auth) in order; postgres privilege writes = 2 exactly (GRANT USAGE, CREATE ON SCHEMA public; REVOKE CREATE …); CREATE ROLE x5 and ALTER ROLE x1 under supabase_admin; 0 role-catalog statements under postgres",
+      "mutations": {
+        "membership_A_moved_to_postgres": "supabase_admin ledger = 2; postgres ledger contains membership A; server refuses it: 'permission denied to grant role \"uellix_owner\"' / 'Only roles with the ADMIN option … may grant this role.' (RR-02 at execution level); package exit != 0",
+        "auth_USAGE_moved_to_postgres": "supabase_admin ledger = 2; postgres issues the auth GRANT (WARNING no-op); package fails closed with 'stella_local_0000 FAILED verification: uellix_owner lacks USAGE on schema auth.'",
+        "fourth_supabase_admin_write_injected": "GRANT uellix_writer TO postgres inserted after membership B → supabase_admin ledger = 4 (detected); this is the write the file's own §6 self-verification does not scope, which is why the runtime ledger exists"
+      },
+      "new_surface_required": false,
+      "result": "PASS"
+    },
+    "MEMBERSHIP_C_WITNESS": {
+      "static": "stella_local_0000 executable code contains 0 `GRANT uellix_writer TO postgres`; establishes exactly 2 memberships (A, B). stella_0001 contains exactly 1, preceded by its conditional `EXECUTE 'REVOKE uellix_writer FROM postgres'`.",
+      "runtime": "catalog holds 0 postgres→uellix_writer rows after stella_local_0000 on a live cluster",
+      "residual": "Runtime CREATION of membership C by stella_0001 is not exercised: PHASE_LOCAL_PREPARED_CHAIN stays outside the canonical gate's minimum invariant by recorded choice and was NOT introduced into the gate. Membership C remains a source-level fact for stella_0001."
+    },
+    "P1A_M1": {
+      "test": "tests/p1a-bootstrap-gate.test.ts — 'P1A-M1 — after MINIMAL_EXPORT_WIDENING …'",
+      "baseline": "IMMUTABLE predecessor scripts/m2-disposable-pg-bootstrap.ts at 696243f7 (blob 70a52b0ea3a729493e676d3f2081559a52b6875b): 69 unique record ids, 79 record() sites (frozen in the test, never rebaselined)",
+      "candidate": "identical id SET and identical site COUNT; export-only widening (stripping `export ` prefixes leaves the inventory unchanged)",
+      "mutation_proof": "removed id, invented id, changed count, and an appended record() call are each DETECTED",
+      "runtime_reference": "M2 Real PostgreSQL Gate OVERALL=PASS (252/252 checks) on predecessor CI run 33827389877 (1b07181) and on candidate CI runs 33833989035 (3a72403) and 33834673142 (103cc67); the 230/230 figure in the older integration manifest is a superseded baseline",
+      "result": "PASS"
+    },
+    "P1A_M2": { "location": "scripts/p1a-bootstrap-gate.ts (P1A-N2/N3/N6 live scenarios)", "result": "PASS within OVERALL=PASS (182/182)" },
+    "P1A_M3": { "location": "tests/p1a-bootstrap-gate.test.ts", "result": "PASS (cheap suite)" },
+    "P1A_M4": {
+      "test": "tests/prepared-stella-sql.test.ts — 'P1A-M4 — stella_0001 assertions are fail-closed …'",
+      "positive": "committed stella_0001 PASSES (both assertions present, zero grant-producing fallbacks)",
+      "mutations_in_memory_only": {
+        "a_bare_GRANT_replaces_assertion": "FAIL detected (assertion missing + fallback present)",
+        "b_ELSE_regrant_fallback_added": "FAIL detected (fallback present)",
+        "c_EXECUTE_dynamic_regrant": "FAIL detected"
+      },
+      "committed_stella_0001_modified": false,
+      "result": "PASS"
+    },
+    "R3_5_THREE_WAY": {
+      "CURRENT": "EXPECTED_HASHES → status CURRENT (no diverged files)",
+      "SUPERSEDED": "exactly stella_0001 at e50fe2e4… → SUPERSEDED; executeFixedCertification throws R3_5CertificationSupersededError before loadVerifiedR3Sources(); CLI exit 2",
+      "MISMATCH": "stella_0001 at successor hash PLUS stella_0004 diverged → MISMATCH (both files listed, NOT SUPERSEDED); stella_0001 at an unknown hash → MISMATCH; a single non-0001 drift → MISMATCH",
+      "harness_source_test": "current head classifies as SUPERSEDED exactly (not MISMATCH, not CURRENT)",
+      "result": "PASS"
+    }
+  },
+  "m2_regression": {
+    "static_control": "P1A-M1 PASS (see above)",
+    "runtime_reference": "252/252 on predecessor and candidate CI runs (see P1A_M1.runtime_reference)"
+  },
+  "ci": {
+    "pr59_head_at_mission_start": "103cc67390beb8d63c4e9d708c68c644c9ceb0b4",
+    "runs_on_103cc67": { "CI": "33834673156 success", "M2 Real PostgreSQL Gate": "33834673142 success", "P1A Bootstrap Gate": "33834673147 success" },
+    "runs_after_this_mission": "RECORDED_IN_MISSION_REPORT"
+  },
+  "open_findings": {
+    "blocking": [],
+    "authority_blockers": ["tests/database-role-safety.test.ts requires a separate authority delta (v1.0.2 lane) before PR59 can be scope-clean over its full delta"],
+    "unknown": [],
+    "residuals": [
+      "Membership C runtime creation by stella_0001 not exercised (recorded above).",
+      "SIGTERM teardown test validated only in CI (ubuntu), by platform limitation."
+    ]
+  },
+  "not_claimed": [
+    "P1A is NOT certified by this artifact.",
+    "The independent full audit has NOT been run.",
+    "PR59 is NOT marked ready and is NOT merged.",
+    "No production or hosted promotion is implied."
+  ]
+}
