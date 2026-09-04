@@ -252,7 +252,12 @@ const RUNNER_PATH = path.join(REPO_ROOT, 'scripts', 'stella-r3-4-local-runner.ts
 
 describe('R3.4 runner — import-safe, plan is env/DB-free, CLI unchanged (cheap, no Docker)', () => {
   it('importing the module does NOT execute main(): no argv parse, no exitCode side effect, preflight is exported', () => {
-    const script = `import(${JSON.stringify(pathToFileURL(RUNNER_PATH).href)}).then((m) => console.log('IMPORT_OK exitCode=' + process.exitCode + ' preflight=' + typeof m.runR3_4PreMutationPreflight))`
+    // MEASURED (CI, ubuntu): with package type=commonjs, tsx emits the runner as
+    // CJS there and the named export is reachable only through `default` from a
+    // CJS `-e` context, while on Windows it surfaced on the namespace directly.
+    // The witness resolves both so the check is platform-independent; the
+    // load-bearing fact is exitCode=undefined (main() did not run).
+    const script = `import(${JSON.stringify(pathToFileURL(RUNNER_PATH).href)}).then((m) => { const f = m.runR3_4PreMutationPreflight ?? (m.default && m.default.runR3_4PreMutationPreflight); console.log('IMPORT_OK exitCode=' + process.exitCode + ' preflight=' + typeof f) })`
     const r = spawnSync('node', ['--import', 'tsx', '-e', script], { cwd: REPO_ROOT, encoding: 'utf8' })
     expect(r.status).toBe(0)
     expect(r.stdout).toContain('IMPORT_OK exitCode=undefined preflight=function')
