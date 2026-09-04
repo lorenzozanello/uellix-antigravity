@@ -168,17 +168,40 @@
   ],
 
   "commit_and_push": {
-    "note": "Recorded by the mission's final report, not embedded here to avoid a self-referential artifact — this evidence file is committed in the same commit series as the implementation, and cannot contain its own final SHA."
+    "commit_1": "b091f81 — feat(db): FIBIU-15/14 schema, migrations 0062/0063, baseline registration",
+    "commit_2": "1bcc61d — feat(pipeline): FIBIU-15/14/16 service layer, actions, tests, evidence",
+    "push": "origin/codex/w2-b4-r1 updated d6d4318..1bcc61d, non-force, fast-forward",
+    "pr": "PR #62, draft, base integration/commercial-v1, head codex/w2-b4-r1 — https://github.com/lorenzozanello/uellix-antigravity/pull/62"
+  },
+
+  "ci_confirmation": {
+    "run": "https://github.com/lorenzozanello/uellix-antigravity/actions/runs/33891825856 (job 'Lint, typecheck, test, build')",
+    "result": "FAIL — exactly and only the two pre-declared known conditions; no new/unanticipated failure",
+    "other_required_checks": {
+      "Canonical LOCAL/CI clean bootstrap proof": "PASS (2m34s)",
+      "Isolated M2 disposable PostgreSQL proof": "PASS (1m39s)",
+      "Vercel deployment + preview comments": "PASS"
+    },
+    "measured_counts": "3 test files failed, 369 passed, 4 skipped (376) | 7 tests failed, 10151 passed, 221 skipped (10379)",
+    "failure_attribution": {
+      "tests/hosted/checkpoint-a1.test.ts": "2 failures (lines 891, 1022) — KTC-W2-B4-A1-STALE",
+      "tests/hosted/checkpoint-b0.test.ts": "2 failures (line 278 + observation-content mismatch) — KTC-W2-B4-B0-STALE",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts": "3 failures (lines 18, 42, 86) — same root cause as KTC-W2-B4-A1-STALE: report.gates/baselineApplied/stagingApplied all derive from the same stale artifacts/hosted-a1-status.json + baseline-rehearsal artifact CI reads, so this file's failures are a direct, expected downstream consequence, not a third condition"
+    },
+    "action_taken": "None — fixing either root cause requires writing to a path outside this mission's authorized surface (artifacts/** is unenumerated; db/prepared/checkpoint-b0/** is explicitly prohibited by W2_B4_AUTHORITY_v1.0.0.json). Per the mission's own CI instruction ('fix only authorized local defects... if another authority is genuinely required, STOP'), no fix was attempted. This is the UNAUTHORIZED_REQUIRED_PATH condition, disclosed here for the FOCUSED_OPUS_ADVERSARIAL_CLOSURE_AUDIT rather than worked around.",
+    "conclusion": "CI's real result confirms the pre-CI diagnosis exactly (same test files, same line numbers, same root causes) — the two known conditions are real, reproducible, and structurally out of this mission's authorized surface, not a self-serving prediction."
   },
 
   "final_state": {
     "W2_B4_IMPLEMENTATION_STATUS": "IMPLEMENTED_AWAITING_FOCUSED_OPUS_AUDIT",
+    "ci_status": "FAIL — attributable in full to KTC-W2-B4-A1-STALE / KTC-W2-B4-B0-STALE, both requiring authority this mission does not hold to close",
     "not_claimed": [
       "W2-B4 is NOT certified by this artifact.",
       "The independent FOCUSED_OPUS_ADVERSARIAL_CLOSURE_AUDIT has NOT been run.",
       "This PR is NOT marked ready and is NOT merged.",
       "No production or hosted promotion is implied.",
-      "CONTROLLER_DB_EXECUTION remains DISABLED."
+      "CONTROLLER_DB_EXECUTION remains DISABLED.",
+      "CI is NOT green — the two known conditions above are outstanding and unresolved by this mission."
     ]
   }
 }
