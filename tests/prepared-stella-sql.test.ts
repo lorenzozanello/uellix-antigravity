@@ -453,6 +453,14 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // character for character — and grants nothing to anyone.
       'stella_hosted_0008_audit_log_write_capability.sql',
       'stella_hosted_0008_rollback.sql',
+      // P1A. The LOCAL/CI pre-baseline role IDENTITY bootstrap — see its own
+      // file header. FORWARD-ONLY (db/hosted/forward-only-packages.ts): no
+      // rollback ships for it, and the sweep this tripwire drives from
+      // therefore has no matching `stella_local_0000_rollback.sql` to also
+      // list — see the forward-only exemption branch, a few lines below in
+      // this same describe, which is what makes that absence expected
+      // rather than a T-series failure.
+      'stella_local_0000_local_role_identity_bootstrap.sql',
     ])
   })
 
@@ -3049,9 +3057,15 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R8W public sch
     )
   })
 
-  it('T9: §3 still grants CREATE on public to uellix_owner alone, unchanged', () => {
-    expect(code).toMatch(/GRANT CREATE ON SCHEMA public TO uellix_owner/i)
-    expect(code).not.toMatch(/GRANT CREATE ON SCHEMA public TO(?!\s*uellix_owner\b)/i)
+  it('T9: §3 ASSERTS (not grants) CREATE on public for uellix_owner alone — HPO-ODS-W2-11 successor contract', () => {
+    // stella_0001_successor_contract converted this from a grant-producing
+    // statement into a fail-closed ASSERTION that
+    // db/prepared/stella_local_0000_local_role_identity_bootstrap.sql already
+    // established the privilege — a re-grant here would reopen the exact
+    // ambiguity the split exists to remove. The bare GRANT this test
+    // previously expected is now the thing stella_0001 must NOT contain.
+    expect(raw).toMatch(/has_schema_privilege\('uellix_owner',\s*'public',\s*'CREATE'\)/)
+    expect(code).not.toMatch(/^\s*GRANT CREATE ON SCHEMA public TO uellix_owner/im)
   })
 
   it('T10: no 0003, 0004 or hosted package was touched by this remediation (byte-exact)', () => {
@@ -3288,9 +3302,18 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R9A REFERENCES
 
   it('T14: exact byte-pinned hashes for the two repinned packages (frozen at this gate)', () => {
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
+    // HPO-ODS-W2-11 successor contract (stella_0001_successor_contract):
+    // converts the two canonical grants at (then-)§3 into fail-closed
+    // ASSERTIONS that stella_local_0000 already established them — an
+    // authorized, single, enumerated byte change. This pin now tracks the
+    // SUCCESSOR bytes; the PREDECESSOR bytes remain separately, immutably
+    // pinned (never repinned) in db/r3-5-pg17-certification-inputs.ts as the
+    // historical R3.5 PostgreSQL 17 certification input.
     expect(sha256('stella_0001_role_topology_bootstrap.sql')).toBe(
-      '9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3',
+      'e50fe2e404c06ca181c2f517d8dfa9c2bc2f9a35def4856dedb48d6d481fcd35',
     )
+    // The rollback package is untouched by the successor contract — same
+    // pin as before.
     expect(sha256('stella_0001_role_topology_bootstrap_rollback.sql')).toBe(
       '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
     )

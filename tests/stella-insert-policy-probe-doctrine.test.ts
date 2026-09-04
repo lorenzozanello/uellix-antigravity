@@ -566,8 +566,17 @@ describe('T29 — active hash witnesses are exact', () => {
     const { createHash } = await import('node:crypto')
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
     const UNCHANGED: Record<string, string> = {
+      // Updated by the P1A successor contract (HPO-ODS-W2-11) — a SEPARATE,
+      // authorized, enumerated change (converting the two canonical grants
+      // into fail-closed assertions), not by this MSC-07B remediation.
+      // MEASURED, this was the one independent stella_0001 hash-pin required
+      // by the CONDITIONALLY_AUTHORIZED disposition
+      // (P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json
+      // authorized_additional_future_implementation_surface.conditional_note):
+      // SIX_PACKAGES/EXPECTED_SITE_COUNT above are untouched and unbroken;
+      // only this single pin, unrelated to that doctrine, needed updating.
       'stella_0001_role_topology_bootstrap.sql':
-        '9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3',
+        'e50fe2e404c06ca181c2f517d8dfa9c2bc2f9a35def4856dedb48d6d481fcd35',
       'stella_0001_role_topology_bootstrap_rollback.sql':
         '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
       'stella_0002_interactions_hardening.sql':

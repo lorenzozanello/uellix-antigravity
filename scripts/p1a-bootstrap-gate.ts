@@ -56,14 +56,23 @@
 // THIS GATE'S MINIMUM INVARIANT — an explicit choice the authority's own
 // canonical_topology (ordinal 6) permits: "This phase is NOT part of the
 // minimum gate invariant... may be declared out of the gate's scope with a
-// recorded reason." The recorded reason, measured this implementation
-// session against the exact pinned image below: stella_0001's own §2
-// membership precondition assumes a TRUE superuser installer (matching the
-// Supabase-CLI local dev stack, its real target) and does not tolerate the
-// automatic ADMIN-OPTION membership rows PostgreSQL 16+ creates when a
-// CREATEROLE-non-superuser role creates new roles — which is unavoidable
-// here, where `postgres` is verified NOT to be a superuser. The two
-// statements this gate's own successor contract authorized converting in
+// recorded reason."
+//
+// CORRECTION (P1A actor-partition remediation): an earlier revision of this
+// comment gave a reason that is now FALSE and is withdrawn — it claimed the
+// ADMIN-OPTION auto-grant rows a CREATEROLE-non-superuser role creator
+// leaves were "unavoidable" because postgres is not a superuser here.
+// MEASURED, they are avoidable: db/prepared/stella_local_0000_local_role_identity_bootstrap.sql
+// now creates the five roles and issues memberships A/B as `supabase_admin`
+// (a genuine superuser on this substrate), which leaves ZERO such rows — see
+// its own file header, ACTOR PARTITION. The exclusion of
+// PHASE_LOCAL_PREPARED_CHAIN from this gate's minimum invariant is RETAINED
+// here regardless, because wiring stella_0001 (and the migration corpus it
+// requires — see its own header, "WHY THIS FILE EXISTS") into this gate's
+// credential window, second-run contract and env-restore scope is a further,
+// separately-scoped architectural decision this remediation does not make.
+// It remains an authorized, explicit choice (ordinal 6), not a forced one.
+// The two statements this gate's own successor contract authorized converting in
 // that file (CREATE ON SCHEMA public, USAGE ON SCHEMA auth, now fail-closed
 // ASSERTIONS) were verified correct in BOTH directions this session, in
 // isolation, directly against this exact substrate — see
@@ -154,7 +163,10 @@ const LOCAL_ROLE_IDENTITY_PATH = resolve(REPO_ROOT, 'db/prepared/stella_local_00
 // `node -e "createHash('sha256')..."`, the same mechanism verifyPinnedSha()
 // re-derives and compares live, every application — this constant is
 // evidence of the exact bytes authorized, not a substitute for that check.
-const LOCAL_ROLE_IDENTITY_SHA256_EXPECTED = 'd0a61ceed5210911189c05080fdb9177d607fca2f9538504cbdeb9976c8dd505'
+// Updated by the P1A actor-partition remediation: the file's corrected
+// content (supabase_admin now performs role creation and memberships A/B)
+// changed its bytes from the prior pin.
+const LOCAL_ROLE_IDENTITY_SHA256_EXPECTED = 'c15b08370940dcbfc388981ec2d1ea478c030ae0bbbae0c7ea5ca0eeceac94d9'
 const LOCAL_ROLE_IDENTITY_SQL = readFileSync(LOCAL_ROLE_IDENTITY_PATH, 'utf8')
 
 function sha256(text: string): string {
@@ -226,34 +238,74 @@ function runMigrationCorpusOrderSensitivitySelfTest(): boolean {
 /**
  * Structural, static proof (no Docker) that
  * db/prepared/stella_local_0000_local_role_identity_bootstrap.sql performs
- * EXACTLY ONE reconnection to `supabase_admin` and EXACTLY ONE privilege-
- * changing statement after it — the file's own P1A-N7 discipline, provable
- * from source text alone because every mutating statement in this specific
- * file is a literal at column 0 (mirrors the source-scanning technique
- * scripts/m2-disposable-pg-bootstrap.ts SELFTEST:READY-N5 already uses for
- * an analogous "called exactly once" claim).
+ * EXACTLY the corrected actor partition
+ * (P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json D5_b2_grantor.actor_partition):
+ * TWO reconnections — to `supabase_admin`, then back to `postgres` — with
+ * EXACTLY THREE privilege-changing statements (P1A-N7) in the supabase_admin
+ * segment and EXACTLY TWO (the public-schema ACL only) in the final postgres
+ * segment. Provable from source text alone because every mutating statement
+ * in this specific file is a literal at column 0 (mirrors the
+ * source-scanning technique scripts/m2-disposable-pg-bootstrap.ts
+ * SELFTEST:READY-N5 already uses for an analogous "called exactly once"
+ * claim).
  */
 function runSingleAdminWriteStructuralSelfTest(): boolean {
   const src = LOCAL_ROLE_IDENTITY_SQL
-  const connectMatches = src.match(/^\\connect /gm) ?? []
-  if (connectMatches.length !== 1) {
-    return record('SELFTEST:P1A-N7-STRUCTURAL', false, `expected exactly one \\connect statement, found ${connectMatches.length}`)
+  const connectMatches = [...src.matchAll(/^\\connect - (\S+)$/gm)]
+  if (connectMatches.length !== 2 || connectMatches[0][1] !== 'supabase_admin' || connectMatches[1][1] !== 'postgres') {
+    return record(
+      'SELFTEST:P1A-N7-STRUCTURAL',
+      false,
+      `expected exactly two \\connect statements (supabase_admin then postgres), found: ${JSON.stringify(connectMatches.map((m) => m[1]))}`,
+    )
   }
 
-  const connectIndex = src.search(/^\\connect /m)
-  const afterConnect = src.slice(connectIndex)
+  const supabaseAdminSegment = src.slice(connectMatches[0].index, connectMatches[1].index)
+  const postgresSegment = src.slice(connectMatches[1].index! + connectMatches[1][0].length)
+
   // Top-level (column-0) mutating keywords only — matches this file's own
   // literal style (every GRANT/REVOKE/CREATE/ALTER in it starts a line at
   // column 0; the self-verification block's SELECT/RAISE statements inside
   // the DO $$ body are indented, not column-0, and are read-only regardless).
-  const mutatingLines = (afterConnect.match(/^(GRANT|REVOKE|CREATE ROLE|ALTER ROLE|CREATE SCHEMA|DROP)\b/gm) ?? [])
-  const ok = mutatingLines.length === 1 && /^GRANT USAGE ON SCHEMA auth TO uellix_owner;$/m.test(afterConnect)
+  const MUTATING = /^(GRANT|REVOKE|CREATE ROLE|ALTER ROLE|CREATE SCHEMA|DROP)\b/gm
+
+  // supabase_admin: CREATE ROLE x5 (not privilege writes — zero
+  // pg_auth_members rows from a superuser creator) + one ALTER ROLE ... SET
+  // default_transaction_read_only (a role-attribute default, not a
+  // privilege-graph mutation — no pg_auth_members row, no ACL) + membership
+  // A + B + the auth grant = exactly 3 privilege-changing GRANT statements.
+  const createRoleLines = (supabaseAdminSegment.match(/^CREATE ROLE\b/gm) ?? []).length
+  const alterRoleLines = (supabaseAdminSegment.match(/^ALTER ROLE\b/gm) ?? []).length
+  const supabaseAdminGrants = [...supabaseAdminSegment.matchAll(MUTATING)].filter((m) => m[1] === 'GRANT')
+  const supabaseAdminNonGrantNonCreate = [...supabaseAdminSegment.matchAll(MUTATING)].filter(
+    (m) => m[1] !== 'GRANT' && m[1] !== 'CREATE ROLE' && m[1] !== 'ALTER ROLE',
+  )
+  const supabaseAdminOk =
+    createRoleLines === 5 &&
+    alterRoleLines === 1 &&
+    /^ALTER ROLE uellix_auditor SET default_transaction_read_only = on;$/m.test(supabaseAdminSegment) &&
+    supabaseAdminGrants.length === 3 &&
+    supabaseAdminNonGrantNonCreate.length === 0 &&
+    /^GRANT uellix_owner {2}TO uellix_migrator/m.test(supabaseAdminSegment) &&
+    /^GRANT uellix_writer TO uellix_app/m.test(supabaseAdminSegment) &&
+    /^GRANT USAGE ON SCHEMA auth TO uellix_owner;$/m.test(supabaseAdminSegment)
+
+  // postgres (final segment): exactly the two public-schema ACL statements —
+  // no role creation, no membership, no auth-schema touch, no further
+  // \connect (already proven above: exactly two \connect total).
+  const postgresMutating = [...postgresSegment.matchAll(MUTATING)]
+  const postgresOk =
+    postgresMutating.length === 2 &&
+    /^GRANT USAGE, CREATE ON SCHEMA public TO uellix_owner;$/m.test(postgresSegment) &&
+    /^REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC;$/m.test(postgresSegment)
+
+  const ok = supabaseAdminOk && postgresOk
   return record(
     'SELFTEST:P1A-N7-STRUCTURAL',
     ok,
     ok
-      ? 'exactly one top-level mutating statement after the single \\connect — GRANT USAGE ON SCHEMA auth TO uellix_owner'
-      : `expected exactly one top-level mutating statement (the auth-schema grant) after \\connect; found ${mutatingLines.length}: ${JSON.stringify(mutatingLines)}`,
+      ? 'corrected actor partition confirmed: supabase_admin segment = CREATE ROLE x5 (0 privilege writes) + exactly 3 GRANTs (membership A, membership B, auth USAGE); postgres segment = exactly the 2 public-schema ACL statements, nothing else'
+      : `actor partition mismatch — supabaseAdminOk=${supabaseAdminOk} (createRoleLines=${createRoleLines}, grants=${supabaseAdminGrants.length}, other=${supabaseAdminNonGrantNonCreate.length}) postgresOk=${postgresOk} (mutating=${postgresMutating.length})`,
   )
 }
 
@@ -746,7 +798,12 @@ async function runP1aN3SetRoleIneffectiveNegative(runner: DockerRunner, id: stri
     if (results.some((r) => r.id.startsWith(`${id}:`) && !r.ok)) return
     if (!grantDatabaseCreate(runner, handle.name, id)) return
 
-    const revoke = psql(runner, handle.name, 'REVOKE uellix_owner FROM uellix_migrator;')
+    // supabase_admin, not postgres: under the corrected actor partition,
+    // membership A is granted by supabase_admin (oid 10), and postgres holds
+    // NO ADMIN OPTION over it — this negative control's REVOKE must use the
+    // actual grantor, exactly as production code must, or it fails with
+    // insufficient privilege rather than exercising the intended scenario.
+    const revoke = psqlAs(runner, handle.name, 'supabase_admin', 'REVOKE uellix_owner FROM uellix_migrator;')
     if (!record(`${id}:DELIBERATE-REVOKE-SET-ROLE-PATH`, revoke.status === 0)) return
     if (!proveGapAbsent(runner, handle.name, id, 'GAP-PROOF', `SELECT pg_has_role('uellix_migrator','uellix_owner','USAGE');`)) return
 

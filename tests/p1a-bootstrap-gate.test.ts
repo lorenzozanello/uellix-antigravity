@@ -115,33 +115,49 @@ describe('P1A-M3 — finally-guaranteed env restoration survives a thrown except
   })
 })
 
-describe('P1A-N7 — structural proof: exactly one \\connect and exactly one privilege statement after it (cheap, no Docker)', () => {
+describe('P1A-N7 — structural proof: the corrected actor partition (cheap, no Docker)', () => {
+  // Actor-partition remediation: the file now reconnects TWICE — to
+  // supabase_admin first (role creation, memberships A/B, the auth grant),
+  // then BACK to postgres (the public-schema ACL only) — superseding the
+  // prior single-reconnect shape these assertions pinned.
   const src = readFileSync(LOCAL_ROLE_IDENTITY_PATH, 'utf8')
 
-  it('the file reconnects to a different role exactly once', () => {
-    const connectMatches = src.match(/^\\connect /gm) ?? []
-    expect(connectMatches).toHaveLength(1)
-    expect(connectMatches[0]).toBe('\\connect ')
-    expect(src).toMatch(/^\\connect - supabase_admin$/m)
+  it('the file reconnects exactly twice: to supabase_admin, then back to postgres', () => {
+    const connectMatches = [...src.matchAll(/^\\connect - (\S+)$/gm)]
+    expect(connectMatches).toHaveLength(2)
+    expect(connectMatches.map((m) => m[1])).toEqual(['supabase_admin', 'postgres'])
   })
 
-  it('exactly one top-level mutating statement follows that reconnection, and it is the auth-schema grant', () => {
-    const connectIndex = src.search(/^\\connect /m)
-    expect(connectIndex).toBeGreaterThan(-1)
-    const afterConnect = src.slice(connectIndex)
-    const mutatingLines = afterConnect.match(/^(GRANT|REVOKE|CREATE ROLE|ALTER ROLE|CREATE SCHEMA|DROP)\b/gm) ?? []
-    expect(mutatingLines).toEqual(['GRANT'])
-    expect(afterConnect).toMatch(/^GRANT USAGE ON SCHEMA auth TO uellix_owner;$/m)
+  it('exactly three privilege-changing GRANTs follow the supabase_admin reconnection: membership A, membership B, the auth grant', () => {
+    const connectMatches = [...src.matchAll(/^\\connect - (\S+)$/gm)]
+    const supabaseAdminSegment = src.slice(connectMatches[0].index!, connectMatches[1].index!)
+    const mutatingLines = supabaseAdminSegment.match(/^(GRANT|REVOKE|CREATE ROLE|ALTER ROLE|CREATE SCHEMA|DROP)\b/gm) ?? []
+    // 5x CREATE ROLE (zero privilege writes — a superuser creator leaves no
+    // pg_auth_members row), 1x ALTER ROLE (auditor read-only default, not a
+    // privilege-graph mutation), 3x GRANT (membership A, membership B, the
+    // auth grant — P1A-N7's exactly-three invariant) = 9 mutating lines,
+    // exactly 3 of which are GRANT.
+    expect(mutatingLines).toHaveLength(9)
+    expect(mutatingLines.filter((l) => l === 'GRANT')).toHaveLength(3)
+    expect(supabaseAdminSegment).toMatch(/^GRANT uellix_owner {2}TO uellix_migrator/m)
+    expect(supabaseAdminSegment).toMatch(/^GRANT uellix_writer TO uellix_app/m)
+    expect(supabaseAdminSegment).toMatch(/^GRANT USAGE ON SCHEMA auth TO uellix_owner;$/m)
   })
 
-  it('no mutating statement precedes the reconnection except the five role creations, the two memberships and the two public-schema statements (exact count)', () => {
-    const connectIndex = src.search(/^\\connect /m)
+  it('exactly two mutating statements follow the postgres reconnection: the public-schema ACL only', () => {
+    const connectMatches = [...src.matchAll(/^\\connect - (\S+)$/gm)]
+    const postgresSegment = src.slice(connectMatches[1].index! + connectMatches[1][0].length)
+    const mutatingLines = postgresSegment.match(/^(GRANT|REVOKE|CREATE ROLE|ALTER ROLE|CREATE SCHEMA|DROP)\b/gm) ?? []
+    expect(mutatingLines).toEqual(['GRANT', 'REVOKE'])
+    expect(postgresSegment).toMatch(/^GRANT USAGE, CREATE ON SCHEMA public TO uellix_owner;$/m)
+    expect(postgresSegment).toMatch(/^REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC;$/m)
+  })
+
+  it('no mutating statement precedes the first reconnection (the connecting identity performs no privilege write of its own)', () => {
+    const connectIndex = src.search(/^\\connect - /m)
     const beforeConnect = src.slice(0, connectIndex)
     const mutatingLines = beforeConnect.match(/^(GRANT|REVOKE|CREATE ROLE|ALTER ROLE|CREATE SCHEMA|DROP)\b/gm) ?? []
-    // 5x CREATE ROLE, 1x ALTER ROLE (auditor read-only default), 2x GRANT
-    // (memberships), 1x GRANT (public USAGE+CREATE), 1x REVOKE (public
-    // CREATE from the other four roles + PUBLIC) = 10.
-    expect(mutatingLines).toHaveLength(10)
+    expect(mutatingLines).toEqual([])
   })
 })
 

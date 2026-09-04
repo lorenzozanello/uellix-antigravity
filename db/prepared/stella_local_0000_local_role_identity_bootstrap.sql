@@ -59,31 +59,59 @@
 -- disposable fixture does when it borrows the HOSTED package, matches the
 -- canonical LOCAL topology exactly and needs no separate narrowing step.
 --
--- WHY THE FILE RECONNECTS MID-SCRIPT (\connect), AND WHY THAT IS NOT A SECOND
--- ENTRY POINT
+-- ACTOR PARTITION (P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json
+-- D5_b2_grantor.actor_partition — CORRECTED, superseding an earlier revision
+-- of this file that ran role creation and memberships A/B as `postgres`)
 --
--- Measured empirically against the exact pinned image
--- public.ecr.aws/supabase/postgres@sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453
--- scripts/m2-disposable-pg-bootstrap.ts also targets: `postgres` there is
--- NOT a superuser (rolsuper=false) — it holds CREATEROLE/CREATEDB/BYPASSRLS
--- directly, which is sufficient for §1 (role creation, all attributes
--- literal at CREATE time — never a later ALTER ROLE … NOSUPERUSER, which
--- PostgreSQL 16+ refuses to a non-superuser regardless of the target value)
--- and for §2 (the two PERMANENT public-schema grants: schema `public` is
--- owned by `pg_database_owner`, and `postgres` owns the `postgres` database,
--- so it holds effective owner-level rights there). It is NOT sufficient for
--- USAGE on schema `auth`: `auth` is owned by `supabase_admin` (the actual
--- reachable superuser on this substrate), and a GRANT attempted as `postgres`
--- there does not error — it silently WARNs "no privileges were granted" and
--- exits 0. `\connect - supabase_admin` reconnects the SAME script, SAME
--- database, as the only role that can perform that one grant correctly, and
--- ON_ERROR_STOP=1 fails the whole script closed if that reconnection itself
--- fails. supabase_admin performs EXACTLY ONE privilege-changing statement —
--- the auth-schema USAGE grant — matching the single-write discipline
--- scripts/m2-disposable-pg-bootstrap.ts already established for that actor
--- (P1A-N7). Everything after the reconnect is that one grant plus read-only
--- self-verification; supabase_admin is never asked to create a role, grant a
--- membership, or touch schema `public`.
+-- `supabase_admin` performs: CREATE ROLE x5, membership A, membership B, and
+-- the auth-schema USAGE grant. That is four statements, but only THREE are
+-- privilege writes under P1A-N7's definition (a pg_auth_members row or an
+-- object-ACL change) — CREATE ROLE by a genuine superuser emits ZERO
+-- pg_auth_members rows (measured against the exact pinned image), so it does
+-- not count. `postgres` retains ONLY the two public-schema ACL statements —
+-- measured to produce a BYTE-IDENTICAL resulting ACL regardless of which
+-- actor issues them, because schema `public` is owned by `pg_database_owner`,
+-- not by the issuing role; routing them through `supabase_admin` would add
+-- two privilege writes for zero catalog difference, which the single-write
+-- discipline this file enforces (P1A-N7 = exactly 3) forbids.
+--
+-- This split is not stylistic. Three independently measured, mechanical
+-- reasons make `supabase_admin` the only correct actor for role creation and
+-- memberships A/B — none of them is "postgres cannot issue the GRANT". It
+-- can:
+--   1. GRANTOR PIN. db/prepared/stella_0001_role_topology_bootstrap.sql §2
+--      pins the canonical grantor for these membership rows to the fixed
+--      bootstrap-superuser oid (10), and refuses any unexpected relevant
+--      row. `supabase_admin` IS oid 10 on this substrate; `postgres` is not.
+--   2. ADMIN-OPTION AUTO-GRANTS / RR-02. PostgreSQL 16+ automatically grants
+--      a CREATEROLE-non-superuser creator ADMIN OPTION over every role it
+--      creates. `postgres` here is CREATEROLE-non-superuser, so creating the
+--      five roles as `postgres` would leave five admin_option=true rows —
+--      which stella_0001's precondition rejects, and which would let
+--      `postgres` grant itself `uellix_owner … SET TRUE` and self-escalate
+--      (measured: it then successfully reached `uellix_owner` via SET
+--      ROLE). A genuine superuser creator — `supabase_admin` — leaves ZERO
+--      such rows.
+--   3. AUTH-SCHEMA FAIL-OPEN. `GRANT USAGE ON SCHEMA auth` as `postgres`
+--      does not error — it silently WARNs "no privileges were granted" and
+--      exits 0, leaving the privilege absent; `ON_ERROR_STOP=1` cannot catch
+--      a WARNING. `supabase_admin` owns schema `auth`, and the grant
+--      succeeds.
+--
+-- WHY THE FILE RECONNECTS TWICE (\connect), AND WHY NEITHER IS A SECOND ENTRY
+-- POINT
+--
+-- The script's own psql invocation still connects as `postgres` (below,
+-- APPLICATION) — that is the substrate-shape connection §0/E3 verifies.
+-- Section 1 immediately reconnects to `supabase_admin`, reachable directly
+-- on this substrate without any prior role existing (it is the pinned
+-- image's own pre-existing bootstrap superuser, oid 10): every statement
+-- that must be a supabase_admin privilege write happens in that ONE
+-- session — role creation, membership A, membership B, the auth grant.
+-- Section 5 reconnects BACK to `postgres` for the two public-schema ACL
+-- statements only. `ON_ERROR_STOP=1` fails the whole script closed if
+-- either reconnection fails, and each reconnect is followed by an explicit
+-- identity assertion — never trusted implicitly.
 --
 -- WHY THIS PACKAGE REFUSES A SECOND APPLICATION (UNLIKE ITS TWO SIBLINGS)
 --
@@ -147,11 +175,14 @@ BEGIN
   END IF;
 
   -- (E3) The installer must be exactly `postgres`, connected directly (no
-  --      SET ROLE in effect), non-superuser, holding CREATEROLE — the one
-  --      capability §1 actually uses. Written over the CONNECTING identity,
-  --      not merely current_user, so a session that reached `postgres` via
-  --      SET ROLE from something else is refused rather than silently
-  --      trusted.
+  --      SET ROLE in effect), non-superuser, holding CREATEROLE. `postgres`
+  --      no longer performs role creation itself (see ACTOR PARTITION,
+  --      above) — this proves the substrate SHAPE this package targets
+  --      (the pinned image's `postgres` is deliberately CREATEROLE-but-
+  --      non-superuser), independent of which actor exercises which
+  --      privilege later. Written over the CONNECTING identity, not merely
+  --      current_user, so a session that reached `postgres` via SET ROLE
+  --      from something else is refused rather than silently trusted.
   IF session_user <> 'postgres' OR current_user <> 'postgres' THEN
     RAISE EXCEPTION 'stella_local_0000 aborted: must run as a direct `postgres` connection with no SET ROLE in effect; session_user=%, current_user=%', session_user, current_user;
   END IF;
@@ -191,14 +222,46 @@ BEGIN
 END $$;
 
 -- ============================================================
--- 1. The five roles — identity only, no application table referenced
+-- 1. Reconnect as supabase_admin — the actor for every supabase_admin
+--    privilege write this package performs (P1A-N7 = exactly 3)
+-- ============================================================
+-- See the file header, ACTOR PARTITION. `\connect` opens a brand-new backend
+-- connection; ON_ERROR_STOP=1 aborts the whole script if it cannot
+-- authenticate as supabase_admin, so a substrate where that role is
+-- unreachable fails closed here rather than silently continuing as
+-- `postgres`.
+\connect - supabase_admin
+
+DO $$
+BEGIN
+  IF current_user <> 'supabase_admin' OR session_user <> 'supabase_admin' THEN
+    RAISE EXCEPTION 'stella_local_0000 fail-closed: \connect to supabase_admin did not take effect (current_user=%, session_user=%)', current_user, session_user;
+  END IF;
+
+  -- supabase_admin must genuinely BE the bootstrap superuser (oid 10) this
+  -- package's entire actor partition depends on — never trusted by name
+  -- alone. stella_0001's own canonical membership precondition pins the
+  -- same oid; asserting it here, before any mutation, fails this package
+  -- closed on a substrate where the identity has drifted rather than
+  -- silently issuing grants a later phase will reject anyway.
+  IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname = 'supabase_admin') THEN
+    RAISE EXCEPTION 'stella_local_0000 aborted: supabase_admin is not a superuser on this substrate.';
+  END IF;
+
+  IF (SELECT oid FROM pg_roles WHERE rolname = 'supabase_admin') <> 10 THEN
+    RAISE EXCEPTION 'stella_local_0000 aborted: supabase_admin does not hold the fixed bootstrap-superuser oid (10) on this substrate.';
+  END IF;
+END $$;
+
+-- ============================================================
+-- 2. The five roles — identity only, no application table referenced
 -- ============================================================
 -- Every attribute is set INLINE at CREATE time, never by a later ALTER ROLE.
--- A non-superuser CREATEROLE holder may CREATE a role with NOSUPERUSER, but
--- PostgreSQL 16+ refuses that same holder ALTERing NOSUPERUSER on an EXISTING
--- role regardless of direction — measured this session against the exact
--- pinned image. The pristine-state precondition above guarantees none of
--- these five roles exists yet, so a plain CREATE ROLE (not
+-- Created by a genuine superuser (supabase_admin): PostgreSQL 16+'s implicit
+-- ADMIN-OPTION auto-grant applies only to a CREATEROLE-non-superuser
+-- creator, so this creates ZERO pg_auth_members rows — measured against the
+-- exact pinned image. The pristine-state precondition above guarantees none
+-- of these five roles exists yet, so a plain CREATE ROLE (not
 -- "IF NOT EXISTS … ELSE ALTER") is correct here and doubles as an additional,
 -- independent pristine-state proof: a collision raises 42710 on its own.
 --
@@ -220,54 +283,54 @@ COMMENT ON ROLE uellix_writer   IS 'stella_local_0000: NOLOGIN governed write-ca
 COMMENT ON ROLE uellix_auditor  IS 'stella_local_0000: LOGIN read-only audit role; default_transaction_read_only=on.';
 
 -- ============================================================
--- 2. Membership — exactly the two the migration window needs
+-- 3. Membership A and B — exactly the two the migration window needs,
+--    issued by supabase_admin so the grantor is the fixed bootstrap-
+--    superuser oid (10) stella_0001's own precondition requires
 -- ============================================================
--- `postgres` created every role above, so PostgreSQL 16+ automatically holds
--- ADMIN OPTION on each and can grant these without any further elevation.
 -- Only the two memberships PHASE_MIGRATION_WINDOW depends on are established
 -- here; db/prepared/stella_0001_role_topology_bootstrap.sql §2 remains the
--- owner of the third (uellix_writer TO postgres) and of ongoing membership
--- reconciliation — this package does not duplicate that responsibility.
+-- owner of the third (uellix_writer TO postgres, membership C) and of
+-- ongoing membership reconciliation — this package does not duplicate that
+-- responsibility and does not create membership C.
 GRANT uellix_owner  TO uellix_migrator WITH INHERIT FALSE, SET TRUE,  ADMIN FALSE;
 GRANT uellix_writer TO uellix_app      WITH INHERIT TRUE,  SET FALSE, ADMIN FALSE;
 
 -- ============================================================
--- 3. Bootstrap privilege — PERMANENT local topology, `postgres`-issuable
+-- 4. Auth-schema privilege — the third and final supabase_admin write
 -- ============================================================
+-- Verbatim in effect with db/prepared/stella_0001_role_topology_bootstrap.sql:181
+-- — moved here because `postgres` cannot issue it on this substrate (see
+-- ACTOR PARTITION, REASON 3, above). The THIRD and LAST privilege-changing
+-- statement this package ever runs as supabase_admin — P1A-N7's
+-- exactly-three invariant.
+GRANT USAGE ON SCHEMA auth TO uellix_owner;
+
+-- ============================================================
+-- 5. Reconnect back to postgres for the public-schema ACL only
+-- ============================================================
+-- supabase_admin's work is done: it never touches schema `public`. `public`
+-- is owned by `pg_database_owner`, and `postgres` owns database `postgres`,
+-- so `postgres` holds effective owner-level rights here without needing
+-- supabase_admin's privileges — and per ACTOR PARTITION, routing these two
+-- statements through supabase_admin instead would add two more privilege
+-- writes for a byte-identical resulting ACL, which P1A-N7 forbids.
+\connect - postgres
+
+DO $$
+BEGIN
+  IF current_user <> 'postgres' OR session_user <> 'postgres' THEN
+    RAISE EXCEPTION 'stella_local_0000 fail-closed: \connect back to postgres did not take effect (current_user=%, session_user=%)', current_user, session_user;
+  END IF;
+END $$;
+
 -- Verbatim in effect (not in file provenance) with
--- db/prepared/stella_0001_role_topology_bootstrap.sql:175-177 — moved here
--- because `pnpm db:migrate:local` needs them BEFORE stella_0001 can run.
--- `public` is owned by `pg_database_owner`, and `postgres` owns database
--- `postgres`, so `postgres` holds effective owner-level rights here without
--- any reconnect.
+-- db/prepared/stella_0001_role_topology_bootstrap.sql:175-177 — established
+-- here because `pnpm db:migrate:local` needs it BEFORE stella_0001 can run.
 GRANT USAGE, CREATE ON SCHEMA public TO uellix_owner;
 REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC;
 
 -- ============================================================
--- 4. Reconnect as the ONE role that can grant on schema `auth`
--- ============================================================
--- See the file header. `\connect` opens a brand-new backend connection;
--- ON_ERROR_STOP=1 aborts the whole script if it cannot authenticate as
--- supabase_admin, so a substrate where that role is unreachable fails closed
--- here rather than silently continuing as `postgres` and warning-not-erroring
--- the grant below into a no-op.
-\connect - supabase_admin
-
-DO $$
-BEGIN
-  IF current_user <> 'supabase_admin' OR session_user <> 'supabase_admin' THEN
-    RAISE EXCEPTION 'stella_local_0000 fail-closed: \connect to supabase_admin did not take effect (current_user=%, session_user=%)', current_user, session_user;
-  END IF;
-END $$;
-
--- Verbatim in effect with db/prepared/stella_0001_role_topology_bootstrap.sql:181
--- — moved here because `postgres` cannot issue it on this substrate (see file
--- header). The ONLY privilege-changing statement this package ever runs as
--- supabase_admin — P1A-N7's single-write invariant.
-GRANT USAGE ON SCHEMA auth TO uellix_owner;
-
--- ============================================================
--- 5. Self-verification — exact end state, in this (supabase_admin) session
+-- 6. Self-verification — exact end state, in this (final: postgres) session
 -- ============================================================
 DO $$
 DECLARE
@@ -302,21 +365,27 @@ BEGIN
   END IF;
 
   -- (2) Exactly the two controlled membership tuples, each with the correct
-  --     grantor, inherit/set/admin flags, and cardinality one.
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  --     GRANTOR (fixed bootstrap-superuser oid 10 — mirrors stella_0001's
+  --     own precondition, so a regression that routes these grants back
+  --     through `postgres` is caught HERE, at the earliest possible point,
+  --     rather than deferred to stella_0001 after other phases may have
+  --     already committed), inherit/set/admin flags, and cardinality one.
+  WITH expected(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner',  false, true,  false),
-      ('uellix_app',      'uellix_writer', true,  false, false)
+      ('uellix_migrator', 'uellix_owner',  10::oid, false, true,  false),
+      ('uellix_app',      'uellix_writer', 10::oid, true,  false, false)
   ), actual AS (
-    SELECT m.rolname AS member_name, r.rolname AS role_name,
+    SELECT m.rolname AS member_name, r.rolname AS role_name, a.grantor AS grantor_oid,
+           g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
     FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname IN ('uellix_migrator', 'uellix_app')
       AND r.rolname IN ('uellix_owner', 'uellix_writer')
   )
-  SELECT string_agg(a.member_name || '->' || a.role_name ||
+  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name || '(oid=' || a.grantor_oid || ')' ||
                      ' (inherit=' || a.inherit_option::text || ',set=' || a.set_option::text ||
                      ',admin=' || a.admin_option::text || ')', ', ' ORDER BY a.member_name)
     INTO v_problem
@@ -324,20 +393,21 @@ BEGIN
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name AND e.role_name = a.role_name
+      AND e.grantor_oid = a.grantor_oid
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   );
 
   IF v_problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_local_0000 FAILED verification: unexpected membership row(s): %', v_problem;
+    RAISE EXCEPTION 'stella_local_0000 FAILED verification: unexpected membership row(s) (wrong grantor, flags or ADMIN escalation): %', v_problem;
   END IF;
 
   IF (
     SELECT count(*) FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member JOIN pg_roles r ON r.oid = a.roleid
     WHERE m.rolname = 'uellix_migrator' AND r.rolname = 'uellix_owner'
-      AND a.inherit_option = false AND a.set_option = true
+      AND a.grantor = 10 AND a.inherit_option = false AND a.set_option = true
   ) <> 1 THEN
     RAISE EXCEPTION 'stella_local_0000 FAILED verification: uellix_migrator -> uellix_owner membership tuple cardinality is not exactly one row.';
   END IF;
@@ -346,7 +416,7 @@ BEGIN
     SELECT count(*) FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member JOIN pg_roles r ON r.oid = a.roleid
     WHERE m.rolname = 'uellix_app' AND r.rolname = 'uellix_writer'
-      AND a.inherit_option = true AND a.set_option = false
+      AND a.grantor = 10 AND a.inherit_option = true AND a.set_option = false
   ) <> 1 THEN
     RAISE EXCEPTION 'stella_local_0000 FAILED verification: uellix_app -> uellix_writer membership tuple cardinality is not exactly one row.';
   END IF;

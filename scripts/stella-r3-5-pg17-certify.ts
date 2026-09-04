@@ -1209,7 +1209,82 @@ function cleanupOwnedCertificationContainer(): void {
   dockerOrThrow(fixedDockerCommand('cleanup-remove'))
 }
 
+// R3.5 SUPERSEDED classification — P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json
+// D4_r3_5_historical_certification. db/r3-5-pg17-certification-inputs.ts is
+// historical evidence and stays byte-immutable: R3_5_PG17_CERTIFICATION_PACKAGE_HASHES
+// is NEVER repinned to agree with successor bytes. The P1A successor contract
+// authorizes exactly one enumerated change to db/prepared/stella_0001_role_topology_bootstrap.sql
+// (converting its two canonical grants into fail-closed assertions), which
+// necessarily diverges its hash from the historical pin. SUPERSEDED must be
+// classified HERE — before delegating into loadVerifiedR3Sources, whose
+// assertR3_5Pg17CertificationSourceHashes call would otherwise throw an
+// undifferentiated 'SHA-256 mismatch' — and it must be NARROW and EXACT: it
+// recognizes only this one specific, known successor hash for this one
+// specific file. Any OTHER divergence — an unrecognized hash, or a second
+// file changing — is NOT reclassified as SUPERSEDED; it falls through to the
+// existing undifferentiated mismatch throw, because that is a genuine
+// integrity failure this classification must never mask.
+//
+// SUPERSEDED is not a certification PASS and never claims successor parity:
+// P1A is SUCCESSOR_OF the historical R3.5 PostgreSQL 17 certification, and
+// the historical proof covers the predecessor bytes only (D7_r7_residual,
+// no_silent_parity). An explicit, separately adjudicated successor
+// certification — run against these successor bytes — is required before any
+// parity claim, and does not exist yet.
+const R3_5_KNOWN_SUCCESSOR_HASHES: Readonly<Partial<Record<R3_5Pg17CertificationSourceFile, string>>> =
+  Object.freeze({
+    'stella_0001_role_topology_bootstrap.sql': 'e50fe2e404c06ca181c2f517d8dfa9c2bc2f9a35def4856dedb48d6d481fcd35',
+  })
+
+export type R3_5CertificationClassification =
+  | { readonly status: 'CURRENT'; readonly divergedFiles: readonly R3_5Pg17CertificationSourceFile[] }
+  | { readonly status: 'SUPERSEDED'; readonly divergedFiles: readonly R3_5Pg17CertificationSourceFile[] }
+  | { readonly status: 'MISMATCH'; readonly divergedFiles: readonly R3_5Pg17CertificationSourceFile[] }
+
+/** Pure, read-only. No Docker, no filesystem write, no historical-input mutation. */
+export function classifyR3_5CertificationAgainstCurrentHead(): R3_5CertificationClassification {
+  const observed = collectR3_5Pg17CertificationSourceHashes()
+  const diverged = (Object.keys(R3_5_PG17_CERTIFICATION_PACKAGE_HASHES) as R3_5Pg17CertificationSourceFile[]).filter(
+    (file) => observed[file] !== R3_5_PG17_CERTIFICATION_PACKAGE_HASHES[file],
+  )
+
+  if (diverged.length === 0) {
+    return { status: 'CURRENT', divergedFiles: [] }
+  }
+
+  const isExactlyTheAuthorizedDivergence =
+    diverged.length === 1 &&
+    diverged[0] === 'stella_0001_role_topology_bootstrap.sql' &&
+    observed['stella_0001_role_topology_bootstrap.sql'] ===
+      R3_5_KNOWN_SUCCESSOR_HASHES['stella_0001_role_topology_bootstrap.sql']
+
+  return { status: isExactlyTheAuthorizedDivergence ? 'SUPERSEDED' : 'MISMATCH', divergedFiles: diverged }
+}
+
+export class R3_5CertificationSupersededError extends Error {
+  constructor(divergedFiles: readonly R3_5Pg17CertificationSourceFile[]) {
+    super(
+      `R3.5 PostgreSQL 17 certification: SUPERSEDED for current HEAD. ${divergedFiles.join(', ')} ` +
+        'diverge(s) from the historical pin by the P1A successor contract\'s authorized, enumerated ' +
+        'change. This is NOT a certification PASS and NOT an ordinary integrity failure — the ' +
+        'historical proof in db/r3-5-pg17-certification-inputs.ts (byte-immutable, never repinned) ' +
+        'covers the predecessor bytes only. No successor certification exists for the current bytes; ' +
+        'none is claimed here.'
+    )
+    this.name = 'R3_5CertificationSupersededError'
+  }
+}
+
 function executeFixedCertification(): void {
+  // Classified BEFORE any delegation into loadVerifiedR3Sources — see
+  // classifyR3_5CertificationAgainstCurrentHead above. A SUPERSEDED result
+  // stops here, distinctly from both PASS and an ordinary mismatch; only
+  // CURRENT or a genuine MISMATCH proceeds to the existing behavior below.
+  const classification = classifyR3_5CertificationAgainstCurrentHead()
+  if (classification.status === 'SUPERSEDED') {
+    throw new R3_5CertificationSupersededError(classification.divergedFiles)
+  }
+
   // This happens before any Docker inspection or mutation, as package bytes are
   // the root authority of this certification profile.
   const sources = loadVerifiedR3Sources()
@@ -1272,7 +1347,14 @@ if (isDirectExecution()) {
     parseR3_5Pg17CertificationArguments(process.argv.slice(2))
     executeFixedCertification()
   } catch (error) {
-    console.error('[r3.5-pg17-certification] failed:', error instanceof Error ? error.message : 'unknown error')
-    process.exitCode = 1
+    if (error instanceof R3_5CertificationSupersededError) {
+      // Distinct exit code: neither PASS (0) nor an ordinary integrity
+      // FAILURE (1). SUPERSEDED is its own outcome.
+      console.error(`[r3.5-pg17-certification] SUPERSEDED: ${error.message}`)
+      process.exitCode = 2
+    } else {
+      console.error('[r3.5-pg17-certification] failed:', error instanceof Error ? error.message : 'unknown error')
+      process.exitCode = 1
+    }
   }
 }

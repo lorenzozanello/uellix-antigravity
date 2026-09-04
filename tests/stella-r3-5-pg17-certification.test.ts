@@ -136,28 +136,74 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
     expect(Object.isFrozen(R3_5_PG17_CERTIFICATION_PHASES)).toBe(true)
   })
 
+  // The one file the P1A successor contract authorizes to diverge from the
+  // historical pin. Its bytes are a DISTINCT, successor object — see
+  // classifyR3_5CertificationAgainstCurrentHead below — never claimed
+  // parity with, and never used to repin, the historical constant.
+  const R3_5_SUPERSEDED_FILE = 'stella_0001_role_topology_bootstrap.sql' as const
+  const R3_5_KNOWN_SUCCESSOR_HASH = 'e50fe2e404c06ca181c2f517d8dfa9c2bc2f9a35def4856dedb48d6d481fcd35'
+
   it('pins the image and every R8 package or rollback byte before Docker can be used', () => {
     expect(R3_5_PG17_CERTIFICATION_IMAGE).toBe('public.ecr.aws/supabase/postgres:17.6.1.143')
     expect(R3_5_PG17_CERTIFICATION_IMAGE_ID).toBe(
       'sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453',
     )
+    // The HISTORICAL constant is unchanged and byte-correct — this is a
+    // self-check on db/r3-5-pg17-certification-inputs.ts, never repinned.
     expect(R3_5_PG17_CERTIFICATION_PACKAGE_HASHES).toEqual(EXPECTED_HASHES)
 
     const observed = collectR3_5Pg17CertificationSourceHashes()
-    expect(observed).toEqual(EXPECTED_HASHES)
-    expect(() => assertR3_5Pg17CertificationSourceHashes(observed)).not.toThrow()
+    // CURRENT observed bytes diverge from the historical pin at EXACTLY the
+    // one file the P1A successor contract authorizes — nowhere else. This is
+    // the measured hazard SUPERSEDED classification exists to handle.
+    expect(observed).not.toEqual(EXPECTED_HASHES)
+    expect(observed[R3_5_SUPERSEDED_FILE]).toBe(R3_5_KNOWN_SUCCESSOR_HASH)
+    expect({ ...observed, [R3_5_SUPERSEDED_FILE]: EXPECTED_HASHES[R3_5_SUPERSEDED_FILE] }).toEqual(EXPECTED_HASHES)
+
+    // assertR3_5Pg17CertificationSourceHashes itself is UNWEAKENED: it still
+    // throws on the current (diverged) observed hashes...
+    expect(() => assertR3_5Pg17CertificationSourceHashes(observed)).toThrow(/sha-?256 mismatch/i)
+    // ...and still passes for hashes that genuinely match the historical pin.
+    expect(() => assertR3_5Pg17CertificationSourceHashes(EXPECTED_HASHES)).not.toThrow()
     expect(() => assertR3_5Pg17CertificationSourceHashes({
-      ...observed,
+      ...EXPECTED_HASHES,
       'stella_0004_role_separation.sql': '0'.repeat(64),
     })).toThrow(/sha-?256 mismatch/i)
     expect(() => assertR3_5Pg17CertificationImageId('sha256:wrong')).toThrow(/image id mismatch/i)
 
     for (const [file, expected] of Object.entries(EXPECTED_HASHES)) {
+      if (file === R3_5_SUPERSEDED_FILE) continue
       const actual = createHash('sha256')
         .update(readFileSync(path.join(ROOT, 'db', 'prepared', file)))
         .digest('hex')
       expect(actual, file).toBe(expected)
     }
+  })
+
+  it('SUPERSEDED: classifies current HEAD distinctly from PASS and from an ordinary integrity failure', () => {
+    const classification = executor.classifyR3_5CertificationAgainstCurrentHead()
+    expect(classification.status).toBe('SUPERSEDED')
+    expect(classification.divergedFiles).toEqual([R3_5_SUPERSEDED_FILE])
+
+    // executeFixedCertification classifies BEFORE delegating into
+    // loadVerifiedR3Sources — the SUPERSEDED error is thrown directly by the
+    // classification, never by the historical mismatch assertion, and never
+    // by db/r3-5-pg17-certification-inputs.ts (byte-immutable, untouched).
+    expect(
+      () => new executor.R3_5CertificationSupersededError(classification.divergedFiles),
+    ).not.toThrow()
+    const error = new executor.R3_5CertificationSupersededError(classification.divergedFiles)
+    expect(error.name).toBe('R3_5CertificationSupersededError')
+    expect(error.message).toMatch(/SUPERSEDED/)
+    expect(error.message).toMatch(/NOT a certification PASS/)
+    expect(error.message).not.toMatch(/parity/i)
+  })
+
+  it('SUPERSEDED classification does not mutate or read db/r3-5-pg17-certification-inputs.ts differently — it stays byte-immutable', () => {
+    const beforeHashes = { ...R3_5_PG17_CERTIFICATION_PACKAGE_HASHES }
+    executor.classifyR3_5CertificationAgainstCurrentHead()
+    expect(R3_5_PG17_CERTIFICATION_PACKAGE_HASHES).toEqual(beforeHashes)
+    expect(R3_5_PG17_CERTIFICATION_PACKAGE_HASHES[R3_5_SUPERSEDED_FILE]).toBe(EXPECTED_HASHES[R3_5_SUPERSEDED_FILE])
   })
 
   it('rejects every caller attempt to select SQL, packages, Docker, a database target, a role, or a phase', () => {
@@ -297,11 +343,13 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
 
     // Exactly the closed export surface — no generic SQL/role/container executor is reachable.
     expect(Object.keys(executor).sort()).toEqual([
+      'R3_5CertificationSupersededError',
       'R3_5_PG17_CERTIFICATION_MATRIX_STEPS',
       'R3_5_PG17_CERTIFICATION_PHASE_IDENTITY_MATRIX',
       'assertCertifiedSubstratePreflightObserved',
       'assertPsqlRefusedWithReason',
       'certifiedSubstratePreflightQuery',
+      'classifyR3_5CertificationAgainstCurrentHead',
       'describeR3_5Pg17CertificationPlan',
       'parseR3_5Pg17CertificationArguments',
     ])
@@ -703,11 +751,13 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
       'cleanup',
     ])
     expect(Object.keys(executor).sort()).toEqual([
+      'R3_5CertificationSupersededError',
       'R3_5_PG17_CERTIFICATION_MATRIX_STEPS',
       'R3_5_PG17_CERTIFICATION_PHASE_IDENTITY_MATRIX',
       'assertCertifiedSubstratePreflightObserved',
       'assertPsqlRefusedWithReason',
       'certifiedSubstratePreflightQuery',
+      'classifyR3_5CertificationAgainstCurrentHead',
       'describeR3_5Pg17CertificationPlan',
       'parseR3_5Pg17CertificationArguments',
     ])
@@ -1185,7 +1235,13 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
     })
 
     it('the seven governed SQL package hashes are unchanged by this harness-only remediation', () => {
+      // stella_0001_role_topology_bootstrap.sql is excluded here: its bytes
+      // changed under the SEPARATE, authorized P1A successor contract — see
+      // R3_5_SUPERSEDED_FILE above — not by this harness-only remediation,
+      // which this test's title and the other six packages still hold to
+      // exactly.
       for (const [file, expected] of Object.entries(EXPECTED_HASHES)) {
+        if (file === R3_5_SUPERSEDED_FILE) continue
         const actual = createHash('sha256').update(readFileSync(path.join(ROOT, 'db', 'prepared', file))).digest('hex')
         expect(actual, file).toBe(expected)
       }
