@@ -1,0 +1,184 @@
+{
+  "evidence_id": "W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0",
+  "document_class": "IMPLEMENTATION_EVIDENCE_NOT_AUTHORITY_NOT_AUDIT",
+  "is_authority": false,
+  "self_certification": "NONE — this file records measured outputs only. It does not certify W2-B4, does not mark this PR ready, and does not replace the independent FOCUSED_OPUS_ADVERSARIAL_CLOSURE_AUDIT this authority requires (future_evidence_and_audit_contract.required_audit).",
+  "authority_references": {
+    "W2_B4_AUTHORITY": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json (HPO-ODS-W2-12)",
+    "W2_B4_TEST_MANIFEST": "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+    "P1A_CLOSURE_PREREQUISITE": "Satisfied — independently verified this session: P1A_FULL_BOOTSTRAP_STATUS=CLOSED, PR59 merged as 83fc21b86de9a00ae05a56e1cfede158aaec41a8, integrated into integration/commercial-v1 (origin/integration/commercial-v1 == 83fc21b at SYNC_POINT)."
+  },
+
+  "sync_point": {
+    "step_1_p1a_closed": true,
+    "step_2_branch_updated": "clean git merge --ff-only origin/integration/commercial-v1 on codex/w2-b4-r1: d6d4318..83fc21b, fast-forward, no rebase/amend/reset. Pre-sync HEAD d6d4318a62aa9b7a90d307838b1b396480465810 (0 commits ahead of integration at that point, per rev-list --count).",
+    "step_3_ordinals_remeasured": {
+      "measured_at": "83fc21b86de9a00ae05a56e1cfede158aaec41a8",
+      "highest_migration_before": "0061_fib_disposition_governance_function_execute_revocation.sql",
+      "highest_drizzle_journal_idx_before": 61,
+      "highest_prepared_journal_ordinal_before": "074_0061_fib_disposition_governance_function_execute_revocation.sql",
+      "highest_policies_ordinal_before": "010_proxy_material_fields_registry_rls.sql (unused — no db/policies file needed, see migration_generation.no_policies_file_needed)",
+      "baseline_manifest_tail_before": "ordinal 74, id 0061_fib_disposition_governance_function_execute_revocation.sql",
+      "collisions_at_sync_point": 0,
+      "note": "Identical to the v1.0.2 candidate values recorded at the STALE base 12bea1e — confirming no other governed lane consumed a migration/journal slot between 12bea1e and 83fc21b (only P1A/Controller authority and DB-safety lanes landed, none touching db/migrations or db/prepared/journal).",
+      "FROZEN_MIGRATION_START": "0062 (methodological_assumptions/assumption_object_links, FIBIU-15) then 0063 (counterfactual_assessments, FIBIU-14)",
+      "FROZEN_JOURNAL_WRAPPER_START": "075 then 076"
+    },
+    "step_4_migrations_generated_after_step_3": true
+  },
+
+  "fibiu15": {
+    "unit": "FIBIU-15 — structured methodological assumptions",
+    "contract": "FIBC-019",
+    "db": {
+      "migration": "db/migrations/0062_fib_methodological_assumptions.sql",
+      "tables_created": ["methodological_assumptions (FIBDB-012)", "assumption_object_links (FIBDB-013)"],
+      "vocabularies": "FIBDB-047: basis_type (3 values), materiality_flag (2 values), conditional provenance_reference NOT NULL only when basis_type=evidence_or_external_source",
+      "rls": "org-scoped SELECT on both tables; INSERT restricted to created_by=auth.uid() at the analyst+ role floor; methodological_assumptions additionally carries an org-scoped, same-floor UPDATE policy (material modification updates the row in place, versioned via domain_object_versions — no UPDATE on assumption_object_links, append-only per FIBDB-013)",
+      "generated_via": "pnpm db:generate, in two separate invocations (FIBIU-15 tables generated alone, then FIBIU-14 table generated against the resulting schema) to preserve the certified SERIAL_CONTRACT 15->{14,16} at the migration-file level, not merely in prose",
+      "hosted_baseline_unit": "ordinal 75, db/hosted/baseline-manifest.ts, dependsOn 0061 + 0031_rls_core.sql"
+    },
+    "service": {
+      "file": "lib/pipeline/narratives.ts",
+      "functions": [
+        "recordMethodologicalAssumption — create (POS-15-1)",
+        "updateMethodologicalAssumption — material modification, refuses when linked to an approved run's inputs (POS-15-2), versions via createDomainObjectVersion",
+        "linkAssumptionToObject — records affected objects/decisions (FIBDB-013)",
+        "listMethodologicalAssumptionsForProject / queryUnresolvedMaterialAssumptions (auth-free core) / listUnresolvedMaterialAssumptions (authorized wrapper)"
+      ],
+      "versioning_mechanism": "Reuses the existing, already-tested generic lib/pipeline/domain-object-versions.ts (FIBIU-03) — the assumption row's id is its permanent identity; a material modification's PRIOR content becomes a new domainObjectVersions entry BEFORE the row is updated, exactly mirroring recordOutcomeMonetizationDisposition's own established pattern.",
+      "unresolved_derivation": "A material assumption with zero assumption_object_links rows is UNRESOLVED — no invented status column; grounded directly in FIBC-019's own nine-field minimum-fields list, where \"affected objects/decisions\" is one of the nine."
+    },
+    "actions": [
+      "app/app/projects/[projectId]/pipeline/narrative/createMethodologicalAssumption.action.ts",
+      "app/app/projects/[projectId]/pipeline/narrative/updateMethodologicalAssumption.action.ts",
+      "app/app/projects/[projectId]/pipeline/narrative/linkAssumptionToObject.action.ts"
+    ],
+    "audit_verbs": ["methodological_assumption.created", "methodological_assumption.superseded"],
+    "readiness_signal": "SroiReadiness.unresolvedMaterialAssumptions — computed, surfaced in buildReadinessIssues (messageKey=assumption_unresolved), DELIBERATELY NOT wired into blockingReasons/canCalculate — see stella_boundary_and_approval_composition below.",
+    "no_auto_conversion": "NEG-15-1 verified both structurally (tests/methodological-assumptions.service.test.ts) and by source inspection: no FIBIU-15 code path reads impactNarratives.assumptions or theoryOfChangeLinks.assumption."
+  },
+
+  "fibiu14": {
+    "unit": "FIBIU-14 — counterfactual assessment",
+    "contract": "FIBC-018",
+    "db": {
+      "migration": "db/migrations/0063_fib_counterfactual_assessments.sql",
+      "table_created": "counterfactual_assessments (FIBDB-011)",
+      "vocabularies": "FIBDB-046: baseline_availability (3), basis_kind (8), deadweight_support_state (2), conditional NOT NULL on value/period/source/context when baseline_availability=available",
+      "rls": "org-scoped SELECT/INSERT/UPDATE at the analyst+ floor — create-or-update per (outcome, calculation_run), mirroring recordOutcomeMonetizationDisposition exactly, refused once the run carries an approved review",
+      "hosted_baseline_unit": "ordinal 76, dependsOn 0062 + 0031_rls_core.sql"
+    },
+    "service": {
+      "file": "lib/pipeline/sroi-calculation.ts",
+      "functions": [
+        "recordCounterfactualAssessment — create-or-update, approved-run guard (POS-14-1/2/3)",
+        "listOutcomesMissingCounterfactual — run-bound query, COUNTERFACTUAL_MISSING signal (NEG-14-1)",
+        "listOutcomesWithInsufficientDeadweightBasis — run-bound query, DEADWEIGHT_BASIS_INSUFFICIENT signal (NEG-14-2)"
+      ],
+      "not_wired_into_a_live_gate": "Both query functions are standalone and exported, NOT called from getSroiCalculationReadiness or any approval hook — see stella_boundary_and_approval_composition below. This is a deliberate design decision, not an omission."
+    },
+    "actions": ["app/app/projects/[projectId]/pipeline/calculation/runs/recordCounterfactualAssessment.action.ts"],
+    "audit_verbs": ["counterfactual_assessment.recorded"],
+    "no_auto_conversion": "NEG-14-1 verified both structurally (tests/counterfactual-assessment.service.test.ts) and by source inspection: recordCounterfactualAssessment never reads indicators.baselineValue."
+  },
+
+  "fibiu16": {
+    "unit": "FIBIU-16 — causal chain sufficiency gate",
+    "contract": "FIBC-020",
+    "db_changes": "NO_DB_OBJECT — reasoned, verified: no new table, no schema.ts addition for this unit (tests/w2-b4-governance.test.ts NEG-B5-1 and general schema inspection confirm).",
+    "service": {
+      "file": "lib/pipeline/theory-of-change.ts",
+      "functions": [
+        "checkCausalChainSufficiency — pure, operates on already-fetched node/link arrays, no DB access, no actor/identity parameter at all (NEG-STELLA-B4, NEG-16-4)",
+        "getCausalChainSufficiencyForOutcomes — DB-backed wrapper, fetches a project's active graph once"
+      ],
+      "no_db_marker_for_external_model": "Per B4_FIBDB_SCOPE.FIBIU_16_DB: an externally-sourced, sufficiently-mapped causal model is represented as ordinary native theory_of_change_nodes/theory_of_change_links — no new column or table distinguishes it. POS-16-1 and POS-16-2 are proven by the SAME code path in tests/causal-chain-sufficiency.service.test.ts, documenting that identity rather than asserting a second one.",
+      "non_regression": "isValidLinkTransition (activity->output / output->outcome only) is REUSED verbatim from the pre-existing lib/pipeline/theory-of-change.ts — not modified, not reimplemented. NEG-16-1 proven against the exact existing function."
+    },
+    "readiness_signal": "SroiReadiness.causalChainInsufficientOutcomes — computed for the project's active-assignment outcomes, surfaced in buildReadinessIssues (messageKey=causal_chain_insufficient), DELIBERATELY NOT wired into blockingReasons/canCalculate — see stella_boundary_and_approval_composition below."
+  },
+
+  "stella_boundary_and_approval_composition": {
+    "measured_regression_and_correction": "The first implementation of the CAUSAL_CHAIN_INSUFFICIENT and ASSUMPTION_UNRESOLVED signals pushed them into getSroiCalculationReadiness's blockingReasons array, which calculateAndPersistSroiRun uses to REFUSE TO CALCULATE a run at all. Running the existing tests/sroi-calculation.service.test.ts regression suite immediately surfaced 46 new failures — every existing test fixture lacking a theory-of-change graph could no longer calculate. This directly contradicted FIBC-020's graph_status='RECOMMENDED, NOT MANDATORY' and determinism_and_regression_sentinels.engine_semantics ('B4 must NOT alter deterministic SROI numeric engine semantics'). Corrected: both signals are computed and surfaced as visible SroiReadiness fields and buildReadinessIssues entries, but are NEVER pushed to blockingReasons/canCalculate. The mission's own instruction ('Do not touch direct approval hooks merely to enforce non-approvable... FIBIU19 later composes approval eligibility') is the governing rule this correction restores. Re-ran the full existing regression suite after the fix: zero new failures from this cause.",
+    "deadweight_and_counterfactual_missing": "Never wired into any hook at all — listOutcomesMissingCounterfactual and listOutcomesWithInsufficientDeadweightBasis are standalone, run-bound query functions (FIBDB-011 is snapshot-bound to a specific calculation_run_id, so these cannot meaningfully belong in the run-independent preliminary readiness gate the way the other two signals do). Neither is called from calculateAndPersistSroiRun, any approval function, or lib/pipeline/sroi-results.ts (which B4 does not touch — explicitly prohibited)."
+  },
+
+  "migration_generation": {
+    "no_policies_file_needed": "Measured, not assumed: db/policies/** is used ONLY for (a) re-applying RLS content already present in earlier Drizzle migrations for hosted-bootstrap-order reasons, and (b) retrofitting RLS onto pre-existing org-agnostic global-catalog tables shipped without it. FIBDB-011/012/013 all declare 'rls: org-scoped' and ship WITH their creating migration, matching the 0053/0059 precedent exactly — no db/policies/011_*.sql file was created.",
+    "rls_hand_authored": "drizzle-kit generate produces CREATE TABLE/CHECK/FK/INDEX only — Drizzle has no native RLS API in this repo. RLS ENABLE/CREATE POLICY blocks were hand-appended to both generated .sql files, following the exact 0059/0060 idiom (org-scoped SELECT via current_user_org_ids()/current_user_is_super_admin(), INSERT/UPDATE via current_user_role_in_org() at the analyst+ floor, created_by=auth.uid() check).",
+    "hashes_independently_verified": "sha256 for both migration files computed independently via node crypto and cross-checked against db/hosted/baseline-manifest.ts pins before pnpm baseline:verify was run — both matched on the first attempt."
+  },
+
+  "gates": {
+    "typecheck": { "command": "pnpm exec tsc --noEmit -p tsconfig.json", "result": "PASS", "exit_code": 0 },
+    "lint": { "command": "pnpm exec eslint <every changed .ts/.tsx file>", "result": "PASS", "note": "one pre-fix warning (unused destructured var in a test) corrected; zero errors, zero warnings on the final pass" },
+    "secrets_scan": { "command": "pnpm secrets:scan", "result": "PASS", "output": "CURRENT_TREE: no credential material found." },
+    "authority_seal_verify": { "command": "pnpm authority:seal:verify", "result": "PASS", "output": "ODS_AUTHORITY_INPUT_INTEGRITY=PASS PROTECTED_CORPUS_COUNT=9 PROTECTED_CORPUS_INTEGRITY=PASS TRANSITIVE_ATTESTATION_COUNT=4 NATIVE_RELATIONSHIPS=PASS AUTHORITY_SEAL_VERIFY=PASS" },
+    "ods_scope": {
+      "command": "pnpm ods:scope -- --base 83fc21b86de9a00ae05a56e1cfede158aaec41a8 --protected-authority HPO-ODS-W2-12 --allow <every changed path>",
+      "result": "PASS",
+      "output": "CHANGED_FILE_COUNT=107 PROTECTED_AUTHORITY=HPO-ODS-W2-12 resolved on branch codex/w2-b4-r1 PROTECTED_AUTHORIZED_PATH_COUNT=81 PROTECTED_PATH_VIOLATIONS=0 NON_CANONICAL_PROTECTED_PATHS=0 UNAUTHORIZED_PATHS=0 ODS_SCOPE=PASS",
+      "note_74_pre_existing_wrappers": "74 of the 107 changed paths are PRE-EXISTING db/prepared/journal/NNN_*.sql wrapper files whose only change is their mechanically-derived 'Unit N/TOTAL' header comment advancing from /74 to /76 — regenerated by pnpm journal:generate, verified byte-identical to what generation reproduces (pnpm journal:verify), and covered by the db/prepared/journal/** grant pattern like any other file under it."
+    },
+    "ods_poststate": {
+      "command": "pnpm ods:poststate -- --base 83fc21b86de9a00ae05a56e1cfede158aaec41a8 --protected-authority HPO-ODS-W2-12 --allow <every changed path> --test tests/methodological-assumptions.service.test.ts --test tests/counterfactual-assessment.service.test.ts --test tests/causal-chain-sufficiency.service.test.ts --test tests/w2-b4-governance.test.ts",
+      "result": "PASS",
+      "output": "STEP typecheck=PASS STEP targeted-tests=PASS (52/52) STEP secrets-scan=PASS STEP authority-seal-verify=PASS STEP ods-scope=PASS ODS_POSTSTATE=PASS",
+      "note": "Run without --clean prior to commit (107 uncommitted paths at measurement time); the clean-state step is deferred to the post-commit re-run recorded in commit_and_push below."
+    },
+    "journal_verify": { "command": "pnpm journal:verify", "result": "PASS", "output": "[journal] verification OK — all 77 wrappers regenerate byte-identically" },
+    "baseline_verify": { "command": "pnpm baseline:verify", "result": "PASS", "output": "[baseline] verification OK — 76 units, order pinned, hashes match, derived scan matches every pinned expectation" },
+    "postgres_disposable_probe": {
+      "command": "UELLIX_PG_TESTS=1 pnpm vitest run tests/postgres/b4-completeness.pg.test.ts",
+      "result": "PASS",
+      "output": "Test Files 1 passed, Tests 32 passed (32) — includes PG-POS-1/2, SEC-N1/N2/N3/N4, SEC-ACL-1, and all MUT-PG-1/2/3/4 mutation controls, against public.ecr.aws/supabase/postgres:17.6.1.143 via the canonical disposable harness, zero leftover containers verified after teardown",
+      "first_run_note": "The first run failed 6 probes on a self-inflicted fixture bug (two different probes reused the same (outcome_id, calculation_run_id) pair the caA fixture row already occupied, tripping uq_counterfactual_assessments_outcome_run — a real, correctly-enforced constraint, not an implementation defect). Fixed by adding a dedicated scratch outcome (outA2) for fresh-insert probes; the second run passed all 32."
+    },
+    "targeted_tests": {
+      "command": "pnpm vitest run tests/methodological-assumptions.service.test.ts tests/counterfactual-assessment.service.test.ts tests/causal-chain-sufficiency.service.test.ts tests/w2-b4-governance.test.ts",
+      "result": "PASS",
+      "output": "Test Files 4 passed (4), Tests 52 passed (52)"
+    }
+  },
+
+  "regression_suite": {
+    "command": "pnpm vitest run tests/ lib/pipeline/*.test.ts (excluding tests/postgres/** and tests/eval/**)",
+    "clean_result": "7160+ passed, 0 new failures attributable to this mission's changes beyond the two documented known conditions below (KTC-W2-B4-A1-STALE, KTC-W2-B4-B0-STALE).",
+    "flakiness_observed_and_ruled_out": "Multiple full-suite runs under this session showed a DIFFERENT set of tests/ods/*.test.ts and tests/hosted/baseline-apply-authorization.test.ts sub-tests failing each time (different PG-N sub-cases, different named-branch cases) — these tests spawn real git/pnpm subprocesses against temporary repo fixtures and are sensitive to concurrent load. Every one of them PASSED when re-run in isolation or in a small batch, confirming environment-level flakiness under heavy parallel load, not a deterministic regression. tests/hosted/checkpoint-a1.test.ts and tests/hosted/checkpoint-b0.test.ts failed IDENTICALLY and deterministically on every run, isolated or not — those two are real, and are the known conditions below."
+  },
+
+  "known_conditions_discovered": [
+    {
+      "id": "KTC-W2-B4-A1-STALE",
+      "status": "NEW_DISCOVERED_DEFERRED",
+      "affected_test": "tests/hosted/checkpoint-a1.test.ts (2 tests: 'the recorded verdict is what the CLI computes over the recorded corroboration', 'no test in this file may write over a real measurement')",
+      "root_cause": "artifacts/hosted-a1-status.json is a checked-in, derived snapshot computed by scripts/a1-status.ts, which calls planProvisioningPhase (db/hosted/hosted-provisioning-runner.ts), which consumes BASELINE_UNITS/BASELINE_ORDER from db/hosted/baseline-manifest.ts. Registering the two new B4 baseline units (74->76) legitimately changes the computed provisioning plan, so the checked-in snapshot now diverges from what the CLI recomputes.",
+      "why_not_fixed": "artifacts/hosted-a1-status.json is not enumerated anywhere in W2_B4_AUTHORITY_v1.0.0.json authorized_future_implementation_surface — refreshing it would be an unauthorized path, exactly analogous to the ALREADY-EXCLUDED artifacts/baseline-rehearsal/latest.json staleness (KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02, W2_B4_AUTHORITY hosted_baseline_pin_remeasurement.artifacts_path_deliberately_excluded): 'Refreshing it is a rehearsal act against a real stack, not a B4 concern, and doing so would silently close [a] deferred known condition this node has no authority to close.'",
+      "class": "Standing, structural characteristic of the hosted-lane derived-cache design — any baseline-growing mission (past W2 batches, P1A, future W2-B5) would trigger the identical staleness against its own baseline growth."
+    },
+    {
+      "id": "KTC-W2-B4-B0-STALE",
+      "status": "NEW_DISCOVERED_DEFERRED",
+      "affected_test": "tests/hosted/checkpoint-b0.test.ts (2 tests: 'asks one row-count arm per table the corpus creates', 'regenerates byte-identically from the corpus')",
+      "root_cause": "db/prepared/checkpoint-b0/observation.sql is a checked-in SQL file generated by pnpm b0:observation:generate from EXPECTED.tables (db/hosted/checkpoint-b0.ts's deriveExpectedBaselineState, which introspects the migration corpus and now correctly includes methodological_assumptions/assumption_object_links/counterfactual_assessments). The checked-in file predates these three tables.",
+      "why_not_fixed": "db/prepared/checkpoint-b0/observation.sql is under db/prepared/**, and W2_B4_AUTHORITY_v1.0.0.json authorized_future_implementation_surface.explicitly_prohibited names exactly 'db/prepared/** other than db/prepared/journal/**'. Regenerating it is EXPLICITLY PROHIBITED to this mission, not merely unenumerated.",
+      "class": "Same structural class as KTC-W2-B4-A1-STALE — a hosted-lane derived cache, out of B4's authorized surface by the authority's own explicit design."
+    }
+  ],
+
+  "commit_and_push": {
+    "note": "Recorded by the mission's final report, not embedded here to avoid a self-referential artifact — this evidence file is committed in the same commit series as the implementation, and cannot contain its own final SHA."
+  },
+
+  "final_state": {
+    "W2_B4_IMPLEMENTATION_STATUS": "IMPLEMENTED_AWAITING_FOCUSED_OPUS_AUDIT",
+    "not_claimed": [
+      "W2-B4 is NOT certified by this artifact.",
+      "The independent FOCUSED_OPUS_ADVERSARIAL_CLOSURE_AUDIT has NOT been run.",
+      "This PR is NOT marked ready and is NOT merged.",
+      "No production or hosted promotion is implied.",
+      "CONTROLLER_DB_EXECUTION remains DISABLED."
+    ]
+  }
+}
