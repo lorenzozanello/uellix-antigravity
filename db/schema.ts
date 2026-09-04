@@ -892,6 +892,13 @@ export const sroiRunReviews = pgTable('sroi_run_reviews', {
   calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
   reviewerId: uuid('reviewer_id').references(() => users.id).notNull(),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
+  // FIBIU-17 (FIBC-021, FIBDB-016 stage B, W2-B5, HPO-ODS-W2-17):
+  // LEGACY_NON_AUTHORITATIVE from B5 forward — historical manual readiness
+  // value, retained as history, never written by a new review, never the
+  // canonical FIBC-021 readiness. See the matching COMMENT ON COLUMN in
+  // migration 0064 (measured at runtime via pg_description) and
+  // lib/pipeline/sroi-readiness.ts for the canonical readiness_assessments
+  // computation this column no longer feeds.
   readinessScore: integer('readiness_score'),
   overallNotes: text('overall_notes'),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
@@ -1367,4 +1374,106 @@ export const counterfactualAssessments = pgTable('counterfactual_assessments', {
   check('counterfactual_assessments_baseline_available_fields_check', sql`${table.baselineAvailability} <> 'available' OR (${table.baselineValue} IS NOT NULL AND ${table.baselinePeriod} IS NOT NULL AND ${table.baselineSource} IS NOT NULL AND ${table.baselineContext} IS NOT NULL)`),
   uniqueIndex('uq_counterfactual_assessments_outcome_run').on(table.outcomeId, table.calculationRunId),
   index('idx_counterfactual_assessments_run_id').on(table.calculationRunId),
+])
+
+// FIBIU-17 (FIBC-021, FIBDB-015). Canonical readiness — SROI_READINESS_MODEL_v1.0.0.
+// One immutable row per calculation run: the global score, the ten dimensional
+// scores and the per-criterion resolution detail, all computed deterministically
+// from already-persisted governed state. readiness_model_version is a
+// value-reference to governed_model_registry (modelId='SROI_READINESS_MODEL'),
+// seeded by migration 0040 — never re-seeded or edited here (FIBC-003).
+// IMMUTABILITY: snapshot copy, realized by the ABSENCE of an UPDATE/DELETE
+// policy (stage A) — a recompute is a new run, never an edit of this row.
+// No human or Stella may inject a score: created_by identifies only the actor
+// who triggered the (system-only) computation, never a value source.
+export const readinessAssessments = pgTable('readiness_assessments', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  readinessModelVersion: varchar('readiness_model_version', { length: 20 }).notNull(),
+  globalScore: numeric('global_score', { precision: 5, scale: 2 }).notNull(),
+  band: varchar('band', { length: 30 }).notNull(),
+  // Per-dimension detail, D1..D10: { score, satisfiedCount, applicableCount }.
+  dimensionScores: jsonb('dimension_scores').notNull(),
+  // Per-criterion detail, all 46: { id, dimension, resolution, ... }.
+  criteriaDetail: jsonb('criteria_detail').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('readiness_assessments_global_score_check', sql`${table.globalScore} >= 0 AND ${table.globalScore} <= 100`),
+  check('readiness_assessments_band_check', sql`${table.band} IN ('initial_preparation', 'partial_preparation', 'advanced_preparation', 'high_preparation')`),
+  uniqueIndex('uq_readiness_assessments_calculation_run').on(table.calculationRunId),
+  index('idx_readiness_assessments_project_id').on(table.projectId),
+  index('idx_readiness_assessments_organization_id').on(table.organizationId),
+])
+
+// FIBIU-18 (FIBC-022, FIBDB-017/048). Per-run sensitivity candidate register —
+// SROI_SENSITIVITY_MODEL_v1.0.0. Supersedes (not extends) the uniform
+// SCENARIO_DELTA_PP shortcut. candidate_key is deterministic per run so the
+// same actually-used input never registers twice (uq_sensitivity_candidates_run_key).
+// disposition starts 'pending' (fail-closed) and transitions to
+// variation_required | no_additional_variation_required, both carrying rationale
+// (FIBDB-048 key constraint). UPDATE is contract-required (FIBC-022's governed
+// disposition transition), unlike the append-only FIBDB-018/counterfactual
+// precedent — the ONLY mutable column set is the disposition transition itself.
+export const sensitivityCandidates = pgTable('sensitivity_candidates', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  candidateKey: varchar('candidate_key', { length: 200 }).notNull(),
+  candidateKind: varchar('candidate_kind', { length: 40 }).notNull(),
+  // { assignmentId?, outcomeId?, filter?, assumptionId?, proxyId?, proxyVersionId?, inputName? }
+  inputReference: jsonb('input_reference').notNull(),
+  baseValue: varchar('base_value', { length: 255 }),
+  disposition: varchar('disposition', { length: 40 }).default('pending').notNull(),
+  rationale: text('rationale'),
+  dispositionedBy: uuid('dispositioned_by').references(() => users.id),
+  dispositionedAt: timestamp('dispositioned_at'),
+  sensitivityModelVersion: varchar('sensitivity_model_version', { length: 20 }).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('sensitivity_candidates_candidate_kind_check', sql`${table.candidateKind} IN ('methodological_filter', 'structured_assumption', 'proxy_value', 'other_quantitative_input')`),
+  check('sensitivity_candidates_disposition_check', sql`${table.disposition} IN ('variation_required', 'no_additional_variation_required', 'pending')`),
+  check('sensitivity_candidates_rationale_check', sql`${table.disposition} = 'pending' OR ${table.rationale} IS NOT NULL`),
+  uniqueIndex('uq_sensitivity_candidates_run_key').on(table.calculationRunId, table.candidateKey),
+  index('idx_sensitivity_candidates_run_id').on(table.calculationRunId),
+  index('idx_sensitivity_candidates_organization_id').on(table.organizationId),
+])
+
+// FIBIU-18 (FIBC-022, FIBDB-018/048). Governed scenario for a
+// variation_required candidate — executed through the SAME deterministic
+// engine (runDeterministicCalc) with only the declared inputs substituted.
+// The base run (sroi_calculation_runs) is never overwritten; base_result_json
+// re-proves the base reproduction alongside result_json so a scenario can
+// never silently drift from the run it varies. APPEND-ONLY (stage A):
+// realized by the ABSENCE of an UPDATE/DELETE policy — no stage-E hardening
+// (trigger/VALIDATE/NOT VALID) ships in B5.
+export const sensitivityScenarios = pgTable('sensitivity_scenarios', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  scenarioKind: varchar('scenario_kind', { length: 20 }).notNull(),
+  // uuid[] of sensitivity_candidates.id varied by this scenario.
+  candidateIds: jsonb('candidate_ids').notNull(),
+  // [{ candidateId, candidateKey, baseValue, alternativeValue }]
+  modifiedInputs: jsonb('modified_inputs').notNull(),
+  reason: text('reason').notNull(),
+  sources: text('sources'),
+  combinationDescription: text('combination_description'),
+  sensitivityModelVersion: varchar('sensitivity_model_version', { length: 20 }).notNull(),
+  calculationEngineVersion: varchar('calculation_engine_version', { length: 20 }).notNull(),
+  resultJson: jsonb('result_json').notNull(),
+  baseResultJson: jsonb('base_result_json').notNull(),
+  selectedBy: uuid('selected_by').references(() => users.id).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('sensitivity_scenarios_scenario_kind_check', sql`${table.scenarioKind} IN ('one_at_a_time', 'combined')`),
+  check('sensitivity_scenarios_combination_description_check', sql`${table.scenarioKind} <> 'combined' OR ${table.combinationDescription} IS NOT NULL`),
+  index('idx_sensitivity_scenarios_run_id').on(table.calculationRunId),
+  index('idx_sensitivity_scenarios_organization_id').on(table.organizationId),
 ])

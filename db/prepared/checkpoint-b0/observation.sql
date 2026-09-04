@@ -152,6 +152,12 @@ SELECT jsonb_pretty(jsonb_build_object(
     UNION ALL
     SELECT 'public.proxy_sources' AS t, count(*) AS n FROM "public"."proxy_sources"
     UNION ALL
+    SELECT 'public.readiness_assessments' AS t, count(*) AS n FROM "public"."readiness_assessments"
+    UNION ALL
+    SELECT 'public.sensitivity_candidates' AS t, count(*) AS n FROM "public"."sensitivity_candidates"
+    UNION ALL
+    SELECT 'public.sensitivity_scenarios' AS t, count(*) AS n FROM "public"."sensitivity_scenarios"
+    UNION ALL
     SELECT 'public.signup_allowlist' AS t, count(*) AS n FROM "public"."signup_allowlist"
     UNION ALL
     SELECT 'public.sroi_assignment_inputs' AS t, count(*) AS n FROM "public"."sroi_assignment_inputs"

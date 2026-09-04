@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 47/78: 005_theory_of_change_rls.sql
+-- GENERATED — DO NOT EDIT. Unit 77/78: 0064_fib_readiness_assessments.sql
 -- ============================================================================
 --
--- Includes:      db/policies/005_theory_of_change_rls.sql
--- Source SHA256: 703aa74bf1b579c237391af9520ee649605ab6953dcac739ab2bd8636cf04b30
+-- Includes:      db/migrations/0064_fib_readiness_assessments.sql
+-- Source SHA256: 03f4f138d2ac806dce67261a1beea2dabc13a6327d07caca04897f7c6bbd70a4
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/047_005_theory_of_change_rls.sql
+--        -f db/prepared/journal/077_0064_fib_readiness_assessments.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/policies/005_theory_of_change_rls.sql
+\ir ../../../db/migrations/0064_fib_readiness_assessments.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '005_theory_of_change_rls.sql', 'PHASE_BASELINE',
-   '703aa74bf1b579c237391af9520ee649605ab6953dcac739ab2bd8636cf04b30', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0064_fib_readiness_assessments.sql', 'PHASE_BASELINE',
+   '03f4f138d2ac806dce67261a1beea2dabc13a6327d07caca04897f7c6bbd70a4', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

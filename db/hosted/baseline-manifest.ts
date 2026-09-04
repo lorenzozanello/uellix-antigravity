@@ -1310,6 +1310,67 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: '38d7e1cd4f92aa38323d2228b6f7cc017431dbc9416a956b8343b97b0a3b7bd4',
     },
   },
+  {
+    ordinal: 77,
+    id: '0064_fib_readiness_assessments.sql',
+    kind: D,
+    file: 'db/migrations/0064_fib_readiness_assessments.sql',
+    sha256: '03f4f138d2ac806dce67261a1beea2dabc13a6327d07caca04897f7c6bbd70a4',
+    dependsOn: ['0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-17 stage A (FIBC-021/FIBDB-015). CREATE TABLE readiness_assessments — one immutable row per ' +
+      'calculation_run (UNIQUE): global_score, band, ten-dimension detail and 46-criterion detail, ' +
+      'readiness_model_version referencing governed_model_registry by value. RLS: org-scoped SELECT and ' +
+      'INSERT at the same analyst+ floor as unit 76 — no UPDATE, no DELETE (immutable snapshot; a ' +
+      'recompute is a new run, never an edit). Also carries FIBDB-016 stage B: a plain, reversible ' +
+      'COMMENT ON COLUMN marks sroi_run_reviews.readiness_score LEGACY_NON_AUTHORITATIVE — no DROP, no ' +
+      'rename, no NOT NULL, no read-only trigger (that is stage F, deferred to FIBIU-30, Wave 6). ' +
+      'SEC-ACL-1: no new function or SECURITY DEFINER surface — RLS-only, same class as unit 76.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing COMMENT and policies are guarded (COMMENT ON COLUMN is naturally idempotent; policies use ' +
+      'DROP POLICY IF EXISTS) but do not change the unit\'s overall class. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 2,
+      securitySurfaceDigest: 'beb2ea37940f921cf2ca4d376410f942c8414e3f2201645498aeec519ffcdde7',
+    },
+  },
+  {
+    ordinal: 78,
+    id: '0065_fib_sensitivity_model.sql',
+    kind: D,
+    file: 'db/migrations/0065_fib_sensitivity_model.sql',
+    sha256: '2dbf15b4712ffaeb7d3580f4e04a31b0dee95e47012ee8da7497809e3a14139a',
+    dependsOn: ['0064_fib_readiness_assessments.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-18 stage A (FIBC-022/FIBDB-017/018/048). CREATE TABLE sensitivity_candidates and ' +
+      'sensitivity_scenarios — supersedes (not extends) the uniform SCENARIO_DELTA_PP = 10 shortcut. ' +
+      'sensitivity_candidates RLS: org-scoped SELECT, INSERT and UPDATE at the analyst+ floor — UPDATE is ' +
+      'contract-required for the governed pending → variation_required|no_additional_variation_required ' +
+      'disposition transition. sensitivity_scenarios RLS: org-scoped SELECT and INSERT only — append-only, ' +
+      'no UPDATE, no DELETE. dependsOn 0064 encodes the certified write-serialization FIBIU-17→FIBIU-18 ' +
+      '(product DAG has NO edge between them — see W2_B5_AUTHORITY_v1.0.0.json W2_B5_SCOPE.dag_authority). ' +
+      'SEC-ACL-1: no new function or SECURITY DEFINER surface — RLS-only, same class as unit 77.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing policies are guarded but do not change the unit\'s overall class. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 2,
+      policiesCreatedCount: 5,
+      securitySurfaceDigest: 'ee9de841b80d3f21aa5f1565ac449aba52ced6f2c734dddb726d26bcce2564f6',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

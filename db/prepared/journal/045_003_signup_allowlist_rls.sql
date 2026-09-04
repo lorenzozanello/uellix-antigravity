@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 45/76: 003_signup_allowlist_rls.sql
+-- GENERATED — DO NOT EDIT. Unit 45/78: 003_signup_allowlist_rls.sql
 -- ============================================================================
 --
 -- Includes:      db/policies/003_signup_allowlist_rls.sql
