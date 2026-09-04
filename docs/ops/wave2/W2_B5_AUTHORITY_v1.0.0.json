@@ -1,0 +1,590 @@
+{
+  "package_id": "W2_B5_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "W2_B5_AUTHORITY_v1.0.0",
+  "authority_class": "WAVE_2_BATCH_IMPLEMENTATION_AUTHORITY_FROZEN_BEFORE_IMPLEMENTATION",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-17",
+  "hpo_mission_id": "CONTROLLER26-REMEDIATED-INDEPENDENT-REAUDIT-TO-B5-AUTHORITY-R2",
+  "predecessor_hpo_mission_id": "W2-B4-RC3-BINDING-RULING-AND-AUTHORITY-MATERIALIZATION-R2",
+  "materialization_date": "2026-09-04",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json",
+  "test_manifest": "docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json",
+
+  "purpose": "Freeze, BEFORE any implementation byte exists, the complete closed-world authority for Wave 2 batch B5 — FIBIU-17 (SROI_READINESS_MODEL_v1.0.0) and FIBIU-18 (SROI_SENSITIVITY_MODEL_v1.0.0). The successor implementation mission must need ZERO product reasoning: scope, DAG, schema surface, security contract, reader contract, baseline-growth consequences, prohibitions, controls and audit requirements are all determined here from primary certified authority.",
+
+  "scope_note": "This artifact writes NO implementation, allocates NO migration ordinal, and creates NO database object. It is the frozen contract the successor mission executes against. The migration slot is deliberately NOT frozen: it is mechanically re-measured at SYNC_POINT against live integration and every remote head.",
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-w2-b5-authority-r1",
+    "branch": "codex/w2-b5-authority-r1",
+    "INTEGRATION_SHA": "ea845921214cfee85cd11db1f5c741137d5397d5",
+    "INTEGRATION_TREE": "a562f8cc0b2d94a7cc55867913fbd0db01426fe4",
+    "integration_branch": "integration/commercial-v1",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "b4_merge_sha": "33c2347d81b16c9aafa5dad2db1647c0e4c3d684",
+    "controller26_merge_sha": "ea845921214cfee85cd11db1f5c741137d5397d5",
+    "controller_live_immutable_count_at_INTEGRATION_SHA": 26,
+    "protected_grants_count_at_INTEGRATION_SHA": 9,
+    "baseline_units_at_INTEGRATION_SHA": 76,
+    "prepared_journal_wrappers_at_INTEGRATION_SHA": 77,
+    "drizzle_migrations_at_INTEGRATION_SHA": 64
+  },
+
+  "b4_prerequisite": {
+    "REQUIRED": "W2_B4 = CLOSED_AUDITED_INTEGRATED",
+    "MEASURED": "SATISFIED",
+    "proof_command": "pnpm ops:program-state --unit W2-B4 --integration-target origin/integration/commercial-v1",
+    "measured_result": "AUTHORITY_STATUS=CLOSED, IMPLEMENTATION_STATUS=CLOSED, AUDIT_STATUS=CLOSED, INTEGRATION_STATUS[origin/integration/commercial-v1]=INTEGRATED",
+    "measurement_hazard_recorded": "resolveBranch() in scripts/ods-program-state.ts resolves the LOCAL branch name. In this repository the local branch integration/commercial-v1 is stale (547ac36405c47b1be386d37ba1f387173c867252) while origin/integration/commercial-v1 is current. Any successor mission that omits --integration-target origin/integration/commercial-v1 will read a FALSE NOT_INTEGRATED. This is a measurement hazard, not a closure defect.",
+    "why_it_matters": "FIBIU-17 hard-depends on FIBIU-15 and FIBIU-16, both delivered by W2-B4. FIBIU-18 hard-depends on FIBIU-15. Neither unit may begin before B4 is integrated."
+  },
+
+  "W2_B5_SCOPE": {
+    "fibius": ["FIBIU-17", "FIBIU-18"],
+    "unit_count": 2,
+    "batch_name": "Governed models",
+    "wave": 2,
+    "internal_dag": "FIBIU-17 || FIBIU-18",
+    "levels": { "FIBIU-17": "2.3", "FIBIU-18": "2.3" },
+    "dag_authority": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md section 13, WAVE 2: PARALLEL_GROUPS ... {17, 18}; SERIAL_CONTRACTS 04->{05,06,07} . 08->{09,10} . 11->12 . 15->{14,16} . {15,16}->17 . 15->18. There is NO edge between FIBIU-17 and FIBIU-18 in either direction.",
+    "hard_dependencies": { "FIBIU-17": ["FIBIU-01", "FIBIU-15", "FIBIU-16"], "FIBIU-18": ["FIBIU-15", "FIBIU-01"] },
+    "no_dependency_may_be_invented": "A shared-writer collision (db/schema.ts, db/migrations, the prepared journal, lib/audit/logger.ts, the entrypoint inventory) is a SERIALIZATION constraint on write order. It is NOT a product dependency and must never be recorded as a DAG edge.",
+    "batch_preconditions": "W2-B1, W2-B2, W2-B3 and W2-B4 are CLOSED. Wave 1 is CLOSED.",
+    "b5_is_the_last_wave2_batch": "W2_EXECUTION_MAPPING_v1.0.0.json state_after_this_artifact.wave2_batch_count = 5. B5 closure does not by itself close Wave 2 — see post_b5_unlocks."
+  },
+
+  "executor_routing": {
+    "IMPLEMENTATION_CLASS": "B",
+    "IMPLEMENTATION_MODEL": "SONNET_HIGH",
+    "FABLE_ELIGIBLE": false,
+    "machine_gates_unconditional": "Every machine gate applies regardless of executor model.",
+    "B5_CLOSURE_AUDIT": "FOCUSED_OPUS_ADVERSARIAL_CLOSURE_AUDIT",
+    "FIBIU_18_OPUS_REVIEW_REQUIRED": "YES",
+    "fibiu_18_review_authority": "FIB section 13 WAVE 2 OPUS_REVIEW_REQUIRED: YES for FIBIU-07, FIBIU-10, FIBIU-18. FIBIU-18 carries RISK: HIGH in its own section 12 registry entry.",
+    "two_audits_are_not_interchangeable": "The FIBIU-18 independent Opus review and the independent focused B5 closure audit are SEPARATE required artifacts. Neither may substitute for, absorb, or be merged into the other. Both must be PASS for B5 closure."
+  },
+
+  "B5_FIBDB_SCOPE": {
+    "included": [
+      {
+        "id": "FIBDB-015",
+        "object": "readiness_assessments",
+        "change_type": "NEW_TABLE",
+        "owning_fibiu": "FIBIU-17",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "hardening_stage": "none declared",
+        "fib_reference": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:309",
+        "fields": "Global + 10 dimensional scores + criterion detail + readiness_model_version.",
+        "immutability": "snapshot copy immutable",
+        "backfill_class": "PROSPECTIVE_ONLY - the manual score is retained separately as non-authoritative history",
+        "rls": "org-scoped"
+      },
+      {
+        "id": "FIBDB-016",
+        "object": "sroi_run_reviews.readiness_score",
+        "change_type": "LEGACY_MARKING",
+        "owning_fibiu": ["FIBIU-17", "FIBIU-30"],
+        "track": "DRIZZLE",
+        "schema_stage": "B",
+        "hardening_stage": "F - DEFERRED TO FIBIU-30 (Wave 6), NOT AUTHORIZED IN B5",
+        "fib_reference": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:311",
+        "certified_stage_gloss": "STAGE: B (marking) / F (surfaces stop reading it)",
+        "application_prerequisite": "NONE - FIB section 6.2 row 016 records APPLICATION_PREREQUISITE as empty",
+        "rollback": "Reversible marking",
+        "backfill_class": "LEGACY_NON_AUTHORITATIVE - value retained as history"
+      },
+      {
+        "id": "FIBDB-017",
+        "object": "sensitivity_candidates",
+        "change_type": "NEW_TABLE",
+        "owning_fibiu": "FIBIU-18",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "hardening_stage": "E (append-only) - DEFERRED, NOT AUTHORIZED IN B5",
+        "fib_reference": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:313",
+        "fields": "Per run: input reference, disposition, rationale, actor.",
+        "immutability": "immutable with the run",
+        "backfill_class": "PROSPECTIVE_ONLY - absent on historical runs implies legacy",
+        "rls": "org-scoped"
+      },
+      {
+        "id": "FIBDB-018",
+        "object": "sensitivity_scenarios",
+        "change_type": "NEW_TABLE",
+        "owning_fibiu": "FIBIU-18",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "hardening_stage": "E (append-only) - DEFERRED, NOT AUTHORIZED IN B5",
+        "fib_reference": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:315",
+        "fields": "Modified inputs, base/alt values, reason, sources, actor, sensitivity_model_version, results.",
+        "immutability": "append-only",
+        "backfill_class": "PROSPECTIVE_ONLY - no retrospective scenario backfill",
+        "rls": "org-scoped"
+      },
+      {
+        "id": "FIBDB-048",
+        "object": "sensitivity candidate-disposition vocabulary",
+        "change_type": "NEW_ENUM_OR_CHECK",
+        "owning_fibiu": "FIBIU-18",
+        "track": "DRIZZLE",
+        "schema_stage": "A",
+        "hardening_stage": "E - DEFERRED, NOT AUTHORIZED IN B5",
+        "fib_reference": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:375",
+        "vocabularies": {
+          "sensitivity_candidates.disposition": ["variation_required", "no_additional_variation_required", "pending"],
+          "sensitivity_candidates.candidate_kind": ["methodological_filter", "structured_assumption", "proxy_value", "other_quantitative_input"],
+          "sensitivity_scenarios.scenario_kind": ["one_at_a_time", "combined"]
+        },
+        "key_constraints": "rationale NOT NULL in both non-pending states; combined requires combination_description NOT NULL.",
+        "backfill_class": "BACKFILL_NOT_REQUIRED - no retrospective scenario backfill; pre-model runs stay legacy_non_authoritative"
+      }
+    ],
+    "explicitly_excluded": {
+      "FIBDB-051": "legacy_class_vocabulary - stage B but APPLICATION_PREREQUISITE FIBIU-30, Wave 6. NOT B5.",
+      "FIBDB-030": "verification_hash locator retirement - FIBIU-26, Wave 5. NOT B5.",
+      "FIBDB-052": "sroi_run_reviews partial index - FIBIU-19, Wave 3. NOT B5."
+    }
+  },
+
+  "B5_SCHEMA_STAGE": {
+    "stage": "A for FIBDB-015/017/018/048; B for FIBDB-016",
+    "rule": "Every B5 DDL item ships in its additive stage-A form, except FIBDB-016 which ships its stage-B marking only. Authority: FIB section 6.1 - hardening (stage E) is PROHIBITED before stage D (application cutover), and stage F is LEGACY_FINALIZATION reachable only once no live surface reads the old path.",
+    "no_hardening_authorized": true,
+    "stage_e_deferred": "FIBDB-017/018/048 each declare a stage-E append-only/immutability hardening. NONE of it is authorized in B5. In B5 immutability is realized by ABSENCE of an UPDATE/DELETE policy plus a service-level refusal on an approved run - the precedent counterfactual_assessments established in W2-B4.",
+    "stage_f_prohibited": "Stage F of FIBDB-016 belongs to FIBIU-30, Wave 6. B5 may not retire, drop, rename or make read-only the sroi_run_reviews.readiness_score column."
+  },
+
+  "domain_contracts": {
+    "FIBIU-17": {
+      "name": "SROI_READINESS_MODEL_v1.0.0",
+      "contract": "FIBC-021",
+      "authorities_served": ["NPDD-01", "V-22", "NPDD-03"],
+      "fib_reference": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md section 3.H and section 12 FIBIU-17",
+      "canonical_model": {
+        "dimensions": 10,
+        "dimension_weight": "10% each, exactly",
+        "criteria_total": 46,
+        "dimension_score": "100 * applicable criteria satisfied / applicable criteria total",
+        "global": "arithmetic mean of the ten dimension scores, scale 0-100",
+        "bands": "0-39 Initial Preparation / 40-69 Partial Preparation / 70-84 Advanced Preparation / 85-100 High Preparation",
+        "band_copy_authority": "V-22 - the legacy copy 'Audit-ready candidate' is PROHIBITED; it suggests certification or audit guarantee.",
+        "criterion_equal_weight": "Every criterion weighs equally within its dimension.",
+        "readiness_model_version": "SROI_READINESS_MODEL 1.0.0 - ALREADY SEEDED in governed_model_registry by migration 0040 (FIBIU-01). B5 references it by value and MUST NOT re-seed, edit or version it."
+      },
+      "governed_not_applicable": "A governed not_applicable SATISFIES its criterion and stays in BOTH numerator and denominator. It is valid only when established through governed state, decision and rationale - never automatic, never set by Stella. It is derived from the governed decision already persisted on the underlying object, never from a readiness-local flag.",
+      "d8_4_vacuity": "D8-4 ('every open Stella high finding has human disposition') resolves DETERMINISTICALLY by vacuity in three of four situations: Stella not executed => satisfied by vacuity; Stella executed with zero high findings => satisfied by vacuity; all high findings disposed => satisfied; at least one high finding undisposed => not satisfied. Resolution-by-vacuity is automatic and is NOT a governed not_applicable. NO criterion of the 46 may resolve by consulting whether Stella is enabled, available or was invoked - this is a construction invariant, verifiable by test (V-17).",
+      "invariants": "Readiness NEVER gates approval. No numeric threshold. A high score never compensates a failed gate. NO human or Stella may inject points. Historicals never change retroactively. Each run snapshots the global score, the ten dimensional scores, the criterion detail and readiness_model_version.",
+      "manual_input_removal": "Removal of the manual readiness input, which today is a free numeric field that Portfolio averages and Stella's context consumes.",
+      "exit_gate": "46 criteria, ten dimensions, bands, and snapshot; no path writes authoritative readiness from human input."
+    },
+    "FIBIU-18": {
+      "name": "SROI_SENSITIVITY_MODEL_v1.0.0",
+      "contract": "FIBC-022",
+      "authorities_served": ["NPDD-04", "V-23"],
+      "fib_reference": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md section 3.I and section 12 FIBIU-18",
+      "supersede_not_extend": "lib/pipeline/sroi-sensitivity.ts applies a uniform SCENARIO_DELTA_PP = 10 to all four filters, non-persisted - precisely what the canonical methodology V-23 forbids. It is SUPERSEDED, NOT EXTENDED.",
+      "candidate_register": "Deterministic per-run register built from the inputs and assumptions ACTUALLY USED, mandatorily including: the five adjustments deadweight, attribution, displacement, drop_off, duration - NONE omissible for being 0 or stable; every structured assumption flagged materially methodological; every financial proxy value used to monetize where a reasonable alternative/range/uncertainty exists; and any other quantitative engine input whose uncertainty could materially affect net social value, investment, ratio or interpretation - which captures discount_rate_pct.",
+      "disposition": "Each candidate receives a human disposition variation_required | no_additional_variation_required | pending. Both non-pending states carry rationale.",
+      "scenarios": "Every variation_required candidate needs at least one governed scenario identifying modified inputs, base value, alternative value/range, reason, relevant sources/assumptions, the human who selected or accepted it, and sensitivity_model_version. Upper AND lower scenarios are NOT both required when only one direction is defensible. One-at-a-time and combined scenarios are both permitted; combined must state what combination it represents and why.",
+      "same_engine": "Scenarios execute through the SAME deterministic engine with only the declared inputs substituted. Stella never computes scenario ratios. The base run remains the authoritative result and is NEVER overwritten.",
+      "completeness": "complete requires zero pending and at least one valid persisted scenario per variation_required. A run destined for approval fails closed while incomplete, surfacing as SENSITIVITY_INCOMPLETE.",
+      "no_threshold": "No universal percentage threshold determines material sensitivity - the system computes and displays deltas deterministically; the reviewer determines materiality and records rationale.",
+      "no_confidence_interval": "Min/max across scenarios may be shown ONLY as a scenario envelope, NEVER as a statistical confidence interval.",
+      "no_backfill": "Pre-model runs stay legacy_non_authoritative. NO retrospective scenario backfill.",
+      "sensitivity_model_version": "SROI_SENSITIVITY_MODEL 1.0.0 - ALREADY SEEDED in governed_model_registry by migration 0040 (FIBIU-01). Reference by value only.",
+      "exit_gate": "The uniform +/-10pp is superseded and the completeness gate is operative."
+    },
+    "FIBIU-16_non_regression": "FIBIU-16's causal-chain preserved prohibition (activity -> outcome shortcuts forbidden when the intermediate structure is absent) was delivered in W2-B4 and is a NON-REGRESSION sentinel for B5, never reimplemented."
+  },
+
+  "approval_boundary": {
+    "FIBIU_19_IS_THE_SINGLE_FUTURE_APPROVAL_AUTHORITY": true,
+    "rule": "B5 signals are VISIBLE READINESS/ISSUE FACTS ONLY. Neither the canonical readiness score nor SENSITIVITY_INCOMPLETE may be pushed into getSroiCalculationReadiness blockingReasons or canCalculate.",
+    "authority": "FIBC-021 invariant 'readiness never gates approval'. FIBC-023 (FIBIU-19, Wave 3) is the single canonical run-eligibility composition and owns the 24 enumerated non-eligibility reasons, which already include SENSITIVITY_INCOMPLETE, ASSUMPTION_UNRESOLVED and CAUSAL_CHAIN_INSUFFICIENT.",
+    "measured_precedent": "The W2-B4 implementation's FIRST attempt pushed its signals into blockingReasons and broke 46 pre-existing fixtures in tests/sroi-calculation.service.test.ts. It was corrected by changing SEMANTICS, not by loosening tests. B5 must not repeat that attempt.",
+    "b5_must_not": "Touch a direct approval hook merely to enforce non-approvability."
+  },
+
+  "readiness_reader_contract": {
+    "authority_hierarchy": {
+      "CANONICAL_IMPACT_READINESS": "readiness_assessments (FIBDB-015 / FIBC-021). The ONLY authoritative readiness.",
+      "LEGACY_MANUAL_READINESS": "sroi_run_reviews.readiness_score (FIBDB-016). NON-AUTHORITATIVE from B5. Historical data only. Never contributes to an authoritative aggregate, a new gate, or a live Stella prompt.",
+      "METHODOLOGY_REVIEW_STEP_COMPLETION": "methodology_review_matrix.readiness_score. NOT FIBC-021 readiness. Authoritative ONLY for per-pipeline-step review-checklist completion."
+    },
+    "matrix_is_a_different_metric_proven_by_computation": "methodology_review_matrix.readiness_score is computed by computeReadinessScore in lib/pipeline/methodology-review.ts as round(100 * sum(severity_weight * status_credit) / sum(severity_weight)) over items whose status is not not_applicable, with SEVERITY_WEIGHT {low:1, medium:2, high:3} and STATUS_CREDIT {pass:1, warning:0.5, fail:0}. It is scoped per (project, pipeline_step) over six pre-calculation steps and returns null when nothing is assessable. FIBC-021 weighs every criterion EQUALLY within its dimension, every dimension at exactly 10%, is scoped per run over ten dimensions, and counts a governed not_applicable as SATISFIED in BOTH numerator and denominator. The not_applicable treatment is EXACTLY OPPOSITE. They are not the same concept and no FIBDB item governs the matrix column.",
+    "matrix_disposition_in_B5": "NO schema change, NO computation change, NO presentation change. Its use, substitution or aggregation as FIBC-021 readiness is PROHIBITED. lib/pipeline/methodology-review.ts is a byte-pin sentinel for B5.",
+    "mandatory_b5_reader_changes": [
+      "lib/stella/context/build-composer-context.ts - stop reading sroi_run_reviews.readiness_score",
+      "lib/stella/context/build-validator-context.ts - stop reading sroi_run_reviews.readiness_score",
+      "lib/stella/context/build-reviewer-context.ts - remove latestReadinessScore from ReviewerRunReviewSummary and its select",
+      "lib/stella/prompts/reviewer-system.ts - remove both the runReviews.latestReadinessScore mapping and the projectAnalysisState.readinessScore line"
+    ],
+    "reviewer_enumeration_correction": {
+      "why_authorized": "FIB section 12 names only build-composer-context and build-validator-context for both FIBIU-17 and FIBIU-30. build-reviewer-context.ts is NEVER named anywhere in the FIB, yet at INTEGRATION_SHA it reads sroiRunReviews.readinessScore into latestReadinessScore and lib/stella/prompts/reviewer-system.ts injects it into the audit_assistant prompt as 'readiness score'. The canonical FIBDB-016 clause governs 'Stella context' generically, not two named files. Omission is an ENUMERATION GAP, not an exclusion.",
+      "structural_note": "buildReviewerContext builds on buildValidatorContext and spreads it, so the base readinessScore field is INHERITED. Fixing the validator automatically removes projectAnalysisState.readinessScore from the reviewer prompt. Only buildRunReviewSummary's own read is genuinely unenumerated. The delta is one function and one field.",
+      "why_not_scope_creep": "It performs on an omitted consumer exactly the operation the FIB already orders for composer and validator, on the same column of the same FIBDB item. No new object, contract or concept. A wildcard over lib/stella/** would be scope creep and is PROHIBITED."
+    },
+    "portfolio": {
+      "b5_disposition": "lib/portfolios/analytics.ts MAY continue reading sroi_run_reviews.readiness_score, but ONLY as explicitly LEGACY_NON_AUTHORITATIVE. It must not be labelled, aggregated or presented as authoritative readiness.",
+      "prohibited_in_b5": "The population predicate and the formula sum(net social value)/sum(investment) are FIBIU-27 surface (Wave 5) and are FROZEN for B5. B5 does not switch Portfolio's readiness source.",
+      "future_owner": "FIBIU-27, Wave 5 - 'the manual readiness_score stops being a source and is replaced by the canonical score with coverage'. FIB section 10 binds this to FIBIU-27 by name."
+    },
+    "stage_f_reader_finalization": "The final read-stop of every remaining historical surface, and the repointing of the Stella contexts to readiness_assessments, is FIBIU-30 (Wave 6). Repointing during B5 is PERMITTED but NOT REQUIRED; if not repointed, an ABSENT/null readiness field is REQUIRED over a legacy manual value.",
+    "REQ_SUCC_READINESS_LABEL_01": {
+      "class": "DEFERRED_NAMED_SUCCESSOR",
+      "not_a_b5_unknown": true,
+      "requirement": "The frozen FIBC-021 band copy (Initial/Partial/Advanced/High Preparation) will collide nominally in Spanish with the existing report annex 'Preparacion metodologica por paso'. When canonical readiness reaches a report surface, FIBIU-24 (lib/reports/**, app/app/projects/[projectId]/report/[reportId]/**) and FIBIU-26 (public verification) must distinguish the two by name.",
+      "explicitly_not_b5": "No report or public surface changes in B5."
+    }
+  },
+
+  "authorized_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR mission W2_B5_IMPLEMENTATION_R1 only, on branch codex/w2-b5-r1. None of these paths is created or modified by THIS mission. This list is CLOSED-WORLD.",
+    "enumeration_principle": "Exact existing paths are enumerated exactly. A pattern appears ONLY where the concrete path cannot exist yet because its ordinal is re-measured at SYNC_POINT, and then only in the narrowest semantically justified form.",
+    "protected": {
+      "patterns": ["db/migrations/**", "db/prepared/journal/**", "db/prepared/checkpoint-b0/observation.sql"],
+      "grant": "HPO-ODS-W2-17",
+      "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. Both remain mandatory."
+    },
+    "unprotected": {
+      "schema_and_manifest": ["db/schema.ts", "db/hosted/baseline-manifest.ts"],
+      "domain_logic": [
+        "lib/pipeline/sroi-readiness.ts",
+        "lib/pipeline/sroi-sensitivity.ts",
+        "lib/pipeline/sroi-calculation.ts",
+        "lib/pipeline/sroi-results.ts",
+        "lib/audit/logger.ts"
+      ],
+      "readiness_readers": [
+        "lib/portfolios/analytics.ts",
+        "lib/stella/context/build-composer-context.ts",
+        "lib/stella/context/build-validator-context.ts",
+        "lib/stella/context/build-reviewer-context.ts",
+        "lib/stella/context/types.ts",
+        "lib/stella/prompts/reviewer-system.ts"
+      ],
+      "product_surface_patterns": {
+        "app/app/projects/[projectId]/pipeline/calculation/**": "FIBIU-17 readiness display and manual-input removal; FIBIU-18 candidate/scenario/envelope UI and server actions."
+      },
+      "existing_tests": [
+        "tests/audit-action-contract.test.ts",
+        "tests/database-entrypoint-inventory.json",
+        "tests/database-runtime-entrypoints.test.ts",
+        "tests/sroi-calculation.service.test.ts",
+        "tests/sroi-calculation.golden.test.ts",
+        "tests/sroi-sensitivity.service.test.ts",
+        "tests/sroi-results.service.test.ts",
+        "tests/sroi-results.actions.test.ts",
+        "tests/portfolios.service.test.ts",
+        "lib/portfolios/analytics.test.ts",
+        "lib/stella/context/__tests__/build-composer-context.test.ts",
+        "lib/stella/context/__tests__/build-validator-context.test.ts",
+        "lib/stella/context/__tests__/build-reviewer-context.test.ts",
+        "lib/stella/prompts/reviewer-system.test.ts",
+        "app/actions/stella/__tests__/composer.test.ts",
+        "app/actions/stella/__tests__/validator.test.ts",
+        "tests/w2-b4-governance.test.ts",
+        "tests/hosted/baseline-manifest.test.ts",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+      ],
+      "existing_tests_rationale": "The first sixteen are the declared targeted and reader-contract hosts for FIBIU-17/18. tests/w2-b4-governance.test.ts is enumerated for ONE reason only: its sroi-sensitivity byte-pin at lines 63-65 asserts SCENARIO_DELTA_PP is still present, which FIBIU-18 supersedes by contract; the successor INVERTS that control into an absence sentinel. That is a strengthening, never a weakening. The last five are the mechanically forced baseline-growth pin hosts - see baseline_growth_contract.",
+      "new_tests": {
+        "patterns": [
+          "tests/sroi-readiness*.test.ts",
+          "tests/sensitivity-*.test.ts",
+          "tests/postgres/b5-*.ts",
+          "tests/postgres/b5-*.json"
+        ],
+        "exact_new_hosts": ["tests/w2-b5-governance.test.ts"],
+        "why_exact": "W2-B4's closure audit found tests/w2-b4-governance.test.ts to be an UNAUTHORIZED PATH precisely because a new governance host matched no enumerated pattern. That failure class is closed here by naming the host exactly.",
+        "placement_constraint": "New tests are authorized at tests/ and tests/postgres/ and deliberately NOT under tests/integration/**, which would require modifying a closed-world integration inventory not authorized here."
+      },
+      "derived_artifact_refresh": [
+        "artifacts/hosted-a1-status.json",
+        "artifacts/baseline-rehearsal/latest.json"
+      ],
+      "derived_artifact_note": "artifacts/** is NOT in DEFAULT_PROTECTED_PATTERNS, so these two need an ordinary --allow ONLY and receive no protected grant. db/prepared/checkpoint-b0/observation.sql IS protected and is covered by HPO-ODS-W2-17.",
+      "evidence": ["docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json"],
+      "audit_artifacts": [
+        "docs/ops/wave2/W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0.json",
+        "docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json"
+      ]
+    },
+    "explicitly_prohibited": [
+      "db/prepared/** other than db/prepared/journal/** and db/prepared/checkpoint-b0/observation.sql",
+      "db/baseline/**",
+      "db/policies/**",
+      "db/safety/local-stack.ts",
+      "scripts/p1a-bootstrap-gate.ts",
+      "scripts/m2-disposable-pg-bootstrap.ts",
+      "scripts/stella-r3-5-pg17-certify.ts",
+      "scripts/ods-program-state.ts",
+      "scripts/ods-poststate.ts",
+      "scripts/ods-prestate.ts",
+      "scripts/ods-scope.ts",
+      "scripts/ods-controller.ts",
+      ".github/workflows/**",
+      "supabase/config.toml",
+      "package.json",
+      "tests/database-target-safety.test.ts",
+      "tests/database-entrypoint-safety.test.ts",
+      "tests/integration/**",
+      "tests/ods/**",
+      "docs/ops/fib/**",
+      "docs/ops/pc01b/**",
+      "docs/ops/im01b/**",
+      "docs/ops/ods/**",
+      "docs/ops/p1a/**",
+      "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+      "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+      "docs/ops/wave2/W2_B4_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+      "lib/pipeline/methodology-review.ts",
+      "lib/pipeline/narratives.ts",
+      "lib/pipeline/theory-of-change.ts",
+      "lib/pipeline/domain-object-versions.ts",
+      "lib/reports/**",
+      "app/(public)/**",
+      "lib/stella/** outside the four enumerated reader/prompt files and their enumerated test hosts",
+      "db/migrations/0040_governed_model_registry.sql",
+      "artifacts/hosted-a1-corroboration.json",
+      "db/prepared/checkpoint-a1/**",
+      "main",
+      "Production"
+    ],
+    "prohibited_rationale": {
+      "fibiu_27_30_surfaces": "Portfolio's population predicate and formula belong to FIBIU-27 (Wave 5). Stage-F reader finalization belongs to FIBIU-30 (Wave 6). Their appearance in a B5 diff is an UNEXPECTED_CHANGED_PATH stop.",
+      "methodology_review": "lib/pipeline/methodology-review.ts computes a DIFFERENT metric (METHODOLOGY_REVIEW_STEP_COMPLETION). B5 must not migrate, deprecate or substitute it.",
+      "r3_5_historical_pin": "scripts/stella-r3-5-pg17-certify.ts asserts BASELINE_UNITS.length !== 50 as an R3.5-era closure fact. A naive baseline-count sweep would corrupt it. It is a HISTORICAL RECORD and is never advanced.",
+      "ods_gate_scripts": "A node never edits its own referee. scripts/ods-scope.ts and scripts/ods-controller.ts are changed by AUTHORITY missions only, never by an implementation mission.",
+      "registry_seed": "SROI_READINESS_MODEL and SROI_SENSITIVITY_MODEL version 1.0.0 are already seeded by migration 0040. Re-seeding would be a historical rewrite."
+    },
+    "closed_world": "This list is EXHAUSTIVE. A path not enumerated in protected or unprotected is NOT authorized, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP - never a retroactive scope inference from the fact that it changed.",
+    "scope_gate_invocation_rule": {
+      "BINDING": "The successor mission MUST invoke pnpm ods:scope with the enumeration of THIS authority. Invoking it with '--allow <every changed path>' is PROHIBITED.",
+      "why": "W2-B4's implementation recorded exactly that invocation and obtained a vacuous ODS_SCOPE=PASS while two paths were genuinely unauthorized. scripts/ods-scope.ts states the rule in its own header: 'Being changed is never itself permission.' An allowlist derived from the diff cannot test a closed world."
+    }
+  },
+
+  "security_and_tenancy_contract": {
+    "rls_required": "EVERY new B5 table - readiness_assessments, sensitivity_candidates, sensitivity_scenarios - must have ORGANIZATION-SCOPED RLS. Authority: FIBDB-015/017/018 each declare RLS: org-scoped.",
+    "acl_per_table": {
+      "readiness_assessments": { "uellix_writer": ["SELECT", "INSERT"], "uellix_auditor": ["SELECT"], "PUBLIC": [], "policies_expected": 2, "no_update_no_delete": "Immutable snapshot - realized by ABSENCE of an UPDATE and a DELETE policy (stage A)." },
+      "sensitivity_candidates": { "uellix_writer": ["SELECT", "INSERT", "UPDATE"], "uellix_auditor": ["SELECT"], "PUBLIC": [], "policies_expected": 3, "update_justification": "FIBC-022 requires a human disposition transition from pending. UPDATE is contract-required, not convenience." },
+      "sensitivity_scenarios": { "uellix_writer": ["SELECT", "INSERT"], "uellix_auditor": ["SELECT"], "PUBLIC": [], "policies_expected": 2, "no_update_no_delete": "Append-only - realized by ABSENCE of an UPDATE and a DELETE policy (stage A)." }
+    },
+    "actor_binding": "Every INSERT policy binds the actor column to auth.uid().",
+    "cross_tenant_negative_controls": "REAL PostgreSQL negative cross-tenant controls are REQUIRED for SELECT, INSERT and UPDATE as applicable to each table. Each cross-tenant probe MUST carry an own-tenant positive control in the SAME probe, so a denial is distinguished from zero-rows-by-accident.",
+    "function_execution_surface": "B5 introduces NO new function and NO SECURITY DEFINER surface. That EMPTINESS must be proven explicitly by measurement from pg_proc, never by silent omission.",
+    "no_default_privilege_reliance": true,
+    "postgres_execution_boundary": "Database verification runs ONLY through the canonical disposable harness: throwaway container bound to 127.0.0.1, ephemeral port, no bind mounts, teardown in finally, leftover check. NEVER staging. NEVER Production. NEVER the canonical local stack."
+  },
+
+  "fibdb016_stage_b_realization": {
+    "no_new_column_required": true,
+    "technical_realization": "A COMMENT ON COLUMN sroi_run_reviews.readiness_score declaring LEGACY_NON_AUTHORITATIVE, shipped inside the FIBIU-17 migration (additive, reversible, and measurable from pg_description in the real-PG probe), PLUS the doc-comment in db/schema.ts, PLUS removal of the field from the action schemas and the sroi-results persist path, PLUS the reader contract above.",
+    "why_minimal": "FIB section 6.2 records FIBDB-016 SCHEMA_STAGE B with APPLICATION_PREREQUISITE empty and ROLLBACK 'Reversible marking'. A new column, a trigger, a constraint or a rename would exceed stage B and trespass on stage F.",
+    "no_hidden_dual_authority": "After B5 no authoritative path reads the manual score. For any NEW run the column receives no value at all, so no surface can silently prefer it. For HISTORICAL runs the value survives as history, which FIB section 11 explicitly authorizes.",
+    "prohibited": "No DROP, no rename, no NOT NULL, no read-only trigger, no physical retirement. That is stage F and belongs to FIBIU-30."
+  },
+
+  "baseline_growth_contract": {
+    "BINDING": "B5 appends TWO governed baseline units. Baseline grows 76 -> 78 and drizzle-migration kind grows 64 -> 66. Every deterministic current-state consequence is refreshed under THIS authority.",
+    "no_ktc_for_baseline_growth": {
+      "RULE": "Deterministic drift caused by baseline growth is REGENERATED, never carried as a known test condition.",
+      "PROHIBITED": "Creating any KTC-W2-B5-* identifier, or invoking PASS_WITH_KTC for a baseline-growth consequence.",
+      "why": "W2-B4's first candidate coined two KTC identifiers in its own implementation evidence that existed in no governed registry, and its independent audit classified that as AUTHORITY_DELTA_REQUIRED. The remediation regenerated the derived artifacts instead and reached full CI green. B5 follows the remediation, not the first attempt.",
+      "TARGET": "FULL CI GREEN after B5."
+    },
+    "canonical_regenerations": [
+      { "artifact": "artifacts/hosted-a1-status.json", "command": "pnpm a1:status:write", "class": "CURRENT_STATE_GENERATED", "uses_database_or_network": false, "historical_source_not_touched": "artifacts/hosted-a1-corroboration.json and db/prepared/checkpoint-a1/corroboration.sql are the historical measurement and are NOT regenerated, NOT edited and NOT authorized." },
+      { "artifact": "db/prepared/checkpoint-b0/observation.sql", "command": "pnpm b0:observation:generate", "class": "CURRENT_STATE_GENERATED", "uses_database_or_network": false, "protected": true, "grant": "HPO-ODS-W2-17", "why_it_drifts": "scripts/b0-observation-sql.ts reads the corpus and writes the file; rowCounts needs one arm per table the corpus creates. B5 adds three tables to the corpus, so the generated probe is stale by construction." },
+      { "artifact": "artifacts/baseline-rehearsal/latest.json", "command": "pnpm baseline:rehearsal:local", "class": "CURRENT_STATE_GENERATED", "uses_database_or_network": true, "isolation_contract": "scripts/baseline-rehearsal-local.ts starts its OWN fresh disposable container from a pinned image and never borrows a running supabase_db_* container. NEVER staging, NEVER Production." },
+      { "artifact": "db/prepared/journal/**", "command": "pnpm journal:generate", "class": "CURRENT_STATE_GENERATED", "note": "All 77 existing wrappers advance their generated 'Unit N/76' header to 'Unit N/78' plus two new wrappers. Header-only; zero SQL semantic change." }
+    ],
+    "forced_pins_measured_at_INTEGRATION_SHA": {
+      "method": "Measured by dependency-family sweep at ea845921214cfee85cd11db1f5c741137d5397d5, NOT by literal grep for 76. Families searched: BASELINE_UNITS/BASELINE_ORDER cardinality assertions, byKind counts, evidence.unitCount, superuserFreeUnits, manifestApplied, firstProvisioning.steps.length, and N+1 derived arithmetic.",
+      "pins": [
+        "tests/hosted/baseline-manifest.test.ts:99 - expect(BASELINE_UNITS).toHaveLength(76) -> 78",
+        "tests/hosted/baseline-manifest.test.ts:101 - expect(byKind('drizzle-migration')).toBe(64) -> 66",
+        "tests/hosted/baseline-manifest.test.ts:108 - Array.from({ length: 76 }) contiguous ordinals -> 78",
+        "tests/hosted/baseline-manifest.test.ts:111 - expect(new Set(BASELINE_ORDER).size).toBe(76) -> 78",
+        "tests/hosted/baseline-journal-wrapper.test.ts:471 - expect(BASELINE_UNITS).toHaveLength(76) -> 78",
+        "tests/hosted/baseline-journal-wrapper.test.ts:472 - expect(BASELINE_ORDER).toHaveLength(76) -> 78",
+        "tests/hosted/operator-runner.test.ts:236 - expect(BASELINE_UNITS).toHaveLength(76) -> 78",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts:65 - expect(evidence.unitCount).toBe(76) -> 78",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts:66 - expect(evidence.superuserFreeUnits).toBe(76) -> 78",
+        "tests/eval/stella-release/hosted-baseline-gate.ts:424 - evidence.unitCount === 76 -> 78 (GATE LOGIC, not a test assertion)",
+        "tests/eval/stella-release/hosted-baseline-gate.ts:403 - firstProvisioning.steps.length === 77 -> 79"
+      ],
+      "the_n_plus_1_trap": "tests/eval/stella-release/hosted-baseline-gate.ts:403 pins 77, which is BASELINE_ORDER.length + 1 (units plus the bootstrap step). It contains no literal 76 and is INVISIBLE to a literal grep. A successor that sweeps only for 76 will miss it and ship a false-negative gate. This is the exact failure class this contract exists to prevent.",
+      "self_adapting_do_not_touch": "Every assertion already expressed as BASELINE_UNITS.length or BASELINE_ORDER.length + 1 adapts automatically and MUST NOT be converted to a literal. This includes tests/hosted/baseline-journal-wrapper.test.ts:51,444,476, tests/hosted/hosted-provisioning-runner.test.ts:182,292,782,795,1037, tests/hosted/operator-runner.test.ts:396,403,903,905,1443,1456, tests/hosted/baseline-recovery.test.ts:36,67, all of db/hosted/**, and both existing PostgreSQL harnesses.",
+      "historical_pin_never_advanced": "scripts/stella-r3-5-pg17-certify.ts:1008 and :1302 assert BASELINE_UNITS.length !== 50. That is an R3.5-era historical closure fact, NOT a current-state pin. Advancing it would be historical evidence rewriting and is PROHIBITED."
+    },
+    "authorized_edit_scope": "At each forced pin: advance the cardinality and its derivation comment to the value implied by the units B5 actually registers, and nothing else. No refactor. No weakening of any assertion into a lower-bound or contains-at-least form. No unrelated cleanup. No change to hosted security semantics. If any of these files needs a change that is not a forced count advance, that is a STOP_FOR_AUTHORITY_DELTA, not a licence."
+  },
+
+  "determinism_and_regression_sentinels": {
+    "engine_semantics": "B5 must NOT alter deterministic SROI numeric engine semantics. FIBIU-18 scenarios reuse runDeterministicCalc with substituted inputs only.",
+    "golden_sentinel": "tests/sroi-calculation.golden.test.ts G1-G5 outputs stay byte-identical. G4 currently imports scenarioFilterPct; when FIBIU-18 supersedes that module, G4's inputs are inlined as literals and its EXPECTED OUTPUTS do not change.",
+    "b4_sentinel_inversion": "tests/w2-b4-governance.test.ts:63-65 currently asserts SCENARIO_DELTA_PP is PRESENT in lib/pipeline/sroi-sensitivity.ts. FIBIU-18 supersedes that constant by contract, so the successor INVERTS this single control into an absence sentinel. Only those three lines may change in that file.",
+    "stella_anti_regression": "lib/stella/__tests__/anti-regression.test.ts already forbids any lib/stella/** import of pipeline/sroi-calculation, sroi-sensitivity or sroi-funders. It is preserved unchanged and is the standing proof that Stella never computes scenario ratios.",
+    "approval_boundary_sentinel": "tests/sroi-calculation.service.test.ts (46 fixtures) is preserved unchanged and is the standing proof that no B5 signal reaches blockingReasons.",
+    "methodology_review_byte_pin": "lib/pipeline/methodology-review.ts computeReadinessScore and recomputeMatrixScore are byte-pinned for B5.",
+    "closed_surfaces_not_reopened": "No B4, B3, B2, B1 or P1A closed surface is reopened."
+  },
+
+  "audit_verb_contract": {
+    "authority": "FIBC-040 closed governed union in lib/audit/logger.ts AUDIT_ACTIONS. Measured size at INTEGRATION_SHA: 100 verbs.",
+    "new_verbs": {
+      "FIBIU-17": { "entity_type": "readiness_assessment", "verbs": ["readiness_assessment.computed"] },
+      "FIBIU-18": { "entity_type": "sensitivity_candidate / sensitivity_scenario", "verbs": ["sensitivity_candidate.registered", "sensitivity_candidate.dispositioned", "sensitivity_scenario.recorded"] }
+    },
+    "content_modifying": "sensitivity_candidate.dispositioned is content-modifying and requires beforeJson; it is registered in tests/audit-action-contract.test.ts CONTENT_MODIFYING_SITES.",
+    "closed_union_surface": "No verb outside this list may be added by B5."
+  },
+
+  "entrypoint_closed_world_sentinel": {
+    "obligation": "Every new database-reaching server action is registered DELIBERATELY in tests/database-entrypoint-inventory.json with its identity context, and the checkedModules / databaseReaching counts advance exactly.",
+    "measured_at_INTEGRATION_SHA": { "checkedModules": 137, "databaseReaching": 113 },
+    "precedent": "W2-B3's blocker B3-BLK-A was a new action absent from this inventory. W2-B4 closed that class with a mutation control. B5 carries the same control forward."
+  },
+
+  "migration_and_postgres_contract": {
+    "mechanical_numbering": "MIGRATION_SLOT_FROZEN = NO. Ordinals are re-measured at SYNC_POINT from FIVE sources: the highest db/migrations/NNNN_ ordinal, the highest db/migrations/meta/_journal.json idx, the highest db/prepared/journal/NNN_ ordinal, the highest db/policies/NNN_ ordinal, and the db/hosted/baseline-manifest.ts BASELINE_UNITS tail.",
+    "remote_head_sweep_required": "The successor MUST additionally sweep EVERY remote head for a colliding migration ordinal before generating. A collision is a STOP.",
+    "internal_migration_dependency": "FIBIU-17's migration precedes FIBIU-18's. This is a WRITE SERIALIZATION for the shared journal and manifest, chosen by ascending unit id. It is NOT a product dependency and does not create a DAG edge.",
+    "required_registration_chain": "Each new migration is registered in db/migrations/meta/_journal.json, receives its meta/NNNN_snapshot.json, receives a db/prepared/journal wrapper via pnpm journal:generate, and is appended to db/hosted/baseline-manifest.ts with its dependsOn chain and pinned SHA.",
+    "disposable_postgres_only": "Real-PG verification runs only through the canonical disposable harness.",
+    "count_pin_consequence": "Registering two baseline units invalidates the eleven forced pins enumerated in baseline_growth_contract. Advancing them is mandatory and is authorized there."
+  },
+
+  "protected_grant_required": true,
+  "protected_grant_rationale": "db/migrations/** and db/prepared/** are DEFAULT_PROTECTED_PATTERNS entries in scripts/ods-scope.ts and are unchanged by this authority, so all three patterns are unconditionally protected absent a resolved grant. The grant is registered IN ADVANCE precisely so the successor implementation mission cannot claim retroactive authorization from the fact that a path changed. NO db/migrations or db/prepared file is changed by THIS mission.",
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-17",
+    "branch": "codex/w2-b5-r1",
+    "patterns": ["db/migrations/**", "db/prepared/journal/**", "db/prepared/checkpoint-b0/observation.sql"],
+    "pattern_count": 3,
+    "narrowness_note": "Deliberately NOT db/prepared/** - that would reach every hosted and local bootstrap file the P1A and hosted lanes own, and the checkpoint-a1 corroboration this authority explicitly protects as a historical record. The third pattern is ONE exact literal path, no glob: db/prepared/checkpoint-b0/ holds exactly that one file, so even a directory pattern would grant strictly more than the classifier can justify.",
+    "precedent": "Patterns one and two mirror HPO-ODS-W2-12 (the W2-B4 grant). Pattern three mirrors HPO-ODS-W2-16 and HPO-ODS-W2-07, both of which granted this same probe path on their own branches.",
+    "no_existing_grant_widened": "HPO-ODS-W2-12 and HPO-ODS-W2-16 are FROZEN and are NOT widened, amended or reused. A grant is bound to exactly one branch and codex/w2-b4-r1 is not this node's branch.",
+    "source_of_truth": "This object. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json protected_grant and the scripts/ods-scope.ts PROTECTED_GRANTS entry must both equal it, asserted mechanically in tests/ods/ods-scope.test.ts."
+  },
+
+  "ods_test_instructions": {
+    "note": "ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment. The following are that instruction, path-by-path. Requiring an ODS instruction is NOT the same as matching DEFAULT_PROTECTED_PATTERNS: none of these paths is protected, and none receives a protected grant. All need an ordinary --allow only.",
+    "granted_paths": [
+      { "path": "tests/w2-b4-governance.test.ts", "narrowly_required_adjustment": "Invert ONLY the sroi-sensitivity byte-pin at lines 63-65 from presence to absence of SCENARIO_DELTA_PP, because FIBIU-18 supersedes that constant by contract. No other assertion in the file may change." },
+      { "path": "tests/sroi-calculation.golden.test.ts", "narrowly_required_adjustment": "In G4 ONLY, inline the four filter literals that scenarioFilterPct currently computes and drop the import. Every expected output value stays byte-identical." },
+      { "path": "tests/sroi-sensitivity.service.test.ts", "narrowly_required_adjustment": "Replace the scenarioFilterPct unit tests with the superseding FIBIU-18 model's own controls. The file is the declared FIBIU-18 test host." },
+      { "path": "lib/portfolios/analytics.test.ts", "narrowly_required_adjustment": "Rename the readiness field and assert it is LEGACY_NON_AUTHORITATIVE. The population predicate and formula assertions are FROZEN." },
+      { "path": "lib/stella/context/__tests__/build-composer-context.test.ts", "narrowly_required_adjustment": "Invert the readinessScore-from-latest-review assertions to prove the manual score is no longer read." },
+      { "path": "lib/stella/context/__tests__/build-validator-context.test.ts", "narrowly_required_adjustment": "Same inversion as the composer host." },
+      { "path": "lib/stella/context/__tests__/build-reviewer-context.test.ts", "narrowly_required_adjustment": "Remove latestReadinessScore from the ReviewerRunReviewSummary expectations and assert its absence." },
+      { "path": "lib/stella/prompts/reviewer-system.test.ts", "narrowly_required_adjustment": "Assert the reviewer payload carries no readiness value from sroi_run_reviews." },
+      { "path": "app/actions/stella/__tests__/composer.test.ts", "narrowly_required_adjustment": "Drop the readinessScore fixture field and assert the authorized-numeric set no longer admits it." },
+      { "path": "app/actions/stella/__tests__/validator.test.ts", "narrowly_required_adjustment": "Drop the readinessScore fixture field." },
+      { "path": "tests/hosted/baseline-manifest.test.ts", "narrowly_required_adjustment": "Advance the four forced cardinality pins only." },
+      { "path": "tests/hosted/baseline-journal-wrapper.test.ts", "narrowly_required_adjustment": "Advance the two forced cardinality pins only." },
+      { "path": "tests/hosted/operator-runner.test.ts", "narrowly_required_adjustment": "Advance the one forced cardinality pin only." },
+      { "path": "tests/eval/stella-release/hosted-baseline-gate.test.ts", "narrowly_required_adjustment": "Advance the two forced pins only." },
+      { "path": "tests/eval/stella-release/hosted-baseline-gate.ts", "narrowly_required_adjustment": "Advance the unitCount gate literal and the firstProvisioning.steps.length N+1 literal only. No change to the gate's DML, serviceRoleGranters, superuser-free or row-source contracts." },
+      { "path": "tests/sroi-calculation.service.test.ts", "narrowly_required_adjustment": "Additive only: new fixtures may be appended for the new readiness/sensitivity fields. The 46 existing fixtures and their expectations are FROZEN and must stay green unchanged." },
+      { "path": "tests/sroi-results.service.test.ts", "narrowly_required_adjustment": "Remove readinessScore from the run-review input expectations." },
+      { "path": "tests/sroi-results.actions.test.ts", "narrowly_required_adjustment": "Assert the action schemas reject a readinessScore field." },
+      { "path": "tests/portfolios.service.test.ts", "narrowly_required_adjustment": "Assert the readiness statistic is presented as legacy and non-authoritative." },
+      { "path": "tests/audit-action-contract.test.ts", "narrowly_required_adjustment": "Register the four new verbs and the one new content-modifying site." },
+      { "path": "tests/database-entrypoint-inventory.json", "narrowly_required_adjustment": "Register the new server actions and advance both counts exactly." },
+      { "path": "tests/database-runtime-entrypoints.test.ts", "narrowly_required_adjustment": "Only if the closed-world enumeration requires a corresponding adjustment." }
+    ],
+    "no_wildcard": "No lib/** or tests/** grant of any kind is created. No other existing product test is authorized. A further such test is a fresh STOP_FOR_AUTHORITY_DELTA."
+  },
+
+  "test_manifest_contract": {
+    "path": "docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json",
+    "schema": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+    "scope": "FIBIU-17 and FIBIU-18 ONLY.",
+    "pre_implementation_commitment": "The manifest is frozen BEFORE implementation and is a COMMITMENT, not a report. test_file is 'UNKNOWN' ONLY where the host genuinely cannot exist yet; every already-knowable existing host is frozen exactly now.",
+    "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "journal_verify", "baseline_verify", "postgres_disposable_probe", "targeted_tests", "full_ci_green"],
+    "gate_weakening_prohibited": "No exit gate may be removed, skipped or softened to obtain a PASS.",
+    "full_ci_green_is_an_exit_gate": "Unlike W2-B4, full CI green is an EXPLICIT B5 exit gate, because every deterministic baseline-growth consequence is refreshed under this authority and no known condition is carried."
+  },
+
+  "future_evidence_and_audit_contract": {
+    "implementation_evidence_path": "docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+    "fibiu18_opus_review_path": "docs/ops/wave2/W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0.json",
+    "independent_audit_path": "docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+    "self_certification_prohibited": "Implementation evidence CANNOT self-certify closure. Only the independent audit artifact may establish the audit verdict.",
+    "no_self_coined_known_conditions": "The implementation mission may NOT coin a known-condition identifier in its own evidence. A condition is governed only if it exists in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json, and that registry states of itself that it is not authority to accept a failure.",
+    "audit_independence": "Both reviews must be independent adversarial passes, not a self-review by the implementing executor.",
+    "final_closure_requires_all_of": [
+      "B5 authority frozen (this artifact, merged into integration/commercial-v1)",
+      "W2_B4 = CLOSED_AUDITED_INTEGRATED",
+      "B5 implementation complete within the closed-world authorized surface",
+      "every machine gate in docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json exit_gates = PASS, including full_ci_green",
+      "independent FIBIU-18 Opus review = PASS",
+      "independent focused Opus adversarial B5 closure audit = PASS",
+      "Controller successor enumerating v1.0.16 = CLOSED_AUDITED_INTEGRATED",
+      "integration closure into integration/commercial-v1"
+    ]
+  },
+
+  "controller_successor_rule": {
+    "FROZEN": "YES",
+    "measured": "IMMUTABLE_BY_CONVENTION holds 26 entries at INTEGRATION_SHA and does NOT contain ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json.",
+    "successor_scope": "Append EXACTLY docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json to IMMUTABLE_BY_CONVENTION. Count 26 -> 27. Authorized paths: scripts/ods-controller.ts and tests/ods/ods-controller.test.ts, and nothing else.",
+    "single_gap_preserved": "This authority creates exactly ONE new addendum, so exactly ONE temporary enumeration gap exists - the same bounded pattern v1.0.10 through v1.0.15 each occupied.",
+    "must_close_before": [
+      "any later ODS lineage allocation (a v1.0.17 or an HPO-ODS-W2-18)",
+      "final W2-B5 closure"
+    ],
+    "may_run_in_parallel_with_b5_implementation": {
+      "PERMITTED": true,
+      "conditions_measured_true_at_INTEGRATION_SHA": [
+        "B5 implementation consumes only the already-allocated HPO-ODS-W2-17 grant and this already-frozen authority - it allocates no lineage item",
+        "CONTROLLER_DB_EXECUTION is DISABLED and the Controller guard has no production effect",
+        "no second ODS lineage gap is created by running them concurrently"
+      ],
+      "precedent": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json controller_sequencing_rule established exactly this shape: controller_26_does_not_block_pr62 permitted the W2-B4 implementation to proceed and merge while the enumeration still held 25, under the same three conditions.",
+      "enforcement": "A mission that finds v1.0.16 unenumerated in the live Controller and attempts to allocate a FURTHER ODS lineage item MUST STOP_FOR_LINEAGE_SEQUENCING."
+    },
+    "controller_line_ceiling": "The 400-line ceiling from ODS_CONTROLLER_AUTHORITY_v1.0.0.json exit_criteria E1 remains in force. The file is 384 lines at INTEGRATION_SHA."
+  },
+
+  "post_b5_unlocks": {
+    "note": "Recorded, NOT executed by this authority.",
+    "wave2_close": "Requires B1..B5 CLOSED plus the separate Class C correction of BK-1 stale manifest prose and cross-workstream regression, which W2_EXECUTION_MAPPING_v1.0.0.json places at WAVE close and explicitly NOT per batch.",
+    "fibdb_053": "The only human-external (G2) gated item. Independent of B5 but a PRECONDITION of Wave 3 alongside Wave 2 completion. If unresolved when Wave 3 starts, FIBIU-20 stops and with it FIBIU-24 and FIBIU-26 by transitive dependency.",
+    "wave3": "FIBIU-19 -> FIBIU-20, serial, whole-wave OPUS review. FIBIU-19 composes the 24 enumerated eligibility reasons and is where the B4 and B5 issue facts become genuinely blocking.",
+    "fibiu27": "Wave 5. Hard-depends on FIBIU-19, FIBIU-20 and FIBIU-17. Consumes readiness_assessments with coverage and drops the manual score as a Portfolio source.",
+    "fibiu30": "Wave 6, sole unit. Stage F of FIBDB-016 plus FIBDB-051, FIBDB-030 and the regime column."
+  },
+
+  "risks_and_open_findings": {
+    "R1": "B5-MAT-B hosted ACL debt is inherited from B4-MAT-B and is bound as required exit control SEC-ACL-1 for B5's own three tables. It may not be waived. The disposable harness models the hosted posture and discloses that it is a MODEL, not a measurement of the hosted chain.",
+    "R2": "This artifact and its companion addendum are not machine-protected by DEFAULT_PROTECTED_PATTERNS. Unchanged by this node (AG-1 remains OPEN).",
+    "R3": "Baseline growth 76 -> 78 invalidates eleven forced pins and four derived artifacts. All are enumerated and pre-authorized in baseline_growth_contract. A successor that greps only for the literal 76 WILL miss tests/eval/stella-release/hosted-baseline-gate.ts:403.",
+    "R4": "scripts/ods-program-state.ts resolveBranch reads LOCAL branch names. Every B5 gate invocation must pass --integration-target origin/integration/commercial-v1 or read a false NOT_INTEGRATED.",
+    "R5": "KNOWN_TEST_CONDITIONS_v1.0.0.json conditions KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02 were adjudicated against a 50-unit-era rehearsal artifact. The W2-B4 remediation regenerated that artifact to manifestApplied=76. Their historical records are NOT edited by B5; B5 simply regenerates the artifact again to 78 under this authority.",
+    "R6": "FIBIU-18 carries RISK: HIGH and a mandatory independent Opus review. A B5 closure audit that absorbs the FIBIU-18 review instead of requiring it separately is a closure defect.",
+    "R7": "REQ-SUCC-READINESS-LABEL-01 is a DEFERRED_NAMED_SUCCESSOR for FIBIU-24/FIBIU-26, not a B5 unknown and not a B5 obligation."
+  },
+
+  "final_state": "W2_B5_AUTHORITY_FROZEN_WAITING_FOR_IMPLEMENTATION",
+  "W2_B5_IMPLEMENTATION_STATUS": "NOT_STARTED",
+  "W2_B5_RELEVANT_UNKNOWN_FINDINGS": 0,
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": true,
+  "next_gate": "W2_B5_AUTHORITY_INDEPENDENT_OPUS_AUDIT"
+}
