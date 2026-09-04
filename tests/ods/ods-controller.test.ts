@@ -88,15 +88,27 @@ describe('E7: closed-world stop taxonomy and state model', () => {
 // ---------------------------------------------------------------------------
 
 describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
-  it('is the exact 22-member closed world (20 pinned entries + v1.0.10 + v1.0.11)', () => {
-    expect(IMMUTABLE_BY_CONVENTION.length).toBe(22)
-    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(22)
+  it('is the exact 24-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13)', () => {
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(24)
+    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(24)
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json')
   })
 
   it('excludes ODS_CARRY_FORWARD_BACKLOG.md by design (append-only working backlog)', () => {
     expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md')
+  })
+
+  // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json test_contract): the closed
+  // world does not pre-include a later ODS successor artifact. This asserts
+  // ABSENCE only — it reserves no identifier and authorizes no future grant.
+  // per ods_lineage_serialization.no_future_ids_reserved, NEXT_ODS_LINEAGE is
+  // DERIVE_AT_MATERIALIZATION_TIME; the mechanically-next version number is
+  // used here purely as a negative-control literal, not an allocation.
+  it('does NOT pre-include the next unallocated ODS successor addendum (no automatic inclusion)', () => {
+    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json')
   })
 
   it('normalizeRepoPath canonicalizes backslashes and redundant "." segments', () => {
@@ -125,6 +137,33 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     // — so this assertion fails the moment the wiring is removed.
     expect(decision.selectable).toBe(false)
     expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  // Entry-specific mutation controls for the v1.0.13 successor maintenance
+  // delta (22 -> 24). These do not re-derive the generic guard mechanism
+  // proven above and in CTRL-R3 — they prove the two newly-appended entries
+  // are actually wired into decideSelection, not merely present as strings.
+  // Removing either from IMMUTABLE_BY_CONVENTION fails these, independently
+  // of the length/Set assertions above.
+  it('a node targeting v1.0.12 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a node targeting v1.0.13 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of a newly-added entry (v1.0.13) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.13.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
   })
 
   it('CTRL-M3: writePaths absent on an otherwise-executable node STOPs with AUTHORITY_GAP (unknown write surface, never implicitly safe)', () => {
