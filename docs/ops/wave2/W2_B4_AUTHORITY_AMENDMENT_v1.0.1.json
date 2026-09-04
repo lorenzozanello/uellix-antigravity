@@ -1,0 +1,279 @@
+{
+  "package_id": "W2_B4_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "W2_B4_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_BATCH_AUTHORITY",
+  "materialization_step": "HPO-ODS-W2-16",
+  "GRANT_ID": "HPO-ODS-W2-16",
+  "hpo_mission_id": "W2-B4-RC3-BINDING-RULING-AND-AUTHORITY-MATERIALIZATION-R2",
+  "materialization_date": "2026-09-04",
+  "amends": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json",
+  "amendment_semantics": "APPEND-ONLY. W2_B4_AUTHORITY_v1.0.0.json is left BYTE-UNCHANGED. This artifact does not rewrite, delete or reinterpret any clause of it. Where a clause of v1.0.0 was correct-but-incomplete, this amendment EXTENDS it and says exactly which clause and why. Where a clause rested on a measurement that has since been overtaken by a governed refresh, this amendment records the corrected measurement and extends the scoping decision built on it, WITHOUT editing the original sentence.",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+
+  "purpose": "Close the two blockers the W2-B4 focused adversarial audit raised against candidate head 5035e7e1810543c7ca373c859237ae7301e4eb51, using the smallest governance-correct vehicle: (1) correct the CLOSED-WORLD authorized surface so it enumerates the two test paths the frozen contract mechanically forces, and (2) authorize the deterministic regeneration of the three derived artifacts whose drift produces the seven CI failures, so the remediated candidate reaches GREEN CI without inventing a known condition. It authorizes no new FIBIU scope, no new migration, no schema change and no B5 scope.",
+
+  "anchors": {
+    "INTEGRATION_SHA": "d082f6458e528e021e01a52b67fb9fb60ac29f95",
+    "INTEGRATION_TREE": "83961ffe9a14cacbaf01092a687e66dfdb456da8",
+    "b4_candidate_pr": 62,
+    "b4_candidate_head": "5035e7e1810543c7ca373c859237ae7301e4eb51",
+    "b4_candidate_tree": "fe2db9f9ceb72b2c6563b95f9b4ad2cf1db1ca2f",
+    "b4_candidate_merge_base": "83fc21b86de9a00ae05a56e1cfede158aaec41a8",
+    "b4_candidate_state": "OPEN, isDraft=true, mergedAt=null — verified UNMERGED before any file was written",
+    "failing_ci_run": "GitHub Actions run 33892545797, workflow CI, check 'Lint, typecheck, test, build' = FAILURE",
+    "measured_failure_totals": "Test Files 3 failed | 369 passed | 4 skipped (376). Tests: 7 failed."
+  },
+
+  "audit_blockers_addressed": {
+    "B4-BLK-1": "Two test paths outside the CLOSED-WORLD authorized surface. INDEPENDENTLY CONFIRMED, and addressed by closed_world_path_correction below.",
+    "B4-BLK-2": "Two ungoverned KTC labels used to excuse a red CI. INDEPENDENTLY CONFIRMED, and addressed by invalid_ktc_claim_disposition plus the three refresh contracts, which make the CI green instead of excusing it."
+  },
+
+  "closed_world_path_correction": {
+    "clause_extended": "W2_B4_AUTHORITY_v1.0.0.json authorized_future_implementation_surface, which declares itself CLOSED-WORLD with existing_tests as 11 exact paths and new_tests.patterns as 5 name patterns.",
+    "nature_of_the_defect": "INCOMPLETENESS OF THE FROZEN ENUMERATION, not implementer overreach. Both paths below are forced by the frozen contract itself. Necessity is derived from the contract and from repository bytes, and is stated in a form that would hold even if PR #62 had never been written.",
+    "prior_write_disclosure": "DISCLOSED AND NOT CAUSAL. Both paths were already written on the unmerged candidate branch codex/w2-b4-r1 before this amendment existed. That fact is recorded for honesty and is explicitly NOT the reason for authorization — the reason is the mechanical necessity proven below. This is the same doctrine applied in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json.",
+
+    "path_1": {
+      "path": "lib/pipeline/sroi-remediation-destinations.test.ts",
+      "AUTHORIZED": "YES — retention, prospectively",
+      "EXISTED_BEFORE_B4": "YES",
+      "DISPOSITION": "PRE_EXISTING_PRODUCT_TEST_MODIFIED",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B4_CONTRACT": "YES",
+      "necessity_proof_1_typecheck": "FIBIU-15 and FIBIU-16 add two NON-OPTIONAL fields to the ReadinessIssueInput interface in lib/pipeline/sroi-calculation.ts — `causalChainInsufficientOutcomes: string[]` and `unresolvedMaterialAssumptions: string[]` — measured at candidate head at lines 1055 and 1056, neither marked optional. The test's baseInput() helper constructs a complete ReadinessIssueInput. Omitting two required properties is a TypeScript error, so the `typecheck` exit gate frozen in W2_B4_TEST_MANIFEST_v1.json cannot pass while this file is unmodified. lib/pipeline/sroi-calculation.ts is itself an ALREADY-AUTHORIZED path under domain_logic in v1.0.0.",
+      "necessity_proof_2_cardinality": "The file carries hard cardinality pins on the RE-U4 sroi_remediation_matrix — `expect(ROWS).toHaveLength(12)` and `expect(new Set(ROWS.map((r) => r.messageKey)).size).toBe(12)`. B4 adds exactly two blockers, causal_chain_insufficient and assumption_unresolved, making both assertions false by construction.",
+      "why_v1_0_0_missed_it": "MEASURED, and stated so the same gap is not repeated. v1.0.0's hosted_baseline_pin_remeasurement performed an exhaustive grep for hard assertions on BASELINE_UNITS / BASELINE_ORDER cardinality, evidence.unitCount, evidence.superuserFreeUnits and byKind() counts. That sweep was correct for the hosted-baseline family and found 7 forced pins, but it did not extend to the RE-U4 remediation-matrix row cardinality, which is an independent closed-world count in a different family. This path belongs to the SAME CLASS v1.0.0 already recognised and named 'mechanically_unavoidable'; only the sweep's coverage was short.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B4": "NO. Reverting the file breaks the typecheck gate and restores a pin that is false against the shipped matrix.",
+      "authorized_edit_scope": "Advance the two cardinality pins to the value implied by the blockers B4 actually adds, add the two required ReadinessIssueInput fields to the baseInput() helper, add the destination constants and rows the two new blockers require, and update the file's own explanatory header. Nothing else. No refactor. No weakening of any assertion into a lower-bound or contains-at-least form. No change to the eligibility semantics the file's header states were deliberately not touched by RE-U1-F04. Any change beyond a forced advance is STOP_FOR_AUTHORITY_DELTA.",
+      "ods_instruction_reference": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json hpo_decision.FUNCTION_A_PRODUCT_TEST_DISCIPLINE — required because this is an existing product test reserved by ODS root prohibited_surfaces.",
+      "protected": false,
+      "protected_note": "lib/** is NOT in DEFAULT_PROTECTED_PATTERNS. Needing an explicit ODS instruction is not the same as being a protected surface. This path needs an ordinary --allow only, and receives no grant."
+    },
+
+    "path_2": {
+      "path": "tests/w2-b4-governance.test.ts",
+      "AUTHORIZED": "YES — retention, prospectively",
+      "EXISTED_BEFORE_B4": "NO",
+      "DISPOSITION": "NEW_CONTROL_HOST_FOR_MANIFEST_MANDATED_CONTROLS",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B4_CONTRACT": "YES",
+      "necessity_proof": "W2_B4_TEST_MANIFEST_v1.json MANDATES four controls — POS-DAG-1 (positive_controls) and NEG-B5-1, NEG-STAGE-1, NEG-STELLA-B4 (negative_controls). All four are declared with `\"test_file\": \"UNKNOWN\"`. The manifest therefore requires four controls to exist while naming no file to host them, and the v1.0.0 authorized surface — CLOSED-WORLD — contains no pattern any of them can occupy. This is a determinate contradiction INSIDE the frozen authority, resolvable only by naming a host.",
+      "why_no_authorized_host_can_express_all_four": "MEASURED against the five new_tests.patterns. Three are unit-scoped by name — tests/methodological-assumptions*.test.ts, tests/counterfactual-assessment*.test.ts, tests/causal-chain-sufficiency*.test.ts — and these four controls are cross-cutting by construction: POS-DAG-1 asserts ordering ACROSS FIBIU-15 and FIBIU-14, and NEG-B5-1 asserts the ABSENCE of an entire other batch, so neither belongs to any single unit file without misfiling it. The remaining two patterns, tests/postgres/b4-*.ts and tests/postgres/b4-*.json, are the disposable-PostgreSQL harness; all four controls are static filesystem and source assertions requiring no database, so hosting them there would place DB-free controls behind a Docker-gated harness and make a mandated control silently unreachable wherever Docker is absent. tests/integration/** is explicitly prohibited by v1.0.0's placement_constraint.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B4": "NO. Removing the file deletes four manifest-mandated controls, including the only assertion that B4 does not annex B5 scope.",
+      "test_file_binding": "BOUND HERE, resolving the UNKNOWNs without editing the frozen manifest: POS-DAG-1, NEG-B5-1, NEG-STAGE-1 and NEG-STELLA-B4 are hosted in tests/w2-b4-governance.test.ts. This binding is recorded in the amendment rather than by editing W2_B4_TEST_MANIFEST_v1.json, which stays byte-unchanged.",
+      "manifest_successor_not_created": "MEASURED AS UNNECESSARY. `\"test_file\": \"UNKNOWN\"` is a declared, schema-valid value in the frozen manifest, not a schema violation, and no closure machinery reads test_file as a gate — the exit_gates array names gate commands, never test_file values. A successor manifest would therefore duplicate authority across two files for no mechanical gain, which W2_B4_AUTHORITY_v1.0.0.json's own append-only discipline discourages. If a future schema revision makes test_file a validated field, an append-only successor manifest — never an edit to v1 — is the governed remedy.",
+      "authorized_scope": "RETENTION ONLY. The file's content is authorized as written; this amendment requires no change to it. Adding a fifth control to it is NOT authorized here.",
+      "protected": false,
+      "protected_note": "tests/** is NOT in DEFAULT_PROTECTED_PATTERNS. Ordinary --allow only; no grant."
+    }
+  },
+
+  "root_cause_analysis_of_the_seven_failures": {
+    "method": "Reproduced from the actual failing CI logs of run 33892545797, then each assertion mapped to a cause measured in repository bytes. Not accepted from the audit summary.",
+    "count": 7,
+    "distinct_root_causes": 3,
+    "correction_to_the_audit_summary": "The two labels the implementation evidence invented explain only FOUR of the seven failures. The three hosted-baseline-gate failures are a THIRD root cause that neither label names.",
+    "shared_mechanism": "One systemic cause with three artifact instances: W2-B4 extended the baseline corpus from 74 to 76 units, and three DERIVED artifacts that mirror that corpus all sat outside the v1.0.0 authorized surface. All three are byte-identical between INTEGRATION_SHA and the candidate head — B4 modified none of them.",
+    "RC-1": {
+      "failures": 2,
+      "file": "tests/hosted/checkpoint-a1.test.ts",
+      "test_ids": [
+        "the status is derived, and an edited one fails verification > the recorded verdict is what the CLI computes over the recorded corroboration",
+        "the status is derived, and an edited one fails verification > no test in this file may write over a real measurement"
+      ],
+      "signature": "AssertionError: expected 1 to be +0",
+      "root_cause": "Both assertions call runScript('verify') and require exit 0. artifacts/hosted-a1-status.json is derived by recomputation over the recorded corroboration AND the current baseline chain. B4 extended that chain, so the committed derived file no longer equals what the CLI recomputes and a1:status:verify exits 1."
+    },
+    "RC-2": {
+      "failures": 2,
+      "file": "tests/hosted/checkpoint-b0.test.ts",
+      "test_ids": [
+        "the observation probe > regenerates byte-identically from the corpus",
+        "the observation probe > asks one row-count arm per table the corpus creates"
+      ],
+      "signature": "AssertionError: byte inequality; and 'public.assumption_object_links: expected ... to contain ...'",
+      "root_cause": "db/prepared/checkpoint-b0/observation.sql is generated from the corpus and needs one rowCounts arm per table. B4 added tables, so the committed probe neither regenerates byte-identically nor covers public.assumption_object_links."
+    },
+    "RC-3": {
+      "failures": 3,
+      "file": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "test_ids": [
+        "the six baseline gates > all pass",
+        "the six baseline gates > are not tautological: each rests on evidence gathered by doing the work",
+        "the four words this report may not say > reports baselineApplied, stagingApplied, hostedReady and providerReady as false — unconditionally"
+      ],
+      "root_cause": "The hosted-baseline-rehearsal-ready gate evaluates `rehearsal.manifestApplied === BASELINE_UNITS.length`. artifacts/baseline-rehearsal/latest.json records manifestApplied=74 against the 74-unit manifest digest 7fb0697b908ce41de810f192d9c5089dc62ee3eba40ed9d43cfcac800b30631b. B4 raises BASELINE_UNITS.length to 76, so 74 !== 76 and the gate turns false, taking all three assertions with it.",
+      "base_vs_head_proof": "At the candidate merge-base 83fc21b the same comparison read 74 === 74 and the gate was GREEN, which is why the measured base failure count is 0. These three failures are NEW and caused by the B4 delta."
+    }
+  },
+
+  "invalid_ktc_claim_disposition": {
+    "finding": "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json cites two condition ids, KTC-W2-B4-A1-STALE and KTC-W2-B4-B0-STALE, to account for the red CI.",
+    "measured_status": "UNGOVERNED AND INVALID. A repository-wide search across all remote heads finds those two strings in exactly one file — the implementation evidence itself. Neither appears in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json, whose conditions array holds exactly KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02.",
+    "doctrinal_violation": "W2_B4_AUTHORITY_v1.0.0.json future_evidence_and_audit_contract.self_certification_prohibited states 'Implementation evidence CANNOT self-certify closure.' An evidence artifact minting its own condition ids to excuse its own red CI is exactly that.",
+    "coverage_defect_independent_of_governance": "Even if the two labels HAD been governed, they name only the A1 and B0 causes and would still leave the three hosted-baseline-gate failures entirely unaccounted for.",
+    "DISPOSITION": "The two invented ids are VOID. They are not registered, not honoured and must be REMOVED from the implementation evidence by the successor mission. No KTC-W2-B4-* condition is created in their place: per the binding ruling R4, deterministic regeneration closes the drift and the CI target is GREEN."
+  },
+
+  "current_ktc_disposition": {
+    "conditions": [
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+    ],
+    "STATUS": "HISTORICALLY_VALID_BUT_NOT_APPLICABLE_TO_CURRENT_FINGERPRINT",
+    "bytes_unchanged": "YES. docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json is NOT edited by this mission.",
+    "why_they_do_not_apply": "MEASURED on the registry's own discriminator. Both conditions match two of the seven failures on test_id and on expected_failure_signature, but their cause_fingerprint records manifestApplied 50 and manifestDigest 8f754f275d280e14130746b3271566d9073e4f3653b7780d47c943b60a7f050a, while the live artifact records manifestApplied 74 and manifestDigest 7fb0697b908ce41de810f192d9c5089dc62ee3eba40ed9d43cfcac800b30631b with manifestFailedAt null. The fingerprints do not match.",
+    "registry_self_description_relied_on": "KNOWN_TEST_CONDITIONS_v1.0.0.json purpose states the registry exists 'to let the classifier tell THE SAME CONDITION apart from A DIFFERENT/NEW FAILURE', and that it 'is NOT an ignore list, a skip list, an allowlist for failures, or authority to accept a failure'. cause_fingerprint is precisely that discriminator, and here it discriminates: these are NEW failures wearing an OLD signature.",
+    "consequence": "Classifying the two failures as known conditions would be an error in the registry's own terms. No PASS_WITH_KTC is claimed or required.",
+    "post_remediation_expectation": "Once the rehearsal artifact is regenerated at 76 units, the underlying gate turns green and both conditions become non-reproducing at the current fingerprint. They remain in the registry as historical records of the 50-unit era. Whether to mark them closed is NOT decided here and requires its own governed act.",
+    "wave2_closure_consumption": "Wave 2 closure is NOT required to consume or close either condition, because neither is being relied on as a waiver. If a future Wave 2 closure artifact wishes to record them as non-reproducing, that is an append-only act in that artifact, never an edit to the registry."
+  },
+
+  "wave1_deferral_disposition": {
+    "artifact": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json#hosted_baseline_deferral",
+    "STATUS": "HISTORICALLY_TRUE_IMMUTABLE_NOT_A_STANDING_PROHIBITION",
+    "bytes_unchanged": "YES. The sealed FIB artifact is NOT edited, and docs/ops/fib/** remains a prohibited surface.",
+    "reasoning": "The clause records the state at Wave-1 closure: the rehearsal artefact then reported manifestApplied=50 against a 50-unit-era digest, so the two gate failures pre-existed Wave 1's own remediation. Every number in it describes the 50-unit era and every verb is closure-tense. It declines to change a deferred condition; it does not reserve, grant or withhold any future permission, and names no future actor.",
+    "prospective_regeneration_is_not_retroactive": "Regenerating artifacts/baseline-rehearsal/latest.json against the current 76-unit corpus creates NEW current-state evidence. It does not alter what the Wave-1 closure recorded as true at Wave-1 closure, does not reopen Wave 1, and does not modify any Wave-1 artifact.",
+    "authority_for_the_regeneration": "Binding coordinator ruling R2 and R3, recorded verbatim in substance in docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json binding_coordinator_ruling_ingested."
+  },
+
+  "derived_artifact_refresh_contracts": {
+    "common_rule": "No manual byte editing where a canonical generator exists. Each artifact is produced ONLY by the command named below, run from the repository root of the candidate branch.",
+    "A1_REFRESH_CONTRACT": {
+      "path": "artifacts/hosted-a1-status.json",
+      "command": "pnpm a1:status:write",
+      "implementation": "scripts/a1-status.ts, write mode",
+      "inputs": [
+        "artifacts/hosted-a1-corroboration.json (HISTORICAL measurement — read only, never regenerated)",
+        "db/prepared/checkpoint-a1/corroboration.sql (HISTORICAL — read only)",
+        "the current baseline SQL chain",
+        "the recorded Stella sources and storage unit state"
+      ],
+      "uses_database_or_network": false,
+      "evidence_class": "CURRENT_STATE_GENERATED",
+      "expected_post_b4_relationship_to_baseline_76": "The recomputed status reflects the 76-unit chain, so `pnpm a1:status:verify` exits 0 and both checkpoint-a1 assertions turn green.",
+      "verification": "pnpm a1:status:verify",
+      "protected": false,
+      "prohibition": "artifacts/hosted-a1-corroboration.json and db/prepared/checkpoint-a1/corroboration.sql MUST NOT be regenerated, edited or refreshed. They are the historical measurement this status is derived FROM."
+    },
+    "B0_REFRESH_CONTRACT": {
+      "path": "db/prepared/checkpoint-b0/observation.sql",
+      "command": "pnpm b0:observation:generate",
+      "implementation": "scripts/b0-observation-sql.ts, generate mode",
+      "inputs": [
+        "the corpus, i.e. db/hosted/baseline-manifest.ts and the units it names"
+      ],
+      "uses_database_or_network": false,
+      "generator_self_description": "'CONNECTS TO NOTHING. It reads the corpus and writes a file.'",
+      "evidence_class": "CURRENT_STATE_GENERATED",
+      "expected_post_b4_relationship_to_baseline_76": "The probe regenerates byte-identically from the 76-unit corpus and gains one rowCounts arm per table B4 creates, including public.assumption_object_links, so both checkpoint-b0 assertions turn green.",
+      "verification": "pnpm b0:observation:verify",
+      "protected": true,
+      "grant": "HPO-ODS-W2-16 — see docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json protected_grant. The grant authorizes the path ONLY in combination with an ordinary --allow covering it; both remain mandatory."
+    },
+    "REHEARSAL_REFRESH_CONTRACT": {
+      "path": "artifacts/baseline-rehearsal/latest.json",
+      "command": "pnpm baseline:rehearsal:local",
+      "implementation": "scripts/baseline-rehearsal-local.ts",
+      "inputs": [
+        "db/hosted/baseline-manifest.ts (the 76-unit corpus)",
+        "a freshly started disposable PostgreSQL container"
+      ],
+      "uses_database_or_network": true,
+      "isolation_contract": "The script starts its OWN fresh container from the pinned image, never borrows a running supabase_db_* container, and states 'It never opens, reads or writes any pre-existing container.' Teardown removes the container and the run asserts 0 leftovers. NEVER staging. NEVER Production. NEVER the canonical local stack.",
+      "evidence_class": "CURRENT_STATE_GENERATED",
+      "why_regeneration_is_the_correct_repair": "tests/eval/stella-release/hosted-baseline-gate.ts records, in the comment immediately above the rehearsal read, that the gate 'reads what a completed run recorded, and checks the run was about THIS manifest — a result from before a manifest edit is not evidence about the manifest after it.' The artifact is designed to be re-run whenever the manifest changes; a pin to a superseded manifest is the defect the gate exists to detect.",
+      "expected_post_b4_relationship_to_baseline_76": "manifestApplied === 76, manifestFailedAt === null, and manifestDigest equal to the digest of the 76-unit manifest, so hosted-baseline-rehearsal-ready turns green and all three hosted-baseline-gate assertions pass.",
+      "run_a_failure_is_a_passing_result": "The harness deliberately runs the naive order first to WATCH IT FAIL. A red RUN A is the expected reproduction, not a regression.",
+      "protected": false,
+      "protected_note": "artifacts/** is not in DEFAULT_PROTECTED_PATTERNS and is not a prohibited ODS surface. Ordinary --allow only; no grant.",
+      "prohibition": "This authorizes regenerating the CURRENT-STATE artifact only. It does NOT authorize editing the Wave-1 closure record, the KTC-01/02 records, or any other historical artifact that describes the 50-unit era."
+    }
+  },
+
+  "future_pr62_remediation_surface": {
+    "note": "CLOSED-WORLD. After this authority merges, the W2-B4 remediation on codex/w2-b4-r1 may change ONLY the paths below.",
+    "RETENTION_ONLY_no_content_change_required": [
+      "lib/pipeline/sroi-remediation-destinations.test.ts",
+      "tests/w2-b4-governance.test.ts"
+    ],
+    "REFRESH_via_canonical_generator": [
+      "artifacts/hosted-a1-status.json",
+      "db/prepared/checkpoint-b0/observation.sql",
+      "artifacts/baseline-rehearsal/latest.json"
+    ],
+    "REFRESH_EVIDENCE": [
+      "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "evidence_correction_scope": "Remove the two void KTC-W2-B4-* claims, record the corrected three-root-cause analysis, record the three regeneration commands actually run and their outputs, and record CI as GREEN. The evidence artifact still may NOT self-certify closure — only the independent audit artifact may establish the verdict.",
+    "no_other_path": "No other W2-B4 implementation blob may change. Every previously-green implementation blob MUST remain byte-identical. This is a precondition of the focused re-audit class below, not a preference.",
+    "explicitly_still_prohibited": "Every entry in W2_B4_AUTHORITY_v1.0.0.json authorized_future_implementation_surface.explicitly_prohibited remains prohibited, with exactly one bounded exception: db/prepared/checkpoint-b0/observation.sql, which that list covered only through the blanket clause 'db/prepared/** other than db/prepared/journal/**' and which is now granted narrowly under HPO-ODS-W2-16. db/baseline/**, docs/ops/fib/**, docs/ops/p1a/**, package.json, the workflow files and every other prohibited entry are UNCHANGED and remain prohibited."
+  },
+
+  "ci_target": {
+    "FROZEN": "YES",
+    "tests/hosted/checkpoint-a1.test.ts": "GREEN",
+    "tests/hosted/checkpoint-b0.test.ts": "GREEN",
+    "tests/eval/stella-release/hosted-baseline-gate.test.ts": "GREEN",
+    "full_normal_CI": "GREEN",
+    "PASS_WITH_KTC": "NOT_REQUIRED_AND_NOT_ACCEPTED",
+    "old_ktc_status_at_target": "NOT_APPLICABLE_TO_CURRENT_FINGERPRINT",
+    "rule": "Per binding ruling R4, a red CI carried by an invented or misapplied known condition is not an acceptable outcome where deterministic regeneration closes the drift. If any of the seven failures survives regeneration, that is a NEW finding requiring its own adjudication, never a candidate for a fresh KTC entry written by the implementer."
+  },
+
+  "reaudit_class": {
+    "CLASS": "FOCUSED_REAUDIT_OF_FAILED_DIMENSIONS",
+    "sufficient_if_and_only_if": "Every previously-green W2-B4 implementation blob is byte-identical between the audited candidate 5035e7e1810543c7ca373c859237ae7301e4eb51 and the remediated candidate. The re-auditor MUST verify this mechanically, per path, and MUST escalate to a full re-audit if any such blob moved.",
+    "must_cover": [
+      "the new authority artifacts and their internal consistency",
+      "the corrected closed world and its necessity proofs",
+      "ods:scope and ods:poststate over the remediated candidate",
+      "the three regenerated artifacts, including that each was produced by its canonical generator and not hand-edited",
+      "non-applicability of KTC-01/02 at the current cause_fingerprint",
+      "full CI green",
+      "the implementation-evidence correction, including removal of the two void KTC ids",
+      "merge-tree semantics against the then-current integration"
+    ],
+    "need_not_re_execute_unless_relevant_bytes_changed": [
+      "real PostgreSQL probe suite",
+      "FIBIU-15, FIBIU-14 and FIBIU-16 semantics",
+      "migration ordinals and the certified serial contract",
+      "approval boundary",
+      "security and tenancy controls",
+      "mutation controls",
+      "test non-weakening over the originally audited surface"
+    ],
+    "justification": "Those dimensions already passed an independent adversarial pass against blobs this remediation does not touch. Re-executing them adds cost without adding evidence, PROVIDED the byte-identity precondition above is mechanically proven first."
+  },
+
+  "this_mission_controls": {
+    "A1": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json is byte-unchanged.",
+    "A2": "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json is byte-unchanged.",
+    "A3": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json is byte-unchanged.",
+    "A4": "docs/ops/fib/** is byte-unchanged, including FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json.",
+    "A5": "No path under db/**, app/**, lib/**, artifacts/** or .github/** is changed by this AUTHORITY mission, and package.json and pnpm-lock.yaml are unchanged. In particular NO derived artifact is refreshed here, despite the refresh contracts existing.",
+    "A6": "tests/ods/ods-scope.test.ts passes with PROTECTED_GRANTS.length == 9 and the HPO-ODS-W2-16 entry proven deep-equal to protected_grant in the companion addendum.",
+    "A7": "HPO-ODS-W2-12 is proven unchanged in the registry — same branch, same two patterns.",
+    "M1": "DEFERRED_TO_SUCCESSOR_MISSION for every runtime control: the three regenerations and the resulting green CI are not executable as code at this node.",
+    "M2": "NOT DEFERRED — the grant-narrowness controls G2, G3 and G4 ARE this mission's real mutation controls, because they prove the ninth registry entry changes classifier behaviour in exactly one direction and no further. They are executable at this node."
+  },
+
+  "risks_and_open_findings": {
+    "R1": "The rehearsal regeneration requires Docker. If the successor mission's environment cannot start the disposable container, the correct action is to STOP and report, never to fall back to hand-editing the artifact or to registering a known condition.",
+    "R2": "W2_B4_AUTHORITY_v1.0.0.json's artifacts_path_deliberately_excluded clause remains byte-present and still says 'stale by design at manifestApplied=50'. That sentence is now factually overtaken. It is deliberately NOT edited; this amendment records the corrected measurement instead. A reader consulting v1.0.0 alone will read a stale number, which is the accepted cost of append-only discipline.",
+    "R3": "Whether KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02 should ultimately be marked closed once the gate is green is NOT decided here and remains open for a governed act in its own artifact.",
+    "R4": "This amendment binds four manifest controls to a host file without editing the manifest. If a future schema revision validates test_file, an append-only successor manifest is required at that time."
+  },
+
+  "final_state": "W2_B4_AUTHORITY_AMENDMENT_v1_0_1_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "W2_B4_REMEDIATION_IMPLEMENTATION_STATUS": "NOT_STARTED_NOT_AUTHORIZED_UNTIL_THIS_AUTHORITY_MERGES",
+  "W2_B5_STATUS": "NOT_AUTHORIZED",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": "YES — 067e8c2f3ac9b5e843de3a35575182907b4365d4",
+  "READY_FOR_MERGE": "NO — requires a NEW independent focused Opus authority audit in a clean conversation",
+  "next_gate": "W2_B4_REMEDIATION_AUTHORITY_INDEPENDENT_OPUS_AUDIT"
+}
