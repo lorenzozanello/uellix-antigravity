@@ -275,14 +275,23 @@ describe('stella_0004 forward: allowlist integrity', () => {
     expect(section).toMatch(/d\.defaclnamespace = 0 OR n\.nspname = 'public'/i)
   })
 
-  it('grants exactly one schema-level privilege outside public, and it is USAGE on auth', () => {
+  it('grants/asserts exactly one schema-level privilege outside public, and it is USAGE on auth', () => {
     // Needed because three SECURITY DEFINER functions call auth.uid() and the
     // ownership transfer changes their effective user. Without it every policy
     // that calls them errors — for every caller, including PostgREST.
+    //
+    // HPO-ODS-W2-11 successor contract (P1A): this file no longer GRANTs the
+    // auth-schema privilege itself — db/prepared/stella_local_0000_local_role_identity_bootstrap.sql
+    // now establishes it, and this file fail-closed ASSERTS it via
+    // has_schema_privilege rather than re-granting (a re-grant would let this
+    // file independently re-establish the privilege even when the governed
+    // pre-baseline step did not run). The public-schema statements remain
+    // ordinary GRANT/REVOKE, unchanged, and are what this scan still finds.
     const schemaGrants = [...topologyBootstrapCode.matchAll(/\b(GRANT|REVOKE)\s+[A-Z, ]+\s+ON\s+SCHEMA\s+(\w+)[^;]*;/gi)]
     const outsidePublic = schemaGrants.filter((m) => m[2].toLowerCase() !== 'public')
-    expect(outsidePublic).toHaveLength(1)
-    expect(outsidePublic[0][0]).toMatch(/GRANT\s+USAGE\s+ON\s+SCHEMA\s+auth\s+TO\s+uellix_owner/i)
+    expect(outsidePublic).toHaveLength(0)
+    expect(topologyBootstrapCode).toMatch(/has_schema_privilege\('uellix_owner',\s*'auth',\s*'USAGE'\)/)
+    expect(topologyBootstrapCode).not.toMatch(/^\s*GRANT\s+USAGE\s+ON\s+SCHEMA\s+auth\s+TO\s+uellix_owner/im)
   })
 
   it('does not enable FORCE ROW LEVEL SECURITY', () => {
