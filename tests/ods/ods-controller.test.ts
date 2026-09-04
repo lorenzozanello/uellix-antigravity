@@ -88,27 +88,37 @@ describe('E7: closed-world stop taxonomy and state model', () => {
 // ---------------------------------------------------------------------------
 
 describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
-  it('is the exact 24-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13)', () => {
-    expect(IMMUTABLE_BY_CONVENTION.length).toBe(24)
-    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(24)
+  it('is the exact 25-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14)', () => {
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(25)
+    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(25)
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json')
   })
 
   it('excludes ODS_CARRY_FORWARD_BACKLOG.md by design (append-only working backlog)', () => {
     expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md')
   })
 
-  // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json test_contract): the closed
+  // C11 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract): the closed
+  // world was extended by exactly the one docs/ops/ods/ artifact this addendum
+  // funds — never implicitly widened to the companion P1A amendment. The
+  // Controller closed world enumerates docs/ops/ods/ artifacts exclusively.
+  it('does NOT absorb the companion P1A amendment v1.0.2 (closed world stays docs/ops/ods/ only)', () => {
+    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json')
+    expect(IMMUTABLE_BY_CONVENTION.every((entry) => entry.startsWith('docs/ops/ods/'))).toBe(true)
+  })
+
+  // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract): the closed
   // world does not pre-include a later ODS successor artifact. This asserts
   // ABSENCE only — it reserves no identifier and authorizes no future grant.
   // per ods_lineage_serialization.no_future_ids_reserved, NEXT_ODS_LINEAGE is
   // DERIVE_AT_MATERIALIZATION_TIME; the mechanically-next version number is
   // used here purely as a negative-control literal, not an allocation.
   it('does NOT pre-include the next unallocated ODS successor addendum (no automatic inclusion)', () => {
-    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json')
+    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json')
   })
 
   it('normalizeRepoPath canonicalizes backslashes and redundant "." segments', () => {
@@ -161,6 +171,23 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
 
   it('a case-mutated spelling of a newly-added entry (v1.0.13) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
     const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.13.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // C9 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract): non-vacuity
+  // through the REAL selection path for the new entry specifically — not
+  // merely implied by the length/Set assertions above.
+  it('a node targeting v1.0.14 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.14) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.14.JSON'] })
     const decision = decideSelection(unit, 'OPEN', {}, {})
     expect(decision.selectable).toBe(false)
     expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
