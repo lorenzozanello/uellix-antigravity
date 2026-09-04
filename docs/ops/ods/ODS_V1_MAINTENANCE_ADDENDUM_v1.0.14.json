@@ -1,0 +1,256 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.14",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14",
+  "authority_class": "APPEND_ONLY_FUTURE_IMPLEMENTATION_SURFACE_AUTHORIZATION",
+  "materialization_step": "HPO-ODS-W2-15",
+  "GRANT_ID": "HPO-ODS-W2-15",
+  "hpo_mission_id": "P1A-V1_0_2-MINIMAL-AUTHORITY-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_id": "P1A-DATABASE-ROLE-SAFETY-AUTHORITY-GAP-HPO-R1",
+  "materialization_date": "2026-09-04",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_p1a_authority": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "node_authority": null,
+  "node_test_manifest": null,
+  "node_authority_note": "DELIBERATELY NULL. No new companion node-authority document is created and none is required. The P1A domain contract lives in P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json and its amendments, which this addendum leaves byte-unchanged; the Controller semantics live in ODS_CONTROLLER_AUTHORITY_v1.0.0.json, also byte-unchanged. There is no new domain contract to freeze, so this addendum carries its bounded scope inline, mirroring ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json.",
+
+  "purpose": "Serve two bounded functions and no wider. (A) Discharge the ODS product-test discipline for the single-path P1A widening frozen in docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json: ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment', and tests/database-role-safety.test.ts is an existing product test — this addendum IS that explicit ODS instruction, for exactly one file and exactly one narrowly bounded assertion. (B) Authorize, prospectively and append-only, the FUTURE bounded Controller maintenance required by this addendum's own arrival: exactly two paths, scripts/ods-controller.ts and tests/ods/ods-controller.test.ts, to take IMMUTABLE_BY_CONVENTION from 24 to 25 by enumerating this artifact. It authorizes no Controller implementation in this mission, edits no Controller code, edits no P1A predecessor authority, edits no test, and writes exactly two files together with its companion.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.13, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, KNOWN_TEST_CONDITIONS_v1.0.0.json, P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json, P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through HPO-ODS-W2-14 are FROZEN_UNCHANGED. The frozen A/B/C/D executor taxonomy in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing is UNCHANGED and UNEXTENDED: no class B+, no CLASS_E, no additional executor class. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is UNCHANGED, and this addendum adds NO entry to the PROTECTED_GRANTS registry — neither a pattern nor an entry. This mission writes exactly TWO new files, this addendum and its companion P1A amendment, and no implementation code whatsoever.",
+
+  "grant_id_semantics": {
+    "GRANT_ID": "HPO-ODS-W2-15",
+    "identifier_uniqueness": "Derived mechanically at materialization time, never assumed. Verified this session at BASE_SHA 696243f702f0feab155b1bd7411bb211f50f5a89: (a) a repository-wide `git grep -l 'HPO-ODS-W2-15'` across every local head and every remote ref returned ZERO occurrences; (b) `git ls-tree` for docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json and docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json against integration returned nothing, and `git log --all --diff-filter=A` for both paths returned nothing, so neither has ever existed in any reachable tree in repository history; (c) HPO-ODS-W2-14 is the highest predecessor in use, held by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json, which entered integration via merge commit bdb6a7400a0efdb3c7f1fef6bbed46290920a24f. HPO-ODS-W2-15 and version 1.0.14 are therefore the correct next unused identifiers in the sequence, not a reuse and not a guess. Had either been occupied, this mission's instruction was STOP_FOR_LINEAGE_RENUMBERING rather than silently selecting another id.",
+    "IS_PROTECTED_SURFACE_GRANT": false,
+    "clarification": "HPO-ODS-W2-15 is an AUTHORITY identifier. It is deliberately NOT an entry in the PROTECTED_GRANTS array of scripts/ods-scope.ts, and must never be read or cited as machine-enforced protected-surface authorization. This is stated affirmatively because the sequence alternates and a reader cannot infer treatment from position: HPO-ODS-W2-01, W2-02, W2-03, W2-07, W2-08, W2-09, W2-11 and W2-12 ARE registry entries, while HPO-ODS-W2-10, W2-13 and W2-14 are deliberately NOT. This grant follows the latter convention, for the same reason: no path it authorizes matches DEFAULT_PROTECTED_PATTERNS."
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-p1a-database-role-safety-authority-r1",
+    "branch": "codex/p1a-database-role-safety-authority-r1",
+    "BASE_SHA": "696243f702f0feab155b1bd7411bb211f50f5a89",
+    "BASE_TREE": "338675e158ec4669e5f6eda431731174eaf6c585",
+    "integration_baseline_sha": "696243f702f0feab155b1bd7411bb211f50f5a89",
+    "integration_branch": "integration/commercial-v1",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "controller_status": "CLOSED_AUDITED_INTEGRATED",
+    "controller_implementation_merge_commit": "696243f702f0feab155b1bd7411bb211f50f5a89",
+    "controller_live_immutable_count_at_BASE_SHA": 24,
+    "p1a_implementation_pr": 59,
+    "p1a_implementation_pr_state": "OPEN, isDraft=true, mergedAt=null — verified UNMERGED before any file was written",
+    "hard_gate": "PASS — verified BEFORE any branch, worktree or file was created. (1) origin/integration/commercial-v1 = 696243f702f0feab155b1bd7411bb211f50f5a89, unmoved and reached only through the known P1A/Controller coordination sequence. (2) PR #59 unmerged and still a draft. (3) P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json (blob a45558515842495550bc28dd17de1981e45c23e6) and P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json (blob f28d44b2b0931cfd20a466175ab3e8deb85dda99) byte-identical. (4) Controller IMMUTABLE_BY_CONVENTION live count = 24, measured directly from origin/integration/commercial-v1:scripts/ods-controller.ts. (5) origin/main UNCHANGED at 067e8c2f3ac9b5e843de3a35575182907b4365d4.",
+    "prestate_gate": "PASS — dedicated clean worktree created by `git worktree add -b codex/p1a-database-role-safety-authority-r1 <path> 696243f702f0feab155b1bd7411bb211f50f5a89`. Branch codex/p1a-database-role-safety-authority-r1, HEAD 696243f702f0feab155b1bd7411bb211f50f5a89, TREE 338675e158ec4669e5f6eda431731174eaf6c585, working tree clean under --untracked-files=all, all verified BEFORE any file was written. No rebase, no reset, no amend, no force-push."
+  },
+
+  "predecessor_authorities": {
+    "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json": "ODS v1 root authority. Unchanged. Its prohibited_surfaces clause reserving 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment' is the source of function (A) below, and its A/B/C/D executor taxonomy governs this addendum's executor routing and is neither extended nor weakened.",
+    "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json": "HPO-ODS-W2-10 — Controller v0. UNCHANGED by this addendum. Source of the enumeration obligation: ag1_disposition.immutableByConvention.closed_world_requirement and ag1_disposition.immutableByConvention.excluded_by_design.reason.",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json": "HPO-ODS-W2-14. Unchanged. The precedent this addendum follows for prospectively funding its own Controller enumeration in the same artifact rather than spawning a second Controller-authority document. Its grant is CONSUMED — the 22 -> 24 maintenance it funded is CLOSED_AUDITED_INTEGRATED at merge commit 696243f702f0feab155b1bd7411bb211f50f5a89.",
+    "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json": "HPO-ODS-W2-11. Unchanged. Source of the frozen stella_0001_successor_contract from which the necessity of the authorized test adjustment is derived.",
+    "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json": "HPO-ODS-W2-13. Unchanged. Its authorized_additional_future_implementation_surface.closed_world designates STOP_FOR_AUTHORITY_DELTA as the governed remedy for a further necessary path; the companion P1A amendment v1.0.2 is that delta.",
+    "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json": "HPO-ODS-W2-15 — this addendum's companion, materialized in the same mission and the same commit. It carries the P1A-lane surface widening; this addendum carries the ODS-lane instruction and the Controller obligation."
+  },
+
+  "hpo_decision": {
+    "FUNCTION_A_PRODUCT_TEST_DISCIPLINE": {
+      "ODS_INSTRUCTION_GRANTED": "YES",
+      "path": "tests/database-role-safety.test.ts",
+      "why_an_ODS_instruction_is_required": "ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment'. tests/database-role-safety.test.ts is an existing product test that predates the P1A lane. A P1A-lane amendment alone would be the lane widening its own surface into a category the ODS root reserves to an ODS instruction. Both prior P1A widenings that touched existing product tests carried a companion ODS maintenance addendum with an HPO-ODS-W2-NN identifier — v1.0.0 with ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json / HPO-ODS-W2-11, and v1.0.1 with ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json / HPO-ODS-W2-13. This addendum preserves that discipline rather than de-escalating it on convenience.",
+      "narrowly_required": "The adjustment is ONE assertion in ONE file. See the companion amendment's necessity section for the full derivation from the frozen stella_0001_successor_contract plus the BASE_SHA state of the two files, and the recorded counterfactual measurement that corroborates it.",
+      "measured_necessity_summary": "db/prepared/stella_0001_role_topology_bootstrap.sql:181 at BASE_SHA is `GRANT USAGE ON SCHEMA auth TO uellix_owner;` — one of the two statements P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json stella_0001_successor_contract.authorized_change requires be converted into a fail-closed assertion. tests/database-role-safety.test.ts:284 asserts `expect(outsidePublic).toHaveLength(1)` over a GRANT/REVOKE-only regex scan. A has_schema_privilege() assertion is not a GRANT or REVOKE, so ANY conforming implementation drives that count to 0 and the assertion fails deterministically. Measured counterfactual: authorized SQL plus the unmodified predecessor test yields exactly 1 failure, that one; with the adjusted test, 0 failures.",
+      "no_wildcard": "No tests/** grant of any kind is created. No other existing product test is authorized. A second such test is a fresh STOP_FOR_AUTHORITY_DELTA."
+    },
+    "FUNCTION_B_CONTROLLER_MAINTENANCE": {
+      "CONTROLLER_MAINTENANCE_REQUIRED": "YES",
+      "CONTROLLER_MAINTENANCE_AUTHORITY": "GRANTED_BY_THIS_ADDENDUM",
+      "measured_necessity": "scripts/ods-controller.ts at BASE_SHA defines IMMUTABLE_BY_CONVENTION as an EXACT-membership closed world (:49 — 'EXACT membership — never a subset test') holding exactly 24 entries, all of them docs/ops/ods/ artifacts. It does not contain v1.0.14. tests/ods/ods-controller.test.ts asserts length 24 and Set size 24 as HARDCODED constants and performs ZERO filesystem reads, so v1.0.14 entering integration fails no test and CI stays green. The obligation is nevertheless mandatory: until v1.0.14 is enumerated, Controller v0 would NOT classify a write targeting it as PROTECTED_SURFACE_CHANGE, and because v1.0.14 is also absent from DEFAULT_PROTECTED_PATTERNS — which covers exactly ONE docs/ops/ods/ file, ODS_V1_AUTHORITY_v1.0.0.json — the artifact would be accepted for mutation by an ordinary `pnpm ods:scope --allow docs/ops/ods/**` with no guard at either layer.",
+      "why_new_authority_is_required": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json authorized scripts/ods-controller.ts and tests/ods/ods-controller.test.ts for its own successor maintenance mission only, under a list marked EXHAUSTIVE, with a frozen 22 -> 24 target. That mission is CLOSED_AUDITED_INTEGRATED at merge commit 696243f702f0feab155b1bd7411bb211f50f5a89, so its grant is CONSUMED, not standing. ODS_CONTROLLER_AUTHORITY_v1.0.0.json makes the enumeration obligation MANDATORY while granting write scope to no open mission — its authorized_write_scope_this_mission names two documentation paths and places scripts/** and tests/** in forbidden_paths. The obligation to add v1.0.14 is not itself permission to edit Controller code.",
+      "OLD_IMMUTABLE_COUNT": 24,
+      "NEW_IMMUTABLE_COUNT": 25,
+      "SELF_INCLUSION_FROZEN": "YES",
+      "package_json_not_required": "The 'ops:controller' scripts entry already exists at package.json:113. No package.json change is required and none is authorized here.",
+      "CONTROLLER_AUTHORITY_EDITED": false,
+      "P1A_PREDECESSOR_AUTHORITIES_EDITED": false
+    }
+  },
+
+  "self_inclusion_rule": {
+    "RULE": "The implementation MUST enumerate EXACTLY ONE canonical path, taking IMMUTABLE_BY_CONVENTION from 24 to 25.",
+    "paths_to_enumerate": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json"
+    ],
+    "why_only_one": "MEASURED: the 24-entry list already contains ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json as of the PR #58 merge, so no predecessor gap remains to close. The only uncovered new docs/ops/ods/ artifact is this addendum itself.",
+    "why_self_inclusion_is_required": "This addendum is itself a docs/ops/ods/ artifact. ODS_CONTROLLER_AUTHORITY_v1.0.0.json ag1_disposition.immutableByConvention.excluded_by_design.reason states, of the sole recorded exclusion: 'It is NOT a general precedent: no other docs/ops/ods/ artifact may be excluded from immutableByConvention without new authority.' That clause binds THIS artifact identically, and no authority excludes it. Self-enumeration is therefore not an optimization; it is the only delta that discharges the obligation.",
+    "companion_p1a_amendment_is_not_enumerated": "MEASURED and DELIBERATE. docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json is NOT added to IMMUTABLE_BY_CONVENTION, because that closed world enumerates docs/ops/ods/ artifacts exclusively — all 24 current entries begin with docs/ops/ods/. Extending it to docs/ops/p1a/** would be a scope change to the Controller's own domain and is NOT authorized here. The residual exposure of docs/ops/p1a/** is the pre-existing AG-1 residual already recorded in P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json protected_grant_disposition.residual_AG_1, and is neither closed nor widened by this addendum.",
+    "precedent": "ESTABLISHED AND MEASURED. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json froze a self-enumerating 22 -> 24 target, was independently audited, and merged; its implementation was independently audited and merged at 696243f70. Before that, the Controller v0 authority mission enumerated both its own artifact and its companion addendum as entries 19 and 20 of its own pinned list. This addendum applies the identical pattern to a single artifact.",
+    "prospective_enumeration_note": "This addendum authorizes the future enumeration of its OWN canonical path prospectively. At the moment this artifact is committed the Controller list still holds 24 and this path is not yet enumerated; that transitional interval is bounded, CI-green, has no runtime effect, and ends when the successor implementation lands. It is the same governed transitional shape v1.0.10, v1.0.11, v1.0.12 and v1.0.13 each occupied, and is accepted for the same reasons: CONTROLLER_DB_EXECUTION is DISABLED and the guard has no production effect.",
+    "live_count_precondition": "If the live IMMUTABLE_BY_CONVENTION count at the start of the successor implementation is NOT 24, the implementation MUST STOP and rederive rather than assume this delta. A different live count means another docs/ops/ods/ artifact landed in the interval, and the correct target is no longer 24 -> 25."
+  },
+
+  "implementation_contract": {
+    "binding_on": "The successor Controller-maintenance implementation mission authorized by this addendum, and on nothing else.",
+    "scripts/ods-controller.ts": {
+      "change": "Append EXACTLY the one canonical path in self_inclusion_rule.paths_to_enumerate to the IMMUTABLE_BY_CONVENTION array, preserving existing entry order and the `readonly string[] ... as const` shape. Update the count comment at :49 so it continues to describe the list truthfully.",
+      "count": "24 -> 25",
+      "line_ceiling": "The 400-line Controller ceiling from ODS_CONTROLLER_AUTHORITY_v1.0.0.json exit_criteria E1 remains in force and must not be exceeded by this change. The file is 382 lines at BASE_SHA."
+    },
+    "tests/ods/ods-controller.test.ts": {
+      "change": "Update the describing title and the length and Set-cardinality assertions from 24 to 25, add an explicit toContain assertion for the new path mirroring the existing v1.0.12/v1.0.13 pattern, and re-point the explicit-absence control from the now-allocated v1.0.14 to the next unallocated addendum version.",
+      "no_line_ceiling": true
+    },
+    "must_preserve_byte_and_semantic_behavior_of": [
+      "normalizeRepoPath",
+      "checkImmutableGuard",
+      "case canonicalization, including canonical-exact match winning over a merely case-insensitive one",
+      "the NONCANONICAL_PROTECTED_PATH stop class and its distinction from PROTECTED_SURFACE_CHANGE",
+      "the PROTECTED_SURFACE_CHANGE stop class",
+      "selection routing, rerun policy and audit routing, including the self-certification prohibition",
+      "the stop-class closed-world set",
+      "IMMUTABLE_BY_CONVENTION_LOWER derivation"
+    ],
+    "prohibitions": [
+      "no filesystem discovery of docs/ops/ods/ or any directory",
+      "no globs",
+      "no prefix matching",
+      "no directory sweep",
+      "no subset semantics — the exact-membership test is preserved",
+      "no automatic inclusion of any future artifact",
+      "no extension of IMMUTABLE_BY_CONVENTION to docs/ops/p1a/** or any directory outside docs/ops/ods/",
+      "no weakening, relaxing, skipping or deleting of any existing test or machine gate to obtain a PASS",
+      "no change to DEFAULT_PROTECTED_PATTERNS or the PROTECTED_GRANTS registry",
+      "no removal of docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md's excluded_by_design status",
+      "no edit to package.json, db/**, docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, scripts/ods-scope.ts, scripts/ods-prestate.ts, scripts/ods-poststate.ts or scripts/ods-program-state.ts",
+      "no edit to any P1A authority artifact",
+      "no edit to pull request #59 or any commit on its branch",
+      "no enabling of CONTROLLER_DB_EXECUTION",
+      "no production promotion and no write to main"
+    ],
+    "guard_must_not_be_weakened": "The immutable closed-world guard MUST NOT be weakened, and must never be relaxed into a subset test, prefix match or directory sweep to absorb future addenda automatically. This restates the prohibition already frozen in ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json and v1.0.13.json and creates no new rule. The recurring per-addendum maintenance cost is DELIBERATE and ACCEPTED: it is the price of a guard whose value is exact coverage."
+  },
+
+  "test_contract": {
+    "schema_reference": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+    "controls": {
+      "C1": "Exact length: IMMUTABLE_BY_CONVENTION.length === 25. Removing the new entry fails.",
+      "C2": "Set cardinality: new Set(IMMUTABLE_BY_CONVENTION).size === 25. A duplicated entry makes size (25) differ from length (26) and fails.",
+      "C3": "Explicit toContain for docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json.",
+      "C4": "Backslash variant guarded: checkImmutableGuard with a backslash spelling of the new path returns violated=true (CTRL-M3).",
+      "C5": "Case mutation of the new path yields nonCanonicalPaths and stop class NONCANONICAL_PROTECTED_PATH — never PROTECTED_SURFACE_CHANGE, never silently lowercased (CTRL-R3). Behavior identical to existing entries.",
+      "C6": "docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md remains not.toContain — the sole excluded_by_design exclusion, unchanged.",
+      "C7": "The existing entry-specific decideSelection controls for v1.0.12 and v1.0.13 remain present and unweakened.",
+      "C8": "The explicit-absence control is re-pointed to the next unallocated ODS_V1_MAINTENANCE_ADDENDUM version, so a later artifact cannot be pre-included without new authority. The control asserts ABSENCE only and allocates nothing.",
+      "C9": "Non-vacuity through the REAL selection path: decideSelection — not the isolated pure helper — STOPs with PROTECTED_SURFACE_CHANGE for a node whose writePaths target the new immutable path. A dedicated assertion for this path is REQUIRED, not merely implied by the count. Preserves exit criterion E3.",
+      "C10": "Regression: exit criteria E4 through E8 unchanged — rerun policy non-vacuity (REPEATED_LOCAL_FAILURE), CONTROLLER_DB_EXECUTION non-vacuity (DATABASE_AUTHORITY_REQUIRED), fableEligible cannot be self-granted, stop-class closed-world set, and no test weakened or skipped.",
+      "C11": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json is NOT added: an explicit not.toContain proves the closed world was not silently extended beyond docs/ops/ods/."
+    },
+    "exit_gate": "All eleven controls green, the full existing tests/ods/ods-controller.test.ts suite green, and ods:poststate clean against a base of this authority's merge commit with an allowlist covering exactly the two authorized implementation paths."
+  },
+
+  "executor_and_audit": {
+    "EXECUTION_CLASS": "B",
+    "EXECUTOR_MODEL": "SONNET_HIGH",
+    "fableEligible": false,
+    "fable_rationale": "Two files, a fully enumerated single-entry delta, no cross-layer coupling and no splitting risk. None of the eligibility categories in ODS_CONTROLLER_AUTHORITY_v1.0.0.json mc1_disposition.fable_disposition.eligibility_may_be_true_only_for applies. fableEligible defaults to false and absence is read as false, never as permission; Controller v0 may READ this field and may NEVER author, infer, default, promote or set it true.",
+    "class_b_validation_requirements_preserved": "Every existing Class-B empirical validation requirement in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing.classes.B remains applicable and unweakened, including validation_requirement and explicit_caution (model economy is NOT proof of adequacy). The machine gates remain mandatory regardless of executor.",
+    "AUDIT_MODE": "FOCUSED_OPUS",
+    "AUDIT_INDEPENDENT": true,
+    "audit_requirement": "An independent focused Opus audit is MANDATORY before the Controller-maintenance implementation merges. Scope: exact-membership arithmetic, single-path self-inclusion completeness (25/25), byte-invariance of the case and path guards, E3 non-vacuity through decideSelection for the new path specifically, confirmation that the closed world was not extended beyond docs/ops/ods/, and confirmation that no test was weakened. The audit is INDEPENDENT: implementation evidence can never establish its own verdict, and the implementing executor may not certify its own change.",
+    "no_self_certification": "Per ODS_CONTROLLER_AUTHORITY_v1.0.0.json model_and_audit_routing.audit_routing.self_certification_prohibition, the audit mode may be ESCALATED but never de-escalated, and no actor may declare on its own judgment that this node needs less audit than this authority specifies. MACHINE_ONLY is explicitly insufficient.",
+    "this_authority_also_requires_audit": "This authority artifact and its companion stop for an independent focused audit before their own pull request is marked ready. They are opened as a DRAFT pull request and are not merged by this mission. The auditor must be neither the actor that adjudicated the gap in P1A-DATABASE-ROLE-SAFETY-AUTHORITY-GAP-HPO-R1 nor the actor that wrote these artifacts."
+  },
+
+  "ods_lineage_serialization": {
+    "RULE": "All later authority lanes that require an ODS maintenance addendum MUST rederive the lineage mechanically, repository-wide, only AFTER this authority's pull request merges.",
+    "no_future_ids_reserved": "This addendum reserves NO future version and NO future HPO identifier. NEXT_ODS_LINEAGE is DERIVE_AT_MATERIALIZATION_TIME for every successor lane without exception.",
+    "on_collision": "If a derived identifier is already occupied, the correct action is STOP_FOR_LINEAGE_RENUMBERING. Silently selecting an alternative identifier is PROHIBITED.",
+    "known_pending_lanes": "Recorded and explicitly NOT allocated: (a) the Controller-maintenance implementation mission does NOT require its own addendum — it is funded by this one; (b) the P1A implementation mission does NOT require a further addendum — its surface is funded by v1.0.0, v1.0.1 and the companion v1.0.2; (c) the FIBDB-053 / stella_0017b prepared-unit authority lane WILL require one, and its addendum will in turn require its own Controller maintenance cycle. None may assume an identifier now.",
+    "parallelization": "Write surfaces across lanes are disjoint; the ODS addendum lineage is the single shared resource. Parallel work is permitted provided addendum-identifier ALLOCATION is serialized: one lane lands its addendum, the next then rederives."
+  },
+
+  "protected_grant_required": false,
+  "protected_grant_rationale": "MEASURED by replaying the repository classifier. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts at BASE_SHA is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. Neither this mission's two authority paths, nor the authorized future test path tests/database-role-safety.test.ts, nor the two Controller paths scripts/ods-controller.ts and tests/ods/ods-controller.test.ts match any of them — docs/ops/ods/ is protected only at the single-file granularity of ODS_V1_AUTHORITY_v1.0.0.json, which this mission does not touch. classifyPaths returns ok with protectedViolations=[], unauthorized=[], grantAuthorized=[] and nonCanonicalProtectedPaths=[] for each. Therefore NO entry in the PROTECTED_GRANTS registry is created, required or implied, scripts/ods-scope.ts is NOT modified, the assertion tests/ods/ods-scope.test.ts:317 expect(PROTECTED_GRANTS.length).toBe(8) is untouched, and the classifier is NOT relaxed. This mirrors the rationale recorded for HPO-ODS-W2-10, W2-13 and W2-14.",
+  "protected_grant": null,
+  "PROTECTED_GRANTS_CHANGED": false,
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json"
+    ],
+    "both_are_new_files": true,
+    "no_controller_edit": true,
+    "no_implementation_code": true,
+    "no_test_edit": true,
+    "no_pr59_edit": true,
+    "closed_world": "This list is EXHAUSTIVE. A path not enumerated here is NOT authorized for this mission, and its appearance in the diff is an UNEXPECTED_CHANGED_PATH stop — never a retroactive authorization on the grounds that it 'changed anyway'.",
+    "explicitly_not_touched": [
+      "scripts/ods-controller.ts — authorized for the SUCCESSOR maintenance mission only; unchanged here",
+      "tests/ods/ods-controller.test.ts — authorized for the SUCCESSOR maintenance mission only; unchanged here",
+      "tests/database-role-safety.test.ts — authorized for the P1A successor implementation mission only; unchanged here",
+      "package.json — ops:controller already present at :113; no change needed or authorized",
+      "scripts/ods-scope.ts, scripts/ods-prestate.ts, scripts/ods-poststate.ts, scripts/ods-program-state.ts — the machine gates themselves; a node never edits its own referee",
+      "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json — byte-unchanged",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json and P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json — byte-unchanged, blob shas recorded in the companion amendment",
+      "db/**, app/**, lib/** — no database, schema, service, action or UI change of any kind"
+    ]
+  },
+
+  "authorized_future_implementation_surface": {
+    "AUTHORIZED_PATH_COUNT": 2,
+    "note": "These two paths are authorized for the SUCCESSOR Controller-maintenance mission only. The single P1A test path is authorized separately and for a different successor mission by the companion amendment; it is NOT part of this list.",
+    "paths": [
+      {
+        "path": "scripts/ods-controller.ts",
+        "status": "TO_BE_MODIFIED",
+        "role": "Append the one canonical path to IMMUTABLE_BY_CONVENTION (24 -> 25) and update the count comment at :49. No other change to this file is authorized.",
+        "narrowness": "This authorization is limited to the IMMUTABLE_BY_CONVENTION array and its adjacent count comment. No change to guard logic, normalization, stop classes, selection, rerun or audit routing is authorized under this grant."
+      },
+      {
+        "path": "tests/ods/ods-controller.test.ts",
+        "status": "TO_BE_MODIFIED",
+        "role": "Update the count and Set-cardinality assertions from 24 to 25, update the describing title, add an explicit toContain assertion for the new path, add the dedicated decideSelection control for it, re-point the explicit-absence control to the next unallocated addendum, and add the not.toContain proving docs/ops/p1a/** was not absorbed. Implements controls C1 through C11.",
+        "narrowness": "No existing control may be weakened, skipped or deleted. Additions and the count update only."
+      }
+    ],
+    "closed_world": "This list is EXHAUSTIVE. A path not enumerated here is NOT authorized for the successor Controller-maintenance mission. In particular: NO package.json, NO database, NO registry, NO other ODS machine, NO protected grant, NO P1A artifact."
+  },
+
+  "integration_freeze": {
+    "INTEGRATION_FREEZE_FOR_P1A": "ON",
+    "exception": "While the freeze is ON, only (a) this authority pull request and (b) the bounded Controller 24 -> 25 maintenance funded by this addendum may merge into integration/commercial-v1 before P1A closure.",
+    "explicitly_still_frozen": "Commercial, tenancy and platform implementation.",
+    "read_only_work": "Unrestricted."
+  },
+
+  "closure_evidence_precedence": {
+    "RULE": "CLOSURE_EVIDENCE_SUPERSEDES_FROZEN_SELF_STATUS",
+    "statement": "A READY_FOR_MERGE field embedded in an immutable, append-only materialization artifact is a HISTORICAL SNAPSHOT of that artifact's state at materialization time, not a live merge gate. Later closure evidence — an independent audit PASS, a merge object, and containment in integration — supersedes it. Reading a frozen self-status as a live gate would render every merged authority permanently un-mergeable, which is a logical impossibility.",
+    "do_not_reopen": "The completed audits of pull requests #56, #57 and #58 are NOT reopened merely because their materialization artifacts are immutable.",
+    "applies_to_this_artifact_too": "This addendum's own READY_FOR_MERGE='NO' below is likewise a materialization-time snapshot and will be superseded by its own independent audit and merge."
+  },
+
+  "ag1_note": {
+    "AG1_STATUS": "PRESERVED_WITH_CONTROLLER_LOCAL_GUARD",
+    "AG1_GLOBAL_STATUS": "OPEN — NOT CLOSED BY THIS ARTIFACT",
+    "statement": "This addendum does NOT close AG-1 and does NOT change ods:scope semantics. It extends the controller-local, additive defense-in-depth guard to cover one further artifact. Global closure of AG-1 requires separate governed adjudication of scripts/ods-scope.ts and remains explicitly out of scope for this mission and for the successor implementation mission. The precedence rule is unchanged: where ods:scope and immutableByConvention disagree, the STRICTER outcome governs.",
+    "docs_ops_p1a_residual": "docs/ops/p1a/** remains outside both DEFAULT_PROTECTED_PATTERNS and IMMUTABLE_BY_CONVENTION. That residual is pre-existing, already recorded in P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json protected_grant_disposition.residual_AG_1, and is neither closed nor widened here."
+  },
+
+  "risks_and_open_findings": {
+    "R1": "TRANSITIONAL COVERAGE WINDOW. Between this artifact's commit and the successor Controller implementation's merge, v1.0.14 exists in the tree while the Controller guard still ends at v1.0.13. ACCEPTED, bounded governed transitional state: CI is green, the guard has no runtime effect, CONTROLLER_DB_EXECUTION is DISABLED, no production promotion occurs, and the interval is precedented by v1.0.10, v1.0.11, v1.0.12 and v1.0.13. Mitigation: the successor implementation follows immediately under this authority.",
+    "R2": "RECURRING MAINTENANCE COST. Every future ODS maintenance addendum will require its own Controller enumeration cycle, because automatic inclusion is prohibited. This is DELIBERATE, not a defect: the guard's value is exact coverage, and a directory sweep would trade that away. Recorded so a future mission does not 'fix' it by weakening the guard.",
+    "R3": "LIVE-COUNT DRIFT. If another docs/ops/ods/ artifact lands between this merge and the Controller maintenance, the 24 -> 25 target is stale. self_inclusion_rule.live_count_precondition makes that a STOP-and-rederive rather than a silent miscount.",
+    "R4": "ORDERING RISK ON THE P1A SIDE. Binding condition C1 in the companion amendment requires this authority to merge before pull request #59. If that ordering is violated the retention disposition is void. The integration freeze exception exists to protect that ordering."
+  },
+
+  "final_state": "P1A_PRODUCT_TEST_DISCIPLINE_DISCHARGED_FOR_ONE_PATH_AND_CONTROLLER_MAINTENANCE_SURFACE_AUTHORIZED_SELF_ENUMERATING_24_TO_25_PENDING_INDEPENDENT_AUTHORITY_AUDIT_AND_IMPLEMENTATION",
+  "CONTROLLER_MAINTENANCE_IMPLEMENTATION_STATUS": "AUTHORIZED_NOT_STARTED",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": true,
+  "READY_FOR_MERGE": "NO",
+  "next_gate": "P1A_DATABASE_ROLE_SAFETY_AUTHORITY_FOCUSED_AUDIT_R1"
+}
