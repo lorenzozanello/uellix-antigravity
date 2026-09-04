@@ -513,6 +513,28 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
     branch: 'codex/w2-b4-r1',
     patterns: ['db/prepared/checkpoint-b0/observation.sql'],
   },
+  // HPO-ODS-W2-17 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json,
+  // companion docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json): Wave 2 batch B5 -
+  // FIBIU-17 readiness and FIBIU-18 sensitivity - on its own branch. THREE
+  // patterns, because B5 needs one surface W2-B4's grant did not: registering
+  // two governed baseline units adds three tables to the corpus that
+  // scripts/b0-observation-sql.ts reads, so the generated checkpoint-b0 probe
+  // is stale by construction and its canonical regenerator is the only correct
+  // repair - the same mechanism HPO-ODS-W2-07 and HPO-ODS-W2-16 each addressed
+  // on their own branches. Deliberately NOT db/prepared/**: that would reach
+  // the hosted and local bootstrap files the P1A and hosted lanes own, and
+  // db/prepared/checkpoint-a1/corroboration.sql, which the B5 authority
+  // protects as a historical measurement. The third pattern is one exact
+  // literal path, no glob - db/prepared/checkpoint-b0/ holds exactly that one
+  // file. W2-12 and W2-16 are FROZEN, bound to codex/w2-b4-r1, and are neither
+  // widened nor reused: a grant is bound to exactly one branch. The concrete
+  // migration ordinals cannot be literals here - W2_B5_AUTHORITY_v1.0.0.json
+  // sets MIGRATION_SLOT_FROZEN = NO and re-measures at SYNC_POINT.
+  {
+    authorityId: 'HPO-ODS-W2-17',
+    branch: 'codex/w2-b5-r1',
+    patterns: ['db/migrations/**', 'db/prepared/journal/**', 'db/prepared/checkpoint-b0/observation.sql'],
+  },
 ]
 
 export interface ProtectedGrantResolution {

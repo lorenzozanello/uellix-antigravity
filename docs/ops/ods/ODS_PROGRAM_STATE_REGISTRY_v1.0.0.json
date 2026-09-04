@@ -117,6 +117,52 @@
       "fableEligible": false,
       "auditClass": "FOCUSED_OPUS",
       "dbWriting": true
+    },
+    {
+      "id": "W2-B5",
+      "description": "Wave 2 batch B5 (FIBIU-17 SROI_READINESS_MODEL_v1.0.0 and FIBIU-18 SROI_SENSITIVITY_MODEL_v1.0.0) - governed models. FIBIU-17 and FIBIU-18 are PARALLEL; the batch requires TWO independent reviews that may not substitute for one another: the mandatory FIBIU-18 Opus review and the focused B5 closure audit.",
+      "authority": {
+        "type": "json-field",
+        "ref": "codex/w2-b5-authority-r1",
+        "path": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json",
+        "field": "final_state",
+        "closedValues": [
+          "W2_B5_AUTHORITY_FROZEN_WAITING_FOR_IMPLEMENTATION"
+        ]
+      },
+      "implementation": {
+        "type": "paths-exist",
+        "ref": "codex/w2-b5-r1",
+        "paths": [
+          "docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+          "docs/ops/wave2/W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0.json",
+          "tests/w2-b5-governance.test.ts",
+          "tests/postgres/b5-completeness.pg.test.ts"
+        ]
+      },
+      "audit": {
+        "type": "json-field",
+        "ref": "codex/w2-b5-r1",
+        "path": "docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+        "field": "closure.W2_B5",
+        "closedValues": [
+          "CLOSED"
+        ]
+      },
+      "integrationTargets": [
+        "integration/commercial-v1"
+      ],
+      "productBranch": "feature/sprint-0-foundation",
+      "dependsOn": [
+        "W2-B4"
+      ],
+      "externalPreconditions": [
+        "P1A_FULL_BOOTSTRAP_CLOSED"
+      ],
+      "executionClass": "B",
+      "fableEligible": false,
+      "auditClass": "FOCUSED_OPUS",
+      "dbWriting": true
     }
   ]
 }
