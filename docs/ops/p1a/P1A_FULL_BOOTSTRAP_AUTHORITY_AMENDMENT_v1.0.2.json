@@ -1,0 +1,286 @@
+{
+  "package_id": "P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_SINGLE_PATH_IMPLEMENTATION_SURFACE_WIDENING",
+  "materialization_step": "HPO-ODS-W2-15",
+  "GRANT_ID": "HPO-ODS-W2-15",
+  "hpo_mission_id": "P1A-V1_0_2-MINIMAL-AUTHORITY-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_id": "P1A-DATABASE-ROLE-SAFETY-AUTHORITY-GAP-HPO-R1",
+  "materialization_date": "2026-09-04",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json",
+  "test_manifest": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json",
+
+  "amends": {
+    "predecessor_authority": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json",
+    "predecessor_amendment": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "predecessor_grant_ids": ["HPO-ODS-W2-11", "HPO-ODS-W2-13"],
+    "relationship": "APPEND_ONLY_AMENDMENT",
+    "predecessor_bytes_unchanged": true,
+    "measured_predecessor_blobs_at_BASE_SHA": {
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json": "a45558515842495550bc28dd17de1981e45c23e6",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json": "f28d44b2b0931cfd20a466175ab3e8deb85dda99",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json": "02f56247b8f82431b1ae0b90114d6d26faaeba32"
+    },
+    "statement": "This amendment does NOT edit, rewrite, restate or reinterpret P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json or P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json. Both remain byte-identical and controlling for everything this amendment does not explicitly extend. It EXTENDS the combined closed-world implementation surface by exactly ONE unprotected path and changes nothing else.",
+    "supersedes": null,
+    "refines": {
+      "P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json": [
+        "authorized_additional_future_implementation_surface.unprotected (extended by exactly one path; closed world preserved)",
+        "authorized_additional_future_implementation_surface.closed_world (its STOP_FOR_AUTHORITY_DELTA branch is hereby taken)"
+      ]
+    }
+  },
+
+  "purpose": "Close, append-only and prospectively, a single measured authority gap in the combined P1A implementation surface: tests/database-role-safety.test.ts is enumerated in NEITHER v1.0.0 nor v1.0.1 — neither as authorized nor as explicitly forbidden — yet the successor contract v1.0.0 itself freezes makes a narrowly bounded adjustment to that file mechanically unavoidable. This amendment authorizes that ONE path and nothing else. It creates no implementation code, no SQL, no test and no dependency change, and writes exactly two files.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.13, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json, P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through HPO-ODS-W2-14 are FROZEN_UNCHANGED. The frozen A/B/C/D executor taxonomy in ODS_V1_AUTHORITY_v1.0.0.json model_executor_routing is UNCHANGED and UNEXTENDED. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is UNCHANGED and this amendment adds NO entry to the PROTECTED_GRANTS registry. It touches no db/prepared file, no migration, no package.json, no lockfile, no workflow and no implementation script. It does NOT edit pull request #59 or any commit on its branch.",
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-p1a-database-role-safety-authority-r1",
+    "branch": "codex/p1a-database-role-safety-authority-r1",
+    "BASE_SHA": "696243f702f0feab155b1bd7411bb211f50f5a89",
+    "BASE_TREE": "338675e158ec4669e5f6eda431731174eaf6c585",
+    "integration_branch": "integration/commercial-v1",
+    "integration_baseline_sha": "696243f702f0feab155b1bd7411bb211f50f5a89",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "p1a_implementation_pr": 59,
+    "p1a_implementation_pr_state": "OPEN, isDraft=true, mergedAt=null, head=103cc67390beb8d63c4e9d708c68c644c9ceb0b4 — verified UNMERGED before any file was written. This amendment does not edit that pull request, its branch or any of its commits.",
+    "controller_live_immutable_count_at_BASE_SHA": 24,
+    "hard_gate": "PASS — verified BEFORE any branch, worktree or file was created. (1) origin/integration/commercial-v1 = 696243f702f0feab155b1bd7411bb211f50f5a89, unmoved since the PR #58 merge and reached only through the known P1A/Controller coordination sequence. (2) PR #59 unmerged and still a draft. (3) Both P1A predecessor authorities byte-identical, blob shas recorded under amends.measured_predecessor_blobs_at_BASE_SHA. (4) Controller IMMUTABLE_BY_CONVENTION live count = 24, measured directly from origin/integration/commercial-v1:scripts/ods-controller.ts. (5) origin/main UNCHANGED at 067e8c2f3ac9b5e843de3a35575182907b4365d4.",
+    "prestate_gate": "PASS — dedicated clean worktree created by `git worktree add -b codex/p1a-database-role-safety-authority-r1 <path> 696243f702f0feab155b1bd7411bb211f50f5a89`. Branch codex/p1a-database-role-safety-authority-r1, HEAD 696243f702f0feab155b1bd7411bb211f50f5a89, TREE 338675e158ec4669e5f6eda431731174eaf6c585, working tree clean under --untracked-files=all, all verified BEFORE any file was written. No rebase, no reset, no amend, no force-push."
+  },
+
+  "authority_gap_basis": {
+    "statement": "The combined v1.0.0 + v1.0.1 closed-world implementation surface holds exactly FIFTEEN paths. tests/database-role-safety.test.ts is not one of them, and is also absent from both prohibition lists. This is a genuine OMISSION, not an implied permission and not a permanent prohibition.",
+    "measured_combined_closed_world_at_BASE_SHA": {
+      "count": 15,
+      "v1_0_0_protected": [
+        "db/prepared/stella_local_0000_local_role_identity_bootstrap.sql",
+        "db/prepared/stella_0001_role_topology_bootstrap.sql",
+        "db/prepared/README.md"
+      ],
+      "v1_0_0_unprotected": [
+        "scripts/p1a-bootstrap-gate.ts",
+        "scripts/m2-disposable-pg-bootstrap.ts",
+        "package.json",
+        ".github/workflows/p1a-bootstrap-gate.yml",
+        "tests/p1a-bootstrap-gate.test.ts",
+        "docs/ops/p1a/P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0.json"
+      ],
+      "v1_0_1_unprotected": [
+        "db/hosted/forward-only-packages.ts",
+        "scripts/stella-r3-4-local-runner.ts",
+        "scripts/stella-r3-5-pg17-certify.ts",
+        "tests/prepared-stella-sql.test.ts",
+        "tests/stella-r3-5-pg17-certification.test.ts",
+        "tests/stella-insert-policy-probe-doctrine.test.ts"
+      ]
+    },
+    "omission_is_not_permission": "MEASURED: `grep -c 'database-role-safety'` returns 0 against BOTH P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json and P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json. The path appears in no authorized list and in no prohibition list. Under v1.0.1 authorized_additional_future_implementation_surface.closed_world, absence from the authorized list is the operative fact and the appearance of such a path in a diff is an UNEXPECTED_CHANGED_PATH STOP.",
+    "sibling_asymmetry_recorded": "v1.0.0 authorized_future_implementation_surface.explicitly_not_authorized DOES enumerate two members of the same test family — tests/database-target-safety.test.ts and tests/database-entrypoint-safety.test.ts — while naming neither this file nor any general tests/** rule. The authors were demonstrably aware of the family. That makes the omission of the third sibling a gap to be adjudicated, never a silent inclusion by family resemblance.",
+    "governed_remedy_taken": "v1.0.1 authorized_additional_future_implementation_surface.closed_world designates the remedy verbatim: 'If repository mechanics prove a further path genuinely necessary — protected or unprotected — that is STOP_FOR_AUTHORITY_DELTA, never a silent widening.' This amendment IS that delta.",
+    "ods_product_test_discipline": "ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment'. tests/database-role-safety.test.ts is an existing product test. That reservation is why this amendment carries a companion ODS maintenance addendum rather than standing alone, matching the two prior P1A precedents (v1.0.0 with ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json / HPO-ODS-W2-11, and v1.0.1 with ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json / HPO-ODS-W2-13)."
+  },
+
+  "necessity": {
+    "PATH_MECHANICALLY_REQUIRED": "YES",
+    "derivation_is_independent_of_any_implementation_diff": "The necessity below is derived ENTIRELY from (a) the frozen stella_0001_successor_contract in P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json and (b) the state of the two files at BASE_SHA. No implementation diff, commit or pull request is cited as its basis. The counterfactual measurement recorded afterwards is CORROBORATION of a conclusion already reached from frozen text, never its source.",
+    "step_1_frozen_contract": "P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json stella_0001_successor_contract.authorized_change, verbatim: 'ONLY the conversion of the two already-existing canonical grants — CREATE ON SCHEMA public (line 176) and USAGE ON SCHEMA auth (line 181) — from grant-producing behaviour into ASSERTIONS that db/prepared/stella_local_0000_local_role_identity_bootstrap.sql already established them.' assertion_semantics adds that the assertions must FAIL CLOSED and must 'never re-grant as a fallback'.",
+    "step_2_base_state_of_the_sql": "MEASURED at BASE_SHA — db/prepared/stella_0001_role_topology_bootstrap.sql:181 is exactly `GRANT USAGE ON SCHEMA auth TO uellix_owner;`, and :176 is `GRANT CREATE ON SCHEMA public TO uellix_owner;`. These are the two statements the contract names, at the line numbers it names.",
+    "step_3_base_state_of_the_test": "MEASURED at BASE_SHA — tests/database-role-safety.test.ts:278 declares `it('grants exactly one schema-level privilege outside public, and it is USAGE on auth', ...)`. It scans the stella_0001 source with the regex /\\b(GRANT|REVOKE)\\s+[A-Z, ]+\\s+ON\\s+SCHEMA\\s+(\\w+)[^;]*;/gi, filters out schema public, and then asserts at :284 `expect(outsidePublic).toHaveLength(1)` and at :285 that the survivor matches /GRANT\\s+USAGE\\s+ON\\s+SCHEMA\\s+auth\\s+TO\\s+uellix_owner/i.",
+    "step_4_deterministic_consequence": "The regex matches only GRANT/REVOKE statements. A fail-closed has_schema_privilege() assertion is neither. Therefore ANY implementation conforming to the frozen successor contract removes the sole non-public match, `outsidePublic` becomes length 0, and the assertion at :284 fails deterministically. The test's expectation is a HISTORICAL expectation that the authorized conversion makes false by construction. This conclusion follows from steps 1-3 alone.",
+    "counterfactual_measurement": {
+      "method": "Ephemeral, fully reverted. The authorized stella_0001 conversion was placed in a clean worktree alongside the UNMODIFIED BASE_SHA copy of tests/database-role-safety.test.ts, and `vitest run tests/database-role-safety.test.ts` was executed.",
+      "result_with_predecessor_test": "Tests 1 failed | 25 passed | 27 skipped (53). The single failure is 'grants exactly one schema-level privilege outside public, and it is USAGE on auth' — the assertion identified in step 3 and no other.",
+      "result_with_adjusted_test": "Tests 26 passed | 27 skipped (53). Zero failures.",
+      "conclusion": "Reverting this one test while keeping the authorized implementation makes CI fail deterministically on a false historical expectation, and no other control is disturbed. The delta is therefore MECHANICALLY REQUIRED, minimal, and confined to one assertion.",
+      "reversion_proof": "Both files were restored to their BASE_SHA blobs and the working tree verified clean before this artifact was written."
+    },
+    "authorized_adjustment_shape": "Narrowly bounded: update that ONE historical expectation so it asserts the fail-closed guard is present and the bare GRANT is absent, rather than the reverse. This mirrors the already-authorized adjustment to tests/prepared-stella-sql.test.ts under v1.0.1. No other assertion in the file may be weakened, skipped, deleted or rewritten."
+  },
+
+  "retention_disposition": {
+    "DISPOSITION": "AUTHORIZE_RETENTION_UNDER_PROSPECTIVE_NECESSITY",
+    "adjudicated_by": "P1A-DATABASE-ROLE-SAFETY-AUTHORITY-GAP-HPO-R1",
+    "revert_and_reapply_ceremony_required": "NO",
+    "candid_record": "The adjustment to tests/database-role-safety.test.ts was ALREADY WRITTEN on the unmerged branch codex/p1a-full-bootstrap-r1 (pull request #59) before this authority existed. That is recorded openly rather than elided. That fact is EXPLICITLY NOT the basis of this authorization: the basis is the frozen successor contract and the BASE_SHA state of the two files, as set out under necessity, which would hold identically if no implementation had ever been written.",
+    "why_this_is_not_a_retroactive_scope_inference": "The prohibition frozen in v1.0.0 and v1.0.1 is against inferring authorization FROM a diff — 'never a retroactive scope inference from the fact that it changed'. The clause in v1.0.1 authority_delta_basis.what_this_is_not ('This is not a retroactive scope inference from an observed diff') is immediately warranted there by 'No implementation has been written', which was a statement of that mission's factual posture, not a general rule that authority may never cover already-written unmerged work. The governing test is whether the necessity is derivable WITHOUT the diff. Here it is, and it was so derived.",
+    "why_a_revert_reapply_cycle_is_not_required": [
+      "Nothing has merged. integration/commercial-v1 is untouched by the unauthorized path, so the fail-closed guarantee is satisfied by ordering: this authority merges first.",
+      "Repository precedent: P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json prior_hpo_dispositions_reverified.remediation_record_R1 records that artifact being FAILED by an independent audit and corrected 'on the SAME unmerged PR #56 candidate and the SAME lineage identifiers' — new governed authority plus corrective commits on the same pull request, with no revert-and-reapply cycle and no history rewrite.",
+      "A revert commit followed by a byte-identical reapply commit adds two commits of permanent noise to the audit trail while adding no governance guarantee, and sits uneasily with the standing prohibition on historical evidence rewriting."
+    ],
+    "BINDING_CONDITIONS": {
+      "C1_authority_merges_first": "This authority pull request MUST merge into integration/commercial-v1 BEFORE pull request #59 merges. No exception. If #59 were to merge first, the retention disposition is void and the path reverts to an UNEXPECTED_CHANGED_PATH stop.",
+      "C2_necessity_from_frozen_contract": "The necessity is derived from the frozen stella_0001_successor_contract and the BASE_SHA state of the two files, never from the observed implementation diff. See necessity.derivation_is_independent_of_any_implementation_diff.",
+      "C3_candid_record": "This artifact records candidly that the path was already written on an unmerged branch, and states affirmatively that this fact is NOT the basis for authorization. See retention_disposition.candid_record.",
+      "C4_exactly_one_path": "Exactly ONE path is added to the combined closed world. A second existing product test — or any further path — is a fresh STOP_FOR_AUTHORITY_DELTA, never an extension of this one."
+    },
+    "all_four_conditions_are_conjunctive": "If any of C1 through C4 is not satisfied, this disposition degrades to the revert-then-prospective-authority-then-reapply sequence and this amendment does not authorize retention."
+  },
+
+  "authorized_additional_future_implementation_surface": {
+    "note": "Authorized for the SUCCESSOR mission P1A_FULL_BOOTSTRAP_IMPLEMENTATION_R1 only. This path is neither created nor modified by THIS mission. This list EXTENDS the v1.0.0 and v1.0.1 surfaces and does not replace them; every prior protected[] and unprotected[] entry remains in force verbatim. The combined surface remains CLOSED-WORLD.",
+    "ADDITIONAL_PATH_COUNT": 1,
+    "protected": [],
+    "protected_note": "NO new protected path and NO new protected grant. HPO-ODS-W2-11 is NOT widened by this amendment and its branch binding is unchanged.",
+    "unprotected": [
+      {
+        "path": "tests/database-role-safety.test.ts",
+        "status": "TO_BE_MODIFIED",
+        "requirement": "MECHANICALLY_REQUIRED",
+        "role": "Update the single historical expectation at :278-:286 so that it asserts the fail-closed has_schema_privilege('uellix_owner', 'auth', 'USAGE') guard is present in db/prepared/stella_0001_role_topology_bootstrap.sql and the bare GRANT USAGE ON SCHEMA auth TO uellix_owner is absent, rather than the reverse.",
+        "measured_justification": "See necessity — steps 1 through 4 plus the recorded counterfactual.",
+        "narrowness": "That ONE control only. No other assertion in this file may be weakened, skipped, deleted, renamed away or rewritten. No change to the file's helpers, its fixtures, its regex scanning approach for other sections, or any live-database control. The public-schema statements remain ordinary GRANT/REVOKE and the scan that finds them is unchanged."
+      }
+    ],
+    "combined_closed_world_after_this_amendment": {
+      "count": 16,
+      "statement": "The combined v1.0.0 + v1.0.1 + v1.0.2 surface is exhaustive at SIXTEEN paths. A path enumerated in none of the three is NOT authorized, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP. If repository mechanics prove a further path genuinely necessary — protected or unprotected — that is STOP_FOR_AUTHORITY_DELTA, never a silent widening."
+    },
+    "explicitly_still_not_authorized": [
+      "tests/database-target-safety.test.ts — enumerated as forbidden in v1.0.0 and untouched here",
+      "tests/database-entrypoint-safety.test.ts — same",
+      "any tests/** wildcard — no general test grant of any kind is created",
+      "any database, migration, prepared SQL or baseline path beyond the three already under HPO-ODS-W2-11",
+      "package.json, pnpm-lock.yaml or any dependency change",
+      "scripts/ods-scope.ts, tests/ods/ods-scope.test.ts — no registry change is required",
+      "scripts/ods-controller.ts, tests/ods/ods-controller.test.ts — NOT edited by this mission; their bounded future maintenance is funded by the companion addendum, not by this artifact",
+      "everything enumerated in v1.0.0 authorized_future_implementation_surface.explicitly_not_authorized and in v1.0.1 explicitly_still_not_authorized, unchanged"
+    ]
+  },
+
+  "pre_audit_scope_clarification": {
+    "IS_NEW_AUTHORIZATION": false,
+    "statement": "This section is a SCOPE CLARIFICATION derived from authority that already exists. It authorizes nothing. It is recorded so that work identified by the adversarial pre-audit is not mistaken for a further authority gap and does not trigger an unnecessary widening.",
+    "evidence_artifact": {
+      "path": "docs/ops/p1a/P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0.json",
+      "already_authorized_by": "P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json authorized_future_implementation_surface.unprotected",
+      "status_there": "TO_BE_CREATED",
+      "measured": "VERIFIED present in the v1.0.0 unprotected list at BASE_SHA, and VERIFIED absent from the pull request #59 tree — it remains to be created by the successor mission under existing authority.",
+      "no_new_authority_needed": true
+    },
+    "persistent_controls_may_use_already_authorized_paths": {
+      "paths": [
+        "scripts/p1a-bootstrap-gate.ts",
+        "tests/p1a-bootstrap-gate.test.ts",
+        "scripts/stella-r3-4-local-runner.ts",
+        "tests/stella-r3-5-pg17-certification.test.ts",
+        "tests/prepared-stella-sql.test.ts"
+      ],
+      "measured": "ALL FIVE VERIFIED present in the combined v1.0.0 + v1.0.1 authorized surface at BASE_SHA. Implementing persistent P1A controls inside them requires NO further path widening.",
+      "not_an_adjudication": "This records SCOPE only. Whether any such control actually PASSES, and whether it satisfies the test manifest, is reserved entirely to the independent full P1A audit and is neither asserted nor prejudged here."
+    },
+    "stop_condition": "Had any of the six facts above proved mechanically untrue, this mission's instruction was STOP rather than proceed. All six were verified true before this artifact was written."
+  },
+
+  "protected_grant_required": false,
+  "protected_grant_rationale": "MEASURED by replaying the repository classifier itself. scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS at BASE_SHA is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. classifyPaths(['tests/database-role-safety.test.ts'], DEFAULT_PROTECTED_PATTERNS, ['tests/database-role-safety.test.ts']) returns protectedViolations=[], unauthorized=[], grantAuthorized=[], nonCanonicalProtectedPaths=[] and ok=['tests/database-role-safety.test.ts']. The same call for this mission's own two authority paths under --allow docs/ops/p1a/** docs/ops/ods/** also returns ok with no violation. Therefore NO entry in the PROTECTED_GRANTS registry is created, required or implied; scripts/ods-scope.ts is NOT modified; the assertion tests/ods/ods-scope.test.ts:317 expect(PROTECTED_GRANTS.length).toBe(8) is untouched; and the classifier is NOT relaxed.",
+  "protected_grant": null,
+  "PROTECTED_GRANTS_CHANGED": false,
+
+  "controller_cross_lane_disposition": {
+    "CONTROLLER_EFFECT": "BOUNDED_SUCCESSOR_MAINTENANCE_REQUIRED_FOR_THE_COMPANION_ADDENDUM_ONLY",
+    "controller_edited_by_this_mission": false,
+    "breaks_anything_now": false,
+    "statement": "This amendment's own path is docs/ops/p1a/**, which is NOT an entry in the Controller's IMMUTABLE_BY_CONVENTION closed world — that list enumerates docs/ops/ods/ artifacts only. This artifact therefore imposes no Controller obligation of its own. The companion ODS addendum docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json DOES impose one, and funds it prospectively itself.",
+    "CONTROLLER_CURRENT_COUNT": 24,
+    "CONTROLLER_FUTURE_COUNT": 25,
+    "delta": "+1, self-inclusion of the companion addendum only. v1.0.12 and v1.0.13 are already enumerated as of the PR #58 merge.",
+    "no_second_controller_authority_artifact": "The companion addendum funds its own enumeration, following the ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json precedent. No separate Controller-authority artifact is created or required, and no fixed-point churn is introduced."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json"
+    ],
+    "both_are_new_files": true,
+    "no_implementation_code": true,
+    "no_sql": true,
+    "no_tests": true,
+    "no_package_json": true,
+    "no_lockfile": true,
+    "no_controller_edit": true,
+    "no_db_prepared_file_changed": true,
+    "no_migration_changed": true,
+    "no_pr59_edit": true,
+    "closed_world": "This list is EXHAUSTIVE. A path not enumerated here is NOT authorized for this mission, and its appearance in the diff is an UNEXPECTED_CHANGED_PATH stop — never a retroactive authorization on the grounds that it 'changed anyway'."
+  },
+
+  "integration_freeze": {
+    "INTEGRATION_FREEZE_FOR_P1A": "ON",
+    "meaning": "Between the PR #58 merge and the independent closure of the P1A candidate, no unrelated Commercial, tenancy or platform implementation pull request should merge into integration/commercial-v1. This is a COORDINATION freeze, not a product-authority change. Read-only work continues unrestricted.",
+    "exception": "While the freeze is ON, only (a) this authority pull request and (b) the bounded Controller 24 -> 25 maintenance funded by the companion addendum may merge before P1A closure.",
+    "explicitly_still_frozen": "Commercial, tenancy and platform implementation."
+  },
+
+  "closure_evidence_precedence": {
+    "RULE": "CLOSURE_EVIDENCE_SUPERSEDES_FROZEN_SELF_STATUS",
+    "adjudicated_by": "P1A-DATABASE-ROLE-SAFETY-AUTHORITY-GAP-HPO-R1",
+    "statement": "A READY_FOR_MERGE field embedded in an immutable, append-only materialization artifact is a HISTORICAL SNAPSHOT of that artifact's state at materialization time. It is not a live merge gate. Later closure evidence — an independent audit PASS, a merge object, and containment in integration — supersedes it.",
+    "measured_instances": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json:217, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json:170 and docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json:449 each carry READY_FOR_MERGE='NO' and a next_gate naming an audit that has since executed and passed; all three are in the integration tree today.",
+    "why": "These artifacts are append-only and by construction cannot be updated after merge. Reading a frozen self-status as a live gate would render every merged authority permanently un-mergeable, which is a logical impossibility.",
+    "do_not_reopen": "The completed audits of pull requests #56, #57 and #58 are NOT reopened merely because their materialization artifacts are immutable."
+  },
+
+  "full_audit_rule": {
+    "required_audit": "FULL_OPUS_INDEPENDENT_ADVERSARIAL_CLOSURE_AUDIT of the P1A implementation, unchanged from v1.0.0 audit_requirement.",
+    "NEW_CHAT_REQUIRED": true,
+    "NEW_WORKTREE_REQUIRED": true,
+    "AUDIT_MODEL": "OPUS_HIGH",
+    "AUDIT_CLASS": "FULL_INDEPENDENT_ADVERSARIAL_CLOSURE_AUDIT",
+    "cannot_begin_before": [
+      "this amendment and its companion ODS addendum are merged into integration/commercial-v1",
+      "pull request #59 has synchronized from the resulting integration head by an ORDINARY MERGE COMMIT — never a rebase, amend, squash or force-push",
+      "the already-authorized evidence artifact docs/ops/p1a/P1A_FULL_BOOTSTRAP_EVIDENCE_v1.0.0.json exists",
+      "the persistent controls required by P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json are present",
+      "the candidate's exact SHA and tree are frozen and supplied to the auditor"
+    ],
+    "closed_world_for_that_audit": "SIXTEEN paths — the combined v1.0.0 + v1.0.1 + v1.0.2 surface, including the previously-authorized evidence artifact once it is finally created.",
+    "base_rule": "The audit's base is the integration head AFTER this authority merges, measured at audit time and never assumed."
+  },
+
+  "audit_requirement": {
+    "required_audit": "P1A_DATABASE_ROLE_SAFETY_AUTHORITY_FOCUSED_AUDIT_R1",
+    "when": "Before this amendment may be marked ready or merged, and before pull request #59 may merge.",
+    "AUDIT_MODEL": "OPUS_HIGH",
+    "AUDIT_CLASS": "FOCUSED_INDEPENDENT_AUTHORITY_AUDIT",
+    "independence_conditions": [
+      "a clean conversation carrying no materialization context",
+      "an independent worktree",
+      "no reuse of this mission's own evidence claims as proof",
+      "the auditor must not be the actor that adjudicated the gap in P1A-DATABASE-ROLE-SAFETY-AUTHORITY-GAP-HPO-R1 nor the actor that wrote this artifact"
+    ],
+    "must_specifically_challenge": [
+      "that tests/database-role-safety.test.ts really is absent from BOTH v1.0.0 and v1.0.1, by re-deriving the fifteen-path closed world directly rather than trusting authority_gap_basis",
+      "that the necessity is genuinely derivable from the frozen successor contract WITHOUT reference to pull request #59, by re-running the counterfactual independently",
+      "that exactly ONE path is added and no tests/** wildcard, database, prepared SQL, package or lockfile authority is created",
+      "that the four binding retention conditions are conjunctive and that C1 ordering is actually enforceable",
+      "that the companion addendum's Controller obligation is exactly 24 -> 25 with self-inclusion only",
+      "that no protected grant is created and PROTECTED_GRANTS remains at eight entries",
+      "that neither P1A predecessor authority was edited, by blob comparison against the shas recorded under amends"
+    ],
+    "no_self_certification": "Per ODS_CONTROLLER_AUTHORITY_v1.0.0.json model_and_audit_routing.audit_routing.self_certification_prohibition, the audit mode may be ESCALATED but never de-escalated, and no actor may declare on its own judgment that this node needs less audit than this authority specifies.",
+    "this_authority_also_requires_audit": "This artifact is opened as a DRAFT pull request and is not marked ready and not merged by this mission."
+  },
+
+  "risks_and_open_findings": {
+    "R1": "ORDERING RISK. If pull request #59 were merged before this authority, binding condition C1 fails and the retention disposition is void. Mitigation: #59 is a draft, the integration freeze is ON with an exception covering only this authority and the Controller maintenance, and the P1A full audit cannot begin before this merges.",
+    "R2": "TRANSITIONAL CONTROLLER COVERAGE WINDOW. Between this artifact's merge and the Controller 24 -> 25 maintenance, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json exists in the tree while the guard still ends at v1.0.13. ACCEPTED and precedented by v1.0.10, v1.0.11, v1.0.12 and v1.0.13: bounded, CI-green, no runtime effect, CONTROLLER_DB_EXECUTION DISABLED, no production promotion.",
+    "R3": "SCOPE CREEP PRESSURE. A single authorized product-test adjustment invites a second. Binding condition C4 and the sixteen-path closed world exist to make any further widening a loud STOP_FOR_AUTHORITY_DELTA rather than a quiet extension.",
+    "R4": "PRE-AUDIT SCOPE CLARIFICATION MISREAD. pre_audit_scope_clarification could be misread as authorizing the work it describes. It authorizes nothing; IS_NEW_AUTHORIZATION is false and the technical adequacy of that work is reserved to the independent full P1A audit."
+  },
+
+  "final_state": "P1A_DATABASE_ROLE_SAFETY_SUCCESSOR_TEST_PATH_AUTHORIZED_SINGLE_PATH_CLOSED_WORLD_SIXTEEN_PENDING_INDEPENDENT_FOCUSED_AUTHORITY_AUDIT",
+  "ADDITIONAL_IMPLEMENTATION_PATH_COUNT": 1,
+  "MAIN_EFFECT": "NONE",
+  "MAIN_UNCHANGED": true,
+  "PRODUCTION_PROMOTION": "NO",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "READY_FOR_MERGE": "NO",
+  "next_gate": "P1A_DATABASE_ROLE_SAFETY_AUTHORITY_FOCUSED_AUDIT_R1"
+}
