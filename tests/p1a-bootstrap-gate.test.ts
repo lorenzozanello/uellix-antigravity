@@ -30,8 +30,8 @@
 
 import { describe, it, expect } from 'vitest'
 import { spawn } from 'node:child_process'
-import { readFileSync, existsSync, writeFileSync } from 'node:fs'
-import { createHash } from 'node:crypto'
+import { readFileSync, existsSync, writeFileSync, unlinkSync } from 'node:fs'
+import { createHash, randomUUID } from 'node:crypto'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import postgres from 'postgres'
@@ -227,15 +227,83 @@ describe.skipIf(!REAL_DOCKER)('P1A-N5 — a REAL SIGTERM during the credential w
       const exitPromise = new Promise<number | null>((resolveExit) => {
         child.on('exit', (code) => resolveExit(code))
       })
-      await exitPromise
+      const exitCode = await exitPromise
 
       for (const p of ENV_FILES) {
         expect(existsSync(p), `${p} must be restored to absent after SIGTERM restoration`).toBe(false)
       }
 
+      // Non-vacuity: the finally-normal-return path (20s idle wait, then
+      // 'P1A_SIGTERM_PROBE_NOT_KILLED') and the governed-SIGTERM path
+      // (installP1aSignalCleanup's handler, process.exit(130)) are
+      // DIFFERENT outcomes with the SAME env-absence postcondition. Without
+      // these two assertions a swallowed signal that let the probe run to
+      // its idle-timeout branch would restore env identically and this test
+      // would stay green despite the governed handler never having fired.
+      expect(stdoutBuf, 'the untouched idle-timeout branch must never fire on a real SIGTERM').not.toContain('P1A_SIGTERM_PROBE_NOT_KILLED')
+      expect(exitCode, 'installP1aSignalCleanup exits 130 (128 + SIGTERM=15) only via its own governed handler').toBe(130)
+
       const leftover = spawnSync('docker', ['ps', '-a', '--filter', 'name=uellix-p1a-bootstrap-gate-SIGTERM-PROBE', '--format', '{{.Names}}'], { encoding: 'utf8' })
       const leftoverNames = (leftover.stdout ?? '').trim()
       expect(leftoverNames, `expected zero leftover SIGTERM-PROBE containers, found: ${leftoverNames}`).toBe('')
+    },
+    90000,
+  )
+
+  it(
+    'SIGTERM delivered mid-window restores PRE-EXISTING env bytes exactly, not merely absence — proves restoreEnvFiles\' existed=true branch under a real signal, not just its existed=false branch',
+    async () => {
+      // Seed synthetic pre-existing content BEFORE the probe starts, so
+      // snapshotEnvFiles() (called inside withEnvRestoreAndSignalVisibility,
+      // which wraps only the rotation+ready+wait window) captures
+      // existed=true with these exact bytes — the branch the other SIGTERM
+      // test cannot exercise, because it starts from genuine absence.
+      const seeded = new Map(ENV_FILES.map((p) => [p, Buffer.from(`# PRE_EXISTING_SIGTERM_WITNESS ${p}\nMARKER=${randomUUID()}\n`, 'utf8')]))
+      for (const [p, bytes] of seeded) writeFileSync(p, bytes)
+
+      let child
+      try {
+        child = spawn('node', ['--import', 'tsx', 'scripts/p1a-bootstrap-gate.ts', 'sigterm-probe'], {
+          cwd: REPO_ROOT,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        })
+
+        let stdoutBuf2 = ''
+        let sawReady2 = false
+        const readyPromise2 = new Promise<void>((resolveReady, rejectReady) => {
+          const timeout = setTimeout(() => rejectReady(new Error('timed out waiting for P1A_SIGTERM_PROBE_READY')), 60000)
+          child!.stdout.on('data', (chunk: Buffer) => {
+            stdoutBuf2 += chunk.toString('utf8')
+            if (!sawReady2 && stdoutBuf2.includes('P1A_SIGTERM_PROBE_READY')) {
+              sawReady2 = true
+              clearTimeout(timeout)
+              resolveReady()
+            }
+          })
+          child!.on('exit', () => {
+            if (!sawReady2) {
+              clearTimeout(timeout)
+              rejectReady(new Error(`probe exited before signalling ready; stdout so far:\n${stdoutBuf2}`))
+            }
+          })
+        })
+
+        await readyPromise2
+        child.kill('SIGTERM')
+        const exitCode2 = await new Promise<number | null>((resolveExit) => child!.on('exit', (code: number | null) => resolveExit(code)))
+
+        expect(stdoutBuf2).not.toContain('P1A_SIGTERM_PROBE_NOT_KILLED')
+        expect(exitCode2).toBe(130)
+
+        for (const [p, bytes] of seeded) {
+          expect(existsSync(p), `${p} must exist (restored), not merely be absent`).toBe(true)
+          expect(readFileSync(p).equals(bytes), `${p} must be restored BYTE-IDENTICAL to its pre-existing content, not the rotated credential content`).toBe(true)
+        }
+      } finally {
+        for (const p of ENV_FILES) {
+          try { if (existsSync(p)) unlinkSync(p) } catch { /* best-effort cleanup */ }
+        }
+      }
     },
     90000,
   )
