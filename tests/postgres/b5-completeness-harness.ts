@@ -24,13 +24,15 @@
 //      FIBC-022-mandated disposition transition; readiness_assessments and
 //      sensitivity_scenarios are append-only, no UPDATE grant, no policy);
 //   6. a two-tenant fixture (org A: analyst uA + viewer uV; org B: analyst
-//      uB), extended with one readiness_assessments row, one
-//      sensitivity_candidates row (disposition=pending) and one
-//      sensitivity_scenarios row per organization, so every cross-tenant
-//      probe below has a real, pre-existing "other org's row" to prove it
-//      cannot read — plus a second, assessment-less run per org (scratch
-//      space) so INSERT probes never collide with a unique index already
-//      bound by the fixture row.
+//      uB), extended with one readiness_assessments row, TWO
+//      sensitivity_candidates rows (one disposition=pending, one already
+//      dispositioned variation_required) and one sensitivity_scenarios row
+//      per organization, so every cross-tenant probe below has a real,
+//      pre-existing "other org's row" to prove it cannot read — plus a
+//      second, assessment-less run per org (scratch space) so INSERT probes
+//      never collide with a unique index already bound by the fixture row,
+//      and a legacy sroi_run_reviews row per org carrying a pre-B5 manual
+//      readiness_score, for the FIBDB-016 stage-B marking proof (PG-POS-3).
 //
 // READ THIS BEFORE CITING A GREEN RUN: the hosted-fidelity block is a MODEL
 // of the hosted posture, not a measurement of it — see
@@ -69,8 +71,18 @@ export const IDS = {
   raB: '6b100000-0000-4000-8000-0000000006b1',
   scA: '7a100000-0000-4000-8000-0000000007a1',
   scB: '7b100000-0000-4000-8000-0000000007b1',
+  // A second candidate per org, already dispositioned variation_required —
+  // postgres_requirements requires "one pending and one variation_required
+  // sensitivity_candidates row" per organization.
+  scA2: '7a100000-0000-4000-8000-0000000007a2',
+  scB2: '7b100000-0000-4000-8000-0000000007b2',
   ssA: '8a100000-0000-4000-8000-0000000008a1',
   ssB: '8b100000-0000-4000-8000-0000000008b1',
+  // FIBDB-016 stage B (PG-POS-3) — a legacy sroi_run_reviews row carrying a
+  // pre-B5 manual readiness_score, one per org, proving the column and its
+  // data survive stage-B marking untouched.
+  srrA: '9a100000-0000-4000-8000-0000000009a1',
+  srrB: '9b100000-0000-4000-8000-0000000009b1',
 } as const
 
 const ROLE_PRELUDE = `
@@ -164,13 +176,24 @@ INSERT INTO public.readiness_assessments (id, organization_id, project_id, calcu
   ('${IDS.raA}','${IDS.oA}','${IDS.pA}','${IDS.rA1}','1.0.0','60.00','partial_preparation','{}','[]','${IDS.uA}'),
   ('${IDS.raB}','${IDS.oB}','${IDS.pB}','${IDS.rB1}','1.0.0','60.00','partial_preparation','{}','[]','${IDS.uB}');
 
--- FIBIU-18 fixture rows, one per organization.
+-- FIBIU-18 fixture rows, one per organization -- one pending, one already
+-- dispositioned variation_required (postgres_requirements).
 INSERT INTO public.sensitivity_candidates (id, organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, sensitivity_model_version, created_by) VALUES
   ('${IDS.scA}','${IDS.oA}','${IDS.pA}','${IDS.rA1}','methodological_filter:x:deadweight','methodological_filter','{}','0','pending','1.0.0','${IDS.uA}'),
   ('${IDS.scB}','${IDS.oB}','${IDS.pB}','${IDS.rB1}','methodological_filter:x:deadweight','methodological_filter','{}','0','pending','1.0.0','${IDS.uB}');
+INSERT INTO public.sensitivity_candidates (id, organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, rationale, dispositioned_by, dispositioned_at, sensitivity_model_version, created_by) VALUES
+  ('${IDS.scA2}','${IDS.oA}','${IDS.pA}','${IDS.rA1}','methodological_filter:x:attribution','methodological_filter','{}','10','variation_required','Fixture rationale A','${IDS.uA}',now(),'1.0.0','${IDS.uA}'),
+  ('${IDS.scB2}','${IDS.oB}','${IDS.pB}','${IDS.rB1}','methodological_filter:x:attribution','methodological_filter','{}','10','variation_required','Fixture rationale B','${IDS.uB}',now(),'1.0.0','${IDS.uB}');
 INSERT INTO public.sensitivity_scenarios (id, organization_id, project_id, calculation_run_id, scenario_kind, candidate_ids, modified_inputs, reason, sensitivity_model_version, calculation_engine_version, result_json, base_result_json, selected_by, created_by) VALUES
   ('${IDS.ssA}','${IDS.oA}','${IDS.pA}','${IDS.rA1}','one_at_a_time','[]','[]','Fixture scenario A','1.0.0','1.0.0','{}','{}','${IDS.uA}','${IDS.uA}'),
   ('${IDS.ssB}','${IDS.oB}','${IDS.pB}','${IDS.rB1}','one_at_a_time','[]','[]','Fixture scenario B','1.0.0','1.0.0','{}','{}','${IDS.uB}','${IDS.uB}');
+
+-- FIBDB-016 stage B (PG-POS-3) -- a legacy sroi_run_reviews row per org
+-- carrying a pre-B5 manual readiness_score, proving the column and its data
+-- survive stage-B marking untouched.
+INSERT INTO public.sroi_run_reviews (id, organization_id, project_id, calculation_run_id, reviewer_id, status, readiness_score, created_by) VALUES
+  ('${IDS.srrA}','${IDS.oA}','${IDS.pA}','${IDS.rA1}','${IDS.uA}','draft',75,'${IDS.uA}'),
+  ('${IDS.srrB}','${IDS.oB}','${IDS.pB}','${IDS.rB1}','${IDS.uB}','draft',75,'${IDS.uB}');
 `
 
 export interface SetupManifest {
