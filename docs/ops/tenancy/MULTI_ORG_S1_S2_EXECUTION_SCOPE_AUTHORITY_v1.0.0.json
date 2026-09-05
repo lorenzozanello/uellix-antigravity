@@ -1,0 +1,486 @@
+{
+  "package_id": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTION_SCOPE_SUCCESSOR_AUTHORITY_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "mission_id": "MULTIORG-S1-S2-FIRST-EXECUTION-AUTHORITY-R1",
+  "GRANT_ID": "HPO-ODS-W2-20",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json",
+  "materialization_date": "2026-09-05",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "source_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+  "source_test_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+  "supersedes": null,
+  "refines": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json - REFINES ONLY, never supersedes. Every doctrinal decision in that authority (MO-01..MO-12, SS-01..SS-03, PI-3, PI-4, PI-9) remains controlling and is NOT restated here. This artifact adds exactly one thing that authority deliberately deferred: the EXECUTABLE SCOPE of its first implementation batch.",
+
+  "anchors": {
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-stella-multiorg-s1-s2-execution-authority-r1",
+    "branch": "codex/multiorg-s1-s2-execution-authority-r1",
+    "START_HEAD": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+    "LATEST_REMOTE_HEAD": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+    "INTEGRATION_TREE": "e7f3a1e4fd8c4c8fe5a90cc02bc63c39ac978286",
+    "integration_branch": "integration/commercial-v1",
+    "start_head_equals_latest_remote_head": true,
+    "intervening_delta": "NONE. `git log HEAD..origin/integration/commercial-v1` returned zero commits after `git fetch origin --prune`.",
+    "controller_live_immutable_count_at_START_HEAD": 29,
+    "protected_grants_count_at_START_HEAD": 10,
+    "default_protected_patterns_count_at_START_HEAD": 7,
+    "source_authority_AS_OF_HEAD": "d98cfb7 (the tenancy authority's own AS_OF_HEAD lineage; its measurements are re-verified below rather than carried forward)"
+  },
+
+  "WHY_THIS_ARTIFACT_IS_REQUIRED": {
+    "rule": "A successor artifact is created ONLY where a measured gap makes the existing authority insufficient to execute. Three gaps were measured; each is falsifiable.",
+    "GAP_1_TARGET_ONLY": {
+      "measured": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json TARGET_SCHEMA.classification reads 'TARGET_ONLY - no migration ordinal, no prepared-unit id, and no baseline-manifest position is allocated by this authority. An implementing mission allocates those under its own ODS grant.'",
+      "consequence": "That authority cannot, by its own terms, be the artifact that freezes executable scope. Something must, and an ODS maintenance addendum is INSTRUCTION_ONLY over paths - it is not the place for schema/backfill/cookie semantics."
+    },
+    "GAP_2_CARRIER_DEFERRED": {
+      "measured": "TARGET_SCHEMA.founder_cardinality_carrier.classification = 'FUTURE_MEASUREMENT_REQUIRED', and its target string contains the literal unresolved placeholder '<self_service_provenance predicate>'.",
+      "consequence": "The single most dangerous decision in S1 is explicitly unresolved in the source authority. It is resolved here against the live schema, as that authority instructs ('MUST be chosen against the live schema, not asserted here')."
+    },
+    "GAP_3_S2_ALONE_UNCOVERED": {
+      "measured": "MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json is node_or_batch='batch' covering S1..S8. Its ONLY S2-tagged control is P-3. Every control that would catch carrier MISUSE - N-1 (carrier naming a non-member organization) and N-2 (revocation latency) - is tagged S3, and M-3/M-4 are S3/S4.",
+      "consequence": "The batch manifest silently assumes S2 and S3 land together. This mission ships S2 WITHOUT S3, so the batch manifest alone does not prove S2-alone safety. The S2 INERTNESS controls added below close exactly that hole and nothing wider.",
+      "honesty_note": "This is a gap in the PROBE, not a defect in the source authority's doctrine. The doctrine is correct and unchanged."
+    },
+    "what_is_NOT_duplicated": "No product doctrine, no security doctrine, no ratification, no failure code and no DAG node definition is restated here. Where this artifact needs one it CITES it."
+  },
+
+  "LINEAGE": {
+    "NEXT_ODS_DERIVATION": "MECHANICAL. Highest ODS maintenance addendum present on disk and in the live Controller at START_HEAD = v1.0.18. Next ordinal = v1.0.19. Verified absent: `git rev-list --all --objects | grep ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json` returns ZERO, and `git log --all --diff-filter=A -- <that path>` returns nothing, so v1.0.19 has never existed in any reachable tree in repository history.",
+    "NEXT_ODS_ALLOCATED": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json",
+    "NEXT_HPO_DERIVATION": {
+      "method": "MECHANICAL, from two independently measured invariants - never from the prompt, and never inherited from the v1.0.18 prediction.",
+      "invariant_1_offset": "GRANT_ID ordinal === addendum patch version + 1. Measured across every addendum that carries a GRANT_ID: v1.0.9->W2-10, v1.0.10->W2-11, v1.0.11->W2-12, v1.0.12->W2-13, v1.0.13->W2-14, v1.0.14->W2-15, v1.0.15->W2-16, v1.0.16->W2-17, v1.0.17->W2-18, v1.0.18->W2-19. Ten of ten, zero exceptions. Therefore v1.0.19 -> HPO-ODS-W2-20.",
+      "invariant_2_series_is_not_wave_scoped": {
+        "question_raised": "Wave2 is no longer an open batch program. A reader may reasonably ask whether the 'W2' infix is a claim of Wave2 membership that has become false, which would make HPO-ODS-W2-20 the wrong identifier.",
+        "measured_answer": "The W2 series is the ODS GRANT-SERIES COUNTER, not a wave-membership claim. Proof by counterexample from live artifacts: ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json holds GRANT_ID HPO-ODS-W2-11 with node_authority docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json holds GRANT_ID HPO-ODS-W2-13 with node_authority docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json. Both are P1A-domain grants carrying W2-series identifiers. The series therefore ALREADY spans non-Wave2 domains, and did so while Wave2 was open.",
+        "conclusion": "Wave2's closure does not invalidate the series. Renaming the series here would FORK the ODS grant lineage and break the offset invariant that ten consecutive addenda rely on - a strictly worse outcome than continuing it.",
+        "falsifier": "Had any addendum carried a GRANT_ID whose infix tracked its node's program domain (for example an 'HPO-ODS-P1A-nn' for the P1A-anchored addenda), the series would be domain-scoped and this conclusion would be wrong. No such identifier exists in the repository."
+      },
+      "collision_check": "MEASURED. `git grep -l HPO-ODS-W2-20` across every reachable commit returns exactly TWO distinct paths - docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json and docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json - and in BOTH the identifier appears only inside must_close_before / enforcement / no_preallocation / consequence_for_that_lane clauses. Those are PROHIBITIONS, and each file says so in its own words ('Naming them in the two clauses above is a PROHIBITION, never an allocation'). HPO-ODS-W2-20 is never a GRANT_ID, never a materialization_step, and never an authorityId in the live PROTECTED_GRANTS registry (whose ten ids are HPO-ODS-W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17). It was UNALLOCATED and is allocated here for the first time."
+    },
+    "NEXT_HPO_ALLOCATED": "HPO-ODS-W2-20",
+    "predecessor_sequencing_rule_satisfied": {
+      "rule_cited": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json controller_sequencing_rule.enforcement: 'A mission that finds v1.0.18 unenumerated in the live Controller and attempts to allocate v1.0.19 or HPO-ODS-W2-20, or to declare W2-B5 closed, MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.'",
+      "measurement": "The rule triggers ONLY on 'finds v1.0.18 unenumerated'. Importing IMMUTABLE_BY_CONVENTION from the live scripts/ods-controller.ts at START_HEAD yields length === 29, exactly ONE entry containing 'v1.0.18', ZERO entries containing 'v1.0.19', and ZERO duplicates.",
+      "verdict": "v1.0.18 is ENUMERATED. The precondition is discharged by the rule's own terms and STOP_FOR_LINEAGE_SEQUENCING is NOT triggered.",
+      "third_clause_not_engaged": "The same rule also forbids DECLARING W2-B5 CLOSED while the gap stands. This mission declares nothing about W2-B5 closure - see PRESTATE_FINDINGS.WAVE2_STATUS."
+    },
+    "gate_E16_discharged": {
+      "gate": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json FUTURE_ODS_NEEDS_SYMBOLIC.NEXT_AVAILABLE_ODS_LINEAGE.blocking_gate = 'E16 - v1.0.17 is UNENUMERATED in scripts/ods-controller.ts (0 occurrences at AS_OF_HEAD)'.",
+      "measurement_now": "At START_HEAD, scripts/ods-controller.ts enumerates v1.0.17 (line 78) AND v1.0.18 (line 79). E16's stated condition is false.",
+      "verdict": "E16 DISCHARGED. This is the gate that blocked the whole S1..S8 DAG, and its discharge is what makes this mission possible.",
+      "note": "The source authority froze E16 as ACTIVE and its companion manifest froze the same dependency as UNKNOWN/BLOCKING. Both were correct at their own AS_OF_HEAD. Neither is edited here; they are superseded in fact by a later measurement, which is recorded rather than back-written."
+    },
+    "no_preallocation": "This artifact and its companion allocate NOTHING beyond v1.0.19 and HPO-ODS-W2-20. No v1.0.20, no HPO-ODS-W2-21, no migration ordinal, no prepared-unit id and no baseline-manifest position is reserved, named-as-allocated or pre-created. Where a following identifier is named anywhere in this package it is a PROHIBITION, never an allocation - the same form v1.0.15 through v1.0.18 used."
+  },
+
+  "PRESTATE_FINDINGS": {
+    "CONTROLLER_COUNT": 29,
+    "CONTROLLER_SET": 29,
+    "v1_0_18_exactly_once": true,
+    "WAVE2_STATUS": {
+      "declared_by_mission_prompt": "CLOSED",
+      "measured_verdict": "PARTIALLY_PROVABLE - reported rather than accepted, and NOT relied upon by this mission.",
+      "what_is_proven": "W2-B5 AUTHORITY is frozen; W2-B5 IMPLEMENTATION is integrated - merge a27c4a9 ('Merge pull request #70 from lorenzozanello/codex/w2-b5-r1') brought db/migrations/0064_fib_readiness_assessments.sql, 0065_fib_sensitivity_model.sql, the FIBIU-17/18 server actions and their tests onto integration/commercial-v1. Controller 29 enumerates v1.0.18, discharging the lineage interlock that v1.0.18 named as the sole gate on final B5 closure.",
+      "what_is_NOT_proven": "ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json defines the W2-B5 AUDIT stage as CLOSED only when docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json exists with closure.W2_B5 === 'CLOSED'. That file DOES NOT EXIST at START_HEAD (`ls` returns 'No such file or directory'). By the registry's own machine definition the W2-B5 audit stage is therefore NOT closed at this HEAD.",
+      "disposition": "RECORDED AS AN OPEN FINDING, NOT SILENTLY ACCEPTED AND NOT FABRICATED. This mission does NOT declare Wave2 or W2-B5 closed, and nothing in this package depends on that declaration.",
+      "why_it_does_not_block": "The gate that actually blocked this lane is E16 / the Controller enumeration interlock, not W2-B5 closure. E16 is discharged by direct measurement of the live Controller. A missing B5 closure-audit ARTIFACT is a Wave2-lane obligation; it neither grants nor withholds authority over the tenancy lane, and this package writes nothing Wave2 owns.",
+      "escalation": "If the lane coordinator intends 'Wave2 = CLOSED' to be a machine-checkable precondition of this package, the W2-B5 closure-audit artifact must be materialized under its own lineage. That is OUT OF SCOPE here and is not resolved."
+    },
+    "no_migration_ordinal_allocated_for_multiorg": "CONFIRMED. Highest migration on disk is db/migrations/0065_fib_sensitivity_model.sql. No 0066 exists and none is allocated by this artifact.",
+    "commercial_account_authority": "INTEGRATED but holds NO implementation grant. It is not an authority anchor for this lineage and does not own it. Measured: no PROTECTED_GRANTS entry names it, and its executable authority (merge 7e46f846) is authority-only."
+  },
+
+  "CANONICAL_NODES": {
+    "naming_discipline": "The canonical node names are taken verbatim from MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json S1_TO_S8_DAG. The informal shorthand in which 'S2' meant founded_by and 'S3a' meant the carrier/principal is NOT used anywhere in this package, and any artifact that uses it is describing a different numbering.",
+    "S1": {
+      "canonical_title": "Founder traceability",
+      "delivers": ["FOUNDED_BY", "FOUNDER_CARDINALITY", "BACKFILL"],
+      "resolves": ["C-5"],
+      "depends_on": [],
+      "IN_THIS_BATCH": true
+    },
+    "S2": {
+      "canonical_title": "Selected-organization session carrier",
+      "delivers": ["SESSION_SCOPE", "SELECTED_ORG_CARRIER"],
+      "resolves": ["C-4"],
+      "depends_on": [],
+      "IN_THIS_BATCH": true
+    },
+    "S3_EXCLUDED": {
+      "canonical_title": "Selected-organization request principal",
+      "IN_THIS_BATCH": false,
+      "question_the_mission_required_to_be_answered": "Does the canonical authority itself require S3 in order to make S2 functional or SAFE? If yes, S3 must join this batch. If no, it must not.",
+      "measured_answer": "NO. S3 is required to make the carrier USEFUL, never to make it SAFE.",
+      "safety_argument": {
+        "cited": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json REQUEST_REVALIDATION.preserved_mechanism: 'The existing per-request mechanism at db/identity-context.ts withDatabaseIdentityContext is genuine revalidation today and is PRESERVED (PI-4, PI-9). S3 changes WHAT is revalidated (membership in the selected organization) rather than WHETHER revalidation happens.'",
+        "consequence": "Per-request revalidation against live database state ALREADY happens at START_HEAD. It currently revalidates the pick-first membership (SI-2, lib/auth/database-context.ts:210/:219). Shipping S2 does not remove, weaken, bypass or race that mechanism, because S2 adds a cookie that NOTHING reads for authorization.",
+        "therefore": "The tenant-isolation posture after S2-alone is byte-for-byte the posture before S2-alone. S2 alone cannot be a security regression because it changes no authorization input.",
+        "the_condition_that_makes_this_true": "The carrier must be INERT. See S2.INERTNESS_RULE. If an implementing mission wires the carrier into principal construction, role resolution, RLS, a GUC or any capability check, this safety argument is VOID and that mission has silently performed S3 without its lineage."
+      },
+      "trust_model_objection_answered": {
+        "objection": "SELECTED_ORG_CARRIER.trust_model says a forged or stale cookie 'must produce a refusal, never data'. Does shipping the cookie without S3 violate that?",
+        "answer": "No. That clause governs what must happen when the carrier is CONSUMED as a scope. Under INERTNESS the carrier is never consumed as a scope, so there is no request in which a forged cookie could yield data: the pre-existing revalidation decides scope exactly as it does today and never consults the cookie. The obligation attaches to S3, which is where consumption begins, and it is carried forward unchanged as an S3 precondition.",
+        "residual_risk_stated_plainly": "The honest residual is not a data-exposure risk but a SEQUENCING risk - a later mission may consume the carrier without noticing that revalidation was never retargeted. Control NS2-4 exists to fail loudly in exactly that case."
+      },
+      "smallest_useful_batch_test": "S1+S2 is the smallest batch that delivers standalone value: S1 closes C-5 completely and independently, and S2 closes C-4's carrier half and is the sole hard prerequisite of S3. Adding S3 would pull in CP-5 (db/identity-context.ts) and lib/auth/database-context.ts, converting a two-lane parallel batch into a serial one and enlarging the blast radius the source authority itself records as FUTURE_MEASUREMENT_REQUIRED (REQUEST_PRINCIPAL.blast_radius)."
+    },
+    "also_excluded": "S3c, S4, S5, S6, S7, S8. No path, grant, test or schema element of any of them is authorized by this package."
+  },
+
+  "S1": {
+    "node": "S1 - Founder traceability",
+    "authority_controlling": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json FOUNDED_BY (traces_to MO-10, MO-11, MO-01) and TARGET_SCHEMA.organizations. NOT restated here.",
+
+    "S1_SCHEMA_SCOPE": {
+      "column": "organizations.founded_by uuid NULL REFERENCES users(id) ON DELETE RESTRICT",
+      "measured_absent_today": "grep for 'foundedBy|founded_by' in db/schema.ts returns 0 occurrences at START_HEAD. S1 is greenfield on this column.",
+      "nullable": "PERMANENTLY. MO-11 controls. An implementing mission MUST NOT add NOT NULL, a DEFAULT, a sentinel uuid or a backfill-to-placeholder as 'cleanup'.",
+      "unchanged": "Every existing column of organizations, including status, stripe_customer_id and stella_monthly_quota, is unchanged.",
+      "organization_members": "UNCHANGED. user_single_active_membership is NOT dropped, NOT altered and NOT made deferrable. DROP_LAST is an S7 obligation and S7 is not in this batch.",
+      "FK_DELETE": "ON DELETE RESTRICT. The source authority's escape_hatch permits SET NULL only if repository mechanics prove a blocking incompatibility, and only together with a compensating durable attribution record. If the implementing mission invokes the escape hatch it MUST record the exact source citation of the blocking path; a bare downgrade is a failure."
+    },
+
+    "S1_CARDINALITY": {
+      "requirement": "MO-01 - a subject may SELF-SERVICE-FOUND at most ONE organization.",
+      "compiler_warning_adjudicated": {
+        "warning": "LANE Z warned that a naive UNIQUE(founded_by) partial index may be insufficient to distinguish self-service founding from other provenance.",
+        "verdict": "WARNING UPHELD, AND STRONGER THAN STATED.",
+        "why_a_naive_index_is_wrong": "A partial unique index of the shape UNIQUE(founded_by) WHERE founded_by IS NOT NULL binds the COLUMN globally. FOUNDER_CARDINALITY.explicitly_not_implied forbids exactly that: the cardinality 'binds the SELF-SERVICE FOUNDING ACT, not the founded_by column globally', and explicitly permits additional organizations whose founded_by names the same subject through a NON-self-service path. Under the naive index, a platform-admin-created organization that honestly records its deterministic provenance would CONSUME the subject's one self-service slot and permanently block their own founding - a correctness failure produced by recording the truth.",
+        "the_platform_admin_path_is_real_not_hypothetical": "MEASURED. Policy orgs_insert_super_admin ON public.organizations FOR INSERT WITH CHECK (public.current_user_is_super_admin()) exists in the live baseline at db/baseline/stella_g2_schema.sql:9148 and is re-created at db/migrations/0031_rls_core.sql:95-96. A super admin can insert organizations at the database boundary today, independently of whether an application surface exists.",
+        "the_authority_s_own_alternative_is_NOT_AVAILABLE": {
+          "alternative_text": "TARGET_SCHEMA.founder_cardinality_carrier offers '...or an equivalent enforcement in the bootstrap capability'.",
+          "measured_blocker": "The bootstrap capability is db/prepared/stella_0010_organization_bootstrap_capability.sql (CAP-05, function uellix_capability.bootstrap_organization at :358). Its own header states 'STATUS: DESIGN. NOT APPLIED ANYWHERE. THE CAPABILITY IS NOT ENABLED.' and it appears NOWHERE in db/hosted/baseline-manifest.ts.",
+          "consequence": "Enforcement 'in the bootstrap capability' would be enforcement in code that does not run. It cannot be the carrier. An implementing mission that chooses it has chosen no enforcement at all.",
+          "why_this_matters": "This is the trap. The source authority offers two carriers; one is over-broad and one does not exist. Choosing either without measuring produces a package that passes review and enforces nothing."
+        }
+      },
+      "REQUIRED_RESOLUTION": {
+        "rule": "The implementing mission MUST introduce a DURABLE SELF-SERVICE PROVENANCE DISCRIMINATOR that the cardinality predicate can reference, and MUST enforce the cardinality at the DATABASE boundary.",
+        "why_a_discriminator_is_unavoidable": "MEASURED. organizations carries no provenance/kind/origin column at START_HEAD (inspected db/schema.ts:17-40 and the full table definition). Without one there is no predicate that can distinguish a self-service founding from a platform-admin founding, so no partial index can express MO-01 correctly. The discriminator is therefore not a design preference; it is the minimum information the constraint needs to exist.",
+        "shape": "The exact discriminator (for example a founding-provenance enum column on organizations, defaulting to the honest 'unknown' for historical rows) is DEFERRED to the implementing mission and MUST be chosen against the live schema. It MUST admit at least: self-service founding, non-self-service founding, and UNKNOWN.",
+        "hard_constraints": [
+          "MUST NOT retroactively constrain historical rows whose founded_by is NULL under MO-11. A backfill that leaves NULLs and a cardinality rule that rejects NULLs must coexist - carried forward verbatim from TARGET_SCHEMA.founder_cardinality_carrier.hard_constraint.",
+          "MUST NOT be enforced only in application code. SELF_SERVICE_BOOTSTRAP.serialization_replacement.prohibited establishes the repository rule that replacing a database uniqueness guarantee with an application read-then-write check is 'a downgrade disguised as a refactor'. The same rule binds here.",
+          "MUST NOT make the discriminator readable by any authorization path. founded_by and its provenance discriminator are traceability only (PI-3).",
+          "MUST NOT default historical rows to the self-service value. Unknown provenance is UNKNOWN."
+        ],
+        "failure_behavior": "A second self-service founding attempt by the same subject MUST fail closed with TENANCY_FOUNDER_CARDINALITY_EXCEEDED, never silently succeed and never silently reuse the existing organization."
+      }
+    },
+
+    "S1_BOOTSTRAP_INTERSECTION": {
+      "measured_founding_write_paths": [
+        {
+          "path": "app/(authenticated)/app/onboarding/actions.ts:100",
+          "form": "Drizzle service-client .insert(organizations), gated at :63-67 by isEmailAllowlisted, followed by .insert(organizationMembers) at :113 and an audit_logs write at :125-129 with action 'organization.created'.",
+          "status": "LIVE. This is the ONLY organization-insert site in app/ or lib/ at START_HEAD (`grep -rn 'insert(organizations)' app/ lib/ db/` returns exactly this one hit).",
+          "S1_obligation": "This is where the self-service founding act happens, so this is where founded_by and the self-service provenance value MUST be written, inside the SAME transaction as the organization insert."
+        },
+        {
+          "path": "db/prepared/stella_0010_organization_bootstrap_capability.sql:526",
+          "form": "SECURITY DEFINER uellix_capability.bootstrap_organization, writes its own 'organization.created' audit row.",
+          "status": "DESIGN ONLY - NOT APPLIED, absent from db/hosted/baseline-manifest.ts.",
+          "S1_obligation": "OUT OF SCOPE FOR THIS BATCH. S1 does NOT edit, apply, enable or renumber stella_0010. Stated affirmatively because the intersection is real and an implementing mission may be tempted to 'finish' CAP-05 while it is in the file. Doing so would take CP-4 (db/prepared/stella_*) from the Stella/Wave3 lane without a grant.",
+          "carried_forward_obligation": "Whenever CAP-05 is eventually applied, it MUST write founded_by and the self-service provenance value with the same semantics S1 establishes, or it will create founding acts invisible to the cardinality carrier. Recorded here as a durable obligation on that future mission, not resolved."
+        }
+      ],
+      "allowlist_gate_unchanged": "SS-01 ALLOWLIST_EXIT is an S6 obligation. S1 does NOT remove, weaken or bypass isEmailAllowlisted. The gate at onboarding/actions.ts:63-67 is preserved exactly."
+    },
+
+    "S1_BACKFILL": {
+      "controlling": "MO-11 via FOUNDED_BY.BACKFILL. Controls in full; not restated.",
+      "decision": "Conservative, deterministic-provenance-only. Unknown remains NULL.",
+      "hard_prohibition_restated_because_it_is_the_likeliest_failure": "invited_by IS NULL MUST NOT be used to attribute founding. So must no earliest joined_at, no earliest created_at, no sole-organization_admin, no lowest id and no 'most likely founder' heuristic. A mission that backfills on any of these FAILS even if every other control passes.",
+      "MEASURED_QUALIFYING_SOURCE": {
+        "finding": "The source authority left the existence of a qualifying deterministic source as FUTURE_MEASUREMENT_REQUIRED ('Whether any such record actually exists for any historical organization at the time of backfill is FUTURE_MEASUREMENT_REQUIRED and MUST be measured, never assumed'). It is measured here.",
+        "candidate": "audit_logs rows with action = 'organization.created' (constant ORGANIZATION_CREATED at lib/audit/logger.ts:10, written at app/(authenticated)/app/onboarding/actions.ts:129 with entityType 'organization', entityId = the new organization id, and an actor user id).",
+        "why_it_qualifies": "It records the founding ACT itself rather than a state consistent with founding, which is precisely the source authority's qualifying test, and its shape matches the authority's own worked example ('An audit_logs row whose action names the organization-creation act and whose actor_user_id is the founder').",
+        "STILL_REQUIRED_AT_IMPLEMENTATION_TIME": "This is a measurement of the SHAPE, not of the DATA. The implementing mission MUST additionally measure, against the live database, (a) how many historical organizations have exactly one such row, (b) how many have none, and (c) how many have more than one. Case (c) is AMBIGUOUS and MUST resolve to NULL, never to a first/earliest pick. Coverage MUST NOT be assumed from the existence of the code path - the audit write postdates the earliest organizations and seeded/migrated rows have no such row at all."
+      },
+      "unknown_disposition": "NULL. Not a sentinel user, not a placeholder uuid, not the platform account, not the first admin.",
+      "audit_requirement": "The backfill MUST emit a durable count of rows-attributed and rows-left-NULL, reproducible from the same inputs. The count MUST be recorded in the implementation-evidence artifact AND be independently recomputable by PG-S1-3 below. A backfill whose outcome cannot be reproduced is not deterministic and does not satisfy MO-11.",
+      "irreversibility": "A wrong attribution is unrecoverable, because a wrong value becomes indistinguishable from a right one. This asymmetry is why the rule is conservative rather than best-effort."
+    },
+
+    "S1_EXACT_PATHS": {
+      "semantics": "This list is a CEILING enforced by ods:scope, never a mandate. The implementing mission may change a SUBSET. Any path outside it requires a scope amendment and fails closed.",
+      "protected": [
+        "db/migrations/** - PROTECTED (DEFAULT_PROTECTED_PATTERNS entry 4). Requires the HPO-ODS-W2-20 grant. The exact files are the next free ordinal and its meta snapshot plus db/migrations/meta/_journal.json. The ordinal is NOT allocated here - see migration_ordinal_rule."
+      ],
+      "unprotected": [
+        "db/schema.ts",
+        "app/(authenticated)/app/onboarding/actions.ts",
+        "tests/tenancy/s1-founder-traceability.test.ts",
+        "tests/postgres/s1-founder-cardinality.pg.test.ts",
+        "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+      ],
+      "migration_ordinal_rule": {
+        "measured_highest_at_START_HEAD": "db/migrations/0065_fib_sensitivity_model.sql",
+        "rule": "The implementing mission allocates the next FREE ordinal measured at ITS OWN start, never the ordinal implied by this sentence. CP-1 records that db/migrations/** is a single global sequence shared with Wave3/FIBDB-053, CommercialAccount, Portfolio and Stella, and that 'a merge resolves the text without resolving the order'. Pinning 0066 here would manufacture exactly that collision if any lane allocates first.",
+        "not_allocated_here": true
+      },
+      "explicitly_NOT_authorized": [
+        "db/prepared/** - NO prepared unit is required by S1 (the carrier is schema-level and the bootstrap capability is not applied), so NO prepared grant is issued. A blanket db/prepared/** grant is forbidden.",
+        "db/hosted/baseline-manifest.ts - not required, because no prepared/hosted unit is added. Leaving it untouched also avoids CP-3 and the pinned manifest digest guarded by KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02.",
+        "db/baseline/** - historical record, never edited.",
+        "db/identity-context.ts and lib/auth/database-context.ts - S3/S4/S5 surfaces.",
+        "db/prepared/stella_0010_organization_bootstrap_capability.sql - see S1_BOOTSTRAP_INTERSECTION."
+      ]
+    }
+  },
+
+  "S2": {
+    "node": "S2 - Selected-organization session carrier",
+    "authority_controlling": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json SESSION_SCOPE (MO-03 + MO-04) and SELECTED_ORG_CARRIER (MO-04). NOT restated here.",
+
+    "S2_SESSION_CARRIER": {
+      "decision": "A session cookie carrying the selected organization identity. Exactly one selected organization is the tenant request scope at a time.",
+      "measured_greenfield": "No selected-organization carrier exists at START_HEAD. `grep -rln 'selected_org|selectedOrg|active_org|activeOrg' app/ lib/ db/` returns zero. The Supabase auth cookie is decoded at lib/auth/identity.ts and is a DIFFERENT cookie with a different purpose; S2 does not modify it.",
+      "explicit_selection_required": "A request with no selected organization is NOT silently defaulted to a membership. Where the subject has exactly one selectable membership the application MAY present it, but MUST make an EXPLICIT selection by writing the carrier, never by inferring scope at request time. Multi-membership: the subject is asked. No pick-first, no most-recent, no alphabetical default.",
+      "observability_of_the_distinction": "The source authority notes the distinction is observable - after a selection the carrier exists; under inference it never would. Control NS2-5 asserts exactly that."
+    },
+
+    "S2_COOKIE_CONTRACT": {
+      "HttpOnly": true,
+      "Secure": true,
+      "SameSite": "Lax",
+      "session_only": "No Max-Age and NO Expires. The cookie must die with the browser session.",
+      "not_persisted": "Not written to the users row, not to a database preference table, not restored across sessions. A new session starts with NO selection.",
+      "path_scope": {
+        "status": "FUTURE_MEASUREMENT_REQUIRED - carried forward unresolved from the source authority.",
+        "obligation": "The implementing mission MUST choose the cookie Path against the live route tree so the carrier is not sent to routes with no business receiving it, and MUST record the measured route set that justified the choice.",
+        "measured_input": "At START_HEAD the authenticated route group app/(authenticated)/app/ contains exactly ONE route - onboarding - while the main product surface lives under app/app/. The Path choice must be made against that real split and not assumed to be '/'."
+      },
+      "prohibited_carriers": [
+        "localStorage or sessionStorage - not HttpOnly, readable by any script on the origin",
+        "a URL path segment or query parameter - leaks tenant scope into logs, referrers and shared links",
+        "a request header set by client-side code - trivially forgeable, invisible to cookie policy",
+        "a persisted database column on users - would survive the session and violate SESSION_SCOPE"
+      ],
+      "trust_model": "THE CARRIER IS AN ASSERTION, NEVER A GRANT. Hard to forge is not the same as validated. This is carried into S3 as a precondition and is NOT discharged by S2."
+    },
+
+    "INERTNESS_RULE": {
+      "status": "THE LOAD-BEARING CONSTRAINT OF THIS BATCH. It is what makes S3's exclusion safe AND what makes S1/S2 parallel-safe. If it is violated, both properties fail together.",
+      "rule": "In this batch the carrier is WRITTEN, READ BACK and CLEARED, and is consumed by NOTHING that participates in an authorization decision.",
+      "prohibited_in_this_batch": [
+        "reading the carrier in db/identity-context.ts (CP-5) or in any GUC assignment",
+        "reading the carrier in lib/auth/database-context.ts, including loadRequestPrincipal and loadActiveMembershipWithinContext (:210, the SI-2 site whose .limit(1) sits at :219)",
+        "reading the carrier in lib/auth/session.ts, lib/auth/permissions.ts or lib/auth/roles.ts",
+        "using the carrier in any RLS predicate, policy, capability check, role resolution or entitlement evaluation",
+        "using the carrier to select, filter or scope any tenant row"
+      ],
+      "consequence_if_violated": "The mission has silently performed S3 without S3's lineage, without REQUEST_REVALIDATION, and without the N-1/N-2 controls that exist to catch precisely that. Control NS2-4 is the detector and is mandatory.",
+      "what_S2_may_legitimately_do": "Write the carrier from an explicit selection action; read it back to render which organization is selected; clear it. Nothing else."
+    },
+
+    "S2_EXACT_PATHS": {
+      "semantics": "CEILING, not mandate. Subset permitted; superset fails closed.",
+      "protected": [],
+      "protected_grant_required": false,
+      "protected_grant_rationale": "MEASURED. No path S2 needs matches any of the seven DEFAULT_PROTECTED_PATTERNS entries. S2 touches no db/**, no docs/ops/fib/**, no docs/ops/pc01b/** and no docs/ops/im01b/**. S2 therefore requires NO protected grant of any kind - a direct consequence of the carrier being a session cookie rather than a database column.",
+      "unprotected": [
+        "lib/auth/selected-organization.ts",
+        "app/(authenticated)/app/organizations/select/actions.ts",
+        "app/(authenticated)/app/organizations/select/page.tsx",
+        "tests/tenancy/s2-selected-org-carrier.test.ts",
+        "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+      ],
+      "new_files_note": "All five are new at START_HEAD. lib/auth/selected-organization.ts is the substantive deliverable and is deliberately a NEW module rather than an addition to lib/auth/session.ts or lib/auth/database-context.ts: those are S3 surfaces, and keeping the carrier in its own module is what makes the INERTNESS_RULE mechanically checkable by import-graph inspection rather than by reading prose.",
+      "explicitly_NOT_authorized": [
+        "db/schema.ts - S2 adds no column. SESSION_SCOPE forbids persisting the selection.",
+        "db/identity-context.ts (CP-5), lib/auth/database-context.ts, lib/auth/session.ts - INERTNESS_RULE and S3 ownership.",
+        "app/(authenticated)/app/onboarding/actions.ts - owned exclusively by S1 this batch. See PARALLELISM.the_one_real_collision.",
+        "lib/auth/identity.ts - the Supabase auth cookie is a different carrier with a different lifetime."
+      ]
+    }
+  },
+
+  "PARALLELISM": {
+    "claim_under_test": "LANE Z reported S1 and S2 parallel-safe, and MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json S1_TO_S8_DAG independently gives both nodes depends_on: [] with S2 noted 'Independent of S1'.",
+    "method": "NOT TRUSTED. Re-derived by intersecting the two authorized path sets measured above against the live tree at START_HEAD.",
+    "S1_S2_PARALLEL_SAFE": true,
+    "path_intersection": "EMPTY. S1 = {db/migrations/**, db/schema.ts, app/(authenticated)/app/onboarding/actions.ts, tests/tenancy/s1-*, tests/postgres/s1-*, docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json}. S2 = {lib/auth/selected-organization.ts, app/(authenticated)/app/organizations/select/*, tests/tenancy/s2-*, docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json}. No element is shared, and no directory is shared at a granularity ods:scope resolves.",
+    "the_one_real_collision": {
+      "finding": "The compiler's parallel-safety report is CORRECT but INCOMPLETE, and the gap it leaves is not visible from the DAG. A natural S2 implementation auto-selects the newly founded organization immediately after self-service founding. That write would land in app/(authenticated)/app/onboarding/actions.ts - the single file S1 must also edit to write founded_by. Under concurrent lanes that is a genuine shared writer producing a silent textual merge on the exact transaction S1 is changing.",
+      "resolution": "app/(authenticated)/app/onboarding/actions.ts is assigned EXCLUSIVELY to S1 for this batch. S2 MUST NOT write the carrier there.",
+      "why_this_costs_nothing": "The resolution is not a compromise forced by scheduling - it is what SESSION_SCOPE.no_selection_behavior already mandates. That clause requires selection to be made by an EXPLICIT selection act writing the carrier, and forbids inferring a scope, including in the single-membership case. Auto-selecting inside the founding transaction is precisely the inference it forbids. The disjointness constraint and the product doctrine agree, so no functionality is deferred by honouring it.",
+      "post_founding_behavior": "After self-service founding the subject has NO selection until they make one explicitly. This is correct by MO-04 and is asserted by control NS2-5."
+    },
+    "shared_writers_within_the_batch": "NONE after the resolution above.",
+    "recommended_execution": "TWO INDEPENDENT LANES, concurrent. S1 on codex/multiorg-s1-founder-traceability-r1; S2 on codex/multiorg-s2-selected-org-carrier-r1. Each opens its own prestate/scope/poststate gates against its own allowlist. Neither may pass the other's paths to --allow.",
+    "if_the_lanes_are_run_serially_instead": "Permitted and harmless. Order is immaterial because the sets are disjoint and neither node depends on the other."
+  },
+
+  "SHARED_WRITERS_CROSS_LANE": {
+    "method": "Reconciled against MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json SHARED_WRITERS chokepoints CP-1..CP-6 and against the live PROTECTED_GRANTS registry.",
+    "CP-1_db_migrations": {
+      "taken_by_this_batch": true,
+      "by": "S1 only",
+      "contested_with": ["Wave3 / FIBDB-053", "CommercialAccount/Entitlements", "Portfolio", "Stella"],
+      "measured_disposition": "SAFE TO TAKE AT START_HEAD. W2-B5 has finished writing (0064/0065 are integrated in merge a27c4a9). CommercialAccount/EntitlementGrant holds NO implementation grant. Wave3/FIBDB-053 holds no new implementation grant. The live PROTECTED_GRANTS registry contains no entry granting db/migrations/** on either implementation branch named by this package - HPO-ODS-W2-01 grants that pattern only on branch codex/w2-methodology-objects-r1, and grants resolve per-branch, contributing zero patterns off their own branch.",
+      "residual": "The ordinal remains a live race. Mitigated by migration_ordinal_rule (allocate at implementation start, never from this artifact)."
+    },
+    "CP-2_db_schema_ts": {
+      "taken_by_this_batch": true,
+      "by": "S1 only",
+      "risk": "Textual merges here are SILENT - the source authority records that a lost index declaration does not fail typecheck.",
+      "mitigation": "S1's edit is additive and narrow (one column plus one constraint carrier). Control S1-4 asserts the constraint's existence against the LIVE database rather than against the file, so a lost declaration fails the probe rather than passing review."
+    },
+    "CP-3_baseline_manifest": { "taken_by_this_batch": false, "why": "No prepared/hosted unit is added. Avoids the pinned digest and KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02." },
+    "CP-4_db_prepared_stella": { "taken_by_this_batch": false, "why": "stella_0010 is explicitly out of scope. The MISSION-MANDATED S3c/FIBDB-053 sequencing decision remains OPEN and is not touched, not pre-empted and not resolved here." },
+    "CP-5_db_identity_context": { "taken_by_this_batch": false, "why": "Owned by S3/S4/S5 and contested with Platform Admin. Excluded by INERTNESS_RULE. This is the single largest reason S3 is not in this batch." },
+    "CP-6_controller_enumeration": {
+      "taken_by_this_batch": false,
+      "by_whom_later": "The Controller 29 -> 30 successor mission.",
+      "state": "This package OPENS exactly one new enumeration gap (v1.0.19) and closes none."
+    },
+    "lib_auth_database_context_ts": { "taken_by_this_batch": false, "note": "S3 surface; not contested across lanes at START_HEAD, but excluded here by INERTNESS_RULE." },
+    "resolution_scope": "This artifact takes CP-1 and CP-2 under an explicit grant and declines CP-3, CP-4, CP-5 and CP-6. It resolves no cross-lane sequencing decision that the source authority left open."
+  },
+
+  "TEST_CONTRACT": {
+    "binding_rule": "Controls already frozen in docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json are BOUND BY ID and are NOT restated. Only controls that do not exist there are added, and every addition is justified by the S2-alone gap measured in WHY_THIS_ARTIFACT_IS_REQUIRED.GAP_3.",
+    "why_no_second_manifest": "The existing manifest is node_or_batch='batch' and already covers S1 and S2 as members of S1..S8. Creating a competing per-node manifest would produce two artifacts claiming authority over the same node ids with no rule saying which governs. Extending by binding-plus-addition is the smaller and safer instrument.",
+    "INHERITED_BINDING": {
+      "S1": ["P-1", "P-2", "N-7", "N-9", "M-5", "M-6"],
+      "S2": ["P-3"],
+      "explicitly_NOT_inherited_because_they_are_S3_or_later": ["P-4", "P-5", "P-6", "P-7", "P-8", "P-9", "P-10", "P-11", "P-12", "P-13", "P-14", "P-15", "N-1", "N-2", "N-3", "N-4", "N-5", "N-6", "N-8", "M-1", "M-2", "M-3", "M-4", "M-7", "M-8"],
+      "note_on_N1_and_N2": "N-1 and N-2 are the controls that would catch carrier misuse, and both are S3-tagged. They are NOT inherited because S3 is not implemented here and a control asserting behavior no code implements is vacuous. NS2-4 replaces them for this batch by asserting the STRONGER property that no consumption exists at all."
+    },
+    "ADDED_S1_CONTROLS": {
+      "S1-1": "SELF_SERVICE_PROVENANCE DISCRIMINATOR EXISTS. organizations carries a durable provenance discriminator, and it admits at least self-service, non-self-service and UNKNOWN. Fails if the implementation relies on founded_by alone.",
+      "S1-2": "PLATFORM-CREATED ORGANIZATION DOES NOT CONSUME THE SLOT. A subject who is recorded as the deterministic provenance of a NON-self-service organization may still self-service-found exactly one organization. THIS IS THE CONTROL THE NAIVE PARTIAL INDEX FAILS, and it is the reason the discriminator is mandatory.",
+      "S1-3": "AMBIGUOUS BACKFILL RESOLVES TO NULL. An organization with zero, or with more than one, qualifying 'organization.created' audit row is left NULL. Never a first pick, never an earliest pick.",
+      "S1-4": "CARDINALITY IS ENFORCED AT THE DATABASE BOUNDARY, asserted against live database metadata rather than against db/schema.ts, so a silently lost declaration (CP-2) fails rather than passes.",
+      "S1-5": "NULLS COEXIST WITH THE CARDINALITY RULE. Multiple historical organizations with founded_by NULL are accepted simultaneously; the constraint does not collapse them.",
+      "S1-6": "FOUNDED_BY IS WRITTEN IN THE FOUNDING TRANSACTION. A successful self-service founding yields founded_by = the founder and the self-service provenance value, committed atomically with the organization row - never as a follow-up write that can be lost."
+    },
+    "ADDED_S2_CONTROLS": {
+      "NS2-1": "COOKIE ATTRIBUTES ARE EXACT. The carrier is HttpOnly, Secure, SameSite=Lax, with NO Max-Age and NO Expires. Each attribute asserted individually - a single combined assertion can pass while one attribute is missing.",
+      "NS2-2": "SESSION-ONLY IN FACT. The selection does not survive a new session, and no users column, preference row or other persistent store holds it.",
+      "NS2-3": "CARRIER TAMPERING IS INERT AND NON-FATAL. A carrier naming an unknown organization id, a malformed id, an organization the subject is not a member of, a suspended organization, a stale/removed-membership organization, or a CommercialAccount id supplied where an organization id is expected, MUST NOT yield that organization's data and MUST NOT crash the request. Under INERTNESS the request resolves exactly as it does today, because scope never consults the carrier. Cookie deletion and session expiry yield NO selection, never a default.",
+      "NS2-4": "INERTNESS DETECTOR - THE MANDATORY CONTROL OF THIS BATCH. No authorization surface imports or reads the carrier. Asserted mechanically over the import graph and source of db/identity-context.ts, lib/auth/database-context.ts, lib/auth/session.ts, lib/auth/permissions.ts and lib/auth/roles.ts. Fails if any of them references lib/auth/selected-organization.ts or the carrier's cookie name. This control is what converts the S3-exclusion safety argument from prose into a machine-checked property, and it MUST be retired deliberately by S3 rather than deleted quietly.",
+      "NS2-5": "NO INFERRED SELECTION. A subject with exactly one selectable membership has NO carrier until an explicit selection act writes one, and a subject who has just self-service-founded an organization likewise has no carrier. Asserts MO-04 and simultaneously proves the S1/S2 collision resolution held.",
+      "NS2-6": "SUPERADMIN IS NOT EXEMPT FROM SELECTION. A platform super_admin obtains no implicit tenant scope from the absence of a carrier and no bypass from its presence. Scoped to S2's inert surface only; the full SUPERADMIN_BOUNDARY obligation (N-3) remains S5's."
+    },
+    "MUTATION_CONTROLS": {
+      "rule": "Each mutation must be applied to a WORKING tree and must produce a FAILING control. A mutation harness must additionally assert that the file actually changed on disk, so a no-op edit cannot masquerade as a passing control.",
+      "MS1-1": "Guarantee: the cardinality carrier discriminates self-service provenance. Mutation: widen the partial index predicate to `WHERE founded_by IS NOT NULL`, dropping the provenance conjunct. Expected: S1-2 FAILS. This is the exact naive-index defect the compiler warned about; a batch whose controls survive this mutation has not implemented MO-01.",
+      "MS1-2": "Guarantee: the MO-11 backfill prohibition (binds M-5). Mutation: add `invited_by IS NULL` as a backfill predicate. Expected: S1-3 and P-2 FAIL.",
+      "MS1-3": "Guarantee: founded_by grants nothing, PI-3 (binds M-6). Mutation: add founded_by as a disjunct to any authorization predicate. Expected: N-9 FAILS.",
+      "MS1-4": "Guarantee: unknown provenance stays NULL. Mutation: default the provenance discriminator to the self-service value for historical rows. Expected: S1-3 and S1-5 FAIL.",
+      "MS2-1": "Guarantee: the carrier dies with the session. Mutation: add a Max-Age to the cookie. Expected: NS2-1 and NS2-2 FAIL.",
+      "MS2-2": "Guarantee: the carrier is HttpOnly. Mutation: set HttpOnly false. Expected: NS2-1 FAILS.",
+      "MS2-3": "Guarantee: INERTNESS. Mutation: read the carrier inside loadActiveMembershipWithinContext and use it to qualify the membership lookup. Expected: NS2-4 FAILS. NOTE - this mutation makes the system arguably MORE correct in product terms; the control must still fail, because the change is S3 and requires S3's lineage and revalidation contract. A control that passes here is not a control.",
+      "MS2-4": "Guarantee: explicit selection only. Mutation: auto-select the sole membership at request time when no carrier is present. Expected: NS2-5 FAILS."
+    },
+    "REAL_PG_FUTURE_CONTROLS": {
+      "rule": "MANDATORY for S1 because its guarantees are database semantics. A unit test over Drizzle types cannot prove a partial unique index exists or that a constraint rejects a write.",
+      "PG-S1-1": "The partial unique carrier REJECTS a second self-service founding by the same subject with the correct failure, under a real INSERT.",
+      "PG-S1-2": "The same carrier ACCEPTS a non-self-service organization recording the same subject as provenance. PG-S1-1 and PG-S1-2 together are the discriminator proof; either alone is passable by a wrong implementation.",
+      "PG-S1-3": "The backfill's attributed / left-NULL counts are recomputable from the same inputs and match the recorded evidence exactly.",
+      "PG-S1-4": "ON DELETE RESTRICT is enforced: deleting a users row referenced by organizations.founded_by is refused by the database, not by application code.",
+      "PG-S1-5": "CONCURRENT BOOTSTRAP. Two simultaneous self-service founding attempts by the SAME subject yield exactly one organization and one refusal. Must be run under real concurrency, since a read-then-write check passes serially and fails only here.",
+      "S2_real_pg": "NOT REQUIRED. Measured: S2 introduces no database object, no column, no policy and no GUC. Stating this affirmatively because REAL_PG_CONTRACT is mandatory for the batch as a whole and a reader could otherwise assume S2 inherits it. If an implementing mission finds itself needing a PG probe for S2, that is evidence the INERTNESS_RULE has been broken."
+    },
+    "SENTINELS_AND_KNOWN_CONDITIONS": {
+      "sentinels": "Inherited from the source manifest. SENTINEL_SUSPENDED_ORG is required by NS2-3.",
+      "known_conditions": ["KTC-HOSTED-BASELINE-REHEARSAL-STALE-01", "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"],
+      "known_conditions_note": "Both concern the hosted baseline rehearsal digest. Neither is expected to be engaged, because this batch does not touch db/hosted/baseline-manifest.ts. Recorded so an implementing mission does not mistake a pre-existing condition for a regression it caused."
+    },
+    "EXIT_GATES": [
+      "Every INHERITED_BINDING control passes.",
+      "Every ADDED_S1_CONTROL and ADDED_S2_CONTROL passes.",
+      "Every MUTATION_CONTROL produces its expected FAILURE, with the harness asserting the file changed on disk.",
+      "Every REAL_PG_FUTURE_CONTROL passes against a real PostgreSQL.",
+      "NS2-4 passes - no authorization surface consumes the carrier.",
+      "ods:prestate, ods:scope, ods:poststate and authority:seal:verify pass on each lane's own allowlist.",
+      "No path outside the lane's authorized ceiling appears in its diff.",
+      "user_single_active_membership is present and unmodified (DROP_LAST, S7)."
+    ]
+  },
+
+  "CONTROLLER_SUCCESSOR": {
+    "CONTROLLER30_REQUIRED": true,
+    "why": "Allocating docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json adds an artifact to the ODS immutable-by-convention closed world. scripts/ods-controller.ts:49 records that IMMUTABLE_BY_CONVENTION membership is EXACT and never a subset test, so an unenumerated addendum is a lineage hole.",
+    "count": "29 -> 30",
+    "paths_to_enumerate": ["docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json"],
+    "authorized_paths_for_that_successor_mission": ["scripts/ods-controller.ts", "tests/ods/ods-controller.test.ts"],
+    "NOT_PERFORMED_BY_THIS_MISSION": "CORRECT AND DELIBERATE. This mission is AUTHORITY_ONLY and edits no gate script.",
+    "gap_count": "This package opens EXACTLY ONE enumeration gap and closes none.",
+    "no_next_next": "No v1.0.20 and no HPO-ODS-W2-21 is allocated, reserved or pre-created. Controller 30 is the LAST lineage item this package contemplates.",
+    "negative_control_note": "When Controller 30 advances the absence-control literal at tests/ods/ods-controller.test.ts:129 from v1.0.19 to v1.0.20, that literal is a NEGATIVE CONTROL and reserves nothing - the same reading the W2-B5 amendment recorded for the v1.0.18 literal."
+  },
+
+  "SECURITY_CONTROLS_SUMMARY": {
+    "S1": ["founder provenance is traceability only, never authorization (PI-3)", "ambiguous backfill resolves to NULL", "self-service founder cardinality enforced at the database boundary", "platform-created organizations do not consume the self-service slot", "concurrent bootstrap yields one organization and one refusal", "ON DELETE RESTRICT preserves attribution"],
+    "S2": ["cookie tampering is inert", "unknown organization id inert", "nonmember organization inert", "suspended organization not selectable", "stale selection inert", "superadmin obtains no implicit scope", "CommercialAccount id supplied as organization scope yields nothing", "cookie deletion and session expiry yield no selection, never a default"],
+    "posture_statement": "After this batch the tenant-isolation posture is UNCHANGED from START_HEAD. S1 adds a traceability column that no authorization path reads; S2 adds a carrier that no authorization path consumes. The batch is a foundation, not a change in who can see what - and NS2-4 is the control that keeps that claim true."
+  },
+
+  "RISKS_AND_OPEN_FINDINGS": {
+    "F-1_wave2_closure_artifact_absent": {
+      "severity": "NON-BLOCKING for this package, OPEN for the Wave2 lane.",
+      "finding": "docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json does not exist at START_HEAD, so the W2-B5 audit stage is not CLOSED by the program-state registry's own definition, even though the mission prompt asserts Wave2 = CLOSED.",
+      "disposition": "Reported, not resolved and not fabricated. This package does not depend on W2-B5 closure; it depends on the Controller enumeration interlock, which is discharged by measurement."
+    },
+    "F-2_cap05_founding_path_will_bypass_the_carrier": {
+      "severity": "DEFERRED OBLIGATION, not a defect of this batch.",
+      "finding": "db/prepared/stella_0010_organization_bootstrap_capability.sql is DESIGN-ONLY and unapplied. If it is ever applied without writing founded_by and the self-service provenance value, it creates founding acts invisible to the S1 cardinality carrier.",
+      "disposition": "Recorded as a durable obligation on whichever mission applies CAP-05. Not resolved here, because applying or editing stella_0010 would take CP-4 without a grant."
+    },
+    "F-3_s2_alone_has_no_product_surface_consuming_it": {
+      "severity": "ACCEPTED, BY DESIGN.",
+      "finding": "Because the carrier is inert, S2 delivers no user-visible tenant behavior. Its value is entirely as S3's prerequisite.",
+      "disposition": "Accepted as the cost of the smallest safe batch. The alternative - shipping S2 and S3 together - takes CP-5 and an unmeasured blast radius that the source authority itself flags as FUTURE_MEASUREMENT_REQUIRED."
+    },
+    "F-4_cookie_path_scope_unresolved": {
+      "severity": "MUST BE RESOLVED BY THE S2 IMPLEMENTING MISSION.",
+      "finding": "path_scope remains FUTURE_MEASUREMENT_REQUIRED. The authenticated route group holds one route while the product lives under app/app/, so the correct Path is genuinely not obvious.",
+      "disposition": "Left unresolved deliberately rather than guessed. The implementing mission must measure and record it."
+    },
+    "F-5_migration_ordinal_race": {
+      "severity": "MITIGATED, NOT ELIMINATED.",
+      "finding": "CP-1 is a global sequence. Another lane may allocate 0066 between this freeze and S1's implementation.",
+      "disposition": "Mitigated by allocating at implementation start rather than here. Residual risk is a re-number, not a silent merge."
+    },
+    "F-6_naive_index_remains_the_likeliest_implementation_error": {
+      "severity": "HIGH LIKELIHOOD, FULLY CONTROLLED.",
+      "finding": "The naive partial index is the obvious implementation, is what the source authority's target string reads like at a glance, and passes any control that only tests the happy path.",
+      "disposition": "Controlled by S1-2 (positive) and MS1-1 (mutation). Both are mandatory; neither may be waived."
+    }
+  },
+
+  "self_check": {
+    "allocates_exactly_one_ods_addendum": true,
+    "allocates_exactly_one_hpo_grant": true,
+    "allocates_no_following_lineage_item": true,
+    "allocates_no_migration_ordinal": true,
+    "allocates_no_prepared_unit_id": true,
+    "allocates_no_baseline_manifest_position": true,
+    "uses_canonical_node_names_only": true,
+    "s3_excluded": true,
+    "s3_exclusion_is_argued_from_the_authority_not_from_convenience": true,
+    "parallel_safety_independently_measured_not_inherited": true,
+    "one_unreported_collision_found_and_resolved": true,
+    "no_prepared_blanket_grant": true,
+    "no_staging_no_production_no_docker": true,
+    "supersedes_no_frozen_authority": true,
+    "edits_no_sealed_or_certified_artifact": true,
+    "edits_no_gate_script": true,
+    "opens_exactly_one_controller_gap": true,
+    "wave2_closure_reported_honestly_rather_than_asserted": true
+  },
+
+  "final_state": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1_0_0_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "READY_FOR_S1_S2_IMPLEMENTATION": "NO_UNTIL_AUDITED_INTEGRATED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": true,
+  "READY_FOR_MERGE": "NO_PENDING_INDEPENDENT_AUDIT",
+  "next_gate": "MULTIORG_S1_S2_FIRST_EXECUTION_AUTHORITY_INDEPENDENT_AUDIT"
+}
