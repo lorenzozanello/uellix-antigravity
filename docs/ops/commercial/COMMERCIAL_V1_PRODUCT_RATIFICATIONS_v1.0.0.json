@@ -6,6 +6,9 @@
   "hpo_mission_id": "COMMERCIAL-V1-ALIGNMENT-BASELINE-MATERIALIZATION-R1",
   "materialization_date": "2026-09-04",
   "companion_document": "docs/ops/commercial/COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md",
+  "amendment_mission_id": "COMMERCIAL-V1-CA06-CA08-RATIFICATION-MATERIALIZATION-R1",
+  "amendment_date": "2026-09-05",
+  "amendment_note": "Adds CA-06, CA-07, CA-08 per explicit product-owner ratification (Lane AA — COMMERCIAL-ACCOUNT-PRODUCT-DECISION-ADJUDICATION-R1). All 27 pre-existing ratifications below are preserved byte-for-byte in statement/status/implementation_status_as_of_head; only self_check aggregate metadata was mechanically grown to admit the 3 new ids.",
 
   "purpose": "Machine-citable list of product-owner ratifications for Commercial V1, extracted verbatim from the alignment-baseline mission prompt. This artifact records WHAT was ratified and by whom (product owner, this mission), not whether it is implemented. It grants no schema, no migration ordinal, no ODS/HPO id, and no executable authority. A future mission that needs one of these decisions cites this file's ratification id instead of re-deriving or re-litigating the decision.",
 
@@ -17,19 +20,20 @@
 
   "self_check": {
     "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script — a checklist a reviewer or a future editor can verify by eye or with a one-line jq/node command.",
-    "expected_ratification_count": 27,
+    "expected_ratification_count": 30,
     "expected_id_set": [
       "MO-01", "MO-02", "MO-03", "MO-04", "MO-05", "MO-06", "MO-07", "MO-08", "MO-09", "MO-10", "MO-11", "MO-12",
       "SS-01", "SS-02", "SS-03",
-      "CA-01", "CA-02", "CA-03", "CA-04", "CA-05",
+      "CA-01", "CA-02", "CA-03", "CA-04", "CA-05", "CA-06", "CA-07", "CA-08",
       "EV-01", "EV-02", "EV-03",
       "RI-01",
       "AG-01", "AG-02", "AG-03"
     ],
     "checks": [
-      "ratifications.length == 27",
+      "ratifications.length == 30",
       "every id in ratifications is unique (no duplicate id values)",
-      "the set of ids in ratifications, compared as sets, equals expected_id_set exactly (no missing id, no extra id)"
+      "the set of ids in ratifications, compared as sets, equals expected_id_set exactly (no missing id, no extra id)",
+      "no CA-09 or any other id beyond expected_id_set is present"
     ]
   },
 
@@ -199,6 +203,39 @@
       "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — lib/stripe exists at AS_OF_HEAD; whether any code path lets payment state directly gate authorization requires a dedicated audit, not asserted here. Prior memory (project_platform_admin_self_service_zero_discovery_r1) records that CommercialAccount/entitlements do not exist yet, which is consistent with this ratification being currently unenforceable rather than violated."
     },
     {
+      "id": "CA-06",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "An Organization is governed by exactly one CommercialAccount at a time. A governed transfer, Platform-Admin-initiated in Commercial V1, may change that association without altering the Organization id, tenant data, memberships, roles, evidence, or audit history. The pre-transfer CommercialAccount association must remain historically reconstructible. Entitlements must be explicitly re-evaluated under the receiving CommercialAccount rather than silently inherited from the prior one. This does not ratify any specific schema table or FK design — a live-FK-plus-history-relation is a derived architecture recommendation, not product doctrine.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "ratification_source": "Lane AA — COMMERCIAL-ACCOUNT-PRODUCT-DECISION-ADJUDICATION-R1 (Decision 1 Option A)",
+      "defined": "YES",
+      "implemented": "NO",
+      "commercially_ready": "NO",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — depends on CA-01/CA-02; no CommercialAccount type/table, and therefore no CommercialAccount-to-Organization association or transfer mechanism, exists in the repository at AS_OF_HEAD."
+    },
+    {
+      "id": "CA-07",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "CommercialAccount owns the commercial/payment relationship: Stripe customer/subscription/price identity and plan/catalog identity. Effective EntitlementGrants, usage meters and quota enforcement remain scoped to Organization x product-capability per CA-04. CommercialAccount-level plan state defines what an Organization may be entitled to but is never itself evaluated as tenant authorization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "ratification_source": "Lane AA — COMMERCIAL-ACCOUNT-PRODUCT-DECISION-ADJUDICATION-R1 (Decision 2 Option D)",
+      "defined": "YES",
+      "implemented": "NO",
+      "commercially_ready": "NO",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — depends on CA-01/CA-02/CA-04; no CommercialAccount type/table or Stripe-identity-to-CommercialAccount binding exists in the repository at AS_OF_HEAD. Current commercial fields overload Organization directly (app/app/organization/billing, lib/stripe); see baseline Known Alignment Gap #2."
+    },
+    {
+      "id": "CA-08",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "Stella usage and other metered capability usage in Commercial V1 are metered and enforced per Organization. A CommercialAccount governing multiple Organizations may aggregate usage and billing for reporting/invoicing; this aggregation does NOT create an implicit shared authorization or pooled runtime quota. A pooled-quota model is future product scope and would require its own explicit future ratification.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "ratification_source": "Lane AA — COMMERCIAL-ACCOUNT-PRODUCT-DECISION-ADJUDICATION-R1",
+      "defined": "YES",
+      "implemented": "NO",
+      "commercially_ready": "NO",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — depends on CA-01/CA-02/CA-04/CA-07; no CommercialAccount-scoped usage-aggregation or per-Organization quota-enforcement mechanism exists in the repository at AS_OF_HEAD. lib/stella exists but usage metering/quota at the Organization boundary is FUTURE_MEASUREMENT_REQUIRED, not asserted here."
+    },
+    {
       "id": "EV-01",
       "domain": "EVALUATE",
       "statement": "Governed N/A requires explicit state, rationale and human provenance. For Evaluate scoring, N/A is excluded from numerator AND denominator. Readiness may use a different governed-N/A arithmetic because Measure readiness and Evaluate are different domains.",
@@ -251,5 +288,21 @@
 
   "invariants_reference_only": {
     "note": "The non-negotiable invariants (Organization=tenant root, Ownership!=Access, CommercialAccount!=Organization, Payment!=Activation, ReleaseFlag!=Entitlement!=Authorization, Measure!=Evaluate, Stella analysis!=Human decision, Evidence!=Claim, Draft!=Approved, Calculated!=Methodology Approved, Code Complete!=Audit Complete!=Staging Validated!=Commercially Ready, historical reconstructibility, cross-tenant fail-closed, no technical manual provisioning) are recorded in the companion baseline document, not duplicated here as separate ratification ids — they are framing invariants rather than discrete product decisions."
+  },
+
+  "ratified_semantics_detail_ca06_ca08": {
+    "note": "Elaboration of product-owner-ratified semantics that accompany CA-06/CA-07/CA-08. This is doctrine detail, not additional ratification ids — no CA-09 or other new id is allocated here. It grants no schema, migration ordinal, ODS/HPO id, or executable authority (e.g. no CAP-05 authority is created by the self_service_bootstrap entry below).",
+    "self_service_bootstrap": {
+      "cites": ["SS-01", "SS-02", "SS-03", "CA-01", "CA-02"],
+      "statement": "Registration is an atomic CommercialAccount + first Organization bootstrap: founder/admin membership is granted, and a deterministic initial/default entitlement is assigned, without technical/manual provisioning. Commercial activation / Stripe first-binding is a later, separate, first-party-authenticated action — not part of the atomic bootstrap. This elaborates SS-03 (registration != provisioning != commercial activation != entitlement); it does not create CAP-05 or any other executable capability authority."
+    },
+    "payment_suspension_semantics": {
+      "cites": ["CA-05", "CA-07", "CA-08"],
+      "statement": "Payment != Activation. CommercialAccount past_due or commercial suspension does not automatically delete membership, remove tenant identity, change Organization.status, or remove historical access/evidence. Commercial billing state may cause an explicit, auditable downgrade/revocation of paid EntitlementGrants. Organization.status remains a separate tenant-operational control. Platform Admin may apply an explicit, audited commercial exception/override. Grace periods, collections schedules, and payment retry timing are NOT ratified here — they remain future configurable policy."
+    },
+    "transfer_semantics": {
+      "cites": ["CA-06"],
+      "statement": "A CommercialAccount-to-Organization transfer is Platform-Admin-initiated in Commercial V1. Organization tenant identity, memberships, and roles remain unchanged across a transfer. Evidence and report history remain unchanged. Commercial history remains reconstructible. Entitlements must be explicitly re-evaluated under the receiving CommercialAccount rather than silently inherited. This records product intent only — no specific schema table, FK design, or history-relation shape is ratified by this entry."
+    }
   }
 }
