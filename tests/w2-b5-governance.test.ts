@@ -10,7 +10,7 @@
 // (NEG-BASE-2 / MUT-BASE-2).
 
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import journal from '@/db/migrations/meta/_journal.json'
 import { BASELINE_UNITS, BASELINE_ORDER } from '@/db/hosted/baseline-manifest'
@@ -106,7 +106,6 @@ describe('NEG-18-1: the legacy uniform scenario model is absent from lib/** and 
   const SUPERSEDED_IDENTIFIERS = ['SCENARIO_DELTA_PP', 'scenarioFilterPct', 'calculateSroiScenarios']
 
   function walk(dir: string, out: string[] = []): string[] {
-    const { readdirSync, statSync } = require('node:fs') as typeof import('node:fs')
     for (const entry of readdirSync(dir)) {
       if (entry === 'node_modules' || entry === '.next') continue
       const full = path.join(dir, entry)

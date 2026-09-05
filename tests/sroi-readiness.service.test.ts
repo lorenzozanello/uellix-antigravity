@@ -168,12 +168,12 @@ describe('computeAndPersistReadinessAssessment', () => {
   })
 
   it('NEG-17-9: no exported function accepts a caller-supplied global_score or criterion override', async () => {
-    const module = await import('@/lib/pipeline/sroi-readiness')
+    const readinessModule = await import('@/lib/pipeline/sroi-readiness')
     // The only mutation entry point takes (projectId, runId) — no score,
     // no dimension, no criterion override parameter exists anywhere in the
     // module's public surface.
-    expect(module.computeAndPersistReadinessAssessment.length).toBe(2)
-    expect(Object.keys(module)).not.toContain('setReadinessScore')
-    expect(Object.keys(module)).not.toContain('overrideCriterion')
+    expect(readinessModule.computeAndPersistReadinessAssessment.length).toBe(2)
+    expect(Object.keys(readinessModule)).not.toContain('setReadinessScore')
+    expect(Object.keys(readinessModule)).not.toContain('overrideCriterion')
   })
 })
