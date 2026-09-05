@@ -133,12 +133,29 @@ export default async function RunDetailPage({
       // policies enforce; the service and the database remain authoritative.
       canRecordDisposition: hasRole(ctx.membership.role, 'analyst'),
       runApproved: (await listSroiRunReviews(projectId, runId)).some((r) => r.status === 'approved'),
-      // FIBIU-17 (FIBC-021, W2-B5) — canonical readiness; null until computed.
-      readiness: await getReadinessAssessment(projectId, runId),
-      // FIBIU-18 (FIBC-022, W2-B5) — governed sensitivity register/scenarios.
-      sensitivityCandidates: await listSensitivityCandidates(projectId, runId),
-      sensitivityScenarios: await listSensitivityScenarios(projectId, runId),
-      sensitivityCompleteness: await getRunSensitivityCompleteness(projectId, runId),
+      // FIBIU-17/18 (W2-B5) — same best-effort pattern as getCalculationRunDetail
+      // above: project/run access was already established by it, so these
+      // never fail in production, but the panel is not load-bearing for the
+      // rest of the page and must not crash it on an unexpected error.
+      ...(await (async () => {
+        try {
+          return {
+            // FIBIU-17 (FIBC-021, W2-B5) — canonical readiness; null until computed.
+            readiness: await getReadinessAssessment(projectId, runId),
+            // FIBIU-18 (FIBC-022, W2-B5) — governed sensitivity register/scenarios.
+            sensitivityCandidates: await listSensitivityCandidates(projectId, runId),
+            sensitivityScenarios: await listSensitivityScenarios(projectId, runId),
+            sensitivityCompleteness: await getRunSensitivityCompleteness(projectId, runId),
+          };
+        } catch {
+          return {
+            readiness: null,
+            sensitivityCandidates: [],
+            sensitivityScenarios: [],
+            sensitivityCompleteness: { complete: true, pendingCandidateIds: [], variationRequiredWithoutScenarioIds: [] },
+          };
+        }
+      })()),
     };
   });
 
