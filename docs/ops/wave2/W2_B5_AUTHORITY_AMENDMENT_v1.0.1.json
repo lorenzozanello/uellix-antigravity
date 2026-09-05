@@ -1,0 +1,262 @@
+{
+  "package_id": "W2_B5_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "W2_B5_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_BATCH_AUTHORITY",
+  "materialization_step": "HPO-ODS-W2-18",
+  "GRANT_ID": "HPO-ODS-W2-18",
+  "hpo_mission_id": "W2-B5-SCOPE-GAP-AUTHORITY-SUCCESSOR-R1",
+  "predecessor_hpo_mission_id": "CONTROLLER26-REMEDIATED-INDEPENDENT-REAUDIT-TO-B5-AUTHORITY-R2",
+  "materialization_date": "2026-09-04",
+  "amends": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json",
+  "amendment_semantics": "APPEND-ONLY. W2_B5_AUTHORITY_v1.0.0.json is left BYTE-UNCHANGED and remains HISTORICAL AND IMMUTABLE authority. This artifact does not rewrite, delete or reinterpret any clause of it. Where a clause of v1.0.0 was correct-but-incomplete, this amendment EXTENDS it and says exactly which clause and why. Where v1.0.0 COMMANDS an obligation whose only possible discharge lies outside its own closed world, this amendment names that determinate internal contradiction explicitly and resolves it by the narrowest possible enumeration - never by editing the original sentence.",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "test_manifest": "docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Close the ONE scope gap the W2-B5 implementation candidate discovered: exactly four mechanically required files are absent from the CLOSED-WORLD authorized surface frozen in W2_B5_AUTHORITY_v1.0.0.json authorized_future_implementation_surface. It authorizes no new FIBIU scope, no new migration, no schema change, no behavioral delta and no B5 semantic change of any kind.",
+
+  "scope_note": "This amendment adds FOUR exact literal paths and NOTHING else. No wildcard. No directory. No 'related files'. No allowlist derived from a diff.",
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-w2-b5-scope-authority-successor-r1",
+    "branch": "codex/w2-b5-scope-authority-successor-r1",
+    "INTEGRATION_SHA": "4264bd606e1b1da93ab6c8e9167979983994e702",
+    "INTEGRATION_TREE": "b9beeae646ad47f2e40957b90445ca4dad62aba9",
+    "integration_branch": "integration/commercial-v1",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "controller27_merge_sha": "4264bd606e1b1da93ab6c8e9167979983994e702",
+    "controller_live_immutable_count_at_INTEGRATION_SHA": 27,
+    "b5_candidate_branch": "codex/w2-b5-r1",
+    "b5_candidate_head": "1c7bb3c260e854cd7095af79604ef865044125a8",
+    "b5_candidate_base": "040efdfe965dddb663ae722d5b4b4da1a84294d9",
+    "b5_authority_status_measured": "CLOSED",
+    "b5_implementation_status_measured": "OPEN"
+  },
+
+  "what_is_unchanged": {
+    "BINDING": "Every clause below is restated as UNCHANGED for the avoidance of doubt. This amendment alters NONE of them.",
+    "old_authority_disposition": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json remains HISTORICAL AND IMMUTABLE. It is not edited, superseded, revoked or reinterpreted. Its final_state stays W2_B5_AUTHORITY_FROZEN_WAITING_FOR_IMPLEMENTATION.",
+    "implementation_semantics": "UNCHANGED.",
+    "readiness_semantics": "UNCHANGED. The canonical readiness model (FIBIU-17, readiness_assessments) and the LEGACY_NON_AUTHORITATIVE disposition of sroi_run_reviews.readiness_score are exactly as frozen.",
+    "sensitivity_semantics": "UNCHANGED. FIBIU-18 candidate/scenario/envelope semantics are exactly as frozen.",
+    "security_semantics": "UNCHANGED. security_and_tenancy_contract, approval_boundary and audit_verb_contract are untouched.",
+    "migrations": "UNCHANGED. No migration ordinal is allocated, renamed, reordered or edited. 0064 and 0065 stand exactly as the frozen authority contemplates.",
+    "schema": "UNCHANGED. No table, column, constraint, policy or grant is added, removed or altered by this amendment.",
+    "test_requirements": "UNCHANGED. docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json is BYTE-UNCHANGED. No control is added to it, removed from it or weakened. Its ten exit_gates stand in full, including full_ci_green.",
+    "protected_grant": "UNCHANGED. HPO-ODS-W2-17 is not widened, amended, reused or rebranched. Its three patterns and its binding to branch codex/w2-b5-r1 stand exactly.",
+    "baseline_growth_contract": "UNCHANGED.",
+    "determinism_and_regression_sentinels": "UNCHANGED, including the b4_governance_test_successor_contract inversions.",
+    "explicitly_prohibited_list": "UNCHANGED except for the two paths named in defect_class_B below, which are narrowed by exact literal path and by nothing else. Every other entry of v1.0.0 explicitly_prohibited stands in full force - including main, Production, db/baseline/**, db/policies/**, tests/integration/**, tests/ods/** for the IMPLEMENTATION mission, docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, docs/ops/ods/**, docs/ops/p1a/** and every W2-B4 artifact."
+  },
+
+  "closed_world_path_correction": {
+    "clause_extended": "W2_B5_AUTHORITY_v1.0.0.json authorized_future_implementation_surface, which declares itself CLOSED-WORLD and whose closed_world clause states: 'A path not enumerated in protected or unprotected is NOT authorized, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP - never a retroactive scope inference from the fact that it changed.'",
+    "measurement_method": "MECHANICAL SET DIFFERENCE, not inspection. The 49 patterns of the frozen enumeration (protected.patterns + schema_and_manifest + domain_logic + readiness_readers + product_surface_patterns keys + existing_tests + new_tests.patterns + new_tests.exact_new_hosts + derived_artifact_refresh + evidence + audit_artifacts) were applied with the exact matcher semantics of scripts/ods-scope.ts patternToRegExp to the 142 paths of `git diff --name-only 040efdfe965dddb663ae722d5b4b4da1a84294d9 codex/w2-b5-r1`. UNAUTHORIZED_COUNT = 4. The four are exactly the paths recorded below. 138 of 142 changed paths are already authorized by the frozen enumeration, which is itself evidence that the gap is a narrow enumeration defect and not an implementer scope breach.",
+    "nature_of_the_defect": "TWO DISTINCT DEFECT CLASSES, deliberately NOT collapsed into one. Both are defects of the frozen enumeration, not implementer overreach. Necessity for every path is derived from the FROZEN CONTRACT and from repository bytes at the candidate BASE, and is stated in a form that would hold even if branch codex/w2-b5-r1 had never been written.",
+    "defect_class_A": {
+      "name": "INCOMPLETENESS OF THE FROZEN ENUMERATION",
+      "definition": "The path is simply absent from the closed world. No clause of v1.0.0 forbids it by name.",
+      "paths": [
+        "app/app/portfolios/[portfolioId]/page.tsx",
+        "tests/eval/stella-roles/cases.ts"
+      ],
+      "precedent": "Identical in kind to docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json closed_world_path_correction, which extended the W2-B4 closed world for exactly this class."
+    },
+    "defect_class_B": {
+      "name": "DETERMINATE CONTRADICTION INSIDE THE FROZEN AUTHORITY",
+      "definition": "The path is reached by an EXPLICIT PROHIBITION of v1.0.0, AND v1.0.0 simultaneously COMMANDS a change whose mechanical consequence can only be absorbed in that path, AND v1.0.0 mandates an exit gate that the unabsorbed consequence fails. Authorizing the path is therefore not a discretionary widening - it is the only resolution of a contradiction internal to the frozen authority.",
+      "paths": [
+        "lib/stella/context/build-composer-context.funder-breakdown.test.ts",
+        "lib/stella/prompts/sensitive-populations-notice.test.ts"
+      ],
+      "prohibiting_clause": "v1.0.0 explicitly_prohibited entry: 'lib/stella/** outside the four enumerated reader/prompt files and their enumerated test hosts'.",
+      "honesty_note": "This class is MATERIALLY STRONGER than defect_class_A and is NOT presented as equivalent to it. Narrowing an explicit prohibition is a heavier authority act than filling an omission. It is exercised here ONLY because the contradiction is determinate and machine-demonstrable, and it is exercised by exact literal path - never by relaxing the prohibition's pattern.",
+      "prohibition_narrowed_how": "By EXACT LITERAL PATH ONLY. The clause 'lib/stella/** outside the four enumerated reader/prompt files and their enumerated test hosts' remains in force for every lib/stella path in the repository except the two literal paths named above. No pattern is edited. No third lib/stella path is authorized now or by implication.",
+      "precedent": "docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json closed_world_path_correction.path_2, which identified 'a determinate contradiction INSIDE the frozen authority, resolvable only by naming a host' and resolved it by naming exactly one host."
+    },
+    "prior_write_disclosure": "DISCLOSED AND NOT CAUSAL. All four paths were already written on the unmerged candidate branch codex/w2-b5-r1 at head 1c7bb3c260e854cd7095af79604ef865044125a8 before this amendment existed. That fact is recorded for honesty and is explicitly NOT the reason for authorization - the reason is the mechanical necessity proven per path below, each derived from the frozen contract and from bytes at the candidate BASE. This is the same doctrine applied in docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json and docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.2.json.",
+
+    "path_1": {
+      "PATH": "app/app/portfolios/[portfolioId]/page.tsx",
+      "DEFECT_CLASS": "A",
+      "AUTHORIZED": "YES - prospectively",
+      "EXISTED_BEFORE_B5": "YES - present at candidate base 040efdfe965dddb663ae722d5b4b4da1a84294d9",
+      "DISPOSITION": "PRE_EXISTING_PRODUCT_SURFACE_MECHANICALLY_MODIFIED",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B5_CONTRACT": "YES",
+      "MECHANICAL_CAUSE": "TYPECHECK BREAK FROM AN ALREADY-AUTHORIZED RENAME, PLUS AN UNDISCHARGEABLE LABELLING COMMAND. (1) lib/portfolios/analytics.ts is an ALREADY-AUTHORIZED path under v1.0.0 unprotected.readiness_readers. Its exported PortfolioAggregate interface declares `averageReadinessScore: number | null` and `readinessCoverage: number` at base lines 43-44, neither optional. Discharging the frozen readiness_reader_contract.portfolio.b5_disposition renames them to averageLegacyManualReadinessScore and legacyManualReadinessCoverage. A `git grep` sweep for both identifiers across all *.ts and *.tsx at the candidate BASE returns exactly three files: lib/portfolios/analytics.ts (authorized), lib/portfolios/analytics.test.ts (authorized, enumerated in existing_tests) and app/app/portfolios/[portfolioId]/page.tsx (NOT enumerated), which reads agg.averageReadinessScore at lines 121, 122, 124 and 126 and agg.readinessCoverage at line 128. Renaming a non-optional interface field while a consumer still reads the old name is a TypeScript error, so the `typecheck` exit gate frozen in W2_B5_TEST_MANIFEST_v1.json cannot pass while this file is unmodified. (2) Independently, readiness_reader_contract.portfolio.b5_disposition COMMANDS that the legacy value 'must not be labelled, aggregated or presented as authoritative readiness'. Labelling and presentation occur in this page, not in analytics.ts - analytics.ts computes, the page renders the string the user reads. The frozen contract therefore issues a labelling obligation whose ONLY possible site of discharge lies outside its own closed world.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_RENAME_CONSUMPTION_PLUS_FROZEN_LABEL_DISCHARGE",
+      "authorized_edit_scope": "Consume the two renamed PortfolioAggregate fields, and change the human-readable label so the displayed value is explicitly marked as the legacy, non-authoritative manual score as readiness_reader_contract.portfolio.b5_disposition requires. Nothing else. No refactor. No change to the population predicate. No change to the formula sum(net social value)/sum(investment). No new data source. No new query. No change to any other section of the page. Any change beyond a forced rename consumption and the frozen label discharge is STOP_FOR_AUTHORITY_DELTA.",
+      "BEHAVIORAL_SCOPE_DELTA": "NONE",
+      "behavioral_scope_delta_proof": "The rendered NUMBER is bit-identical: the same aggregate is computed by the same code path in analytics.ts and rendered by the same Math.round expression, with only the property identifier changed. The only user-visible delta is the label STRING, which is the frozen contract's own explicit command, not a new behavior chosen here. No predicate, no formula, no query, no ordering and no rounding changes.",
+      "fibiu_27_boundary_respected": "MEASURED. v1.0.0 prohibited_rationale.fibiu_27_30_surfaces reserves 'Portfolio's population predicate and formula' for FIBIU-27 (Wave 5), and readiness_reader_contract.portfolio.prohibited_in_b5 names exactly 'the population predicate and the formula sum(net social value)/sum(investment)'. NEITHER is touched. The reservation is on the predicate and the formula, NOT on the display layer, and readiness_reader_contract.portfolio.future_owner confirms FIBIU-27's subject is the SOURCE switch - 'the manual readiness_score stops being a source' - which B5 explicitly does not perform. Labelling the legacy value as legacy is the precise opposite of annexing FIBIU-27: it preserves the legacy source while making its non-authoritative status explicit, exactly as v1.0.0 commands.",
+      "why_v1_0_0_missed_it": "MEASURED, and stated so the same gap is not repeated. v1.0.0 enumerated the readiness READERS exhaustively and correctly - analytics.ts is present. Its product_surface_patterns entry authorizes exactly one product tree, app/app/projects/[projectId]/pipeline/calculation/**, which is the FIBIU-17/18 display surface. The sweep that produced readiness_readers was a MODULE-level sweep and did not extend to the RENDERING consumers of a renamed exported interface in a different product tree. The path belongs to the same class v1.0.0 already recognised as mechanically unavoidable; only the sweep's coverage was short by one hop - from the module that exports a type to the component that consumes it.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B5": "NO. Reverting the file breaks the typecheck gate outright, and additionally leaves a legacy non-authoritative number presented to the user as 'Preparacion metodologica promedio', which readiness_reader_contract.portfolio.b5_disposition forbids in terms.",
+      "REQUIRED_TEST_OR_GATE": "typecheck (W2_B5_TEST_MANIFEST_v1.json exit_gates[0]) and full_ci_green (exit_gates[9]). No new control is added to the frozen manifest.",
+      "protected": false,
+      "protected_note": "app/** is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS. It IS reserved by ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces, which is a different and independent gate. This path needs an ordinary --allow plus the explicit ODS instruction in ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json, and receives NO protected grant.",
+      "ods_instruction_reference": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json hpo_decision.FUNCTION_A_PRODUCT_TEST_AND_PRODUCT_SURFACE_DISCIPLINE"
+    },
+
+    "path_2": {
+      "PATH": "lib/stella/context/build-composer-context.funder-breakdown.test.ts",
+      "DEFECT_CLASS": "B",
+      "AUTHORIZED": "YES - prospectively",
+      "EXISTED_BEFORE_B5": "YES - present at candidate base 040efdfe965dddb663ae722d5b4b4da1a84294d9",
+      "DISPOSITION": "PRE_EXISTING_PRODUCT_TEST_HOST_WITH_A_FORCED_QUERY_SEQUENCE",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B5_CONTRACT": "YES",
+      "MECHANICAL_CAUSE": "MOCK QUERY-SEQUENCE DESYNCHRONISATION FROM AN ALREADY-AUTHORIZED READER CHANGE. lib/stella/context/build-composer-context.ts is an ALREADY-AUTHORIZED path under v1.0.0 unprotected.readiness_readers, and v1.0.0 readiness_reader_contract requires the composer to stop sourcing readiness from sroi_run_reviews - stage_f_reader_finalization states that where the context is not repointed, 'an ABSENT/null readiness field is REQUIRED over a legacy manual value'. Discharging that removes the sroi_run_reviews SELECT from buildComposerContext entirely. This test file does NOT assert on readiness at all - it tests funder breakdown - but it drives the composer through an ORDER-DEPENDENT mock: a chained db.select() mock queued with one mockReturnValueOnce per query, in positional order, documented in the file's own header as steps 1..13 with '12. readiness review' and '13. report sections'. Removing one query shifts every subsequent position by one, so the queue's step-12 entry is consumed by the sections query and the final entry is never consumed. The file's assertions fail on data that has nothing to do with readiness. This is a POSITIONAL COUPLING, not a semantic dependency.",
+      "the_determinate_contradiction": "v1.0.0 (a) COMMANDS the composer reader change, (b) PROHIBITS 'lib/stella/** outside the four enumerated reader/prompt files and their enumerated test hosts' - and this file is a lib/stella test host that v1.0.0 does NOT enumerate, because enumeration lists only lib/stella/context/__tests__/build-composer-context.test.ts and this file sits beside the module rather than under __tests__ - and (c) MANDATES full_ci_green as exit_gates[9] plus targeted_tests as exit_gates[8]. All three cannot hold simultaneously. The contradiction is internal to the frozen authority and is resolvable only by naming this exact file.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_MOCK_SEQUENCE_REALIGNMENT",
+      "authorized_edit_scope": "Remove the one now-dead mockReturnValueOnce entry corresponding to the deleted sroi_run_reviews query, renumber the file's own explanatory header comment to match, and nothing else. No assertion may be added, removed, weakened, converted to a lower-bound or contains-at-least form, or skipped. The funder-breakdown expectations this file exists to enforce are FROZEN. Any change beyond the forced sequence realignment is STOP_FOR_AUTHORITY_DELTA.",
+      "BEHAVIORAL_SCOPE_DELTA": "NONE",
+      "behavioral_scope_delta_proof": "The file's subject is funder breakdown. Its funder-breakdown assertions are unchanged in number, in strength and in expected value. The edit removes a queue entry for a query the production code no longer issues, restoring the mock to a faithful model of the real call sequence. A test whose mock models a call that no longer happens is less faithful, not more strict, so realigning it strengthens the control rather than weakening it.",
+      "why_v1_0_0_missed_it": "MEASURED. v1.0.0 enumerated the Stella context test hosts by their conventional location, lib/stella/context/__tests__/. This file is the single Stella context test that lives BESIDE its module instead of under __tests__, so a directory-shaped sweep of __tests__ could not see it. The defect is in the sweep's shape, not in its intent.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B5": "NO. Reverting the file leaves an existing product test failing against correctly implemented B5 code, which fails targeted_tests and full_ci_green and would force the batch to either carry a fabricated known condition or weaken a gate - both prohibited by W2_B5_TEST_MANIFEST_v1.json gate_weakening_prohibited.",
+      "REQUIRED_TEST_OR_GATE": "targeted_tests (exit_gates[8]) and full_ci_green (exit_gates[9]). The file's own funder-breakdown assertions remain its control.",
+      "protected": false,
+      "protected_note": "lib/** is NOT in DEFAULT_PROTECTED_PATTERNS. It IS reserved by ODS prohibited_surfaces. Ordinary --allow plus the ODS instruction; NO protected grant.",
+      "ods_instruction_reference": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json hpo_decision.FUNCTION_A_PRODUCT_TEST_AND_PRODUCT_SURFACE_DISCIPLINE"
+    },
+
+    "path_3": {
+      "PATH": "lib/stella/prompts/sensitive-populations-notice.test.ts",
+      "DEFECT_CLASS": "B",
+      "AUTHORIZED": "YES - prospectively",
+      "EXISTED_BEFORE_B5": "YES - present at candidate base 040efdfe965dddb663ae722d5b4b4da1a84294d9, carrying latestReadinessScore at line 65",
+      "DISPOSITION": "PRE_EXISTING_PRODUCT_TEST_WITH_A_FORCED_FIXTURE_FIELD",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B5_CONTRACT": "YES",
+      "MECHANICAL_CAUSE": "TYPESCRIPT EXCESS-PROPERTY BREAK FROM A CHANGE v1.0.0 COMMANDS BY NAME. v1.0.0 domain_contracts states verbatim: 'lib/stella/context/build-reviewer-context.ts - remove latestReadinessScore from ReviewerRunReviewSummary and its select'. ReviewerRunReviewSummary is declared in build-reviewer-context.ts at base line 92 as `latestReadinessScore: number | null`, and W2_B5_TEST_MANIFEST_v1.json control NEG-17-4 requires that 'ReviewerRunReviewSummary no longer exposes latestReadinessScore'. This file builds a fixture object literal for ReviewerContext['runReviewSummary'] containing latestReadinessScore. Once the field is removed from the type, an object literal supplying it is an excess property, which TypeScript rejects on a literal assigned to a typed target. The `typecheck` exit gate therefore cannot pass while this file is unmodified. A `git grep latestReadinessScore` at the candidate BASE returns exactly two source consumers outside the enumerated surface: this file and path_4. Every other consumer - build-reviewer-context.ts, reviewer-system.ts, their two test hosts and build-reviewer-context.test.ts - is already enumerated in v1.0.0.",
+      "the_determinate_contradiction": "v1.0.0 (a) COMMANDS the removal of latestReadinessScore by name, (b) PROHIBITS 'lib/stella/** outside the four enumerated reader/prompt files and their enumerated test hosts', and this file is an unenumerated lib/stella test host, and (c) MANDATES typecheck as exit_gates[0]. The three cannot hold at once. Resolvable only by naming this exact file.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_FIXTURE_FIELD_REMOVAL",
+      "authorized_edit_scope": "Remove the single now-nonexistent latestReadinessScore property from the runReviewSummary fixture, optionally accompanied by an explanatory comment naming FIBIU-17. Nothing else. This file's sensitive-populations-notice assertions are FROZEN - none may be added, removed, weakened or skipped. Any change beyond the forced fixture-field removal is STOP_FOR_AUTHORITY_DELTA.",
+      "BEHAVIORAL_SCOPE_DELTA": "NONE",
+      "behavioral_scope_delta_proof": "The removed fixture field is latestReadinessScore: null. The file's subject is the sensitive-populations notice; no assertion in it reads readiness, and the value removed was already null, so no expected value anywhere in the file changes. The fixture simply stops declaring a property the type no longer has.",
+      "why_v1_0_0_missed_it": "MEASURED. v1.0.0 enumerated lib/stella/prompts/reviewer-system.ts and its test host lib/stella/prompts/reviewer-system.test.ts, which are the reviewer-prompt surface the readiness removal targets. It did not sweep for OTHER tests in the same directory that merely borrow the same fixture SHAPE for an unrelated subject. The sweep followed the semantic surface; the break follows the structural type, and those two sets differ by exactly these two files.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B5": "NO. Reverting the file breaks typecheck outright.",
+      "REQUIRED_TEST_OR_GATE": "typecheck (exit_gates[0]) and full_ci_green (exit_gates[9]). The file's own sensitive-populations controls remain unchanged and continue to run.",
+      "protected": false,
+      "protected_note": "lib/** is NOT in DEFAULT_PROTECTED_PATTERNS. Ordinary --allow plus the ODS instruction; NO protected grant.",
+      "ods_instruction_reference": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json hpo_decision.FUNCTION_A_PRODUCT_TEST_AND_PRODUCT_SURFACE_DISCIPLINE"
+    },
+
+    "path_4": {
+      "PATH": "tests/eval/stella-roles/cases.ts",
+      "DEFECT_CLASS": "A",
+      "AUTHORIZED": "YES - prospectively",
+      "EXISTED_BEFORE_B5": "YES - present at candidate base 040efdfe965dddb663ae722d5b4b4da1a84294d9, carrying latestReadinessScore at line 171",
+      "DISPOSITION": "PRE_EXISTING_PRODUCT_TEST_FIXTURE_MODULE_WITH_A_FORCED_FIXTURE_FIELD",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B5_CONTRACT": "YES",
+      "MECHANICAL_CAUSE": "TYPESCRIPT EXCESS-PROPERTY BREAK, IDENTICAL IN KIND TO path_3. This module declares RUN_REVIEW_SUMMARY as ReviewerContext['runReviewSummary'] containing latestReadinessScore: 72. Once v1.0.0's commanded removal of latestReadinessScore from ReviewerRunReviewSummary lands, the literal supplies a property the type no longer declares and typecheck fails. It is the second and last of the two unenumerated consumers the base-ref grep identified.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_FIXTURE_FIELD_REMOVAL",
+      "authorized_edit_scope": "Remove the single now-nonexistent latestReadinessScore property from the RUN_REVIEW_SUMMARY fixture, optionally accompanied by an explanatory comment naming FIBIU-17. Nothing else. No eval case, expectation, threshold or scoring rule in this module may change. Any change beyond the forced fixture-field removal is STOP_FOR_AUTHORITY_DELTA.",
+      "BEHAVIORAL_SCOPE_DELTA": "NONE",
+      "behavioral_scope_delta_proof": "The removed property is a fixture input that the reviewer context no longer accepts. Because the production reader no longer emits the field, no eval case can assert on it; removing it from the fixture aligns the fixture with the contract rather than altering what any case measures. No case, threshold or expected output changes.",
+      "why_v1_0_0_missed_it": "MEASURED. v1.0.0 enumerated tests/eval/stella-release/hosted-baseline-gate.ts and its test as the baseline-growth pin hosts. tests/eval/stella-roles/ is a DIFFERENT eval family under the same tests/eval/ parent, and it was not swept: the baseline-growth sweep was organised by the artifact family it was pinning, not by the type surface FIBIU-17 changes. Same class as path_3, different directory family.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B5": "NO. Reverting the file breaks typecheck outright.",
+      "REQUIRED_TEST_OR_GATE": "typecheck (exit_gates[0]) and full_ci_green (exit_gates[9]).",
+      "protected": false,
+      "protected_note": "tests/** is NOT in DEFAULT_PROTECTED_PATTERNS. This path is reached by the ODS prohibited_surfaces 'existing product tests' reservation only. Ordinary --allow plus the ODS instruction; NO protected grant.",
+      "not_reached_by_any_v1_0_0_explicit_prohibition": "MEASURED. v1.0.0 explicitly_prohibited reserves tests/integration/** and tests/ods/**. It does NOT name tests/eval/**. This path is defect_class_A - pure omission.",
+      "ods_instruction_reference": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json hpo_decision.FUNCTION_A_PRODUCT_TEST_AND_PRODUCT_SURFACE_DISCIPLINE"
+    }
+  },
+
+  "amended_authorized_surface": {
+    "BINDING": "The W2-B5 implementation mission's CLOSED WORLD is the UNION of W2_B5_AUTHORITY_v1.0.0.json authorized_future_implementation_surface and the four exact literal paths below. Nothing else.",
+    "additional_exact_paths": [
+      "app/app/portfolios/[portfolioId]/page.tsx",
+      "lib/stella/context/build-composer-context.funder-breakdown.test.ts",
+      "lib/stella/prompts/sensitive-populations-notice.test.ts",
+      "tests/eval/stella-roles/cases.ts"
+    ],
+    "additional_exact_path_count": 4,
+    "closed_world": "STILL CLOSED. The union is EXHAUSTIVE. A path in neither the v1.0.0 enumeration nor this list is NOT authorized, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP - never a retroactive scope inference from the fact that it changed.",
+    "no_wildcards": "NONE of the four entries contains '*' or '**'. Every entry is an exact literal path.",
+    "no_directories": "NONE of the four entries is a directory or a directory prefix. Authorizing app/app/portfolios/[portfolioId]/page.tsx does NOT authorize app/app/portfolios/ or any sibling in it. Authorizing lib/stella/prompts/sensitive-populations-notice.test.ts does NOT authorize lib/stella/prompts/. Authorizing tests/eval/stella-roles/cases.ts does NOT authorize tests/eval/stella-roles/.",
+    "no_related_files": "The concept 'related files' has no authority here. Adjacency, sibling status, shared directory, shared import, shared fixture shape and shared subject matter confer NO authorization.",
+    "no_discovered_diff_allowlist": "An allowlist derived from what a candidate branch happened to change is PROHIBITED and cannot test a closed world. v1.0.0 scope_gate_invocation_rule is restated unchanged: the successor mission MUST invoke pnpm ods:scope with this enumeration, never with '--allow <every changed path>'.",
+    "case_sensitivity": "Authorization is bound to the CANONICAL spelling of each path exactly as written above. A path that matches only case-insensitively is NOT authorized, consistent with scripts/ods-scope.ts HPO-ODS-C4-CASE-01 semantics."
+  },
+
+  "precedent_prohibition": {
+    "BINDING": "This amendment MUST NOT be cited to infer any future path.",
+    "rule": "The authorization of these four paths creates NO precedent for a fifth. It licenses no pattern, no directory, no family, no 'same kind of thing' and no analogical extension. A fifth mechanically forced path - in any batch, in any lane, at any time - is a fresh STOP_FOR_AUTHORITY_DELTA requiring its own governed amendment with its own per-path necessity proof and, where ODS prohibited_surfaces is engaged, its own explicit ODS instruction.",
+    "specifically_prohibited_inferences": [
+      "that app/app/portfolios/** is now open because one page in it is authorized",
+      "that lib/stella/** is now open, or that its explicit prohibition is generally weakened, because two exact files in it are authorized",
+      "that tests/eval/** or tests/eval/stella-roles/** is now open because one module in it is authorized",
+      "that any file consuming a renamed exported field is automatically authorized",
+      "that any fixture carrying a removed field is automatically authorized",
+      "that any test whose mock sequence desynchronises is automatically authorized",
+      "that a path is authorized because it is mechanically forced, without a governed authority object naming it",
+      "that 'it was already changed on a candidate branch' is ever a reason for authorization"
+    ],
+    "why_this_clause_exists": "The recurring failure mode in this program is not an implementer inventing scope - it is a later mission reading a narrow, well-justified exception as a general permission. W2-B4's audit recorded a vacuous ODS_SCOPE=PASS obtained from a diff-derived allowlist. This clause and its deterministic controls exist so that the next reader cannot mistake four proven exceptions for an open surface."
+  },
+
+  "test_and_mutation_contract": {
+    "host": "tests/ods/w2-b5-scope-amendment.test.ts",
+    "host_rationale": "tests/ods/ is the repository-native home for controls that assert properties OF governance artifacts - it already hosts ods-scope, ods-controller, ods-prestate, ods-poststate, authority-seal-verify and ci-authority-integration controls. This host asserts properties of THIS amendment; it is not a product test and adds no control to the frozen W2_B5_TEST_MANIFEST_v1.json, which stays byte-unchanged. Note that v1.0.0 explicitly_prohibited reserves tests/ods/** against the IMPLEMENTATION mission - a correct rule that binds that mission, not this authority mission, which is separately authorized by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json authorized_changed_paths_this_mission.",
+    "matcher_binding": "Controls import patternToRegExp / matchesAnyPattern from scripts/ods-scope.ts so authorization is evaluated by the REAL gate matcher, never by a reimplementation that could drift from it.",
+    "positive_controls": [
+      "POS-AMD-1: each of the four exact paths is a member of amended_authorized_surface.additional_exact_paths.",
+      "POS-AMD-2: each of the four exact paths IS authorized under the EFFECTIVE surface (v1.0.0 enumeration UNION the four).",
+      "POS-AMD-3 (NON-VACUITY): each of the four exact paths is NOT authorized under the v1.0.0 enumeration ALONE. Without this, POS-AMD-2 could pass vacuously against an already-permissive surface and would prove nothing."
+    ],
+    "negative_controls": [
+      "NEG-AMD-1: a fifth adjacent path is NOT authorized - one sibling per authorized path's directory.",
+      "NEG-AMD-2: a wildcard is NOT authorized - no entry contains '*' or '**', and a wildcard string is not a member.",
+      "NEG-AMD-3: a directory prefix is NOT sufficient - no entry is a bare directory, and a directory prefix is not a member.",
+      "NEG-AMD-4: the amendment grants no protected surface - it declares no protected patterns and no grant, and none of the four paths matches DEFAULT_PROTECTED_PATTERNS.",
+      "NEG-AMD-5: the frozen v1.0.0 authority and the frozen test manifest are declared byte-unchanged by this amendment's own what_is_unchanged clause."
+    ],
+    "mutation_controls": [
+      "MUT-AMD-1: REMOVE one of the four from the surface => that path becomes unauthorized under the effective surface. Asserted for each of the four independently, so no single path can silently drop out.",
+      "MUT-AMD-2: ADD an unrelated path => exact-membership and closed-world count assertions fail.",
+      "MUT-AMD-3: CASE-CORRUPT one exact path => the corrupted spelling is NOT authorized, proving authorization is bound to canonical casing.",
+      "MUT-AMD-4: WIDEN one exact path to its directory glob => a sibling that must not be authorized becomes authorized, proving the exact-path form is load-bearing."
+    ],
+    "closed_world_proof": "EXACT MEMBERSHIP, never a subset test: the additional path list is asserted to have length 4, to contain no duplicates, and to equal the expected four-element set exactly - in both directions.",
+    "gate_weakening_prohibited": "No control in this file may be skipped, softened or converted to a lower-bound form to obtain a PASS."
+  },
+
+  "this_mission_controls": {
+    "authority_objects_created": 2,
+    "objects": [
+      "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json"
+    ],
+    "control_host_created": "tests/ods/w2-b5-scope-amendment.test.ts",
+    "no_b5_implementation_edit": "MEASURED. This mission changes NO file on the B5 implementation surface. Branch codex/w2-b5-r1 is NOT touched, NOT rebased and NOT merged by this mission.",
+    "no_migration_ordinal_allocated": true,
+    "no_schema_change": true,
+    "no_staging": true,
+    "no_production": true,
+    "main_unchanged": true,
+    "controller_not_changed": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts are NOT changed here; the 27 -> 28 enumeration belongs to the successor Controller mission funded by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json.",
+    "one_hole_rule": "Exactly ONE new ODS lineage hole is opened - v1.0.17 unenumerated in the live Controller. The predecessor hole (v1.0.16) is CLOSED at INTEGRATION_SHA. No second concurrent hole exists.",
+    "no_preallocation": "Nothing beyond v1.0.17 and HPO-ODS-W2-18 is allocated, reserved or pre-created."
+  },
+
+  "risks_and_open_findings": {
+    "OPEN_FINDING_1_stale_role_contract_doc": "docs/20_STELLA_ROLE_CONTRACTS.md line 112 documents latestReadinessScore as a reviewer input and becomes stale once FIBIU-17 lands. NOT authorized here and NOT repaired here. Recorded for the B5 closure audit to dispose of.",
+    "OPEN_FINDING_2_imprecise_prohibition_numeral": "v1.0.0 explicitly_prohibited says 'the four enumerated reader/prompt files' while readiness_readers enumerates FIVE lib/stella paths. Recorded, NOT corrected - the operative term 'the enumerated ... files' is exact and machine-checkable, the numeral is descriptive prose no gate reads, and correcting it would require editing a frozen authority in place.",
+    "RISK_1_defect_class_B_is_a_heavier_act": "Two of the four paths narrow an EXPLICIT prohibition rather than filling an omission. This is disclosed as its own defect class precisely so an independent auditor evaluates it on its own merits and is not invited to accept it on the strength of the easier class_A cases. If an auditor rejects the class_B reasoning, the correct outcome is that paths 2 and 3 lose authorization - not that the whole amendment is read down.",
+    "RISK_2_precedent_generalization": "Mitigated by precedent_prohibition and its deterministic controls, but no test can bind a future author's reading. The clause is written to be unmistakable.",
+    "UNKNOWN_FINDINGS": 0
+  },
+
+  "final_state": "W2_B5_AUTHORITY_AMENDMENT_v1_0_1_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "W2_B5_AUTHORITY_STATUS": "CLOSED",
+  "W2_B5_IMPLEMENTATION_STATUS": "OPEN",
+  "W2_B5_RELEVANT_UNKNOWN_FINDINGS": 0,
+  "BEHAVIORAL_SCOPE_DELTA": "NONE",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": true,
+  "READY_FOR_MERGE": "NO_PENDING_INDEPENDENT_AUDIT",
+  "next_gate": "W2_B5_SCOPE_GAP_AUTHORITY_SUCCESSOR_INDEPENDENT_AUDIT"
+}
