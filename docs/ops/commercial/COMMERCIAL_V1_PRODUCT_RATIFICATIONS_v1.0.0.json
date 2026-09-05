@@ -1,0 +1,190 @@
+{
+  "package_id": "COMMERCIAL_V1_PRODUCT_RATIFICATIONS",
+  "version": "1.0.0",
+  "artifact_id": "COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "hpo_mission_id": "COMMERCIAL-V1-ALIGNMENT-BASELINE-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-04",
+  "companion_document": "docs/ops/commercial/COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md",
+
+  "purpose": "Machine-citable list of product-owner ratifications for Commercial V1, extracted verbatim from the alignment-baseline mission prompt. This artifact records WHAT was ratified and by whom (product owner, this mission), not whether it is implemented. It grants no schema, no migration ordinal, no ODS/HPO id, and no executable authority. A future mission that needs one of these decisions cites this file's ratification id instead of re-deriving or re-litigating the decision.",
+
+  "precedence_note": "This file is canonical for product-owner intent only. It does NOT override executable FIB/ODS/database/security authority. Where a ratification here conflicts with current executable authority or current schema, that conflict is an AUTHORITY_GAP requiring a governed successor before implementation — see the companion baseline document, section 'Known Alignment Gaps'.",
+
+  "reopening_rule": "Do not re-open any ratification below unless repository evidence proves an actual contradiction requiring escalation. Absence of implementation is not a contradiction.",
+
+  "ratifications": [
+    {
+      "id": "MO-01",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "A subject may self-service-found at most ONE organization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "AUTHORITY_GAP — no CommercialAccount/founder-cardinality enforcement observed in repository; see baseline Known Alignment Gap #1."
+    },
+    {
+      "id": "MO-02",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "A subject may hold active memberships in MULTIPLE organizations. Self-service founding cardinality and membership cardinality are different concepts.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "AUTHORITY_GAP — no multi-membership session/selection surface found under app/app or lib/organizations; see baseline Known Alignment Gap #1."
+    },
+    {
+      "id": "MO-03",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Exactly one selected organization is the tenant request scope at a time.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — current single-active-membership model may already satisfy this incidentally; requires dedicated measurement against lib/organizations and auth middleware."
+    },
+    {
+      "id": "MO-04",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Selected organization is session-scoped. Target carrier: HttpOnly, Secure, SameSite=Lax, session-only.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — no dedicated selected-organization cookie/session carrier located by targeted grep of app/lib at AS_OF_HEAD."
+    },
+    {
+      "id": "MO-05",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Membership must be revalidated on every request.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — requires dedicated audit of request-boundary authorization, not re-derived here."
+    },
+    {
+      "id": "MO-06",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Membership role is the authorization ceiling.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED."
+    },
+    {
+      "id": "MO-07",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Tenant application routes remain membership-bound even for platform superadmins. There is NO silent superadmin tenant-data bypass.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — app/admin exists as a separate route tree at AS_OF_HEAD (consistent with MO-08 in shape), but a bypass-absence claim requires a dedicated RLS/authorization audit, not asserted here."
+    },
+    {
+      "id": "MO-08",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "/admin is a separate platform/global control-plane scope.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_IMPLEMENTED — app/admin exists as a distinct route tree with lib/admin as a distinct library at AS_OF_HEAD; completeness/isolation not re-audited by this mission (see project_platform_admin_self_service_zero_discovery_r1 prior finding: /admin already calls definers ahead of design application in some paths)."
+    },
+    {
+      "id": "MO-09",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Any future support/impersonation capability must be explicit, auditable, time-bounded and separately authorized. It must not be inferred from superadmin status.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no impersonation capability is authorized to exist yet; this ratification is a forward constraint on any future authority, not a present feature."
+    },
+    {
+      "id": "SS-01",
+      "domain": "SELF_SERVICE",
+      "statement": "Mandatory signup allowlisting is NOT part of the final Commercial V1 journey.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — current allowlisting posture not re-measured by this mission."
+    },
+    {
+      "id": "SS-02",
+      "domain": "SELF_SERVICE",
+      "statement": "Commercial V1 target is: verified identity/email + abuse/rate protection + deterministic/idempotent bootstrap.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED."
+    },
+    {
+      "id": "SS-03",
+      "domain": "SELF_SERVICE",
+      "statement": "Registration != provisioning != commercial activation != entitlement. Commercial review can exist. Technical provisioning intervention cannot be required.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "AUTHORITY_GAP — no CommercialAccount/EntitlementGrant concept exists in repository at AS_OF_HEAD to carry this distinction; see baseline Known Alignment Gap #2."
+    },
+    {
+      "id": "MO-10",
+      "domain": "FOUNDED_BY_HISTORICAL",
+      "statement": "organizations.founded_by is the target explicit founder relation.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no founded_by column located by targeted grep of db/prepared and db/baseline at AS_OF_HEAD."
+    },
+    {
+      "id": "MO-11",
+      "domain": "FOUNDED_BY_HISTORICAL",
+      "statement": "Historical founded_by backfill must be conservative. Use deterministic evidence where available. Do NOT attribute a founder merely because invited_by IS NULL. If reliable founder provenance is unavailable, leave founded_by NULL. Never fabricate historical ownership/founding attribution.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_APPLICABLE_YET — governs a future backfill migration that does not yet exist; binding on whichever future authority allocates it."
+    },
+    {
+      "id": "MO-12",
+      "domain": "STELLA_TENANT_SCOPE",
+      "statement": "Stella operations/tickets must be bound to the selected validated organization context and rechecked at the database/runtime boundary. Do not accept a V1 design where membership ceiling alone permits ambiguous cross-scope attribution.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — requires dedicated audit of lib/stella tenant-scope binding; not re-derived by this mission."
+    },
+    {
+      "id": "CA-01",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "CommercialAccount is distinct from Organization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no CommercialAccount type/table located by targeted grep at AS_OF_HEAD; commercial fields currently overload Organization (app/app/organization/billing, lib/stripe). See baseline Known Alignment Gap #2."
+    },
+    {
+      "id": "CA-02",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "One CommercialAccount may govern one or more Organizations.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — depends on CA-01."
+    },
+    {
+      "id": "CA-03",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "EntitlementGrant is distinct from authorization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no EntitlementGrant concept located in repository at AS_OF_HEAD."
+    },
+    {
+      "id": "CA-04",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "Entitlements are evaluated at the organization/product-capability boundary.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_IMPLEMENTED — lib/capabilities exists at AS_OF_HEAD as a capability-boundary concept; whether it implements entitlement evaluation in the CA-01..CA-05 sense is FUTURE_MEASUREMENT_REQUIRED, not asserted here."
+    },
+    {
+      "id": "CA-05",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "Stripe/payment state does not directly grant application authorization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — lib/stripe exists at AS_OF_HEAD; whether any code path lets payment state directly gate authorization requires a dedicated audit, not asserted here. Prior memory (project_platform_admin_self_service_zero_discovery_r1) records that CommercialAccount/entitlements do not exist yet, which is consistent with this ratification being currently unenforceable rather than violated."
+    },
+    {
+      "id": "EV-01",
+      "domain": "EVALUATE",
+      "statement": "Governed N/A requires explicit state, rationale and human provenance. For Evaluate scoring, N/A is excluded from numerator AND denominator. Readiness may use a different governed-N/A arithmetic because Measure readiness and Evaluate are different domains.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate module located under app/app or lib at AS_OF_HEAD; this ratification binds a future Evaluate authority, not present code."
+    },
+    {
+      "id": "EV-02",
+      "domain": "EVALUATE",
+      "statement": "DecisionPolicy belongs to an immutable/versioned template policy. System recommendation is deterministic. Human decision remains decisive. Decision/recommendation divergence is explicit and auditable.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED."
+    },
+    {
+      "id": "EV-03",
+      "domain": "EVALUATE",
+      "statement": "Stella may analyze, explain, suggest, draft rationale. Stella may NOT score, produce the authoritative recommendation, decide, or approve.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "DOCTRINE_LEVEL — this is the same human-control boundary already carried by 'la IA propone y analiza; el sistema controla y calcula; las personas deciden y aprueban' for Stella generally (lib/stella); its Evaluate-specific instance has no code to check yet because Evaluate is NOT_IMPLEMENTED."
+    },
+    {
+      "id": "RI-01",
+      "domain": "REPORT_INTEGRITY",
+      "statement": "Do NOT resurrect obsolete report/hash/RPC designs merely because they appeared in prior packets. Current Report Integrity requires its own future authority against the live repository.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "AUTHORITY_GAP — no report_hash/report-integrity RPC located by targeted grep of app/lib/db at AS_OF_HEAD; lib/reports exists but its relationship to a live Report Integrity design is unresolved. See baseline Known Alignment Gap #3."
+    }
+  ],
+
+  "invariants_reference_only": {
+    "note": "The non-negotiable invariants (Organization=tenant root, Ownership!=Access, CommercialAccount!=Organization, Payment!=Activation, ReleaseFlag!=Entitlement!=Authorization, Measure!=Evaluate, Stella analysis!=Human decision, Evidence!=Claim, Draft!=Approved, Calculated!=Methodology Approved, Code Complete!=Audit Complete!=Staging Validated!=Commercially Ready, historical reconstructibility, cross-tenant fail-closed, no technical manual provisioning) are recorded in the companion baseline document, not duplicated here as separate ratification ids — they are framing invariants rather than discrete product decisions."
+  }
+}
