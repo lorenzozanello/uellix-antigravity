@@ -142,7 +142,7 @@
       },
       "audit": {
         "type": "json-field",
-        "ref": "codex/w2-b5-r1",
+        "ref": "codex/w2-b5-closure-evidence-r1",
         "path": "docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
         "field": "closure.W2_B5",
         "closedValues": [
