@@ -10,7 +10,7 @@
   },
   {
    "id": "PG-POS-2-CHECK-range-global_score",
-   "sql": "DO $c$ DECLARE def text; BEGIN\n  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint WHERE conname = 'readiness_assessments_global_score_check';\n  IF def IS NULL THEN RAISE EXCEPTION 'PG-POS-2 global_score: constraint readiness_assessments_global_score_check does not exist'; END IF;\n  IF def NOT LIKE '%>= 0%' THEN RAISE EXCEPTION 'PG-POS-2 global_score missing lower bound in %', def; END IF;\n  IF def NOT LIKE '%<= 100%' THEN RAISE EXCEPTION 'PG-POS-2 global_score missing upper bound in %', def; END IF;\nEND $c$;\n"
+   "sql": "DO $c$ DECLARE def text; BEGIN\n  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint WHERE conname = 'readiness_assessments_global_score_check';\n  IF def IS NULL THEN RAISE EXCEPTION 'PG-POS-2 global_score: constraint readiness_assessments_global_score_check does not exist'; END IF;\n  IF def NOT LIKE '%>= (0)%' THEN RAISE EXCEPTION 'PG-POS-2 global_score missing lower bound in %', def; END IF;\n  IF def NOT LIKE '%<= (100)%' THEN RAISE EXCEPTION 'PG-POS-2 global_score missing upper bound in %', def; END IF;\nEND $c$;\n"
   },
   {
    "id": "PG-POS-2-CHECK-vocabulary-band",
@@ -106,7 +106,7 @@
   },
   {
    "id": "MUT-PG-2-CHECK-removal-caught-disposition",
-   "sql": "BEGIN;\nALTER TABLE public.sensitivity_candidates DROP CONSTRAINT sensitivity_candidates_disposition_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, sensitivity_model_version, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','mut2:disposition','methodological_filter','{}','0','invented_value','1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-2 disposition expected the invalid INSERT to SUCCEED once the CHECK is dropped (n=%), proving the CHECK was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+   "sql": "BEGIN;\nALTER TABLE public.sensitivity_candidates DROP CONSTRAINT sensitivity_candidates_disposition_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, rationale, sensitivity_model_version, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','mut2:disposition','methodological_filter','{}','0','invented_value','mut2 rationale (isolates this probe to the disposition CHECK, not rationale_check)','1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-2 disposition expected the invalid INSERT to SUCCEED once the CHECK is dropped (n=%), proving the CHECK was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
   },
   {
    "id": "MUT-PG-2-CHECK-removal-caught-scenario_kind",
