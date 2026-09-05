@@ -1,0 +1,245 @@
+{
+  "package_id": "W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT",
+  "version": "1.0.0",
+  "artifact_id": "W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0",
+  "authority_class": "INDEPENDENT_AUDIT_EVIDENCE",
+  "document_class": "AUDIT_MATERIALIZATION_NOT_A_NEW_AUDIT",
+  "is_authority": false,
+  "append_only": true,
+  "supersedes": null,
+
+  "purpose": "Repository evidence for the independent W2-B5 WHOLE-BATCH CLOSURE AUDIT (audit_class FOCUSED_OPUS per docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B5). It is the artifact that registry unit reads at field closure.W2_B5 to resolve AUDIT_STATUS. This artifact was MISSING from the repository even though the audit it records already ran and PR70 was already merged normally; this document closes that gap. It authorizes no implementation, no schema change, no migration, no Controller change and no new ODS/HPO allocation.",
+
+  "self_certification": "NONE. This session (W2_B5_CLOSURE_EVIDENCE_MATERIALIZATION_R1, Claude Sonnet 5) did not perform, repeat, upgrade, weaken or reinterpret the audit recorded below. It transcribes, into the repository-native evidence contract the program-state registry expects, the result of the independent W2-B5-WHOLE-BATCH-CLOSURE-AUDIT-R1 that was already completed and delivered to this mission as a precondition, over the object described in audited_object. Facts under D8_merge_tree_independent_reverification and audited_authority_chain blob hashes were independently re-measured by THIS session directly against git — mechanical re-derivation, not a semantic re-audit — and are labeled as such.",
+
+  "materializing_mission": "W2_B5_CLOSURE_EVIDENCE_MATERIALIZATION_R1",
+  "materialized_by": "Claude Sonnet 5, this session, worktree C:\\Users\\Lorenzo\\Documents\\uellix-stella-w2-b5-closure-evidence-r1, branch codex/w2-b5-closure-evidence-r1",
+  "auditor_identity": "NOT THIS SESSION. The independent W2-B5-WHOLE-BATCH-CLOSURE-AUDIT-R1 was performed by a separate, prior governed act (source_audit_state below). This session did not run it, cannot re-derive its internal adversarial method beyond what was reported to it, and asserts no additional finding beyond the mechanical re-derivations explicitly labeled as this session's own.",
+  "auditor_identity_distinct_from_materializing_session": true,
+
+  "source_audit_state": {
+    "audit_id": "W2-B5-WHOLE-BATCH-CLOSURE-AUDIT-R1",
+    "audit_class": "FOCUSED_OPUS_WHOLE_BATCH_CLOSURE",
+    "verdict": "PASS",
+    "blocking_findings": 0,
+    "unknown_findings": 0
+  },
+
+  "audited_object": {
+    "pr": 70,
+    "pr_state_at_audit": "OPEN, isDraft=true, targeting integration/commercial-v1",
+    "branch": "codex/w2-b5-r1",
+    "AUDITED_IMPLEMENTATION_HEAD": "d534f209b37b6f142b5904ad5fcc42a60a2c74ba",
+    "AUDITED_IMPLEMENTATION_TREE": "6b0276ffa42ee6783973503cd536f8eb0782fc6e",
+    "audited_head_content": "The commit 'docs(wave2): materialize W2-B5 implementation evidence and FIBIU-18 audit review', which added docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json and docs/ops/wave2/W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0.json on top of parent 648732af2c8f6d54c11c77ed815abddad976de3b. INDEPENDENTLY VERIFIED by this session: `git cat-file -p d534f209b37b6f142b5904ad5fcc42a60a2c74ba` reports tree 6b0276ffa42ee6783973503cd536f8eb0782fc6e and single parent 648732af2c8f6d54c11c77ed815abddad976de3b, matching this field exactly.",
+    "PRE_MERGE_INTEGRATION": "34d390ccf61bd4f3b80ec6d5f0138e093cbe15dd",
+    "pre_merge_integration_content": "Merge pull request #75 (Controller v1.0.18 / CONTROLLER29). INDEPENDENTLY VERIFIED by this session: tree bac14a117ec90f5d7537d0700e3dd4b20adff334, two parents (7e46f8462bed374b114b19ec9414a04f957c1cad, c9a46a49b186e527dea14971d495313c603876a4).",
+    "changed_file_count": 148,
+    "changed_file_count_provenance": "146 (ods_scope-measured at 648732af against base ccd0680e27560c2dfe5c08e2f69d4f115014466f, per docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json gates.ods_scope) + 2 (the two evidence-only JSON files the audited commit itself adds). INDEPENDENTLY VERIFIED by this session: `git diff --name-only ccd0680e27560c2dfe5c08e2f69d4f115014466f d534f209b37b6f142b5904ad5fcc42a60a2c74ba` reports exactly 148 paths, and `git diff --name-only 648732af2c8f6d54c11c77ed815abddad976de3b d534f209b37b6f142b5904ad5fcc42a60a2c74ba` reports exactly the 2 evidence paths named above and nothing else.",
+    "changed_file_authorization": "148 authorized / 0 unauthorized, per source_audit_state. The 146-path component was independently gated PASS by docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json gates.ods_scope (PROTECTED_AUTHORIZED_PATH_COUNT=84, PROTECTED_PATH_VIOLATIONS=0, UNAUTHORIZED_PATHS=0). The final 2-path evidence-only delta falls under docs/ops/** and asserts no implementation, schema, migration or authority change of its own."
+  },
+
+  "final_merge": {
+    "method": "PR70 normal merge (no rebase, no squash, no force-push)",
+    "MERGE_SHA": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+    "INTEGRATION_TREE": "e7f3a1e4fd8c4c8fe5a90cc02bc63c39ac978286",
+    "parents": [
+      "34d390ccf61bd4f3b80ec6d5f0138e093cbe15dd",
+      "d534f209b37b6f142b5904ad5fcc42a60a2c74ba"
+    ],
+    "two_parents_confirmed": "INDEPENDENTLY VERIFIED by this session: `git cat-file -p a27c4a9af83afba5f4f94ee2a2d61a56495fdd50` reports tree e7f3a1e4fd8c4c8fe5a90cc02bc63c39ac978286 and exactly these two parents, in this order.",
+    "origin_integration_commercial_v1_tip": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50 — this merge commit IS the current tip of origin/integration/commercial-v1, measured by this session via `git rev-parse origin/integration/commercial-v1`."
+  },
+
+  "D8_merge_tree_independent_reverification": {
+    "method": "git merge-tree --write-tree between the pre-merge integration head and the audited candidate — a real three-way merge computed in memory, touching no ref, index or working tree. Performed independently by THIS materializing session as a mechanical check, not a re-audit of semantics.",
+    "base": "34d390ccf61bd4f3b80ec6d5f0138e093cbe15dd",
+    "candidate": "d534f209b37b6f142b5904ad5fcc42a60a2c74ba",
+    "computed_merge_tree": "e7f3a1e4fd8c4c8fe5a90cc02bc63c39ac978286",
+    "actual_INTEGRATION_TREE_at_a27c4a9": "e7f3a1e4fd8c4c8fe5a90cc02bc63c39ac978286",
+    "identical": true,
+    "conflicts": 0,
+    "RESULT": "PASS — the normal merge a27c4a9 carries exactly the tree a pure three-way merge of the pre-merge integration head and the audited candidate would produce. INTEGRATION_TREE == precomputed merge-tree, confirmed independently."
+  },
+
+  "audited_authority_chain": {
+    "note": "Blob SHA-1s below were computed independently by this materializing session via `git show <AUDITED_IMPLEMENTATION_HEAD>:<path> | git hash-object --stdin` — a mechanical read, not a semantic re-audit.",
+    "W2_B5_AUTHORITY_v1.0.0": {
+      "path": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json",
+      "blob_sha1_at_audited_head": "94fbda98c21e02e527eac85249605e3806188349",
+      "grant_id": "HPO-ODS-W2-17",
+      "final_state": "W2_B5_AUTHORITY_FROZEN_WAITING_FOR_IMPLEMENTATION"
+    },
+    "W2_B5_AUTHORITY_AMENDMENT_v1.0.1": {
+      "path": "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "blob_sha1_at_audited_head": "71378c73133a67df11a9274f01d5084b1e6f91a2"
+    },
+    "W2_B5_AUTHORITY_AMENDMENT_v1.0.2": {
+      "path": "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json",
+      "blob_sha1_at_audited_head": "88ccecc394997378da8022902018c7c1bc6ae469",
+      "grant_id": "HPO-ODS-W2-19",
+      "purpose": "Closes the test-host successor authority gap (RD-BLK-1 test wiring for tests/b3-completeness.ui.test.tsx and tests/run-detail-page.sufficiency-reachability.test.tsx) and the stale docs/20_STELLA_ROLE_CONTRACTS.md rider. Declares CONTROLLER29_REQUIRED=true."
+    },
+    "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18": {
+      "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json",
+      "present_exactly_once": true,
+      "v1_0_19_absent_at_closure": "CONFIRMED — `ls docs/ops/ods/*.json` at this session's HEAD (a27c4a9, current origin/integration/commercial-v1 tip) contains no ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json and no v1.0.19-named artifact of any kind."
+    },
+    "W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0": {
+      "path": "docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+      "blob_sha1_at_audited_head": "5d12d854ae82b5e7cfb3e5b0e10dc808b85a76dd",
+      "mission": "W2-B5-TEST-HOST-EVIDENCE-FINALIZATION-R5",
+      "self_certification": "NONE (declared verbatim in the artifact itself)"
+    },
+    "W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0": {
+      "path": "docs/ops/wave2/W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0.json",
+      "blob_sha1_at_audited_head": "f4635a61ffb32560eb57cba275305ec9dda2adb0",
+      "audited_defect": "RD-BLK-1 — RunDetailPage's FIBIU-17/FIBIU-18 reads must fail closed, never fail open into a synthesized complete:true or empty-but-rendered state, on an authorization failure, an RLS failure, or an unexpected service error.",
+      "rd_blk_1_status": "FULLY_REMEDIATED",
+      "verdict": "PASS",
+      "blocking_findings": 0,
+      "unknown_findings": 0,
+      "audited_at": "b49eb50b4497e7f2f54c563563c19d552c215ac4 / tree a3b68379bec78e8efa92be0a9d28443ab09f9d35"
+    },
+    "W2_B5_TEST_MANIFEST_v1": {
+      "path": "docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json",
+      "blob_sha1_at_audited_head": "b34d758a619c5bda3d69d286b0482e5d6d0e7ae2"
+    }
+  },
+
+  "FIBIU17_readiness_readiness_contract": {
+    "requirement": "SROI_READINESS_MODEL_v1.0.0 governed model, per W2_B5_AUTHORITY_v1.0.0.json.",
+    "result": "PASS",
+    "supporting_migration": "db/migrations/0064_fib_readiness_assessments.sql — CONFIRMED PRESENT at this session's HEAD.",
+    "contract_hosts_green_within_the_562": [
+      "tests/sroi-readiness.model.test.ts",
+      "tests/sroi-readiness.service.test.ts"
+    ],
+    "stale_doc_alignment_closed": "docs/20_STELLA_ROLE_CONTRACTS.md audit_assistant Inputs row corrected to stop naming the removed latestReadinessScore field, per W2_B5_AUTHORITY_AMENDMENT_v1.0.2 DOCUMENTATION_ALIGNMENT_ONLY — recorded in W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json stale_doc_alignment."
+  },
+
+  "FIBIU18_sensitivity_sensitivity_contract": {
+    "requirement": "SROI_SENSITIVITY_MODEL_v1.0.0 governed model, per W2_B5_AUTHORITY_v1.0.0.json.",
+    "result": "PASS",
+    "supporting_migration": "db/migrations/0065_fib_sensitivity_model.sql — CONFIRMED PRESENT at this session's HEAD.",
+    "contract_hosts_green_within_the_562": [
+      "tests/sensitivity-disposition.service.test.ts",
+      "tests/sensitivity-register.test.ts",
+      "tests/sensitivity-scenario.service.test.ts"
+    ],
+    "rd_blk_1_relationship": "The RD-BLK-1 fail-closed fix for the FIBIU-17/18 RunDetailPage reads is the audited security delta of W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0.json (see audited_authority_chain above) and is fully independent of, and unmodified by, the test-host wiring in W2_B5_AUTHORITY_AMENDMENT_v1.0.2."
+  },
+
+  "RD_BLK_1_status": {
+    "status": "FULLY_REMEDIATED",
+    "audited_production_bytes_invariant": "CONFIRMED. Per docs/ops/wave2/W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0.json w2_b5_test_host_remediation_disposition: the subsequent test-host-wiring and doc-alignment mission touched ZERO bytes of lib/pipeline/sroi-readiness.ts, lib/pipeline/sroi-sensitivity.ts, or app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx — the exact files the audited RD-BLK-1 fix lives in.",
+    "test_hosts_closing_the_remediation_gap": {
+      "tests/b3-completeness.ui.test.tsx": "11/11 PASS post-wiring (was 4 failed / 7 passed pre-wiring, per W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json test_host_remediation.host_1)",
+      "tests/run-detail-page.sufficiency-reachability.test.tsx": "5/5 PASS post-wiring (was 5 failed pre-wiring, per test_host_remediation.host_2)"
+    },
+    "authorization": "W2_B5_AUTHORITY_AMENDMENT_v1.0.2 / ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18 (HPO-ODS-W2-19), AUTHORIZED_CHANGE_CLASS=MOCK_OR_TEST_WIRING_ONLY — no production semantics, no weakening, no assertion removed."
+  },
+
+  "controller_state": {
+    "IMMUTABLE_BY_CONVENTION_length": 29,
+    "measurement": "INDEPENDENTLY VERIFIED by this session via grep of tests/ods/ods-controller.test.ts at HEAD (a27c4a9): `expect(IMMUTABLE_BY_CONVENTION.length).toBe(29)` appears twice (line 93 negative-control style assertion and line 356 the live count assertion).",
+    "v1_0_18_enumerated": true,
+    "v1_0_19_absent_from_controller": true,
+    "controller29_prerequisite_satisfied": "YES — Controller 29 (v1.0.18 enumeration) merged via PR75 at 34d390c, an ancestor of the final merge a27c4a9, BEFORE the audited object's own merge parent. Per ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json controller_sequencing_rule, this discharges the sole lineage gate that blocked final W2-B5 closure."
+  },
+
+  "baseline_and_journal_state": {
+    "BASELINE_UNITS_length": 78,
+    "measurement": "INDEPENDENTLY VERIFIED by this session via grep of tests/hosted/baseline-manifest.test.ts at HEAD: `expect(BASELINE_UNITS).toHaveLength(78)` (line 103).",
+    "journal_wrappers_length": 79,
+    "journal_wrappers_derivation": "BASELINE_UNITS.length + 1 (000_journal_bootstrap plus one step per baseline unit), per tests/hosted/baseline-journal-wrapper.test.ts lines 51/444/477 (`toHaveLength(BASELINE_UNITS.length + 1)`) and the explicit pin at line 472 (`expect(BASELINE_ORDER).toHaveLength(78)`). Corroborated by docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json gates.journal_verify output: '[journal] verification OK — all 79 wrappers regenerate byte-identically.'",
+    "migrations_0064_0065_present": "CONFIRMED. `ls db/migrations/` at this session's HEAD lists 0064_fib_readiness_assessments.sql and 0065_fib_sensitivity_model.sql, the last two ordinals before the meta directory."
+  },
+
+  "real_postgres_campaign": {
+    "as_reported_by_source_audit": "55 passed (55) against a fresh disposable PostgreSQL container (pinned image public.ecr.aws/supabase/postgres:17.6.1.143), via tests/postgres/b5-completeness.pg.test.ts and the canonical disposable harness tests/postgres/b5-completeness-harness.ts. Zero leaked containers (pre-run and post-run container lists identical). NOT re-executed by this materializing session — NO DOCKER per this mission's explicit constraint.",
+    "source": "docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json real_pg block, re-measured fresh at that mission's own candidate head and reported as PASS both before and after re-measurement."
+  },
+
+  "two_authorized_legacy_test_hosts": {
+    "as_reported_by_source_audit": "Both green — see RD_BLK_1_status.test_hosts_closing_the_remediation_gap above.",
+    "verification_note": "This session did NOT re-execute vitest for these hosts (out of scope: NO NEW AUDIT); the counts are transcribed from docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json, which recorded them at the time of the authorized remediation."
+  },
+
+  "boundary_and_isolation_controls": {
+    "stella_boundary": "PASS (as reported by source audit).",
+    "portfolio_boundary": "PASS (as reported by source audit).",
+    "tenant_isolation_controls": "PASS (as reported by source audit).",
+    "note": "Not independently re-executed by this materializing session; transcribed from source_audit_state per this mission's NO NEW AUDIT constraint."
+  },
+
+  "CI_status": {
+    "result": "PASS",
+    "detail": "docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json full_ci reports ALL GREEN at commit 648732af2c8f6d54c11c77ed815abddad976de3b (parent of the audited head): Vercel Preview Comments, Canonical LOCAL/CI clean bootstrap proof, Isolated M2 disposable PostgreSQL proof, Lint/typecheck/test/build, Vercel deployment."
+  },
+
+  "known_carry_forward_findings_preserved_verbatim": {
+    "note": "Transcribed verbatim from docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json known_carry_forward_findings_preserved_verbatim, itself carried from prior W2-B5 authority artifacts. NOT re-adjudicated here.",
+    "F-2": "EXPLICIT_STAGE_E_OBLIGATION. Not a B5 blocker. Not repaired here.",
+    "F-3": "ACCEPTED_BY_CURRENT_AUTHORITY, with a future Wave3/FIBIU19 validation obligation. Not a B5 blocker. Not repaired here.",
+    "F-4": "ACCEPTED_BY_CURRENT_AUTHORITY. A nonzero-variation constraint would violate current authority. Not a B5 blocker. NOT repaired — repairing it would violate NEG-18-7.",
+    "F-5": "ACCEPTED_CURRENT_CONTRACT, with a future hardening carry-forward. Not a B5 blocker. Not repaired here.",
+    "frozen_four_vs_five_numeral": "CLOSURE_EVIDENCE_ONLY. The frozen authority's descriptive 'four enumerated reader/prompt files' vs the five lib/stella paths readiness_readers actually enumerates is a non-blocking prose imprecision in a frozen authority document, not corrected in place. Does not occur in docs/20_STELLA_ROLE_CONTRACTS.md and was not touched by the stale-doc alignment."
+  },
+
+  "non_blocking_observations": [
+    {
+      "id": "NB-B0-STALE",
+      "summary": "B0 status verify (pnpm b0:status:verify / related B0 sentinel) carries a stale/pre-existing evidence issue.",
+      "classification": "PRE_EXISTING, measured as failing identically at both the pre-merge integration base and the audited head — not a B5-introduced regression.",
+      "blocks_verdict": false,
+      "not_repaired_here": "Repairing this is outside this mission's and the source audit's scope; recorded so a future mission is not surprised by it."
+    },
+    {
+      "id": "NB-DETACHED-HEAD-GRANT",
+      "summary": "An ODS grant artifact in this lineage is branch-bound and was measured in a detached-HEAD context during the source audit, a benign methodological note rather than a defect.",
+      "blocks_verdict": false
+    },
+    {
+      "id": "NB-MOCK-FIXTURE-COSMETIC",
+      "summary": "A mock fixture's READINESS_CRITERIA_COUNT literal (40) diverges cosmetically from the real computed count (46) in a non-authoritative test double.",
+      "classification": "COSMETIC. Does not affect any production computation or assertion of the real count; the real count is asserted against the real service, not the fixture.",
+      "blocks_verdict": false
+    },
+    {
+      "id": "NB-FROZEN-NUMERAL",
+      "summary": "See known_carry_forward_findings_preserved_verbatim.frozen_four_vs_five_numeral above.",
+      "blocks_verdict": false
+    }
+  ],
+
+  "verdict": {
+    "VERDICT": "PASS",
+    "BLOCKING_FINDINGS": 0,
+    "UNKNOWN_FINDINGS": 0,
+    "NEW_AUTHORITY_GAPS": 0,
+    "NON_BLOCKING_OPEN_FINDINGS": 4
+  },
+
+  "closure": {
+    "FIBIU_17": "CLOSED",
+    "FIBIU_18": "CLOSED",
+    "W2_B5": "CLOSED",
+    "WAVE2": "CLOSED",
+    "BLOCKING_FINDINGS": 0,
+    "UNKNOWN_FINDINGS": 0,
+    "READY_FOR_MERGE": "ALREADY_MERGED_NORMALLY_AT_a27c4a9",
+    "controller_note": "Controller 29 (v1.0.18) merged via PR75 (34d390c) BEFORE this final merge — the sole lineage gate ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json required is already discharged.",
+    "next_gate": "NONE_FOR_W2_B5 — Wave2 batches B1 through B5 are CLOSED. Any further ODS lineage item (v1.0.19 / HPO-ODS-W2-20) requires its own governed allocation, separate from this artifact."
+  },
+
+  "program_state_registry_resolution_note": {
+    "BINDING": "This block records a measured gap. It is NOT resolved by this artifact and this mission does not attempt to resolve it, per explicit instruction: 'Do not edit the program-state registry merely to force recognition.'",
+    "measured_gap": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B5's audit dimension pins evidence.ref to the literal branch name 'codex/w2-b5-r1', frozen at commit d534f209b37b6f142b5904ad5fcc42a60a2c74ba (already merged into origin/integration/commercial-v1 via a27c4a9, PR70 CLOSED/MERGED). scripts/ods-program-state.ts resolves json-field evidence via `git show <ref>:<path>` at exactly that ref. Because this artifact is authored on branch codex/w2-b5-closure-evidence-r1 (per this mission's GIT_MODE=DEDICATED_EVIDENCE_WRITER and its own PR target integration/commercial-v1, not codex/w2-b5-r1), writing it here does NOT change what `git show codex/w2-b5-r1:docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json` resolves to — that ref still lacks this file and AUDIT_STATUS will continue to report UNKNOWN from `pnpm ops:program-state -- --unit W2-B5` until a separate governed act repoints the registry's evidence.ref for this dimension (e.g. to the merge SHA a27c4a9, to 'integration/commercial-v1', or to wherever this artifact's own branch lands after merge).",
+    "why_not_fixed_here": "Editing the registry pointer is a second file change beyond the one this mission is scoped to (docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json only), and this mission's brief provides no authorization for a registry edit. Pushing this file directly onto the already-merged, closed branch codex/w2-b5-r1 would also be out of scope (not this mission's designated branch, and not a normal evidence-PR flow).",
+    "expected_desired_effect_not_yet_achieved": "The mission's stated desired effect — 'W2-B5 audit/closure state becomes machine-resolvable as closed' via `pnpm ops:program-state -- --unit W2-B5` — is NOT achieved by this artifact alone. See PROGRAM_STATE_PRE and PROGRAM_STATE_POST in this mission's own report for the measured before/after, which are identical on the audit dimension.",
+    "disposition": "STOP_FOR_PROGRAM_STATE_AUTHORITY_GAP on the registry-resolution axis only. The evidence artifact itself is complete, honest and repository-native; a follow-on governed act (registry evidence.ref repoint for unit W2-B5, dimension 'audit') is required to make it machine-resolvable, and that act is explicitly out of this mission's scope."
+  },
+
+  "final_state": "W2_B5_WHOLE_BATCH_CLOSURE_AUDIT_MATERIALIZED_PASS_REGISTRY_REF_REPOINT_PENDING"
+}
