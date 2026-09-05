@@ -468,8 +468,9 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
     // + 0061_fib_disposition_governance_function_execute_revocation.sql (the
     // B0-17 security successor to sealed 0060, REVOKE-only, no DML) = 74.
     // HPO-ODS-W2-12 (W2-B4 assumptions and causality): + 0062/0063 = 76.
-    expect(BASELINE_UNITS).toHaveLength(76)
-    expect(BASELINE_ORDER).toHaveLength(76)
+    // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.
+    expect(BASELINE_UNITS).toHaveLength(78)
+    expect(BASELINE_ORDER).toHaveLength(78)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {

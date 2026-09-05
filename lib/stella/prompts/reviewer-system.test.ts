@@ -97,10 +97,12 @@ const enrichedContext: ReviewerContext = {
       createdAt: '2026-03-01T00:00:00.000Z',
     },
   ],
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): latestReadinessScore is
+  // REMOVED from ReviewerRunReviewSummary (NEG-17-4/5 — the reviewer
+  // enumeration gap the B5 authority closed).
   runReviewSummary: {
     reviewCount: 2,
     latestStatus: 'flagged',
-    latestReadinessScore: 72,
     latestReviewedAt: '2026-06-10T12:00:00.000Z',
   },
 }
@@ -195,9 +197,20 @@ describe('reviewer prompt ↔ context contract (RK-17)', () => {
     expect(payload.runReviews).toEqual({
       reviewCount: 2,
       latestStatus: 'flagged',
-      latestReadinessScore: 72,
       latestReviewedAt: '2026-06-10T12:00:00.000Z',
     })
+  })
+
+  // NEG-17-5 (FIBIU-17, FIBC-021, W2-B5) — the reviewer prompt carries no
+  // readiness value sourced from sroi_run_reviews, even though the input
+  // context here carries context.readinessScore = 72 (baseContext, below):
+  // both the runReviews.latestReadinessScore route (closed above) and the
+  // projectAnalysisState.readinessScore route are closed.
+  it('audit_assistant payload exposes no readiness value from sroi_run_reviews (NEG-17-5)', () => {
+    const payload = extractPayload(buildReviewerUserMessage('audit_assistant', enrichedContext))
+    expect(payload.runReviews).not.toHaveProperty('latestReadinessScore')
+    const projectAnalysisState = payload.projectAnalysisState as Record<string, unknown>
+    expect(projectAnalysisState).not.toHaveProperty('readinessScore')
   })
 
   it('audit_assistant payload carries the narrative summary (FIX 1c) — grounds the consistency mandate', () => {
@@ -231,7 +244,6 @@ describe('reviewer prompt ↔ context contract (RK-17)', () => {
       expect(payload.runReviews).toEqual({
         reviewCount: 0,
         latestStatus: null,
-        latestReadinessScore: null,
         latestReviewedAt: null,
       })
     })

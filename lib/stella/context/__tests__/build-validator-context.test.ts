@@ -114,8 +114,6 @@ const mockCalcRun = {
 
 const mockLineItems = [{ id: 'li-1' }, { id: 'li-2' }, { id: 'li-3' }]
 
-const mockReview = { readinessScore: 87 }
-
 // ---------------------------------------------------------------------------
 // Mock builder helpers
 // Validator uses .orderBy() in addition to the advisor chain methods.
@@ -148,12 +146,14 @@ function makeChain(resolvedValue: unknown) {
 // 9. filter sets (innerJoin) → mockFilterSets (array)
 // 10. latest calc run (.orderBy) → [mockCalcRun]
 // 11. line items → mockLineItems (array, only if run exists)
-// 12. readiness review (.orderBy) → [mockReview]
+//
+// FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): step 12 used to be a
+// sroi_run_reviews readiness-review select (NEG-17-3) — REMOVED, not
+// replaced. buildValidatorContext no longer queries sroi_run_reviews at all.
 // ---------------------------------------------------------------------------
 async function setupFullMockSequence(opts: {
   projectRow?: typeof mockProject
   withCalcRun?: boolean
-  withReview?: boolean
   stakeholderRows?: Array<{ id: string; type?: string | null }>
   narrativeRow?: typeof mockNarrative
   evidenceVersionRows?: typeof mockEvidenceVersions
@@ -161,7 +161,6 @@ async function setupFullMockSequence(opts: {
   const {
     projectRow = mockProject,
     withCalcRun = true,
-    withReview = true,
     stakeholderRows = mockStakeholders,
     narrativeRow = mockNarrative,
     evidenceVersionRows = mockEvidenceVersions,
@@ -186,8 +185,6 @@ async function setupFullMockSequence(opts: {
   if (withCalcRun) {
     chain.mockReturnValueOnce(makeChain(mockLineItems) as never) // 11. line items
   }
-
-  chain.mockReturnValueOnce(makeChain(withReview ? [mockReview] : []) as never) // 12. review
 }
 
 // ---------------------------------------------------------------------------
@@ -356,6 +353,10 @@ describe('buildValidatorContext', () => {
       const { db } = await import('@/db/client')
       const selectMock = vi.mocked(db.select)
 
+      // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): the trailing "review"
+      // queue entry is REMOVED — buildValidatorContext no longer queries
+      // sroi_run_reviews at all (NEG-17-3), so a leftover 10th value here
+      // would silently leak into the next test's mock queue.
       selectMock
         .mockReturnValueOnce(makeChain([mockProject]) as never)
         .mockReturnValueOnce(makeChain([mockNarrative]) as never)
@@ -366,7 +367,6 @@ describe('buildValidatorContext', () => {
         .mockReturnValueOnce(makeChain([]) as never)           // assignments
         .mockReturnValueOnce(makeChain([]) as never)           // filter sets (empty)
         .mockReturnValueOnce(makeChain([]) as never)           // calc run (none)
-        .mockReturnValueOnce(makeChain([]) as never)           // review
 
       const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
       expect(ctx.filterSetsSummary).toHaveLength(0)
@@ -377,15 +377,11 @@ describe('buildValidatorContext', () => {
   // Readiness score
   // -------------------------------------------------------------------------
   describe('Readiness score', () => {
-    it('includes readinessScore from latest review', async () => {
-      await setupFullMockSequence({ withReview: true })
-      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
-
-      expect(ctx.readinessScore).toBe(87)
-    })
-
-    it('readinessScore is undefined when no review exists', async () => {
-      await setupFullMockSequence({ withReview: false })
+    // NEG-17-3 (FIBIU-17, FIBC-021, W2-B5) — inverted: the validator no
+    // longer reads sroi_run_reviews.readiness_score at all, so
+    // readinessScore is unconditionally undefined.
+    it('readinessScore is always undefined — buildValidatorContext no longer reads sroi_run_reviews', async () => {
+      await setupFullMockSequence()
       const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
 
       expect(ctx.readinessScore).toBeUndefined()

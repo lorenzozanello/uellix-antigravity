@@ -43,26 +43,33 @@ describe('POS-DAG-1: certified internal order (FIBIU-15 before FIBIU-14)', () =>
   })
 })
 
-// NEG-B5-1 — B4 does not materialize B5. FIBDB-015/016/017/018/048 remain
-// unmaterialized.
-describe('NEG-B5-1: B4 does not materialize B5', () => {
-  it('no readiness_assessments, sensitivity_candidates or sensitivity_scenarios table exists in schema.ts', () => {
+// NEG-B5-1 — successor-state sentinel. B4 did not materialize B5;
+// HPO-ODS-W2-17 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json,
+// companion docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json) authorized exactly
+// these three inversions from the original B4-era absence sentinels — see
+// W2_B5_AUTHORITY_v1.0.0.json determinism_and_regression_sentinels
+// .b4_governance_test_successor_contract for the frozen text this control
+// implements. No other assertion in this describe block, nor the file's
+// other three describe blocks (POS-DAG-1, NEG-STAGE-1, NEG-STELLA-B4), may
+// change.
+describe('NEG-B5-1: B4 does not materialize B5 (successor: B5 does)', () => {
+  it('readiness_assessments, sensitivity_candidates and sensitivity_scenarios tables now exist in schema.ts (POS-GOV-B4-1)', () => {
     const schema = read('db/schema.ts')
-    expect(schema).not.toMatch(/readinessAssessments|readiness_assessments/)
-    expect(schema).not.toMatch(/sensitivityCandidates|sensitivity_candidates/)
-    expect(schema).not.toMatch(/sensitivityScenarios|sensitivity_scenarios/)
+    expect(schema).toMatch(/readinessAssessments|readiness_assessments/)
+    expect(schema).toMatch(/sensitivityCandidates|sensitivity_candidates/)
+    expect(schema).toMatch(/sensitivityScenarios|sensitivity_scenarios/)
   })
 
-  it('sroi_run_reviews.readiness_score carries no legacy marking (FIBDB-016 is FIBIU-17 scope, not B4)', () => {
+  it('sroi_run_reviews.readiness_score now carries the FIBDB-016 stage-B legacy marking (POS-GOV-B4-2)', () => {
     const schema = read('db/schema.ts')
     const runReviewsBlock = schema.slice(schema.indexOf("pgTable('sroi_run_reviews'"), schema.indexOf("pgTable('sroi_run_reviews'") + 1200)
     expect(runReviewsBlock).toMatch(/readinessScore/)
-    expect(runReviewsBlock).not.toMatch(/legacy|deprecated|LEGACY_MARKING/i)
+    expect(runReviewsBlock).toMatch(/LEGACY_NON_AUTHORITATIVE/)
   })
 
-  it('lib/pipeline/sroi-sensitivity.ts is byte-unchanged — SCENARIO_DELTA_PP still present, not superseded by this mission', () => {
+  it('lib/pipeline/sroi-sensitivity.ts no longer contains SCENARIO_DELTA_PP — superseded by FIBIU-18 (NEG-GOV-B4-1)', () => {
     const source = read('lib/pipeline/sroi-sensitivity.ts')
-    expect(source).toMatch(/SCENARIO_DELTA_PP/)
+    expect(source).not.toMatch(/SCENARIO_DELTA_PP/)
   })
 
   // Scoped to the NEW W2-B4 content each file adds, not the whole file —

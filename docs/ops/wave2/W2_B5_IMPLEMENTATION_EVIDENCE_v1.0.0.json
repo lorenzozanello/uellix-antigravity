@@ -1,0 +1,218 @@
+{
+  "evidence_id": "W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0",
+  "document_class": "IMPLEMENTATION_EVIDENCE_NOT_AUTHORITY_NOT_AUDIT",
+  "is_authority": false,
+  "self_certification": "NONE — this file records measured outputs only. It does not certify W2-B5 closed, does not mark PR70 ready, and does not replace the future whole-batch independent closure audit that remains gated on Controller29 (see final_state below).",
+
+  "mission": "W2-B5-TEST-HOST-EVIDENCE-FINALIZATION-R5",
+
+  "authority_references": {
+    "W2_B5_AUTHORITY_v1.0.0": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json (HPO-ODS-W2-17)",
+    "W2_B5_AUTHORITY_AMENDMENT_v1.0.1": "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "W2_B5_AUTHORITY_AMENDMENT_v1.0.2": "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json (HPO-ODS-W2-19) — authorizes the test-host wiring and doc alignment this artifact records",
+    "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json — companion ODS instruction for the same two test hosts",
+    "W2_B5_TEST_MANIFEST_v1": "docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json",
+    "RD_BLK_1_INDEPENDENT_AUDIT": "PASS at head b49eb50b4497e7f2f54c563563c19d552c215ac4 — see docs/ops/wave2/W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0.json (materializes the already-completed result; not re-derived here)."
+  },
+
+  "prestate": {
+    "PRE_HEAD": "b49eb50b4497e7f2f54c563563c19d552c215ac4",
+    "PR70_REMOTE_HEAD_MEASURED": "b49eb50b4497e7f2f54c563563c19d552c215ac4 — matched the expected premission head exactly.",
+    "LATEST_INTEGRATION_MEASURED": "origin/integration/commercial-v1 at ccd0680e27560c2dfe5c08e2f69d4f115014466f",
+    "pr73_integrated": "YES — ccd0680 is the literal 'Merge pull request #73 from lorenzozanello/codex/w2-b5-test-host-successor-r1' commit.",
+    "pr74_integrated": "YES — bd3dc53 'Merge pull request #74 from lorenzozanello/codex/commercial-ratifications-ca06-ca08-r1', an ancestor of ccd0680.",
+    "required_artifacts_verified_on_integration": {
+      "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json": "PRESENT at origin/integration/commercial-v1",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json": "PRESENT at origin/integration/commercial-v1"
+    }
+  },
+
+  "merge_integration": {
+    "method": "git merge origin/integration/commercial-v1 --no-ff (normal merge — no rebase, no reset, no cherry-pick reconstruction)",
+    "PRE_MERGE_HEAD": "b49eb50b4497e7f2f54c563563c19d552c215ac4",
+    "INTEGRATION_HEAD_MERGED": "ccd0680e27560c2dfe5c08e2f69d4f115014466f",
+    "POST_MERGE_HEAD": "ff663ce45c0aaac3d550ac026ca2b692603cbb2d",
+    "MERGE_CONFLICTS": 0,
+    "merge_diff_summary": "7 files changed, 2384 insertions(+), 8 deletions(-) — additive commercial ratification and multi-org tenancy authority docs, plus the two required B5 test-host successor authority artifacts. No B5 implementation byte touched by the merge itself.",
+    "b5_semantic_conflict": "NONE"
+  },
+
+  "lineage_interlock": {
+    "controller_count_measured_post_merge": 28,
+    "v1_0_18_present_as_file": true,
+    "v1_0_18_enumerated_in_live_controller": false,
+    "CONTROLLER29_PENDING": true,
+    "consequence": "This mission neither allocates v1.0.19 / HPO-ODS-W2-20 nor declares W2-B5 closed. Controller29 remains the sole lineage gate on final B5 closure, per ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json controller_sequencing_rule."
+  },
+
+  "test_host_remediation": {
+    "authority": "W2_B5_AUTHORITY_AMENDMENT_v1.0.2 / ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18 (HPO-ODS-W2-19), AUTHORIZED_CHANGE_CLASS=MOCK_OR_TEST_WIRING_ONLY",
+    "host_1": {
+      "path": "tests/b3-completeness.ui.test.tsx",
+      "pre_wiring_result_measured": "4 failed, 7 passed (11) — vitest run --no-file-parallelism",
+      "root_cause_measured": "Only the 'FIBIU-12 run detail page' describe block (4 tests) renders RunDetailPage via a renderRun() helper. RunDetailPage unconditionally calls getReadinessAssessment (new, from @/lib/pipeline/sroi-readiness) before any other FIBIU-17/18 read; this host never mocked that module, so the real authorize() ran against the host's own db mock and threw 'Project not found or not owned'. The other 7 tests in the file exercise different pages and never render RunDetailPage, so they were unaffected.",
+      "missing_module_or_read": "@/lib/pipeline/sroi-readiness (getReadinessAssessment, READINESS_CRITERIA_COUNT), @/lib/pipeline/sroi-sensitivity (listSensitivityCandidates, listSensitivityScenarios, getRunSensitivityCompleteness, computeScenarioEnvelope, SCENARIO_KIND_VALUES)",
+      "wiring_applied": "Two vi.mock blocks added: getReadinessAssessment resolves null (the page's own 'not yet computed' branch, which this suite never otherwise exercises); listSensitivityCandidates/listSensitivityScenarios resolve []; getRunSensitivityCompleteness resolves a benign complete-shape object (unread in the empty-register render branch); computeScenarioEnvelope stubbed (never called — guarded by sensitivityScenarios.length === 0). SCENARIO_KIND_VALUES included because the real (deliberately unmocked) recordSensitivityScenario.action module consumes it at import time for a zod schema.",
+      "measured_minimality": "The four new server-action modules (computeReadinessAssessment.action, registerSensitivityCandidates.action, dispositionSensitivityCandidate.action, recordSensitivityScenario.action) were explicitly tried WITHOUT a vi.mock and imported cleanly once the two service-module mocks above were in place — they are only invoked from 'use server' form-submit handlers neither host's tests exercise. Mocking them was measured NOT required and is not present in the final diff.",
+      "post_wiring_result": "11 passed (11) — vitest run --no-file-parallelism"
+    },
+    "host_2": {
+      "path": "tests/run-detail-page.sufficiency-reachability.test.tsx",
+      "pre_wiring_result_measured": "5 failed (5) — vitest run --no-file-parallelism",
+      "root_cause_measured": "All 5 tests render RunDetailPage directly. Same unmocked getReadinessAssessment call, but this host has no db mock at all, so authorize() reached the real getDefaultDatabaseClient path and threw CapabilityDatabaseUrlError('UELLIX_RUNTIME_DATABASE_URL is not set') — a different symptom of the identical root cause as host 1.",
+      "missing_module_or_read": "Identical to host 1: @/lib/pipeline/sroi-readiness and @/lib/pipeline/sroi-sensitivity.",
+      "wiring_applied": "Identical two vi.mock blocks as host 1, inserted next to this host's existing @/lib/pipeline/evidence-sufficiency mock.",
+      "post_wiring_result": "5 passed (5) — vitest run --no-file-parallelism"
+    },
+    "hosts_left_unedited": "NONE were skipped — both authorized hosts were red and both required wiring. No other existing product test was touched.",
+    "prohibited_adjustments_confirmed_absent": "No test expectation weakened, relaxed or deleted. No it()/describe() removed. No .skip/.todo introduced. No test reclassified to a different host/config. No production file touched (git diff confirms zero changes outside the two test files and the one doc). No wildcard or directory grant used in either vi.mock call — every mocked specifier is an exact literal module path."
+  },
+
+  "stale_doc_alignment": {
+    "path": "docs/20_STELLA_ROLE_CONTRACTS.md",
+    "authority": "W2_B5_AUTHORITY_AMENDMENT_v1.0.2, AUTHORIZED_CHANGE_CLASS=DOCUMENTATION_ALIGNMENT_ONLY",
+    "what_was_stale": "The audit_assistant role's Inputs/Invariants row still named `latestReadinessScore` as part of `runReviewSummary` and described a 'readiness score' being read from base context / sroi_run_reviews.",
+    "what_is_true_now_measured": "lib/stella/context/build-reviewer-context.ts (line ~88, comment on ReviewerRunReviewSummary) explicitly removed latestReadinessScore under FIBIU-17/HPO-ODS-W2-17: 'this was an ENUMERATION GAP the B5 authority closed'. ReviewerRunReviewSummary now has exactly { reviewCount, latestStatus, latestReviewedAt }. tests/build-reviewer-context.test.ts NEG-17-4 asserts runReviewSummary never carries latestReadinessScore, even from a row shaped with one. The shared StellaProjectContext.readinessScore field (lib/stella/context/types.ts ~line 247) is structurally present but no builder (composer/validator/reviewer) populates it — always undefined, per that file's own comment and the composer/validator tests asserting it.",
+    "correction_applied": "Row rewritten to state: latestReadinessScore was removed from runReviewSummary (FIBIU-17, W2-B5); canonical readiness is system-computed via getReadinessAssessment/sroi_readiness_assessments; the legacy sroi_run_reviews.readiness_score column is LEGACY_NON_AUTHORITATIVE and this context does not read it; base-context readinessScore is structurally present but never populated.",
+    "not_touched": "The frozen authority's descriptive 'four vs five' numeral does not appear in this document and was not searched-and-replaced or otherwise altered. No new Stella doctrine was introduced — the correction only aligns prose with already-shipped, already-tested code."
+  },
+
+  "gates": {
+    "typecheck": {
+      "command": "pnpm exec tsc --noEmit -p tsconfig.json",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    "lint": {
+      "command": "pnpm exec eslint tests/b3-completeness.ui.test.tsx tests/run-detail-page.sufficiency-reachability.test.tsx docs/20_STELLA_ROLE_CONTRACTS.md",
+      "result": "PASS",
+      "output": "0 errors, 3 warnings — 2 are pre-existing unused-React-import warnings unrelated to this mission's diff (present before these edits), 1 is a pre-existing 'file ignored, no matching configuration' warning for the .md path."
+    },
+    "secrets_scan": {
+      "command": "pnpm run secrets:scan",
+      "result": "PASS",
+      "output": "CURRENT_TREE: no credential material found."
+    },
+    "authority_seal_verify": {
+      "command": "pnpm run authority:seal:verify",
+      "result": "PASS",
+      "output": "ODS_AUTHORITY_INPUT_INTEGRITY=PASS PROTECTED_CORPUS_COUNT=9 PROTECTED_CORPUS_INTEGRITY=PASS TRANSITIVE_ATTESTATION_COUNT=4 NATIVE_RELATIONSHIPS=PASS AUTHORITY_SEAL_VERIFY=PASS"
+    },
+    "journal_verify": {
+      "command": "pnpm run journal:verify",
+      "result": "PASS",
+      "output": "[journal] verification OK — all 79 wrappers regenerate byte-identically"
+    },
+    "baseline_verify": {
+      "command": "pnpm run baseline:verify",
+      "result": "PASS",
+      "output": "[baseline] verification OK — 78 units, order pinned, hashes match, derived scan matches every pinned expectation"
+    },
+    "b0_observation_verify": {
+      "command": "pnpm run b0:observation:verify",
+      "result": "PASS",
+      "output": "[b0-sql] verification OK — the probe regenerates byte-identically from the corpus"
+    },
+    "a1_status_verify": {
+      "command": "pnpm run a1:status:verify",
+      "result": "PASS",
+      "output": "[a1] verification OK — the recorded verdict is what the contract computes over the recorded corroboration"
+    },
+    "ods_prestate": {
+      "command": "pnpm run ods:prestate -- --branch codex/w2-b5-r1 --head <HEAD> --tree <TREE> --clean",
+      "result": "PASS (post-commit, clean working tree)",
+      "note": "A pre-commit run correctly reported PRESTATE_CLEAN=FAIL while the three authorized files were still uncommitted working-tree edits; this is expected and not a defect. The clean PASS below is the authoritative post-commit measurement."
+    },
+    "ods_scope": {
+      "command": "pnpm exec tsx scripts/ods-scope.ts --base ccd0680e27560c2dfe5c08e2f69d4f115014466f --allow app/** --allow artifacts/** --allow db/** --allow docs/** --allow lib/** --allow tests/** --protected-authority HPO-ODS-W2-17",
+      "result": "PASS",
+      "output": "CHANGED_FILE_COUNT=146 PROTECTED_AUTHORITY=HPO-ODS-W2-17 PROTECTED_AUTHORIZED_PATH_COUNT=84 PROTECTED_PATH_VIOLATIONS=0 NON_CANONICAL_PROTECTED_PATHS=0 UNAUTHORIZED_PATHS=0 ODS_SCOPE=PASS",
+      "base_note": "Base is the current authoritative integration head (ccd0680, the merge-base of this branch and origin/integration/commercial-v1 after the merge), NOT the obsolete 040efdfe — per this mission's explicit instruction. This correctly excludes the unrelated commercial-ratification and multi-org-tenancy content carried in by the merge from needing any B5 allowance, leaving only the genuine B5 implementation diff plus this mission's own two test-host and one doc change in scope.",
+      "wildcard_note": "The six --allow patterns (app/**, artifacts/**, db/**, docs/**, lib/**, tests/**) are directory-level CLI convenience patterns for this measurement invocation only — they are not an authority grant and do not appear in, or widen, any authority document. Verified equivalent to the exact 146-literal-path form of the same command (identical CHANGED_FILE_COUNT, PROTECTED_AUTHORIZED_PATH_COUNT and zero violations in both invocations) before being relied on."
+    },
+    "ods_poststate": {
+      "command": "pnpm exec tsx scripts/ods-poststate.ts --base ccd0680e27560c2dfe5c08e2f69d4f115014466f --allow app/** --allow artifacts/** --allow db/** --allow docs/** --allow lib/** --allow tests/** --protected-authority HPO-ODS-W2-17 --test tests/b3-completeness.ui.test.tsx --test tests/run-detail-page.sufficiency-reachability.test.tsx --test tests/sensitivity-run-detail-error-boundary.test.ts --clean",
+      "result": "PASS",
+      "output": "STEP typecheck=PASS STEP targeted-tests=PASS (21/21) STEP secrets-scan=PASS STEP authority-seal-verify=PASS STEP ods-scope=PASS STEP clean-state=PASS ODS_POSTSTATE=PASS",
+      "windows_tooling_note": "scripts/ods-poststate.ts's internal ods-scope step re-invokes `pnpm ods:scope` through a single shelled command string (cmd.exe on Windows). With the full 146-literal-path --allow form this exceeded cmd.exe's ~8191-character command-line limit ('La linea de comandos es demasiado larga') — a Windows shell-quoting ceiling, not a scope violation (the same 146-path form independently measured ODS_SCOPE=PASS via a direct, non-shelled node+tsx invocation beforehand). Re-run with the six-pattern compact --allow form above, which is representationally identical (see ods_scope.wildcard_note) and fits under the limit; ODS_POSTSTATE then passed end-to-end with no script modified."
+    }
+  },
+
+  "targeted_tests": {
+    "command": "vitest run tests/b3-completeness.ui.test.tsx tests/run-detail-page.sufficiency-reachability.test.tsx tests/sensitivity-run-detail-error-boundary.test.ts tests/audit-action-contract.test.ts tests/database-runtime-entrypoints.test.ts tests/sensitivity-disposition.service.test.ts tests/sensitivity-register.test.ts tests/sensitivity-scenario.service.test.ts tests/sroi-calculation.service.test.ts tests/sroi-readiness.model.test.ts tests/sroi-readiness.service.test.ts tests/sroi-results.actions.test.ts tests/w2-b4-governance.test.ts tests/w2-b5-governance.test.ts lib/portfolios/analytics.test.ts lib/stella/context/__tests__/build-composer-context.test.ts lib/stella/context/__tests__/build-reviewer-context.test.ts lib/stella/context/__tests__/build-validator-context.test.ts lib/stella/prompts/reviewer-system.test.ts --no-file-parallelism",
+    "result": "PASS",
+    "output": "Test Files 19 passed (19), Tests 562 passed (562)",
+    "manifest_source": "Every test_file value enumerated in docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json (excluding the disposable-PostgreSQL probe manifest, covered separately below, and one control marked test_file=UNKNOWN in the manifest itself)."
+  },
+
+  "real_pg": {
+    "command": "UELLIX_PG_TESTS=1 vitest run tests/postgres/b5-completeness.pg.test.ts --no-file-parallelism",
+    "target": "Fresh disposable PostgreSQL container, pinned image public.ecr.aws/supabase/postgres:17.6.1.143, via the canonical disposable harness (tests/postgres/b5-completeness-harness.ts). Never staging, never Production, never the canonical local Supabase stack.",
+    "result": "PASS",
+    "count": "55 passed (55)",
+    "security": "Included in the 55 — SEC-N/SEC-ACL style probes per the canonical b5-completeness.probes.json manifest.",
+    "mutations": "Included in the 55 — MUT-PG style probes per the same manifest.",
+    "prior_campaign_note": "The mission text flagged the prior 55/55 as not to be trusted without re-measurement. Re-measured fresh against this exact candidate: also 55/55 — same count, independently confirmed, not assumed.",
+    "leaked_containers": {
+      "pre_state_containers": "12 long-running local Supabase/dev containers, unrelated to this test, recorded by name/image/status before the run.",
+      "post_state_containers": "Identical list, byte-for-byte, after the run and its teardown.",
+      "result": "ZERO leaked containers from this campaign."
+    }
+  },
+
+  "full_ci": {
+    "commit": "648732af2c8f6d54c11c77ed815abddad976de3b",
+    "commit_message_summary": "fix(wave2): W2-B5 test-host successor remediation — wire two legacy hosts, align stale reviewer doc",
+    "push": "origin/codex/w2-b5-r1 updated b49eb50..648732a, non-force, includes the earlier normal-merge commit ff663ce",
+    "pr": "PR #70, existing, not merged, not marked ready by this mission",
+    "checks_result": "ALL GREEN: Vercel Preview Comments (pass), Canonical LOCAL/CI clean bootstrap proof (pass, 2m44s), Isolated M2 disposable PostgreSQL proof (pass, 1m32s), Lint, typecheck, test, build (pass, 4m54s), Vercel deployment (pass).",
+    "previously_failing_hosts_now_green_in_ci": "YES — tests/b3-completeness.ui.test.tsx and tests/run-detail-page.sufficiency-reachability.test.tsx are both exercised by the 'Lint, typecheck, test, build' job, which is green on this head."
+  },
+
+  "known_carry_forward_findings_preserved_verbatim": {
+    "F-2": "EXPLICIT_STAGE_E_OBLIGATION. Not a B5 blocker. Not repaired here.",
+    "F-3": "ACCEPTED_BY_CURRENT_AUTHORITY, with a future Wave3/FIBIU19 validation obligation. Not a B5 blocker. Not repaired here.",
+    "F-4": "ACCEPTED_BY_CURRENT_AUTHORITY. A nonzero-variation constraint would violate current authority. Not a B5 blocker. NOT repaired — repairing it would violate NEG-18-7.",
+    "F-5": "ACCEPTED_CURRENT_CONTRACT, with a future hardening carry-forward. Not a B5 blocker. Not repaired here.",
+    "frozen_four_vs_five_numeral": "CLOSURE_EVIDENCE_ONLY. Not touched by the stale_doc_alignment change above (that numeral does not occur in docs/20_STELLA_ROLE_CONTRACTS.md)."
+  },
+
+  "changed_paths_this_mission": [
+    "docs/20_STELLA_ROLE_CONTRACTS.md",
+    "tests/b3-completeness.ui.test.tsx",
+    "tests/run-detail-page.sufficiency-reachability.test.tsx"
+  ],
+  "changed_paths_carried_by_merge_not_authored_here": "141 additional paths from the B5 implementation (040efdfe..b49eb50, already authored and merged prior to this mission) plus 7 additive authority/tenancy paths from PR73/PR74 (already integrated, unrelated to B5). See gates.ods_scope for the exact CHANGED_FILE_COUNT=146 measurement this mission verified, not authored in full.",
+
+  "commits_this_mission": [
+    {
+      "sha": "ff663ce45c0aaac3d550ac026ca2b692603cbb2d",
+      "type": "merge",
+      "summary": "merge: integrate test-host successor authority + CA ratifications (normal merge of origin/integration/commercial-v1)"
+    },
+    {
+      "sha": "648732af2c8f6d54c11c77ed815abddad976de3b",
+      "type": "fix",
+      "summary": "fix(wave2): W2-B5 test-host successor remediation — wire two legacy hosts, align stale reviewer doc"
+    }
+  ],
+
+  "PR70_HEAD": "648732af2c8f6d54c11c77ed815abddad976de3b",
+
+  "blocking_findings": 0,
+  "unknown_findings": 0,
+
+  "final_state": {
+    "W2_B5_IMPLEMENTATION_STATUS": "TEST_HOST_AND_EVIDENCE_FINALIZATION_COMPLETE_AWAITING_CONTROLLER29_THEN_WHOLE_BATCH_CLOSURE_AUDIT",
+    "ci_status": "GREEN — all checks pass on 648732a",
+    "not_claimed": [
+      "W2-B5 is NOT certified closed by this artifact.",
+      "The whole-batch independent closure audit has NOT been run by this mission.",
+      "PR70 remains NOT merged, per explicit mission constraint.",
+      "No staging or production promotion is implied.",
+      "CONTROLLER_DB_EXECUTION remains DISABLED.",
+      "Controller29 (enumerating v1.0.18) is authorized but NOT performed here — it must close before final W2-B5 closure and before any further ODS lineage allocation, per ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json controller_sequencing_rule.",
+      "READY_FOR_WHOLE_BATCH_B5_CLOSURE_AUDIT=YES on the implementation/evidence axis this mission owns; FINAL_B5_CLOSURE_ALLOWED=NO until Controller29 closes."
+    ]
+  }
+}

@@ -1,0 +1,212 @@
+{
+ "probes": [
+  {
+   "id": "PG-POS-1-same-tenant-SELECT",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $a$ DECLARE v text; BEGIN\n  SELECT (SELECT count(*) FROM public.readiness_assessments WHERE id='6a100000-0000-4000-8000-0000000006a1')::text INTO v;\n  IF v IS DISTINCT FROM '1' THEN RAISE EXCEPTION 'PG-POS-1 readiness_assessments measured=% expected=1', v; END IF;\n  SELECT (SELECT count(*) FROM public.sensitivity_candidates WHERE id='7a100000-0000-4000-8000-0000000007a1')::text INTO v;\n  IF v IS DISTINCT FROM '1' THEN RAISE EXCEPTION 'PG-POS-1 sensitivity_candidates measured=% expected=1', v; END IF;\n  SELECT (SELECT count(*) FROM public.sensitivity_scenarios WHERE id='8a100000-0000-4000-8000-0000000008a1')::text INTO v;\n  IF v IS DISTINCT FROM '1' THEN RAISE EXCEPTION 'PG-POS-1 sensitivity_scenarios measured=% expected=1', v; END IF;\nEND $a$;\nROLLBACK;\n"
+  },
+  {
+   "id": "PG-POS-1-same-tenant-INSERT",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $i$ DECLARE n int; new_sc uuid; BEGIN\n  INSERT INTO public.readiness_assessments (organization_id, project_id, calculation_run_id, readiness_model_version, global_score, band, dimension_scores, criteria_detail, created_by)\n    VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','1.0.0','60.00','partial_preparation','{}','[]','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT; IF n <> 1 THEN RAISE EXCEPTION 'PG-POS-1 readiness_assessments INSERT ROW_COUNT=% expected=1', n; END IF;\n\n  INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, sensitivity_model_version, created_by)\n    VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','pos1:candidate','methodological_filter','{}','0','pending','1.0.0','0a100000-0000-4000-8000-0000000000a1') RETURNING id INTO new_sc;\n  GET DIAGNOSTICS n = ROW_COUNT; IF n <> 1 THEN RAISE EXCEPTION 'PG-POS-1 sensitivity_candidates INSERT ROW_COUNT=% expected=1', n; END IF;\n\n  INSERT INTO public.sensitivity_scenarios (organization_id, project_id, calculation_run_id, scenario_kind, candidate_ids, modified_inputs, reason, sensitivity_model_version, calculation_engine_version, result_json, base_result_json, selected_by, created_by)\n    VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','one_at_a_time','[]','[]','pos1 reason','1.0.0','1.0.0','{}','{}','0a100000-0000-4000-8000-0000000000a1','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT; IF n <> 1 THEN RAISE EXCEPTION 'PG-POS-1 sensitivity_scenarios INSERT ROW_COUNT=% expected=1', n; END IF;\nEND $i$;\nROLLBACK;\n"
+  },
+  {
+   "id": "PG-POS-1-same-tenant-UPDATE-sensitivity_candidates",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $u$ DECLARE n int; BEGIN\n  UPDATE public.sensitivity_candidates SET disposition = 'variation_required', rationale = 'pos1 rationale', dispositioned_by = '0a100000-0000-4000-8000-0000000000a1', dispositioned_at = now() WHERE id = '7a100000-0000-4000-8000-0000000007a1';\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'PG-POS-1 sensitivity_candidates same-tenant UPDATE ROW_COUNT=% expected=1', n; END IF;\nEND $u$;\nROLLBACK;\n"
+  },
+  {
+   "id": "PG-POS-2-CHECK-range-global_score",
+   "sql": "DO $c$ DECLARE def text; BEGIN\n  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint WHERE conname = 'readiness_assessments_global_score_check';\n  IF def IS NULL THEN RAISE EXCEPTION 'PG-POS-2 global_score: constraint readiness_assessments_global_score_check does not exist'; END IF;\n  IF def NOT LIKE '%>= (0)%' THEN RAISE EXCEPTION 'PG-POS-2 global_score missing lower bound in %', def; END IF;\n  IF def NOT LIKE '%<= (100)%' THEN RAISE EXCEPTION 'PG-POS-2 global_score missing upper bound in %', def; END IF;\nEND $c$;\n"
+  },
+  {
+   "id": "PG-POS-2-CHECK-vocabulary-band",
+   "sql": "DO $c$ DECLARE def text; BEGIN\n  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint WHERE conname = 'readiness_assessments_band_check';\n  IF def IS NULL THEN RAISE EXCEPTION 'PG-POS-2 band: constraint readiness_assessments_band_check does not exist'; END IF;\n  IF def NOT LIKE '%initial_preparation%' THEN RAISE EXCEPTION 'PG-POS-2 band missing value initial_preparation in %', def; END IF;\n  IF def NOT LIKE '%partial_preparation%' THEN RAISE EXCEPTION 'PG-POS-2 band missing value partial_preparation in %', def; END IF;\n  IF def NOT LIKE '%advanced_preparation%' THEN RAISE EXCEPTION 'PG-POS-2 band missing value advanced_preparation in %', def; END IF;\n  IF def NOT LIKE '%high_preparation%' THEN RAISE EXCEPTION 'PG-POS-2 band missing value high_preparation in %', def; END IF;\nEND $c$;\n"
+  },
+  {
+   "id": "PG-POS-2-CHECK-vocabulary-candidate_kind",
+   "sql": "DO $c$ DECLARE def text; BEGIN\n  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint WHERE conname = 'sensitivity_candidates_candidate_kind_check';\n  IF def IS NULL THEN RAISE EXCEPTION 'PG-POS-2 candidate_kind: constraint sensitivity_candidates_candidate_kind_check does not exist'; END IF;\n  IF def NOT LIKE '%methodological_filter%' THEN RAISE EXCEPTION 'PG-POS-2 candidate_kind missing value methodological_filter in %', def; END IF;\n  IF def NOT LIKE '%structured_assumption%' THEN RAISE EXCEPTION 'PG-POS-2 candidate_kind missing value structured_assumption in %', def; END IF;\n  IF def NOT LIKE '%proxy_value%' THEN RAISE EXCEPTION 'PG-POS-2 candidate_kind missing value proxy_value in %', def; END IF;\n  IF def NOT LIKE '%other_quantitative_input%' THEN RAISE EXCEPTION 'PG-POS-2 candidate_kind missing value other_quantitative_input in %', def; END IF;\nEND $c$;\n"
+  },
+  {
+   "id": "PG-POS-2-CHECK-vocabulary-disposition",
+   "sql": "DO $c$ DECLARE def text; BEGIN\n  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint WHERE conname = 'sensitivity_candidates_disposition_check';\n  IF def IS NULL THEN RAISE EXCEPTION 'PG-POS-2 disposition: constraint sensitivity_candidates_disposition_check does not exist'; END IF;\n  IF def NOT LIKE '%variation_required%' THEN RAISE EXCEPTION 'PG-POS-2 disposition missing value variation_required in %', def; END IF;\n  IF def NOT LIKE '%no_additional_variation_required%' THEN RAISE EXCEPTION 'PG-POS-2 disposition missing value no_additional_variation_required in %', def; END IF;\n  IF def NOT LIKE '%pending%' THEN RAISE EXCEPTION 'PG-POS-2 disposition missing value pending in %', def; END IF;\nEND $c$;\n"
+  },
+  {
+   "id": "PG-POS-2-CHECK-vocabulary-scenario_kind",
+   "sql": "DO $c$ DECLARE def text; BEGIN\n  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint WHERE conname = 'sensitivity_scenarios_scenario_kind_check';\n  IF def IS NULL THEN RAISE EXCEPTION 'PG-POS-2 scenario_kind: constraint sensitivity_scenarios_scenario_kind_check does not exist'; END IF;\n  IF def NOT LIKE '%one_at_a_time%' THEN RAISE EXCEPTION 'PG-POS-2 scenario_kind missing value one_at_a_time in %', def; END IF;\n  IF def NOT LIKE '%combined%' THEN RAISE EXCEPTION 'PG-POS-2 scenario_kind missing value combined in %', def; END IF;\nEND $c$;\n"
+  },
+  {
+   "id": "PG-POS-2-rationale-required-variation_required",
+   "sql": "DO $r$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, rationale, sensitivity_model_version, created_by)\n      VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','pos2:rationale:vr','methodological_filter','{}','0','variation_required',NULL,'1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  EXCEPTION WHEN check_violation THEN caught := SQLSTATE; END;\n  IF caught <> '23514' THEN RAISE EXCEPTION 'PG-POS-2 rationale-required (variation_required) caught=% expected=23514 (check_violation)', caught; END IF;\nEND $r$;\n"
+  },
+  {
+   "id": "PG-POS-2-rationale-required-no_additional_variation_required",
+   "sql": "DO $r$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, rationale, sensitivity_model_version, created_by)\n      VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','pos2:rationale:navr','methodological_filter','{}','0','no_additional_variation_required',NULL,'1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  EXCEPTION WHEN check_violation THEN caught := SQLSTATE; END;\n  IF caught <> '23514' THEN RAISE EXCEPTION 'PG-POS-2 rationale-required (no_additional_variation_required) caught=% expected=23514 (check_violation)', caught; END IF;\nEND $r$;\n"
+  },
+  {
+   "id": "PG-POS-2-combination_description-required-combined",
+   "sql": "DO $r$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    INSERT INTO public.sensitivity_scenarios (organization_id, project_id, calculation_run_id, scenario_kind, candidate_ids, modified_inputs, reason, combination_description, sensitivity_model_version, calculation_engine_version, result_json, base_result_json, selected_by, created_by)\n      VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','combined','[]','[]','pos2 reason',NULL,'1.0.0','1.0.0','{}','{}','0a100000-0000-4000-8000-0000000000a1','0a100000-0000-4000-8000-0000000000a1');\n  EXCEPTION WHEN check_violation THEN caught := SQLSTATE; END;\n  IF caught <> '23514' THEN RAISE EXCEPTION 'PG-POS-2 combination_description-required caught=% expected=23514 (check_violation)', caught; END IF;\nEND $r$;\n"
+  },
+  {
+   "id": "PG-POS-2-UNIQUE-readiness_assessments-per-run",
+   "sql": "DO $r$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    INSERT INTO public.readiness_assessments (organization_id, project_id, calculation_run_id, readiness_model_version, global_score, band, dimension_scores, criteria_detail, created_by)\n      VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a1','1.0.0','60.00','partial_preparation','{}','[]','0a100000-0000-4000-8000-0000000000a1');\n  EXCEPTION WHEN unique_violation THEN caught := SQLSTATE; END;\n  IF caught <> '23505' THEN RAISE EXCEPTION 'PG-POS-2 UNIQUE(calculation_run_id) readiness_assessments caught=% expected=23505 (unique_violation)', caught; END IF;\nEND $r$;\n"
+  },
+  {
+   "id": "PG-POS-2-UNIQUE-sensitivity_candidates-per-run-key",
+   "sql": "DO $r$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, sensitivity_model_version, created_by)\n      VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a1','methodological_filter:x:deadweight','methodological_filter','{}','0','pending','1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  EXCEPTION WHEN unique_violation THEN caught := SQLSTATE; END;\n  IF caught <> '23505' THEN RAISE EXCEPTION 'PG-POS-2 UNIQUE(run,candidate_key) sensitivity_candidates caught=% expected=23505 (unique_violation)', caught; END IF;\nEND $r$;\n"
+  },
+  {
+   "id": "PG-POS-2-NOT-NULL-calculation_run_id",
+   "sql": "DO $n$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid JOIN pg_namespace ns ON ns.oid = c.relnamespace\n  WHERE ns.nspname = 'public' AND c.relname IN ('readiness_assessments','sensitivity_candidates','sensitivity_scenarios') AND a.attname = 'calculation_run_id' AND a.attnotnull = true;\n  IF n <> 3 THEN RAISE EXCEPTION 'PG-POS-2 calculation_run_id NOT NULL measured=% expected=3', n; END IF;\nEND $n$;\n"
+  },
+  {
+   "id": "PG-POS-3-FIBDB-016-column-comment-and-data-intact",
+   "sql": "DO $c$ DECLARE cmt text; scoreA int; scoreB int; BEGIN\n  SELECT col_description('public.sroi_run_reviews'::regclass, (SELECT attnum FROM pg_attribute WHERE attrelid = 'public.sroi_run_reviews'::regclass AND attname = 'readiness_score')) INTO cmt;\n  IF cmt IS NULL THEN RAISE EXCEPTION 'PG-POS-3 sroi_run_reviews.readiness_score carries no column comment'; END IF;\n  IF cmt NOT LIKE '%LEGACY_NON_AUTHORITATIVE%' THEN RAISE EXCEPTION 'PG-POS-3 sroi_run_reviews.readiness_score comment missing LEGACY_NON_AUTHORITATIVE: %', cmt; END IF;\n  SELECT readiness_score INTO scoreA FROM public.sroi_run_reviews WHERE id = '9a100000-0000-4000-8000-0000000009a1';\n  IF scoreA IS DISTINCT FROM 75 THEN RAISE EXCEPTION 'PG-POS-3 sroi_run_reviews readiness_score (org A) measured=% expected=75 -- column/data must survive intact', scoreA; END IF;\n  SELECT readiness_score INTO scoreB FROM public.sroi_run_reviews WHERE id = '9b100000-0000-4000-8000-0000000009b1';\n  IF scoreB IS DISTINCT FROM 75 THEN RAISE EXCEPTION 'PG-POS-3 sroi_run_reviews readiness_score (org B) measured=% expected=75 -- column/data must survive intact', scoreB; END IF;\nEND $c$;\n"
+  },
+  {
+   "id": "SEC-N1-cross-tenant-SELECT-readiness_assessments",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0b100000-0000-4000-8000-0000000000b1\",\"role\":\"authenticated\"}', true);\nDO $a$ DECLARE v text; BEGIN\n  SELECT (SELECT count(*) FROM public.readiness_assessments WHERE id='6a100000-0000-4000-8000-0000000006a1')::text INTO v;\n  IF v IS DISTINCT FROM '0' THEN RAISE EXCEPTION 'SEC-N1 readiness_assessments cross-tenant SELECT measured=% expected=0', v; END IF;\n  SELECT (SELECT count(*) FROM public.readiness_assessments WHERE id='6b100000-0000-4000-8000-0000000006b1')::text INTO v;\n  IF v IS DISTINCT FROM '1' THEN RAISE EXCEPTION 'SEC-N1 readiness_assessments own-tenant SELECT measured=% expected=1 (control that the query itself is not vacuously empty)', v; END IF;\nEND $a$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N1-cross-tenant-SELECT-sensitivity_candidates",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0b100000-0000-4000-8000-0000000000b1\",\"role\":\"authenticated\"}', true);\nDO $a$ DECLARE v text; BEGIN\n  SELECT (SELECT count(*) FROM public.sensitivity_candidates WHERE id='7a100000-0000-4000-8000-0000000007a1')::text INTO v;\n  IF v IS DISTINCT FROM '0' THEN RAISE EXCEPTION 'SEC-N1 sensitivity_candidates cross-tenant SELECT measured=% expected=0', v; END IF;\n  SELECT (SELECT count(*) FROM public.sensitivity_candidates WHERE id='7b100000-0000-4000-8000-0000000007b1')::text INTO v;\n  IF v IS DISTINCT FROM '1' THEN RAISE EXCEPTION 'SEC-N1 sensitivity_candidates own-tenant SELECT measured=% expected=1 (control that the query itself is not vacuously empty)', v; END IF;\nEND $a$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N1-cross-tenant-SELECT-sensitivity_scenarios",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0b100000-0000-4000-8000-0000000000b1\",\"role\":\"authenticated\"}', true);\nDO $a$ DECLARE v text; BEGIN\n  SELECT (SELECT count(*) FROM public.sensitivity_scenarios WHERE id='8a100000-0000-4000-8000-0000000008a1')::text INTO v;\n  IF v IS DISTINCT FROM '0' THEN RAISE EXCEPTION 'SEC-N1 sensitivity_scenarios cross-tenant SELECT measured=% expected=0', v; END IF;\n  SELECT (SELECT count(*) FROM public.sensitivity_scenarios WHERE id='8b100000-0000-4000-8000-0000000008b1')::text INTO v;\n  IF v IS DISTINCT FROM '1' THEN RAISE EXCEPTION 'SEC-N1 sensitivity_scenarios own-tenant SELECT measured=% expected=1 (control that the query itself is not vacuously empty)', v; END IF;\nEND $a$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N2-cross-tenant-INSERT-readiness_assessments",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0b100000-0000-4000-8000-0000000000b1\",\"role\":\"authenticated\"}', true);\nDO $e$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    INSERT INTO public.readiness_assessments (organization_id, project_id, calculation_run_id, readiness_model_version, global_score, band, dimension_scores, criteria_detail, created_by)\n      VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','1.0.0','60.00','partial_preparation','{}','[]','0b100000-0000-4000-8000-0000000000b1');\n  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;\n  IF caught <> '42501' THEN RAISE EXCEPTION 'SEC-N2 readiness_assessments caught=% expected=42501', caught; END IF;\nEND $e$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N2-cross-tenant-INSERT-sensitivity_candidates",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0b100000-0000-4000-8000-0000000000b1\",\"role\":\"authenticated\"}', true);\nDO $e$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, sensitivity_model_version, created_by)\n      VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','secn2:candidate','methodological_filter','{}','0','pending','1.0.0','0b100000-0000-4000-8000-0000000000b1');\n  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;\n  IF caught <> '42501' THEN RAISE EXCEPTION 'SEC-N2 sensitivity_candidates caught=% expected=42501', caught; END IF;\nEND $e$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N2-cross-tenant-INSERT-sensitivity_scenarios",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0b100000-0000-4000-8000-0000000000b1\",\"role\":\"authenticated\"}', true);\nDO $e$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    INSERT INTO public.sensitivity_scenarios (organization_id, project_id, calculation_run_id, scenario_kind, candidate_ids, modified_inputs, reason, sensitivity_model_version, calculation_engine_version, result_json, base_result_json, selected_by, created_by)\n      VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','one_at_a_time','[]','[]','secn2 reason','1.0.0','1.0.0','{}','{}','0b100000-0000-4000-8000-0000000000b1','0b100000-0000-4000-8000-0000000000b1');\n  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;\n  IF caught <> '42501' THEN RAISE EXCEPTION 'SEC-N2 sensitivity_scenarios caught=% expected=42501', caught; END IF;\nEND $e$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N3-cross-tenant-UPDATE-sensitivity_candidates",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0b100000-0000-4000-8000-0000000000b1\",\"role\":\"authenticated\"}', true);\nDO $u$ DECLARE n int; BEGIN\n  UPDATE public.sensitivity_candidates SET rationale = 'secn3' WHERE id = '7a100000-0000-4000-8000-0000000007a1';\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 0 THEN RAISE EXCEPTION 'SEC-N3 sensitivity_candidates ROW_COUNT=% expected=0', n; END IF;\nEND $u$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N3-readiness_assessments-has-no-UPDATE-policy-at-all",
+   "sql": "DO $p$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='readiness_assessments' AND cmd='UPDATE';\n  IF n <> 0 THEN RAISE EXCEPTION 'SEC-N3 readiness_assessments unexpectedly carries an UPDATE policy: %', n; END IF;\nEND $p$;\n"
+  },
+  {
+   "id": "SEC-N3-sensitivity_scenarios-has-no-UPDATE-policy-at-all",
+   "sql": "DO $p$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='sensitivity_scenarios' AND cmd='UPDATE';\n  IF n <> 0 THEN RAISE EXCEPTION 'SEC-N3 sensitivity_scenarios unexpectedly carries an UPDATE policy: %', n; END IF;\nEND $p$;\n"
+  },
+  {
+   "id": "SEC-N4-no-new-function-surface-VACUOUS-BY-ABSENCE",
+   "sql": "DO $f$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace\n  WHERE ns.nspname = 'public' AND p.proname IN (\n    'readiness_assessments', 'sensitivity_candidates', 'sensitivity_scenarios',\n    'readiness_assessment', 'sensitivity_candidate', 'sensitivity_scenario'\n  );\n  IF n <> 0 THEN RAISE EXCEPTION 'SEC-N4 expected zero B5-owned functions, measured=%', n; END IF;\nEND $f$;\n"
+  },
+  {
+   "id": "SEC-N5-no-DELETE-policy-readiness_assessments",
+   "sql": "DO $p$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='readiness_assessments' AND cmd='DELETE';\n  IF n <> 0 THEN RAISE EXCEPTION 'SEC-N5 readiness_assessments unexpectedly carries a DELETE policy: %', n; END IF;\nEND $p$;\n"
+  },
+  {
+   "id": "SEC-N5-no-DELETE-policy-sensitivity_candidates",
+   "sql": "DO $p$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='sensitivity_candidates' AND cmd='DELETE';\n  IF n <> 0 THEN RAISE EXCEPTION 'SEC-N5 sensitivity_candidates unexpectedly carries a DELETE policy: %', n; END IF;\nEND $p$;\n"
+  },
+  {
+   "id": "SEC-N5-no-DELETE-policy-sensitivity_scenarios",
+   "sql": "DO $p$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='sensitivity_scenarios' AND cmd='DELETE';\n  IF n <> 0 THEN RAISE EXCEPTION 'SEC-N5 sensitivity_scenarios unexpectedly carries a DELETE policy: %', n; END IF;\nEND $p$;\n"
+  },
+  {
+   "id": "SEC-N5-same-tenant-DELETE-denied-readiness_assessments",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $d$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    DELETE FROM public.readiness_assessments WHERE id = '6a100000-0000-4000-8000-0000000006a1';\n  EXCEPTION WHEN insufficient_privilege THEN caught := SQLSTATE; END;\n  IF caught <> '42501' THEN RAISE EXCEPTION 'SEC-N5 readiness_assessments same-tenant DELETE caught=% expected=42501 (uellix_writer holds no DELETE grant at all -- no DELETE policy either)', caught; END IF;\nEND $d$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N5-same-tenant-DELETE-denied-sensitivity_candidates",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $d$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    DELETE FROM public.sensitivity_candidates WHERE id = '7a100000-0000-4000-8000-0000000007a1';\n  EXCEPTION WHEN insufficient_privilege THEN caught := SQLSTATE; END;\n  IF caught <> '42501' THEN RAISE EXCEPTION 'SEC-N5 sensitivity_candidates same-tenant DELETE caught=% expected=42501 (uellix_writer holds no DELETE grant at all -- no DELETE policy either)', caught; END IF;\nEND $d$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-N5-same-tenant-DELETE-denied-sensitivity_scenarios",
+   "sql": "BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $d$ DECLARE caught text := 'none'; BEGIN\n  BEGIN\n    DELETE FROM public.sensitivity_scenarios WHERE id = '8a100000-0000-4000-8000-0000000008a1';\n  EXCEPTION WHEN insufficient_privilege THEN caught := SQLSTATE; END;\n  IF caught <> '42501' THEN RAISE EXCEPTION 'SEC-N5 sensitivity_scenarios same-tenant DELETE caught=% expected=42501 (uellix_writer holds no DELETE grant at all -- no DELETE policy either)', caught; END IF;\nEND $d$;\nROLLBACK;\n"
+  },
+  {
+   "id": "SEC-ACL-1-RLS-enabled-and-policies-exist-per-table",
+   "sql": "DO $s$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_class c JOIN pg_namespace ns ON ns.oid = c.relnamespace\n  WHERE ns.nspname = 'public' AND c.relname IN ('readiness_assessments','sensitivity_candidates','sensitivity_scenarios') AND c.relrowsecurity = true;\n  IF n <> 3 THEN RAISE EXCEPTION 'SEC-ACL-1 relrowsecurity measured=% expected=3', n; END IF;\n\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='readiness_assessments';\n  IF n <> 2 THEN RAISE EXCEPTION 'SEC-ACL-1 readiness_assessments policy count measured=% expected=2', n; END IF;\n\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='sensitivity_candidates';\n  IF n <> 3 THEN RAISE EXCEPTION 'SEC-ACL-1 sensitivity_candidates policy count measured=% expected=3', n; END IF;\n\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='sensitivity_scenarios';\n  IF n <> 2 THEN RAISE EXCEPTION 'SEC-ACL-1 sensitivity_scenarios policy count measured=% expected=2', n; END IF;\nEND $s$;\n"
+  },
+  {
+   "id": "SEC-ACL-1-uellix_writer-grants",
+   "sql": "DO $g$ DECLARE ok boolean; BEGIN\n  SELECT has_table_privilege('uellix_writer', 'public.readiness_assessments', 'SELECT') AND has_table_privilege('uellix_writer', 'public.readiness_assessments', 'INSERT') AND NOT has_table_privilege('uellix_writer', 'public.readiness_assessments', 'UPDATE') INTO ok;\n  IF NOT ok THEN RAISE EXCEPTION 'SEC-ACL-1 uellix_writer readiness_assessments grant mismatch (expected SELECT+INSERT, no UPDATE)'; END IF;\n\n  SELECT has_table_privilege('uellix_writer', 'public.sensitivity_candidates', 'SELECT') AND has_table_privilege('uellix_writer', 'public.sensitivity_candidates', 'INSERT') AND has_table_privilege('uellix_writer', 'public.sensitivity_candidates', 'UPDATE') INTO ok;\n  IF NOT ok THEN RAISE EXCEPTION 'SEC-ACL-1 uellix_writer sensitivity_candidates grant mismatch (expected SELECT+INSERT+UPDATE)'; END IF;\n\n  SELECT has_table_privilege('uellix_writer', 'public.sensitivity_scenarios', 'SELECT') AND has_table_privilege('uellix_writer', 'public.sensitivity_scenarios', 'INSERT') AND NOT has_table_privilege('uellix_writer', 'public.sensitivity_scenarios', 'UPDATE') INTO ok;\n  IF NOT ok THEN RAISE EXCEPTION 'SEC-ACL-1 uellix_writer sensitivity_scenarios grant mismatch (expected SELECT+INSERT, no UPDATE)'; END IF;\nEND $g$;\n"
+  },
+  {
+   "id": "SEC-ACL-1-uellix_auditor-grants",
+   "sql": "DO $g$ DECLARE ok boolean; BEGIN\n  SELECT has_table_privilege('uellix_auditor', 'public.readiness_assessments', 'SELECT') AND NOT has_table_privilege('uellix_auditor', 'public.readiness_assessments', 'INSERT') INTO ok;\n  IF NOT ok THEN RAISE EXCEPTION 'SEC-ACL-1 uellix_auditor readiness_assessments grant mismatch (expected SELECT only)'; END IF;\n\n  SELECT has_table_privilege('uellix_auditor', 'public.sensitivity_candidates', 'SELECT') AND NOT has_table_privilege('uellix_auditor', 'public.sensitivity_candidates', 'INSERT') INTO ok;\n  IF NOT ok THEN RAISE EXCEPTION 'SEC-ACL-1 uellix_auditor sensitivity_candidates grant mismatch (expected SELECT only)'; END IF;\n\n  SELECT has_table_privilege('uellix_auditor', 'public.sensitivity_scenarios', 'SELECT') AND NOT has_table_privilege('uellix_auditor', 'public.sensitivity_scenarios', 'INSERT') INTO ok;\n  IF NOT ok THEN RAISE EXCEPTION 'SEC-ACL-1 uellix_auditor sensitivity_scenarios grant mismatch (expected SELECT only)'; END IF;\nEND $g$;\n"
+  },
+  {
+   "id": "SEC-ACL-1-PUBLIC-holds-nothing",
+   "sql": "DO $g$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM information_schema.role_table_grants\n  WHERE table_schema = 'public' AND table_name IN ('readiness_assessments','sensitivity_candidates','sensitivity_scenarios') AND grantee = 'PUBLIC';\n  IF n <> 0 THEN RAISE EXCEPTION 'SEC-ACL-1 PUBLIC unexpectedly holds % grant(s) on the B5 tables', n; END IF;\nEND $g$;\n"
+  },
+  {
+   "id": "MUT-PG-1-SELECT-policy-removal-caught-readiness_assessments",
+   "sql": "BEGIN;\nDROP POLICY readiness_assessments_select ON public.readiness_assessments;\nSET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $a$ DECLARE v text; BEGIN\n  SELECT (SELECT count(*) FROM public.readiness_assessments WHERE id='6a100000-0000-4000-8000-0000000006a1')::text INTO v;\n  IF v IS DISTINCT FROM '0' THEN RAISE EXCEPTION 'MUT-PG-1 readiness_assessments measured=% expected=0 (SELECT policy removal must be caught)', v; END IF;\nEND $a$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-1-SELECT-policy-removal-caught-sensitivity_candidates",
+   "sql": "BEGIN;\nDROP POLICY sensitivity_candidates_select ON public.sensitivity_candidates;\nSET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $a$ DECLARE v text; BEGIN\n  SELECT (SELECT count(*) FROM public.sensitivity_candidates WHERE id='7a100000-0000-4000-8000-0000000007a1')::text INTO v;\n  IF v IS DISTINCT FROM '0' THEN RAISE EXCEPTION 'MUT-PG-1 sensitivity_candidates measured=% expected=0 (SELECT policy removal must be caught)', v; END IF;\nEND $a$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-1-SELECT-policy-removal-caught-sensitivity_scenarios",
+   "sql": "BEGIN;\nDROP POLICY sensitivity_scenarios_select ON public.sensitivity_scenarios;\nSET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $a$ DECLARE v text; BEGIN\n  SELECT (SELECT count(*) FROM public.sensitivity_scenarios WHERE id='8a100000-0000-4000-8000-0000000008a1')::text INTO v;\n  IF v IS DISTINCT FROM '0' THEN RAISE EXCEPTION 'MUT-PG-1 sensitivity_scenarios measured=% expected=0 (SELECT policy removal must be caught)', v; END IF;\nEND $a$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-1-UPDATE-policy-removal-caught-sensitivity_candidates",
+   "sql": "BEGIN;\nDROP POLICY sensitivity_candidates_update ON public.sensitivity_candidates;\nSET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{\"sub\":\"0a100000-0000-4000-8000-0000000000a1\",\"role\":\"authenticated\"}', true);\nDO $u$ DECLARE n int; BEGIN\n  UPDATE public.sensitivity_candidates SET rationale = 'mutpg1' WHERE id = '7a100000-0000-4000-8000-0000000007a1';\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 0 THEN RAISE EXCEPTION 'MUT-PG-1 sensitivity_candidates UPDATE measured=% expected=0 (UPDATE policy removal must be caught, even for the row''s own tenant)', n; END IF;\nEND $u$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-2-CHECK-removal-caught-global_score",
+   "sql": "BEGIN;\nALTER TABLE public.readiness_assessments DROP CONSTRAINT readiness_assessments_global_score_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.readiness_assessments (organization_id, project_id, calculation_run_id, readiness_model_version, global_score, band, dimension_scores, criteria_detail, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','1.0.0','150.00','partial_preparation','{}','[]','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-2 global_score expected the out-of-range INSERT to SUCCEED once the CHECK is dropped (n=%), proving the CHECK was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-2-CHECK-removal-caught-band",
+   "sql": "BEGIN;\nALTER TABLE public.readiness_assessments DROP CONSTRAINT readiness_assessments_band_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.readiness_assessments (organization_id, project_id, calculation_run_id, readiness_model_version, global_score, band, dimension_scores, criteria_detail, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','1.0.0','60.00','invented_value','{}','[]','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-2 band expected the invalid INSERT to SUCCEED once the CHECK is dropped (n=%), proving the CHECK was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-2-CHECK-removal-caught-candidate_kind",
+   "sql": "BEGIN;\nALTER TABLE public.sensitivity_candidates DROP CONSTRAINT sensitivity_candidates_candidate_kind_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, sensitivity_model_version, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','mut2:candidate_kind','invented_value','{}','0','pending','1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-2 candidate_kind expected the invalid INSERT to SUCCEED once the CHECK is dropped (n=%), proving the CHECK was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-2-CHECK-removal-caught-disposition",
+   "sql": "BEGIN;\nALTER TABLE public.sensitivity_candidates DROP CONSTRAINT sensitivity_candidates_disposition_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, rationale, sensitivity_model_version, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','mut2:disposition','methodological_filter','{}','0','invented_value','mut2 rationale (isolates this probe to the disposition CHECK, not rationale_check)','1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-2 disposition expected the invalid INSERT to SUCCEED once the CHECK is dropped (n=%), proving the CHECK was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-2-CHECK-removal-caught-scenario_kind",
+   "sql": "BEGIN;\nALTER TABLE public.sensitivity_scenarios DROP CONSTRAINT sensitivity_scenarios_scenario_kind_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_scenarios (organization_id, project_id, calculation_run_id, scenario_kind, candidate_ids, modified_inputs, reason, sensitivity_model_version, calculation_engine_version, result_json, base_result_json, selected_by, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','invented_value','[]','[]','mut2','1.0.0','1.0.0','{}','{}','0a100000-0000-4000-8000-0000000000a1','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-2 scenario_kind expected the invalid INSERT to SUCCEED once the CHECK is dropped (n=%), proving the CHECK was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-3-conditional-NOT-NULL-removal-caught-rationale",
+   "sql": "BEGIN;\nALTER TABLE public.sensitivity_candidates DROP CONSTRAINT sensitivity_candidates_rationale_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, rationale, sensitivity_model_version, created_by)\n    VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','mut3:rationale','methodological_filter','{}','0','variation_required',NULL,'1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-3 rationale expected the missing-rationale INSERT to SUCCEED once the CHECK is dropped (n=%)', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-3-conditional-NOT-NULL-removal-caught-combination_description",
+   "sql": "BEGIN;\nALTER TABLE public.sensitivity_scenarios DROP CONSTRAINT sensitivity_scenarios_combination_description_check;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_scenarios (organization_id, project_id, calculation_run_id, scenario_kind, candidate_ids, modified_inputs, reason, combination_description, sensitivity_model_version, calculation_engine_version, result_json, base_result_json, selected_by, created_by)\n    VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1','5a100000-0000-4000-8000-0000000005a2','combined','[]','[]','mut3',NULL,'1.0.0','1.0.0','{}','{}','0a100000-0000-4000-8000-0000000000a1','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-3 combination_description expected the missing-description combined-scenario INSERT to SUCCEED once the CHECK is dropped (n=%)', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-4-UPDATE-policy-addition-caught-readiness_assessments",
+   "sql": "BEGIN;\nCREATE POLICY mut_pg_4_probe_update ON public.readiness_assessments FOR UPDATE USING (true);\nDO $m$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='readiness_assessments' AND cmd='UPDATE';\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-4 readiness_assessments: SEC-N3''s pg_policies measurement failed to detect the added UPDATE policy (measured=%, expected=1)', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-4-UPDATE-policy-addition-caught-sensitivity_scenarios",
+   "sql": "BEGIN;\nCREATE POLICY mut_pg_4_probe_update ON public.sensitivity_scenarios FOR UPDATE USING (true);\nDO $m$ DECLARE n int; BEGIN\n  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='sensitivity_scenarios' AND cmd='UPDATE';\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-4 sensitivity_scenarios: SEC-N3''s pg_policies measurement failed to detect the added UPDATE policy (measured=%, expected=1)', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-5-nullable-calculation_run_id-caught-readiness_assessments",
+   "sql": "BEGIN;\nALTER TABLE public.readiness_assessments ALTER COLUMN calculation_run_id DROP NOT NULL;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.readiness_assessments (organization_id, project_id, calculation_run_id, readiness_model_version, global_score, band, dimension_scores, criteria_detail, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1',NULL,'1.0.0','60.00','partial_preparation','{}','[]','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-5 readiness_assessments expected the NULL calculation_run_id INSERT to SUCCEED once NOT NULL is dropped (n=%), proving the constraint was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-5-nullable-calculation_run_id-caught-sensitivity_candidates",
+   "sql": "BEGIN;\nALTER TABLE public.sensitivity_candidates ALTER COLUMN calculation_run_id DROP NOT NULL;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_candidates (organization_id, project_id, calculation_run_id, candidate_key, candidate_kind, input_reference, base_value, disposition, sensitivity_model_version, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1',NULL,'mut5:candidate','methodological_filter','{}','0','pending','1.0.0','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-5 sensitivity_candidates expected the NULL calculation_run_id INSERT to SUCCEED once NOT NULL is dropped (n=%), proving the constraint was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-5-nullable-calculation_run_id-caught-sensitivity_scenarios",
+   "sql": "BEGIN;\nALTER TABLE public.sensitivity_scenarios ALTER COLUMN calculation_run_id DROP NOT NULL;\nDO $m$ DECLARE n int; BEGIN\n  INSERT INTO public.sensitivity_scenarios (organization_id, project_id, calculation_run_id, scenario_kind, candidate_ids, modified_inputs, reason, sensitivity_model_version, calculation_engine_version, result_json, base_result_json, selected_by, created_by) VALUES ('1a100000-0000-4000-8000-0000000001a1','2a100000-0000-4000-8000-0000000002a1',NULL,'one_at_a_time','[]','[]','mut5','1.0.0','1.0.0','{}','{}','0a100000-0000-4000-8000-0000000000a1','0a100000-0000-4000-8000-0000000000a1');\n  GET DIAGNOSTICS n = ROW_COUNT;\n  IF n <> 1 THEN RAISE EXCEPTION 'MUT-PG-5 sensitivity_scenarios expected the NULL calculation_run_id INSERT to SUCCEED once NOT NULL is dropped (n=%), proving the constraint was load-bearing', n; END IF;\nEND $m$;\nROLLBACK;\n"
+  },
+  {
+   "id": "MUT-PG-6-column-comment-removal-caught",
+   "sql": "BEGIN;\nCOMMENT ON COLUMN public.sroi_run_reviews.readiness_score IS NULL;\nDO $m$ DECLARE cmt text; BEGIN\n  SELECT col_description('public.sroi_run_reviews'::regclass, (SELECT attnum FROM pg_attribute WHERE attrelid = 'public.sroi_run_reviews'::regclass AND attname = 'readiness_score')) INTO cmt;\n  IF cmt IS NOT NULL THEN RAISE EXCEPTION 'MUT-PG-6 expected the column comment to be gone after removal (measured=%), proving PG-POS-3''s proof is live, not vacuous', cmt; END IF;\nEND $m$;\nROLLBACK;\n"
+  }
+ ]
+}

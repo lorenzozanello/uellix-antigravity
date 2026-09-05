@@ -221,6 +221,10 @@ const CONTENT_MODIFYING_SITES = [
   // FIBIU-14 (FIBC-018, W2-B4) — the update branch of
   // recordCounterfactualAssessment, mirroring recordOutcomeMonetizationDisposition.
   { file: 'lib/pipeline/sroi-calculation.ts', action: 'counterfactual_assessment.recorded' },
+  // FIBIU-18 (FIBC-022, W2-B5) — dispositionSensitivityCandidate: the
+  // governed pending -> variation_required|no_additional_variation_required
+  // transition updates the row's own content in place.
+  { file: 'lib/pipeline/sroi-sensitivity.ts', action: 'sensitivity_candidate.dispositioned' },
 ]
 
 describe('content-modifying audit coverage (FIBC-040)', () => {

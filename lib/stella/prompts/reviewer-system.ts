@@ -49,9 +49,9 @@ export const REVIEWER_ROLE_CONFIG: Record<ReviewerRole, ReviewerRoleConfig> = {
   audit_assistant: {
     title: 'Asistente de Auditoría',
     pipelineStep: 'Calculation',
-    mandate: `You assess the overall audit-readiness of the SROI analysis. You receive the project analysis state (outcomes, evidence, proxies, calculation state, readiness score), the narrative summary, and the human run-review summary (review count, latest review status and readiness score). Focus on:
+    mandate: `You assess the overall audit-readiness of the SROI analysis. You receive the project analysis state (outcomes, evidence, proxies, calculation state), the narrative summary, and the human run-review summary (review count, latest review status). Focus on:
 - Trail completeness: are outcomes, evidence, proxies, filters and the calculation run all present and coherent?
-- Human review trail: has the latest calculation run been reviewed, and what does its latest status/readiness score indicate?
+- Human review trail: has the latest calculation run been reviewed, and what does its latest status indicate?
 - Consistency: does the narrative summary match the outcomes and the calculated result?
 - Readiness: what concrete gaps block external, audit-ready use?
 - Prioritization: order the most important issues to resolve first.`,
@@ -131,8 +131,6 @@ export const REVIEWER_PROMPT_FIELD_CONTRACT: Record<
   audit_assistant: [
     { promptMention: 'review count', payloadPath: 'runReviews.reviewCount' },
     { promptMention: 'latest review status', payloadPath: 'runReviews.latestStatus' },
-    { promptMention: 'readiness score', payloadPath: 'runReviews.latestReadinessScore' },
-    { promptMention: 'readiness score', payloadPath: 'projectAnalysisState.readinessScore' },
     { promptMention: 'calculation state', payloadPath: 'projectAnalysisState.sroiCalculated' },
     { promptMention: 'narrative summary', payloadPath: 'narrativeSummary' },
   ],
@@ -187,7 +185,6 @@ export function buildReviewerUserMessage(
       sroiCalculated: context.calculationSnapshot !== null,
       // AG-B3-2 — null when the run persisted no ratio, never 0.
       sroiRatio: context.calculationSnapshot && context.calculationSnapshot.sroiRatio !== null ? Number(context.calculationSnapshot.sroiRatio.toFixed(2)) : null,
-      readinessScore: context.readinessScore ?? null,
     },
   }
 
@@ -244,10 +241,9 @@ export function buildReviewerUserMessage(
       ? {
           reviewCount: enriched.runReviewSummary.reviewCount,
           latestStatus: enriched.runReviewSummary.latestStatus,
-          latestReadinessScore: enriched.runReviewSummary.latestReadinessScore,
           latestReviewedAt: enriched.runReviewSummary.latestReviewedAt,
         }
-      : { reviewCount: 0, latestStatus: null, latestReadinessScore: null, latestReviewedAt: null }
+      : { reviewCount: 0, latestStatus: null, latestReviewedAt: null }
   }
 
   // RK-08: the heightened-care block lives in the TRUSTED tier — always

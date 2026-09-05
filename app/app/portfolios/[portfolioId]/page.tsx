@@ -117,15 +117,19 @@ export default async function PortfolioDetailPage({
             </dl>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Preparación metodológica promedio:</span>
-              <Badge variant={readinessBadgeVariant(agg.averageReadinessScore)}>
-                {agg.averageReadinessScore === null
+              {/* FIBIU-17 (FIBC-021, W2-B5): legacy manual score, never the
+                  canonical readiness (readiness_assessments), and never
+                  presented without this label. FIBIU-27 (Wave 5) switches
+                  the source; frozen for B5. */}
+              <span className="text-xs text-muted-foreground">Score manual heredado (no autoritativo) promedio:</span>
+              <Badge variant={readinessBadgeVariant(agg.averageLegacyManualReadinessScore)}>
+                {agg.averageLegacyManualReadinessScore === null
                   ? 'Sin evaluar'
-                  : `${Math.round(agg.averageReadinessScore)}%`}
+                  : `${Math.round(agg.averageLegacyManualReadinessScore)}%`}
               </Badge>
-              {agg.averageReadinessScore !== null && (
+              {agg.averageLegacyManualReadinessScore !== null && (
                 <span className="text-xs text-muted-foreground/70">
-                  ({agg.readinessCoverage} de {agg.includedCount} con revisión)
+                  ({agg.legacyManualReadinessCoverage} de {agg.includedCount} con revisión)
                 </span>
               )}
             </div>

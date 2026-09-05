@@ -35,7 +35,6 @@ import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import { computeFundersBreakdown, type FunderBreakdownRow } from '@/lib/pipeline/sroi-funders'
 import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
-import { scenarioFilterPct, SCENARIO_DELTA_PP, type Scenario } from '@/lib/pipeline/sroi-sensitivity'
 import { resolveRunVersionIdentity } from '@/lib/pipeline/run-version-identity'
 import { getCausalChainSufficiencyForOutcomes } from '@/lib/pipeline/theory-of-change'
 import { queryUnresolvedMaterialAssumptions } from '@/lib/pipeline/narratives'
@@ -1548,11 +1547,11 @@ export interface SkippedAssignment {
  *                     of the five governed filters is UNKNOWN, never zero:
  *                     the engine throws FILTER_VALUE_UNKNOWN and nothing is
  *                     computed or persisted from an invented zero.
- *   'preliminary'   — calculateSroiPreview / calculateSroiScenarios, both
- *                     rendered under the product's "Cálculo preliminar"
- *                     label. A NULL filter is coerced as before AND every
- *                     coercion is itemized in preliminaryFilterAssumptions,
- *                     so the preview is labelled and never silent.
+ *   'preliminary'   — calculateSroiPreview, rendered under the product's
+ *                     "Cálculo preliminar" label. A NULL filter is coerced
+ *                     as before AND every coercion is itemized in
+ *                     preliminaryFilterAssumptions, so the preview is
+ *                     labelled and never silent.
  */
 export type FilterSemantics = 'authoritative' | 'preliminary'
 export interface EngineOptions {
@@ -1878,60 +1877,10 @@ export async function calculateSroiPreview(projectId: string) {
   }
 }
 
-// ─── Sensitivity: conservative / base / optimistic scenarios ──────────────────
-
-export interface SroiScenarioResult {
-  scenario: Scenario
-  currency: string
-  netSocialValue: number
-  netSocialValueExact: string
-  // AG-B3-2 — null in the no-ratio state (same engine, same rule).
-  sroiRatio: number | null
-  sroiRatioExact: string | null
-}
-
-// Non-persisted sensitivity band: re-runs the deterministic engine with every
-// SROI filter shifted uniformly by ±deltaPp (conservative up, optimistic down),
-// leaving the audited persist path untouched. Reuses the same runDeterministicCalc
-// so the scenarios can never drift from the real formula.
-export async function calculateSroiScenarios(projectId: string, deltaPp: number = SCENARIO_DELTA_PP) {
-  const ctx = await authorize(projectId)
-  const readiness = await getSroiCalculationReadiness(projectId)
-  if (!readiness.canCalculate) {
-    return { canCalculate: false as const, readiness, scenarios: null, deltaPp }
-  }
-
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
-  if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
-
-  // AG-B3-4 — an unknown (NULL) filter stays unknown through the shift so the
-  // preliminary engine path itemizes it, instead of being silently read as 0
-  // here and shifted from that invented zero.
-  const shift = (raw: string | null, sc: Scenario) => (raw === null || raw === '' ? raw : String(scenarioFilterPct(parseNum(raw), sc, deltaPp)))
-  const scenarios: SroiScenarioResult[] = (['conservative', 'base', 'optimistic'] as const).map((sc) => {
-    const adjusted: AssignmentData[] = assignmentData.map((d) => ({
-      ...d,
-      filterSet: {
-        ...d.filterSet,
-        deadweightPct: shift(d.filterSet.deadweightPct, sc),
-        attributionPct: shift(d.filterSet.attributionPct, sc),
-        displacementPct: shift(d.filterSet.displacementPct, sc),
-        dropoffPct: shift(d.filterSet.dropoffPct, sc),
-      },
-    }))
-    const result = runDeterministicCalc(investments, adjusted, allocations, fundersList, discountRatePct, { filterSemantics: 'preliminary' })
-    return {
-      scenario: sc,
-      currency: result.currency,
-      netSocialValue: result.netSocialValue,
-      netSocialValueExact: result.netSocialValueExact,
-      sroiRatio: result.sroiRatio,
-      sroiRatioExact: result.sroiRatioExact,
-    }
-  })
-
-  return { canCalculate: true as const, readiness, scenarios, deltaPp }
-}
+// FIBIU-18 (FIBC-022, W2-B5): the uniform conservative/base/optimistic
+// scenario band that used to live here is SUPERSEDED, not extended — see
+// lib/pipeline/sroi-sensitivity.ts's governed candidate register and
+// recordSensitivityScenario for the replacement.
 
 // ─── Input version fingerprint (FIBIU-03 / FIBC-002 / FIBC-045) ────────────
 

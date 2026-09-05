@@ -6,7 +6,7 @@ function usdRun(
   projectId: string,
   totalInvestment: number,
   netSocialValue: number,
-  readinessScore: number | null = null
+  legacyManualReadinessScore: number | null = null
 ): ProjectRunSummary {
   return {
     projectId,
@@ -17,7 +17,7 @@ function usdRun(
       netSocialValue,
       sroiRatio: netSocialValue / totalInvestment,
     },
-    readinessScore,
+    legacyManualReadinessScore,
   }
 }
 
@@ -37,7 +37,7 @@ describe('aggregatePortfolioSroi', () => {
   it('excludes projects without a calculation run', () => {
     const result = aggregatePortfolioSroi([
       usdRun('A', 100, 300),
-      { projectId: 'B', projectName: 'B', run: null, readinessScore: null },
+      { projectId: 'B', projectName: 'B', run: null, legacyManualReadinessScore: null },
     ])
     expect(result.includedCount).toBe(1)
     expect(result.excluded).toEqual([{ projectId: 'B', projectName: 'B', reason: 'no_run' }])
@@ -49,7 +49,7 @@ describe('aggregatePortfolioSroi', () => {
       projectId: 'B',
       projectName: 'B',
       run: { currency: 'COP', totalInvestment: 5000000, netSocialValue: 9000000, sroiRatio: 1.8 },
-      readinessScore: null,
+      legacyManualReadinessScore: null,
     }
     const result = aggregatePortfolioSroi([usdRun('A', 100, 300), legacy])
     expect(result.includedCount).toBe(1)
@@ -59,7 +59,7 @@ describe('aggregatePortfolioSroi', () => {
 
   it('returns a null ratio when no project is included', () => {
     const result = aggregatePortfolioSroi([
-      { projectId: 'A', projectName: 'A', run: null, readinessScore: null },
+      { projectId: 'A', projectName: 'A', run: null, legacyManualReadinessScore: null },
     ])
     expect(result.portfolioSroiRatio).toBeNull()
     expect(result.includedCount).toBe(0)
@@ -72,8 +72,17 @@ describe('aggregatePortfolioSroi', () => {
       usdRun('B', 100, 100, 40),
       usdRun('C', 100, 100, null), // no review yet — excluded from the average
     ])
-    expect(result.averageReadinessScore).toBe(60) // (80 + 40) / 2
-    expect(result.readinessCoverage).toBe(2)
+    expect(result.averageLegacyManualReadinessScore).toBe(60) // (80 + 40) / 2
+    expect(result.legacyManualReadinessCoverage).toBe(2)
+  })
+
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17) — this figure MAY continue to
+  // be read (sroi_run_reviews.readiness_score), but is never labelled,
+  // aggregated or presented as canonical FIBC-021 readiness. The population
+  // predicate and the sum/sum formula above are FROZEN and unchanged.
+  it('is explicitly labelled LEGACY_NON_AUTHORITATIVE — never presented as canonical readiness', () => {
+    const result = aggregatePortfolioSroi([usdRun('A', 100, 300, 80)])
+    expect(result.readinessSource).toBe('LEGACY_NON_AUTHORITATIVE')
   })
 
   it('sums large money values without floating-point drift (Decimal)', () => {
@@ -100,7 +109,7 @@ describe('W2-B3 no-ratio (N-RATIO-2 / M-RATIO-2)', () => {
       projectId: 'B',
       projectName: 'B',
       run: { currency: 'USD', totalInvestment: 900, netSocialValue: 0, sroiRatio: null },
-      readinessScore: 50,
+      legacyManualReadinessScore: 50,
     }
     const result = aggregatePortfolioSroi([usdRun('A', 100, 300), noRatio])
     expect(result.includedCount).toBe(1)
@@ -110,12 +119,12 @@ describe('W2-B3 no-ratio (N-RATIO-2 / M-RATIO-2)', () => {
     expect(result.portfolioSroiRatio).toBe(3)
     expect(result.portfolioSroiRatio).not.toBe(0.3)
     // Its readiness is not averaged in either (it is not an included project).
-    expect(result.readinessCoverage).toBe(0)
+    expect(result.legacyManualReadinessCoverage).toBe(0)
   })
 
   it('a portfolio whose only project has no ratio yields a null portfolio ratio, never 0', () => {
     const result = aggregatePortfolioSroi([
-      { projectId: 'B', projectName: 'B', run: { currency: 'USD', totalInvestment: 900, netSocialValue: 0, sroiRatio: null }, readinessScore: null },
+      { projectId: 'B', projectName: 'B', run: { currency: 'USD', totalInvestment: 900, netSocialValue: 0, sroiRatio: null }, legacyManualReadinessScore: null },
     ])
     expect(result.portfolioSroiRatio).toBeNull()
     expect(result.includedCount).toBe(0)

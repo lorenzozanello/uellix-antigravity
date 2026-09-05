@@ -751,7 +751,16 @@ describe('every entry point that can reach the database opens an identity contex
     // runWithOrganizationAccess around its one governed write, exactly like
     // its siblings in the same directories, so all four are `contextualized`,
     // not allowlisted: +4 inventoried, +4 reaching, +4 contextualized.
-    }).toEqual({ inventoried: 135, reaching: 110, contextualized: 94, allowlisted: 16 })
+    //
+    // 135 -> 139, 110 -> 114, contextualized 94 -> 98, allowlisted UNCHANGED
+    // at 16: W2-B5 (HPO-ODS-W2-17, FIBIU-17/18) adds FOUR new .action.ts
+    // entry points under calculation/runs/ — computeReadinessAssessment,
+    // registerSensitivityCandidates, dispositionSensitivityCandidate,
+    // recordSensitivityScenario. Each calls runWithOrganizationAccess around
+    // its one governed read/write, exactly like their W2-B4 siblings in the
+    // same directory, so all four are `contextualized`, not allowlisted:
+    // +4 inventoried, +4 reaching, +4 contextualized.
+    }).toEqual({ inventoried: 139, reaching: 114, contextualized: 98, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

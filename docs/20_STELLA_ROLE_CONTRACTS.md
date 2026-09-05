@@ -109,8 +109,8 @@ The prompt↔context mapping is formalized in `REVIEWER_PROMPT_FIELD_CONTRACT`
 |---|---|
 | Purpose | Overall audit-readiness assessment: trail completeness, consistency, prioritized gaps. |
 | Flag | `STELLA_ENABLED` + `STELLA_AUDIT_ASSISTANT_ENABLED` |
-| Inputs | Base context (incl. calculation snapshot + readiness score) **plus** `runReviewSummary`: `reviewCount`, `latestStatus`, `latestReadinessScore`, `latestReviewedAt` from `sroi_run_reviews`; **plus** `narrativeSummary` in the payload (sanitized + PII-redacted upstream) — grounds the narrative-consistency mandate. |
-| Invariants | Never declares the analysis audit-ready; readiness scores are reported, not awarded. |
+| Inputs | Base context (incl. calculation snapshot; `readinessScore` is structurally present on the shared context type but no builder populates it — absent, not legacy) **plus** `runReviewSummary`: `reviewCount`, `latestStatus`, `latestReviewedAt` from `sroi_run_reviews`; **plus** `narrativeSummary` in the payload (sanitized + PII-redacted upstream) — grounds the narrative-consistency mandate. FIBIU-17 (W2-B5): `latestReadinessScore` was removed from `runReviewSummary` — canonical readiness is system-computed (`getReadinessAssessment` / `sroi_readiness_assessments`), the legacy `sroi_run_reviews.readiness_score` column is LEGACY_NON_AUTHORITATIVE, and this context no longer reads it. |
+| Invariants | Never declares the analysis audit-ready; consumes no readiness score of any kind — canonical readiness is reported to reviewers elsewhere (the run detail page), never through this context. |
 
 Reviewer failure modes: common codes only (see §0.6); context builder errors map to `UNAUTHORIZED`.
 

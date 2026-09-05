@@ -165,10 +165,11 @@ const EVIDENCE_DETAILS: ReviewerContext['evidenceDetails'] = [
   },
 ]
 
+// FIBIU-17 (W2-B5): latestReadinessScore removed from ReviewerRunReviewSummary
+// — mechanically forced fixture update, unrelated to this eval suite's own controls.
 const RUN_REVIEW_SUMMARY: ReviewerContext['runReviewSummary'] = {
   reviewCount: 2,
   latestStatus: 'flagged',
-  latestReadinessScore: 72,
   latestReviewedAt: '2026-06-10T12:00:00.000Z',
 }
 

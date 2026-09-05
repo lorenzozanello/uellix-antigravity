@@ -237,6 +237,13 @@ export interface StellaProjectContext {
 
   // Report
   reportSections: SectionRef[]
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): kept for compile compatibility
+  // with lib/stella/prompts/advisor-system.ts and validator-system.ts, which
+  // read it as `context.readinessScore ?? null` — but no builder in
+  // lib/stella/context/** populates it any more (composer/validator/reviewer
+  // all set it undefined or omit it). ABSENT is required over a legacy
+  // manual value (readiness_reader_contract). Repointing to the canonical
+  // readiness_assessments score is PERMITTED but NOT REQUIRED in B5.
   readinessScore?: number
 
   // RK-08: heightened-care flag computed from already-queried metadata.

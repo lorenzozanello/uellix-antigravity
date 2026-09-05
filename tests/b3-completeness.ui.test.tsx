@@ -107,6 +107,24 @@ vi.mock('@/lib/pipeline/sroi-calculation', () => ({
 vi.mock('@/lib/pipeline/evidence-sufficiency', () => ({
   getLatestSufficiencyDeterminationsByOutcomeIds: vi.fn().mockResolvedValue(new Map()),
 }))
+// FIBIU-17 (W2-B5) — RunDetailPage now unconditionally reads canonical
+// readiness; these tests never exercise the readiness feature itself, so the
+// "not yet computed" (null) shape is the correct fixture, not a stand-in.
+vi.mock('@/lib/pipeline/sroi-readiness', () => ({
+  getReadinessAssessment: vi.fn().mockResolvedValue(null),
+  READINESS_CRITERIA_COUNT: 40,
+}))
+// FIBIU-18 (W2-B5) — same for the governed sensitivity register/scenarios;
+// empty register is the correct "nothing registered yet" fixture.
+vi.mock('@/lib/pipeline/sroi-sensitivity', () => ({
+  listSensitivityCandidates: vi.fn().mockResolvedValue([]),
+  listSensitivityScenarios: vi.fn().mockResolvedValue([]),
+  getRunSensitivityCompleteness: vi.fn().mockResolvedValue({ complete: true, pendingCandidateIds: [], variationRequiredWithoutScenarioIds: [] }),
+  computeScenarioEnvelope: vi.fn(),
+  // The (unmocked, real) recordSensitivityScenario.action module consumes
+  // this at import time for its zod schema — it is not called at render.
+  SCENARIO_KIND_VALUES: ['one_at_a_time', 'combined'],
+}))
 vi.mock('@/app/app/projects/[projectId]/pipeline/calculation/runs/createSroiRunReview.action', () => ({ createSroiRunReviewAction: vi.fn() }))
 vi.mock('@/app/app/projects/[projectId]/pipeline/calculation/runs/recordEvidenceSufficiencyDetermination.action', () => ({ recordEvidenceSufficiencyDeterminationAction: vi.fn() }))
 vi.mock('@/app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action', () => ({ recordOutcomeMonetizationDispositionAction: vi.fn() }))
