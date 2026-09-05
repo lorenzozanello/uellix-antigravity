@@ -13,6 +13,26 @@
 
   "reopening_rule": "Do not re-open any ratification below unless repository evidence proves an actual contradiction requiring escalation. Absence of implementation is not a contradiction.",
 
+  "precedence_clarification": "A product ratification can intentionally contradict current executable authority; that contradiction is not resolved by precedence. It creates an AUTHORITY_GAP and requires a governed executable successor. See ratifications MO-02 and MO-07 below for the two ratifications currently in this state.",
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script — a checklist a reviewer or a future editor can verify by eye or with a one-line jq/node command.",
+    "expected_ratification_count": 27,
+    "expected_id_set": [
+      "MO-01", "MO-02", "MO-03", "MO-04", "MO-05", "MO-06", "MO-07", "MO-08", "MO-09", "MO-10", "MO-11", "MO-12",
+      "SS-01", "SS-02", "SS-03",
+      "CA-01", "CA-02", "CA-03", "CA-04", "CA-05",
+      "EV-01", "EV-02", "EV-03",
+      "RI-01",
+      "AG-01", "AG-02", "AG-03"
+    ],
+    "checks": [
+      "ratifications.length == 27",
+      "every id in ratifications is unique (no duplicate id values)",
+      "the set of ids in ratifications, compared as sets, equals expected_id_set exactly (no missing id, no extra id)"
+    ]
+  },
+
   "ratifications": [
     {
       "id": "MO-01",
@@ -26,14 +46,22 @@
       "domain": "TENANCY_MULTI_ORG",
       "statement": "A subject may hold active memberships in MULTIPLE organizations. Self-service founding cardinality and membership cardinality are different concepts.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "AUTHORITY_GAP — no multi-membership session/selection surface found under app/app or lib/organizations; see baseline Known Alignment Gap #1."
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "A subject may hold ACTIVE memberships in multiple organizations simultaneously.",
+        "CURRENT_EXECUTABLE_STATE": "CONTRADICTS_PRODUCT_INTENT — this is not a mere absence of multi-membership support. The database actively ENFORCES a single active membership per user: db/schema.ts:61 declares `uniqueIndex('user_single_active_membership').on(table.userId).where(sql`${table.status} = 'active'`)`, materialized as `CREATE UNIQUE INDEX user_single_active_membership ON public.organization_members USING btree (user_id) WHERE ((status)::text = 'active'::text)` (db/baseline/stella_g2_schema.sql:7071, also db/migrations/0003_curvy_tempest.sql). The current invitation and organization-bootstrap capabilities (db/prepared/stella_0006_invitation_capability.sql, db/prepared/stella_0010_organization_bootstrap_capability.sql) explicitly rely on this index to serialize concurrent invitation acceptance and org bootstrap, i.e. the single-active-membership ceiling is load-bearing product-adjacent logic today, not incidental.",
+        "REQUIRED_RESOLUTION": "FUTURE_AUTHORITY_REQUIRED — lifting this ceiling to allow concurrent active memberships requires a governed schema/authorization change (the partial unique index, the invitation/bootstrap logic built on it, and every call site that currently assumes 'the' single active membership), not a documentation update."
+      }
     },
     {
       "id": "MO-03",
       "domain": "TENANCY_MULTI_ORG",
       "statement": "Exactly one selected organization is the tenant request scope at a time.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — current single-active-membership model may already satisfy this incidentally; requires dedicated measurement against lib/organizations and auth middleware."
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "Exactly one SELECTED organization (chosen from among possibly several memberships) is the tenant request scope at a time, session-scoped per MO-04.",
+        "CURRENT_EXECUTABLE_STATE": "NOT_IMPLEMENTED_AS_RATIFIED — the current principal is singular/pick-first, not selected. lib/auth/database-context.ts documents 'The caller's single active membership, if any' (line ~209) and resolves the active organization as 'the caller's active membership' (line ~422), i.e. there is exactly one membership to read because MO-02's ceiling forbids more than one, not because a selection mechanism picked one among several.",
+        "REQUIRED_RESOLUTION": "AUTHORITY_GAP — a selected-organization scope model cannot be built until MO-02's ceiling is addressed by a governed successor; until then there is no 'selection' to implement, only a single value to read."
+      }
     },
     {
       "id": "MO-04",
@@ -47,21 +75,33 @@
       "domain": "TENANCY_MULTI_ORG",
       "statement": "Membership must be revalidated on every request.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — requires dedicated audit of request-boundary authorization, not re-derived here."
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "Membership must be revalidated on every request, against whichever organization is the current request's tenant scope.",
+        "CURRENT_EXECUTABLE_STATE": "IMPLEMENTED_AT_CURRENT_SINGLE_ORG_CEILING — per-request revalidation genuinely exists: db/identity-context.ts `withDatabaseIdentityContext` re-derives and checks membership on every call (loads the active membership fresh, then `if (identity.organizationId !== null && check.is_member !== true && !check.is_super_admin)` at line 217 rejects a non-member claim), and lib/auth/database-context.ts re-resolves the caller's active membership from the database each time a principal is built. This is real revalidation, not a cached/trust-on-first-use shortcut.",
+        "REQUIRED_RESOLUTION": "PARTIALLY_IMPLEMENTED — the mechanism revalidates against 'the' single active membership (MO-02's ceiling), not against a session-selected organization among several (MO-03/MO-04). Once MO-02/MO-03 are addressed by governed successor authority, this revalidation logic requires rework to check membership in the SELECTED organization specifically, not merely that one exists."
+      }
     },
     {
       "id": "MO-06",
       "domain": "TENANCY_MULTI_ORG",
       "statement": "Membership role is the authorization ceiling.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED."
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "A member's role in their (selected) organization is the ceiling on what they may do — no capability check may exceed what the role allows.",
+        "CURRENT_EXECUTABLE_STATE": "IMPLEMENTED_AT_CURRENT_TENANCY_MODEL — role-as-ceiling is implemented against the current single-org model via frozen FIB authority plus live RLS: db/identity-context.ts documents 104 RLS policies, 98 of which call `current_user_is_super_admin()` and 33 of which call `current_user_org_ids()`, all resolving from `auth.uid()`; roles are enforced through this policy surface plus lib/auth/roles.ts and lib/auth/permissions.ts.",
+        "REQUIRED_RESOLUTION": "IMPLEMENTED_AT_CURRENT_TENANCY_MODEL — no further resolution required for the current single-active-membership model; if/when MO-02/MO-03 change that model, this ceiling logic must be re-verified against the new selected-organization scope, but the role-as-ceiling principle itself is not contradicted today."
+      }
     },
     {
       "id": "MO-07",
       "domain": "TENANCY_MULTI_ORG",
       "statement": "Tenant application routes remain membership-bound even for platform superadmins. There is NO silent superadmin tenant-data bypass.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — app/admin exists as a separate route tree at AS_OF_HEAD (consistent with MO-08 in shape), but a bypass-absence claim requires a dedicated RLS/authorization audit, not asserted here."
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "Tenant application routes remain membership-bound even for platform superadmins; there is NO silent superadmin tenant-data bypass.",
+        "CURRENT_EXECUTABLE_STATE": "CONTRADICTS_PRODUCT_INTENT — db/identity-context.ts:217 reads `if (identity.organizationId !== null && check.is_member !== true && !check.is_super_admin)` before throwing `DB_IDENTITY_ORGANIZATION_NOT_A_MEMBER`. The `!check.is_super_admin` clause is an explicit, present-day exception: a caller confirmed as super-admin is NOT required to be an active member of the organization it is operating against at this boundary. This is a real, named superadmin membership-check bypass in the current executable code, not a hypothetical risk.",
+        "REQUIRED_RESOLUTION": "FUTURE_AUTHORITY_REQUIRED — closing this bypass (or replacing it with the explicit, auditable, time-bounded impersonation capability contemplated by MO-09) is a security-boundary change to db/identity-context.ts and requires its own governed authority and audit, not a documentation-only fix."
+      }
     },
     {
       "id": "MO-08",
@@ -117,7 +157,11 @@
       "domain": "STELLA_TENANT_SCOPE",
       "statement": "Stella operations/tickets must be bound to the selected validated organization context and rechecked at the database/runtime boundary. Do not accept a V1 design where membership ceiling alone permits ambiguous cross-scope attribution.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — requires dedicated audit of lib/stella tenant-scope binding; not re-derived by this mission."
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "Stella operations/tickets bind to the SELECTED, validated organization context, rechecked at the database/runtime boundary — not to whichever membership happens to exist.",
+        "CURRENT_EXECUTABLE_STATE": "NOT_IMPLEMENTED_AS_RATIFIED — a selected-organization scope does not yet exist to bind to (see MO-03). Stella (lib/stella) currently rides on the same single-active-membership ceiling as the rest of the application, not on an explicit selected/validated organization context.",
+        "REQUIRED_RESOLUTION": "AUTHORITY_GAP — depends directly on MO-03's resolution. Binding Stella to a selected-org scope that does not exist yet is not implementable in isolation; this is downstream of the same future authority needed for MO-02/MO-03."
+      }
     },
     {
       "id": "CA-01",
@@ -181,6 +225,27 @@
       "statement": "Do NOT resurrect obsolete report/hash/RPC designs merely because they appeared in prior packets. Current Report Integrity requires its own future authority against the live repository.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
       "implementation_status_as_of_head": "AUTHORITY_GAP — no report_hash/report-integrity RPC located by targeted grep of app/lib/db at AS_OF_HEAD; lib/reports exists but its relationship to a live Report Integrity design is unresolved. See baseline Known Alignment Gap #3."
+    },
+    {
+      "id": "AG-01",
+      "domain": "AI_GATEWAY",
+      "statement": "Uellix AI Gateway is the provider-abstraction boundary for production Stella: Frontend -> Stella Orchestrator -> Uellix AI Gateway -> Provider Adapter -> AI provider.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no independent Gateway module (a layer between the Stella orchestrator and the provider adapter) exists in the repository at AS_OF_HEAD. What exists is lib/stella/adapter/gemini-client.ts, a direct provider adapter, plus lib/stella/advisor/run-contextual-advisor.ts calling into it; there is no intervening Uellix AI Gateway layer to route through yet."
+    },
+    {
+      "id": "AG-02",
+      "domain": "AI_GATEWAY",
+      "statement": "Frontend must never invoke Gemini or another AI provider directly.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIAL_CURRENT_DIRECT_ADAPTER_ARCHITECTURE — server-side code already mediates provider calls through lib/stella/adapter (not raw frontend calls), which is consistent with this ratification in shape; but that adapter is a direct provider adapter, not the ratified Gateway boundary of AG-01, so the target architecture is not yet materialized even though the specific frontend-direct-call violation is not observed either."
+    },
+    {
+      "id": "AG-03",
+      "domain": "AI_GATEWAY",
+      "statement": "Gateway/provider execution must expose governed telemetry sufficient for model/provider identity, token usage where available, economic/cost accounting, latency/errors, and operation/trace correlation, without leaking private prompt/evidence content into ordinary logs.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_IMPLEMENTED_AT_ADAPTER_LEVEL — lib/stella/adapter/provider-call-log.ts and lib/stella/observability.ts exist at AS_OF_HEAD and are consistent with per-call logging/observability intent at the current adapter layer; lib/stella/cost-model.ts is consistent with economic/cost accounting intent. Whether this telemetry meets the full AG-03 bar (all five properties, with content-leak avoidance) at the not-yet-existing Gateway layer is FUTURE_MEASUREMENT_REQUIRED, not asserted here — this ratification binds the Gateway layer of AG-01, which does not exist yet."
     }
   ],
 
