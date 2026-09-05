@@ -5,10 +5,13 @@ artifact_id:        COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0
 authority_class:    PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY
 hpo_mission_id:      COMMERCIAL-V1-ALIGNMENT-BASELINE-MATERIALIZATION-R1
 remediation_mission_id: COMMERCIAL-V1-ALIGNMENT-BASELINE-COORDINATOR-REMEDIATION-R2
+amendment_mission_id: COMMERCIAL-V1-CA06-CA08-RATIFICATION-MATERIALIZATION-R1
 materialization_date: 2026-09-04
+amendment_date:      2026-09-05
 companion_artifact:  docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json
-ratification_count:  27 (MO-01..MO-12=12, SS-01..SS-03=3, CA-01..CA-05=5, EV-01..EV-03=3, RI-01=1, AG-01..AG-03=3) — see companion JSON self_check block for the deterministic count/uniqueness/ID-set verification
+ratification_count:  30 (MO-01..MO-12=12, SS-01..SS-03=3, CA-01..CA-08=8, EV-01..EV-03=3, RI-01=1, AG-01..AG-03=3) — see companion JSON self_check block for the deterministic count/uniqueness/ID-set verification
 AS_OF_HEAD:          4264bd606e1b1da93ab6c8e9167979983994e702 (origin/integration/commercial-v1)
+amendment_AS_OF_HEAD: d98cfb72d3e2e513a592be1183e6b9e5f638f2db (origin/integration/commercial-v1, at time of CA-06/07/08 materialization)
 main_frozen_sha:     067e8c2f3ac9b5e843de3a35575182907b4365d4 (unchanged, out of scope)
 ```
 
@@ -99,6 +102,18 @@ It must support:
 - Historical claims/evidence/reports must remain reconstructible.
 - Cross-tenant access fails closed.
 - Commercial V1 cannot require technical manual provisioning.
+- CommercialAccount association != membership.
+- CommercialAccount association != authorization.
+- Plan != entitlement.
+- Usage != entitlement.
+- Quota != billing.
+- Payment != activation.
+- Stripe webhook != membership/role/tenant creation authority.
+- Selected organization scope remains Organization, never CommercialAccount.
+
+*(The eight invariants above were added by the CA-06/CA-07/CA-08 amendment,
+`COMMERCIAL-V1-CA06-CA08-RATIFICATION-MATERIALIZATION-R1`, 2026-09-05. No
+pre-existing invariant in this list was altered or removed.)*
 
 **Stella doctrine:** *"la IA propone y analiza; el sistema controla y calcula; las
 personas deciden y aprueban."*
@@ -158,10 +173,64 @@ MO ids below marked with an evidence note, the full `RATIFIED_PRODUCT_INTENT` /
 - **Founded_by / historical data**: MO-10 .. MO-11 — `organizations.founded_by` is the
   target explicit founder relation; any historical backfill must be conservative,
   evidence-based, and must leave `founded_by` NULL rather than fabricate attribution.
-- **CommercialAccount**: CA-01 .. CA-05 — CommercialAccount is distinct from
+- **CommercialAccount**: CA-01 .. CA-08 — CommercialAccount is distinct from
   Organization, may govern one-or-more Organizations, EntitlementGrant is distinct from
   authorization, entitlements are evaluated at the organization/product-capability
-  boundary, and Stripe/payment state does not directly grant application authorization.
+  boundary, and Stripe/payment state does not directly grant application authorization
+  (CA-01..CA-05). An Organization is governed by exactly one CommercialAccount at a time,
+  with a Platform-Admin-initiated governed transfer able to reassign that association
+  without touching Organization identity, tenant data, memberships, roles, evidence, or
+  audit history, and with the pre-transfer association remaining historically
+  reconstructible (CA-06). CommercialAccount owns the commercial/payment relationship —
+  Stripe customer/subscription/price identity and plan/catalog identity — while effective
+  EntitlementGrants, usage meters, and quota enforcement remain scoped to Organization x
+  product-capability per CA-04; CommercialAccount-level plan state is never itself
+  evaluated as tenant authorization (CA-07). Stella usage and other metered capability
+  usage are metered and enforced per Organization; a CommercialAccount governing multiple
+  Organizations may aggregate usage/billing for reporting/invoicing only, which does NOT
+  create implicit shared authorization or a pooled runtime quota — a pooled-quota model is
+  future product scope requiring its own explicit ratification (CA-08). CA-06/CA-07/CA-08
+  were ratified 2026-09-05 via
+  `COMMERCIAL-V1-CA06-CA08-RATIFICATION-MATERIALIZATION-R1` (source: Lane AA —
+  COMMERCIAL-ACCOUNT-PRODUCT-DECISION-ADJUDICATION-R1); see section 5a/5b/5c below and the
+  companion JSON `ratified_semantics_detail_ca06_ca08` block for elaboration. Their
+  `DEFINED=YES / IMPLEMENTED=NO / COMMERCIALLY_READY=NO` — no CommercialAccount
+  type/table exists in the repository, so CA-06/07/08 inherit the same NOT_IMPLEMENTED
+  posture as CA-01/CA-02 they depend on.
+
+### 5a. Self-Service Bootstrap Sequence (ratified doctrine, elaborates SS-01..SS-03)
+
+Registration is an atomic **CommercialAccount + first Organization bootstrap**: founder/
+admin membership is granted and a deterministic initial/default entitlement is assigned,
+without any technical/manual provisioning step. Commercial activation / Stripe first
+binding is a **later, separate, first-party-authenticated action** — it is not part of the
+atomic bootstrap and is never required for the initial Commercial V1 customer to exist.
+This elaborates SS-03 (registration != provisioning != commercial activation !=
+entitlement); it does **not** create CAP-05 or any other executable capability authority,
+and it allocates no ODS/HPO id and no migration ordinal.
+
+### 5b. Payment / Suspension Semantics (ratified doctrine, elaborates CA-05/CA-07/CA-08)
+
+Payment != Activation. CommercialAccount `past_due` or commercial suspension does **not**
+automatically delete membership, remove tenant identity, change `Organization.status`, or
+remove historical access/evidence. Commercial billing state may cause an explicit,
+auditable downgrade/revocation of paid EntitlementGrants. `Organization.status` remains a
+separate tenant-operational control, independent of commercial/billing state. Platform
+Admin may apply an explicit, audited commercial exception/override. Grace periods,
+collections schedules, and payment retry timing are **not** ratified here — those remain
+future configurable policy, not decided by this mission.
+
+### 5c. Transfer Semantics (ratified doctrine, elaborates CA-06)
+
+A CommercialAccount-to-Organization transfer is Platform-Admin-initiated in Commercial V1.
+Across a transfer: Organization tenant identity is unchanged; memberships and roles are
+unchanged; evidence and report history are unchanged; commercial history remains
+reconstructible; and entitlements must be **explicitly re-evaluated** under the receiving
+CommercialAccount rather than silently inherited from the prior one. This records product
+intent only — no specific schema table, foreign-key design, or history-relation shape is
+ratified here. A live FK plus a history relation remains a derived architecture
+recommendation for a future implementation mission to propose, not product doctrine
+settled by this document.
 - **Evaluate**: EV-01 .. EV-03 — governed N/A semantics (excluded from numerator and
   denominator for scoring; Measure readiness may differ), DecisionPolicy as an
   immutable/versioned template with deterministic system recommendation and decisive
@@ -207,7 +276,7 @@ percentage:
 | Report Integrity | YES (ratified: RI-01, "do not resurrect obsolete designs") | NOT_IMPLEMENTED | NO | no `report_hash`/report-integrity RPC found under `app`/`lib`/`db` by targeted search at `AS_OF_HEAD`; `lib/reports` exists but its relation to a live design is unresolved — **AUTHORITY_GAP**, needs its own future authority per RI-01 |
 | Self-service onboarding | YES (ratified: SS-01..SS-03) | PARTIAL | NO | `app/app/organization/onboarding` exists; verified-identity/abuse-protection/idempotent-bootstrap posture is FUTURE_MEASUREMENT_REQUIRED |
 | Multi-org | YES (ratified: MO-01..MO-09) | **CONTRADICTS_PRODUCT_INTENT at MO-02/MO-07**, NOT_IMPLEMENTED_AS_RATIFIED at MO-03/MO-12, PARTIALLY_IMPLEMENTED at MO-05/MO-06 | NO | not a generic absence: `db/schema.ts:61` (`user_single_active_membership` partial unique index) actively enforces single active membership (contradicts MO-02), and `db/identity-context.ts:217` contains an explicit superadmin membership-check bypass (contradicts MO-07) — see section 5 and the companion JSON for the full per-id breakdown; both require `FUTURE_AUTHORITY_REQUIRED` |
-| CommercialAccount / Entitlements | YES (ratified: CA-01..CA-05) | NOT_IMPLEMENTED | NO | no `CommercialAccount`/`EntitlementGrant` type or table found by targeted search; commercial fields currently overload Organization (`app/app/organization/billing`, `lib/stripe`) — see Known Alignment Gap #2 |
+| CommercialAccount / Entitlements | YES (ratified: CA-01..CA-08) | NOT_IMPLEMENTED | NO | no `CommercialAccount`/`EntitlementGrant` type or table found by targeted search; commercial fields currently overload Organization (`app/app/organization/billing`, `lib/stripe`) — see Known Alignment Gap #2. CA-06/07/08 (governed transfer, plan/payment ownership boundary, per-Organization metering with aggregation-only rollup) are `DEFINED=YES / IMPLEMENTED=NO / COMMERCIALLY_READY=NO`, ratified 2026-09-05 |
 | Platform Admin | YES | PARTIAL | NO | `app/admin` and `lib/admin` exist as a distinct route/library tree (consistent with MO-08 in shape); superadmin membership-check bypass at `db/identity-context.ts:217` (MO-07) means the `/admin`-vs-tenant-route separation is not yet the clean boundary MO-07 ratifies — completeness/isolation beyond that specific point is FUTURE_MEASUREMENT_REQUIRED |
 | Staging/release | YES | PARTIAL | NO | staging pipeline artifacts exist under `docs/ops/staging/**`; exact baseline-unit completeness is **FUTURE_MEASUREMENT_REQUIRED** via `pnpm ops:program-state`/`ops:integration-plan` at whatever HEAD a future mission starts from — no historical unit count is carried forward into this canonical baseline |
 
@@ -380,3 +449,37 @@ integration evolves — treat any node marked CLOSED above as the only fixed poi
   (`db/schema.ts:61`, `db/identity-context.ts:217`, `lib/stella/adapter/gemini-client.ts`)
   found by direct read or grep at `AS_OF_HEAD` — none is carried forward from
   conversation memory without a fresh repository check.
+
+## 13. Quality Check — CA-06/CA-07/CA-08 Amendment (`COMMERCIAL-V1-CA06-CA08-RATIFICATION-MATERIALIZATION-R1`, 2026-09-05)
+
+- No existing ratification (MO-01..MO-12, SS-01..SS-03, CA-01..CA-05, EV-01..EV-03, RI-01,
+  AG-01..AG-03) was altered — verified by a direct field-by-field diff of the companion
+  JSON's 27 pre-amendment entries against the post-amendment file (byte-identical).
+- CA-06, CA-07, CA-08 are the only ids added. No CA-09 or any other new product id was
+  allocated, per this mission's explicit boundary.
+- Mechanically verified (companion JSON `self_check` block): `ratifications.length == 30`;
+  every `id` unique (30 unique); the exact id set equals
+  `MO-01..MO-12, SS-01..SS-03, CA-01..CA-08, EV-01..EV-03, RI-01, AG-01..AG-03` with no
+  missing and no extra id; `CA-09` absent.
+- CA-06/CA-07/CA-08 are recorded as `DEFINED=YES / IMPLEMENTED=NO / COMMERCIALLY_READY=NO`
+  — no repository evidence contradicts this; they depend on CA-01/CA-02, which are
+  themselves `NOT_IMPLEMENTED` (no `CommercialAccount` type/table exists at
+  `amendment_AS_OF_HEAD`).
+- The self-service bootstrap sequence, payment/suspension semantics, and transfer
+  semantics are recorded as doctrine elaboration (sections 5a/5b/5c above and the
+  companion JSON `ratified_semantics_detail_ca06_ca08` block) — no new ratification id,
+  no CAP-05 or other executable capability authority, no ODS/HPO id, and no migration
+  ordinal is allocated by any of them.
+- No prohibited interpretation from the mission prompt was introduced: this document does
+  not state that an Organization may have multiple simultaneous CommercialAccounts, does
+  not make CommercialAccount a tenant root, does not create account-wide runtime
+  authorization or pooled Stella quota in Commercial V1, does not make payment failure
+  automatically suspend `Organization.status`, does not let Stripe directly grant
+  membership/role/tenant access/EntitlementGrant, and does not make a CommercialAccount
+  transfer rewrite historical billing/evidence.
+- No runtime, schema, migration, RLS, Stripe, capability, ODS/HPO, or Controller change
+  was made by this amendment; only `docs/ops/commercial/**` was changed.
+- This amendment is `READY_FOR_INDEPENDENT_COMMERCIAL_RATIFICATION_AUDIT`. It is
+  explicitly **NOT** `READY_FOR_COMMERCIAL_ACCOUNT_EXECUTABLE_AUTHORITY` until that
+  independent audit passes — required because this is a cross-project canonical product
+  artifact per the originating mission prompt.
