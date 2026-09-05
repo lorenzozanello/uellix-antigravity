@@ -1,0 +1,255 @@
+{
+  "package_id": "COMMERCIAL_V1_PRODUCT_RATIFICATIONS",
+  "version": "1.0.0",
+  "artifact_id": "COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "hpo_mission_id": "COMMERCIAL-V1-ALIGNMENT-BASELINE-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-04",
+  "companion_document": "docs/ops/commercial/COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md",
+
+  "purpose": "Machine-citable list of product-owner ratifications for Commercial V1, extracted verbatim from the alignment-baseline mission prompt. This artifact records WHAT was ratified and by whom (product owner, this mission), not whether it is implemented. It grants no schema, no migration ordinal, no ODS/HPO id, and no executable authority. A future mission that needs one of these decisions cites this file's ratification id instead of re-deriving or re-litigating the decision.",
+
+  "precedence_note": "This file is canonical for product-owner intent only. It does NOT override executable FIB/ODS/database/security authority. Where a ratification here conflicts with current executable authority or current schema, that conflict is an AUTHORITY_GAP requiring a governed successor before implementation — see the companion baseline document, section 'Known Alignment Gaps'.",
+
+  "reopening_rule": "Do not re-open any ratification below unless repository evidence proves an actual contradiction requiring escalation. Absence of implementation is not a contradiction.",
+
+  "precedence_clarification": "A product ratification can intentionally contradict current executable authority; that contradiction is not resolved by precedence. It creates an AUTHORITY_GAP and requires a governed executable successor. See ratifications MO-02 and MO-07 below for the two ratifications currently in this state.",
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script — a checklist a reviewer or a future editor can verify by eye or with a one-line jq/node command.",
+    "expected_ratification_count": 27,
+    "expected_id_set": [
+      "MO-01", "MO-02", "MO-03", "MO-04", "MO-05", "MO-06", "MO-07", "MO-08", "MO-09", "MO-10", "MO-11", "MO-12",
+      "SS-01", "SS-02", "SS-03",
+      "CA-01", "CA-02", "CA-03", "CA-04", "CA-05",
+      "EV-01", "EV-02", "EV-03",
+      "RI-01",
+      "AG-01", "AG-02", "AG-03"
+    ],
+    "checks": [
+      "ratifications.length == 27",
+      "every id in ratifications is unique (no duplicate id values)",
+      "the set of ids in ratifications, compared as sets, equals expected_id_set exactly (no missing id, no extra id)"
+    ]
+  },
+
+  "ratifications": [
+    {
+      "id": "MO-01",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "A subject may self-service-found at most ONE organization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "AUTHORITY_GAP — no CommercialAccount/founder-cardinality enforcement observed in repository; see baseline Known Alignment Gap #1."
+    },
+    {
+      "id": "MO-02",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "A subject may hold active memberships in MULTIPLE organizations. Self-service founding cardinality and membership cardinality are different concepts.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "A subject may hold ACTIVE memberships in multiple organizations simultaneously.",
+        "CURRENT_EXECUTABLE_STATE": "CONTRADICTS_PRODUCT_INTENT — this is not a mere absence of multi-membership support. The database actively ENFORCES a single active membership per user: db/schema.ts:61 declares `uniqueIndex('user_single_active_membership').on(table.userId).where(sql`${table.status} = 'active'`)`, materialized as `CREATE UNIQUE INDEX user_single_active_membership ON public.organization_members USING btree (user_id) WHERE ((status)::text = 'active'::text)` (db/baseline/stella_g2_schema.sql:7071, also db/migrations/0003_curvy_tempest.sql). The current invitation and organization-bootstrap capabilities (db/prepared/stella_0006_invitation_capability.sql, db/prepared/stella_0010_organization_bootstrap_capability.sql) explicitly rely on this index to serialize concurrent invitation acceptance and org bootstrap, i.e. the single-active-membership ceiling is load-bearing product-adjacent logic today, not incidental.",
+        "REQUIRED_RESOLUTION": "FUTURE_AUTHORITY_REQUIRED — lifting this ceiling to allow concurrent active memberships requires a governed schema/authorization change (the partial unique index, the invitation/bootstrap logic built on it, and every call site that currently assumes 'the' single active membership), not a documentation update."
+      }
+    },
+    {
+      "id": "MO-03",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Exactly one selected organization is the tenant request scope at a time.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "Exactly one SELECTED organization (chosen from among possibly several memberships) is the tenant request scope at a time, session-scoped per MO-04.",
+        "CURRENT_EXECUTABLE_STATE": "NOT_IMPLEMENTED_AS_RATIFIED — the current principal is singular/pick-first, not selected. lib/auth/database-context.ts documents 'The caller's single active membership, if any' (line ~209) and resolves the active organization as 'the caller's active membership' (line ~422), i.e. there is exactly one membership to read because MO-02's ceiling forbids more than one, not because a selection mechanism picked one among several.",
+        "REQUIRED_RESOLUTION": "AUTHORITY_GAP — a selected-organization scope model cannot be built until MO-02's ceiling is addressed by a governed successor; until then there is no 'selection' to implement, only a single value to read."
+      }
+    },
+    {
+      "id": "MO-04",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Selected organization is session-scoped. Target carrier: HttpOnly, Secure, SameSite=Lax, session-only.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — no dedicated selected-organization cookie/session carrier located by targeted grep of app/lib at AS_OF_HEAD."
+    },
+    {
+      "id": "MO-05",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Membership must be revalidated on every request.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "Membership must be revalidated on every request, against whichever organization is the current request's tenant scope.",
+        "CURRENT_EXECUTABLE_STATE": "IMPLEMENTED_AT_CURRENT_SINGLE_ORG_CEILING — per-request revalidation genuinely exists: db/identity-context.ts `withDatabaseIdentityContext` re-derives and checks membership on every call (loads the active membership fresh, then `if (identity.organizationId !== null && check.is_member !== true && !check.is_super_admin)` at line 217 rejects a non-member claim), and lib/auth/database-context.ts re-resolves the caller's active membership from the database each time a principal is built. This is real revalidation, not a cached/trust-on-first-use shortcut.",
+        "REQUIRED_RESOLUTION": "PARTIALLY_IMPLEMENTED — the mechanism revalidates against 'the' single active membership (MO-02's ceiling), not against a session-selected organization among several (MO-03/MO-04). Once MO-02/MO-03 are addressed by governed successor authority, this revalidation logic requires rework to check membership in the SELECTED organization specifically, not merely that one exists."
+      }
+    },
+    {
+      "id": "MO-06",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Membership role is the authorization ceiling.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "A member's role in their (selected) organization is the ceiling on what they may do — no capability check may exceed what the role allows.",
+        "CURRENT_EXECUTABLE_STATE": "IMPLEMENTED_AT_CURRENT_TENANCY_MODEL — role-as-ceiling is implemented against the current single-org model via frozen FIB authority plus live RLS: db/identity-context.ts documents 104 RLS policies, 98 of which call `current_user_is_super_admin()` and 33 of which call `current_user_org_ids()`, all resolving from `auth.uid()`; roles are enforced through this policy surface plus lib/auth/roles.ts and lib/auth/permissions.ts.",
+        "REQUIRED_RESOLUTION": "IMPLEMENTED_AT_CURRENT_TENANCY_MODEL — no further resolution required for the current single-active-membership model; if/when MO-02/MO-03 change that model, this ceiling logic must be re-verified against the new selected-organization scope, but the role-as-ceiling principle itself is not contradicted today."
+      }
+    },
+    {
+      "id": "MO-07",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Tenant application routes remain membership-bound even for platform superadmins. There is NO silent superadmin tenant-data bypass.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "Tenant application routes remain membership-bound even for platform superadmins; there is NO silent superadmin tenant-data bypass.",
+        "CURRENT_EXECUTABLE_STATE": "CONTRADICTS_PRODUCT_INTENT — db/identity-context.ts:217 reads `if (identity.organizationId !== null && check.is_member !== true && !check.is_super_admin)` before throwing `DB_IDENTITY_ORGANIZATION_NOT_A_MEMBER`. The `!check.is_super_admin` clause is an explicit, present-day exception: a caller confirmed as super-admin is NOT required to be an active member of the organization it is operating against at this boundary. This is a real, named superadmin membership-check bypass in the current executable code, not a hypothetical risk.",
+        "REQUIRED_RESOLUTION": "FUTURE_AUTHORITY_REQUIRED — closing this bypass (or replacing it with the explicit, auditable, time-bounded impersonation capability contemplated by MO-09) is a security-boundary change to db/identity-context.ts and requires its own governed authority and audit, not a documentation-only fix."
+      }
+    },
+    {
+      "id": "MO-08",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "/admin is a separate platform/global control-plane scope.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_IMPLEMENTED — app/admin exists as a distinct route tree with lib/admin as a distinct library at AS_OF_HEAD; completeness/isolation not re-audited by this mission (see project_platform_admin_self_service_zero_discovery_r1 prior finding: /admin already calls definers ahead of design application in some paths)."
+    },
+    {
+      "id": "MO-09",
+      "domain": "TENANCY_MULTI_ORG",
+      "statement": "Any future support/impersonation capability must be explicit, auditable, time-bounded and separately authorized. It must not be inferred from superadmin status.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no impersonation capability is authorized to exist yet; this ratification is a forward constraint on any future authority, not a present feature."
+    },
+    {
+      "id": "SS-01",
+      "domain": "SELF_SERVICE",
+      "statement": "Mandatory signup allowlisting is NOT part of the final Commercial V1 journey.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — current allowlisting posture not re-measured by this mission."
+    },
+    {
+      "id": "SS-02",
+      "domain": "SELF_SERVICE",
+      "statement": "Commercial V1 target is: verified identity/email + abuse/rate protection + deterministic/idempotent bootstrap.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED."
+    },
+    {
+      "id": "SS-03",
+      "domain": "SELF_SERVICE",
+      "statement": "Registration != provisioning != commercial activation != entitlement. Commercial review can exist. Technical provisioning intervention cannot be required.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "AUTHORITY_GAP — no CommercialAccount/EntitlementGrant concept exists in repository at AS_OF_HEAD to carry this distinction; see baseline Known Alignment Gap #2."
+    },
+    {
+      "id": "MO-10",
+      "domain": "FOUNDED_BY_HISTORICAL",
+      "statement": "organizations.founded_by is the target explicit founder relation.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no founded_by column located by targeted grep of db/prepared and db/baseline at AS_OF_HEAD."
+    },
+    {
+      "id": "MO-11",
+      "domain": "FOUNDED_BY_HISTORICAL",
+      "statement": "Historical founded_by backfill must be conservative. Use deterministic evidence where available. Do NOT attribute a founder merely because invited_by IS NULL. If reliable founder provenance is unavailable, leave founded_by NULL. Never fabricate historical ownership/founding attribution.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_APPLICABLE_YET — governs a future backfill migration that does not yet exist; binding on whichever future authority allocates it."
+    },
+    {
+      "id": "MO-12",
+      "domain": "STELLA_TENANT_SCOPE",
+      "statement": "Stella operations/tickets must be bound to the selected validated organization context and rechecked at the database/runtime boundary. Do not accept a V1 design where membership ceiling alone permits ambiguous cross-scope attribution.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": {
+        "RATIFIED_PRODUCT_INTENT": "Stella operations/tickets bind to the SELECTED, validated organization context, rechecked at the database/runtime boundary — not to whichever membership happens to exist.",
+        "CURRENT_EXECUTABLE_STATE": "NOT_IMPLEMENTED_AS_RATIFIED — a selected-organization scope does not yet exist to bind to (see MO-03). Stella (lib/stella) currently rides on the same single-active-membership ceiling as the rest of the application, not on an explicit selected/validated organization context.",
+        "REQUIRED_RESOLUTION": "AUTHORITY_GAP — depends directly on MO-03's resolution. Binding Stella to a selected-org scope that does not exist yet is not implementable in isolation; this is downstream of the same future authority needed for MO-02/MO-03."
+      }
+    },
+    {
+      "id": "CA-01",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "CommercialAccount is distinct from Organization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no CommercialAccount type/table located by targeted grep at AS_OF_HEAD; commercial fields currently overload Organization (app/app/organization/billing, lib/stripe). See baseline Known Alignment Gap #2."
+    },
+    {
+      "id": "CA-02",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "One CommercialAccount may govern one or more Organizations.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — depends on CA-01."
+    },
+    {
+      "id": "CA-03",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "EntitlementGrant is distinct from authorization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no EntitlementGrant concept located in repository at AS_OF_HEAD."
+    },
+    {
+      "id": "CA-04",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "Entitlements are evaluated at the organization/product-capability boundary.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_IMPLEMENTED — lib/capabilities exists at AS_OF_HEAD as a capability-boundary concept; whether it implements entitlement evaluation in the CA-01..CA-05 sense is FUTURE_MEASUREMENT_REQUIRED, not asserted here."
+    },
+    {
+      "id": "CA-05",
+      "domain": "COMMERCIAL_ACCOUNT",
+      "statement": "Stripe/payment state does not directly grant application authorization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — lib/stripe exists at AS_OF_HEAD; whether any code path lets payment state directly gate authorization requires a dedicated audit, not asserted here. Prior memory (project_platform_admin_self_service_zero_discovery_r1) records that CommercialAccount/entitlements do not exist yet, which is consistent with this ratification being currently unenforceable rather than violated."
+    },
+    {
+      "id": "EV-01",
+      "domain": "EVALUATE",
+      "statement": "Governed N/A requires explicit state, rationale and human provenance. For Evaluate scoring, N/A is excluded from numerator AND denominator. Readiness may use a different governed-N/A arithmetic because Measure readiness and Evaluate are different domains.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate module located under app/app or lib at AS_OF_HEAD; this ratification binds a future Evaluate authority, not present code."
+    },
+    {
+      "id": "EV-02",
+      "domain": "EVALUATE",
+      "statement": "DecisionPolicy belongs to an immutable/versioned template policy. System recommendation is deterministic. Human decision remains decisive. Decision/recommendation divergence is explicit and auditable.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED."
+    },
+    {
+      "id": "EV-03",
+      "domain": "EVALUATE",
+      "statement": "Stella may analyze, explain, suggest, draft rationale. Stella may NOT score, produce the authoritative recommendation, decide, or approve.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "DOCTRINE_LEVEL — this is the same human-control boundary already carried by 'la IA propone y analiza; el sistema controla y calcula; las personas deciden y aprueban' for Stella generally (lib/stella); its Evaluate-specific instance has no code to check yet because Evaluate is NOT_IMPLEMENTED."
+    },
+    {
+      "id": "RI-01",
+      "domain": "REPORT_INTEGRITY",
+      "statement": "Do NOT resurrect obsolete report/hash/RPC designs merely because they appeared in prior packets. Current Report Integrity requires its own future authority against the live repository.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "AUTHORITY_GAP — no report_hash/report-integrity RPC located by targeted grep of app/lib/db at AS_OF_HEAD; lib/reports exists but its relationship to a live Report Integrity design is unresolved. See baseline Known Alignment Gap #3."
+    },
+    {
+      "id": "AG-01",
+      "domain": "AI_GATEWAY",
+      "statement": "Uellix AI Gateway is the provider-abstraction boundary for production Stella: Frontend -> Stella Orchestrator -> Uellix AI Gateway -> Provider Adapter -> AI provider.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no independent Gateway module (a layer between the Stella orchestrator and the provider adapter) exists in the repository at AS_OF_HEAD. What exists is lib/stella/adapter/gemini-client.ts, a direct provider adapter, plus lib/stella/advisor/run-contextual-advisor.ts calling into it; there is no intervening Uellix AI Gateway layer to route through yet."
+    },
+    {
+      "id": "AG-02",
+      "domain": "AI_GATEWAY",
+      "statement": "Frontend must never invoke Gemini or another AI provider directly.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIAL_CURRENT_DIRECT_ADAPTER_ARCHITECTURE — server-side code already mediates provider calls through lib/stella/adapter (not raw frontend calls), which is consistent with this ratification in shape; but that adapter is a direct provider adapter, not the ratified Gateway boundary of AG-01, so the target architecture is not yet materialized even though the specific frontend-direct-call violation is not observed either."
+    },
+    {
+      "id": "AG-03",
+      "domain": "AI_GATEWAY",
+      "statement": "Gateway/provider execution must expose governed telemetry sufficient for model/provider identity, token usage where available, economic/cost accounting, latency/errors, and operation/trace correlation, without leaking private prompt/evidence content into ordinary logs.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_IMPLEMENTED_AT_ADAPTER_LEVEL — lib/stella/adapter/provider-call-log.ts and lib/stella/observability.ts exist at AS_OF_HEAD and are consistent with per-call logging/observability intent at the current adapter layer; lib/stella/cost-model.ts is consistent with economic/cost accounting intent. Whether this telemetry meets the full AG-03 bar (all five properties, with content-leak avoidance) at the not-yet-existing Gateway layer is FUTURE_MEASUREMENT_REQUIRED, not asserted here — this ratification binds the Gateway layer of AG-01, which does not exist yet."
+    }
+  ],
+
+  "invariants_reference_only": {
+    "note": "The non-negotiable invariants (Organization=tenant root, Ownership!=Access, CommercialAccount!=Organization, Payment!=Activation, ReleaseFlag!=Entitlement!=Authorization, Measure!=Evaluate, Stella analysis!=Human decision, Evidence!=Claim, Draft!=Approved, Calculated!=Methodology Approved, Code Complete!=Audit Complete!=Staging Validated!=Commercially Ready, historical reconstructibility, cross-tenant fail-closed, no technical manual provisioning) are recorded in the companion baseline document, not duplicated here as separate ratification ids — they are framing invariants rather than discrete product decisions."
+  }
+}
