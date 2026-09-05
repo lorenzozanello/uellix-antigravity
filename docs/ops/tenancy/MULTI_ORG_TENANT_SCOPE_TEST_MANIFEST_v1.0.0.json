@@ -1,0 +1,238 @@
+{
+  "manifest_id": "MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0",
+  "node_or_batch": "batch",
+
+  "authority_reference": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json — the companion executable tenancy authority frozen by mission MULTIORG-S1-TENANCY-AUTHORITY-MATERIALIZATION-R1 at AS_OF_HEAD 60c93804a37bbae050959cb2709003dc6d92d8f3 / tree 796ecf4a76752ffde32bcf5dfe3f7298e1bf7fda. Product alignment references consumed by that authority: docs/ops/commercial/COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md and docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json (ratifications MO-01..MO-12, SS-01..SS-03). This manifest is a batch commitment covering DAG nodes S1, S2, S3, S3c, S4, S5, S6, S7, S8 as defined in that authority's S1_TO_S8_DAG section. NAMING DERIVATION: the repo-native convention for a versioned package manifest is <PACKAGE_STEM>_TEST_MANIFEST_v<semver>.json placed beside its authority, as in docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.0.json, docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_TEST_MANIFEST_v1.0.1.json and docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json; the authority stem MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 therefore yields MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json unambiguously.",
+
+  "dependencies": [
+    "ODS LINEAGE SEQUENCING — UNKNOWN/BLOCKING. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json:113 requires STOP_FOR_LINEAGE_SEQUENCING for any mission that finds v1.0.17 unenumerated in the live Controller and attempts to allocate the next ODS/HPO identifier. Measured at AS_OF_HEAD: grep -c 'v1.0.17' scripts/ods-controller.ts = 0, so v1.0.17 IS unenumerated and the gate is ACTIVE. No node of this manifest may open an implementation grant until the Controller successor enumerating v1.0.17 is CLOSED. This dependency could NOT be verified via pnpm ops:program-state in this worktree (node_modules ABSENT) and was measured by direct grep instead.",
+    "W2-B5 implementation — UNKNOWN. COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md section 10 records W2-B5 authority CLOSED_AUDITED_INTEGRATED with implementation OPEN. Not re-measured by this mission; treated as fail-closed UNKNOWN rather than assumed satisfied. Named because it shares SERIAL CHOKE POINTS CP-1 (db/migrations ordinal), CP-2 (db/schema.ts) and CP-3 (db/hosted/baseline-manifest.ts) with every node of this batch.",
+    "P1A_FULL_BOOTSTRAP — UNKNOWN, not re-measured by this mission. Named because the real-PostgreSQL contract of this batch rides the hosted baseline chain that P1A establishes.",
+    "Wave3 / FIBDB-053 Stella hosted surfaces — NOT_MATERIALIZED at AS_OF_HEAD (no docs/ops/wave3 directory). Named as an OPEN SEQUENCING DECISION against node S3c on SERIAL CHOKE POINT CP-4 (db/prepared/stella_*), recorded as finding F-3 in the companion authority and deliberately unresolved."
+  ],
+
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/**",
+    "db/prepared/journal/**",
+    "db/hosted/baseline-manifest.ts"
+  ],
+
+  "protected_authority": null,
+
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "A real PostgreSQL probe is MANDATORY for this batch and both manifest paths are legitimately UNKNOWN because no implementing node exists yet — this manifest is a pre-implementation commitment, and naming a harness path that does not exist would be a fabricated fact. The authority's REAL_PG_CONTRACT section freezes six required probes: PG-1 (a RESTRICTIVE selected-org conjunct denies a non-selected organization's row to a subject who is a member of BOTH), PG-2 (current_setting('app.organization_id', true) resolves to the CALLER's value inside the SECURITY DEFINER can_write_evidence_object), PG-3 (an unset GUC yields zero rows and no writes), PG-4 (concurrent invitation acceptance and bootstrap are serialized WITHOUT user_single_active_membership), PG-5 (a dual-member subject scoped to organization A reads nothing from B), PG-6 (the founder-cardinality carrier refuses a second self-service founding while permitting historical NULL founded_by rows). Static reading of SQL text is NOT proof for any of the six: policy combination (PERMISSIVE OR versus RESTRICTIVE AND), definer GUC resolution, NULL-not-TRUE denial, concurrency serialization, and partial-index/NULL interaction are all runtime properties. HARNESS SHAPE, frozen here: a disposable cluster only, via pnpm db:audit:disposable — NEVER staging, NEVER production, NEVER the canonical local stack; a TWO-TENANT fixture carrying real rows in the non-selected organization, because a probe that returns zero rows merely for want of data proves nothing; and a TWO-PHASE construction, because the DUAL-MEMBER fixture required by PG-1 and PG-5 is impossible to build while user_single_active_membership exists and may only be constructed in a post-S7 phase inside the disposable cluster. Dropping the index early to make a fixture buildable is prohibited by DROP_LAST_RULE.prohibited_shortcuts."
+  },
+
+  "sentinels": [
+    {
+      "id": "SENTINEL_ORG_B_CANARY_ROW",
+      "purpose": "A uniquely-valued row planted in the NON-SELECTED organization B. It must never appear in any result set, log line, error payload, PDF or report produced by a request scoped to organization A. Its purpose is to make cross-tenant leakage assertable by identity rather than by row count — a count-based assertion cannot distinguish 'denied' from 'no such row'."
+    },
+    {
+      "id": "SENTINEL_FOUNDER_NULL_ORG",
+      "purpose": "A historical organization fixture whose ONLY founder signal is invited_by IS NULL. Its purpose is to prove the MO-11 hard prohibition: after backfill its founded_by must still be NULL. If any backfill implementation ever attributes a founder to this fixture, M-5 fails."
+    },
+    {
+      "id": "SENTINEL_SUSPENDED_ORG",
+      "purpose": "An organization set to status='suspended' through the governed capability path. Its purpose is to prove SUSPENDED_ORG_BEHAVIOR D1/D3 — that it is absent from selection options and that a pre-existing carrier naming it is refused on the next request, rather than merely being cosmetically hidden in the UI."
+    },
+    {
+      "id": "SENTINEL_SUPERADMIN_NON_MEMBER",
+      "purpose": "A confirmed platform super_admin subject holding NO membership in the target organization. Its purpose is to prove the removal of the db/identity-context.ts:217 exemption (SC-3) and, in the same fixture, that the adjacent DB_IDENTITY_SUPER_ADMIN_CLAIM_REJECTED check survived that edit (M-7)."
+    }
+  ],
+
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+
+  "positive_controls": [
+    {
+      "id": "P-0",
+      "description": "MANIFEST PRECONDITION, UNKNOWN BY CONSTRUCTION. The two known_conditions listed above are the only entries in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json at AS_OF_HEAD, read directly from that file. Both are PRE_EXISTING_DEFERRED failures of tests/eval/stella-release/hosted-baseline-gate.test.ts caused by a rehearsal artefact recorded against an older baseline manifest; this batch adds units to db/hosted/baseline-manifest.ts and therefore changes the manifest digest they fingerprint. Their applicability to each implementing node is UNKNOWN and MUST be re-verified with pnpm ops:test-diff at that node's own base — it could NOT be run in the authoring worktree because node_modules is ABSENT. A node that observes a hosted-baseline-gate failure whose signature does NOT match these two fingerprints has found a NEW failure and must fail closed rather than classify it as known.",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+    },
+    {
+      "id": "P-1",
+      "description": "S1 / MO-10. organizations.founded_by exists as uuid NULL REFERENCES users(id) ON DELETE RESTRICT, and an organization founded through the CAP-05 bootstrap path after S1 carries founded_by set to the bootstrapping subject from the recorded founding act, not from inference.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-2",
+      "description": "S1 / MO-11. The backfill leaves founded_by NULL for every historical organization lacking deterministic founding provenance, and emits a reproducible count of rows-attributed and rows-left-NULL. A NULL outcome is recorded as an outcome, since MO-11's honesty requirement is only auditable if the non-attribution is itself recorded.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-3",
+      "description": "S2 / MO-04. Selecting an organization writes a session carrier with HttpOnly, Secure, SameSite=Lax and NO Max-Age and NO Expires, so the selection dies with the browser session.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-4",
+      "description": "S3 / MO-03 + MO-05. The request principal resolves the membership by the (user, SELECTED organization) pair rather than by pick-first over the user's active memberships, and re-derives that proof from live database state on EVERY request. This supersedes the .limit(1) at lib/auth/database-context.ts:219.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-5",
+      "description": "S3 / MO-06. The role used for every capability check is the role held in the SELECTED organization's membership, and a role held in another organization contributes nothing to it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-6",
+      "description": "S3c / MO-12. A Stella interaction produced by a request scoped to organization A is attributed to A, and that attribution is rechecked at the database boundary rather than only in application code.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-7",
+      "description": "S4 / GUC_CONTRACT + RLS_TARGET. Tenant row authorization is the CONJUNCTION of membership-set inclusion (existing PERMISSIVE predicate, unchanged) and selected-organization equality (new conjunct, published AS RESTRICTIVE), and an ordinary in-scope read of the selected organization's own rows continues to succeed unchanged. Requires PG-1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-8",
+      "description": "S4 / RLS_TARGET closed-world. The enumeration of welded tables is derived from live pg_policy catalog state under the disposable harness, and every table carrying organization_id is either welded or explicitly classified out of scope with a recorded reason. The number 45 measured at AS_OF_HEAD is a TEXT OCCURRENCE COUNT in db/baseline/stella_g2_schema.sql and must not be used as a policy count.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-9",
+      "description": "S4 / STORAGE_V1_BOUNDARY. An evidence-object write permitted for the selected organization still succeeds after can_write_evidence_object is welded to the selected-org conjunct, and stella_0019's own verification assertions (that it recreates no policy on storage.objects, and that insert_evidence and delete_evidence still call the helper) are preserved rather than weakened. Requires PG-2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-10",
+      "description": "S5 / MO-08. A platform super_admin retains full global reach over organizations through the /admin control plane WITHOUT constructing a tenant context, including over a suspended organization.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-11",
+      "description": "S6 / MO-02 + INVITATIONS. A subject holding an active membership in organization A accepts an invitation to organization B through the ordinary product invitation path and ends with TWO active memberships, without the acceptance changing the currently selected organization.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-12",
+      "description": "S6 / SS-01 ALLOWLIST_EXIT. A verified subject who appears on NO allowlist completes self-service organization founding successfully. Until this passes, ALLOWLIST_EXIT is not satisfied; a residual allowlist may exist only as an operator-controlled, DEFAULT-OFF control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-13",
+      "description": "S6 / SS-02 + SI-7. Concurrent invitation acceptance and organization bootstrap remain serialized by an explicit DATABASE-level guarantee that does not depend on user_single_active_membership, and bootstrap remains deterministic and idempotent. Requires PG-4. An application-level read-then-write check does not satisfy this control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-14",
+      "description": "S7 / MO-02. With user_single_active_membership dropped, a subject holds two active memberships and a request scoped to organization A functions normally in A. Requires PG-5. S7's diff contains exactly one index drop and nothing else.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-15",
+      "description": "S8 / GOLDEN_S8_CONTRACT. The existing commercial Golden E2E journey is RETAINED in full and EXTENDED: found A, accept an invitation to B, select A, complete a Golden step in A, switch to B, complete a step in B under B's role, with A's data absent throughout the B-scoped portion. The subject MUST hold DIFFERENT roles in A and B, since equal roles cannot detect cross-organization role-ceiling failures. No direct-SQL, test-only or seed shortcut may construct the second membership.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "SC-1 / S3. A carrier naming an organization in which the subject holds no ACTIVE membership is REFUSED with failure code TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER, and there is NO fallback to any other membership. The assertion is on the FAILURE CODE, not merely on the absence of the other organization's data — an assertion on absence alone cannot distinguish a refusal from a silent fallback that happened to return nothing.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-2",
+      "description": "SC-2 / S3. Membership revoked mid-session is refused on the NEXT request, with no grace window. A memoized or session-cached membership proof fails this control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-3",
+      "description": "SC-3 / S5. A confirmed platform super_admin who is NOT an active member of the target organization is REFUSED on a tenant route, proving removal of the `&& !check.is_super_admin` exemption at db/identity-context.ts:217. Uses SENTINEL_SUPERADMIN_NON_MEMBER.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-4",
+      "description": "SC-4 and GUC_CONTRACT C5 / S4. THE PRIMARY NEGATIVE CONTROL OF THE BATCH. A subject who is an active member of BOTH organizations, scoped to A, cannot read or write SENTINEL_ORG_B_CANARY_ROW; and separately, a tenant-scoped query executed with app.organization_id UNSET returns zero rows and permits no writes. Requires PG-1 and PG-3. This control is what makes DROP_LAST safe: current_user_org_ids() (db/migrations/0031_rls_core.sql:25-37) returns EVERY active membership, so `= ANY(current_user_org_ids())` is a single-organization predicate only while the dropped index holds it to one element.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-5",
+      "description": "SC-4 / PROJECT_AUTHORIZATION / S4. Addressing a project id belonging to the NON-SELECTED organization is refused with TENANCY_CROSS_ORG_RESOURCE_REFUSED on the project-scoped routes, which at AS_OF_HEAD include the eight project and portfolio consumers of runWithOptionalOrganizationAccess measured in the companion authority's evidence anchor E15. Project ids are client-supplied, so this is reachable input, not a hypothetical.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-6",
+      "description": "SC-5 / S5. SENTINEL_SUSPENDED_ORG is absent from selection options, and a pre-existing carrier naming it is refused on the next request with TENANCY_ORGANIZATION_SUSPENDED — evaluated at revalidation time, not only at selection time.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-7",
+      "description": "SC-6 / S1. A second self-service founding attempt by the same subject is refused with TENANCY_FOUNDER_CARDINALITY_EXCEEDED and does NOT silently return the subject's existing organization; and the backfill leaves SENTINEL_FOUNDER_NULL_ORG's founded_by NULL. Requires PG-6.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-8",
+      "description": "SC-7 / S3c / MO-12. A Stella write asserting an organization other than the request's selected organization is refused AT THE DATABASE BOUNDARY. The refusal must hold with the membership ceiling absent, since MO-12 explicitly rejects a design in which the membership ceiling alone prevents ambiguous cross-scope attribution.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-9",
+      "description": "PI-3 / S1. A subject named in organizations.founded_by who holds NO active membership in that organization is refused tenant access. founded_by is traceability, never authorization; this control proves the two did not get wired together.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "M-1",
+      "description": "Guarantee: the selected-org conjunct is RESTRICTIVE. Mutation: change it to PERMISSIVE. Must be caught by N-4 — a permissive policy combines with OR, so the non-selected organization's canary row becomes readable again. This is the exact regression shape already adjudicated as adversarial finding A2-F02 in docs/ops/capabilities/ADVERSARIAL_FINDINGS_ROUND2.md, which closed by converting nine capability policies to AS RESTRICTIVE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-2",
+      "description": "Guarantee: the GUC is transaction-local. Mutation: change the third argument of set_config at db/identity-context.ts:180 from true to false. Must be caught by a control proving the selected scope does not survive into a subsequent transaction on a pooled connection.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-3",
+      "description": "Guarantee: per-request revalidation. Mutation: memoize the membership proof for the life of the session. Must be caught by N-2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-4",
+      "description": "Guarantee: no fallback on refusal. Mutation: replace the TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER throw with a fallback to the subject's first remaining membership. Must be caught by N-1, which is why N-1 asserts the failure code rather than data absence.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-5",
+      "description": "Guarantee: the MO-11 backfill prohibition. Mutation: add `invited_by IS NULL` as a backfill attribution predicate. Must be caught by N-7 via SENTINEL_FOUNDER_NULL_ORG, whose only founder signal is exactly that predicate.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-6",
+      "description": "Guarantee: founded_by grants nothing (PI-3). Mutation: add founded_by as a disjunct to any authorization predicate or RLS policy. Must be caught by N-9.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-7",
+      "description": "Guarantee: the DB_IDENTITY_SUPER_ADMIN_CLAIM_REJECTED check survives the S5 exemption removal (PI-10). Mutation: delete the branch at db/identity-context.ts:210-215 while editing the adjacent branch at :217. Must be caught by a control proving an unconfirmed super-admin claim is still rejected. This control exists because the likeliest S5 defect is removing too much from an adjacent line.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-8",
+      "description": "Guarantee: DROP_LAST ordering. Mutation: drop user_single_active_membership in any node earlier than S7, or as an incidental part of a larger diff. Must be caught by a control asserting the index is PRESENT at the end of every node S1 through S6, and that S7's diff contains exactly one index drop and no other change.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
