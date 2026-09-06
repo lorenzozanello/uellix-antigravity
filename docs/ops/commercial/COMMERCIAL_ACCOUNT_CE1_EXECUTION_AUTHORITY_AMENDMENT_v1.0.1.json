@@ -39,7 +39,7 @@
       "NOT a re-opening of CA-01..CA-08, of the parent COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json, or of its companion test manifest.",
       "NOT a new companion CE-1 test manifest. The base's MANIFEST_DISPOSITION decision stands."
     ],
-    "conflict_rule": "Where this amendment and the base disagree, the base controls for every product/schema/security/compatibility/DAG semantic, and this amendment controls ONLY for the implementation-surface enumeration in CE1_IMPLEMENTATION_SURFACE, BASELINE_GROWTH_CONTRACT, BASELINE_UNIT_SHAPE and JOURNAL_RULE. There is exactly one clause of the base that this amendment contradicts, it is named by exact quotation in DEFECT_CORRECTED, and nothing else."
+    "conflict_rule": "Where this amendment and the base disagree, the base controls for every product/schema/security/compatibility/DAG semantic, and this amendment controls ONLY for the implementation-surface enumeration in CE1_IMPLEMENTATION_SURFACE, BASELINE_GROWTH_CONTRACT, BASELINE_UNIT_SHAPE and JOURNAL_RULE. There are exactly two clauses of the base that this amendment contradicts — both instances of the same defect class IMPLEMENTATION_SURFACE_UNDER_ENUMERATION, both named by exact quotation in DEFECT_CORRECTED — and nothing else."
   },
 
   "DEFECT_CORRECTED": {
@@ -54,6 +54,16 @@
     },
     "what_survives_unchanged": "HOSTED_UNIT_REQUIRED remains 'NO' in its NARROW and correct meaning: CE-1 creates no capability-definer hosted package, no db/prepared/** capability unit, no prepared-unit idempotency ledger, no out-of-band credential and no new role. See HOSTED_UNIT_REQUIRED_NARROWED for the exact restatement.",
     "compiler_attribution": "The defect class was proved by Lane BM (COMMERCIAL-ACCOUNT-CE1-SUCCESSOR-AUTHORITY-COMPILER-R1). This mission re-derived every count and every mechanism independently at START_HEAD rather than inheriting them; where BM's numbers and this mission's measurements agree, they agree because both measured a8a61a1."
+  },
+
+  "SECOND_CLAUSE_OF_THE_SAME_DEFECT_CLASS": {
+    "id": "CE1-A-2",
+    "class": "IMPLEMENTATION_SURFACE_UNDER_ENUMERATION",
+    "base_clause_quoted_verbatim": "HOSTED_DISPOSITION.migration_surface.not_used[0]: \"db/prepared/** — no capability definer is created by CE-1.\"",
+    "narrow_reading_that_remains_true": "No CAPABILITY-DEFINER package is created under db/prepared/** by CE-1: no db/prepared/storage/**, no db/prepared/hosted/**, no stella_*/stella_hosted_*/stella_local_* unit, no capability role, no GRANT/REVOKE chain, no SECURITY DEFINER function, no prepared-unit idempotency ledger and no out-of-band credential. That reading is correct and is restated in HOSTED_UNIT_REQUIRED_NARROWED.",
+    "false_reading_this_amendment_forecloses": "Read instead as 'no byte under db/prepared/** changes at CE-1', the clause is false for the same underlying reason as CE1-A-1/not_used[2]: CE1_IMPLEMENTATION_SURFACE.BASELINE_WRITERS names two real db/prepared/** writer surfaces a CE-1 implementation MUST touch — db/prepared/journal/** (the FAMILY: one new wrapper plus the header of every existing wrapper regenerated) and db/prepared/checkpoint-b0/observation.sql (the regenerated corpus probe) — and FUTURE_PROTECTED_GRANT_SHAPE.patterns grants exactly those two paths, deliberately never the blanket db/prepared/**.",
+    "shared_root_cause": "Both not_used[0] and not_used[2] conflate the CAPABILITY-DEFINER meaning of 'db/prepared'/'hosted' (correctly NO for CE-1) with the ORDINARY-CORPUS meaning of the same directory tree (which CE-1 DOES write to, generatively). CE1_IMPLEMENTATION_SURFACE is this amendment's single corrected enumeration that repairs both false readings at once; neither is corrected in isolation.",
+    "supersession": "CE1_IMPLEMENTATION_SURFACE, BASELINE_WRITERS, JOURNAL_RULE and FUTURE_PROTECTED_GRANT_SHAPE supersede/repair this clause by the same conflict_rule stated in AMENDMENT_SEMANTICS that governs CE1-A-1. docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json remains byte-unchanged; only this amendment's reading controls the implementation surface."
   },
 
   "CE1_FROZEN_SEMANTICS_PRESERVED": {
@@ -90,7 +100,7 @@
         "path": "db/schema.ts",
         "protected": false,
         "why": "The Drizzle source of truth. Adds `export const commercialAccounts = pgTable('commercial_accounts', ...)` with its check() constraint, adds `commercialAccountId` to organizations, and adds the index.",
-        "measured_precision": "At START_HEAD the `organizations` pgTable call has NO third argument — `pgTable('organizations', { ... })` closes at db/schema.ts:46 with no `(table) => [...]` array. The base's IMPLEMENTATION_REFERENCE says the index is 'added to organizations' own (table) => [...] array'; that array does not exist and must be CREATED by the implementer. `check` and `index` are ALREADY imported at db/schema.ts:1, so no import edit is needed for either.",
+        "measured_precision": "At START_HEAD the `organizations` pgTable call has NO third argument — `pgTable('organizations', { ... })` closes at db/schema.ts:47 with no `(table) => [...]` array. The base's IMPLEMENTATION_REFERENCE says the index is 'added to organizations' own (table) => [...] array'; that array does not exist and must be CREATED by the implementer. `check` and `index` are ALREADY imported at db/schema.ts:1, so no import edit is needed for either.",
         "chokepoint": "CP-2 / SW-4. Serial with Multi-org S1 and Wave3 FIBIU-20."
       },
       {
@@ -121,9 +131,10 @@
         "note": "db/hosted/** is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (measured at START_HEAD). An ordinary --allow suffices; no protected grant covers or is required for this file."
       },
       {
-        "path": "db/prepared/journal/<WRAPPER_ORDINAL>_<MIGRATION_BASENAME>.sql",
+        "path": "db/prepared/journal/**",
         "protected": true,
-        "why": "MANDATORY and GENERATED. One wrapper per baseline unit. See JOURNAL_RULE.",
+        "why": "MANDATORY and GENERATED. THE FAMILY, not one file. MEASURED, quoted verbatim from db/hosted/baseline-journal-wrapper.ts:211 — buildJournalWrapper prints every wrapper's header as `Unit ${unit.ordinal}/${BASELINE_UNITS.length}`. BASELINE_UNITS.length is GLOBAL to every wrapper's bytes, not local to the new one, so registering one CE-1 baseline unit does BOTH of the following: (a) ADDS exactly one new wrapper (079_<CE-1 unit id> at START_HEAD); AND (b) REGENERATES the on-disk bytes of ALL 78 EXISTING non-bootstrap wrappers at START_HEAD, because each one's header total moves from 'Unit N/78' to 'Unit N/79'. This is HEADER REGENERATION ONLY: buildJournalWrapper's `Includes:` line, `Source SHA256:` pin and the spliced unit SQL (\\ir target) are untouched for the 78 existing wrappers, so no wrapper's semantic content, applied effect or included unit changes — only the printed total. db/prepared/journal/000_journal_bootstrap.sql is UNAFFECTED: journalBootstrapArtefact() takes no dependency on BASELINE_UNITS.length. Total journal directory files: 79 -> 80 (78 regenerated + 1 new + the unaffected bootstrap). See JOURNAL_RULE.existing_wrapper_regeneration and BASELINE_GROWTH_CONTRACT.growth_after_one_CE1_unit.journal_wrapper_files for the exact counts.",
+        "never_hand_edited": "Wrappers — including the 78 that regenerate — are NEVER hand-edited. A hand-edited wrapper is a wrapper the generator will overwrite and the verifier will reject.",
         "generator": "pnpm journal:generate ; verified by pnpm journal:verify"
       },
       {
@@ -175,7 +186,7 @@
       }
     ],
     "EXPLICITLY_NOT_AUTHORIZED": [
-      "db/prepared/** other than db/prepared/journal/** and db/prepared/checkpoint-b0/observation.sql. In particular NOT db/prepared/checkpoint-a1/corroboration.sql (measured: buildA1CorroborationSql() takes no arguments and derives from the witness registry, not the corpus tables — a new public table does not make it stale), NOT db/prepared/hosted/**, NOT db/prepared/storage/**, NOT any stella_*/stella_hosted_*/stella_local_* package, NOT db/prepared/README.md, NOT db/prepared/class-c/**, NOT db/prepared/prechain/**.",
+      "db/prepared/** other than db/prepared/journal/** and db/prepared/checkpoint-b0/observation.sql. In particular NOT db/prepared/checkpoint-a1/corroboration.sql (measured: buildA1CorroborationSql() has four defaulted parameters — registry, packageIds, expectedProjectRef, production — and its current generator call site, scripts/a1-observation-sql.ts:29, invokes it ARGUMENT-FREE; it derives from the witness registry, not the corpus tables, so a new public table does not make it stale), NOT db/prepared/hosted/**, NOT db/prepared/storage/**, NOT any stella_*/stella_hosted_*/stella_local_* package, NOT db/prepared/README.md, NOT db/prepared/class-c/**, NOT db/prepared/prechain/**.",
       "db/prepared-package-order.ts — CE-1 appends nothing to the prepared chain and registers no supersession. SW-3 names a 'Commercial account/entitlement package' as a writer of that file; that writer is a LATER CE node, not CE-1.",
       "db/baseline/** — never touched by any CE node.",
       "db/policies/** — CE-1 creates zero policies, so it creates no policy unit.",
@@ -228,7 +239,7 @@
       "kind_policy": "10 -> 10 (UNCHANGED — CE-1 creates zero policies and therefore no db/policies/** unit)",
       "ordinals": "contiguous 1..79; the CE-1 unit takes ordinal 79",
       "firstProvisioning_steps": "79 -> 80",
-      "journal_wrapper_files": "79 -> 80 (one new wrapper, prefix 079)",
+      "journal_wrapper_files": "79 -> 80 TOTAL FILES: one NEW wrapper (prefix 079) PLUS the header of all 78 EXISTING non-bootstrap wrappers regenerated in place (unchanged filenames, unchanged included SQL, unchanged Source SHA256 — only the printed 'Unit N/<total>' text moves from /78 to /79). Bootstrap (000_journal_bootstrap.sql) is unaffected. See CE1_IMPLEMENTATION_SURFACE.BASELINE_WRITERS and JOURNAL_RULE.existing_wrapper_regeneration.",
       "drizzle_journal_entries": "66 -> 67",
       "EXPECTED.tables": "51 -> 52 (public.commercial_accounts enters)",
       "EXPECTED.rlsEnabledTables": "51 -> 52 (public.commercial_accounts enters)",
@@ -281,7 +292,7 @@
           "tests/hosted/baseline-journal-wrapper.test.ts — the comment block ending at :471 ('HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.')",
           "tests/hosted/operator-runner.test.ts — the comment block ending at :236",
           "tests/eval/stella-release/hosted-baseline-gate.test.ts — the comment block ending at :66",
-          "tests/eval/stella-release/hosted-baseline-gate.ts — the comment blocks ending at :402 and :428"
+          "tests/eval/stella-release/hosted-baseline-gate.ts — the comment blocks ending at :404 and :428"
         ],
         "rule": "APPEND one new line naming the CE-1 node and its arithmetic (78 -> 79, 66 -> 67, 79 -> 80). NEVER rewrite, renumber or delete an existing line. Every prior line is a historical closure record of a prior batch."
       }
@@ -303,7 +314,7 @@
       "rule": "Sites that LOOK like corpus counts and are NOT. Named so an implementer does not 'fix' a control into uselessness.",
       "sites": [
         "tests/hosted/operator-runner.test.ts:717 — expect(expectation.rlsEnabledTables).toHaveLength(24). MEASURED: `expectation` here is unitStructuralExpectation(baselineUnit('0031_rls_core.sql'), source) inside `describe('the unit 032 false negative')`. It is a PER-UNIT count for migration 0031, not the corpus aggregate. CE-1 does NOT move it. Changing it to 25 would be a defect.",
-        "tests/hosted/operator-runner.test.ts:701 — expect(expectation.policies).toHaveLength(69). Same per-unit scope, same non-pin.",
+        "tests/hosted/operator-runner.test.ts:663 — expect(expectation.policies).toHaveLength(69). Same per-unit scope, same non-pin.",
         "tests/hosted/baseline-postconditions.test.ts:195 — expect(BASELINE_POSTCONDITIONS).toHaveLength(18). The count of canonical postconditions, unrelated to corpus size.",
         "tests/hosted/baseline-postconditions.test.ts:247 and :248 — per-table expected COLUMN counts for governed_model_registry (9) and proxy_material_fields_registry (109). Unrelated to corpus size.",
         "db/hosted/baseline-manifest.ts BASELINE_GLOBAL_INVARIANTS — superuserDependencies/roleStatements/ownershipStatements/extensionStatements all 0, with no per-unit opt-out. CE-1's DDL introduces none of the four, so these stay 0 and are not edited."
@@ -354,6 +365,7 @@
     "wrapper_ordinal_allocated_by_this_authority": "NONE",
     "wrapper_ordinal_rationale": "The wrapper prefix is a DERIVED CONSEQUENCE of the baseline ordinal, which is itself a consequence of the migration ordinal, which this authority does not allocate. At START_HEAD the derivation would yield prefix 079; that is a prediction of the derivation, not a reservation.",
     "step_0_is_not_a_unit": "db/prepared/journal/000_journal_bootstrap.sql creates the ledger and is NOT a baseline unit. BASELINE_ORDER does not contain it and no BaselineUnit has it as its file. This is why the journal directory holds N+1 files for N units, and why firstProvisioning plans N+1 steps for N units. Two correct sentences that describe different things — do not reconcile them by inventing an extra unit.",
+    "existing_wrapper_regeneration": "MEASURED, quoted verbatim from db/hosted/baseline-journal-wrapper.ts:211 — buildJournalWrapper's header line is `Unit ${unit.ordinal}/${BASELINE_UNITS.length}`. BASELINE_UNITS.length is GLOBAL to every wrapper, so appending one CE-1 unit changes the header — and therefore the on-disk bytes, since buildJournalWrapper is a pure function of its inputs — of EVERY existing non-bootstrap wrapper, not only the new one: at START_HEAD, 78 existing wrappers move their header from 'Unit N/78' to 'Unit N/79', and one new wrapper 079_<CE-1 unit id> is added. This is HEADER REGENERATION ONLY: each regenerated wrapper's `\\ir` include target, its `Source SHA256:` pin and the spliced unit SQL are untouched, so no wrapper's semantic behaviour or applied effect changes — only the printed total. db/prepared/journal/000_journal_bootstrap.sql does not depend on BASELINE_UNITS.length (journalBootstrapArtefact() takes no such argument) and is not regenerated. Regeneration is exclusively via `pnpm journal:generate`; wrappers — including the 78 that regenerate — are never hand-edited, and `pnpm journal:verify` rejects any wrapper whose bytes were hand-authored rather than produced by the generator.",
     "generation": {
       "generate": "pnpm journal:generate",
       "verify": "pnpm journal:verify",
@@ -365,7 +377,7 @@
   "PROTECTED_GRANT_REQUIRED": {
     "required": true,
     "allocated_by_this_amendment": "NONE",
-    "rationale_measured": "scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS at START_HEAD is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. Three of CE-1's writer paths fall inside it: db/migrations/** (the .sql, the snapshot and _journal.json), db/prepared/journal/** (the wrapper) and db/prepared/checkpoint-b0/observation.sql. Absent a resolved grant naming CE-1's implementation branch, all three are unconditional protectedViolations. NOTHING under db/migrations or db/prepared is changed by THIS mission.",
+    "rationale_measured": "scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS at START_HEAD is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. Three of CE-1's writer surfaces fall inside it: db/migrations/** (the .sql, the snapshot and _journal.json), db/prepared/journal/** (one new wrapper PLUS the header of all 78 existing wrappers regenerated — see CE1_IMPLEMENTATION_SURFACE.BASELINE_WRITERS) and db/prepared/checkpoint-b0/observation.sql. Absent a resolved grant naming CE-1's implementation branch, all three are unconditional protectedViolations. NOTHING under db/migrations or db/prepared is changed by THIS mission.",
     "SYMBOLIC_GRANT_ALLOWED": "YES",
     "adjudication": {
       "question": "Can this amendment be frozen now with a structurally SYMBOLIC, UNALLOCATED protected-grant requirement, with a future ODS addendum binding the actual authorityId later WITHOUT editing this amendment?",
@@ -444,7 +456,7 @@
       {
         "path": "tests/hosted/operator-runner.test.ts",
         "authorized_adjustment": "Move 78 -> 79 at line 237. APPEND one derivation line to the comment block ending at line 236.",
-        "prohibited_in_the_same_file": "Do NOT touch line 717 (rlsEnabledTables toHaveLength(24)) or line 701 (policies toHaveLength(69)). Both are PER-UNIT expectations scoped to baselineUnit('0031_rls_core.sql') inside describe('the unit 032 false negative'), not corpus aggregates. Changing either would be a defect, not a repair."
+        "prohibited_in_the_same_file": "Do NOT touch line 717 (rlsEnabledTables toHaveLength(24)) or line 663 (policies toHaveLength(69)). Both are PER-UNIT expectations scoped to baselineUnit('0031_rls_core.sql') inside describe('the unit 032 false negative'), not corpus aggregates. Changing either would be a defect, not a repair."
       },
       {
         "path": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
@@ -453,7 +465,7 @@
       },
       {
         "path": "tests/eval/stella-release/hosted-baseline-gate.ts",
-        "authorized_adjustment": "Move the raw unit count 78 -> 79 at line 429, AND move the DERIVED N+1 step count 79 -> 80 at line 407. APPEND one derivation line to each of the two comment blocks ending at lines 402 and 428.",
+        "authorized_adjustment": "Move the raw unit count 78 -> 79 at line 429, AND move the DERIVED N+1 step count 79 -> 80 at line 407. APPEND one derivation line to each of the two comment blocks ending at lines 404 and 428.",
         "why_this_file_is_both_a_gate_and_a_host": "It is source, not a .test.ts, but it carries the two live assertions the gate evaluates and is therefore an existing product-test host in substance. Line 407 is the N+1 trap: it contains no literal 78 and a literal-78 sweep misses it.",
         "prohibited_in_the_same_file": "Do NOT loosen `firstProvisioning.steps.length === 80` to `>= 80`, and do NOT loosen `evidence.unitCount === 79`. The file states the reason itself: a plan that silently grew or shrank is exactly what this evidence exists to notice."
       }
@@ -467,7 +479,7 @@
         "tests/hosted/checkpoint-b0.test.ts — line 278 asserts the on-disk observation.sql equals buildB0ObservationSql(EXPECTED.tables) after CRLF normalization. The TEST is self-adapting; what must change is the GENERATED FILE, which is already enumerated as a BASELINE_WRITER. NOT a host.",
         "tests/prepared-sql-source-of-truth.test.ts — readdirSync sweeps over db/migrations and db/migrations/meta imposing GATE_MANAGED_TABLES constraints. Self-adapting, and CE-1 satisfies them because commercial_accounts is not gate-managed. NOT a host.",
         "tests/assignment-version-immutability.test.ts and tests/hosted/prechain-ownership.test.ts — both readdir db/migrations and apply content rules to whatever they find. Self-adapting constraints, no count to move. NOT hosts.",
-        "tests/hosted/checkpoint-a1.test.ts and db/prepared/checkpoint-a1/corroboration.sql — MEASURED: buildA1CorroborationSql() takes NO arguments and derives from the witness registry; its single count(*) is over uellix_bootstrap.staging_sentinel, not the corpus. A new public table does not make it stale. NOT a host and NOT a writer."
+        "tests/hosted/checkpoint-a1.test.ts and db/prepared/checkpoint-a1/corroboration.sql — MEASURED: buildA1CorroborationSql() has four defaulted parameters (registry, packageIds, expectedProjectRef, production) and its current generator call site, scripts/a1-observation-sql.ts:29, invokes it ARGUMENT-FREE, deriving from the witness registry rather than baseline corpus cardinality; its single count(*) is over uellix_bootstrap.staging_sentinel, not the corpus. A new public table does not make it stale. NOT a host and NOT a writer."
       ],
       "sweep_method": "Two independent sweeps, both over the repository at START_HEAD: (1) grep every tests/**/*.ts for the literals 78, 79, 66 and 65 in an assertion position, which found exactly the eleven family-A/B sites plus the one family-C site; (2) grep every tests/**/*.ts for readdirSync over db/migrations, db/migrations/meta, db/prepared and db/policies, which found five files, all self-adapting. Sweep (1) alone would have missed family C — it was the derivation-family enumeration, not the literal grep, that caught line 407.",
       "stop_rule": "If a CE-1 implementation mission finds a sixth existing product-test host mechanically required at ITS OWN base, it MUST STOP_FOR_AUTHORITY_DELTA rather than extend this list on its own judgement."
@@ -549,7 +561,7 @@
       {
         "id": "CE1-A-F-2",
         "class": "IMPLEMENTATION_SURFACE_PRECISION",
-        "finding": "The base's IMPLEMENTATION_REFERENCE instructs that the new index be 'added to organizations' own (table) => [...] array'. MEASURED at START_HEAD: the organizations pgTable call has no third argument at all — it closes at db/schema.ts:46 with `})`. The array does not exist.",
+        "finding": "The base's IMPLEMENTATION_REFERENCE instructs that the new index be 'added to organizations' own (table) => [...] array'. MEASURED at START_HEAD: the organizations pgTable call has no third argument at all — it closes at db/schema.ts:47 with `})`. The array does not exist.",
         "disposition": "RECORDED and CORRECTED in CE1_IMPLEMENTATION_SURFACE.RUNTIME_WRITERS. The implementer must CREATE the callback array. `check` and `index` are already imported at db/schema.ts:1, so no import edit is needed. This changes no product, schema or security semantic — the frozen index declaration is unchanged, only the mechanics of where it is written."
       },
       {
@@ -610,7 +622,16 @@
       "CE1_FROZEN_SEMANTICS_PRESERVED asserts 7 columns, the four-value closed CHECK set, nullable/no-default/no-backfill, ON DELETE RESTRICT, non-unique b-tree, ENABLE + FORCE with ZERO policies, live legacy stripe_*/stella_* columns, and no new companion test manifest",
       "HOSTED_UNIT_REQUIRED_NARROWED.value == 'NO' and the false inference is explicitly prohibited",
       "OPEN_FINDINGS.blocking is empty and OPEN_FINDINGS.unknown is empty",
-      "The base artifact is byte-unchanged: git hash-object of docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json == expected_base_blob_sha"
+      "The base artifact is byte-unchanged: git hash-object of docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json == expected_base_blob_sha",
+      "CE1_IMPLEMENTATION_SURFACE.BASELINE_WRITERS names the journal writer surface as the FAMILY 'db/prepared/journal/**', never a single templated wrapper filename as an exhaustive singular writer",
+      "The journal writer entry states that appending one CE-1 unit regenerates the header of all 78 existing non-bootstrap wrappers at START_HEAD, in addition to creating exactly one new wrapper — a candidate that describes only 'one new wrapper' fails this check",
+      "closed_world does not reject a CE-1 diff for touching an existing wrapper under db/prepared/journal/** that pnpm journal:generate regenerated — see JOURNAL_RULE.existing_wrapper_regeneration",
+      "No BASELINE_WRITERS or FUTURE_PROTECTED_GRANT_SHAPE entry equals the blanket pattern 'db/prepared/**'; PROHIBITED_PATTERNS still names it explicitly rejected",
+      "JOURNAL_RULE names both pnpm journal:generate and pnpm journal:verify; neither is omitted",
+      "tests/hosted/operator-runner.test.ts non-pin citations read :663 for policies).toHaveLength(69) and :717 for rlsEnabledTables).toHaveLength(24) — never :701",
+      "tests/eval/stella-release/hosted-baseline-gate.ts derivation-comment-block citations read :404 and :428 as block-ending lines — never :402 as a block-ending citation",
+      "buildA1CorroborationSql is described as having four defaulted parameters and being invoked ARGUMENT-FREE at its current generator call site — never as a function that 'takes no arguments'",
+      "SECOND_CLAUSE_OF_THE_SAME_DEFECT_CLASS (CE1-A-2) is present and names HOSTED_DISPOSITION.migration_surface.not_used[0] as the second corrected clause of the same IMPLEMENTATION_SURFACE_UNDER_ENUMERATION class as CE1-A-1"
     ]
   },
 
