@@ -9,6 +9,7 @@
 
 import { describe, it, expect } from 'vitest'
 import path from 'node:path'
+import fs from 'node:fs'
 import crypto from 'node:crypto'
 import {
   CONTROLLER_STATES,
@@ -89,9 +90,9 @@ describe('E7: closed-world stop taxonomy and state model', () => {
 // ---------------------------------------------------------------------------
 
 describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
-  it('is the exact 29-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14 + v1.0.15 + v1.0.16 + v1.0.17 + v1.0.18)', () => {
-    expect(IMMUTABLE_BY_CONVENTION.length).toBe(29)
-    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(29)
+  it('is the exact 30-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14 + v1.0.15 + v1.0.16 + v1.0.17 + v1.0.18 + v1.0.19)', () => {
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(30)
+    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(30)
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json')
@@ -101,6 +102,7 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json')
   })
 
   it('excludes ODS_CARRY_FORWARD_BACKLOG.md by design (append-only working backlog)', () => {
@@ -117,16 +119,17 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
   })
 
   // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract, carried
-  // forward by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json and v1.0.18.json
-  // self_inclusion_rule): the closed world does not pre-include a later ODS
-  // successor artifact. The control ADVANCES with the list — v1.0.18 is now
-  // enumerated, so the absence assertion moves to the mechanically-next
-  // version. It asserts ABSENCE only: it reserves no identifier and
-  // authorizes no future grant. Per ods_lineage_serialization.
-  // no_future_ids_reserved, NEXT_ODS_LINEAGE is DERIVE_AT_MATERIALIZATION_TIME;
-  // the literal below is a negative-control literal, never an allocation.
+  // forward by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json, v1.0.18.json and
+  // v1.0.19.json self_inclusion_rule / negative_control_note): the closed
+  // world does not pre-include a later ODS successor artifact. The control
+  // ADVANCES with the list — v1.0.19 is now enumerated, so the absence
+  // assertion moves to the mechanically-next version. It asserts ABSENCE
+  // only: it reserves no identifier and authorizes no future grant. Per
+  // ods_lineage_serialization.no_future_ids_reserved, NEXT_ODS_LINEAGE is
+  // DERIVE_AT_MATERIALIZATION_TIME; the literal below is a negative-control
+  // literal, never an allocation.
   it('does NOT pre-include the next unallocated ODS successor addendum (no automatic inclusion)', () => {
-    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json')
+    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json')
   })
 
   it('normalizeRepoPath canonicalizes backslashes and redundant "." segments', () => {
@@ -280,32 +283,55 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
   })
 
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json self_inclusion_rule (HPO-ODS-W2-20,
+  // funded by MULTIORG-S1-S2-FIRST-EXECUTION-AUTHORITY-R1): the Controller must
+  // enumerate its own governing addendum. These controls prove the newly
+  // appended entry is actually wired into decideSelection, not merely present
+  // as a string — removing it from IMMUTABLE_BY_CONVENTION fails them
+  // independently of the length/Set assertions above.
+  it('a node targeting v1.0.19 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.19) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.19.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
   // Duplicate control: the closed world is a SET as well as an ordered list.
   // A second copy of the new entry would satisfy a naive toContain check and
   // would still be caught here, and by length === Set size, before it could
   // make the live count ambiguous as a successor precondition.
   it('the new entry appears exactly once, and the list carries no duplicates at all', () => {
     const occurrences = IMMUTABLE_BY_CONVENTION.filter(
-      (entry) => entry === 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json',
+      (entry) => entry === 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json',
     ).length
     expect(occurrences).toBe(1)
     expect(IMMUTABLE_BY_CONVENTION.length).toBe(new Set(IMMUTABLE_BY_CONVENTION).size)
   })
 
   // ---------------------------------------------------------------------
-  // ORDER PROOF (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json successor_scope):
-  // an independently-typed literal of the pre-append 28-entry closed world
-  // (OLD28 — never derived from the live IMMUTABLE_BY_CONVENTION import) is
-  // hashed with an ordered digest. A remove-only reconstruction of the live,
-  // post-append list (dropping exactly the new final element) must reproduce
-  // OLD28 element-by-element AND by that same ordered digest. This catches a
-  // reorder of any predecessor entry that a naive length/Set/toContain check
-  // would miss, because Set equality and length are order-blind.
+  // ORDER PROOF (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json controller_sequencing_rule
+  // / self_inclusion_rule): an independently-typed literal of the pre-append
+  // 29-entry closed world (OLD29 — never derived from the live
+  // IMMUTABLE_BY_CONVENTION import, and never copied from the candidate diff
+  // that appends v1.0.19) is hashed with an ordered digest. A remove-only
+  // reconstruction of the live, post-append list (dropping exactly the new
+  // final element) must reproduce OLD29 element-by-element AND by that same
+  // ordered digest. This catches a reorder of any predecessor entry that a
+  // naive length/Set/toContain check would miss, because Set equality and
+  // length are order-blind.
   // ---------------------------------------------------------------------
-  describe('ORDER PROOF: append-only reconstruction of OLD28', () => {
-    // Independently typed — copied once from the pre-v1.0.18 source, not
-    // imported or derived from scripts/ods-controller.ts.
-    const OLD28: readonly string[] = [
+  describe('ORDER PROOF: append-only reconstruction of OLD29', () => {
+    // Independently typed — copied once from the pre-v1.0.19 source (the
+    // START_HEAD state of scripts/ods-controller.ts, i.e. Controller 29), not
+    // imported or derived from the post-append candidate.
+    const OLD29: readonly string[] = [
       'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
       'docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json',
       'docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json',
@@ -334,55 +360,56 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json',
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json',
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json',
     ]
 
     // Independently computed and pinned as a literal — recorded in the
-    // CONTROLLER29_V1_0_18_IMPLEMENTATION_R1 report as OLD28_DIGEST. A
-    // mismatch here means either OLD28 above or the live pre-append 28
+    // CONTROLLER30_V1_0_19_IMPLEMENTATION_R1 report as OLD29_DIGEST. A
+    // mismatch here means either OLD29 above or the live pre-append 29
     // entries drifted — never silently accepted.
-    const OLD28_DIGEST_EXPECTED = 'b0c83a552e0ec4afc4ac63d0e433245391e6226baee4fa325ae44686044859ff'
+    const OLD29_DIGEST_EXPECTED = '51d6dd08cfaec94881f0f5688d59d13ff3b40a0bbd8e3866f2095ec55e1053a3'
 
     function orderedDigest(entries: readonly string[]): string {
       return crypto.createHash('sha256').update(JSON.stringify(entries)).digest('hex')
     }
 
-    it('OLD28 literal has length 28, no duplicates, and matches the pinned OLD28_DIGEST', () => {
-      expect(OLD28.length).toBe(28)
-      expect(new Set(OLD28).size).toBe(28)
-      expect(orderedDigest(OLD28)).toBe(OLD28_DIGEST_EXPECTED)
+    it('OLD29 literal has length 29, no duplicates, and matches the pinned OLD29_DIGEST', () => {
+      expect(OLD29.length).toBe(29)
+      expect(new Set(OLD29).size).toBe(29)
+      expect(orderedDigest(OLD29)).toBe(OLD29_DIGEST_EXPECTED)
     })
 
-    it('the live list is exactly OLD28 with v1.0.18 appended as the sole new final element', () => {
-      expect(IMMUTABLE_BY_CONVENTION.length).toBe(29)
-      expect(IMMUTABLE_BY_CONVENTION[28]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json')
+    it('the live list is exactly OLD29 with v1.0.19 appended as the sole new final element', () => {
+      expect(IMMUTABLE_BY_CONVENTION.length).toBe(30)
+      expect(IMMUTABLE_BY_CONVENTION[29]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json')
     })
 
-    it('REMOVE-ONLY RECONSTRUCTION: dropping the live list\'s last element reproduces OLD28 element-by-element, in order', () => {
+    it('REMOVE-ONLY RECONSTRUCTION: dropping the live list\'s last element reproduces OLD29 element-by-element, in order', () => {
       const reconstructed = IMMUTABLE_BY_CONVENTION.slice(0, -1)
-      expect(reconstructed).toEqual(OLD28)
-      expect(reconstructed.length).toBe(OLD28.length)
-      for (let i = 0; i < OLD28.length; i++) {
-        expect(reconstructed[i]).toBe(OLD28[i])
+      expect(reconstructed).toEqual(OLD29)
+      expect(reconstructed.length).toBe(OLD29.length)
+      for (let i = 0; i < OLD29.length; i++) {
+        expect(reconstructed[i]).toBe(OLD29[i])
       }
     })
 
-    it('REMOVE-ONLY RECONSTRUCTION: its ordered digest matches OLD28_DIGEST exactly (catches any predecessor reorder)', () => {
+    it('REMOVE-ONLY RECONSTRUCTION: its ordered digest matches OLD29_DIGEST exactly (catches any predecessor reorder)', () => {
       const reconstructed = IMMUTABLE_BY_CONVENTION.slice(0, -1)
-      expect(orderedDigest(reconstructed)).toBe(OLD28_DIGEST_EXPECTED)
+      expect(orderedDigest(reconstructed)).toBe(OLD29_DIGEST_EXPECTED)
     })
 
     // MUTATION CONTROL (M5 class, non-vacuous): proves the digest actually
     // detects a predecessor reorder rather than only ever matching by
-    // construction. Swapping two adjacent OLD28 entries must change the
+    // construction. Swapping two adjacent OLD29 entries must change the
     // digest even though length, Set size and membership are all unchanged.
     it('MUTATION CONTROL: reordering two predecessor entries changes the ordered digest (order-blind checks would miss this)', () => {
-      const reordered = [...OLD28]
+      const reordered = [...OLD29]
       const tmp = reordered[0]
       reordered[0] = reordered[1]
       reordered[1] = tmp
-      expect(reordered.length).toBe(OLD28.length)
-      expect(new Set(reordered)).toEqual(new Set(OLD28))
-      expect(orderedDigest(reordered)).not.toBe(OLD28_DIGEST_EXPECTED)
+      expect(reordered.length).toBe(OLD29.length)
+      expect(new Set(reordered)).toEqual(new Set(OLD29))
+      expect(orderedDigest(reordered)).not.toBe(OLD29_DIGEST_EXPECTED)
     })
   })
 
@@ -397,6 +424,68 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     const unit = baseUnit({ writePaths: [] })
     const decision = decideSelection(unit, 'OPEN', {}, {})
     expect(decision.selectable).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PACKAGE NON-VACUITY (CONTROLLER30-V1-0-19-IMPLEMENTATION-R1): a test-only
+// integrity control over the v1.0.19 package itself, layered on top of the
+// closed-world enumeration proven above. Enumeration alone proves the
+// STRING is present in IMMUTABLE_BY_CONVENTION; it proves nothing about the
+// FILE that string names. This control reads the real, integrated artifact
+// from disk and checks the load-bearing facts docs/ops/ods/
+// ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json itself declares — document
+// identity/version, the companion HPO grant HPO-ODS-W2-20, and the S1/S2
+// authority relationship (node_authority + companion_execution_scope_authority)
+// — never inventing a new authority contract, only verifying facts the
+// integrated, frozen artifact already asserts about itself.
+// ---------------------------------------------------------------------------
+
+describe('PACKAGE NON-VACUITY: v1.0.19 package identity', () => {
+  const V1_0_19_PATH = path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json')
+
+  function readV1_0_19(): Record<string, unknown> {
+    return JSON.parse(fs.readFileSync(V1_0_19_PATH, 'utf8')) as Record<string, unknown>
+  }
+
+  // The single deterministic identity check — load-bearing facts only,
+  // never re-deriving the addendum's full content or its S1/S2 grant body.
+  function isValidV1_0_19PackageIdentity(pkg: Record<string, unknown>): boolean {
+    return (
+      pkg.package_id === 'ODS_V1_MAINTENANCE_ADDENDUM' &&
+      pkg.version === '1.0.19' &&
+      pkg.artifact_id === 'ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19' &&
+      pkg.GRANT_ID === 'HPO-ODS-W2-20' &&
+      pkg.node_authority === 'docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json' &&
+      pkg.companion_execution_scope_authority === 'docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json'
+    )
+  }
+
+  it('POSITIVE: the real integrated artifact satisfies the identity control (not empty, not a wrong package)', () => {
+    const pkg = readV1_0_19()
+    expect(isValidV1_0_19PackageIdentity(pkg)).toBe(true)
+  })
+
+  it('an empty object is NOT a valid v1.0.19 package (proves the control is non-vacuous against a trivially wrong artifact)', () => {
+    expect(isValidV1_0_19PackageIdentity({})).toBe(false)
+  })
+
+  // M6 MUTATION CONTROL: mutate exactly one load-bearing fact, in a scratch
+  // in-memory copy only — the real file on disk is never written. Proves the
+  // integrity control actually discriminates the real package from a
+  // corrupted one, rather than only ever matching by construction.
+  it('M6 MUTATION CONTROL: corrupting GRANT_ID alone flips the control to false', () => {
+    const pkg = readV1_0_19()
+    const mutated = { ...pkg, GRANT_ID: 'HPO-ODS-W2-99' }
+    expect(isValidV1_0_19PackageIdentity(pkg)).toBe(true)
+    expect(isValidV1_0_19PackageIdentity(mutated)).toBe(false)
+  })
+
+  it('M6 MUTATION CONTROL: corrupting the S1/S2 companion_execution_scope_authority relationship alone flips the control to false', () => {
+    const pkg = readV1_0_19()
+    const mutated = { ...pkg, companion_execution_scope_authority: 'docs/ops/tenancy/WRONG_AUTHORITY_v1.0.0.json' }
+    expect(isValidV1_0_19PackageIdentity(pkg)).toBe(true)
+    expect(isValidV1_0_19PackageIdentity(mutated)).toBe(false)
   })
 })
 
