@@ -241,6 +241,21 @@
         "id": "E37",
         "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json",
         "fact": "Wave 1 closure evidence: closure_status \"CLOSED\", closure_class \"ADVERSARIAL\", closure_authority \"HUMAN_PRODUCT_OWNER_ACCEPTANCE_OF_W1_07\", state_after_closure.wave1_formally_closed true, audited_head 6944a618b70c0ac0436a915fa0a52af24a16a5dc, audited_tree 80915e1608725351a9b7ad9772bdc595af679767, audited_branch codex/w1-integration-closure-r1, authority_commit 8ae297cd228a79d3fd7f598532e43e456f0aef5e. FIBIU-29 is a declared unit of that wave (:833). The audited head is an ancestor of origin/integration/commercial-v1 and of this PR head. Added by amendment R2."
+      },
+      {
+        "id": "E38",
+        "path": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (unit W2-B5, audit block)",
+        "fact": "The repaired registry entry at R3: audit.ref = \"codex/w2-b5-closure-evidence-r1\" (was \"codex/w2-b5-r1\"), path docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json, field closure.W2_B5, closedValues [\"CLOSED\"]. Repaired by PR #81 (commit cb0f569, merged as 08d3c4dd262a9cd9d4f64900fdd09205370f23ef) — a one-line repoint, independently audited before integration. Supersedes E29, which recorded the pre-repair state. Added by amendment R3."
+      },
+      {
+        "id": "E39",
+        "path": "docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+        "fact": "The W2-B5 whole-batch closure audit evidence, integrated by PR #78 (artifact commit d3ab9e3d86117337894b10860fc6b66f319a3910, merged as 4e28c4c22ef026e7206802b3f773ea02a6566a6d) and present in the working tree at R3 with closure.W2_B5 = \"CLOSED\". Reachable by the resolver only after E38's repair. Added by amendment R3."
+      },
+      {
+        "id": "E40",
+        "path": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (units array)",
+        "fact": "The registry enumerates exactly four units — W2-B1, W2-B3, W2-B4, W2-B5 — with no W2-B2 entry. Measured at R3: all four report AUTHORITY_STATUS=CLOSED, IMPLEMENTATION_STATUS=CLOSED, AUDIT_STATUS=CLOSED and INTEGRATION_STATUS[origin/integration/commercial-v1]=INTEGRATED. Basis for F-W3-1.RESOLUTION.wave2_population_measured and for finding F-W3-7. Added by amendment R3."
       }
     ]
   },
@@ -912,36 +927,72 @@
       "narrowest_grant": "The FIBDB-053 authoring grant — four files under db/prepared/** and db/prepared/hosted/**, plus one non-protected edit to db/prepared-package-order.ts.",
       "why_this_mission_needed_none": "docs/ops/wave3/** is not a DEFAULT_PROTECTED_PATTERN (E33). An ordinary --allow authorizes this diff in full."
     },
-    "controller_obligation": "Any artifact this package eventually produces that lands in the ODS immutable-by-convention set must be enumerated by the Controller. This artifact produces none such and makes no Controller claim."
+    "controller_obligation": "Any artifact this package eventually produces that lands in the ODS immutable-by-convention set must be enumerated by the Controller. This artifact produces none such and makes no Controller claim.",
+    "CURRENT_EXTERNAL_LINEAGE_STATE": {
+      "rule": "OBSERVATION ONLY. This block records what the lineage landscape looks like outside this package at R3. It allocates nothing, reserves nothing, and confers nothing on Wave 3.",
+      "measured_at": "origin/integration/commercial-v1 = 08d3c4dd262a9cd9d4f64900fdd09205370f23ef.",
+      "pr77_status": "OPEN, NOT MERGED. PR #77 (\"docs(tenancy): Multi-org S1/S2 first execution authority (v1.0.19 / HPO-ODS-W2-20)\") had not merged when R3 was measured — verified with gh pr view: state=OPEN, mergeCommit=none.",
+      "consequence": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19 and HPO-ODS-W2-20 are therefore NOT present in integration at R3, and the highest ODS addendum ordinal in the integrated line remains v1.0.18. Had PR #77 merged, those identifiers would still be recorded here as EXTERNAL STATE belonging to Lane AG, never as available to Wave 3.",
+      "wave3_position_unchanged": "Wave 3 future implementation lineage remains SYMBOLIC and must be RE-DERIVED after Controller 30 closes. This mission allocates nothing: not v1.0.19, not HPO-ODS-W2-20, not a migration ordinal, not a Controller entry."
+    }
   },
   "OPEN_FINDINGS": {
     "blocking_for_this_docs_only_freeze": [],
-    "blocking_for_wave3_implementation": [
+    "blocking_for_wave3_implementation": [],
+    "non_blocking": [
       {
         "id": "F-W3-1",
-        "class": "PARTIALLY_REMEDIATED_MEASURED_PRECONDITION",
-        "finding": "FIB:854 makes \"Wave 2 complete\" a Wave 3 PRECONDITION, and the machine resolver for W2-B5 still does not return it. Re-measured on this amendment's post-merge head with pnpm ops:program-state -- --unit W2-B5: AUTHORITY_STATUS=CLOSED, IMPLEMENTATION_STATUS=CLOSED, AUDIT_STATUS=UNKNOWN.",
-        "what_this_is_not": "NOT a claim that the B5 closure audit was not performed, NOT a claim the artifact is missing, and NOT — since this amendment — a claim that it is unintegrated. The sole surviving defect is the registry's audit.ref.",
+        "class": "RESOLVED_ON_MACHINE_PROOF",
+        "finding": "FIB:854 makes \"Wave 2 complete\" a Wave 3 PRECONDITION, and for three revisions of this artifact the machine resolver for W2-B5 did not return it. It now does.",
+        "what_this_is_not": "NOT a claim that Wave 3 implementation is now authorized. The precondition this finding tracked is satisfied; authorization additionally requires the independent audit of this package and a lineage grant, neither of which exists. See final_state.",
         "separately_measured": "INTEGRATION_STATUS reported NOT_INTEGRATED for integration/commercial-v1 only because the LOCAL branch of that name is stale at 547ac36405c47b1be386d37ba1f387173c867252 (PR #54 era). Re-measured against origin/integration/commercial-v1 the same unit reports INTEGRATED, and git merge-base --is-ancestor confirms d534f20 is an ancestor of a27c4a9. That signal is a stale-local-ref artifact and is NOT a finding.",
-        "disposition": "RECORDED, NOT REPAIRED, AND EXPLICITLY NOT RESOLVED. The remaining half is outside this mission's authorized paths (docs/ops/wave3/** plus the base merge commit): the fix edits docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, whose own purpose field classifies such an edit as ordinary tooling maintenance rather than an authority act. F-W3-1 MUST NOT be marked resolved until the repair has itself been audited and integrated.",
-        "blocks": "Wave 3 implementation authorization. It does not block freezing this authority.",
-        "required_before_wave3_implementation": "W2-B5 must MEASURE AUDIT_STATUS=CLOSED via pnpm ops:program-state. The artifact now being readable at HEAD does NOT satisfy the precondition: what satisfies it is the GATE's answer, never a human reading a file the gate does not consult. This rule is restated, not relaxed — the partial remediation makes it easier, not harder, to mistake the file's presence for the gate's verdict.",
-        "status": "PARTIALLY_REMEDIATED — BLOCKING_WAVE3_IMPLEMENTATION_AUTHORIZATION",
+        "disposition": "RESOLVED. No prose in this artifact was rewritten to reach this state and no historical intermediate state was erased — R1 recorded it as an unmeasurable precondition, R2 as PARTIALLY_REMEDIATED after PR #78, and R3 as RESOLVED after PR #81 and the resolver. See AMENDMENT_HISTORY.",
+        "status": "RESOLVED",
         "remediated_since_r1": {
           "fact": "THE CLOSURE EVIDENCE ARTIFACT IS NOW INTEGRATED. R1 recorded it as existing only on an unintegrated branch; that statement is now FALSE and is withdrawn.",
           "measurement": "PR #78 (codex/w2-b5-closure-evidence-r1, d3ab9e3d86117337894b10860fc6b66f319a3910) was independently audited and merged into integration as 4e28c4c22ef026e7206802b3f773ea02a6566a6d, which this branch then merged normally. docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json is present at this PR's head and its closure.W2_B5 field reads \"CLOSED\" — exactly the value the registry's closedValues expects.",
           "consequence": "One of the two defects R1 identified is closed. The artifact no longer needs authoring, integrating, or duplicating."
         },
-        "remaining_prerequisite": {
-          "count": 1,
-          "item": "The program-state registry repair: docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B5 still declares audit.ref = \"codex/w2-b5-r1\", where the artifact is absent. Measured unchanged at this head.",
-          "why_integration_alone_did_not_close_it": "The resolver reads the artifact AT THE REF THE REGISTRY NAMES, not at HEAD. Integrating the file therefore moved the artifact into the line without moving the ref that points at it, and AUDIT_STATUS stayed UNKNOWN. This is the concrete demonstration of R1's claim that fixing either defect alone is insufficient.",
-          "closure_condition": "ALL THREE, in order: (1) the registry repair is authored; (2) it is INDEPENDENTLY AUDITED; (3) it is INTEGRATED — and only then (4) pnpm ops:program-state -- --unit W2-B5 returns AUDIT_STATUS=CLOSED. The resolver returning CLOSED is the acceptance signal; the first three are its preconditions, not substitutes for it.",
-          "not_speculated_here": "This artifact names no future PR number, branch name or lineage identifier for that repair. Naming one would be an allocation, and this mission allocates nothing."
+        "RESOLUTION": {
+          "decisive_proof": "The machine gate, not this artifact's prose. Re-measured on the R3 post-merge head with `pnpm ops:program-state -- --unit W2-B5 --json --integration-target origin/integration/commercial-v1`: authority.status=CLOSED, implementation.status=CLOSED, audit.status=CLOSED, integration[\"origin/integration/commercial-v1\"]=INTEGRATED. No field reports UNKNOWN.",
+          "the_field_that_flipped": "audit.status. It now resolves as codex/w2-b5-closure-evidence-r1:docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json#closure.W2_B5 = \"CLOSED\" — the evidenceRef itself changed from codex/w2-b5-r1 to codex/w2-b5-closure-evidence-r1, which is exactly the repair this finding named as its single remaining prerequisite.",
+          "closure_chain": [
+            {
+              "step": 1,
+              "item": "PR #70 — W2-B5 implementation and audit",
+              "merge_commit": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+              "note": "The same commit this artifact was originally measured against as AS_OF_HEAD. Supplies authority.status=CLOSED and implementation.status=CLOSED."
+            },
+            {
+              "step": 2,
+              "item": "PR #78 — the W2-B5 whole-batch closure audit evidence artifact",
+              "merge_commit": "4e28c4c22ef026e7206802b3f773ea02a6566a6d",
+              "artifact_commit": "d3ab9e3d86117337894b10860fc6b66f319a3910",
+              "note": "Integrated the artifact. Necessary but NOT sufficient: the resolver still read at the ref the registry named, so audit.status stayed UNKNOWN. Recorded in R2 as the concrete demonstration that fixing one of the two defects alone does nothing."
+            },
+            {
+              "step": 3,
+              "item": "PR #81 — the program-state registry audit.ref repair, independently audited",
+              "merge_commit": "08d3c4dd262a9cd9d4f64900fdd09205370f23ef",
+              "repair_commit": "cb0f569",
+              "note": "A one-line repoint of ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B5 audit.ref from \"codex/w2-b5-r1\" to \"codex/w2-b5-closure-evidence-r1\". This is the second defect, and it is what makes the artifact reachable by the gate."
+            },
+            {
+              "step": 4,
+              "item": "program-state resolver returns CLOSED",
+              "measured_on": "this branch after normal-merging integration at 08d3c4dd262a9cd9d4f64900fdd09205370f23ef",
+              "note": "The acceptance signal. Steps 1-3 are its preconditions, never its substitutes — the rule this finding carried from R1 through R3 unchanged."
+            }
+          ],
+          "rule_honoured_not_relaxed": "From R1 onward this finding held that what satisfies the precondition is the GATE's answer, never a human reading a file. That rule is what closes it now: the resolution is recorded because the resolver returned CLOSED, not because the artifact became readable at HEAD — it was already readable at HEAD in R2, and the finding stayed open.",
+          "wave2_population_measured": {
+            "note": "Measured rather than inferred from W2-B5 alone, since the precondition is stated as \"Wave 2 complete\" and not as \"W2-B5 closed\".",
+            "result": "All FOUR batches the program-state registry enumerates — W2-B1, W2-B3, W2-B4, W2-B5 — report AUTHORITY_STATUS=CLOSED, IMPLEMENTATION_STATUS=CLOSED, AUDIT_STATUS=CLOSED and INTEGRATION_STATUS[origin/integration/commercial-v1]=INTEGRATED on this head.",
+            "scope_limit": "The registry enumerates four units and contains no W2-B2 entry, so this measurement covers the registry's Wave 2 population and not, by itself, every batch the wave ever had. See non-blocking finding F-W3-7."
+          },
+          "what_remains_not_a_finding": "INTEGRATION_STATUS for the BARE name integration/commercial-v1 still reports NOT_INTEGRATED. Re-measured at R3: the local branch of that name is still stale at 547ac36405c47b1be386d37ba1f387173c867252 (PR #54 era), while origin/integration/commercial-v1 reports INTEGRATED. This is a stale-local-ref artifact, characterised identically in R1, R2 and R3, and is not a finding."
         }
-      }
-    ],
-    "non_blocking": [
+      },
       {
         "id": "F-W3-2",
         "class": "ADJUDICATED_CLOSED",
@@ -978,15 +1029,24 @@
         "class": "OBSERVED_SCHEMA_DIVERGENCE_IN_A_SHARED_TEMPLATE",
         "finding": "Measured by validating both files against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json at AS_OF_HEAD: docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json sets postgres_requirements to null, which the schema types as an object; docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json sets node_or_batch to \"W2-B5\", outside the closed enum [node, batch], AND carries an exit_gates member \"full_ci_green\" that is outside the schema's closed exit-gate enum. The tenancy authority recorded the first two as its F-1; the third is measured here and was not previously recorded.",
         "disposition": "RECORDED, NOT CHANGED — outside this mission's authorized paths. This package's companion manifest OMITS postgres_requirements rather than nulling it, so it validates against the schema as written."
+      },
+      {
+        "id": "F-W3-7",
+        "class": "REGISTRY_COVERAGE_OBSERVATION",
+        "finding": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json enumerates exactly four units — W2-B1, W2-B3, W2-B4, W2-B5 — and contains no W2-B2 unit. The W2-B2 artifacts present in docs/ops/wave2/ (W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json, W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json) carry final_state values but no closure field a resolver reads.",
+        "why_recorded": "F-W3-1 is resolved against the precondition \"Wave 2 complete\". This artifact therefore states precisely what was measured: every batch the registry enumerates is closed and integrated. It does not claim machine proof for a batch the registry does not enumerate, because that would be exactly the substitution of prose for a gate that F-W3-1 spent three revisions refusing.",
+        "disposition": "RECORDED, NOT REPAIRED, NON-BLOCKING. Adding a registry unit is ODS tooling maintenance and is outside this mission's authorized paths (docs/ops/wave3/** plus the base merge). It does not block Wave 3: no Wave 3 obligation in this package depends on W2-B2, whose subject matter (the B2 entrypoint/404 contract) is not consumed by FIBIU-19, FIBIU-20 or FIBDB-053.",
+        "recommended_action": "A future governed mission should either add a W2-B2 registry unit pointing at its closure evidence, or record why that batch is deliberately not resolver-tracked. Not adjudicated here."
       }
     ],
     "unknown": [],
-    "unknown_note": "EMPTY as of amendment R2. U-W3-1 (FIBIU-29 status) was the only member and is now adjudicated CLOSED_AUDITED_INTEGRATED — see FIBIU20_REVIEW_SOD_AND_FINDINGS.FIBIU29_DEPENDENCY_STATUS, including its EVIDENCE_LIMITATION. An empty unknown[] is an explicit \"nothing is currently unmeasured\", not an omission; a future mission that discovers an unmeasurable required fact adds it here rather than assuming it satisfied."
+    "unknown_note": "EMPTY as of amendment R2. U-W3-1 (FIBIU-29 status) was the only member and is now adjudicated CLOSED_AUDITED_INTEGRATED — see FIBIU20_REVIEW_SOD_AND_FINDINGS.FIBIU29_DEPENDENCY_STATUS, including its EVIDENCE_LIMITATION. An empty unknown[] is an explicit \"nothing is currently unmeasured\", not an omission; a future mission that discovers an unmeasurable required fact adds it here rather than assuming it satisfied.",
+    "blocking_for_wave3_implementation_note": "EMPTY as of amendment R3. F-W3-1 was the only member and is now RESOLVED on machine proof; it is carried in non_blocking with its full resolution record rather than deleted. An empty list is an explicit \"no known blocker\", not an omission — a future mission that measures a new blocker adds it here."
   },
   "self_check": {
     "note": "Deterministic checks verifiable by inspection or a one-line node/jq command against this file. Not a script, and not a claim that any implementation passed anything.",
     "expected_reason_code_count": 24,
-    "expected_evidence_anchor_count": 37,
+    "expected_evidence_anchor_count": 40,
     "expected_evidence_anchor_ids": [
       "E1",
       "E2",
@@ -1024,26 +1084,29 @@
       "E34",
       "E35",
       "E36",
-      "E37"
+      "E37",
+      "E38",
+      "E39",
+      "E40"
     ],
     "expected_security_control_count": 7,
     "expected_mutation_control_count": 8,
     "expected_shared_writer_chokepoint_count": 6,
-    "expected_blocking_for_wave3_implementation_ids": [
-      "F-W3-1"
-    ],
+    "expected_blocking_for_wave3_implementation_ids": [],
     "expected_non_blocking_ids": [
+      "F-W3-1",
       "F-W3-2",
       "F-W3-3",
       "F-W3-4",
       "F-W3-5",
-      "F-W3-6"
+      "F-W3-6",
+      "F-W3-7"
     ],
     "expected_unknown_ids": [],
     "expected_fibdb053_chain_step_count": 3,
     "checks": [
       "FIBIU19_METHODOLOGY_APPROVAL_COMPOSITION.REASON_CODES.codes.length == 24 and equals the FIB baseline's list at docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:180 in the same order",
-      "EVIDENCE_ANCHORS.anchors.length == 37 and every id E1..E37 appears exactly once (E35..E37 added by amendment R2)",
+      "EVIDENCE_ANCHORS.anchors.length == 40 and every id E1..E40 appears exactly once (E35-E37 added by R2, E38-E40 by R3)",
       "every EVIDENCE_ANCHORS entry's path resolves to a real repository path at AS_OF_HEAD",
       "FIBDB053_STAGE_A_CONTRACT.TWO_FUNCTION_DERIVATION.chain.length == 3 and its orders are 1,2,3",
       "FIBDB053_STAGE_A_CONTRACT.required_artifacts.paths.length == 4 and each path is absent at AS_OF_HEAD",
@@ -1061,11 +1124,20 @@
       "no statement anywhere in this file says FIBDB-051 owns the LEGACY_NON_AUTHORITATIVE_RUN eligibility reason",
       "FIBDB-051 is still described as wave 6 / FIBIU-30 and is nowhere pulled forward",
       "OPEN_FINDINGS.unknown is empty and OPEN_FINDINGS.unknown_note explains why",
-      "OPEN_FINDINGS.blocking_for_wave3_implementation contains exactly F-W3-1, and F-W3-1.status is not \"RESOLVED\"",
-      "F-W3-1.remaining_prerequisite.count == 1 and names no future PR number, branch or lineage identifier",
-      "FIBIU29_DEPENDENCY_STATUS.EVIDENCE_LIMITATION states that no fresh local suite execution backs the status"
+      "OPEN_FINDINGS.blocking_for_wave3_implementation is empty, and F-W3-1 is carried in non_blocking with status \"RESOLVED\"",
+      "FIBIU29_DEPENDENCY_STATUS.EVIDENCE_LIMITATION states that no fresh local suite execution backs the status",
+      "F-W3-1.status == \"RESOLVED\" and F-W3-1.RESOLUTION.closure_chain.length == 4 with steps 1..4",
+      "F-W3-1.RESOLUTION.decisive_proof cites the program-state resolver, not this artifact's prose",
+      "both OPEN_FINDINGS.blocking lists are empty and OPEN_FINDINGS.unknown is empty",
+      "AMENDMENT_HISTORY records R2 and R3, and finding_state_progression shows F-W3-1 as unknown -> partial -> resolved without erasing an intermediate state",
+      "FUTURE_ODS_NEEDS_SYMBOLIC.CURRENT_EXTERNAL_LINEAGE_STATE is an observation and allocates nothing",
+      "the 24 reason codes and the 22 + 2 partition are unchanged by amendment R3"
     ],
-    "expected_tension_case_count": 3
+    "expected_tension_case_count": 3,
+    "expected_amendment_revisions": [
+      "R2",
+      "R3"
+    ]
   },
   "final_state": "WAVE3_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_ALLOCATION",
   "AMENDMENT_HISTORY": [
@@ -1087,6 +1159,33 @@
         "FIBDB-051's wave 6 / FIBIU-30 ownership and its migration stage B.",
         "Every sealed source. The FIB baseline, PC-01B, IM-01B, Wave 1 closure evidence and Wave 2 closure evidence are untouched by this mission.",
         "AS_OF_HEAD / AS_OF_TREE / AS_OF_REF — the measurement anchor of this artifact stays a27c4a9 / e7f3a1e4, because every anchor E1..E34 was measured there and re-anchoring would invalidate them without re-measuring."
+      ]
+    },
+    {
+      "revision": "R3",
+      "mission_id": "WAVE3-F-W3-1-FINAL-RESOLUTION-R3",
+      "date": "2026-09-05",
+      "pre_amendment_head": "2141f2b33ac210a2adc94c0f1bbae0f14a1d590b",
+      "base_merge": "origin/integration/commercial-v1 at 08d3c4dd262a9cd9d4f64900fdd09205370f23ef merged by NORMAL MERGE (never rebase). The merged delta is two paths — docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json (PR #80) and docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (PR #81) — with zero overlap on docs/ops/wave3/**. Zero conflict.",
+      "what_changed": [
+        "F-W3-1 — RESOLVED on machine proof, moved out of blocking_for_wave3_implementation, which is now empty. Its full resolution record and closure chain are carried with it.",
+        "F-W3-7 — NEW non-blocking observation: the program-state registry enumerates four Wave 2 units and no W2-B2, so \"Wave 2 complete\" is machine-proven over the registry's population and not, by itself, over every batch the wave had.",
+        "FUTURE_ODS_NEEDS_SYMBOLIC.CURRENT_EXTERNAL_LINEAGE_STATE — added as observation: PR #77 is OPEN, so v1.0.19 / HPO-ODS-W2-20 are not in integration at R3.",
+        "Evidence anchors E38-E40 added for the repaired registry entry, the integrated closure artifact, and the four-batch measurement."
+      ],
+      "finding_state_progression": {
+        "F-W3-1": "R1 = measured precondition not provable (blocking) -> R2 = PARTIALLY_REMEDIATED after PR #78 integrated the artifact but the resolver still read the wrong ref -> R3 = RESOLVED after PR #81 repaired the ref and the resolver returned CLOSED.",
+        "F-W3-2": "R1 = blocking, sequencing tension requiring adjudication -> R2 = ADJUDICATED AND CLOSED as REACHABLE_IN_WAVE3_FROM_EXISTING_STATE. Untouched by R3.",
+        "U-W3-1": "R1 = UNKNOWN (FIBIU-29 status unmeasurable) -> R2 = CLOSED_AUDITED_INTEGRATED via the Wave 1 closure chain, removed from unknown[]. Untouched by R3."
+      },
+      "what_did_not_change": [
+        "The 24 reason codes — content, order and count. Still exactly 24.",
+        "The 22 + 2 = 24 reachability partition.",
+        "The F-W3-2 adjudication and FIBDB-051's wave 6 / FIBIU-30 ownership.",
+        "The FIBIU-29 adjudication and its stated evidence limitation.",
+        "CP4_SEQUENCE, the FIBDB-053 Stage-A contract, G2_BOUNDARY, and the F-2 / F-3 carry-forwards.",
+        "AS_OF_HEAD / AS_OF_TREE / AS_OF_REF — the measurement anchor stays a27c4a9 / e7f3a1e4, because anchors E1..E34 were measured there. Anchors added in later revisions state their own measurement point.",
+        "No historical intermediate state was rewritten or erased."
       ]
     }
   ]
