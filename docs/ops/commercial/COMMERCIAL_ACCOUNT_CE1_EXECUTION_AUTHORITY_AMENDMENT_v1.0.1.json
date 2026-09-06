@@ -1,0 +1,620 @@
+{
+  "package_id": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_NODE_AUTHORITY",
+  "document_class": "EXECUTABLE_TECHNICAL_AUTHORITY_AMENDMENT",
+  "append_only": true,
+  "mission_id": "COMMERCIAL-ACCOUNT-CE1-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1",
+  "source_compiler": "COMMERCIAL-ACCOUNT-CE1-SUCCESSOR-AUTHORITY-COMPILER-R1 (Lane BM)",
+  "materialization_date": "2026-09-06",
+
+  "amends": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "companion_manifest": null,
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "START_HEAD": "a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303",
+    "START_TREE": "57952b24486ce0fae84e3977e8fbc56aed895db7",
+    "BRANCH": "codex/commercial-account-ce1-successor-authority-r1",
+    "LATEST_INTEGRATION_HEAD": "a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303",
+    "INTERVENING_DELTA": "NONE. Measured with `git fetch origin` followed by `git rev-parse origin/integration/commercial-v1` and `git log --oneline a8a61a1..origin/integration/commercial-v1` — zero commits. The integration branch has NOT advanced since this mission's START_HEAD, so every cardinality below was measured on the base the compiler measured and no count is inherited across a moved base.",
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/commercial-account-ce1-successor-authority-r1 --head a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303 --tree 57952b24486ce0fae84e3977e8fbc56aed895db7 --clean => PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS.",
+    "remeasurement_rule": "Every count in BASELINE_GROWTH_CONTRACT is bound to START_HEAD a8a61a1. An implementing mission whose base differs from a8a61a1 by even one commit MUST re-measure all of them and MUST NOT inherit them from this document. The measurement commands are named inline so re-measurement is mechanical, not interpretive."
+  },
+
+  "NAMING_DERIVATION": "The repo-native convention for an append-only correction to a frozen authority is <BASE_PACKAGE_STEM>_AMENDMENT_v<semver>.json in the same directory as its base, already used twice at AS_OF_HEAD: docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json and docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json / _v1.0.2.json. Applied to the base COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0 this yields exactly docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, which is also the path this mission was directed to write. No STOP condition on naming arose.",
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json is left BYTE-UNCHANGED and remains HISTORICAL AND CONTROLLING authority for everything it says correctly. This artifact rewrites, deletes and reinterprets nothing in it.",
+    "what_this_amendment_does": "It corrects exactly ONE class of statement in the base: the CE-1 IMPLEMENTATION SURFACE — HOSTED_DISPOSITION.migration_surface and the transitive baseline/journal/generated-artifact obligations that an ordinary db/migrations/** unit mechanically drags with it in this repository. Every product, schema, security, compatibility, DAG and manifest semantic of the base is preserved verbatim and restated below as UNCHANGED.",
+    "what_this_amendment_is_not": [
+      "NOT an implementation. No schema.ts edit, no migration file, no snapshot, no journal entry, no wrapper, no baseline-manifest entry, no test and no generated artifact is created or changed by this mission.",
+      "NOT an ODS/HPO lineage allocation. See PROTECTED_GRANT_REQUIRED and FUTURE_ODS_NEEDS_SYMBOLIC — this artifact allocates and reserves no identifier of any kind.",
+      "NOT a migration-ordinal allocation. The base's ordinal_rule stands unchanged and is restated below.",
+      "NOT a PROTECTED_GRANTS registration. scripts/ods-scope.ts is not edited by this mission.",
+      "NOT a re-opening of CA-01..CA-08, of the parent COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json, or of its companion test manifest.",
+      "NOT a new companion CE-1 test manifest. The base's MANIFEST_DISPOSITION decision stands."
+    ],
+    "conflict_rule": "Where this amendment and the base disagree, the base controls for every product/schema/security/compatibility/DAG semantic, and this amendment controls ONLY for the implementation-surface enumeration in CE1_IMPLEMENTATION_SURFACE, BASELINE_GROWTH_CONTRACT, BASELINE_UNIT_SHAPE and JOURNAL_RULE. There is exactly one clause of the base that this amendment contradicts, it is named by exact quotation in DEFECT_CORRECTED, and nothing else."
+  },
+
+  "DEFECT_CORRECTED": {
+    "id": "CE1-A-1",
+    "class": "IMPLEMENTATION_SURFACE_UNDER_ENUMERATION",
+    "base_clause_quoted_verbatim": "HOSTED_DISPOSITION.migration_surface.not_used[2]: \"no baseline-manifest hosted unit — db/hosted/baseline-manifest.ts is not edited; CE-1 adds no entry there.\"",
+    "why_it_is_wrong": "It conflates two different things that share the word 'hosted'. HOSTED_UNIT_REQUIRED=NO is a statement about CAPABILITY DEFINERS (db/prepared/** packages with their own roles, grants and apply-preconditions) and it is CORRECT — CE-1 creates none. But db/hosted/baseline-manifest.ts is NOT the capability-definer registry: it is the manifest of the ORDINARY provisioning corpus, and its verifier fails closed on any db/migrations/**/*.sql that no manifest unit claims.",
+    "machine_proof": {
+      "mechanism": "db/hosted/baseline-manifest.ts verifyBaselineCorpus emits kind 'UNKNOWN_FILE' for every discovered file that no unit claims, with the detail 'exists on disk but no manifest unit claims it. An unclaimed migration is a migration nobody applies hosted and everybody applies locally — the exact asymmetry that hid the 0039 ordering defect.' (db/hosted/baseline-manifest.ts, verifier tail).",
+      "consequence": "A CE-1 migration that lands WITHOUT a BASELINE_UNITS entry makes evidence.manifestProblems non-empty, which turns the gate `hosted-baseline-manifest-ready` red in tests/eval/stella-release/hosted-baseline-gate.ts. The base's 'CE-1 adds no entry there' is therefore not merely incomplete — it is a self-defeating instruction.",
+      "measured_at_START_HEAD": "buildHostedBaselineGateEvidence(repoRoot) executed against a8a61a1 returns unitCount=78, superuserFreeUnits=78, manifestProblems=0, firstProvisioningPlannable=true, rehearsalFresh=true, and all six gates pass. That is the green state a CE-1 implementation must preserve, and it is preserved only by registering the unit and carrying its transitive consequences."
+    },
+    "what_survives_unchanged": "HOSTED_UNIT_REQUIRED remains 'NO' in its NARROW and correct meaning: CE-1 creates no capability-definer hosted package, no db/prepared/** capability unit, no prepared-unit idempotency ledger, no out-of-band credential and no new role. See HOSTED_UNIT_REQUIRED_NARROWED for the exact restatement.",
+    "compiler_attribution": "The defect class was proved by Lane BM (COMMERCIAL-ACCOUNT-CE1-SUCCESSOR-AUTHORITY-COMPILER-R1). This mission re-derived every count and every mechanism independently at START_HEAD rather than inheriting them; where BM's numbers and this mission's measurements agree, they agree because both measured a8a61a1."
+  },
+
+  "CE1_FROZEN_SEMANTICS_PRESERVED": {
+    "BINDING": "Every item below is restated as UNCHANGED for the avoidance of doubt. This amendment alters NONE of them. An implementation that changes any of them is outside CE-1 and outside this amendment.",
+    "commercial_accounts_shape": "UNCHANGED. Exactly 7 columns: id, legal_name, billing_country, billing_contact_email, commercial_status, created_at, updated_at. Types, nullability, defaults and Drizzle declarations exactly as TABLE_DEFINITION freezes them.",
+    "commercial_status_value_set": "UNCHANGED. NOT NULL, DEFAULT 'active', CHECK constraint named commercial_status_check enumerating exactly and in this order: 'active', 'past_due', 'suspended', 'closed'. A closed set. 'suspended' is the commercial-lifecycle state and is NEVER Organization.status (base PI-1).",
+    "explicit_prohibition": "UNCHANGED. commercial_accounts carries NO user_id, NO membership, NO role, NO Stripe column, NO entitlement column and NO quota column.",
+    "organizations_commercial_account_id": "UNCHANGED. uuid, NULLABLE, NO DEFAULT, NO CE-1 BACKFILL, set by no writer at CE-1. Every existing organizations row is NULL immediately after CE-1 lands and that is the entire intended effect on that table.",
+    "fk_on_delete": "UNCHANGED. REFERENCES commercial_accounts(id) ON DELETE RESTRICT. Not CASCADE, not SET NULL.",
+    "index_kind": "UNCHANGED. Ordinary non-unique b-tree, idx_organizations_commercial_account_id on organizations(commercial_account_id). Uniqueness would re-impose the 1:1 cardinality CC-4 exists to remove.",
+    "rls_posture": "UNCHANGED. ALTER TABLE commercial_accounts ENABLE ROW LEVEL SECURITY and ALTER TABLE commercial_accounts FORCE ROW LEVEL SECURITY in the SAME migration, and ZERO CREATE POLICY statements against commercial_accounts at CE-1. No tenant-facing policy of any kind. Platform Admin access remains CE-8's, not CE-1's.",
+    "legacy_commercial_columns": "UNCHANGED. organizations.stella_monthly_quota, stella_plan_label, stripe_customer_id, stripe_subscription_id and stripe_price_id stay LIVE and remain the only live source of commercial truth at the end of CE-1. Moving Stripe identity is CE-6; backfill is CE-4; entitlement_grants is CE-3.",
+    "compatibility": "UNCHANGED. PURELY ADDITIVE. No reader change, no writer change, no existing behaviour altered.",
+    "dag_ownership": "UNCHANGED. CE-1 owns exactly what parent MIGRATION_DAG.nodes[id=CE-1] says it owns; CE-2..CE-9 are untouched and their hosted dispositions are their own.",
+    "ratifications": "UNCHANGED. CA-01..CA-08 are consumed exactly as ratified and are not re-opened. The CA_VERBATIM_CONSUMED quotations in the base stand byte-for-byte.",
+    "security_and_mutation_controls": "UNCHANGED. SEC-2, SEC-7 and MUT-10 stand exactly as the base restates them, including MUT-10's specific prohibition on adding commercial_account_id to db/identity-context.ts.",
+    "real_pg_probes": "UNCHANGED. PG-1 and PG-3 remain MANDATORY future proofs on a disposable cluster, with the base's future_proof_required text controlling — including the requirement to ASSERT, never assume, that the tenant-facing runtime role is neither the table owner nor a BYPASSRLS member, because FORCE ROW LEVEL SECURITY is silently inert for both.",
+    "manifest_disposition": "UNCHANGED. NO new companion CE-1 test manifest is created. docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json remains the batch commitment covering CE-1..CE-9 and is BYTE-UNCHANGED. The CE-1-relevant ids stay P-1/P-2/P-3, N-4/N-16, M-10, PG-1/PG-3, SENTINEL_SIBLING_ORG_CANARY_ROW and SENTINEL_UNGOVERNED_ORG.",
+    "ordinal_rule": "UNCHANGED. NO MIGRATION ORDINAL IS ALLOCATED. The base measured the ceiling 0065 at its own AS_OF_HEAD and reserved nothing; this amendment re-measures the same ceiling at START_HEAD and likewise reserves nothing. See MIGRATION_ORDINAL.",
+    "open_findings_of_the_base": "UNCHANGED. CE1-F-1 (PG-1/PG-3 mandatory future proof), CE1-F-2 (open CE-1 vs Multi-org S1 sequencing) and CE1-F-3 (novel ENABLE+FORCE+zero-policy pattern) all remain OPEN exactly as recorded. This amendment resolves none of them and adds its own findings separately."
+  },
+
+  "HOSTED_UNIT_REQUIRED_NARROWED": {
+    "value": "NO",
+    "narrow_meaning_that_remains_true": "CE-1 creates NO capability-definer hosted package. It creates no db/prepared/** capability unit, no capability role, no GRANT/REVOKE chain of its own, no SECURITY DEFINER function, no prepared-unit idempotency ledger, no out-of-band credential and no entry in db/hosted/hosted-package-manifest.ts HOSTED_CHAIN. Measured exemplars of what CE-1 is NOT: stella_0008 (Stripe webhook identity), stella_0010 (organization bootstrap), stella_0013..0018 (the quota/ticket chain).",
+    "false_inference_prohibited": "HOSTED_UNIT_REQUIRED=NO does NOT mean CE-1 is exempt from baseline/journal participation. The corpus manifest, the journal wrappers and the CHECKPOINT B0 observation probe govern ORDINARY DDL, and an ordinary migration is exactly what CE-1 is. A mission that reads HOSTED_UNIT_REQUIRED=NO as 'db/hosted/** and db/prepared/journal/** are out of scope' has made the error this amendment exists to close, and its diff will fail the hosted-baseline gates.",
+    "unchanged_forward_note": "The base's future_node_note stands: CE-2, CE-3, CE-5, CE-6 and CE-7 ARE capability-shaped and each makes its own hosted-disposition decision at its own authority time. Nothing here is read forward onto them."
+  },
+
+  "CE1_IMPLEMENTATION_SURFACE": {
+    "closed_world": "EXHAUSTIVE. A path not enumerated below is NOT authorized for a CE-1 implementation mission. Its appearance in a CE-1 diff is a STOP_FOR_AUTHORITY_DELTA — never a retroactive scope inference from the fact that it changed. This closed world replaces, for implementation-surface purposes only, HOSTED_DISPOSITION.migration_surface in the base.",
+    "RUNTIME_WRITERS": [
+      {
+        "path": "db/schema.ts",
+        "protected": false,
+        "why": "The Drizzle source of truth. Adds `export const commercialAccounts = pgTable('commercial_accounts', ...)` with its check() constraint, adds `commercialAccountId` to organizations, and adds the index.",
+        "measured_precision": "At START_HEAD the `organizations` pgTable call has NO third argument — `pgTable('organizations', { ... })` closes at db/schema.ts:46 with no `(table) => [...]` array. The base's IMPLEMENTATION_REFERENCE says the index is 'added to organizations' own (table) => [...] array'; that array does not exist and must be CREATED by the implementer. `check` and `index` are ALREADY imported at db/schema.ts:1, so no import edit is needed for either.",
+        "chokepoint": "CP-2 / SW-4. Serial with Multi-org S1 and Wave3 FIBIU-20."
+      },
+      {
+        "path": "db/migrations/<NEXT_FREE_ORDINAL>_<slug>.sql",
+        "protected": true,
+        "why": "The forward-only DDL. Produced by `drizzle-kit generate` and then hand-extended with the two RLS statements — the established repo pattern, stated in the header of db/migrations/0065_fib_sensitivity_model.sql: 'Generated cleanly by drizzle-kit generate; RLS is hand-authored below.'",
+        "ordinal": "NOT ALLOCATED HERE. See MIGRATION_ORDINAL.",
+        "chokepoint": "CP-1 / SW-5."
+      },
+      {
+        "path": "db/migrations/meta/<SAME_ORDINAL>_snapshot.json",
+        "protected": true,
+        "why": "drizzle-kit writes one snapshot per migration, named by the migration ordinal only (measured: meta/0063_snapshot.json, 0064_snapshot.json, 0065_snapshot.json against migrations 0063/0064/0065). Generated, never hand-edited.",
+        "note": "The snapshot reflects db/schema.ts ONLY. The hand-authored ENABLE/FORCE RLS statements are invisible to it by construction, and that is correct, not a defect."
+      },
+      {
+        "path": "db/migrations/meta/_journal.json",
+        "protected": true,
+        "why": "drizzle-kit appends one entry {idx, version:'7', when:<epoch ms>, tag:'<ordinal>_<slug>', breakpoints:true}. Measured at START_HEAD: 66 entries, idx 0..65, dialect postgresql, version 7, last tag '0065_fib_sensitivity_model'. `idx` tracks the migration ordinal exactly and `tag` is the migration basename without '.sql'.",
+        "note": "`when` is an implementation-time epoch millisecond value. It is NOT deterministic and is NOT frozen by this authority."
+      }
+    ],
+    "BASELINE_WRITERS": [
+      {
+        "path": "db/hosted/baseline-manifest.ts",
+        "protected": false,
+        "why": "MANDATORY. Registers the new migration as one BaselineUnit. Without it the corpus verifier emits UNKNOWN_FILE and hosted-baseline-manifest-ready fails. See BASELINE_UNIT_SHAPE for the exact derivation of every field.",
+        "note": "db/hosted/** is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (measured at START_HEAD). An ordinary --allow suffices; no protected grant covers or is required for this file."
+      },
+      {
+        "path": "db/prepared/journal/<WRAPPER_ORDINAL>_<MIGRATION_BASENAME>.sql",
+        "protected": true,
+        "why": "MANDATORY and GENERATED. One wrapper per baseline unit. See JOURNAL_RULE.",
+        "generator": "pnpm journal:generate ; verified by pnpm journal:verify"
+      },
+      {
+        "path": "db/prepared/checkpoint-b0/observation.sql",
+        "protected": true,
+        "why": "MANDATORY and GENERATED. Its rowCounts arms are one per table the CORPUS creates, so a new corpus table makes it stale BY CONSTRUCTION. Its own header says 'GENERATED — DO NOT EDIT'.",
+        "mechanism_measured": "scripts/b0-observation-sql.ts builds it as buildB0ObservationSql(deriveExpectedBaselineState(read).tables). deriveExpectedBaselineState scans every BASELINE_UNITS file for CREATE TABLE; commercial_accounts enters that set the moment the unit is registered.",
+        "generator": "pnpm b0:observation:generate ; verified by pnpm b0:observation:verify (byte comparison after CRLF normalization)",
+        "precedent": "The identical repair was granted and performed three times before, on three different branches: HPO-ODS-W2-07, HPO-ODS-W2-16 and HPO-ODS-W2-17."
+      },
+      {
+        "path": "artifacts/hosted-a1-status.json",
+        "protected": false,
+        "why": "REGENERATED. Its chainPlan message embeds a corpus-derived count: at START_HEAD it reads 'refused: 28 baseline unit(s) missing, starting with 0040_governed_model_registry.sql'. A 79th unit makes it 29. Deterministic drift, not a measurement of anything new.",
+        "generator": "pnpm a1:status:write ; verified by pnpm a1:status:verify",
+        "offline_safe": "MEASURED. scripts/a1-status.ts states of itself: 'CONNECTS TO NOTHING, and RUNS NOTHING' — it reads artifacts/hosted-a1-corroboration.json and re-runs the canonical gates. Regeneration needs no database, no network and no Docker.",
+        "protection_note": "artifacts/** is NOT in DEFAULT_PROTECTED_PATTERNS. Ordinary --allow only; no protected grant."
+      }
+    ],
+    "EXISTING_TEST_HOSTS": {
+      "count": 5,
+      "note": "Enumerated path-by-path in EXISTING_TEST_INSTRUCTIONS. Exactly five, no wildcard, no tests/** and no tests/hosted/** grant of any kind."
+    },
+    "NEW_TESTS": [
+      {
+        "path": "tests/commercial/ce1-commercial-account.test.ts",
+        "protected": false,
+        "class": "NEW_FILE_NEW_DIRECTORY",
+        "measured": "tests/commercial/ does NOT exist at START_HEAD. The directory is created by the implementation.",
+        "collected_by": "vitest.config.ts default project. tests/commercial/** is excluded by neither BASE_EXCLUDE nor INTEGRATION_GLOB nor E2E_GLOB (vitest.shared.ts), so it runs in the default suite.",
+        "hosts": "The offline half of the CE-1 controls: P-1/P-2/P-3 shape and declaration assertions, N-4/N-16, M-10, and the sentinels named in the base's MANIFEST_DISPOSITION."
+      },
+      {
+        "path": "tests/postgres/ce1-commercial-account.pg.test.ts",
+        "protected": false,
+        "class": "NEW_FILE_EXISTING_DIRECTORY",
+        "measured": "tests/postgres/ exists at START_HEAD with the *.pg.test.ts convention (b2/b3/b4/b5-completeness.pg.test.ts plus their harness and probes files and disposable-db.ts).",
+        "hosts": "PG-1 and PG-3, the base's two MANDATORY real-PostgreSQL probes.",
+        "convention_measured": "Gated on `process.env.UELLIX_PG_TESTS === '1'` (Docker required), run through the canonical disposable harness scripts/db-audit-disposable.ts — throwaway container on 127.0.0.1, ephemeral port, no bind mounts, teardown in finally, leftover check. SKIPPED, never silently passed, when the gate is off. Never staging, never production, never the canonical local stack.",
+        "companion_files_permitted": "If and only if the implementation follows the b3/b4/b5 pattern, a `tests/postgres/ce1-commercial-account-harness.ts` and a `tests/postgres/ce1-commercial-account.probes.json` are authorized as part of THIS entry. Any other tests/postgres/** path is a STOP_FOR_AUTHORITY_DELTA."
+      }
+    ],
+    "EVIDENCE": [
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+        "protected": false,
+        "why": "The implementation mission's own evidence artifact, mirroring docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json. Created by the implementation mission, NOT by this one.",
+        "prohibition": "It may NOT coin a known-condition identifier. A condition is governed only if it exists in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json. See KNOWN_CONDITIONS."
+      }
+    ],
+    "EXPLICITLY_NOT_AUTHORIZED": [
+      "db/prepared/** other than db/prepared/journal/** and db/prepared/checkpoint-b0/observation.sql. In particular NOT db/prepared/checkpoint-a1/corroboration.sql (measured: buildA1CorroborationSql() takes no arguments and derives from the witness registry, not the corpus tables — a new public table does not make it stale), NOT db/prepared/hosted/**, NOT db/prepared/storage/**, NOT any stella_*/stella_hosted_*/stella_local_* package, NOT db/prepared/README.md, NOT db/prepared/class-c/**, NOT db/prepared/prechain/**.",
+      "db/prepared-package-order.ts — CE-1 appends nothing to the prepared chain and registers no supersession. SW-3 names a 'Commercial account/entitlement package' as a writer of that file; that writer is a LATER CE node, not CE-1.",
+      "db/baseline/** — never touched by any CE node.",
+      "db/policies/** — CE-1 creates zero policies, so it creates no policy unit.",
+      "db/identity-context.ts — prohibited by MUT-10, restated.",
+      "scripts/ods-scope.ts — the PROTECTED_GRANTS registration is a separate governed act by a lineage-granted mission, not part of the CE-1 implementation diff and not part of this mission.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json — frozen, byte-unchanged.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json and its companion test manifest — frozen, byte-unchanged.",
+      "artifacts/baseline-rehearsal/latest.json — OPTIONAL, not required. See KNOWN_CONDITIONS.",
+      "lib/**, app/**, components/** — CE-1 introduces no reader and no writer.",
+      "Any existing product test other than the five enumerated in EXISTING_TEST_INSTRUCTIONS."
+    ]
+  },
+
+  "MIGRATION_ORDINAL": {
+    "allocated_by_this_amendment": "NONE",
+    "measured_ceiling_at_START_HEAD": "0065 — db/migrations/0065_fib_sensitivity_model.sql is the highest .sql ordinal, and db/migrations/meta/_journal.json holds 66 entries with the highest idx = 65.",
+    "rule": "This is a MEASUREMENT of the ceiling at START_HEAD, NOT a reservation of 0066 for CE-1. A CE-1 implementation mission MUST re-measure the ceiling at ITS OWN base and take the next free ordinal there, exactly as the base authority's ordinal_rule requires and exactly as W2_B5_AUTHORITY_v1.0.0.json (MIGRATION_SLOT_FROZEN=NO) and WAVE3_AUTHORITY_v1.0.0.json (MIGRATION_AND_STAGE_CONTRACT.NO_ORDINAL_ALLOCATED) each require of their own lanes.",
+    "slug": "NOT FROZEN. The repository convention is a descriptive lowercase snake_case slug (measured: 0061_fib_disposition_governance_function_execute_revocation, 0062_fib_methodological_assumptions, 0065_fib_sensitivity_model). A CE-1-appropriate slug is the implementer's choice within that convention; this authority does not fabricate one because the slug propagates into the baseline unit id, the journal tag and the wrapper filename, and a fabricated slug would look like an allocation."
+  },
+
+  "BASELINE_GROWTH_CONTRACT": {
+    "measurement_binding": "All counts measured at START_HEAD a8a61a1 / TREE 57952b2, by IMPORTING the live modules rather than by reading test literals. Re-measure if the base moves.",
+    "measured_at_START_HEAD": {
+      "BASELINE_UNITS.length": 78,
+      "BASELINE_ORDER.length": 78,
+      "kind_drizzle_migration": 66,
+      "kind_supabase_migration": 2,
+      "kind_policy": 10,
+      "ordinals": "contiguous 1..78, last unit ordinal 78 id '0065_fib_sensitivity_model.sql' kind drizzle-migration",
+      "firstProvisioning_steps": 79,
+      "journal_wrapper_files": "79 files in db/prepared/journal/ = 000_journal_bootstrap.sql + 78 wrappers, highest 078_0065_fib_sensitivity_model.sql",
+      "drizzle_journal_entries": 66,
+      "EXPECTED.tables": 51,
+      "EXPECTED.rlsEnabledTables": 51,
+      "EXPECTED.policies": 139,
+      "hosted_baseline_gates": "all six PASS; manifestProblems=0; superuserFreeUnits=78; rehearsalFresh=true",
+      "measurement_commands": [
+        "tsx: import { BASELINE_UNITS, BASELINE_ORDER } from db/hosted/baseline-manifest — length and kind tally",
+        "tsx: import { deriveExpectedBaselineState } from db/hosted/baseline-postconditions — tables / rlsEnabledTables / policies",
+        "tsx: import { buildHostedBaselineGateEvidence, evaluateHostedBaselineGates } from tests/eval/stella-release/hosted-baseline-gate — unitCount, firstProvisioningPlannable, rehearsalFresh, gate verdicts",
+        "ls db/prepared/journal | wc -l",
+        "node: require('db/migrations/meta/_journal.json').entries.length"
+      ]
+    },
+    "growth_after_one_CE1_unit": {
+      "BASELINE_UNITS": "78 -> 79",
+      "BASELINE_ORDER": "78 -> 79",
+      "kind_drizzle_migration": "66 -> 67",
+      "kind_supabase_migration": "2 -> 2 (UNCHANGED)",
+      "kind_policy": "10 -> 10 (UNCHANGED — CE-1 creates zero policies and therefore no db/policies/** unit)",
+      "ordinals": "contiguous 1..79; the CE-1 unit takes ordinal 79",
+      "firstProvisioning_steps": "79 -> 80",
+      "journal_wrapper_files": "79 -> 80 (one new wrapper, prefix 079)",
+      "drizzle_journal_entries": "66 -> 67",
+      "EXPECTED.tables": "51 -> 52 (public.commercial_accounts enters)",
+      "EXPECTED.rlsEnabledTables": "51 -> 52 (public.commercial_accounts enters)",
+      "EXPECTED.policies": "139 -> 139 (UNCHANGED)",
+      "append_at_tail_justification": "MEASURED, not assumed. Baseline ordinal 78 is itself a drizzle-migration (0065), so the corpus tail is drizzle and a new tail drizzle migration appends at ordinal 79. The manifest's stated ordering rule interleaves policy and supabase units by DEPENDENCY, not by kind block — measured: policy unit 009 sits at ordinal 58 and policy unit 010 at ordinal 69, both mid-list. An implementation whose base has a non-drizzle tail MUST re-derive its own insertion position rather than assume the tail."
+    },
+    "corpus_invariant_preserved": {
+      "invariant": "At START_HEAD, EXPECTED.tables and EXPECTED.rlsEnabledTables are SET-EQUAL: 51 = 51, with zero tables lacking RLS and zero RLS entries lacking a table. Measured by set difference in both directions.",
+      "ce1_effect": "CE-1 preserves it at 52 = 52, because the CE-1 unit both creates commercial_accounts and enables RLS on it in the same file.",
+      "why_this_matters": "It bounds the base's CE1-F-3 novelty claim precisely. CE-1 is NOT novel in enabling RLS — every corpus table does. CE-1 is novel ONLY in combining ENABLE + FORCE with ZERO CREATE POLICY. The base's novel_pattern_disclosure is correct and this measurement sharpens rather than weakens it."
+    },
+    "FORCED_PINS_BY_DEPENDENCY_FAMILY": {
+      "rule": "Enumerated by DEPENDENCY FAMILY, not by grepping a literal. A literal-78 sweep MISSES family C by construction — that is the trap this section exists to close, and it is the same trap W2-B4's forced-pin sweep fell into and W2-B5's baseline_growth_contract named by line number.",
+      "family_A_raw_unit_count": {
+        "what": "Sites carrying the literal current unit count 78.",
+        "sites": [
+          "tests/hosted/baseline-manifest.test.ts:102 — the `it(...)` TITLE STRING 'has 78 units: 66 Drizzle, 2 Supabase, 10 policies'. A title is not an assertion and will not fail; leaving it stale is a documentation defect the reviewer sees, so it moves with the assertions.",
+          "tests/hosted/baseline-manifest.test.ts:103 — expect(BASELINE_UNITS).toHaveLength(78)",
+          "tests/hosted/baseline-manifest.test.ts:110 — the `it(...)` TITLE STRING 'numbers ordinals 1..78 contiguously, and BASELINE_ORDER is derived from them'",
+          "tests/hosted/baseline-manifest.test.ts:112 — Array.from({ length: 78 }, (_, i) => i + 1)",
+          "tests/hosted/baseline-manifest.test.ts:115 — expect(new Set(BASELINE_ORDER).size).toBe(78)",
+          "tests/hosted/baseline-journal-wrapper.test.ts:472 — expect(BASELINE_UNITS).toHaveLength(78)",
+          "tests/hosted/baseline-journal-wrapper.test.ts:473 — expect(BASELINE_ORDER).toHaveLength(78)",
+          "tests/hosted/operator-runner.test.ts:237 — expect(BASELINE_UNITS).toHaveLength(78)",
+          "tests/eval/stella-release/hosted-baseline-gate.test.ts:67 — expect(evidence.unitCount).toBe(78)",
+          "tests/eval/stella-release/hosted-baseline-gate.test.ts:68 — expect(evidence.superuserFreeUnits).toBe(78)",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:429 — const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 78"
+        ]
+      },
+      "family_B_kind_tally": {
+        "what": "Sites carrying the drizzle-migration kind count 66.",
+        "sites": [
+          "tests/hosted/baseline-manifest.test.ts:105 — expect(byKind('drizzle-migration')).toBe(66)"
+        ],
+        "unchanged_siblings": "tests/hosted/baseline-manifest.test.ts:106 (supabase-migration = 2) and :107 (policy = 10) do NOT move. An implementation that changes them has created a unit of the wrong kind."
+      },
+      "family_C_derived_N_plus_1": {
+        "what": "THE TRAP. A site whose value is BASELINE_ORDER.length + 1 and which therefore contains NO literal 78 anywhere.",
+        "sites": [
+          "tests/eval/stella-release/hosted-baseline-gate.ts:407 — firstProvisioning.steps.length === 79. The plan is 000_journal_bootstrap plus one step per BASELINE_ORDER entry, so 78 units yield 79 steps and 79 units yield 80.",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:402 — the derivation COMMENT '0065_fib_sensitivity_model.sql = 78 baseline units + 1 journal bootstrap' that explains :407"
+        ],
+        "proof_that_it_is_live_at_START_HEAD": "buildHostedBaselineGateEvidence(repoRoot) returns firstProvisioningPlannable=true at a8a61a1, which is exactly the assertion steps.length === 79 evaluating true. The pin is not dormant.",
+        "prohibition": "It MUST NOT be loosened to `>= 80`. The file states the reason in its own words: a plan that silently grew or shrank is exactly what this evidence exists to notice."
+      },
+      "family_D_derivation_comment_blocks": {
+        "what": "Running derivation ledgers above each pin, appended to by every batch. They are the audit trail that makes a moved pin reviewable.",
+        "sites": [
+          "tests/hosted/baseline-manifest.test.ts — the comment block ending at :101 ('78 units, 66 Drizzle.')",
+          "tests/hosted/baseline-journal-wrapper.test.ts — the comment block ending at :471 ('HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.')",
+          "tests/hosted/operator-runner.test.ts — the comment block ending at :236",
+          "tests/eval/stella-release/hosted-baseline-gate.test.ts — the comment block ending at :66",
+          "tests/eval/stella-release/hosted-baseline-gate.ts — the comment blocks ending at :402 and :428"
+        ],
+        "rule": "APPEND one new line naming the CE-1 node and its arithmetic (78 -> 79, 66 -> 67, 79 -> 80). NEVER rewrite, renumber or delete an existing line. Every prior line is a historical closure record of a prior batch."
+      }
+    },
+    "MUST_REMAIN_SELF_ADAPTING": {
+      "rule": "These sites derive from BASELINE_UNITS at runtime and MUST NOT be converted to literals. Freezing one would silently destroy a control.",
+      "sites": [
+        "tests/hosted/baseline-journal-wrapper.test.ts:51 — expect(Object.keys(generated.files)).toHaveLength(BASELINE_UNITS.length + 1)",
+        "tests/hosted/baseline-journal-wrapper.test.ts:444 — expect(commands).toHaveLength(BASELINE_UNITS.length + 1)",
+        "tests/hosted/baseline-journal-wrapper.test.ts:477 — expect(generated.commands).toHaveLength(BASELINE_UNITS.length + 1)",
+        "tests/hosted/baseline-journal-wrapper.test.ts 'admits no baseline unit outside the manifest' — wrapper-id set vs BASELINE_ORDER set",
+        "tests/hosted/baseline-postconditions.test.ts:115 — expect(EXPECTED.tables.length).toBeGreaterThan(25)",
+        "tests/hosted/baseline-postconditions.test.ts:164 — expect(EXPECTED.policies.length).toBeGreaterThan(90)",
+        "tests/hosted/checkpoint-b0.test.ts:278 — expect(sql).toBe(buildB0ObservationSql(EXPECTED.tables)) — a byte comparison against the generator, which is why the TEST needs no edit but the generated FILE must be regenerated",
+        "tests/prepared-sql-source-of-truth.test.ts:96 and :130 — readdirSync sweeps over db/migrations and db/migrations/meta that impose GATE_MANAGED_TABLES constraints on any new migration and snapshot. Self-adapting; CE-1 satisfies them because commercial_accounts is not a gate-managed table."
+      ]
+    },
+    "EXPLICIT_NON_PINS": {
+      "rule": "Sites that LOOK like corpus counts and are NOT. Named so an implementer does not 'fix' a control into uselessness.",
+      "sites": [
+        "tests/hosted/operator-runner.test.ts:717 — expect(expectation.rlsEnabledTables).toHaveLength(24). MEASURED: `expectation` here is unitStructuralExpectation(baselineUnit('0031_rls_core.sql'), source) inside `describe('the unit 032 false negative')`. It is a PER-UNIT count for migration 0031, not the corpus aggregate. CE-1 does NOT move it. Changing it to 25 would be a defect.",
+        "tests/hosted/operator-runner.test.ts:701 — expect(expectation.policies).toHaveLength(69). Same per-unit scope, same non-pin.",
+        "tests/hosted/baseline-postconditions.test.ts:195 — expect(BASELINE_POSTCONDITIONS).toHaveLength(18). The count of canonical postconditions, unrelated to corpus size.",
+        "tests/hosted/baseline-postconditions.test.ts:247 and :248 — per-table expected COLUMN counts for governed_model_registry (9) and proxy_material_fields_registry (109). Unrelated to corpus size.",
+        "db/hosted/baseline-manifest.ts BASELINE_GLOBAL_INVARIANTS — superuserDependencies/roleStatements/ownershipStatements/extensionStatements all 0, with no per-unit opt-out. CE-1's DDL introduces none of the four, so these stay 0 and are not edited."
+      ]
+    },
+    "HISTORICAL_CLOSURE_PINS_UNTOUCHED": "No ODS maintenance addendum, no W2_B*/WAVE3 authority, no *_IMPLEMENTATION_EVIDENCE, no *_CLOSURE_AUDIT, no KNOWN_TEST_CONDITIONS entry and no sealed FIB/PC-01B/IM-01B artifact is edited, renumbered or reinterpreted by a CE-1 implementation. Their recorded counts describe the corpus AS IT WAS at their own closure and remain correct as history."
+  },
+
+  "BASELINE_UNIT_SHAPE": {
+    "principle": "This section freezes only what is knowable BEFORE the migration bytes exist. Everything that is a function of those bytes is a DERIVATION RULE plus the exact command that computes it — never a fabricated value.",
+    "NOT_FROZEN_MUST_NOT_BE_FABRICATED": {
+      "ordinal_of_the_migration_file": "Depends on the ceiling at the implementer's own base. See MIGRATION_ORDINAL.",
+      "slug": "Implementer's choice within the repo convention. Propagates into id, tag and wrapper filename.",
+      "sha256": "SHA-256 of the LF-normalized migration file. Cannot exist before the file does. Computed by the manifest verifier itself (db/hosted/hosted-package-manifest.sha256OfSql over the file with \\r\\n? normalized to \\n) and reported by `pnpm baseline:verify`. Any sha256 written into an authority before the file exists would be fiction.",
+      "securitySurfaceDigest_if_non_empty": "See the derivation below — for CE-1 as frozen it is provably the empty-surface digest and the field is therefore OMITTED, but if a future CE-1 variant acquired a policy or a SECURITY DEFINER body the digest would be a function of that text and must be computed, never guessed.",
+      "journal_when": "The drizzle _journal.json epoch-millisecond timestamp. Non-deterministic by nature."
+    },
+    "FROZEN_DERIVATION_RULES": {
+      "kind": "'drizzle-migration'. Derived from the unit's directory: db/migrations/NNNN_*.sql is the drizzle chain (db/hosted/baseline-manifest.ts BaselineUnitKind). Not 'supabase-migration' (supabase/migrations/*.sql) and not 'policy' (db/policies/NNN_*.sql).",
+      "file": "'db/migrations/<ORDINAL>_<slug>.sql' — repo-relative, POSIX separators, exactly as every other drizzle unit.",
+      "id": "The BASENAME of `file`, including the .sql extension. Measured convention: id '0065_fib_sensitivity_model.sql' for file 'db/migrations/0065_fib_sensitivity_model.sql'. The id is what dependsOn and BASELINE_ORDER reference, and what the wrapper filename suffixes.",
+      "ordinal": "The next contiguous integer after the current maximum. At START_HEAD that is 79. Re-derived, never assumed.",
+      "dependsOn": "IDS, never ordinals — 'an insertion in the middle must not silently re-point a dependency at a different unit' (db/hosted/baseline-manifest.ts). For CE-1 the correct value is the id of the immediately preceding drizzle unit at the implementer's base (at START_HEAD: ['0065_fib_sensitivity_model.sql']). CE-1 has NO second dependency: it creates a brand-new table and one nullable FK on organizations, both of which exist far earlier in the chain, and it enables RLS without referencing any helper function, so it needs no edge to 0031_rls_core.sql or to any policy unit. A dependency on 0031 would be a false edge.",
+      "dml": "'none'. CE-1 is pure DDL. It inserts, updates and deletes nothing — the base's ORGANIZATION_FK.nullable_meaning is explicit that no writer sets the column at CE-1.",
+      "managed": "'A-hosted-compatible'. CE-1 is CREATE TABLE / ADD COLUMN / ADD CONSTRAINT / CREATE INDEX plus two ALTER TABLE ... ROW LEVEL SECURITY statements on schema public, all of which managed Supabase grants `postgres`. It is NOT 'B-hosted-compatible-given-supabase' — that class is used where a unit depends on something the managed platform supplies (auth/storage schemas, auth.uid()), and CE-1 references neither auth nor storage.",
+      "reapply": "'destructive-on-reapply'. The drizzle chain is forward-only; CREATE TABLE without IF NOT EXISTS fails on a second application. NOT 'idempotent' — that class is reserved for units whose every statement is guarded (the manifest verifier cross-checks the claim against the scan for policy units).",
+      "managedNote": "One reviewable sentence naming the CE-1 node, the objects created, and the RLS posture. It MUST record that the table is created with ENABLE + FORCE ROW LEVEL SECURITY and ZERO policies, and that this is deliberate — the manifest is where a reviewer looks first and the absence of policies must not read as an omission (base CE1-F-3).",
+      "rollback": "The PLAIN_DDL text is correct and should be used: applied with psql -1 so a failure inside the unit rolls the unit back whole; no reverse script, because the drizzle chain is forward-only and a partially advanced chain is recovered by DESTROY_AND_REPROVISION, not by hand.",
+      "equivalentTo": "ABSENT. That field exists only for the A2 policy units that repeat a migration's content. CE-1 is not one.",
+      "expect": "EXACTLY { rlsEnabledTableCount: 1 }. Every other field of BaselineExpectedScan defaults to the safe value and MUST be left unstated — the verifier spreads `...unit.expect` over a full set of zero/false defaults, so an unstated field is asserted to be safe rather than unchecked."
+    },
+    "SCANNER_BEHAVIOUR_RE_DERIVED": {
+      "why": "This authority is required to prove the expected rlsEnabledTableCount rather than assume it, because CE-1 writes TWO RLS statements against one table and the naive expectation is 2.",
+      "matcher_quoted_verbatim": "db/hosted/baseline-scanner.ts: const rls = statement.match(/^ALTER\\s+TABLE\\s+\"?([\\w.]+)\"?[^;]*\\bENABLE\\s+ROW\\s+LEVEL\\s+SECURITY/i); if (rls) rlsEnabledTables.push(qualify(rls[1]))",
+      "machine_proof": "The matcher was applied, byte-for-byte as quoted, to the six statements a drizzle-generated CE-1 migration plus its hand-authored RLS tail produces. Result: `ALTER TABLE \"commercial_accounts\" ENABLE ROW LEVEL SECURITY` MATCHES (true); `ALTER TABLE \"commercial_accounts\" FORCE ROW LEVEL SECURITY` DOES NOT MATCH (false) — the pattern requires the literal token ENABLE and FORCE supplies no such token. tablesCreated = ['commercial_accounts']; rlsEnabledTables = ['commercial_accounts']; length = 1.",
+      "PROVEN_VALUE": "rlsEnabledTableCount: 1. NOT 2.",
+      "FORCE_IS_INVISIBLE_TO_THE_SCAN": "MEASURED: `grep -n 'FORCE' db/hosted/baseline-scanner.ts` finds no handling of FORCE ROW LEVEL SECURITY anywhere. The structural scan therefore pins the ENABLE and cannot see the FORCE. The FORCE statement is protected by the unit's sha256 ALONE — remove it and the hash changes, but no SCAN_MISMATCH is produced and no expect field moves. This is recorded as non-blocking finding CE1-A-F-1 and is a live obligation for the CE-1 test host, which must assert the FORCE statement's presence directly rather than relying on the manifest to notice its removal.",
+      "securitySurfaceDigest_derivation": "MEASURED: db/hosted/baseline-scanner.ts pushes into `securitySurface` in exactly two places — a CREATE POLICY predicate (line 350) and a SECURITY DEFINER function body (line 363). ENABLE and FORCE ROW LEVEL SECURITY contribute NOTHING. CE-1 creates zero policies and zero definers, so securitySurface is the empty array, its join('\\n') is the empty string, and sha256OfSql('') = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855, which is exactly EMPTY_SECURITY_SURFACE_DIGEST and exactly the verifier's default. THEREFORE the field is OMITTED from `expect`, per the manifest's own stated convention: 'Omitted means the unit has no policy and no definer, and the verifier expects the digest of the empty string.' Writing the literal digest instead of omitting it would be legal but non-conventional; omitting it is the frozen instruction.",
+      "trap_note": "e3b0c442... is the SHA-256 of the empty string. If a future mission computes a unit digest and gets that value for a unit that DOES have a policy or definer, it hashed nothing — that is a measurement error, not an empty surface."
+    },
+    "VERIFICATION_COMMAND": "pnpm baseline:verify — reports SHA_MISMATCH for an unannounced edit, SCAN_MISMATCH for an announced edit that changes what the unit DOES, and UNKNOWN_FILE for a migration no unit claims."
+  },
+
+  "JOURNAL_RULE": {
+    "chain_frozen": "migration -> baseline position -> journal wrapper. Each step is mechanical and each is stated with its measured mechanism.",
+    "step_1_migration_to_baseline_position": "The new db/migrations/**.sql becomes ONE BaselineUnit whose ordinal is the next contiguous integer (79 at START_HEAD). See BASELINE_UNIT_SHAPE.",
+    "step_2_baseline_position_to_wrapper_filename": "MEASURED, quoted verbatim from db/hosted/baseline-journal-wrapper.ts:86 — `return `${JOURNAL_WRAPPER_DIR}/${String(unit.ordinal).padStart(3, '0')}_${unit.id}`` with JOURNAL_WRAPPER_DIR = 'db/prepared/journal'. The wrapper's three-digit prefix IS the baseline ordinal, and its suffix IS the unit id verbatim. Corroborated against the corpus: baseline ordinal 78, unit id '0065_fib_sensitivity_model.sql', wrapper 'db/prepared/journal/078_0065_fib_sensitivity_model.sql'.",
+    "wrapper_ordinal_allocated_by_this_authority": "NONE",
+    "wrapper_ordinal_rationale": "The wrapper prefix is a DERIVED CONSEQUENCE of the baseline ordinal, which is itself a consequence of the migration ordinal, which this authority does not allocate. At START_HEAD the derivation would yield prefix 079; that is a prediction of the derivation, not a reservation.",
+    "step_0_is_not_a_unit": "db/prepared/journal/000_journal_bootstrap.sql creates the ledger and is NOT a baseline unit. BASELINE_ORDER does not contain it and no BaselineUnit has it as its file. This is why the journal directory holds N+1 files for N units, and why firstProvisioning plans N+1 steps for N units. Two correct sentences that describe different things — do not reconcile them by inventing an extra unit.",
+    "generation": {
+      "generate": "pnpm journal:generate",
+      "verify": "pnpm journal:verify",
+      "rule": "Wrappers are GENERATED, never hand-edited. A hand-edited wrapper is a wrapper the generator will overwrite and the verifier will reject."
+    },
+    "protection": "db/prepared/journal/** matches DEFAULT_PROTECTED_PATTERNS entry 'db/prepared/**'. Writing a wrapper therefore requires BOTH a resolved protected grant covering db/prepared/journal/** AND an ordinary --allow covering the same path. Neither substitutes for the other."
+  },
+
+  "PROTECTED_GRANT_REQUIRED": {
+    "required": true,
+    "allocated_by_this_amendment": "NONE",
+    "rationale_measured": "scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS at START_HEAD is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. Three of CE-1's writer paths fall inside it: db/migrations/** (the .sql, the snapshot and _journal.json), db/prepared/journal/** (the wrapper) and db/prepared/checkpoint-b0/observation.sql. Absent a resolved grant naming CE-1's implementation branch, all three are unconditional protectedViolations. NOTHING under db/migrations or db/prepared is changed by THIS mission.",
+    "SYMBOLIC_GRANT_ALLOWED": "YES",
+    "adjudication": {
+      "question": "Can this amendment be frozen now with a structurally SYMBOLIC, UNALLOCATED protected-grant requirement, with a future ODS addendum binding the actual authorityId later WITHOUT editing this amendment?",
+      "verdict": "YES. Repository doctrine at START_HEAD affirmatively provides for exactly this form, and the alternative reading is falsified by live artifacts.",
+      "evidence": [
+        "E1 — THE BASE ITSELF. docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json was frozen with NO GRANT_ID at all: LINEAGE.next_symbolic_ods_lineage.allocated_by_this_mission = 'NONE', future_lineage_symbolic_only, final_state '..._WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_GRANT', READY_FOR_CE1_IMPLEMENTATION 'NO_UNTIL_LINEAGE_GRANTED'. It passed independent audit and is an ancestor of START_HEAD. A CE-1 authority frozen without a bound grant is therefore already accepted doctrine, and this amendment is strictly the same posture.",
+        "E2 — THE NAMED DOCTRINAL FORM. docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json carries a section FUTURE_ODS_NEEDS_SYMBOLIC whose rule reads: 'THIS MISSION ALLOCATES NOTHING. Every identifier below is SYMBOLIC — a description of what a FUTURE mission will need, never a reservation, never a name-as-allocated. This mirrors the form used by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15/16/17, where naming a successor is a PROHIBITION, not an allocation.' It includes NEXT_AVAILABLE_HPO_ID with allocated_by_this_mission = 'NONE' and an anticipated protected-surface list. That artifact is frozen and integrated.",
+        "E3 — THE BINDING HAPPENED LATER, WITHOUT EDITING THE FROZEN ARTIFACT. docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json subsequently bound the concrete GRANT_ID 'HPO-ODS-W2-20' for that same lane. MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json was NOT edited to absorb it. That is precisely the mechanism this amendment relies on.",
+        "E4 — THE SAME FORM IS IN CURRENT USE. docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json (integrated at merge 1c1dccf, an ancestor of START_HEAD) carries its own FUTURE_ODS_NEEDS_SYMBOLIC with NEXT_HPO_ODS_ID.allocated_by_this_mission = 'NONE' and an explicit_non_allocation clause, plus grants_a_future_mission_will_need listing anticipated protected surfaces without an id.",
+        "E5 — DECLARATION AND REGISTRATION ARE ALREADY SEPARATE ACTS. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json declares protected_grant { authorityId: 'HPO-ODS-W2-20', branch: 'codex/multiorg-s1-founder-traceability-r1', patterns: ['db/migrations/**'] } with registration_status 'DECLARED_NOT_REGISTERED'. Measured: `grep -c HPO-ODS-W2-20 scripts/ods-scope.ts` = 0 at START_HEAD; the live registry holds exactly ten ids (W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17). A declared-but-unregistered grant is a live, governed state — so a grant that is not yet even declared is a fortiori not a freeze blocker."
+      ],
+      "counter_argument_considered_and_rejected": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json carries a concrete GRANT_ID (HPO-ODS-W2-17) and asserts 'source_of_truth: This object', with scripts/ods-scope.ts and the companion addendum required to equal it, mechanically checked in tests/ods/ods-scope.test.ts. That could be read as 'a node authority must contain a concrete GRANT_ID before it can be frozen'. It is NOT such a rule: W2-B5's mission HELD lineage allocation authority and materialized its companion addendum v1.0.16 in the same act, so the id was available to it. The clause binds the THREE COPIES of an allocated grant to each other; it does not require the allocation to happen inside the node authority. E1..E5 show four frozen, audited, integrated authorities that carry no GRANT_ID at all.",
+      "consequence": "No STOP_FOR_LINEAGE_DEPENDENCY. This amendment is materialized with a symbolic, unallocated grant requirement and a fully specified PATTERN SHAPE, which is the part a future addendum needs and the only part this mission is competent to freeze.",
+      "no_placeholder_edit": "This amendment contains NO placeholder to be filled in later. GRANT_ID is null and FUTURE_PROTECTED_GRANT_SHAPE.authorityId is the string 'UNALLOCATED'. The future binding happens in the future ODS addendum and in scripts/ods-scope.ts, NOT by editing this frozen artifact. Editing a frozen artifact to fill a placeholder is not authorized by anything and is not contemplated here."
+    },
+    "FUTURE_PROTECTED_GRANT_SHAPE": {
+      "authorityId": "UNALLOCATED",
+      "branch": "UNALLOCATED — the CE-1 implementation branch, which does not exist at START_HEAD. A grant is bound to exactly ONE branch.",
+      "patterns": [
+        "db/migrations/**",
+        "db/prepared/journal/**",
+        "db/prepared/checkpoint-b0/observation.sql"
+      ],
+      "narrowness_rationale": {
+        "db/migrations/**": "A glob is unavoidable and is the established form for a lane whose ordinal is not yet allocated: literal paths cannot be written before the ordinal is known. Precedent: HPO-ODS-W2-01, HPO-ODS-W2-12 and HPO-ODS-W2-17 each use this exact glob for exactly this reason, and HPO-ODS-W2-17's registry comment states it explicitly ('The concrete migration ordinals cannot be literals here'). The glob covers the .sql, meta/<ordinal>_snapshot.json and meta/_journal.json in one pattern, which is correct — drizzle-kit writes all three in one act.",
+        "db/prepared/journal/**": "Directory-scoped, and DELIBERATELY NOT db/prepared/**. scripts/ods-scope.ts states the reason in its own words: a grant for db/prepared/journal/** must never authorize db/prepared/sibling.sql, because classifyPaths checks the CONCRETE path against the SUPPLIED grant's own patterns and never against the broader default pattern that made it protected. A blanket db/prepared/** would reach the hosted and local bootstrap packages that the P1A and hosted lanes own (stella_hosted_0000/0001, stella_local_0000, db/prepared/storage/**, db/prepared/README.md) and db/prepared/checkpoint-a1/corroboration.sql, none of which CE-1 touches.",
+        "db/prepared/checkpoint-b0/observation.sql": "ONE exact literal path, no glob. db/prepared/checkpoint-b0/ holds exactly that one file at START_HEAD, so even a directory pattern would grant strictly more than the classifier can justify. Precedent for this exact literal: HPO-ODS-W2-07, HPO-ODS-W2-16 and HPO-ODS-W2-17."
+      },
+      "PROHIBITED_PATTERNS": [
+        "db/prepared/** — blanket. Explicitly rejected above.",
+        "db/baseline/** — CE-1 touches nothing there.",
+        "docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** — sealed corpora, never in a CE-1 grant.",
+        "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json — never."
+      ],
+      "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. Both remain mandatory. This is the same clause W2_B5_AUTHORITY_v1.0.0.json states and it is restated here because it is the single most common misreading of the mechanism.",
+      "no_existing_grant_reused_or_widened": "HPO-ODS-W2-01, -02, -03, -07, -08, -09, -11, -12, -16 and -17 are FROZEN, each bound to a branch that is not CE-1's, and none is widened, amended, rebranched or reused by this amendment or by a future CE-1 implementation. HPO-ODS-W2-20 belongs to the Multi-org S1 lane on branch codex/multiorg-s1-founder-traceability-r1 and is likewise not reused.",
+      "separate_entry_rule": "If a future addendum needs to add a CE-1 surface that its first grant did not cover, it must create a SEPARATE registry entry rather than widen the first — even when the two share a branch. Measured precedent: HPO-ODS-W2-16 is a deliberately separate entry on the same branch codex/w2-b4-r1 as HPO-ODS-W2-12, and the registry comment says so ('W2-12 is FROZEN at its two patterns and is never widened, and resolveProtectedGrants unions only the ids a caller actually supplies')."
+    },
+    "FUTURE_ODS_NEEDS_SYMBOLIC": {
+      "rule": "THIS MISSION ALLOCATES NOTHING. Every identifier below is SYMBOLIC — a description of what a FUTURE mission will need, never a reservation and never a name-as-allocated. This mirrors the form used by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15/16/17/18/19, MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json and WAVE3_AUTHORITY_v1.0.0.json, where naming a successor is a PROHIBITION, not an allocation.",
+      "NEXT_ODS_ADDENDUM_ORDINAL": {
+        "symbolic": "The ODS maintenance addendum ordinal immediately after the highest present at the future mission's own base.",
+        "measured_highest_present_at_START_HEAD": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json",
+        "allocated_by_this_mission": "NONE",
+        "explicit_non_allocation": "v1.0.20 is NOT allocated, reserved or pre-created here."
+      },
+      "NEXT_HPO_ODS_ID": {
+        "symbolic": "The HPO-ODS-W2 grant immediately after the highest present at the future mission's own base.",
+        "measured_highest_in_the_LIVE_REGISTRY_at_START_HEAD": "HPO-ODS-W2-17 (scripts/ods-scope.ts PROTECTED_GRANTS holds exactly ten ids)",
+        "measured_highest_ALLOCATED_anywhere_at_START_HEAD": "HPO-ODS-W2-20 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json, GRANT_ID; registration_status DECLARED_NOT_REGISTERED)",
+        "measured_highest_NAMED_anywhere_at_START_HEAD": "HPO-ODS-W2-21 — measured to appear ONLY inside prohibition/no_preallocation clauses of ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json and MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json, each of which says in its own words that naming it is a PROHIBITION, never an allocation. This amendment likewise names it only to record that it is NOT allocated here.",
+        "allocated_by_this_mission": "NONE",
+        "explicit_non_allocation": "HPO-ODS-W2-21 is NOT allocated, reserved or pre-created here. Neither is any other id."
+      },
+      "lineage_sequencing_gate_measured": "At START_HEAD, scripts/ods-controller.ts DOES enumerate v1.0.19 (grep -c 'v1.0.19' = 2) and does NOT enumerate v1.0.20 (grep -c 'v1.0.20' = 0). The v1.0.19 STOP_FOR_LINEAGE_SEQUENCING condition — which fires when a mission finds v1.0.19 unenumerated and attempts to allocate v1.0.20 or HPO-ODS-W2-21 — is therefore NOT currently tripped. This mission complies trivially by allocating nothing, and this measurement is recorded for the future allocating mission's benefit only; that mission must re-measure at its own base.",
+      "offset_invariant_not_relied_upon": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json records a measured offset invariant (GRANT_ID ordinal === addendum patch version + 1, ten of ten with zero exceptions). This amendment does NOT apply it to derive a CE-1 identifier, because applying it would BE an allocation.",
+      "controller_obligation": "Any artifact a future CE-1 lineage produces that lands in the ODS immutable-by-convention set must be enumerated by the Controller. scripts/ods-controller.ts records that the membership test is EXACT, never a subset — an unenumerated addendum is a lineage hole."
+    }
+  },
+
+  "EXISTING_TEST_INSTRUCTIONS": {
+    "basis": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment'. The following IS that instruction, path by path.",
+    "protection_note": "Requiring an ODS instruction is NOT the same as matching DEFAULT_PROTECTED_PATTERNS. None of the five paths below is protected and none receives or needs a protected grant. All five need an ordinary --allow only.",
+    "count": 5,
+    "granted_paths": [
+      {
+        "path": "tests/hosted/baseline-manifest.test.ts",
+        "authorized_adjustment": "Move the raw unit count 78 -> 79 at lines 103, 112 and 115, the drizzle kind count 66 -> 67 at line 105, and the two `it(...)` title strings at lines 102 and 110 so they name the new counts. APPEND one derivation line to the comment block ending at line 101.",
+        "prohibited_in_the_same_file": "Do NOT change line 106 (supabase-migration = 2) or line 107 (policy = 10). Do NOT loosen any equality to an inequality. Do NOT touch the BASELINE_DELIBERATE_EXCLUSIONS tests or the db/manual-migrations sweep."
+      },
+      {
+        "path": "tests/hosted/baseline-journal-wrapper.test.ts",
+        "authorized_adjustment": "Move 78 -> 79 at lines 472 and 473. APPEND one derivation line to the comment block ending at line 471.",
+        "prohibited_in_the_same_file": "Lines 51, 444 and 477 use BASELINE_UNITS.length + 1 and MUST remain self-adapting. The 'admits no baseline unit outside the manifest' set comparison MUST remain derived. Do NOT convert any of them to a literal."
+      },
+      {
+        "path": "tests/hosted/operator-runner.test.ts",
+        "authorized_adjustment": "Move 78 -> 79 at line 237. APPEND one derivation line to the comment block ending at line 236.",
+        "prohibited_in_the_same_file": "Do NOT touch line 717 (rlsEnabledTables toHaveLength(24)) or line 701 (policies toHaveLength(69)). Both are PER-UNIT expectations scoped to baselineUnit('0031_rls_core.sql') inside describe('the unit 032 false negative'), not corpus aggregates. Changing either would be a defect, not a repair."
+      },
+      {
+        "path": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+        "authorized_adjustment": "Move 78 -> 79 at lines 67 and 68. APPEND one derivation line to the comment block ending at line 66.",
+        "prohibited_in_the_same_file": "No other assertion in this file is authorized to move."
+      },
+      {
+        "path": "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "authorized_adjustment": "Move the raw unit count 78 -> 79 at line 429, AND move the DERIVED N+1 step count 79 -> 80 at line 407. APPEND one derivation line to each of the two comment blocks ending at lines 402 and 428.",
+        "why_this_file_is_both_a_gate_and_a_host": "It is source, not a .test.ts, but it carries the two live assertions the gate evaluates and is therefore an existing product-test host in substance. Line 407 is the N+1 trap: it contains no literal 78 and a literal-78 sweep misses it.",
+        "prohibited_in_the_same_file": "Do NOT loosen `firstProvisioning.steps.length === 80` to `>= 80`, and do NOT loosen `evidence.unitCount === 79`. The file states the reason itself: a plan that silently grew or shrank is exactly what this evidence exists to notice."
+      }
+    ],
+    "no_wildcard": "No tests/** grant. No tests/hosted/** grant. No tests/eval/** grant. No lib/** grant. No other existing product test is authorized by this amendment.",
+    "sixth_host_adjudication": {
+      "question": "Is a SIXTH existing product-test host mechanically required by CE-1?",
+      "answer": "NO — measured, not assumed.",
+      "candidates_examined_and_cleared": [
+        "tests/hosted/baseline-postconditions.test.ts — its corpus-sensitive assertions are toBeGreaterThan(25) for tables and toBeGreaterThan(90) for policies. Monotone growth satisfies both. BASELINE_POSTCONDITIONS toHaveLength(18) counts postconditions, not units. The two per-table column counts (9, 109) are unrelated. NOT a host.",
+        "tests/hosted/checkpoint-b0.test.ts — line 278 asserts the on-disk observation.sql equals buildB0ObservationSql(EXPECTED.tables) after CRLF normalization. The TEST is self-adapting; what must change is the GENERATED FILE, which is already enumerated as a BASELINE_WRITER. NOT a host.",
+        "tests/prepared-sql-source-of-truth.test.ts — readdirSync sweeps over db/migrations and db/migrations/meta imposing GATE_MANAGED_TABLES constraints. Self-adapting, and CE-1 satisfies them because commercial_accounts is not gate-managed. NOT a host.",
+        "tests/assignment-version-immutability.test.ts and tests/hosted/prechain-ownership.test.ts — both readdir db/migrations and apply content rules to whatever they find. Self-adapting constraints, no count to move. NOT hosts.",
+        "tests/hosted/checkpoint-a1.test.ts and db/prepared/checkpoint-a1/corroboration.sql — MEASURED: buildA1CorroborationSql() takes NO arguments and derives from the witness registry; its single count(*) is over uellix_bootstrap.staging_sentinel, not the corpus. A new public table does not make it stale. NOT a host and NOT a writer."
+      ],
+      "sweep_method": "Two independent sweeps, both over the repository at START_HEAD: (1) grep every tests/**/*.ts for the literals 78, 79, 66 and 65 in an assertion position, which found exactly the eleven family-A/B sites plus the one family-C site; (2) grep every tests/**/*.ts for readdirSync over db/migrations, db/migrations/meta, db/prepared and db/policies, which found five files, all self-adapting. Sweep (1) alone would have missed family C — it was the derivation-family enumeration, not the literal grep, that caught line 407.",
+      "stop_rule": "If a CE-1 implementation mission finds a sixth existing product-test host mechanically required at ITS OWN base, it MUST STOP_FOR_AUTHORITY_DELTA rather than extend this list on its own judgement."
+    }
+  },
+
+  "CROSS_LANE_CONSTRAINTS": {
+    "rule": "RECORDED, NOT ORDERED. This amendment records which surfaces CE-1 shares with which lane and why. It assigns NO landing order — that is a lane-coordination decision that exceeds this mission's authority, exactly as the base's CE1-F-2 already records.",
+    "CE1_x_MULTIORG_S1": {
+      "collision": "REAL, on two surfaces.",
+      "db/schema.ts": "SW-4 / CP-2. Both lanes edit it: CE-1 adds commercialAccounts + organizations.commercialAccountId + its index; S1 adds organizations.founded_by. MEASURED at START_HEAD: `grep -c 'commercial_account_id|commercialAccountId|founded_by|foundedBy' db/schema.ts` = 0. NEITHER is implemented, so the base's collision_statement remains exactly true.",
+      "db/migrations/**": "SW-5 / CP-1. Both need the next free ordinal. Whichever lands SECOND must rebase onto the state the first left, re-read db/schema.ts and db/migrations/meta/_journal.json at ITS OWN base, and take the next ordinal after whatever the first lane left. Never assume 0066 is available; never assume the base is still 0065.",
+      "baseline_machinery": "SHARED AND ADDITIVE. Both lanes drag the same BASELINE_WRITERS and the same five test hosts. The second lane to land inherits counts the first already moved — 78 -> 79 -> 80, 66 -> 67 -> 68, 79 -> 80 -> 81 — and MUST re-measure rather than apply the arithmetic in this document.",
+      "measured_grant_shape_of_the_S1_lane": "RECORDED WITHOUT ADJUDICATION. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json declares HPO-ODS-W2-20 on branch codex/multiorg-s1-founder-traceability-r1 with patterns ['db/migrations/**'] and registration_status DECLARED_NOT_REGISTERED. That is a fact about the S1 lane measured at START_HEAD. This amendment neither endorses nor challenges it, and draws no inference from it about CE-1's own grant shape, which is derived independently in FUTURE_PROTECTED_GRANT_SHAPE.",
+      "textual_merge_prohibition": "UNCHANGED from the base. A three-way textual merge of two additive schema.ts diffs can be syntactically clean and still silently drop an index or constraint. The correct sequencing is serial landing with a rebase, never a merge of two concurrent branches."
+    },
+    "CE1_x_MULTIORG_S2": {
+      "collision": "NONE.",
+      "measured_basis": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json records for S2: protected_grant_required = false, with the rationale 'No path S2 needs matches any of the seven DEFAULT_PROTECTED_PATTERNS entries. S2 touches no db/**... a direct consequence of the carrier being a session cookie rather than a database column.' S2 shares no writer, no migration ordinal and no baseline surface with CE-1."
+    },
+    "CE1_x_FIBDB053": {
+      "collision": "NO CONCRETE WRITER COLLISION. Shared protected/gate machinery only.",
+      "measured_basis": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json MIGRATION_AND_STAGE_CONTRACT.track_split places FIBDB-053 alone on the PREPARED_G2 track and every other Wave3 DB item on the DRIZZLE track. FIBDB-053 revises stella_0017's lineage under db/prepared/** and db/prepared/hosted/**; it writes no db/migrations/** file. CE-1 writes no db/prepared file except its generated journal wrapper and the regenerated checkpoint-b0 probe.",
+      "what_IS_shared": "The db/prepared/** PROTECTED SURFACE and the hosted gate machinery — which is precisely why CE-1's grant must be narrowed to db/prepared/journal/** plus the one checkpoint-b0 literal rather than blanket db/prepared/**. A blanket grant would reach the FIBDB-053 artifacts.",
+      "db/prepared-package-order.ts": "SW-3 names 'Commercial account/entitlement package' as a writer of that file. CE-1 is NOT that writer — it appends nothing to the prepared chain and registers no supersession. The writer is a later CE node."
+    },
+    "CE1_x_FIBIU19": {
+      "collision": "REAL — migration/baseline serialization.",
+      "measured_basis": "WAVE3_AUTHORITY_v1.0.0.json SHARED_WRITERS chokepoint SW-5 lists db/migrations/** with writers 'Wave3 FIBIU-19 (FIBDB-052) and FIBIU-20 (FIBDB-019/020/040/049)', 'Tenancy S-nodes' and 'Commercial package', resolution 'Serial, and ordinal allocation is explicitly NOT performed by this artifact'. FIBDB-052 is on the DRIZZLE track, so FIBIU-19 takes a db/migrations ordinal and drags the same baseline/journal/checkpoint-b0 consequences CE-1 does.",
+      "consequence": "Same rebase-and-re-measure rule as CE1 x S1. Both lanes move the same five test hosts."
+    },
+    "stale_claim_rule": "Where any earlier compilation conflicts with the BM/BL machine evidence or with the measurements in this document, the MACHINE EVIDENCE controls. No cross-lane claim in this section is carried over from prose — each is cited to a live artifact path read at START_HEAD.",
+    "no_ordinal_allocation": "RESTATED. Nothing in this section allocates, reserves or implies a migration ordinal for any lane, including CE-1."
+  },
+
+  "KNOWN_CONDITIONS": {
+    "SAME_CONDITION_RULE_PRESERVED": {
+      "rule": "UNCHANGED. A known test condition is identified by test_file + test_id, NEVER by filename alone — docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json states this of itself in the notes of KTC-HOSTED-BASELINE-REHEARSAL-STALE-02.",
+      "existing_conditions": [
+        "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 — tests/eval/stella-release/hosted-baseline-gate.test.ts, test_id 'the six baseline gates all pass', semantic_category HOSTED_BASELINE_REHEARSAL_FRESHNESS, evidence_artifact artifacts/baseline-rehearsal/latest.json.",
+        "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02 — same test_file, different test_id, same underlying cause."
+      ],
+      "PROHIBITION": "A CE-1 implementation mission MUST NOT coin a new KTC identifier merely because a deterministic baseline count moved. It MUST NOT create any KTC-CE1-* identifier. Measured precedent: W2_B5_AUTHORITY_v1.0.0.json prohibits exactly this, recording that W2-B4's first candidate coined two ungoverned KTC ids in its own evidence and its independent audit classified that as AUTHORITY_DELTA_REQUIRED; the remediation regenerated the derived artifacts instead and reached full CI green.",
+      "if_the_gate_goes_red": "It is the SAME CONDITION as KTC-01/-02, not a new one, and the correct response is to regenerate the derived artifact or to record the pre-existing deferral — never to invent an identifier and never to weaken the gate."
+    },
+    "rehearsal_artifact_disposition": {
+      "path": "artifacts/baseline-rehearsal/latest.json",
+      "requirement": "OPTIONAL. Not required by this amendment.",
+      "measured_state_at_START_HEAD": "manifestApplied = 78, manifestDigest = d26ada68a8dd77e6b09d3f5da26a251ba8cf7c0d0489564342d39bbfcf4e00f6, postconditionsPassed 18/18, and buildHostedBaselineGateEvidence reports rehearsalFresh = true with all six gates PASS. The artifact is CURRENT at START_HEAD.",
+      "mechanism": "MEASURED, quoted from tests/eval/stella-release/hosted-baseline-gate.ts:342 — `const rehearsalFresh = rehearsal?.manifestDigest === currentDigest`. Registering a 79th unit changes currentDigest, so rehearsalFresh flips to false and the gate hosted-baseline-rehearsal-ready goes red unless the artifact is regenerated.",
+      "regeneration_cost": "`pnpm baseline:rehearsal:local` requires Docker. It is the ONE writer in the CE-1 family that is not offline-deterministic.",
+      "disposition": "A CE-1 implementation mission MAY regenerate it if it has Docker, in which case artifacts/baseline-rehearsal/latest.json is authorized as an ordinary --allow path (artifacts/** is not protected). If it does not, the resulting red gate is KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/-02 recurring under the SAME-CONDITION rule and is recorded as such — NOT as a new condition, NOT as a CE-1 defect, and NOT as grounds to weaken the gate. Choosing to refresh it is an explicit choice of the implementation authority, not an obligation created here."
+    }
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "json_valid": "Parsed with node before publish. No repository JSON schema governs authority documents — only test manifests validate against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, and this artifact is not one.",
+    "base_artifact_byte_identity": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json blob SHA measured at START_HEAD as 2d83cdc6022f6faa87bfdab5a734b3d158e64a54 (git hash-object) and re-measured after this mission's write. Unchanged.",
+    "counts_independently_derived": "Every cardinality in BASELINE_GROWTH_CONTRACT was obtained by importing the live modules (db/hosted/baseline-manifest.ts, db/hosted/baseline-postconditions.ts, tests/eval/stella-release/hosted-baseline-gate.ts) and executing them at START_HEAD, not by reading a test literal or inheriting a predecessor's number. The test literals were then cross-checked against the executed values and agree.",
+    "scanner_behaviour_machine_proven": "The rlsEnabledTableCount = 1 result and the FORCE-is-invisible result were obtained by applying the scanner's own regular expression, copied byte-for-byte from db/hosted/baseline-scanner.ts, to the exact statement set a CE-1 migration produces. Not inferred from reading.",
+    "cross_references": "Every path, line number, identifier, quoted clause and measured count cited above was checked against the file it is attributed to, at START_HEAD.",
+    "secrets": "No secret, credential, token, connection string or project ref is referenced or embedded anywhere in this file.",
+    "authority_seal": "scripts/authority-seal-verify.ts checks a fixed corpus under docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** plus docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. docs/ops/commercial/** is not in it. This file cannot fail that gate and is not added to it.",
+    "ods_scope": "docs/ops/commercial/** is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (measured at START_HEAD). An ordinary --allow docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json is sufficient; no --protected-authority grant is required for this docs-only change.",
+    "ci": "One new JSON file under docs/ops/commercial/**. No code, schema, migration, generated artifact or test is touched, so no build/type/test CI surface is affected beyond the standard docs-diff gates."
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "unknown": [],
+    "non_blocking": [
+      {
+        "id": "CE1-A-F-1",
+        "class": "CONTROL_GAP_IN_AN_EXISTING_MECHANISM",
+        "finding": "The baseline structural scan cannot see FORCE ROW LEVEL SECURITY. db/hosted/baseline-scanner.ts matches only the ENABLE form and handles FORCE nowhere, so the CE-1 unit's expect pins rlsEnabledTableCount: 1 for the ENABLE statement and pins nothing at all for the FORCE statement. Removing the FORCE line from the migration would change the unit's sha256 — and nothing else. No SCAN_MISMATCH, no moved expect field.",
+        "why_it_matters_for_CE1_specifically": "FORCE is the half of CE-1's posture that binds the table OWNER. Without it, ENABLE plus zero policies still leaves the owner able to read and write every row, which is precisely what PG-3 exists to disprove.",
+        "disposition": "RECORDED. Not a defect in this amendment and not a reason to change the scanner. It becomes a hard obligation on the CE-1 test host: tests/commercial/ce1-commercial-account.test.ts MUST assert the presence of the FORCE ROW LEVEL SECURITY statement in the migration text directly, and tests/postgres/ce1-commercial-account.pg.test.ts MUST prove its runtime effect per PG-3. The manifest is not competent to notice its removal."
+      },
+      {
+        "id": "CE1-A-F-2",
+        "class": "IMPLEMENTATION_SURFACE_PRECISION",
+        "finding": "The base's IMPLEMENTATION_REFERENCE instructs that the new index be 'added to organizations' own (table) => [...] array'. MEASURED at START_HEAD: the organizations pgTable call has no third argument at all — it closes at db/schema.ts:46 with `})`. The array does not exist.",
+        "disposition": "RECORDED and CORRECTED in CE1_IMPLEMENTATION_SURFACE.RUNTIME_WRITERS. The implementer must CREATE the callback array. `check` and `index` are already imported at db/schema.ts:1, so no import edit is needed. This changes no product, schema or security semantic — the frozen index declaration is unchanged, only the mechanics of where it is written."
+      },
+      {
+        "id": "CE1-A-F-3",
+        "class": "OPEN_SEQUENCING_DECISION_CARRIED_FORWARD",
+        "finding": "Which of {CE-1 implementation, Multi-org S1 implementation, Wave3 FIBIU-19 implementation} lands first on db/schema.ts and the db/migrations ordinal sequence remains undecided. All three are ratified-but-unimplemented at START_HEAD.",
+        "disposition": "RECORDED, NOT RESOLVED. This restates and slightly widens the base's CE1-F-2 (which named only S1) with the measured Wave3 SW-5 writer set. Resolving it is a lane-coordination decision that exceeds this mission's authority."
+      },
+      {
+        "id": "CE1-A-F-4",
+        "class": "MEASURED_STATE_OF_A_SIBLING_LANE",
+        "finding": "HPO-ODS-W2-20 is declared in docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json with registration_status DECLARED_NOT_REGISTERED and is measurably absent from scripts/ods-scope.ts PROTECTED_GRANTS at START_HEAD (grep count 0; the live registry holds ten ids ending at HPO-ODS-W2-17).",
+        "disposition": "RECORDED AS MEASURED STATE ONLY. It is cited in this amendment solely as evidence that declaration and registration are separate governed acts (E5 of the SYMBOLIC_GRANT_ALLOWED adjudication). This amendment does not adjudicate the S1 lane's grant, its patterns, or its registration schedule, and draws no CE-1 conclusion from it."
+      }
+    ]
+  },
+
+  "self_check": {
+    "note": "Deterministic checks verifiable by inspection or a one-line grep/node command against this file and the repository at START_HEAD. Not a script.",
+    "expected_files_written_by_this_mission": 1,
+    "expected_file_path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "expected_base_blob_sha": "2d83cdc6022f6faa87bfdab5a734b3d158e64a54",
+    "expected_baseline_units_at_START_HEAD": 78,
+    "expected_baseline_units_after_CE1": 79,
+    "expected_drizzle_kind_at_START_HEAD": 66,
+    "expected_drizzle_kind_after_CE1": 67,
+    "expected_first_provisioning_steps_at_START_HEAD": 79,
+    "expected_first_provisioning_steps_after_CE1": 80,
+    "expected_rls_enabled_table_count_of_the_CE1_unit": 1,
+    "expected_security_surface_digest_field": "OMITTED",
+    "expected_runtime_writer_count": 4,
+    "expected_baseline_writer_count": 4,
+    "expected_existing_test_host_count": 5,
+    "expected_new_test_count": 2,
+    "expected_evidence_artifact_count": 1,
+    "expected_future_grant_pattern_count": 3,
+    "expected_ods_hpo_allocated": "NONE",
+    "expected_migration_ordinal_allocated": "NONE",
+    "expected_journal_wrapper_ordinal_allocated": "NONE",
+    "expected_protected_grants_registered_by_this_mission": 0,
+    "expected_symbolic_grant_allowed": "YES",
+    "expected_blocking_findings": 0,
+    "expected_unknown_findings": 0,
+    "checks": [
+      "CE1_IMPLEMENTATION_SURFACE.RUNTIME_WRITERS.length == 4 and BASELINE_WRITERS.length == 4",
+      "EXISTING_TEST_INSTRUCTIONS.granted_paths.length == 5 and equals EXISTING_TEST_INSTRUCTIONS.count",
+      "CE1_IMPLEMENTATION_SURFACE.NEW_TESTS.length == 2 and EVIDENCE.length == 1",
+      "FUTURE_PROTECTED_GRANT_SHAPE.patterns has exactly 3 entries and contains NO 'db/prepared/**'",
+      "FUTURE_PROTECTED_GRANT_SHAPE.authorityId == 'UNALLOCATED' and top-level GRANT_ID == null",
+      "PROTECTED_GRANT_REQUIRED.SYMBOLIC_GRANT_ALLOWED == 'YES' and no STOP_FOR_LINEAGE_DEPENDENCY is declared",
+      "FUTURE_ODS_NEEDS_SYMBOLIC.NEXT_ODS_ADDENDUM_ORDINAL.allocated_by_this_mission == 'NONE' and NEXT_HPO_ODS_ID.allocated_by_this_mission == 'NONE'",
+      "MIGRATION_ORDINAL.allocated_by_this_amendment == 'NONE' and JOURNAL_RULE.wrapper_ordinal_allocated_by_this_authority == 'NONE'",
+      "No string of the form 'HPO-ODS-W2-<n>' anywhere in this file appears as an allocation: every occurrence is inside a measurement, a precedent citation, a non-allocation clause or a not-reused clause",
+      "No ODS addendum version beyond v1.0.19 is stated as existing, and none is stated as allocated",
+      "BASELINE_GROWTH_CONTRACT.FORCED_PINS_BY_DEPENDENCY_FAMILY.family_C_derived_N_plus_1 names tests/eval/stella-release/hosted-baseline-gate.ts:407 and states that it contains no literal 78",
+      "EXPLICIT_NON_PINS names tests/hosted/operator-runner.test.ts:717 as scoped to unit 0031_rls_core.sql and NOT a corpus aggregate",
+      "MUST_REMAIN_SELF_ADAPTING lists every BASELINE_UNITS.length + 1 site in tests/hosted/baseline-journal-wrapper.test.ts",
+      "CE1_FROZEN_SEMANTICS_PRESERVED asserts 7 columns, the four-value closed CHECK set, nullable/no-default/no-backfill, ON DELETE RESTRICT, non-unique b-tree, ENABLE + FORCE with ZERO policies, live legacy stripe_*/stella_* columns, and no new companion test manifest",
+      "HOSTED_UNIT_REQUIRED_NARROWED.value == 'NO' and the false inference is explicitly prohibited",
+      "OPEN_FINDINGS.blocking is empty and OPEN_FINDINGS.unknown is empty",
+      "The base artifact is byte-unchanged: git hash-object of docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json == expected_base_blob_sha"
+    ]
+  },
+
+  "final_state": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_GRANT",
+  "READY_FOR_CE1_IMPLEMENTATION": "NO_UNTIL_LINEAGE_GRANTED",
+  "next_gate": "Independent Opus exact-object audit of this amendment against the frozen base and against the repository at START_HEAD. Merge only after that audit returns PASS with zero blocking and zero unknown findings."
+}
