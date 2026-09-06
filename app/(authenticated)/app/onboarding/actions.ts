@@ -105,6 +105,16 @@ export async function createFirstOrganization(formData: FormData) {
         country,
         sector,
         status: 'active',
+        // Multi-org S1 (MO-10 / MO-01): this is the self-service founding ACT,
+        // so the founder and the self-service provenance value are written
+        // HERE, in the same insert and the same transaction as the
+        // organisation row - never as a follow-up write that can be lost.
+        // founded_by is traceability only (PI-3); no authorization path reads
+        // it. The partial unique carrier organizations_self_service_founder_unique
+        // refuses a second self-service founding by the same subject at the
+        // database boundary (TENANCY_FOUNDER_CARDINALITY_EXCEEDED semantics).
+        foundedBy: authUser.id,
+        foundingProvenance: 'self_service',
       })
       .returning()
 
@@ -127,7 +137,7 @@ export async function createFirstOrganization(formData: FormData) {
       entityType: 'organization',
       entityId: org.id,
       action: 'organization.created',
-      afterJson: { name, slug, sector, country },
+      afterJson: { name, slug, sector, country, foundedBy: authUser.id, foundingProvenance: 'self_service' },
     })
 
     await logAuditAction({

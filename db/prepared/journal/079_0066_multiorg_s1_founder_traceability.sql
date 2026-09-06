@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 28/79: 0027_little_midnight.sql
+-- GENERATED — DO NOT EDIT. Unit 79/79: 0066_multiorg_s1_founder_traceability.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0027_little_midnight.sql
--- Source SHA256: fe90355b15a7182485806a0279ad28a043540bfd05071c58ce60789bfbfd7fb0
+-- Includes:      db/migrations/0066_multiorg_s1_founder_traceability.sql
+-- Source SHA256: 0f038b236fd868b373cffbbe0c8cd12244fdba8ace4065d61579a8162fb6b725
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/028_0027_little_midnight.sql
+--        -f db/prepared/journal/079_0066_multiorg_s1_founder_traceability.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0027_little_midnight.sql
+\ir ../../../db/migrations/0066_multiorg_s1_founder_traceability.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0027_little_midnight.sql', 'PHASE_BASELINE',
-   'fe90355b15a7182485806a0279ad28a043540bfd05071c58ce60789bfbfd7fb0', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0066_multiorg_s1_founder_traceability.sql', 'PHASE_BASELINE',
+   '0f038b236fd868b373cffbbe0c8cd12244fdba8ace4065d61579a8162fb6b725', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

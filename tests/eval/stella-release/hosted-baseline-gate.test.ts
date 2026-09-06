@@ -64,8 +64,12 @@ describe('the six baseline gates', () => {
     // both RLS-only, no superuser dependency, no DML) = 76.
     // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 (FIBIU-17/18, both
     // RLS-only, no superuser dependency, no DML) = 78.
-    expect(evidence.unitCount).toBe(78)
-    expect(evidence.superuserFreeUnits).toBe(78)
+    // HPO-ODS-W2-20/W2-21 (multi-org S1): + 0066 (ADD COLUMN founded_by /
+    // founding_provenance, the MO-01 partial unique carrier and the MO-11
+    // structural backfill; no superuser dependency, so superuserFreeUnits
+    // advances in lockstep with unitCount) = 79.
+    expect(evidence.unitCount).toBe(79)
+    expect(evidence.superuserFreeUnits).toBe(79)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',
@@ -75,6 +79,9 @@ describe('the six baseline gates', () => {
       '0048_fib_evidence_versions.sql',
       '0055_fib_proxy_material_change_registry.sql',
       '0056_fib_proxy_material_fields_editability.sql',
+      // Multi-org S1 (HPO-ODS-W2-20/W2-21, v1.0.21 FUNCTION_H): the MO-11
+      // structural backfill, one top-level UPDATE, zero literal row sources.
+      '0066_multiorg_s1_founder_traceability.sql',
     ])
     expect(evidence.literalRowSources).toBe(4)
     expect(evidence.mustNotRunUnits).toEqual([])
