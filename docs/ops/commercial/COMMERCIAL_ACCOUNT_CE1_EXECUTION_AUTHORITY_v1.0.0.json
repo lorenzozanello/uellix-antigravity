@@ -1,0 +1,306 @@
+{
+  "package_id": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "CE1_EXECUTABLE_TECHNICAL_AUTHORITY_FROZEN_WAITING_FOR_LINEAGE_ALLOCATION",
+  "mission_id": "COMMERCIAL-ACCOUNT-CE1-EXECUTION-AUTHORITY-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-05",
+  "companion_manifest": null,
+
+  "AS_OF_HEAD": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+  "AS_OF_TREE": "measured via git status --porcelain=v1 at AS_OF_HEAD: clean, zero output",
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "starting_ref_measurement": "STARTING_REF origin/integration/commercial-v1 resolves to a27c4a9af83afba5f4f94ee2a2d61a56495fdd50 (git fetch origin --quiet && git rev-parse origin/integration/commercial-v1), identical to the authoring branch HEAD and to the working tree measured. Zero re-measurement drift to reconcile.",
+
+  "NAMING_DERIVATION": "The repo-native convention, already used by the parent package, is <PACKAGE_STEM>_AUTHORITY_v<semver>.json in the domain directory named by the mission. The mission's own title (COMMERCIAL-ACCOUNT-CE1-EXECUTION-AUTHORITY-MATERIALIZATION-R1) supplies the stem COMMERCIAL_ACCOUNT_CE1 and the type EXECUTION_AUTHORITY, so the unambiguous path is docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json. No STOP condition on naming arose.",
+
+  "PARENT_AUTHORITY": {
+    "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json",
+    "AS_OF_HEAD_of_parent": "ccd0680e27560c2dfe5c08e2f69d4f115014466f",
+    "ancestry_check": "git merge-base --is-ancestor ccd0680e27560c2dfe5c08e2f69d4f115014466f HEAD => true. The parent authority's frozen state is an ancestor of this mission's AS_OF_HEAD and has not been superseded or edited.",
+    "not_modified": "This mission does not open, edit, or re-litigate the parent file. It is consumed exactly as frozen.",
+    "companion_test_manifest_of_parent": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json — also not modified, and consumed below for the CE-1-relevant control ids only."
+  },
+
+  "PURPOSE": {
+    "statement": "Deepen the parent authority's CE-1 node ('CommercialAccount relation and live association') into a self-contained executable technical authority sufficient for a future lineage-granted writer to implement CE-1 without another design/discovery cycle: the exact new table, the exact new column and FK on organizations, the exact security posture, the exact hosted/migration-surface disposition, and the exact multi-lane collision this node shares with Multi-org S1.",
+    "what_this_is": [
+      "A freeze of exactly one table (commercial_accounts), exactly one new column on an existing table (organizations.commercial_account_id) and its FK/index, and the RLS posture of the new table.",
+      "A restatement, at implementation precision, of what the parent authority already ratified for CE-1 (COMMERCIAL_ACCOUNT.target_shape, ORGANIZATION_RELATION.live_association, CC-1, CC-4, SEC-2, SEC-7, PG-1, PG-3) — narrowed from the parent's DERIVED_ARCHITECTURE_DECISION-level shape to concrete column types, defaults, constraints and index kind.",
+      "A frozen migration-surface and hosted disposition for CE-1 specifically, and a frozen statement of the exact multi-lane collision this node has with Multi-org S1 on db/schema.ts and the migration ordinal sequence."
+    ],
+    "what_this_is_not": [
+      "NOT an implementation. No schema.ts edit, no migration file, no RLS policy, no test is created or changed by this mission.",
+      "NOT a re-opening of the parent authority's MIGRATION_DAG, SECURITY_CONTROLS, MUTATION_CONTROLS or REAL_PG_FUTURE_CONTRACT. CE-1's entries there control; this document narrows them to implementation precision and adds nothing that contradicts them.",
+      "NOT an ODS/HPO lineage allocation and NOT a migration-ordinal allocation. See LINEAGE and MULTIORG_CP2.",
+      "NOT a re-opening of CA-01..CA-08. They are consumed exactly as ratified."
+    ],
+    "fail_closed_rule": "Where this authority marks a fact UNKNOWN or requiring a real-PostgreSQL probe, an implementing mission must measure or probe it, not assume it. Unknown required evidence fails closed."
+  },
+
+  "SOURCE_CONSUMPTION": {
+    "consumed_from_parent_authority": [
+      "COMMERCIAL_ACCOUNT (target_shape, explicit_prohibition, never_a_tenant_scope)",
+      "ORGANIZATION_RELATION (cardinality_frozen, chosen_model.live_association, ungoverned_state)",
+      "MIGRATION_DAG.nodes[id=CE-1] (delivers, resolves, depends_on, touches, compatibility)",
+      "CURRENT_CONTRADICTIONS.contradictions[id=CC-1,CC-4]",
+      "SECURITY_CONTROLS[id=SEC-2,SEC-7]",
+      "MUTATION_CONTROLS[id=MUT-10]",
+      "REAL_PG_FUTURE_CONTRACT.probes[id=PG-1,PG-3]",
+      "SHARED_WRITERS.writers[path=db/schema.ts (CP-2), path=db/migrations/** (CP-1)]",
+      "BACKFILL (read-only context: CE-1 precedes CE-4; this authority does not backfill)"
+    ],
+    "consumed_from_parent_test_manifest": [
+      "positive_controls[id=P-1,P-2,P-3]",
+      "negative_controls[id=N-4,N-16]",
+      "mutation_controls[id=M-10]",
+      "sentinels[id=SENTINEL_SIBLING_ORG_CANARY_ROW,SENTINEL_UNGOVERNED_ORG]"
+    ],
+    "CA_VERBATIM_CONSUMED": {
+      "CA-01": "CommercialAccount is distinct from Organization.",
+      "CA-02": "One CommercialAccount may govern one or more Organizations.",
+      "CA-05": "Stripe/payment state does not directly grant application authorization.",
+      "CA-06": "An Organization is governed by exactly one CommercialAccount at a time. A governed transfer, Platform-Admin-initiated in Commercial V1, may change that association without altering the Organization id, tenant data, memberships, roles, evidence, or audit history. The pre-transfer CommercialAccount association must remain historically reconstructible. Entitlements must be explicitly re-evaluated under the receiving CommercialAccount rather than silently inherited from the prior one. This does not ratify any specific schema table or FK design — a live-FK-plus-history-relation is a derived architecture recommendation, not product doctrine.",
+      "CA-07": "CommercialAccount owns the commercial/payment relationship: Stripe customer/subscription/price identity and plan/catalog identity. Effective EntitlementGrants, usage meters and quota enforcement remain scoped to Organization x product-capability per CA-04. CommercialAccount-level plan state defines what an Organization may be entitled to but is never itself evaluated as tenant authorization."
+    },
+    "consumption_rule": "These ratifications and parent-authority sections are consumed EXACTLY as written and are NOT re-opened. CA-03/CA-04/CA-08 and the Stripe-column/entitlement-grant shapes belong to later nodes (CE-3, CE-5, CE-6) and are out of scope here; they are named only where MUTATION_CONTROLS.MUT-10 requires an explicit boundary statement.",
+    "MO01_reminder": "MO-01 (self-service founding ceiling) and CA-02 (governance cardinality) remain non-contradictory per the parent's MO01_CA02_RECONCILIATION. CE-1 makes CA-02 structurally expressible (resolves CC-4); it does not touch MO-01 or the founding path."
+  },
+
+  "TABLE_DEFINITION": {
+    "relation": "commercial_accounts",
+    "classification": "EXECUTABLE_SHAPE — narrows COMMERCIAL_ACCOUNT.target_shape (DERIVED_ARCHITECTURE_DECISION) in the parent authority to concrete column types.",
+    "columns": [
+      {
+        "name": "id",
+        "type": "uuid",
+        "constraint": "PRIMARY KEY, generated per existing repo convention",
+        "drizzle_convention_citation": "db/schema.ts:18 (organizations.id): uuid('id').primaryKey().defaultRandom().notNull()",
+        "frozen_declaration": "id: uuid('id').primaryKey().defaultRandom().notNull()"
+      },
+      {
+        "name": "legal_name",
+        "type": "varchar(255)",
+        "constraint": "NULLABLE",
+        "frozen_declaration": "legalName: varchar('legal_name', { length: 255 })"
+      },
+      {
+        "name": "billing_country",
+        "type": "varchar(2)",
+        "constraint": "NULLABLE",
+        "convention_note": "Mirrors organizations.country (db/schema.ts:22, varchar(2)). No CHECK constraint on ISO-3166-1 alpha-2 shape is frozen here — none exists on the exemplar column either.",
+        "frozen_declaration": "billingCountry: varchar('billing_country', { length: 2 })"
+      },
+      {
+        "name": "billing_contact_email",
+        "type": "varchar(255)",
+        "constraint": "NULLABLE",
+        "frozen_declaration": "billingContactEmail: varchar('billing_contact_email', { length: 255 })"
+      },
+      {
+        "name": "commercial_status",
+        "type": "varchar(50)",
+        "constraint": "NOT NULL, DEFAULT 'active', CHECK (commercial_status IN ('active','past_due','suspended','closed'))",
+        "convention_citation": "Mirrors the CHECK-constraint pattern at db/schema.ts:62 (organization_members.role_check) and the default+notNull pattern at db/schema.ts:24 (organizations.status).",
+        "frozen_declaration": "commercialStatus: varchar('commercial_status', { length: 50 }).default('active').notNull()",
+        "frozen_check_declaration": "check('commercial_status_check', sql`${table.commercialStatus} IN ('active', 'past_due', 'suspended', 'closed')`)",
+        "closed_value_set_disposition": "This CHECK-constrained value set is the DERIVED_ARCHITECTURE_DECISION the parent authority left open at COMMERCIAL_ACCOUNT.target_shape.lifecycle_column ('a CHECK-constrained closed value set decided by the implementing node'). Frozen here as exactly the four values named by this mission. 'suspended' is the commercial-lifecycle state named by PAYMENT_SUSPENSION in the parent authority; it is NOT Organization.status and must never be read as one (PI-1)."
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp",
+        "constraint": "NOT NULL, DEFAULT now()",
+        "convention_citation": "db/schema.ts:45 (organizations.createdAt)",
+        "frozen_declaration": "createdAt: timestamp('created_at').defaultNow().notNull()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp",
+        "constraint": "NOT NULL, DEFAULT now()",
+        "convention_citation": "db/schema.ts:46 (organizations.updatedAt) — this exemplar carries no trigger-maintained auto-update; neither does this column. Application-side maintenance, if any, is out of scope for CE-1, which creates no writer.",
+        "frozen_declaration": "updatedAt: timestamp('updated_at').defaultNow().notNull()"
+      }
+    ],
+    "explicit_prohibition_restated": "commercial_accounts carries NO user_id column, NO membership column, NO role column, NO Stripe column (stripe_customer_id/stripe_subscription_id/stripe_price_id move here only at CE-6 per parent STRIPE_BOUNDARY), NO entitlement column, and NO quota column. A future node that adds any of these to this table without a lineage grant naming that node is out of scope of CE-1 and must not be smuggled in under this authority.",
+    "why_no_stripe_or_entitlement_columns_yet": "Parent MIGRATION_DAG.nodes[CE-1].compatibility: 'the legacy commercial columns are untouched and remain the only live source of commercial truth at the end of this node.' Moving Stripe identity is CE-6; entitlement is CE-3. CE-1 is structural existence only."
+  },
+
+  "ORGANIZATION_FK": {
+    "column": "organizations.commercial_account_id",
+    "type": "uuid",
+    "constraint": "NULLABLE, NO DEFAULT, NO CE-1 BACKFILL",
+    "fk": {
+      "references": "commercial_accounts(id)",
+      "on_delete": "RESTRICT",
+      "rationale": "RESTRICT (not CASCADE, not SET NULL) is the DERIVED_ARCHITECTURE_DECISION this mission freezes: a CommercialAccount that still governs a live Organization must not be deletable at all — deleting the governing account out from under a live Organization is exactly the kind of silent-loss-of-commercial-identity the parent authority's reconstructibility requirements (CA-06, SEC-12) are designed to prevent. A CommercialAccount may only be removed after every Organization it governs has been transferred (CE-2) or the FK cleared."
+    },
+    "index": {
+      "kind": "ordinary b-tree",
+      "uniqueness": "NONE — explicitly not unique. Uniqueness would re-impose the 1:1 cardinality CC-4 exists to remove (one CommercialAccount governs one-or-more Organizations, per CA-02).",
+      "frozen_declaration": "index('idx_organizations_commercial_account_id').on(table.commercialAccountId)",
+      "convention_citation": "Mirrors the existing per-FK index pattern already used for every other organization_id-shaped FK in this schema, e.g. db/schema.ts:84-85 (idx_audit_logs_organization_id) and :103-104 (idx_invitations_organization_id)."
+    },
+    "frozen_declaration": "commercialAccountId: uuid('commercial_account_id').references(() => commercialAccounts.id, { onDelete: 'restrict' })",
+    "nullable_meaning": "NULL means 'no CommercialAccount governs this Organization' per parent ORGANIZATION_RELATION.ungoverned_state. It is set by NO writer at CE-1 — no default, no backfill (CE-4's job), no trigger. Every existing Organization row has this column NULL immediately after CE-1 lands, and that is the entire intended effect of this node on the table."
+  },
+
+  "SECURITY": {
+    "classification": "EXECUTABLE_SECURITY_POSTURE derived from parent SEC-2, SEC-7, PG-1, PG-3.",
+    "frozen": [
+      "CREATE TABLE commercial_accounts is followed, in the same migration, by ALTER TABLE commercial_accounts ENABLE ROW LEVEL SECURITY; and ALTER TABLE commercial_accounts FORCE ROW LEVEL SECURITY;.",
+      "ZERO CREATE POLICY statements are written against commercial_accounts at CE-1. No tenant-facing policy of any kind.",
+      "CommercialAccount is NOT tenant data (parent statement, restated verbatim: 'CommercialAccount is not tenant data'). No tenant role gains access merely from sharing the account. Platform Admin read/write capability belongs to later CE nodes (CE-8, per parent PLATFORM_ADMIN_BOUNDARY) and is explicitly NOT granted here."
+    ],
+    "why_force_and_zero_policies": "ENABLE ROW LEVEL SECURITY with zero policies denies every ordinary role by default (no policy = no match = deny). FORCE ROW LEVEL SECURITY additionally binds the table owner and any role with BYPASSRLS-independent superuser status is the only escape — meaning even a migration or application role that happens to own the table cannot read or write rows through ordinary DML once RLS is forced. This is the strongest available default-deny posture for a relation with no ratified tenant-facing access pattern at all, which is exactly CommercialAccount's status at CE-1.",
+    "novel_pattern_disclosure": "Measured at AS_OF_HEAD by grep across db/migrations/*.sql: every existing ENABLE ROW LEVEL SECURITY statement in this repository's application schema is immediately followed by one or more CREATE POLICY statements (e.g. db/migrations/0045_fib_domain_object_version_lineage.sql, 0048_fib_evidence_versions.sql, 0062_fib_methodological_assumptions.sql). commercial_accounts is the FIRST application table in this repository to combine ENABLE + FORCE with ZERO policies. This is a deliberate, mission-directed departure and not an oversight; it is recorded here so an implementing or auditing mission does not mistake it for a forgotten policy set.",
+    "PG_1": {
+      "id": "PG-1",
+      "proves": "SEC-7 — a subject scoped to OrgA reads zero rows of OrgB despite a shared CommercialAccount X.",
+      "status_after_CE1": "PARTIALLY GROUNDED. CE-1 makes SEC-7 hold TRIVIALLY for commercial_accounts itself (zero policies means no tenant reads the table at all, by any organization). SEC-7's harder claim — that organizations.commercial_account_id being shared does not widen a tenant RLS predicate over OTHER tables — is a property of every OTHER table's existing RLS policies, which CE-1 does not touch and does not need to touch, because CE-1 adds no RLS predicate anywhere that references commercial_account_id. A real-PostgreSQL probe (per parent REAL_PG_FUTURE_CONTRACT.harness_shape: two-account, three-organization fixture) remains MANDATORY before CE-1 closes, to prove the negative — that nothing in the existing policy set was written to accidentally join through the new column.",
+      "future_proof_required": "Exhaustive grep of db/baseline/**/*.sql and db/migrations/**/*.sql for any existing RLS predicate that references organizations.commercial_account_id (there must be none, since the column does not yet exist at AS_OF_HEAD) PLUS a disposable-cluster probe confirming a scoped read of OrgA returns zero rows of a sibling OrgB governed by the same account."
+    },
+    "PG_3": {
+      "id": "PG-3",
+      "proves": "commercial_accounts is not tenant-readable: a tenant principal scoped to OrgA cannot read account X's row, and cannot enumerate the sibling OrgB through it.",
+      "status_after_CE1": "This is CE-1's OWN probe (parent REAL_PG_FUTURE_CONTRACT names node=CE-1 for PG-3). It is the direct runtime verification of the ENABLE+FORCE+zero-policy posture above. Static reading of the migration SQL is NOT proof — the parent's own rationale (RLS policy combination is a runtime property) applies with full force to a table with NO policies as much as to one with several: the mandatory probe must confirm that the tenant-facing application database role is NOT a member of any role with BYPASSRLS, and is NOT the table owner, or FORCE ROW LEVEL SECURITY provides no protection against it.",
+      "future_proof_required": "A disposable-cluster probe, run AS the tenant-facing runtime role (never as a migration/superuser role), attempting SELECT/INSERT/UPDATE/DELETE against commercial_accounts and asserting every one is denied. The role's BYPASSRLS and ownership status must be asserted, not assumed, because FORCE ROW LEVEL SECURITY is silently inert for a BYPASSRLS role or the table owner."
+    },
+    "sec_2_restated": "SEC-2 (parent, enforceable_from CE-1): 'A commercial-account relation does not grant tenant access. Membership in no Organization plus governance of that Organization's account yields zero tenant rows.' Held by construction: commercial_accounts has zero tenant-facing policies and organizations.commercial_account_id participates in no RLS predicate anywhere in this authority.",
+    "mut_10_restated": "MUT-10 (parent): the specific mutation this authority must not admit is adding commercial_account_id to db/identity-context.ts (the selected-organization GUC carrier) 'for convenience'. CE-1 touches only db/schema.ts and db/migrations/**; db/identity-context.ts is NOT in CE-1's touches list and this authority freezes that it stays that way."
+  },
+
+  "HOSTED_DISPOSITION": {
+    "HOSTED_UNIT_REQUIRED": "NO",
+    "rationale": "CE-1 creates one ordinary table and one ordinary nullable FK column with a plain b-tree index — pure DDL, zero SECURITY DEFINER functions, zero capability definer roles, zero prepared-unit idempotency ledger, zero out-of-band credential. The repository's hosted/prepared-unit machinery (db/prepared/**, db/hosted/baseline-manifest.ts) exists to govern CAPABILITY DEFINERS with their own roles, grants and apply-preconditions (measured exemplars: stella_0008 Stripe identity, stella_0010 bootstrap, stella_0013..0018 quota chain — all in PREPARED_CAPABILITY_DISPOSITIONS). CE-1 has no capability of that shape.",
+    "migration_surface": {
+      "used": ["db/schema.ts", "db/migrations/**"],
+      "not_used": [
+        "db/prepared/** — no capability definer is created by CE-1.",
+        "no hosted package — commercial_accounts is not a hosted-only relation; it lives in the same schema as organizations.",
+        "no baseline-manifest hosted unit — db/hosted/baseline-manifest.ts is not edited; CE-1 adds no entry there."
+      ]
+    },
+    "future_node_note": "CE-2's transfer verb, CE-3's evaluator, CE-5's projection writer, CE-6's recomposed Stripe apply, and CE-7's composed bootstrap ARE capability-shaped (they touch db/prepared/** per parent MIGRATION_DAG) and will each make their own hosted-disposition decision at their own authority time. This determination is scoped to CE-1 only and must not be read forward onto those nodes."
+  },
+
+  "COMPATIBILITY": {
+    "restated_from_parent": "PURELY ADDITIVE. commercial_accounts is new; organizations.commercial_account_id is nullable with no default and no backfill. Zero existing reader or writer changes behaviour. The legacy commercial columns are untouched and remain the only live source of commercial truth at the end of this node.",
+    "frozen_here": [
+      "Legacy organization commercial fields (stella_monthly_quota, stella_plan_label, stripe_customer_id, stripe_subscription_id, stripe_price_id) remain live truth after CE-1. No backfill of them into commercial_accounts happens at CE-1 — that is CE-4's BACKFILL step B1, explicitly out of scope here.",
+      "No reader change: nothing in lib/ or app/ is required to read commercial_accounts or organizations.commercial_account_id after CE-1 lands, and nothing existing is broken by their existence.",
+      "No writer change: no existing code path writes either the new table or the new column. The only writer of organizations.commercial_account_id introduced anywhere in the parent DAG before CE-4 is none — CE-1 itself writes nothing.",
+      "No Stripe move: stripe_customer_id/stripe_subscription_id/stripe_price_id stay on organizations. Moving them is CE-6 (STRIPE_BOUNDARY), depends_on CE-1 and CE-5, not reachable from this authority alone.",
+      "No entitlement materialization: entitlement_grants does not exist until CE-3. CE-1 creates no entitlement concept, only the account it will eventually be scoped under."
+    ]
+  },
+
+  "MULTIORG_CP2": {
+    "shared_surfaces": ["db/schema.ts", "db/migrations/** (ordinal sequencing)"],
+    "chokepoint_id_confirmed_from_parent": "CP-2 (db/schema.ts) and CP-1 (db/migrations/** ordinal)",
+    "measured_state_at_AS_OF_HEAD": {
+      "multiorg_s1_authority_status": "FROZEN AND INTEGRATED — docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json merged via PR #72 (merge commit d98cfb7), confirmed an ancestor of this mission's AS_OF_HEAD (git merge-base --is-ancestor d98cfb7 HEAD => true).",
+      "multiorg_s1_implementation_status": "NOT LANDED. grep -n \"founded_by\\|foundedBy\" db/schema.ts at AS_OF_HEAD => zero matches. The tenancy authority's S1 node (organizations.founded_by) is ratified but not yet implemented on this branch's schema.",
+      "current_migration_ordinal_ceiling": "0065 (db/migrations/0065_fib_sensitivity_model.sql; db/migrations/meta/_journal.json idx 65). CE-1 allocates none — see ordinal_rule below."
+    },
+    "collision_statement": "CE-1 and Multi-org S1's implementation are semantically independent (CE-1 adds commercial_accounts + organizations.commercial_account_id; S1 adds organizations.founded_by) but both edit db/schema.ts and both require the next db/migrations/** ordinal. Whichever implementation lands SECOND on the integration branch must rebase onto the state left by whichever landed FIRST, re-read db/schema.ts and db/migrations/meta/_journal.json at ITS OWN base, and take the next ordinal after whatever the first lane left — never assume 0066 is available, never assume its own base is still 0065.",
+    "ordinal_rule": "NO MIGRATION ORDINAL IS ALLOCATED BY THIS AUTHORITY, consistent with the parent's MIGRATION_DAG.ordinal_rule. 0065 above is a MEASUREMENT of the ceiling at THIS mission's AS_OF_HEAD, not a reservation of 0066 for CE-1. A future CE-1 implementation mission must re-measure the ceiling at ITS OWN base before allocating.",
+    "no_stale_base_blind_merge": "Neither lane may merge its schema.ts/migrations diff against a base older than the other lane's latest integrated state without re-measuring. A three-way textual merge of two additive schema.ts diffs can be syntactically clean and still silently drop an index or constraint (parent SHARED_WRITERS.writers[path=db/schema.ts].collision: 'Textual merges here are silent'); the correct sequencing is serial landing with a rebase, not a merge of two concurrent branches."
+  },
+
+  "LINEAGE": {
+    "statement": "PR77 (codex/multiorg-s1-authority-r1 lineage, 'Multi-org S1/S2 first execution authority') owns the current candidate next ODS/HPO allocation. CE-1 has NO lineage allocation in this mission.",
+    "controller_gap_status_update": "The parent authority recorded, as its CC-L / F-2 lineage constraint, that ODS maintenance addendum v1.0.18 was present on disk and UNENUMERATED by the live Controller (EA-18, measured at the parent's own AS_OF_HEAD). Re-measured at THIS mission's AS_OF_HEAD: scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION now enumerates v1.0.18 (confirmed by direct grep — v1.0.18 is present in the array and the file's own comment records '20 entries + v1.0.10..v1.0.18'). That specific gap is CLOSED at AS_OF_HEAD (Controller v1.0.18 successor, PR #75, merge 34d390c). This does NOT allocate anything for CE-1; it only means the blocking condition the parent recorded is no longer the reason CE-1 cannot proceed — the reason is, and remains, that no lineage grant naming CE-1 exists.",
+    "next_symbolic_ods_lineage": {
+      "symbolic": "The ODS maintenance addendum ordinal immediately after the highest present at AS_OF_HEAD.",
+      "measured_highest_present": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json",
+      "allocated_by_this_mission": "NONE",
+      "candidate_holder": "PR77, per this mission's own LINEAGE directive. Not verified further by this mission — this authority does not adjudicate PR77's status, only records that it is named as the current candidate."
+    },
+    "future_lineage_symbolic_only": "CE-1's future lineage identifier, its DP-CAP dependencies (there are none — CE-1 creates no capability definer, see HOSTED_DISPOSITION) and its migration ordinal are ALL future allocations, derivable only after the current Controller cycle closes, per this mission's explicit directive. This authority names what CE-1 IS; it allocates nothing of what CE-1 will be called."
+  },
+
+  "IMPLEMENTATION_REFERENCE": {
+    "classification": "NON-NORMATIVE ILLUSTRATION of the frozen shapes above, provided so a future implementing mission has a single place to read the intended db/schema.ts diff and equivalent SQL without re-deriving it from prose. Where this section and TABLE_DEFINITION/ORGANIZATION_FK/SECURITY disagree, those sections control.",
+    "drizzle_schema_ts_sketch": "export const commercialAccounts = pgTable('commercial_accounts', {\n  id: uuid('id').primaryKey().defaultRandom().notNull(),\n  legalName: varchar('legal_name', { length: 255 }),\n  billingCountry: varchar('billing_country', { length: 2 }),\n  billingContactEmail: varchar('billing_contact_email', { length: 255 }),\n  commercialStatus: varchar('commercial_status', { length: 50 }).default('active').notNull(),\n  createdAt: timestamp('created_at').defaultNow().notNull(),\n  updatedAt: timestamp('updated_at').defaultNow().notNull(),\n}, (table) => [\n  check('commercial_status_check', sql`${table.commercialStatus} IN ('active', 'past_due', 'suspended', 'closed')`),\n])\n\n// organizations gains, additively:\n//   commercialAccountId: uuid('commercial_account_id').references(() => commercialAccounts.id, { onDelete: 'restrict' }),\n// added to organizations' own (table) => [...] array:\n//   index('idx_organizations_commercial_account_id').on(table.commercialAccountId),",
+    "migration_sql_sketch": "CREATE TABLE commercial_accounts (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  legal_name varchar(255),\n  billing_country varchar(2),\n  billing_contact_email varchar(255),\n  commercial_status varchar(50) NOT NULL DEFAULT 'active',\n  created_at timestamp NOT NULL DEFAULT now(),\n  updated_at timestamp NOT NULL DEFAULT now(),\n  CONSTRAINT commercial_status_check CHECK (commercial_status IN ('active','past_due','suspended','closed'))\n);\nALTER TABLE commercial_accounts ENABLE ROW LEVEL SECURITY;\nALTER TABLE commercial_accounts FORCE ROW LEVEL SECURITY;\n\nALTER TABLE organizations ADD COLUMN commercial_account_id uuid REFERENCES commercial_accounts(id) ON DELETE RESTRICT;\nCREATE INDEX idx_organizations_commercial_account_id ON organizations (commercial_account_id);",
+    "note_on_drizzle_id_default": "Drizzle's .defaultRandom() on a uuid column compiles to DEFAULT gen_random_uuid() in this repository's existing migrations (matching organizations.id); the SQL sketch above uses that literal for exactness, but the frozen instruction is the Drizzle declaration in TABLE_DEFINITION, and drizzle-kit's own generated SQL for that declaration is authoritative over this hand-written sketch if the two ever diverge in a future Drizzle version."
+  },
+
+  "MANIFEST_DISPOSITION": {
+    "decision": "NO new companion test/implementation manifest is created for CE-1.",
+    "rationale": "The parent's companion manifest, docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json, is already a BATCH commitment covering CE-1..CE-9 (its own header: 'a batch commitment covering DAG nodes CE-1..CE-9'), and it already carries CE-1-scoped ids by name: positive_controls P-1/P-2/P-3, negative_controls N-4/N-16, mutation_controls M-10, and sentinels SENTINEL_SIBLING_ORG_CANARY_ROW/SENTINEL_UNGOVERNED_ORG. Materializing a second manifest naming CE-1 would either duplicate those ids under a new manifest_id (a fork risk — two documents each claiming to be the test contract for the same control ids) or force a renumbering that this mission has no authority to perform on a sealed sibling artifact. The repository convention this mission was told to check ('may be created only if repository convention clearly requires one') does not clearly require a second manifest here, because the existing one already names this exact scope with this exact granularity.",
+    "ce1_relevant_ids_for_a_future_implementer": {
+      "positive_controls": ["P-1", "P-2", "P-3"],
+      "negative_controls": ["N-4", "N-16"],
+      "mutation_controls": ["M-10"],
+      "pg_probes": ["PG-1", "PG-3"],
+      "sentinels": ["SENTINEL_SIBLING_ORG_CANARY_ROW", "SENTINEL_UNGOVERNED_ORG"],
+      "exit_gates_inherited_from_batch_manifest": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "journal_verify", "baseline_verify", "postgres_disposable_probe", "targeted_tests"]
+    }
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "json_valid": "This file parses as valid JSON (verified by a direct parse before publish; no repository JSON-schema exists for authority documents — only test manifests validate against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, which this artifact is not).",
+    "cross_references": "Every CC-, SEC-, MUT-, PG-, P-, N-, M-, CA- id cited above was checked present in the parent authority or its companion manifest at the exact ids and text quoted.",
+    "security_controls": "SEC-2, SEC-7 and PG-1/PG-3 are restated and their CE-1-specific proof obligations are named explicitly (see SECURITY.PG_1/PG_3 future_proof_required).",
+    "pg_controls": "PG-1 and PG-3 are the only REAL_PG_FUTURE_CONTRACT probes whose node is CE-1; both are addressed above as mandatory future proofs, not closed by this docs-only mission.",
+    "secrets": "No secret, credential, token or connection string is referenced or embedded anywhere in this file.",
+    "authority_seal": "pnpm authority:seal:verify checks a fixed 9-artifact protected corpus plus attested seal/manifest/ratification relationships (scripts/authority-seal-verify.ts) — none of which include docs/ops/commercial/**. This new file cannot fail that gate and does not need to be added to it.",
+    "ods_scope": "docs/ops/commercial/** is NOT in scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (measured directly from that file at AS_OF_HEAD). An ordinary --allow docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json is sufficient; no --protected-authority grant is required for this docs-only change.",
+    "ods_poststate": "Run with --base against this mission's own pre-change HEAD and --allow scoped to the single new file, per the standard governed workflow in CLAUDE.md.",
+    "ci": "This mission adds one new JSON file under docs/ops/commercial/**. No code, schema, migration, or test file is touched, so no build/type/test CI surface is affected beyond the standard docs-diff gates named above."
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "id": "CE1-F-1",
+        "class": "MANDATORY_FUTURE_PROOF",
+        "finding": "SECURITY.PG_1 and SECURITY.PG_3 are NOT satisfied by this docs-only authority. The ENABLE+FORCE+zero-policy posture is frozen as intent; a disposable-cluster probe proving the tenant-facing runtime role is neither the table owner nor BYPASSRLS is a hard precondition of CE-1's own close, not merely of the whole package's later nodes.",
+        "disposition": "RECORDED. A future CE-1 implementation mission must run PG-1 and PG-3 before declaring CE-1 closed."
+      },
+      {
+        "id": "CE1-F-2",
+        "class": "OPEN_SEQUENCING_DECISION",
+        "finding": "MULTIORG_CP2: which of {CE-1 implementation, Multi-org S1 implementation} lands first on db/schema.ts and the migration ordinal sequence is undecided. Both are ratified-but-unimplemented at AS_OF_HEAD.",
+        "disposition": "RECORDED, NOT RESOLVED. Resolving it is a lane-coordination decision that exceeds this mission's authority, exactly as the parent authority already recorded for its own analogous findings (parent F-1)."
+      },
+      {
+        "id": "CE1-F-3",
+        "class": "NOVEL_PATTERN_FLAG",
+        "finding": "commercial_accounts is the first application table in this repository to combine ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY, and zero CREATE POLICY statements. There is no existing precedent migration to copy verbatim.",
+        "disposition": "RECORDED as SECURITY.novel_pattern_disclosure above. Not a defect — a deliberate, mission-directed posture — but flagged so an implementer or auditor does not mistake the absence of policies for an omission."
+      }
+    ]
+  },
+
+  "self_check": {
+    "note": "Deterministic, test-free checks verifiable by inspection or a one-line grep/node command. Not a script.",
+    "expected_table_column_count": 7,
+    "expected_column_names": ["id", "legal_name", "billing_country", "billing_contact_email", "commercial_status", "created_at", "updated_at"],
+    "expected_new_organizations_columns": ["commercial_account_id"],
+    "expected_check_constraint_count": 1,
+    "expected_commercial_status_value_set": ["active", "past_due", "suspended", "closed"],
+    "expected_fk_on_delete": "RESTRICT",
+    "expected_index_uniqueness": "NONE",
+    "expected_hosted_unit_required": "NO",
+    "expected_ods_hpo_allocated": "NONE",
+    "expected_migration_ordinal_allocated": "NONE",
+    "expected_blocking_findings": 0,
+    "checks": [
+      "TABLE_DEFINITION.columns.length == 7 and its name set equals expected_column_names",
+      "TABLE_DEFINITION.columns[commercial_status].frozen_check_declaration enumerates exactly expected_commercial_status_value_set, in that order",
+      "ORGANIZATION_FK.fk.on_delete == 'RESTRICT' and ORGANIZATION_FK.index.uniqueness states NONE",
+      "HOSTED_DISPOSITION.HOSTED_UNIT_REQUIRED == 'NO'",
+      "LINEAGE.next_symbolic_ods_lineage.allocated_by_this_mission == 'NONE' and MULTIORG_CP2.ordinal_rule states none allocated",
+      "OPEN_FINDINGS.blocking is empty",
+      "every id cited in SOURCE_CONSUMPTION is present, byte-for-byte where quoted, in the parent authority or its companion manifest",
+      "no ODS addendum version beyond v1.0.18, no HPO id and no migration ordinal beyond the measured ceiling 0065 is stated as allocated anywhere in this file",
+      "companion_manifest is null and MANIFEST_DISPOSITION.decision states why"
+    ]
+  },
+
+  "final_state": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_GRANT",
+  "READY_FOR_CE1_IMPLEMENTATION": "NO_UNTIL_LINEAGE_GRANTED"
+}
