@@ -1,0 +1,318 @@
+{
+  "package_id": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "TENANCY_EXECUTION_SCOPE_AMENDMENT",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-21",
+  "hpo_mission_id": "MULTIORG-S1-S2-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-06",
+
+  "amends": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json",
+  "node_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+  "node_test_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+
+  "naming_derivation": "REPOSITORY-NATIVE, MEASURED. The companion-amendment convention is <BASE_PACKAGE>_AMENDMENT_v1.0.N.json in the base package's own directory, with N starting at 1: docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json -> W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json, and docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json -> P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json and _v1.0.2.json. `git grep -l MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT` returns ZERO occurrences across every reachable commit, so v1.0.1 is the first amendment of this package.",
+
+  "purpose": "Carry the execution-scope half of the S1/S2 successor authority: the FINAL path ceilings for both lanes after the repairs in the companion ODS addendum, the exact route-topology regression S2 must install, the parallelism proof, and the S1 product semantics that remain frozen verbatim. It changes no product code, no schema and no test.",
+
+  "scope_note": "AMENDS BY ADDITION ONLY. Every grant, prohibition, product semantic and security invariant frozen by MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json remains in force byte-unchanged. This amendment adds the paths that document provably could not be exercised without, corrects one measurement gap in its companion's migration reasoning, and restates the frozen semantics so an implementing mission needs no third artifact. It reopens no adjudicated product decision.",
+
+  "anchors": {
+    "INTEGRATION_SHA": "a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303",
+    "INTEGRATION_TREE": "57952b24486ce0fae84e3977e8fbc56aed895db7",
+    "branch": "codex/multiorg-s1-s2-successor-authority-r1",
+    "integration_branch": "integration/commercial-v1",
+    "controller_live_immutable_count": 30,
+    "protected_grants_count": 10,
+    "highest_migration_ordinal": "db/migrations/0065_fib_sensitivity_model.sql",
+    "highest_journal_wrapper": "db/prepared/journal/078_0065_fib_sensitivity_model.sql"
+  },
+
+  "S1_LANE": {
+    "node": "S1 - Founder traceability (canonical)",
+    "implementation_branch": "codex/multiorg-s1-founder-traceability-r1",
+    "protected_paths": [
+      "db/migrations/**",
+      "db/prepared/journal/**"
+    ],
+    "protected_path_grants": {
+      "db/migrations/**": "HPO-ODS-W2-20 (declared by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json)",
+      "db/prepared/journal/**": "HPO-ODS-W2-21 (declared by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json)"
+    },
+    "unprotected_paths": [
+      "db/schema.ts",
+      "db/hosted/baseline-manifest.ts",
+      "app/(authenticated)/app/onboarding/actions.ts",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts",
+      "tests/hosted/baseline-manifest.test.ts",
+      "tests/tenancy/s1-founder-traceability.test.ts",
+      "tests/postgres/s1-founder-cardinality.pg.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "path_count": 11,
+    "delta_from_v1_0_0": {
+      "added_protected": ["db/prepared/journal/**"],
+      "added_unprotected": [
+        "db/hosted/baseline-manifest.ts",
+        "scripts/ods-scope.ts",
+        "tests/ods/ods-scope.test.ts",
+        "tests/hosted/baseline-manifest.test.ts"
+      ],
+      "removed": [],
+      "unchanged": "All six paths the base authority granted are retained verbatim."
+    },
+    "invocation": "pnpm ods:scope -- --base <INTEGRATION_SHA> --protected-authority HPO-ODS-W2-20 --protected-authority HPO-ODS-W2-21 --allow <each path above, exactly>",
+    "multiple_grants_are_supported": "MACHINE-PROVEN at INTEGRATION_SHA in scripts/ods-scope.ts, three independent ways: the usage banner documents '[--protected-authority <id> ...]'; the header records that the flag 'MAY be repeated. Every occurrence is resolved ... independently' and that an unresolved id 'never broadens, narrows, or invalidates what any OTHER supplied id resolved'; and resolveProtectedGrants takes authorityIds: string[], maps each through the singular resolver, and classifyPaths unions the resolved pattern sets with .some(). Passing two ids is not an extension of the gate - it is its documented contract.",
+    "ceiling_semantics": "A CEILING resolved by ods:scope against the lane's own --allow list, never a mandate. A lane may change a SUBSET. A path outside the list fails closed. A resolved grant authorizes a protected path ONLY together with an ordinary --allow entry covering the same path; both remain mandatory."
+  },
+
+  "S2_LANE": {
+    "node": "S2 - Selected-organization session carrier (canonical)",
+    "implementation_branch": "codex/multiorg-s2-selected-org-carrier-r1",
+    "protected_paths": [],
+    "protected_path_grants": {},
+    "unprotected_paths": [
+      "lib/auth/selected-organization.ts",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "app/(authenticated)/app/organizations/select/page.tsx",
+      "tests/tenancy/s2-selected-org-carrier.test.ts",
+      "tests/auth/route-authorization-boundary.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "path_count": 6,
+    "delta_from_v1_0_0": {
+      "added_protected": [],
+      "added_unprotected": ["tests/auth/route-authorization-boundary.test.ts"],
+      "removed": [],
+      "unchanged": "All five paths the base authority granted are retained verbatim."
+    },
+    "invocation": "pnpm ods:scope -- --base <INTEGRATION_SHA> --allow <each path above, exactly>   (NO --protected-authority: S2 touches no protected surface)",
+    "no_protected_grant": "MEASURED with the gate's own patternToRegExp: none of the six paths matches any of the seven DEFAULT_PROTECTED_PATTERNS. A session cookie carrier and a route file touch no protected surface."
+  },
+
+  "S2_ROUTE_TOPOLOGY_DECISION": {
+    "RATIFIED": "The selected-organization selector remains an explicit PRE-ORGANIZATION route at app/(authenticated)/app/organizations/select/*.",
+    "not_relocated": "It is NOT moved beneath app/app/**. Requiring organization scope in order to reach the organization selector is circular: app/app/layout.tsx calls requireOrganizationAccess(), which redirects a user without an organization to onboarding, so a selector placed there could never be reached by the only users who need it. This is the same cycle closed historically by commit 65ab17d.",
+    "the_regression_evolves_deliberately": "The existing route-security control is made STRICTER rather than widened. Widening is the failure mode this decision exists to avoid.",
+    "test_path": "tests/auth/route-authorization-boundary.test.ts",
+    "control_replaced": "The control currently at :155, 'carves out EXACTLY one route - every other /app/* page stays gated', whose sweep at :167 reads only the FIRST level of directory names beneath each app/(group)/app/ and asserts ['onboarding'] at :172.",
+    "why_it_must_change": "MECHANICAL, NOT DISCRETIONARY. Creating app/(authenticated)/app/organizations/select/page.tsx makes the swept set ['onboarding','organizations'], which fails the exact-equality assertion. S2 cannot land without touching this control.",
+    "EXACT_RULE_AUTHORIZED": {
+      "shape": "RECURSIVE ROUTE-PATH ENUMERATION. For each route group directory app/(<group>)/, if app/(<group>)/app/ exists, walk it recursively; every directory containing a route-serving file contributes its path RELATIVE to that app/ root, joined with '/'. Assert the deduplicated sorted set equals the exact declared carve-out list.",
+      "declared_carve_outs": ["onboarding", "organizations/select"],
+      "assertion_form": "expect([...new Set(ungated)].sort()).toEqual(['onboarding', 'organizations/select'])",
+      "route_serving_file_names": ["page.tsx", "page.ts", "route.ts", "route.tsx"],
+      "route_file_measurement_obligation": "BINDING. The S2 mission MUST re-measure the repository's actual route-file conventions at its own head and use the set it measures. Omitting a name the repository DOES use would silently un-gate a route - the precise failure this control exists to prevent. Including a name it does not use is inert. MEASURED at INTEGRATION_SHA: the only route-serving file beneath any app/(group)/app/ tree is app/(authenticated)/app/onboarding/page.tsx.",
+      "explicitly_not_authorized": "['onboarding','organizations']. A top-level-directory form would silently authorize EVERY future app/(authenticated)/app/organizations/** route - create, [id], settings and any successor - none of which has been adjudicated as a pre-organization surface. This is expectation broadening, which the ODS existing-test adjustment class forbids."
+    },
+    "BINDING_STRICTNESS_PROOF": {
+      "obligation": "The replacement must be proven STRICTLY STRONGER than the control it replaces, in both directions, BEFORE it is accepted. A replacement that is merely DIFFERENT, or that trades one blind spot for another, is gate weakening and is a STOP.",
+      "required_rows": [
+        {
+          "scenario": "CURRENT TREE (no S2 route)",
+          "old_control": "PASS - swept set ['onboarding']",
+          "new_control": "PASS - route set ['onboarding']",
+          "significance": "IDENTICAL VERDICT. Proves the replacement is not repairing a currently-failing control and introduces no regression on today's tree."
+        },
+        {
+          "scenario": "WITH S2 - organizations/select/page.tsx added",
+          "old_control": "FAIL - ['onboarding','organizations'] != ['onboarding']",
+          "new_control": "PASS - ['onboarding','organizations/select']",
+          "significance": "The authorized carve-out, and only it, is admitted."
+        },
+        {
+          "scenario": "MUTATION organizations/create/page.tsx",
+          "old_control_under_the_forbidden_widening": "PASS - top-level name is still 'organizations'",
+          "new_control": "FAIL - 'organizations/create' is not a declared carve-out",
+          "significance": "THE LOAD-BEARING ROW. This is exactly the future route the forbidden widening would have silently authorized."
+        },
+        {
+          "scenario": "MUTATION organizations/[id]/page.tsx",
+          "old_control_under_the_forbidden_widening": "PASS",
+          "new_control": "FAIL - 'organizations/[id]' is not a declared carve-out",
+          "significance": "Dynamic segments are caught identically; the rule is path-shaped, not name-shaped."
+        },
+        {
+          "scenario": "MUTATION onboarding/step2/page.tsx",
+          "old_control": "PASS - reports only the top-level name 'onboarding'",
+          "new_control": "FAIL - 'onboarding/step2' is not a declared carve-out",
+          "significance": "CLOSES A PRE-EXISTING BLIND SPOT. The CURRENT control cannot see a nested ungated route at all. The replacement is therefore strictly stronger even on a surface unrelated to S2, which is independent evidence that this is a strengthening and not an accommodation."
+        }
+      ],
+      "non_vacuity": "Each mutation row must be produced by actually creating the file and observing the failure, or by driving the enumeration function over a fixture tree that contains it. Asserting the rows from reasoning alone is not a proof."
+    },
+    "MIRRORED_NEGATIVE_CONTROL_AUTHORIZED": {
+      "assertion": "expect(existsSync(path.join(ROOT, 'app/app/organizations/select/page.tsx'))).toBe(false)",
+      "message": "the organization selector is back inside the organisation-gated layout - the circular gate",
+      "precedent": "Mechanically identical to the existing onboarding old-location control at :135, whose comment reads 'The old location. Its return would reinstate the cycle verbatim.'"
+    },
+    "SINGULAR_PLURAL_CONFLATION_HAZARD": {
+      "measured": "app/app/organization/ (SINGULAR) exists at INTEGRATION_SHA and is legitimately organization-gated; the sibling control at :180 already names 'organization' among the routes that must stay gated. S2 introduces 'organizations' (PLURAL) as a pre-organization carve-out.",
+      "why_it_is_material": "The two paths differ by one character and sit one directory apart. A grep, a rename, an autocomplete or a hurried review can substitute one for the other, and doing so would either un-gate the organization workspace or re-gate the selector into the circular state.",
+      "obligation": "BOTH halves must be asserted in the same file: the SINGULAR app/app/organization/ stays inside the organization gate, and the PLURAL organizations/select is the ONLY ungated member of its subtree.",
+      "out_of_scope_recorded_affirmatively": "app/admin/organizations exists but lies OUTSIDE every app/(group)/app/ tree, so the recursive sweep never reaches it. It is neither granted nor implicated by this carve-out doctrine. Recorded explicitly so a future reader does not 'fix' the sweep to include it and thereby import an admin surface into a tenancy decision."
+    },
+    "sibling_controls_frozen": "The three other controls in the same describe block - the onboarding old-location control, the (authenticated)-layout-does-not-gate control, and the workspace-routes-still-gated control - are NOT authorized for change. Only the exact-carve-out control is replaced, and the mirrored negative control is added."
+  },
+
+  "S1_MIGRATION_PARTICIPATION": {
+    "correction_recorded": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json and its companion ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json both concluded that S1 needs no db/prepared/** grant and no db/hosted/baseline-manifest.ts authorization. Their premise - that S1 adds no PREPARED UNIT - is TRUE. Their conclusion does not follow, because an ORDINARY MIGRATION independently drags the journal wrapper and the baseline manifest with it. This is a successor correction of a measurement gap, recorded here; the predecessors' own bytes are not back-written.",
+    "machine_evidence": {
+      "journal_correspondence": "db/migrations/ holds 66 files, highest 0065_fib_sensitivity_model.sql. db/prepared/journal/ holds 79 files, highest 078_0065_fib_sensitivity_model.sql - the wrapper for that exact migration, sharing its slug.",
+      "manifest_completeness_gate": "db/hosted/baseline-manifest.ts raises problem kind UNKNOWN_FILE for any discovered migration file no BASELINE_UNITS entry claims, with the recorded reason that an unclaimed migration is 'the exact asymmetry that hid the 0039 ordering defect'.",
+      "wrapper_append_gate": "scripts/baseline-operator-runner.ts refuses a wrapper that does not carry the journal append.",
+      "exact_count_pins": "tests/hosted/baseline-manifest.test.ts:105 asserts drizzle-migration count toBe(66) and :115 asserts BASELINE_ORDER cardinality toBe(78). Both exact literals."
+    },
+    "NO_ORDINAL_ALLOCATED": "BINDING. This amendment allocates NO migration ordinal and NO journal-wrapper ordinal. At INTEGRATION_SHA the next free values would be 0066 and 079, but that is a MEASUREMENT OF TODAY and explicitly NOT a reservation. Both sequences are globally contested with Wave3/FIBDB-053, CommercialAccount, Portfolio and Stella. The S1 mission derives both at its own materialization time.",
+    "count_pin_non_vacuity": "The advanced pins must be DERIVED FROM MEASUREMENT of the tree after S1's unit is added, never from arithmetic on the 66 and 78 recorded here. If the measured values are not exactly 67 and 79, that discrepancy is evidence of a concurrent migration landing in the contested sequence and is STOP_FOR_INTERVENING_DELTA, not a number to overwrite.",
+    "NO_BLANKET_PREPARED_GRANT": "RESTATED AND UNWEAKENED. No db/prepared/** grant of any width. The authorized pattern is db/prepared/journal/**, a STRICT SUBSET, proven by negative control not to reach db/prepared/stella_0010_organization_bootstrap_capability.sql.",
+    "hosted_gate_files_not_authorized": "tests/eval/stella-release/hosted-baseline-gate.test.ts and tests/eval/stella-release/hosted-baseline-gate.ts are NOT authorized paths. Their digest-staleness failure is already registered as a known condition; editing them would convert a registered condition into an unregistered change."
+  },
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-21",
+    "branch": "codex/multiorg-s1-founder-traceability-r1",
+    "patterns": [
+      "db/prepared/journal/**"
+    ],
+    "pattern_count": 1,
+    "registration_status": "DECLARED_NOT_REGISTERED",
+    "equals_companion_addendum": "This object equals docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json protected_grant field for field, including pattern_count. Both must equal the scripts/ods-scope.ts registry entry the S1 mission installs.",
+    "W2_20_FROZEN_UNCHANGED": "HPO-ODS-W2-20 keeps EXACTLY the branch and single pattern db/migrations/** that v1.0.19 declared. It is neither amended nor extended. See the companion addendum's W2_20_WIDENING_ADJUDICATION for the precedent this follows."
+  },
+
+  "PROTECTED_GRANTS_COUNT_BEFORE": 10,
+  "PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION": 12,
+
+  "FROZEN_S1_SEMANTICS": {
+    "status": "CARRIED VERBATIM FROM THE FROZEN AUTHORITY. NOT RE-ADJUDICATED HERE. Restated so an implementing mission needs no third artifact, never to reopen them.",
+    "BACKFILL_FOUNDED_BY": {
+      "rule": "Historical organizations.founded_by may be populated ONLY where there is EXACTLY ONE qualifying 'organization.created' audit row with a non-null actor.",
+      "exactly_one_non_null_actor": "founded_by = that actor",
+      "zero_rows": "founded_by = NULL",
+      "more_than_one_row": "founded_by = NULL",
+      "null_actor": "founded_by = NULL",
+      "anchor_verified": "The audit action constant exists at lib/audit/logger.ts - ORGANIZATION_CREATED: 'organization.created'. The rule binds to a real object, not a hoped-for one."
+    },
+    "BACKFILL_PROVENANCE": {
+      "rule": "founding_provenance = 'unknown' for ALL historical backfilled rows, unconditionally.",
+      "prohibition": "Never infer self_service provenance from code-history uniqueness. A single historical creation path in the codebase is evidence about the CODE, not about how any particular row came to exist."
+    },
+    "LIVE_DATA_ROLE": {
+      "rule": "Live database measurement establishes COVERAGE ONLY - how many rows received a non-null founded_by.",
+      "prohibition": "It cannot upgrade historical provenance classification. A 100 percent coverage measurement is not evidence of self_service provenance for any row."
+    },
+    "BOOTSTRAP_RLS_WALL": {
+      "rule": "S1 does NOT solve self-service bootstrap/RLS. That wall is pre-existing and remains exactly where it is.",
+      "elevated_identity_is_valid": "Elevated PostgreSQL identity is valid for proving S1's DB invariants - founder cardinality, the FK, the provenance discriminator domain and backfill determinism.",
+      "s3_remains_ungranted": "db/identity-context.ts, lib/auth/database-context.ts, lib/auth/session.ts, lib/auth/permissions.ts and lib/auth/roles.ts are NOT in either lane's ceiling. Stated affirmatively because making the S2 carrier useful invites reading it in exactly those files, which would be S3 performed without S3's lineage."
+    },
+    "ORDINARY_USER_NEGATIVE_CONTROL": {
+      "required": true,
+      "what_it_must_prove": "That S1 did NOT accidentally weaken the pre-existing bootstrap/RLS wall.",
+      "the_vacuity_hazard": "MEASURED AND CONCRETE. An ordinary-role INSERT INTO organizations can fail at three different walls, and a bare rejects assertion cannot tell them apart.",
+      "walls": {
+        "42501_or_rls_policy_violation": "THE BOOTSTRAP WALL - the one this control must prove intact. CORRECT.",
+        "23502_not_null_violation_on_founded_by": "S1's OWN new column. WRONG WALL - the control is vacuous.",
+        "23503_foreign_key_violation_on_founded_by": "S1's OWN new FK. WRONG WALL - the control is vacuous."
+      },
+      "BINDING_FORM": "Assert POSITIVELY that the failure SQLSTATE is the permission/RLS class (42501, or the RLS policy-violation class the driver surfaces), AND assert NEGATIVELY that it is neither 23502 nor 23503.",
+      "declaration_obligation": "The test title AND an in-file comment must state that it proves the PRE-EXISTING RLS/bootstrap wall, NOT S1's new constraints. A control that passes because S1's own NOT NULL fired first would prove the wall intact only by accident, and would keep passing if the RLS wall were later deleted.",
+      "requires_real_postgres": true
+    }
+  },
+
+  "KNOWN_TEST_CONDITIONS_CARRIED": {
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "CARRIED. Adding a baseline unit restales the pinned rehearsal digest asserted by tests/eval/stella-release/hosted-baseline-gate.ts.",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "CARRIED. Same underlying cause, separate test_id, separate failure signature.",
+    "same_condition_comparison_rule": "BINDING. A failure matches a carried condition ONLY on test_file + test_id together, NEVER on filename alone. This is the registry's own rule.",
+    "not_a_blanket_exemption": "These two entries excuse exactly the two registered digest-staleness signatures. They excuse no other failure in those files and authorize no edit to them."
+  },
+
+  "PARALLELISM": {
+    "verdict": "S1_S2_PARALLEL_SAFE = YES, after this successor authority is audited and integrated.",
+    "S1_writer_set": [
+      "db/migrations/**",
+      "db/prepared/journal/**",
+      "db/schema.ts",
+      "db/hosted/baseline-manifest.ts",
+      "app/(authenticated)/app/onboarding/actions.ts",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts",
+      "tests/hosted/baseline-manifest.test.ts",
+      "tests/tenancy/s1-founder-traceability.test.ts",
+      "tests/postgres/s1-founder-cardinality.pg.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "S2_writer_set": [
+      "lib/auth/selected-organization.ts",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "app/(authenticated)/app/organizations/select/page.tsx",
+      "tests/tenancy/s2-selected-org-carrier.test.ts",
+      "tests/auth/route-authorization-boundary.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "intersection": "EMPTY SET - computed over the FINAL ceilings including every path this amendment adds.",
+    "named_exclusivities": {
+      "app/(authenticated)/app/onboarding/actions.ts": "S1 EXCLUSIVE. The base authority records why S2 must not write the carrier there and why that costs no functionality.",
+      "tests/auth/route-authorization-boundary.test.ts": "S2 EXCLUSIVE. S1 has no reason to touch route topology, and the two lanes must never contend for this host.",
+      "tests/tenancy/": "Two DIFFERENT files - s1-founder-traceability.test.ts and s2-selected-org-carrier.test.ts. A shared DIRECTORY is not a shared writer; ods:scope and git both resolve at file granularity."
+    },
+    "controller31_non_collision": "PROVEN. Controller 31's authorized pair is scripts/ods-controller.ts and tests/ods/ods-controller.test.ts. Neither appears in either lane's writer set. S1 writes scripts/ods-scope.ts and tests/ods/ods-scope.test.ts, which are DIFFERENT files that merely share a directory with the Controller test - the same file-granularity argument as tests/tenancy/.",
+    "SERIALIZATION_REQUIRED": "YES, for this successor authority itself. The two artifacts are one indivisible authority pair and must be materialized, audited and integrated ONCE, serially, before either lane opens. Only the two IMPLEMENTATION lanes are parallel.",
+    "residual_contention_disclosed": "db/migrations and db/prepared/journal remain single global forward-only sequences contested with other lanes. That contention is between S1 and NON-S2 lanes; it does not make S1 and S2 mutually unsafe, and it is handled by S1 deriving its ordinals at materialization time."
+  },
+
+  "TEST_CONTRACT": {
+    "binds_by_id_to": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+    "adds_only": "The S2-alone route-topology controls and the S1 grant-registration controls that the frozen manifest does not carry, enumerated below. Nothing in the frozen manifest is restated, weakened or renumbered.",
+    "S1_controls": {
+      "T-S1-GRANT-1": "PROTECTED_GRANTS contains BOTH HPO-ODS-W2-20 and HPO-ODS-W2-21, each equal field-for-field to its declaring addendum's protected_grant object.",
+      "T-S1-GRANT-2": "LIVE-COUNT GUARD. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION === PROTECTED_GRANTS.length. Bound to the live array, never to a hardcoded 12.",
+      "T-S1-GRANT-3": "PREDECESSOR DEMOTION. The guard previously bound to ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json becomes the pinned literal 10 - the historically correct value for that addendum's own change. Same demotion v1.0.16 performed on v1.0.15.",
+      "T-S1-GRANT-4": "NOT-WIDENED. W2-01, W2-12, W2-16, W2-17 and W2-20 are each asserted byte-unchanged - same branch, same exact pattern list. W2-01, W2-12 and W2-17 matter most because they already carry db/prepared/journal/**, so only the branch field distinguishes them from the new grant.",
+      "T-S1-GRANT-5": "GRANT NARROWNESS, direction two. An unrelated protected path such as db/prepared/stella_0010_organization_bootstrap_capability.sql remains a PROTECTED VIOLATION even WITH HPO-ODS-W2-21 supplied, proving the grant did not silently become a blanket db/prepared/** grant.",
+      "T-S1-GRANT-6": "BRANCH BINDING. HPO-ODS-W2-21 does NOT resolve on any branch other than codex/multiorg-s1-founder-traceability-r1.",
+      "T-S1-BACKFILL-1": "Real PostgreSQL. Exactly one qualifying audit row with non-null actor -> founded_by = that actor.",
+      "T-S1-BACKFILL-2": "Real PostgreSQL. Zero rows, more than one row, and null actor each -> founded_by = NULL. Three distinct negative cases, not one.",
+      "T-S1-BACKFILL-3": "founding_provenance = 'unknown' for EVERY backfilled historical row, asserted over the whole backfilled set, not a sample.",
+      "T-S1-WALL-1": "ORDINARY-USER NEGATIVE CONTROL as specified in FROZEN_S1_SEMANTICS.ORDINARY_USER_NEGATIVE_CONTROL, including the positive SQLSTATE class assertion and BOTH negative assertions."
+    },
+    "S2_controls": {
+      "T-S2-TOPO-1": "The recursive route enumeration yields EXACTLY ['onboarding','organizations/select'].",
+      "T-S2-TOPO-2": "STRICTNESS PROOF, all five rows of BINDING_STRICTNESS_PROOF.required_rows, produced by real fixtures rather than by reasoning.",
+      "T-S2-TOPO-3": "MIRRORED NEGATIVE CONTROL - app/app/organizations/select/page.tsx does NOT exist.",
+      "T-S2-TOPO-4": "SINGULAR/PLURAL - app/app/organization/ remains organization-gated AND organizations/select is the only ungated member of its subtree. Both halves.",
+      "T-S2-CARRIER-1": "The selected-organization carrier round-trips and is scoped to the authenticated principal.",
+      "T-S2-CARRIER-2": "The carrier is NOT read by any canonical S3 file - db/identity-context.ts, lib/auth/database-context.ts, lib/auth/session.ts, lib/auth/permissions.ts, lib/auth/roles.ts. A static control, because that is precisely the boundary S2 must not cross."
+    },
+    "gate_weakening_prohibited": "No control may be skipped, softened or converted to a lower-bound form to obtain a PASS."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json",
+      "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json"
+    ],
+    "no_implementation_code": true,
+    "no_schema_change": true,
+    "no_migration_changed": true,
+    "no_test_changed": true,
+    "no_gate_script_change": true,
+    "no_controller_change": true,
+    "frozen_artifacts_left_byte_unchanged": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json, MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json, MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json are CONSUMED and CITED, never edited."
+  },
+
+  "risks_and_open_findings": {
+    "F-1_ordinal_contention": "NON-BLOCKING, DISCLOSED. See S1_MIGRATION_PARTICIPATION.NO_ORDINAL_ALLOCATED and count_pin_non_vacuity.",
+    "F-2_predecessor_grant_shape_superseded": "NON-BLOCKING, DISCLOSED. The predecessor compiler recommended a single widened HPO-ODS-W2-20 with two patterns and a post-registration cardinality of 11. This package instead allocates a separate HPO-ODS-W2-21 for a cardinality of 12, on the v1.0.15 precedent. Consumers holding the predecessor's numbers must use these.",
+    "F-3_route_file_convention_drift": "NON-BLOCKING, DISCLOSED. Only the S2 mission's own re-measurement can close the over-inclusion direction of the route-file name list.",
+    "F-4_prong_two_unadjudicated": "NON-BLOCKING, DISCLOSED. Whether 'renders a product page' is a necessary prong of the ODS existing-product-test reservation remains unadjudicated repository-wide; the companion addendum routes around it fail-closed for the one path this batch needs and asserts no general rule."
+  }
+}
