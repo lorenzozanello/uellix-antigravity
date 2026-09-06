@@ -50,18 +50,83 @@
       "scripts/ods-scope.ts",
       "tests/ods/ods-scope.test.ts",
       "tests/hosted/baseline-manifest.test.ts",
+      "tests/hosted/baseline-journal-wrapper.test.ts",
+      "tests/hosted/operator-runner.test.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.ts",
+      "artifacts/hosted-a1-status.json",
       "tests/tenancy/s1-founder-traceability.test.ts",
       "tests/postgres/s1-founder-cardinality.pg.test.ts",
       "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
     ],
-    "path_count": 11,
+    "path_count": 16,
+    "path_count_derivation": "2 protected patterns + 14 unprotected literal paths = 16. The pre-remediation figure was 11 (2 + 9). The five paths added by the BR remediation are tests/hosted/baseline-journal-wrapper.test.ts, tests/hosted/operator-runner.test.ts, tests/eval/stella-release/hosted-baseline-gate.test.ts, tests/eval/stella-release/hosted-baseline-gate.ts and artifacts/hosted-a1-status.json. No wildcard was used to obtain them; each is a literal path.",
+    "FINAL_SCOPE_CLASSIFICATION": {
+      "why_classified": "The audit finding this remediation closes was a SCOPE finding, so the ceiling is restated by CLASS rather than as one undifferentiated list. A path's class determines what authorises it and what the implementing mission may do to it. Conflating the classes is how the pre-remediation ceiling came to omit five mechanically forced paths.",
+      "CLASS_1_PROTECTED_PATTERNS": {
+        "paths": ["db/migrations/**", "db/prepared/journal/**"],
+        "count": 2,
+        "authorised_by": "A resolved protected grant (HPO-ODS-W2-20 and HPO-ODS-W2-21 respectively) AND an ordinary --allow entry covering the same path. Both remain mandatory; neither alone suffices.",
+        "narrowness": "UNCHANGED BY THIS REMEDIATION. Neither pattern is broadened. No db/prepared/** grant of any width is created."
+      },
+      "CLASS_2_UNPROTECTED_LITERAL_FILES": {
+        "paths": [
+          "db/schema.ts",
+          "db/hosted/baseline-manifest.ts",
+          "app/(authenticated)/app/onboarding/actions.ts",
+          "scripts/ods-scope.ts",
+          "tests/ods/ods-scope.test.ts",
+          "tests/tenancy/s1-founder-traceability.test.ts",
+          "tests/postgres/s1-founder-cardinality.pg.test.ts",
+          "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+        ],
+        "count": 8,
+        "authorised_by": "An ordinary --allow entry alone. No protected grant is required or permitted for them.",
+        "not_existing_product_tests": "tests/ods/ods-scope.test.ts is an ODS-native governance control over the gate itself, authorised by an ordinary ODS path grant (adjudicated in the companion addendum FUNCTION_A). tests/tenancy/s1-founder-traceability.test.ts and tests/postgres/s1-founder-cardinality.pg.test.ts are files S1 CREATES, so no existing-test instruction can apply to them."
+      },
+      "CLASS_3_EXISTING_TEST_HOSTS": {
+        "paths": [
+          "tests/hosted/baseline-manifest.test.ts",
+          "tests/hosted/baseline-journal-wrapper.test.ts",
+          "tests/hosted/operator-runner.test.ts",
+          "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+          "tests/eval/stella-release/hosted-baseline-gate.ts"
+        ],
+        "count": 5,
+        "authorised_by": "An ordinary --allow entry AND the narrow per-host existing-test instruction issued in EXISTING_TEST_INSTRUCTIONS below, restated in the companion addendum FUNCTION_D and FUNCTION_F. The --allow entry ALONE is NOT sufficient for these five.",
+        "classification_measured": "ALL FIVE ARE UNPROTECTED BY PATTERN. MEASURED at INTEGRATION_SHA with the gate's own matchesAnyPattern against DEFAULT_PROTECTED_PATTERNS: no path under tests/hosted/ or tests/eval/ matches any of the seven default protected patterns. They need no protected grant; they need an INSTRUCTION.",
+        "why_five_and_not_one": "One appended drizzle baseline unit changes BASELINE_UNITS.length, and five distinct hosts pin that value, or a value derived from it, with EXACT literals. FOUR of the five were outside the pre-remediation ceiling, which is the substance of the audit finding.",
+        "helper_vs_spec": "tests/eval/stella-release/hosted-baseline-gate.ts contains NO it() block. It is the gate implementation that tests/eval/stella-release/hosted-baseline-gate.test.ts asserts against. It is authorised because two of the forced literals live in gate code rather than in the spec, not because it is a test file."
+      },
+      "CLASS_4_GENERATED_ARTEFACTS": {
+        "paths": ["db/prepared/journal/**", "artifacts/hosted-a1-status.json"],
+        "count": 2,
+        "authorised_by": "An ordinary --allow entry, plus the protected grant where the path is also CLASS_1. db/prepared/journal/** is BOTH protected and generated; artifacts/hosted-a1-status.json is generated but unprotected.",
+        "binding_rule": "NEVER HAND-EDITED. Each is produced by its own repository-native generator and confirmed by that generator's own verifier. A hand edit to either is a STOP, not a shortcut. Generators and verifiers: pnpm journal:generate / pnpm journal:verify, and pnpm a1:status:write / pnpm a1:status:verify.",
+        "overlap_is_deliberate": "db/prepared/journal/** appears in CLASS_1 and CLASS_4 because it carries two independent obligations - a protected grant to touch it at all, and a generator discipline governing HOW it may be changed. The classes are PROPERTIES, not a partition; path_count counts each distinct path exactly once."
+      },
+      "count_reconciliation": "CLASS_1 contributes 2 distinct paths, CLASS_2 contributes 8, CLASS_3 contributes 5 - fifteen so far. CLASS_4 contributes exactly ONE further distinct path, artifacts/hosted-a1-status.json, because its other member db/prepared/journal/** is already counted in CLASS_1. 15 + 1 = 16, which equals path_count.",
+      "no_wildcards_introduced": "The remediation adds FIVE LITERAL PATHS. It introduces no tests/** grant, no tests/hosted/** grant, no tests/eval/** grant and no artifacts/** grant. A sixth forced path discovered at implementation time is a fresh STOP_FOR_AUTHORITY_DELTA requiring its own instruction, never an inference from these five."
+    },
     "delta_from_v1_0_0": {
       "added_protected": ["db/prepared/journal/**"],
       "added_unprotected": [
         "db/hosted/baseline-manifest.ts",
         "scripts/ods-scope.ts",
         "tests/ods/ods-scope.test.ts",
-        "tests/hosted/baseline-manifest.test.ts"
+        "tests/hosted/baseline-manifest.test.ts",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "artifacts/hosted-a1-status.json"
+      ],
+      "added_by_BR_remediation": [
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "artifacts/hosted-a1-status.json"
       ],
       "removed": [],
       "unchanged": "All six paths the base authority granted are retained verbatim."
@@ -171,7 +236,144 @@
     "NO_ORDINAL_ALLOCATED": "BINDING. This amendment allocates NO migration ordinal and NO journal-wrapper ordinal. At INTEGRATION_SHA the next free values would be 0066 and 079, but that is a MEASUREMENT OF TODAY and explicitly NOT a reservation. Both sequences are globally contested with Wave3/FIBDB-053, CommercialAccount, Portfolio and Stella. The S1 mission derives both at its own materialization time.",
     "count_pin_non_vacuity": "The advanced pins must be DERIVED FROM MEASUREMENT of the tree after S1's unit is added, never from arithmetic on the 66 and 78 recorded here. If the measured values are not exactly 67 and 79, that discrepancy is evidence of a concurrent migration landing in the contested sequence and is STOP_FOR_INTERVENING_DELTA, not a number to overwrite.",
     "NO_BLANKET_PREPARED_GRANT": "RESTATED AND UNWEAKENED. No db/prepared/** grant of any width. The authorized pattern is db/prepared/journal/**, a STRICT SUBSET, proven by negative control not to reach db/prepared/stella_0010_organization_bootstrap_capability.sql.",
-    "hosted_gate_files_not_authorized": "tests/eval/stella-release/hosted-baseline-gate.test.ts and tests/eval/stella-release/hosted-baseline-gate.ts are NOT authorized paths. Their digest-staleness failure is already registered as a known condition; editing them would convert a registered condition into an unregistered change."
+    "hosted_gate_files_not_authorized": "WITHDRAWN AND REPLACED BY THE BR REMEDIATION. DO NOT APPLY. Its pre-remediation text read: 'tests/eval/stella-release/hosted-baseline-gate.test.ts and tests/eval/stella-release/hosted-baseline-gate.ts are NOT authorized paths. Their digest-staleness failure is already registered as a known condition; editing them would convert a registered condition into an unregistered change.' It is withdrawn because it committed two errors. FIRST, it conflated the REHEARSAL DIGEST staleness - which the two registered known conditions do describe - with the BASELINE COUNT pins that live in the same two files, which they do not describe. SECOND, it inferred from 'a known condition exists in this file' that 'this file must not be edited', which is not what a known-condition registration means: a registration says which failures are ACCEPTED, and is never itself a path prohibition. The replacement disposition is in EXISTING_TEST_INSTRUCTIONS and DETERMINISTIC_BASELINE_GROWTH below, and in the companion addendum FUNCTION_F.",
+    "hosted_gate_files_ARE_authorized": "BINDING, replacing the withdrawn field above. tests/eval/stella-release/hosted-baseline-gate.test.ts and tests/eval/stella-release/hosted-baseline-gate.ts ARE AUTHORISED PATHS in the S1 ceiling, each under a narrow instruction naming exactly which literals may be advanced and forbidding everything else. MEASURED at INTEGRATION_SHA: hosted-baseline-gate.test.ts:67 asserts evidence.unitCount toBe(78) and :68 asserts evidence.superuserFreeUnits toBe(78); hosted-baseline-gate.ts:429 gates on evidence.unitCount === 78 and :407 gates on firstProvisioning.steps.length === 79. All four are EXACT equality comparisons that one appended baseline unit deterministically invalidates. Leaving them stale does not reproduce the registered digest-staleness signature - it produces FOUR NEW failure signatures that no registered condition covers, and which the registry's own test_file-plus-test_id rule therefore refuses to excuse."
+  },
+
+  "EXISTING_TEST_INSTRUCTIONS": {
+    "status": "ISSUED BY THE BR REMEDIATION. These are the narrow ODS existing-test instructions for every existing host that one appended drizzle baseline unit mechanically forces. They are restated in the companion ODS addendum FUNCTION_D (host 1) and FUNCTION_F (hosts 2 to 5). The two artefacts must agree; a disagreement between them is a STOP, not a choice.",
+    "COMMON_BINDING_RULES": {
+      "measure_do_not_compute": "Every advanced value MUST be DERIVED FROM MEASUREMENT of the tree after S1's unit is added, never from arithmetic on the 78 and 66 recorded in this artefact. If the measured baseline cardinality is not exactly 79 and the measured drizzle-migration count is not exactly 67, that discrepancy is evidence of a concurrent migration landing in the globally contested sequence and is STOP_FOR_INTERVENING_DELTA, not a number to overwrite.",
+      "re_measure_line_numbers": "Every line number recorded below was read from live bytes at INTEGRATION_SHA. The implementing mission MUST re-measure them at its own head before editing. A line number that has moved is a signal to re-read the file, never a licence to edit whatever now sits at the recorded number.",
+      "no_weakening": "No exact equality may be converted to a lower bound, a range, a >= comparison, a computed expression that cannot fail, a .skip, a .todo or a deletion. Advancing a pin changes WHICH exact value it demands; it never changes WHETHER it demands one.",
+      "no_unrelated_assertions": "In every host, only the enumerated literals may change. Any other assertion in the same file, the same describe block or the same it() block is out of scope and untouchable.",
+      "no_adjacent_inference": "Authorisation of one host does not authorise a neighbouring file, a file sharing its directory, or a file sharing its prefix."
+    },
+    "HOST_1": {
+      "path": "tests/hosted/baseline-manifest.test.ts",
+      "class": "EXISTING TEST HOST - already inside the pre-remediation ceiling, but its instruction was INCOMPLETE and is corrected here.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_COUNT_PIN_ADVANCE_ONLY",
+      "forced_pin_count": 4,
+      "forced_pins": {
+        "L103": "expect(BASELINE_UNITS).toHaveLength(78) -> the measured post-growth cardinality. OMITTED ENTIRELY by the pre-remediation instruction.",
+        "L105": "expect(byKind('drizzle-migration')).toBe(66) -> the measured post-growth drizzle-migration count.",
+        "L112": "Array.from({ length: 78 }, (_, i) => i + 1), the second argument of the toEqual at L111 -> the measured post-growth cardinality. This is the ORDINAL-CONTIGUITY ASSERTION and it is a real exact pin. MISCHARACTERISED by the pre-remediation instruction, which described the region as 'the ordinal-contiguity wording at :110'. L110 is the it() TITLE and cannot fail; the assertion is the Array.from length argument at L112 and does fail if left stale.",
+        "L115": "expect(new Set(BASELINE_ORDER).size).toBe(78) -> the measured post-growth cardinality."
+      },
+      "NOT_forced": "L106 expect(byKind('supabase-migration')).toBe(2) and L107 expect(byKind('policy')).toBe(10) are NOT forced by an appended DRIZZLE unit and MUST NOT be touched. Changing either would be an unauthorised edit this instruction does not license, and would destroy a control that legitimately distinguishes unit kinds.",
+      "it_titles": "The it() titles at L102 and L110 restate the same literals DESCRIPTIVELY. They are not assertions and cannot fail. Updating them for coherence with the advanced pins is PERMITTED under this instruction and is expected; leaving them stale is a documentation defect rather than a gate failure. Either way they are not among the four forced pins, and they are not a substitute for advancing one.",
+      "explicitly_prohibited": [
+        "converting any exact count pin to a lower bound, range, >= comparison or computed expression that cannot fail",
+        "changing L106 or L107",
+        "changing any sha256 pin, dependsOn chain or kind classification for a unit S1 did not add",
+        "touching db/hosted/baseline-manifest.ts entries other than appending S1's own unit"
+      ]
+    },
+    "HOST_2": {
+      "path": "tests/hosted/baseline-journal-wrapper.test.ts",
+      "class": "EXISTING TEST HOST - ADDED BY THE BR REMEDIATION. Outside the pre-remediation ceiling.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_COUNT_PIN_ADVANCE_ONLY",
+      "forced_pin_count": 2,
+      "forced_pins": {
+        "L472": "expect(BASELINE_UNITS).toHaveLength(78) -> the measured post-growth cardinality.",
+        "L473": "expect(BASELINE_ORDER).toHaveLength(78) -> the measured post-growth cardinality."
+      },
+      "NOT_forced": "L51 expect(Object.keys(generated.files)).toHaveLength(BASELINE_UNITS.length + 1), L444 expect(commands).toHaveLength(BASELINE_UNITS.length + 1) and L477 expect(generated.commands).toHaveLength(BASELINE_UNITS.length + 1) are DERIVED from the live BASELINE_UNITS.length and self-adjust. They MUST NOT be touched. Rewriting a derived expression into a literal would convert a self-maintaining control into one that goes stale, which is gate weakening in the disguise of a count advance.",
+      "explicitly_prohibited": [
+        "converting any derived BASELINE_UNITS.length expression into a literal",
+        "converting any exact pin to a lower bound or range",
+        "changing any wrapper-content, journal-append or SQL-safety assertion in this file"
+      ]
+    },
+    "HOST_3": {
+      "path": "tests/hosted/operator-runner.test.ts",
+      "class": "EXISTING TEST HOST - ADDED BY THE BR REMEDIATION. Outside the pre-remediation ceiling.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_CORPUS_CARDINALITY_ADVANCE_ONLY",
+      "forced_pin_count": 1,
+      "forced_pins": {
+        "L237": "expect(BASELINE_UNITS).toHaveLength(78) -> the measured post-growth cardinality. This is the ONLY corpus-cardinality pin in this host."
+      },
+      "NOT_forced": "EXPLICIT AND LOAD-BEARING. Every UNIT-SPECIFIC HISTORICAL ASSERTION in this file - any assertion naming a particular migration id, ordinal, slug or historical defect - is NOT forced by appending a unit at the END of the corpus, and MUST NOT be changed. Appending a unit changes the corpus SIZE; it changes no existing unit's identity. Rewriting a unit-specific historical assertion under cover of a cardinality advance would be historical evidence rewriting, which fails closed under the ODS fail-closed rules.",
+      "explicitly_prohibited": [
+        "changing any unit-specific historical assertion",
+        "changing any assertion naming a specific migration id, ordinal or slug",
+        "converting the exact pin to a lower bound or range",
+        "adding S1's own unit to any historical enumeration in this file"
+      ]
+    },
+    "HOST_4": {
+      "path": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "class": "EXISTING TEST HOST - ADDED BY THE BR REMEDIATION. Previously PROHIBITED by the now-withdrawn hosted_gate_files_not_authorized field.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_EVIDENCE_PIN_ADVANCE_ONLY",
+      "forced_pin_count": 2,
+      "forced_pins": {
+        "L67": "expect(evidence.unitCount).toBe(78) -> the measured post-growth cardinality.",
+        "L68": "expect(evidence.superuserFreeUnits).toBe(78) -> the measured post-growth cardinality, CONDITIONAL ON S1's own unit being superuser-free."
+      },
+      "superuser_free_is_a_real_condition_not_a_formality": "BINDING. superuserFreeUnits advances in lockstep with unitCount ONLY IF S1's migration is free of superuser dependencies, role statements, ownership transfers and extensions. S1 adds two columns and one foreign key and is EXPECTED to qualify, but the implementing mission MUST verify this from the evidence the gate itself computes rather than assume it. If the measured superuserFreeUnits does not equal the measured unitCount, that is a REAL FINDING about S1's migration - it means S1 introduced a superuser dependency - and it is a STOP, never a number to reconcile by pinning the smaller value.",
+      "explicitly_prohibited": [
+        "setting superuserFreeUnits to a value different from unitCount in order to accommodate a superuser dependency S1 introduced",
+        "converting either pin to a lower bound or range",
+        "changing any other evidence assertion in this file"
+      ]
+    },
+    "HOST_5": {
+      "path": "tests/eval/stella-release/hosted-baseline-gate.ts",
+      "class": "EXISTING GATE HELPER - ADDED BY THE BR REMEDIATION. Previously PROHIBITED by the now-withdrawn hosted_gate_files_not_authorized field. Contains NO it() block; it is the gate implementation that the HOST_4 spec asserts against.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_GATE_LITERAL_ADVANCE_ONLY",
+      "forced_pin_count": 2,
+      "forced_pins": {
+        "L429": "const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 78 -> advance the 78 to the measured post-growth cardinality. This literal IS the baseline count and is findable by grep.",
+        "L407": "firstProvisioning.steps.length === 79 -> advance to the measured post-growth cardinality PLUS ONE."
+      },
+      "THE_N_PLUS_1_TRAP": {
+        "binding": "L407 MUST BE IDENTIFIED BY DERIVATION, NEVER BY GREP. Its literal is 79, which is NOT the baseline count. The provisioning plan emits one step per baseline unit PLUS one journal-bootstrap step, so the literal is N+1: 78 units + 1 bootstrap = 79 today, and 79 units + 1 bootstrap = 80 after S1. The adjacent clause at L408 asserts firstProvisioning.steps[0].id === '000_journal_bootstrap', which is the +1 made visible in the code itself.",
+        "why_grep_fails_in_both_directions": "MEASURED AND CONCRETE. A mission grepping this file for the baseline count 78 NEVER SEES L407 at all. A mission grepping for 79 does see it, but cannot tell from the literal alone whether 79 means 'the new baseline count' or 'the old count plus one' - and at INTEGRATION_SHA 79 is ALSO the live db/prepared/journal file count, a coincidental collision that makes a grep-based identification actively misleading rather than merely incomplete.",
+        "the_specific_failure_mode_this_forbids": "A mission that mechanically advances every 78 to 79 in this file leaves L407 sitting at 79 and concludes it is already correct. The gate then demands 79 steps from a plan that produces 80, firstProvisioningPlannable goes false, and the failure surfaces far from its cause. The correct post-growth value is 80.",
+        "verification_obligation": "The implementing mission MUST assert the RELATIONSHIP, not the number. Before advancing, confirm from the live code that steps.length is BASELINE_UNITS.length + 1. After advancing, confirm the literal equals the MEASURED baseline cardinality plus one."
+      },
+      "NOT_forced": "L354 unitCount: BASELINE_UNITS.length and L359 superuserFreeUnits are DERIVED from the live manifest and self-adjust; they MUST NOT be touched. The prose templates at L434 and L504 interpolate the evidence.unitCount value and likewise self-adjust.",
+      "explicitly_prohibited": [
+        "advancing L407 to the measured baseline cardinality instead of that cardinality plus one",
+        "converting any gate literal to a lower bound, range or expression that cannot fail",
+        "changing the L408 firstProvisioning.steps[0].id assertion",
+        "changing any rehearsal, phase-skip or postcondition gate in this file",
+        "changing the pinned rehearsal digest - that staleness is what the two registered known conditions genuinely do cover"
+      ]
+    },
+    "COMPLETENESS_CLAIM": {
+      "claim": "These five hosts are the COMPLETE set of existing hosts that one appended drizzle baseline unit mechanically forces, as measured at INTEGRATION_SHA.",
+      "how_it_was_established": "By simulating one baseline growth event and running the repository's own generators and gates, not by grep alone. Three repository-native verifiers were confirmed GREEN at INTEGRATION_SHA BEFORE the simulation - pnpm a1:status:verify, pnpm journal:verify and pnpm b0:observation:verify - so any drift observed after the simulation is attributable to the growth and to nothing else.",
+      "honesty_qualifier": "This is a MEASUREMENT OF INTEGRATION_SHA, not a theorem. The implementing mission MUST re-run the same generators and gates at its own head. A SIXTH forced host discovered there is a fresh STOP_FOR_AUTHORITY_DELTA requiring its own instruction. It is NOT covered by these five and MUST NOT be inferred from them."
+    }
+  },
+
+  "A1_STATUS_DISPOSITION": {
+    "path": "artifacts/hosted-a1-status.json",
+    "class": "CURRENT_STATE_GENERATED_EVIDENCE",
+    "authorised": "YES - ADDED BY THE BR REMEDIATION. Outside the pre-remediation ceiling.",
+    "protected": "NO. MEASURED with the gate's own matchesAnyPattern against DEFAULT_PROTECTED_PATTERNS: artifacts/ matches none of the seven patterns. It requires an ordinary --allow entry and NO protected grant.",
+    "why_it_is_mechanically_forced": "MEASURED. scripts/a1-status.ts derives the artefact from artifacts/hosted-a1-corroboration.json TOGETHER WITH the live baseline manifest, and its chainPlan message counts the baseline units the recorded observation lacks - at INTEGRATION_SHA, 'refused: 28 baseline unit(s) missing, starting with 0040_governed_model_registry.sql'. Appending one baseline unit that the recorded staging observation does not contain deterministically changes that count to 29. pnpm a1:status:verify compares the on-disk bytes against a freshly serialised status and FAILS on any difference.",
+    "regeneration_is_offline": "MEASURED FROM SOURCE. scripts/a1-status.ts reads with readFileSync and constructs no database client. Regeneration is a pure recomputation over the RECORDED corroboration plus the live manifest, and needs no live database, no credentials and no staging access. Its write mode REFUSES outright when the corroboration artefact is absent, so it cannot fabricate a verdict from nothing.",
+    "MANDATORY_REGENERATION": "BINDING. The implementing mission MUST regenerate this artefact with the repository-native generator pnpm a1:status:write, and MUST confirm with pnpm a1:status:verify. It MUST NEVER be hand-edited. Its own first field reads 'do not hand-edit; this file is derived from the corroboration'; a hand edit would assert a verdict the recorded corroboration does not support.",
+    "NOT_HISTORICAL_CLOSURE_EVIDENCE": {
+      "binding": "This artefact is CURRENT-STATE evidence - what the A1 contract computes over the recorded corroboration AS OF NOW. It is NOT historical closure evidence and NOT a sealed or certified artefact. Regenerating it is the OPPOSITE of historical evidence rewriting: leaving it stale is what would misreport the current state.",
+      "the_distinction_that_matters": "A historical closure artefact records what was true at a past checkpoint and is immutable. A current-state generated artefact records what the contract computes today and is REQUIRED to move when its inputs move. Conflating the two is what produces both failure modes - frozen files edited, and live files left stale.",
+      "corroboration_is_NOT_authorised": "artifacts/hosted-a1-corroboration.json - the RECORDED PROBE OUTPUT this status derives from - falls in the FIRST category and is NOT an authorised path. It is not in the S1 ceiling and S1 must not touch it. Only the DERIVED status file is authorised. Editing the corroboration would alter the recorded observation itself, which is exactly the historical rewrite this disposition forbids."
+    },
+    "verifier_not_a_test_host": "PRECISE, AND THE REASON THIS IS NOT LISTED AS AN EXISTING TEST HOST. pnpm a1:status:verify is a repository-native CLI verifier, not a vitest spec. No file under tests/ asserts this artefact's freshness. It is therefore classified as a generated artefact governed by generator discipline, and NO existing-test instruction is issued for it. A mission that looked only for failing vitest specs would never discover this obligation."
+  },
+
+  "CHECKPOINT_B0_DISPOSITION": {
+    "path": "db/prepared/checkpoint-b0/observation.sql",
+    "verdict": "NOT REQUIRED FOR S1. NOT AUTHORISED. NOT TO BE ADDED TO THE CEILING.",
+    "status": "RECORDED NEGATIVE FINDING. This entry exists so a future reader does not 'complete' the S1 ceiling by importing a consequence that does not apply to it.",
+    "why_not": "S1 ADDS COLUMNS TO AN EXISTING TABLE AND CREATES NO TABLE. organizations.founded_by and organizations.founding_provenance are added to the pre-existing organizations relation.",
+    "machine_derivation": "PROVEN FROM SOURCE rather than asserted. scripts/b0-observation-sql.ts:30 builds the probe as buildB0ObservationSql(deriveExpectedBaselineState(read).tables) - the probe is TABLE-SCOPED. db/hosted/baseline-postconditions.ts:164 populates that set with a loop over facts.tablesCreated, so it is filled from CREATE TABLE facts ONLY. A migration whose DDL is ALTER TABLE ... ADD COLUMN contributes no member to tablesCreated, the derived table set is therefore unchanged, and the generated probe is byte-identical.",
+    "machine_confirmation": "pnpm b0:observation:verify was run at INTEGRATION_SHA and reported 'verification OK - the probe regenerates byte-identically from the corpus'. The implementing mission MUST re-run it after adding S1's unit and MUST obtain the same byte-identical result. That re-run is the confirmation; this reasoning is not a substitute for it.",
+    "conditional_not_absolute": "BINDING HONESTY QUALIFIER. This negative holds BECAUSE S1's frozen semantics create no table. It is CONDITIONAL on that, not unconditional. If the S1 implementing mission finds itself writing a CREATE TABLE, it has departed from FROZEN_S1_SEMANTICS, and the correct response is STOP_FOR_AUTHORITY_DELTA - never to quietly add checkpoint-b0 to the ceiling and continue.",
+    "DO_NOT_IMPORT_CE1s_CONSEQUENCE": "EXPLICIT. The CommercialAccount CE-1 lane DID require db/prepared/checkpoint-b0/observation.sql, because its migration CREATED A TABLE and therefore changed deriveExpectedBaselineState().tables. That consequence is specific to table creation and MUST NOT be imported into S1 by analogy. Two lanes sharing the phrase 'ordinary migration' do not thereby share this consequence, and the difference is measurable rather than a matter of judgement.",
+    "second_negative_control": "MEASURED. Even a mission that wrongly concluded checkpoint-b0 were needed would not be able to reach it under this authority: db/prepared/checkpoint-b0/observation.sql is PROTECTED under DEFAULT_PROTECTED_PATTERNS entry db/prepared/**, and matchesAnyPattern('db/prepared/checkpoint-b0/observation.sql', ['db/prepared/journal/**']) evaluates to FALSE. HPO-ODS-W2-21 demonstrably does not cover it. The narrow grant fails closed in exactly the direction it was designed to."
   },
 
   "protected_grant": {
@@ -227,11 +429,47 @@
     }
   },
 
-  "KNOWN_TEST_CONDITIONS_CARRIED": {
-    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "CARRIED. Adding a baseline unit restales the pinned rehearsal digest asserted by tests/eval/stella-release/hosted-baseline-gate.ts.",
-    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "CARRIED. Same underlying cause, separate test_id, separate failure signature.",
-    "same_condition_comparison_rule": "BINDING. A failure matches a carried condition ONLY on test_file + test_id together, NEVER on filename alone. This is the registry's own rule.",
-    "not_a_blanket_exemption": "These two entries excuse exactly the two registered digest-staleness signatures. They excuse no other failure in those files and authorize no edit to them."
+  "DETERMINISTIC_BASELINE_GROWTH": {
+    "status": "FROZEN BY THE BR REMEDIATION. This block is the CONTROLLING disposition for every count pin that one appended baseline unit invalidates. It replaces the pre-remediation KNOWN_TEST_CONDITIONS_CARRIED block, whose text is preserved verbatim below for audit continuity and is WITHDRAWN as guidance.",
+    "DOCTRINE": {
+      "rule": "DETERMINISTIC_BASELINE_GROWTH -> REGENERATE, or ADVANCE THE EXACT GOVERNED COUNT PIN -> TARGET FULL GREEN.",
+      "binding": "A pin that is stale because the baseline deterministically grew is a pin that MUST BE ADVANCED. It is not a known condition, it is not an accepted failure, and it is not a candidate for registration as one. The S1 exit target is FULL GREEN on every host enumerated in EXISTING_TEST_INSTRUCTIONS, with every generated artefact regenerated by its own generator and confirmed by its own verifier.",
+      "no_new_KTC": "PROHIBITED. The S1 implementing mission MUST NOT create KTC-S1-anything, nor any other new known-test-condition entry, for baseline-growth staleness. Registering a deterministic, mechanically repairable, fully specified drift as a known condition converts a bounded repair into permanent accepted debt, and hides precisely the class of failure this authority exists to force into the open.",
+      "why_this_is_not_gate_weakening": "Advancing an exact pin from 78 to a MEASURED 79 leaves it an exact pin: the control still fails on any drift that was not measured. What WOULD be gate weakening is converting it to a lower bound, a range, a computed expression that cannot fail, or a registered exemption - and all four are prohibited by COMMON_BINDING_RULES.no_weakening."
+    },
+    "WHAT_THE_TWO_KTCs_DO_STILL_COVER": {
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "REMAINS VALID AS A HISTORICAL AND CURRENT CONDITION, ON ITS OWN TERMS ONLY. Registered in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json. It covers the REHEARSAL DIGEST going stale - the pinned artefact recording that a rehearsal ran against a PREVIOUS manifest. That is genuinely not repairable by editing a number, because the repair is running pnpm baseline:rehearsal:local, which requires an environment the authority lane does not have.",
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "REMAINS VALID on the same terms. Same underlying cause, separate test_id, separate failure signature.",
+      "the_conflation_that_was_corrected": "MATERIAL. The rehearsal digest and the baseline COUNT PINS live in the same two files but are different failures with different repairs. The two registered conditions cover the DIGEST. They never covered the COUNTS. The pre-remediation candidate reasoned from 'a registered condition exists in this file' to 'this file must not be edited', which does not follow, and which is exactly what left four mechanically forced pins outside the S1 ceiling.",
+      "same_condition_comparison_rule": "BINDING AND UNCHANGED. A failure matches a carried condition ONLY on test_file plus test_id together, NEVER on filename alone. This is the registry's own rule, and it is precisely the rule the conflation violated: sharing a FILE with a registered condition is not matching that condition.",
+      "not_a_blanket_exemption": "These two entries excuse exactly the two registered digest-staleness signatures. They excuse no other failure in those files. They do NOT excuse a stale evidence.unitCount pin, a stale evidence.superuserFreeUnits pin, a stale manifestOk gate literal, or a stale firstProvisioning.steps.length literal - each of which is a NEW, unregistered failure signature.",
+      "and_they_authorise_no_edit_by_themselves": "A known condition states which failures are ACCEPTED. It is never itself a path grant, and never itself a path prohibition. The four forced literals in those two files are editable because EXISTING_TEST_INSTRUCTIONS HOST_4 and HOST_5 authorise them - not because a condition happens to be registered nearby."
+    },
+    "WITHDRAWN_PRE_REMEDIATION_TEXT": {
+      "preserved_for_audit_continuity": "The pre-remediation KNOWN_TEST_CONDITIONS_CARRIED block read as follows. It is recorded verbatim so the audit trail shows exactly what changed, and it is WITHDRAWN as guidance.",
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "CARRIED. Adding a baseline unit restales the pinned rehearsal digest asserted by tests/eval/stella-release/hosted-baseline-gate.ts.",
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "CARRIED. Same underlying cause, separate test_id, separate failure signature.",
+      "same_condition_comparison_rule": "BINDING. A failure matches a carried condition ONLY on test_file + test_id together, NEVER on filename alone. This is the registry's own rule.",
+      "not_a_blanket_exemption": "These two entries excuse exactly the two registered digest-staleness signatures. They excuse no other failure in those files and authorize no edit to them.",
+      "what_was_wrong_with_it": "Only the final clause - 'and authorize no edit to them'. Read together with the withdrawn S1_MIGRATION_PARTICIPATION.hosted_gate_files_not_authorized field, it made a registered digest condition do the work of a scope prohibition, and thereby excluded four mechanically forced pins from the S1 ceiling. The first four clauses were and remain correct."
+    },
+    "REGENERATION_CONSEQUENCES_SUMMARY": {
+      "db/prepared/journal/**": "REGENERATE with pnpm journal:generate, confirm with pnpm journal:verify. See JOURNAL_CONSEQUENCE.",
+      "artifacts/hosted-a1-status.json": "REGENERATE with pnpm a1:status:write, confirm with pnpm a1:status:verify. See A1_STATUS_DISPOSITION.",
+      "db/prepared/checkpoint-b0/observation.sql": "NO CHANGE EXPECTED. Confirm byte-identity with pnpm b0:observation:verify. See CHECKPOINT_B0_DISPOSITION.",
+      "count_pins_in_the_five_test_hosts": "ADVANCE BY HAND under the narrow per-host instructions. See EXISTING_TEST_INSTRUCTIONS."
+    }
+  },
+
+  "JOURNAL_CONSEQUENCE": {
+    "grant": "db/prepared/journal/** - PRESERVED EXACTLY. Declared by HPO-ODS-W2-21. Neither broadened nor narrowed by the BR remediation.",
+    "why_the_pattern_is_load_bearing": "MACHINE-PROVEN, RE-VERIFIED INDEPENDENTLY AT INTEGRATION_SHA. db/hosted/baseline-journal-wrapper.ts:211 emits each wrapper's header as a GENERATED - DO NOT EDIT line carrying 'Unit <ordinal>/<BASELINE_UNITS.length>: <unit id>'. The DENOMINATOR is the live baseline cardinality, interpolated at generation time. The live wrapper db/prepared/journal/078_0065_fib_sensitivity_model.sql carries 'Unit 78/78' in its own bytes.",
+    "the_consequence": "ONE appended baseline unit therefore does TWO things at once. It CREATES one new wrapper, and it REWRITES THE DENOMINATOR IN EVERY EXISTING WRAPPER. At INTEGRATION_SHA that is 79 files regenerated, measured by pnpm journal:verify reporting 'verification OK - all 79 wrappers regenerate byte-identically'.",
+    "why_no_exact_file_list_may_be_frozen": "BINDING. Because the change set is 'every existing wrapper, plus one new one', an exact frozen file list would be wrong the moment it was written and would fail closed against the generator's own output. The PATTERN is the only correct form. This is the affirmative reason db/prepared/journal/** is a pattern grant rather than an enumeration, and it is why the pattern MUST NOT be replaced by a file list during implementation.",
+    "generator": "pnpm journal:generate",
+    "verifier": "pnpm journal:verify",
+    "MANDATORY": "Wrappers are GENERATED. The implementing mission MUST regenerate them with the generator and MUST confirm with the verifier. Hand-editing a wrapper is a STOP. scripts/baseline-operator-runner.ts independently refuses a wrapper that does not carry the journal append, so a hand-written wrapper fails a second, unrelated gate as well.",
+    "narrowness_preserved": "The pattern remains a STRICT SUBSET of db/prepared/**. Re-proven at INTEGRATION_SHA with the gate's own matcher in two directions: matchesAnyPattern('db/prepared/stella_0010_organization_bootstrap_capability.sql', ['db/prepared/journal/**']) is FALSE, and matchesAnyPattern('db/prepared/checkpoint-b0/observation.sql', ['db/prepared/journal/**']) is FALSE. Both remain PROTECTED VIOLATIONS even with HPO-ODS-W2-21 supplied."
   },
 
   "PARALLELISM": {
@@ -281,7 +519,12 @@
       "T-S1-BACKFILL-1": "Real PostgreSQL. Exactly one qualifying audit row with non-null actor -> founded_by = that actor.",
       "T-S1-BACKFILL-2": "Real PostgreSQL. Zero rows, more than one row, and null actor each -> founded_by = NULL. Three distinct negative cases, not one.",
       "T-S1-BACKFILL-3": "founding_provenance = 'unknown' for EVERY backfilled historical row, asserted over the whole backfilled set, not a sample.",
-      "T-S1-WALL-1": "ORDINARY-USER NEGATIVE CONTROL as specified in FROZEN_S1_SEMANTICS.ORDINARY_USER_NEGATIVE_CONTROL, including the positive SQLSTATE class assertion and BOTH negative assertions."
+      "T-S1-WALL-1": "ORDINARY-USER NEGATIVE CONTROL as specified in FROZEN_S1_SEMANTICS.ORDINARY_USER_NEGATIVE_CONTROL, including the positive SQLSTATE class assertion and BOTH negative assertions.",
+      "T-S1-GROWTH-1": "ADDED BY THE BR REMEDIATION. All ELEVEN mechanically forced count pins are advanced to MEASURED values and every affected suite is GREEN: 4 in tests/hosted/baseline-manifest.test.ts, 2 in tests/hosted/baseline-journal-wrapper.test.ts, 1 in tests/hosted/operator-runner.test.ts, 2 in tests/eval/stella-release/hosted-baseline-gate.test.ts and 2 in tests/eval/stella-release/hosted-baseline-gate.ts. A skipped, softened or registered-as-known pin FAILS this control.",
+      "T-S1-GROWTH-2": "ADDED BY THE BR REMEDIATION. N+1 DERIVATION CONTROL. tests/eval/stella-release/hosted-baseline-gate.ts firstProvisioning.steps.length equals the MEASURED baseline cardinality PLUS ONE, and is asserted as that relationship rather than as a copied literal. A value equal to the baseline cardinality itself FAILS this control - that is the specific defect the pin invites.",
+      "T-S1-GROWTH-3": "ADDED BY THE BR REMEDIATION. GENERATED-ARTEFACT DISCIPLINE. pnpm journal:verify and pnpm a1:status:verify both pass after regeneration by their own generators, and pnpm b0:observation:verify still reports byte-identical output. A generated file brought into agreement by hand rather than by its generator FAILS this control.",
+      "T-S1-GROWTH-4": "ADDED BY THE BR REMEDIATION. NO NEW KNOWN CONDITION. docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json gains NO entry from the S1 mission. Any new registration whose cause is baseline growth FAILS this control.",
+      "T-S1-GROWTH-5": "ADDED BY THE BR REMEDIATION. NEGATIVE CONTROL ON THE UNFORCED PINS. tests/hosted/baseline-manifest.test.ts L106 supabase-migration toBe(2) and L107 policy toBe(10) are BYTE-UNCHANGED, and every unit-specific historical assertion in tests/hosted/operator-runner.test.ts is BYTE-UNCHANGED. A count advance that also moved one of these has exceeded its instruction and FAILS this control."
     },
     "S2_controls": {
       "T-S2-TOPO-1": "The recursive route enumeration yields EXACTLY ['onboarding','organizations/select'].",
@@ -314,5 +557,65 @@
     "F-2_predecessor_grant_shape_superseded": "NON-BLOCKING, DISCLOSED. The predecessor compiler recommended a single widened HPO-ODS-W2-20 with two patterns and a post-registration cardinality of 11. This package instead allocates a separate HPO-ODS-W2-21 for a cardinality of 12, on the v1.0.15 precedent. Consumers holding the predecessor's numbers must use these.",
     "F-3_route_file_convention_drift": "NON-BLOCKING, DISCLOSED. Only the S2 mission's own re-measurement can close the over-inclusion direction of the route-file name list.",
     "F-4_prong_two_unadjudicated": "NON-BLOCKING, DISCLOSED. Whether 'renders a product page' is a necessary prong of the ODS existing-product-test reservation remains unadjudicated repository-wide; the companion addendum routes around it fail-closed for the one path this batch needs and asserts no general rule."
+  },
+
+  "CANDIDATE_REVISION_HISTORY": {
+    "form": "APPEND-ONLY. Each revision is recorded, never overwritten. This candidate is UNMERGED; recording its audit history here is candidate provenance, not historical evidence rewriting.",
+    "R1_MATERIALIZATION": {
+      "lane": "LANE BK - MULTIORG-S1-S2-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1",
+      "candidate_head": "0c5b5442f3abb5ce82aa7add8155a0a3dd79a1fc",
+      "candidate_tree": "7984000e39d4643cf67bdfdbf84ff387ce17d787",
+      "outcome": "PUBLISHED AS PR #83, DRAFT."
+    },
+    "R1_INDEPENDENT_AUDIT": {
+      "lane": "LANE BO - PR83-INDEPENDENT-EXACT-OBJECT-AUDIT-AND-INTEGRATION-R1",
+      "RESULT": "FAIL",
+      "BLOCKING_FINDINGS": 1,
+      "UNKNOWN_FINDINGS": 0,
+      "finding": "S1_SCOPE_STILL_INCOMPLETE",
+      "what_was_proven": "That a mandatory S1 drizzle migration cannot avoid becoming a BASELINE_UNITS member - omitting the unit raises problem kind UNKNOWN_FILE - and that after one simulated baseline growth event, run against the repository's real generators, five further paths remained mechanically required and were outside the S1 ceiling: tests/hosted/baseline-journal-wrapper.test.ts, tests/hosted/operator-runner.test.ts, tests/eval/stella-release/hosted-baseline-gate.test.ts, tests/eval/stella-release/hosted-baseline-gate.ts and artifacts/hosted-a1-status.json. Separately, tests/hosted/baseline-manifest.test.ts was already in scope but its existing-test instruction was incomplete.",
+      "not_relitigated": "The finding is ACCEPTED. This remediation re-derived every element of it independently from live bytes, and agrees. Where the independent re-derivation is sharper than the finding as stated, that is recorded in R1_REMEDIATION.remediator_findings rather than used to narrow the finding."
+    },
+    "R1_REMEDIATION": {
+      "lane": "LANE BR - PR83-S1-BASELINE-SURFACE-REMEDIATION-R1",
+      "scope": "Addresses exactly the BO finding. Revises the SAME TWO unmerged authority artefacts already in PR #83. Creates no third file, no successor authority, no new ODS version, no new HPO id, no v1.0.21, no HPO-ODS-W2-22, no Controller31 implementation and no runtime, schema, migration, test or gate implementation.",
+      "changes": [
+        "S1 ceiling raised from 11 to 16 paths by FIVE LITERAL additions, classified into protected patterns, unprotected literal files, existing test hosts and generated artefacts.",
+        "S1_MIGRATION_PARTICIPATION.hosted_gate_files_not_authorized WITHDRAWN, its text preserved, and replaced by hosted_gate_files_ARE_authorized.",
+        "EXISTING_TEST_INSTRUCTIONS issued for all five existing hosts, with 11 forced pins enumerated by exact line and exact current literal.",
+        "HOST_1 corrected from 2 named pins to the 4 that are actually forced, including L103 which was omitted and L112 which was mischaracterised as wording at L110.",
+        "A1_STATUS_DISPOSITION added - CURRENT_STATE_GENERATED evidence, regenerated by pnpm a1:status:write, never hand-edited, distinguished from historical closure evidence.",
+        "CHECKPOINT_B0_DISPOSITION added - the negative result, proven from source and confirmed by pnpm b0:observation:verify.",
+        "JOURNAL_CONSEQUENCE added - why db/prepared/journal/** must stay a pattern and can never be frozen as a file list.",
+        "KNOWN_TEST_CONDITIONS_CARRIED replaced by DETERMINISTIC_BASELINE_GROWTH; the two registered KTCs retained on their own terms, the conflation corrected, KTC-S1-* prohibited.",
+        "TEST_CONTRACT S1_controls extended with T-S1-GROWTH-1 through T-S1-GROWTH-5.",
+        "CANDIDATE_SELF_CHECK added."
+      ],
+      "remediator_findings": {
+        "RF-1": "SHARPER THAN THE FINDING AS STATED. BO reported that the baseline-manifest instruction 'omitted one mechanically forced cardinality pin'. Independent measurement of live bytes finds the instruction named TWO assertions (L105, L115) out of FOUR forced ones. L103 expect(BASELINE_UNITS).toHaveLength(78) was omitted entirely, and L112 Array.from({ length: 78 }, ...) was mischaracterised as 'the ordinal-contiguity wording at :110' when L110 is the it() title and L112 is a real assertion. The remediation issues all four. This strengthens the finding; it does not contradict it.",
+        "RF-2": "The five newly required paths were independently classified with the gate's own matchesAnyPattern against DEFAULT_PROTECTED_PATTERNS. ALL FIVE ARE UNPROTECTED. No protected grant is created for any of them, and neither W2-20 nor W2-21 is broadened.",
+        "RF-3": "artifacts/hosted-a1-status.json is enforced by a CLI verifier, not a vitest spec. No file under tests/ asserts its freshness. A mission looking only for failing tests would never have found this obligation, which is why it is classified as a generated artefact rather than a test host.",
+        "RF-4": "The checkpoint-b0 negative was proven FROM SOURCE rather than by trial: the probe is built from deriveExpectedBaselineState().tables, which is populated only from CREATE TABLE facts, so an ALTER TABLE ADD COLUMN migration leaves it byte-identical. The negative is therefore CONDITIONAL on S1 creating no table, and is recorded as conditional rather than absolute."
+      },
+      "verdict_authority": "NO PASS IS CLAIMED HERE. This lane is the remediator, not the auditor. Only an independent exact-object re-audit may issue a verdict on the revised candidate. The next authorized action is that re-audit."
+    }
+  },
+
+  "CANDIDATE_SELF_CHECK": {
+    "form": "Each entry is a MACHINE-CHECKABLE assertion over this artefact's own bytes and, where stated, over the live repository. A FALSE entry is a defect in the candidate, not a note.",
+    "SC-1_five_paths_present": "S1_LANE.unprotected_paths contains ALL FIVE of tests/hosted/baseline-journal-wrapper.test.ts, tests/hosted/operator-runner.test.ts, tests/eval/stella-release/hosted-baseline-gate.test.ts, tests/eval/stella-release/hosted-baseline-gate.ts and artifacts/hosted-a1-status.json. FAILS if any one disappears.",
+    "SC-2_path_count_consistent": "S1_LANE.path_count === 16 === protected_paths.length + unprotected_paths.length.",
+    "SC-3_host_1_has_four_pins": "EXISTING_TEST_INSTRUCTIONS.HOST_1.forced_pin_count === 4 and its forced_pins object has exactly the four keys L103, L105, L112, L115. FAILS if any one of the four is omitted.",
+    "SC-4_all_five_hosts_instructed": "EXISTING_TEST_INSTRUCTIONS contains HOST_1 through HOST_5, their paths are exactly the five CLASS_3 paths, and each carries a non-empty AUTHORIZED_CHANGE_CLASS, a forced_pin_count and an explicitly_prohibited list. FAILS if any of the four additional hosts loses its narrow instruction.",
+    "SC-5_forced_pin_total": "The five forced_pin_count values sum to 11 (4 + 2 + 1 + 2 + 2).",
+    "SC-6_a1_status_disposition": "A1_STATUS_DISPOSITION exists, names artifacts/hosted-a1-status.json, mandates pnpm a1:status:write, and forbids hand-editing.",
+    "SC-7_checkpoint_b0_not_authorised": "db/prepared/checkpoint-b0/observation.sql appears NOWHERE in S1_LANE.protected_paths or S1_LANE.unprotected_paths, and CHECKPOINT_B0_DISPOSITION.verdict states it is NOT REQUIRED and NOT AUTHORISED. FAILS if checkpoint-b0 is accidentally authorised for S1.",
+    "SC-8_no_KTC_waiver": "DETERMINISTIC_BASELINE_GROWTH.DOCTRINE.no_new_KTC is present and prohibitive, and no field of this artefact uses a known test condition to excuse a baseline-growth count pin. The withdrawn text under WITHDRAWN_PRE_REMEDIATION_TEXT is explicitly labelled WITHDRAWN and is not guidance. FAILS if a KTC is used to waive deterministic baseline growth.",
+    "SC-9_grants_not_broadened": "S1_LANE.protected_paths is EXACTLY ['db/migrations/**', 'db/prepared/journal/**'] - two entries, unchanged. No db/prepared/** of any width appears as a grant. FAILS if W2-20 or W2-21 is broadened.",
+    "SC-10_no_new_lineage": "This artefact allocates NO v1.0.21 and NO HPO-ODS-W2-22. Its version remains 1.0.1 and its GRANT_ID remains HPO-ODS-W2-21. FAILS if either appears as an allocation rather than as a prohibition.",
+    "SC-11_grant_cardinality_unchanged": "PROTECTED_GRANTS_COUNT_BEFORE === 10 and PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION === 12. The BR remediation does not alter that adjudication.",
+    "SC-12_changed_path_count": "authorized_changed_paths_this_mission.count === 2 and its paths are exactly this artefact and its companion ODS addendum. The remediation adds no third file.",
+    "SC-13_audit_history_preserved": "CANDIDATE_REVISION_HISTORY.R1_INDEPENDENT_AUDIT records RESULT FAIL, BLOCKING_FINDINGS 1, UNKNOWN_FINDINGS 0 and finding S1_SCOPE_STILL_INCOMPLETE, and no field of this artefact claims an independent PASS. FAILS if the audit failure is erased or a PASS is fabricated.",
+    "SC-14_n_plus_1_by_derivation": "EXISTING_TEST_INSTRUCTIONS.HOST_5.THE_N_PLUS_1_TRAP exists and requires the L407 literal to be identified by derivation rather than grep, and to be advanced to the measured cardinality PLUS ONE."
   }
 }
