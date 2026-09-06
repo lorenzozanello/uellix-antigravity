@@ -1,0 +1,295 @@
+{
+  "manifest_id": "WAVE3_TEST_MANIFEST_v1.0.0",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json — the companion executable Wave 3 domain authority frozen by mission WAVE3-AUTHORITY-MATERIALIZATION-R1 at AS_OF_HEAD a27c4a9af83afba5f4f94ee2a2d61a56495fdd50 / tree e7f3a1e4fd8c4c8fe5a90cc02bc63c39ac978286 / ref origin/integration/commercial-v1. Controlling frozen authority consumed by that artifact: docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md — FIBC-023 (:179-180), FIBC-024 (:184-185), FIBC-025 (:187-188), FIBC-029 (:201-202), FIBDB-053 (:385-403), FIBIU-19 (:781-782), FIBIU-20 (:784-785), WAVE 3 block (:853-862). This manifest is a BATCH commitment covering FIBIU-19, FIBIU-20 and the FIBDB-053 Stage-A prepared package as one Wave 3 unit, because the frozen topology makes them serial (SERIAL_CONTRACTS 19->20, PARALLEL_GROUPS none) and FIBDB-053 is FIBIU-20's hard precondition. NAMING DERIVATION: the repo-native convention is <PACKAGE_STEM>_TEST_MANIFEST_v<semver>.json beside its authority, as in docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json; the authority stem WAVE3_AUTHORITY_v1.0.0 therefore yields WAVE3_TEST_MANIFEST_v1.0.0.json. THIS MANIFEST IS A PRE-IMPLEMENTATION COMMITMENT: no control below has been run, and no test_file below exists at AS_OF_HEAD. AMENDMENT R2 (mission WAVE3-AUTHORITY-ADJUDICATION-AMENDMENT-R2, source LANE AR — WAVE3-OPEN-AUTHORITY-FINDINGS-ADJUDICATION-R1): F-W3-2 adjudicated CLOSED as REACHABLE_IN_WAVE3_FROM_EXISTING_STATE, FIBIU-29 reclassified CLOSED_AUDITED_INTEGRATED, F-W3-1 updated to PARTIALLY_REMEDIATED. The 24 reason codes are unchanged in content and order. AMENDMENT R3 (mission WAVE3-F-W3-1-FINAL-RESOLUTION-R3): F-W3-1 RESOLVED on machine proof — pnpm ops:program-state -- --unit W2-B5 now returns AUTHORITY/IMPLEMENTATION/AUDIT all CLOSED and INTEGRATION[origin/integration/commercial-v1]=INTEGRATED, after PR #81 repaired the registry audit.ref. BLOCKING_FINDINGS=0, UNKNOWN_FINDINGS=0. The 24 reason codes, the 22+2 partition, the FIBDB-051 and FIBIU-29 adjudications, CP-4 and the F-2/F-3 carry-forwards are unchanged.",
+  "dependencies": [
+    "W2-B5 — CLOSED, SATISFIED. The Wave 3 precondition \"Wave 2 complete\" (FIB:854) is now machine-proven for this unit. Measured on the R3 post-merge head with `pnpm ops:program-state -- --unit W2-B5 --json --integration-target origin/integration/commercial-v1`: authority.status=CLOSED, implementation.status=CLOSED, audit.status=CLOSED, integration[\"origin/integration/commercial-v1\"]=INTEGRATED, no field UNKNOWN. The field that flipped is audit.status, whose evidenceRef moved from codex/w2-b5-r1 to codex/w2-b5-closure-evidence-r1 — the repair PR #81 made (commit cb0f569, merged as 08d3c4dd262a9cd9d4f64900fdd09205370f23ef), which was independently audited before integration. CLOSURE CHAIN: PR #70 (a27c4a9af8, implementation + audit) -> PR #78 (4e28c4c22e, closure evidence artifact d3ab9e3) -> PR #81 (08d3c4dd26, registry audit.ref repair) -> resolver returns CLOSED. Steps one to three are preconditions of the fourth, never substitutes for it. MEASURED MORE BROADLY, not inferred from this unit alone: all four batches the registry enumerates — W2-B1, W2-B3, W2-B4, W2-B5 — report authority, implementation and audit CLOSED and INTEGRATED against origin/integration/commercial-v1. The registry contains no W2-B2 unit, so that statement covers the registry's Wave 2 population; see authority finding F-W3-7. Still NOT a finding, characterised identically in R1, R2 and R3: INTEGRATION_STATUS for the bare name integration/commercial-v1 reports NOT_INTEGRATED because the local branch is stale at 547ac36405c47b1be386d37ba1f387173c867252; against origin it reports INTEGRATED.",
+    "FIBIU-29 — CLOSED_AUDITED_INTEGRATED, adjudicated by LANE AR and applied as amendment R2. Grounded in the Wave 1 closure chain: FIBIU-29 is a declared Wave 1 unit (FIB:833, level 1.2); docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json records closure_status=\"CLOSED\", closure_class=\"ADVERSARIAL\", wave1_formally_closed=true under closure_authority=\"HUMAN_PRODUCT_OWNER_ACCEPTANCE_OF_W1_07\", at audited_head 6944a618b70c0ac0436a915fa0a52af24a16a5dc / audited_tree 80915e1608725351a9b7ad9772bdc595af679767; and that audited head is an ancestor of both origin/integration/commercial-v1 and this PR head (measured with git merge-base --is-ancestor). EVIDENCE LIMITATION, stated so the grade is not overread: this is a STATIC and HISTORICAL closure-chain determination, NOT a fresh local execution of FIBIU-29's suites — the Lane AR adjudication could not run suites (node_modules absent in its worktree) and this amending mission did not re-execute them either. A Wave 3 mission needing a live guarantee of the six discrete permissions must exercise them as ordinary controls. Supersedes U-W3-1, which is removed from the authority's unknown[].",
+    "FIBDB-053 external G2 gate — PENDING, BLOCKING for FIBIU-20 production readiness. FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:401 records the status as PENDING and :899 records the transitive stop rule (unresolved by the start of wave 3 stops FIBIU-20, FIBIU-24 and FIBIU-26). Measured at AS_OF_HEAD: none of the four stella_0017b artifacts exists in db/prepared/ or db/prepared/hosted/, so the gate has no submitted object. FIBIU-20 Stage-A development MAY begin before G2; FIBIU-20 MAY NOT become production ready until FIBDB-053 is APPLIED.",
+    "Controller 30 — NOT MEASURED BY THIS MISSION. WAVE3_AUTHORITY_v1.0.0.json FUTURE_ODS_NEEDS_SYMBOLIC records that future Wave 3 implementation lineage is SYMBOLIC and must be RE-DERIVED after Controller 30 closes. No node of this manifest may open an implementation grant on an identifier read off either artifact — there is none to read.",
+    "PR77 / Lane AG — owns the current next lineage at AS_OF_HEAD. Named because it is the contending writer for the next ODS addendum ordinal and the next HPO-ODS grant. This package allocates neither (explicitly NOT v1.0.19 and NOT HPO-ODS-W2-20) and does not contend for them.",
+    "Tenancy S3c — SEQUENCED, NOT BLOCKING. docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json STELLA_S3C_SCOPE_WELD declares db/prepared/stella_* a SERIAL CHOKE POINT shared with the Wave 3 Stella surfaces. WAVE3_AUTHORITY_v1.0.0.json CP4_SEQUENCE freezes the direction: FIBDB-053 Stage-A authoring FIRST, S3c SECOND, never parallel writers."
+  ],
+  "protected_surfaces": [
+    "db/prepared/**",
+    "db/prepared/hosted/**",
+    "db/prepared/hosted/governed/**",
+    "db/migrations/**"
+  ],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "A real PostgreSQL probe is MANDATORY for this batch, and both harness paths are legitimately UNKNOWN because no implementing node exists yet — naming a harness path that does not exist would be a fabricated fact. WHY STATIC READING IS NOT PROOF HERE: FIBDB-040 is a TRIGGER (its refusal is a runtime behaviour, and a service-layer test passes unchanged if the trigger is absent); FIBDB-053 publishes SECURITY DEFINER functions whose ACLs, search_path binding and DROP+CREATE arity change are catalogue facts no TypeScript test can observe; FIBDB-049 is a CHECK vocabulary whose refusal happens in the database; and the append-only interaction of trg_stella_interactions_append_only with a behavioral-only rollback is a transactional property. HARNESS SHAPE, frozen here: a DISPOSABLE cluster only, via `pnpm db:audit:disposable` — NEVER staging, NEVER production, NEVER the canonical local Supabase stack. FIXTURE SHAPE, frozen here: (a) at least TWO distinct users in one organization, because every SoD control needs a second qualified reviewer to exist and a single-user fixture cannot distinguish 'refused for independence' from 'refused for absence'; (b) at least ONE single-user organization, because NO_SECOND_QUALIFIED_REVIEWER is only reachable there; (c) at least one PRE-EXISTING self-approved sroi_run_reviews row created BEFORE the FIBDB-040 trigger is installed, because the preservation guarantee is unprovable against a fixture built after the trigger; (d) at least one run with ZERO stella_interactions rows, because the zero-Stella gate cannot be proven on a run that invoked Stella. CONTAINER HYGIENE: the post-run container list must be byte-identical to the pre-run list, recorded by name/image/status on both sides."
+  },
+  "sentinels": [
+    {
+      "id": "SENTINEL_NONNUMERIC_ALTERNATIVE_VALUE",
+      "purpose": "A deliberately non-numeric string (e.g. a fixed marker token) submitted as a sensitivity scenario's alternativeValue for a numeric candidate kind. Its purpose is to prove that W2-B5 finding F-3 is closed as NUMERIC-FORMAT validation: the value must be REFUSED at the recording boundary, and must never appear in any persisted sensitivity_scenarios row, in any engine input, or in any computed scenario result. Asserting by identity rather than by row count is what distinguishes 'refused' from 'accepted but coincidentally inert'."
+    },
+    {
+      "id": "SENTINEL_HISTORICAL_SELF_APPROVAL",
+      "purpose": "A pre-existing sroi_run_reviews row whose reviewer_id equals its run's calculated_by, created BEFORE FIBDB-040 is installed and carrying a uniquely identifiable value. Its purpose is to prove the FIBC-024 preservation rule in both directions: after the trigger is installed the row must be byte-identical (no rewrite, no re-attribution, no invented second approver), AND it must NOT read as METHODOLOGY_APPROVED under the new rule."
+    },
+    {
+      "id": "SENTINEL_ZERO_STELLA_RUN",
+      "purpose": "A calculated run with zero associated stella_interactions rows. Its purpose is to prove FIBC-025's 'if Stella was not executed, no such gate is created': this run must be ELIGIBLE on the STELLA_HIGH_FINDING_UNDISPOSED dimension. It exists as a named fixture because the natural blocking implementation ('block unless a disposition row exists') silently converts every non-Stella run into a permanently blocked run, and that mutation looks stricter and therefore safer under review."
+    },
+    {
+      "id": "SENTINEL_MAX_READINESS_UNMET_RUN",
+      "purpose": "A run carrying a maximal sroi_run_reviews.readiness_score while at least one eligibility condition is unmet. Its purpose is to prove that readiness is NEVER an input to the eligibility composition: this run must be PRELIMINARY. Paired with SENTINEL_NULL_READINESS_MET_RUN so the property is proven in both directions — a one-directional assertion leaves readiness usable as a veto."
+    },
+    {
+      "id": "SENTINEL_NULL_READINESS_MET_RUN",
+      "purpose": "A run with NULL or minimal readiness_score whose eligibility conditions are ALL met. Its purpose is the second direction of the same property: this run must reach ELIGIBLE_FOR_METHODOLOGY_APPROVAL. Without it, an implementation that treats readiness as a necessary condition passes the maximal-readiness test unchanged."
+    },
+    {
+      "id": "SENTINEL_RISK_FLAG_CANARY",
+      "purpose": "A uniquely-valued synthetic entry in the risk_flags array passed to the revised governed completion path. Its purpose is to prove FIBDB-053's fail-closed test by identity: the exact value must be readable on the durable public.stella_interactions row within the same transaction that charged the quota, and FIBIU-20's gate must obtain it WITHOUT reading audit_logs. Never a real credential, never a real finding text."
+    },
+    {
+      "id": "SENTINEL_NULL_VERSION_TRIPLE_RUN",
+      "purpose": "A run whose methodology_version, calculation_engine_version and build_identity are ALL NULL — the shape every run predating FIBDB-001 permanently carries (db/schema.ts:828-830, IMPOSSIBLE_TO_BACKFILL). Its purpose is to prove LEGACY_NON_AUTHORITATIVE_RUN is reachable at FIBIU-19's own gate from state that already exists, with no FIBDB-051 and no wave 6 dependency (P-18). It is a named fixture rather than an incidental one because the whole adjudication of F-W3-2 turns on this row existing and being detectable today."
+    },
+    {
+      "id": "SENTINEL_COMPLETE_VERSION_TRIPLE_RUN",
+      "purpose": "A run carrying all three version-triple columns non-NULL. Its purpose is the refusal half (N-14): this run must NOT raise LEGACY_NON_AUTHORITATIVE_RUN. Without it, an implementation that emits the code unconditionally passes P-18 and silently marks every run in the system legacy — a mutation that looks like working detection."
+    }
+  ],
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+  "positive_controls": [
+    {
+      "id": "P-0",
+      "description": "MANIFEST PRECONDITION, UNKNOWN BY CONSTRUCTION. The two known_conditions above are the only entries in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json at AS_OF_HEAD, read directly from that file (count = 2, both PRE_EXISTING_DEFERRED against tests/eval/stella-release/hosted-baseline-gate.test.ts). Their applicability to each implementing node is UNKNOWN and MUST be re-verified with `pnpm ops:test-diff --base <ref> --head <ref>` at that node's own base — it was NOT run by this authoring mission because a docs-only diff has no test delta to compare and running it would have produced a comparison of the baseline against itself. This batch adds prepared units, so the hosted baseline digest those two conditions fingerprint is expected to change. A node observing a hosted-baseline-gate failure whose signature does NOT match these two fingerprints has found a NEW failure and must fail closed rather than classify it as known.",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+    },
+    {
+      "id": "P-1",
+      "description": "Each of the 24 frozen non-eligibility reason codes is DEFINED by the single server-side composition function and emitted with its stable, domain-specific identifier, independent of UI copy. The list and its order are those frozen at FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:180 and reproduced in WAVE3_AUTHORITY_v1.0.0.json REASON_CODES.codes. REACHABILITY PARTITION, frozen by amendment R2 and arithmetically closed at 24 = 22 + 2: TWENTY-TWO are reachable at FIBIU-19's OWN gate — every code except the two below — and this set INCLUDES LEGACY_NON_AUTHORITATIVE_RUN, which amendment R2 adjudicated REACHABLE_IN_WAVE3_FROM_EXISTING_STATE via FIBDB-001's permanent NULL version triple (db/schema.ts:828-830), with no FIBDB-051 and no wave 6 dependency. TWO — STELLA_HIGH_FINDING_UNDISPOSED and NO_SECOND_QUALIFIED_REVIEWER — become reachable only once FIBIU-20 lands, because the tables carrying their state (FIBDB-019/020, FIBDB-040) do not exist before it; their reachability is proven at the WAVE 3 exit gate (FIB:860), not at FIBIU-19's. NOTHING is deferred beyond the Wave 3 exit: the gate keeps its full 24-reason reading and is NOT relaxed to 23/24. ARITHMETIC NOTE, recorded so the split cannot drift: 22 + 2 = 24 exactly. Any restatement of this partition whose parts do not sum to 24 is wrong by construction, whatever its provenance.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-2",
+      "description": "The composition function distinguishes exactly four states — CALCULATED, PRELIMINARY, ELIGIBLE_FOR_METHODOLOGY_APPROVAL, METHODOLOGY_APPROVED — and every surface labels a PRELIMINARY result as preliminary. METHODOLOGY_APPROVED requires an sroi_run_reviews row with status='approved' that satisfies FIBC-024, not merely a row with that status.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-3",
+      "description": "The composition is computed from live governed state and MUTATES NOTHING. After a full composition over a run in every state, the sroi_calculation_runs row is byte-identical to its pre-composition value. No eligibility state table exists — FIBDB-052 is an INDEX package only.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-4",
+      "description": "READINESS IS NOT ELIGIBILITY, direction one. SENTINEL_MAX_READINESS_UNMET_RUN — a run with maximal readiness_score and at least one unmet condition — composes to PRELIMINARY with the unmet reason codes listed.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-5",
+      "description": "READINESS IS NOT ELIGIBILITY, direction two. SENTINEL_NULL_READINESS_MET_RUN — a run with NULL or minimal readiness_score and all conditions met — composes to ELIGIBLE_FOR_METHODOLOGY_APPROVAL. Both directions are required; asserting only P-4 leaves readiness usable as a veto.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-6",
+      "description": "W2-B5 F-3 BOUNDARY, positive half. A sensitivity scenario whose alternativeValue is a NUMERICALLY VALID string is ACCEPTED — including when it is numerically EQUAL to the candidate's base value. This half is what keeps the authorized numeric-FORMAT check from drifting into the prohibited materiality/nonzero-variation threshold, which W2-B5 F-4 records as a violation of current authority (NEG-18-7). Pairs with N-3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-7",
+      "description": "SoD, positive path. A user distinct from the run's calculated_by, holding a role in the review set, DOES successfully approve the run, and the run reaches METHODOLOGY_APPROVED. Without this control the SoD implementation could refuse every approval and still pass every negative control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-8",
+      "description": "NO_SECOND_QUALIFIED_REVIEWER is SURFACED, not merely enforced. A single-user organization may work with preliminary results, may not approve or lock, and receives the reason code NO_SECOND_QUALIFIED_REVIEWER as a visible, comprehensible condition — never a silent failure and never a generic permission error. The FIB baseline classifies FIBDB-040 as the batch's highest social risk precisely because a trigger without this visible path strands single-user organizations with no explanation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-9",
+      "description": "HIGH FINDING DISPOSITION, positive path. A risk_level='high' finding from an EXECUTED Stella review, once explicitly dispositioned by a human as one of resolved | accepted_as_limitation | dismissed_not_applicable with a justification, no longer blocks approval or lock, and the disposition's actor, moment and rationale are durably recorded on an append-only trail.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-10",
+      "description": "ZERO STELLA, ZERO GATE. SENTINEL_ZERO_STELLA_RUN — a run with zero stella_interactions rows — is ELIGIBLE on the STELLA_HIGH_FINDING_UNDISPOSED dimension and reaches approval on its other conditions. Absence of Stella is not an open finding, not a preliminary condition, and carries no quality penalty.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-11",
+      "description": "FIBDB-053 APPLY, on a disposable PostgreSQL cluster. After stella_0017b_governed_risk_parameters applies: uellix_stella_ops holds EXACTLY EIGHT functions; the NINE-argument uellix_stella_ops.complete_operation_ticket and the TWELVE-argument uellix_stella.settle_reserved_quota both exist; the prior SEVEN- and TEN-argument forms do NOT; the five-argument settle delegator still exists and its body contains no INSERT INTO public.stella_interactions; and every one of the three keeps SECURITY DEFINER with SET search_path = ''. Anchored to db/prepared/stella_0018_category_bound_operation_tickets.sql:447,455-460, which is the assertion a wrong revision breaks.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-12",
+      "description": "RISK REACHES THE DURABLE ROW. A validator or reviewer interaction completed through the revised governed path writes SENTINEL_RISK_FLAG_CANARY into public.stella_interactions.risk_flags and its risk_level into .risk_level, inside the SAME transaction that archives the interaction and charges the quota, under the existing per-organization advisory lock and the existing ON CONFLICT (organization_id, idempotency_key) clause. Measured starting point: db/stella/operation-tickets.ts:620-626 declares this is NOT filed today, and app/actions/stella/reviewer.ts:263-264 / validator.ts:279-280 show the values reaching only the audit_logs afterJson payload.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-13",
+      "description": "IDEMPOTENCY PRESERVED ACROSS THE ARITY CHANGE. Two completions of the same ticket file exactly ONE stella_interactions row and charge exactly ONE unit; the second returns 'replayed'; and the risk_level / risk_flags on the existing row are NOT overwritten by the replay's payload, even when that payload differs. An append-only trail is not edited.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-14",
+      "description": "SUPERSESSION REGISTRY ENTRY COMPLETE. PREPARED_PACKAGE_SUPERSESSIONS in db/prepared-package-order.ts gains an entry with ALL FIVE fields the PreparedPackageSupersession interface requires (db/prepared-package-order.ts:63-79): packageName 'stella_0017_governed_stella_consumption', supersededBy 'stella_0017b_governed_risk_parameters', a `probe` that is a FIXED LITERAL SQL string (never composed, never interpolated) true when stella_0017b is installed, a `wouldRepublish` list naming the seven-argument complete_operation_ticket and the ten-argument settle_reserved_quota, and a `why`. The FIB baseline names only three of the five; an entry with three fields does not compile.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-15",
+      "description": "BEHAVIORAL ROLLBACK, NEVER DATA ROLLBACK. stella_0017b_rollback.sql restores all THREE signatures in one transaction — the seven-argument complete_operation_ticket, the ten-argument settle_reserved_quota, and the five-argument delegator re-pointed at the ten-argument form — while every risk_level and risk_flags value already written remains intact and unmodified (trg_stella_interactions_append_only). A rollback that restores only the verb leaves the delegator pointing at a dropped function.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-16",
+      "description": "HISTORICAL SELF-APPROVAL PRESERVED. SENTINEL_HISTORICAL_SELF_APPROVAL, created before FIBDB-040 is installed, is byte-identical after installation: not edited, not deleted, not re-attributed, and carrying no invented second approver. The trigger's installation itself does not fail on pre-existing rows. Speculative backfill count for this row is ZERO, per FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:1059.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-17",
+      "description": "CHAIN AND ARTIFACT COMPLETENESS. STELLA_TICKET_PACKAGE_CHAIN (db/prepared-package-order.ts:88-95 — note the executable constant carries the STELLA_ prefix the FIB prose omits) gains 'stella_0017b_governed_risk_parameters' at its TAIL, after 'stella_0018_category_bound_operation_tickets' and never interleaved; and all FOUR required artifacts exist — db/prepared/stella_0017b_governed_risk_parameters.sql, db/prepared/stella_0017b_rollback.sql, db/prepared/hosted/stella_0017b_governed_risk_parameters.hosted.sql, db/prepared/hosted/governed/stella_0017b_governed_risk_parameters.governed.sql.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-18",
+      "description": "LEGACY_NON_AUTHORITATIVE_RUN IS REACHABLE FROM EXISTING STATE. A run whose version triple is entirely NULL — methodology_version, calculation_engine_version and build_identity all NULL on sroi_calculation_runs (FIBDB-001, db/schema.ts:828-830) — composes to PRELIMINARY with LEGACY_NON_AUTHORITATIVE_RUN among its reasons. The detection consumes the persisted NULL-triple predicate directly; it does not read any legacy_class column, does not wait for FIBDB-051, and does not infer legacy status from created_at, a date cutoff, or the absence of an unrelated row. For the historical self-approval case the composition additionally consumes reviewer_id = calculated_by, the predicate the sealed authority names at FIB:381 and FIB:715. Anchored to FIB:59, whose FIBC-001 TESTS clause already reads \"legacy run keeps NULL and is ineligible\". Pairs with N-14 and is protected by M-10.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "SELF-APPROVAL REFUSED SERVER-SIDE. An approval attempt where reviewer_id equals the run's sroi_calculation_runs.calculated_by is refused by the service with a comprehensible independence message. Measured starting point: no such check exists at AS_OF_HEAD and calculated_by is written and never read (FIB:185).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-2",
+      "description": "SELF-APPROVAL REFUSED BY DIRECT DATABASE WRITE. An INSERT or UPDATE placed directly against sroi_run_reviews, bypassing the service entirely, with reviewer_id equal to the run's calculated_by, is refused by FIBDB-040. This control and N-1 are NOT redundant: FIBIU-20's exit gate requires both, and a service-only implementation passes N-1 unchanged.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-3",
+      "description": "W2-B5 F-3 CLOSED. A sensitivity scenario whose alternativeValue is NON-NUMERIC (SENTINEL_NONNUMERIC_ALTERNATIVE_VALUE) is REFUSED as a numeric-format validation failure. It must not create a sensitivity_scenarios row, must not reach the deterministic engine, and must therefore not discharge SENTINEL-bearing candidates' variation_required state nor the SENSITIVITY_INCOMPLETE reason code. Measured starting point: app/.../recordSensitivityScenario.action.ts:16 validates only z.string().min(1), and lib/pipeline/sroi-sensitivity.ts:405-410 substitutes the raw string into the engine for three numeric candidate kinds. Pairs with P-6 — a refusal implemented as a magnitude threshold fails P-6 and is not this control's closure.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-4",
+      "description": "AN OPEN HIGH FINDING BLOCKS APPROVAL. A run carrying a risk_level='high' finding from an executed Stella review with NO human disposition cannot be approved. The refusal is fail-closed and names STELLA_HIGH_FINDING_UNDISPOSED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-5",
+      "description": "AN OPEN HIGH FINDING BLOCKS LOCK. The same run cannot have its report locked. Approval and lock are separate acts and blocking one does not imply blocking the other; both must be proven.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-6",
+      "description": "OUT-OF-VOCABULARY RISK LEVEL REFUSED BY THE DATABASE. A completion carrying a risk_level outside {low, medium, high} is refused by the stella_interactions_risk_level_check CHECK constraint (db/schema.ts:1094) — not normalized, defaulted or silently dropped by the application before it reaches the column.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-7",
+      "description": "AN UNKNOWN OR UNRESOLVABLE CONDITION MEANS NOT ELIGIBLE. A run for which the composition function cannot evaluate a condition — missing supporting state, an unreadable dependency — composes to PRELIMINARY, never to ELIGIBLE_FOR_METHODOLOGY_APPROVAL. A condition that cannot be evaluated is never treated as satisfied (FIB:180).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-8",
+      "description": "THE RUN CANNOT BE MUTATED BY COMPOSITION. A direct attempt to persist a computed eligibility verdict onto sroi_calculation_runs is refused by the existing 0030 append-only trigger. Proven by direct write, because a service that simply never attempts the write passes trivially.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-9",
+      "description": "ACL ABSENCE ASSERTED, NOT ONLY PRESENCE. EXECUTE on the new twelve-argument uellix_stella.settle_reserved_quota is NOT held by uellix_app and NOT held by PUBLIC; it is held by uellix_cap_stella_ticket alone. An ungranted privilege and a revoked one read the same in a catalogue only if somebody checks — the same reasoning stella_0017 applies to its own grants.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-10",
+      "description": "STELLA CANNOT DISCHARGE ITS OWN FINDING. Re-running the Stella review until it reports a lower risk_level does NOT clear the open high finding, and no automatic path — timeout, re-run, or a subsequent lower risk_level — discharges it. Only an explicit human disposition with justification does (FIB:188, :785).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-11",
+      "description": "STELLA DOES NOT SATISFY INDEPENDENCE. A single-user organization in which Stella participated in the review still cannot approve, and still surfaces NO_SECOND_QUALIFIED_REVIEWER. Stella supports review and never counts as a reviewer.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-12",
+      "description": "NO DEFAULT ON A GOVERNED ARGUMENT. After stella_0017b applies, none of bind_operation_ticket, complete_operation_ticket, abort_operation_ticket or inspect_operation_ticket in uellix_stella_ops declares pronargdefaults > 0. An argument with a DEFAULT is an argument the caller may omit, and the guarantee is that the SIGNATURE refuses the call (db/prepared/stella_0018_category_bound_operation_tickets.sql:587-593).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-13",
+      "description": "THE CHARGE STAYS CALLER-IMMOVABLE. The added risk parameters do NOT enter the derivation of the idempotency key, which remains computed from the ticket and a nonce no function returns. A caller supplying a different risk_level for the same ticket cannot produce a second charge or a second ledger row.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-14",
+      "description": "A COMPLETE VERSION TRIPLE MUST NOT EMIT LEGACY_NON_AUTHORITATIVE_RUN. A run carrying non-NULL methodology_version, calculation_engine_version AND build_identity does not raise the code, and is not held preliminary on that dimension. Prove the boundary, not just the happy case: a run with a PARTIALLY populated triple (one or two of the three NULL) is a distinct state, and the control must assert which verdict the composition gives it rather than leaving it to accident — FIBC-001's fail-closed clause refuses to persist a run if any of the three cannot be resolved, so a partial triple should not exist on a governed run and its appearance is itself a finding. Without this control, an implementation that emits LEGACY_NON_AUTHORITATIVE_RUN unconditionally passes P-18 and marks every run in the system legacy.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-1",
+      "description": "Guarantee: readiness is not an eligibility input. MUTATION: add readiness_score as a term in the composition function. CAUGHT BY: P-4 and P-5 together. A suite carrying only one direction does NOT catch this — a readiness-as-necessary-condition mutation passes P-4 unchanged.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-2",
+      "description": "Guarantee: non-numeric alternativeValue is refused. MUTATION: revert the numeric-format validation to z.string().min(1). CAUGHT BY: N-3. SECOND MUTATION, opposite direction: replace the format check with a magnitude/nonzero-variation threshold — CAUGHT BY P-6, which requires a numerically valid value equal to the base value to be ACCEPTED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-3",
+      "description": "Guarantee: zero Stella means zero finding gate. MUTATION: change the high-finding gate from 'block when an executed review has an undisposed high finding' to 'block unless a disposition exists'. CAUGHT BY: P-10 via SENTINEL_ZERO_STELLA_RUN. This mutation is the one most likely to survive human review because it reads as stricter and therefore safer.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-4",
+      "description": "Guarantee: the SoD refusal is enforced in the database. MUTATION: delete FIBDB-040 and keep only the service-layer check. CAUGHT BY: N-2 alone. N-1, P-7 and P-8 all pass unchanged under this mutation, which is exactly why N-2 is not optional.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-5",
+      "description": "Guarantee: historical self-approvals are preserved and never satisfy V-04. MUTATION: backfill a second approver, or exempt historical rows by rewriting them so the trigger installs cleanly. CAUGHT BY: P-16 asserting byte-identity of SENTINEL_HISTORICAL_SELF_APPROVAL AND that it does not read as METHODOLOGY_APPROVED. A migration that 'fixes' historical data to avoid a trigger failure is a historical invention.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-6",
+      "description": "Guarantee: the ledger holds ONE INSERT reached by two arities. MUTATION: give stella_0017b's five-argument delegator a self-contained body instead of re-pointing it at the new twelve-argument settle. CAUGHT BY: P-11's assertion that the delegator's body contains no INSERT INTO public.stella_interactions — the same probe shape stella_0017's own self-verification already uses at its lines 899 and 912. A count-of-functions assertion does NOT catch this mutation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-7",
+      "description": "Guarantee: the uellix_stella_ops function count stays at eight. MUTATION: add p_risk_level / p_risk_flags with DEFAULTs via CREATE OR REPLACE, producing an overload rather than a DROP+CREATE. CAUGHT BY: P-11's count assertion (expected 8) together with N-12's pronargdefaults assertion. This is the exact failure mode FIB:391 names, and it is silent until stella_0018 is re-applied in some other environment.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-8",
+      "description": "Guarantee: risk data reaches the durable row inside the charging transaction, not the best-effort trail. MUTATION: satisfy the fail-closed test by writing risk_level from the application in a separate statement after the transaction commits. CAUGHT BY: P-12 asserting the sentinel is present on the stella_interactions row within the SAME transaction that charged the quota, plus the requirement that FIBIU-20's gate never reads audit_logs. A test that only asserts the value is eventually present passes this mutation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-9",
+      "description": "Guarantee: the supersession registry entry actually refuses re-application. MUTATION: add the entry with a probe that is composed or interpolated at runtime rather than a fixed literal, or with a placeholder wouldRepublish. CAUGHT BY: P-14 asserting all five fields are present and that the probe is a literal. A registry entry that never evaluates true is a refusal that never fires, and the failure surfaces only when an operator re-applies stella_0017 over stella_0017b in a G2 window.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-10",
+      "description": "Guarantee: LEGACY_NON_AUTHORITATIVE_RUN is detected from the persisted NULL version-triple predicate. MUTATION: remove the NULL-triple predicate from the composition function — delete the term, or replace it with a constant false, or make it read a legacy_class column that does not exist until wave 6. CAUGHT BY: P-18, and through it the P-1 reachability control, which can no longer show the code reachable at FIBIU-19's own gate. SECOND MUTATION, opposite direction: satisfy the code by WRITING a durable legacy_class value from FIBIU-19. CAUGHT BY: N-8 (the run cannot be mutated by composition) plus an assertion that no legacy_class representation is written — FIBIU-19 DETECTS and must not pre-empt FIBDB-051's wave 6 vocabulary. Both directions matter: the first makes the Wave 3 exit gate unprovable, and the second makes it pass by doing something FIBIU-19 is forbidden to do.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
