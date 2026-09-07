@@ -1,0 +1,351 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.23",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23",
+  "authority_class": "ODS_V1_MAINTENANCE_ADDENDUM_INSTRUCTION_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-24",
+  "hpo_mission_id": "MULTIORG-S3-REQUEST-PRINCIPAL-EXECUTION-AUTHORITY-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_id": "S1-REHEARSAL-FRESHNESS-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1",
+  "input_finding_mission_id": "LANE CH - S3 REQUEST-PRINCIPAL ZERO-DISCOVERY COMPILER (RESULT=BLOCKED_BY_F-1/F-2, subsequently adjudicated)",
+  "materialization_date": "2026-09-07",
+
+  "supersedes": null,
+  "refines": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_execution_scope_authority": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json",
+  "node_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+  "node_test_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+
+  "purpose": "Open the S3 execution ceiling for the canonical node 'Selected-organization request principal' - the node that makes the S2 carrier authoritative-by-revalidation rather than inert - and freeze its path ceiling, its principal contract, its selector decircularisation rule, its inertness-retirement rule, its test contract, its real-PostgreSQL contract and its deferred audit-verb disposition, WITHOUT any migration, schema change, protected-grant registration or Controller edit.",
+
+  "scope_note": "AUTHORITY ONLY. This mission writes exactly TWO new tracked files - this addendum and its companion tenancy amendment v1.0.4 - and edits NOTHING. No implementation, no test implementation, no migration, no schema change, no Controller edit and no protected-grant registration occurs in this lane.",
+
+  "anchors": {
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-s3-request-principal-authority",
+    "branch": "codex/multiorg-s3-request-principal-authority-r1",
+    "LANE_START_HEAD": "88afdb90e34b3eca66c51d148cd8e9307f1e10a2",
+    "LANE_START_TREE": "f3202e6a153d8f1ca17a2a628e47ea9f89cb6410",
+    "INTEGRATION_SHA": "6a8b22dd35175202c006f9a9270fd3f46f1a1ef5",
+    "INTEGRATION_TREE": "f177548786a4abd61c8f43d0898cde9553f07f3b",
+    "integration_branch": "integration/commercial-v1",
+    "MEASUREMENT_BASE": "6a8b22dd35175202c006f9a9270fd3f46f1a1ef5. Every figure in this addendum was measured at this SHA, AFTER the PR #90 merge described in INTEGRATION_DRIFT_FINAL. Nothing is retro-fitted from the lane's original 88afdb90 start point, and nothing is inherited from LANE CH without re-measurement.",
+    "base_advance_disposition": "The lane opened at 88afdb90 (then the integration tip, prestate PASS). PR #90 merged into integration/commercial-v1 DURING this lane, advancing it to 6a8b22dd. The branch held ZERO commits of its own at that moment, so it was FAST-FORWARDED to 6a8b22dd - a pure base update that discarded nothing and rewrote nothing. Re-measurement at the new tip is recorded throughout.",
+    "measurement_discipline": "Every fact was re-measured at INTEGRATION_SHA by EXECUTING the repository's own code - the live Controller by real ESM import, classifyPaths from scripts/ods-scope.ts by direct invocation, and the machine gates by their own pnpm entry points. No fact here rests on a textual grep alone."
+  },
+
+  "controller_33_precondition_discharged": {
+    "requirement": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json controller_sequencing_rule required Controller33 to enumerate v1.0.22 BEFORE any further ODS lineage allocation - that is, before any v1.0.23 or HPO-ODS-W2-24 could be derived by any mission in any lane.",
+    "DISCHARGED": true,
+    "how_measured": "By REAL ESM IMPORT of scripts/ods-controller.ts, never by parsing its source text. A source parse would happily 'confirm' a list whose runtime value differs; importing measures the value the gate itself uses.",
+    "measured_at_INTEGRATION_SHA": {
+      "IMMUTABLE_BY_CONVENTION_count": 33,
+      "IMMUTABLE_BY_CONVENTION_set_size": 33,
+      "duplicate_entries": 0,
+      "v1_0_22_occurrences": 1,
+      "v1_0_22_is_final_element": true,
+      "final_element": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json",
+      "v1_0_23_occurrences": 0,
+      "CONTROLLER_DB_EXECUTION": "DISABLED"
+    },
+    "why_set_size_is_asserted_separately": "COUNT alone cannot detect a DUPLICATED entry - a list of 33 with one repeated element and one missing still has length 33. SET_SIZE === COUNT is the assertion that actually closes that hole, and both are measured here.",
+    "CONTROLLER_DB_EXECUTION_evidence": "scripts/ods-controller.ts declares the CLI READ-ONLY in its own header ('Zero daemon/service/database/UI/second state store. CLI is READ-ONLY') and carries the DATABASE_AUTHORITY_REQUIRED stop class, emitted with the literal reason 'unit requires database execution; CONTROLLER_DB_EXECUTION=DISABLED'. The stop class was confirmed present in the IMPORTED STOP_CLASSES array, not merely in the source text.",
+    "consequence": "The precondition v1.0.22 imposed is satisfied. THIS addendum is therefore authorised to allocate the next lineage pair. It is the FIRST allocation permitted since Controller33 integrated at 88afdb90."
+  },
+
+  "lineage_derivation": {
+    "next_ods_version": "1.0.23",
+    "next_grant_id": "HPO-ODS-W2-24",
+    "next_tenancy_amendment_version": "1.0.4",
+
+    "version_derivation": "The highest ODS maintenance addendum present in docs/ops/ods/ at INTEGRATION_SHA is v1.0.22, enumerated by directory listing and INDEPENDENTLY confirmed by the live Controller's own final element. The successor is v1.0.23.",
+
+    "grant_id_derivation": "MEASURED OVER THE CURRENT APPLICABLE SEGMENT, not extrapolated from a single pair and not assumed from the mission brief. The GRANT_ID offset is NOT globally uniform: v1.0.8 carries HPO-ODS-W2-07 (offset -1) while v1.0.9 carries HPO-ODS-W2-10 (offset +1), a discontinuity at the v1.0.8/v1.0.9 boundary. The segment from v1.0.9 onward is invariant over FOURTEEN consecutive addenda: v1.0.9->W2-10, v1.0.10->W2-11, v1.0.11->W2-12, v1.0.12->W2-13, v1.0.13->W2-14, v1.0.14->W2-15, v1.0.15->W2-16, v1.0.16->W2-17, v1.0.17->W2-18, v1.0.18->W2-19, v1.0.19->W2-20, v1.0.20->W2-21, v1.0.21->W2-22, v1.0.22->W2-23. Applying that invariant, v1.0.23 -> HPO-ODS-W2-24. The predecessor v1.0.22 measured the same segment at THIRTEEN members; this addendum re-measured it and found FOURTEEN, the one additional member being v1.0.22 itself.",
+
+    "tenancy_version_derivation": "The highest tenancy execution-scope amendment present in docs/ops/tenancy/ at INTEGRATION_SHA is MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json. The append-only successor is the same stem at v1.0.4.",
+
+    "COLLISION_SWEEP": {
+      "method": "FOUR sweeps, each distinguishing an ALLOCATION from a mere MENTION. (1) A STRUCTURAL walk of every JSON under docs/ (139 files parsed at INTEGRATION_SHA) collecting every scalar field whose VALUE is exactly a candidate id - this reports allocation-shaped occurrences ONLY, and is the sweep that decides. (2) A tracked-tree textual sweep via git grep for each candidate id and filename stem. (3) The working-tree directory listing of docs/ops/ods/ and docs/ops/tenancy/. (4) The live Controller's own enumeration, which independently reports v1.0.23 absent.",
+      "result_ods_v1_0_23": "FREE. Absent from docs/ops/ods/ at INTEGRATION_SHA and absent from the live Controller's closed world.",
+      "result_tenancy_v1_0_4": "FREE. `git grep 'AMENDMENT_v1.0.4'` returns EMPTY across the entire tracked tree - not one textual hit, let alone an allocation.",
+      "result_grant_id_W2_24": "FREE. HPO-ODS-W2-24 appears NOWHERE as an exact scalar field value in any JSON under docs/. It appears as a textual substring exactly 6 times at INTEGRATION_SHA, and EVERY occurrence is inside a PROHIBITION or cross-reference clause: four in ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json (controller_sequencing_rule.controller_33_must_close_before, .enforcement, .no_preallocation, candidate_self_check SC-3) and two in MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json (CONTROLLER_SEQUENCING.what_controller33_blocks, .no_preallocation).",
+      "why_a_textual_grep_alone_would_have_been_WRONG": "RE-REPRODUCED AS A TRAP, not merely inherited from v1.0.22. A bare `git grep 'HPO-ODS-W2-24'` returns SIX hits at INTEGRATION_SHA and would read as a COLLISION, producing a spurious STOP_FOR_LINEAGE_COLLISION and deadlocking S3 behind an id nobody has allocated. The distinction that resolves it is STRUCTURAL: an ALLOCATION is a scalar field whose VALUE IS the id (a .GRANT_ID, a .protected_grant.authorityId, a .lineage_derivation.next_grant_id); a PROHIBITION merely NAMES the id inside prose. The structural walk returned ZERO allocation-shaped occurrences of HPO-ODS-W2-24 while the textual sweep returned six - the two sweeps disagreeing is exactly the signal the structural one exists to produce.",
+      "structural_sweep_is_non_vacuous": "PROVEN, not asserted. The same structural walk that returns ZERO for HPO-ODS-W2-24 correctly returns THREE allocation-shaped hits for the PREDECESSOR id HPO-ODS-W2-23: ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json .GRANT_ID, the same file's .lineage_derivation.next_grant_id, and MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json .GRANT_ID. A sweep that found nothing anywhere would prove nothing; this one finds the previous allocation and not the next.",
+      "highest_allocated_measured": "HPO-ODS-W2-23, allocated at ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json .GRANT_ID and at MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json .GRANT_ID.",
+      "one_unparseable_file_disclosed": "docs/ops/staging/evidence/2026-08-12-att_9d8c0412-m8-runtime-observation.json does not parse as JSON and was reported by the sweep rather than silently skipped. It was additionally covered by the textual sweep, which returned no candidate-id hit in it. Disclosed here because a sweep that silently swallows an unreadable file is not a closed sweep."
+    },
+
+    "GRANT_ID_IS_NOT_A_PROTECTED_GRANT_REGISTRY_ENTRY": {
+      "binding": "The two are DISTINCT and this addendum allocates ONLY the first. A GRANT_ID is a LINEAGE identifier naming an act of authority. A protected-grant registry entry is a ROW in scripts/ods-scope.ts PROTECTED_GRANTS carrying an authorityId, a branch and a pattern list, which the gate resolves to authorise a path that DEFAULT_PROTECTED_PATTERNS would otherwise refuse.",
+      "W2_24_MUST_NOT_BE_REGISTERED": "BINDING. HPO-ODS-W2-24 MUST NOT be added to scripts/ods-scope.ts PROTECTED_GRANTS. S3 touches NO protected path, so there is nothing for a registry row to authorise; adding one would widen the protected surface with no path to justify it. MEASURED PRECEDENT: v1.0.21 allocated HPO-ODS-W2-22 and v1.0.22 allocated HPO-ODS-W2-23 as PURE LINEAGE, both with protected_grant null and protected_grant_required false. Registering W2-24 merely because it is the new lineage id is an unauthorised widening and is a STOP.",
+      "no_future_ids_reserved": "This addendum allocates NOTHING beyond v1.0.23, HPO-ODS-W2-24 and tenancy v1.0.4. It does not reserve, name-as-allocated or pre-create any v1.0.24 or HPO-ODS-W2-25 artefact."
+    }
+  },
+
+  "protected_grant_required": false,
+  "protected_grant": null,
+  "protected_grant_rationale": "MACHINE-PROVEN, not argued. All twelve S3 ceiling paths were classified by EXECUTING classifyPaths from scripts/ods-scope.ts against DEFAULT_PROTECTED_PATTERNS at INTEGRATION_SHA. With an ordinary --allow list and NO grant supplied, all twelve land in `ok`, with protectedViolations EMPTY, grantAuthorized EMPTY and nonCanonicalProtectedPaths EMPTY. None of the seven DEFAULT_PROTECTED_PATTERNS (docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json) matches any of them.",
+
+  "protected_grant_probe_non_vacuous": {
+    "binding": "A classifier that authorises everything would also have returned twelve `ok`. The probe is therefore paired with a GENUINE positive control.",
+    "positive_control": "db/migrations/0067_positive_control.sql - a real db/migrations/** path - was added to the SAME classifyPaths invocation and to the SAME --allow list. It landed in protectedViolations and NOT in ok, while the twelve S3 paths were unaffected. protectedViolations had cardinality exactly 1 and contained exactly that control.",
+    "why_an_ordinary_allow_was_deliberately_given_to_the_control": "Because the interesting failure mode is a classifier in which --allow silently overrides protection. Giving the control an ordinary --allow entry and STILL observing a protectedViolation is what proves --allow cannot stand in for a grant.",
+    "second_control_sealed_sibling": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json - a sealed file in the SAME directory this addendum is written into - was classified with an ordinary --allow and correctly landed in protectedViolations. This proves docs/ops/ods/ is NOT blanket-unprotected, and therefore that this addendum's own path being unprotected is a measured property of the path, not of the directory.",
+    "authority_write_set_classified_too": "The two files this mission actually writes were classified by the same executed function: both land in `ok` with protectedViolations EMPTY and grantAuthorized EMPTY. This lane needs no --protected-authority of any kind."
+  },
+
+  "PROTECTED_GRANTS_CHANGED": false,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 12,
+  "PROTECTED_GRANTS_COUNT_AFTER": 12,
+  "protected_grants_count_rule": "MEASURED at INTEGRATION_SHA from the EXECUTED array's ROWS in scripts/ods-scope.ts - 12 rows, ids W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17, -20, -21 - NEVER by grep, which returns 23 matches for 'authorityId' because the identifier also appears in the interface declaration, in resolveProtectedGrant's parameter and body, and in prose. The count moved 10 -> 12 when PR #90 registered HPO-ODS-W2-20 and HPO-ODS-W2-21; that was PR #90's act, and this addendum CARRIES it unchanged. S3 neither adds, removes, widens nor re-scopes any row. The count after S3 remains 12, never 13.",
+
+  "hpo_decision": {
+    "decision_id": "HPO-ODS-W2-24",
+    "adjudicated": "F-1 disposition = (a) DEFER the two refusal audit verbs to a separate governed node.",
+    "status": "BINDING AND NOT REOPENED BY THIS ADDENDUM. The disposition was adjudicated before this lane opened; this addendum RECORDS and MECHANISES it, and does not re-litigate it.",
+    "F_2_disposition": "Resolved by the same adjudication: with the two refusal verbs deferred, S3 core carries PATH_COUNT 12, PROTECTED_PATHS 0, PROTECTED_GRANT_REQUIRED false and MIGRATION_REQUIRED false. LANE CH compiled S3 as BLOCKED by F-1/F-2; that block is DISCHARGED by this pair, not waived."
+  },
+
+  "S3_NODE_IDENTITY": {
+    "canonical_title": "Selected-organization request principal",
+    "node_id": "S3",
+    "delivers_exactly": ["REQUEST_PRINCIPAL", "REQUEST_REVALIDATION", "ROLE_CEILING"],
+    "resolves": ["C-2"],
+    "supersedes": ["SI-2"],
+    "depends_on": ["S2"],
+    "EXPLICITLY_EXCLUDED": ["S3c", "S4", "S5", "S6", "S7", "S8"],
+    "no_downstream_semantics_pulled_forward": {
+      "binding": "S3 delivers exactly the three capabilities above and NOTHING adjacent. Each exclusion below is named because it is a plausible and tempting over-reach, not because it is remote.",
+      "S5_superadmin_boundary": "The super-admin exemption in db/identity-context.ts belongs to S5. S3 MUST NOT remove, narrow or widen it. Removing it here would be an unauthorised privilege change wearing an S3 label.",
+      "S7_multi_membership_cardinality": "Multi-membership cardinality and the DROP_LAST rule for user_single_active_membership belong to S7. S3 MUST NOT drop, alter or route around that index. Manifest control M-8 governs this and is inherited unchanged.",
+      "S4_cross_org_resource_authorization": "Project and resource cross-org authorization - the RLS conjunction and the GUC contract - belongs to S4. S3 sets no new RLS predicate and welds no table.",
+      "S3c_stella_attribution": "Stella interaction attribution (MO-12) belongs to S3c and is excluded.",
+      "S3_refusal_audit": "No S3 refusal-audit implementation is delivered here. See AUDIT_VERB_DISPOSITION."
+    }
+  },
+
+  "S3_PATH_CEILING": {
+    "count": 12,
+    "protected_count": 0,
+    "semantics": "A CEILING resolved by ods:scope against the lane's own --allow list, NEVER a mandate. A SUBSET is allowed; a SUPERSET fails closed. Being changed is never itself permission.",
+    "paths": [
+      "lib/auth/database-context.ts",
+      "lib/auth/session.ts",
+      "lib/auth/selected-organization.ts",
+      "app/(authenticated)/app/organizations/select/page.tsx",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "db/identity-context.ts",
+      "tests/tenancy/s3-request-principal.test.ts",
+      "tests/tenancy/s2-selected-org-carrier.test.ts",
+      "tests/authenticated-database-context.test.ts",
+      "tests/auth/session.test.ts",
+      "tests/auth/route-authorization-boundary.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "restated_here_for_checkability_only": "The twelve paths are restated in BOTH artefacts ONLY so the cross-artifact agreement and the S1 disjointness claim are mechanically checkable as SET comparisons, NOT to grant them twice. The companion amendment carries the per-path disposition; this list carries the cardinality.",
+    "existence_measured_at_INTEGRATION_SHA": "TEN of the twelve already exist. TWO are NEW files the implementation creates: tests/tenancy/s3-request-principal.test.ts and docs/ops/tenancy/MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json. Recorded because a ceiling entry that silently does not exist is indistinguishable from a typo.",
+    "invocation": "pnpm ods:scope -- --base <INTEGRATION_SHA> --allow <each of the 12 paths above, exactly>. NO --protected-authority is required or permitted for S3."
+  },
+
+  "MIGRATION_DISPOSITION": {
+    "S3_MIGRATION_REQUIRED": false,
+    "binding": "S3 introduces NO table, NO column, NO index, NO policy, NO function and NO migration ordinal. A migration appearing in an S3 candidate diff is a STOP, not a convenience.",
+    "measured_proof": {
+      "1_revalidation_mechanism_already_exists": "REQUEST_REVALIDATION preserves the EXISTING database revalidation mechanism. S3 changes WHICH organization is revalidated, not WHETHER revalidation happens. No new mechanism is therefore required at the database layer.",
+      "2_supplied_org_already_verified": "db/identity-context.ts ALREADY verifies a supplied organization against public.current_user_org_ids(). MEASURED at INTEGRATION_SHA: the identity probe evaluates `${identity.organizationId}::uuid = ANY (public.current_user_org_ids())` (db/identity-context.ts:193) alongside public.current_user_is_super_admin() (:190). S3 supplies a DIFFERENT organization id to an EXISTING check; it does not add the check.",
+      "3_guc_already_set": "app.organization_id is ALREADY set when an organization is supplied - `SELECT set_config('app.organization_id', ${identity.organizationId}, true)` at db/identity-context.ts:180, transaction-local. CONSUMPTION of that GUC by RLS predicates is S4, not S3. S3 changes the VALUE that flows into an existing set_config call, not the call and not its consumers.",
+      "4_uniqueness_already_present": "organization_members_org_user_unique already gives the required uniqueness for (organization_id, user_id). MEASURED: db/baseline/stella_g2_schema.sql:5680 `ADD CONSTRAINT organization_members_org_user_unique UNIQUE (organization_id, user_id)`, introduced by db/migrations/0002_huge_namorita.sql. The (user, selected organization) pair therefore addresses AT MOST ONE membership row by construction - which is precisely what the S3 predicate needs and why no new index is required.",
+      "5_session_scope_forbids_persistence": "SESSION_SCOPE prohibits persistence of the selection beyond the carrier. There is consequently NO column to add: a selected organization that were stored in public.users or a preference table would outlive the browser session and violate MO-03/MO-04. The absence of a migration is a REQUIREMENT here, not merely an economy."
+    },
+    "what_would_have_forced_one_and_does_not": "A new membership-lookup index. It is not required: organization_members_org_user_unique already indexes exactly the (organization_id, user_id) pair the S3 predicate qualifies on, so the qualified lookup is an index lookup on an EXISTING unique index."
+  },
+
+  "AUDIT_VERB_DISPOSITION": {
+    "S3_AUDIT_VERB_DISPOSITION": "DEFERRED_TO_SEPARATE_GOVERNED_NODE",
+    "DEFERRED_VERBS": [
+      "tenancy.organization.selection_refused",
+      "tenancy.membership.revalidation_refused"
+    ],
+    "WAIVED": false,
+    "OPTIONAL": false,
+    "IMPLEMENTED_BY_S3": false,
+    "deferred_not_waived": "BINDING AND LOAD-BEARING. DEFERRED means the obligation SURVIVES in full and is owed by a named successor node. It is NOT dropped, NOT made optional, and NOT satisfied by S3 doing nothing. An implementation that emits these verbs is out of S3 scope; an authority that forgets them is a failure of this addendum.",
+    "measured_reason": "The current audit_logs INSERT policy REQUIRES organization membership or super-admin, while these two refusal events arise PRECISELY when membership is absent or revoked. MEASURED at INTEGRATION_SHA, db/baseline/stella_g2_schema.sql:8822: `CREATE POLICY audit_logs_insert_member_or_admin ON public.audit_logs FOR INSERT TO uellix_app WITH CHECK (((actor_user_id = auth.uid()) AND (((organization_id IS NOT NULL) AND (organization_id = ANY (public.current_user_org_ids()))) OR public.current_user_is_super_admin())))`. A subject whose membership in the selected organization is absent or revoked fails `organization_id = ANY (current_user_org_ids())` by definition - the refusal and the un-writability have the SAME cause. The two verbs are therefore mechanically inexpressible under S3's authority, not merely inconvenient.",
+    "PROHIBITED_WORKAROUNDS": {
+      "binding": "S3 MUST NOT use any of the following to emit these verbs. Each is a STOP, and each is named because it is the obvious way to make the problem disappear.",
+      "list": [
+        "service-role or any other privileged connection",
+        "RLS bypass of any form, including SET ROLE or a BYPASSRLS role",
+        "a new or altered audit_logs policy",
+        "a SECURITY DEFINER function",
+        "writing the refusal to a different table to dodge the policy",
+        "emitting the verb with a NULL organization_id to sidestep the predicate"
+      ],
+      "why_this_is_stated_positively": "The compiled threat model treats an audit-write workaround as a PRIVILEGE ESCALATION surface, not a logging convenience: any of the above would give the refusal path a capability the success path does not have."
+    },
+    "successor_node": "The separate governed node has ALREADY been compiled independently by LANE CK / CK-R2. This addendum neither re-compiles it nor absorbs it, and allocates no lineage for it."
+  },
+
+  "P5_COVERAGE_DISPOSITION": {
+    "P5_BEHAVIOURAL_COVERAGE": "DEFERRED",
+    "P5_STRUCTURAL_COVERAGE": "DELIVERED_BY_S3",
+    "declared_partial_coverage": "This is DECLARED PARTIAL COVERAGE. It is NOT an UNKNOWN finding and it is NOT a PASS laundered from a test that cannot fail.",
+    "measured_reason": "MEASURED at INTEGRATION_SHA, db/baseline/stella_g2_schema.sql:7071: `CREATE UNIQUE INDEX user_single_active_membership ON public.organization_members USING btree (user_id) WHERE ((status)::text = 'active'::text)`. While that partial unique index stands, a subject CANNOT hold two active memberships. A behavioural proof that 'the role comes from the SELECTED membership rather than from some other active membership' therefore has NO second membership to distinguish against - the discriminating fixture is unconstructible, not merely unwritten.",
+    "what_S3_proves_now": "STRUCTURALLY: that the role is derived SOLELY from the membership resolved by the (user, selected organization) pair, and from no other source - provable by the shape of the resolution path and by the mutation controls, without a second membership.",
+    "who_owes_the_behavioural_proof": "The later governed node already identified by the canonical DAG as the owner of user_single_active_membership's DROP_LAST - S7. Manifest control P-14 is that node's obligation, and manifest control M-8 protects the ordering in the meantime.",
+    "why_this_must_not_be_claimed_as_full": "Claiming behavioural P-5 coverage now would assert a proof whose fixture cannot exist, and would make a later S7 regression invisible by having already 'passed'."
+  },
+
+  "GOVERNANCE_LEDGER_STABILITY": {
+    "binding": "Under the 12-path disposition, EVERY ledger below is expected to be UNCHANGED by S3. If implementation discovers that one of them MECHANICALLY MUST move, the correct action is STOP_FOR_AUTHORITY_DELTA. Do NOT 'fix the ledger' automatically - a ledger that moves is a signal that the ceiling was wrong, not a chore.",
+    "expected_unchanged": {
+      "database_entrypoint_inventory": "tests/database-entrypoint-inventory.json - MEASURED at INTEGRATION_SHA: checkedModules 143, databaseReaching 119, modules map 119 rows, of which ZERO are under lib/. Unchanged by S3.",
+      "database_runtime_entrypoint_magnitude_pins": "tests/database-runtime-entrypoints.test.ts - MEASURED at INTEGRATION_SHA, the pinned tuple is { inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 }. Unchanged by S3.",
+      "route_carve_outs": "Unchanged by S3.",
+      "baseline_manifest": "Unchanged by S3.",
+      "rehearsal_digest": "artifacts/baseline-rehearsal/latest.json - unchanged by S3. S3 adds no baseline unit, so neither rehearsalFresh nor rehearsalAppliedAll can go false.",
+      "PROTECTED_GRANTS": "12 rows, unchanged by S3.",
+      "Controller": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts - unchanged by S3."
+    },
+    "NEITHER_LEDGER_FILE_IS_IN_THE_S3_CEILING": "DELIBERATE AND LOAD-BEARING. tests/database-runtime-entrypoints.test.ts and tests/database-entrypoint-inventory.json were BOTH inside the S2 ceiling (v1.0.2, 8 paths) and are BOTH OUTSIDE the S3 ceiling. S3 therefore has NO authorised way to absorb a ledger move: any change that forces one is fail-closed by construction rather than by vigilance. See the companion amendment's SELECTOR_DECIRCULARISATION for the specific mechanism this closes.",
+    "why_S3_does_not_move_the_pins": "MEASURED FROM THE SCANNER'S OWN SEMANTICS. ENTRY_POINTS is `walk(APP).filter(isEntryPoint)` - app/-scoped - and the AST inventory's checkedDirs are ['app','components']. S3 adds NO file under app/ or components/: the only new file in its ceiling is tests/tenancy/s3-request-principal.test.ts. The two selector files already in the ceiling are already inventoried and already classified `contextualized`. So long as S3 introduces no new database-reaching module OUTSIDE the three CONTEXT_MODULES, no pin can move."
+  },
+
+  "INTEGRATION_DRIFT_FINAL": {
+    "observed": "`git fetch origin --prune` during this lane returned a NEW integration head 6a8b22dd35175202c006f9a9270fd3f46f1a1ef5, 'Merge pull request #90 from lorenzozanello/codex/multiorg-s1-founder-traceability-r1'. PR #90 merged at 2026-09-07T11:39:32Z.",
+    "intervening_commits_classified": [
+      "6a8b22d - Merge pull request #90 (S1 founder traceability)",
+      "13bdfa9 - fix(tenancy): S1 R4, regenerate baseline rehearsal (79 units), final green exit",
+      "3793f6e - Merge origin/integration/commercial-v1 into the S1 branch (BW-R4 reconciliation)",
+      "15870d0 - feat(tenancy): multi-org S1 founder traceability, migration 0066, MO-11 backfill"
+    ],
+    "delta_path_count": 97,
+    "delta_path_count_excluding_prepared_journal": 18,
+    "CLASSIFICATION": "NON_MATERIAL to this authority - established by EXPLICIT COMPARISON, never inherited from the PR title or from v1.0.3's own PR87 precedent.",
+    "intersection_with_S3_ceiling": "EMPTY. Verified as a SET comparison against all twelve S3 paths. The delta's nearest neighbours are DIFFERENT files: it touches app/(authenticated)/app/onboarding/actions.ts (S3 touches app/(authenticated)/app/organizations/select/{page.tsx,actions.ts}), db/schema.ts and db/migrations/** (S3 touches db/identity-context.ts), tests/tenancy/s1-founder-traceability.test.ts (S3 touches tests/tenancy/s3-request-principal.test.ts and tests/tenancy/s2-selected-org-carrier.test.ts), and docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json (S3 writes MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json). Adjacency is not intersection, and each near-miss was checked by exact path, not by directory.",
+    "intersection_with_this_lane_write_set": "EMPTY. The delta contains no docs/ops/ods/ path at all.",
+    "no_new_ODS_lineage": "VERIFIED. NO path under docs/ops/ods/ appears in the 97-path delta. ODS v1.0.23, tenancy v1.0.4 and HPO-ODS-W2-24 were each RE-VERIFIED as still unallocated at 6a8b22dd by re-running the structural sweep there, and the live Controller at 6a8b22dd still holds 33 with v1.0.22 final and v1.0.23 absent.",
+    "what_the_delta_DID_change_that_is_recorded": "scripts/ods-scope.ts - PR #90 registered HPO-ODS-W2-20 and HPO-ODS-W2-21, taking PROTECTED_GRANTS from 10 rows to 12. This addendum's PROTECTED_GRANTS_COUNT_BEFORE is therefore 12, not the 10 that v1.0.3 measured. Recorded because silently carrying forward v1.0.3's figure would have been a stale inheritance.",
+    "S1_REMAINS_NON_MATERIAL_GOING_FORWARD": "S1 is now MERGED, so no further S1 drift can arrive from PR #90."
+  },
+
+  "PARALLELISM": {
+    "S3_implementation_writer_set_INTERSECT_S1_writer_set": "EMPTY",
+    "how_measured": "`git diff --name-only 88afdb90 6a8b22dd` produced the S1 writer set (97 paths, 18 excluding db/prepared/journal/**), compared as a SET against the twelve S3 ceiling paths. No member is shared in either direction.",
+    "expected_under_F1_disposition_a": "CONFIRMED. The disposition that defers the refusal audit verbs is precisely what keeps the two sets disjoint: an S3 that emitted audit verbs would have needed the audit surface, and a workaround for the audit_logs policy would have reached db/ and docs/ops/ods/ paths S1 also touches.",
+    "PR90_status": "MERGED at 6a8b22dd. It is no longer an open parallel writer.",
+    "other_open_PRs_at_finalisation": "PR #84 (wave3 FIBDB-052 successor authority, DRAFT), PR #63 (portfolio authority, DRAFT), PR #44 and PR #14 (unrelated base branches). None targets docs/ops/ods/ lineage v1.0.23, tenancy v1.0.4 or HPO-ODS-W2-24, and none writes an S3 ceiling path."
+  },
+
+  "CROSS_ARTIFACT_AGREEMENT": {
+    "binding": "This addendum and docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json MUST agree EXACTLY on every field below. A disagreement is a STOP, never a choice, and never a reason to prefer one artefact over the other.",
+    "agreed_fields": {
+      "GRANT_ID": "HPO-ODS-W2-24",
+      "ODS_VERSION": "1.0.23",
+      "TENANCY_AMENDMENT_VERSION": "1.0.4",
+      "INTEGRATION_SHA": "6a8b22dd35175202c006f9a9270fd3f46f1a1ef5",
+      "S3_CANONICAL_TITLE": "Selected-organization request principal",
+      "S3_PATH_COUNT": 12,
+      "S3_PROTECTED_PATH_COUNT": 0,
+      "PROTECTED_GRANT_REQUIRED": false,
+      "PROTECTED_GRANTS_CHANGED": false,
+      "PROTECTED_GRANTS_COUNT_BEFORE": 12,
+      "PROTECTED_GRANTS_COUNT_AFTER": 12,
+      "W2_24_REGISTERED_IN_ODS_SCOPE": false,
+      "S3_MIGRATION_REQUIRED": false,
+      "S3_DELIVERS": ["REQUEST_PRINCIPAL", "REQUEST_REVALIDATION", "ROLE_CEILING"],
+      "S3_RESOLVES": ["C-2"],
+      "S3_SUPERSEDES": ["SI-2"],
+      "S3_DEPENDS_ON": ["S2"],
+      "S3_EXCLUDES": ["S3c", "S4", "S5", "S6", "S7", "S8"],
+      "S3_AUDIT_VERB_DISPOSITION": "DEFERRED_TO_SEPARATE_GOVERNED_NODE",
+      "S3_AUDIT_VERBS_WAIVED": false,
+      "S3_AUDIT_VERBS_OPTIONAL": false,
+      "S3_AUDIT_VERBS_IMPLEMENTED_BY_S3": false,
+      "DEFERRED_VERB_COUNT": 2,
+      "NO_NEW_LIB_AUTH_MODULE": true,
+      "ENUMERATOR_HOST_ALLOWED": ["@/lib/auth/session", "@/lib/auth/database-context"],
+      "NS2_4_DISPOSITION": "RETIRED_BY_REPLACEMENT",
+      "INHERITED_TEST_IDS": ["P-4", "P-5", "N-1", "N-2", "M-3", "M-4", "M-8"],
+      "ADDED_S3_CONTROL_COUNT": 8,
+      "MUTATION_CONTROL_COUNT": 13,
+      "REAL_PG_REQUIRED": true,
+      "REAL_PG_HOST": "tests/authenticated-database-context.test.ts",
+      "NEW_DISPOSABLE_PG_HARNESS": false,
+      "REAL_PG_CONTROL_COUNT": 5,
+      "P5_BEHAVIOURAL_COVERAGE": "DEFERRED",
+      "CONTROLLER34_REQUIRED": true,
+      "IMPLEMENTATION_BEFORE_CONTROLLER34_ALLOWED": true,
+      "AUTHORIZED_CHANGED_PATH_COUNT_THIS_MISSION": 2
+    }
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json",
+      "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json"
+    ],
+    "both_are_NEW_files": true,
+    "no_third_path": "EXACTLY TWO. This mission edits NOTHING - not the Controller, not scripts/ods-scope.ts, not any test host, not any migration or journal artefact, not the KTC registry, not v1.0.21/v1.0.22, not tenancy v1.0.1/v1.0.2/v1.0.3, and no S3 implementation path. A third changed path in this lane's diff is a STOP.",
+    "NO_COMPETING_S3_TEST_MANIFEST": "BINDING. docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json is BATCH authority and ALREADY governs S3 - it carries P-4, P-5, N-1, N-2, M-3, M-4 and M-8 as S3-labelled entries at INTEGRATION_SHA. This mission binds those by ID and EXTENDS the execution authority. Creating a parallel S3-specific test manifest would fork the batch contract into two artefacts that could silently disagree, and is a STOP."
+  },
+
+  "self_inclusion_rule": {
+    "binding": "This addendum is NOT self-including. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json is NOT added to the Controller's IMMUTABLE_BY_CONVENTION by this mission, and MUST NOT be.",
+    "why": "The Controller's closed world is EXACT membership, extended by a SEPARATE governed maintenance mission. A lane that both allocated a lineage id and enumerated its own artefact would be self-approving.",
+    "negative_control_note": "tests/ods/ods-controller.test.ts:137 asserts IMMUTABLE_BY_CONVENTION does NOT contain docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json. MEASURED CONSEQUENCE: merging THIS addendum creates that FILE but does not touch that ARRAY, so the assertion continues to pass and this merge CANNOT turn CI red on that control. Verified additionally by measurement that NO gate asserts enumeration COMPLETENESS - there is no test comparing the docs/ops/ods/ directory listing against IMMUTABLE_BY_CONVENTION. Controller34 will advance that absence assertion to v1.0.24; that is Controller34's act, not this one's."
+  },
+
+  "controller_sequencing_rule": {
+    "CONTROLLER34_REQUIRED": true,
+    "why": "This lane creates docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json, which the Controller's IMMUTABLE_BY_CONVENTION closed world must eventually enumerate, taking 33 -> 34. Immediately after this pair merges, v1.0.23 is UNENUMERATED.",
+    "controller_34_must_close_before": "any further ODS lineage allocation - that is, before any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.24 or HPO-ODS-W2-25 is derived by any mission in any lane",
+    "enforcement": "A mission that finds v1.0.23 unenumerated in the live Controller and attempts to allocate v1.0.24 or HPO-ODS-W2-25 MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.",
+    "what_controller34_blocks": "The NEXT LINEAGE ALLOCATION ONLY. It does NOT block the S3 implementation this pair grants, once this successor authority has been independently audited and integrated.",
+    "IMPLEMENTATION_BEFORE_CONTROLLER34_ALLOWED": true,
+    "sequencing_doctrine_precedent": "The IDENTICAL adjudication v1.0.21 made for Controller32 and v1.0.22 made for Controller33. Conflating 'the next lineage allocation is blocked' with 'the granted implementation is blocked' would deadlock S3 behind a Controller maintenance that has no bearing on it.",
+    "no_controller_edit_in_this_lane": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts are NOT authorised paths for this lane and MUST NOT be touched here. Controller34 is a SEPARATE mission.",
+    "no_preallocation": "This addendum allocates NOTHING beyond v1.0.23, HPO-ODS-W2-24 and tenancy v1.0.4. It does not reserve, name-as-allocated or pre-create any v1.0.24 or HPO-ODS-W2-25 artefact. Naming them in the clauses above is a PROHIBITION, never an allocation - the same form v1.0.15 through v1.0.22 used."
+  },
+
+  "risks_and_open_findings": {
+    "BLOCKING": [],
+    "UNKNOWN": [],
+    "DISCLOSED_NON_BLOCKING": [
+      {
+        "id": "R-1",
+        "finding": "P-5 behavioural coverage cannot exist while user_single_active_membership stands.",
+        "disposition": "DECLARED PARTIAL COVERAGE, recorded in P5_COVERAGE_DISPOSITION and owed to S7. Not blocking S3, and deliberately not laundered into a PASS."
+      },
+      {
+        "id": "R-2",
+        "finding": "The two refusal audit verbs are unwritable under the current audit_logs INSERT policy.",
+        "disposition": "DEFERRED to the separate governed node already compiled by LANE CK/CK-R2, per the binding F-1 disposition (a). Deferred, never waived. Not blocking S3."
+      },
+      {
+        "id": "R-3",
+        "finding": "The S3 implementation must retire assertion NS2-4, which is currently the mandatory control of the S2 batch.",
+        "disposition": "Governed by INERTNESS_RETIREMENT in the companion amendment: RETIRED BY REPLACEMENT with mutation control MS3-10 catching silent deletion. Not blocking this authority."
+      },
+      {
+        "id": "R-4",
+        "finding": "docs/ops/staging/evidence/2026-08-12-att_9d8c0412-m8-runtime-observation.json does not parse as JSON and was skipped by the structural sweep.",
+        "disposition": "Disclosed rather than swallowed. Covered by the independent textual sweep, which returned no candidate-id hit. Pre-existing, outside this lane's ceiling, and not blocking."
+      }
+    ]
+  },
+
+  "candidate_self_check": {
+    "SC-1_exactly_two_tracked_files": "The lane diff against INTEGRATION_SHA contains EXACTLY the two paths in authorized_changed_paths_this_mission, both added, none modified. FAILS on a third path.",
+    "SC-2_no_implementation": "No lib/**, app/**, db/**, scripts/** or tests/** path appears in the diff. FAILS if any does.",
+    "SC-3_no_new_lineage_beyond_this_one": "Neither v1.0.24 nor HPO-ODS-W2-25 appears as an ALLOCATION anywhere in this artefact; where either appears it is inside a PROHIBITION clause. FAILS if either appears as an allocation.",
+    "SC-4_controller_untouched": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts are byte-unchanged. FAILS otherwise.",
+    "SC-5_protected_grants_untouched": "scripts/ods-scope.ts is byte-unchanged and PROTECTED_GRANTS still holds 12 rows; HPO-ODS-W2-24 is absent from it. FAILS otherwise.",
+    "SC-6_path_ceiling_cardinality": "S3_PATH_CEILING lists exactly 12 distinct paths, 0 of them protected. FAILS on 11, on 13, or on a duplicate.",
+    "SC-7_cross_artifact_agreement": "Every field in CROSS_ARTIFACT_AGREEMENT.agreed_fields is present in the companion amendment with an IDENTICAL value. FAILS on any disagreement.",
+    "SC-8_no_competing_test_manifest": "No new test-manifest artefact is created; the seven inherited ids are bound by reference to MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json. FAILS if a parallel S3 manifest appears.",
+    "SC-9_audit_verbs_not_waived": "AUDIT_VERB_DISPOSITION carries WAIVED false, OPTIONAL false and IMPLEMENTED_BY_S3 false, with both verbs named. FAILS if any is true or a verb is missing.",
+    "SC-10_no_migration": "S3_MIGRATION_REQUIRED is false and no db/migrations/** or db/prepared/** path appears anywhere in the diff. FAILS otherwise."
+  }
+}
