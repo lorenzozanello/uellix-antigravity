@@ -1,0 +1,537 @@
+{
+  "package_id": "PORTFOLIO_PF1_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "mission_id": "PORTFOLIO-PF1-EXECUTION-AUTHORITY-R1",
+  "materialization_date": "2026-09-07",
+  "companion_manifest": null,
+
+  "AS_OF_HEAD": "9ccef5e9e8303c30c51295739976951636eeb8ef",
+  "AS_OF_TREE": "ff790b7f6020596ee3649ad90ba3ee0867318c5c",
+  "AS_OF_REF": "codex/portfolio-pf1-execution-authority-r1",
+
+  "starting_ref_measurement": {
+    "branch": "codex/portfolio-pf1-execution-authority-r1",
+    "head": "9ccef5e9e8303c30c51295739976951636eeb8ef",
+    "tree": "ff790b7f6020596ee3649ad90ba3ee0867318c5c",
+    "worktree_clean_at_start": true,
+    "live_base_expected_matched": true,
+    "integration_tip_relationship": "IDENTICAL. `git rev-parse origin/integration/commercial-v1` == 9ccef5e9e8303c30c51295739976951636eeb8ef == HEAD; `git rev-list --left-right --count HEAD...origin/integration/commercial-v1` == 0\\t0; merge-base == HEAD. This branch is neither ahead of nor behind the live integration tip, so `pnpm ods:scope --base 9ccef5e9...` diffs two endpoints that share the true base and cannot produce the phantom-deletion FAIL class that arises when an audit branch sits behind integration.",
+    "node_modules_state_at_start": "ABSENT — fresh worktree. `pnpm install --frozen-lockfile` was run before any gate, because `tsx` (and therefore every gate script) is otherwise unresolvable. This installs dependencies only; it changes no tracked file and the lockfile is frozen."
+  },
+
+  "NAMING_DERIVATION": {
+    "decision": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json",
+    "derivation": "The repository has exactly one prior EXECUTION_AUTHORITY lineage, measured by `find docs -iname '*EXECUTION_AUTHORITY*'`: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json and its v1.0.1 amendment. Its own NAMING_DERIVATION states the repo-native convention as `<PACKAGE_STEM>_AUTHORITY_v<semver>.json` in the domain directory named by the mission, with the mission title supplying the stem and the authority type. Applying that identical rule here: the domain directory is docs/ops/portfolio/ (where the parent product authority and its batch test manifest already live), the mission title PORTFOLIO-PF1-EXECUTION-AUTHORITY-R1 supplies the stem PORTFOLIO_PF1 and the type EXECUTION_AUTHORITY, and the version is the first materialization, 1.0.0.",
+    "ambiguity_with_parent": "NONE. The parent product authority is PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json and its batch manifest is PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json. The stem PORTFOLIO_PF1 is distinct from PORTFOLIO_COMMERCIAL_V1, and the type EXECUTION_AUTHORITY is distinct from the parent's authority_class PRODUCT_AUTHORITY, so neither the filename nor the artifact_id can be confused with the parent pair.",
+    "stop_condition": "NOT TRIGGERED. STOP_FOR_ARTIFACT_FORM_DECISION was reserved for the case where governance is ambiguous. Governance is not ambiguous: a directly analogous precedent exists, was independently audited and is integrated, and it resolves both the naming and the single-versus-paired-artifact question."
+  },
+
+  "ARTIFACT_FORM": {
+    "decision": "SINGLE ARTIFACT. One execution authority; NO companion PORTFOLIO_PF1_TEST_MANIFEST_v1.0.0.json is created.",
+    "instruction_followed": "The source packet directed: 'If one artifact can truthfully freeze both execution and per-node test contract under repository precedent, use the smaller form.' It can, and the smaller form is used.",
+    "precedent": {
+      "artifact": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
+      "measured_shape": "companion_manifest = null, and a MANIFEST_DISPOSITION block whose decision reads 'NO new companion test/implementation manifest is created for CE-1.'",
+      "precedent_rationale_quoted_in_substance": "CE-1 declined a second manifest because the parent's companion manifest was already a BATCH commitment that carried CE-1-scoped control ids by name, and because materializing a second manifest would either duplicate those ids under a new manifest_id — a fork risk, two documents each claiming to be the test contract for the same control ids — or force a renumbering on a sealed sibling artifact that the mission had no authority to perform.",
+      "structural_match_here": "The same two conditions hold for PF1. docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json declares node_or_batch = 'batch' and authority_reference = the parent product authority, and it already carries PF1-scoped ids by name: POS-AGG-1..4/6, NEG-AGG-1..8, NEG-READINESS-1, MUT-AGG-1..4, MUT-TRACE-1, MUT-READINESS-1, SENT-PF-UNAPPROVED-RUN and SENT-PF-LEGACY-RUN."
+    },
+    "how_new_controls_are_frozen_without_forking": {
+      "problem": "PF1 requires five controls that the batch manifest does not contain — the review tie-break (positive and negative), the approval-ordering mutation, the tie-break mutation and the invalid-investment mutation. They must be frozen somewhere, and the batch manifest is integrated and immutable.",
+      "resolution": "They are frozen in THIS artifact, under the reserved prefix PF1-, in the PF1_NEW_CONTROLS block. The batch manifest remains the sole contract for every id it defines; this authority defines only strictly-new ids and redefines none.",
+      "measured_disjointness_proof": "The batch manifest contains 55 control and sentinel ids in exactly four prefixes — POS, NEG, MUT, SENT — enumerated over positive_controls, negative_controls, mutation_controls and sentinels. Zero of those 55 ids begin with 'PF1-'. The PF1- namespace is therefore provably disjoint from the batch manifest's namespace, and no id defined here can collide with, shadow or renumber an id defined there.",
+      "why_this_is_not_a_second_manifest": "A second manifest would restate the batch manifest's PF1-scoped ids under a new manifest_id, creating two documents that both claim authority over POS-AGG-1 and its siblings. This artifact restates none of them: it CITES them by id as inherited and binding, and adds five ids that exist nowhere else."
+    }
+  },
+
+  "PARENT_AUTHORITY": {
+    "product_authority": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
+    "product_authority_class": "PRODUCT_AUTHORITY",
+    "batch_test_manifest": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json",
+    "immutability": "BOTH ARE IMMUTABLE AND ARE NOT EDITED BY THIS MISSION. This authority's changed-path set contains exactly one file, itself. Neither parent artifact appears in the diff.",
+    "governed_by": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md (FIBC-038, FIBC-041, FIBC-042, section 7 PORTFOLIO, section 10, FIBIU-27), docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json — inherited verbatim from the parent's governed_by field.",
+    "relationship": "SUCCESSOR. This artifact does not supersede, refine or correct the parent. It consumes the parent's already-frozen product decisions and converts the parent's frozen future implementation surface for PF1 — and only PF1 — into explicit write permission."
+  },
+
+  "PURPOSE": "Materialize the minimum append-only execution authority needed to convert the already-integrated PF1 frozen future surface into explicit write permission. The parent product authority carries PORTFOLIO_IMPLEMENTATION_AUTHORIZED = false and PORTFOLIO_IMPLEMENTATION_STATUS = 'NOT_STARTED — no implementation is authorized by this mission or by the R1 correction', and its GRANT_ID is null. It froze WHAT may eventually be written and WHERE; it granted no permission to write it. This successor supplies that permission for PF1 alone, once independently audited and integrated.",
+
+  "SOURCE_CONSUMPTION": {
+    "packet": "LANE DH — PORTFOLIO PF1 ZERO-DISCOVERY IMPLEMENTATION PACKET R1",
+    "role": "Zero-discovery input. Every obligation the packet states is either (a) already frozen in the parent product authority and re-cited here without alteration, or (b) an additive gap-fill on a question the parent authority is measurably silent about. Category (b) is enumerated exhaustively in NO_PRODUCT_DECISION_REOPENED.additive_gap_fills.",
+    "prohibition_honoured": "The packet's instruction 'The new authority must NOT reopen any Portfolio product decision' is discharged by the structural check recorded in NO_PRODUCT_DECISION_REOPENED, which compares this artifact's obligations against the parent's frozen keys rather than against its prose."
+  },
+
+  "NO_PRODUCT_DECISION_REOPENED": {
+    "method": "Each obligation this authority states was checked against the parent's aggregate_contract and authorized_future_implementation_surface keys, and against a targeted grep of the parent artifact for the terms that would signal a competing decision. A decision is REOPENED only if the parent states X and this artifact states not-X. A decision is INHERITED if the parent states X and this artifact restates X. A decision is an ADDITIVE GAP-FILL if the parent is silent on the question and this artifact answers it without contradicting anything the parent does state.",
+    "inherited_unchanged": [
+      "aggregate_contract.population — approved-eligible run selection, ordered by run version DESC then calculated_at DESC.",
+      "aggregate_contract.formula — SUM(net_social_value) / SUM(total_investment) with decimal.js, never an average of ratios.",
+      "aggregate_contract.exclusion_reasons — exactly six reasons, no more.",
+      "aggregate_contract.non_emission — null ratio, never a silent zero.",
+      "aggregate_contract.traceability_tuple.fields — the nine-field tuple.",
+      "aggregate_contract.readiness_legacy_disposition.binding_invariant — the legacy manual readiness score is non-authoritative and readiness_assessments may not be substituted for it.",
+      "authorized_future_implementation_surface.PF1_aggregate_and_traceability and .PF1_tests — the five paths.",
+      "authorized_future_implementation_surface.explicitly_not_authorized — including the three Portfolio pages' auth branches.",
+      "multi_org_dependency — Portfolio performs no multi-org work; the page-auth coupling successor is separate."
+    ],
+    "additive_gap_fills": [
+      {
+        "question": "When the selected run carries MORE THAN ONE currently-approved review, which review supplies included[].reviewId and the preserved legacy manual readiness value?",
+        "parent_state": "SILENT. Measured: the parent artifact contains 0 occurrences of 'reviewed_at', 0 of 'created_at', 0 of 'ORDER BY', 0 of 'tiebreak' and 0 of 'tie-break'. Its population key orders RUNS (version DESC, calculated_at DESC) and says nothing about ordering REVIEWS within a selected run. The batch manifest's POS-AGG-1 likewise describes only the run ordering.",
+        "answer_frozen_here": "APPROVED_REVIEW_TIEBREAK.",
+        "contradiction_check": "NONE. Run ordering and review ordering are different selection axes. This authority leaves the parent's run ordering exactly as written and answers only the review axis the parent left open."
+      },
+      {
+        "question": "In what ORDER are the six exclusion reasons evaluated when a project qualifies for more than one?",
+        "parent_state": "SILENT ON PRECEDENCE. The parent enumerates the six reasons as an object's keys and defines each one's meaning, but nowhere states that key order is evaluation order, and nowhere resolves an overlap — for example a legacy run that is also non-USD.",
+        "answer_frozen_here": "EXCLUSION_PRECEDENCE.",
+        "contradiction_check": "NONE. The SET of six reasons is inherited unchanged and unextended; only the evaluation ORDER over that set is added."
+      },
+      {
+        "question": "Which concrete files carry the PF1 real-PostgreSQL contract, given that the batch manifest and the product authority name different PostgreSQL paths?",
+        "parent_state": "IN CONFLICT WITH ITS OWN SIBLING — see OPEN_FINDINGS.F-PF1-1. The product authority's PF1_tests names tests/postgres/portfolio-aggregate.pg.test.ts and tests/postgres/portfolio-aggregate.probes.json. The batch manifest's postgres_requirements names tests/postgres/portfolio-v1.setup.json and tests/postgres/portfolio-v1.probes.json.",
+        "answer_frozen_here": "POSTGRES_CONTRACT.file_resolution.",
+        "contradiction_check": "NONE AGAINST THE PRODUCT AUTHORITY, which this resolution follows exactly. The divergence is recorded as a non-blocking finding rather than silently reconciled, and neither parent artifact is edited."
+      }
+    ],
+    "reopened": [],
+    "reopened_count": 0
+  },
+
+  "PF1_WRITE_SURFACE": {
+    "authorized_paths_exactly_five": [
+      "lib/portfolios/analytics.ts",
+      "lib/portfolios/analytics.test.ts",
+      "tests/portfolios.analytics.service.test.ts",
+      "tests/postgres/portfolio-aggregate.pg.test.ts",
+      "tests/postgres/portfolio-aggregate.probes.json"
+    ],
+    "provenance": "Identical, path for path, to the parent product authority's authorized_future_implementation_surface.PF1_aggregate_and_traceability (one path) and .PF1_tests (four paths). This authority narrows nothing and widens nothing.",
+    "measured_existence_at_AS_OF_TREE": {
+      "lib/portfolios/analytics.ts": "PRESENT, 9506 bytes — modified in place by PF1.",
+      "lib/portfolios/analytics.test.ts": "PRESENT, 6670 bytes — extended by PF1; existing assertions are preserved, never weakened.",
+      "tests/portfolios.analytics.service.test.ts": "ABSENT — created by PF1.",
+      "tests/postgres/portfolio-aggregate.pg.test.ts": "ABSENT — created by PF1.",
+      "tests/postgres/portfolio-aggregate.probes.json": "ABSENT — created by PF1."
+    },
+    "no_sixth_path": "PF1 may not create, rename or modify any path outside this list of five. In particular it may not create a sixth PostgreSQL harness module of the tests/postgres/<stem>-harness.ts kind, even though b3, b4 and b5 each have one; see POSTGRES_CONTRACT.test_pattern for the self-contained pattern that makes the harness file unnecessary.",
+    "prohibited_surfaces_restated_from_parent": [
+      "app/app/portfolios/page.tsx, app/app/portfolios/new/page.tsx, app/app/portfolios/[portfolioId]/page.tsx — all Portfolio pages.",
+      "lib/audit/logger.ts — PF-2 owns it; PF-1 must not.",
+      "tests/database-entrypoint-inventory.json — PF-2 owns it; PF-1 must not.",
+      "tests/audit-action-contract.test.ts — PF-2 owns it; PF-1 must not.",
+      "readiness_assessments and every path that reads it.",
+      "lib/stella/** and app/actions/stella/** — no Stella surface in V1.",
+      "The three Portfolio pages' unauthenticated / no-selection auth branches — the tenancy coupling successor's surface, not Portfolio's.",
+      "db/schema.ts — no schema change.",
+      "db/migrations/** — no migration is required or permitted.",
+      "db/prepared/**, db/baseline/** — no prepared package, no baseline unit.",
+      "docs/ops/ods/** — no ODS artifact."
+    ],
+    "shared_writer_rule_inherited": "The parent's shared_writer_serialization.rule states that PF-2 OWNS lib/audit/logger.ts, tests/database-entrypoint-inventory.json and tests/audit-action-contract.test.ts for the Portfolio lane and that PF-1 and PF-3 must not edit them. That rule is inherited verbatim and is enforced here by their absence from the five authorized paths."
+  },
+
+  "APPROVED_RUN_CONTRACT": {
+    "population_rule": "For each member project, select THE MOST RECENT APPROVED ELIGIBLE RUN: a run with status = 'calculated' that has at least one row in sroi_run_reviews with status = 'approved' for that calculation_run_id and the same organization, ordered by run version DESC then calculated_at DESC. Inherited verbatim from the parent's aggregate_contract.population.",
+    "ordering_of_operations": {
+      "rule": "APPROVAL FILTERING OCCURS BEFORE LATEST-RUN SELECTION.",
+      "consequence_frozen": "A newer calculated but unapproved run MUST NOT displace an older approved run. The unapproved run is not a candidate at the moment the latest-run choice is made; it is not selected and then rejected.",
+      "why_this_must_be_stated_as_an_ordering": "The two orderings are indistinguishable on a population where every run is approved, and differ only where the newest run is unapproved. An implementation that filters after selecting would return no_approved_run for a project that in fact has an older approved run, which the parent's later_ineligible_runs key forbids: a more recent ineligible run 'never substitutes for the approved run'.",
+      "pinned_by": "NEG-AGG-2 (inherited) and PF1-MUT-ORDER-1 (new)."
+    },
+    "required_predicates": [
+      "sroi_calculation_runs.status = 'calculated'",
+      "sroi_calculation_runs.organization_id = the caller's organization",
+      "sroi_calculation_runs.project_id IN the portfolio's member projects",
+      "an EXISTS correlation to sroi_run_reviews on calculation_run_id with status = 'approved'",
+      "sroi_run_reviews.organization_id = the same organization as the run — organization correlation is required on the review side as well as the run side, never only on the run side"
+    ],
+    "determinism_of_run_selection": {
+      "claim": "Ordering by run version DESC is already total per project.",
+      "measured_evidence": "db/migrations/0029_integrity.sql:6-7 creates `uq_sroi_run_project_version` as a UNIQUE INDEX on sroi_calculation_runs (project_id, version). At most one run exists per (project, version), so version DESC admits no tie within a project and the inherited calculated_at DESC clause is a defensive second key that cannot be reached through this uniqueness.",
+      "reader_hazard": "This uniqueness is NOT visible in db/schema.ts. The Drizzle table's constraint array at db/schema.ts:855-858 declares only the status check and idx_sroi_calculation_runs_project_id. A reviewer who verifies uniqueness against the schema module alone will wrongly conclude there is none; the constraint lives only in the migration."
+    }
+  },
+
+  "APPROVED_REVIEW_TIEBREAK": {
+    "rule": "When the selected run has more than one row in sroi_run_reviews whose CURRENT status is 'approved', select the most recently created approved review: ORDER BY sroi_run_reviews.created_at DESC, sroi_run_reviews.id DESC.",
+    "total_tiebreaker": "sroi_run_reviews.id is the total deterministic tie-breaker. It is a uuid PRIMARY KEY (db/schema.ts:910), so it is unique and NOT NULL, and the two-key ordering therefore admits no residual tie.",
+    "prohibited_ordering": {
+      "rule": "Do NOT order by sroi_run_reviews.reviewed_at.",
+      "reason_1_nullable": "reviewed_at is declared `timestamp('reviewed_at')` at db/schema.ts:927 with no .notNull(), so it is NULLABLE.",
+      "reason_2_null_ordering": "PostgreSQL places NULLs FIRST under DESC by default. An approved review that was never stamped therefore wins over one that was, which is the opposite of 'most recent'.",
+      "contrast_with_created_at": "created_at is declared `timestamp('created_at').defaultNow().notNull()` at db/schema.ts:928 — NOT NULL with a server default, so every row has one and the ordering is total in combination with id."
+    },
+    "what_the_selected_review_supplies": [
+      "included[].reviewId — the reviewId reported in the traceability tuple is the id of THIS review.",
+      "the preserved legacy manual readiness value associated with the selected run and review — see READINESS."
+    ],
+    "live_defect_this_corrects": {
+      "statement": "This is not a preference between two acceptable orderings. The live implementation orders reviews by the prohibited column.",
+      "measured_evidence": "lib/portfolios/analytics.ts:221 reads `.orderBy(desc(sroiRunReviews.reviewedAt))`, and lines 222-226 take the first row per calculation_run_id into readinessByRunId. Because reviewed_at is nullable and DESC sorts NULLs first, an unstamped review currently outranks a stamped one.",
+      "consequence_for_control_strength": "PF1-MUT-TIEBREAK-1 is therefore non-vacuous by construction: reverting to reviewed_at DESC restores a defect that exists in the tree today, rather than introducing a synthetic one."
+    },
+    "pinned_by": "PF1-POS-TIEBREAK-1, PF1-NEG-TIEBREAK-1 and PF1-MUT-TIEBREAK-1 (all new)."
+  },
+
+  "LEGACY_EXCLUSION": {
+    "rule": "Mandatory FIBC-042 exclusion. A project is excluded with reason `legacy_non_authoritative` when projects.governance_regime = 'pre_pc01b' OR the SELECTED sroi_calculation_runs.methodology_version IS NULL.",
+    "derivation_source": "Persisted facts only, never inferred. Inherited verbatim from the parent's aggregate_contract.exclusion_reasons.legacy_non_authoritative.",
+    "which_run_is_tested": "The SELECTED run — the approved-eligible run chosen by APPROVED_RUN_CONTRACT — not the newest run and not any other run of the project. Testing an unselected run's methodology_version would exclude or admit a project on the basis of a run that contributes nothing.",
+    "approval_does_not_override": "An approved review does NOT override the legacy exclusion. A pre-PC-01B run with a currently-approved review is still excluded as legacy_non_authoritative. Approval establishes methodological review; it does not retro-fit a methodology version onto a run that predates versioning.",
+    "methodology_version_null_semantics": "db/schema.ts:844-849 records that methodology_version is NULL on every run created before FIBIU-02, that the NULL is permanent and means 'predates versioning', and that it is never backfilled (IMPOSSIBLE_TO_BACKFILL). The exclusion therefore reads a stable permanent fact, not a transient gap awaiting a migration.",
+    "pinned_by": "NEG-AGG-3 (inherited) and MUT-AGG-3 (inherited)."
+  },
+
+  "EXCLUSION_PRECEDENCE": {
+    "ordered_list_exact": [
+      "no_run",
+      "no_approved_run",
+      "legacy_non_authoritative",
+      "non_usd_currency",
+      "no_sroi_ratio",
+      "zero_or_invalid_investment"
+    ],
+    "semantics": "Evaluation is first-match-wins in exactly this order. A project qualifying for more than one reason reports the earliest reason in the list and no other.",
+    "count": 6,
+    "no_seventh_reason": "The set is closed at six. PF1 may not add a seventh reason, may not merge two, and may not rename one. The six are identical to the parent's aggregate_contract.exclusion_reasons key set; this authority adds only the evaluation order over that set.",
+    "why_legacy_precedes_currency_and_ratio": "legacy_non_authoritative is a governance-regime fact about whether the run may contribute to an authoritative aggregate at all. Reporting non_usd_currency or no_sroi_ratio for a pre-PC-01B run would describe a mechanical property of a run that was never eligible on governance grounds, and would make the FIBC-042 exclusion invisible in the excluded[] output wherever a legacy run also happens to be non-USD.",
+    "type_widening_required": {
+      "measured_current_state": "lib/portfolios/analytics.ts:38 declares ExcludedProject.reason as the three-member union 'no_run' | 'non_usd_currency' | 'no_sroi_ratio'.",
+      "required_state": "The same union widened to all six reasons in the frozen order. Exactly three members are added: no_approved_run, legacy_non_authoritative, zero_or_invalid_investment.",
+      "prohibition": "The union must remain a closed literal union. It may not be widened to `string`, which would let a seventh reason enter without a type error."
+    }
+  },
+
+  "TRACEABILITY": {
+    "rule": "Each included contribution exposes exactly the nine-field tuple, and no more.",
+    "fields_exact_nine": [
+      "projectId",
+      "projectName",
+      "runId",
+      "runVersion",
+      "reviewId",
+      "methodologyVersion",
+      "sroiRatio",
+      "totalInvestment",
+      "netSocialValue"
+    ],
+    "provenance": "Inherited verbatim from the parent's aggregate_contract.traceability_tuple.fields.",
+    "binding_correspondence": "The runId a component carries MUST be the run whose reviewId is the approved review selected by APPROVED_REVIEW_TIEBREAK. A component may not report a runId from one selection path and a reviewId from another.",
+    "measured_current_state": "lib/portfolios/analytics.ts:47 declares included as `{ projectId: string; projectName: string; sroiRatio: number }[]` — three of the nine fields. PF1 widens this to the full tuple.",
+    "no_pf3_descriptive_intelligence_in_pf1": {
+      "rule": "PF1 emits no descriptive intelligence. POS-AGG-5 (minimum, median, maximum over individual ratios) and POS-TI-1 (the eight deterministic transversal facts) remain PF3 obligations and are NOT implemented, NOT partially implemented and NOT stubbed by PF1.",
+      "consequence": "PF1's failure to emit descriptive statistics is correct behaviour, not an incomplete implementation, and must not be recorded as a PF1 gap by any audit of this node.",
+      "still_binding_on_pf1": "NEG-AGG-8 remains binding: nothing PF1 emits may be returned under the name of the consolidated ratio, and the consolidated ratio may not be labelled as a descriptive statistic."
+    }
+  },
+
+  "FORMULA": {
+    "rule": "portfolioSroiRatio = SUM(net social value) / SUM(total investment) over exactly the included population, computed with the current decimal arithmetic.",
+    "arithmetic": "decimal.js, as already imported at lib/portfolios/analytics.ts:8 and used at :59-60, :81-82 and :92-94. PF1 changes the POPULATION that enters the sum; it does not change the arithmetic library, the accumulation order or the division.",
+    "prohibited_aggregations": [
+      "average of project ratios",
+      "median of project ratios",
+      "weighted average of project ratios",
+      "current-page-only aggregate"
+    ],
+    "same_universe_rule": "Numerator and denominator are drawn from the SAME universe. An excluded project contributes to NEITHER the numerator nor the denominator — never a zero in the denominator, never a zero in the numerator.",
+    "all_excluded_case": "When every member project is excluded, or the summed denominator is zero, portfolioSroiRatio is null and the impossibility is represented explicitly. Never a silent zero and never an omitted figure. The live guard at lib/portfolios/analytics.ts:92-94 already returns null when totalInvestment is not greater than zero; PF1 preserves it.",
+    "pinned_by": "POS-AGG-2, NEG-AGG-7, NEG-AGG-8 and MUT-AGG-2 (all inherited)."
+  },
+
+  "READINESS": {
+    "preserved_symbols_exact": [
+      "ProjectRunSummary.legacyManualReadinessScore (lib/portfolios/analytics.ts:32)",
+      "PortfolioAggregate.averageLegacyManualReadinessScore (lib/portfolios/analytics.ts:52)",
+      "PortfolioAggregate.legacyManualReadinessCoverage (lib/portfolios/analytics.ts:53)",
+      "PortfolioAggregate.readinessSource, whose only inhabitant is the literal 'LEGACY_NON_AUTHORITATIVE' (lib/portfolios/analytics.ts:51)"
+    ],
+    "preservation_rule": "PF1 preserves all four symbols with their current names, their current types and their current computation. It may not rename them, may not restore the pre-B5 names readinessScore / averageReadinessScore / readinessCoverage, may not relabel the value with the FIBIU-17 band vocabulary, and may not promote it into canonical FIBC-021 readiness semantics.",
+    "prohibited_consumption": {
+      "rule": "PF1 may NOT consume readiness_assessments and may NOT call getReadinessAssessment.",
+      "measured_current_state": "lib/portfolios/analytics.ts imports only decimal.js, drizzle-orm, @/db/client, @/db/schema and @/lib/auth/session (lines 8-12). No readiness_assessments reference and no getReadinessAssessment call exists on this path today, so the control is currently GREEN and PF1's obligation is to keep it green.",
+      "portion_d_disposition": "Canonical FIBC-021 readiness (Portion D) remains a Wave 5 / FIBIU-27 surface switch. It is out of scope for PF1 and for the whole Portfolio Commercial V1 batch."
+    },
+    "expected_displayed_value_change": {
+      "statement": "The selected approved review may naturally change WHICH existing legacy manual readiness value is displayed, because the readiness value is read from the review of the SELECTED run and PF1 changes which run and which review are selected.",
+      "classification": "This is a CONSEQUENCE of selecting the correct run and review. It is NOT canonical readiness implementation, NOT a readiness semantic change and NOT a relabelling.",
+      "what_remains_invariant": "The source column stays sroi_run_reviews.readiness_score (read today at lib/portfolios/analytics.ts:212), the provenance discriminator stays 'LEGACY_NON_AUTHORITATIVE', and the averaging rule stays 'over included projects that have a score' as implemented at :84-87 and asserted by the existing unit test at lib/portfolios/analytics.test.ts:69.",
+      "audit_guidance": "An audit that observes a changed readiness average between the pre-PF1 and post-PF1 fixtures must check that the change is explained by a changed run/review selection. A readiness change with an unchanged selection would be a genuine violation."
+    },
+    "pinned_by": "NEG-READINESS-1 and MUT-READINESS-1 (both inherited)."
+  },
+
+  "POSTGRES_CONTRACT": {
+    "REAL_POSTGRES_REQUIRED": "YES",
+    "file_resolution": {
+      "binding_paths": [
+        "tests/postgres/portfolio-aggregate.pg.test.ts",
+        "tests/postgres/portfolio-aggregate.probes.json"
+      ],
+      "authority_for_this_resolution": "The parent PRODUCT AUTHORITY's authorized_future_implementation_surface.PF1_tests names exactly these two paths, each marked '(new)'. They are followed exactly.",
+      "superseded_names": "The batch manifest's postgres_requirements names tests/postgres/portfolio-v1.setup.json and tests/postgres/portfolio-v1.probes.json. Neither file exists at AS_OF_TREE; `ls tests/postgres/` returns b2-remediation.pg.test.ts, b3/b4/b5-completeness-harness.ts, b3/b4/b5-completeness.pg.test.ts, b3/b4/b5-completeness.probes.json, disposable-db.ts and s1-founder-cardinality.pg.test.ts, and no portfolio file of any name. Those two names are unmaterialized intent, and the product authority's enumerated write surface governs. Recorded as OPEN_FINDINGS.F-PF1-1; neither parent artifact is edited to reconcile it.",
+      "no_committed_setup_manifest": {
+        "rule": "PF1 does NOT create tests/postgres/portfolio-v1.setup.json or any other committed setup manifest. Doing so would be a sixth path.",
+        "measured_repository_convention": "No `*setup.json` file exists anywhere under tests/postgres/ at AS_OF_TREE. Committed `*.probes.json` files exist for b3, b4 and b5; committed setup manifests do not exist for any of them.",
+        "mechanism_that_makes_this_work": "scripts/db-audit-disposable.ts declares `export interface SetupManifest { statements: string[] }` at :93-95 and `export interface ProbeManifest { probes: Array<{id, sql}> }` at :97-99, and runDisposableHarness accepts both as in-memory objects. tests/postgres/s1-founder-cardinality.pg.test.ts builds both in code — buildSetupManifest() at :187 and buildProbeManifest() at :211 — and passes them directly at :525-528. tests/postgres/b5-completeness-harness.ts shows the complementary half: PROBES_TEMPLATE (:48) names the COMMITTED probes.json, reads it as a template at :220, and materializes the runtime copies into an out directory at :227. The setup manifest is therefore built at runtime and materialized to disposable storage, never committed."
+      }
+    },
+    "test_pattern": {
+      "rule": "Use the S1-style SELF-CONTAINED real-PostgreSQL test pattern: tests/postgres/portfolio-aggregate.pg.test.ts builds its own setup manifest in code and consumes the committed probe template, with NO separate tests/postgres/portfolio-aggregate-harness.ts module.",
+      "why_not_the_b3_b4_b5_pattern": "b3, b4 and b5 each split their setup construction into a companion `-harness.ts` file. Adopting that split here would require a sixth authorized path, which PF1_WRITE_SURFACE.no_sixth_path forbids. s1-founder-cardinality.pg.test.ts demonstrates that the split is optional: it carries buildSetupManifest and buildProbeManifest inside the .pg.test.ts itself.",
+      "committed_probe_template_retained": "tests/postgres/portfolio-aggregate.probes.json is still committed, because it is one of the five authorized paths and because a committed probe template is what makes the SQL assertions reviewable in a diff rather than only at runtime.",
+      "execution_channel": "Exclusively through the canonical disposable harness — a throwaway container on 127.0.0.1, ephemeral port, no bind mounts, teardown in `finally`, leftover check. Never staging, never production, never the canonical local stack.",
+      "gating": "UELLIX_PG_TESTS=1 with Docker required. The suite is SKIPPED — never silently passed — when the gate variable is unset, matching PG_TESTS_ENABLED at tests/postgres/disposable-db.ts:25."
+    },
+    "frozen_matrix": [
+      { "id": "PG-PF1-01", "case": "approved run included", "binding_control": "POS-AGG-1" },
+      { "id": "PG-PF1-02", "case": "unapproved calculated run excluded with reason no_approved_run", "binding_control": "NEG-AGG-1", "sentinel": "SENT-PF-UNAPPROVED-RUN" },
+      { "id": "PG-PF1-03", "case": "older approved run beats newer unapproved run — the newer run neither replaces it nor alters any aggregate value", "binding_control": "NEG-AGG-2", "also_pinned_by": "PF1-MUT-ORDER-1" },
+      { "id": "PG-PF1-04", "case": "newest version wins among approved runs", "binding_control": "POS-AGG-1" },
+      { "id": "PG-PF1-05", "case": "multiple currently-approved reviews on the selected run — created_at DESC then id DESC decides", "binding_control": "PF1-POS-TIEBREAK-1" },
+      { "id": "PG-PF1-06", "case": "legacy exclusion via methodology_version IS NULL on the selected run", "binding_control": "NEG-AGG-3", "sentinel": "SENT-PF-LEGACY-RUN" },
+      { "id": "PG-PF1-07", "case": "legacy exclusion via projects.governance_regime = 'pre_pc01b', including when the run carries an approved review", "binding_control": "NEG-AGG-3" },
+      { "id": "PG-PF1-08", "case": "mixed population arithmetic — included and excluded projects in one portfolio, ratio equals Σ/Σ over the included subset only", "binding_control": "POS-AGG-2" },
+      { "id": "PG-PF1-09", "case": "zero, negative and null total_investment each excluded with reason zero_or_invalid_investment", "binding_control": "NEG-AGG-6", "also_pinned_by": "PF1-MUT-INVESTMENT-1" },
+      { "id": "PG-PF1-10", "case": "all members excluded — portfolioSroiRatio is null, never 0", "binding_control": "NEG-AGG-7" },
+      { "id": "PG-PF1-11", "case": "mixed methodology versions across the approved population — aggregate still emitted, each component reports its own methodologyVersion", "binding_control": "POS-AGG-4" },
+      { "id": "PG-PF1-12", "case": "cross-organization sentinel absent from every aggregate and every component", "binding_control": "NEG-PG-1", "sentinel": "SENT-PF-CROSS-ORG-PROJECT" },
+      { "id": "PG-PF1-13", "case": "report state irrelevant — a project with a locked report and a project with no report participate identically", "binding_control": "POS-AGG-6" },
+      { "id": "PG-PF1-14", "case": "no readiness_assessments dependency — the aggregate is produced with the table absent from every query plan on the PF1 path", "binding_control": "NEG-READINESS-1" }
+    ],
+    "matrix_id_namespace_note": "PG-PF1-* ids name ROWS OF THIS MATRIX for reviewability. They do not create a parallel control contract: every row's authority is the binding_control it cites, which is either an inherited batch-manifest id or a PF1_NEW_CONTROLS id.",
+    "matrix_is_a_floor": "The packet requires this matrix 'at least'. PF1 may add further real-PostgreSQL cases within the two authorized PostgreSQL paths; it may not drop or weaken a row."
+  },
+
+  "MANIFEST_DISPOSITION": {
+    "decision": "NO new companion test manifest is created for PF1. The batch manifest docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json remains the binding test contract for every id it defines. This authority cites those ids and adds five strictly-new ids under the disjoint PF1- prefix.",
+    "precedent": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json's MANIFEST_DISPOSITION, applied to a structurally identical situation. See ARTIFACT_FORM.",
+    "pf1_relevant_inherited_ids": {
+      "positive_controls": ["POS-AGG-1", "POS-AGG-2", "POS-AGG-3", "POS-AGG-4", "POS-AGG-6"],
+      "negative_controls": ["NEG-AGG-1", "NEG-AGG-2", "NEG-AGG-3", "NEG-AGG-4", "NEG-AGG-5", "NEG-AGG-6", "NEG-AGG-7", "NEG-AGG-8", "NEG-READINESS-1"],
+      "mutation_controls": ["MUT-AGG-1", "MUT-AGG-2", "MUT-AGG-3", "MUT-AGG-4", "MUT-TRACE-1", "MUT-READINESS-1"],
+      "sentinels": ["SENT-PF-UNAPPROVED-RUN", "SENT-PF-LEGACY-RUN"],
+      "shared_with_other_nodes": {
+        "ids": ["POS-PG-1", "NEG-PG-1", "SENT-PF-CROSS-ORG-PROJECT", "NEG-TENANT-3", "NEG-BYPASS-1", "NEG-STELLA-1", "NEG-PERF-1", "NEG-SCOPE-1", "NEG-TENANCY-COUPLING-1"],
+        "disposition": "Binding on PF1 to the extent of PF1's own paths and queries. PF1 discharges its share; the remainder of each control is discharged by PF2 or PF3. PF1 may not be recorded as having closed any of these ids outright."
+      }
+    },
+    "explicitly_not_pf1": {
+      "ids": ["POS-AGG-5", "POS-SIZE-1", "POS-SIZE-2", "POS-COMP-1", "POS-COMP-2", "POS-COMP-3", "POS-COMP-4", "POS-EH-1", "POS-EH-2", "POS-TI-1", "NEG-PERM-1", "NEG-PERM-2", "NEG-PERM-3", "NEG-TENANT-1", "NEG-TENANT-2", "NEG-COMP-1", "NEG-COMP-2", "NEG-AUDIT-1", "MUT-SIZE-1", "MUT-PERM-1", "MUT-COMP-1", "MUT-TENANT-1", "MUT-ENTRYPOINT-1", "MUT-AUDIT-1"],
+      "disposition": "PF2 or PF3 obligations. PF1 neither implements nor stubs them, and their absence from a PF1 run is correct."
+    },
+    "exit_gates_inherited_from_batch_manifest": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "postgres_disposable_probe", "targeted_tests"],
+    "exit_gates_note": "These are the IMPLEMENTATION node's exit gates, inherited by PF1 from the batch manifest's exit_gates array. They are not the gates of the present authority-only mission, which are recorded separately under VALIDATION_PERFORMED_BY_THIS_MISSION."
+  },
+
+  "PF1_NEW_CONTROLS": {
+    "namespace_rule": "Every id in this block begins with 'PF1-'. The prefix is reserved for this authority. Measured disjointness: the batch manifest's 55 ids use only the prefixes POS, NEG, MUT and SENT, and none begins with 'PF1-'.",
+    "positive_controls": [
+      {
+        "id": "PF1-POS-TIEBREAK-1",
+        "description": "For a selected run carrying two or more rows in sroi_run_reviews whose current status is 'approved', the aggregate reports as included[].reviewId the id of the review with the greatest created_at, and where two approved reviews share a created_at value, the greatest id. The associated legacy manual readiness value displayed is the one belonging to that same review.",
+        "fixture_requirement": "At least one pair of approved reviews sharing an identical created_at, so that the id tiebreaker is actually exercised and not merely present in the ORDER BY. At least one approved review whose reviewed_at is NULL and whose created_at is the OLDEST, so that a reviewed_at-based ordering would select it and a created_at-based ordering would not.",
+        "test_file": "tests/postgres/portfolio-aggregate.pg.test.ts and tests/portfolios.analytics.service.test.ts"
+      }
+    ],
+    "negative_controls": [
+      {
+        "id": "PF1-NEG-TIEBREAK-1",
+        "description": "sroi_run_reviews.reviewed_at is never an ordering input on any PF1 path. No PF1 authorized file contains an orderBy over reviewedAt or an ORDER BY over reviewed_at, in either the application query or any committed probe SQL.",
+        "why_a_static_control_is_appropriate": "The ordering column is a syntactic property of the query. A static assertion over the five authorized paths catches a reintroduction that a fixture-based test would catch only when a fixture happens to distinguish the two orderings.",
+        "scope_boundary": "Scoped to the five PF1 authorized paths. It makes no claim about reviewed_at usage elsewhere in the repository, where the column has legitimate uses.",
+        "test_file": "lib/portfolios/analytics.test.ts or tests/portfolios.analytics.service.test.ts"
+      }
+    ],
+    "mutation_controls": [
+      {
+        "id": "PF1-MUT-ORDER-1",
+        "description": "Moving the approval filter to AFTER latest-run selection — selecting each project's newest calculated run first and only then discarding it if it lacks an approved review — makes NEG-AGG-2 and PG-PF1-03 fail: a project whose newest run is unapproved but which has an older approved run is wrongly reported as no_approved_run, and the aggregate loses that project's contribution.",
+        "non_vacuity_basis": "The fixture required by PG-PF1-03 contains a project whose newest calculated run is unapproved and whose second-newest is approved. On that fixture the two orderings produce different includedCount and different portfolioSroiRatio values, so the mutation is observable arithmetically and not only by inspection."
+      },
+      {
+        "id": "PF1-MUT-TIEBREAK-1",
+        "description": "Replacing ORDER BY created_at DESC, id DESC with ORDER BY reviewed_at DESC on the approved-review selection makes PF1-POS-TIEBREAK-1 and PG-PF1-05 fail: the review with a NULL reviewed_at sorts first under PostgreSQL's default DESC NULLs-first rule and supplies the wrong reviewId and the wrong legacy readiness value.",
+        "non_vacuity_basis": "The mutated form is the form the live tree carries today at lib/portfolios/analytics.ts:221, so this control asserts a real correction rather than guarding a hypothetical regression. The fixture requirement in PF1-POS-TIEBREAK-1 guarantees the two orderings disagree."
+      },
+      {
+        "id": "PF1-MUT-INVESTMENT-1",
+        "description": "Letting a run whose total_investment is null, zero or negative collapse into reason no_run — rather than being excluded with reason zero_or_invalid_investment — makes NEG-AGG-6 and PG-PF1-09 fail. The project's exclusion reason is wrong, and a reader cannot distinguish a project that was never calculated from one whose calculated run carries an unusable investment.",
+        "non_vacuity_basis": "This is the live behaviour for the null case. lib/portfolios/analytics.ts:133-136 returns null from toProjectRunSummaryRun when the parsed investment is null, and :65-67 then classifies a null run as no_run. The zero and negative cases are worse than that today: they are neither null nor rejected, so they currently pass the guard and contribute a zero or a negative to the denominator. The mutation therefore reverts to a state that is observably present in the tree.",
+        "boundary": "This control does not authorize changing what toProjectRunSummaryRun does with a genuinely unparseable numeric column. It requires only that null, zero and negative investment on an otherwise valid selected run be reported as zero_or_invalid_investment."
+      }
+    ]
+  },
+
+  "MUTATION_CONTRACT": {
+    "required_non_vacuous_controls": [
+      { "requirement": "approved -> calculated", "control_id": "MUT-AGG-1", "origin": "inherited" },
+      { "requirement": "approval filter after run selection", "control_id": "PF1-MUT-ORDER-1", "origin": "new" },
+      { "requirement": "remove legacy exclusion", "control_id": "MUT-AGG-3", "origin": "inherited" },
+      { "requirement": "wrong review tie-break", "control_id": "PF1-MUT-TIEBREAK-1", "origin": "new" },
+      { "requirement": "average ratios instead of sigma/sigma", "control_id": "MUT-AGG-2", "origin": "inherited" },
+      { "requirement": "drop traceability runId/reviewId", "control_id": "MUT-TRACE-1", "origin": "inherited" },
+      { "requirement": "null investment collapsing to no_run", "control_id": "PF1-MUT-INVESTMENT-1", "origin": "new" },
+      { "requirement": "readiness_assessments dependency", "control_id": "MUT-READINESS-1", "origin": "inherited" }
+    ],
+    "coverage_check": "8 required, 8 mapped, 0 unmapped.",
+    "non_vacuity_definition": "A mutation control is non-vacuous only if applying the mutation to the real working tree makes at least one NAMED control fail, and if that control passes on the unmutated tree. A mutation that leaves the suite green proves the guarded assertion does not exist, and is itself a BLOCKING finding for the implementation node.",
+    "execution_obligations": {
+      "real_bytes": "Each mutation MUST be applied to real working-tree bytes and then restored byte-exactly. A mutation reasoned about but never applied does not discharge its control.",
+      "pristine_capture_ordering": "Capture the pristine copy of every file to be mutated BEFORE the first edit of the sequence, never inside the edit loop. Capturing a pristine copy after an earlier mutation has landed poisons the restore baseline and makes byte-exact restoration unverifiable.",
+      "restoration_proof": "Restoration is proven by hashing each mutated file before the first edit and after the final restore and comparing the two digests, and by confirming a clean `git status --porcelain --untracked-files=all` at the end of the mutation sequence. A visual re-read is not proof.",
+      "chunking": "The mutation sequence MUST be chunked so that no single command invocation can be interrupted mid-control. An interrupted run can leave a mutation on disk, which silently converts the working tree into a mutated tree for every subsequent gate.",
+      "scope": "Mutations may touch only the five authorized paths. A mutation that would require editing a sixth path is out of scope and its control must be redesigned within the five."
+    }
+  },
+
+  "TENANCY_DISPOSITION": {
+    "status": "SEPARATE_GOVERNED_TENANCY_COUPLING_SUCCESSOR_REQUIRED",
+    "ownership": "PF1 does NOT own the Portfolio tenancy coupling successor and does not need it in order to implement the five authorized files.",
+    "prohibited_branches": [
+      "app/app/portfolios/page.tsx:15 and :19",
+      "app/app/portfolios/[portfolioId]/page.tsx:41 and :53",
+      "app/app/portfolios/new/page.tsx:14 and :15"
+    ],
+    "rule": "PF1 must not touch the three Portfolio pages' unauthenticated / no-selection auth branches. The prohibition is unconditional and does not depend on who eventually owns them; the parent records the owner as TO_BE_MAPPED.",
+    "structural_reason_pf1_is_unaffected": "All three prohibited branches live in app/app/portfolios/**, and no path under app/ appears in PF1_WRITE_SURFACE. The prohibition is enforced by the write surface itself, not only by intent.",
+    "organization_binding_pf1_relies_on": "PF1 reads the caller's organization through getCurrentOrganizationContext(), already imported at lib/portfolios/analytics.ts:12 and called at :152. PF1 introduces no new tenancy mechanism, no new principal resolution and no RLS dependency. The parent's retracted_prediction_S3_rls key records that Portfolio has NO RLS dependency on S3 and must not manufacture one; PF1 manufactures none.",
+    "pinned_by": "NEG-TENANCY-COUPLING-1 and NEG-TENANT-3 (both inherited, shared)."
+  },
+
+  "LOCKS": {
+    "ODS_REQUIRED": "NO",
+    "MIGRATION_REQUIRED": "NO",
+    "PROTECTED_GRANT_REQUIRED": "NO",
+    "CONTROLLER_REQUIRED": "NO",
+    "protected_grant_measured_basis": "scripts/ods-scope.ts:82-90 declares DEFAULT_PROTECTED_PATTERNS as docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. Neither docs/ops/portfolio/** nor any of the five PF1 implementation paths matches any of these, so no --protected-authority grant is required for this authority mission or for the PF1 implementation node.",
+    "migration_measured_basis": "The parent records that Portfolio consumes no migration ordinal, no journal wrapper ordinal and no baseline unit ordinal, and explicitly does not allocate 0067 or any later ordinal. PF1 touches no file under db/, so it cannot consume one.",
+    "implementation_lock": {
+      "id": "LOCK-HEAVY-LOCAL-PG",
+      "when": "The PF1 implementation node MAY take this lock, and only while executing its real-PostgreSQL verification.",
+      "release": "Released as soon as the disposable container is torn down. The lock is not held across the whole implementation node.",
+      "not_taken_by_this_mission": "The present authority-only mission takes NO lock. It runs no PostgreSQL of any kind — HEAVY_PG_REQUIRED is false on the parent and remains false here."
+    }
+  },
+
+  "EXECUTION_AUTHORIZATION": {
+    "resolution_of_the_integrated_field": {
+      "integrated_field": "PORTFOLIO_IMPLEMENTATION_AUTHORIZED = false, in docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json.",
+      "corroborating_fields": "PORTFOLIO_IMPLEMENTATION_STATUS = 'NOT_STARTED — no implementation is authorized by this mission or by the R1 correction'; GRANT_ID = null; authority_class = 'PRODUCT_AUTHORITY'.",
+      "reading": "The integrated product authority froze the future implementation surfaces — it enumerated the PF1, PF2 and PF3 path sets and the product decisions that govern them — but it did not itself grant write permission to anyone. Its false value is therefore a statement about ITS OWN grant, not a prohibition that this successor contradicts.",
+      "consequence": "The integrated field is NOT altered, NOT superseded and NOT reinterpreted. It remains true of the parent artifact. Write permission is created HERE, by a separate artifact of authority_class EXECUTION_AUTHORITY, for one node."
+    },
+    "PF1_IMPLEMENTATION_AUTHORIZED_AFTER_THIS_AUTHORITY_INTEGRATES": "YES",
+    "PF1_IMPLEMENTATION_AUTHORIZED_NOW": "NO",
+    "PF2_IMPLEMENTATION_AUTHORIZED": "NO",
+    "PF3_IMPLEMENTATION_AUTHORIZED": "NO",
+    "conditions_precedent": [
+      "This artifact passes an independent Opus exact-object audit.",
+      "This artifact is integrated into integration/commercial-v1."
+    ],
+    "scope_of_the_grant": "Write permission for the five paths in PF1_WRITE_SURFACE, and for nothing else. The grant does not extend to PF2's or PF3's path sets, does not extend to any protected surface, and does not authorize a migration, a schema change, an ODS artifact or a Controller enumeration.",
+    "what_this_authority_does_not_do": [
+      "It does not implement PF1. The working tree's PF1 paths are unchanged by this mission.",
+      "It does not authorize PF2 or PF3, which require their own successors.",
+      "It does not close the Portfolio tenancy coupling successor.",
+      "It does not edit, supersede or amend either parent artifact."
+    ]
+  },
+
+  "MEASURED_BASELINE_OF_THE_IMPLEMENTATION_SURFACE": {
+    "purpose": "Record the live pre-PF1 state of lib/portfolios/analytics.ts at AS_OF_TREE, so that an audit of the PF1 implementation node can distinguish what PF1 changed from what it inherited, and so that the mutation controls' non-vacuity claims are checkable against a fixed baseline.",
+    "measured_facts": [
+      { "ref": "lib/portfolios/analytics.ts:38", "fact": "ExcludedProject.reason is the three-member union 'no_run' | 'non_usd_currency' | 'no_sroi_ratio'. Three of the six frozen reasons are absent." },
+      { "ref": "lib/portfolios/analytics.ts:47", "fact": "PortfolioAggregate.included carries three fields — projectId, projectName, sroiRatio. Six of the nine traceability fields are absent, including runId and reviewId." },
+      { "ref": "lib/portfolios/analytics.ts:191-198", "fact": "The run query filters on projectId IN (...), organizationId and status = 'calculated'. There is NO approval predicate of any kind." },
+      { "ref": "lib/portfolios/analytics.ts:200-203", "fact": "Latest-run-per-project selection takes the first row per projectId from a version DESC, calculated_at DESC ordering. Because no approval filter has been applied, an unapproved newest run currently wins." },
+      { "ref": "lib/portfolios/analytics.ts:209-226", "fact": "Reviews are fetched for the already-selected runs only, filtered on calculationRunId IN (...) and organizationId, with NO status filter — so a draft, reviewed, flagged or archived review can currently supply the readiness value — and ordered by desc(reviewedAt), the prohibited column." },
+      { "ref": "lib/portfolios/analytics.ts:133-136", "fact": "toProjectRunSummaryRun returns null when investment or net parses to null, which classifies the project as no_run at :65-67. Zero and negative investments are not rejected at all and reach the denominator at :81." },
+      { "ref": "lib/portfolios/analytics.ts:8-12", "fact": "Imports are decimal.js, drizzle-orm, @/db/client, @/db/schema, @/lib/auth/session. No readiness_assessments and no getReadinessAssessment — NEG-READINESS-1 is GREEN today." },
+      { "ref": "lib/portfolios/analytics.ts:104-106", "fact": "readinessSource is the literal 'LEGACY_NON_AUTHORITATIVE'; averageLegacyManualReadinessScore and legacyManualReadinessCoverage are computed over included projects carrying a score. All four B5 symbol names are live and correct." },
+      { "ref": "lib/portfolios/analytics.test.ts", "fact": "Twelve existing assertions across two describe blocks, including the Sigma/Sigma-not-average control at :25, the no_sroi_ratio controls at :107 and :133, and the LEGACY_NON_AUTHORITATIVE labelling control at :83. PF1 extends this file; it may not weaken or delete any of these." }
+    ],
+    "implication": "PF1 is a substantive correction, not a cosmetic one: at AS_OF_TREE the approved-run population, the six-reason exclusion vocabulary, the nine-field traceability tuple and the review tie-break are all absent or wrong on the live path."
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "scope_note": "These are the gates of the AUTHORITY-ONLY mission. The implementation node's own exit gates are listed under MANIFEST_DISPOSITION.exit_gates_inherited_from_batch_manifest and are NOT discharged here.",
+    "prestate": {
+      "branch": "codex/portfolio-pf1-execution-authority-r1 — matches the lane's required branch.",
+      "head": "9ccef5e9e8303c30c51295739976951636eeb8ef — matches LIVE_BASE_EXPECTED.",
+      "tree": "ff790b7f6020596ee3649ad90ba3ee0867318c5c — matches LIVE_TREE_EXPECTED.",
+      "clean": "`git status --porcelain --untracked-files=all` returned empty."
+    },
+    "json_validation": "The artifact parses as JSON via JSON.parse and re-serializes without loss. Structural self-consistency of its own cross-references is asserted in self_check.",
+    "schema_applicability": {
+      "repository_json_schemas_measured": "Exactly one JSON Schema artifact exists in the repository: docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json. `find docs -iname '*SCHEMA*'` otherwise returns only two prose audit documents.",
+      "applies_to_this_artifact": false,
+      "proof": "That schema declares required = [manifest_id, node_or_batch, exit_gates, positive_controls, negative_controls] and additionalProperties = false. This artifact has ZERO of those five keys at top level — its control blocks are nested inside PF1_NEW_CONTROLS, never hoisted — and carries 39 top-level keys the schema would forbid. It therefore does not claim, and cannot be read as claiming, to be a test manifest.",
+      "consistency_with_precedent": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json likewise declares neither manifest_id nor node_or_batch. Execution authorities are not schema-governed in this repository; test manifests are.",
+      "consequence": "The JSON/schema validation gate is discharged by parse validity plus the cross-artifact and self-consistency checks recorded here, because no schema binds this artifact class. Had this mission materialized a second, companion test manifest, that manifest WOULD have been bound by UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json — one further reason the single-artifact form is the honest one."
+    },
+    "cross_artifact_consistency": "Performed against the two integrated parents rather than against a second artifact of this mission, because this mission materializes only one artifact. Every inherited claim in this authority was read out of the parent JSON by key, not paraphrased from prose.",
+    "authority_seal_verify_baseline": "PASS on the clean tree before any edit: ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS, AUTHORITY_SEAL_VERIFY=PASS. The protected corpus is a fixed set of 9, not a directory enumeration of docs/ops, so adding this artifact cannot perturb it.",
+    "secrets_scan_baseline": "PASS on the clean tree before any edit: 'CURRENT_TREE: no credential material found.'",
+    "gate_results_after_materialization": "Recorded in the mission report and reproducible from the final commit; see final_state."
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-PF1-1",
+      "severity": "NON_BLOCKING",
+      "title": "The integrated batch manifest and the integrated product authority name different PostgreSQL file paths for PF1.",
+      "detail": "PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json's postgres_requirements names tests/postgres/portfolio-v1.setup.json and tests/postgres/portfolio-v1.probes.json. PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json's authorized_future_implementation_surface.PF1_tests names tests/postgres/portfolio-aggregate.pg.test.ts and tests/postgres/portfolio-aggregate.probes.json. Neither of the manifest's two names exists at AS_OF_TREE, and no *setup.json exists anywhere under tests/postgres/.",
+      "why_non_blocking": "The product authority enumerates the authorized WRITE SURFACE, which is the operative question for an execution grant, and it is the artifact the parent's own next_gate points at. The manifest's postgres_requirements is a pointer to intended fixtures, not a write-surface enumeration. The divergence is resolvable without guessing.",
+      "disposition": "RESOLVED IN FAVOUR OF THE PRODUCT AUTHORITY, in POSTGRES_CONTRACT.file_resolution. Neither integrated artifact is edited. Recorded here so that an auditor encounters the divergence as a disclosed finding rather than as an unexplained deviation from the manifest."
+    },
+    {
+      "id": "F-PF1-2",
+      "severity": "NON_BLOCKING",
+      "title": "The live review query applies no review-status filter at all.",
+      "detail": "lib/portfolios/analytics.ts:215-220 filters reviews only on calculationRunId and organizationId. sroi_run_reviews.status admits draft, reviewed, approved, flagged and archived (db/schema.ts:931), so a draft or archived review can currently supply the displayed legacy readiness value.",
+      "why_non_blocking": "PF1's approved-run population and approved-review tie-break both require a status = 'approved' predicate, so implementing this authority closes the gap as a consequence. It is recorded because it is a distinct defect from the reviewed_at ordering defect and an auditor should see both named.",
+      "disposition": "Closed by APPROVED_RUN_CONTRACT.required_predicates and APPROVED_REVIEW_TIEBREAK when PF1 is implemented. No separate control is added; PF1-POS-TIEBREAK-1's fixture requirement exercises it."
+    },
+    {
+      "id": "F-PF1-3",
+      "severity": "NON_BLOCKING",
+      "title": "sroi_calculation_runs (project_id, version) uniqueness is invisible in db/schema.ts.",
+      "detail": "uq_sroi_run_project_version is created in db/migrations/0029_integrity.sql:6-7 and is absent from the Drizzle constraint array at db/schema.ts:855-858.",
+      "why_non_blocking": "The uniqueness is real and is what makes run selection by version DESC total. Nothing needs to change.",
+      "disposition": "Recorded as a reviewer hazard in APPROVED_RUN_CONTRACT.determinism_of_run_selection.reader_hazard, so that an auditor verifying determinism against the schema module alone does not raise a false finding."
+    }
+  ],
+
+  "self_check": {
+    "artifact_count_this_mission": 1,
+    "changed_paths_this_mission": ["docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json"],
+    "parents_edited": 0,
+    "product_decisions_reopened": 0,
+    "write_surface_path_count": 5,
+    "exclusion_reason_count": 6,
+    "traceability_field_count": 9,
+    "mutation_requirements_required": 8,
+    "mutation_requirements_mapped": 8,
+    "postgres_matrix_row_count": 14,
+    "new_control_ids": ["PF1-POS-TIEBREAK-1", "PF1-NEG-TIEBREAK-1", "PF1-MUT-ORDER-1", "PF1-MUT-TIEBREAK-1", "PF1-MUT-INVESTMENT-1"],
+    "new_control_id_count": 5,
+    "new_control_ids_collide_with_batch_manifest": false,
+    "batch_manifest_ids_redefined": 0,
+    "migrations_consumed": 0,
+    "ods_artifacts_touched": 0,
+    "protected_paths_touched": 0,
+    "locks_taken_by_this_mission": [],
+    "blocking_findings": 0,
+    "unknown_findings": 0,
+    "non_blocking_findings": 3
+  },
+
+  "final_state": "PORTFOLIO_PF1_EXECUTION_AUTHORITY_MATERIALIZED_AWAITING_INDEPENDENT_AUDIT",
+
+  "READY_FOR_PF1_IMPLEMENTATION": "NO — an independent Opus exact-object audit of this artifact, followed by integration into integration/commercial-v1, is required first. On integration, PF1_IMPLEMENTATION_AUTHORIZED_AFTER_THIS_AUTHORITY_INTEGRATES becomes operative and PF1 — and only PF1 — may be written.",
+
+  "next_gate": "INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT_OF_PF1_EXECUTION_AUTHORITY, at base 9ccef5e9e8303c30c51295739976951636eeb8ef."
+}
