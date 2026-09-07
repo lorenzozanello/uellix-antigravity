@@ -53,6 +53,14 @@ import {
 } from '@/db/identity-context'
 import { getVerifiedAuthIdentityResult, type AuthIdentityFailure } from './identity'
 import { isValidRole, type Role } from './roles'
+// S3 (docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json
+// REQUEST_PRINCIPAL): the ONLY read of the S2 carrier's VALUE anywhere in the
+// authorization surface. Import direction is database-context -> carrier,
+// never the reverse — the carrier stays a leaf (lib/auth/selected-organization.ts
+// header). The value is an ASSERTION, never a grant: every membership it
+// leads to below is re-derived from live database state, never trusted from
+// the cookie alone.
+import { getSelectedOrganizationId } from './selected-organization'
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -111,6 +119,23 @@ export interface RequestPrincipal {
   readonly user: AuthUser
   readonly membership: Membership | null
   readonly organization: Organization | null
+  /**
+   * WHY `membership`/`organization` are null, when they are. `null` when they
+   * are present.
+   *
+   * S3 — REQUEST_PRINCIPAL_CONTRACT distinguishes two refusals that used to
+   * collapse into one generic "no organization": an absent selection, and a
+   * selection naming an organisation the caller does not hold an active
+   * membership in. The second value also covers a DELETED or NONEXISTENT
+   * selected organisation — deliberately indistinguishable from
+   * non-membership here, so this boundary is never an existence oracle for
+   * organisation ids the caller has no right to probe (indistinguishability_
+   * requirement).
+   */
+  readonly organizationRefusalCode:
+    | 'TENANCY_NO_ORGANIZATION_SELECTED'
+    | 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'
+    | null
 }
 
 export type AuthContextErrorCode =
@@ -120,9 +145,22 @@ export type AuthContextErrorCode =
   | 'AUTH_UNAVAILABLE'
   | 'AUTH_NO_PROFILE'
   | 'AUTH_USER_DEACTIVATED'
+  // Superseded by the two TENANCY_* codes below (S3, REQUEST_PRINCIPAL_CONTRACT
+  // .refusal_codes). No longer thrown — SI-2's pick-first shape is what used to
+  // make one generic "no organization" refusal sufficient. Kept in the union
+  // rather than deleted: it is not a protected surface, but removing a public
+  // error-code literal on a guess about every caller is not this node's call.
   | 'AUTH_NO_ORGANIZATION'
   | 'AUTH_ORGANIZATION_FORBIDDEN'
   | 'AUTH_NOT_SUPER_ADMIN'
+  // S3 — REQUEST_PRINCIPAL_CONTRACT.refusal_codes, frozen by
+  // docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json.
+  // Two distinct codes because the two failures are NOT the same refusal: one
+  // is "you have not chosen", the other is "what you chose does not admit
+  // you" — collapsing them would make M-4-style regressions (a silent
+  // fallback dressed as a rename) harder to catch by code alone.
+  | 'TENANCY_NO_ORGANIZATION_SELECTED'
+  | 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'
 
 export class AuthContextError extends Error {
   readonly name = 'AuthContextError'
@@ -150,6 +188,8 @@ export function authContextErrorStatus(code: AuthContextErrorCode): number {
     case 'AUTH_NO_ORGANIZATION':
     case 'AUTH_ORGANIZATION_FORBIDDEN':
     case 'AUTH_NOT_SUPER_ADMIN':
+    case 'TENANCY_NO_ORGANIZATION_SELECTED':
+    case 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER':
       return 403
   }
 }
@@ -206,15 +246,38 @@ export async function loadCurrentUserWithinContext(userId: string): Promise<Auth
   }
 }
 
-/** The caller's single active membership, if any. Context required. */
+/**
+ * The caller's active membership in ONE SPECIFIC organisation. Context
+ * required.
+ *
+ * S3 — REQUEST_PRINCIPAL_CONTRACT.PROHIBITED_IMPLEMENTATION_SHAPE: the
+ * organisation is part of THIS PREDICATE, not a filter applied afterward to
+ * an unqualified result. `organization_members_org_user_unique` guarantees
+ * the triple (user_id, organization_id, status='active') addresses AT MOST
+ * ONE row, so `.limit(1)` is a defensive cap on an already-unique lookup,
+ * never how uniqueness is achieved. This is the SI-2 site
+ * (lib/auth/database-context.ts:210/:219 before S3): the prior shape queried
+ * `userId + status='active'` alone and took whichever row came back first.
+ *
+ * `organizationId` is the SELECTED organisation from the S2 carrier — an
+ * ASSERTION, never authority. Finding no row here means "not an active
+ * member of this organisation", which is also what a DELETED or NONEXISTENT
+ * organisation id resolves to: there is no second query that could tell them
+ * apart, by construction.
+ */
 export async function loadActiveMembershipWithinContext(
-  userId: string
+  userId: string,
+  organizationId: string
 ): Promise<Membership | null> {
   const row = await db
     .select()
     .from(organizationMembers)
     .where(
-      and(eq(organizationMembers.userId, userId), eq(organizationMembers.status, 'active'))
+      and(
+        eq(organizationMembers.userId, userId),
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.status, 'active')
+      )
     )
     .limit(1)
     .then((rows) => rows[0] ?? null)
@@ -233,6 +296,58 @@ export async function loadActiveMembershipWithinContext(
     role,
     status: row.status,
   }
+}
+
+/** One candidate the caller MAY select — never a principal, never authority. */
+export interface SelectableMembership {
+  readonly membership: Membership
+  readonly organization: Organization
+}
+
+/**
+ * Every ACTIVE membership the caller may select. Context required.
+ *
+ * S3 — SELECTOR_DECIRCULARISATION: the organisation-selection page cannot
+ * require an already-selected principal in order to let the subject select
+ * one. This enumerator is keyed on `(userId, status='active')` ALONE — no
+ * selected organisation is read, consulted or required — and answers "which
+ * organisations may this subject choose", never "which one is chosen".
+ *
+ * `enumerator_is_not_a_principal`: this result MUST NOT be used to construct
+ * a principal, a role, an RLS predicate or a GUC, and MUST NOT drive an
+ * auto-selection — not even when it holds exactly one row. Its only
+ * authorised consumers are the selector page (to render candidates) and the
+ * selection action (to prove the REQUESTED organisation, whichever one that
+ * is, is one the caller may actually pick).
+ *
+ * `user_single_active_membership` (a UNIQUE partial index on
+ * `organization_members(user_id) WHERE status='active'`) means this holds at
+ * most one row in production today — S7 owns lifting that ceiling. The
+ * predicate below is written for the post-S7 cardinality regardless, so nothing
+ * here has to change when that index is dropped.
+ */
+export async function loadSelectableMembershipsWithinContext(
+  userId: string
+): Promise<SelectableMembership[]> {
+  const rows = await db
+    .select()
+    .from(organizationMembers)
+    .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.status, 'active')))
+
+  const selectable: SelectableMembership[] = []
+  for (const row of rows) {
+    const role = isValidRole(row.role) ? row.role : null
+    if (!role) continue
+
+    const organization = await loadOrganizationWithinContext(row.organizationId)
+    if (!organization) continue
+
+    selectable.push({
+      membership: { id: row.id, organizationId: row.organizationId, userId: row.userId, role, status: row.status },
+      organization,
+    })
+  }
+  return selectable
 }
 
 /** The organisation row. Context required. */
@@ -277,17 +392,43 @@ async function readPrincipalUnderOpenContext(userId: string): Promise<RequestPri
   const user = await loadCurrentUserWithinContext(userId)
   if (!user) return null
 
-  const membership = await loadActiveMembershipWithinContext(userId)
-  const organization = membership
-    ? await loadOrganizationWithinContext(membership.organizationId)
-    : null
+  // S3 — REQUEST_PRINCIPAL_CONTRACT.authoritative_rederivation: re-read on
+  // EVERY call, never cached beyond this one request's memoised principal.
+  // The carrier is an ASSERTION ONLY — reaching this line proves nothing by
+  // itself; every membership below is re-derived from live database state.
+  const selectedOrganizationId = await getSelectedOrganizationId()
 
-  // `membership` and `organization` are reported INDEPENDENTLY. A membership
-  // whose organisation row is unreadable is a real membership — it is just not
-  // usable as an organisation context, and it is the wrappers below (and
-  // `requireOrganizationAccess`) that insist on both. Collapsing the two here
-  // would silently change what `getCurrentMembership()` answers.
-  return { user, membership, organization }
+  if (selectedOrganizationId === null) {
+    return { user, membership: null, organization: null, organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED' }
+  }
+
+  const membership = await loadActiveMembershipWithinContext(userId, selectedOrganizationId)
+  if (!membership) {
+    // S3-4: a DELETED or NONEXISTENT selected organisation resolves HERE,
+    // through the SAME qualified predicate, to the SAME refusal as ordinary
+    // non-membership — organization_members.organization_id is a RESTRICT
+    // (never CASCADE) foreign key, so an organisation cannot be removed while
+    // an active membership still references it. There is no second query
+    // that could tell "deleted" apart from "never a member", by construction,
+    // which is what makes this boundary immune to being an existence oracle.
+    return { user, membership: null, organization: null, organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' }
+  }
+
+  // `membership` and `organization` are reported INDEPENDENTLY from here,
+  // exactly as before S3: a membership whose organisation row cannot be read
+  // is still a real membership — it is just not usable as an organisation
+  // context, and it is the wrappers below (and `requireOrganizationAccess`)
+  // that insist on both. Collapsing the two would silently change what
+  // `getCurrentMembership()` answers for no reason the qualified predicate
+  // above does not already cover.
+  const organization = await loadOrganizationWithinContext(membership.organizationId)
+
+  return {
+    user,
+    membership,
+    organization,
+    organizationRefusalCode: organization ? null : 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+  }
 }
 
 /**
@@ -375,6 +516,36 @@ async function requirePrincipal(options: DatabaseContextOptions): Promise<Reques
 }
 
 /**
+ * The selectable-memberships enumerator (S3 —
+ * SELECTOR_DECIRCULARISATION.enumerator_is_not_a_principal), for the
+ * currently authenticated caller.
+ *
+ * Opens (or reuses) the SAME unscoped context `loadRequestPrincipal` does —
+ * never an organisation-scoped one, since enumerating candidates must not
+ * require having already selected one. Requires a session; throws exactly
+ * what `requirePrincipal` throws when there is none.
+ *
+ * The result MUST NOT be used to construct a principal, a role, an RLS
+ * predicate or a GUC, and MUST NOT drive an auto-selection.
+ */
+export async function listSelectableMemberships(
+  options: DatabaseContextOptions = {}
+): Promise<SelectableMembership[]> {
+  const principal = await requirePrincipal(options)
+
+  const bound = getBoundDatabaseContext()
+  if (bound !== undefined && bound.identity.userId === principal.user.id) {
+    return loadSelectableMembershipsWithinContext(principal.user.id)
+  }
+
+  return withDatabaseIdentityContext(
+    { userId: principal.user.id, organizationId: null, isSuperAdmin: principal.user.isSuperAdmin },
+    () => loadSelectableMembershipsWithinContext(principal.user.id),
+    options
+  )
+}
+
+/**
  * Run `callback` inside a database identity context for the caller.
  *
  * Not organisation-scoped: use this for work that belongs to the user rather
@@ -429,9 +600,16 @@ export async function withOrganizationDatabaseContext<T>(
   const principal = await requirePrincipal(options)
 
   if (!principal.membership || !principal.organization) {
+    // S3 — REQUEST_PRINCIPAL_CONTRACT.refusal_codes supersedes the single
+    // generic AUTH_NO_ORGANIZATION this used to throw unconditionally: "no
+    // selection" and "selected organisation refuses membership" are different
+    // refusals, and M-4 exists to catch either one being silently smoothed
+    // over into the other or into a fallback.
     throw new AuthContextError(
-      'AUTH_NO_ORGANIZATION',
-      'This account has no active organisation membership.'
+      principal.organizationRefusalCode ?? 'TENANCY_NO_ORGANIZATION_SELECTED',
+      principal.organizationRefusalCode === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'
+        ? 'The selected organisation is not one this account holds an active membership in.'
+        : 'No organisation is selected for this session.'
     )
   }
 

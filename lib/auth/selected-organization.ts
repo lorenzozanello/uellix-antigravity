@@ -22,22 +22,28 @@
 // an organization the subject was removed from five minutes ago is perfectly
 // authentic and must still be refused by whatever consumes it.
 //
-// THIS MODULE DOES NOT CONSUME ITS OWN VALUE FOR ANY AUTHORIZATION DECISION.
-// It is deliberately a leaf: it imports nothing from lib/auth/database-context,
-// lib/auth/session, lib/auth/permissions, lib/auth/roles or
-// db/identity-context, and nothing in this batch reads it back for anything
-// other than rendering which organization is currently selected.
+// THIS MODULE REMAINS A LEAF (S3 —
+// docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json
+// INERTNESS_RETIREMENT.leaf_rule): it imports NOTHING from
+// lib/auth/database-context, lib/auth/session, lib/auth/permissions,
+// lib/auth/roles or db/identity-context, so a cycle back into the module that
+// reads this one can never form. The import direction is, and must stay,
+// ONE-WAY:
 //
-// Consuming this value to construct a request principal, a role, an RLS
-// predicate, a GUC or any capability check is node S3
-// (MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json REQUEST_PRINCIPAL), which is
-// NOT part of this batch
-// (docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json
-// S2.INERTNESS_RULE). Wiring this module into db/identity-context.ts,
-// lib/auth/database-context.ts, lib/auth/session.ts, lib/auth/permissions.ts
-// or lib/auth/roles.ts performs S3 without S3's revalidation lineage and is
-// exactly the failure tests/tenancy/s2-selected-org-carrier.test.ts exists to
-// catch.
+//     lib/auth/database-context.ts  ->  lib/auth/selected-organization.ts
+//     (never the reverse)
+//
+// S3 (MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json REQUEST_PRINCIPAL) is the
+// node that reads this module's VALUE to construct a request principal: it
+// consumes lib/auth/database-context.ts's `readPrincipalUnderOpenContext`,
+// which is the SOLE call site of `getSelectedOrganizationId` in the
+// authorization surface, and every membership that value leads to is
+// RE-DERIVED from live database state on every request
+// (REQUEST_PRINCIPAL_CONTRACT.authoritative_rederivation) — the carrier is
+// never trusted on its own. `lib/auth/permissions.ts`, `lib/auth/roles.ts` and
+// `db/identity-context.ts` still do NOT import this module and still do NOT
+// reference the cookie name literal — that narrower guarantee is unchanged by
+// S3 and is asserted in tests/tenancy/s2-selected-org-carrier.test.ts.
 //
 // ---------------------------------------------------------------------------
 // WHY A MANUAL COOKIE RATHER THAN A LIBRARY
