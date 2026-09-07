@@ -25,7 +25,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { BASELINE_UNITS } from '@/db/hosted/baseline-manifest'
+import { BASELINE_UNITS, baselineManifestDigest } from '@/db/hosted/baseline-manifest'
 import { scanBaselineSql, splitSqlStatements, stripSqlComments } from '@/db/hosted/baseline-scanner'
 import { organizationMembers, organizations } from '@/db/schema'
 import {
@@ -389,10 +389,41 @@ describe('DETERMINISTIC_BASELINE_GROWTH — the pins are derived, the exit crite
     expect(lf(read('tests/eval/stella-release/hosted-baseline-gate.ts'))).not.toMatch(/evidence\.unitCount >=|steps\.length >=/)
   })
 
-  it('the failing gate-id set is EXACTLY { hosted-baseline-rehearsal-ready } — the registered condition and nothing else', () => {
+  // v1.0.2 froze the INTERMEDIATE post-growth state (failing set exactly the
+  // registered rehearsal condition). v1.0.3 (HPO-ODS-W2-23) authorises the
+  // repository-native regeneration of artifacts/baseline-rehearsal/latest.json
+  // and revises the FINAL exit to the empty set: every hosted baseline gate
+  // passes, and the two registered KTCs are dormant because their condition
+  // no longer occurs. Exact set equality - never a bound, never a filter.
+  it('the failing gate-id set is EXACTLY [] — every hosted baseline gate passes against the regenerated rehearsal artefact', () => {
     const evidence = buildHostedBaselineGateEvidence()
     const failed = evaluateHostedBaselineGates(evidence).filter((g) => !g.passed).map((g) => g.id)
-    expect(failed).toEqual(['hosted-baseline-rehearsal-ready'])
+    expect(failed).toEqual([])
+    expect(evidence.rehearsalFresh).toBe(true)
+    expect(evidence.rehearsalAppliedAll).toBe(true)
+    expect(evidence.rehearsalReproducedDefect).toBe(true)
+    expect(evidence.rehearsalPostconditionsClean).toBe(true)
+    // The artefact is CURRENT-STATE GENERATED (v1.0.3 NEW_PATH_DISPOSITION):
+    // the relation, not a copied digest, is what binds.
+    const rehearsal = JSON.parse(read('artifacts/baseline-rehearsal/latest.json')) as { manifestDigest: string; manifestApplied: number }
+    expect(rehearsal.manifestApplied).toBe(BASELINE_UNITS.length)
+    expect(rehearsal.manifestDigest).toBe(baselineManifestDigest())
+    // Self-form guard: this exit assertion must stay an EXACT empty-set
+    // equality. A weakening to a bound, a filter or a singleton is refused here
+    // as well as by tests/eval/stella-release/hosted-baseline-gate.test.ts.
+    const self = lf(read('tests/tenancy/s1-founder-traceability.test.ts'))
+    // The needle is assembled at runtime so this guard cannot match itself.
+    const exactEmptySet = ['expect(failed)', '.toEqual([])'].join('')
+    expect(self.split(exactEmptySet).length - 1).toBe(1)
+    const weakenedForms = new RegExp(['expect\\(failed(\\.length)?\\)', '\\.(toBeLessThan|toBeLessThanOrEqual|toBeGreaterThan|toContain|toEqual\\(expect\\.arrayContaining)'].join(''))
+    expect(self).not.toMatch(weakenedForms)
+    // ... and the failing set must be derived from the gates UNFILTERED: no
+    // gate id may be excluded before the comparison (a KTC is never a filter).
+    const derivation = ['.filter((g) => !g.passed)', '.map((g) => g.id)'].join('')
+    expect(self.split(derivation).length - 1).toBe(1)
+    const filteredDerivation = new RegExp(['\\.map\\(\\(g\\) => g\\.id\\)', '\\s*\\.filter'].join(''))
+    expect(self).not.toMatch(filteredDerivation)
+    expect(self).not.toMatch(/failed\s*=\s*[^\n]*hosted-baseline-rehearsal-ready/)
     expect(evidence.unitCount).toBe(BASELINE_UNITS.length)
     expect(evidence.superuserFreeUnits).toBe(BASELINE_UNITS.length)
     expect(evidence.dmlUnits[evidence.dmlUnits.length - 1]).toBe(S1_UNIT.id)

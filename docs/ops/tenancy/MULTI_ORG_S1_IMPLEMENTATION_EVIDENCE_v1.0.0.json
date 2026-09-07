@@ -354,6 +354,67 @@
     "UNKNOWN_FINDINGS": 0
   },
 
+  "R3_R4_HISTORY": {
+    "form": "APPEND-ONLY. Everything above this section is the R2 record as it landed in commit 15870d0 and is preserved verbatim, including its CI-red observation and its v1.0.2 singleton exit criterion. Nothing earlier is reworded or retroactively greened.",
+    "R2_CANDIDATE": { "sha": "15870d0caa83eeae83ea156582de1e3529334bf5", "tree": "65505e3e68e39ba34d138e7a6bd71c5542eae1f1", "merge_base_with_integration": "78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d" },
+    "R2_GITHUB_CI_BEFORE": {
+      "run": "34067110654 (job 101577699745, `pnpm test:unit` on ubuntu)",
+      "conclusion": "FAILURE - 10356 passed, 2 failed, both in tests/eval/stella-release/hosted-baseline-gate.test.ts: 'the six baseline gates > all pass' (AssertionError: expected [ Array(1) ] to deeply equal [], failing gate hosted-baseline-rehearsal-ready with rehearsalFresh=false) and 'the four words this report may not say > reports baselineApplied ... as false - unconditionally' (AssertionError: expected false to be true)",
+      "other_gates": "credentials scan, ODS authority, lint, typecheck, generated artefacts PASS; M2 Real PostgreSQL Gate PASS; P1A Bootstrap Gate PASS; build SKIPPED"
+    },
+    "R3_CI_DIAGNOSIS": {
+      "lane": "LANE BW-R3 - S1-CI-FAILURE-DIAGNOSIS-AND-REMEDIATION-R3",
+      "verdict": "STOP_FOR_AUTHORITY_DELTA (F-BW3-1). Candidate untouched.",
+      "base_control": "Disposable worktree at 78b2e7c: hosted-baseline-gate spec + evidence-immutability 37/37, failing gate-id set [], rehearsalFresh=true. The two CI failures are therefore a deterministic consequence of S1's baseline growth (class A) that is simultaneously the exact registered KTC condition post-growth (class C) - and neither the evidence-immutability failure nor the leftover local probe role appeared on the clean Linux runner.",
+      "local_exact_ci_reproduction": "`pnpm test:unit` on this Windows host: 47 failures = 45 subprocess timeouts at the 5000 ms default (the documented spawn flake) + the same 2 deterministic assertions as CI.",
+      "doctrine_measured": "ci.yml runs the raw suite; scripts/ods-test-diff.ts only LABELS failures ('never converts a failure into a pass') and CI does not invoke it; no KTC-aware wrapper exists. Every previous growth lane closed the identical red state by regenerating artifacts/baseline-rehearsal/latest.json (W2-B4 4d177fc, W2-B5 85c0db1: runs b49eb50/2eea15e red, 63d3101 green). A registered KTC therefore never made a FINAL CI red.",
+      "reverted_measurement": "`pnpm baseline:rehearsal:local` (own container public.ecr.aws/supabase/postgres:17.6.1.143, --network none) applied 79/79 units, 18/18 postconditions, 0 leftovers, and changed exactly ONE tracked file with a 4-line delta; with it the gate spec was 7/7 and the failing set []. Reverted; tree re-proved 65505e3e. The path was outside the 16-path ceiling, hence the STOP.",
+      "authority_gap_closed_by": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json (HPO-ODS-W2-23, FUNCTION_J) + docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json, integrated in PR #91 (3bd86ce): artifacts/baseline-rehearsal/latest.json added as the 17th S1 path (CURRENT_STATE_GENERATED, third member of CLASS_4), FINAL exit criterion revised to failing gate-id set EXACTLY [], one forced literal in tests/tenancy/s1-founder-traceability.test.ts, append-only evidence extension. HPO-ODS-W2-23 is lineage-only (protected_grant null) and is NOT registered."
+    },
+    "R4_RECONCILIATION": {
+      "lane": "LANE BW-R4 - MULTIORG-S1-FOUNDER-TRACEABILITY-FINAL-GREEN-R4",
+      "integration_at_reconciliation": { "sha": "3bd86ce226de4f07a83085e348e32356bba746d9", "tree": "306bc1ead90d0c2c39e165b52cc4209c563ec649" },
+      "intervening_delta_since_merge_base": "Controller32 (d6f9ca6 / PR #89), S2 R1+R3 (fe57ec9, fb9dfcf, 68283b1 / PR #87), ODS v1.0.22 + tenancy v1.0.3 (9a446e2 / PR #91). Paths: 12 - all disjoint from S1's 96 (intersection EMPTY).",
+      "merge_tree_analysis": "`git merge-tree --write-tree 15870d0 3bd86ce` = a462887965cbe91d8c47ca35af903621d27ee49d with ZERO conflicts.",
+      "reconciliation_merge": { "sha": "3793f6e24685687a14b835105793cbcee16e7925", "tree": "a462887965cbe91d8c47ca35af903621d27ee49d", "parents": ["15870d0caa83eeae83ea156582de1e3529334bf5", "3bd86ce226de4f07a83085e348e32356bba746d9"], "method": "NORMAL MERGE (--no-ff). No rebase, no squash, no force-push. 15870d0 and 3bd86ce are both ancestors." },
+      "byte_identity_proofs": "Every integration-delta path (v1.0.22, v1.0.3, ods-controller.ts + its test, the six S2 files, the S2 evidence, the entrypoint inventory + test, route-authorization-boundary.test.ts) is blob-identical to origin/integration/commercial-v1; every S1 path (0066 migration, schema, manifest, ods-scope.ts, onboarding action, both S1 tests, a1 status) is blob-identical to 15870d0. Controller executes at 32 with v1.0.21 final, v1.0.22 unenumerated, v1.0.23 absent, CONTROLLER_DB_EXECUTION DISABLED (Controller33 not required for this implementation).",
+      "pre_remediation_re_measurement": "BASELINE_UNITS 79 (67 drizzle), journal 80 wrappers, drizzle journal 67 entries, PROTECTED_GRANTS 12 (W2-20, W2-21 present; W2-22, W2-23 absent), a1/b0/baseline/journal verify OK, rehearsal artefact digest d26ada68a8dd77e6b09d3f5da26a251ba8cf7c0d0489564342d39bbfcf4e00f6 / manifestApplied 78 (STALE), failing gate-id set EXACTLY ['hosted-baseline-rehearsal-ready'], S1 suites green except the two registered signatures."
+    },
+    "R4_REHEARSAL_REGENERATION": {
+      "generator_run": "pnpm baseline:rehearsal:local (scripts/baseline-rehearsal-local.ts), image public.ecr.aws/supabase/postgres:17.6.1.143, --network none, own disposable cluster",
+      "first_attempt": "ABORTED BY THE ENVIRONMENT, NOT BY THE GENERATOR: run concurrently with the real-PG S1 suite's own container on an 8 GB Docker host, the docker CLI process itself crashed (Go runtime allocation failure, `spawnSync docker UNKNOWN`) during teardown; the artefact was NOT written and one rehearsal container was left up. Classified causally (resource contention), the leftover removed (`docker rm -f`, 0 leftovers), and the run repeated ALONE.",
+      "demonstrations_all_true": ["PRISTINE cluster (0 uellix_* roles)", "RUN A failed at 0039 as predicted (historic defect still reproduced)", "RUN N1 failed at 0042 with 42704", "IDENTITY applied, canonical, 0 tables", "RUN B applied all 79 units", "0044 guard 42P01", "CHECKPOINT B0 clean (18/18)", "S1 post-baseline bootstrap", "PRESENT control created the 6th trigger", "0 leftover containers", "recorded: artifacts/baseline-rehearsal/latest.json"],
+      "tracked_file_effect": "EXACTLY ONE: artifacts/baseline-rehearsal/latest.json (4-line delta). Never hand-edited.",
+      "rehearsal_before": { "manifestDigest": "d26ada68a8dd77e6b09d3f5da26a251ba8cf7c0d0489564342d39bbfcf4e00f6", "manifestApplied": 78 },
+      "rehearsal_after": { "manifestDigest": "2578544e6c673cad5bab07f4e29d4363ba4ad4545a76a4862fe84df483f9dcd5", "manifestApplied": 79, "manifestFailedAt": null, "naiveFailedAt": "db/migrations/0039_grant_rls_helper_execution.sql", "postconditions": "18/18" },
+      "relation_that_binds": "manifestApplied === BASELINE_UNITS.length === 79 and manifestDigest === baselineManifestDigest() of the live manifest"
+    },
+    "R4_FINAL_GREEN_EXIT": {
+      "forced_literal": "tests/tenancy/s1-founder-traceability.test.ts: `expect(failed).toEqual(['hosted-baseline-rehearsal-ready'])` -> `expect(failed).toEqual([])` (exact set equality), plus the four rehearsal predicates asserted true. tests/eval/stella-release/hosted-baseline-gate.test.ts NOT modified. docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json NOT modified - KTC-01/-02 are dormant because their condition no longer occurs.",
+      "failing_gate_id_set_before": ["hosted-baseline-rehearsal-ready"],
+      "failing_gate_id_set_after": [],
+      "hosted_baseline_gate_spec_after": "7/7 (six gates evaluated, seven test cases - the binding oracle is the empty failing-id set)",
+      "github_ci_after": "Measured on the final PR #90 candidate after push and recorded in the PR body; a commit cannot record the CI conclusion of its own SHA."
+    },
+    "R4_MUTATION_CONTROLS": {
+      "method": "Pristine copies of the regenerated artefact and the advanced test taken BEFORE any mutation; each mutation applied to the working tree, the detector run, the files restored byte-exact; results written incrementally. Baseline (unmutated) run GREEN first (28/28 across the tenancy suite and the hosted-baseline-gate spec).",
+      "six_of_six_CAUGHT": [
+        "R4-M1 stale rehearsal artefact (the 15870d0-era file, 78 units, restored on disk) -> hosted-baseline-gate spec 2 failed + tenancy exit test failed",
+        "R4-M2 exit assertion weakened to a bound (failed.length <= 1) -> tenancy self-form guard failed",
+        "R4-M3 the superseded singleton literal instead of [] -> tenancy exit test failed (the real set is [])",
+        "R4-M4 hand-edited artefact, manifestApplied 79 -> 80 -> gate spec 2 failed + tenancy relation check failed",
+        "R4-M5 hand-edited artefact digest (one hex digit) -> gate spec 2 failed + tenancy freshness check failed",
+        "R4-M6 the known condition FILTERED out of the failing set before the comparison -> tenancy self-form guard failed (the derivation must be the unfiltered gate list)"
+      ],
+      "defect_found_and_fixed_by_the_baseline_run": "The first version of the self-form guard used a literal needle that matched its own occurrence, so the exit test failed unmutated and three 'caught' results were vacuous. Rebuilt with runtime-assembled needles, baseline re-proved green, all six mutations re-run. Recorded because a mutation battery whose baseline is red proves nothing.",
+      "not_re_run": "The R2 battery of 20 DB-free + 1 real-PG mutation controls was NOT re-run in full: the reconciliation merge touched no S1 implementation or test host (every S1 path is blob-identical to 15870d0), and R4 changed only artifacts/baseline-rehearsal/latest.json (generated), the one authorised literal in tests/tenancy/s1-founder-traceability.test.ts and this evidence artefact."
+    },
+    "R4_S1_REGRESSION_BATTERY": {
+      "real_postgresql": "tests/postgres/s1-founder-cardinality.pg.test.ts on the reconciled tree: 35/35 PASS (31 probes, 230.6 s under concurrent Docker load) - backfill cardinality, FK RESTRICT, partial unique carrier, platform provenance, CHECKs, ordinary-user 42501 RLS wall, super-admin preservation, dblink concurrency all re-proved; the rehearsal remediation changes no product or database semantics.",
+      "db_free": "tests/tenancy/s1-founder-traceability.test.ts 21/21 with the advanced literal; tests/hosted, tests/eval, tests/auth, tests/database-runtime-entrypoints.test.ts, tests/ods/ods-controller.test.ts GREEN (three hosted files - evidence-immutability, checkpoint-a1, hosted-managed-role-attributes - produced load artefacts once when run with everything at once and pass 111/112 when run alone; the same controlled-comparison classification v1.0.2 recorded)",
+      "verifiers": "baseline:verify OK 79 units; journal:verify OK 80 wrappers; a1:status:verify OK; b0:observation:verify OK byte-identical; hosted:verify OK 12 artefacts; typecheck clean; lint 0 errors (63 pre-existing warnings, none in an S1 path)"
+    }
+  },
   "CANDIDATE": {
     "commit_sha": "The commit that carries this artefact cannot record its own SHA; the candidate SHA and tree are recorded in the PR body and the lane report.",
     "status": "CANDIDATE_AWAITING_INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT",
