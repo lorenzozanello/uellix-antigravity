@@ -2,13 +2,21 @@
   "manifest_id": "PORTFOLIO-COMMERCIAL-V1",
   "node_or_batch": "batch",
   "authority_reference": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
-  "dependencies": [],
+  "dependencies": [
+    "W2-B4 — CLOSED. closure.W2_B4='CLOSED' in docs/ops/wave2/W2_B4_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json; PR #62 merged 2026-09-04 at 33c2347. The authority's original merge prohibition against an open B4 is discharged and retired.",
+    "W2-B5 (FIBIU-17) — CLOSED. closure.W2_B5='CLOSED' in docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json; PR #70 merged 2026-09-05 at a27c4a9. FIBIU-17 renamed the Portfolio readiness symbols and demoted the legacy manual score; NEG-READINESS-1 and MUT-READINESS-1 target the renamed symbols. B5 closure does NOT bring FIBIU-27 portion D into scope — see the authority's PORTFOLIO_PORTION_D_DEFERRED_TO_FIBIU_27_WAVE5.",
+    "MULTI_ORG_S1_FOUNDER_TRACEABILITY — INTEGRATED. PR #90 merged 2026-09-07 at 6a8b22dd.",
+    "MULTI_ORG_S2_SELECTED_ORGANIZATION_CARRIER — INTEGRATED. PR #87 merged 2026-09-07 at f4cef21.",
+    "MULTI_ORG_S3_REQUEST_PRINCIPAL_CORE — INTEGRATED. PR #95 merged 2026-09-07 at 62b309ce. S3 shipped at the application/request-context layer and introduced NO change to the RLS policies Portfolio reads through; no control in this manifest may assume one.",
+    "FIBIU-27 — NOT CLOSED and NOT a precondition. Only its bounded early subset (portions A and B plus the FIBC-042 legacy exclusion) is authorized; portion D is deferred to Wave 5.",
+    "WAVE3_AUTHORITY_AMENDMENT_v1.0.1 (FIBDB-052 sequencing) — INTEGRATED by PR #84 at 420a2238. Assessed and found to reopen no Portfolio decision; recorded as a dependency for base identity only. This manifest does not test FIBIU-19."
+  ],
   "protected_surfaces": [],
   "protected_authority": null,
   "postgres_requirements": {
     "setup_manifest": "tests/postgres/portfolio-v1.setup.json",
     "probe_manifest": "tests/postgres/portfolio-v1.probes.json",
-    "rationale": "The aggregate population predicate, the composition writes and the tenancy negatives are all row-level facts that a mocked database cannot prove. The approved-run selection depends on a real join between sroi_calculation_runs and sroi_run_reviews under RLS, and the cross-organization refusals depend on the policies themselves rather than on application code. Run exclusively through pnpm db:audit:disposable against a throwaway container; never staging, never production, never the canonical local stack."
+    "rationale": "The aggregate population predicate, the composition writes and the tenancy negatives are all row-level facts that a mocked database cannot prove. The approved-run selection depends on a real join between sroi_calculation_runs and sroi_run_reviews under RLS, and the cross-organization refusals depend on the policies themselves rather than on application code. CORRECTED at the R1 correction base: those policies are unchanged by S1/S2/S3 and still read organization_id = ANY (current_user_org_ids()) OR current_user_is_super_admin(); the selected-organization scope now reaches them through the request principal that the application opens the identity context with, not through a widened policy predicate. A PostgreSQL probe is required for the FUTURE implementation nodes only — the present authority correction requires no PostgreSQL run of any kind. Run exclusively through pnpm db:audit:disposable against a throwaway container; never staging, never production, never the canonical local stack."
   },
   "sentinels": [
     {
@@ -150,7 +158,7 @@
     },
     {
       "id": "NEG-READINESS-1",
-      "description": "No Portfolio path reads readiness_assessments before FIBIU-17 exists, and the manual readiness_score display is byte-unchanged from the base — same value, same coverage counter, same badge thresholds. Portion D of FIBIU-27 has not been smuggled in.",
+      "description": "CORRECTED AT R1 — retargeted to the live post-B5 symbols. No Portfolio path reads the readiness_assessments table and no Portfolio path calls getReadinessAssessment (lib/pipeline/sroi-readiness.ts:518), even though FIBIU-17 now exists: portion D of FIBIU-27 is DEFERRED to Wave 5, not unlocked by B5's closure. The legacy manual score continues to be exposed exactly as B5 left it — ProjectRunSummary.legacyManualReadinessScore, PortfolioAggregate.averageLegacyManualReadinessScore, PortfolioAggregate.legacyManualReadinessCoverage and the discriminator readinessSource='LEGACY_NON_AUTHORITATIVE' (lib/portfolios/analytics.ts:32,52,53,51) — sourced from sroi_run_reviews.readiness_score, with its coverage counter and the existing 80/50 badge thresholds, and never relabelled with the canonical FIBIU-17 band vocabulary. The pre-B5 names averageReadinessScore and readinessCoverage must NOT reappear.",
       "test_file": "UNKNOWN"
     },
     {
@@ -210,7 +218,17 @@
     },
     {
       "id": "NEG-SCOPE-1",
-      "description": "The Portfolio diff contains no migration, no db/schema.ts change, no db/prepared change and no edit to the three pages' runWithOptionalOrganizationAccess call sites, which are S1-owned.",
+      "description": "CORRECTED AT R1. The Portfolio diff contains no migration (0067 and every later ordinal explicitly unallocated), no db/schema.ts change, no db/prepared change, and no edit to the three Portfolio pages' unauthenticated / no-selection auth branches: app/app/portfolios/page.tsx:15,:19 and app/app/portfolios/[portfolioId]/page.tsx:41,:53, which use runWithOptionalOrganizationAccess, and app/app/portfolios/new/page.tsx:14,:15, which uses getCurrentOrganizationContext() and was previously mis-described as a runWithOptionalOrganizationAccess call site. These are NOT S1-owned: the retracted ownership claim is replaced by SEPARATE_GOVERNED_TENANCY_COUPLING_SUCCESSOR_REQUIRED with owner TO_BE_MAPPED. Portfolio's prohibition on touching them is unconditional and does not depend on who is eventually mapped as owner.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-AUDIT-1",
+      "description": "ADDED AT R1, to match the authority's PF-2 surface freeze over tests/audit-action-contract.test.ts. Every Portfolio verb that modifies a row's own content in place — portfolio.updated, portfolio.archived, project.portfolio_assigned, project.portfolio_unassigned, project.portfolio_moved — is REGISTERED in that file's CONTENT_MODIFYING_SITES list and wires both contentModifying: true and a real beforeJson read; and every Portfolio module emitting logAuditAction, including the new app/app/portfolios/[portfolioId]/actions.ts, is REACHED by CORRESPONDENCE_SCAN_ROOTS. Both mechanisms fail OPEN today (the list is iterated, not closed-world, and the roots exclude app/**), so this control asserts coverage directly rather than relying on a green suite.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "NEG-TENANCY-COUPLING-1",
+      "description": "ADDED AT R1. No Portfolio implementation path modifies the three Portfolio pages' unauthenticated / no-selection auth branches, and no Portfolio path reads, re-throws, translates or renders the S3 refusal codes TENANCY_NO_ORGANIZATION_SELECTED or TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER. The orphaned coupling is recorded as SEPARATE_GOVERNED_TENANCY_COUPLING_SUCCESSOR_REQUIRED with owner TO_BE_MAPPED and is neither absorbed nor resolved by Portfolio.",
       "test_file": "UNKNOWN"
     },
     {
@@ -271,8 +289,13 @@
       "test_file": "UNKNOWN"
     },
     {
+      "id": "MUT-AUDIT-1",
+      "description": "ADDED AT R1. Removing any Portfolio verb from CONTENT_MODIFYING_SITES, or dropping contentModifying/beforeJson at one of its call sites, makes NEG-AUDIT-1 fail. This is the mutation that the repository's own audit-contract test would NOT catch on its own — CONTENT_MODIFYING_SITES is a registration list, so an unregistered verb passes silently — which is precisely why the control is stated here rather than assumed from a green suite.",
+      "test_file": "UNKNOWN"
+    },
+    {
       "id": "MUT-READINESS-1",
-      "description": "Pointing any Portfolio read at readiness_assessments, or re-labelling the manual score with the canonical FIBC-021 band vocabulary, makes NEG-READINESS-1 fail.",
+      "description": "CORRECTED AT R1 — retargeted to the live post-B5 symbols. Any of the following makes NEG-READINESS-1 fail: pointing a Portfolio read at the readiness_assessments table; calling getReadinessAssessment from a Portfolio path; relabelling the legacy manual score with the canonical FIBIU-17 band vocabulary (Initial / Partial / Advanced / High Preparation); replacing the 80/50 badge thresholds with FIBC-021's 0-39/40-69/70-84/85-100 bands; renaming averageLegacyManualReadinessScore or legacyManualReadinessCoverage back to their pre-B5 names; or dropping the readinessSource='LEGACY_NON_AUTHORITATIVE' discriminator.",
       "test_file": "UNKNOWN"
     }
   ],
