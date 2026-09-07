@@ -760,7 +760,18 @@ describe('every entry point that can reach the database opens an identity contex
     // its one governed read/write, exactly like their W2-B4 siblings in the
     // same directory, so all four are `contextualized`, not allowlisted:
     // +4 inventoried, +4 reaching, +4 contextualized.
-    }).toEqual({ inventoried: 139, reaching: 114, contextualized: 98, allowlisted: 16 })
+    //
+    // 139 -> 141, 114 -> 116, contextualized 98 -> 100, allowlisted UNCHANGED
+    // at 16: MULTIORG-S2 (HPO-ODS-W2-21/v1.0.2, docs/ops/tenancy/
+    // MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json
+    // S2_INVENTORY_INSTRUCTIONS) adds TWO new entry points — the
+    // selected-organization pre-organization selector's
+    // app/(authenticated)/app/organizations/select/{actions.ts,page.tsx}.
+    // Both import requireAuth/getCurrentMembership from lib/auth/session.ts,
+    // which imports db/client.ts, and both call requireAuth() around every
+    // database-touching region, so both are `contextualized`, not
+    // allowlisted: +2 inventoried, +2 reaching, +2 contextualized.
+    }).toEqual({ inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

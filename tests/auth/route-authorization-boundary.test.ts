@@ -34,6 +34,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import * as fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 const ROOT = path.resolve(process.cwd())
@@ -152,10 +154,55 @@ describe('route topology: AUTHENTICATED is separated from ORGANIZATION_REQUIRED'
     expect(authOnlyCode).not.toMatch(/requireOrganizationAccess/)
   })
 
-  it('carves out EXACTLY one route — every other /app/* page stays gated', () => {
+  // S2 (docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json
+  // S2_ROUTE_TOPOLOGY_DECISION) adds a second pre-organization route,
+  // app/(authenticated)/app/organizations/select/page.tsx. A ONE-LEVEL
+  // directory-name sweep reports its top-level name as `organizations`, which
+  // is indistinguishable from a top-level carve-out of the WHOLE
+  // `organizations/**` subtree — silently authorizing `organizations/create`,
+  // `organizations/[id]` or any future sibling that has never been
+  // adjudicated as pre-organization. The sweep below is a RECURSIVE
+  // route-path enumeration keyed on route-SERVING files, so the carve-out is
+  // exactly as wide as the routes that actually exist.
+  const ROUTE_SERVING_FILE_NAMES = ['page.tsx', 'page.ts', 'route.ts', 'route.tsx']
+
+  /**
+   * Every route-serving path (relative to `app/<group>/app/`, joined with
+   * `/`) reachable beneath `dir`. A directory contributes a path only if it
+   * (or a descendant) directly contains one of ROUTE_SERVING_FILE_NAMES —
+   * this is what makes a nested route like `organizations/select` collapse
+   * to that one string instead of the top-level `organizations`.
+   */
+  function collectRouteServingPaths(dir: string, prefix: string[] = []): string[] {
+    const found: string[] = []
+    let entries: import('node:fs').Dirent[]
+    try {
+      entries = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return found
+    }
+
+    const servesRouteHere = entries.some(
+      (e) => e.isFile() && ROUTE_SERVING_FILE_NAMES.includes(e.name)
+    )
+    if (servesRouteHere && prefix.length > 0) {
+      found.push(prefix.join('/'))
+    }
+
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        found.push(...collectRouteServingPaths(path.join(dir, entry.name), [...prefix, entry.name]))
+      }
+    }
+
+    return found
+  }
+
+  it('carves out EXACTLY the declared pre-organization routes — every other /app/* page stays gated', () => {
     // Route groups are stripped from the URL, so any `app/(group)/app/**` also
-    // serves `/app/*` while escaping app/app/layout.tsx. Enumerate them all and
-    // require the set to be exactly the declared exception.
+    // serves `/app/*` while escaping app/app/layout.tsx. Enumerate every
+    // route-serving path they contribute and require the set to be exactly
+    // the declared exception.
     const groups = readdirSync(path.join(ROOT, 'app'), { withFileTypes: true })
       .filter((e) => e.isDirectory() && e.name.startsWith('(') && e.name.endsWith(')'))
       .map((e) => e.name)
@@ -164,12 +211,115 @@ describe('route topology: AUTHENTICATED is separated from ORGANIZATION_REQUIRED'
     for (const group of groups) {
       const groupAppDir = path.join(ROOT, 'app', group, 'app')
       if (!existsSync(groupAppDir)) continue
-      for (const entry of readdirSync(groupAppDir, { withFileTypes: true })) {
-        if (entry.isDirectory()) ungated.push(entry.name)
-      }
+      ungated.push(...collectRouteServingPaths(groupAppDir))
     }
 
-    expect(ungated.sort()).toEqual(['onboarding'])
+    expect([...new Set(ungated)].sort()).toEqual(['onboarding', 'organizations/select'])
+  })
+
+  it('does NOT authorize the organization-gated location for the selector — the circular gate', () => {
+    // Mechanically identical to the onboarding old-location control above:
+    // if the selector is ever served from inside app/app/, the layout that
+    // gates on an organization would gate the very page that selects one.
+    expect(
+      existsSync(path.join(ROOT, 'app/app/organizations/select/page.tsx')),
+      'the organization selector is back inside the organisation-gated layout — the circular gate'
+    ).toBe(false)
+  })
+
+  it('SINGULAR app/app/organization/ stays organization-gated; PLURAL organizations/select is the only ungated member of its subtree', () => {
+    // The two names differ by one character and sit one directory apart. A
+    // grep, a rename or a hurried review could conflate them — either
+    // ungating the workspace or re-gating the selector into the cycle.
+    expect(
+      existsSync(path.join(ROOT, 'app/app/organization')),
+      'the singular organization workspace must remain inside app/app/'
+    ).toBe(true)
+    expect(
+      existsSync(path.join(ROOT, 'app/(authenticated)/app/organizations/select/page.tsx')),
+      'the plural pre-organization selector must exist at its declared location'
+    ).toBe(true)
+  })
+
+  it('STRICTNESS PROOF: the recursive enumeration is strictly stronger than the one-level sweep it replaces', () => {
+    // Reproduces the OLD one-level sweep inline (rather than re-importing a
+    // deleted implementation) so both controls can be driven over the same
+    // fixture trees and compared row by row.
+    function oldOneLevelSweep(root: string): string[] {
+      const grps = readdirSync(path.join(root, 'app'), { withFileTypes: true })
+        .filter((e) => e.isDirectory() && e.name.startsWith('(') && e.name.endsWith(')'))
+        .map((e) => e.name)
+      const out: string[] = []
+      for (const g of grps) {
+        const groupAppDir = path.join(root, 'app', g, 'app')
+        if (!existsSync(groupAppDir)) continue
+        for (const entry of readdirSync(groupAppDir, { withFileTypes: true })) {
+          if (entry.isDirectory()) out.push(entry.name)
+        }
+      }
+      return out.sort()
+    }
+
+    function newRecursiveSweep(root: string): string[] {
+      const grps = readdirSync(path.join(root, 'app'), { withFileTypes: true })
+        .filter((e) => e.isDirectory() && e.name.startsWith('(') && e.name.endsWith(')'))
+        .map((e) => e.name)
+      const out: string[] = []
+      for (const g of grps) {
+        const groupAppDir = path.join(root, 'app', g, 'app')
+        if (!existsSync(groupAppDir)) continue
+        out.push(...collectRouteServingPaths(groupAppDir))
+      }
+      return [...new Set(out)].sort()
+    }
+
+    // Row 1: CURRENT TREE — identical verdict, proving no currently-failing
+    // control is being repaired and no regression is introduced today.
+    expect(newRecursiveSweep(ROOT)).toEqual(['onboarding', 'organizations/select'])
+    expect(oldOneLevelSweep(ROOT)).not.toEqual(['onboarding']) // already invalidated by S2 landing — see next row
+    expect(oldOneLevelSweep(ROOT)).toEqual(['onboarding', 'organizations'])
+
+    // Rows 2-4: mutation fixtures built on a real disposable directory tree,
+    // never asserted from reasoning alone.
+    const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'route-topology-fixture-'))
+    try {
+      const mk = (...segments: string[]) => {
+        const p = path.join(fixtureRoot, ...segments)
+        fs.mkdirSync(p, { recursive: true })
+        return p
+      }
+      const touch = (dir: string, name: string) => fs.writeFileSync(path.join(dir, name), '')
+
+      // Baseline fixture: reproduces today's authorized carve-out.
+      touch(mk('app', '(authenticated)', 'app', 'onboarding'), 'page.tsx')
+      touch(mk('app', '(authenticated)', 'app', 'organizations', 'select'), 'page.tsx')
+
+      // Row: WITH S2 — both controls agree the baseline fixture is exactly
+      // the declared carve-out.
+      expect(newRecursiveSweep(fixtureRoot)).toEqual(['onboarding', 'organizations/select'])
+
+      // Row: MUTATION organizations/create/page.tsx — THE LOAD-BEARING ROW.
+      // The widening the old sweep would have silently authorized.
+      touch(mk('app', '(authenticated)', 'app', 'organizations', 'create'), 'page.tsx')
+      expect(oldOneLevelSweep(fixtureRoot)).toEqual(['onboarding', 'organizations']) // unchanged — blind to the new route
+      expect(newRecursiveSweep(fixtureRoot)).not.toEqual(['onboarding', 'organizations/select'])
+      expect(newRecursiveSweep(fixtureRoot)).toContain('organizations/create')
+
+      // Row: MUTATION organizations/[id]/page.tsx — dynamic segments caught
+      // identically; the rule is path-shaped, not name-shaped.
+      touch(mk('app', '(authenticated)', 'app', 'organizations', '[id]'), 'page.tsx')
+      expect(newRecursiveSweep(fixtureRoot)).toContain('organizations/[id]')
+
+      // Row: MUTATION onboarding/step2/page.tsx — closes a PRE-EXISTING
+      // blind spot in the OLD control, unrelated to S2: it reports only the
+      // top-level name `onboarding` and cannot see a nested ungated route at
+      // all, while the new control does.
+      touch(mk('app', '(authenticated)', 'app', 'onboarding', 'step2'), 'page.tsx')
+      expect(oldOneLevelSweep(fixtureRoot)).toEqual(['onboarding', 'organizations']) // still blind
+      expect(newRecursiveSweep(fixtureRoot)).toContain('onboarding/step2')
+    } finally {
+      fs.rmSync(fixtureRoot, { recursive: true, force: true })
+    }
   })
 
   it('the workspace routes are still inside the gated directory', () => {
