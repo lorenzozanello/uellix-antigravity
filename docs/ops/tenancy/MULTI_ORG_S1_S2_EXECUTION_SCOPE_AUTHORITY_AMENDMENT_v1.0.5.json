@@ -7,7 +7,6 @@
   "GRANT_ID": "HPO-ODS-W2-25",
   "hpo_mission_id": "S3-REFUSAL-AUDIT-AUTHORITY-F-CU-1-ADJUDICATION-AND-MATERIALIZATION-R2",
   "materialization_date": "2026-09-07",
-
   "amends": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json",
   "refines": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json",
   "supersedes": null,
@@ -15,7 +14,6 @@
   "node_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
   "node_test_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
   "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
-
   "APPEND_ONLY_DISCIPLINE": {
     "binding": "This amendment AMENDS the v1.0.0 base authority and REFINES v1.0.4. It NEVER EDITS v1.0.1, v1.0.2, v1.0.3 or v1.0.4, all of which remain byte-unchanged on disk and fully in force.",
     "naming_derivation": "The predecessor is MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json, the highest present in docs/ops/tenancy/ at INTEGRATION_SHA (four amendments present). The append-only successor filename is the same stem at v1.0.5. Confirmed FREE: `git grep 'AMENDMENT_v1.0.5'` returns EMPTY across the working tree AND across all 263 reachable refs - not one textual hit anywhere, let alone an allocation - and no ref's tree contains the filename.",
@@ -23,11 +21,8 @@
     "what_it_REMOVES": "NOTHING. Every path, grant, prohibition, disposition and semantic that v1.0.1 through v1.0.4 froze REMAINS IN FORCE. The ONE clause that is REFINED rather than repeated is v1.0.4's AUDIT_VERB_DISPOSITION, whose DEFERRED obligation this amendment DISCHARGES by opening its named successor node - which is what v1.0.4 said would happen, not a departure from it.",
     "no_silent_reinterpretation": "Where this amendment is silent, v1.0.4 governs; where v1.0.4 is silent, v1.0.3 governs; then v1.0.2, then v1.0.1, then v1.0.0. Silence here is never a repeal, never a relaxation and never an invitation to infer a broader grant."
   },
-
   "purpose": "Open the execution scope for the S3 REFUSAL AUDIT node - the named successor that v1.0.4 AUDIT_VERB_DISPOSITION deferred the two refusal audit verbs to - and freeze its refusal-subject contract, per-path ceiling, protected grant, RLS insert design, readability contract, test/mutation contract and real-PostgreSQL contract, WITHOUT implementation, migration, schema reopen, protected-grant registration or Controller edit.",
-
   "scope_note": "AUTHORITY ONLY. This mission writes exactly TWO new tracked files - this amendment and its companion ODS addendum v1.0.24 - and edits NOTHING.",
-
   "anchors": {
     "worktree": "C:/Users/Lorenzo/Documents/uellix-s3-refusal-audit-authority",
     "branch": "codex/multiorg-s3-refusal-audit-authority-r1",
@@ -38,22 +33,20 @@
     "integration_branch": "integration/commercial-v1",
     "intervening_delta": "NONE. The lane branch HEAD is byte-identical to origin/integration/commercial-v1 at both HEAD and TREE, measured at LANE CU open, at LANE CU-R2 open and again immediately before commit.",
     "measurement_discipline": "Every fact was measured by EXECUTING the repository's own code - the live Controller by real ESM import, PROTECTED_GRANTS/classifyPaths/resolveProtectedGrant by direct invocation, and the machine gates by their own pnpm entry points.",
-    "two_round_lane_note": "LANE CU stopped at STOP_FOR_AUTHORITY_DELTA on finding F-CU-1 without writing any tracked file. LANE CU-R2 resumed from that clean state after the HPO adjudication recorded in F_CU_1_ADJUDICATION_CARRIED."
+    "two_round_lane_note": "LANE CU stopped at STOP_FOR_AUTHORITY_DELTA on finding F-CU-1 without writing any tracked file. LANE CU-R2 resumed from that clean state after the HPO adjudication recorded in F_CU_1_ADJUDICATION_CARRIED.",
+    "correction_round_note": "THREE rounds on one branch. LANE CU measured and STOPPED at F-CU-1 with no tracked file written. LANE CU-R2 materialised the pair as candidate 88b2c3b5ab520d46cdf57817205556097e32b52d (tree 38571546b32447af207ff4610ad466e415a82937). LANE CU-R3 found F-CU2-1 against that candidate, re-derived the closed world, and amended the SAME two files on the SAME branch and PR. No history rewritten, no candidate concealed."
   },
-
   "S1_LANE": {
     "SEMANTIC_CHANGE": "NONE",
     "PATH_CHANGE": "NONE",
     "statement": "S1 is INTEGRATED and is not reopened, re-scoped or re-measured by this amendment. Its ceiling, its exit criteria and its two registered protected grants (HPO-ODS-W2-20 and HPO-ODS-W2-21) are carried forward exactly as v1.0.1 through v1.0.4 left them.",
     "protected_grants_carried_unchanged": "HPO-ODS-W2-20 (db/migrations/**) and HPO-ODS-W2-21 (db/prepared/journal/**), both bound to branch codex/multiorg-s1-founder-traceability-r1, are BYTE-UNCHANGED. The new grant declared below neither widens nor re-scopes them; it is an independent additive row on a DIFFERENT branch."
   },
-
   "S2_LANE": {
     "SEMANTIC_CHANGE": "NONE",
     "PATH_CHANGE": "NONE",
     "statement": "S2 is INTEGRATED and is not reopened. The selected-organization carrier's shape, session scope, cookie lifetime and write path are untouched by this node."
   },
-
   "S3_CORE_LANE": {
     "SEMANTIC_CHANGE": "NONE",
     "PATH_CHANGE": "NONE",
@@ -61,7 +54,6 @@
     "refusal_codes_unchanged": "REQUEST_PRINCIPAL_CONTRACT.refusal_codes from v1.0.4 - no_selected_organization -> TENANCY_NO_ORGANIZATION_SELECTED and selected_organization_without_active_membership -> TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER - keep exactly their frozen meanings. This node ADDS an audit-subject classification on top of them and redefines neither.",
     "what_this_node_observes_only": "The refusal DECISION belongs to S3 core. This node RECORDS that decision. An implementation that changes which refusal code a boundary returns, or which redirect branch the selector takes, has reopened S3 core and must STOP."
   },
-
   "S3_REFUSAL_AUDIT_LANE": {
     "node": "S3-REFUSAL-AUDIT",
     "canonical_title": "S3 REFUSAL AUDIT",
@@ -72,11 +64,22 @@
       "tenancy.organization.selection_refused",
       "tenancy.membership.revalidation_refused"
     ],
-    "depends_on": ["S1", "S2", "S3"],
-    "EXPLICITLY_EXCLUDED": ["S3c", "S4", "S5", "S6", "S7", "S8"],
-    "path_count": 17,
+    "depends_on": [
+      "S1",
+      "S2",
+      "S3"
+    ],
+    "EXPLICITLY_EXCLUDED": [
+      "S3c",
+      "S4",
+      "S5",
+      "S6",
+      "S7",
+      "S8"
+    ],
+    "path_count": 24,
     "protected_path_count": 4,
-    "unprotected_path_count": 13,
+    "unprotected_path_count": 20,
     "PROTECTED_GRANT_REQUIRED": true,
     "protected_paths": [
       "db/migrations/00NN_tenancy_refusal_audit_insert_policy.sql",
@@ -97,7 +100,14 @@
       "artifacts/baseline-rehearsal/latest.json",
       "docs/ops/tenancy/MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
       "scripts/ods-scope.ts",
-      ".github/workflows/s3-refusal-real-pg-gate.yml"
+      ".github/workflows/s3-refusal-real-pg-gate.yml",
+      "tests/tenancy/s1-founder-traceability.test.ts",
+      "tests/hosted/baseline-manifest.test.ts",
+      "tests/hosted/baseline-journal-wrapper.test.ts",
+      "tests/hosted/operator-runner.test.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.ts",
+      "tests/ods/ods-scope.test.ts"
     ],
     "ceiling_semantics": "A CEILING resolved by ods:scope against the lane's own --allow list, NEVER a mandate. A SUBSET is allowed; a SUPERSET fails closed. Being changed is never itself permission.",
     "ORDINAL_PLACEHOLDERS_ARE_NOT_ALLOCATIONS": "The 00NN and 0NN tokens are SYMBOLIC and allocate NOTHING. The migration ordinal is globally serialized and contested; it MUST be re-derived live at implementation start from db/migrations/, db/migrations/meta/_journal.json and db/prepared/journal/ together. Measured for information only at INTEGRATION_SHA and explicitly NOT allocated: migrations top out at 0066_multiorg_s1_founder_traceability.sql, the journal holds 67 entries, and db/prepared/journal/ tops out at 079_*, so the next free value was 0067 with wrapper 080_0067_* AT THAT MOMENT. Do not assume it.",
@@ -115,22 +125,33 @@
       "tests/postgres/s3refusal-completeness.pg.test.ts": "NEW, unprotected. Real-PostgreSQL contract suite.",
       "tests/postgres/s3refusal-completeness.probes.json": "NEW, unprotected. Targeted probe definitions - see POLICY_PROBE_CONTRACT.",
       "tests/tenancy/s3-refusal-audit.test.ts": "NEW, unprotected. DB-free controls.",
-      "artifacts/baseline-rehearsal/latest.json": "EXISTING, unprotected. CONDITIONAL - regenerate with the native generator only if the rehearsal gate is green on the implementation base. Never hand-edited.",
+      "artifacts/baseline-rehearsal/latest.json": "EXISTING, unprotected. MANDATORY regeneration with the repository-native generator - CORRECTED from CONDITIONAL by F-CU2-1, because appending a baseline unit necessarily changes baselineManifestDigest() and the gate's rehearsalFresh/rehearsalAppliedAll both fail against a stale artefact. Never hand-edited.",
       "docs/ops/tenancy/MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0.json": "NEW, unprotected. The implementation's evidence artifact. Must record the PROTECTED_GRANTS 12 -> 13 transition and bind to the RA-SUBJECT control ids by id.",
-      "scripts/ods-scope.ts": "EXISTING, unprotected. Registers the declared HPO-ODS-W2-25 row. The ONLY governance ledger this node may touch."
+      "scripts/ods-scope.ts": "EXISTING, unprotected. Registers the declared HPO-ODS-W2-25 row. The ONLY governance ledger this node may touch.",
+      "tests/tenancy/s1-founder-traceability.test.ts": "EXISTING, unprotected. F-CU2-1 ADDITION. S1 FINAL-UNIT DISPLACEMENT: it pins S1 as the last baseline unit (:163), its ordinal to the array length (:165), the wrapper header Unit N/N (:193) and the highest/only-new drizzle migration (:94-99). RETARGET only; never weaken a pin.",
+      "tests/hosted/baseline-manifest.test.ts": "EXISTING, unprotected. F-CU2-1 ADDITION (HOST_1). Four forced pins at :106, :108, :115, :118. The unforced kind pins supabase=2 and policy=10 and the DML-unit list must stay byte-unchanged.",
+      "tests/hosted/baseline-journal-wrapper.test.ts": "EXISTING, unprotected. F-CU2-1 ADDITION (HOST_2). Two forced pins at :473, :474. The three derived toHaveLength(BASELINE_UNITS.length + 1) forms must stay derived.",
+      "tests/hosted/operator-runner.test.ts": "EXISTING, unprotected. F-CU2-1 ADDITION (HOST_3). One forced pin at :238.",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts": "EXISTING, unprotected. F-CU2-1 ADDITION (HOST_4). Two forced pins at :71, :72. literalRowSources stays 4 and the DML-unit list stays byte-unchanged.",
+      "tests/eval/stella-release/hosted-baseline-gate.ts": "EXISTING, unprotected. F-CU2-1 ADDITION (HOST_5). The GATE MODULE, not a .test.ts file - easy to miss for that reason. Two forced pins at :410 (firstProvisioning N+1) and :433 (unitCount).",
+      "tests/ods/ods-scope.test.ts": "EXISTING, unprotected. F-CU2-1 ADDITION. Coupled through the PROTECTED-GRANT REGISTRY, not baseline growth: :317 and :318 pin the count and set size at 12, and the LIVE-COUNT GUARDS at :587 and :591 bind v1.0.20's and v1.0.21's PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION to the live array. Apply the established PREDECESSOR-DEMOTION pattern; never edit a predecessor authority artefact to satisfy them."
     },
     "PATHS_DELIBERATELY_EXCLUDED": {
       "db/prepared/checkpoint-b0/observation.sql": "EXCLUDED because a policy-only migration creates zero tables and the B0 observation is generated from `.tables` alone - see CHECKPOINT_B0_DISPOSITION.",
       "tests/database-entrypoint-inventory.json": "EXCLUDED. If the implementation believes it must move, that is STOP_FOR_AUTHORITY_DELTA.",
       "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json": "EXCLUDED. M-10 is detected by baseline:verify and must not be KTC-masked.",
       "db/baseline/**, tests/database-insert-policy-scope.test.ts, tests/database-role-safety.test.ts, tests/capability-baseline-artifact.test.ts, scripts/capability-baseline-verify.sh": "EXCLUDED as FROZEN G2 count surfaces - see FROZEN_G2_COUNT_SURFACES.",
-      "lib/auth/identity.ts, lib/auth/selected-organization.ts, lib/auth/session.ts, db/identity-context.ts": "EXCLUDED. These four host the existing private UUID_PATTERN copies. Exporting from any of them would require an 18th path and fail the ceiling closed - see MALFORMED_ASSERTION_DISPOSITION.",
-      "scripts/ods-controller.ts": "EXCLUDED. Controller35 is a separate mission."
+      "lib/auth/identity.ts, lib/auth/selected-organization.ts, lib/auth/session.ts, db/identity-context.ts": "EXCLUDED. These four host the existing private UUID_PATTERN copies. They lie OUTSIDE the corrected 24-path ceiling, so exporting from any of them would require a TWENTY-FIFTH path and fail the ceiling closed - see MALFORMED_ASSERTION_DISPOSITION.",
+      "scripts/ods-controller.ts": "EXCLUDED. Controller35 is a separate mission.",
+      "artifacts/hosted-a1-status.json": "EXCLUDED after explicit testing under F-CU2-1. Its only cardinalities are chain-package and Stella-flag counts (signals 3, rowCount 1, packageCount 9, flags.evaluated 9) plus chainPlan.stepCount 0, which is the EXTENSION CHAIN plan and NOT firstProvisioning. It carries no baseline cardinality, no manifest digest and no final-unit identity; db/hosted/checkpoint-a1.ts does not consume BASELINE_UNITS; and no test asserts anything about it.",
+      "tests/hosted/hosted-provisioning-runner.test.ts": "EXCLUDED. Its :231 last-step pin names stella_0019_storage_write_roles, which is NOT in BASELINE_ORDER (measured index -1 of 79); it belongs to the separate eleven-step PHASE_STELLA_CHAIN.",
+      "tests/hosted/prechain-ownership.test.ts": "EXCLUDED. Its db/migrations readdirSync is a CONTENT PREDICATE about stella_suggestion_decisions, not a count; a policy-only unit creates no table.",
+      "scripts/m2-disposable-pg-bootstrap.ts": "EXCLUDED. Corpus count, entries and terminal are all derived live from the journal, with hashes computed at run time."
     },
-    "CLASSIFIER_EVIDENCE": "MACHINE-MEASURED by EXECUTING classifyPaths and resolveProtectedGrant from scripts/ods-scope.ts at INTEGRATION_SHA. WITHOUT a grant: protectedViolations = exactly the four protected paths, ok = 13, unauthorized = 0, nonCanonicalProtectedPaths = 0. WITH the declared grant: protectedViolations = 0, grantAuthorized = exactly those four, ok = 17, unauthorized = 0, nonCanonicalProtectedPaths = 0. The 17 paths are pairwise distinct.",
-    "invocation": "pnpm ods:scope -- --base <INTEGRATION_SHA> --allow <each of the 17 paths, exactly, with the resolved ordinal substituted> --protected-authority HPO-ODS-W2-25"
+    "CLASSIFIER_EVIDENCE": "MACHINE-MEASURED by EXECUTING classifyPaths and resolveProtectedGrant from scripts/ods-scope.ts at INTEGRATION_SHA over all 24 paths. WITHOUT a grant: protectedViolations = exactly the four protected paths, ok = 20, unauthorized = 0, nonCanonicalProtectedPaths = 0. WITH the declared grant: protectedViolations = 0, grantAuthorized = exactly those four, ok = 24, unauthorized = 0. Set equality asserted in both directions. The seven F-CU2-1 additions classified ALONE return protectedViolations = 0, ok = 7, and each was verified to exist on disk.",
+    "invocation": "pnpm ods:scope -- --base <INTEGRATION_SHA> --allow <each of the 24 paths, exactly, with the resolved ordinal substituted> --protected-authority HPO-ODS-W2-25",
+    "CORRECTED_BY_F_CU2_1": "The FIRST published candidate 88b2c3b5ab520d46cdf57817205556097e32b52d declared 17 paths (4 protected, 13 unprotected). That was UNDER-ENUMERATED. The corrected closed world is 24 (4 protected, 20 unprotected); the PROTECTED set is unchanged and all seven additions are unprotected tracked hosts. See F_CU2_1_CORRECTION_CARRIED and the companion addendum's BASELINE_GROWTH_CONSEQUENCE for the independent re-derivation."
   },
-
   "F_CU_1_ADJUDICATION_CARRIED": {
     "why_this_section_exists": "LANE CU STOPPED rather than materialize a contract it had measured to be unsatisfiable. The HPO adjudication that followed CHANGED that contract. Both the finding and the adjudication are preserved here and in the companion addendum, so a future reader sees WHY the frozen contract has two shapes. Silently rewriting the original assumption is prohibited.",
     "F_CU_1_STATEMENT": "The originally specified contract froze, for BOTH refusal verbs, entity_type='organization' AND entity_id = the attempted organization UUID, while ALSO authorising the reason TENANCY_NO_ORGANIZATION_SELECTED. Those three cannot hold at once.",
@@ -146,7 +167,18 @@
     ],
     "STATUS": "BINDING AND NOT REOPENED BY THE IMPLEMENTATION."
   },
-
+  "F_CU2_1_CORRECTION_CARRIED": {
+    "finding_id": "F-CU2-1",
+    "status": "CLOSED_BY_THIS_CORRECTION",
+    "what_was_wrong": "The first published candidate of this pair declared a 17-path implementation ceiling. It was UNDER-ENUMERATED by seven tracked hosts that one successor hosted baseline unit mechanically invalidates.",
+    "first_published_candidate": "88b2c3b5ab520d46cdf57817205556097e32b52d",
+    "first_published_candidate_tree": "38571546b32447af207ff4610ad466e415a82937",
+    "first_candidate_disposition": "UNDER-ENUMERATED, and RETAINED in this branch's history and PR #96's commit list. Not concealed, not relabelled, not force-replaced.",
+    "when_and_how_discovered": "After the first candidate was committed and PR #96 opened. A concurrently-running lane's finding came into view and was NOT accepted on its word - it was re-derived here by executing db/hosted/baseline-manifest.ts and reading the S1 closure test, which confirmed the coupling and additionally surfaced one host the earlier account did not name.",
+    "root_cause": "The first candidate registered the new unit in db/hosted/baseline-manifest.ts and correctly noted that the expected POLICY set follows automatically, but did not ask what else is pinned to the CARDINALITY, KIND MIX, DIGEST and FINAL-ELEMENT IDENTITY of that array. S1 was the previous last unit and its closure evidence pinned it AS the last unit.",
+    "correction": "Ceiling 17 -> 24 (protected unchanged at 4, unprotected 13 -> 20), and the rehearsal artefact's disposition CONDITIONAL -> MANDATORY. Both re-derived independently; see the companion addendum's BASELINE_GROWTH_CONSEQUENCE for the full derivation, the two-method exhaustiveness proof and the excluded candidates.",
+    "what_this_correction_does_NOT_change": "NOTHING semantic. The two-shape refusal subject contract, both forms, both reason values, the additive INSERT policy and its reason-to-subject correlation, the readability contract, the no-schema-reopen prohibitions, the migration and B0 dispositions, the entrypoint-ledger disposition, the real-PG contract, the lineage and the protected grant are all carried unchanged from the first candidate."
+  },
   "REFUSAL_SUBJECT_CONTRACT": {
     "binding": "EXACTLY TWO forms are authorised. A row matching neither is a STOP, and the RLS policy is shaped so the database itself refuses it.",
     "governing_definition": "TENANCY_NO_ORGANIZATION_SELECTED means NO VALID ORGANIZATION UUID ASSERTION EXISTS AT THIS REFUSAL BOUNDARY - absent, empty, malformed/non-UUID, or otherwise unavailable as a valid organization UUID. It does not mean 'the user did not click anything'.",
@@ -201,12 +233,11 @@
       "UUID_SHAPE_MECHANISM": {
         "MEASURED_STATE": "There is NO exported UUID-shape helper in the auth layer. UUID_PATTERN exists as a MODULE-PRIVATE const in FOUR modules - lib/auth/identity.ts:78, lib/auth/selected-organization.ts:79, lib/auth/session.ts:54, db/identity-context.ts:88 - all BYTE-IDENTICAL: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i . None is exported. The zod z.string().uuid() usages in lib/admin/** and lib/pipeline/** are a service-module input-validation convention, not the auth-layer one.",
         "AUTHORIZED_FORM": "lib/audit/tenancy-refusal.ts - a NEW file already in the ceiling - declares its OWN module-private UUID_PATTERN byte-identical to the established literal, becoming a fifth instance of an existing four-fold convention.",
-        "WHY_NOT_EXPORT_THE_EXISTING_ONE": "MEASURED CEILING CONSEQUENCE. All four host modules are OUTSIDE the 17-path ceiling; exporting from any would require an 18th path and fail the ceiling closed. This is why the adjudication's 'requires NO additional implementation path' holds.",
+        "WHY_NOT_EXPORT_THE_EXISTING_ONE": "MEASURED CEILING CONSEQUENCE. All four host modules lie OUTSIDE the ceiling - true at the corrected 24 paths exactly as it was at the original 17 - so exporting from any of them would require a TWENTY-FIFTH path and fail the ceiling closed. This is why the adjudication's 'requires NO additional implementation path' holds.",
         "prohibited": "Refactoring the four existing literals into a shared exported helper is a STOP in this node - a defensible cleanup, and somebody else's authorized mission."
       }
     }
   },
-
   "AUDIT_LOG_POLICY_CONTRACT": {
     "policy_name": "audit_logs_insert_tenancy_refusal",
     "table": "public.audit_logs",
@@ -250,7 +281,6 @@
       "the_other_prohibitions_remain_absolute": "service-role, RLS bypass, SECURITY DEFINER and writing to a different table remain STOPS for THIS node exactly as for S3 core."
     }
   },
-
   "READABILITY_CONTRACT": {
     "binding": "NULL-org refusal rows - BOTH forms - are readable ONLY by superadmin under the current governed audit model. No ordinary organization member gains read access.",
     "NO_SELECT_POLICY_CHANGE_AUTHORIZED": "The required behaviour ALREADY HOLDS and is frozen, not implemented.",
@@ -258,7 +288,6 @@
     "no_membership_conferred_by_entity_id": "entity_id is DESCRIPTIVE SUBJECT METADATA ONLY. No membership, read grant or tenancy relationship may be inferred from it. No FK from entity_id to organizations is introduced, and none may be.",
     "no_existence_oracle": "A refused subject cannot read the row their own refusal produced: they are not a superadmin, and the row carries no organization_id that could admit them."
   },
-
   "SECURITY_INVARIANTS": {
     "binding": "Carried forward from v1.0.4 SECURITY_INVARIANTS unchanged, plus the following node-specific ones.",
     "audit_write_is_not_a_capability": "The refusal insert path must never give the refusal branch a capability the success path lacks. It is a bounded logging shape, not a privilege.",
@@ -268,7 +297,6 @@
     "no_existence_oracle": "Neither the emitter nor the policy may perform an organizations lookup, and the row is unreadable by the refused party.",
     "cookie_tampering": "A forged or stale carrier produces a refusal and therefore an audit row; it never produces a principal. Unchanged from S3 core."
   },
-
   "TEST_CONTRACT": {
     "binding_by_id_not_restatement": "The node's controls bind by id against docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json and the ids below. No competing test manifest is created by this mission.",
     "BASE_CONTROLS": [
@@ -305,7 +333,6 @@
       "pristine_capture_discipline": "Capture the pristine copy BEFORE the mutation loop begins, never inside it - capturing inside poisons the baseline of a two-edit mutation."
     }
   },
-
   "REAL_PG_CONTRACT": {
     "REAL_PG_REQUIRED": true,
     "DEDICATED_WORKFLOW": ".github/workflows/s3-refusal-real-pg-gate.yml",
@@ -324,7 +351,6 @@
     ],
     "existing_harness_note": "tests/authenticated-database-context.test.ts already demonstrates the idiom - a real uellix_app connection with a two-tenant fixture under describe.skipIf(!LIVE), with rollback. The new harness may follow it but must not weaken skip detection."
   },
-
   "POLICY_PROBE_CONTRACT": {
     "AUDIT_LOG_POLICY_TARGET": "public.audit_logs",
     "binding": "TARGETED at public.audit_logs. MUST NOT assert a global policy count such as 108.",
@@ -339,14 +365,12 @@
     "measured_basis": "db/baseline/stella_g2_schema.sql declares exactly two policies on public.audit_logs, at :8822 and :8829. The only audit_logs policy statements in db/migrations/ are in 0031_rls_core.sql and 0042_fib_audit_insert_policy.sql. No third policy exists at INTEGRATION_SHA.",
     "probe_must_assert_both": "PRESENCE (the three names, by name, on this table) AND refusal SEMANTICS (the two authorised shapes insert; the forgeries do not). Presence alone would pass against a gutted WITH CHECK."
   },
-
   "CHECKPOINT_B0_DISPOSITION": {
     "CHECKPOINT_B0_CHANGE_REQUIRED": false,
     "binding": "db/prepared/checkpoint-b0/observation.sql is NOT in the ceiling and MUST NOT be edited.",
     "measured_proof": "scripts/b0-observation-sql.ts builds the file as buildB0ObservationSql(deriveExpectedBaselineState(read).tables) - it consumes ONLY `.tables`. db/hosted/baseline-postconditions.ts populates `tables` exclusively from facts.tablesCreated. A policy-only migration creates ZERO tables, so the generated file is byte-identical.",
     "what_DOES_move": "The same function's `policies` member changes, via the second pass folding policiesDropped then policiesCreated - which is why the DROP-then-CREATE idiom is safe and why db/hosted/baseline-manifest.ts is in the ceiling. No hand-maintained policy list is edited anywhere."
   },
-
   "ENTRYPOINT_LEDGER_DISPOSITION": {
     "ENTRYPOINT_LEDGER_CHANGE_REQUIRED": false,
     "binding": "tests/database-entrypoint-inventory.json is NOT an authorized edit and is NOT in the ceiling. Governed entrypoint magnitudes must be PRESERVED, never repaired by editing the inventory or the pins.",
@@ -361,7 +385,6 @@
     },
     "STOP_CONDITION": "If the existing context-opening mechanism cannot support this NULL-organization authenticated context without a ledger change, STOP_FOR_AUTHORITY_DELTA. Do NOT repair the tuple by editing tests/database-entrypoint-inventory.json or the pinned literals."
   },
-
   "LOGGER_EXTENSION_IS_MEASURED": {
     "binding": "lib/audit/logger.ts may receive ONLY the minimal extension, and that minimum has been MEASURED rather than guessed.",
     "no_change_needed_for_NULL_org": "AuditLogEntry.organizationId is ALREADY optional (lib/audit/logger.ts:272 declares `organizationId?: string`) and logAuditAction passes it straight to the insert. A NULL organization_id therefore requires NO logger change at all.",
@@ -374,7 +397,6 @@
       "any parameterisation letting a caller choose organization_id, before_json, after_json, ip_address or user_agent"
     ]
   },
-
   "M10_AND_KTC_DISPOSITION": {
     "KTC_REGISTRY_EDIT_REQUIRED": false,
     "KTC_SUCCESSOR_REQUIRED": false,
@@ -383,7 +405,6 @@
     "measured_state": "KNOWN_TEST_CONDITIONS_v1.0.0.json holds exactly TWO conditions at INTEGRATION_SHA - KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02, both bound to tests/eval/stella-release/hosted-baseline-gate.test.ts, both PRE_EXISTING_DEFERRED. Neither concerns audit_logs, policies or this node. `pnpm baseline:verify` PASSES at INTEGRATION_SHA (79 units).",
     "no_masking": "If the new policy is not seen by the baseline scanner, fix the policy or its unit registration - NEVER add a KTC row so the mismatch is tolerated."
   },
-
   "FROZEN_G2_COUNT_SURFACES": {
     "binding": "FROZEN. MUST NOT be edited by this node.",
     "prohibited_edits": [
@@ -396,14 +417,15 @@
     "why": "The historical 38 / 107 / 10 values DESCRIBE THE FROZEN G2 DUMP, a historical artefact - not the live end state. The refusal policy belongs to the MIGRATION CHAIN. Updating a frozen G2 count to accommodate a new migration would corrupt the description of a historical object to make a present-day test pass.",
     "second_wall": "db/baseline/** is additionally a DEFAULT_PROTECTED_PATTERN and is NOT covered by the declared grant, so editing it fails the scope gate closed as well. Both walls are deliberate."
   },
-
   "REHEARSAL_DISPOSITION": {
-    "status": "CONDITIONAL",
-    "rule": "At implementation start, if the native rehearsal gate is GREEN on the exact implementation base, regenerate artifacts/baseline-rehearsal/latest.json with the REPOSITORY-NATIVE generator and include it in the ceiling. If RED only under a separately adjudicated pre-existing condition, carry that condition id and DO NOT rewrite the artifact to manufacture green.",
-    "never_hand_edit": "The artifact is generator-owned; a hand edit is caught by its digest, not merely by a counter - the measured precedent is the v1.0.22/PR91 lane.",
-    "measured_expectation": "`pnpm baseline:verify` and `pnpm authority:seal:verify` both PASS at INTEGRATION_SHA, so the expectation is GREEN - but the implementation MUST MEASURE on its own base rather than inherit this sentence."
+    "status": "MANDATORY",
+    "CORRECTED_BY_F_CU2_1": "The first published candidate declared this CONDITIONAL. That was wrong and is corrected here.",
+    "binding": "The implementation MUST regenerate artifacts/baseline-rehearsal/latest.json with the repository-native generator (pnpm baseline:rehearsal:local).",
+    "measured_proof": "baselineManifestDigest() is a sha256 over every unit's ordinal:id:sha256, so appending one unit necessarily changes it. The gate computes rehearsalFresh as `rehearsal?.manifestDigest === currentDigest` and requires `rehearsal?.manifestApplied === BASELINE_UNITS.length`. The stored artefact records manifestApplied 79 and a digest equal to the live one, so it is fresh today and stale the moment the unit is appended. The S1 exit assertion then fails, since it requires the failing gate-id set to be EXACTLY [] with rehearsalFresh true.",
+    "adds_no_path": "The artefact was already inside the original ceiling, so this correction changes its disposition only.",
+    "never_hand_edit": "The artefact is generator-owned; a hand edit is caught by the digest relation, not merely by a counter.",
+    "not_executed_in_this_lane": "No rehearsal was executed and no artefact regenerated by this AUTHORITY-ONLY lane."
   },
-
   "GOVERNANCE_LEDGER_STABILITY": {
     "expected_unchanged": [
       "tests/database-entrypoint-inventory.json",
@@ -418,9 +440,9 @@
       "scripts/ods-controller.ts"
     ],
     "if_one_must_move": "STOP_FOR_AUTHORITY_DELTA, never a quiet edit.",
-    "the_one_ledger_that_DOES_move": "scripts/ods-scope.ts PROTECTED_GRANTS, 12 -> 13, when the implementation registers HPO-ODS-W2-25. That file IS in the ceiling and that movement IS authorized - the only governance ledger this node may touch."
+    "scope_note_after_F_CU2_1": "This expected-unchanged list is DISJOINT from the seven F-CU2-1 additions: none of the seven appears here, and none of the ten below is authorised as an edit. The seven are RETARGET-ONLY hosts - pins move to newly measured values and no pin may be weakened into a bound, a range, a filter or expect.any.",
+    "the_ledgers_that_DO_move": "scripts/ods-scope.ts PROTECTED_GRANTS 12 -> 13 with its test host tests/ods/ods-scope.test.ts, plus the five hosted baseline-growth pin hosts and tests/tenancy/s1-founder-traceability.test.ts. All are inside the corrected ceiling."
   },
-
   "PROTECTED_GRANT_CARDINALITY": {
     "NEW_PROTECTED_PATH_REQUIRED": true,
     "PROTECTED_GRANT_REQUIRED": true,
@@ -429,9 +451,10 @@
     "PROTECTED_GRANTS_COUNT_AFTER_THIS_LANE": 12,
     "PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25": 13,
     "how_measured": "MEASURED at INTEGRATION_SHA by EXECUTING scripts/ods-scope.ts and reading the PROTECTED_GRANTS array's ROWS - 12 rows, ids W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17, -20, -21 - NEVER by grep, which over-counts because the identifier also appears in the interface declaration, in resolveProtectedGrant, and in prose.",
-    "this_lane_registers_nothing": "scripts/ods-scope.ts is NOT among this mission's two changed files. The grant below is DECLARED_NOT_REGISTERED and, verified by execution, resolveProtectedGrant('HPO-ODS-W2-25', ...) returns NO grant on any branch at this SHA."
+    "this_lane_registers_nothing": "scripts/ods-scope.ts is NOT among this mission's two changed files. The grant below is DECLARED_NOT_REGISTERED and, verified by execution, resolveProtectedGrant('HPO-ODS-W2-25', ...) returns NO grant on any branch at this SHA.",
+    "test_host_consequence": "Registering HPO-ODS-W2-25 moves PROTECTED_GRANTS 12 -> 13 and therefore requires tests/ods/ods-scope.test.ts, which is inside the corrected ceiling as an F-CU2-1 addition. Its :317/:318 count and set-size pins move, and its LIVE-COUNT GUARDS at :587/:591 - which bind v1.0.20's and v1.0.21's PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION to the live array - must be DEMOTED to their own historical literal 12, with a NEW live guard bound to this addendum's PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25. That is the identical demotion v1.0.16 performed on v1.0.15 and v1.0.20 on v1.0.16. NO predecessor authority artefact is edited.",
+    "no_protected_grant_authority_delta": "MEASURED: all seven F-CU2-1 additions classify UNPROTECTED under DEFAULT_PROTECTED_PATTERNS (protectedViolations 0, ok 7 when classified alone), so NO required protected path lies outside the frozen grant's two patterns. The grant's authorityId, branch, patterns and pattern_count are UNCHANGED by this correction."
   },
-
   "protected_grant": {
     "authorityId": "HPO-ODS-W2-25",
     "branch": "codex/multiorg-s3-refusal-audit-implementation-r1",
@@ -445,13 +468,11 @@
     "narrowness_proven_by_negative_control": "MEASURED at INTEGRATION_SHA by executing classifyPaths WITH this grant supplied: db/prepared/stella_0010_organization_bootstrap_capability.sql, db/prepared/checkpoint-b0/observation.sql, db/prepared/README.md, db/baseline/stella_g2_schema.sql, docs/ops/fib/anything.json and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json ALL remain protectedViolations, 6 of 6, with grantAuthorized 0.",
     "S1_GRANTS_FROZEN_UNCHANGED": "HPO-ODS-W2-20 and HPO-ODS-W2-21 keep EXACTLY the branch and patterns v1.0.19 and v1.0.20 declared. They are neither amended nor extended, and this node cannot borrow them - resolveProtectedGrant binds by exact branch equality and they are bound to the S1 implementation branch."
   },
-
   "PARALLELISM": {
     "S3_REFUSAL_AUDIT_writer_set_INTERSECT_S1_and_S2_and_S3_core_writer_sets": "S1, S2 and S3 core are ALL INTEGRATED at INTEGRATION_SHA, so there is no concurrent writer to intersect with. The question that mattered for S3 core versus PR #90 does not arise here.",
     "open_PRs_at_finalisation": "FOUR: #84 (docs/ops/wave3/** only), #63 (docs/ops/portfolio/** only), #44 and #14 (product branches touching no authority path). NONE intersects this lane's two-file write set, and none touches docs/ops/ods/ or docs/ops/tenancy/.",
     "no_lineage_collision_from_any_open_PR": "Verified by listing each authority PR's complete changed-file set, which also confirmed the filter was non-vacuous."
   },
-
   "CONTROLLER_SEQUENCING": {
     "CONTROLLER35_REQUIRED": true,
     "why": "The companion addendum ALLOCATES the next ODS lineage (v1.0.24 / HPO-ODS-W2-25 / tenancy v1.0.5), and the Controller's IMMUTABLE_BY_CONVENTION does not yet enumerate ODS_V1_MAINTENANCE_ADDENDUM_v1.0.24.json.",
@@ -461,7 +482,6 @@
     "merge_of_this_pair_cannot_redden_CI": "MEASURED. tests/ods/ods-controller.test.ts:138 asserts IMMUTABLE_BY_CONVENTION does NOT contain ODS_V1_MAINTENANCE_ADDENDUM_v1.0.24.json - Controller34 already advanced that absence assertion from v1.0.23 to v1.0.24. Merging this pair creates that FILE but does not touch that ARRAY, so the assertion still passes. Additionally verified that NO gate asserts enumeration COMPLETENESS: no test reads the docs/ops/ods/ directory listing and compares it against IMMUTABLE_BY_CONVENTION.",
     "no_preallocation": "Naming v1.0.25 or HPO-ODS-W2-26 above is a PROHIBITION, never an allocation. This amendment allocates NOTHING beyond tenancy v1.0.5 and HPO-ODS-W2-25."
   },
-
   "authorized_changed_paths_this_mission": {
     "count": 2,
     "paths": [
@@ -469,10 +489,10 @@
       "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.5.json"
     ],
     "both_are_NEW_files": true,
-    "no_third_path": "Any third tracked path is a STOP. scripts/ods-scope.ts, scripts/ods-controller.ts, every implementation path in the 17-path ceiling and every predecessor authority artefact are UNTOUCHED.",
-    "NO_COMPETING_TEST_MANIFEST": "No new test manifest is created. The node's controls bind by id against the existing MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json."
+    "no_third_path": "Any third tracked path is a STOP. scripts/ods-scope.ts, scripts/ods-controller.ts, every one of the 24 implementation paths in the corrected ceiling and every predecessor authority artefact are UNTOUCHED by this lane.",
+    "NO_COMPETING_TEST_MANIFEST": "No new test manifest is created. The node's controls bind by id against the existing MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json.",
+    "correction_round_note": "Exactly these two files in BOTH rounds. The first candidate 88b2c3b5ab520d46cdf57817205556097e32b52d wrote them; this correction amends the same two on the same branch and the same PR, and adds no third path."
   },
-
   "CROSS_ARTIFACT_AGREEMENT": {
     "binding": "Every field below must be IDENTICAL in this amendment and in docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.24.json. A divergence in any one is a STOP, checkable mechanically as a field-by-field comparison.",
     "agreed_fields": {
@@ -480,9 +500,9 @@
       "ODS_VERSION": "1.0.24",
       "TENANCY_AMENDMENT_VERSION": "1.0.5",
       "INTEGRATION_SHA": "62b309cecbf115daaae1f4ad38bf13ff0b3f341d",
-      "CEILING_COUNT": 17,
+      "CEILING_COUNT": 24,
       "PROTECTED_PATH_COUNT": 4,
-      "UNPROTECTED_PATH_COUNT": 13,
+      "UNPROTECTED_PATH_COUNT": 20,
       "PROTECTED_GRANT_REQUIRED": true,
       "PROTECTED_GRANT_AUTHORITY_ID": "HPO-ODS-W2-25",
       "PROTECTED_GRANT_BRANCH": "codex/multiorg-s3-refusal-audit-implementation-r1",
@@ -511,10 +531,12 @@
       "FORM_B_ENTITY_ID": "the exact valid attempted/selected organization UUID",
       "FORM_B_REASON": "TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER",
       "ENTITY_ID_REMAINS_NOT_NULL": true,
-      "CHANGED_PATH_COUNT": 2
+      "CHANGED_PATH_COUNT": 2,
+      "REHEARSAL_DISPOSITION": "MANDATORY",
+      "F_CU2_1_DISPOSITION": "CLOSED_BY_THIS_CORRECTION_CEILING_17_TO_24",
+      "FIRST_PUBLISHED_CANDIDATE": "88b2c3b5ab520d46cdf57817205556097e32b52d"
     }
   },
-
   "AUDIT_VERB_DISPOSITION": {
     "PREDECESSOR_DISPOSITION": "v1.0.4 AUDIT_VERB_DISPOSITION set S3_AUDIT_VERB_DISPOSITION = DEFERRED_TO_SEPARATE_GOVERNED_NODE with WAIVED false, OPTIONAL false and IMPLEMENTED_BY_S3 false.",
     "THIS_AMENDMENT_DISCHARGES_IT": "The two verbs are converted from DEFERRED OBLIGATION into GOVERNED IMPLEMENTATION SCOPE by this amendment and its companion addendum. This is the successor node v1.0.4 named.",
@@ -526,7 +548,6 @@
     "WAIVED": false,
     "OPTIONAL": false
   },
-
   "risks_and_open_findings": {
     "BLOCKING": [],
     "UNKNOWN": [],
@@ -550,14 +571,26 @@
         "id": "D-CU2-4",
         "statement": "The UUID-shape constant will exist as a FIFTH byte-identical private copy rather than a shared exported helper.",
         "why_non_blocking": "Consolidation would require editing up to four modules outside the ceiling. Following the established convention keeps this node inside its ceiling; the cleanup remains available to a separately authorized mission."
+      },
+      {
+        "id": "D-CU3-1",
+        "statement": "The seven F-CU2-1 additions are all test or gate-module hosts, so the implementation necessarily edits its own verification surface.",
+        "why_non_blocking": "Every edit is a RETARGET to a newly measured value, never a weakening. The S1 test guards its own exit assertion against weakening and asserts the five hosted pin hosts carry EXACT-equality literals rather than bounds."
+      }
+    ],
+    "HISTORICAL_BLOCKING_NOW_CLOSED": [
+      {
+        "id": "F-CU2-1",
+        "raised_against": "88b2c3b5ab520d46cdf57817205556097e32b52d",
+        "statement": "The first published candidate's 17-path ceiling was under-enumerated by seven tracked hosts.",
+        "closed_by": "This correction: ceiling 17 -> 24 and rehearsal CONDITIONAL -> MANDATORY, both independently re-derived."
       }
     ]
   },
-
   "CANDIDATE_SELF_CHECK": {
     "SC-1_exactly_two_tracked_files": "The candidate diff against INTEGRATION_SHA contains EXACTLY two tracked paths, both NEW. FAILS on any third path.",
     "SC-2_no_implementation": "No file under app/, lib/, db/, tests/, scripts/, artifacts/ or .github/ is created or modified. FAILS otherwise.",
-    "SC-3_ceiling_cardinality": "17 total, 4 protected, 13 unprotected, pairwise distinct, machine-classified with and without the grant. FAILS on any other cardinality.",
+    "SC-3_ceiling_cardinality": "24 total, 4 protected, 20 unprotected, pairwise distinct, machine-classified with and without the grant with set equality in both directions. FAILS on any other cardinality.",
     "SC-4_protected_grant_declared_not_registered": "protected_grant is non-null with pattern_count 2 and registration_status DECLARED_NOT_REGISTERED; scripts/ods-scope.ts is byte-unchanged and PROTECTED_GRANTS still holds 12 rows. FAILS otherwise.",
     "SC-5_no_migration": "No file under db/migrations/ or db/prepared/ is created or modified and no ordinal is allocated - the four protected entries carry SYMBOLIC placeholders only. FAILS otherwise.",
     "SC-6_audit_verbs_discharged_not_narrowed": "Both verbs converted to implementation scope and BOTH reasons retained and reachable. FAILS if either is narrowed away.",
@@ -568,6 +601,8 @@
     "SC-11_F_CU_1_preserved_in_history": "F_CU_1_ADJUDICATION_CARRIED records the finding, its measured proof, the rejected resolutions and the adjudication. The original single-shape assumption is NOT silently rewritten. FAILS if absent.",
     "SC-12_predecessors_byte_unchanged": "Tenancy v1.0.1-v1.0.4 and ODS v1.0.1-v1.0.23 are byte-unchanged. FAILS otherwise.",
     "SC-13_no_select_policy_change": "No change to audit_logs_select_member_or_admin is authorized; readability is frozen as a CONSEQUENCE of the existing policy. FAILS otherwise.",
-    "SC-14_no_ledger_repair": "tests/database-entrypoint-inventory.json and the pinned entrypoint tuple are declared expected-unchanged with an explicit STOP_FOR_AUTHORITY_DELTA if they must move. FAILS if either is authorized as an edit."
+    "SC-14_no_ledger_repair": "tests/database-entrypoint-inventory.json and the pinned entrypoint tuple are declared expected-unchanged with an explicit STOP_FOR_AUTHORITY_DELTA if they must move. FAILS if either is authorized as an edit.",
+    "SC-15_F_CU2_1_correction_recorded": "F_CU2_1_CORRECTION_CARRIED names the first published candidate 88b2c3b5ab520d46cdf57817205556097e32b52d and states plainly that its 17-path ceiling was under-enumerated. FAILS if absent, or if the first candidate is presented as though it had been correct.",
+    "SC-16_rehearsal_mandatory": "REHEARSAL_DISPOSITION.status is MANDATORY with the digest-relation proof. FAILS if it still reads CONDITIONAL."
   }
 }
