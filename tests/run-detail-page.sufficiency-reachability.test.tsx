@@ -89,6 +89,25 @@ vi.mock('@/lib/pipeline/evidence-sufficiency', () => ({
   getLatestSufficiencyDeterminationsByOutcomeIds: mockGetLatestSufficiencyDeterminationsByOutcomeIds,
 }))
 
+// FIBIU-17 (W2-B5) — RunDetailPage now unconditionally reads canonical
+// readiness; this suite is focused on the sufficiency panel and never
+// exercises readiness, so the "not yet computed" (null) shape is correct.
+vi.mock('@/lib/pipeline/sroi-readiness', () => ({
+  getReadinessAssessment: vi.fn().mockResolvedValue(null),
+  READINESS_CRITERIA_COUNT: 40,
+}))
+// FIBIU-18 (W2-B5) — same for the governed sensitivity register/scenarios;
+// empty register is the correct "nothing registered yet" fixture.
+vi.mock('@/lib/pipeline/sroi-sensitivity', () => ({
+  listSensitivityCandidates: vi.fn().mockResolvedValue([]),
+  listSensitivityScenarios: vi.fn().mockResolvedValue([]),
+  getRunSensitivityCompleteness: vi.fn().mockResolvedValue({ complete: true, pendingCandidateIds: [], variationRequiredWithoutScenarioIds: [] }),
+  computeScenarioEnvelope: vi.fn(),
+  // The (unmocked, real) recordSensitivityScenario.action module consumes
+  // this at import time for its zod schema — it is not called at render.
+  SCENARIO_KIND_VALUES: ['one_at_a_time', 'combined'],
+}))
+
 vi.mock('@/app/app/projects/[projectId]/pipeline/outcomes.actions', () => ({
   fetchOutcomes: vi.fn().mockResolvedValue([
     { id: OUTCOME_A, title: 'Reducción del tiempo de acceso a agua' },

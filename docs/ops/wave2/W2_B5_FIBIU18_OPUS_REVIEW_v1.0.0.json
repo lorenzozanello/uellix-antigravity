@@ -1,0 +1,76 @@
+{
+  "package_id": "W2_B5_FIBIU18_OPUS_REVIEW",
+  "version": "1.0.0",
+  "artifact_id": "W2_B5_FIBIU18_OPUS_REVIEW_v1.0.0",
+  "authority_class": "INDEPENDENT_AUDIT_EVIDENCE",
+  "document_class": "AUDIT_MATERIALIZATION_NOT_A_NEW_AUDIT",
+  "append_only": true,
+  "supersedes": null,
+  "is_authority": false,
+
+  "self_certification": "NONE. This artifact does not perform, repeat, upgrade, weaken or reinterpret any audit finding. It materializes, into the repository-native evidence contract, the independent RD-BLK-1 / FIBIU-18 focused re-audit result that was already completed and delivered to this mission (W2-B5-TEST-HOST-EVIDENCE-FINALIZATION-R5) as a precondition, and it distinguishes that audited production-security delta from the test-host/doc-only changes this same mission subsequently authored on top of the audited object.",
+
+  "materializing_mission": "W2-B5-TEST-HOST-EVIDENCE-FINALIZATION-R5",
+  "materialized_by": "Claude Sonnet 5, this session, worktree C:\\Users\\Lorenzo\\Documents\\uellix-stella-w2-b5-r1, branch codex/w2-b5-r1",
+  "auditor_identity": "NOT THIS SESSION. The independent Opus focused adversarial audit referenced below was performed by a separate, prior governed act. This session did not run it, cannot re-derive its internal method beyond what was reported to it, and asserts no additional finding.",
+
+  "audited_object": {
+    "AUDITED_IMPLEMENTATION_HEAD": "b49eb50b4497e7f2f54c563563c19d552c215ac4",
+    "AUDITED_IMPLEMENTATION_TREE": "a3b68379bec78e8efa92be0a9d28443ab09f9d35",
+    "branch_at_audit_time": "codex/w2-b5-r1",
+    "pr": 70,
+    "audited_defect": "RD-BLK-1 — RunDetailPage's FIBIU-17/FIBIU-18 reads (getReadinessAssessment, listSensitivityCandidates, listSensitivityScenarios, getRunSensitivityCompleteness) must fail closed, never fail open into a synthesized complete:true or empty-but-rendered state, on an authorization failure, an RLS failure, or an unexpected service error.",
+    "remediation_commit_under_audit": "b49eb50 — fix(wave2): RD-BLK-1 — RunDetailPage FIBIU-17/18 reads must fail closed (already present in this branch's history prior to this mission; not authored by this mission)."
+  },
+
+  "audit_result_as_reported": {
+    "audit_class": "INDEPENDENT_OPUS_FOCUSED_ADVERSARIAL_REAUDIT",
+    "verdict": "PASS",
+    "blocking_findings": 0,
+    "unknown_findings": 0,
+    "rd_blk_1_status": "FULLY_REMEDIATED",
+    "fibiu18_reaudit_verdict": "PASS"
+  },
+
+  "measured_facts_as_reported": {
+    "note": "Transcribed verbatim from the completed audit's own reported findings. This session did not independently re-execute these measurements; see verification_performed_by_this_session below for what this session DID independently re-run on top of the same audited object.",
+    "items": [
+      "Broad catch removed from the RunDetail page's FIBIU-17/18 read path.",
+      "An authorization failure propagates out of the page render rather than being swallowed.",
+      "An RLS failure propagates out of the page render rather than being swallowed.",
+      "An unexpected service error propagates out of the page render rather than being swallowed.",
+      "An unknown sensitivity state never becomes complete:true.",
+      "A genuine empty candidate set preserves the canonical service semantics (never conflated with an authorization/RLS/unexpected failure).",
+      "Focused tests: 5/5 PASS.",
+      "Mutation MUT_COMPLETE_TRUE: killed.",
+      "Mutation MUT_SWALLOW_AUTH: killed.",
+      "13 additional relevant hosts: 164/164 PASS.",
+      "One known, separately classified two-host gap: KNOWN_SEPARATE_AUTHORITY_GAP — the exact gap this mission's own test-host successor authority (W2_B5_AUTHORITY_AMENDMENT_v1.0.2 / ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18) subsequently closed; see w2_b5_test_host_remediation_disposition below."
+    ]
+  },
+
+  "w2_b5_test_host_remediation_disposition": {
+    "relationship_to_the_audited_security_delta": "NONE. The audited RD-BLK-1 defect and its fix live entirely inside b49eb50, already merged into this branch before this mission began. This mission touched ZERO bytes of lib/pipeline/sroi-readiness.ts, lib/pipeline/sroi-sensitivity.ts, or app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx.",
+    "what_this_mission_changed_instead": "Exactly two pre-existing, unrelated test hosts (tests/b3-completeness.ui.test.tsx, tests/run-detail-page.sufficiency-reachability.test.tsx) that render RunDetailPage and had not yet been wired to mock the two new FIBIU-17/18 service modules the audited implementation added. This is MOCK_OR_TEST_WIRING_ONLY under W2_B5_AUTHORITY_AMENDMENT_v1.0.2 / ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18 (HPO-ODS-W2-19) — it changes no production byte and asserts no new security property. It is recorded in full, independently of this artifact, in docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json.",
+    "no_weakening": "Neither host's fail-closed assertions were touched, relaxed, skipped or reclassified. The fixtures added (readiness=null, empty sensitivity register) exercise the SAME guarded UI branches the audited fail-closed behavior was already proven against; they do not stand in for, weaken, or bypass RD-BLK-1's propagate-on-failure design."
+  },
+
+  "verification_performed_by_this_session": {
+    "scope": "This session re-ran the regression net around the audited surface AFTER merging latest integration and applying the authorized test-host wiring, to confirm the audited fail-closed behavior still holds unmodified. This is confirmatory regression evidence, NOT a re-audit and NOT a new adversarial finding.",
+    "targeted_hosts": {
+      "command": "vitest run tests/b3-completeness.ui.test.tsx tests/run-detail-page.sufficiency-reachability.test.tsx tests/sensitivity-run-detail-error-boundary.test.ts --no-file-parallelism",
+      "result": "PASS — 11/11, 5/5, and the third named host green (see docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json targeted_tests for the exact combined count)."
+    },
+    "full_manifest_suite": "19 files / 562 tests PASS — see docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json.",
+    "real_pg_campaign": "tests/postgres/b5-completeness.pg.test.ts — 55/55 PASS against a fresh disposable PostgreSQL container, zero leaked containers — see docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json.",
+    "candidate_head_this_verification_ran_against": "648732af2c8f6d54c11c77ed815abddad976de3b (post-merge, post-test-host-wiring, post-doc-alignment — strictly AFTER the audited object b49eb50, never a substitute for it)."
+  },
+
+  "not_claimed": [
+    "This artifact does not certify W2-B5 closed.",
+    "This artifact does not perform a new independent audit and carries no adversarial authority of its own.",
+    "This artifact does not extend, narrow or reinterpret the audited PASS verdict.",
+    "The two-host test gap this mission closed is NOT re-litigated as a security finding here — it was never a security finding; it was a test-host authorization gap, closed under its own ODS instruction.",
+    "No production, staging or hosted promotion is implied."
+  ]
+}

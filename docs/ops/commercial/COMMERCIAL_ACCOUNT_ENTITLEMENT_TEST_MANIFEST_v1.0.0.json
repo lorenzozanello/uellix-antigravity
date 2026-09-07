@@ -1,0 +1,308 @@
+{
+  "manifest_id": "COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0",
+  "node_or_batch": "batch",
+
+  "authority_reference": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json — the companion executable commercial authority frozen by mission COMMERCIAL-ACCOUNT-ENTITLEMENT-AUTHORITY-MATERIALIZATION-R1 at AS_OF_HEAD ccd0680e27560c2dfe5c08e2f69d4f115014466f / tree ff8082d457c5b6ccf6b5f16b1788b2cb736424a2 / ref origin/integration/commercial-v1. Product references consumed by that authority: docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json (30 integrated ratifications; this package consumes CA-01..CA-08, SS-01..SS-03 and the three ratified_semantics_detail_ca06_ca08 doctrine blocks) and docs/ops/commercial/COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md. This manifest is a batch commitment covering DAG nodes CE-1..CE-9 as defined in that authority's MIGRATION_DAG section. NAMING DERIVATION: the repo-native convention for a versioned package manifest is <PACKAGE_STEM>_TEST_MANIFEST_v<semver>.json placed beside its authority — measured exemplars at AS_OF_HEAD are docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json, docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json and docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.0.json — so the authority stem COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0 yields COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json unambiguously. This manifest is a PRE-IMPLEMENTATION COMMITMENT: no node of it exists, and every test_file below is legitimately UNKNOWN except where an existing file is named.",
+
+  "dependencies": [
+    "ODS LINEAGE SEQUENCING — BLOCKING for every node of this batch. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json is present on disk and UNENUMERATED by the live Controller: scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION parses to exactly 28 entries ending at v1.0.17, and scripts/ods-controller.ts:49 records that the membership test is EXACT, never a subset. No node of this manifest may open an implementation grant until the Controller successor enumerating v1.0.18 is CLOSED. Measured by direct parse of scripts/ods-controller.ts at AS_OF_HEAD, not assumed from memory.",
+    "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 (docs/ops/tenancy/) — FROZEN, IMPLEMENTATION OPEN. Nodes S1, S3, S4, S5, S7 are named ordering dependencies of CE-3, CE-5, CE-7 and CE-8 in the companion authority's MULTIORG_INTERSECTION. Not re-measured by this mission beyond confirming the artifact exists at AS_OF_HEAD and that its own AS_OF_HEAD 60c93804a37bbae050959cb2709003dc6d92d8f3 is an ancestor of this one. Treated as fail-closed UNKNOWN for implementation status.",
+    "PLATFORM ADMIN COLUMN-ACL SET (db/prepared/stella_0011 + stella_0012 + the lib/admin change) — UNKNOWN, and an OPEN SEQUENCING DECISION against CE-5 on serial chokepoints CP-4 and CP-7. db/prepared/README.md:1008 records the three as one obligatory set; lib/admin/organization-administration.ts:106-108 and :133-137 already call both definers, which are applied nowhere. Recorded as finding F-1 in the companion authority and deliberately unresolved.",
+    "PREPARED QUOTA CHAIN (db/prepared/stella_0013..stella_0018) — PREPARED, NOT APPLIED, each with hard preconditions on its predecessors. Named because db/prepared/stella_0013_grounded_query_quota.sql:88 aborts application if organizations.stella_monthly_quota is absent, which is the binding precondition P4 of the companion authority's RETIREMENT_LAST_RULE and therefore of node CE-9.",
+    "CAP-03 STRIPE CAPABILITY (db/prepared/stella_0008_stripe_webhook_identity.sql) — PREPARED, NOT APPLIED, with its application-side flag false at app/api/webhooks/stripe/route.ts:57. Named because CE-6 recomposes it and because enabling it as written would make contradiction CC-3 live.",
+    "CAP-05 BOOTSTRAP CAPABILITY (db/prepared/stella_0010_organization_bootstrap_capability.sql) — PREPARED, NOT APPLIED, requires DP-CAP-12 and DP-CAP-13. Named because CE-7 composes a successor over it.",
+    "P1A_FULL_BOOTSTRAP — UNKNOWN, not re-measured by this mission. Named because the real-PostgreSQL contract of this batch rides the hosted baseline chain that P1A establishes."
+  ],
+
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/**",
+    "db/baseline/**"
+  ],
+
+  "protected_authority": null,
+
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "A real PostgreSQL probe is MANDATORY for this batch and both manifest paths are legitimately UNKNOWN because no implementing node exists yet — this manifest is a pre-implementation commitment, and naming a harness path that does not exist would be a fabricated fact. The companion authority's REAL_PG_FUTURE_CONTRACT freezes twelve required probes PG-1..PG-12: cross-organization denial under a SHARED CommercialAccount (PG-1), per-organization quota isolation under concurrency (PG-2), non-tenant-readability of commercial_accounts (PG-3), the partial unique index refusing a second live grant under concurrent insert (PG-4), transfer compare-and-set serialization (PG-5), zero membership rows touched by a transfer measured as a row-count delta (PG-6), fail-closed refusal rather than an empty result on a cross-organization entitlement request (PG-7), invisibility to tenants of an audit row with organization_id NULL (PG-8), a privilege census proving the Stripe identity cannot write membership, grants or the legacy quota columns (PG-9), atomic rollback of a composed bootstrap (PG-10), a platform commercial operation leaving app.organization_id unset (PG-11), and before/after equivalence across the legacy retirement (PG-12). Static reading of SQL text is NOT proof for any of the twelve: RLS policy combination (PERMISSIVE OR versus RESTRICTIVE AND), definer GUC resolution, NULL-not-TRUE denial, advisory-lock scope, row-lock serialization, partial-index behaviour under concurrency and effective-privilege inheritance are all runtime properties. HARNESS SHAPE, frozen by the authority: a DISPOSABLE cluster only, via the repository's disposable-audit path — NEVER staging, NEVER production, NEVER the canonical local stack; and a TWO-ACCOUNT, THREE-ORGANIZATION fixture (account X governing OrgA and OrgB, account Y governing OrgC), because a single-account fixture cannot express CA-02 and therefore cannot falsify SEC-7 or SEC-8, and because a probe returning zero rows merely for want of data proves nothing — the non-scoped organizations must carry real rows."
+  },
+
+  "sentinels": [
+    {
+      "id": "SENTINEL_SIBLING_ORG_CANARY_ROW",
+      "purpose": "A uniquely-valued tenant row planted in OrgB, where OrgB is governed by the SAME CommercialAccount as OrgA. It must never appear in any result set, log line, error payload, PDF, report or aggregate produced by a request scoped to OrgA. Its purpose is to make the single most dangerous misreading of CA-02 — that shared commercial governance implies shared visibility — assertable by IDENTITY rather than by row count, since a count-based assertion cannot distinguish 'denied' from 'no such row'."
+    },
+    {
+      "id": "SENTINEL_UNGOVERNED_ORG",
+      "purpose": "An Organization whose commercial_account_id is NULL and which holds no live entitlement grant. Its purpose is to prove that NULL governance is never read as an implicit plan, trial or unlimited state. If any evaluator returns a capability for this fixture, the ungoverned_state rule of ORGANIZATION_RELATION has been violated."
+    },
+    {
+      "id": "SENTINEL_UNKNOWN_STRIPE_PRICE",
+      "purpose": "A Stripe price identifier deliberately absent from the price map of lib/stripe/client.ts. Its purpose is to prove PI-6 on the WRITE path: an unrecognised price must produce a refusal, not the free-tier fallback that lib/stripe/client.ts:53-56 returns and that app/api/webhooks/stripe/route.ts:60-62 already documents as a silent downgrade of a paying customer when used as a quota input."
+    },
+    {
+      "id": "SENTINEL_CLOSED_HISTORY_ROW",
+      "purpose": "A commercial_account_organization_history row whose effective_to is already set. Its purpose is to prove append-only behaviour: any UPDATE or DELETE reaching this row must be refused. It is the fixture that makes MUT-8 assertable rather than merely asserted."
+    },
+    {
+      "id": "SENTINEL_COMMERCIALLY_SUSPENDED_ACCOUNT",
+      "purpose": "A CommercialAccount in commercial suspension or past_due that governs an Organization whose status is 'active'. Its purpose is to prove PI-1 and the payment/suspension doctrine as a pair: the commercial state must NOT have propagated to Organization.status, must NOT have deleted any membership row, and must NOT have removed access to historical evidence — while a paid entitlement may legitimately have been closed by an explicit, audited grant row."
+    },
+    {
+      "id": "SENTINEL_MANUAL_QUOTA_ORG",
+      "purpose": "An Organization whose current stella_monthly_quota was assigned manually by a super_admin with no Stripe identity present — the state db/schema.ts:25-27 documents as today's normal case. Its purpose is to prove the backfill classifies it as source PLATFORM_ADMIN with commercial_account_id NULL, and never as source PLAN, so that the backfill cannot invent a commercial basis that never existed."
+    }
+  ],
+
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+
+  "positive_controls": [
+    {
+      "id": "P-0",
+      "description": "MANIFEST PRECONDITION, UNKNOWN BY CONSTRUCTION. The two known_conditions listed above are the only entries in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json at AS_OF_HEAD, read directly from that file; both are PRE_EXISTING_DEFERRED. Whether any node of this batch adds a hosted unit — and therefore changes the baseline-manifest digest these two fingerprint — is UNKNOWN at authority time and is recorded as UNKNOWN rather than assumed absent. Each implementing node MUST re-verify applicability with pnpm ops:test-diff at its own base. A node that observes a hosted-baseline-gate failure whose signature does NOT match these two fingerprints has found a NEW failure and must fail closed rather than classify it as known.",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+    },
+    {
+      "id": "P-1",
+      "description": "CE-1 / CA-01. A CommercialAccount exists as its own relation, distinct from Organization, carrying commercial identity and lifecycle state and carrying NO user, membership or role column. The assertion is on the absence of those columns as well as on the presence of the relation — a CommercialAccount that can hold a member is not the ratified concept.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-2",
+      "description": "CE-1 / CA-02. One CommercialAccount governs two Organizations simultaneously, and both are readable as governed by it. This is the control that proves the 1:N relation is expressible at all — today it is not, because stripe_customer_id is a UNIQUE column on the tenant table (contradiction CC-4).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-3",
+      "description": "CE-1 / CA-06. An Organization has exactly one live governing CommercialAccount at a time, and an Organization with none is representable as NULL rather than as a forged association.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-4",
+      "description": "CE-2 / T-1..T-5. A completed transfer leaves the Organization id, the full tenant data set, every organization_members row, every role value and every evidence/report row and its audit rows byte-identical. Asserted as a before/after delta over row counts AND content hashes, not as a spot check of one table — T-2 is a statement about everything the transfer did not touch.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-5",
+      "description": "CE-2 / T-6 / SEC-12. After a transfer, the pre-transfer governing CommercialAccount is recoverable for any instant before the transfer, from append-only history rows alone, with no reliance on the mutable organizations.commercial_account_id value.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-6",
+      "description": "CE-2 / T-7 / T-8. A transfer explicitly re-evaluates entitlements under the receiving account: grants whose source was PLAN with the outgoing account as basis are CLOSED, new grants are written under the receiving account, and grants whose source is PLATFORM_ADMIN or BOOTSTRAP_DEFAULT are untouched because their basis was never commercial. Asserted on the grant ROWS, not on the effective limit — an unchanged effective number can hide a silently inherited grant.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-7",
+      "description": "CE-2 / T-11. Re-issuing a transfer with the same idempotency key is a no-op returning the original outcome. Combined with N-10, this pins the compare-and-set as a pair: replay succeeds identically, contention is refused.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-8",
+      "description": "CE-3 / CA-04. The effective entitlement evaluator answers at the Organization x product-capability boundary and takes an EXPLICIT organization_id argument rather than reading an ambient principal. The explicitness is itself the assertion: an evaluator that resolves the Organization implicitly evaluates the wrong tenant the moment tenancy node S7 removes user_single_active_membership.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-9",
+      "description": "CE-3. Grant provenance is complete and reconstructible: for any grant at any past instant, source, status-by-period, effective period, reason, actor, commercial-account basis, plan snapshot and metered limit are all readable. Asserted by reconstructing a past instant, not by inspecting the column list.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-10",
+      "description": "CE-5 / PI-2. The limit projection is exact in both directions for the Stella capability: limit_kind UNMETERED projects to stella_monthly_quota NULL, BLOCKED to 0, CAPPED to limit_value; and the backfill inversion of the same mapping is lossless. lib/stella/quota.ts:43-44 distinguishes 'unlimited' from 'a lot' deliberately, and this control is what stops the discriminator collapsing back into an overloaded NULL.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-11",
+      "description": "CE-5 / SEC-8 / CA-08. OrgA exhausting its quota leaves OrgB's available capacity unchanged, where OrgA and OrgB are governed by the SAME CommercialAccount, and the two consumptions run concurrently. Sequential exhaustion would not distinguish a per-organization ledger from a pooled one that simply had headroom.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-12",
+      "description": "CE-5 / CA-08. A CommercialAccount aggregates usage across the Organizations it governs for reporting/invoicing, and that aggregate is READ-ONLY: no code path exists from an aggregate value to a runtime enforcement decision. Asserted by proving the aggregate has no writer and no consumer inside the enforcement path.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-13",
+      "description": "CE-7 / SS-03. Registration performs an ATOMIC bootstrap of CommercialAccount + first Organization + founder/admin membership + deterministic initial entitlement in one transaction, with no manual technical provisioning at any point.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-14",
+      "description": "CE-7 / PI-4 / CA-05. The bootstrap's initial grant is source BOOTSTRAP_DEFAULT with commercial_account_id NULL and a limit declared by the capability catalogue; it is identical for every new tenant; and the verb still refuses owner, role, plan and quota as parameters, with the subject taken from auth.uid(). A bootstrap that could be steered into a paid entitlement by its caller has lost the property db/prepared/stella_0010_organization_bootstrap_capability.sql:571 currently holds.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-15",
+      "description": "CE-6 / CA-05 / CA-07. A signature-verified Stripe event updates the billing state of an ALREADY-BOUND CommercialAccount and emits a governed re-evaluation request. Asserted together with N-5: the same event must move commercial state and must move zero entitlement rows and zero runtime limits.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-16",
+      "description": "CE-8 / SEC-11. Each of PA-1..PA-6 writes an audit row naming the acting subject. The account-scoped half of a commercial event carries organization_id NULL and entity_type 'commercial_account'; the organization-scoped half carries the Organization. Asserted against the existing audit policies rather than against a new table.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-17",
+      "description": "CE-4. The backfill seeds one CommercialAccount per existing Organization, writes the opening association row THROUGH the CE-2 history contract rather than beside it, and derives each seed grant from the current column value. SENTINEL_MANUAL_QUOTA_ORG must come out as source PLATFORM_ADMIN with a NULL commercial basis, and an Organization with a live subscription as source PLAN.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-18",
+      "description": "CE-9 / RETIREMENT_LAST_RULE P5. Entitlement evaluation and quota consumption return identical values before and after the legacy column retirement, on the two-account three-organization fixture. This is the only control that can prove the compatibility window actually closed rather than merely ended.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "SEC-6 / CE-3. An entitlement request naming an Organization the caller is not scoped to is REFUSED with an explicit failure code. The assertion is on the FAILURE CODE, not on the absence of data: an empty result and a refusal are indistinguishable to a test that asserts on absence, and an evaluator that quietly substituted the caller's own Organization would also return a non-empty, entirely wrong answer.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-2",
+      "description": "SEC-4 / CE-3. An organization_admin of an Organization with no live grant for a capability is REFUSED that capability, and the refusal is attributable to the missing grant rather than to the role. Membership does not imply entitlement.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-3",
+      "description": "SEC-3 / CE-3. A live grant for (OrgA, capability) gives a subject with no membership in OrgA zero ability to act in OrgA: no role, no membership, no tenant read. Entitlement does not imply authorization.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-4",
+      "description": "SEC-7 / CE-1. A subject scoped to OrgA reads zero rows of OrgB — including SENTINEL_SIBLING_ORG_CANARY_ROW — despite OrgA and OrgB being governed by the same CommercialAccount, and the shared account appears in no tenant RLS predicate. This is the control that falsifies the shared-governance-implies-shared-visibility misreading of CA-02.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-5",
+      "description": "SEC-10 / MUT-1 / CE-6. A Stripe webhook event cannot create or modify a membership or a role, cannot write an entitlement grant, and cannot write a runtime limit. Asserted as a privilege census on the webhook's database identity AND as a behavioural assertion that a subscription event moves commercial state while leaving every grant row and every effective limit unchanged. This is the direct reversal of the current prepared shape at db/prepared/stella_0008_stripe_webhook_identity.sql:781-793, which moves stella_monthly_quota and stella_plan_label in the same UPDATE as the Stripe identifiers.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-6",
+      "description": "MUT-2 / CE-3. A second live grant for the same (organization_id, capability_key) is REFUSED, including under concurrent insertion. Without this the evaluator's answer becomes dependent on row order.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-7",
+      "description": "MUT-3 / T-8 / CE-2. A transfer that would leave the receiving CommercialAccount holding the outgoing account's entitlements — by repointing commercial_account_id on live grant rows rather than closing them — is CAUGHT. Asserted by inspecting grant rows after transfer: any live grant whose basis is the receiving account must have an effective_from at or after the transfer instant.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-8",
+      "description": "MUT-4 / CE-3. A grant insert that omits an explicit metered semantic is REFUSED, not silently defaulted to unlimited. This is the control that keeps the Stella null-means-unlimited semantic capability-local instead of generalising it to every future capability — the generalisation the companion authority prohibits under USAGE_QUOTA_BOUNDARY.null_semantic_prohibition.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-9",
+      "description": "MUT-5 / CE-5. During the compatibility window, any writer to organizations.stella_monthly_quota or stella_plan_label other than the entitlement projection causes a detectable divergence between the effective limit and the live grant. Asserted BOTH behaviourally and by an exhaustive repository search that includes db/prepared/**, where two of the three currently-known writers live and where a search restricted to lib/ and app/ would find neither.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-10",
+      "description": "MUT-6 / T-11 / T-12 / CE-2. Two concurrent transfers of one Organization serialize: the second is REFUSED on the compare-and-set because its expected current account no longer matches, rather than overwriting the first. A transfer whose expected account still matches but whose target is the account already governing the Organization is refused with a DISTINCT code (T-13), so a no-op is never reported as a successful transfer.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-11",
+      "description": "MUT-7 / CE-7. An induced failure after the Organization insert and before the initial grant insert leaves NO Organization, NO membership, NO CommercialAccount and NO grant. A bootstrap that split the grant into a follow-up call would leave a founder with no entitlement and no verb able to repair it atomically.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-12",
+      "description": "MUT-8 / SEC-12 / CE-2. An UPDATE or DELETE reaching SENTINEL_CLOSED_HISTORY_ROW is REFUSED. Append-only is asserted at the storage boundary, not merely by the absence of such a statement in the verb's body.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-13",
+      "description": "SEC-11 / CE-8. A platform commercial operation inserts zero organization_members rows, leaves app.organization_id unset, and returns no tenant data. Platform authority is never exercised as tenant membership.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-14",
+      "description": "PI-6 / CE-6. SENTINEL_UNKNOWN_STRIPE_PRICE is REFUSED on the write path rather than resolved to the free tier. The free-tier fallback remains admissible for display only; using it as an input to any grant is the silent downgrade already documented at app/api/webhooks/stripe/route.ts:60-62.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-15",
+      "description": "PI-1 / payment_suspension_semantics / CE-5. SENTINEL_COMMERCIALLY_SUSPENDED_ACCOUNT has NOT changed Organization.status, has NOT deleted any membership row, and has NOT removed read access to historical evidence or reports. Any paid entitlement closure it caused is present as an explicit, audited grant row with a stated commercial reason — not as an unattributed change of an effective number.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-16",
+      "description": "ORGANIZATION_RELATION.ungoverned_state / CE-1. SENTINEL_UNGOVERNED_ORG, whose commercial_account_id is NULL, yields NO capability. NULL governance is not read as free, trial or unlimited. Asserted because an implementation that treats an absent account as a permissive default reintroduces CA-05's violation through the back door.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "M-1",
+      "description": "Guarantee: the recomposed Stripe apply verb writes no runtime limit. Mutation: re-add stella_monthly_quota = p_quota (and stella_plan_label = p_plan_label) to its UPDATE. Must be caught by N-5 — a billing event would move an effective limit with no grant row. This is the highest-value mutation control in the package because it is not hypothetical: it is the exact shape of the code that exists today at db/prepared/stella_0008_stripe_webhook_identity.sql:781-793.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-2",
+      "description": "Guarantee: exactly one live grant per (organization_id, capability_key). Mutation: drop the partial unique index WHERE effective_to IS NULL. Must be caught by N-6 — two concurrent grants both commit and the evaluator becomes order-dependent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-3",
+      "description": "Guarantee: a grant's commercial basis is closed by transfer, never repointed. Mutation: replace the transfer's grant-closing step with an UPDATE of commercial_account_id on live grant rows. Must be caught by N-7 — the receiving account silently inherits, violating T-8, and the pre-transfer entitlement state becomes unreconstructible.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-4",
+      "description": "Guarantee: limit_kind discriminates UNMETERED, BLOCKED and CAPPED. Mutation: remove limit_kind and infer 'unlimited' from limit_value IS NULL. Must be caught by N-8 — a grant created without an explicit limit becomes unlimited instead of failing closed, which is precisely the null-semantic generalisation the ratifications forbid.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-5",
+      "description": "Guarantee: the legacy quota column has exactly one writer during the compatibility window. Mutation: restore any second writer — a direct ORM update, the prepared admin verb's direct set, or the Stripe apply. Must be caught by N-9 — the effective limit and the live grant diverge with no audit row explaining why.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-6",
+      "description": "Guarantee: the transfer is a compare-and-set under a row lock. Mutation: remove the expected-current-account argument, or the row lock, or both. Must be caught by N-10 — two concurrent transfers both report success and the history relation records an impossible sequence.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-7",
+      "description": "Guarantee: the composed bootstrap is atomic over account, organization, membership and initial grant. Mutation: split the initial grant out into a follow-up call. Must be caught by N-11 — a failure between the two calls leaves an Organization with a founder and no entitlement.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-8",
+      "description": "Guarantee: transfer history rows are append-only. Mutation: permit UPDATE of a closed row or DELETE of any row. Must be caught by N-12 — a past association becomes rewritable and CA-06's reconstructibility requirement silently fails while every other assertion still passes.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-9",
+      "description": "Guarantee: db/prepared/stella_0013_grounded_query_quota.sql:88 aborts application when organizations.stella_monthly_quota is absent. Mutation: delete that RAISE EXCEPTION so the column becomes droppable. PROHIBITED OUTRIGHT by RETIREMENT_LAST_RULE.prohibited_shortcuts; recorded here as a mutation control because it is the most plausible 'helpful' edit an implementer of CE-9 would reach for, and because it converts a fail-closed guard into a silent misconfiguration that no downstream assertion would notice.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-10",
+      "description": "Guarantee: no commercial identifier enters tenant scope. Mutation: add the governing commercial_account_id to the selected-organization carrier, the request principal, or an RLS predicate 'for convenience'. Must be caught by N-4 — the shared account becomes a term that can widen a tenant read. Recorded because db/identity-context.ts:180 is the single line at which this mutation would be written, and the companion authority lists that file as a shared writer this package intends NOT to edit.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}

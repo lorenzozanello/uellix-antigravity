@@ -1,0 +1,466 @@
+{
+  "package_id": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT",
+  "version": "1.0.4",
+  "artifact_id": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4",
+  "authority_class": "EXECUTION_SCOPE_AUTHORITY_AMENDMENT_INSTRUCTION_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-24",
+  "hpo_mission_id": "MULTIORG-S3-REQUEST-PRINCIPAL-EXECUTION-AUTHORITY-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-07",
+
+  "amends": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json",
+  "refines": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json",
+  "supersedes": null,
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json",
+  "node_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+  "node_test_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+
+  "APPEND_ONLY_DISCIPLINE": {
+    "binding": "This amendment AMENDS the v1.0.0 base authority and REFINES v1.0.3. It NEVER EDITS v1.0.1, v1.0.2 or v1.0.3, all of which remain byte-unchanged on disk and fully in force.",
+    "naming_derivation": "The predecessor is MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json, the highest present in docs/ops/tenancy/ at INTEGRATION_SHA. The append-only successor filename is the same stem at v1.0.4. Confirmed FREE: `git grep 'AMENDMENT_v1.0.4'` returns EMPTY across the entire tracked tree - not one textual hit anywhere, let alone an allocation.",
+    "what_this_amendment_ADDS": "It OPENS the S3 lane, which no prior amendment in this stem has done. v1.0.1 and v1.0.2 governed S1 and S2; v1.0.3 added exactly one S1 path and revised one S1 exit criterion. This amendment adds an entirely NEW LANE and touches neither the S1 nor the S2 ceiling.",
+    "what_it_REMOVES": "NOTHING. Every path, grant, prohibition, disposition and semantic that v1.0.1, v1.0.2 and v1.0.3 froze REMAINS IN FORCE, with ONE fully adjudicated and explicitly named exception: assertion NS2-4, whose retirement is governed by INERTNESS_RETIREMENT below and is a REPLACEMENT, never a deletion.",
+    "no_silent_reinterpretation": "Where this amendment is silent, v1.0.3 governs; where v1.0.3 is silent, v1.0.2 governs; then v1.0.1, then v1.0.0. Silence here is never a repeal, never a relaxation and never an invitation to infer a broader grant."
+  },
+
+  "purpose": "Open and freeze the S3 execution ceiling for the canonical node 'Selected-organization request principal': its twelve unprotected paths, its request-principal contract, its principal shape, its selector decircularisation rule, its S2 inertness-retirement rule, its security invariants, its test contract, its real-PostgreSQL contract and its deferred audit-verb disposition - with no migration, no schema change, no protected grant and no Controller edit.",
+
+  "scope_note": "AUTHORITY ONLY. This mission writes exactly TWO new tracked files - this amendment and its companion ODS addendum v1.0.23 - and edits NOTHING. No implementation and no test implementation occurs in this lane.",
+
+  "anchors": {
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-s3-request-principal-authority",
+    "branch": "codex/multiorg-s3-request-principal-authority-r1",
+    "LANE_START_HEAD": "88afdb90e34b3eca66c51d148cd8e9307f1e10a2",
+    "LANE_START_TREE": "f3202e6a153d8f1ca17a2a628e47ea9f89cb6410",
+    "INTEGRATION_SHA": "6a8b22dd35175202c006f9a9270fd3f46f1a1ef5",
+    "INTEGRATION_TREE": "f177548786a4abd61c8f43d0898cde9553f07f3b",
+    "integration_branch": "integration/commercial-v1",
+    "intervening_delta": "PR #90 (S1 founder traceability) merged DURING this lane, advancing integration from 88afdb90 to 6a8b22dd. Classified NON_MATERIAL by explicit set comparison - see the companion addendum INTEGRATION_DRIFT_FINAL. The branch held zero commits of its own and was fast-forwarded.",
+    "measurement_discipline": "Every fact was re-measured at INTEGRATION_SHA by EXECUTING the repository's own code. Nothing was inherited from LANE CH, from v1.0.3, or from the mission brief without re-measurement."
+  },
+
+  "S1_LANE": {
+    "SEMANTIC_CHANGE": "NONE",
+    "PATH_CHANGE": "NONE",
+    "path_count": 17,
+    "statement": "This amendment makes NO S1 change of any kind. v1.0.3's S1_LANE, its 17-path ceiling, its CLASS_4_GENERATED_ARTEFACTS disposition, its generator/verifier contract and its FULL GREEN exit criterion all remain in force BYTE-UNCHANGED. S1 is now MERGED at 6a8b22dd.",
+    "protected_grants_carried_unchanged": "HPO-ODS-W2-20 (db/migrations/**) and HPO-ODS-W2-21 (db/prepared/journal/**) were REGISTERED by PR #90, taking PROTECTED_GRANTS from 10 rows to 12. That is PR #90's act, CARRIED UNCHANGED. This amendment neither widens nor re-scopes either pattern."
+  },
+
+  "S2_LANE": {
+    "SEMANTIC_CHANGE": "NONE_EXCEPT_THE_ADJUDICATED_NS2_4_RETIREMENT",
+    "PATH_CHANGE": "NONE",
+    "path_count": 8,
+    "statement": "This amendment adds no S2 path, removes none and reclassifies none. v1.0.2's S2_LANE remains in force. The ONE S2 semantic that S3 necessarily changes is assertion NS2-4, governed in full by INERTNESS_RETIREMENT below.",
+    "unprotected_paths_carried_unchanged": [
+      "lib/auth/selected-organization.ts",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "app/(authenticated)/app/organizations/select/page.tsx",
+      "tests/tenancy/s2-selected-org-carrier.test.ts",
+      "tests/auth/route-authorization-boundary.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+      "tests/database-entrypoint-inventory.json",
+      "tests/database-runtime-entrypoints.test.ts"
+    ],
+    "TWO_S2_PATHS_ARE_DELIBERATELY_NOT_IN_THE_S3_CEILING": {
+      "paths": ["tests/database-entrypoint-inventory.json", "tests/database-runtime-entrypoints.test.ts"],
+      "binding": "LOAD-BEARING, NOT AN OVERSIGHT. Both were inside the S2 ceiling and BOTH are OUTSIDE the S3 ceiling. S3 therefore has NO authorised way to absorb a governance-ledger move: any change that would force one fails closed at ods:scope rather than depending on a reviewer noticing. See SELECTOR_DECIRCULARISATION for the exact mechanism this closes.",
+      "consequence": "If S3 implementation discovers that either file mechanically must move, the correct action is STOP_FOR_AUTHORITY_DELTA."
+    },
+    "docs_ops_tenancy_S2_evidence_not_in_S3_ceiling": "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json is S2's closure evidence and stays OUTSIDE the S3 ceiling. S3 writes its OWN evidence artefact at MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json and MUST NOT retro-edit S2's."
+  },
+
+  "S3_LANE": {
+    "node": "S3 - Selected-organization request principal (canonical)",
+    "canonical_title": "Selected-organization request principal",
+    "implementation_branch_expected": "a codex/multiorg-s3-* branch off integration/commercial-v1",
+    "delivers_exactly": ["REQUEST_PRINCIPAL", "REQUEST_REVALIDATION", "ROLE_CEILING"],
+    "resolves": ["C-2"],
+    "supersedes": ["SI-2"],
+    "depends_on": ["S2"],
+    "EXPLICITLY_EXCLUDED": ["S3c", "S4", "S5", "S6", "S7", "S8"],
+
+    "path_count": 12,
+    "protected_paths": [],
+    "protected_path_count": 0,
+    "PROTECTED_GRANT_REQUIRED": false,
+    "protected_grant": null,
+
+    "unprotected_paths": [
+      "lib/auth/database-context.ts",
+      "lib/auth/session.ts",
+      "lib/auth/selected-organization.ts",
+      "app/(authenticated)/app/organizations/select/page.tsx",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "db/identity-context.ts",
+      "tests/tenancy/s3-request-principal.test.ts",
+      "tests/tenancy/s2-selected-org-carrier.test.ts",
+      "tests/authenticated-database-context.test.ts",
+      "tests/auth/session.test.ts",
+      "tests/auth/route-authorization-boundary.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+
+    "path_count_derivation": "0 protected patterns + 12 unprotected LITERAL paths = 12. No wildcard is introduced anywhere in the S3 ceiling; every entry is an exact path. Distinctness verified as a SET: 12 entries, set size 12.",
+
+    "ceiling_semantics": "A CEILING resolved by ods:scope against the lane's own --allow list, NEVER a mandate. A lane MAY change a SUBSET. A path outside the list fails closed. Being changed is never itself permission.",
+
+    "PER_PATH_DISPOSITION": {
+      "lib/auth/database-context.ts": "THE PRIMARY SITE. Hosts loadActiveMembershipWithinContext (declared :210) whose unqualified .limit(1) is the SI-2 defect S3 supersedes, and readPrincipalUnderOpenContext (:280) which is its SINGLE call site in the whole repository - MEASURED: `git grep loadActiveMembershipWithinContext` returns exactly two code hits, the declaration and that one call, every other hit being prose in docs or a comment. That single call site is why S3's rework is bounded rather than sprawling.",
+      "lib/auth/session.ts": "A CONTEXT_MODULE. Re-exports and thin readers over the principal; a permitted host for the selectable-memberships enumerator (see SELECTOR_DECIRCULARISATION). getCurrentMembership and requireOrganizationAccess read the principal whose membership becomes selection-qualified.",
+      "lib/auth/selected-organization.ts": "The S2 carrier. Its INERTNESS_RULE header must be REWRITTEN to state the S3 consumption rule; it REMAINS A LEAF. Its cookie name, path, attributes and session-only lifetime are FROZEN by MO-04 and MUST NOT change.",
+      "app/(authenticated)/app/organizations/select/page.tsx": "The selector. Must enumerate SELECTABLE memberships rather than render the single pick-first membership, and must keep working with NO selection present.",
+      "app/(authenticated)/app/organizations/select/actions.ts": "The explicit selection act. Its membership proof must become selection-qualified rather than pick-first-then-compare.",
+      "db/identity-context.ts": "The mechanism. Receives a DIFFERENT organizationId; its existing current_user_org_ids() verification, its set_config transaction-locality and its super-admin re-check are UNCHANGED. Editing it to widen or remove any of those is a STOP.",
+      "tests/tenancy/s3-request-principal.test.ts": "NEW FILE. The S3 control host: S3-1..S3-8 and the mutation controls.",
+      "tests/tenancy/s2-selected-org-carrier.test.ts": "Existing S2 host. Where NS2-4 is RETIRED BY REPLACEMENT.",
+      "tests/authenticated-database-context.test.ts": "The EXISTING live-runtime PostgreSQL host. Where S3-PG-1..S3-PG-5 live.",
+      "tests/auth/session.test.ts": "Existing host for the session-layer readers whose semantics change.",
+      "tests/auth/route-authorization-boundary.test.ts": "Existing boundary host, already in the S2 ceiling; carries the route-level refusal boundary.",
+      "docs/ops/tenancy/MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json": "NEW FILE. S3's own closure evidence artefact."
+    },
+
+    "PATHS_DELIBERATELY_EXCLUDED": {
+      "binding": "Each path below is a plausible S3 writer and is NOT authorised. Touching one is a STOP.",
+      "lib/auth/permissions.ts": "Must NOT consume the carrier. Role input reaches it from the principal, never from the cookie.",
+      "lib/auth/roles.ts": "Must NOT consume the carrier.",
+      "any_new_lib_auth_module": "PROHIBITED outright - see SELECTOR_DECIRCULARISATION.",
+      "tests/database-runtime-entrypoints.test.ts": "OUTSIDE the ceiling. A forced edit here is STOP_FOR_AUTHORITY_DELTA.",
+      "tests/database-entrypoint-inventory.json": "OUTSIDE the ceiling. Same disposition.",
+      "scripts/ods-scope.ts": "OUTSIDE the ceiling. HPO-ODS-W2-24 must NOT be registered.",
+      "scripts/ods-controller.ts_and_its_spec": "OUTSIDE the ceiling. Controller34 is a separate mission.",
+      "db/migrations_and_db_prepared": "OUTSIDE the ceiling. S3_MIGRATION_REQUIRED is false.",
+      "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json": "OUTSIDE the ceiling. Bound by ID, never restated or forked."
+    },
+
+    "CLASSIFIER_EVIDENCE": "MACHINE-PROVEN by EXECUTING classifyPaths from scripts/ods-scope.ts against DEFAULT_PROTECTED_PATTERNS at INTEGRATION_SHA. All twelve land in `ok` with protectedViolations EMPTY, unauthorized EMPTY, grantAuthorized EMPTY and nonCanonicalProtectedPaths EMPTY. NON-VACUOUS: the same invocation, given a genuine db/migrations/0067_positive_control.sql WITH an ordinary --allow entry, still returned it as the SOLE protectedViolation; and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json was likewise refused, proving neither --allow nor directory membership can launder a protected path.",
+
+    "invocation": "pnpm ods:scope -- --base <INTEGRATION_SHA> --allow <each of the 12 paths above, exactly>. NO --protected-authority is required or permitted."
+  },
+
+  "REQUEST_PRINCIPAL_CONTRACT": {
+    "binding": "FROZEN. This is the semantic core of S3.",
+
+    "assertion_not_grant": "selectedOrganizationId is an ASSERTION from the carrier, NEVER an authorization grant. A cookie naming an organization the subject was removed from five minutes ago is perfectly authentic and must still be refused.",
+
+    "authoritative_rederivation": "The authoritative membership MUST be re-derived on EVERY REQUEST by the triple (userId, selectedOrganizationId, status='active'). Not once per session, not once per login, not from a durable cache.",
+
+    "refusal_codes": {
+      "no_selected_organization": "TENANCY_NO_ORGANIZATION_SELECTED",
+      "selected_organization_without_active_membership": "TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER"
+    },
+
+    "indistinguishability_requirement": "A DELETED or NONEXISTENT selected organization MUST be indistinguishable from NON-MEMBERSHIP at this boundary. Both yield TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER. Distinguishing them turns the boundary into an existence oracle for organization ids the subject has no right to probe.",
+
+    "NO_FALLBACK": {
+      "binding": "On refusal there is NO fallback of any kind. Each item below is independently prohibited.",
+      "prohibited_fallbacks": [
+        "the first membership",
+        "the only membership",
+        "the most recent membership",
+        "an organization inferred from the route",
+        "an organization inferred from the project or any other addressed resource"
+      ],
+      "single_membership_is_not_an_exception": "Even when the subject holds exactly ONE active membership, an absent or non-matching selection is a REFUSAL, not an inference. SESSION_SCOPE.no_selection_behavior already forbids that inference for the carrier WRITE; this extends the same rule to the principal READ."
+    },
+
+    "SUPERSEDES_PICK_FIRST": "The existing pick-first shape - `userId + status='active' + limit(1)` at lib/auth/database-context.ts loadActiveMembershipWithinContext - is SUPERSEDED. This is the SI-2 site.",
+
+    "PROHIBITED_IMPLEMENTATION_SHAPE": {
+      "shape": "Select one UNQUALIFIED membership with .limit(1), THEN compare the result against selectedOrganizationId.",
+      "why_it_is_prohibited": "It is observationally correct for a single-membership subject and CATASTROPHICALLY wrong the moment S7 lands: with two active memberships the unqualified limit(1) returns an ARBITRARY row, so a subject legitimately selecting organization B is refused whenever the database happens to return A. It converts a correct selection into a refusal non-deterministically, and it does so silently.",
+      "REQUIRED_SHAPE": "The selected organization MUST be part of the MEMBERSHIP PREDICATE ITSELF - a single qualified lookup on (user_id, organization_id, status='active'). organization_members_org_user_unique guarantees that predicate addresses at most one row.",
+      "control": "MS3-9 exists precisely to catch the prohibited shape, and is LOAD-BEARING."
+    }
+  },
+
+  "REQUEST_PRINCIPAL_SHAPE": {
+    "binding": "FROZEN. The conceptual principal, field by field.",
+    "user": "AUTHORITATIVE. From the verified auth subject and the readable public.users row, unchanged by S3.",
+    "selectedOrganizationId": "ASSERTION ONLY. Carries no authority of its own.",
+    "membership": "AUTHORITATIVE, derived from the SELECTED pair (userId, selectedOrganizationId, status='active').",
+    "organization": "DERIVED from the validated membership. Never read ahead of, or independently of, that validation.",
+    "role": "DERIVED SOLELY from the selected membership. There is no other role source.",
+    "isSuperAdmin": "AUTHORITATIVE, revalidated by the EXISTING mechanism - read from public.users under the subject's own claims and re-checked against public.current_user_is_super_admin() inside db/identity-context.ts. S3 does not widen, narrow or relocate this.",
+    "WHAT_THE_CARRIER_CAN_NEVER_ESTABLISH": [
+      "membership",
+      "role",
+      "permission",
+      "superadmin status",
+      "resource access"
+    ],
+    "carrier_shape_validation_is_not_authorization": "The UUID-shape check in lib/auth/selected-organization.ts rejects MALFORMED values. Passing it means the value is well-formed, never that it is permitted. Treating shape validation as an authorization step is the confused-deputy failure this clause exists to name."
+  },
+
+  "SELECTOR_DECIRCULARISATION": {
+    "the_circularity": "The organization-selection page CANNOT require the selected-org principal in order to let the user select an organization. After S3, getCurrentOrganizationContext() resolves through the SELECTED pair - so on the selector page, where no selection exists yet, it necessarily returns null. A selector that renders from the request principal would show 'you belong to no organization' to every user who has not yet selected one, and there would be no way to ever select.",
+    "resolution": "S3 MUST expose a SELECTABLE-MEMBERSHIPS ENUMERATOR that is SEPARATE from the request principal: it answers 'which organizations may this subject select', keyed on (userId, status='active') alone, and it performs NO selection and grants NO authority.",
+    "enumerator_is_not_a_principal": "BINDING. The enumerator returns CANDIDATES for an explicit human act. It must never be consumed to construct a principal, a role, an RLS predicate or a GUC, and it must never auto-select - not even when it returns exactly one row.",
+
+    "NO_NEW_LIB_AUTH_MODULE": {
+      "binding": "PROHIBITED. The enumerator MUST be hosted and exported from an EXISTING context module - `@/lib/auth/session` or `@/lib/auth/database-context`. Creating e.g. lib/auth/memberships.ts is a STOP.",
+      "MEASURED_MECHANISM": "MEASURED FROM THE SCANNER'S OWN CODE at INTEGRATION_SHA, not asserted. tests/database-runtime-entrypoints.test.ts:305 declares CONTEXT_MODULES = ['@/lib/auth/session', '@/lib/auth/database-context', '@/db/identity-context'], and databaseSymbols() SKIPS any import whose specifier is in that list ('Modules that are the ANSWER, not the risk'). The selector page currently passes the per-file assertion for a SUBTLE reason: requireAuth and getCurrentOrganizationContext are NOT in CONTEXT_OPENERS, so opensAContext(page.tsx) is FALSE - the page survives ONLY because both symbols arrive from @/lib/auth/session, which is skipped, leaving databaseSymbols EMPTY and usesDatabase() false.",
+      "WHAT_A_NEW_MODULE_WOULD_DO": "If the enumerator lived in lib/auth/memberships.ts, the page's import of it would NOT be skipped; that module reaches db/client.ts, so its exported symbol would enter databaseSymbols; the page's render region calls it, so usesDatabase() becomes TRUE; and because opensAContext(page.tsx) is FALSE, the per-file assertion FAILS. The only two remedies are to add the page to ALLOWLIST (moving the pinned magnitude allowlisted 16 -> 17) or to add the new module to CONTEXT_MODULES/contextModulePaths - and BOTH edit tests/database-runtime-entrypoints.test.ts, which is OUTSIDE the S3 ceiling. The AST layer forces the same conclusion through tests/database-entrypoint-inventory.json, also outside the ceiling.",
+      "therefore": "The prohibition is MECHANICALLY LOAD-BEARING, not stylistic: hosting the enumerator inside an existing CONTEXT_MODULE keeps the specifier skipped and moves NO ledger, which is exactly why the 12-path ceiling can promise GOVERNANCE_LEDGER_STABILITY.",
+      "honest_scope_of_the_measurement": "RECORDED FOR PRECISION. The pinned tuple's `inventoried` and `reaching` fields are app/-scoped (ENTRY_POINTS = walk(APP)), and the AST inventory holds ZERO lib/ rows, so a new lib/auth module would not by itself add an inventory ROW. The forced delta comes from the SELECTOR PAGE's classification flipping, not from the new module being counted - which is why `allowlisted` is the magnitude that would actually move. Stating the mechanism this precisely is what lets a future auditor falsify it."
+    },
+
+    "selector_must_work_with_no_selection": "The selector route must render correctly when the carrier is ABSENT, when it is MALFORMED, and when it names an organization the subject is no longer a member of. In all three cases it presents the selectable set and no error state that blocks selection."
+  },
+
+  "INERTNESS_RETIREMENT": {
+    "NS2_4_DISPOSITION": "RETIRED_BY_REPLACEMENT",
+    "binding": "NS2-4 is RETIRED BY REPLACEMENT, NEVER SILENTLY DELETED. Deleting the old inertness assertion without installing the replacement S3 assertion in the same change is a FAILURE, and MS3-10 exists to catch exactly that.",
+
+    "what_changes": "After S3, lib/auth/database-context.ts MUST consume the selected-org carrier. NS2-4's current form asserts that FIVE canonical surfaces - db/identity-context.ts, lib/auth/database-context.ts, lib/auth/session.ts, lib/auth/permissions.ts, lib/auth/roles.ts - neither import lib/auth/selected-organization nor reference the carrier cookie name. That assertion becomes false for database-context.ts BY DESIGN, and for session.ts only to the extent the enumerator/principal wiring requires.",
+
+    "what_MUST_STILL_HOLD": {
+      "binding": "The retirement is NARROW. These three surfaces MUST STILL NOT consume the carrier DIRECTLY.",
+      "surfaces": ["lib/auth/permissions.ts", "lib/auth/roles.ts", "db/identity-context.ts"],
+      "why_db_identity_context_stays_out": "It is the MECHANISM. It must receive an organization id that has ALREADY been validated by the principal layer; reading the cookie itself would let it construct its own claim and would bypass the very revalidation S3 exists to add."
+    },
+
+    "leaf_rule": "lib/auth/selected-organization.ts REMAINS A LEAF. It imports no authorization surface.",
+    "import_direction": {
+      "REQUIRED": "database-context -> selected-organization",
+      "PROHIBITED": "selected-organization -> database-context",
+      "why": "A cycle here would let the carrier module reach the principal it is an input to, and would make the leaf's 'this module consumes nothing' guarantee unenforceable."
+    },
+
+    "REPLACEMENT_ASSERTION_REQUIRED": "The S3 replacement MUST assert, at minimum: (a) the three surfaces above still do not import lib/auth/selected-organization nor reference the cookie-name literal; (b) lib/auth/selected-organization.ts imports no authorization surface, preserving the leaf and the import direction; (c) the carrier is consumed by database-context ONLY through the revalidating principal path, never as a direct authorization input. An S3 candidate in which NS2-4 is gone and no such assertion exists is a STOP.",
+    "header_must_be_rewritten_not_left_stale": "lib/auth/selected-organization.ts's module header currently states that wiring it into database-context 'performs S3 without S3's revalidation lineage and is exactly the failure tests/tenancy/s2-selected-org-carrier.test.ts exists to catch.' After S3 that sentence is FALSE. Leaving it in place would leave the repository asserting a prohibition it no longer enforces."
+  },
+
+  "SECURITY_INVARIANTS": {
+    "binding": "FROZEN AND ENFORCEABLE. Each invariant must be observable by at least one control in TEST_CONTRACT.",
+    "cookie_tampering": "A carrier edited to name another organization is well-formed and MUST still be refused. Shape validation is not authorization.",
+    "stale_or_revoked_membership": "Revocation is effective on the NEXT REQUEST, with no grace window. A membership revoked mid-session must not survive in any memo, cache or closure.",
+    "IDOR_cross_org_principal_mismatch": "A selected organization the subject is not an active member of can never become the request's organization context.",
+    "confused_deputy": "No server-side component may treat the carrier as having been validated by someone else. The revalidation is performed by the principal layer on every request, not assumed from the fact that a cookie exists.",
+    "superadmin_leakage": "Super-admin status is never derived from, widened by, or granted through the carrier. The existing double check - public.users under own claims, then current_user_is_super_admin() - is preserved unchanged.",
+    "role_escalation": "The role comes ONLY from the selected membership. No route, project, resource or carrier value may supply or raise it.",
+    "permission_cache_staleness": "Per-request memoisation is permitted; cross-request persistence of the membership proof is PROHIBITED. M-3 governs this.",
+    "request_context_bleed": "One request's principal must never be observable from another. AsyncLocalStorage isolation and SET LOCAL transaction-locality are PRESERVED; set_config's third argument stays true. M-2 governs the GUC locality.",
+    "server_side_cookie_trust": "No server component may trust the carrier's value for any decision other than 'which organization to attempt to revalidate'.",
+    "direct_db_bypass": "Direct database access without an identity context remains FAIL-CLOSED - as uellix_app a claimless query returns zero rows rather than erroring, so the fail-closed property must be preserved rather than assumed.",
+    "no_module_level_auth_state": "No module-level mutable auth state may be introduced. A module-scoped principal would leak across requests in a warm server process."
+  },
+
+  "TEST_CONTRACT": {
+    "binding_by_id_not_restatement": "The batch manifest docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json ALREADY governs S3 and is bound HERE BY ID. It is NOT restated, NOT forked and NOT superseded. Creating a competing S3-specific manifest is a STOP.",
+
+    "INHERITED_IDS": {
+      "P-4": "S3 / MO-03 + MO-05. The request principal resolves the membership by the (user, SELECTED organization) pair rather than pick-first.",
+      "P-5": "S3 / MO-06. The role used for every capability check is the role held in the SELECTED organization's membership. STRUCTURAL coverage only in S3 - see P5_COVERAGE.",
+      "N-1": "SC-1 / S3. A carrier naming an organization in which the subject holds no ACTIVE membership is REFUSED.",
+      "N-2": "SC-2 / S3. Membership revoked mid-session is refused on the NEXT request, with no grace window.",
+      "M-3": "Mutation: memoize the membership proof for the life of the session. Must be caught.",
+      "M-4": "Mutation: replace the TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER refusal with a fallback. Must be caught.",
+      "M-8": "Mutation: drop user_single_active_membership in any node earlier than S7. Must be caught. Inherited to PROTECT the S7 ordering that P5_COVERAGE depends on."
+    },
+
+    "ADDED_S3_CONTROLS": {
+      "S3-1": "The membership is resolved by a SINGLE QUALIFIED predicate on (user_id, selected organization_id, status='active') - the selected organization is part of the predicate, not a post-filter.",
+      "S3-2": "No selected organization yields TENANCY_NO_ORGANIZATION_SELECTED, and no principal with an organization is constructed.",
+      "S3-3": "A selected organization with no active membership yields TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER.",
+      "S3-4": "A DELETED or NONEXISTENT selected organization is INDISTINGUISHABLE from non-membership at this boundary - same code, same shape, no existence oracle.",
+      "S3-5": "No fallback occurs on refusal, INCLUDING when the subject holds exactly one active membership.",
+      "S3-6": "The role on the resulting principal comes solely from the selected membership, and isSuperAdmin is unchanged in derivation.",
+      "S3-7": "The selectable-memberships enumerator is exported from an EXISTING context module (@/lib/auth/session or @/lib/auth/database-context); NO new lib/auth/* module exists. Asserted structurally.",
+      "S3-8": "The selector route renders and permits selection with the carrier ABSENT, MALFORMED, and naming a non-member organization."
+    },
+
+    "MUTATION_CONTROLS": {
+      "MS3-1": "Remove the selected-organization conjunct from the membership predicate. Expected: S3-1 and P-4 FAIL.",
+      "MS3-2": "Return the first active membership when the selected organization has none. Expected: S3-5, N-1 and M-4 FAIL.",
+      "MS3-3": "Cache the membership proof across requests. Expected: N-2 and M-3 FAIL.",
+      "MS3-4": "Distinguish 'organization does not exist' from 'not a member' by code or message. Expected: S3-4 FAILS.",
+      "MS3-5": "Derive the role from a route or resource parameter instead of the selected membership. Expected: S3-6 and P-5 FAIL.",
+      "MS3-6": "Grant super-admin from the carrier. Expected: S3-6 FAILS and the identity-context super-admin re-check refuses.",
+      "MS3-7": "Auto-select when the enumerator returns exactly one membership. Expected: S3-5 and S3-8 FAIL.",
+      "MS3-8": "Make set_config's third argument false so the GUC outlives the transaction. Expected: M-2 FAILS.",
+      "MS3-9": "LOAD-BEARING. KEEP the unqualified .limit(1) and filter the selected organization AFTERWARD. Expected: S3-1 FAILS. This mutation is observationally indistinguishable from correct behaviour for a single-membership subject, so a control that only exercises one membership CANNOT catch it - S3-1 must assert the PREDICATE SHAPE, not merely the returned row.",
+      "MS3-10": "LOAD-BEARING. DELETE assertion NS2-4 without installing the S3 replacement. Expected: the replacement's absence FAILS. A suite in which removing a control makes everything green is not a suite.",
+      "MS3-11": "Host the enumerator in a NEW lib/auth/* module. Expected: S3-7 FAILS. (Independently, the entrypoint gate would force an out-of-ceiling ledger edit - observing BOTH is the point.)",
+      "MS3-12": "Import lib/auth/database-context from lib/auth/selected-organization, inverting the import direction. Expected: the replacement leaf/direction assertion FAILS.",
+      "MS3-13": "Read the carrier directly inside db/identity-context.ts. Expected: the replacement assertion FAILS."
+    },
+
+    "NO_MUTATION_MAY_BE_DOCUMENTARY": "BINDING. Every mutation above MUST be applied by the future implementing mission to ACTUAL WORKING-TREE BYTES, observed to produce a NAMED failure, and then REVERTED. A mutation control that is merely described in prose proves nothing. The implementing mission MUST record, per mutation, the exact file and the exact failing test name.",
+    "mutation_harness_discipline": "Mutations MUST be applied in CHUNKS with pristine copies taken BEFORE each chunk, and each touched file MUST be verified byte-identical after revert - never by a grep of occurrence counts. A harness killed mid-control otherwise leaves a mutation on disk.",
+    "CRLF_HAZARD": "MEASURED REPOSITORY HAZARD. .gitattributes pins docs/** to LF, but other text files round-trip through core.autocrlf. A mutation that searches for an LF newline in a CRLF file is a SILENT NO-OP and would be recorded as 'control passed' when nothing was mutated. Every mutation must be verified to have actually changed the bytes before its expected failure is credited."
+  },
+
+  "REAL_PG_CONTRACT": {
+    "REAL_PG_REQUIRED": true,
+    "HOST": "tests/authenticated-database-context.test.ts",
+    "NEW_DISPOSABLE_S3_HARNESS": false,
+    "binding": "S3 uses the EXISTING live-runtime PostgreSQL host. Creating a disposable S3 PostgreSQL harness is a STOP - the two-tenant live-PG capability the S3 threat model needs already exists at that host, and a second harness would duplicate provisioning, double the flake surface and fork the fixture semantics.",
+    "controls": {
+      "S3-PG-1": "The membership resolved against a real cluster is the one belonging to the SELECTED organization - proven with the subject holding a membership and the selection naming it.",
+      "S3-PG-2": "A REVOKED selected membership is refused on the NEXT request against the real cluster, with no grace window and no surviving memo.",
+      "S3-PG-3": "A WRONG selected organization cannot become the database context: app.organization_id is never set to an organization the subject is not an active member of, and current_user_org_ids() refuses it at the identity probe.",
+      "S3-PG-4": "NO request-context bleed: two interleaved identity contexts do not observe each other's claims; SET LOCAL locality and AsyncLocalStorage isolation hold.",
+      "S3-PG-5": "Super-admin semantics are NOT WIDENED by S3: a super admin's reach is exactly what it was before, and the carrier neither grants nor extends it."
+    },
+    "flake_discipline": "A Windows spawn timeout MUST be proven CAUSALLY - by re-running with an increased timeout and measuring the spawn cost - never by relaxing an assertion. Changing an assertion to manufacture green is a STOP."
+  },
+
+  "P5_COVERAGE": {
+    "P5_BEHAVIOURAL_COVERAGE": "DEFERRED",
+    "P5_STRUCTURAL_COVERAGE": "DELIVERED_BY_S3",
+    "measured_reason": "user_single_active_membership - a UNIQUE partial index on organization_members(user_id) WHERE status='active', db/baseline/stella_g2_schema.sql:7071 - makes a second active membership IMPOSSIBLE. The discriminating fixture for a behavioural P-5 proof is therefore unconstructible, not merely unwritten.",
+    "declared_partial_not_unknown_and_not_pass_laundering": "S3 proves P-5 STRUCTURALLY now. The fully behavioural multi-membership proof belongs to the later governed node the canonical DAG already identifies - S7, which owns the DROP_LAST of that index and carries manifest control P-14. Manifest control M-8 protects the ordering meanwhile.",
+    "why_not_claimed_as_full": "Claiming full behavioural coverage would assert a proof whose fixture cannot exist and would make a later S7 regression invisible by having already 'passed'."
+  },
+
+  "GOVERNANCE_LEDGER_STABILITY": {
+    "expected_unchanged_by_S3": [
+      "database entrypoint inventory (tests/database-entrypoint-inventory.json - 143 checkedModules, 119 databaseReaching, 119 rows)",
+      "database runtime-entrypoint magnitude pins ({ inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 })",
+      "route carve-outs",
+      "baseline manifest",
+      "rehearsal digest (artifacts/baseline-rehearsal/latest.json)",
+      "PROTECTED_GRANTS (12 rows)",
+      "the Controller (scripts/ods-controller.ts, tests/ods/ods-controller.test.ts)"
+    ],
+    "if_one_must_move": "STOP_FOR_AUTHORITY_DELTA. Do NOT 'fix the ledger' automatically. A ledger that mechanically must move is evidence the ceiling was wrong, and the correct response is a successor authority, not a quiet edit."
+  },
+
+  "PARALLELISM": {
+    "S3_writer_set_INTERSECT_S1_writer_set": "EMPTY",
+    "how_measured": "`git diff --name-only 88afdb90 6a8b22dd` (the S1 delta, 97 paths) compared as a SET against the twelve S3 ceiling paths. No shared member in either direction. Near-misses were checked by EXACT PATH, not by directory: onboarding/actions.ts vs organizations/select/actions.ts, db/schema.ts vs db/identity-context.ts, s1-founder-traceability.test.ts vs s3-request-principal.test.ts, and MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE vs MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE.",
+    "PR90_disposition": "MERGED at 6a8b22dd during this lane. Classified NON_MATERIAL by the explicit comparison above, NOT inherited from v1.0.3's PR87 precedent and NOT assumed from the PR title.",
+    "no_lineage_collision_from_the_merge": "The 97-path delta contains NO docs/ops/ods/ path. ODS v1.0.23, tenancy v1.0.4 and HPO-ODS-W2-24 were RE-VERIFIED unallocated at 6a8b22dd, and the live Controller there still reports 33 with v1.0.22 final."
+  },
+
+  "CONTROLLER_SEQUENCING": {
+    "CONTROLLER34_REQUIRED": true,
+    "why": "This lane creates docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json, which the Controller's IMMUTABLE_BY_CONVENTION closed world must eventually enumerate, taking 33 -> 34.",
+    "what_controller34_blocks": "The NEXT LINEAGE ALLOCATION ONLY - any v1.0.24 or HPO-ODS-W2-25. It does NOT block the S3 implementation this pair grants, once this successor authority has been independently audited and integrated. Conflating the two would deadlock S3 behind a Controller maintenance with no bearing on it - the identical adjudication v1.0.2 made for Controller32 and v1.0.3 made for Controller33.",
+    "IMPLEMENTATION_BEFORE_CONTROLLER34_ALLOWED": true,
+    "no_controller_edit_in_this_lane": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts are NOT authorised paths for this lane and MUST NOT be touched here. Controller34 is a SEPARATE mission.",
+    "merge_of_this_pair_cannot_redden_CI": "MEASURED. tests/ods/ods-controller.test.ts:137 asserts IMMUTABLE_BY_CONVENTION does NOT contain v1.0.23. Creating the FILE does not touch the ARRAY, so that assertion still passes; and NO gate asserts enumeration COMPLETENESS against the docs/ops/ods/ directory listing.",
+    "no_preallocation": "Naming v1.0.24 or HPO-ODS-W2-25 above is a PROHIBITION, never an allocation. This amendment allocates NOTHING beyond tenancy v1.0.4 and HPO-ODS-W2-24."
+  },
+
+  "PROTECTED_GRANT_CARDINALITY": {
+    "NEW_PROTECTED_PATH_REQUIRED": false,
+    "PROTECTED_GRANT_REQUIRED": false,
+    "PROTECTED_GRANTS_CHANGED": false,
+    "PROTECTED_GRANTS_COUNT_BEFORE": 12,
+    "PROTECTED_GRANTS_COUNT_AFTER": 12,
+    "how_measured": "From the EXECUTED array's ROWS in scripts/ods-scope.ts at INTEGRATION_SHA - 12 rows, ids W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17, -20, -21 - never by grep, which returns 23 'authorityId' matches because the identifier also appears in the interface, in resolveProtectedGrant and in prose.",
+    "W2_24_MUST_NOT_BE_REGISTERED": "BINDING. HPO-ODS-W2-24 is this lineage act's GRANT_ID, NOT a protected-grant registry entry. S3 touches zero protected paths, so there is nothing a registry row could authorise. Adding it to scripts/ods-scope.ts is an unauthorised widening and a STOP. The count after S3 remains 12, never 13."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json",
+      "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json"
+    ],
+    "both_are_NEW_files": true,
+    "no_third_path": "EXACTLY TWO. This mission edits NOTHING - not the Controller, not ods-scope, not any test host, not any migration or journal artefact, not the KTC registry, not v1.0.1/v1.0.2/v1.0.3, and no S3 implementation path. A third changed path in this lane's diff is a STOP."
+  },
+
+  "CROSS_ARTIFACT_AGREEMENT": {
+    "binding": "This amendment and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json MUST agree EXACTLY on every field below. A disagreement is a STOP, never a choice.",
+    "agreed_fields": {
+      "GRANT_ID": "HPO-ODS-W2-24",
+      "ODS_VERSION": "1.0.23",
+      "TENANCY_AMENDMENT_VERSION": "1.0.4",
+      "INTEGRATION_SHA": "6a8b22dd35175202c006f9a9270fd3f46f1a1ef5",
+      "S3_CANONICAL_TITLE": "Selected-organization request principal",
+      "S3_PATH_COUNT": 12,
+      "S3_PROTECTED_PATH_COUNT": 0,
+      "PROTECTED_GRANT_REQUIRED": false,
+      "PROTECTED_GRANTS_CHANGED": false,
+      "PROTECTED_GRANTS_COUNT_BEFORE": 12,
+      "PROTECTED_GRANTS_COUNT_AFTER": 12,
+      "W2_24_REGISTERED_IN_ODS_SCOPE": false,
+      "S3_MIGRATION_REQUIRED": false,
+      "S3_DELIVERS": ["REQUEST_PRINCIPAL", "REQUEST_REVALIDATION", "ROLE_CEILING"],
+      "S3_RESOLVES": ["C-2"],
+      "S3_SUPERSEDES": ["SI-2"],
+      "S3_DEPENDS_ON": ["S2"],
+      "S3_EXCLUDES": ["S3c", "S4", "S5", "S6", "S7", "S8"],
+      "S3_AUDIT_VERB_DISPOSITION": "DEFERRED_TO_SEPARATE_GOVERNED_NODE",
+      "S3_AUDIT_VERBS_WAIVED": false,
+      "S3_AUDIT_VERBS_OPTIONAL": false,
+      "S3_AUDIT_VERBS_IMPLEMENTED_BY_S3": false,
+      "DEFERRED_VERB_COUNT": 2,
+      "NO_NEW_LIB_AUTH_MODULE": true,
+      "ENUMERATOR_HOST_ALLOWED": ["@/lib/auth/session", "@/lib/auth/database-context"],
+      "NS2_4_DISPOSITION": "RETIRED_BY_REPLACEMENT",
+      "INHERITED_TEST_IDS": ["P-4", "P-5", "N-1", "N-2", "M-3", "M-4", "M-8"],
+      "ADDED_S3_CONTROL_COUNT": 8,
+      "MUTATION_CONTROL_COUNT": 13,
+      "REAL_PG_REQUIRED": true,
+      "REAL_PG_HOST": "tests/authenticated-database-context.test.ts",
+      "NEW_DISPOSABLE_PG_HARNESS": false,
+      "REAL_PG_CONTROL_COUNT": 5,
+      "P5_BEHAVIOURAL_COVERAGE": "DEFERRED",
+      "CONTROLLER34_REQUIRED": true,
+      "IMPLEMENTATION_BEFORE_CONTROLLER34_ALLOWED": true,
+      "AUTHORIZED_CHANGED_PATH_COUNT_THIS_MISSION": 2
+    }
+  },
+
+  "AUDIT_VERB_DISPOSITION": {
+    "S3_AUDIT_VERB_DISPOSITION": "DEFERRED_TO_SEPARATE_GOVERNED_NODE",
+    "DEFERRED_VERBS": [
+      "tenancy.organization.selection_refused",
+      "tenancy.membership.revalidation_refused"
+    ],
+    "WAIVED": false,
+    "OPTIONAL": false,
+    "IMPLEMENTED_BY_S3": false,
+    "measured_reason": "The audit_logs INSERT policy requires organization membership or super-admin (db/baseline/stella_g2_schema.sql:8822), while these refusal events arise PRECISELY when membership is absent or revoked. The refusal and the un-writability share a single cause.",
+    "no_workaround": "S3 MUST NOT use service-role, RLS bypass, a new or altered policy, or SECURITY DEFINER to emit them. Each is a STOP.",
+    "successor": "Already compiled independently by LANE CK / CK-R2. This amendment neither absorbs it nor allocates lineage for it."
+  },
+
+  "risks_and_open_findings": {
+    "BLOCKING": [],
+    "UNKNOWN": [],
+    "DISCLOSED_NON_BLOCKING": [
+      {
+        "id": "R-1",
+        "finding": "P-5 behavioural coverage is unconstructible while user_single_active_membership stands.",
+        "disposition": "DECLARED PARTIAL COVERAGE, owed to S7 and protected by M-8. Not blocking."
+      },
+      {
+        "id": "R-2",
+        "finding": "The two refusal audit verbs are unwritable under the current audit_logs INSERT policy.",
+        "disposition": "DEFERRED per the binding F-1 disposition (a). Deferred, never waived. Not blocking."
+      },
+      {
+        "id": "R-3",
+        "finding": "S3 must retire NS2-4, currently the mandatory control of the S2 batch.",
+        "disposition": "RETIRED BY REPLACEMENT, with MS3-10 catching silent deletion. Not blocking."
+      },
+      {
+        "id": "R-4",
+        "finding": "The selector page relies on a non-obvious scanner property (CONTEXT_MODULES skipping) rather than on opening a context itself.",
+        "disposition": "MEASURED and recorded in SELECTOR_DECIRCULARISATION, including the honest scope of what would and would not move. It is the reason the no-new-module rule is binding. Not blocking; it is a constraint S3 must respect, not a defect S3 must fix."
+      }
+    ]
+  },
+
+  "CANDIDATE_SELF_CHECK": {
+    "SC-1_exactly_two_tracked_files": "The lane diff against INTEGRATION_SHA contains EXACTLY the two authority paths, both added. FAILS on a third path.",
+    "SC-2_no_implementation": "No lib/**, app/**, db/**, scripts/** or tests/** path appears in the diff. FAILS if any does.",
+    "SC-3_S3_ceiling_cardinality": "S3_LANE.unprotected_paths holds exactly 12 DISTINCT literal paths and protected_paths is EMPTY. FAILS on 11, 13, a duplicate, or any wildcard.",
+    "SC-4_no_protected_grant": "PROTECTED_GRANT_REQUIRED false, protected_grant null, and HPO-ODS-W2-24 absent from scripts/ods-scope.ts. FAILS otherwise.",
+    "SC-5_no_migration": "S3_MIGRATION_REQUIRED false and no db/migrations/** or db/prepared/** path anywhere in the diff. FAILS otherwise.",
+    "SC-6_audit_verbs_deferred_not_waived": "WAIVED false, OPTIONAL false, IMPLEMENTED_BY_S3 false, both verbs named. FAILS if any is true or a verb is missing.",
+    "SC-7_no_competing_manifest": "No new test-manifest artefact; the seven inherited ids are bound by reference. FAILS if a parallel S3 manifest appears.",
+    "SC-8_cross_artifact_agreement": "Every field in CROSS_ARTIFACT_AGREEMENT.agreed_fields is present in the companion addendum with an IDENTICAL value. FAILS on any disagreement.",
+    "SC-9_no_new_lineage_beyond_this_one": "Neither tenancy v1.0.5, ODS v1.0.24 nor HPO-ODS-W2-25 appears as an ALLOCATION; where named, it is inside a PROHIBITION clause. FAILS otherwise.",
+    "SC-10_NS2_4_replacement_declared": "INERTNESS_RETIREMENT declares RETIRED_BY_REPLACEMENT with an explicit REPLACEMENT_ASSERTION_REQUIRED and mutation control MS3-10. FAILS if retirement is declared without a replacement obligation.",
+    "SC-11_no_new_lib_auth_module": "NO_NEW_LIB_AUTH_MODULE is true, the permitted hosts are enumerated, and S3-7 plus MS3-11 enforce it. FAILS otherwise.",
+    "SC-12_predecessors_byte_unchanged": "v1.0.1, v1.0.2 and v1.0.3 are byte-unchanged in the diff. FAILS otherwise."
+  }
+}

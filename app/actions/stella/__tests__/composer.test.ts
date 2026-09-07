@@ -203,7 +203,10 @@ const MOCK_CONTEXT: StellaProjectContext = {
     version: 1,
   },
   reportSections: [],
-  readinessScore: 87,
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): readinessScore is REMOVED —
+  // no builder in lib/stella/context/** populates it any more. See the
+  // CL-1B-style test below proving the authorized-numeric set no longer
+  // admits a readiness figure.
   projectCreatedAt: '2026-01-01T00:00:00.000Z',
   lastUpdatedAt: '2026-06-01T00:00:00.000Z',
 }
@@ -360,6 +363,31 @@ describe('getStellaComposer server action', () => {
       mockAdapterParseResponse.mockResolvedValue({
         ...VALID_COMPOSER_OUTPUT,
         draft_content: 'Este proyecto generó un retorno social de 42.5x la inversión inicial.',
+      })
+
+      const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary', TICKET)
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('PARSE_ERROR')
+      const rejected = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.integrity_rejected')
+      expect(rejected).toBeDefined()
+      expect(rejected.afterJson.numericViolationCount).toBeGreaterThan(0)
+      errorSpy.mockRestore()
+    })
+
+    // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17) — NEG-17-2: the removed
+    // readinessScore never re-enters the composer's authorized-numeric set,
+    // even with a real calculationSnapshot present. A draft citing 87 (the
+    // legacy readinessScore fixture value, absent from every other
+    // authorized number here) fails closed exactly like any other
+    // unauthorized figure.
+    it('NEG-17-2: a draft citing a readiness-shaped number is rejected — the authorized-numeric set no longer admits readinessScore', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      setupSuccessfulCall()
+      mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
+      mockAdapterParseResponse.mockResolvedValue({
+        ...VALID_COMPOSER_OUTPUT,
+        draft_content: 'El proyecto alcanzó un puntaje de preparación de 87.',
       })
 
       const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary', TICKET)

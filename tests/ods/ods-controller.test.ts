@@ -9,6 +9,8 @@
 
 import { describe, it, expect } from 'vitest'
 import path from 'node:path'
+import fs from 'node:fs'
+import crypto from 'node:crypto'
 import {
   CONTROLLER_STATES,
   STOP_CLASSES,
@@ -88,14 +90,23 @@ describe('E7: closed-world stop taxonomy and state model', () => {
 // ---------------------------------------------------------------------------
 
 describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
-  it('is the exact 25-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14)', () => {
-    expect(IMMUTABLE_BY_CONVENTION.length).toBe(25)
-    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(25)
+  it('is the exact 34-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14 + v1.0.15 + v1.0.16 + v1.0.17 + v1.0.18 + v1.0.19 + v1.0.20 + v1.0.21 + v1.0.22 + v1.0.23)', () => {
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(34)
+    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(34)
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json')
   })
 
   it('excludes ODS_CARRY_FORWARD_BACKLOG.md by design (append-only working backlog)', () => {
@@ -111,14 +122,20 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     expect(IMMUTABLE_BY_CONVENTION.every((entry) => entry.startsWith('docs/ops/ods/'))).toBe(true)
   })
 
-  // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract): the closed
-  // world does not pre-include a later ODS successor artifact. This asserts
-  // ABSENCE only — it reserves no identifier and authorizes no future grant.
-  // per ods_lineage_serialization.no_future_ids_reserved, NEXT_ODS_LINEAGE is
-  // DERIVE_AT_MATERIALIZATION_TIME; the mechanically-next version number is
-  // used here purely as a negative-control literal, not an allocation.
+  // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract, carried
+  // forward by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json, v1.0.18.json,
+  // v1.0.19.json, v1.0.20.json, v1.0.21.json, v1.0.22.json and v1.0.23.json
+  // self_inclusion_rule / negative_control_note): the closed world does not
+  // pre-include a later ODS successor artifact. The control ADVANCES with
+  // the list — v1.0.23 is now enumerated (Controller34), so the absence
+  // assertion moves to the mechanically-next version. It asserts ABSENCE
+  // only: it reserves no identifier and authorizes no future grant. Per
+  // ods_lineage_serialization.no_future_ids_reserved, NEXT_ODS_LINEAGE is
+  // DERIVE_AT_MATERIALIZATION_TIME; the literal below is a negative-control
+  // literal, never an allocation. See ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json
+  // self_inclusion_rule.negative_control_note.
   it('does NOT pre-include the next unallocated ODS successor addendum (no automatic inclusion)', () => {
-    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json')
+    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.24.json')
   })
 
   it('normalizeRepoPath canonicalizes backslashes and redundant "." segments', () => {
@@ -193,6 +210,301 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
   })
 
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json self_inclusion_rule: the Controller
+  // must enumerate its own governing addendum. These controls prove the newly
+  // appended entry is actually wired into decideSelection, not merely present
+  // as a string — removing it from IMMUTABLE_BY_CONVENTION fails them
+  // independently of the length/Set assertions above.
+  it('a node targeting v1.0.15 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.15) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.15.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json self_inclusion_rule (HPO-ODS-W2-17,
+  // funded by W2_B5_AUTHORITY_v1.0.0.json): the Controller must enumerate its
+  // own governing addendum. These controls prove the newly appended entry is
+  // actually wired into decideSelection, not merely present as a string —
+  // removing it from IMMUTABLE_BY_CONVENTION fails them independently of the
+  // length/Set assertions above.
+  it('a node targeting v1.0.16 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.16) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.16.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json self_inclusion_rule (HPO-ODS-W2-18,
+  // funded by W2-B5 scope-gap authority successor R1): the Controller must
+  // enumerate its own governing addendum. These controls prove the newly
+  // appended entry is actually wired into decideSelection, not merely present
+  // as a string — removing it from IMMUTABLE_BY_CONVENTION fails them
+  // independently of the length/Set assertions above.
+  it('a node targeting v1.0.17 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.17) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.17.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json self_inclusion_rule (HPO-ODS-W2-19,
+  // funded by W2-B5 test-host successor authority R1): the Controller must
+  // enumerate its own governing addendum. These controls prove the newly
+  // appended entry is actually wired into decideSelection, not merely present
+  // as a string — removing it from IMMUTABLE_BY_CONVENTION fails them
+  // independently of the length/Set assertions above.
+  it('a node targeting v1.0.18 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.18) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.18.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json self_inclusion_rule (HPO-ODS-W2-20,
+  // funded by MULTIORG-S1-S2-FIRST-EXECUTION-AUTHORITY-R1): the Controller must
+  // enumerate its own governing addendum. These controls prove the newly
+  // appended entry is actually wired into decideSelection, not merely present
+  // as a string — removing it from IMMUTABLE_BY_CONVENTION fails them
+  // independently of the length/Set assertions above.
+  it('a node targeting v1.0.19 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.19) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.19.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json self_inclusion_rule (HPO-ODS-W2-21,
+  // funded by MULTIORG-S1-S2-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1): the
+  // Controller must enumerate its own governing addendum. These controls
+  // prove the newly appended entry is actually wired into decideSelection,
+  // not merely present as a string — removing it from IMMUTABLE_BY_CONVENTION
+  // fails them independently of the length/Set assertions above.
+  it('a node targeting v1.0.20 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.20) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.20.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json self_inclusion_rule (HPO-ODS-W2-22,
+  // funded by the combined multi-org S1/S2 successor authority materialization
+  // R1): the Controller must enumerate its own governing addendum. These
+  // controls prove the newly appended entry is actually wired into
+  // decideSelection, not merely present as a string — removing it from
+  // IMMUTABLE_BY_CONVENTION fails them independently of the length/Set
+  // assertions above.
+  it('a node targeting v1.0.21 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.21) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.21.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json self_inclusion_rule (HPO-ODS-W2-23,
+  // funded by S1-REHEARSAL-FRESHNESS-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1,
+  // controller_sequencing_rule.what_controller33_must_do): the Controller
+  // must enumerate its own governing addendum. These controls prove the
+  // newly appended entry is actually wired into decideSelection, not merely
+  // present as a string — removing it from IMMUTABLE_BY_CONVENTION fails
+  // them independently of the length/Set assertions above.
+  it('a node targeting v1.0.22 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.22) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.22.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json self_inclusion_rule (HPO-ODS-W2-24,
+  // funded by MULTIORG-S3-REQUEST-PRINCIPAL-EXECUTION-AUTHORITY-MATERIALIZATION-R1,
+  // controller_sequencing_rule.CONTROLLER34_REQUIRED): the Controller must
+  // enumerate its own governing addendum. These controls prove the newly
+  // appended entry is actually wired into decideSelection, not merely
+  // present as a string — removing it from IMMUTABLE_BY_CONVENTION fails
+  // them independently of the length/Set assertions above.
+  it('a node targeting v1.0.23 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.23) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.23.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // Duplicate control: the closed world is a SET as well as an ordered list.
+  // A second copy of the new entry would satisfy a naive toContain check and
+  // would still be caught here, and by length === Set size, before it could
+  // make the live count ambiguous as a successor precondition.
+  it('the new entry appears exactly once, and the list carries no duplicates at all', () => {
+    const occurrences = IMMUTABLE_BY_CONVENTION.filter(
+      (entry) => entry === 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json',
+    ).length
+    expect(occurrences).toBe(1)
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(new Set(IMMUTABLE_BY_CONVENTION).size)
+  })
+
+  // ---------------------------------------------------------------------
+  // ORDER PROOF (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json controller_sequencing_rule
+  // / self_inclusion_rule): an independently-typed literal of the pre-append
+  // 33-entry closed world (OLD33 — never derived from the live
+  // IMMUTABLE_BY_CONVENTION import, and never copied from the candidate diff
+  // that appends v1.0.23) is hashed with an ordered digest. A remove-only
+  // reconstruction of the live, post-append list (dropping exactly the new
+  // final element) must reproduce OLD33 element-by-element AND by that same
+  // ordered digest. This catches a reorder of any predecessor entry that a
+  // naive length/Set/toContain check would miss, because Set equality and
+  // length are order-blind.
+  // ---------------------------------------------------------------------
+  describe('ORDER PROOF: append-only reconstruction of OLD33', () => {
+    // Independently typed — copied once from the pre-v1.0.23 source (the
+    // START_HEAD state of scripts/ods-controller.ts, i.e. Controller 33), not
+    // imported or derived from the post-append candidate.
+    const OLD33: readonly string[] = [
+      'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
+      'docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json',
+      'docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json',
+      'docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.4.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.5.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.6.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.7.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.8.json',
+      'docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json',
+      'docs/ops/ods/ODS_CONTEXT_CHECKPOINT_STANDARD_v1.0.0.md',
+      'docs/ops/ods/UELLIX_DEV_OS_OPERATING_MODEL_v1.0.0.md',
+      'docs/ops/ods/UELLIX_DEV_OS_PROMPT_EXAMPLES_v1.0.0.md',
+      'docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json',
+      'docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json',
+      'docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.9.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json',
+    ]
+
+    // Independently computed and pinned as a literal. A mismatch here means
+    // either OLD33 above or the live pre-append 33 entries drifted — never
+    // silently accepted.
+    const OLD33_DIGEST_EXPECTED = 'a80ac4fe7a9537cf5a03955a829644f62ffd3300d4eef6b868434b08ae279056'
+
+    function orderedDigest(entries: readonly string[]): string {
+      return crypto.createHash('sha256').update(JSON.stringify(entries)).digest('hex')
+    }
+
+    it('OLD33 literal has length 33, no duplicates, and matches the pinned OLD33_DIGEST', () => {
+      expect(OLD33.length).toBe(33)
+      expect(new Set(OLD33).size).toBe(33)
+      expect(orderedDigest(OLD33)).toBe(OLD33_DIGEST_EXPECTED)
+    })
+
+    it('the live list is exactly OLD33 with v1.0.23 appended as the sole new final element', () => {
+      expect(IMMUTABLE_BY_CONVENTION.length).toBe(34)
+      expect(IMMUTABLE_BY_CONVENTION[33]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json')
+    })
+
+    it('REMOVE-ONLY RECONSTRUCTION: dropping the live list\'s last element reproduces OLD33 element-by-element, in order', () => {
+      const reconstructed = IMMUTABLE_BY_CONVENTION.slice(0, -1)
+      expect(reconstructed).toEqual(OLD33)
+      expect(reconstructed.length).toBe(OLD33.length)
+      for (let i = 0; i < OLD33.length; i++) {
+        expect(reconstructed[i]).toBe(OLD33[i])
+      }
+    })
+
+    it('REMOVE-ONLY RECONSTRUCTION: its ordered digest matches OLD33_DIGEST exactly (catches any predecessor reorder)', () => {
+      const reconstructed = IMMUTABLE_BY_CONVENTION.slice(0, -1)
+      expect(orderedDigest(reconstructed)).toBe(OLD33_DIGEST_EXPECTED)
+    })
+
+    // MUTATION CONTROL (M5 class, non-vacuous): proves the digest actually
+    // detects a predecessor reorder rather than only ever matching by
+    // construction. Swapping two adjacent OLD33 entries must change the
+    // digest even though length, Set size and membership are all unchanged.
+    it('MUTATION CONTROL: reordering two predecessor entries changes the ordered digest (order-blind checks would miss this)', () => {
+      const reordered = [...OLD33]
+      const tmp = reordered[0]
+      reordered[0] = reordered[1]
+      reordered[1] = tmp
+      expect(reordered.length).toBe(OLD33.length)
+      expect(new Set(reordered)).toEqual(new Set(OLD33))
+      expect(orderedDigest(reordered)).not.toBe(OLD33_DIGEST_EXPECTED)
+    })
+  })
+
   it('CTRL-M3: writePaths absent on an otherwise-executable node STOPs with AUTHORITY_GAP (unknown write surface, never implicitly safe)', () => {
     const unit = baseUnit({ writePaths: undefined })
     const decision = decideSelection(unit, 'OPEN', {}, {})
@@ -204,6 +516,68 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     const unit = baseUnit({ writePaths: [] })
     const decision = decideSelection(unit, 'OPEN', {}, {})
     expect(decision.selectable).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PACKAGE NON-VACUITY (CONTROLLER30-V1-0-19-IMPLEMENTATION-R1): a test-only
+// integrity control over the v1.0.19 package itself, layered on top of the
+// closed-world enumeration proven above. Enumeration alone proves the
+// STRING is present in IMMUTABLE_BY_CONVENTION; it proves nothing about the
+// FILE that string names. This control reads the real, integrated artifact
+// from disk and checks the load-bearing facts docs/ops/ods/
+// ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json itself declares — document
+// identity/version, the companion HPO grant HPO-ODS-W2-20, and the S1/S2
+// authority relationship (node_authority + companion_execution_scope_authority)
+// — never inventing a new authority contract, only verifying facts the
+// integrated, frozen artifact already asserts about itself.
+// ---------------------------------------------------------------------------
+
+describe('PACKAGE NON-VACUITY: v1.0.19 package identity', () => {
+  const V1_0_19_PATH = path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json')
+
+  function readV1_0_19(): Record<string, unknown> {
+    return JSON.parse(fs.readFileSync(V1_0_19_PATH, 'utf8')) as Record<string, unknown>
+  }
+
+  // The single deterministic identity check — load-bearing facts only,
+  // never re-deriving the addendum's full content or its S1/S2 grant body.
+  function isValidV1_0_19PackageIdentity(pkg: Record<string, unknown>): boolean {
+    return (
+      pkg.package_id === 'ODS_V1_MAINTENANCE_ADDENDUM' &&
+      pkg.version === '1.0.19' &&
+      pkg.artifact_id === 'ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19' &&
+      pkg.GRANT_ID === 'HPO-ODS-W2-20' &&
+      pkg.node_authority === 'docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json' &&
+      pkg.companion_execution_scope_authority === 'docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json'
+    )
+  }
+
+  it('POSITIVE: the real integrated artifact satisfies the identity control (not empty, not a wrong package)', () => {
+    const pkg = readV1_0_19()
+    expect(isValidV1_0_19PackageIdentity(pkg)).toBe(true)
+  })
+
+  it('an empty object is NOT a valid v1.0.19 package (proves the control is non-vacuous against a trivially wrong artifact)', () => {
+    expect(isValidV1_0_19PackageIdentity({})).toBe(false)
+  })
+
+  // M6 MUTATION CONTROL: mutate exactly one load-bearing fact, in a scratch
+  // in-memory copy only — the real file on disk is never written. Proves the
+  // integrity control actually discriminates the real package from a
+  // corrupted one, rather than only ever matching by construction.
+  it('M6 MUTATION CONTROL: corrupting GRANT_ID alone flips the control to false', () => {
+    const pkg = readV1_0_19()
+    const mutated = { ...pkg, GRANT_ID: 'HPO-ODS-W2-99' }
+    expect(isValidV1_0_19PackageIdentity(pkg)).toBe(true)
+    expect(isValidV1_0_19PackageIdentity(mutated)).toBe(false)
+  })
+
+  it('M6 MUTATION CONTROL: corrupting the S1/S2 companion_execution_scope_authority relationship alone flips the control to false', () => {
+    const pkg = readV1_0_19()
+    const mutated = { ...pkg, companion_execution_scope_authority: 'docs/ops/tenancy/WRONG_AUTHORITY_v1.0.0.json' }
+    expect(isValidV1_0_19PackageIdentity(pkg)).toBe(true)
+    expect(isValidV1_0_19PackageIdentity(mutated)).toBe(false)
   })
 })
 
@@ -513,10 +887,31 @@ describe('already-closed disposition', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Real repository proof: W2-B4 is not selectable while
-// P1A_FULL_BOOTSTRAP_CLOSED is unresolved — now a single deterministic
-// answer under CTRL-M1 (dependsOn UNKNOWN evidence and unresolved
-// externalPreconditions both map to UNKNOWN_EVIDENCE).
+// CTRL26-CLOSURE-TEST-R1 (binding coordinator ruling): W2-B4 closed on
+// 2026-09-04 (PR #62 merge 33c2347d81b16c9aafa5dad2db1647c0e4c3d684) — its own
+// authority/implementation/audit evidence is now mechanically CLOSED, not
+// UNKNOWN. The OLD assertion here (stopClass === 'UNKNOWN_EVIDENCE') tested a
+// premise that expired the moment B4 closed: decideSelection's
+// ownClosureStatus check runs FIRST and short-circuits to alreadyClosed=true
+// before dependsOn/externalPreconditions/dbWriting are ever consulted, so the
+// original rationale above ("dependsOn UNKNOWN evidence and unresolved
+// externalPreconditions both map to UNKNOWN_EVIDENCE") no longer describes
+// what this unit hits. UNKNOWN_EVIDENCE remains correct ONLY when the
+// required evidence/ref genuinely cannot be resolved — a materially
+// different condition, split into its own control below.
+//
+// Both controls are deterministic across checkout topology: neither depends
+// on whether the branch name "codex/w2-b4-r1" happens to be a locally known
+// git ref (true in a full checkout that fetched it; generally false in CI's
+// single-branch checkout, which is why the stale assertion above still
+// passed there — a checkout-topology accident, not a semantic proof).
+// CTRL-CLOSED-1 pins evidence to HEAD, which is trivially resolvable in any
+// checkout of this very branch, and the W2-B4 closure artifacts are
+// integrated into this branch's own ancestry. CTRL-UNKNOWN-1 pins evidence to
+// a ref that provably never exists, in any topology. Neither mocks a
+// condition the real selector cannot encounter — both run through the real
+// selectNode I/O path (evaluateEvidence + aggregateClosureStatus +
+// decideSelection), only the evidence ref differs.
 // ---------------------------------------------------------------------------
 
 describe('real registry: W2-B4 fail-closed selection', () => {
@@ -528,9 +923,34 @@ describe('real registry: W2-B4 fail-closed selection', () => {
     expect(unit?.dbWriting).toBe(true)
   })
 
-  it('selectNode STOPs W2-B4 fail-closed with UNKNOWN_EVIDENCE, deterministically', () => {
-    const decision = selectNode(REPO_ROOT, registry, 'W2-B4')
+  it('CTRL-CLOSED-1: with fully resolvable own evidence, selectNode short-circuits to alreadyClosed=true BEFORE dependsOn/externalPreconditions/dbWriting are ever consulted', () => {
+    // Same evidence type, path, field and closedValues the real registry
+    // declares for W2-B4 — only ref changes, from the branch name to HEAD, so
+    // resolution never depends on which branches this checkout fetched.
+    const realUnit = registry.units.find((u) => u.id === 'W2-B4') as ControllerUnit
+    const unit: ControllerUnit = {
+      ...realUnit,
+      authority: { ...realUnit.authority, ref: 'HEAD' },
+      implementation: { ...realUnit.implementation, ref: 'HEAD' },
+      audit: { ...realUnit.audit, ref: 'HEAD' },
+    }
+    const decision = selectNode(REPO_ROOT, { units: [unit] }, 'W2-B4')
     expect(decision.selectable).toBe(false)
+    expect(decision.alreadyClosed).toBe(true)
+    expect(decision.stopClass).toBeUndefined()
+  })
+
+  it('CTRL-UNKNOWN-1: with the required evidence/ref genuinely unresolvable, selectNode fails closed as UNKNOWN_EVIDENCE — never alreadyClosed', () => {
+    const realUnit = registry.units.find((u) => u.id === 'W2-B4') as ControllerUnit
+    const unresolvable: Evidence = {
+      type: 'paths-exist',
+      ref: 'refs/does-not-exist-xyz-w2-b4-closure-test',
+      paths: ['docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json'],
+    }
+    const unit: ControllerUnit = { ...realUnit, authority: unresolvable, implementation: unresolvable, audit: unresolvable }
+    const decision = selectNode(REPO_ROOT, { units: [unit] }, 'W2-B4')
+    expect(decision.selectable).toBe(false)
+    expect(decision.alreadyClosed).toBeUndefined()
     expect(decision.stopClass).toBe('UNKNOWN_EVIDENCE')
   })
 

@@ -16,11 +16,10 @@ import {
   sroiFilterSets,
   sroiCalculationRuns,
   sroiCalculationLineItems,
-  sroiRunReviews,
   sroiReports,
   sroiReportSections,
 } from '@/db/schema'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './sanitize'
 import { detectSensitivePopulations } from '../security/sensitive-populations'
@@ -345,19 +344,11 @@ export async function buildComposerContext(
     }
   }
 
-  // Readiness score from latest run review
-  const latestReview = await db
-    .select({ readinessScore: sroiRunReviews.readinessScore })
-    .from(sroiRunReviews)
-    .where(
-      and(
-        eq(sroiRunReviews.projectId, projectId),
-        eq(sroiRunReviews.organizationId, organizationId)
-      )
-    )
-    .orderBy(desc(sroiRunReviews.createdAt))
-    .limit(1)
-    .then((rows) => rows[0] ?? null)
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): the composer no longer reads
+  // sroi_run_reviews.readiness_score — that column is LEGACY_NON_AUTHORITATIVE
+  // (FIBDB-016 stage B). Canonical readiness is readiness_assessments; not
+  // repointed here (permitted, not required — B5 readiness_reader_contract).
+  // ABSENT is required over a legacy manual value.
 
   // Existing report sections — gives Composer awareness of what's already
   // drafted, to avoid duplicating content across sections.
@@ -399,7 +390,9 @@ export async function buildComposerContext(
     filterSetsSummary,
     calculationSnapshot,
     reportSections,
-    readinessScore: latestReview?.readinessScore ?? undefined,
+    // FIBIU-17 (W2-B5): no longer sourced from sroi_run_reviews — see the
+    // comment above. ABSENT, never a legacy value.
+    readinessScore: undefined,
     sensitivePopulations,
     projectCreatedAt: project.createdAt.toISOString(),
     lastUpdatedAt: project.updatedAt.toISOString(),

@@ -21,9 +21,8 @@ vi.mock('@/lib/audit/logger', async (importOriginal) => {
   return { ...actual, logAuditAction: vi.fn() }
 })
 
-import { runDeterministicCalc, parseNum, applyMaterialityExclusion, type EngineOptions } from '@/lib/pipeline/sroi-calculation'
+import { runDeterministicCalc, applyMaterialityExclusion, type EngineOptions } from '@/lib/pipeline/sroi-calculation'
 import { convertToUsd } from '@/lib/pipeline/fx-math'
-import { scenarioFilterPct } from '@/lib/pipeline/sroi-sensitivity'
 import { applyDecimalConfig } from '@/lib/pipeline/decimal-config'
 
 // ── Fixture builders (minimal shapes, cast to the engine's drizzle types) ────
@@ -140,17 +139,23 @@ describe('Golden: exact engine output strings', () => {
     expect(r.unattributedNsvUsd).toBe('150.0000')
   })
 
-  it('G4 sensitivity triple (uniform ±10pp via scenarioFilterPct)', () => {
-    const base = { deadweightPct: '20', attributionPct: '10', displacementPct: '0', dropoffPct: '5' }
+  it('G4 sensitivity triple (uniform ±10pp shift, inlined literals — FIBIU-18 supersedes scenarioFilterPct, expected outputs unchanged)', () => {
+    // Literals below are scenarioFilterPct(base, scenario, 10) inlined, base =
+    // { deadweightPct: 20, attributionPct: 10, displacementPct: 0, dropoffPct: 5 }:
+    //   base:         unchanged            -> 20, 10, 0, 5
+    //   conservative: +10pp, clamp 0..100  -> 30, 20, 10, 15
+    //   optimistic:   -10pp, clamp 0..100  -> 10, 0, 0, 0
+    const scenarioFilters: Record<'base' | 'conservative' | 'optimistic', { deadweightPct: string; attributionPct: string; displacementPct: string; dropoffPct: string }> = {
+      base: { deadweightPct: '20', attributionPct: '10', displacementPct: '0', dropoffPct: '5' },
+      conservative: { deadweightPct: '30', attributionPct: '20', displacementPct: '10', dropoffPct: '15' },
+      optimistic: { deadweightPct: '10', attributionPct: '0', displacementPct: '0', dropoffPct: '0' },
+    }
     const mk = (scenario: 'conservative' | 'base' | 'optimistic') =>
       run(
         [inv('1000')],
         [line({
           quantity: '10', proxyUsd: '100', durationYears: 3,
-          deadweightPct: String(scenarioFilterPct(parseNum(base.deadweightPct), scenario, 10)),
-          attributionPct: String(scenarioFilterPct(parseNum(base.attributionPct), scenario, 10)),
-          displacementPct: String(scenarioFilterPct(parseNum(base.displacementPct), scenario, 10)),
-          dropoffPct: String(scenarioFilterPct(parseNum(base.dropoffPct), scenario, 10)),
+          ...scenarioFilters[scenario],
         })],
       )
     expect(mk('base').sroiRatioExact).toBe('2.053800')

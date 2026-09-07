@@ -1,0 +1,321 @@
+{
+  "package_id": "W2_B5_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "W2_B5_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_BATCH_AUTHORITY",
+  "materialization_step": "HPO-ODS-W2-19",
+  "GRANT_ID": "HPO-ODS-W2-19",
+  "hpo_mission_id": "W2-B5-TEST-HOST-SUCCESSOR-AUTHORITY-R1",
+  "predecessor_hpo_mission_id": "W2-B5-CLOSURE-OBLIGATIONS-HPO-ADJUDICATION-R1",
+  "materialization_date": "2026-09-05",
+  "amends": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json",
+  "amendment_semantics": "APPEND-ONLY. docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json and docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json are BOTH left BYTE-UNCHANGED and both remain controlling. This artifact rewrites, deletes and reinterprets no clause of either. It EXTENDS the closed-world surface by exactly three additional exact literal paths, on top of the four v1.0.1 already added, and says per path exactly which clause of the frozen contract forces it and why.",
+  "predecessor_amendment": "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "test_manifest": "docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Close the LAST known W2-B5 closed-world authority gap, the one W2-B5-CLOSURE-OBLIGATIONS-HPO-ADJUDICATION-R1 classified as its single BLOCKING finding: two EXISTING product test hosts render the RunDetail page the frozen B5 contract commands FIBIU-17/FIBIU-18 to extend, and neither host is inside the B5 closed world, so no mission may wire them. It additionally carries ONE Wave2-only documentation rider for the stale role-contract sentence recorded as OPEN_FINDING_1 by both v1.0.1 and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json. It authorizes NO new FIBIU scope, NO migration, NO schema change, NO behavioral delta, NO production-semantics change and NO B5 semantic change of any kind.",
+
+  "scope_note": "This amendment adds THREE exact literal paths and NOTHING else. No wildcard. No directory. No 'related files'. No allowlist derived from a diff. The three paths are NOT interchangeable and carry TWO DIFFERENT authorized change classes, stated per path and separately controlled.",
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-w2-b5-test-host-successor-r1",
+    "branch": "codex/w2-b5-test-host-successor-r1",
+    "INTEGRATION_SHA": "d98cfb72d3e2e513a592be1183e6b9e5f638f2db",
+    "INTEGRATION_TREE": "82fe538678a86954eb9e9a37e0312d49497ca539",
+    "integration_branch": "integration/commercial-v1",
+    "start_head_equals_latest_remote_head": "MEASURED. `git fetch origin --prune` then `git rev-parse origin/integration/commercial-v1` returns d98cfb72d3e2e513a592be1183e6b9e5f638f2db, identical to this branch's START_HEAD and to `git merge-base HEAD origin/integration/commercial-v1`. This branch is not behind and carries no stale local ref.",
+    "main_frozen_sha": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "controller28_merge_sha": "a72994ec86f8348e6a5036c1a53cea137d17d7bf",
+    "controller_live_immutable_count_at_INTEGRATION_SHA": 28,
+    "protected_grants_count_at_INTEGRATION_SHA": 10,
+    "default_protected_patterns_count_at_INTEGRATION_SHA": 7,
+    "b5_candidate_branch": "codex/w2-b5-r1",
+    "b5_candidate_head": "b49eb50b4497e7f2f54c563563c19d552c215ac4",
+    "b5_candidate_base": "040efdfe965dddb663ae722d5b4b4da1a84294d9",
+    "b5_authority_status_measured": "CLOSED - docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json final_state is W2_B5_AUTHORITY_FROZEN_WAITING_FOR_IMPLEMENTATION and the authority lane is closed by W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json.",
+    "b5_implementation_status_measured": "OPEN - not merged into integration/commercial-v1 at INTEGRATION_SHA.",
+    "controller_status": "CLOSED_AUDITED_INTEGRATED. MEASURED at INTEGRATION_SHA by importing the live module: IMMUTABLE_BY_CONVENTION holds exactly 28 entries, contains docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json exactly once, contains no v1.0.18 entry and holds zero duplicates. scripts/ods-controller.ts is 386 lines."
+  },
+
+  "lineage_precondition_discharged": {
+    "BINDING": "This mission is the FIRST allowed to allocate v1.0.18 / HPO-ODS-W2-19, and it proves that mechanically rather than assuming it.",
+    "governing_clause": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json controller_sequencing_rule.enforcement: 'A mission that finds v1.0.17 unenumerated in the live Controller and attempts to allocate v1.0.18 or HPO-ODS-W2-19, or to declare W2-B5 closed, MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.'",
+    "measurement": "The enforcement trigger is the antecedent 'finds v1.0.17 unenumerated'. This mission finds v1.0.17 ENUMERATED. Measured by importing scripts/ods-controller.ts at INTEGRATION_SHA and evaluating the live array: length === 28, exactly one entry containing 'v1.0.17', zero entries containing 'v1.0.18', zero duplicates. The antecedent is FALSE, STOP_FOR_LINEAGE_SEQUENCING is NOT triggered, and the precondition is discharged by its own terms.",
+    "second_clause_not_yet_due": "The same rule also requires Controller 28 to close before FINAL W2-B5 closure. That clause is satisfied and is separately irrelevant here, because this mission does NOT declare W2-B5 closed. W2_B5_IMPLEMENTATION_STATUS remains OPEN.",
+    "one_hole_after_this_mission": "This mission opens EXACTLY ONE new ODS lineage hole - v1.0.18 unenumerated in the live Controller. The predecessor hole (v1.0.17) is CLOSED at INTEGRATION_SHA. No second concurrent hole exists, preserving the single-gap invariant every predecessor from v1.0.10 onward maintained."
+  },
+
+  "what_is_unchanged": {
+    "BINDING": "Everything in this block is a NON-CHANGE assertion. If any of it is false, this amendment is defective.",
+    "predecessor_authorities": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json and docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json are BYTE-UNCHANGED by this mission. Neither is edited, superseded, read down, or reinterpreted.",
+    "old_authority_disposition": "The four exact paths v1.0.1 authorized remain authorized, unchanged and unwidened. Their authorized_edit_scope, DEFECT_CLASS assignments and per-path prohibitions are untouched.",
+    "implementation_semantics": "UNCHANGED.",
+    "readiness_semantics": "UNCHANGED. No readiness criterion, band, model version or computation rule is added, removed or altered.",
+    "sensitivity_semantics": "UNCHANGED. No candidate registration rule, disposition requirement, scenario kind, envelope computation or materiality rule is added, removed or altered. No universal materiality threshold is introduced.",
+    "security_semantics": "UNCHANGED. The RunDetail page's FIBIU-17/18 reads remain FAIL-CLOSED and unguarded exactly as the candidate implements them under RD-BLK-1. This amendment authorizes TEST WIRING ONLY and explicitly does NOT authorize adding, relaxing or reintroducing a catch, fallback, synthesized-empty state or any other fail-open behavior at that boundary.",
+    "migrations": "UNCHANGED. No migration ordinal is allocated, renamed, reordered or edited.",
+    "schema": "UNCHANGED. db/schema.ts is not touched by this mission and no schema delta is authorized by it.",
+    "test_requirements": "docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json is BYTE-UNCHANGED. No control in it is added, removed, renumbered, softened or reassigned to a different host by this amendment.",
+    "protected_grant": "UNCHANGED. No protected grant is created, widened, reused or rebranched. scripts/ods-scope.ts is not touched and PROTECTED_GRANTS cardinality stays 10.",
+    "baseline_growth_contract": "UNCHANGED.",
+    "determinism_and_regression_sentinels": "UNCHANGED. In particular the W2-B4/W2-B5 governance sentinels read the FROZEN addendum artifacts, not the live Controller, and are unaffected by this mission.",
+    "explicitly_prohibited_list": "The explicitly_prohibited list of v1.0.0 is UNCHANGED as written. None of the three paths added here appears on it - see closed_world_path_correction.defect_class_A.prohibition_check, which is a MEASURED non-membership, not an assumption.",
+    "controller": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts are NOT changed by this mission."
+  },
+
+  "closed_world_path_correction": {
+    "clause_extended": "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json authorized_future_implementation_surface, as already extended by docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json amended_authorized_surface.",
+    "measurement_method": "Each path's absence from the effective surface is MEASURED with the REAL gate matcher - matchesAnyPattern imported from scripts/ods-scope.ts - against the composed surface v1.0.0-enumeration UNION v1.0.1-four-paths, never against a prose reading and never against a reimplementation. Measured at INTEGRATION_SHA: the v1.0.0 enumeration composes to 49 patterns, the union with v1.0.1 to 53, and all three paths below return matchesAnyPattern === false against BOTH. The gap is therefore real for all three and this amendment is non-vacuous for each of them independently.",
+    "nature_of_the_defect": "All three are DEFECT CLASS A - OMISSION. None of them is reached by any entry of v1.0.0 explicitly_prohibited. This amendment fills omissions; unlike v1.0.1 it narrows NO explicit prohibition, so it contains no defect class B and is a strictly lighter act than its predecessor.",
+
+    "defect_class_A": {
+      "name": "OMISSION_FROM_A_CLOSED_WORLD",
+      "definition": "A path that the frozen contract's own commands mechanically or governance-wise require to change, that is absent from the enumerated closed world, and that NO explicit prohibition in that contract reaches. The closed world is incomplete rather than restrictive.",
+      "paths": [
+        "tests/b3-completeness.ui.test.tsx",
+        "tests/run-detail-page.sufficiency-reachability.test.tsx",
+        "docs/20_STELLA_ROLE_CONTRACTS.md"
+      ],
+      "prohibition_check": "MEASURED NON-MEMBERSHIP, stated affirmatively because a reader cannot infer it. v1.0.0 explicitly_prohibited contains 42 entries. It DOES contain 'tests/integration/**', 'tests/ods/**', 'tests/database-target-safety.test.ts' and 'tests/database-entrypoint-safety.test.ts' - so tests/** is NOT blanket-prohibited, it is prohibited by enumerated exception, and neither of the two hosts added here is one of those exceptions. It DOES contain 'docs/ops/fib/**', 'docs/ops/pc01b/**', 'docs/ops/im01b/**', 'docs/ops/ods/**', 'docs/ops/p1a/**' and five named docs/ops/wave2 W2-B4 artifacts - every docs entry is under docs/ops/, and docs/20_STELLA_ROLE_CONTRACTS.md is a repository-root product document under none of them.",
+      "precedent": "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json defect_class_A, which filled the identical class of omission for two paths under exactly this per-path, no-wildcard form."
+    },
+
+    "no_defect_class_B_in_this_amendment": "AFFIRMATIVE AND DELIBERATE. v1.0.1 disclosed a defect class B - narrowing an EXPLICIT prohibition - as the heavier of its two acts, and asked an auditor to judge it separately. This amendment contains NO defect class B. If an auditor concludes that any of the three paths below IS reached by an explicit v1.0.0 prohibition, that is a defect in THIS amendment's measurement and the correct outcome is that the path loses authorization - never that a prohibition is read down after the fact.",
+
+    "prior_write_disclosure": "MEASURED. `git diff --name-only 040efdfe965dddb663ae722d5b4b4da1a84294d9 b49eb50` at INTEGRATION_SHA does NOT list tests/b3-completeness.ui.test.tsx, tests/run-detail-page.sufficiency-reachability.test.tsx or docs/20_STELLA_ROLE_CONTRACTS.md. No candidate branch has already written any of the three. This authorization is therefore forward-looking in the strict sense and cannot be, and is not, a retroactive allowlist for work already done - the exact failure class W2-B4's audit recorded as a vacuous ODS_SCOPE=PASS.",
+
+    "path_1": {
+      "PATH": "tests/b3-completeness.ui.test.tsx",
+      "DEFECT_CLASS": "A",
+      "AUTHORIZED": true,
+      "EXISTED_BEFORE_B5": "YES - MEASURED. `git cat-file -e 040efdfe965dddb663ae722d5b4b4da1a84294d9:tests/b3-completeness.ui.test.tsx` succeeds; the file was first added by commit 5273eb7 'feat(product): complete B3 methodology controls', two batches before B5.",
+      "DISPOSITION": "EXISTING PRODUCT TEST. Its adjustment is therefore reserved by ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces and requires an explicit ODS instruction, which docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json supplies.",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B5_CONTRACT": "YES",
+      "NECESSITY_CLASS": "GATE_FORCED",
+      "MECHANICAL_CAUSE": "UNMOCKED-SPECIFIER BREAK FROM A SURFACE v1.0.0 AUTHORIZES BY PATTERN. v1.0.0 authorized_future_implementation_surface.unprotected.product_surface_patterns authorizes 'app/app/projects/[projectId]/pipeline/calculation/**' for 'FIBIU-17 readiness display and manual-input removal; FIBIU-18 candidate/scenario/envelope UI and server actions'. The RunDetail page under that pattern gains SIX new module specifiers at candidate head b49eb50, MEASURED from its import block: '@/lib/pipeline/sroi-readiness', '@/lib/pipeline/sroi-sensitivity', '../computeReadinessAssessment.action', '../registerSensitivityCandidates.action', '../dispositionSensitivityCandidate.action' and '../recordSensitivityScenario.action'. This host imports that page at line 149 and renders it at line 252, and MEASURED by grep over its own vi.mock declarations it mocks NONE of those six. The four readiness/sensitivity reads are unguarded by deliberate design - the candidate's own RD-BLK-1 comment states 'No catch here: an authorization/RLS/unexpected failure must fail the whole page render' - so an unmocked read that throws propagates out of the render and fails the host rather than degrading silently. B5's exit gates include the test suite, so the batch cannot pass while this host is unwirable.",
+      "MEASURED_BASELINE": "This host PASSES at INTEGRATION_SHA today: `vitest run tests/b3-completeness.ui.test.tsx --no-file-parallelism` reports 11 passed (11). The host is healthy, so any break is attributable to the B5 delta and not to pre-existing rot.",
+      "measurement_honesty": "The runtime failure is DERIVED from the static specifier/mock gap plus the deliberate absence of a catch; it is NOT an executed measurement, because the B5 implementation is not merged and this mission is forbidden to run or modify it. This host additionally mocks '@/db/client' at line 124 with a chainable select stub, so its concrete failure mode may be a wrong-state render rather than a thrown error. The remediation mission MUST MEASURE the actual failure of this host against the merged B5 implementation BEFORE wiring it, and MUST wire only what the measured failure requires. An unmeasured 'wire everything that might break' change is STOP_FOR_AUTHORITY_DELTA.",
+      "AUTHORIZED_CHANGE_CLASS": "MOCK_OR_TEST_WIRING_ONLY",
+      "authorized_edit_scope": "Add or extend vi.mock / vi.hoisted declarations, mock return values and fixture data for the FIBIU-17/FIBIU-18 reads the already-authorized RunDetail implementation performs, so this host can render the page as it does today. Nothing else. The host's existing assertions, describe blocks, it() cases, expected values and role matrices are FROZEN.",
+      "explicitly_prohibited_within_this_path": [
+        "weakening, relaxing, broadening or deleting any existing expectation",
+        "deleting any existing it() or describe block",
+        ".skip, .todo, .concurrent.skip, .failing or any other de-activation of any control",
+        "reclassifying a test - moving it to another host, another suite, another config or an integration-only path",
+        "converting an exact assertion to a lower-bound, truthiness or snapshot form to obtain a PASS",
+        "changing production semantics from within the test, including mocking the FIBIU-17/18 reads in a way that asserts or depends on a fail-open behavior the implementation does not have",
+        "adding assertions that certify B5 behavior - B5's own controls live in docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json and its enumerated hosts, and this host must not silently become a second, unmanifested certifier"
+      ],
+      "BEHAVIORAL_SCOPE_DELTA": "NONE",
+      "behavioral_scope_delta_proof": "Mock wiring changes what a test double returns, never what the product does. The subject of this host is B3 methodology completeness; no assertion in it reads readiness or sensitivity, and none may be added. After the authorized wiring the host proves exactly what it proves today, against a page that now performs four additional reads.",
+      "why_v1_0_0_missed_it": "v1.0.0 enumerated existing_tests by walking the FIBIU-17/18 DECLARED reader and contract hosts - the sixteen lib/**, app/actions/** and tests/sroi-* hosts whose subject IS readiness or sensitivity. It did not enumerate hosts whose subject is something else entirely but which happen to RENDER the page being extended. That is an enumeration gap of exactly the kind v1.0.1 defect_class_A already recorded, one layer further out.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B5": "NO - removing it leaves an existing, healthy, passing product test unwirable against the implementation B5 commands, which either blocks the exit gate or invites the far worse repair of weakening or skipping the host.",
+      "REQUIRED_TEST_OR_GATE": "The B5 exit gate `pnpm test` (vitest run) must include this host and it must PASS with its existing assertion set intact. The remediation mission must additionally show the host's it() count and titles are unchanged.",
+      "protected": false,
+      "protected_note": "MEASURED: matchesAnyPattern('tests/b3-completeness.ui.test.tsx', DEFAULT_PROTECTED_PATTERNS) === false against the live seven-entry list. Needs an ordinary --allow only; no protected grant is created or required.",
+      "ods_instruction_reference": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json hpo_decision.FUNCTION_A_EXISTING_PRODUCT_TEST_DISCIPLINE.paths[0]"
+    },
+
+    "path_2": {
+      "PATH": "tests/run-detail-page.sufficiency-reachability.test.tsx",
+      "DEFECT_CLASS": "A",
+      "AUTHORIZED": true,
+      "EXISTED_BEFORE_B5": "YES - MEASURED. `git cat-file -e 040efdfe965dddb663ae722d5b4b4da1a84294d9:tests/run-detail-page.sufficiency-reachability.test.tsx` succeeds; first added by commit 5273eb7, the same B3 commit as path_1.",
+      "DISPOSITION": "EXISTING PRODUCT TEST. Same ODS reservation as path_1; same explicit instruction discharges it.",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B5_CONTRACT": "YES",
+      "NECESSITY_CLASS": "GATE_FORCED",
+      "MECHANICAL_CAUSE": "UNMOCKED-SPECIFIER BREAK, SAME MECHANISM AS path_1 AND STRICTLY MORE EXPOSED. This host imports RunDetailPage and renders it in every one of its five cases. MEASURED over its vi.mock declarations, it mocks '@/lib/auth/session', '@/components/calculation-results/CalculationResultsCard', '@/lib/pipeline/sroi-results', '@/lib/pipeline/sroi-calculation', '@/lib/pipeline/evidence-sufficiency' and the outcomes actions module - and NONE of the six new specifiers. Unlike path_1 it does NOT mock '@/db/client' at all, so the unmocked '@/lib/pipeline/sroi-readiness' and '@/lib/pipeline/sroi-sensitivity' modules execute their real database-backed implementations inside a jsdom unit context. Combined with the deliberately unguarded reads, the whole page render is expected to fail, taking all five cases with it.",
+      "MEASURED_BASELINE": "This host PASSES at INTEGRATION_SHA today: `vitest run tests/run-detail-page.sufficiency-reachability.test.tsx --no-file-parallelism` reports 5 passed (5).",
+      "measurement_honesty": "As for path_1, the runtime failure is DERIVED from static measurement, not executed against a merged implementation. The remediation mission MUST MEASURE it first and wire only the minimum the measured failure requires.",
+      "AUTHORIZED_CHANGE_CLASS": "MOCK_OR_TEST_WIRING_ONLY",
+      "authorized_edit_scope": "Identical in kind to path_1: add or extend vi.mock / vi.hoisted declarations, mock return values and fixture data for the FIBIU-17/FIBIU-18 reads the RunDetail page performs. Nothing else. This host's FIBIU-06 sufficiency-panel assertions - the affordance matrix by role, the per-run outcome deduplication, the server-fixed run identity control and the existing-determination case - are FROZEN and none may be added, removed, weakened or skipped.",
+      "explicitly_prohibited_within_this_path": [
+        "weakening, relaxing, broadening or deleting any existing expectation",
+        "deleting any existing it() or describe block",
+        ".skip, .todo, .concurrent.skip, .failing or any other de-activation of any control",
+        "reclassifying a test - moving it to another host, another suite, another config or an integration-only path",
+        "converting an exact assertion to a lower-bound, truthiness or snapshot form to obtain a PASS",
+        "changing production semantics from within the test, including mocking the FIBIU-17/18 reads in a way that asserts or depends on a fail-open behavior the implementation does not have",
+        "weakening the run-identity control - the assertion that no input[name=calculationRunId] or input[name=runId] exists is a security-relevant control and is FROZEN",
+        "adding assertions that certify B5 behavior, for the same reason as path_1"
+      ],
+      "BEHAVIORAL_SCOPE_DELTA": "NONE",
+      "behavioral_scope_delta_proof": "The subject of this host is the FIBIU-06 evidence-sufficiency panel's reachability through the real route/component tree. Readiness and sensitivity are not read by any assertion in it and none may be added. Wiring their reads to test doubles changes no expected value in the file.",
+      "why_v1_0_0_missed_it": "Same enumeration gap as path_1: v1.0.0 walked the declared FIBIU-17/18 reader and contract hosts, not the hosts of OTHER FIBIUs that render the same page. FIBIU-06's reachability host is a B1-era artifact whose subject has no textual overlap with readiness or sensitivity, so no keyword-driven sweep of the B5 contract would surface it.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B5": "NO - identical reasoning to path_1, and more acute because this host has no db/client stub to absorb the unmocked reads.",
+      "REQUIRED_TEST_OR_GATE": "The B5 exit gate `pnpm test` must include this host and it must PASS with all five existing cases intact and unrenamed.",
+      "protected": false,
+      "protected_note": "MEASURED: matchesAnyPattern('tests/run-detail-page.sufficiency-reachability.test.tsx', DEFAULT_PROTECTED_PATTERNS) === false. Ordinary --allow only.",
+      "ods_instruction_reference": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json hpo_decision.FUNCTION_A_EXISTING_PRODUCT_TEST_DISCIPLINE.paths[1]"
+    },
+
+    "path_3": {
+      "PATH": "docs/20_STELLA_ROLE_CONTRACTS.md",
+      "DEFECT_CLASS": "A",
+      "AUTHORIZED": true,
+      "EXISTED_BEFORE_B5": "YES - present at candidate base 040efdfe965dddb663ae722d5b4b4da1a84294d9, carrying the stale sentence at line 112.",
+      "DISPOSITION": "PRODUCT DOCUMENTATION. It is NOT a test, NOT code, and NOT an ODS-reserved surface. See ods_reservation_does_not_reach_this_path below - this distinction is the reason path_3 appears in the Wave2 grant and NOT in the ODS instruction.",
+      "MECHANICALLY_REQUIRED_BY_FROZEN_B5_CONTRACT": "NO",
+      "NECESSITY_CLASS": "GOVERNANCE_FORCED_NOT_GATE_FORCED",
+      "necessity_class_honesty": "STATED PLAINLY BECAUSE IT CHANGES WHAT AN AUDITOR SHOULD CHECK. Unlike path_1 and path_2, NO machine gate reads this file. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json risks_and_open_findings.OPEN_FINDING_1 says so verbatim: 'no gate reads that file'. Nothing breaks if it is left alone; typecheck, lint and the test suite all pass with the stale sentence in place. The necessity here is governance, not mechanics: the document would assert, as a current contract, that a field the same batch is commanded to delete is still an input to a live role. An auditor must judge this path on THAT ground and must not accept it on the strength of path_1 and path_2's mechanical proofs.",
+      "MECHANICAL_CAUSE": "STALE ASSERTION CREATED BY A CHANGE v1.0.0 COMMANDS BY NAME. v1.0.0 domain_contracts states verbatim: 'lib/stella/context/build-reviewer-context.ts - remove latestReadinessScore from ReviewerRunReviewSummary and its select' and 'lib/stella/prompts/reviewer-system.ts - remove both the runReviews.latestReadinessScore mapping and the projectAnalysisState.readinessScore line'. W2_B5_TEST_MANIFEST_v1.json control NEG-17-4 requires that 'ReviewerRunReviewSummary no longer exposes latestReadinessScore'. docs/20_STELLA_ROLE_CONTRACTS.md line 112, the audit_assistant role's Inputs row, documents runReviewSummary as carrying 'reviewCount, latestStatus, latestReadinessScore, latestReviewedAt from sroi_run_reviews'. Once the commanded removal lands, that row documents a field the type no longer has, in the section that defines what the role is contractually given.",
+      "why_it_matters_despite_no_gate": "This document is the human-facing contract for the six Stella roles and is cited as such by its own header. A role-contract document that lists a non-existent input is worse than an undocumented one: a reader, a reviewer or a future authority author can rely on it, and this program's recorded failure mode is a later mission reading a stale statement as current authority. The finding has now been carried unresolved across TWO governed artifacts - v1.0.1 risks_and_open_findings.OPEN_FINDING_1 and v1.0.17 risks_and_open_findings.OPEN_FINDING_1 - each explicitly deferring it 'for the B5 closure audit to dispose of'. This amendment is that disposal.",
+      "AUTHORIZED_CHANGE_CLASS": "DOCUMENTATION_ALIGNMENT_ONLY",
+      "authorized_edit_scope": "Remove or correct the stale reviewer-input documentation of latestReadinessScore so the document matches B5's already-authorized removal - that is, edit the audit_assistant Inputs row at line 112 to stop listing latestReadinessScore, optionally with a short clause naming FIBIU-17 as the reason. Nothing else in the file may change.",
+      "explicitly_prohibited_within_this_path": [
+        "any NEW Stella doctrine, principle, invariant, cross-role rule or role definition",
+        "any change to the cross-role invariants in section 0, including the human-review and numeric-prohibition clauses",
+        "any change to any OTHER role's Inputs, Flag, Purpose or Invariants rows",
+        "any change to the section 7 versioning policy",
+        "any change to the companion-tests header",
+        "restating, summarizing or duplicating FIB, PC-01B, IM-01B or HPO authority into this document",
+        "using this grant to bring any other documentation file into the B5 closed world"
+      ],
+      "BEHAVIORAL_SCOPE_DELTA": "NONE",
+      "behavioral_scope_delta_proof": "The file is Markdown. It is imported by no module, read by no gate, and parsed by no test. Editing it changes no runtime behavior, no type, no schema and no gate outcome. The edit removes a description of a field the batch is separately commanded to delete; it grants no new capability and documents no new one.",
+      "ods_reservation_does_not_reach_this_path": "MEASURED, and load-bearing for the split between the two instruments. ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces holds eleven entries. Nine are path patterns - docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, lib/**, app/**, components/** - and matchesAnyPattern('docs/20_STELLA_ROLE_CONTRACTS.md', those nine) === false, measured with the real gate matcher. The tenth is the prose reservation over 'existing product tests', and this file is not a test: it is Markdown, it is executed by no runner, and it is not named by any test manifest. The eleventh is 'historical evidence rewriting', and this file is a live current-state contract document, not an evidence, audit, certification or checkpoint record - it is under docs/ rather than docs/ops/, it certifies nothing, and correcting a statement about the CURRENT system is the opposite of rewriting a historical record. NO ODS reservation reaches it. It therefore requires a Wave2 closed-world grant ONLY, and including it in the ODS product-test instruction would be an unnecessary and misleading widening of that instruction.",
+      "why_v1_0_0_missed_it": "v1.0.0's closed world enumerates code, schema, migrations, tests and governance artifacts. Root-level product documentation is not a category it enumerates at all, so the omission is categorical rather than an oversight within a category.",
+      "CAN_BE_REMOVED_WITHOUT_WEAKENING_B5": "YES, MECHANICALLY - and that is stated honestly rather than hidden. Dropping path_3 breaks no gate and blocks no exit criterion. What it costs is the disposal of a finding two governed artifacts have already deferred once each, leaving the role-contract document asserting a removed field. An auditor who rejects path_3 should say so and the correct outcome is that path_3 alone loses authorization and OPEN_FINDING_1 is carried forward a third time - not that path_1 and path_2 are affected.",
+      "REQUIRED_TEST_OR_GATE": "NONE MECHANICAL, stated affirmatively. The verification is a reviewer check that the file contains no remaining assertion that latestReadinessScore is a reviewer input, and that its diff touches only the audit_assistant Inputs row.",
+      "protected": false,
+      "protected_note": "MEASURED: matchesAnyPattern('docs/20_STELLA_ROLE_CONTRACTS.md', DEFAULT_PROTECTED_PATTERNS) === false. DEFAULT_PROTECTED_PATTERNS covers exactly one docs/ops/ods file and three docs/ops/** trees; this path is under none.",
+      "ods_instruction_reference": "NONE - DELIBERATE. This path is authorized by this Wave2 amendment ALONE. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json does NOT list it, must not be read as listing it, and asserts its exclusion affirmatively."
+    }
+  },
+
+  "amended_authorized_surface": {
+    "BINDING": "The W2-B5 implementation and remediation missions' CLOSED WORLD is the UNION of W2_B5_AUTHORITY_v1.0.0.json authorized_future_implementation_surface, the four exact literal paths of W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json, and the three exact literal paths below. Nothing else.",
+    "additional_exact_paths": [
+      "tests/b3-completeness.ui.test.tsx",
+      "tests/run-detail-page.sufficiency-reachability.test.tsx",
+      "docs/20_STELLA_ROLE_CONTRACTS.md"
+    ],
+    "additional_exact_path_count": 3,
+    "cumulative_additional_exact_path_count": 7,
+    "closed_world": "STILL CLOSED. The three-way union is EXHAUSTIVE. A path in none of the three enumerations is NOT authorized, and its appearance in a diff is an UNEXPECTED_CHANGED_PATH STOP - never a retroactive scope inference from the fact that it changed.",
+    "no_wildcards": "NONE of the three entries contains '*' or '**'. Every entry is an exact literal path.",
+    "no_directories": "NONE of the three entries is a directory or a directory prefix. Authorizing tests/b3-completeness.ui.test.tsx does NOT authorize tests/ or any sibling in it. Authorizing tests/run-detail-page.sufficiency-reachability.test.tsx does NOT authorize any other tests/run-detail-page* file. Authorizing docs/20_STELLA_ROLE_CONTRACTS.md does NOT authorize docs/ or any other numbered document in it.",
+    "no_related_files": "The concept 'related files' has no authority here. Adjacency, sibling status, shared directory, shared import, shared fixture shape, shared subject matter and shared naming prefix confer NO authorization.",
+    "no_discovered_diff_allowlist": "An allowlist derived from what a candidate branch happened to change is PROHIBITED and cannot test a closed world. The remediation mission MUST invoke pnpm ods:scope with this enumeration, never with '--allow <every changed path>'.",
+    "case_sensitivity": "Authorization is bound to the CANONICAL spelling of each path exactly as written above. A path that matches only case-insensitively is NOT authorized, consistent with scripts/ods-scope.ts HPO-ODS-C4-CASE-01 semantics and with scripts/ods-controller.ts nonCanonicalPaths.",
+    "change_classes_are_not_interchangeable": "BINDING. MOCK_OR_TEST_WIRING_ONLY authorizes path_1 and path_2 and NOTHING about path_3. DOCUMENTATION_ALIGNMENT_ONLY authorizes path_3 and NOTHING about path_1 or path_2. A change of the wrong class on an authorized path is as unauthorized as a change to an unauthorized path."
+  },
+
+  "precedent_prohibition": {
+    "BINDING": "This amendment MUST NOT be cited to infer any future path.",
+    "rule": "The authorization of these three paths creates NO precedent for a fourth. It licenses no pattern, no directory, no family, no 'same kind of thing' and no analogical extension. An eighth mechanically or governance forced path - in any batch, in any lane, at any time - is a fresh STOP_FOR_AUTHORITY_DELTA requiring its own governed amendment with its own per-path necessity proof and, where ODS prohibited_surfaces is engaged, its own explicit ODS instruction.",
+    "specifically_prohibited_inferences": [
+      "that tests/** is now open, or that any test rendering a B5-touched page is automatically authorized",
+      "that any test host whose mocks desynchronise against an authorized implementation is automatically authorized",
+      "that tests/*.ui.test.tsx, tests/run-detail-page*, or any other naming family is now open",
+      "that docs/** is now open, or that any documentation file made stale by an authorized change is automatically authorized",
+      "that DOCUMENTATION_ALIGNMENT_ONLY is a general licence to edit documentation during an implementation mission",
+      "that MOCK_OR_TEST_WIRING_ONLY permits any change to an assertion, an it() case or a describe block",
+      "that a governance-forced path may be authorized without an explicit necessity statement distinguishing it from a gate-forced one",
+      "that a path is authorized because it is mechanically forced, without a governed authority object naming it",
+      "that 'it was already changed on a candidate branch' is ever a reason for authorization",
+      "that this amendment, by adding a second amendment to the same base authority, establishes that the B5 closed world may be extended routinely - two governed extensions with per-path proofs are two exceptions, not a process"
+    ],
+    "why_this_clause_exists": "The recurring failure mode in this program is not an implementer inventing scope - it is a later mission reading a narrow, well-justified exception as a general permission. W2-B4's audit recorded a vacuous ODS_SCOPE=PASS obtained from a diff-derived allowlist. This amendment is the SECOND extension of the same frozen closed world, which raises that risk rather than lowering it, so the clause is restated in a strengthened form and asserted by deterministic controls."
+  },
+
+  "test_and_mutation_contract": {
+    "host": "tests/ods/w2-b5-scope-amendment.test.ts",
+    "host_rationale": "EXTENDED, NOT REPLACED, and no new filename is invented. That file is the repository-native host for controls asserting properties of the W2-B5 closed-world amendments - its name is the amendment family, not a version - and it already composes the v1.0.0 enumeration and the v1.0.1 additions with the REAL gate matcher. The decisive reason is technical, not stylistic: the non-vacuity and closed-world controls for THESE three paths must be evaluated against the surface that ALREADY includes v1.0.1's four, so a separate host would have to duplicate v1EnumerationPatterns() and re-read the v1.0.1 artifact - reintroducing exactly the reimplementation drift that host's own header warns against. tests/ods/ is the repository-native home for controls over governance artifacts and is separately authorized for THIS authority mission by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json; v1.0.0 explicitly_prohibited reserves tests/ods/** against the IMPLEMENTATION mission, a correct rule that binds that mission and not this one.",
+    "host_edit_discipline": "STRICTLY ADDITIVE. Every existing line of the host is left byte-unchanged. The v1.0.1 constants EXPECTED_FOUR, ADDED, V1_PATTERNS and EFFECTIVE_PATTERNS are NOT redefined, NOT reassigned and NOT widened, so every v1.0.1 control continues to assert exactly what it asserted before. The v1.0.2 controls introduce their own constants and their own effective surface.",
+    "matcher_binding": "Controls use matchesAnyPattern and DEFAULT_PROTECTED_PATTERNS imported from scripts/ods-scope.ts so authorization is evaluated by the REAL gate matcher, never by a reimplementation that could drift from it.",
+    "positive_controls": [
+      "POS-AMD2-1: each of the three exact paths is a member of amended_authorized_surface.additional_exact_paths.",
+      "POS-AMD2-2: each of the three exact paths IS authorized under the EFFECTIVE surface (v1.0.0 enumeration UNION v1.0.1's four UNION these three).",
+      "POS-AMD2-3 (NON-VACUITY): each of the three exact paths is NOT authorized under v1.0.0 ALONE, and NOT authorized under v1.0.0 UNION v1.0.1 either. Both directions are asserted, because a path already covered by v1.0.1 would make this amendment vacuous for it and POS-AMD2-2 would prove nothing.",
+      "POS-AMD2-4: the composed predecessor surface is non-trivial - the v1.0.0 enumeration composes to at least 40 patterns and still authorizes its own known members - so POS-AMD2-3 cannot pass because the surface was accidentally emptied."
+    ],
+    "negative_controls": [
+      "NEG-AMD2-1: an adjacent third test is NOT authorized. Named explicitly for a sibling of each authorized path, including a same-prefix test host, so 'the test next to it' is proven unauthorized rather than merely unmentioned.",
+      "NEG-AMD2-2: a wildcard is NOT authorized - no entry contains '*' or '**', and tests/**, tests/*.test.tsx, docs/** and docs/*.md are proven non-members.",
+      "NEG-AMD2-3: a directory-prefix inference is REJECTED - tests/, tests/ods/ and docs/ are neither members nor authorized, and every entry carries a file extension and does not end in '/'.",
+      "NEG-AMD2-4: a production path is REJECTED - representative app/**, lib/** and db/migrations/** paths outside the frozen enumeration are proven unauthorized under the effective surface, so this amendment is shown not to have opened any production surface.",
+      "NEG-AMD2-5: the amendment grants NO protected surface - none of the three matches DEFAULT_PROTECTED_PATTERNS, the companion addendum declares no grant, and PROTECTED_GRANTS cardinality is unchanged at 10.",
+      "NEG-AMD2-6 (THE DOCS-RIDER SPLIT): docs/20_STELLA_ROLE_CONTRACTS.md is authorized by THIS Wave2 amendment and is NOT a member of the companion ODS addendum's product-test instruction. Asserted in both directions - present in the Wave2 list, absent from the ODS list - so the rider cannot be silently transformed into an ODS-protected product-test grant.",
+      "NEG-AMD2-7: the frozen predecessors are declared byte-unchanged, and the two authorized change classes are declared non-interchangeable."
+    ],
+    "mutation_controls": [
+      "MUT-AMD2-1: REMOVE either product-test path => that path becomes unauthorized under the effective surface, while the other two remain authorized. Asserted for each of the three independently, so no single path can silently drop out and the failure is precise rather than collateral.",
+      "MUT-AMD2-2: ADD an unrelated path => exact-membership and the closed-world count assertion fail.",
+      "MUT-AMD2-3: CASE-CORRUPT an exact path => the corrupted spelling is NOT authorized, proving authorization is bound to canonical casing. Asserted for all three paths.",
+      "MUT-AMD2-4: WIDEN a product-test path to its directory glob => an adjacent third test that must not be authorized becomes authorized, proving the exact-path form is load-bearing.",
+      "MUT-AMD2-5: MOVE the docs rider into the ODS instruction => the ODS path count and the exact-set equality against the two product-test paths both fail, proving NEG-AMD2-6 is enforced by cardinality and not only by absence."
+    ],
+    "closed_world_proof": "EXACT MEMBERSHIP, never a subset test: the additional path list is asserted to have length 3, to contain no duplicates, and to equal the expected three-element set exactly - in both directions. The ODS instruction list is asserted to have length 2 and to equal the two product-test paths exactly, in both directions.",
+    "gate_weakening_prohibited": "No control in this file may be skipped, softened or converted to a lower-bound form to obtain a PASS. This applies to the v1.0.1 controls it already carries as much as to the v1.0.2 controls added here."
+  },
+
+  "controller_successor_rule": {
+    "FROZEN": "YES",
+    "CONTROLLER_29_REQUIRED": true,
+    "why": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json is a new docs/ops/ods/ artifact and is therefore absent from the live IMMUTABLE_BY_CONVENTION closed world, which is an EXACT-membership list of 28 entries at INTEGRATION_SHA. Until it is enumerated, the Controller would not classify a write targeting it as PROTECTED_SURFACE_CHANGE, and because it is also outside DEFAULT_PROTECTED_PATTERNS - which covers exactly ONE docs/ops/ods file - it would be accepted for mutation with no guard at either layer.",
+    "successor_authorized_paths": [
+      "scripts/ods-controller.ts",
+      "tests/ods/ods-controller.test.ts"
+    ],
+    "successor_scope": "Append EXACTLY docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json to IMMUTABLE_BY_CONVENTION. Count 28 -> 29. Advance the C8 absence control in tests/ods/ods-controller.test.ts from v1.0.18 to the mechanically-next version, exactly as that control's own comment already prescribes. Nothing else.",
+    "c8_absence_control_is_not_an_allocation": "STATED BECAUSE IT IS EASY TO MISREAD. tests/ods/ods-controller.test.ts currently asserts not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json'). That is a NEGATIVE-CONTROL LITERAL and, by the control's own comment, 'never an allocation'. It did not reserve v1.0.18 for anyone, and this mission's allocation of v1.0.18 does not conflict with it - it discharges it. When Controller 29 advances the literal to v1.0.19, that too is a negative control and reserves nothing.",
+    "NOT_PERFORMED_HERE": "CORRECT AND DELIBERATE. scripts/ods-controller.ts and tests/ods/ods-controller.test.ts are NOT changed by this mission. A mission that both allocated an ODS lineage item and enumerated it in the Controller would be auditing its own lineage allocation - the separation Controller 25->26, 26->27 and 27->28 each preserved.",
+    "line_ceiling": "MEASURED. ODS_CONTROLLER_AUTHORITY_v1.0.0.json exit criteria cap scripts/ods-controller.ts at 400 lines. It is 386 lines at INTEGRATION_SHA; appending one entry yields 387, inside the ceiling.",
+    "no_v1_0_19_allocated": "This amendment allocates NOTHING beyond v1.0.18 and HPO-ODS-W2-19. It does not reserve, name-as-allocated or pre-create any v1.0.19 or HPO-ODS-W2-20 artifact."
+  },
+
+  "this_mission_controls": {
+    "authority_objects_created": 2,
+    "objects": [
+      "docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json"
+    ],
+    "control_host_extended": "tests/ods/w2-b5-scope-amendment.test.ts",
+    "no_b5_implementation_edit": "MEASURED. This mission changes NO file on the B5 implementation surface. Branch codex/w2-b5-r1 is NOT touched, NOT rebased and NOT merged by this mission.",
+    "no_test_host_edit": "MEASURED AND BINDING. tests/b3-completeness.ui.test.tsx and tests/run-detail-page.sufficiency-reachability.test.tsx are AUTHORIZED by this amendment for a FUTURE remediation mission and are NOT modified by this one. Authoring the authority and consuming it in the same mission would defeat the independent-audit gate.",
+    "no_stale_doc_edit": "MEASURED AND BINDING. docs/20_STELLA_ROLE_CONTRACTS.md is AUTHORIZED here and NOT modified here, for the same reason.",
+    "no_migration_ordinal_allocated": true,
+    "no_schema_change": true,
+    "no_staging": true,
+    "no_production": true,
+    "no_docker": true,
+    "main_unchanged": true,
+    "controller_not_changed": true,
+    "gate_scripts_not_changed": "scripts/ods-scope.ts, scripts/ods-prestate.ts, scripts/ods-poststate.ts, scripts/ods-program-state.ts and scripts/ods-controller.ts are ALL unchanged by this mission.",
+    "one_hole_rule": "EXACTLY ONE new ODS lineage hole is opened - v1.0.18 unenumerated in the live Controller. The predecessor hole (v1.0.17) is CLOSED at INTEGRATION_SHA. No second concurrent hole exists.",
+    "no_preallocation": "Nothing beyond v1.0.18 and HPO-ODS-W2-19 is allocated, reserved or pre-created."
+  },
+
+  "cross_lane_notice": {
+    "multi_org_s1_lane": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json records at its gate E16 that the v1.0.17 sequencing rule blocked its own S2+ steps and NAMES HPO-ODS-W2-19 as prohibited-until-enumerated. That naming was a PROHIBITION quote, never a reservation, so it creates no collision with this mission's allocation. It follows that the multi-org lane must NOT read HPO-ODS-W2-19 as its own: that identifier is allocated HERE and is now occupied.",
+    "consequence_for_that_lane": "This mission opens a new single gap (v1.0.18), so the multi-org S2+ steps remain blocked on the SAME rule, now pointing at Controller 29 rather than Controller 28. That lane's next free identifiers are v1.0.19 and HPO-ODS-W2-20, and it must derive them mechanically at its own materialization time rather than from this sentence."
+  },
+
+  "risks_and_open_findings": {
+    "OPEN_FINDING_1_stale_role_contract_doc": "DISPOSED HERE, not repaired here. The finding carried by W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json is discharged by authorizing path_3 for a future remediation mission. It remains OPEN as a repair until that mission lands; it is no longer open as an AUTHORITY GAP.",
+    "OPEN_FINDING_2_imprecise_prohibition_numeral": "CARRIED FORWARD UNCHANGED. v1.0.0 explicitly_prohibited still says 'the four enumerated reader/prompt files' while readiness_readers enumerates FIVE lib/stella paths. Recorded, NOT corrected, for the same reason v1.0.1 gave: the operative term is machine-checkable and the numeral is descriptive prose no gate reads, and correcting it would require editing a frozen authority in place.",
+    "RISK_1_derived_rather_than_executed_necessity": "The runtime failure of path_1 and path_2 is DERIVED from static measurement - six unmocked specifiers, both hosts rendering the page, reads deliberately unguarded - and from a measured baseline showing both hosts pass today. It is NOT executed against a merged B5 implementation, because that implementation is not merged and this mission may not run or modify it. The mitigation is binding rather than rhetorical: each path's measurement_honesty clause REQUIRES the remediation mission to measure the concrete failure before wiring, and forbids wiring anything the measured failure does not require. If the measurement shows a host does NOT in fact break, the correct outcome is that its authorization goes unused - never that the wiring is applied anyway.",
+    "RISK_2_second_extension_of_the_same_closed_world": "This is the SECOND governed extension of W2_B5_AUTHORITY_v1.0.0.json's closed world. Two extensions with per-path proofs are two exceptions, not a process, but the pattern itself invites a third author to treat extension as routine. Mitigated by the strengthened precedent_prohibition and its deterministic control, and disclosed here so an auditor weighs it directly.",
+    "RISK_3_docs_rider_bundled_with_gate_forced_paths": "path_3 is governance-forced while path_1 and path_2 are gate-forced, and bundling them in one instrument risks an auditor accepting the weaker case on the strength of the stronger. Mitigated by giving path_3 its own NECESSITY_CLASS, its own honesty clause, its own CAN_BE_REMOVED answer of YES, and its own exclusion control NEG-AMD2-6. If an auditor rejects path_3, the correct outcome is that path_3 alone loses authorization.",
+    "RISK_4_control_host_extension_could_disturb_v1_0_1_controls": "Extending tests/ods/w2-b5-scope-amendment.test.ts rather than creating a new host risks silently altering the v1.0.1 controls it already carries. Mitigated by host_edit_discipline - strictly additive, no existing constant redefined - and verifiable by diff: the v1.0.1 region of the file must be byte-unchanged.",
+    "UNKNOWN_FINDINGS": 0
+  },
+
+  "final_state": "W2_B5_AUTHORITY_AMENDMENT_v1_0_2_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "W2_B5_AUTHORITY_STATUS": "CLOSED",
+  "W2_B5_IMPLEMENTATION_STATUS": "OPEN",
+  "W2_B5_RELEVANT_UNKNOWN_FINDINGS": 0,
+  "BEHAVIORAL_SCOPE_DELTA": "NONE",
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "CONTROLLER29_REQUIRED": true,
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": true,
+  "READY_FOR_MERGE": "NO_PENDING_INDEPENDENT_AUDIT",
+  "READY_FOR_TEST_HOST_REMEDIATION": "NO_UNTIL_AUDITED_INTEGRATED",
+  "next_gate": "W2_B5_TEST_HOST_SUCCESSOR_AUTHORITY_INDEPENDENT_AUDIT"
+}

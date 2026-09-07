@@ -1242,6 +1242,164 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'exactly as 0060 installed them. No GRANT, no DDL, no DML, no policy, no auth./storage. reference.',
     expect: {},
   },
+
+  /* ---------------------------------------------------------------------- *
+   * Wave 2 batch B4 (FIBIU-15/14, HPO-ODS-W2-12,                            *
+   * docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json). Certified SERIAL_CONTRACT  *
+   * 15->{14,16}: FIBDB-012/013/047 (this unit) precede FIBDB-011/046        *
+   * (the next unit). FIBIU-16 materializes no unit here — NO_DB_OBJECT.     *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 75,
+    id: '0062_fib_methodological_assumptions.sql',
+    kind: D,
+    file: 'db/migrations/0062_fib_methodological_assumptions.sql',
+    sha256: '7b73b99ffc46a8d1ded7734d5625b59e1deb79e56018e37da9a287847fde4940',
+    dependsOn: ['0061_fib_disposition_governance_function_execute_revocation.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-15 stage A (FIBC-019/FIBDB-012/013/047). CREATE TABLE methodological_assumptions and ' +
+      'assumption_object_links. RLS: org-scoped SELECT on both; INSERT restricted to the same analyst+ ' +
+      'floor upsertSroiFilterSet/outcome_monetization_dispositions already use (created_by = auth.uid()); ' +
+      'methodological_assumptions additionally carries an org-scoped, same-floor UPDATE policy — unlike ' +
+      '0059\'s append-only precedent — because a material modification updates the row in place (its id ' +
+      'is the assumption\'s permanent identity) while lib/pipeline/domain-object-versions.ts preserves the ' +
+      'prior content as history; assumption_object_links has no UPDATE/DELETE policy (append-only, ' +
+      'FIBDB-013 "immutability: none beyond the assumption\'s own versioning"). SEC-ACL-1: no new ' +
+      'function or SECURITY DEFINER surface — the hosted disposition is RLS-only, identical in class to ' +
+      'unit 72; nothing here needs a service_role/anon/authenticated grant of any kind.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing policies are guarded but do not change the unit\'s overall class. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 2,
+      policiesCreatedCount: 5,
+      securitySurfaceDigest: '91d247fe13c6343bcaaadfb3828d095eb8375dcb487991d78fe8a420a764ad3b',
+    },
+  },
+  {
+    ordinal: 76,
+    id: '0063_fib_counterfactual_assessments.sql',
+    kind: D,
+    file: 'db/migrations/0063_fib_counterfactual_assessments.sql',
+    sha256: '66418b303421e3e9286b1b96d0eb03931f0d7c81a4caf67a4a1957af9497b188',
+    dependsOn: ['0062_fib_methodological_assumptions.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-14 stage A (FIBC-018/FIBDB-011/046). CREATE TABLE counterfactual_assessments — one row per ' +
+      '(outcome, calculation_run): baseline_availability/basis_kind/deadweight_support_state vocabularies, ' +
+      'baseline value/period/source/context required exactly when baseline_availability=available. RLS: ' +
+      'org-scoped SELECT, INSERT and UPDATE at the same analyst+ floor as unit 75 — UPDATE because this ' +
+      'object is refined create-or-update until the run is approved, mirroring ' +
+      'recordOutcomeMonetizationDisposition\'s own shape rather than FIBDB-013\'s append-only one. ' +
+      'SEC-ACL-1: no new function or SECURITY DEFINER surface — RLS-only, same class as unit 72/75.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing policies are guarded but do not change the unit\'s overall class. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 3,
+      securitySurfaceDigest: '38d7e1cd4f92aa38323d2228b6f7cc017431dbc9416a956b8343b97b0a3b7bd4',
+    },
+  },
+  {
+    ordinal: 77,
+    id: '0064_fib_readiness_assessments.sql',
+    kind: D,
+    file: 'db/migrations/0064_fib_readiness_assessments.sql',
+    sha256: '03f4f138d2ac806dce67261a1beea2dabc13a6327d07caca04897f7c6bbd70a4',
+    dependsOn: ['0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-17 stage A (FIBC-021/FIBDB-015). CREATE TABLE readiness_assessments — one immutable row per ' +
+      'calculation_run (UNIQUE): global_score, band, ten-dimension detail and 46-criterion detail, ' +
+      'readiness_model_version referencing governed_model_registry by value. RLS: org-scoped SELECT and ' +
+      'INSERT at the same analyst+ floor as unit 76 — no UPDATE, no DELETE (immutable snapshot; a ' +
+      'recompute is a new run, never an edit). Also carries FIBDB-016 stage B: a plain, reversible ' +
+      'COMMENT ON COLUMN marks sroi_run_reviews.readiness_score LEGACY_NON_AUTHORITATIVE — no DROP, no ' +
+      'rename, no NOT NULL, no read-only trigger (that is stage F, deferred to FIBIU-30, Wave 6). ' +
+      'SEC-ACL-1: no new function or SECURITY DEFINER surface — RLS-only, same class as unit 76.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing COMMENT and policies are guarded (COMMENT ON COLUMN is naturally idempotent; policies use ' +
+      'DROP POLICY IF EXISTS) but do not change the unit\'s overall class. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 2,
+      securitySurfaceDigest: 'beb2ea37940f921cf2ca4d376410f942c8414e3f2201645498aeec519ffcdde7',
+    },
+  },
+  {
+    ordinal: 78,
+    id: '0065_fib_sensitivity_model.sql',
+    kind: D,
+    file: 'db/migrations/0065_fib_sensitivity_model.sql',
+    sha256: '2dbf15b4712ffaeb7d3580f4e04a31b0dee95e47012ee8da7497809e3a14139a',
+    dependsOn: ['0064_fib_readiness_assessments.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-18 stage A (FIBC-022/FIBDB-017/018/048). CREATE TABLE sensitivity_candidates and ' +
+      'sensitivity_scenarios — supersedes (not extends) the uniform SCENARIO_DELTA_PP = 10 shortcut. ' +
+      'sensitivity_candidates RLS: org-scoped SELECT, INSERT and UPDATE at the analyst+ floor — UPDATE is ' +
+      'contract-required for the governed pending → variation_required|no_additional_variation_required ' +
+      'disposition transition. sensitivity_scenarios RLS: org-scoped SELECT and INSERT only — append-only, ' +
+      'no UPDATE, no DELETE. dependsOn 0064 encodes the certified write-serialization FIBIU-17→FIBIU-18 ' +
+      '(product DAG has NO edge between them — see W2_B5_AUTHORITY_v1.0.0.json W2_B5_SCOPE.dag_authority). ' +
+      'SEC-ACL-1: no new function or SECURITY DEFINER surface — RLS-only, same class as unit 77.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing policies are guarded but do not change the unit\'s overall class. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 2,
+      policiesCreatedCount: 5,
+      securitySurfaceDigest: 'ee9de841b80d3f21aa5f1565ac449aba52ced6f2c734dddb726d26bcce2564f6',
+    },
+  },
+  // Multi-org S1 (HPO-ODS-W2-20 / HPO-ODS-W2-21, MO-10/MO-11/MO-01): founder
+  // traceability. ADD COLUMN founded_by (nullable, FK users ON DELETE RESTRICT)
+  // and founding_provenance (DEFAULT 'unknown', CHECK), the partial unique
+  // self-service founder carrier, then the MO-11 structural backfill.
+  {
+    ordinal: 79,
+    id: '0066_multiorg_s1_founder_traceability.sql',
+    kind: D,
+    file: 'db/migrations/0066_multiorg_s1_founder_traceability.sql',
+    sha256: '0f038b236fd868b373cffbbe0c8cd12244fdba8ace4065d61579a8162fb6b725',
+    dependsOn: ['0065_fib_sensitivity_model.sql', '0000_quick_husk.sql'],
+    dml: 'structural-backfill',
+    managed: 'A-hosted-compatible',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'Multi-org S1 (MO-10/MO-11/MO-01). ADD COLUMN organizations.founded_by (uuid NULL, FK users ' +
+      'ON DELETE RESTRICT) and organizations.founding_provenance (varchar DEFAULT \'unknown\' NOT ' +
+      'NULL, CHECK self_service|platform|unknown), a partial UNIQUE index on founded_by WHERE ' +
+      'founding_provenance = \'self_service\' (the MO-01 carrier), and one UPDATE deriving ' +
+      'founded_by from audit_logs organization.created rows with exactly one non-null actor -- ' +
+      'structural-backfill, zero rows on an empty database, same class as units 19, 52 and 58. ' +
+      'No CREATE TABLE, no policy, no function, no SECURITY DEFINER surface. founded_by is ' +
+      'traceability only (PI-3) and is read by no authorization path.',
+    rollback:
+      'ADD COLUMN / ADD CONSTRAINT / CREATE UNIQUE INDEX have no IF NOT EXISTS guard and no reverse ' +
+      'script -- forward-only, recovered by DESTROY_AND_REPROVISION. The UPDATE re-runs to zero ' +
+      'affected rows because it only targets founded_by IS NULL.',
+    expect: { dmlStatementCount: 1 },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

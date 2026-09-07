@@ -1,0 +1,1192 @@
+{
+  "package_id": "WAVE3_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "WAVE3_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTABLE_WAVE3_DOMAIN_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_ALLOCATION",
+  "document_class": "AUTHORITY",
+  "append_only": true,
+  "supersedes": "NONE — this is the first Wave 3 authority artifact in the repository.",
+  "mission_id": "WAVE3-AUTHORITY-MATERIALIZATION-R1",
+  "source_compiler": "WAVE3-FIBDB053-FINAL-EXECUTION-PACKET-R1",
+  "materialization_date": "2026-09-05",
+  "companion_manifest": "docs/ops/wave3/WAVE3_TEST_MANIFEST_v1.0.0.json",
+  "AS_OF_HEAD": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+  "AS_OF_TREE": "e7f3a1e4fd8c4c8fe5a90cc02bc63c39ac978286",
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "intervening_delta_from_mission_creation": "ZERO — the mission's STARTING_REF (origin/integration/commercial-v1) resolves to a27c4a9af83afba5f4f94ee2a2d61a56495fdd50, which is byte-identical to the local branch head of codex/wave3-authority-r1 at materialization (git rev-list --left-right --count HEAD...origin/integration/commercial-v1 = 0 0). No re-measurement drift to reconcile.",
+  "NAMING_DERIVATION": {
+    "rule": "Names are derived from the repository's existing domain-authority convention, not invented. The convention is <DOMAIN>_AUTHORITY_v<semver>.json plus a companion <DOMAIN>_TEST_MANIFEST_v<semver>.json in a domain directory under docs/ops/.",
+    "precedents_measured_at_AS_OF_HEAD": [
+      "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json + docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json, docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json"
+    ],
+    "why_not_the_wave2_batch_form": "docs/ops/wave2/ names artifacts per BATCH (W2_B1..W2_B5) because Wave 2 was executed as five audited batches. This artifact is not a batch authority: it is the whole-wave domain authority for Wave 3, whose batch decomposition is a future lane-coordinator decision this mission does not make. The domain form (tenancy/commercial) is therefore the correct precedent, and the directory docs/ops/wave3/ mirrors docs/ops/wave2/ for locality.",
+    "scope_gate_consequence": "docs/ops/wave3/** is NOT a member of scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (measured at scripts/ods-scope.ts:82-90). An ordinary --allow authorizes it; no --protected-authority grant is required, and none is claimed."
+  },
+  "PURPOSE": {
+    "statement": "Freeze the executable Wave 3 authority: the FIBDB-053 Stage-A package contract, the FIBIU-19 methodology-approval composition contract, and the FIBIU-20 SoD / findings / Stage-E contract — as one reconciled, evidence-anchored package. This artifact implements NOTHING and authorizes NO implementation to begin.",
+    "what_this_is": [
+      "The executable reconciliation between the frozen FIB baseline's Wave 3 text and the executable state measured at AS_OF_HEAD.",
+      "A frozen CP-4 sequencing decision (FIBDB-053 Stage-A authoring first, S3c second, never parallel writers) with its measured serialization reason.",
+      "A frozen G2 boundary: what may be authored and rehearsed before G2, and what may not happen without an explicit human G2 act.",
+      "A frozen 24-item non-eligibility reason register, with the measured sequencing tension in four of them stated rather than resolved by assumption.",
+      "Two named carry-forwards from W2-B5 (F-2, F-3) placed under the Wave 3 units that own them."
+    ],
+    "what_this_is_not": [
+      "NOT an implementation. No runtime, schema, migration, prepared unit, hosted artifact or test is created or changed by this mission.",
+      "NOT an ODS/HPO lineage allocation. See FUTURE_ODS_NEEDS_SYMBOLIC — this artifact allocates no identifier of any kind, and explicitly allocates neither ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19 nor HPO-ODS-W2-20.",
+      "NOT a Controller change. scripts/ods-controller.ts is untouched by this mission.",
+      "NOT a migration ordinal assignment. No db/migrations/** ordinal is claimed, reserved or implied.",
+      "NOT a G2 application, a staging act, or a production act. See G2_BOUNDARY.",
+      "NOT a re-opening of the FIB baseline. FIBC-023/024/025/029, FIBDB-019/020/040/049/052/053 and FIBIU-19/20 are consumed as frozen and are not re-litigated here.",
+      "NOT a re-adjudication of W2-B5. F-2 and F-3 are carried forward under the dispositions the B5 evidence artifact already recorded, verbatim."
+    ],
+    "fail_closed_rule": "Where this authority marks a decision UNKNOWN, FUTURE_MEASUREMENT_REQUIRED or REQUIRES_ADJUDICATION, an implementing mission must measure or adjudicate it, never assume it. Unknown required evidence fails closed."
+  },
+  "ALIGNMENT_REFERENCES": {
+    "controlling_authority": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md (sealed; docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.seal.json) and its compact index docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json.",
+    "process_authority": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json and the ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1..v1.0.18 chain.",
+    "adjacent_domain_authorities_consumed_not_reopened": [
+      "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json — the S1..S8 tenancy DAG, whose S3c node is the other writer named in CP4_SEQUENCE.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json — the commercial account/entitlement package that shares the prepared-unit surface.",
+      "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json and docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json — the source of the F-2 and F-3 carry-forwards."
+    ],
+    "test_manifest_schema": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json — the companion manifest validates against it."
+  },
+  "EVIDENCE_ANCHORS": {
+    "rule": "Every anchor is an exact repository path with a line or line-range measured at AS_OF_HEAD. No anchor is a paraphrase, and no claim in this artifact rests on an anchor that is not listed here.",
+    "anchors": [
+      {
+        "id": "E1",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:179-180",
+        "fact": "FIBC-023 Canonical Run Eligibility Composition: the four distinguished states, the 24 enumerated non-eligibility reasons, 'Readiness score is never an input to this function', and 'an unknown or unresolvable condition => not eligible'. OWNING UNIT FIBIU-19."
+      },
+      {
+        "id": "E2",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:184-185",
+        "fact": "FIBC-024 Methodology Review & Segregation of Duties: no SoD check exists today; calculated_by is written and never read; target is server-side rejection when reviewer_id = run.calculated_by; no mandatory third person; NO_SECOND_QUALIFIED_REVIEWER; Stella never counts as reviewer; historical self-approvals preserved and never satisfying V-04. DB FIBDB-040. OWNING UNIT FIBIU-20."
+      },
+      {
+        "id": "E3",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:187-188",
+        "fact": "FIBC-025 High-Risk Finding Disposition: each risk_level='high' finding becomes a tracked open item requiring explicit human disposition before approval or lock; 'If Stella was not executed (V-17), no such gate is created'; FIBDB-053 named as a HARD PRECONDITION. OWNING UNIT FIBIU-20."
+      },
+      {
+        "id": "E4",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:201-202",
+        "fact": "FIBC-029 Audit-Before-Delivery: audit is a precondition of delivery, not best-effort telemetry; served by the governed completion path revised under FIBDB-053, which for the first time carries risk_level/risk_flags as real parameters into the same transaction that archives the interaction and charges the quota. OWNING UNIT FIBIU-20 (FIBDB-053 consumption)."
+      },
+      {
+        "id": "E5",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:385-403",
+        "fact": "FIBDB-053 in full: PREPARED_FUNCTION_REVISION on the PREPARED_G2 track; frozen PREPARED_UNIT_ID stella_0017b_governed_risk_parameters; the four required artifacts; tail position after stella_0018; the DROP+CREATE requirement (CREATE OR REPLACE cannot alter the argument list, a DEFAULT would create an overload and raise the function count); the mandatory supersession registry entry; MIGRATION_STAGE A, HARDENING_STAGE E; external gate status PENDING."
+      },
+      {
+        "id": "E6",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:781-782",
+        "fact": "FIBIU-19 unit definition: one server-side composition function as sole authority; no state table; readiness never an input; twelve HARD_DEPENDENCIES (FIBIU-06,08,09,10,11,12,13,14,15,16,17,18); SOFT_DEPENDENCIES FIBIU-20; EXIT_GATE 'every enumerated reason is reachable and the run stays unmutated'."
+      },
+      {
+        "id": "E7",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:784-785",
+        "fact": "FIBIU-20 unit definition: HARD_DEPENDENCIES FIBIU-19, FIBIU-29, and 'FIBDB-053 applied'; EXIT_GATE 'self-approval is rejected server-side and in the database; an open high finding blocks'; RISK HIGH with mandatory OPUS review; the SoD trigger strands single-user organisations if it lands before their exit path."
+      },
+      {
+        "id": "E8",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:853-862",
+        "fact": "WAVE 3 block: PRECONDITIONS 'Wave 2 complete . FIBDB-053 G2 gate resolved'; UNITS FIBIU-19, FIBIU-20; LEVEL 3.1 then 3.2; SERIAL_CONTRACTS 19->20; PARALLEL_GROUPS none; MIGRATIONS FIBDB-019,020,040,049,052,053; TEST_GATE 'eligibility matrix (24 reasons reachable) . segregation of duties'; OPUS_REVIEW_REQUIRED YES (whole wave)."
+      },
+      {
+        "id": "E9",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:601",
+        "fact": "Section 6.3, the frozen ordering of the externally-gated item: authored and submitted in wave 1; the gate proceeds in parallel through waves 1-2; consumed in wave 3 by FIBIU-20; and the absolute prohibition that no already-applied prepared unit is ever edited in place."
+      },
+      {
+        "id": "E10",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:899",
+        "fact": "FIBDB-053's external gate positioned against the waves: if unresolved by the start of wave 3, FIBIU-20 stops, and with it FIBIU-24 (wave 4) and FIBIU-26 (wave 5) by transitive dependency. The plan's only externally-gated dependency."
+      },
+      {
+        "id": "E11",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:1059",
+        "fact": "Historical reviewer identity, FIBIU-20 + FIBDB-051: 'Self-approvals preserved exactly, never satisfying V-04; no fictitious second approver added' — speculative backfill count 0."
+      },
+      {
+        "id": "E12",
+        "path": "db/prepared/stella_0017_governed_stella_consumption.sql:603-611",
+        "fact": "The runtime-called completion verb as it exists today: uellix_stella_ops.complete_operation_ticket(p_ticket_id char(64), p_expected_project_id uuid, p_query_hash char(64), p_pipeline_step varchar(100), p_model_used varchar(100), p_tokens_used integer, p_response_json jsonb) — SEVEN parameters, SECURITY DEFINER, SET search_path = ''. No risk parameter of any kind."
+      },
+      {
+        "id": "E13",
+        "path": "db/prepared/stella_0017_governed_stella_consumption.sql:390-400",
+        "fact": "uellix_stella.settle_reserved_quota(p_organization_id uuid, p_project_id uuid, p_stella_role varchar(50), p_idempotency_key char(64), p_ticket_id char(64), p_pipeline_step varchar(100), p_context_hash char(64), p_model_used varchar(100), p_tokens_used integer, p_response_json jsonb) — TEN parameters. This, not complete_operation_ticket, is the function that owns the ledger INSERT."
+      },
+      {
+        "id": "E14",
+        "path": "db/prepared/stella_0017_governed_stella_consumption.sql:481,511-527",
+        "fact": "Inside the ten-argument settle: pg_catalog.pg_advisory_xact_lock(...) at 481, then INSERT INTO public.stella_interactions (organization_id, project_id, ..., context_hash, response_json, model_used, tokens_used, idempotency_key) at 511-525, then ON CONFLICT (organization_id, idempotency_key) WHERE idempotency_key IS NOT NULL at 527. risk_level and risk_flags are ABSENT from the column list."
+      },
+      {
+        "id": "E15",
+        "path": "db/prepared/stella_0017_governed_stella_consumption.sql:557-580",
+        "fact": "The five-argument settle_reserved_quota is a DELEGATOR whose body calls the ten-argument one with five NULLs (line 576). Its stated reason: 'one INSERT into the ledger from this schema, reached by two arities. A second body would be a second place for the idempotency semantics to drift.'"
+      },
+      {
+        "id": "E16",
+        "path": "db/prepared/stella_0017_governed_stella_consumption.sql:719-721",
+        "fact": "complete_operation_ticket calls uellix_stella.settle_reserved_quota(v_org, v_project, v_category, v_key, p_ticket_id, p_pipeline_step, v_hash, p_model_used, p_tokens_used, p_response_json). The payload arguments are the only caller-supplied values and none of them can move the charge."
+      },
+      {
+        "id": "E17",
+        "path": "db/prepared-package-order.ts:88-95",
+        "fact": "The forward chain constant is named STELLA_TICKET_PACKAGE_CHAIN (not TICKET_PACKAGE_CHAIN as the FIB prose says), and its tail is 'stella_0018_category_bound_operation_tickets'. stella_0019_storage_write_roles exists on disk but is NOT a member of this chain."
+      },
+      {
+        "id": "E18",
+        "path": "db/prepared-package-order.ts:63-79",
+        "fact": "interface PreparedPackageSupersession requires FIVE fields: packageName, supersededBy, probe (a fixed literal SQL that is TRUE when the successor is installed), wouldRepublish (the exact object signatures re-application would restore), and why."
+      },
+      {
+        "id": "E19",
+        "path": "db/prepared-package-order.ts:320",
+        "fact": "export const PREPARED_PACKAGE_SUPERSESSIONS — the array FIBDB-053's mandatory registry entry must join."
+      },
+      {
+        "id": "E20",
+        "path": "db/prepared/stella_0018_category_bound_operation_tickets.sql:447,455-460,587-593",
+        "fact": "stella_0018 self-verification asserts (1) uellix_stella_ops holds EXACTLY EIGHT functions, raising otherwise; and (7) that none of bind_operation_ticket, complete_operation_ticket, abort_operation_ticket, inspect_operation_ticket declares pronargdefaults > 0 — 'an argument with a DEFAULT is an argument the caller may omit'."
+      },
+      {
+        "id": "E21",
+        "path": "db/schema.ts:1089-1101",
+        "fact": "stella_interactions.risk_level varchar(50) and .risk_flags text[] already exist, with CHECK stella_interactions_risk_level_check (NULL or low|medium|high) and a partial index stella_interactions_risk_level_idx WHERE risk_level IS NOT NULL. The COLUMNS exist; nothing on the governed path writes them."
+      },
+      {
+        "id": "E22",
+        "path": "db/schema.ts:831",
+        "fact": "sroi_calculation_runs.calculated_by uuid REFERENCES users(id) NOT NULL — the column FIBC-024's SoD check must read and which the baseline records as written-but-never-read today."
+      },
+      {
+        "id": "E23",
+        "path": "db/schema.ts:888-893",
+        "fact": "sroi_run_reviews carries organization_id, project_id, calculation_run_id and reviewer_id uuid REFERENCES users(id) NOT NULL. Both sides of the FIBC-024 independence comparison therefore already exist as columns."
+      },
+      {
+        "id": "E24",
+        "path": "db/stella/operation-tickets.ts:620-626",
+        "fact": "The runtime declares the gap in its own words: 'riskLevel and riskFlags have no parameter in prepared stella_0017 and are therefore NOT filed by this path. Declared, not silently dropped ... closing that gap means a new package argument rather than a runtime workaround.'"
+      },
+      {
+        "id": "E25",
+        "path": "app/actions/stella/reviewer.ts:263-264 and app/actions/stella/validator.ts:279-280",
+        "fact": "riskLevel and riskFlags are written ONLY into the audit_logs afterJson payload passed to logStellaAudit — the complementary trail, not the durable stella_interactions row. This is the exact path FIBDB-053 describes as fire-and-forget."
+      },
+      {
+        "id": "E26",
+        "path": "app/app/projects/[projectId]/pipeline/calculation/runs/recordSensitivityScenario.action.ts:16",
+        "fact": "substitutions: z.array(z.object({ candidateId: z.string().uuid(), alternativeValue: z.string().min(1) })).min(1) — the ONLY validation on alternativeValue is non-emptiness. A non-numeric string is accepted. This is the live surface of W2-B5 finding F-3."
+      },
+      {
+        "id": "E27",
+        "path": "lib/pipeline/sroi-sensitivity.ts:405-410",
+        "fact": "The accepted string is substituted verbatim into the deterministic engine for three numeric candidate kinds: into FILTER_SET_FIELD[ref.filter] for methodological_filter, into proxyVersion.valueUsd for proxy_value, and into substitutedDiscountRatePct for discount_rate_pct. No numeric parse or format check intervenes."
+      },
+      {
+        "id": "E28",
+        "path": "docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json:173-174",
+        "fact": "The only repository-resident record of the two carry-forwards, quoted verbatim: F-2 = 'EXPLICIT_STAGE_E_OBLIGATION. Not a B5 blocker. Not repaired here.'; F-3 = 'ACCEPTED_BY_CURRENT_AUTHORITY, with a future Wave3/FIBIU19 validation obligation. Not a B5 blocker. Not repaired here.'"
+      },
+      {
+        "id": "E29",
+        "path": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (unit W2-B5, audit block)",
+        "fact": "The registry points W2-B5's audit evidence at codex/w2-b5-r1:docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json#closure.W2_B5. That path does not exist at codex/w2-b5-r1 (d534f209b37b6f142b5904ad5fcc42a60a2c74ba) nor at AS_OF_HEAD. Measured verdict: AUDIT_STATUS=UNKNOWN. See OPEN_FINDINGS F-W3-1."
+      },
+      {
+        "id": "E30",
+        "path": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json (STELLA_S3C_SCOPE_WELD)",
+        "fact": "S3c's own text already declares the collision: 'S3c and the future FIBDB-053 / Wave3 Stella hosted surfaces write the same prepared-unit and hosted-baseline-manifest region. This is a declared SERIAL CHOKE POINT, not a parallelizable pair.' CP4_SEQUENCE resolves the direction that text left open."
+      },
+      {
+        "id": "E31",
+        "path": "db/prepared/stella_0017_governed_stella_consumption.sql, db/prepared/stella_0017_rollback.sql, db/prepared/hosted/stella_0017_governed_stella_consumption.hosted.sql, db/prepared/hosted/governed/stella_0017_governed_stella_consumption.governed.sql",
+        "fact": "The four-artifact set FIBDB-053 requires stella_0017b to replicate exists in full for stella_0017 at AS_OF_HEAD. The stella_0017b counterparts do NOT exist (measured: db/prepared/ holds stella_0010..stella_0019, no 0017b)."
+      },
+      {
+        "id": "E32",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json (prepared_g2)",
+        "fact": "The index's machine form of FIBDB-053: prepared_unit_id stella_0017b_governed_risk_parameters, supersedes stella_0017_governed_stella_consumption, chain_position tail_of_TICKET_PACKAGE_CHAIN_after_stella_0018_category_bound_operation_tickets, owning_fibiu FIBIU-20. prepared_g2 has exactly one member."
+      },
+      {
+        "id": "E33",
+        "path": "scripts/ods-scope.ts:82-90",
+        "fact": "DEFAULT_PROTECTED_PATTERNS = docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. docs/ops/wave3/** is absent from the list; db/prepared/** is present, which is why every future FIBDB-053 implementation mission needs a protected-surface grant and this docs-only mission does not."
+      },
+      {
+        "id": "E34",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json (fibiu, computed closure)",
+        "fact": "Computed from the index at AS_OF_HEAD: the transitive hard-dependency closure of FIBIU-19 is exactly 15 units — FIBIU-01,03,04,06,08,09,10,11,12,13,14,15,16,17,18 — all in waves 1-2. FIBIU-05 (wave 2), FIBIU-20 (wave 3, level 3.2) and FIBIU-30 (wave 6) are NOT in that closure. See REASON_CODE_SOURCE_TENSION."
+      },
+      {
+        "id": "E35",
+        "path": "db/schema.ts:828-830",
+        "fact": "The FIBDB-001 version triple on sroi_calculation_runs: methodology_version varchar(20), calculation_engine_version varchar(20), build_identity varchar(100) — all three NULLABLE. A run predating versioning already carries the all-NULL triple today, so the LEGACY_NON_AUTHORITATIVE_RUN predicate has persisted state to read at AS_OF_HEAD. Added by amendment R2."
+      },
+      {
+        "id": "E36",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:59,281,311,339,381,713,715",
+        "fact": "The four sealed statements that separate the three legacy concepts. :59 — FIBC-001 TESTS, verbatim \"run carries triple; legacy run keeps NULL and is ineligible; no update path exists\". :281 — FIBDB-001 BACKFILL_CLASS IMPOSSIBLE_TO_BACKFILL, permanent NULL, owning unit FIBIU-02. :311 and :339 — the ONLY two carriers of BACKFILL_CLASS LEGACY_NON_AUTHORITATIVE (FIBDB-016 and FIBDB-030, both LEGACY_MARKING). :381 — FIBDB-051 legacy_class vocabulary, six members, BACKFILL_CLASS SAFE_AUTOMATIC_BACKFILL \"derived from already-persisted facts ... never inference\", owning unit FIBIU-30. :713 — binds legacy_non_authoritative_for_new_runs to historically approved PROXIES (FIBDB-006), and legacy_self_approved_review to reviewer_id = calculated_by. :715 — legacy_class \"makes every one of these regimes verifiable by machine, derived exclusively from already-persisted facts\". Added by amendment R2."
+      },
+      {
+        "id": "E37",
+        "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json",
+        "fact": "Wave 1 closure evidence: closure_status \"CLOSED\", closure_class \"ADVERSARIAL\", closure_authority \"HUMAN_PRODUCT_OWNER_ACCEPTANCE_OF_W1_07\", state_after_closure.wave1_formally_closed true, audited_head 6944a618b70c0ac0436a915fa0a52af24a16a5dc, audited_tree 80915e1608725351a9b7ad9772bdc595af679767, audited_branch codex/w1-integration-closure-r1, authority_commit 8ae297cd228a79d3fd7f598532e43e456f0aef5e. FIBIU-29 is a declared unit of that wave (:833). The audited head is an ancestor of origin/integration/commercial-v1 and of this PR head. Added by amendment R2."
+      },
+      {
+        "id": "E38",
+        "path": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (unit W2-B5, audit block)",
+        "fact": "The repaired registry entry at R3: audit.ref = \"codex/w2-b5-closure-evidence-r1\" (was \"codex/w2-b5-r1\"), path docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json, field closure.W2_B5, closedValues [\"CLOSED\"]. Repaired by PR #81 (commit cb0f569, merged as 08d3c4dd262a9cd9d4f64900fdd09205370f23ef) — a one-line repoint, independently audited before integration. Supersedes E29, which recorded the pre-repair state. Added by amendment R3."
+      },
+      {
+        "id": "E39",
+        "path": "docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+        "fact": "The W2-B5 whole-batch closure audit evidence, integrated by PR #78 (artifact commit d3ab9e3d86117337894b10860fc6b66f319a3910, merged as 4e28c4c22ef026e7206802b3f773ea02a6566a6d) and present in the working tree at R3 with closure.W2_B5 = \"CLOSED\". Reachable by the resolver only after E38's repair. Added by amendment R3."
+      },
+      {
+        "id": "E40",
+        "path": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (units array)",
+        "fact": "The registry enumerates exactly four units — W2-B1, W2-B3, W2-B4, W2-B5 — with no W2-B2 entry. Measured at R3: all four report AUTHORITY_STATUS=CLOSED, IMPLEMENTATION_STATUS=CLOSED, AUDIT_STATUS=CLOSED and INTEGRATION_STATUS[origin/integration/commercial-v1]=INTEGRATED. Basis for F-W3-1.RESOLUTION.wave2_population_measured and for finding F-W3-7. Added by amendment R3."
+      }
+    ]
+  },
+  "CP4_SEQUENCE": {
+    "status": "DERIVED_AND_FROZEN_FOR_EXECUTION_PLANNING",
+    "decision": "FIBDB-053 Stage-A authoring happens FIRST. The S3c selected-organization Stella hosted/runtime weld happens SECOND. They MUST NOT be parallel writers.",
+    "carried_from": "Coordinator decision CP-4, restated here as this package's frozen sequencing rule. The collision it resolves was already declared, without a direction, at E30.",
+    "why_serial_and_not_merely_ordered": {
+      "shared_write_region": [
+        "db/prepared/** — FIBDB-053 authors stella_0017b_*.sql and stella_0017b_rollback.sql; S3c rewrites the Stella writer surface in the same prepared track (E30, E33).",
+        "db/prepared/hosted/** and db/prepared/hosted/governed/** — both packages must publish a hosted and a governed variant of the same lineage (E31).",
+        "db/prepared-package-order.ts — FIBDB-053 appends to STELLA_TICKET_PACKAGE_CHAIN and adds a PREPARED_PACKAGE_SUPERSESSIONS entry (E17, E18, E19); S3c's hosted-baseline-manifest work touches the same declarative region.",
+        "db/hosted/baseline-manifest.ts — named by the tenancy authority as an anticipated protected surface for the S-node package."
+      ],
+      "why_a_merge_cannot_reconcile_them": "Both packages change the ARITY and body of the same SECURITY DEFINER functions in the same schemas. A textual merge of two independent DROP+CREATE revisions of uellix_stella_ops.complete_operation_ticket produces a file that applies cleanly and installs a function neither author designed. stella_0018's self-verification asserts a function COUNT of exactly eight (E20); two concurrent revisions that each believe they preserved the count can jointly break it, and the failure surfaces only at apply time in a G2 window neither author controls.",
+      "direction_rationale": "FIBDB-053 is first because it is the externally gated item (E5, E9, E10) and because its target is narrow and already frozen down to the parameter names. S3c is second because it is explicitly required to build from the LATEST FIBDB-053 form; the reverse order would force FIBDB-053 to re-derive a signature S3c had already moved."
+    },
+    "s3c_preservation_obligations": {
+      "rule": "S3c builds FROM the latest FIBDB-053 form. It preserves each of the following exactly; changing any of them is a supersession of FIBDB-053, not an S3c change, and requires its own authority.",
+      "must_preserve": [
+        "risk_level — the stella_interactions column, its CHECK vocabulary (NULL|low|medium|high) and its partial index (E21).",
+        "risk_flags — the text[] column and the fact that it is written on the same durable row, in the same transaction (E21).",
+        "The FINAL function signature FIBDB-053 publishes for the completion verb and for the settle function it delegates to — argument names, types and order.",
+        "Ticket-package semantics — one ticket is one unit whichever verb settles it; the charge identity is derived from a nonce no function returns; a caller cannot move the charge (E16).",
+        "Idempotency — the (organization_id, idempotency_key) contract and the ON CONFLICT ... DO NOTHING behaviour, unchanged (E14).",
+        "Quota transaction semantics — the charge, the ledger INSERT and the ticket status UPDATE remain in ONE transaction under the existing per-organization advisory lock (E14, E16)."
+      ],
+      "reciprocal_prohibition": "FIBDB-053 must NOT attempt to anticipate or implement S3c. It does not add an organization-scope recheck, does not change how organization_id is derived, and does not touch the selected-organization carrier. Those are S3c's obligations under the tenancy authority and remain there."
+    },
+    "what_this_ordering_does_not_do": "This ordering does not itself execute G2. Hosted G2 application remains separately human-controlled. See G2_BOUNDARY."
+  },
+  "FIBDB053_STAGE_A_CONTRACT": {
+    "frozen_identity": {
+      "prepared_unit_id": "stella_0017b_governed_risk_parameters",
+      "source": "E5, E32 — frozen by the FIB baseline, not chosen here.",
+      "lineage": "stella_0017_governed_stella_consumption. The applied unit is NEVER edited; it remains intact as a historical artifact (E5, E9).",
+      "track": "PREPARED_G2",
+      "migration_stage": "A (additive; the parameters are optional and the existing path keeps functioning without them).",
+      "hardening_stage": "E (the parameters become mandatory for the validator and reviewer categories once FIBIU-20 is in production)."
+    },
+    "required_artifacts": {
+      "rule": "Replicates the stella_0017 set exactly (E5, E31). All four are required; a package missing the hosted or governed variant is incomplete, not merely unpolished.",
+      "paths": [
+        "db/prepared/stella_0017b_governed_risk_parameters.sql",
+        "db/prepared/stella_0017b_rollback.sql",
+        "db/prepared/hosted/stella_0017b_governed_risk_parameters.hosted.sql",
+        "db/prepared/hosted/governed/stella_0017b_governed_risk_parameters.governed.sql"
+      ],
+      "measured_absence_at_AS_OF_HEAD": "NONE of the four exists. db/prepared/ holds stella_0010..stella_0019 with no 0017b (E31)."
+    },
+    "TWO_FUNCTION_DERIVATION": {
+      "class": "MATERIAL_DERIVATION_THIS_AUTHORITY_ADDS",
+      "what_the_baseline_says": "E5 speaks of 'the governed completion function' in the singular: extended with p_risk_level and p_risk_flags, written inside the existing INSERT ... ON CONFLICT (organization_id, idempotency_key), under the existing per-organization advisory lock.",
+      "what_the_executable_state_shows": "Those two clauses do not describe the same function. The advisory lock and the ledger INSERT with its ON CONFLICT live in uellix_stella.settle_reserved_quota, the TEN-argument function (E13, E14). The verb the runtime calls is uellix_stella_ops.complete_operation_ticket, the SEVEN-argument function, which owns neither the lock nor the INSERT and reaches them only by calling settle (E12, E16).",
+      "derived_contract": "FIBDB-053 Stage A must revise a CHAIN of functions, not one function. The parameters are threaded, not merely added:",
+      "chain": [
+        {
+          "order": 1,
+          "function": "uellix_stella.settle_reserved_quota (ten-argument form)",
+          "change": "DROP the ten-argument signature and CREATE a twelve-argument one adding p_risk_level varchar(50) and p_risk_flags text[], in the same transaction. The two new values are written into the SAME INSERT column list at E14 — never a second statement, never an UPDATE after the fact, because an UPDATE would edit an append-only trail and a second INSERT would be a second charge.",
+          "invariants_preserved": "The advisory lock stays first; the ON CONFLICT (organization_id, idempotency_key) WHERE idempotency_key IS NOT NULL clause is unchanged; the function stays SECURITY DEFINER with SET search_path = ''; ownership stays uellix_cap_stella_quota; EXECUTE stays granted to uellix_cap_stella_ticket and to nobody else."
+        },
+        {
+          "order": 2,
+          "function": "uellix_stella.settle_reserved_quota (five-argument delegator)",
+          "change": "Re-created so its body delegates to the NEW twelve-argument form with two additional NULLs. Its own signature does not change.",
+          "why_it_cannot_be_skipped": "E15 — the delegator's body names the ten-argument function explicitly. Dropping the ten-argument form without re-creating the delegator leaves a delegator pointing at a function that no longer exists, and the stated design reason for the delegator is that this schema holds ONE ledger INSERT reached by two arities. A missed delegator is a second body waiting to drift."
+        },
+        {
+          "order": 3,
+          "function": "uellix_stella_ops.complete_operation_ticket (seven-argument form)",
+          "change": "DROP the seven-argument signature and CREATE a nine-argument one adding p_risk_level varchar(50) and p_risk_flags text[], passing both through to the twelve-argument settle at the call site measured at E16.",
+          "invariants_preserved": "Every refusal ordering is unchanged: identifier validation, project mismatch U0110 checked BEFORE the replay short-circuit, digest U0107, liveness U0108, replay semantics, and the derivation of the charge key from the unreturned nonce. Ownership stays uellix_cap_stella_ticket; EXECUTE stays granted to uellix_app."
+        }
+      ],
+      "no_overload_rule": "Every one of the three is a DROP-then-CREATE inside one transaction, never a CREATE OR REPLACE with a longer argument list and never a DEFAULT. E5 gives the reason (CREATE OR REPLACE cannot alter the argument list; a DEFAULT creates an overload and raises the function count) and E20 gives the enforcement: stella_0018 asserts uellix_stella_ops holds EXACTLY EIGHT functions, and separately asserts that none of the four ticket verbs declares pronargdefaults > 0. Both assertions must still hold after stella_0017b.",
+      "function_count_after": "uellix_stella_ops must still hold exactly EIGHT functions. The DROP+CREATE of complete_operation_ticket is count-neutral by construction; a package that leaves nine has created an overload and is refused by stella_0018's own verification if that unit is ever re-applied.",
+      "technique_precedent": "E5 names it: 'the same technique stella_0015 used for stella_0014's four signatures.'"
+    },
+    "CHAIN_POSITION": {
+      "decision": "Appended to the TAIL of the Stella ticket chain, after stella_0018_category_bound_operation_tickets — never interleaved between stella_0017 and stella_0018.",
+      "source": "E5, E32.",
+      "measured_constant_name_divergence": "The FIB prose says TICKET_PACKAGE_CHAIN; the executable constant is named STELLA_TICKET_PACKAGE_CHAIN at db/prepared-package-order.ts:88 (E17). Recorded as a naming divergence, not a conflict — the referent is unambiguous and there is exactly one such chain. An implementing mission edits STELLA_TICKET_PACKAGE_CHAIN. See OPEN_FINDINGS F-W3-3.",
+      "why_the_tail": "E5: interleaving would force re-application of stella_0018 in already-installed environments, and stella_0018 self-verifies the exact function count stella_0017 produced (E20). At the tail, an already-applied environment applies only the new unit and a fresh environment receives it after 0017 and 0018.",
+      "not_a_member": "stella_0019_storage_write_roles exists on disk but is not a member of STELLA_TICKET_PACKAGE_CHAIN (E17). stella_0017b joins the chain; it does not follow stella_0019."
+    },
+    "SUPERSESSION_REGISTRY_ENTRY": {
+      "status": "MANDATORY",
+      "target": "PREPARED_PACKAGE_SUPERSESSIONS in db/prepared-package-order.ts (E19).",
+      "fields_named_by_the_fib_baseline": {
+        "packageName": "stella_0017_governed_stella_consumption",
+        "supersededBy": "stella_0017b_governed_risk_parameters",
+        "why": "Re-applying stella_0017 over stella_0017b would restore a completion verb without the risk parameters, silently returning V-18's governance data to the best-effort audit_logs trail that swallows its own failures. Genuine reversal uses stella_0017b_rollback.sql."
+      },
+      "fields_the_executable_interface_ADDITIONALLY_requires": {
+        "class": "MATERIAL_DERIVATION_THIS_AUTHORITY_ADDS",
+        "finding": "E18 — PreparedPackageSupersession is a five-field interface. The FIB baseline's mandatory-entry text names three of the five. An implementing mission that writes only the three named fields does not compile.",
+        "probe": "A fixed literal SQL string, never composed and never interpolated, that is TRUE when stella_0017b is installed in the connected database. It must follow the STELLA_0017_INSTALLED_PROBE / STELLA_0018_INSTALLED_PROBE pattern already in the file. The natural discriminator is the presence of the nine-argument complete_operation_ticket signature, which no prior unit publishes.",
+        "wouldRepublish": "The exact object signature list re-application would restore — the pattern in the file is a named const array of objects mapped to .signature. The list must name the seven-argument complete_operation_ticket and the ten-argument settle_reserved_quota, because those are precisely the signatures stella_0017 would put back.",
+        "rule": "Both fields are REQUIRED. Neither may be filled with a placeholder, and the probe may not be composed at runtime — E18 states the literal requirement and the migrator runs it verbatim."
+      }
+    },
+    "ROLLBACK_CONTRACT": {
+      "rule": "Reverting means ceasing to pass the parameters. Already-written rows cannot be deleted or modified — trg_stella_interactions_append_only is applied in G2. Rollback is BEHAVIORAL ONLY, never a data rollback (E5).",
+      "derived_obligation": "stella_0017b_rollback.sql must restore the seven-argument complete_operation_ticket, the ten-argument settle_reserved_quota AND the five-argument delegator's body pointing back at the ten-argument form — all three, in one transaction, mirroring the three-step forward chain. A rollback that restores only the verb leaves the delegator pointing at a dropped function.",
+      "interaction_with_stella_0017_rollback": "stella_0017_rollback.sql restores the five-argument settle as a SELF-CONTAINED body and drops the ten-argument function. After stella_0017b is installed, running stella_0017_rollback.sql is therefore NOT a valid reversal path — it would drop a function stella_0017b's forward unit replaced with a wider one. This is exactly what the mandatory supersession entry exists to refuse. Recorded so an operator is not left to discover it at apply time."
+    },
+    "FAIL_CLOSED_TEST": {
+      "source": "E5, restated as this package's obligation, not weakened.",
+      "assertions": [
+        "A validator or reviewer interaction that produces a risk_level and fails to persist it to the durable row is NOT delivered (F-16).",
+        "Every new interaction of those two categories carries risk_level on its stella_interactions row.",
+        "FIBIU-20's gate NEVER reads audit_logs to obtain a risk level."
+      ],
+      "measured_starting_point": "All three are FALSE today: E24 records that the path does not file the values at all, and E25 records that the only place they land is the audit_logs afterJson payload."
+    },
+    "APPLICATION_PREREQUISITE": "None to AUTHORIZE the unit. Consumption requires FIBIU-20 (E5)."
+  },
+  "G2_BOUNDARY": {
+    "rule": "A hard boundary between what this package may do and what only a human may do. It is stated as two disjoint lists so that neither can be read as implying the other.",
+    "permitted_before_G2": [
+      "Authoring the four stella_0017b artifacts as files in the repository.",
+      "Authoring the STELLA_TICKET_PACKAGE_CHAIN append and the PREPARED_PACKAGE_SUPERSESSIONS entry.",
+      "Disposable rehearsal — applying the unit against a fresh, throwaway PostgreSQL container via pnpm db:audit:disposable, and destroying it. Never staging, never production, never the canonical local Supabase stack.",
+      "Beginning FIBIU-20 Stage-A development — E5's APPLICATION_PREREQUISITE is 'none to authorize the unit', and the FIB baseline authorizes the unit in wave 1 while consuming it in wave 3."
+    ],
+    "requires_an_explicit_human_G2_action": [
+      "Any remote or staging application of stella_0017b.",
+      "Any hosted application of the .hosted.sql or .governed.sql variants.",
+      "Any production application, under any framing.",
+      "Declaring the FIBDB-053 external gate RESOLVED."
+    ],
+    "FIBIU20_PRODUCTION_READINESS_RULE": "FIBIU-20 MAY begin Stage-A development before G2. FIBIU-20 may NOT become production ready until FIBDB-053 is APPLIED. The two are different milestones and this package does not let the first stand in for the second.",
+    "external_gate_status_at_AS_OF_HEAD": "PENDING. E5 states it and nothing measured at AS_OF_HEAD changes it: none of the four artifacts exists (E31), so the gate has no submitted object.",
+    "transitive_stop_rule": "E10 — if the gate is unresolved by the start of wave 3, FIBIU-20 stops, and with it FIBIU-24 (wave 4) and FIBIU-26 (wave 5) by transitive dependency. This package does not soften that rule and does not provide a bypass.",
+    "no_bypass_clause": "There is no condition under which this authority authorizes a hosted or remote apply. A future mission that believes it has found one has misread this section."
+  },
+  "FIBIU19_METHODOLOGY_APPROVAL_COMPOSITION": {
+    "role": "THE single future methodology-approval composition authority. Any other surface that appears to decide approvability is either consuming this composition or is wrong.",
+    "source": "E1, E6.",
+    "COMPOSITION_FUNCTION": {
+      "rule": "ONE server-side composition function is the sole authority. It is computed from live governed state and MUTATES NOTHING.",
+      "no_state_table": "Eligibility is computed, not persisted. FIBDB-052 is a supporting INDEX package only; there is no eligibility state table and none may be introduced (E1, E6).",
+      "run_immutability": "The run row stays unmutated. This is not a style preference — it honours F-06 and the existing 0030 append-only trigger, and it is half of FIBIU-19's exit gate (E6).",
+      "server_side": "The gate runs server-side. No condition is skippable via the interface (E6)."
+    },
+    "FOUR_STATES": [
+      {
+        "state": "CALCULATED",
+        "meaning": "A persisted run exists."
+      },
+      {
+        "state": "PRELIMINARY",
+        "meaning": "Calculated but at least one eligibility condition is unmet. EVERY surface must label it preliminary."
+      },
+      {
+        "state": "ELIGIBLE_FOR_METHODOLOGY_APPROVAL",
+        "meaning": "All conditions met; no approval yet."
+      },
+      {
+        "state": "METHODOLOGY_APPROVED",
+        "meaning": "An sroi_run_reviews row with status='approved' satisfying FIBC-024 exists."
+      }
+    ],
+    "READINESS_NON_ELIGIBILITY": {
+      "rule": "READINESS IS NEVER ELIGIBILITY.",
+      "hard_form": "The readiness score is NEVER an input to the composition function (E1, E6). Not as a tie-breaker, not as a hint, not as a display-only field the function happens to read.",
+      "why_it_is_stated_this_strongly": "sroi_run_reviews.readiness_score already exists and already carries a LEGACY_NON_AUTHORITATIVE marking from W2-B5 forward (db/schema.ts, the FIBIU-17 comment block above the column). A historical column that still holds plausible values is exactly the kind of thing a composition function acquires by accident.",
+      "test_obligation": "A run whose readiness_score is maximal and whose conditions are unmet is PRELIMINARY. A run whose readiness_score is NULL or minimal and whose conditions are all met is ELIGIBLE_FOR_METHODOLOGY_APPROVAL. Both directions must be proven; proving only one leaves the field usable as a veto."
+    },
+    "REASON_CODES": {
+      "count": 24,
+      "rule": "EXACTLY these 24, frozen. They are stable, domain-specific identifiers, independent of UI copy. Adding a 25th, removing one, or renaming one is a supersession of FIBC-023 and requires its own authority — it is not an implementation decision.",
+      "source": "E1 — reproduced in the baseline's own order.",
+      "codes": [
+        "FILTER_VALUE_MISSING",
+        "FILTER_JUSTIFICATION_MISSING",
+        "COUNTERFACTUAL_MISSING",
+        "DEADWEIGHT_BASIS_INSUFFICIENT",
+        "MATERIALITY_UNCLASSIFIED",
+        "MATERIALITY_JUSTIFICATION_MISSING",
+        "MONETIZATION_DISPOSITION_MISSING",
+        "NOT_MONETIZED_REASON_MISSING",
+        "EVIDENCE_APPROVED_MISSING",
+        "EVIDENCE_SUFFICIENCY_UNDETERMINED",
+        "EVIDENCE_SENSITIVITY_UNCLASSIFIED",
+        "EVIDENCE_CONTENT_UNVERIFIABLE",
+        "PROXY_NOT_APPROVED",
+        "PROXY_PROVENANCE_INCOMPLETE",
+        "PROXY_RUBRIC_INCOMPLETE",
+        "PROXY_EXCEPTIONAL_DETERMINATION_MISSING",
+        "PROXY_VERSION_SUPERSEDED",
+        "ASSUMPTION_UNRESOLVED",
+        "CAUSAL_CHAIN_INSUFFICIENT",
+        "SENSITIVITY_INCOMPLETE",
+        "STELLA_HIGH_FINDING_UNDISPOSED",
+        "INPUTS_CHANGED_SINCE_RUN",
+        "LEGACY_NON_AUTHORITATIVE_RUN",
+        "NO_SECOND_QUALIFIED_REVIEWER"
+      ],
+      "unknown_condition_rule": "FC — an unknown or unresolvable condition means NOT ELIGIBLE (E1). A condition the function cannot evaluate is never treated as satisfied.",
+      "reachability_gate": "Each of the 24 must be reachable. E8 places that gate at the WAVE level ('eligibility matrix (24 reasons reachable)'), and E6 restates it as FIBIU-19's own exit gate. Where those two readings diverge, see REASON_CODE_SOURCE_TENSION."
+    },
+    "REASON_CODE_SOURCE_TENSION": {
+      "class": "MEASURED_SEQUENCING_TENSION_RECORDED_NOT_RESOLVED",
+      "measurement": "E34 — FIBIU-19's transitive hard-dependency closure is exactly 15 units, all in waves 1-2. Three units that own the state four reason codes depend on are OUTSIDE that closure.",
+      "cases": [
+        {
+          "reason_codes": [
+            "EVIDENCE_SENSITIVITY_UNCLASSIFIED"
+          ],
+          "state_owner": "FIBIU-05 (owns FIBDB-043, the evidence sensitivity/treatment/erasure vocabularies)",
+          "position": "Wave 2, NOT in FIBIU-19's transitive hard-dependency closure.",
+          "assessment": "BENIGN IN PRACTICE, UNDECLARED IN THE GRAPH. FIBIU-05 completes in wave 2, so wave ordering satisfies it. But the dependency is satisfied by wave ordering, not by a declared edge — an implementing mission that trusts the hard-dependency list alone will not know it must read FIBDB-043's vocabulary.",
+          "obligation": "The FIBIU-19 implementing mission must verify FIBDB-043 is present and consume its vocabulary; it must not infer the sensitivity classification set."
+        },
+        {
+          "reason_codes": [
+            "STELLA_HIGH_FINDING_UNDISPOSED",
+            "NO_SECOND_QUALIFIED_REVIEWER"
+          ],
+          "state_owner": "FIBIU-20 (owns FIBDB-019/020 stella_findings and dispositions, and FIBDB-040 the SoD trigger)",
+          "position": "Wave 3, topological level 3.2 — AFTER FIBIU-19 (level 3.1). FIBIU-20 is FIBIU-19's declared SOFT dependency, and FIBIU-19 is FIBIU-20's HARD dependency (E6, E7).",
+          "assessment": "RESOLVED BY THE WAVE-LEVEL GATE, NOT BY FIBIU-19 ALONE. Two of the 24 reasons cannot be reachable until FIBIU-20 lands, because the tables that carry their state do not exist until then (measured: db/schema.ts contains no stella_findings or stella_finding_dispositions at AS_OF_HEAD).",
+          "obligation": "FIBIU-19 defines and emits both codes; their REACHABILITY is proven at the wave exit gate (E8), not at FIBIU-19's. A FIBIU-19 closure audit that demands 24/24 reachable before FIBIU-20 exists is demanding something the frozen topology forbids, and a Wave-3 closure audit that accepts 22/24 is accepting less than E8 requires. Both readings are wrong; the split above is the frozen resolution."
+        },
+        {
+          "reason_codes": [
+            "LEGACY_NON_AUTHORITATIVE_RUN"
+          ],
+          "state_owner": "FIBIU-02 (owns FIBDB-001, the run version triple). NOT FIBIU-30.",
+          "position": "Wave 1, topological level 1.2. FIBIU-02 is NOT in FIBIU-19's declared transitive hard-dependency closure (E34) — an UNDECLARED EDGE, not a missing wave.",
+          "classification": "REACHABLE_IN_WAVE3_FROM_EXISTING_STATE",
+          "correction_of_r1": "R1 of this artifact asserted that FIBDB-051 is this reason code's \"vocabulary owner\" and that the code therefore depends on a wave 6 object. That assertion is FALSE and is withdrawn. It conflated three distinct things now separated below, and it named a legacy_class member whose actual referent is historically approved PROXIES, not runs.",
+          "three_distinct_things": [
+            {
+              "name": "BACKFILL_CLASS: LEGACY_NON_AUTHORITATIVE",
+              "what_it_is": "A backfill classification carried by a DB change, describing how history is treated. Measured at AS_OF_HEAD: it appears on EXACTLY TWO items — FIBDB-016 (sroi_run_reviews.readiness_score, :311) and FIBDB-030 (sroi_reports.verification_hash, :339), both LEGACY_MARKING. Neither is an eligibility reason and neither concerns run version identity."
+            },
+            {
+              "name": "legacy_class member legacy_non_authoritative_for_new_runs",
+              "what_it_is": "One of six members of the legacy_class vocabulary FIBDB-051 defines (:381). Its referent per FIB:713 is historically APPROVED PROXIES lacking full provenance/actor/version/rubric (FIBDB-006) — not runs. The run-shaped member of that same vocabulary is legacy_run_without_version_identity, and the review-shaped one is legacy_self_approved_review. Naming this member as the run reason code's owner was R1's specific error."
+            },
+            {
+              "name": "eligibility reason LEGACY_NON_AUTHORITATIVE_RUN",
+              "what_it_is": "Member 23 of the frozen FIBC-023 register (E1, :180). It is a COMPOSITION OUTPUT of FIBIU-19, owned by FIBC-023 / FIBIU-19. It is not a column, not an enum member, and not a backfill class."
+            }
+          ],
+          "reachability_proof": {
+            "rule": "The reason is reachable in Wave 3 from state that already exists, with no FIBDB-051 and no wave 6 dependency.",
+            "carrier": "FIBDB-001 — the permanent NULL version triple. FIB:281 declares BACKFILL_CLASS: IMPOSSIBLE_TO_BACKFILL — permanent NULL on historical runs, write-once, with the existing 0030_immutability.sql trigger already blocking UPDATE.",
+            "measured_present_at_AS_OF_HEAD": "db/schema.ts:828-830 — methodology_version varchar(20), calculation_engine_version varchar(20), build_identity varchar(100), all three NULLABLE on sroi_calculation_runs. A run predating versioning therefore already carries the all-NULL triple today; nothing needs to be built for the predicate to have something to read.",
+            "the_baseline_already_says_it": "FIB:59, FIBC-001's own TESTS clause, verbatim: \"run carries triple; legacy run keeps NULL and is ineligible; no update path exists.\" INELIGIBILITY of a NULL-triple run is therefore already a frozen FIBC-001 test obligation. FIBC-023 supplies the identifier that ineligibility is reported under; it does not create the condition.",
+            "fibdb051_is_a_representation_not_a_source": "FIBDB-051's own BACKFILL_CLASS is SAFE_AUTOMATIC_BACKFILL, and :381 states every class is \"derived from already-persisted facts (content IS NULL, snapshot_identity IS NULL, reviewer_id = calculated_by, methodology_version IS NULL), never inference.\" FIB:715 repeats it: legacy_class \"makes every one of these regimes verifiable by machine, derived exclusively from already-persisted facts.\" The facts are already persisted. FIBDB-051 makes the classification DURABLE and machine-verifiable later; it is not what makes the condition detectable now."
+          },
+          "fibdb051_role": {
+            "stays": "FIBDB-051 stays Wave 6 / FIBIU-30, migration stage B, unchanged. Nothing about it is pulled forward, and this artifact does not reclassify it.",
+            "owns": "Later DURABLE REPRESENTATION only — the legacy_class vocabulary and its NOT NULL constraint under governance_regime='pre_pc01b'.",
+            "does_not_own": "The FIBC-023 eligibility reason code, the detection predicate, and the Wave 3 exit gate."
+          },
+          "division_of_labour": {
+            "FIBIU_19_DETECTS": "FIBIU-19 DETECTS the condition and emits LEGACY_NON_AUTHORITATIVE_RUN as a composition output, computed from live governed state.",
+            "FIBIU_19_MUST_NOT_WRITE": "FIBIU-19 MUST NOT write any durable legacy_class representation. Doing so would (a) mutate state the composition is required to leave untouched, and (b) pre-empt FIBDB-051's wave 6 vocabulary with a value written by a unit that does not own it. The composition function persists nothing — see COMPOSITION_FUNCTION.no_state_table and RUN_IMMUTABILITY."
+          },
+          "obligation": "ADJUDICATED AND CLOSED. No reason code is removed, renamed or reclassified; the register remains exactly 24. The Wave 3 exit gate keeps its full 24-reason reading (E8) — it is not relaxed to 23/24, and FIBDB-051 is not pulled forward. See UNDECLARED_EDGE_OBLIGATION."
+        }
+      ],
+      "fail_closed_note": "None of the four codes above is dropped, renamed, or quietly reclassified by this artifact. The register stays at 24.",
+      "UNDECLARED_EDGE_OBLIGATION": {
+        "rule": "FROZEN. The FIBIU-19 implementing mission MUST consume the existing predicates directly. It may neither infer the condition heuristically nor wait for FIBDB-051.",
+        "measured_gap": "FIBIU-02 (owner of FIBDB-001) and FIBIU-05 (owner of FIBDB-043) are both outside FIBIU-19's declared transitive hard-dependency closure of 15 units (E34), yet FIBIU-19 must read state both of them own. Wave ordering satisfies both in practice — FIBIU-02 is wave 1 and FIBIU-05 is wave 2 — but neither is a declared edge, so a mission trusting the hard-dependency list alone will not know it must read them.",
+        "required_predicates": [
+          {
+            "reason_code": "LEGACY_NON_AUTHORITATIVE_RUN",
+            "predicate": "The NULL version-triple predicate over sroi_calculation_runs — methodology_version / calculation_engine_version / build_identity (db/schema.ts:828-830, FIBDB-001). Consumed as the persisted fact it already is.",
+            "additionally": "For the HISTORICAL SELF-APPROVAL case the mission must ALSO consume reviewer_id = calculated_by, exactly where the sealed authority requires it — FIB:381 and FIB:715 both name that predicate among the already-persisted facts, and FIB:713 binds it to \"historical self-approvals are preserved exactly and never satisfy V-04\". Both columns already exist (E22, E23)."
+          },
+          {
+            "reason_code": "EVIDENCE_SENSITIVITY_UNCLASSIFIED",
+            "predicate": "The FIBDB-043 evidence sensitivity vocabulary (FIBIU-05, wave 2). Verify it is present and consume it; do not infer the classification set."
+          }
+        ],
+        "prohibitions": [
+          "NO heuristic inference of legacy status — not from created_at, not from a date cutoff, not from the absence of an unrelated row. The predicate is the persisted NULL triple and nothing else.",
+          "NO waiting for FIBDB-051. The wave 6 vocabulary is not a precondition of detection, and a mission that blocks on it has misread this section.",
+          "NO durable legacy_class write by FIBIU-19 (see division_of_labour)."
+        ]
+      },
+      "status_after_adjudication": "Two of the three cases are RESOLVED — LEGACY_NON_AUTHORITATIVE_RUN by the Lane AR adjudication applied here, and the FIBIU-20 pair by the wave-level gate split already frozen in R1. The FIBIU-05 case remains a benign undeclared edge, now carried as an explicit obligation rather than an open tension."
+    },
+    "B5_F3_CARRY_FORWARD": {
+      "carried_finding": "W2-B5 finding F-3.",
+      "repository_resident_disposition_verbatim": "ACCEPTED_BY_CURRENT_AUTHORITY, with a future Wave3/FIBIU19 validation obligation. Not a B5 blocker. Not repaired here.",
+      "disposition_source": "E28 — docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json:173-174. This one-line disposition is the ONLY repository-resident record of F-3; the full finding narrative lives in the B5 adjudication conversation and is not a repository artifact. Recorded as such rather than reconstructed.",
+      "measured_live_surface": "E26, E27 — alternativeValue is validated only as z.string().min(1) and is then substituted verbatim into the deterministic engine for methodological_filter, proxy_value and discount_rate_pct candidates. No numeric parse or format check exists on that path at AS_OF_HEAD.",
+      "the_obligation_now_owned_by_FIBIU19": {
+        "rule": "A non-numeric sensitivity alternativeValue MUST be rejected, as NUMERIC-FORMAT VALIDATION, so that it cannot silently discharge SENSITIVITY_INCOMPLETE.",
+        "mechanism": "Format validation. The value must parse as a number for the candidate kinds whose substitution target is numeric. A value that does not parse is refused at the recording boundary, not accepted-and-ignored.",
+        "why_it_matters_to_eligibility": "The FIBIU-18 completeness gate discharges when every variation_required candidate carries at least one governed scenario. SENSITIVITY_INCOMPLETE reads that gate. A scenario recorded with a non-numeric alternativeValue is a scenario by the letter of the gate and nothing by its substance — so a reason code can be discharged by a value that changed no computation."
+      },
+      "EXPLICIT_PROHIBITION": {
+        "rule": "DO NOT add a materiality threshold and DO NOT add a nonzero-variation constraint.",
+        "reason": "That is a different finding — W2-B5 F-4 — whose repository-resident disposition is 'ACCEPTED_BY_CURRENT_AUTHORITY. A nonzero-variation constraint would violate current authority. Not a B5 blocker. NOT repaired — repairing it would violate NEG-18-7' (docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json:175). FIBIU-18's own contract states that no universal percentage threshold determines materiality: the system computes and displays deltas and the reviewer records rationale. A numeric-FORMAT check and a numeric-MAGNITUDE check are different things, and only the first is authorized here.",
+        "test_obligation": "The negative control must prove the boundary in BOTH directions: a non-numeric value is refused, AND a numerically valid value equal to the base value is ACCEPTED. The second half is what keeps a format check from becoming the forbidden threshold."
+      }
+    },
+    "RUN_IMMUTABILITY": "The run remains immutable. Composition reads live governed state and writes nothing to the run. Any implementation that persists a computed eligibility verdict onto the run row has violated both FIBC-023 and F-06."
+  },
+  "FIBIU20_REVIEW_SOD_AND_FINDINGS": {
+    "source": "E2, E3, E7, E11.",
+    "SOD": {
+      "rule": "Server-side rejection when reviewer_id = run.calculated_by.",
+      "measured_current_state": "NO segregation-of-duties check exists. Any super_admin | organization_admin | impact_manager | reviewer may approve a run they generated. calculated_by is written and never read (E2).",
+      "both_columns_already_exist": "sroi_calculation_runs.calculated_by NOT NULL (E22) and sroi_run_reviews.reviewer_id NOT NULL (E23). The comparison needs no new column.",
+      "two_independent_enforcement_points": {
+        "rule": "The refusal must hold in BOTH the service and the database. E7's exit gate is explicit: 'self-approval is rejected server-side and in the database.'",
+        "service": "The application layer refuses the approval.",
+        "database": "FIBDB-040, a NEW_TRIGGER on sroi_run_reviews, refuses the row on direct write. Its implementation form was frozen at R1 as a PostgreSQL trigger, superseding FIB-01A's originally declared NEW_CONSTRAINT.",
+        "why_both": "A service-only check is bypassed by any direct write; a database-only check gives the user no comprehensible refusal. E7 requires both, and a test that exercises only the service path proves half the gate."
+      },
+      "no_mandatory_third_person": "The reviewer may also perform the narrative attestation and lock the report when permitted. The independence rule constrains WHO may approve, not HOW MANY people must touch the run (E2).",
+      "no_inherited_approval": "A material change producing a new run does not inherit approval. The new run is re-reviewed under the same independence rule (E2)."
+    },
+    "NO_SECOND_QUALIFIED_REVIEWER_PATH": {
+      "rule": "An organisation without a second authorised user MAY work with preliminary results but MAY NOT approve or lock. The condition is surfaced as the reason code NO_SECOND_QUALIFIED_REVIEWER — it is never a silent failure and never a generic permission error.",
+      "source": "E2, and the code is member 24 of the frozen register.",
+      "social_risk_stated_by_the_baseline": "E7 — 'the SoD trigger strands single-user organisations if it lands before their exit path'. The FIB baseline classifies FIBDB-040 as behavioral with the highest social risk in its stage table and requires NO_SECOND_QUALIFIED_REVIEWER to be visible.",
+      "derived_ordering_obligation": "The reason code's surfacing is not a UI nicety that may follow the trigger. A single-user organisation that meets the database trigger before it can see why it cannot approve has been stranded with no explanation. The visible path and the trigger are one closure.",
+      "stella_exclusion": "Stella may support review but NEVER counts as a reviewer and NEVER satisfies independence. A single-user organisation does not become two-user because Stella participated (E2)."
+    },
+    "HIGH_FINDING_DISPOSITION": {
+      "rule": "Every risk_level='high' finding from an EXECUTED Stella review becomes a tracked open item requiring explicit human disposition, with justification, before run approval or report lock.",
+      "disposition_vocabulary_minimum": [
+        "resolved",
+        "accepted_as_limitation",
+        "dismissed_not_applicable"
+      ],
+      "vocabulary_owner": "FIBDB-049 (Stella findings/dispositions/abstentions vocabularies), owned by FIBIU-20 and consumed by FIBIU-21.",
+      "state_tables": "FIBDB-019 stella_findings and FIBDB-020 stella_finding_dispositions, both NEW_TABLE, both append-only. Measured at AS_OF_HEAD: neither exists in db/schema.ts.",
+      "fail_closed": "An open undisposed high finding BLOCKS approval and BLOCKS lock (E3).",
+      "downstream": "Findings requiring change follow the versioning/new-run rules. Findings accepted as limitations propagate to V-24 and, per E7, to FIBIU-24's snapshot.",
+      "stella_may_not_resolve_its_own_finding": "Stella neither approves the resolution nor must be re-run to a lower risk level. Re-running Stella until it reports a lower risk is an explicitly prohibited discharge path (E3, E7).",
+      "hard_precondition": "FIBDB-053. E3 states the reason plainly: the risk parameters must reach the durable row before this gate can be built on it. V-18's gate cannot be built on data that never reaches the durable row (E5), and today the data reaches only audit_logs (E24, E25)."
+    },
+    "ZERO_STELLA_ZERO_FINDING_GATE": {
+      "rule": "If Stella was NOT executed, NO finding gate is created.",
+      "source": "E3, verbatim: 'If Stella was not executed (V-17), no such gate is created.'",
+      "consequence": "Absence of Stella is not an open finding, not a preliminary condition, and not a quality penalty. A run that never invoked Stella reaches ELIGIBLE_FOR_METHODOLOGY_APPROVAL on its other 23 conditions with STELLA_HIGH_FINDING_UNDISPOSED never raised.",
+      "why_this_needs_saying": "The natural implementation of a blocking gate is 'block unless a disposition row exists', which converts every non-Stella run into a permanently blocked run. The gate is conditional on EXECUTION, not on the presence of a disposition.",
+      "test_obligation": "A run with zero Stella interactions must be provably eligible on that dimension. This is a required negative control, not an optional one."
+    },
+    "HUMAN_APPROVAL_BOUNDARY": {
+      "rule": "AI proposes and analyses; the system controls and calculates; humans decide and approve. Nothing in FIBIU-20 moves any part of that line.",
+      "specifics": [
+        "No Stella output constitutes approval, certification, audit or external verification.",
+        "Stella does not count as a reviewer and does not satisfy independence.",
+        "Stella does not approve a finding's resolution.",
+        "The disposition of a high finding is a HUMAN act carrying a human justification, recorded with actor and date.",
+        "No automatic path may discharge a high finding — not a timeout, not a re-run, not a lower subsequent risk_level."
+      ]
+    },
+    "HISTORICAL_SELF_APPROVAL_PRESERVATION": {
+      "rule": "Historical self-approvals are preserved EXACTLY and NEVER satisfy V-04 going forward. No fictitious second approver is added.",
+      "source": "E2, E11 — the baseline's speculative-backfill table records this row with backfill count 0.",
+      "consequences": [
+        "No historical sroi_run_reviews row is edited, deleted, re-attributed or annotated with an invented reviewer.",
+        "The SoD trigger must not be written in a form that would fail on, or rewrite, pre-existing rows.",
+        "A historical self-approved run does not thereby become METHODOLOGY_APPROVED under the new rule; it remains exactly the historical fact it is."
+      ],
+      "prohibition": "Any implementation that backfills a second approver, or that makes a historical self-approval satisfy V-04 in order to avoid a migration failure, is a historical invention and is refused."
+    },
+    "B5_F2_STAGE_E_CARRY_FORWARD": {
+      "carried_finding": "W2-B5 finding F-2.",
+      "repository_resident_disposition_verbatim": "EXPLICIT_STAGE_E_OBLIGATION. Not a B5 blocker. Not repaired here.",
+      "disposition_source": "E28 — docs/ops/wave2/W2_B5_IMPLEMENTATION_EVIDENCE_v1.0.0.json:173. As with F-3, this one line is the only repository-resident record; the full narrative is not a repository artifact and is not reconstructed here.",
+      "stage": "E — HARDENING. Not Stage A.",
+      "obligations": [
+        {
+          "id": "F2-a",
+          "topic": "candidate-field immutability",
+          "obligation": "The fields of a sensitivity candidate that identify WHAT it varies must not be mutable after the candidate has been dispositioned. A candidate whose input reference can change after disposition means a recorded human judgement can be silently re-pointed at a different input."
+        },
+        {
+          "id": "F2-b",
+          "topic": "relinking",
+          "obligation": "Any permitted re-association of a candidate, a scenario or a disposition to a different subject must be an explicit, recorded act with provenance — never an in-place field edit that leaves the prior linkage unrecoverable."
+        },
+        {
+          "id": "F2-c",
+          "topic": "disposition provenance",
+          "obligation": "Every disposition carries its actor, its moment and its rationale durably, and the trail is append-only. A disposition whose provenance can be overwritten is not evidence."
+        }
+      ],
+      "NON_RETROACTIVITY": {
+        "rule": "This carry-forward does NOT retroactively change B5 Stage A.",
+        "meaning": "W2-B5's Stage-A implementation stands exactly as audited and integrated. F-2 is a FORWARD hardening obligation landing in Stage E. No B5 artifact is reopened, re-audited or amended by this authority, and no B5 test is rewritten to assert a Stage-E property.",
+        "prohibition": "An implementing mission that satisfies F-2 by editing B5's Stage-A surface has violated this rule and the ODS no-historical-evidence-rewriting rule together."
+      }
+    },
+    "FIBIU29_DEPENDENCY_STATUS": {
+      "status": "CLOSED_AUDITED_INTEGRATED",
+      "adjudicated_by": "LANE AR — WAVE3-OPEN-AUTHORITY-FINDINGS-ADJUDICATION-R1, applied here as amendment R2. Supersedes U-W3-1, which R1 carried as UNKNOWN.",
+      "what_fibiu29_is": "FIBIU-29 — Discrete permissions and tenancy boundary (FIB:811-812). CONTRACTS_SERVED FIBC-041. DB_CHANGES: NO_DB_OBJECT — reasoned; it consumes FIBDB-032/033 and the existing policies rather than adding an object of its own. It is FIBIU-20's second declared hard dependency (E7).",
+      "why_it_matters_to_fibiu20": "Among the six discrete permissions it introduces are canApproveRunMethodology (the review set MINUS the run author) and canDisposeHighRiskFinding (review set). Those are precisely the permission surfaces FIBIU-20's SoD refusal and high-finding disposition gate sit on, which is why the baseline makes the edge hard rather than soft.",
+      "closure_chain": {
+        "step_1": "FIBIU-29 is a declared UNIT of Wave 1 — FIB:833, \"UNITS: FIBIU-01, FIBIU-02, FIBIU-03, FIBIU-28, FIBIU-29\", at topological level 1.2 (FIB:834). Confirmed independently from the machine index: FIBIU-29 wave = 1.",
+        "step_2": "Wave 1 is formally CLOSED. docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json records closure_status = \"CLOSED\", closure_class = \"ADVERSARIAL\", state_after_closure.wave1_formally_closed = true, under closure_authority = \"HUMAN_PRODUCT_OWNER_ACCEPTANCE_OF_W1_07\".",
+        "step_3": "The closure is AUDITED at an exact object: audited_head 6944a618b70c0ac0436a915fa0a52af24a16a5dc, audited_tree 80915e1608725351a9b7ad9772bdc595af679767, audited_branch codex/w1-integration-closure-r1, authority_commit 8ae297cd228a79d3fd7f598532e43e456f0aef5e.",
+        "step_4": "The closure is INTEGRATED. Measured directly: git merge-base --is-ancestor 6944a618 origin/integration/commercial-v1 returns true, and the same holds against this PR's head. Unlike the W2-B5 case (F-W3-1), no stale ref or unintegrated branch stands between the evidence and the integrated line."
+      },
+      "EVIDENCE_LIMITATION": {
+        "rule": "Stated so the grade of evidence is not overread.",
+        "what_this_is": "A STATIC and HISTORICAL closure-chain determination: the unit's Wave 1 membership, the Wave 1 closure artifact's own recorded verdict, and a git ancestry measurement.",
+        "what_this_is_NOT": "NOT a fresh local execution of FIBIU-29's test suites. The Lane AR adjudication could not execute suites in its worktree because node_modules was ABSENT there. This amending mission likewise did not re-execute FIBIU-29's suites — it re-measured the closure artifact's fields and the git ancestry, nothing more.",
+        "prohibition": "No consumer of this artifact may cite FIBIU29_DEPENDENCY_STATUS as evidence of a passing test run. It is evidence that Wave 1 closed adversarially and that its audited object is in the integrated line.",
+        "residual": "A Wave 3 implementing mission that needs a LIVE guarantee of the six discrete permissions must exercise them itself; the manifest carries that as an ordinary control, not as a dependency check."
+      }
+    }
+  },
+  "STELLA_BOUNDARY": {
+    "rule": "Wave 3 changes what is RECORDED about Stella and what BLOCKS on it. It changes nothing about Stella's authority.",
+    "preserved_exactly": [
+      "No authoritative SROI computation by Stella — the prompt prohibition, the numeric guard and the architectural import ban all stand.",
+      "requires_human_review = z.literal(true), rejected fail-closed if false, absent or incompatible, and NEVER silently corrected.",
+      "No Stella output constitutes approval, certification, audit or external verification.",
+      "Nothing auto-persists. Generation and incorporation remain distinct acts.",
+      "Stella review is RECOMMENDED, never required for validity, approval or lock. Its omission does not by itself make a result preliminary or inferior."
+    ],
+    "what_wave3_does_change": [
+      "Findings become first-class rows with stable identity (FIBDB-019) instead of fields buried in stella_interactions.response_json.",
+      "risk_level and risk_flags acquire real parameters on the governed completion path via FIBDB-053, so they reach the durable row inside the same transaction that charges the quota (E4, E5).",
+      "A high finding acquires a blocking human-disposition gate (FIBC-025)."
+    ],
+    "what_wave3_must_not_change": [
+      "Stella's tenant scope. That is S3c's obligation under the tenancy authority; FIBDB-053 does not anticipate or implement it (see CP4_SEQUENCE.s3c_preservation_obligations.reciprocal_prohibition).",
+      "Anything gated behind STELLA_GROUNDED_QUERY_ENABLED. FIBIU-21 carries an absolute prohibition on importing or activating it, and Wave 3 has no reason to approach it.",
+      "The abstention contract in lib/grounding/contracts/answer.ts, which is FIBIU-21's subject in wave 4, not Wave 3's."
+    ]
+  },
+  "SHARED_WRITERS": {
+    "rule": "Every surface below is written by more than one in-flight package. Each is a SERIAL CHOKE POINT: two missions may not hold it at once, regardless of how disjoint their intent appears.",
+    "chokepoints": [
+      {
+        "id": "SW-1",
+        "surface": "db/prepared/** (Stella lineage)",
+        "writers": [
+          "Wave3 FIBDB-053 (stella_0017b)",
+          "Tenancy S3c"
+        ],
+        "resolution": "CP4_SEQUENCE — FIBDB-053 first, S3c second.",
+        "protected": true
+      },
+      {
+        "id": "SW-2",
+        "surface": "db/prepared/hosted/** and db/prepared/hosted/governed/**",
+        "writers": [
+          "Wave3 FIBDB-053",
+          "Tenancy S3c"
+        ],
+        "resolution": "Same ordering as SW-1; the hosted and governed variants are part of the same four-artifact set (E31).",
+        "protected": true
+      },
+      {
+        "id": "SW-3",
+        "surface": "db/prepared-package-order.ts",
+        "writers": [
+          "Wave3 FIBDB-053 (chain append + supersession entry)",
+          "Tenancy S3c",
+          "Commercial account/entitlement package"
+        ],
+        "resolution": "Serial. The file holds both an ordered chain and a supersession registry; two concurrent appends produce an order neither author chose.",
+        "protected": false
+      },
+      {
+        "id": "SW-4",
+        "surface": "db/schema.ts",
+        "writers": [
+          "Wave3 FIBIU-20 (FIBDB-019/020/049)",
+          "Tenancy S-nodes",
+          "Commercial package"
+        ],
+        "resolution": "Serial by convention already in force across Wave 2 batches.",
+        "protected": false
+      },
+      {
+        "id": "SW-5",
+        "surface": "db/migrations/**",
+        "writers": [
+          "Wave3 FIBIU-19 (FIBDB-052) and FIBIU-20 (FIBDB-019/020/040/049)",
+          "Tenancy S-nodes",
+          "Commercial package"
+        ],
+        "resolution": "Serial, and ordinal allocation is explicitly NOT performed by this artifact. See FUTURE_ODS_NEEDS_SYMBOLIC.",
+        "protected": true
+      },
+      {
+        "id": "SW-6",
+        "surface": "lib/pipeline/sroi-results.ts",
+        "writers": [
+          "Wave3 FIBIU-19 (eligibility composition)",
+          "Wave3 FIBIU-20 (review/SoD)"
+        ],
+        "resolution": "Serial WITHIN Wave 3 by the frozen topology: 19 -> 20, SERIAL_CONTRACTS with no parallel groups (E8)."
+      }
+    ],
+    "intra_wave_rule": "FIBIU-19 and FIBIU-20 are themselves serial. E8 freezes SERIAL_CONTRACTS 19->20 and PARALLEL_GROUPS none. FIBIU-19 CAN_PARALLELIZE is 'no — the plan's real barrier'; it composes twelve units and a partial specification produces an incoherent gate (E6)."
+  },
+  "MIGRATION_AND_STAGE_CONTRACT": {
+    "wave3_db_changes": [
+      "FIBDB-019",
+      "FIBDB-020",
+      "FIBDB-040",
+      "FIBDB-049",
+      "FIBDB-052",
+      "FIBDB-053"
+    ],
+    "source": "E8.",
+    "stage_A_items": [
+      "FIBDB-019",
+      "FIBDB-020",
+      "FIBDB-049",
+      "FIBDB-052",
+      "FIBDB-053"
+    ],
+    "stage_E_items": [
+      "FIBDB-019",
+      "FIBDB-020",
+      "FIBDB-040",
+      "FIBDB-049",
+      "FIBDB-053"
+    ],
+    "track_split": {
+      "DRIZZLE": [
+        "FIBDB-019",
+        "FIBDB-020",
+        "FIBDB-040",
+        "FIBDB-049",
+        "FIBDB-052"
+      ],
+      "PREPARED_G2": [
+        "FIBDB-053"
+      ]
+    },
+    "one_track_per_object": "FIBDB-053 is the only item touching the prepared track, and it does so by REVISING stella_0017's lineage rather than creating a new logical object. The one-track-per-object rule is not violated.",
+    "NO_ORDINAL_ALLOCATED": "This artifact allocates NO db/migrations/** ordinal, reserves none, and implies none. Ordinal allocation is a separate governed act performed by the implementing mission against the then-current state of db/migrations/."
+  },
+  "SECURITY_CONTROLS": {
+    "rule": "Properties a Wave 3 implementation must PROVE, not merely intend. Each is stated so a test can fail on it.",
+    "controls": [
+      {
+        "id": "SEC-W3-1",
+        "property": "The SoD refusal holds on a DIRECT database write, not only through the service. A row inserted into sroi_run_reviews with reviewer_id = the run's calculated_by is refused by FIBDB-040."
+      },
+      {
+        "id": "SEC-W3-2",
+        "property": "No SECURITY DEFINER function published by stella_0017b declares a DEFAULT on any argument. E20's assertion (pronargdefaults > 0 on any of the four ticket verbs) must still evaluate to zero."
+      },
+      {
+        "id": "SEC-W3-3",
+        "property": "EXECUTE on the new settle_reserved_quota arity is granted to uellix_cap_stella_ticket and to nobody else — not uellix_app, not PUBLIC. Absence is asserted, not only presence."
+      },
+      {
+        "id": "SEC-W3-4",
+        "property": "The nine-argument complete_operation_ticket keeps SET search_path = '' and SECURITY DEFINER. A revision that drops either turns a governed verb into a search-path-injectable one."
+      },
+      {
+        "id": "SEC-W3-5",
+        "property": "risk_level values outside the CHECK vocabulary (NULL|low|medium|high) are refused by the database, not normalised by the application (E21)."
+      },
+      {
+        "id": "SEC-W3-6",
+        "property": "The eligibility composition never mutates the run. A direct attempt to write a computed verdict onto sroi_calculation_runs is refused by the existing 0030 append-only trigger."
+      },
+      {
+        "id": "SEC-W3-7",
+        "property": "The charge identity remains underivable by the caller: the key is still computed from a nonce no function returns, and the added risk parameters do not enter that derivation (E16). A risk parameter that fed the key would make the charge caller-movable."
+      }
+    ]
+  },
+  "MUTATION_CONTROLS": {
+    "rule": "Each control names a specific safety guarantee and the deletion that must be CAUGHT. A control the suite would not notice is not a control.",
+    "controls": [
+      {
+        "id": "MUT-W3-1",
+        "guarantee": "Readiness is not an eligibility input.",
+        "mutation": "Add readiness_score as a term in the composition function.",
+        "must_be_caught_by": "A run with maximal readiness and unmet conditions must still be PRELIMINARY, AND a run with NULL readiness and met conditions must still be ELIGIBLE. A suite asserting only one direction does not catch this."
+      },
+      {
+        "id": "MUT-W3-2",
+        "guarantee": "Non-numeric alternativeValue is refused.",
+        "mutation": "Revert the numeric-format validation to z.string().min(1).",
+        "must_be_caught_by": "A test recording a scenario with a non-numeric alternativeValue and asserting refusal — and a paired test asserting a numerically valid value equal to the base value is ACCEPTED, so the fix cannot drift into the prohibited magnitude threshold."
+      },
+      {
+        "id": "MUT-W3-3",
+        "guarantee": "Zero-Stella means zero finding gate.",
+        "mutation": "Change the high-finding gate from 'block when an executed review has an undisposed high finding' to 'block unless a disposition exists'.",
+        "must_be_caught_by": "A run with zero Stella interactions asserted ELIGIBLE on that dimension. Without this control the mutation looks stricter and therefore safer, which is exactly why it survives review."
+      },
+      {
+        "id": "MUT-W3-4",
+        "guarantee": "The SoD refusal is enforced in the database.",
+        "mutation": "Remove FIBDB-040 and keep only the service-layer check.",
+        "must_be_caught_by": "A direct-write test that bypasses the service entirely. A service-level test passes unchanged under this mutation."
+      },
+      {
+        "id": "MUT-W3-5",
+        "guarantee": "Historical self-approvals are preserved and never satisfy V-04.",
+        "mutation": "Backfill a second approver, or exempt historical rows by rewriting them.",
+        "must_be_caught_by": "An assertion that a pre-existing self-approved row is byte-identical after the trigger is installed, and that it does not read as METHODOLOGY_APPROVED under the new rule."
+      },
+      {
+        "id": "MUT-W3-6",
+        "guarantee": "The ledger holds ONE INSERT reached by two arities.",
+        "mutation": "Give stella_0017b's five-argument delegator a self-contained body instead of re-pointing it at the new wider settle.",
+        "must_be_caught_by": "A probe asserting the delegator's body contains no INSERT INTO public.stella_interactions — the same shape stella_0017's own self-verification already uses at its lines 899 and 912."
+      },
+      {
+        "id": "MUT-W3-7",
+        "guarantee": "The uellix_stella_ops function count stays at eight.",
+        "mutation": "Add p_risk_level/p_risk_flags with DEFAULTs via CREATE OR REPLACE, producing an overload.",
+        "must_be_caught_by": "A count assertion on uellix_stella_ops (expected 8) plus the pronargdefaults = 0 assertion. The overload is the failure mode E5 names explicitly."
+      },
+      {
+        "id": "MUT-W3-8",
+        "guarantee": "Risk data reaches the durable row, not the best-effort trail.",
+        "mutation": "Satisfy the fail-closed test by writing risk_level from the application after the transaction.",
+        "must_be_caught_by": "An assertion that the value is present on the stella_interactions row within the SAME transaction that charged the quota, and that FIBIU-20's gate never reads audit_logs (E5's FAIL_CLOSED_TEST)."
+      }
+    ]
+  },
+  "REAL_PG_FUTURE_CONTRACT": {
+    "rule": "Wave 3 cannot be proven without a real PostgreSQL probe. FIBDB-040 is a trigger, FIBDB-053 is a set of SECURITY DEFINER functions with ACLs, and FIBDB-049 is a vocabulary CHECK — none of the three has a meaningful in-process test double.",
+    "harness": "pnpm db:audit:disposable, against a fresh disposable container. NEVER staging, NEVER production, NEVER the canonical local Supabase stack.",
+    "required_probe_classes": [
+      "SoD trigger refusal on direct write, and acceptance for a distinct reviewer.",
+      "Pre-existing self-approved row preserved byte-identical across trigger installation.",
+      "stella_0017b apply: function count on uellix_stella_ops = 8; no DEFAULT on the four ticket verbs; the nine-argument complete_operation_ticket and twelve-argument settle exist; the seven- and ten-argument forms do not.",
+      "ACL: EXECUTE on the new settle arity granted to uellix_cap_stella_ticket only; absence asserted for uellix_app and PUBLIC.",
+      "risk_level CHECK refusal for an out-of-vocabulary value.",
+      "Idempotency: two completions of the same ticket file one row and charge one unit, with the risk columns unchanged on the replay.",
+      "stella_0017b_rollback restores all three signatures and leaves already-written risk values intact (behavioral rollback, never data rollback).",
+      "Container leak check: the post-run container list is byte-identical to the pre-run list."
+    ],
+    "status_at_AS_OF_HEAD": "NOT RUNNABLE — none of the objects exists. This is a FUTURE contract, declared now so an implementing mission does not have to invent it."
+  },
+  "FUTURE_ODS_NEEDS_SYMBOLIC": {
+    "rule": "THIS MISSION ALLOCATES NOTHING. Every identifier below is SYMBOLIC — a description of what a FUTURE mission will need, never a reservation and never a name-as-allocated.",
+    "lineage_ownership_at_AS_OF_HEAD": "PR77 / Lane AG owns the current next lineage. This package does not contend for it and does not consume it.",
+    "NEXT_ODS_ADDENDUM_ORDINAL": {
+      "symbolic": "The ODS maintenance addendum ordinal immediately after the highest present at AS_OF_HEAD.",
+      "measured_highest_present": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json",
+      "allocated_by_this_mission": "NONE",
+      "explicit_non_allocation": "v1.0.19 is NOT allocated here."
+    },
+    "NEXT_HPO_ODS_ID": {
+      "symbolic": "The HPO-ODS-W2 grant immediately after the highest present at AS_OF_HEAD.",
+      "allocated_by_this_mission": "NONE",
+      "explicit_non_allocation": "HPO-ODS-W2-20 is NOT allocated here."
+    },
+    "re_derivation_rule": "Future Wave 3 implementation lineage remains SYMBOLIC and MUST be re-derived after Controller 30 closes. A mission that reads an identifier off this artifact and treats it as granted has misread it; there is no identifier here to read.",
+    "grants_a_future_mission_will_need": {
+      "note": "Symbolic count only. Whether each maps to one grant or several is a lane-coordinator decision, not an authority decision.",
+      "anticipated_protected_surfaces": [
+        "db/prepared/**",
+        "db/migrations/**"
+      ],
+      "narrowest_grant": "The FIBDB-053 authoring grant — four files under db/prepared/** and db/prepared/hosted/**, plus one non-protected edit to db/prepared-package-order.ts.",
+      "why_this_mission_needed_none": "docs/ops/wave3/** is not a DEFAULT_PROTECTED_PATTERN (E33). An ordinary --allow authorizes this diff in full."
+    },
+    "controller_obligation": "Any artifact this package eventually produces that lands in the ODS immutable-by-convention set must be enumerated by the Controller. This artifact produces none such and makes no Controller claim.",
+    "CURRENT_EXTERNAL_LINEAGE_STATE": {
+      "rule": "OBSERVATION ONLY. This block records what the lineage landscape looks like outside this package at R3. It allocates nothing, reserves nothing, and confers nothing on Wave 3.",
+      "measured_at": "origin/integration/commercial-v1 = 08d3c4dd262a9cd9d4f64900fdd09205370f23ef.",
+      "pr77_status": "OPEN, NOT MERGED. PR #77 (\"docs(tenancy): Multi-org S1/S2 first execution authority (v1.0.19 / HPO-ODS-W2-20)\") had not merged when R3 was measured — verified with gh pr view: state=OPEN, mergeCommit=none.",
+      "consequence": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19 and HPO-ODS-W2-20 are therefore NOT present in integration at R3, and the highest ODS addendum ordinal in the integrated line remains v1.0.18. Had PR #77 merged, those identifiers would still be recorded here as EXTERNAL STATE belonging to Lane AG, never as available to Wave 3.",
+      "wave3_position_unchanged": "Wave 3 future implementation lineage remains SYMBOLIC and must be RE-DERIVED after Controller 30 closes. This mission allocates nothing: not v1.0.19, not HPO-ODS-W2-20, not a migration ordinal, not a Controller entry."
+    }
+  },
+  "OPEN_FINDINGS": {
+    "blocking_for_this_docs_only_freeze": [],
+    "blocking_for_wave3_implementation": [],
+    "non_blocking": [
+      {
+        "id": "F-W3-1",
+        "class": "RESOLVED_ON_MACHINE_PROOF",
+        "finding": "FIB:854 makes \"Wave 2 complete\" a Wave 3 PRECONDITION, and for three revisions of this artifact the machine resolver for W2-B5 did not return it. It now does.",
+        "what_this_is_not": "NOT a claim that Wave 3 implementation is now authorized. The precondition this finding tracked is satisfied; authorization additionally requires the independent audit of this package and a lineage grant, neither of which exists. See final_state.",
+        "separately_measured": "INTEGRATION_STATUS reported NOT_INTEGRATED for integration/commercial-v1 only because the LOCAL branch of that name is stale at 547ac36405c47b1be386d37ba1f387173c867252 (PR #54 era). Re-measured against origin/integration/commercial-v1 the same unit reports INTEGRATED, and git merge-base --is-ancestor confirms d534f20 is an ancestor of a27c4a9. That signal is a stale-local-ref artifact and is NOT a finding.",
+        "disposition": "RESOLVED. No prose in this artifact was rewritten to reach this state and no historical intermediate state was erased — R1 recorded it as an unmeasurable precondition, R2 as PARTIALLY_REMEDIATED after PR #78, and R3 as RESOLVED after PR #81 and the resolver. See AMENDMENT_HISTORY.",
+        "status": "RESOLVED",
+        "remediated_since_r1": {
+          "fact": "THE CLOSURE EVIDENCE ARTIFACT IS NOW INTEGRATED. R1 recorded it as existing only on an unintegrated branch; that statement is now FALSE and is withdrawn.",
+          "measurement": "PR #78 (codex/w2-b5-closure-evidence-r1, d3ab9e3d86117337894b10860fc6b66f319a3910) was independently audited and merged into integration as 4e28c4c22ef026e7206802b3f773ea02a6566a6d, which this branch then merged normally. docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json is present at this PR's head and its closure.W2_B5 field reads \"CLOSED\" — exactly the value the registry's closedValues expects.",
+          "consequence": "One of the two defects R1 identified is closed. The artifact no longer needs authoring, integrating, or duplicating."
+        },
+        "RESOLUTION": {
+          "decisive_proof": "The machine gate, not this artifact's prose. Re-measured on the R3 post-merge head with `pnpm ops:program-state -- --unit W2-B5 --json --integration-target origin/integration/commercial-v1`: authority.status=CLOSED, implementation.status=CLOSED, audit.status=CLOSED, integration[\"origin/integration/commercial-v1\"]=INTEGRATED. No field reports UNKNOWN.",
+          "the_field_that_flipped": "audit.status. It now resolves as codex/w2-b5-closure-evidence-r1:docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json#closure.W2_B5 = \"CLOSED\" — the evidenceRef itself changed from codex/w2-b5-r1 to codex/w2-b5-closure-evidence-r1, which is exactly the repair this finding named as its single remaining prerequisite.",
+          "closure_chain": [
+            {
+              "step": 1,
+              "item": "PR #70 — W2-B5 implementation and audit",
+              "merge_commit": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+              "note": "The same commit this artifact was originally measured against as AS_OF_HEAD. Supplies authority.status=CLOSED and implementation.status=CLOSED."
+            },
+            {
+              "step": 2,
+              "item": "PR #78 — the W2-B5 whole-batch closure audit evidence artifact",
+              "merge_commit": "4e28c4c22ef026e7206802b3f773ea02a6566a6d",
+              "artifact_commit": "d3ab9e3d86117337894b10860fc6b66f319a3910",
+              "note": "Integrated the artifact. Necessary but NOT sufficient: the resolver still read at the ref the registry named, so audit.status stayed UNKNOWN. Recorded in R2 as the concrete demonstration that fixing one of the two defects alone does nothing."
+            },
+            {
+              "step": 3,
+              "item": "PR #81 — the program-state registry audit.ref repair, independently audited",
+              "merge_commit": "08d3c4dd262a9cd9d4f64900fdd09205370f23ef",
+              "repair_commit": "cb0f569",
+              "note": "A one-line repoint of ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B5 audit.ref from \"codex/w2-b5-r1\" to \"codex/w2-b5-closure-evidence-r1\". This is the second defect, and it is what makes the artifact reachable by the gate."
+            },
+            {
+              "step": 4,
+              "item": "program-state resolver returns CLOSED",
+              "measured_on": "this branch after normal-merging integration at 08d3c4dd262a9cd9d4f64900fdd09205370f23ef",
+              "note": "The acceptance signal. Steps 1-3 are its preconditions, never its substitutes — the rule this finding carried from R1 through R3 unchanged."
+            }
+          ],
+          "rule_honoured_not_relaxed": "From R1 onward this finding held that what satisfies the precondition is the GATE's answer, never a human reading a file. That rule is what closes it now: the resolution is recorded because the resolver returned CLOSED, not because the artifact became readable at HEAD — it was already readable at HEAD in R2, and the finding stayed open.",
+          "wave2_population_measured": {
+            "note": "Measured rather than inferred from W2-B5 alone, since the precondition is stated as \"Wave 2 complete\" and not as \"W2-B5 closed\".",
+            "result": "All FOUR batches the program-state registry enumerates — W2-B1, W2-B3, W2-B4, W2-B5 — report AUTHORITY_STATUS=CLOSED, IMPLEMENTATION_STATUS=CLOSED, AUDIT_STATUS=CLOSED and INTEGRATION_STATUS[origin/integration/commercial-v1]=INTEGRATED on this head.",
+            "scope_limit": "The registry enumerates four units and contains no W2-B2 entry, so this measurement covers the registry's Wave 2 population and not, by itself, every batch the wave ever had. See non-blocking finding F-W3-7."
+          },
+          "what_remains_not_a_finding": "INTEGRATION_STATUS for the BARE name integration/commercial-v1 still reports NOT_INTEGRATED. Re-measured at R3: the local branch of that name is still stale at 547ac36405c47b1be386d37ba1f387173c867252 (PR #54 era), while origin/integration/commercial-v1 reports INTEGRATED. This is a stale-local-ref artifact, characterised identically in R1, R2 and R3, and is not a finding."
+        }
+      },
+      {
+        "id": "F-W3-2",
+        "class": "ADJUDICATED_CLOSED",
+        "status": "RESOLVED by LANE AR — WAVE3-OPEN-AUTHORITY-FINDINGS-ADJUDICATION-R1, applied as amendment R2.",
+        "finding_as_stated_in_r1": "R1 recorded that LEGACY_NON_AUTHORITATIVE_RUN's \"vocabulary owner FIBDB-051\" belongs to FIBIU-30, a wave 6 unit, while FIB:860 requires all 24 reasons reachable at the Wave 3 exit — and left the disposition unresolved as an authority act.",
+        "adjudication": "CLASSIFICATION = REACHABLE_IN_WAVE3_FROM_EXISTING_STATE. R1's premise was false: FIBDB-051 does not own the eligibility reason. The reason belongs to FIBC-023 / FIBIU-19 and is reachable today from FIBDB-001's permanent NULL version triple (db/schema.ts:828-830), a Wave 1 object. FIBC-001's own TESTS clause (FIB:59) already states that a legacy run keeps NULL and is ineligible.",
+        "what_r1_conflated": "Three distinct things sharing a word: the BACKFILL_CLASS LEGACY_NON_AUTHORITATIVE (carried by FIBDB-016 and FIBDB-030 only); the legacy_class member legacy_non_authoritative_for_new_runs (FIBDB-051, whose referent per FIB:713 is historically approved PROXIES, not runs); and the FIBC-023 eligibility reason LEGACY_NON_AUTHORITATIVE_RUN. See REASON_CODE_SOURCE_TENSION.cases[2].three_distinct_things.",
+        "consequences": "The Wave 3 exit gate keeps its full 24-reason reading. FIBDB-051 stays wave 6 / FIBIU-30 and is not pulled forward. No reason code is removed, renamed or reclassified; the register remains exactly 24. What replaces the finding is an obligation, not a deferral — see REASON_CODE_SOURCE_TENSION.UNDECLARED_EDGE_OBLIGATION.",
+        "residual_obligation": "FIBIU-19 DETECTS via the persisted predicates and MUST NOT write durable legacy_class representation; that belongs to FIBDB-051 in wave 6."
+      },
+      {
+        "id": "F-W3-3",
+        "class": "PROSE_TO_CODE_NAMING_DIVERGENCE",
+        "finding": "The FIB baseline instructs appending to 'TICKET_PACKAGE_CHAIN' in db/prepared-package-order.ts (E5, and the index's chain_position string). The exported constant is named STELLA_TICKET_PACKAGE_CHAIN (E17).",
+        "disposition": "RECORDED, NOT CHANGED. The referent is unambiguous — there is exactly one Stella ticket chain — and the FIB baseline is sealed. An implementing mission edits STELLA_TICKET_PACKAGE_CHAIN.",
+        "why_recorded": "A mission grepping the literal string TICKET_PACKAGE_CHAIN finds it as a substring and proceeds correctly; a mission grepping for an exact constant named TICKET_PACKAGE_CHAIN finds nothing and may conclude the file changed shape."
+      },
+      {
+        "id": "F-W3-4",
+        "class": "AUTHORITY_UNDERSPECIFICATION_CLOSED_BY_THIS_ARTIFACT",
+        "finding": "Two places where the FIB baseline's Stage-A instruction is not sufficient to produce a compiling, applying package: (a) it describes the risk parameters as an addition to one 'governed completion function' when the lock and the INSERT live in a different function from the verb the runtime calls (E12-E16); (b) it names three of the five fields the PreparedPackageSupersession interface requires (E18).",
+        "disposition": "CLOSED BY DERIVATION, not by amendment. FIBDB053_STAGE_A_CONTRACT.TWO_FUNCTION_DERIVATION and .SUPERSESSION_REGISTRY_ENTRY state the derived contract. The sealed FIB baseline is NOT edited and NOT reinterpreted — the derivations follow from it plus measured executable state.",
+        "audit_note": "An independent auditor should treat both derivations as the highest-value targets in this artifact: they are the two places where this authority says more than its source."
+      },
+      {
+        "id": "F-W3-5",
+        "class": "AUTHORITY_NARRATIVE_NOT_REPOSITORY_RESIDENT",
+        "finding": "The full narratives of W2-B5 findings F-2 and F-3 are not repository artifacts. The only repository-resident record is the one-line disposition for each at E28.",
+        "disposition": "The verbatim dispositions are quoted and the SUBSTANCE of each obligation is stated from the mission packet that commissioned this artifact, labelled as such. Neither narrative is reconstructed or presented as a repository quotation.",
+        "consequence": "An auditor verifying F2/F3 fidelity should compare against the B5 adjudication record, not against this repository alone."
+      },
+      {
+        "id": "F-W3-6",
+        "class": "OBSERVED_SCHEMA_DIVERGENCE_IN_A_SHARED_TEMPLATE",
+        "finding": "Measured by validating both files against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json at AS_OF_HEAD: docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json sets postgres_requirements to null, which the schema types as an object; docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json sets node_or_batch to \"W2-B5\", outside the closed enum [node, batch], AND carries an exit_gates member \"full_ci_green\" that is outside the schema's closed exit-gate enum. The tenancy authority recorded the first two as its F-1; the third is measured here and was not previously recorded.",
+        "disposition": "RECORDED, NOT CHANGED — outside this mission's authorized paths. This package's companion manifest OMITS postgres_requirements rather than nulling it, so it validates against the schema as written."
+      },
+      {
+        "id": "F-W3-7",
+        "class": "REGISTRY_COVERAGE_OBSERVATION",
+        "finding": "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json enumerates exactly four units — W2-B1, W2-B3, W2-B4, W2-B5 — and contains no W2-B2 unit. The W2-B2 artifacts present in docs/ops/wave2/ (W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json, W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json) carry final_state values but no closure field a resolver reads.",
+        "why_recorded": "F-W3-1 is resolved against the precondition \"Wave 2 complete\". This artifact therefore states precisely what was measured: every batch the registry enumerates is closed and integrated. It does not claim machine proof for a batch the registry does not enumerate, because that would be exactly the substitution of prose for a gate that F-W3-1 spent three revisions refusing.",
+        "disposition": "RECORDED, NOT REPAIRED, NON-BLOCKING. Adding a registry unit is ODS tooling maintenance and is outside this mission's authorized paths (docs/ops/wave3/** plus the base merge). It does not block Wave 3: no Wave 3 obligation in this package depends on W2-B2, whose subject matter (the B2 entrypoint/404 contract) is not consumed by FIBIU-19, FIBIU-20 or FIBDB-053.",
+        "recommended_action": "A future governed mission should either add a W2-B2 registry unit pointing at its closure evidence, or record why that batch is deliberately not resolver-tracked. Not adjudicated here."
+      }
+    ],
+    "unknown": [],
+    "unknown_note": "EMPTY as of amendment R2. U-W3-1 (FIBIU-29 status) was the only member and is now adjudicated CLOSED_AUDITED_INTEGRATED — see FIBIU20_REVIEW_SOD_AND_FINDINGS.FIBIU29_DEPENDENCY_STATUS, including its EVIDENCE_LIMITATION. An empty unknown[] is an explicit \"nothing is currently unmeasured\", not an omission; a future mission that discovers an unmeasurable required fact adds it here rather than assuming it satisfied.",
+    "blocking_for_wave3_implementation_note": "EMPTY as of amendment R3. F-W3-1 was the only member and is now RESOLVED on machine proof; it is carried in non_blocking with its full resolution record rather than deleted. An empty list is an explicit \"no known blocker\", not an omission — a future mission that measures a new blocker adds it here."
+  },
+  "self_check": {
+    "note": "Deterministic checks verifiable by inspection or a one-line node/jq command against this file. Not a script, and not a claim that any implementation passed anything.",
+    "expected_reason_code_count": 24,
+    "expected_evidence_anchor_count": 40,
+    "expected_evidence_anchor_ids": [
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "E7",
+      "E8",
+      "E9",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E14",
+      "E15",
+      "E16",
+      "E17",
+      "E18",
+      "E19",
+      "E20",
+      "E21",
+      "E22",
+      "E23",
+      "E24",
+      "E25",
+      "E26",
+      "E27",
+      "E28",
+      "E29",
+      "E30",
+      "E31",
+      "E32",
+      "E33",
+      "E34",
+      "E35",
+      "E36",
+      "E37",
+      "E38",
+      "E39",
+      "E40"
+    ],
+    "expected_security_control_count": 7,
+    "expected_mutation_control_count": 8,
+    "expected_shared_writer_chokepoint_count": 6,
+    "expected_blocking_for_wave3_implementation_ids": [],
+    "expected_non_blocking_ids": [
+      "F-W3-1",
+      "F-W3-2",
+      "F-W3-3",
+      "F-W3-4",
+      "F-W3-5",
+      "F-W3-6",
+      "F-W3-7"
+    ],
+    "expected_unknown_ids": [],
+    "expected_fibdb053_chain_step_count": 3,
+    "checks": [
+      "FIBIU19_METHODOLOGY_APPROVAL_COMPOSITION.REASON_CODES.codes.length == 24 and equals the FIB baseline's list at docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:180 in the same order",
+      "EVIDENCE_ANCHORS.anchors.length == 40 and every id E1..E40 appears exactly once (E35-E37 added by R2, E38-E40 by R3)",
+      "every EVIDENCE_ANCHORS entry's path resolves to a real repository path at AS_OF_HEAD",
+      "FIBDB053_STAGE_A_CONTRACT.TWO_FUNCTION_DERIVATION.chain.length == 3 and its orders are 1,2,3",
+      "FIBDB053_STAGE_A_CONTRACT.required_artifacts.paths.length == 4 and each path is absent at AS_OF_HEAD",
+      "OPEN_FINDINGS.blocking_for_this_docs_only_freeze is empty",
+      "SECURITY_CONTROLS.controls.length == 7 and MUTATION_CONTROLS.controls.length == 8",
+      "SHARED_WRITERS.chokepoints.length == 6 and every id SW-1..SW-6 appears exactly once",
+      "no ODS addendum version and no HPO-ODS identifier is stated as allocated anywhere in this file",
+      "no db/migrations ordinal is stated as allocated anywhere in this file",
+      "G2_BOUNDARY.permitted_before_G2 and G2_BOUNDARY.requires_an_explicit_human_G2_action are disjoint",
+      "every reason code named in REASON_CODE_SOURCE_TENSION.cases is a member of REASON_CODES.codes",
+      "FIBIU19_METHODOLOGY_APPROVAL_COMPOSITION.REASON_CODES.codes.length is still 24 after amendment R2 — no code added, removed, renamed or reordered by the adjudication",
+      "REASON_CODE_SOURCE_TENSION.cases.length == 3 and cases[2].classification == \"REACHABLE_IN_WAVE3_FROM_EXISTING_STATE\"",
+      "REASON_CODE_SOURCE_TENSION.cases[2].three_distinct_things.length == 3",
+      "REASON_CODE_SOURCE_TENSION.UNDECLARED_EDGE_OBLIGATION.required_predicates covers LEGACY_NON_AUTHORITATIVE_RUN and EVIDENCE_SENSITIVITY_UNCLASSIFIED",
+      "no statement anywhere in this file says FIBDB-051 owns the LEGACY_NON_AUTHORITATIVE_RUN eligibility reason",
+      "FIBDB-051 is still described as wave 6 / FIBIU-30 and is nowhere pulled forward",
+      "OPEN_FINDINGS.unknown is empty and OPEN_FINDINGS.unknown_note explains why",
+      "OPEN_FINDINGS.blocking_for_wave3_implementation is empty, and F-W3-1 is carried in non_blocking with status \"RESOLVED\"",
+      "FIBIU29_DEPENDENCY_STATUS.EVIDENCE_LIMITATION states that no fresh local suite execution backs the status",
+      "F-W3-1.status == \"RESOLVED\" and F-W3-1.RESOLUTION.closure_chain.length == 4 with steps 1..4",
+      "F-W3-1.RESOLUTION.decisive_proof cites the program-state resolver, not this artifact's prose",
+      "both OPEN_FINDINGS.blocking lists are empty and OPEN_FINDINGS.unknown is empty",
+      "AMENDMENT_HISTORY records R2 and R3, and finding_state_progression shows F-W3-1 as unknown -> partial -> resolved without erasing an intermediate state",
+      "FUTURE_ODS_NEEDS_SYMBOLIC.CURRENT_EXTERNAL_LINEAGE_STATE is an observation and allocates nothing",
+      "the 24 reason codes and the 22 + 2 partition are unchanged by amendment R3"
+    ],
+    "expected_tension_case_count": 3,
+    "expected_amendment_revisions": [
+      "R2",
+      "R3"
+    ]
+  },
+  "final_state": "WAVE3_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_ALLOCATION",
+  "AMENDMENT_HISTORY": [
+    {
+      "revision": "R2",
+      "mission_id": "WAVE3-AUTHORITY-ADJUDICATION-AMENDMENT-R2",
+      "source_adjudication": "LANE AR — WAVE3-OPEN-AUTHORITY-FINDINGS-ADJUDICATION-R1",
+      "date": "2026-09-05",
+      "pre_amendment_head": "6efefc7527f6bae5951cb7a515a343c1efce3e45",
+      "base_merge": "origin/integration/commercial-v1 at 4e28c4c22ef026e7206802b3f773ea02a6566a6d merged by NORMAL MERGE (never rebase). The merged delta is exactly one path, docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json (PR #78, d3ab9e3d86117337894b10860fc6b66f319a3910), unrelated to docs/ops/wave3/**. Zero conflict.",
+      "what_changed": [
+        "F-W3-2 — ADJUDICATED AND CLOSED as REACHABLE_IN_WAVE3_FROM_EXISTING_STATE. R1's claim that FIBDB-051 owns the LEGACY_NON_AUTHORITATIVE_RUN eligibility reason is withdrawn as FALSE. Moved from blocking to non_blocking.",
+        "U-W3-1 — FIBIU-29 reclassified CLOSED_AUDITED_INTEGRATED and REMOVED from unknown[], which is now empty.",
+        "F-W3-1 — updated to PARTIALLY_REMEDIATED. The closure artifact is now INTEGRATED; exactly one prerequisite remains. NOT marked resolved."
+      ],
+      "what_did_not_change": [
+        "The 24 reason codes — no code removed, renamed, reclassified or reordered. Count remains exactly 24.",
+        "The Wave 3 exit gate's full 24-reason reading. It is NOT relaxed to 23/24.",
+        "FIBDB-051's wave 6 / FIBIU-30 ownership and its migration stage B.",
+        "Every sealed source. The FIB baseline, PC-01B, IM-01B, Wave 1 closure evidence and Wave 2 closure evidence are untouched by this mission.",
+        "AS_OF_HEAD / AS_OF_TREE / AS_OF_REF — the measurement anchor of this artifact stays a27c4a9 / e7f3a1e4, because every anchor E1..E34 was measured there and re-anchoring would invalidate them without re-measuring."
+      ]
+    },
+    {
+      "revision": "R3",
+      "mission_id": "WAVE3-F-W3-1-FINAL-RESOLUTION-R3",
+      "date": "2026-09-05",
+      "pre_amendment_head": "2141f2b33ac210a2adc94c0f1bbae0f14a1d590b",
+      "base_merge": "origin/integration/commercial-v1 at 08d3c4dd262a9cd9d4f64900fdd09205370f23ef merged by NORMAL MERGE (never rebase). The merged delta is two paths — docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json (PR #80) and docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (PR #81) — with zero overlap on docs/ops/wave3/**. Zero conflict.",
+      "what_changed": [
+        "F-W3-1 — RESOLVED on machine proof, moved out of blocking_for_wave3_implementation, which is now empty. Its full resolution record and closure chain are carried with it.",
+        "F-W3-7 — NEW non-blocking observation: the program-state registry enumerates four Wave 2 units and no W2-B2, so \"Wave 2 complete\" is machine-proven over the registry's population and not, by itself, over every batch the wave had.",
+        "FUTURE_ODS_NEEDS_SYMBOLIC.CURRENT_EXTERNAL_LINEAGE_STATE — added as observation: PR #77 is OPEN, so v1.0.19 / HPO-ODS-W2-20 are not in integration at R3.",
+        "Evidence anchors E38-E40 added for the repaired registry entry, the integrated closure artifact, and the four-batch measurement."
+      ],
+      "finding_state_progression": {
+        "F-W3-1": "R1 = measured precondition not provable (blocking) -> R2 = PARTIALLY_REMEDIATED after PR #78 integrated the artifact but the resolver still read the wrong ref -> R3 = RESOLVED after PR #81 repaired the ref and the resolver returned CLOSED.",
+        "F-W3-2": "R1 = blocking, sequencing tension requiring adjudication -> R2 = ADJUDICATED AND CLOSED as REACHABLE_IN_WAVE3_FROM_EXISTING_STATE. Untouched by R3.",
+        "U-W3-1": "R1 = UNKNOWN (FIBIU-29 status unmeasurable) -> R2 = CLOSED_AUDITED_INTEGRATED via the Wave 1 closure chain, removed from unknown[]. Untouched by R3."
+      },
+      "what_did_not_change": [
+        "The 24 reason codes — content, order and count. Still exactly 24.",
+        "The 22 + 2 = 24 reachability partition.",
+        "The F-W3-2 adjudication and FIBDB-051's wave 6 / FIBIU-30 ownership.",
+        "The FIBIU-29 adjudication and its stated evidence limitation.",
+        "CP4_SEQUENCE, the FIBDB-053 Stage-A contract, G2_BOUNDARY, and the F-2 / F-3 carry-forwards.",
+        "AS_OF_HEAD / AS_OF_TREE / AS_OF_REF — the measurement anchor stays a27c4a9 / e7f3a1e4, because anchors E1..E34 were measured there. Anchors added in later revisions state their own measurement point.",
+        "No historical intermediate state was rewritten or erased."
+      ]
+    }
+  ]
+}

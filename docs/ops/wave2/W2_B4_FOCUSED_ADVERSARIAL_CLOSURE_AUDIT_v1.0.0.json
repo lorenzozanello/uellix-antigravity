@@ -1,0 +1,379 @@
+{
+  "package_id": "W2_B4_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT",
+  "version": "1.0.0",
+  "artifact_id": "W2_B4_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0",
+  "authority_class": "INDEPENDENT_AUDIT_EVIDENCE",
+  "append_only": true,
+  "supersedes": null,
+  "audit_date": "2026-09-04",
+  "auditor_role": "INDEPENDENT_B4_REMEDIATED_CANDIDATE_FOCUSED_REAUDITOR",
+  "audit_class": "FOCUSED_REAUDIT_OF_FAILED_AND_MOVED_DIMENSIONS",
+  "purpose": "Repository evidence for the independent, adversarial re-audit that adjudicated the REMEDIATED W2-B4 candidate at head 4d177fcc636bc2bb641a83e95417b8c701720e51. It records what was mechanically measured, per dimension, against the frozen authority chain. It authorizes no implementation, no schema change, no B5 scope and no Controller work. It is the artifact docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B4 reads at field closure.W2_B4 to resolve AUDIT_STATUS.",
+  "audit_purity": "STRICTLY READ-ONLY over the audited object. Every measurement below was taken against commit 4d177fcc636bc2bb641a83e95417b8c701720e51 / tree f97067b8f954b6ff42f7026b9dee032c6ad7bbaf with a clean working tree. No implementation blob was written, regenerated or repaired by this audit. This artifact is appended in a SUCCESSOR commit and does not alter the audited implementation object; the audited head and tree are pinned verbatim below so the object this verdict covers remains addressable after the append.",
+
+  "audited_object": {
+    "pr": 62,
+    "pr_state_at_audit": "OPEN, isDraft=true, mergedAt=null, mergeable=MERGEABLE, mergeStateStatus=CLEAN",
+    "branch": "codex/w2-b4-r1",
+    "AUDITED_IMPLEMENTATION_HEAD": "4d177fcc636bc2bb641a83e95417b8c701720e51",
+    "AUDITED_IMPLEMENTATION_TREE": "f97067b8f954b6ff42f7026b9dee032c6ad7bbaf",
+    "AUDITED_BASE": "48ed3b70fefd2178dc1e80a1565f063265b04804",
+    "base_equals_integration_head": "YES — origin/integration/commercial-v1 measured at 48ed3b70fefd2178dc1e80a1565f063265b04804, identical to the PR base. Integration did NOT move during this audit.",
+    "MAIN_FROZEN": "067e8c2f3ac9b5e843de3a35575182907b4365d4 — measured unchanged.",
+    "prior_audited_candidate_head": "5035e7e1810543c7ca373c859237ae7301e4eb51",
+    "changed_file_count": 111
+  },
+
+  "audited_authority_chain": {
+    "note": "Every artifact below was measured present and integrated at the audited base, and its bytes hashed at the audited head.",
+    "W2_B4_AUTHORITY_v1.0.0": {
+      "path": "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json",
+      "sha256": "2d950ed6b2afad078efeac241909278ac466747d4f52238d3ed77cb3f1396348",
+      "final_state": "W2_B4_AUTHORITY_FROZEN_WAITING_FOR_P1A_AND_IMPLEMENTATION"
+    },
+    "W2_B4_AUTHORITY_AMENDMENT_v1.0.1": {
+      "path": "docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "sha256": "3967b3073f3312dc33150457c5f2afa462fe08a2d09c3c7654d1898eb8c17ec0",
+      "grant_id": "HPO-ODS-W2-16",
+      "integrated_via": "PR #64, merged at 48ed3b70fefd2178dc1e80a1565f063265b04804"
+    },
+    "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15": {
+      "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json",
+      "sha256": "adc47c42cbe28162b66e41ed4946b5b6739a25bc73b7182d3bc8769b913bb7ff"
+    },
+    "W2_B4_TEST_MANIFEST_v1": {
+      "path": "docs/ops/wave2/W2_B4_TEST_MANIFEST_v1.json",
+      "sha256": "7591f6ff3a23068b7d8df58b089eec4aa29bfbe6c4082d79e0fbb7bd91ff87da",
+      "bytes_unchanged_by_remediation": "YES"
+    },
+    "KNOWN_TEST_CONDITIONS_v1.0.0": {
+      "path": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json",
+      "sha256": "00b9c644bd998d64d467b8061f1dab18566668cd5505a7a280b825a7fe0e6a42",
+      "blob_sha1_across_all_four_heads": "7d27af2a285ceeece51604b057a6925575446c60",
+      "heads_compared": ["83fc21b", "5035e7e", "48ed3b7", "4d177fc"],
+      "bytes_unchanged": "YES — byte-identical at every head in the lineage."
+    },
+    "grants_verified": {
+      "HPO-ODS-W2-12": "resolved on branch codex/w2-b4-r1; patterns db/migrations/** and db/prepared/journal/**",
+      "HPO-ODS-W2-16": "resolved on branch codex/w2-b4-r1; pattern db/prepared/checkpoint-b0/observation.sql (one exact literal path, no glob)"
+    }
+  },
+
+  "D1_previous_pass_blob_invariance": {
+    "requirement": "The focused re-audit class is sufficient IF AND ONLY IF every previously-green W2-B4 implementation blob is byte-identical between 5035e7e and 4d177fc. Verified mechanically, per path, by blob SHA comparison.",
+    "method": "For each of the 108 paths in the previously-audited diff 83fc21b..5035e7e, compared `git rev-parse <head>:<path>` at both heads. Equal blob object ids prove byte-identical content.",
+    "PRIOR_PATH_COUNT": 108,
+    "BYTE_IDENTICAL": 106,
+    "MOVED": 2,
+    "moved_paths": [
+      {
+        "path": "docs/ops/wave2/W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+        "old_blob": "5883cdbf5406733e5c41b35fc6623840ef7d8013",
+        "new_blob": "548531b861708d46cc65a99946aac186b2d13452",
+        "authorized_by": "W2_B4_AUTHORITY_AMENDMENT_v1.0.1 future_pr62_remediation_surface.REFRESH_EVIDENCE"
+      },
+      {
+        "path": "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "old_blob": "75466e2f8804a405529e3bf8eac0a53d5730b66d",
+        "new_blob": "f059b9bea745b2e30f0c1f15e65f03d913caf437",
+        "authorized_by": "W2_B4_AUTHORITY_v1.0.0 authorized_future_implementation_surface.unprotected.existing_tests plus hosted_baseline_pin_remeasurement.authorized_edit_scope — see D6 and F-2."
+      }
+    ],
+    "NEW_PATHS": 3,
+    "new_paths_exact": [
+      "artifacts/hosted-a1-status.json",
+      "db/prepared/checkpoint-b0/observation.sql",
+      "artifacts/baseline-rehearsal/latest.json"
+    ],
+    "path_set_arithmetic": "108 prior + 3 newly-authorized generated current-state artifacts = 111, matching the measured CHANGED_FILE_COUNT and the GitHub-reported changedFiles for PR #62. Zero prior paths disappeared.",
+    "additional_semantic_blob_moved": "NONE",
+    "intervening_integration_delta_classified": {
+      "range": "83fc21b..48ed3b7",
+      "commits": ["d082f64 (PR #61, controller v1.0.14)", "48ed3b7 (PR #64, W2-B4 remediation authority)"],
+      "paths": [
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json",
+        "docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "scripts/ods-controller.ts",
+        "scripts/ods-scope.ts",
+        "tests/ods/ods-controller.test.ts",
+        "tests/ods/ods-scope.test.ts"
+      ],
+      "disjointness": "MEASURED DISJOINT from the 111-path B4 surface. No intervening integration delta could have silently mutated a previously-PASS B4 blob.",
+      "class": "Authority-layer only. No product code, no schema, no migration."
+    },
+    "RESULT": "PASS — the byte-identity precondition of the FOCUSED re-audit class is satisfied. No widening to a full re-audit is required."
+  },
+
+  "D2_closed_world": {
+    "gate": "pnpm ods:scope",
+    "base": "48ed3b70fefd2178dc1e80a1565f063265b04804",
+    "allow_form": "111 exact --allow paths, one per changed path. No globs, so no over-allowing.",
+    "run_both_grants": {
+      "protected_authority": ["HPO-ODS-W2-12", "HPO-ODS-W2-16"],
+      "CHANGED_FILE_COUNT": 111,
+      "PROTECTED_AUTHORIZED_PATH_COUNT": 82,
+      "PROTECTED_PATH_VIOLATIONS": 0,
+      "NON_CANONICAL_PROTECTED_PATHS": 0,
+      "UNAUTHORIZED_PATHS": 0,
+      "ODS_SCOPE": "PASS",
+      "exit_code": 0
+    },
+    "negative_control_W2_12_only": {
+      "PROTECTED_AUTHORIZED_PATH_COUNT": 81,
+      "PROTECTED_PATH_VIOLATIONS": 1,
+      "violation": "db/prepared/checkpoint-b0/observation.sql",
+      "UNAUTHORIZED_PATHS": 0,
+      "ODS_SCOPE": "FAIL",
+      "meaning": "W2-12 alone leaves exactly the B0 observation probe unauthorized — the precise path W2-16 exists to grant."
+    },
+    "negative_control_W2_16_only": {
+      "PROTECTED_PATH_VIOLATIONS": 81,
+      "violation_families": ["db/migrations/**", "db/prepared/journal/**"],
+      "UNAUTHORIZED_PATHS": 0,
+      "ODS_SCOPE": "FAIL",
+      "meaning": "W2-16 alone leaves exactly the 81 migration and journal paths unauthorized — the precise set W2-12 exists to grant."
+    },
+    "no_same_branch_grant_union": "INDEPENDENTLY PROVEN. Both grants are registered on the SAME branch codex/w2-b4-r1. If the resolver unioned grants by branch rather than by supplied authorityId, each single-id run would have returned zero violations. Each instead returned exactly its complement, and 81 + 1 = 82 = the two-id authorized count with no overlap and no slack. The two grants partition the protected surface disjointly.",
+    "RESULT": "PASS — UNAUTHORIZED_PATHS=0 and PROTECTED_PATH_VIOLATIONS=0, with both negative controls reproducing exactly the predicted complements."
+  },
+
+  "D3_generated_artifacts": {
+    "common_requirement": "Each artifact must correspond to its canonical generator and must not have been hand-edited.",
+    "A1": {
+      "path": "artifacts/hosted-a1-status.json",
+      "canonical_generator": "pnpm a1:status:write (scripts/a1-status.ts)",
+      "verification_command": "pnpm a1:status:verify",
+      "exit_code": 0,
+      "output": "[a1] verification OK — the recorded verdict is what the contract computes over the recorded corroboration",
+      "self_declared_provenance": "generatedBy field reads 'pnpm a1:status:write — do not hand-edit; this file is derived from the corroboration'",
+      "historical_inputs_untouched": "artifacts/hosted-a1-corroboration.json and db/prepared/checkpoint-a1/corroboration.sql are NOT in the 111-path diff — the prohibition on regenerating the historical measurement is honoured.",
+      "consumer_gate": "tests/hosted/checkpoint-a1.test.ts — 72 passed, 0 failed, 1 skipped (the it.runIf(measured)/it.runIf(!measured) pair, exactly one of which runs by construction).",
+      "RESULT": "PASS"
+    },
+    "B0": {
+      "path": "db/prepared/checkpoint-b0/observation.sql",
+      "canonical_generator": "pnpm b0:observation:generate (scripts/b0-observation-sql.ts)",
+      "verification_command": "pnpm b0:observation:verify",
+      "exit_code": 0,
+      "output": "[b0-sql] verification OK — the probe regenerates byte-identically from the corpus",
+      "byte_identical_regeneration": "PROVEN by the canonical verifier, which regenerates from db/hosted/baseline-manifest.ts and the units it names and compares. The generator connects to nothing.",
+      "b4_tables_present": ["assumption_object_links", "methodological_assumptions", "counterfactual_assessments"],
+      "assumption_object_links_note": "Present — the amendment's B0_REFRESH_CONTRACT named this table explicitly as the one a hand-edit would most plausibly omit.",
+      "consumer_gate": "tests/hosted/checkpoint-b0.test.ts — 31 passed, 0 failed, 0 skipped.",
+      "audit_did_not_regenerate": "The audited file was NOT regenerated by this audit; reproducibility was established through the generator's own verify mode, leaving the audited tree byte-untouched.",
+      "RESULT": "PASS"
+    },
+    "REHEARSAL": {
+      "path": "artifacts/baseline-rehearsal/latest.json",
+      "canonical_generator": "pnpm baseline:rehearsal:local (scripts/baseline-rehearsal-local.ts)",
+      "manifestApplied": 76,
+      "manifestFailedAt": null,
+      "manifestDigest": "30ee87259b0e83c1095c5e240e0c9af4bcd96f2c60c516404a26b9e75d39fd20",
+      "postconditionsPassed": 18,
+      "postconditionsTotal": 18,
+      "postconditionsFailed": [],
+      "leftovers": [],
+      "leaked_containers": 0,
+      "isolation_evidence": "cluster.image = public.ecr.aws/supabase/postgres:17.6.1.143, cluster.network = none, cluster.pristine = '0 uellix_* roles, non-superuser CREATEROLE installer, 7 platform roles', uellixRolesAtStart = []. A fresh disposable cluster, never a pre-existing container, never staging, never Production.",
+      "run_a_reproduction": "naiveFailedAt = db/migrations/0039_grant_rls_helper_execution.sql — the naive-order RUN A failed as designed. Per the refresh contract, a red RUN A is the expected reproduction, not a regression.",
+      "consumer_gate": "tests/eval/stella-release/hosted-baseline-gate.test.ts — 7 passed, 0 failed, 0 skipped.",
+      "RESULT": "PASS"
+    }
+  },
+
+  "D4_fourth_root_cause_derived_pin_77": {
+    "id": "MISSED_FORCED_PIN_firstProvisioningPlannable",
+    "path": "tests/eval/stella-release/hosted-baseline-gate.ts",
+    "independent_measurement": {
+      "BASELINE_UNITS.length": 76,
+      "BASELINE_ORDER.length": 76,
+      "unique(BASELINE_ORDER).size": 76,
+      "derived_expected": "BASELINE_ORDER.length + 1 = 77 (000_journal_bootstrap plus one step per BASELINE_ORDER entry)",
+      "registered_units": ["0062_fib_methodological_assumptions.sql", "0063_fib_counterfactual_assessments.sql"],
+      "each_registered_exactly_once": true,
+      "method": "Imported BASELINE_UNITS/BASELINE_ORDER directly from db/hosted/baseline-manifest.ts at the audited head and evaluated. Not read from any report."
+    },
+    "assertion_as_shipped": "firstProvisioning.steps.length === 77",
+    "exact_equality_preserved": "YES",
+    "weakened_form_rejected": "CONFIRMED ABSENT — the assertion is not >= 77, not a contains-at-least form, and not a range. Because it is an exact equality, the gate turning green is itself proof that 77 is the correct value.",
+    "why_two_prior_sweeps_missed_it": "The pin stores a DERIVED count (BASELINE_ORDER.length + 1 = 75), not the raw unit count 74. Both prior sweeps searched for the raw cardinality, so a literal-value search could not surface it. Independently confirmed by re-deriving the value rather than by searching for its digits.",
+    "sibling_derived_pin_sweep": {
+      "requirement": "Search semantically for sibling derived-count pins missed because they do not contain literal 74 or 76.",
+      "method": "Enumerated EVERY numeric comparison against a .length or .size in the tracked *.ts/*.tsx corpus, plus every toHaveLength / .length).toBe / .size).toBe form and every EXPECTED_/COUNT_/TOTAL_ constant with a two-or-more-digit literal — regardless of the digits carried. Each hit was then classified by whether its right-hand side is a function of what B4 changed (the baseline corpus, the migration corpus, or the public-schema surface), not by the value it holds.",
+      "corpus_derived_pins_found_and_verified_current": [
+        "tests/hosted/baseline-manifest.test.ts:99,111 — BASELINE_UNITS/BASELINE_ORDER 76, unique 76 — ADVANCED, correct",
+        "tests/hosted/baseline-journal-wrapper.test.ts:471,472 — 76, 76 — ADVANCED, correct",
+        "tests/hosted/operator-runner.test.ts:236 — BASELINE_UNITS 76 — ADVANCED, correct",
+        "tests/hosted/baseline-manifest.test.ts — byKind('drizzle-migration') 62 -> 64 — ADVANCED, correct",
+        "tests/eval/stella-release/hosted-baseline-gate.ts:403 — derived plan length 77 — ADVANCED, correct"
+      ],
+      "candidates_classified_NOT_corpus_derived": [
+        "tests/hosted/operator-runner.test.ts:662,716 — policies 69 and rlsEnabledTables 24 are scoped to ONE sealed unit (describe 'the unit 032 false negative', expectation = unitStructuralExpectation(unit, source)), not to the corpus. Invariant under B4 adding units 075/076. CORRECTLY UNCHANGED.",
+        "tests/database-role-safety.test.ts:187-189 — APPEND_ONLY_TABLES 5 / OPERATIONAL_TABLES 33 / ALL_TABLES 38 are the static allowlist stella_0004 declares, asserted against that migration's own SQL text. B4 does not modify stella_0004. CORRECTLY UNCHANGED.",
+        "tests/database-role-safety.test.ts:685 — byTable.size 38 filters on a.grantee = uellix_writer, i.e. exactly stella_0004's allowlist, not the live public schema. CORRECTLY UNCHANGED.",
+        "scripts/stella-r3-5-pg17-certify.ts:1008,1302 — BASELINE_UNITS.length !== 50 is a fail-closed guard pinning the SEALED R3.5/PG17 certification profile to its imported 50-unit era. It already refused at 74 before B4 and equally refuses at 76: B4 does not change its state. NOT a B4-introduced staleness."
+      ],
+      "NEW_B4_STALE_DERIVED_PIN_FOUND": "NONE",
+      "one_pre_existing_latent_pin_recorded": "See open_findings NB-1. It is measured divergent AT THE AUDITED BASE, before B4, and is therefore not a B4 obligation."
+    },
+    "diff_scope_of_the_fix": "9 lines: 8 lines of derivation comment plus the single literal 75 -> 77. No refactor, no unrelated cleanup, no change to the gate's DML, serviceRoleGranters, superuser-free or row-source contracts.",
+    "RESULT": "PASS"
+  },
+
+  "D5_ktc": {
+    "void_ids": ["KTC-W2-B4-A1-STALE", "KTC-W2-B4-B0-STALE"],
+    "void_id_status": "VOID and non-authoritative. Neither was ever registered in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json.",
+    "removed_as_claims": "VERIFIED. known_conditions_discovered = [] in the implementation evidence at the audited head. The two strings survive only inside known_conditions_disposition.VOID_IDS (an explicit removal record) and inside a block carrying VOID_IDS_NOTE, which retains the pre-remediation record verbatim and states the ids carry no waiver force.",
+    "retention_is_correct": "Deleting the historical block would be historical-evidence rewriting, which the ODS operating discipline prohibits. Removal as a CLAIM plus retention as DISCLOSED HISTORY is the governance-correct form, and the waiver-bearing array is empty.",
+    "historic_registered_conditions": ["KTC-HOSTED-BASELINE-REHEARSAL-STALE-01", "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"],
+    "registry_bytes_unchanged": "YES — blob 7d27af2a285ceeece51604b057a6925575446c60 at 83fc21b, 5035e7e, 48ed3b7 and 4d177fc.",
+    "fingerprint_discrimination": {
+      "registered_cause_fingerprint": {
+        "manifestApplied": 50,
+        "manifestDigest": "8f754f275d280e14130746b3271566d9073e4f3653b7780d47c943b60a7f050a",
+        "rehearsalFresh": false,
+        "appliedAll": false
+      },
+      "current_state": {
+        "manifestApplied": 76,
+        "manifestDigest": "30ee87259b0e83c1095c5e240e0c9af4bcd96f2c60c516404a26b9e75d39fd20",
+        "manifestFailedAt": null
+      },
+      "match": "NO — no discriminator matches. By the registry's own stated purpose, these conditions do not describe the current state.",
+      "moot_at_target": "The underlying gate is GREEN at the audited head, so neither condition reproduces at all."
+    },
+    "PASS_WITH_KTC": "NOT CLAIMED AND NOT REQUIRED. No failure is carried under any known condition; CI is green on its own merits.",
+    "ktc_01_02_closure_not_decided_here": "Whether KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02 should be marked closed remains open for its own governed act, per the amendment's R3. This audit records only that they do not apply at the current fingerprint.",
+    "RESULT": "PASS"
+  },
+
+  "D6_authority_conformance": {
+    "closed_world_correction_verified": {
+      "path_1": "lib/pipeline/sroi-remediation-destinations.test.ts — authorized for retention. Consumer suite measured 62 passed, 0 failed.",
+      "path_2": "tests/w2-b4-governance.test.ts — authorized for retention; hosts the four manifest-mandated controls whose test_file was UNKNOWN. Measured 15 passed, 0 failed."
+    },
+    "refresh_contracts_verified": "A1, B0 and REHEARSAL each authorized, each produced by the canonical generator named in its contract, each verified — see D3.",
+    "forced_pin_advance_permitted": "YES. tests/eval/stella-release/hosted-baseline-gate.ts is enumerated verbatim in W2_B4_AUTHORITY_v1.0.0 authorized_future_implementation_surface.unprotected.existing_tests, and hosted_baseline_pin_remeasurement.authorized_edit_scope reads: 'At each forced pin: advance the cardinality and its derivation comment to the value implied by the units B4 actually registers, and nothing else. No refactor. No weakening of any assertion into a lower-bound or contains-at-least form.' The 75 -> 77 change is exactly and only that. VERIFIED VERBATIM against the authority bytes, not accepted from the implementation evidence's citation.",
+    "amendment_enumeration_tension": "See open_findings NB-2. Resolved, non-blocking.",
+    "historic_ktcs_unchanged": "YES — see D5.",
+    "self_certification_prohibition_honoured": "The implementation evidence's final_state reads W2_B4_IMPLEMENTATION_STATUS = REMEDIATED_AWAITING_NEW_INDEPENDENT_FOCUSED_REAUDIT. It claims no closure. The verdict is established only by THIS artifact.",
+    "no_new_scope": "MEASURED. No new FIBIU scope, no new migration beyond the authorized 0062/0063, no schema change beyond them, and no B5 scope. tests/w2-b4-governance.test.ts's NEG-B5-1 control asserts the absence of B5 scope and passes.",
+    "RESULT": "PASS"
+  },
+
+  "D7_ci_and_gates": {
+    "ci_at_exact_head": {
+      "head": "4d177fcc636bc2bb641a83e95417b8c701720e51",
+      "checks": [
+        { "name": "Lint, typecheck, test, build", "conclusion": "success" },
+        { "name": "Canonical LOCAL/CI clean bootstrap proof", "conclusion": "success" },
+        { "name": "Isolated M2 disposable PostgreSQL proof", "conclusion": "success" },
+        { "name": "Vercel", "conclusion": "success" },
+        { "name": "Vercel Preview Comments", "conclusion": "success" }
+      ],
+      "all_green": true,
+      "p1a_validation_not_required": "The P1A Validation workflow triggers only on pull_request targeting branches: [main]. PR #62 targets integration/commercial-v1, so it is correctly not required for this PR. This is the current workflow definition, not a skipped requirement."
+    },
+    "locally_reexecuted_closure_critical_gates": {
+      "pnpm authority:seal:verify": "AUTHORITY_SEAL_VERIFY=PASS (PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS)",
+      "pnpm secrets:scan": "CURRENT_TREE: no credential material found",
+      "pnpm typecheck": "exit 0",
+      "pnpm ods:scope": "PASS — see D2",
+      "pnpm a1:status:verify": "exit 0",
+      "pnpm b0:observation:verify": "exit 0",
+      "full_vitest_suite": {
+        "command": "npx vitest run --testTimeout=120000 --hookTimeout=120000",
+        "numTotalTests": 10383,
+        "numPassedTests": 10168,
+        "numFailedTests": 0,
+        "numPendingTests": 215,
+        "numFailedTestSuites": 0,
+        "success": true
+      },
+      "windows_timeout_note": "A first local run at vitest's default 5s testTimeout produced 28 failures, all in tests that spawn real git repositories and the real ods:scope CLI. Raising the timeout cleared all 28 with no code change, confirming they are a Windows process-spawn latency artifact and not semantic failures. CI on Linux is green at the same head."
+    },
+    "skip_analysis": {
+      "why_recorded": "A green suite only proves the assertions that ran. The excluded and skipped surface was enumerated so the verdict does not silently inherit unexercised assertions.",
+      "statically_excluded_globs": ["tests/integration/**", "tests/e2e/**"],
+      "derived_count_pins_inside_excluded_globs": "NONE — measured.",
+      "runtime_skipped": "215 tests, all behind describe.skipIf(!LIVE_CATALOG.available), skipIf(!LIVE), skipIf(!PG_TESTS_ENABLED) or skipIf(!REAL_DOCKER) guards. The real-PostgreSQL B4 battery (tests/postgres/b4-completeness.pg.test.ts, 32 tests) is exercised in CI by the Isolated M2 disposable PostgreSQL proof, which is green at this head."
+    },
+    "RESULT": "PASS"
+  },
+
+  "D8_merge_tree": {
+    "method": "git merge-tree --write-tree between the integration head and the candidate — a real three-way merge computed in memory, touching no ref, index or working tree.",
+    "base": "48ed3b70fefd2178dc1e80a1565f063265b04804",
+    "candidate": "4d177fcc636bc2bb641a83e95417b8c701720e51",
+    "merge_result_tree": "f97067b8f954b6ff42f7026b9dee032c6ad7bbaf",
+    "candidate_tree": "f97067b8f954b6ff42f7026b9dee032c6ad7bbaf",
+    "identical": true,
+    "conflicts": 0,
+    "base_is_ancestor_of_candidate": true,
+    "meaning": "A normal merge commit carries exactly the audited tree. The integrated content will be byte-identical to the object this verdict covers.",
+    "RESULT": "PASS"
+  },
+
+  "dimensions_not_re_executed": {
+    "justification": "Permitted by W2_B4_AUTHORITY_AMENDMENT_v1.0.1 reaudit_class.need_not_re_execute_unless_relevant_bytes_changed, whose precondition — byte-identity of every previously-green implementation blob — is mechanically proven in D1 (106/108 byte-identical; the 2 movers are the two authorized paths, neither of which was previously green).",
+    "list": [
+      "real PostgreSQL probe suite",
+      "FIBIU-15, FIBIU-14 and FIBIU-16 runtime semantics",
+      "migration ordinals and the certified serial contract",
+      "approval boundary",
+      "security and tenancy controls",
+      "mutation controls",
+      "test non-weakening over the originally audited surface"
+    ],
+    "prior_verdict_relied_upon": "The independent adversarial audit of candidate 5035e7e1810543c7ca373c859237ae7301e4eb51, which PASSed each of these dimensions against blobs this remediation does not touch."
+  },
+
+  "open_findings": [
+    {
+      "id": "NB-1",
+      "status": "OPEN",
+      "blocks_b4": false,
+      "classification": "PRE_EXISTING_LATENT_ASSERTION_DEBT",
+      "path": "tests/database-role-safety.test.ts:589",
+      "summary": "The live-catalog ownership assertion expect(rows).toHaveLength(46) // 38 tables + 8 functions counts the ENTIRE public schema (pg_class relkind r,p UNION pg_proc, WHERE nspname='public'), unfiltered. Its sibling at line 685 is correctly scoped by a.grantee = uellix_writer and is invariant; this one is not.",
+      "why_not_a_b4_finding": "MEASURED AT THE AUDITED BASE. db/migrations/** already creates 45 distinct tables at 48ed3b7, against a pin of 38 — divergent by 7 BEFORE B4 exists. B4 takes the corpus to 48, widening a divergence it did not create. A pin that was already inaccurate at the base and remains inaccurate after is not a B4-introduced staleness, and advancing it is outside B4's authorized surface.",
+      "why_it_is_latent": "The assertion sits inside describe.skipIf(!LIVE_CATALOG.available) and is skipped wherever no local catalog is reachable. The only workflow that would make it reachable is P1A Validation, which triggers solely on pull_request targeting main; main is frozen, so no current PR exercises it.",
+      "recommended_disposition": "A governed act in the database-role-safety lineage should either scope the query the way line 685 is scoped, or derive the expected count from the corpus rather than pinning a literal. Recorded here so the next mission that makes the live catalog reachable is not surprised by it."
+    },
+    {
+      "id": "NB-2",
+      "status": "RESOLVED_NON_BLOCKING",
+      "blocks_b4": false,
+      "classification": "AUTHORITY_ENUMERATION_INCOMPLETENESS",
+      "summary": "W2_B4_AUTHORITY_AMENDMENT_v1.0.1 future_pr62_remediation_surface declares itself CLOSED-WORLD and enumerates four groups; tests/eval/stella-release/hosted-baseline-gate.ts, which the remediation changed to fix the fourth root cause, is in none of them.",
+      "resolution": "NOT A CLOSED-WORLD VIOLATION. The amendment's own amendment_semantics states it is APPEND-ONLY and 'does not rewrite, delete or reinterpret any clause' of W2_B4_AUTHORITY_v1.0.0.json. An append-only amendment structurally cannot revoke a permission the base authority granted, so it cannot narrow v1.0.0's existing_tests. v1.0.0 enumerates that exact path and its authorized_edit_scope expressly permits advancing a forced cardinality pin and its derivation comment, which is precisely and only what changed.",
+      "why_the_enumeration_is_short": "The fourth root cause was undiscovered when the amendment was frozen — it was isolated only after regenerating the three artifacts left the gate red. The amendment anticipated exactly this outcome in ci_target.rule: 'If any of the seven failures survives regeneration, that is a NEW finding requiring its own adjudication.' This audit is that adjudication, and it passes.",
+      "recommended_disposition": "No further authority act is required for B4. A future amendment in this lineage may wish to record that a CLOSED-WORLD remediation list is scoped to paths beyond the base authority's surface, not a repeal of it."
+    }
+  ],
+
+  "verdict": {
+    "VERDICT": "PASS",
+    "BLOCKING_FINDINGS": 0,
+    "UNKNOWN_FINDINGS": 0,
+    "NEW_AUTHORITY_GAPS": 0,
+    "NEW_DETERMINISTIC_FAILURES": 0,
+    "PASS_WITH_KTC": "NOT_CLAIMED",
+    "NON_BLOCKING_OPEN_FINDINGS": 2
+  },
+
+  "closure": {
+    "FIBIU_15": "CLOSED",
+    "FIBIU_14": "CLOSED",
+    "FIBIU_16": "CLOSED",
+    "W2_B4": "CLOSED",
+    "BLOCKING_FINDINGS": 0,
+    "UNKNOWN_FINDINGS": 0,
+    "READY_FOR_MERGE": "YES",
+    "b5_authorization": "NONE. This audit authorizes no W2-B5 work. W2-B5 requires its own authority artifact; readiness is not granted here.",
+    "controller_note": "Per ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15 controller_sequencing_rule, Controller 25 -> 26 does NOT block this merge, but MUST be materialized, audited and integrated before any further ODS lineage item is allocated.",
+    "next_gate": "PR62_NORMAL_MERGE_THEN_CONTROLLER_25_TO_26"
+  },
+
+  "final_state": "W2_B4_INDEPENDENTLY_AUDITED_PASS_READY_FOR_NORMAL_MERGE"
+}

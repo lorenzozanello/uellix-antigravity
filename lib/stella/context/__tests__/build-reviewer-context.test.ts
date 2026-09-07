@@ -95,7 +95,6 @@ const mockCalcRun = {
   sroiRatio: '1.50',
 }
 const mockLineItems = [{ id: 'li-1' }]
-const mockReview = { readinessScore: 72 }
 
 // Enrichment rows -----------------------------------------------------------
 
@@ -235,7 +234,9 @@ async function setupMockSequence(
     .mockReturnValueOnce(makeChain(mockFilterSets) as never)                           // 9 filter sets
     .mockReturnValueOnce(makeChain([mockCalcRun]) as never)                            // 10 calc run
     .mockReturnValueOnce(makeChain(mockLineItems) as never)                            // 11 line items
-    .mockReturnValueOnce(makeChain([mockReview]) as never)                             // 12 review
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): step 12 used to be the
+  // sroi_run_reviews readiness-review select buildValidatorContext made —
+  // REMOVED there, so removed here too (NEG-17-4).
 
   if (!role || role === 'proxy_reviewer') {
     chain.mockReturnValueOnce(makeChain(mockProxyDetailRows) as never)
@@ -418,7 +419,7 @@ describe('buildReviewerContext', () => {
   })
 
   describe('audit_assistant enrichment', () => {
-    it('includes the run-review roll-up (count + latest status/score/date)', async () => {
+    it('includes the run-review roll-up (count + latest status/date)', async () => {
       await setupMockSequence('audit_assistant')
       const ctx = await buildReviewerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'audit_assistant')
 
@@ -426,9 +427,17 @@ describe('buildReviewerContext', () => {
       expect(ctx.runReviewSummary).toEqual({
         reviewCount: 2,
         latestStatus: 'flagged',
-        latestReadinessScore: 72,
         latestReviewedAt: '2026-06-10T12:00:00.000Z',
       })
+    })
+
+    // NEG-17-4 (FIBIU-17, FIBC-021, W2-B5) — buildRunReviewSummary's own
+    // select no longer requests readiness_score at all (not merely
+    // unmapped): the direct read this file's own unenumerated gap left open.
+    it('runReviewSummary never carries a readiness value, even from a row shaped with one (NEG-17-4)', async () => {
+      await setupMockSequence('audit_assistant')
+      const ctx = await buildReviewerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'audit_assistant')
+      expect(ctx.runReviewSummary).not.toHaveProperty('latestReadinessScore')
     })
 
     it('keeps the calculation snapshot from the base context', async () => {

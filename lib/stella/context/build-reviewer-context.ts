@@ -85,11 +85,14 @@ export interface ReviewerEvidenceDetail {
   createdAt: string
 }
 
+// FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): latestReadinessScore is REMOVED
+// — this was an ENUMERATION GAP the B5 authority closed (build-reviewer-context.ts
+// was never named in the FIB, yet read sroi_run_reviews.readiness_score into
+// the audit_assistant prompt). ABSENT is required over a legacy value.
 /** Run-review roll-up for the audit_assistant (sroi_run_reviews). */
 export interface ReviewerRunReviewSummary {
   reviewCount: number
   latestStatus: string | null
-  latestReadinessScore: number | null
   latestReviewedAt: string | null
 }
 
@@ -236,7 +239,6 @@ async function buildRunReviewSummary(
   const rows = await db
     .select({
       status: sroiRunReviews.status,
-      readinessScore: sroiRunReviews.readinessScore,
       reviewedAt: sroiRunReviews.reviewedAt,
       createdAt: sroiRunReviews.createdAt,
     })
@@ -250,7 +252,6 @@ async function buildRunReviewSummary(
   return {
     reviewCount: rows.length,
     latestStatus: latest?.status ?? null,
-    latestReadinessScore: latest?.readinessScore ?? null,
     latestReviewedAt: latest?.reviewedAt ? latest.reviewedAt.toISOString() : null,
   }
 }

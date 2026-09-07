@@ -214,6 +214,17 @@ const CONTENT_MODIFYING_SITES = [
   { file: 'lib/pipeline/evidence.ts', action: 'evidence_version.treatment_recorded' },
   // FIBIU-12 (FIBC-016) — the update branch of recordOutcomeMonetizationDisposition.
   { file: 'lib/pipeline/sroi-calculation.ts', action: 'outcome_monetization_disposition.recorded' },
+  // FIBIU-15 (FIBC-019, W2-B4) — updateMethodologicalAssumption: a material
+  // modification updates the row's own content in place before
+  // domainObjectVersions preserves the prior content as history.
+  { file: 'lib/pipeline/narratives.ts', action: 'methodological_assumption.superseded' },
+  // FIBIU-14 (FIBC-018, W2-B4) — the update branch of
+  // recordCounterfactualAssessment, mirroring recordOutcomeMonetizationDisposition.
+  { file: 'lib/pipeline/sroi-calculation.ts', action: 'counterfactual_assessment.recorded' },
+  // FIBIU-18 (FIBC-022, W2-B5) — dispositionSensitivityCandidate: the
+  // governed pending -> variation_required|no_additional_variation_required
+  // transition updates the row's own content in place.
+  { file: 'lib/pipeline/sroi-sensitivity.ts', action: 'sensitivity_candidate.dispositioned' },
 ]
 
 describe('content-modifying audit coverage (FIBC-040)', () => {

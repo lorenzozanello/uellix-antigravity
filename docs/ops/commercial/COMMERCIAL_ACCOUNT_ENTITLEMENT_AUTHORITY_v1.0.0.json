@@ -1,0 +1,1154 @@
+{
+  "package_id": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTABLE_COMMERCIAL_AUTHORITY_FROZEN_WAITING_FOR_LINEAGE_ALLOCATION",
+  "mission_id": "COMMERCIAL-ACCOUNT-ENTITLEMENT-AUTHORITY-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-05",
+  "companion_manifest": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_HEAD": "ccd0680e27560c2dfe5c08e2f69d4f115014466f",
+  "AS_OF_TREE": "ff8082d457c5b6ccf6b5f16b1788b2cb736424a2",
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "intervening_delta_from_mission_creation": "ZERO — the mission named STARTING_REF origin/integration/commercial-v1; that ref resolves to ccd0680e27560c2dfe5c08e2f69d4f115014466f, which is also the authoring branch HEAD and the working tree measured (ff8082d457c5b6ccf6b5f16b1788b2cb736424a2, clean). pnpm ods:prestate returned ODS_PRESTATE=PASS on all four checks. No re-measurement drift to reconcile.",
+
+  "NAMING_DERIVATION": "The repo-native convention for a versioned executable authority is <PACKAGE_STEM>_AUTHORITY_v<semver>.json with its companion <PACKAGE_STEM>_TEST_MANIFEST_v<semver>.json placed in the same domain directory. Exemplars measured at AS_OF_HEAD: docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json + MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json; docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json + P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json; docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json + ..._TEST_MANIFEST_v1.0.0.json. The mission-named domain directory is docs/ops/commercial/** and the mission-named semantic stem is COMMERCIAL_ACCOUNT_ENTITLEMENT_. The convention is therefore unambiguous and yields exactly these two paths; no STOP condition on naming arose.",
+
+  "PURPOSE": {
+    "statement": "Freeze the executable architecture and security authority for CommercialAccount and EntitlementGrant in Commercial V1: what the target model IS, which measured executable facts contradict it today, in what forward-only order the change may be made, and which security properties must hold at every point of that order. This artifact implements NOTHING and authorizes NOTHING to be implemented yet.",
+    "what_this_is": [
+      "The executable reconciliation between the canonically integrated product ratifications CA-01..CA-08 (plus the self-service and payment/suspension doctrine that accompanies them) and the current executable commercial state measured at AS_OF_HEAD.",
+      "A frozen CE-1..CE-9 forward-only implementation DAG with a RETIREMENT_LAST_RULE protecting the legacy commercial columns that a prepared unit's apply-precondition still depends on.",
+      "A frozen contradiction register: ten named places where current executable state contradicts, or cannot express, ratified product intent — each with an exact repo citation.",
+      "A frozen security contract of twelve controls, each of which must remain true at every intermediate state of the DAG, not merely at its end."
+    ],
+    "what_this_is_not": [
+      "NOT an implementation. No runtime, schema, migration, prepared unit, RLS policy, Stripe code, CAP-05 change or test is created or changed by this mission.",
+      "NOT an ODS/HPO lineage allocation, and NOT a migration-ordinal allocation. See FUTURE_ODS_NEEDS_SYMBOLIC and MIGRATION_DAG.ordinal_rule — this artifact allocates no identifier of any kind.",
+      "NOT a re-opening of any product ratification. The 30 integrated ratifications are consumed as given and are not re-litigated here.",
+      "NOT a tenancy authority. Selected tenant scope is Organization and belongs to docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json; this package only reconciles against it as a shared writer."
+    ],
+    "fail_closed_rule": "Where this authority marks a decision UNKNOWN or FUTURE_MEASUREMENT_REQUIRED, an implementing mission must measure it, not assume it. Unknown required evidence fails closed."
+  },
+
+  "ALIGNMENT_REFERENCES": {
+    "product_ratifications": "docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json",
+    "product_alignment_baseline": "docs/ops/commercial/COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md",
+    "integrated_ratification_count_required": 30,
+    "integrated_ratification_count_measured": 30,
+    "count_measurement": "node -e on docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json at AS_OF_HEAD: ratifications.length == 30 and self_check.expected_ratification_count == 30, with self_check.expected_id_set containing CA-01..CA-08 and no CA-09. The CA-06/CA-07/CA-08 amendment was integrated as merge bd3dc53 (audited head 00bbe9c), verified an ancestor of AS_OF_HEAD by git merge-base --is-ancestor.",
+    "consumed_ratification_ids": [
+      "CA-01", "CA-02", "CA-03", "CA-04", "CA-05", "CA-06", "CA-07", "CA-08",
+      "SS-01", "SS-02", "SS-03"
+    ],
+    "consumed_doctrine_blocks": [
+      "ratified_semantics_detail_ca06_ca08.self_service_bootstrap",
+      "ratified_semantics_detail_ca06_ca08.payment_suspension_semantics",
+      "ratified_semantics_detail_ca06_ca08.transfer_semantics"
+    ],
+    "CA_01_TO_CA_08_VERBATIM": {
+      "CA-01": "CommercialAccount is distinct from Organization.",
+      "CA-02": "One CommercialAccount may govern one or more Organizations.",
+      "CA-03": "EntitlementGrant is distinct from authorization.",
+      "CA-04": "Entitlements are evaluated at the organization/product-capability boundary.",
+      "CA-05": "Stripe/payment state does not directly grant application authorization.",
+      "CA-06": "An Organization is governed by exactly one CommercialAccount at a time. A governed transfer, Platform-Admin-initiated in Commercial V1, may change that association without altering the Organization id, tenant data, memberships, roles, evidence, or audit history. The pre-transfer CommercialAccount association must remain historically reconstructible. Entitlements must be explicitly re-evaluated under the receiving CommercialAccount rather than silently inherited from the prior one. This does not ratify any specific schema table or FK design — a live-FK-plus-history-relation is a derived architecture recommendation, not product doctrine.",
+      "CA-07": "CommercialAccount owns the commercial/payment relationship: Stripe customer/subscription/price identity and plan/catalog identity. Effective EntitlementGrants, usage meters and quota enforcement remain scoped to Organization x product-capability per CA-04. CommercialAccount-level plan state defines what an Organization may be entitled to but is never itself evaluated as tenant authorization.",
+      "CA-08": "Stella usage and other metered capability usage in Commercial V1 are metered and enforced per Organization. A CommercialAccount governing multiple Organizations may aggregate usage and billing for reporting/invoicing; this aggregation does NOT create an implicit shared authorization or pooled runtime quota. A pooled-quota model is future product scope and would require its own explicit future ratification."
+    },
+    "consumption_rule": "These ratifications are consumed EXACTLY as written and are NOT re-opened. Where this authority states a decision they do not cover — notably every schema shape, which CA-06 explicitly declines to ratify — it is classified DERIVED_ARCHITECTURE_DECISION or DERIVED_SECURITY_DECISION and creates NO new product ratification id.",
+    "precedence": "The ratifications are PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY by their own declared class. They establish product intent. THIS artifact is the executable reconciliation of that intent with measured repository state. On any divergence about product intent, the ratifications control; on any divergence about current executable state, the measured EVIDENCE_ANCHORS below control.",
+    "not_consumed_here": "MO-01..MO-12 belong to docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json and are consumed there. This package cites MO-01, MO-02, MO-03 and MO-07 only where they intersect (see MULTIORG_INTERSECTION). EV-01..EV-03, RI-01 and AG-01..AG-03 are out of scope for this package entirely.",
+    "MO01_CA02_RECONCILIATION": "MO-01 ratifies that a SUBJECT may self-service-found at most ONE organization. CA-02 ratifies that a COMMERCIAL ACCOUNT may govern one or more Organizations. These are not in tension and neither implies the other: founding cardinality is a per-subject anti-abuse ceiling on the self-service path, while governance cardinality is a per-account commercial fact. A second Organization under one CommercialAccount therefore arrives through a Platform-Admin or invitation path, never by relaxing MO-01. An implementing mission that reads CA-02 as authorising multi-founding has misread it."
+  },
+
+  "EVIDENCE_ANCHORS": {
+    "measurement_note": "Every anchor below was measured directly in this worktree at AS_OF_HEAD ccd0680e27560c2dfe5c08e2f69d4f115014466f / tree ff8082d457c5b6ccf6b5f16b1788b2cb736424a2, working tree clean, by git, grep, sed or a one-line node read of the named file. Nothing here is carried from memory or from a prior mission's report. Line numbers are as of this tree and must be re-measured by any mission acting on a different head.",
+    "anchors": [
+      {
+        "id": "EA-01",
+        "claim": "No CommercialAccount concept and no EntitlementGrant concept exist anywhere in the executable repository.",
+        "source": "repo-wide grep at AS_OF_HEAD",
+        "literal": "grep -rniE \"commercial_?account|entitlement_?grant|entitlementGrant|commercialAccount\" --include='*.ts' --include='*.tsx' --include='*.sql' --include='*.json' db lib app => 0 matches."
+      },
+      {
+        "id": "EA-02",
+        "claim": "Commercial identity, plan identity and the runtime metered limit are five columns on the tenant table itself.",
+        "source": "db/schema.ts:28-29,37-39",
+        "literal": "stellaMonthlyQuota: integer('stella_monthly_quota').default(0) / stellaPlanLabel: varchar('stella_plan_label', { length: 100 }) / stripeCustomerId: varchar('stripe_customer_id', { length: 255 }).unique() / stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }).unique() / stripePriceId: varchar('stripe_price_id', { length: 255 })"
+      },
+      {
+        "id": "EA-03",
+        "claim": "Organization.status is a separate tenant-operational state, defaulted active, and is not a commercial field.",
+        "source": "db/schema.ts:24",
+        "literal": "status: varchar('status', { length: 50 }).default('active').notNull()"
+      },
+      {
+        "id": "EA-04",
+        "claim": "The Stella quota column carries a three-valued capability-local semantic: null = no cap assigned or enforced, 0 = blocked, N = monthly cap. 'Unlimited' and 'a lot' are deliberately distinct states.",
+        "source": "db/schema.ts:25-28 and lib/stella/quota.ts:4,43-53",
+        "literal": "db/schema.ts:25-27 comment: 'Stella usage quota: null = unlimited (internal/Uellix use only); 0 = blocked (default — no plan assigned yet); N = monthly cap on Stella calls.' lib/stella/quota.ts:43-44: 'limit === null means no cap is assigned or enforced, and then available is null too: \"unlimited\" and \"a lot\" are different states and collapsing them' ... StellaCapacity.limit: number | null, StellaCapacity.available: number | null."
+      },
+      {
+        "id": "EA-05",
+        "claim": "The Stripe webhook write path is disabled by a compile-time constant; a signature-verified event is refused 503 rather than answered 200 with no write.",
+        "source": "app/api/webhooks/stripe/route.ts:57",
+        "literal": "const WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false"
+      },
+      {
+        "id": "EA-06",
+        "claim": "The Stripe database identity unit (CAP-03) is prepared and applied nowhere.",
+        "source": "db/prepared/stella_0008_stripe_webhook_identity.sql and db/prepared/README.md:589",
+        "literal": "README.md:589 status column reads 'DISEÑO — no aplicado'; the row also records that it requires DP-CAP-07 and an out-of-band credential, and that it creates roles uellix_stripe / uellix_cap_stripe, table stripe_webhook_events and the three verbs stripe_begin_event, stripe_apply_subscription, stripe_fail_event."
+      },
+      {
+        "id": "EA-07",
+        "claim": "stripe_apply_subscription writes commercial identity AND the runtime metered limit in ONE UPDATE against the tenant table, and its audit row is typed as an organization event.",
+        "source": "db/prepared/stella_0008_stripe_webhook_identity.sql:781-804",
+        "literal": "UPDATE public.organizations SET stripe_customer_id = COALESCE(...), stripe_subscription_id = COALESCE(...), stripe_price_id = p_stripe_price_id, stella_monthly_quota = p_quota, stella_plan_label = p_plan_label, updated_at = pg_catalog.now() WHERE id = v_org_id; ... INSERT INTO public.audit_logs (...) VALUES (v_org_id, NULL, 'organization', v_org_id, 'stripe.subscription.applied', ...)"
+      },
+      {
+        "id": "EA-08",
+        "claim": "The only plan resolution that exists maps a Stripe price id directly to a numeric quota and a label, with a free-quota fallback for an unrecognised price.",
+        "source": "lib/stripe/client.ts:53-61 and app/api/webhooks/stripe/route.ts:59-64",
+        "literal": "export function mapStripePriceToQuota(priceId: string | null): number { if (!priceId) return STRIPE_QUOTAS.free; return PRICE_ID_MAP[priceId]?.quota ?? STRIPE_QUOTAS.free } ... route.ts:60-62 comment: 'An unknown price must never be applied. The shared mapping falls back to the free quota for a price it does not recognise, which is a safe default for a read and a silent downgrade of a paying customer when it is the input to a quota write'."
+      },
+      {
+        "id": "EA-09",
+        "claim": "CAP-05 self-service organisation bootstrap is prepared and applied nowhere, and by design takes no plan or quota parameter and holds no grant on any plan, quota or billing column.",
+        "source": "db/prepared/stella_0010_organization_bootstrap_capability.sql:174,216,571 and db/prepared/README.md:591",
+        "literal": ":174 'stella_0010 / CAP-05: definer of uellix_capability.bootstrap_organization. NOLOGIN, ZERO members. Can CREATE an organisation and its founding membership; cannot UPDATE or DELETE either, and has no grant on any plan, quota or billing column.' :571 'Creates one organisation, its founding admin membership and two audit rows in ONE transaction — there is no partial organisation. Subject comes from auth.uid(); owner, role, plan and quota are not parameters.' :216 idempotency ledger capability_bootstrap_attempts keyed by (user_id, idempotency_key). README.md:591 status 'DISEÑO — no aplicado'."
+      },
+      {
+        "id": "EA-10",
+        "claim": "The organisation column ACL unit (stella_0011) is prepared and applied nowhere, yet TWO live application call sites already invoke the two definers it creates. The code is welded to signatures that do not exist in any database today.",
+        "source": "db/prepared/README.md:592 and lib/admin/organization-administration.ts:106-108,133-137",
+        "literal": "README.md:592 records RR-CAP-10-A ('lib/admin/stella-services.ts and lib/admin/organizations.ts must call the two functions BEFORE applying') and status 'DISEÑO — no aplicado'. lib/admin/organization-administration.ts:106-108 issues SELECT uellix_capability.admin_set_stella_service(<uuid>::uuid, <int>::integer, <text>::text); :133-137 issues SELECT uellix_capability.admin_set_organization_status(<uuid>::uuid, <text>::text)."
+      },
+      {
+        "id": "EA-11",
+        "claim": "stella_0011 is not independently applicable: the repository records that it, stella_0012 and the lib/admin change are one obligatory set.",
+        "source": "db/prepared/README.md:593,1003-1008",
+        "literal": "README.md:593 for stella_0012: 'ninguno; se aplica con stella_0011 y con el cambio de lib/admin/**' ... :1008 'Lo que sí es obligatorio: stella_0011, stella_0012 y el cambio de lib/admin/**'."
+      },
+      {
+        "id": "EA-12",
+        "claim": "A prepared quota chain already models metering per ORGANIZATION with a per-organization advisory lock, an idempotency key, and the canonical arithmetic Limit − Consumed − Reserved. None of it is applied.",
+        "source": "db/prepared/README.md:290,340,396,433,480,537 (stella_0013..stella_0018)",
+        "literal": "README.md:290 consume_stella_quota(uuid, uuid, varchar, char) SECURITY DEFINER — 'comprueba y consume una unidad en la transacción del llamante, bajo lock de advisory por organización, idempotente por (organization_id, idempotency_key)'. README.md:433 stella_capacity(uuid, char(64)) — 'la aritmética canónica Limit − Consumed − Reserved'. All six rows carry status 'DISEÑO — no aplicado'."
+      },
+      {
+        "id": "EA-13",
+        "claim": "The prepared quota chain has a HARD apply-precondition on the legacy column organizations.stella_monthly_quota: stella_0013 aborts if the column is absent, and both stella_0013 and stella_0016 read the limit from it.",
+        "source": "db/prepared/stella_0013_grounded_query_quota.sql:86-88,474 and db/prepared/stella_0016_reserved_quota_semantics.sql:375",
+        "literal": "stella_0013:88 RAISE EXCEPTION 'stella_0013 aborted: public.organizations.stella_monthly_quota is absent — there is no limit for a consumption path to enforce.'; stella_0013:474 SELECT o.stella_monthly_quota INTO v_quota; stella_0016:375 SELECT o.stella_monthly_quota INTO v_limit."
+      },
+      {
+        "id": "EA-14",
+        "claim": "The audit table can carry a commercial event but has no CommercialAccount anchor: organization_id is a nullable FK to organizations, and entity_type/entity_id are free-form.",
+        "source": "db/schema.ts:65-80",
+        "literal": "auditLogs = pgTable('audit_logs', { organizationId: uuid('organization_id').references(() => organizations.id), projectId, actorUserId, entityType: varchar('entity_type', { length: 100 }).notNull(), entityId: uuid('entity_id').notNull(), action, beforeJson, afterJson, reason, ipAddress, userAgent })"
+      },
+      {
+        "id": "EA-15",
+        "claim": "Audit RLS selects by organization membership OR super_admin. A row with organization_id NULL is therefore denied to every tenant (NULL = ANY(...) is NULL, not TRUE) and visible only to a platform super_admin.",
+        "source": "db/baseline/stella_g2_schema.sql:8829 and :8822",
+        "literal": ":8829 CREATE POLICY audit_logs_select_member_or_admin ON public.audit_logs FOR SELECT USING (((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())); :8822 the INSERT policy additionally requires actor_user_id = auth.uid()."
+      },
+      {
+        "id": "EA-16",
+        "claim": "The current request principal is a single active membership read, not a selection among several; the database enforces at most one active membership per subject.",
+        "source": "lib/auth/database-context.ts:209-210 and db/schema.ts:61",
+        "literal": "database-context.ts:209 comment '/** The caller's single active membership, if any. Context required. */' above loadActiveMembershipWithinContext. db/schema.ts:61 uniqueIndex('user_single_active_membership').on(table.userId).where(sql`${table.status} = 'active'`)"
+      },
+      {
+        "id": "EA-17",
+        "claim": "Tenant scope is carried into the database as a single organization GUC set transaction-locally; there is no commercial identifier in the request identity at all.",
+        "source": "db/identity-context.ts:176,180",
+        "literal": ":176 SELECT set_config('request.jwt.claims', <claims>, true) ; :180 SELECT set_config('app.organization_id', <identity.organizationId>, true)"
+      },
+      {
+        "id": "EA-18",
+        "claim": "The live ODS Controller enumerates 28 immutable-by-convention artifacts, ending at maintenance addendum v1.0.17. Addendum v1.0.18 exists on disk and is NOT enumerated.",
+        "source": "scripts/ods-controller.ts:49-79 and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json",
+        "literal": "IMMUTABLE_BY_CONVENTION parsed at AS_OF_HEAD: length 28, includes '.../ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json', does NOT include '.../ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json'. scripts/ods-controller.ts:49 states the membership test is 'EXACT membership — never a subset test.'"
+      }
+    ]
+  },
+
+  "CURRENT_CONTRADICTIONS": {
+    "framing": "A contradiction here is a place where measured executable state cannot express, or actively opposes, an integrated ratification. Absence of a feature is not automatically a contradiction; it is recorded as one only where the current shape would have to be UNDONE, not merely extended, to reach the target. Each entry names the node of MIGRATION_DAG that resolves it.",
+    "contradictions": [
+      {
+        "id": "CC-1",
+        "class": "STRUCTURAL_INEXPRESSIBILITY",
+        "against": ["CA-01", "CA-02", "CA-07"],
+        "statement": "There is no CommercialAccount entity. Commercial identity exists only as columns on the tenant row, so 'CommercialAccount is distinct from Organization' has no carrier and 'CommercialAccount owns the commercial relationship' has no owner.",
+        "evidence": ["EA-01", "EA-02"],
+        "resolved_by_node": "CE-1"
+      },
+      {
+        "id": "CC-2",
+        "class": "STRUCTURAL_INEXPRESSIBILITY",
+        "against": ["CA-03", "CA-04"],
+        "statement": "There is no EntitlementGrant entity. The runtime metered limit IS the plan column, so there is no record with a source, an actor, a reason, an effective period or a commercial basis standing between a commercial fact and a runtime capability. 'EntitlementGrant is distinct from authorization' is not merely unimplemented — there is nothing to be distinct.",
+        "evidence": ["EA-01", "EA-02", "EA-04"],
+        "resolved_by_node": "CE-3"
+      },
+      {
+        "id": "CC-3",
+        "class": "PREPARED_ACTIVE_CONTRADICTION",
+        "against": ["CA-03", "CA-05", "CA-07"],
+        "statement": "The prepared Stripe verb fuses payment state and runtime limit into a single UPDATE: stripe_apply_subscription writes stripe_customer_id, stripe_subscription_id, stripe_price_id, stella_monthly_quota and stella_plan_label in one statement on public.organizations. In that shape, payment state IS the entitlement — with no grant record between them. CA-05 currently holds only because the unit is unapplied and app/api/webhooks/stripe/route.ts:57 is false; it is not enforced by design.",
+        "evidence": ["EA-05", "EA-06", "EA-07", "EA-08"],
+        "load_bearing_note": "This is the single most important contradiction in the package. It is NOT resolved by leaving the flag false. A future mission that enables CAP-03 as written would make the contradiction live in one deploy.",
+        "resolved_by_node": "CE-6"
+      },
+      {
+        "id": "CC-4",
+        "class": "CARDINALITY_CONTRADICTION",
+        "against": ["CA-02"],
+        "statement": "Commercial identity is one-to-one with Organization by column cardinality: stripe_customer_id and stripe_subscription_id are UNIQUE columns ON the organizations table. One CommercialAccount governing two Organizations is therefore not expressible — the two organisations would need the same customer id in a UNIQUE column.",
+        "evidence": ["EA-02"],
+        "resolved_by_node": "CE-1"
+      },
+      {
+        "id": "CC-5",
+        "class": "HISTORY_DESTRUCTION",
+        "against": ["CA-06"],
+        "statement": "There is no commercial association and therefore no association history. A transfer performed on today's shape would be an in-place UPDATE of the five commercial columns, which destroys the prior commercial state rather than superseding it. CA-06's requirement that the pre-transfer association remain historically reconstructible cannot be met by any UPDATE-only design.",
+        "evidence": ["EA-01", "EA-02", "EA-07"],
+        "resolved_by_node": "CE-2"
+      },
+      {
+        "id": "CC-6",
+        "class": "BYPASS_PATH",
+        "against": ["CA-03", "CA-04"],
+        "statement": "The platform-admin quota path writes the runtime limit directly. admin_set_stella_service(uuid, integer, text) sets stella_monthly_quota and stella_plan_label with no grant record, no effective period and no source discriminator; and its label argument is destructive when omitted. Under the target this is an entitlement decision being taken outside the entitlement record.",
+        "evidence": ["EA-10"],
+        "resolved_by_node": "CE-5"
+      },
+      {
+        "id": "CC-7",
+        "class": "STRUCTURAL_INEXPRESSIBILITY",
+        "against": ["CA-05", "CA-07"],
+        "statement": "Plan and entitlement are one write. stella_plan_label and stella_monthly_quota move together in every writer that touches them (the prepared Stripe verb and the prepared admin verb), and the only plan resolution in the codebase maps a Stripe price id straight to a quota number with a free-tier fallback. 'Plan existence alone never grants runtime capability' has no seam at which to hold.",
+        "evidence": ["EA-07", "EA-08", "EA-10"],
+        "resolved_by_node": "CE-5"
+      },
+      {
+        "id": "CC-8",
+        "class": "MISSING_ATOMIC_STEP",
+        "against": ["SS-03", "CA-01"],
+        "statement": "The prepared self-service bootstrap creates an Organization, its founding admin membership and two audit rows atomically — and deliberately nothing commercial: it takes no plan or quota parameter and holds no grant on any plan, quota or billing column. The ratified journey requires an atomic CommercialAccount + first Organization + founder membership + deterministic initial entitlement. The current unit is correct as far as it goes and incomplete against the target.",
+        "evidence": ["EA-09"],
+        "note": "This is a contradiction of COMPLETENESS, not of intent. The bootstrap's refusal to take a plan parameter is a property to PRESERVE, not to relax — see CAP05_DISPOSITION.",
+        "resolved_by_node": "CE-7"
+      },
+      {
+        "id": "CC-9",
+        "class": "RETIREMENT_BLOCKER",
+        "against": ["CA-07"],
+        "statement": "The legacy commercial columns cannot simply be dropped once CommercialAccount owns plan identity. db/prepared/stella_0013_grounded_query_quota.sql:88 aborts application outright if public.organizations.stella_monthly_quota is absent, and both stella_0013:474 and stella_0016:375 read the limit from it. Retiring the column would invalidate the apply-precondition of a six-unit prepared quota chain that is otherwise CA-08-conformant.",
+        "evidence": ["EA-12", "EA-13"],
+        "resolved_by_node": "CE-9"
+      },
+      {
+        "id": "CC-10",
+        "class": "AUDIT_ANCHOR_GAP",
+        "against": ["CA-06"],
+        "statement": "CA-06 requires a full audit event for a transfer, but the audit table's only tenant anchor is organization_id, a FK to organizations; there is no commercial-account anchor, and the prepared Stripe verb already types a commercial event as entity_type='organization'. A CommercialAccount-level event governing several Organizations has no single organisation to name.",
+        "evidence": ["EA-07", "EA-14", "EA-15"],
+        "resolved_by_node": "CE-2"
+      }
+    ],
+    "additional_recorded_constraint": {
+      "id": "CC-L",
+      "class": "LINEAGE_CONSTRAINT_NOT_A_CONTRADICTION",
+      "statement": "ODS maintenance addendum v1.0.18 is present on disk and unenumerated by the live Controller, which tests EXACT membership. Any mission that attempts to allocate the next ODS/HPO identifier before the Controller successor closes must STOP for lineage sequencing. This constrains every implementing node of this package; it does not constrain this docs-only authority, which allocates nothing.",
+      "evidence": ["EA-18"]
+    }
+  },
+
+  "PRESERVED_INVARIANTS": {
+    "rule": "These are properties of the CURRENT shape that the target must KEEP. Naming them prevents an implementing mission from treating a correct property as incidental debris while removing an adjacent incorrect one.",
+    "invariants": [
+      {
+        "id": "PI-1",
+        "invariant": "Organization.status remains a tenant-operational control, separate from every commercial state. Commercial suspension is not tenant suspension.",
+        "carried_by": "EA-03",
+        "ratification_basis": "payment_suspension_semantics"
+      },
+      {
+        "id": "PI-2",
+        "invariant": "The Stella quota semantic is capability-local and three-valued: null = no cap assigned or enforced, 0 = blocked, N = cap. 'Unlimited' and 'a large number' stay distinct.",
+        "carried_by": "EA-04",
+        "scope_limit": "This semantic is RETAINED for the Stella capability only. It is explicitly NOT generalised to future capabilities — see USAGE_QUOTA_BOUNDARY.null_semantic_prohibition."
+      },
+      {
+        "id": "PI-3",
+        "invariant": "Metering is per Organization, under a per-organization advisory lock, idempotent by (organization_id, idempotency_key), with the arithmetic Limit − Consumed − Reserved. There is no pooled runtime quota anywhere in the prepared chain.",
+        "carried_by": "EA-12",
+        "ratification_basis": "CA-08",
+        "note": "The prepared quota chain is ALREADY CA-08-conformant. This package must not redesign it."
+      },
+      {
+        "id": "PI-4",
+        "invariant": "The bootstrap definer takes no plan or quota parameter, and the subject comes from auth.uid() rather than from a caller-supplied argument.",
+        "carried_by": "EA-09",
+        "ratification_basis": "SS-03 / CA-05"
+      },
+      {
+        "id": "PI-5",
+        "invariant": "A billing change made by Stripe is audited with actor_user_id NULL — a machine event is not attributed to a person.",
+        "carried_by": "EA-07",
+        "ratification_basis": "DERIVED_SECURITY_DECISION, preserved from stella_0008."
+      },
+      {
+        "id": "PI-6",
+        "invariant": "An unrecognised Stripe price is never applied as a quota. The free-tier fallback is safe for a read and is a silent downgrade when used as a write input; the write path must keep refusing rather than defaulting.",
+        "carried_by": "EA-08",
+        "ratification_basis": "DERIVED_SECURITY_DECISION"
+      },
+      {
+        "id": "PI-7",
+        "invariant": "The webhook holds no tenant, resolves no tenant and issues no statement from application code; the database identity is the only writer.",
+        "carried_by": "EA-05",
+        "ratification_basis": "CA-05"
+      },
+      {
+        "id": "PI-8",
+        "invariant": "An audit row whose organization_id is NULL is invisible to every tenant and visible only to a platform super_admin. This is the correct visibility for a platform-level commercial event and must not be 'fixed' by inventing a tenant for it.",
+        "carried_by": "EA-15",
+        "ratification_basis": "DERIVED_SECURITY_DECISION"
+      }
+    ]
+  },
+
+  "COMMERCIAL_ACCOUNT": {
+    "classification": "DERIVED_ARCHITECTURE_DECISION — CA-01/CA-02/CA-07 ratify the concept and its ownership; no schema shape is ratified.",
+    "owns": [
+      "commercial identity (legal/billing name, billing country, billing contact reference)",
+      "the billing/customer relationship",
+      "Stripe customer identity, subscription identity and price identity",
+      "plan / catalog identity",
+      "commercial lifecycle state (e.g. active, past_due, commercially suspended, closed)"
+    ],
+    "does_not_own": [
+      "tenant data of any Organization it governs",
+      "membership of any kind",
+      "roles of any kind",
+      "tenant authorization — a CommercialAccount is never evaluated as a permission",
+      "usage meters and runtime quota, which remain Organization-scoped per CA-04/CA-08"
+    ],
+    "target_shape": {
+      "relation": "commercial_accounts",
+      "identity_columns": "id (uuid pk), plus the commercial identity fields above",
+      "stripe_columns": "stripe_customer_id UNIQUE, stripe_subscription_id UNIQUE, stripe_price_id — moved here from organizations at CE-6, not duplicated permanently",
+      "lifecycle_column": "commercial_status, with a CHECK-constrained closed value set decided by the implementing node",
+      "explicit_prohibition": "commercial_accounts carries NO user_id, NO membership column and NO role column. A CommercialAccount has no members. Its human operators are reached through the Organizations it governs or through platform admin, never by a membership row on the account itself."
+    },
+    "never_a_tenant_scope": "A CommercialAccount MUST NEVER become selected tenant scope. Selected tenant is Organization (MO-03). No commercial identifier is ever set as a database GUC, is ever part of the request principal, or is ever a term in an RLS predicate over tenant data. See SEC-7 and MULTIORG_INTERSECTION."
+  },
+
+  "ORGANIZATION_RELATION": {
+    "classification": "DERIVED_ARCHITECTURE_DECISION. CA-06 states explicitly that no table or FK design is ratified and that a live-FK-plus-history-relation is a recommendation. This authority ADOPTS that shape and records why, so that the choice is auditable rather than inherited.",
+    "cardinality_frozen": "One Organization is governed by EXACTLY ONE live CommercialAccount at a time (CA-06). One CommercialAccount may govern one or more Organizations (CA-02). The relation is therefore 1:N from CommercialAccount to Organization. Simultaneous many-to-many commercial ownership is PROHIBITED and no implementing node may introduce it.",
+    "chosen_model": {
+      "live_association": "organizations.commercial_account_id — a nullable uuid FK to commercial_accounts(id). Nullable because a historical Organization that predates the backfill, or one deliberately left ungoverned, is a legitimate state that must not be forged.",
+      "history_relation": "commercial_account_organization_history — append-only. Minimum columns: id, organization_id (FK, NOT NULL), commercial_account_id (FK, NOT NULL), effective_from (NOT NULL), effective_to (NULL while live), transfer_reason, actor_user_id, audit_log_id. No UPDATE of a closed row, no DELETE.",
+      "consistency_rule": "The history relation is the SOURCE OF TRUTH for reconstruction; the column is a materialised cache of its currently-open row. Both are written in ONE transaction by a single governed verb — never by two independent writers."
+    },
+    "why_this_shape": {
+      "against_junction_with_is_current_flag": "A junction table plus a partial unique index on (organization_id) WHERE is_current makes 'exactly one live' an INDEX property. Two concurrent transfers then race on index insertion, and the loser's failure mode is a constraint violation surfaced from a write it believed had succeeded. With a single FK column the same two transfers race on a ROW LOCK that UPDATE already takes, so serialization is a property of the storage engine rather than of an index the implementer must remember to add.",
+      "against_history_only_derive_current": "Deriving the current account as the row with the greatest effective_from turns the most frequent read in the system — resolve the governing account — into an aggregate, and makes 'exactly one live' a query invariant that nothing enforces. Rejected.",
+      "cost_accepted": "The chosen shape stores the same fact twice and therefore requires the single-writer rule above. That cost is accepted deliberately and is the reason TRANSFER_CONTRACT mandates one governed verb rather than an application-side sequence of statements."
+    },
+    "ungoverned_state": "commercial_account_id IS NULL means 'no CommercialAccount governs this Organization'. It does NOT mean 'free', 'unlimited' or 'trial'. Entitlement in that state comes only from grants whose source is BOOTSTRAP_DEFAULT or PLATFORM_ADMIN. An implementing node that treats NULL as an implicit plan violates CA-05."
+  },
+
+  "TRANSFER_CONTRACT": {
+    "classification": "EXECUTABLE_INVARIANTS derived from CA-06 and transfer_semantics.",
+    "initiator": "Platform Admin only, in Commercial V1. There is no tenant-initiated transfer and no self-service transfer.",
+    "invariants": [
+      { "id": "T-1", "invariant": "The Organization id is unchanged. A transfer that creates a new Organization is not a transfer." },
+      { "id": "T-2", "invariant": "Tenant data is unchanged. No project, evidence, report or analytic row is read, written or moved by a transfer." },
+      { "id": "T-3", "invariant": "Membership is unchanged. Zero rows of organization_members are inserted, updated or deleted." },
+      { "id": "T-4", "invariant": "Roles are unchanged. No role value is read as an input to, or written as an output of, a transfer." },
+      { "id": "T-5", "invariant": "Evidence and report history are unchanged, including their audit rows." },
+      { "id": "T-6", "invariant": "The prior commercial association is reconstructible: the outgoing history row is CLOSED by setting effective_to, never deleted and never rewritten, and the incoming row is APPENDED." },
+      { "id": "T-7", "invariant": "Entitlements are EXPLICITLY re-evaluated under the receiving CommercialAccount. Re-evaluation is a separate, recorded act that writes new grant rows with source PLAN and the receiving account as commercial basis." },
+      { "id": "T-8", "invariant": "No silent inheritance. A grant whose commercial basis was the outgoing account is CLOSED by the transfer; it does not survive by having its foreign key repointed. A grant whose source is PLATFORM_ADMIN or BOOTSTRAP_DEFAULT is unaffected, because its basis was never commercial." },
+      { "id": "T-9", "invariant": "Stripe rebinding is SEPARATE from transfer. A transfer never creates, moves, detaches or reattaches a Stripe customer or subscription. An Organization may be transferred to an account with no Stripe identity at all; the resulting entitlement state is whatever explicit re-evaluation produces, which may be none." },
+      { "id": "T-10", "invariant": "A full audit event is REQUIRED and is written in the same transaction as the association change. Its shape is frozen in TRANSFER_AUDIT_SHAPE below." },
+      { "id": "T-11", "invariant": "Idempotency is explicit: a transfer verb takes an idempotency key and a caller-supplied expected current commercial_account_id. Re-issuing the same key is a no-op returning the original outcome; issuing a transfer whose expected current account no longer matches is REFUSED, not applied. This is a compare-and-set, not a blind write." },
+      { "id": "T-12", "invariant": "Concurrency is explicit: the transfer verb takes a row lock on the Organization before reading the current association, so two concurrent transfers of one Organization serialize and the second observes the first's result rather than overwriting it." },
+      { "id": "T-13", "invariant": "A transfer to the account that already governs the Organization is a REFUSAL with a distinct failure code, not a silent success and not a history row with a zero-width effective period." }
+    ],
+    "TRANSFER_AUDIT_SHAPE": {
+      "classification": "DERIVED_ARCHITECTURE_DECISION resolving CC-10 WITHOUT a schema change to audit_logs.",
+      "rule": "A transfer writes at least two audit rows in the same transaction: (a) an ORGANIZATION-scoped row with organization_id = the transferred Organization, entity_type='organization', action='commercial_account.transferred', before_json/after_json carrying the outgoing and incoming account ids — visible to that tenant's admins under the existing SELECT policy; and (b) an ACCOUNT-scoped row with organization_id NULL, entity_type='commercial_account', entity_id = the account id, visible only to a platform super_admin per EA-15. Each entitlement re-evaluation consequence writes its own ORGANIZATION-scoped row.",
+      "why_no_schema_change": "audit_logs.entity_type is free-form varchar(100) and entity_id is a bare uuid with no FK, so a commercial-account entity is already representable. organization_id is a nullable FK, so an account-scoped event needs no forged tenant. Adding a commercial_account_id column to audit_logs would put a second nullable tenant-ish anchor into an append-only table whose RLS already reads exactly one — rejected as a widening of the audit trust surface for no reconstruction benefit.",
+      "measured_precedent": "stella_0008 already writes a commercial event into audit_logs with actor_user_id NULL (EA-07); the only change the target requires is that the ACCOUNT half be typed as a commercial_account entity rather than as an organization one."
+    }
+  },
+
+  "ENTITLEMENT_GRANT": {
+    "classification": "DERIVED_ARCHITECTURE_DECISION. CA-03 and CA-04 ratify that EntitlementGrant is distinct from authorization and is evaluated at Organization × product-capability; no shape is ratified.",
+    "effective_key": "Organization × product-capability. Exactly one LIVE grant per (organization_id, capability_key) — enforced by a partial unique index WHERE effective_to IS NULL.",
+    "distinctness_rule": "An EntitlementGrant answers 'is this capability purchased/allowed for this Organization, and up to what limit'. It NEVER answers 'may this subject act'. Authorization remains membership × role, unchanged. A grant creates no membership and confers no role; a membership confers no grant. The two are evaluated by different code paths and MUST NOT be merged into one predicate.",
+    "target_shape": {
+      "relation": "entitlement_grants",
+      "columns": [
+        "id uuid pk",
+        "organization_id uuid NOT NULL FK -> organizations(id) — the effective scope, per CA-04",
+        "capability_key varchar NOT NULL — product-capability identity, from a closed catalogue owned by the implementing node",
+        "source varchar NOT NULL — one of PLAN | PLATFORM_ADMIN | BOOTSTRAP_DEFAULT | COMMERCIAL_EXCEPTION",
+        "commercial_account_id uuid NULL FK -> commercial_accounts(id) — the commercial basis; NOT NULL when source IN (PLAN, COMMERCIAL_EXCEPTION), NULL when source IN (PLATFORM_ADMIN, BOOTSTRAP_DEFAULT)",
+        "plan_ref varchar NULL — plan/catalog identity SNAPSHOTTED at grant time",
+        "limit_kind varchar NOT NULL — one of UNMETERED | BLOCKED | CAPPED",
+        "limit_value integer NULL — the cap when limit_kind = CAPPED",
+        "effective_from timestamptz NOT NULL",
+        "effective_to timestamptz NULL — NULL means live",
+        "reason text NULL",
+        "actor_user_id uuid NULL FK -> users(id) — NULL for a machine-originated grant, per PI-5",
+        "audit_log_id uuid NULL"
+      ],
+      "constraints": [
+        "CHECK: limit_kind = 'CAPPED' => limit_value IS NOT NULL AND limit_value >= 0",
+        "CHECK: limit_kind IN ('UNMETERED','BLOCKED') => limit_value IS NULL",
+        "CHECK: source IN ('PLAN','COMMERCIAL_EXCEPTION') => commercial_account_id IS NOT NULL",
+        "CHECK: source IN ('PLATFORM_ADMIN','BOOTSTRAP_DEFAULT') => commercial_account_id IS NULL",
+        "CHECK: effective_to IS NULL OR effective_to > effective_from",
+        "PARTIAL UNIQUE INDEX on (organization_id, capability_key) WHERE effective_to IS NULL"
+      ],
+      "append_only_rule": "Rows are INSERTed and CLOSED (effective_to set once, from NULL to a timestamp). No other UPDATE and no DELETE. Revocation is closing the live row, optionally followed by inserting a replacement. A 'status' column is deliberately ABSENT: status is derived from the effective period, so a row cannot be simultaneously closed and active.",
+      "plan_snapshot_rule": "plan_ref is a SNAPSHOT string, not a live FK to a plan catalogue. Editing a plan definition must never retroactively rewrite what an Organization was granted. This is the same reasoning that makes the history relation append-only."
+    },
+    "provenance_sufficiency": "The column set above is the MINIMUM that answers, for any grant, at any past instant: what capability, for which Organization, from what source, on whose commercial basis, under which plan identity, with what limit, over what period, for what stated reason, by which actor, with which audit row. An implementing node may add columns; it may not remove one of these and claim provenance.",
+    "prohibitions": [
+      "Does NOT create tenant membership.",
+      "Does NOT create or imply tenant authorization.",
+      "Does NOT reference organization_members, users' roles, or any subject other than the recording actor.",
+      "Is NOT keyed by CommercialAccount. A grant is always Organization-scoped even when its basis is commercial — this is what makes CA-08's 'no pooled quota' structurally true rather than merely intended."
+    ]
+  },
+
+  "PLAN_ENTITLEMENT_BOUNDARY": {
+    "classification": "EXECUTABLE_BOUNDARY derived from CA-05 and CA-07.",
+    "frozen": [
+      "Commercial plan != entitlement. A plan is a fact about a CommercialAccount; an entitlement is a fact about an Organization × capability.",
+      "Plan existence alone NEVER grants runtime capability. There is no code path in which reading a plan value produces an effective limit without an intervening grant row.",
+      "A plan change MAY TRIGGER an explicit governed entitlement re-evaluation. The trigger is a REQUEST, not an effect: the plan write and the grant write are separate acts, each separately audited, and the second is refusable.",
+      "No silent inheritance from CommercialAccount to Organization: an Organization joining an account with an active plan receives entitlements only through explicit re-evaluation (T-7).",
+      "Re-evaluation is DETERMINISTIC given (plan_ref, capability catalogue, organization). Two re-evaluations of the same inputs produce the same grants, so a replay is a no-op rather than a second grant."
+    ],
+    "prohibited_shortcut": "A database trigger on commercial_accounts that writes entitlement_grants is PROHIBITED. It would recreate CC-3 in a new location: a commercial write silently becoming a runtime capability change, with no separate audit and no refusal point."
+  },
+
+  "USAGE_QUOTA_BOUNDARY": {
+    "classification": "EXECUTABLE_BOUNDARY derived from CA-04, CA-07, CA-08 and PI-3.",
+    "frozen": [
+      "The usage meter is Organization-scoped.",
+      "Runtime quota enforcement is Organization-scoped, under a per-organization lock, idempotent by (organization_id, idempotency_key).",
+      "A CommercialAccount MAY aggregate usage across the Organizations it governs, for commercial reporting and invoicing ONLY. Aggregation is a READ. There is no write path from an aggregate to a runtime decision.",
+      "There is NO shared live quota pool in Commercial V1. Exhaustion in one Organization has no effect on any other, including a sibling under the same CommercialAccount.",
+      "The LIMIT becomes a projection of the live EntitlementGrant; the LEDGER stays exactly where the prepared chain puts it. This authority moves the source of the limit and moves nothing else."
+    ],
+    "limit_projection": {
+      "rule": "For the Stella capability, the live grant projects onto the legacy column during the compatibility window: limit_kind UNMETERED -> stella_monthly_quota NULL; BLOCKED -> 0; CAPPED -> limit_value. The projection is written by the entitlement writer and by nobody else (see CE-5 single-writer rule).",
+      "why_a_discriminator": "The legacy column overloads NULL to mean 'unlimited'. Carrying that overload into a generic grant table would silently make every future capability unlimited-by-default the moment someone forgot to set a value. limit_kind makes the three states explicit and makes 'nobody decided yet' impossible to express as 'unlimited'."
+    },
+    "null_semantic_prohibition": "The Stella semantic (null = unlimited, 0 = blocked) is RETAINED for the Stella capability only, because it is the semantic the existing code and existing rows already carry (EA-04, PI-2). It is NOT a general rule. An implementing node MUST NOT infer, for any other capability, that an absent limit means unlimited. Each capability's metered semantic is declared explicitly in the capability catalogue by its own node, and a capability with no declared semantic fails closed."
+  },
+
+  "PAYMENT_SUSPENSION": {
+    "classification": "EXECUTABLE_BOUNDARY derived from CA-05 and payment_suspension_semantics.",
+    "frozen": [
+      "Payment != Activation.",
+      "A CommercialAccount in past_due, or commercially suspended, does NOT automatically delete membership, does NOT change Organization.status, does NOT destroy tenant identity, and does NOT destroy evidence, reports or audit history.",
+      "Paid entitlement downgrade or revocation must be EXPLICIT (a closed grant row and, where applicable, a replacement row), AUDITABLE (its own audit row naming the commercial cause), and REVERSIBLE according to policy (reinstatement is a new grant, not an un-closing of the old row).",
+      "A platform commercial exception or override is a grant with source COMMERCIAL_EXCEPTION, carrying an actor, a reason and an effective period. There is no unaudited override.",
+      "Organization.status remains the separate tenant-operational control (PI-1). Commercial suspension and tenant suspension are two different verbs with two different authorities and must never be wired to each other."
+    ],
+    "grace_period": "Grace periods, collections schedules and retry timing are NOT ratified and are NOT frozen here. They remain future configurable policy. An implementing node that hard-codes a grace window into the entitlement path has exceeded this authority.",
+    "read_side_rule": "A tenant whose paid entitlement has been revoked retains READ access to its own historical evidence and reports unless a separate tenant-operational decision says otherwise. Loss of a paid capability is loss of the capability, not of the record."
+  },
+
+  "SELF_SERVICE": {
+    "classification": "TARGET_JOURNEY derived from SS-01/SS-02/SS-03 and self_service_bootstrap.",
+    "target_journey": [
+      "registration (verified identity/email + abuse/rate protection, per SS-02)",
+      "ATOMIC bootstrap: CommercialAccount + first Organization + founder/admin membership + deterministic initial/default entitlement, in ONE transaction",
+      "separate, later, first-party-authenticated Stripe/commercial activation"
+    ],
+    "frozen": [
+      "No manual technical provisioning may be required at any point of the journey. A commercial review MAY exist; a technical intervention MAY NOT.",
+      "The bootstrap is atomic: there is no state in which an Organization exists without its CommercialAccount, its founding membership, or its initial entitlement.",
+      "The bootstrap is idempotent, keyed by (subject, idempotency_key), so a retry returns the original outcome rather than founding a second Organization.",
+      "The bootstrap chooses NO paid entitlement and NO Stripe identity. The initial grant is source BOOTSTRAP_DEFAULT with commercial_account_id NULL and a limit declared by the capability catalogue — deterministic, identical for every new tenant, and not derived from anything the registrant supplies.",
+      "The subject comes from auth.uid(), never from a parameter (PI-4)."
+    ],
+    "cap05_reconciliation": {
+      "no_history_rewrite": "CAP-05 history is not rewritten. db/prepared/stella_0010_organization_bootstrap_capability.sql and its rollback are untouched by this authority.",
+      "successor_required": "YES — a COMPOSED successor bootstrap verb is REQUIRED. The current unit is atomic over (organization, membership, audit) and must become atomic over (commercial_account, organization, membership, initial grant, audit). Widening a transaction cannot be done by an application-side sequence of calls without losing the atomicity that is the unit's whole point.",
+      "properties_to_preserve": [
+        "the idempotency ledger keyed by (user_id, idempotency_key), which serialises concurrent bootstrap by primary key",
+        "the definer's NOLOGIN, zero-member identity",
+        "the refusal to take owner, role, plan or quota as parameters",
+        "the definer's absence of any grant on a plan, quota or billing COLUMN — the successor gains INSERT on entitlement_grants and commercial_accounts and STILL holds no column grant on the legacy billing columns",
+        "the uniform-refusal contract (U0001 generic, U0002 for a taken slug only)"
+      ],
+      "no_authority_created": "This section creates no CAP identifier and no capability authority. The successor's identifier, its DP-CAP dependencies and its lineage are a future allocation."
+    }
+  },
+
+  "STRIPE_BOUNDARY": {
+    "classification": "EXECUTABLE_BOUNDARY derived from CA-05, CA-07 and PI-5/PI-6/PI-7.",
+    "target": [
+      "Stripe customer, subscription and price identity live on commercial_accounts. They are MOVED there, not duplicated permanently.",
+      "A webhook may update the billing state of a KNOWN CommercialAccount — one already bound by a first-party authenticated act.",
+      "First binding remains first-party authenticated. A webhook never establishes a binding it did not already have."
+    ],
+    "webhook_prohibitions": [
+      "MUST NOT create membership.",
+      "MUST NOT create or change a role.",
+      "MUST NOT select or influence tenant scope.",
+      "MUST NOT create an arbitrary tenant (Organization or CommercialAccount).",
+      "MUST NOT grant tenant authorization.",
+      "MUST NOT write an entitlement grant directly, and MUST NOT write a runtime limit. This is the specific reversal of CC-3."
+    ],
+    "downstream_reaction": "A billing change may EMIT a governed re-evaluation request, recorded and auditable, which a separate governed path consumes. The emission and the entitlement write are two acts in two authorities. A webhook transaction that both records a subscription and moves a quota is prohibited by this authority regardless of how the code is factored.",
+    "identity_rule": "The webhook's database identity remains a dedicated LOGIN role with no tenant reach, per the existing CAP-03 design. The resolution of WHICH CommercialAccount an event addresses must come from the Stripe identity columns on commercial_accounts, never from a buyer-supplied checkout field.",
+    "unknown_price_rule": "PI-6 is preserved and strengthened: an unrecognised price must produce a REFUSAL on the write path. The free-tier fallback of lib/stripe/client.ts:53-56 is admissible for display only and must not be an input to any grant."
+  },
+
+  "PLATFORM_ADMIN_BOUNDARY": {
+    "classification": "EXECUTABLE_BOUNDARY derived from CA-06, payment_suspension_semantics, and coordinated with MO-07/MO-08.",
+    "operations": [
+      { "id": "PA-1", "operation": "Commercial account inspection — read account identity, governed Organizations, plan state, live grants, aggregated usage." },
+      { "id": "PA-2", "operation": "Transfer — move an Organization's governing CommercialAccount under TRANSFER_CONTRACT." },
+      { "id": "PA-3", "operation": "Manual entitlement grant — insert a grant with source PLATFORM_ADMIN, commercial_account_id NULL, an actor and a reason." },
+      { "id": "PA-4", "operation": "Manual entitlement revoke — close a live grant with an actor and a reason." },
+      { "id": "PA-5", "operation": "Billing exception override — insert a grant with source COMMERCIAL_EXCEPTION and an explicit effective period." },
+      { "id": "PA-6", "operation": "Commercial suspension — set the CommercialAccount's commercial lifecycle state. Distinct from PA-7." },
+      { "id": "PA-7", "operation": "Tenant suspension — set Organization.status. Belongs to the tenancy authority, listed here only to keep the two verbs visibly separate (PI-1)." }
+    ],
+    "boundaries": [
+      "Platform authority is the platform super_admin predicate, exercised through a governed capability definer. It is NEVER a tenant membership bypass: no platform commercial operation may insert, read-as, or impersonate an organization_members row.",
+      "Every operation above writes an audit row naming the acting subject. There is no unattributed platform commercial act.",
+      "A platform commercial operation MUST NOT set the tenant GUC of an Organization it is acting on. Acting on a tenant's commercial state is not entering that tenant.",
+      "Read of tenant DATA is not implied by any of PA-1..PA-6. Commercial inspection returns commercial and entitlement facts, not projects, evidence or reports."
+    ],
+    "multiorg_coordination": "MO-07 and MO-08 govern the platform-admin control plane and superadmin boundary in docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json (nodes S5 and ADMIN_CONTROL_PLANE). Where an operation above requires a superadmin predicate change, THAT change belongs to the tenancy package's S5, not to this one. This package consumes the boundary; it does not redefine it."
+  },
+
+  "MULTIORG_INTERSECTION": {
+    "consumed_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json (MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0), frozen at its own AS_OF_HEAD 60c93804a37bbae050959cb2709003dc6d92d8f3 — an ANCESTOR of this package's AS_OF_HEAD. Its node ids S1..S8 are used here exactly as that authority defines them.",
+    "naming_rule": "The canonical node names are the tenancy authority's own: S1 founder traceability, S2 selected-organization session carrier, S3 selected-organization request principal, S3c Stella scope weld, S4 GUC conjunctive weld and RLS target, S5 superadmin boundary and suspended-organization behavior, S6 second membership / invitations / bootstrap / allowlist exit, S7 DROP user_single_active_membership, S8 golden journey. The informal S2/S3a naming used by an earlier execution compiler is NOT used and must not be reintroduced.",
+    "hard_separation": "CommercialAccount is NOT multi-org tenant scope. The tenancy package answers 'which Organization is this request scoped to'. This package answers 'which CommercialAccount governs that Organization and what is it entitled to'. A CommercialAccount governing OrgA and OrgB widens NOTHING about what a subject scoped to OrgA can see. See SEC-7.",
+    "intersections": [
+      {
+        "with": "S1 (founder traceability)",
+        "intersection": "CE-7's composed bootstrap and S1's organizations.founded_by both extend the founding transaction and both edit db/schema.ts. S1 also carries FOUNDER_CARDINALITY, which is the MO-01 ceiling that CA-02 must not be read as relaxing.",
+        "ordering": "S1 BEFORE CE-7. A bootstrap successor that does not already know how founder traceability is recorded would have to be rewritten by S1.",
+        "chokepoints": ["CP-2"]
+      },
+      {
+        "with": "S2 (selected-organization session carrier)",
+        "intersection": "NONE at the data level, and that is a REQUIREMENT, not an observation: no commercial identifier may ever enter the selected-organization carrier. Recorded so that a future mission cannot 'helpfully' add the governing account to the session for convenience.",
+        "ordering": "INDEPENDENT.",
+        "chokepoints": []
+      },
+      {
+        "with": "S3 (selected-organization request principal)",
+        "intersection": "Entitlement evaluation reads the SELECTED Organization. Today the principal is a single active membership read (EA-16); after S3 it is a selection among several. An entitlement evaluator written against today's pick-first principal would silently evaluate the wrong Organization for a multi-member subject.",
+        "ordering": "S3 BEFORE any entitlement evaluation reaches a request path that can see more than one membership. CE-3 may land earlier only if its evaluator takes an explicit organization_id argument rather than reading an ambient principal.",
+        "chokepoints": []
+      },
+      {
+        "with": "S4 (GUC conjunctive weld and RLS target)",
+        "intersection": "entitlement_grants and commercial_account_organization_history are new tenant-adjacent relations and need RLS decided under the SAME conjunctive model S4 freezes. commercial_accounts is NOT tenant-scoped and needs its own decision (see REAL_PG_FUTURE_CONTRACT PG-3).",
+        "ordering": "S4 BEFORE the RLS of the new relations is finalised. A relation whose policies were written under the pre-S4 model would have to be re-derived.",
+        "chokepoints": ["CP-5"]
+      },
+      {
+        "with": "S7 (DROP user_single_active_membership)",
+        "intersection": "S7 removes the index that today makes 'the caller's single active membership' well-defined. Every entitlement read that resolves an Organization implicitly rather than explicitly breaks silently at S7 — it does not fail, it evaluates the wrong tenant.",
+        "ordering": "Every entitlement read path must take an EXPLICIT organization_id before S7 lands. This is a hard precondition of this package on that node.",
+        "chokepoints": []
+      },
+      {
+        "with": "S5 (superadmin boundary)",
+        "intersection": "PA-1..PA-6 are exercised through the platform predicate that S5 reshapes, and SUSPENDED_ORG_BEHAVIOR is the tenant half of the suspension pair whose commercial half is PA-6.",
+        "ordering": "S5 BEFORE CE-8.",
+        "chokepoints": ["CP-5"]
+      }
+    ],
+    "shared_writer_reconciliation": {
+      "note": "The tenancy authority's SHARED_WRITERS section already names 'CommercialAccount/Entitlements' as a contending lane on db/migrations/** (CP-1) and db/schema.ts (CP-2). This package confirms that identification from the other side and adds the collisions the tenancy package could not see.",
+      "confirmed_from_this_side": ["CP-1", "CP-2", "CP-4", "CP-5", "CP-6"],
+      "added_by_this_package": ["CP-7", "CP-8"]
+    }
+  },
+
+  "PREPARED_CAPABILITY_DISPOSITIONS": {
+    "rule": "A prepared, unapplied unit is a CURRENT-STATE CONSTRAINT, never a live capability. No disposition below is executed by this mission, and every one is SUBJECT TO FUTURE IMPLEMENTATION PROOF: the disposition states what a future node must justify, not a result it may assume.",
+    "dispositions": [
+      {
+        "unit": "db/prepared/stella_0008_stripe_webhook_identity.sql (CAP-03 — Stripe webhook capability)",
+        "current_state": "PREPARED, NOT APPLIED (EA-06). Its application-side flag is false (EA-05).",
+        "disposition": "COMPOSE",
+        "rationale": "Three of its four properties are exactly what the target needs and must not be rebuilt: the event ledger with an idempotency PRIMARY KEY, the dedicated LOGIN identity with no tenant reach, and the begin/fail verbs with their retry semantics. One property is the package's central contradiction: stripe_apply_subscription writes commercial identity AND the runtime limit in one UPDATE on organizations (EA-07, CC-3). COMPOSE therefore means: keep the ledger, the identity and the begin/fail verbs; recompose apply so that it writes CommercialAccount commercial state only and EMITS a re-evaluation request instead of moving a quota.",
+        "not_apply_as_is": "Applying it unchanged would make CC-3 live in one deploy.",
+        "not_retire": "Retiring it would discard a reviewed idempotency and refusal design that took two adversarial rounds to reach.",
+        "future_proof_required": "A future node must prove the recomposed apply writes zero columns of public.organizations and zero rows of entitlement_grants."
+      },
+      {
+        "unit": "db/prepared/stella_0010_organization_bootstrap_capability.sql (CAP-05 — organisation bootstrap)",
+        "current_state": "PREPARED, NOT APPLIED (EA-09). Requires DP-CAP-12 and DP-CAP-13.",
+        "disposition": "COMPOSE",
+        "rationale": "The unit is correct and incomplete against the target (CC-8). Its atomicity, its idempotency ledger and its refusal to accept plan/quota parameters are properties to PRESERVE (PI-4). The target widens the transaction to include the CommercialAccount and the initial grant, which cannot be done outside the definer without losing atomicity.",
+        "not_apply_as_is": "Applying it unchanged would create Organizations with no CommercialAccount and no initial entitlement — a state the target has no verb to repair atomically afterwards.",
+        "not_supersede": "A full supersession would discard the reviewed uniform-refusal and idempotency design for no gain; the successor is additive over the same transaction.",
+        "future_proof_required": "A future node must prove the composed verb still refuses owner/role/plan/quota parameters and still holds no column grant on the legacy billing columns."
+      },
+      {
+        "unit": "db/prepared/stella_0011_organization_column_acl.sql (organisation column ACL — NOT a capability, see README §'stella_0011 no es una sexta capacidad')",
+        "current_state": "PREPARED, NOT APPLIED (EA-10) — yet TWO live call sites already invoke both definers it creates, so the application is welded to signatures that exist in no database today.",
+        "disposition": "APPLY_AS_IS",
+        "downstream_obligation": "SUPERSEDE_AT_CE5 — a two-phase disposition, recorded explicitly rather than smuggled into a single label.",
+        "rationale": "Phase one is APPLY_AS_IS because the ACL is the control that removes table-wide UPDATE on public.organizations, which is the precondition for a single-writer projection at CE-5; and because lib/admin/organization-administration.ts:106-108 and :133-137 already call admin_set_stella_service and admin_set_organization_status (EA-10), so the unit cannot be reshaped without simultaneously repointing those call sites. Phase two is SUPERSEDE at CE-5 because admin_set_stella_service writes the runtime limit with no grant record, which is CC-6; after CE-5 the admin quota verb must become an entitlement-grant verb whose projection writes the column.",
+        "coupling_constraint": "stella_0011 is NOT independently applicable. The repository records that stella_0011, stella_0012 and the lib/admin change are one obligatory set (EA-11). A node that applies stella_0011 alone leaves UPDATE public.users SET is_super_admin = true reachable, which makes the boundary decorative.",
+        "future_proof_required": "A future node must prove, on a real cluster, that after phase one no runtime principal holds table-wide UPDATE on public.organizations, and after phase two that admin_set_stella_service either no longer exists or no longer writes stella_monthly_quota outside the projection."
+      },
+      {
+        "unit": "db/prepared/stella_0012_super_admin_column_acl.sql",
+        "current_state": "PREPARED, NOT APPLIED.",
+        "disposition": "APPLY_AS_IS",
+        "rationale": "Recorded here only because EA-11 makes it inseparable from stella_0011. This package neither reshapes it nor depends on it beyond that coupling.",
+        "scope_note": "Its adjudication belongs to the platform-admin lane, not to this one."
+      },
+      {
+        "unit": "db/prepared/stella_0013..stella_0018 (the grounded-quota / operation-ticket chain)",
+        "current_state": "PREPARED, NOT APPLIED (EA-12), each with hard preconditions on its predecessors.",
+        "disposition": "APPLY_AS_IS",
+        "rationale": "The chain is ALREADY CA-08-conformant: metering per Organization, per-organization advisory lock, idempotency by (organization_id, idempotency_key), arithmetic Limit − Consumed − Reserved, and no pooled quota anywhere. Nothing in this authority requires changing it. Recorded as APPLY_AS_IS so that a future node does not 'modernise' a correct design while building the entitlement layer above it.",
+        "binding_constraint": "stella_0013:88 aborts if organizations.stella_monthly_quota is absent, and stella_0013:474 / stella_0016:375 read the limit from it (EA-13, CC-9). This chain is therefore the reason CE-9 exists as a separate terminal node and the reason RETIREMENT_LAST_RULE is not optional.",
+        "future_proof_required": "A future node must prove that moving the limit source to a grant projection leaves the chain's reads observing the same value, before any retirement is attempted."
+      }
+    ]
+  },
+
+  "MIGRATION_DAG": {
+    "allocation_note": "CE-ids are LOCAL to this authority. They are not ODS unit ids, not FIB node ids, not HPO grants and not migration ordinals. Each node requires its own lineage allocation before implementation — see FUTURE_ODS_NEEDS_SYMBOLIC.",
+    "ordinal_rule": "NO MIGRATION ORDINAL IS ALLOCATED BY THIS MISSION. db/migrations/** uses a single global ordinal sequence (tenancy CP-1); allocating one here would collide with every other open lane. Each implementing node allocates its own ordinal at implementation time, under lane coordination.",
+    "direction": "FORWARD-ONLY. No node reverses a predecessor. A node that cannot proceed stops; it does not roll the package backwards.",
+    "nodes": [
+      {
+        "id": "CE-1",
+        "title": "CommercialAccount relation and live association",
+        "delivers": ["COMMERCIAL_ACCOUNT.target_shape", "ORGANIZATION_RELATION.live_association"],
+        "resolves": ["CC-1", "CC-4"],
+        "depends_on": [],
+        "touches": ["db/schema.ts", "db/migrations/**"],
+        "compatibility": "PURELY ADDITIVE. commercial_accounts is new; organizations.commercial_account_id is nullable with no default and no backfill. Zero existing reader or writer changes behaviour. The legacy commercial columns are untouched and remain the only live source of commercial truth at the end of this node."
+      },
+      {
+        "id": "CE-2",
+        "title": "Transfer history relation and governed transfer verb",
+        "delivers": ["ORGANIZATION_RELATION.history_relation", "TRANSFER_CONTRACT", "TRANSFER_AUDIT_SHAPE"],
+        "resolves": ["CC-5", "CC-10"],
+        "depends_on": ["CE-1"],
+        "touches": ["db/schema.ts", "db/migrations/**", "db/prepared/**"],
+        "compatibility": "ADDITIVE. The transfer verb exists and is exercisable but has nothing to transfer until CE-4 seeds associations. Building it before the backfill is deliberate: the backfill must write its seed rows THROUGH the history contract, not beside it."
+      },
+      {
+        "id": "CE-3",
+        "title": "EntitlementGrant relation and explicit evaluator",
+        "delivers": ["ENTITLEMENT_GRANT", "effective entitlement read at Organization × capability"],
+        "resolves": ["CC-2"],
+        "depends_on": ["CE-1"],
+        "touches": ["db/schema.ts", "db/migrations/**", "lib/capabilities/**"],
+        "compatibility": "ADDITIVE and UNREAD. The evaluator exists and NOTHING consumes it yet. It takes an EXPLICIT organization_id argument — never an ambient principal — which is what makes it safe to land before tenancy S3/S7 (see MULTIORG_INTERSECTION)."
+      },
+      {
+        "id": "CE-4",
+        "title": "Backfill: seed accounts, seed associations, seed grants",
+        "delivers": ["BACKFILL"],
+        "resolves": [],
+        "depends_on": ["CE-1", "CE-2", "CE-3"],
+        "touches": ["db/migrations/**"],
+        "compatibility": "READ-COMPATIBLE. Nothing reads the seeded rows yet. This is the last node at which the new model can be discarded without a compatibility window."
+      },
+      {
+        "id": "CE-5",
+        "title": "Limit cutover: grant becomes the source, column becomes a projection",
+        "delivers": ["USAGE_QUOTA_BOUNDARY.limit_projection", "PLAN_ENTITLEMENT_BOUNDARY", "single-writer rule"],
+        "resolves": ["CC-6", "CC-7"],
+        "depends_on": ["CE-4"],
+        "touches": ["lib/admin/**", "db/prepared/**", "lib/stella/quota.ts consumers"],
+        "compatibility": "THE COMPATIBILITY NODE. See COMPATIBILITY.single_writer_rule — this is the only node at which dual-writer ambiguity is possible, and the rule exists to make it impossible rather than to manage it.",
+        "severity": "The security-critical node of the package. Every SEC control that separates plan from entitlement becomes enforceable here and is merely intended before it."
+      },
+      {
+        "id": "CE-6",
+        "title": "Stripe target migration and CAP-03 recomposition",
+        "delivers": ["STRIPE_BOUNDARY"],
+        "resolves": ["CC-3"],
+        "depends_on": ["CE-1", "CE-5"],
+        "touches": ["db/schema.ts", "db/migrations/**", "db/prepared/**", "app/api/webhooks/stripe/route.ts", "lib/capabilities/stripe-webhook.ts", "lib/stripe/client.ts"],
+        "compatibility": "Stripe identity columns move from organizations to commercial_accounts. Depends on CE-5 because a recomposed apply that no longer writes a quota is only SAFE once the quota has a different source; doing CE-6 first would leave limits frozen at their legacy values with no writer."
+      },
+      {
+        "id": "CE-7",
+        "title": "Self-service bootstrap successor",
+        "delivers": ["SELF_SERVICE.target_journey", "CAP05 composed successor"],
+        "resolves": ["CC-8"],
+        "depends_on": ["CE-1", "CE-3", "CE-4"],
+        "external_depends_on": ["tenancy S1", "tenancy S6"],
+        "touches": ["db/prepared/**", "app/(authenticated)/app/onboarding/**"],
+        "compatibility": "New tenants take the composed path; existing tenants are already seeded by CE-4. There is no window in which a tenant exists half-bootstrapped."
+      },
+      {
+        "id": "CE-8",
+        "title": "Platform Admin commercial control plane",
+        "delivers": ["PLATFORM_ADMIN_BOUNDARY PA-1..PA-6"],
+        "resolves": [],
+        "depends_on": ["CE-2", "CE-3", "CE-5"],
+        "external_depends_on": ["tenancy S5"],
+        "touches": ["lib/admin/**", "app/admin/**", "db/prepared/**"]
+      },
+      {
+        "id": "CE-9",
+        "title": "Legacy commercial column retirement",
+        "delivers": ["LEGACY_RETIREMENT"],
+        "resolves": ["CC-9"],
+        "depends_on": ["CE-1", "CE-2", "CE-3", "CE-4", "CE-5", "CE-6", "CE-7", "CE-8"],
+        "touches": ["db/schema.ts", "db/migrations/**", "db/prepared/**"],
+        "gate": "RETIREMENT_LAST_RULE. This node has NO other content — it retires the legacy commercial columns and nothing else, so that its blast radius is exactly the compatibility surface it removes."
+      }
+    ],
+    "RETIREMENT_LAST_RULE": {
+      "rule": "CE-9 may not begin until ALL of the preconditions below are simultaneously true and independently proven. It is the mirror of the tenancy package's DROP_LAST_RULE and exists for the same reason: the removal of a load-bearing legacy surface must be the narrowest possible change, taken last.",
+      "preconditions_all_of": [
+        "P1 — CE-5 is CLOSED and the grant is the proven single source of the limit, with the legacy column written by exactly one writer.",
+        "P2 — CE-6 is CLOSED and no Stripe path reads or writes any legacy commercial column.",
+        "P3 — Zero readers of stella_monthly_quota, stella_plan_label, stripe_customer_id, stripe_subscription_id or stripe_price_id remain outside the projection writer, proven by exhaustive grep at the node's own base rather than by memory of this document.",
+        "P4 — The prepared quota chain's dependency on organizations.stella_monthly_quota is resolved: stella_0013:88's apply-precondition and the reads at stella_0013:474 and stella_0016:375 either target the new source or are superseded by a governed successor. Until this is done, retiring the column silently invalidates a six-unit prepared chain (EA-13, CC-9).",
+        "P5 — A real-PostgreSQL probe proves that entitlement evaluation and quota consumption return identical values before and after the retirement, on a two-account, three-organization fixture.",
+        "P6 — The retirement is a migration whose diff contains the column drops and nothing else."
+      ],
+      "prohibited_shortcuts": [
+        "Dropping a column early because 'nothing reads it in this branch'. P3 is measured at the node's own base, across the whole repository including db/prepared/**, not in the implementer's working set.",
+        "Editing stella_0013's precondition to remove the abort, in order to make the column droppable. That converts a fail-closed guard into a silent misconfiguration and is prohibited outright.",
+        "Retiring the Stripe columns before the quota columns because 'they are easier'. The five columns are one compatibility surface and are retired in one node."
+      ]
+    }
+  },
+
+  "BACKFILL": {
+    "node": "CE-4",
+    "strategy": "ONE CommercialAccount is seeded per existing Organization — a 1:1 seed, deliberately NOT an attempt to infer which existing Organizations share a commercial owner. Grouping tenants under a shared account is a commercial fact nobody in the repository knows; inferring it from a shared billing email or a shared domain would fabricate a governance relation with real security consequences (SEC-7).",
+    "steps": [
+      "B1 — For each Organization, INSERT a commercial_accounts row carrying the Organization's current stripe_customer_id, stripe_subscription_id, stripe_price_id (copied, not moved — the move is CE-6) and a commercial lifecycle state derived deterministically from the presence of a subscription id.",
+      "B2 — SET organizations.commercial_account_id to the seeded account.",
+      "B3 — INSERT the opening history row through the CE-2 contract: effective_from = the migration timestamp, effective_to NULL, actor NULL, reason 'BACKFILL_SEED'. Writing it through the contract rather than beside it is what makes every later transfer reconstructible back to the origin.",
+      "B4 — INSERT one entitlement_grants row per Organization for the Stella capability, derived from the CURRENT column value with the projection inverted: stella_monthly_quota NULL -> limit_kind UNMETERED; 0 -> BLOCKED; N -> CAPPED with limit_value N. plan_ref = the current stella_plan_label. source = PLAN with commercial_account_id set when a subscription id exists; source = PLATFORM_ADMIN with commercial_account_id NULL otherwise, because a quota assigned manually by a super_admin is exactly what PLATFORM_ADMIN means (EA-04 records that today's quotas are assigned manually via /admin/services)."
+    ],
+    "prohibitions": [
+      "MUST NOT invent a commercial owner for an Organization that has none. An Organization with no Stripe identity gets an account seeded for structural uniformity and a grant whose source is PLATFORM_ADMIN, not PLAN.",
+      "MUST NOT group Organizations under one account by inference.",
+      "MUST NOT alter any tenant row other than setting the new nullable FK.",
+      "MUST NOT create membership."
+    ],
+    "reversibility": "CE-4 is the last reversible node. Its inverse is: clear the FK, delete the seeded rows. After CE-5 the legacy column is no longer authoritative and reversal requires a compatibility decision, not a delete."
+  },
+
+  "COMPATIBILITY": {
+    "single_writer_rule": {
+      "statement": "At CE-5 and for the whole compatibility window, public.organizations.stella_monthly_quota and stella_plan_label have EXACTLY ONE writer: the entitlement projection. Every other writer is removed in the same node that introduces the projection, not in a later cleanup.",
+      "why": "Dual-writer ambiguity is not managed here, it is prevented. Two writers to a value that is also an authorization input produce a state where the effective limit depends on which writer ran last, and no audit row explains why. The measured writers to remove or repoint are: the prepared stripe_apply_subscription (EA-07), the prepared admin_set_stella_service (EA-10), and any remaining ORM update.",
+      "measurement_obligation": "The implementing node proves single-writer status by exhaustive search at its own base for writes to those columns — including db/prepared/**, which is where two of the three current writers live and where a grep restricted to lib/ and app/ would find neither."
+    },
+    "read_compatibility": "During the window, readers may continue to read the legacy column. They observe the projection, which is by construction equal to the live grant. No reader is required to change until CE-9, and no reader is permitted to write.",
+    "prepared_unit_compatibility": "The prepared quota chain reads the legacy column (EA-13). During the window it therefore reads the projection and is unaffected. This is the reason the projection exists at all rather than the column simply being dropped at CE-5.",
+    "rollback_posture": "Forward-only. If CE-5 must be undone, the correct act is a new node restoring the previous writer under lane coordination, not a revert that leaves grant rows describing a state no column reflects."
+  },
+
+  "LEGACY_RETIREMENT": {
+    "node": "CE-9",
+    "columns_retired": [
+      "organizations.stella_monthly_quota",
+      "organizations.stella_plan_label",
+      "organizations.stripe_customer_id",
+      "organizations.stripe_subscription_id",
+      "organizations.stripe_price_id"
+    ],
+    "columns_explicitly_not_retired": [
+      "organizations.status — PI-1, a tenant-operational control that was never commercial.",
+      "organizations.base_currency, onboarding_completed, white-label columns — outside this package entirely."
+    ],
+    "gate": "RETIREMENT_LAST_RULE, preconditions P1..P6.",
+    "known_blocker_at_AS_OF_HEAD": "P4. The prepared quota chain's hard precondition (EA-13) is unresolved and cannot be resolved by this authority."
+  },
+
+  "SECURITY_CONTROLS": {
+    "rule": "Each control must hold at EVERY state of the DAG, including intermediate ones — not only at CE-9. A control that becomes true only at the end is not a control, it is a hope. Where a control is not yet ENFORCEABLE because the mechanism does not exist, that is stated explicitly with the node that makes it enforceable.",
+    "controls": [
+      {
+        "id": "SEC-1",
+        "control": "Payment does not create membership. No Stripe-originated path inserts, updates or deletes any row of organization_members, at any point of the DAG.",
+        "enforceable_from": "CE-6",
+        "enforced_today_by": "The webhook holds no tenant and issues no statement (PI-7, EA-05).",
+        "attacks": "The CC-3 fusion pattern, generalised: a billing event acquiring tenant reach."
+      },
+      {
+        "id": "SEC-2",
+        "control": "A commercial-account relation does not grant tenant access. Membership in no Organization plus governance of that Organization's account yields zero tenant rows.",
+        "enforceable_from": "CE-1",
+        "attacks": "Treating commercial_account_id as an access edge."
+      },
+      {
+        "id": "SEC-3",
+        "control": "An entitlement does not grant membership. A live grant for (OrgA, capability) gives no subject any role, any membership, or any ability to act in OrgA.",
+        "enforceable_from": "CE-3"
+      },
+      {
+        "id": "SEC-4",
+        "control": "Membership does not imply entitlement. An admin of an Organization with no live grant for a capability is refused that capability, and the refusal is on the grant, not on the role.",
+        "enforceable_from": "CE-3"
+      },
+      {
+        "id": "SEC-5",
+        "control": "A plan does not imply an entitlement. A CommercialAccount with an active plan and an Organization with no grant yields no capability. There is no read path from plan state to effective limit.",
+        "enforceable_from": "CE-5",
+        "attacks": "CC-7 and the prohibited trigger in PLAN_ENTITLEMENT_BOUNDARY."
+      },
+      {
+        "id": "SEC-6",
+        "control": "A cross-organization entitlement request fails CLOSED. Asking for the effective entitlement of an Organization the caller is not scoped to is REFUSED with a failure code — not answered with an empty result, and not answered with the caller's own Organization's entitlement.",
+        "enforceable_from": "CE-3",
+        "note": "The distinction matters: an empty result and a refusal are indistinguishable to a test that asserts on absence, which is why the companion manifest asserts on the failure code."
+      },
+      {
+        "id": "SEC-7",
+        "control": "A CommercialAccount shared across OrgA and OrgB does NOT widen selected-organization data. A subject scoped to OrgA reads nothing of OrgB, and the shared account is not a term in any tenant RLS predicate.",
+        "enforceable_from": "CE-1",
+        "attacks": "The single most dangerous misreading of CA-02 — that shared commercial governance implies shared visibility.",
+        "coordination": "Depends on tenancy S4's conjunctive model for the final RLS shape."
+      },
+      {
+        "id": "SEC-8",
+        "control": "OrgA quota exhaustion does not affect OrgB, including a sibling under the same CommercialAccount. There is no shared counter, no shared lock and no shared limit.",
+        "enforceable_from": "CE-5",
+        "enforced_today_by": "The prepared chain's per-organization lock and per-organization ledger (PI-3, EA-12)."
+      },
+      {
+        "id": "SEC-9",
+        "control": "A commercial transfer does not alter tenant membership. TRANSFER_CONTRACT T-3/T-4 as a runtime assertion: the transfer transaction touches zero rows of organization_members.",
+        "enforceable_from": "CE-2"
+      },
+      {
+        "id": "SEC-10",
+        "control": "A Stripe webhook cannot mutate membership or roles, and cannot write an entitlement grant or a runtime limit.",
+        "enforceable_from": "CE-6",
+        "attacks": "CC-3 directly."
+      },
+      {
+        "id": "SEC-11",
+        "control": "Platform-admin commercial operations cannot silently act as a tenant member. No PA operation inserts a membership, sets the tenant GUC, or returns tenant data; and each writes an audit row naming the acting subject.",
+        "enforceable_from": "CE-8",
+        "coordination": "The platform predicate itself belongs to tenancy S5."
+      },
+      {
+        "id": "SEC-12",
+        "control": "History remains reconstructible. For any Organization and any past instant, the governing CommercialAccount and the live grants are answerable from append-only rows, with no reliance on a mutable current value.",
+        "enforceable_from": "CE-2 (association) and CE-3 (grants)",
+        "attacks": "Any implementation that 'simplifies' by updating a history row in place."
+      }
+    ]
+  },
+
+  "MUTATION_CONTROLS": {
+    "rule": "Each entry names a safety guarantee, the mutation that removes it, and the control that MUST fail if the mutation is applied. A guarantee whose deletion no test notices is not guaranteed.",
+    "controls": [
+      {
+        "id": "MUT-1",
+        "guarantee": "The recomposed Stripe apply writes no runtime limit.",
+        "mutation": "Re-add stella_monthly_quota = p_quota to the apply verb's UPDATE.",
+        "must_be_caught_by": "SEC-10 / N-5 — a billing event moving an effective limit with no grant row.",
+        "note": "This is the highest-value mutation control in the package: it is the exact shape of the code that exists today at db/prepared/stella_0008_stripe_webhook_identity.sql:781-793."
+      },
+      {
+        "id": "MUT-2",
+        "guarantee": "Exactly one live grant per (organization_id, capability_key).",
+        "mutation": "Drop the partial unique index WHERE effective_to IS NULL.",
+        "must_be_caught_by": "N-6 — two concurrent grants for one org × capability both commit, and the evaluator's answer becomes order-dependent."
+      },
+      {
+        "id": "MUT-3",
+        "guarantee": "A grant's commercial basis is closed by transfer, never repointed.",
+        "mutation": "Replace the transfer's grant-closing step with an UPDATE of commercial_account_id on the live grant rows.",
+        "must_be_caught_by": "N-7 — the receiving account silently inherits the outgoing account's entitlements, violating T-8, and the pre-transfer entitlement state becomes unreconstructible."
+      },
+      {
+        "id": "MUT-4",
+        "guarantee": "limit_kind discriminates the three metered states.",
+        "mutation": "Remove limit_kind and infer 'unlimited' from limit_value IS NULL.",
+        "must_be_caught_by": "N-8 — a grant created without an explicit limit becomes UNLIMITED instead of failing closed, which is the null-semantic generalisation the ratifications forbid."
+      },
+      {
+        "id": "MUT-5",
+        "guarantee": "The legacy column has exactly one writer during the compatibility window.",
+        "mutation": "Restore any second writer — the ORM update, the admin verb's direct set, or the Stripe apply.",
+        "must_be_caught_by": "N-9 — the effective limit and the live grant diverge, and no audit row explains the divergence."
+      },
+      {
+        "id": "MUT-6",
+        "guarantee": "The transfer is a compare-and-set under a row lock.",
+        "mutation": "Remove the expected-current-account argument, or the row lock, or both.",
+        "must_be_caught_by": "N-10 — two concurrent transfers of one Organization both report success and the history relation records an impossible sequence."
+      },
+      {
+        "id": "MUT-7",
+        "guarantee": "The composed bootstrap is atomic over account, organization, membership and initial grant.",
+        "mutation": "Split the initial grant out of the bootstrap transaction into a follow-up call.",
+        "must_be_caught_by": "N-11 — a failure between the two calls leaves an Organization with a founder and no entitlement, which no verb can atomically repair."
+      },
+      {
+        "id": "MUT-8",
+        "guarantee": "History rows are append-only.",
+        "mutation": "Allow UPDATE of a closed history row, or DELETE of any history row.",
+        "must_be_caught_by": "SEC-12 / N-12 — a past association becomes rewritable and CA-06's reconstructibility requirement silently fails."
+      },
+      {
+        "id": "MUT-9",
+        "guarantee": "stella_0013's abort on a missing quota column.",
+        "mutation": "Delete the RAISE EXCEPTION at stella_0013:88 so that the column can be dropped.",
+        "must_be_caught_by": "RETIREMENT_LAST_RULE.prohibited_shortcuts — prohibited outright. Recorded as a mutation control because it is the most plausible 'helpful' edit an implementer of CE-9 would reach for."
+      },
+      {
+        "id": "MUT-10",
+        "guarantee": "No commercial identifier enters tenant scope.",
+        "mutation": "Add the governing commercial_account_id to the selected-organization carrier, to the request principal, or to an RLS predicate 'for convenience'.",
+        "must_be_caught_by": "SEC-7 / N-4 — the shared account becomes a term that can widen a tenant read across sibling Organizations.",
+        "note": "db/identity-context.ts:180 is the single line at which this mutation would be written. SHARED_WRITERS lists that file as CP-5 with this_package_edits NONE INTENDED precisely so that an edit there is visible as a deviation rather than as ordinary work."
+      }
+    ]
+  },
+
+  "REAL_PG_FUTURE_CONTRACT": {
+    "rule": "These properties are RUNTIME properties of PostgreSQL — policy combination, definer GUC resolution, NULL-not-TRUE denial, concurrency serialization, constraint interaction. Static reading of SQL text is NOT proof for any of them. Every probe below is MANDATORY before the corresponding node may close.",
+    "no_docker_in_this_mission": "This authority runs no container, no cluster and no probe. It compiles the contract only.",
+    "harness_shape": {
+      "cluster": "A DISPOSABLE cluster only, via the repository's disposable-audit path — NEVER staging, NEVER production, NEVER the canonical local stack.",
+      "fixture": "A TWO-ACCOUNT, THREE-ORGANIZATION fixture: account X governing OrgA and OrgB, account Y governing OrgC. A single-account fixture cannot express CA-02 and cannot falsify SEC-7 or SEC-8.",
+      "canary_requirement": "The non-scoped organizations must carry REAL rows. A probe that returns zero rows merely for want of data proves nothing."
+    },
+    "probes": [
+      { "id": "PG-1", "proves": "SEC-7 — a subject scoped to OrgA reads zero rows of OrgB despite the shared CommercialAccount X.", "node": "CE-1", "why_runtime": "RLS policy combination (PERMISSIVE OR versus RESTRICTIVE AND) is not readable from the policy text alone." },
+      { "id": "PG-2", "proves": "SEC-8 — exhausting OrgA's quota leaves OrgB's available capacity unchanged, with the two consumptions running concurrently.", "node": "CE-5", "why_runtime": "Advisory-lock scope and ledger keying are concurrency properties." },
+      { "id": "PG-3", "proves": "commercial_accounts is not tenant-readable: a tenant principal scoped to OrgA cannot read account X's row, and cannot enumerate the sibling OrgB through it.", "node": "CE-1", "why_runtime": "Requires an explicit ACL/RLS decision for a NON-tenant-scoped relation; the default of no policy on an RLS-enabled table denies, but the default of RLS not enabled permits." },
+      { "id": "PG-4", "proves": "MUT-2 — the partial unique index actually refuses a second live grant under concurrent inserts.", "node": "CE-3", "why_runtime": "Partial-index/NULL interaction under concurrency." },
+      { "id": "PG-5", "proves": "MUT-6 / T-11 / T-12 — two concurrent transfers of one Organization serialize; the loser is REFUSED on the compare-and-set rather than overwriting.", "node": "CE-2", "why_runtime": "Row-lock serialization." },
+      { "id": "PG-6", "proves": "T-3 / SEC-9 — the transfer transaction touches zero rows of organization_members, measured by row-count delta rather than by reading the function body.", "node": "CE-2", "why_runtime": "A trigger or a cascade could touch membership without any statement in the verb naming it." },
+      { "id": "PG-7", "proves": "SEC-6 — a cross-organization entitlement request raises the refusal SQLSTATE rather than returning an empty set.", "node": "CE-3", "why_runtime": "Fail-closed versus empty-result is indistinguishable at the type level." },
+      { "id": "PG-8", "proves": "PI-8 / TRANSFER_AUDIT_SHAPE — an audit row with organization_id NULL is invisible to every tenant principal and visible to a platform super_admin.", "node": "CE-2", "why_runtime": "NULL = ANY(...) evaluating to NULL rather than FALSE is exactly the kind of predicate behaviour that must be observed, not reasoned about." },
+      { "id": "PG-9", "proves": "SEC-10 — the Stripe capability identity can write commercial_accounts and CANNOT write organization_members, entitlement_grants or the legacy quota columns, measured as a privilege census on the role.", "node": "CE-6", "why_runtime": "Effective privilege is inheritance plus grants plus policies, not the text of the unit that created the role." },
+      { "id": "PG-10", "proves": "MUT-7 — an induced failure after the organization insert and before the grant insert leaves NO organization, NO membership and NO account.", "node": "CE-7", "why_runtime": "Transaction boundary behaviour under a definer." },
+      { "id": "PG-11", "proves": "SEC-11 — a platform commercial operation leaves app.organization_id unset and inserts zero membership rows.", "node": "CE-8", "why_runtime": "GUC state is transaction-local and only observable at runtime." },
+      { "id": "PG-12", "proves": "RETIREMENT_LAST_RULE P5 — entitlement evaluation and quota consumption return identical values before and after the legacy retirement.", "node": "CE-9", "why_runtime": "Equivalence across a schema change is only demonstrable by executing both." }
+    ]
+  },
+
+  "SHARED_WRITERS": {
+    "rule": "A shared writer is a path this package must edit that another open or planned lane must also edit. Identifying them is required; RESOLVING them is explicitly OUT OF SCOPE for this mission.",
+    "writers": [
+      {
+        "path": "db/schema.ts",
+        "shared_with": ["Multi-org tenancy (S1 founded_by, S7 index drop)", "W2-B5", "Wave3 / FIBDB-053", "Portfolio", "Stella"],
+        "this_package_edits": "CE-1 adds commercial_accounts and organizations.commercial_account_id; CE-2 adds the history relation; CE-3 adds entitlement_grants; CE-9 removes five columns.",
+        "collision": "Textual merges here are silent — a lost index or constraint declaration does not fail typecheck. Four of this package's own nodes are serial on this file.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-2",
+        "confirms": "The tenancy authority already names 'CommercialAccount/Entitlements' on this path. Confirmed from this side."
+      },
+      {
+        "path": "db/migrations/**",
+        "shared_with": ["Multi-org tenancy", "W2-B5", "Wave3 / FIBDB-053", "Portfolio"],
+        "this_package_edits": "CE-1, CE-2, CE-3, CE-4, CE-6, CE-9 each need an ordinal.",
+        "collision": "A single global ordinal sequence. Two lanes allocating concurrently collide on the number, and a merge resolves the text without resolving the order.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-1",
+        "note": "This is the reason MIGRATION_DAG.ordinal_rule allocates nothing."
+      },
+      {
+        "path": "db/prepared/stella_*.sql",
+        "shared_with": ["Multi-org tenancy S3c", "Wave3 / FIBDB-053 Stella hosted surfaces", "Platform Admin (stella_0011/0012)"],
+        "this_package_edits": "CE-5 supersedes admin_set_stella_service; CE-6 recomposes stella_0008's apply verb; CE-7 composes a CAP-05 successor; CE-2 adds the transfer verb.",
+        "collision": "Four separate lanes republish definer bodies and policy predicates over overlapping prepared-unit territory. A parallel merge can produce a body that passes both lanes' postconditions while enforcing neither lane's intent.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-4",
+        "explicit_reconciliation_required": "This package's CE-5/CE-6 and the platform-admin lane's stella_0011/stella_0012 application MUST be sequenced, never parallel: EA-10/EA-11 show the ACL, its sibling and two live call sites are one obligatory set, and CE-5 supersedes one of the two functions that set creates. Which goes first is an OPEN SEQUENCING DECISION, recorded and NOT resolved here."
+      },
+      {
+        "path": "db/identity-context.ts",
+        "shared_with": ["Multi-org tenancy S3/S4/S5", "Platform Admin", "Stella"],
+        "this_package_edits": "NONE INTENDED. Recorded because SEC-7 and SEC-11 are properties OF this file's behaviour, and because a mission that decided to carry a commercial identifier in the request identity would edit it. That decision is PROHIBITED by COMMERCIAL_ACCOUNT.never_a_tenant_scope.",
+        "collision": "Three tenancy nodes are already serial on it.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-5"
+      },
+      {
+        "path": "lib/admin/**",
+        "shared_with": ["Platform Admin lane", "Multi-org tenancy S5"],
+        "this_package_edits": "CE-5 repoints the quota write; CE-8 adds the commercial control plane.",
+        "collision": "lib/admin/organization-administration.ts already calls two definers that do not exist in any database (EA-10). Repointing that file is contended between the ACL application and this package's supersession.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-7",
+        "new_in_this_package": true
+      },
+      {
+        "path": "organizations commercial columns (db/schema.ts:28-29,37-39 as a SURFACE, not a file)",
+        "shared_with": ["Platform Admin (stella_0011 column ACL)", "Stella quota chain (stella_0013..0018)", "Stripe capability (stella_0008)"],
+        "this_package_edits": "CE-5 makes them a projection; CE-9 retires them.",
+        "collision": "Three prepared surfaces read or write these five columns and none of the three is applied. A grep limited to lib/ and app/ finds none of them.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-8",
+        "new_in_this_package": true
+      },
+      {
+        "path": "app/api/webhooks/stripe/route.ts + lib/capabilities/stripe-webhook.ts + lib/stripe/client.ts",
+        "shared_with": ["Platform Admin (enabling rollout)"],
+        "this_package_edits": "CE-6.",
+        "collision": "Enabling CAP-03 and recomposing it are two decisions on one surface; doing the first without the second makes CC-3 live.",
+        "serial_chokepoint": false,
+        "note": "Not contested across lanes at AS_OF_HEAD, but ORDER-CRITICAL: recomposition MUST precede enablement."
+      },
+      {
+        "path": "scripts/ods-controller.ts + docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.*.json",
+        "shared_with": ["EVERY lane"],
+        "this_package_edits": "NONE. This mission allocates no lineage.",
+        "collision": "Controller enumeration is EXACT membership, never a subset test (scripts/ods-controller.ts:49).",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-6",
+        "current_state": "v1.0.18 present on disk, unenumerated in the live Controller, which enumerates 28 entries ending at v1.0.17 (EA-18). This is the ACTIVE blocker on every implementing node of this package."
+      }
+    ],
+    "SERIAL_CHOKEPOINTS_SUMMARY": [
+      "CP-1 db/migrations ordinal",
+      "CP-2 db/schema.ts",
+      "CP-4 db/prepared/stella_*",
+      "CP-5 db/identity-context.ts",
+      "CP-6 Controller enumeration",
+      "CP-7 lib/admin/**",
+      "CP-8 organizations commercial columns as a surface"
+    ],
+    "not_a_commercial_chokepoint": "db/hosted/baseline-manifest.ts (tenancy CP-3) is a shared writer for lanes that add hosted units. This package adds none at authority time; whether CE-2/CE-5/CE-6/CE-7 produce hosted units is a per-node decision and is recorded here as UNKNOWN rather than assumed absent.",
+    "resolution_scope": "OUT OF SCOPE. This mission identifies collisions and resolves none of them. Sequencing decisions belong to the lane coordinator."
+  },
+
+  "FUTURE_ODS_NEEDS_SYMBOLIC": {
+    "rule": "THIS MISSION ALLOCATES NOTHING. Every identifier below is SYMBOLIC — a description of what a FUTURE mission will need, never a reservation and never a name-as-allocated.",
+    "NEXT_AVAILABLE_ODS_LINEAGE": {
+      "symbolic": "The ODS maintenance addendum ordinal immediately after the highest present at AS_OF_HEAD.",
+      "measured_highest_present": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json",
+      "allocated_by_this_mission": "NONE",
+      "blocking_gate": "v1.0.18 is present on disk and UNENUMERATED by the live Controller, which enumerates exactly 28 entries ending at v1.0.17 and tests EXACT membership (EA-18). A Controller successor closing that enumeration must be CLOSED before any implementing node of this package may allocate the next ordinal."
+    },
+    "NEXT_AVAILABLE_HPO_ID": {
+      "symbolic": "The next HPO grant after the highest present at AS_OF_HEAD.",
+      "allocated_by_this_mission": "NONE",
+      "blocking_gate": "Same lineage gap as above."
+    },
+    "grants_required_per_node": {
+      "note": "Symbolic count only. Whether each CE-node maps to one grant or several is a lane-coordinator decision, not an authority decision.",
+      "minimum": "CE-1, CE-2, CE-3, CE-4, CE-5, CE-6, CE-7, CE-8 and CE-9 each require at least one implementation grant with its own protected-surface allowlist. CE-9's grant should be the narrowest of the package (five column drops and nothing else).",
+      "protected_surfaces_anticipated": ["db/migrations/**", "db/prepared/**", "db/prepared/journal/**", "db/hosted/baseline-manifest.ts"]
+    },
+    "controller_obligation": "Every artifact this package eventually produces that lands in the ODS immutable-by-convention set must be enumerated by the Controller, because the membership test is EXACT and an unenumerated artifact is a lineage hole — which is the exact condition currently open at AS_OF_HEAD.",
+    "this_artifact_is_not_ods": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json and its companion manifest live under docs/ops/commercial/**, are NOT ODS artifacts, and are NOT candidates for the immutable-by-convention set. Publishing them creates no Controller obligation, which is why this docs-only authority may close while the lineage gap is open."
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "id": "F-1",
+        "class": "OPEN_SEQUENCING_DECISION",
+        "finding": "CP-4/CP-7: the platform-admin application of stella_0011+stella_0012+the lib/admin change (one obligatory set per EA-11) and this package's CE-5 supersession of admin_set_stella_service contend for the same two files and the same function signature. Which lane goes first is not decided.",
+        "disposition": "RECORDED, NOT RESOLVED. Resolving it requires a lane-coordination decision that exceeds this mission's authority.",
+        "recommended_action": "The lane coordinator sequences the ACL application before CE-5, on the reasoning that CE-5's single-writer rule presupposes the table-wide UPDATE revocation the ACL performs. Recorded as a recommendation, not an adjudication."
+      },
+      {
+        "id": "F-2",
+        "class": "ACTIVE_LINEAGE_GAP",
+        "finding": "ODS addendum v1.0.18 is present and unenumerated (EA-18). Every implementing node of this package is blocked on the Controller successor.",
+        "disposition": "RECORDED. This authority allocates nothing and therefore does not trip the gate; it records the gate as binding on its successors.",
+        "recommended_action": "None by this mission. The Controller successor is another lane's work."
+      },
+      {
+        "id": "F-3",
+        "class": "UNRESOLVED_RETIREMENT_PRECONDITION",
+        "finding": "RETIREMENT_LAST_RULE P4 has no owner. The prepared quota chain's dependency on organizations.stella_monthly_quota (EA-13, CC-9) must be resolved by a governed successor to that chain, and this authority cannot write one.",
+        "disposition": "RECORDED as a precondition of CE-9, not as a blocker of this authority.",
+        "recommended_action": "A future node adjudicates whether stella_0013/stella_0016 are repointed at the grant projection or superseded. Named here so CE-9 cannot be planned as a simple column drop."
+      },
+      {
+        "id": "F-4",
+        "class": "CURRENT_STATE_ANOMALY_NOT_OWNED_BY_THIS_PACKAGE",
+        "finding": "lib/admin/organization-administration.ts calls two SQL functions that exist in no applied database (EA-10). Today those calls would raise 42883. This is the RR-CAP-10-A ordering hazard, deliberately closed on the code side and open on the database side.",
+        "disposition": "RECORDED, NOT CHANGED. It is a platform-admin lane condition, not a defect introduced or owned here. This mission's authorized paths are docs/ops/commercial/** only.",
+        "recommended_action": "None by this mission. It is named because CE-5's supersession must not be planned as if those call sites were already working."
+      },
+      {
+        "id": "F-5",
+        "class": "OBSERVED_SCOPE_LIMIT",
+        "finding": "CA-04's implementation status records lib/capabilities as a capability-boundary concept whose relationship to entitlement evaluation is FUTURE_MEASUREMENT_REQUIRED. This authority did not re-adjudicate that: lib/capabilities at AS_OF_HEAD contains contracts.ts and stripe-webhook.ts, i.e. a capability-availability contract for the Stripe webhook, not an entitlement evaluator.",
+        "disposition": "MEASURED AND RECORDED. CE-3 places the evaluator in lib/capabilities/** on that basis, and an implementing node must re-measure rather than assume the directory is empty of conflicting concepts."
+      }
+    ]
+  },
+
+  "self_check": {
+    "note": "Deterministic, test-free checks verifiable by inspection or a one-line jq/node command. Not a script.",
+    "expected_consumed_ratification_count": 11,
+    "expected_integrated_ratification_count": 30,
+    "expected_ca_id_set": ["CA-01", "CA-02", "CA-03", "CA-04", "CA-05", "CA-06", "CA-07", "CA-08"],
+    "expected_contradiction_count": 10,
+    "expected_contradiction_ids": ["CC-1", "CC-2", "CC-3", "CC-4", "CC-5", "CC-6", "CC-7", "CC-8", "CC-9", "CC-10"],
+    "expected_additional_constraint_id": "CC-L",
+    "expected_evidence_anchor_count": 18,
+    "expected_preserved_invariant_count": 8,
+    "expected_dag_node_count": 9,
+    "expected_dag_node_ids": ["CE-1", "CE-2", "CE-3", "CE-4", "CE-5", "CE-6", "CE-7", "CE-8", "CE-9"],
+    "expected_security_control_count": 12,
+    "expected_mutation_control_count": 10,
+    "expected_pg_probe_count": 12,
+    "expected_transfer_invariant_count": 13,
+    "expected_serial_chokepoint_count": 7,
+    "expected_prepared_disposition_count": 5,
+    "checks": [
+      "ALIGNMENT_REFERENCES.integrated_ratification_count_measured == 30 and equals the ratifications.length of docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json",
+      "ALIGNMENT_REFERENCES.CA_01_TO_CA_08_VERBATIM has exactly the 8 keys of expected_ca_id_set and each value equals that ratification's statement byte-for-byte",
+      "CURRENT_CONTRADICTIONS.contradictions.length == 10 and its id set equals expected_contradiction_ids",
+      "every contradiction's resolved_by_node is a member of expected_dag_node_ids",
+      "every contradiction's evidence entry names an id present in EVIDENCE_ANCHORS.anchors",
+      "EVIDENCE_ANCHORS.anchors.length == 18 and every id EA-01..EA-18 appears exactly once",
+      "MIGRATION_DAG.nodes.length == 9 and every depends_on entry is a member of expected_dag_node_ids",
+      "CE-9.depends_on contains every other node",
+      "RETIREMENT_LAST_RULE.preconditions_all_of.length == 6",
+      "SECURITY_CONTROLS.controls.length == 12 and every enforceable_from is a member of expected_dag_node_ids",
+      "MUTATION_CONTROLS.controls.length == 10 and every must_be_caught_by names a control id defined in this file or a negative-control id defined in the companion manifest",
+      "REAL_PG_FUTURE_CONTRACT.probes.length == 12 and every probe's node is a member of expected_dag_node_ids",
+      "SHARED_WRITERS.SERIAL_CHOKEPOINTS_SUMMARY.length == 7",
+      "PREPARED_CAPABILITY_DISPOSITIONS.dispositions.length == 5 and every disposition value is one of APPLY_AS_IS, SUPERSEDE, COMPOSE, RETIRE",
+      "OPEN_FINDINGS.blocking is empty",
+      "no ODS addendum version, no HPO id and no migration ordinal is stated as allocated anywhere in this file",
+      "the token 'S3a' is never used as a node identifier: it occurs exactly twice in this file, once inside MULTIORG_INTERSECTION.naming_rule as an explicit prohibition and once inside this check line, and nowhere as an id, key or node reference"
+    ]
+  },
+
+  "final_state": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_SEQUENCING"
+}

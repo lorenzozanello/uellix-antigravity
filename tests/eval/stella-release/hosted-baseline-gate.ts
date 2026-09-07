@@ -391,9 +391,23 @@ export function buildHostedBaselineGateEvidence(
     // HPO-ODS-W2-09: + 0061 (B0-17 security successor to sealed 0060) = 74
     // baseline units + 1 journal bootstrap step = 75 — derived from
     // planProvisioningPhase (000_journal_bootstrap + one step per BASELINE_ORDER).
+    // W2-B4 (FIBIU-15/14/16): + 0062_fib_methodological_assumptions.sql and
+    // 0063_fib_counterfactual_assessments.sql = 76 baseline units + 1 journal
+    // bootstrap step = 77. This is a DERIVED count (BASELINE_ORDER.length + 1),
+    // which is why the authority's forced-pin sweep — which enumerated pins
+    // carrying the raw unit count 74 — did not surface it. Advanced as an exact
+    // count, never loosened to `>= 77`: a plan that silently grew or shrank is
+    // exactly what this evidence exists to notice.
+    // W2-B5 (FIBIU-17/18): + 0064_fib_readiness_assessments.sql and
+    // 0065_fib_sensitivity_model.sql = 78 baseline units + 1 journal bootstrap
+    // step = 79 — the same N+1 trap the B5 authority's own baseline_growth_contract
+    // named this exact line by number so a literal-76 sweep would not miss it.
+    // HPO-ODS-W2-20/W2-21 (multi-org S1): + 0066 = 79 baseline units + 1 journal
+    // bootstrap step = 80 — DERIVED as BASELINE_ORDER.length + 1 from
+    // planProvisioningPhase, never grepped from the old count.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 75 &&
+      firstProvisioning.steps.length === 80 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -413,7 +427,10 @@ export function evaluateHostedBaselineGates(
   // (W2-B3) = 72; + 0060 (W2-B3 completeness) = 73. Same derivation as
   // tests/hosted/baseline-manifest.test.ts, independently re-verified there.
   // HPO-ODS-W2-09: + 0061 = 74.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 74
+  // HPO-ODS-W2-12 (W2-B4 assumptions and causality): + 0062/0063 = 76.
+  // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.
+  // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability): + 0066 = 79.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 79
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,
@@ -460,6 +477,11 @@ export function evaluateHostedBaselineGates(
     // 1.1.0 rows + the governed model append), verified in
     // tests/hosted/baseline-manifest.test.ts.
     '0056_fib_proxy_material_fields_editability.sql',
+    // Multi-org S1 (HPO-ODS-W2-20/W2-21, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21
+    // FUNCTION_H) - 0066: the MO-11 founder-traceability backfill, one
+    // top-level UPDATE from audit_logs (structural-backfill, zero literal row
+    // sources), verified in tests/hosted/baseline-manifest.test.ts.
+    '0066_multiorg_s1_founder_traceability.sql',
   ]
   if (
     evidence.dmlUnits.length !== EXPECTED_DML_UNITS.length ||
@@ -488,7 +510,7 @@ export function evaluateHostedBaselineGates(
     passed: managedProblems.length === 0,
     detail:
       managedProblems.length === 0
-        ? `all ${evidence.unitCount} units are free of superuser dependencies, role statements, ownership transfers and extensions; exactly one (0033) grants to service_role and it is recorded rather than hidden; seven units (0018, 0040, 0041, 0047, 0048, 0055, 0056) carry DML — 0018, 0041, 0047 and 0048 write zero rows on an empty database, and 0040, 0055 and 0056 write exactly four literal deploy-time global-catalog seeds (8 + 39 + 70 + 1 rows, not tenant data)`
+        ? `all ${evidence.unitCount} units are free of superuser dependencies, role statements, ownership transfers and extensions; exactly one (0033) grants to service_role and it is recorded rather than hidden; eight units (0018, 0040, 0041, 0047, 0048, 0055, 0056, 0066) carry DML — 0018, 0041, 0047, 0048 and 0066 write zero rows on an empty database, and 0040, 0055 and 0056 write exactly four literal deploy-time global-catalog seeds (8 + 39 + 70 + 1 rows, not tenant data)`
         : `managed compatibility broken: ${managedProblems.join('; ')}`,
   })
 

@@ -1,0 +1,228 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.19",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19",
+  "authority_class": "ODS_V1_MAINTENANCE_ADDENDUM_INSTRUCTION_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-20",
+  "hpo_mission_id": "MULTIORG-S1-S2-FIRST-EXECUTION-AUTHORITY-R1",
+  "predecessor_hpo_mission_id": "W2-B5-TEST-HOST-SUCCESSOR-AUTHORITY-R1",
+  "materialization_date": "2026-09-05",
+  "supersedes": null,
+  "refines": null,
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_execution_scope_authority": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json",
+  "node_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+  "node_test_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+
+  "purpose": "Open the FIRST implementation lineage of the multi-organization tenancy package, bounded to canonical DAG nodes S1 (founder traceability) and S2 (selected-organization session carrier). This addendum is INSTRUCTION_ONLY over paths: it grants the exact protected and unprotected surfaces the two implementing missions may change, and it declares the protected grant and Controller successor those missions must register. All product, schema, backfill, cookie and security semantics live in the companion execution-scope authority and in the frozen tenancy authority, and are NOT restated here.",
+
+  "scope_note": "This addendum authorizes NO implementation code and NO schema change of its own. It changes exactly two new documentation artifacts and nothing else. It does not edit scripts/ods-scope.ts, scripts/ods-controller.ts, any test host, any migration, any prepared unit, db/hosted/baseline-manifest.ts, package.json, or any frozen or sealed artifact. The protected grant it declares is registered by the S1 implementing mission under its own branch, not by this mission - the same deferral form ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17 and v1.0.18 used for Controller maintenance. It allocates exactly one ODS ordinal and exactly one HPO grant, and allocates no following lineage item, no migration ordinal, no prepared-unit id and no baseline-manifest position.",
+
+  "anchors": {
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-stella-multiorg-s1-s2-execution-authority-r1",
+    "branch": "codex/multiorg-s1-s2-execution-authority-r1",
+    "INTEGRATION_SHA": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+    "INTEGRATION_TREE": "e7f3a1e4fd8c4c8fe5a90cc02bc63c39ac978286",
+    "integration_branch": "integration/commercial-v1",
+    "start_head_equals_latest_remote_head": true,
+    "intervening_delta": "NONE",
+    "main_frozen_sha": "UNCHANGED - main is not touched by this mission",
+    "controller29_merge_sha": "34d390ccf61bd4f3b80ec6d5f0138e093cbe15dd",
+    "w2_b5_implementation_merge_sha": "a27c4a9af83afba5f4f94ee2a2d61a56495fdd50",
+    "controller_live_immutable_count_at_INTEGRATION_SHA": 29,
+    "protected_grants_count_at_INTEGRATION_SHA": 10,
+    "default_protected_patterns_count_at_INTEGRATION_SHA": 7,
+    "highest_migration_ordinal_at_INTEGRATION_SHA": "db/migrations/0065_fib_sensitivity_model.sql",
+    "controller_status": "CONTROLLER 29 CLOSED_AUDITED_INTEGRATED - v1.0.17 and v1.0.18 both enumerated"
+  },
+
+  "lineage_derivation": {
+    "method": "Derived mechanically at INTEGRATION_SHA by importing the LIVE Controller module, by sweeping every HPO-ODS-W2 identifier and every ODS addendum filename across every reachable commit, and by re-deriving the repository's own GRANT_ID offset invariant - never assumed from a prompt and never inherited from a predecessor's forward-looking prediction.",
+    "live_controller_measurement": "Importing IMMUTABLE_BY_CONVENTION from scripts/ods-controller.ts at INTEGRATION_SHA yields: length === 29, exactly ONE entry containing 'v1.0.18', ZERO entries containing 'v1.0.19', and ZERO duplicates.",
+    "highest_existing_ods_addendum": "v1.0.18",
+    "allocated_here": "v1.0.19",
+    "highest_allocated_hpo_ods_w2_grant_id": "HPO-ODS-W2-19",
+    "allocated_grant_id_here": "HPO-ODS-W2-20",
+    "offset_invariant": "MEASURED, NOT ASSUMED. GRANT_ID ordinal === addendum patch version + 1, across every addendum that carries a GRANT_ID: v1.0.9->W2-10, v1.0.10->W2-11, v1.0.11->W2-12, v1.0.12->W2-13, v1.0.13->W2-14, v1.0.14->W2-15, v1.0.15->W2-16, v1.0.16->W2-17, v1.0.17->W2-18, v1.0.18->W2-19. Ten of ten with zero exceptions, therefore v1.0.19 -> HPO-ODS-W2-20.",
+    "w2_series_is_not_wave_scoped": "MEASURED, AND MATERIAL BECAUSE WAVE2 IS NO LONGER AN OPEN BATCH PROGRAM. The 'W2' infix is the ODS grant-series counter, not an assertion of Wave2 membership. Proof by counterexample: ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json holds GRANT_ID HPO-ODS-W2-11 over node_authority docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_v1.0.0.json, and ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json holds GRANT_ID HPO-ODS-W2-13 over node_authority docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json. Both are P1A-domain grants inside the W2 series, so the series already spans non-Wave2 domains. No identifier of the form HPO-ODS-<domain>-nn exists anywhere in the repository, which is the falsifier that would have shown the series to be domain-scoped. Renaming the series here would fork the ODS grant lineage and break an invariant ten consecutive addenda rely on.",
+    "w2_20_collision_check": "MEASURED. `git grep -l HPO-ODS-W2-20` across every reachable commit returns exactly TWO distinct paths - docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json and docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.2.json - and in both the identifier occurs ONLY inside must_close_before, enforcement, no_preallocation and consequence_for_that_lane clauses. Both files state in their own words that naming it there is 'a PROHIBITION, never an allocation'. It is never a GRANT_ID, never a materialization_step, and never an authorityId in the live PROTECTED_GRANTS registry, whose ten authorityIds are HPO-ODS-W2-01, -02, -03, -07, -08, -09, -11, -12, -16 and -17. HPO-ODS-W2-20 was therefore UNALLOCATED and is allocated here for the first time.",
+    "v1_0_19_collision_check": "MEASURED. `git rev-list --all --objects | grep ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json` returns ZERO occurrences and `git log --all --diff-filter=A -- docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json` returns nothing, so version 1.0.19 has never existed in any reachable tree in repository history. The only textual occurrences of the string 'v1.0.19' at INTEGRATION_SHA are the four forward-looking prohibition clauses in v1.0.18 and the W2-B5 amendment, plus the ABSENCE control at tests/ods/ods-controller.test.ts:129 and its assertion in tests/ods/w2-b5-scope-amendment.test.ts:602. The test literal is a NEGATIVE-CONTROL LITERAL and, by the control's own recorded reading, never an allocation - it did not reserve v1.0.19 for anyone, and this allocation discharges it rather than conflicting with it.",
+    "execution_scope_authority_collision_check": "MEASURED. `git grep -l MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY` across every reachable commit returns ZERO occurrences. The path is new.",
+    "predecessor_sequencing_rule_satisfied": "MEASURED, NOT ASSUMED. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18.json controller_sequencing_rule.enforcement triggers only for 'a mission that finds v1.0.18 unenumerated in the live Controller' and then attempts to allocate v1.0.19 or HPO-ODS-W2-20 or to declare W2-B5 closed. This mission finds v1.0.18 ENUMERATED inside an EXACT-membership IMMUTABLE_BY_CONVENTION of 29 entries. The precondition is discharged by the rule's own terms and STOP_FOR_LINEAGE_SEQUENCING is NOT triggered.",
+    "cross_lane_notice_honoured": "v1.0.18 cross_lane_notice states that HPO-ODS-W2-19 is OCCUPIED, that the multi-org lane must not read it as its own, and that the lane's next free identifiers are v1.0.19 and HPO-ODS-W2-20 'to be derived mechanically at its own materialization time, never from this sentence.' This mission is that lane at that time. It derived both identifiers independently from the offset invariant and the collision sweeps above, and reports that the independent derivation AGREES with the notice. The agreement is a corroboration, not the source of the allocation.",
+    "gate_E16_discharged": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json FUTURE_ODS_NEEDS_SYMBOLIC named gate E16 - 'v1.0.17 is UNENUMERATED in scripts/ods-controller.ts (0 occurrences at AS_OF_HEAD)' - as the ACTIVE blocker on the entire S1..S8 DAG. At INTEGRATION_SHA scripts/ods-controller.ts enumerates v1.0.17 at line 78 and v1.0.18 at line 79, so E16's stated condition is false and the gate is DISCHARGED. This is the specific event that makes the multi-org lane executable.",
+    "w2_b5_closure_not_declared": "This mission does NOT declare W2-B5 or Wave2 closed. See risks_and_open_findings.F-1."
+  },
+
+  "hpo_decision": {
+    "FUNCTION_A_IMPLEMENTATION_PATH_GRANT": {
+      "ODS_INSTRUCTION_GRANTED": "YES",
+      "why_an_ODS_instruction_is_required": "The tenancy authority is TARGET_ONLY by its own classification and allocates no path, no ordinal and no grant. Without an ODS instruction the S1 and S2 implementing missions have no authorized changed-path ceiling, and ods:scope would classify every one of their edits as unauthorized. This addendum supplies exactly that ceiling and nothing more.",
+      "S1_LANE": {
+        "node": "S1 - Founder traceability (canonical)",
+        "implementation_branch": "codex/multiorg-s1-founder-traceability-r1",
+        "protected_paths": ["db/migrations/**"],
+        "unprotected_paths": [
+          "db/schema.ts",
+          "app/(authenticated)/app/onboarding/actions.ts",
+          "tests/tenancy/s1-founder-traceability.test.ts",
+          "tests/postgres/s1-founder-cardinality.pg.test.ts",
+          "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+        ],
+        "path_count": 6
+      },
+      "S2_LANE": {
+        "node": "S2 - Selected-organization session carrier (canonical)",
+        "implementation_branch": "codex/multiorg-s2-selected-org-carrier-r1",
+        "protected_paths": [],
+        "unprotected_paths": [
+          "lib/auth/selected-organization.ts",
+          "app/(authenticated)/app/organizations/select/actions.ts",
+          "app/(authenticated)/app/organizations/select/page.tsx",
+          "tests/tenancy/s2-selected-org-carrier.test.ts",
+          "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+        ],
+        "path_count": 5
+      },
+      "ceiling_semantics": "Each list is a CEILING resolved by ods:scope against that lane's own --allow list, never a mandate. A lane may change a SUBSET. A path outside its own list fails closed, and neither lane may pass the other lane's paths to --allow.",
+      "disjointness": "MEASURED. The S1 and S2 path sets intersect in the EMPTY SET. app/(authenticated)/app/onboarding/actions.ts is assigned EXCLUSIVELY to S1; the companion authority records why S2 must not write the carrier there and why that costs no functionality.",
+      "S3_NOT_GRANTED": "No path of canonical S3 is authorized. In particular db/identity-context.ts, lib/auth/database-context.ts, lib/auth/session.ts, lib/auth/permissions.ts and lib/auth/roles.ts are NOT in either lane's ceiling. Stated affirmatively because the natural way to make the S2 carrier useful is to read it in exactly those files, and doing so would be S3 performed without S3's lineage."
+    },
+    "FUNCTION_B_PROTECTED_GRANT": {
+      "PROTECTED_GRANT_REQUIRED": "YES - for the S1 lane only.",
+      "why": "MEASURED. db/migrations/** is DEFAULT_PROTECTED_PATTERNS entry 4 in scripts/ods-scope.ts, and S1 must add a migration carrying organizations.founded_by, its provenance discriminator, the founder-cardinality carrier and the MO-11 backfill. No other authorized path in either lane matches any of the seven default protected patterns.",
+      "declared_grant": {
+        "authorityId": "HPO-ODS-W2-20",
+        "branch": "codex/multiorg-s1-founder-traceability-r1",
+        "patterns": ["db/migrations/**"]
+      },
+      "REGISTERED_BY_THIS_MISSION": "NO - DELIBERATE. Inserting the entry into the PROTECTED_GRANTS registry edits scripts/ods-scope.ts, which is a gate script. This mission is AUTHORITY_ONLY and edits no gate script. Registration is GRANTED_BY_THIS_ADDENDUM_TO_THE_S1_IMPLEMENTING_MISSION_ONLY, in the same deferral form v1.0.17 and v1.0.18 used for Controller maintenance.",
+      "narrowing": "The pattern is db/migrations/** rather than an exact ordinal because CP-1 records that db/migrations is a single global sequence contested with Wave3/FIBDB-053, CommercialAccount, Portfolio and Stella, and pinning an ordinal at freeze time manufactures the collision it is meant to avoid. The effective surface stays narrow because ods:scope additionally requires every granted path to appear in the lane's own exact --allow list - the grant alone never authorizes a diff.",
+      "NO_PREPARED_GRANT": "MEASURED AND DELIBERATE. No db/prepared/** grant of any width is issued. S1 needs no prepared unit: the founder-cardinality carrier is schema-level, and db/prepared/stella_0010_organization_bootstrap_capability.sql is DESIGN-ONLY, NOT APPLIED and absent from db/hosted/baseline-manifest.ts, so it is neither editable nor needed by this batch. A blanket db/prepared/** grant is forbidden.",
+      "NO_BASELINE_MANIFEST_GRANT": "db/hosted/baseline-manifest.ts is not authorized, because no prepared or hosted unit is added. This also keeps the batch clear of CP-3 and of the pinned manifest digest guarded by KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02.",
+      "NO_STAGING_NO_PRODUCTION": "No staging path, no production path, no Docker and no db/baseline/** is authorized."
+    },
+    "FUNCTION_C_CONTROLLER_MAINTENANCE": {
+      "CONTROLLER_MAINTENANCE_REQUIRED": "YES",
+      "CONTROLLER_MAINTENANCE_AUTHORITY": "GRANTED_BY_THIS_ADDENDUM_TO_A_SUCCESSOR_MISSION_ONLY",
+      "measured_necessity": "scripts/ods-controller.ts:49 records that IMMUTABLE_BY_CONVENTION is an EXACT-membership closed world - 'EXACT membership - never a subset test' - holding exactly 29 entries at INTEGRATION_SHA. Allocating docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json therefore leaves that artifact unenumerated, which is a lineage hole of exactly the kind that blocked this DAG through gate E16.",
+      "OLD_IMMUTABLE_COUNT": 29,
+      "NEW_IMMUTABLE_COUNT": 30,
+      "authorized_paths_for_that_successor_mission": ["scripts/ods-controller.ts", "tests/ods/ods-controller.test.ts"],
+      "NOT_PERFORMED_BY_THIS_MISSION": "CORRECT AND DELIBERATE - this mission edits no gate script and no test host.",
+      "companion_not_enumerated": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json is NOT enumerated by the Controller, for the same reason the companion Wave2 and P1A amendments were not: the Controller closed world enumerates docs/ops/ods/ artifacts exclusively."
+    },
+    "FUNCTION_D_NO_TEST_HOST_INSTRUCTION": {
+      "ODS_INSTRUCTION_GRANTED": "NO",
+      "why": "MEASURED. This addendum authorizes no change to any EXISTING test file. The two test paths in FUNCTION_A are NEW files under tests/tenancy/ and tests/postgres/, which no ODS reservation over 'existing product tests' reaches. Stated affirmatively because v1.0.18 required a test-host instruction for exactly the opposite reason - it changed two existing product tests - and a reader should not infer that every implementation grant needs one."
+    }
+  },
+
+  "self_inclusion_rule": {
+    "paths_to_enumerate": ["docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json"],
+    "count": "29 -> 30",
+    "exact_membership_never_a_subset_test": true,
+    "prohibitions": [
+      "no filesystem discovery of docs/ops/ods/ or any directory",
+      "no globs, no prefix matching, no directory sweep, no subset semantics in the Controller guard",
+      "no automatic inclusion of any future artifact",
+      "no extension of IMMUTABLE_BY_CONVENTION outside docs/ops/ods/",
+      "no inclusion of the companion execution-scope authority - docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json is NOT enumerated"
+    ]
+  },
+
+  "controller_sequencing_rule": {
+    "controller_30_must_close_before": [
+      "any further ODS lineage allocation - that is, before any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20 or HPO-ODS-W2-21 is derived by any mission in any lane",
+      "any implementation grant for canonical nodes S3, S3c, S4, S5, S6, S7 or S8 of the multi-organization tenancy package"
+    ],
+    "enforcement": "A mission that finds v1.0.19 unenumerated in the live Controller and attempts to allocate v1.0.20 or HPO-ODS-W2-21, or to open an implementation grant for S3 or later, MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.",
+    "does_not_block": "Controller 30 is NOT a precondition of the S1 and S2 implementing missions themselves. Those two lanes are authorized by THIS addendum and may proceed once it is audited and integrated. The gap this addendum opens blocks the NEXT lineage allocation, not the batch it grants - the same relation v1.0.18 held to W2-B5's implementation.",
+    "no_preallocation": "This addendum allocates NOTHING beyond v1.0.19 and HPO-ODS-W2-20. It does not reserve, name-as-allocated or pre-create any v1.0.20 or HPO-ODS-W2-21 artifact. Naming them in the clauses above is a PROHIBITION, never an allocation - the same form v1.0.15 through v1.0.18 used.",
+    "negative_control_note": "When Controller 30 advances the absence-control literal at tests/ods/ods-controller.test.ts:129 from v1.0.19 to v1.0.20, that literal remains a NEGATIVE CONTROL and reserves nothing.",
+    "gap_arithmetic": "This package opens EXACTLY ONE enumeration gap and closes none. Controller count goes 29 -> 30 when the successor mission runs."
+  },
+
+  "protected_grant_required": true,
+  "protected_grant_rationale": "S1 must write db/migrations/**, which is DEFAULT_PROTECTED_PATTERNS entry 4. The grant is DECLARED here and REGISTERED by the S1 implementing mission, because registration edits the gate script scripts/ods-scope.ts and this mission is AUTHORITY_ONLY. S2 requires no protected grant at all, because a session cookie touches no db/** path.",
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-20",
+    "branch": "codex/multiorg-s1-founder-traceability-r1",
+    "patterns": ["db/migrations/**"],
+    "registration_status": "DECLARED_NOT_REGISTERED"
+  },
+  "PROTECTED_GRANTS_CHANGED": false,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 10,
+  "PROTECTED_GRANTS_COUNT_AFTER": 10,
+  "W2_16_NOT_WIDENED": true,
+  "W2_17_NOT_WIDENED": true,
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json",
+      "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json"
+    ],
+    "new_files": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json",
+      "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json"
+    ],
+    "modified_files": [],
+    "no_implementation_code": true,
+    "no_test_host_changed": true,
+    "no_existing_test_changed": true,
+    "no_migration_changed": true,
+    "no_prepared_unit_changed": true,
+    "no_db_file_changed": true,
+    "no_app_or_lib_file_changed": true,
+    "no_schema_change": true,
+    "no_package_json_change": true,
+    "no_gate_script_change": true,
+    "no_controller_change": true,
+    "no_protected_grants_registry_change": true,
+    "no_program_state_registry_change": true,
+    "no_staging": true,
+    "no_production": true,
+    "no_docker": true,
+    "no_runtime": true,
+    "frozen_artifacts_left_byte_unchanged": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json and MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json are CONSUMED and CITED, never edited. Their frozen gate E16 and their BLOCKING dependency entry were correct at their own AS_OF_HEAD and are recorded as discharged by later measurement rather than back-written.",
+    "program_state_registry_unchanged_rationale": "ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json holds no unit entry for the multi-organization tenancy package, and adding one is tooling maintenance for a lane that has no implementation evidence yet. Creating an entry now would assert stages that do not exist."
+  },
+
+  "test_contract": {
+    "host": "NONE FOR THIS MISSION",
+    "why_no_test_host": "MEASURED. This mission adds two documentation artifacts and changes no executable surface, so there is no runtime behavior for a test to bind to. v1.0.18 needed a host because its companion amendment changed two existing product tests; this addendum changes none. Inventing a test host to satisfy symmetry would create a control that asserts only that a JSON file parses.",
+    "binding": "The controls this addendum's GRANTS eventually require are enumerated in docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json TEST_CONTRACT, which binds by id to docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json and adds only the S2-alone controls that manifest lacks. They are not restated here.",
+    "ods_specific_properties_an_auditor_should_check": {
+      "O1": "The lineage allocation is EXACTLY v1.0.19 and HPO-ODS-W2-20, with no_preallocation stated as a PROHIBITION and no following item named as allocated.",
+      "O2": "The GRANT_ID offset invariant (patch + 1) holds for this addendum as it does for the ten before it.",
+      "O3": "PROTECTED_GRANTS cardinality is unchanged at 10, PROTECTED_GRANTS_CHANGED is false, and W2_16_NOT_WIDENED and W2_17_NOT_WIDENED are both true.",
+      "O4": "The protected grant is DECLARED_NOT_REGISTERED, scoped to exactly one branch and exactly one pattern, and no gate script is edited by this mission.",
+      "O5": "The Controller successor is declared, bounded to exactly one entry, counted 29 -> 30, and NOT performed here.",
+      "O6": "The S1 and S2 authorized path lists are disjoint, and no canonical S3 path appears in either.",
+      "O7": "No db/prepared/** grant of any width exists, and db/hosted/baseline-manifest.ts is not authorized.",
+      "O8": "authorized_changed_paths_this_mission.count === 2 and equals the actual diff exactly, in both directions."
+    }
+  },
+
+  "risks_and_open_findings": {
+    "F-1_wave2_closure_artifact_absent": "NON-BLOCKING HERE, OPEN FOR THE WAVE2 LANE. ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json defines the W2-B5 audit stage as CLOSED only when docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json exists with closure.W2_B5 === 'CLOSED'. That file does not exist at INTEGRATION_SHA, so by the registry's own machine definition the stage is not closed, notwithstanding that W2-B5 implementation is integrated in merge a27c4a9. This mission reports the discrepancy rather than accepting or fabricating closure, declares nothing about W2-B5, and depends on the Controller enumeration interlock instead - which is discharged by direct measurement of the live Controller.",
+    "F-2_migration_ordinal_race": "MITIGATED, NOT ELIMINATED. CP-1 is a global sequence. The grant deliberately does not pin an ordinal; the S1 mission allocates the next free one measured at its own start. Residual risk is a re-number, never a silent merge.",
+    "F-3_grant_pattern_is_a_directory_glob": "ACCEPTED WITH COMPENSATION. db/migrations/** is broader than an exact file list, which HPO-ODS-W2-02 was able to use because its ordinals were already known. Compensated by the fact that ods:scope requires the lane's exact --allow list in addition to the grant, so the glob alone can never authorize a diff, and by O8-style exact-path accounting in the S1 lane's own poststate.",
+    "F-4_inertness_is_a_convention_until_its_control_exists": "THE PRINCIPAL RESIDUAL RISK OF THE BATCH. S2's safety argument depends on nothing consuming the carrier. Until control NS2-4 is implemented, that is prose rather than a machine-checked property. The companion authority makes NS2-4 mandatory and non-waivable for exactly this reason.",
+    "F-5_program_state_registry_has_no_entry_for_this_lane": "ACCEPTED. pnpm ops:program-state cannot report multi-org stage state until an entry exists. Creating one now would assert stages that have no evidence. It should be added by the first implementing mission that produces implementation evidence."
+  },
+
+  "final_state": "ODS_V1_MAINTENANCE_ADDENDUM_v1_0_19_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "MULTIORG_S1_AUTHORITY_STATUS": "GRANTED_NOT_STARTED",
+  "MULTIORG_S2_AUTHORITY_STATUS": "GRANTED_NOT_STARTED",
+  "MULTIORG_S3_AUTHORITY_STATUS": "NOT_GRANTED",
+  "CONTROLLER_MAINTENANCE_IMPLEMENTATION_STATUS": "NOT_STARTED_SUCCESSOR_MISSION",
+  "CONTROLLER30_REQUIRED": true,
+  "CONTROLLER_DB_EXECUTION": "DISABLED",
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": true,
+  "READY_FOR_MERGE": "NO_PENDING_INDEPENDENT_AUDIT",
+  "next_gate": "MULTIORG_S1_S2_FIRST_EXECUTION_AUTHORITY_INDEPENDENT_AUDIT"
+}

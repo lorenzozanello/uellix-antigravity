@@ -64,3 +64,16 @@ describe('Portfolio service - create', () => {
     await expect(createPortfolioForCurrentOrganization(input as any)).rejects.toThrow();
   });
 });
+
+// FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17) — this file's own readiness-
+// adjacent control: the portfolio-level readiness statistic
+// getPortfolioAnalytics surfaces is explicitly labelled
+// LEGACY_NON_AUTHORITATIVE, never presented as canonical FIBC-021 readiness.
+// aggregatePortfolioSroi is pure and needs no DB mock beyond this file's own.
+describe('Portfolio service - readiness disposition', () => {
+  it('the readiness statistic is presented as LEGACY_NON_AUTHORITATIVE, never canonical readiness', async () => {
+    const { aggregatePortfolioSroi } = await import('@/lib/portfolios/analytics');
+    const result = aggregatePortfolioSroi([]);
+    expect(result.readinessSource).toBe('LEGACY_NON_AUTHORITATIVE');
+  });
+});

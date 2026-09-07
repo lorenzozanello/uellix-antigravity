@@ -101,6 +101,28 @@ export const AUDIT_ACTIONS = {
   // FIBIU-12 (FIBC-016) — per-outcome-per-run monetization disposition.
   OUTCOME_MONETIZATION_DISPOSITION_RECORDED: 'outcome_monetization_disposition.recorded',
 
+  // FIBIU-15 (FIBC-019, W2-B4, HPO-ODS-W2-12) — structured methodological
+  // assumptions. SUPERSEDED fires on a material modification, never on
+  // creation — the row's id is the assumption's permanent identity; the
+  // prior content is preserved separately in domainObjectVersions.
+  METHODOLOGICAL_ASSUMPTION_CREATED: 'methodological_assumption.created',
+  METHODOLOGICAL_ASSUMPTION_SUPERSEDED: 'methodological_assumption.superseded',
+
+  // FIBIU-14 (FIBC-018, W2-B4, HPO-ODS-W2-12) — counterfactual assessment.
+  COUNTERFACTUAL_ASSESSMENT_RECORDED: 'counterfactual_assessment.recorded',
+
+  // FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17) — canonical readiness. One
+  // event per immutable readiness_assessments row; there is no update/
+  // supersede verb because the row itself is never edited.
+  READINESS_ASSESSMENT_COMPUTED: 'readiness_assessment.computed',
+
+  // FIBIU-18 (FIBC-022, W2-B5, HPO-ODS-W2-17) — governed sensitivity.
+  // .dispositioned is content-modifying (pending -> a non-pending
+  // disposition); registration and scenario recording are not.
+  SENSITIVITY_CANDIDATE_REGISTERED: 'sensitivity_candidate.registered',
+  SENSITIVITY_CANDIDATE_DISPOSITIONED: 'sensitivity_candidate.dispositioned',
+  SENSITIVITY_SCENARIO_RECORDED: 'sensitivity_scenario.recorded',
+
   // Methodology review matrix (generalized across pipeline steps)
   METHODOLOGY_REVIEW_STARTED: 'methodology_review.started',
   METHODOLOGY_REVIEW_UPDATED: 'methodology_review.updated',

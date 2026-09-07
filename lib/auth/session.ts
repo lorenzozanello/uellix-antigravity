@@ -37,6 +37,7 @@ import { withDatabaseIdentityContext } from '@/db/identity-context'
 import { getVerifiedAuthIdentity } from './identity'
 import {
   loadRequestPrincipal,
+  listSelectableMemberships,
   withOptionalDatabaseIdentityContext,
   withOrganizationDatabaseContext,
   withSuperAdminDatabaseContext,
@@ -44,6 +45,7 @@ import {
   type Membership,
   type Organization,
   type OrganizationContext,
+  type SelectableMembership,
 } from './database-context'
 import type { Role } from './roles'
 import { hasRole } from './permissions'
@@ -58,7 +60,27 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 // Defined in lib/auth/database-context.ts and re-exported here so the ~40
 // modules that import them from this path keep working.
 
-export type { AuthUser, Membership, Organization, OrganizationContext }
+export type { AuthUser, Membership, Organization, OrganizationContext, SelectableMembership }
+
+// ---------------------------------------------------------------------------
+// listSelectableMemberships
+// ---------------------------------------------------------------------------
+//
+// S3 — SELECTOR_DECIRCULARISATION: hosted (as a thin re-export) here rather
+// than duplicated, because the actual query already lives in
+// lib/auth/database-context.ts, which is where organizationMembers and
+// organizations are already imported. Session.ts stays the reader surface
+// pages import from, matching every other helper in this file, without this
+// module gaining a new schema/db import of its own — the smaller of the two
+// compliant dependency surfaces measured for this choice (see
+// docs/ops/tenancy/MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json
+// ENUMERATOR_HOST).
+//
+// Both `@/lib/auth/session` and `@/lib/auth/database-context` are
+// CONTEXT_MODULES the entry-point scanner skips by import specifier
+// (tests/database-runtime-entrypoints.test.ts CONTEXT_MODULES) — re-exporting
+// here moves neither the AST inventory nor the runtime-entrypoint pins.
+export { listSelectableMemberships }
 
 // ---------------------------------------------------------------------------
 // getCurrentUser

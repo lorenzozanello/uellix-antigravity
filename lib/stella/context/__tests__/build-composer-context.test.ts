@@ -124,8 +124,6 @@ const mockCalcRun = {
 
 const mockLineItems = [{ id: 'li-1' }, { id: 'li-2' }, { id: 'li-3' }]
 
-const mockReview = { readinessScore: 87 }
-
 const mockSections = [
   { id: 'sec-1', sectionType: 'executive_summary', title: 'Executive Summary', content: 'Some drafted content here.' },
   { id: 'sec-2', sectionType: 'methodology', title: 'Methodology', content: '' },
@@ -186,14 +184,16 @@ function extractEqValues(val: any): string[] {
 // 10. filter sets (innerJoin) → mockFilterSets (array)
 // 11. latest calc run (.orderBy) → [mockCalcRun]
 // 12. line items → mockLineItems (array, only if run exists)
-// 13. readiness review (.orderBy) → [mockReview]
-// 14. report sections → mockSections (array)
+// 13. report sections → mockSections (array)
+//
+// FIBIU-17 (FIBC-021, W2-B5, HPO-ODS-W2-17): step 13 used to be a
+// sroi_run_reviews readiness-review select (NEG-17-2) — REMOVED, not
+// replaced. buildComposerContext no longer queries sroi_run_reviews at all.
 // ---------------------------------------------------------------------------
 async function setupFullMockSequence(opts: {
   projectRow?: typeof mockProject
   reportRow?: typeof mockReport
   withCalcRun?: boolean
-  withReview?: boolean
   sectionsRows?: typeof mockSections
   stakeholderRows?: Array<{ id: string; type?: string | null }>
   narrativeRow?: typeof mockNarrative
@@ -203,7 +203,6 @@ async function setupFullMockSequence(opts: {
     projectRow = mockProject,
     reportRow = mockReport,
     withCalcRun = true,
-    withReview = true,
     sectionsRows = mockSections,
     stakeholderRows = mockStakeholders,
     narrativeRow = mockNarrative,
@@ -231,8 +230,7 @@ async function setupFullMockSequence(opts: {
     chain.mockReturnValueOnce(makeChain(mockLineItems) as never) // 12. line items
   }
 
-  chain.mockReturnValueOnce(makeChain(withReview ? [mockReview] : []) as never) // 13. review
-  chain.mockReturnValueOnce(makeChain(sectionsRows) as never) // 14. report sections
+  chain.mockReturnValueOnce(makeChain(sectionsRows) as never) // 13. report sections
 }
 
 // ---------------------------------------------------------------------------
@@ -505,15 +503,12 @@ describe('buildComposerContext', () => {
       expect(ctx.evidenceMetadata).toHaveLength(0)
     })
 
-    it('includes readinessScore from latest review', async () => {
-      await setupFullMockSequence({ withReview: true })
-      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
-
-      expect(ctx.readinessScore).toBe(87)
-    })
-
-    it('readinessScore is undefined when no review exists', async () => {
-      await setupFullMockSequence({ withReview: false })
+    // NEG-17-2 (FIBIU-17, FIBC-021, W2-B5) — inverted: the composer no
+    // longer reads sroi_run_reviews.readiness_score at all, so readinessScore
+    // is unconditionally undefined and the composer authorized-numeric set
+    // no longer admits it (see numberCheck below).
+    it('readinessScore is always undefined — buildComposerContext no longer reads sroi_run_reviews', async () => {
+      await setupFullMockSequence()
       const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
 
       expect(ctx.readinessScore).toBeUndefined()

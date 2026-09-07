@@ -1,0 +1,425 @@
+{
+  "package_id": "MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE",
+  "version": "1.0.0",
+  "artifact_id": "MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0",
+  "artifact_class": "IMPLEMENTATION_EVIDENCE_MEASURED_FACTS_ONLY",
+  "node": "S1 - Founder traceability (canonical, MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json S1_TO_S8_DAG)",
+  "mission_id": "MULTIORG-S1-FOUNDER-TRACEABILITY-IMPLEMENTATION-R2",
+  "lane": "LANE BW-R2 (R1 stopped for authority delta F-BW-1; delta closed by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json + MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json, integrated in PR #88)",
+  "materialization_date": "2026-09-06",
+  "grants_exercised": ["HPO-ODS-W2-20", "HPO-ODS-W2-21"],
+  "governed_by": [
+    "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json",
+    "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json",
+    "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json",
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json",
+    "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+    "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json"
+  ],
+  "no_invented_pass": "Every value below was MEASURED in worktree C:/Users/Lorenzo/Documents/uellix-multiorg-s1-founder-traceability by executing the repository's own code. Nothing is inherited from the authority artefacts' own figures; where an authority-era figure is quoted it is labelled as such.",
+
+  "PRESTATE": {
+    "branch": "codex/multiorg-s1-founder-traceability-r1",
+    "START_HEAD": "78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d",
+    "START_TREE": "44d505a8b1c4aab2514825d1ebbcf312d0f9f1c7",
+    "origin_integration_commercial_v1_at_start": "78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d",
+    "intervening_delta_since_R1_start_d5ae09c": {
+      "commits": ["473c456", "db03d34", "3890d47 (PR #85)", "f8e9d5d", "e483d9d (PR #86)", "fdfd3b0", "78b2e7c (PR #88)"],
+      "changed_paths": [
+        "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json",
+        "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "scripts/ods-controller.ts",
+        "tests/ods/ods-controller.test.ts"
+      ],
+      "classification": "NON_MATERIAL to every S1 fact surface: `git diff --stat d5ae09c 78b2e7c -- scripts/ods-scope.ts tests/ods/ods-scope.test.ts tests/hosted tests/eval db app` is EMPTY. No migration, schema, baseline or journal writer landed."
+    },
+    "ods_prestate": "ODS_PRESTATE=PASS (PRESTATE_BRANCH/HEAD/TREE/CLEAN all PASS) at START_HEAD",
+    "live_measurements_at_START_HEAD": {
+      "highest_drizzle_migration": "db/migrations/0065_fib_sensitivity_model.sql",
+      "migration_file_count": 66,
+      "drizzle_journal_entries": 66,
+      "BASELINE_UNITS": 78,
+      "drizzle_baseline_units": 66,
+      "journal_wrapper_files": 79,
+      "journal_highest": "db/prepared/journal/078_0065_fib_sensitivity_model.sql",
+      "baseline_manifest_digest": "d26ada68a8dd77e6b09d3f5da26a251ba8cf7c0d0489564342d39bbfcf4e00f6",
+      "PROTECTED_GRANTS_length": 10,
+      "PROTECTED_GRANTS_set_size": 10,
+      "HPO-ODS-W2-20_present": false,
+      "HPO-ODS-W2-21_present": false,
+      "HPO-ODS-W2-22_present": false,
+      "hosted_baseline_gate_spec": "7/7 GREEN at START_HEAD (rehearsal artefact digest d26ada68... fresh for the 78-unit manifest, manifestApplied=78)"
+    },
+    "ordinal_derivation": "Next free drizzle ordinal = 0066, next free journal wrapper = 079, next free BASELINE_UNITS ordinal = 79 - derived from the live measurements above, not from any authority artefact. No other migration writer landed (STOP_FOR_MIGRATION_SEQUENCE_DRIFT not triggered)."
+  },
+
+  "MIGRATION": {
+    "ordinal": "0066",
+    "path": "db/migrations/0066_multiorg_s1_founder_traceability.sql",
+    "sha256_lf_normalized": "0f038b236fd868b373cffbbe0c8cd12244fdba8ace4065d61579a8162fb6b725",
+    "generator": "pnpm db:generate --name multiorg_s1_founder_traceability (drizzle-kit ^0.31.10) - repository-native; db/migrations/meta/0066_snapshot.json and the _journal.json entry (idx 66, tag 0066_multiorg_s1_founder_traceability) are generator-owned and were not hand-written",
+    "snapshot_lineage": { "0066_snapshot_id": "a420ca15-df6e-4819-a720-748f74488ce7", "0066_snapshot_prevId": "bd7bc7c6-0e57-443a-b0a9-8644fe29b453", "0065_snapshot_id": "bd7bc7c6-0e57-443a-b0a9-8644fe29b453" },
+    "generated_statements_inspected_byte_by_byte": [
+      "ALTER TABLE \"organizations\" ADD COLUMN \"founded_by\" uuid",
+      "ALTER TABLE \"organizations\" ADD COLUMN \"founding_provenance\" varchar(20) DEFAULT 'unknown' NOT NULL",
+      "ALTER TABLE \"organizations\" ADD CONSTRAINT \"organizations_founded_by_users_id_fk\" FOREIGN KEY (\"founded_by\") REFERENCES \"public\".\"users\"(\"id\") ON DELETE restrict ON UPDATE no action",
+      "CREATE UNIQUE INDEX \"organizations_self_service_founder_unique\" ON \"organizations\" USING btree (\"founded_by\") WHERE \"organizations\".\"founded_by\" IS NOT NULL AND \"organizations\".\"founding_provenance\" = 'self_service'",
+      "ALTER TABLE \"organizations\" ADD CONSTRAINT \"organizations_founding_provenance_check\" CHECK (\"organizations\".\"founding_provenance\" IN ('self_service', 'platform', 'unknown'))",
+      "ALTER TABLE \"organizations\" ADD CONSTRAINT \"organizations_self_service_requires_founder_check\" CHECK (\"organizations\".\"founding_provenance\" <> 'self_service' OR \"organizations\".\"founded_by\" IS NOT NULL)"
+    ],
+    "unrelated_churn": "NONE. Semantic diff 0065_snapshot -> 0066_snapshot = 8 leaves: id, prevId, the two columns, the index, the FK and the two CHECK constraints. The stella_interactions.model_used default drift historically noted by 0047 did not surface.",
+    "hand_authored_addition": "A header comment and the MO-11 backfill (Stage B) after a `--> statement-breakpoint`, following 0047's convention. No other bytes.",
+    "no_create_table": true
+  },
+
+  "S1_SCHEMA_DELTA": {
+    "file": "db/schema.ts (+22 / -1)",
+    "organizations.foundedBy": "uuid('founded_by').references(() => users.id, { onDelete: 'restrict' }) - NULLABLE permanently (MO-11), no default, no sentinel",
+    "organizations.foundingProvenance": "varchar('founding_provenance', { length: 20 }).default('unknown').notNull() - the durable self-service DISCRIMINATOR; domain self_service | platform | unknown",
+    "carrier": "uniqueIndex('organizations_self_service_founder_unique').on(foundedBy).where(founded_by IS NOT NULL AND founding_provenance = 'self_service') - binds the SELF-SERVICE founding ACT only; no global uniqueness on founded_by (a platform-created organization naming the same subject does not consume the slot)",
+    "checks": ["organizations_founding_provenance_check", "organizations_self_service_requires_founder_check (self_service => founded_by NOT NULL)"],
+    "FK_DELETE": "ON DELETE RESTRICT as decided; escape hatch NOT invoked - no governed user-deletion path exists in app/ or lib/ (grep for delete(users) / DELETE FROM users returns nothing; users carry a soft-delete deleted_at instead)",
+    "organization_members": "UNCHANGED. user_single_active_membership and organization_members_org_user_unique present and unmodified (DROP_LAST, S7)",
+    "no_other_lifecycle_semantics_added": true
+  },
+
+  "BACKFILL_MO_11": {
+    "statement": "UPDATE \"organizations\" AS o SET \"founded_by\" = q.actor_user_id FROM (SELECT \"entity_id\" AS organization_id, (array_agg(\"actor_user_id\"))[1] AS actor_user_id FROM \"audit_logs\" WHERE \"action\" = 'organization.created' AND \"entity_type\" = 'organization' GROUP BY \"entity_id\" HAVING count(*) = 1 AND count(\"actor_user_id\") = 1) AS q WHERE o.\"id\" = q.organization_id AND o.\"founded_by\" IS NULL;",
+    "rule_encoded": "exactly ONE qualifying organization.created row (entity_type organization, entity_id = the organization) AND that row's actor is NON-NULL -> founded_by = that actor; zero rows, more than one row, or a NULL actor -> founded_by stays NULL",
+    "provenance": "founding_provenance is NOT written by the backfill; every historical row keeps the column DEFAULT 'unknown'. No historical self_service is inferred from anything, including code-history uniqueness.",
+    "prohibited_predicates_absent": ["invited_by IS NULL", "earliest joined_at / created_at", "sole organization_admin", "lowest id", "any most-likely-founder heuristic"],
+    "why_array_agg": "PostgreSQL has no min()/max() aggregate over uuid. The first R2 real-PG run FAILED at setup with `function min(uuid) does not exist` (finding F-BW2-1 below); HAVING count(*) = 1 makes the group a single row, so (array_agg(actor_user_id))[1] is exactly that row's actor. Fixed BEFORE commit.",
+    "durable_count": "The count is (a) recorded here from the real-PG fixture run and (b) independently recomputable from the same inputs by probe S1-BACKFILL-4 (PG-S1-3), which re-derives it with a correlated EXISTS formulation (no GROUP BY, no aggregate) and additionally asserts every attributed value equals THE sole qualifying row's actor.",
+    "measured_counts_disposable_fixture": {
+      "historical_organizations": 6,
+      "attributed": 1,
+      "left_NULL": 5,
+      "cases": {
+        "H1 exactly one qualifying row, non-null actor uF1": "founded_by = uF1, provenance unknown",
+        "H0 zero qualifying rows": "NULL, unknown",
+        "H2 two qualifying rows (uF1, uF2)": "NULL, unknown",
+        "HN one qualifying row, NULL actor": "NULL, unknown",
+        "HS SENTINEL_FOUNDER_NULL_ORG (only signal invited_by IS NULL, no audit row)": "NULL, unknown",
+        "HU one row with non-qualifying action organization.updated": "NULL, unknown"
+      },
+      "repeatability": "Re-running the identical UPDATE against the backfilled state changes 0 rows (probe S1-BACKFILL-5); state unchanged"
+    },
+    "live_database_coverage": "NOT MEASURED against staging or production - this lane holds no staging/production access and CONTROLLER_DB_EXECUTION is DISABLED (ODS_CONTROLLER_AUTHORITY_v1.0.0.json). Coverage on a real target is measured when 0066 is applied under the hosted baseline operator, as a separate governed act. Per LIVE_DATA_ROLE any such measurement establishes coverage only and can never upgrade historical provenance."
+  },
+
+  "DML_SCANNER_RESULT": {
+    "scanner": "db/hosted/baseline-scanner.ts scanBaselineSql, executed against the real 0066 bytes",
+    "tablesCreated": [],
+    "dmlStatements_count": 1,
+    "dmlStatements": ["UPDATE \"organizations\" AS o SET \"founded_by\" = q.actor_user_id FROM ( SELECT \"entity_id\" AS organization_id, (array_agg(\"actor_user_id\"))[1] AS actor_user_id FR..."],
+    "literalRowSources_count": 0,
+    "superuserDependencies": [],
+    "roleStatements": 0,
+    "ownershipStatements": 0,
+    "extensionStatements": 0,
+    "policiesCreated": [],
+    "functionsCreated": [],
+    "triggersCreated": [],
+    "referencesAuthSchema": false,
+    "securitySurfaceDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 (empty surface)",
+    "scanner_visible_form": "Top-level UPDATE - CLASSIFIED. No DO block, no WITH ... UPDATE, no function/trigger body, no EXECUTE (v1.0.2 SCANNER_VISIBILITY_REQUIREMENT). tests/tenancy/s1-founder-traceability.test.ts asserts all of this against the live bytes, and mutation M-06 (DO block) is CAUGHT by the unit test, the manifest verifier (SCAN_MISMATCH) and the DML whitelist."
+  },
+
+  "BASELINE_UNIT": {
+    "ordinal": 79,
+    "id": "0066_multiorg_s1_founder_traceability.sql",
+    "kind": "drizzle-migration",
+    "file": "db/migrations/0066_multiorg_s1_founder_traceability.sql",
+    "sha256": "0f038b236fd868b373cffbbe0c8cd12244fdba8ace4065d61579a8162fb6b725",
+    "dependsOn": ["0065_fib_sensitivity_model.sql", "0000_quick_husk.sql"],
+    "dml": "structural-backfill",
+    "managed": "A-hosted-compatible",
+    "reapply": "destructive-on-reapply",
+    "expect": { "dmlStatementCount": 1, "literalRowSourceCount": "0 (default, scanner-measured 0)" },
+    "position_derivation": "Appended LAST in BASELINE_UNITS (index 78, ordinal 79). All three DML lists inherit BASELINE_UNITS order, so the appended id is LAST in each - derived, not assumed (policy units interleave at ordinals 44-49).",
+    "baseline_verify": "[baseline] verification OK - 79 units, order pinned, hashes match, derived scan matches every pinned expectation",
+    "growth": { "BASELINE_UNITS": "78 -> 79", "drizzle": "66 -> 67", "manifest_digest": "d26ada68a8dd77e6b09d3f5da26a251ba8cf7c0d0489564342d39bbfcf4e00f6 -> 2578544e6c673cad5bab07f4e29d4363ba4ad4545a76a4862fe84df483f9dcd5" }
+  },
+
+  "ORIGINAL_11_PINS": {
+    "rule": "v1.0.1 EXISTING_TEST_INSTRUCTIONS HOST_1..HOST_5. Every line number below was RE-MEASURED at START_HEAD before editing and was identical to the amendment's INTEGRATION_SHA measurement. Values are the MEASURED post-growth cardinality (79 / 67) and the DERIVED N+1 (80).",
+    "HOST_1 tests/hosted/baseline-manifest.test.ts": ["L103 expect(BASELINE_UNITS).toHaveLength(78 -> 79)", "L105 expect(byKind('drizzle-migration')).toBe(66 -> 67)", "L112 Array.from({ length: 78 -> 79 })", "L115 expect(new Set(BASELINE_ORDER).size).toBe(78 -> 79)", "it() titles at L102/L110 updated (coupled prose)", "NOT touched: L106 supabase-migration toBe(2), L107 policy toBe(10), every sha256/dependsOn/kind pin of a unit S1 did not add"],
+    "HOST_2 tests/hosted/baseline-journal-wrapper.test.ts": ["L472 toHaveLength(78 -> 79)", "L473 toHaveLength(78 -> 79)", "NOT touched: the three derived BASELINE_UNITS.length + 1 forms (still exactly three)"],
+    "HOST_3 tests/hosted/operator-runner.test.ts": ["L237 toHaveLength(78 -> 79)", "NOT touched: every unit-specific historical assertion"],
+    "HOST_4 tests/eval/stella-release/hosted-baseline-gate.test.ts": ["L67 unitCount toBe(78 -> 79)", "L68 superuserFreeUnits toBe(78 -> 79) - S1's unit is superuser-free, MEASURED: superuserFreeUnits === unitCount === 79", "NOT touched: L79 literalRowSources toBe(4)"],
+    "HOST_5 tests/eval/stella-release/hosted-baseline-gate.ts": ["L407 firstProvisioning.steps.length === 79 -> 80 (N+1, DERIVED: planProvisioningPhase emits 000_journal_bootstrap + one step per BASELINE_ORDER member; confirmed by execution: firstProvisioningPlannable=true with 80)", "L429 evidence.unitCount === 78 -> 79", "NOT touched: L493 literalRowSources !== 4, the rehearsal digest, every phase-skip/postcondition gate"],
+    "total_advanced": 11,
+    "form": "Every pin remains an EXACT equality. No >=, range, Set, arrayContaining or computed oracle. tests/tenancy/s1-founder-traceability.test.ts additionally asserts the exact-literal form of all 11 pins and the byte-unchanged unforced kind pins (T-S1-GROWTH-5)."
+  },
+
+  "DML_3_LISTS": {
+    "change_class": "MECHANICAL_DML_WHITELIST_ADVANCE_ONLY (v1.0.2 S1_DML_INSTRUCTIONS / v1.0.21 FUNCTION_H)",
+    "appended_id": "0066_multiorg_s1_founder_traceability.sql",
+    "byte_identical_in": ["tests/hosted/baseline-manifest.test.ts (expect(withDml.map(u => u.id)).toEqual([...8]))", "tests/eval/stella-release/hosted-baseline-gate.test.ts (expect(evidence.dmlUnits).toEqual([...8]))", "tests/eval/stella-release/hosted-baseline-gate.ts (const EXPECTED_DML_UNITS = [...8]; both guard conjuncts intact)"],
+    "position": "LAST in each list, derived from BASELINE_UNITS order",
+    "coupled_prose_updated": ["baseline-manifest.test.ts it() title '... 0055, 0056 and 0066 are the only units with DML'", "hosted-baseline-gate.ts pass-branch detail 'eight units (..., 0066) carry DML - 0018, 0041, 0047, 0048 and 0066 write zero rows on an empty database'"],
+    "NOT_touched": ["literalRowSources toBe(4) / !== 4", "per-unit literalRowSources assertions for 0018/0040/0041/0047/0048", "db/hosted/baseline-scanner.ts", "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json"],
+    "fourth_forced_literal": "NONE found. tests/hosted/global-catalog-seeds.test.ts and db/hosted/baseline-apply-authorization.ts were re-run/re-read at this head: neither moved (structural-backfill with zero literal rows enters neither).",
+    "negative_control_second_unintended_DML_unit": "MUTATION M-17 (a top-level UPDATE appended to 0065): baseline-manifest.test.ts DML whitelist FAILS, hosted-baseline-gate.test.ts dmlUnits FAILS, and evaluateHostedBaselineGates reports hosted-baseline-managed-compatible 'DML units changed' - all three controls fail. Restored byte-exact afterwards.",
+    "live_evidence_dmlUnits": ["0018_redundant_firebird.sql", "0040_governed_model_registry.sql", "0041_pc01b_regime_boundary_backfill.sql", "0047_fib_taxonomy_mapping_governance_regime.sql", "0048_fib_evidence_versions.sql", "0055_fib_proxy_material_change_registry.sql", "0056_fib_proxy_material_fields_editability.sql", "0066_multiorg_s1_founder_traceability.sql"],
+    "live_evidence_literalRowSources": 4
+  },
+
+  "PROTECTED_GRANT_REGISTRATION": {
+    "before": { "PROTECTED_GRANTS_length": 10, "set_size": 10, "W2-20": "absent", "W2-21": "absent", "W2-22": "absent" },
+    "registered": [
+      { "authorityId": "HPO-ODS-W2-20", "branch": "codex/multiorg-s1-founder-traceability-r1", "patterns": ["db/migrations/**"], "index": 10, "equals": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json protected_grant field for field" },
+      { "authorityId": "HPO-ODS-W2-21", "branch": "codex/multiorg-s1-founder-traceability-r1", "patterns": ["db/prepared/journal/**"], "index": 11, "equals": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json protected_grant and MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json protected_grant field for field, pattern_count 1" }
+    ],
+    "after": { "PROTECTED_GRANTS_length": 12, "set_size": 12, "W2-20": "present exactly once", "W2-21": "present exactly once", "W2-22": "ABSENT - an addendum identity (v1.0.21 protected_grant = null), deliberately NOT registered" },
+    "not_widened": "W2-01, W2-12, W2-16, W2-17 byte-unchanged (asserted by tests/ods/ods-scope.test.ts). No db/prepared/** grant of any width exists.",
+    "tests_ods_ods_scope_test_ts": {
+      "cardinality": "toBe(10) -> toBe(12) plus a set-size 12 assertion",
+      "predecessor_demotion": "the v1.0.16 guard `PROTECTED_GRANTS_COUNT_AFTER toBe(PROTECTED_GRANTS.length)` demoted to the pinned literal 10 (its own historical value) - the same demotion v1.0.16 performed on v1.0.15",
+      "live_guard": "v1.0.20 PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION toBe(PROTECTED_GRANTS.length) and v1.0.21 PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION toBe(PROTECTED_GRANTS.length) - bound to the LIVE array, never a hardcoded 12",
+      "added_controls": ["T-S1-GRANT-1 exact objects vs declaring addenda + amendment", "T-S1-GRANT-2 live-count guard", "T-S1-GRANT-3 predecessor demotion", "T-S1-GRANT-4 not-widened (W2-01/12/17 explicit + W2-16)", "T-S1-GRANT-5 narrowness: stella_0010, checkpoint-b0, checkpoint-a1, stella_hosted_0000 remain PROTECTED VIOLATIONS with W2-21 supplied", "T-S1-GRANT-6 branch binding on six other branches; W2-22 resolves nowhere ('unknown protected authority'); S1 branch cannot borrow W2-01/12/17", "S1-GRANT-P1/N1, P2/N2 non-vacuity both directions", "S1-GRANT-N4 separation and exact union"],
+      "result": "138/138 PASS with --testTimeout=90000; at the 5000 ms default 7 real-CLI tests time out at 5.5-6.1 s (the Windows pnpm-spawn flake recorded as F-10 in v1.0.21, present at BASE)"
+    }
+  },
+
+  "JOURNAL_FAMILY": {
+    "generator": "pnpm journal:generate -> [journal] wrote 80 wrappers to db/prepared/journal/ ; apply order: 80 commands, unit ZERO first",
+    "verifier": "pnpm journal:verify -> [journal] verification OK - all 80 wrappers regenerate byte-identically",
+    "changed_files": "79 under db/prepared/journal/**: 78 existing governed wrappers regenerated (denominator 78 -> 79 in the GENERATED header) + 1 new wrapper 079_0066_multiorg_s1_founder_traceability.sql ('Unit 79/79', Source SHA256 = the unit's sha256). 000_journal_bootstrap.sql unchanged.",
+    "hand_edits": "NONE",
+    "covered_by": "ordinary --allow db/prepared/journal/** AND HPO-ODS-W2-21; ods:scope PROTECTED_AUTHORIZED_PATH_COUNT=82 (79 journal + 0066.sql + 0066_snapshot.json + _journal.json)"
+  },
+
+  "A1_STATUS": {
+    "generator": "pnpm a1:status:write -> [a1] wrote artifacts/hosted-a1-status.json - checkpointPassed=false",
+    "verifier": "pnpm a1:status:verify -> [a1] verification OK - the recorded verdict is what the contract computes over the recorded corroboration",
+    "delta": "chainPlan message 'refused: 28 baseline unit(s) missing, starting with 0040_governed_model_registry.sql' -> '29 baseline unit(s) missing' (two occurrences). No other field moved.",
+    "corroboration_untouched": "artifacts/hosted-a1-corroboration.json NOT in the diff (historical measurement)",
+    "note": "tests/hosted/evidence-immutability.test.ts compares this artefact against the blob AT HEAD, so it reports DIFFERS in the uncommitted working tree and is expected to go GREEN once the candidate commit carries the regenerated bytes (finding F-BW2-3)."
+  },
+
+  "CHECKPOINT_B0": {
+    "verifier": "pnpm b0:observation:verify -> [b0-sql] verification OK - the probe regenerates byte-identically from the corpus (run after registering the unit)",
+    "file_unchanged": "db/prepared/checkpoint-b0/observation.sql NOT in the diff; S1 creates no table (scanner tablesCreated = [])"
+  },
+
+  "LIVE_ONBOARDING": {
+    "file": "app/(authenticated)/app/onboarding/actions.ts (+12 / -1; the only authorized product-code edit)",
+    "change": "The organizations insert inside withAuthenticatedDatabaseContext now carries foundedBy: authUser.id and foundingProvenance: 'self_service' in the SAME insert and SAME transaction as the organisation row (S1-6); the existing organization.created audit row (the MO-11 deterministic source) additionally records foundedBy and foundingProvenance in afterJson.",
+    "preserved_verbatim": ["isEmailAllowlisted gate and not_allowlisted redirect (SS-01 is S6)", "getCurrentMembership single-membership check", "withAuthenticatedDatabaseContext transaction and redirect-outside-transaction shape", "no withSuperAdminDatabaseContext / runWithOrganizationAccess", "no selected-organization carrier read or write (S2/S3 boundary)"],
+    "controls": "tests/tenancy/s1-founder-traceability.test.ts static + behavioural (mocked db/auth): POSITIVE insert carries founder + provenance inside the context, membership insert follows in the same context, audit afterJson carries both; NEGATIVE non-allowlisted subject redirected before any insert. tests/auth/route-authorization-boundary.test.ts 'still allowlist-gated and unwidened' GREEN."
+  },
+
+  "REAL_POSTGRESQL": {
+    "file": "tests/postgres/s1-founder-cardinality.pg.test.ts",
+    "harness": "scripts/db-audit-disposable.ts runDisposableHarness - postgres:16-alpine, 127.0.0.1 ephemeral port, no bind mounts, teardown in finally, leftover check; NEVER staging/production/the canonical local stack",
+    "setup_order": "roles -> local-supabase shim -> G2 shim -> BASELINE_UNITS[0..78) in manifest order -> HISTORICAL fixture (6 organizations, memberships, audit rows) -> the S1 unit (index 78, derived) -> hosted-fidelity block (auth.uid hosted semantics, OWNER TO uellix_owner, helper EXECUTE grants, organizations ACL floor for uellix_writer)",
+    "result": "35/35 PASS, 31 probes ALL_PASSED, setupStatus SUCCESS, teardownStatus SUCCESS, leftoverDatabaseCount 0, lifecycleState VERIFIED_GONE, targetLocality LOCAL, duration 98.6 s",
+    "probes": [
+      "S1-SCHEMA-1 columns (founded_by uuid NULL no default; founding_provenance varchar NOT NULL DEFAULT 'unknown')",
+      "S1-SCHEMA-2 FK -> users, confdeltype r (RESTRICT)",
+      "S1-SCHEMA-3 partial UNIQUE carrier predicates on founded_by IS NOT NULL AND founding_provenance = 'self_service'; NO naive global unique index exists",
+      "S1-SCHEMA-4 both CHECK constraints present",
+      "S1-SCHEMA-5 DROP_LAST: user_single_active_membership + organization_members_org_user_unique present",
+      "S1-BACKFILL-1 exactly-one non-null actor -> attributed (T-S1-BACKFILL-1)",
+      "S1-BACKFILL-2a/2b/2c/2d/2e zero rows / >1 rows / NULL actor / invited_by-only sentinel / non-qualifying action -> NULL (T-S1-BACKFILL-2, M-5 sentinel)",
+      "S1-BACKFILL-3 founding_provenance = unknown for EVERY historical row (T-S1-BACKFILL-3)",
+      "S1-BACKFILL-4 attributed=1 / left_NULL=5 recomputed from the same inputs by an independent formulation; every attribution equals the sole qualifying actor (PG-S1-3)",
+      "S1-BACKFILL-5 second application changes 0 rows",
+      "S1-REAPPLY ADD COLUMN again -> 42701 (destructive-on-reapply classification is real)",
+      "PG-S1-2 then PG-S1-1: platform-provenance org naming uX does NOT consume the slot; self-service founding succeeds; SECOND self-service founding -> 23505 naming organizations_self_service_founder_unique; a second platform org also permitted",
+      "S1-5 NULL founded_by rows coexist with the carrier",
+      "PG-S1-4 deleting a user referenced ONLY through founded_by -> 23503 naming organizations_founded_by_users_id_fk",
+      "S1-PROVENANCE-1 domain CHECK -> 23514; S1-PROVENANCE-2 self_service without founder -> 23514",
+      "T-S1-WALL-1 ordinary user (auth.uid() proven effective, not super admin) INSERT with VALID S1 values -> SQLSTATE 42501, message 'new row violates row-level security policy for table \"organizations\"'; asserted NOT 23502, NOT 23503, and NOT a table-grant refusal",
+      "T-S1-WALL-2 platform super admin INSERT permitted by orgs_insert_super_admin (platform-admin creation path preserved)",
+      "N-9 a subject named in founded_by with no membership reads 0 rows of that organization; current_user_org_ids() excludes it (PI-3)",
+      "PI-3 no pg_policies qual/with_check, no public/auth function body, no trigger on organizations references founded_by/founding_provenance",
+      "MUT-PG-1 carrier dropped -> duplicate self-service founding SUCCEEDS (index load-bearing)",
+      "MUT-PG-2 CHECK dropped -> invented provenance ACCEPTED (CHECK load-bearing)",
+      "MUT-PG-3 FK dropped -> founded_by-only user delete SUCCEEDS, one dangling attribution (RESTRICT load-bearing)",
+      "MUT-PG-4/5/6 the invited_by / >1-rows / NULL-actor-fallback backfill variants WOULD move HS / H2 / HN - the 2d / 2b / 2c assertions discriminate",
+      "PG-S1-5 REAL CONCURRENCY via dblink: two backend sessions, same subject; session 2 BLOCKS on the carrier while session 1 holds its transaction (dblink_is_busy = 1), then fails 23505 after session 1 commits; exactly ONE organization survives"
+    ],
+    "ordinary_user_negative_control": { "sqlstate": "42501", "message": "new row violates row-level security policy for table \"organizations\"", "not_23502": true, "not_23503": true, "wall_proven": "PRE-EXISTING orgs_insert_super_admin RLS policy - S1 did not weaken the bootstrap wall and does not solve ordinary-user bootstrap" }
+  },
+
+  "KTC_EXIT": {
+    "criterion": "v1.0.2 S1_KTC_EXIT_CRITERION.POSITIVE_EXIT_CRITERION - POST-GROWTH failing gate-id set on tests/eval/stella-release/hosted-baseline-gate.test.ts EXACTLY { hosted-baseline-rehearsal-ready }; 'the six baseline gates all pass' MUST reproduce 'AssertionError: expected [ Array(1) ] to deeply equal []'",
+    "measured_by_execution": { "FAILING_GATE_ID_SET": ["hosted-baseline-rehearsal-ready"], "all_pass_signature": "AssertionError: expected [ Array(1) ] to deeply equal [] (hosted-baseline-gate.test.ts:18)", "four_words_signature": "AssertionError: expected false to be true (hosted-baseline-gate.test.ts:95) - KTC-02, whose every()-collapsed signature alone proves nothing; the SET above is the discriminator", "rehearsalFresh": false, "unitCount": 79, "superuserFreeUnits": 79, "firstProvisioningPlannable": true, "literalRowSources": 4 },
+    "base_state": "7/7 GREEN at START_HEAD; the rehearsal condition reappears only after growth because artifacts/baseline-rehearsal/latest.json records digest d26ada68... for 78 units and that artefact is outside the S1 ceiling",
+    "no_new_KTC": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json NOT in the diff. No KTC-S1-* exists.",
+    "machine_control": "tests/tenancy/s1-founder-traceability.test.ts asserts the failing set is exactly ['hosted-baseline-rehearsal-ready'] on every run"
+  },
+
+  "MUTATION_CONTROLS": {
+    "method": "Each mutation applied to the WORKING tree with an anchor-checked, no-op-refusing edit; the named detector run; the file restored byte-exact (tracked files verified with git diff -U0, the untracked migration by sha256; pristine copies compared with cmp). Results recorded incrementally.",
+    "db_free_20_of_20_CAUGHT": [
+      "M-01 wrong founder attribution (SET founded_by = organization id) -> unit test 3 failed",
+      "M-02 historical self_service inference (backfill writes provenance) -> unit test 3 failed",
+      "M-03 multiple audit rows accepted as unique (count(*) = 1 dropped) -> unit test 3 failed",
+      "M-04 NULL actor promoted (non-null conjunct dropped + fallback) -> unit test 4 failed",
+      "M-05 invited_by IS NULL inference -> unit test 4 failed",
+      "M-06 hidden DML in a DO block -> unit test + baseline-manifest (SCAN_MISMATCH) + DML whitelist + gate spec: 12 failed",
+      "M-07 naive global founder uniqueness (provenance conjunct dropped) -> unit test failed",
+      "M-08 founded_by read by lib/auth/permissions.ts -> unit test PI-3 failed",
+      "M-09 live path drops foundingProvenance -> unit test 2 failed",
+      "M-10 W2-20 missing -> ods-scope test 5 failed",
+      "M-11 W2-21 missing -> ods-scope test 5 failed",
+      "M-12 W2-22 incorrectly registered -> ods-scope test 2 failed",
+      "M-13 W2-21 widened to db/prepared/** -> ods-scope test 3 failed",
+      "M-14 S1 id removed from the baseline-manifest DML whitelist -> 1 failed",
+      "M-15 S1 id removed from evidence.dmlUnits -> 3 failed",
+      "M-16 S1 id removed from EXPECTED_DML_UNITS -> gate spec Array(2) + unit-test exit-criterion: 4 failed",
+      "M-17 second unintended DML unit (UPDATE appended to 0065) -> baseline-manifest whitelist + gate spec dmlUnits + managed-compatible gate: 7 failed",
+      "M-18 stale count pin (journal-wrapper 79 -> 78) -> host + unit-test pin-form control: 2 failed",
+      "M-19 pin weakened to >= (operator-runner) -> unit-test pin-form control failed",
+      "M-20 N+1 copied instead of derived (80 -> 79) -> gate spec + unit test: 6 failed"
+    ],
+    "real_postgresql_mutation_run": "SEE MUTATION_CONTROLS_REAL_PG below",
+    "restoration": "All 20 controls restored. One earlier harness run was killed by the 10-minute tool cap mid-control M-13, leaving W2-21 transiently widened on disk; detected by byte-level diff, corrected, and the harness re-run with pristine snapshots (finding F-BW2-2). The committed candidate carries the exact declared patterns."
+  },
+
+  "MUTATION_CONTROLS_REAL_PG": {
+    "method": "One additional full disposable-cluster run with THREE mutations applied at once (each with distinct expected detectors), then byte-exact restoration (migration sha256 back to 0f038b23..., test file back to its pristine copy).",
+    "mutations": {
+      "MS1-1_naive_global_founder_uniqueness": "carrier predicate reduced to WHERE founded_by IS NOT NULL (provenance conjunct dropped) in 0066",
+      "MS1-2_invited_by_inference": "backfill source replaced by organization_members WHERE invited_by IS NULL in 0066",
+      "wall_vacuity_attempt": "the ordinary-user probe made to supply a NON-EXISTENT founded_by so that a naive control could pass on 23503"
+    },
+    "result": "setup SUCCESS (the mutated migration applies), 6 of 31 probes FAILED, 28/35 tests, harness verdict FAILED, teardown SUCCESS, 0 leftovers",
+    "failing_probes_and_attribution": [
+      "S1-SCHEMA-3 carrier shape <- MS1-1 (index no longer predicates on founding_provenance)",
+      "PG-S1-2/PG-S1-1 <- MS1-1 (the platform-provenance organization CONSUMED uX's slot; the self-service founding was refused - exactly the naive-index defect the compiler warned about)",
+      "MUT-PG-5 <- MS1-1 (its own attribution of H2 to uF1 collides with H1 under the global index)",
+      "S1-BACKFILL-2d sentinel <- MS1-2 (HS attributed from invited_by IS NULL)",
+      "S1-BACKFILL-4 PG-S1-3 recomputation <- MS1-2 (attributed 2 vs recomputed 1)",
+      "S1-5 NULL-row count <- MS1-2 (left_NULL 4 instead of 5)"
+    ],
+    "wall_vacuity_attempt_outcome": "T-S1-WALL-1 STILL PASSED with 42501 + the RLS message: PostgreSQL evaluates row-level-security WITH CHECK before the FK trigger fires, so a dangling founder cannot pre-empt the wall. The probe's vacuity branch (caught IN ('23502','23503') -> RAISE 'VACUOUS') and its catch-all (caught <> '42501' -> RAISE) remain in the control; a NOT NULL or CHECK violation, which PostgreSQL evaluates BEFORE RLS, is excluded by construction because the probe supplies valid S1 values, and any such SQLSTATE would fail the catch-all.",
+    "restoration_verified": "sha256 of 0066 back to 0f038b236fd868b3..., tests/postgres/s1-founder-cardinality.pg.test.ts identical to its pristine copy (0 occurrences of the dead founder id)"
+  },
+
+  "GATES": {
+    "json_evidence_validation": "JSON.parse of this artefact and of the six governing artefacts OK",
+    "typecheck": "tsc --noEmit PASS",
+    "ods_prestate": "PASS",
+    "ods_scope": "pnpm ods:scope -- --base 78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d --protected-authority HPO-ODS-W2-20 --protected-authority HPO-ODS-W2-21 --allow <the 16 ceiling paths exactly> -> CHANGED_FILE_COUNT=95, PROTECTED_AUTHORIZED_PATH_COUNT=82, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0, UNAUTHORIZED_PATHS=0, ODS_SCOPE=PASS",
+    "secrets_scan": "CURRENT_TREE: no credential material found",
+    "authority_seal_verify": "NATIVE_RELATIONSHIPS=PASS AUTHORITY_SEAL_VERIFY=PASS",
+    "baseline_verify": "OK 79 units",
+    "journal_verify": "OK 80 wrappers",
+    "a1_status_verify": "OK",
+    "b0_observation_verify": "OK byte-identical",
+    "targeted_s1": "tests/tenancy/s1-founder-traceability.test.ts 21/21; tests/postgres/s1-founder-cardinality.pg.test.ts 35/35 (UELLIX_PG_TESTS=1)",
+    "ods_scope_tests": "tests/ods/ods-scope.test.ts 138/138 (--testTimeout=90000)",
+    "relevant_suites": "tests/hosted tests/eval tests/auth tests/admin-organization* tests/database-runtime-entrypoints tests/database-entrypoint-safety tests/ods/ods-controller tests/ods/authority-seal-verify tests/ods/w2-b5-scope-amendment tests/tenancy: 3607 passed, 33 skipped, 3 failed = the two registered KTC signatures + evidence-immutability (HEAD comparison, pre-commit only, F-BW2-3)",
+    "widest_suite_and_poststate": "SEE FINAL_SWEEP below"
+  },
+
+  "FINAL_SWEEP": {
+    "full_default_suite": "pnpm vitest run --testTimeout=90000 -> 387 files, 10360 passed, 305 skipped, 4 failed in 416.7 s",
+    "the_four_failures_classified": [
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts 'the six baseline gates all pass' - the registered KTC-01 signature '[ Array(1) ]' (post-growth rehearsal staleness, failing gate-id set exactly { hosted-baseline-rehearsal-ready })",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts 'reports baselineApplied ... as false' - the registered KTC-02 signature, same single cause",
+      "tests/hosted/evidence-immutability.test.ts 'artifacts/hosted-a1-status.json is unchanged' - HEAD-relative comparison, RED only while the regenerated artefact is uncommitted (F-BW2-3); re-verified GREEN after the candidate commit in the PR body",
+      "tests/hosted/hosted-managed-role-attributes.test.ts 'CREATE ROLE with the same negated attributes is permitted' - ENVIRONMENTAL: a leftover probe role uellix_cap_createprobe in the shared local Supabase container (created by an earlier interrupted run of that test) made its own CREATE ROLE fail with 'already exists', and the container's postgres role lacks the ADMIN option to drop it. Dropped with supabase_admin; the test then passes 9/9 on this tree. Unrelated to any S1 byte (F-BW2-7)."
+    ],
+    "no_other_failure": true,
+    "ods_poststate_pre_commit": "pnpm ods:poststate -- --base 78b2e7c... --protected-authority HPO-ODS-W2-20 --protected-authority HPO-ODS-W2-21 --allow <16 ceiling paths> --test tests/tenancy/s1-founder-traceability.test.ts --test tests/hosted/baseline-manifest.test.ts --test tests/hosted/baseline-journal-wrapper.test.ts --test tests/hosted/operator-runner.test.ts -> STEP typecheck=PASS, targeted-tests=PASS, secrets-scan=PASS, authority-seal-verify=PASS, ods-scope=PASS (CHANGED_FILE_COUNT=96, PROTECTED_AUTHORIZED_PATH_COUNT=82, violations 0, unauthorized 0), ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_INTEGRITY=PASS, ODS_POSTSTATE=PASS",
+    "final_drift": "git fetch origin --prune immediately before finalizing: origin/integration/commercial-v1 = 78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d = START_HEAD; `git log HEAD..origin/integration/commercial-v1` EMPTY. No BX-R3, Controller32 or any other writer landed; STOP_FOR_MIGRATION_SEQUENCE_DRIFT not triggered.",
+    "post_commit_obligations_reported_in_the_PR": ["pnpm ods:prestate --clean at the candidate HEAD/tree", "tests/hosted/evidence-immutability.test.ts GREEN against the committed a1 status", "candidate SHA and tree"]
+  },
+
+  "FILES_CHANGED": {
+    "count": "95 (12 modified tracked + 4 new + 79 journal)",
+    "modified": ["app/(authenticated)/app/onboarding/actions.ts", "artifacts/hosted-a1-status.json", "db/hosted/baseline-manifest.ts", "db/migrations/meta/_journal.json", "db/schema.ts", "scripts/ods-scope.ts", "tests/eval/stella-release/hosted-baseline-gate.test.ts", "tests/eval/stella-release/hosted-baseline-gate.ts", "tests/hosted/baseline-journal-wrapper.test.ts", "tests/hosted/baseline-manifest.test.ts", "tests/hosted/operator-runner.test.ts", "tests/ods/ods-scope.test.ts", "db/prepared/journal/* (78 regenerated)"],
+    "new": ["db/migrations/0066_multiorg_s1_founder_traceability.sql", "db/migrations/meta/0066_snapshot.json", "db/prepared/journal/079_0066_multiorg_s1_founder_traceability.sql", "tests/tenancy/s1-founder-traceability.test.ts", "tests/postgres/s1-founder-cardinality.pg.test.ts", "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json"],
+    "outside_ceiling": "NONE (ods:scope UNAUTHORIZED_PATHS=0)",
+    "explicitly_untouched": ["db/prepared/checkpoint-b0/observation.sql", "db/hosted/baseline-scanner.ts", "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json", "artifacts/hosted-a1-corroboration.json", "artifacts/baseline-rehearsal/latest.json", "lib/audit/logger.ts", "db/identity-context.ts", "lib/auth/**", "db/prepared/stella_*"]
+  },
+
+  "FINDINGS": {
+    "F-BW2-1_min_uuid": "NON-BLOCKING, FIXED BEFORE COMMIT. The first backfill draft used min(actor_user_id); PostgreSQL has no min(uuid). Caught by the real-PG control at setup ('function min(uuid) does not exist'), never by the DB-free suite - a concrete instance of why REAL_PG_CONTRACT is mandatory. Replaced by (array_agg(actor_user_id))[1] under HAVING count(*) = 1.",
+    "F-BW2-2_mutation_harness_kill": "NON-BLOCKING, CORRECTED. A mutation harness run exceeded the 10-minute tool cap and was killed during M-13, leaving HPO-ODS-W2-21 widened to db/prepared/** in the working tree. Detected by byte-level `git diff -U0 scripts/ods-scope.ts` (count greps had missed it), restored to the declared pattern, and every touchable file re-verified byte-exact. Recorded so an auditor can see the transient state existed and was closed before the candidate commit.",
+    "F-BW2-3_evidence_immutability_is_HEAD_relative": "NON-BLOCKING, EXPECTED. tests/hosted/evidence-immutability.test.ts asserts artifacts/hosted-a1-status.json equals the blob at HEAD, so it is RED in the uncommitted tree and GREEN after the candidate commit (re-verified in FINAL_SWEEP).",
+    "F-BW2-4_audit_verbs_not_emitted": "DEFERRED, OUT OF CEILING. MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json AUDIT_VERBS names tenancy.organization.founded and tenancy.founded_by.backfilled for S1, with the carrier's adequacy FUTURE_MEASUREMENT_REQUIRED (U-7). lib/audit/logger.ts's closed AuditAction union is NOT an authorized S1 path, so no new verb can be registered here. What S1 records instead: the live founding act keeps writing the existing organization.created row (the MO-11 deterministic source) with foundedBy and foundingProvenance in afterJson; the backfill's attributed/left-NULL outcome is recorded in this artefact and is recomputable by PG-S1-3. Emitting the named verbs remains an obligation on whichever node is granted lib/audit/logger.ts.",
+    "F-BW2-5_live_coverage_unmeasured": "DEFERRED, NO ACCESS. Historical coverage (rows attributed vs left NULL) was measured on the disposable fixture only. Staging/production are not reachable from this lane and CONTROLLER_DB_EXECUTION is DISABLED; the hosted apply of 0066 is a separate governed act whose runner can record the real counts. LIVE_DATA_ROLE: such a measurement can never upgrade historical provenance.",
+    "F-BW2-6_windows_spawn_flake": "ENVIRONMENTAL, PRE-EXISTING (v1.0.21 F-10). The real-CLI tests in tests/ods/ods-scope.test.ts and tests/ods/ods-poststate.test.ts time out at vitest's 5000 ms default on this host (pnpm spawn 3.3-3.6 s); 138/138 with --testTimeout=90000.",
+    "F-BW2-7_leftover_probe_role_in_local_stack": "ENVIRONMENTAL, CLOSED. tests/hosted/hosted-managed-role-attributes.test.ts failed once in the full sweep because its own probe role uellix_cap_createprobe survived an earlier interrupted run in the shared local Supabase container and the container's postgres role cannot drop it (no ADMIN option). Dropped via supabase_admin; 9/9 afterwards. No S1 byte is involved; recorded so an auditor running the full suite on a similarly dirty local stack does not attribute it to S1.",
+    "BLOCKING_FINDINGS": 0,
+    "UNKNOWN_FINDINGS": 0
+  },
+
+  "R3_R4_HISTORY": {
+    "form": "APPEND-ONLY. Everything above this section is the R2 record as it landed in commit 15870d0 and is preserved verbatim, including its CI-red observation and its v1.0.2 singleton exit criterion. Nothing earlier is reworded or retroactively greened.",
+    "R2_CANDIDATE": { "sha": "15870d0caa83eeae83ea156582de1e3529334bf5", "tree": "65505e3e68e39ba34d138e7a6bd71c5542eae1f1", "merge_base_with_integration": "78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d" },
+    "R2_GITHUB_CI_BEFORE": {
+      "run": "34067110654 (job 101577699745, `pnpm test:unit` on ubuntu)",
+      "conclusion": "FAILURE - 10356 passed, 2 failed, both in tests/eval/stella-release/hosted-baseline-gate.test.ts: 'the six baseline gates > all pass' (AssertionError: expected [ Array(1) ] to deeply equal [], failing gate hosted-baseline-rehearsal-ready with rehearsalFresh=false) and 'the four words this report may not say > reports baselineApplied ... as false - unconditionally' (AssertionError: expected false to be true)",
+      "other_gates": "credentials scan, ODS authority, lint, typecheck, generated artefacts PASS; M2 Real PostgreSQL Gate PASS; P1A Bootstrap Gate PASS; build SKIPPED"
+    },
+    "R3_CI_DIAGNOSIS": {
+      "lane": "LANE BW-R3 - S1-CI-FAILURE-DIAGNOSIS-AND-REMEDIATION-R3",
+      "verdict": "STOP_FOR_AUTHORITY_DELTA (F-BW3-1). Candidate untouched.",
+      "base_control": "Disposable worktree at 78b2e7c: hosted-baseline-gate spec + evidence-immutability 37/37, failing gate-id set [], rehearsalFresh=true. The two CI failures are therefore a deterministic consequence of S1's baseline growth (class A) that is simultaneously the exact registered KTC condition post-growth (class C) - and neither the evidence-immutability failure nor the leftover local probe role appeared on the clean Linux runner.",
+      "local_exact_ci_reproduction": "`pnpm test:unit` on this Windows host: 47 failures = 45 subprocess timeouts at the 5000 ms default (the documented spawn flake) + the same 2 deterministic assertions as CI.",
+      "doctrine_measured": "ci.yml runs the raw suite; scripts/ods-test-diff.ts only LABELS failures ('never converts a failure into a pass') and CI does not invoke it; no KTC-aware wrapper exists. Every previous growth lane closed the identical red state by regenerating artifacts/baseline-rehearsal/latest.json (W2-B4 4d177fc, W2-B5 85c0db1: runs b49eb50/2eea15e red, 63d3101 green). A registered KTC therefore never made a FINAL CI red.",
+      "reverted_measurement": "`pnpm baseline:rehearsal:local` (own container public.ecr.aws/supabase/postgres:17.6.1.143, --network none) applied 79/79 units, 18/18 postconditions, 0 leftovers, and changed exactly ONE tracked file with a 4-line delta; with it the gate spec was 7/7 and the failing set []. Reverted; tree re-proved 65505e3e. The path was outside the 16-path ceiling, hence the STOP.",
+      "authority_gap_closed_by": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json (HPO-ODS-W2-23, FUNCTION_J) + docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json, integrated in PR #91 (3bd86ce): artifacts/baseline-rehearsal/latest.json added as the 17th S1 path (CURRENT_STATE_GENERATED, third member of CLASS_4), FINAL exit criterion revised to failing gate-id set EXACTLY [], one forced literal in tests/tenancy/s1-founder-traceability.test.ts, append-only evidence extension. HPO-ODS-W2-23 is lineage-only (protected_grant null) and is NOT registered."
+    },
+    "R4_RECONCILIATION": {
+      "lane": "LANE BW-R4 - MULTIORG-S1-FOUNDER-TRACEABILITY-FINAL-GREEN-R4",
+      "integration_at_reconciliation": { "sha": "3bd86ce226de4f07a83085e348e32356bba746d9", "tree": "306bc1ead90d0c2c39e165b52cc4209c563ec649" },
+      "intervening_delta_since_merge_base": "Controller32 (d6f9ca6 / PR #89), S2 R1+R3 (fe57ec9, fb9dfcf, 68283b1 / PR #87), ODS v1.0.22 + tenancy v1.0.3 (9a446e2 / PR #91). Paths: 12 - all disjoint from S1's 96 (intersection EMPTY).",
+      "merge_tree_analysis": "`git merge-tree --write-tree 15870d0 3bd86ce` = a462887965cbe91d8c47ca35af903621d27ee49d with ZERO conflicts.",
+      "reconciliation_merge": { "sha": "3793f6e24685687a14b835105793cbcee16e7925", "tree": "a462887965cbe91d8c47ca35af903621d27ee49d", "parents": ["15870d0caa83eeae83ea156582de1e3529334bf5", "3bd86ce226de4f07a83085e348e32356bba746d9"], "method": "NORMAL MERGE (--no-ff). No rebase, no squash, no force-push. 15870d0 and 3bd86ce are both ancestors." },
+      "byte_identity_proofs": "Every integration-delta path (v1.0.22, v1.0.3, ods-controller.ts + its test, the six S2 files, the S2 evidence, the entrypoint inventory + test, route-authorization-boundary.test.ts) is blob-identical to origin/integration/commercial-v1; every S1 path (0066 migration, schema, manifest, ods-scope.ts, onboarding action, both S1 tests, a1 status) is blob-identical to 15870d0. Controller executes at 32 with v1.0.21 final, v1.0.22 unenumerated, v1.0.23 absent, CONTROLLER_DB_EXECUTION DISABLED (Controller33 not required for this implementation).",
+      "pre_remediation_re_measurement": "BASELINE_UNITS 79 (67 drizzle), journal 80 wrappers, drizzle journal 67 entries, PROTECTED_GRANTS 12 (W2-20, W2-21 present; W2-22, W2-23 absent), a1/b0/baseline/journal verify OK, rehearsal artefact digest d26ada68a8dd77e6b09d3f5da26a251ba8cf7c0d0489564342d39bbfcf4e00f6 / manifestApplied 78 (STALE), failing gate-id set EXACTLY ['hosted-baseline-rehearsal-ready'], S1 suites green except the two registered signatures."
+    },
+    "R4_REHEARSAL_REGENERATION": {
+      "generator_run": "pnpm baseline:rehearsal:local (scripts/baseline-rehearsal-local.ts), image public.ecr.aws/supabase/postgres:17.6.1.143, --network none, own disposable cluster",
+      "first_attempt": "ABORTED BY THE ENVIRONMENT, NOT BY THE GENERATOR: run concurrently with the real-PG S1 suite's own container on an 8 GB Docker host, the docker CLI process itself crashed (Go runtime allocation failure, `spawnSync docker UNKNOWN`) during teardown; the artefact was NOT written and one rehearsal container was left up. Classified causally (resource contention), the leftover removed (`docker rm -f`, 0 leftovers), and the run repeated ALONE.",
+      "demonstrations_all_true": ["PRISTINE cluster (0 uellix_* roles)", "RUN A failed at 0039 as predicted (historic defect still reproduced)", "RUN N1 failed at 0042 with 42704", "IDENTITY applied, canonical, 0 tables", "RUN B applied all 79 units", "0044 guard 42P01", "CHECKPOINT B0 clean (18/18)", "S1 post-baseline bootstrap", "PRESENT control created the 6th trigger", "0 leftover containers", "recorded: artifacts/baseline-rehearsal/latest.json"],
+      "tracked_file_effect": "EXACTLY ONE: artifacts/baseline-rehearsal/latest.json (4-line delta). Never hand-edited.",
+      "rehearsal_before": { "manifestDigest": "d26ada68a8dd77e6b09d3f5da26a251ba8cf7c0d0489564342d39bbfcf4e00f6", "manifestApplied": 78 },
+      "rehearsal_after": { "manifestDigest": "2578544e6c673cad5bab07f4e29d4363ba4ad4545a76a4862fe84df483f9dcd5", "manifestApplied": 79, "manifestFailedAt": null, "naiveFailedAt": "db/migrations/0039_grant_rls_helper_execution.sql", "postconditions": "18/18" },
+      "relation_that_binds": "manifestApplied === BASELINE_UNITS.length === 79 and manifestDigest === baselineManifestDigest() of the live manifest"
+    },
+    "R4_FINAL_GREEN_EXIT": {
+      "forced_literal": "tests/tenancy/s1-founder-traceability.test.ts: `expect(failed).toEqual(['hosted-baseline-rehearsal-ready'])` -> `expect(failed).toEqual([])` (exact set equality), plus the four rehearsal predicates asserted true. tests/eval/stella-release/hosted-baseline-gate.test.ts NOT modified. docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json NOT modified - KTC-01/-02 are dormant because their condition no longer occurs.",
+      "failing_gate_id_set_before": ["hosted-baseline-rehearsal-ready"],
+      "failing_gate_id_set_after": [],
+      "hosted_baseline_gate_spec_after": "7/7 (six gates evaluated, seven test cases - the binding oracle is the empty failing-id set)",
+      "github_ci_after": "Measured on the final PR #90 candidate after push and recorded in the PR body; a commit cannot record the CI conclusion of its own SHA."
+    },
+    "R4_MUTATION_CONTROLS": {
+      "method": "Pristine copies of the regenerated artefact and the advanced test taken BEFORE any mutation; each mutation applied to the working tree, the detector run, the files restored byte-exact; results written incrementally. Baseline (unmutated) run GREEN first (28/28 across the tenancy suite and the hosted-baseline-gate spec).",
+      "six_of_six_CAUGHT": [
+        "R4-M1 stale rehearsal artefact (the 15870d0-era file, 78 units, restored on disk) -> hosted-baseline-gate spec 2 failed + tenancy exit test failed",
+        "R4-M2 exit assertion weakened to a bound (failed.length <= 1) -> tenancy self-form guard failed",
+        "R4-M3 the superseded singleton literal instead of [] -> tenancy exit test failed (the real set is [])",
+        "R4-M4 hand-edited artefact, manifestApplied 79 -> 80 -> gate spec 2 failed + tenancy relation check failed",
+        "R4-M5 hand-edited artefact digest (one hex digit) -> gate spec 2 failed + tenancy freshness check failed",
+        "R4-M6 the known condition FILTERED out of the failing set before the comparison -> tenancy self-form guard failed (the derivation must be the unfiltered gate list)"
+      ],
+      "defect_found_and_fixed_by_the_baseline_run": "The first version of the self-form guard used a literal needle that matched its own occurrence, so the exit test failed unmutated and three 'caught' results were vacuous. Rebuilt with runtime-assembled needles, baseline re-proved green, all six mutations re-run. Recorded because a mutation battery whose baseline is red proves nothing.",
+      "not_re_run": "The R2 battery of 20 DB-free + 1 real-PG mutation controls was NOT re-run in full: the reconciliation merge touched no S1 implementation or test host (every S1 path is blob-identical to 15870d0), and R4 changed only artifacts/baseline-rehearsal/latest.json (generated), the one authorised literal in tests/tenancy/s1-founder-traceability.test.ts and this evidence artefact."
+    },
+    "R4_S1_REGRESSION_BATTERY": {
+      "real_postgresql": "tests/postgres/s1-founder-cardinality.pg.test.ts on the reconciled tree: 35/35 PASS (31 probes, 230.6 s under concurrent Docker load) - backfill cardinality, FK RESTRICT, partial unique carrier, platform provenance, CHECKs, ordinary-user 42501 RLS wall, super-admin preservation, dblink concurrency all re-proved; the rehearsal remediation changes no product or database semantics.",
+      "db_free": "tests/tenancy/s1-founder-traceability.test.ts 21/21 with the advanced literal; tests/hosted, tests/eval, tests/auth, tests/database-runtime-entrypoints.test.ts, tests/ods/ods-controller.test.ts GREEN (three hosted files - evidence-immutability, checkpoint-a1, hosted-managed-role-attributes - produced load artefacts once when run with everything at once and pass 111/112 when run alone; the same controlled-comparison classification v1.0.2 recorded)",
+      "verifiers": "baseline:verify OK 79 units; journal:verify OK 80 wrappers; a1:status:verify OK; b0:observation:verify OK byte-identical; hosted:verify OK 12 artefacts; typecheck clean; lint 0 errors (63 pre-existing warnings, none in an S1 path)"
+    }
+  },
+  "CANDIDATE": {
+    "commit_sha": "The commit that carries this artefact cannot record its own SHA; the candidate SHA and tree are recorded in the PR body and the lane report.",
+    "status": "CANDIDATE_AWAITING_INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT",
+    "PRODUCTION_PROMOTION": "NO",
+    "MAIN_UNCHANGED": true,
+    "READY_FOR_MERGE": "NO_PENDING_INDEPENDENT_AUDIT"
+  }
+}

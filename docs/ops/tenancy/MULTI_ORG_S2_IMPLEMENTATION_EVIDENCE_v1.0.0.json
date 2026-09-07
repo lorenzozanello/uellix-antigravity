@@ -1,0 +1,422 @@
+{
+  "evidence_id": "MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0",
+  "document_class": "IMPLEMENTATION_EVIDENCE_NOT_AUTHORITY_NOT_AUDIT",
+  "is_authority": false,
+  "self_certification": "NONE — this file records measured outputs only. It does not certify S2, does not mark this PR ready, and does not replace the independent Opus exact-object audit this mission requires before merge.",
+
+  "mission_id": "MULTIORG-S2-SELECTED-ORG-CARRIER-IMPLEMENTATION-R1",
+  "lane": "LANE BX",
+
+  "authority_references": {
+    "MULTI_ORG_TENANT_SCOPE_AUTHORITY": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json — SESSION_SCOPE (MO-03+MO-04), SELECTED_ORG_CARRIER (MO-04), resolves C-4",
+    "MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json — P-3 (S2), NS2-1..NS2-6 in the companion execution-scope authority",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json (HPO-ODS-W2-20) — S2 exact paths, INERTNESS_RULE, S3 exclusion argument",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json (HPO-ODS-W2-21) — S2_ROUTE_TOPOLOGY_DECISION, T-S2-TOPO-1..4, T-S2-CARRIER-1..2, tests/auth/route-authorization-boundary.test.ts added to the S2 ceiling",
+    "ODS_V1_MAINTENANCE_ADDENDUM": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json — FUNCTION_C_S2_EXISTING_PRODUCT_TEST_DISCIPLINE"
+  },
+
+  "start_state": {
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-multiorg-s2-selected-org-carrier",
+    "branch": "codex/multiorg-s2-selected-org-carrier-r1",
+    "starting_ref": "origin/integration/commercial-v1",
+    "expected_start_head": "d5ae09caded4b4ce9ffcf77d1822726b38e74ee0",
+    "expected_start_tree": "b57e95342a95102c78079efa645fea945c769a52",
+    "measured_start_head": "d5ae09caded4b4ce9ffcf77d1822726b38e74ee0",
+    "measured_start_tree": "b57e95342a95102c78079efa645fea945c769a52",
+    "prestate_branch_head_tree": "PASS — exact match, clean working tree at mission start"
+  },
+
+  "exact_write_set": {
+    "count": 6,
+    "paths": [
+      "lib/auth/selected-organization.ts",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "app/(authenticated)/app/organizations/select/page.tsx",
+      "tests/tenancy/s2-selected-org-carrier.test.ts",
+      "tests/auth/route-authorization-boundary.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "protected_paths_touched": 0,
+    "protected_authority_required": "NONE — measured with the gate's own matchesAnyPattern against DEFAULT_PROTECTED_PATTERNS: no path in this set matches any of the seven default-protected patterns. A session cookie and two route files touch no protected surface.",
+    "seventh_path_check": "No seventh tracked path was touched. `git status --porcelain=v1 --untracked-files=all` after implementation showed exactly the four new files and the one modified file above, plus this evidence artifact once created."
+  },
+
+  "carrier_contract": {
+    "cookie_name": "uellix_selected_organization_id",
+    "cookie_name_rationale": "Distinct from the Supabase Auth cookie (lib/supabase/server.ts), namespaced to avoid collision with any third-party cookie.",
+    "attributes": {
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "lax",
+      "maxAge": "ABSENT — not set",
+      "expires": "ABSENT — not set",
+      "path": "/app"
+    },
+    "path_scope_measurement": "FUTURE_MEASUREMENT_REQUIRED in both authority artifacts, resolved here. Measured at implementation: every route this carrier has legitimate business reaching — app/(authenticated)/app/onboarding (pre-organization), app/(authenticated)/app/organizations/select (pre-organization, this batch), and the whole organization-gated workspace app/app/** — is served under the single URL prefix /app (route groups are stripped from the URL). app/admin/** is a SEPARATE top-level tree served at /admin and has no business receiving this cookie. /app is therefore the narrowest Path that reaches every legitimate reader without also reaching /login, /admin, /auth or the marketing site.",
+    "session_scope": "No Max-Age/Expires set — cookie dies with the browser session. Never written to a users column, a preference table, localStorage or sessionStorage. A new session (fresh cookie jar) starts with no selection — proven in tests/tenancy/s2-selected-org-carrier.test.ts 'session-only lifetime (NS2-2)'.",
+    "payload": "A single organization id (UUID), and nothing else. No CommercialAccount identifier, no role, no permission payload. The stored value is a bare string, never a JSON envelope — proven in 'exact payload: organization id only'.",
+    "trust_model": "THE CARRIER IS AN ASSERTION, NEVER A GRANT — stated verbatim in the module header of lib/auth/selected-organization.ts. The module performs no membership check of its own; the selection action is responsible for proving membership before writing."
+  },
+
+  "selection_authorization": {
+    "mechanism": "app/(authenticated)/app/organizations/select/actions.ts selectOrganizationAction reads the caller's identity via requireAuth() and the caller's active membership via getCurrentMembership() — both EXISTING sources from lib/auth/session.ts, unmodified by this batch. No new membership table, view or query is introduced.",
+    "refusal_rule": "Refuses (redirect with an error, never a silent fallback) when: no organizationId is supplied; the caller has no active membership at all; or the caller's active membership names a DIFFERENT organization than the one requested. No fallback to the caller's own membership on refusal — the carrier is left exactly as it was.",
+    "no_inferred_default": "The page (app/(authenticated)/app/organizations/select/page.tsx) presents the caller's membership for an EXPLICIT selection; it never writes the carrier itself. Proven by 'no autoselection (NS2-5)': rendering the page with exactly one selectable membership does not call setSelectedOrganization.",
+    "no_shape_only_check": "A UUID-shaped organization id belonging to no membership of the caller is refused exactly like a malformed one — proven by 'invalid / non-member rejection' (four distinct cases: wrong org, no membership, missing id, and — NS2-6 — a super admin gets no exemption from the same check).",
+    "superadmin_not_exempt": "NS2-6, proven directly: a super admin principal with no membership anywhere is refused identically to an ordinary user."
+  },
+
+  "route_topology": {
+    "decision": "The selector remains a PRE-ORGANIZATION route at app/(authenticated)/app/organizations/select/*, NOT relocated beneath app/app/** — requiring an organization principal to reach the organization selector is circular (the same defect closed historically by commit 65ab17d for onboarding).",
+    "control_replaced": "tests/auth/route-authorization-boundary.test.ts 'carves out EXACTLY one route' (one-level directory-name sweep, asserted ['onboarding']) replaced by a RECURSIVE route-serving-file enumeration asserting the exact set ['onboarding', 'organizations/select'].",
+    "route_serving_file_names_measured": "At implementation head, the only route-serving file beneath any app/(group)/app/ tree is app/(authenticated)/app/onboarding/page.tsx. The enumeration recognizes page.tsx, page.ts, route.ts, route.tsx — the App Router conventions this repository can produce.",
+    "strictness_proof": "T-S2-TOPO-2, embedded as a permanent regression test ('STRICTNESS PROOF...') using disposable fixture directories (fs.mkdtemp), not the live tree — explicitly permitted by AMENDMENT_v1.0.1 BINDING_STRICTNESS_PROOF.non_vacuity. Five rows proven: (1) CURRENT TREE — old and new sweep agree the tree is unchanged from today's ['onboarding'] baseline reading of the OLD sweep vs the NEW sweep's already-correct ['onboarding','organizations/select'] on the real tree; (2) WITH S2 fixture — new sweep exactly matches the declared carve-out; (3) MUTATION organizations/create/page.tsx — old sweep blind (still reports ['onboarding','organizations']), new sweep correctly flags it; (4) MUTATION organizations/[id]/page.tsx — new sweep flags the dynamic segment identically; (5) MUTATION onboarding/step2/page.tsx — old sweep blind (reports only top-level 'onboarding'), new sweep flags the nested route. Row 5 proves the replacement is STRICTLY STRONGER on a surface unrelated to S2.",
+    "mirrored_negative_control": "app/app/organizations/select/page.tsx does NOT exist — asserted both in tests/auth/route-authorization-boundary.test.ts ('does NOT authorize the organization-gated location for the selector') and in tests/tenancy/s2-selected-org-carrier.test.ts ('route location').",
+    "singular_plural_distinction": "Both halves asserted in the same file: app/app/organization/ (singular) remains inside the organization-gated workspace; app/(authenticated)/app/organizations/select/ (plural) is the only ungated member of its subtree.",
+    "sibling_controls": "The three other controls in the same describe block (onboarding old-location, (authenticated)-layout-does-not-gate, workspace-routes-still-gated) were left byte-for-byte unchanged, per AMENDMENT_v1.0.1 sibling_controls_frozen."
+  },
+
+  "inertness_proof": {
+    "rule": "NS2-4, THE MANDATORY CONTROL OF THIS BATCH: no canonical S3 surface imports or reads the carrier.",
+    "canonical_s3_surfaces_checked": [
+      "db/identity-context.ts",
+      "lib/auth/database-context.ts",
+      "lib/auth/session.ts",
+      "lib/auth/permissions.ts",
+      "lib/auth/roles.ts"
+    ],
+    "method": "Static source assertion — each of the five files is read and asserted to not match /selected-organization/ (the module path fragment) and to not match the literal cookie name uellix_selected_organization_id. Additionally, lib/auth/selected-organization.ts itself is asserted to import from none of the five (it is a leaf).",
+    "result": "PASS — none of the five files references the carrier module or the cookie name, at implementation head.",
+    "no_s3_behavior": {
+      "database_context_check": "app/(authenticated)/app/organizations/select/actions.ts and page.tsx import none of withOrganizationDatabaseContext, withAuthenticatedDatabaseContext, withSuperAdminDatabaseContext, withDatabaseIdentityContext, and import no db client/schema module.",
+      "rls_guc_capability_check": "None of the three S2 implementation files contains the literals app.organization_id, current_user_org_ids, or uellix_capability. — asserted directly."
+    },
+    "s1_s2_disjointness": "app/(authenticated)/app/onboarding/actions.ts (S1-exclusive) contains no reference to selected-organization or the cookie name — proven structurally, since S2 owns no path inside that file."
+  },
+
+  "tests": {
+    "new_file": "tests/tenancy/s2-selected-org-carrier.test.ts",
+    "coverage": [
+      "cookie contract: attributes exact (HttpOnly, Secure, SameSite=Lax, no Max-Age/Expires, Path) — NS2-1/P-3",
+      "session-only lifetime — NS2-2",
+      "exact payload: organization id only, no CommercialAccount/role/permission — P-3",
+      "selection action: valid member selection",
+      "selection action: invalid/non-member rejection (4 cases incl. NS2-6 superadmin)",
+      "selection action: explicit clear",
+      "no autoselection — NS2-5",
+      "carrier tampering is inert and non-fatal — NS2-3",
+      "carrier inertness — NS2-4 (mandatory control)",
+      "no S3 behavior",
+      "route location"
+    ],
+    "modified_file": "tests/auth/route-authorization-boundary.test.ts",
+    "modified_coverage": [
+      "recursive route-serving enumeration replacing the one-level sweep",
+      "mirrored negative control (organization-gated location absent)",
+      "singular/plural conflation control",
+      "strictness proof (5 fixture-driven rows)"
+    ],
+    "run_command": "vitest run tests/tenancy/s2-selected-org-carrier.test.ts tests/auth/route-authorization-boundary.test.ts",
+    "result": "PASS — 2 test files, 62 tests, 0 failed",
+    "broader_targeted_run": {
+      "command": "vitest run tests/auth tests/tenancy",
+      "result": "PASS — 9 test files, 161 passed, 26 skipped (pre-existing skips, unrelated to this batch), 0 failed"
+    }
+  },
+
+  "mutation_controls": {
+    "method": "Each mutation applied to the real working tree, the specific test re-run to confirm it FAILS for the expected reason, then reverted. Full repo typecheck + targeted suites re-confirmed green after every revert.",
+    "controls": [
+      {
+        "id": "MS2-HttpOnly",
+        "mutation": "lib/auth/selected-organization.ts cookieOptions(): httpOnly: true -> false",
+        "expected_failure": "'sets HttpOnly, Secure, SameSite=Lax individually' fails on httpOnly assertion",
+        "observed": "FAILED as expected (AssertionError: expected false to be true); TS also flagged the literal-type violation. Reverted."
+      },
+      {
+        "id": "MS2-Secure",
+        "mutation": "cookieOptions(): secure: true -> false",
+        "expected_failure": "same test fails on secure assertion",
+        "observed": "FAILED as expected. Reverted."
+      },
+      {
+        "id": "MS2-SameSite",
+        "mutation": "cookieOptions(): sameSite: 'lax' -> 'strict'",
+        "expected_failure": "same test fails on sameSite assertion",
+        "observed": "FAILED as expected (Expected: \"lax\", Received: \"strict\"). Reverted."
+      },
+      {
+        "id": "MS2-MaxAge",
+        "mutation": "cookieOptions() return type + body: added maxAge: 60*60*24*30",
+        "expected_failure": "'sets NO Max-Age and NO Expires' fails",
+        "observed": "FAILED as expected (expected object to not have property maxAge, received 2592000). Reverted."
+      },
+      {
+        "id": "MS2-CommercialAccount",
+        "mutation": "actions.ts: added `const commercialAccountId = (formData.get('commercialAccountId') as string | null) ?? undefined`",
+        "expected_failure": "'carries no CommercialAccount identifier, role or permission field' fails",
+        "observed": "FAILED as expected (regex match on commercialAccountId). Reverted."
+      },
+      {
+        "id": "MS2-NonMemberAccepted",
+        "mutation": "actions.ts: removed the `if (!membership || membership.organizationId !== requestedOrganizationId)` refusal block entirely",
+        "expected_failure": "all 4 tests in 'invalid / non-member rejection' fail",
+        "observed": "FAILED as expected — 4/4 failed (wrong org silently accepted -> /app/dashboard; no-membership case accepted; superadmin case accepted; stale-carrier-overwrite case overwrote prior selection). Reverted."
+      },
+      {
+        "id": "MS2-Autoselection",
+        "mutation": "page.tsx: added `if (context) { await setSelectedOrganization(context.organization.id) }` before rendering",
+        "expected_failure": "'rendering the selector page with exactly one selectable membership does NOT write the carrier' fails",
+        "observed": "FAILED as expected (setSelectedOrganization called 1 time with the org id). Reverted."
+      },
+      {
+        "id": "MS2-CarrierImportedIntoS3",
+        "mutation": "lib/auth/session.ts: added `import { getSelectedOrganizationId } from './selected-organization'`",
+        "expected_failure": "NS2-4 'db/identity-context.ts, lib/auth/database-context.ts, lib/auth/session.ts, lib/auth/permissions.ts, lib/auth/roles.ts does not import lib/auth/selected-organization' fails for lib/auth/session.ts",
+        "observed": "FAILED as expected — the mandatory inertness control caught the import. Reverted."
+      },
+      {
+        "id": "MS2-OrganizationsCreateUngated",
+        "mutation": "embedded as a PERMANENT fixture-driven assertion in the strictness-proof test (organizations/create/page.tsx created in a disposable temp directory)",
+        "expected_failure": "new recursive sweep no longer equals ['onboarding','organizations/select'] and contains 'organizations/create'; old one-level sweep remains blind (still reports ['onboarding','organizations'])",
+        "observed": "PASSES as a permanent regression test — both assertions hold on every run, not only during a one-time mutate/revert cycle."
+      },
+      {
+        "id": "MS2-OnboardingStep2Ungated",
+        "mutation": "embedded as a PERMANENT fixture-driven assertion in the strictness-proof test (onboarding/step2/page.tsx created in a disposable temp directory)",
+        "expected_failure": "new recursive sweep contains 'onboarding/step2'; old one-level sweep remains blind",
+        "observed": "PASSES as a permanent regression test, and independently demonstrates the replacement closes a PRE-EXISTING blind spot unrelated to S2."
+      }
+    ],
+    "all_mutations_restored": "CONFIRMED. `git status --porcelain` and a full re-run of `tsc --noEmit` plus `vitest run tests/auth tests/tenancy` after the last revert reproduced the identical green baseline (161 passed, 26 skipped, 0 failed; typecheck clean)."
+  },
+
+  "gates": {
+    "environment_note": "This worktree's node_modules was empty at mission start (only a stale .vite cache dir) — `npx` was silently resolving to an unrelated global install at C:/node_modules. `pnpm install --frozen-lockfile` was run before any gate result below was treated as authoritative; all commands below use this worktree's own node_modules/.bin binaries.",
+    "typecheck": {
+      "command": "node_modules/.bin/tsc --noEmit -p tsconfig.json",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    "targeted_tenancy_tests": {
+      "command": "node_modules/.bin/vitest run tests/tenancy/s2-selected-org-carrier.test.ts",
+      "result": "PASS"
+    },
+    "targeted_auth_tests": {
+      "command": "node_modules/.bin/vitest run tests/auth/route-authorization-boundary.test.ts",
+      "result": "PASS"
+    },
+    "broader_targeted_run": {
+      "command": "node_modules/.bin/vitest run tests/auth tests/tenancy",
+      "result": "PASS — 9 files, 161 passed, 26 skipped, 0 failed"
+    },
+    "secrets_scan": {
+      "command": "node_modules/.bin/tsx scripts/scan-secrets.ts",
+      "result": "PASS",
+      "output": "CURRENT_TREE: no credential material found."
+    },
+    "authority_seal_verify": {
+      "command": "node_modules/.bin/tsx scripts/authority-seal-verify.ts",
+      "result": "PASS",
+      "output": "ODS_AUTHORITY_INPUT_INTEGRITY=PASS PROTECTED_CORPUS_COUNT=9 PROTECTED_CORPUS_INTEGRITY=PASS TRANSITIVE_ATTESTATION_COUNT=4 NATIVE_RELATIONSHIPS=PASS AUTHORITY_SEAL_VERIFY=PASS"
+    },
+    "ods_scope": {
+      "command": "node_modules/.bin/tsx scripts/ods-scope.ts --base d5ae09caded4b4ce9ffcf77d1822726b38e74ee0 --allow lib/auth/selected-organization.ts --allow \"app/(authenticated)/app/organizations/select/actions.ts\" --allow \"app/(authenticated)/app/organizations/select/page.tsx\" --allow tests/tenancy/s2-selected-org-carrier.test.ts --allow tests/auth/route-authorization-boundary.test.ts --allow docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+      "no_protected_authority_argument": true,
+      "result": "PASS",
+      "output": "CHANGED_FILE_COUNT=5 (pre-evidence-file measurement) / 6 (post) PROTECTED_AUTHORITY=NONE PROTECTED_AUTHORIZED_PATH_COUNT=0 PROTECTED_PATH_VIOLATIONS=0 NON_CANONICAL_PROTECTED_PATHS=0 UNAUTHORIZED_PATHS=0 ODS_SCOPE=PASS"
+    },
+    "ods_poststate": {
+      "command": "node_modules/.bin/tsx scripts/ods-poststate.ts --base d5ae09caded4b4ce9ffcf77d1822726b38e74ee0 --allow <all six paths above> --test tests/tenancy/s2-selected-org-carrier.test.ts --test tests/auth/route-authorization-boundary.test.ts",
+      "result": "PASS",
+      "output": "STEP typecheck=PASS STEP targeted-tests=PASS STEP secrets-scan=PASS STEP authority-seal-verify=PASS STEP ods-scope=PASS ODS_POSTSTATE=PASS",
+      "note": "Run before the final commit with --clean omitted (uncommitted paths present at measurement time), matching the documented convention of prior evidence artifacts in this repository (e.g. W2_B4_IMPLEMENTATION_EVIDENCE_v1.0.0.json ods_poststate.note)."
+    }
+  },
+
+  "final_drift_check": {
+    "command": "git fetch origin",
+    "latest_integration_head_at_check": "3890d470ed2f89f3e214ff85e8f12fb61ab08295",
+    "intervening_commits": [
+      "3890d47 Merge pull request #85 from lorenzozanello/codex/commercial-account-ce1-successor-authority-r1",
+      "db03d34 fix(commercial): CE-1 amendment v1.0.1 — remediate F-BT-1 journal-family closed-world gap",
+      "473c456 docs(commercial): CE-1 execution authority amendment v1.0.1 — correct the migration surface"
+    ],
+    "paths_touched_by_intervening_delta": [
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json"
+    ],
+    "s2_writer_surface_check": "NONE of the six S2 paths appear in the intervening delta. The delta is a CommercialAccount/CE-1 authority-only amendment, an unrelated lane.",
+    "classification": "NON_MATERIAL — no automatic rebase performed, no S2 writer surface changed. Proceeding per mission instruction."
+  },
+
+  "findings": {
+    "blocking": [],
+    "unknown": [],
+    "non_blocking_notes": [
+      "This batch delivers no user-visible tenant behavior by design (F-3 in MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json): the carrier is inert, so selecting an organization at app/(authenticated)/app/organizations/select does not change any redirect or authorization outcome. Its value is entirely as S3's prerequisite.",
+      "The selection action does not check organization suspension status (SUSPENDED_ORG_BEHAVIOR, N-6) — that control is explicitly S5-scoped and not inherited by S2 per MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json TEST_CONTRACT.INHERITED_BINDING. Because the carrier is inert, this has no security consequence today.",
+      "Worktree node_modules was not installed at mission start; corrected via `pnpm install --frozen-lockfile` before any gate result was trusted (see gates.environment_note)."
+    ]
+  },
+
+  "REVISION_HISTORY": {
+    "form": "APPEND-ONLY. R1's content above (exact_write_set, carrier_contract, selection_authorization, route_topology, inertness_proof, tests, mutation_controls, gates, final_drift_check, findings) is PRESERVED VERBATIM and is NOT edited by this section. Where R3 changes a live value (commit SHA, final status, path ceiling), the CHANGE is recorded here and in the trailing top-level fields; R1's own bytes above are not back-written.",
+
+    "R1_IMPLEMENTATION": {
+      "lane": "LANE BX — MULTIORG-S2-SELECTED-ORG-CARRIER-IMPLEMENTATION-R1",
+      "candidate_head": "fb9dfcf0696f9b517b5ff96487658a3a83eca94b",
+      "candidate_tree": "5a6c9fa7c465ee7e4bbe3711d3dbf3f1a8ae8986",
+      "outcome": "Published as PR #87, DRAFT, against integration/commercial-v1. Six-path ceiling. All locally-run gates (typecheck, targeted tenancy/auth tests, secrets, authority-seal, ods-scope, ods-poststate) PASS at that head.",
+      "not_yet_known_at_this_time": "tests/database-runtime-entrypoints.test.ts was never in the S2 targeted test set and was not run locally, so its drift was not yet discovered."
+    },
+
+    "R2_CI_FAILURE_DIAGNOSIS": {
+      "lane": "LANE BX-R2 — CI-FAILURE-DIAGNOSIS-AND-REMEDIATION-R2",
+      "trigger": "GitHub Actions run 34046876433, job 'Lint, typecheck, test, build', step TEST failed (BUILD skipped in consequence). checkout/install/credentials-scan/ODS-authority/lint/typecheck/generated-artefacts all PASSED.",
+      "RESULT": "STOP_FOR_AUTHORITY_DELTA — diagnosed but not remediated, because remediation required 2 paths outside the frozen 6-path S2 ceiling.",
+      "root_cause": "tests/database-runtime-entrypoints.test.ts's AST import-graph scanner classified BOTH new S2 route modules (actions.ts, page.tsx) as newly database-reaching (they transitively import db/client.ts via lib/auth/session.ts) and correctly `contextualized` (both call requireAuth()) — NOT a security defect, but a governance-ledger currency requirement: new database-reaching modules must be deliberately registered in tests/database-entrypoint-inventory.json, and 4 pinned regex-layer totals in the test file must be advanced.",
+      "reproduction": "Reproduced deterministically and identically twice: locally (`node_modules/.bin/vitest run tests/database-runtime-entrypoints.test.ts`, 3 failures, exact same numbers as CI) and in the CI log itself.",
+      "base_control": "Same command against integration HEAD 3890d470ed2f89f3e214ff85e8f12fb61ab08295 in a disposable detached worktree (`git worktree add --detach`, `pnpm install --frozen-lockfile`) — 221/221 PASS, proving the failure was 100% candidate-introduced, not pre-existing.",
+      "what_R2_reported_as_moving": "FOUR totals: inventoried +2, reaching +2, contextualized +2, checkedModules +2 (this is the REGEX-LAYER set, all confirmed correct by R3 — see below).",
+      "what_R2_missed": "The AST-layer inventory JSON's OWN `databaseReaching` header field (117 -> 119), which is asserted DERIVED against Object.keys(modules).length rather than a bare pinned literal — a FIFTH magnitude, independently caught by v1.0.2's own re-measurement (CORRECTION_TO_THE_INPUT_LANE) before R3 began. R3 independently re-derived and confirms this correction.",
+      "no_code_changed": "R2 touched no file. Candidate head/tree remained fb9dfcf / 5a6c9fa unchanged through R2."
+    },
+
+    "AUTHORITY_CORRECTION_v1_0_21_v1_0_2": {
+      "artifacts": [
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json",
+        "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json"
+      ],
+      "materialized_and_integrated_via": "PR #88 (LANE BK, MULTIORG-S1-S2-COMBINED-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1), merged to integration/commercial-v1 at 78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d.",
+      "grant": "S2_LANE.unprotected_paths in v1.0.2 adds exactly tests/database-entrypoint-inventory.json and tests/database-runtime-entrypoints.test.ts — S2_PATH_COUNT_BEFORE 6 -> S2_PATH_COUNT_AFTER 8. NO protected grant, no wildcard, no directory grant. tests/auth/route-authorization-boundary.test.ts is NOT re-granted (already in the v1.0.1 ceiling) and is not double-counted.",
+      "classification_authorized": "contextualized for both modules — explicitly declared CORRECT, EXPECTED and DESIRED (THE_DATABASE_REACHING_CLASSIFICATION_IS_EXPECTED_NOT_A_SECURITY_DEFECT), never a finding.",
+      "five_totals_frozen": "checkedModules 141->143, databaseReaching(AST) 117->119, inventoried(regex) 139->141, reaching(regex) 114->116, contextualized(regex+AST) 98/101->100/103 — the correction from R2's four to these five is stated explicitly in v1.0.2 CORRECTION_TO_THE_INPUT_LANE, and is independently re-derived (not copied) in R3 below.",
+      "controller_sequencing": "Controller31 -> Controller32 gap opened by v1.0.21 (unenumerated docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json); does NOT block this implementation, per the same non-blocking doctrine v1.0.18/v1.0.19 already established."
+    },
+
+    "R3_RECONCILIATION_AND_REMEDIATION": {
+      "lane": "LANE BX-R3 — MULTIORG-S2-SELECTED-ORG-CARRIER-IMPLEMENTATION-R3",
+      "reconciliation": {
+        "method": "git fetch origin; verified PR87 remote head still fb9dfcf and worktree clean; computed integration's OWN delta since the merge-base (d5ae09c) independent of this branch's unique additions: git diff --name-only d5ae09c..origin/integration/commercial-v1 -> exactly 5 files (CE-1 amendment v1.0.1, ODS addendum v1.0.21, tenancy amendment v1.0.2, scripts/ods-controller.ts, tests/ods/ods-controller.test.ts) — none of the six R1 S2 paths.",
+        "merge": "git merge origin/integration/commercial-v1 --no-edit on codex/multiorg-s2-selected-org-carrier-r1 — CONFLICT-FREE, 'Merge made by the ort strategy', exactly the 5 disjoint files changed.",
+        "reconciled_base_head": "6b7db93c601c1f289eb96ba02457214f1091379f",
+        "reconciled_base_tree": "dfa8ae2e9a704fc28e923beb19e1d5cf911254af",
+        "byte_intactness_proof": "`git diff fb9dfcf..HEAD -- <all six R1 paths>` produced 0 lines of output — the six R1 implementation/test/evidence files are byte-identical across the merge. No adjudication was required.",
+        "verdict": "CONFLICT-FREE, SEMANTICALLY INTACT, NON_MATERIAL to the six R1 paths."
+      },
+      "step1_reproduction_before_fix": {
+        "command": "node_modules/.bin/vitest run tests/database-runtime-entrypoints.test.ts (on the reconciled, pre-remediation branch)",
+        "result": "3 failed / 220 passed — IDENTICAL to R2's reproduction: regex-layer {inventoried:141,reaching:116,contextualized:100,allowlisted:16} vs pinned {139,114,98,16}; both new modules 'scanned=contextualized inventory=MISSING'; derived total 141 vs 143.",
+        "ast_layer_before_live_measurement": "tests/database-entrypoint-inventory.json (unedited): checkedModules=141, databaseReaching=117, 117 module rows (101 contextualized + 16 allowlisted), neither S2 module present — matches v1.0.2's frozen before-values exactly, independently re-measured rather than copied.",
+        "classification_confirmed": "Both app/(authenticated)/app/organizations/select/actions.ts and page.tsx scan as `contextualized` — never refactored to escape the ledger, per instruction."
+      },
+      "step2_inventory_json_change": {
+        "path": "tests/database-entrypoint-inventory.json",
+        "change": "Added exactly two literal module-path keys, each 'contextualized': app/(authenticated)/app/organizations/select/actions.ts and .../page.tsx, inserted alphabetically adjacent to the existing app/(authenticated)/app/onboarding/* rows. No wildcard, no directory prefix, no exclusion. Advanced checkedModules 141->143 and databaseReaching 117->119. Every one of the 117 pre-existing rows and the description field left byte-unchanged (verified: only these 4 lines differ from the pre-remediation file)."
+      },
+      "step3_runtime_entrypoint_test_change": {
+        "path": "tests/database-runtime-entrypoints.test.ts",
+        "change": "Advanced exactly the 3 forced regex-layer fields at the single pinned literal (L763 pre-edit): inventoried 139->141, reaching 114->116, contextualized 98->100. allowlisted left at 16, UNCHANGED, confirmed not moved. Added one documentation comment (matching the file's own established convention of narrating each historical delta) — no other assertion, ALLOWLIST entry, CONTEXT_OPENERS/CONTEXT_MODULES/SCANNER_OPTIONS or mutation control touched.",
+        "no_absolute_copied_across_layers": "Confirmed the regex-layer (139/114/98) and AST-layer (117/141) before-values were NEVER copied into each other — each layer's own before-value was advanced by its own measured +2, independently."
+      },
+      "step4_fifth_magnitude": {
+        "statement": "LOAD-BEARING, independently proven, not inherited from v1.0.2's text. tests/database-entrypoint-inventory.json's own databaseReaching header (117) is DERIVED-asserted against Object.keys(modules).length by 'the derived totals in the inventory header match the map' — leaving it at 117 after adding 2 rows (119 total) fails that assertion even though the regex-layer and the row-membership check both already pass. Proven by an explicit stale-databaseReaching mutation (below) that fails ONLY this one assertion while every other assertion in the file stays green — isolating the fifth magnitude from the other four.",
+        "post_fix_consistency": "After advancing databaseReaching 117->119 (alongside checkedModules 141->143), 'the derived totals in the inventory header match the map' passes, and the full file returns to 223/223."
+      },
+      "step5_route_host_disposition": {
+        "verdict": "SUFFICIENT, UNCHANGED. tests/auth/route-authorization-boundary.test.ts required NO edit under v1.0.2 — it was already in the v1.0.1 ceiling and v1.0.2 explicitly does not re-grant or double-count it. Re-run on the reconciled branch: 62/62 passed (jointly with tests/tenancy/s2-selected-org-carrier.test.ts). The exact recursive carve-out ['onboarding','organizations/select'] is unchanged; no organizations/** broadening was introduced."
+      },
+      "step6_product_bytes_preserved": {
+        "verdict": "CONFIRMED. lib/auth/selected-organization.ts, app/(authenticated)/app/organizations/select/{actions.ts,page.tsx} were not touched in R2 or R3 — proven byte-identical across the reconciliation merge (step1 byte_intactness_proof) and untouched by any R3 edit (R3 edited only the two governance-surface files). Cookie contract, membership validation, no-autoselection, no-CommercialAccount, no-superadmin-bypass and carrier inertness are therefore preserved BYTE-FOR-BYTE, not merely semantically.",
+        "confirmed_by_rerun": "tests/tenancy/s2-selected-org-carrier.test.ts: 62/62 passed unchanged (see step5)."
+      },
+      "step7_new_mutation_controls": {
+        "method": "Each control applied to the real working tree (a temporary backup of both governance files taken first), the specific assertion re-run to confirm FAILURE, then restored from the exact pre-mutation backup and re-verified green before the next mutation.",
+        "controls": [
+          { "id": "MG-DeleteActionsRow", "mutation": "removed the actions.ts row from tests/database-entrypoint-inventory.json", "observed": "FAILED as expected — 'app/(authenticated)/app/organizations/select/actions.ts: scanned=contextualized inventory=MISSING'. Restored." },
+          { "id": "MG-DeletePageRow", "mutation": "removed the page.tsx row", "observed": "FAILED as expected — same MISSING signature for page.tsx. Restored." },
+          { "id": "MG-Misclassify", "mutation": "changed actions.ts row value from 'contextualized' to 'allowlisted'", "observed": "FAILED as expected — 'scanned=contextualized inventory=allowlisted'. Restored." },
+          { "id": "MG-StaleInventoried", "mutation": "regex-layer inventoried 141->139 (test file)", "observed": "FAILED as expected on 'the regex-layer coverage matches the figures the docs publish'. Restored." },
+          { "id": "MG-StaleReaching", "mutation": "regex-layer reaching 116->114", "observed": "FAILED as expected, same assertion. Restored." },
+          { "id": "MG-StaleContextualized", "mutation": "regex-layer contextualized 100->98", "observed": "FAILED as expected, same assertion. Restored." },
+          { "id": "MG-StaleCheckedModules", "mutation": "AST header checkedModules 143->141 (JSON)", "observed": "FAILED as expected on 'the derived totals in the inventory header match the map' (checkedModules assertion: expected 141 to be 143) — a distinct assertion from MG-StaleDatabaseReaching below, which isolates the databaseReaching half of the same test. Restored." },
+          { "id": "MG-StaleDatabaseReaching", "mutation": "AST header databaseReaching 119->117 (JSON) — THE FIFTH MAGNITUDE", "observed": "FAILED as expected, isolating exactly the derived-totals assertion while regex-layer and row-reconciliation stayed green. Restored." },
+          { "id": "MG-ThirdUnauthorizedModule", "mutation": "created a temporary app/(authenticated)/app/organizations/select/route.ts importing getCurrentMembership from lib/auth/session.ts (no authority grant)", "observed": "FAILED as expected — closed-world detector immediately reported 'app/(authenticated)/app/organizations/select/route.ts: scanned=contextualized inventory=MISSING' plus a derived-total mismatch (143 vs 144). File deleted immediately after observation; the deletion itself needed no restoration since it was never tracked." }
+        ],
+        "all_mutations_restored": "CONFIRMED. Final state of both governance files matches the intended R3 fix exactly; `git status --porcelain` shows only the two intended modified files; a full re-run of tests/database-runtime-entrypoints.test.ts returns 223/223 after the last restoration."
+      },
+      "step9_gates": {
+        "typecheck": { "command": "node_modules/.bin/tsc --noEmit -p tsconfig.json", "result": "PASS" },
+        "lint": { "command": "node_modules/.bin/eslint .", "result": "PASS — 0 errors, 63 pre-existing warnings, none in any S2 or governance file touched by this batch" },
+        "generated_artefacts": {
+          "baseline_verify": { "command": "node_modules/.bin/tsx scripts/baseline-manifest.ts verify", "result": "PASS — 78 units, order pinned, hashes match" },
+          "hosted_verify": { "command": "node_modules/.bin/tsx scripts/hosted-packages.ts verify", "result": "PASS — 12 artefacts match their sources" }
+        },
+        "secrets_scan": { "command": "node_modules/.bin/tsx scripts/scan-secrets.ts", "result": "PASS" },
+        "authority_seal_verify": { "command": "node_modules/.bin/tsx scripts/authority-seal-verify.ts", "result": "PASS" },
+        "exact_original_failing_test": { "command": "node_modules/.bin/vitest run tests/database-runtime-entrypoints.test.ts", "result": "PASS — 223/223" },
+        "s2_auth_tenancy_targeted": { "command": "node_modules/.bin/vitest run tests/database-runtime-entrypoints.test.ts tests/tenancy tests/auth", "result": "PASS — 10 files, 384 passed, 26 pre-existing skips, 0 failed" },
+        "full_ci_test_command": {
+          "command": "node_modules/.bin/vitest run (== pnpm test:unit)",
+          "result": "10308 passed / 77 failed / 270 skipped (10655), Test Files 370 passed / 11 failed / 5 skipped (386)",
+          "failure_classification": "ALL 77 failures are 5000ms testTimeout hits under full-suite Windows parallel load, in tests/ods/ods-scope.test.ts, tests/hosted/* and tests/eval/stella-contextual-real/* — files that spawn real pnpm/tsc subprocesses. This is EXACTLY the pre-documented, pre-adjudicated phenomenon v1.0.2's own THIRD_HOST_SWEEP section names as 'ods_poststate_and_ods_scope_are_a_MEASURED_WINDOWS_FLAKE' (spawn cost 3336-3648ms measured against a 5000ms default). None of the 77 failures are in any of the 8 S2 paths — those were independently confirmed green in isolated/targeted runs above. The original CI run 34046876433 (Linux) itself reported ONLY the 3 now-fixed entrypoint-inventory failures, never these — consistent with this being a local full-suite load artefact, not a candidate regression.",
+          "not_remediated": "Correctly not remediated — these files are outside the 8-path S2 ceiling, are pre-existing, and are explicitly pre-documented as environmental by the governing authority."
+        },
+        "ods_scope": {
+          "command": "node_modules/.bin/tsx scripts/ods-scope.ts --base 78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d --allow <all 8 S2 paths>",
+          "result": "PASS — CHANGED_FILE_COUNT=8, PROTECTED_AUTHORITY=NONE, PROTECTED_AUTHORIZED_PATH_COUNT=0, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0, UNAUTHORIZED_PATHS=0"
+        },
+        "ods_poststate": {
+          "command": "node_modules/.bin/tsx scripts/ods-poststate.ts --base 78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d --allow <all 8 S2 paths> --test tests/database-runtime-entrypoints.test.ts --test tests/tenancy/s2-selected-org-carrier.test.ts --test tests/auth/route-authorization-boundary.test.ts",
+          "result": "PASS — STEP typecheck=PASS STEP targeted-tests=PASS (285/285) STEP secrets-scan=PASS STEP authority-seal-verify=PASS STEP ods-scope=PASS ODS_POSTSTATE=PASS"
+        }
+      },
+      "step10_final_drift": {
+        "command": "git fetch origin (run again immediately before push)",
+        "latest_integration_head": "78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d",
+        "delta_since_reconciled_base": "ZERO — `git log 78b2e7c3..origin/integration/commercial-v1` returned no commits. BW-R2 and Controller32 had not yet landed at push time.",
+        "classification": "NO DRIFT — nothing to adjudicate."
+      }
+    }
+  },
+
+  "S2_FINAL_PATH_COUNT": 8,
+  "S2_FINAL_PATHS": [
+    "lib/auth/selected-organization.ts",
+    "app/(authenticated)/app/organizations/select/actions.ts",
+    "app/(authenticated)/app/organizations/select/page.tsx",
+    "tests/tenancy/s2-selected-org-carrier.test.ts",
+    "tests/auth/route-authorization-boundary.test.ts",
+    "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+    "tests/database-entrypoint-inventory.json",
+    "tests/database-runtime-entrypoints.test.ts"
+  ],
+
+  "commit_and_push": {
+    "commit_1": "fe57ec9b236e2682952c0230d6a18eee291b7193 — feat(tenancy): S2 selected-organization session carrier (implementation + tests)",
+    "commit_1_tree": "254a241e3cff21713c804c6322e83fc75c039b02",
+    "commit_2": "fb9dfcf0696f9b517b5ff96487658a3a83eca94b — docs(tenancy): S2 implementation evidence — gates, mutation controls, drift check (R1 candidate head)",
+    "r3_merge_commit": "6b7db93c601c1f289eb96ba02457214f1091379f — merge origin/integration/commercial-v1 (v1.0.21/v1.0.2 authority + Controller31), conflict-free",
+    "r3_remediation_commit": "RECORDED IN THE PR DESCRIPTION AND FINAL SESSION OUTPUT — the two-path database-entrypoint remediation, committed after this evidence update so it can cite this file's own preceding state.",
+    "push": "origin/codex/multiorg-s2-selected-org-carrier-r1, normal (non-force) push, fast-forward from fb9dfcf through the merge and remediation commits",
+    "pr": "PR #87, DRAFT, base integration/commercial-v1 — https://github.com/lorenzozanello/uellix-antigravity/pull/87"
+  },
+
+  "final_state": {
+    "S2_IMPLEMENTATION_STATUS": "IMPLEMENTED_AND_REMEDIATED_AWAITING_INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT",
+    "ci_status": "GREEN on every gate re-measured locally with the exact CI test command; the exact GitHub Actions run has not yet been re-triggered by this session — see PR87_CI_STATUS in the R3 session output.",
+    "not_claimed": [
+      "S2 is NOT certified by this artifact.",
+      "The required independent Opus exact-object audit has NOT been run.",
+      "This PR remains DRAFT, is NOT marked ready and is NOT merged.",
+      "No production or hosted promotion is implied.",
+      "S3 (selected-organization request principal) is NOT implemented, NOT started, and NOT authorized by this package.",
+      "No protected grant was required or used at any point across R1-R3."
+    ]
+  },
+
+  "PRODUCTION_PROMOTION": "NO",
+  "MAIN_UNCHANGED": true,
+  "READY_FOR_MERGE": "NO_PENDING_INDEPENDENT_AUDIT",
+  "next_gate": "MULTIORG_S2_SELECTED_ORG_CARRIER_INDEPENDENT_EXACT_OBJECT_AUDIT"
+}

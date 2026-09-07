@@ -99,11 +99,14 @@ function makeChain(resolvedValue: unknown) {
 }
 
 // Query order inside buildComposerContext (assignments carry sourceId: null,
-// so the per-source lookup loop issues no query):
+// so the per-source lookup loop issues no query). W2-B5 removed the
+// sroi_run_reviews readiness lookup entirely (readinessScore is now a
+// hardcoded `undefined` — see lib/pipeline/sroi-readiness.ts), so there is
+// no "review" query left to queue here:
 // 1. project  2. report  3. narrative  4. stakeholders  5. outcomes
 // 6. indicators  7. evidence  8. proxy assignments  9. filter sets
 // 10. latest calc run  [11. line items — only when a run exists]
-// 12. readiness review  13. report sections
+// 12. report sections
 async function setupSequence(calcRunRows: unknown[]) {
   const { db } = await import('@/db/client')
   const selectMock = vi.mocked(db.select)
@@ -124,8 +127,7 @@ async function setupSequence(calcRunRows: unknown[]) {
     chain.mockReturnValueOnce(makeChain([{ id: 'li-1' }, { id: 'li-2' }]) as never) // 11. line items
   }
 
-  chain.mockReturnValueOnce(makeChain([]) as never) // 12. review
-  chain.mockReturnValueOnce(makeChain([]) as never) // 13. sections
+  chain.mockReturnValueOnce(makeChain([]) as never) // 12. sections
 }
 
 const build = () => buildComposerContext(PROJECT_ID, ORG_ID, REPORT_ID)

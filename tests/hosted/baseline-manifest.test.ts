@@ -91,20 +91,31 @@ describe('the baseline manifest describes the corpus that is actually checked in
   // HPO-ODS-W2-09 (COMMERCIAL-V1-WAVE2-RECONCILIATION successor remediation) —
   // + 0061_fib_disposition_governance_function_execute_revocation.sql, the
   // REVOKE-only B0-17 security successor to sealed 0060 = 74 units, 62 Drizzle.
-  it('has 74 units: 62 Drizzle, 2 Supabase, 10 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(74)
+  // HPO-ODS-W2-12 (W2-B4 assumptions and causality) —
+  // + 0062_fib_methodological_assumptions.sql (FIBIU-15, FIBDB-012/013/047)
+  // and 0063_fib_counterfactual_assessments.sql (FIBIU-14, FIBDB-011/046) =
+  // 76 units, 64 Drizzle.
+  // HPO-ODS-W2-17 (W2-B5 governed models) —
+  // + 0064_fib_readiness_assessments.sql (FIBIU-17, FIBDB-015) and
+  // 0065_fib_sensitivity_model.sql (FIBIU-18, FIBDB-017/018/048) =
+  // 78 units, 66 Drizzle.
+  // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability) —
+  // + 0066_multiorg_s1_founder_traceability.sql (MO-10/MO-11/MO-01) =
+  // 79 units, 67 Drizzle.
+  it('has 79 units: 67 Drizzle, 2 Supabase, 10 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(79)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(62)
+    expect(byKind('drizzle-migration')).toBe(67)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(10)
   })
 
-  it('numbers ordinals 1..74 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..79 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 74 }, (_, i) => i + 1),
+      Array.from({ length: 79 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(74)
+    expect(new Set(BASELINE_ORDER).size).toBe(79)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
@@ -322,7 +333,13 @@ describe('Phase 5 — data', () => {
   // W2-B2-R1 (R-B2-03) — 0056 genuinely added: two literal global-catalog
   // seeds (70 registry rows as registry_version 1.1.0 + the governed model
   // append), same class as 0040 and 0055.
-  it('0018, 0040, 0041, 0047, 0048, 0055 and 0056 are the only units with DML', () => {
+  // Multi-org S1 (HPO-ODS-W2-20/W2-21, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21
+  // FUNCTION_H) - 0066 genuinely added: the MO-11 founder-traceability backfill
+  // is ONE top-level UPDATE deriving founded_by from audit_logs rows - the same
+  // structural-backfill class as 0018/0041/0047/0048, zero literal row sources,
+  // zero rows on an empty database. Scanner-visible by instruction: a DO block
+  // or CTE-wrapped form would evade this whitelist and is prohibited.
+  it('0018, 0040, 0041, 0047, 0048, 0055, 0056 and 0066 are the only units with DML', () => {
     const withDml = BASELINE_UNITS.filter(
       (u) => scanBaselineSql(readOrThrow(u.file)).dmlStatements.length > 0,
     )
@@ -334,6 +351,7 @@ describe('Phase 5 — data', () => {
       '0048_fib_evidence_versions.sql',
       '0055_fib_proxy_material_change_registry.sql',
       '0056_fib_proxy_material_fields_editability.sql',
+      '0066_multiorg_s1_founder_traceability.sql',
     ])
 
     const facts0018 = scanBaselineSql(readOrThrow('db/migrations/0018_redundant_firebird.sql'))

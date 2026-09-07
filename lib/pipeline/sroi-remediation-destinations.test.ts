@@ -3,13 +3,18 @@
 // RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix contract tests.
 //
 // These are navigation contract tests, not calculation tests: they prove
-// that every one of the 12 SROI readiness blockers points at a real,
+// that every one of the 14 SROI readiness blockers points at a real,
 // canonical remediation destination (project-scoped route or same-page DOM
 // anchor), and that the eligibility logic these CTAs are attached to was
 // not touched by this repair (RE-U1-F04 repairs navigation, not blocker
 // eligibility). Route/anchor existence is checked against the real
 // filesystem and real page source, not a snapshot, so a later rename of a
 // route or anchor without updating the blocker fails this suite.
+//
+// W2-B4 (HPO-ODS-W2-12) extends the frozen 12-row RE-U4 matrix with two
+// FIBIU-15/16 blockers — causal_chain_insufficient and
+// assumption_unresolved — both routing to real project-scoped pages, not
+// same-page anchors (neither has a DOM anchor on the calculation page).
 
 import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
@@ -35,6 +40,8 @@ function baseInput(overrides: Partial<ReadinessIssueInput> = {}): ReadinessIssue
     invalidFilters: [],
     proxiesMissingUsd: [],
     overAllocatedOutcomes: [],
+    causalChainInsufficientOutcomes: [],
+    unresolvedMaterialAssumptions: [],
     ...overrides,
   }
 }
@@ -46,6 +53,10 @@ const CALCULATION_PAGE_PATH = path.join(
 const EVIDENCE_ROUTE_PATH = path.join(
   process.cwd(),
   'app/app/projects/[projectId]/pipeline/evidence/page.tsx',
+)
+const NARRATIVE_ROUTE_PATH = path.join(
+  process.cwd(),
+  'app/app/projects/[projectId]/pipeline/narrative/page.tsx',
 )
 const PROXIES_ROUTE_PATH = path.join(
   process.cwd(),
@@ -160,12 +171,30 @@ const ROWS: Array<{
     kind: 'anchor',
     anchor: 'funder-attribution',
   },
+  // FIBIU-16 (FIBC-020, W2-B4). The theory-of-change graph UI is surfaced
+  // inside the narrative page (theoryOfChange.actions.ts has no dedicated
+  // route) — same destination as assumption_unresolved below.
+  {
+    messageKey: 'causal_chain_insufficient',
+    trigger: { causalChainInsufficientOutcomes: ['outcome-3'] },
+    actionPath: (projectId) => `/app/projects/${projectId}/pipeline/narrative`,
+    actionLabel: 'Ir a teoría de cambio',
+    kind: 'route',
+  },
+  // FIBIU-15 (FIBC-019, NEG-15-2, W2-B4).
+  {
+    messageKey: 'assumption_unresolved',
+    trigger: { unresolvedMaterialAssumptions: ['assumption-1'] },
+    actionPath: (projectId) => `/app/projects/${projectId}/pipeline/narrative`,
+    actionLabel: 'Ir a supuestos',
+    kind: 'route',
+  },
 ]
 
 describe('SROI remediation-destination matrix (RE-U1-F04 / RE-U4)', () => {
-  it('maps exactly the 12 blockers RE-U4 froze — no fewer, no more, no unknown key', () => {
-    expect(ROWS).toHaveLength(12)
-    expect(new Set(ROWS.map((r) => r.messageKey)).size).toBe(12)
+  it('maps exactly the 14 blockers (12 RE-U4 + 2 W2-B4/FIBIU-15/16) — no fewer, no more, no unknown key', () => {
+    expect(ROWS).toHaveLength(14)
+    expect(new Set(ROWS.map((r) => r.messageKey)).size).toBe(14)
   })
 
   describe.each(ROWS)('$messageKey', (row) => {
@@ -217,6 +246,7 @@ describe('SROI remediation-destination matrix (RE-U1-F04 / RE-U4)', () => {
   it('destination routes referenced by any blocker exist on disk', () => {
     expect(existsSync(EVIDENCE_ROUTE_PATH)).toBe(true)
     expect(existsSync(PROXIES_ROUTE_PATH)).toBe(true)
+    expect(existsSync(NARRATIVE_ROUTE_PATH)).toBe(true)
   })
 
   it('does not invent a top-level /app/proxies route', () => {
@@ -231,13 +261,13 @@ describe('SROI remediation-destination matrix (RE-U1-F04 / RE-U4)', () => {
     }
   })
 
-  it('raises all 12 blockers together without cross-contamination when every condition is triggered', () => {
+  it('raises all 14 blockers together without cross-contamination when every condition is triggered', () => {
     // missing_investment (hasInvestment=false) and invalid_investment_amount
     // (hasInvestment=true, amount invalid) are mutually exclusive in real
     // readiness data — an assignment set never has "no investment at all"
     // AND "an invalid investment amount" simultaneously. This combined case
     // exercises the realistic "investment exists but is invalid" branch,
-    // matching all 12 message keys via the *other* 11 rows' independent
+    // matching all 14 message keys via the *other* 13 rows' independent
     // triggers plus invalid_investment_amount standing in for the pair.
     const everything: Partial<ReadinessIssueInput> = Object.assign(
       {},
@@ -263,6 +293,8 @@ describe('SROI remediation-destination matrix (RE-U1-F04 / RE-U4)', () => {
         invalidFilters: ['assign-d'],
         proxiesMissingUsd: ['proxy-b'],
         overAllocatedOutcomes: ['outcome-b'],
+        causalChainInsufficientOutcomes: ['outcome-c'],
+        unresolvedMaterialAssumptions: ['assumption-x'],
       }),
     )
     const byKey = new Map(issues.map((i) => [i.messageKey, i]))
@@ -276,5 +308,7 @@ describe('SROI remediation-destination matrix (RE-U1-F04 / RE-U4)', () => {
     expect(byKey.get('invalid_filters')?.itemIds).toEqual(['assign-d'])
     expect(byKey.get('proxies_missing_usd')?.itemIds).toEqual(['proxy-b'])
     expect(byKey.get('over_allocated_outcomes')?.itemIds).toEqual(['outcome-b'])
+    expect(byKey.get('causal_chain_insufficient')?.itemIds).toEqual(['outcome-c'])
+    expect(byKey.get('assumption_unresolved')?.itemIds).toEqual(['assumption-x'])
   })
 })

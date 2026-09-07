@@ -742,7 +742,36 @@ describe('every entry point that can reach the database opens an identity contex
     // allowlisted. COMMERCIAL-V1-WAVE2-RECONCILIATION-R1 (HPO-ODS-W2-08):
     // figures re-measured fresh against the reconciled tree, matching the
     // AST-layer inventory update.
-    }).toEqual({ inventoried: 131, reaching: 106, contextualized: 90, allowlisted: 16 })
+    //
+    // 131 -> 135, 106 -> 110, contextualized 90 -> 94, allowlisted UNCHANGED
+    // at 16: W2-B4 (HPO-ODS-W2-12, FIBIU-14/15) adds FOUR new .action.ts
+    // entry points — calculation/runs/recordCounterfactualAssessment.action.ts
+    // and narrative/{createMethodologicalAssumption,linkAssumptionToObject,
+    // updateMethodologicalAssumption}.action.ts. Each calls
+    // runWithOrganizationAccess around its one governed write, exactly like
+    // its siblings in the same directories, so all four are `contextualized`,
+    // not allowlisted: +4 inventoried, +4 reaching, +4 contextualized.
+    //
+    // 135 -> 139, 110 -> 114, contextualized 94 -> 98, allowlisted UNCHANGED
+    // at 16: W2-B5 (HPO-ODS-W2-17, FIBIU-17/18) adds FOUR new .action.ts
+    // entry points under calculation/runs/ — computeReadinessAssessment,
+    // registerSensitivityCandidates, dispositionSensitivityCandidate,
+    // recordSensitivityScenario. Each calls runWithOrganizationAccess around
+    // its one governed read/write, exactly like their W2-B4 siblings in the
+    // same directory, so all four are `contextualized`, not allowlisted:
+    // +4 inventoried, +4 reaching, +4 contextualized.
+    //
+    // 139 -> 141, 114 -> 116, contextualized 98 -> 100, allowlisted UNCHANGED
+    // at 16: MULTIORG-S2 (HPO-ODS-W2-21/v1.0.2, docs/ops/tenancy/
+    // MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json
+    // S2_INVENTORY_INSTRUCTIONS) adds TWO new entry points — the
+    // selected-organization pre-organization selector's
+    // app/(authenticated)/app/organizations/select/{actions.ts,page.tsx}.
+    // Both import requireAuth/getCurrentMembership from lib/auth/session.ts,
+    // which imports db/client.ts, and both call requireAuth() around every
+    // database-touching region, so both are `contextualized`, not
+    // allowlisted: +2 inventoried, +2 reaching, +2 contextualized.
+    }).toEqual({ inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

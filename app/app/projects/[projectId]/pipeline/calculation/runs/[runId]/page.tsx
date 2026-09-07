@@ -13,9 +13,15 @@ import {
 } from '@/lib/pipeline/sroi-calculation';
 import { getLatestSufficiencyDeterminationsByOutcomeIds } from '@/lib/pipeline/evidence-sufficiency';
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
+import { getReadinessAssessment, READINESS_CRITERIA_COUNT } from '@/lib/pipeline/sroi-readiness';
+import { getRunSensitivityCompleteness, listSensitivityCandidates, listSensitivityScenarios, computeScenarioEnvelope } from '@/lib/pipeline/sroi-sensitivity';
 import { createSroiRunReviewAction } from '../createSroiRunReview.action';
 import { recordEvidenceSufficiencyDeterminationAction } from '../recordEvidenceSufficiencyDetermination.action';
 import { recordOutcomeMonetizationDispositionAction } from '../recordOutcomeMonetizationDisposition.action';
+import { computeReadinessAssessmentAction } from '../computeReadinessAssessment.action';
+import { registerSensitivityCandidatesAction } from '../registerSensitivityCandidates.action';
+import { dispositionSensitivityCandidateAction } from '../dispositionSensitivityCandidate.action';
+import { recordSensitivityScenarioAction } from '../recordSensitivityScenario.action';
 import { revalidatePath } from 'next/cache';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -127,6 +133,19 @@ export default async function RunDetailPage({
       // policies enforce; the service and the database remain authoritative.
       canRecordDisposition: hasRole(ctx.membership.role, 'analyst'),
       runApproved: (await listSroiRunReviews(projectId, runId)).some((r) => r.status === 'approved'),
+      // FIBIU-17/18 (W2-B5) — RD-BLK-1: these are governed reads, not optional
+      // enrichment. No catch here: an authorization/RLS/unexpected failure
+      // must fail the whole page render (same as every other read above),
+      // never be swallowed into a synthesized empty/complete state. There is
+      // no reliable error taxonomy to distinguish "genuinely nothing to
+      // report" from "could not be verified" at this boundary, so the only
+      // safe behavior is to let a thrown error propagate.
+      // FIBIU-17 (FIBC-021, W2-B5) — canonical readiness; null until computed.
+      readiness: await getReadinessAssessment(projectId, runId),
+      // FIBIU-18 (FIBC-022, W2-B5) — governed sensitivity register/scenarios.
+      sensitivityCandidates: await listSensitivityCandidates(projectId, runId),
+      sensitivityScenarios: await listSensitivityScenarios(projectId, runId),
+      sensitivityCompleteness: await getRunSensitivityCompleteness(projectId, runId),
     };
   });
 
@@ -144,12 +163,28 @@ export default async function RunDetailPage({
     coverage,
     canRecordDisposition,
     runApproved,
+    readiness,
+    sensitivityCandidates,
+    sensitivityScenarios,
+    sensitivityCompleteness,
   } = loaded;
 
   const { run, lineItems, snapshotJson } = detail;
   const outcomeTitleById = new Map((outcomes ?? []).map((o) => [o.id, o.title]));
   const noRatioReason = (snapshotJson as { noRatioReason?: string | null } | null)?.noRatioReason ?? null;
   const hasRatio = run.sroiRatio !== null && run.sroiRatio !== undefined;
+  const readinessBandLabel: Record<string, string> = {
+    initial_preparation: 'Preparación inicial',
+    partial_preparation: 'Preparación parcial',
+    advanced_preparation: 'Preparación avanzada',
+    high_preparation: 'Preparación alta',
+  };
+  const scenarioEnvelope = sensitivityScenarios.length === 0
+    ? null
+    : computeScenarioEnvelope(
+        { netSocialValueExact: run.netSocialValue ?? '0', sroiRatioExact: run.sroiRatio },
+        sensitivityScenarios.map((s) => s.resultJson as { netSocialValueExact: string; sroiRatioExact: string | null })
+      );
 
   async function handleRecordDisposition(formData: FormData) {
     'use server';
@@ -179,10 +214,38 @@ export default async function RunDetailPage({
     'use server';
     await createSroiRunReviewAction(projectId, runId, {
       status: formData.get('status') as string,
-      readinessScore: formData.get('readinessScore')
-        ? Number(formData.get('readinessScore'))
-        : undefined,
       overallNotes: (formData.get('overallNotes') as string) || undefined,
+    });
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation/runs/${runId}`);
+  }
+
+  async function handleComputeReadiness() {
+    'use server';
+    await computeReadinessAssessmentAction(projectId, runId);
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation/runs/${runId}`);
+  }
+
+  async function handleRegisterSensitivityCandidates() {
+    'use server';
+    await registerSensitivityCandidatesAction(projectId, runId);
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation/runs/${runId}`);
+  }
+
+  async function handleDispositionCandidate(formData: FormData) {
+    'use server';
+    await dispositionSensitivityCandidateAction(projectId, formData.get('candidateId') as string, {
+      disposition: formData.get('disposition') as string,
+      rationale: formData.get('rationale') as string,
+    });
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation/runs/${runId}`);
+  }
+
+  async function handleRecordScenario(formData: FormData) {
+    'use server';
+    await recordSensitivityScenarioAction(projectId, runId, {
+      scenarioKind: formData.get('scenarioKind') as string,
+      substitutions: [{ candidateId: formData.get('candidateId') as string, alternativeValue: formData.get('alternativeValue') as string }],
+      reason: formData.get('reason') as string,
     });
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation/runs/${runId}`);
   }
@@ -734,6 +797,117 @@ export default async function RunDetailPage({
       </Card>
       </section>
 
+      {/* FIBIU-17 (FIBC-021, W2-B5) — canonical readiness */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Preparación (Readiness)</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Puntaje canónico computado por el sistema — {READINESS_CRITERIA_COUNT} criterios en diez dimensiones. Nunca aprueba ni bloquea el cálculo; ningún humano ni Stella puede asignarlo.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {readiness ? (
+            <div className="flex items-center gap-4">
+              <p className="text-2xl font-bold text-foreground tabular-nums font-ibm-plex-mono">
+                {Number(readiness.globalScore).toFixed(1)}
+              </p>
+              <div>
+                <Badge variant="info">{readinessBandLabel[readiness.band] ?? readiness.band}</Badge>
+                <p className="text-xs text-muted-foreground mt-1">Modelo {readiness.readinessModelVersion}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground italic">Aún no se ha computado la preparación para esta corrida.</p>
+              {canRecordDisposition && (
+                <form action={handleComputeReadiness}>
+                  <button type="submit" className="text-sm px-3 py-1.5 rounded-md border border-input bg-background hover:bg-muted">
+                    Computar preparación
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* FIBIU-18 (FIBC-022, W2-B5) — governed sensitivity register/scenarios */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Análisis de sensibilidad gobernado</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Registro de candidatos por insumo realmente usado; cada candidato requiere disposición humana. Ningún umbral universal determina materialidad — el sistema calcula deltas, el revisor determina y registra materialidad.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {sensitivityCandidates.length === 0 ? (
+            canRecordDisposition && (
+              <form action={handleRegisterSensitivityCandidates}>
+                <button type="submit" className="text-sm px-3 py-1.5 rounded-md border border-input bg-background hover:bg-muted">
+                  Registrar candidatos de sensibilidad
+                </button>
+              </form>
+            )
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                {sensitivityCompleteness.complete
+                  ? 'Registro completo: sin candidatos pendientes, cada variation_required tiene al menos un escenario.'
+                  : `Incompleto — ${sensitivityCompleteness.pendingCandidateIds.length} pendiente(s), ${sensitivityCompleteness.variationRequiredWithoutScenarioIds.length} sin escenario.`}
+              </p>
+              <div className="divide-y divide-border border rounded-md">
+                {sensitivityCandidates.map((c) => (
+                  <div key={c.id} className="px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-foreground">{c.candidateKey}</span>
+                      <Badge variant={c.disposition === 'pending' ? 'warning' : 'success'}>{c.disposition}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Valor base: {c.baseValue ?? '—'}</p>
+                    {c.disposition === 'pending' && canRecordDisposition && !runApproved && (
+                      <form action={handleDispositionCandidate} className="flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="candidateId" value={c.id} />
+                        <select name="disposition" className={INPUT_CLASS} style={{ maxWidth: 260 }}>
+                          <option value="variation_required">Requiere variación</option>
+                          <option value="no_additional_variation_required">No requiere variación adicional</option>
+                        </select>
+                        <input name="rationale" placeholder="Justificación (requerida)" className={INPUT_CLASS} style={{ maxWidth: 320 }} />
+                        <button type="submit" className="text-xs px-2 py-1.5 rounded-md border border-input bg-background hover:bg-muted">
+                          Registrar disposición
+                        </button>
+                      </form>
+                    )}
+                    {c.disposition === 'variation_required' && canRecordDisposition && !runApproved && (
+                      <form action={handleRecordScenario} className="flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="candidateId" value={c.id} />
+                        <input type="hidden" name="scenarioKind" value="one_at_a_time" />
+                        <input name="alternativeValue" placeholder="Valor alternativo" className={INPUT_CLASS} style={{ maxWidth: 200 }} />
+                        <input name="reason" placeholder="Razón (requerida)" className={INPUT_CLASS} style={{ maxWidth: 320 }} />
+                        <button type="submit" className="text-xs px-2 py-1.5 rounded-md border border-input bg-background hover:bg-muted">
+                          Registrar escenario
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {scenarioEnvelope && (
+                <div className="rounded-md border p-3 bg-muted/30">
+                  <p className="text-xs font-medium text-muted-foreground">Envolvente de escenario (scenario envelope) — nunca un intervalo de confianza</p>
+                  <p className="text-sm text-foreground mt-1">
+                    Valor neto: {scenarioEnvelope.netSocialValueMinExact} – {scenarioEnvelope.netSocialValueMaxExact}
+                  </p>
+                  {scenarioEnvelope.sroiRatioMinExact && (
+                    <p className="text-sm text-foreground">
+                      Ratio SROI: {scenarioEnvelope.sroiRatioMinExact} – {scenarioEnvelope.sroiRatioMaxExact}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Reviews */}
       <Card>
         <CardHeader>
@@ -763,8 +937,11 @@ export default async function RunDetailPage({
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant={reviewBadge.variant}>{reviewBadge.label}</Badge>
                       {review.readinessScore !== null && review.readinessScore !== undefined && (
+                        // FIBIU-17 (FIBC-021, W2-B5) — FIBDB-016 stage B: historical
+                        // manual score, retained but LEGACY_NON_AUTHORITATIVE. Never
+                        // written by a new review; only pre-B5 rows carry it.
                         <span className="text-xs text-muted-foreground">
-                          Score: {review.readinessScore}/100
+                          Score legado (no autoritativo): {review.readinessScore}/100
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground/60 ml-auto">
@@ -828,20 +1005,6 @@ export default async function RunDetailPage({
                     {canApproveThisRun && <option value="approved">Aprobado</option>}
                     <option value="flagged">Marcado</option>
                   </select>
-                </div>
-                <div>
-                  <label htmlFor="review-score" className="block text-xs font-medium text-foreground">
-                    Score de Preparación (0–100)
-                  </label>
-                  <input
-                    id="review-score"
-                    name="readinessScore"
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="ej. 80"
-                    className={INPUT_CLASS}
-                  />
                 </div>
               </div>
               <div>

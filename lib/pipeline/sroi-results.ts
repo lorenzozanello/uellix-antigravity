@@ -32,11 +32,14 @@ import {
 // Helper schemas
 // ---------------------------------------------------------------------------
 
+// FIBIU-17 (FIBC-021, W2-B5): readinessScore is REMOVED — no human path may
+// write authoritative readiness (NEG-17-1). Canonical readiness is computed
+// exclusively by lib/pipeline/sroi-readiness.ts. A caller-supplied
+// readinessScore is rejected at the schema boundary, not silently dropped.
 const ReviewInputSchema = z.object({
   status: z.enum(['draft', 'reviewed', 'approved', 'flagged']).default('draft'),
-  readinessScore: z.number().int().min(0).max(100).optional(),
   overallNotes: z.string().optional(),
-});
+}).strict();
 
 type ReviewInput = z.infer<typeof ReviewInputSchema>;
 
@@ -463,7 +466,6 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
       calculationRunId: runId,
       reviewerId: ctx.user.id,
       status: validated.status,
-      readinessScore: validated.readinessScore,
       overallNotes: validated.overallNotes,
       createdBy: ctx.user.id,
       createdAt: new Date(),
@@ -521,7 +523,6 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
     .update(sroiRunReviews)
     .set({
       status: validated.status,
-      readinessScore: validated.readinessScore,
       overallNotes: validated.overallNotes,
       reviewedAt: new Date(),
       updatedAt: new Date(),

@@ -1,0 +1,469 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.20",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20",
+  "authority_class": "ODS_V1_MAINTENANCE_ADDENDUM_INSTRUCTION_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-21",
+  "hpo_mission_id": "MULTIORG-S1-S2-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1",
+  "predecessor_hpo_mission_id": "MULTIORG-S1-S2-FIRST-EXECUTION-AUTHORITY-R1",
+  "materialization_date": "2026-09-06",
+  "supersedes": null,
+  "refines": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json - REFINES, never supersedes. Every grant, prohibition and semantic v1.0.19 froze remains in force byte-unchanged. This addendum only ADDS the paths and the one protected grant v1.0.19's own grants provably cannot be exercised without.",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "companion_execution_scope_authority": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "node_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+  "node_test_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+
+  "purpose": "Make the multi-organization S1 and S2 implementation grants opened by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json ACTUALLY EXECUTABLE. v1.0.19 granted three actions whose required paths it did not authorize: registering HPO-ODS-W2-20, shipping an ordinary migration, and creating a pre-organization route. This addendum authorizes exactly those missing paths, declares the one additional protected grant an ordinary migration mechanically forces, and issues the narrow existing-test instructions those two lanes require. It opens no new node, changes no product semantic and widens no existing grant.",
+
+  "scope_note": "This addendum authorizes NO implementation code and NO schema change of its own. It changes exactly two new documentation artifacts and nothing else. It does not edit scripts/ods-scope.ts, scripts/ods-controller.ts, any test host, any migration, any prepared unit, db/hosted/baseline-manifest.ts, package.json, or any frozen or sealed artifact. The protected grant it declares is registered by the S1 implementing mission under its own branch, not by this mission - the same deferral form v1.0.17, v1.0.18 and v1.0.19 used. It allocates exactly one ODS ordinal and exactly one HPO grant, and allocates no following lineage item, no migration ordinal, no journal-wrapper ordinal, no prepared-unit id and no baseline-manifest position.",
+
+  "anchors": {
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-stella-multiorg-s1-s2-successor-compiler-r1",
+    "branch": "codex/multiorg-s1-s2-successor-authority-r1",
+    "INTEGRATION_SHA": "a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303",
+    "INTEGRATION_TREE": "57952b24486ce0fae84e3977e8fbc56aed895db7",
+    "integration_branch": "integration/commercial-v1",
+    "start_head_equals_latest_remote_head": true,
+    "intervening_delta": "MEASURED. Two commits since the predecessor compiler's START_HEAD 1c1dccf1dfec593cc6a94ae6e857b36720b7e775: fa22d32 (Controller30 - enumerate v1.0.19, 29 -> 30) and its merge a8a61a1 (PR #82). `git diff --name-status 1c1dccf a8a61a1` returns EXACTLY TWO paths, scripts/ods-controller.ts and tests/ods/ods-controller.test.ts. Every fact surface this mission depends on was proven byte-unchanged across that delta by per-path diff: scripts/ods-scope.ts, docs/ops/ods/, docs/ops/tenancy/, db/migrations/, db/prepared/journal/, db/hosted/baseline-manifest.ts, tests/hosted/baseline-manifest.test.ts, tests/auth/route-authorization-boundary.test.ts, tests/ods/ods-scope.test.ts, docs/ops/fib/, docs/ops/pc01b/ and docs/ops/im01b/ - all zero changed files. The delta is therefore material ONLY in that it DISCHARGES this mission's own hard precondition, and is non-material to every other fact used here.",
+    "main_frozen_sha": "UNCHANGED - main is not touched by this mission",
+    "controller30_merge_sha": "a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303",
+    "controller_live_immutable_count_at_INTEGRATION_SHA": 30,
+    "protected_grants_count_at_INTEGRATION_SHA": 10,
+    "default_protected_patterns_count_at_INTEGRATION_SHA": 7,
+    "highest_migration_ordinal_at_INTEGRATION_SHA": "db/migrations/0065_fib_sensitivity_model.sql",
+    "highest_journal_wrapper_at_INTEGRATION_SHA": "db/prepared/journal/078_0065_fib_sensitivity_model.sql",
+    "controller_status": "CONTROLLER 30 CLOSED_AUDITED_INTEGRATED - v1.0.19 enumerated as the final append-only member"
+  },
+
+  "controller_30_precondition_discharged": {
+    "REQUIRED_BY": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json controller_sequencing_rule.enforcement - 'A mission that finds v1.0.19 unenumerated in the live Controller and attempts to allocate v1.0.20 or HPO-ODS-W2-21 ... MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.'",
+    "method": "The live IMMUTABLE_BY_CONVENTION array literal was extracted from scripts/ods-controller.ts at INTEGRATION_SHA and measured deterministically. Not read from PR #82 prose, and not inherited from the predecessor compiler.",
+    "IMMUTABLE_BY_CONVENTION_length": 30,
+    "IMMUTABLE_BY_CONVENTION_set_size": 30,
+    "duplicates": 0,
+    "v1_0_19_occurrences": 1,
+    "v1_0_19_index": "29 of 30, zero-based - the FINAL member, consistent with append-only",
+    "v1_0_20_present": false,
+    "all_entries_under_docs_ops_ods": true,
+    "CONTROLLER_DB_EXECUTION": "DISABLED - scripts/ods-controller.ts:239 still returns stopClass DATABASE_AUTHORITY_REQUIRED with reason 'unit requires database execution; CONTROLLER_DB_EXECUTION=DISABLED'. This addendum does not change it and grants no database execution of any kind.",
+    "verdict": "PRECONDITION DISCHARGED BY ITS OWN TERMS. STOP_FOR_LINEAGE_SEQUENCING is NOT triggered."
+  },
+
+  "lineage_derivation": {
+    "method": "Derived mechanically at INTEGRATION_SHA by enumerating every ODS_V1_MAINTENANCE_ADDENDUM file on disk, parsing each one's GRANT_ID, re-deriving the offset invariant across the COMPLETE set rather than a remembered subset, and sweeping both derived identifiers across every reachable commit and every local and remote ref. The predecessor compiler's symbolic prediction was treated as CORROBORATION ONLY and was not the source of any value here.",
+    "highest_existing_ods_addendum": "v1.0.19",
+    "allocated_here": "v1.0.20",
+    "highest_allocated_hpo_ods_w2_grant_id": "HPO-ODS-W2-20",
+    "allocated_grant_id_here": "HPO-ODS-W2-21",
+    "offset_invariant": "RE-MEASURED INDEPENDENTLY, NOT INHERITED. GRANT_ID ordinal === addendum patch version + 1, across EVERY addendum that carries a GRANT_ID: v1.0.9->W2-10, v1.0.10->W2-11, v1.0.11->W2-12, v1.0.12->W2-13, v1.0.13->W2-14, v1.0.14->W2-15, v1.0.15->W2-16, v1.0.16->W2-17, v1.0.17->W2-18, v1.0.18->W2-19, v1.0.19->W2-20. ELEVEN of eleven with zero exceptions. Addenda v1.0.1 through v1.0.8 carry no GRANT_ID and are correctly outside the invariant's domain rather than counter-examples to it. Therefore v1.0.20 -> HPO-ODS-W2-21.",
+    "predecessor_reported_ten_of_ten": "The predecessor compiler measured 10/10 at START_HEAD 1c1dccf, where v1.0.19 was the newest addendum and was therefore the item being derived rather than a datum. At this mission's INTEGRATION_SHA v1.0.19 is itself integrated evidence, so the invariant's domain grew by one and the correct count is 11/11. The independent re-derivation AGREES with the predecessor's conclusion and strengthens its basis.",
+    "v1_0_20_collision_check": "MEASURED. `git rev-list --all --objects | grep ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json` returns ZERO occurrences; `git log --all --diff-filter=A -- docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json` returns nothing; and a `git ls-tree -r` sweep across every refs/heads and refs/remotes ref returns no hit. Version 1.0.20 has never existed in any reachable tree.",
+    "w2_21_collision_check": "MEASURED. `git grep -n HPO-ODS-W2-21 HEAD` returns exactly FIVE occurrences, in exactly TWO files: three inside ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json (controller_30_must_close_before, enforcement, no_preallocation) and two inside docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json (no_preallocation, no_next_next). Every one is a PROHIBITION clause that names the identifier in order to forbid its premature allocation, and both files say so in their own words. It is never a GRANT_ID, never a materialization_step, and never an authorityId in the live PROTECTED_GRANTS registry - measured by extracting the registry, whose ten authorityIds are HPO-ODS-W2-01, -02, -03, -07, -08, -09, -11, -12, -16 and -17. HPO-ODS-W2-21 was therefore UNALLOCATED and is allocated here for the first time.",
+    "cross_ref_sweep": "MEASURED. A `git grep -l HPO-ODS-W2-21` across every local and remote ref returns only the same two files, on branches that are all ancestors of or identical to integration/commercial-v1. The two superficially alarming local refs codex/multiorg-s2-r1 and codex/multiorg-s1-s2-execution-authority-r1 were measured with `git rev-list --left-right --count` and are ZERO commits ahead of INTEGRATION_SHA with an EMPTY diff against their merge-base: they are stale already-merged refs, not in-flight lanes. No other lane has allocated either identifier.",
+    "predecessor_sequencing_rule_satisfied": "MEASURED, NOT ASSUMED. See controller_30_precondition_discharged above.",
+    "gate_E16_remains_discharged": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json gate E16 required v1.0.17 to be enumerated. It has been since Controller 28. This addendum does not reopen it."
+  },
+
+  "hpo_decision": {
+    "FUNCTION_A_S1_PATH_CEILING_REPAIR": {
+      "ODS_INSTRUCTION_GRANTED": "YES",
+      "closes_finding": "F-S1-1",
+      "why_an_ODS_instruction_is_required": "MEASURED AND LOAD-BEARING. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json FUNCTION_B states that registration of HPO-ODS-W2-20 is 'GRANTED_BY_THIS_ADDENDUM_TO_THE_S1_IMPLEMENTING_MISSION_ONLY'. But v1.0.19 FUNCTION_A.S1_LANE enumerates six paths and NEITHER scripts/ods-scope.ts NOR tests/ods/ods-scope.test.ts is among them. Registering a grant edits both. ods:scope would classify both as unauthorized and fail closed. An authority that grants an action while withholding every path required to perform it is a hole, not a grant, and only an ODS instruction can close it.",
+      "paths_added_to_the_S1_ceiling": [
+        "scripts/ods-scope.ts",
+        "tests/ods/ods-scope.test.ts"
+      ],
+      "classification": "BOTH UNPROTECTED. MEASURED at INTEGRATION_SHA against DEFAULT_PROTECTED_PATTERNS using the gate's own patternToRegExp: neither path matches any of the seven default protected patterns. They require an ordinary --allow entry and NO protected grant.",
+      "tests_ods_is_not_an_existing_product_test": "ADJUDICATED EXPLICITLY, NOT LEFT IMPLICIT. Modifying an existing tests/ods/** file is authorized by an ORDINARY ODS PATH GRANT, never by an existing-product-test instruction. Two independent bases. (1) ODS_V1_AUTHORITY_v1.0.0.json authorized_implementation_surfaces lists 'tests/ods/**' as an ODS-native authorized surface, while prohibited_surfaces reserves 'existing PRODUCT tests' - tests/ods/** are ODS governance controls over the gates themselves, not product tests, and the two lists are disjoint by construction. (2) REPOSITORY PRACTICE, exercised twice: ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json and v1.0.19.json each authorize tests/ods/ods-controller.test.ts to their Controller-maintenance successor as a plain authorized_paths entry - 'Authorized paths: scripts/ods-controller.ts and tests/ods/ods-controller.test.ts, and nothing else' - and NEITHER issues an existing-product-test instruction for it. Controller 28 and Controller 30 both shipped under that reading.",
+      "necessity_of_the_test_path": "MEASURED at INTEGRATION_SHA. tests/ods/ods-scope.test.ts:317 asserts `expect(PROTECTED_GRANTS.length).toBe(10)` - an EXACT cardinality, not a lower bound - and :512 asserts `expect(addendumB5.PROTECTED_GRANTS_COUNT_AFTER).toBe(PROTECTED_GRANTS.length)`, which binds the LIVE-count guard to ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json. Registering any further grant breaks both. The test path is mechanically forced, not discretionary.",
+      "no_wildcard": "No scripts/**, no tests/**, no tests/ods/** directory grant. Exactly two literal paths. A third is a fresh STOP_FOR_AUTHORITY_DELTA requiring its own instruction."
+    },
+
+    "FUNCTION_B_ORDINARY_MIGRATION_PARTICIPATION": {
+      "ODS_INSTRUCTION_GRANTED": "YES",
+      "closes_finding": "F-S1-2",
+      "why_v1_0_19_was_insufficient": "v1.0.19 FUNCTION_B recorded NO_PREPARED_GRANT ('S1 needs no prepared unit') and NO_BASELINE_MANIFEST_GRANT ('db/hosted/baseline-manifest.ts is not authorized, because no prepared or hosted unit is added'). Both rest on a premise that is TRUE BUT INSUFFICIENT: S1 indeed adds no PREPARED UNIT. What v1.0.19 did not measure is that an ORDINARY MIGRATION independently drags all three surfaces with it. This is a correction of a measurement gap in a predecessor's reasoning, NOT a reinterpretation of its decision, and NOT a widening obtained by observing that a lane's diff would otherwise fail.",
+      "machine_evidence_re_measured_at_INTEGRATION_SHA": {
+        "E1_journal_correspondence": "db/migrations/ holds 66 files, 0000..0065, highest db/migrations/0065_fib_sensitivity_model.sql. db/prepared/journal/ holds 79 files whose highest is db/prepared/journal/078_0065_fib_sensitivity_model.sql - the wrapper for that exact migration, sharing its slug. Every ordinary migration carries a journal wrapper.",
+        "E2_manifest_completeness_is_machine_enforced": "db/hosted/baseline-manifest.ts BASELINE_UNITS enumerates db/migrations/NNNN_*.sql entries with per-unit sha256 and dependsOn. Its completeness check builds `new Set(BASELINE_UNITS.map((u) => u.file))` and raises problem kind UNKNOWN_FILE for any discovered file no unit claims, with the recorded reason 'An unclaimed migration is a migration nobody applies hosted and everybody applies locally - the exact asymmetry that hid the 0039 ordering defect.' A migration added without a manifest unit FAILS.",
+        "E3_wrapper_append_is_machine_enforced": "scripts/baseline-operator-runner.ts refuses a wrapper that does not carry the journal append: 'A wrapper that applies its unit and records nothing is the exact defect the journal exists to remove.' scripts/journal-artifacts.ts generates and verifies the wrappers.",
+        "E4_exact_count_pins": "tests/hosted/baseline-manifest.test.ts:105 asserts `expect(byKind('drizzle-migration')).toBe(66)` and :115 asserts `expect(new Set(BASELINE_ORDER).size).toBe(78)`. Both are EXACT literals. A 67th migration and a 79th ordinal break both.",
+        "E5_line_numbers_revalidated": "Lines 105 and 115 were re-read at INTEGRATION_SHA rather than inherited from the predecessor compiler, and are unchanged - consistent with the measured intervening delta touching only the Controller pair."
+      },
+      "paths_added_to_the_S1_ceiling": [
+        "db/prepared/journal/**",
+        "db/hosted/baseline-manifest.ts",
+        "tests/hosted/baseline-manifest.test.ts"
+      ],
+      "classification": {
+        "db/prepared/journal/**": "PROTECTED - matches DEFAULT_PROTECTED_PATTERNS entry 5 'db/prepared/**'. Requires the protected grant declared below IN ADDITION to an exact --allow entry.",
+        "db/hosted/baseline-manifest.ts": "UNPROTECTED - MEASURED with the gate's own matcher: db/hosted/** matches none of the seven patterns. db/baseline/** is a DIFFERENT directory and does not reach it.",
+        "tests/hosted/baseline-manifest.test.ts": "UNPROTECTED by pattern. Its existing-test discipline is handled separately in FUNCTION_D."
+      },
+      "NO_ORDINAL_ALLOCATED": "DELIBERATE AND BINDING. This addendum allocates NO migration ordinal and NO journal-wrapper ordinal. Both are execution-time values in global sequences contested with Wave3/FIBDB-053, CommercialAccount, Portfolio and Stella. At INTEGRATION_SHA the next free values would be 0066 and 079, but that is a MEASUREMENT OF TODAY, explicitly NOT a reservation. The S1 mission derives both at its own materialization time.",
+      "NO_BLANKET_PREPARED_GRANT": "RESTATED AND UNWEAKENED. v1.0.19's prohibition on a blanket db/prepared/** grant of any width STANDS. The pattern authorized here is db/prepared/journal/**, a STRICT SUBSET, which ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json:76 subset_grant_hazard already names as the correct narrow form. PROVEN BY NEGATIVE CONTROL at INTEGRATION_SHA: db/prepared/stella_0010_organization_bootstrap_capability.sql is protected=true under db/prepared/** and grantCovers=false under db/prepared/journal/**, so the narrow grant demonstrably does not leak into the blanket surface.",
+      "NO_BASELINE_OR_STAGING": "No db/baseline/** path, no staging path, no production path and no Docker is authorized."
+    },
+
+    "FUNCTION_C_S2_EXISTING_PRODUCT_TEST_DISCIPLINE": {
+      "ODS_INSTRUCTION_GRANTED": "YES",
+      "closes_finding": "F-S2-1",
+      "paths": [
+        "tests/auth/route-authorization-boundary.test.ts"
+      ],
+      "path_count": 1,
+      "why_an_ODS_instruction_is_required": "ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment'. MEASURED: the path is an existing product test on all three prongs the repository has used - it is collected by the DEFAULT vitest config (vitest.config.ts excludes only BASE_EXCLUDE, INTEGRATION_GLOB and E2E_GLOB, none of which reach tests/auth/), it exercises product route topology and product layout gating, and it PREDATES this batch, first added by commit 65ab17d 'fix(auth): separate onboarding from organization-gated layout'. v1.0.19 FUNCTION_D issued NO test-host instruction, correctly, because its own two test paths were new files. This addendum is that explicit instruction, issued path by path.",
+      "AUTHORIZED_CHANGE_CLASS": "ROUTE_TOPOLOGY_ASSERTION_STRENGTHENING_ONLY",
+      "the_adjustment_authorized": "In the control currently at tests/auth/route-authorization-boundary.test.ts:155 ('carves out EXACTLY one route'), replace the ONE-LEVEL directory-name sweep of app/(group)/app/ with a RECURSIVE route-path enumeration anchored on route-serving files, and assert the exact set ['onboarding','organizations/select']. Additionally ADD one mirrored negative control asserting the selector is NOT served from the organization-gated location. NOTHING ELSE.",
+      "route_file_names": {
+        "expected": ["page.tsx", "page.ts", "route.ts", "route.tsx"],
+        "binding_rule": "The S1/S2 implementing mission MUST re-measure the repository's actual route-file conventions at its own head and use the set it measures. MEASURED at INTEGRATION_SHA: the only route-serving file beneath any app/(group)/app/ tree is app/(authenticated)/app/onboarding/page.tsx. The four names above are the App Router conventions this repository can produce; enumerating a name the repository never uses is inert, but OMITTING one it does use would silently un-gate a route. Measure, do not copy this list on trust."
+      },
+      "expected_permitted_set_after_S2": ["onboarding", "organizations/select"],
+      "explicitly_not_authorized": "['onboarding','organizations']. Top-level widening would silently authorize EVERY future app/(authenticated)/app/organizations/** route - create, [id], settings and any successor - none of which has been adjudicated as a pre-organization surface. It is the exact 'expectation broadening' the v1.0.18 adjustment class forbids.",
+      "binding_strictness_obligation": "The replacement MUST be proven STRICTLY STRONGER than the control it replaces, in both directions, before it is accepted. Required proof rows: (1) CURRENT TREE - old control PASS and new control PASS, identical verdict, so the change is not a repair of a currently-failing control; (2) WITH S2 - new control PASS; (3) MUTATION organizations/create -> FAIL; (4) MUTATION organizations/[id] -> FAIL; (5) MUTATION onboarding/step2 -> FAIL, which the CURRENT control does NOT catch because it reports only the top-level directory name, so the replacement closes a real pre-existing blind spot. A replacement that is merely DIFFERENT, or that trades one blind spot for another, is gate weakening and is a STOP.",
+      "mirrored_negative_control_authorized": "expect(existsSync(path.join(ROOT,'app/app/organizations/select/page.tsx'))).toBe(false) - the organization-gated location whose use would reinstate the circular gate.",
+      "singular_plural_conflation_hazard": "MEASURED AND MATERIAL. app/app/organization/ (SINGULAR) exists at INTEGRATION_SHA and is legitimately organization-gated; the control at :180 already names it. S2 introduces organizations (PLURAL) as the ungated carve-out. The two differ by one character, and a grep, a rename or a careless review can conflate them. BOTH halves must be asserted: the singular stays gated, the plural /select is the only ungated member of its subtree.",
+      "app_admin_organizations_out_of_scope": "MEASURED: app/admin/organizations exists but lies OUTSIDE every app/(group)/app/ tree, so the sweep never reaches it and it is neither granted nor implicated. Recorded affirmatively so that a future reader does not 'fix' the sweep to include it and thereby import an admin surface into a tenancy carve-out.",
+      "explicitly_prohibited_adjustments": [
+        "widening the asserted set to ['onboarding','organizations'] or to any top-level-directory form",
+        "test expectation weakening, relaxing, broadening or deletion",
+        "test deletion - removing any it() or describe block",
+        ".skip in any form",
+        ".todo in any form",
+        "test reclassification - moving a control to another host, suite, config or integration-only path",
+        "changing the three sibling controls in the same describe block: the onboarding old-location control, the layout-gating control, or the workspace-routes-still-gated control",
+        "wildcards of any kind in the authorized surface",
+        "directory grants of any kind in the authorized surface",
+        "adjacent test inference - authorizing a second test because it neighbours, resembles or shares a prefix with this one"
+      ],
+      "route_decision_ratified": "The selector REMAINS a PRE-ORGANIZATION route at app/(authenticated)/app/organizations/select/*. It is NOT relocated beneath app/app/**, because requiring organization scope in order to reach the organization selector is circular - the exact defect closed historically by 65ab17d. The route-security regression is being made STRICTER, deliberately, rather than being widened to accommodate the new route."
+    },
+
+    "FUNCTION_D_HOSTED_TEST_DISCIPLINE_FAIL_CLOSED": {
+      "ODS_INSTRUCTION_GRANTED": "YES - ISSUED FAIL-CLOSED, WITHOUT CONCEDING THE CLASSIFICATION. CORRECTED BY THE BR REMEDIATION: the pin enumeration below was INCOMPLETE as first issued and now names all four forced pins.",
+      "closes_finding": "U-1, and the baseline-manifest half of the BO audit finding S1_SCOPE_STILL_INCOMPLETE",
+      "paths": [
+        "tests/hosted/baseline-manifest.test.ts"
+      ],
+      "path_count": 1,
+      "the_ambiguity": "The repository's working characterisation of an ODS-reserved existing product test, recorded in v1.0.18 FUNCTION_A, is a path that 'is executed by the default vitest config, ... renders a product page, and ... predates' the batch. tests/hosted/baseline-manifest.test.ts satisfies prongs one and three and FAILS prong two: it renders no product page and asserts only manifest arithmetic over db/hosted/baseline-manifest.ts. Whether prong two is NECESSARY or merely DESCRIPTIVE is not adjudicated anywhere in the repository, and it is not adjudicated here either.",
+      "disposition": "FAIL CLOSED. The instruction is issued narrowly regardless of which reading is correct. Issuing an instruction that may not have been required costs nothing and removes an ambiguity from the S1 lane's path; omitting one that WAS required is a STOP discovered at gate time. This entry is NOT a precedent that every infrastructure test is a product test, and it is NOT a concession that prong two is optional.",
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_COUNT_PIN_ADVANCE_ONLY",
+      "forced_pin_count": 4,
+      "the_adjustment_authorized": "Advance the FOUR exact count pins that one appended drizzle baseline unit and its journal wrapper mechanically invalidate, to the values the S1 mission MEASURES after its own unit is added. They are, at INTEGRATION_SHA: L103 expect(BASELINE_UNITS).toHaveLength(78); L105 expect(byKind('drizzle-migration')).toBe(66); L112 the Array.from({ length: 78 }, ...) ordinal-contiguity argument of the toEqual opened at L111; and L115 expect(new Set(BASELINE_ORDER).size).toBe(78). NOTHING ELSE.",
+      "CORRECTION_RECORDED": {
+        "what_was_wrong": "As first issued this instruction named only TWO of the four forced assertions - the drizzle-migration count at :105 and the BASELINE_ORDER cardinality at :115 - and referred to the remaining region as 'the ordinal-contiguity wording at :110 that names the same upper bound'.",
+        "defect_1_omission": "L103 expect(BASELINE_UNITS).toHaveLength(78) was OMITTED ENTIRELY. It is the first assertion in the same it() block as L105 and fails on the same growth event.",
+        "defect_2_mischaracterisation": "L110 is the it() TITLE - descriptive text that cannot fail. The ordinal-contiguity ASSERTION is the Array.from length argument at L112, inside the toEqual opened at L111. Calling it 'wording' invited a mission to update a title and believe the region was handled, leaving a real exact pin stale.",
+        "why_it_matters": "Both omitted pins are EXACT equalities on the same value the two named pins assert. A mission following the instruction literally would have advanced two pins, left two stale, and failed the suite it had just been authorised to repair.",
+        "corrected_by": "LANE BR - PR83-S1-BASELINE-SURFACE-REMEDIATION-R1, on the BO audit finding. Re-measured from live bytes at INTEGRATION_SHA rather than inherited."
+      },
+      "it_titles_are_not_pins": "The it() titles at L102 and L110 restate the same literals descriptively. Updating them for coherence is PERMITTED under this instruction and is expected; they are not assertions, they cannot fail, and updating one is never a substitute for advancing a pin.",
+      "explicitly_not_forced": "L106 expect(byKind('supabase-migration')).toBe(2) and L107 expect(byKind('policy')).toBe(10) are NOT forced by an appended DRIZZLE unit and MUST NOT be touched.",
+      "explicitly_prohibited_adjustments": [
+        "converting any exact count pin to a lower bound, a range, a >= comparison or a computed expression that cannot fail",
+        "changing L106 or L107",
+        "test expectation weakening, relaxing, broadening or deletion",
+        ".skip or .todo in any form",
+        "changing any sha256 pin, any dependsOn chain or any kind classification for a unit S1 did not add",
+        "touching db/hosted/baseline-manifest.ts entries other than appending S1's own unit"
+      ],
+      "non_vacuity_obligation": "The advanced pins must be DERIVED FROM MEASUREMENT of the tree after S1's unit is added, never from arithmetic on this addendum's recorded 66 and 78. If the measured values are not exactly 67 and 79, that discrepancy is evidence of a concurrent migration landing in the contested global sequence and is STOP_FOR_INTERVENING_DELTA, not a number to overwrite."
+    },
+
+    "FUNCTION_F_BASELINE_GROWTH_SURFACE_COMPLETION": {
+      "ODS_INSTRUCTION_GRANTED": "YES",
+      "issued_by": "LANE BR - PR83-S1-BASELINE-SURFACE-REMEDIATION-R1",
+      "closes_finding": "S1_SCOPE_STILL_INCOMPLETE - the single blocking finding of the LANE BO independent audit of PR #83, R1.",
+      "why_this_function_exists": "FUNCTION_B established that an ORDINARY MIGRATION drags the journal wrapper and the baseline manifest with it, and added three paths to the S1 ceiling. That was correct but STILL INCOMPLETE. The independent audit simulated one baseline growth event and ran the repository's real generators, and found FIVE FURTHER paths mechanically required and outside the ceiling. This function authorises exactly those five. It is a completion of FUNCTION_B's measurement, not a reinterpretation of its decision, and not a widening obtained by observing that a lane's diff would otherwise fail.",
+      "paths_added_to_the_S1_ceiling": [
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "artifacts/hosted-a1-status.json"
+      ],
+      "path_count": 5,
+      "classification": {
+        "measured": "ALL FIVE ARE UNPROTECTED. MEASURED at INTEGRATION_SHA with the gate's own matchesAnyPattern against DEFAULT_PROTECTED_PATTERNS: no path under tests/hosted/, tests/eval/ or artifacts/ matches any of the seven default protected patterns. Each requires an ordinary --allow entry and NO protected grant.",
+        "consequence_for_the_grants": "NO NEW PROTECTED GRANT IS REQUIRED BY THIS FUNCTION. HPO-ODS-W2-20 remains db/migrations/** alone and HPO-ODS-W2-21 remains db/prepared/journal/** alone. Neither is broadened. PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION remains 12."
+      },
+      "machine_evidence_measured_at_INTEGRATION_SHA": {
+        "E6_journal_wrapper_host": "tests/hosted/baseline-journal-wrapper.test.ts:472 asserts expect(BASELINE_UNITS).toHaveLength(78) and :473 asserts expect(BASELINE_ORDER).toHaveLength(78). Both EXACT. Its other cardinality checks at :51, :444 and :477 are written as BASELINE_UNITS.length + 1 and self-adjust - the file mixes derived and pinned forms, which is why it cannot be dismissed by inspecting one line.",
+        "E7_operator_runner_host": "tests/hosted/operator-runner.test.ts:237 asserts expect(BASELINE_UNITS).toHaveLength(78). EXACT, and the ONLY corpus-cardinality pin in that file.",
+        "E8_hosted_gate_spec": "tests/eval/stella-release/hosted-baseline-gate.test.ts:67 asserts expect(evidence.unitCount).toBe(78) and :68 asserts expect(evidence.superuserFreeUnits).toBe(78). Both EXACT.",
+        "E9_hosted_gate_helper": "tests/eval/stella-release/hosted-baseline-gate.ts:429 gates on evidence.unitCount === 78, and :407 gates on firstProvisioning.steps.length === 79. Both EXACT. The helper contains no it() block; it is the gate the spec asserts against.",
+        "E10_a1_status_artefact": "artifacts/hosted-a1-status.json carries a chainPlan message counting the baseline units the recorded staging observation lacks - 'refused: 28 baseline unit(s) missing' at INTEGRATION_SHA. scripts/a1-status.ts derives that from the RECORDED corroboration plus the LIVE manifest, and pnpm a1:status:verify compares the on-disk bytes against a freshly serialised status, failing on any difference.",
+        "E11_baseline_of_measurement": "Three repository-native verifiers were confirmed GREEN at INTEGRATION_SHA BEFORE the growth simulation - pnpm a1:status:verify, pnpm journal:verify (reporting all 79 wrappers regenerate byte-identically) and pnpm b0:observation:verify. Any drift after the simulation is therefore attributable to the growth alone, and not to pre-existing staleness."
+      },
+      "PER_HOST_INSTRUCTIONS": "Issued in full, host by host, in docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json EXISTING_TEST_INSTRUCTIONS HOST_2 through HOST_5, together with A1_STATUS_DISPOSITION for the generated artefact. They are not restated here. The two artefacts MUST agree; a disagreement between them is a STOP, not a choice.",
+      "SUMMARY_OF_THE_FORCED_PINS": {
+        "tests/hosted/baseline-journal-wrapper.test.ts": "2 - the exact cardinality pins at :472 and :473. The derived BASELINE_UNITS.length + 1 forms are NOT forced and must not be converted to literals.",
+        "tests/hosted/operator-runner.test.ts": "1 - the corpus cardinality pin at :237. Unit-specific historical assertions are NOT forced and must not be changed; appending a unit changes the corpus SIZE, not any existing unit's identity.",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts": "2 - evidence.unitCount at :67 and evidence.superuserFreeUnits at :68. The second is CONDITIONAL on S1's unit being superuser-free; a divergence between them is a real finding about S1's migration and a STOP, not a number to reconcile.",
+        "tests/eval/stella-release/hosted-baseline-gate.ts": "2 - the unitCount gate literal at :429, and the firstProvisioning.steps.length N+1 literal at :407.",
+        "artifacts/hosted-a1-status.json": "0 pins. REGENERATED, never hand-edited. Generator pnpm a1:status:write, verifier pnpm a1:status:verify."
+      },
+      "THE_N_PLUS_1_LITERAL_MUST_BE_DERIVED_NOT_GREPPED": {
+        "binding": "tests/eval/stella-release/hosted-baseline-gate.ts:407 CONTAINS NO BASELINE-COUNT LITERAL. Its literal is 79, which is the baseline count PLUS ONE: the provisioning plan emits one step per baseline unit plus one journal-bootstrap step, and the adjacent clause at :408 asserts firstProvisioning.steps[0].id === '000_journal_bootstrap'. It MUST be identified by DERIVATION from that relationship, never by grep.",
+        "why_grep_is_actively_misleading_here": "A mission grepping this file for the baseline count 78 never sees :407 at all. A mission grepping for 79 does see it, but cannot tell from the literal whether 79 means the new baseline count or the old count plus one - and at INTEGRATION_SHA 79 is ALSO the live db/prepared/journal file count, a coincidental collision.",
+        "the_failure_mode_forbidden": "Advancing every 78 to 79 in this file leaves :407 at 79 and looks finished. The gate then demands 79 steps from a plan producing 80 and firstProvisioningPlannable goes false. The correct post-growth value is 80 - the MEASURED cardinality plus one."
+      },
+      "no_wildcard": "FIVE LITERAL PATHS. No tests/** grant, no tests/hosted/** grant, no tests/eval/** grant, no tests/eval/stella-release/** grant and no artifacts/** grant. A sixth forced path discovered at implementation time is a fresh STOP_FOR_AUTHORITY_DELTA requiring its own instruction, never an inference from these five.",
+      "existing_product_test_prong_two": "The four test-host paths in this function are in the SAME position as tests/hosted/baseline-manifest.test.ts under FUNCTION_D: they are collected by the default vitest config and predate this batch, and none renders a product page. The disposition is identical and for the identical reason - FAIL CLOSED, issued narrowly, conceding nothing about whether prong two is necessary. F-4 in risks_and_open_findings remains open and this function asserts no general rule.",
+      "COMPLETENESS_IS_A_MEASUREMENT_NOT_A_THEOREM": "These five paths, plus FUNCTION_B's three and FUNCTION_A's two, are the complete forced surface AS MEASURED AT INTEGRATION_SHA. The implementing mission MUST re-run the same generators and gates at its own head rather than trusting this enumeration. That obligation is the reason the enumeration can be stated at all."
+    },
+
+    "FUNCTION_G_CHECKPOINT_B0_NOT_REQUIRED": {
+      "ODS_INSTRUCTION_GRANTED": "NO - AND THE NEGATIVE IS RECORDED DELIBERATELY",
+      "issued_by": "LANE BR - PR83-S1-BASELINE-SURFACE-REMEDIATION-R1",
+      "path_considered": "db/prepared/checkpoint-b0/observation.sql",
+      "verdict": "NOT REQUIRED FOR S1. NOT AUTHORISED. NOT ADDED TO THE CEILING.",
+      "why_recorded_rather_than_omitted": "A negative that is merely absent is indistinguishable from a negative that was never considered. This function exists so a future reader does not 'complete' the S1 ceiling by importing a consequence that provably does not apply to it.",
+      "why_not": "S1 ADDS COLUMNS TO AN EXISTING TABLE AND CREATES NO TABLE. organizations.founded_by and organizations.founding_provenance are added to the pre-existing organizations relation.",
+      "machine_derivation": "PROVEN FROM SOURCE. scripts/b0-observation-sql.ts:30 builds the probe as buildB0ObservationSql(deriveExpectedBaselineState(read).tables) - the probe is TABLE-SCOPED - and db/hosted/baseline-postconditions.ts:164 populates that set by iterating facts.tablesCreated, so it is filled from CREATE TABLE facts only. An ALTER TABLE ... ADD COLUMN migration contributes no member, the derived table set is unchanged, and the generated probe is byte-identical.",
+      "machine_confirmation": "pnpm b0:observation:verify at INTEGRATION_SHA reports 'verification OK - the probe regenerates byte-identically from the corpus'. The implementing mission MUST re-run it after adding S1's unit and MUST obtain the same result.",
+      "conditional_not_absolute": "This negative is CONDITIONAL on S1 creating no table, which is what FROZEN_S1_SEMANTICS requires. If the implementing mission finds itself writing a CREATE TABLE it has left the frozen semantics, and the correct response is STOP_FOR_AUTHORITY_DELTA - never a quiet ceiling addition.",
+      "DO_NOT_IMPORT_CE1s_CONSEQUENCE": "The CommercialAccount CE-1 lane DID require this path, because its migration CREATED A TABLE and therefore changed deriveExpectedBaselineState().tables. That consequence is specific to table creation and MUST NOT be carried into S1 by analogy from the shared phrase 'ordinary migration'.",
+      "second_negative_control": "MEASURED. The path is PROTECTED under DEFAULT_PROTECTED_PATTERNS entry db/prepared/**, and matchesAnyPattern('db/prepared/checkpoint-b0/observation.sql', ['db/prepared/journal/**']) is FALSE. HPO-ODS-W2-21 demonstrably does not reach it, so the narrow grant fails closed in exactly the direction it was designed to."
+    },
+
+    "FUNCTION_E_NO_S3_GRANT": {
+      "ODS_INSTRUCTION_GRANTED": "NO",
+      "restated_from_v1_0_19": "No path of canonical S3 is authorized by this addendum either. db/identity-context.ts, lib/auth/database-context.ts, lib/auth/session.ts, lib/auth/permissions.ts and lib/auth/roles.ts remain OUTSIDE both lanes' ceilings. Stated affirmatively a second time because this addendum makes the S2 carrier real, and the natural next instinct is to READ that carrier in exactly those five files - which would be S3 performed without S3's lineage."
+    }
+  },
+
+  "protected_grant_required": true,
+
+  "protected_grant_rationale": "S1 must write db/prepared/journal/**, which is inside DEFAULT_PROTECTED_PATTERNS entry 5 'db/prepared/**'. HPO-ODS-W2-20, declared by v1.0.19, covers db/migrations/** ONLY and does not reach the journal wrapper. A SECOND, SEPARATE grant is therefore required. S2 requires no protected grant at all, because a session cookie and a route file touch no protected path.",
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-21",
+    "branch": "codex/multiorg-s1-founder-traceability-r1",
+    "patterns": [
+      "db/prepared/journal/**"
+    ],
+    "pattern_count": 1,
+    "registration_status": "DECLARED_NOT_REGISTERED",
+    "narrowness_note": "ONE pattern, a STRICT SUBSET of the protected pattern that makes the path protected. It grants nothing under db/migrations/**, db/baseline/**, db/prepared/checkpoint-b0/**, db/prepared/ root-level units, docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** or docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. PROVEN BY NEGATIVE CONTROL at INTEGRATION_SHA using the gate's own patternToRegExp: db/prepared/stella_0010_organization_bootstrap_capability.sql is protected=true and grantCovers=false.",
+    "why_not_an_exact_literal": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json preferred ONE EXACT LITERAL for HPO-ODS-W2-16 and deliberately rejected a directory pattern. That form is UNAVAILABLE here and the difference is principled, not convenient: the exact literal would be db/prepared/journal/<ordinal>_<migration>.sql, and naming it would ALLOCATE the journal-wrapper ordinal, which this addendum is bound not to do because that sequence is globally contested. db/prepared/journal/** is the narrowest form expressible without allocating a sequence value, and it is the exact pattern already carried by HPO-ODS-W2-01, HPO-ODS-W2-12 and HPO-ODS-W2-17 - three independent precedents.",
+    "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. Both remain mandatory. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json:77 grant_is_narrowing_only binds the effective surface to the INTERSECTION of the granted pattern and the lane's own --allow, so this grant alone never authorizes a diff.",
+    "source_of_truth": "This object. The scripts/ods-scope.ts PROTECTED_GRANTS entry must equal it, asserted mechanically in tests/ods/ods-scope.test.ts, and the companion authority's protected_grant must equal it field for field including pattern_count."
+  },
+
+  "W2_20_WIDENING_ADJUDICATION": {
+    "question": "HPO-ODS-W2-20 is DECLARED by v1.0.19 with the single pattern db/migrations/** and has never been registered. S1 also needs db/prepared/journal/**. May this addendum AMEND W2-20's declared pattern list, or must it allocate a separate grant?",
+    "w2_20_live_registry_presence": "ZERO. MEASURED at INTEGRATION_SHA by extracting PROTECTED_GRANTS from scripts/ods-scope.ts: length 10, authorityIds HPO-ODS-W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17. HPO-ODS-W2-20 is absent, and so is HPO-ODS-W2-21.",
+    "controlling_language": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json prohibitions include 'no widening or retrospective amendment of HPO-ODS-W2-12 or any other existing grant'. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json no_widening states that W2-12 and W2-16 'are FROZEN, are bound to branch codex/w2-b4-r1, and are neither widened, amended nor reused.'",
+    "controlling_precedent": "v1.0.15 faced THIS EXACT SITUATION and its answer is recorded verbatim in W2_12_NOT_WIDENED: 'HPO-ODS-W2-12 keeps its exact two patterns ... It is neither edited nor extended. The new grant is a SEPARATE ninth registry entry that happens to share a branch, which is permitted: resolveProtectedGrants resolves each --protected-authority id independently and unions the resolved pattern sets.' W2-B4 needed an ADDITIONAL protected surface on the SAME branch and the repository's answer was a SEPARATE ENTRY, never a widening. The same shape appears a second time in HPO-ODS-W2-08 and HPO-ODS-W2-09, which also share one branch.",
+    "reinforcing_precedent": "v1.0.15 additionally records that HPO-ODS-W2-07 is 'FROZEN_UNCHANGED and is NOT reused, because a grant is bound to exactly one branch'. Grants are treated as immutable once declared; the repository's remedy for a shortfall is always allocation, never mutation.",
+    "ADJUDICATION": "SEPARATE GRANT. This addendum does NOT amend HPO-ODS-W2-20. It allocates HPO-ODS-W2-21 as a distinct registry entry sharing the same branch, exactly as v1.0.15 did.",
+    "why_this_is_decided_without_resolving_the_ambiguity": "There are two defensible readings of whether an UNREGISTERED but DECLARED grant is an 'existing grant' for the purposes of the v1.0.15 prohibition. Reading one: the declaration IS the grant, because v1.0.15 itself calls the addendum's protected_grant object 'source_of_truth' and treats the registry as its mechanical projection - so W2-20 exists and amending it is prohibited outright. Reading two: 'existing' attaches at registration, and W2-20's measured zero registry presence means no live object is being mutated. THE SEPARATE-GRANT ROUTE IS CORRECT UNDER BOTH READINGS, so the adjudication does not depend on resolving the ambiguity, and none is asserted. This is deliberately the more conservative of the two available routes and the more expensive one in registry cardinality; it was chosen against the convenient answer.",
+    "consequence_disclosed": "The separate-grant route makes the post-registration cardinality 12, not the 11 a single widened grant would have produced. The predecessor compiler recommended the widened form and its cardinality; that recommendation is superseded here on precedent, and the disagreement is reported rather than smoothed over.",
+    "W2_20_FROZEN_UNCHANGED": "HPO-ODS-W2-20 keeps EXACTLY the authorityId, branch codex/multiorg-s1-founder-traceability-r1 and single pattern db/migrations/** that ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json declared. It is neither edited, extended, reinterpreted nor re-declared by this addendum."
+  },
+
+  "PROTECTED_GRANTS_CHANGED": false,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 10,
+  "PROTECTED_GRANTS_COUNT_AFTER": 10,
+  "PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION": 12,
+
+  "protected_grants_count_rule": {
+    "why_BEFORE_equals_AFTER_here": "This mission registers nothing. It edits no gate script. PROTECTED_GRANTS_CHANGED is false and the live cardinality is 10 both before and after THIS mission, exactly as v1.0.19 recorded for itself.",
+    "the_registration_anchor": "PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION is the count the S1 implementing mission must produce: 10 + HPO-ODS-W2-20 + HPO-ODS-W2-21 = 12. It is a SEPARATE field from PROTECTED_GRANTS_COUNT_AFTER precisely so that neither can be silently read as the other.",
+    "self_checking_rule_the_S1_mission_must_install": "MEASURED PRECEDENT at tests/ods/ods-scope.test.ts:512 - the NEWEST grant-bearing addendum carries the LIVE guard, asserted as `expect(<newest>.PROTECTED_GRANTS_COUNT_AFTER).toBe(PROTECTED_GRANTS.length)`, while older addenda have their own historical counts pinned as LITERALS. The S1 mission MUST therefore: (a) assert this addendum's PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION against the LIVE PROTECTED_GRANTS.length, never against a hardcoded 12; and (b) demote the guard currently bound to ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json at :512 to the pinned literal 10, which is the historically correct value for that addendum's own change and is NOT historical evidence rewriting but the same demotion v1.0.16 performed on v1.0.15 at :463.",
+    "why_the_addendum_and_not_a_test_literal": "Binding the AFTER side to the live array means a registry that grew by more or fewer than the two authorized entries fails the control, whereas a hardcoded literal would silently agree with any registry that happened to match it."
+  },
+
+  "W2_01_NOT_WIDENED": true,
+  "W2_12_NOT_WIDENED": true,
+  "W2_16_NOT_WIDENED": true,
+  "W2_17_NOT_WIDENED": true,
+  "W2_20_NOT_WIDENED": true,
+
+  "not_widened_verification_obligation": "The S1 mission must prove each of the five above byte-unchanged in the registry - same branch, same exact pattern list - AFTER its two new entries land. W2-01, W2-12 and W2-17 matter specifically because they already carry db/prepared/journal/**, which is the pattern this addendum newly grants to a DIFFERENT branch; a grant that appeared to widen one of them would be indistinguishable from correct behaviour on a pattern-only inspection, and only the branch field separates them.",
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json",
+      "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json"
+    ],
+    "new_files": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json",
+      "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json"
+    ],
+    "modified_files": [],
+    "exact_in_both_directions": "authorized_changed_paths_this_mission.count === 2 and equals the actual diff exactly - no authorized path left unchanged, no changed path unauthorized.",
+    "no_implementation_code": true,
+    "no_test_host_changed": true,
+    "no_existing_test_changed": true,
+    "no_migration_changed": true,
+    "no_journal_wrapper_changed": true,
+    "no_prepared_unit_changed": true,
+    "no_db_file_changed": true,
+    "no_app_or_lib_file_changed": true,
+    "no_schema_change": true,
+    "no_package_json_change": true,
+    "no_gate_script_change": true,
+    "no_controller_change": true,
+    "no_protected_grants_registry_change": true,
+    "no_program_state_registry_change": true,
+    "no_staging": true,
+    "no_production": true,
+    "no_docker": true,
+    "no_runtime": true,
+    "frozen_artifacts_left_byte_unchanged": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json, MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json, MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json and MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json are CONSUMED and CITED, never edited. Where v1.0.19's FUNCTION_B measurement is corrected, the correction is recorded HERE as a successor finding; v1.0.19's own bytes are not back-written.",
+    "program_state_registry_unchanged_rationale": "ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json still holds no unit entry for the multi-organization tenancy package, and this addendum still produces no implementation evidence. Creating an entry now would assert stages that do not exist."
+  },
+
+  "self_inclusion_rule": {
+    "paths_to_enumerate": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json"
+    ],
+    "count": "30 -> 31",
+    "exact_membership_never_a_subset_test": true,
+    "prohibitions": [
+      "no filesystem discovery of docs/ops/ods/ or any directory",
+      "no globs, no prefix matching, no directory sweep, no subset semantics in the Controller guard",
+      "no automatic inclusion of any future artifact",
+      "no extension of IMMUTABLE_BY_CONVENTION outside docs/ops/ods/",
+      "no inclusion of the companion amendment - docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json is NOT enumerated, because the Controller closed world enumerates docs/ops/ods/ artifacts exclusively"
+    ]
+  },
+
+  "controller_sequencing_rule": {
+    "controller_31_must_close_before": [
+      "any further ODS lineage allocation - that is, before any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21 or HPO-ODS-W2-22 is derived by any mission in any lane",
+      "any implementation grant for canonical nodes S3, S3c, S4, S5, S6, S7 or S8 of the multi-organization tenancy package"
+    ],
+    "enforcement": "A mission that finds v1.0.20 unenumerated in the live Controller and attempts to allocate v1.0.21 or HPO-ODS-W2-22, or to open an implementation grant for S3 or later, MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.",
+    "successor_authorized_paths": [
+      "scripts/ods-controller.ts",
+      "tests/ods/ods-controller.test.ts"
+    ],
+    "OLD_IMMUTABLE_COUNT": 30,
+    "NEW_IMMUTABLE_COUNT": 31,
+    "NOT_PERFORMED_BY_THIS_MISSION": "CORRECT AND DELIBERATE - this mission edits no gate script and no test host.",
+    "does_not_block": "ADJUDICATED FROM REPOSITORY DOCTRINE, NOT ASSUMED. Controller 31 is NOT a precondition of the S1 and S2 implementing missions. Those lanes are authorized by v1.0.19 as repaired by THIS addendum and may proceed once this addendum is audited and integrated. The controlling statement is v1.0.19 controller_sequencing_rule.does_not_block - 'The gap this addendum opens blocks the NEXT lineage allocation, not the batch it grants - the same relation v1.0.18 held to W2-B5's implementation.' The doctrine has now been exercised twice: v1.0.18 opened a gap and W2-B5 implemented under it, and v1.0.19 opened a gap that this mission's own precondition check confirms did not block S1/S2 authorization. IMPLEMENTATION_BEFORE_CONTROLLER31_ALLOWED = YES.",
+    "no_preallocation": "This addendum allocates NOTHING beyond v1.0.20 and HPO-ODS-W2-21. It does not reserve, name-as-allocated or pre-create any v1.0.21 or HPO-ODS-W2-22 artifact. Naming them in the clauses above is a PROHIBITION, never an allocation - the same form v1.0.15 through v1.0.19 used.",
+    "negative_control_note": "When Controller 31 advances the absence-control literal in tests/ods/ods-controller.test.ts from v1.0.20 to v1.0.21, that literal remains a NEGATIVE CONTROL and reserves nothing.",
+    "gap_arithmetic": "This package opens EXACTLY ONE enumeration gap and closes none. Controller count goes 30 -> 31 when the successor mission runs."
+  },
+
+  "test_contract": {
+    "host": "NONE FOR THIS MISSION",
+    "why_no_test_host": "MEASURED. This mission adds two documentation artifacts and changes no executable surface, so there is no runtime behavior for a test to bind to. Inventing a host would create a control that asserts only that a JSON file parses. The same reasoning v1.0.19 recorded, and it still holds.",
+    "binding": "The controls this addendum's GRANTS eventually require are enumerated in docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json, which binds by id to docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json. They are not restated here.",
+    "ods_specific_properties_an_auditor_should_check": {
+      "O1": "The lineage allocation is EXACTLY v1.0.20 and HPO-ODS-W2-21, with no_preallocation stated as a PROHIBITION and no following item named as allocated.",
+      "O2": "The GRANT_ID offset invariant (patch + 1) holds for this addendum as it does for the eleven before it, and GRANT_ID === protected_grant.authorityId.",
+      "O3": "PROTECTED_GRANTS cardinality is UNCHANGED at 10 by this mission, PROTECTED_GRANTS_CHANGED is false, and the post-registration figure lives in a SEPARATE field that cannot be misread as this mission's own count.",
+      "O4": "HPO-ODS-W2-20 is proven byte-unchanged in its v1.0.19 declaration - same branch, same single pattern db/migrations/** - so this addendum is shown NOT to have widened it. W2-01, W2-12, W2-16 and W2-17 likewise.",
+      "O5": "The new grant is DECLARED_NOT_REGISTERED, scoped to exactly one branch and exactly one pattern, and no gate script is edited by this mission.",
+      "O6": "The Controller successor is declared, bounded to exactly one entry, counted 30 -> 31, and NOT performed here.",
+      "O7": "No blanket db/prepared/** grant of any width exists, and the negative control proving db/prepared/journal/** does not reach db/prepared/stella_0010_organization_bootstrap_capability.sql is reproducible with the gate's own matcher.",
+      "O8": "authorized_changed_paths_this_mission.count === 2 and equals the actual diff exactly, in both directions.",
+      "O9": "The S1 and S2 final path ceilings, INCLUDING every path added here, intersect in the EMPTY SET, and neither collides with the Controller 31 pair.",
+      "O10": "The S2 instruction authorizes a STRENGTHENING and names the widened form ['onboarding','organizations'] as explicitly NOT authorized.",
+      "O11": "ADDED BY THE BR REMEDIATION. The S1 ceiling accounts for the COMPLETE forced surface of one appended drizzle baseline unit: FUNCTION_A's two paths, FUNCTION_B's three, and FUNCTION_F's five, for a final S1 path count of 16 in the companion amendment. Verify by re-running the repository's own generators after simulating one growth event, not by reading this list.",
+      "O12": "ADDED BY THE BR REMEDIATION. FUNCTION_D names FOUR forced pins in tests/hosted/baseline-manifest.test.ts, not two. Its CORRECTION_RECORDED block states that L103 was omitted and that L112 was mischaracterised as 'wording at :110'. An auditor should confirm from live bytes that L110 is an it() title and L112 is a real assertion.",
+      "O13": "ADDED BY THE BR REMEDIATION. FUNCTION_F adds five UNPROTECTED literal paths and creates NO protected grant. Confirm with the gate's own matchesAnyPattern against DEFAULT_PROTECTED_PATTERNS that none of tests/hosted/**, tests/eval/** or artifacts/** matches, and that PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION is still 12.",
+      "O14": "ADDED BY THE BR REMEDIATION. The N+1 literal at tests/eval/stella-release/hosted-baseline-gate.ts:407 is identified by DERIVATION and its post-growth value is the measured cardinality PLUS ONE. An instruction that advances it to the measured cardinality itself is wrong, and a grep-based identification is insufficient because the file contains no baseline-count literal at that line.",
+      "O15": "ADDED BY THE BR REMEDIATION. No known test condition is used to waive a deterministic baseline-growth count pin. deterministic_baseline_growth prohibits KTC-S1-*, the two registered KTCs are retained only for the rehearsal-digest signatures they actually name, and the withdrawn pre-remediation text is labelled as withdrawn rather than deleted.",
+      "O16": "ADDED BY THE BR REMEDIATION. FUNCTION_G records the checkpoint-b0 NEGATIVE deliberately, proves it from source rather than by assertion, states it as CONDITIONAL on S1 creating no table, and confirms it with pnpm b0:observation:verify. db/prepared/checkpoint-b0/observation.sql appears in no ceiling or grant list."
+    },
+    "gate_weakening_prohibited": "No control may be skipped, softened or converted to a lower-bound form to obtain a PASS."
+  },
+
+  "risks_and_open_findings": {
+    "F-1_migration_ordinal_contention": "NON-BLOCKING, DISCLOSED. db/migrations is a single global forward-only sequence contested with Wave3/FIBDB-053, CommercialAccount, Portfolio and Stella. At INTEGRATION_SHA the next free ordinal is 0066 and the next free journal wrapper is 079, but neither is reserved here. If another lane lands first, the S1 mission re-derives both and the count pins it advances change accordingly. Its non-vacuity obligation in FUNCTION_D turns that contention into a detected STOP rather than a silent overwrite.",
+    "F-2_predecessor_recommendation_superseded": "NON-BLOCKING, DISCLOSED. The predecessor compiler recommended widening HPO-ODS-W2-20 to two patterns and a post-registration cardinality of 11. This addendum instead allocates a separate grant for a cardinality of 12, on the v1.0.15 precedent recorded in W2_20_WIDENING_ADJUDICATION. Any consumer holding the predecessor's numbers must use these instead.",
+    "F-3_route_file_convention_drift": "NON-BLOCKING, DISCLOSED. FUNCTION_C names four App Router route-file names but binds the S2 mission to RE-MEASURE the repository's actual conventions rather than trust the list. At INTEGRATION_SHA exactly one route-serving file exists beneath any app/(group)/app/ tree, so the list is currently untestable in the direction of over-inclusion; only the S2 mission's own measurement can close that.",
+    "F-4_prong_two_unadjudicated": "NON-BLOCKING, DISCLOSED AS A KNOWN AMBIGUITY. Whether 'renders a product page' is a NECESSARY prong of the ODS existing-product-test reservation remains unadjudicated repository-wide. FUNCTION_D routes around it fail-closed for the one path this batch needs and asserts no general rule. A future mission that needs the general rule must adjudicate it on its own authority."
+  },
+
+  "deterministic_baseline_growth": {
+    "status": "FROZEN BY THE BR REMEDIATION. Replaces the pre-remediation known_test_conditions_carried block, whose text is preserved verbatim below for audit continuity and is WITHDRAWN as guidance. The controlling long form is docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json DETERMINISTIC_BASELINE_GROWTH; the two artefacts must agree.",
+    "DOCTRINE": "DETERMINISTIC_BASELINE_GROWTH -> REGENERATE, or ADVANCE THE EXACT GOVERNED COUNT PIN -> TARGET FULL GREEN. A pin that is stale because the baseline deterministically grew MUST BE ADVANCED. It is not a known condition, it is not an accepted failure, and it is not a candidate for registration as one.",
+    "no_new_KTC": "PROHIBITED. The S1 implementing mission MUST NOT create KTC-S1-anything, nor any other new known-test-condition entry, for baseline-growth staleness. Registering a deterministic, mechanically repairable, fully specified drift as a known condition converts a bounded repair into permanent accepted debt and hides the one class of failure this addendum exists to force into the open.",
+    "not_gate_weakening": "Advancing an exact pin from 78 to a MEASURED 79 leaves it an exact pin; the control still fails on any unmeasured drift. Gate weakening would be converting it to a lower bound, a range, a computed expression that cannot fail, or a registered exemption - and all four remain prohibited.",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "REMAINS VALID ON ITS OWN TERMS ONLY, NOT WIDENED. Registered in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json. It covers the REHEARSAL DIGEST going stale - the pinned artefact recording that a rehearsal ran against a PREVIOUS manifest - which is genuinely not repairable by editing a number, because the repair is running pnpm baseline:rehearsal:local in an environment the authority lane does not have.",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "REMAINS VALID on the same terms. Same underlying cause, separate test_id, separate failure signature.",
+    "the_conflation_corrected": "MATERIAL, AND THE SUBSTANCE OF THE AUDIT FINDING. The rehearsal digest and the baseline COUNT PINS live in the same two files but are different failures with different repairs. The two registered conditions cover the DIGEST; they never covered the COUNTS. The pre-remediation text reasoned from 'a registered condition exists in this file' to 'this file must not be edited', which does not follow, and which left four mechanically forced pins outside the S1 ceiling.",
+    "same_condition_comparison_rule": "BINDING AND UNCHANGED. A failure matches a carried condition ONLY on test_file plus test_id together, never on filename alone - the registry's own rule, and precisely the rule the conflation violated. A NEW failure in the same file is a NEW finding.",
+    "not_a_blanket_exemption": "These two entries excuse exactly the two registered digest-staleness signatures. They do not excuse a stale evidence.unitCount pin, a stale evidence.superuserFreeUnits pin, a stale manifestOk gate literal or a stale firstProvisioning.steps.length literal - each of which is a NEW, unregistered failure signature.",
+    "a_condition_is_never_a_grant_or_a_prohibition": "A known condition states which failures are ACCEPTED. It is never itself a path grant and never itself a path prohibition. The four forced literals in those two files are editable because FUNCTION_F authorises them, not because a condition is registered nearby.",
+    "withdrawn_pre_remediation_text": {
+      "preserved_for_audit_continuity": "The pre-remediation known_test_conditions_carried block read as follows. It is recorded verbatim so the audit trail shows exactly what changed, and it is WITHDRAWN as guidance.",
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "CARRIED, NOT WIDENED. Registered in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json. Adding a baseline unit restales the pinned rehearsal digest that tests/eval/stella-release/hosted-baseline-gate.ts asserts against. Because the condition is already registered, tests/eval/stella-release/hosted-baseline-gate.test.ts and its helper are NOT authorized paths for S1 and must NOT be edited.",
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "CARRIED, NOT WIDENED. Same underlying cause, separate test_id and separate failure signature.",
+      "same_condition_comparison_rule": "BINDING. A failure matches a carried condition ONLY on test_file + test_id together, never on filename alone - the registry's own rule. A NEW failure in the same file is a NEW finding.",
+      "not_a_blanket_exemption": "These two entries excuse exactly the two registered digest-staleness signatures. They do not excuse any other failure in those files, and they do not authorize editing them.",
+      "what_was_wrong_with_it": "The second sentence of the first entry, and the final clause of the last. Together they made a registered digest condition do the work of a scope prohibition. The remaining clauses were and remain correct."
+    },
+    "regeneration_consequences": {
+      "db/prepared/journal/**": "REGENERATE with pnpm journal:generate, confirm with pnpm journal:verify.",
+      "artifacts/hosted-a1-status.json": "REGENERATE with pnpm a1:status:write, confirm with pnpm a1:status:verify.",
+      "db/prepared/checkpoint-b0/observation.sql": "NO CHANGE EXPECTED. Confirm byte-identity with pnpm b0:observation:verify. See FUNCTION_G.",
+      "the_eleven_count_pins": "ADVANCE BY HAND under FUNCTION_D and FUNCTION_F, and the per-host instructions in the companion amendment."
+    }
+  },
+
+  "journal_consequence": {
+    "grant": "db/prepared/journal/** - PRESERVED EXACTLY, declared by HPO-ODS-W2-21. Neither broadened nor narrowed by the BR remediation.",
+    "why_the_pattern_is_load_bearing": "MACHINE-PROVEN. db/hosted/baseline-journal-wrapper.ts:211 emits each wrapper's header as a GENERATED - DO NOT EDIT line carrying 'Unit <ordinal>/<BASELINE_UNITS.length>: <unit id>'. The DENOMINATOR is the live baseline cardinality. The live wrapper db/prepared/journal/078_0065_fib_sensitivity_model.sql carries 'Unit 78/78' in its own bytes.",
+    "the_consequence": "ONE appended baseline unit CREATES one new wrapper AND REWRITES THE DENOMINATOR IN EVERY EXISTING WRAPPER. At INTEGRATION_SHA that is 79 files regenerated, measured by pnpm journal:verify reporting that all 79 wrappers regenerate byte-identically.",
+    "why_no_exact_file_list_may_be_frozen": "BINDING. Because the change set is 'every existing wrapper plus one new one', an exact frozen file list would be wrong the moment it was written and would fail closed against the generator's own output. The PATTERN is the only correct form, and it must not be replaced by an enumeration during implementation.",
+    "generator_and_verifier": "pnpm journal:generate, verified by pnpm journal:verify. Wrappers are GENERATED and hand-editing one is a STOP; scripts/baseline-operator-runner.ts independently refuses a wrapper that carries no journal append.",
+    "narrowness_preserved": "Re-proven at INTEGRATION_SHA with the gate's own matcher in two directions: db/prepared/journal/** covers NEITHER db/prepared/stella_0010_organization_bootstrap_capability.sql NOR db/prepared/checkpoint-b0/observation.sql. Both remain PROTECTED VIOLATIONS even with HPO-ODS-W2-21 supplied."
+  },
+
+  "candidate_revision_history": {
+    "form": "APPEND-ONLY. This candidate is UNMERGED; recording its audit history is candidate provenance, not historical evidence rewriting.",
+    "R1_materialization": "LANE BK - MULTIORG-S1-S2-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1. Candidate head 0c5b5442f3abb5ce82aa7add8155a0a3dd79a1fc, tree 7984000e39d4643cf67bdfdbf84ff387ce17d787. Published as PR #83, DRAFT.",
+    "R1_independent_audit": {
+      "lane": "LANE BO - PR83-INDEPENDENT-EXACT-OBJECT-AUDIT-AND-INTEGRATION-R1",
+      "RESULT": "FAIL",
+      "BLOCKING_FINDINGS": 1,
+      "UNKNOWN_FINDINGS": 0,
+      "finding": "S1_SCOPE_STILL_INCOMPLETE",
+      "substance": "A mandatory S1 drizzle migration cannot avoid becoming a BASELINE_UNITS member - omitting the unit raises problem kind UNKNOWN_FILE. After one simulated baseline growth event run against the repository's real generators, five further paths remained mechanically required and outside the S1 ceiling, and the instruction for the one hosted test host already in scope was incomplete."
+    },
+    "R1_remediation": {
+      "lane": "LANE BR - PR83-S1-BASELINE-SURFACE-REMEDIATION-R1",
+      "addresses": "Exactly that finding, by revising the SAME TWO unmerged artefacts already in PR #83.",
+      "creates_nothing_new": "No third file, no successor authority, no new ODS version, no new HPO id, no v1.0.21, no HPO-ODS-W2-22, no Controller31 implementation, and no runtime, schema, migration, test or gate implementation.",
+      "changes_in_this_addendum": [
+        "FUNCTION_D corrected from 2 named pins to the 4 that are forced, with the omission of L103 and the mischaracterisation of L112 as wording at L110 both recorded.",
+        "FUNCTION_F added, authorising the five further paths as UNPROTECTED literals with no new protected grant.",
+        "FUNCTION_G added, recording the checkpoint-b0 negative as a deliberate negative result.",
+        "known_test_conditions_carried replaced by deterministic_baseline_growth; the two registered KTCs retained on their own terms and KTC-S1-* prohibited.",
+        "journal_consequence added.",
+        "ods_specific_properties_an_auditor_should_check extended with O11 through O16.",
+        "candidate_self_check added."
+      ],
+      "no_pass_claimed": "NO PASS IS CLAIMED HERE. This lane is the remediator, not the auditor. Only an independent exact-object re-audit may issue a verdict on the revised candidate."
+    }
+  },
+
+  "candidate_self_check": {
+    "form": "Each entry is a MACHINE-CHECKABLE assertion over this artefact's own bytes and, where stated, over the live repository. A FALSE entry is a defect in the candidate.",
+    "SC-1_function_f_five_paths": "hpo_decision.FUNCTION_F_BASELINE_GROWTH_SURFACE_COMPLETION.paths_added_to_the_S1_ceiling contains ALL FIVE newly required paths and its path_count === 5. FAILS if any one disappears.",
+    "SC-2_function_d_four_pins": "hpo_decision.FUNCTION_D_HOSTED_TEST_DISCIPLINE_FAIL_CLOSED.forced_pin_count === 4 and its authorized adjustment names L103, L105, L112 and L115. FAILS if the baseline-manifest instruction omits one of its four forced pins.",
+    "SC-3_a1_status_authorised": "artifacts/hosted-a1-status.json appears in FUNCTION_F's path list and is dispositioned as a regenerated artefact. FAILS if it disappears.",
+    "SC-4_checkpoint_b0_refused": "FUNCTION_G exists, its verdict refuses db/prepared/checkpoint-b0/observation.sql for S1, and that path appears in NO grant or ceiling list anywhere in this addendum. FAILS if checkpoint-b0 is accidentally authorised for S1.",
+    "SC-5_no_KTC_waiver": "deterministic_baseline_growth.no_new_KTC is present and prohibitive, and no field of this addendum uses a known test condition to excuse a baseline-growth count pin. The withdrawn text is explicitly labelled WITHDRAWN and is not guidance. FAILS if a KTC is used to waive deterministic baseline growth.",
+    "SC-6_grants_not_broadened": "protected_grant.patterns is EXACTLY ['db/prepared/journal/**'] for HPO-ODS-W2-21, W2_20_NOT_WIDENED still asserts HPO-ODS-W2-20 is db/migrations/** alone, and FUNCTION_F creates no protected grant. FAILS if W2-20 or W2-21 is broadened.",
+    "SC-7_no_new_lineage": "This addendum's version remains 1.0.20 and its GRANT_ID remains HPO-ODS-W2-21. Neither v1.0.21 nor HPO-ODS-W2-22 appears as an ALLOCATION anywhere; where either identifier appears it is inside a PROHIBITION clause. FAILS if either appears as an allocation.",
+    "SC-8_grant_cardinality_unchanged": "PROTECTED_GRANTS_CHANGED is false, PROTECTED_GRANTS_COUNT_BEFORE === 10, PROTECTED_GRANTS_COUNT_AFTER === 10 and PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION === 12. The BR remediation alters none of them.",
+    "SC-9_changed_path_count": "authorized_changed_paths_this_mission.count === 2 and its paths are exactly this addendum and its companion tenancy amendment. The remediation adds no third file.",
+    "SC-10_audit_history_preserved": "candidate_revision_history.R1_independent_audit records RESULT FAIL, BLOCKING_FINDINGS 1, UNKNOWN_FINDINGS 0 and finding S1_SCOPE_STILL_INCOMPLETE, and no field of this addendum claims an independent PASS. FAILS if the audit failure is erased or a PASS is fabricated.",
+    "SC-11_controller31_preserved": "The Controller successor obligation is still declared, still bounded to exactly one entry, still counted 30 -> 31, and still NOT performed by this mission.",
+    "SC-12_companion_agreement": "Every path FUNCTION_F authorises also appears in the companion amendment's S1_LANE.unprotected_paths, and the per-host forced_pin_count values agree across the two artefacts. A disagreement is a STOP."
+  }
+}

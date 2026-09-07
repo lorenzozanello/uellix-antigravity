@@ -50,7 +50,7 @@ beforeEach(() => {
 
 describe('createSroiRunReviewAction', () => {
   it('validates input payload and delegates to service', async () => {
-    const payload = { status: 'reviewed', readinessScore: 90, overallNotes: 'Looks good' };
+    const payload = { status: 'reviewed', overallNotes: 'Looks good' };
     vi.mocked(createSroiRunReview).mockResolvedValue({ id: 'new-rev' } as any);
 
     const result = await createSroiRunReviewAction(PROJECT_ID, RUN_ID, payload);
@@ -64,9 +64,13 @@ describe('createSroiRunReviewAction', () => {
     expect(createSroiRunReview).not.toHaveBeenCalled();
   });
 
-  it('fails validation on score out of bounds', async () => {
-    const payload = { readinessScore: 120 };
+  // NEG-17-1 (FIBIU-17, FIBC-021, W2-B5) — inverted: readinessScore is
+  // REMOVED from the schema (.strict()), so no human path may write
+  // authoritative readiness — any value is rejected as an unrecognized key.
+  it('NEG-17-1: rejects the action schema when readinessScore is supplied at all', async () => {
+    const payload = { status: 'reviewed', readinessScore: 80 };
     await expect(createSroiRunReviewAction(PROJECT_ID, RUN_ID, payload)).rejects.toThrow('Invalid review payload');
+    expect(createSroiRunReview).not.toHaveBeenCalled();
   });
 });
 

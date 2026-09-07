@@ -1,0 +1,1027 @@
+{
+  "package_id": "MULTI_ORG_TENANT_SCOPE_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTABLE_TENANCY_AUTHORITY_FROZEN_WAITING_FOR_LINEAGE_ALLOCATION",
+  "mission_id": "MULTIORG-S1-TENANCY-AUTHORITY-MATERIALIZATION-R1",
+  "source_compiler": "LANE O — MULTIORG-S1-AUTHORITY-ZERO-DISCOVERY-COMPILER-R1",
+  "materialization_date": "2026-09-05",
+  "companion_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_HEAD": "60c93804a37bbae050959cb2709003dc6d92d8f3",
+  "AS_OF_TREE": "796ecf4a76752ffde32bcf5dfe3f7298e1bf7fda",
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "intervening_delta_from_mission_creation": "ZERO — EXPECTED_START_HEAD_AT_CREATION == LATEST_REMOTE_HEAD == 60c93804a37bbae050959cb2709003dc6d92d8f3. No re-measurement drift to reconcile.",
+
+  "PURPOSE": {
+    "statement": "Freeze the executable tenancy authority for Commercial V1 multi-organization tenant scope: what the target model IS, which current invariants it supersedes, which it preserves, and in what proven order the change may be made. This artifact implements NOTHING and authorizes NOTHING to be implemented yet.",
+    "what_this_is": [
+      "The executable reconciliation between the product-alignment references (MO-01..MO-12, SS-01..SS-03) and the current executable tenancy state measured at AS_OF_HEAD.",
+      "A frozen S1..S8 dependency graph with a DROP_LAST rule protecting the single load-bearing safety index.",
+      "A frozen contradiction register: eight named places where current executable code contradicts, or fails to carry, ratified product intent — each with an exact source citation."
+    ],
+    "what_this_is_not": [
+      "NOT an implementation. No runtime, schema, migration, prepared unit, or test is created or changed by this mission.",
+      "NOT an ODS/HPO lineage allocation. See FUTURE_ODS_NEEDS_SYMBOLIC — this artifact allocates no identifier of any kind.",
+      "NOT a re-opening of any product ratification. MO-01..MO-12 and SS-01..SS-03 are consumed as given and are not re-litigated here.",
+      "NOT a generic multi-org discovery exercise. Discovery was performed by the source compiler; this artifact only reconciles it with measured executable state."
+    ],
+    "fail_closed_rule": "Where this authority marks a decision UNKNOWN or FUTURE_MEASUREMENT_REQUIRED, an implementing mission must measure it, not assume it. Unknown required evidence fails closed."
+  },
+
+  "ALIGNMENT_REFERENCES": {
+    "product_alignment_baseline": "docs/ops/commercial/COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md",
+    "product_ratifications": "docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json",
+    "consumed_ratification_ids": [
+      "MO-01", "MO-02", "MO-03", "MO-04", "MO-05", "MO-06", "MO-07", "MO-08", "MO-09",
+      "MO-10", "MO-11", "MO-12",
+      "SS-01", "SS-02", "SS-03"
+    ],
+    "consumption_rule": "These 15 ratifications are consumed EXACTLY as written and are NOT re-opened. Where this authority states a decision they do not cover, it is classified DERIVED_ARCHITECTURE_DECISION or DERIVED_SECURITY_DECISION or DERIVED_TRACEABILITY_DECISION and creates NO new product ratification id.",
+    "precedence": "The alignment references are PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY (their own declared class). They establish product intent. THIS artifact is the executable reconciliation of that intent with measured repository state. On any divergence about product intent, the ratifications control; on any divergence about current executable state, the measured EVIDENCE_ANCHORS below control.",
+    "not_consumed_here": "CA-01..CA-05, EV-01..EV-03, RI-01, AG-01..AG-03 are out of scope for this tenancy package. CA-* is named only where it collides as a shared writer (see SHARED_WRITERS)."
+  },
+
+  "EVIDENCE_ANCHORS": {
+    "measurement_note": "Every anchor below was measured by direct read or grep in this worktree at AS_OF_HEAD 60c9380 / tree 796ecf4. Line numbers are pinned to that tree and MUST be re-verified, not assumed, by any mission starting from a later head.",
+    "anchors": [
+      {
+        "id": "E1",
+        "claim": "The database ENFORCES at most one active membership per user.",
+        "source": "db/schema.ts:61",
+        "literal": "uniqueIndex('user_single_active_membership').on(table.userId).where(sql`${table.status} = 'active'`)"
+      },
+      {
+        "id": "E2",
+        "claim": "E1 is materialized in the applied baseline, not merely declared in the ORM.",
+        "source": "db/baseline/stella_g2_schema.sql:7071",
+        "literal": "CREATE UNIQUE INDEX user_single_active_membership ON public.organization_members USING btree (user_id) WHERE ((status)::text = 'active'::text);"
+      },
+      {
+        "id": "E3",
+        "claim": "E1 has a migration provenance.",
+        "source": "db/migrations/0003_curvy_tempest.sql",
+        "literal": "Migration that introduced user_single_active_membership."
+      },
+      {
+        "id": "E4",
+        "claim": "The current principal is singular/pick-first, not selected.",
+        "source": "lib/auth/database-context.ts:209 (doc), :210 (function), :219 (limit)",
+        "literal": "/** The caller's single active membership, if any. Context required. */ export async function loadActiveMembershipWithinContext(userId) { ... .where(and(eq(userId), eq(status,'active'))).limit(1) ... }",
+        "note": "The `.limit(1)` at :219 is a literal pick-first over the active-membership set. It is correct today ONLY because E1 guarantees that set has at most one element."
+      },
+      {
+        "id": "E5",
+        "claim": "An explicit superadmin membership-check bypass exists at the database identity boundary.",
+        "source": "db/identity-context.ts:217",
+        "literal": "if (identity.organizationId !== null && check.is_member !== true && !check.is_super_admin)"
+      },
+      {
+        "id": "E6",
+        "claim": "The selected-organization GUC is SET on every bound connection.",
+        "source": "db/identity-context.ts:180",
+        "literal": "drizzleSql`SELECT set_config('app.organization_id', ${identity.organizationId}, true)`"
+      },
+      {
+        "id": "E7",
+        "claim": "The core RLS helper resolves to the FULL SET of the caller's active memberships, not to the selected one.",
+        "source": "db/migrations/0031_rls_core.sql:25-37",
+        "literal": "CREATE OR REPLACE FUNCTION current_user_org_ids() RETURNS uuid[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$ SELECT ARRAY(SELECT organization_id FROM organization_members WHERE user_id = auth.uid() AND status = 'active'); $$;"
+      },
+      {
+        "id": "E8",
+        "claim": "The selected-org GUC is NOT conjunctively enforced across the baseline tenant policy surface.",
+        "source": "counted in this worktree at AS_OF_HEAD",
+        "literal": "grep -c 'current_user_org_ids' db/baseline/stella_g2_schema.sql = 45; grep -c 'app.organization_id' db/baseline/stella_g2_schema.sql = 0. The GUC is consumed at exactly 9 sites, ALL inside db/prepared/stella_0003_suggestion_decisions.sql, stella_0004_role_separation.sql, stella_0005_runtime_cutover.sql, stella_0005_rollback.sql, stella_0005c_runtime_policy_scope.sql, stella_0005c_rollback.sql.",
+        "security_significance": "E7 + E8 together are the reason for DROP_LAST_RULE. `organization_id = ANY(current_user_org_ids())` is a one-org predicate today ONLY as a side effect of E1. Removing E1 without first welding the GUC conjunctively widens the baseline tenant policy surface from 'the caller's one organization' to 'every organization the caller is a member of', with no policy edit and no visible diff."
+      },
+      {
+        "id": "E9",
+        "claim": "organizations.founded_by does not exist anywhere in the repository.",
+        "source": "repo-wide grep at AS_OF_HEAD",
+        "literal": "grep -rn 'founded_by|foundedBy' --include=*.ts --include=*.sql (excluding node_modules) = 0 matches."
+      },
+      {
+        "id": "E10",
+        "claim": "No selected-organization session carrier exists.",
+        "source": "targeted grep of app, lib, db at AS_OF_HEAD",
+        "literal": "grep -rniE 'selected_?organization|selectedOrg|active_?organization_?cookie|org_?switch' --include=*.ts --include=*.tsx app lib db = 0 matches."
+      },
+      {
+        "id": "E11",
+        "claim": "Organization suspension is WRITTEN but never CONSUMED outside the admin control plane.",
+        "source": "lib/auth/database-context.ts:258 (status loaded); grep at AS_OF_HEAD (status never compared)",
+        "literal": "loadOrganizationWithinContext returns `status: org.status` at :258. A grep for the literals 'suspended' / \"suspended\" across app and lib, excluding app/admin, lib/admin and __tests__, returns 0 matches. The write path exists (db/prepared/stella_0011_organization_column_acl.sql §3.2, uellix_capability.admin_set_organization_status, refusing any status outside (active, suspended)); no ordinary tenant request path reads it."
+      },
+      {
+        "id": "E12",
+        "claim": "Signup allowlisting is MANDATORY on the current self-service org-creation path.",
+        "source": "app/(authenticated)/app/onboarding/actions.ts:63-67",
+        "literal": "const allowlisted = ... isEmailAllowlisted(authUser.email!) ...; if (!allowlisted) { redirect('/app/onboarding?error=not_allowlisted') }"
+      },
+      {
+        "id": "E13",
+        "claim": "Stella fact rows already carry an organization column; what is missing is the SELECTED-org binding, not the column.",
+        "source": "db/schema.ts:1065-1067",
+        "literal": "export const stellaInteractions = pgTable('stella_interactions', { ... organizationId: uuid('organization_id').references(() => organizations.id).notNull(), ... })",
+        "note": "organization_id is NOT NULL. Its VALUE, however, is derived from the pick-first membership of E4 — so today it records 'the caller's only org', which is indistinguishable from 'the selected org' only while E1 holds."
+      },
+      {
+        "id": "E14",
+        "claim": "Storage authorization is delegated to a SECURITY DEFINER helper that reads membership tables directly, not the GUC.",
+        "source": "db/prepared/stella_0019_storage_write_roles.sql:261, :427, :680, :689",
+        "literal": "Policies insert_evidence / delete_evidence on storage.objects call public.can_write_evidence_object, which is asserted SECURITY DEFINER (:261) and reads public.projects and public.organization_members (:427)."
+      },
+      {
+        "id": "E15",
+        "claim": "The organization-scoped request surface is 10 consumer files plus one definition, not a handful.",
+        "source": "grep of app, lib, db excluding tests at AS_OF_HEAD",
+        "literal": "runWithOptionalOrganizationAccess: defined in lib/auth/session.ts; consumed in app/api/fx-rates/fetch/route.ts, app/app/organization/settings/page.tsx, app/app/portfolios/page.tsx, app/app/portfolios/[portfolioId]/page.tsx, app/app/projects/page.tsx, app/app/projects/[projectId]/page.tsx, app/app/projects/[projectId]/pipeline/page.tsx, app/app/projects/[projectId]/pipeline/proxies/page.tsx, app/app/projects/[projectId]/report/[reportId]/pdf/route.ts, app/app/projects/[projectId]/report/[reportId]/print/page.tsx."
+      },
+      {
+        "id": "E16",
+        "claim": "An ACTIVE lineage hard gate forbids allocating the next ODS/HPO identifier until the Controller enumerates v1.0.17.",
+        "source": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json:109, :113, :114",
+        "literal": "\"A mission that finds v1.0.17 unenumerated in the live Controller and attempts to allocate v1.0.18 or HPO-ODS-W2-19, or to declare W2-B5 closed, MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.\"",
+        "measured_state": "grep -c 'v1.0.17' scripts/ods-controller.ts = 0 — v1.0.17 is UNENUMERATED at AS_OF_HEAD. The gate is ACTIVE. This mission complies by allocating nothing (see FUTURE_ODS_NEEDS_SYMBOLIC)."
+      }
+    ]
+  },
+
+  "CURRENT_CONTRADICTIONS": {
+    "framing": "These are the executable contradictions this authority must resolve. They are stated as contradictions, never as 'not yet built' — where current code actively enforces the opposite of ratified intent, that is recorded as such. Absence and contradiction are kept distinct.",
+    "contradictions": [
+      {
+        "id": "C-1",
+        "class": "ACTIVE_ENFORCED_CONTRADICTION",
+        "against": "MO-02",
+        "statement": "user_single_active_membership actively ENFORCES at most one active membership per subject. MO-02 ratifies that a subject may hold active memberships in MULTIPLE organizations.",
+        "evidence": ["E1", "E2", "E3"],
+        "load_bearing_note": "This index is not incidental. db/prepared/stella_0006_invitation_capability.sql and db/prepared/stella_0010_organization_bootstrap_capability.sql rely on it to serialize concurrent invitation acceptance and org bootstrap. Removing it removes a concurrency guarantee that must be replaced, not merely deleted.",
+        "resolved_by_node": "S7"
+      },
+      {
+        "id": "C-2",
+        "class": "NOT_IMPLEMENTED_AS_RATIFIED",
+        "against": "MO-03",
+        "statement": "The request principal is singular/pick-first. There is exactly one membership to read because C-1 forbids a second, not because a selection mechanism chose one among several. MO-03 ratifies exactly one SELECTED organization as the tenant request scope.",
+        "evidence": ["E4"],
+        "resolved_by_node": "S3"
+      },
+      {
+        "id": "C-3",
+        "class": "ACTIVE_ENFORCED_CONTRADICTION",
+        "against": "MO-07",
+        "statement": "A caller confirmed as super-admin is NOT required to be an active member of the organization it operates against at the database identity boundary. MO-07 ratifies that tenant routes remain membership-bound even for platform superadmins, with NO silent superadmin tenant-data bypass.",
+        "evidence": ["E5"],
+        "resolved_by_node": "S5"
+      },
+      {
+        "id": "C-4",
+        "class": "ABSENT_CARRIER",
+        "against": "MO-04",
+        "statement": "No selected-organization session carrier exists. MO-04 ratifies a session-scoped carrier that is HttpOnly, Secure, SameSite=Lax and session-only.",
+        "evidence": ["E10"],
+        "resolved_by_node": "S2"
+      },
+      {
+        "id": "C-5",
+        "class": "ABSENT_COLUMN",
+        "against": "MO-10",
+        "statement": "organizations.founded_by does not exist. MO-10 ratifies it as the target explicit founder relation.",
+        "evidence": ["E9"],
+        "resolved_by_node": "S1"
+      },
+      {
+        "id": "C-6",
+        "class": "NON_CONJUNCTIVE_ENFORCEMENT",
+        "against": "MO-03 + MO-06",
+        "statement": "The selected-org GUC app.organization_id is set on every bound connection but is NOT conjunctively enforced across the baseline tenant policy surface. Those policies authorize on membership-set inclusion (= ANY(current_user_org_ids())), which is a one-organization predicate today only as a side effect of C-1.",
+        "evidence": ["E6", "E7", "E8"],
+        "severity": "THIS IS THE PRIMARY SECURITY CONTRADICTION OF THE PACKAGE. It is the reason DROP_LAST_RULE exists.",
+        "resolved_by_node": "S4"
+      },
+      {
+        "id": "C-7",
+        "class": "ABSENT_WELD",
+        "against": "MO-12",
+        "statement": "Stella operations are not bound to a selected, validated organization context and are not rechecked against one at the database/runtime boundary. stella_interactions.organization_id is NOT NULL, but its value is the pick-first membership org of C-2 — indistinguishable from a selected org only while C-1 holds.",
+        "evidence": ["E13"],
+        "resolved_by_node": "S3c"
+      },
+      {
+        "id": "C-8",
+        "class": "CONSTRAINED_BOOTSTRAP",
+        "against": "SS-01 + SS-02 + SS-03",
+        "statement": "Self-service organization bootstrap is constrained by a MANDATORY signup allowlist gate, and by the current RLS/hosted-capability posture that routes bootstrap through definer capabilities. SS-01 ratifies that mandatory allowlisting is NOT part of the final Commercial V1 journey.",
+        "evidence": ["E12"],
+        "resolved_by_node": "S6"
+      }
+    ],
+    "additional_recorded_gap": {
+      "id": "C-9",
+      "class": "WRITTEN_NEVER_CONSUMED",
+      "against": "DERIVED_SECURITY_DECISION (no ratification covers it)",
+      "statement": "Organization suspension is writable through a governed platform capability and is loaded into the application Organization object, but no ordinary tenant request path ever reads it. A suspended organization is therefore still fully selectable and operable as a tenant scope.",
+      "evidence": ["E11"],
+      "resolved_by_node": "S5"
+    }
+  },
+
+  "SUPERSEDED_INVARIANTS": {
+    "rule": "Each entry names an invariant that the target model REPLACES, cites the exact current source that carries it, and names the node that may supersede it. An invariant is NOT superseded on the date this authority is frozen — it is superseded when its node is materialized and proven.",
+    "invariants": [
+      {
+        "id": "SI-1",
+        "current_invariant": "A subject has at most one active organization membership.",
+        "carried_by": "E1 / E2 / E3 — db/schema.ts:61, db/baseline/stella_g2_schema.sql:7071, db/migrations/0003_curvy_tempest.sql",
+        "superseded_by": "MEMBERSHIP_CARDINALITY (multiple active memberships permitted, MO-02)",
+        "superseding_node": "S7",
+        "supersession_is_gated_by": "DROP_LAST_RULE — this is the single DROP_LAST item of the package."
+      },
+      {
+        "id": "SI-2",
+        "current_invariant": "The request principal's organization is whichever active membership the query returns first.",
+        "carried_by": "E4 — lib/auth/database-context.ts:209/:210/:219",
+        "superseded_by": "REQUEST_PRINCIPAL (the principal's organization is the SELECTED organization, validated against a live membership)",
+        "superseding_node": "S3"
+      },
+      {
+        "id": "SI-3",
+        "current_invariant": "A confirmed super-admin is exempt from the active-membership check at the database identity boundary.",
+        "carried_by": "E5 — db/identity-context.ts:217",
+        "superseded_by": "SUPERADMIN_BOUNDARY (tenant routes are membership-bound for every principal without exception; platform reach is exercised through ADMIN_CONTROL_PLANE, which constructs no tenant context)",
+        "superseding_node": "S5"
+      },
+      {
+        "id": "SI-4",
+        "current_invariant": "Tenant row authorization = membership-set inclusion.",
+        "carried_by": "E7 / E8 — db/migrations/0031_rls_core.sql:25-37 plus 45 baseline policy uses and 0 baseline GUC uses",
+        "superseded_by": "RLS_TARGET (tenant row authorization = membership-set inclusion AND selected-organization equality, the second conjunct enforced RESTRICTIVELY)",
+        "superseding_node": "S4",
+        "note": "SI-4 must be superseded BEFORE SI-1. Superseding SI-1 first is the silent-widening failure described at E8."
+      },
+      {
+        "id": "SI-5",
+        "current_invariant": "Stella fact rows are attributed to the caller's only organization.",
+        "carried_by": "E13 — db/schema.ts:1065-1067",
+        "superseded_by": "STELLA_S3C_SCOPE_WELD (Stella fact rows are attributed to the selected, validated organization and rechecked at the database boundary)",
+        "superseding_node": "S3c"
+      },
+      {
+        "id": "SI-6",
+        "current_invariant": "Self-service organization creation requires the caller's email to match a signup allowlist entry.",
+        "carried_by": "E12 — app/(authenticated)/app/onboarding/actions.ts:63-67",
+        "superseded_by": "ALLOWLIST_EXIT (allowlisting ceases to be MANDATORY; it may survive as an optional, feature-flagged compatibility control)",
+        "superseding_node": "S6",
+        "note": "SS-01 supersedes the MANDATORY property, not the mechanism. See ALLOWLIST_EXIT."
+      },
+      {
+        "id": "SI-7",
+        "current_invariant": "Concurrent invitation acceptance and organization bootstrap are serialized by the user_single_active_membership unique index.",
+        "carried_by": "db/prepared/stella_0006_invitation_capability.sql, db/prepared/stella_0010_organization_bootstrap_capability.sql (reliance recorded in COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json, MO-02 CURRENT_EXECUTABLE_STATE)",
+        "superseded_by": "SECOND_ORG_MEMBERSHIP + SELF_SERVICE_BOOTSTRAP (an explicit serialization mechanism that does not depend on a membership-cardinality index)",
+        "superseding_node": "S6",
+        "note": "This is the invariant most likely to be forgotten. Dropping SI-1 without replacing SI-7 removes a concurrency guarantee, not just a cardinality rule."
+      }
+    ]
+  },
+
+  "PRESERVED_INVARIANTS": {
+    "rule": "These invariants survive the target model unchanged. An implementing node that weakens any of them fails, regardless of whether its own controls pass.",
+    "invariants": [
+      { "id": "PI-1", "invariant": "Organization = tenant root.", "source": "COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md §4" },
+      { "id": "PI-2", "invariant": "Cross-tenant access fails closed.", "source": "COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md §4" },
+      { "id": "PI-3", "invariant": "Ownership != Access. Founding an organization grants traceability, never authorization.", "source": "COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md §4; reinforced by FOUNDED_BY below" },
+      { "id": "PI-4", "invariant": "Membership is revalidated on EVERY request. No cached, trust-on-first-use, or session-asserted membership.", "source": "MO-05; currently satisfied at the single-org ceiling by db/identity-context.ts withDatabaseIdentityContext" },
+      { "id": "PI-5", "invariant": "Membership role is the authorization ceiling. No capability check may exceed the role.", "source": "MO-06" },
+      { "id": "PI-6", "invariant": "Historical claims, evidence and reports remain reconstructible. No backfill may fabricate history.", "source": "COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md §4; MO-11" },
+      { "id": "PI-7", "invariant": "Stella analysis != human decision. Stella may analyze, explain, suggest, draft — never score, decide or approve.", "source": "Stella doctrine, COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md §4; EV-03" },
+      { "id": "PI-8", "invariant": "Commercial V1 cannot require technical manual provisioning.", "source": "COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md §4; SS-03" },
+      { "id": "PI-9", "invariant": "The identity claim must be proven to have taken effect on the connection before any query runs, rather than silently seeing no rows or the wrong ones.", "source": "db/identity-context.ts:202-208 (code literal DB_IDENTITY_CONTEXT_NOT_APPLIED at :204). Preserved verbatim — S3/S4/S5 extend this check, never relax it." },
+      { "id": "PI-10", "invariant": "A super-admin claim the database does not confirm is rejected.", "source": "db/identity-context.ts:210-215 (code literal DB_IDENTITY_SUPER_ADMIN_CLAIM_REJECTED at :212). Preserved verbatim — S5 removes the membership EXEMPTION at :217, never this claim check." },
+      { "id": "PI-11", "invariant": "Production remains frozen. main at 067e8c2f3ac9b5e843de3a35575182907b4365d4; no cutover authorized by this package.", "source": "docs/ops/ods/ODS_CONTROLLER_AUTHORITY_v1.0.0.json production_freeze_invariant" },
+      { "id": "PI-12", "invariant": "A role the application does not recognize is not a role it can make an authorization decision with.", "source": "lib/auth/database-context.ts:226-228 (isValidRole guard returning null). Preserved — the selected-org principal of S3 keeps this guard." }
+    ]
+  },
+
+  "TARGET_SCHEMA": {
+    "classification": "TARGET_ONLY — no migration ordinal, no prepared-unit id, and no baseline-manifest position is allocated by this authority. An implementing mission allocates those under its own ODS grant.",
+    "organizations": {
+      "new_columns": [
+        {
+          "column": "founded_by",
+          "type": "uuid",
+          "nullable": true,
+          "references": "users(id)",
+          "on_delete": "RESTRICT",
+          "traces_to": "MO-10"
+        }
+      ],
+      "unchanged": "Every existing column of organizations, including status, is unchanged by S1. S5 changes how status is CONSUMED, never its shape."
+    },
+    "organization_members": {
+      "S1_through_S6": "UNCHANGED. In particular user_single_active_membership is NOT dropped, NOT altered, and NOT made deferrable before S7.",
+      "S7": "DROP INDEX user_single_active_membership, and ONLY that. organization_members_org_user_unique (db/schema.ts:60, the (organization_id, user_id) uniqueness) is PRESERVED — it prevents duplicate rows for the same pair and is orthogonal to membership cardinality across organizations."
+    },
+    "founder_cardinality_carrier": {
+      "requirement": "MO-01 (at most one SELF-SERVICE-FOUNDED organization per subject) needs an enforcement carrier distinct from founded_by itself, because founded_by is nullable by MO-11 and a NULL cannot participate in a uniqueness constraint that would enforce a cardinality.",
+      "target": "A partial unique index on organizations(founded_by) WHERE founded_by IS NOT NULL AND <self_service_provenance predicate>, or an equivalent enforcement in the bootstrap capability. The exact carrier is DEFERRED to the S1 implementing mission and MUST be chosen against the live schema, not asserted here.",
+      "classification": "FUTURE_MEASUREMENT_REQUIRED",
+      "hard_constraint": "Whatever carrier is chosen MUST NOT retroactively constrain historical rows whose founded_by is NULL under MO-11. A backfill that leaves NULLs and a cardinality rule that rejects NULLs must coexist."
+    },
+    "no_other_tables": "This authority creates no other table. CommercialAccount and EntitlementGrant (CA-01..CA-05) are explicitly OUT OF SCOPE and are named only under SHARED_WRITERS."
+  },
+
+  "FOUNDED_BY": {
+    "traces_to": "MO-10",
+    "decision": "organizations.founded_by uuid NULL REFERENCES users(id) ON DELETE RESTRICT.",
+    "semantics": "founded_by records WHO FOUNDED the organization. It is a TRACEABILITY relation, never an AUTHORIZATION relation (PI-3). No capability check, RLS policy, role resolution or entitlement evaluation may read founded_by. An implementing mission that makes founded_by grant any privilege violates PI-3 and fails.",
+    "nullability": "NULLABLE, permanently. MO-11 requires that unknown provenance remain NULL. A future mission MUST NOT tighten this to NOT NULL as a 'cleanup' — the NULLs are the honest record, not a defect.",
+    "FK_DELETE": {
+      "decision": "ON DELETE RESTRICT",
+      "classification": "DERIVED_TRACEABILITY_DECISION",
+      "rationale": "founded_by exists to make founding attribution reconstructible (PI-6). ON DELETE SET NULL would silently erase a true, deterministic attribution the moment a user row is deleted, converting 'this organization was founded by X' into 'provenance unknown' — which is exactly the state MO-11 reserves for genuinely unknown provenance. ON DELETE CASCADE is categorically wrong: it would delete an organization because a user row was deleted. RESTRICT makes the collision loud rather than lossy.",
+      "escape_hatch": "RESTRICT is the decision UNLESS repository mechanics prove a blocking incompatibility (for example, an existing governed user-deletion path that must succeed and cannot be reworked). If such an incompatibility is proven, the implementing mission must record it as a measured finding with an exact source citation, and must choose SET NULL only together with a compensating durable attribution record — never a bare downgrade.",
+      "prohibited": ["ON DELETE CASCADE", "silent downgrade to SET NULL without a compensating record", "no FK at all"]
+    },
+    "FOUNDER_CARDINALITY": {
+      "traces_to": "MO-01",
+      "decision": "A subject may SELF-SERVICE-FOUND at most ONE organization.",
+      "explicitly_not_implied": "This is NOT a limit on how many organizations a subject may be a MEMBER of (MO-02), nor on how many organizations may exist with founded_by pointing at the same subject through a NON-self-service path (for example a platform-admin-created organization whose deterministic provenance names that subject). The cardinality binds the SELF-SERVICE FOUNDING ACT, not the founded_by column globally.",
+      "carrier": "See TARGET_SCHEMA.founder_cardinality_carrier — FUTURE_MEASUREMENT_REQUIRED.",
+      "failure_behavior": "A second self-service founding attempt by the same subject MUST fail closed with TENANCY_FOUNDER_CARDINALITY_EXCEEDED (see FAILURE_CODES), never silently succeed, never silently reuse the existing organization."
+    },
+    "BACKFILL": {
+      "traces_to": "MO-11 — MO-11 CONTROLS this section in full.",
+      "decision": "Conservative, deterministic-provenance-only backfill. Unknown remains NULL.",
+      "prohibited_inference": {
+        "rule": "invited_by IS NULL MUST NOT be used to attribute founding.",
+        "why": "invited_by IS NULL means 'this membership row records no inviter'. That is consistent with founding, but it is equally consistent with a row created by a migration, a seed, a platform admin, a data repair, or an import. Treating an absence of inviter as evidence of founding manufactures attribution from silence — precisely what MO-11 forbids.",
+        "status": "HARD PROHIBITION. An implementing mission that backfills on this predicate fails, even if every other control passes."
+      },
+      "permitted_sources": {
+        "rule": "Only DETERMINISTIC provenance may set founded_by. A source qualifies as deterministic only if it records the founding act itself, not a state consistent with it.",
+        "examples_of_qualifying_shape": "An audit_logs row whose action names the organization-creation act and whose actor_user_id is the founder; a bootstrap-capability execution record naming the caller. Whether any such record actually exists for any historical organization at the time of backfill is FUTURE_MEASUREMENT_REQUIRED and MUST be measured, never assumed.",
+        "examples_of_non_qualifying_shape": "invited_by IS NULL; earliest joined_at; earliest created_at; the sole organization_admin; the row with the lowest id; any 'most likely founder' heuristic."
+      },
+      "unknown_disposition": "NULL. Not a sentinel user, not a placeholder uuid, not the platform account, not the first admin. NULL.",
+      "irreversibility_note": "A backfill that writes a wrong attribution is not recoverable by a later correction, because the wrong value becomes indistinguishable from a right one. This asymmetry is why the rule is conservative rather than best-effort.",
+      "audit_requirement": "The backfill MUST emit a durable count of rows-attributed and rows-left-NULL, and that count must be reproducible from the same inputs. A backfill whose outcome cannot be reproduced is not deterministic and does not satisfy MO-11."
+    }
+  },
+
+  "MEMBERSHIP_CARDINALITY": {
+    "traces_to": "MO-02",
+    "target": "A subject MAY hold ACTIVE memberships in MULTIPLE organizations simultaneously.",
+    "current": "Forbidden by SI-1 / C-1.",
+    "distinction_that_must_not_collapse": "FOUNDER cardinality (MO-01, at most one) and MEMBERSHIP cardinality (MO-02, many) are different concepts over different acts. An implementing mission that enforces one using the other's carrier is wrong in both directions.",
+    "change_node": "S7",
+    "preconditions": "See DROP_LAST_RULE. Every one of them.",
+    "what_multiple_memberships_do_NOT_grant": "Holding N active memberships does NOT widen a single request's authorization to N organizations. Exactly one is the request scope (MO-03). The other N-1 are invisible to that request's data plane. This is the property S4 must enforce mechanically, not by convention."
+  },
+
+  "SESSION_SCOPE": {
+    "traces_to": "MO-03 + MO-04",
+    "decision": "Exactly one selected organization is the tenant request scope at a time, and the selection is SESSION-scoped.",
+    "session_scoped_means": "The selection lives for the duration of the browser session and no longer. It is not persisted to the user row, not persisted to a database preference, and not restored across sessions. A new session starts with no selection.",
+    "no_selection_behavior": {
+      "rule": "A request with no selected organization is NOT silently defaulted to a membership.",
+      "single_membership_case": "Where the subject has exactly one selectable membership, the application MAY present that organization as the selection, but it MUST do so by making an explicit selection (writing the carrier), not by inferring a scope at request time. The distinction is observable: after the selection the carrier exists; under inference it never would.",
+      "multi_membership_case": "The subject is asked to select. No pick-first, no most-recent, no alphabetical default.",
+      "why": "Inference at request time is exactly SI-2, re-created under a new name. The whole point of S3 is that the scope is chosen once and then validated, never re-derived per request from whatever memberships happen to exist."
+    }
+  },
+
+  "SELECTED_ORG_CARRIER": {
+    "traces_to": "MO-04",
+    "decision": "A session cookie carrying the selected organization identity.",
+    "mandatory_attributes": {
+      "HttpOnly": true,
+      "Secure": true,
+      "SameSite": "Lax",
+      "session_only": "No Max-Age and no Expires. The cookie must die with the browser session.",
+      "path_scope": "FUTURE_MEASUREMENT_REQUIRED — must be chosen against the live route tree so that the carrier is not sent to routes that have no business receiving it."
+    },
+    "prohibited_carriers": [
+      "localStorage or sessionStorage (not HttpOnly; readable by any script on the origin)",
+      "a URL path segment or query parameter (leaks the tenant scope into logs, referrers and shared links)",
+      "a request header set by client-side code (trivially forgeable and invisible to the cookie policy)",
+      "a persisted database column on users (violates SESSION_SCOPE — it would survive the session)"
+    ],
+    "trust_model": {
+      "rule": "THE CARRIER IS AN ASSERTION, NEVER A GRANT.",
+      "elaboration": "The cookie states which organization the subject WISHES to act in. It authorizes nothing by itself. Every request must independently prove, against live database state, that the subject holds an active membership in that organization (REQUEST_REVALIDATION) before any tenant data is read or written. A forged or stale cookie must produce a refusal, never data.",
+      "classification": "DERIVED_SECURITY_DECISION",
+      "why_stated_explicitly": "This is the single most likely implementation error in the package: treating a signed/HttpOnly cookie as sufficient because it is hard to forge. Hard to forge is not the same as validated. A cookie naming an organization the subject was removed from five minutes ago is perfectly authentic and must still be refused."
+    },
+    "change_node": "S2"
+  },
+
+  "REQUEST_PRINCIPAL": {
+    "traces_to": "MO-03 + MO-05",
+    "target_shape": "The request principal carries: the authenticated subject; the SELECTED organization id (from the carrier); the membership row proving active membership in THAT organization; and the role from THAT membership.",
+    "supersedes": "SI-2 — lib/auth/database-context.ts:209/:210/:219.",
+    "explicit_rework_required": {
+      "site": "lib/auth/database-context.ts loadActiveMembershipWithinContext",
+      "current": "Selects active memberships for the user and takes .limit(1).",
+      "target": "Selects the active membership for (user, SELECTED organization). The result is either exactly one row or none. There is no 'first' row to take, because the (organization_id, user_id) uniqueness of organizations_members_org_user_unique makes the pair unique.",
+      "prohibited": "Keeping .limit(1) over an unqualified user predicate and adding a selected-org check afterwards. That leaves a pick-first with a filter bolted on — under multiple memberships it can select row A and then validate row A while the subject asked for organization B, producing either a wrong scope or a spurious refusal."
+    },
+    "blast_radius": {
+      "measured_at_AS_OF_HEAD": "E15 — 10 consumer files plus one definition (lib/auth/session.ts) for runWithOptionalOrganizationAccess.",
+      "note": "This is the OPTIONAL-organization surface only. The full principal-construction surface (withDatabaseIdentityContext callers, withAuthenticatedDatabaseContext callers, server actions) is LARGER and is FUTURE_MEASUREMENT_REQUIRED — the S3 implementing mission must enumerate it mechanically, not carry this number forward as if it were the whole surface."
+    },
+    "change_node": "S3"
+  },
+
+  "REQUEST_REVALIDATION": {
+    "traces_to": "MO-05",
+    "target": "On EVERY request, membership in the SELECTED organization is re-derived from live database state and re-proven at the database boundary. No caching, no session-asserted membership, no trust-on-first-use.",
+    "preserved_mechanism": "The existing per-request mechanism at db/identity-context.ts withDatabaseIdentityContext is genuine revalidation today and is PRESERVED (PI-4, PI-9). S3 changes WHAT is revalidated (membership in the selected organization) rather than WHETHER revalidation happens.",
+    "revocation_latency_requirement": {
+      "rule": "Membership revocation must take effect on the NEXT request. There is no permitted grace window.",
+      "consequence": "Any implementation that caches the membership proof for the life of the session, or memoizes it across requests, violates MO-05 even if the cache is short-lived.",
+      "classification": "DERIVED_SECURITY_DECISION"
+    },
+    "change_node": "S3"
+  },
+
+  "ROLE_CEILING": {
+    "traces_to": "MO-06",
+    "target": "The role held in the SELECTED organization's membership is the authorization ceiling for the request. No capability check may exceed it.",
+    "cross_org_role_prohibition": {
+      "rule": "A role held in organization A grants NOTHING in organization B, regardless of its rank.",
+      "why_stated": "Under multiple memberships this becomes a live risk that does not exist today. A subject who is organization_admin in A and viewer in B must be a viewer, and only a viewer, for every request scoped to B. Any code that resolves 'the user's role' without naming an organization is a defect after S7 even if it is correct before it.",
+      "classification": "DERIVED_SECURITY_DECISION"
+    },
+    "preserved": "PI-12 — an unrecognized role yields null and no authorization decision, per lib/auth/database-context.ts:226-228.",
+    "change_node": "S3"
+  },
+
+  "SUPERADMIN_BOUNDARY": {
+    "traces_to": "MO-07 + MO-09",
+    "target": "Tenant application routes are membership-bound for EVERY principal, with no superadmin exception.",
+    "supersedes": "SI-3 — the `!check.is_super_admin` clause at db/identity-context.ts:217.",
+    "precise_change": {
+      "remove": "The `&& !check.is_super_admin` conjunct at db/identity-context.ts:217, so that a non-member organization claim is refused for every principal.",
+      "preserve_verbatim": [
+        "PI-9 — the DB_IDENTITY_CONTEXT_NOT_APPLIED check at :202-208.",
+        "PI-10 — the DB_IDENTITY_SUPER_ADMIN_CLAIM_REJECTED check at :210-215. S5 removes the membership EXEMPTION, never the claim-confirmation check. A superadmin claim the database does not confirm must still be rejected."
+      ]
+    },
+    "what_superadmins_retain": "Platform-global reach through ADMIN_CONTROL_PLANE, which does not construct a tenant context at all. Superadmin does not become a lesser principal; it becomes a principal that reaches tenant DATA through a different, explicit door.",
+    "impersonation": {
+      "traces_to": "MO-09",
+      "status": "NOT AUTHORIZED TO EXIST by this package.",
+      "forward_constraint": "If a support/impersonation capability is ever authorized, it must be EXPLICIT (a named act, never inferred from superadmin status), AUDITABLE (every impersonated request attributable to both the operator and the impersonated subject), TIME-BOUNDED (an expiry that is enforced, not documented), and SEPARATELY AUTHORIZED (its own grant, never folded into a tenancy node).",
+      "anti_pattern": "Reintroducing the :217 exemption under an 'impersonation' name, without the four properties above, would be MO-07's contradiction restored with better vocabulary. It is prohibited."
+    },
+    "change_node": "S5"
+  },
+
+  "ADMIN_CONTROL_PLANE": {
+    "traces_to": "MO-08",
+    "target": "/admin is a platform/global control plane, structurally separate from the tenant data plane.",
+    "current_state": "app/admin and lib/admin exist as a distinct route tree and library at AS_OF_HEAD (MO-08 implementation_status: PARTIALLY_IMPLEMENTED).",
+    "boundary_rule": {
+      "rule": "The platform control plane operates on organizations AS OBJECTS OF ADMINISTRATION. It does not construct a tenant request scope, does not read the selected-org carrier, and does not acquire tenant-member privileges.",
+      "consequence_for_S5": "Because /admin never constructs a tenant context, removing the :217 exemption does not break it. If removing that exemption DOES break an /admin path, that path was reaching tenant data through the tenant door, and the correct fix is to give it an explicit platform capability — never to restore the exemption.",
+      "classification": "DERIVED_SECURITY_DECISION"
+    },
+    "measurement_obligation": "Whether every current /admin path already honors this boundary is FUTURE_MEASUREMENT_REQUIRED. The S5 implementing mission MUST enumerate /admin's database entry points and classify each as platform-capability or tenant-context, rather than assuming the separation the route tree implies.",
+    "change_node": "S5"
+  },
+
+  "GUC_CONTRACT": {
+    "traces_to": "MO-03 + MO-06; the enforcement mechanism is a DERIVED_SECURITY_DECISION.",
+    "guc_name": "app.organization_id",
+    "current_state": {
+      "set": "YES, on every bound connection — E6, db/identity-context.ts:180, transaction-local (`set_config(..., true)`).",
+      "consumed": "At exactly 9 sites, all in db/prepared/stella_000{3,4,5,5c} — E8.",
+      "consumed_in_baseline_policy_surface": "NO. Zero occurrences in db/baseline/stella_g2_schema.sql against 45 occurrences of current_user_org_ids — E8."
+    },
+    "target_contract": {
+      "C1_set": "app.organization_id is set transaction-locally to the SELECTED organization on every bound connection. Transaction-local (the `true` third argument) is PRESERVED — a session-scoped GUC would leak the scope across pooled connections.",
+      "C2_never_null_in_tenant_scope": "In any tenant-scoped transaction the GUC is set to a validated organization id. It is never empty, never NULL, and never a client-supplied value that has not passed REQUEST_REVALIDATION.",
+      "C3_conjunctive": "Where the GUC governs a tenant table, it is enforced CONJUNCTIVELY with membership — authorization = membership-set inclusion AND selected-organization equality. Never disjunctively, never as a replacement for the membership predicate.",
+      "C4_restrictive": "The conjunct is published as a RESTRICTIVE policy. PERMISSIVE policies combine with OR; a permissive selected-org policy could be satisfied by any other permissive policy on the table and would enforce nothing. This is not a hypothetical: it is the exact failure class already adjudicated at docs/ops/capabilities/ADVERSARIAL_FINDINGS_ROUND2.md A2-F02, which closed by converting 9 capability policies to AS RESTRICTIVE for this reason.",
+      "C5_absence_fails_closed": "A tenant-scoped query executing with the GUC unset must return NO ROWS and permit NO WRITES. `current_setting('app.organization_id', true)` returns NULL when unset; a predicate of the form `organization_id = current_setting(...)::uuid` yields NULL, which is not TRUE, which denies. This must be PROVEN by a negative control (N-4), not assumed from the SQL semantics."
+    },
+    "change_node": "S4"
+  },
+
+  "RLS_TARGET": {
+    "traces_to": "MO-03 + MO-06; mechanism is a DERIVED_SECURITY_DECISION.",
+    "supersedes": "SI-4.",
+    "target_predicate_shape": "membership-set inclusion (existing, PERMISSIVE, unchanged) AND selected-organization equality (new, RESTRICTIVE, from the GUC).",
+    "why_both_conjuncts_are_required": {
+      "membership_alone": "Authorizes every organization the subject belongs to — the silent-widening failure of E8 once SI-1 is dropped.",
+      "guc_alone": "Authorizes whatever the connection asserts. The GUC is set by application code; making it the sole authority moves the tenant boundary from the database into the application, which is precisely what RLS exists to prevent.",
+      "conjunction": "The subject must both BELONG to the organization and have SELECTED it. Neither the application nor the membership table can widen the scope alone."
+    },
+    "scope_of_the_weld": {
+      "target_set": "The tenant tables whose policies currently authorize via `organization_id = ANY(current_user_org_ids())`.",
+      "cardinality": "FUTURE_MEASUREMENT_REQUIRED. 45 textual occurrences of current_user_org_ids exist in db/baseline/stella_g2_schema.sql at AS_OF_HEAD, but occurrences are not policies and policies are not tables. The S4 implementing mission MUST enumerate the actual policy/table set from live catalog state (pg_policy) under a disposable harness, and MUST NOT carry the number 45 forward as a policy count.",
+      "closed_world_requirement": "The enumeration must be CLOSED-WORLD: a table that carries organization_id and is NOT in the welded set is a finding requiring explicit disposition (welded, or classified out of scope with a reason), never a silent omission."
+    },
+    "superadmin_interaction": "Existing policy disjuncts of the form `OR current_user_is_super_admin()` are OUT OF SCOPE for S4 and are handled by S5. S4 must not silently alter them; changing the superadmin reach and changing the tenant-scope reach in one node makes neither provable.",
+    "change_node": "S4"
+  },
+
+  "STORAGE_V1_BOUNDARY": {
+    "current_state": "E14 — policies insert_evidence and delete_evidence on storage.objects delegate to public.can_write_evidence_object, a SECURITY DEFINER helper that reads public.projects and public.organization_members directly (db/prepared/stella_0019_storage_write_roles.sql:261, :427, :680, :689).",
+    "the_boundary_problem": "Because the helper derives authorization from membership tables rather than from the GUC, it inherits SI-4 exactly: it is a one-organization check today only because SI-1 holds. Dropping SI-1 without welding storage widens object-level write authorization to every organization the subject belongs to.",
+    "V1_DECISION": {
+      "decision": "Storage IS IN SCOPE for the weld and is a HARD PRECONDITION of S7.",
+      "classification": "DERIVED_SECURITY_DECISION",
+      "rationale": "The alternative — declaring storage out of scope for V1 — would leave an unwelded write surface at exactly the moment the membership ceiling is removed. A tenant boundary that holds for rows and not for evidence objects is not a tenant boundary. There is no version of Commercial V1 in which cross-tenant evidence writes are acceptable (PI-2).",
+      "node": "S4 welds it; S7 may not proceed until it is welded and proven."
+    },
+    "implementation_constraint": {
+      "definer_hazard": "can_write_evidence_object is SECURITY DEFINER and is invoked from a policy on storage.objects by `authenticated`. A SECURITY DEFINER function does NOT reset session GUCs, so `current_setting('app.organization_id', true)` inside it resolves to the CALLER's value — which is the desired behavior here, but is the same mechanism that produced adversarial finding A2-F02 (docs/ops/capabilities/ADVERSARIAL_FINDINGS_ROUND2.md) where auth.uid() inside a definer resolved to the caller and disabled capability bounds by OR.",
+      "requirement": "The S4 implementing mission MUST prove the GUC's value inside the definer under a real PostgreSQL probe, never reason about it from the definer's declaration.",
+      "package_invariant_to_preserve": "stella_0019 asserts at :667 and :680/:689 that it recreates NO policy on storage.objects and that the named policies still call the helper. Any successor republishing the helper body must preserve those verification assertions rather than weaken them."
+    }
+  },
+
+  "STELLA_S3C_SCOPE_WELD": {
+    "traces_to": "MO-12",
+    "node_id": "S3c",
+    "why_a_dedicated_node": "MO-12 already requires that Stella operations bind to the selected validated organization AND be rechecked at the database/runtime boundary. That is a distinct proof obligation from the generic principal rework (S3) and from the generic policy weld (S4), because Stella has its own writer path, its own fact tables, and its own hosted prepared-unit surface. Folding it into S3 or S4 would make it provable only by inference.",
+    "current_state": "E13 — stella_interactions.organization_id is uuid NOT NULL REFERENCES organizations(id) (db/schema.ts:1067). The COLUMN exists. What is missing is that its VALUE derives from the pick-first membership of SI-2, and that no recheck binds it to a selected, validated organization.",
+    "target": {
+      "attribution": "Every Stella fact row is attributed to the SELECTED, validated organization of the request that produced it.",
+      "recheck": "The binding is rechecked at the database/runtime boundary — the same GUC conjunct as RLS_TARGET, applied to the Stella writer surface, so that a Stella write asserting organization B while the request is scoped to A is refused by the database, not only by the application.",
+      "explicitly_insufficient": "MO-12 states it directly: a design in which the MEMBERSHIP CEILING ALONE prevents ambiguous cross-scope attribution is REJECTED. After S7 the ceiling is gone; a Stella scope that depended on it silently loses its guarantee. S3c must hold WITHOUT the ceiling."
+    },
+    "surface": {
+      "known": "stella_interactions (db/schema.ts:1065).",
+      "unknown": "The full set of Stella-owned tables carrying organization_id, and the full Stella writer path, are FUTURE_MEASUREMENT_REQUIRED. The S3c implementing mission MUST enumerate them mechanically.",
+      "reconciliation_with_FIBDB053": "See SHARED_WRITERS — S3c and the future FIBDB-053 / Wave3 Stella hosted surfaces write the same prepared-unit and hosted-baseline-manifest region. This is a declared SERIAL CHOKE POINT, not a parallelizable pair."
+    },
+    "preserved": "PI-7 — this node changes Stella's tenant SCOPE, never Stella's authority. Stella still may not score, decide or approve.",
+    "change_node": "S3c"
+  },
+
+  "CAP05_INTERFACE": {
+    "what_CAP05_is": "The organization-bootstrap capability surface: db/prepared/stella_0010_organization_bootstrap_capability.sql, together with the CAP-05 dry-run acceptance cases recorded in docs/ops/capabilities/ADVERSARIAL_FINDINGS.md (rows A-B2/B-F2 'bootstrap creates the organisation' and A-B4/B-F4 'founding membership').",
+    "why_it_is_an_interface_for_this_package": "Bootstrap is where a subject, an organization and a founding membership come into existence in one act. Every one of MO-01 (founder cardinality), MO-10 (founded_by), MO-11 (backfill's forward counterpart: new rows have KNOWN provenance) and SS-02 (deterministic/idempotent bootstrap) lands on this surface.",
+    "contract": {
+      "I1": "Bootstrap is the DETERMINISTIC PROVENANCE source for founded_by going forward. Organizations created through CAP-05 after S1 have founded_by set to the bootstrapping subject — not by inference, but because the capability records the founding act it performs.",
+      "I2": "Bootstrap enforces FOUNDER_CARDINALITY (MO-01) and refuses a second self-service founding with TENANCY_FOUNDER_CARDINALITY_EXCEEDED.",
+      "I3": "Bootstrap remains DETERMINISTIC and IDEMPOTENT (SS-02). Idempotency must not be achieved by silently returning the subject's existing organization for what the caller submitted as a new founding — that would satisfy idempotency by violating I2's failure contract.",
+      "I4": "Bootstrap must NOT depend on user_single_active_membership for serialization after S7. See SI-7 and SELF_SERVICE_BOOTSTRAP."
+    },
+    "known_adversarial_history_to_preserve": "The CAP-05 surface has already been hardened against two closed findings: a definer missing USAGE on schema auth (A-B2/B-F2, closed by granting USAGE with a has_schema_privilege postcondition) and a RETURNING id requiring SELECT on the id column (A-B4/B-F4, closed by adding id to the grant with an explicit postcondition at stella_0010 §4.4). Any successor touching this surface must PRESERVE those postconditions, not re-derive the grants."
+  },
+
+  "SELF_SERVICE_BOOTSTRAP": {
+    "traces_to": "SS-02 + SS-03 + PI-8",
+    "target": "Verified identity/email + abuse/rate protection + deterministic, idempotent bootstrap — with NO technical provisioning intervention required.",
+    "current_state": "C-8. Bootstrap is gated by a MANDATORY allowlist (E12) and routes through definer capabilities under the current RLS/hosted posture.",
+    "serialization_replacement": {
+      "problem": "SI-7 — concurrent invitation acceptance and org bootstrap are serialized today BY user_single_active_membership. S7 removes that serializer.",
+      "requirement": "S6 must establish an explicit serialization mechanism that does not depend on membership cardinality, and S7 may not proceed until it is proven under real concurrency.",
+      "prohibited": "Relying on application-level checks (read-then-write) for serialization. The current guarantee is a database uniqueness guarantee; replacing it with an application check is a downgrade disguised as a refactor.",
+      "classification": "DERIVED_ARCHITECTURE_DECISION"
+    },
+    "distinction_preserved": "SS-03 — registration != provisioning != commercial activation != entitlement. Commercial review MAY exist. Technical provisioning intervention MAY NOT be required. This package authorizes no CommercialAccount/entitlement concept (out of scope, CA-01..CA-05); it only forbids technical intervention becoming a precondition of bootstrap.",
+    "change_node": "S6"
+  },
+
+  "ALLOWLIST_EXIT": {
+    "traces_to": "SS-01",
+    "what_SS01_actually_says": "Mandatory signup allowlisting is NOT part of the FINAL Commercial V1 journey.",
+    "what_that_does_and_does_not_supersede": {
+      "superseded": "The MANDATORY property. Allowlist membership may no longer be a precondition of self-service organization founding in the final Commercial V1 journey.",
+      "not_superseded": "The MECHANISM. The signup_allowlist table, its super-admin-only read policy (signup_allowlist_select_super_admin), lib/admin/signup-allowlist and the /admin management surface are NOT required to be deleted."
+    },
+    "V1_DECISION": {
+      "decision": "A temporary compatibility allowlist MAY survive the tenancy migration, PROVIDED it is FEATURE-FLAGGED and NOT MANDATORY by the Commercial V1 exit.",
+      "classification": "DERIVED_ARCHITECTURE_DECISION",
+      "exit_criterion": "Commercial V1 exit requires that the self-service founding journey COMPLETE SUCCESSFULLY for a verified subject who is on NO allowlist. Until that is proven by a positive control, ALLOWLIST_EXIT is not satisfied.",
+      "explicitly_permitted_residual": "Retaining the allowlist as an operator-controlled, default-off control (for example for abuse response or a limited early-access cohort) is permitted and does not violate SS-01, because SS-01 constrains the mandatory gate, not the existence of the capability.",
+      "explicitly_prohibited": "Leaving the flag defaulted ON at Commercial V1 exit and describing it as 'temporary'. A default-on gate is a mandatory gate."
+    },
+    "current_gate_to_supersede": "SI-6 — app/(authenticated)/app/onboarding/actions.ts:63-67, redirect('/app/onboarding?error=not_allowlisted').",
+    "change_node": "S6"
+  },
+
+  "INVITATIONS": {
+    "current_surface": "db/prepared/stella_0006_invitation_capability.sql, with its definer grants hardened by the closed findings recorded at docs/ops/capabilities/ADVERSARIAL_FINDINGS.md (A-B2/B-F2 schema auth USAGE; A-B4/B-F4 id in the organization_members grant, postcondition at stella_0006 §4.7).",
+    "current_behavior_under_the_ceiling": "An invitation to a second organization CANNOT be accepted by a subject who already holds an active membership: user_single_active_membership rejects the insert. The invitation surface is therefore correct today only within a one-org world.",
+    "target": {
+      "T1": "A subject holding an active membership in organization A may accept an invitation to organization B, resulting in TWO active memberships (MO-02).",
+      "T2": "Accepting an invitation does NOT change the SELECTED organization. Acceptance is a membership act; selection is a session act (SESSION_SCOPE). Conflating them would let an invitation link silently re-scope an in-flight session — a cross-tenant hazard, not a convenience.",
+      "T3": "The role granted by an invitation is scoped to the inviting organization only, and is subject to ROLE_CEILING.cross_org_role_prohibition.",
+      "T4": "Invitation acceptance keeps a database-level serialization guarantee after SI-1 is dropped — see SELF_SERVICE_BOOTSTRAP.serialization_replacement."
+    },
+    "classification": "T2 is a DERIVED_SECURITY_DECISION; T1/T3 trace to MO-02/MO-06.",
+    "change_node": "S6"
+  },
+
+  "SECOND_ORG_MEMBERSHIP": {
+    "definition": "The behavioral contract for the FIRST moment a subject legitimately holds two active memberships — the state that is impossible before S7 and ordinary after it.",
+    "contract": [
+      "B1 — The subject can hold both memberships simultaneously, each with its own independent role (MO-02, MO-06).",
+      "B2 — Exactly one is the request scope at a time (MO-03). The other is invisible to that request's data plane, enforced by RLS_TARGET, not by application filtering.",
+      "B3 — Switching the selected organization is an explicit act that rewrites the carrier and is revalidated on the next request like any other (SESSION_SCOPE, REQUEST_REVALIDATION).",
+      "B4 — Losing membership in the selected organization while a session is open produces a refusal on the next request, not a silent fallback to the other membership. A silent fallback would re-create SI-2 as an error path.",
+      "B5 — Neither membership's role influences the other (ROLE_CEILING.cross_org_role_prohibition)."
+    ],
+    "B4_classification": "DERIVED_SECURITY_DECISION — the fallback prohibition is the failure mode most likely to be introduced as a UX nicety.",
+    "change_node": "S6, proven at S8"
+  },
+
+  "PROJECT_AUTHORIZATION": {
+    "current_state": "Project-scoped authorization derives from the project's organization and the caller's membership set. E14 shows this shape explicitly inside can_write_evidence_object, which reads public.projects and public.organization_members.",
+    "target": "Project authorization = the project's organization EQUALS the selected organization, AND the subject holds an active membership in it with a sufficient role. The first conjunct is new and is what RLS_TARGET supplies.",
+    "hazard_named": "A project id is a client-supplied value on many routes (E15 lists eight project-scoped consumers). Today a project belonging to another organization is unreachable because the caller's membership set has one element. After S7 that is no longer true, and any route that resolves a project by id WITHOUT the selected-org conjunct becomes a cross-tenant read for a multi-member subject.",
+    "classification": "DERIVED_SECURITY_DECISION",
+    "requirement": "S4's closed-world enumeration MUST cover the project-scoped tables, and S8's Golden journey MUST include a negative control attempting a project of the non-selected organization (N-5)."
+  },
+
+  "SUSPENDED_ORG_BEHAVIOR": {
+    "current_state": "C-9 / E11 — suspension is writable through uellix_capability.admin_set_organization_status (db/prepared/stella_0011_organization_column_acl.sql §3.2, refusing any status outside (active, suspended)), organizations.status is loaded into the application Organization object at lib/auth/database-context.ts:258, and no ordinary tenant request path compares it to anything.",
+    "V1_DECISION": {
+      "D1": "A SUSPENDED organization is NOT SELECTABLE as an ordinary tenant request scope. It does not appear as a selection option, and an existing carrier naming it must be refused on the next request with TENANCY_ORGANIZATION_SUSPENDED.",
+      "D2": "/admin MAY inspect and manage a suspended organization globally, WITHOUT constructing a tenant context — consistent with ADMIN_CONTROL_PLANE. Suspension is precisely the state in which the platform must retain reach while the tenant loses it.",
+      "D3": "Suspension refusal is evaluated at request revalidation time, alongside membership. A subject suspended mid-session is refused on the next request, with the same zero-grace-window rule as REQUEST_REVALIDATION.",
+      "classification": "DERIVED_SECURITY_DECISION — no product ratification covers suspension behavior; this is derived from PI-2 (cross-tenant/denied access fails closed) and MO-08."
+    },
+    "why_it_belongs_in_this_package": "Under the current one-org ceiling a suspended organization's members simply have nowhere else to go, so the missing check has limited blast radius. Under multiple memberships, an unenforced suspension means a suspended tenant's data remains fully readable and writable to anyone who selects it — and the platform's only suspension lever is silently inert.",
+    "change_node": "S5"
+  },
+
+  "AUDIT_VERBS": {
+    "rule": "Every verb below is a durable, attributable record. This authority names the verbs and their required attribution; it does NOT allocate table shapes, columns or an audit-log schema — the existing audit_logs surface (db/schema.ts:65-...) is the presumed carrier and its adequacy is FUTURE_MEASUREMENT_REQUIRED.",
+    "verbs": [
+      { "verb": "tenancy.organization.founded", "attribution": "actor subject, organization, self_service|platform provenance", "node": "S1" },
+      { "verb": "tenancy.founded_by.backfilled", "attribution": "organization, resolved subject or NULL, the deterministic source consulted, the batch identity", "node": "S1", "note": "A NULL outcome is recorded as an outcome, not omitted — MO-11's honesty requirement is only auditable if the non-attribution is itself recorded." },
+      { "verb": "tenancy.organization.selected", "attribution": "subject, organization, session identity", "node": "S2" },
+      { "verb": "tenancy.organization.selection_refused", "attribution": "subject, attempted organization, failure code", "node": "S3" },
+      { "verb": "tenancy.membership.revalidation_refused", "attribution": "subject, selected organization, failure code", "node": "S3" },
+      { "verb": "tenancy.membership.granted", "attribution": "subject, organization, role, granting act (invitation or founding)", "node": "S6" },
+      { "verb": "tenancy.membership.revoked", "attribution": "subject, organization, revoking actor", "node": "S6" },
+      { "verb": "tenancy.superadmin.tenant_access_refused", "attribution": "superadmin subject, attempted organization", "node": "S5", "note": "This verb exists specifically to make the removal of SI-3 observable — a refusal that leaves no record is indistinguishable from an absent code path." },
+      { "verb": "tenancy.organization.suspended_scope_refused", "attribution": "subject, suspended organization", "node": "S5" }
+    ],
+    "prohibited": "No audit verb may record the CONTENT of tenant data. Attribution and outcome only."
+  },
+
+  "FAILURE_CODES": {
+    "rule": "Every code below fails CLOSED — it denies and records. No code in this list has a fallback, degraded, or best-effort path. Codes are named here so that controls can assert on identity rather than on message text.",
+    "codes": [
+      { "code": "TENANCY_NO_ORGANIZATION_SELECTED", "meaning": "A tenant-scoped request carried no selected organization.", "must_not": "Must not fall back to any membership. See SESSION_SCOPE.no_selection_behavior.", "node": "S3" },
+      { "code": "TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER", "meaning": "The carrier named an organization in which the subject holds no ACTIVE membership.", "must_not": "Must not fall back to another membership. See SECOND_ORG_MEMBERSHIP B4.", "node": "S3" },
+      { "code": "TENANCY_ORGANIZATION_SUSPENDED", "meaning": "The selected organization is suspended.", "node": "S5" },
+      { "code": "TENANCY_FOUNDER_CARDINALITY_EXCEEDED", "meaning": "A subject attempted a second self-service founding.", "must_not": "Must not silently return the existing organization. See CAP05_INTERFACE I3.", "node": "S1" },
+      { "code": "TENANCY_CROSS_ORG_RESOURCE_REFUSED", "meaning": "A resource (project, evidence object, Stella row) belonging to a non-selected organization was addressed.", "node": "S4" },
+      { "code": "TENANCY_SCOPE_NOT_APPLIED", "meaning": "app.organization_id was not set on a tenant-scoped connection. The database-side counterpart of PI-9.", "must_not": "Must not proceed with an unset GUC on the assumption that RLS will deny — the denial must be explicit, not incidental.", "node": "S4" }
+    ],
+    "preserved_existing_codes": [
+      "DB_IDENTITY_CONTEXT_NOT_APPLIED (literal at db/identity-context.ts:204, branch :202-208) — PI-9, preserved verbatim.",
+      "DB_IDENTITY_SUPER_ADMIN_CLAIM_REJECTED (literal at db/identity-context.ts:212, branch :210-215) — PI-10, preserved verbatim.",
+      "DB_IDENTITY_ORGANIZATION_NOT_A_MEMBER (literal at db/identity-context.ts:219, branch :217-222) — PRESERVED, and BROADENED by S5 to apply to superadmins too. The code keeps its identity; only its exemption is removed."
+    ]
+  },
+
+  "BACKWARD_COMPATIBILITY": {
+    "principle": "Every node from S1 through S6 is BEHAVIOR-PRESERVING for a subject with exactly one active membership. Only S7 changes what is possible, and it changes it for everyone at once. This is what makes the sequence auditable: each node before S7 can be proven not to have changed observable behavior.",
+    "per_node": {
+      "S1": "Additive column plus a cardinality carrier that no existing row violates (existing subjects have at most one membership, hence at most one plausible founding). Backfill writes founded_by or NULL and grants nothing (PI-3).",
+      "S2": "The carrier is written and read, but with one selectable membership the selection is the same organization the pick-first would have returned. Observable difference: the carrier now exists. Authorization difference: none.",
+      "S3": "The principal resolves by (user, selected org) instead of pick-first. With one membership both resolve identically. Observable difference: a request naming a non-member organization now fails with TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER instead of silently scoping to the only membership.",
+      "S3c": "Stella rows are attributed to the selected org, which equals the only membership. No attribution changes for existing traffic.",
+      "S4": "The RESTRICTIVE conjunct is added. With one membership, `= ANY(current_user_org_ids())` and `= app.organization_id` select the same organization, so the conjunction denies nothing that was previously permitted. THIS IS THE CLAIM MOST WORTH ATTACKING and it is why M-1 exists.",
+      "S5": "Superadmins lose the tenant-route exemption. THIS NODE IS NOT BEHAVIOR-PRESERVING FOR SUPERADMINS and is stated as such — it is the intended, ratified removal of a bypass (MO-07). Any /admin path that breaks is a finding, not a regression to be reverted (ADMIN_CONTROL_PLANE.boundary_rule).",
+      "S6": "Second memberships become acceptable and the allowlist stops being mandatory. Existing single-membership subjects are unaffected; the serialization guarantee is replaced, not removed.",
+      "S7": "The ceiling is dropped. From here, multiple active memberships exist and every guarantee above must hold WITHOUT the index.",
+      "S8": "Proof only. No behavior change."
+    },
+    "explicit_non_goal": "This package does not attempt to keep S5 backward compatible. Recording that plainly is the point: a supersession that is described as behavior-preserving when it is not would make the audit worthless."
+  },
+
+  "S1_TO_S8_DAG": {
+    "allocation_note": "S-ids are LOCAL to this authority. They are not ODS unit ids, not FIB node ids, and not HPO grants. Each node requires its own lineage allocation before implementation — see FUTURE_ODS_NEEDS_SYMBOLIC.",
+    "nodes": [
+      {
+        "id": "S1",
+        "title": "Founder traceability",
+        "delivers": ["FOUNDED_BY", "FOUNDER_CARDINALITY", "BACKFILL"],
+        "resolves": ["C-5"],
+        "supersedes": [],
+        "depends_on": [],
+        "does_not_touch": "organization_members. user_single_active_membership is untouched."
+      },
+      {
+        "id": "S2",
+        "title": "Selected-organization session carrier",
+        "delivers": ["SESSION_SCOPE", "SELECTED_ORG_CARRIER"],
+        "resolves": ["C-4"],
+        "supersedes": [],
+        "depends_on": [],
+        "note": "Independent of S1. Ordered before S3 only because S3 consumes the carrier."
+      },
+      {
+        "id": "S3",
+        "title": "Selected-organization request principal",
+        "delivers": ["REQUEST_PRINCIPAL", "REQUEST_REVALIDATION", "ROLE_CEILING"],
+        "resolves": ["C-2"],
+        "supersedes": ["SI-2"],
+        "depends_on": ["S2"]
+      },
+      {
+        "id": "S3c",
+        "title": "Stella selected-organization scope weld",
+        "delivers": ["STELLA_S3C_SCOPE_WELD"],
+        "resolves": ["C-7"],
+        "supersedes": ["SI-5"],
+        "depends_on": ["S3"],
+        "traces_to": "MO-12",
+        "collides_with": "FIBDB-053 / Wave3 Stella hosted surfaces — SERIAL, see SHARED_WRITERS."
+      },
+      {
+        "id": "S4",
+        "title": "GUC conjunctive weld and RLS target",
+        "delivers": ["GUC_CONTRACT", "RLS_TARGET", "STORAGE_V1_BOUNDARY", "PROJECT_AUTHORIZATION"],
+        "resolves": ["C-6"],
+        "supersedes": ["SI-4"],
+        "depends_on": ["S3"],
+        "severity": "The security-critical node of the package. S7 is unsafe without it."
+      },
+      {
+        "id": "S5",
+        "title": "Superadmin boundary and suspended-organization behavior",
+        "delivers": ["SUPERADMIN_BOUNDARY", "ADMIN_CONTROL_PLANE", "SUSPENDED_ORG_BEHAVIOR"],
+        "resolves": ["C-3", "C-9"],
+        "supersedes": ["SI-3"],
+        "depends_on": ["S3"],
+        "note": "Independent of S4. Ordered relative to it only by convenience; the two must not be implemented in one node (see RLS_TARGET.superadmin_interaction)."
+      },
+      {
+        "id": "S6",
+        "title": "Second membership, invitations, bootstrap and allowlist exit",
+        "delivers": ["SECOND_ORG_MEMBERSHIP", "INVITATIONS", "SELF_SERVICE_BOOTSTRAP", "CAP05_INTERFACE", "ALLOWLIST_EXIT"],
+        "resolves": ["C-8"],
+        "supersedes": ["SI-6", "SI-7"],
+        "depends_on": ["S1", "S3", "S4", "S5"],
+        "note": "Depends on S1 for FOUNDER_CARDINALITY at the bootstrap interface, and on S4/S5 because the second-membership behavioral contract (B2, B4) is only meaningful once the scope and boundary are enforced."
+      },
+      {
+        "id": "S7",
+        "title": "DROP user_single_active_membership",
+        "delivers": ["MEMBERSHIP_CARDINALITY"],
+        "resolves": ["C-1"],
+        "supersedes": ["SI-1"],
+        "depends_on": ["S1", "S2", "S3", "S3c", "S4", "S5", "S6"],
+        "gate": "DROP_LAST_RULE. This node has NO other content — it drops one index and nothing else, so that its blast radius is exactly the invariant it removes."
+      },
+      {
+        "id": "S8",
+        "title": "Golden multi-org journey and security-control proof",
+        "delivers": ["GOLDEN_S8_CONTRACT", "SECURITY_CONTROLS", "MUTATION_CONTROLS"],
+        "resolves": [],
+        "supersedes": [],
+        "depends_on": ["S7"]
+      }
+    ],
+    "topological_order": "S1, S2 (parallel) -> S3 -> {S3c, S4, S5} (parallel among themselves) -> S6 -> S7 -> S8",
+    "program_precondition": {
+      "applies_to": "EVERY node S1..S8.",
+      "gate": "E16 — docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json:109/:113/:114 forbids any mission in any lane from allocating ODS_V1_MAINTENANCE_ADDENDUM_v1.0.18 or HPO-ODS-W2-19 while v1.0.17 is unenumerated in the live Controller. Measured at AS_OF_HEAD: scripts/ods-controller.ts contains 0 occurrences of v1.0.17 — the gate is ACTIVE.",
+      "consequence": "No node of this DAG may open an implementation grant until the Controller successor enumerating v1.0.17 is CLOSED. A mission that attempts it MUST STOP_FOR_LINEAGE_SEQUENCING.",
+      "this_mission_compliance": "This mission allocates NOTHING and is therefore not subject to that stop. See FUTURE_ODS_NEEDS_SYMBOLIC."
+    }
+  },
+
+  "DROP_LAST_RULE": {
+    "item": "user_single_active_membership (db/schema.ts:61; db/baseline/stella_g2_schema.sql:7071; db/migrations/0003_curvy_tempest.sql)",
+    "rule": "user_single_active_membership MUST NOT be dropped in S1. It is DROP_LAST.",
+    "preconditions_all_of": [
+      { "id": "DL-1", "requirement": "founded_by enforcement materialized and proven", "node": "S1" },
+      { "id": "DL-2", "requirement": "selected-organization principal materialized and proven", "node": "S2 + S3" },
+      { "id": "DL-3", "requirement": "selected-organization RLS materialized and proven, closed-world across the tenant policy surface INCLUDING storage", "node": "S4" },
+      { "id": "DL-4", "requirement": "self-service bootstrap materialized and proven, with a serialization guarantee that does not depend on this index", "node": "S6" },
+      { "id": "DL-5", "requirement": "second-membership behavior materialized and proven (B1..B5)", "node": "S6" },
+      { "id": "DL-6", "requirement": "security controls materialized and proven (SECURITY_CONTROLS SC-1..SC-6)", "node": "S4 + S5 + S6" }
+    ],
+    "conjunction": "ALL SIX. Not a majority, not 'the important ones'. A single unproven precondition blocks the drop.",
+    "why_this_rule_is_a_security_rule_and_not_a_sequencing_preference": "E8 measured it: the baseline tenant policy surface authorizes via `organization_id = ANY(current_user_org_ids())`, and current_user_org_ids returns EVERY active membership of auth.uid() (E7). That predicate is a single-organization predicate today ONLY because this index guarantees the array has at most one element. Dropping the index first would widen every one of those policies from one organization to all of the subject's organizations — with no policy edit, no code change, no failing test, and no visible diff. The widening would be invisible until a subject held a second membership, which is exactly the state the drop enables.",
+    "prohibited_shortcuts": [
+      "Dropping the index 'temporarily' to test multi-membership behavior in any environment that carries real tenant data.",
+      "Replacing the index with a deferrable or NOT VALID constraint as an intermediate step — a deferred guarantee is not the guarantee.",
+      "Dropping it as an incidental part of a larger node. S7 drops one index and does nothing else, precisely so that its diff is auditable at a glance."
+    ],
+    "not_dropped_by_this_rule": "organization_members_org_user_unique (db/schema.ts:60) is PRESERVED. It enforces one row per (organization, user) pair and is orthogonal to cross-organization membership cardinality. Confusing the two would either fail to lift the ceiling or permit duplicate membership rows."
+  },
+
+  "SHARED_WRITERS": {
+    "rule": "A shared writer is a path this package must edit that another open or planned lane must also edit. Identifying them is required; RESOLVING them is explicitly OUT OF SCOPE for this mission.",
+    "writers": [
+      {
+        "path": "db/migrations/**",
+        "shared_with": ["W2-B5 (FIBIU-17/18)", "Wave3 / FIBDB-053", "CommercialAccount/Entitlements", "Portfolio"],
+        "collision": "A single global migration ordinal sequence. Two lanes allocating concurrently collide on the number, and a merge resolves the text without resolving the order.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-1"
+      },
+      {
+        "path": "db/schema.ts",
+        "shared_with": ["W2-B5", "Wave3 / FIBDB-053", "CommercialAccount/Entitlements", "Portfolio", "Stella"],
+        "collision": "S1 adds organizations.founded_by; S7 removes a table index. Every other lane adding tables or columns edits the same file. Textual merges here are silent — a lost index declaration does not fail typecheck.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-2"
+      },
+      {
+        "path": "db/hosted/baseline-manifest.ts",
+        "shared_with": ["W2-B5", "Wave3 / FIBDB-053", "Platform Admin"],
+        "collision": "Ordered hosted-unit manifest. Adding a unit shifts positions and changes the manifest digest, which is pinned by the hosted-baseline gate and by KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-3"
+      },
+      {
+        "path": "db/prepared/stella_*.sql",
+        "shared_with": ["Wave3 / FIBDB-053 Stella hosted surfaces", "Platform Admin (stella_0011 organization column ACL)", "Stella"],
+        "collision": "S3c's Stella scope weld and the future FIBDB-053 hosted Stella surfaces republish overlapping prepared-unit territory. stella_0011 §3.2 (admin_set_organization_status) is also the write path S5's SUSPENDED_ORG_BEHAVIOR reads from.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-4",
+        "explicit_reconciliation_required": "MISSION-MANDATED. S3c and FIBDB-053's Stella hosted surfaces MUST be sequenced, never run in parallel. Both republish definer bodies and policy predicates over the same Stella tables; a parallel merge would produce a body that passes both lanes' postconditions while enforcing neither lane's intent. Which of the two goes first is NOT decided by this authority and requires its own adjudication — recorded here as an OPEN SEQUENCING DECISION, not resolved."
+      },
+      {
+        "path": "db/identity-context.ts",
+        "shared_with": ["Platform Admin", "Stella"],
+        "collision": "S3 (revalidation target), S4 (GUC set semantics at :180) and S5 (the :217 exemption) all edit this file, and Platform Admin's boundary work lands here too. Three of this package's own nodes are already serial on it.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-5"
+      },
+      {
+        "path": "lib/auth/database-context.ts",
+        "shared_with": ["Platform Admin", "Portfolio"],
+        "collision": "S3 reworks loadActiveMembershipWithinContext (:210-234); the 10 consumer files of E15 read the resulting principal.",
+        "serial_chokepoint": false,
+        "note": "Serial within this package (S3 owns it) but not contested across lanes at AS_OF_HEAD."
+      },
+      {
+        "path": "scripts/ods-controller.ts + docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.*.json",
+        "shared_with": ["EVERY lane"],
+        "collision": "Controller enumeration is EXACT membership, never a subset test (scripts/ods-controller.ts:49). Every lineage item must be enumerated, and the enumeration is a single ordered artifact.",
+        "serial_chokepoint": true,
+        "chokepoint_id": "CP-6",
+        "current_state": "v1.0.17 present on disk, unenumerated in the live Controller (E16). This is the ACTIVE blocker on the whole DAG."
+      },
+      {
+        "path": "app/(authenticated)/app/onboarding/actions.ts",
+        "shared_with": ["Platform Admin (signup allowlist administration)"],
+        "collision": "S6's ALLOWLIST_EXIT changes the gate at :63-67; Platform Admin owns the allowlist management surface it reads.",
+        "serial_chokepoint": false
+      }
+    ],
+    "SERIAL_CHOKEPOINTS_SUMMARY": ["CP-1 db/migrations ordinal", "CP-2 db/schema.ts", "CP-3 db/hosted/baseline-manifest.ts", "CP-4 db/prepared/stella_*", "CP-5 db/identity-context.ts", "CP-6 Controller enumeration"],
+    "not_a_tenancy_chokepoint": "lib/analytics.ts is a known shared writer between B5 and Portfolio. This package does not touch it and it is recorded here only to prevent a future mission from assuming tenancy owns it.",
+    "resolution_scope": "OUT OF SCOPE. This mission identifies collisions and does not resolve any of them. Sequencing decisions belong to the lane coordinator."
+  },
+
+  "REAL_PG_CONTRACT": {
+    "rule": "Every claim in this package about POLICY BEHAVIOR, GUC RESOLUTION, INDEX ENFORCEMENT or CONCURRENCY must be proven against a real PostgreSQL cluster. Static reading of SQL text is NOT proof for any of them.",
+    "harness": "pnpm db:audit:disposable — a disposable cluster only. NEVER staging, NEVER production, NEVER the canonical local stack.",
+    "required_probes": [
+      { "id": "PG-1", "proves": "The RESTRICTIVE selected-org conjunct denies a row of a non-selected organization for a subject who is a member of BOTH.", "node": "S4", "why_real_pg": "Policy combination (PERMISSIVE OR vs RESTRICTIVE AND) is a runtime property of the planner, not of the DDL text. The A2-F02 finding exists precisely because the static reading was wrong." },
+      { "id": "PG-2", "proves": "current_setting('app.organization_id', true) resolves to the CALLER's value inside can_write_evidence_object (SECURITY DEFINER).", "node": "S4", "why_real_pg": "Definer GUC/session semantics are the exact mechanism that produced A2-F02. It must be observed, not inferred." },
+      { "id": "PG-3", "proves": "With the GUC unset, a tenant-scoped query returns zero rows and permits no writes.", "node": "S4", "why_real_pg": "GUC_CONTRACT C5 relies on NULL-not-TRUE denial semantics; asserting them from the SQL standard is not evidence." },
+      { "id": "PG-4", "proves": "Two concurrent invitation acceptances / bootstraps are serialized WITHOUT user_single_active_membership.", "node": "S6", "why_real_pg": "SI-7 is a concurrency guarantee. Concurrency cannot be proven by a single-session test." },
+      { "id": "PG-5", "proves": "A subject holds two active memberships, and a request scoped to A reads nothing from B.", "node": "S7", "why_real_pg": "This state is impossible to construct before the drop; it must be constructed on a real cluster with the index actually dropped." },
+      { "id": "PG-6", "proves": "The founder-cardinality carrier refuses a second self-service founding while permitting historical NULL founded_by rows to coexist.", "node": "S1", "why_real_pg": "Partial-index/NULL interaction is a storage-engine property." }
+    ],
+    "two_tenant_fixture_requirement": "Every cross-tenant probe requires a REAL row in the other organization to prove it cannot be read. A probe that returns zero rows because the other organization has no rows proves nothing.",
+    "dual_member_fixture_requirement": "PG-1 and PG-5 require a subject with active memberships in BOTH organizations. That fixture is IMPOSSIBLE to construct before S7 drops the index. Before S7 those probes must be run in a harness phase that constructs the second membership only after the drop is applied within the disposable cluster — a two-phase harness. Attempting a dual-member fixture in a pre-S7 phase will fail on the index, and that failure must not be worked around by dropping the index early (DROP_LAST_RULE.prohibited_shortcuts)."
+  },
+
+  "SECURITY_CONTROLS": {
+    "rule": "Each control is a REFUSAL that must be proven. A control that can only be demonstrated by the absence of a permit is not a control.",
+    "controls": [
+      { "id": "SC-1", "control": "A carrier naming an organization the subject is not an active member of is REFUSED (TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER), with no fallback to any other membership.", "node": "S3", "attacks": "SELECTED_ORG_CARRIER.trust_model — cookie-as-grant." },
+      { "id": "SC-2", "control": "Membership revoked mid-session is refused on the NEXT request, with no grace window.", "node": "S3", "attacks": "REQUEST_REVALIDATION.revocation_latency_requirement." },
+      { "id": "SC-3", "control": "A superadmin who is not a member is REFUSED on a tenant route.", "node": "S5", "attacks": "SI-3 / C-3 — the :217 exemption." },
+      { "id": "SC-4", "control": "A row, project or evidence object of a NON-SELECTED organization is unreachable to a subject who is a member of both.", "node": "S4", "attacks": "C-6 / E8 — the silent-widening failure. THE PRIMARY CONTROL OF THE PACKAGE." },
+      { "id": "SC-5", "control": "A suspended organization cannot be selected, and an existing carrier naming it is refused.", "node": "S5", "attacks": "C-9 — suspension written and never consumed." },
+      { "id": "SC-6", "control": "A second self-service founding is refused; and the backfill attributes no founder from invited_by IS NULL.", "node": "S1", "attacks": "MO-01 cardinality and MO-11's hard prohibition." },
+      { "id": "SC-7", "control": "A Stella write asserting an organization other than the request's selected organization is refused AT THE DATABASE BOUNDARY, not only in application code.", "node": "S3c", "attacks": "C-7 / MO-12's explicit rejection of ceiling-only scope." }
+    ]
+  },
+
+  "MUTATION_CONTROLS": {
+    "rule": "Each entry names a safety guarantee and asserts that DELETING it is CAUGHT by the suite. A guarantee no test would miss the removal of is undefended.",
+    "controls": [
+      { "id": "M-1", "guarantee": "The RESTRICTIVE selected-org conjunct.", "mutation": "Change the policy from AS RESTRICTIVE to PERMISSIVE.", "must_be_caught_by": "SC-4 — under PERMISSIVE the conjunct combines with OR and the non-selected organization's row becomes readable again.", "note": "This is the single most important mutation control in the package: it is the exact regression shape of adversarial finding A2-F02." },
+      { "id": "M-2", "guarantee": "The GUC is transaction-local.", "mutation": "Change set_config's third argument at db/identity-context.ts:180 from true to false.", "must_be_caught_by": "A control proving the scope does not survive into a subsequent transaction on a pooled connection." },
+      { "id": "M-3", "guarantee": "Per-request revalidation.", "mutation": "Memoize the membership proof for the session.", "must_be_caught_by": "SC-2." },
+      { "id": "M-4", "guarantee": "No fallback on refusal.", "mutation": "Replace the TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER throw with a fallback to the subject's first remaining membership.", "must_be_caught_by": "SC-1, asserting the FAILURE CODE, not merely that the wrong organization's data was absent." },
+      { "id": "M-5", "guarantee": "The MO-11 backfill prohibition.", "mutation": "Add `invited_by IS NULL` as a backfill predicate.", "must_be_caught_by": "SC-6, asserting that an organization whose only signal is a NULL inviter is left with founded_by NULL." },
+      { "id": "M-6", "guarantee": "founded_by grants nothing (PI-3).", "mutation": "Add founded_by as a disjunct to any authorization predicate.", "must_be_caught_by": "A control proving a founder with no active membership is refused tenant access." },
+      { "id": "M-7", "guarantee": "The superadmin CLAIM check survives the EXEMPTION removal (PI-10).", "mutation": "Delete the DB_IDENTITY_SUPER_ADMIN_CLAIM_REJECTED branch at db/identity-context.ts:210-215 while performing S5.", "must_be_caught_by": "A control proving an unconfirmed super-admin claim is still rejected.", "note": "S5 edits the adjacent branch. This control exists because the likeliest S5 defect is removing too much." }
+    ]
+  },
+
+  "GOLDEN_S8_CONTRACT": {
+    "rule": "S8 EXTENDS the existing commercial Golden E2E journey. It does not create a parallel multi-org journey and does not replace the existing one. The prior passing journey is RETAINED in full.",
+    "extension": {
+      "positive_path": "A subject founds organization A (S1 provenance, founded_by set), is invited to and accepts membership in organization B (S6), selects A, completes an existing Golden step in A, switches selection to B, and completes a step in B under B's role — with A's data absent throughout the B-scoped portion.",
+      "negative_controls_required_in_the_journey": [
+        "Addressing a project of the non-selected organization is refused (SC-4 / PROJECT_AUTHORIZATION).",
+        "A superadmin without membership is refused on a tenant route (SC-3).",
+        "A suspended organization is not selectable (SC-5)."
+      ],
+      "no_dev_only_workarounds": "The journey must not construct the second membership by direct SQL, a test-only escape hatch, or a seed that bypasses the invitation path. If the product journey cannot produce the state, the state is not shipped."
+    },
+    "role_asymmetry_requirement": "The subject MUST hold DIFFERENT roles in A and B (for example organization_admin in A, viewer in B). A journey where both roles are equal cannot detect ROLE_CEILING.cross_org_role_prohibition failures.",
+    "retention_rule": "Any existing Golden step that regresses is a BLOCKING failure of S8, not a fixture to be updated."
+  },
+
+  "FUTURE_ODS_NEEDS_SYMBOLIC": {
+    "rule": "THIS MISSION ALLOCATES NOTHING. Every identifier below is SYMBOLIC — a description of what a FUTURE mission will need, never a reservation, never a name-as-allocated. This mirrors the form used by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15/16/17, where naming a successor is a PROHIBITION, not an allocation.",
+    "NEXT_AVAILABLE_ODS_LINEAGE": {
+      "symbolic": "The ODS maintenance addendum ordinal immediately after the highest present at AS_OF_HEAD.",
+      "measured_highest_present": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json",
+      "allocated_by_this_mission": "NONE",
+      "blocking_gate": "E16 — v1.0.17 is UNENUMERATED in scripts/ods-controller.ts (0 occurrences at AS_OF_HEAD). Per ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json:113, a mission that finds v1.0.17 unenumerated and attempts to allocate the next ordinal MUST STOP_FOR_LINEAGE_SEQUENCING."
+    },
+    "NEXT_AVAILABLE_HPO_ID": {
+      "symbolic": "The HPO-ODS-W2 grant immediately after the highest present at AS_OF_HEAD.",
+      "measured_highest_present": "HPO-ODS-W2-18 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.17.json, docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json, docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json)",
+      "allocated_by_this_mission": "NONE",
+      "blocking_gate": "Same as above — the v1.0.17 gate names HPO-ODS-W2-19 explicitly as prohibited-until-enumerated."
+    },
+    "grants_required_per_node": {
+      "note": "Symbolic count only. Whether each S-node maps to one grant or several is a lane-coordinator decision, not an authority decision.",
+      "minimum": "S1, S2, S3, S3c, S4, S5, S6, S7, S8 each require at least one implementation grant with its own protected-surface allowlist. S7's grant should be the narrowest of the package (one index drop).",
+      "protected_surfaces_anticipated": ["db/migrations/**", "db/prepared/**", "db/hosted/baseline-manifest.ts", "db/prepared/journal/**"]
+    },
+    "controller_obligation": "Every artifact this package eventually produces that lands in the ODS immutable-by-convention set must be enumerated by the Controller. scripts/ods-controller.ts:49 records that the membership test is EXACT, never a subset — an unenumerated addendum is a lineage hole, which is the exact condition currently blocking this DAG."
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "id": "F-1",
+        "class": "OBSERVED_SCHEMA_DIVERGENCE",
+        "finding": "docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json sets node_or_batch to \"W2-B5\", which is not in the UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0 closed enum [\"node\",\"batch\"]. docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json sets postgres_requirements to null, which the schema types as object.",
+        "disposition": "RECORDED, NOT CHANGED. This mission's authorized paths are docs/ops/tenancy/** only; editing a wave2 manifest or the shared template is outside them. The companion manifest of THIS package validates against the schema as written.",
+        "recommended_action": "A future governed mission should reconcile the exemplar and the template with the schema, or amend the schema. Not adjudicated here."
+      },
+      {
+        "id": "F-2",
+        "class": "GATES_NOT_RUNNABLE_IN_THIS_WORKTREE",
+        "finding": "node_modules is ABSENT in this worktree. pnpm ods:prestate, ods:scope, ods:poststate, authority:seal:verify, secrets:scan and ops:test-diff could not be executed locally.",
+        "disposition": "Reported honestly rather than claimed. Deterministic facts were measured directly instead: branch, HEAD, tree and working-tree cleanliness by git; changed paths by git status; secret absence by inspection of the two authored files, which contain no credential material of any kind. CI on the pull request is the machine gate of record for this mission.",
+        "recommended_action": "The reviewing audit should treat CI as the authoritative gate result, not this artifact's self-report."
+      },
+      {
+        "id": "F-3",
+        "class": "OPEN_SEQUENCING_DECISION",
+        "finding": "CP-4 — the ordering between S3c (Stella selected-org scope weld) and the future FIBDB-053 / Wave3 Stella hosted surfaces is not decided.",
+        "disposition": "Identified as mission-required and left OPEN. Resolving shared-writer collisions is explicitly out of scope for this mission.",
+        "recommended_action": "Lane coordinator adjudication before either lane opens a grant on db/prepared/stella_*."
+      }
+    ],
+    "unknown": [
+      { "id": "U-1", "unknown": "The founder-cardinality enforcement carrier (TARGET_SCHEMA.founder_cardinality_carrier).", "resolution": "FUTURE_MEASUREMENT_REQUIRED at S1 against the live schema." },
+      { "id": "U-2", "unknown": "The actual policy/table cardinality of the RLS weld set (RLS_TARGET.scope_of_the_weld).", "resolution": "FUTURE_MEASUREMENT_REQUIRED at S4 from pg_policy under a disposable harness. The number 45 is a TEXT OCCURRENCE COUNT and must not be used as a policy count." },
+      { "id": "U-3", "unknown": "The full principal-construction surface beyond the 10 runWithOptionalOrganizationAccess consumers of E15.", "resolution": "FUTURE_MEASUREMENT_REQUIRED at S3." },
+      { "id": "U-4", "unknown": "The full set of Stella-owned tables carrying organization_id.", "resolution": "FUTURE_MEASUREMENT_REQUIRED at S3c." },
+      { "id": "U-5", "unknown": "Whether any deterministic founding-provenance record actually exists for historical organizations.", "resolution": "FUTURE_MEASUREMENT_REQUIRED at S1. If none exists, MO-11's answer is that every historical founded_by is NULL — and that is a correct outcome, not a failed backfill." },
+      { "id": "U-6", "unknown": "Whether every current /admin database entry point already avoids constructing a tenant context.", "resolution": "FUTURE_MEASUREMENT_REQUIRED at S5 (ADMIN_CONTROL_PLANE.measurement_obligation)." },
+      { "id": "U-7", "unknown": "The adequacy of the existing audit_logs surface to carry the AUDIT_VERBS.", "resolution": "FUTURE_MEASUREMENT_REQUIRED at the first node that emits one." }
+    ]
+  },
+
+  "self_check": {
+    "note": "Deterministic, test-free checks verifiable by inspection or a one-line jq/node command. Not a script.",
+    "expected_contradiction_count": 8,
+    "expected_contradiction_ids": ["C-1", "C-2", "C-3", "C-4", "C-5", "C-6", "C-7", "C-8"],
+    "expected_additional_gap_id": "C-9",
+    "expected_superseded_count": 7,
+    "expected_superseded_ids": ["SI-1", "SI-2", "SI-3", "SI-4", "SI-5", "SI-6", "SI-7"],
+    "expected_preserved_count": 12,
+    "expected_dag_node_count": 9,
+    "expected_dag_node_ids": ["S1", "S2", "S3", "S3c", "S4", "S5", "S6", "S7", "S8"],
+    "expected_evidence_anchor_count": 16,
+    "expected_serial_chokepoint_count": 6,
+    "checks": [
+      "CURRENT_CONTRADICTIONS.contradictions.length == 8 and its id set equals expected_contradiction_ids",
+      "every contradiction's resolved_by_node is a member of expected_dag_node_ids",
+      "every SUPERSEDED_INVARIANTS entry's superseding_node is a member of expected_dag_node_ids",
+      "every SUPERSEDED_INVARIANTS entry cites a carried_by that names an EVIDENCE_ANCHORS id or an exact repo path",
+      "EVIDENCE_ANCHORS.anchors.length == 16 and every id E1..E16 appears exactly once",
+      "DROP_LAST_RULE.preconditions_all_of.length == 6",
+      "S7.depends_on contains every other node except S8",
+      "SHARED_WRITERS.SERIAL_CHOKEPOINTS_SUMMARY.length == 6",
+      "OPEN_FINDINGS.blocking is empty",
+      "no ODS addendum version and no HPO-ODS id is stated as allocated anywhere in this file"
+    ]
+  },
+
+  "final_state": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_SEQUENCING"
+}

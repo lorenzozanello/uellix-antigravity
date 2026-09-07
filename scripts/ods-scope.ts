@@ -499,6 +499,68 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
     branch: 'codex/w2-b4-r1',
     patterns: ['db/migrations/**', 'db/prepared/journal/**'],
   },
+  // HPO-ODS-W2-16 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.15.json): the
+  // W2-B4 remediation grant for the checkpoint-b0 observation probe. ONE exact
+  // literal path, no glob — db/prepared/checkpoint-b0/ holds exactly that one
+  // file, so even a directory pattern would grant strictly more than the
+  // classifier can justify. Same branch as W2-12 and deliberately a SEPARATE
+  // entry: W2-12 is FROZEN at its two patterns and is never widened, and
+  // resolveProtectedGrants unions only the ids a caller actually supplies.
+  // Mechanically identical in shape to HPO-ODS-W2-07, the same probe's
+  // regeneration grant on the Product PR-candidate branch.
+  {
+    authorityId: 'HPO-ODS-W2-16',
+    branch: 'codex/w2-b4-r1',
+    patterns: ['db/prepared/checkpoint-b0/observation.sql'],
+  },
+  // HPO-ODS-W2-17 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.16.json,
+  // companion docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json): Wave 2 batch B5 -
+  // FIBIU-17 readiness and FIBIU-18 sensitivity - on its own branch. THREE
+  // patterns, because B5 needs one surface W2-B4's grant did not: registering
+  // two governed baseline units adds three tables to the corpus that
+  // scripts/b0-observation-sql.ts reads, so the generated checkpoint-b0 probe
+  // is stale by construction and its canonical regenerator is the only correct
+  // repair - the same mechanism HPO-ODS-W2-07 and HPO-ODS-W2-16 each addressed
+  // on their own branches. Deliberately NOT db/prepared/**: that would reach
+  // the hosted and local bootstrap files the P1A and hosted lanes own, and
+  // db/prepared/checkpoint-a1/corroboration.sql, which the B5 authority
+  // protects as a historical measurement. The third pattern is one exact
+  // literal path, no glob - db/prepared/checkpoint-b0/ holds exactly that one
+  // file. W2-12 and W2-16 are FROZEN, bound to codex/w2-b4-r1, and are neither
+  // widened nor reused: a grant is bound to exactly one branch. The concrete
+  // migration ordinals cannot be literals here - W2_B5_AUTHORITY_v1.0.0.json
+  // sets MIGRATION_SLOT_FROZEN = NO and re-measures at SYNC_POINT.
+  {
+    authorityId: 'HPO-ODS-W2-17',
+    branch: 'codex/w2-b5-r1',
+    patterns: ['db/migrations/**', 'db/prepared/journal/**', 'db/prepared/checkpoint-b0/observation.sql'],
+  },
+  // HPO-ODS-W2-20 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json,
+  // companion docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json):
+  // multi-org S1 (founder traceability) on its own branch. ONE pattern -
+  // db/migrations/** - because CP-1 is a single global ordinal sequence and
+  // pinning the ordinal at authority time would manufacture the collision the
+  // grant exists to avoid. Registered by the S1 implementing mission, as the
+  // addendum instructs. Deliberately NOT db/prepared/**.
+  {
+    authorityId: 'HPO-ODS-W2-20',
+    branch: 'codex/multiorg-s1-founder-traceability-r1',
+    patterns: ['db/migrations/**'],
+  },
+  // HPO-ODS-W2-21 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json,
+  // companion docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json):
+  // the journal-wrapper family an ordinary migration drags with it. ONE
+  // pattern - db/prepared/journal/** - a STRICT SUBSET of db/prepared/** that
+  // reaches neither the stella_* hosted units nor checkpoint-b0. A SEPARATE
+  // entry sharing W2-20's branch, on the v1.0.15 precedent: W2-20 keeps its
+  // single pattern and is never widened; resolveProtectedGrants unions only
+  // the ids a caller actually supplies. HPO-ODS-W2-22 is an ADDENDUM IDENTITY
+  // (v1.0.21, protected_grant=null) and is deliberately NOT registered.
+  {
+    authorityId: 'HPO-ODS-W2-21',
+    branch: 'codex/multiorg-s1-founder-traceability-r1',
+    patterns: ['db/prepared/journal/**'],
+  },
 ]
 
 export interface ProtectedGrantResolution {

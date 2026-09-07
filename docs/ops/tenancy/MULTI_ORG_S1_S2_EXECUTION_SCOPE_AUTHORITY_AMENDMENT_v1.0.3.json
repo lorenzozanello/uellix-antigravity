@@ -1,0 +1,340 @@
+{
+  "package_id": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT",
+  "version": "1.0.3",
+  "artifact_id": "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3",
+  "authority_class": "EXECUTION_SCOPE_AUTHORITY_AMENDMENT_INSTRUCTION_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-23",
+  "hpo_mission_id": "S1-REHEARSAL-FRESHNESS-SUCCESSOR-AUTHORITY-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-06",
+  "amends": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json",
+  "refines": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "supersedes": null,
+  "companion_ods_addendum": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json",
+  "node_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+  "node_test_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+
+  "APPEND_ONLY_DISCIPLINE": {
+    "binding": "This amendment AMENDS the v1.0.0 base authority and REFINES v1.0.2. It NEVER EDITS v1.0.1 or v1.0.2, both of which remain byte-unchanged on disk and fully in force.",
+    "naming_derivation": "The predecessor is MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json, the highest present in docs/ops/tenancy/ at INTEGRATION_SHA. The append-only successor filename is the same stem at v1.0.3. Confirmed NEVER ADDED on any reachable ref: `git log --all --oneline --diff-filter=A -- 'docs/ops/tenancy/*AMENDMENT_v1.0.3.json'` returns EMPTY.",
+    "what_refine_means_here": "Every path, grant, prohibition, disposition and semantic v1.0.1 and v1.0.2 froze REMAINS IN FORCE, with ONE deliberate and fully adjudicated exception: the S1 KTC POSITIVE_EXIT_CRITERION, which v1.0.2 itself framed as a POST-GROWTH state admissible only while rehearsal regeneration lay outside S1's authority. This amendment ADDS exactly one S1 path and REVISES that one exit criterion. It REMOVES nothing, REWORDS nothing else already frozen, and REOPENS nothing else already adjudicated.",
+    "the_one_revision_is_not_a_silent_edit": "The revision is stated explicitly in S1_KTC_EXIT_REVISED below and adjudicated at length in the companion addendum AUTHORITY_CONTRADICTION_ADJUDICATED. v1.0.2's text is not altered; its criterion is SUPERSEDED AS AN EXIT STATE by a later authority that removed the criterion's own stated precondition."
+  },
+
+  "purpose": "Admit the CURRENT-STATE rehearsal artefact artifacts/baseline-rehearsal/latest.json to the S1 execution ceiling under generator-only discipline, freeze its repository-native generator, and revise the S1 exit criterion from the temporary post-growth singleton to FULL GREEN, so that the S1 implementation lane can reach a green GitHub CI on integration/commercial-v1 without weakening any control.",
+
+  "scope_note": "AUTHORITY ONLY. This mission writes exactly TWO new tracked files - this amendment and its companion ODS addendum v1.0.22 - and edits NOTHING. No implementation occurs in this lane, and PR #90 is not modified by it.",
+
+  "anchors": {
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-s1-rehearsal-successor-authority",
+    "branch": "codex/s1-rehearsal-successor-authority-r1",
+    "INTEGRATION_SHA": "99835529a828add833f1fcb985ec0451e314e3ae",
+    "INTEGRATION_TREE": "beef89f1d2f76a2b78272d3dabea6dba07fe0163",
+    "integration_branch": "integration/commercial-v1",
+    "intervening_delta": "MEASURED AS ZERO. START_HEAD equals origin/integration/commercial-v1 byte-for-byte and the log is empty in both directions.",
+    "S1_IMPLEMENTATION_CANDIDATE_MEASURED": "15870d0caa83eeae83ea156582de1e3529334bf5, head of PR #90 (DRAFT), merge-base 78b2e7c30b8fd3f9c05fc63e9e45076de57d2f2d.",
+    "measurement_discipline": "Every fact was re-measured at INTEGRATION_SHA or at the named candidate by executing the repository's own code. Nothing was inherited from LANE BW-R3 or from v1.0.2."
+  },
+
+  "S1_LANE": {
+    "node": "S1 - Founder traceability (canonical)",
+    "implementation_branch": "codex/multiorg-s1-founder-traceability-r1",
+    "path_count": 17,
+    "path_count_before_this_amendment": 16,
+    "path_count_after_this_amendment": 17,
+    "added_paths_from_v1_0_2": ["artifacts/baseline-rehearsal/latest.json"],
+    "removed_paths": [],
+    "reclassified_paths": [],
+
+    "protected_paths": [
+      "db/migrations/**",
+      "db/prepared/journal/**"
+    ],
+    "protected_path_grants": {
+      "db/migrations/**": "HPO-ODS-W2-20 (declared by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json) - CARRIED UNCHANGED, NOT WIDENED",
+      "db/prepared/journal/**": "HPO-ODS-W2-21 (declared by ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json) - CARRIED UNCHANGED, NOT WIDENED"
+    },
+    "protected_grant_registration_state": "MEASURED at INTEGRATION_SHA from the EXECUTED array in scripts/ods-scope.ts: PROTECTED_GRANTS holds 10 rows and NEITHER HPO-ODS-W2-20 NOR HPO-ODS-W2-21 is among them, exactly as v1.0.1 and v1.0.2 left them. Registering them is the S1 IMPLEMENTING mission's act and takes the count 10 -> 12. MEASURED ON CANDIDATE 15870d0: PR #90 already performs precisely that registration and advances the companion assertion from toBe(10) to toBe(12). This amendment CARRIES that unchanged and adds nothing to it.",
+
+    "unprotected_paths": [
+      "db/schema.ts",
+      "db/hosted/baseline-manifest.ts",
+      "app/(authenticated)/app/onboarding/actions.ts",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts",
+      "tests/hosted/baseline-manifest.test.ts",
+      "tests/hosted/baseline-journal-wrapper.test.ts",
+      "tests/hosted/operator-runner.test.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.ts",
+      "artifacts/hosted-a1-status.json",
+      "tests/tenancy/s1-founder-traceability.test.ts",
+      "tests/postgres/s1-founder-cardinality.pg.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+      "artifacts/baseline-rehearsal/latest.json"
+    ],
+    "path_count_derivation": "2 protected patterns + 15 unprotected literal paths = 17. The v1.0.1 figure was 16 (2 + 14), carried unchanged by v1.0.2. The single path added by this amendment is artifacts/baseline-rehearsal/latest.json. No wildcard was introduced to obtain it; it is a literal path.",
+
+    "NEW_PATH_DISPOSITION": {
+      "path": "artifacts/baseline-rehearsal/latest.json",
+      "class": "CURRENT_STATE_GENERATED",
+      "class_membership": "CLASS_4_GENERATED_ARTEFACTS - the THIRD member, joining db/prepared/journal/** and artifacts/hosted-a1-status.json. It is ALSO an unprotected literal file for authorisation purposes.",
+      "NOT_A_NEW_CLASS": "MEASURED, AND THE REASON THIS AMENDMENT IS NARROW. CLASS_4_GENERATED_ARTEFACTS already exists in v1.0.1 FINAL_SCOPE_CLASSIFICATION with two members, each already bound by 'NEVER HAND-EDITED. Each is produced by its own repository-native generator and confirmed by that generator's own verifier.' This amendment adds a third member under the IDENTICAL discipline and invents no category. v1.0.1's A1_STATUS_DISPOSITION is its governing precedent in full, and is adopted here rather than paraphrased.",
+      "authorised": "YES - ADDED BY THIS AMENDMENT. Outside the v1.0.1 and v1.0.2 ceiling.",
+      "protected": "NO. MACHINE-PROVEN by EXECUTING classifyPaths from scripts/ods-scope.ts against DEFAULT_PROTECTED_PATTERNS. With no --allow and no grant the path lands in `unauthorized`, NOT in `protectedViolations`; with an ordinary --allow entry alone it lands in `ok` with `grantAuthorized` EMPTY. The probe is non-vacuous: the same invocation correctly flagged db/migrations/0066_multiorg_s1_founder_traceability.sql as a protectedViolation, and the known-unprotected reference artifacts/hosted-a1-status.json classified identically to the new path. artifacts/ matches none of the seven DEFAULT_PROTECTED_PATTERNS. It requires an ordinary --allow entry and NO protected grant.",
+
+      "why_it_is_mechanically_forced": "MEASURED BY EXECUTION at candidate 15870d0, not reasoned from the diff. The artefact records a rehearsal against a 78-unit manifest; S1 appends one baseline unit, taking BASELINE_UNITS.length to 79. Two INDEPENDENT freshness predicates in tests/eval/stella-release/hosted-baseline-gate.ts then go false: rehearsalFresh (recorded manifestDigest vs the digest of the CURRENT manifest) and rehearsalAppliedAll (recorded manifestApplied 78 vs BASELINE_UNITS.length 79). Both feed the SAME gate id, so the failing gate SET has cardinality one while TWO conditions are false.",
+      "why_v1_0_1_and_v1_0_2_did_not_cover_it": "MEASURED BY ABSENCE. The path appears in NO path list of v1.0.0, v1.0.1 or v1.0.2, and in no ODS addendum through v1.0.21 as a granted path. v1.0.1's baseline-growth surface completion enumerated the five COUNT-pinning test hosts and the A1 status artefact, but not this artefact - because its freshness is asserted by a GATE rather than by a count literal in a test host, and a sweep for count literals would never surface it. v1.0.2 did the opposite of granting it: it CONSTRUCTED an exit criterion around the artefact remaining stale.",
+
+      "regeneration_is_NOT_offline": "AN HONEST DIFFERENCE FROM THE A1 PRECEDENT, RECORDED RATHER THAN GLOSSED. artifacts/hosted-a1-status.json regenerates by pure recomputation with no database. This artefact does NOT: its generator provisions a real PostgreSQL cluster. That is why the isolation requirements below are binding rather than advisory, and why an environment without Docker is a STOP rather than a licence to hand-edit.",
+
+      "MANDATORY_REGENERATION": "BINDING. The implementing mission MUST regenerate this artefact with the repository-native generator `pnpm baseline:rehearsal:local` and MUST confirm the result through the hosted-baseline gate. It MUST NEVER be hand-edited. A hand edit would assert that a rehearsal ran which did not run - precisely the failure the gate exists to catch, and which the gate's own source calls out: it verifies THE REHEARSAL ARTEFACT, not the rehearsal SCRIPT.",
+
+      "NOT_HISTORICAL_CLOSURE_EVIDENCE": {
+        "binding": "This artefact is CURRENT-STATE evidence - what a rehearsal of the CURRENT manifest produces. It is NOT historical closure evidence and NOT a sealed or certified artefact. Regenerating it is the OPPOSITE of historical evidence rewriting: leaving it stale is what would misreport the current state.",
+        "the_distinction_that_matters": "CARRIED VERBATIM IN SUBSTANCE FROM A1_STATUS_DISPOSITION. A historical closure artefact records what was true at a past checkpoint and is immutable. A current-state generated artefact records what the contract computes today and is REQUIRED to move when its inputs move. Conflating the two produces both failure modes - frozen files edited, and live files left stale.",
+        "which_side_of_the_line_the_KTC_REGISTRY_falls_on": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json is on the HISTORICAL side and is additionally immutable-by-convention under the Controller guard. It records that the artefact WAS stale at a past base ref. That record stays true and stays untouched; only the artefact moves."
+      }
+    },
+
+    "GENERATOR_AND_VERIFIER_CONTRACT": {
+      "GENERATOR": "pnpm baseline:rehearsal:local",
+      "generator_source": "scripts/baseline-rehearsal-local.ts",
+      "verified_live": "MEASURED from package.json scripts at INTEGRATION_SHA: 'baseline:rehearsal:local': 'tsx scripts/baseline-rehearsal-local.ts'. The command exists; it is not invented by this amendment. It is also the command the FAILING GATE ITSELF prints as the remedy, emitted verbatim from tests/eval/stella-release/hosted-baseline-gate.ts.",
+      "NO_CLI_VERIFIER_EXISTS": "MEASURED AND RECORDED, because it is a REAL DIFFERENCE from the A1 precedent. There is no `pnpm baseline:rehearsal:verify`. Freshness is asserted by the hosted-baseline gate and its spec. The implementing mission MUST NOT invent a verifier command; doing so is a STOP.",
+      "VERIFIER": [
+        "the gate id hosted-baseline-rehearsal-ready produced by evaluateHostedBaselineGates(buildHostedBaselineGateEvidence()) MUST pass",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts MUST pass in full"
+      ],
+      "MINIMUM_CONDITIONS_ALL_REQUIRED": [
+        "baseline rehearsal generation succeeds",
+        "manifest digest matches the CURRENT manifest (rehearsalFresh true)",
+        "unit count matches BASELINE_UNITS.length with manifestFailedAt null (rehearsalAppliedAll true)",
+        "the historic defect is still reproduced (rehearsalReproducedDefect true)",
+        "postconditions clean (rehearsalPostconditionsClean true)",
+        "hosted-baseline-rehearsal-ready passes",
+        "the hosted-baseline gate spec passes"
+      ],
+      "ISOLATED_DISPOSABLE_MECHANISM_REQUIRED": "BINDING. Generation MUST use the repository's own isolated mechanism and no other. The script starts its OWN container from public.ecr.aws/supabase/postgres:17.6.1.143 with --network none, asserts a role-pristine cluster before proceeding, and destroys the container unconditionally. Regenerating against a borrowed, shared or long-lived cluster is PROHIBITED: HPO-ODS-W2-03 records that the previous borrowed-container form masked the real first failure because the borrowed cluster already carried a uellix_app role. NO staging write, NO Production write and NO persistent local-dev write is authorised.",
+      "reproducedDefect_must_NOT_be_traded_away": "LOAD-BEARING. RUN A must still FAIL at 0039. A rehearsal in which the naive order SUCCEEDS means the historic defect is no longer reproduced and MUST fail the gate rather than be welcomed as an improvement.",
+      "SINGLE_FILE_EFFECT": "The rehearsal operation writes exactly ONE tracked file. Proven two ways: scripts/baseline-rehearsal-local.ts contains a single writeFileSync (L694) targeting the artefact, and an executed run at candidate 15870d0 left `git status --porcelain --untracked-files=all` reporting exactly ' M artifacts/baseline-rehearsal/latest.json'. Any second tracked file appearing in a rehearsal's diff is a STOP.",
+      "NO_DIGEST_FROZEN_HERE": "BINDING. This amendment names no expected post-refresh digest as a target. MEASURED FOR ORIENTATION ONLY at candidate 15870d0: the refresh moved manifestApplied 78 -> 79 and manifestDigest d26ada68a8dd77e6b09d3f5da26a251ba8cf7c0d0489564342d39bbfcf4e00f6 -> 2578544e6c673cad5bab07f4e29d4363ba4ad4545a76a4862fe84df483f9dcd5. The implementing mission MEASURES at its own head. The only invariant that must hold is the RELATION manifestApplied === BASELINE_UNITS.length."
+    },
+
+    "S1_KTC_EXIT_REVISED": {
+      "SUPERSEDED_CRITERION": "v1.0.2 S1_KTC_EXIT_CRITERION.POSITIVE_EXIT_CRITERION - failing gate-id set EXACTLY { hosted-baseline-rehearsal-ready }, Array(1).",
+      "SUPERSEDED_IN_WHAT_SENSE": "AS AN EXIT STATE ONLY. v1.0.2 is not edited, not deleted and not declared to have been wrong. It was CORRECT under the authority in force when it was issued, and it remains the correct description of the INTERMEDIATE state a candidate occupies between landing the S1 unit and regenerating the artefact.",
+      "WHY_IT_WAS_ONLY_EVER_TEMPORARY": "Because v1.0.2 could not authorise the fix. artifacts/baseline-rehearsal/latest.json was outside the S1 ceiling, so the singleton was the BEST reachable post-growth state, not a desired end state. This amendment authorises the regeneration, which REMOVES the exception's own precondition - and with it the exception.",
+      "v1_0_2_ALREADY_TREATED_EMPTY_AS_THE_STEADY_STATE": "IN ITS OWN WORDS. v1.0.2 BASE_STATE_MEASURED records that at its INTEGRATION_SHA the suite was FULLY GREEN with a failing set of [] and rehearsalFresh=true, and warns the criterion 'is therefore explicitly POST-GROWTH and MUST NOT be read as describing the base - read that way it would authorise a regression from green.' This amendment RESTORES that steady state after the growth; it does not contradict v1.0.2.",
+
+      "FINAL_POSITIVE_EXIT_CRITERION": "At BW-R4's final candidate the failing gate-id set on tests/eval/stella-release/hosted-baseline-gate.test.ts MUST be EXACTLY []. Every hosted baseline gate MUST PASS.",
+      "HOSTED_BASELINE_GATE_COUNT": 6,
+      "gate_ids": [
+        "hosted-baseline-manifest-ready",
+        "hosted-baseline-order-ready",
+        "hosted-baseline-managed-compatible",
+        "hosted-baseline-rehearsal-ready",
+        "hosted-baseline-postconditions-ready",
+        "hosted-baseline-recovery-ready"
+      ],
+      "SIX_GATES_NOT_SEVEN": "MEASURED BY EXECUTION, and recorded because two artefacts say 'seven'. evaluateHostedBaselineGates returns SIX gates and the spec's describe block is titled 'the six baseline gates'. The figure SEVEN in v1.0.2 BASE_STATE_MEASURED ('the spec passes 7/7') counts SEVEN TEST CASES in that spec file - a different denominator - confirmed by executing the spec against a refreshed artefact, which reports 'Tests 7 passed (7)'. The binding requirement is the failing gate-id SET being EMPTY, which has no denominator to confuse.",
+
+      "AUTHORIZED_CHANGE_CLASS": "MECHANICAL_KTC_EXIT_CRITERION_ADVANCE_TO_EMPTY",
+      "forced_literal_count": 1,
+      "forced_literal_host": "tests/tenancy/s1-founder-traceability.test.ts - ALREADY inside the ceiling as a CLASS_2 unprotected literal file. INSTRUCTION REFINEMENT, NOT RE-GRANTING.",
+      "forced_literal": "MEASURED AT CANDIDATE 15870d0 at L395 inside the it() at L392: `expect(failed).toEqual(['hosted-baseline-rehearsal-ready'])`. It MUST become `expect(failed).toEqual([])`. The line number is EVIDENCE, not instruction: act on the ASSERTION found at BW-R4's own head.",
+      "coupled_prose": "The it() title at L392 and the header comment at L20-L21 describe the singleton criterion descriptively. Updating them for coherence is PERMITTED and expected; it is NEVER a substitute for advancing the assertion.",
+      "NOT_forced_and_MUST_NOT_be_touched": "MEASURED AND LOAD-BEARING. tests/eval/stella-release/hosted-baseline-gate.test.ts ALREADY asserts the green state - `expect(failed.map(...)).toEqual([])` at L18 and `expect(report.gates.every((g) => g.passed)).toBe(true)` at L95. Those are the two assertions that currently FAIL, and they go green from the artefact refresh ALONE. BW-R4 MUST NOT edit that file under this instruction. Nor are the v1.0.1 HOST_1-HOST_5 count pins or the v1.0.2 FUNCTION_H DML whitelist literals touched by this instruction; each retains its own distinct change class.",
+
+      "no_weakening": "PROHIBITED: converting any exact ordered comparison to a lower bound, a range, a >= comparison, a Set comparison, arrayContaining, toContain, a length-only check, a snapshot, an it.skip, an it.todo, or a .only that hides siblings; and PROHIBITED: any expression that computes the expectation from the gate list at assertion time. The comparison MUST remain an exact ordered equality against the empty array.",
+      "ANY_FAILING_GATE_AT_FINAL_CANDIDATE_IS_A_STOP": "BINDING, and it is v1.0.2's ANY_DEVIATION_IS_A_STOP carried forward and TIGHTENED. Under v1.0.2 an additional gate id was a STOP; under this amendment ANY failing gate id whatsoever is a STOP. BW-R4 does NOT register a KTC, does NOT weaken an assertion and does NOT absorb a failure into an existing condition.",
+      "moving_from_Array_1_to_Array_0_is_not_a_deviation": "It is the removal of the sole remaining failure. v1.0.2's deviation clause forbade failures WORSE than the registered condition (an extra gate id, or Array(n>=2)); it never forbade the condition being FIXED.",
+
+      "no_new_KTC": "PROHIBITED. Carried UNCHANGED from v1.0.20 deterministic_baseline_growth.no_new_KTC and v1.0.2. No KTC-S1-*, and no new known-test-condition entry of any name. Deterministic-growth doctrine is preserved in full.",
+      "REGISTERED_CONDITIONS_STATUS": {
+        "conditions": ["KTC-HOSTED-BASELINE-REHEARSAL-STALE-01", "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"],
+        "action": "NONE. Neither is deleted, retired, rewritten, renamed nor widened.",
+        "status": "DORMANT. Under a refreshed artefact their cause_fingerprint (rehearsalFresh=false, appliedAll=false) no longer holds, so neither fires. They remain REGISTERED HISTORICAL conditions, able to fire again should the artefact ever go stale once more - exactly the situation they describe.",
+        "no_edit_is_even_possible": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json is a member of scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION, so any mission changing it triggers the Controller immutable guard and STOPS. Dormancy is the ONLY reachable disposition.",
+        "signatures_reproduced": "At candidate 15870d0 BOTH registered signatures were observed VERBATIM - 'AssertionError: expected [ Array(1) ] to deeply equal []' at L18 and 'AssertionError: expected false to be true' at L95 - and BOTH disappeared after the artefact refresh, with the spec reporting 7 passed (7)."
+      },
+      "A_KTC_IS_NOT_A_TEST_LAUNDERER": "BINDING DOCTRINE. A known test condition REGISTERS a failure that is understood and deferred. It does NOT convert a failing test into a passing one and does NOT make a red suite green. CI reports the raw suite; the registration lives beside it, not inside it."
+    },
+
+    "EVIDENCE_UPDATE_INSTRUCTION": {
+      "AUTHORIZED_CHANGE_CLASS": "APPEND_ONLY_HISTORY_EXTENSION",
+      "host": "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json - ALREADY inside the ceiling as a CLASS_2 unprotected literal file. INSTRUCTION REFINEMENT, NOT RE-GRANTING. Created by PR #90; MODIFIED, not created, by BW-R4.",
+      "what_must_be_appended": [
+        "R2 implementation as landed",
+        "R3 CI diagnosis and its STOP_FOR_AUTHORITY_DELTA verdict",
+        "this successor authority (ODS v1.0.22 / HPO-ODS-W2-23 and tenancy v1.0.3)",
+        "R4 rehearsal regeneration, naming the generator actually run",
+        "the OLD stale rehearsal digest and unit count",
+        "the NEW fresh rehearsal digest and unit count",
+        "the hosted-baseline failing-gate-id set BEFORE and AFTER",
+        "the GitHub CI conclusion BEFORE and AFTER"
+      ],
+      "DO_NOT_REWRITE_THE_EARLIER_CI_RED_STATE": "BINDING. The recorded CI-RED state and the R3 diagnosis are HISTORY and MUST be preserved verbatim. BW-R4 APPENDS; it MUST NOT delete, reword or retroactively green any earlier recorded state. Making the record say the S1 implementation was always green is historical evidence rewriting, which ODS doctrine prohibits outright.",
+      "honesty_requirement": "Every appended figure MUST be the value MEASURED at BW-R4's own head."
+    },
+
+    "FROZEN_S1_SEMANTICS_CARRIED_UNCHANGED": {
+      "statement": "Every S1 provenance and tenancy semantic frozen by MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json, by the v1.0.0 execution-scope authority, by v1.0.1 and by v1.0.2 is carried forward UNCHANGED and is NOT restated here, with the single explicitly adjudicated exception of the KTC exit criterion.",
+      "explicitly_preserved": [
+        "the frozen MO-11 founder-traceability semantics and the canonical founder derivation",
+        "the three-class structure of the ceiling, now with a fifteenth unprotected literal path",
+        "v1.0.1 EXISTING_TEST_INSTRUCTIONS HOST_1 through HOST_5 and their five distinct change classes",
+        "v1.0.2 S1_DML_INSTRUCTIONS DML_HOST_1/2/3, the MECHANICAL_DML_WHITELIST_ADVANCE_ONLY class and the byte-identical appended id rule",
+        "v1.0.2 S1_BASELINE_DML_SHAPE, including literalRowSourceCount 0 and the SCANNER_VISIBILITY_REQUIREMENT with its PROHIBITED_FORMS (DO block, CTE-wrapped, function/trigger body, dynamic EXECUTE)",
+        "db/hosted/baseline-scanner.ts remains NOT an authorised path and MUST NOT be edited",
+        "A1_STATUS_DISPOSITION and the regenerate-never-hand-edit rule for artifacts/hosted-a1-status.json",
+        "CHECKPOINT_B0_DISPOSITION",
+        "S1_MIGRATION_PARTICIPATION and the ordinary-migration doctrine",
+        "DETERMINISTIC_BASELINE_GROWTH and JOURNAL_CONSEQUENCE",
+        "the narrowness of HPO-ODS-W2-20 (db/migrations/** alone) and HPO-ODS-W2-21 (db/prepared/journal/** alone)",
+        "artifacts/hosted-a1-corroboration.json remains OUTSIDE the ceiling and MUST NOT be touched"
+      ],
+      "no_silent_reinterpretation": "Where this amendment is silent, v1.0.2 governs; where v1.0.2 is silent, v1.0.1 governs; where v1.0.1 is silent, v1.0.0 governs. Silence here is never a repeal, never a relaxation and never an invitation to infer a broader grant.",
+      "ceiling_semantics": "A CEILING resolved by ods:scope against the lane's own --allow list, never a mandate. A lane may change a SUBSET. A path outside the list fails closed. A resolved grant authorizes a protected path ONLY together with an ordinary --allow entry covering the same path; both remain mandatory."
+    },
+
+    "invocation": "pnpm ods:scope -- --base <INTEGRATION_SHA> --protected-authority HPO-ODS-W2-20 --protected-authority HPO-ODS-W2-21 --allow <each of the 17 paths above, exactly>"
+  },
+
+  "S2_LANE": {
+    "SEMANTIC_CHANGE": "NONE",
+    "PATH_CHANGE": "NONE",
+    "path_count": 8,
+    "path_count_before_this_amendment": 8,
+    "path_count_after_this_amendment": 8,
+    "statement": "This amendment makes NO S2 change of any kind. It adds no S2 path, removes none, reclassifies none, issues no new S2 instruction, and REOPENS NO S2 AUTHORITY. v1.0.2's S2_LANE and the companion FUNCTION_I remain in force BYTE-UNCHANGED.",
+    "unprotected_paths_carried_unchanged": [
+      "lib/auth/selected-organization.ts",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "app/(authenticated)/app/organizations/select/page.tsx",
+      "tests/tenancy/s2-selected-org-carrier.test.ts",
+      "tests/auth/route-authorization-boundary.test.ts",
+      "docs/ops/tenancy/MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+      "tests/database-entrypoint-inventory.json",
+      "tests/database-runtime-entrypoints.test.ts"
+    ],
+    "restated_for_disjointness_only": "The eight paths are restated here ONLY to make the disjointness claim checkable, NOT to re-grant them. MEASURED: the S2 set and the S1 set share NO member, and neither contains artifacts/baseline-rehearsal/latest.json. An S2 merge during or after this lane is therefore NON_MATERIAL to this authority."
+  },
+
+  "PROTECTED_GRANT_CARDINALITY": {
+    "NEW_PROTECTED_PATH_REQUIRED": false,
+    "PROTECTED_GRANT_REQUIRED": false,
+    "PROTECTED_GRANTS_CHANGED": false,
+    "PROTECTED_GRANTS_COUNT_BEFORE": 10,
+    "PROTECTED_GRANTS_COUNT_AFTER": 10,
+    "PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION": 12,
+    "how_measured": "From the EXECUTED array's rows in scripts/ods-scope.ts at INTEGRATION_SHA - 10 rows, ids W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17 - never by grep, which returns more matches than there are rows because ids also appear in prose and rationale.",
+    "W2_23_MUST_NOT_BE_REGISTERED": "BINDING. HPO-ODS-W2-23 is this lineage act's GRANT_ID, NOT a protected-grant registry entry. It MUST NOT be added to scripts/ods-scope.ts PROTECTED_GRANTS. MEASURED PRECEDENT: v1.0.21 allocated HPO-ODS-W2-22 as pure lineage with protected_grant null and protected_grant_required false. Registering W2-23 merely because it is the new lineage id would be an unauthorised widening of the protected surface and is a STOP. The count after S1 registration remains 12, never 13.",
+    "W2_20_AND_W2_21_SEMANTICS_PRESERVED": "PR #90 registers HPO-ODS-W2-20 (db/migrations/**) and HPO-ODS-W2-21 (db/prepared/journal/**) and advances the companion assertion from toBe(10) to toBe(12). That is PR #90's act, CARRIED UNCHANGED. This amendment neither widens nor re-scopes either pattern, and BW-R4 MUST NOT alter what PR #90 registered."
+  },
+
+  "CONTROLLER_SEQUENCING": {
+    "CONTROLLER33_REQUIRED": true,
+    "why": "This lane creates docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json, which the Controller's IMMUTABLE_BY_CONVENTION closed world must eventually enumerate, taking 32 -> 33.",
+    "what_controller33_blocks": "The NEXT LINEAGE ALLOCATION ONLY - any v1.0.23 or HPO-ODS-W2-24. It does NOT block the BW-R4 implementation this pair grants, once this successor authority has been independently audited and integrated. Conflating the two would deadlock the S1 closure behind a Controller maintenance with no bearing on it - the identical adjudication v1.0.2 already made for Controller32.",
+    "IMPLEMENTATION_BEFORE_CONTROLLER33_ALLOWED": true,
+    "no_controller_edit_in_this_lane": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts are NOT authorised paths for this lane and MUST NOT be touched here.",
+    "no_preallocation": "Naming v1.0.23 or HPO-ODS-W2-24 above is a PROHIBITION, never an allocation. This amendment allocates NOTHING beyond tenancy v1.0.3 and HPO-ODS-W2-23."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 2,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json",
+      "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.3.json"
+    ],
+    "both_are_NEW_files": true,
+    "no_third_path": "EXACTLY TWO. This mission edits NOTHING - not the Controller, not ods-scope, not any test host, not any migration or journal artefact, not artifacts/baseline-rehearsal/latest.json itself, not the KTC registry, not v1.0.1 or v1.0.2, and not PR #90. A third changed path in this lane's diff is a STOP."
+  },
+
+  "CROSS_ARTIFACT_AGREEMENT": {
+    "binding": "This amendment and docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.22.json MUST agree EXACTLY on every field below. A disagreement is a STOP, never a choice, and never a reason to prefer one artefact over the other.",
+    "agreed_fields": {
+      "S1_PATH_COUNT_BEFORE": 16,
+      "S1_PATH_COUNT_AFTER": 17,
+      "NEW_S1_PATH": "artifacts/baseline-rehearsal/latest.json",
+      "NEW_S1_PATH_COUNT": 1,
+      "NEW_S1_PATH_CLASSIFICATION": "CURRENT_STATE_GENERATED",
+      "NEW_S1_PATH_CLASS_MEMBERSHIP": "CLASS_4_GENERATED_ARTEFACTS",
+      "S1_GENERATOR": "pnpm baseline:rehearsal:local",
+      "S1_GENERATOR_SOURCE": "scripts/baseline-rehearsal-local.ts",
+      "S1_ARTEFACT_HAND_EDIT": "PROHIBITED",
+      "S1_AUTHORIZED_CHANGE_CLASS": "CURRENT_STATE_GENERATED_ARTEFACT_REGENERATION_ONLY",
+      "S1_FINAL_KTC_EXIT": "failing gate-id set EXACTLY [] - all hosted baseline gates pass",
+      "S1_KTC_EXIT_SUPERSEDED": "the TEMPORARY post-growth singleton { hosted-baseline-rehearsal-ready } frozen by v1.0.2, as an EXIT STATE only",
+      "S1_HOSTED_BASELINE_GATE_COUNT": 6,
+      "KTC_REGISTRATIONS_STATUS": "REGISTERED AND DORMANT - neither deleted, retired, rewritten nor widened",
+      "NO_NEW_KTC": true,
+      "S2_SEMANTIC_CHANGE": "NONE",
+      "S2_PATH_CHANGE": "NONE",
+      "S2_PATH_COUNT_BEFORE": 8,
+      "S2_PATH_COUNT_AFTER": 8,
+      "PROTECTED_GRANTS_COUNT_BEFORE": 10,
+      "PROTECTED_GRANTS_COUNT_AFTER": 10,
+      "PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION": 12,
+      "NEW_PROTECTED_PATH_REQUIRED": false,
+      "PROTECTED_GRANT_REQUIRED": false,
+      "PROTECTED_GRANTS_CHANGED": false,
+      "W2_23_REGISTERED_IN_ODS_SCOPE": false,
+      "CONTROLLER33_REQUIRED": true,
+      "IMPLEMENTATION_BEFORE_CONTROLLER33_ALLOWED": true,
+      "AUTHORIZED_CHANGED_PATH_COUNT_THIS_MISSION": 2
+    }
+  },
+
+  "PARALLELISM": {
+    "PR90_NOT_MODIFIED_BY_THIS_LANE": "BINDING. PR #90 remains exactly as its author left it at 15870d0. This lane reads it, reproduces its failure, and grants the authority its remediation needs - it does not touch it.",
+    "PR87_S2_may_merge_concurrently": "IT DID, AND IT IS NON_MATERIAL - see PR87_MERGED_DURING_THIS_LANE below. S2's eight implementation paths are disjoint from this lane's two authority files and from the S1 migration and baseline surface. The S2 merge changes no field of this amendment.",
+    "PR87_MERGED_DURING_THIS_LANE": {
+      "observed_at_finalisation": "`git fetch origin --prune` immediately before finalisation returned a NEW integration head f4cef21aeaa53379830ea5dd6a92c2ac0958d29d, 'Merge pull request #87 from lorenzozanello/codex/multiorg-s2-selected-org-carrier-r1'.",
+      "MEASUREMENT_BASE_UNCHANGED": "99835529a828add833f1fcb985ec0451e314e3ae. Every figure here stays anchored to the SHA at which it was actually measured; none is retro-fitted to the newer head.",
+      "delta_path_count": 8,
+      "delta_equals_the_declared_S2_SET_EXACTLY": "VERIFIED AS A SET COMPARISON, not assumed from the PR title. `git diff --name-only 9983552 f4cef21` is SET-EQUAL to S2_LANE.unprotected_paths_carried_unchanged above, with nothing extra in either direction. That is why those eight paths are restated in this amendment: to make this very check mechanical.",
+      "disjointness_verified": "Intersection with this lane's two-path write set is EMPTY. Intersection with the S1 seventeen-path ceiling is EMPTY - no literal S1 path, no db/migrations/ path, no db/prepared/ path, and no baseline or hosted surface path is touched.",
+      "no_new_ODS_lineage": "NO path under docs/ops/ods/ appears in the delta. ODS v1.0.22, tenancy v1.0.3 and HPO-ODS-W2-23 were each RE-VERIFIED as still unallocated at f4cef21, and the live Controller there still holds 32 with v1.0.21 final and v1.0.22 absent.",
+      "VERDICT": "NON_MATERIAL. No re-derivation required; no field of this amendment moves."
+    },
+    "what_WOULD_be_material": "A NEW ODS LINEAGE ALLOCATION in an intervening commit - any v1.0.22 or HPO-ODS-W2-23 claimed by another lane - or any intervening change to the S1 ceiling, to the rehearsal artefact or its generator, or to scripts/ods-controller.ts or scripts/ods-scope.ts. Any of those is MATERIAL and a STOP, and would require this pair to be re-derived at the new head."
+  },
+
+  "TEST_CONTRACT": {
+    "no_test_written_by_this_mission": "AUTHORITY_ONLY. This mission writes no test, edits no test host and changes no product test.",
+    "what_BW_R4_must_demonstrate": [
+      "the rehearsal was REGENERATED with pnpm baseline:rehearsal:local, never hand-edited",
+      "the rehearsal operation changed exactly one tracked file",
+      "rehearsalFresh, rehearsalAppliedAll, rehearsalReproducedDefect and rehearsalPostconditionsClean are all true",
+      "the failing gate-id set is EXACTLY []",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts passes in full",
+      "tests/tenancy/s1-founder-traceability.test.ts passes with the advanced literal",
+      "no assertion anywhere was weakened, skipped or snapshot-masked",
+      "GitHub CI on the PR branch is GREEN"
+    ]
+  },
+
+  "risks_and_open_findings": {
+    "R1": "The generator requires Docker. An environment without it cannot regenerate the artefact. OPEN AND DISCLOSED as an ENVIRONMENTAL precondition, never a licence to hand-edit: if the generator cannot run, BW-R4 STOPS. MEASURED: Docker 29.5.2 sufficed and the full rehearsal completed at candidate 15870d0.",
+    "R2": "If PR #90 is revised, the post-refresh digest changes. NEUTRALISED: no digest is frozen as a target; only the relation manifestApplied === BASELINE_UNITS.length must hold.",
+    "R3": "A reader could mistake FINAL_KTC_EXIT=[] for licence to edit the hosted-baseline spec to force green. FORECLOSED: NOT_forced_and_MUST_NOT_be_touched records that the spec already asserts the green state and needs no edit; only tests/tenancy/s1-founder-traceability.test.ts carries a literal that moves.",
+    "R4": "Two prior artefacts and the mission brief say 'seven' where the measured gate count is six. RESOLVED EXPLICITLY in SIX_GATES_NOT_SEVEN rather than propagated."
+  },
+
+  "CANDIDATE_SELF_CHECK": {
+    "SC-1_exact_write_set": "EXACTLY TWO new tracked files. FAILS if a third tracked path appears in this lane's diff.",
+    "SC-2_lineage": "version 1.0.3, GRANT_ID HPO-ODS-W2-23, both proven FREE by structural allocation sweep plus all-refs history sweep. FAILS if either was already allocated.",
+    "SC-3_one_new_path_only": "path_count 16 -> 17, exactly one path added, none removed, none reclassified, and the unprotected_paths list holds 15 entries so 2 + 15 = 17 closes. FAILS if the arithmetic does not close.",
+    "SC-4_append_only": "v1.0.1 and v1.0.2 are byte-unchanged on disk. FAILS if either appears in the diff.",
+    "SC-5_S2_untouched": "S2_PATH_COUNT_BEFORE equals S2_PATH_COUNT_AFTER equals 8 and no S2 instruction is issued. FAILS if any S2 field moves.",
+    "SC-6_protected_surface": "PROTECTED_GRANTS_CHANGED false, counts 10 -> 10, W2-23 explicitly NOT registered. FAILS if any protected pattern is added or widened.",
+    "SC-7_KTC_preserved": "Both registered conditions named, neither deleted, retired, rewritten nor widened, no new KTC of any name. FAILS if any edit to KNOWN_TEST_CONDITIONS_v1.0.0.json is instructed.",
+    "SC-8_exit_criterion_revision_is_explicit": "The supersession of v1.0.2's criterion is stated, scoped to EXIT STATE only, and justified by the removal of its own precondition. FAILS if the revision is implicit or if v1.0.2 is characterised as having been wrong.",
+    "SC-9_controller_untouched": "Controller paths are excluded from this lane and Controller33 is declared a separate required successor. FAILS if either path is modified here.",
+    "SC-10_cross_artifact_agreement": "Every field in CROSS_ARTIFACT_AGREEMENT.agreed_fields appears with a byte-identical value in the companion ODS addendum v1.0.22. FAILS on any disagreement.",
+    "SC-11_measured_not_assumed": "Every quantitative claim carries its measurement method, and the six-versus-seven divergence and the absent CLI verifier are recorded explicitly. FAILS if a figure appears without a method."
+  }
+}

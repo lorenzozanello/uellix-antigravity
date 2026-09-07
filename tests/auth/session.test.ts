@@ -27,6 +27,36 @@ vi.mock('next/navigation', () => ({
   redirect: (path: string) => mockRedirect(path),
 }))
 
+// S3 — lib/auth/database-context.ts now reads the S2 carrier
+// (lib/auth/selected-organization.ts, unmocked and exercised for real below)
+// to resolve which organization's membership to derive. That module's only
+// dependency is next/headers' `cookies()`, so a minimal fake cookie jar is
+// mocked here — the same shape tests/tenancy/s2-selected-org-carrier.test.ts
+// already uses.
+interface StoredCookie {
+  value: string
+}
+class FakeCookieStore {
+  private readonly entries = new Map<string, StoredCookie>()
+  get(name: string): { name: string; value: string } | undefined {
+    const entry = this.entries.get(name)
+    return entry ? { name, value: entry.value } : undefined
+  }
+  set(name: string, value: string): void {
+    this.entries.set(name, { value })
+  }
+  delete(nameOrOptions: string | { name: string }): void {
+    this.entries.delete(typeof nameOrOptions === 'string' ? nameOrOptions : nameOrOptions.name)
+  }
+  clear(): void {
+    this.entries.clear()
+  }
+}
+const fakeCookieStore = new FakeCookieStore()
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => fakeCookieStore),
+}))
+
 // In-memory table fixtures selected by table name, mirroring the pattern
 // already used in tests/proxies.service.test.ts / evidence.service.test.ts
 const mockDbData = {
@@ -89,6 +119,12 @@ import {
   getCurrentOrganizationContext,
   syncUserProfile,
 } from '@/lib/auth/session'
+import { SELECTED_ORGANIZATION_COOKIE_NAME } from '@/lib/auth/selected-organization'
+
+/** S3: set the S2 carrier the way a real browser session would. */
+function selectOrganization(organizationId: string): void {
+  fakeCookieStore.set(SELECTED_ORGANIZATION_COOKIE_NAME, organizationId)
+}
 
 const AUTH_USER = { id: '11111111-1111-4111-8111-111111111111', email: 'user@org.com' }
 
@@ -134,6 +170,7 @@ beforeEach(() => {
   mockDbData.organizations = []
   mockDbData.organizationMembers = []
   mockGetUser.mockResolvedValue({ data: { user: null } })
+  fakeCookieStore.clear()
 })
 
 // ---------------------------------------------------------------------------
@@ -179,13 +216,26 @@ describe('getCurrentUser', () => {
 describe('getCurrentMembership', () => {
   // getCurrentMembership no longer queries: it reads the request principal,
   // which needs a verified session AND a readable users row. Both are set up
-  // here for every case in this block.
+  // here for every case in this block. S3: it also needs a SELECTED
+  // organization — membership is derived from the (user, selected
+  // organization) pair, never pick-first — so each case that expects a real
+  // row selects the organization that row belongs to.
   beforeEach(() => {
     mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
     mockDbData.users = [DB_USER]
   })
 
+  it('S3 / TENANCY_NO_ORGANIZATION_SELECTED: returns null when NO organization is selected, even with an active membership row present', async () => {
+    mockDbData.organizationMembers = [DB_MEMBERSHIP]
+    // No selectOrganization() call — the carrier is absent.
+
+    const result = await getCurrentMembership('11111111-1111-4111-8111-111111111111')
+
+    expect(result).toBeNull()
+  })
+
   it('returns null when the user has no active membership row', async () => {
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = []
 
     const result = await getCurrentMembership('11111111-1111-4111-8111-111111111111')
@@ -194,6 +244,7 @@ describe('getCurrentMembership', () => {
   })
 
   it('returns null when the stored role is not a recognized Role (defensive against DB drift)', async () => {
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = [{ ...DB_MEMBERSHIP, role: 'not-a-real-role' }]
 
     const result = await getCurrentMembership('11111111-1111-4111-8111-111111111111')
@@ -201,7 +252,8 @@ describe('getCurrentMembership', () => {
     expect(result).toBeNull()
   })
 
-  it('returns the mapped Membership for a valid active row', async () => {
+  it('returns the mapped Membership for a valid active row in the SELECTED organization', async () => {
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = [DB_MEMBERSHIP]
 
     const result = await getCurrentMembership('11111111-1111-4111-8111-111111111111')
@@ -260,6 +312,7 @@ describe('requireRole', () => {
   it('returns the membership when the role meets the threshold', async () => {
     mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
     mockDbData.users = [DB_USER]
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = [{ ...DB_MEMBERSHIP, role: 'organization_admin' }]
 
     const result = await requireRole('11111111-1111-4111-8111-111111111111', 'analyst')
@@ -295,9 +348,23 @@ describe('requireOrganizationAccess', () => {
     await expect(requireOrganizationAccess()).rejects.toThrow('REDIRECT:/app/onboarding')
   })
 
-  it('redirects to /app/onboarding when the membership references a deleted organization', async () => {
+  it('S3 / single_membership_is_not_an_exception: redirects a non-admin with an ACTIVE membership but NO organization selected to /app/onboarding — route topology is unchanged by S3, only membership derivation is', async () => {
     mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
     mockDbData.users = [DB_USER]
+    mockDbData.organizationMembers = [DB_MEMBERSHIP]
+    mockDbData.organizations = [DB_ORG]
+    // No selectOrganization() call — an active membership exists, but the
+    // carrier is absent. REQUEST_PRINCIPAL_CONTRACT.NO_FALLBACK.
+    // single_membership_is_not_an_exception: this is a REFUSAL, not an
+    // inference, even though the caller has exactly one membership.
+
+    await expect(requireOrganizationAccess()).rejects.toThrow('REDIRECT:/app/onboarding')
+  })
+
+  it('redirects to /app/onboarding when the SELECTED membership references a deleted organization', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
+    mockDbData.users = [DB_USER]
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = [DB_MEMBERSHIP]
     mockDbData.organizations = [] // org row missing/deleted
 
@@ -307,6 +374,7 @@ describe('requireOrganizationAccess', () => {
   it('returns the full OrganizationContext when everything resolves', async () => {
     mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
     mockDbData.users = [DB_USER]
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = [DB_MEMBERSHIP]
     mockDbData.organizations = [DB_ORG]
 
@@ -362,9 +430,23 @@ describe('getCurrentOrganizationContext', () => {
     expect(mockRedirect).not.toHaveBeenCalled()
   })
 
-  it('returns null when there is no membership (does not redirect)', async () => {
+  it('S3 / TENANCY_NO_ORGANIZATION_SELECTED: returns null when authenticated with an active membership but NO organization selected', async () => {
     mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
     mockDbData.users = [DB_USER]
+    mockDbData.organizationMembers = [DB_MEMBERSHIP]
+    mockDbData.organizations = [DB_ORG]
+    // No selectOrganization() call.
+
+    const ctx = await getCurrentOrganizationContext()
+
+    expect(ctx).toBeNull()
+    expect(mockRedirect).not.toHaveBeenCalled()
+  })
+
+  it('returns null when there is no membership in the SELECTED organization (does not redirect)', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
+    mockDbData.users = [DB_USER]
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = []
 
     const ctx = await getCurrentOrganizationContext()
@@ -376,6 +458,7 @@ describe('getCurrentOrganizationContext', () => {
   it('returns null when the organization row is missing (does not redirect)', async () => {
     mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
     mockDbData.users = [DB_USER]
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = [DB_MEMBERSHIP]
     mockDbData.organizations = []
 
@@ -387,6 +470,7 @@ describe('getCurrentOrganizationContext', () => {
   it('returns the full context when everything resolves', async () => {
     mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
     mockDbData.users = [DB_USER]
+    selectOrganization(DB_MEMBERSHIP.organizationId)
     mockDbData.organizationMembers = [DB_MEMBERSHIP]
     mockDbData.organizations = [DB_ORG]
 

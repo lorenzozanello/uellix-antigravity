@@ -44,7 +44,28 @@ export const organizations = pgTable('organizations', {
   
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+
+  // Multi-org S1 (MO-10/MO-11, HPO-ODS-W2-20) — founder traceability.
+  // founded_by is TRACEABILITY ONLY (PI-3): no capability check, RLS policy,
+  // role resolution or entitlement evaluation may read it. NULLABLE
+  // permanently (MO-11): unknown provenance stays NULL, never a sentinel.
+  // ON DELETE RESTRICT: a true attribution is never silently erased.
+  foundedBy: uuid('founded_by').references(() => users.id, { onDelete: 'restrict' }),
+  // The durable self-service provenance DISCRIMINATOR the founder-cardinality
+  // carrier predicates on. 'unknown' is the honest default for every
+  // historical row; only the live self-service founding act writes 'self_service'.
+  foundingProvenance: varchar('founding_provenance', { length: 20 }).default('unknown').notNull(),
+}, (table) => [
+  // MO-01 founder cardinality: at most ONE SELF-SERVICE-founded organization
+  // per subject. Binds the self-service founding ACT, never founded_by
+  // globally — a platform-created organization naming the same subject does
+  // not consume the slot, and NULL founded_by rows coexist freely.
+  uniqueIndex('organizations_self_service_founder_unique')
+    .on(table.foundedBy)
+    .where(sql`${table.foundedBy} IS NOT NULL AND ${table.foundingProvenance} = 'self_service'`),
+  check('organizations_founding_provenance_check', sql`${table.foundingProvenance} IN ('self_service', 'platform', 'unknown')`),
+  check('organizations_self_service_requires_founder_check', sql`${table.foundingProvenance} <> 'self_service' OR ${table.foundedBy} IS NOT NULL`),
+])
 
 export const organizationMembers = pgTable('organization_members', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -892,6 +913,13 @@ export const sroiRunReviews = pgTable('sroi_run_reviews', {
   calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
   reviewerId: uuid('reviewer_id').references(() => users.id).notNull(),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
+  // FIBIU-17 (FIBC-021, FIBDB-016 stage B, W2-B5, HPO-ODS-W2-17):
+  // LEGACY_NON_AUTHORITATIVE from B5 forward — historical manual readiness
+  // value, retained as history, never written by a new review, never the
+  // canonical FIBC-021 readiness. See the matching COMMENT ON COLUMN in
+  // migration 0064 (measured at runtime via pg_description) and
+  // lib/pipeline/sroi-readiness.ts for the canonical readiness_assessments
+  // computation this column no longer feeds.
   readinessScore: integer('readiness_score'),
   overallNotes: text('overall_notes'),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
@@ -1266,3 +1294,207 @@ export const marketingLeads = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   }
 )
+
+// ─────────────────────────────────────────────────────────────────────────
+// Wave 2 Batch B4 — Assumptions and causality (HPO-ODS-W2-12,
+// docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json). FIBIU-15 structured
+// methodological assumptions (FIBC-019, FIBDB-012/013/047) and FIBIU-14
+// counterfactual assessment (FIBC-018, FIBDB-011/046). FIBIU-16 (causal
+// chain sufficiency) adds NO table — NO_DB_OBJECT, reasoned: it composes
+// theoryOfChangeNodes/theoryOfChangeLinks above into a new eligibility
+// condition in lib/pipeline/theory-of-change.ts instead.
+// ─────────────────────────────────────────────────────────────────────────
+
+// FIBIU-15 (FIBC-019, FIBDB-012/047). A first-class methodological
+// assumption. IMMUTABILITY: "versioned" — id is the assumption's permanent
+// identity and is never reissued on a material modification; each material
+// modification's PRIOR content is recorded by
+// lib/pipeline/domain-object-versions.ts as a new domainObjectVersions row
+// keyed by (objectType='methodological_assumption', objectId=id) — the same
+// mechanism recordOutcomeMonetizationDisposition already uses — so the
+// prior version remains independently readable as history without a second
+// row identity per version. basisType/materialityFlag vocabularies and the
+// conditional provenanceReference NOT NULL are FIBDB-047.
+export const methodologicalAssumptions = pgTable('methodological_assumptions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  formulation: text('formulation').notNull(),
+  rationale: text('rationale').notNull(),
+  basisType: varchar('basis_type', { length: 30 }).notNull(),
+  // NOT NULL only when basisType='evidence_or_external_source' (FIBDB-047).
+  // documented_human_judgement and derived persist with this NULL — no
+  // fictitious source is ever invented for a legitimate documented human
+  // judgement (FIBC-019 documented_human_judgement_contract).
+  provenanceReference: text('provenance_reference'),
+  materialityFlag: varchar('materiality_flag', { length: 20 }).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('methodological_assumptions_basis_type_check', sql`${table.basisType} IN ('evidence_or_external_source', 'derived', 'documented_human_judgement')`),
+  check('methodological_assumptions_materiality_flag_check', sql`${table.materialityFlag} IN ('material', 'non_material')`),
+  check('methodological_assumptions_provenance_reference_check', sql`${table.basisType} <> 'evidence_or_external_source' OR ${table.provenanceReference} IS NOT NULL`),
+  index('idx_methodological_assumptions_project_id').on(table.projectId),
+  index('idx_methodological_assumptions_organization_id').on(table.organizationId),
+])
+
+// FIBIU-15 (FIBC-019, FIBDB-013). Assumption <-> affected object/decision
+// link. Polymorphic by design — an assumption's "affected objects/decisions"
+// span outcomes, theory-of-change nodes/links, calculation runs, indicators
+// and whole projects, none of which share a single FK target — mirroring
+// domainObjectVersions' established (objectType, objectId) idiom rather than
+// inventing a second one. A material assumption with zero rows here is
+// UNRESOLVED for getSroiCalculationReadiness's ASSUMPTION_UNRESOLVED gate:
+// "affected objects/decisions" is one of FIBC-019's nine contracted minimum
+// fields, and this table is where it is proven present, not merely claimed.
+// NOT reusable for any other purpose (FIBDB-054 discretion sweep, FIB §17).
+export const assumptionObjectLinks = pgTable('assumption_object_links', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  assumptionId: uuid('assumption_id').references(() => methodologicalAssumptions.id).notNull(),
+  affectedObjectType: varchar('affected_object_type', { length: 40 }).notNull(),
+  affectedObjectId: uuid('affected_object_id').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('assumption_object_links_affected_type_check', sql`${table.affectedObjectType} IN ('outcome', 'theory_of_change_node', 'theory_of_change_link', 'sroi_calculation_run', 'indicator', 'project')`),
+  uniqueIndex('uq_assumption_object_links_assumption_object').on(table.assumptionId, table.affectedObjectType, table.affectedObjectId),
+  index('idx_assumption_object_links_assumption_id').on(table.assumptionId),
+  index('idx_assumption_object_links_organization_id').on(table.organizationId),
+])
+
+// FIBIU-14 (FIBC-018, FIBDB-011/046). Per monetized outcome, per calculation
+// run: the counterfactual/deadweight basis. IMMUTABILITY: "snapshot-bound" —
+// one row per (outcomeId, calculationRunId), mirroring
+// outcomeMonetizationDispositions exactly; calculationRunId is NOT NULL
+// (run-bound). No version column: unlike methodologicalAssumptions, this
+// object's version identity is inherited from the run it is snapshot-bound
+// to, never versioned on its own.
+export const counterfactualAssessments = pgTable('counterfactual_assessments', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  baselineAvailability: varchar('baseline_availability', { length: 20 }).notNull(),
+  basisKind: varchar('basis_kind', { length: 30 }).notNull(),
+  baselineValue: varchar('baseline_value', { length: 255 }),
+  baselinePeriod: varchar('baseline_period', { length: 100 }),
+  baselineSource: text('baseline_source'),
+  baselineContext: text('baseline_context'),
+  deadweightSupportState: varchar('deadweight_support_state', { length: 30 }).notNull(),
+  sources: text('sources'),
+  rationale: text('rationale').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('counterfactual_assessments_baseline_availability_check', sql`${table.baselineAvailability} IN ('available', 'not_available', 'not_applicable')`),
+  check('counterfactual_assessments_basis_kind_check', sql`${table.basisKind} IN ('baseline_observation', 'comparison_group', 'historical_trend', 'benchmark', 'statistic', 'literature', 'stakeholder_evidence', 'documented_assumption')`),
+  check('counterfactual_assessments_deadweight_support_state_check', sql`${table.deadweightSupportState} IN ('supported', 'unknown_or_insufficient')`),
+  check('counterfactual_assessments_baseline_available_fields_check', sql`${table.baselineAvailability} <> 'available' OR (${table.baselineValue} IS NOT NULL AND ${table.baselinePeriod} IS NOT NULL AND ${table.baselineSource} IS NOT NULL AND ${table.baselineContext} IS NOT NULL)`),
+  uniqueIndex('uq_counterfactual_assessments_outcome_run').on(table.outcomeId, table.calculationRunId),
+  index('idx_counterfactual_assessments_run_id').on(table.calculationRunId),
+])
+
+// FIBIU-17 (FIBC-021, FIBDB-015). Canonical readiness — SROI_READINESS_MODEL_v1.0.0.
+// One immutable row per calculation run: the global score, the ten dimensional
+// scores and the per-criterion resolution detail, all computed deterministically
+// from already-persisted governed state. readiness_model_version is a
+// value-reference to governed_model_registry (modelId='SROI_READINESS_MODEL'),
+// seeded by migration 0040 — never re-seeded or edited here (FIBC-003).
+// IMMUTABILITY: snapshot copy, realized by the ABSENCE of an UPDATE/DELETE
+// policy (stage A) — a recompute is a new run, never an edit of this row.
+// No human or Stella may inject a score: created_by identifies only the actor
+// who triggered the (system-only) computation, never a value source.
+export const readinessAssessments = pgTable('readiness_assessments', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  readinessModelVersion: varchar('readiness_model_version', { length: 20 }).notNull(),
+  globalScore: numeric('global_score', { precision: 5, scale: 2 }).notNull(),
+  band: varchar('band', { length: 30 }).notNull(),
+  // Per-dimension detail, D1..D10: { score, satisfiedCount, applicableCount }.
+  dimensionScores: jsonb('dimension_scores').notNull(),
+  // Per-criterion detail, all 46: { id, dimension, resolution, ... }.
+  criteriaDetail: jsonb('criteria_detail').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('readiness_assessments_global_score_check', sql`${table.globalScore} >= 0 AND ${table.globalScore} <= 100`),
+  check('readiness_assessments_band_check', sql`${table.band} IN ('initial_preparation', 'partial_preparation', 'advanced_preparation', 'high_preparation')`),
+  uniqueIndex('uq_readiness_assessments_calculation_run').on(table.calculationRunId),
+  index('idx_readiness_assessments_project_id').on(table.projectId),
+  index('idx_readiness_assessments_organization_id').on(table.organizationId),
+])
+
+// FIBIU-18 (FIBC-022, FIBDB-017/048). Per-run sensitivity candidate register —
+// SROI_SENSITIVITY_MODEL_v1.0.0. Supersedes (not extends) the uniform
+// SCENARIO_DELTA_PP shortcut. candidate_key is deterministic per run so the
+// same actually-used input never registers twice (uq_sensitivity_candidates_run_key).
+// disposition starts 'pending' (fail-closed) and transitions to
+// variation_required | no_additional_variation_required, both carrying rationale
+// (FIBDB-048 key constraint). UPDATE is contract-required (FIBC-022's governed
+// disposition transition), unlike the append-only FIBDB-018/counterfactual
+// precedent — the ONLY mutable column set is the disposition transition itself.
+export const sensitivityCandidates = pgTable('sensitivity_candidates', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  candidateKey: varchar('candidate_key', { length: 200 }).notNull(),
+  candidateKind: varchar('candidate_kind', { length: 40 }).notNull(),
+  // { assignmentId?, outcomeId?, filter?, assumptionId?, proxyId?, proxyVersionId?, inputName? }
+  inputReference: jsonb('input_reference').notNull(),
+  baseValue: varchar('base_value', { length: 255 }),
+  disposition: varchar('disposition', { length: 40 }).default('pending').notNull(),
+  rationale: text('rationale'),
+  dispositionedBy: uuid('dispositioned_by').references(() => users.id),
+  dispositionedAt: timestamp('dispositioned_at'),
+  sensitivityModelVersion: varchar('sensitivity_model_version', { length: 20 }).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('sensitivity_candidates_candidate_kind_check', sql`${table.candidateKind} IN ('methodological_filter', 'structured_assumption', 'proxy_value', 'other_quantitative_input')`),
+  check('sensitivity_candidates_disposition_check', sql`${table.disposition} IN ('variation_required', 'no_additional_variation_required', 'pending')`),
+  check('sensitivity_candidates_rationale_check', sql`${table.disposition} = 'pending' OR ${table.rationale} IS NOT NULL`),
+  uniqueIndex('uq_sensitivity_candidates_run_key').on(table.calculationRunId, table.candidateKey),
+  index('idx_sensitivity_candidates_run_id').on(table.calculationRunId),
+  index('idx_sensitivity_candidates_organization_id').on(table.organizationId),
+])
+
+// FIBIU-18 (FIBC-022, FIBDB-018/048). Governed scenario for a
+// variation_required candidate — executed through the SAME deterministic
+// engine (runDeterministicCalc) with only the declared inputs substituted.
+// The base run (sroi_calculation_runs) is never overwritten; base_result_json
+// re-proves the base reproduction alongside result_json so a scenario can
+// never silently drift from the run it varies. APPEND-ONLY (stage A):
+// realized by the ABSENCE of an UPDATE/DELETE policy — no stage-E hardening
+// (trigger/VALIDATE/NOT VALID) ships in B5.
+export const sensitivityScenarios = pgTable('sensitivity_scenarios', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  scenarioKind: varchar('scenario_kind', { length: 20 }).notNull(),
+  // uuid[] of sensitivity_candidates.id varied by this scenario.
+  candidateIds: jsonb('candidate_ids').notNull(),
+  // [{ candidateId, candidateKey, baseValue, alternativeValue }]
+  modifiedInputs: jsonb('modified_inputs').notNull(),
+  reason: text('reason').notNull(),
+  sources: text('sources'),
+  combinationDescription: text('combination_description'),
+  sensitivityModelVersion: varchar('sensitivity_model_version', { length: 20 }).notNull(),
+  calculationEngineVersion: varchar('calculation_engine_version', { length: 20 }).notNull(),
+  resultJson: jsonb('result_json').notNull(),
+  baseResultJson: jsonb('base_result_json').notNull(),
+  selectedBy: uuid('selected_by').references(() => users.id).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('sensitivity_scenarios_scenario_kind_check', sql`${table.scenarioKind} IN ('one_at_a_time', 'combined')`),
+  check('sensitivity_scenarios_combination_description_check', sql`${table.scenarioKind} <> 'combined' OR ${table.combinationDescription} IS NOT NULL`),
+  index('idx_sensitivity_scenarios_run_id').on(table.calculationRunId),
+  index('idx_sensitivity_scenarios_organization_id').on(table.organizationId),
+])
