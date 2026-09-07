@@ -1,0 +1,929 @@
+{
+  "package_id": "WAVE3_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "WAVE3_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_AND_INTEGRATED_DOMAIN_AUTHORITY",
+  "document_class": "AUTHORITY",
+  "append_only": true,
+  "amends": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "refines": "FIBDB-052 only. No other FIB object, contract, unit, wave or topological level is reopened by this amendment.",
+  "companion_manifest": "docs/ops/wave3/WAVE3_TEST_MANIFEST_v1.0.0.json - UNAMENDED, see MANIFEST_DISPOSITION",
+  "mission_id": "WAVE3-FIBDB052-SEQUENCING-SUCCESSOR-AUTHORITY-R1",
+  "source_adjudication": "LANE BL - WAVE3-FIBDB052-SEQUENCING-ADJUDICATION-R1",
+  "materialization_date": "2026-09-06",
+  "AS_OF_HEAD": "a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303",
+  "AS_OF_TREE": "57952b24486ce0fae84e3977e8fbc56aed895db7",
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "intervening_delta_from_mission_creation": "NONE. At mission start git fetch origin was run and origin/integration/commercial-v1 resolved to a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303, identical to EXPECTED_START_HEAD; the worktree HEAD tree was 57952b24486ce0fae84e3977e8fbc56aed895db7, identical to EXPECTED_START_TREE; the working tree was clean. Every Wave 3 and FIB fact this amendment relies on was therefore measured at exactly the ref the mission specified, and no delta had to be classified.",
+  "NAMING_DERIVATION": {
+    "chosen_path": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "rule": "An append-only amendment to an ALREADY-COMMITTED domain or batch authority is a SEPARATE file named <BASE>_AUTHORITY_AMENDMENT_v1.0.<n>.json, placed beside the base artifact in the same docs/ops/<domain>/ directory. The base token here is WAVE3, taken verbatim from WAVE3_AUTHORITY_v1.0.0.json, so the first amendment is WAVE3_AUTHORITY_AMENDMENT_v1.0.1.json.",
+    "precedents_measured_at_AS_OF_HEAD": [
+      "docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json added by 663e5b2; its amendment docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json added later by e1fb2e4; _v1.0.2.json later still by 29a1ec4.",
+      "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json plus docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json.",
+      "docs/ops/p1a/P1A_FULL_BOOTSTRAP_AUTHORITY_AMENDMENT_v1.0.1.json added by e45d613, plus _v1.0.2.json."
+    ],
+    "shape_precedent": "W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json declares package_id, version, artifact_id, authority_class, amends, supersedes and final_state. This artifact follows that shape. It deliberately OMITS that precedent's GRANT_ID and companion_ods_addendum fields, because this mission allocates no ODS or HPO lineage. See NO_ALLOCATION.",
+    "why_not_an_in_file_amendment_history_append": "WAVE3_AUTHORITY_v1.0.0.json already carries an in-file AMENDMENT_HISTORY with revisions R2 and R3. That form was correct THEN and is wrong NOW, and the distinction is measurable rather than stylistic. R2 and R3 mutated the artifact while it was still an unmerged draft on the PR #79 branch, where no integrated consumer could observe the change. The artifact is now integrated into origin/integration/commercial-v1 at merge 1c1dccf, and its own final_state is WAVE3_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_ALLOCATION. Editing an integrated frozen authority in place would rewrite audited evidence, which CLAUDE.md section 5 forbids. The repository's own answer for that situation is the separate _AMENDMENT_ file, attested by the three independent lineages above, each of which added its amendment in a strictly later commit than its base.",
+    "scope_gate_consequence": "docs/ops/wave3/** is NOT a member of DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts. The measured list is docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. An ordinary --allow authorizes this path; no --protected-authority grant is required and none is claimed."
+  },
+  "PURPOSE": {
+    "statement": "Correct the FIBDB-052 index package's sequencing and specification defects in the smallest append-only form that makes the object executable, using only facts measured at AS_OF_HEAD. FIBDB-052 was written as a single flat list of 19 indexes over 16 relations, of which 4 relations and 2 columns do not exist on the DRIZZLE track at AS_OF_HEAD, and it names no index although CREATE INDEX IF NOT EXISTS requires a name.",
+    "what_this_is": [
+      "A sequencing adjudication: FIBDB-052 is declared STAGED across DAG levels with exact phase ownership.",
+      "A specification correction for four named defects: S1 index identity, S2 sensitivity_scenarios, S3 financial_proxy_versions partial key list, S4 run_id naming.",
+      "An enumeration of all 19 index obligations with a per-item disposition and, where an index is to be created, its exact governed name.",
+      "A completion semantics: what FIBDB-052 COMPLETE means and how partial completion is represented."
+    ],
+    "what_this_is_not": [
+      "Not an implementation. No db/** file is created, edited or deleted by this mission.",
+      "Not a migration ordinal allocation. None is allocated, reserved or implied.",
+      "Not an ODS addendum or an HPO decision. No lineage is allocated.",
+      "Not a Controller change.",
+      "Not a FIB baseline edit. docs/ops/fib/** is unconditionally protected and is untouched.",
+      "Not a G2 apply, and not a relaxation of any G2 boundary.",
+      "Not a test-manifest amendment. See MANIFEST_DISPOSITION.",
+      "Not a re-opening of the Wave 3 serial contract, the 24 reason codes, or any Stella, SoD or human boundary."
+    ],
+    "fail_closed_rule": "Where the frozen FIBDB-052 text names an object that cannot be constructed against measured schema, this amendment records the defect and freezes an explicit disposition. It never invents a column, never invents a relation, and never silently drops an obligation. An obligation whose correct form cannot be determined from measured state is held OPEN with a named owner and a named decision gate, not resolved by guess."
+  },
+  "EVIDENCE_ANCHORS": {
+    "rule": "Every anchor was measured at AS_OF_HEAD a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303 / tree 57952b24486ce0fae84e3977e8fbc56aed895db7. No anchor is carried from conversation context.",
+    "anchors": [
+      {
+        "id": "B1",
+        "fact": "FIBDB-052 declares exactly 19 index obligations over exactly 16 distinct relations, all CREATE INDEX IF NOT EXISTS, BACKFILL_CLASS BACKFILL_NOT_REQUIRED, TRACK DRIZZLE, OWNING UNIT FIBIU-19 (primary consumer; cross-cutting owner).",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:383"
+      },
+      {
+        "id": "B2",
+        "fact": "Of the 16 relations, 12 are defined as Drizzle pgTable in db/schema.ts and 4 are not: stella_findings, stella_finding_dispositions, report_snapshots, report_public_disclosures.",
+        "source": "db/schema.ts, measured by presence of pgTable('<name>') at AS_OF_HEAD"
+      },
+      {
+        "id": "B3",
+        "fact": "report_public_disclosures exists as a CREATE TABLE only inside db/prepared/stella_0007_public_verification_capability.sql:212, an UNAPPLIED prepared package. FIBDB-029 states it supersedes that design and places the table on TRACK: DRIZZLE. The prepared file therefore does not make the relation available to a DRIZZLE-track index.",
+        "source": "db/prepared/stella_0007_public_verification_capability.sql:212 plus FIB FIBDB-029"
+      },
+      {
+        "id": "B4",
+        "fact": "sensitivity_scenarios has NO column named candidate_id. It has candidate_ids of type jsonb, i.e. the candidate-to-scenario relation is stored many-to-many on the scenario row and not as a scalar foreign key.",
+        "source": "db/schema.ts, sensitivity_scenarios block, 17 columns"
+      },
+      {
+        "id": "B5",
+        "fact": "sroi_reports has 16 columns and NEITHER lineage_id NOR report_version among them.",
+        "source": "db/schema.ts, sroi_reports block"
+      },
+      {
+        "id": "B6",
+        "fact": "No FIBDB-052 relation defines a column named run_id. Five define calculation_run_id (outcome_monetization_dispositions, evidence_sufficiency_determinations, counterfactual_assessments, sensitivity_candidates, readiness_assessments), and sroi_run_reviews, sroi_reports and sensitivity_scenarios also use calculation_run_id. A bare run_id column DOES exist in the repository, on sroi_line_items at db/schema.ts:841, which is NOT a FIBDB-052 relation, so the abbreviation claim is scoped to FIBDB-052's relations and is not asserted repository-wide.",
+        "source": "db/schema.ts"
+      },
+      {
+        "id": "B7",
+        "fact": "The repository's index-name convention for calculation_run_id is NOT uniform. Four existing index names abbreviate it to run_id (idx_outcome_monetization_dispositions_run_id, idx_counterfactual_assessments_run_id, idx_sensitivity_candidates_run_id, idx_sensitivity_scenarios_run_id) and two spell it out (idx_sroi_run_reviews_calculation_run_id, uq_readiness_assessments_calculation_run). A naming rule therefore has to be FROZEN, not inferred.",
+        "source": "db/schema.ts index declarations"
+      },
+      {
+        "id": "B8",
+        "fact": "db/migrations/0013_performance_indexes.sql, the pattern FIBDB-052 explicitly cites, contains 36 statements of the form CREATE INDEX IF NOT EXISTS \"idx_<table>_<column>\" ON \"<table>\" (\"<column>\"). Every index is NAMED.",
+        "source": "db/migrations/0013_performance_indexes.sql"
+      },
+      {
+        "id": "B9",
+        "fact": "FIBDB-052's obligation readiness_assessments (run_id) is ALREADY SATISFIED at AS_OF_HEAD by the existing UNIQUE index uq_readiness_assessments_calculation_run ON readiness_assessments (calculation_run_id).",
+        "source": "db/schema.ts, readiness_assessments block"
+      },
+      {
+        "id": "B10",
+        "fact": "FIBDB-022 declares NEW_CONSTRAINT UNIQUE(lineage_id, report_version) on sroi_reports. In PostgreSQL a UNIQUE table constraint is implemented by an automatically created unique btree index on exactly those columns in exactly that order. FIBDB-052's sroi_reports (lineage_id, report_version) is therefore redundant with its own owning object.",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md, FIBDB-022"
+      },
+      {
+        "id": "B11",
+        "fact": "FIBDB-050 KEY_CONSTRAINTS declares locator_token unique on report_public_disclosures. FIBDB-052's report_public_disclosures (locator_token) unique is therefore redundant with its own owning object.",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md, FIBDB-050"
+      },
+      {
+        "id": "B12",
+        "fact": "Topological positions measured from the FIB index: FIBIU-19 wave 3 level 3.1 with db_changes exactly [FIBDB-052]; FIBIU-20 wave 3 level 3.2; FIBIU-23 wave 4 level 4.1; FIBIU-24 wave 4 level 4.3; FIBIU-26 wave 5 level 5.1.",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json"
+      },
+      {
+        "id": "B13",
+        "fact": "Owning units of the objects that create FIBDB-052's missing relations and columns: FIBDB-019 stella_findings to FIBIU-20; FIBDB-020 stella_finding_dispositions to FIBIU-20; FIBDB-022 sroi_reports.report_version and FIBDB-023 sroi_reports.lineage_id to FIBIU-23; FIBDB-024 report_snapshots to FIBIU-24; FIBDB-029 report_public_disclosures and FIBDB-050 its vocabularies to FIBIU-26.",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md, per-object OWNING UNIT"
+      },
+      {
+        "id": "B14",
+        "fact": "WAVE3_AUTHORITY_v1.0.0.json MIGRATION_AND_STAGE_CONTRACT places FIBDB-052 in wave3_db_changes, in stage_A_items and on the DRIZZLE track. FIBDB-052 is NOT in stage_E_items. NO_ORDINAL_ALLOCATED is explicit.",
+        "source": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json MIGRATION_AND_STAGE_CONTRACT"
+      },
+      {
+        "id": "B15",
+        "fact": "WAVE3_AUTHORITY_v1.0.0.json G2_BOUNDARY.transitive_stop_rule (E10): if the FIBDB-053 external gate is unresolved by the start of wave 3, FIBIU-20 stops, and with it FIBIU-24 (wave 4) and FIBIU-26 (wave 5) by transitive dependency. external_gate_status_at_AS_OF_HEAD is PENDING.",
+        "source": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json G2_BOUNDARY"
+      },
+      {
+        "id": "B16",
+        "fact": "WAVE3_TEST_MANIFEST_v1.0.0.json contains the token 'index' exactly ONCE in the entire file, inside positive control P-3, whose assertion is that no eligibility state table exists and FIBDB-052 is an INDEX package only. The manifest's counts are 19 positive, 14 negative and 10 mutation controls, 8 sentinels and 9 exit gates. No control's truth value depends on the presence or absence of any index.",
+        "source": "docs/ops/wave3/WAVE3_TEST_MANIFEST_v1.0.0.json"
+      },
+      {
+        "id": "B17",
+        "fact": "Partial-index precedent exists on both tracks: db/migrations/0003, 0012, 0017, 0021 and 0024 carry CREATE [UNIQUE] INDEX ... WHERE, and db/schema.ts carries seven .where(...) index declarations. No measured precedent encodes the predicate into the index NAME by a uniform rule, so the partial-index name suffix frozen by this amendment is DECLARED, not derived.",
+        "source": "db/migrations/*.sql and db/schema.ts"
+      },
+      {
+        "id": "B18",
+        "fact": "The longest index identifier existing at AS_OF_HEAD is idx_evidence_sufficiency_determinations_outcome_run at 51 characters. PostgreSQL's identifier limit is 63 bytes. Every name enumerated by this amendment is at most 58 characters and every name is unique.",
+        "source": "db/schema.ts plus INDEX_NAMING_RULE.self_check_lengths"
+      },
+      {
+        "id": "B19",
+        "fact": "FIBIU-23's hard dependencies are [FIBIU-19, FIBIU-02] and do NOT include FIBIU-20. FIBIU-23 is therefore the only owner among the blocked set that is not transitively stopped by the FIBDB-053 G2 gate. FIBIU-24 depends on FIBIU-20, and FIBIU-26 depends on FIBIU-24, so both are transitively stopped.",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json hard_dependencies"
+      },
+      {
+        "id": "B20",
+        "fact": "CREATE INDEX IF NOT EXISTS resolves the IF NOT EXISTS test on the index NAME, not on the index DEFINITION. Two consequences are load-bearing here: a name that does not yet exist is created even when a definitionally equivalent index already exists under another name, and the statement cannot be written at all without a name. The name requirement was machine-proven by LANE BL. The name-based rather than definition-based matching is DERIVED from it and is carried as an explicit implementation-time verification obligation rather than asserted as a new machine fact by this docs-only mission.",
+        "source": "LANE BL machine proof (name required; 42P01 on missing relation; 42703 on missing column) plus PostgreSQL CREATE INDEX semantics"
+      }
+    ]
+  },
+  "INPUT_ADJUDICATION_COHERENCE_CHECK": {
+    "rule": "LANE BL's findings were treated as input claims to verify for coherence, not as settled facts to restate. Each was re-measured independently at AS_OF_HEAD. Two findings ADDITIONAL to BL's were produced by that re-measurement and are recorded here, because a successor that silently absorbed them would be hiding a change in what FIBDB-052 COMPLETE means.",
+    "confirmed": [
+      "19 indexes on 16 relations - CONFIRMED exactly (B1).",
+      "12 relations exist and 4 are absent - CONFIRMED exactly, and refined: report_public_disclosures is absent from the DRIZZLE track but present as an unapplied prepared-package design (B2, B3).",
+      "6 indexes blocked across levels 3.2, 4.1, 4.3 and 5.1 - CONFIRMED, with owners and levels re-derived independently (B12, B13).",
+      "sensitivity_scenarios(candidate_id) conflicts with a live candidate_ids jsonb - CONFIRMED (B4).",
+      "FIBDB-052 names zero indexes although IF NOT EXISTS requires a name - CONFIRMED (B1, B8, B20).",
+      "financial_proxy_versions partial index key list is underspecified - CONFIRMED (B1).",
+      "42P01 on a missing relation, 42703 on a missing column, and whole-file transaction rollback - ACCEPTED from BL's machine proof and NOT re-executed, because this mission is docs-only and executing DDL would exceed its authority.",
+      "WAVE3_TEST_MANIFEST_v1.0.0.json does not bind FIBDB-052 index names or counts - CONFIRMED independently (B16).",
+      "FIBDB-053 remains independent and disjoint from FIBDB-052 - CONFIRMED: FIBDB-053 is the sole PREPARED_G2 item and FIBDB-052 is the DRIZZLE index package; they share no relation, no column and no file (B14).",
+      "FIBIU-19 DDL cannot proceed under the unamended authority - CONFIRMED: 8 of the 19 obligations are not constructible as written, being the 6 blocked plus S2 plus S3.",
+      "FIBIU-19 service and composition work may proceed - CONFIRMED and preserved explicitly. See BOUNDARIES."
+    ],
+    "additional_to_BL": [
+      {
+        "id": "ADD-1",
+        "finding": "TWO of the six blocked obligations are not merely blocked, they are REDUNDANT WITH THEIR OWN OWNING OBJECT. D3 duplicates FIBDB-022's UNIQUE(lineage_id, report_version) and D5 duplicates FIBDB-050's locator_token unique (B10, B11).",
+        "why_it_matters": "BL classified all six identically as blocked and to be emitted later. Emitting them later verbatim would create two permanently redundant indexes, because IF NOT EXISTS matches on NAME and the constraint-backed indexes carry constraint-derived names, so the guard would not suppress them (B20). This changes the per-item disposition and therefore the definition of FIBDB-052 COMPLETE.",
+        "disposition": "D3 and D5 are adjudicated DISCHARGED_BY_OWNING_OBJECT with a verification obligation, and are NOT DDL-emitting phases."
+      },
+      {
+        "id": "ADD-2",
+        "finding": "One obligation on an EXISTING relation is already satisfied at AS_OF_HEAD: readiness_assessments (run_id) is served by the existing UNIQUE index uq_readiness_assessments_calculation_run (B9).",
+        "why_it_matters": "BL's framing implied all 13 non-blocked obligations were outstanding work. Eleven are, one is already satisfied, and one (S2) is not constructible. Re-emitting the satisfied one under a new name would create a second index on the same single column.",
+        "disposition": "Recorded as ALREADY_SATISFIED with a verification obligation, emitting no DDL."
+      },
+      {
+        "id": "ADD-3",
+        "finding": "FIBDB-052 COMPLETE is transitively gated on a human G2 action. Five of the six blocked obligations sit with FIBIU-20, FIBIU-24 and FIBIU-26, all of which are stopped by G2_BOUNDARY.transitive_stop_rule while the FIBDB-053 gate is PENDING. Only D3 (FIBIU-23) escapes, and D3 emits no DDL in any case (B15, B19).",
+        "why_it_matters": "It means no autonomous authority can ever reach FIBDB-052 COMPLETE. Any future mission claiming completion without a human G2 action has misread this.",
+        "disposition": "Stated as a hard rule in COMPLETION_SEMANTICS.G2_GATING."
+      }
+    ]
+  },
+  "WHAT_IS_UNCHANGED": {
+    "rule": "This amendment refines FIBDB-052 and nothing else. Everything listed here is carried forward from WAVE3_AUTHORITY_v1.0.0.json unchanged, and any future reading that finds one of these relaxed by this amendment has misread it.",
+    "frozen_artifacts_not_edited": [
+      "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json - not edited. This amendment is a separate file.",
+      "docs/ops/wave3/WAVE3_TEST_MANIFEST_v1.0.0.json - not edited. See MANIFEST_DISPOSITION.",
+      "docs/ops/fib/** - unconditionally protected by scripts/ods-scope.ts and not edited.",
+      "docs/ops/pc01b/**, docs/ops/im01b/**, db/baseline/**, db/prepared/**, db/migrations/** - not edited."
+    ],
+    "preserved_exactly": [
+      "The FIBIU-19 to FIBIU-20 SERIAL contract. FIBIU-19 is level 3.1 and FIBIU-20 is level 3.2, in that order.",
+      "PARALLEL_GROUPS: none, for Wave 3.",
+      "The FIBDB-053 G2 boundary in full, including requires_an_explicit_human_G2_action, FIBIU20_PRODUCTION_READINESS_RULE, transitive_stop_rule and no_bypass_clause. This amendment provides no bypass and softens nothing.",
+      "The FIBDB-053 to S3c ordering.",
+      "The 24 non-eligibility reason codes - content, order and count. No code is added, removed, renamed, reclassified or reordered. The count remains exactly 24, and the Wave 3 exit gate's full 24-reason reading is NOT relaxed.",
+      "Every human, SoD and Stella boundary: HUMAN_APPROVAL_BOUNDARY, the SoD two-enforcement-point rule, NO_SECOND_QUALIFIED_REVIEWER_PATH, HIGH_FINDING_DISPOSITION, ZERO_STELLA_ZERO_FINDING_GATE, HISTORICAL_SELF_APPROVAL_PRESERVATION and STELLA_BOUNDARY.",
+      "RUN_IMMUTABILITY and the no-state-table rule for the eligibility composition. FIBDB-052 remains an INDEX package only; this amendment creates no table, no column, no trigger and no state.",
+      "MIGRATION_AND_STAGE_CONTRACT: FIBDB-052 stays a wave-3 DB change, a stage_A item, and on the DRIZZLE track. It is still absent from stage_E_items.",
+      "The SHARED_WRITERS chokepoints, SECURITY_CONTROLS and MUTATION_CONTROLS of the base authority.",
+      "All OPEN_FINDINGS of the base authority, including its seven non-blocking findings. None is erased, downgraded or silently closed by this amendment."
+    ],
+    "ownership_semantics_preserved": "FIBDB-052 remains ONE FIB object whose OWNING UNIT is FIBIU-19, described by the baseline as primary consumer and cross-cutting owner. The phases frozen below are EXECUTION POSITIONS, not ownership transfers. A phase is EXECUTED by the unit that owns the relation the index sits on, while FIBIU-19 remains the single accountable owner of FIBDB-052 as a whole and the only unit that may declare it COMPLETE."
+  },
+  "INDEX_NAMING_RULE": {
+    "defect": "S1 INDEX IDENTITY. FIBDB-052 names zero of its 19 indexes, yet CREATE INDEX IF NOT EXISTS cannot be written without a name (B1, B8, B20). The object is therefore not executable as written.",
+    "resolution": "BOTH forms required by the mission are supplied: a deterministic repository-native derivation rule is frozen, AND every governed name it produces is enumerated. The ENUMERATION is the binding artifact; the rule exists to explain and to extend it.",
+    "why_enumeration_and_not_the_rule_alone": "The repository's naming is NOT mechanically uniform (B7, B17): calculation_run_id is abbreviated in four index names and spelled out in two, and no measured precedent encodes a partial-index predicate into the name by a uniform rule. A rule alone would therefore leave real ambiguity, and an implementer resolving that ambiguity differently would silently create a second index rather than hit the IF NOT EXISTS guard (B20).",
+    "rule": {
+      "1_prefix": "uq_ if the index is UNIQUE, otherwise idx_. Measured precedent: uq_outcome_monetization_dispositions_outcome_run, uq_counterfactual_assessments_outcome_run, uq_readiness_assessments_calculation_run, uq_sensitivity_candidates_run_key are unique; every idx_ name is not.",
+      "2_table": "The relation name verbatim.",
+      "3_columns": "An underscore, then the key columns in index order joined by underscores, each column spelled EXACTLY AS FIBDB-052 SPELLS IT. This is the S4 rule and it is deliberate: FIBDB-052 writes run_id for five relations and calculation_run_id for sroi_run_reviews, and reproducing that reproduces the repository's own existing names on three of those very tables (idx_outcome_monetization_dispositions_run_id, idx_counterfactual_assessments_run_id, idx_sensitivity_candidates_run_id) and on sroi_run_reviews (idx_sroi_run_reviews_calculation_run_id). Inferring a single uniform spelling would have contradicted the repository on one side or the other.",
+      "4_sort_direction": "Sort direction is NOT part of the identifier. No measured index name carries ASC or DESC. A DESC key contributes only its column name.",
+      "5_partial_predicate": "For a partial index, append an underscore and a single token naming the selected value of the predicate, e.g. _approved for WHERE review_status='approved', _high for WHERE risk_level='high', _active for WHERE disclosure_state='active'. DECLARED, NOT DERIVED: B17 records that no measured precedent fixes this, so it is frozen here by decision rather than claimed as repository convention.",
+      "6_length": "The identifier must be at most 63 bytes, PostgreSQL's limit. If the rule would exceed it, the rule FAILS CLOSED: the name must be enumerated explicitly by a governed amendment, never silently truncated. No name below reaches the limit; the longest is 58 characters (B18)."
+    },
+    "self_check_lengths": {
+      "limit_bytes": 63,
+      "longest_name_produced": 58,
+      "longest_name": "idx_methodological_assumptions_project_id_materiality_flag",
+      "collisions_with_each_other": 0,
+      "collisions_with_existing_index_names_at_AS_OF_HEAD": 0
+    },
+    "prohibition": "No implementing mission may rename, abbreviate or re-derive any enumerated name. A name that needs to change requires a further governed amendment, because the name is the identity the IF NOT EXISTS guard tests (B20)."
+  },
+  "FIBDB052_INVENTORY": {
+    "rule": "All 19 obligations are enumerated with an explicit disposition. A successor covering only a subset would be invalid, and a successor that dropped an item without saying so would be worse. Counts below are asserted by self_check.",
+    "counts": {
+      "total_obligations": 19,
+      "distinct_relations": 16,
+      "relations_present_on_the_drizzle_track_at_AS_OF_HEAD": 12,
+      "relations_absent_at_AS_OF_HEAD": 4,
+      "obligations_on_present_relations": 13,
+      "obligations_blocked": 6,
+      "required_new_indexes_total": 15,
+      "required_new_in_phase_P1": 11,
+      "already_satisfied": 1,
+      "not_constructible_as_written": 1,
+      "discharged_by_owning_object": 2
+    },
+    "items": [
+      {
+        "id": "I-1",
+        "fibdb052_text": "domain_object_versions (object_type, object_id, ordinal DESC)",
+        "relation": "domain_object_versions",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_domain_object_versions_object_type_object_id_ordinal",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on domain_object_versions (object_type, object_id, ordinal DESC)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "The existing idx_domain_object_versions_object covers only (object_type, object_id). It is a leading-column prefix of this index, not a substitute: the ordinal DESC tail is what makes latest-version lookup cheap."
+      },
+      {
+        "id": "I-2",
+        "fibdb052_text": "evidence_versions (evidence_id, ordinal DESC)",
+        "relation": "evidence_versions",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_evidence_versions_evidence_id_ordinal",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on evidence_versions (evidence_id, ordinal DESC)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "The existing idx_evidence_versions_evidence_id covers only (evidence_id)."
+      },
+      {
+        "id": "I-3",
+        "fibdb052_text": "evidence_versions partial (evidence_id) WHERE review_status='approved'",
+        "relation": "evidence_versions",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_evidence_versions_evidence_id_approved",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on evidence_versions (evidence_id) WHERE review_status = 'approved'",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "review_status exists on evidence_versions (measured)."
+      },
+      {
+        "id": "I-4",
+        "fibdb052_text": "financial_proxy_versions (financial_proxy_id, ordinal DESC)",
+        "relation": "financial_proxy_versions",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_financial_proxy_versions_financial_proxy_id_ordinal",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on financial_proxy_versions (financial_proxy_id, ordinal DESC)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "The existing idx_financial_proxy_versions_proxy_id covers only (financial_proxy_id)."
+      },
+      {
+        "id": "I-5",
+        "fibdb052_text": "financial_proxy_versions partial WHERE review_status='approved' - KEY LIST ABSENT",
+        "relation": "financial_proxy_versions",
+        "disposition": "REQUIRED_NEW_AFTER_S3_RESOLUTION",
+        "governed_index_name": "idx_financial_proxy_versions_financial_proxy_id_approved",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on financial_proxy_versions (financial_proxy_id) WHERE review_status = 'approved'",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "Key list supplied by defect resolution S3."
+      },
+      {
+        "id": "I-6",
+        "fibdb052_text": "outcome_monetization_dispositions (run_id, outcome_id)",
+        "relation": "outcome_monetization_dispositions",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_outcome_monetization_dispositions_run_id_outcome_id",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on outcome_monetization_dispositions (calculation_run_id, outcome_id)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "The existing uq_outcome_monetization_dispositions_outcome_run has the columns in the REVERSE order (outcome_id, calculation_run_id) and does not serve a run-leading lookup. The existing idx_outcome_monetization_dispositions_run_id is a single-column prefix of this index and becomes redundant once this exists; dropping it is NOT authorized here and is recorded as F-A1."
+      },
+      {
+        "id": "I-7",
+        "fibdb052_text": "evidence_sufficiency_determinations (run_id, outcome_id)",
+        "relation": "evidence_sufficiency_determinations",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_evidence_sufficiency_determinations_run_id_outcome_id",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on evidence_sufficiency_determinations (calculation_run_id, outcome_id)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "The existing idx_evidence_sufficiency_determinations_outcome_run is (outcome_id, calculation_run_id), the reverse order. No run-leading index exists on this relation."
+      },
+      {
+        "id": "I-8",
+        "fibdb052_text": "counterfactual_assessments (run_id, outcome_id)",
+        "relation": "counterfactual_assessments",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_counterfactual_assessments_run_id_outcome_id",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on counterfactual_assessments (calculation_run_id, outcome_id)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "The existing uq_counterfactual_assessments_outcome_run is the reverse order; idx_counterfactual_assessments_run_id is a single-column prefix. See F-A1."
+      },
+      {
+        "id": "I-9",
+        "fibdb052_text": "sensitivity_candidates (run_id, disposition)",
+        "relation": "sensitivity_candidates",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_sensitivity_candidates_run_id_disposition",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on sensitivity_candidates (calculation_run_id, disposition)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "Neither uq_sensitivity_candidates_run_key (calculation_run_id, candidate_key) nor idx_sensitivity_candidates_run_id covers disposition."
+      },
+      {
+        "id": "I-10",
+        "fibdb052_text": "sensitivity_scenarios (candidate_id)",
+        "relation": "sensitivity_scenarios",
+        "disposition": "NOT_CONSTRUCTIBLE_AS_WRITTEN__RE_EXPRESSED_AS_AN_ACCESS_PATH_OBLIGATION",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "There is no candidate_id column; the relation is stored as candidate_ids jsonb (B4). See defect resolution S2. This item emits NO DDL under this amendment and carries a named determination gate."
+      },
+      {
+        "id": "I-11",
+        "fibdb052_text": "readiness_assessments (run_id)",
+        "relation": "readiness_assessments",
+        "disposition": "ALREADY_SATISFIED_AT_AS_OF_HEAD",
+        "governed_index_name": "uq_readiness_assessments_calculation_run",
+        "governed_definition": "Existing UNIQUE index on readiness_assessments (calculation_run_id)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "B9. Emits NO DDL. The verification obligation is to confirm the existing index is present and unchanged, NOT to create a second one. See ADD-2."
+      },
+      {
+        "id": "I-12",
+        "fibdb052_text": "methodological_assumptions (project_id, materiality_flag)",
+        "relation": "methodological_assumptions",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_methodological_assumptions_project_id_materiality_flag",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on methodological_assumptions (project_id, materiality_flag)",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "The existing idx_methodological_assumptions_project_id is a single-column prefix. See F-A1."
+      },
+      {
+        "id": "I-13",
+        "fibdb052_text": "sroi_run_reviews (calculation_run_id) WHERE status='approved'",
+        "relation": "sroi_run_reviews",
+        "disposition": "REQUIRED_NEW",
+        "governed_index_name": "idx_sroi_run_reviews_calculation_run_id_approved",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on sroi_run_reviews (calculation_run_id) WHERE status = 'approved'",
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "This is the index the baseline names as making Portfolio's approved-population selection (V-28) cheap, and FIBIU-27 consumes it with NO_DB_OBJECT of its own (FIB:243, FIB:806). The existing idx_sroi_run_reviews_calculation_run_id is NON-partial and is not a substitute for the partial form."
+      },
+      {
+        "id": "I-14",
+        "fibdb052_text": "stella_findings (run_id, risk_level) WHERE risk_level='high'",
+        "relation": "stella_findings",
+        "disposition": "BLOCKED__D1",
+        "governed_index_name": "idx_stella_findings_run_id_risk_level_high",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on stella_findings (<run reference column>, risk_level) WHERE risk_level = 'high'",
+        "phase": "FIBDB-052/P2",
+        "executed_by": "FIBIU-20",
+        "dag_level": "3.2",
+        "notes": "Relation absent at AS_OF_HEAD (B2); created by FIBDB-019, owned by FIBIU-20 (B13). The run-reference column name is NOT dictated here because FIBDB-019 has not yet defined the table; see F-A2."
+      },
+      {
+        "id": "I-15",
+        "fibdb052_text": "stella_finding_dispositions (finding_id)",
+        "relation": "stella_finding_dispositions",
+        "disposition": "BLOCKED__D2",
+        "governed_index_name": "idx_stella_finding_dispositions_finding_id",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on stella_finding_dispositions (finding_id)",
+        "phase": "FIBDB-052/P2",
+        "executed_by": "FIBIU-20",
+        "dag_level": "3.2",
+        "notes": "Relation absent at AS_OF_HEAD (B2); created by FIBDB-020, owned by FIBIU-20 (B13)."
+      },
+      {
+        "id": "I-16",
+        "fibdb052_text": "sroi_reports (lineage_id, report_version)",
+        "relation": "sroi_reports",
+        "disposition": "BLOCKED__D3__DISCHARGED_BY_OWNING_OBJECT",
+        "governed_definition": "No DDL. Satisfied by the unique index backing FIBDB-022's UNIQUE(lineage_id, report_version).",
+        "phase": "FIBDB-052/P3",
+        "executed_by": "FIBIU-23",
+        "dag_level": "4.1",
+        "notes": "Both columns absent at AS_OF_HEAD (B5), added by FIBDB-023 (lineage_id) and FIBDB-022 (report_version), owned by FIBIU-23 (B13). FIBDB-022 additionally declares UNIQUE(lineage_id, report_version), whose backing unique btree index subsumes this obligation exactly (B10). Emitting it anyway would create a permanent duplicate, since IF NOT EXISTS matches on name (B20). See ADD-1."
+      },
+      {
+        "id": "I-17",
+        "fibdb052_text": "report_snapshots (report_id, report_version)",
+        "relation": "report_snapshots",
+        "disposition": "BLOCKED__D4",
+        "governed_index_name": "idx_report_snapshots_report_id_report_version",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on report_snapshots (report_id, report_version)",
+        "phase": "FIBDB-052/P4",
+        "executed_by": "FIBIU-24",
+        "dag_level": "4.3",
+        "notes": "Relation absent at AS_OF_HEAD (B2); created by FIBDB-024, owned by FIBIU-24 (B13). FIBDB-024 does not enumerate the table's columns, so the existence of report_id and report_version on report_snapshots is an obligation on FIBIU-24, not an assumption made here; see F-A3."
+      },
+      {
+        "id": "I-18",
+        "fibdb052_text": "report_public_disclosures (locator_token) unique",
+        "relation": "report_public_disclosures",
+        "disposition": "BLOCKED__D5__DISCHARGED_BY_OWNING_OBJECT",
+        "governed_definition": "No DDL. Satisfied by the unique index backing FIBDB-050's locator_token unique constraint.",
+        "phase": "FIBDB-052/P5",
+        "executed_by": "FIBIU-26",
+        "dag_level": "5.1",
+        "notes": "Relation absent from the DRIZZLE track at AS_OF_HEAD (B2, B3); created by FIBDB-029 and constrained by FIBDB-050, both owned by FIBIU-26 (B13). FIBDB-050 KEY_CONSTRAINTS already requires locator_token unique (B11). See ADD-1."
+      },
+      {
+        "id": "I-19",
+        "fibdb052_text": "report_public_disclosures (report_id) WHERE disclosure_state='active'",
+        "relation": "report_public_disclosures",
+        "disposition": "BLOCKED__D6",
+        "governed_index_name": "idx_report_public_disclosures_report_id_active",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS on report_public_disclosures (report_id) WHERE disclosure_state = 'active'",
+        "phase": "FIBDB-052/P5",
+        "executed_by": "FIBIU-26",
+        "dag_level": "5.1",
+        "notes": "Relation absent at AS_OF_HEAD (B2, B3). This obligation additionally depends on FIBDB-050's vocabulary, because the literal 'active' must be a legal value of disclosure_state, whose domain FIBDB-050 defines as {not_disclosed, active, revoked}. Unlike D5 this index is NOT implied by any FIBDB-029 or FIBDB-050 constraint and is a genuine new obligation."
+      }
+    ]
+  },
+  "SPECIFICATION_DEFECTS": {
+    "rule": "Four defects were named by the mission. S1 is resolved in INDEX_NAMING_RULE. S2, S3 and S4 are resolved here. Each resolution states what was measured, what was decided, and what was explicitly NOT decided.",
+    "S2_SENSITIVITY_SCENARIOS": {
+      "frozen_request": "sensitivity_scenarios (candidate_id)",
+      "measured_conflict": "sensitivity_scenarios has no candidate_id column. It has candidate_ids of type jsonb (B4). The frozen request assumes a scalar many-to-one candidate reference; the live shape is a many-to-many list carried on the scenario row. Executing the request verbatim raises 42703.",
+      "adjudication": "RE_EXPRESSED_AS_AN_ACCESS_PATH_OBLIGATION_WITH_A_NAMED_DETERMINATION_GATE",
+      "what_is_decided": [
+        "The column-level request is declared NOT CONSTRUCTIBLE and is retired as a column-level obligation.",
+        "The obligation is re-expressed at the level FIBDB-052 actually speaks at - the hot access path - as: scenario lookup on the eligibility path must be index-served.",
+        "Measured status of the two candidate access paths at AS_OF_HEAD: the RUN-scoped path (sensitivity_scenarios by calculation_run_id) is ALREADY index-served by the existing idx_sensitivity_scenarios_run_id; the CANDIDATE-scoped path (find scenarios containing a given candidate) is NOT served and, on a jsonb array, could only be served by a GIN index on candidate_ids.",
+        "Which path the eligibility composition actually uses is DETERMINED BY FIBIU-19 AT IMPLEMENTATION, and the determination is a required, recorded step - not an inference made here."
+      ],
+      "the_determination_gate": {
+        "owner": "FIBIU-19",
+        "when": "At the point the eligibility composition function's scenario access is first written.",
+        "if_run_scoped_only": "The obligation is DISCHARGED by the existing idx_sensitivity_scenarios_run_id. No DDL is emitted. The discharge must be recorded with the measured call site.",
+        "if_candidate_scoped": "A GIN index on sensitivity_scenarios (candidate_ids) becomes a REQUIRED completion item of FIBDB-052 and must be added by governed amendment before FIBDB-052 may be declared COMPLETE.",
+        "fail_closed": "If the determination has not been made, FIBDB-052 is NOT COMPLETE. Absence of a decision is not a discharge."
+      },
+      "why_not_simply_re_expressed_to_calculation_run_id": "That re-expression would have been convenient and is rejected as unsound. It would have made the obligation a no-op against an index that already exists, which reads as a resolution but is really a silent narrowing: it would assert that the composition reaches scenarios by run, and the composition does not yet exist to be measured (FIBIU-19 is unimplemented at AS_OF_HEAD). Asserting it would be guessing about unwritten code, which section 5 of CLAUDE.md forbids. The access-path form preserves the obligation and names who resolves it.",
+      "explicitly_prohibited": [
+        "Inventing a candidate_id column on sensitivity_scenarios, or any column, to satisfy the frozen text.",
+        "Silently substituting a GIN index without recording the determination that requires it - GIN is a new access method, present nowhere else in FIBDB-052, and its introduction is a governed decision.",
+        "Dropping the obligation on the ground that the named column does not exist."
+      ],
+      "not_an_unknown": "Every fact here is measured: the column does not exist, the jsonb column does, the run-scoped index does, the composition does not. What remains is a bounded future design decision with a named owner and a named gate, which is an OBLIGATION, not an unmeasurable fact."
+    },
+    "S3_FINANCIAL_PROXY_PARTIAL_INDEX": {
+      "frozen_request": "financial_proxy_versions ... + partial WHERE review_status='approved' - with NO key list.",
+      "measured_asymmetry": "Within the same sentence of the same FIBDB entry, the sibling clause for evidence_versions supplies its key list explicitly - partial (evidence_id) WHERE review_status='approved' - while the financial_proxy_versions clause supplies only the predicate. Both relations carry a review_status column (measured).",
+      "adjudication": "RESOLVED_BY_STRUCTURAL_SYMMETRY_WITH_THE_SIBLING_CLAUSE",
+      "resolution": "The key list is (financial_proxy_id). The governed index is idx_financial_proxy_versions_financial_proxy_id_approved, defined as CREATE INDEX IF NOT EXISTS on financial_proxy_versions (financial_proxy_id) WHERE review_status = 'approved'.",
+      "derivation_class": "TEXTUAL_SYMMETRY_WITHIN_ONE_FROZEN_SENTENCE",
+      "why_this_is_sound": "The two clauses are constructed identically - a base index on (<entity>_id, ordinal DESC) plus a partial on the same entity key filtered to approved - and differ only in that one omits the parenthesised key list. Both relations expose the same <entity>_id and review_status columns. The omission is an ellipsis in the prose, not a different design; no other key list would make the two clauses parallel.",
+      "residual_risk": "Low but recorded as F-A5. If the omission was intended to mean a different key list, only a governed amendment may change it; an implementer may not."
+    },
+    "S4_RUN_ID_NAMING": {
+      "frozen_request": "FIBDB-052 writes run_id for five relations and calculation_run_id for sroi_run_reviews.",
+      "measurement": "No FIBDB-052 relation has a column named run_id; the column is calculation_run_id throughout. A bare run_id column does exist elsewhere in the repository, on sroi_line_items, which is not a FIBDB-052 relation (B6). Separately, four existing index NAMES abbreviate calculation_run_id to run_id and two spell it out (B7).",
+      "adjudication": "RECORDED_AS_A_NAMING_ABBREVIATION__NOT_A_SCHEMA_CHANGE",
+      "rule": "Wherever FIBDB-052 writes run_id on one of its own relations, it DENOTES the existing column calculation_run_id. This is an abbreviation in the baseline's prose and in the repository's index names. It creates, renames and requires NO column. Every governed definition above therefore targets calculation_run_id while the governed NAME preserves FIBDB-052's own spelling, per INDEX_NAMING_RULE step 3.",
+      "why_the_name_keeps_the_abbreviation": "Because doing so reproduces the repository's existing index names exactly on three of the affected tables and on sroi_run_reviews (B7). A uniform spelling in either direction would have contradicted the measured repository on one side.",
+      "scope_limit": "This rule is scoped to FIBDB-052's 16 relations. It is NOT a repository-wide claim that run_id always means calculation_run_id; sroi_line_items is a measured counter-example.",
+      "open_edge": "For the four relations that do not yet exist, the run-reference column name is defined by their OWN creating object (FIBDB-019 for stella_findings), not by FIBDB-052 and not by this amendment. Recorded as F-A2."
+    }
+  },
+  "STAGED_VS_ATOMIC": {
+    "decision": "STAGED",
+    "rule": "FIBDB-052 is a STAGED object executed across DAG levels 3.1, 3.2, 4.1, 4.3 and 5.1. The ATOMIC alternative - holding the entire package until level 5.1 - is REJECTED.",
+    "why_not_atomic__structural_not_convenience": [
+      "A1. ATOMIC contradicts the frozen wave assignment. WAVE3_AUTHORITY_v1.0.0.json MIGRATION_AND_STAGE_CONTRACT lists FIBDB-052 in wave3_db_changes and stage_A_items (B14). Deferring the whole object to level 5.1 would move a declared Wave 3 stage-A DB change into Wave 5, making that frozen list factually false. This amendment has no authority to move it and does not.",
+      "A2. ATOMIC would leave FIBIU-19 with no DB support at all. FIBDB-052 is FIBIU-19's ONLY declared db_change (B12). Under ATOMIC, the unit the baseline calls the plan's real barrier - composing twelve units and traversing every new table hot (FIB:782) - would ship at level 3.1 with none of its own index package.",
+      "A3. ATOMIC still would not work. Five of the six blocked obligations sit behind the FIBDB-053 G2 gate via transitive_stop_rule (B15, B19). An ATOMIC package would inherit that gate for ALL 19 obligations, so the 11 obligations that are executable today would become gated on a human action they do not need. ATOMIC makes the object strictly harder to complete, not safer.",
+      "A4. The purpose the baseline states requires it. FIBDB-052 exists to make the eligibility, snapshot and portfolio hot paths cheap. Those paths come into existence progressively - eligibility at 3.1, findings at 3.2, report versioning at 4.1, snapshots at 4.3, disclosures at 5.1. An index has value from the moment its relation carries rows on a hot path, so the package's own purpose is staged."
+    ],
+    "why_this_is_not_convenience": "The mission warned against choosing STAGED for convenience. The four arguments above rest on frozen assignments (B12, B14), a frozen gate (B15) and the baseline's stated purpose - not on effort. The decisive one is A1: ATOMIC would require contradicting a frozen contract this amendment may not touch. A3 further shows STAGED is the more conservative option, not the easier one.",
+    "cost_accepted": "STAGED means FIBDB-052 is partially complete for an extended period, spanning three waves. That is accepted and is precisely why COMPLETION_SEMANTICS below defines partial completion explicitly rather than leaving it to be inferred from a boolean."
+  },
+  "FIBDB052_PHASE_MODEL": {
+    "rule": "Five phases. Each is owned for EXECUTION by the unit that owns the relations its indexes sit on, while FIBDB-052 as an object remains owned by FIBIU-19 (see WHAT_IS_UNCHANGED.ownership_semantics_preserved).",
+    "phases": [
+      {
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "wave": 3,
+        "dag_level": "3.1",
+        "items": [
+          "I-1",
+          "I-2",
+          "I-3",
+          "I-4",
+          "I-5",
+          "I-6",
+          "I-7",
+          "I-8",
+          "I-9",
+          "I-10",
+          "I-11",
+          "I-12",
+          "I-13"
+        ],
+        "emits_ddl_for": 11,
+        "emits_no_ddl_for": [
+          "I-10 (S2 determination gate)",
+          "I-11 (already satisfied)"
+        ],
+        "relation_precondition": "All 12 relations exist at AS_OF_HEAD (B2). No relation or column is created by this phase.",
+        "g2_gated": false,
+        "notes": "This phase is executable today. It is the only phase whose preconditions are fully met at AS_OF_HEAD."
+      },
+      {
+        "phase": "FIBDB-052/P2",
+        "executed_by": "FIBIU-20",
+        "wave": 3,
+        "dag_level": "3.2",
+        "items": [
+          "I-14",
+          "I-15"
+        ],
+        "emits_ddl_for": 2,
+        "emits_no_ddl_for": [],
+        "relation_precondition": "stella_findings and stella_finding_dispositions must exist. They are created by FIBDB-019 and FIBDB-020, both owned by FIBIU-20 (B13). Same wave, next level.",
+        "g2_gated": true,
+        "notes": "Directly gated: FIBIU-20 stops while the FIBDB-053 gate is unresolved (B15)."
+      },
+      {
+        "phase": "FIBDB-052/P3",
+        "executed_by": "FIBIU-23",
+        "wave": 4,
+        "dag_level": "4.1",
+        "items": [
+          "I-16"
+        ],
+        "emits_ddl_for": 0,
+        "emits_no_ddl_for": [
+          "I-16 (discharged by FIBDB-022's UNIQUE)"
+        ],
+        "relation_precondition": "sroi_reports.lineage_id and .report_version must exist, added by FIBDB-023 and FIBDB-022, owned by FIBIU-23 (B13).",
+        "g2_gated": false,
+        "notes": "The only phase that emits no DDL at all and the only blocked phase not transitively G2-gated (B19). Its obligation is a VERIFICATION: confirm the unique index backing UNIQUE(lineage_id, report_version) exists, and do NOT create a second index (B10, B20)."
+      },
+      {
+        "phase": "FIBDB-052/P4",
+        "executed_by": "FIBIU-24",
+        "wave": 4,
+        "dag_level": "4.3",
+        "items": [
+          "I-17"
+        ],
+        "emits_ddl_for": 1,
+        "emits_no_ddl_for": [],
+        "relation_precondition": "report_snapshots must exist, created by FIBDB-024, owned by FIBIU-24 (B13), and must carry report_id and report_version - see F-A3.",
+        "g2_gated": true,
+        "notes": "Transitively gated: FIBIU-24 depends on FIBIU-20 (B19)."
+      },
+      {
+        "phase": "FIBDB-052/P5",
+        "executed_by": "FIBIU-26",
+        "wave": 5,
+        "dag_level": "5.1",
+        "items": [
+          "I-18",
+          "I-19"
+        ],
+        "emits_ddl_for": 1,
+        "emits_no_ddl_for": [
+          "I-18 (discharged by FIBDB-050's locator_token unique)"
+        ],
+        "relation_precondition": "report_public_disclosures must exist on the DRIZZLE track, created by FIBDB-029 and constrained by FIBDB-050, both owned by FIBIU-26 (B13). I-19 additionally requires FIBDB-050's disclosure_state vocabulary, so that the literal 'active' is a legal value.",
+        "g2_gated": true,
+        "notes": "Transitively gated: FIBIU-26 depends on FIBIU-24, which depends on FIBIU-20 (B19)."
+      }
+    ],
+    "NO_PHASE_MAY_PRECEDE_ITS_RELATION": {
+      "rule": "No phase may create an index before the relation and every column it references exist. Violating this raises 42P01 for a missing relation or 42703 for a missing column, and because a migration transaction rolls back as a WHOLE FILE, one such statement discards every other statement in that file - including correct ones.",
+      "enforcement": "Each phase's DDL must be emitted in the SAME migration file as its owning object's CREATE TABLE or ALTER TABLE, or in a strictly later ordinal. Co-location in the same file is PREFERRED, precisely because whole-file rollback then makes relation-plus-index atomic: either both exist or neither does. Splitting a phase across files is permitted only when the index file's ordinal is strictly greater.",
+      "prohibition": "A phase may NOT be advanced by adding IF NOT EXISTS and hoping the statement is inert. IF NOT EXISTS does not guard against a missing relation or a missing column; it guards only against a duplicate NAME (B20)."
+    },
+    "ordinal_note": "This amendment allocates NO db/migrations/** ordinal, reserves none and implies none, exactly as the base authority's NO_ORDINAL_ALLOCATED requires. Ordinal allocation is a separate governed act performed by each implementing mission against the then-current state of db/migrations/."
+  },
+  "COMPLETION_SEMANTICS": {
+    "FIBDB052_COMPLETE_DEFINITION": {
+      "rule": "FIBDB-052 is COMPLETE if and only if ALL of the following hold simultaneously.",
+      "conditions": [
+        "C1. All five phases P1..P5 are DISCHARGED.",
+        "C2. Every one of the 15 REQUIRED_NEW indexes exists under EXACTLY its governed name from FIBDB052_INVENTORY.",
+        "C3. The 2 DISCHARGED_BY_OWNING_OBJECT items (I-16, I-18) are VERIFIED - the owning object's constraint and its backing unique index are present - and NO duplicate index was created for them.",
+        "C4. The 1 ALREADY_SATISFIED item (I-11) is VERIFIED present and unchanged, with no second index created.",
+        "C5. The S2 access-path determination for I-10 has been MADE and RECORDED, and any index it requires exists.",
+        "C6. No index was created under a name other than an enumerated governed name."
+      ],
+      "phase_discharge_definition": "A phase is DISCHARGED when every item assigned to it has reached its disposition's terminal state: created for REQUIRED_NEW, verified for DISCHARGED_BY_OWNING_OBJECT and ALREADY_SATISFIED, determined-and-actioned for I-10."
+    },
+    "PARTIAL_COMPLETION_REPRESENTATION": {
+      "rule": "FIBDB-052 carries a PHASE VECTOR, never a boolean. Its state is the five-tuple (P1, P2, P3, P4, P5), each element in {NOT_STARTED, DISCHARGED}, together with the I-10 determination state in {NOT_DETERMINED, DETERMINED_NO_INDEX_REQUIRED, DETERMINED_INDEX_REQUIRED_AND_PRESENT}.",
+      "reporting_rule": "Any status surface reporting FIBDB-052 must report the vector, not a single flag. 'FIBDB-052 done' is not a well-formed statement about this object.",
+      "no_unit_may_claim_the_whole": "A unit that discharges its own phase may state only that its phase is DISCHARGED. It may NOT state that FIBDB-052 is complete. Only FIBIU-19, as the object's owner, may declare FIBDB-052 COMPLETE, and only when C1..C6 all hold.",
+      "at_AS_OF_HEAD": "The vector is (NOT_STARTED, NOT_STARTED, NOT_STARTED, NOT_STARTED, NOT_STARTED) and the I-10 determination is NOT_DETERMINED."
+    },
+    "G2_GATING": {
+      "rule": "FIBDB-052 COMPLETE is transitively gated on an explicit human G2 action and cannot be reached under any autonomous authority.",
+      "derivation": "P2, P4 and P5 are executed by FIBIU-20, FIBIU-24 and FIBIU-26. G2_BOUNDARY.transitive_stop_rule stops FIBIU-20 while the FIBDB-053 external gate is unresolved, and stops FIBIU-24 and FIBIU-26 transitively (B15, B19). The gate's status at AS_OF_HEAD is PENDING. Declaring that gate RESOLVED is listed in requires_an_explicit_human_G2_action.",
+      "consequence": "C1 cannot hold until a human resolves the FIBDB-053 G2 gate. Any future mission that believes it may declare FIBDB-052 COMPLETE without that action has misread this section and the base authority's no_bypass_clause.",
+      "what_is_NOT_gated": "P1 and P3 are not G2-gated. P1's 11 indexes are executable as soon as an implementing mission holds ordinary authority; nothing in this amendment or the base authority requires a human G2 action for them."
+    }
+  },
+  "MANIFEST_DISPOSITION": {
+    "MANIFEST_AMENDMENT_REQUIRED": "NO",
+    "independently_confirmed": true,
+    "measured_rationale": [
+      "M1. The manifest contains the token 'index' exactly ONCE in the whole file, inside positive control P-3, whose assertion is that no eligibility state table exists and FIBDB-052 is an INDEX package only (B16). It binds no index name, no index count and no DDL.",
+      "M2. P-3's assertion stays TRUE verbatim under this amendment. The amendment introduces no table, no column, no trigger and no persisted state; FIBDB-052 remains an index package only.",
+      "M3. No other control is affected. Zero of the 19 positive, 14 negative and 10 mutation controls and 8 sentinels other than P-3 mention an index (B16), and none could: an index changes query COST, never query RESULTS, so no behavioural control's truth value can turn on index presence.",
+      "M4. The amendment changes nothing the manifest does bind. The 24 reason codes are untouched in content, order and count; no state, gate, sentinel, known condition, protected surface or exit gate is altered.",
+      "M5. The manifest's protected_surfaces are db/prepared/**, db/prepared/hosted/**, db/prepared/hosted/governed/** and db/migrations/**. This mission writes to none of them."
+    ],
+    "where_the_index_verification_obligation_lives": "C2, C3, C4 and C6 of COMPLETION_SEMANTICS do create a real verification obligation - index existence by exact name. That obligation belongs to the manifest of the FUTURE mission that emits the DDL, frozen before that implementation begins, per the repository's freeze-the-manifest-before-implementation doctrine. It does NOT belong to WAVE3_TEST_MANIFEST_v1.0.0.json, which is the Wave 3 BEHAVIOURAL contract for the composition function, SoD and findings. This amendment ASSIGNS that obligation here, in the one file it is authorized to create, rather than silently creating a second file.",
+    "no_second_file_created": "Exactly one new file is added by this mission. No second artifact was created, and no STOP_FOR_SCOPE_DELTA condition was reached.",
+    "pre_existing_manifest_condition_observed_not_fixed": "P-3 carries test_file 'UNKNOWN'. That is a pre-existing condition of the frozen manifest, is not caused by this amendment, and is not repaired here because the manifest may not be edited by this mission. Recorded as F-A7 so it is not lost."
+  },
+  "BOUNDARIES": {
+    "FIBDB053_CAN_PROCEED_INDEPENDENTLY": {
+      "value": "YES",
+      "condition": "Provided its own future lineage and grant exist. This amendment allocates neither.",
+      "basis": "FIBDB-053 is the sole PREPARED_G2 item and FIBDB-052 is the DRIZZLE index package (B14). They share no relation, no column and no file, so nothing in this amendment constrains FIBDB-053's Stage-A authoring work.",
+      "unchanged": "The FIBDB-053 G2 boundary, its Stage-A contract, the two-function derivation, the five-field supersession requirement, the rollback contract and the FIBDB-053 to S3c ordering are all carried forward untouched."
+    },
+    "FIBIU19_DDL_CAN_PROCEED_UNDER_OLD_AUTHORITY": {
+      "value": "NO",
+      "basis": "Under the unamended authority 8 of 19 obligations are not constructible: the 6 blocked, plus I-10 (no such column) and I-5 (no key list). Worse, all 19 are unnameable, and CREATE INDEX IF NOT EXISTS cannot be written without a name (B1, B8, B20).",
+      "what_changes_it": "This amendment supplies the names, the phase model and the defect resolutions. FIBIU-19 DDL for phase P1 becomes specifiable once this amendment is INTEGRATED - and separately requires its own implementation authority, migration ordinal and test manifest, none of which this mission grants."
+    },
+    "FIBIU19_SERVICE_COMPOSITION_CAN_ADVANCE": {
+      "value": "YES",
+      "scope": "Strictly the frozen NON-DDL scope: the server-side composition function, the four distinguished states, the 24 reason codes, the readiness-is-never-an-input rule, run immutability, and the UI and report surfaces the base authority already describes.",
+      "explicitly_preserved": "This amendment does not slow, gate or re-scope FIBIU-19's service work. FIBDB-052 is a performance support package; no eligibility semantic depends on any index.",
+      "hard_limit": "Service work may NOT claim FIBDB-052 completion, in any form, at any stage. Completion is defined solely by COMPLETION_SEMANTICS C1..C6 and is G2-gated. Shipping the composition function is not evidence that its index package exists."
+    },
+    "no_lineage_allocated_for_any_of_them": "This amendment allocates no lineage for FIBDB-052, FIBDB-053 or FIBIU-19."
+  },
+  "NO_ALLOCATION": {
+    "rule": "This mission allocates nothing. Each item below was explicitly considered and explicitly not allocated.",
+    "ods_addendum_ordinal": "NONE allocated, reserved or implied.",
+    "hpo_ods_id": "NONE allocated, reserved or implied.",
+    "grant_id": "NONE. docs/ops/wave3/** is not a protected surface (see NAMING_DERIVATION.scope_gate_consequence), so an ordinary --allow authorizes this write and no protected-authority grant is needed or claimed.",
+    "migration_ordinal": "NONE. No db/migrations/** ordinal is allocated, reserved or implied.",
+    "controller_change": "NONE. No Controller enumeration, version or digest is touched.",
+    "re_derivation_rule": "A future mission needing any of these must re-derive them against the then-current repository state, never from this artifact."
+  },
+  "OPEN_FINDINGS": {
+    "blocking_for_this_docs_only_amendment": [],
+    "blocking_for_fibdb052_implementation": [],
+    "non_blocking": [
+      {
+        "id": "F-A1",
+        "class": "REDUNDANT_PREFIX_INDEXES_LEFT_IN_PLACE",
+        "finding": "Four P1 indexes strictly subsume an existing single-column index on the same relation: I-6 over idx_outcome_monetization_dispositions_run_id, I-8 over idx_counterfactual_assessments_run_id, I-9 over idx_sensitivity_candidates_run_id, and I-12 over idx_methodological_assumptions_project_id. Once the two-column index exists, the single-column one is redundant for lookup.",
+        "why_not_blocking": "Redundant indexes cost write amplification and storage, never correctness. No query returns a different result.",
+        "disposition": "OBSERVED, NOT ACTIONED. Dropping an existing index is a behavioural change on a live surface and is outside this docs-only mission's authority. Recorded so a future implementing mission decides deliberately rather than inheriting the redundancy unnoticed.",
+        "owner": "The FIBDB-052/P1 implementing mission."
+      },
+      {
+        "id": "F-A2",
+        "class": "COLUMN_NAME_NOT_YET_DEFINED_BY_THE_OWNING_OBJECT",
+        "finding": "I-14's governed definition references stella_findings' run-reference column as <run reference column> rather than naming it. FIBDB-019 creates the table but does not enumerate its columns, and FIBDB-052 writes run_id, which is an abbreviation for calculation_run_id on every EXISTING relation (B6) but cannot be asserted for a relation that does not exist.",
+        "why_not_blocking": "It blocks nothing today: P2 is G2-gated and cannot execute regardless. The name is determined at the moment FIBDB-019 defines the table.",
+        "disposition": "The column name is set by FIBDB-019, owned by FIBIU-20, NOT by FIBDB-052 and NOT by this amendment. The governed index NAME idx_stella_findings_run_id_risk_level_high is frozen regardless, since it follows FIBDB-052's own spelling per INDEX_NAMING_RULE step 3.",
+        "why_not_unknown": "Not an unmeasurable fact but a future definition with a named owner and a named object.",
+        "owner": "FIBIU-20 via FIBDB-019."
+      },
+      {
+        "id": "F-A3",
+        "class": "COLUMN_EXISTENCE_NOT_ENUMERATED_BY_THE_OWNING_OBJECT",
+        "finding": "I-17 indexes report_snapshots (report_id, report_version). FIBDB-024 creates report_snapshots and names snapshot_identity but does not enumerate report_id or report_version. Note that report_version is added to sroi_reports by FIBDB-022, which says nothing about report_snapshots.",
+        "why_not_blocking": "P4 is G2-gated and cannot execute regardless. Nothing is asserted here about columns that do not exist.",
+        "disposition": "Recorded as an obligation on FIBIU-24: report_snapshots must carry report_id and report_version, or FIBDB-052's I-17 must be re-expressed by a further governed amendment. NOT resolved here, because inventing the column set of a table another unit owns would be exactly the guess CLAUDE.md section 5 forbids.",
+        "why_not_unknown": "Measured precisely: FIBDB-024's text does not enumerate them. The residue is a future design obligation, not an unmeasured fact.",
+        "owner": "FIBIU-24 via FIBDB-024."
+      },
+      {
+        "id": "F-A4",
+        "class": "ACCESS_PATH_DETERMINATION_DEFERRED_TO_A_NAMED_GATE",
+        "finding": "I-10 (sensitivity_scenarios) has no constructible column-level form and its correct access path cannot be measured because the eligibility composition function does not exist at AS_OF_HEAD.",
+        "why_not_blocking": "FIBDB-052 is BACKFILL_NOT_REQUIRED and purely supporting; no eligibility semantic and no reason code depends on this index existing. It blocks neither P1's other 11 indexes nor FIBIU-19's service work.",
+        "disposition": "Held OPEN under S2's determination gate with owner FIBIU-19, an explicit fail-closed rule (absence of a decision is not a discharge), and an explicit prohibition on inventing a column or silently introducing GIN.",
+        "why_not_unknown": "Every present-tense fact is measured. What is open is a bounded future decision with a named owner and gate.",
+        "owner": "FIBIU-19."
+      },
+      {
+        "id": "F-A5",
+        "class": "DERIVED_NOT_MEASURED",
+        "finding": "Two elements of this amendment are derivations rather than direct measurements: S3's key list (financial_proxy_id), derived by textual symmetry with the sibling evidence_versions clause; and INDEX_NAMING_RULE step 5, the partial-index name suffix, which B17 records as having no measured precedent and which is therefore DECLARED.",
+        "why_not_blocking": "Both are internally consistent, constructible against measured schema, and explicitly labelled as derivations so an auditor can overturn either without excavating for it.",
+        "disposition": "Flagged for the independent Opus exact-object audit as the two places where this amendment reasons beyond direct measurement.",
+        "owner": "Independent audit."
+      },
+      {
+        "id": "F-A6",
+        "class": "DERIVED_SEMANTIC_CARRIED_AS_A_VERIFICATION_OBLIGATION",
+        "finding": "B20's claim that IF NOT EXISTS matches on index NAME rather than DEFINITION is load-bearing for ADD-1 and ADD-2 - it is why re-emitting I-16, I-18 and I-11 would create duplicates rather than being inert. LANE BL machine-proved that a name is REQUIRED; it did not machine-prove the name-based matching semantics, and this docs-only mission executed no DDL.",
+        "why_not_blocking": "The conservative disposition was chosen in every affected case - verify, do not emit - so if the semantics were somehow otherwise, the result is a no-op rather than a wrong index.",
+        "disposition": "Carried as an explicit implementation-time verification obligation on the P1, P3 and P5 missions, not asserted as a machine fact by this mission.",
+        "owner": "The FIBDB-052/P1, P3 and P5 implementing missions."
+      },
+      {
+        "id": "F-A7",
+        "class": "PRE_EXISTING_CONDITION_OF_A_FROZEN_ARTIFACT",
+        "finding": "WAVE3_TEST_MANIFEST_v1.0.0.json positive control P-3 carries test_file 'UNKNOWN'.",
+        "why_not_blocking": "Pre-existing, not caused by this amendment, and unrelated to FIBDB-052 sequencing.",
+        "disposition": "OBSERVED ONLY. Not repaired, because this mission may not edit the manifest. Recorded so the observation is not lost by having been noticed inside a mission that could not act on it.",
+        "owner": "A future Wave 3 test-manifest mission."
+      },
+      {
+        "id": "F-A8",
+        "class": "STRUCTURAL_CONSEQUENCE_OF_A_FROZEN_GATE",
+        "finding": "FIBDB-052 COMPLETE is unreachable under any autonomous authority, because P2, P4 and P5 are transitively stopped by the FIBDB-053 G2 gate, whose resolution requires an explicit human action (B15, B19).",
+        "why_not_blocking": "It blocks nothing this amendment does, and it blocks nothing FIBIU-19 does at level 3.1. It is a true statement about the object's horizon that must be visible rather than discovered later by a mission that assumed completion was reachable.",
+        "disposition": "Stated as a hard rule in COMPLETION_SEMANTICS.G2_GATING. No bypass is offered and none exists.",
+        "owner": "Human G2 authority."
+      }
+    ],
+    "unknown": [],
+    "unknown_note": "unknown[] is EMPTY and that is a substantive claim, not a formality. Every present-tense fact this amendment relies on was measured at AS_OF_HEAD: relation existence, column existence, existing index names and definitions, DAG levels, owning units, gate status and manifest content. Three findings (F-A2, F-A3, F-A4) concern things not yet decided; each is a BOUNDED FUTURE DECISION with a named owner and a named gate, which is an OBLIGATION rather than an unmeasurable fact, and each says so explicitly. No finding was moved out of unknown[] by reclassification; none was ever in it.",
+    "blocking_note": "blocking_for_fibdb052_implementation is EMPTY because this amendment resolves the four defects that made the object unexecutable (S1 naming, S2 sensitivity_scenarios, S3 key list, S4 run_id) and supplies the phase model that orders the six blocked obligations. What remains before P1 can run is ORDINARY governed process - an implementation authority, a migration ordinal and a test manifest - not an unresolved defect. G2 gating on P2, P4 and P5 is a preserved frozen gate, recorded as F-A8, not a finding this amendment introduces or may close."
+  },
+  "self_check": {
+    "note": "Every count is asserted here and is verifiable against this artifact's own content by machine.",
+    "expected_inventory_item_count": 19,
+    "expected_distinct_relation_count": 16,
+    "expected_relations_present_at_AS_OF_HEAD": 12,
+    "expected_relations_absent_at_AS_OF_HEAD": 4,
+    "expected_absent_relation_names": [
+      "stella_findings",
+      "stella_finding_dispositions",
+      "report_snapshots",
+      "report_public_disclosures"
+    ],
+    "expected_blocked_obligation_count": 6,
+    "expected_blocked_obligation_ids": [
+      "I-14",
+      "I-15",
+      "I-16",
+      "I-17",
+      "I-18",
+      "I-19"
+    ],
+    "expected_blocked_obligation_labels": [
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5",
+      "D6"
+    ],
+    "expected_required_new_index_count": 15,
+    "expected_governed_index_name_count": 15,
+    "expected_already_satisfied_count": 1,
+    "expected_discharged_by_owning_object_count": 2,
+    "expected_not_constructible_count": 1,
+    "expected_phase_count": 5,
+    "expected_phase_ids": [
+      "FIBDB-052/P1",
+      "FIBDB-052/P2",
+      "FIBDB-052/P3",
+      "FIBDB-052/P4",
+      "FIBDB-052/P5"
+    ],
+    "expected_g2_gated_phases": [
+      "FIBDB-052/P2",
+      "FIBDB-052/P4",
+      "FIBDB-052/P5"
+    ],
+    "expected_evidence_anchor_count": 20,
+    "expected_evidence_anchor_ids": [
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "B6",
+      "B7",
+      "B8",
+      "B9",
+      "B10",
+      "B11",
+      "B12",
+      "B13",
+      "B14",
+      "B15",
+      "B16",
+      "B17",
+      "B18",
+      "B19",
+      "B20"
+    ],
+    "expected_defect_ids": [
+      "S1",
+      "S2",
+      "S3",
+      "S4"
+    ],
+    "expected_additional_to_BL_ids": [
+      "ADD-1",
+      "ADD-2",
+      "ADD-3"
+    ],
+    "expected_non_blocking_ids": [
+      "F-A1",
+      "F-A2",
+      "F-A3",
+      "F-A4",
+      "F-A5",
+      "F-A6",
+      "F-A7",
+      "F-A8"
+    ],
+    "expected_blocking_count": 0,
+    "expected_unknown_count": 0,
+    "expected_reason_code_count_unchanged": 24,
+    "expected_new_files_created_by_this_mission": 1,
+    "expected_manifest_amendment_required": "NO",
+    "expected_staged_or_atomic": "STAGED",
+    "expected_max_index_name_length": 58,
+    "expected_postgres_identifier_limit": 63,
+    "checks": [
+      "C-1. FIBDB052_INVENTORY.items has exactly 19 entries and their ids are I-1..I-19 with no gap.",
+      "C-2. The union of the five phases' item lists is exactly I-1..I-19, with every item appearing exactly once.",
+      "C-3. Exactly 15 items carry a governed_index_name that is a CREATE target, and all 15 names are distinct.",
+      "C-4. No governed index name exceeds 63 characters; the longest is 58.",
+      "C-5. The dispositions partition the 19 items as 15 REQUIRED_NEW (11 in P1, 4 blocked) + 1 ALREADY_SATISFIED + 2 DISCHARGED_BY_OWNING_OBJECT + 1 NOT_CONSTRUCTIBLE = 19.",
+      "C-6. Every blocked item names an executing unit and DAG level consistent with the FIB index: I-14/I-15 FIBIU-20 at 3.2, I-16 FIBIU-23 at 4.1, I-17 FIBIU-24 at 4.3, I-18/I-19 FIBIU-26 at 5.1.",
+      "C-7. All four defects S1..S4 have an explicit resolution and none is left implicit.",
+      "C-8. OPEN_FINDINGS.blocking_for_this_docs_only_amendment, blocking_for_fibdb052_implementation and unknown are all empty arrays, and non_blocking has exactly 8 entries.",
+      "C-9. WHAT_IS_UNCHANGED asserts the 24 reason codes unchanged, and this artifact adds, removes, renames and reorders zero reason codes - it contains no reason-code list at all.",
+      "C-10. MANIFEST_AMENDMENT_REQUIRED is NO and is supported by five measured rationales M1..M5.",
+      "C-11. No section of this artifact authorizes a db/** write, a migration ordinal, a G2 apply, an ODS or HPO allocation, or a Controller change.",
+      "C-12. Every phase carries a relation_precondition, so no phase can be read as authorizing an index before its relation exists.",
+      "C-13. The three findings additional to LANE BL (ADD-1, ADD-2, ADD-3) are each stated with what BL held, what was measured, and the resulting disposition change.",
+      "C-14. Every derivation that is not a direct measurement is labelled as such and collected in F-A5 and F-A6."
+    ]
+  },
+  "AMENDMENT_HISTORY": [
+    {
+      "revision": "v1.0.1",
+      "mission_id": "WAVE3-FIBDB052-SEQUENCING-SUCCESSOR-AUTHORITY-R1",
+      "source_adjudication": "LANE BL - WAVE3-FIBDB052-SEQUENCING-ADJUDICATION-R1",
+      "date": "2026-09-06",
+      "form": "SEPARATE APPEND-ONLY FILE, not an in-file append to WAVE3_AUTHORITY_v1.0.0.json. See NAMING_DERIVATION.why_not_an_in_file_amendment_history_append.",
+      "base_state": "origin/integration/commercial-v1 at a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303, tree 57952b24486ce0fae84e3977e8fbc56aed895db7. Identical to EXPECTED_START_HEAD and EXPECTED_START_TREE; zero intervening delta, so no merge was required and none was performed.",
+      "what_changed": [
+        "FIBDB-052 is adjudicated STAGED across five phases at DAG levels 3.1, 3.2, 4.1, 4.3 and 5.1, with exact execution ownership per phase.",
+        "All 19 index obligations are enumerated with per-item dispositions and 15 governed index names.",
+        "All six blocked obligations D1..D6 are enumerated; two of them (D3, D5) are adjudicated DISCHARGED BY THEIR OWN OWNING OBJECT rather than deferred, which BL had not distinguished.",
+        "One obligation on an existing relation (readiness_assessments) is found ALREADY SATISFIED.",
+        "Four specification defects are resolved: S1 index identity, S2 sensitivity_scenarios, S3 financial_proxy_versions key list, S4 run_id naming.",
+        "FIBDB-052 COMPLETE and partial completion are defined; completion is shown to be transitively G2-gated.",
+        "MANIFEST_AMENDMENT_REQUIRED is determined NO on five measured grounds, and the index-verification obligation is assigned to the future implementing mission's own manifest."
+      ],
+      "what_did_not_change": [
+        "The 24 reason codes - content, order and count. Still exactly 24, and the Wave 3 exit gate's full 24-reason reading is not relaxed.",
+        "The FIBIU-19 to FIBIU-20 serial contract, PARALLEL_GROUPS none, and every Wave 3 topological level.",
+        "The FIBDB-053 G2 boundary in full, including the transitive stop rule and the no-bypass clause.",
+        "The FIBDB-053 to S3c ordering and the FIBDB-053 Stage-A contract.",
+        "Every human, SoD and Stella boundary carried by the base authority.",
+        "Every sealed source. docs/ops/fib/**, PC-01B, IM-01B, Wave 1 and Wave 2 closure evidence are untouched.",
+        "The base authority's own seven non-blocking findings, none of which is erased or downgraded.",
+        "AS_OF_HEAD, AS_OF_TREE and AS_OF_REF of WAVE3_AUTHORITY_v1.0.0.json, which this amendment does not re-anchor because it does not edit that file."
+      ]
+    }
+  ],
+  "final_state": "WAVE3_AUTHORITY_AMENDMENT_v1_0_1_FROZEN_AWAITING_INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT",
+  "next_gate": "Independent Opus exact-object audit of this artifact against AS_OF_HEAD, then integration. No FIBDB-052 DDL may be written before that audit passes and an implementation authority, a migration ordinal and a test manifest exist for the P1 phase."
+}
