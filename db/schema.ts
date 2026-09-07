@@ -44,7 +44,28 @@ export const organizations = pgTable('organizations', {
   
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+
+  // Multi-org S1 (MO-10/MO-11, HPO-ODS-W2-20) — founder traceability.
+  // founded_by is TRACEABILITY ONLY (PI-3): no capability check, RLS policy,
+  // role resolution or entitlement evaluation may read it. NULLABLE
+  // permanently (MO-11): unknown provenance stays NULL, never a sentinel.
+  // ON DELETE RESTRICT: a true attribution is never silently erased.
+  foundedBy: uuid('founded_by').references(() => users.id, { onDelete: 'restrict' }),
+  // The durable self-service provenance DISCRIMINATOR the founder-cardinality
+  // carrier predicates on. 'unknown' is the honest default for every
+  // historical row; only the live self-service founding act writes 'self_service'.
+  foundingProvenance: varchar('founding_provenance', { length: 20 }).default('unknown').notNull(),
+}, (table) => [
+  // MO-01 founder cardinality: at most ONE SELF-SERVICE-founded organization
+  // per subject. Binds the self-service founding ACT, never founded_by
+  // globally — a platform-created organization naming the same subject does
+  // not consume the slot, and NULL founded_by rows coexist freely.
+  uniqueIndex('organizations_self_service_founder_unique')
+    .on(table.foundedBy)
+    .where(sql`${table.foundedBy} IS NOT NULL AND ${table.foundingProvenance} = 'self_service'`),
+  check('organizations_founding_provenance_check', sql`${table.foundingProvenance} IN ('self_service', 'platform', 'unknown')`),
+  check('organizations_self_service_requires_founder_check', sql`${table.foundingProvenance} <> 'self_service' OR ${table.foundedBy} IS NOT NULL`),
+])
 
 export const organizationMembers = pgTable('organization_members', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),

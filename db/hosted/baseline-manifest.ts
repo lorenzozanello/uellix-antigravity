@@ -1371,6 +1371,35 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: 'ee9de841b80d3f21aa5f1565ac449aba52ced6f2c734dddb726d26bcce2564f6',
     },
   },
+  // Multi-org S1 (HPO-ODS-W2-20 / HPO-ODS-W2-21, MO-10/MO-11/MO-01): founder
+  // traceability. ADD COLUMN founded_by (nullable, FK users ON DELETE RESTRICT)
+  // and founding_provenance (DEFAULT 'unknown', CHECK), the partial unique
+  // self-service founder carrier, then the MO-11 structural backfill.
+  {
+    ordinal: 79,
+    id: '0066_multiorg_s1_founder_traceability.sql',
+    kind: D,
+    file: 'db/migrations/0066_multiorg_s1_founder_traceability.sql',
+    sha256: '0f038b236fd868b373cffbbe0c8cd12244fdba8ace4065d61579a8162fb6b725',
+    dependsOn: ['0065_fib_sensitivity_model.sql', '0000_quick_husk.sql'],
+    dml: 'structural-backfill',
+    managed: 'A-hosted-compatible',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'Multi-org S1 (MO-10/MO-11/MO-01). ADD COLUMN organizations.founded_by (uuid NULL, FK users ' +
+      'ON DELETE RESTRICT) and organizations.founding_provenance (varchar DEFAULT \'unknown\' NOT ' +
+      'NULL, CHECK self_service|platform|unknown), a partial UNIQUE index on founded_by WHERE ' +
+      'founding_provenance = \'self_service\' (the MO-01 carrier), and one UPDATE deriving ' +
+      'founded_by from audit_logs organization.created rows with exactly one non-null actor -- ' +
+      'structural-backfill, zero rows on an empty database, same class as units 19, 52 and 58. ' +
+      'No CREATE TABLE, no policy, no function, no SECURITY DEFINER surface. founded_by is ' +
+      'traceability only (PI-3) and is read by no authorization path.',
+    rollback:
+      'ADD COLUMN / ADD CONSTRAINT / CREATE UNIQUE INDEX have no IF NOT EXISTS guard and no reverse ' +
+      'script -- forward-only, recovered by DESTROY_AND_REPROVISION. The UPDATE re-runs to zero ' +
+      'affected rows because it only targets founded_by IS NULL.',
+    expect: { dmlStatementCount: 1 },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

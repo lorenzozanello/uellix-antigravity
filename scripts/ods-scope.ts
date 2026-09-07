@@ -535,6 +535,32 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
     branch: 'codex/w2-b5-r1',
     patterns: ['db/migrations/**', 'db/prepared/journal/**', 'db/prepared/checkpoint-b0/observation.sql'],
   },
+  // HPO-ODS-W2-20 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.19.json,
+  // companion docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json):
+  // multi-org S1 (founder traceability) on its own branch. ONE pattern -
+  // db/migrations/** - because CP-1 is a single global ordinal sequence and
+  // pinning the ordinal at authority time would manufacture the collision the
+  // grant exists to avoid. Registered by the S1 implementing mission, as the
+  // addendum instructs. Deliberately NOT db/prepared/**.
+  {
+    authorityId: 'HPO-ODS-W2-20',
+    branch: 'codex/multiorg-s1-founder-traceability-r1',
+    patterns: ['db/migrations/**'],
+  },
+  // HPO-ODS-W2-21 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json,
+  // companion docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json):
+  // the journal-wrapper family an ordinary migration drags with it. ONE
+  // pattern - db/prepared/journal/** - a STRICT SUBSET of db/prepared/** that
+  // reaches neither the stella_* hosted units nor checkpoint-b0. A SEPARATE
+  // entry sharing W2-20's branch, on the v1.0.15 precedent: W2-20 keeps its
+  // single pattern and is never widened; resolveProtectedGrants unions only
+  // the ids a caller actually supplies. HPO-ODS-W2-22 is an ADDENDUM IDENTITY
+  // (v1.0.21, protected_grant=null) and is deliberately NOT registered.
+  {
+    authorityId: 'HPO-ODS-W2-21',
+    branch: 'codex/multiorg-s1-founder-traceability-r1',
+    patterns: ['db/prepared/journal/**'],
+  },
 ]
 
 export interface ProtectedGrantResolution {
