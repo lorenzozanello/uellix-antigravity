@@ -361,6 +361,26 @@
       "disposition": "Flagged as a separate, out-of-ceiling follow-up (spawn_task), not fixed in this mission: tests/authenticated-database-context.test.ts's pre-existing 'STELLA WRITE' test performs a raw INSERT into public.stella_interactions, a write path stella_0017_governed_stella_consumption (R6-INT) deliberately revoked in favour of a governed ticket protocol (uellix_stella_ops.complete_operation_ticket). The test is stale relative to that governance; fixing it means rewriting its fixture to the ticket protocol, which is outside the S3 ceiling's authorized scope (no db/prepared/** change, no new capability). Confirmed this failure is INVISIBLE to CI's own pnpm test:unit job today, since that job has no live PostgreSQL credentials either — this PR does not redden any currently-green CI signal."
     },
 
+    "github_gates_final_candidate": {
+      "candidate_sha": "48f007c9ca0d1d4f79a12b785c83c90f2d68dfac",
+      "CI": "GREEN — 'Lint, typecheck, test, build' (run 34140443014), pass, 7m20s",
+      "P1A": "GREEN — 'Canonical LOCAL/CI clean bootstrap proof' (run 34140443073), pass, 2m16s",
+      "M2_first_attempt": {
+        "result": "FAIL (208/209 checks)",
+        "run": "https://github.com/lorenzozanello/uellix-antigravity/actions/runs/34140442975",
+        "causal_classification": "INFRASTRUCTURE_IMAGE_PULL_RATE_LIMIT — NOT an S3 assertion failure, NOT an M2 semantic regression, NOT a migration regression, NOT a candidate-code failure.",
+        "evidence": "MAIN:PORT-PRECHECK=PASS, then MAIN:CONTAINER-CREATE=FAIL with the verbatim Docker daemon error 'docker: toomanyrequests: Rate exceeded' while pulling public.ecr.aws/supabase/postgres@sha256:80d7b27c3e8d77cfa7226eee9508671796da214781ff15a35b3670d7ad5ee453 — the FIRST image pull of the job. MAIN:TEARDOWN=PASS and MAIN:PORT-FREE-AFTER-TEARDOWN=PASS immediately followed (clean abort, no leftover). Every SUBSEQUENT phase (PRIV-N1a, N1b, N2, N3, N4, N5 — all negative controls) then pulled the SAME image successfully and passed every one of their checks, consistent with a transient registry-side rate-limit that had cleared (or a layer cache warming) by the time of the second pull attempt seconds later. FINAL:LABELLED-LEFTOVER-COUNT=PASS — 0. Exactly 1 of 209 checks failed; the other 208 passed on the SAME run.",
+        "s3_causal_exclusion": "Verified by `git diff --name-only 432540c 48f007c` (the exact 10-path S3 write set) containing zero overlap with scripts/m2-disposable-pg-bootstrap.ts, any .github/workflows/*.yml, or any Docker/image-reference file — no S3 changed path can influence a Docker registry's rate-limit response.",
+        "remediation": "Re-ran ONLY the failed job via `gh run rerun 34140442975 --failed` on the SAME candidate SHA — no code change, no gate weakening, no waiver."
+      },
+      "M2_after_rerun": {
+        "result": "PASS",
+        "run": "https://github.com/lorenzozanello/uellix-antigravity/actions/runs/34140442975 (job 101807839781, rerun of the same run id)",
+        "status_recorded_as": "M2_STATUS = GREEN_AFTER_INFRASTRUCTURE_RERUN",
+        "original_failed_attempt_preserved": "The original run id (34140442975) and its first-attempt job log are preserved by GitHub as run history; this evidence artifact records both the original failure signature and the rerun result rather than overwriting the record."
+      }
+    },
+
     "s3_audit_ready_bar": {
       "SI2_RESOLVED": true,
       "NO_FALLBACK": true,
@@ -377,7 +397,19 @@
       "MS3_8": "BEHAVIOURALLY_CAUGHT",
       "ENTRYPOINT_PINS_UNCHANGED": true,
       "PROTECTED_GRANTS": 12,
-      "CONTROLLER": 34
+      "CONTROLLER": 34,
+      "TYPECHECK": "PASS",
+      "LINT": "PASS",
+      "SECRETS": "PASS",
+      "SEAL": "PASS",
+      "ODS_SCOPE": "PASS",
+      "ODS_POSTSTATE": "PASS",
+      "CI": "GREEN",
+      "M2": "GREEN_AFTER_INFRASTRUCTURE_RERUN",
+      "P1A": "GREEN",
+      "BLOCKING_FINDINGS": 0,
+      "UNKNOWN_FINDINGS": 0,
+      "S3_AUDIT_READY": true
     }
   }
 }
