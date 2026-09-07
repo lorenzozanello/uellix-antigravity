@@ -73,12 +73,10 @@ vi.mock('next/navigation', () => ({
 }))
 
 const mockRequireAuth = vi.fn()
-const mockGetCurrentMembership = vi.fn()
-const mockGetCurrentOrganizationContext = vi.fn()
+const mockListSelectableMemberships = vi.fn()
 vi.mock('@/lib/auth/session', () => ({
   requireAuth: () => mockRequireAuth(),
-  getCurrentMembership: (userId: string) => mockGetCurrentMembership(userId),
-  getCurrentOrganizationContext: () => mockGetCurrentOrganizationContext(),
+  listSelectableMemberships: () => mockListSelectableMemberships(),
 }))
 
 // Rendering chrome only — this suite is about the carrier and the selection
@@ -111,6 +109,8 @@ const SUPER_ADMIN = { ...USER, isSuperAdmin: true }
 const ORG_A = '00000000-0000-4000-8000-0000000000aa'
 const ORG_B = '00000000-0000-4000-8000-0000000000bb'
 const MEMBERSHIP_A = { id: 'm1', role: 'organization_admin', organizationId: ORG_A, userId: USER.id }
+const ORGANIZATION_A = { id: ORG_A, name: 'Org A' }
+const SELECTABLE_A = [{ membership: MEMBERSHIP_A, organization: ORGANIZATION_A }]
 
 function formDataWith(organizationId: string | null): FormData {
   const fd = new FormData()
@@ -133,8 +133,7 @@ beforeEach(() => {
   fakeCookieStore.clear()
   mockRedirect.mockClear()
   mockRequireAuth.mockReset()
-  mockGetCurrentMembership.mockReset()
-  mockGetCurrentOrganizationContext.mockReset()
+  mockListSelectableMemberships.mockReset()
   vi.restoreAllMocks()
 })
 
@@ -240,20 +239,20 @@ describe('exact payload: organization id only', () => {
 describe('selection action: valid member selection', () => {
   it('writes the carrier and redirects to the dashboard when the caller is an active member', async () => {
     mockRequireAuth.mockResolvedValue(USER)
-    mockGetCurrentMembership.mockResolvedValue(MEMBERSHIP_A)
+    mockListSelectableMemberships.mockResolvedValue(SELECTABLE_A)
 
     const location = await locationOf(() => selectOrganizationAction(formDataWith(ORG_A)))
 
     expect(location).toBe('/app/dashboard')
     expect(await getSelectedOrganizationId()).toBe(ORG_A)
-    expect(mockGetCurrentMembership).toHaveBeenCalledWith(USER.id)
+    expect(mockListSelectableMemberships).toHaveBeenCalled()
   })
 })
 
 describe('selection action: invalid / non-member rejection', () => {
   it('refuses an organization the caller is not an active member of — no fallback, no partial write', async () => {
     mockRequireAuth.mockResolvedValue(USER)
-    mockGetCurrentMembership.mockResolvedValue(MEMBERSHIP_A) // active member of A only
+    mockListSelectableMemberships.mockResolvedValue(SELECTABLE_A) // active member of A only
 
     const location = await locationOf(() => selectOrganizationAction(formDataWith(ORG_B)))
 
@@ -265,7 +264,7 @@ describe('selection action: invalid / non-member rejection', () => {
 
   it('refuses when the caller has no active membership at all', async () => {
     mockRequireAuth.mockResolvedValue(USER)
-    mockGetCurrentMembership.mockResolvedValue(null)
+    mockListSelectableMemberships.mockResolvedValue([])
 
     const location = await locationOf(() => selectOrganizationAction(formDataWith(ORG_A)))
 
@@ -275,12 +274,12 @@ describe('selection action: invalid / non-member rejection', () => {
 
   it('refuses a missing organizationId rather than guessing one', async () => {
     mockRequireAuth.mockResolvedValue(USER)
-    mockGetCurrentMembership.mockResolvedValue(MEMBERSHIP_A)
+    mockListSelectableMemberships.mockResolvedValue(SELECTABLE_A)
 
     const location = await locationOf(() => selectOrganizationAction(formDataWith(null)))
 
     expect(location).toBe('/app/organizations/select?error=missing_organization')
-    expect(mockGetCurrentMembership).not.toHaveBeenCalled()
+    expect(mockListSelectableMemberships).not.toHaveBeenCalled()
     expect(await getSelectedOrganizationId()).toBeNull()
   })
 
@@ -292,12 +291,12 @@ describe('selection action: invalid / non-member rejection', () => {
     const location = await locationOf(() => selectOrganizationAction(formDataWith(ORG_A)))
 
     expect(location).toBe('/login')
-    expect(mockGetCurrentMembership).not.toHaveBeenCalled()
+    expect(mockListSelectableMemberships).not.toHaveBeenCalled()
   })
 
   it('NS2-6: a super admin gets NO exemption from the membership check in the selection act', async () => {
     mockRequireAuth.mockResolvedValue(SUPER_ADMIN)
-    mockGetCurrentMembership.mockResolvedValue(null) // no membership anywhere
+    mockListSelectableMemberships.mockResolvedValue([]) // no membership anywhere
 
     const location = await locationOf(() => selectOrganizationAction(formDataWith(ORG_A)))
 
@@ -308,13 +307,31 @@ describe('selection action: invalid / non-member rejection', () => {
   it('does not leave a stale carrier from a PRIOR selection after a refused re-selection', async () => {
     await setSelectedOrganization(ORG_A)
     mockRequireAuth.mockResolvedValue(USER)
-    mockGetCurrentMembership.mockResolvedValue(MEMBERSHIP_A) // no longer a member of B
+    mockListSelectableMemberships.mockResolvedValue(SELECTABLE_A) // no longer a member of B
 
     await locationOf(() => selectOrganizationAction(formDataWith(ORG_B)))
 
     // Refused — the PRIOR selection (A) is untouched, never silently
     // replaced by the rejected request.
     expect(await getSelectedOrganizationId()).toBe(ORG_A)
+  })
+
+  it('S3-5 / NO_FALLBACK: proof is against the REQUESTED organization, never the CURRENTLY SELECTED one', async () => {
+    // The caller is currently selected into A, but is an active member of B
+    // too, and is now switching TO B. A proof keyed on the CURRENT selection
+    // (the pre-S3 getCurrentMembership shape) would check membership in A —
+    // the organization being switched AWAY FROM — and wrongly refuse.
+    await setSelectedOrganization(ORG_A)
+    mockRequireAuth.mockResolvedValue(USER)
+    mockListSelectableMemberships.mockResolvedValue([
+      SELECTABLE_A[0],
+      { membership: { id: 'm2', role: 'viewer', organizationId: ORG_B, userId: USER.id }, organization: { id: ORG_B, name: 'Org B' } },
+    ])
+
+    const location = await locationOf(() => selectOrganizationAction(formDataWith(ORG_B)))
+
+    expect(location).toBe('/app/dashboard')
+    expect(await getSelectedOrganizationId()).toBe(ORG_B)
   })
 })
 
@@ -347,15 +364,11 @@ describe('selection action: explicit clear', () => {
 /* No autoselection — NS2-5                                                  */
 /* -------------------------------------------------------------------------- */
 
-describe('no autoselection (NS2-5)', () => {
+describe('no autoselection (NS2-5 / MS3-7)', () => {
   it('rendering the selector page with exactly one selectable membership does NOT write the carrier', async () => {
     const setSpy = vi.spyOn(carrier, 'setSelectedOrganization')
     mockRequireAuth.mockResolvedValue(USER)
-    mockGetCurrentOrganizationContext.mockResolvedValue({
-      user: USER,
-      membership: MEMBERSHIP_A,
-      organization: { id: ORG_A, name: 'Org A' },
-    })
+    mockListSelectableMemberships.mockResolvedValue(SELECTABLE_A)
 
     await SelectOrganizationPage({ searchParams: Promise.resolve({}) })
 
@@ -408,55 +421,111 @@ describe('carrier tampering is inert and non-fatal (NS2-3)', () => {
 })
 
 /* -------------------------------------------------------------------------- */
-/* Carrier inertness — NS2-4, THE MANDATORY CONTROL OF THIS BATCH             */
+/* Carrier inertness RETIRED BY REPLACEMENT — S3 supersedes NS2-4             */
 /* -------------------------------------------------------------------------- */
+//
+// NS2-4 asserted that FIVE canonical surfaces never import the carrier. S3
+// deliberately makes exactly ONE of them false: lib/auth/database-context.ts
+// now consumes the carrier's value, by design — see
+// REQUEST_PRINCIPAL_CONTRACT and INERTNESS_RETIREMENT in
+// docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json.
+// This block does not delete that guarantee; it NARROWS it to the three
+// surfaces that must STILL hold it, and adds the S3 assertions that prove the
+// widening happened exactly once, through exactly one call site, without
+// reversing the leaf's import direction. MS3-10 exists to prove this
+// replacement, not merely the deletion, is what stands here.
 
-describe('carrier inertness: no authorization surface consumes the carrier (NS2-4)', () => {
-  const CANONICAL_S3_SURFACES = [
+describe('carrier inertness RETIRED BY REPLACEMENT (S3 supersedes NS2-4)', () => {
+  const NARROWED_SURFACES_STILL_NOT_CONSUMING = [
     'db/identity-context.ts',
-    'lib/auth/database-context.ts',
-    'lib/auth/session.ts',
     'lib/auth/permissions.ts',
     'lib/auth/roles.ts',
   ]
 
-  it.each(CANONICAL_S3_SURFACES)('%s does not import lib/auth/selected-organization', (relativePath) => {
-    const source = read(relativePath)
-    expect(source).not.toMatch(/selected-organization/)
+  it.each(NARROWED_SURFACES_STILL_NOT_CONSUMING)(
+    '%s STILL does not import lib/auth/selected-organization (INERTNESS_RETIREMENT.what_MUST_STILL_HOLD)',
+    (relativePath) => {
+      const source = read(relativePath)
+      expect(source).not.toMatch(/selected-organization/)
+    }
+  )
+
+  it.each(NARROWED_SURFACES_STILL_NOT_CONSUMING)(
+    '%s STILL does not reference the carrier cookie name literal',
+    (relativePath) => {
+      const source = read(relativePath)
+      expect(source).not.toMatch(new RegExp(SELECTED_ORGANIZATION_COOKIE_NAME))
+    }
+  )
+
+  it('lib/auth/database-context.ts is the ONE surface S3 widens — it now imports the carrier', () => {
+    const source = read('lib/auth/database-context.ts')
+    expect(source).toMatch(/from '\.\/selected-organization'/)
   })
 
-  it.each(CANONICAL_S3_SURFACES)('%s does not reference the carrier cookie name literal', (relativePath) => {
-    const source = read(relativePath)
-    expect(source).not.toMatch(new RegExp(SELECTED_ORGANIZATION_COOKIE_NAME))
+  it('S3-1 / the widening is EXACTLY ONE call site — getSelectedOrganizationId is read once, inside the revalidating principal path', () => {
+    const source = read('lib/auth/database-context.ts')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/[^\n]*/g, '')
+    const callSites = source.match(/\bgetSelectedOrganizationId\s*\(/g) ?? []
+    expect(callSites.length).toBe(1)
   })
 
-  it('the carrier module itself imports NOTHING from the canonical S3 surfaces (it is a leaf)', () => {
+  it('the carrier module itself STILL imports NOTHING from any authorization surface (it remains a leaf)', () => {
     const source = read('lib/auth/selected-organization.ts')
-    for (const surface of CANONICAL_S3_SURFACES) {
+    const AUTHORIZATION_SURFACES = [
+      'db/identity-context.ts',
+      'lib/auth/database-context.ts',
+      'lib/auth/session.ts',
+      'lib/auth/permissions.ts',
+      'lib/auth/roles.ts',
+    ]
+    for (const surface of AUTHORIZATION_SURFACES) {
       const bareModule = surface.replace(/\.ts$/, '').replace(/^lib\//, '@/lib/').replace(/^db\//, '@/db/')
       expect(source).not.toContain(`from '${bareModule}'`)
     }
   })
+
+  it('import direction is database-context -> selected-organization, NEVER the reverse (MS3-12)', () => {
+    const carrierSource = read('lib/auth/selected-organization.ts')
+    expect(carrierSource).not.toMatch(/from ['"][.@].*database-context['"]/)
+
+    const databaseContextSource = read('lib/auth/database-context.ts')
+    expect(databaseContextSource).toMatch(/from ['"]\.\/selected-organization['"]/)
+  })
 })
 
 /* -------------------------------------------------------------------------- */
-/* No S3 behavior — the selection act opens no database context               */
+/* No ORGANIZATION-SCOPED behavior — narrowed by S3, not deleted by it        */
 /* -------------------------------------------------------------------------- */
+//
+// Before S3 this block asserted the selection surface performed NO
+// database-context work at all. That is no longer true — both files now call
+// listSelectableMemberships(), an UNSCOPED enumerator that does reach the
+// database. What remains, and is asserted below, is narrower and still load
+// -bearing: neither file opens an ORGANIZATION-SCOPED context, constructs a
+// principal, or touches an RLS/GUC/capability literal — selecting an
+// organization changes what the NEXT request revalidates, never what THIS
+// one is authorized to do.
 
-describe('no S3 behavior: the selection act performs no database-context work', () => {
-  it('the selection action imports no database identity/context wrapper', () => {
+describe('selection surface: unscoped enumeration only, no organization-scoped context (S3 narrows the S2 guarantee)', () => {
+  it('the selection action imports no ORGANIZATION-SCOPED or super-admin database wrapper', () => {
     const source = read('app/(authenticated)/app/organizations/select/actions.ts')
     expect(source).not.toMatch(
       /withOrganizationDatabaseContext|withAuthenticatedDatabaseContext|withSuperAdminDatabaseContext|withDatabaseIdentityContext/
     )
     expect(source).not.toMatch(/@\/db\/client|@\/db\/schema/)
+    // …but it DOES now reach the database, through the enumerator — the S3
+    // change this block exists to narrow, not hide.
+    expect(source).toMatch(/listSelectableMemberships/)
   })
 
-  it('the selector page imports no database identity/context wrapper', () => {
+  it('the selector page imports no ORGANIZATION-SCOPED or super-admin database wrapper', () => {
     const source = read('app/(authenticated)/app/organizations/select/page.tsx')
     expect(source).not.toMatch(
       /withOrganizationDatabaseContext|withAuthenticatedDatabaseContext|withSuperAdminDatabaseContext|withDatabaseIdentityContext/
     )
+    expect(source).toMatch(/listSelectableMemberships/)
   })
 
   it('selecting an organization does not touch RLS, a GUC, or any capability check — no such literal exists in either file', () => {

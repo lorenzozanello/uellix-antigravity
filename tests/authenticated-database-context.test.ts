@@ -36,6 +36,36 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: () => Promise.resolve({ auth: { getUser: () => mockGetUser() } }),
 }))
 
+// S3 — lib/auth/database-context.ts now resolves membership through the S2
+// carrier (lib/auth/selected-organization.ts), whose only dependency is
+// next/headers' `cookies()`. Faked here exactly as in
+// tests/tenancy/s2-selected-org-carrier.test.ts and tests/auth/session.test.ts,
+// so this suite can select a real tenant's organization before exercising the
+// live wrappers below.
+interface StoredCookie {
+  value: string
+}
+class FakeCookieStore {
+  private readonly entries = new Map<string, StoredCookie>()
+  get(name: string): { name: string; value: string } | undefined {
+    const entry = this.entries.get(name)
+    return entry ? { name, value: entry.value } : undefined
+  }
+  set(name: string, value: string): void {
+    this.entries.set(name, { value })
+  }
+  delete(nameOrOptions: string | { name: string }): void {
+    this.entries.delete(typeof nameOrOptions === 'string' ? nameOrOptions : nameOrOptions.name)
+  }
+  clear(): void {
+    this.entries.clear()
+  }
+}
+const fakeCookieStore = new FakeCookieStore()
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => fakeCookieStore),
+}))
+
 import { db } from '@/db/client'
 import {
   AuthContextError,
@@ -47,7 +77,13 @@ import {
   withSuperAdminDatabaseContext,
 } from '@/lib/auth/database-context'
 import { withDatabaseIdentityContext } from '@/db/identity-context'
+import { SELECTED_ORGANIZATION_COOKIE_NAME } from '@/lib/auth/selected-organization'
 import { RUNTIME_CONNECTION, migratorSql, MIGRATOR_CONNECTION } from './helpers/local-runtime'
+
+/** S3: select the organization a real tenant's request should revalidate against. */
+function selectOrganization(organizationId: string): void {
+  fakeCookieStore.set(SELECTED_ORGANIZATION_COOKIE_NAME, organizationId)
+}
 
 const LIVE = RUNTIME_CONNECTION.available && MIGRATOR_CONNECTION.available
 
@@ -87,6 +123,7 @@ beforeAll(async () => {
 beforeEach(() => {
   vi.clearAllMocks()
   mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
+  fakeCookieStore.clear()
 })
 
 function signedInAs(userId: string): void {
@@ -194,12 +231,23 @@ describe.skipIf(!LIVE)('the request principal comes from the database, under the
     expect(failure).toBe('AUTH_NO_PROFILE')
   })
 
-  it('resolves the profile, the membership and the organisation for a real session', async () => {
+  it('resolves the profile, the membership and the organisation for a real session with that organisation SELECTED', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const { principal } = await loadRequestPrincipalResult()
     expect(principal?.user.id).toBe(tenants!.a.userId)
     expect(principal?.membership?.organizationId).toBe(tenants!.a.organizationId)
     expect(principal?.organization?.id).toBe(tenants!.a.organizationId)
+  })
+
+  it('S3-PG-1: resolves the profile but NO membership/organisation when no organisation is selected, even with a live active membership', async () => {
+    signedInAs(tenants!.a.userId)
+    // No selectOrganization() call.
+    const { principal } = await loadRequestPrincipalResult()
+    expect(principal?.user.id).toBe(tenants!.a.userId)
+    expect(principal?.membership).toBeNull()
+    expect(principal?.organization).toBeNull()
+    expect(principal?.organizationRefusalCode).toBe('TENANCY_NO_ORGANIZATION_SELECTED')
   })
 
   it('a soft-deleted account cannot resolve a principal', async () => {
@@ -232,8 +280,9 @@ describe.skipIf(!LIVE)('the request principal comes from the database, under the
 /* -------------------------------------------------------------------------- */
 
 describe.skipIf(!LIVE)('withOrganizationDatabaseContext', () => {
-  it('sees exactly the caller’s own organisation', async () => {
+  it('sees exactly the caller’s SELECTED organisation', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const rows = await withOrganizationDatabaseContext(async (ctx) => {
       expect(ctx.organization.id).toBe(tenants!.a.organizationId)
       return db.execute(drizzleSql`SELECT id::text AS id FROM public.organizations`)
@@ -243,8 +292,9 @@ describe.skipIf(!LIVE)('withOrganizationDatabaseContext', () => {
     expect(ids).not.toContain(tenants!.b.organizationId)
   })
 
-  it('accepts a caller-supplied organizationId only when it is the caller’s own', async () => {
+  it('accepts a caller-supplied organizationId only when it is the caller’s SELECTED one', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const ok = await withOrganizationDatabaseContext(
       async (ctx) => ctx.organization.id,
       { organizationId: tenants!.a.organizationId }
@@ -254,6 +304,7 @@ describe.skipIf(!LIVE)('withOrganizationDatabaseContext', () => {
 
   it('refuses a caller-supplied organizationId belonging to somebody else', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const code = await captureCode(() =>
       withOrganizationDatabaseContext(async () => null, {
         organizationId: tenants!.b.organizationId,
@@ -264,6 +315,7 @@ describe.skipIf(!LIVE)('withOrganizationDatabaseContext', () => {
 
   it('does not echo the refused organisation id back to the caller', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     let message = ''
     try {
       await withOrganizationDatabaseContext(async () => null, {
@@ -275,13 +327,37 @@ describe.skipIf(!LIVE)('withOrganizationDatabaseContext', () => {
     expect(message).not.toContain(tenants!.b.organizationId)
   })
 
-  it('an account with no membership gets AUTH_NO_ORGANIZATION, not an empty page', async () => {
+  it('an account with no membership gets AUTH_NO_PROFILE, not an empty page', async () => {
     signedInAs(ORPHAN_USER_ID)
+    selectOrganization(tenants!.a.organizationId)
     // No profile row either, so the earlier refusal wins — which is the point:
     // the wrapper never proceeds to open a context for an unknown principal.
     expect(await captureCode(() => withOrganizationDatabaseContext(async () => null))).toBe(
       'AUTH_NO_PROFILE'
     )
+  })
+
+  it('S3-PG-3: a WRONG selected organisation can never become the database context — app.organization_id is never set to it', async () => {
+    signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.b.organizationId) // A selecting B, which A is not a member of
+    const code = await captureCode(() =>
+      withOrganizationDatabaseContext(async (ctx) => {
+        // Never reached — but if it WERE, this would prove the leak.
+        return ctx.organization.id
+      })
+    )
+    expect(code).toBe('TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER')
+
+    // The identity probe itself refuses the same claim independently —
+    // db/identity-context.ts's own current_user_org_ids() re-check, proven
+    // directly rather than inferred from the wrapper's earlier refusal.
+    const mechanismCode = await captureCode(() =>
+      withDatabaseIdentityContext(
+        { userId: tenants!.a.userId, organizationId: tenants!.b.organizationId, isSuperAdmin: false },
+        async () => null
+      )
+    )
+    expect(mechanismCode).toBe('unexpected:IdentityContextError')
   })
 })
 
@@ -315,10 +391,17 @@ describe.skipIf(!LIVE)('withOptionalDatabaseIdentityContext', () => {
     expect(seen).toBe(0)
   })
 
-  it('runs with the organisation context when there is one', async () => {
+  it('runs with the SELECTED organisation context when there is one', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const id = await withOptionalDatabaseIdentityContext(async (ctx) => ctx?.organization.id ?? null)
     expect(id).toBe(tenants!.a.organizationId)
+  })
+
+  it('runs with null, not a fabricated context, when a session exists but NO organisation is selected', async () => {
+    signedInAs(tenants!.a.userId)
+    const ctx = await withOptionalDatabaseIdentityContext(async (c) => c)
+    expect(ctx).toBeNull()
   })
 })
 
@@ -329,6 +412,7 @@ describe.skipIf(!LIVE)('withOptionalDatabaseIdentityContext', () => {
 describe.skipIf(!LIVE)('isolation', () => {
   it('nesting the SAME identity reuses the open transaction', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const same = await withOrganizationDatabaseContext(async (outer) =>
       withOrganizationDatabaseContext(async (inner) => inner.organization.id === outer.organization.id)
     )
@@ -337,6 +421,7 @@ describe.skipIf(!LIVE)('isolation', () => {
 
   it('nesting a DIFFERENT identity is refused rather than silently reused', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const code = await withOrganizationDatabaseContext(async () =>
       captureCode(() =>
         withDatabaseIdentityContext(
@@ -350,6 +435,7 @@ describe.skipIf(!LIVE)('isolation', () => {
 
   it('clears the claim after a COMMIT — the next query on that pooled connection sees nothing', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     await withOrganizationDatabaseContext(async () => undefined)
 
     // Same pool, no context. If the claim had been session-scoped this would
@@ -360,6 +446,7 @@ describe.skipIf(!LIVE)('isolation', () => {
 
   it('clears the claim after a ROLLBACK too', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     await expect(
       withOrganizationDatabaseContext(async () => {
         throw new Error('ROLLBACK_MARKER')
@@ -370,7 +457,7 @@ describe.skipIf(!LIVE)('isolation', () => {
     expect((rows as unknown as unknown[]).length).toBe(0)
   })
 
-  it('two concurrent requests with different identities never see each other’s rows', async () => {
+  it('S3-PG-4: two concurrent requests with different identities never see each other’s rows — AsyncLocalStorage + SET LOCAL do not bleed', async () => {
     // The failure this guards against is not hypothetical: postgres-js hands
     // the same physical connection to whoever asks next, so a SESSION-scoped
     // claim would cross tenants here with no code path to blame.
@@ -399,8 +486,10 @@ describe.skipIf(!LIVE)('isolation', () => {
 
   it('repeats cleanly — a second identical run is not served stale state', async () => {
     signedInAs(tenants!.b.userId)
+    selectOrganization(tenants!.b.organizationId)
     const first = await withOrganizationDatabaseContext(async (ctx) => ctx.organization.id)
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const second = await withOrganizationDatabaseContext(async (ctx) => ctx.organization.id)
     expect(first).toBe(tenants!.b.organizationId)
     expect(second).toBe(tenants!.a.organizationId)
@@ -445,6 +534,7 @@ describe.skipIf(!LIVE)('application flows', () => {
 
   it('DASHBOARD: an authorised session lists its own projects and nobody else’s', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const mine = await withOrganizationDatabaseContext(async (ctx) => {
       const rows = await db.execute(
         drizzleSql`SELECT organization_id::text AS org FROM public.projects`
@@ -466,6 +556,7 @@ describe.skipIf(!LIVE)('application flows', () => {
     if (foreignProject.length === 0) return // nothing to assert against
 
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const seen = await withOrganizationDatabaseContext(async () =>
       db.execute(
         drizzleSql`SELECT id FROM public.projects WHERE id = ${foreignProject[0].id}::uuid`
@@ -476,6 +567,7 @@ describe.skipIf(!LIVE)('application flows', () => {
 
   it('STELLA READ: interactions are readable inside the context and invisible outside it', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const inside = await withOrganizationDatabaseContext(async () =>
       db.execute(drizzleSql`SELECT count(*)::int AS n FROM public.stella_interactions`)
     )
@@ -489,6 +581,7 @@ describe.skipIf(!LIVE)('application flows', () => {
 
   it('STELLA WRITE: an interaction can be created inside the context, and is rolled back', async () => {
     signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
     const before = await countInteractions()
 
     await expect(
@@ -523,6 +616,7 @@ describe.skipIf(!LIVE)('application flows', () => {
     'APPEND-ONLY: %s on stella_interactions is refused even inside the owning organisation',
     async (_label, statement) => {
       signedInAs(tenants!.a.userId)
+      selectOrganization(tenants!.a.organizationId)
       let refused = false
       try {
         await withOrganizationDatabaseContext(async () => db.execute(statement))
@@ -542,3 +636,74 @@ async function countInteractions(): Promise<number> {
   })) as unknown as { n: number }[]
   return rows[0].n
 }
+
+/* -------------------------------------------------------------------------- */
+/* S3-PG-2: revocation takes effect on the NEXT request, real PostgreSQL      */
+/* -------------------------------------------------------------------------- */
+//
+// Every other write in this file happens INSIDE the transaction under test,
+// then rolls back — proof that stays within one transaction boundary. This
+// control needs the opposite: a revocation COMMITTED by a separate
+// connection, observed by a fresh principal resolution in ITS OWN
+// transaction, which is what "revalidated on every request" actually means.
+// The revocation is reverted in a `finally`, and the revert itself is
+// verified by a THIRD resolution — never assumed from the UPDATE succeeding.
+
+describe.skipIf(!LIVE)('S3-PG-2: a REVOKED selected membership is refused on the NEXT request, no grace window', () => {
+  it('membership resolves, is revoked by a real committed write, and is refused on the next resolution — then resolves again once restored', async () => {
+    signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
+
+    const before = await loadRequestPrincipalResult()
+    expect(before.principal?.membership?.organizationId).toBe(tenants!.a.organizationId)
+
+    await migratorSql.begin(async (tx) => {
+      await tx.unsafe('SET LOCAL ROLE uellix_owner')
+      await tx`UPDATE public.organization_members SET status = 'revoked_for_s3_pg2_test'
+                 WHERE user_id = ${tenants!.a.userId}::uuid AND organization_id = ${tenants!.a.organizationId}::uuid`
+    })
+
+    try {
+      const after = await loadRequestPrincipalResult()
+      expect(after.principal?.membership).toBeNull()
+      expect(after.principal?.organization).toBeNull()
+      expect(after.principal?.organizationRefusalCode).toBe('TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER')
+    } finally {
+      await migratorSql.begin(async (tx) => {
+        await tx.unsafe('SET LOCAL ROLE uellix_owner')
+        await tx`UPDATE public.organization_members SET status = 'active'
+                   WHERE user_id = ${tenants!.a.userId}::uuid AND organization_id = ${tenants!.a.organizationId}::uuid`
+      })
+    }
+
+    const restored = await loadRequestPrincipalResult()
+    expect(restored.principal?.membership?.organizationId).toBe(tenants!.a.organizationId)
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* S3-PG-5: super-admin semantics are NOT WIDENED by S3                      */
+/* -------------------------------------------------------------------------- */
+
+describe.skipIf(!LIVE)('S3-PG-5: super-admin semantics are not widened by S3', () => {
+  it('isSuperAdmin is IDENTICAL with and without an organization selected — the carrier cannot influence it', async () => {
+    signedInAs(tenants!.a.userId)
+    const without = (await loadRequestPrincipalResult()).principal?.user.isSuperAdmin
+
+    selectOrganization(tenants!.a.organizationId)
+    const withSelection = (await loadRequestPrincipalResult()).principal?.user.isSuperAdmin
+
+    expect(withSelection).toBe(without)
+  })
+
+  it('super-admin access is governed ENTIRELY by public.users + current_user_is_super_admin(), unaffected by any selection', async () => {
+    signedInAs(tenants!.a.userId)
+    const { principal } = await loadRequestPrincipalResult()
+    if (principal?.user.isSuperAdmin) {
+      const seen = await withSuperAdminDatabaseContext(async (user) => user.isSuperAdmin)
+      expect(seen).toBe(true)
+      return
+    }
+    expect(await captureCode(() => withSuperAdminDatabaseContext(async () => null))).toBe('AUTH_NOT_SUPER_ADMIN')
+  })
+})

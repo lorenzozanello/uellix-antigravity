@@ -2,30 +2,39 @@
 
 // app/(authenticated)/app/organizations/select/actions.ts
 //
-// The EXPLICIT selection act (S2). Writes the selected-organization carrier
-// ONLY after proving, against an existing membership source, that the caller
-// holds an active membership in the requested organization.
+// The EXPLICIT selection act (S2, decircularised by S3). Writes the
+// selected-organization carrier ONLY after proving, against the
+// selectable-memberships enumerator, that the caller holds an active
+// membership in the REQUESTED organization.
 //
 // docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json
 // SESSION_SCOPE.no_selection_behavior: "A user may not write an arbitrary
 // organization id merely because it has a valid shape." The UUID-shape check
 // lives in lib/auth/selected-organization.ts; the MEMBERSHIP check — the one
-// that actually decides whether the write is allowed — lives here, against
-// `getCurrentMembership`, an EXISTING identity/membership source
-// (lib/auth/session.ts). No new membership table, view or query is
-// introduced.
+// that actually decides whether the write is allowed — lives here.
 //
-// THIS ACTION DOES NOT CONSTRUCT A REQUEST PRINCIPAL. It reads the caller's
-// own active membership exactly the way every other entry point already does
-// today (lib/auth/database-context.ts loadActiveMembershipWithinContext,
-// singular / pick-first, unchanged by this batch — that rework is S3). It
-// does not open an organization-scoped database context, and it writes no
-// row. Selecting an organization here has NO effect on what
-// `requireOrganizationAccess()` or any other authorization surface decides —
-// see the INERTNESS_RULE in lib/auth/selected-organization.ts.
+// WHY NOT `getCurrentMembership` ANY MORE. After S3,
+// `getCurrentMembership`/`getCurrentOrganizationContext` resolve through the
+// CURRENTLY SELECTED pair — which, at the moment of making a NEW selection
+// (there is none yet, or it names a different organization the caller is
+// switching away from), is exactly the wrong thing to check: it would prove
+// membership in the OLD selection, not the REQUESTED one. The proof here
+// instead uses `listSelectableMemberships()`, the same non-authorizing
+// enumerator the selector page renders from, keyed on (userId,
+// status='active') alone — it never depends on what is currently selected,
+// so it works identically whether this is a first selection, a switch, or a
+// re-selection of the same organization.
+//
+// THIS ACTION DOES NOT CONSTRUCT A REQUEST PRINCIPAL. It does not open an
+// organization-scoped database context, and it writes no row. Selecting an
+// organization here still has NO effect on what `requireOrganizationAccess()`
+// or any other authorization surface decides FOR THIS REQUEST — the write
+// only changes what the NEXT request revalidates against
+// (REQUEST_REVALIDATION) — see the header of
+// lib/auth/selected-organization.ts.
 
 import { redirect } from 'next/navigation'
-import { requireAuth, getCurrentMembership } from '@/lib/auth/session'
+import { requireAuth, listSelectableMemberships } from '@/lib/auth/session'
 import {
   setSelectedOrganization,
   clearSelectedOrganization,
@@ -45,18 +54,22 @@ import {
  * unset if it was unset, unchanged if it was already set to something else.
  */
 export async function selectOrganizationAction(formData: FormData): Promise<void> {
-  const user = await requireAuth()
+  await requireAuth()
 
   const requestedOrganizationId = (formData.get('organizationId') as string | null)?.trim()
   if (!requestedOrganizationId) {
     redirect('/app/organizations/select?error=missing_organization')
   }
 
-  const membership = await getCurrentMembership(user.id)
-  if (!membership || membership.organizationId !== requestedOrganizationId) {
+  const candidates = await listSelectableMemberships()
+  const isSelectableMember = candidates.some(({ organization }) => organization.id === requestedOrganizationId)
+  if (!isSelectableMember) {
     // Refuse. The requested organization is not one the database says this
     // subject is an active member of. Never echoed, and never silently
-    // resolved to the caller's own membership instead.
+    // resolved to the caller's own (or currently selected) membership
+    // instead — this check is deliberately independent of any prior
+    // selection, so a caller has no way to bootstrap a wrong write from a
+    // stale carrier.
     redirect('/app/organizations/select?error=not_a_member')
   }
 

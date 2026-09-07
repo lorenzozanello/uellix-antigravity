@@ -1,6 +1,6 @@
 // app/(authenticated)/app/organizations/select/page.tsx
 //
-// The pre-organization selector (S2).
+// The pre-organization selector (S2, decircularised by S3).
 //
 // docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json
 // S2_ROUTE_TOPOLOGY_DECISION: this route is DELIBERATELY placed OUTSIDE
@@ -10,16 +10,27 @@
 // app/(authenticated)/layout.tsx, which calls only `requireAuth()` — no
 // organization is required to render this page.
 //
-// This page renders NO SELECTION. It reads the caller's own membership
-// (an EXISTING source, lib/auth/session.ts) and presents an EXPLICIT act —
-// a form submit to `selectOrganizationAction` — as the only way the carrier
-// is ever written. See SESSION_SCOPE.no_selection_behavior: even in the
+// SELECTOR_DECIRCULARISATION (S3,
+// docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json):
+// after S3, `getCurrentOrganizationContext()` resolves through the SELECTED
+// pair, so on THIS page — where no selection may exist yet — it necessarily
+// returns null. Enumerating candidates therefore reads
+// `listSelectableMemberships()` instead: keyed on (userId, status='active')
+// alone, it performs no selection and requires none. It is an ENUMERATOR, not
+// a principal — its result is rendered as candidates, never used to build one.
+//
+// This page renders NO SELECTION. It presents an EXPLICIT act — a form submit
+// to `selectOrganizationAction` — as the only way the carrier is ever
+// written. See SESSION_SCOPE.no_selection_behavior: even in the
 // single-membership case, presenting the organization is not the same as
 // selecting it, and the distinction here is the same one the authority
 // requires be observable — the carrier does not exist until the button is
-// pressed.
+// pressed. It also renders correctly with the carrier ABSENT, MALFORMED, or
+// naming an organization the caller is no longer a member of (S3-8): none of
+// those states is consulted by the enumerator at all, only by the "currently
+// selected" cosmetic comparison below.
 
-import { requireAuth, getCurrentOrganizationContext } from '@/lib/auth/session'
+import { requireAuth, listSelectableMemberships } from '@/lib/auth/session'
 import { getSelectedOrganizationId } from '@/lib/auth/selected-organization'
 import { selectOrganizationAction } from './actions'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -38,7 +49,10 @@ export default async function SelectOrganizationPage(props: {
 }) {
   await requireAuth()
 
-  const context = await getCurrentOrganizationContext()
+  const candidates = await listSelectableMemberships()
+  // Cosmetic ONLY — which card says "currently selected". Reading the
+  // carrier back never performs a lookup (lib/auth/selected-organization.ts
+  // is a leaf), so this cannot influence which organizations are offered.
   const currentlySelectedOrganizationId = await getSelectedOrganizationId()
 
   const searchParams = await props.searchParams
@@ -71,23 +85,27 @@ export default async function SelectOrganizationPage(props: {
               />
             )}
 
-            {!context ? (
+            {candidates.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Todavía no perteneces a ninguna organización activa.
               </p>
             ) : (
-              <form action={selectOrganizationAction} className="space-y-4">
-                <input type="hidden" name="organizationId" value={context.organization.id} />
-                <div className="rounded-md border border-border px-4 py-3">
-                  <p className="text-sm font-medium text-foreground">{context.organization.name}</p>
-                  {context.organization.id === currentlySelectedOrganizationId && (
-                    <p className="mt-1 text-xs text-muted-foreground">Actualmente seleccionada</p>
-                  )}
-                </div>
-                <Button type="submit" id="btn-select-organization" className="w-full">
-                  Seleccionar organización
-                </Button>
-              </form>
+              <div className="space-y-3">
+                {candidates.map(({ organization }) => (
+                  <form action={selectOrganizationAction} className="space-y-2" key={organization.id}>
+                    <input type="hidden" name="organizationId" value={organization.id} />
+                    <div className="rounded-md border border-border px-4 py-3">
+                      <p className="text-sm font-medium text-foreground">{organization.name}</p>
+                      {organization.id === currentlySelectedOrganizationId && (
+                        <p className="mt-1 text-xs text-muted-foreground">Actualmente seleccionada</p>
+                      )}
+                    </div>
+                    <Button type="submit" id="btn-select-organization" className="w-full">
+                      Seleccionar organización
+                    </Button>
+                  </form>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>

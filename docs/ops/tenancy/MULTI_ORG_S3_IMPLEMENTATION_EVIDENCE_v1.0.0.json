@@ -1,0 +1,251 @@
+{
+  "evidence_id": "MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0",
+  "document_class": "IMPLEMENTATION_EVIDENCE_NOT_AUTHORITY_NOT_AUDIT",
+  "is_authority": false,
+  "self_certification": "NONE — this file records measured outputs only. It does not certify S3, does not mark this PR ready, and does not replace the independent Opus exact-object audit this mission requires before merge.",
+
+  "mission_id": "MULTIORG-S3-REQUEST-PRINCIPAL-IMPLEMENTATION-R1",
+  "lane": "LANE CQ",
+
+  "authority_references": {
+    "ODS_V1_MAINTENANCE_ADDENDUM": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json — HPO-ODS-W2-24",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json — S3_LANE, REQUEST_PRINCIPAL_CONTRACT, SELECTOR_DECIRCULARISATION, INERTNESS_RETIREMENT, TEST_CONTRACT, REAL_PG_CONTRACT",
+    "MULTI_ORG_TENANT_SCOPE_AUTHORITY": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json — REQUEST_PRINCIPAL, REQUEST_REVALIDATION, ROLE_CEILING, C-2, SI-2",
+    "MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json — P-4, P-5, N-1, N-2, M-3, M-4, M-8 (bound by id, not restated)"
+  },
+
+  "start_state": {
+    "worktree": "C:/Users/Lorenzo/Documents/uellix-s3-request-principal-implementation",
+    "branch": "codex/multiorg-s3-request-principal-implementation-r1",
+    "expected_start_head": "287dbd0c7154bafbffec3fec3d63390c03de0779",
+    "expected_start_tree": "90800a44d9a1430cb0840192719899b7d247cfd5",
+    "measured_start_head": "287dbd0c7154bafbffec3fec3d63390c03de0779",
+    "measured_start_tree": "90800a44d9a1430cb0840192719899b7d247cfd5",
+    "prestate_branch_head_tree": "PASS — exact match, clean working tree at mission start",
+    "controller_prestate": {
+      "IMMUTABLE_BY_CONVENTION_count": 33,
+      "set_size": 33,
+      "v1_0_22_occurrences": 1,
+      "v1_0_22_is_final": true,
+      "v1_0_23_occurrences": 0,
+      "CONTROLLER_DB_EXECUTION": "DISABLED",
+      "measured_by": "real ESM import of scripts/ods-controller.ts, not a source parse"
+    },
+    "protected_grants_prestate": {
+      "count": 12,
+      "HPO_ODS_W2_24_registered": false
+    },
+    "final_drift_check": "git fetch origin immediately before commit: origin/integration/commercial-v1 unchanged at 287dbd0c7154bafbffec3fec3d63390c03de0779. INTERVENING_DELTA = NONE."
+  },
+
+  "si2_reproduction": {
+    "site": "lib/auth/database-context.ts loadActiveMembershipWithinContext (pre-S3: :210-236), single call site lib/auth/database-context.ts readPrincipalUnderOpenContext (pre-S3: :280)",
+    "measured_call_site_count": "EXACTLY ONE code call site — `git grep loadActiveMembershipWithinContext` returned the declaration and one call; every other hit was prose in docs/comments.",
+    "pre_S3_shape": "userId + status='active', .limit(1), no selected-organization conjunct — the selected organization was never part of the predicate.",
+    "verdict": "SI2_REPRODUCED = true"
+  },
+
+  "exact_write_set": {
+    "count": 9,
+    "paths": [
+      "lib/auth/database-context.ts",
+      "lib/auth/session.ts",
+      "lib/auth/selected-organization.ts",
+      "app/(authenticated)/app/organizations/select/page.tsx",
+      "app/(authenticated)/app/organizations/select/actions.ts",
+      "tests/tenancy/s3-request-principal.test.ts",
+      "tests/tenancy/s2-selected-org-carrier.test.ts",
+      "tests/authenticated-database-context.test.ts",
+      "tests/auth/session.test.ts"
+    ],
+    "ceiling_paths_not_touched": [
+      "db/identity-context.ts",
+      "tests/auth/route-authorization-boundary.test.ts"
+    ],
+    "not_touched_rationale": "db/identity-context.ts required no edit: it already receives a DIFFERENT organizationId argument value from the principal layer and already re-verifies it against current_user_org_ids(); S3 changes WHICH id flows in, never the mechanism. tests/auth/route-authorization-boundary.test.ts fully mocks loadRequestPrincipal at the module boundary, so its assertions are unaffected by the internal membership-derivation change and needed no edit — re-run and confirmed green.",
+    "protected_paths_touched": 0,
+    "ods_scope_result": "PASS — CHANGED_FILE_COUNT=9, PROTECTED_AUTHORITY=NONE, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0, UNAUTHORIZED_PATHS=0 (pnpm ods:scope -- --base 287dbd0c7154bafbffec3fec3d63390c03de0779 --allow <all 12 ceiling paths>)"
+  },
+
+  "request_principal_contract": {
+    "primary_change": "lib/auth/database-context.ts loadActiveMembershipWithinContext now takes (userId, organizationId) and qualifies organizationId INSIDE the WHERE predicate — and(eq(userId), eq(organizationId), eq(status='active')) — never a post-filter on an unqualified result.",
+    "authoritative_rederivation": "readPrincipalUnderOpenContext re-reads getSelectedOrganizationId() and re-derives membership on every call; loadRequestPrincipal's cache() memoises only within one request's render, exactly as it did pre-S3 for the user row.",
+    "refusal_codes_added": ["TENANCY_NO_ORGANIZATION_SELECTED", "TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER"],
+    "auth_no_organization_disposition": "AUTH_NO_ORGANIZATION remains defined in AuthContextErrorCode (not removed — no caller outside the ceiling pattern-matches its literal value, confirmed by repo-wide grep) but is no longer thrown from withOrganizationDatabaseContext, which now throws one of the two new codes.",
+    "indistinguishability": "A DELETED/NONEXISTENT selected organization and a real organization the caller does not belong to both resolve through the identical qualified-predicate miss to TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER — proven in tests/tenancy/s3-request-principal.test.ts S3-4, and structurally guaranteed by organization_members.organization_id being a RESTRICT (not CASCADE) foreign key: an organisation cannot be removed while an active membership still references it.",
+    "no_fallback": "No pick-first, first-remaining, or single-membership inference anywhere in the new code path — proven by S3-5 tests including a two-membership mock fixture (impossible in real PG under P-5, used ONLY to prove predicate shape) and the real-PG S3-PG-1/S3-PG-3 tests.",
+    "organizationRefusalCode_field": "Added to RequestPrincipal (additive, not a breaking change to the ~10 unrelated consumer files outside the ceiling, none of which construct this type or destructure this field) so wrapper functions can throw the CORRECT one of the two new codes without re-deriving the reason."
+  },
+
+  "route_topology_disposition": {
+    "decision": "S3 does NOT alter app/app/layout.tsx or the requireOrganizationAccess() null-branch redirect targets (/app/onboarding, /admin) — GOVERNANCE_LEDGER_STABILITY.route_carve_outs is 'Unchanged by S3', and app/app/layout.tsx is outside the 12-path ceiling.",
+    "disclosed_consequence": "A signed-in member with exactly one active membership who has never visited the selector now resolves membership=null (TENANCY_NO_ORGANIZATION_SELECTED) on first reaching an organization-gated route, and the EXISTING (unchanged) redirect logic sends them to /app/onboarding rather than to the selector. This is the measured, accepted consequence of REQUEST_PRINCIPAL_CONTRACT.NO_FALLBACK.single_membership_is_not_an_exception ('an absent selection is a REFUSAL, not an inference') combined with route carve-outs being frozen for S3. It is NOT remediated here — S3_NODE_IDENTITY.no_downstream_semantics_pulled_forward explicitly scopes redirect-topology changes out of this node. Recorded as a disclosed, non-blocking finding for a future UX/routing node, not a defect of this implementation.",
+    "classification": "DISCLOSED_NON_BLOCKING"
+  },
+
+  "selector_decircularisation": {
+    "problem": "After S3, getCurrentOrganizationContext()/getCurrentMembership() resolve through the SELECTED pair, so on the selector page (where no selection may exist yet) they would return null/no-membership for every caller, making selection impossible.",
+    "resolution": "A new selectable-memberships enumerator — SelectableMembership, loadSelectableMembershipsWithinContext, listSelectableMemberships — keyed on (userId, status='active') alone, never reading or requiring a selection.",
+    "enumerator_host_decision": {
+      "candidates_measured": ["@/lib/auth/session", "@/lib/auth/database-context"],
+      "chosen_implementation_host": "lib/auth/database-context.ts",
+      "measurement": "database-context.ts already imports organizationMembers, organizations and db — hosting the actual query there requires ZERO new import edges. Hosting the query logic in session.ts would require importing organizationMembers/organizations from @/db/schema (2 new symbols) that module does not otherwise need, and would duplicate the exact query shape already established by loadActiveMembershipWithinContext/loadOrganizationWithinContext in database-context.ts. database-context.ts is therefore the measured smaller compliant dependency surface.",
+      "public_surface": "session.ts re-exports the SAME function object (`export { listSelectableMemberships }` after importing it) rather than wrapping/duplicating it — verified by reference equality in tests/tenancy/s3-request-principal.test.ts ('session.ts re-exports the SAME function ... not a duplicate query').",
+      "no_new_lib_auth_module": "VERIFIED. lib/auth/ directory listing after S3 is byte-identical in membership to before: database-context.ts, identity.ts, permissions.ts, roles.ts, safe-redirect.ts, selected-organization.ts, session.ts. Asserted as a literal array-equality test."
+    },
+    "governance_ledger_stability": {
+      "expected": "database entrypoint inventory / runtime-entrypoint magnitude pins ({inventoried:141, reaching:116, contextualized:100, allowlisted:16}) unchanged, because both permitted enumerator hosts are already CONTEXT_MODULES the scanner skips by import specifier (tests/database-runtime-entrypoints.test.ts:305 CONTEXT_MODULES), independent of which symbol is imported from them.",
+      "measured_before": { "inventoried": 141, "reaching": 116, "contextualized": 100, "allowlisted": 16 },
+      "measured_after": { "inventoried": 141, "reaching": 116, "contextualized": 100, "allowlisted": 16 },
+      "result": "UNCHANGED — pnpm vitest run tests/database-runtime-entrypoints.test.ts: 223 passed, 0 failed, including the exact-object magnitude assertion and the full AST-scanner inventory reconciliation."
+    },
+    "selector_page_behavior": "app/(authenticated)/app/organizations/select/page.tsx now calls listSelectableMemberships() and renders one form per candidate; the 'currently selected' label is cosmetic only, read via getSelectedOrganizationId() (the leaf carrier reader, no lookup). Never imports getCurrentOrganizationContext or getCurrentMembership — asserted directly in tests/tenancy/s3-request-principal.test.ts.",
+    "selection_action_behavior": "app/(authenticated)/app/organizations/select/actions.ts now proves membership against listSelectableMemberships() (the REQUESTED organization, independent of any currently selected one) rather than getCurrentMembership() (which would check the WRONG, currently-selected organization when switching) — proven by a dedicated test simulating a switch between two memberships."
+  },
+
+  "ns2_4_retirement": {
+    "disposition": "RETIRED_BY_REPLACEMENT — not deleted.",
+    "what_changed": "lib/auth/database-context.ts now imports lib/auth/selected-organization.ts (the ONE canonical S3 surface S3 widens, by design).",
+    "what_still_holds": "db/identity-context.ts, lib/auth/permissions.ts and lib/auth/roles.ts still do not import lib/auth/selected-organization.ts and still do not reference the cookie name literal — re-asserted in tests/tenancy/s2-selected-org-carrier.test.ts's NARROWED_SURFACES_STILL_NOT_CONSUMING block.",
+    "leaf_and_import_direction": "lib/auth/selected-organization.ts still imports nothing from any authorization surface (still a leaf); import direction is database-context -> selected-organization, never the reverse — both asserted directly, and both are targets of executed mutation controls (MS3-12, MS3-13) below.",
+    "one_call_site": "getSelectedOrganizationId is called EXACTLY ONCE in lib/auth/database-context.ts, inside readPrincipalUnderOpenContext — asserted by counting call-syntax occurrences after stripping comments."
+  },
+
+  "p5_coverage_disposition": {
+    "P5_BEHAVIOURAL_COVERAGE": "DEFERRED",
+    "P5_STRUCTURAL_COVERAGE": "DELIVERED_BY_S3",
+    "reason": "user_single_active_membership (UNIQUE partial index on organization_members(user_id) WHERE status='active', db/schema.ts) makes a second real active membership impossible until S7 drops it. The role-derivation predicate is proven STRUCTURALLY (keyed on the selected pair alone, by construction) and the two-membership BEHAVIOURAL distinction is proven only against a mock fixture in tests/tenancy/s3-request-principal.test.ts, explicitly disclosed there as impossible under real PostgreSQL.",
+    "not_claimed_as_full": true
+  },
+
+  "inherited_tests": {
+    "P-4": "tests/tenancy/s3-request-principal.test.ts S3-1 block — membership derived from (user, SELECTED organization), never pick-first.",
+    "P-5": "tests/tenancy/s3-request-principal.test.ts P5_COVERAGE_DISPOSITION block — structural only, disposition declared.",
+    "N-1": "tests/tenancy/s3-request-principal.test.ts S3-3 block — carrier naming a non-member organization is refused, no fallback.",
+    "N-2": "tests/tenancy/s3-request-principal.test.ts N-2/M-3 block (mock) + tests/authenticated-database-context.test.ts S3-PG-2 (real PostgreSQL, LIVE-gated) — revocation refused on the NEXT request.",
+    "M-3": "same as N-2 — per-call revalidation, no session-lifetime memoisation.",
+    "M-4": "tests/tenancy/s3-request-principal.test.ts S3-5 block — no fallback to first/only/most-recent membership.",
+    "M-8": "tests/tenancy/s3-request-principal.test.ts M-8 block — user_single_active_membership still declared in db/schema.ts, byte-verified, untouched."
+  },
+
+  "s3_added_controls": {
+    "S3-1": "PASS — tests/tenancy/s3-request-principal.test.ts, 3 tests (multi-org resolution, eq()-call predicate-shape assertion, P-4 principal-level assertion)",
+    "S3-2": "PASS — 2 tests (principal-level refusal code, wrapper-level throw)",
+    "S3-3": "PASS — 2 tests (principal-level refusal code, wrapper-level throw, indistinguishable from S3-4's non-member case)",
+    "S3-4": "PASS — 2 tests (nonexistent vs non-member code equality; no second query attempted before the membership predicate refuses)",
+    "S3-5": "PASS — 2 tests (single-membership refusal without inference; no fallback to any candidate on a nonexistent selection)",
+    "S3-6": "PASS — 3 tests (role tracks the selected org across two memberships; isSuperAdmin unaffected by refusal; MS3-6 guard: carrier cannot grant super-admin)",
+    "S3-7": "PASS — 4 tests (lib/auth/ file listing unchanged; enumerator exported from both permitted hosts; re-export is the SAME function, not a duplicate; enumerator never reads the carrier)",
+    "S3-8": "PASS — 2 tests (selector page never imports getCurrentOrganizationContext/getCurrentMembership; enumerator succeeds identically with the carrier absent, malformed, or naming a non-member organization)"
+  },
+
+  "mutation_controls": {
+    "harness": "A dedicated tsx harness applied each mutation to REAL working-tree bytes (CRLF-normalized for matching, CRLF restored on write — this repository's text files round-trip through core.autocrlf), ran the named test file(s), captured PASS/FAIL, then reverted and verified byte-identity via SHA-256 against the pre-mutation file — one mutation at a time, never left on disk between controls. Two rounds were required: the first surfaced two bugs in the harness's OWN mutation definitions (MS3-3 and MS3-6 initially mutated dead code that was never read), which were fixed and the harness re-run to completion.",
+    "final_run_summary": "13/13 mutations applied real byte changes and were fully reverted with SHA-256 byte-identity confirmed. 12/13 produced the expected test failure. 1/13 (MS3-8) could not be behaviourally observed in this environment because no local PostgreSQL is configured (.env.local/.env.migration.local absent) — its target test file's LIVE describe blocks are skipped regardless of the mutation, an environmental limitation, not a coverage gap; that control (GUC transaction-locality) is inherited unchanged from S2/M-2 and is exercised by the same file's LIVE suite under CI's real-PostgreSQL gate.",
+    "controls": [
+      { "id": "MS3-1", "guarantee": "S3-1 predicate qualification", "mutation": "loadActiveMembershipWithinContext: removed the organizationId eq() conjunct", "expected_failure": "S3-1 and P-4 tests fail", "observed": "FAILED as expected (9 tests failed across S3-1/S3-3/S3-4/S3-5/S3-6/P5 blocks). Reverted, byte-identical." },
+      { "id": "MS3-2", "guarantee": "S3-5/N-1/M-4 no fallback", "mutation": "readPrincipalUnderOpenContext: on no-membership-in-selected-org, fell back to any active membership row", "expected_failure": "S3-3/S3-4/S3-5 tests fail", "observed": "FAILED as expected (4 tests). Reverted, byte-identical." },
+      { "id": "MS3-3", "guarantee": "M-3 per-request revalidation", "mutation": "resolveRequestPrincipal wrapped with a module-level (process-lifetime) result cache, bypassing per-call re-derivation", "expected_failure": "N-2/M-3 revocation test fails", "observed": "FAILED as expected on second (post-fix) run. Reverted, byte-identical." },
+      { "id": "MS3-4", "guarantee": "S3-4 indistinguishability / no existence oracle", "mutation": "on no-membership, added a second query to check organization existence and returned a DIFFERENT code when the organization was found vs not found", "expected_failure": "S3-4 code-equality test fails", "observed": "FAILED as expected. Reverted, byte-identical." },
+      { "id": "MS3-5", "guarantee": "S3-6/P-5 role sourced solely from the selected membership", "mutation": "principal construction overrode the resolved role with a hardcoded 'viewer' regardless of the selected membership's actual role", "expected_failure": "S3-6 role-tracking test fails", "observed": "FAILED as expected. Reverted, byte-identical." },
+      { "id": "MS3-6", "guarantee": "S3-6 no super-admin grant from the carrier", "mutation": "principal construction set isSuperAdmin: true whenever a selection resolved successfully, regardless of the users row", "expected_failure": "MS3-6 guard test fails", "observed": "FAILED as expected on second (post-fix) run — the first mutation definition set an unused local variable and was a no-op, corrected to actually flow into the returned principal. Reverted, byte-identical." },
+      { "id": "MS3-7", "guarantee": "S3-5/S3-8 / NS2-5 no autoselection", "mutation": "selector page auto-called setSelectedOrganization() when exactly one candidate was enumerated", "expected_failure": "'no autoselection (NS2-5 / MS3-7)' test fails", "observed": "FAILED as expected. Reverted, byte-identical." },
+      { "id": "MS3-8", "guarantee": "M-2 GUC transaction-locality (inherited, unchanged by S3)", "mutation": "db/identity-context.ts set_config('app.organization_id', ..., true) -> false", "expected_failure": "LIVE isolation tests in tests/authenticated-database-context.test.ts fail", "observed": "NOT OBSERVABLE in this environment — no local PostgreSQL (.env.local/.env.migration.local absent), so the LIVE describe.skipIf(!LIVE) blocks are skipped regardless of the mutation. Bytes were changed and reverted (SHA-256 verified) as the mission requires; the behavioural observation is deferred to the CI M2 real-PostgreSQL gate.", "classification": "STRUCTURALLY_EXECUTED_BEHAVIOURALLY_UNOBSERVABLE_NO_LOCAL_PG" },
+      { "id": "MS3-9", "guarantee": "S3-1 LOAD-BEARING: predicate shape, not post-filter", "mutation": "loadActiveMembershipWithinContext reverted to the unqualified userId+status query, then post-filtered the result array by organizationId with an array.find (observationally identical to correct behaviour for a single-membership subject, exactly as the authority predicts)", "expected_failure": "S3-1's eq()-call predicate-shape assertion fails (the organization_id eq() call is never made)", "observed": "FAILED as expected. Reverted, byte-identical." },
+      { "id": "MS3-10", "guarantee": "NS2-4 retired BY REPLACEMENT, not silently deleted", "mutation": "tests/tenancy/s2-selected-org-carrier.test.ts: the RETIRED BY REPLACEMENT describe block changed to describe.skip(...) with an appended note, WITHOUT removing the marker text", "expected_failure": "tests/tenancy/s3-request-principal.test.ts MS3-10 structural guard fails", "observed": "FAILED as expected on second (post-fix) run — the first guard only substring-matched the marker text and missed a describe.skip() disabling the block; corrected to require the exact active describe( call form and explicitly reject describe.skip(/describe.todo( forms. Reverted, byte-identical." },
+      { "id": "MS3-11", "guarantee": "S3-7 no new lib/auth/* module", "mutation": "created lib/auth/memberships-ms3-11-probe.ts, a new file under lib/auth/", "expected_failure": "S3-7's lib/auth/ file-listing equality test fails", "observed": "FAILED as expected. File deleted afterward, directory listing verified restored to the original 7 files." },
+      { "id": "MS3-12", "guarantee": "leaf + import direction (database-context -> selected-organization, never reverse)", "mutation": "lib/auth/selected-organization.ts: added a type-only import from ./database-context", "expected_failure": "the 'import direction' / leaf test in tests/tenancy/s2-selected-org-carrier.test.ts fails", "observed": "FAILED as expected. Reverted, byte-identical." },
+      { "id": "MS3-13", "guarantee": "db/identity-context.ts never reads the carrier directly", "mutation": "db/identity-context.ts: added an import of getSelectedOrganizationId from lib/auth/selected-organization", "expected_failure": "the 'db/identity-context.ts STILL does not import' test in tests/tenancy/s2-selected-org-carrier.test.ts fails", "observed": "FAILED as expected. Reverted, byte-identical." }
+    ]
+  },
+
+  "real_pg_contract": {
+    "REAL_PG_REQUIRED": true,
+    "host": "tests/authenticated-database-context.test.ts (existing host, no new harness created)",
+    "environment_disposition": "This mission's sandbox has no local PostgreSQL configured — .env.local and .env.migration.local are both absent, so RUNTIME_CONNECTION.available/MIGRATOR_CONNECTION.available are both false and every LIVE-gated describe.skipIf(!LIVE) block is skipped. This is the SAME documented degrade-to-skip behaviour tests/helpers/local-runtime.ts already implements for a machine with no Docker/DB stack. All S3-PG tests below were written, typecheck-clean, and structurally exercised (collected, not executed) in this environment; none is claimed as a live PASS here.",
+    "measured_run": "vitest run tests/authenticated-database-context.test.ts: 7 offline tests passed, 32 LIVE tests skipped, 0 failed.",
+    "controls_authored": {
+      "S3-PG-1": "resolves the profile with NO membership/organization and TENANCY_NO_ORGANIZATION_SELECTED when no organization is selected, even with a live active membership — new test in the 'Live: the principal' describe block.",
+      "S3-PG-2": "a membership revoked by a REAL COMMITTED write (via the migrator connection, in a SEPARATE transaction from the one under test) is refused on the very next principal resolution, then resolves again once explicitly restored in a try/finally — new dedicated describe block.",
+      "S3-PG-3": "a WRONG selected organization can never become the database context: withOrganizationDatabaseContext throws TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER, and the identity-context mechanism independently refuses the same claim via withDatabaseIdentityContext — new test in the withOrganizationDatabaseContext describe block.",
+      "S3-PG-4": "two concurrent requests with different identities never see each other's rows — the PRE-EXISTING 'two concurrent requests' isolation test, relabelled S3-PG-4: it already exercises AsyncLocalStorage + SET LOCAL isolation directly via withDatabaseIdentityContext, a mechanism S3 explicitly preserves unchanged.",
+      "S3-PG-5": "isSuperAdmin is IDENTICAL with and without an organisation selected (the carrier cannot influence it), and super-admin access remains governed entirely by public.users + current_user_is_super_admin() — two new tests in a dedicated describe block."
+    },
+    "existing_live_tests_updated_for_selection": "Every pre-existing LIVE test that resolves membership/organization now calls the new selectOrganization(tenants!.a.organizationId) helper (a fake next/headers cookie jar, the same pattern already used in tests/tenancy/s2-selected-org-carrier.test.ts and tests/auth/session.test.ts) before invoking the wrapper under test — otherwise every one of them would now correctly refuse with TENANCY_NO_ORGANIZATION_SELECTED, which is itself proof the new predicate is live in this file's own wiring."
+  },
+
+  "three_entrypoint_flavors": {
+    "page_component": "app/(authenticated)/app/organizations/select/page.tsx — verified via tests/tenancy/s2-selected-org-carrier.test.ts and tests/tenancy/s3-request-principal.test.ts (S3-8).",
+    "server_action": "app/(authenticated)/app/organizations/select/actions.ts selectOrganizationAction/clearOrganizationSelectionAction — verified via tests/tenancy/s2-selected-org-carrier.test.ts.",
+    "route_handler_equivalent": "lib/auth/database-context.ts withOrganizationDatabaseContext (the wrapper every route handler and service uses) — verified via tests/tenancy/s3-request-principal.test.ts (mock) and tests/authenticated-database-context.test.ts (real PostgreSQL, LIVE-gated).",
+    "convergence": "All three converge on the SAME two refusal codes and the SAME qualified-predicate membership source (lib/auth/database-context.ts), since none of them implements its own membership lookup — no surface has a private fallback path."
+  },
+
+  "governance_non_churn": {
+    "database_entrypoint_inventory": "UNCHANGED — tests/database-entrypoint-inventory.json is outside the S3 ceiling and was not touched; the AST-scanner reconciliation test in tests/database-runtime-entrypoints.test.ts passed with 0 unexpected/stale entries.",
+    "database_runtime_entrypoint_pins": { "before": { "inventoried": 141, "reaching": 116, "contextualized": 100, "allowlisted": 16 }, "after": { "inventoried": 141, "reaching": 116, "contextualized": 100, "allowlisted": 16 } },
+    "route_carve_outs": "UNCHANGED — tests/auth/route-authorization-boundary.test.ts re-run green with zero edits; its enumeration of ['onboarding', 'organizations/select'] is untouched.",
+    "baseline_manifest": "UNCHANGED — no db/baseline/** path in this mission's diff.",
+    "rehearsal_digest": "UNCHANGED — no baseline unit added by S3; artifacts/baseline-rehearsal/latest.json not in this mission's diff.",
+    "PROTECTED_GRANTS": { "before": 12, "after": 12, "HPO_ODS_W2_24_registered": false },
+    "Controller": { "before": { "count": 33, "set_size": 33 }, "after": { "count": 33, "set_size": 33 }, "scripts_ods_controller_touched": false }
+  },
+
+  "local_quality_gates": {
+    "typecheck": "PASS — pnpm typecheck (tsc --noEmit), 0 errors",
+    "lint": "PASS — pnpm lint (eslint), 0 errors, 0 new warnings (pre-existing 63 warnings elsewhere unchanged)",
+    "secrets_scan": "PASS — pnpm secrets:scan: 'no credential material found'",
+    "authority_seal_verify": "PASS — ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_INTEGRITY=PASS, NATIVE_RELATIONSHIPS=PASS",
+    "ods_scope": "PASS — CHANGED_FILE_COUNT=9, UNAUTHORIZED_PATHS=0, PROTECTED_PATH_VIOLATIONS=0",
+    "ods_poststate": "PASS — steps typecheck, targeted-tests (6 files, 344 passed / 32 skipped), secrets-scan, authority-seal-verify, ods-scope all PASS",
+    "targeted_test_run": "vitest run tests/tenancy/s3-request-principal.test.ts tests/tenancy/s2-selected-org-carrier.test.ts tests/authenticated-database-context.test.ts tests/auth/session.test.ts tests/auth/route-authorization-boundary.test.ts tests/database-runtime-entrypoints.test.ts — 6 files passed, 345 tests passed, 32 skipped (LIVE, no local PostgreSQL), 0 failed"
+  },
+
+  "no_migration": {
+    "verdict": "CONFIRMED — no db/migrations/** or db/prepared/** path appears anywhere in this mission's diff. No table, column, index, function or policy introduced.",
+    "measured_basis": "organization_members_org_user_unique (existing UNIQUE constraint on (organization_id, user_id)) already gives the qualified predicate its uniqueness guarantee; no new index was required."
+  },
+
+  "no_audit_policy_implementation": {
+    "verdict": "CONFIRMED — tenancy.organization.selection_refused and tenancy.membership.revalidation_refused are NOT emitted anywhere in this diff. WAIVED=false, OPTIONAL=false, IMPLEMENTED_BY_S3=false, per AUDIT_VERB_DISPOSITION, unchanged from the governing authority."
+  },
+
+  "boundary_exclusions_respected": {
+    "S4": "No new RLS predicate, no GUC consumer added.",
+    "S5": "db/identity-context.ts super-admin re-check untouched (file not edited); isSuperAdmin derivation logic in database-context.ts unchanged (still read from public.users, re-verified downstream).",
+    "S7": "user_single_active_membership untouched, verified present in db/schema.ts.",
+    "S3c": "No Stella attribution code touched."
+  },
+
+  "risks_and_open_findings": {
+    "BLOCKING": [],
+    "UNKNOWN": [],
+    "DISCLOSED_NON_BLOCKING": [
+      {
+        "id": "R-S3-1",
+        "finding": "Route-topology consequence: a single-membership user who never visits the selector is redirected to /app/onboarding rather than the selector, once they have no active selection.",
+        "disposition": "See route_topology_disposition above. Accepted consequence of NO_FALLBACK, out of S3's mandate per S3_NODE_IDENTITY.no_downstream_semantics_pulled_forward."
+      },
+      {
+        "id": "R-S3-2",
+        "finding": "MS3-8 (GUC transaction-locality mutation) could not be behaviourally observed in this sandbox — no local PostgreSQL configured.",
+        "disposition": "Structurally executed (bytes mutated and reverted, SHA-256 verified). Behavioural observation deferred to CI's M2 real-PostgreSQL gate, which runs the same LIVE test file this mutation targets."
+      },
+      {
+        "id": "R-S3-3",
+        "finding": "P-5 behavioural coverage remains structurally-only, as declared by the governing authority — not a gap introduced by this implementation.",
+        "disposition": "DEFERRED to S7, per P5_COVERAGE_DISPOSITION above."
+      }
+    ]
+  },
+
+  "candidate_self_check": {
+    "SC_paths_within_ceiling": "All 9 changed paths are a SUBSET of the 12-path S3 ceiling. FAILS on a 10th path — none observed.",
+    "SC_protected_count_zero": "0 protected paths touched, confirmed by ods:scope.",
+    "SC_no_migration": "Confirmed above.",
+    "SC_no_controller_edit": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts byte-unchanged (not in this mission's diff).",
+    "SC_no_new_lib_auth_module": "Confirmed structurally (S3-7) and by mutation control (MS3-11).",
+    "SC_ns2_4_replaced_not_deleted": "Confirmed structurally and by mutation control (MS3-10).",
+    "SC_governance_pins_unchanged": "Confirmed by re-running tests/database-runtime-entrypoints.test.ts (223/223 passed) and the Controller/PROTECTED_GRANTS re-measurement above."
+  }
+}
