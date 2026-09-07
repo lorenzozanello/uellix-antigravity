@@ -457,6 +457,27 @@ describe.skipIf(!LIVE)('isolation', () => {
     expect((rows as unknown as unknown[]).length).toBe(0)
   })
 
+  it('M-2 / MS3-8: app.organization_id specifically does not survive a COMMIT on the pooled connection — checked DIRECTLY, not only via RLS visibility', async () => {
+    // The two tests above prove organizations become invisible after a
+    // COMMIT, but that visibility depends on BOTH claims: request.jwt.claims
+    // (identity) and app.organization_id (scope), set by two SEPARATE
+    // set_config calls in db/identity-context.ts. If only app.organization_id
+    // stopped being transaction-local, request.jwt.claims resetting correctly
+    // would still zero out current_user_org_ids() and mask the leak — the
+    // organizations table would still read empty for the WRONG reason. This
+    // reads the GUC directly, independent of auth.uid()/RLS, so a leak
+    // confined to app.organization_id alone cannot hide behind that mask.
+    signedInAs(tenants!.a.userId)
+    selectOrganization(tenants!.a.organizationId)
+    await withOrganizationDatabaseContext(async () => undefined)
+
+    const rows = await db.execute(drizzleSql`SELECT current_setting('app.organization_id', true) AS v`)
+    // `current_setting(name, true)` reports an unset GUC as '' (its
+    // compiled-in default), not SQL NULL — this asserts on that literal
+    // empty-string "cleared" representation, never on the LEAKED value.
+    expect((rows as unknown as { v: string | null }[])[0].v).toBe('')
+  })
+
   it('S3-PG-4: two concurrent requests with different identities never see each other’s rows — AsyncLocalStorage + SET LOCAL do not bleed', async () => {
     // The failure this guards against is not hypothetical: postgres-js hands
     // the same physical connection to whoever asks next, so a SESSION-scoped

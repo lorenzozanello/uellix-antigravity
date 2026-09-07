@@ -47,6 +47,7 @@
 
   "exact_write_set": {
     "count": 9,
+    "count_correction_R2": "R1 REPORTING ERROR, corrected in r2_closure.step2_reporting_correction below: this list deliberately excludes the evidence artifact itself (this file), giving 9 non-evidence paths. GitHub's actual tracked-file diff count for the PR is 10 (these 9 plus this evidence file). R1's PR body text stated '9 changed paths' without this caveat, which read as a miscount against GitHub's own reported 10. See r2_closure for the corrected, single authoritative count.",
     "paths": [
       "lib/auth/database-context.ts",
       "lib/auth/session.ts",
@@ -229,7 +230,7 @@
       {
         "id": "R-S3-2",
         "finding": "MS3-8 (GUC transaction-locality mutation) could not be behaviourally observed in this sandbox — no local PostgreSQL configured.",
-        "disposition": "Structurally executed (bytes mutated and reverted, SHA-256 verified). Behavioural observation deferred to CI's M2 real-PostgreSQL gate, which runs the same LIVE test file this mutation targets."
+        "disposition": "SUPERSEDED BY R2. R1's proposed disposition (deferring behavioural observation to CI's M2 gate) was itself an INVALID substitution — M2/B0-17's gate exercises a completely different table-privilege proof and never runs this file's LIVE suite at all. R2 provisioned a real local PostgreSQL runtime and closed this control directly; see r2_closure.ms3_8_behavioural_closure. R-S3-2 is RESOLVED, not merely re-deferred."
       },
       {
         "id": "R-S3-3",
@@ -240,12 +241,143 @@
   },
 
   "candidate_self_check": {
-    "SC_paths_within_ceiling": "All 9 changed paths are a SUBSET of the 12-path S3 ceiling. FAILS on a 10th path — none observed.",
+    "SC_paths_within_ceiling": "All 10 changed tracked paths (9 implementation/test paths + this evidence artifact) are a SUBSET of the 12-path S3 ceiling — corrected in R2, see r2_closure.step2_reporting_correction. FAILS on an 11th path — none observed.",
     "SC_protected_count_zero": "0 protected paths touched, confirmed by ods:scope.",
     "SC_no_migration": "Confirmed above.",
-    "SC_no_controller_edit": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts byte-unchanged (not in this mission's diff).",
+    "SC_no_controller_edit": "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts byte-unchanged BY THIS MISSION'S OWN DIFF — Controller34 (PR #94) touched both as a SEPARATE, prior, non-material merge; see r2_closure.controller34_reconciliation.",
     "SC_no_new_lib_auth_module": "Confirmed structurally (S3-7) and by mutation control (MS3-11).",
     "SC_ns2_4_replaced_not_deleted": "Confirmed structurally and by mutation control (MS3-10).",
     "SC_governance_pins_unchanged": "Confirmed by re-running tests/database-runtime-entrypoints.test.ts (223/223 passed) and the Controller/PROTECTED_GRANTS re-measurement above."
+  },
+
+  "r2_closure": {
+    "mission_id": "MULTIORG-S3-REQUEST-PRINCIPAL-REAL-PG-CLOSURE-AND-CONTROLLER34-RECONCILIATION-R2",
+    "lane": "LANE CQ-R2",
+    "r1_candidate_sha": "06af94e62b67385b38c91e65b7fb7bf129ce979c",
+    "purpose": "Close two R1 defects without rewriting R1's substantive findings: (F-CQ-R2-1) the real-PostgreSQL S3 contract was never executed (no local PostgreSQL in the R1 sandbox); (F-CQ-R2-2) MS3-8 was never behaviourally demonstrated, and R1's proposal to treat a green M2 CI gate as a substitute was itself invalid — M2/B0-17's gate proves a different, narrow table-privilege contract and never runs tests/authenticated-database-context.test.ts's LIVE suite at all.",
+
+    "controller34_reconciliation": {
+      "observed": "Between R1 and R2, PR #94 ('Controller34 - enumerate v1.0.23 addendum') merged into origin/integration/commercial-v1 as commit 432540c6e451c8158d00bb280557a03557fce377, a normal two-parent merge with parents 287dbd0c7154bafbffec3fec3d63390c03de0779 (R1's original base) and 7aca8e8a6de5dcad01c4c2084d0f694fa2eddb4b (the Controller34 feature commit) — the exact required parent, confirmed via `git show --no-patch --format=\"%H %P\"`.",
+      "controller34_delta_paths": ["scripts/ods-controller.ts", "tests/ods/ods-controller.test.ts"],
+      "intersection_with_S3_write_set": "EMPTY — verified by `git diff --name-only 287dbd0 432540c` producing exactly those 2 paths, neither of which appears in the S3 implementation write set.",
+      "classification": "NON_MATERIAL to S3",
+      "live_controller_at_integration_tip": {
+        "count": 34,
+        "set_size": 34,
+        "v1_0_23_occurrences": 1,
+        "v1_0_23_is_final": true,
+        "v1_0_24_occurrences": 0,
+        "CONTROLLER_DB_EXECUTION": "DISABLED",
+        "measured_by": "extracting IMMUTABLE_BY_CONVENTION from `git show 432540c:scripts/ods-controller.ts` and parsing the literal array — not a live import, since that ref is not checked out; the array is a plain literal with no computed members, so textual extraction and import are equivalent here."
+      },
+      "reconciliation_merge": {
+        "method": "NORMAL MERGE (git merge --no-ff), never a rebase, never a force-push.",
+        "merge_commit": "b066965b52c64198c84e3ccc788c2c8bcadcae03",
+        "proofs": {
+          "r1_candidate_is_ancestor": "PASS — `git merge-base --is-ancestor 06af94e62b67385b38c91e65b7fb7bf129ce979c HEAD`",
+          "latest_integration_is_ancestor": "PASS — `git merge-base --is-ancestor origin/integration/commercial-v1 HEAD` (at 432540c)",
+          "controller34_paths_blob_identical_to_integration": "PASS — `git diff origin/integration/commercial-v1 HEAD -- scripts/ods-controller.ts tests/ods/ods-controller.test.ts` produced an EMPTY diff",
+          "s3_implementation_paths_unchanged_by_merge": "PASS — `git diff 06af94e HEAD -- <all 10 S3 paths>` produced an EMPTY diff (the merge itself introduced zero S3 semantic changes; all R2 S3 edits, e.g. the new MS3-8 test, are separate commits made AFTER the reconciliation merge)",
+          "no_v1_0_24_lineage_allocated": "PASS — Controller re-measured post-merge on the R2 branch: count=34, set_size=34, v1.0.23 final, v1.0.24 absent (via the real ESM-import measurement script, same method as R1's prestate)"
+        },
+        "post_merge_protected_grants": { "count": 12, "HPO_ODS_W2_24_registered": false }
+      }
+    },
+
+    "step2_reporting_correction": {
+      "github_actual_changed_file_count": 10,
+      "r1_error": "R1's PR body stated '9 changed paths' in its summary line, derived from exact_write_set.count which deliberately excluded the evidence artifact from its own enumeration — an internal-convention choice that read as a miscount against GitHub's actual diff.",
+      "corrected_count_derivation": "`git diff --name-only 432540c HEAD` (the current integration tip, post-Controller34) lists exactly 10 tracked paths: the 9 non-evidence implementation/test paths R1's exact_write_set already enumerated, plus docs/ops/tenancy/MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json (this file). Cross-checked against `git diff --name-only 287dbd0 HEAD`, which returns 12 (the same 10 plus Controller34's 2 merge-only files scripts/ods-controller.ts and tests/ods/ods-controller.test.ts) — those 2 are correctly EXCLUDED from the S3 implementation count as merge-only base files, not authored by this mission.",
+      "all_10_paths_within_ceiling": true,
+      "ods_scope_reconfirmation": "PASS — CHANGED_FILE_COUNT=10 against --base 432540c6e451c8158d00bb280557a03557fce377, 0 protected violations, 0 unauthorized paths"
+    },
+
+    "real_pg_provisioning": {
+      "method": "A real, local, disposable, loopback-only PostgreSQL 17.6 container was provisioned by replaying the ALREADY-GOVERNED setup phases scripts/m2-disposable-pg-bootstrap.ts and scripts/p1a-bootstrap-gate.ts already use (the same pinned Supabase Postgres image, the same db/prepared/stella_local_0000_local_role_identity_bootstrap.sql role-identity package, scripts/rotate-local-role-credentials.ts unmodified, pnpm db:migrate:local unmodified) — WITHOUT invoking pnpm m2:pg:gate or pnpm p1a:bootstrap:gate themselves, since both self-teardown at the end and this proof needed the stack left running. No new tracked PostgreSQL harness was created; no tracked file was modified to provision this.",
+      "container": "uellix-s3-local-rehearsal-d98027ff, bound to 127.0.0.1:56322 ONLY (verified via `docker inspect --format '{{.HostConfig.PortBindings}}'`, confirming loopback-only, never 0.0.0.0) — matches db/safety/local-stack.ts LOCAL_DB_PORT/LOCAL_PROJECT_ID for this worktree exactly; never touched the pre-existing, unrelated docker stacks for other worktrees (uellix-antigravity, aforiq) running concurrently on this host.",
+      "migrations_applied": "db/migrations/0000..0066 (the full corpus) via the unmodified pnpm db:migrate:local entrypoint, mechanically hash-verified by that script's own machinery.",
+      "env_files": "`.env.local`, `.env.migration.local`, `.env.audit.local` — all repo-root, gitignored, never staged or committed, containing real rotated LOGIN credentials for uellix_app/uellix_migrator/uellix_auditor.",
+      "tenant_fixture": "Two organizations, two users, two active organization_members rows (one per org), matching tests/authenticated-database-context.test.ts's own readTenants() query shape, seeded via direct SQL against the disposable container (pnpm db:seed:local was not usable here — it calls the Supabase Admin HTTP API, which this bare-Postgres disposable container does not run). Two projects were also seeded (one per organization) to satisfy the pre-existing, non-S3 STELLA WRITE/DASHBOARD/CROSS-ORG tests' preconditions.",
+      "infrastructure_gaps_found_and_closed_locally": [
+        {
+          "gap": "uellix_writer (and therefore uellix_app, which inherits it WITH INHERIT TRUE) was never granted membership in the authenticated Postgres role, so every RLS-helper-function call (current_user_is_super_admin(), current_user_org_ids(), current_user_role_in_org()) failed with 'permission denied for function' — this governed grant normally comes from db/prepared/stella_0004_role_separation.sql, which refuses to run against this worktree's current migration corpus because its own table-classification precondition is stale relative to migrations 0042-0065 (it does not recognise 14 newer tables and fails closed rather than guess, exactly as designed).",
+          "fix_applied": "`GRANT authenticated TO uellix_writer WITH INHERIT TRUE;` — issued directly against the disposable local container (127.0.0.1:56322), mechanically re-confirmed as loopback-only via `docker inspect` immediately before executing, per explicit user authorization obtained in-session. No tracked file was touched; no product schema, migration, or grant was added to the repository. This reproduces exactly what the stale governed script would have done for the tables/functions this test file exercises, nothing broader.",
+          "authorized_by": "Explicit user confirmation in this session, after the Bash safety classifier declined to auto-approve a live database GRANT statement."
+        },
+        {
+          "gap": "This disposable container's auth.uid() stub (from db/prepared/stella_local_0000_local_role_identity_bootstrap.sql, a minimal local-only auth schema stand-in) only reads the flat `request.jwt.claim.sub` GUC. db/identity-context.ts sets identity as JSON via `set_config('request.jwt.claims', ..., true)` and its OWN header comment documents the production-correct behaviour as `auth.uid() = COALESCE(current_setting('request.jwt.claim.sub'), claims->>'sub')` — this container's stub was missing that COALESCE fallback entirely, so every RLS policy keyed on `id = auth.uid()` (starting with `users_select_own`) silently matched nobody.",
+          "fix_applied": "`CREATE OR REPLACE FUNCTION auth.uid() ...` reproducing the exact COALESCE formula db/identity-context.ts's own header comment already documents as the intended production behaviour — issued directly against the disposable local container as supabase_admin (the schema owner; the postgres role in this image is deliberately non-superuser and does not own the auth schema), after mechanically re-confirming the connection target was loopback-only. No tracked file was touched.",
+          "authorized_by": "Explicit user confirmation in this session, after the Bash safety classifier declined to auto-approve a live CREATE OR REPLACE FUNCTION statement. The user's authorization was scoped explicitly to: local-only target, no migration, no db/schema.ts edit, no tracked file edit, reproduce-documented-behaviour-only, tear down afterward, record in this evidence artifact."
+        }
+      ],
+      "not_representable_as_a_product_schema_change": "Both fixes above are ORCHESTRATION of an already-correct, already-governed intent (the stale stella_0004 script's own documented purpose; db/identity-context.ts's own documented auth.uid() contract) against throwaway local infrastructure. Neither adds, widens, or alters any product RLS policy, grant, or schema — see db/migrations/**/db/prepared/** diff (empty) for confirmation."
+    },
+
+    "live_test_run": {
+      "run_command": "npx vitest run tests/authenticated-database-context.test.ts",
+      "LIVE_TESTS_COLLECTED": 40,
+      "LIVE_TESTS_PASSED": 39,
+      "LIVE_TESTS_FAILED": 1,
+      "LIVE_TESTS_SKIPPED": 0,
+      "note": "0 skipped — every describe.skipIf(!LIVE) block in this file executed for real; RUNTIME_CONNECTION.available && MIGRATOR_CONNECTION.available were both true throughout.",
+      "the_one_failure": {
+        "test": "application flows > STELLA WRITE: an interaction can be created inside the context, and is rolled back",
+        "cause": "PRE-EXISTING, NOT an S3 defect and NOT an infrastructure-provisioning gap. Direct investigation of db/prepared/stella_hosted_0007_runtime_table_acl_contract.sql (lines ~350-361) shows that a LATER governed hardening (stella_0017_governed_stella_consumption, 'R6-INT') DELIBERATELY REVOKED direct INSERT on public.stella_interactions from every runtime role, replacing it with a governed ticket protocol (uellix_stella_ops.complete_operation_ticket). This test predates that hardening and still performs a raw INSERT — it is the TEST that is stale relative to current governed schema intent, not the grants. Reinstating direct INSERT to make this test pass would be a REGRESSION of R6-INT and was correctly NOT done.",
+        "classification": "DISCLOSED_NON_BLOCKING, pre-existing, outside S3 and outside this mission's ceiling-authorized remediation scope (fixing it would mean rewriting this test's fixture to use the governed ticket protocol, a change to test semantics beyond what S3 authorizes)."
+      },
+      "S3_PG_isolated_run": "`npx vitest run tests/authenticated-database-context.test.ts -t S3-PG` — 6 passed, 33 skipped (the non-matching tests, correctly filtered out), 0 failed."
+    },
+
+    "s3_pg_results": {
+      "S3_PG_1": "PASS — 'S3-PG-1: resolves the profile but NO membership/organisation when no organisation is selected, even with a live active membership'",
+      "S3_PG_2": "PASS — 'S3-PG-2: a REVOKED selected membership is refused on the NEXT request, no grace window' — membership resolves, is revoked by a real COMMITTED write from a separate migrator-role transaction, refused on the next independent resolution, and independently verified restored afterward.",
+      "S3_PG_3": "PASS — 'S3-PG-3: a WRONG selected organisation can never become the database context' — both the wrapper-level refusal (TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER) and the independent identity-context mechanism refusal (IdentityContextError via current_user_org_ids()) were proven on the real cluster.",
+      "S3_PG_4": "PASS — the pre-existing 'two concurrent requests with different identities never see each other's rows' test (relabelled S3-PG-4), proving AsyncLocalStorage + SET LOCAL isolation directly via withDatabaseIdentityContext on the real cluster — the exact mechanism S3 preserves unchanged.",
+      "S3_PG_5": "PASS (2 tests) — isSuperAdmin identical with/without a selection; super-admin access governed entirely by public.users + current_user_is_super_admin(), unaffected by any selection.",
+      "no_live_S3_block_remained_skipped": true
+    },
+
+    "ms3_8_behavioural_closure": {
+      "why_r1_and_the_first_r2_attempt_were_insufficient": "The PRE-EXISTING isolation tests ('clears the claim after a COMMIT', 'clears the claim after a ROLLBACK too') check GUC locality only INDIRECTLY, via whether public.organizations becomes invisible after commit. That visibility depends on TWO separate set_config calls in db/identity-context.ts — request.jwt.claims (identity, always is_local=true) and app.organization_id (scope, the one MS3-8 mutates). Mutating ONLY the second one still leaves the first correctly transaction-local, so auth.uid() correctly returns NULL post-commit, current_user_org_ids() correctly returns empty, and the organizations query correctly returns zero rows — for the WRONG reason. The first mutation attempt against these two tests observed NO failure, which was an accurate but incomplete result: it proved the identity claim's locality is intact, not that the mutation was uncaught.",
+      "new_control_added": "tests/authenticated-database-context.test.ts, 'isolation' describe block — 'M-2 / MS3-8: app.organization_id specifically does not survive a COMMIT on the pooled connection — checked DIRECTLY, not only via RLS visibility'. Reads `current_setting('app.organization_id', true)` directly after a committed withOrganizationDatabaseContext call, independent of auth.uid()/RLS, so a leak confined to app.organization_id alone cannot hide behind the identity claim resetting correctly. This is a genuine strengthening of M-2's own coverage, added inside the S3 ceiling (this file is ceiling path #9) — not new S3 semantics.",
+      "baseline_before_mutation": "PASS — value reads back as '' (current_setting's documented representation of an unset GUC), confirmed against a fresh checkout of this test.",
+      "mutation_applied": "db/identity-context.ts line 180: `SELECT set_config('app.organization_id', ${identity.organizationId}, true)` -> `..., false)` — the EXACT mutation named by the governing authority (M-2's mutation definition). Applied to real working-tree bytes via a harness that CRLF-normalizes for matching (this repository's non-docs/** files round-trip through core.autocrlf) and verifies the write actually changed on-disk bytes (SHA-256 comparison) before proceeding.",
+      "oracle_result": "FAILED as intended, for the intended reason: `AssertionError: expected '853afe9d-92ae-43bc-8d07-ea719e36186e' to be ''` — the received value is the REAL, LEAKED organization id from the prior request, proving the GUC survived past COMMIT on the reused pooled connection. No unrelated environment error substituted for this failure (the one OTHER failure in the same run, STELLA WRITE, is independently confirmed present with or without this mutation — see live_test_run.the_one_failure — so it is not this mutation's effect).",
+      "revert": "Reverted immediately after the test run; SHA-256 of the restored file verified byte-identical to the pre-mutation original.",
+      "post_revert_baseline": "PASS — full tests/authenticated-database-context.test.ts re-run: 39 passed, 1 failed (the pre-existing, unrelated STELLA WRITE gap), 0 skipped.",
+      "verdict": "MS3_8 = BEHAVIOURALLY_CAUGHT"
+    },
+
+    "mutation_final_disposition": {
+      "MS3_1_TO_MS3_13": "13/13 CLOSED — non-vacuous, byte-verified, revert-verified.",
+      "note": "MS3-1 through MS3-7 and MS3-9 through MS3-13 were already behaviourally confirmed in R1 (see mutation_controls above) and were NOT re-run in R2 — their disposition is unchanged and this session did not touch lib/auth/database-context.ts, lib/auth/selected-organization.ts, app/(authenticated)/app/organizations/select/*, or tests/tenancy/s2-selected-org-carrier.test.ts's implementation content during R2 (confirmed by the empty `git diff 06af94e HEAD` over the S3 implementation paths in controller34_reconciliation.reconciliation_merge.proofs). Only MS3-8's disposition changed, from STRUCTURALLY_EXECUTED_BEHAVIOURALLY_UNOBSERVABLE_NO_LOCAL_PG (R1) to BEHAVIOURALLY_CAUGHT (R2)."
+    },
+
+    "cleanup": {
+      "status": "TORN DOWN. Container uellix-s3-local-rehearsal-d98027ff stopped and removed (`docker stop` + `docker rm`); confirmed absent via `docker ps -a --filter name=uellix-s3-local-rehearsal` (empty result). .env.local, .env.migration.local and .env.audit.local deleted from the worktree root; confirmed absent via directory listing (only the tracked .env.example remains) and `git status` (they were never tracked, so no working-tree residue either way).",
+      "other_worktrees_stacks": "uellix-antigravity and aforiq docker stacks, pre-existing and unrelated to this mission, were never started, stopped, or otherwise touched at any point — reconfirmed by container count immediately after this mission's own teardown."
+    },
+    "stella_write_gap_flagged": {
+      "disposition": "Flagged as a separate, out-of-ceiling follow-up (spawn_task), not fixed in this mission: tests/authenticated-database-context.test.ts's pre-existing 'STELLA WRITE' test performs a raw INSERT into public.stella_interactions, a write path stella_0017_governed_stella_consumption (R6-INT) deliberately revoked in favour of a governed ticket protocol (uellix_stella_ops.complete_operation_ticket). The test is stale relative to that governance; fixing it means rewriting its fixture to the ticket protocol, which is outside the S3 ceiling's authorized scope (no db/prepared/** change, no new capability). Confirmed this failure is INVISIBLE to CI's own pnpm test:unit job today, since that job has no live PostgreSQL credentials either — this PR does not redden any currently-green CI signal."
+    },
+
+    "s3_audit_ready_bar": {
+      "SI2_RESOLVED": true,
+      "NO_FALLBACK": true,
+      "NS2_4_RETIRED_BY_REPLACEMENT": true,
+      "S2_PRESERVED": true,
+      "S4_S5_S7_EXCLUDED": true,
+      "REAL_PG_AVAILABLE": true,
+      "S3_PG_1": "PASS",
+      "S3_PG_2": "PASS",
+      "S3_PG_3": "PASS",
+      "S3_PG_4": "PASS",
+      "S3_PG_5": "PASS",
+      "MS3_1_TO_MS3_13": "13/13 CLOSED",
+      "MS3_8": "BEHAVIOURALLY_CAUGHT",
+      "ENTRYPOINT_PINS_UNCHANGED": true,
+      "PROTECTED_GRANTS": 12,
+      "CONTROLLER": 34
+    }
   }
 }
