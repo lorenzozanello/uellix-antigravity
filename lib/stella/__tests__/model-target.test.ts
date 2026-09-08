@@ -18,7 +18,7 @@
 // question this gate answers is "did changing the model loosen anything?", and
 // an answer spread across four files is an answer nobody reads.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { stellaConfig, STELLA_DEFAULT_GEMINI_MODEL } from '../config'
@@ -48,10 +48,61 @@ describe('G1-M0 — production model target', () => {
     expect(STELLA_DEFAULT_GEMINI_MODEL).not.toBe('gemini-2.5-flash')
   })
 
-  it('resolves geminiModel as GEMINI_MODEL override or the default', () => {
-    // Stated as a RELATIONSHIP rather than a literal so the test is correct
-    // whether or not the developer running it has GEMINI_MODEL exported.
-    expect(stellaConfig.geminiModel).toBe(process.env.GEMINI_MODEL ?? STELLA_DEFAULT_GEMINI_MODEL)
+})
+
+// F-EU-1 — `??` IS THE WRONG OPERATOR FOR THIS RESOLUTION, AND WAS A BUG.
+//
+// The PR109/R1 version of this suite asserted
+// `stellaConfig.geminiModel === (process.env.GEMINI_MODEL ?? DEFAULT)` — a
+// tautology that mirrors whatever operator config.ts actually uses on both
+// sides of the comparison, so it passed whether config.ts used `??` (wrong:
+// an empty string is not nullish, so `''` survived instead of falling back)
+// or the fixed `.trim() || default`. It could never have caught the bug it
+// was meant to guard.
+//
+// This suite instead pins each input to a LITERAL expected output, computed
+// independently of config.ts's own operator, against a freshly loaded module
+// instance per case (vi.resetModules — stellaConfig is computed once at
+// import time from process.env, so re-exercising it requires a fresh import).
+describe('F-EU-1 — GEMINI_MODEL resolution treats empty/whitespace as absent', () => {
+  const ORIGINAL_GEMINI_MODEL = process.env.GEMINI_MODEL
+
+  afterEach(() => {
+    if (ORIGINAL_GEMINI_MODEL === undefined) {
+      delete process.env.GEMINI_MODEL
+    } else {
+      process.env.GEMINI_MODEL = ORIGINAL_GEMINI_MODEL
+    }
+    vi.resetModules()
+  })
+
+  async function resolveGeminiModel(value: string | undefined): Promise<string> {
+    if (value === undefined) {
+      delete process.env.GEMINI_MODEL
+    } else {
+      process.env.GEMINI_MODEL = value
+    }
+    vi.resetModules()
+    const mod = await import('../config')
+    return mod.stellaConfig.geminiModel
+  }
+
+  it('env var absent (undefined) resolves to the default', async () => {
+    expect(await resolveGeminiModel(undefined)).toBe('gemini-3.6-flash')
+  })
+
+  it('env var empty string resolves to the default', async () => {
+    expect(await resolveGeminiModel('')).toBe('gemini-3.6-flash')
+  })
+
+  it('env var whitespace-only resolves to the default', async () => {
+    expect(await resolveGeminiModel('   ')).toBe('gemini-3.6-flash')
+    expect(await resolveGeminiModel('\t\n')).toBe('gemini-3.6-flash')
+  })
+
+  it('env var with a custom id resolves to that id, trimmed', async () => {
+    expect(await resolveGeminiModel('gemini-4.0-pro')).toBe('gemini-4.0-pro')
+    expect(await resolveGeminiModel('  gemini-4.0-pro  ')).toBe('gemini-4.0-pro')
   })
 })
 
