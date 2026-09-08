@@ -1,0 +1,368 @@
+{
+  "package_id": "PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_NODE_AUTHORITY",
+  "document_class": "EXECUTABLE_TECHNICAL_AUTHORITY_AMENDMENT",
+  "append_only": true,
+  "mission_id": "PORTFOLIO-PF2-ENTRYPOINT-REGEX-LAYER-PIN-AUTHORITY-AMENDMENT-R1",
+  "materialization_date": "2026-09-08",
+  "amends": "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "companion_manifest": null,
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+  "sibling_amendment_materialized_in_the_same_mission": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "both_are_required": "NEITHER AMENDMENT IS EFFECTIVE ALONE. This one widens the operative GRANT; the sibling widens the parent's FROZEN SURFACE. Integrating only one leaves the surface incoherent in one direction or the other; see the sibling's AUTHORITY_FORM_DETERMINATION and this artifact's CONTRADICTION_CLOSURE_LEDGER.",
+
+  "AS_OF": {
+    "AS_OF_REF": "codex/portfolio-pf2-entrypoint-amendment-r1",
+    "START_HEAD": "1625bea2124f7b5ef6ffa500f133ffe80c487d92",
+    "START_TREE": "3eaf425fab6aa2e33781dd19623c6721a9eda940",
+    "BRANCH": "codex/portfolio-pf2-entrypoint-amendment-r1",
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/portfolio-pf2-entrypoint-amendment-r1 --head 1625bea2124f7b5ef6ffa500f133ffe80c487d92 --tree 3eaf425fab6aa2e33781dd19623c6721a9eda940 --clean => ODS_PRESTATE=PASS.",
+    "LIVE_INTEGRATION_TIP_AT_MATERIALIZATION": "fb46c342277246ac1891e8ca38b48e4a77c7331e",
+    "INTEGRATION_TIP_RELATIONSHIP": "HEAD is a strict ancestor of the live tip, three commits behind. The mission pinned BASE=1625bea2, so the base is honoured and the delta is measured rather than assumed harmless. Full measurement in the sibling amendment's AS_OF.INTERVENING_DELTA.",
+    "base_authority_AS_OF": {
+      "base_AS_OF_HEAD": "635ed04605bd7d9f1a66f55511c5e2ae79175aaa",
+      "base_AS_OF_TREE": "51c7ab3aafeaefaed149a03cf3947f8ad3d6a468",
+      "delta_between_base_AS_OF_HEAD_and_START_HEAD": {
+        "measurement": "`git diff --name-only 635ed046 1625bea2` returns exactly three paths.",
+        "paths": [
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json",
+          "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json",
+          "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.8.json"
+        ],
+        "consequence": "NO implementation path moved between the base's own AS_OF and this amendment's base. The base authority itself appears in the delta only because it is the artifact PR #107 added. `git rev-parse 635ed046:tests/database-runtime-entrypoints.test.ts` and `git rev-parse 1625bea2:tests/database-runtime-entrypoints.test.ts` are both 19c859d8f0c784e60381d601e2efe27d919615a9, so every line citation the base makes about that file is evaluated here against the identical blob it measured.",
+        "same_for_the_parent": "`git rev-parse 635ed046:docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json` and the same at 1625bea2 are both d4cb3b5deb26ff693f34d10cc08579e895e0d49d."
+      }
+    },
+    "remeasurement_rule": "Every line number, blob SHA and count cited here is bound to START_TREE 3eaf425f and re-verified at fb46c342. An implementing mission whose base differs by a commit that touches tests/database-runtime-entrypoints.test.ts, tests/database-entrypoint-inventory.json or any file under app/ MUST re-measure the quadruple before relying on a citation here."
+  },
+
+  "NAMING_DERIVATION": {
+    "decision": "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "derivation": "<BASE_PACKAGE_STEM>_AMENDMENT_v<semver>.json beside the base, the convention every one of the sixteen amendment artifacts measured at START_TREE follows.",
+    "precedent_of_the_exact_class": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json — the sibling node's own amendment, itself modelled on docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. Structural decisions followed: authority_class APPEND_ONLY_AMENDMENT_TO_A_FROZEN_NODE_AUTHORITY, document_class EXECUTABLE_TECHNICAL_AUTHORITY_AMENDMENT, append_only true, `amends` naming the base by path, supersedes / companion_manifest / companion_ods_addendum / GRANT_ID all null.",
+    "version_choice": "1.0.1. The base is 1.0.0 and `find docs -iname 'PORTFOLIO_PF2*'` at START_TREE returns exactly the base. 1.0.1 is the first free patch ordinal, matching PF1's and CE-1's own 1.0.0 -> 1.0.1 step.",
+    "stop_condition": "STOP_FOR_ARTIFACT_FORM_DECISION was NOT triggered."
+  },
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json is left BYTE-UNCHANGED and remains HISTORICAL AND CONTROLLING authority for everything it says correctly. This artifact rewrites, deletes and reinterprets nothing in it. Its blob SHA at START_HEAD is b120684ab432e48345ac71efa274b9b5b94ed754 (88384 blob bytes) and the same SHA must still be readable at the commit that carries this amendment.",
+    "what_this_amendment_does": "It does exactly THREE things, all narrow. (1) It widens the operative PF2 write grant from thirteen paths to fourteen, adding tests/database-runtime-entrypoints.test.ts for registration and derived-total reconciliation only. (2) It retires, by name and by locator, the seven clauses of the base that would otherwise still prohibit that path — a retirement that is legal only because the parent's frozen surface now contains the path, which it did not when the base was written. (3) It records that limb (a) of the base's own LOCK_ENTRYPOINT_REGEX_LAYER_PIN.release_condition is necessary but not sufficient, and states the sufficient condition.",
+    "what_this_amendment_is_not": [
+      "NOT an implementation. The working tree's fourteen PF2 paths are unchanged by this mission. app/app/portfolios/[portfolioId]/actions.ts is still ABSENT.",
+      "NOT a widening beyond one path. Fourteen, and no fifteenth.",
+      "NOT a release of LOCK-AUDIT-ACTION-VOCABULARY. See LOCKS.",
+      "NOT a change to any frozen PF2 semantic. PF2_SEMANTICS_FROZEN, ROLE_ENFORCEMENT_LAYER, STATUS_INPUT_CONTRACT, PAGINATION_DISPOSITION, AUDIT_VOCABULARY_CONTRACT, ENTRYPOINT_REGISTRATION_CONTRACT, POSTGRES_CONTRACT, MANIFEST_DISPOSITION, PF2_NEW_CONTROLS and TENANCY_DISPOSITION are unchanged in content and in cardinality. No control id is added, redefined or removed; the base's seven PF2- controls remain seven. MUTATION_CONTRACT is unchanged in CONTENT — no mutation control is added, removed or redesigned — and its execution_obligations.scope is re-anchored from thirteen paths to fourteen for the single reason that it names a 'fourteenth path' as out of scope; see CONTRADICTION_CLOSURE_LEDGER entry 7.",
+      "NOT a new PostgreSQL matrix row, NOT a new mutation requirement, NOT a companion manifest.",
+      "NOT an ODS/HPO lineage allocation, NOT a migration ordinal allocation, NOT a PROTECTED_GRANTS registration, NOT a Controller enumeration. scripts/ods-scope.ts is not edited.",
+      "NOT an execution authorization. PF2_IMPLEMENTATION_AUTHORIZED remains NO; see EXECUTION_AUTHORIZATION.",
+      "NOT an edit to any integrated predecessor. The base, the parent, the batch test manifest and the PF1 pair are all left byte-unchanged."
+    ],
+    "conflict_rule": "Where this amendment and the base disagree, the base controls for every product, permission, composition, lifecycle, audit-vocabulary, tenancy, PostgreSQL, mutation and control semantic, and this amendment controls ONLY for the narrow question named in DEFECT_CORRECTED: whether tests/database-runtime-entrypoints.test.ts is inside PF2's write surface and, if so, for what. Exactly SEVEN clauses of the base are retired, every one of them an instance of the same fact — that the path was outside the parent's surface, and that PF2's surface was therefore thirteen — and nothing else is overridden. The enumeration is measured rather than asserted; see CONTRADICTION_CLOSURE_LEDGER.completeness_check."
+  },
+
+  "DEFECT_CORRECTED": {
+    "id": "F-EP-1b",
+    "class": "RELEASE_CONDITION_THAT_UNDER_SPECIFIES_ITS_OWN_RELEASE",
+    "statement": "The base's LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN.release_condition offers two limbs and names limb (a) as 'a bounded append-only amendment to the parent product authority adding tests/database-runtime-entrypoints.test.ts to PF2_composition_and_permissions for REGISTRATION ONLY, with an explicit prohibition on loosening any assertion in it'. Taken literally and satisfied exactly, limb (a) leaves SEVEN clauses of the base itself still prohibiting the path, because PF2's write permission is created by the base — not by the parent — and the base defines its grant by a literal thirteen-element list plus an absolute no-fourteenth-path rule.",
+    "why_this_is_a_defect_and_not_a_reading_error": "The base states its own position unambiguously in EXECUTION_AUTHORIZATION.resolution_of_the_integrated_field: the parent 'granted write permission to no one' and 'Write permission is created HERE'. A release condition that only moves the parent therefore cannot, on the base's own account of where permission lives, release anything. The two statements are internally inconsistent about what limb (a) accomplishes.",
+    "correction": "Limb (a) is NECESSARY. It is not SUFFICIENT. The sufficient condition is limb (a) TOGETHER WITH this amendment: the parent's frozen surface must admit the path AND the operative grant must admit it, in that order of authority. Both are materialized in the same mission and both must be integrated for the lock to release.",
+    "what_is_NOT_being_claimed": "Limb (b) — an HPO adjudication assigning the pin move to another owner — is NOT taken, NOT reinterpreted and NOT closed. It remains available as an alternative route that this mission simply did not use.",
+    "narrowness": "This correction touches the release_condition of ONE lock. It does not generalise to any other lock, any other release condition, or any other authority in the repository."
+  },
+
+  "REPRODUCTION_INCORPORATED_BY_REFERENCE": {
+    "rule": "The full first-hand reproduction lives in the sibling amendment's REPRODUCTION block and is not restated here in order to keep one measurement with one owner. The load-bearing figures are repeated below so this artifact is independently checkable.",
+    "current_totals_measured_at_BASE_and_at_the_live_tip": { "inventoried": 141, "reaching": 116, "contextualized": 100, "allowlisted": 16 },
+    "totals_after_the_PF2_actions_module_is_created": { "inventoried": 142, "reaching": 117, "contextualized": 101, "allowlisted": 16 },
+    "independent_recomputation": "A script written from the test's own definitions, not by importing them, reproduced INVENTORIED = 141 and found exactly three portfolio entry points — app/app/portfolios/page.tsx, app/app/portfolios/new/page.tsx and app/app/portfolios/[portfolioId]/page.tsx — with no actions module, corroborating the base's PF2_WRITE_SURFACE.measured_existence_at_AS_OF_TREE value 'ABSENT'.",
+    "per_axis_reason": {
+      "inventoried_+1": "Filename-driven and unconditional: the seventh element of ENTRY_POINT_PATTERNS (tests/database-runtime-entrypoints.test.ts:172-193) matches a basename of exactly actions.ts or actions.tsx anywhere under app/. Measured with a variant containing no imports at all, which moved this axis and only this axis.",
+      "reaching_+1": "Import-graph-driven: reachesDatabaseClient finds db/client.ts in two hops through lib/portfolios/service.ts. Measured with a variant that reached the database but opened no context, which moved inventoried and reaching and left contextualized at 100.",
+      "contextualized_+1": "Shape-driven: the module opens runWithOrganizationAccess around its governed writes, so every database-touching server region satisfies opensAContext. Measured as the delta between that contextless variant (100) and the faithful variant (101).",
+      "allowlisted_+0": "ALLOWLIST is a literal in the test file; a module enters it only if someone adds a row. All three variants measured 16 — including the contextless one, the shape whose author would be tempted to allowlist it. Holding at 16 is an obligation here, not merely an observation: see PROHIBITIONS.P_EP_4."
+    },
+    "residual_after_authorized_discharge": "With the module created and tests/database-entrypoint-inventory.json registered exactly as ENTRYPOINT_REGISTRATION_CONTRACT requires (checkedModules 143 -> 144, databaseReaching 119 -> 120, one map row classified 'contextualized'), the suite reports Tests 1 failed | 223 passed (224), and the single red assertion is tests/database-runtime-entrypoints.test.ts:774. That measurement — not an argument — is what fixes the amendment surface at exactly one path.",
+    "sufficiency": "Applying only the two authorized hunks to that file yields Test Files 1 passed (1), Tests 224 passed (224), with no assertion weakened, no pattern removed and no ALLOWLIST row added."
+  },
+
+  "PF2_WRITE_SURFACE_AMENDED": {
+    "base_state": "THIRTEEN paths under PF2_WRITE_SURFACE.authorized_paths_exactly_thirteen.",
+    "amended_state_authorized_paths_exactly_fourteen": [
+      "lib/portfolios/service.ts",
+      "lib/projects/service.ts",
+      "lib/auth/permissions.ts",
+      "lib/audit/logger.ts",
+      "app/app/portfolios/page.tsx",
+      "app/app/portfolios/new/page.tsx",
+      "app/app/portfolios/[portfolioId]/page.tsx",
+      "app/app/portfolios/[portfolioId]/actions.ts",
+      "tests/database-entrypoint-inventory.json",
+      "tests/audit-action-contract.test.ts",
+      "tests/portfolios.service.test.ts",
+      "tests/auth/permissions.test.ts",
+      "tests/postgres/portfolio-composition.pg.test.ts",
+      "tests/database-runtime-entrypoints.test.ts"
+    ],
+    "provenance_restated_and_still_true": "Identical, path for path and in order, to the parent product authority's authorized_future_implementation_surface.PF2_composition_and_permissions AS AMENDED BY docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json. This amendment narrows nothing and widens nothing relative to that amended parent surface. The base's own provenance claim, true of the unamended parent, remains true of the unamended pair; this clause is its successor, not its contradiction.",
+    "measured_existence_of_the_fourteenth_path": "PRESENT at START_TREE. Blob 19c859d8f0c784e60381d601e2efe27d919615a9, 49959 blob bytes (larger in the working tree because .gitattributes pins only docs/**, db/baseline/**, db/prepared/** and *.sh to LF, so a .ts file round-trips through core.autocrlf). Identical blob at the base's own AS_OF_HEAD 635ed046.",
+    "no_fifteenth_path": "PF2 may not create, rename or modify any path outside this list of fourteen. In particular it still may not create tests/postgres/portfolio-composition.probes.json, may not create a tests/postgres/<stem>-harness.ts module, and may not edit lib/audit/__tests__/logger.test.ts, lib/portfolios/analytics.ts, lib/portfolios/analytics.test.ts, lib/portfolios/read-model.ts, lib/portfolios/evidence-health.ts, lib/portfolios/intelligence.ts, components/portfolios/**, db/schema.ts, db/migrations/**, db/prepared/**, db/baseline/**, db/policies/**, lib/stella/**, app/actions/stella/** or docs/ops/ods/**. Every prohibited surface the base enumerates remains prohibited verbatim, minus the single entry retired below.",
+    "the_thirteen_are_unchanged": "No path of the thirteen is removed, renamed, reordered or re-scoped, and each retains exactly the permitted edits and prohibitions the base attached to it. The fourteenth is appended, not substituted."
+  },
+
+  "CONTRADICTION_CLOSURE_LEDGER": {
+    "purpose": "The mission required a form that leaves ZERO contradiction about whether tests/database-runtime-entrypoints.test.ts is legally writable by PF2 implementation. Six clauses of the base would otherwise still say NO. Each is retired here by locator, with the exact ground of its retirement. An auditor can check the ledger is complete by searching the base for the path string and for the word 'thirteen'.",
+    "entries": [
+      {
+        "locator": "PF2_WRITE_SURFACE.authorized_paths_exactly_thirteen",
+        "base_effect": "A literal thirteen-element array not containing the path.",
+        "retired_by": "PF2_WRITE_SURFACE_AMENDED.amended_state_authorized_paths_exactly_fourteen, which restates all thirteen unchanged and appends the fourteenth.",
+        "status": "RETIRED. The base's array remains historically true of the base; the operative list is the fourteen above."
+      },
+      {
+        "locator": "PF2_WRITE_SURFACE.no_fourteenth_path",
+        "base_quoted": "PF2 may not create, rename or modify any path outside this list of thirteen.",
+        "retired_by": "PF2_WRITE_SURFACE_AMENDED.no_fifteenth_path, which is the same absolute rule re-anchored to the fourteen and which re-enumerates every prohibited surface the base named.",
+        "status": "RETIRED AND REPLACED BY AN EQUALLY ABSOLUTE RULE. The prohibition is not relaxed in kind, only re-anchored by one path."
+      },
+      {
+        "locator": "PF2_WRITE_SURFACE.prohibited_surfaces_restated_from_parent_and_sibling, the entry beginning 'tests/database-runtime-entrypoints.test.ts'",
+        "base_quoted": "tests/database-runtime-entrypoints.test.ts — NOT in the parent's PF2 surface. PF2 may not edit it under this authority; see LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN.",
+        "ground_of_retirement": "Its stated ground is now false as a matter of measurement: the parent's PF2 surface, as amended by PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json, DOES contain the path. This entry is the only one of that list retired; the other entries stand verbatim.",
+        "status": "RETIRED. Replaced by REGISTRATION_ONLY_SCOPE and PROHIBITIONS, which are narrower than a blanket permission and stricter than the base's silence."
+      },
+      {
+        "locator": "LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN.what_may_not_be_done_instead[0]",
+        "base_quoted": "Editing tests/database-runtime-entrypoints.test.ts under this authority. It is not in the write surface.",
+        "ground_of_retirement": "The second sentence is the whole of the first sentence's ground, and it is now false. The path IS in the write surface.",
+        "status": "RETIRED. The other three entries of what_may_not_be_done_instead are NOT retired: weakening the assertion, relocating the module into page.tsx, and deferring the registration to a later commit all remain absolutely prohibited, and are restated as P_EP_3, P_EP_2 and REGISTRATION_ONLY_SCOPE.same_commit_obligation_inherited respectively."
+      },
+      {
+        "locator": "EXECUTION_AUTHORIZATION.scope_of_the_grant",
+        "base_quoted": "Write permission for the thirteen paths in PF2_WRITE_SURFACE, and for nothing else.",
+        "retired_by": "EXECUTION_AUTHORIZATION.scope_of_the_grant_amended below: write permission for the fourteen paths, and for nothing else. Every other limb of that clause — no extension to PF1's or PF3's path sets, no protected surface, no migration, no schema change, no RLS policy change, no ODS artifact, no Controller enumeration — is restated unchanged.",
+        "status": "RETIRED AS TO CARDINALITY ONLY."
+      },
+      {
+        "locator": "PF2_WRITE_SURFACE.provenance",
+        "base_quoted": "Identical, path for path and in order, to the parent product authority's authorized_future_implementation_surface.PF2_composition_and_permissions. This authority narrows nothing and widens nothing.",
+        "why_it_had_to_be_addressed": "This clause is a FACTUAL claim, not a permission. A parent-only amendment would have falsified it and left a contradiction with no owner. Amending both artifacts in one mission keeps the claim true of the amended pair.",
+        "retired_by": "PF2_WRITE_SURFACE_AMENDED.provenance_restated_and_still_true.",
+        "status": "RETIRED AND RE-ASSERTED, still true of the amended parent."
+      },
+      {
+        "locator": "MUTATION_CONTRACT.execution_obligations.scope",
+        "base_quoted": "Mutations may touch only the thirteen authorized paths. A mutation that would require editing a fourteenth path is out of scope and its control must be redesigned within the thirteen.",
+        "why_it_is_prohibitive_and_not_narrative": "It is the only clause outside PF2_WRITE_SURFACE and EXECUTION_AUTHORIZATION that binds behaviour to the cardinality thirteen, and it uses the word 'fourteenth' to name exactly the thing this amendment creates. Left unretired it would say, in terms, that a fourteenth path is out of scope while the grant says it is in scope.",
+        "retired_by": "This entry, re-anchored: mutations may touch only the FOURTEEN authorized paths, and a mutation that would require editing a fifteenth path is out of scope and its control must be redesigned within the fourteen.",
+        "status": "RETIRED AS TO CARDINALITY ONLY.",
+        "no_mutation_control_is_added_or_changed": "This amendment adds no mutation control, removes none and redesigns none. The base's MUTATION_CONTRACT is unchanged in content and in cardinality, so the re-anchoring has no effect on any existing control; it exists to remove a numeric self-contradiction, not to enable a new mutation.",
+        "the_fourteenth_path_is_not_thereby_a_free_mutation_target": "Any mutation of tests/database-runtime-entrypoints.test.ts remains bound by PROHIBITIONS. In particular P_EP_3 forbids weakening any assertion in it, and a mutation control is a temporary edit proving a gate catches drift — never a persisted loosening."
+      }
+    ],
+    "completeness_check": {
+      "method": "MEASURED, not asserted. Every occurrence of the string 'tests/database-runtime-entrypoints.test.ts' and of the word 'thirteen' in the base was enumerated field by field by walking the parsed JSON, and each occurrence was classified PROHIBITIVE (binds what PF2 may do, therefore must be retired) or NARRATIVE (records a measurement or a rationale, therefore stays and remains historically true).",
+      "path_occurrences": "12 occurrences across 11 fields.",
+      "path_occurrences_PROHIBITIVE_and_retired": [
+        "PF2_WRITE_SURFACE.prohibited_surfaces_restated_from_parent_and_sibling[4] — ledger entry 3.",
+        "LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN.what_may_not_be_done_instead[0] — ledger entry 4."
+      ],
+      "path_occurrences_NARRATIVE_and_left_standing": [
+        "NO_PRODUCT_DECISION_REOPENED.additive_gap_fills[3].parent_state — describes the parent's silence on the derived totals and cites :993-995. Still true.",
+        "ENTRYPOINT_REGISTRATION_CONTRACT.why_the_totals_are_stated — cites :993-995 and contrasts the dischargeable AST obligation with 'the second pin recorded under LOCK_ENTRYPOINT_REGEX_LAYER_PIN'. Still true as written; the second pin is now dischargeable too, which the lock's amended status records.",
+        "PF2_NEW_CONTROLS.positive_controls[0].test_file and .why_it_is_stated_separately_from_MUT_ENTRYPOINT_1 — name the file as the VERIFIER of PF2-POS-ENTRYPOINT-TOTALS-1, not as a writable path. Unaffected: that control's test_file remains tests/database-entrypoint-inventory.json.",
+        "LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN.what_it_holds, .measured_basis, .why_it_is_not_dischargeable_within_the_current_surface and .release_condition — the lock's own recitals. Addressed under DEFECT_CORRECTED and under LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN below, not retired: they remain an accurate account of why the lock existed. Note that what_it_holds carries the :775 citation recorded as F-EP-2.",
+        "OPEN_FINDINGS[0].detail (F-PF2-1), two occurrences — the finding that raised the lock. Still an accurate statement of the defect; its disposition is now this amendment."
+      ],
+      "thirteen_occurrences": "9 occurrences across 8 string VALUES. A raw grep over the file returns 10, because the KEY name PF2_WRITE_SURFACE.authorized_paths_exactly_thirteen also contains the word. That key is ledger entry 1 and is retired with the array it names; the discrepancy between 10 and 9 is the key, not a missing clause.",
+      "thirteen_occurrences_PROHIBITIVE_and_retired": [
+        "PF2_WRITE_SURFACE.no_fourteenth_path — ledger entry 2.",
+        "EXECUTION_AUTHORIZATION.scope_of_the_grant — ledger entry 5.",
+        "MUTATION_CONTRACT.execution_obligations.scope, two occurrences in one field — ledger entry 7."
+      ],
+      "thirteen_occurrences_NARRATIVE_and_left_standing": [
+        "NO_PRODUCT_DECISION_REOPENED.inherited_unchanged[14] — 'authorized_future_implementation_surface.PF2_composition_and_permissions — the thirteen paths.' A record of what the base inherited from the UNAMENDED parent. True of that parent and left as history; the operative count is fourteen.",
+        "PF2_NEW_CONTROLS.negative_controls[2].why_a_static_control_is_appropriate and .scope_boundary — PF2-NEG-AGGREGATE-PAGE-1 is scoped to the thirteen authorized paths and asserts that none of them adds a page/limit/offset/cursor parameter. NOT retired and NOT extended: the control's scope stays exactly at the thirteen implementation paths. tests/database-runtime-entrypoints.test.ts adds no such parameter and is not an aggregate surface, so the control's claim is unaffected either way, and widening its scope would be a change to a frozen control this amendment has no cause to make.",
+        "TENANCY_DISPOSITION.ownership — 'does not need it in order to implement the thirteen authorized files.' Still true; it is now fourteen files and the tenancy successor is still not needed, since the fourteenth is a test file with no tenancy surface.",
+        "LOCKS.protected_grant_measured_basis — states that none of the thirteen implementation paths matches DEFAULT_PROTECTED_PATTERNS. Re-derived for the fourteenth at START_TREE: tests/database-runtime-entrypoints.test.ts matches none of the seven patterns either, so the conclusion holds unchanged at fourteen. Restated in this amendment's LOCKS.protected_grant_measured_basis."
+      ],
+      "auditor_reproduction": "Parse the base, walk every string field, count both tokens, and compare against the two totals above (12 across 11 fields; 9 across 8 fields). Any occurrence not listed in one of the four buckets is a gap in this ledger."
+    },
+    "residual_contradiction_after_this_amendment": "ZERO. After both amendments integrate, no clause of any integrated Portfolio authority says PF2 may not edit tests/database-runtime-entrypoints.test.ts; no clause binds PF2 to a cardinality of thirteen in a way that contradicts the grant; and no clause says PF2 may edit the file for anything other than the registration and derived-total reconciliation named below."
+  },
+
+  "REGISTRATION_ONLY_SCOPE": {
+    "identical_to_the_sibling": "This block is materially identical to REGISTRATION_ONLY_SCOPE in PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json, deliberately. Two artifacts widening the same surface must not offer two readings of what the widening permits.",
+    "binding_rule": "The fourteenth path is authorized for ONE purpose and no other: registration and derived-total reconciliation caused by the new PF2 actions entry point. Any other edit to tests/database-runtime-entrypoints.test.ts is outside this authority and fails closed.",
+    "permitted_edits_exhaustively": [
+      {
+        "id": "EP-EDIT-1",
+        "what": "Move the four integers of the assertion at tests/database-runtime-entrypoints.test.ts:774 from { inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 } to { inventoried: 142, reaching: 117, contextualized: 101, allowlisted: 16 }.",
+        "constraint": "The four values are FIXED at exactly those figures. The assertion form stays a strict .toEqual over the same four keys in the same order. No fifth key, no removed key."
+      },
+      {
+        "id": "EP-EDIT-2",
+        "what": "Append ONE comment entry to the wave comment block that occupies tests/database-runtime-entrypoints.test.ts:703-773, recording the move and its reason, in the established form the prior waves used.",
+        "constraint": "Append only. No prior wave's comment entry may be edited, shortened, reworded or deleted. The entry names the PF2 node, names app/app/portfolios/[portfolioId]/actions.ts by path, states +1 inventoried / +1 reaching / +1 contextualized / allowlisted UNCHANGED at 16, and states that the module is contextualized because it opens runWithOrganizationAccess around its governed writes exactly as its siblings do."
+      }
+    ],
+    "the_whole_edit_is_two_hunks": "MEASURED: applying exactly these two hunks takes the file's suite to 224 passed (224). No third hunk is needed and none is authorized.",
+    "same_commit_obligation": "The edit lands in the SAME commit that creates app/app/portfolios/[portfolioId]/actions.ts, alongside the AST-layer registration the base's ENTRYPOINT_REGISTRATION_CONTRACT already requires. The base's non-waivable 'in the same commit that introduces it' rule now governs BOTH layers.",
+    "line_number_caveat": "The line citations 774 and 703-773 are bound to blob 19c859d8. An implementer whose base carries a different blob for this file locates the constructs by content — the sole `.toEqual` over the four keys inventoried/reaching/contextualized/allowlisted, and the comment block immediately preceding it — and re-measures before editing.",
+    "citation_correction_recorded": "The base cites this assertion as ':775'. It is at 774; 775 is the closing brace-paren of the it() block. Measured at the identical blob the base itself measured. See OPEN_FINDINGS.F-EP-2. The base is not edited; this amendment simply cites correctly."
+  },
+
+  "PROHIBITIONS": {
+    "identical_to_the_sibling": "Materially identical to PROHIBITIONS in PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json. Binding and exhaustively enumerated. Each is a prohibition, not a permission, and none may be read as narrowing another.",
+    "P_EP_1_no_weakening_of_the_entrypoint_regex": "ENTRY_POINT_PATTERNS (tests/database-runtime-entrypoints.test.ts:172-193) may not be edited. No pattern may be removed, narrowed, anchored differently, commented out or reordered. In particular the pattern that classifies a file basenamed exactly actions.ts or actions.tsx — the seventh element — stays exactly as it is. Deleting it would silently return inventoried to 141 with the module in place, which is the precise failure this prohibition exists to prevent.",
+    "P_EP_2_no_removal_of_actions_ts_from_entrypoint_classification": "isEntryPoint (:208-217) and walk (:195-206) may not be edited. The new module may not be excluded from the inventory by any device: not by renaming it, not by moving it out of app/, not by placing it under a directory the walk skips, not by adding a name-based exclusion beside the '.test.' one, and not by inlining the composition server actions into app/app/portfolios/[portfolioId]/page.tsx to avoid creating an entry point at all. This restates, unweakened, the base's LOCK_ENTRYPOINT_REGEX_LAYER_PIN.what_may_not_be_done_instead entry on relocation, whose own reasoning stands: the parent states as product fact that PF-2 introduces the module at that path, NEG-AUDIT-1 names it by path, and page.tsx is itself already an entry point so the quadruple would move anyway.",
+    "P_EP_3_no_loosening_of_exact_total_assertions": "The assertion at :774 stays a strict toEqual over the same four keys. It may not become toMatchObject, toContain, a range, a comparison, a toBeGreaterThan, a snapshot, an it.skip, an it.todo, a conditional, or a commented-out block. The non-vacuity guard at :638-640 may not be loosened either. No assertion anywhere in the file may be weakened, disabled or deleted, including assertions this amendment does not name. This restates, unweakened, the base's prohibition on weakening the assertion 'from toEqual to a comparison that tolerates drift'.",
+    "P_EP_4_no_new_allowlist_row": "ALLOWLIST (:451 onward) may not gain a row for app/app/portfolios/[portfolioId]/actions.ts or for any other module, and no existing row may be edited or removed. allowlisted stays at 16. An ALLOWLIST row is a documented decision about a module that legitimately cannot open a context; the PF2 module can and must, so a row for it would be a suppression. SERVICE_OWNED_CONTEXTS may not gain an entry for it either. This is the regex-layer twin of the base's ENTRYPOINT_REGISTRATION_CONTRACT rule that an ALLOWLIST row in the AST layer 'would be an unauthorized weakening'.",
+    "P_EP_5_no_change_to_unrelated_entrypoint_inventory_behavior": "Everything in the file other than the two hunks of REGISTRATION_ONLY_SCOPE is out of scope: CONTEXT_OPENERS, reachesDatabaseClient and its cycle handling, valueImports, isClientModule, serverRegions, usesDatabase, opensAContext, databaseSymbols, resolveModule, the AST scanner sections, the mutant fixtures, the versioned-inventory reconciliation tests and the documented-residual-limits tests. No helper may be edited to change what any other module classifies as.",
+    "P_EP_6_no_edit_for_any_other_purpose": "The path is authorized for the PF2 actions entry point's registration and derived-total reconciliation ONLY. It is not authorized for PF1 work, for PF3 work, for unrelated drift found while editing, for reformatting, for lint fixes, for import reordering, or for correcting the citation defect recorded as F-EP-2.",
+    "P_EP_7_no_deletion_or_rename": "tests/database-runtime-entrypoints.test.ts may not be deleted, renamed, split, moved or replaced by a generated equivalent.",
+    "P_EP_8_the_move_is_plus_one_plus_one_plus_one_plus_zero_and_nothing_else": "If a PF2 implementation measures a quadruple other than { 142, 117, 101, 16 } after creating the module, that is a discovery and a STOP, not a licence to write whatever number the suite reports. A different measured figure means either the module does not have the shape this authority requires — the contextless variant measures { 142, 117, 100, 16 } — or the base has drifted, and both are escalations rather than edits.",
+    "P_EP_9_PF2_production_surface_otherwise_unchanged": "Nothing about the other thirteen paths changes: not their permitted edits, not their prohibitions, not their measured byte counts, not their ownership under shared_writer_serialization. Every prohibition the base and the parent already carry over app/**, lib/**, db/**, docs/ops/ods/** and the three Portfolio pages' unauthenticated / no-selection auth branches remains in force verbatim.",
+    "P_EP_10_no_second_use_of_this_widening": "The fourteenth path is granted to the PF2 node for one entry point. It does not become a Portfolio-lane standing permission: PF1 and PF3 acquire nothing here, and a future PF2-adjacent node that adds another entry point needs its own authority rather than reusing this one."
+  },
+
+  "SHARED_WRITER_DISPOSITION_OF_THE_FOURTEENTH_PATH": {
+    "ownership": "PF2 owns tests/database-runtime-entrypoints.test.ts for the Portfolio lane, on the same terms the base's shared_writer_rule_inherited applies to lib/audit/logger.ts, tests/database-entrypoint-inventory.json and tests/audit-action-contract.test.ts. PF1 and PF3 must not edit it.",
+    "ownership_is_not_cross_lane_exclusivity": "The file is a repository-wide shared writer: every wave that adds an entry point moves the same quadruple. PF2 synchronises with integration before editing it and resolves a conflict by RE-APPLYING Portfolio's figure on top of whatever is there — recomputing the quadruple against the merged tree rather than restoring its own number — and never by deleting another lane's comment entry.",
+    "measured_contention_at_START_TREE": "NONE. All six open pull requests were checked by two-endpoint merge-base diff rather than by the `gh pr view --json files` listing, which caps at 100 entries and would have truncated PR #105's 107-path delta: #105 107 paths, #106 2, #109 2, #110 3, #44 288 against its merge-base, #14 52. Not one touches tests/database-runtime-entrypoints.test.ts.",
+    "why_this_is_stated_rather_than_assumed": "The base recorded exactly one concurrent writer on one shared file and was right to; adding a fourteenth shared-writer path without re-running that measurement would be inheriting a conclusion instead of taking one."
+  },
+
+  "NON_OVERLAP": {
+    "no_audit_vocabulary_lock_is_released_here": "LOCK-AUDIT-ACTION-VOCABULARY is NOT released, NOT narrowed and NOT reinterpreted. lib/audit/logger.ts remains path four of the write surface and remains blocked.",
+    "PR_105_still_owns_lib_audit_logger_ts": "Re-measured, not inherited. `gh pr view 105`: state OPEN, isDraft true, mergedAt null, head codex/multiorg-s3-refusal-audit-implementation-r1, base integration/commercial-v1. Its own delta against the merge-base is 107 paths and includes lib/audit/logger.ts.",
+    "PF2_IMPLEMENTATION_AUTHORIZED_remains_NO_after_this_amendment_while_PR_105_is_open": "BINDING. This amendment removes ONE of the two preconditions. The other stands. Because the base records that the five audit verbs are load-bearing for almost every frozen PF2 semantic, the practical effect is unchanged: PF2 implementation does not start while PR #105 is open.",
+    "no_ODS_lineage_touched": "The base's TENANCY_DISPOSITION, the multi-org S3 lane's ODS v1.0.27 / tenancy v1.0.8 artifacts and every ODS maintenance addendum are untouched. This mission allocates no ODS identifier, no HPO grant and no Controller ordinal."
+  },
+
+  "LOCKS": {
+    "ODS_REQUIRED": "NO",
+    "MIGRATION_REQUIRED": "NO",
+    "PROTECTED_GRANT_REQUIRED": "NO",
+    "CONTROLLER_REQUIRED": "NO",
+    "SCHEMA_CHANGE_REQUIRED": "NO",
+    "HEAVY_PG_REQUIRED": "NO",
+    "protected_grant_measured_basis": "Re-derived at START_TREE from scripts/ods-scope.ts:82-90. DEFAULT_PROTECTED_PATTERNS is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. Neither docs/ops/portfolio/** nor tests/database-runtime-entrypoints.test.ts matches any of them, so no --protected-authority grant is required for this mission or for the PF2 implementation node.",
+    "migration_measured_basis": "Unchanged from the base. PF2 touches no file under db/ and consumes no ordinal. Ordinal 0067 remains claimed by the open multi-org S3 lane and by no Portfolio node.",
+    "LOCK_ENTRYPOINT_REGEX_LAYER_PIN": {
+      "id": "LOCK-ENTRYPOINT-REGEX-LAYER-PIN",
+      "status": "RELEASED ON INTEGRATION OF BOTH AMENDMENTS OF THIS MISSION. Not before.",
+      "released_by": [
+        "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json — satisfies limb (a): the parent's frozen surface admits the path.",
+        "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json (this artifact) — supplies the residue limb (a) does not reach: the operative grant admits the path and the six prohibiting clauses are retired."
+      ],
+      "release_is_conditional": "Neither artifact releases anything before both pass an independent Opus exact-object audit and are integrated into integration/commercial-v1.",
+      "what_the_release_does_NOT_permit": "It permits the two hunks of REGISTRATION_ONLY_SCOPE and nothing else. Every item of the base's what_may_not_be_done_instead other than the retired first entry survives, restated as P_EP_2, P_EP_3 and the same-commit obligation."
+    },
+    "LOCK_AUDIT_ACTION_VOCABULARY": {
+      "id": "LOCK-AUDIT-ACTION-VOCABULARY",
+      "status": "HELD BY ANOTHER LANE. UNCHANGED BY THIS MISSION.",
+      "holder": "PR #105, open and draft at START_HEAD, own delta 107 paths including lib/audit/logger.ts.",
+      "release_condition": "Unchanged from the base: released when PR #105 is integrated or closed. On integration PF2 re-measures lib/audit/logger.ts at the new tip and appends its five constants on top of whatever is there, never overwriting the other lane's entries and never removing them to obtain a green pin.",
+      "measured_defect_class_of_the_holder_still_not_shared_by_PF2": "Unchanged from the base and not re-litigated here: PF2's five values are two-segment and satisfy the shape assertion in lib/audit/__tests__/logger.test.ts unchanged. The lock exists for concurrency on a shared writer, not for a shared defect."
+    },
+    "implementation_lock": {
+      "id": "LOCK-HEAVY-LOCAL-PG",
+      "disposition": "Unchanged from the base. The PF2 implementation node MAY take it, and only while executing its real-PostgreSQL verification.",
+      "not_taken_by_this_mission": "This authority-only mission runs no PostgreSQL of any kind."
+    }
+  },
+
+  "EXECUTION_AUTHORIZATION": {
+    "resolution_of_the_integrated_parent_field_unchanged": "PORTFOLIO_IMPLEMENTATION_AUTHORIZED = false in the parent is NOT altered, NOT superseded and NOT reinterpreted, by either amendment of this mission. The parent still grants write permission to no one; permission is created by the base as amended here.",
+    "scope_of_the_grant_amended": "Write permission for the FOURTEEN paths in PF2_WRITE_SURFACE_AMENDED, and for nothing else. The grant does not extend to PF1's or PF3's path sets, does not extend to any protected surface, and does not authorize a migration, a schema change, an RLS policy change, an ODS artifact or a Controller enumeration. The fourteenth path carries the narrowest scope of the fourteen: two hunks, enumerated.",
+    "PF2_IMPLEMENTATION_AUTHORIZED_NOW": "NO",
+    "PF2_IMPLEMENTATION_AUTHORIZED_AFTER_BOTH_AMENDMENTS_INTEGRATE": "CONDITIONAL — YES for the thirteen paths that do not depend on a held lock, and NO for lib/audit/logger.ts until LOCK-AUDIT-ACTION-VOCABULARY is released. app/app/portfolios/[portfolioId]/actions.ts and tests/database-runtime-entrypoints.test.ts are no longer blocked by LOCK-ENTRYPOINT-REGEX-LAYER-PIN once both amendments integrate. Because the five audit verbs are load-bearing for almost every frozen semantic, the practical effect remains that PF2 implementation should not start until PR #105 is integrated or closed.",
+    "PF1_IMPLEMENTATION_AUTHORIZED": "SPENT — implemented and integrated at 635ed046.",
+    "PF3_IMPLEMENTATION_AUTHORIZED": "NO",
+    "conditions_precedent": [
+      "This artifact and its sibling pass an independent Opus exact-object audit.",
+      "BOTH are integrated into integration/commercial-v1. Integrating one without the other does not release the lock.",
+      "LOCK-AUDIT-ACTION-VOCABULARY is released before lib/audit/logger.ts is written."
+    ],
+    "what_this_amendment_does_not_do": [
+      "It does not implement PF2. The working tree's PF2 paths are unchanged by this mission and the actions module is still absent.",
+      "It does not authorize PF1 or PF3.",
+      "It does not release LOCK-AUDIT-ACTION-VOCABULARY.",
+      "It does not widen the surface to a fifteenth path, now or by implication.",
+      "It does not edit, supersede or amend any integrated predecessor artifact.",
+      "It does not close the Portfolio tenancy coupling successor.",
+      "It does not authorize editing docs/ops/DATABASE_RUNTIME_CUTOVER.md; see the sibling's OUT_OF_SCOPE_MEASURED."
+    ]
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "shared_with_the_sibling": "The mission ran one set of gates for both artifacts; they are recorded in full in the sibling's VALIDATION_PERFORMED_BY_THIS_MISSION and summarised here.",
+    "prestate": "ODS_PRESTATE=PASS (branch, head, tree, clean all PASS).",
+    "authority_seal": "AUTHORITY_SEAL_VERIFY=PASS.",
+    "entrypoint_census": "223 passed (223) at BASE with the full file executed; the pinned assertion also passes at the live tip fb46c342.",
+    "differential_experiment": "Three module variants measured, isolating one axis each.",
+    "residual_after_authorized_discharge": "Exactly one red assertion, which is what fixes the amendment surface at one path.",
+    "sufficiency": "224 passed (224) after the two authorized hunks.",
+    "concurrency": "Six open pull requests checked by merge-base diff; the fourteenth path is uncontended.",
+    "no_postgres": "No PostgreSQL of any kind was started. NO PG."
+  },
+
+  "OPEN_FINDINGS": {
+    "F-EP-2": {
+      "severity": "MINOR / NON-BLOCKING",
+      "class": "CITATION_DEFECT_IN_THE_BASE",
+      "statement": "The base cites the pinned assertion as tests/database-runtime-entrypoints.test.ts:775. It is at 774.",
+      "measured_basis": "`grep -n 'toEqual({ inventoried: 141' tests/database-runtime-entrypoints.test.ts` returns 774, evaluated against blob 19c859d8 — the identical blob the base measured at its own AS_OF_HEAD 635ed046, so this is an off-by-one and not a base shift. The base's other structural citations check out: ENTRY_POINT_PATTERNS at :172 onward, ENTRY_POINTS at :221, the inventory-header assertions at :993-995.",
+      "disposition": "The base is left byte-unchanged. This amendment cites 774 and additionally identifies the construct by content, so no implementer can be misled. Not blocking."
+    },
+    "F-EP-3": {
+      "severity": "MINOR / NON-BLOCKING / PRE-EXISTING / NOT PF2's",
+      "class": "PUBLISHED_DOC_DRIFT",
+      "statement": "docs/ops/DATABASE_RUNTIME_CUTOVER.md:414-419 publishes 121 / 97 / 83 / 14 against the test's 141 / 116 / 100 / 16.",
+      "disposition": "OUT OF SCOPE and not authorized. Full measurement and reasoning in the sibling's OUT_OF_SCOPE_MEASURED. No owner is assigned and PF2 is explicitly not made responsible."
+    },
+    "F-EP-4": {
+      "severity": "INFORMATIONAL",
+      "class": "SHAPE_DEPENDENCE_OF_THE_AUTHORIZED_FIGURE",
+      "statement": "{ 142, 117, 101, 16 } is correct only if the module is contextualized; a contextless module measures { 142, 117, 100, 16 }.",
+      "disposition": "Converted into a control by P_EP_8: any other measured quadruple is a STOP, so the pin doubles as a check on the module's shape rather than a number to be updated."
+    },
+    "no_blocking_findings": "NONE."
+  },
+
+  "self_check": {
+    "append_only": "PASS — the base is byte-unchanged at blob b120684a; this artifact is a new file.",
+    "no_integrated_predecessor_edited": "PASS — the mission's changed-path set is two ADDED files under docs/ops/portfolio/.",
+    "grant_widened_by_exactly_one_path": "PASS — thirteen to fourteen, enumerated in full, order preserved.",
+    "every_prohibiting_clause_retired_by_locator": "PASS — seven entries in CONTRADICTION_CLOSURE_LEDGER, with a completeness check over the base's own occurrences of the path string and of 'thirteen'.",
+    "no_frozen_semantic_reopened": "PASS — no control id added or redefined; the base's seven PF2- controls remain seven; PostgreSQL and mutation contracts unchanged in content and cardinality.",
+    "no_gate_weakened": "PASS — ten named prohibitions, three of which restate the base's own unweakened prohibitions verbatim in substance.",
+    "scope_text_identical_to_the_sibling": "PASS — REGISTRATION_ONLY_SCOPE and PROHIBITIONS are materially identical across both artifacts, so no third reading of the widening is available.",
+    "audit_vocabulary_lock_untouched": "PASS — HELD, holder re-measured rather than inherited.",
+    "no_ODS_no_migration_no_grant_no_schema": "PASS — re-derived from scripts/ods-scope.ts:82-90 at START_TREE.",
+    "no_PG": "PASS."
+  },
+
+  "final_state": {
+    "changed_paths_this_mission": [
+      "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json"
+    ],
+    "PF2_EFFECTIVE_WRITE_CEILING_BEFORE": 13,
+    "PF2_EFFECTIVE_WRITE_CEILING_AFTER": 14,
+    "ENTRYPOINT_TOTALS_NOW": { "inventoried": 141, "reaching": 116, "contextualized": 100, "allowlisted": 16 },
+    "ENTRYPOINT_TOTALS_AFTER_PF2": { "inventoried": 142, "reaching": 117, "contextualized": 101, "allowlisted": 16 },
+    "LOCK_ENTRYPOINT_REGEX_LAYER_PIN": "RELEASED ON INTEGRATION OF BOTH AMENDMENTS",
+    "LOCK_AUDIT_ACTION_VOCABULARY": "HELD",
+    "MAIN_UNCHANGED": true
+  },
+
+  "PF2_IMPLEMENTATION_AUTHORIZED": "NO",
+  "READY_FOR_PF2_IMPLEMENTATION": false,
+  "READY_FOR_INDEPENDENT_AUDIT": true,
+  "next_gate": "Independent Opus exact-object audit of both amendments together, then integration of both into integration/commercial-v1. PF2 implementation remains blocked until LOCK-AUDIT-ACTION-VOCABULARY is released by PR #105 being integrated or closed."
+}
