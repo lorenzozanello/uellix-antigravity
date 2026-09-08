@@ -40,6 +40,45 @@
       "productBranch": "feature/sprint-0-foundation"
     },
     {
+      "id": "W2-B2",
+      "description": "Wave 2 batch B2 (FIBIU-08/09/10) — financial proxy governance: review-status vocabulary mapping and live/version coupling, FIBC-010 provenance reachability and approval gate, exhaustive material-field registry, version-bound monetary resolution. Materially implemented at 75a385fd on 2026-09-01; its focused closure audit was omitted then and materialized on 2026-09-08 (HPO F-ER-3 RATIFY_MATERIAL_COMPLETION). The audit dimension deliberately pins the closure artifact's own commit SHA rather than a topic branch, because the resolver reads json-field evidence via `git show <ref>:<path>` and an ephemeral branch ref reports UNKNOWN — the measured W2-B5 registry-resolution gap.",
+      "authority": {
+        "type": "json-field",
+        "ref": "75a385fdd39502d2dbb10c646a6ea14eec9b68d5",
+        "path": "docs/ops/wave2/W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json",
+        "field": "final_state",
+        "closedValues": [
+          "B2_AUTHORITY_GAPS_DISPOSED_READY_FOR_NARROW_REMEDIATION"
+        ]
+      },
+      "implementation": {
+        "type": "paths-exist",
+        "ref": "75a385fdd39502d2dbb10c646a6ea14eec9b68d5",
+        "paths": [
+          "app/api/proxies/[id]/suggest/route.ts",
+          "lib/pipeline/financial-proxy-versions.ts",
+          "db/policies/010_proxy_material_fields_registry_rls.sql",
+          "tests/postgres/b2-remediation.pg.test.ts"
+        ]
+      },
+      "audit": {
+        "type": "json-field",
+        "ref": "8df3c708f0f45b422df1af8b8c9cc3544b80fecd",
+        "path": "docs/ops/wave2/W2_B2_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+        "field": "closure.W2_B2",
+        "closedValues": [
+          "CLOSED"
+        ]
+      },
+      "integrationTargets": [
+        "integration/commercial-v1"
+      ],
+      "productBranch": "feature/sprint-0-foundation",
+      "dependsOn": [
+        "W2-B1"
+      ]
+    },
+    {
       "id": "W2-B3",
       "description": "Wave 2 batch B3 (FIBIU-11/12/13) completeness authority, cross-layer remediation, and focused closure audit — measured on codex/w2-methodology-objects-r1.",
       "authority": {
