@@ -91,12 +91,25 @@ describe('S1 schema — the frozen shape (P-1, S1-1)', () => {
 })
 
 describe('S1 migration — exactly the authorized DDL, one scanner-visible structural backfill', () => {
-  it('is the highest, and only new, drizzle migration and its journal entry exists', () => {
+  // FINAL-UNIT DISPLACEMENT (HPO-ODS-W2-25). S1 was the highest migration when
+  // it landed; 0067_tenancy_refusal_audit_insert_policy.sql has since been
+  // appended above it. What this control actually protects is that S1's own
+  // journal row and snapshot exist and stay consistent — being LAST was only
+  // ever how that was expressed while nothing followed it. The pin is
+  // RETARGETED to S1's own position and the displacing unit is NAMED, so a
+  // second, unannounced displacement still fails here. It is not relaxed into
+  // "somewhere in the list".
+  it('has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit', () => {
+    const S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql'
     const files = readdirSync(path.join(ROOT, 'db/migrations')).filter((f) => f.endsWith('.sql')).sort()
-    expect(files[files.length - 1]).toBe(S1_UNIT.id)
+    expect(files[files.length - 2]).toBe(S1_UNIT.id)
+    expect(files[files.length - 1]).toBe(S3_UNIT_ID)
     const journal = JSON.parse(read('db/migrations/meta/_journal.json')) as { entries: { idx: number; tag: string }[] }
+    const own = journal.entries.find((e) => `${e.tag}.sql` === S1_UNIT.id)
+    expect(own).toBeDefined()
+    expect(existsSync(path.join(ROOT, `db/migrations/meta/${String(own!.idx).padStart(4, '0')}_snapshot.json`))).toBe(true)
     const last = journal.entries[journal.entries.length - 1]
-    expect(`${last.tag}.sql`).toBe(S1_UNIT.id)
+    expect(`${last.tag}.sql`).toBe(S3_UNIT_ID)
     expect(last.idx).toBe(journal.entries.length - 1)
     expect(existsSync(path.join(ROOT, `db/migrations/meta/${String(last.idx).padStart(4, '0')}_snapshot.json`))).toBe(true)
   })
@@ -159,10 +172,15 @@ describe('S1 migration — exactly the authorized DDL, one scanner-visible struc
     expect(MIGRATION_LF).toMatch(/PROHIBITED and absent: invited_by IS NULL/)
   })
 
-  it('is registered as the LAST baseline unit with the sha256 of its own bytes, structural-backfill, dmlStatementCount measured by the scanner, and zero literal row sources', () => {
-    expect(BASELINE_UNITS[BASELINE_UNITS.length - 1]).toBe(S1_UNIT)
+  // FINAL-UNIT DISPLACEMENT (HPO-ODS-W2-25): S1 is no longer the last unit, so
+  // its ordinal is pinned to the EXACT literal it was assigned rather than to
+  // a moving BASELINE_UNITS.length, and its position in the array is derived
+  // FROM that ordinal. Exact equality both ways — an ordinal that drifted, or
+  // a unit that moved out from under its ordinal, still fails.
+  it('is registered at its own fixed ordinal with the sha256 of its own bytes, structural-backfill, dmlStatementCount measured by the scanner, and zero literal row sources', () => {
+    expect(S1_UNIT.ordinal).toBe(79)
+    expect(BASELINE_UNITS[S1_UNIT.ordinal - 1]).toBe(S1_UNIT)
     expect(S1_UNIT.kind).toBe('drizzle-migration')
-    expect(S1_UNIT.ordinal).toBe(BASELINE_UNITS.length)
     expect(S1_UNIT.sha256).toBe(createHash('sha256').update(MIGRATION_LF, 'utf8').digest('hex'))
     expect(S1_UNIT.dml).toBe('structural-backfill')
     expect(S1_UNIT.expect.dmlStatementCount).toBe(FACTS.dmlStatements.length)
@@ -190,7 +208,11 @@ describe('S1 migration — exactly the authorized DDL, one scanner-visible struc
     const own = wrappers.find((w) => w.endsWith(`_${S1_UNIT.id}`))
     expect(own).toBeDefined()
     const header = lf(read(`db/prepared/journal/${own}`))
-    expect(header).toContain(`GENERATED — DO NOT EDIT. Unit ${BASELINE_UNITS.length}/${BASELINE_UNITS.length}: ${S1_UNIT.id}`)
+    // The NUMERATOR is S1's own ordinal and the DENOMINATOR is the live unit
+    // count: appending a unit rewrites the denominator of every wrapper, which
+    // is exactly the amplification that makes db/prepared/journal/** a family
+    // rather than a single file in this node's ceiling.
+    expect(header).toContain(`GENERATED — DO NOT EDIT. Unit ${S1_UNIT.ordinal}/${BASELINE_UNITS.length}: ${S1_UNIT.id}`)
     expect(header).toContain(`Source SHA256: ${S1_UNIT.sha256}`)
     // One wrapper per unit plus the bootstrap.
     expect(wrappers).toHaveLength(BASELINE_UNITS.length + 1)

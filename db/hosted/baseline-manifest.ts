@@ -1400,6 +1400,40 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'affected rows because it only targets founded_by IS NULL.',
     expect: { dmlStatementCount: 1 },
   },
+  // S3 refusal audit (HPO-ODS-W2-25, ODS v1.0.25 AUDIT_LOG_POLICY_CONTRACT):
+  // the additive INSERT policy that lets a tenancy refusal -- an event with no
+  // owning tenant, and therefore organization_id NULL -- be recorded at all.
+  // The sibling policy from unit 53 (0042_fib_audit_insert_policy.sql) demands
+  // organization_id IS NOT NULL, so it cannot carry this row and is not
+  // widened to try. Policy-only: it creates no table, which is why the
+  // generated checkpoint-b0 observation is byte-invariant across this append.
+  {
+    ordinal: 80,
+    id: '0067_tenancy_refusal_audit_insert_policy.sql',
+    kind: D,
+    file: 'db/migrations/0067_tenancy_refusal_audit_insert_policy.sql',
+    sha256: '26a8258cb2c37dd56815ff87dcec024c3a969756a30e492958fc513335fae898',
+    // 0042 created this table's first INSERT policy and established the
+    // DROP-then-CREATE idiom this unit follows; 0031 enabled RLS on audit_logs
+    // and owns the auth.uid() surface both policies read.
+    dependsOn: ['0042_fib_audit_insert_policy.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'idempotent',
+    managedNote:
+      'Multi-org S3 refusal audit. DROP POLICY IF EXISTS / CREATE POLICY on audit_logs, following ' +
+      'the 0031_rls_core.sql pattern and reusing auth.uid(). The WITH CHECK correlates ACTION to ' +
+      'SUBJECT FORM: it admits selection_refused in either form and revalidation_refused in Form B ' +
+      'only, so the DATABASE -- not merely the emitter -- refuses a revalidation row in Form A. ' +
+      'No table, no column, no index, no function, no SECURITY DEFINER surface, no organizations ' +
+      'existence lookup, and no change to the sibling INSERT policy or to the SELECT policy.',
+    rollback: 'One guarded DROP POLICY IF EXISTS ahead of one CREATE POLICY. Converges.',
+    expect: {
+      referencesAuthSchema: true,
+      policiesCreatedCount: 1,
+      securitySurfaceDigest: 'e4936fd55cf51a24d66f5325820eb5ad05348f5496e58ecebf2d6d5a9ff64788',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

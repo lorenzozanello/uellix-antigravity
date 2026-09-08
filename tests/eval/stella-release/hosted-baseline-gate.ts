@@ -402,12 +402,13 @@ export function buildHostedBaselineGateEvidence(
     // 0065_fib_sensitivity_model.sql = 78 baseline units + 1 journal bootstrap
     // step = 79 — the same N+1 trap the B5 authority's own baseline_growth_contract
     // named this exact line by number so a literal-76 sweep would not miss it.
-    // HPO-ODS-W2-20/W2-21 (multi-org S1): + 0066 = 79 baseline units + 1 journal
-    // bootstrap step = 80 — DERIVED as BASELINE_ORDER.length + 1 from
-    // planProvisioningPhase, never grepped from the old count.
+    // HPO-ODS-W2-20/W2-21 (multi-org S1): + 0066 = 79 baseline units.
+    // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80 baseline units
+    // + 1 journal bootstrap step = 81 — DERIVED as BASELINE_ORDER.length + 1
+    // from planProvisioningPhase, never grepped from the old count.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 80 &&
+      firstProvisioning.steps.length === 81 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -430,7 +431,8 @@ export function evaluateHostedBaselineGates(
   // HPO-ODS-W2-12 (W2-B4 assumptions and causality): + 0062/0063 = 76.
   // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.
   // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability): + 0066 = 79.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 79
+  // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 80
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

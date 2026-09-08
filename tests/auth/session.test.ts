@@ -98,13 +98,42 @@ vi.mock('@/db/client', () => ({
 // helpers' branching, and it does so against the in-memory tables above. The
 // transaction, the claims and the rollback are proved against a live database
 // in tests/authenticated-database-context.test.ts.
-vi.mock('@/db/identity-context', () => ({
-  withDatabaseIdentityContext: async (
-    _identity: unknown,
-    callback: (db: unknown) => unknown
-  ) => callback(undefined),
-  getBoundDatabaseContext: () => undefined,
-}))
+// CORRECTED under ODS v1.0.26 F_DN_6_ADJUDICATION. This double used to be a
+// pass-through whose getBoundDatabaseContext was a CONSTANT returning
+// undefined — undefined even WHILE the callback was executing. That is not a
+// simplification of the real module, it CONTRADICTS it: db/identity-context.ts
+// binds a context for the duration of the callback, and its own nesting check
+// reads getBoundDatabaseContext() back during execution.
+//
+// The lie became load-bearing once the S3 refusal emitter began asserting, at
+// emission time, that a context IS bound for the refusal subject. Under the old
+// double the guard observed nothing bound and correctly failed closed — the
+// DOUBLE was wrong, not the guard, and the guard is deliberately not relaxed to
+// accommodate it.
+//
+// It still opens no transaction and touches no database. It binds through the
+// REAL async-local store, so binding and RESTORATION — on return and on throw
+// alike, which matters because every refusal path here ends in a throw — come
+// from the same mechanism production uses.
+vi.mock('@/db/identity-context', async () => {
+  const store = await import('@/db/identity-store')
+  return {
+    withDatabaseIdentityContext: async (
+      identity: { userId: string; organizationId: string | null; isSuperAdmin: boolean },
+      callback: (db: unknown) => unknown
+    ) => {
+      // Re-entry with a context already open reuses it, exactly as the real
+      // module does; these suites never nest a DIFFERENT identity.
+      const existing = store.getBoundDatabaseContext()
+      if (existing !== undefined) return callback(existing.db)
+      return store.runWithBoundDatabaseContext(
+        { identity, db: undefined } as never,
+        (async () => callback(undefined)) as () => Promise<never>
+      )
+    },
+    getBoundDatabaseContext: () => store.getBoundDatabaseContext(),
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Import after mocks are in place

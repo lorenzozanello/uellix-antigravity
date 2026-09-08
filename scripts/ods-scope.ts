@@ -561,6 +561,30 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
     branch: 'codex/multiorg-s1-founder-traceability-r1',
     patterns: ['db/prepared/journal/**'],
   },
+  // HPO-ODS-W2-25 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json,
+  // companion docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6.json):
+  // the multi-org S3 refusal-audit implementation. TWO patterns, because a
+  // policy reaches the database only as a migration PLUS the journal wrapper
+  // that commits its journal row in the same transaction - so authorising one
+  // without the other authorises nothing that can actually be applied.
+  //
+  // db/prepared/journal/** is load-bearing beyond the ONE new wrapper: the
+  // generator stamps BASELINE_UNITS.length into the header of EVERY wrapper
+  // (db/hosted/baseline-journal-wrapper.ts), so appending one baseline unit
+  // rewrites all 79 existing wrappers as well. The pattern is still a STRICT
+  // SUBSET of db/prepared/** and reaches neither the stella_* hosted units nor
+  // checkpoint-b0.
+  //
+  // GRANT ID REUSED, NOT REALLOCATED. W2-25 was declared by v1.0.24 and
+  // carried field-for-field into v1.0.25; the version bump corrects the
+  // ceiling's REPRESENTATION of the journal family, not the grant. W2-20/W2-21
+  // carry the same surfaces but resolve only on the S1 branch, so neither can
+  // stand in for this one.
+  {
+    authorityId: 'HPO-ODS-W2-25',
+    branch: 'codex/multiorg-s3-refusal-audit-implementation-r1',
+    patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+  },
 ]
 
 export interface ProtectedGrantResolution {
