@@ -3,29 +3,56 @@
   "version": "1.0.0",
   "artifact_id": "EVALUATE_V1_AUTHORITY_v1.0.0",
   "authority_class": "EXECUTABLE_PRODUCT_DOMAIN_AUTHORITY",
-  "mission_id": "LANE-EC-EVALUATE-V1-AUTHORITY-FINALIZATION-R1",
+  "mission_id": "LANE-EQ-PR106-EVALUATE-V1-AUTHORITY-BOUNDED-REMEDIATION-R2",
+  "predecessor_mission_id": "LANE-EC-EVALUATE-V1-AUTHORITY-FINALIZATION-R1",
   "materialization_date": "2026-09-08",
   "companion_manifest": "docs/ops/evaluate/EVALUATE_V1_TEST_MANIFEST_v1.0.0.json",
-  "AS_OF_HEAD": "635ed04605bd7d9f1a66f55511c5e2ae79175aaa",
-  "AS_OF_TREE": "51c7ab3aafeaefaed149a03cf3947f8ad3d6a468",
+  "AS_OF_HEAD": "b22839a4dab716f1fd2a96f2fab68d0d9619356e",
   "AS_OF_REF": "codex/evaluate-v1-authority-materialization-r1",
+  "AS_OF_NOTE": "AS_OF_HEAD is the merge commit at which every measurement in this artifact was RE-TAKEN during the R2 remediation. Lineage: the R1 materialization measured at 635ed04605bd7d9f1a66f55511c5e2ae79175aaa and was audited at adb82726da22eeebd62907fd4842c6fa26943d8a; R2 then normal-merged integration 1625bea2124f7b5ef6ffa500f133ffe80c487d92 (no rebase, no squash) into the topic branch, producing this measurement head. Every count below was re-derived after that merge, because the merged delta was capable of invalidating them - and one of them it did.",
+  "REMEDIATION_R2": {
+    "target_pr": 106,
+    "audited_head": "adb82726da22eeebd62907fd4842c6fa26943d8a",
+    "merged_integration": "1625bea2124f7b5ef6ffa500f133ffe80c487d92",
+    "merge_form": "Normal merge (--no-ff). No rebase, no squash. Resulting merge commit has exactly two parents: the audited head and the integration head.",
+    "integration_delta_noncollision": {
+      "method": "Set intersection of the integration delta against this mission's authorized write paths.",
+      "delta_file_count": 3,
+      "delta_files": [
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json",
+        "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json",
+        "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.8.json"
+      ],
+      "intersection_with_authorized_write_paths": 0,
+      "merge_conflicts": 0,
+      "structural_result": "NO COLLISION - no delta path is under docs/ops/evaluate/**.",
+      "semantic_result": "COLLISION FOUND AND CORRECTED. Structural noncollision is NOT semantic noncollision: ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json invalidated this artifact's ODS_LINEAGE_SEQUENCING classification, which R1 recorded as CLOSED and which is OPEN again at the measurement head. It also supersedes the audit-action vocabulary pattern this artifact constrains its verbs against. Both are corrected below."
+    },
+    "findings_closed": {
+      "F-AUDIT-2": "BLOCKING. R1 assigned the Recommendation to a deterministic DecisionPolicy output. Corrected: the Recommendation is an ADVISORY recommendation produced in the Stella analysis/recommendation stage. See RECOMMENDATION_STAGE_RECONCILIATION and the propagation list there.",
+      "F-AUDIT-1": "NON-BLOCKING. R1's finding F-EV-1 asserted that no shipped manifest was affected by the template defect. That assertion was FALSE and is corrected: docs/ops/wave2/W2_B3_TEST_MANIFEST.json is a shipped manifest that fails the schema on exactly the same error.",
+      "F-AUDIT-3": "NON-BLOCKING. Invariant I2 (SUBJECT_KIND_V1 = PROJECT_ONLY) carried no control. Corrected: the companion manifest adds positive control P-14, negative control N-14 and mutation control M-10."
+    },
+    "H4_DISPOSITION": "NOT CREATED. The mission authorized recording an H4 if independent source reconciliation found genuine ambiguity, and forbade inventing an answer merely to avoid it. Reconciliation found the three frozen sources CONSISTENT, not ambiguous - see RECOMMENDATION_STAGE_RECONCILIATION.converging_source_facts. Creating an H4 here would be artificial human debt, so none is created. The one genuinely underdetermined question this touches - whether DecisionPolicy emits its own computed artifact distinct from the Human Decision - is folded into the already-open H2 rather than opened as new debt.",
+    "human_items_untouched": "H1, H2 and H3 remain OPEN and unresolved. H2's scope is clarified, not decided."
+  },
   "NAMING_DERIVATION": {
     "rule": "The repo-native convention for a versioned package authority is <PACKAGE_STEM>_AUTHORITY_v<semver>.json with its companion <PACKAGE_STEM>_TEST_MANIFEST_v<semver>.json beside it in a package-named directory under docs/ops/.",
-    "measured_exemplars_at_AS_OF_HEAD": [
+    "measured_exemplars": [
       "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json + docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json",
       "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json + docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json",
       "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
       "docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json"
     ],
-    "directory_derivation": "docs/ops/evaluate/ did not exist at AS_OF_HEAD (measured: git ls-files docs/ops/evaluate returns 0 files). It is created by this mission as a package directory, exactly as docs/ops/portfolio/ and docs/ops/commercial/ exist for their packages.",
     "result": "docs/ops/evaluate/EVALUATE_V1_AUTHORITY_v1.0.0.json and docs/ops/evaluate/EVALUATE_V1_TEST_MANIFEST_v1.0.0.json - exactly two files."
   },
   "ARTIFACT_FORM": {
-    "this_artifact_is_not_ods": "docs/ops/evaluate/** is NOT an ODS artifact directory. Measured at AS_OF_HEAD: absent from scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (which lists exactly docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json); absent from the 37-entry IMMUTABLE_BY_CONVENTION set in scripts/ods-controller.ts; and absent from every path constant read by scripts/authority-seal-verify.ts, which seals only FIB, PC-01B, IM-01B and ODS_V1_AUTHORITY. Publishing these two files therefore creates NO Controller enumeration obligation and consumes NO protected surface.",
+    "this_artifact_is_not_ods": "docs/ops/evaluate/** is NOT an ODS artifact directory. Re-measured at AS_OF_HEAD: absent from scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (7 entries), absent from the 37-entry IMMUTABLE_BY_CONVENTION set in scripts/ods-controller.ts, and absent from every path constant read by scripts/authority-seal-verify.ts, which seals only FIB, PC-01B, IM-01B and ODS_V1_AUTHORITY. Publishing these two files creates NO Controller enumeration obligation and consumes NO protected surface.",
     "precedent": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json FUTURE_ODS_NEEDS_SYMBOLIC.this_artifact_is_not_ods establishes exactly this form: a docs-only package authority may close while downstream lineage or implementation gates remain open.",
-    "no_grant_required_for_this_mission": "This mission's diff touches only docs/ops/evaluate/**, which is unprotected. No --protected-authority is claimed and none is needed."
+    "why_this_matters_at_R2": "The ODS lineage gap REOPENED at the measurement head. Under this form that does not block publication of these two files, because they generate no Controller obligation - which is precisely the condition the cited precedent was written for. It does block a future Evaluate implementation node from allocating a lineage ordinal.",
+    "no_grant_required_for_this_mission": "The diff touches only docs/ops/evaluate/**, which is unprotected. No --protected-authority is claimed and none is needed."
   },
-  "PURPOSE": "Freeze the executable Evaluate Commercial V1 authority - object model, invariants, boundaries, fail-closed rules and future implementation surface - derived exclusively from already-frozen product architecture. This artifact authorizes NO implementation. It exists so that a future Evaluate implementation mission starts from a frozen authority rather than from code, and so that the three human ratifications this domain still lacks are recorded as OPEN rather than silently assumed.",
+  "PURPOSE": "Freeze the executable Evaluate Commercial V1 authority - object model, invariants, boundaries, fail-closed rules and future implementation surface - derived exclusively from already-frozen product architecture. This artifact authorizes NO implementation. It exists so that a future Evaluate implementation mission starts from a frozen authority rather than from code, and so that the human ratifications this domain still lacks are recorded as OPEN rather than silently assumed.",
   "SOURCE_CONSUMPTION": {
     "primary_frozen_authority": [
       {
@@ -37,9 +64,22 @@
           "hpo_question_required": false,
           "implementation_gap": true,
           "prohibition": "Do not invent missing technical contracts in this step.",
-          "preserved_invariant": "INPUT != SCORE != RECOMMENDATION != DECISION"
+          "preserved_invariant": "INPUT != SCORE != RECOMMENDATION != DECISION",
+          "target_model_ordered": [
+            "Evaluation",
+            "AssessmentTemplateVersion",
+            "Dimensions",
+            "Criteria",
+            "Inputs",
+            "Evidence",
+            "deterministic Score",
+            "Reviewer Analysis",
+            "Stella Analysis/Recommendation",
+            "DecisionPolicy",
+            "Human Decision"
+          ]
         },
-        "significance": "This is the legality anchor. Q1 is RESOLVED by prior frozen product architecture and explicitly requires NO further HPO question, so restating that architecture as an executable authority is derivation, not invention. The same record's prohibition is why every technical contract below is marked DERIVED_CONCEPTUAL and never as allocated DDL."
+        "significance": "The legality anchor. Q1 is RESOLVED by prior frozen product architecture and explicitly requires NO further HPO question, so restating that architecture as an executable authority is derivation, not invention. Its prohibition is why every technical contract below is DERIVED_CONCEPTUAL and never allocated DDL. Its index-8 node 'Stella Analysis/Recommendation' is also load-bearing evidence for the F-AUDIT-2 correction."
       },
       {
         "path": "docs/ops/reeng/RE_U3_INFORMATION_ARCHITECTURE_DELTA_v1.0.0.json",
@@ -48,17 +88,34 @@
           "EVALUATE_TARGET_IA_STATUS": "FIRST_CLASS_TARGET_NODE",
           "EVALUATE_RUNTIME_STATUS": "WAIT_FOR_WAVE3_CONTRACT",
           "zero_files_named_evaluate": true,
-          "wave_dependency": "Wave 3 = FIBIU-19, FIBIU-20"
+          "wave_dependency": "Wave 3 = FIBIU-19, FIBIU-20",
+          "target_model_preserved_verbatim_ordered": [
+            "Evaluation",
+            "AssessmentTemplateVersion",
+            "Dimensions",
+            "Criteria",
+            "Inputs",
+            "Evidence",
+            "Reviewer Assessments",
+            "deterministic Score",
+            "Divergence",
+            "Stella Analysis",
+            "Recommendation",
+            "DecisionPolicy",
+            "Human Decision"
+          ]
         }
       },
       {
         "path": "docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json",
-        "locator": "golden_journey[13] (step EVALUATE) and evaluate_journey",
+        "locator": "golden_journey[13] (step EVALUATE), evaluate_journey, human_decision_matrix[11]",
         "measured_fields": {
           "TARGET_REQUIRED": "Subject -> AssessmentTemplateVersion -> Dimensions -> Criteria -> Inputs+Evidence -> Reviewer Assessments -> deterministic Score -> Divergence -> Stella Analysis -> Recommendation -> DecisionPolicy -> Human Decision",
           "ACTOR": "analyst+ (Inputs+Evidence), reviewer+ (Reviewer Assessments), Stella (Analysis), an organization_admin+/DecisionPolicy-designated role (Human Decision)",
+          "SYSTEM_ACTION": "target: deterministic Score computed from Criteria; Divergence detected across Reviewer Assessments; Stella Analysis/Recommendation generated",
           "EXIT_CONDITION": "target: Human Decision recorded, immutable",
           "FAIL_CLOSED_STATE": "target: insufficient evidence, contradictory evidence, unresolved Divergence",
+          "human_decision_matrix_11": "Evaluate Human Decision per DecisionPolicy (target); who = TARGET_ONLY - DecisionPolicy role binding not yet implemented",
           "TECHNICAL_DEPENDENCY": "WAIT_FOR_WAVE3_CONTRACT (FIBIU-19, FIBIU-20)",
           "READY_NOW_OR_WAIT": "WAIT"
         }
@@ -68,7 +125,7 @@
       "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
       "locator": "section 7 EVALUATE, line 621 onward",
       "measured_text_summary": "FIB freezes ONLY the methodological review and approval of a run, which today lives inside run detail, and records that no Evaluate surface exists in the repository: zero routes, zero components, zero directories.",
-      "binding_reading": "RE_U0 Q1.clarification governs the relationship: FIB's narrower EVALUATE scope note describes what FIB froze, NOT the ceiling of the product target. This authority therefore does not contradict FIB; it occupies the product target FIB explicitly declined to define."
+      "binding_reading": "RE_U0 Q1.clarification governs: FIB's narrower EVALUATE scope note describes what FIB froze, NOT the ceiling of the product target. This authority does not contradict FIB; it occupies the product target FIB explicitly declined to define."
     }
   },
   "MEASURED_PRESTATE_OF_THE_EVALUATE_SURFACE": {
@@ -77,15 +134,54 @@
     "current_implementation_subset": "lib/pipeline/methodology-review.ts and db/policies/006_methodology_review_rls.sql implement a narrower review/approval step embedded in Measure. RE_U3 records it has no Dimensions/Criteria/Divergence/DecisionPolicy objects. It is NOT the Evaluate journey and must not be renamed or relocated to appear to be.",
     "roles_measured": "db/schema.ts:74 - super_admin, organization_admin, impact_manager, analyst, reviewer, viewer. There is NO editor and NO approver role. Any DecisionPolicy role designation must resolve inside this closed set."
   },
+  "RECOMMENDATION_STAGE_RECONCILIATION": {
+    "finding_closed": "F-AUDIT-2 (BLOCKING)",
+    "what_R1_asserted_and_why_it_was_wrong": "R1 asserted that the Recommendation is the deterministic output of DecisionPolicy, and derived that from a single negative reading: RE_U4's ACTOR map names 'Stella (Analysis)' and does not name Stella against the Recommendation. That inference was invalid. The ACTOR map is an abbreviated list of actor bindings; it does not mention the Recommendation at ALL, so its silence cannot be converted into a positive assignment to DecisionPolicy. R1 turned an absence of evidence into an assignment, and that assignment then contradicted the explicit ORDERING given by all three frozen sources.",
+    "converging_source_facts": [
+      "ORDERING, RE_U3 indices 9-11: 'Stella Analysis' (9), 'Recommendation' (10), 'DecisionPolicy' (11). The Recommendation stands immediately AFTER Stella Analysis and strictly BEFORE DecisionPolicy. Were the Recommendation a DecisionPolicy output it would have to follow DecisionPolicy, not precede it.",
+      "ORDERING, RE_U4 golden_journey[13].TARGET_REQUIRED: '... Divergence -> Stella Analysis -> Recommendation -> DecisionPolicy -> Human Decision'. Same order, independently stated.",
+      "BINDING, RE_U0 Q1 target_model index 8: the single node is written 'Stella Analysis/Recommendation'. The slash joins them into ONE node of the model.",
+      "BINDING, RE_U4 SYSTEM_ACTION: 'Stella Analysis/Recommendation generated' - again slash-joined, and generated as one act."
+    ],
+    "reconciliation_verdict": "CONSISTENT, NOT AMBIGUOUS. Two of the three sources bind Analysis and Recommendation into a single slash-joined phrase, and all three place the Recommendation strictly before DecisionPolicy. No source places it after. Therefore no H4 is opened.",
+    "frozen_model_as_corrected": {
+      "RECOMMENDATION_IS": "An ADVISORY recommendation produced in the Stella analysis/recommendation stage.",
+      "RECOMMENDATION_IS_NOT": [
+        "a deterministic Score",
+        "a DecisionPolicy result",
+        "a Human Decision",
+        "an approval",
+        "a certification"
+      ],
+      "DECISION_POLICY_IS": "A distinct, LATER object/stage, versioned, that governs the Human Decision - RE_U4 human_decision_matrix[11] reads 'Evaluate Human Decision per DecisionPolicy'. It is never produced by Stella and never consumes the advisory recommendation as authority.",
+      "HUMAN_DECISION_IS": "Separate, later still, and human-authored. Never derivable from the advisory recommendation.",
+      "governance_effect_of_the_advisory_recommendation": "NONE. It gates nothing, blocks nothing, unblocks nothing, and is not an input to any deterministic computation. It is readable narrative-grade guidance attributed to Stella."
+    },
+    "what_this_does_NOT_decide": "Whether DecisionPolicy emits its own computed artifact distinct from the Human Decision is NOT established by any frozen source and is NOT decided here. That question is folded into the already-open H2 rather than opened as new human debt. What IS frozen is the negative: whatever DecisionPolicy emits, it is not the advisory Recommendation, because the sources order the Recommendation before it.",
+    "invariant_effect": "INPUT != SCORE != RECOMMENDATION != DECISION is STRENGTHENED, not weakened. R1 stored the Score and the Recommendation in one shared row, which blurred exactly the boundary I1 protects. The corrected model gives the deterministic Score and the advisory Recommendation separate objects with different authors, different determinism guarantees and different governance weight.",
+    "propagation_applied_to": [
+      "PRESERVED_INVARIANTS.I9 - rewritten.",
+      "STELLA_BOUNDARY - permitted set, prohibition set and derivation all rewritten; the invalid actor-map inference removed.",
+      "DERIVED_CONCEPTUAL_PERSISTENCE - evaluation_system_outputs split into evaluation_scores and evaluation_advisory_recommendations.",
+      "FROZEN_OBJECT_MODEL.D1_READ_MODEL_DESIGN_LINE - the read model composes the score row, not a shared system-output row; the advisory recommendation is explicitly excluded from the result.",
+      "The 13-node restatement and its cardinality accounting - recomputed with no merged nodes.",
+      "AUDIT_VOCABULARY_DEPENDENCY - the verb is renamed to evaluation.advisory_recommendation_generated.",
+      "UNRATIFIED_HUMAN_DECISIONS.H2 - scope clarified to carry the DecisionPolicy-artifact question.",
+      "FUTURE_IMPLEMENTATION_SURFACE - recommendation generation moved off the deterministic services line and onto the Stella integration line.",
+      "Companion manifest controls P-8, N-9, and new control N-15 with mutation control M-9."
+    ]
+  },
   "PRESERVED_INVARIANTS": {
     "I1_FOUR_WAY_SEPARATION": {
       "invariant": "INPUT != SCORE != RECOMMENDATION != DECISION",
-      "meaning": "Four distinct object kinds with four distinct write paths and four distinct authors. A human-supplied input may never be stored as a score; a computed score may never be stored as a recommendation; a recommendation may never be stored as a decision. Collapsing any adjacent pair is a violation even when the resulting value is numerically identical.",
-      "source": "RE_U0 Q1.preserved_invariant, RE_U3 evaluate_ia.preserved_invariant and RE_U4 golden_journey[13].preserved_invariant - three independent frozen restatements."
+      "meaning": "Four distinct object kinds with four distinct write paths and four distinct authors. A human-supplied input may never be stored as a score; a deterministic score may never be stored as an advisory recommendation; an advisory recommendation may never be stored as a decision. Collapsing any adjacent pair is a violation even when the resulting value is numerically identical.",
+      "source": "RE_U0 Q1.preserved_invariant, RE_U3 evaluate_ia.preserved_invariant and RE_U4 golden_journey[13].preserved_invariant - three independent frozen restatements.",
+      "authors": "INPUT: analyst+ human. SCORE: system, deterministic. RECOMMENDATION: Stella, advisory. DECISION: an authorized human. Four objects, four authors - which is why no two of them may share a row."
     },
     "I2_SUBJECT_SCOPE": {
       "invariant": "SUBJECT_KIND_V1 = PROJECT_ONLY",
-      "meaning": "The V1 Evaluate subject is a project. No organization-level, portfolio-level or cross-project subject exists in V1. Widening the subject kind is a successor-version act, never an implementation detail."
+      "meaning": "The V1 Evaluate subject is a project. No organization-level, portfolio-level, cross-project or evaluation-of-an-evaluation subject exists in V1. Widening the subject kind is a successor-version act, never an implementation detail.",
+      "control_coverage": "Covered by companion manifest controls P-14 (a project subject is accepted), N-14 (a non-project subject is refused at the write path) and M-10 (deleting the subject-kind check must make N-14 fail). Added in R2 to close F-AUDIT-3."
     },
     "I3_IMMUTABLE_TEMPLATE_VERSIONS": {
       "invariant": "Templates are versioned and each version is immutable once referenced.",
@@ -98,7 +194,7 @@
     },
     "I5_DETERMINISTIC_SCORE": {
       "invariant": "The score is computed by the system, deterministically, with Decimal arithmetic.",
-      "meaning": "Same input set + same template version + same engine version yields a byte-identical score. The score carries an input_set_hash and an engine version so it is reproducible and falsifiable. No reviewer-supplied aggregate is ever accepted as the score.",
+      "meaning": "Same input set + same template version + same engine version yields a byte-identical score. The score carries an input_set_hash and an engine version so it is reproducible and falsifiable. No reviewer-supplied aggregate and no Stella output is ever accepted as, or as an input to, the score.",
       "decimal_requirement": "Decimal/exact arithmetic is mandatory, not a preference. IEEE-754 binary floating point is prohibited in the scoring path because it makes the reproducibility guarantee untestable and lets two runs of the same inputs disagree in the last places."
     },
     "I6_HUMAN_REVIEWER_ASSESSMENTS": {
@@ -107,15 +203,16 @@
     },
     "I7_SEPARATION_OF_DUTIES": {
       "invariant": "The actor who authors an input or an assessment on an evaluation may not be the actor who renders the final decision on that same evaluation.",
-      "meaning": "Separation of duties is enforced at the write path, not merely by UI affordance. The existing assertRunMethodologyApprovalAllowed I1/I2 pattern, together with its explicit denial event, is the repo-native precedent to follow."
+      "meaning": "Separation of duties is enforced at the write path, not merely by UI affordance. The existing assertRunMethodologyApprovalAllowed I1/I2 pattern, with its explicit denial event, is the repo-native precedent."
     },
     "I8_EXPLICIT_DIVERGENCE_RESOLUTION": {
       "invariant": "Divergence across submitted reviewer assessments is detected by the system and resolved explicitly by a human, append-only.",
       "meaning": "Divergence is computed only over SUBMITTED assessments. A material unresolved divergence fails closed BEFORE the decision. Resolution is an append-only human act carrying a rationale; it never overwrites the diverging assessments."
     },
-    "I9_RECOMMENDATION_IS_NOT_DECISION": {
-      "invariant": "The system recommendation is distinct from, and never substitutes for, the human final decision.",
-      "meaning": "A recommendation may exist with no decision. A decision must be explicitly rendered by an authorized human. No code path may auto-promote a recommendation into a decision - not on timeout, not on reviewer unanimity, not on a confidence threshold."
+    "I9_RECOMMENDATION_IS_ADVISORY_AND_IS_NOT_A_DECISION": {
+      "invariant": "The Recommendation is advisory, produced in the Stella analysis/recommendation stage, and is distinct from the deterministic Score, from DecisionPolicy and from the Human Decision. It never substitutes for any of them.",
+      "meaning": "An evaluation may carry an advisory recommendation and no decision. A decision must be explicitly rendered by an authorized human. No code path may auto-promote an advisory recommendation into a decision - not on timeout, not on reviewer unanimity, not on a confidence threshold - and no code path may feed it back into the deterministic score, which would let Stella influence the score indirectly.",
+      "revised_in": "R2, closing F-AUDIT-2. See RECOMMENDATION_STAGE_RECONCILIATION."
     },
     "I10_FINALIZATION_IMMUTABILITY": {
       "invariant": "A finalized evaluation is immutable except through governed successor/version semantics.",
@@ -132,21 +229,27 @@
     },
     "I13_AUDIT_TRACEABILITY": {
       "invariant": "Every state transition of an evaluation is audit-logged with actor, organization and timestamp.",
-      "meaning": "Input submission, assessment submission, score computation, divergence detection, divergence resolution, recommendation generation, decision and finalization are each traceable to an actor. Stella actions are logged as Stella actions and are never attributable to a human actor."
+      "meaning": "Input submission, assessment submission, score computation, divergence detection, divergence resolution, advisory recommendation generation, decision and finalization are each traceable to an actor. Stella actions are logged as Stella actions and are never attributable to a human actor."
     }
   },
   "STELLA_BOUNDARY": {
-    "permitted": "Analysis and explanation only. Stella may read an evaluation and produce narrative analysis and advisory commentary.",
+    "permitted": [
+      "Analysis and explanation of an evaluation.",
+      "An ADVISORY recommendation, produced in the Stella analysis/recommendation stage, attributed to Stella and carrying no governance effect."
+    ],
     "prohibited": [
       "Stella must not compute or supply the deterministic score.",
+      "Stella must not supply an input to the deterministic score - including indirectly, via the advisory recommendation.",
       "Stella must not approve.",
       "Stella must not certify.",
       "Stella must not render the final evaluation decision.",
       "Stella must not resolve a divergence.",
-      "Stella must not mark evidence sufficient or an input satisfied."
+      "Stella must not mark evidence sufficient or an input satisfied.",
+      "Stella must not author or amend a DecisionPolicy version."
     ],
-    "actor_map_derivation": "RE_U4 golden_journey[13].ACTOR assigns Stella exactly '(Analysis)'. It does NOT assign Stella the Recommendation. The Recommendation is therefore the deterministic output of DecisionPolicy; Stella's own narrative recommendations remain advisory text with no governance effect.",
-    "non_escalation": "There must be no code path by which Stella output becomes a score, a sufficiency determination, a divergence resolution or a decision - including indirectly, by being written into any field that those paths read.",
+    "derivation": "RE_U0 Q1 target_model index 8 binds the node as 'Stella Analysis/Recommendation', and RE_U4 SYSTEM_ACTION generates 'Stella Analysis/Recommendation' as one act. The advisory recommendation therefore belongs to Stella's stage. RE_U4's ACTOR map abbreviates this as 'Stella (Analysis)'; that abbreviation does not mention the Recommendation at all and must not be read as assigning it elsewhere - the error R1 made and R2 corrects.",
+    "the_boundary_that_actually_bites": "Stella is permitted to RECOMMEND and forbidden to DECIDE, to SCORE, and to feed the score. The separation is enforced by governance weight, not by vocabulary: an advisory recommendation that any deterministic path reads is no longer advisory, which is why the prohibition on feeding the score is stated explicitly and given its own control.",
+    "non_escalation": "There must be no code path by which Stella output becomes a score, an input to a score, a sufficiency determination, a divergence resolution, a DecisionPolicy version or a decision - including indirectly, by being written into any field that those paths read.",
     "unratified_integration_shape": "See UNRATIFIED_HUMAN_DECISIONS.H3. The proposal to reuse the existing audit_assistant category with pipeline_step='evaluate' is NOT ratified and is NOT frozen by this authority."
   },
   "LEGACY_NON_REPURPOSE": {
@@ -171,11 +274,12 @@
       "DecisionPolicy",
       "Human Decision"
     ],
-    "source": "RE_U3 evaluate_ia.target_model_preserved_verbatim (13 nodes) and RE_U4 golden_journey[13].TARGET_REQUIRED, which agree.",
+    "source": "RE_U3 evaluate_ia.target_model_preserved_verbatim (13 nodes) and RE_U4 golden_journey[13].TARGET_REQUIRED, which agree on both membership and order.",
     "D1_READ_MODEL_DESIGN_LINE": {
-      "statement": "There is no separate 'evaluation result' object. The final result of an evaluation is a READ MODEL over the decided decision row, its foreign-keyed system-output row, and the frozen template version.",
-      "why": "The zero-discovery packet carried a tenth name, evaluation_results, that maps to no node of the frozen 13-node model. Materializing it as a table would create a second source of truth for a value already fully determined by the decision plus the system output, and would open a path for that copy to drift from the immutable decision - a direct I10 hazard.",
-      "status": "DESIGN LINE, frozen by this authority."
+      "statement": "There is no separate 'evaluation result' object. The final result of an evaluation is a READ MODEL over the decided decision row, its foreign-keyed deterministic SCORE row, and the frozen template version. The advisory recommendation is NOT part of the result.",
+      "why": "The zero-discovery packet carried a tenth name, evaluation_results, that maps to no node of the frozen 13-node model. Materializing it as a table would create a second source of truth for a value already fully determined by the decision plus the score, and would open a path for that copy to drift from the immutable decision - a direct I10 hazard.",
+      "why_the_advisory_recommendation_is_excluded": "Including advisory narrative in the authoritative result would give a Stella-authored artifact governance weight it does not have, re-opening the boundary I9 closes.",
+      "status": "DESIGN LINE, frozen by this authority. Revised in R2 to name the score row rather than a shared system-output row."
     },
     "D2_APPEND_ONLY_TRIGGER_PLACEMENT": {
       "statement": "Append-only / forbid-mutation triggers for a new Evaluate table ship in the SAME migration unit that creates that table, never in a later hardening unit.",
@@ -190,60 +294,92 @@
       {
         "object": "evaluations",
         "frozen_model_node": "Evaluation",
+        "node_index": 0,
         "note": "Organization-scoped; subject is a project (I2); binds exactly one AssessmentTemplateVersion."
       },
       {
         "object": "assessment_template_versions",
         "frozen_model_node": "AssessmentTemplateVersion",
+        "node_index": 1,
         "note": "Immutable once referenced (I3). Organization-scoped; no global catalog in V1."
       },
       {
         "object": "assessment_dimensions",
         "frozen_model_node": "Dimensions",
+        "node_index": 2,
         "note": "Belongs to a template VERSION, not to a mutable template."
       },
       {
         "object": "assessment_criteria",
         "frozen_model_node": "Criteria",
+        "node_index": 3,
         "note": "Belongs to a dimension within a template version; carries the weighting the deterministic engine consumes."
       },
       {
         "object": "evaluation_inputs",
         "frozen_model_node": "Inputs",
+        "node_index": 4,
         "note": "Human-authored. Distinct write path from score (I1). Missing required input fails closed (I11)."
       },
       {
         "object": "evaluation_evidence_links",
         "frozen_model_node": "Evidence",
+        "node_index": 5,
         "note": "Pins an evidence VERSION (I4), anchored on the existing evidence_versions substrate."
       },
       {
         "object": "evaluation_reviewer_assessments",
         "frozen_model_node": "Reviewer Assessments",
+        "node_index": 6,
         "note": "draft -> submitted; submitted is immutable (I6). Multiple rows per evaluation by construction, which is precisely why methodology_review_matrix cannot host it."
+      },
+      {
+        "object": "evaluation_scores",
+        "frozen_model_node": "deterministic Score",
+        "node_index": 7,
+        "note": "System-authored, deterministic, Decimal. Carries input_set_hash and engine version (I5). Its input set NEVER includes an advisory recommendation. Split out from the R1 shared system-output row in R2."
       },
       {
         "object": "evaluation_divergences",
         "frozen_model_node": "Divergence",
+        "node_index": 8,
         "note": "Computed over SUBMITTED assessments only; carries append-only human resolutions (I8)."
       },
       {
-        "object": "evaluation_system_outputs",
-        "frozen_model_node": "deterministic Score + Recommendation",
-        "note": "System-authored. Carries input_set_hash and engine version (I5). The recommendation is the deterministic DecisionPolicy output and remains distinct from the decision (I9)."
+        "object": "evaluation_advisory_recommendations",
+        "frozen_model_node": "Recommendation",
+        "node_index": 10,
+        "note": "Stella-stage, ADVISORY, attributed to Stella, no governance effect (I9). Read by humans and by nothing deterministic. Split out from the R1 shared system-output row in R2."
       },
       {
         "object": "evaluation_decisions",
         "frozen_model_node": "Human Decision",
+        "node_index": 12,
         "note": "Human-authored, immutable once recorded (I10). Subject to separation of duties against inputs and assessments (I7)."
       }
     ],
-    "cardinality_note": "Ten conceptual objects cover the 13 frozen model nodes because Score and Recommendation share one system-authored row while remaining distinct FIELDS with distinct semantics and distinct governance, and because Stella Analysis and DecisionPolicy are not new Evaluate tables. This is a derivation of storage shape, never a merge of the concerns I1 separates.",
-    "stella_analysis_placement": "Stella Analysis is NOT a new Evaluate table. It rides the existing stella_interactions substrate. See UNRATIFIED_HUMAN_DECISIONS.H3.",
-    "decision_policy_placement": "DecisionPolicy is a VERSIONED POLICY carried by or beside the template version, not a per-evaluation row. Its exact shape is blocked on UNRATIFIED_HUMAN_DECISIONS.H2."
+    "nodes_that_are_not_new_evaluate_tables": [
+      {
+        "frozen_model_node": "Stella Analysis",
+        "node_index": 9,
+        "placement": "Rides the existing stella_interactions substrate. Not a new Evaluate table. Shape blocked on H3."
+      },
+      {
+        "frozen_model_node": "DecisionPolicy",
+        "node_index": 11,
+        "placement": "A VERSIONED POLICY carried by or beside the template version, not a per-evaluation row. A distinct, later stage than the advisory recommendation. Shape blocked on H2."
+      }
+    ],
+    "cardinality_accounting": {
+      "frozen_model_nodes": 13,
+      "conceptual_objects": 11,
+      "nodes_not_materialized_as_new_tables": 2,
+      "check": "11 + 2 = 13. Every frozen node is accounted for exactly once, and NO two frozen nodes share a conceptual object.",
+      "R1_defect_corrected": "R1 claimed 10 objects covered 13 nodes by having the Score and the Recommendation share one row. That merged two nodes I1 separates and encoded the F-AUDIT-2 error structurally. The corrected accounting merges nothing."
+    }
   },
   "UNRATIFIED_HUMAN_DECISIONS": {
-    "rule": "These three decisions are NOT ratified anywhere in the repository at AS_OF_HEAD. This authority records them as OPEN. No implementing mission may proceed on the affected surface by assuming any of them; a future artifact claiming them ratified must cite a human ratification that does not exist today.",
+    "rule": "These decisions are NOT ratified anywhere in the repository at AS_OF_HEAD. This authority records them as OPEN. No implementing mission may proceed on the affected surface by assuming any of them; a future artifact claiming them ratified must cite a human ratification that does not exist today.",
     "H1_NA_ARITHMETIC": {
       "question": "How does a Not-Applicable criterion participate in the deterministic score - numerator only, denominator only, both, or neither?",
       "status": "OPEN - NOT RATIFIED",
@@ -256,10 +392,11 @@
       ]
     },
     "H2_DECISION_POLICY": {
-      "question": "What are the DecisionPolicy bands, the permitted decision outcomes, and the decider role?",
+      "question": "What are the DecisionPolicy bands, the permitted decision outcomes, and the decider role - and does DecisionPolicy emit its own computed artifact distinct from the Human Decision?",
       "status": "OPEN - NOT RATIFIED",
-      "measured": "Zero artifacts in the repository define Evaluate decision bands or outcomes.",
-      "constraint_this_authority_does_freeze": "Whatever the ratified policy turns out to be, the decider defaults to organization_admin or above, and a policy version may designate a MORE restrictive role - never a less restrictive one. The role must resolve inside the closed measured role set (super_admin, organization_admin, impact_manager, analyst, reviewer, viewer); there is no editor and no approver role to designate.",
+      "measured": "Zero artifacts in the repository define Evaluate decision bands or outcomes. RE_U4 human_decision_matrix[11] records the decider binding itself as TARGET_ONLY, not yet implemented.",
+      "scope_clarified_in_R2": "The R2 reconciliation of F-AUDIT-2 established the NEGATIVE - whatever DecisionPolicy emits, it is not the advisory Recommendation, because every frozen source orders the Recommendation before it. Whether it emits any computed artifact at all is genuinely underdetermined by the frozen sources and is folded into this already-open question rather than opened as new human debt.",
+      "constraint_this_authority_does_freeze": "Whatever the ratified policy turns out to be, the decider defaults to organization_admin or above, and a policy version may designate a MORE restrictive role - never a less restrictive one. The role must resolve inside the closed measured role set (super_admin, organization_admin, impact_manager, analyst, reviewer, viewer - there is no editor and no approver role to designate).",
       "blocks": [
         "E3 DecisionPolicy service",
         "E4 decision UI"
@@ -268,29 +405,30 @@
     "H3_STELLA_CATEGORY": {
       "question": "Does Evaluate reuse the existing audit_assistant reviewer category with pipeline_step='evaluate', or does it require a new evaluation_analyst category?",
       "status": "OPEN - NOT RATIFIED",
-      "measured_at_AS_OF_HEAD": "stella_interactions.pipeline_step is varchar(100) with NO CHECK constraint, and the prepared stella_0017 governed path assigns it by COALESCE without validating a vocabulary - so setting pipeline_step='evaluate' touches NO protected G2 surface. By contrast stella_role IS closed in three places (schema CHECK, the v_governed prepared function, and the application-side categories module), so a NEW category is a protected G2 surface.",
+      "measured_at_AS_OF_HEAD": "stella_interactions.pipeline_step is varchar(100) with NO CHECK constraint, and the governed prepared path assigns it by COALESCE without validating a vocabulary - so setting pipeline_step='evaluate' touches NO protected G2 surface. By contrast stella_role IS closed in three places (schema CHECK, the v_governed prepared function, and the application-side categories module), so a NEW category is a protected G2 surface.",
       "the_actual_decision": "The blocker is therefore NOT a schema constraint but a semantic one: the audit_assistant category is hard-coded to a Calculation pipeline step and its mandate is SROI audit-readiness. Reusing it for structured evaluation is a deliberate semantic stretch of the audit trail. Accepting that stretch - versus opening a protected G2 window for a new evaluation_analyst category - is a human decision, not an engineering one.",
+      "widened_in_R2": "The corrected model gives Stella an additional permitted output - the advisory recommendation - which makes the category question slightly heavier, not lighter: an audit_assistant persona emitting evaluation recommendations stretches the audit trail further than one emitting analysis alone. Recorded, not resolved.",
       "blocks": [
         "E5 Stella integration"
       ]
-    }
+    },
+    "H4": "NOT OPENED. See REMEDIATION_R2.H4_DISPOSITION."
   },
   "DEPENDENCIES_REMEASURED_AT_AS_OF_HEAD": {
-    "method": "Each row below was measured at AS_OF_HEAD by the repository's own gates or by direct parse - never carried over from the zero-discovery packet, whose every ordinal and count is explicitly a sync-point re-measurement rather than a pin.",
+    "method": "Each row below was RE-MEASURED at the post-merge AS_OF_HEAD by the repository's own gates or by direct parse - never carried over from the zero-discovery packet, and never carried over from R1. Two rows changed between R1 and R2 as a direct result of the merged integration delta.",
     "WAVE3_FIBIU_19": {
       "classification": "OPEN",
       "measured": "WAVE3_AUTHORITY_v1.0.0.json final_state = WAVE3_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_ALLOCATION. FIBIU-19 sits at wave 3 level 3.1. Wave 3 has not started.",
-      "effect_on_evaluate": "RE_U3 and RE_U4 both bind Evaluate to WAIT_FOR_WAVE3_CONTRACT (FIBIU-19, FIBIU-20). FIBIU-19 being OPEN is an IMPLEMENTATION gate for Evaluate, not an authority gate."
+      "effect_on_evaluate": "RE_U3 and RE_U4 both bind Evaluate to WAIT_FOR_WAVE3_CONTRACT (FIBIU-19, FIBIU-20). An IMPLEMENTATION gate, not an authority gate."
     },
     "WAVE3_FIBIU_20": {
       "classification": "OPEN_AND_TRANSITIVELY_BLOCKED",
       "measured": "FIBIU-20 sits at wave 3 level 3.2, serial after FIBIU-19. WAVE3_AUTHORITY_v1.0.0.json G2_BOUNDARY.transitive_stop_rule (E10) stops FIBIU-20 while the FIBDB-053 external gate is unresolved, and the measured external_gate_status is PENDING.",
-      "effect_on_evaluate": "This is the deepest implementation gate under Evaluate. It cannot be cleared by engineering: WAVE3_AUTHORITY_v1.0.0.json lists 'Declaring the FIBDB-053 external gate RESOLVED' among the acts requiring an explicit human G2 action."
+      "effect_on_evaluate": "The deepest implementation gate under Evaluate. It cannot be cleared by engineering: WAVE3_AUTHORITY_v1.0.0.json lists 'Declaring the FIBDB-053 external gate RESOLVED' among the acts requiring an explicit human G2 action."
     },
     "FIBDB_053_EXTERNAL_GATE": {
       "classification": "OPEN",
-      "measured": "External gate status PENDING at AS_OF_HEAD. PREPARED_FUNCTION_REVISION on the PREPARED_G2 track, frozen prepared unit id stella_0017b_governed_risk_parameters.",
-      "effect_on_evaluate": "Transitively stops FIBIU-20 and therefore the Wave 3 contract Evaluate waits on."
+      "measured": "External gate status PENDING at AS_OF_HEAD. PREPARED_FUNCTION_REVISION on the PREPARED_G2 track, frozen prepared unit id stella_0017b_governed_risk_parameters."
     },
     "WAVE3_AMENDMENT_v1_0_1": {
       "classification": "OPEN",
@@ -298,13 +436,15 @@
     },
     "WAVE2_BATCHES_W2_B1_B3_B4_B5": {
       "classification": "CLOSED_BUT_NOT_INTEGRATED",
-      "measured": "pnpm ops:program-state --unit <id> --json at AS_OF_HEAD reports, for each of W2-B1, W2-B3, W2-B4 and W2-B5, authority=CLOSED, implementation=CLOSED and audit=CLOSED, while the integration dimension reports NOT_INTEGRATED against both integration/commercial-v1 and feature/sprint-0-foundation.",
-      "effect_on_evaluate": "Wave 2 closure is a precondition of Wave 3 ('PRECONDITIONS: Wave 2 complete . FIBDB-053 G2 gate resolved'). The three closure dimensions are satisfied; the integration dimension is not. Recorded as measured, and deliberately NOT reinterpreted as 'Wave 2 complete' by this authority."
+      "measured": "pnpm ops:program-state --unit <id> --json reports, for each of W2-B1, W2-B3, W2-B4 and W2-B5, authority=CLOSED, implementation=CLOSED and audit=CLOSED, while the integration dimension reports NOT_INTEGRATED against both integration/commercial-v1 and feature/sprint-0-foundation.",
+      "effect_on_evaluate": "Wave 2 closure is a precondition of Wave 3. The three closure dimensions are satisfied; the integration dimension is not. Recorded as measured, and deliberately NOT reinterpreted as 'Wave 2 complete' by this authority."
     },
     "ODS_LINEAGE_SEQUENCING": {
-      "classification": "CLOSED",
-      "measured": "scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION parses to exactly 37 entries, of which 26 are ODS maintenance addenda, the highest being ODS_V1_MAINTENANCE_ADDENDUM_v1.0.26.json. Exactly 26 addenda are present on disk in docs/ops/ods/, the highest being v1.0.26. Enumerated set and on-disk set agree, and the Controller membership test is EXACT.",
-      "delta_from_the_frozen_packet": "MATERIAL CHANGE. The zero-discovery packet recorded STOP_FOR_LINEAGE_SEQUENCING because v1.0.16 was present and unenumerated against a 26-entry list ending at v1.0.15. That hole has since been closed. This authority does NOT allocate a lineage ordinal; it records only that the gap which would have blocked a future allocation is no longer open."
+      "classification": "OPEN",
+      "measured": "At the post-merge AS_OF_HEAD: 27 ODS maintenance addenda are present on disk in docs/ops/ods/, the highest being ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json, while scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION parses to 37 entries of which exactly 26 are addenda, the highest being v1.0.26. The Controller membership test is EXACT, so v1.0.27 is present and UNENUMERATED - a lineage hole.",
+      "R1_to_R2_CHANGE": "MATERIAL REVERSAL. R1 recorded this as CLOSED (26 on disk, 26 enumerated, both v1.0.26) and that was true at the R1 measurement head. The merged integration delta added ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json and no Controller successor enumerating it, reopening the hole. This is the exact staleness hazard R1's own FUTURE_ODS_NEEDS_SYMBOLIC warned about, demonstrated against R1 itself within one integration cycle.",
+      "effect_on_this_artifact": "NONE for publication. docs/ops/evaluate/** is not an ODS directory and generates no Controller obligation, which is the condition ARTIFACT_FORM.this_artifact_is_not_ods was written for.",
+      "effect_on_future_implementation": "BLOCKING for allocation. No Evaluate implementation node may allocate an ODS lineage ordinal until a Controller successor enumerating v1.0.27 is CLOSED."
     },
     "GOLDEN_E2E_COMMERCIAL_JOURNEY": {
       "classification": "OPEN",
@@ -313,16 +453,20 @@
     },
     "LOCK_AUDIT_ACTION_VOCABULARY": {
       "classification": "OPEN",
-      "measured": "PR #105 (codex/multiorg-s3-refusal-audit-implementation-r1 into integration/commercial-v1) is state OPEN at AS_OF_HEAD.",
-      "effect_on_evaluate": "See AUDIT_VOCABULARY_DEPENDENCY."
+      "measured": "PR #105 is state OPEN at AS_OF_HEAD. See AUDIT_VOCABULARY_DEPENDENCY for the pattern supersession the merged delta introduced."
     }
   },
   "AUDIT_VOCABULARY_DEPENDENCY": {
     "lock": "LOCK-AUDIT-ACTION-VOCABULARY",
     "status": "OPEN - PR #105 is OPEN at AS_OF_HEAD.",
-    "measured_baseline": "lib/audit/logger.ts AUDIT_ACTIONS contains exactly 104 keys and 104 distinct values at AS_OF_HEAD. Measured segment histogram: all 104 values have exactly two dot-separated segments; none has one or three.",
-    "the_reactive_pin": "lib/audit/__tests__/logger.test.ts asserts, over every value of AUDIT_ACTIONS, that it matches /^[a-z_]+\\.[a-z_]+$/ - exactly TWO lowercase segments. A companion control asserts value uniqueness. Any Evaluate verb with three segments would fail this pin, which is precisely the failure recorded against PR #105.",
-    "binding_constraint_on_evaluate": "Every Evaluate audit verb MUST be exactly two lowercase dot-separated segments and MUST be unique against the 104 existing values. This is a hard constraint derived from a live test, not a style preference.",
+    "measured_baseline": "lib/audit/logger.ts AUDIT_ACTIONS contains exactly 104 keys and 104 distinct values at the post-merge AS_OF_HEAD. Measured segment histogram: all 104 values have exactly two dot-separated segments; none has one or three. Unchanged by the merge.",
+    "live_pin_in_code": "lib/audit/__tests__/logger.test.ts:34 asserts, over every value of AUDIT_ACTIONS, that it matches /^[a-z_]+\\.[a-z_]+$/ - exactly TWO lowercase segments, because the character class [a-z_] cannot cross a dot and the pattern is anchored at both ends. A companion control asserts value uniqueness. This is still the live text at AS_OF_HEAD, verified by direct read after the merge.",
+    "authorized_successor_pattern": {
+      "source": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json, arrived in the integration delta merged by R2.",
+      "supersession": "That addendum authorizes replacing the pin with /^[a-z_]+(\\.[a-z_]+)+$/, binding the convention as TWO OR MORE lowercase snake_case segments separated by single dots. The character class is UNCHANGED - uppercase, digits, hyphens and spaces remain rejected.",
+      "applied_to_code": "NO. The authority is merged; the code change is not. The live pin at AS_OF_HEAD is still the exactly-two-segment form, so the binding constraint TODAY is the narrower one."
+    },
+    "binding_constraint_on_evaluate": "Every Evaluate audit verb must be lowercase snake_case segments joined by single dots, and unique against the existing 104 values. Under the live pin it must be EXACTLY two segments; under the authorized successor pin, two or more. All seventeen verbs below are exactly two segments, so they are conformant under BOTH patterns and no verb needs re-derivation whichever lands first.",
     "conceptual_verbs_symbolic": [
       "evaluation.created",
       "evaluation.input_submitted",
@@ -334,7 +478,7 @@
       "evaluation.assessment_submitted",
       "evaluation.divergence_detected",
       "evaluation.divergence_resolved",
-      "evaluation.recommendation_generated",
+      "evaluation.advisory_recommendation_generated",
       "evaluation.decision_recorded",
       "evaluation.finalized",
       "evaluation.successor_opened",
@@ -343,31 +487,33 @@
       "evaluation_policy.version_published"
     ],
     "verb_count": 17,
-    "allocation_status": "SYMBOLIC AND UNALLOCATED. These 17 verbs are a shape commitment - they demonstrate that the Evaluate vocabulary is expressible within the two-segment pin - not a reservation. No verb is added to AUDIT_ACTIONS by this mission.",
+    "verb_renamed_in_R2": "evaluation.recommendation_generated became evaluation.advisory_recommendation_generated, so the vocabulary itself carries the F-AUDIT-2 correction and cannot be read as naming a deterministic DecisionPolicy output. Still exactly two segments.",
+    "allocation_status": "SYMBOLIC AND UNALLOCATED. These 17 verbs are a shape commitment - they demonstrate that the Evaluate vocabulary is expressible within the pin - not a reservation. No verb is added to AUDIT_ACTIONS by this mission.",
     "sequencing_obligation": "No Evaluate implementation node may extend AUDIT_ACTIONS until PR #105 is resolved. Two branches adding verbs to the same frozen 104-value object concurrently would collide on both the uniqueness control and the count, and the loser would have to re-derive its verbs against a moved baseline."
   },
   "FUTURE_IMPLEMENTATION_SURFACE": {
     "status": "CLASSIFICATION ONLY. Nothing below is implemented, authorized to be implemented, or allocated by this mission.",
     "schema": {
-      "surface": "db/schema.ts - Drizzle definitions for the ten conceptual objects in DERIVED_CONCEPTUAL_PERSISTENCE.",
+      "surface": "db/schema.ts - Drizzle definitions for the eleven conceptual objects in DERIVED_CONCEPTUAL_PERSISTENCE.",
       "classification": "PROTECTED_BY_ASSOCIATION - db/schema.ts is not itself in DEFAULT_PROTECTED_PATTERNS, but it must move in lockstep with db/migrations/**, which is.",
       "fable_eligible": false
     },
     "migration": {
-      "surface": "Five conceptual migrations in foreign-key order: (1) template versions + dimensions + criteria; (2) evaluations + inputs; (3) evidence links; (4) reviewer assessments + divergences; (5) system outputs + decisions, with the decided-evaluation guard trigger. Each ships its own append-only triggers per design line D2.",
+      "surface": "Five conceptual migrations in foreign-key order: (1) template versions + dimensions + criteria; (2) evaluations + inputs; (3) evidence links; (4) reviewer assessments + divergences; (5) scores + advisory recommendations + decisions, with the decided-evaluation guard trigger. Each ships its own append-only triggers per design line D2.",
       "classification": "PROTECTED - db/migrations/** and db/prepared/journal/**.",
-      "ordinal_allocation": "NONE. This mission allocates no migration ordinal. Measured only, as a sync-point fact and never as a reservation: the highest migration ordinal present at AS_OF_HEAD is 0066 (db/migrations/0066_multiorg_s1_founder_traceability.sql) and the highest prepared journal ordinal is 079. A future mission re-measures both at its own sync point.",
+      "ordinal_allocation": "NONE. Measured only, as a sync-point fact and never as a reservation: the highest migration ordinal present at AS_OF_HEAD is 0066 and the highest prepared journal ordinal is 079, both unchanged by the merge. A future mission re-measures both at its own sync point.",
       "fable_eligible": false
     },
     "services": {
-      "surface": "A deterministic scoring engine (pure, Decimal-only), a divergence detector, a DecisionPolicy evaluator and a finalization guard.",
+      "surface": "A deterministic scoring engine (pure, Decimal-only), a divergence detector, a DecisionPolicy evaluator and a finalization guard. The advisory recommendation is NOT produced here - see stella_integration.",
       "classification": "UNPROTECTED application code.",
       "blocked_on": [
         "H1_NA_ARITHMETIC (engine)",
         "H2_DECISION_POLICY (policy evaluator)"
       ],
       "fable_eligible": true,
-      "fable_note": "The pure engine and the divergence detector are the highest-value fable-eligible surfaces: total functions with exact-arithmetic contracts and no I/O."
+      "fable_note": "The pure engine and the divergence detector are the highest-value fable-eligible surfaces: total functions with exact-arithmetic contracts and no I/O.",
+      "revised_in_R2": "Recommendation generation was removed from this line and moved to stella_integration, closing F-AUDIT-2."
     },
     "actions": {
       "surface": "Server actions for input submission, assessment draft/submit, divergence resolution, decision rendering and successor opening. Each is a separation-of-duties chokepoint (I7) and an audit chokepoint (I13).",
@@ -377,11 +523,11 @@
     "ui": {
       "surface": "A first-class Evaluate product area. RE_U3 currently reserves it as a RESERVED_TARGET_NODE with NAV_RESERVED_FOR_FUTURE_RUNTIME and no route.",
       "classification": "UNPROTECTED.",
-      "constraint": "V1 has no blind review, but R1 ratings must be hidden from R2 until R2 submits - otherwise the divergence metric measures anchoring rather than genuine reviewer disagreement.",
+      "constraint": "V1 has no blind review, but R1 ratings must be hidden from R2 until R2 submits - otherwise the divergence metric measures anchoring rather than genuine reviewer disagreement. The advisory recommendation must be visually distinguishable from the deterministic score and from the decision, so the interface does not re-collapse what I1 separates.",
       "fable_eligible": false
     },
     "audit": {
-      "surface": "Seventeen new two-segment verbs in lib/audit/logger.ts AUDIT_ACTIONS.",
+      "surface": "Seventeen new lowercase dot-separated verbs in lib/audit/logger.ts AUDIT_ACTIONS.",
       "classification": "LOCKED - see AUDIT_VOCABULARY_DEPENDENCY. Sequenced behind PR #105.",
       "fable_eligible": false
     },
@@ -391,14 +537,15 @@
       "fable_eligible": true
     },
     "pg_harness": {
-      "surface": "Disposable-cluster probes for cross-organization isolation, append-only trigger enforcement, the decided-evaluation guard, and separation of duties at the write path.",
+      "surface": "Disposable-cluster probes for cross-organization isolation, append-only trigger enforcement, the decided-evaluation guard, subject-kind refusal, and separation of duties at the write path.",
       "classification": "DISPOSABLE ONLY - via pnpm db:audit:disposable. Never staging, never production, never the canonical local stack.",
       "rationale": "Row-level security policy combination, trigger firing, NULL-not-TRUE denial and effective privilege inheritance are runtime properties. Static reading of SQL text is not proof of any of them.",
       "fable_eligible": false
     },
     "stella_integration": {
-      "surface": "An Evaluate-scoped Stella context, prompt and response schema riding stella_interactions.",
+      "surface": "An Evaluate-scoped Stella context, prompt and response schema riding stella_interactions, producing analysis AND the advisory recommendation.",
       "classification": "BLOCKED on H3_STELLA_CATEGORY. The pipeline_step axis is unprotected; the stella_role axis is a protected G2 surface.",
+      "boundary": "The advisory recommendation is written to evaluation_advisory_recommendations and read by no deterministic path (I9, N-15).",
       "fable_eligible": false
     }
   },
@@ -406,13 +553,13 @@
     "rule": "THIS MISSION ALLOCATES NOTHING. Every identifier below is SYMBOLIC - a description of what a FUTURE mission will need. It is never a reservation and never a name-as-allocated.",
     "NEXT_AVAILABLE_ODS_LINEAGE": {
       "symbolic": "The ODS maintenance addendum ordinal immediately after the highest present at the future mission's own sync point.",
-      "measured_highest_present_at_AS_OF_HEAD": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.26.json",
+      "measured_highest_present_at_AS_OF_HEAD": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json",
       "allocated_by_this_mission": "NONE",
-      "blocking_gate": "NONE AT AS_OF_HEAD. The enumeration hole that previously blocked allocation is closed: 26 addenda on disk, 26 enumerated, both ending at v1.0.26."
+      "blocking_gate": "OPEN AGAIN AT AS_OF_HEAD. v1.0.27 is present on disk and UNENUMERATED by the live Controller, which enumerates exactly 26 addenda ending at v1.0.26 and tests EXACT membership. A Controller successor enumerating v1.0.27 must be CLOSED before any implementing Evaluate node may allocate the next ordinal."
     },
     "NEXT_AVAILABLE_HPO_GRANT_ID": {
       "symbolic": "The next HPO protected-grant id after the highest present at the future mission's own sync point.",
-      "measured_registry_at_AS_OF_HEAD": "scripts/ods-scope.ts PROTECTED_GRANTS contains exactly 12 rows, non-contiguous, with authorityId values HPO-ODS-W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17, -20 and -21. No Evaluate grant exists; a search for HPO-ODS-EVAL at AS_OF_HEAD returns zero hits.",
+      "measured_registry_at_AS_OF_HEAD": "scripts/ods-scope.ts PROTECTED_GRANTS contains exactly 12 rows, non-contiguous, with authorityId values HPO-ODS-W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17, -20 and -21. Unchanged by the merge. No Evaluate grant exists; a search for HPO-ODS-EVAL returns zero hits.",
       "allocated_by_this_mission": "NONE",
       "note": "Non-contiguity is normal in this registry and is not evidence of a missing row. A grant id is bound to exactly ONE branch, so a future Evaluate grant is allocated against the branch that will carry the implementation, never in advance."
     },
@@ -420,7 +567,7 @@
       "symbolic": "The next migration ordinal after the highest present at the future mission's own sync point.",
       "measured_highest_present_at_AS_OF_HEAD": "0066",
       "allocated_by_this_mission": "NONE",
-      "hazard": "Ordinals move between missions. A future mission MUST re-measure rather than reuse the number recorded here."
+      "hazard": "Ordinals move between missions. A future mission MUST re-measure rather than reuse the number recorded here. R2 demonstrates the general form of this hazard: the ODS lineage classification recorded by R1 was falsified by a single integration cycle."
     },
     "grants_required_per_node": {
       "note": "Symbolic count only. Whether each E-node maps to one grant or several is a lane-coordinator decision, not an authority decision.",
@@ -438,9 +585,10 @@
     "gates_that_must_close_first": [
       "H1_NA_ARITHMETIC ratified by a human (blocks the engine and every golden score string).",
       "H2_DECISION_POLICY ratified by a human (blocks the policy evaluator and the decision UI).",
-      "H3_STELLA_CATEGORY ratified by a human (blocks Stella integration).",
+      "H3_STELLA_CATEGORY ratified by a human (blocks Stella integration, including the advisory recommendation surface).",
       "Wave 3 contract available: FIBIU-19 started, and FIBIU-20 released by an explicit human G2 resolution of the FIBDB-053 external gate.",
       "PR #105 resolved, releasing LOCK-AUDIT-ACTION-VOCABULARY.",
+      "A Controller successor enumerating ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json CLOSED, before any lineage allocation.",
       "A commercial Golden E2E journey file exists to EXTEND, for the E8 gate."
     ],
     "what_this_authority_does_authorize": "Nothing beyond its own existence as a frozen reference. It is a docs-only artifact."
@@ -449,35 +597,50 @@
     {
       "id": "F-EV-1",
       "severity": "NON_BLOCKING",
-      "finding": "docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json sets postgres_requirements to null, but the schema declares that property as type 'object' with required [probe_manifest, rationale]. A manifest copied verbatim from the template and left with a null there does NOT validate. The companion manifest avoids this by supplying a conformant object.",
-      "impact": "Template defect only; no shipped manifest is affected, because every manifest measured at AS_OF_HEAD either omits the key or supplies an object.",
-      "owner": "A future ODS tooling-maintenance node, not this mission."
+      "status": "CORRECTED IN R2 (closes F-AUDIT-1)",
+      "finding": "docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json sets postgres_requirements to null, but the schema declares that property type 'object' with required [probe_manifest, rationale]. A manifest copied verbatim from the template and left with a null there does NOT validate.",
+      "shipped_manifest_affected": "docs/ops/wave2/W2_B3_TEST_MANIFEST.json - a SHIPPED, tracked manifest that fails schema validation on exactly this error.",
+      "measured": "Validating all eleven tracked manifests plus the template against UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0 yields exactly two failures, each with exactly one error, and the error is identical in both: '$/postgres_requirements: type [object], got NoneType'. The two are docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json and docs/ops/wave2/W2_B3_TEST_MANIFEST.json. Its own successor docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json supplies a conformant object, so the defect was already corrected once downstream without the original being fixed.",
+      "R1_error_corrected": "R1 asserted 'no shipped manifest is affected, because every manifest measured at AS_OF_HEAD either omits the key or supplies an object'. That assertion was FALSE. R1 measured only the protected_authority and protected_surfaces fields across manifests and never ran the full schema over each shipped file, so a defect present in a shipped artifact was reported as template-only.",
+      "impact": "The companion Evaluate manifest is unaffected - it supplies a conformant object. Fixing either affected file is out of this mission's authorized write paths.",
+      "owner": "A future ODS tooling-maintenance node, which should fix the template and W2_B3_TEST_MANIFEST.json together."
     },
     {
       "id": "F-EV-2",
       "severity": "NON_BLOCKING",
+      "status": "OPEN, unchanged in R2",
       "finding": "The companion manifest sets protected_authority to the string 'UNKNOWN' rather than to null. Three merged precedents (COMMERCIAL_ACCOUNT_ENTITLEMENT, MULTI_ORG_TENANT_SCOPE, WAVE3) use null while declaring a NON-EMPTY protected_surfaces list.",
-      "rationale": "The schema documents null as meaning 'no protected surface is touched'. Pairing null with a non-empty protected_surfaces list therefore asserts something false. The schema's own top-level description mandates that unknown or absent required evidence be represented explicitly, naming 'UNKNOWN' as the form, so that a validator fails closed instead of reading a missing or empty value as satisfied. 'UNKNOWN' is a valid string against the property's declared type and is the strictly more truthful of the two legal forms. The deviation is recorded here rather than left for an auditor to discover.",
+      "rationale": "The schema documents null as meaning 'no protected surface is touched'. Pairing null with a non-empty protected_surfaces list therefore asserts something false. The schema's own top-level description mandates that unknown or absent required evidence be represented explicitly, naming 'UNKNOWN' as the form, so that a validator fails closed instead of reading a missing or empty value as satisfied. 'UNKNOWN' is a valid string against the property's declared type and is the strictly more truthful of the two legal forms.",
       "impact": "None mechanical: no gate reads protected_authority from a manifest. scripts/ods-poststate.ts takes protectedAuthority as a CLI input and forwards it to ods:scope; it never parses a manifest file."
     },
     {
       "id": "F-EV-3",
       "severity": "NON_BLOCKING",
+      "status": "OPEN, unchanged in R2",
       "finding": "known_conditions is an empty array in the companion manifest and could not be measured. pnpm ops:test-diff requires --base and --head test captures, which presuppose an implementation and a baseline test run; Evaluate has neither.",
       "impact": "Recorded explicitly rather than populated from memory. docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json carries exactly two conditions at AS_OF_HEAD, both PRE_EXISTING_DEFERRED hosted-baseline-rehearsal staleness; whether an Evaluate baseline would still carry them is genuinely unknown until such a baseline exists."
     },
     {
       "id": "F-EV-4",
       "severity": "NON_BLOCKING",
+      "status": "OPEN, unchanged in R2",
       "finding": "Wave 2 measures CLOSED on authority, implementation and audit for all four batches, but NOT_INTEGRATED on both named integration refs. Wave 3's stated precondition is 'Wave 2 complete'.",
       "impact": "This authority deliberately does not adjudicate whether NOT_INTEGRATED defeats 'complete'. It records the measurement and leaves the reading to the Wave 3 mission, which owns that precondition."
+    },
+    {
+      "id": "F-EV-5",
+      "severity": "NON_BLOCKING",
+      "status": "NEW IN R2",
+      "finding": "The ODS lineage gap REOPENED between R1 and R2 as a direct result of the merged integration delta: ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json is present and unenumerated by the Controller.",
+      "impact": "Does not block publication of these two docs-only files, which create no Controller obligation. Does block a future Evaluate implementation node from allocating a lineage ordinal. Recorded in DEPENDENCIES_REMEASURED_AT_AS_OF_HEAD.ODS_LINEAGE_SEQUENCING and in FUTURE_ODS_NEEDS_SYMBOLIC.",
+      "lesson": "Structural noncollision between an integration delta and a mission's write paths does not imply semantic noncollision. A delta that touches none of your files can still falsify your measured claims about theirs."
     }
   ],
   "VALIDATION_PERFORMED_BY_THIS_MISSION": {
-    "prestate": "Branch codex/evaluate-v1-authority-materialization-r1, HEAD 635ed04605bd7d9f1a66f55511c5e2ae79175aaa, tree 51c7ab3aafeaefaed149a03cf3947f8ad3d6a468, working tree clean at mission start. HEAD equals the mission's declared BASE exactly.",
-    "dependency_installation": "pnpm install --frozen-lockfile was run before any gate, because this worktree had no node_modules. A gate run without it returns a vacuous pass whose exit code comes from the shell rather than from the gate.",
-    "schema_conformance": "The companion manifest was validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json by a purpose-written validator. ajv is not installed in this repository, so no third-party validator was available.",
-    "measurements_not_inherited": "Every count and ordinal in this artifact was re-measured at AS_OF_HEAD. The zero-discovery packet's pins were treated as stale by default: of those re-measured, AUDIT_ACTIONS moved from 100 to 104, the highest migration ordinal from 0063 to 0066, the prepared journal head from 076 to 079, and the ODS lineage gap from OPEN to CLOSED."
+    "reconciliation": "origin fetched; PR #106 head confirmed still exactly adb82726da22eeebd62907fd4842c6fa26943d8a; integration 1625bea2124f7b5ef6ffa500f133ffe80c487d92 normal-merged (--no-ff, no rebase, no squash) with 0 conflicts; resulting merge commit carries exactly two parents.",
+    "dependency_installation": "node_modules present before any gate ran. A gate run in a bare worktree returns a vacuous pass whose exit code comes from the shell rather than from the gate.",
+    "schema_conformance": "The companion manifest was validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json by a purpose-written draft-07 validator; ajv is not installed in this repository. The validator carries its own negative controls, each confirmed to be CAUGHT, so a PASS is not vacuous.",
+    "measurements_re_taken_after_the_merge": "AUDIT_ACTIONS (104, all two-segment - unchanged), the live vocabulary pin text (unchanged), PROTECTED_GRANTS (12, ending HPO-ODS-W2-21 - unchanged), migration head (0066 - unchanged), prepared journal head (079 - unchanged), and ODS addenda on disk versus enumerated (27 versus 26 - CHANGED, reopening the gap)."
   },
   "self_check": {
     "allocated_no_ods_lineage": true,
@@ -486,8 +649,16 @@
     "created_no_ods_addendum": true,
     "touched_no_protected_surface": true,
     "claimed_no_unratified_decision_as_ratified": true,
+    "created_no_artificial_human_debt": true,
     "implemented_nothing": true,
     "files_written": 2,
+    "human_items_still_open": [
+      "H1",
+      "H2",
+      "H3"
+    ],
+    "recommendation_not_assigned_to_decision_policy": true,
+    "no_two_frozen_nodes_share_a_conceptual_object": true,
     "evaluate_contract_clauses_preserved": [
       "INPUT != SCORE != RECOMMENDATION != DECISION",
       "project-scoped V1 subject",
@@ -496,7 +667,7 @@
       "deterministic Decimal scoring",
       "human reviewer assessments",
       "explicit divergence resolution",
-      "recommendation distinct from final decision",
+      "system recommendation distinct from human final decision",
       "separation of duties",
       "fail closed on missing required input or evidence",
       "Stella analysis/explanation only",
@@ -506,5 +677,5 @@
     ]
   },
   "final_state": "EVALUATE_V1_AUTHORITY_FROZEN_WAITING_FOR_HUMAN_RATIFICATIONS_H1_H2_H3_AND_WAVE3_CONTRACT",
-  "next_gate": "INDEPENDENT_EVALUATE_AUTHORITY_AUDIT"
+  "next_gate": "FOCUSED_INDEPENDENT_RE_AUDIT_OF_REMEDIATION_DELTA_ONLY"
 }
