@@ -61,6 +61,11 @@ import { isValidRole, type Role } from './roles'
 // leads to below is re-derived from live database state, never trusted from
 // the cookie alone.
 import { getSelectedOrganizationId } from './selected-organization'
+// The refusal-audit emitter. Imported for RETURN SITE 2 only — see
+// readPrincipalUnderOpenContext, where the obligation is produced, and
+// resolveRequestPrincipal, where it is discharged AFTER the principal
+// transaction has committed.
+import { emitMembershipRevalidationRefused } from '@/lib/audit/tenancy-refusal'
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -388,9 +393,35 @@ export async function loadOrganizationWithinContext(
 /* The principal                                                              */
 /* -------------------------------------------------------------------------- */
 
-async function readPrincipalUnderOpenContext(userId: string): Promise<RequestPrincipal | null> {
+/**
+ * What one principal resolution produced: the principal itself, and the audit
+ * obligation it INCURRED but deliberately did not discharge.
+ *
+ * THE SPLIT EXISTS FOR ONE REASON. This function runs inside the transaction
+ * that DECIDES the refusal. Writing the refusal's audit row here would couple
+ * the observation to the decision: a failing INSERT would roll the whole
+ * transaction back, so the audit surface could change what the authorization
+ * surface answers. Returning the obligation instead means the write CANNOT
+ * join this transaction — not by discipline, but because there is no code path
+ * that could put it here (HPO ADJUDICATION D).
+ */
+interface PrincipalRead {
+  readonly principal: RequestPrincipal | null
+  /**
+   * The valid organisation UUID whose membership revalidation was refused, or
+   * null when this resolution owes no audit row.
+   *
+   * SET AT EXACTLY ONE RETURN SITE — the one where the membership is genuinely
+   * absent. It is deliberately NOT derived from organizationRefusalCode: that
+   * code is returned at TWO structurally different sites below and is TRUE at
+   * only one of them. See the third return site for what the other one is.
+   */
+  readonly pendingRevalidationRefusal: string | null
+}
+
+async function readPrincipalUnderOpenContext(userId: string): Promise<PrincipalRead> {
   const user = await loadCurrentUserWithinContext(userId)
-  if (!user) return null
+  if (!user) return { principal: null, pendingRevalidationRefusal: null }
 
   // S3 — REQUEST_PRINCIPAL_CONTRACT.authoritative_rederivation: re-read on
   // EVERY call, never cached beyond this one request's memoised principal.
@@ -399,7 +430,24 @@ async function readPrincipalUnderOpenContext(userId: string): Promise<RequestPri
   const selectedOrganizationId = await getSelectedOrganizationId()
 
   if (selectedOrganizationId === null) {
-    return { user, membership: null, organization: null, organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED' }
+    // RETURN SITE 1 — AND IT AUDITS NOTHING, WHICH IS THE POINT.
+    //
+    // getSelectedOrganizationId() returns null for BOTH an absent carrier AND
+    // a present-but-malformed one, so reaching this line does not mean anyone
+    // ATTEMPTED anything. In the overwhelmingly common case it is an ordinary
+    // signed-in user who has not selected yet — onboarding, not refusal. An
+    // audit row here would record a refusal of an attempt that never happened,
+    // on almost every request such a user makes.
+    //
+    // The malformed-carrier sub-case resolves here too and is likewise not
+    // audited. Telling it apart from "absent" would require changing
+    // getSelectedOrganizationId(), which this node has no authority to touch.
+    // It costs nothing observable: a caller who actually attempts to use a
+    // malformed value through the governed selection act IS audited there.
+    return {
+      principal: { user, membership: null, organization: null, organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED' },
+      pendingRevalidationRefusal: null,
+    }
   }
 
   const membership = await loadActiveMembershipWithinContext(userId, selectedOrganizationId)
@@ -411,7 +459,19 @@ async function readPrincipalUnderOpenContext(userId: string): Promise<RequestPri
     // an active membership still references it. There is no second query
     // that could tell "deleted" apart from "never a member", by construction,
     // which is what makes this boundary immune to being an existence oracle.
-    return { user, membership: null, organization: null, organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' }
+    //
+    // RETURN SITE 2 — THE ONLY SITE THAT OWES AN AUDIT ROW, and the only
+    // emission site of tenancy.membership.revalidation_refused anywhere in the
+    // repository. Both halves of Form B hold here BY CONSTRUCTION: control
+    // reaches this line only with selectedOrganizationId non-null, and
+    // getSelectedOrganizationId() has already guaranteed UUID validity for
+    // anything it returns non-null — and the membership genuinely is absent.
+    //
+    // The obligation is RETURNED, not discharged: see PrincipalRead.
+    return {
+      principal: { user, membership: null, organization: null, organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' },
+      pendingRevalidationRefusal: selectedOrganizationId,
+    }
   }
 
   // `membership` and `organization` are reported INDEPENDENTLY from here,
@@ -423,11 +483,34 @@ async function readPrincipalUnderOpenContext(userId: string): Promise<RequestPri
   // above does not already cover.
   const organization = await loadOrganizationWithinContext(membership.organizationId)
 
+  // RETURN SITE 3 — SAME REFUSAL CODE AS SITE 2, AND IT AUDITS NOTHING.
+  //
+  // This is the single most likely implementation error in this node, so it is
+  // written down rather than left to be re-derived. The code
+  // TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER is emitted at BOTH site 2 and
+  // here, and it is TRUE at only one of them: at site 2 the membership really
+  // is absent, while here a membership DEMONSTRABLY EXISTS — it was loaded,
+  // is non-null, and is returned in this very object. Only the ORGANISATION
+  // ROW could not be read, and the code is a REUSED CARRIER for that condition
+  // rather than a truthful description of it.
+  //
+  // An emitter keyed on organizationRefusalCode would therefore write a FALSE
+  // audit row here, asserting an absent membership that the same return value
+  // disproves. That is why pendingRevalidationRefusal is set BY RETURN SITE
+  // and never derived from the code.
+  //
+  // Whether this condition should be observable at all, and under what verb
+  // and subject, is a separate governed question recorded as
+  // TENANCY_ORGANIZATION_READABILITY_INVARIANT_SUCCESSOR_REQUIRED. It is NOT
+  // absorbed here by widening either subject form.
   return {
-    user,
-    membership,
-    organization,
-    organizationRefusalCode: organization ? null : 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+    principal: {
+      user,
+      membership,
+      organization,
+      organizationRefusalCode: organization ? null : 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+    },
+    pendingRevalidationRefusal: null,
   }
 }
 
@@ -466,17 +549,64 @@ async function resolveRequestPrincipal(
   // context is both correct and cheaper than opening a second transaction.
   const bound = getBoundDatabaseContext()
   if (bound !== undefined && bound.identity.userId === identity.userId) {
-    const principal = await readPrincipalUnderOpenContext(identity.userId)
-    return { principal, failure: principal ? null : 'AUTH_NO_PROFILE' }
+    const read = await readPrincipalUnderOpenContext(identity.userId)
+
+    if (read.pendingRevalidationRefusal !== null) {
+      // BORROWED TRANSACTION, SO THE AUDIT CANNOT BE ISOLATED — AND IS
+      // THEREFORE NOT WRITTEN AT ALL.
+      //
+      // Here the transaction that decided the refusal belongs to a CALLER, and
+      // this function can neither commit it nor open a sibling: re-entering
+      // withDatabaseIdentityContext with a matching identity reuses the open
+      // transaction rather than starting a second one, which is exactly the
+      // coupling ADJUDICATION D forbids. Writing the row anyway would let a
+      // failing audit insert roll back the caller's work.
+      //
+      // Both remaining options are failures; this picks the LOUD one. Silently
+      // skipping the row would leave a refusal unrecorded while the request
+      // succeeded — precisely the best-effort behaviour that is prohibited.
+      throw new AuthContextError(
+        'AUTH_NO_SESSION',
+        'A membership revalidation was refused while resolving the principal inside a database ' +
+          'context this call did not open. The refusal audit row must be written in its own ' +
+          'transaction, which is impossible here, and it must not be skipped. Resolve the ' +
+          'principal before opening a context — the ordinary request flow already does.'
+      )
+    }
+
+    return { principal: read.principal, failure: read.principal ? null : 'AUTH_NO_PROFILE' }
   }
 
-  const principal = await withDatabaseIdentityContext(
+  const read = await withDatabaseIdentityContext(
     { userId: identity.userId, organizationId: null, isSuperAdmin: false },
     () => readPrincipalUnderOpenContext(identity.userId),
     options
   )
 
-  return { principal, failure: principal ? null : 'AUTH_NO_PROFILE' }
+  // THE PRINCIPAL-RESOLUTION TRANSACTION HAS NOW COMMITTED (HPO ADJUDICATION
+  // D, step 2). Only past this line may the refusal be recorded, and it is
+  // recorded in a SEPARATE transaction opened below — so a failing audit
+  // insert can no longer roll back, or otherwise perturb, the resolution that
+  // decided the refusal in the first place.
+  //
+  // FAIL-CLOSED, still: this is deliberately not wrapped in a try/catch. If
+  // the row cannot be written the error propagates and the request fails,
+  // rather than the refusal path completing with its audit row missing. The
+  // two properties are independent and both are required — satisfying
+  // isolation by making the audit best-effort would trade one for the other.
+  if (read.pendingRevalidationRefusal !== null) {
+    await withDatabaseIdentityContext(
+      { userId: identity.userId, organizationId: null, isSuperAdmin: false },
+      () =>
+        emitMembershipRevalidationRefused({
+          userId: identity.userId,
+          selectedOrganizationId: read.pendingRevalidationRefusal as string,
+        }),
+      options
+    )
+  }
+
+  return { principal: read.principal, failure: read.principal ? null : 'AUTH_NO_PROFILE' }
 }
 
 /** Non-memoised principal resolution, with the reason it failed. */

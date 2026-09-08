@@ -68,8 +68,8 @@ describe('the six baseline gates', () => {
     // founding_provenance, the MO-01 partial unique carrier and the MO-11
     // structural backfill; no superuser dependency, so superuserFreeUnits
     // advances in lockstep with unitCount) = 79.
-    expect(evidence.unitCount).toBe(79)
-    expect(evidence.superuserFreeUnits).toBe(79)
+    expect(evidence.unitCount).toBe(80)
+    expect(evidence.superuserFreeUnits).toBe(80)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',

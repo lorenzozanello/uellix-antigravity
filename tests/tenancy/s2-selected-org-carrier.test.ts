@@ -79,6 +79,49 @@ vi.mock('@/lib/auth/session', () => ({
   listSelectableMemberships: () => mockListSelectableMemberships(),
 }))
 
+// ADDED under ODS v1.0.26 F_DN_6_ADJUDICATION. Unlike the other two hosts this
+// suite never had an identity-context double at all — it did not need one
+// until the selection action began emitting a fail-closed refusal audit row on
+// its REFUSAL branches, at which point an unmocked wrapper would have reached
+// the real principal resolution and the real database.
+//
+// The double is TRUTHFUL rather than a pass-through, which is the whole point
+// of the correction: it BINDS the identity through the REAL async-local store
+// for the duration of the callback, so the emitter's guard observes exactly
+// what production would, and AsyncLocalStorage RESTORES the previous value on
+// return AND on throw. The throw path is not hypothetical here — every refusal
+// ends in a redirect, and this suite's redirect double throws.
+//
+// The bound identity is derived from the AUTHENTICATED USER, never chosen by
+// the module under test, mirroring the real wrapper
+// (lib/auth/database-context.ts:554-577), which binds
+// { userId: principal.user.id, organizationId: null }.
+const refusalAuditRows = vi.hoisted(() => [] as Record<string, unknown>[])
+
+vi.mock('@/lib/auth/database-context', async () => {
+  const store = await import('@/db/identity-store')
+  return {
+    withAuthenticatedDatabaseContext: async (callback: (ctx: unknown) => unknown) => {
+      const user = (await mockRequireAuth()) as { id: string }
+      return store.runWithBoundDatabaseContext(
+        {
+          identity: { userId: user.id, organizationId: null, isSuperAdmin: false },
+          // Recording rather than discarding: it is what lets this suite ASSERT
+          // the refusal row instead of merely tolerating it.
+          db: {
+            insert: () => ({
+              values: async (row: Record<string, unknown>) => {
+                refusalAuditRows.push(row)
+              },
+            }),
+          },
+        } as never,
+        (async () => callback({ user, membership: null, organization: null })) as () => Promise<never>
+      )
+    },
+  }
+})
+
 // Rendering chrome only — this suite is about the carrier and the selection
 // act, not about markup.
 vi.mock('@/components/ui/card', () => ({
@@ -509,11 +552,40 @@ describe('carrier inertness RETIRED BY REPLACEMENT (S3 supersedes NS2-4)', () =>
 // one is authorized to do.
 
 describe('selection surface: unscoped enumeration only, no organization-scoped context (S3 narrows the S2 guarantee)', () => {
-  it('the selection action imports no ORGANIZATION-SCOPED or super-admin database wrapper', () => {
+  // NARROWED BY HPO-ODS-W2-25 / ODS v1.0.26 F_DN_5_ADJUDICATION, and narrowed
+  // is the operative word: THREE of the four names remain prohibited here and
+  // every companion assertion is untouched.
+  //
+  // WHAT CHANGED AND WHY. The refusal-audit node makes this module emit a
+  // fail-closed audit row on the EXPLICIT REFUSAL path, and an audit INSERT
+  // cannot satisfy audit_logs' WITH CHECK without an open identity context —
+  // outside one auth.uid() is NULL and the row is refused. The only opener
+  // whose bound shape is already { userId, organizationId: null } is
+  // withAuthenticatedDatabaseContext (lib/auth/database-context.ts:554-577),
+  // so it is authorized here SOLELY for that emission.
+  //
+  // WHAT DID NOT CHANGE, AND IS THE POINT OF THE BLOCK. The SUCCESSFUL
+  // selection path remains COOKIE-ONLY and gains no database write. The three
+  // still-banned names are banned for reasons that did not weaken: an
+  // organization-scoped context would assert the very tenant a refusal proves
+  // the caller lacks; a super-admin context would hand the refusal branch a
+  // capability the success path does not have; and the raw identity-context
+  // mechanism would let this module choose its own bound identity instead of
+  // deriving it from the authenticated principal.
+  //
+  // The entrypoint inventory is NOT weakened by this. Keeping the opener is
+  // what HOLDS tests/database-runtime-entrypoints.test.ts:774 at
+  // { inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 };
+  // removing it would drop contextualized to 99.
+  it('the selection action imports no ORGANIZATION-SCOPED, super-admin or raw-mechanism database wrapper', () => {
     const source = read('app/(authenticated)/app/organizations/select/actions.ts')
     expect(source).not.toMatch(
-      /withOrganizationDatabaseContext|withAuthenticatedDatabaseContext|withSuperAdminDatabaseContext|withDatabaseIdentityContext/
+      /withOrganizationDatabaseContext|withSuperAdminDatabaseContext|withDatabaseIdentityContext/
     )
+    // The ONE authorized opener, and it must actually be there: this is a
+    // POSITIVE pin, so silently dropping the emission's context — which would
+    // move the entrypoint tuple — fails here rather than passing quietly.
+    expect(source).toMatch(/withAuthenticatedDatabaseContext/)
     expect(source).not.toMatch(/@\/db\/client|@\/db\/schema/)
     // …but it DOES now reach the database, through the enumerator — the S3
     // change this block exists to narrow, not hide.
@@ -560,5 +632,76 @@ describe('route location: the pre-organization selector', () => {
 
   it('the singular organization workspace is untouched by this batch', () => {
     expect(existsSync(path.join(ROOT, 'app/app/organization'))).toBe(true)
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* The refusal audit row — and the success path's continued silence           */
+/* -------------------------------------------------------------------------- */
+//
+// ADDED under ODS v1.0.26 F_DN_5_ADJUDICATION. The adjudication authorizes the
+// refusal path to open an authenticated context, and it does so on ONE
+// condition that this block is here to keep honest: the SUCCESSFUL selection
+// path must remain COOKIE-ONLY and gain NO database write.
+//
+// Asserting only the refusals would leave that condition unmeasured, and an
+// implementation that emitted on success too would pass every other control in
+// this file. So the success case is asserted NEGATIVELY, and it is the most
+// load-bearing assertion of the three.
+
+describe('explicit refusal emits a fail-closed audit row; success emits nothing', () => {
+  beforeEach(() => {
+    refusalAuditRows.length = 0
+    fakeCookieStore.clear()
+  })
+
+  it('a MISSING organizationId records exactly one FORM A row naming the caller', async () => {
+    mockRequireAuth.mockResolvedValue(USER)
+    mockListSelectableMemberships.mockResolvedValue(SELECTABLE_A)
+
+    await locationOf(() => selectOrganizationAction(formDataWith(null)))
+
+    expect(refusalAuditRows).toHaveLength(1)
+    expect(refusalAuditRows[0]).toMatchObject({
+      action: 'tenancy.organization.selection_refused',
+      reason: 'TENANCY_NO_ORGANIZATION_SELECTED',
+      entityType: 'user',
+      entityId: USER.id,
+      actorUserId: USER.id,
+    })
+    // No owning tenant, no payload — the shape the INSERT policy requires.
+    expect(refusalAuditRows[0].organizationId).toBeUndefined()
+    expect(refusalAuditRows[0].beforeJson).toBeUndefined()
+  })
+
+  it('a NON-MEMBER organizationId records exactly one FORM B row naming the ATTEMPTED organization', async () => {
+    mockRequireAuth.mockResolvedValue(USER)
+    mockListSelectableMemberships.mockResolvedValue(SELECTABLE_A)
+
+    await locationOf(() => selectOrganizationAction(formDataWith(ORG_B)))
+
+    expect(refusalAuditRows).toHaveLength(1)
+    expect(refusalAuditRows[0]).toMatchObject({
+      action: 'tenancy.organization.selection_refused',
+      reason: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+      entityType: 'organization',
+      entityId: ORG_B,
+      actorUserId: USER.id,
+    })
+    // The EXACT attempted organization, never the caller's own and never a
+    // manufactured sentinel.
+    expect(refusalAuditRows[0].entityId).not.toBe(ORG_A)
+    expect(refusalAuditRows[0].entityId).not.toBe(USER.id)
+  })
+
+  it('a SUCCESSFUL selection writes the carrier and NO audit row — the success path stays cookie-only', async () => {
+    mockRequireAuth.mockResolvedValue(USER)
+    mockListSelectableMemberships.mockResolvedValue(SELECTABLE_A)
+
+    const location = await locationOf(() => selectOrganizationAction(formDataWith(ORG_A)))
+
+    expect(location).toBe('/app/dashboard')
+    expect(await getSelectedOrganizationId()).toBe(ORG_A)
+    expect(refusalAuditRows).toHaveLength(0)
   })
 })
