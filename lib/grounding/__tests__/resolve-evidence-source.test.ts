@@ -44,6 +44,14 @@ function readerReturning(bytes: Buffer | null): EvidenceObjectReader & { calls: 
 
 const neverReader: EvidenceObjectReader & { calls: string[] } = readerReturning(null)
 
+/**
+ * F-ED-4: both builders below pin `sensitivityClassification: 'non_sensitive'`
+ * so this suite keeps isolating the axes it was written for — scope, kind,
+ * hash, size, malformed metadata. None of those cases are about
+ * classification, so holding it at the one cleared value is what keeps them
+ * unchanged; a case actually about classification belongs in
+ * `classification-boundary.test.ts`, not here.
+ */
 function textRecord(overrides: Partial<EvidenceSourceRecord> = {}): EvidenceSourceRecord {
   const text = 'Encuesta de salida, marzo. 84 participantes completaron el programa.'
   return {
@@ -57,6 +65,7 @@ function textRecord(overrides: Partial<EvidenceSourceRecord> = {}): EvidenceSour
     fileSize: null,
     mimeType: null,
     contentHash: sha256(text),
+    sensitivityClassification: 'non_sensitive',
     ...overrides,
   }
 }
@@ -76,6 +85,7 @@ function fileRecord(
     fileSize: bytes.length,
     mimeType: 'text/csv',
     contentHash: sha256(bytes),
+    sensitivityClassification: 'non_sensitive',
     ...overrides,
   }
 }

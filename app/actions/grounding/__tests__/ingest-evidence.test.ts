@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { evidenceItems, evidenceVersions } from '@/db/schema'
 
 const ORG = '11111111-1111-4111-8111-111111111111'
 const PROJECT = '22222222-2222-4222-8222-222222222222'
@@ -83,10 +84,20 @@ vi.mock('@/lib/auth/database-context', () => ({
 }))
 
 /* -------------------------------------------------------------------------- */
-/* Drizzle handle — one evidence row lookup                                   */
+/* Drizzle handle — the evidence row lookup, and (F-ED-4) the CURRENT         */
+/* version's classification lookup alongside it                              */
 /* -------------------------------------------------------------------------- */
 
 let evidenceRows: Record<string, unknown>[] = []
+/**
+ * F-ED-4 — `getLatestEvidenceVersionsByEvidenceIds` (lib/pipeline/evidence-
+ * versions.ts) reads `evidence_versions` for the resolver's classification
+ * gate. Real schema tables (`evidenceItems`/`evidenceVersions`, unmocked) are
+ * imported so `.from(table)` below can tell the two queries apart by table
+ * IDENTITY, the same way drizzle itself would route them — not by call order,
+ * which the production code is free to change.
+ */
+let evidenceVersionRows: Record<string, unknown>[] = []
 /**
  * The predicate the evidence lookup was actually built with.
  *
@@ -99,12 +110,22 @@ let lookupPredicate: unknown = null
 // spread call site needs a rest type, and an unused `_args` binding would only
 // trade a type error for a lint warning.
 const mockSelect = vi.fn<(...args: unknown[]) => unknown>(() => ({
-  from: () => ({
-    where: (predicate: unknown) => {
-      lookupPredicate = predicate
-      return { limit: async () => evidenceRows }
-    },
-  }),
+  from: (table: unknown) => {
+    if (table === evidenceVersions) {
+      // No `.limit()` in the real call (lib/pipeline/evidence-versions.ts) —
+      // `.where()` itself must resolve to the row array.
+      return { where: async () => evidenceVersionRows }
+    }
+    if (table === evidenceItems) {
+      return {
+        where: (predicate: unknown) => {
+          lookupPredicate = predicate
+          return { limit: async () => evidenceRows }
+        },
+      }
+    }
+    throw new Error('mockSelect: unexpected table — this double serves exactly evidenceItems and evidenceVersions')
+  },
 }))
 
 /** Every value drizzle bound into a predicate, flattened. */
@@ -235,6 +256,13 @@ beforeEach(() => {
   mockStellaConfig.geminiApiKey = ''
   mockRequireOrganizationAccess.mockResolvedValue(session('analyst'))
   evidenceRows = [fileRow()]
+  // F-ED-4: this evidence's current version is classified non_sensitive by
+  // default — every case in this file exercises an axis OTHER than
+  // classification (tenancy, kind, bytes, idempotency, rollback, audit), so
+  // holding classification at the one cleared value is what keeps them
+  // isolated. The classification gate itself is proven in
+  // lib/grounding/__tests__/classification-boundary.test.ts.
+  evidenceVersionRows = [{ evidenceId: EVIDENCE, ordinal: 1, sensitivityClassification: 'non_sensitive' }]
   mockRead.mockResolvedValue(CSV_BYTES)
   mockIngest.mockResolvedValue(persisted)
   mockCreateRepository.mockReturnValue({ id: 'db-grounding-ingestion-v1' })
