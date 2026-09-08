@@ -40,7 +40,18 @@ const CSV = Buffer.from('nombre,edad\nAna,34\nLuis,29\n', 'utf8')
 // Not a real PDF; nothing in this path parses one, which is the point.
 const PDF = Buffer.from('%PDF-1.7\n%\xE2\xE3\xCF\xD3\n', 'binary')
 
-/** A file row, complete in every column the resolver reads. */
+/**
+ * A file row, complete in every column the resolver reads.
+ *
+ * F-ED-4: `sensitivityClassification: 'non_sensitive'` is pinned here so this
+ * suite's agreement check keeps isolating the axes it was written for (kind,
+ * hash, size, MIME, format) — `classifyEvidenceIndexability` never inspects
+ * classification (see EvidenceIndexabilityInput's Pick, and the same reason
+ * `scope_mismatch` is absent from it: it is not decidable from this row
+ * alone), so pinning it here is what keeps the REAL resolver on the same
+ * axis the predicate forecasts, rather than proving the classification gate
+ * itself — that is `classification-boundary.test.ts`'s job.
+ */
 function fileRow(overrides: Partial<EvidenceSourceRecord> = {}): EvidenceSourceRecord {
   return {
     id: EVIDENCE,
@@ -53,6 +64,7 @@ function fileRow(overrides: Partial<EvidenceSourceRecord> = {}): EvidenceSourceR
     fileSize: TXT.length,
     mimeType: 'text/plain',
     contentHash: sha256(TXT),
+    sensitivityClassification: 'non_sensitive',
     ...overrides,
   }
 }
@@ -70,6 +82,7 @@ function textRow(overrides: Partial<EvidenceSourceRecord> = {}): EvidenceSourceR
     fileSize: null,
     mimeType: null,
     contentHash: sha256(Buffer.from(body, 'utf8')),
+    sensitivityClassification: 'non_sensitive',
     ...overrides,
   }
 }
