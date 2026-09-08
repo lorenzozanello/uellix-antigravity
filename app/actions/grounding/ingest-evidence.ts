@@ -77,6 +77,7 @@ import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { isStellaCapabilityReady } from '@/lib/stella/capability-readiness'
 import { db } from '@/db/client'
 import { evidenceItems } from '@/db/schema'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { AUDIT_ACTIONS, logAuditAction } from '@/lib/audit/logger'
 import { createEvidenceObjectReader } from '@/lib/supabase/evidence-object-reader'
 import { createPersistedGroundingIngestionRepository } from '@/db/grounding/grounding-ingestion-repository'
@@ -177,8 +178,16 @@ async function ingestProjectEvidence(
   // 6. EVIDENCE LOOKUP — the FIRST read, scoped by all three identifiers. Its
   //    own short transaction: the storage round trip below must not run with a
   //    transaction open.
-  const rows = await withOrganizationDatabaseContext(() =>
-    db
+  //
+  //    F-ED-4 — the CURRENT version's sensitivity classification is read
+  //    alongside the row, inside this same organization-scoped context, so
+  //    `resolveEvidenceSource` decides ingestion eligibility from a value
+  //    fetched under the same RLS the row itself was. `null` (never
+  //    versioned, or no classification recorded) is passed through as-is;
+  //    the resolver — not this lookup — decides that null is unmet, not
+  //    exempt.
+  const lookup = await withOrganizationDatabaseContext(async () => {
+    const evidenceRows = await db
       .select({
         id: evidenceItems.id,
         organizationId: evidenceItems.organizationId,
@@ -199,17 +208,30 @@ async function ingestProjectEvidence(
           eq(evidenceItems.organizationId, scope.organizationId),
         ),
       )
-      .limit(1),
-  ).catch(() => null)
+      .limit(1)
 
-  if (rows === null) return { status: 'error', stage: 'evidence_lookup' }
-  if (rows.length === 0) {
+    if (evidenceRows.length === 0) {
+      return { evidenceRows, sensitivityClassification: null as string | null }
+    }
+
+    const versionsById = await getLatestEvidenceVersionsByEvidenceIds([evidenceRows[0]!.id])
+    return {
+      evidenceRows,
+      sensitivityClassification: versionsById.get(evidenceRows[0]!.id)?.sensitivityClassification ?? null,
+    }
+  }).catch(() => null)
+
+  if (lookup === null) return { status: 'error', stage: 'evidence_lookup' }
+  if (lookup.evidenceRows.length === 0) {
     // No audit row: writing one keyed to an evidence id the caller may not see
     // would make the trail the oracle the response refuses to be.
     return { status: 'unauthorized' }
   }
 
-  const record = rows[0] as EvidenceSourceRecord
+  const record: EvidenceSourceRecord = {
+    ...(lookup.evidenceRows[0] as Omit<EvidenceSourceRecord, 'sensitivityClassification'>),
+    sensitivityClassification: lookup.sensitivityClassification,
+  }
 
   // 7. BYTES — OUTSIDE any transaction. The reader runs under the caller's own
   //    session client; holding a database transaction across a storage round
