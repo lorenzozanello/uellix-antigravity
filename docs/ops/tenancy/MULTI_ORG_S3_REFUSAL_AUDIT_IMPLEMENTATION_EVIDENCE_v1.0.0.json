@@ -21,11 +21,11 @@
     "IMPLEMENTATION_COMPLETE": true,
     "INTEGRATED": false,
     "COMMITTED": true,
-    "PUSHED": true,
-    "PR_OPENED": true,
-    "PR_STATE": "DRAFT",
+    "PUSHED": false,
+    "PR_OPENED": false,
+    "PR_STATE": "NOT_OPENED",
     "verdict": "COMPLETE - ALL GATES PASS",
-    "why": "The three blocking findings this lane raised under the predecessor pair (F-DN-1, F-DN-5, F-DN-6) were independently adjudicated and integrated as ODS v1.0.26 / tenancy v1.0.7, which widened the ceiling from 24 entries to 28 by adding exactly four unprotected paths. All four are now closed, the effective diff is the predicted 107, and every gate passes.",
+    "why": "The three blocking findings this lane raised under the predecessor pair (F-DN-1, F-DN-5, F-DN-6) were independently adjudicated and integrated as ODS v1.0.26 / tenancy v1.0.7, which widened the ceiling from 24 entries to 28 by adding exactly four unprotected paths. All four are now closed, the effective diff is the predicted 107, and every gate passes. The commit exists locally; the push and draft PR were blocked by the session permission classifier and are the only steps outstanding.",
     "no_invented_pass": "Every figure was produced by executing the named command in this worktree and reading its output. Where a control failed, it was diagnosed by measurement and the defect corrected - never reasoned away. Two residual conditions are disclosed as NON_BLOCKING with their evidence."
   },
   "PRESTATE": {
@@ -599,12 +599,16 @@
   },
   "CANDIDATE": {
     "committed": true,
-    "final_sha": "PENDING",
-    "final_tree": "PENDING",
-    "pushed": true,
-    "pr_number": "PENDING",
-    "pr_state": "DRAFT",
-    "next_authorized_action": "INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT_OF_S3_REFUSAL_IMPLEMENTATION"
+    "implementation_commit_sha": "72de9f13960765a7850e1ac8e57eee563232155e",
+    "implementation_commit_tree": "cbfc8b6a58552cecc5718a19c06ce3730b1edaa6",
+    "implementation_commit_file_count": 107,
+    "evidence_finalization_commit": "This artifact records the SHA of the implementation commit it describes. Writing that SHA into the artifact necessarily produces a SECOND commit, since a file cannot contain its own commit hash. The branch therefore carries the implementation commit followed by this evidence finalization; the 107-path diff against integration is unchanged by it, because this artifact is already one of the 107.",
+    "base": "6d78445e299066b3568d69288038078c801f16d8",
+    "pushed": false,
+    "pr_number": null,
+    "pr_state": "NOT_OPENED",
+    "push_disposition": "The push was BLOCKED by the session's auto-mode permission classifier, not by any gate, authority or repository condition. Every gate this node is required to pass had already passed at the implementation commit. The branch is push-ready and unmodified.",
+    "next_authorized_action": "INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT_OF_S3_REFUSAL_IMPLEMENTATION, once the branch is pushed and the draft PR opened."
   },
   "CONTINUATION_RECONCILIATION": {
     "preserved_state_before_reconciliation": {
