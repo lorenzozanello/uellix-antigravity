@@ -313,9 +313,23 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant, plus the HPO-ODS-W2-12 Wave 2 batch B4 grant, plus the HPO-ODS-W2-16 W2-B4 remediation checkpoint-b0 probe grant, plus the HPO-ODS-W2-17 Wave 2 batch B5 grant, plus the HPO-ODS-W2-20 multi-org S1 migration grant and the HPO-ODS-W2-21 multi-org S1 journal grant', () => {
-    expect(PROTECTED_GRANTS.length).toBe(12)
-    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(12)
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant, plus the HPO-ODS-W2-12 Wave 2 batch B4 grant, plus the HPO-ODS-W2-16 W2-B4 remediation checkpoint-b0 probe grant, plus the HPO-ODS-W2-17 Wave 2 batch B5 grant, plus the HPO-ODS-W2-20 multi-org S1 migration grant and the HPO-ODS-W2-21 multi-org S1 journal grant, plus the HPO-ODS-W2-25 multi-org S3 refusal-audit grant', () => {
+    expect(PROTECTED_GRANTS.length).toBe(13)
+    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(13)
+    // HPO-ODS-W2-25 (multi-org S3 refusal audit). ONE row, TWO patterns, bound
+    // to the implementation branch by exact string equality. The set-size
+    // assertion above is what forbids a duplicate id from being registered
+    // beside it rather than replacing it.
+    const w2_25 = PROTECTED_GRANTS[12]
+    expect(w2_25).toEqual({
+      authorityId: 'HPO-ODS-W2-25',
+      branch: 'codex/multiorg-s3-refusal-audit-implementation-r1',
+      patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+    })
+    expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-25').length).toBe(1)
+    // W2-26 is NOT allocated by this node. Registering one would be a silent
+    // grant-lineage advance.
+    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-26')).toBe(false)
     const w2_03 = PROTECTED_GRANTS[2]
     expect(w2_03.authorityId).toBe('HPO-ODS-W2-03')
     expect(w2_03.branch).toBe('codex/u0-u9-reengineering-resume-r1')
@@ -577,18 +591,49 @@ describe('resolveProtectedGrant — pure', () => {
     expect(tenancyAmendment.protected_grant.branch).toBe(w2_21.branch)
     expect(tenancyAmendment.protected_grant.patterns).toEqual(w2_21.patterns)
     expect(tenancyAmendment.protected_grant.pattern_count).toBe(w2_21.patterns.length)
-    // LIVE-COUNT GUARD (T-S1-GRANT-2): the S1 registration is the newest
-    // registry change, so ITS post-registration figure - declared by v1.0.20
-    // and carried unchanged by v1.0.21 - is bound to the LIVE array, never to a
-    // hardcoded 12. A registry that grew by more or fewer than the two
-    // authorized entries fails here.
+    // DEMOTED TO A HISTORICAL LITERAL (HPO-ODS-W2-25). These two figures were
+    // bound to the LIVE array while the S1 registration was the newest registry
+    // change. It no longer is: registering W2-25 moved the array to 13, and
+    // v1.0.20 / v1.0.21 still describe the state as it stood at 12. Rebinding
+    // them to the live length would make two frozen authority artefacts appear
+    // to predict a count they never claimed; editing the artefacts to say 13
+    // would corrupt the historical record. So the guard is demoted to the
+    // literal those artefacts actually assert, and the LIVE binding moves to
+    // the newest registration below. The exactness is unchanged.
     expect(addendumS1Journal.PROTECTED_GRANTS_COUNT_BEFORE).toBe(10)
     expect(addendumS1Journal.PROTECTED_GRANTS_COUNT_AFTER).toBe(10)
-    expect(addendumS1Journal.PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION).toBe(PROTECTED_GRANTS.length)
+    expect(addendumS1Journal.PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION).toBe(12)
     const addendumCombined = JSON.parse(
       readFileSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.21.json'), 'utf8'),
     ) as { GRANT_ID: string; protected_grant: unknown; PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION: number }
-    expect(addendumCombined.PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION).toBe(PROTECTED_GRANTS.length)
+    expect(addendumCombined.PROTECTED_GRANTS_COUNT_AFTER_S1_REGISTRATION).toBe(12)
+    // LIVE-COUNT GUARD, REBOUND (HPO-ODS-W2-25). The newest registry change is
+    // now the S3 refusal-audit registration, so ITS declared post-registration
+    // figure is the one bound to the LIVE array. A registry that grew by more
+    // or fewer than the one authorized entry fails here, exactly as the S1
+    // guard used to catch it.
+    const addendumS3Refusal = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json'), 'utf8'),
+    ) as {
+      GRANT_ID: string
+      protected_grant: { authorityId: string; branch: string; patterns: string[]; pattern_count: number }
+      PROTECTED_GRANTS_COUNT_BEFORE: number
+      PROTECTED_GRANTS_COUNT_AFTER: number
+      PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25: number
+    }
+    expect(addendumS3Refusal.GRANT_ID).toBe('HPO-ODS-W2-25')
+    expect(addendumS3Refusal.PROTECTED_GRANTS_COUNT_BEFORE).toBe(12)
+    expect(addendumS3Refusal.PROTECTED_GRANTS_COUNT_AFTER).toBe(12)
+    expect(addendumS3Refusal.PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25).toBe(
+      PROTECTED_GRANTS.length,
+    )
+    // The registered row must equal the authority's declaration field for
+    // field — the artefact and the code cannot drift apart.
+    const w2_25_live = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-25')!
+    expect(addendumS3Refusal.protected_grant.authorityId).toBe(w2_25_live.authorityId)
+    expect(addendumS3Refusal.protected_grant.branch).toBe(w2_25_live.branch)
+    expect(addendumS3Refusal.protected_grant.patterns).toEqual(w2_25_live.patterns)
+    expect(addendumS3Refusal.protected_grant.pattern_count).toBe(w2_25_live.patterns.length)
     // HPO-ODS-W2-22 is an ADDENDUM IDENTITY (v1.0.21 carries GRANT_ID
     // HPO-ODS-W2-22 with protected_grant = null). It MUST NOT be a registry
     // row: a lineage identifier is not a protected-path grant.
