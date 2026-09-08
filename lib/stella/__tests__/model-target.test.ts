@@ -18,7 +18,7 @@
 // question this gate answers is "did changing the model loosen anything?", and
 // an answer spread across four files is an answer nobody reads.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { stellaConfig, STELLA_DEFAULT_GEMINI_MODEL } from '../config'
@@ -48,10 +48,61 @@ describe('G1-M0 — production model target', () => {
     expect(STELLA_DEFAULT_GEMINI_MODEL).not.toBe('gemini-2.5-flash')
   })
 
-  it('resolves geminiModel as GEMINI_MODEL override or the default', () => {
-    // Stated as a RELATIONSHIP rather than a literal so the test is correct
-    // whether or not the developer running it has GEMINI_MODEL exported.
-    expect(stellaConfig.geminiModel).toBe(process.env.GEMINI_MODEL ?? STELLA_DEFAULT_GEMINI_MODEL)
+})
+
+// F-EU-1 — `??` IS THE WRONG OPERATOR FOR THIS RESOLUTION, AND WAS A BUG.
+//
+// The PR109/R1 version of this suite asserted
+// `stellaConfig.geminiModel === (process.env.GEMINI_MODEL ?? DEFAULT)` — a
+// tautology that mirrors whatever operator config.ts actually uses on both
+// sides of the comparison, so it passed whether config.ts used `??` (wrong:
+// an empty string is not nullish, so `''` survived instead of falling back)
+// or the fixed `.trim() || default`. It could never have caught the bug it
+// was meant to guard.
+//
+// This suite instead pins each input to a LITERAL expected output, computed
+// independently of config.ts's own operator, against a freshly loaded module
+// instance per case (vi.resetModules — stellaConfig is computed once at
+// import time from process.env, so re-exercising it requires a fresh import).
+describe('F-EU-1 — GEMINI_MODEL resolution treats empty/whitespace as absent', () => {
+  const ORIGINAL_GEMINI_MODEL = process.env.GEMINI_MODEL
+
+  afterEach(() => {
+    if (ORIGINAL_GEMINI_MODEL === undefined) {
+      delete process.env.GEMINI_MODEL
+    } else {
+      process.env.GEMINI_MODEL = ORIGINAL_GEMINI_MODEL
+    }
+    vi.resetModules()
+  })
+
+  async function resolveGeminiModel(value: string | undefined): Promise<string> {
+    if (value === undefined) {
+      delete process.env.GEMINI_MODEL
+    } else {
+      process.env.GEMINI_MODEL = value
+    }
+    vi.resetModules()
+    const mod = await import('../config')
+    return mod.stellaConfig.geminiModel
+  }
+
+  it('env var absent (undefined) resolves to the default', async () => {
+    expect(await resolveGeminiModel(undefined)).toBe('gemini-3.6-flash')
+  })
+
+  it('env var empty string resolves to the default', async () => {
+    expect(await resolveGeminiModel('')).toBe('gemini-3.6-flash')
+  })
+
+  it('env var whitespace-only resolves to the default', async () => {
+    expect(await resolveGeminiModel('   ')).toBe('gemini-3.6-flash')
+    expect(await resolveGeminiModel('\t\n')).toBe('gemini-3.6-flash')
+  })
+
+  it('env var with a custom id resolves to that id, trimmed', async () => {
+    expect(await resolveGeminiModel('gemini-4.0-pro')).toBe('gemini-4.0-pro')
+    expect(await resolveGeminiModel('  gemini-4.0-pro  ')).toBe('gemini-4.0-pro')
   })
 })
 
@@ -176,5 +227,113 @@ describe('G1-M0 — the Advisor output contract survived the migration', () => {
     }
 
     expect(() => decodeProviderSourceRefIndexes(response, ['a.b'], 'stakeholders')).toThrow()
+  })
+})
+
+// F-ED-1 — .env.example is a DEPLOYMENT ARTIFACT, not just documentation. A
+// concrete model id there silently overrides STELLA_DEFAULT_GEMINI_MODEL the
+// moment this file is copied into a deployment's real env — so it must ship
+// with GEMINI_MODEL empty, and every STELLA_*/GEMINI_* var config.ts actually
+// reads must be represented, or an operator has no idea the knob exists.
+describe('F-ED-1 — .env.example never overrides the production model default', () => {
+  const ENV_EXAMPLE_PATH = path.resolve(process.cwd(), '.env.example')
+  const CONFIG_PATH = path.resolve(process.cwd(), 'lib', 'stella', 'config.ts')
+
+  // CRLF/LF safe: .env.example is not pinned to LF in .gitattributes, so a
+  // Windows checkout may materialize it as CRLF while the stored blob (or a
+  // contributor's editor) may be LF. Split on either before trimming.
+  function parseEnvExample(raw: string): Map<string, string> {
+    const map = new Map<string, string>()
+    for (const rawLine of raw.split(/\r\n|\n|\r/)) {
+      const line = rawLine.trim()
+      if (!line || line.startsWith('#')) continue
+      const eq = line.indexOf('=')
+      if (eq === -1) continue
+      map.set(line.slice(0, eq).trim(), line.slice(eq + 1))
+    }
+    return map
+  }
+
+  // Derived from config.ts source, not a hardcoded list — a var added there
+  // without an .env.example entry must fail this test, not require someone
+  // to remember to update a second list by hand.
+  //
+  // Two read shapes are present in config.ts: a direct `process.env.NAME` /
+  // `process.env['NAME']`, and an indirect read through the envPositiveInt(name,
+  // fallback) helper, where `process.env[name]` uses the parameter — so the
+  // literal that identifies the var lives at the call site, not at the
+  // process.env access itself.
+  function stellaGeminiVarsReadByConfig(): Set<string> {
+    const source = readFileSync(CONFIG_PATH, 'utf8')
+    const names = new Set<string>()
+    const directPattern = /process\.env(?:\.([A-Z0-9_]+)|\[\s*['"]([A-Z0-9_]+)['"]\s*\])/g
+    const helperPattern = /envPositiveInt\(\s*['"]([A-Z0-9_]+)['"]/g
+    for (const pattern of [directPattern, helperPattern]) {
+      let match: RegExpExecArray | null
+      while ((match = pattern.exec(source)) !== null) {
+        const name = match[1] ?? match[2]
+        if (name.startsWith('STELLA_') || name.startsWith('GEMINI_')) {
+          names.add(name)
+        }
+      }
+    }
+    return names
+  }
+
+  it('GEMINI_MODEL is present in .env.example and empty', () => {
+    const vars = parseEnvExample(readFileSync(ENV_EXAMPLE_PATH, 'utf8'))
+    expect(vars.has('GEMINI_MODEL')).toBe(true)
+    expect(vars.get('GEMINI_MODEL')).toBe('')
+  })
+
+  it('never pins a concrete Gemini model id to GEMINI_MODEL', () => {
+    const vars = parseEnvExample(readFileSync(ENV_EXAMPLE_PATH, 'utf8'))
+    expect(vars.get('GEMINI_MODEL')).not.toMatch(/gemini-\d/)
+  })
+
+  it('represents every STELLA_*/GEMINI_* var config.ts reads from process.env', () => {
+    const readByConfig = stellaGeminiVarsReadByConfig()
+    // Sanity: the extraction itself must find the known surface, or the
+    // regex (or config.ts) drifted silently and the completeness check below
+    // would pass vacuously.
+    expect([...readByConfig].sort()).toEqual(
+      [
+        'GEMINI_API_KEY',
+        'GEMINI_MODEL',
+        'STELLA_ADVISOR_ENABLED',
+        'STELLA_AUDIT_ASSISTANT_ENABLED',
+        'STELLA_COMPOSER_ENABLED',
+        'STELLA_DECISIONS_PERSISTENCE_ENABLED',
+        'STELLA_ENABLED',
+        'STELLA_EVIDENCE_REVIEWER_ENABLED',
+        'STELLA_GROUNDED_QUERY_ENABLED',
+        'STELLA_LEGACY_ADVISOR_ENABLED',
+        'STELLA_MAX_OUTPUT_TOKENS',
+        'STELLA_MAX_PROMPT_CHARS',
+        'STELLA_PROXY_REVIEWER_ENABLED',
+        'STELLA_RATE_LIMIT_PER_HOUR',
+        'STELLA_VALIDATOR_ENABLED',
+      ].sort()
+    )
+
+    const declaredInEnvExample = parseEnvExample(readFileSync(ENV_EXAMPLE_PATH, 'utf8'))
+    const missing = [...readByConfig].filter((name) => !declaredInEnvExample.has(name)).sort()
+    expect(missing).toEqual([])
+  })
+
+  it('parses .env.example identically whether its line endings are CRLF or LF', () => {
+    const raw = readFileSync(ENV_EXAMPLE_PATH, 'utf8')
+    const asLf = raw.replace(/\r\n/g, '\n')
+    const asCrlf = asLf.replace(/\n/g, '\r\n')
+
+    const lfVars = parseEnvExample(asLf)
+    const crlfVars = parseEnvExample(asCrlf)
+
+    expect(crlfVars.size).toBe(lfVars.size)
+    expect(crlfVars.get('GEMINI_MODEL')).toBe('')
+    expect(lfVars.get('GEMINI_MODEL')).toBe('')
+    for (const [key, value] of lfVars) {
+      expect(crlfVars.get(key)).toBe(value)
+    }
   })
 })
