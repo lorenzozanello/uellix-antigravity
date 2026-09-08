@@ -1,0 +1,230 @@
+{
+  "manifest_id": "EVALUATE-V1-STRUCTURED-EVALUATION",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/evaluate/EVALUATE_V1_AUTHORITY_v1.0.0.json - the companion executable authority frozen by mission LANE-EC-EVALUATE-V1-AUTHORITY-FINALIZATION-R1 at AS_OF_HEAD 635ed04605bd7d9f1a66f55511c5e2ae79175aaa / tree 51c7ab3aafeaefaed149a03cf3947f8ad3d6a468 / ref codex/evaluate-v1-authority-materialization-r1. That authority derives exclusively from already-frozen product architecture: docs/ops/reeng/RE_U0_DELTA_RECONCILIATION_v1.0.0.json coordinator_adjudication_layer.questions.Q1 (coordinator_status RESOLVED_BY_PRIOR_FROZEN_PRODUCT_ARCHITECTURE, hpo_question_required false), docs/ops/reeng/RE_U3_INFORMATION_ARCHITECTURE_DELTA_v1.0.0.json evaluate_ia, and docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json golden_journey[13] plus evaluate_journey. NAMING DERIVATION: the repo-native convention for a versioned package manifest is <PACKAGE_STEM>_TEST_MANIFEST_v<semver>.json placed beside its authority - measured exemplars at AS_OF_HEAD are docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json, docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json and docs/ops/p1a/P1A_FULL_BOOTSTRAP_TEST_MANIFEST_v1.0.0.json - so the authority stem EVALUATE_V1_AUTHORITY_v1.0.0 yields EVALUATE_V1_TEST_MANIFEST_v1.0.0.json unambiguously. THIS MANIFEST IS A PRE-IMPLEMENTATION COMMITMENT: no node of it exists at AS_OF_HEAD - the repository contains zero Evaluate domain identifiers - so every test_file below is legitimately UNKNOWN. PROTECTED_AUTHORITY DERIVATION: set to the string 'UNKNOWN', not null. The schema documents null as meaning 'no protected surface is touched', which would be false here because protected_surfaces below is deliberately non-empty; the schema's own top-level description requires that unknown or absent required evidence be represented explicitly, naming 'UNKNOWN' as that form so a validator fails closed rather than reading an empty value as satisfied. The three merged precedents that pair null with a non-empty protected_surfaces list (COMMERCIAL_ACCOUNT_ENTITLEMENT, MULTI_ORG_TENANT_SCOPE, WAVE3) are acknowledged and deliberately not followed on that one field; the deviation is recorded as finding F-EV-2 in the companion authority. No grant is allocated by the mission that wrote this manifest, and no gate reads this field from a manifest file.",
+  "dependencies": [
+    "H1_NA_ARITHMETIC - BLOCKING and UNKNOWN. How a Not-Applicable criterion participates in the deterministic score is NOT ratified anywhere in the repository at AS_OF_HEAD, and repo precedents actively conflict: FIB readiness counts N/A in both numerator and denominator, while the legacy computeReadinessScore excludes it from both. Every golden score string in this manifest is undefined until a human ratifies this. Controls P-3, P-4, M-5 and the whole of the E8 golden extension are blocked on it.",
+    "H2_DECISION_POLICY - BLOCKING and UNKNOWN. DecisionPolicy bands, permitted outcomes and the decider role are defined by zero artifacts at AS_OF_HEAD. Controls P-8, P-13, N-9 and the decision UI are blocked on it. The only part this manifest may already assume is the authority-frozen narrowing rule: the decider defaults to organization_admin or above and a policy version may designate a MORE restrictive role, never a less restrictive one, resolved inside the closed measured role set (super_admin, organization_admin, impact_manager, analyst, reviewer, viewer - there is no editor and no approver role).",
+    "H3_STELLA_CATEGORY - BLOCKING and UNKNOWN for the Stella controls only. Whether Evaluate reuses audit_assistant with pipeline_step='evaluate' or requires a new evaluation_analyst category is not ratified. Measured at AS_OF_HEAD: stella_interactions.pipeline_step is varchar(100) with NO CHECK and the governed prepared path assigns it by COALESCE without vocabulary validation, so the pipeline_step axis touches no protected G2 surface; stella_role by contrast is closed in three places and a new category IS a protected G2 surface. Controls P-11, N-12 and M-7 are shape-blocked on it.",
+    "WAVE3 FIBIU-19 - OPEN. WAVE3_AUTHORITY_v1.0.0.json final_state = WAVE3_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_ALLOCATION; FIBIU-19 is wave 3 level 3.1 and wave 3 has not started. RE_U3 and RE_U4 both bind Evaluate to WAIT_FOR_WAVE3_CONTRACT (FIBIU-19, FIBIU-20). No node of this manifest may open an implementation grant while this is OPEN.",
+    "WAVE3 FIBIU-20 - OPEN and TRANSITIVELY BLOCKED. WAVE3_AUTHORITY_v1.0.0.json G2_BOUNDARY.transitive_stop_rule (E10) stops FIBIU-20 while the FIBDB-053 external gate is unresolved, and that gate measures PENDING at AS_OF_HEAD. The same authority lists declaring it RESOLVED among the acts requiring an explicit human G2 action, so this dependency cannot be cleared by engineering.",
+    "WAVE2 W2-B1 / W2-B3 / W2-B4 / W2-B5 - CLOSED BUT NOT INTEGRATED. Measured at AS_OF_HEAD by pnpm ops:program-state -- --unit <id> --json: each of the four reports authority=CLOSED, implementation=CLOSED and audit=CLOSED, while the integration dimension reports NOT_INTEGRATED against both integration/commercial-v1 and feature/sprint-0-foundation. Wave 3's stated precondition is 'Wave 2 complete'. Whether NOT_INTEGRATED defeats 'complete' is deliberately NOT adjudicated here and belongs to the Wave 3 mission.",
+    "LOCK-AUDIT-ACTION-VOCABULARY - OPEN. PR #105 (codex/multiorg-s3-refusal-audit-implementation-r1) is state OPEN at AS_OF_HEAD. lib/audit/logger.ts AUDIT_ACTIONS holds exactly 104 keys and 104 distinct values, every one of them exactly two dot-separated segments, and lib/audit/__tests__/logger.test.ts pins every value to /^[a-z_]+\\.[a-z_]+$/ with a companion uniqueness control. No node of this manifest may extend AUDIT_ACTIONS until PR #105 resolves; every Evaluate verb must be exactly two lowercase segments and unique against the existing 104. Control N-13 exists to prove that pin still bites.",
+    "GOLDEN E2E COMMERCIAL JOURNEY - ABSENT, therefore the E8 extension is BLOCKED. Measured at AS_OF_HEAD: tests/e2e/ contains exactly g04-governed-evidence-journey.e2e.test.ts, stella-multicategory-quota.e2e.test.ts and stella-ticket-journey.e2e.test.ts, and the only golden-named test is tests/sroi-calculation.golden.test.ts. The uellix-golden-e2e contract is to EXTEND a prior passing journey, never to recreate one, so with no commercial journey file to extend this is recorded as a later release gate and explicitly not as grounds to declare Evaluate complete without it.",
+    "KNOWN_TEST_CONDITIONS DISPOSITION - UNKNOWN, deliberately not populated. known_conditions below is an empty array because the condition set could not be measured: pnpm ops:test-diff requires --base and --head test captures, which presuppose an implementation and a baseline test run, and Evaluate has neither. docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json carries exactly two conditions at AS_OF_HEAD, KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02, both PRE_EXISTING_DEFERRED. Whether an Evaluate baseline would still carry them is genuinely unknown, and hand-picking them from memory is precisely what the manifest skill forbids.",
+    "ODS LINEAGE SEQUENCING - CLOSED, recorded because it was BLOCKING in the predecessor packet. Measured at AS_OF_HEAD: scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION parses to 37 entries of which 26 are ODS maintenance addenda ending at v1.0.26, and exactly 26 addenda are present on disk ending at the same version. Enumerated and on-disk sets agree and the membership test is EXACT, so the hole that previously forced STOP_FOR_LINEAGE_SEQUENCING is closed. No ordinal is allocated by the mission that wrote this manifest."
+  ],
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/journal/**",
+    "db/baseline/**"
+  ],
+  "protected_authority": "UNKNOWN",
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "A real PostgreSQL probe is MANDATORY for this batch and both manifest paths are legitimately UNKNOWN because no implementing node exists yet - naming a harness path that does not exist would be a fabricated fact. Static reading of SQL text is NOT proof for any property this batch depends on: row-level security policy combination (PERMISSIVE OR versus RESTRICTIVE AND), NULL-not-TRUE denial, trigger firing order, effective privilege inheritance and constraint behaviour under concurrency are all runtime properties. The probes this batch requires are: cross-organization invisibility of every Evaluate object measured by sentinel IDENTITY rather than by row count, because a count-based assertion cannot distinguish 'denied' from 'no such row'; refusal of an UPDATE against a decided evaluation row, proving the decided-evaluation guard trigger actually fires rather than merely existing; refusal of an UPDATE against a submitted reviewer assessment and against a referenced template version; enforcement of separation of duties at the write path rather than in application code only; and a privilege census proving no Stella identity holds write privilege on the score, sufficiency, divergence-resolution or decision surfaces. HARNESS SHAPE, frozen by the companion authority: a DISPOSABLE cluster only, via the repository's disposable-audit path - NEVER staging, NEVER production, NEVER the canonical local stack. The fixture must be TWO-ORGANIZATION with real rows in the non-scoped organization, because a probe returning zero rows merely for want of data proves nothing."
+  },
+  "sentinels": [
+    {
+      "id": "SENTINEL_FOREIGN_ORG_EVALUATION_CANARY",
+      "purpose": "A uniquely-valued evaluation planted in a second organization. It must never appear in any result set, log line, error payload, export, aggregate or Stella context produced by a request scoped to the first organization. Asserted by IDENTITY rather than by row count, because a count-based assertion cannot distinguish a genuine denial from an empty table."
+    },
+    {
+      "id": "SENTINEL_UNPINNED_EVIDENCE_REVISION",
+      "purpose": "A second revision of an already-pinned evidence record, carrying a uniquely identifiable value. It must never surface through an evaluation that pinned the earlier version - proving I4 pins a version rather than following a mutable head."
+    },
+    {
+      "id": "SENTINEL_STELLA_AUTHORED_SCORE_STRING",
+      "purpose": "A uniquely-valued string emitted by a stubbed Stella response into every field Stella is permitted to write. It must never appear in the score, the sufficiency determination, the divergence resolution or the decision of any evaluation - proving Stella non-escalation by identity rather than by inspecting call sites."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "P-1",
+      "description": "IMMUTABLE TEMPLATE VERSIONS: publishing an AssessmentTemplateVersion and referencing it from an evaluation leaves the version's dimensions and criteria byte-identical afterwards, and a subsequent rubric change produces a NEW version while the referencing evaluation continues to resolve the original. Proves I3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-2",
+      "description": "EVIDENCE-VERSION PINNING: an evaluation that pins evidence version V continues to resolve V after a later revision V+1 is created, and the pinned version id is recorded on the evaluation rather than a mutable evidence head. Proves I4. Exercises SENTINEL_UNPINNED_EVIDENCE_REVISION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-3",
+      "description": "DETERMINISTIC SCORE: computing the score twice over the same input set, template version and engine version yields byte-identical output, and the stored score carries an input_set_hash and an engine version that reproduce it. Proves I5. BLOCKED on H1 - the expected string is undefined until N/A arithmetic is ratified.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-4",
+      "description": "DECIMAL ARITHMETIC: the engine computes with exact decimal arithmetic across a weighted criteria set chosen so that binary floating point would produce a different last-place digit, and the exact value round-trips through persistence unchanged. Proves the Decimal clause of I5. BLOCKED on H1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-5",
+      "description": "REVIEWER ASSESSMENT LIFECYCLE: a reviewer creates a draft assessment, edits it while draft, and submits it; after submission the assessment is readable and immutable. Proves I6.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-6",
+      "description": "DIVERGENCE DETECTION: two reviewers submitting materially different ratings over the same criteria produce a detected divergence, computed over SUBMITTED assessments only - a draft assessment does not contribute. Proves I8 detection.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-7",
+      "description": "DIVERGENCE RESOLUTION IS APPEND-ONLY: a human resolves a detected divergence with a recorded rationale; the resolution is appended and both diverging assessments remain readable and unchanged. Proves I8 resolution.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-8",
+      "description": "RECOMMENDATION GENERATED: a recommendation is produced deterministically from DecisionPolicy over the score, and is stored distinctly from any decision - an evaluation may carry a recommendation with no decision. Proves the first half of I9. BLOCKED on H2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-9",
+      "description": "DECISION AND FINALIZATION: an authorized human records the final decision; the evaluation becomes finalized and its decided state is thereafter immutable. Proves I10 and the RE_U4 exit condition 'Human Decision recorded, immutable'.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-10",
+      "description": "CROSS-ORG POSITIVE PATH: an actor scoped to their own organization reads their own evaluations in full. Establishes that the isolation controls N-11 and M-6 are measuring denial rather than a globally broken read path.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-11",
+      "description": "STELLA ANALYSIS: Stella produces narrative analysis over an evaluation, stored as advisory content and attributed to Stella rather than to a human actor. Proves the permitted half of the Stella boundary. Shape-BLOCKED on H3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-12",
+      "description": "AUDIT TRACEABILITY: a full evaluation lifecycle emits an audit record for each transition - creation, input submission, evidence pinning, score computation, assessment submission, divergence detection, divergence resolution, recommendation generation, decision and finalization - each carrying actor, organization and timestamp, with Stella actions attributed to Stella. Proves I13.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-13",
+      "description": "SEPARATION OF DUTIES POSITIVE PATH: a decider who authored neither an input nor an assessment on the evaluation successfully records the decision. Establishes that N-7 measures a genuine SoD refusal rather than a decision path that is broken for everyone. BLOCKED on H2 for the decider role.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "TEMPLATE VERSION MUTATION REFUSED: an attempt to edit the dimensions, criteria or weights of an AssessmentTemplateVersion that any evaluation references is REFUSED. Proves I3 is enforced rather than merely documented.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-2",
+      "description": "EVIDENCE HEAD SUBSTITUTION REFUSED: an attempt to repoint an evaluation's evidence reference from a pinned version to a mutable head, or to a different version after finalization, is REFUSED. Proves I4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-3",
+      "description": "MISSING REQUIRED INPUT FAILS CLOSED: scoring an evaluation whose required inputs are incomplete is REFUSED - the engine returns a refusal, not a partial score, not zero, and not a neutral-scored placeholder. Proves I11.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-4",
+      "description": "MISSING REQUIRED EVIDENCE FAILS CLOSED: scoring an evaluation whose required evidence is absent or unpinned is REFUSED, with the same no-partial-score guarantee. Proves I11.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-5",
+      "description": "REVIEWER-SUPPLIED AGGREGATE REJECTED: an attempt to write a reviewer-supplied aggregate into the score field, or to accept a client-supplied score on any input path, is REFUSED. Proves the INPUT != SCORE edge of I1 and is the specific defect that makes sroi_run_reviews.readiness_score unusable as this batch's substrate.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-6",
+      "description": "SUBMITTED ASSESSMENT MUTATION REFUSED: an attempt to edit a reviewer assessment after submission is REFUSED. Proves I6.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-7",
+      "description": "SEPARATION OF DUTIES REFUSAL: an actor who authored an input or an assessment on an evaluation attempting to record the final decision on that same evaluation is REFUSED at the write path, and the refusal is itself audit-logged. Proves I7.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-8",
+      "description": "UNRESOLVED DIVERGENCE BLOCKS DECISION: recording a decision on an evaluation carrying a material unresolved divergence is REFUSED. Proves the fail-closed clause of I8 and the RE_U4 FAIL_CLOSED_STATE 'unresolved Divergence'.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-9",
+      "description": "RECOMMENDATION NEVER AUTO-PROMOTES: no code path converts a recommendation into a decision without an explicit authorized human act - asserted against elapsed time, against reviewer unanimity and against a maximal confidence value. Proves the second half of I9. BLOCKED on H2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-10",
+      "description": "DECIDED EVALUATION IS IMMUTABLE: an UPDATE against a decided evaluation, its decision row or its system-output row is REFUSED at the database level by the decided-evaluation guard, not merely by application code. Correction is only available by opening a governed successor referencing the predecessor. Proves I10.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-11",
+      "description": "CROSS-ORG READ REFUSED FAIL-CLOSED: a request scoped to organization A for an evaluation belonging to organization B is REFUSED, and the refusal is distinguishable from an empty result. Proves I12. Exercises SENTINEL_FOREIGN_ORG_EVALUATION_CANARY, which must appear in no output of any kind.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-12",
+      "description": "STELLA NON-ESCALATION: Stella output is REFUSED as a write to the score, to a sufficiency determination, to a divergence resolution and to a decision - each asserted separately, including the indirect path where Stella text is written into a field one of those surfaces later reads. Exercises SENTINEL_STELLA_AUTHORED_SCORE_STRING, which must appear in none of the four. Shape-BLOCKED on H3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-13",
+      "description": "AUDIT VOCABULARY PIN STILL BITES: an Evaluate audit action value with three dot-separated segments is REJECTED by the existing vocabulary control at lib/audit/__tests__/logger.test.ts, and a duplicate of an existing value is rejected by the uniqueness control. This control exists because that exact pin is the recorded blocker of PR #105; it proves the constraint is live before this batch adds any of its seventeen verbs.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-1",
+      "description": "Deleting the missing-required-input fail-closed branch from the engine MUST make N-3 fail. If N-3 still passes, it is proving the absence of data rather than the presence of a refusal.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-2",
+      "description": "Deleting the separation-of-duties check from the decision write path MUST make N-7 fail.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-3",
+      "description": "Deleting the unresolved-divergence guard from the decision write path MUST make N-8 fail.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-4",
+      "description": "Dropping the decided-evaluation guard trigger MUST make N-10 fail under the real-PostgreSQL probe. A test that still passes without the trigger is proving application-layer behaviour only and would not catch a direct database write.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-5",
+      "description": "Replacing the engine's exact decimal arithmetic with IEEE-754 binary floating point MUST make P-3 or P-4 fail. If both still pass, the chosen criteria weights are insufficiently discriminating and the Decimal guarantee is untested.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-6",
+      "description": "Removing the organization predicate from an Evaluate read path MUST make N-11 fail and MUST surface SENTINEL_FOREIGN_ORG_EVALUATION_CANARY.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-7",
+      "description": "Removing the Stella non-escalation guard MUST make N-12 fail and MUST surface SENTINEL_STELLA_AUTHORED_SCORE_STRING in at least one of the four prohibited destinations.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-8",
+      "description": "Editing a referenced AssessmentTemplateVersion in place MUST make N-1 fail and MUST change what P-1's evaluation resolves - proving immutability is enforced rather than merely conventional.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
