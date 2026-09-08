@@ -62,3 +62,47 @@ tienen paquete preparado**:
 paquete propio. G7 y G10 no tenían paquete al cierre de campaña — ambos
 fueron creados en esta reconciliación documental (2026-07-31), sin ejecutar
 ningún gate ni tocar código.
+
+## Reconciliación 2026-09 — G1-M0 / G1-B / PB-01
+
+> Nota documental sobre el estado medido del repositorio a la fecha de esta
+> reconciliación. No reescribe el registro de gates ni la tabla de Estado de
+> arriba (cierre de campaña `15af6bb`, reconciliación `dd36a4e`/2026-07-31);
+> añade una vía que surgió después y que ese cierre no podía conocer.
+
+Desde entonces surgió una vía más estrecha que **antecede** a G1
+(`Evaluación con Gemini real`) y a G8 (`Prueba de humo end-to-end en
+Preview`) sin sustituirlos — certifica que el deployment y el modelo objetivo
+están en condiciones de que una llamada real a G1/G8 signifique algo:
+
+- **G1-M0** — el objetivo del modelo de producción, como gate
+  (`lib/stella/config.ts`, `STELLA_DEFAULT_GEMINI_MODEL`). **CERRADO**:
+  retargeteado a `gemini-3.6-flash` (commit `f8969f5d`, 2026-08-17), sin
+  parámetros de muestreo (`temperature`/`topP`/`topK` retirados del tipo, no
+  sólo de la petición). Precondición de que G1/G8 certifiquen contra el
+  modelo vigente y no contra uno con shutdown anunciado
+  (`gemini-2.5-flash`, 2026-10-16).
+- **G1-B PRECONDITIONS** — certificación de que un deployment de Preview está
+  configurado como la certificación asume, antes de gastar una sola llamada
+  real. Expuesta en `GET /api/health/stella-preconditions`
+  (`app/api/health/stella-preconditions/route.ts`): sólo lee configuración de
+  su propio proceso — cero red, cero base de datos, cero secretos en la
+  respuesta — y exige sesión verificada.
+- **`G1_B_GOVERNED_PREVIEW_RUNBOOK`**
+  (`docs/ops/runbooks/G1_B_GOVERNED_PREVIEW_RUNBOOK.md`) — el procedimiento
+  que gastaría **exactamente 1** llamada a Gemini para certificar el path
+  gobernado completo en Preview. **Estado del runbook: DISEÑO — NO
+  EJECUTADO.** Ninguna sección se ha corrido.
+- **PB-01** (`PROVIDER_CALL_CONCURRENCY_PER_TICKET`,
+  `docs/ops/G1_B_POST_GATE_PILOT_BLOCKERS.md`) — hallazgo de la auditoría
+  independiente de G1-B: un ticket ya `bound` admite entregas concurrentes,
+  así que ninguna cifra del ledger de Uellix (`stella_interactions`, cuota,
+  `audit_logs`, `completed_at`) puede leerse como número de llamadas al
+  proveedor mientras siga abierto. **Estado: ABIERTO — por decisión explícita
+  del gate, no se arregla en G1-B.** No bloquea G1-B; sí bloquea tráfico
+  piloto real hasta **RESOLVERSE** o **ACEPTARSE** con una decisión firmada.
+
+**Hecho que ninguna de estas piezas cambia: cero llamadas reales al proveedor
+han sido certificadas por esta vía.** El runbook que las certificaría existe
+y está diseñado; ninguna de sus secciones se ha ejecutado. G1 (arriba) sigue
+`PENDIENTE (ejecución = Lorenzo)`, sin cambio de estado.

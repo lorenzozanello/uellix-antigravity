@@ -67,15 +67,35 @@ export const stellaConfig = {
   isDecisionsPersistenceEnabled: process.env.STELLA_DECISIONS_PERSISTENCE_ENABLED === 'true',
   // TRAIN 3 — grounded query runtime (PRODUCT-002). DORMANT by default.
   //
-  // The reason it is dormant CHANGED, and the old one is no longer true.
+  // The reason it is dormant has changed twice, and both earlier versions of
+  // this comment are now false if read as current state.
+  //
   // Until the governed chain was installed, grounding_0002 and grounding_0003
   // were applied to no database and the persisted GroundingChunkRepository had
   // nothing to read. As of 06041e1 the chain T1->T9 is 9/9 INSTALLED in
-  // staging, measured remotely, so the READ side has a real surface.
+  // staging, measured remotely (docs/ops/staging/STELLA_STAGING_POST_INSTALL_GATE.md),
+  // so the READ side has a real surface. (`.env.example` and
+  // docs/ops/staging/STELLA_HOSTED_ENVIRONMENT_MATRIX.md still describe
+  // grounding_0002/0003 as unapplied; both predate that install closure and
+  // are outside this module's authorized scope to correct — see the
+  // reconciliation in docs/ops/staging/STELLA_STAGING_GATE_PLAN.md.)
   //
-  // What keeps the flag false is now the WRITE side: no application code path
-  // calls `ingestEvidenceDocument`, so a staging project has no evidence chunks
-  // to ground an answer in. See the audit's G-01.
+  // This comment then said the WRITE side was the reason: no application code
+  // path called `ingestEvidenceDocument`. That is ALSO no longer true. G-01
+  // (app/actions/grounding/ingest-evidence.ts, `ingestProjectEvidenceForProject`)
+  // is a live caller, reached from two mounted server actions: the manual
+  // "Index" retry (app/app/projects/[projectId]/pipeline/evidence/
+  // indexEvidence.action.ts, wired into the evidence pipeline page) and the
+  // auto-index-on-upload path (createFileEvidence.action.ts, same directory).
+  // Both call through to `ingestEvidenceDocument`
+  // (lib/grounding/ingest/orchestrate-ingestion.ts).
+  //
+  // That write path does not open its own switch: `ingestProjectEvidence`
+  // checks `isStellaCapabilityReady('grounded_query')` FIRST, before auth,
+  // which resolves to THIS SAME flag (lib/stella/capability-readiness.ts).
+  // So today, with the flag false, read and write are dark together for the
+  // ordinary reason every dormant-by-default Stella capability is dark — not
+  // because either side is unwired.
   //
   // The flag is checked FIRST in the server action, before auth, quota, any
   // connection and any observability event — see
