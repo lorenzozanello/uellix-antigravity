@@ -46,7 +46,7 @@ export const STOP_CLASSES = [
 ] as const
 export type StopClass = (typeof STOP_CLASSES)[number]
 
-// ag1_disposition.immutableByConvention.entries (20) + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14 + v1.0.15 + v1.0.16 + v1.0.17 + v1.0.18 + v1.0.19 + v1.0.20 + v1.0.21 + v1.0.22 + v1.0.23 + v1.0.24 + v1.0.25. EXACT membership — never a subset test.
+// ag1_disposition.immutableByConvention.entries (20) + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14 + v1.0.15 + v1.0.16 + v1.0.17 + v1.0.18 + v1.0.19 + v1.0.20 + v1.0.21 + v1.0.22 + v1.0.23 + v1.0.24 + v1.0.25 + v1.0.26. EXACT membership — never a subset test.
 export const IMMUTABLE_BY_CONVENTION: readonly string[] = [
   'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
   'docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json',
@@ -84,6 +84,7 @@ export const IMMUTABLE_BY_CONVENTION: readonly string[] = [
   'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.23.json',
   'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.24.json',
   'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json',
+  'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.26.json',
 ] as const
 
 /** Backslashes -> /, drop "." and empty segments. CTRL-M3: path spelling must never bypass the guard. */
