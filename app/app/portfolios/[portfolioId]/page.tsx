@@ -1,11 +1,26 @@
 import { runWithOptionalOrganizationAccess } from '@/lib/auth/session';
-import { getPortfolioByIdForCurrentOrganization } from '@/lib/portfolios/service';
+import { canManagePortfolio } from '@/lib/auth/permissions';
+import {
+  getPortfolioByIdForCurrentOrganization,
+  listPortfoliosForCurrentOrganization,
+} from '@/lib/portfolios/service';
 import { getPortfolioAnalytics } from '@/lib/portfolios/analytics';
-import { listProjectsForPortfolio } from '@/lib/projects/service';
+import { listProjectsForPortfolio, listActiveProjectsForCurrentOrganization } from '@/lib/projects/service';
+import {
+  updatePortfolioAction,
+  archivePortfolioAction,
+  assignProjectAction,
+  unassignProjectAction,
+  moveProjectAction,
+} from './actions';
 import Link from 'next/link';
 import { ArrowLeft, FolderKanban, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { EmptyState } from '@/components/states/EmptyState';
 
@@ -32,6 +47,9 @@ const EXCLUSION_REASON_LABEL: Record<string, string> = {
   non_usd_currency: 'cálculo en moneda distinta a USD (no comparable)',
 };
 
+const TEXTAREA_CLASS =
+  'mt-1.5 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y';
+
 export default async function PortfolioDetailPage({
   params,
 }: {
@@ -42,21 +60,35 @@ export default async function PortfolioDetailPage({
     if (!ctx) return { state: 'unauthenticated' as const };
     const portfolio = await getPortfolioByIdForCurrentOrganization(portfolioId);
     if (!portfolio) return { state: 'not-found' as const };
+    const [projects, analytics, allPortfolios, activeProjects] = await Promise.all([
+      listProjectsForPortfolio(portfolioId),
+      getPortfolioAnalytics(portfolioId),
+      listPortfoliosForCurrentOrganization(),
+      listActiveProjectsForCurrentOrganization(),
+    ]);
     return {
       state: 'ok' as const,
+      canManage: canManagePortfolio(ctx.membership.role),
       portfolio,
-      projects: await listProjectsForPortfolio(portfolioId),
-      analytics: await getPortfolioAnalytics(portfolioId),
+      projects,
+      analytics,
+      otherPortfolios: allPortfolios.filter((p) => p.id !== portfolioId && p.status !== 'archived'),
+      assignableProjects: activeProjects.filter((p) => p.portfolioId === null),
     };
   });
 
   if (data.state === 'unauthenticated') return <p>No autenticado. Por favor inicia sesión.</p>;
   if (data.state === 'not-found') return <p>Portafolio no encontrado o acceso denegado.</p>;
 
-  const { portfolio, projects, analytics } = data;
+  const { portfolio, projects, analytics, canManage, otherPortfolios, assignableProjects } = data;
   const agg = analytics?.aggregate ?? null;
+  const isArchived = portfolio.status === 'archived';
 
   const statusConfig = STATUS_CONFIG[portfolio.status] ?? { variant: 'neutral' as const, label: portfolio.status };
+
+  const updateActionWithId = updatePortfolioAction.bind(null, portfolioId);
+  const archiveActionWithId = archivePortfolioAction.bind(null, portfolioId);
+  const assignActionWithId = assignProjectAction.bind(null, portfolioId);
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -172,6 +204,65 @@ export default async function PortfolioDetailPage({
         </CardContent>
       </Card>
 
+      {canManage && !isArchived && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Editar portafolio</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <form action={updateActionWithId} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input id="name" name="name" type="text" defaultValue={portfolio.name} required className="mt-1.5" />
+              </div>
+              <div>
+                <Label htmlFor="description">Descripción</Label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={3}
+                  defaultValue={portfolio.description ?? ''}
+                  className={TEXTAREA_CLASS}
+                />
+              </div>
+              <Button type="submit">Guardar cambios</Button>
+            </form>
+
+            <form action={archiveActionWithId}>
+              <Button type="submit" variant="outline">
+                Archivar portafolio
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {canManage && !isArchived && assignableProjects.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Asignar proyecto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form action={assignActionWithId} className="flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[200px]">
+                <Label htmlFor="projectId">Proyecto sin portafolio</Label>
+                <Select id="projectId" name="projectId" required className="mt-1.5" defaultValue="">
+                  <option value="" disabled>
+                    -- Selecciona un proyecto --
+                  </option>
+                  {assignableProjects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <Button type="submit">Asignar</Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
       <div>
         <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3">
           Proyectos SROI ({projects.length})
@@ -184,18 +275,49 @@ export default async function PortfolioDetailPage({
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                id={project.id}
-                name={project.name}
-                description={project.description}
-                status={project.status}
-                territory={project.territory}
-                country={project.country}
-                startDate={project.startDate}
-              />
-            ))}
+            {projects.map((project) => {
+              const unassignActionForProject = unassignProjectAction.bind(null, portfolioId, project.id);
+              const moveActionForProject = moveProjectAction.bind(null, portfolioId, project.id);
+              return (
+                <div key={project.id} className="space-y-2">
+                  <ProjectCard
+                    id={project.id}
+                    name={project.name}
+                    description={project.description}
+                    status={project.status}
+                    territory={project.territory}
+                    country={project.country}
+                    startDate={project.startDate}
+                  />
+                  {canManage && !isArchived && (
+                    <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/10 p-2">
+                      <form action={unassignActionForProject}>
+                        <Button type="submit" variant="outline" size="sm">
+                          Quitar del portafolio
+                        </Button>
+                      </form>
+                      {otherPortfolios.length > 0 && (
+                        <form action={moveActionForProject} className="flex items-center gap-1.5">
+                          <Select name="targetPortfolioId" required defaultValue="" className="w-40 text-xs">
+                            <option value="" disabled>
+                              Mover a...
+                            </option>
+                            {otherPortfolios.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </Select>
+                          <Button type="submit" variant="outline" size="sm">
+                            Mover
+                          </Button>
+                        </form>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

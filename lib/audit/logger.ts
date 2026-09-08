@@ -161,6 +161,13 @@ export const AUDIT_ACTIONS = {
 
   // Portfolios (lib/portfolios/service.ts)
   PORTFOLIO_CREATED: 'portfolio.created',
+  // PF2 (PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json AUDIT_VOCABULARY_CONTRACT)
+  // — composition, lifecycle and permissions. Five new verbs, frozen values.
+  PORTFOLIO_UPDATED: 'portfolio.updated',
+  PORTFOLIO_ARCHIVED: 'portfolio.archived',
+  PROJECT_PORTFOLIO_ASSIGNED: 'project.portfolio_assigned',
+  PROJECT_PORTFOLIO_UNASSIGNED: 'project.portfolio_unassigned',
+  PROJECT_PORTFOLIO_MOVED: 'project.portfolio_moved',
 
   // SROI run reviews and reports (lib/pipeline/sroi-results.ts)
   SROI_RUN_REVIEW_CREATED: 'sroi_run_review.created',

@@ -1,5 +1,6 @@
 import { createPortfolioForCurrentOrganization } from '@/lib/portfolios/service';
 import { getCurrentOrganizationContext, runWithOrganizationAccess } from '@/lib/auth/session';
+import { canManagePortfolio } from '@/lib/auth/permissions';
 import { redirect } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,9 +15,7 @@ export default async function NewPortfolioPage() {
   const ctx = await getCurrentOrganizationContext();
   if (!ctx) return <p>No autenticado. Por favor inicia sesión.</p>;
 
-  const canCreate = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'].includes(
-    ctx.membership.role,
-  );
+  const canCreate = canManagePortfolio(ctx.membership.role);
 
   async function handleCreate(formData: FormData) {
     'use server';

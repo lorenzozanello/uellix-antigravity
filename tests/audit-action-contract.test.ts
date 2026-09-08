@@ -225,6 +225,15 @@ const CONTENT_MODIFYING_SITES = [
   // governed pending -> variation_required|no_additional_variation_required
   // transition updates the row's own content in place.
   { file: 'lib/pipeline/sroi-sensitivity.ts', action: 'sensitivity_candidate.dispositioned' },
+  // PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json AUDIT_VOCABULARY_CONTRACT —
+  // all five PF2 verbs modify a row's own content in place (portfolio.updated,
+  // portfolio.archived, project.portfolio_assigned, project.portfolio_unassigned)
+  // or are required by the parent to carry both endpoints (project.portfolio_moved).
+  { file: 'lib/portfolios/service.ts', action: 'portfolio.updated' },
+  { file: 'lib/portfolios/service.ts', action: 'portfolio.archived' },
+  { file: 'lib/projects/service.ts', action: 'project.portfolio_assigned' },
+  { file: 'lib/projects/service.ts', action: 'project.portfolio_unassigned' },
+  { file: 'lib/projects/service.ts', action: 'project.portfolio_moved' },
 ]
 
 describe('content-modifying audit coverage (FIBC-040)', () => {

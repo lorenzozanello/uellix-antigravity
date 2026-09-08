@@ -771,7 +771,16 @@ describe('every entry point that can reach the database opens an identity contex
     // which imports db/client.ts, and both call requireAuth() around every
     // database-touching region, so both are `contextualized`, not
     // allowlisted: +2 inventoried, +2 reaching, +2 contextualized.
-    }).toEqual({ inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 })
+    //
+    // 141 -> 142, 116 -> 117, contextualized 100 -> 101, allowlisted
+    // UNCHANGED at 16: PORTFOLIO-PF2-COMPOSITION-IMPLEMENTATION-R1
+    // (PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json, released for this one
+    // path by PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json) adds
+    // one new .ts entry point — app/app/portfolios/[portfolioId]/actions.ts.
+    // It calls runWithOrganizationAccess around each of its five governed
+    // composition writes, exactly like its sibling app/app/portfolios/new/
+    // page.tsx, so it is `contextualized`, not allowlisted.
+    }).toEqual({ inventoried: 142, reaching: 117, contextualized: 101, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

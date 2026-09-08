@@ -90,6 +90,18 @@ export function canGenerateReport(role: Role): boolean {
   return hasRole(role, 'impact_manager')
 }
 
+/**
+ * Can the user manage Portfolio composition — create, rename/update, archive,
+ * assign, unassign and move (PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json
+ * PF2_SEMANTICS_FROZEN.permissions)? Resolves to super_admin,
+ * organization_admin and impact_manager. `analyst` is deliberately excluded
+ * at this application layer even though the RLS policies governing
+ * `portfolios` and `projects` still admit it — see ROLE_ENFORCEMENT_LAYER.
+ */
+export function canManagePortfolio(role: Role): boolean {
+  return hasRole(role, 'impact_manager')
+}
+
 // ---------------------------------------------------------------------------
 // Stella (AI advisor) permissions
 // ---------------------------------------------------------------------------

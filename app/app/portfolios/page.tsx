@@ -1,4 +1,5 @@
 import { runWithOptionalOrganizationAccess } from '@/lib/auth/session';
+import { canManagePortfolio } from '@/lib/auth/permissions';
 import { listPortfoliosForCurrentOrganization } from '@/lib/portfolios/service';
 import Link from 'next/link';
 import { Plus, Layers, ArrowRight } from 'lucide-react';
@@ -19,7 +20,7 @@ export default async function PortfoliosPage() {
   if (!data) return <p>No autenticado. Por favor inicia sesión.</p>;
   const { ctx, portfolios } = data;
 
-  const canCreate = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role);
+  const canCreate = canManagePortfolio(ctx.membership.role);
 
   return (
     <div className="space-y-6">
