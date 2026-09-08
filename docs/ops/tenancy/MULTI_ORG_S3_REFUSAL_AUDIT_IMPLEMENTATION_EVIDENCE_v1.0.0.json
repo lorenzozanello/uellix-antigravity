@@ -32,7 +32,8 @@
     "verdict": "COMPLETE - ALL LOCAL GATES PASS, F-DY-1 CLOSED",
     "why": "The original implementation closed the three blocking findings raised under the predecessor pair (F-DN-1, F-DN-5, F-DN-6) and passed every gate, but was audited FAIL on a single blocking finding, F-DY-1: a convention pin in a file OUTSIDE its ceiling rejected the three-segment audit action names the node is required to introduce. ODS v1.0.27 / tenancy v1.0.8 adjudicated the finding, froze the names and widened the ceiling by exactly one unprotected path. This continuation merged live twice by normal merge with zero path intersection, corrected the pin without deleting or exempting anything, added the mandatory negative controls, and re-derived every pin against the current live head rather than inheriting it.",
     "historical_fields_not_rewritten": "The successor authority did NOT exist when the original implementation was created. Every section describing that work is left as measured under v1.0.26 / tenancy v1.0.7, and the superseded push/PR state is preserved under CANDIDATE.HISTORICAL_AT_ORIGINAL_IMPLEMENTATION rather than overwritten.",
-    "no_invented_pass": "Every figure was produced by executing the named command in this worktree and reading its output. The defect was reproduced BEFORE it was fixed; the fix was proven to bind by four mutations that each killed a named control and restored byte-exactly; and ods:scope was additionally run WITHOUT the grant to prove it does not pass vacuously."
+    "no_invented_pass": "Every figure was produced by executing the named command in this worktree and reading its output. The defect was reproduced BEFORE it was fixed; the fix was proven to bind by four mutations that each killed a named control and restored byte-exactly; and ods:scope was additionally run WITHOUT the grant to prove it does not pass vacuously.",
+    "REMOTE_CI": "GREEN on 06953300 - all four required checks pass. One transient infrastructure failure occurred and is classified in REMOTE_CI_STATUS rather than left unexplained."
   },
   "PRESTATE": {
     "worktree": "C:/Users/Lorenzo/Documents/uellix-s3-refusal-audit-implementation-r1",
@@ -634,6 +635,15 @@
         "cause": "Both 103-figures were measured during the v1.0.25 / 24-entry phase of this lane and were not refreshed when the lane continued under v1.0.26, which authorized four further unprotected paths. The sibling keys were refreshed; these two were not.",
         "why_not_blocking": "No gate consumed either figure - ods:scope derives the count from the live diff, and the audited 107 was correct. The defect was documentary. It is disclosed rather than quietly overwritten because a stale figure that agrees with nothing is exactly how a false PASS gets narrated.",
         "disposition": "CORRECTED at LANE EO by live re-measurement to 108, with the superseded figures and their cause recorded in place."
+      },
+      {
+        "id": "F-EO-2",
+        "title": "The real-PostgreSQL suite hides the harness failureReason, so a provisioning failure is undiagnosable from CI logs alone.",
+        "class": "OBSERVABILITY_GAP",
+        "discovered_by": "LANE EO, while classifying a transient CI failure on 06953300.",
+        "measured": "tests/postgres/s3refusal-completeness.pg.test.ts:117 asserts outcome.setupStatus; outcome.failureReason is populated by scripts/db-audit-disposable.ts but never printed or asserted anywhere.",
+        "why_not_blocking": "It degrades diagnosis, not the contract. Every probe assertion still fails closed, so a real defect can never present as green.",
+        "disposition": "Disclosed for a successor authority. NOT edited - not mechanically required by F-DY-1, and this is a bounded remediation. See REMOTE_CI_STATUS.OBSERVABILITY_GAP_DISCLOSED."
       }
     ]
   },
@@ -988,5 +998,35 @@
     ],
     "unrelated_integration_merges": "Sixteen further paths arrive from the two normal merges (ten from 1625bea2124f7b5ef6ffa500f133ffe80c487d92, six from fb46c342277246ac1891e8ca38b48e4a77c7331e). They are current live files, not candidate work, and intersect the 108-path candidate surface in ZERO paths.",
     "no_protected_or_runtime_byte_changed": true
+  },
+  "REMOTE_CI_STATUS": {
+    "measured_at_sha": "06953300c0aaa87f09c38e68487acc241963d356",
+    "binding": "These figures describe the PARENT commit 06953300, the SHA that carried the remediation and this artifact before this CI record was appended. Appending the record necessarily produces a LATER commit, which runs its own checks; those must be green in their own right before final audit. The same self-reference the evidence-finalization commit has always had.",
+    "checks": {
+      "Lint, typecheck, test, build": "PASS (7m11s)",
+      "Canonical LOCAL/CI clean bootstrap proof (P1A)": "PASS (2m21s)",
+      "Isolated M2 disposable PostgreSQL proof": "PASS (1m39s)",
+      "Isolated S3 refusal-audit disposable PostgreSQL proof": "PASS (42s, attempt 2 - see the classification below)",
+      "Vercel": "PASS"
+    },
+    "full_suite_confirms_F_DY_1_closed": "DECISIVE. At the pre-remediation head 9cbc3b76 the \"Lint, typecheck, test, build\" job was RED with exactly one failing test - the F-DY-1 convention pin. At 06953300 the same job is GREEN. The whole-repository suite, not a targeted subset, is what confirms the closure, which is the specific methodological failure the audit of PR #105 named.",
+    "TRANSIENT_INFRASTRUCTURE_FAILURE_CLASSIFIED": {
+      "binding": "RECORDED RATHER THAN QUIETLY RE-RUN AWAY. An unexplained attempt=2 in the run history is exactly the kind of anomaly an auditor should challenge.",
+      "what_happened": "Attempt 1 of the S3 gate on 06953300 failed after 28 seconds. Every probe reported \"did not run\", the harness reported setupStatus=SKIPPED, and probeResults was empty.",
+      "why_SKIPPED_carries_no_contract_information": "READ FROM SOURCE, not inferred. scripts/db-audit-disposable.ts initialises setupStatus to SKIPPED and only ever raises it to SUCCESS or FAILED. It stays SKIPPED when the harness returns before provisioning - the earliest such return is a failed \"docker run\" of the disposable container. So the value reports that PROVISIONING NEVER STARTED. It says nothing whatsoever about the refusal policy, the migration or any probe.",
+      "evidence_it_was_NOT_the_candidate": [
+        "The SAME workflow was SUCCESS at the pre-remediation head 9cbc3b76, and every protected and runtime byte the workflow exercises is proven blob-identical between the two heads. See BYTE_PRESERVATION_ACROSS_REMEDIATION.",
+        "The \"Isolated M2 disposable PostgreSQL proof\" job PASSED on the SAME SHA at the SAME time. It drives the SAME runDisposableHarness against the SAME postgres:16-alpine image, so Docker and the registry were demonstrably working for that commit. A general infrastructure outage is therefore excluded, and so is an image-tag defect.",
+        "RE-RUN ON THE IDENTICAL SHA, with zero code changes, PASSED in 42 seconds. A deterministic defect cannot pass on a re-run of the same bytes."
+      ],
+      "classification": "TRANSIENT_EXTERNAL_INFRASTRUCTURE - the disposable container could not be created on that runner. NOT a product defect and NOT caused by this candidate.",
+      "what_was_NOT_done": "No product code, test, workflow or manifest was modified in response. The failure was classified by measurement and the job re-run unchanged."
+    },
+    "OBSERVABILITY_GAP_DISCLOSED": {
+      "finding": "F-EO-2, NON_BLOCKING.",
+      "what": "tests/postgres/s3refusal-completeness.pg.test.ts asserts outcome.setupStatus but never surfaces outcome.failureReason, which the harness populates with the exact reason (for example the redacted stderr of a failed docker run).",
+      "consequence": "A provisioning failure presents as 36 identical \"probe did not run\" assertions with no cause anywhere in the log. Diagnosing attempt 1 required reading the harness source to learn what SKIPPED means, then re-running to separate transient from deterministic. A single line printing failureReason would have answered it immediately.",
+      "disposition": "NOT REPAIRED HERE. The host is inside the ceiling, but the change is not mechanically required by F-DY-1 and this is a BOUNDED remediation - widening it on my own judgement would be the scope creep the authority forbids. Disclosed for a successor authority."
+    }
   }
 }
