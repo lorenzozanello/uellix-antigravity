@@ -1,0 +1,381 @@
+{
+  "package_id": "PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_NODE_AUTHORITY",
+  "document_class": "EXECUTABLE_TECHNICAL_AUTHORITY_AMENDMENT",
+  "append_only": true,
+  "mission_id": "PORTFOLIO-PF1-EXECUTION-AUTHORITY-AMENDMENT-v1.0.1-R1",
+  "source_compiler": "LANE DQ — PORTFOLIO-PF1-EXECUTION-AUTHORITY-AMENDMENT-v1.0.1-R1",
+  "materialization_date": "2026-09-07",
+  "amends": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "companion_manifest": null,
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "START_HEAD": "63592f7f06c6b090f33771c6a8d58d9a8e619dd2",
+    "START_TREE": "9825e8cc0403279bef26f1f38c634dee2c8f2ce4",
+    "BRANCH": "codex/portfolio-pf1-execution-authority-amendment-r1",
+    "LATEST_INTEGRATION_HEAD": "63592f7f06c6b090f33771c6a8d58d9a8e619dd2",
+    "INTERVENING_DELTA": "NONE. Measured with `git fetch origin` followed by `git rev-parse origin/integration/commercial-v1` (= 63592f7f06c6b090f33771c6a8d58d9a8e619dd2), `git merge-base HEAD origin/integration/commercial-v1` (= 63592f7f) and `git rev-list --left-right --count HEAD...origin/integration/commercial-v1` (= 0 0). This branch IS the live integration tip; it is neither ahead nor behind.",
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/portfolio-pf1-execution-authority-amendment-r1 --head 63592f7f06c6b090f33771c6a8d58d9a8e619dd2 --tree 9825e8cc0403279bef26f1f38c634dee2c8f2ce4 --clean => ODS_PRESTATE=PASS (PRESTATE_BRANCH=PASS, PRESTATE_HEAD=PASS, PRESTATE_TREE=PASS, PRESTATE_CLEAN=PASS).",
+    "base_authority_AS_OF_HEAD": "9ccef5e9e8303c30c51295739976951636eeb8ef",
+    "delta_between_base_AS_OF_HEAD_and_START_HEAD": {
+      "measurement": "`git diff --name-only 9ccef5e9 63592f7f` returns exactly three paths.",
+      "paths": [
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json",
+        "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json",
+        "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6.json"
+      ],
+      "consequence": "NO PF1 implementation path moved. `git rev-parse 9ccef5e9:lib/portfolios/analytics.ts` and `git rev-parse 63592f7f:lib/portfolios/analytics.ts` are both 94c7eb0895319e4e245276722e4803e1f990d30c; `git rev-parse 9ccef5e9:lib/portfolios/analytics.test.ts` and `git rev-parse 63592f7f:lib/portfolios/analytics.test.ts` are both c8bb45d7d1e40d6f011d24bafb3674e3488554bd. Every measured fact the base states about the implementation surface therefore remains literally true at START_HEAD, and this amendment re-derives rather than inherits each one it relies on.",
+      "remeasurement_rule": "Every line number, byte count and blob SHA cited in this amendment is bound to START_HEAD 63592f7f / TREE 9825e8cc. An implementing mission whose base differs by even one commit that touches lib/portfolios/** MUST re-measure before relying on a citation here."
+    }
+  },
+
+  "NAMING_DERIVATION": {
+    "decision": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "derivation": "The repository-native convention for an append-only correction to a frozen authority is <BASE_PACKAGE_STEM>_AMENDMENT_v<semver>.json placed in the SAME directory as the base. Measured by `find docs -iname '*AMENDMENT*'`: thirteen amendment artifacts exist, in docs/ops/commercial/, docs/ops/p1a/, docs/ops/tenancy/, docs/ops/wave2/ and docs/ops/wave3/, and every one of them sits beside the artifact it amends and carries a semver strictly greater than that artifact's.",
+    "precedent_of_the_exact_class": "Measured by `find docs -iname '*EXECUTION_AUTHORITY*'`: the repository holds exactly two EXECUTION_AUTHORITY lineages — COMMERCIAL_ACCOUNT_CE1 and PORTFOLIO_PF1 — and exactly one of them has ever been amended: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. That artifact is the governing precedent for this one and its structural decisions are followed: authority_class APPEND_ONLY_AMENDMENT_TO_A_FROZEN_NODE_AUTHORITY, document_class EXECUTABLE_TECHNICAL_AUTHORITY_AMENDMENT, append_only true, `amends` naming the base by path, and supersedes / companion_manifest / companion_ods_addendum / GRANT_ID all null.",
+    "version_choice": "1.0.1. The base is 1.0.0 and no other PF1 amendment exists (`find docs -iname 'PORTFOLIO_PF1*'` returns exactly the base and this file). 1.0.1 is the first free patch ordinal, matching CE-1's own 1.0.0 -> 1.0.1 step.",
+    "stop_condition": "STOP_FOR_ARTIFACT_FORM_DECISION was NOT triggered. The form is not ambiguous: one prior amendment of the identical authority_class exists, it is structurally applicable without adaptation, and the directory, stem and semver are each determined by a measurement rather than by a judgement."
+  },
+
+  "ARTIFACT_FORM": {
+    "decision": "SINGLE ARTIFACT. One append-only amendment JSON. NO companion test manifest, NO ODS addendum, NO product-authority edit, NO implementation file.",
+    "expected_tracked_diff": "Exactly one added path: docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json.",
+    "why_not_a_new_test_manifest": "The base's MANIFEST_DISPOSITION decided that NO companion PF1 test manifest is created and that docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json remains the batch contract. This amendment does not reopen that decision. It adds no control id, redefines no control id, and changes no control's test_file.",
+    "why_not_an_ODS_addendum": "The base's LOCKS record ODS_REQUIRED=NO and PROTECTED_GRANT_REQUIRED=NO. Re-measured at START_HEAD: scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. docs/ops/portfolio/** matches none of them, so this artifact needs no protected grant and no HPO lineage identifier."
+  },
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json is left BYTE-UNCHANGED and remains HISTORICAL AND CONTROLLING authority for everything it says correctly. This artifact rewrites, deletes and reinterprets nothing in it. Its blob SHA at START_HEAD is 8d270ce25fd3fc2fc81bb9668a1c1ca87294c80a and the same SHA must still be readable at the commit that carries this amendment.",
+    "what_this_amendment_does": "It resolves exactly ONE internal contradiction inside the base: the base's blanket TEST-ASSERTION PRESERVATION clause for lib/portfolios/analytics.test.ts collides with the base's own null/zero/negative-investment exclusion requirement. Both sides of the collision are the base's own text. This amendment states which side controls, states it narrowly, and states what remains protected.",
+    "what_this_amendment_is_not": [
+      "NOT an implementation. No line of lib/portfolios/analytics.ts, lib/portfolios/analytics.test.ts or any test file is written, moved or deleted by this mission. The five PF1 paths are untouched in the working tree.",
+      "NOT a widening of the PF1 write surface. The surface remains exactly five paths. See PF1_WRITE_SURFACE_UNCHANGED.",
+      "NOT a general licence to edit inherited tests. See PRESERVED_ASSERTIONS_RULE, which is a prohibition, not a permission.",
+      "NOT a change to the parser/conversion contract for genuinely unparseable numeric data. See PARSER_BOUNDARY_RULE.",
+      "NOT a reopening of any Portfolio product decision. See PF1_FROZEN_SEMANTICS_PRESERVED, which restates twelve of them as UNCHANGED.",
+      "NOT a new control, a new control id, a new PostgreSQL matrix row or a new mutation requirement. The base's PF1_NEW_CONTROLS (5 ids), MUTATION_CONTRACT (8 requirements) and POSTGRES_CONTRACT (14 rows) are unchanged in content and in cardinality.",
+      "NOT an ODS/HPO lineage allocation, NOT a migration ordinal allocation, NOT a PROTECTED_GRANTS registration, NOT a Controller enumeration. scripts/ods-scope.ts is not edited.",
+      "NOT an execution authorization. PF1_IMPLEMENTATION_AUTHORIZED_NOW remains NO until this amendment is independently audited and integrated, exactly as the base's own conditions_precedent require of the base."
+    ],
+    "conflict_rule": "Where this amendment and the base disagree, the base controls for every product, formula, exclusion-set, traceability, readiness, tenancy, PostgreSQL, mutation and write-surface semantic, and this amendment controls ONLY for the narrow question named in DEFECT_CORRECTED: whether the specific inherited assertion that encodes null-investment-collapses-to-no_run is protected against the base's own correction requirement. There are exactly TWO clauses of the base that this amendment overrides, both instances of the same defect class, both named by exact quotation below, and nothing else."
+  },
+
+  "DEFECT_CORRECTED": {
+    "id": "PF1-A-1",
+    "class": "SELF_CONTRADICTORY_PRESERVATION_CLAUSE",
+    "base_clause_quoted_verbatim": "PF1_WRITE_SURFACE.measured_existence_at_AS_OF_TREE[\"lib/portfolios/analytics.test.ts\"]: \"PRESENT, 6670 bytes — extended by PF1; existing assertions are preserved, never weakened.\"",
+    "why_it_is_wrong": "Read as an unqualified rule over every assertion in the file, it is unsatisfiable jointly with the base's own PF1-MUT-INVESTMENT-1, with the batch manifest's NEG-AGG-6 which the base inherits, and with the base's own PostgreSQL row PG-PF1-09. One of the twelve-or-so inherited assertions in that file does not merely happen to be inconvenient: it is the executable encoding of the exact defect those three obligations require PF1 to correct. A rule that protects the encoding of a defect while another rule commands the defect's correction cannot be discharged as written.",
+    "narrow_reading_that_remains_true": "For every assertion in lib/portfolios/analytics.test.ts EXCEPT the single null-investment expectation identified below, the clause is true, binding and untouched by this amendment. The file has 10 `it` blocks and 30 `expect(` calls at START_HEAD; this amendment releases exactly one `expect(` call from protection and protects the other 29 exactly as the base does.",
+    "what_survives_unchanged": "The clause's operative half — 'extended by PF1' — is unchanged: lib/portfolios/analytics.test.ts remains an EXTENSION target, not a rewrite target, and remains one of the five authorized paths and no more. Its measured byte count 6670 at AS_OF_TREE is re-confirmed at START_HEAD by `wc -c`.",
+    "machine_proof": {
+      "step_1_the_requirement": "Base PF1_NEW_CONTROLS.mutation_controls[2] (PF1-MUT-INVESTMENT-1) states verbatim: \"Letting a run whose total_investment is null, zero or negative collapse into reason no_run — rather than being excluded with reason zero_or_invalid_investment — makes NEG-AGG-6 and PG-PF1-09 fail. The project's exclusion reason is wrong, and a reader cannot distinguish a project that was never calculated from one whose calculated run carries an unusable investment.\"",
+      "step_2_the_inherited_control": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json negative_controls[5] (NEG-AGG-6) states verbatim: \"A run with total_investment null, zero or negative is excluded with reason zero_or_invalid_investment rather than contributing a zero to the denominator.\" Its test_file is \"UNKNOWN\", so nothing in the manifest routes it away from the PF1 surface.",
+      "step_3_the_postgres_row": "Base POSTGRES_CONTRACT.frozen_matrix row PG-PF1-09 states verbatim: {\"id\":\"PG-PF1-09\",\"case\":\"zero, negative and null total_investment each excluded with reason zero_or_invalid_investment\",\"binding_control\":\"NEG-AGG-6\",\"also_pinned_by\":\"PF1-MUT-INVESTMENT-1\"}.",
+      "step_4_the_base_names_the_defect_site_itself": "Base PF1-MUT-INVESTMENT-1.non_vacuity_basis states verbatim: \"This is the live behaviour for the null case. lib/portfolios/analytics.ts:133-136 returns null from toProjectRunSummaryRun when the parsed investment is null, and :65-67 then classifies a null run as no_run. The zero and negative cases are worse than that today: they are neither null nor rejected, so they currently pass the guard and contribute a zero or a negative to the denominator. The mutation therefore reverts to a state that is observably present in the tree.\" The base thus locates the defect precisely at toProjectRunSummaryRun's null return.",
+      "step_5_the_live_assertion_that_encodes_the_defect": "lib/portfolios/analytics.test.ts:147, quoted byte-for-byte from START_HEAD: `expect(toProjectRunSummaryRun({ currency: 'USD', totalInvestment: null, netSocialValue: '1', sroiRatio: '1' })).toBeNull()`, preceded at :146 by the comment `// A run without valid totals is still \"no run\".`. It sits inside the `it` block opened at :133 and the describe block opened at :106.",
+      "step_6_the_live_code_it_pins": "lib/portfolios/analytics.ts:133-136, quoted byte-for-byte: `const investment = toNumberOrNull(run.totalInvestment)` / `const net = toNumberOrNull(run.netSocialValue)` / `// A run without valid numeric totals can't be aggregated — treat as no run.` / `if (investment === null || net === null) return null`. And :65-67: `if (!p.run) {` / `excluded.push({ projectId: p.projectId, projectName: p.projectName, reason: 'no_run' })` / `continue`.",
+      "step_7_no_third_path_exists": "The contradiction cannot be dissolved by routing around the mapper. THREE independent measurements close that escape: (a) `grep -rn 'toProjectRunSummaryRun' --include=*.ts --include=*.tsx .` excluding node_modules returns exactly one production call site, lib/portfolios/analytics.ts:234 `run: run ? toProjectRunSummaryRun(run) : null`, plus the declaration at :127 and four references inside the test file — so the mapper is the SOLE conversion boundary on the PF1 read path; (b) lib/portfolios/analytics.ts:19 declares `totalInvestment: number` inside ProjectRunSummary['run'], not `number | null`, so a run object cannot today carry a null investment past the mapper for the aggregate to classify; (c) `grep -rn 'zero_or_invalid_investment' --include=*.ts --include=*.tsx .` excluding node_modules returns ZERO hits, and lib/portfolios/analytics.ts:38 declares `reason: 'no_run' | 'non_usd_currency' | 'no_sroi_ratio'` — the reason PF1 must emit does not exist anywhere in the tree. Any implementation that satisfies NEG-AGG-6 must therefore change what the mapper does with a null investment, or change the type that forces the mapper's hand, or both. Each of those makes the assertion at :147 false.",
+      "step_8_the_collision_is_therefore_total": "Preserving :147 verbatim and satisfying PF1-MUT-INVESTMENT-1 / NEG-AGG-6 / PG-PF1-09 are jointly impossible. This is a contradiction internal to the integrated authority, not a disagreement between the authority and an implementer's preference."
+    },
+    "compiler_attribution": "The collision was first surfaced by the PF1 implementation mission (LANE DO), which changed only the conflict-bearing fixture and preserved the parser-boundary test intent. This amendment re-derived every quotation, line number, blob SHA and grep count above independently at START_HEAD 63592f7f and does not rely on that mission's report for any fact."
+  },
+
+  "SECOND_CLAUSE_OF_THE_SAME_DEFECT_CLASS": {
+    "id": "PF1-A-2",
+    "class": "SELF_CONTRADICTORY_PRESERVATION_CLAUSE",
+    "base_clause_quoted_verbatim": "MEASURED_BASELINE_OF_THE_IMPLEMENTATION_SURFACE.measured_facts[8].fact: \"Twelve existing assertions across two describe blocks, including the Sigma/Sigma-not-average control at :25, the no_sroi_ratio controls at :107 and :133, and the LEGACY_NON_AUTHORITATIVE labelling control at :83. PF1 extends this file; it may not weaken or delete any of these.\"",
+    "narrow_reading_that_remains_true": "The four assertions the clause names BY LINE are fully protected and are not touched by this amendment: :25 (Σ net / Σ investment, never the average of ratios), :83 (LEGACY_NON_AUTHORITATIVE labelling), :107 (N-RATIO-2 no_sroi_ratio exclusion) and the `it` block opened at :133 in its parser-boundary character. The prohibition 'may not weaken or delete any of these' stands over all of them.",
+    "false_reading_this_amendment_forecloses": "Read as an unqualified closed-world protection over every assertion the file happens to contain, the clause protects lib/portfolios/analytics.test.ts:147 — and therefore protects the defect. That reading is foreclosed for exactly that one assertion, on exactly the grounds proved in DEFECT_CORRECTED.machine_proof, and for nothing else.",
+    "shared_root_cause": "Both clauses were written as blanket statements about a file, at a moment when the base had not yet cross-checked the file's contents against the base's own correction obligations. Neither clause is wrong about its subject; both are wrong about their scope. That is why this amendment narrows scope rather than reversing either clause.",
+    "an_imprecision_recorded_but_not_adjudicated": "The clause calls :133 a 'no_sroi_ratio control'. Measured at START_HEAD, the `it` block opened at :133 is the toProjectRunSummaryRun PARSER-BOUNDARY block — it is the block that also contains the conflict-bearing assertion at :147 — while the no_sroi_ratio controls proper open at :107 and :125. The clause's count 'Twelve' also matches neither measured cardinality (10 `it` blocks: 7 in the describe at :24 and 3 in the describe at :106; 30 `expect(` calls: 19 and 11). These are measurement imprecisions in the base, not contradictions, and this amendment does NOT correct them — see OPEN_FINDINGS.non_blocking[0]. They are recorded so that an auditor who re-counts the file encounters a disclosed discrepancy rather than an unexplained one, and so that no implementer reads 'twelve' as a closed enumeration authorizing edits to the other assertions."
+  },
+
+  "CONTRADICTION_PROOF_SUMMARY": {
+    "statement": "PROVEN AND REAL, by independent re-derivation at START_HEAD 63592f7f / TREE 9825e8cc, before any byte of this amendment was written.",
+    "artifacts_inspected": [
+      "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json — blob 8d270ce25fd3fc2fc81bb9668a1c1ca87294c80a",
+      "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json — blob 38fecb03772de264e3aa185331a3dba23ed009ef",
+      "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json — blob d4cb3b5deb26ff693f34d10cc08579e895e0d49d",
+      "lib/portfolios/analytics.ts — blob 94c7eb0895319e4e245276722e4803e1f990d30c, 9506 bytes, 240 lines",
+      "lib/portfolios/analytics.test.ts — blob c8bb45d7d1e40d6f011d24bafb3674e3488554bd, 6670 bytes, 149 lines"
+    ],
+    "the_two_sides": {
+      "side_A_preservation": "PF1_WRITE_SURFACE.measured_existence_at_AS_OF_TREE['lib/portfolios/analytics.test.ts'] and MEASURED_BASELINE_OF_THE_IMPLEMENTATION_SURFACE.measured_facts[8].fact.",
+      "side_B_correction": "PF1_NEW_CONTROLS.mutation_controls[2] (PF1-MUT-INVESTMENT-1), the inherited NEG-AGG-6, POSTGRES_CONTRACT.frozen_matrix row PG-PF1-09, EXCLUSION_PRECEDENCE.ordered_list_exact (which contains zero_or_invalid_investment as reason 6 of 6) and EXCLUSION_PRECEDENCE.type_widening_required (which requires the three-member union at analytics.ts:38 to be widened to six).",
+      "the_witness": "lib/portfolios/analytics.test.ts:147 — one `expect(` call. It is the entire intersection. No other assertion in the file is implicated."
+    },
+    "counterfactual_checked": "If side A were read narrowly enough to exclude :147, no contradiction would exist and this amendment would be unnecessary. Side A contains no such narrowing: 'existing assertions are preserved, never weakened' and 'it may not weaken or delete any of these' are both unqualified over the file. The narrowing does not exist in the base and is created here."
+  },
+
+  "BINDING_ADJUDICATION": {
+    "normative_hierarchy": "For the null / zero / negative total_investment case on an otherwise-valid selected run, the controlling authority is, jointly and in this order: PF1-MUT-INVESTMENT-1, NEG-AGG-6, PG-PF1-09 and EXCLUSION_PRECEDENCE. The preservation clauses PF1-A-1 and PF1-A-2 yield to them, and only to them, and only for this case.",
+    "disposition_token": "LEGACY_ASSERTION_TOTAL_INVESTMENT_NULL_RETURNS_NO_RUN = SUPERSEDED_FOR_THIS_SPECIFIC_CASE",
+    "token_definition": "The token names exactly one assertion: the expectation at lib/portfolios/analytics.test.ts:147 at START_HEAD, that toProjectRunSummaryRun returns null for an input whose totalInvestment is null. It names no other assertion, in this file or any other, now or later.",
+    "frozen_decisions": [
+      {
+        "id": "PF1-A-D1",
+        "decision": "A null total_investment on an otherwise-valid approved SELECTED run is NOT no_run.",
+        "detail": "'Otherwise valid' means the run has already survived every higher-precedence check: it exists, it has a currently-approved review, it is not legacy_non_authoritative, its currency is USD and its persisted sroi_ratio is not null. no_run is reserved for a project with no selected run at all.",
+        "binding_controls": ["PF1-MUT-INVESTMENT-1", "NEG-AGG-6", "PG-PF1-09"]
+      },
+      {
+        "id": "PF1-A-D2",
+        "decision": "A ZERO total_investment on an otherwise-valid approved selected run is NOT no_run.",
+        "detail": "Today a zero investment is neither null nor rejected: it passes toProjectRunSummaryRun unchanged and is summed into the denominator, contributing a zero. That is a different live defect from the null case and it is corrected by the same reason.",
+        "binding_controls": ["PF1-MUT-INVESTMENT-1", "NEG-AGG-6", "PG-PF1-09"]
+      },
+      {
+        "id": "PF1-A-D3",
+        "decision": "A NEGATIVE total_investment on an otherwise-valid approved selected run is NOT no_run.",
+        "detail": "Today a negative investment likewise passes the mapper and is summed, and can move the portfolio denominator toward or below zero. Corrected by the same reason.",
+        "binding_controls": ["PF1-MUT-INVESTMENT-1", "NEG-AGG-6", "PG-PF1-09"]
+      },
+      {
+        "id": "PF1-A-D4",
+        "decision": "All three cases map to exclusion reason `zero_or_invalid_investment`, evaluated AFTER every higher-precedence exclusion check.",
+        "detail": "The order is the base's EXCLUSION_PRECEDENCE.ordered_list_exact, unchanged and unreordered: no_run, no_approved_run, legacy_non_authoritative, non_usd_currency, no_sroi_ratio, zero_or_invalid_investment. zero_or_invalid_investment is last and is first-match-wins like the other five, so a project that also qualifies for an earlier reason reports the earlier reason and never zero_or_invalid_investment. The set stays closed at six; no seventh reason, no merge, no rename.",
+        "binding_controls": ["NEG-AGG-6", "PG-PF1-09", "EXCLUSION_PRECEDENCE"]
+      },
+      {
+        "id": "PF1-A-D5",
+        "decision": "Changing the expectation and/or the fixture at lib/portfolios/analytics.test.ts:147 as necessary to represent the corrected behaviour is AUTHORIZED, and is NOT weakening of the inherited suite.",
+        "detail": "The authorization covers the minimum needed to stop the file asserting the defect: altering that expectation, or moving that fixture to an input that still exercises the preserved parser contract, or both. It does not cover deleting the enclosing `it` block's parser-boundary purpose — see PARSER_BOUNDARY_RULE — and it does not cover any other line of the file.",
+        "rationale": "An assertion is 'weakened' when the suite afterwards proves less than it did, or proves something the authority requires to be false. Replacing an assertion that pins a defect the same authority commands be corrected does neither: after the change the suite proves MORE, because the corrected behaviour is itself pinned by NEG-AGG-6, PG-PF1-09 and the non-vacuous mutation control PF1-MUT-INVESTMENT-1."
+      },
+      {
+        "id": "PF1-A-D6",
+        "decision": "Every unrelated pre-existing assertion in the repository remains protected, without exception.",
+        "detail": "See PRESERVED_ASSERTIONS_RULE. This is a prohibition and is the operative half of this amendment for any future reader looking for licence."
+      },
+      {
+        "id": "PF1-A-D7",
+        "decision": "The parser/conversion contract for genuinely unparseable numeric run data is NOT widened by this amendment.",
+        "detail": "See PARSER_BOUNDARY_RULE."
+      },
+      {
+        "id": "PF1-A-D8",
+        "decision": "The PF1 write surface remains EXACTLY five files.",
+        "detail": "See PF1_WRITE_SURFACE_UNCHANGED. This amendment adds no path, removes no path and renames no path."
+      }
+    ],
+    "count": 8
+  },
+
+  "PRESERVED_ASSERTIONS_RULE": {
+    "rule": "THIS AMENDMENT IS NOT PERMISSION TO WEAKEN ANY OTHER TEST. Exactly ONE inherited expectation is released from protection: lib/portfolios/analytics.test.ts:147 at START_HEAD, the toProjectRunSummaryRun null-totalInvestment expectation. Every other assertion inherited by PF1 — in that file, in any other test file, in any test host, in any PostgreSQL probe — remains protected exactly as the base states.",
+    "explicitly_still_protected_in_the_same_file": [
+      ":25 — the Σ net / Σ investment control, and its explicit `not.toBe` guard against the average-of-ratios form.",
+      ":37 — projects without a calculation run are excluded (this is the genuine no_run control and it stays exactly as it is).",
+      ":47 — non-USD legacy runs excluded rather than summed.",
+      ":60 — a null portfolio ratio when no project is included.",
+      ":69 — readiness averaged only over included projects that have a score.",
+      ":83 — the LEGACY_NON_AUTHORITATIVE labelling control.",
+      ":88 — Decimal summation of large money values without floating-point drift.",
+      ":107 — N-RATIO-2 / M-RATIO-2, including the `expect(result.portfolioSroiRatio).not.toBe(0.3)` mutation guard.",
+      ":125 — a portfolio whose only project has no ratio yields a null ratio, never 0.",
+      ":133 — the toProjectRunSummaryRun parser-boundary block, in every part of it except the single expectation at :147: the '900.0000' -> 900 with sroiRatio null case at :134-139 and the '100.0000'/'300.0000'/'3.000000' case at :140-145 are both fully protected."
+    ],
+    "arithmetic": "30 `expect(` calls at START_HEAD; 1 released; 29 protected. 10 `it` blocks; 0 deleted.",
+    "no_generalization": "No future mission may cite this amendment as precedent for editing an inherited assertion. The precedent it sets is narrower than that: where an integrated authority's preservation clause and that same authority's correction requirement are provably unsatisfiable together over one identified assertion, the correction requirement controls for that assertion and the collision must be adjudicated in a governed append-only artifact BEFORE the implementation lands — not asserted by the implementer afterwards.",
+    "prohibition_restated": "Weakening a test or a gate to obtain a PASS remains prohibited. Nothing here creates an exception to that rule; the released assertion is released because the authority requires the behaviour it pins to change, not because it is inconvenient to satisfy."
+  },
+
+  "PARSER_BOUNDARY_RULE": {
+    "rule": "The parser/conversion boundary is PRESERVED and is NOT widened by this amendment. Genuinely unusable or unparseable numeric run data — outside the specific null/zero/negative totalInvestment correction — may still follow the existing parser boundary wherever the base explicitly preserves it.",
+    "what_stays": [
+      "toNumberOrNull (lib/portfolios/analytics.ts:114-118) keeps its contract: a null string stays null, a non-finite parse stays null. It is not made lenient.",
+      "The netSocialValue arm of the guard at :136 is untouched by this amendment. A run whose net_social_value is null or unparseable is outside the scope of PF1-MUT-INVESTMENT-1, NEG-AGG-6 and PG-PF1-09, all three of which speak only about total_investment.",
+      "The persisted sroi_ratio contract is untouched: NULL stays null, never recomputed as net/investment and never coerced to 0. That is the W2-B3 / AG-B3-2 / FIBC-016 decision pinned at :134-139 and at :107, and the base's own FORMULA and no_sroi_ratio reason depend on it.",
+      "The portfolio-level guard at lib/portfolios/analytics.ts:92-94, `totalInvestment.gt(0) ? totalNet.div(totalInvestment).toNumber() : null`, is preserved. It is a different rule from the per-project exclusion: it makes the AGGREGATE ratio null when the summed denominator is not positive. The base's FORMULA.all_excluded_case already says PF1 preserves it, and this amendment does not disturb that."
+    ],
+    "how_the_preserved_intent_may_be_re_hosted": "The implementation MAY keep the old parser-boundary test intent alive by moving the fixture at :147 away from the now-corrected totalInvestment case — for example to the independently valid net-value parsing boundary, where a null netSocialValue on an otherwise-valid row still legitimately yields null from toProjectRunSummaryRun — PROVIDED the resulting test truthfully covers the preserved parser contract. 'Truthfully' is the operative word: the moved assertion must exercise a path that really does return null under the corrected implementation. A moved fixture that no longer proves anything, or that proves something the corrected code does not do, is a weakened test and is prohibited by PRESERVED_ASSERTIONS_RULE.",
+    "boundary_quoted_from_the_base": "PF1-MUT-INVESTMENT-1.boundary, verbatim: \"This control does not authorize changing what toProjectRunSummaryRun does with a genuinely unparseable numeric column. It requires only that null, zero and negative investment on an otherwise valid selected run be reported as zero_or_invalid_investment.\" This amendment adopts that boundary word for word and adds nothing to it.",
+    "consequence_for_the_reason_semantics": "zero_or_invalid_investment is a reason about the INVESTMENT FIGURE of a run that otherwise qualifies. It is not a general 'bad row' reason and may not become one. A row that is unusable for a reason other than its total_investment is classified by whichever of the other five reasons applies, or — where the row genuinely does not yield a run at all — by no_run."
+  },
+
+  "PF1_WRITE_SURFACE_UNCHANGED": {
+    "statement": "EXACTLY FIVE FILES. Unchanged from the base, path for path, in the same order.",
+    "authorized_paths_exactly_five": [
+      "lib/portfolios/analytics.ts",
+      "lib/portfolios/analytics.test.ts",
+      "tests/portfolios.analytics.service.test.ts",
+      "tests/postgres/portfolio-aggregate.pg.test.ts",
+      "tests/postgres/portfolio-aggregate.probes.json"
+    ],
+    "count": 5,
+    "no_sixth_path": "RESTATED AND UNCHANGED. PF1 may not create, rename or modify any path outside this list of five. In particular this amendment does not authorize a new test file to host the corrected null/zero/negative investment case: it is hosted inside the five, on lib/portfolios/analytics.test.ts and tests/portfolios.analytics.service.test.ts for the unit and service levels, and on tests/postgres/portfolio-aggregate.pg.test.ts with tests/postgres/portfolio-aggregate.probes.json for PG-PF1-09.",
+    "re_measured_at_START_HEAD": {
+      "lib/portfolios/analytics.ts": "PRESENT, 9506 bytes, 240 lines — modified in place by PF1.",
+      "lib/portfolios/analytics.test.ts": "PRESENT, 6670 bytes, 149 lines — extended by PF1; existing assertions preserved except the single expectation released by PF1-A-D5.",
+      "tests/portfolios.analytics.service.test.ts": "ABSENT — created by PF1.",
+      "tests/postgres/portfolio-aggregate.pg.test.ts": "ABSENT — created by PF1.",
+      "tests/postgres/portfolio-aggregate.probes.json": "ABSENT — created by PF1."
+    },
+    "prohibited_surfaces": "The base's PF1_WRITE_SURFACE.prohibited_surfaces_restated_from_parent (11 entries) and its shared_writer_rule_inherited stand entirely unchanged. This amendment adds no exception to any of them."
+  },
+
+  "PF1_FROZEN_SEMANTICS_PRESERVED": {
+    "BINDING": "Every item below is restated as UNCHANGED for the avoidance of doubt. This amendment alters NONE of them. An implementation that changes any of them is out of authority regardless of anything this amendment says.",
+    "five_path_write_surface": "UNCHANGED. See PF1_WRITE_SURFACE_UNCHANGED. Five paths, no sixth.",
+    "approved_run_rules": "UNCHANGED. APPROVED_RUN_CONTRACT's population rule, its ordering_of_operations (approval filter BEFORE latest-run selection), its five required_predicates and its determinism_of_run_selection stand exactly as the base states them. PF1-MUT-ORDER-1 is unaffected.",
+    "approved_review_tie_break": "UNCHANGED. ORDER BY created_at DESC, id DESC on currently-approved reviews, with sroi_run_reviews.id as the total tie-breaker and reviewed_at prohibited as an ordering input. PF1-POS-TIEBREAK-1, PF1-NEG-TIEBREAK-1 and PF1-MUT-TIEBREAK-1 are unaffected.",
+    "legacy_exclusion": "UNCHANGED. The mandatory FIBC-042 legacy_non_authoritative exclusion, its derivation from persisted facts only, the rule that it is evaluated against the SELECTED run, and the rule that an approved review does NOT override it. NEG-AGG-3 and MUT-AGG-3 are unaffected.",
+    "six_reason_set": "UNCHANGED. Exactly six reasons: no_run, no_approved_run, legacy_non_authoritative, non_usd_currency, no_sroi_ratio, zero_or_invalid_investment. No seventh, no merge, no rename. The union at lib/portfolios/analytics.ts:38 is widened from three members to these six and must remain a closed literal union — never `string`.",
+    "exclusion_precedence": "UNCHANGED, including its order and its first-match-wins semantics. This amendment states WHICH reason the null/zero/negative investment case receives; it does not move that reason within the order, and it does not change how the order is evaluated.",
+    "nine_field_traceability": "UNCHANGED. Exactly nine fields, and no more, with the binding correspondence between the runId a component carries and the reviewId of the approved review selected by APPROVED_REVIEW_TIEBREAK. MUT-TRACE-1 is unaffected.",
+    "sum_over_sum_formula": "UNCHANGED. portfolioSroiRatio = SUM(net social value) / SUM(total investment) over exactly the included population, in decimal.js, never the average of per-project ratios, with numerator and denominator drawn from the same universe. An excluded project — including one excluded as zero_or_invalid_investment — contributes to NEITHER. POS-AGG-2, NEG-AGG-7, NEG-AGG-8 and MUT-AGG-2 are unaffected.",
+    "readiness_prohibition": "UNCHANGED. All four readiness symbols preserved by name, type and computation; no rename to the pre-B5 names; no FIBIU-17 band vocabulary; no promotion to canonical FIBC-021 readiness; no readiness_assessments dependency. NEG-READINESS-1 and MUT-READINESS-1 are unaffected.",
+    "real_pg_requirements": "UNCHANGED. REAL_POSTGRES_REQUIRED remains YES, the frozen matrix remains 14 rows, the matrix remains a FLOOR that PF1 may extend but may not drop or weaken, and the file_resolution decision in favour of the product authority's path names stands. PG-PF1-09 is restated, not rewritten: its `case` text already reads 'zero, negative and null total_investment each excluded with reason zero_or_invalid_investment'.",
+    "mutation_requirements": "UNCHANGED. Eight required non-vacuous mutation controls, eight mapped, zero unmapped, with the same ids and the same non-vacuity definition. PF1-MUT-INVESTMENT-1 keeps its description, its non_vacuity_basis and its boundary verbatim; this amendment removes the obstacle to discharging it and changes nothing about the control itself.",
+    "tenancy_disposition": "UNCHANGED. SEPARATE_GOVERNED_TENANCY_COUPLING_SUCCESSOR_REQUIRED; the three prohibited Portfolio page branches remain prohibited; PF1 remains structurally unaffected because no path under app/ is in its write surface.",
+    "manifest_disposition": "UNCHANGED. No new companion PF1 test manifest. docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json remains the batch contract and its seven inherited exit gates stand.",
+    "open_findings_of_the_base": "UNCHANGED. F-PF1-1 (PostgreSQL path divergence between the manifest and the product authority), F-PF1-2 (the live review query applies no status filter) and F-PF1-3 (uq_sroi_run_project_version invisible in db/schema.ts) remain open with the dispositions the base gives them.",
+    "PF2_and_PF3": "UNCHANGED. PF2_IMPLEMENTATION_AUTHORIZED = NO. PF3_IMPLEMENTATION_AUTHORIZED = NO. Each requires its own successor authority. This amendment authorizes neither and touches neither path set."
+  },
+
+  "LOCKS": {
+    "ODS_REQUIRED": "NO",
+    "MIGRATION_REQUIRED": "NO",
+    "PROTECTED_GRANT_REQUIRED": "NO",
+    "CONTROLLER_REQUIRED": "NO",
+    "HOSTED_UNIT_REQUIRED": "NO",
+    "protected_grant_measured_basis": "Re-measured at START_HEAD from scripts/ods-scope.ts: DEFAULT_PROTECTED_PATTERNS is exactly ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. The single path written by this mission, docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, matches none of them. An ordinary --allow pattern authorizes it; no grant is resolved and none is registered.",
+    "seal_measured_basis": "scripts/authority-seal-verify.ts checks a fixed corpus of 9 protected artifacts under docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** plus docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, with 4 transitive attestations. docs/ops/portfolio/** is not in that corpus, so adding this file cannot move a sealed digest. Verified empirically: AUTHORITY_SEAL_VERIFY=PASS both before and after this file was written.",
+    "locks_taken_by_this_mission": [],
+    "identifiers_allocated_by_this_mission": "NONE. No migration ordinal, no baseline unit ordinal, no journal wrapper ordinal, no HPO id, no GRANT_ID, no new control id. PF1-A-1, PF1-A-2, PF1-A-D1..D8 and PF1-A-F-1..F-2 are internal identifiers of THIS document; they are not controls and they do not enter the batch manifest. Measured disjointness: `grep -rn 'PF1-A-' docs/` returned zero hits before this file was written, and the base's own namespace_rule reserves the 'PF1-' prefix to the PF1 lineage, of which this amendment is part."
+  },
+
+  "EXECUTION_AUTHORIZATION": {
+    "PF1_IMPLEMENTATION_AUTHORIZED_NOW": "NO",
+    "PF1_IMPLEMENTATION_AUTHORIZED_AFTER_THIS_AMENDMENT_INTEGRATES": "YES — jointly with the base, which supplies the grant. This amendment supplies no grant of its own; it removes an internal contradiction that would otherwise make the base's grant impossible to discharge.",
+    "PF1_HEAVY_PG_AUTHORIZED_NOW": "NO",
+    "PF2_IMPLEMENTATION_AUTHORIZED": "NO",
+    "PF3_IMPLEMENTATION_AUTHORIZED": "NO",
+    "conditions_precedent": [
+      "This amendment passes an independent Opus exact-object audit.",
+      "This amendment is integrated into integration/commercial-v1.",
+      "The base's own two conditions_precedent are already satisfied: it passed its independent audit and was integrated at 3a8c2173 / 57844e13, and is present at START_HEAD with blob 8d270ce25fd3fc2fc81bb9668a1c1ca87294c80a."
+    ],
+    "scope_of_the_grant": "NONE CREATED HERE. The write permission for the five PF1 paths is the base's, unchanged in extent. This amendment neither widens it nor narrows it.",
+    "what_this_amendment_does_not_do": [
+      "It does not implement PF1. The five PF1 paths are byte-unchanged in the working tree of this mission.",
+      "It does not authorize heavy PostgreSQL execution. PG-PF1-01..PG-PF1-14 remain obligations of the implementation node, discharged under the base.",
+      "It does not authorize PF2 or PF3.",
+      "It does not close the Portfolio tenancy coupling successor.",
+      "It does not edit the base, either parent, or any implementation, test or schema file."
+    ]
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "scope_note": "These are the gates of an AUTHORITY-ONLY mission whose entire tracked diff is one added JSON file under docs/ops/portfolio/**. The implementation node's own exit gates remain the seven inherited from the batch manifest and are not run here.",
+    "prestate": "pnpm ods:prestate -- --branch codex/portfolio-pf1-execution-authority-amendment-r1 --head 63592f7f06c6b090f33771c6a8d58d9a8e619dd2 --tree 9825e8cc0403279bef26f1f38c634dee2c8f2ce4 --clean => ODS_PRESTATE=PASS.",
+    "environment_note": "node_modules was ABSENT in this fresh worktree. `pnpm install --frozen-lockfile` was run before any gate, because tsx — and therefore every ods:*, authority:* and secrets:* script — resolves through it. Exit code 0.",
+    "json_validation": "The artifact parses with JSON.parse and re-serializes without loss. No repository JSON schema governs authority documents; docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json governs test manifests only, and this artifact is not a test manifest.",
+    "base_artifact_byte_identity": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json blob SHA measured at START_HEAD as 8d270ce25fd3fc2fc81bb9668a1c1ca87294c80a and unchanged by this mission. Its absence from `git status --porcelain --untracked-files=all` is the proof that the append-only rule held.",
+    "implementation_surface_untouched": "lib/portfolios/analytics.ts stays at blob 94c7eb0895319e4e245276722e4803e1f990d30c and lib/portfolios/analytics.test.ts at c8bb45d7d1e40d6f011d24bafb3674e3488554bd. Neither appears in this mission's diff.",
+    "quotations_verified": "Every clause quoted verbatim from the base or from the batch manifest was read out of the file it is attributed to by JSON path, at START_HEAD, not from a report. Every line number cited in lib/portfolios/analytics.ts (8, 19, 38, 47, 65-67, 81-82, 92-94, 114-118, 127, 133-136, 221, 234) and in lib/portfolios/analytics.test.ts (25, 83, 106, 107, 125, 133, 134-145, 146, 147) was printed and compared byte-for-byte.",
+    "counts_independently_derived": "10 `it` blocks and 30 `expect(` calls in lib/portfolios/analytics.test.ts, split 7/19 in the describe at :24 and 3/11 in the describe at :106. Zero occurrences of the literal zero_or_invalid_investment anywhere under *.ts / *.tsx outside node_modules. Exactly one production call site of toProjectRunSummaryRun. Five authorized PF1 paths. Six exclusion reasons. Fourteen PostgreSQL matrix rows. Eight mutation requirements.",
+    "typecheck": "pnpm typecheck => PASS. Recorded because it is the cheapest proof that this mission changed no TypeScript surface; the result is identical to the clean tree by construction.",
+    "secrets_scan": "pnpm secrets:scan => 'CURRENT_TREE: no credential material found.' PASS both before and after this file was written. No secret, credential, token, connection string or project ref is referenced or embedded anywhere in this file.",
+    "authority_seal_verify": "pnpm authority:seal:verify => AUTHORITY_SEAL_VERIFY=PASS, ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS. PASS both before and after.",
+    "ods_scope": "pnpm ods:scope -- --base 63592f7f06c6b090f33771c6a8d58d9a8e619dd2 --allow docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. The two-endpoint diff form is used deliberately: the branch is measured at the LIVE integration tip, so no phantom deletion can be introduced by a stale base.",
+    "ods_poststate": "pnpm ods:poststate -- --base 63592f7f06c6b090f33771c6a8d58d9a8e619dd2 --allow docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json --clean.",
+    "heavy_postgres": "NOT RUN AND NOT AUTHORIZED. No disposable cluster was provisioned and no PG-PF1-* row was executed by this mission.",
+    "gate_results_after_materialization": "Recorded in the mission report and reproducible from the final commit."
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "unknown": [],
+    "non_blocking": [
+      {
+        "id": "PF1-A-F-1",
+        "class": "MEASUREMENT_IMPRECISION_IN_THE_BASE",
+        "finding": "MEASURED_BASELINE_OF_THE_IMPLEMENTATION_SURFACE.measured_facts[8].fact states 'Twelve existing assertions across two describe blocks' and calls the block at :133 a 'no_sroi_ratio control'. Measured at START_HEAD, lib/portfolios/analytics.test.ts holds 10 `it` blocks and 30 `expect(` calls across the two describe blocks at :24 and :106, and the block at :133 is the toProjectRunSummaryRun parser-boundary block, not a no_sroi_ratio control; the no_sroi_ratio controls open at :107 and :125.",
+        "why_non_blocking": "The clause's operative content — that these assertions are protected — is unaffected by how many there are or by how one of them is labelled. The adjudication in this amendment is anchored on the exact line :147 and on the machine proof, not on the base's count.",
+        "disposition": "RECORDED, NOT CORRECTED. Correcting a measurement that carries no obligation would widen this amendment beyond its single defect class. An auditor who re-counts the file will find 10/30 rather than 12 and should treat that as a disclosed discrepancy. No implementer may read 'twelve' as a closed enumeration that licenses editing an assertion outside it: PRESERVED_ASSERTIONS_RULE protects all 29 remaining expectations regardless of the base's count."
+      },
+      {
+        "id": "PF1-A-F-2",
+        "class": "LIVE_DEFECT_WIDER_THAN_THE_ASSERTION_THAT_PINS_IT",
+        "finding": "Only the NULL case is pinned by an inherited assertion. The zero and negative cases are not asserted anywhere at START_HEAD: `grep -rn 'zero_or_invalid_investment'` over *.ts / *.tsx outside node_modules returns zero hits, and lib/portfolios/analytics.ts contains no per-project guard on the investment figure at all. A zero or negative total_investment currently passes toProjectRunSummaryRun unchanged and is summed into the denominator at :81.",
+        "why_it_matters": "PF1-A-D2 and PF1-A-D3 therefore correct a defect that NO existing test contradicts. Only PF1-A-D1 is in tension with an inherited assertion. An auditor should not expect to find three released assertions — there is exactly one, and the other two decisions are additive.",
+        "disposition": "RECORDED. It strengthens rather than weakens the adjudication: the released assertion count is 1, not 3, and PRESERVED_ASSERTIONS_RULE's arithmetic (30 expectations, 1 released, 29 protected) is exact. The zero and negative cases are discharged purely by new coverage under NEG-AGG-6, PG-PF1-09 and PF1-MUT-INVESTMENT-1, inside the five authorized paths."
+      }
+    ]
+  },
+
+  "self_check": {
+    "note": "Deterministic checks verifiable by inspection or a one-line grep/node/git command against this file and the repository at START_HEAD 63592f7f / TREE 9825e8cc. Not a script.",
+    "expected_files_written_by_this_mission": 1,
+    "expected_file_path": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "expected_base_blob_sha": "8d270ce25fd3fc2fc81bb9668a1c1ca87294c80a",
+    "expected_analytics_ts_blob_sha": "94c7eb0895319e4e245276722e4803e1f990d30c",
+    "expected_analytics_test_ts_blob_sha": "c8bb45d7d1e40d6f011d24bafb3674e3488554bd",
+    "expected_base_artifacts_edited": 0,
+    "expected_parents_edited": 0,
+    "expected_implementation_files_edited": 0,
+    "expected_test_files_edited": 0,
+    "expected_product_decisions_reopened": 0,
+    "expected_defect_clauses_overridden": 2,
+    "expected_frozen_decision_count": 8,
+    "expected_released_assertion_count": 1,
+    "expected_released_assertion_location": "lib/portfolios/analytics.test.ts:147",
+    "expected_protected_assertion_count_same_file": 29,
+    "expected_it_block_count_same_file": 10,
+    "expected_expect_call_count_same_file": 30,
+    "expected_it_blocks_deleted": 0,
+    "expected_pf1_write_surface_path_count": 5,
+    "expected_exclusion_reason_count": 6,
+    "expected_traceability_field_count": 9,
+    "expected_postgres_matrix_row_count": 14,
+    "expected_mutation_requirement_count": 8,
+    "expected_new_control_ids": 0,
+    "expected_redefined_control_ids": 0,
+    "expected_zero_or_invalid_investment_occurrences_in_code_at_START_HEAD": 0,
+    "expected_toProjectRunSummaryRun_production_call_sites": 1,
+    "expected_migration_ordinal_allocated": "NONE",
+    "expected_journal_wrapper_ordinal_allocated": "NONE",
+    "expected_ods_hpo_allocated": "NONE",
+    "expected_protected_grants_registered_by_this_mission": 0,
+    "expected_ods_artifacts_touched": 0,
+    "expected_protected_paths_touched": 0,
+    "expected_blocking_findings": 0,
+    "expected_unknown_findings": 0,
+    "expected_non_blocking_findings": 2,
+    "expected_pf1_heavy_pg_authorized_now": "NO",
+    "expected_pf2_authorized": "NO",
+    "expected_pf3_authorized": "NO",
+    "checks": [
+      "`git status --porcelain --untracked-files=all` after the commit is empty.",
+      "`git diff --name-only 63592f7f HEAD` lists exactly docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json.",
+      "`git rev-parse HEAD:docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json` still returns 8d270ce25fd3fc2fc81bb9668a1c1ca87294c80a.",
+      "`git rev-parse HEAD:lib/portfolios/analytics.ts` still returns 94c7eb0895319e4e245276722e4803e1f990d30c.",
+      "`git rev-parse HEAD:lib/portfolios/analytics.test.ts` still returns c8bb45d7d1e40d6f011d24bafb3674e3488554bd.",
+      "`node -e \"JSON.parse(require('fs').readFileSync(p,'utf8'))\"` on this file succeeds.",
+      "`grep -c 'expect(' lib/portfolios/analytics.test.ts` returns 30 and `grep -c 'it(' lib/portfolios/analytics.test.ts` returns 10.",
+      "`sed -n '147p' lib/portfolios/analytics.test.ts` returns the toProjectRunSummaryRun null-totalInvestment expectation quoted in DEFECT_CORRECTED.machine_proof.step_5.",
+      "`sed -n '38p' lib/portfolios/analytics.ts` returns the three-member reason union.",
+      "`sed -n '19p' lib/portfolios/analytics.ts` returns `    totalInvestment: number`.",
+      "`grep -rn 'zero_or_invalid_investment' --include=*.ts --include=*.tsx .` outside node_modules returns nothing at START_HEAD.",
+      "`grep -rn 'toProjectRunSummaryRun' --include=*.ts --include=*.tsx .` outside node_modules returns exactly one production call site, lib/portfolios/analytics.ts:234.",
+      "BINDING_ADJUDICATION.frozen_decisions has length 8 and its ids run PF1-A-D1..PF1-A-D8 without gap or repetition.",
+      "PF1_WRITE_SURFACE_UNCHANGED.authorized_paths_exactly_five has length 5 and is element-for-element identical to the base's PF1_WRITE_SURFACE.authorized_paths_exactly_five.",
+      "OPEN_FINDINGS.blocking and OPEN_FINDINGS.unknown are both empty arrays.",
+      "LOCKS.locks_taken_by_this_mission is an empty array.",
+      "pnpm authority:seal:verify returns AUTHORITY_SEAL_VERIFY=PASS at the final commit.",
+      "pnpm secrets:scan reports no credential material at the final commit.",
+      "This file embeds no SQL statement, allocates no migration ordinal, allocates no baseline unit ordinal, and its GRANT_ID field is null."
+    ]
+  },
+
+  "final_state": "PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_MATERIALIZED_AWAITING_INDEPENDENT_AUDIT",
+  "READY_FOR_PF1_IMPLEMENTATION": "NO — an independent Opus exact-object audit of this amendment against the frozen base and against the repository at START_HEAD 63592f7f, followed by integration into integration/commercial-v1, are both conditions precedent. Until then the contradiction proved in DEFECT_CORRECTED stands unresolved and PF1 implementation remains blocked at the null/zero/negative investment case.",
+  "next_gate": "INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT_OF_PF1_EXECUTION_AUTHORITY_AMENDMENT, at base 63592f7f06c6b090f33771c6a8d58d9a8e619dd2. Merge only after that audit returns PASS."
+}
