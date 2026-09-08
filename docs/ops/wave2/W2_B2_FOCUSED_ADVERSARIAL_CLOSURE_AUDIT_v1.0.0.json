@@ -1,0 +1,495 @@
+{
+ "package_id": "W2_B2_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT",
+ "version": "1.0.0",
+ "artifact_id": "W2_B2_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0",
+ "authority_class": "INDEPENDENT_AUDIT_EVIDENCE",
+ "document_class": "GENUINE_FOCUSED_AUDIT_PERFORMED_NOW_NOT_A_MATERIALIZATION_OF_A_PRIOR_AUDIT",
+ "is_authority": false,
+ "append_only": true,
+ "supersedes": null,
+ "purpose": "Discharge W2_B2_R3_FOCUSED_ADVERSARIAL_REAUDIT — the gate that docs/ops/wave2/W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json closure_rule.required_next_gate names, and the only gate its closure_condition empowers to declare W2_B2=CLOSED. That gate was never materialized when the B2 work completed, so W2-B2 has been materially implemented but formally unclosed and machine-unresolvable ever since. This artifact performs the missing focused adversarial audit against the previously unaudited runtime delta, re-confirms full B2 sufficiency at CURRENT live, and records the closure. It does NOT rewrite, retrofit or backdate any historical artifact and does NOT reopen W2-B3, W2-B4, W2-B5 or WAVE2.",
+
+ "materialization_identity": {
+  "task": "W2-B2-FOCUSED-CLOSURE-AUDIT-AND-REGISTRY-MATERIALIZATION-R1",
+  "lane": "FB",
+  "date": "2026-09-08",
+  "timestamp_utc": "2026-09-08T22:47:22Z",
+  "branch": "codex/w2-b2-closure-artifact-r1",
+  "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-w2-b2-closure-artifact-r1",
+  "base_at_start": "fb46c342277246ac1891e8ca38b48e4a77c7331e",
+  "executor": "Claude Opus 5",
+  "role": "INDEPENDENT_FOCUSED_ADVERSARIAL_CLOSURE_AUDITOR + BOUNDED_EVIDENCE_AND_REGISTRY_WRITER",
+  "auditor_and_writer_are_the_same_session": true,
+  "auditor_and_writer_disclosure": "Unlike W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json, which materialized a PRIOR independent audit performed by a separate act, this artifact records an audit performed BY THIS SESSION. The session is therefore not independent of its own writing, and this is disclosed rather than obscured. Independence is supplied downstream: the NEXT_AUTHORIZED_ACTION below requires a separate Opus exact-object independent audit of this artifact before it may be integrated. Every claim below is stated as a reproducible measurement (exact SHA, blob id, path, line, test count, mutation outcome) precisely so that downstream auditor can re-derive it without trusting this session.",
+  "self_certification": "NONE ASSERTED. This artifact does not certify itself; it records measurements and a verdict for independent re-derivation."
+ },
+
+ "hpo_ratification": {
+  "binding_input": "HPO adjudication of F-ER-3, supplied to this lane as a binding input.",
+  "HPO_F_ER_3_DISPOSITION": "RATIFY_MATERIAL_COMPLETION",
+  "verbatim_substance": "W2-B2 se considera materialmente implementado en el commit 75a385fd; la ausencia posterior del artefacto de closure fue una omision de gobernanza, no una ausencia de implementacion. El acto actual debe materializar una auditoria de cierre y registrar W2-B2 como CLOSED sin alterar ni retrofechar los artefactos historicos y sin reabrir los cierres posteriores de W2-B3/B4/B5/Wave2.",
+  "W2_B2_MATERIAL_IMPLEMENTATION_HEAD": "75a385fdd39502d2dbb10c646a6ea14eec9b68d5",
+  "WAVE2_REOPEN": "NO",
+  "HISTORICAL_AUTHORITY_ARTIFACTS_MUTABLE": "NO",
+  "BACKDATE_CLOSURE": "NO",
+  "CURRENT_ACT_MATERIALIZES_PREVIOUSLY_MISSING_CLOSURE_EVIDENCE": "YES",
+  "scope_of_the_ratification": "The HPO ratification resolves F-ER-3 ONLY — the question of whether W2-B2 was materially implemented. It does NOT waive, and this lane did NOT treat it as waiving, the requirement to genuinely audit the previously unaudited runtime delta (F-ER-2) or to prove which gate is authorized to declare closure (F-ER-1). Both were discharged by measurement below."
+ },
+
+ "historical_versus_current": {
+  "HISTORICAL_MATERIAL_IMPLEMENTATION": {
+   "head": "75a385fdd39502d2dbb10c646a6ea14eec9b68d5",
+   "tree": "7ea830f19eceeff45dba27922ad596e8e0336da1",
+   "authored_date": "2026-09-01 19:31:15 -0500",
+   "meaning": "The runtime and test content of W2-B2 was complete at this commit, on 2026-09-01."
+  },
+  "CURRENT_FORMAL_CLOSURE_MATERIALIZATION": {
+   "date": "2026-09-08",
+   "timestamp_utc": "2026-09-08T22:47:22Z",
+   "meaning": "The governance evidence — this closure artifact — is created TODAY, seven days after the implementation it adjudicates."
+  },
+  "closure_is_not_backdated": "TRUE. This artifact carries its real creation date (2026-09-08) and makes no claim to have existed on 2026-09-01 or at any earlier moment. It is NOT presented as historically present. Anyone reading the repository history will correctly see a seven-day gap between implementation and formal closure evidence; that gap is the governance omission this act repairs, and concealing it would be the falsification.",
+  "historical_b2_authority_remains_byte_immutable": "TRUE, measured. docs/ops/wave2/W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json still hashes to sha256 6f961e13904e5249bc4ba07b2e9bdb96e9f71be788f3eb5cee50dc102a994782 — the exact value docs/ops/wave2/W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json froze in its predecessor_authority block. Neither B2 authority artifact is edited by this act.",
+  "b3_b4_b5_wave2_remain_closed": "TRUE. No W2-B3, W2-B4, W2-B5 or WAVE2 artifact is read-modified, reopened, reinterpreted or superseded by this act. Their closure artifacts were consulted READ-ONLY, as structural precedent only.",
+  "nature_of_this_act": "REPAIR OF MISSING GOVERNANCE EVIDENCE, NOT REWRITING OF HISTORY. No historical commit is amended, no sealed authority edited, no date falsified, no prior verdict altered."
+ },
+
+ "audit_purity": "STRICTLY READ-ONLY over the audited object and over every runtime surface. No tracked runtime file was left changed: TRACKED_RUNTIME_FILES_CHANGED=0. Three deliberate mutation controls were applied to working-tree copies to prove test non-vacuity (see test_evidence.mutation_controls); each was reverted and the worktree proven byte-clean against pristine sha1 copies captured BEFORE any mutation (route.ts 5e2c58a58507f4102ff166865301b2fb8fc8101f, proxies.ts de90f202e24b1b05d5c769e9105459cfa2e8caae), with `git status --porcelain` empty afterwards.",
+
+ "audited_object": {
+  "base": "8db02b3b6abab6a00f1ef806b09317aed93873ce",
+  "base_subject": "docs(wave2): freeze B2 remediation authority",
+  "head": "75a385fdd39502d2dbb10c646a6ea14eec9b68d5",
+  "head_subject": "fix(proxy): preserve cross-tenant not-found contract",
+  "tree": "7ea830f19eceeff45dba27922ad596e8e0336da1",
+  "graph_independently_reconstructed": true,
+  "graph_form": "LINEAR. Eleven single-parent commits from 8db02b3b (exclusive) to 75a385fd (inclusive). Zero merge commits in the range; every commit in `git log 8db02b3b..75a385fd` has exactly one parent.",
+  "last_previously_audited_head": "a52139f9c5d3a635b321b8d1d726c3fb91a7a9a7",
+  "last_previously_audited_head_is_ancestor_of_head": "TRUE, proven by `git merge-base --is-ancestor a52139f9 75a385fd` exit 0.",
+  "prior_audit": "W2-B2-R2-AR (INDEPENDENT_ADVERSARIAL_REAUDIT), verdict 0_BLOCKING_0_DETERMINISTIC_REGRESSIONS_2_NEW_AUTHORITY_GAPS, as recorded in W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json source_reaudit. It audited through a52139f9 only."
+ },
+
+ "delta_not_previously_audited": {
+  "declared_by_lane": [
+   "733d3b3fe636747a8bc411bc7fd5ae2c8d9c0ef9",
+   "75a385fdd39502d2dbb10c646a6ea14eec9b68d5"
+  ],
+  "independently_reconstructed": "CONFIRMED COMPLETE FOR RUNTIME. `git log a52139f9..75a385fd` returns THREE commits, not two. The third, d7114b559d737fd8f6ca26cb576117540c14fd13 ('docs(wave2): freeze B2 authority-gap dispositions'), is the gap-disposition authority artifact itself and was verified DOCS-ONLY: 1 file changed, 179 insertions, touching exactly docs/ops/wave2/W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json and nothing else. The declared two-commit runtime delta is therefore exhaustive. This check was performed precisely because an incomplete delta declaration would have made the entire audit measure the wrong object.",
+  "commits": {
+   "733d3b3fe636747a8bc411bc7fd5ae2c8d9c0ef9": {
+    "subject": "fix(proxy): couple suggest review transition to version",
+    "authored_date": "2026-09-01 18:54:03 -0500",
+    "parent": "d7114b559d737fd8f6ca26cb576117540c14fd13",
+    "node": "R-B2-10 (GAP-A)",
+    "changed_files": 4,
+    "stat": "app/api/proxies/[id]/suggest/route.ts +29/-27, lib/pipeline/proxies.ts +29/-1, tests/postgres/b2-remediation.pg.test.ts +43/-0, tests/proxy-suggest-route.test.ts +269/-0"
+   },
+   "75a385fdd39502d2dbb10c646a6ea14eec9b68d5": {
+    "subject": "fix(proxy): preserve cross-tenant not-found contract",
+    "authored_date": "2026-09-01 19:31:15 -0500",
+    "parent": "733d3b3fe636747a8bc411bc7fd5ae2c8d9c0ef9",
+    "node": "R4 / W2-B2-R4-404-CONTRACT-CORRECTION",
+    "changed_files": 3,
+    "stat": "app/api/proxies/[id]/suggest/route.ts +9/-0, lib/pipeline/proxies.ts +37/-1, tests/proxy-suggest-route.test.ts +101/-17"
+   }
+  }
+ },
+
+ "audited_authority_chain": {
+  "note": "Both B2 authority artifacts were read COMPLETELY and neither was edited. Hashes recomputed independently by this session.",
+  "W2_B2_REMEDIATION_AUTHORITY_v1.0.0": {
+   "path": "docs/ops/wave2/W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json",
+   "sha256": "6f961e13904e5249bc4ba07b2e9bdb96e9f71be788f3eb5cee50dc102a994782",
+   "blob_at_current_live": "b30c43570cc6edf39e1eb8068a4bb70d1b900804",
+   "sha256_matches_the_value_frozen_by_the_successor": true,
+   "role": "Predecessor authority. Freezes R-B2-01..R-B2-09, the LIVE_VERSION_STATUS_COUPLING invariant, the live->version review-status bijection, the three authority-gap adjudications (AG-B2-1/2/3-DERIVED), preserved_closed_surfaces for FIBIU-09 and MNB-1, and exit_gates_summary. final_state = B2_REMEDIATION_AUTHORITY_FROZEN_READY_FOR_IMPLEMENTATION.",
+   "modified_by_this_artifact": false
+  },
+  "W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0": {
+   "path": "docs/ops/wave2/W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json",
+   "sha256": "21720ca6545e10feacbf539ad6fae833a0ac61b11d9607b523f8a88c424181bd",
+   "blob_at_current_live": "62f26215ecdbe0788b3d2a7d32eab8632bdfcf00",
+   "role": "Successor authority. Disposes GAP-A (MUST_REMEDIATE via R-B2-10) and GAP-B (RATIFY_EXACT_EXISTING_CHANGE). final_state = B2_AUTHORITY_GAPS_DISPOSED_READY_FOR_NARROW_REMEDIATION.",
+   "modified_by_this_artifact": false
+  },
+  "FIB_IMPLEMENTATION_BASELINE_v1.0.0_index": {
+   "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+   "consulted": "INDEX FORM ONLY, per CLAUDE.md section 3 authority retrieval order. Not edited.",
+   "units_consumed": ["FIBIU-08", "FIBIU-09", "FIBIU-10"],
+   "contracts_consumed": ["FIBC-002", "FIBC-010", "FIBC-011", "FIBC-012", "FIBC-013"]
+  },
+  "closure_precedents_consulted_read_only": [
+   "docs/ops/wave2/W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+   "docs/ops/wave2/W2_B4_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+   "docs/ops/wave2/W2_B5_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json"
+  ],
+  "grants_verified": "authority:seal:verify PASS at the materialization tree; ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS."
+ },
+
+ "D0_authorized_closure_gate_identification": {
+  "requirement": "F-ER-1. Prove that W2_B2_R3_FOCUSED_ADVERSARIAL_REAUDIT is the missing gate authorized to declare W2_B2=CLOSED.",
+  "measured_chain": [
+   "W2_B2_REMEDIATION_AUTHORITY_v1.0.0.state_after_this_artifact.next_gate = 'W2_B2_REMEDIATION_IMPLEMENTATION' — discharged by R-B2-01..09, delivered through head a52139f9.",
+   "That implementation was audited by W2-B2-R2-AR, which returned 0 BLOCKING / 0 deterministic regressions but raised GAP-A and GAP-B (recorded verbatim in the gap disposition's source_reaudit block).",
+   "W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.closure_rule.b2_not_yet_closed = true.",
+   "W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.closure_rule.required_next_gate = 'W2_B2_R3_FOCUSED_ADVERSARIAL_REAUDIT'.",
+   "W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.closure_rule.closure_condition = 'If W2_B2_R3_FOCUSED_ADVERSARIAL_REAUDIT returns BLOCKING_FINDINGS=0 and NEW_AUTHORITY_GAPS=0, it may declare W2_B2=CLOSED and READY_FOR_W2_B3=YES. This artifact does not itself make that declaration.'",
+   "R-B2-10 was implemented at 733d3b3f and R4 at 75a385fd. No artifact named W2_B2_R3_FOCUSED_ADVERSARIAL_REAUDIT, and no B2 closure audit of any name, exists anywhere in docs/ops/wave2/ — `ls docs/ops/wave2/` returns focused closure audits for B3, B4 and B5 only."
+  ],
+  "conclusion": "PROVEN. The successor authority names exactly one gate empowered to declare W2_B2=CLOSED, delegates that declaration exclusively to it, and explicitly withholds it from itself. That gate was never materialized. This artifact IS that gate, discharged now.",
+  "RESULT": "PASS"
+ },
+
+ "D1_R_B2_10_semantic_audit": {
+  "requirement": "F-ER-2, first commit. Audit 733d3b3f semantically, not by diff count.",
+  "updateFinancialProxyReviewStatusForContext": {
+   "form": "A new exported function in lib/pipeline/proxies.ts that accepts an already-resolved OrganizationContext. updateFinancialProxyReviewStatus (the pre-existing entry point) was reduced to a two-line wrapper that resolves the context via requireOrganizationAccess() and delegates.",
+   "no_second_implementation": "CONFIRMED. The mapping (toVersionReviewStatus), the version write (updateCurrentFinancialProxyVersion) and the coupling assertion (assertLiveVersionStatusCoupling) exist in exactly one place and are reached by both callers through the same `transition` closure. GAP-A's prohibition on a hand-rolled parallel implementation is honoured: the refactor MOVED the body, it did not COPY it.",
+   "authority_conformance": "gap_a.authorized_surfaces permits 'lib/pipeline/proxies.ts (only if updateFinancialProxyReviewStatus requires a narrowly-scoped adaptation to be callable from the suggest route; no unrelated change)'. The named structural incompatibility is real and is the one the authority anticipated: requireOrganizationAccess() calls Next.js redirect(), which throws, so a Route Handler cannot use it and still control its own HTTP status. The adaptation is the minimum that resolves it."
+  },
+  "fifth_transition_site": {
+   "before": "app/api/proxies/[id]/suggest/route.ts performed `db.select()` then `db.update(financialProxies).set({reviewStatus:'pending_review'})` with no read or write of financial_proxy_versions.",
+   "after": "The route contains zero direct database access. Its imports of db, financialProxies, eq and and were removed outright; it imports only updateFinancialProxyReviewStatusForContext. Verified by reading the file at current live: no `db.` reference remains.",
+   "RESULT": "PASS"
+  },
+  "live_version_coupling": {
+   "mechanism": "Inside withLockedFinancialProxy's db.transaction: the live row is updated, then updateCurrentFinancialProxyVersion writes toVersionReviewStatus(newStatus) to the current version, then assertLiveVersionStatusCoupling(updated.reviewStatus, version.reviewStatus) runs. All three are in the SAME transaction, so a coupling violation throws and rolls back.",
+   "mapping_is_the_frozen_one": "The live token crosses into the version write ONLY through toVersionReviewStatus. For this route's transition that is 'pending_review' -> 'under_review', exactly the frozen live_to_version_review_status_mapping.",
+   "proven_non_vacuously": "Mutation control M3, below.",
+   "RESULT": "PASS"
+  },
+  "organization_scoping": {
+   "at_733d3b3f": "The primitive's own checks: `if (proxy.organizationId && proxy.organizationId !== ctx.organization.id) throw 'Forbidden'` and `if (!proxy.organizationId) throw 'Forbidden'` (system/global proxies are admin-only). Correct on the security axis but wrong on this route's frozen response contract — see D2.",
+   "RESULT": "PASS_WITH_SUCCESSOR_CORRECTION"
+  },
+  "failure_behavior": {
+   "mapping": "The route maps three named primitive errors to its frozen contract: 'Proxy not found' -> 404, 'Unexpected current status' -> 400 already_submitted, 'Forbidden' -> 403. Any other error is rethrown, reaching the outer handler which returns the identity layer's own status for AuthContextError and 500 otherwise. No error is swallowed.",
+   "requireFromStatus_is_in_transaction": "CONFIRMED and load-bearing. The 'must currently be suggested' precondition is evaluated against the LOCKED row inside the transition closure, not as a separate pre-read. The pre-R-B2-10 code did a separate SELECT then UPDATE, whose race window (an admin approval landing between them would silently regress an approved proxy to pending_review) is closed by construction.",
+   "proven_non_vacuously": "Mutation control M2, below.",
+   "RESULT": "PASS"
+  },
+  "audit_semantics": {
+   "before": "The raw db.update emitted NO audit event for this transition.",
+   "after": "The primitive emits FINANCIAL_PROXY_REVIEW_STATUS_CHANGED on the live row and FINANCIAL_PROXY_VERSION_REVIEW_STATUS_CHANGED on the version, both with organizationId, actorUserId and before/after JSON.",
+   "assessment": "gap_a.required_behavior.preserve names 'existing audit behavior for this transition'. The existing behavior was NONE; the delivered behavior is the canonical pair every other governed transition site emits. This is a strict improvement and uses existing audit verbs only — no new verb is introduced, so MNB-1's audit-verb correspondence is untouched.",
+   "RESULT": "PASS"
+  },
+  "canApproveProxy_gate_behavior_change": {
+   "observation": "R-B2-10 makes the suggest route subject to `canApproveProxy(ctx.membership.role)` (role >= impact_manager), which it previously did not enforce. This is a genuine behavioural change to a reachable endpoint and was examined rather than accepted on the commit message's word.",
+   "independent_verification": "The claim that this gate already governed the same transition elsewhere was verified by tracing the organisation UI path: app/app/projects/[projectId]/pipeline/proxies/page.tsx handleSuggestProxy (line 303) calls updateFinancialProxyReviewStatusAction with newStatus 'pending_review' -> updateFinancialProxyReviewStatus.action.ts line 17 -> lib/pipeline/proxies.ts updateFinancialProxyReviewStatus -> updateFinancialProxyReviewStatusForContext, which enforces canApproveProxy. The gate WAS already in force on the UI path for this exact transition before R-B2-10.",
+   "assessment": "The API route was the outlier that bypassed a gate the product's own governed path already enforced. R-B2-10 is a TIGHTENING toward the canonical primitive, not a weakening, and gap_a.required_behavior.stop_condition (which forbids weakening a check to admit the caller) is honoured — no check was weakened to make the route callable.",
+   "RESULT": "PASS"
+  },
+  "prohibited_surfaces_respected": {
+   "db_migrations": "NONE. `git show --name-only 733d3b3f` lists no db/ path.",
+   "db_schema_ts": "UNTOUCHED by this commit.",
+   "financial_proxy_rubric_ts": "UNTOUCHED. GAP-B's file is not in the commit's file list.",
+   "b1_surfaces": "UNTOUCHED.",
+   "b3_u7_u8_surfaces": "UNTOUCHED.",
+   "RESULT": "PASS"
+  },
+  "RESULT": "PASS"
+ },
+
+ "D2_R4_semantic_audit": {
+  "requirement": "F-ER-2, second commit. Audit 75a385fd semantically, including independent reproduction of ER's IDOR concern.",
+  "authority_basis_for_R4": {
+   "question": "R4 introduced no new authority artifact. Is it authorized?",
+   "measured_answer": "YES, by the EXISTING successor authority, on two independent clauses. (1) gap_a.required_behavior.preserve enumerates the route's contract as '200/{success:true}, 401, 404, 400 already_submitted' — a 403 is not in it. (2) gap_a.required_committed_coverage item 5 requires, verbatim: 'A cross-tenant actor (member of a different organization) attempting to mutate another organization's proxy is refused (404, per the existing not_found branch driven by the ownership predicate), verified by a negative test.' R-B2-10 as shipped returned 403 for that case, so it did NOT yet satisfy item 5. R4 is the completion of an already-frozen requirement, not a new one. The commit's own claim that no new authority artifact is required is CORRECT.",
+   "RESULT": "PASS"
+  },
+  "hideCrossTenantAsNotFound": {
+   "form": "A sixth optional parameter on updateFinancialProxyReviewStatusForContext, defaulting to undefined (falsy). When true it passes { organizationId: ctx.organization.id } into withLockedFinancialProxy's new third parameter.",
+   "opt_in_proven_mechanically": "Call-site arity was enumerated over lib/pipeline/proxies.ts rather than asserted. withLockedFinancialProxy has FOUR call sites: lines 136, 564 and 822 pass two arguments (unchanged behaviour), line 784 is the only one passing the options object. updateFinancialProxyReviewStatusForContext has TWO call sites: line 686 (from updateFinancialProxyReviewStatus, four arguments — the flag resolves to undefined) and the suggest route (six arguments). No unrelated caller is silently altered.",
+   "caller_side_literal": "CONFIRMED. The route passes the literal `true` at app/api/proxies/[id]/suggest/route.ts:49. It is not read from params, the request body, headers, query or any other request-derived value.",
+   "RESULT": "PASS"
+  },
+  "locking_select_semantics": {
+   "change": "withLockedFinancialProxy's row-lock SELECT predicate becomes `and(eq(id, proxyId), eq(organizationId, options.organizationId))` when options.organizationId is supplied, instead of `eq(id, proxyId)`. The `.for('update')` row lock and the `if (!proxy) throw 'Proxy not found'` fall-through are unchanged.",
+   "system_global_proxy_case": "organizationId IS NULL never satisfies `eq(organization_id, <uuid>)` under SQL three-valued logic, so a global/system proxy is likewise never observed to exist by an org-scoped caller. This is a property of the predicate, not of an extra branch.",
+   "atomicity_unaffected": "The scoping narrows WHICH row is locked; it does not move any write outside the transaction. The live update, the version write and assertLiveVersionStatusCoupling remain in the same db.transaction.",
+   "RESULT": "PASS"
+  },
+  "cross_tenant_404_behavior": {
+   "before_R4": "403 Forbidden — which confirms to the caller that the id exists and belongs to another tenant.",
+   "after_R4": "404 Proxy not found — indistinguishable from an id that does not exist.",
+   "adversarial_case_covered": "An actor holding ACTIVE membership in BOTH the requesting and the owning organization still receives 404 while acting under the requesting organization's context, because the predicate keys on ctx.organization.id (the SELECTED, re-derived organisation) alone and never on 'any organisation this user belongs to'. Verified against the predicate itself, not against the commit message.",
+   "RESULT": "PASS"
+  },
+  "IDOR_resistance_independently_reproduced": {
+   "ER_concern": "Whether organizationId reaching the lock predicate could be influenced by request input, which would turn the new scoping into an IDOR vector rather than a defence.",
+   "provenance_trace_performed_by_this_session": [
+    "app/api/proxies/[id]/suggest/route.ts:16 — `const ctx = await getCurrentOrganizationContext()`. Null -> 401. `ctx` is the ONLY tenancy input to the primitive; `params.id` is the resource id and never a tenancy value.",
+    "lib/auth/session.ts:213 — getCurrentOrganizationContext returns { user, membership, organization } built solely from loadRequestPrincipal(); it accepts no arguments at all, so no request value can reach it.",
+    "lib/auth/database-context.ts:441 -> resolveRequestPrincipal — identity comes from getVerifiedAuthIdentityResult(); no identity -> null principal.",
+    "lib/auth/database-context.ts:391-414 — readPrincipalUnderOpenContext calls getSelectedOrganizationId(), whose in-repository comment states the S3 REQUEST_PRINCIPAL_CONTRACT explicitly: 'The carrier is an ASSERTION ONLY — reaching this line proves nothing by itself; every membership below is re-derived from live database state.' The selected id is then passed to loadActiveMembershipWithinContext(userId, selectedOrganizationId); if no ACTIVE membership exists for that pair the principal resolves to membership null / organization null, and the route returns 401."
+   ],
+   "conclusion": "ctx.organization.id is a SERVER-DERIVED value, re-derived per request against organization_members and gated on active membership. An attacker who forges the selection carrier for an organisation they are not an active member of does not obtain that context at all — they get 401, never a scoped lookup into that tenant. An attacker who supplies another tenant's proxy id gets 404 because the predicate excludes the row. Neither reaches a cross-tenant write. NO IDOR.",
+   "second_independent_layer": "The route additionally executes inside withOrganizationDatabaseContext, so PostgreSQL RLS scopes the session independently of the application predicate. The 404 contract does not rest on a single control.",
+   "RESULT": "PASS"
+  },
+  "no_caller_controlled_bypass": {
+   "newStatus": "Literal 'pending_review' at route line 46 — the route cannot be driven to 'approved' or any other transition.",
+   "requireFromStatus": "Literal 'suggested' at route line 48.",
+   "hideCrossTenantAsNotFound": "Literal true at route line 49.",
+   "expectedApprovalState": "Literal undefined at route line 47.",
+   "assessment": "Every governance-relevant parameter of the call is a source-code literal. The only request-derived value crossing the boundary is proxyId, which is the resource identifier and is confined to the WHERE predicate.",
+   "RESULT": "PASS"
+  },
+  "does_not_silently_alter_unrelated_callers": {
+   "measurement": "See opt_in_proven_mechanically above. In addition, updateFinancialProxyReviewStatus's own IDOR test — which intentionally expects 'Forbidden' — continues to pass (tests/proxies.service.test.ts, 49/49), confirming the pre-existing 403 contract on the approval path is preserved exactly.",
+   "RESULT": "PASS"
+  },
+  "RESULT": "PASS"
+ },
+
+ "D3_full_b2_sufficiency_at_current_live": {
+  "requirement": "Re-confirm the MATERIAL SURVIVAL of R-B2-01..R-B2-10 plus R4 at CURRENT live (fb46c342277246ac1891e8ca38b48e4a77c7331e), and treat any drift in a load-bearing B2 semantic as BLOCKING.",
+  "method": "Blob-identity comparison of every B2-load-bearing surface between the audited head 75a385fd and current live, followed by direct re-measurement of every surface that was NOT byte-identical.",
+  "byte_identical_between_75a385fd_and_current_live": [
+   "lib/pipeline/proxies.ts",
+   "lib/pipeline/financial-proxy-versions.ts",
+   "lib/pipeline/proxy-material-change.ts",
+   "lib/pipeline/financial-proxy-rubric.ts",
+   "lib/admin/proxies.ts",
+   "app/api/proxies/[id]/suggest/route.ts",
+   "db/policies/010_proxy_material_fields_registry_rls.sql",
+   "db/migrations/0055_fib_proxy_material_change_registry.sql",
+   "tests/postgres/b2-remediation.pg.test.ts"
+  ],
+  "changed_and_therefore_re_measured": {
+   "db/schema.ts": {
+    "magnitude": "280 insertions, 1 deletion",
+    "classification": "ADDITIVE ON NON-B2 AXES. The insertions are multi-org S1 founder traceability on `organizations`, FIBIU-11/12/13 columns on `outcomes`, and the new `outcome_monetization_dispositions` table.",
+    "decisive_measurement": "Each B2 pgTable block was extracted from both revisions by balanced-paren parsing and hashed. ALL SIX ARE BYTE-IDENTICAL: financialProxies 9b39222387, financialProxyVersions 531fc1677f, proxyMaterialFieldsRegistry 900c347a2e, outcomeProxyAssignments 3a2f8eb15a, fxRates d19ebbe267, sroiCalculationLineItems 250d39285e.",
+    "consequence": "Every CHECK constraint the B2 remediation and its PostgreSQL suite depend on is unchanged.",
+    "DRIFT_IN_B2_SEMANTIC": "NONE"
+   },
+   "lib/pipeline/sroi-calculation.ts": {
+    "magnitude": "1027 insertions, 198 deletions",
+    "classification": "GROWTH ON B3/B4/B5/PORTFOLIO AXES. This is the AG-B2-1 / R-B2-05 host file, so its B2 invariants were re-measured directly rather than inferred.",
+    "AG_B2_1_invariants_at_current_live": [
+     "line 1714 — `const proxyValue = dec(proxyVersion.valueUsd)` with the comment 'from the BOUND version'. The monetary source of a run is the bound version, NOT the mutable live row. This is the exact defect AG-B2-1 closed and it remains closed.",
+     "lines 1709-1711 — fail-closed refusal carrying the literal marker 'AG-B2-1 FAIL CLOSED' when the bound approved version has a null value_usd; it does not degrade to '?? 0'.",
+     "lines 989 and 1327 — the double-assertion eligibility guard (live row approved AND bound version approved) is intact.",
+     "line 1336 — the USD readiness check reads proxyVersion.valueUsd, not the live row."
+    ],
+    "residual_live_row_read_examined": "A single live-row read survives: line 1332, `if (proxy?.value && parseNum(proxy.value) <= 0) invalidQuantities.push(...)`. It was traced to the audited head, where it exists BYTE-IDENTICAL at line 557. It is therefore NOT drift — it was present in the object W2-B2-R2-AR audited and passed. Semantically it is a readiness/validity warning, not a monetary source for a run, which AG-B2-1's frozen semantics permit ('financial_proxies remains the governance and discovery surface').",
+    "DRIFT_IN_B2_SEMANTIC": "NONE"
+   }
+  },
+  "per_node_survival": {
+   "R-B2-01": "SURVIVES. Host modules byte-identical; the frozen bijection and assertLiveVersionStatusCoupling intact; guarded by tests/review-status-mapping.test.ts (21/21) which independently detects mutation M3.",
+   "R-B2-02": "SURVIVES. assertApprovableProvenance lives in lib/pipeline/financial-proxy-versions.ts (byte-identical) and enforces APPROVAL_BLOCKING_PROVENANCE_ITEMS — items 1,2,3,4,5,6,7,9,10,11: exactly TEN. Item 8 (consultation_date) is deliberately absent, which is EXACT conformance: R-B2-02.required_changes states 'consultation_date is rendered and recordable but MUST NOT be added to the approval gate.' Org-surface reachability guarded by tests/org-proxies-page.reachability.test.tsx (29/29).",
+   "R-B2-03": "SURVIVES. proxyMaterialFieldsRegistry table definition byte-identical; migration 0055 byte-identical; guarded by tests/proxy-material-fields-registry.test.ts (20/20) and tests/proxy-material-categories.service.test.ts (12/12). The PG suite pins registry_version 1.1.0 at exactly 70 rows, one per persisted column.",
+   "R-B2-04": "SURVIVES. lib/admin/proxies.ts byte-identical; guarded by tests/admin-proxies.service.test.ts (16/16) and tests/proxy-fx-conversion.test.ts (40/40).",
+   "R-B2-05": "SURVIVES. Re-measured directly in the changed sroi-calculation.ts, see above; the financial_proxy_version_id immutability negative control tests/assignment-version-immutability.test.ts passes (5/5).",
+   "R-B2-06": "SURVIVES. Guarded by tests/proxy-editorial-noop.service.test.ts (23/23).",
+   "R-B2-07": "SURVIVES. db/policies/010_proxy_material_fields_registry_rls.sql byte-identical; the PG suite's NC-9 real-RLS probe is in the byte-identical PG blob.",
+   "R-B2-08": "SURVIVES. lib/admin/proxies.ts byte-identical; global-promotion governance reset covered by tests/admin-proxies.service.test.ts.",
+   "R-B2-09": "SURVIVES. The committed high-risk coverage IS the node; 406 tests green across the B2 surface, plus the 23-case real-PostgreSQL suite (see postgres_evidence).",
+   "R-B2-10": "SURVIVES. Both host files byte-identical to the audited head; guarded by tests/proxy-suggest-route.test.ts (10/10) and PG1 in the PostgreSQL suite.",
+   "R4": "SURVIVES. Both host files byte-identical to the audited head; guarded by the N3/multi-org/system-proxy negative controls in tests/proxy-suggest-route.test.ts."
+  },
+  "FIBIU_09_not_reopened": "CONFIRMED on three independent axes: (1) the gap_b ratified diff is 9 insertions / 1 deletion, entirely on the review-status integration path, with zero rubric mathematics, factors, weights, thresholds, confidence/risk derivation or SQL constraints — the disposition's not_authorized list is untouched; (2) the FIBIU-09 sentinel suite tests/financial-proxy-rubric.service.test.ts passes 29/29; (3) the PG suite carries its own FIBIU-09 constraint sentinel inside the byte-identical blob.",
+  "MNB_1_not_reopened": "CONFIRMED. lib/admin/proxies.ts — the module MNB-1 closed — is byte-identical between the audited head and current live. The delta introduces no new audit verb; the suggest route now emits two PRE-EXISTING verbs (FINANCIAL_PROXY_REVIEW_STATUS_CHANGED, FINANCIAL_PROXY_VERSION_REVIEW_STATUS_CHANGED).",
+  "B1_sentinel": "No B1 surface appears in either delta commit's file list.",
+  "RESULT": "PASS"
+ },
+
+ "test_evidence": {
+  "requirement": "Resolve U-ER-1 rather than inheriting it. Tests must be non-vacuous; no PASS may be claimed from static reading.",
+  "dependency_provenance": {
+   "condition_found": "This worktree had NO node_modules. Per the measured PASS-VACUO hazard, gates in such a worktree return exit 0 from the npm shim's echo, not from the gate.",
+   "LOCK_DEPENDENCY_INSTALL": "NOT HELD. An exhaustive search of docs/ for the token 'LOCK-DEPENDENCY-INSTALL' returns zero hits; no lane owns it in repository-native form.",
+   "resolution_without_running_an_install": "A junction was made to the node_modules of worktree uellix-pr108-s3-naming-final-audit-r1 (a CLOSED, merged lane), selected because its pnpm-lock.yaml hashes to sha1 3a23be1632bbdfb67d1159b851290323f11240e1 — IDENTICAL to this worktree's. The dependency closure is therefore provably the same one this branch's lockfile resolves to, and `pnpm install` was never run. A first candidate donor was rejected after measurement: its node_modules contained only .vite and would have produced exactly the vacuous PASS this check exists to prevent.",
+   "non_vacuity_of_the_runner_itself": "Every run below reports a real, non-zero test COUNT — never an exit code alone."
+  },
+  "suites_executed": {
+   "batch_1_delta_coupled_and_lane_named": {
+    "command": "npx vitest run --testTimeout=60000 --hookTimeout=60000 <7 files>",
+    "results": [
+     "tests/proxy-suggest-route.test.ts 10/10",
+     "tests/proxies.service.test.ts 49/49",
+     "tests/proxy-approval-race.service.test.ts 3/3",
+     "tests/review-status-mapping.test.ts 21/21",
+     "tests/b2-remediation-sentinels.test.ts 7/7",
+     "tests/assignment-version-immutability.test.ts 5/5",
+     "tests/proxy-security.test.ts 3/3"
+    ],
+    "total": "7 files, 98 tests, 98 passed, 0 failed"
+   },
+   "batch_2_full_b2_surface": {
+    "command": "npx vitest run --testTimeout=60000 --hookTimeout=60000 <10 files>",
+    "results": [
+     "tests/financial-proxy-versions.service.test.ts 31/31",
+     "tests/proxy-material-fields-registry.test.ts 20/20",
+     "tests/proxy-fx-conversion.test.ts 40/40",
+     "tests/admin-proxies.service.test.ts 16/16",
+     "tests/proxy-material-categories.service.test.ts 12/12",
+     "tests/proxy-editorial-noop.service.test.ts 23/23",
+     "tests/financial-proxy-rubric.service.test.ts 29/29",
+     "tests/proxy-material-change.service.test.ts 13/13",
+     "tests/sroi-calculation.service.test.ts 95/95",
+     "tests/org-proxies-page.reachability.test.tsx 29/29"
+    ],
+    "total": "10 files, 308 tests, 308 passed, 0 failed"
+   },
+   "grand_total": "17 files, 406 tests, 406 passed, 0 failed"
+  },
+  "mutation_controls": {
+   "protocol": "Pristine copies of both runtime files were captured and sha1-hashed BEFORE any mutation, per the measured hazard that an interrupted control leaves the mutation on disk. Each mutation was applied by an anchored, count-asserted string replacement, run, then reverted and hash-verified.",
+   "M1": {
+    "mutation": "app/api/proxies/[id]/suggest/route.ts:49 — hideCrossTenantAsNotFound literal `true` -> `false`.",
+    "hypothesis": "If the R4 correction is genuinely load-bearing, exactly the three cross-tenant cases must regress to 403 and nothing else may move.",
+    "observed": "tests/proxy-suggest-route.test.ts 3 failed | 7 passed (10). The three failures are N3 (cross-tenant), the multi-org membership case, and N6 (system/global proxy), each 'expected 403 to be 404'. Every other case unaffected.",
+    "verdict": "R4 IS LOAD-BEARING AND ITS TESTS ARE NON-VACUOUS. This independently reproduces, rather than inherits, the claim in 75a385fd's commit message."
+   },
+   "M2": {
+    "mutation": "lib/pipeline/proxies.ts — the `requireFromStatus` precondition block deleted entirely.",
+    "hypothesis": "If the 400 already_submitted contract is genuinely enforced in-transaction, its test must fail.",
+    "observed": "tests/proxy-suggest-route.test.ts 1 failed | 9 passed (10); 'expected 200 to be 400'.",
+    "verdict": "THE 400 CONTRACT IS ENFORCED, NOT INCIDENTAL."
+   },
+   "M3": {
+    "mutation": "lib/pipeline/proxies.ts — the version write's `reviewStatus: toVersionReviewStatus(newStatus)` -> `reviewStatus: newStatus`, reproducing the original B2-AR-B1 defect (the live token copied verbatim into the version vocabulary).",
+    "hypothesis": "If LIVE_VERSION_STATUS_COUPLING is genuinely guarded, at least one committed test must fail.",
+    "observed": "TWO INDEPENDENT SUITES detect it: tests/proxy-suggest-route.test.ts P1/P2/P3 fails, and tests/review-status-mapping.test.ts:127 fails (1 failed | 20 passed). A coverage observation was measured in passing: tests/proxies.service.test.ts (49/49), tests/financial-proxy-versions.service.test.ts (31/31), tests/proxy-material-change.service.test.ts (13/13) and tests/admin-proxies.service.test.ts (16/16) do NOT detect M3 — the guard lives specifically in the mapping suite and the route suite, not in the service suites.",
+    "verdict": "THE COUPLING INVARIANT IS GUARDED BY TWO INDEPENDENT SUITES. No coverage gap; the guard is simply localised."
+   },
+   "restoration_proof": "After M3, both files were restored from the pristine copies and re-hashed: route.ts 5e2c58a58507f4102ff166865301b2fb8fc8101f and proxies.ts de90f202e24b1b05d5c769e9105459cfa2e8caae — both matching the pre-mutation values. `git status --porcelain --untracked-files=all` empty; `git diff --stat HEAD` empty."
+  },
+  "U_ER_1_disposition": "RESOLVED BY THIS SESSION, NOT INHERITED.",
+  "RESULT": "PASS"
+ },
+
+ "postgres_evidence": {
+  "requirement": "Resolve U-ER-2 through exact repository-native historical evidence first; escalate to heavy local PostgreSQL only if UNKNOWN=0 cannot otherwise be reached.",
+  "frozen_pg_contract": {
+   "path": "tests/postgres/b2-remediation.pg.test.ts",
+   "blob": "e86ae5eae89803b14a8c153557d5390e5b047b77",
+   "blob_invariance": "IDENTICAL at 733d3b3f (where the R-B2-10 PG coverage was added), at the audited head 75a385fd, and at current live fb46c342. The frozen contract has not moved since the delta introduced it.",
+   "run_gate": "describe.skipIf(!RUN) where RUN = (process.env.UELLIX_PG_TESTS === '1') && resolveContainer() !== null."
+  },
+  "committed_historical_execution_evidence": {
+   "artifact": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_TEST_MANIFEST_v1.0.1.json",
+   "locator": "section SEC-5, 'Wave2 PG suites unchanged'",
+   "verbatim_record": "tests/postgres/b2-remediation.pg.test.ts 23/23",
+   "recording_commit": "9d73dbf6f92d7a1a9314dd9ec35997146bcba693, 2026-09-02 13:01:14 -0500, 'merge(wave2): reconcile closed methodology into Commercial V1'",
+   "post_dates_the_audited_head": "TRUE. 2026-09-02 is after 75a385fd's 2026-09-01, so the attested run observed the delta's PG additions."
+  },
+  "independent_corroboration_of_the_attested_count": {
+   "method": "The attested figure is a COUNT, not an exit code, so it can be re-derived from the blob. Test cases were enumerated from the file itself.",
+   "arithmetic": "14 plain it() invocations + it.each([...LIVE_REVIEW_STATUSES]) which expands to 5 (LIVE_REVIEW_STATUSES = suggested, pending_review, approved, rejected, archived) + it.each(['suggested','pending_review']) = 2 + it.each(['draft','under_review']) = 2. Total 14 + 5 + 2 + 2 = 23.",
+   "match": "EXACT. 23 derived == 23 attested. The attestation therefore corresponds to precisely this blob and not to some earlier version of the suite."
+  },
+  "pg_observed_surfaces_unchanged_since_the_proven_execution": [
+   "db/schema.ts — all six B2 pgTable blocks byte-identical (see D3), so every CHECK constraint the suite asserts is unchanged",
+   "db/policies/010_proxy_material_fields_registry_rls.sql — byte-identical (the NC-9 real-RLS probe)",
+   "db/migrations/0055_fib_proxy_material_change_registry.sql — byte-identical",
+   "lib/pipeline/financial-proxy-versions.ts — byte-identical (LIVE_REVIEW_STATUSES / VERSION_REVIEW_STATUSES / toVersionReviewStatus, which the suite imports directly)"
+  ],
+  "R4_pg_requirement_analysis": {
+   "question": "R4 changed a SQL predicate and added no PostgreSQL test. Does the authority require real PostgreSQL for it?",
+   "measured_answer": "NO. gap_a.required_committed_coverage item 7 scopes the PostgreSQL requirement precisely: 'Real PostgreSQL is required WHERE NEEDED to observe the financial_proxy_versions.review_status CHECK constraint and the transaction-boundary behavior.' R4 alters neither: it narrows a SELECT's WHERE clause. Item 5, which R4 completes, carries no PostgreSQL requirement — it says 'verified by a negative test', and three such negative tests exist and were proven non-vacuous by mutation control M1."
+  },
+  "HEAVY_REQUIRED": "NO",
+  "heavy_pg_executed_by_this_lane": false,
+  "justification_for_not_rerunning": "The frozen contract is established without UNKNOWN: the exact blob is invariant across the delta and current live; a committed governed artifact records its execution at 23/23 on a date after the audited head; the attested count re-derives exactly from the blob's own it()/it.each() arithmetic; and every PostgreSQL surface the suite observes is byte-identical since that execution. Rerunning would re-measure an unchanged object.",
+  "U_ER_2_disposition": "RESOLVED FROM REPOSITORY-NATIVE EVIDENCE. UNKNOWN=0 on the PostgreSQL axis.",
+  "RESULT": "PASS"
+ },
+
+ "gap_b_ratification_reverification": {
+  "requirement": "Independently verify the gap_b ratification blob and that drift = 0.",
+  "declared_blob_after": "5b5678d57a1a0f1318f8c78f3700bf6156129a67",
+  "declared_blob_before": "500efd83b02da4fb7149e32ace29791c38b047c0",
+  "measured": {
+   "8db02b3b:lib/pipeline/financial-proxy-rubric.ts": "500efd83b02da4fb7149e32ace29791c38b047c0 — matches declared blob_before",
+   "b7072bf3:lib/pipeline/financial-proxy-rubric.ts": "5b5678d57a1a0f1318f8c78f3700bf6156129a67 — matches declared blob_after",
+   "a52139f9:lib/pipeline/financial-proxy-rubric.ts": "5b5678d57a1a0f1318f8c78f3700bf6156129a67",
+   "75a385fd:lib/pipeline/financial-proxy-rubric.ts": "5b5678d57a1a0f1318f8c78f3700bf6156129a67",
+   "HEAD:lib/pipeline/financial-proxy-rubric.ts": "5b5678d57a1a0f1318f8c78f3700bf6156129a67"
+  },
+  "DRIFT": 0,
+  "drift_measured_through_current_live": "The ratified blob survives unchanged all the way to fb46c342, so gap_b's stop_condition ('this ratification does not apply to the divergent state') is not triggered.",
+  "exact_scope_reverified": {
+   "diff_500efd83_to_5b5678d5": "9 insertions, 1 deletion",
+   "content": "Two import additions (toLiveReviewStatus, assertLiveVersionStatusCoupling); three comment lines; one `let liveReviewStatus = proxy.reviewStatus`; the live update's literal 'pending_review' replaced by toLiveReviewStatus(result.version.reviewStatus); one assertLiveVersionStatusCoupling call after the version write.",
+   "not_authorized_list_untouched": "CONFIRMED — zero changes to rubric mathematics, factors, weights, thresholds, confidence/risk derivation or SQL rubric constraints.",
+   "RESULT": "PASS"
+  }
+ },
+
+ "known_erratum": {
+  "U-ER-3": {
+   "status": "CONFIRMED BY INDEPENDENT MEASUREMENT AND RECORDED, NOT REPAIRED",
+   "location": "docs/ops/wave2/W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json gap_b.exact_diff_identity.commit_title",
+   "frozen_text": "fix(fib): reset governance on global promotion, copy only factual provenance",
+   "actual_subject_of_the_named_sha": "b7072bf326e003b2540675a79b5db654f6bdc3f5 is actually 'fix(fib): map review-status vocabularies and couple live/version status'",
+   "sha_that_actually_owns_the_frozen_title": "53e3a14a2e9780b7c8dd44a26119489866574990",
+   "what_is_correct": "The SHA (b7072bf3) and BOTH blob ids (before 500efd83, after 5b5678d5) are correct and were re-verified above. Only the human-readable title text is transposed from a sibling commit in the same series.",
+   "materiality": "NON-BLOCKING. Every machine-resolvable identifier in gap_b is correct; the erratum is confined to prose that no gate resolves.",
+   "disposition": "The frozen artifact is NOT edited. Recording the erratum here is the authorized remedy: the artifact is byte-immutable and correcting it would be exactly the historical rewriting this act must not perform."
+  }
+ },
+
+ "open_findings_non_blocking": [
+  {
+   "id": "F-FB-1",
+   "title": "hideCrossTenantAsNotFound is silently ignored on the 'approved' branch",
+   "severity": "NON_BLOCKING_LATENT",
+   "location": "lib/pipeline/proxies.ts, the ternary at the end of updateFinancialProxyReviewStatusForContext (approximately lines 780-788)",
+   "measurement": "`const result = newStatus === 'approved' ? await withExpectedLockedFinancialProxy(proxyId, expectedApprovalState, authorize, transition) : await withLockedFinancialProxy(proxyId, transition, hideCrossTenantAsNotFound ? {...} : undefined)`. The 'approved' branch never receives options.organizationId, so a caller passing hideCrossTenantAsNotFound=true together with newStatus='approved' would silently get the old 403 leak instead of 404. Neither the parameter list nor the doc comment signals this coupling.",
+   "why_not_blocking": "UNREACHABLE at current live, proven by exhaustive call-site enumeration: updateFinancialProxyReviewStatusForContext has exactly two callers; the only one that sets the flag (the suggest route) passes the source-code literal 'pending_review' and can never reach the 'approved' branch. No behaviour observable today is affected.",
+   "why_not_fixed_here": "lib/** is an explicitly prohibited write surface for this lane, and TRACKED_RUNTIME_FILES_CHANGED must equal 0. Recording it is the authorized action.",
+   "carry_forward": "Any future caller wishing to combine approval with the not-found contract must extend the 'approved' branch first."
+  },
+  {
+   "id": "F-FB-2",
+   "title": "Audit events are emitted after the transaction commits",
+   "severity": "NON_BLOCKING_PREEXISTING",
+   "location": "lib/pipeline/proxies.ts updateFinancialProxyReviewStatusForContext — both logAuditAction calls run after the withLockedFinancialProxy transaction returns.",
+   "measurement": "A process failure between commit and the audit write would leave a committed status transition with no audit record.",
+   "why_not_blocking": "PRE-EXISTING in the canonical primitive and shared identically by every governed transition site; it is not introduced, widened or worsened by either delta commit. The audited head and current live are byte-identical here. It is outside both B2 authority artifacts' scope and outside MNB-1, which governs audit VERB correspondence, not audit durability.",
+   "why_not_fixed_here": "Prohibited write surface; and it would be an unauthorized scope expansion beyond B2."
+  }
+ ],
+
+ "machine_gates": {
+  "ods_prestate": "PASS — PRESTATE_BRANCH/HEAD/TREE/CLEAN all PASS at branch codex/w2-b2-closure-artifact-r1, head fb46c342277246ac1891e8ca38b48e4a77c7331e, tree 76f13919bd86bb0dcb14a8230d4aca978387e770.",
+  "authority_seal_verify": "PASS — ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS.",
+  "secrets_scan": "PASS — no credential material found in CURRENT_TREE.",
+  "typecheck": "PASS — tsc --noEmit, exit 0.",
+  "ods_scope": "See the lane report; allowlist is exactly the two authorized paths.",
+  "ods_poststate": "See the lane report.",
+  "TRACKED_RUNTIME_FILES_CHANGED": 0
+ },
+
+ "verdict": {
+  "VERDICT": "PASS",
+  "BLOCKING_FINDINGS": 0,
+  "UNKNOWN_FINDINGS": 0,
+  "NEW_AUTHORITY_GAPS": 0,
+  "NEW_DETERMINISTIC_FAILURES": 0,
+  "NON_BLOCKING_OPEN_FINDINGS": 2,
+  "KNOWN_ERRATA_RECORDED": 1,
+  "closure_condition_satisfied": "W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json closure_rule.closure_condition requires BLOCKING_FINDINGS=0 and NEW_AUTHORITY_GAPS=0. Both are 0. This gate is therefore empowered to declare closure."
+ },
+
+ "closure": {
+  "FIBIU_08": "CLOSED",
+  "FIBIU_09": "CLOSED",
+  "FIBIU_10": "CLOSED",
+  "W2_B2": "CLOSED",
+  "FIBIU_09_note": "CLOSED THROUGHOUT — never reopened by the gap_b ratification or by this act. Its status is preserved, not re-decided.",
+  "BLOCKING_FINDINGS": 0,
+  "UNKNOWN_FINDINGS": 0,
+  "READY_FOR_W2_B3": "YES — recorded for completeness of the frozen closure_rule. W2-B3 is already independently CLOSED (docs/ops/wave2/W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json); this artifact does not reopen, re-audit or re-authorize it.",
+  "wave2_note": "W2-B3, W2-B4, W2-B5 and WAVE2 remain CLOSED exactly as their own artifacts recorded. Nothing in this act disturbs them.",
+  "READY_FOR_MERGE": "NO — a separate independent Opus exact-object audit is required before integration.",
+  "next_gate": "W2_B2_CLOSURE_EXACT_OBJECT_INDEPENDENT_AUDIT"
+ },
+
+ "final_state": "W2_B2_FOCUSED_CLOSURE_AUDIT_MATERIALIZED_PASS"
+}
