@@ -65,8 +65,20 @@
 //
 // The check runs BEFORE the kind branch, so it precedes even text evidence's
 // read of its own row (`resolveTextBytes` reads `description` directly, with
-// no storage round trip to gate on otherwise) — this is a decision about which
-// bytes may be looked at, not merely one about which bytes may be persisted.
+// no storage round trip to gate on otherwise) — INSIDE this resolver, it is a
+// decision about which bytes may be looked at, not merely one about which
+// bytes may be persisted.
+//
+// That property is local to this function. The caller
+// (app/actions/grounding/ingest-evidence.ts) already selects `description`
+// off `evidence_items` — for text evidence, the very content this gate
+// exists to keep out — in the SAME query that finds the row, before this
+// resolver or its classification is ever reached; and the classification
+// lookup itself (`getLatestEvidenceVersionsByEvidenceIds`) selects every
+// column of the matching `evidence_versions` rows, `content` included, for a
+// decision that needs one varchar. Neither is a bypass of this gate — nothing
+// downstream is more permissive — but "no byte is looked at" is not literally
+// true one layer up, and a caller relying on that stronger claim should not.
 
 import crypto from 'node:crypto'
 

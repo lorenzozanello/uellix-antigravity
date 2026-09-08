@@ -6,13 +6,26 @@
 // external model any evidence whose CURRENT `sensitivity_classification` is
 // not exactly `'non_sensitive'` — unclassified included. This suite proves
 // `resolveEvidenceSource` (lib/grounding/ingest/resolve-evidence-source.ts)
-// now enforces the identical boundary at the one seam every ingested byte
-// must cross, so a restricted evidence item can never reach the grounding
-// corpus regardless of what a caller upstream authorized.
+// now enforces the identical boundary at the one seam every ingested BYTE
+// must cross, so a restricted evidence item's content can never be WRITTEN
+// into the grounding corpus by this resolver, regardless of what a caller
+// upstream authorized.
+//
+// SCOPE, NAMED: this is an INGESTION-TIME gate. It says nothing about
+// evidence that was ALREADY ingested while non_sensitive and is later
+// reclassified, or whose content is later erased (FIBIU-05/07,
+// lib/pipeline/evidence.ts) — neither path purges `evidence_chunks`, and
+// this suite does not exercise or claim otherwise. See the F-ED-4 PR's own
+// audit trail for that residual gap; closing it needs `lib/grounding/
+// retrieve/**` or `db/**`, both explicitly out of this LANE's authority.
 //
 // This file tests ONLY the classification axis and its interaction with the
 // axes `resolve-evidence-source.test.ts` already covers (scope, kind, hash,
-// size) — it does not re-derive those suites' full coverage.
+// size) — it does not re-derive those suites' full coverage. It also does
+// NOT prove the action layer (app/actions/grounding/ingest-evidence.ts)
+// actually reads and forwards this value rather than manufacturing it —
+// see the dedicated "F-ED-4" describe block in
+// app/actions/grounding/__tests__/ingest-evidence.test.ts for that.
 
 import crypto from 'node:crypto'
 import { describe, expect, it } from 'vitest'

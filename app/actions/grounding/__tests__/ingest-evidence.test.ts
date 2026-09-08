@@ -420,6 +420,68 @@ describe('6-9. kinds and bytes', () => {
   })
 })
 
+describe('F-ED-4 — the action actually reads and forwards classification, not just the resolver', () => {
+  // Every other case in this file pins classification at 'non_sensitive'
+  // (see the beforeEach) precisely so it stays out of the way of the axis
+  // each of THOSE cases is testing. That default is exactly what would hide
+  // a defect where this action stops reading `evidence_versions` at all, or
+  // hardcodes the cleared value instead of forwarding it — the resolver's
+  // own gate (lib/grounding/__tests__/classification-boundary.test.ts) is
+  // proven correct in isolation, but nothing before this block proved the
+  // ACTION wires that classification through rather than manufacturing it.
+  // These cases are written to die on exactly that class of regression:
+  // hardcoding `sensitivityClassification: 'non_sensitive'` at the call
+  // site, defaulting a lookup miss to 'non_sensitive' instead of null, or
+  // deleting the evidence_versions read outright all turn every case below
+  // from 'refused' into 'indexed'.
+
+  it('refuses when the evidence current version carries a restricted classification, before storage or ingestion run', async () => {
+    evidenceVersionRows = [{ evidenceId: EVIDENCE, ordinal: 1, sensitivityClassification: 'special_category' }]
+
+    const result = await ingestProjectEvidenceForProject(PROJECT, { evidenceId: EVIDENCE })
+
+    expect(result).toEqual({ status: 'refused', reason: 'classification_restricted' })
+    expect(mockRead).not.toHaveBeenCalled()
+    expect(mockIngest).not.toHaveBeenCalled()
+  })
+
+  it('refuses when the evidence has never been versioned — a lookup miss is not a permissive default', async () => {
+    evidenceVersionRows = []
+
+    const result = await ingestProjectEvidenceForProject(PROJECT, { evidenceId: EVIDENCE })
+
+    expect(result).toEqual({ status: 'refused', reason: 'classification_restricted' })
+    expect(mockRead).not.toHaveBeenCalled()
+  })
+
+  it('decides on the CURRENT (highest-ordinal) version, not any version that happens to be non_sensitive', async () => {
+    // ordinal 1 was cleared; ordinal 2 — the CURRENT version — is not. If the
+    // action selected by evidenceId alone (any row) rather than by ordinal
+    // (the CURRENT row), this would wrongly resolve.
+    evidenceVersionRows = [
+      { evidenceId: EVIDENCE, ordinal: 1, sensitivityClassification: 'non_sensitive' },
+      { evidenceId: EVIDENCE, ordinal: 2, sensitivityClassification: 'personal_data' },
+    ]
+
+    const result = await ingestProjectEvidenceForProject(PROJECT, { evidenceId: EVIDENCE })
+
+    expect(result).toEqual({ status: 'refused', reason: 'classification_restricted' })
+  })
+
+  it('a classification refusal never names the classification, in the response or in the audit row', async () => {
+    evidenceVersionRows = [{ evidenceId: EVIDENCE, ordinal: 1, sensitivityClassification: 'special_category' }]
+
+    await ingestProjectEvidenceForProject(PROJECT, { evidenceId: EVIDENCE })
+
+    expect(mockLogAuditAction).toHaveBeenCalledTimes(1)
+    const entry = mockLogAuditAction.mock.calls[0][0] as { afterJson: Record<string, unknown> }
+    expect(entry.afterJson).toMatchObject({ refusalReason: 'classification_restricted' })
+    expect(JSON.stringify(entry.afterJson)).not.toMatch(
+      /special_category|personal_data|identifiable_restricted|confidential_third_party/,
+    )
+  })
+})
+
 describe('10. the governed repository is the one that is used', () => {
   it('builds the persisted ingestion repository for the derived scope', async () => {
     await ingestProjectEvidenceForProject(PROJECT, { evidenceId: EVIDENCE })
