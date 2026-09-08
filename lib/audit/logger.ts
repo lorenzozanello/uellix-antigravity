@@ -28,6 +28,15 @@ export const AUDIT_ACTIONS = {
   USER_LOGGED_IN: 'user.logged_in',
   USER_LOGGED_OUT: 'user.logged_out',
 
+  // Tenancy refusal audit (multi-org S3 — HPO-ODS-W2-25). The ONLY two audit
+  // verbs whose rows carry organization_id NULL: a refused request has no
+  // owning tenant, which is why db/migrations/0067 adds a policy beside the
+  // generic one rather than widening it. Emitted exclusively through
+  // lib/audit/tenancy-refusal.ts — never construct these entries by hand, as
+  // the action/subject-form correlation the policy enforces lives there.
+  TENANCY_ORGANIZATION_SELECTION_REFUSED: 'tenancy.organization.selection_refused',
+  TENANCY_MEMBERSHIP_REVALIDATION_REFUSED: 'tenancy.membership.revalidation_refused',
+
   // Signup allowlist
   SIGNUP_ALLOWLIST_CREATED: 'signup_allowlist.created',
   SIGNUP_ALLOWLIST_REMOVED: 'signup_allowlist.removed',

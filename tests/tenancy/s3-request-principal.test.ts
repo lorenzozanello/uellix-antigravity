@@ -68,11 +68,42 @@ vi.mock('@/lib/supabase/server', () => ({
 /* tests/authenticated-database-context.test.ts, not here.                    */
 /* -------------------------------------------------------------------------- */
 
-vi.mock('@/db/identity-context', () => ({
-  withDatabaseIdentityContext: async (_identity: unknown, callback: (db: unknown) => unknown) =>
-    callback(undefined),
-  getBoundDatabaseContext: () => undefined,
-}))
+// CORRECTED under ODS v1.0.26 F_DN_6_ADJUDICATION. This double used to be a
+// pass-through whose getBoundDatabaseContext was a CONSTANT returning
+// undefined — undefined even WHILE the callback was executing. That is not a
+// simplification of the real module, it CONTRADICTS it: db/identity-context.ts
+// binds a context for the duration of the callback, and its own nesting check
+// reads getBoundDatabaseContext() back during execution.
+//
+// The lie became load-bearing once the S3 refusal emitter began asserting, at
+// emission time, that a context IS bound for the refusal subject. Under the old
+// double the guard observed nothing bound and correctly failed closed — the
+// DOUBLE was wrong, not the guard, and the guard is deliberately not relaxed to
+// accommodate it.
+//
+// It still opens no transaction and touches no database. It binds through the
+// REAL async-local store, so binding and RESTORATION — on return and on throw
+// alike, which matters because every refusal path here ends in a throw — come
+// from the same mechanism production uses.
+vi.mock('@/db/identity-context', async () => {
+  const store = await import('@/db/identity-store')
+  return {
+    withDatabaseIdentityContext: async (
+      identity: { userId: string; organizationId: string | null; isSuperAdmin: boolean },
+      callback: (db: unknown) => unknown
+    ) => {
+      // Re-entry with a context already open reuses it, exactly as the real
+      // module does; these suites never nest a DIFFERENT identity.
+      const existing = store.getBoundDatabaseContext()
+      if (existing !== undefined) return callback(existing.db)
+      return store.runWithBoundDatabaseContext(
+        { identity, db: undefined } as never,
+        (async () => callback(undefined)) as () => Promise<never>
+      )
+    },
+    getBoundDatabaseContext: () => store.getBoundDatabaseContext(),
+  }
+})
 
 /* -------------------------------------------------------------------------- */
 /* drizzle-orm — replaced with a NORMALIZED condition tree the @/db/client    */
@@ -145,8 +176,19 @@ const TABLES: {
   organizations: Array<Record<string, unknown>>
 } = { users: [], organization_members: [], organizations: [] }
 
+// The refusal-audit emitter writes through this same handle, so the double
+// needs an `insert` as well as a `select`. Recording the rows rather than
+// discarding them turns the S3 refusal contract into something this suite can
+// ASSERT: site 2 emits exactly one row, and sites 1 and 3 emit none.
+const auditRows = vi.hoisted(() => [] as Record<string, unknown>[])
+
 vi.mock('@/db/client', () => ({
   db: {
+    insert: vi.fn().mockImplementation(() => ({
+      values: async (row: Record<string, unknown>) => {
+        auditRows.push(row)
+      },
+    })),
     select: vi.fn().mockImplementation(() => ({
       from: vi.fn().mockImplementation((table: { [key: symbol]: string } & { _?: { name?: string } }) => {
         const tableName = (table[Symbol.for('drizzle:Name')] as unknown as string) ?? table._?.name ?? ''

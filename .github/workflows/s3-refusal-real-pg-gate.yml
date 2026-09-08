@@ -1,0 +1,80 @@
+name: S3 Refusal Audit Real PostgreSQL Gate
+
+# Dedicated, isolated real-PostgreSQL proof of the multi-org S3 refusal-audit
+# contract (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json,
+# REAL_PG_CONTRACT; companion
+# docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6.json).
+#
+# WHY A DEDICATED WORKFLOW AND NOT A LINE IN ci.yml.
+#
+# The suite is gated behind UELLIX_PG_TESTS=1 and uses describe.skipIf, which
+# is this repository's established live-PostgreSQL idiom. That idiom has one
+# failure mode that matters more than any assertion inside it: a suite that
+# SILENTLY SKIPS is indistinguishable, in a green checkmark, from one that
+# passed. Relying on generic CI to collect it incidentally would make "the
+# tests were green" mean nothing. So this gate sets the live-PostgreSQL
+# environment EXPLICITLY rather than inheriting it by luck, and additionally
+# sets UELLIX_S3_REFUSAL_PG_REQUIRED=1, which arms an UNGATED self-check inside
+# the suite that FAILS if the gated half was skipped.
+#
+# This gate must fail on each of:
+#   * the suite being skipped        -> the ungated self-check fails;
+#   * zero tests collected           -> --passWithNoTests is NOT set, so vitest
+#                                       exits non-zero on an empty run;
+#   * zero probes executed           -> the suite asserts probeResults is
+#                                       non-empty AND equals the frozen roster;
+#   * any required probe absent      -> the frozen roster is hand-listed, so a
+#                                       deleted probe fails the equality;
+#   * real-PG setup failure          -> setupStatus/teardownStatus/leftover
+#                                       assertions;
+#   * a mutation not being caught    -> MUT-PG-1/2/3 are probes like any other.
+#
+# It does NOT reuse the M2 workflow and does not expand M2's governed scope.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - integration/commercial-v1
+      - main
+
+jobs:
+  s3-refusal-real-pg-gate:
+    name: Isolated S3 refusal-audit disposable PostgreSQL proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The DB-free half. Proves what no policy can: that site 1 and the third
+      # readability-invariant site emit NOTHING, that the refusal write lands
+      # in a SEPARATE transaction from the principal resolution, and that a
+      # failing audit write fails the request rather than being swallowed.
+      - name: DB-free refusal contract (site discrimination, transaction isolation)
+        run: pnpm exec vitest run tests/tenancy/s3-refusal-audit.test.ts
+
+      # The real-PostgreSQL half, on a throwaway container: the policy exists
+      # beside the two pre-existing ones, all three authorised action/form
+      # combinations insert, every cross-product forgery is refused, a Form B
+      # row naming a nonexistent organisation is still accepted (no existence
+      # oracle), readability is unchanged, and three mutations are caught.
+      #
+      # UELLIX_S3_REFUSAL_PG_REQUIRED=1 turns a SKIP into a FAILURE.
+      - name: Real PostgreSQL refusal contract
+        env:
+          UELLIX_PG_TESTS: '1'
+          UELLIX_S3_REFUSAL_PG_REQUIRED: '1'
+        run: pnpm exec vitest run tests/postgres/s3refusal-completeness.pg.test.ts

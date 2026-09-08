@@ -235,7 +235,8 @@ describe('unit source verification', () => {
     // HPO-ODS-W2-12 (W2-B4 assumptions and causality): + 0062/0063 = 76.
     // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.
     // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability): + 0066 = 79.
-    expect(BASELINE_UNITS).toHaveLength(79)
+    // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80.
+    expect(BASELINE_UNITS).toHaveLength(80)
     for (const u of BASELINE_UNITS) expect(u.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 })

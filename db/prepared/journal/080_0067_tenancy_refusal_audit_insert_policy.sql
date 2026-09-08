@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 47/80: 005_theory_of_change_rls.sql
+-- GENERATED — DO NOT EDIT. Unit 80/80: 0067_tenancy_refusal_audit_insert_policy.sql
 -- ============================================================================
 --
--- Includes:      db/policies/005_theory_of_change_rls.sql
--- Source SHA256: 703aa74bf1b579c237391af9520ee649605ab6953dcac739ab2bd8636cf04b30
+-- Includes:      db/migrations/0067_tenancy_refusal_audit_insert_policy.sql
+-- Source SHA256: 26a8258cb2c37dd56815ff87dcec024c3a969756a30e492958fc513335fae898
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/047_005_theory_of_change_rls.sql
+--        -f db/prepared/journal/080_0067_tenancy_refusal_audit_insert_policy.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/policies/005_theory_of_change_rls.sql
+\ir ../../../db/migrations/0067_tenancy_refusal_audit_insert_policy.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '005_theory_of_change_rls.sql', 'PHASE_BASELINE',
-   '703aa74bf1b579c237391af9520ee649605ab6953dcac739ab2bd8636cf04b30', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0067_tenancy_refusal_audit_insert_policy.sql', 'PHASE_BASELINE',
+   '26a8258cb2c37dd56815ff87dcec024c3a969756a30e492958fc513335fae898', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'
