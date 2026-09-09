@@ -6,6 +6,9 @@ import {
 } from '@/lib/portfolios/service';
 import { getPortfolioAnalytics } from '@/lib/portfolios/analytics';
 import { listProjectsForPortfolio, listActiveProjectsForCurrentOrganization } from '@/lib/projects/service';
+import { getPortfolioReadModel } from '@/lib/portfolios/read-model';
+import { getPortfolioEvidenceHealth } from '@/lib/portfolios/evidence-health';
+import { getPortfolioTransversalIntelligence } from '@/lib/portfolios/intelligence';
 import {
   updatePortfolioAction,
   archivePortfolioAction,
@@ -23,6 +26,9 @@ import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { EmptyState } from '@/components/states/EmptyState';
+import { ComparisonTable } from '@/components/portfolios/ComparisonTable';
+import { EvidenceHealthPanel } from '@/components/portfolios/EvidenceHealthPanel';
+import { TransversalIntelligencePanel } from '@/components/portfolios/TransversalIntelligencePanel';
 
 const STATUS_CONFIG: Record<string, { variant: 'success' | 'neutral'; label: string }> = {
   active: { variant: 'success', label: 'Activo' },
@@ -52,26 +58,39 @@ const TEXTAREA_CLASS =
 
 export default async function PortfolioDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ portfolioId: string }>;
+  searchParams?: Promise<{ page?: string }>;
 }) {
   const { portfolioId } = await params;
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const requestedPage = Number.parseInt(resolvedSearchParams.page ?? '1', 10);
+  const comparisonPageNumber = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+
   const data = await runWithOptionalOrganizationAccess(async (ctx) => {
     if (!ctx) return { state: 'unauthenticated' as const };
     const portfolio = await getPortfolioByIdForCurrentOrganization(portfolioId);
     if (!portfolio) return { state: 'not-found' as const };
-    const [projects, analytics, allPortfolios, activeProjects] = await Promise.all([
-      listProjectsForPortfolio(portfolioId),
-      getPortfolioAnalytics(portfolioId),
-      listPortfoliosForCurrentOrganization(),
-      listActiveProjectsForCurrentOrganization(),
-    ]);
+    const [projects, analytics, allPortfolios, activeProjects, readModel, evidenceHealth, transversalIntelligence] =
+      await Promise.all([
+        listProjectsForPortfolio(portfolioId),
+        getPortfolioAnalytics(portfolioId),
+        listPortfoliosForCurrentOrganization(),
+        listActiveProjectsForCurrentOrganization(),
+        getPortfolioReadModel(portfolioId, { page: comparisonPageNumber }),
+        getPortfolioEvidenceHealth(portfolioId),
+        getPortfolioTransversalIntelligence(portfolioId),
+      ]);
     return {
       state: 'ok' as const,
       canManage: canManagePortfolio(ctx.membership.role),
       portfolio,
       projects,
       analytics,
+      readModel,
+      evidenceHealth,
+      transversalIntelligence,
       otherPortfolios: allPortfolios.filter((p) => p.id !== portfolioId && p.status !== 'archived'),
       assignableProjects: activeProjects.filter((p) => p.portfolioId === null),
     };
@@ -80,7 +99,17 @@ export default async function PortfolioDetailPage({
   if (data.state === 'unauthenticated') return <p>No autenticado. Por favor inicia sesión.</p>;
   if (data.state === 'not-found') return <p>Portafolio no encontrado o acceso denegado.</p>;
 
-  const { portfolio, projects, analytics, canManage, otherPortfolios, assignableProjects } = data;
+  const {
+    portfolio,
+    projects,
+    analytics,
+    canManage,
+    otherPortfolios,
+    assignableProjects,
+    readModel,
+    evidenceHealth,
+    transversalIntelligence,
+  } = data;
   const agg = analytics?.aggregate ?? null;
   const isArchived = portfolio.status === 'archived';
 
@@ -187,6 +216,14 @@ export default async function PortfolioDetailPage({
           </CardContent>
         </Card>
       )}
+
+      {readModel && (
+        <ComparisonTable basePath={`/app/portfolios/${portfolioId}`} comparisonPage={readModel.comparisonPage} />
+      )}
+
+      {evidenceHealth && <EvidenceHealthPanel evidenceHealth={evidenceHealth} />}
+
+      {transversalIntelligence && <TransversalIntelligencePanel intelligence={transversalIntelligence} />}
 
       <Card>
         <CardHeader>
