@@ -74,8 +74,18 @@
     },
     {
       "id": "P-8",
-      "description": "BASELINE APPEND INTEGRITY. db/hosted/baseline-manifest.ts BASELINE_UNITS gains exactly ONE unit, taking the count from 80 to 81 with contiguous ordinals 1..81 and BASELINE_ORDER derived from them. The new unit's sha256 is computed over the FINAL guard-patched LF-normalized migration bytes (not over the pre-patch generator output). A matching db/prepared/journal wrapper exists whose ordinal is the successor of the measured maximum prepared-journal ordinal (080 at AS_OF_HEAD).",
+      "description": "BASELINE APPEND INTEGRITY. db/hosted/baseline-manifest.ts BASELINE_UNITS gains exactly ONE unit, taking the count from 80 to 81 with contiguous ordinals 1..81 and BASELINE_ORDER derived from them. The new unit's sha256 is computed over the FINAL guard-patched LF-normalized migration bytes (not over the pre-patch generator output). The prepared-journal family goes from 81 files to 82: 000_journal_bootstrap.sql byte-unchanged, the 80 existing unit wrappers each regenerated in exactly ONE header line (the 'Unit N/TOTAL' denominator, 80 -> 81), and one new wrapper added at prepared ordinal 081. CHANGED protected wrapper files = 81, not 1.",
       "test_file": "tests/hosted/baseline-manifest.test.ts"
+    },
+    {
+      "id": "P-13",
+      "description": "HEADER TOTAL REGENERATION ONLY. Each of the 80 pre-existing db/prepared/journal wrappers differs from its pre-change bytes in EXACTLY ONE line, and that line differs only in the denominator of its 'Unit N/TOTAL' header. No SQL body, no numerator, no Source/Derived SHA256 line, no psql include-directive target and no prose changes in any historical wrapper. 000_journal_bootstrap.sql is byte-identical.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-14",
+      "description": "A1 STATUS REGENERATION. artifacts/hosted-a1-status.json is regenerated and its missing-baseline-unit count moves from 30 to 31 in BOTH chainPlan.message and blockers[0]. The 'starting with 0040_governed_model_registry.sql' clause is UNCHANGED (the P1 unit appends at the end of BASELINE_ORDER, so it is the last missing id, never the first). packageCount and packageStates are UNCHANGED, being governed by A1_OBSERVED_CHAIN rather than by BASELINE_ORDER.",
+      "test_file": "UNKNOWN"
     },
     {
       "id": "P-9",
@@ -152,7 +162,7 @@
     },
     {
       "id": "N-11",
-      "description": "DEPENDENCY MEASURABILITY, FAIL CLOSED. Status of FIBDB052_P1_MIGRATION_ORDINAL_ALLOCATION, FIBDB052_P1_ODS_LINEAGE_ALLOCATION, FIBDB052_P1_PROTECTED_GRANT_ALLOCATION and ODS_CONTROLLER40_ENUMERATES_v1.0.29 is UNKNOWN at manifest-freeze time — all four are UNALLOCATED at AS_OF_HEAD 4c19c3c7. Additionally, docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json enumerates only W2-B1..W2-B5, so NONE of this node's dependencies is measurable via pnpm ops:program-state; the Wave3 dependencies were instead measured by file presence at AS_OF_TREE plus git ancestry of merge commits ab6d9ccf and 4c19c3c7. The implementing mission MUST re-measure all four allocation dependencies at its own AS_OF_HEAD and REFUSE to proceed while any remains UNKNOWN. Absence of a measurement is not satisfaction.",
+      "description": "DEPENDENCY MEASURABILITY, FAIL CLOSED. At R2, re-measured against live 07c33c95: ODS_CONTROLLER40_ENUMERATES_v1.0.29 is now SATISFIED (Controller array = 40, final item v1.0.29, PR #124) and HPO-ODS-W2-26 is REGISTERED (PROTECTED_GRANTS = 14 by authorityId key position, PR #125). The three P1 allocations — FIBDB052_P1_MIGRATION_ORDINAL_ALLOCATION, FIBDB052_P1_ODS_LINEAGE_ALLOCATION, FIBDB052_P1_PROTECTED_GRANT_ALLOCATION — remain UNALLOCATED and therefore UNKNOWN. Additionally, docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json enumerates only W2-B1..W2-B5, so NONE of this node's dependencies is measurable via pnpm ops:program-state; the Wave3 dependencies were instead measured by file presence at AS_OF_TREE plus git ancestry of merge commits ab6d9ccf and 4c19c3c7. The implementing mission MUST re-measure all four allocation dependencies at its own AS_OF_HEAD and REFUSE to proceed while any remains UNKNOWN. Absence of a measurement is not satisfaction.",
       "test_file": "UNKNOWN"
     },
     {
@@ -195,7 +205,7 @@
     },
     {
       "id": "M-7",
-      "description": "WEAKEN EXACT CARDINALITY PINS => RED. Relaxing expect(BASELINE_UNITS).toHaveLength(81) to a bound, relaxing the contiguous-ordinals 1..81 assertion, or relaxing the 8-statement equality in the migration must FAIL the suite. The four literal sites are tests/hosted/baseline-manifest.test.ts (toHaveLength, Array.from length, Set size), tests/hosted/baseline-journal-wrapper.test.ts (BASELINE_UNITS and BASELINE_ORDER) and tests/hosted/operator-runner.test.ts (BASELINE_UNITS).",
+      "description": "WEAKEN EXACT CARDINALITY PINS => RED. Relaxing expect(BASELINE_UNITS).toHaveLength(81) to a bound, relaxing the contiguous-ordinals 1..81 assertion, or relaxing the 8-statement equality in the migration must FAIL the suite. There are SIX literal assertion sites across THREE files (mechanically enumerated; R1 said four): baseline-manifest.test.ts carries three (toHaveLength, Array.from length, Set size), baseline-journal-wrapper.test.ts carries two (BASELINE_UNITS, BASELINE_ORDER) and operator-runner.test.ts carries one (BASELINE_UNITS). Every OTHER cardinality assertion in those files is expressed relative to BASELINE_UNITS.length, moves on its own, and must NOT be touched.",
       "test_file": "tests/hosted/baseline-manifest.test.ts"
     },
     {
@@ -206,6 +216,16 @@
     {
       "id": "M-9",
       "description": "SUITE NON-VACUITY. Every executable suite named in this manifest must report COLLECTED > 0. A run that collects zero tests is NOT green, and a skipped real-PostgreSQL suite is NOT green — it is unmeasured. The test COUNT is recorded so that a run can be tied to the revision it actually exercised.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-10",
+      "description": "SEMANTIC MUTATION OF A HISTORICAL JOURNAL WRAPPER => RED. Changing anything in a pre-existing db/prepared/journal wrapper other than the header denominator — its SQL body, its numerator, a SHA256 line, its include target — must FAIL the suite. An 81-file protected diff is exactly the shape under which such a change would be invisible, so the volume being authorized is not a licence for its content.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-11",
+      "description": "SELF-REGISTERING THE P1 GRANT => REFUSED. If the P1 protected-grant is not present at the authorityId key position in PROTECTED_GRANTS, the implementation mission must STOP rather than add the row to its own diff. Registration is a separate governed act on a different surface from declaration; a mission that registers the grant it then relies on has authorized its own diff.",
       "test_file": "UNKNOWN"
     }
   ],
