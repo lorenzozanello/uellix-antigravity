@@ -41,7 +41,7 @@ import { db as typedDb } from '@/db/client';
 // The mocked module shape (vi.mock above) does not match the real
 // PostgresJsDatabase type; these tests reach into the mock's own vi.fn()s
 // directly, which the real type does not expose.
-const db = typedDb as unknown as Record<'where' | 'set' | 'returning' | 'values', ReturnType<typeof vi.fn>>;
+const db = typedDb as unknown as Record<'where' | 'set' | 'returning' | 'values' | 'update', ReturnType<typeof vi.fn>>;
 
 /**
  * A real drizzle query builder is both awaitable (a select's terminal
@@ -103,6 +103,26 @@ describe('Portfolio service - create', () => {
     const input = { description: 'no name' };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await expect(createPortfolioForCurrentOrganization(input as any)).rejects.toThrow();
+  });
+
+  // F-FJ-1 remediation (LANE FJ independent audit, PR116 BLOCKING finding).
+  // PF2-MUT-STATUS-1's `create` half was vacuous: the mocked `returning`
+  // value is hardcoded to status:'active', so a prior version of this
+  // suite would see 'active' in the RESULT even if the code actually wrote
+  // 'archived' — re-admitting the status enum into PortfolioInputSchema and
+  // writing data.status through would pass 18/18 unnoticed. This asserts
+  // directly on the payload handed to db.values(...), which the mocked
+  // return value cannot launder.
+  it('PF2-MUT-STATUS-1 (create): the emitted insert payload writes status=active regardless of a caller-supplied status — proven from db.values(...), not the mocked return', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'user-1', email: 'test@example.com', fullName: null, avatarUrl: null, isSuperAdmin: false },
+      organization: { id: 'org-1', name: 'Test Org', slug: 'test-org', legalName: null, country: null, sector: null, status: 'active' },
+      membership: { id: 'mem-1', organizationId: 'org-1', userId: 'user-1', role: 'impact_manager', status: 'active' },
+    });
+    const adversarialInput = { name: 'Adversarial', description: 'd', status: 'archived' } as never;
+    await createPortfolioForCurrentOrganization(adversarialInput);
+    const valuesCallArgs = db.values.mock.calls[0][0] as Record<string, unknown>;
+    expect(valuesCallArgs.status).toBe('active');
   });
 });
 
@@ -212,6 +232,54 @@ describe('Portfolio composition - assign/unassign/move permission gate (PF2 NEG-
   });
 });
 
+// F-FJ-2 remediation (LANE FJ independent audit, PR116 BLOCKING finding).
+// MUT-COMP-1 was vacuous: nothing exercised moveProjectToPortfolioForCurrentOrganization
+// beyond its permission-denial path, so decomposing move into an unassign
+// UPDATE followed by an assign UPDATE (two db.update calls, two audit rows,
+// a transient state with no portfolio) left the whole 246/246 suite green.
+// This proves the SHAPE directly: exactly one db.update call and exactly
+// one logAuditAction call, carrying the frozen project.portfolio_moved verb.
+describe('POS-COMP-3 / MUT-COMP-1: move is exactly one UPDATE and one audit row', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Both the source-portfolio and target-portfolio lookups (two separate
+    // `db.select()...where()` calls) resolve through the same mock; a single
+    // active, non-archived portfolio row satisfies both existence checks.
+    db.where.mockReturnValue(
+      mockWhereResult(
+        [{ id: 'portfolio-either', organizationId: 'org-1', status: 'active' }],
+        [{ id: 'proj-1', organizationId: 'org-1', portfolioId: 'target-portfolio' }],
+      ) as never,
+    );
+    mockContext('impact_manager');
+  });
+
+  it('calls db.update exactly once and logAuditAction exactly once, emitting project.portfolio_moved', async () => {
+    await moveProjectToPortfolioForCurrentOrganization('proj-1', 'source-portfolio', 'target-portfolio');
+
+    expect(db.update.mock.calls.length).toBe(1);
+
+    const { logAuditAction } = await import('@/lib/audit/logger');
+    expect(vi.mocked(logAuditAction).mock.calls.length).toBe(1);
+    expect(vi.mocked(logAuditAction)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'project.portfolio_moved',
+        entityType: 'project',
+        contentModifying: true,
+      }),
+    );
+    // Decomposing move into unassign+assign would call logAuditAction with
+    // project.portfolio_unassigned and project.portfolio_assigned instead —
+    // neither verb may appear for a move.
+    expect(vi.mocked(logAuditAction)).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'project.portfolio_unassigned' }),
+    );
+    expect(vi.mocked(logAuditAction)).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'project.portfolio_assigned' }),
+    );
+  });
+});
+
 describe('NEG-PERM-3: no inline role array survives on any Portfolio composition path', () => {
   // The historical defect named by the authority: lib/portfolios/
   // service.ts:41, app/app/portfolios/page.tsx:22 and app/app/portfolios/
@@ -236,6 +304,34 @@ describe('NEG-PERM-3: no inline role array survives on any Portfolio composition
   it.each(PORTFOLIO_COMPOSITION_PATHS)('%s carries no inline four-role composition array', (file) => {
     const source = readFileSync(file, 'utf8');
     expect(INLINE_ARRAY_PATTERN.test(source)).toBe(false);
+  });
+});
+
+// PF2-NEG-AGGREGATE-PAGE-1 (materialized — LANE FJ non-blocking gap). The
+// property already held (no PF2 path paginates the aggregate); this control
+// makes it a checked assertion rather than an unstated fact. Scoped to the
+// PF2 authorized paths only (analytics.ts itself is PF1's, not PF2's).
+describe('PF2-NEG-AGGREGATE-PAGE-1: no PF2 authorized path paginates the portfolio aggregate', () => {
+  const PF2_APP_PATHS = [
+    'app/app/portfolios/page.tsx',
+    'app/app/portfolios/new/page.tsx',
+    'app/app/portfolios/[portfolioId]/page.tsx',
+    'app/app/portfolios/[portfolioId]/actions.ts',
+    'lib/portfolios/service.ts',
+    'lib/projects/service.ts',
+  ];
+
+  it.each(PF2_APP_PATHS)('%s calls getPortfolioAnalytics with no page/limit/offset/cursor argument', (file) => {
+    const source = readFileSync(file, 'utf8');
+    const calls = [...source.matchAll(/getPortfolioAnalytics\(([^)]*)\)/g)];
+    for (const call of calls) {
+      expect(call[1]).not.toMatch(/page|limit|offset|cursor/i);
+    }
+  });
+
+  it.each(PF2_APP_PATHS)('%s never calls aggregatePortfolioSroi directly (owned by lib/portfolios/analytics.ts)', (file) => {
+    const source = readFileSync(file, 'utf8');
+    expect(source).not.toMatch(/aggregatePortfolioSroi\s*\(/);
   });
 });
 

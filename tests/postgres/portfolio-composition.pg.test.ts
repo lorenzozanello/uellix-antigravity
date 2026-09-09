@@ -1,7 +1,8 @@
 // tests/postgres/portfolio-composition.pg.test.ts
 // PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json — Portfolio composition, REAL
-// PostgreSQL controls (POS-PG-1, NEG-PG-1, NEG-TENANT-1/2, POS-COMP-3,
-// POS-COMP-4, NEG-COMP-1, NEG-COMP-2, MUT-TENANT-1), run through the
+// PostgreSQL controls (POS-PG-1, NEG-PG-1 [assign + move], NEG-TENANT-1/2
+// [assign + move], POS-COMP-3, POS-COMP-4, NEG-COMP-1, NEG-COMP-2,
+// MUT-TENANT-1), run through the
 // CANONICAL disposable harness scripts/db-audit-disposable.ts: a throwaway
 // postgres container on 127.0.0.1, ephemeral port, no bind mounts, teardown
 // in `finally`, leftover check. Never staging, never production, never the
@@ -15,12 +16,14 @@
 // lib/portfolios/service.ts and lib/projects/service.ts issue their writes.
 //
 // what_a_real_database_must_prove (POSTGRES_CONTRACT): the cross-organization
-// refusal on assign and move (with SENT-PF-CROSS-ORG-PROJECT absent from
-// every org-A-scoped read); the read path for an impact_manager with the
-// identity context open; that a move is one UPDATE affecting one row, and a
-// move whose source no longer matches affects zero rows and is refused; that
-// archiving a portfolio changes exactly one column of one portfolios row and
-// leaves every member project's row byte-identical.
+// refusal ON ASSIGN AND ON MOVE (with SENT-PF-CROSS-ORG-PROJECT absent from
+// every org-A-scoped read) — both with the application-layer organization
+// predicate in place and with it removed (RLS refuses independently); the
+// read path for an impact_manager with the identity context open; that a
+// move is one UPDATE affecting one row, and a move whose source no longer
+// matches affects zero rows and is refused; that archiving a portfolio
+// changes exactly one column of one portfolios row and leaves every member
+// project's row byte-identical.
 //
 // what_a_real_database_CANNOT_prove (ROLE_ENFORCEMENT_LAYER): the analyst
 // denial — both governing RLS policies admit 'analyst'. That control is
@@ -59,7 +62,8 @@ export const IDS = {
   projA_unassigned: '2a200000-0000-4000-8000-0000000000c1', // in org A, no portfolio — POS-COMP-2/assign
   projA_inA2: '2a200000-0000-4000-8000-0000000000c2', // in org A, member of portfolioA2 — move source/target
   projA_inA3: '2a200000-0000-4000-8000-0000000000c3', // in org A, member of ARCHIVED portfolioA3 — POS-COMP-4
-  projB_sentinel: '2a200000-0000-4000-8000-0000000000c4', // SENT-PF-CROSS-ORG-PROJECT, in org B
+  projB_sentinel: '2a200000-0000-4000-8000-0000000000c4', // SENT-PF-CROSS-ORG-PROJECT, in org B, unassigned — assign-cross-org probes
+  projB_sentinel_assigned: '2a200000-0000-4000-8000-0000000000c5', // SENT-PF-CROSS-ORG-PROJECT, in org B, member of portfolioB1 — move-cross-org probes (needs a source portfolio)
 } as const
 
 const SENTINEL_MARKER = 'SENT-PF-CROSS-ORG-PROJECT'
@@ -131,7 +135,8 @@ INSERT INTO public.projects (id, organization_id, portfolio_id, name, status, cr
   ('${IDS.projA_unassigned}','${IDS.orgA}',NULL,'PF2 Project A (unassigned)','active','${IDS.uIM_A}'),
   ('${IDS.projA_inA2}','${IDS.orgA}','${IDS.portfolioA2}','PF2 Project A (in A2)','active','${IDS.uIM_A}'),
   ('${IDS.projA_inA3}','${IDS.orgA}','${IDS.portfolioA3}','PF2 Project A (in archived A3)','active','${IDS.uIM_A}'),
-  ('${IDS.projB_sentinel}','${IDS.orgB}',NULL,'${SENTINEL_MARKER}','active','${IDS.uSA}');
+  ('${IDS.projB_sentinel}','${IDS.orgB}',NULL,'${SENTINEL_MARKER}','active','${IDS.uSA}'),
+  ('${IDS.projB_sentinel_assigned}','${IDS.orgB}','${IDS.portfolioB1}','${SENTINEL_MARKER}','active','${IDS.uSA}');
 `
 
 const HOSTED_FIDELITY = `
@@ -194,11 +199,11 @@ END $p$;
 ROLLBACK;`)
 
   // --- NEG-TENANT-2: a portfolio in org B is not readable from org A ---------
-  add('NEG-TENANT-2-org-B-portfolio-and-sentinel-project-invisible-from-org-A', asUser(IDS.uIM_A) + `DO $p$ DECLARE n int; found text; BEGIN
+  add('NEG-TENANT-2-org-B-portfolio-and-sentinel-projects-invisible-from-org-A', asUser(IDS.uIM_A) + `DO $p$ DECLARE n int; found text; BEGIN
   SELECT count(*) INTO n FROM public.portfolios WHERE id = '${IDS.portfolioB1}';
   IF n <> 0 THEN RAISE EXCEPTION 'NEG-TENANT-2 org B portfolio visible from org A (count=%)', n; END IF;
-  SELECT count(*) INTO n FROM public.projects WHERE id = '${IDS.projB_sentinel}';
-  IF n <> 0 THEN RAISE EXCEPTION 'NEG-TENANT-2 sentinel project visible from org A (count=%)', n; END IF;
+  SELECT count(*) INTO n FROM public.projects WHERE id IN ('${IDS.projB_sentinel}', '${IDS.projB_sentinel_assigned}');
+  IF n <> 0 THEN RAISE EXCEPTION 'NEG-TENANT-2 sentinel project(s) visible from org A (count=%)', n; END IF;
   SELECT string_agg(name, ',') INTO found FROM public.projects WHERE organization_id = '${IDS.orgA}' AND name = '${SENTINEL_MARKER}';
   IF found IS NOT NULL THEN RAISE EXCEPTION 'NEG-TENANT-2 sentinel marker leaked into an org-A-scoped read: %', found; END IF;
 END $p$;
@@ -226,6 +231,26 @@ ROLLBACK;`)
    WHERE id = '${IDS.projB_sentinel}' AND portfolio_id IS NULL;
   GET DIAGNOSTICS n = ROW_COUNT;
   IF n <> 0 THEN RAISE EXCEPTION 'NEG-PG-1 expected RLS to independently refuse (0 rows), got %', n; END IF;
+END $p$;
+ROLLBACK;`)
+
+  // --- NEG-TENANT-1B / NEG-PG-1B: cross-org MOVE refused (POSTGRES_CONTRACT --
+  // names "assign and move" explicitly). Mirrors moveProjectToPortfolioForCurrentOrganization's
+  // exact WHERE clause: the sentinel's real source portfolio is in org B, so
+  // this is a genuine move attempt, not merely an assign of an unassigned row.
+  add('NEG-TENANT-1B-cross-org-move-refused-at-the-application-predicate', asUser(IDS.uIM_A) + `DO $p$ DECLARE n int; BEGIN
+  UPDATE public.projects SET portfolio_id = '${IDS.portfolioA1}'
+   WHERE id = '${IDS.projB_sentinel_assigned}' AND organization_id = '${IDS.orgA}' AND portfolio_id = '${IDS.portfolioB1}';
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n <> 0 THEN RAISE EXCEPTION 'NEG-TENANT-1B expected 0 rows updated, got %', n; END IF;
+END $p$;
+ROLLBACK;`)
+
+  add('NEG-PG-1B-move-without-the-organization-predicate-still-refused-by-RLS', asUser(IDS.uIM_A) + `DO $p$ DECLARE n int; BEGIN
+  UPDATE public.projects SET portfolio_id = '${IDS.portfolioA1}'
+   WHERE id = '${IDS.projB_sentinel_assigned}' AND portfolio_id = '${IDS.portfolioB1}';
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n <> 0 THEN RAISE EXCEPTION 'NEG-PG-1B expected RLS to independently refuse (0 rows), got %', n; END IF;
 END $p$;
 ROLLBACK;`)
 
