@@ -14,6 +14,7 @@ import { eq, and, isNotNull, isNull } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { currentGovernanceRegime } from '@/lib/pipeline/governance-regime';
+import { canManagePortfolio } from '@/lib/auth/permissions';
 import { z } from 'zod';
 import type { Role } from '@/lib/auth/roles';
 
@@ -472,4 +473,181 @@ export async function listActiveProjectsForCurrentOrganization() {
         isNull(projects.deletionRequestedAt),
       ),
     );
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio composition (PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json
+// PF2_SEMANTICS_FROZEN). Grouping-only: none of the three writes below touch
+// project.status, evidence, or any other Measure object — only
+// projects.portfolio_id.
+// ---------------------------------------------------------------------------
+
+/**
+ * Assign a project to a portfolio. Both must belong to the caller's
+ * organization, verified in the same transaction as the write, and the
+ * portfolio must not be archived. Only assigns a currently-unassigned
+ * project — the WHERE clause's `portfolioId IS NULL` is the guard, not a
+ * pre-check, so a concurrent assign cannot silently overwrite another.
+ */
+export async function assignProjectToPortfolioForCurrentOrganization(projectId: string, portfolioId: string) {
+  const ctx = await getCurrentOrganizationContext();
+  if (!ctx) throw new Error('Unauthenticated');
+  if (!canManagePortfolio(ctx.membership.role)) {
+    throw new Error('Permission denied');
+  }
+
+  const [portfolio] = await db
+    .select()
+    .from(portfolios)
+    .where(and(eq(portfolios.id, portfolioId), eq(portfolios.organizationId, ctx.organization.id)));
+  if (!portfolio) throw new Error('Portfolio not found');
+  if (portfolio.status === 'archived') {
+    throw new Error('No se puede asignar un proyecto a un portafolio archivado.');
+  }
+
+  const [project] = await db
+    .select()
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)));
+  if (!project) throw new Error('Project not found');
+
+  const updated = await db
+    .update(projects)
+    .set({ portfolioId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, ctx.organization.id),
+        isNull(projects.portfolioId),
+      ),
+    )
+    .returning();
+
+  if (updated.length === 0) {
+    throw new Error('El proyecto ya pertenece a un portafolio.');
+  }
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'project',
+    entityId: projectId,
+    action: AUDIT_ACTIONS.PROJECT_PORTFOLIO_ASSIGNED,
+    contentModifying: true,
+    beforeJson: { portfolioId: project.portfolioId },
+    afterJson: { portfolioId },
+  });
+
+  return updated[0];
+}
+
+/**
+ * Unassign a project from a portfolio. The project remains fully intact —
+ * only the grouping is removed. Requires the project to currently belong to
+ * exactly the given portfolio; a project that has already moved elsewhere
+ * refuses rather than silently detaching from wherever it now is.
+ */
+export async function unassignProjectFromPortfolioForCurrentOrganization(projectId: string, portfolioId: string) {
+  const ctx = await getCurrentOrganizationContext();
+  if (!ctx) throw new Error('Unauthenticated');
+  if (!canManagePortfolio(ctx.membership.role)) {
+    throw new Error('Permission denied');
+  }
+
+  const updated = await db
+    .update(projects)
+    .set({ portfolioId: null, updatedAt: new Date() })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, ctx.organization.id),
+        eq(projects.portfolioId, portfolioId),
+      ),
+    )
+    .returning();
+
+  if (updated.length === 0) {
+    throw new Error('El proyecto no pertenece a ese portafolio.');
+  }
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'project',
+    entityId: projectId,
+    action: AUDIT_ACTIONS.PROJECT_PORTFOLIO_UNASSIGNED,
+    contentModifying: true,
+    beforeJson: { portfolioId },
+    afterJson: { portfolioId: null },
+  });
+
+  return updated[0];
+}
+
+/**
+ * Move a project from one portfolio to another — ONE human decision, ONE
+ * UPDATE, ONE audit row (never unassign followed by assign: MUT-COMP-1
+ * exists to catch exactly that regression). Both portfolios must belong to
+ * the caller's organization and the target must not be archived. If the
+ * source no longer matches (zero rows updated), the operation is REFUSED —
+ * never retried and never silently converted into an assign, so no state
+ * exists in which the project belongs to no portfolio.
+ */
+export async function moveProjectToPortfolioForCurrentOrganization(
+  projectId: string,
+  sourcePortfolioId: string,
+  targetPortfolioId: string,
+) {
+  const ctx = await getCurrentOrganizationContext();
+  if (!ctx) throw new Error('Unauthenticated');
+  if (!canManagePortfolio(ctx.membership.role)) {
+    throw new Error('Permission denied');
+  }
+
+  const [sourcePortfolio] = await db
+    .select()
+    .from(portfolios)
+    .where(and(eq(portfolios.id, sourcePortfolioId), eq(portfolios.organizationId, ctx.organization.id)));
+  if (!sourcePortfolio) throw new Error('Source portfolio not found');
+
+  const [targetPortfolio] = await db
+    .select()
+    .from(portfolios)
+    .where(and(eq(portfolios.id, targetPortfolioId), eq(portfolios.organizationId, ctx.organization.id)));
+  if (!targetPortfolio) throw new Error('Target portfolio not found');
+  if (targetPortfolio.status === 'archived') {
+    throw new Error('No se puede mover un proyecto a un portafolio archivado.');
+  }
+
+  const updated = await db
+    .update(projects)
+    .set({ portfolioId: targetPortfolioId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, ctx.organization.id),
+        eq(projects.portfolioId, sourcePortfolioId),
+      ),
+    )
+    .returning();
+
+  if (updated.length === 0) {
+    throw new Error('El proyecto ya no pertenece al portafolio de origen.');
+  }
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'project',
+    entityId: projectId,
+    action: AUDIT_ACTIONS.PROJECT_PORTFOLIO_MOVED,
+    contentModifying: true,
+    beforeJson: { portfolioId: sourcePortfolioId },
+    afterJson: { portfolioId: targetPortfolioId },
+  });
+
+  return updated[0];
 }

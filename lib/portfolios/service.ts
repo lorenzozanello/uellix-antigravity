@@ -3,18 +3,38 @@ import { portfolios } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
+import { canManagePortfolio } from '@/lib/auth/permissions';
 import { z } from 'zod';
-import type { Role } from '@/lib/auth/roles';
 
 
 // Validation schema
+//
+// PF2 STATUS_INPUT_CONTRACT: no PF2 request schema may accept a `status`
+// field. portfolios.status is written by exactly two authorized paths and by
+// no input surface: createPortfolioForCurrentOrganization always writes the
+// literal 'active', archivePortfolioForCurrentOrganization always writes the
+// literal 'archived'. A caller-supplied status here would let a create reach
+// the archived state with no portfolio.archived audit row anywhere in the
+// trail (PF2-NEG-STATUS-1).
 const PortfolioInputSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  status: z.enum(['active', 'archived']).default('active'),
 });
 
 type PortfolioInput = z.input<typeof PortfolioInputSchema>;
+
+// Update-only fields (name/description). Status is never accepted here either
+// — see PortfolioInputSchema's note above and PF2-NEG-UNARCHIVE-1.
+const PortfolioUpdateInputSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    description: z.string().optional(),
+  })
+  .refine((data) => data.name !== undefined || data.description !== undefined, {
+    message: 'At least one of name or description must be provided',
+  });
+
+type PortfolioUpdateInput = z.input<typeof PortfolioUpdateInputSchema>;
 
 /** List all portfolios for the current organization */
 export async function listPortfoliosForCurrentOrganization() {
@@ -34,12 +54,11 @@ export async function getPortfolioByIdForCurrentOrganization(id: string) {
   return rows[0] ?? null;
 }
 
-/** Create a portfolio, verifying role and logging */
+/** Create a portfolio, verifying role and logging. Always active — see PortfolioInputSchema. */
 export async function createPortfolioForCurrentOrganization(input: PortfolioInput) {
   const ctx = await getCurrentOrganizationContext();
   if (!ctx) throw new Error('Unauthenticated');
-  const allowedRoles: Role[] = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'];
-  if (!allowedRoles.includes(ctx.membership.role)) {
+  if (!canManagePortfolio(ctx.membership.role)) {
     throw new Error('Permission denied');
   }
   const data = PortfolioInputSchema.parse(input);
@@ -51,7 +70,7 @@ export async function createPortfolioForCurrentOrganization(input: PortfolioInpu
       organizationId: ctx.organization.id,
       name: data.name,
       description: data.description ?? null,
-      status: data.status,
+      status: 'active',
       createdBy: ctx.user.id,
     })
     .returning();
@@ -66,4 +85,84 @@ export async function createPortfolioForCurrentOrganization(input: PortfolioInpu
   });
 
   return newRecord;
+}
+
+/** Update a portfolio's name and/or description. Status is never updatable through this path. */
+export async function updatePortfolioForCurrentOrganization(id: string, input: PortfolioUpdateInput) {
+  const ctx = await getCurrentOrganizationContext();
+  if (!ctx) throw new Error('Unauthenticated');
+  if (!canManagePortfolio(ctx.membership.role)) {
+    throw new Error('Permission denied');
+  }
+  const data = PortfolioUpdateInputSchema.parse(input);
+
+  const existing = await getPortfolioByIdForCurrentOrganization(id);
+  if (!existing) throw new Error('Portfolio not found');
+
+  const updated = await db
+    .update(portfolios)
+    .set({
+      ...(data.name !== undefined ? { name: data.name } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(portfolios.id, id), eq(portfolios.organizationId, ctx.organization.id)))
+    .returning();
+
+  if (updated.length === 0) throw new Error('Failed to update portfolio');
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    actorUserId: ctx.user.id,
+    entityType: 'portfolio',
+    entityId: id,
+    action: AUDIT_ACTIONS.PORTFOLIO_UPDATED,
+    contentModifying: true,
+    beforeJson: { name: existing.name, description: existing.description },
+    afterJson: data,
+  });
+
+  return updated[0];
+}
+
+/**
+ * Archive a portfolio — a grouping-only transition. Never archives, deletes,
+ * detaches or otherwise touches member projects: exactly one column of
+ * exactly one portfolios row is written (PF2 archive.grouping_only).
+ * Unarchiving is out of scope for V1 (PF2-NEG-UNARCHIVE-1) — this is the
+ * ONLY writer of 'archived', and it never writes 'active'.
+ */
+export async function archivePortfolioForCurrentOrganization(id: string) {
+  const ctx = await getCurrentOrganizationContext();
+  if (!ctx) throw new Error('Unauthenticated');
+  if (!canManagePortfolio(ctx.membership.role)) {
+    throw new Error('Permission denied');
+  }
+
+  const existing = await getPortfolioByIdForCurrentOrganization(id);
+  if (!existing) throw new Error('Portfolio not found');
+  if (existing.status === 'archived') {
+    throw new Error('El portafolio ya está archivado.');
+  }
+
+  const updated = await db
+    .update(portfolios)
+    .set({ status: 'archived', updatedAt: new Date() })
+    .where(and(eq(portfolios.id, id), eq(portfolios.organizationId, ctx.organization.id)))
+    .returning();
+
+  if (updated.length === 0) throw new Error('Failed to archive portfolio');
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    actorUserId: ctx.user.id,
+    entityType: 'portfolio',
+    entityId: id,
+    action: AUDIT_ACTIONS.PORTFOLIO_ARCHIVED,
+    contentModifying: true,
+    beforeJson: { status: existing.status },
+    afterJson: { status: 'archived' },
+  });
+
+  return updated[0];
 }

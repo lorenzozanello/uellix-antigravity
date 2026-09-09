@@ -10,6 +10,7 @@ import {
   canUploadEvidence,
   canApproveProxy,
   canGenerateReport,
+  canManagePortfolio,
   canAccessAdmin,
   canViewAuditLogs,
   canViewOrganization,
@@ -139,6 +140,23 @@ describe('canGenerateReport()', () => {
 
   it('denies analyst and below', () => {
     expect(canGenerateReport(ROLES.ANALYST)).toBe(false)
+  })
+})
+
+describe('canManagePortfolio()', () => {
+  // PF2-NEG-PERM (PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json NEG-PERM-1) —
+  // pins the deliberate narrowing: analyst is EXCLUDED from Portfolio
+  // composition management even though it is admitted by RLS.
+  it('allows impact_manager and above', () => {
+    expect(canManagePortfolio(ROLES.IMPACT_MANAGER)).toBe(true)
+    expect(canManagePortfolio(ROLES.ORGANIZATION_ADMIN)).toBe(true)
+    expect(canManagePortfolio(ROLES.SUPER_ADMIN)).toBe(true)
+  })
+
+  it('denies analyst, reviewer and viewer', () => {
+    expect(canManagePortfolio(ROLES.ANALYST)).toBe(false)
+    expect(canManagePortfolio(ROLES.REVIEWER)).toBe(false)
+    expect(canManagePortfolio(ROLES.VIEWER)).toBe(false)
   })
 })
 
