@@ -1,0 +1,997 @@
+{
+  "package_id": "FIBDB052_P1_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "document_class": "AUTHORITY_ONLY__NO_IMPLEMENTATION__NO_ALLOCATION",
+  "append_only": true,
+  "mission_id": "LANE_GV__FIBDB052_P1_EXECUTION_AUTHORITY_AND_TEST_MANIFEST_R1",
+  "lane": "GV",
+  "role": "BOUNDED_FIBDB052_P1_AUTHORITY_AND_TEST_MANIFEST_WRITER",
+  "mode": "DOCS_ONLY",
+  "materialization_date": "2026-09-09",
+  "companion_manifest": "docs/ops/wave3/FIBDB052_P1_TEST_MANIFEST_v1.0.0.json",
+
+  "base_authority": [
+    "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json",
+    "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json"
+  ],
+  "amends": "NOTHING. This artifact is a NEW execution authority scoped strictly under the integrated Wave3 authority chain. It amends no prior artifact, edits no sealed object, and supersedes nothing.",
+  "supersedes": null,
+
+  "AS_OF_HEAD": "4c19c3c7a96213a26af4d9a937e29973601fd949",
+  "AS_OF_TREE": "cd5ef6a3064de50126095479032182a7f3156d5d",
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "AS_OF_BRANCH": "codex/fibdb052-p1-authority-manifest-r1",
+  "AS_OF_MAX_MIGRATION_ORDINAL": "0067_tenancy_refusal_audit_insert_policy.sql",
+  "AS_OF_SCHEMA_SNAPSHOT": "db/migrations/meta/0067_snapshot.json",
+  "AS_OF_JOURNAL_ENTRY_COUNT": 68,
+  "AS_OF_JOURNAL_MAX_IDX": 67,
+  "AS_OF_BASELINE_UNIT_COUNT": 80,
+  "AS_OF_PREPARED_JOURNAL_MAX_ORDINAL": "080_0067_tenancy_refusal_audit_insert_policy.sql",
+  "AS_OF_CONTROLLER_IMMUTABLE_ENTRY_COUNT": 39,
+
+  "PURPOSE": "To confer bounded, machine-verifiable EXECUTION authority for the FIBDB-052 phase P1 index sub-package, and only that. It freezes the exact P1 partition, the exact eight CREATE targets, the exact four verification-only objects, the I-10 phase semantics, the re-measured retired names, the future implementation surface, the normal-generate-plus-guard-patch contract, the migration-tail retarget contract, the ODS/grant sequencing, the protected surface and the deployment boundary. It writes no implementation, allocates no migration ordinal, allocates no ODS lineage, allocates no grant id, and applies nothing anywhere.",
+
+  "LIVE_RECONCILIATION": {
+    "rule": "Every claim below was re-derived against origin/integration/commercial-v1 at the time this artifact was written. None is inherited from a handoff count. The live tip was fetched and compared before any byte was written.",
+    "live_tip_at_handoff": "4c19c3c7a96213a26af4d9a937e29973601fd949",
+    "live_tip_at_first_fetch": "4c19c3c7a96213a26af4d9a937e29973601fd949",
+    "live_tip_at_post_write_refetch": "ab594a641fefbaa62734421086ee25678f0e04b5",
+    "live_moved_during_this_mission": true,
+    "AS_OF_HEAD_is_deliberately_the_branch_base_not_the_final_live_tip": "AS_OF_HEAD is 4c19c3c7, which is this branch's actual base and the head at which every measurement in this artifact was taken. It is NOT retargeted to ab594a64. Restamping AS_OF_HEAD to a commit no measurement was taken against would be exactly the stale-inheritance defect stated in reverse, and would invalidate the ODS_PRESTATE evidence.",
+
+    "DELTA_CLASSIFICATION": {
+      "rule": "The live tip moved between the first fetch and the post-write re-derivation. The delta is classified exactly, not inherited and not ignored.",
+      "from": "4c19c3c7a96213a26af4d9a937e29973601fd949",
+      "to": "ab594a641fefbaa62734421086ee25678f0e04b5",
+      "to_tree": "81430a4ead4efb290f5c37f9092e19dea00b0f3c",
+      "integration_commit": "ab594a64 (Merge pull request #122 from lorenzozanello/codex/portfolio-pf3-authority-r1)",
+      "constituent_commits": [
+        "442f24fd docs(portfolio): PF3 execution authority v1.0.0 — comparison, evidence health, transversal intelligence",
+        "1bd63cd7 docs(portfolio): PF3 authority — record actual gate results and two runner corrections",
+        "a3ea0ef6 docs(portfolio): PF3 authority R2 — live reconciliation, EH-5 semantics, ARCH-2 non-vacuity",
+        "b6884050 docs(portfolio): PF3 authority R2 addendum — record the correct ods-scope base"
+      ],
+      "files_changed": [
+        "A docs/ops/portfolio/PORTFOLIO_PF3_EXECUTION_AUTHORITY_v1.0.0.json"
+      ],
+      "file_count": 1,
+      "classification": "DISJOINT_FROM_EVERY_FACT_THIS_ARTIFACT_FREEZES",
+      "impact_analysis_per_axis": {
+        "db/**": "UNTOUCHED. The migration tail (0067), journal entry count (68), journal max idx (67), baseline unit count (80) and prepared-journal max ordinal (080) are all unchanged.",
+        "scripts/ods-controller.ts": "UNTOUCHED. Re-measured after the delta: IMMUTABLE_BY_CONVENTION still holds exactly 39 entries and still does not enumerate v1.0.29. Controller40 remains required.",
+        "scripts/ods-scope.ts": "UNTOUCHED. Re-measured after the delta: zero PROTECTED_GRANTS rows carry authorityId HPO-ODS-W2-26. The W2-26 axis has not moved.",
+        "tests/**": "UNTOUCHED. The migration-tail tripwire and the four reactive cardinality pins are unchanged.",
+        "docs/ops/wave3/**": "UNTOUCHED by the delta. The integrated Wave3 authority chain this artifact is scoped under is unchanged.",
+        "docs/ops/ods/**": "UNTOUCHED. The ODS lineage still terminates at v1.0.29 and no new addendum was allocated.",
+        "docs/ops/portfolio/**": "The sole surface the delta touches. FIBDB-052 P1 shares no relation, no column, no file and no authority with the Portfolio PF3 execution authority."
+      },
+      "conclusion": "EVERY fact frozen in this artifact was re-derived after the delta and is UNCHANGED. No count, roster, disposition, surface or sequencing claim required revision. The delta is recorded because it occurred, not because it mattered — and stating that distinction is the point: a future auditor comparing this artifact's AS_OF_HEAD against the then-live tip will find intervening commits and must be able to see they were classified rather than missed.",
+      "no_silent_inheritance": "No count in this artifact was carried forward across the delta unverified. The Controller count and the W2-26 registration state were both physically re-measured after the delta, not assumed stable from their pre-delta values."
+    },
+
+    "WAVE3_V1_0_2_INTEGRATED": {
+      "value": "YES",
+      "evidence": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json is present in the tree at AS_OF_TREE. It was integrated by merge commit ab6d9ccf (Merge pull request #119 from lorenzozanello/codex/wave3-amendment-v102-r1), which is an ancestor of the live tip 4c19c3c7.",
+      "why_it_matters": "v1.0.2 is the artifact that supplies the CORRECTED_CREATE_ROSTER (12 names, 8 of them P1) and the CORRECTED_PHASE_ARITHMETIC this authority freezes. Without it integrated, the P1 partition would still be v1.0.1's incorrect 11-DDL form."
+    },
+
+    "F_FQ_1_CLOSED": {
+      "value": "YES",
+      "severity_in_source": "BLOCKING",
+      "source_artifact": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1_0_1_POST_INTEGRATION_EXACT_OBJECT_AUDIT_v1.0.0.json",
+      "closure_instrument": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json -> RESOLVES.F-FQ-1",
+      "resolution_class": "DISPOSITION_CORRECTED_AFTER_MEASUREMENT",
+      "what_closure_means": "I-1, I-2 and I-4 are re-frozen as ALREADY_SATISFIED_AT_AS_OF_HEAD, each naming the existing constraint-backed index that discharges it. They leave the CREATE roster and emit no DDL. F-FQ-2 (NON_BLOCKING) is likewise resolved by CORRECTED_EVIDENCE_ANCHORS.B18_CORRECTED.",
+      "why_this_unblocks_P1": "v1.0.2's own next_gate states that FIBIU-19 P1 implementation authority is conferred by that artifact's independent exact-object audit PASSING, not by its existence. That audit passed and v1.0.2 was integrated at ab6d9ccf. With the blocking finding closed and the artifact integrated, the residual obstacle to P1 is the absence of a P1 execution authority and test manifest — which is precisely what this mission materializes."
+    },
+
+    "V1_0_2_AUDIT_DISPOSITION_LOCATION": {
+      "observation": "docs/ops/wave3/ contains a materialized post-integration audit artifact for v1.0.1 but NOT for v1.0.2.",
+      "measured": "`ls docs/ops/wave3/` returns exactly five files; none carries a v1_0_2 or V1_0_2 audit token.",
+      "disposition": "The v1.0.2 exact-object audit disposition lives in the PR #119 review record and in the merge at ab6d9ccf, not in a repository artifact. This is recorded as an EVIDENCE-LOCATION fact, not as a defect, and it is NOT cured here: curing it would be a third path and is outside the authorized write surface. Recorded as F-GV-1.",
+      "consequence_for_a_future_auditor": "An auditor looking for the v1.0.2 audit inside docs/ops/wave3/** will not find it and must not read that absence as the audit not having occurred."
+    },
+
+    "P1_NOT_G2_GATED": {
+      "value": "CONFIRMED NOT G2-GATED",
+      "primary_evidence": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.1.json -> FIBDB052_PHASE_MODEL.phases[FIBDB-052/P1].g2_gated = false, with note 'This phase is executable today. It is the only phase whose preconditions are fully met at AS_OF_HEAD.'",
+      "corrected_restatement": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json -> CORRECTED_COMPLETION_SEMANTICS.G2_GATING_what_is_NOT_gated_CORRECTED: 'P1 and P3 are not G2-gated. P1's 8 CREATE-target indexes are executable as soon as an implementing mission holds ordinary authority; nothing in this amendment or the base authority requires a human G2 action for them.' and 'no clause here may be read as introducing a gate on P1 or P3.'",
+      "what_IS_G2_gated_and_is_not_P1": "The WAVE3_AUTHORITY_v1.0.0 G2_BOUNDARY governs the stella_0017b artifacts and the FIBDB-053 external gate, and phases P2, P4 and P5. None of those is P1. A reader must not transfer the FIBDB-053 gate onto P1 by proximity.",
+      "the_one_clause_that_could_be_misread": "BOUNDARIES.FIBIU19_SERVICE_COMPOSITION_CAN_ADVANCE.hard_limit says FIBDB-052 COMPLETION is G2-gated. That is a statement about declaring the whole 19-obligation package COMPLETE, which spans P2/P4/P5. It is NOT a gate on EXECUTING P1. This authority governs P1 execution only and makes no completion claim; see I10_PHASE_SEMANTICS.two_distinct_terminal_states."
+    },
+
+    "LC0_DOES_NOT_BLOCK_P1": {
+      "value": "CONFIRMED NON-BLOCKING",
+      "lc0_integration_commit": "4b75c735 (Merge pull request #120 from lorenzozanello/codex/lc0-canonical-baseline-materialization-r1)",
+      "measured": "`git diff --name-only 4b75c735^1 4b75c735 -- db/` returns ZERO paths. The LC0 canonical-baseline integration touched no db/** path at all — no migration, no snapshot, no journal, no prepared unit, no hosted baseline manifest.",
+      "conclusion": "LC0's subject matter (rate-limit taxonomy, proxy.ts fail-open, compliance prose) is disjoint from the FIBDB-052 P1 surface. It neither blocks P1 nor is blocked by it. There is no shared file and no shared authority.",
+      "caution": "LC0 merged at 4b75c735, which is AFTER the base of some concurrent read-only lanes. A future mission comparing against a pre-4b75c735 base will see LC0 as a delta; that delta is still disjoint from P1."
+    },
+
+    "ODS_V1_0_29_INTEGRATED": {
+      "value": "YES",
+      "evidence": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json is present at AS_OF_TREE, integrated by merge commit 4c19c3c7 (Merge pull request #121 from lorenzozanello/codex/ce1-ods-v1029-successor-r1), which IS the live tip.",
+      "measured": "`git diff --name-only 4c19c3c7^1 4c19c3c7 -- db/` returns ZERO paths. The v1.0.29 integration touched no db/** path.",
+      "what_v1_0_29_allocated": "The ODS lineage ordinal v1.0.29 and nothing else. HPO-ODS-W2-26 is REUSED from v1.0.28, not allocated by v1.0.29."
+    },
+
+    "CONTROLLER_STILL_39": {
+      "value": "CONFIRMED 39",
+      "how_measured": "scripts/ods-controller.ts -> IMMUTABLE_BY_CONVENTION (declared at line 50) holds exactly 39 quoted entries. Of those, 28 are ODS_V1_MAINTENANCE_ADDENDUM files, spanning v1.0.1 through v1.0.28 with no gap. The final addendum entry is 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json'.",
+      "v1_0_29_enumerated": false,
+      "corroboration": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json itself records CONTROLLER_ENUMERATES_v1_0_29 = false and states the Controller40 requirement.",
+      "note": "This count is a LIVE MEASUREMENT of the array, not a carried-forward figure. It is stated because 39 is exactly the kind of number that looks stale when it has in fact just been re-derived."
+    },
+
+    "CONTROLLER40_REQUIRED_BEFORE_NEXT_ODS_LINEAGE": {
+      "value": "REQUIRED",
+      "source": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json: 'Controller40 is REQUIRED to enumerate docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json in IMMUTABLE_BY_CONVENTION after this successor is integrated, taking the array from 39 entries to 40 with v1.0.29 as the final item.'",
+      "binding_on_this_authority": "This authority allocates no ODS lineage ordinal, so it does not trip this precondition. It records the precondition so that a future P1 LINEAGE mission cannot allocate v1.0.30 (or any successor ordinal) while the Controller array still stands at 39.",
+      "decoupling_preserved_verbatim_in_substance": "v1.0.29 records that the Controller's IMMUTABLE_BY_CONVENTION array and the PROTECTED_GRANTS registry are INDEPENDENT registries with independent controls. A missing Controller enumeration gates the next LINEAGE allocation; it does not and cannot prevent a GRANT from resolving. This authority does not conflate them."
+    },
+
+    "W2_26_REGISTRATION_IS_A_SEPARATE_CONCURRENT_AXIS": {
+      "value": "CONFIRMED SEPARATE AND CURRENTLY UNREGISTERED",
+      "how_measured": "scripts/ods-scope.ts -> PROTECTED_GRANTS (declared at line 208) contains a grant row for HPO-ODS-W2-25 and NO row for HPO-ODS-W2-26. tests/ods/ods-scope.test.ts:332 asserts this positively: expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-26')).toBe(false).",
+      "consequence": "The protected-grant registry and the ODS lineage sequence may both move between now and P1 lineage allocation, independently and concurrently. A P1 lineage mission MUST re-measure BOTH axes at its own AS_OF_HEAD. Neither this artifact's grant-registry measurement nor its Controller measurement may be carried forward as a reservation."
+    },
+
+    "NO_P1_ODS_LINEAGE_OR_GRANT_EXISTS": {
+      "value": "CONFIRMED NONE",
+      "how_measured": "A repository sweep for FIBDB052-P1 / FIBDB-052/P1 tokens across scripts/** and tests/** returns zero hits. No PROTECTED_GRANTS row names FIBDB-052, P1 or FIBIU-19. No ODS_V1_MAINTENANCE_ADDENDUM allocates a FIBDB-052 P1 lineage. The FIBDB-052 token appears only in authority prose and in the FIB baseline.",
+      "consequence": "P1 currently has NO lineage ordinal, NO grant id, NO migration ordinal and NO scope-allowlist row. All four remain to be allocated by a separate, later, governed act. This artifact allocates none of them; see NO_ALLOCATION."
+    }
+  },
+
+  "BINDING_HPO_RATIFICATIONS": {
+    "rule": "Two HPO ratifications are carried into this authority as BINDING. They are the reason P1 may be implemented at all under the constraints below, and they are the only two acts that authorize the otherwise-prohibited operations they name. Neither may be widened by an implementing mission.",
+
+    "HPO-FIBP1-01": {
+      "id": "HPO-FIBP1-01",
+      "title": "FIBDB052_P1_MIGRATION_TAIL_PIN",
+      "disposition": "AUTHORIZED_RETARGET_ONLY",
+      "what_is_authorized": "The future P1 implementation MAY include tests/tenancy/s1-founder-traceability.test.ts in its diff, for the SOLE purpose of retargeting the deliberate migration-tail equality tripwire to the actually allocated P1 migration unit.",
+      "what_MUST_be_preserved": [
+        "Exact equality semantics. Every assertion that is an equality today remains an equality.",
+        "Explicit naming of the displacing unit. The identity of what displaces what stays spelled out as a literal.",
+        "Every other control in the file, without exception."
+      ],
+      "what_is_PROHIBITED": [
+        "toContain in place of an equality.",
+        "Bounds of any kind (toBeGreaterThan, toBeLessThan, toHaveLength ranges) in place of an equality.",
+        "Any 'somewhere in the list' relaxation.",
+        "Deletion of the assertion or of the test.",
+        "Weakening of the assertion by any other means.",
+        "Any unrelated tenancy change in the same file."
+      ],
+      "allocates": "NOTHING. This act allocates no migration ordinal, no lineage and no protected grant.",
+      "machine_contract": "See MIGRATION_TAIL_RETARGET_CONTRACT for the exact, derivable list of assertions that may move and the exact list that may not."
+    },
+
+    "HPO-FIBP1-02": {
+      "id": "HPO-FIBP1-02",
+      "title": "FIBDB052_P1_INDEX_GENERATION",
+      "disposition": "NORMAL_GENERATE_PLUS_BOUNDED_GUARD_PATCH",
+      "what_is_authorized": "The future implementation generates the P1 migration through the NORMAL drizzle-kit generate path, preserves the generated snapshot and journal exactly as generated, and then applies one bounded, byte-semantically constrained transformation to the generated SQL: adding IF NOT EXISTS to exactly the eight governed CREATE INDEX statements.",
+      "required_sequence": [
+        "1. Declare all 8 governed indexes in db/schema.ts.",
+        "2. Run the normal drizzle-kit generate path.",
+        "3. Preserve the generated snapshot and journal.",
+        "4. Before any apply, add IF NOT EXISTS manually ONLY to the eight governed CREATE INDEX statements.",
+        "5. Preserve index name, columns, order and predicate byte-semantically.",
+        "6. Audit, hash and test the final SQL."
+      ],
+      "what_is_PROHIBITED": "drizzle-kit generate --custom is PROHIBITED, unconditionally.",
+      "why_no_FIB_baseline_amendment_is_required": "The sealed FIB baseline requires CREATE INDEX IF NOT EXISTS. This method produces exactly that in the final, applied SQL. The requirement is satisfied by the artifact that is applied, not by the intermediate generator output, so no amendment to the sealed baseline is required and none is requested.",
+      "why_generate_rather_than_custom": "--custom produces an empty migration and leaves the author to hand-write both the SQL and the metadata. That path forfeits drizzle's own agreement check between db/schema.ts, the emitted SQL and the snapshot — the single strongest structural control this node has. The guard patch is deliberately applied AFTER generation precisely so that agreement is machine-established first and only then narrowed.",
+      "machine_contract": "See GENERATE_PLUS_GUARD_PATCH_CONTRACT."
+    }
+  },
+
+  "P1_PARTITION": {
+    "rule": "The P1 partition is FROZEN here exactly as re-derived from the integrated Wave3 chain at AS_OF_HEAD. It is exhaustive, disjoint and closes. No other FIBDB-052 item belongs to P1.",
+    "P1_total": 13,
+    "CREATE": {
+      "count": 8,
+      "ids": ["I-3", "I-5", "I-6", "I-7", "I-8", "I-9", "I-12", "I-13"]
+    },
+    "VERIFY_ONLY": {
+      "count": 4,
+      "ids": ["I-1", "I-2", "I-4", "I-11"]
+    },
+    "OPEN_ACCESS_PATH_DETERMINATION": {
+      "count": 1,
+      "ids": ["I-10"]
+    },
+    "arithmetic": "8 + 4 + 1 = 13. Closes exactly against CORRECTED_PHASE_ARITHMETIC.phase_item_counts['FIBDB-052/P1'] = 13.",
+    "source": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json -> CORRECTED_PHASE_ARITHMETIC.P1_INTERNAL_PARTITION",
+    "P1_DDL_EMISSION": 8,
+    "items_NOT_in_P1": "I-14 through I-19 are the six blocked obligations and belong to P2, P3, P4 and P5. None of them is in scope for this authority under any framing.",
+    "closure_of_the_negative": "A FIBDB-052 item not named in one of the three P1 buckets above is NOT a P1 item. There is no fourth bucket and no implied membership."
+  },
+
+  "EIGHT_CREATE_TARGETS": {
+    "rule": "This is the complete and closed roster of index names the P1 implementing mission is authorized to CREATE. A name absent from this roster is not authorized. Each entry's governed name, relation, key list, key ORDER and predicate are frozen exactly. The governed NAME preserves FIBDB-052's own run_id spelling while the DEFINITION targets the live column calculation_run_id (S4_RUN_ID_NAMING); this asymmetry is deliberate and must not be 'corrected' by an implementer.",
+    "count": 8,
+    "partial_count": 3,
+    "non_partial_count": 5,
+    "targets": [
+      {
+        "id": "I-3",
+        "governed_index_name": "idx_evidence_versions_evidence_id_approved",
+        "relation": "evidence_versions",
+        "columns": ["evidence_id"],
+        "key_order": "evidence_id",
+        "partial": true,
+        "predicate": "review_status = 'approved'",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS idx_evidence_versions_evidence_id_approved ON evidence_versions (evidence_id) WHERE review_status = 'approved'",
+        "identifier_bytes": 42,
+        "disposition": "REQUIRED_NEW",
+        "why_not_discharged_by_an_existing_object": "A partial-predicate index cannot be discharged by an unconditional UNIQUE constraint (M-7). It is distinct from I-2 on the same relation."
+      },
+      {
+        "id": "I-5",
+        "governed_index_name": "idx_financial_proxy_versions_financial_proxy_id_approved",
+        "relation": "financial_proxy_versions",
+        "columns": ["financial_proxy_id"],
+        "key_order": "financial_proxy_id",
+        "partial": true,
+        "predicate": "review_status = 'approved'",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS idx_financial_proxy_versions_financial_proxy_id_approved ON financial_proxy_versions (financial_proxy_id) WHERE review_status = 'approved'",
+        "identifier_bytes": 56,
+        "disposition": "REQUIRED_NEW_AFTER_S3_RESOLUTION",
+        "key_list_provenance": "The frozen FIBDB-052 text supplies NO key list for this clause. The key list (financial_proxy_id) is supplied by defect resolution S3_FINANCIAL_PROXY_PARTIAL_INDEX, derivation class TEXTUAL_SYMMETRY_WITHIN_ONE_FROZEN_SENTENCE, residual risk F-A5. An implementer may NOT change it; only a governed amendment may.",
+        "why_not_discharged_by_an_existing_object": "Partial; distinct from I-4 on the same relation, which is an unconditional UNIQUE and cannot discharge a partial (M-7)."
+      },
+      {
+        "id": "I-6",
+        "governed_index_name": "idx_outcome_monetization_dispositions_run_id_outcome_id",
+        "relation": "outcome_monetization_dispositions",
+        "columns": ["calculation_run_id", "outcome_id"],
+        "key_order": "calculation_run_id THEN outcome_id",
+        "partial": false,
+        "predicate": null,
+        "governed_definition": "CREATE INDEX IF NOT EXISTS idx_outcome_monetization_dispositions_run_id_outcome_id ON outcome_monetization_dispositions (calculation_run_id, outcome_id)",
+        "identifier_bytes": 55,
+        "disposition": "REQUIRED_NEW",
+        "why_not_discharged_by_an_existing_object": "The existing uq_outcome_monetization_dispositions_outcome_run carries the columns in the REVERSE order (outcome_id, calculation_run_id) and does not serve a run-leading lookup. The existing idx_outcome_monetization_dispositions_run_id is a single-column PREFIX of this index and becomes redundant once this exists; DROPPING IT IS NOT AUTHORIZED (F-A1)."
+      },
+      {
+        "id": "I-7",
+        "governed_index_name": "idx_evidence_sufficiency_determinations_run_id_outcome_id",
+        "relation": "evidence_sufficiency_determinations",
+        "columns": ["calculation_run_id", "outcome_id"],
+        "key_order": "calculation_run_id THEN outcome_id",
+        "partial": false,
+        "predicate": null,
+        "governed_definition": "CREATE INDEX IF NOT EXISTS idx_evidence_sufficiency_determinations_run_id_outcome_id ON evidence_sufficiency_determinations (calculation_run_id, outcome_id)",
+        "identifier_bytes": 57,
+        "disposition": "REQUIRED_NEW",
+        "why_not_discharged_by_an_existing_object": "The existing idx_evidence_sufficiency_determinations_outcome_run is (outcome_id, calculation_run_id), the reverse order. No run-leading index exists on this relation."
+      },
+      {
+        "id": "I-8",
+        "governed_index_name": "idx_counterfactual_assessments_run_id_outcome_id",
+        "relation": "counterfactual_assessments",
+        "columns": ["calculation_run_id", "outcome_id"],
+        "key_order": "calculation_run_id THEN outcome_id",
+        "partial": false,
+        "predicate": null,
+        "governed_definition": "CREATE INDEX IF NOT EXISTS idx_counterfactual_assessments_run_id_outcome_id ON counterfactual_assessments (calculation_run_id, outcome_id)",
+        "identifier_bytes": 48,
+        "disposition": "REQUIRED_NEW",
+        "why_not_discharged_by_an_existing_object": "The existing uq_counterfactual_assessments_outcome_run is the reverse order; idx_counterfactual_assessments_run_id is a single-column prefix. DROPPING THE PREFIX IS NOT AUTHORIZED (F-A1)."
+      },
+      {
+        "id": "I-9",
+        "governed_index_name": "idx_sensitivity_candidates_run_id_disposition",
+        "relation": "sensitivity_candidates",
+        "columns": ["calculation_run_id", "disposition"],
+        "key_order": "calculation_run_id THEN disposition",
+        "partial": false,
+        "predicate": null,
+        "governed_definition": "CREATE INDEX IF NOT EXISTS idx_sensitivity_candidates_run_id_disposition ON sensitivity_candidates (calculation_run_id, disposition)",
+        "identifier_bytes": 45,
+        "disposition": "REQUIRED_NEW",
+        "why_not_discharged_by_an_existing_object": "Neither uq_sensitivity_candidates_run_key (calculation_run_id, candidate_key) nor idx_sensitivity_candidates_run_id covers the disposition column."
+      },
+      {
+        "id": "I-12",
+        "governed_index_name": "idx_methodological_assumptions_project_id_materiality_flag",
+        "relation": "methodological_assumptions",
+        "columns": ["project_id", "materiality_flag"],
+        "key_order": "project_id THEN materiality_flag",
+        "partial": false,
+        "predicate": null,
+        "governed_definition": "CREATE INDEX IF NOT EXISTS idx_methodological_assumptions_project_id_materiality_flag ON methodological_assumptions (project_id, materiality_flag)",
+        "identifier_bytes": 58,
+        "disposition": "REQUIRED_NEW",
+        "why_not_discharged_by_an_existing_object": "The existing idx_methodological_assumptions_project_id is a single-column prefix. DROPPING THE PREFIX IS NOT AUTHORIZED (F-A1).",
+        "note": "This is the longest identifier in the entire 12-name CREATE roster and therefore the one that pins the length-safety ceiling."
+      },
+      {
+        "id": "I-13",
+        "governed_index_name": "idx_sroi_run_reviews_calculation_run_id_approved",
+        "relation": "sroi_run_reviews",
+        "columns": ["calculation_run_id"],
+        "key_order": "calculation_run_id",
+        "partial": true,
+        "predicate": "status = 'approved'",
+        "governed_definition": "CREATE INDEX IF NOT EXISTS idx_sroi_run_reviews_calculation_run_id_approved ON sroi_run_reviews (calculation_run_id) WHERE status = 'approved'",
+        "identifier_bytes": 48,
+        "disposition": "REQUIRED_NEW",
+        "predicate_column_note": "The predicate column here is `status`, NOT `review_status`. I-3 and I-5 use review_status; I-13 uses status. This is a real per-relation difference and copying one predicate onto another relation is a defect.",
+        "why_not_discharged_by_an_existing_object": "The existing idx_sroi_run_reviews_calculation_run_id is NON-partial and is not a substitute for the partial form. This is the index the FIB baseline names as making Portfolio's approved-population selection (V-28) cheap; FIBIU-27 consumes it with NO_DB_OBJECT of its own (FIB:243, FIB:806)."
+      }
+    ],
+    "PARTIAL_PREDICATE_ROSTER": {
+      "count": 3,
+      "entries": [
+        { "id": "I-3", "predicate": "review_status = 'approved'" },
+        { "id": "I-5", "predicate": "review_status = 'approved'" },
+        { "id": "I-13", "predicate": "status = 'approved'" }
+      ],
+      "closure": "Exactly three P1 CREATE targets are partial. The other five carry NO WHERE clause. An emitted WHERE clause on any of I-6, I-7, I-8, I-9 or I-12 is a defect, and a missing WHERE clause on any of I-3, I-5 or I-13 is a defect."
+    },
+    "NON_PARTIAL_ROSTER": {
+      "count": 5,
+      "ids": ["I-6", "I-7", "I-8", "I-9", "I-12"]
+    },
+    "LENGTH_SAFETY": {
+      "longest_P1_create_target_name": "idx_methodological_assumptions_project_id_materiality_flag",
+      "longest_P1_create_target_bytes": 58,
+      "postgres_identifier_limit_bytes": 63,
+      "headroom_bytes": 5,
+      "re_measured_here": true,
+      "conclusion": "UNCHANGED AND RE-CONFIRMED. The maximum CREATE target identifier is 58 bytes, below the 63-byte PostgreSQL limit. See RETIRED_NAMES.effect_on_the_length_ceiling for why the retired-name measurement correction does not reopen this."
+    }
+  },
+
+  "FOUR_VERIFY_ONLY": {
+    "rule": "These four P1 items are ALREADY_SATISFIED_AT_AS_OF_HEAD. Each names an EXISTING object directly. The obligation is to VERIFY that the named object is present, covers exactly the stated columns in the stated order, and is unchanged. Each MUST emit ZERO DDL. Creating an index for any of them — under the governed name, under a retired name, or under any other name — violates C4 and C6 of CORRECTED_COMPLETION_SEMANTICS.",
+    "count": 4,
+    "objects": [
+      {
+        "id": "I-1",
+        "existing_object_name": "domain_object_versions_object_ordinal_unique",
+        "relation": "domain_object_versions",
+        "object_kind": "UNIQUE constraint-backed unique btree index",
+        "columns": ["object_type", "object_id", "ordinal"],
+        "key_order": "object_type THEN object_id THEN ordinal",
+        "constraint_lineage": "db/migrations/0045_fib_domain_object_version_lineage.sql:40",
+        "emits_ddl": false,
+        "all_columns_not_null": true,
+        "note": "The obligation is discharged by the FULL-TUPLE UNIQUE constraint, not by the prefix index idx_domain_object_versions_object, which covers only (object_type, object_id) and is NOT a substitute."
+      },
+      {
+        "id": "I-2",
+        "existing_object_name": "evidence_versions_evidence_ordinal_unique",
+        "relation": "evidence_versions",
+        "object_kind": "UNIQUE constraint-backed unique btree index",
+        "columns": ["evidence_id", "ordinal"],
+        "key_order": "evidence_id THEN ordinal",
+        "constraint_lineage": "db/migrations/0048_fib_evidence_versions.sql:45",
+        "emits_ddl": false,
+        "all_columns_not_null": true,
+        "note": "Distinct from I-3 on the same relation. I-3 remains a CREATE target because a partial-predicate index cannot be discharged by an unconditional UNIQUE (M-7)."
+      },
+      {
+        "id": "I-4",
+        "existing_object_name": "financial_proxy_versions_proxy_ordinal_unique",
+        "relation": "financial_proxy_versions",
+        "object_kind": "UNIQUE constraint-backed unique btree index",
+        "columns": ["financial_proxy_id", "ordinal"],
+        "key_order": "financial_proxy_id THEN ordinal",
+        "constraint_lineage": "db/migrations/0053_fib_proxy_versions_provenance.sql:85",
+        "emits_ddl": false,
+        "all_columns_not_null": true,
+        "note": "The constraint identifier abbreviates financial_proxy_id to proxy, which is why a name-shaped search for a financial_proxy_id index does not surface it. The identifier is AUTHORITATIVE AS SPELLED. Distinct from I-5, which remains a CREATE target because it is partial."
+      },
+      {
+        "id": "I-11",
+        "existing_object_name": "uq_readiness_assessments_calculation_run",
+        "relation": "readiness_assessments",
+        "object_kind": "UNIQUE index",
+        "columns": ["calculation_run_id"],
+        "key_order": "calculation_run_id",
+        "constraint_lineage": "B9 (WAVE3_AUTHORITY_AMENDMENT_v1.0.1 evidence anchor)",
+        "emits_ddl": false,
+        "note": "This is the PRECEDENT the v1.0.2 correction followed for I-1, I-2 and I-4, not an object that correction altered. See ADD-2."
+      }
+    ],
+    "WHY_IF_NOT_EXISTS_IS_NOT_PROTECTION_HERE": {
+      "rule": "CREATE INDEX IF NOT EXISTS resolves on the index NAME, not on the index DEFINITION (B20).",
+      "consequence": "For all four items a definitionally equivalent index already exists under a name the rule-derived naming scheme would NOT produce. IF NOT EXISTS therefore provides ZERO protection: emitting the rule-derived name would silently create a permanent duplicate rather than being inert. This is the single most important reason these four are verify-only rather than 'create with a guard'.",
+      "epistemic_status": "B20's name-based matching remains DERIVED, not machine-proven by any docs-only mission. The conservative disposition — verify, do not emit — is chosen in all four cases precisely so that if the semantics were somehow otherwise, the result is a no-op rather than a wrong index.",
+      "widened_coverage_reference": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json -> CORRECTED_VERIFICATION_OBLIGATION widens this obligation from {I-11, I-16, I-18} to {I-1, I-2, I-4, I-11, I-16, I-18}. Of those six, exactly four (I-1, I-2, I-4, I-11) are P1. I-16 and I-18 belong to P3 and P5 and are OUT OF SCOPE here."
+    }
+  },
+
+  "I10_SEMANTICS": {
+    "rule": "I-10 REMAINS a P1 item and emits ZERO DDL under the P1 migration implementation. Its obligation is an access-path determination owned by FIBIU-19 and made at implementation time of the eligibility composition, not at migration time.",
+    "id": "I-10",
+    "frozen_request": "sensitivity_scenarios (candidate_id)",
+    "disposition": "NOT_CONSTRUCTIBLE_AS_WRITTEN__RE_EXPRESSED_AS_AN_ACCESS_PATH_OBLIGATION",
+    "measured_conflict": "sensitivity_scenarios has NO candidate_id column. It carries candidate_ids of type jsonb (B4). Executing the frozen request verbatim raises 42703.",
+    "emits_ddl_under_this_authority": false,
+    "when_the_determination_occurs": "At the point the FIBIU-19 eligibility composition service first writes scenario access. NOT during the P1 migration mission.",
+    "determination_owner": "FIBIU-19",
+    "OUTCOMES": {
+      "RUN_SCOPED_ONLY": {
+        "meaning": "The composition reaches scenarios by calculation_run_id.",
+        "effect": "The obligation is DISCHARGED by the existing idx_sensitivity_scenarios_run_id. No DDL is emitted. The discharge MUST be recorded together with the measured call site — an unrecorded discharge is not a discharge."
+      },
+      "CANDIDATE_SCOPED": {
+        "meaning": "The composition must find scenarios CONTAINING a given candidate.",
+        "effect": "A GIN index on sensitivity_scenarios (candidate_ids) becomes a REQUIRED completion item of FIBDB-052 and MUST receive SEPARATE GOVERNED AUTHORITY before it can count toward FIBDB-052 completion. It may NOT be added under this authority, under the P1 migration, or by an implementer's own judgement. GIN is a new access method, present nowhere else in FIBDB-052, and its introduction is a governed decision."
+      },
+      "ABSENCE_OF_DETERMINATION": {
+        "meaning": "The determination has not been made.",
+        "effect": "FAIL CLOSED. The FIBDB-052 P1 PHASE is NOT fully DISCHARGED. Absence of a decision is not a discharge."
+      }
+    },
+    "two_distinct_terminal_states": {
+      "rule": "This authority requires that two states be kept lexically distinct in every report, artifact and commit message. Collapsing them is the specific false claim this section exists to prevent.",
+      "P1_DDL_SUBPACKAGE_COMPLETE": {
+        "definition": "The 8 CREATE targets exist under exactly their governed names with exactly their governed definitions; the 4 verify-only objects are verified present and unchanged with zero duplicate DDL; zero DDL was emitted for I-10; and every gate in EXIT_GATES passed.",
+        "achievable_by_the_migration_mission": true,
+        "requires_the_I10_determination": false
+      },
+      "FIBDB052_P1_PHASE_DISCHARGED": {
+        "definition": "P1_DDL_SUBPACKAGE_COMPLETE **and** the I-10 access-path determination has been MADE, RECORDED with its measured call site, and ACTIONED (discharged under RUN_SCOPED_ONLY, or a governed GIN authority obtained and executed under CANDIDATE_SCOPED).",
+        "achievable_by_the_migration_mission": false,
+        "requires_the_I10_determination": true
+      },
+      "permitted_claim_for_the_migration_mission": "The migration mission MAY claim P1_DDL_SUBPACKAGE_COMPLETE once its gates pass. It MAY NOT claim FIBDB052_P1_PHASE_DISCHARGED, and it MAY NOT claim FIBDB-052 COMPLETE in any form (that additionally spans P2/P4/P5 and is G2-gated).",
+      "why_this_distinction_is_load_bearing": "Without it, a mission that correctly emits 8 indexes and correctly emits nothing for I-10 has no vocabulary for what it achieved, and the nearest available word — 'complete' — is false. Naming the weaker state makes honest reporting the path of least resistance rather than an act of restraint."
+    },
+    "explicitly_prohibited_under_this_authority": [
+      "Inventing a candidate_id column on sensitivity_scenarios, or any column, to satisfy the frozen text.",
+      "Emitting a GIN index on candidate_ids, or any GIN index at all, under the P1 migration.",
+      "Re-expressing I-10 to calculation_run_id in order to make it a no-op against an index that already exists. This would read as a resolution but is a silent narrowing that asserts a fact about unwritten code.",
+      "Dropping the obligation on the ground that the named column does not exist.",
+      "Treating the migration mission's silence on I-10 as the determination."
+    ]
+  },
+
+  "RETIRED_NAMES": {
+    "rule": "These three rule-derived names were CREATE targets in v1.0.1 and are NOT CREATE targets under the integrated authority. They name NOTHING that exists and NOTHING that may be created. No index may be created under any of them, at any time, by any mission.",
+    "count": 3,
+    "names": [
+      {
+        "name": "idx_domain_object_versions_object_type_object_id_ordinal",
+        "retired_for": "I-1",
+        "measured_bytes": 56,
+        "length_recorded_in_v1_0_2": 55,
+        "measurement_status": "CORRECTED_HERE"
+      },
+      {
+        "name": "idx_evidence_versions_evidence_id_ordinal",
+        "retired_for": "I-2",
+        "measured_bytes": 41,
+        "length_recorded_in_v1_0_2": 41,
+        "measurement_status": "CONFIRMED"
+      },
+      {
+        "name": "idx_financial_proxy_versions_financial_proxy_id_ordinal",
+        "retired_for": "I-4",
+        "measured_bytes": 55,
+        "length_recorded_in_v1_0_2": 55,
+        "measurement_status": "CONFIRMED"
+      }
+    ],
+    "measurement_correction": {
+      "what_was_wrong": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json -> CORRECTED_CREATE_ROSTER.length_safety.unchanged_from_v1_0_1_and_why states 'Their lengths were 55, 41 and 55.' The first figure is wrong. idx_domain_object_versions_object_type_object_id_ordinal is 56 bytes, not 55.",
+      "how_re_measured": "Byte length of each identifier under UTF-8, computed directly from the literal string. All three identifiers are pure ASCII, so byte length equals character length.",
+      "what_this_correction_does_NOT_do": "It does NOT amend v1.0.2. v1.0.2 is integrated and append-only; this artifact records the corrected measurement in its own right and does not edit the prior artifact.",
+      "severity": "NON_BLOCKING. Recorded as F-GV-2."
+    },
+    "effect_on_the_length_ceiling": {
+      "conclusion": "NOT REOPENED. The max CREATE target = 58 safety conclusion REMAINS TRUE and is re-confirmed.",
+      "derivation": "The retired names are not CREATE targets, so they do not enter the CREATE ceiling at all. Even if they did, 56 < 58, so the ceiling would be unmoved. v1.0.2's stated REASON for the unchanged ceiling ('none of the three retired names was the maximum') also survives the correction: 56 is still not the maximum. The defect is in a recorded measurement, not in the conclusion that measurement supported.",
+      "why_stated_explicitly": "A future reader who finds one wrong number in a length_safety block is entitled to distrust the whole block. This states exactly which figure moved, which conclusion depended on it, and why the conclusion holds anyway — so the correction narrows the doubt instead of widening it."
+    },
+    "ABSENCE_OBLIGATION": {
+      "rule": "The future P1 implementation MUST prove all three retired names ABSENT from four populations. Absence must be positively tested, not inferred from 'we did not type it'.",
+      "populations": [
+        "db/migrations/** — every .sql file in the directory, at the byte level.",
+        "db/schema.ts — the Drizzle schema source.",
+        "db/prepared/journal/** — every prepared journal wrapper.",
+        "the live PostgreSQL catalog (pg_class / pg_indexes) of the disposable verification database, after the P1 migration has been applied."
+      ],
+      "why_the_catalog_check_is_not_redundant_with_the_file_check": "The file check proves the mission did not WRITE the name. The catalog check proves the name does not EXIST after apply — which is the property that actually matters, and which a generated-but-unreviewed statement, or a name introduced by any other unit in the baseline chain, could violate without appearing in this mission's own diff."
+    }
+  },
+
+  "FUTURE_IMPLEMENTATION_SURFACE": {
+    "rule": "The MINIMUM future implementation surface, derived from the classes required by normal Drizzle generation plus hosted journal/baseline regeneration plus the reactive pins those regenerations turn red. Each path below was independently evaluated against live state; each carries an explicit IN / CONDITIONAL / OUT disposition and a measured reason. NO MIGRATION ORDINAL IS ALLOCATED, RESERVED OR IMPLIED.",
+
+    "ORDINAL_NOT_ALLOCATED": {
+      "allocated": false,
+      "measured_state_at_AS_OF_HEAD": {
+        "max_migration_file": "0067_tenancy_refusal_audit_insert_policy.sql",
+        "journal_entry_count": 68,
+        "journal_max_idx": 67
+      },
+      "derivation_rule_for_the_allocating_mission": "The allocated ordinal is the zero-padded four-digit successor of the highest existing db/migrations/NNNN_*.sql ordinal AT THE ALLOCATING MISSION'S OWN AS_OF_HEAD, as produced by the normal drizzle-kit generate path. It is NOT computed by this artifact and NOT to be read off the figures above.",
+      "why_the_measured_figures_are_not_a_reservation": "Concurrent lanes may land a migration between this artifact and the allocating mission. Reading 0068 off 0067 here and carrying it forward would be exactly the stale-count inheritance this authority's LIVE_RECONCILIATION section forbids. The figures above are dated evidence of what was true at AS_OF_HEAD, not a claim about what will be true later.",
+      "placeholder_notation": "Below, <ORD> denotes the allocated four-digit ordinal and <TAG> denotes the derived tag. Neither is a value this artifact supplies."
+    },
+
+    "TAG_DERIVATION": {
+      "frozen": "PARTIALLY. The PREFIX is deterministic from repository precedent; the SUBJECT half is not, and is left to the allocating mission.",
+      "prefix_rule": {
+        "value": "fib_",
+        "deterministic": true,
+        "measured_precedent": "24 of the 68 migrations carry a fib_ prefix, and it is the prefix used by every FIB-owned unit in the contiguous 0055..0065 band (e.g. 0062_fib_methodological_assumptions, 0063_fib_counterfactual_assessments, 0064_fib_readiness_assessments, 0065_fib_sensitivity_model). FIBDB-052/P1 is a FIB-owned unit executed by FIBIU-19, so the prefix is determined.",
+        "counter_examples_and_why_they_do_not_break_the_rule": "0066_multiorg_s1_founder_traceability and 0067_tenancy_refusal_audit_insert_policy do NOT carry fib_. Both are multi-org tenancy units, not FIB units. The precedent is scoped to FIB ownership, and both non-conforming neighbours are outside that scope."
+      },
+      "subject_rule": {
+        "deterministic": false,
+        "why_not": "The subject half of an existing FIB tag names the relation family or the package subject and is AUTHORED, not mechanically derived (compare fib_sensitivity_model against fib_methodological_assumptions — different derivation shapes from comparable inputs). No rule in the repository produces a unique subject string from 'FIBDB-052 phase P1'.",
+        "exact_derivation_rule_for_the_allocating_mission": "The subject MUST (a) begin with the token fibdb052, (b) contain the token p1, and (c) name the package's kind, which is indexes. A tag matching the regex ^[0-9]{4}_fib_fibdb052_p1_[a-z0-9_]*index(es)?$ satisfies this authority. Any tag conforming to that regex is authorized; the allocating mission selects one and records it.",
+        "why_a_regex_rather_than_a_literal": "Freezing a literal tag here would be an allocation this mission is not authorized to make, and would collide silently if a concurrent lane chose the same string. Freezing the SHAPE binds the property that matters — that the unit is identifiable as FIBDB-052 P1 indexes from its filename alone — without allocating."
+      }
+    },
+
+    "PATHS": [
+      {
+        "path": "db/schema.ts",
+        "disposition": "IN",
+        "class": "SOURCE",
+        "why": "HPO-FIBP1-02 step 1 requires all 8 governed indexes to be declared here. This is the input to normal drizzle-kit generate and is the only place the 8 declarations originate.",
+        "bounded_change": "Exactly 8 index declarations added, matching the frozen names, relations, key lists, key order and predicates in EIGHT_CREATE_TARGETS. No other schema mutation of any kind.",
+        "protected": false
+      },
+      {
+        "path": "db/migrations/<ORD>_<TAG>.sql",
+        "disposition": "IN",
+        "class": "GENERATED_THEN_GUARD_PATCHED",
+        "why": "The generated migration carrying exactly 8 CREATE INDEX statements, each then guard-patched to CREATE INDEX IF NOT EXISTS per HPO-FIBP1-02 steps 2 and 4.",
+        "protected": true,
+        "protected_pattern": "db/migrations/**"
+      },
+      {
+        "path": "db/migrations/meta/<ORD>_snapshot.json",
+        "disposition": "IN",
+        "class": "GENERATED__PRESERVED_AS_GENERATED",
+        "why": "Normal drizzle-kit generate emits this. HPO-FIBP1-02 step 3 requires it be PRESERVED, not synthesized and not hand-edited.",
+        "protected": true,
+        "protected_pattern": "db/migrations/**"
+      },
+      {
+        "path": "db/migrations/meta/_journal.json",
+        "disposition": "IN",
+        "class": "GENERATED__APPEND_ONLY",
+        "why": "Normal drizzle-kit generate appends exactly one entry. Measured at AS_OF_HEAD: 68 entries, max idx 67. The append must be exactly one entry with idx = previous length, and every prior entry must be byte-identical.",
+        "protected": true,
+        "protected_pattern": "db/migrations/**"
+      },
+      {
+        "path": "db/prepared/journal/<PREPARED_ORD>_<ORD>_<TAG>.sql",
+        "disposition": "IN",
+        "class": "HOSTED_JOURNAL_WRAPPER",
+        "why": "Repository precedent is exact and unbroken: every drizzle migration has a prepared-journal wrapper. Measured tail at AS_OF_HEAD: 080_0067_tenancy_refusal_audit_insert_policy.sql. The wrapper ordinal is the successor of the highest prepared-journal ordinal at the allocating mission's own AS_OF_HEAD; it is NOT the migration ordinal and the two must not be conflated (080 wraps 0067).",
+        "protected": true,
+        "protected_pattern": "db/prepared/**",
+        "grant_must_be_narrower_than_the_protected_pattern": true
+      },
+      {
+        "path": "db/hosted/baseline-manifest.ts",
+        "disposition": "IN",
+        "class": "HOSTED_BASELINE_APPEND",
+        "why": "BASELINE_UNITS must gain exactly one unit for the new migration, following the 0067 entry (measured at db/hosted/baseline-manifest.ts:1412). Measured count at AS_OF_HEAD: 80 units. The append takes it to 81.",
+        "protected": false,
+        "note": "db/hosted/** is NOT in DEFAULT_PROTECTED_PATTERNS. This path needs no grant."
+      },
+      {
+        "path": "tests/hosted/baseline-manifest.test.ts",
+        "disposition": "IN",
+        "class": "REACTIVE_CARDINALITY_PIN",
+        "why": "Three literal pins on 80 turn red the instant BASELINE_UNITS gains a unit. Measured sites: line 111 (test title 'has 80 units: 68 Drizzle, 2 Supabase, 10 policies'), line 112 (expect(BASELINE_UNITS).toHaveLength(80)), line 119 (title 'numbers ordinals 1..80 contiguously'), line 121 (Array.from({ length: 80 })) and line 124 (expect(new Set(BASELINE_ORDER).size).toBe(80)).",
+        "bounded_change": "80 -> 81 and 68 -> 69 Drizzle, at exactly those sites. The assertion SHAPES — toHaveLength, contiguous 1..N, Set size — must be PRESERVED as exact equalities. Relaxing any of them to a bound is prohibited by the same principle as HPO-FIBP1-01.",
+        "protected": false
+      },
+      {
+        "path": "tests/hosted/baseline-journal-wrapper.test.ts",
+        "disposition": "IN",
+        "class": "REACTIVE_CARDINALITY_PIN",
+        "why": "Two literal pins on 80 at lines 474 and 475 (BASELINE_UNITS and BASELINE_ORDER), plus the explanatory comment at line 473 which records the running derivation ('+ 0067 = 80').",
+        "bounded_change": "80 -> 81 at both sites; the line 473 derivation comment extended by one term naming the P1 unit. Assertions at lines 51, 444 and 479 are expressed relative to BASELINE_UNITS.length and MOVE ON THEIR OWN — they must NOT be touched.",
+        "protected": false
+      },
+      {
+        "path": "tests/hosted/operator-runner.test.ts",
+        "disposition": "IN",
+        "class": "REACTIVE_CARDINALITY_PIN",
+        "why": "One literal pin on 80 at line 239 (expect(BASELINE_UNITS).toHaveLength(80)).",
+        "bounded_change": "80 -> 81 at exactly that site. Every other assertion in the file is expressed relative to BASELINE_UNITS.length (lines 399, 406, 906, 908, 1446, 1459) and MUST NOT be touched.",
+        "protected": false
+      },
+      {
+        "path": "tests/tenancy/s1-founder-traceability.test.ts",
+        "disposition": "IN__UNDER_HPO-FIBP1-01_ONLY",
+        "class": "MIGRATION_TAIL_TRIPWIRE_RETARGET",
+        "why": "The deliberate final-unit displacement tripwire pins S1 and 0067 at exact tail positions and fails by design when a new unit lands. See MIGRATION_TAIL_RETARGET_CONTRACT for the exact assertion-level contract.",
+        "protected": false,
+        "hard_limit": "This file may be touched ONLY under HPO-FIBP1-01 and ONLY for the retarget. Any other change to it, including an apparently harmless one, is out of authority."
+      },
+      {
+        "path": "tests/fibdb052-p1-indexes.test.ts",
+        "disposition": "IN",
+        "class": "NEW_STRUCTURAL_TEST",
+        "why": "The structural (non-PostgreSQL) proof surface for the P1 contract: schema/migration/snapshot agreement, exact names, exact columns and order, exact predicates, retired-name absence, zero-duplicate and zero-ninth-index cardinality.",
+        "protected": false
+      },
+      {
+        "path": "tests/postgres/fibdb052-p1-indexes.pg.test.ts",
+        "disposition": "IN",
+        "class": "NEW_REAL_PG_TEST",
+        "why": "The catalog-level proof surface. Structural agreement between schema, SQL and snapshot does not prove that PostgreSQL actually built the objects with the intended key ordering, predicates and validity. Only the catalog proves that.",
+        "protected": false
+      },
+      {
+        "path": "tests/postgres/fibdb052-p1-indexes.probes.json",
+        "disposition": "IN",
+        "class": "NEW_DISPOSABLE_PROBE_MANIFEST",
+        "why": "The probe manifest consumed by pnpm db:audit:disposable. Required by the companion test manifest's postgres_requirements.",
+        "protected": false
+      },
+      {
+        "path": "artifacts/hosted-a1-status.json",
+        "disposition": "CONDITIONAL",
+        "class": "REGENERATED_STATUS_ARTIFACT",
+        "why": "This artifact carries packageCount, packageStates and chainPlan (measured keys at AS_OF_HEAD). Whether appending ONE drizzle baseline unit moves any of them is NOT established by this authority and was NOT measured, because measuring it requires running the A1 status generator, which is implementation work.",
+        "disposition_rule": "The implementing mission MUST re-run the generator and include this path ONLY IF the regenerated bytes actually differ. If they do not differ, the path is OUT and must not appear in the diff. An unchanged file included in a diff is scope expansion.",
+        "status": "UNKNOWN — deliberately not resolved here. Fails closed: the mission measures, it does not assume.",
+        "protected": false
+      },
+      {
+        "path": "tests/ods/ods-scope.test.ts",
+        "disposition": "CONDITIONAL",
+        "class": "GRANT_REGISTRY_PIN",
+        "why": "Required ONLY IF the P1 mission's own protected-grant is registered in scripts/ods-scope.ts as part of that mission. Registering a grant moves the live-count guard and the frozen-registry assertion, both of which are exact-equality pins.",
+        "disposition_rule": "IN if and only if the P1 mission registers its grant. OUT if the grant is registered by a separate, prior lineage mission — which is the sequencing this authority expects. See ODS_SEQUENCING.",
+        "status": "UNKNOWN — depends on an allocation decision this artifact does not make.",
+        "critical_hazard": "The live-count guard in tests/ods/ods-scope.test.ts is identified by the OPERAND SIDE of its expect, NEVER by line number: registering a grant inserts rows and moves every line below it. A mission that locates the guard by line number will patch the wrong assertion.",
+        "protected": false
+      },
+      {
+        "path": "scripts/ods-scope.ts",
+        "disposition": "CONDITIONAL",
+        "class": "GRANT_REGISTRY",
+        "why": "Holds PROTECTED_GRANTS (line 208). Touched only if the P1 mission registers its own grant row. Same IN/OUT rule and same sequencing caveat as tests/ods/ods-scope.test.ts.",
+        "status": "UNKNOWN",
+        "protected": false
+      },
+      {
+        "path": "db/baseline/**",
+        "disposition": "OUT",
+        "why": "FIBDB-052 P1 creates no baseline object. The baseline is the pre-Drizzle canonical surface and gains nothing from an index migration on the Drizzle track. Protected under db/baseline/**; no grant is sought and none may be inferred.",
+        "protected": true
+      },
+      {
+        "path": "db/prepared/hosted/**, db/prepared/hosted/governed/**",
+        "disposition": "OUT",
+        "why": "Hosted and governed prepared variants are G2-gated apply surfaces. P1 emits no hosted or governed variant and applies nothing remotely. Any appearance of these paths in a P1 diff is a boundary violation, not a scope question.",
+        "protected": true
+      },
+      {
+        "path": "docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**",
+        "disposition": "OUT",
+        "why": "Sealed/certified authority. P1 requires no amendment to any of them — HPO-FIBP1-02 exists precisely so the sealed baseline's CREATE INDEX IF NOT EXISTS requirement is satisfied without amending it.",
+        "protected": true
+      },
+      {
+        "path": "scripts/ods-controller.ts",
+        "disposition": "OUT",
+        "why": "No Controller enumeration, version or digest is touched by P1. Controller40 is a SEPARATE act with a separate owner. See ODS_SEQUENCING.",
+        "protected": false
+      }
+    ],
+
+    "SURFACE_SUMMARY": {
+      "IN_unconditional": 12,
+      "CONDITIONAL": 3,
+      "OUT_explicitly_evaluated": 5,
+      "protected_paths_among_IN": ["db/migrations/**", "db/prepared/journal/**"],
+      "note": "The IN count is a MINIMUM. A path not listed here is not thereby authorized; the allocating mission's own ods:scope --allow list is the binding surface and must be derived at that time, not copied from here."
+    }
+  },
+
+  "GENERATE_GUARD_PATCH_CONTRACT": {
+    "rule": "HPO-FIBP1-02 frozen as a machine-verifiable implementation contract. The sequence is ORDERED and each step's output is evidence for the next. A step may not be skipped, reordered or merged.",
+
+    "SEQUENCE": [
+      {
+        "step": "A",
+        "action": "Edit db/schema.ts with EXACTLY 8 index declarations.",
+        "verification": "The diff of db/schema.ts adds exactly 8 index declarations and changes nothing else. Names, relations, key lists, key ORDER and predicates match EIGHT_CREATE_TARGETS byte-for-byte in semantics."
+      },
+      {
+        "step": "B",
+        "action": "Run the NORMAL drizzle-kit generate path.",
+        "verification": "The command actually run is recorded verbatim. It does NOT carry --custom.",
+        "prohibited": "drizzle-kit generate --custom."
+      },
+      {
+        "step": "C",
+        "action": "Capture generated metadata.",
+        "verification": "The generated migration file, the generated meta/<ORD>_snapshot.json and the appended meta/_journal.json entry are captured BEFORE any manual edit, so that step F has an unmodified reference to diff against."
+      },
+      {
+        "step": "D",
+        "action": "Verify EXACTLY the expected 8 CREATE INDEX statements were generated.",
+        "verification": "Statement count in the generated SQL is exactly 8. Each is a CREATE INDEX. Each matches one of the 8 governed targets on name, relation, key list, key order and predicate. Zero unmatched statements; zero unmatched targets.",
+        "fails_closed_on": "A ninth statement, a missing statement, a DROP, an ALTER, or a CREATE of any object other than an index."
+      },
+      {
+        "step": "E",
+        "action": "Bounded transformation: CREATE INDEX -> CREATE INDEX IF NOT EXISTS, for those 8 statements ONLY.",
+        "verification": "Exactly 8 occurrences of the token sequence IF NOT EXISTS are added. Zero other tokens are added, removed or reordered.",
+        "prohibited": "Applying the transformation to any statement outside the 8; applying it to a file other than the generated migration; applying it to the snapshot or the journal."
+      },
+      {
+        "step": "F",
+        "action": "Prove NO other byte-semantic SQL change.",
+        "verification": "A diff between the step-C capture and the final SQL shows exactly 8 insertions of ' IF NOT EXISTS' and nothing else. Whitespace, statement order, quoting and identifier casing are unchanged.",
+        "why_this_step_exists": "Step E is a manual edit to a generated artifact. Without F, the guarantee that generation established in D is unverifiable after E. F is what makes the manual edit auditable rather than trusted."
+      },
+      {
+        "step": "G",
+        "action": "Recompute and record every generated hash and manifest evidence the repository requires.",
+        "verification": "The db/hosted/baseline-manifest.ts entry's sha256 is computed over the FINAL, guard-patched, LF-normalized bytes — not over the step-C capture. The prepared-journal wrapper wraps the FINAL bytes.",
+        "windows_hazard": "The stored git blob for db/migrations/** is LF (pinned by .gitattributes). Any hash computed over CRLF working-tree bytes will not match. Hash the LF form."
+      },
+      {
+        "step": "H",
+        "action": "Run structural AND real-PostgreSQL verification BEFORE any apply.",
+        "verification": "Both the structural suite and the disposable-PostgreSQL suite run with COLLECTED > 0 and pass. A skipped real-PG suite is NOT green.",
+        "boundary": "The only apply permitted at this step is against a disposable PostgreSQL container that is destroyed afterwards. See DEPLOYMENT_BOUNDARY."
+      }
+    ],
+
+    "PROHIBITED_ABSOLUTELY": {
+      "rule": "Each item below is prohibited regardless of intent, framing or apparent harmlessness. A mission that believes it has found a case where one is warranted has exceeded this authority and must STOP and escalate.",
+      "items": [
+        "drizzle-kit generate --custom.",
+        "Manual synthesis of db/migrations/meta/<ORD>_snapshot.json.",
+        "Manual synthesis of, or manual edit to, db/migrations/meta/_journal.json beyond the single entry drizzle-kit itself appended.",
+        "Any additional DDL — a ninth index, a table, a column, a constraint, a policy, a trigger, a function, an extension, a role statement or an ownership statement.",
+        "DROP of anything, including the redundant single-column prefix indexes that I-6, I-8 and I-12 subsume. F-A1 records the redundancy; it does NOT authorize the cleanup.",
+        "CONCURRENTLY on any statement. It cannot run inside a transaction, and a drizzle migration file is applied as a whole-file transaction.",
+        "Renaming any index, constraint, table or column.",
+        "Altering any predicate, including normalizing quoting or operator spelling.",
+        "Altering column order in any index key list."
+      ]
+    },
+
+    "WHY_WHOLE_FILE_ROLLBACK_MATTERS_HERE": "A migration transaction rolls back as a WHOLE FILE. One bad statement discards every other statement in that file, including correct ones. This is why step D's exact-count verification runs BEFORE the guard patch and before any apply: an unnoticed ninth statement does not partially succeed, it silently voids all eight."
+  },
+
+  "TAIL_PIN_RETARGET_CONTRACT": {
+    "rule": "HPO-FIBP1-01 frozen as an assertion-level contract. The file is tests/tenancy/s1-founder-traceability.test.ts. The tripwire lives in the test titled 'has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit', inside the describe block 'S1 migration — exactly the authorized DDL, one scanner-visible structural backfill'.",
+
+    "MEASURED_CURRENT_STATE_AT_AS_OF_HEAD": {
+      "identification_rule": "The assertions below are identified by their EXACT SOURCE TEXT and by their OPERAND STRUCTURE, never by line number. Line numbers are given as dated evidence only; any edit above them moves them.",
+      "assertions": [
+        { "ref": "T-1", "line_at_AS_OF_HEAD": 103, "text": "const S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql'" },
+        { "ref": "T-2", "line_at_AS_OF_HEAD": 105, "text": "expect(files[files.length - 2]).toBe(S1_UNIT.id)" },
+        { "ref": "T-3", "line_at_AS_OF_HEAD": 106, "text": "expect(files[files.length - 1]).toBe(S3_UNIT_ID)" },
+        { "ref": "T-4", "line_at_AS_OF_HEAD": 108, "text": "const own = journal.entries.find((e) => e.tag + '.sql' === S1_UNIT.id)" },
+        { "ref": "T-5", "line_at_AS_OF_HEAD": 109, "text": "expect(own).toBeDefined()" },
+        { "ref": "T-6", "line_at_AS_OF_HEAD": 110, "text": "expect(existsSync(... own!.idx padded ..._snapshot.json)).toBe(true)" },
+        { "ref": "T-7", "line_at_AS_OF_HEAD": 112, "text": "expect(last.tag + '.sql').toBe(S3_UNIT_ID)" },
+        { "ref": "T-8", "line_at_AS_OF_HEAD": 113, "text": "expect(last.idx).toBe(journal.entries.length - 1)" },
+        { "ref": "T-9", "line_at_AS_OF_HEAD": 114, "text": "expect(existsSync(... last.idx padded ..._snapshot.json)).toBe(true)" }
+      ],
+      "what_the_control_actually_protects": "Quoted from the file's own prose comment (HPO-ODS-W2-25): S1's own journal row and snapshot exist and stay consistent; being LAST was only ever how that was expressed while nothing followed it. The pin is RETARGETED to S1's own position and the displacing unit is NAMED, so a second, unannounced displacement still fails."
+    },
+
+    "ASSERTIONS_THAT_MAY_MOVE": {
+      "rule": "Exactly these, and no others. Each moves in exactly the way stated. This list is DERIVABLE FROM CURRENT LIVE STATE: it follows mechanically from appending exactly one .sql file to db/migrations and exactly one entry to _journal.json.",
+      "T-2": {
+        "from": "expect(files[files.length - 2]).toBe(S1_UNIT.id)",
+        "to": "expect(files[files.length - 3]).toBe(S1_UNIT.id)",
+        "why": "S1 currently sits second-from-last. Appending the P1 unit moves it to third-from-last. The index shifts by exactly one; the equality, the operand and the target identity are unchanged."
+      },
+      "T-3": {
+        "from": "expect(files[files.length - 1]).toBe(S3_UNIT_ID)",
+        "to": "expect(files[files.length - 2]).toBe(S3_UNIT_ID)  AND a NEW assertion expect(files[files.length - 1]).toBe(P1_UNIT_ID)",
+        "why": "0067 moves from last to second-from-last and the P1 unit takes the tail. This is the ONE place a new assertion is added rather than edited.",
+        "critical": "S3_UNIT_ID MUST BE RETAINED, not replaced. 0067 remains in the chain; it merely moves down one slot. A retarget that substitutes P1_UNIT_ID for S3_UNIT_ID here DELETES the S3 displacement identity and is a PROHIBITED weakening under HPO-FIBP1-01, even though it superficially looks like the intended edit."
+      },
+      "T-7": {
+        "from": "expect(last.tag + '.sql').toBe(S3_UNIT_ID)",
+        "to": "expect(last.tag + '.sql').toBe(P1_UNIT_ID)",
+        "why": "The journal's last entry is now the P1 unit. This is a true substitution: the assertion is about whatever is last, and what is last has changed."
+      },
+      "NEW_CONSTANT": {
+        "add": "const P1_UNIT_ID = '<ORD>_<TAG>.sql'",
+        "shape": "A module- or test-local const holding the EXACT allocated P1 migration filename as a string literal. Not a computed value, not a glob, not a regex.",
+        "why_a_literal": "The whole point of the tripwire is that the displacing unit is NAMED. A computed value would make the assertion self-fulfilling and silently pass under a third, unannounced displacement."
+      },
+      "PROSE": {
+        "may_change": "The it(...) title and the explanatory comment block above it MAY be updated to name the new displacing unit and to extend the displacement history.",
+        "must_not_change": "The prose may not be shortened in a way that removes the record of WHY the pin is positional rather than 'last', nor the HPO-ODS-W2-25 attribution."
+      }
+    },
+
+    "ASSERTIONS_THAT_MUST_NOT_MOVE": {
+      "rule": "These are unaffected by a tail append and any change to them is out of authority.",
+      "T-1": "S3_UNIT_ID's VALUE stays '0067_tenancy_refusal_audit_insert_policy.sql'. Only its position in the assertion chain changes.",
+      "T-4_T-5_T-6": "S1's own journal-row lookup and its snapshot existence check are position-independent and MUST be untouched.",
+      "T-8": "expect(last.idx).toBe(journal.entries.length - 1) is expressed relative to the array and moves on its own. Touching it is prohibited.",
+      "T-9": "The last-entry snapshot existence check is expressed relative to last.idx and moves on its own. Touching it is prohibited.",
+      "elsewhere_in_the_file": "expect(S1_UNIT.ordinal).toBe(79) and expect(BASELINE_UNITS[S1_UNIT.ordinal - 1]).toBe(S1_UNIT) are S1's OWN baseline position. Appending a unit AFTER S1 does not move S1's ordinal. These MUST NOT be touched, and a mission that changes them has misunderstood the append.",
+      "every_other_control": "The six-DDL-statement control, the FACTS.* emptiness controls, the sha256 control, the dependsOn control, the managed control and every schema-shape control in the file are untouched."
+    },
+
+    "MUTATION_CONTROLS_THAT_MUST_PROVE_THE_RETARGET_IS_NOT_A_WEAKENING": {
+      "rule": "The P1 mission MUST demonstrate each of the following turns the suite RED. A retarget that cannot be shown to have preserved strictness has not been shown to be a retarget at all.",
+      "M-T1": "Replacing any surviving toBe with toContain => the suite must FAIL.",
+      "M-T2": "Relaxing any exact index into a bound or an 'includes' form => the suite must FAIL.",
+      "M-T3": "Removing the explicit displacement identity — deleting the S3_UNIT_ID assertion, or replacing its literal with P1_UNIT_ID — => the suite must FAIL.",
+      "M-T4": "Changing any unrelated tenancy assertion in the file => the suite must FAIL.",
+      "M-T5": "Appending a second, unannounced migration after the P1 unit without updating the pin => the suite must FAIL. This is the tripwire's actual purpose and the one control that proves the retarget kept it armed."
+    }
+  },
+
+  "ODS_SEQUENCING": {
+    "rule": "This authority allocates NOTHING in the ODS domain and forbids any 'next id' from being carried forward from it.",
+    "DO_NOT_ALLOCATE": {
+      "v1.0.30": "NOT allocated, NOT reserved, NOT implied.",
+      "HPO-ODS-W2-27": "NOT allocated, NOT reserved, NOT implied.",
+      "any_other_grant_id": "NOT allocated, NOT reserved, NOT implied.",
+      "migration_ordinal": "NOT allocated, NOT reserved, NOT implied.",
+      "scope_allowlist_row": "NOT requested, NOT implied.",
+      "controller_change": "NONE. No Controller enumeration, version or digest is touched."
+    },
+    "FROZEN_SEQUENCE": [
+      {
+        "step": 1,
+        "requirement": "Controller40 MUST be integrated before the NEXT ODS lineage allocation after v1.0.29.",
+        "measured_precondition_state": "Controller IMMUTABLE_BY_CONVENTION holds 39 entries and does NOT enumerate docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json. Controller40 takes it to 40 with v1.0.29 as the final item.",
+        "source": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json"
+      },
+      {
+        "step": 2,
+        "requirement": "The P1 LINEAGE mission MUST re-measure the PROTECTED_GRANTS registry after W2-26 registration, because the lineage axis and the grant axis may move CONCURRENTLY and independently.",
+        "measured_precondition_state": "HPO-ODS-W2-26 is NOT registered in scripts/ods-scope.ts at AS_OF_HEAD; tests/ods/ods-scope.test.ts asserts its absence positively.",
+        "why_re_measurement_is_mandatory": "The two registries are governed independently. A P1 mission that measures one and infers the other will be wrong whenever the other moved in between — which is the normal case, not the exceptional one."
+      },
+      {
+        "step": 3,
+        "requirement": "Only then may a P1 lineage ordinal and a P1 grant id be allocated, each against the THEN-CURRENT repository state.",
+        "constraint": "NO assumed 'next grant id' and NO assumed 'next lineage ordinal' may be carried from this authority. Every figure in AS_OF_* and LIVE_RECONCILIATION is dated evidence of what was true at AS_OF_HEAD, never a reservation."
+      }
+    ],
+    "DECOUPLING_PRESERVED": "The Controller's IMMUTABLE_BY_CONVENTION array gates the NEXT LINEAGE allocation. The PROTECTED_GRANTS registry gates which branch may touch which protected path. They are independent registries with independent controls. A missing Controller enumeration does NOT and CANNOT prevent a grant from resolving. This authority does not conflate them and no clause here may be read as doing so.",
+    "live_count_guard_hazard": "The live-count guard in tests/ods/ods-scope.test.ts is identified by the OPERAND SIDE of its expect, NEVER by line number. Registering a grant inserts registry rows and moves every line below. A mission that locates the guard by remembered line number will patch the wrong assertion and may produce a green suite that proves nothing."
+  },
+
+  "PROTECTED_SURFACE": {
+    "rule": "The EXPECTED P1 protected surface, stated as a prediction to be RE-MEASURED at allocation time, never as a reservation.",
+    "expected_if_still_true_at_future_allocation": [
+      "db/migrations/**",
+      "db/prepared/journal/**"
+    ],
+    "measured_basis": "scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS at AS_OF_HEAD holds exactly: docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json.",
+    "GRANT_MUST_BE_NARROWER_THAN_THE_PROTECTED_PATTERN": {
+      "rule": "The DEFAULT protected pattern is the broad db/prepared/**. The P1 GRANT must be the narrow db/prepared/journal/**. NO BLANKET db/prepared/** GRANT MAY BE REQUESTED OR ISSUED.",
+      "why": "A blanket db/prepared/** grant would additionally authorize db/prepared/hosted/** and db/prepared/hosted/governed/**, which are G2-gated apply surfaces the P1 mission has no business touching. The breadth of the PROTECTION is not a licence for breadth in the GRANT; the grant authorizes an exact union of patterns, and a sibling under db/prepared/ that matches the default pattern but not the grant's narrower pattern is correctly refused."
+    },
+    "CHECKPOINT_B0_EXPLICITLY_EXCLUDED": {
+      "included": false,
+      "rule": "checkpoint-b0 is NOT included in the expected P1 protected surface and MUST NOT be added on the strength of precedent, convenience, or a prior mission's grant shape.",
+      "condition_for_inclusion": "It may be included ONLY IF a future LIVE RE-MEASUREMENT proves that P1 actually changes it. Not that it might; that it does.",
+      "why_stated_negatively": "Several prior grants in this repository carry a checkpoint-b0 probe pattern. Copying a grant shape is the most likely way a P1 mission would silently widen its own protected surface, and it would look like precedent-following rather than expansion."
+    },
+    "re_measurement_obligation": "The allocating mission MUST derive its own --allow list from its own measured diff at its own AS_OF_HEAD. It may NOT copy this list. If its measured diff contains a protected path not listed here, that is a SCOPE DELTA requiring adjudication — never a silent addition on the ground that 'it changed anyway'."
+  },
+
+  "DEPLOYMENT_BOUNDARY": {
+    "rule": "FROZEN. There is no condition under which this authority authorizes an apply anywhere other than a disposable, destroyed-afterwards PostgreSQL container. A future mission that believes it has found one has misread this section.",
+    "NO_PRODUCTION_APPLY": true,
+    "NO_STAGING_APPLY": true,
+    "NO_REMOTE_APPLY": true,
+    "NO_AUTOMATIC_MIGRATION_SIDE_EFFECT": true,
+    "NO_CANONICAL_LOCAL_SUPABASE_APPLY": true,
+    "what_IS_permitted": "Disposable rehearsal only — applying the unit against a fresh, throwaway PostgreSQL container via pnpm db:audit:disposable, and destroying it afterwards.",
+    "sufficiency": "Disposable PostgreSQL is SUFFICIENT for P1 implementation verification. A lock or load rehearsal is NOT required unless FUTURE EVIDENCE proves it is; no such evidence exists at AS_OF_HEAD.",
+    "why_a_lock_rehearsal_is_not_currently_required": "P1 emits 8 plain (non-CONCURRENT) CREATE INDEX statements against relations that are, at AS_OF_HEAD, part of an unshipped FIBIU-19 surface. The ACCESS EXCLUSIVE lock a plain CREATE INDEX takes is only a production concern against a live, loaded table. This is recorded as the REASON the rehearsal is not required, so that a future mission can see exactly which premise would have to change for it to become required.",
+    "COMMERCIAL_V1_PRODUCTION_AUTHORIZATION": {
+      "claimed": false,
+      "rule": "Nothing in this authority constitutes, implies or advances Commercial V1 production authorization. P1 is a performance support package on the Drizzle track. Shipping it is not evidence of production readiness for anything."
+    }
+  },
+
+  "COMPANION_MANIFEST": {
+    "path": "docs/ops/wave3/FIBDB052_P1_TEST_MANIFEST_v1.0.0.json",
+    "manifest_id": "FIBDB052-P1",
+    "schema": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+    "relationship": "The manifest is the MACHINE-READABLE form of this authority's proof obligations. Where the two could be read as disagreeing, the manifest's controls are the executable contract and this authority is the reason they exist. Neither may be satisfied without the other.",
+    "why_the_obligation_lives_here_and_not_in_WAVE3_TEST_MANIFEST_v1_0_0": "v1.0.1's MANIFEST_DISPOSITION assigns the index-existence verification obligation to 'the manifest of the FUTURE mission that emits the DDL, frozen before that implementation begins'. This IS that manifest. WAVE3_TEST_MANIFEST_v1.0.0.json remains the Wave 3 BEHAVIOURAL contract for the composition function, SoD and findings, and is NOT amended, edited or superseded by this mission."
+  },
+
+  "NO_ALLOCATION": {
+    "rule": "This mission allocates nothing. Each item was explicitly considered and explicitly NOT allocated. A future mission needing any of them must re-derive it against the then-current repository state. Nothing here may be cited as a reservation.",
+    "ods_addendum_ordinal": "NONE allocated, reserved or implied. Specifically NOT v1.0.30.",
+    "hpo_ods_id": "NONE allocated, reserved or implied. Specifically NOT HPO-ODS-W2-27.",
+    "grant_id": "NONE. docs/ops/wave3/** is not a member of DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts, so this docs-only write requires no grant row and none is requested.",
+    "migration_ordinal": "NONE. No db/migrations/** ordinal is allocated, reserved or implied.",
+    "migration_tag": "NONE. Only the tag SHAPE is frozen (see FUTURE_IMPLEMENTATION_SURFACE.TAG_DERIVATION). No literal tag is allocated.",
+    "controller_change": "NONE. No Controller enumeration, version or digest is touched.",
+    "scope_allowlist_row": "NONE requested or implied.",
+    "hpo_fibp1_ids": "HPO-FIBP1-01 and HPO-FIBP1-02 are RATIFICATIONS carried into this artifact as binding, not allocations made by it. They confer the two bounded permissions they name and nothing else."
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-GV-1",
+      "severity": "NON_BLOCKING",
+      "finding": "No v1.0.2 post-integration audit artifact exists in docs/ops/wave3/**. The audit disposition lives in the PR #119 review record and the merge at ab6d9ccf.",
+      "why_not_cured_here": "Materializing it would be a third path, outside the two-path authorized write surface.",
+      "consequence": "An auditor must not read the absence of that file as the audit not having occurred."
+    },
+    {
+      "id": "F-GV-2",
+      "severity": "NON_BLOCKING",
+      "finding": "v1.0.2's length_safety block records the retired-name lengths as '55, 41 and 55'. The first is 56.",
+      "corrected_in": "RETIRED_NAMES.measurement_correction",
+      "conclusion_impact": "NONE. The max CREATE target = 58 conclusion is unaffected and is re-confirmed."
+    },
+    {
+      "id": "F-GV-3",
+      "severity": "NON_BLOCKING",
+      "finding": "Whether appending one baseline unit changes artifacts/hosted-a1-status.json is UNKNOWN and was not measured, because measuring it requires running the A1 status generator.",
+      "disposition": "Deliberately unresolved. Fails closed: the implementing mission MUST measure and include the path only if the bytes actually differ."
+    },
+    {
+      "id": "F-GV-4",
+      "severity": "INFORMATIONAL",
+      "finding": "db/prepared/journal/ holds 81 .sql files while BASELINE_UNITS holds 80 units at AS_OF_HEAD.",
+      "disposition": "Not reconciled here; it is not a P1 obligation and reconciling it would be scope expansion. The implementing mission must derive its prepared-journal ordinal from the measured maximum ordinal (080 at AS_OF_HEAD), NOT from a file count."
+    },
+    {
+      "id": "F-A1",
+      "severity": "CARRIED_FORWARD_NON_BLOCKING",
+      "finding": "I-6, I-8 and I-12 each subsume an existing single-column prefix index, rendering it redundant.",
+      "disposition": "Recorded, NOT authorized for cleanup. Dropping any prefix index is prohibited under GENERATE_GUARD_PATCH_CONTRACT.PROHIBITED_ABSOLUTELY."
+    },
+    {
+      "id": "F-A5",
+      "severity": "CARRIED_FORWARD_LOW",
+      "finding": "I-5's key list is derived by textual symmetry with its sibling clause, not stated in the frozen text.",
+      "disposition": "Only a governed amendment may change it; an implementer may not."
+    },
+    {
+      "id": "F-A7",
+      "severity": "CARRIED_FORWARD_INFORMATIONAL",
+      "finding": "WAVE3_TEST_MANIFEST_v1.0.0.json's control P-3 carries test_file 'UNKNOWN'.",
+      "disposition": "Pre-existing condition of a frozen manifest. Not caused by, and not repaired by, this mission."
+    }
+  ],
+
+  "self_check": {
+    "authorized_paths_written": 2,
+    "third_path_written": false,
+    "implementation_written": false,
+    "allocation_made": false,
+    "sealed_artifact_edited": false,
+    "prior_authority_amended": false,
+    "live_re_derived_before_writing": true,
+    "prestate_gate": "ODS_PRESTATE=PASS at branch codex/fibdb052-p1-authority-manifest-r1, HEAD 4c19c3c7a96213a26af4d9a937e29973601fd949, tree cd5ef6a3064de50126095479032182a7f3156d5d, clean.",
+    "partition_closes": "8 + 4 + 1 = 13 = CORRECTED_PHASE_ARITHMETIC P1 count.",
+    "create_roster_closed": "8 P1 names, zero collisions among themselves, all under 63 bytes, maximum 58.",
+    "every_HPO_ratification_bound": "HPO-FIBP1-01 bound in TAIL_PIN_RETARGET_CONTRACT; HPO-FIBP1-02 bound in GENERATE_GUARD_PATCH_CONTRACT.",
+    "unknowns_recorded_not_guessed": "F-GV-3 and the two CONDITIONAL surface paths are recorded as UNKNOWN and fail closed rather than being assumed."
+  },
+
+  "final_state": "FIBDB052_P1_EXECUTION_AUTHORITY_FROZEN__COMPANION_MANIFEST_FROZEN__NO_ALLOCATION_MADE__AWAITING_INDEPENDENT_EXACT_OBJECT_AUDIT",
+
+  "next_gate": "FIBDB052_P1_AUTHORITY_AND_MANIFEST_INDEPENDENT_EXACT_OBJECT_AUDIT against AS_OF_HEAD 4c19c3c7a96213a26af4d9a937e29973601fd949 / tree cd5ef6a3064de50126095479032182a7f3156d5d. FIBDB-052 P1 IMPLEMENTATION AUTHORITY IS NOT CONFERRED BY THIS ARTIFACT'S EXISTENCE; it is conferred by that audit passing AND by the separate allocation of a migration ordinal, an ODS lineage and a protected grant, none of which this artifact makes. Until all four hold, no FIBDB-052 P1 DDL may be written."
+}

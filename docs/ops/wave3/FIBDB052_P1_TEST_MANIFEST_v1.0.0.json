@@ -1,0 +1,224 @@
+{
+  "manifest_id": "FIBDB052-P1",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/wave3/FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json (scoped under docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json -> CORRECTED_CREATE_ROSTER, CORRECTED_PHASE_ARITHMETIC, CORRECTED_DISPOSITIONS, CORRECTED_COMPLETION_SEMANTICS, CORRECTED_VERIFICATION_OBLIGATION; and docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.1.json -> FIBDB052_INVENTORY.items, FIBDB052_PHASE_MODEL.phases[FIBDB-052/P1], SPECIFICATION_DEFECTS.S2_SENSITIVITY_SCENARIOS, SPECIFICATION_DEFECTS.S3_FINANCIAL_PROXY_PARTIAL_INDEX, SPECIFICATION_DEFECTS.S4_RUN_ID_NAMING). Frozen at AS_OF_HEAD 4c19c3c7a96213a26af4d9a937e29973601fd949 / tree cd5ef6a3064de50126095479032182a7f3156d5d. Binding ratifications: HPO-FIBP1-01 (migration-tail pin retarget only) and HPO-FIBP1-02 (normal generate plus bounded guard patch).",
+
+  "dependencies": [
+    "WAVE3_AUTHORITY_v1.0.0",
+    "WAVE3_AUTHORITY_AMENDMENT_v1.0.1",
+    "WAVE3_AUTHORITY_AMENDMENT_v1.0.2",
+    "F-FQ-1",
+    "HPO-FIBP1-01",
+    "HPO-FIBP1-02",
+    "FIBDB052_P1_MIGRATION_ORDINAL_ALLOCATION",
+    "FIBDB052_P1_ODS_LINEAGE_ALLOCATION",
+    "FIBDB052_P1_PROTECTED_GRANT_ALLOCATION",
+    "ODS_CONTROLLER40_ENUMERATES_v1.0.29"
+  ],
+
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/journal/**"
+  ],
+
+  "protected_authority": null,
+
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN — the implementing mission supplies the disposable-harness setup manifest that applies the full baseline chain through the allocated P1 unit. It is not named here because it depends on the allocated ordinal, which this manifest does not allocate.",
+    "probe_manifest": "tests/postgres/fibdb052-p1-indexes.probes.json",
+    "rationale": "Structural agreement between db/schema.ts, the generated SQL and the generated snapshot proves what the repository INTENDED. It does not prove what PostgreSQL actually BUILT. Only pg_index / pg_class / pg_indexes prove the eight indexes exist under exactly their governed names, with exactly their key columns in exactly their key ORDER, with exactly their partial predicates, and with indisvalid true. It is additionally the only surface that can prove a NEGATIVE about the catalog: that no retired name resolves to any object, that no duplicate was created for the four verification-only items, that no GIN index and no ninth index exists, and that the catalog delta is exactly +8. Via pnpm db:audit:disposable against a fresh throwaway container which is destroyed afterwards — NEVER staging, NEVER production, NEVER the canonical local Supabase stack."
+  },
+
+  "sentinels": [],
+
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+
+  "positive_controls": [
+    {
+      "id": "P-1",
+      "description": "EXACT CARDINALITY. The P1 migration emits exactly 8 CREATE INDEX statements and exactly 8 statements in total. Asserted as an equality on the parsed statement count, never as a lower bound and never as a 'contains'. A ninth statement of any kind fails this control.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "P-2",
+      "description": "EXACT NAMES. The set of index names emitted by the P1 migration equals exactly {idx_evidence_versions_evidence_id_approved, idx_financial_proxy_versions_financial_proxy_id_approved, idx_outcome_monetization_dispositions_run_id_outcome_id, idx_evidence_sufficiency_determinations_run_id_outcome_id, idx_counterfactual_assessments_run_id_outcome_id, idx_sensitivity_candidates_run_id_disposition, idx_methodological_assumptions_project_id_materiality_flag, idx_sroi_run_reviews_calculation_run_id_approved}. Set equality in BOTH directions: zero unmatched statements and zero unmatched governed targets.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "P-3",
+      "description": "EXACT COLUMNS AND KEY ORDER. Each of the 8 indexes carries exactly its governed key list in exactly its governed order: I-3 (evidence_id); I-5 (financial_proxy_id); I-6 (calculation_run_id, outcome_id); I-7 (calculation_run_id, outcome_id); I-8 (calculation_run_id, outcome_id); I-9 (calculation_run_id, disposition); I-12 (project_id, materiality_flag); I-13 (calculation_run_id). Order is asserted as an ordered-array equality, not as set membership — the reverse order is the specific defect four of these indexes exist to correct.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "P-4",
+      "description": "THREE PARTIAL PREDICATES, EXACT. Exactly three of the eight are partial and their predicates are exactly: I-3 review_status = 'approved'; I-5 review_status = 'approved'; I-13 status = 'approved'. Note that I-13's predicate column is `status`, NOT `review_status` — a per-relation difference, and copying one predicate onto the other relation is a defect this control catches.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "P-5",
+      "description": "FIVE NON-PARTIAL, EXACT. Exactly five of the eight carry NO WHERE clause: I-6, I-7, I-8, I-9, I-12. Asserted positively (predicate is absent) rather than by omission from P-4.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "P-6",
+      "description": "SCHEMA / MIGRATION / SNAPSHOT AGREEMENT. The 8 index declarations in db/schema.ts, the 8 CREATE INDEX statements in the generated migration, and the index entries in db/migrations/meta/<ORD>_snapshot.json agree on name, relation, key list, key order and predicate for all 8. Three-way agreement, not two pairwise checks — this is the control that the normal drizzle-kit generate path exists to make available, and it is forfeited by --custom.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "P-7",
+      "description": "JOURNAL APPEND INTEGRITY. db/migrations/meta/_journal.json gains exactly ONE entry. Its idx equals the previous entries.length (68 at AS_OF_HEAD, re-measured at implementation). Its tag matches the allocated migration filename minus the .sql suffix. Every pre-existing entry is byte-identical to its pre-implementation value. The corresponding meta/<idx>_snapshot.json exists.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "P-8",
+      "description": "BASELINE APPEND INTEGRITY. db/hosted/baseline-manifest.ts BASELINE_UNITS gains exactly ONE unit, taking the count from 80 to 81 with contiguous ordinals 1..81 and BASELINE_ORDER derived from them. The new unit's sha256 is computed over the FINAL guard-patched LF-normalized migration bytes (not over the pre-patch generator output). A matching db/prepared/journal wrapper exists whose ordinal is the successor of the measured maximum prepared-journal ordinal (080 at AS_OF_HEAD).",
+      "test_file": "tests/hosted/baseline-manifest.test.ts"
+    },
+    {
+      "id": "P-9",
+      "description": "FOUR VERIFICATION-ONLY OBJECTS REMAIN EXACT. domain_object_versions_object_ordinal_unique (object_type, object_id, ordinal); evidence_versions_evidence_ordinal_unique (evidence_id, ordinal); financial_proxy_versions_proxy_ordinal_unique (financial_proxy_id, ordinal); uq_readiness_assessments_calculation_run (calculation_run_id). Each is asserted present, unique, with exactly those columns in exactly that order, and UNCHANGED from its pre-implementation definition.",
+      "test_file": "tests/postgres/fibdb052-p1-indexes.pg.test.ts"
+    },
+    {
+      "id": "P-10",
+      "description": "MIGRATION-TAIL TRIPWIRE RETARGET REMAINS EXACT. After the retarget, files[length-3] === S1_UNIT.id, files[length-2] === '0067_tenancy_refusal_audit_insert_policy.sql', files[length-1] === the allocated P1 unit filename, and journal last.tag + '.sql' === the allocated P1 unit filename. All four are toBe equalities against string literals. S3_UNIT_ID is RETAINED, not replaced. S1_UNIT.ordinal remains 79 and BASELINE_UNITS[78] remains S1_UNIT — appending after S1 does not move S1's own ordinal.",
+      "test_file": "tests/tenancy/s1-founder-traceability.test.ts"
+    },
+    {
+      "id": "P-11",
+      "description": "IF NOT EXISTS GUARD PRESENT ON EXACTLY THE EIGHT. All 8 emitted statements read CREATE INDEX IF NOT EXISTS. The guard appears exactly 8 times in the migration file and nowhere in the snapshot or the journal. This is the control that proves HPO-FIBP1-02 step E was applied to the intended statements and only to them.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "P-12",
+      "description": "IDENTIFIER LENGTH SAFETY. Every one of the 8 governed names is at most 63 bytes; the measured maximum is 58 (idx_methodological_assumptions_project_id_materiality_flag). Asserted per-name against 63 and as an equality on the measured maximum, so that a future rename that silently approaches the limit is caught rather than merely tolerated.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "ALL THREE RETIRED NAMES ABSENT. idx_domain_object_versions_object_type_object_id_ordinal (56 bytes), idx_evidence_versions_evidence_id_ordinal (41 bytes), idx_financial_proxy_versions_financial_proxy_id_ordinal (55 bytes) appear NOWHERE in db/migrations/**, db/schema.ts or db/prepared/journal/**. Absence is asserted positively by scanning the file bytes, never inferred from 'the mission did not type it'.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-2",
+      "description": "ZERO DUPLICATE DDL FOR I-1, I-2, I-4 AND I-11. The migration emits NO CREATE INDEX for domain_object_versions (object_type, object_id, ordinal), evidence_versions (evidence_id, ordinal), financial_proxy_versions (financial_proxy_id, ordinal) or readiness_assessments (calculation_run_id) — under the governed existing name, under a retired name, or under any other name. IF NOT EXISTS gives NO protection here because it resolves on the NAME, not the DEFINITION (B20), so a rule-derived name would create a permanent duplicate rather than being inert.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-3",
+      "description": "ZERO I-10 DDL. The migration emits no statement referencing sensitivity_scenarios and no statement referencing candidate_ids or a candidate_id column. I-10 is NOT_CONSTRUCTIBLE_AS_WRITTEN and its access-path determination belongs to FIBIU-19 at composition-writing time, not to this migration.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-4",
+      "description": "ZERO GIN. The migration contains no USING gin, no USING GIN and no non-btree access method of any kind. GIN is present nowhere else in FIBDB-052 and its introduction is a governed decision requiring separate authority — never an implementer's inference from the CANDIDATE_SCOPED branch of the S2 determination.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-5",
+      "description": "ZERO DROP. The migration contains no DROP of any kind — no DROP INDEX, no DROP TABLE, no DROP CONSTRAINT, no DROP COLUMN.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-6",
+      "description": "ZERO UNAUTHORIZED PREFIX CLEANUP. The three single-column prefix indexes that I-6, I-8 and I-12 subsume — idx_outcome_monetization_dispositions_run_id, idx_counterfactual_assessments_run_id, idx_methodological_assumptions_project_id — are asserted STILL PRESENT after the migration. F-A1 records their redundancy; it does not authorize their removal, and this control makes that distinction executable rather than merely stated.",
+      "test_file": "tests/postgres/fibdb052-p1-indexes.pg.test.ts"
+    },
+    {
+      "id": "N-7",
+      "description": "ZERO CONCURRENTLY. The migration contains no CREATE INDEX CONCURRENTLY. CONCURRENTLY cannot run inside a transaction and a drizzle migration file is applied as a whole-file transaction, so its presence would not merely be unauthorized, it would break the apply.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-8",
+      "description": "ZERO NINTH INDEX. No index name outside the frozen 8-name P1 roster appears in the migration. Asserted as set-difference emptiness against the roster, so that a name that is plausible, well-formed and useful still fails if it is not on the roster.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-9",
+      "description": "ZERO UNRELATED SCHEMA MUTATION. The db/schema.ts diff adds exactly 8 index declarations and changes nothing else — no table, column, constraint, enum, relation or type is added, removed or altered. The migration emits no CREATE TABLE, ALTER TABLE, CREATE POLICY, CREATE TRIGGER, CREATE FUNCTION, CREATE EXTENSION, role statement or ownership statement.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-10",
+      "description": "GENERATOR PATH REFUSAL. The recorded generate command carries no --custom flag, and the snapshot and journal are byte-identical to the generator's own output (no manual synthesis, no manual edit). Proven by diffing the pre-guard-patch capture against the committed artifacts: exactly 8 insertions of the IF NOT EXISTS token sequence in the .sql file and ZERO byte changes in meta/**.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "N-11",
+      "description": "DEPENDENCY MEASURABILITY, FAIL CLOSED. Status of FIBDB052_P1_MIGRATION_ORDINAL_ALLOCATION, FIBDB052_P1_ODS_LINEAGE_ALLOCATION, FIBDB052_P1_PROTECTED_GRANT_ALLOCATION and ODS_CONTROLLER40_ENUMERATES_v1.0.29 is UNKNOWN at manifest-freeze time — all four are UNALLOCATED at AS_OF_HEAD 4c19c3c7. Additionally, docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json enumerates only W2-B1..W2-B5, so NONE of this node's dependencies is measurable via pnpm ops:program-state; the Wave3 dependencies were instead measured by file presence at AS_OF_TREE plus git ancestry of merge commits ab6d9ccf and 4c19c3c7. The implementing mission MUST re-measure all four allocation dependencies at its own AS_OF_HEAD and REFUSE to proceed while any remains UNKNOWN. Absence of a measurement is not satisfaction.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-12",
+      "description": "NO COMPLETION OVERCLAIM. No artifact, commit message or report produced by the implementing mission asserts FIBDB052_P1_PHASE_DISCHARGED or FIBDB-052 COMPLETE. The strongest claim available to the migration mission is P1_DDL_SUBPACKAGE_COMPLETE, because the I-10 access-path determination is owned by FIBIU-19 and is not made by the migration; and because FIBDB-052 completion additionally spans P2, P4 and P5, which are G2-gated.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "M-1",
+      "description": "REVERSE RUN/OUTCOME ORDERING => RED. Emitting I-6, I-7 or I-8 as (outcome_id, calculation_run_id) instead of (calculation_run_id, outcome_id) must FAIL the suite. This is the exact defect these three indexes exist to correct — the reverse-ordered objects already exist — so a suite that tolerates the reversal proves nothing.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "M-2",
+      "description": "REMOVE A PARTIAL WHERE => RED. Deleting the WHERE clause from I-3, I-5 or I-13 must FAIL the suite. The non-partial form of I-13 already exists as idx_sroi_run_reviews_calculation_run_id, so a dropped predicate silently degrades into a duplicate of an existing object rather than into an obvious error.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "M-3",
+      "description": "RETIRED ALIAS => RED. Adding a CREATE INDEX under any of the three retired names must FAIL the suite, both at the file level and at the catalog level.",
+      "test_file": "tests/fibdb052-p1-indexes.test.ts"
+    },
+    {
+      "id": "M-4",
+      "description": "DROP AN EXISTING PREFIX => RED. Adding DROP INDEX idx_outcome_monetization_dispositions_run_id (or either of the other two subsumed prefixes) must FAIL the suite.",
+      "test_file": "tests/postgres/fibdb052-p1-indexes.pg.test.ts"
+    },
+    {
+      "id": "M-5",
+      "description": "DUPLICATE AN EXISTING CONSTRAINT-BACKED INDEX => RED. Adding a CREATE INDEX over domain_object_versions (object_type, object_id, ordinal), evidence_versions (evidence_id, ordinal), financial_proxy_versions (financial_proxy_id, ordinal) or readiness_assessments (calculation_run_id) under ANY name must FAIL the suite — including when written with IF NOT EXISTS, which does not guard against it.",
+      "test_file": "tests/postgres/fibdb052-p1-indexes.pg.test.ts"
+    },
+    {
+      "id": "M-6",
+      "description": "WEAKEN MIGRATION-TAIL EQUALITY => RED. Replacing any surviving toBe in the tail tripwire with toContain, relaxing an exact index into a bound, or deleting the S3_UNIT_ID assertion (including by substituting P1_UNIT_ID for its literal, which superficially resembles the intended retarget) must FAIL the suite.",
+      "test_file": "tests/tenancy/s1-founder-traceability.test.ts"
+    },
+    {
+      "id": "M-7",
+      "description": "WEAKEN EXACT CARDINALITY PINS => RED. Relaxing expect(BASELINE_UNITS).toHaveLength(81) to a bound, relaxing the contiguous-ordinals 1..81 assertion, or relaxing the 8-statement equality in the migration must FAIL the suite. The four literal sites are tests/hosted/baseline-manifest.test.ts (toHaveLength, Array.from length, Set size), tests/hosted/baseline-journal-wrapper.test.ts (BASELINE_UNITS and BASELINE_ORDER) and tests/hosted/operator-runner.test.ts (BASELINE_UNITS).",
+      "test_file": "tests/hosted/baseline-manifest.test.ts"
+    },
+    {
+      "id": "M-8",
+      "description": "SECOND UNANNOUNCED DISPLACEMENT => RED. Appending a further migration after the P1 unit without updating the tail pin must FAIL the suite. This is the tripwire's actual purpose and the one control that proves the HPO-FIBP1-01 retarget left it armed rather than merely made it pass once.",
+      "test_file": "tests/tenancy/s1-founder-traceability.test.ts"
+    },
+    {
+      "id": "M-9",
+      "description": "SUITE NON-VACUITY. Every executable suite named in this manifest must report COLLECTED > 0. A run that collects zero tests is NOT green, and a skipped real-PostgreSQL suite is NOT green — it is unmeasured. The test COUNT is recorded so that a run can be tied to the revision it actually exercised.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
