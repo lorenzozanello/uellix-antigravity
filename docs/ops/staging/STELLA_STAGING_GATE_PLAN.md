@@ -28,6 +28,92 @@ intercambio que el tren 4.2 rechazó al crear `stella_0002b` en vez de editar
 
 ---
 
+## 0b. Reconciliación 2026-09 — instalación real de la cadena T1-T9 y G1-M0/G1-B/PB-01
+
+> Nota documental sobre el estado medido del repositorio a la fecha de esta
+> reconciliación. No reescribe §0-§5 (registro histórico del cierre de la Fase
+> 9, HEAD `2de1050`, 2026-08-08) ni ningún artefacto de evidencia congelado;
+> añade lo que ese cierre no podía saber todavía.
+
+### La cadena T1-T9 (incluye `grounding_0002`=T1, `grounding_0003`=T2) SÍ se instaló
+
+§0 registra, correctamente para su fecha, que ninguno de los ocho paquetes de
+Train 4/4.x tenía gate y que G11 era "PROPUESTO, no existe". Eso cambió por una
+vía **distinta** de la que G11 proponía (`psql` manual contra
+`$STAGING_DATABASE_URL`): un mecanismo de aplicación gobernada (`db/hosted/**`)
+instaló la cadena completa contra el proyecto hosted `bvyzblhqymxruxdguaee` —
+el mismo proyecto que §2/§3 de este documento llaman "staging".
+
+Evidencia, en orden:
+
+- `docs/ops/staging/STELLA_STAGING_POST_INSTALL_GATE.md` (2026-08-11):
+  `POST_INSTALL_VALIDATION_GATE = FULL_PASS`, **`9/9 INSTALLED`**,
+  `CHAIN_SEQUENCE_COMPLETE`, medido remotamente contra `bvyzblhqymxruxdguaee`,
+  con evidencia congelada
+  (`docs/ops/staging/evidence/2026-08-11-att_1398309c-chain-final-observation.json`,
+  cubierta por digest).
+- Cierre de T10 (`grounding_0005_claim_advisory_lock`, commit `5ab5f518`,
+  2026-08-14) y de T11 (`stella_0019_storage_write_roles`, commit `6b61c2b9`,
+  2026-08-16).
+- `lib/stella/config.ts`, comentario de `isGroundedQueryEnabled`: hace la misma
+  afirmación, citando el mismo commit (`06041e1`).
+
+**Esto no habilita ninguna bandera.** Las nueve feature flags de Stella siguen
+en `false`; la instalación es infraestructura DDL medida y verificada, no un
+flag encendido.
+
+### Contradicción NO resuelta en este delta (fuera del alcance de escritura autorizado)
+
+`.env.example` (comentario sobre `STELLA_GROUNDED_QUERY_ENABLED`, sin tocar
+desde el commit `6f3c543c`, 2026-08-05) y
+`docs/ops/staging/STELLA_HOSTED_ENVIRONMENT_MATRIX.md` (fila de
+`STELLA_GROUNDED_QUERY_ENABLED`, sin tocar desde el commit `30a8e7d9`,
+2026-08-06) siguen afirmando que `grounding_0002/0003` **no** están aplicados a
+ninguna base de datos. Ambas fechas son **anteriores** al cierre de 2026-08-11
+citado arriba, y ninguna de las dos se ha actualizado desde entonces. Ninguno
+de los dos archivos está dentro del alcance de escritura autorizado de esta
+reconciliación (`.env.example` pertenece a otra línea de trabajo). Queda
+registrada aquí como contradicción documental **abierta**, con la evidencia
+medida — fecha, digest, medición remota — pesando hacia que ambas están
+desactualizadas.
+
+### G1-M0 / G1-B / PB-01 frente al `G1` de §2
+
+El `G1` de §2 (evaluación real del advisor con proveedor) sigue siendo el mismo
+gate. Lo que se añadió después es una vía más estrecha que lo antecede, sin
+sustituirlo:
+
+- **G1-M0** — el objetivo del modelo de producción como gate
+  (`lib/stella/config.ts`, `STELLA_DEFAULT_GEMINI_MODEL`). **CERRADO**:
+  retargeteado a `gemini-3.6-flash` (commit `f8969f5d`, 2026-08-17); sin
+  parámetros de muestreo (`temperature`/`topP`/`topK` retirados del tipo, no
+  sólo de la petición).
+- **G1-B PRECONDITIONS** — certificación de que un deployment de Preview está
+  configurado como la certificación asume, antes de gastar una sola llamada
+  real. Expuesta en `GET /api/health/stella-preconditions`
+  (`app/api/health/stella-preconditions/route.ts`): sólo lee configuración de
+  su propio proceso — cero red, cero base de datos — nunca devuelve un
+  secreto, y exige sesión verificada.
+- **`G1_B_GOVERNED_PREVIEW_RUNBOOK`**
+  (`docs/ops/runbooks/G1_B_GOVERNED_PREVIEW_RUNBOOK.md`) — el procedimiento
+  que gastaría **exactamente 1** llamada a Gemini para certificar el path
+  gobernado completo en Preview. **Estado del runbook: DISEÑO — NO EJECUTADO.**
+  Ninguna sección se ha corrido.
+- **PB-01** (`PROVIDER_CALL_CONCURRENCY_PER_TICKET`,
+  `docs/ops/G1_B_POST_GATE_PILOT_BLOCKERS.md`) — hallazgo de la auditoría
+  independiente de G1-B: un ticket ya `bound` admite entregas concurrentes, así
+  que ninguna cifra del ledger de Uellix (`stella_interactions`, cuota,
+  `audit_logs`, `completed_at`) puede leerse como número de llamadas al
+  proveedor mientras siga abierto. **Estado: ABIERTO — por decisión explícita
+  del gate, no se arregla en G1-B.** No bloquea G1-B; sí bloquea tráfico
+  piloto real hasta **RESOLVERSE** o **ACEPTARSE** con una decisión firmada.
+
+**Ninguna llamada real al proveedor ha sido certificada por esta vía.** El
+runbook que la certificaría existe y está diseñado; ninguna de sus secciones
+se ha ejecutado.
+
+---
+
 ## 1. Leyenda de clasificación
 
 | Clase | Significado |
