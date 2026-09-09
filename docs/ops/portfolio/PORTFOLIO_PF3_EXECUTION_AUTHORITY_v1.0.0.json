@@ -8,6 +8,19 @@
   "materialization_date": "2026-09-09",
   "companion_manifest": null,
 
+  "REVISION_HISTORY": {
+    "note": "This artifact is amended in place on its own draft branch before audit. Prior commits are never amended or squashed; each revision is a new commit, so the reviewed history shows what was corrected and when.",
+    "R1": {
+      "commits": ["442f24fda2ac499e35205f643f9dad02f7fabb2c", "1bd63cd796fa314bf1463c69df17a65142186f79"],
+      "content": "Initial materialization, then the runner/ordering corrections recorded under VALIDATION_PERFORMED_BY_THIS_MISSION."
+    },
+    "R2": {
+      "mission_id": "PF3-AUTHORITY-PRE-AUDIT-SEMANTIC-CLOSURE-R2",
+      "content": "Adds PRE_AUDIT_LIVE_RECONCILIATION against live tip ab6d9ccf; resolves F-GJ-4 by freezing EH5_EXACT_SEMANTICS; and closes the F-GJ-2 residual by fully specifying NEG-PF3-ARCH-2's non-vacuity evidence obligation.",
+      "AS_OF_HEAD_unchanged": "R2 does NOT rewrite AS_OF_HEAD. The measurement baseline of this authority remains 9a414fac/60ac29a2. The live tip is recorded separately, as a reconciliation, precisely so the historical measurement is not restated as though it had been taken later than it was."
+    }
+  },
+
   "AS_OF_HEAD": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
   "AS_OF_TREE": "60ac29a27c91c51e08da12a45120919b8006d462",
   "AS_OF_REF": "codex/portfolio-pf3-authority-r1",
@@ -24,6 +37,74 @@
     "node_modules_state_at_start": "ABSENT. No node_modules directory exists in this worktree. Every gate reported under VALIDATION_PERFORMED_BY_THIS_MISSION was executed with plain `node --experimental-strip-types` on Node v24.16.0, which imports only Node builtins for these scripts. This is structural dependency-freedom, not the result of an install, and it is also what keeps this worktree immune to the C:\\node_modules junction resolution leak that has previously produced CONTAMINATED green rather than vacuous green.",
     "pf1_implementation_integrated": "YES — git merge-base --is-ancestor 635ed046 HEAD succeeds. PF1's owned surface lib/portfolios/analytics.ts is present at AS_OF_TREE.",
     "pf2_implementation_integrated": "YES — git merge-base --is-ancestor 7713e14c HEAD succeeds. PF2's composition work is present at AS_OF_TREE: tests/postgres/portfolio-composition.pg.test.ts was introduced by e2a8ac19, and the same commit e2a8ac19 is the most recent commit touching app/app/portfolios/[portfolioId]/page.tsx."
+  },
+
+  "PRE_AUDIT_LIVE_RECONCILIATION": {
+    "added_by": "R2, before the independent audit.",
+    "purpose": "The live integration tip moved after this authority was measured. This record classifies that delta. It does NOT restate AS_OF_HEAD as though the mission had run at the new tip.",
+    "measurement_baseline_unchanged": {
+      "AS_OF_HEAD": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
+      "AS_OF_TREE": "60ac29a27c91c51e08da12a45120919b8006d462",
+      "why_it_is_not_rewritten": "Every pin, blob and count in this artifact was taken at that tree. Repointing the label without retaking the measurements would produce an artifact whose stated baseline and whose evidence disagree — the exact historical-evidence rewriting the fail-closed rules forbid."
+    },
+    "live_tip_at_reconciliation": {
+      "sha": "ab6d9ccf042d09949d5db6518b977d716d81554f",
+      "ref": "origin/integration/commercial-v1",
+      "baseline_is_ancestor_of_live": "YES — git merge-base --is-ancestor 9a414fac ab6d9ccf succeeds. The move is a fast-forward, not a divergence."
+    },
+    "delta_classification": {
+      "commit_count": 2,
+      "commits": [
+        "fc5876d5 — docs(wave3): correct FIBDB-052 index dispositions in amendment v1.0.2",
+        "ab6d9ccf — Merge pull request #119 from lorenzozanello/codex/wave3-amendment-v102-r1"
+      ],
+      "changed_path_count": 1,
+      "changed_paths": ["docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json"],
+      "change_kind": "ADD — 558 insertions, 0 deletions, 0 modifications, 0 deletions of existing files.",
+      "measured_with": "git diff --name-status 9a414fac ab6d9ccf, the TWO-ENDPOINT form. The single-ref form has previously diffed against the working tree unexpectedly in this repository, so the two-endpoint form is used deliberately."
+    },
+    "materiality_test": {
+      "method": "Not an argument from the file's directory. Blob-identity comparison of every surface this authority measured, at BOTH endpoints, plus re-derivation of both entrypoint quadruples from the LIVE tip's own blobs.",
+      "surfaces_compared": 25,
+      "surfaces_differing": 0,
+      "surfaces_list": [
+        "tests/database-entrypoint-inventory.json",
+        "tests/database-runtime-entrypoints.test.ts",
+        "tests/helpers/entrypoint-scanner.ts",
+        "tests/database-entrypoint-safety.test.ts",
+        "lib/audit/logger.ts",
+        "tests/audit-action-contract.test.ts",
+        "db/schema.ts",
+        "db/client.ts",
+        "app/app/portfolios/[portfolioId]/page.tsx",
+        "app/app/portfolios/[portfolioId]/actions.ts",
+        "app/app/portfolios/new/page.tsx",
+        "app/app/portfolios/page.tsx",
+        "lib/portfolios/analytics.ts",
+        "lib/portfolios/service.ts",
+        "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
+        "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json",
+        "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json",
+        "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json",
+        "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "package.json",
+        "pnpm-lock.yaml",
+        "vitest.config.ts",
+        "vitest.shared.ts",
+        "scripts/ods-scope.ts"
+      ],
+      "re_derived_at_the_live_tip": {
+        "ast_quadruple_at_ab6d9ccf": "checkedModules 144, databaseReaching 120, modules map 120 entries, tally { contextualized: 104, allowlisted: 16 }, components/ rows 1 — identical to the baseline measurement.",
+        "regex_quadruple_at_ab6d9ccf": "tests/database-runtime-entrypoints.test.ts:783 still reads { inventoried: 142, reaching: 117, contextualized: 101, allowlisted: 16 } — identical.",
+        "tenancy_facts_at_ab6d9ccf": "financial_proxy_versions.organization_id still NULLABLE; outcome_proxy_assignments.organization_id and .project_id still NOT NULL — identical.",
+        "pf3_write_surface_at_ab6d9ccf": "Still eight of nine paths absent, and components/portfolios still contains zero files — identical."
+      },
+      "content_check_of_the_added_file": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json (package_id WAVE3_AUTHORITY_AMENDMENT, version 1.0.2) contains zero case-insensitive occurrences of 'portfolio', zero of 'entrypoint', and zero of 'components/'. It neither claims nor constrains any surface this authority governs."
+    },
+    "verdict": "NON-MATERIAL to PF3. The delta touches no Portfolio authority, no Portfolio implementation, no schema, no entrypoint instrument or pin, and no dependency fact. No claim in this artifact requires re-derivation on account of it, and none was re-derived on account of it.",
+    "mergeability": "git merge-tree --write-tree ab6d9ccf <this branch> produces no conflict: this authority's single added path does not collide with the delta's single added path.",
+    "what_would_have_forced_a_stop": "Any non-zero count in surfaces_differing, any change to either quadruple at the live tip, any change to the nullability facts, or any appearance of a Portfolio path in the delta. All four were tested and all four are negative."
   },
 
   "PF1_PF2_INTEGRATION_PROOF": {
@@ -313,6 +394,48 @@
       "primitive": "getLatestSufficiencyDeterminationsByOutcomeIds(outcomeIds, calculationRunId) — the EXISTING batch primitive, reused, not reimplemented.",
       "the_defect_this_forbids": "Reading the latest determination per outcome without binding it to the selected calculationRunId, so an outcome determined 'sufficient' under an older run reads as sufficient under the one being displayed.",
       "bound_control": "POS-EH-2."
+    },
+    "EH5_EXACT_SEMANTICS": {
+      "status": "FROZEN by R2. This closes F-GJ-4, which R1 carried as an unresolved UNKNOWN about EH-5's denominator.",
+      "inherited_parent_text_being_interpreted": "EH-5, name 'Approved proxy versions', source 'financial_proxy_versions.review_status for the versions assigned in the selected run', shape 'count approved over count assigned', drill 'proxy version'.",
+      "EH5_DENOMINATOR": "The assignments belonging to the SELECTED RUN for which outcome_proxy_assignments.financial_proxy_version_id IS NOT NULL.",
+      "EH5_NUMERATOR": "The subset of that denominator whose bound financial_proxy_versions row has review_status = 'approved'.",
+      "EH5_UNBOUND": "The count of selected-run assignments whose financial_proxy_version_id IS NULL. Reported alongside the ratio. NOT in the denominator. NOT in the numerator. NOT folded into any score.",
+      "the_binding_rule": "A NULL financial_proxy_version_id is NOT a proxy version assigned and MUST NOT inflate the denominator. The parent's own words are 'the versions assigned in the selected run'; where no version was ever bound, there is no assigned version to review, and counting one would make the denominator describe assignments rather than versions.",
+      "why_EH5_UNBOUND_is_reported_rather_than_discarded": {
+        "the_risk_of_silent_discard": "If NULL-bound assignments were merely dropped, a run in which EVERY assignment lacks a version binding would report EH-5 as 0 over 0, or as a perfect ratio over whatever few bindings exist, while being wholly uncalculable. That is the same class of defect this authority forbids elsewhere: a ratio that looks right because its denominator quietly shrank.",
+        "why_this_is_not_a_seventh_indicator_or_a_new_score": "It is a disclosed component of EH-5's own denominator derivation, which the EVIDENCE_HEALTH universal shape obligation already requires ('an explicit denominator'). A reader cannot verify a denominator whose exclusions are invisible.",
+        "measured_precedent_in_the_parent_itself": "EH-3's frozen shape is 'count sufficient / insufficient / UNDETERMINED over active outcomes'. A third bucket reported beside a ratio over a stated denominator is therefore an ESTABLISHED shape in this very contract, not an invention of PF3's. EH5_UNBOUND is EH-5's 'undetermined'.",
+        "no_composite_score": "EH5_UNBOUND is a count with the same denominator-visible discipline as every other indicator. It is never combined with the ratio into a grade, index or health score."
+      },
+      "recorded_tension_with_the_calculation_engine": {
+        "finding": "The SROI calculation engine does NOT treat a NULL version binding the way EH-5 now does, and an exact-object auditor comparing the two will find this. It is recorded rather than left to be discovered.",
+        "primary_source": "lib/pipeline/sroi-calculation.ts:982-983 states, in the repository's own words, that 'A NULL financialProxyVersionId (no version was ever bound) is exactly as fatal as an unapproved one.' The guard at :989 reads: if (enforceApproval && (!proxyVersion || proxyVersion.reviewStatus !== 'approved')) — and it raises the SAME error for both cases, at :991, reporting financialProxyVersionId=null.",
+        "so_the_engine_treats_NULL_as": "EQUIVALENT TO UNAPPROVED — a reason to fail the whole calculation closed.",
+        "so_EH5_treats_NULL_as": "NOT AN ASSIGNED VERSION — outside the ratio entirely, and reported as EH5_UNBOUND.",
+        "why_both_are_correct_for_their_own_question": "The engine asks 'may I compute a value from this assignment?', and for that question an unbound version and an unapproved one are equally disqualifying. EH-5 asks 'of the versions assigned in this run, how many are approved?', and for that question an assignment with no version bound contributes no version to review. The two answers differ because the two questions differ.",
+        "why_this_makes_EH5_UNBOUND_non_optional": "Given the engine's stance, a run carrying NULL bindings cannot be calculated at all. An evidence-health surface that dropped those rows silently would present a healthy proxy ratio for a run that cannot produce a number. EH5_UNBOUND is what keeps EH-5 honest under the mission's own denominator rule.",
+        "not_a_reopened_product_decision": "This does not change EH-5's frozen source, shape or drill, and it does not change the calculation engine, which is outside PF3's write surface and untouched. It fixes the interpretation of one word — 'assigned' — that the parent text did not disambiguate."
+      },
+      "tenancy_binding_preserved": {
+        "rule": "Globally approved proxy versions with financial_proxy_versions.organization_id IS NULL MUST remain reachable.",
+        "how": "Bind through outcome_proxy_assignments — organization_id NOT NULL and project_id NOT NULL, constrained to the portfolio's member projects — then read the joined financial_proxy_versions row's review_status with NO organization predicate on that row.",
+        "measured_at_AS_OF_TREE_and_re_confirmed_at_the_live_tip": "financial_proxy_versions.organization_id has no .notNull(); outcome_proxy_assignments.organization_id and .project_id both do.",
+        "interaction_with_the_denominator_rule": "The IS NOT NULL filter that defines EH5_DENOMINATOR applies to outcome_proxy_assignments.financial_proxy_version_id — the BINDING column. It must never be confused with, or applied to, financial_proxy_versions.organization_id, whose NULLs are legitimate global rows. Two different nullable columns, two opposite dispositions: one narrows the denominator, the other must never narrow anything."
+      },
+      "required_return_shape": {
+        "numerator": "explicit integer",
+        "denominator": "explicit integer",
+        "unbound": "explicit integer",
+        "drill_identifiers": [
+          "outcome_proxy_assignments.id for every row in the denominator and every row in EH5_UNBOUND",
+          "projects.id for each, so a portfolio-level reader can reach the member project",
+          "financial_proxy_versions.id for each row in the denominator",
+          "financial_proxies.id for each, so the drill reaches the proxy as well as the version"
+        ],
+        "prohibited": "A bare ratio, a percentage without both integers present in the same object, a composite proxy-health score, or a denominator whose exclusions are not visible."
+      },
+      "bound_controls": "POS-EH-1 (shape and denominator visibility) and MUT-PF3-TENANT-1 (the organization binding). R2 additionally requires that the POS-EH-1 fixture include at least one selected-run assignment with financial_proxy_version_id IS NULL, or the denominator rule frozen here is never exercised and the control is vacuous with respect to it."
     }
   },
 
@@ -477,7 +600,30 @@
           "assertion_shape": "Independently of the scanner's isClient short-circuit, walk the value-import graph of every file under components/portfolios/** and assert that db/client is unreachable. Type-only imports are excluded from the walk, per COMPONENTS_ENTRYPOINT_DISCIPLINE.type_only_imports_are_permitted. Additionally assert that no file in the directory carries the 'use server' directive and that none has an entrypoint-like basename.",
           "test_file": "lib/portfolios/read-model.test.ts",
           "why_this_control_exists_separately_from_NEG_PF3_ARCH_1": "It closes the DECLARED_LIMIT_OF_THE_INSTRUMENT. listCheckedModules() evaluates `if (info.isClient) continue` before any reachability test, and db/client.ts carries no `import 'server-only'` backstop. NEG-PF3-ARCH-1 alone would leave a leaky client component undetected by both quadruples. This control does not depend on the isClient branch and therefore covers the gap.",
-          "non_vacuity_obligation": "The control must be demonstrated to FAIL against a deliberately leaky fixture component — both a server-component form and a 'use client' form — before it is accepted as passing. A graph walk that finds nothing because it walks nothing is the failure mode this obligation exists to prevent."
+          "NON_VACUITY_EVIDENCE_OBLIGATION": {
+            "status": "FULLY SPECIFIED by R2. This closes the F-GJ-2 residual, so the authority carries no avoidable UNKNOWN about what non-vacuity means here.",
+            "both_forms_are_mandatory": "The implementation MUST prove BOTH of the following. A test covering only form A is INSUFFICIENT and does not discharge this control.",
+            "form_A_server_component": {
+              "fixture": "A Server Component under components/portfolios/** with a VALUE-import chain reaching db/client.ts.",
+              "must_be": "COLLECTED, and OBSERVED to fail the architecture control.",
+              "why_it_is_the_easy_half": "This form is also caught independently by the AST scanner's branch 5 (Form 1), so it would move the AST quadruple as well. Passing only this form proves the control agrees with an instrument that already worked."
+            },
+            "form_B_client_component": {
+              "fixture": "A component under components/portfolios/** carrying the 'use client' directive AND a VALUE-import chain reaching db/client.ts.",
+              "must_be": "COLLECTED, and OBSERVED to fail the architecture control.",
+              "why_it_is_the_half_that_matters": "The shared AST scanner SKIPS this file at listCheckedModules() branch 1 — the clause: if (info.isClient) continue — before any reachability test, and db/client.ts carries no server-only import backstop. Neither entrypoint quadruple moves. If NEG-PF3-ARCH-2 does not catch form B, nothing does, and the gap declared as F-GJ-2 remains open regardless of what else passes."
+            },
+            "ordering_requirement": "Both leaky fixtures must be observed RED BEFORE the safe forms are accepted as GREEN. A control first observed green on safe inputs has demonstrated nothing about its ability to go red.",
+            "collection_evidence_required": "Each fixture run must report a non-zero COLLECTED count naming the fixture. A run that collected zero files exits 0 and reads as a pass; that is the specific accident this clause exists to prevent, and it has occurred in this lineage.",
+            "fixture_placement": "The leaky fixtures are temporary and are removed before the implementation's final commit, or are placed outside components/portfolios/** in a PF3-owned test fixture location. They must never be left in components/portfolios/**, where they would themselves violate COMPONENTS_ENTRYPOINT_DISCIPLINE and move the AST quadruple.",
+            "type_only_imports_remain_allowed": "A type-only import is not a runtime reach and must NOT be caught. The control must therefore also be observed GREEN against a fixture that type-only-imports from db/client — otherwise an over-broad walk that flags every mention of db/client would pass both A and B for the wrong reason, and would then forbid the legitimate shape the repository's own CleanWidget fixture establishes.",
+            "three_fixtures_therefore": [
+              "A — leaky Server Component: expected RED",
+              "B — leaky 'use client' component: expected RED",
+              "C — type-only importer: expected GREEN"
+            ],
+            "prohibited_discharge_paths": "This obligation may NOT be discharged by editing tests/database-entrypoint-inventory.json, tests/database-runtime-entrypoints.test.ts, the shared scanner (tests/helpers/entrypoint-scanner.ts) or db/client.ts. All four are prohibited to PF3, and adding a server-only import to db/client.ts — though it would close the gap — is outside this authority and would change the build semantics of every module that imports it."
+          }
         },
         {
           "id": "POS-PF3-ARCH-1",
@@ -665,7 +811,7 @@
       "severity": "MATERIAL",
       "finding": "listCheckedModules() skips 'use client' modules before any reachability test, and db/client.ts carries no `import 'server-only'` backstop. A leaky client component under components/portfolios/** would move neither quadruple.",
       "disposition": "DECLARED AND MITIGATED. Recorded as ENTRYPOINT_PIN_CONTRACT.DECLARED_LIMIT_OF_THE_INSTRUMENT and closed by NEG-PF3-ARCH-2, which walks the value-import graph independently of the isClient branch.",
-      "residual": "NEG-PF3-ARCH-2 must be demonstrated non-vacuous against BOTH a leaky server-component fixture and a leaky 'use client' fixture. If implementation demonstrates only the server-component form, the gap is not closed."
+      "residual": "CLOSED AS AN AUTHORITY-LEVEL UNKNOWN BY R2. R1 stated the two-fixture requirement in prose; R2 promotes it to a fully specified evidence obligation — NEG-PF3-ARCH-2.NON_VACUITY_EVIDENCE_OBLIGATION — naming three fixtures (leaky server component RED, leaky 'use client' component RED, type-only importer GREEN), the red-before-green ordering, the collection-count evidence, the fixture-placement rule and the prohibited discharge paths. What remains is an IMPLEMENTATION obligation to execute it, not an ambiguity in this authority about what it means."
     },
     {
       "id": "F-GJ-3",
@@ -678,8 +824,9 @@
       "id": "F-GJ-4",
       "severity": "INFORMATIONAL",
       "finding": "outcome_proxy_assignments.financial_proxy_version_id is nullable and the schema reads NULL as INELIGIBLE. EH-5's 'count approved over count assigned' does not state, in the inherited parent text, whether NULL-version assignments belong in the denominator.",
-      "disposition": "NOT RESOLVED BY DECIDING IT. This authority does not re-decide a parent product definition. It imposes the weaker, sufficient obligation that whichever the implementation counts, the returned object must make the denominator's definition visible — which the EVIDENCE_HEALTH universal shape obligation already requires of every indicator.",
-      "residual": "If an implementation reads the denominator one way and a future consumer assumes the other, the visible definition is what resolves it. If that proves insufficient, it is a parent-authority amendment, not a PF3 decision."
+      "disposition": "RESOLVED BY R2. EVIDENCE_HEALTH.EH5_EXACT_SEMANTICS freezes the denominator as selected-run assignments with financial_proxy_version_id IS NOT NULL, the numerator as the approved subset of that denominator, and requires EH5_UNBOUND to be reported beside them so the exclusion is visible rather than silent. The tension with lib/pipeline/sroi-calculation.ts:982-983, which treats a NULL binding as equivalent to unapproved, is recorded there with the reason the two answers legitimately differ.",
+      "why_this_is_an_interpretation_and_not_a_reopened_decision": "EH-5's frozen source, shape and drill are unchanged. What R2 fixes is the meaning of one word the parent left ambiguous — 'assigned' — which had two defensible readings and therefore two different denominators.",
+      "residual": "None carried. R1's residual (that a divergent reading might survive behind a visible definition) is superseded: the reading is now frozen, not merely disclosed."
     },
     {
       "id": "F-GJ-5",
@@ -709,12 +856,26 @@
     "postgres_executed_by_this_mission": false,
     "dependencies_installed_by_this_mission": false,
     "open_findings": 5,
-    "material_open_findings": 2,
-    "material_open_findings_both_resolved_or_mitigated_in_artifact": true
+    "findings_resolved_in_artifact": 3,
+    "findings_mitigated_with_a_specified_implementation_obligation": 1,
+    "findings_accepted_with_a_stated_bound": 1,
+    "findings_carrying_an_unresolved_authority_level_unknown": 0,
+    "live_reconciliation_performed": true,
+    "live_reconciliation_verdict": "NON_MATERIAL",
+    "measured_surfaces_compared_across_the_live_delta": 25,
+    "measured_surfaces_differing_across_the_live_delta": 0,
+    "AS_OF_HEAD_rewritten_by_R2": false,
+    "prior_commits_amended_or_squashed_by_R2": false
   },
 
   "final_state": "PORTFOLIO_PF3_EXECUTION_AUTHORITY_MATERIALIZED_AWAITING_INDEPENDENT_EXACT_OBJECT_AUDIT",
   "PF3_IMPLEMENTATION_AUTHORIZED": false,
   "READY_FOR_PF3_IMPLEMENTATION": "NO — an independent Opus exact-object audit of this artifact must pass, and it must integrate, before PF3 implementation opens.",
+  "AUDIT_READINESS_R2": {
+    "authority_level_unknowns_remaining": 0,
+    "statement": "After R2 this artifact carries no unresolved authority-level UNKNOWN. F-GJ-4 is resolved by a frozen interpretation; the F-GJ-2 residual is converted from an ambiguity about what non-vacuity means into a fully specified implementation evidence obligation; and the live delta is classified NON-MATERIAL by blob identity across 25 measured surfaces plus re-derivation of both quadruples at the live tip.",
+    "what_remains_open_and_is_correctly_open": "Three implementation obligations, which an execution authority is supposed to hand forward rather than discharge: executing NEG-PF3-ARCH-2's three-fixture evidence, including a NULL-bound assignment in the POS-EH-1 fixture, and including an approved global proxy version in the MUT-PF3-TENANT-1 fixture. None is an ambiguity in this authority.",
+    "audit_readiness": "READY FOR INDEPENDENT EXACT-OBJECT AUDIT."
+  },
   "next_gate": "PF3_EXECUTION_AUTHORITY_INDEPENDENT_EXACT_OBJECT_AUDIT"
 }
