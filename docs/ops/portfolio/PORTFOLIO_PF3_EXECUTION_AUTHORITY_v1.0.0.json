@@ -104,7 +104,14 @@
     },
     "verdict": "NON-MATERIAL to PF3. The delta touches no Portfolio authority, no Portfolio implementation, no schema, no entrypoint instrument or pin, and no dependency fact. No claim in this artifact requires re-derivation on account of it, and none was re-derived on account of it.",
     "mergeability": "git merge-tree --write-tree ab6d9ccf <this branch> produces no conflict: this authority's single added path does not collide with the delta's single added path.",
-    "what_would_have_forced_a_stop": "Any non-zero count in surfaces_differing, any change to either quadruple at the live tip, any change to the nullability facts, or any appearance of a Portfolio path in the delta. All four were tested and all four are negative."
+    "what_would_have_forced_a_stop": "Any non-zero count in surfaces_differing, any change to either quadruple at the live tip, any change to the nullability facts, or any appearance of a Portfolio path in the delta. All four were tested and all four are negative.",
+    "correct_scope_base_for_this_branch": {
+      "base_to_use": "9a414fac0858a86e738cb41e2f024502cf5efc8d — the MERGE-BASE of this branch and the live tip, which git merge-base confirms.",
+      "base_NOT_to_use": "ab6d9ccf, the live tip itself.",
+      "measured_reason": "ods-scope diffs TWO ENDPOINTS, base..HEAD. Run with --base ab6d9ccf it reports CHANGED_FILE_COUNT=2 and UNAUTHORIZED_PATH=docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json, exit 1 — because travelling from the live tip to this branch, the Wave3 file disappears, and the gate reads that as an unauthorized change. Run with --base 9a414fac it reports CHANGED_FILE_COUNT=1 and ODS_SCOPE=PASS.",
+      "why_this_is_recorded": "An auditor re-running the scope gate after the tip moved would naturally reach for the live tip as the base and would get a FAIL that says nothing about this artifact. The FAIL would be an artifact of the base choice, not a finding. The gate is not wrong; it is answering the question it was asked.",
+      "both_invocations_were_run": "Yes. The PASS reported under VALIDATION_PERFORMED_BY_THIS_MISSION is the merge-base invocation; the live-tip invocation is recorded here as a semantics probe, not as a gate result."
+    }
   },
 
   "PF1_PF2_INTEGRATION_PROOF": {
