@@ -617,15 +617,34 @@
 
   "VALIDATION_PERFORMED_BY_THIS_MISSION": {
     "scope_note": "This mission is AUTHORITY_ONLY / DOCS_ONLY and writes exactly one path. It runs no PostgreSQL, installs no dependency and executes no implementation.",
-    "node_modules_precondition": "ABSENT throughout. Every gate below ran under plain `node --experimental-strip-types` on Node v24.16.0. These scripts import only Node builtins, which is why they run at all without an install; this is structural, not incidental.",
+    "node_modules_precondition": "ABSENT throughout. No dependency was installed. Node v24.16.0 with --experimental-strip-types was the runner for every gate.",
+    "runner_detail_stated_precisely": {
+      "ran_under_plain_node": [
+        "scripts/ods-prestate.ts",
+        "scripts/ods-scope.ts",
+        "scripts/authority-seal-verify.ts"
+      ],
+      "why_those_three_run_plain": "They import only Node builtins. tsx is the package.json runner, not a real dependency of the script.",
+      "required_a_resolution_hook": "scripts/scan-secrets.ts. MEASURED: it imports '../db/hosted/target-identity' at :70 WITHOUT a file extension. db/hosted/target-identity.ts exists, but Node's ESM resolver requires the extension where tsx does not, so plain node fails with ERR_MODULE_NOT_FOUND. tsx is not available in this worktree.",
+      "what_was_supplied": "An ESM resolve hook that appends '.ts' to extensionless relative specifiers, held in the session scratchpad OUTSIDE the repository and therefore not part of this mission's single changed path. It performs resolution only — no transformation, no change to the gate's logic, its inputs or its verdict. It reproduces what tsx would have provided.",
+      "why_this_is_not_a_weakened_gate": "The gate script is byte-unmodified and its scanning logic ran unchanged. Supplying a resolver is supplying a runtime, not loosening an assertion. Had the hook changed any finding, the correct report would have been BLOCKED, not PASS.",
+      "windows_hazard_recorded": "On Windows the --import argument must be a file:/// URL; a bare C:/... path fails with ERR_UNSUPPORTED_ESM_URL_SCHEME."
+    },
+    "gate_ordering_correction": {
+      "finding": "scan-secrets scans the GIT TREE, not the working directory. It was first run BEFORE this artifact was committed, and that run was therefore VACUOUS with respect to the artifact — an untracked file is invisible to it.",
+      "remedy": "The scan was re-run AFTER the commit, with the artifact tracked and present in CURRENT_TREE. The reported PASS is the post-commit run.",
+      "recorded_rather_than_quietly_fixed": "An auditor checking gate ordering would otherwise have to rediscover that the first run proved nothing about the object under audit."
+    },
     "prestate": {
       "command": "node --experimental-strip-types scripts/ods-prestate.ts --branch codex/portfolio-pf3-authority-r1 --head 9a414fac0858a86e738cb41e2f024502cf5efc8d --tree 60ac29a27c91c51e08da12a45120919b8006d462 --clean",
       "result": "ODS_PRESTATE=PASS (PRESTATE_BRANCH=PASS, PRESTATE_HEAD=PASS, PRESTATE_TREE=PASS, PRESTATE_CLEAN=PASS)"
     },
-    "json_validation": "REPORTED IN THE MISSION RESULT — this artifact is parsed as JSON after writing.",
-    "authority_seal_verify": "REPORTED IN THE MISSION RESULT.",
-    "secrets_scan": "REPORTED IN THE MISSION RESULT.",
-    "ods_scope": "REPORTED IN THE MISSION RESULT, with --allow naming this single path exactly. ods:scope invoked without --allow always fails, by design: a path being changed is never itself permission for it to have changed.",
+    "json_validation": "PASS — the artifact parses as JSON after every write.",
+    "self_verification_of_measured_claims": "PASS — 17 measured claims in this artifact were mechanically re-derived from the live tree and compared: AS_OF_HEAD, AS_OF_TREE, the shared-page blob, the inventory blob, all four AST quadruple components plus the map size, the regex assertion at :783, the AUDIT_ACTIONS key count, the portfolio verb count, the emptiness of components/portfolios, the single components/ database-reaching row, the absence of server-only in db/client.ts, and the nullability of financial_proxy_versions.organization_id. Zero mismatches.",
+    "authority_seal_verify": "PASS — ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS, AUTHORITY_SEAL_VERIFY=PASS.",
+    "secrets_scan": "PASS — post-commit run, artifact tracked and present in CURRENT_TREE: \"CURRENT_TREE: no credential material found.\", exit 0.",
+    "ods_scope": "PASS — SCOPE_BASE=9a414fac0858a86e738cb41e2f024502cf5efc8d, CHANGED_FILE_COUNT=1, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0, UNAUTHORIZED_PATHS=0, ODS_SCOPE=PASS, with --allow naming this single path exactly.",
+    "ods_scope_negative_control": "The same invocation WITHOUT --allow returns UNAUTHORIZED_PATH=docs/ops/portfolio/PORTFOLIO_PF3_EXECUTION_AUTHORITY_v1.0.0.json, UNAUTHORIZED_PATHS=1, ODS_SCOPE=FAIL, exit 1. The gate adjudicated this exact path rather than exiting empty, so the PASS above is not vacuous. ods:scope invoked without --allow always fails, by design: a path being changed is never itself permission for it to have changed.",
     "poststate_not_run": {
       "decision": "ods:poststate is NOT run by this mission.",
       "reason": "poststate is a COMPOSITOR that spawns typecheck and vitest. Both require node_modules, which is absent. Running it would produce a dependency failure that says nothing about this artifact. The four gates that are genuinely dependency-free — prestate, scope, seal verification and the secrets scan — are the ones that bear on a docs-only, one-path mission, and all four are run.",
