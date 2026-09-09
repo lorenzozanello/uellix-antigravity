@@ -1,0 +1,1025 @@
+{
+  "BASELINE_ID": "LC0-CANONICAL-REGULATORY-DATA-GOVERNANCE-BASELINE-v1.0.0",
+  "ARTIFACT_KIND": "DISCOVERY_AND_RELEASE_GOVERNANCE_EVIDENCE",
+  "LANE": "LANE GE — LC0-CANONICAL-BASELINE-MATERIALIZATION-R1",
+
+  "AS_OF": {
+    "date": "2026-09-09",
+    "branch": "codex/lc0-canonical-baseline-materialization-r1",
+    "base_at_start": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
+    "derivation_head": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
+    "derivation_tree": "60ac29a27c91c51e08da12a45120919b8006d462",
+    "ods_authority_line": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+    "latest_ods_maintenance_addendum_present": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json",
+    "derivation_rule": "Every CODE_FACT and CONFIG_FACT in this artifact was re-derived against the working tree at the derivation_tree above. No fact, count, or path was carried forward from prior synthesis without re-measurement. Where re-measurement contradicted the prior synthesis, the correction is recorded in CORRECTIONS_AGAINST_PRIOR_SYNTHESIS and the prior claim is NOT preserved.",
+    "revision": "R2",
+    "r2_correction_note": "R1 (commit 75df4b98) is superseded by this revision on two findings, both from ONE root cause: R1's searches were scoped to lib/ and app/ and looked for a file named middleware.ts, so they never read the repository-root proxy.ts. Because this repository pins next 16.2.9 — where the middleware file is named proxy.ts — that omission caused R1 to (a) miss the fail-open API limiter entirely and wrongly report the prior synthesis's fail-open finding as false, and (b) report that no middleware or app-wide security-header layer existed. Both are corrected here; see CORR-1, HTF-06, HTF-16 and RATE_LIMIT_CONTROL_MATRIX. Every OTHER finding in R1 was independently re-derived at R2 and stands unchanged. No legal conclusion, counsel question, forbidden claim or stage gate was altered for prose reasons.",
+    "prior_synthesis_in_repository": false,
+    "prior_synthesis_note": "No LC0 artifact, and no textual reference to 'LC0', existed anywhere under docs/ at the derivation tree. This artifact is therefore the first materialization of that identifier in the repository, and it stands on re-derivation alone rather than on continuity with an in-repository predecessor."
+  },
+
+  "NON_CERTIFICATION_NOTICE": {
+    "statement": "This artifact is an internal engineering DISCOVERY and RELEASE-GOVERNANCE record. It is evidence about the state of a repository at one commit. It is not, and must not be represented as, any of the items listed in IS_NOT.",
+    "IS_NOT": [
+      "legal advice",
+      "counsel sign-off or counsel review",
+      "a compliance certification, attestation, or audit opinion",
+      "a GDPR, UK GDPR, CCPA/CPRA, LGPD, HIPAA, SOC 2, ISO 27001 or EU AI Act conformity finding",
+      "a Terms of Service, Privacy Policy, or Data Processing Agreement",
+      "a Data Protection Impact Assessment",
+      "a Record of Processing Activities under GDPR Art. 30",
+      "a representation about any live production or staging database",
+      "a warranty that the controls described are operating effectively in any deployed environment"
+    ],
+    "authorized_use": "Internal sequencing of engineering and legal work, and as the input packet to a counsel engagement (see COUNSEL_CHECKPOINT_1).",
+    "supersession": "Superseded by any adjudicated HPO decision or by counsel output on the same question. Where this artifact and frozen FIB/PC-01B/IM-01B authority disagree, the frozen authority controls and this artifact is the defective document."
+  },
+
+  "EVIDENCE_CLASS_MODEL": {
+    "rule": "Every finding in this artifact carries exactly one evidence_class. Classes are NOT collapsed: a legal conclusion is never recorded as a code fact, a product decision is never recorded as a legal requirement, and an unmeasurable production condition is never recorded as either.",
+    "classes": {
+      "CODE_FACT": "A property of source code in this repository, re-derived at the derivation_tree, citable to file and line. Verifiable by reading the cited path.",
+      "CONFIG_FACT": "A property of declared configuration or schema in this repository (migrations, prepared packages, flag inventories, build config). Verifiable by reading the cited path. Says nothing about what is applied in any live environment.",
+      "DOC_FACT": "A property of in-repository documentation or an authority artifact, including in-code prose comments treated as governance statements.",
+      "CURRENT_LAW_VERIFIED": "A statement of law verified against a current primary source as of AS_OF. NOTE: this artifact records ZERO findings in this class — see EVIDENCE_CLASS_MODEL.unpopulated_classes.",
+      "LEGAL_INTERPRETATION_REQUIRES_COUNSEL": "A question whose answer determines an obligation and which this artifact does not answer. Carried as a QUESTION.",
+      "PRODUCT_POLICY_DECISION": "A choice about what the product will do, owned by the product/HPO authority, not compelled by code or by law as recorded here.",
+      "CONTRACTUAL_CHOICE": "A choice about what a contract with a customer, vendor, or provider will say. Owned by the business, informed by counsel.",
+      "SECURITY_BEST_PRACTICE": "A hardening recommendation whose absence is not, on this record, established as a legal violation.",
+      "PRODUCTION_STATE_UNKNOWN": "A condition that cannot be determined from this repository at all, because it is a property of a deployed environment, a vendor agreement, or an operational practice."
+    },
+    "unpopulated_classes": {
+      "CURRENT_LAW_VERIFIED": "DELIBERATELY EMPTY. No finding in this artifact is classified CURRENT_LAW_VERIFIED. This lane performed no primary-source legal verification, and asserting a verified legal proposition without having verified it against current primary law is the exact failure this class exists to prevent. Every legal question raised here is therefore carried as LEGAL_INTERPRETATION_REQUIRES_COUNSEL. An empty class is an honest measurement, not an omission: populating it is counsel's or a future lane's work, and the emptiness is itself the evidence that LC0 has not yet done it."
+    }
+  },
+
+  "CORRECTIONS_AGAINST_PRIOR_SYNTHESIS": {
+    "note": "The lane brief named a set of canonical technical facts to re-derive. Two of them did not survive re-measurement in the form stated. Per the lane rule that stale measurements are not preserved, the corrected form is recorded below and the prior form is NOT carried forward anywhere in this artifact.",
+    "corrections": [
+      {
+        "id": "CORR-1",
+        "status": "WITHDRAWN_AT_R2_AS_ITSELF_DEFECTIVE",
+        "prior_claim": "rate-limit fail-open behavior",
+        "r1_claim_now_withdrawn": "R1 of this artifact asserted globally that the fail-open finding was false, on the basis that lib/stella/rate-limit.ts fails closed.",
+        "why_r1_was_wrong": "R1 measured ONE limiter and generalized to ALL of them. The prior synthesis's fail-open finding referred to a DIFFERENT control — the root-level proxy.ts — which R1 never examined, because R1's searches were scoped to lib/ and app/ and to a file named middleware.ts. The repository runs Next.js 16.2.9, where the middleware file is named proxy.ts, so a search for middleware.ts returned nothing and R1 read that absence as 'no middleware layer'. The generalization was invalid independently of the miss: a property of one limiter is not a property of the set.",
+        "measured_state_at_r2": "The prior synthesis was CORRECT and is reinstated. proxy.ts fails OPEN in two distinct ways (HTF-16). lib/stella/rate-limit.ts separately fails CLOSED in staging and production (HTF-17). Both are true simultaneously because they are different controls. There is no global fail-open answer for this repository, and this artifact no longer states one.",
+        "corrected_finding_id": ["HTF-07", "HTF-16", "HTF-17", "HTF-18"],
+        "evidence_class": "CODE_FACT",
+        "why_the_correction_matters": "The failure was one of TAXONOMY, not of measurement: every individual fact R1 recorded about lib/stella/rate-limit.ts survives re-derivation unchanged. What was wrong was the scope of the conclusion drawn from it. A per-control matrix (RATE_LIMIT_CONTROL_MATRIX) replaces the global statement, and no global fail-open/fail-closed verdict is emitted anywhere in this artifact.",
+        "generalization_rule_adopted": "No aggregate security verdict may be stated over a class of controls unless every member of that class has been individually enumerated and measured. Where enumeration is incomplete, the artifact says so instead of aggregating."
+      },
+      {
+        "id": "CORR-2",
+        "status": "REFINEMENT_NOT_CONTRADICTION",
+        "prior_claim": "evidence_chunks delete capability",
+        "relationship_to_prior_synthesis": "The prior synthesis is NOT contradicted. It said a delete capability exists on evidence_chunks, and it does. This entry SPLITS that single statement into two independently true sub-statements that have different owners, different costs and different verification, because collapsing them is what would mislead a reader about what remains to be built.",
+        "sub_statement_1_DELETE_SUBSTRATE_PRESENT": "CONFIRMED. GRANT SELECT, INSERT, DELETE ON public.evidence_chunks TO uellix_cap_grounding, plus RLS policy evidence_chunks_definer_delete FOR DELETE TO uellix_cap_grounding. Both exist at the derivation tree. No new migration, no new grant and no new RLS policy is required to delete a chunk row.",
+        "sub_statement_2_CALLABLE_APPLICATION_PURGE_PATH_ABSENT": "CONFIRMED ABSENT. The uellix_grounding capability schema exposes exactly six functions and none performs a DELETE. db/grounding/grounding-chunk-repository.ts has no delete method. requestGovernedEvidenceErasure never reaches a chunk. The application role uellix_app holds SELECT only, so no application principal can exercise the substrate even in principle.",
+        "measured_state": "Both sub-statements hold simultaneously. The in-package rationale additionally records the substrate's PURPOSE as reindexing ('this index is regenerable, and reindexing a version is delete + insert'), not erasure — so the capability exists, but was not built for the use LC0 needs it for.",
+        "corrected_finding_id": "HTF-02",
+        "evidence_class": "CONFIG_FACT",
+        "why_the_correction_matters": "Recording the capability as simply present would imply a derivative purge is reachable today. Recording it as simply absent would imply new schema authority is required to build one. Neither is correct, and the difference changes what the remediation costs: the substrate is in place, the callable path is not."
+      }
+    ]
+  },
+
+  "CANONICAL_CONTROL_STATE": {
+    "scope_note": "Control state as declared in this repository at the derivation_tree. Declared is not deployed: see PRODUCTION_STATE_UNKNOWNS.",
+    "controls": [
+      {
+        "control": "Tenant isolation via PostgreSQL Row Level Security",
+        "state": "PRESENT_BUT_NOT_CENSUSED",
+        "evidence_class": "CONFIG_FACT",
+        "detail": "RLS policies are authored per-table across db/migrations/0031_rls_core.sql, 0032_rls_specialized.sql, 0048, 0050, 0051 and the grounding prepared packages. No closed-world census asserts RLS is enabled on EVERY table in schema public. See HTF-13.",
+        "residual_risk": "A table added without an RLS policy is not caught by any failing test in this repository."
+      },
+      {
+        "control": "Evidence chain of custody",
+        "state": "PRESENT",
+        "evidence_class": "CONFIG_FACT",
+        "detail": "public.evidence_document_versions is append-only by construction: no is_active column to UPDATE, uniqueness on version_id / ordinal / supersedes, CHECK-enforced 64-hex raw_content_hash and normalized_content_hash, and no UPDATE or DELETE grant for any RLS-bound role. See HTF-03."
+      },
+      {
+        "control": "Governed evidence erasure",
+        "state": "PRESENT_STAGE_A_ONLY_WITH_A_LATENT_COMPLETENESS_GAP",
+        "evidence_class": "CODE_FACT",
+        "detail": "requestGovernedEvidenceErasure (lib/pipeline/evidence.ts) writes a durable erasure_requested marker BEFORE any content operation, then sweeps the storage object and evidence_versions.content, then writes a terminal tombstone. It does NOT sweep grounding derivatives, and its own comment states this is satisfied vacuously because none exist. See HTF-01 — this is the LC0 blocking finding.",
+        "residual_risk": "The sweep's completeness is conditional on an external premise (grounding not activated) that no runtime check enforces."
+      },
+      {
+        "control": "Ordinary DELETE on evidence_items",
+        "state": "AMBIGUOUS_BY_ACKNOWLEDGED_DESIGN",
+        "evidence_class": "CONFIG_FACT",
+        "detail": "GRANT DELETE to authenticated is present (0033_public_api_grants.sql:36) while no DELETE RLS policy exists (0031_rls_core.sql:418-419 drops it and creates none). Under enabled RLS this yields a silent 0-row DELETE. Stage-E hardening (FIBDB-032/033) is deliberately not executed. See HTF-04.",
+        "residual_risk": "A caller receives a success response for a delete that removed nothing."
+      },
+      {
+        "control": "AI never decides — human review invariant",
+        "state": "PRESENT_AND_ENFORCED_AT_TWO_LAYERS",
+        "evidence_class": "CODE_FACT",
+        "detail": "Enforced structurally, not only by prompt: reviewer-output.ts and validator-output.ts type requires_human_review as z.literal(true), so a model response asserting otherwise fails schema validation. Reinforced by shared-guardrails.ts and reviewer-system.ts. See HTF-09."
+      },
+      {
+        "control": "Stella interaction retention",
+        "state": "PRESENT_AS_IRREVERSIBLE_RETENTION",
+        "evidence_class": "CONFIG_FACT",
+        "detail": "stella_interactions.response_json is NOT NULL and the table is append-only at three layers: no INSERT/UPDATE/DELETE RLS policy, an append-only trigger that blocks mutation even for the table owner, and TRUNCATE/REFERENCES/TRIGGER grant revocation. There is no retention window, TTL, or purge path. See HTF-08 — this is a control AND a constraint.",
+        "residual_risk": "Model output persisted here cannot be erased by any path in this repository."
+      },
+      {
+        "control": "Storage object authorization",
+        "state": "PRESENT_IN_SQL_BUT_BUCKET_CONFIG_IS_DECLARATIVE_PROSE",
+        "evidence_class": "CONFIG_FACT",
+        "detail": "can_read_evidence_object / can_write_evidence_object are SECURITY DEFINER with SET search_path = '' and gate the three storage.objects policies. Bucket existence, public-access setting, size limit and allowed MIME types are specified only as a prose comment block in 0031_rls_core.sql:422-429, with 'Allowed MIME Types: ... (TBD)'. See HTF-05."
+      },
+      {
+        "control": "HTTP security response headers on the application",
+        "state": "PRESENT_APP_WIDE_BUT_OMITS_CSP",
+        "evidence_class": "CODE_FACT",
+        "detail": "Six security headers are applied to every matched request via the Next.js 16 middleware (proxy.ts -> updateSession -> applySecurityHeaders), including X-Frame-Options: DENY and HSTS. Content-Security-Policy is the one absent from the set; next.config.ts declares no headers() function. See HTF-06, corrected at R2.",
+        "residual_risk": "No CSP and therefore no script-source or frame-ancestors policy, despite the other five headers being present."
+      },
+      {
+        "control": "Rate limiting",
+        "state": "FOUR_CONTROLS_WITH_DIVERGENT_FAILURE_SEMANTICS",
+        "evidence_class": "CODE_FACT",
+        "detail": "No single state is stateable. proxy.ts (/api/ only) fails OPEN on both missing configuration and backend error. lib/stella/rate-limit.ts fails CLOSED, but only in staging and production. lib/security/rate-limit.ts and lib/marketing/demo-request-rate-limit.ts are process-local Maps. See RATE_LIMIT_CONTROL_MATRIX and HTF-07, HTF-16, HTF-17, HTF-18.",
+        "residual_risk": "proxy.ts and the Stella limiter read the SAME two environment variables and disagree on what their absence means, so one missing variable simultaneously unlimits the public API and disables Stella."
+      },
+      {
+        "control": "Source licensing / third-party content register",
+        "state": "ABSENT",
+        "evidence_class": "CODE_FACT",
+        "detail": "No licensing, copyright, attribution, or permitted-use field exists on any evidence or corpus entity, and no register table exists. See HTF-10."
+      },
+      {
+        "control": "Legal acceptance record (Terms / Privacy / DPA)",
+        "state": "ABSENT",
+        "evidence_class": "CONFIG_FACT",
+        "detail": "No column or table records acceptance of any legal instrument by any user or organization. See HTF-11."
+      },
+      {
+        "control": "Data export / portability",
+        "state": "ABSENT",
+        "evidence_class": "CODE_FACT",
+        "detail": "No export, portability, or bulk-download surface exists. See HTF-12."
+      }
+    ]
+  },
+
+  "HARD_TECHNICAL_FACTS": [
+    {
+      "id": "HTF-01",
+      "title": "The governed erasure sweep reaches no grounding derivative, and says so",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "lib/pipeline/evidence.ts:932-934",
+        "lib/pipeline/evidence.ts:962-968",
+        "lib/pipeline/evidence.ts:936"
+      ],
+      "measured": "requestGovernedEvidenceErasure sweeps exactly two derivative kinds: the Supabase storage object (file evidence, once) and evidence_versions.content for every non-terminal version. The in-code comment at 962-968 states verbatim that no grounding derivatives (OCR/chunks/embeddings/indices/caches) exist to sweep, that 'docs/19 is not activated', and that the corresponding clause of FIBC-009 is therefore 'satisfied vacuously, not skipped'. A second comment at 932-934 records that erasure_blocked has no reachable trigger for the same reason, and names its own falsifier: 'it becomes reachable once either substrate lands, not before.'",
+      "significance": "The correctness of this sweep rests on an external premise, not on a runtime check. Enabling grounding falsifies the premise WITHOUT changing a line of this function. The defect is latent and its trigger is a configuration change, not a code change.",
+      "status": "BLOCKING_FOR_GROUNDING_ENABLEMENT_ONLY",
+      "honesty_note": "The code is not silently wrong. It documents its own precondition and its own falsifier. This is a documented latent gap, which is materially different from an oversight and should be characterized as such in any downstream use of this artifact."
+    },
+    {
+      "id": "HTF-02",
+      "title": "evidence_chunks DELETE: substrate present, callable path absent, purpose is reindexing",
+      "evidence_class": "CONFIG_FACT",
+      "paths": [
+        "db/prepared/grounding_0003_evidence_chunks.sql:639-642",
+        "db/prepared/grounding_0003_evidence_chunks.sql:681-692",
+        "db/prepared/grounding_0003_evidence_chunks.sql:621-637",
+        "db/grounding/grounding-chunk-repository.ts"
+      ],
+      "measured": "GRANT SELECT, INSERT, DELETE ON public.evidence_chunks TO uellix_cap_grounding, plus RLS policy evidence_chunks_definer_delete FOR DELETE TO uellix_cap_grounding. ALL privileges are revoked from PUBLIC, anon, authenticated, service_role, uellix_app, uellix_writer and uellix_auditor first; those roles receive SELECT only. The in-package rationale states the purpose: 'DELETE, and only for the definer: this index is regenerable, and reindexing a version is delete + insert. The version HISTORY has no such grant anywhere — that is the difference between a derived index and a chain of custody.' The uellix_grounding capability schema exposes exactly six functions — register_document_version, claim_active_document_version, insert_evidence_chunks, finalize_document_ingestion, chunks_in_scope, chunks_in_scope_attested — and NONE performs a delete. grounding-chunk-repository.ts contains no delete method.",
+      "significance": "A derivative purge is buildable without new schema authority, because the grant and the policy already exist. It is not INVOKABLE today, because nothing exposes it. The remediation is a capability function plus a call site, not a migration to widen privileges.",
+      "status": "OPEN_SUBSTRATE_READY",
+      "supersedes": "CORR-2"
+    },
+    {
+      "id": "HTF-03",
+      "title": "evidence_document_versions is append-only and hash-anchored by construction",
+      "evidence_class": "CONFIG_FACT",
+      "paths": [
+        "db/prepared/grounding_0002_document_versions.sql:2",
+        "db/prepared/grounding_0002_document_versions.sql:30-33",
+        "db/prepared/grounding_0002_document_versions.sql:214-218",
+        "db/prepared/grounding_0002_document_versions.sql:285-325"
+      ],
+      "measured": "Declared as 'GR-002 — append-only chain of custody for document versions'. Activeness is derived rather than stored: the package's own comment records that an is_active boolean would require an UPDATE, 'and an UPDATE is the one thing an append-only table must not accept'. The reader role receives 'SELECT, and only SELECT. Not UPDATE ... Not DELETE, not INSERT: this role must never change' the table. raw_content_hash and normalized_content_hash are char(64) NOT NULL, CHECK-constrained to ^[0-9a-f]{64}$. Uniqueness on version_id, ordinal, supersedes, and a composite identity_unique across the hash and pipeline-version tuple.",
+      "significance": "Hashes are the only content anchor retained at this layer. This is a deliberate minimization property and simultaneously means the version chain cannot itself be used to reconstruct erased content.",
+      "status": "CONTROL_PRESENT"
+    },
+    {
+      "id": "HTF-04",
+      "title": "A stale prose comment and a live grant disagree about DELETE on evidence_items",
+      "evidence_class": "DOC_FACT",
+      "paths": [
+        "db/migrations/0031_rls_core.sql:418-419",
+        "db/migrations/0033_public_api_grants.sql:36",
+        "db/migrations/0051_fib_evidence_erasure_substrate.sql:6-16"
+      ],
+      "measured": "0031:418 asserts 'DELETE is strictly denied for evidence_items. Archiving must be performed via UPDATE to status=archived.' The line that follows drops any evidence_items_delete policy and creates none. Two migrations later, 0033:36 grants DELETE on public.evidence_items to authenticated. 0051's header explicitly names the resulting state: 'Today's ambiguous DELETE path (GRANT present at 0033:35, RLS policy absent since 0031:418-419 — a silent 0-row DELETE) is UNCHANGED by this migration.'",
+      "significance": "Under enabled RLS the outcome is denial-by-absence, so the comment's SECURITY claim holds. Its CHARACTERIZATION does not: the mechanism is a silent zero-row DELETE returning success, not a strict denial. A caller cannot distinguish 'deleted nothing' from 'deleted successfully'.",
+      "line_number_discrepancy": "0051's header cites the grant at 0033:35; re-measurement at the derivation_tree places it at 0033:36. The one-line difference is recorded rather than reconciled, because silently adjusting a frozen artifact's citation is the kind of drift this baseline exists to detect. Neither line number changes the finding.",
+      "status": "OPEN_ACKNOWLEDGED_STAGE_E_DEFERRED"
+    },
+    {
+      "id": "HTF-05",
+      "title": "Storage policies are executable; bucket configuration is prose with an open TBD",
+      "evidence_class": "CONFIG_FACT",
+      "paths": [
+        "supabase/migrations/20260716000001_storage_policies.sql",
+        "db/migrations/0031_rls_core.sql:422-429",
+        "db/prepared/hosted/governed/stella_0019_storage_write_roles.governed.sql:309"
+      ],
+      "measured": "The authorization helpers exist and are hardened: SECURITY DEFINER with SET search_path = '', a to_regclass existence guard, path-derived project scoping via storage.foldername, an active-membership filter, and EXCEPTION WHEN OTHERS THEN RETURN false. stella_0019 refuses to apply if can_write_evidence_object is not SECURITY DEFINER, reasoning that over an INVOKER function the check would always answer false. Separately, 0031:422-429 specifies bucket creation as a comment block — 'The uellix-evidence bucket must be created in Supabase Storage with: Public Access: False; File Size Limit: Enforced per plan; Allowed MIME Types: Images, PDFs, Documents (TBD)'.",
+      "significance": "Two different gaps, not one. (a) Bucket-level configuration is not executable in this repository and cannot be asserted from it. (b) The allowed-MIME-type specification is unresolved on its face — 'TBD' — so there is no declared value to compare a live bucket against even if one were observed.",
+      "status": "OPEN_PARTLY_UNMEASURABLE",
+      "related_unknown": "PSU-02"
+    },
+    {
+      "id": "HTF-06",
+      "title": "A security-header layer DOES exist and applies app-wide; Content-Security-Policy is the header it omits",
+      "evidence_class": "CODE_FACT",
+      "corrected_at_r2": "R1 stated that no middleware existed and that the security headers 'govern the Supabase proxy route only'. BOTH halves were wrong, from the same root cause as CORR-1: the repository runs Next.js 16.2.9, where the middleware file is named proxy.ts, so R1's search for middleware.ts found nothing and R1 read that as the absence of a middleware layer. The CSP finding itself survives; its scope and reasoning did not.",
+      "paths": [
+        "lib/supabase/proxy.ts:5-20",
+        "lib/supabase/proxy.ts:101",
+        "proxy.ts:47-51",
+        "next.config.ts",
+        "package.json:134"
+      ],
+      "measured": "lib/supabase/proxy.ts defines SECURITY_HEADERS with exactly six entries — X-Content-Type-Options: nosniff, X-Frame-Options: DENY, X-XSS-Protection: 1; mode=block, Referrer-Policy: strict-origin-when-cross-origin, Permissions-Policy: camera=(), microphone=(), geolocation=(), and Strict-Transport-Security: max-age=31536000; includeSubDomains. applySecurityHeaders sets all six. updateSession returns applySecurityHeaders(...) on EVERY exit path — the unauthenticated redirect, the authenticated /login redirect, and the ordinary supabaseResponse. proxy.ts calls updateSession first and returns its response, under a matcher covering every path except _next/static, _next/image, favicon.ico and common image extensions. Content-Security-Policy is NOT among the six, and a case-insensitive search for it across all non-docs TypeScript, TSX and JSON returns zero hits. next.config.ts declares no headers() function.",
+      "significance": "The remediation is materially smaller than R1 implied: the delivery mechanism exists, is already applied app-wide, and is already asserted by tests/proxy-security.test.ts. What is missing is one header in one object literal — plus the non-trivial work of authoring a policy that does not break the application. Framing this as 'no security header layer' would have overstated the gap and mis-scoped the fix.",
+      "status": "OPEN_NARROWED",
+      "classification_note": "Recorded as SECURITY_BEST_PRACTICE in remediation terms. This artifact does NOT assert that the absence of a CSP constitutes a violation of any statute or standard; whether any applicable framework requires it is carried in COUNSEL_CHECKPOINT_1 as CQ-08."
+    },
+    {
+      "id": "HTF-07",
+      "title": "Rate limiting is four distinct controls with incompatible failure semantics; no global verdict is available",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "proxy.ts:11-42",
+        "lib/stella/rate-limit.ts:95-99",
+        "lib/stella/rate-limit.ts:239-289",
+        "lib/security/rate-limit.ts:1-44",
+        "lib/marketing/demo-request-rate-limit.ts:1-25"
+      ],
+      "measured": "Four production-facing limiters exist. They do NOT share a failure disposition, a backend, a keying strategy, or a request-surface. The per-control detail is in RATE_LIMIT_CONTROL_MATRIX and in HTF-16, HTF-17 and HTF-18; this entry records only the aggregate structural fact that they differ.",
+      "significance": "The single most important structural property is that proxy.ts and lib/stella/rate-limit.ts read the SAME two environment variables — KV_REST_API_URL and KV_REST_API_TOKEN — and take OPPOSITE dispositions when those are absent or when the backend errors. proxy.ts skips limiting silently and continues the request; the Stella limiter refuses the operation. One misconfiguration therefore produces an unlimited public API surface and a fully disabled Stella surface at the same time, in the same deployment, from the same missing variable.",
+      "explicit_non_aggregation": "This artifact states NO global RATE_LIMIT_FAIL_OPEN value. Any consumer requiring one must read the matrix per control. An aggregate would be false in at least one direction whichever value it took.",
+      "status": "OPEN_SEE_MATRIX",
+      "supersedes": "CORR-1"
+    },
+    {
+      "id": "HTF-16",
+      "title": "The Next.js middleware API limiter fails OPEN, in two independent ways",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "proxy.ts:12-16",
+        "proxy.ts:17-38",
+        "proxy.ts:39-41",
+        "proxy.ts:44",
+        "proxy.ts:47-51",
+        "lib/supabase/proxy.ts:22-27"
+      ],
+      "reinstates": "The prior synthesis's proxy.ts fail-open finding, which R1 of this artifact wrongly reported as false. Independently re-derived at the derivation tree and CONFIRMED.",
+      "measured": "proxy.ts is the Next.js 16 middleware (the repository pins next 16.2.9, where the middleware file is named proxy.ts rather than middleware.ts) and declares a broad matcher covering every path except _next/static, _next/image, favicon.ico and common image extensions. Its rate-limit block is a per-request Upstash sliding window of 60 requests per minute keyed global_api_${extractClientIp(request)}, with analytics: false. FAIL-OPEN PATH 1 (configuration): the entire block is guarded by `request.nextUrl.pathname.startsWith('/api/') && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN`. If either variable is absent the limiter never executes, no warning is emitted, and control falls through to `return sessionResponse`. FAIL-OPEN PATH 2 (runtime): the limiter call is wrapped in `try { ... } catch (error: unknown) { console.error('[proxy] API rate limit check failed', error) }` — the catch logs and does NOT return, so execution continues to `return sessionResponse` and the request is served. Only an explicit `success === false` produces a 429.",
+      "significance": "An Upstash outage, an expired token, a network fault, or a single missing environment variable each remove API rate limiting entirely, silently, and without any signal a caller or a health probe could distinguish from normal operation. The 429 path is the ONLY path that limits; every error path serves the request.",
+      "additional_measured_properties": [
+        "SCOPE IS /api/ ONLY. Next.js Server Actions POST to the page route, not to /api/, so they are NOT covered by this limiter. Login, password reset, demo request, evidence upload, and every Stella action are Server Actions.",
+        "extractClientIp (lib/supabase/proxy.ts:22-27) takes the FIRST element of x-forwarded-for, then x-real-ip, then the literal string 'anonymous'. The first two are client-supplied headers unless the hosting platform overwrites them (PSU-09). The 'anonymous' fallback places every request lacking both headers into ONE shared bucket, so those requests collectively share a 60/min budget."
+      ],
+      "status": "OPEN_FAIL_OPEN_CONFIRMED",
+      "related_unknowns": ["PSU-09", "PSU-10"],
+      "related_hpo_decision": "HPO-LC0-08"
+    },
+    {
+      "id": "HTF-17",
+      "title": "The Stella limiter fails CLOSED, but only in staging and production",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "lib/stella/rate-limit.ts:95-99",
+        "lib/stella/rate-limit.ts:239-289",
+        "lib/stella/operation-ticket/issue-governed-ticket.ts:116-123",
+        "app/actions/stella/grounded-query.ts:1116-1123"
+      ],
+      "reconfirmed_at_r2": "Every fact R1 recorded about this module survives re-derivation unchanged. What R1 omitted is the environment conditionality below, and what R1 wrongly did was generalize this module's disposition to every limiter.",
+      "measured": "consumeStellaRateLimit resolves the distributed limiter PER CALL (never at import, never memoised, so a rotated credential is not pinned by a warm instance). Both KV variables must be present or getDistributedLimiter returns null — 'BOTH, or neither. Half a configuration is not a configuration.' When a limiter exists, a thrown error is caught and returns { allowed: false, reason: 'unavailable' }. When no limiter exists, the disposition depends on DISTRIBUTED_REQUIRED_ENVIRONMENTS, which contains exactly 'staging' and 'production': in those, it logs and returns allowed: false; in development, test and CI it warns once and serves a per-instance in-memory Map. The header states the reasoning: 'For local development that fallback is correct and wanted. For a Preview or Production deployment it reports a guarantee it does not have.'",
+      "caller_disposition_verified": "The module's fail-closed is NOT undone downstream. Both call sites wrap the call in .catch(() => null) and then treat null as a refusal — returning RATE_LIMIT_UNAVAILABLE rather than proceeding. Verified at issue-governed-ticket.ts:117-123 and grounded-query.ts:1117-1123. A thrown exception and an unavailable backend therefore both stop the operation before any ticket is minted, any quota unit is held, or any provider call is made.",
+      "significance": "This is the strongest of the four limiters and the only one that refuses on failure. Its guarantee is nonetheless CONDITIONAL on resolveEnvironmentDecision classifying the deployment as staging or production; a deployment misclassified as development would silently fall back to a per-instance Map while appearing to function.",
+      "status": "CONTROL_PRESENT_ENVIRONMENT_CONDITIONAL",
+      "related_unknowns": ["PSU-11"]
+    },
+    {
+      "id": "HTF-18",
+      "title": "The auth-adjacent and demo limiters are process-local Maps; the auth one is keyed by identifier, not by origin",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "lib/security/rate-limit.ts:1-15",
+        "lib/security/rate-limit.ts:29-44",
+        "app/(public)/login/actions.ts:28",
+        "app/(public)/login/actions.ts:71",
+        "app/(public)/forgot-password/actions.ts:20",
+        "lib/marketing/demo-request-rate-limit.ts:1-25",
+        "app/actions/marketing/demo-request.ts:63-66"
+      ],
+      "reconfirmed_at_r2": "R1's scaling-weakness finding is independently re-derived and CONFIRMED. The keying property below was not recorded by R1 and is added.",
+      "measured": "Both modules hold a module-level `const store = new Map(...)`. Their own headers state they are not Redis-backed, reset on server restart, and do not share state across serverless instances; lib/security/rate-limit.ts adds that this is 'acceptable for the MVP as a defense-in-depth layer, not the sole protection (Supabase Auth also rate-limits at its own layer)'. KEYING DIFFERS BY CONTROL: lib/security/rate-limit.ts is keyed by the submitted IDENTIFIER — `login:${email}`, `signup:${email}`, `reset:${email}` — not by client origin. lib/marketing/demo-request-rate-limit.ts is keyed by IP at 5 per hour, behind a honeypot field that returns a fake success to bots without sending.",
+      "significance": "Two independent weakenings, and they compound. (1) Per-instance state means the realized cap is the configured limit multiplied by the number of live instances, a number not knowable from inside the process. (2) Identifier keying means the login and reset limits bound attempts PER ACCOUNT, not per attacker: an actor rotating the email address across a credential-stuffing list is not throttled by this layer at all, on any instance. The email keying is a deliberate and correct choice for the enumeration threat the forgot-password action documents (it declines to reveal whether an address is registered or rate limited), but it does not bound a distributed-guessing threat.",
+      "status": "OPEN_BOUNDED",
+      "related_unknowns": ["PSU-07"],
+      "related_hpo_decision": "HPO-LC0-08"
+    },
+    {
+      "id": "HTF-08",
+      "title": "Stella responses are retained irreversibly, with no retention window and no erasure path",
+      "evidence_class": "CONFIG_FACT",
+      "paths": [
+        "db/schema.ts:1093-1122",
+        "db/migrations/0032_rls_specialized.sql:36-40",
+        "db/prepared/stella_0002_interactions_hardening.sql:94-99",
+        "db/prepared/stella_0002b_append_only_truncate_hardening.sql:33-50"
+      ],
+      "measured": "stella_interactions.response_json is jsonb NOT NULL and stores the model's response. Append-only is enforced at three independent layers: (1) RLS — a SELECT policy exists; the INSERT policy is dropped and never recreated, and the migration states 'No UPDATE policy -> UPDATE is denied by RLS / No DELETE policy -> DELETE is denied by RLS / Append-only semantics enforced at database layer'; writes reach the table only via the service client, which bypasses RLS; (2) trigger — trg_stella_interactions_append_only, which tests/integration/rls.test.ts asserts blocks UPDATE and DELETE with insufficient_privilege even for the TABLE OWNER; (3) grants — stella_0002b revokes TRUNCATE, REFERENCES, TRIGGER and MAINTAIN. A search for retention, TTL, purge or expiry across db/migrations returns no retention mechanism for this table.",
+      "significance": "This is simultaneously an integrity control and a data-governance constraint, and the two point in opposite directions. Whatever personal or confidential data reaches response_json is retained for the life of the database with no erasure path reachable by any role, including the owner. The governed evidence erasure path (HTF-01) does not touch this table.",
+      "status": "OPEN_TENSION_REQUIRES_ADJUDICATION",
+      "related_counsel_question": "CQ-03",
+      "related_hpo_decision": "HPO-LC0-03"
+    },
+    {
+      "id": "HTF-09",
+      "title": "The AI-never-decides invariant is enforced structurally, not only by prompt",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "lib/stella/schemas/reviewer-output.ts:26-28",
+        "lib/stella/schemas/validator-output.ts:29-31",
+        "lib/stella/prompts/shared-guardrails.ts:15",
+        "lib/stella/prompts/shared-guardrails.ts:23",
+        "lib/stella/prompts/shared-guardrails.ts:51",
+        "lib/stella/prompts/shared-guardrails.ts:74",
+        "lib/stella/prompts/reviewer-system.ts:69",
+        "lib/stella/fallbacks.ts:13"
+      ],
+      "measured": "requires_human_review is typed z.literal(true) in both the reviewer and validator output schemas, described as 'ALWAYS true — human review is mandatory; the AI never decides'. A model response setting it false therefore fails schema validation rather than being accepted. reviewer-system.ts:69 states the role boundary directly: the model 'never approves, never decides, and never changes any status — humans decide and act through Uellix's own review flows'. shared-guardrails.ts:15 forbids the model describing anything as certified, audited, automatically approved or definitively validated, regardless of data completeness. shared-guardrails.ts:74 requires elevated human review for sensitive populations. fallbacks.ts:13 records that the fallback path 'claims nothing, and always requires human review'.",
+      "significance": "The invariant does not depend on the model complying with an instruction. A non-compliant response is rejected at the type boundary. This is the strongest control measured in this lane and is directly material to any human-oversight analysis.",
+      "status": "CONTROL_PRESENT_STRUCTURALLY_ENFORCED"
+    },
+    {
+      "id": "HTF-10",
+      "title": "No source licensing or third-party content register exists",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "db/schema.ts",
+        "lib/pipeline/",
+        "lib/grounding/"
+      ],
+      "measured": "A case-insensitive search for licence, license, copyright, attribution_required and source_licen across db/schema.ts, lib/pipeline/ and lib/grounding/ returns zero content-licensing hits. No evidence or corpus entity carries a licence, rights-holder, permitted-use, or attribution field, and no register table exists.",
+      "significance": "Uploaded evidence may be third-party copyrighted material. Nothing in the schema records the right to hold it, to process it, or to surface extracts of it in a grounded answer. This becomes materially sharper on grounding enablement, because grounded retrieval surfaces extracts rather than whole documents.",
+      "status": "OPEN",
+      "related_counsel_question": "CQ-05"
+    },
+    {
+      "id": "HTF-11",
+      "title": "No legal acceptance record exists for any instrument",
+      "evidence_class": "CONFIG_FACT",
+      "paths": [
+        "db/schema.ts",
+        "db/migrations/"
+      ],
+      "measured": "A search for terms_accepted, accepted_terms, tos_accepted, privacy_accepted, dpa, legal_acceptance and consent across db/schema.ts, db/migrations/ and lib/ returns no acceptance-recording column or table. The only substantive match is a Spanish-language report-section description in lib/reports/report-sections.ts:74 referring to stakeholder consent records as report CONTENT — a document the customer may attach, not an acceptance the platform records.",
+      "significance": "There is no queryable answer to which instrument version any user or organization accepted, or when. Acceptance evidence is a precondition for most contractual and several statutory positions.",
+      "status": "OPEN",
+      "related_counsel_question": "CQ-06",
+      "related_hpo_decision": "HPO-LC0-04"
+    },
+    {
+      "id": "HTF-12",
+      "title": "No data export or portability surface exists",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "lib/",
+        "app/"
+      ],
+      "measured": "A search for export_data, dataExport, downloadAllData and portability across lib/ and app/ returns zero hits. Report generation exists as a product feature; it is a rendering of selected project content, not a subject- or tenant-scoped export of held data.",
+      "significance": "There is no implemented path to produce a complete copy of the data held for an organization or an individual. Whether one is required, in what scope, and on what deadline is a legal question this artifact does not answer.",
+      "status": "OPEN",
+      "related_counsel_question": "CQ-07"
+    },
+    {
+      "id": "HTF-13",
+      "title": "RLS is tested by sample, never censused closed-world over schema public",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "tests/integration/rls.test.ts",
+        "tests/database-runtime-rls.test.ts",
+        "db/hosted/baseline-postconditions.ts:338-339",
+        "db/hosted/checkpoint-b0.ts:281"
+      ],
+      "measured": "The RLS test suites are enumerated by named subject: organizations, projects, storage objects, stella_interactions, stella suggestion decisions, plus identity-context behaviour. Neither suite queries pg_class.relrowsecurity to assert that every table in schema public has RLS enabled. Census-shaped SQL DOES exist, but in the HOSTED OPERATOR path — baseline-postconditions.ts:339 probes pg_tables joined to pg_class for relrowsecurity, and states the requirement as 'Every table the corpus switches RLS on has it on. RLS off on one table is a silent read of the whole tenancy.' checkpoint-b0.ts:281 counts the same set.",
+      "significance": "The precise gap is narrower than 'no census exists', and narrower is more useful. A census exists as an OPERATOR postcondition against a live database. What does not exist is a repository-level test that fails when a newly added table ships without an RLS policy. The operator probe also verifies a weaker property — that RLS is on where the corpus switches it on — rather than that it is on everywhere.",
+      "status": "OPEN",
+      "related_counsel_question": null,
+      "related_hpo_decision": "HPO-LC0-05"
+    },
+    {
+      "id": "HTF-14",
+      "title": "Grounding reader and writer share one feature flag, deliberately",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "lib/stella/config.ts:113",
+        "app/actions/grounding/ingest-evidence.ts:29-36",
+        "app/actions/grounding/ingest-evidence.ts:39-52",
+        "db/hosted/hosted-provisioning-runner.ts:144-154"
+      ],
+      "measured": "isGroundedQueryEnabled resolves from process.env.STELLA_GROUNDED_QUERY_ENABLED === 'true'. The ingestion (writer) path is gated on that same flag, and states why: 'The corpus this writes into has exactly one consumer, and it is the grounded query. A second flag would let the two disagree — a corpus filling up for a capability that is off, or a capability on with no way to fill it. It also keeps this path dark by the same switch that keeps the reader dark.' The flag is one of exactly nine in STELLA_FEATURE_FLAGS. Separately, the ingestion PERMISSION is canUploadEvidence rather than canUseStella, on the reasoning that indexing a document the caller may already upload, delete and archive is an evidence-management act rather than an AI-consumption act.",
+      "significance": "This is the single control that currently keeps HTF-01 vacuously satisfied. One environment variable governs both corpus fill and corpus read. It is a genuine strength — there is exactly one switch to reason about and no way for reader and writer to disagree — and simultaneously means a single configuration change activates the derivative-purge gap.",
+      "status": "CONTROL_PRESENT_AND_LOAD_BEARING"
+    },
+    {
+      "id": "HTF-15",
+      "title": "Evidence ingestion re-throws on partial failure to prevent a hollow active version",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "app/actions/grounding/ingest-evidence.ts:55-72"
+      ],
+      "measured": "finalize_document_ingestion verifies chunk count and raises U0103 but activates nothing, while claim_active_document_version selects the highest ordinal with no finalized-state predicate. A version that registers and then fails to fill would therefore become the ACTIVE version and mask the last good one. The sequence runs inside one identity context and a reported failure is re-thrown so drizzle unwinds it; returning the failure normally would let the context commit. The comment records that the fix lives in the application because CREATE OR REPLACE cannot alter claim_active_document_version's return type (42P13), so a state predicate would require a new CAPABILITIES package.",
+      "significance": "An integrity control whose enforcement point sits in application code rather than in SQL, for a stated and verifiable reason. Recorded because it is an integrity property a reviewer would otherwise expect to find in the database, and because its location makes it bypassable by any future non-application writer.",
+      "status": "CONTROL_PRESENT_APPLICATION_LAYER"
+    }
+  ],
+
+  "RATE_LIMIT_CONTROL_MATRIX": {
+    "purpose": "Rate limiting in this repository is not one control. R1 of this artifact stated a global verdict from a single measurement and was wrong. This matrix enumerates every production-facing limiter found at the derivation tree and records the same nine attributes for each, so that no consumer needs an aggregate.",
+    "no_global_verdict": "This artifact emits NO value for RATE_LIMIT_FAIL_OPEN. Members of this set differ on that very property, so any aggregate would be false in at least one direction.",
+    "enumeration_method": "Search for rateLimit / RateLimit / rate_limit / checkAndRecord / Ratelimit across all non-test TypeScript and TSX at the derivation tree, then trace every hit to a limiter definition or a call site. Repository-root files were included — the omission of the repository root from R1's search is the specific defect this re-derivation corrects.",
+    "enumeration_completeness": "Four limiter DEFINITIONS were found. The API route handlers under app/api/ define no limiter of their own; those under /api/ inherit CONTROL-1 only. This enumeration is believed complete for in-repository limiters and says nothing about limiting applied by the hosting platform or by Supabase Auth (PSU-12).",
+    "controls": [
+      {
+        "id": "CONTROL-1",
+        "module": "proxy.ts (repository root — the Next.js 16 middleware)",
+        "scope": "Every request whose pathname starts with /api/, and ONLY those. The middleware matcher itself is broad (all paths except _next/static, _next/image, favicon.ico, common image extensions), but the rate-limit block is guarded by an additional startsWith('/api/') test.",
+        "trigger": "One token per matched request, consumed before the response is returned.",
+        "backend_storage": "Upstash Redis via @upstash/ratelimit, dynamically imported per request. Sliding window, 60 requests per 1 minute, analytics: false. Key: global_api_${extractClientIp(request)}.",
+        "failure_mode": "TWO independent failure paths, both permissive. (a) Configuration: if KV_REST_API_URL or KV_REST_API_TOKEN is absent, the block is skipped entirely with no log and no warning. (b) Runtime: any throw inside the block is caught, logged to console.error, and execution CONTINUES to return sessionResponse.",
+        "fail_open_or_closed": "FAIL_OPEN",
+        "instance_semantics": "Distributed when configured and reachable — this is the only limiter with genuinely shared state across instances.",
+        "environment_variable_dependency": "KV_REST_API_URL and KV_REST_API_TOKEN. Both required; absence of either disables the control silently.",
+        "server_action_coverage": "NONE. Next.js Server Actions POST to the page route rather than to /api/, so every Server Action — login, signup, password reset, demo request, evidence upload, and all Stella actions — bypasses this control entirely.",
+        "production_state_unknowns": ["PSU-09", "PSU-10", "PSU-12"],
+        "finding": "HTF-16"
+      },
+      {
+        "id": "CONTROL-2",
+        "module": "lib/stella/rate-limit.ts",
+        "scope": "Stella operations, per organization. Reached from issueGovernedStellaTicket and from the grounded-query Server Action.",
+        "trigger": "One hourly token per organization, consumed at ticket MINTING — before any reservation, quota hold, or provider call.",
+        "backend_storage": "Upstash Redis via @upstash/ratelimit, constructed PER CALL and never memoised, so a rotated credential is not pinned by a warm instance. Sliding window, stellaConfig.rateLimitPerHour (default 100) per 1 hour, analytics: true. Key: stella_org_${organizationId}. Falls back to an in-process Map ONLY where the environment permits.",
+        "failure_mode": "Backend error is caught and returns { allowed: false, reason: 'unavailable' }. Missing configuration returns null from getDistributedLimiter ('BOTH, or neither'), after which the disposition is decided by environment.",
+        "fail_open_or_closed": "FAIL_CLOSED in staging and production; FAIL_OPEN_BY_DESIGN in development, test and CI, where an in-process Map fallback is intended. Callers do not weaken this: both call sites wrap in .catch(() => null) and treat null as RATE_LIMIT_UNAVAILABLE rather than proceeding.",
+        "instance_semantics": "Distributed where required and configured. Per-instance in development, test and CI by deliberate policy.",
+        "environment_variable_dependency": "KV_REST_API_URL and KV_REST_API_TOKEN (the SAME pair as CONTROL-1, with the opposite disposition on absence), plus STELLA_RATE_LIMIT_PER_HOUR (default 100). Environment classification comes from resolveEnvironmentDecision in db/safety/database-access.ts.",
+        "server_action_coverage": "YES — this is the control that actually covers the Stella Server Actions, which CONTROL-1 does not reach.",
+        "production_state_unknowns": ["PSU-11", "PSU-12"],
+        "finding": "HTF-17"
+      },
+      {
+        "id": "CONTROL-3",
+        "module": "lib/security/rate-limit.ts",
+        "scope": "Auth-adjacent Server Actions: login, signup and password reset.",
+        "trigger": "checkAndRecordRateLimit checks and records one attempt in a single call, keyed by the SUBMITTED IDENTIFIER — login:${email}, signup:${email}, reset:${email} — not by client origin.",
+        "backend_storage": "Module-level in-memory Map, fixed window. Not Redis-backed.",
+        "failure_mode": "No external dependency, so no availability failure mode exists. The weakness is not a failure path but the storage semantics: state resets on server restart and is not shared across instances.",
+        "fail_open_or_closed": "NOT_APPLICABLE_NO_EXTERNAL_DEPENDENCY. Recording it as fail-closed would imply a resilience property it does not have; recording it as fail-open would imply a failure path it does not have.",
+        "instance_semantics": "SINGLE_INSTANCE. Realized cap is the configured limit multiplied by the number of live instances, a count not knowable from inside the process.",
+        "environment_variable_dependency": "NONE.",
+        "server_action_coverage": "YES — and it is the ONLY limiter covering the login and password-reset surfaces, since CONTROL-1 does not see Server Actions.",
+        "production_state_unknowns": ["PSU-07", "PSU-12"],
+        "finding": "HTF-18",
+        "additional_note": "Identifier keying bounds attempts per ACCOUNT, not per attacker. An actor rotating the email across a credential-stuffing list is not throttled by this layer. The module's own header positions it as defense-in-depth alongside Supabase Auth's limiting, not as sole protection."
+      },
+      {
+        "id": "CONTROL-4",
+        "module": "lib/marketing/demo-request-rate-limit.ts",
+        "scope": "The public, unauthenticated demo-request Server Action.",
+        "trigger": "5 requests per UTC hour, keyed by IP resolved via clientIp(), behind a honeypot field that returns a fake success to bots without sending anything.",
+        "backend_storage": "Module-level in-memory Map with lazy hour-key expiry. Not Redis-backed.",
+        "failure_mode": "No external dependency; same storage-semantics weakness as CONTROL-3.",
+        "fail_open_or_closed": "NOT_APPLICABLE_NO_EXTERNAL_DEPENDENCY.",
+        "instance_semantics": "SINGLE_INSTANCE. Realized cap is 5 multiplied by the number of live instances.",
+        "environment_variable_dependency": "NONE.",
+        "server_action_coverage": "YES — it exists precisely because this is a Server Action and CONTROL-1 does not reach it.",
+        "production_state_unknowns": ["PSU-07", "PSU-12"],
+        "finding": "HTF-18"
+      }
+    ],
+    "cross_control_observations": [
+      "CONTROL-1 and CONTROL-2 depend on the SAME two environment variables and disagree about what their absence means. A deployment missing them has an unlimited /api/ surface and a fully refusing Stella surface simultaneously.",
+      "CONTROL-1 is the only distributed limiter that is unconditionally distributed, and it is also the only one that fails open. The strongest storage and the weakest disposition are in the same control.",
+      "No limiter covers Server Actions generally. Coverage is per-action and opt-in: Stella, login/signup/reset, and demo request each carry their own. Any Server Action not individually limited — including evidence upload — is unlimited by every control in this matrix."
+    ]
+  },
+
+  "PRODUCT_STAGE_GATE_MATRIX": {
+    "rule": "LC0 gates the stages it names and NO OTHER. A stage absent from the blocked list is not blocked by LC0, and this artifact must not be cited to delay it. Stages remain subject to their own independent authority chains, which LC0 neither supersedes nor relaxes.",
+    "stages": [
+      {
+        "stage": "foundational_engineering",
+        "lc0_status": "NOT_BLOCKED",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "rationale": "Schema, contracts and tests that do not activate a data-processing surface do not engage any LC0 finding."
+      },
+      {
+        "stage": "commercial_activation",
+        "lc0_status": "GATED_ON_LEGAL_INSTRUMENTS",
+        "evidence_class": "CONTRACTUAL_CHOICE",
+        "rationale": "HTF-11 records that no acceptance of any legal instrument is captured. Whether a customer may be onboarded commercially before that exists is a business and counsel decision, not a code constraint.",
+        "blocking_findings": ["HTF-11"]
+      },
+      {
+        "stage": "self_service_onboarding",
+        "lc0_status": "GATED_ON_LEGAL_INSTRUMENTS",
+        "evidence_class": "CONTRACTUAL_CHOICE",
+        "rationale": "Self-service removes the negotiated-contract path that could otherwise carry acceptance out of band, so HTF-11 binds harder here than for assisted commercial activation.",
+        "blocking_findings": ["HTF-11"]
+      },
+      {
+        "stage": "stella_real_provider",
+        "lc0_status": "BLOCKED",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "blocked_by": "internal provider-governance gate",
+        "unblock_condition": "provider legal and data terms resolved",
+        "rationale": "Blocked by an internal governance decision pending resolution of the provider's legal and data-handling terms. This is a policy and contractual gate, not a code defect.",
+        "explicit_non_assertion": "No provider-governance gate, data-processing term, retention setting, or training-exclusion configuration was found in code at the derivation_tree. A search for provider legal/terms/DPA/zero-data-retention constructs across lib/stella/ returned no such surface. This artifact therefore does NOT assert that a code-level provider gate exists. The gate is organizational.",
+        "related_unknown": "PSU-05"
+      },
+      {
+        "stage": "grounding_enablement",
+        "lc0_status": "BLOCKED",
+        "evidence_class": "CODE_FACT",
+        "blocked_by": "derivative purge absent",
+        "unblock_condition": "A derivative purge path exists, is invoked by requestGovernedEvidenceErasure, and is covered by a test that fails if the sweep misses a chunk.",
+        "rationale": "HTF-01 with HTF-02 and HTF-14. Setting STELLA_GROUNDED_QUERY_ENABLED=true converts a vacuously-satisfied erasure clause into an unsatisfied one, with no code change and no failing test. The substrate for the fix exists (HTF-02); the callable path and the call site do not.",
+        "blocking_findings": ["HTF-01", "HTF-02"]
+      },
+      {
+        "stage": "pilot",
+        "lc0_status": "CONDITIONAL",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "condition": "Permissible with grounding disabled and Stella real-provider disabled, subject to the commercial_activation gate and to whatever instrument the pilot participants sign.",
+        "rationale": "A pilot that does not enable the two blocked stages engages no LC0 blocking finding, but still surfaces HTF-08 and HTF-11 to real users and real data."
+      },
+      {
+        "stage": "release_candidate",
+        "lc0_status": "GATED",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "rationale": "Requires COUNSEL_CHECKPOINT_1 to have been opened and the HPO decisions in HPO_DECISIONS_PENDING to be adjudicated, whatever their outcome. LC0 requires that the questions be ANSWERED, not that they be answered a particular way."
+      },
+      {
+        "stage": "pre_production",
+        "lc0_status": "GATED",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "rationale": "Requires resolution of PRODUCTION_STATE_UNKNOWNS, which are unmeasurable from this repository and require an operator observation against the live environment."
+      },
+      {
+        "stage": "public_launch",
+        "lc0_status": "GATED",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "rationale": "Requires counsel output on COUNSEL_CHECKPOINT_1 and completion of the LC1 packet. LC0 does not assert what public launch requires; it asserts that LC0 alone is not sufficient basis for it."
+      }
+    ],
+    "explicitly_not_blocked_by_lc0": [
+      {
+        "item": "CE1 foundational schema",
+        "lc0_status": "NOT_BLOCKED_BY_LC0",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "note": "Foundational schema work. Subject to its own ODS lineage and grant authority, which LC0 does not supersede, relax, or substitute for."
+      },
+      {
+        "item": "Portfolio implementation",
+        "lc0_status": "NOT_BLOCKED_BY_LC0",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "note": "Subject to its own PF1/PF2 execution authority chain."
+      },
+      {
+        "item": "Evaluate implementation",
+        "lc0_status": "NOT_BLOCKED_BY_LC0",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "note": "Subject to its own Evaluate V1 authority and manifest."
+      },
+      {
+        "item": "FIBIU19 methodological implementation",
+        "lc0_status": "NOT_BLOCKED_BY_LC0",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "note": "Not blocked by LC0 ITSELF, but subject to its independent Wave3 authority chain. LC0 makes no finding about that chain's status and must not be read as clearing it."
+      }
+    ]
+  },
+
+  "PRODUCTION_STATE_UNKNOWNS": [
+    {
+      "id": "PSU-01",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "Whether the grounding prepared packages (grounding_0001 through grounding_0005) are applied in any live environment, and whether public.evidence_chunks holds any row.",
+      "why_unmeasurable": "Prepared packages are applied by a governed operator run against a live database. This repository records what WOULD be applied, never what IS.",
+      "consequence_if_wrong": "If the corpus is non-empty anywhere, HTF-01's vacuous satisfaction has ALREADY failed in that environment and the erasure gap is live rather than latent.",
+      "resolution_path": "Operator observation: row count on public.evidence_chunks per environment.",
+      "priority": "HIGHEST"
+    },
+    {
+      "id": "PSU-02",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "The actual configuration of the uellix-evidence bucket: public-access flag, file size limit, and allowed MIME types.",
+      "why_unmeasurable": "Declared only as prose in 0031_rls_core.sql:422-429, with the MIME list unresolved as 'TBD'. Bucket configuration lives in the Supabase control plane.",
+      "consequence_if_wrong": "A publicly-readable evidence bucket would make every storage RLS policy in HTF-05 decorative.",
+      "resolution_path": "Operator observation against storage.buckets, plus a decision resolving the TBD into a declared list.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PSU-03",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "The live values of the nine STELLA_FEATURE_FLAGS in every environment pointing at each database.",
+      "why_unmeasurable": "lib/stella/config.ts reads the CURRENT process's environment. hosted-provisioning-runner.ts:141-143 records this reasoning explicitly: a planner answering from its own process 'would be answering a question nobody asked, correctly, and reporting it as the answer to the one they did.'",
+      "consequence_if_wrong": "STELLA_GROUNDED_QUERY_ENABLED=true anywhere makes the grounding stage gate already breached in that environment.",
+      "resolution_path": "The existing hosted attestation path already collects a flag inventory per environment. Reuse it.",
+      "priority": "HIGHEST"
+    },
+    {
+      "id": "PSU-04",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "Whether RLS is enabled on every table in schema public in each live database, and whether FORCE ROW LEVEL SECURITY is set anywhere.",
+      "why_unmeasurable": "A runtime property of a live database. HTF-13 records that no repository-level test asserts it. tests/helpers/capability-mutations.ts:901 separately records that there is 'no FORCE ROW LEVEL SECURITY anywhere in the campaign', which makes any table owner RLS-exempt.",
+      "consequence_if_wrong": "One table with RLS off is a cross-tenant read of that table.",
+      "resolution_path": "Operator observation via the existing baseline-postconditions probe, widened from 'tables the corpus switches on' to all tables in public.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PSU-05",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "The provider's contracted data-handling terms: retention period, training-data exclusion, sub-processor list, and processing locations.",
+      "why_unmeasurable": "A vendor agreement. No code artifact records or can record it, and none was found (see stella_real_provider.explicit_non_assertion).",
+      "consequence_if_wrong": "Determines whether Stella real-provider can be enabled at all, and what any customer-facing instrument may truthfully say about where data goes.",
+      "resolution_path": "Business and counsel: obtain and record the executed terms.",
+      "priority": "HIGHEST"
+    },
+    {
+      "id": "PSU-06",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "Whether any live stella_interactions.response_json row contains personal data, and the volume of such rows.",
+      "why_unmeasurable": "Depends on real prompt content in a live database.",
+      "consequence_if_wrong": "Determines whether HTF-08's irreversible retention is an abstract design tension or a present, unremediable holding of personal data.",
+      "resolution_path": "Operator sampling under an approved access procedure, or a decision to treat the column as containing personal data by default.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PSU-07",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "The effective number of concurrent serverless instances in each environment.",
+      "why_unmeasurable": "A platform runtime property.",
+      "consequence_if_wrong": "Sets the realized multiplier on the per-instance rate limits in HTF-07. The configured cap is a lower bound, not the effective one.",
+      "resolution_path": "Platform observation.",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "PSU-09",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "Whether the hosting platform overwrites the x-forwarded-for and x-real-ip headers before they reach the middleware, or forwards client-supplied values.",
+      "why_unmeasurable": "A property of the edge/hosting layer. extractClientIp (lib/supabase/proxy.ts:22-27) takes the first element of x-forwarded-for with no validation, so the trustworthiness of the key is entirely a platform property.",
+      "consequence_if_wrong": "If client-supplied values survive, CONTROL-1's per-IP bucket is attacker-selectable and the 60/min limit is trivially evaded by varying the header.",
+      "resolution_path": "Platform documentation plus an observed request trace.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PSU-10",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "Whether KV_REST_API_URL and KV_REST_API_TOKEN are set in each deployment environment, and whether the Upstash instance is reachable from them.",
+      "why_unmeasurable": "Deployment configuration and network reachability. Note that stellaRateLimitAttestation() reads variable PRESENCE only and explicitly cannot say the backend is reachable or the token valid.",
+      "consequence_if_wrong": "Absence disables CONTROL-1 silently (fail-open) while simultaneously making CONTROL-2 refuse every Stella operation in staging and production. The two symptoms look unrelated but have one cause.",
+      "resolution_path": "The existing /api/health/stella-preconditions surface reports the presence half. Reachability requires a live probe that this repository deliberately does not perform.",
+      "priority": "HIGHEST"
+    },
+    {
+      "id": "PSU-11",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "What resolveEnvironmentDecision() classifies each live deployment as.",
+      "why_unmeasurable": "Resolved at runtime from the deployment's own environment.",
+      "consequence_if_wrong": "CONTROL-2's fail-closed guarantee applies only to 'staging' and 'production'. A production deployment misclassified as development would silently serve a per-instance in-memory Map while appearing to operate normally.",
+      "resolution_path": "Operator observation of the attestation surface per environment.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PSU-12",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "What rate limiting, WAF, or bot protection the hosting platform and Supabase Auth apply independently of this repository.",
+      "why_unmeasurable": "External to the codebase. Two limiter modules explicitly rely on it: lib/security/rate-limit.ts positions itself as defense-in-depth 'not the sole protection (Supabase Auth also rate-limits at its own layer)'.",
+      "consequence_if_wrong": "The in-repository limiters are designed on the assumption that another layer exists. If it does not, CONTROL-3's per-instance, per-email limit is the only bound on credential stuffing.",
+      "resolution_path": "Platform and Supabase configuration review.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PSU-08",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "Whether any data subject has already exercised, or been told they may exercise, a right this repository has no path to satisfy (export, HTF-12; Stella-response erasure, HTF-08).",
+      "why_unmeasurable": "An operational and support-history fact.",
+      "consequence_if_wrong": "Converts an open gap into an outstanding unmet request, which is a different and more urgent posture.",
+      "resolution_path": "Support and operations review.",
+      "priority": "MEDIUM"
+    }
+  ],
+
+  "HPO_DECISIONS_PENDING": [
+    {
+      "id": "HPO-LC0-01",
+      "decision_required": "Whether the derivative purge (HTF-02) must land BEFORE grounding is enabled in any environment including staging, or before production only.",
+      "evidence_class": "PRODUCT_POLICY_DECISION",
+      "depends_on": ["HTF-01", "HTF-02", "PSU-01", "PSU-03"],
+      "note": "This artifact records the technical state and the stage gate. It does not adjudicate the staging-versus-production boundary, which is an HPO decision.",
+      "blocks": ["grounding_enablement"]
+    },
+    {
+      "id": "HPO-LC0-02",
+      "decision_required": "Whether HTF-04's ambiguous evidence_items DELETE is closed now, or remains deferred to stage E as currently authorized.",
+      "evidence_class": "PRODUCT_POLICY_DECISION",
+      "depends_on": ["HTF-04"],
+      "note": "0051's header records the deferral as a deliberate stage assignment under W2-00 §7 and FIB §4, on the basis that FIBDB-032 and FIBDB-033 'must ship together'. Re-opening it is an authority decision, not an engineering one. LC0 records the state; it does not reverse the assignment."
+    },
+    {
+      "id": "HPO-LC0-03",
+      "decision_required": "How to reconcile the irreversible retention of stella_interactions.response_json (HTF-08) with any erasure obligation.",
+      "evidence_class": "PRODUCT_POLICY_DECISION",
+      "depends_on": ["HTF-08", "PSU-06", "CQ-03"],
+      "options_without_recommendation": [
+        "Keep append-only and prevent personal data from reaching response_json at write time",
+        "Add a governed erasure path that pierces the append-only trigger under a discrete permission, mirroring the evidence tombstone pattern",
+        "Introduce a retention window with a governed purge",
+        "Accept the retention and disclose it in the customer instrument"
+      ],
+      "note": "Options are enumerated, not recommended. Each has a different legal profile and the choice is not this artifact's to make. Note that options 2 and 3 both weaken an integrity control that currently holds against the table owner — that trade-off is the substance of the decision."
+    },
+    {
+      "id": "HPO-LC0-04",
+      "decision_required": "Which legal instruments the platform will record acceptance of, at what granularity (user, organization, or both) and with what versioning.",
+      "evidence_class": "CONTRACTUAL_CHOICE",
+      "depends_on": ["HTF-11", "CQ-06"],
+      "blocks": ["commercial_activation", "self_service_onboarding"]
+    },
+    {
+      "id": "HPO-LC0-05",
+      "decision_required": "Whether to add a repository-level closed-world RLS census test that fails when a table ships without an RLS policy.",
+      "evidence_class": "SECURITY_BEST_PRACTICE",
+      "depends_on": ["HTF-13", "PSU-04"],
+      "note": "Distinct from the existing operator postcondition, which runs against a live database and verifies a weaker property. The decision is whether the guarantee belongs in CI as well as in the operator path."
+    },
+    {
+      "id": "HPO-LC0-06",
+      "decision_required": "Whether an application-level security header layer including a CSP is in scope before release candidate.",
+      "evidence_class": "SECURITY_BEST_PRACTICE",
+      "depends_on": ["HTF-06", "CQ-08"]
+    },
+    {
+      "id": "HPO-LC0-07",
+      "decision_required": "Whether a source licensing register is required before grounding enablement, given that grounded retrieval surfaces extracts of third-party documents rather than whole documents.",
+      "evidence_class": "PRODUCT_POLICY_DECISION",
+      "depends_on": ["HTF-10", "CQ-05"]
+    },
+    {
+      "id": "HPO-LC0-08",
+      "decision_required": "Whether the auth-adjacent and public-form limiters (HTF-18) must move to shared state before public launch, or whether Supabase Auth's own limiting is accepted as the effective control.",
+      "evidence_class": "SECURITY_BEST_PRACTICE",
+      "depends_on": ["HTF-18", "PSU-07", "PSU-12"],
+      "note": "Both modules already state the trade-off as accepted for MVP. The decision is whether that acceptance survives the change of stage. Note the added dimension from R2: CONTROL-3 is keyed by email, so it bounds attempts per account rather than per attacker — moving it to shared state fixes the instance multiplier but not the keying."
+    },
+    {
+      "id": "HPO-LC0-09",
+      "decision_required": "Whether the middleware API limiter (HTF-16) must fail CLOSED, and whether missing KV configuration should be a deployment-time refusal rather than a silent skip.",
+      "evidence_class": "SECURITY_BEST_PRACTICE",
+      "depends_on": ["HTF-16", "PSU-10"],
+      "note": "Raised at R2. The repository already contains the opposite disposition for the same variables in lib/stella/rate-limit.ts, together with a written rationale for failing closed and an attestation surface for configuration presence. The decision is whether that reasoning should be extended to the middleware, or whether serving an unlimited API is preferable to refusing traffic when the limiter is unreachable — a genuine availability-versus-abuse trade-off that this artifact does not resolve.",
+      "explicitly_not_recommended_here": "This artifact records the divergence as a fact and does not assert which disposition is correct. An API that refuses all traffic during an Upstash outage may be a worse outcome than an unlimited one; that judgement is the HPO's."
+    },
+    {
+      "id": "HPO-LC0-10",
+      "decision_required": "Whether Server Action coverage should be systematic rather than per-action opt-in.",
+      "evidence_class": "SECURITY_BEST_PRACTICE",
+      "depends_on": ["HTF-16", "RATE_LIMIT_CONTROL_MATRIX"],
+      "note": "Raised at R2. CONTROL-1 covers /api/ only, so every Server Action is unlimited unless it carries its own limiter. Three do. Evidence upload — which accepts a 30 MB body per next.config.ts — does not."
+    }
+  ],
+
+  "COUNSEL_CHECKPOINT_1": {
+    "purpose": "The first counsel engagement. Every item below is a QUESTION carried forward, not an answer, and not a position this artifact holds.",
+    "boundary": "This artifact contains NO legal conclusions. No finding is classified CURRENT_LAW_VERIFIED. Nothing here states which regulations apply, whether any obligation is triggered, or whether any practice is lawful. Every question below is open, and the absence of an answer must not be read as an answer.",
+    "instructions_to_counsel": "The facts in HARD_TECHNICAL_FACTS are re-derived from source at a named commit and are intended to be relied on as accurate statements about the code. The questions below are NOT rhetorical and are not framed to suggest an answer. Where a question presupposes something counsel considers wrong, the presupposition itself should be challenged.",
+    "questions": [
+      {
+        "id": "CQ-01",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Which data protection and AI regimes apply to Uellix, on what basis (establishment, targeting, data subject location), and in which of those is Uellix a controller versus a processor for each category of data it holds?",
+        "why_it_matters": "Every other question's answer depends on this one. It is asked first deliberately."
+      },
+      {
+        "id": "CQ-02",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Given HTF-01 and HTF-02, does an erasure that removes the source document and its stored text, but leaves derived chunks and embeddings in place, satisfy an erasure obligation? Does the answer differ where the derivative is a fixed-size text chunk that reproduces source text verbatim versus an embedding vector?",
+        "why_it_matters": "Determines whether the derivative purge is a legal requirement or an internal completeness standard, and whether chunks and embeddings need different treatment.",
+        "related_findings": ["HTF-01", "HTF-02", "HTF-03"]
+      },
+      {
+        "id": "CQ-03",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Given HTF-08, is an append-only AI interaction log that cannot be modified or deleted by any role — including the table owner — defensible as an integrity or accountability control, or does it constitute an unmet erasure obligation where it contains personal data? Does an integrity justification change the answer, and does it matter that the append-only property is what makes the log trustworthy as an audit record?",
+        "why_it_matters": "The integrity control and the erasure obligation point in opposite directions, and strengthening one weakens the other. HPO-LC0-03 cannot be decided without this.",
+        "related_findings": ["HTF-08"]
+      },
+      {
+        "id": "CQ-04",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Does the structurally-enforced human-review invariant in HTF-09 — requires_human_review typed as a literal true, so a non-compliant model response fails validation — satisfy human-oversight requirements under any applicable AI regime? Does the AI-assisted impact-measurement use case fall within any risk classification that imposes additional obligations?",
+        "why_it_matters": "HTF-09 is the strongest control measured. Knowing whether it is sufficient, and against what standard, determines how much further work oversight requires.",
+        "related_findings": ["HTF-09"]
+      },
+      {
+        "id": "CQ-05",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Given HTF-10, what rights must Uellix hold, and record, to ingest customer-uploaded third-party documents into a retrieval corpus and surface verbatim extracts of them in generated answers? Does the analysis change between storing a document and surfacing extracts of it?",
+        "why_it_matters": "The extract-surfacing step is what grounding adds, and it is the step for which no rights record exists.",
+        "related_findings": ["HTF-10"]
+      },
+      {
+        "id": "CQ-06",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Given HTF-11, what acceptance evidence must be captured, from whom, at what granularity, and with what version binding, for the instruments Uellix will offer? Is organization-level acceptance by an administrator sufficient for individual users of that organization?",
+        "why_it_matters": "Directly blocks commercial_activation and self_service_onboarding.",
+        "related_findings": ["HTF-11"]
+      },
+      {
+        "id": "CQ-07",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Given HTF-12, is a data export or portability capability required, in what scope (individual subject versus tenant), in what format, and on what deadline?",
+        "why_it_matters": "Determines whether HTF-12 is a gap to close before launch or a feature to schedule.",
+        "related_findings": ["HTF-12"]
+      },
+      {
+        "id": "CQ-08",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Do any applicable frameworks or prospective customer security requirements treat the absence of a Content-Security-Policy and application-level security headers (HTF-06) as a deficiency that must be remediated before launch, as distinct from a general hardening recommendation?",
+        "why_it_matters": "This artifact deliberately classifies HTF-06 as SECURITY_BEST_PRACTICE rather than as a violation. That classification is an engineering judgement and is offered to counsel for challenge.",
+        "related_findings": ["HTF-06"]
+      },
+      {
+        "id": "CQ-09",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "What must the provider agreement for the Stella model provider contain — retention, training exclusion, sub-processors, processing locations, onward transfer — before real-provider mode may be enabled, and what must be disclosed to customers about it?",
+        "why_it_matters": "PSU-05 is unresolvable inside engineering. This question defines what 'resolved' means for the stella_real_provider gate.",
+        "related_findings": [],
+        "related_unknowns": ["PSU-05"]
+      },
+      {
+        "id": "CQ-10",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Given HTF-04, does a DELETE that returns success while removing zero rows create any notification, record-accuracy, or misrepresentation exposure, separate from the security question of whether the data was protected?",
+        "why_it_matters": "The security outcome is denial. The question is whether the SILENCE is separately a problem.",
+        "related_findings": ["HTF-04"]
+      },
+      {
+        "id": "CQ-11",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Is a Record of Processing Activities, a Data Protection Impact Assessment, or a Legitimate Interests Assessment required for the processing described here, and does the grounding corpus constitute a distinct processing activity from ordinary evidence storage?",
+        "why_it_matters": "Determines whether LC1 must produce formal instruments and whether grounding needs its own.",
+        "related_findings": []
+      },
+      {
+        "id": "CQ-12",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "question": "Impact-measurement evidence may concern beneficiaries who are not platform users and may include vulnerable populations — lib/stella/prompts/shared-guardrails.ts:74 already treats sensitive populations as a distinct category requiring elevated review. What obligations flow to Uellix toward data subjects it has no relationship with and cannot contact?",
+        "why_it_matters": "This population is structurally invisible to consent and notice mechanisms built around account holders. No finding in this artifact addresses it, which is itself the point of raising it.",
+        "related_findings": ["HTF-09"]
+      }
+    ]
+  },
+
+  "LC1_PACKET_ORDER": {
+    "note": "Sequence for the successor lane. Ordering is by dependency, not by effort. An item's position reflects what must be known before it can be done correctly.",
+    "sequence": [
+      {
+        "order": 1,
+        "item": "Resolve PSU-01 and PSU-03 by operator observation",
+        "rationale": "Whether the grounding stage gate is already breached is the single fact that determines whether HTF-01 is latent or live. Everything downstream is scoped differently depending on the answer, so nothing else should start first.",
+        "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+        "blocking": true
+      },
+      {
+        "order": 2,
+        "item": "Open COUNSEL_CHECKPOINT_1 with CQ-01 first",
+        "rationale": "CQ-01 conditions every other question. Sending all twelve without it invites answers premised on assumptions counsel has not made. Can proceed in parallel with item 1.",
+        "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
+        "blocking": true
+      },
+      {
+        "order": 3,
+        "item": "Adjudicate HPO-LC0-01 (purge before grounding: which environments)",
+        "rationale": "Scopes the derivative purge work. Depends on item 1's answer.",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "depends_on": [1]
+      },
+      {
+        "order": 4,
+        "item": "Specify and implement the derivative purge",
+        "rationale": "The substrate exists per HTF-02, so this is a capability function plus a call site in requestGovernedEvidenceErasure plus a test that fails when the sweep misses a chunk. Requires its own execution authority and test manifest; LC0 authorizes neither.",
+        "evidence_class": "CODE_FACT",
+        "depends_on": [2, 3],
+        "note": "CQ-02's answer determines whether embeddings need different treatment from chunks, so implementing before counsel responds risks building the wrong scope."
+      },
+      {
+        "order": 5,
+        "item": "Adjudicate HPO-LC0-04 and implement legal acceptance capture",
+        "rationale": "Unblocks commercial_activation and self_service_onboarding, which are otherwise blocked independently of grounding. Can run in parallel with item 4.",
+        "evidence_class": "CONTRACTUAL_CHOICE",
+        "depends_on": [2]
+      },
+      {
+        "order": 6,
+        "item": "Adjudicate HPO-LC0-03 on Stella response retention",
+        "rationale": "Requires CQ-03 answered and PSU-06 resolved. The remedy weakens an integrity control that currently holds against the table owner, so it should not be chosen before the obligation is known.",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "depends_on": [2]
+      },
+      {
+        "order": 7,
+        "item": "Resolve PSU-02 and PSU-04 by operator observation, and close the 'TBD' MIME specification",
+        "rationale": "Bucket configuration and full RLS coverage are pre-production conditions. The TBD is closable by decision without waiting for observation.",
+        "evidence_class": "PRODUCTION_STATE_UNKNOWN"
+      },
+      {
+        "order": 8,
+        "item": "Adjudicate HPO-LC0-05 (closed-world RLS census test) and HPO-LC0-06 (security headers)",
+        "rationale": "Both are hardening decisions independent of the counsel track and can proceed at any time.",
+        "evidence_class": "SECURITY_BEST_PRACTICE"
+      },
+      {
+        "order": 9,
+        "item": "Resolve PSU-05 and adjudicate the Stella real-provider gate",
+        "rationale": "Business and counsel track. Independent of the grounding track; sequenced late only because it does not block the earlier items.",
+        "evidence_class": "CONTRACTUAL_CHOICE",
+        "depends_on": [2]
+      },
+      {
+        "order": 10,
+        "item": "Adjudicate HPO-LC0-07 (licensing register) and HPO-LC0-08 (limiter shared state)",
+        "rationale": "HPO-LC0-07 must precede grounding enablement if CQ-05 establishes a rights-recording obligation; otherwise it is schedulable.",
+        "evidence_class": "PRODUCT_POLICY_DECISION",
+        "depends_on": [2]
+      },
+      {
+        "order": 11,
+        "item": "Produce LC1 as a successor baseline re-derived against a new commit",
+        "rationale": "LC1 supersedes this artifact. It must RE-DERIVE rather than inherit, on the same rule stated in AS_OF.derivation_rule, because every finding here is anchored to one tree.",
+        "evidence_class": "DOC_FACT"
+      }
+    ]
+  },
+
+  "FORBIDDEN_COMPLIANCE_CLAIMS": {
+    "rule": "These claims must not be made on the basis of this artifact, by any person or system citing it, in any customer-facing, investor-facing, procurement, marketing, or contractual context. The list is prohibitive and is not exhaustive: a claim not listed is not thereby permitted.",
+    "forbidden": [
+      "Uellix complies with GDPR / UK GDPR / CCPA / CPRA / LGPD / HIPAA / the EU AI Act, or with any other named regime",
+      "Uellix is compliant, certified, audited, accredited, or attested",
+      "Uellix is SOC 2 compliant, ISO 27001 certified, or has completed any third-party audit",
+      "This baseline was reviewed, approved, or signed off by counsel",
+      "Uellix supports the right to erasure, the right of access, or data portability",
+      "Evidence is fully erasable, or erasure is complete",
+      "All data is deleted on request",
+      "Row Level Security is enabled on every table",
+      "Tenant isolation is fully verified, proven, or guaranteed",
+      "Uellix has a Data Processing Agreement in place",
+      "Uellix has completed a Data Protection Impact Assessment",
+      "AI outputs are validated, verified, certified, or audited",
+      "Rate limiting fully protects against abuse or enumeration",
+      "The application enforces a Content-Security-Policy",
+      "The grounding corpus is empty in production",
+      "Model provider data is not retained or not used for training",
+      "This artifact establishes that no legal obligation is unmet"
+    ],
+    "permitted_characterization": "This artifact may be described as: 'an internal engineering discovery record of data-governance-relevant controls and gaps in the Uellix repository at a named commit, produced to sequence legal and engineering work, and not reviewed by counsel.'",
+    "note_on_negative_claims": "The prohibition is symmetric. Just as this artifact does not establish compliance, it does not establish non-compliance or violation of any regime. It records repository state and open questions. Citing it as evidence that Uellix is in breach is as unsupported as citing it as evidence that Uellix complies."
+  },
+
+  "SELF_ASSESSMENT": {
+    "what_this_artifact_proves": "That fifteen specific properties of the repository at tree 60ac29a27c91c51e08da12a45120919b8006d462 are as stated, each citable to a path and verifiable by reading it.",
+    "what_this_artifact_does_not_prove": [
+      "Anything about any deployed environment (see PRODUCTION_STATE_UNKNOWNS)",
+      "Anything about applicable law (no finding is classified CURRENT_LAW_VERIFIED, by design)",
+      "That the set of findings is complete — this lane re-derived the fact families it was directed to, and did not perform an exhaustive census of every data-governance-relevant surface"
+    ],
+    "known_limits_of_this_lane": [
+      "No live database was observed. Every CONFIG_FACT describes declared schema, not applied schema.",
+      "No test suite was executed as part of this derivation. CODE_FACTs were established by reading source, not by running it.",
+      "The prior adversarial synthesis was not available in the repository, so its full fact list could not be diffed against this one. Only the fact families named in the lane brief were re-derived; a fact the synthesis found that the brief did not name would not have been caught.",
+      "R1 OF THIS ARTIFACT WAS ITSELF DEFECTIVE, in a way worth recording rather than quietly fixing. It searched lib/ and app/ and a file named middleware.ts, never the repository root, and on Next.js 16 the middleware lives at the root as proxy.ts. From that single blind spot R1 both missed a fail-open limiter and wrongly contradicted the prior synthesis. Two lessons are adopted: (a) a search scoped by directory is a search scoped by assumption, and the repository root is not a place findings are absent from; (b) no aggregate security verdict may be stated over a class of controls until every member is enumerated — R1's global claim would have been invalid reasoning even had it found proxy.ts.",
+      "Where this artifact contradicts a prior synthesis, the contradiction is now required to name the specific control measured rather than the property class. 'Rate limiting does not fail open' is not a statement this artifact is capable of making; 'CONTROL-2 fails closed' is.",
+      "Line numbers are accurate at the derivation_tree and will drift. The HTF-04 discrepancy is recorded rather than reconciled as a worked example of that drift."
+    ]
+  }
+}
