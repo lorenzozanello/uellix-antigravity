@@ -585,6 +585,41 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
     branch: 'codex/multiorg-s3-refusal-audit-implementation-r1',
     patterns: ['db/migrations/**', 'db/prepared/journal/**'],
   },
+  // HPO-ODS-W2-26 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json,
+  // refined by the minimal append-only successor
+  // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json): the Commercial
+  // Account CE-1 implementation. THREE patterns, carried field for field from
+  // the frozen CE-1 execution authority amendment via v1.0.28 — the migration
+  // family, the journal wrapper family that a migration necessarily drags with
+  // it, and ONE literal checkpoint-b0 observation file.
+  //
+  // NOT db/prepared/**. The third pattern is the single literal
+  // db/prepared/checkpoint-b0/observation.sql and is deliberately NOT
+  // generalized to db/prepared/checkpoint-b0/** or to a blanket
+  // db/prepared/**: the stella_* hosted units and every other checkpoint file
+  // stay protected violations on this branch even with the grant supplied.
+  // W2-07, W2-08, W2-16 and W2-17 carry that same observation literal, and
+  // W2-01/W2-20/W2-21/W2-25 carry the same migration and journal families, but
+  // every one of them resolves only on its own branch — so none can stand in
+  // for this one on the CE-1 branch.
+  //
+  // ORDER IS PART OF THE ROW'S IDENTITY. v1.0.29 asserts the row with a
+  // whole-object equality rather than a set comparison, so the three patterns
+  // are registered in the order the authority states them.
+  //
+  // GRANT ID REUSED, NOT NEWLY ALLOCATED. W2-26 was DECLARED by v1.0.28 and
+  // left DECLARED_NOT_REGISTERED; v1.0.29 refines the same act on the same two
+  // paths for the same id. Declaring a grant is safe; registering it here is
+  // the separate governed act, and this row is that act.
+  {
+    authorityId: 'HPO-ODS-W2-26',
+    branch: 'codex/commercial-account-ce1-implementation-r1',
+    patterns: [
+      'db/migrations/**',
+      'db/prepared/journal/**',
+      'db/prepared/checkpoint-b0/observation.sql',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
