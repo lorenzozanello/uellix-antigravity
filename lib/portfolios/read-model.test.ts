@@ -371,6 +371,12 @@ function walkFiles(dir: string): string[] {
 }
 
 describe('NEG-PF3-ARCH-1 — components/portfolios/** does not move the AST entrypoint pins', () => {
+  // A real AST parse of app/+components/+lib/+db/ (hundreds of files) can
+  // exceed vitest's default 5000ms under load — measured to time out inside
+  // ods:poststate's own composed test run, which offers no CLI override for
+  // testTimeout. An explicit per-test timeout is the correct fix: this is a
+  // slow REAL scan, not a hang, and the assertions below are otherwise
+  // unchanged.
   it('the real scanner reports the unchanged 144/120/104/16 quadruple, with components/portfolios/** populated', () => {
     const scanner = new EntrypointScanner({
       root: ROOT,
@@ -399,7 +405,7 @@ describe('NEG-PF3-ARCH-1 — components/portfolios/** does not move the AST entr
 
     const portfoliosFiles = walkFiles(COMPONENTS_PORTFOLIOS_DIR)
     expect(portfoliosFiles.length).toBeGreaterThan(0)
-  })
+  }, 30_000)
 })
 
 describe('NEG-PF3-ARCH-2 — no direct or transitive DB reach from components/portfolios/**, independent of isClient', () => {
