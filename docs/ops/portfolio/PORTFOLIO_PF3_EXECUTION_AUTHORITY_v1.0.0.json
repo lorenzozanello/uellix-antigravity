@@ -1,0 +1,701 @@
+{
+  "package_id": "PORTFOLIO_PF3_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/portfolio/PORTFOLIO_PF3_EXECUTION_AUTHORITY_v1.0.0.json",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "mission_id": "PORTFOLIO-PF3-EXECUTION-AUTHORITY-R1",
+  "lane_id": "LANE GJ",
+  "materialization_date": "2026-09-09",
+  "companion_manifest": null,
+
+  "AS_OF_HEAD": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
+  "AS_OF_TREE": "60ac29a27c91c51e08da12a45120919b8006d462",
+  "AS_OF_REF": "codex/portfolio-pf3-authority-r1",
+
+  "starting_ref_measurement": {
+    "branch": "codex/portfolio-pf3-authority-r1",
+    "head": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
+    "tree": "60ac29a27c91c51e08da12a45120919b8006d462",
+    "worktree_clean_at_start": "YES — git status --porcelain --untracked-files=all returned empty. The --untracked-files=all form is used deliberately: a new untracked directory collapses to a single git status line under the default setting, and this mission's own write surface is a docs/ops/portfolio/ path.",
+    "base_at_start_matched": "YES — BASE_AT_START as issued by the mission packet is 9a414fac0858a86e738cb41e2f024502cf5efc8d and the measured HEAD is byte-identical.",
+    "live_base_re_derivation": "git fetch origin integration/commercial-v1 was executed before any measurement was trusted. origin/integration/commercial-v1 resolves to 9a414fac0858a86e738cb41e2f024502cf5efc8d. git merge-base HEAD origin/integration/commercial-v1 is the same sha, and git rev-list --left-right --count HEAD...origin/integration/commercial-v1 is '0 0'. HEAD is therefore not merely a descendant of the live integration tip — it IS the live integration tip, with zero commits on either side.",
+    "why_the_live_fetch_was_not_optional": "The lineage precedent PORTFOLIO-PF2 (PR #116) recorded a live delta that appeared BETWEEN the handoff packet and the merge. A base asserted from a packet and never re-fetched is a base asserted from memory. This mission re-fetched and re-derived it.",
+    "branch_naming_caution_honoured": "The session's own git status banner announces 'feature/sprint-0-foundation' as the main branch for PRs. That banner is not the lineage base. The measured lineage base for every Portfolio node is integration/commercial-v1, which is what was fetched and compared. The draft PR opened by this mission targets integration/commercial-v1.",
+    "node_modules_state_at_start": "ABSENT. No node_modules directory exists in this worktree. Every gate reported under VALIDATION_PERFORMED_BY_THIS_MISSION was executed with plain `node --experimental-strip-types` on Node v24.16.0, which imports only Node builtins for these scripts. This is structural dependency-freedom, not the result of an install, and it is also what keeps this worktree immune to the C:\\node_modules junction resolution leak that has previously produced CONTAMINATED green rather than vacuous green.",
+    "pf1_implementation_integrated": "YES — git merge-base --is-ancestor 635ed046 HEAD succeeds. PF1's owned surface lib/portfolios/analytics.ts is present at AS_OF_TREE.",
+    "pf2_implementation_integrated": "YES — git merge-base --is-ancestor 7713e14c HEAD succeeds. PF2's composition work is present at AS_OF_TREE: tests/postgres/portfolio-composition.pg.test.ts was introduced by e2a8ac19, and the same commit e2a8ac19 is the most recent commit touching app/app/portfolios/[portfolioId]/page.tsx."
+  },
+
+  "PF1_PF2_INTEGRATION_PROOF": {
+    "method": "Reachability plus surface presence, not a reading of the merge-commit subject lines. A merge subject can be edited; ancestry and blob presence cannot.",
+    "pf1": {
+      "merge_commit": "635ed046",
+      "ancestry": "git merge-base --is-ancestor 635ed046 9a414fac — exit 0.",
+      "authority_artifact_present": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json (introduced by 57844e13) and docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json are both present at AS_OF_TREE.",
+      "owned_surface_present": "lib/portfolios/analytics.ts and lib/portfolios/analytics.test.ts are present at AS_OF_TREE."
+    },
+    "pf2": {
+      "merge_commit": "7713e14c",
+      "ancestry": "git merge-base --is-ancestor 7713e14c 9a414fac — exit 0.",
+      "authority_artifact_present": "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json (introduced by 25b93a8d) and docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json (introduced by e4e1653f, the LOCK-ENTRYPOINT-REGEX-LAYER-PIN release) are both present at AS_OF_TREE.",
+      "owned_surface_present": "app/app/portfolios/[portfolioId]/actions.ts, lib/portfolios/service.ts, tests/postgres/portfolio-composition.pg.test.ts are present at AS_OF_TREE.",
+      "entrypoint_registration_discharged": "Both layers show PF2's actions module registered. The AST layer's tests/database-entrypoint-inventory.json carries the row 'app/app/portfolios/[portfolioId]/actions.ts' classified 'contextualized'. The regex layer's tests/database-runtime-entrypoints.test.ts comment block at :775-782 records the 141 -> 142 / 116 -> 117 / 100 -> 101 move attributed to PORTFOLIO-PF2-COMPOSITION-IMPLEMENTATION-R1, and the assertion at :783 now reads { inventoried: 142, reaching: 117, contextualized: 101, allowlisted: 16 }."
+    },
+    "conclusion": "PF1 and PF2 are integrated. PF3 is the remaining Portfolio Commercial V1 node."
+  },
+
+  "PORTFOLIO_V1_REMAINING_SCOPE": {
+    "method": "Re-derived from the parent product authority's own node decomposition, then confirmed against the measured repository rather than assumed from the packet.",
+    "pf1_closed": "Aggregate SROI analytics — lib/portfolios/analytics.ts.",
+    "pf2_closed": "Composition, lifecycle and permissions — create/update/archive/assign/unassign/move, lib/portfolios/service.ts plus app/app/portfolios/[portfolioId]/actions.ts.",
+    "pf3_remaining": [
+      "comparison — the paginated multi-project comparison read model",
+      "evidence health — EH-1 through EH-6",
+      "transversal intelligence — TI-1 through TI-8"
+    ],
+    "pf3_is_the_final_v1_portfolio_node": "AFFIRMED. No fourth Portfolio Commercial V1 node is declared by the parent authority, and no Portfolio surface outside the nine paths below is opened by this authority.",
+    "portfolio_surfaces_have_not_materially_moved": "Re-measured. lib/portfolios/ contains exactly three files at AS_OF_TREE (analytics.ts, analytics.test.ts, service.ts). app/app/portfolios/ contains exactly four routed files (page.tsx, new/page.tsx, [portfolioId]/page.tsx, [portfolioId]/actions.ts). All four are registered 'contextualized' in the AST inventory. Nothing under components/portfolios/ exists. No re-measurement of every path and pin beyond what this artifact records was therefore triggered."
+  },
+
+  "PARENT_AUTHORITY": {
+    "product_authority": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
+    "product_authority_amendment": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "batch_test_manifest": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json",
+    "sibling_node_authorities": [
+      "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json",
+      "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json",
+      "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json"
+    ],
+    "immutability": "None of the parents or siblings is edited by this mission. This artifact is append-only with respect to all of them: it narrows PF3's share, it never widens a parent contract and never reopens a product decision.",
+    "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+    "relationship": "PF3 is the third and final execution node under the Portfolio Commercial V1 product authority. It inherits every product decision unchanged and adds only the node-scoped freezes recorded here.",
+    "sibling_stance_on_pf3_at_pf2_time": "PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json EXECUTION_AUTHORIZATION.PF3_IMPLEMENTATION_AUTHORIZED reads 'NO'. That is not a prohibition on PF3; it is the correct statement that at PF2 authority time no PF3 execution authority existed. This artifact is that authority, and it does not edit PF2 to say otherwise."
+  },
+
+  "BINDING_HPO_DECISION": {
+    "decision_id": "HPO-PORTFOLIO-PF3-PROPS-ONLY",
+    "ratified_text": "components/portfolios/** MUST be props-only. Files in that surface may not reach db/client.ts directly; may not reach db/client.ts transitively; may not become governed entrypoints; and may not require movement of existing entrypoint pins. Reads remain in already-authorized contextualized server surfaces and data is passed to components by props. No entrypoint assertion may be weakened.",
+    "status": "BINDING. Frozen below as COMPONENTS_ENTRYPOINT_DISCIPLINE.",
+    "no_weakening_clause": "No test, no allowlist row, no SERVICE_OWNED_CONTEXTS entry, no inventory edit and no scanner-helper edit may be used to make a props-only violation pass. The remedy for a violation is to move the read, never to move the assertion."
+  },
+
+  "PF3_WRITE_SURFACE": {
+    "authorized_paths_exactly_nine": [
+      "lib/portfolios/read-model.ts",
+      "lib/portfolios/evidence-health.ts",
+      "lib/portfolios/intelligence.ts",
+      "app/app/portfolios/[portfolioId]/page.tsx",
+      "components/portfolios/**",
+      "lib/portfolios/read-model.test.ts",
+      "lib/portfolios/evidence-health.test.ts",
+      "lib/portfolios/intelligence.test.ts",
+      "tests/postgres/portfolio-read-model.pg.test.ts"
+    ],
+    "no_tenth_path": "There is no tenth path. Any path not in this list is outside PF3's write surface regardless of whether implementation discovers that it 'changed anyway'. Being changed is never itself permission.",
+    "one_of_the_nine_is_a_glob": "components/portfolios/** is a directory glob, not a single file. It is the only glob in the surface. Its contents are unbounded in COUNT and strictly bounded in KIND by COMPONENTS_ENTRYPOINT_DISCIPLINE below. A glob that admitted any kind of file would be an unbounded write surface; this one is bounded by architecture, and that boundary is machine-checkable.",
+    "measured_existence_at_AS_OF_TREE": {
+      "method": "git cat-file -e HEAD:<path> per path; git ls-tree -r --name-only HEAD -- components/portfolios for the glob.",
+      "present": [
+        {
+          "path": "app/app/portfolios/[portfolioId]/page.tsx",
+          "blob_sha": "2aab88a139d785c396d9b3a8499c034dd87919f1",
+          "bytes": 14437,
+          "lines": 326
+        }
+      ],
+      "absent": [
+        "lib/portfolios/read-model.ts",
+        "lib/portfolios/evidence-health.ts",
+        "lib/portfolios/intelligence.ts",
+        "lib/portfolios/read-model.test.ts",
+        "lib/portfolios/evidence-health.test.ts",
+        "lib/portfolios/intelligence.test.ts",
+        "tests/postgres/portfolio-read-model.pg.test.ts"
+      ],
+      "glob_measured_empty": "components/portfolios/ contains ZERO files at AS_OF_TREE. git ls-tree -r --name-only HEAD -- components/portfolios returns nothing, and components/ top-level contains auth, calculation-results, evidence, layout, marketing, methodology, onboarding, projects, report, sroi, states, stella, taxonomy, ui — no portfolios.",
+      "why_this_measurement_changes_the_shape_of_the_props_only_claim": "Because components/portfolios/** does not exist, COMPONENTS_ENTRYPOINT_DISCIPLINE is not a rule about preserving the behaviour of existing files. It is the stronger claim that an ENTIRE NEW DIRECTORY can be added to a scanned surface without moving a single entrypoint pin. An auditor should hold this authority to that stronger claim, not to the weaker one."
+    },
+    "surface_arithmetic": "Eight of the nine paths are created by implementation. Exactly one — app/app/portfolios/[portfolioId]/page.tsx — is modified, and it is the shared PF2/PF3 path governed by SHARED_PAGE_SUCCESSION below.",
+    "prohibited_surfaces": {
+      "explicitly_prohibited_by_this_authority": [
+        "tests/database-entrypoint-inventory.json",
+        "tests/database-runtime-entrypoints.test.ts",
+        "tests/audit-action-contract.test.ts",
+        "lib/audit/logger.ts",
+        "db/**",
+        "docs/ops/ods/**",
+        "lib/stella/**",
+        "PF1-owned analytics files — lib/portfolios/analytics.ts, lib/portfolios/analytics.test.ts",
+        "PF2-owned service and composition files — lib/portfolios/service.ts, app/app/portfolios/[portfolioId]/actions.ts, tests/portfolios.service.test.ts, tests/portfolios.analytics.service.test.ts, tests/postgres/portfolio-composition.pg.test.ts, tests/postgres/portfolio-aggregate.pg.test.ts, tests/postgres/portfolio-aggregate.probes.json"
+      ],
+      "why_the_first_four_are_the_load_bearing_ones": "tests/database-entrypoint-inventory.json and tests/database-runtime-entrypoints.test.ts hold the two entrypoint pins. tests/audit-action-contract.test.ts and lib/audit/logger.ts hold the audit vocabulary. If PF3 could write any of the four, then every claim this authority makes about pins staying put and verbs staying at zero would be a claim PF3 could satisfy by editing the measuring instrument. Prohibiting them is what converts those claims from assertions into measurements.",
+      "adjacent_portfolio_paths_that_are_NOT_in_the_surface": [
+        "app/app/portfolios/page.tsx",
+        "app/app/portfolios/new/page.tsx",
+        "app/app/portfolios/[portfolioId]/actions.ts"
+      ],
+      "create_ui_lives_outside_the_surface": "MEASURED. The portfolio CREATE form is at app/app/portfolios/new/page.tsx:40 (form action={handleCreate}), which is NOT one of the nine paths. The obligation to preserve PF2 create behaviour is therefore discharged by PF3 not touching that file at all, not by PF3 preserving anything inside the shared detail page. The shared page carries update/archive/assign/unassign/move only."
+    }
+  },
+
+  "SHARED_PAGE_SUCCESSION": {
+    "the_only_shared_path": "app/app/portfolios/[portfolioId]/page.tsx",
+    "succession_is_sequential": "PF2 wrote this file first and its work is integrated. PF3 succeeds PF2 on it. The two nodes never write it concurrently; PF3's write is an amendment to a blob PF2 already shipped.",
+    "pinned_predecessor_blob": {
+      "blob_sha": "2aab88a139d785c396d9b3a8499c034dd87919f1",
+      "bytes": 14437,
+      "lines": 326,
+      "most_recent_commit_touching_it": "e2a8ac19 — feat(portfolio): PF2 composition implementation — create/update/archive/assign/unassign/move",
+      "why_a_blob_sha_and_not_a_commit": "A commit sha says which change last landed. A blob sha says what the file IS. Succession needs the latter: implementation must reconcile against the exact bytes it inherits, and a later unrelated commit that does not touch this file must not invalidate the pin."
+    },
+    "pf3_may_ADD": [
+      "comparison rendering",
+      "evidence-health rendering",
+      "transversal-intelligence rendering"
+    ],
+    "pf3_must_PRESERVE": {
+      "pf2_composition_ui": "The update, archive, assign, unassign and move forms and their server-action wiring. MEASURED at the pinned blob: updatePortfolioAction/archivePortfolioAction/assignProjectAction/unassignProjectAction/moveProjectAction are imported from './actions' at lines 9-15; bound with .bind(null, portfolioId) at :89-91 and per-project at :279-280; and rendered as form action={...} at :213 (update), :231 (archive), :246 (assign), :294 (unassign), :300 (move).",
+      "management_gate": "The canManagePortfolio gate. MEASURED: imported at :2 from '@/lib/auth/permissions', evaluated at :71 as canManage: canManagePortfolio(ctx.membership.role), destructured at :83, and guarding the composition UI at :240 (canManage && !isArchived && assignableProjects.length > 0). PF3 may read canManage to decide what to render; PF3 may not widen it, may not compute a second management predicate, and may not render any composition control outside it.",
+      "auth_and_context_openers": "runWithOptionalOrganizationAccess, imported at :1 from '@/lib/auth/session' and opened at :59. This is the page's single identity context. Every read PF3 adds to this page must happen INSIDE that existing context. PF3 may not open a second context, may not move the existing one, and may not perform a read outside it — as uellix_app a query with no open context returns ZERO ROWS rather than failing, so a read placed outside would render an empty comparison that looks like a correct empty portfolio.",
+      "archived_state_semantics": "isArchived at :85 and the archived badge vocabulary at :29. PF3's added sections must not resurrect composition controls on an archived portfolio."
+    },
+    "no_removal_or_weakening": "PF3 may not delete, rename, disable, wrap-out, conditionally suppress or relocate any of the preserved behaviours. 'Refactoring the page for clarity' is not authorized. The authorized shape of PF3's write to this file is ADDITIVE.",
+    "reconciliation_obligation_if_the_blob_moves": {
+      "trigger": "At implementation prestate, git rev-parse HEAD:'app/app/portfolios/[portfolioId]/page.tsx' does not equal 2aab88a139d785c396d9b3a8499c034dd87919f1.",
+      "required_action": "STOP. Re-derive the file's current composition surface — every preserved marker listed above, by line — against the NEW blob, and record the reconciliation before writing. Implementation may then proceed against the re-derived pin.",
+      "prohibited_action": "Proceeding against the stale pin, or force-restoring the pinned blob. A blob move means someone else changed the page; overwriting it would silently revert their work.",
+      "measured_precedent": "The file has moved seven times in its history (e2a8ac19, f01d987a, f92fa972, 25a36a60, 9ccc4d0f, 56660e82, 8b01ebbc). A blob pin on this path is not a theoretical safeguard."
+    }
+  },
+
+  "COMPONENTS_ENTRYPOINT_DISCIPLINE": {
+    "rule": "Every file under components/portfolios/** must be exactly one of: (a) a pure presentational Server Component with no DB-reachable import chain; or (b) a Client Component receiving serializable/plain props.",
+    "prohibited_in_this_surface": [
+      "importing db/client (value import)",
+      "importing a module whose transitive import graph reaches db/client",
+      "the 'use server' directive",
+      "an entrypoint-like basename that makes the AST scanner govern the file",
+      "server-side data fetching performed inside components/portfolios/**"
+    ],
+    "where_reads_must_live": "All database reads must occur in authorized contextualized server surfaces — lib/portfolios/read-model.ts, lib/portfolios/evidence-health.ts, lib/portfolios/intelligence.ts, called from app/app/portfolios/[portfolioId]/page.tsx inside its existing runWithOptionalOrganizationAccess context — and the resulting data must flow into components by props.",
+    "type_only_imports_are_permitted": {
+      "decision": "A TYPE-ONLY import from a DB-reaching module does not constitute a reach and is permitted.",
+      "measured_basis": "The repository's own negative-control fixture establishes this. tests/fixtures/entrypoint-mutants/app/components/CleanWidget.tsx carries the comment 'a pure presentational component: props in, JSX out. Cannot reach the database, so it is never even a checked module' and its single import is `import type { FixtureRow } from '../../db/client'`. The scanner's reachability walk follows valueImports, not type imports.",
+      "why_this_is_stated_explicitly": "Without it, an implementer facing 'may not import db/client' would either duplicate every row type by hand — producing drift — or would treat the rule as unsatisfiable. The fixture already answers the question; this authority records the answer rather than leaving it to be rediscovered."
+    },
+    "the_repository_already_encodes_both_poles_of_this_rule": {
+      "clean_pole": "tests/fixtures/entrypoint-mutants/app/components/CleanWidget.tsx — props in, JSX out, never a checked module.",
+      "leaky_pole": "tests/fixtures/entrypoint-mutants/app/components/LeakyWidget.tsx — 'FORM 1 — the exact shape OutcomeAllocationWrapper shipped with: an async server component that queries during streaming render, outside any identity context, and silently disappears when RLS returns zero rows.' It is counted among the flagged mutants by tests/database-runtime-entrypoints.test.ts:1047, `expect(flagged).toBe(11) // 10 mutant pages + LeakyWidget`.",
+      "implication": "COMPONENTS_ENTRYPOINT_DISCIPLINE is not a new invention for PF3. It is the pre-existing Form 1 rule, applied to a directory that does not yet exist. PF3's obligation is to stay on the CleanWidget pole for every file it creates."
+    },
+    "measured_baseline_of_the_components_surface": {
+      "components_modules_reaching_the_database_at_AS_OF_TREE": 1,
+      "the_single_row": "components/stella/decision-adapter.ts — classified 'contextualized' in tests/database-entrypoint-inventory.json.",
+      "significance": "In a 120-entry database-reaching map covering app/** and components/**, exactly ONE entry is under components/. The existing components surface is already effectively props-only, with one documented exception that PF3 is separately prohibited from touching (lib/stella/** is prohibited and components/stella/ is not in PF3's surface). PF3 therefore inherits a clean surface and must not be the node that dirties it."
+    }
+  },
+
+  "ENTRYPOINT_PIN_CONTRACT": {
+    "two_layers_are_not_interchangeable": {
+      "finding": "This authority separates the two entrypoint layers because they scan DIFFERENT roots, and citing the wrong one as evidence of props-only discipline would be a measurement defect rather than a scope defect.",
+      "regex_layer_scan_root": "tests/database-runtime-entrypoints.test.ts:221 — `const ENTRY_POINTS = walk(APP).filter(isEntryPoint).map(relative).sort()`, where APP is path.join(ROOT, 'app') at :44. isEntryPoint (defined at the function of that name) matches on BASENAME against ENTRY_POINT_PATTERNS, excludes any name containing '.test.', and additionally admits everything under app/actions/. The regex layer therefore NEVER walks components/.",
+      "ast_layer_scan_root": "tests/database-runtime-entrypoints.test.ts:864-866 — `{ root: ROOT, scanDirs: ['app', 'components', 'lib', 'db'], checkedDirs: ['app', 'components'] }`. The AST layer DOES check components/. The file's own comment at :645 states the contrast in the repository's own words: 'These are the app/** entry-point counts of the REGEX layer, distinct from the AST layer's ... over app/** + components/**.'",
+      "consequence": "A new file under components/portfolios/** is INVISIBLE to the regex layer no matter what it imports. The regex quadruple staying at 142/117/101/16 is therefore evidence that PF3 added no entrypoint-basename file under app/**. It is NOT evidence that components/portfolios/** is props-only. Only the AST quadruple can carry that claim.",
+      "why_this_is_recorded_rather_than_glossed": "The mission packet presents both quadruples together under the heading 'Expected effect' of props-only architecture. Treated that way, half the cited evidence proves something other than what it is cited for. This authority keeps the two claims and their two instruments separate."
+    },
+    "regex_layer_pin": {
+      "quadruple": { "inventoried": 142, "reaching": 117, "contextualized": 101, "allowlisted": 16 },
+      "location": "tests/database-runtime-entrypoints.test.ts:783 — `}).toEqual({ inventoried: 142, reaching: 117, contextualized: 101, allowlisted: 16 })`",
+      "re_derived_at_AS_OF_TREE": "YES — read directly from the assertion at AS_OF_TREE.",
+      "last_ledger_entry": "tests/database-runtime-entrypoints.test.ts:775-782 attributes the most recent move, 141 -> 142 / 116 -> 117 / 100 -> 101 with allowlisted UNCHANGED at 16, to PORTFOLIO-PF2-COMPOSITION-IMPLEMENTATION-R1.",
+      "pf3_expectation": "UNCHANGED at 142/117/101/16. PF3 adds no file under app/** with an entrypoint basename and no file under app/actions/. Its one app/** write is to an already-inventoried page.",
+      "what_would_move_it": "Creating any new file under app/** whose basename matches ENTRY_POINT_PATTERNS, or any .ts/.tsx file under app/actions/. PF3's write surface contains neither.",
+      "this_pin_is_read_only_for_pf3": "tests/database-runtime-entrypoints.test.ts is a prohibited path. PF3 cannot append a ledger comment to it and cannot move the number. If implementation finds this quadruple moving, that is a defect in PF3's change, not an obligation to update the ledger.",
+      "contrast_with_pf2": "PF2 carried LOCK-ENTRYPOINT-REGEX-LAYER-PIN, OPEN, because PF2's actions module WOULD move this equality assertion and PF2 could not write the file holding it. That lock was released by PORTFOLIO_PF2_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. PF3 needs no such lock — not because the lock was inherited, but because PF3's expectation is that the pin does NOT move. An expectation of non-movement needs no write grant."
+    },
+    "ast_layer_pin": {
+      "quadruple": { "checkedModules": 144, "databaseReaching": 120, "contextualized": 104, "allowlisted": 16 },
+      "location": "tests/database-entrypoint-inventory.json — blob d5630835308508c2a9b55e3ce69d0f28e8640549 at AS_OF_TREE (git rev-parse HEAD:tests/database-entrypoint-inventory.json).",
+      "re_derived_at_AS_OF_TREE": "YES, from the file's own data rather than from a comment: checkedModules = 144; databaseReaching = 120; the `modules` map has exactly 120 entries; classification tally over that map is { contextualized: 104, allowlisted: 16 }, summing to 120.",
+      "portfolio_rows_present": [
+        "app/app/portfolios/[portfolioId]/actions.ts => contextualized",
+        "app/app/portfolios/[portfolioId]/page.tsx => contextualized",
+        "app/app/portfolios/new/page.tsx => contextualized",
+        "app/app/portfolios/page.tsx => contextualized"
+      ],
+      "pf3_expectation": "UNCHANGED at 144/120/104/16.",
+      "why_the_shared_page_write_does_not_move_it": "app/app/portfolios/[portfolioId]/page.tsx is ALREADY a row in the map, classified 'contextualized'. PF3 adds reads to it inside its existing context. A file that is already counted and already contextualized stays counted and stays contextualized. The count moves only on membership change, not on content change — provided the added reads remain inside the open context, which SHARED_PAGE_SUCCESSION independently requires.",
+      "why_the_three_new_lib_modules_do_not_move_it": "checkedDirs is ['app','components']. lib/ is in scanDirs (so it is traversed for reachability) but NOT in checkedDirs (so its modules are never themselves checked or counted). lib/portfolios/read-model.ts, evidence-health.ts and intelligence.ts will reach db/client — that is their purpose — and being under lib/ they add nothing to checkedModules or databaseReaching. This mirrors lib/portfolios/analytics.ts and lib/portfolios/service.ts, neither of which appears in the map."
+    },
+    "how_the_ast_layer_would_catch_a_props_only_violation": {
+      "instrument": "tests/helpers/entrypoint-scanner.ts, listCheckedModules().",
+      "measured_semantics_in_order": [
+        "1. `if (info.isClient) continue` — a 'use client' module is skipped outright.",
+        "2. `if (info.isUseServer && this.isUnderCheckedDir(info.rel))` — a 'use server' module under app/ or components/ is CHECKED unconditionally.",
+        "3. `if (!this.isUnderCheckedDir(info.rel)) continue` — anything outside app/ and components/ is never checked.",
+        "4. `if (this.isEntryPointFile(info.rel))` — an entrypoint basename under a checked dir is CHECKED.",
+        "5. `else if (this.reachesDatabase(info.abs))` — otherwise, a module that can reach the database is CHECKED, under the scanner's own comment: 'Form 1: a server component shipped under the app/component trees that can reach the database is checked exactly like a page — it runs during render, outside any open context.'"
+      ],
+      "then": "For each checked module that reachesDatabase, databaseReaching grows by one and the module is classified 'allowlisted' (if listed), 'contextualized' (if analyzeModule finds nothing) or 'unguarded' (if it does).",
+      "therefore_each_prohibition_bites_as_follows": {
+        "direct_or_transitive_db_reach_from_a_server_component": "Branch 5 fires. checkedModules 144 -> 145 AND databaseReaching 120 -> 121, plus a new classification row. BOTH halves of the AST quadruple move. Caught.",
+        "use_server_directive": "Branch 2 fires. checkedModules 144 -> 145. If it also reaches the database, databaseReaching moves too. Caught either way.",
+        "entrypoint_like_basename": "Branch 4 fires. checkedModules 144 -> 145. Caught.",
+        "pure_presentational_server_component": "Falls through branches 2, 4 and 5 without matching. Never checked, never counted. Pin unchanged. This is the authorized shape (a).",
+        "client_component_with_plain_props": "Branch 1 skips it before anything else runs. Never checked, never counted. Pin unchanged. This is the authorized shape (b)."
+      }
+    },
+    "DECLARED_LIMIT_OF_THE_INSTRUMENT": {
+      "finding": "The AST pin does NOT cover one of the five prohibitions in every case, and this authority declares the gap rather than letting the pin be read as total coverage.",
+      "the_gap": "listCheckedModules() evaluates `if (info.isClient) continue` FIRST, before any reachability test. A file under components/portfolios/** carrying 'use client' AND a value import of db/client would be skipped at branch 1 and would move neither half of the AST quadruple.",
+      "why_the_usual_backstop_does_not_close_it_here": "MEASURED: db/client.ts does not begin with `import 'server-only'`. Its first lines are the drizzle, postgres and schema imports. There is therefore no server-only module boundary that would turn a client-side import of it into a hard build error at that layer.",
+      "the_scanner_treats_this_as_deliberate_not_accidental": "tests/helpers/entrypoint-scanner.ts:40 records the rationale: \"A 'use client' module can open no transaction; never dangerous.\" Line 512 calls the same boundary the 'RPC / browser boundary'. The scanner is not defective; it is answering a different question — 'can this render a database read outside an identity context' — for which a client module is genuinely out of scope.",
+      "pf3_disposition": "PF3 does not weaken, edit or work around the scanner. PF3 closes the gap in its OWN test surface: NEG-PF3-ARCH-2 below asserts directly, over the source of components/portfolios/**, that no file in that directory value-imports db/client or any DB-reaching module, INDEPENDENTLY of its 'use client' status. That control is PF3-scoped, lives in a PF3-owned test file, and does not touch the prohibited instruments.",
+      "status": "DECLARED, MITIGATED BY A PF3-SCOPED CONTROL, NOT BLOCKING."
+    },
+    "prestate_re_derivation_obligation": {
+      "requirement": "At implementation prestate, BOTH quadruples must be re-derived from the live tree before any file is written: the regex quadruple by reading the assertion, the AST quadruple by tallying tests/database-entrypoint-inventory.json's own data.",
+      "if_they_match_144_120_104_16_and_142_117_101_16": "Proceed. The expectations in this authority hold.",
+      "if_either_has_moved_for_an_unrelated_reason": "STOP and reconcile. Record what moved them, re-derive PF3's expected post-state from the NEW baseline, and only then proceed.",
+      "explicitly_prohibited": "Blindly forcing the old numbers. A pin that no longer describes the tree is a stale measurement, and restoring it would be historical evidence rewriting. The numbers in this artifact are the AS_OF_TREE measurement, not a target to be hit.",
+      "precedent": "A number that does not change still needs its derivation shown, or it will be read as stale. Both quadruples are re-derived here from primary data at AS_OF_TREE for exactly that reason."
+    }
+  },
+
+  "SIZE_CONTRACT": {
+    "frozen_constants": {
+      "PORTFOLIO_COMPARISON_PAGE_SIZE": 25,
+      "PORTFOLIO_READ_MODEL_CHUNK_SIZE": 500,
+      "PORTFOLIO_SOFT_SIZE_THRESHOLD": 250
+    },
+    "inherited_unchanged_from": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json — the three values are stated there at the SIZE section (25, 500, 250) and restated in the amendment's discussion of what each bounds. This authority reproduces them; it does not re-decide them.",
+    "what_each_one_bounds_measured_from_the_parent": {
+      "PORTFOLIO_COMPARISON_PAGE_SIZE": "Bounds a Server Component payload and the width at which a comparison table stops being comparable.",
+      "PORTFOLIO_READ_MODEL_CHUNK_SIZE": "Bounds drizzle's inArray bind-parameter expansion against PostgreSQL's 65535-parameter statement cap.",
+      "PORTFOLIO_SOFT_SIZE_THRESHOLD": "Bounds nothing mechanical at all — it gates an informational notice and refuses nothing."
+    },
+    "no_hard_project_count_cap": "AFFIRMED. There is no maximum member count. A portfolio of any size must render and must aggregate.",
+    "pagination_applies_to": "The COMPARISON read model only.",
+    "aggregate_covers_the_whole_portfolio": {
+      "rule": "The portfolio aggregate ALWAYS covers all members, never only the displayed page.",
+      "corollary_1": "projectCount, includedCount and the excluded list describe the WHOLE portfolio on every page, not the page.",
+      "corollary_2": "Coverage counts and exclusions describe the whole portfolio.",
+      "the_failure_this_forbids": "A comparison page of 25 members feeding aggregatePortfolioSroi, producing a consolidated ratio that silently describes 25 of 300 projects while the UI presents it as the portfolio's ratio.",
+      "measured_reason_this_needs_a_control_rather_than_a_type": "The parent PF2 authority already recorded the measurement: lib/portfolios/analytics.ts:144 exports aggregatePortfolioSroi(projects: ProjectRunSummary[]), which accepts ANY array including a page of one; only lib/portfolios/analytics.ts:346's getPortfolioAnalytics(portfolioId: string) is structurally incapable of receiving a page. PF3 adds the paginated surface and therefore adds exactly the call sites where the type system stops helping."
+    },
+    "soft_threshold_semantics": {
+      "may": "Warn. Emit an informational notice at 250 members.",
+      "may_not": "Refuse the portfolio, truncate it, degrade the aggregate, or change any count.",
+      "test_obligation": "A portfolio at and above 250 members must produce a complete, correct aggregate and a complete excluded list. The warning is additive output, never a substitute for the result."
+    }
+  },
+
+  "EVIDENCE_HEALTH": {
+    "frozen": "EH-1 through EH-6, inherited unchanged from docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json:298-303.",
+    "indicators": [
+      { "id": "EH-1", "name": "Evidence by state", "source": "evidence_items.status, vocabulary draft|under_review|approved|rejected|archived (db/schema.ts:315 evidenceItems, CHECK evidence_items_status_check at :342)", "shape": "count per state, per project", "drill": "/app/projects/{id}/pipeline/evidence" },
+      { "id": "EH-2", "name": "Outcomes with approved evidence", "source": "evidence_items.status='approved' joined to the active outcome set of the selected run", "shape": "count of covered outcomes over count of active outcomes", "drill": "outcome" },
+      { "id": "EH-3", "name": "Sufficiency determinations", "source": "evidence_sufficiency_determinations.determination, vocabulary sufficient|insufficient (db/schema.ts:414, CHECK evidence_sufficiency_determinations_determination_check at :424), read for the SELECTED run via the existing batch primitive getLatestSufficiencyDeterminationsByOutcomeIds(outcomeIds, calculationRunId)", "shape": "count sufficient / insufficient / undetermined over active outcomes", "drill": "outcome" },
+      { "id": "EH-4", "name": "Monetization dispositions", "source": "outcome_monetization_dispositions.disposition monetized|not_monetized with reason (db/schema.ts:890 outcomeMonetizationDispositions, CHECKs at :901-902)", "shape": "count per disposition, and count per reason for not_monetized", "drill": "outcome" },
+      { "id": "EH-5", "name": "Approved proxy versions", "source": "financial_proxy_versions.review_status for the versions assigned in the selected run", "shape": "count approved over count assigned", "drill": "proxy version" },
+      { "id": "EH-6", "name": "Evidence newer than the selected run", "source": "evidence_items.updated_at compared to the selected run's calculated_at", "shape": "count, per project", "drill": "evidence item", "note": "A fact about timestamps, not a judgement about validity. Labelled as 'evidence updated after this run', never as 'stale' or 'invalid'." }
+    ],
+    "universal_shape_obligation": "Every indicator returns a COUNT, an EXPLICIT DENOMINATOR, and the DRILL/SOURCE IDENTIFIERS needed to reach the objects counted.",
+    "prohibitions": {
+      "no_composite_score": "No indicator, and no combination of indicators, may be reduced to a single health score, grade, index or star rating. Six indicators with six denominators are the deliverable; one number is not.",
+      "no_percentage_without_denominator": "A percentage may be DISPLAYED only where its numerator and denominator are both present in the same returned object. A bare percentage is prohibited because it is not drillable and not reproducible.",
+      "no_evidence_body_or_content_load": "The evidence-health modules may not SELECT the content, body, extracted text, chunk text or file payload of any evidence item. They read status, timestamps, identifiers and foreign keys only. Rationale: these indicators run across every project in a portfolio at once; loading bodies would make the read model's cost scale with corpus size rather than with member count, and would place evidence content into a surface that has no need for it.",
+      "no_stella_derived_metric": "No indicator may be produced by, derived from, or conditioned on a Stella output. Stella may later EXPLAIN these facts. Stella may not PRODUCE or CALCULATE them. lib/stella/** is a prohibited surface for PF3, and no PF3 module may import it."
+    },
+    "selected_run_sufficiency_rule": {
+      "rule": "Selected-run sufficiency must use the selected-run primitive and cannot be satisfied by a determination recorded against another run.",
+      "primitive": "getLatestSufficiencyDeterminationsByOutcomeIds(outcomeIds, calculationRunId) — the EXISTING batch primitive, reused, not reimplemented.",
+      "the_defect_this_forbids": "Reading the latest determination per outcome without binding it to the selected calculationRunId, so an outcome determined 'sufficient' under an older run reads as sufficient under the one being displayed.",
+      "bound_control": "POS-EH-2."
+    }
+  },
+
+  "TRANSVERSAL_INTELLIGENCE": {
+    "frozen": "TI-1 through TI-8, inherited unchanged from docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json:315-322.",
+    "facts": [
+      { "id": "TI-1", "fact": "Projects with no approved run", "source": "the aggregate's own exclusion set, reason no_approved_run" },
+      { "id": "TI-2", "fact": "Projects with an approved run but no report", "source": "sroi_reports absence for the selected run" },
+      { "id": "TI-3", "fact": "Dispersion of individual project ratios: minimum, median, maximum", "source": "included[].sroiRatio, presented under its own name and never as the consolidated figure" },
+      { "id": "TI-4", "fact": "Frequency of each exclusion reason across the portfolio", "source": "the excluded set" },
+      { "id": "TI-5", "fact": "Outcomes without approved evidence, grouped by project", "source": "EH-2" },
+      { "id": "TI-6", "fact": "Proxy versions used by more than one member project", "source": "outcome_proxy_assignments joined across the portfolio's projects" },
+      { "id": "TI-7", "fact": "not_monetized dispositions aggregated by reason across the portfolio", "source": "EH-4" },
+      { "id": "TI-8", "fact": "Projects whose evidence was updated after the selected run", "source": "EH-6" }
+    ],
+    "universal_obligations": {
+      "deterministic": "Same persisted rows in, same facts out. No sampling, no randomness, no time-of-day dependence beyond the explicitly timestamp-based TI-8/EH-6 comparison against the run's calculated_at.",
+      "server_derived_from_persisted_rows": "Every fact is computed server-side from rows already in the database. Nothing is inferred, estimated, extrapolated or generated.",
+      "reproducible": "A reader given the source identifiers must be able to re-derive the number.",
+      "source_identified": "Every fact carries the identifiers of the objects it counts."
+    },
+    "stella_boundary": {
+      "stella_may": "Later EXPLAIN these facts in natural language.",
+      "stella_may_not": "Produce them, calculate them, adjust them, rank them, or be on the derivation path of any of them.",
+      "enforcement": "lib/stella/** is prohibited to PF3. No PF3 module may import it. Bound control: NEG-PF3-STELLA-1 (PF3's share of the inherited NEG-STELLA-1)."
+    },
+    "POS_AGG_5_RESTATED": {
+      "rule": "The individual-ratio descriptive statistics (minimum, median, maximum) must remain DISTINCT from the consolidated portfolio SROI ratio.",
+      "shape": "They are returned under their own names, never as portfolioSroiRatio and never substituted for it.",
+      "why_it_is_a_named_control_rather_than_a_convention": "The two are both 'the portfolio's ratio' in ordinary language and both are single numbers of the same type. A median of member ratios and a consolidated Sum(net)/Sum(investment) are different quantities that coincide only by accident. The portfolio SROI is Sum(net)/Sum(investment) across members — never the average or median of member ratios.",
+      "bound_control": "POS-AGG-5."
+    }
+  },
+
+  "TENANCY_CONTRACT": {
+    "global_proxy_nuance": {
+      "rule": "financial_proxy_versions may legitimately include APPROVED GLOBAL rows where organization_id IS NULL. Organization binding for EH-5 and TI-6 reads must therefore come through the organization-scoped assignment/project relationship, NOT by inventing a non-null organization predicate on the proxy-version row.",
+      "measured_basis_in_the_schema": {
+        "financial_proxy_versions.organization_id": "db/schema.ts:536 financialProxyVersions — `organizationId: uuid('organization_id').references(() => organizations.id)` with NO .notNull(). NULLABLE. A global approved proxy version legitimately carries NULL here.",
+        "outcome_proxy_assignments.organization_id": "outcomeProxyAssignments — `organizationId: uuid('organization_id').references(() => organizations.id).notNull()`. NOT NULL.",
+        "outcome_proxy_assignments.project_id": "`projectId: uuid('project_id').references(() => projects.id).notNull()`. NOT NULL.",
+        "outcome_proxy_assignments.financial_proxy_version_id": "`financialProxyVersionId: uuid('financial_proxy_version_id').references(() => financialProxyVersions.id)` — NULLABLE. The schema's own comment records the semantics: NULL means 'no version was ever bound' (legacy assignments predating this column, or a defensive gap) and is read as INELIGIBLE for the calculation engine, never as 'use whatever the live proxy currently says'."
+      },
+      "why_the_naive_predicate_is_not_merely_over_narrow": "A predicate of the form financial_proxy_versions.organization_id = :orgId does not filter slightly too hard. It removes EVERY global approved proxy version unconditionally, because those rows carry NULL and NULL = :orgId is never true. EH-5's 'count approved over count assigned' would then report an approved count structurally lower than the assigned count for any portfolio using global proxies, and the denominator would still look right — a silently wrong ratio rather than a visible error.",
+      "the_authorized_binding": "Bind through the assignment: outcome_proxy_assignments.organization_id (NOT NULL) and outcome_proxy_assignments.project_id (NOT NULL) constrained to the portfolio's member projects, then read the joined financial_proxy_versions row's review_status without any organization predicate on that row.",
+      "eh5_denominator_note": "Because financial_proxy_version_id is NULLABLE, EH-5's 'assigned' denominator must state explicitly whether it counts assignments with a NULL version binding. Whichever it counts, the returned object must make the denominator's definition visible, per the EVIDENCE_HEALTH universal shape obligation. An implicit denominator is prohibited here for the same reason it is prohibited everywhere else in this contract."
+    },
+    "no_cross_tenant_leakage": {
+      "rule": "No PF3 read may return a project, assignment, outcome, evidence item, determination, disposition or report belonging to another organization.",
+      "scope_note": "This applies to every one of the three new lib modules and to every read PF3 adds to the shared page.",
+      "context_obligation": "Every PF3 read executes inside an already-open identity context. As uellix_app a query with no open context returns ZERO ROWS rather than failing, so a PF3 read placed outside the context would not error — it would render an empty comparison indistinguishable from a correct empty portfolio. This is why SHARED_PAGE_SUCCESSION forbids opening, moving or bypassing the page's single runWithOptionalOrganizationAccess context.",
+      "bound_controls": "MUT-PF3-TENANT-1 below, plus PF3's share of the inherited NEG-TENANT-1/2/3 and MUT-TENANT-1."
+    }
+  },
+
+  "AUDIT_IMPACT": {
+    "pf3_is_read_only": "AFFIRMED. PF3 adds no write, no mutation, no server action and no state transition. Its three lib modules are readers; its component surface is presentational; its shared-page write adds rendering only.",
+    "NEW_AUDIT_VERBS": 0,
+    "measured_baseline_at_AS_OF_TREE": {
+      "AUDIT_ACTIONS_key_count": 111,
+      "portfolio_related_verbs": 6,
+      "portfolio_verb_names": [
+        "PORTFOLIO_CREATED = 'portfolio.created'",
+        "PORTFOLIO_UPDATED = 'portfolio.updated'",
+        "PORTFOLIO_ARCHIVED = 'portfolio.archived'",
+        "PROJECT_PORTFOLIO_ASSIGNED = 'project.portfolio_assigned'",
+        "PROJECT_PORTFOLIO_UNASSIGNED = 'project.portfolio_unassigned'",
+        "PROJECT_PORTFOLIO_MOVED = 'project.portfolio_moved'"
+      ],
+      "provenance_of_the_last_five": "lib/audit/logger.ts records them under the comment '// PF2 (PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json AUDIT_VOCABULARY_CONTRACT) — composition, lifecycle and permissions. Five new verbs, frozen values.'",
+      "logAuditAction_call_sites_under_components": 0
+    },
+    "expected_post_implementation_state": "AUDIT_ACTIONS stays at 111 keys. Portfolio-related verbs stay at 6. logAuditAction call sites under components/ stay at 0.",
+    "prohibitions": {
+      "no_logAuditAction_under_app_or_components": "PF3 introduces no logAuditAction call under app/** or components/**. This is stated as an absolute for PF3's own writes; it does not assert anything about the 28 pre-existing call sites under app/**, none of which PF3 touches.",
+      "no_vocabulary_widening": "No constant added, renamed, retyped or repointed in lib/audit/logger.ts — which is in any case a prohibited path.",
+      "why_prohibiting_the_file_is_what_makes_the_zero_real": "lib/audit/logger.ts and tests/audit-action-contract.test.ts are both prohibited to PF3. NEW_AUDIT_VERBS = 0 is therefore not a promise PF3 could quietly break and then legalize; it is a consequence of the write surface."
+    },
+    "bound_control": "PF3's share of the inherited NEG-AUDIT-1 and MUT-AUDIT-1, plus NEG-PF3-AUDIT-1 below."
+  },
+
+  "TEST_CONTRACT": {
+    "MANIFEST_DISPOSITION": {
+      "decision": "NO new companion test manifest. PF3 binds its controls into the EXISTING batch manifest by reference: docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json.",
+      "precedent": "PF1 and PF2 each did the same. Three node authorities against one batch manifest is the established Portfolio Commercial V1 shape.",
+      "manifest_is_not_edited_by_this_mission": "It is not in PF3's write surface and this mission writes exactly one path.",
+      "how_new_controls_are_frozen_without_forking_the_manifest": "PF3-scoped controls are declared HERE, in this authority, under the PF3- namespace. The batch manifest remains the owner of the inherited ids; this authority is the owner of the PF3- ids. That is the same mechanism PF2 used for its own new controls."
+    },
+    "inherited_pf3_exclusive_controls": {
+      "count": 7,
+      "note": "All seven exist in the batch manifest at AS_OF_TREE and all seven carry test_file: 'UNKNOWN' there. Binding them is precisely PF3's job — assigning each an owned test file. Their DESCRIPTIONS are inherited verbatim and are not re-decided.",
+      "bindings": [
+        { "id": "POS-AGG-5", "inherited_description": "Descriptive statistics over individual ratios (minimum, median, maximum) are computed and returned under their own names, distinct from portfolioSroiRatio.", "pf3_bound_test_file": "lib/portfolios/intelligence.test.ts", "covers": "TI-3" },
+        { "id": "POS-SIZE-1", "inherited_description": "For a portfolio with more members than one comparison page, the aggregate computed through the paginated surface is byte-identical to the aggregate computed with no pagination, and projectCount, includedCount and the excluded list describe the whole portfolio on every page.", "pf3_bound_test_file": "lib/portfolios/read-model.test.ts", "covers": "SIZE_CONTRACT.aggregate_covers_the_whole_portfolio" },
+        { "id": "POS-SIZE-2", "inherited_description": "The read model issues a bounded number of statements independent of member count: chunked at PORTFOLIO_READ_MODEL_CHUNK_SIZE, the statement count is ceil(N/chunk) per read and never N.", "pf3_bound_test_file": "lib/portfolios/read-model.test.ts", "covers": "PORTFOLIO_READ_MODEL_CHUNK_SIZE = 500" },
+        { "id": "POS-EH-1", "inherited_description": "Each of the six evidence-health indicators returns a count with an explicit denominator and the source identifiers needed to drill to the objects counted.", "pf3_bound_test_file": "lib/portfolios/evidence-health.test.ts", "covers": "EH-1..EH-6 universal shape obligation" },
+        { "id": "POS-EH-2", "inherited_description": "Sufficiency determinations are read for the SELECTED run through the existing batch primitive getLatestSufficiencyDeterminationsByOutcomeIds, so a determination recorded for another run never satisfies this one.", "pf3_bound_test_file": "lib/portfolios/evidence-health.test.ts", "covers": "EH-3 selected-run rule" },
+        { "id": "POS-TI-1", "inherited_description": "Each of the eight deterministic transversal facts is computed from persisted rows and is reproducible from them, with source identifiers attached.", "pf3_bound_test_file": "lib/portfolios/intelligence.test.ts", "covers": "TI-1..TI-8" },
+        { "id": "MUT-SIZE-1", "inherited_description": "Feeding the paginated row set into aggregatePortfolioSroi instead of the full member set makes POS-SIZE-1 fail. This is the control that prevents an aggregate silently covering only the current page.", "pf3_bound_test_file": "lib/portfolios/read-model.test.ts", "covers": "the mutation that POS-SIZE-1 exists to catch" }
+      ]
+    },
+    "inherited_shared_controls_pf3_share": {
+      "rule": "PF3 binds its SHARE of the inherited shared controls. Binding a share does not close the global control and this authority does not claim it does.",
+      "explicit_non_closure_statement": "For every id in this list, PF3's binding asserts only that PF3's own surface satisfies it. The control remains open across the batch, owned by the batch manifest, until every node's share is bound. No PF3 evidence may be cited as closing any of these ids batch-wide.",
+      "shares": [
+        { "id": "NEG-TENANT-1", "pf3_share": "No PF3 read returns another organization's project, assignment, outcome, evidence item, determination or disposition." },
+        { "id": "NEG-TENANT-2", "pf3_share": "PF3's proxy reads bind through outcome_proxy_assignments, not through a proxy-version organization predicate." },
+        { "id": "NEG-TENANT-3", "pf3_share": "PF3 opens no identity context of its own and performs no read outside the shared page's existing context." },
+        { "id": "MUT-TENANT-1", "pf3_share": "Removing the organization-bound assignment/project join from a PF3 read makes a PF3 tenancy control fail. Strengthened by MUT-PF3-TENANT-1 below, which pins the specific join." },
+        { "id": "NEG-STELLA-1", "pf3_share": "No PF3 module imports lib/stella/**, and no EH or TI value is Stella-derived." },
+        { "id": "NEG-AUDIT-1", "pf3_share": "PF3 introduces no audit action value outside the governed AUDIT_ACTIONS vocabulary — trivially satisfied by introducing none." },
+        { "id": "MUT-AUDIT-1", "pf3_share": "PF3 adds no logAuditAction call site, so it adds no correspondence obligation." },
+        { "id": "NEG-PERM-1", "pf3_share": "PF3 renders no composition control outside the existing canManagePortfolio gate." },
+        { "id": "NEG-PERM-2", "pf3_share": "PF3 does not widen canManagePortfolio and computes no second management predicate." },
+        { "id": "MUT-PERM-1", "pf3_share": "Removing the canManage guard from the shared page's composition section makes a PF3 succession control fail." },
+        { "id": "MUT-ENTRYPOINT-1", "pf3_share": "PF3 adds no Portfolio server action, so it creates no registration obligation. Note explicitly: MUT-ENTRYPOINT-1 is about SERVER ACTIONS and inventory registration. It does NOT cover a components/** props-only violation. NEG-PF3-ARCH-1 and NEG-PF3-ARCH-2 below are new coverage, not a restatement of it." },
+        { "id": "NEG-AGG-1..NEG-AGG-8", "pf3_share": "Where an aggregate negative control constrains a surface PF3 reads through, PF3's paginated read model satisfies it identically to the unpaginated path. POS-SIZE-1 is the byte-identity proof." },
+        { "id": "POS-PG-1 / NEG-PG-1", "pf3_share": "Discharged for PF3 by tests/postgres/portfolio-read-model.pg.test.ts under POSTGRES_CONTRACT below." }
+      ]
+    },
+    "new_pf3_scoped_controls": {
+      "namespace_rule": "Every control introduced by this authority carries the PF3 infix — POS-PF3-*, NEG-PF3-*, MUT-PF3-*. This makes PF3's additions distinguishable from the batch manifest's inherited ids by NAME, so no future reader can mistake a node-scoped control for a batch-scoped one.",
+      "controls": [
+        {
+          "id": "NEG-PF3-EH-1",
+          "type": "negative",
+          "requirement": "The evidence-health module never selects evidence content or body.",
+          "assertion_shape": "Over the source of lib/portfolios/evidence-health.ts, and over the columns named in every select it issues, assert that no evidence content/body/extracted-text/chunk-text/file-payload column is projected. Status, timestamps, identifiers and foreign keys only.",
+          "test_file": "lib/portfolios/evidence-health.test.ts",
+          "why_it_is_not_vacuous": "The module legitimately reads the evidence_items table for EH-1 and EH-6. A select of that table is expected; a select of its content columns is the defect. The control discriminates between them, so it can fail."
+        },
+        {
+          "id": "NEG-PF3-SIZE-1",
+          "type": "negative",
+          "requirement": "PORTFOLIO_SOFT_SIZE_THRESHOLD = 250 warns but refuses nothing.",
+          "assertion_shape": "A portfolio with member count at and above 250 returns a COMPLETE aggregate and a COMPLETE excluded list, with projectCount and includedCount describing the whole portfolio, AND emits the informational notice. No error is thrown, no result is truncated, no count is altered, no member is dropped.",
+          "test_file": "lib/portfolios/read-model.test.ts",
+          "why_it_is_not_vacuous": "The natural implementation of a 'threshold' is a guard clause that returns early or throws. This control asserts the opposite behaviour at the exact boundary, so an implementation that refuses fails it."
+        },
+        {
+          "id": "MUT-PF3-TENANT-1",
+          "type": "mutation",
+          "requirement": "Removing the organization-bound assignment/project join from the proxy read BITES.",
+          "mutation": "In lib/portfolios/evidence-health.ts and lib/portfolios/intelligence.ts, replace the binding through outcome_proxy_assignments (organization_id NOT NULL, project_id NOT NULL, constrained to the portfolio's member projects) with a predicate on financial_proxy_versions.organization_id.",
+          "expected_effect": "At least one PF3 tenancy or EH-5/TI-6 control must go RED.",
+          "test_file": "lib/portfolios/evidence-health.test.ts and lib/portfolios/intelligence.test.ts",
+          "why_it_is_not_vacuous": "MEASURED: financial_proxy_versions.organization_id is nullable and global approved rows carry NULL, so the mutated predicate silently drops every global proxy rather than erroring. A control that only checked 'the query runs' or 'a number is returned' would stay GREEN under this mutation. The control must therefore be written against a fixture that INCLUDES at least one approved global proxy version with organization_id IS NULL, or it is vacuous. This is a binding requirement on the fixture, not a suggestion."
+        },
+        {
+          "id": "NEG-PF3-ARCH-1",
+          "type": "negative",
+          "requirement": "Props-only components cannot move the AST entrypoint pins.",
+          "assertion_shape": "Run the REAL AST scanner (tests/helpers/entrypoint-scanner.ts) over the live tree with the repository's own configuration — root: ROOT, scanDirs ['app','components','lib','db'], checkedDirs ['app','components'] — and assert the quadruple is exactly { checkedModules: 144, databaseReaching: 120, contextualized: 104, allowlisted: 16 } with components/portfolios/** populated.",
+          "test_file": "lib/portfolios/read-model.test.ts",
+          "must_use_the_real_scanner": "The implementation must prove this with the REAL AST scanner, not with a reimplementation, a regex, or a hand-maintained list. A reimplementation would prove only that PF3's own copy of the rule agrees with PF3's own code.",
+          "prohibited_discharge": "This control may NOT be satisfied by editing tests/database-entrypoint-inventory.json, tests/database-runtime-entrypoints.test.ts, the scanner helper, the ALLOWLIST or SERVICE_OWNED_CONTEXTS. All are prohibited paths. The only authorized way to make it pass is to move the read out of the component."
+        },
+        {
+          "id": "NEG-PF3-ARCH-2",
+          "type": "negative",
+          "requirement": "A direct OR transitive DB reach from components/portfolios/** causes the architecture control to fail — including from a 'use client' module.",
+          "assertion_shape": "Independently of the scanner's isClient short-circuit, walk the value-import graph of every file under components/portfolios/** and assert that db/client is unreachable. Type-only imports are excluded from the walk, per COMPONENTS_ENTRYPOINT_DISCIPLINE.type_only_imports_are_permitted. Additionally assert that no file in the directory carries the 'use server' directive and that none has an entrypoint-like basename.",
+          "test_file": "lib/portfolios/read-model.test.ts",
+          "why_this_control_exists_separately_from_NEG_PF3_ARCH_1": "It closes the DECLARED_LIMIT_OF_THE_INSTRUMENT. listCheckedModules() evaluates `if (info.isClient) continue` before any reachability test, and db/client.ts carries no `import 'server-only'` backstop. NEG-PF3-ARCH-1 alone would leave a leaky client component undetected by both quadruples. This control does not depend on the isClient branch and therefore covers the gap.",
+          "non_vacuity_obligation": "The control must be demonstrated to FAIL against a deliberately leaky fixture component — both a server-component form and a 'use client' form — before it is accepted as passing. A graph walk that finds nothing because it walks nothing is the failure mode this obligation exists to prevent."
+        },
+        {
+          "id": "POS-PF3-ARCH-1",
+          "type": "positive",
+          "requirement": "The regex-layer quadruple is unchanged.",
+          "assertion_shape": "tests/database-runtime-entrypoints.test.ts:783 still asserts { inventoried: 142, reaching: 117, contextualized: 101, allowlisted: 16 } and still passes, with no ledger comment added.",
+          "test_file": "verified by running the existing suite; PF3 adds no assertion to that prohibited file.",
+          "what_this_control_does_and_does_not_prove": "It proves PF3 added no entrypoint-basename file under app/** and no module under app/actions/. It does NOT prove anything about components/portfolios/**, because the regex layer walks app/ only. That claim belongs to NEG-PF3-ARCH-1 and NEG-PF3-ARCH-2."
+        }
+      ]
+    },
+    "mutation_non_vacuity_obligation": {
+      "rule": "Every mutation control must be demonstrated to actually BITE — the mutation is applied, the named control is observed RED, the mutation is reverted, the control is observed GREEN.",
+      "rationale_from_lineage": "A mutation can die in the wrong assertion and be reported as caught by a control that was never the guard. A collected-zero run exits 0 and reads as PASS. Both have happened in this lineage. Non-vacuity is therefore evidence to be produced, not a property to be assumed.",
+      "collection_evidence_required": "Every reported test run must state its COLLECTED count. A run that collected zero files is not a pass.",
+      "pristine_copy_obligation": "Because the Bash tool caps at ten minutes and a kill mid-run leaves a mutation on disk, mutations are applied in chunks with pristine copies captured BEFORE the edit loop begins, and restoration is verified by hash-match against those pristine copies."
+    }
+  },
+
+  "POSTGRES_CONTRACT": {
+    "file": "tests/postgres/portfolio-read-model.pg.test.ts",
+    "status_at_AS_OF_TREE": "ABSENT. Created by implementation.",
+    "gating_convention_measured": "UELLIX_PG_TESTS=1, Docker required. The sibling tests/postgres/portfolio-composition.pg.test.ts establishes the shape: a comment at :34 reading 'Gated: UELLIX_PG_TESTS=1 (Docker required). Skipped — never silently ...' and an exported constant at :44, `export const PG_TESTS_ENABLED = process.env.UELLIX_PG_TESTS === '1'`. PF3's file follows the same convention.",
+    "collection_note": "tests/postgres/** is not in BASE_EXCLUDE, INTEGRATION_GLOB or E2E_GLOB (vitest.shared.ts), so the file IS collected by the default config and self-skips when the gate is unset. It must SKIP visibly, never silently pass.",
+    "what_a_real_database_must_prove": [
+      "Chunking at PORTFOLIO_READ_MODEL_CHUNK_SIZE = 500 against a real bind-parameter limit, not against a mock that accepts any array — POS-SIZE-2.",
+      "The paginated aggregate is byte-identical to the unpaginated aggregate on a real multi-page portfolio — POS-SIZE-1.",
+      "EH-5 counts approved global proxy versions (organization_id IS NULL) that a mock join would not have exercised — MUT-PF3-TENANT-1's fixture obligation.",
+      "Cross-tenant isolation under real row-level security, where a missing context returns zero rows rather than erroring."
+    ],
+    "what_a_real_database_cannot_prove": "It cannot prove the props-only architecture, the entrypoint pins, the audit-verb count or the Stella boundary. Those are static-surface facts and are proven by NEG-PF3-ARCH-1, NEG-PF3-ARCH-2, POS-PF3-ARCH-1 and the audit controls respectively.",
+    "no_pg_in_this_authority_mission": "AFFIRMED. This mission runs no PostgreSQL. It is AUTHORITY_ONLY, DOCS_ONLY, one path.",
+    "lock_for_the_future_implementation": {
+      "id": "LOCK-HEAVY-LOCAL-PG",
+      "taken_by": "The future PF3 implementation mission.",
+      "scope": "ONLY during the real PostgreSQL suite. Not for the duration of the implementation mission.",
+      "not_taken_by_this_mission": "AFFIRMED."
+    }
+  },
+
+  "COMPLIANCE_BOUNDARY": {
+    "pf3_as_frozen": {
+      "does_not_export": "PF3 produces no file download, no CSV/XLSX/PDF generation and no export endpoint.",
+      "does_not_create_public_disclosure": "PF3 adds no public route, no share link, no unauthenticated surface. Its one app/** write is to a page already inside the authenticated app segment and already inside an identity context.",
+      "does_not_redistribute_financial_proxy_values": "PF3 reads financial_proxy_versions.review_status for EH-5 and joins proxy versions for TI-6. It reports COUNTS and IDENTIFIERS. It does not surface, copy or redistribute proxy VALUES (value, value_usd, currency, unit, reference_year, methodology).",
+      "does_not_call_stella": "No PF3 module imports lib/stella/**. No EH or TI value is Stella-derived."
+    },
+    "therefore": "LC0 does not block PF3 implementation.",
+    "lc0_relationship_stated_precisely": "This is a statement about PF3 AS FROZEN BY THIS ARTIFACT, not a general finding about LC0. It holds because of the four negatives above, each of which is a consequence of PF3's write surface and its read-only nature. Change any one and the conclusion lapses.",
+    "what_would_exceed_this_authority": [
+      "external export",
+      "public share",
+      "proxy-value redistribution",
+      "AI generation"
+    ],
+    "escalation_rule": "A future PF3-like change adding any of the four EXCEEDS this authority and requires its own adjudication. It may not proceed under this artifact, and this artifact may not be read as pre-authorizing it.",
+    "a_caution_recorded_from_lineage": "An erasure/compliance sweep can be correct today and false tomorrow without a line of code changing, when the trigger is CONFIGURATION rather than code. The four negatives above are surface-derived rather than config-derived, which is why they are stated as consequences of the write surface. An auditor should verify that framing rather than accept the conclusion."
+  },
+
+  "LOCKS": {
+    "ODS_REQUIRED": "YES — prestate, scope, secrets and authority seal verification are mandatory for this mission and are reported under VALIDATION_PERFORMED_BY_THIS_MISSION.",
+    "MIGRATION_REQUIRED": "NO — db/** is a prohibited surface and PF3 is read-only. No schema change, no migration, no baseline edit.",
+    "PROTECTED_GRANT_REQUIRED": "NO.",
+    "protected_grant_measured_basis": "scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS at :82 lists exactly docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. docs/ops/portfolio/** matches none of them. This mission's single path is therefore authorized by an ordinary --allow and requires no PROTECTED_GRANTS entry and no HPO grant row.",
+    "CONTROLLER_REQUIRED": "NO — this mission allocates no ODS lineage version and registers no HPO grant. It does not touch docs/ops/ods/**, which is a prohibited surface.",
+    "LOCK_ENTRYPOINT_PINS": {
+      "id": "LOCK-ENTRYPOINT-PINS",
+      "status": "NOT REQUIRED — and this is a substantive finding, not an omission.",
+      "reasoning": "A lock is required when an authority's implementation MUST change a file outside its write surface. PF2 needed LOCK-ENTRYPOINT-REGEX-LAYER-PIN because creating an actions module necessarily moved an equality assertion in a file PF2 could not write. PF3's expectation is the exact inverse: BOTH quadruples stay put. An expectation of non-movement creates no obligation to write the pinning files and therefore no lock. If implementation discovers it cannot avoid moving a pin, that is not a lock to be opened — it is a props-only violation, and the remedy is to move the read, never the assertion."
+    },
+    "LOCK_HEAVY_LOCAL_PG": {
+      "id": "LOCK-HEAVY-LOCAL-PG",
+      "status": "NOT TAKEN BY THIS MISSION. Taken by the future implementation mission, only during the real PostgreSQL suite."
+    },
+    "implementation_lock": "PF3 implementation is NOT authorized until this artifact passes an independent Opus exact-object audit and integrates."
+  },
+
+  "EXECUTION_AUTHORIZATION": {
+    "PF3_AUTHORITY_MATERIALIZED_BY_THIS_MISSION": true,
+    "PF3_IMPLEMENTATION_AUTHORIZED_NOW": "NO",
+    "PF3_IMPLEMENTATION_AUTHORIZED_AFTER_THIS_AUTHORITY_INTEGRATES": "YES — conditional on the independent audit passing and on the implementation prestate obligations below being discharged.",
+    "conditions_precedent": [
+      "This artifact passes an independent Opus exact-object audit.",
+      "This artifact is merged into integration/commercial-v1.",
+      "At implementation prestate, both entrypoint quadruples are re-derived and either match 144/120/104/16 and 142/117/101/16 or are reconciled per ENTRYPOINT_PIN_CONTRACT.prestate_re_derivation_obligation.",
+      "At implementation prestate, the shared page blob is re-derived and either matches 2aab88a139d785c396d9b3a8499c034dd87919f1 or is reconciled per SHARED_PAGE_SUCCESSION.reconciliation_obligation_if_the_blob_moves."
+    ],
+    "scope_of_the_grant": "Exactly the nine paths in PF3_WRITE_SURFACE, under exactly the contracts frozen here. Nothing else.",
+    "what_this_authority_does_not_do": [
+      "It does not edit any parent or sibling authority.",
+      "It does not edit the batch test manifest.",
+      "It does not reopen any product decision.",
+      "It does not allocate an ODS lineage version or register an HPO grant.",
+      "It does not authorize any implementation to run now.",
+      "It does not close any batch-wide inherited control."
+    ]
+  },
+
+  "NO_PRODUCT_DECISION_REOPENED": {
+    "method": "Structural key-level comparison against the parent authority's EH, TI and SIZE sections rather than a prose reading. Every EH-N and TI-N definition and every size constant in this artifact was extracted from the parent at AS_OF_TREE and reproduced, not paraphrased.",
+    "inherited_unchanged": [
+      "EH-1 through EH-6 — definitions, sources, shapes and drills",
+      "TI-1 through TI-8 — facts and sources",
+      "PORTFOLIO_COMPARISON_PAGE_SIZE = 25",
+      "PORTFOLIO_READ_MODEL_CHUNK_SIZE = 500",
+      "PORTFOLIO_SOFT_SIZE_THRESHOLD = 250",
+      "the seven PF3-exclusive control descriptions"
+    ],
+    "additive_gap_fills": [
+      "the two-layer entrypoint distinction and which pin proves which claim",
+      "the declared limit of the AST instrument for 'use client' modules, and NEG-PF3-ARCH-2 which closes it",
+      "the type-only-import permission, recorded from the repository's own CleanWidget fixture",
+      "the EH-5 denominator obligation arising from the nullable financial_proxy_version_id",
+      "the measured location of the create UI outside PF3's surface",
+      "test-file bindings for the seven inherited PF3-exclusive controls"
+    ],
+    "reopened": [],
+    "reopened_count": 0
+  },
+
+  "MEASURED_BASELINE_OF_THE_IMPLEMENTATION_SURFACE": {
+    "purpose": "So the future implementation and its auditor can tell a PF3-caused change from a pre-existing condition without re-deriving everything.",
+    "measured_facts": [
+      "lib/portfolios/ contains exactly three files: analytics.ts, analytics.test.ts, service.ts.",
+      "components/portfolios/ does not exist. components/ has fourteen subdirectories, none named portfolios.",
+      "Exactly one module under components/** reaches the database: components/stella/decision-adapter.ts, classified contextualized.",
+      "tests/database-entrypoint-inventory.json: checkedModules 144, databaseReaching 120, modules map 120 entries, tally { contextualized: 104, allowlisted: 16 }. Blob d5630835308508c2a9b55e3ce69d0f28e8640549.",
+      "tests/database-runtime-entrypoints.test.ts:783 asserts { inventoried: 142, reaching: 117, contextualized: 101, allowlisted: 16 }.",
+      "app/app/portfolios/[portfolioId]/page.tsx: blob 2aab88a139d785c396d9b3a8499c034dd87919f1, 14437 bytes, 326 lines, last touched by e2a8ac19.",
+      "AUDIT_ACTIONS has 111 keys; 6 are portfolio-related; logAuditAction appears 0 times under components/.",
+      "financial_proxy_versions.organization_id is NULLABLE; outcome_proxy_assignments.organization_id and .project_id are NOT NULL; outcome_proxy_assignments.financial_proxy_version_id is NULLABLE.",
+      "db/client.ts does not carry `import 'server-only'`.",
+      "The default vitest config has no explicit include and excludes only BASE_EXCLUDE, tests/integration/** and tests/e2e/**, so lib/**/*.test.ts and tests/postgres/** are both collected by it."
+    ],
+    "implication": "Eight of PF3's nine paths are green-field. The single brown-field path is pinned by blob. Every pin PF3 must not move is recorded here with the instrument that reads it."
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "scope_note": "This mission is AUTHORITY_ONLY / DOCS_ONLY and writes exactly one path. It runs no PostgreSQL, installs no dependency and executes no implementation.",
+    "node_modules_precondition": "ABSENT throughout. Every gate below ran under plain `node --experimental-strip-types` on Node v24.16.0. These scripts import only Node builtins, which is why they run at all without an install; this is structural, not incidental.",
+    "prestate": {
+      "command": "node --experimental-strip-types scripts/ods-prestate.ts --branch codex/portfolio-pf3-authority-r1 --head 9a414fac0858a86e738cb41e2f024502cf5efc8d --tree 60ac29a27c91c51e08da12a45120919b8006d462 --clean",
+      "result": "ODS_PRESTATE=PASS (PRESTATE_BRANCH=PASS, PRESTATE_HEAD=PASS, PRESTATE_TREE=PASS, PRESTATE_CLEAN=PASS)"
+    },
+    "json_validation": "REPORTED IN THE MISSION RESULT — this artifact is parsed as JSON after writing.",
+    "authority_seal_verify": "REPORTED IN THE MISSION RESULT.",
+    "secrets_scan": "REPORTED IN THE MISSION RESULT.",
+    "ods_scope": "REPORTED IN THE MISSION RESULT, with --allow naming this single path exactly. ods:scope invoked without --allow always fails, by design: a path being changed is never itself permission for it to have changed.",
+    "poststate_not_run": {
+      "decision": "ods:poststate is NOT run by this mission.",
+      "reason": "poststate is a COMPOSITOR that spawns typecheck and vitest. Both require node_modules, which is absent. Running it would produce a dependency failure that says nothing about this artifact. The four gates that are genuinely dependency-free — prestate, scope, seal verification and the secrets scan — are the ones that bear on a docs-only, one-path mission, and all four are run.",
+      "not_a_weakening": "No gate is skipped to obtain a PASS. poststate's own sub-steps are typecheck and test execution over a surface this mission does not touch: this mission writes no TypeScript and no test."
+    }
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-GJ-1",
+      "severity": "MATERIAL",
+      "finding": "The mission packet groups the regex quadruple (142/117/101/16) and the AST quadruple (144/120/104/16) together as the 'expected effect' of props-only architecture. Measured, the regex layer walks app/ only and never sees components/**, so its pin cannot evidence props-only discipline.",
+      "disposition": "RESOLVED IN THIS ARTIFACT. ENTRYPOINT_PIN_CONTRACT separates the two claims and their two instruments. POS-PF3-ARCH-1 states explicitly what the regex pin does and does not prove.",
+      "residual": "None for this artifact. An auditor should confirm the separation is applied consistently and that no PF3 control cites the regex pin as props-only evidence."
+    },
+    {
+      "id": "F-GJ-2",
+      "severity": "MATERIAL",
+      "finding": "listCheckedModules() skips 'use client' modules before any reachability test, and db/client.ts carries no `import 'server-only'` backstop. A leaky client component under components/portfolios/** would move neither quadruple.",
+      "disposition": "DECLARED AND MITIGATED. Recorded as ENTRYPOINT_PIN_CONTRACT.DECLARED_LIMIT_OF_THE_INSTRUMENT and closed by NEG-PF3-ARCH-2, which walks the value-import graph independently of the isClient branch.",
+      "residual": "NEG-PF3-ARCH-2 must be demonstrated non-vacuous against BOTH a leaky server-component fixture and a leaky 'use client' fixture. If implementation demonstrates only the server-component form, the gap is not closed."
+    },
+    {
+      "id": "F-GJ-3",
+      "severity": "INFORMATIONAL",
+      "finding": "All seven inherited PF3-exclusive controls carry test_file: 'UNKNOWN' in the batch manifest at AS_OF_TREE.",
+      "disposition": "EXPECTED. Binding them to owned test files is PF3's job and is done in TEST_CONTRACT.inherited_pf3_exclusive_controls. This authority does not edit the manifest to record the bindings, because the manifest is not in its write surface.",
+      "residual": "The manifest continues to read 'UNKNOWN' after PF3 implements. A future batch-closure mission owns reconciling it. No PF3 evidence may be read as having closed those ids batch-wide."
+    },
+    {
+      "id": "F-GJ-4",
+      "severity": "INFORMATIONAL",
+      "finding": "outcome_proxy_assignments.financial_proxy_version_id is nullable and the schema reads NULL as INELIGIBLE. EH-5's 'count approved over count assigned' does not state, in the inherited parent text, whether NULL-version assignments belong in the denominator.",
+      "disposition": "NOT RESOLVED BY DECIDING IT. This authority does not re-decide a parent product definition. It imposes the weaker, sufficient obligation that whichever the implementation counts, the returned object must make the denominator's definition visible — which the EVIDENCE_HEALTH universal shape obligation already requires of every indicator.",
+      "residual": "If an implementation reads the denominator one way and a future consumer assumes the other, the visible definition is what resolves it. If that proves insufficient, it is a parent-authority amendment, not a PF3 decision."
+    },
+    {
+      "id": "F-GJ-5",
+      "severity": "INFORMATIONAL",
+      "finding": "components/portfolios/** is a glob and therefore unbounded in file COUNT, which is unusual for a write surface that is otherwise an exact path list.",
+      "disposition": "ACCEPTED AND BOUNDED BY KIND. The glob is bounded by COMPONENTS_ENTRYPOINT_DISCIPLINE, which is machine-checkable by NEG-PF3-ARCH-1 and NEG-PF3-ARCH-2 over whatever files exist. A count bound would have been arbitrary; a kind bound is enforceable.",
+      "residual": "An auditor should confirm the two architecture controls actually range over the directory's live contents rather than a hardcoded file list, or the bound is only nominal."
+    }
+  ],
+
+  "self_check": {
+    "artifact_count_this_mission": 1,
+    "changed_paths_this_mission": ["docs/ops/portfolio/PORTFOLIO_PF3_EXECUTION_AUTHORITY_v1.0.0.json"],
+    "parents_edited": 0,
+    "siblings_edited": 0,
+    "batch_manifest_edited": 0,
+    "product_decisions_reopened": 0,
+    "write_surface_path_count": 9,
+    "write_surface_paths_present_at_AS_OF_TREE": 1,
+    "write_surface_paths_absent_at_AS_OF_TREE": 7,
+    "write_surface_globs_empty_at_AS_OF_TREE": 1,
+    "new_pf3_scoped_controls": 6,
+    "inherited_pf3_exclusive_controls_bound": 7,
+    "new_audit_verbs": 0,
+    "entrypoint_pins_expected_to_move": 0,
+    "locks_taken_by_this_mission": 0,
+    "postgres_executed_by_this_mission": false,
+    "dependencies_installed_by_this_mission": false,
+    "open_findings": 5,
+    "material_open_findings": 2,
+    "material_open_findings_both_resolved_or_mitigated_in_artifact": true
+  },
+
+  "final_state": "PORTFOLIO_PF3_EXECUTION_AUTHORITY_MATERIALIZED_AWAITING_INDEPENDENT_EXACT_OBJECT_AUDIT",
+  "PF3_IMPLEMENTATION_AUTHORIZED": false,
+  "READY_FOR_PF3_IMPLEMENTATION": "NO — an independent Opus exact-object audit of this artifact must pass, and it must integrate, before PF3 implementation opens.",
+  "next_gate": "PF3_EXECUTION_AUTHORITY_INDEPENDENT_EXACT_OBJECT_AUDIT"
+}
