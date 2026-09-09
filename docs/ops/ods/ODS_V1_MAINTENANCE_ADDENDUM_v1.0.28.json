@@ -1,0 +1,398 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.28",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28",
+  "authority_class": "ODS_V1_MAINTENANCE_ADDENDUM_INSTRUCTION_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-26",
+  "hpo_mission_id": "COMMERCIAL-ACCOUNT-CE1-LINEAGE-ALLOCATION-AUTHORITY-R1",
+  "predecessor_hpo_mission_id": "S3-AUDIT-ACTION-NAMING-SUCCESSOR-AUTHORITY-V1.0.27-TENANCY-V1.0.8-R1",
+  "materialization_date": "2026-09-08",
+  "supersedes": null,
+  "refines": null,
+  "refines_note": "DELIBERATELY NULL. v1.0.25, v1.0.26 and v1.0.27 each carried refines pointing at their immediate predecessor because all four artifacts govern ONE act (the multi-org S3 refusal-audit implementation) with increasing accuracy. THIS addendum opens a DIFFERENT lane over a DIFFERENT node with a DIFFERENT grant. It refines nothing, contradicts nothing, and re-opens nothing in v1.0.1 through v1.0.27, every one of which stands byte-unchanged and fully in force.",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "node_authority": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
+  "companion_execution_scope_authority": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "companion_is_PRE_EXISTING_NOT_CREATED_HERE": "BINDING AND LOAD-BEARING. Unlike the tenancy lane, whose companion execution-scope amendment was co-materialized in the SAME mission as each of v1.0.19 through v1.0.27, CE-1's execution-scope authority ALREADY EXISTS, frozen and integrated: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json. It is NOT created, NOT edited and NOT amended by this mission. That is exactly why this mission writes ONE file rather than two — see ARTIFACT_FORM_DERIVATION.",
+  "node_test_manifest": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json",
+  "node_test_manifest_note": "The parent package's companion manifest, consumed by reference only. COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json MANIFEST_DISPOSITION.decision states 'NO new companion test/implementation manifest is created for CE-1' because that manifest is already a BATCH commitment covering CE-1. This addendum creates no test manifest and does not disturb that decision.",
+
+  "purpose": "Allocate the ODS/HPO lineage that COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json and its amendment v1.0.1 have both been waiting on, and nothing else. Both artifacts are frozen with final_state '..._WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_GRANT' and READY_FOR_CE1_IMPLEMENTATION 'NO_UNTIL_LINEAGE_GRANTED'; the amendment's PROTECTED_GRANT_REQUIRED.FUTURE_PROTECTED_GRANT_SHAPE freezes the exact PATTERN SHAPE of the grant CE-1 needs while leaving authorityId and branch the literal string 'UNALLOCATED', and states in its own words that 'the future binding happens in the future ODS addendum and in scripts/ods-scope.ts, NOT by editing this frozen artifact'. This addendum IS that future ODS addendum. Its function inside the ODS lineage is exactly fourfold and no wider: (1) record HPO-ODS-W2-26 as the next unused grant identifier, derived structurally at materialization time and never from a version offset; (2) BIND that grant to one branch and to the three patterns the amendment already froze, as a DECLARED_NOT_REGISTERED grant; (3) authorize, append-only and path-by-path, the FUTURE registration act that installs the grant row in scripts/ods-scope.ts and advances the negative control in tests/ods/ods-scope.test.ts; (4) record that Controller39 is required to enumerate this artifact, and record precisely what that requirement does and does not block. It allocates NO migration ordinal, NO baseline position, NO journal wrapper prefix, registers nothing, implements nothing, and writes exactly one file.",
+
+  "scope_note": "AUTHORITY ONLY. This mission writes exactly ONE new tracked file — this addendum — and edits NOTHING. It does not implement CE-1, does not touch db/schema.ts, does not create a migration, does not allocate a migration ordinal, does not register a baseline unit, does not generate or regenerate a journal wrapper, does not regenerate db/prepared/checkpoint-b0/observation.sql, does not edit scripts/ods-scope.ts, does not edit scripts/ods-controller.ts, does not edit any test, does not run PostgreSQL, and does not create a test manifest or an implementation-evidence artifact. APPEND-ONLY: it does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.27, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, KNOWN_TEST_CONDITIONS_v1.0.0.json, the tenancy amendments v1.0.1 through v1.0.8, either CE-1 artifact, the parent COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json and its companion manifest, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through HPO-ODS-W2-25 are FROZEN_UNCHANGED: none is widened, narrowed, rebranched, reused or amended. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts is UNCHANGED and this addendum adds NO entry to the PROTECTED_GRANTS registry — that installation is a separate governed act, authorized below and performed by a later mission.",
+
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "START_HEAD": "88eb89c7829085a33fb02f032d6482fc4a58524b",
+    "START_TREE": "916975d35b991c32ed779562f796e8e91003d549",
+    "BRANCH": "codex/commercial-account-ce1-lineage-authority-r1",
+    "LATEST_INTEGRATION_HEAD": "88eb89c7829085a33fb02f032d6482fc4a58524b",
+    "INTERVENING_DELTA": "NONE. Measured with `git fetch origin --prune` followed by `git rev-parse origin/integration/commercial-v1`, which resolves to 88eb89c7829085a33fb02f032d6482fc4a58524b — byte-identical to this mission's START_HEAD. The authority worktree HEAD and the live integration head are the SAME COMMIT at materialization time, so no stale-base reconciliation is owed.",
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/commercial-account-ce1-lineage-authority-r1 --head 88eb89c7829085a33fb02f032d6482fc4a58524b --tree 916975d35b991c32ed779562f796e8e91003d549 --clean => PRESTATE_BRANCH=PASS, PRESTATE_HEAD=PASS, PRESTATE_TREE=PASS, PRESTATE_CLEAN=PASS, ODS_PRESTATE=PASS.",
+    "remeasurement_rule": "Every count in this artifact is bound to START_HEAD 88eb89c7. A mission whose base differs from 88eb89c7 by even one commit MUST re-measure all of them and MUST NOT inherit them. In particular the migration ordinal ceiling, the baseline unit count and the PROTECTED_GRANTS row count are shared, globally-serialized resources that any other lane can move."
+  },
+
+  "anchors": {
+    "controller38_merge": "05cc54f8be61a4dec97ffb9864e5ff8aa8e93eaf — 'Merge pull request #113 from lorenzozanello/codex/ods-controller38-r1'. MEASURED ancestor of START_HEAD (`git merge-base --is-ancestor` => true).",
+    "v1_0_27_merge": "1625bea2124f7b5ef6ffa500f133ffe80c487d92 — 'Merge pull request #108 from lorenzozanello/codex/s3-audit-action-naming-successor-authority-r1'. MEASURED ancestor of START_HEAD.",
+    "pf2_entrypoint_amendment_merge": "b01e3cb533f52da0ebc5d7e5f7b687aea056c5fb — 'Merge pull request #112'. MEASURED ancestor of START_HEAD.",
+    "s3_implementation_merge": "88eb89c7829085a33fb02f032d6482fc4a58524b — 'Merge pull request #105 from lorenzozanello/codex/multiorg-s3-refusal-audit-implementation-r1'. This IS START_HEAD; it is the commit that consumed migration ordinal 0067 and baseline unit 80 on integration.",
+    "ce1_base_authority_frozen_at": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json, AS_OF_HEAD a27c4a9af83afba5f4f94ee2a2d61a56495fdd50, present and byte-unchanged at START_HEAD.",
+    "ce1_amendment_frozen_at": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, START_HEAD a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303 / TREE 57952b24486ce0fae84e3977e8fbc56aed895db7, present and byte-unchanged at START_HEAD."
+  },
+
+  "controller_39_precondition_discharged": {
+    "the_condition": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json controller_38_sequencing_rule states, verbatim: controller_38_must_close_before = 'any further ODS lineage allocation - that is, before any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28 or tenancy amendment v1.0.9 is derived by any mission in any lane', with enforcement 'A mission that finds v1.0.27 unenumerated in the live Controller and attempts to allocate a further ODS lineage MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.'",
+    "the_clause_that_names_this_lane": "The same rule carries CE1_MUST_NOT_CONSUME_THE_NEXT_LINEAGE_FIRST: 'BINDING AND NAMED. The CommercialAccount CE-1 lane, or any other lane, MUST NOT allocate the next ODS lineage before Controller38 closes this one.' This addendum is that CE-1 lane, and the clause is discharged BEFORE anything was written, not argued around.",
+    "measurement": "MEASURED BY REAL ESM IMPORT of scripts/ods-controller.ts at START_HEAD, not by grep. IMMUTABLE_BY_CONVENTION holds exactly 38 entries. Its thirty-eighth and final element is 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json'. Every ODS maintenance addendum v1.0.1 through v1.0.27 is present, contiguously, with no hole.",
+    "verdict": "DISCHARGED. v1.0.27 IS enumerated by the live Controller. The STOP_FOR_LINEAGE_SEQUENCING condition is NOT tripped and this lane proceeds lawfully.",
+    "counter_check": "The absence side was measured too: 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json' is NOT in IMMUTABLE_BY_CONVENTION at START_HEAD, which is the state tests/ods/ods-controller.test.ts asserts and which this mission preserves. See self_inclusion_rule."
+  },
+
+  "ARTIFACT_FORM_DERIVATION": {
+    "question": "What is the EXACT legal artifact form for allocating CE-1's lineage, and what is the minimum surface that form requires?",
+    "method": "DERIVED FROM REPOSITORY PRECEDENT BY EXHAUSTIVE SURVEY of every ODS_V1_MAINTENANCE_ADDENDUM_v1.0.N.json at START_HEAD, reading each artifact's own GRANT_ID, protected_grant, companion_execution_scope_authority and authorized_changed_paths_this_mission fields. Not inferred from the prompt, and not generalized from the single most recent lane.",
+    "TWO_HISTORICAL_FORMS_MEASURED": {
+      "FORM_A_DECLARE_AND_REGISTER_IN_ONE_ACT": {
+        "shape": "The addendum, the node authority, the node test manifest, scripts/ods-scope.ts AND tests/ods/ods-scope.test.ts change together; the PROTECTED_GRANTS row is installed in the same mission; protected_grant carries no registration_status field because registration is simultaneous.",
+        "measured_instances": [
+          "v1.0.10 (HPO-ODS-W2-11, branch codex/p1a-full-bootstrap-r1) — 5 changed paths including scripts/ods-scope.ts and tests/ods/ods-scope.test.ts.",
+          "v1.0.11 (HPO-ODS-W2-12, branch codex/w2-b4-r1) — 6 changed paths, same two registry paths plus ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json.",
+          "v1.0.16 (HPO-ODS-W2-17, branch codex/w2-b5-r1) — 6 changed paths, same shape."
+        ],
+        "why_it_does_not_fit_CE_1": "In all three, the NODE AUTHORITY and its TEST MANIFEST were materialized by the SAME mission, so that mission owned the whole package and could register in one act. CE-1's node authority and its execution-scope amendment are already frozen, independently audited and integrated. There is no package to co-materialize, and re-opening either to absorb a grant is prohibited by the amendment's own no_placeholder_edit clause."
+      },
+      "FORM_B_DECLARE_ONLY": {
+        "shape": "The addendum declares protected_grant with registration_status DECLARED_NOT_REGISTERED and changes exactly TWO paths: itself and its lane's execution-scope authority. scripts/ods-scope.ts is untouched; the PROTECTED_GRANTS row is installed later by the mission that consumes the grant.",
+        "measured_instances": [
+          "v1.0.19 (HPO-ODS-W2-20) — DECLARED_NOT_REGISTERED, 2 paths.",
+          "v1.0.20 (HPO-ODS-W2-21) — DECLARED_NOT_REGISTERED, 2 paths.",
+          "v1.0.24 (HPO-ODS-W2-25) — DECLARED_NOT_REGISTERED, 2 paths, and the branch it names, codex/multiorg-s3-refusal-audit-implementation-r1, DID NOT EXIST when the addendum was frozen.",
+          "v1.0.25, v1.0.26, v1.0.27 (HPO-ODS-W2-25 reused) — DECLARED_NOT_REGISTERED, 2 paths each."
+        ],
+        "the_registration_actually_happened_later": "MEASURED at START_HEAD: PROTECTED_GRANTS now holds 13 rows and the thirteenth is HPO-ODS-W2-25 bound to codex/multiorg-s3-refusal-audit-implementation-r1. It was installed by PR #105, the IMPLEMENTATION, not by any of the four authority addenda that declared it. v1.0.27 states this of itself: 'This authority lane registers NOTHING, so the live count stays 12 through its integration. The IMPLEMENTATION registers HPO-ODS-W2-25 and moves it to 13.'",
+        "it_is_the_form_the_CE_1_AMENDMENT_ITSELF_CITES": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json PROTECTED_GRANT_REQUIRED.adjudication evidence E5 cites v1.0.19's DECLARED_NOT_REGISTERED grant by name and concludes 'A declared-but-unregistered grant is a live, governed state'. The amendment's SYMBOLIC_GRANT_ALLOWED = 'YES' verdict rests on this form. Choosing it here is not a novel reading; it is the reading the frozen node authority already made and passed audit on."
+      }
+    },
+    "THE_SECOND_PATH_OF_FORM_B_IS_ALREADY_ON_DISK": {
+      "binding": "THIS IS THE WHOLE OF WHY THE SURFACE IS ONE FILE AND NOT TWO.",
+      "reasoning": "In every FORM_B instance the second changed path is the LANE'S OWN EXECUTION-SCOPE AUTHORITY — MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json for v1.0.19, then its amendments v1.0.1 through v1.0.8 for v1.0.20 through v1.0.27. That artifact carries the lane's implementation ceiling and its copy of the grant object. CE-1's equivalent is COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, which ALREADY carries the full implementation ceiling (CE1_IMPLEMENTATION_SURFACE, closed_world EXHAUSTIVE), the full baseline growth contract, the journal rule and the frozen FUTURE_PROTECTED_GRANT_SHAPE. Nothing in it needs to change for CE-1 to become executable — only the two UNALLOCATED strings need to be bound, and the amendment states that they are bound HERE, not there.",
+      "the_amendment_forbids_the_alternative": "PROTECTED_GRANT_REQUIRED.adjudication.no_placeholder_edit, verbatim: 'This amendment contains NO placeholder to be filled in later. GRANT_ID is null and FUTURE_PROTECTED_GRANT_SHAPE.authorityId is the string UNALLOCATED. The future binding happens in the future ODS addendum and in scripts/ods-scope.ts, NOT by editing this frozen artifact. Editing a frozen artifact to fill a placeholder is not authorized by anything and is not contemplated here.' A companion CE-1 amendment v1.0.2 is therefore not merely unnecessary — inventing one to host a grant the amendment already shaped would be an unauthorized second act over a settled surface.",
+      "NO_COMPANION_ARTIFACT_INVENTED": "No COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json is created, named-as-allocated or pre-created by this mission. No new commercial test manifest is created. No CE-1 implementation-evidence artifact is created — the amendment assigns that to the implementation mission."
+    },
+    "PRECEDENT_FOR_A_SINGLE_FILE_ADDENDUM": {
+      "artifact": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json",
+      "measured": "authorized_changed_paths_this_mission.count = 1, paths = ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json'], is_new_file = true, no_implementation_code = true. It allocated GRANT_ID HPO-ODS-W2-14 and wrote nothing else.",
+      "disanalogy_stated_rather_than_hidden": "v1.0.13 carries protected_grant = null and protected_grant_required = false, because the surface it authorized (scripts/ods-controller.ts, tests/ods/ods-controller.test.ts) is unprotected. THIS addendum does declare a protected grant. The two precedents therefore compose rather than conflict: v1.0.13 proves an ODS addendum may lawfully be a ONE-FILE mission that allocates an identifier and authorizes a future path-by-path surface; v1.0.19/20/24/25/26/27 prove an ODS addendum may lawfully declare a protected grant WITHOUT registering it. Neither precedent is stretched; the intersection of the two is exactly this artifact."
+    },
+    "VERDICT": {
+      "legal_form": "ONE new file — docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json — carrying a FORM_B DECLARED_NOT_REGISTERED protected grant, a v1.0.13-shaped forward authorization of the registration surface, and no allocation of any migration ordinal or baseline position.",
+      "minimum_surface_this_mission": 1,
+      "minimum_surface_of_the_separate_registration_act": 2,
+      "NO_STOP_FOR_ARTIFACT_FORM_DECISION": "Not triggered. Reserving the grant requires NO other artifact and NO registry edit: six consecutive integrated, independently-audited precedents establish DECLARED_NOT_REGISTERED as a complete allocation act, and the CE-1 amendment's own audited adjudication relies on that form. Reserving a migration ordinal is not merely unnecessary but PROHIBITED by the frozen CE-1 authority and its amendment — see MIGRATION_ORDINAL. There is therefore no unauthorized surface to escalate."
+    }
+  },
+
+  "lineage_derivation": {
+    "next_ods_version": "1.0.28",
+    "version_derivation": "The highest ODS maintenance addendum present in docs/ops/ods/ at START_HEAD is v1.0.27, enumerated by directory listing (27 addenda, v1.0.1 through v1.0.27) and INDEPENDENTLY confirmed by the live Controller's own final element. The append-only successor is v1.0.28.",
+    "GRANT_ID_disposition": "ALLOCATED — HPO-ODS-W2-26. This is a NEW grant for a NEW act on a NEW surface, not a reuse. See GRANT_ID_ALLOCATION_DISPOSITION.",
+    "derived_not_assumed": "The prompt that opened this lane NAMED Controller 38, final ODS v1.0.27, next free ODS v1.0.28, integrated migration ceiling 0067, next free ordinal 0068, baseline 80, next baseline unit 81, HPO-ODS-W2-25 consumed and HPO-ODS-W2-26 first free, and explicitly forbade assuming any of them. Every one was DERIVED from the live tree, the live Controller and the live registry before anything was written. The derivation agrees with the naming in all eight cases. Agreement is recorded as a RESULT, never used as the METHOD.",
+    "THE_TWO_AXES_ARE_DECOUPLED": "CARRIED FORWARD FROM v1.0.26 AND v1.0.27 AND RE-MEASURED, AND THIS TIME THE TWO AXES MOVE TOGETHER RATHER THAN APART. The ODS-lineage axis and the HPO-grant axis advance independently. ODS advances 1.0.27 -> 1.0.28 because the predecessor EXISTS. The grant advances W2-25 -> W2-26 NOT because the version moved but because a structural sweep proves W2-26 has never been allocated AND because this lane is a genuinely SECOND, DIFFERENT act over a DIFFERENT node with a DIFFERENT protected surface and a DIFFERENT branch — the precise condition v1.0.25 named as the thing that WOULD justify a new id ('Allocating HPO-ODS-W2-26 would assert that a SECOND, DIFFERENT grant now exists - which would be false' — false THEN, for the S3 lane; true HERE, for CE-1). The offset invariant recorded by v1.0.19 (grant ordinal === addendum patch version + 1) is NOT used and is FALSE at this base: v1.0.28 pairs with W2-26, an offset of -2, because HPO-ODS-W2-25 names four addenda. v1.0.27's consequence_for_the_next_lineage states this obligation verbatim: 'The next lineage allocation must DERIVE its GRANT_ID at materialization time from the ALLOCATION SET, never from a version offset - because HPO-ODS-W2-25 now names four addenda, an offset derivation would be wrong by three.' It is discharged here by the structural sweep below.",
+    "COLLISION_SWEEP": {
+      "method": "THREE sweeps, each distinguishing an ALLOCATION from a mere MENTION. (1) A STRUCTURAL walk of every JSON under docs/ collecting every scalar whose VALUE is EXACTLY a candidate identifier — this reports allocation-shaped occurrences ONLY, and is the sweep that decides. (2) A TREE EXISTENCE check for the candidate FILENAME across ALL 339 named refs (local heads plus remotes), by `git cat-file -e <ref>:<path>`. (3) A TEXTUAL sweep of the candidate identifiers across all 339 named refs, with every hit classified by reading it.",
+      "sweep_1_scope": "159 JSON files under docs/ discovered; 158 parsed. ONE pre-existing unparseable file is REPORTED rather than skipped silently: docs/ops/staging/evidence/2026-08-12-att_9d8c0412-m8-runtime-observation.json. It is a staging runtime-observation evidence artifact, pre-existing at START_HEAD, untouched by this mission, and identified as unparseable by v1.0.27's own sweep before this lane existed. It is not an ODS lineage artifact and cannot host an allocation of an ODS addendum version or an HPO grant id.",
+      "result_ods_v1_0_28": "FREE. Zero allocation-shaped occurrences. No ref among the 339 contains a blob at docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json.",
+      "result_HPO_ODS_W2_26": "FREE. Zero allocation-shaped occurrences under docs/. Zero PROTECTED_GRANTS rows carrying the id in ANY of the 339 refs' copies of scripts/ods-scope.ts.",
+      "result_HPO_ODS_W2_27": "FREE, AND DELIBERATELY LEFT FREE. Zero allocation-shaped occurrences. This lane does NOT allocate it.",
+      "structural_sweep_is_non_vacuous": "PROVEN, not asserted. The SAME structural walk that returns ZERO for all three candidates correctly returns 35 allocation-shaped hits for HPO-ODS-W2-25 across nine artifacts (ODS addenda v1.0.24-v1.0.27, tenancy amendments v1.0.5-v1.0.8, and MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0.json) and exactly ONE for ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27 (its own artifact_id). A sweep that found nothing anywhere would prove nothing; this one finds the previous allocations and not the next.",
+      "MENTION_CLASSIFICATION": {
+        "binding": "Every live mention of a candidate id was CLASSIFIED by reading it, never merely counted.",
+        "ods_v1_0_28_hosts": "THREE distinct blob paths at START_HEAD: docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json and docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.8.json, whose occurrences are PROHIBITION clauses (no_future_ids_reserved, no_preallocation, SC-4_no_new_lineage_beyond_this_one) whose own text states that naming the id is never an allocation; and tests/ods/ods-controller.test.ts, the Controller38 ABSENCE CONTROL, whose own comment block states in terms 'v1.0.28 is NOT allocated. v1.0.28 is NOT reserved. v1.0.28 is NOT an authority. v1.0.28 is ONLY the next mechanical absence-control literal.' None is an allocation, and none entitles or forbids this lane — the entitlement comes from the discharged Controller38 precondition, not from that comment.",
+        "HPO_ODS_W2_26_hosts": "EIGHT distinct blob paths at START_HEAD: ODS addenda v1.0.24, v1.0.25, v1.0.26 and v1.0.27; tenancy amendments v1.0.5, v1.0.6, v1.0.7 and v1.0.8; plus tests/ods/ods-controller.test.ts and tests/ods/ods-scope.test.ts. Every prose occurrence is a prohibition clause stating that naming the id is never an allocation. The two test occurrences are NEGATIVE CONTROLS and are handled explicitly in THE_NEGATIVE_CONTROLS_CANNOT_REDDEN_CI below.",
+        "no_reservation_anywhere": "No live artifact RESERVES either candidate. The governing convention, restated by every addendum from v1.0.15 onward, is NEXT_ODS_LINEAGE = DERIVE_AT_MATERIALIZATION_TIME."
+      },
+      "THE_NEGATIVE_CONTROLS_CANNOT_REDDEN_CI": {
+        "binding": "MEASURED, and this is the load-bearing check for merging this addendum.",
+        "control_1": "tests/ods/ods-controller.test.ts asserts expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json').",
+        "why_creating_the_file_is_safe": "That is a LIST-MEMBERSHIP assertion against a STATIC LITERAL ARRAY declared at scripts/ods-controller.ts:50, NOT a filesystem-existence assertion. Creating the FILE does not touch the ARRAY, and this mission does not edit scripts/ods-controller.ts. The assertion continues to pass, and it must — see self_inclusion_rule.",
+        "control_2": "tests/ods/ods-scope.test.ts:332 asserts expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-26')).toBe(false), installed by PR #105 with the comment 'W2-26 is NOT allocated by this node. Registering one would be a silent grant-lineage advance.'",
+        "why_declaring_the_grant_is_safe": "MEASURED AND EXACT. The assertion quantifies over PROTECTED_GRANTS — the ROW ARRAY in scripts/ods-scope.ts — not over the repository, not over docs/ops/ods/, and not over the set of grant ids named in any authority document. This addendum declares HPO-ODS-W2-26 in an authority artifact and installs NO ROW; PROTECTED_GRANTS is byte-unchanged at 13 rows through this mission's integration, so the assertion continues to pass. The distinction is not a loophole: it is precisely the DECLARE/REGISTER split that v1.0.19 through v1.0.27 institutionalized, and the comment's own words ('Registering one would be...') name registration, not declaration, as the prohibited act.",
+        "the_control_must_move_when_registration_happens": "DISCLOSED, NOT DEFERRED SILENTLY. The mission that installs the HPO-ODS-W2-26 row MUST, in the same act, advance the PROTECTED_GRANTS count and set-size assertions from 13 to 14, add the row-shape assertion for W2-26, and move the absence literal at :332 forward to HPO-ODS-W2-27 — exactly as PR #105 did when it registered W2-25 and moved the absence literal from W2-25 to W2-26. That act is authorized, path-by-path, in AUTHORIZED_FUTURE_REGISTRATION_SURFACE below, and it is NOT performed here.",
+        "no_gate_enumerates_the_directory": "Verified independently at START_HEAD: there is no readdirSync, no glob, no fast-glob and no directory listing of docs/ops/ods/ anywhere under tests/ods/ or in scripts/ods-*.ts. No gate can observe the new file at all."
+      }
+    }
+  },
+
+  "GRANT_ID_ALLOCATION_DISPOSITION": {
+    "binding": "THIS ADDENDUM ALLOCATES ONE NEW GRANT ID: HPO-ODS-W2-26. This is the first grant-axis advance since HPO-ODS-W2-25, and it is stated as one rather than presented as routine.",
+    "why_a_new_id_rather_than_a_reuse": "A GRANT_ID names an ACT OF AUTHORITY over an implementation surface. v1.0.25, v1.0.26 and v1.0.27 reused HPO-ODS-W2-25 because each governed THE SAME act, over THE SAME surface, on THE SAME branch. CE-1 satisfies none of those three identities: a DIFFERENT node (CommercialAccount CE-1, not multi-org S3 refusal audit), a DIFFERENT protected surface (three patterns including db/prepared/checkpoint-b0/observation.sql, which W2-25 does not carry), and a DIFFERENT branch. Reusing HPO-ODS-W2-25 would be the mirror-image error of the one v1.0.25 refused: it would assert that ONE act now spans two unrelated nodes, and — decisively — it would not resolve, because resolveProtectedGrant matches grant.branch against the CURRENT BRANCH by exact string equality and W2-25 is bound to codex/multiorg-s3-refusal-audit-implementation-r1.",
+    "why_this_id_and_not_another": "DERIVED FROM THE ALLOCATION SET, NEVER FROM A VERSION OFFSET. The highest ALLOCATED grant id at START_HEAD is HPO-ODS-W2-25, measured structurally (35 allocation-shaped occurrences). HPO-ODS-W2-26 has zero. HPO-ODS-W2-26 is therefore the next unused identifier in the sequence — not a reuse, not a guess, and not a +1 on the addendum version, which would have produced the wrong answer.",
+    "IS_PROTECTED_SURFACE_GRANT": true,
+    "clarification": "Unlike HPO-ODS-W2-10 and HPO-ODS-W2-14, which are AUTHORITY identifiers deliberately absent from PROTECTED_GRANTS because their authorized paths are unprotected, HPO-ODS-W2-26 IS intended to become a machine-enforced PROTECTED_GRANTS entry — three of CE-1's writer surfaces fall inside DEFAULT_PROTECTED_PATTERNS. It is not one YET. Until the registration act lands, HPO-ODS-W2-26 resolves to 'unknown protected authority' and authorizes nothing at all.",
+    "on_collision": "If a mission derives HPO-ODS-W2-26 or ODS v1.0.28 and finds it occupied, the correct action is STOP_FOR_LINEAGE_RENUMBERING. Silently selecting an alternative identifier is PROHIBITED.",
+    "no_future_ids_reserved": "This addendum allocates NOTHING beyond ODS v1.0.28 and HPO-ODS-W2-26. It does not allocate, reserve, name-as-allocated or pre-create HPO-ODS-W2-27, ODS v1.0.29, tenancy v1.0.9, or any commercial amendment v1.0.2. Naming any of them anywhere in this artifact is a PROHIBITION, never an allocation — the same form v1.0.15 through v1.0.27 used."
+  },
+
+  "protected_grant_required": true,
+  "PROTECTED_GRANT_CHANGE_REQUIRED": true,
+  "PROTECTED_GRANT_CHANGE_REQUIRED_note": "TRUE in the sense that a NEW row must eventually exist in PROTECTED_GRANTS for CE-1 to be implementable at all. FALSE in the sense that no existing row is widened, narrowed, rebranched or amended: HPO-ODS-W2-01 through HPO-ODS-W2-25 are FROZEN_UNCHANGED. Both senses are stated because conflating them is the single most common misreading of this field.",
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-26",
+    "branch": "codex/commercial-account-ce1-implementation-r1",
+    "patterns": [
+      "db/migrations/**",
+      "db/prepared/journal/**",
+      "db/prepared/checkpoint-b0/observation.sql"
+    ],
+    "pattern_count": 3,
+    "registration_status": "DECLARED_NOT_REGISTERED",
+    "PATTERNS_CARRIED_VERBATIM_FROM_THE_FROZEN_CE1_AMENDMENT": "BINDING. The three patterns above are copied FIELD FOR FIELD from COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json PROTECTED_GRANT_REQUIRED.FUTURE_PROTECTED_GRANT_SHAPE.patterns, in that order. This addendum does not add a fourth pattern, does not widen any of the three, and does not substitute a broader glob for the one literal path. The amendment's own narrowness_rationale for each of the three is incorporated by reference and is not restated in weaker words here.",
+    "NO_BLANKET_DB_PREPARED": "EXPLICIT AND LOAD-BEARING. The grant is db/prepared/journal/** and db/prepared/checkpoint-b0/observation.sql — NEVER db/prepared/**. The amendment states the mechanism: classifyPaths checks the CONCRETE path against the SUPPLIED grant's own patterns and never against the broader default pattern that made it protected, so a grant for db/prepared/journal/** cannot authorize db/prepared/sibling.sql. MEASURED at START_HEAD, db/prepared/ holds 79 top-level entries — README.md, checkpoint-a1, checkpoint-b0, class-c, hosted, journal, prechain, stella-bootstrap, storage, five grounding_* pairs and the whole stella_*/stella_hosted_*/stella_local_* prepared chain. A blanket db/prepared/** grant would reach every one of them; CE-1 touches none. The amendment's PROHIBITED_PATTERNS list — blanket db/prepared/**, db/baseline/**, the three sealed corpora, and ODS_V1_AUTHORITY_v1.0.0.json — is carried here unchanged and unwidened.",
+    "why_the_checkpoint_b0_literal_is_a_literal": "db/prepared/checkpoint-b0/ holds EXACTLY ONE file at START_HEAD (measured: observation.sql). Even a directory pattern would grant strictly more than the classifier can justify. Precedent for this exact literal: HPO-ODS-W2-07, HPO-ODS-W2-16 and HPO-ODS-W2-17.",
+    "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. classifyPaths authorizes a protected path only when grantCovers AND taskAllows are BOTH true. The grant alone never authorizes a diff. Restated here because it is the single most common misreading of the mechanism, and because the CE-1 amendment restates it for the same reason.",
+    "why_existing_grants_cannot_be_reused": "MEASURED. resolveProtectedGrant matches grant.branch against the CURRENT BRANCH by exact string equality. HPO-ODS-W2-01 and HPO-ODS-W2-25 carry db/migrations/** and db/prepared/journal/** but are bound to codex/w2-methodology-objects-r1 and codex/multiorg-s3-refusal-audit-implementation-r1 respectively; HPO-ODS-W2-20 and HPO-ODS-W2-21 carry those surfaces on codex/multiorg-s1-founder-traceability-r1; HPO-ODS-W2-17 carries all three CE-1 patterns but is bound to codex/w2-b5-r1. NONE of the 13 live rows resolves on a CE-1 implementation branch. This is why a new id is necessary and why no existing id is rebranched.",
+    "separate_entry_rule": "If a future CE-1 mission needs a surface this grant does not cover, it MUST create a SEPARATE registry entry rather than widen this one — even on the same branch. Measured precedent: HPO-ODS-W2-16 is a deliberately separate entry on the same branch codex/w2-b4-r1 as HPO-ODS-W2-12, and resolveProtectedGrants unions only the ids a caller actually supplies.",
+    "source_of_truth": "This object. It must equal COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json FUTURE_PROTECTED_GRANT_SHAPE.patterns field for field on the patterns axis, and it must equal the row a future registration act installs in scripts/ods-scope.ts field for field on all three axes."
+  },
+
+  "BRANCH_BINDING": {
+    "bound_branch": "codex/commercial-account-ce1-implementation-r1",
+    "why_a_branch_must_be_named_now": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json leaves the branch as the literal string 'UNALLOCATED' with the note 'the CE-1 implementation branch, which does not exist at START_HEAD. A grant is bound to exactly ONE branch.' Binding it is precisely the act the amendment defers to this addendum. A grant with an unbound branch resolves for no one and authorizes nothing.",
+    "naming_derivation": "MEASURED FROM CONVENTION, not invented. The repository's implementation-lane branch form is codex/<node-stem>-implementation-r1, in current use at START_HEAD as codex/multiorg-s3-refusal-audit-implementation-r1, codex/multiorg-s3-request-principal-implementation-r1, codex/portfolio-pf2-implementation-r1 and codex/controller-v1-0-14-implementation-r1. The CE-1 node stem, taken from its own authority directory and package id, is commercial-account-ce1.",
+    "collision_measured": "FREE. The string codex/commercial-account-ce1-implementation-r1 returns ZERO blob hits across all 339 named refs, and no ref of that name exists. The six existing CE-1-adjacent branches are codex/commercial-account-ce1-authority-r1, -successor-authority-r1, -successor-compiler-r1, -live-readiness-r1, -current-live-readiness-r2 and this lane's own -lineage-authority-r1; none is an implementation branch and none is rebranded here.",
+    "naming_a_branch_that_does_not_exist_is_established": "MEASURED PRECEDENT. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.24.json bound HPO-ODS-W2-25 to codex/multiorg-s3-refusal-audit-implementation-r1 at a base where that branch did not yet exist; the implementation later created it under exactly that name and the grant resolved. v1.0.19 and v1.0.20 did the same for codex/multiorg-s1-founder-traceability-r1.",
+    "STOP_FOR_GRANT_BRANCH_MISMATCH": "BINDING. If a CE-1 implementation runs on a branch whose name is not byte-identical to the bound branch above, resolveProtectedGrant returns '\"HPO-ODS-W2-26\" is granted on branch \"codex/commercial-account-ce1-implementation-r1\", not current branch \"...\"' and contributes ZERO patterns. The correct response is to STOP and escalate for a governed rebranch or a separate entry — NEVER to rename the grant in scripts/ods-scope.ts to match whatever branch happens to be checked out, and never to widen another lane's grant to cover the gap."
+  },
+
+  "PROTECTED_GRANTS_CHANGED": false,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 13,
+  "PROTECTED_GRANTS_COUNT_AFTER": 13,
+  "PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26": 14,
+  "protected_grants_count_rule": "MEASURED AT START_HEAD BY READING THE LIVE REGISTRY, not carried from a predecessor. scripts/ods-scope.ts PROTECTED_GRANTS holds exactly 13 rows with ids HPO-ODS-W2-01, -02, -03, -07, -08, -09, -11, -12, -16, -17, -20, -21 and -25, the thirteenth having been installed by PR #105 at this very START_HEAD. This authority lane registers NOTHING, so the live count stays 13 through its integration. A future registration act moves it to 14. Both counts are stated so an auditor can distinguish 'the authority did not register' from 'the registration is missing'.",
+
+  "MIGRATION_ORDINAL": {
+    "MIGRATION_ORDINAL_ALLOCATED": false,
+    "binding": "THIS AUTHORITY ALLOCATES NO MIGRATION ORDINAL, AND IS PROHIBITED FROM DOING SO BY THE NODE AUTHORITY IT SERVES. This is not a discretionary abstention.",
+    "the_two_frozen_prohibitions_it_obeys": [
+      "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json MULTIORG_CP2.ordinal_rule: 'NO MIGRATION ORDINAL IS ALLOCATED BY THIS AUTHORITY, consistent with the parent's MIGRATION_DAG.ordinal_rule.' Its self_check pins expected_migration_ordinal_allocated = 'NONE'.",
+      "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json MIGRATION_ORDINAL.rule: 'This is a MEASUREMENT of the ceiling at START_HEAD, NOT a reservation... A CE-1 implementation mission MUST re-measure the ceiling at ITS OWN base and take the next free ordinal there.'"
+    ],
+    "why_an_authority_must_not_hold_one": "Quoted from the ODS lineage's own settled reasoning (v1.0.27 MIGRATION_ORDINAL_CONTINUITY): 'The ordinal sequence is GLOBALLY SERIALIZED across every lane and is a shared append point in db/migrations/meta/_journal.json. An authority that allocated one would be asserting a fact about a surface it does not control and cannot hold.' Every ODS addendum that has spoken to the question — v1.0.16, v1.0.24, v1.0.25, v1.0.26, v1.0.27 — carries MIGRATION_ORDINAL_ALLOCATED false. There is no precedent for the contrary and this addendum does not create one.",
+    "measured_for_information_only_at_START_HEAD": {
+      "integrated_ceiling": "0067 — db/migrations/ holds 68 .sql files, contiguous 0000_quick_husk.sql through 0067_tenancy_refusal_audit_insert_policy.sql.",
+      "drizzle_journal": "db/migrations/meta/_journal.json holds 68 entries, idx 0..67, highest tag '0067_tenancy_refusal_audit_insert_policy'.",
+      "journal_wrappers": "db/prepared/journal/ holds 81 files: 000_journal_bootstrap.sql plus 80 wrappers, highest 080_0067_tenancy_refusal_audit_insert_policy.sql.",
+      "next_free_ordinal_at_this_base": "0068",
+      "explicit_non_allocation": "0068 is NOT allocated, NOT reserved and NOT pre-created by this addendum. It is a MEASUREMENT of the ceiling at START_HEAD and nothing else. Stating it is a measurement, never a reservation."
+    },
+    "three_way_measurement_rule": "BINDING FOR THE IMPLEMENTATION. Re-check the ordinal against the live db/migrations/ listing AND db/migrations/meta/_journal.json AND db/prepared/journal/ TOGETHER, never one of the three alone. The three moved together at START_HEAD (0067 / idx 67 / wrapper 080) and a disagreement between them is itself a finding.",
+    "on_collision": "If another integrated writer has consumed the next ordinal by the time CE-1 implements, the implementation takes the next free one at ITS OWN base. It MUST NOT silently renumber a preserved workspace: a renumber touches the migration file, its meta snapshot, the shared _journal.json append point and the journal wrapper simultaneously, across a working set nobody has reviewed. That is a governed act requiring its own decision."
+  },
+
+  "BASELINE_POSITION": {
+    "BASELINE_ORDINAL_ALLOCATED": false,
+    "binding": "THIS AUTHORITY ALLOCATES NO BASELINE ORDINAL AND NO JOURNAL WRAPPER PREFIX. Both are DERIVED CONSEQUENCES of the migration ordinal, which is not allocated either.",
+    "measured_for_information_only_at_START_HEAD": {
+      "method": "MEASURED BY IMPORTING THE LIVE MODULE db/hosted/baseline-manifest.ts, not by reading a test literal.",
+      "BASELINE_UNITS.length": 80,
+      "BASELINE_ORDER.length": 80,
+      "kind_drizzle_migration": 68,
+      "kind_supabase_migration": 2,
+      "kind_policy": 10,
+      "ordinals": "contiguous 1..80 (verified by index equality, not by spot check); last unit ordinal 80, id '0067_tenancy_refusal_audit_insert_policy.sql', kind drizzle-migration",
+      "next_baseline_unit_at_this_base": "81",
+      "derived_wrapper_prefix_at_this_base": "081",
+      "explicit_non_allocation": "Baseline position 81 and wrapper prefix 081 are NOT allocated, NOT reserved and NOT pre-created here. They are predictions of a derivation, not reservations."
+    },
+    "append_at_tail_remains_valid_and_was_re_measured": "The CE-1 amendment's append_at_tail_justification required re-derivation if the corpus tail were not a drizzle unit. RE-MEASURED at START_HEAD: baseline ordinal 80 is itself a drizzle-migration (0067), so the corpus tail is drizzle and a new tail drizzle migration appends at ordinal 81. An implementation whose base has a non-drizzle tail MUST re-derive its own insertion position rather than assume the tail.",
+    "the_growth_contract_MUST_be_re_measured_not_inherited": "BINDING AND LOAD-BEARING. COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json BASELINE_GROWTH_CONTRACT is bound to ITS base a8a61a1, where BASELINE_UNITS.length was 78, kind_drizzle_migration 66, firstProvisioning_steps 79 and journal_wrapper_files 79. EVERY ONE OF THOSE NUMBERS IS NOW STALE: the live values at START_HEAD are 80, 68, 81 and 81 respectively, because two further units (0066 multi-org S1 founder traceability and 0067 tenancy refusal-audit insert policy) integrated in between. The amendment anticipated exactly this and states 'Re-measure if the base moves.' A CE-1 implementation mission MUST therefore move the FORCED_PINS_BY_DEPENDENCY_FAMILY sites from their LIVE values (80 -> 81, 68 -> 69, and the derived N+1 step count 81 -> 82), NOT from the amendment's frozen 78/66/79 literals. The FAMILY STRUCTURE of the amendment's pin enumeration — families A, B, C and D, and the MUST_REMAIN_SELF_ADAPTING and EXPLICIT_NON_PINS lists — remains correct and controlling; only the numeric endpoints moved. Line numbers in that enumeration must likewise be re-measured, never trusted across two integrated batches.",
+    "this_addendum_does_not_restate_the_contract": "The implementation ceiling, the baseline unit shape, the journal rule and the pin families stay where they are — in the frozen CE-1 amendment. This addendum allocates lineage; it does not fork the node's technical contract into a second location where the two could drift apart."
+  },
+
+  "AUTHORIZED_FUTURE_REGISTRATION_SURFACE": {
+    "form_precedent": "Modeled path-by-path on ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json authorized_future_implementation_surface, which authorized exactly two future paths (scripts/ods-controller.ts and tests/ods/ods-controller.test.ts) under a closed world, for a successor mission, from a one-file addendum. This is the same shape applied to the scope registry instead of the Controller.",
+    "why_it_is_needed": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json places scripts/ods-scope.ts under EXPLICITLY_NOT_AUTHORIZED with the words 'the PROTECTED_GRANTS registration is a separate governed act by a lineage-granted mission, not part of the CE-1 implementation diff and not part of this mission.' The amendment therefore excludes registration from the implementation's closed world without naming who performs it. Left unresolved, HPO-ODS-W2-26 would be declared and never installed, and CE-1 would remain unimplementable for a reason no artifact owns. This section resolves it FORWARD, in a successor authority, without editing the frozen amendment — the same correction discipline v1.0.25/26/27 used for the S3 ceiling.",
+    "AUTHORIZED_PATH_COUNT": 2,
+    "paths": [
+      {
+        "path": "scripts/ods-scope.ts",
+        "status": "TO_BE_MODIFIED",
+        "role": "Append ONE row to the PROTECTED_GRANTS array, field-for-field equal to this addendum's protected_grant object: authorityId 'HPO-ODS-W2-26', branch 'codex/commercial-account-ce1-implementation-r1', patterns ['db/migrations/**','db/prepared/journal/**','db/prepared/checkpoint-b0/observation.sql'], taking the array from 13 rows to 14. Add the adjacent explanatory comment naming the node and the reason each pattern is narrow, in the form every existing entry uses.",
+        "narrowness": "This authorization is limited to the PROTECTED_GRANTS array and its adjacent comment. NO change to DEFAULT_PROTECTED_PATTERNS, to classifyPaths, to resolveProtectedGrant, to resolveProtectedGrants, to the CLI argument parsing, to the report lines or to any other logic in this file is authorized. Widening, narrowing, rebranching or amending any of the 13 existing rows is PROHIBITED."
+      },
+      {
+        "path": "tests/ods/ods-scope.test.ts",
+        "status": "TO_BE_MODIFIED",
+        "role": "Move the PROTECTED_GRANTS length and Set-cardinality assertions from 13 to 14; extend the describe/it title to name the new grant, as every prior registration did; add an explicit toEqual row-shape assertion for HPO-ODS-W2-26 and a filter(...).length === 1 duplicate control; and ADVANCE the absence literal at the site that currently asserts no row carries 'HPO-ODS-W2-26' to assert no row carries 'HPO-ODS-W2-27'. Add a negative control proving the grant does NOT authorize a blanket db/prepared/ sibling path, matching the narrowness controls already present for W2-25.",
+        "narrowness": "NO existing control may be weakened, skipped, loosened to an inequality, or deleted. Additions, the count update, and the single absence-literal advance only. Line numbers MUST be re-measured at the implementer's own base — the absence assertion sits at :332 at START_HEAD and will move.",
+        "basis": "ODS_V1_AUTHORITY_v1.0.0.json prohibited_surfaces reserves 'existing product tests except where a future explicit ODS instruction authorizes a narrowly required adjustment'. THIS IS THAT INSTRUCTION, and it is narrow by enumeration rather than by adjective."
+      }
+    ],
+    "closed_world": "This list is EXHAUSTIVE. A path not enumerated here is NOT authorized for the registration act. In particular: NO scripts/ods-controller.ts, NO tests/ods/ods-controller.test.ts, NO scripts/ods-prestate.ts, NO scripts/ods-poststate.ts, NO scripts/ods-program-state.ts, NO package.json, NO docs/ops/ods/ artifact, NO database, migration, schema or baseline path, and NO second protected grant.",
+    "who_may_perform_it": "EITHER the CE-1 implementation mission bound to codex/commercial-account-ce1-implementation-r1 — for which these two paths are hereby ADDED to the surface the frozen amendment enumerates, this addendum being later and more specific authority on exactly the point the amendment left open — OR a dedicated registration mission on its own branch. It is a SEPARATE GOVERNED ACT either way, and it is NOT performed by this authority mission.",
+    "NEITHER_PATH_IS_PROTECTED": "MEASURED. scripts/** and tests/** are absent from DEFAULT_PROTECTED_PATTERNS at START_HEAD, which holds exactly docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. Both registration paths need an ordinary --allow only; neither receives nor requires a protected grant. Requiring an explicit ODS instruction is NOT the same thing as matching DEFAULT_PROTECTED_PATTERNS, and the two must not be conflated.",
+    "a_node_does_not_edit_its_own_referee_reconciled": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json lists scripts/ods-scope.ts among 'the machine gates themselves; a node never edits its own referee'. That clause governs a node editing the gate's LOGIC to change how it is judged. Appending a row to the PROTECTED_GRANTS registry is the registry's designed purpose and is the act v1.0.10, v1.0.11 and v1.0.16 each performed under an explicit addendum instruction. The narrowness clause above enforces the distinction mechanically: the array and its comment, nothing else."
+  },
+
+  "CE1_SEMANTICS_PRESERVED": {
+    "binding": "This addendum touches NO product, schema, security, compatibility, DAG or manifest semantic of CE-1. Every such semantic remains exactly where the frozen artifacts put it.",
+    "unchanged_and_not_restated_here": [
+      "TABLE_DEFINITION — commercial_accounts, 7 columns, one CHECK constraint on commercial_status. Unchanged; not re-litigated.",
+      "ORGANIZATION_FK — organizations.commercial_account_id, nullable, no default, no CE-1 backfill, ON DELETE RESTRICT, ordinary non-unique b-tree index. Unchanged.",
+      "SECURITY — ENABLE + FORCE ROW LEVEL SECURITY with ZERO policies; SEC-2, SEC-7, MUT-10 restated in the base; PG-1 and PG-3 remain MANDATORY future probes and are NOT discharged by a lineage grant.",
+      "HOSTED_DISPOSITION.HOSTED_UNIT_REQUIRED = NO, as narrowed by the amendment's HOSTED_UNIT_REQUIRED_NARROWED — which is explicit that NO does not exempt CE-1 from baseline/journal participation.",
+      "CE1_IMPLEMENTATION_SURFACE closed_world, BASELINE_UNIT_SHAPE, JOURNAL_RULE, EXISTING_TEST_INSTRUCTIONS (five paths), KNOWN_CONDITIONS and the rehearsal-artifact disposition — all remain the amendment's, unamended.",
+      "MANIFEST_DISPOSITION — no new CE-1 test manifest. Unchanged."
+    ],
+    "open_findings_not_closed_by_this_addendum": "CE1-F-1 (PG-1/PG-3 mandatory future proofs) and CE1-F-3 (the ENABLE+FORCE+zero-policy novelty flag) remain OPEN and are NOT discharged by a lineage grant. CE1-F-2 (which of CE-1 and Multi-org S1 lands first on db/schema.ts and the ordinal sequence) is now partly overtaken by fact rather than by adjudication: Multi-org S1 landed at 0066 and the S3 refusal audit at 0067, both integrated at START_HEAD, so CE-1's implementation faces a MEASURED tail rather than an open race. That is a measurement, not a resolution of the sequencing question for any lane still open.",
+    "READY_FOR_CE1_IMPLEMENTATION_transition": "The frozen artifacts both read 'NO_UNTIL_LINEAGE_GRANTED'. This addendum grants the lineage. The transition to YES is nevertheless NOT asserted here and is NOT this mission's to assert: it is conditioned on this addendum passing independent audit and integrating, and on the separate registration act installing the grant row. Until both happen, resolveProtectedGrant('HPO-ODS-W2-26', ...) returns 'unknown protected authority' and CE-1 remains unimplementable in fact whatever any document says."
+  },
+
+  "controller_39_sequencing_rule": {
+    "CONTROLLER39_REQUIRED": true,
+    "derivation_of_the_requirement": {
+      "method": "DERIVED FROM REPOSITORY PRECEDENT AND FROM THE LIVE CONTROLLER, not asserted from the prompt.",
+      "the_precedent": "MEASURED. Every ODS maintenance addendum is enumerated into IMMUTABLE_BY_CONVENTION by a SEPARATE, subsequently-numbered Controller mission: Controller35 enumerated v1.0.24, Controller36 v1.0.25, Controller37 v1.0.26, Controller38 v1.0.27. The live array holds 38 entries whose final element is v1.0.27. The mapping is exact and unbroken.",
+      "the_consequence": "This addendum ALLOCATES ODS v1.0.28, which the closed world does not enumerate — measured: v1.0.28 present = false. Extending the closed world is a SEPARATE governed maintenance mission, which by that precedent is Controller39 at the ODS lineage version after this one.",
+      "the_obligation_it_discharges": "scripts/ods-controller.ts records that IMMUTABLE_BY_CONVENTION membership is EXACT, never a subset test. Until v1.0.28 is enumerated, the Controller would not classify a write targeting it as PROTECTED_SURFACE_CHANGE, and because docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json is the ONLY docs/ops/ods/ path in DEFAULT_PROTECTED_PATTERNS, this artifact would be mutable under an ordinary --allow with no guard at either layer. That is the AG-1 gap re-opened for one artifact. The gap is real, bounded and disclosed — not denied.",
+      "zero_discovery_check": "MEASURED. The strings 'Controller39', 'Controller 39' and 'controller_39' return ZERO occurrences anywhere in the repository at START_HEAD. Controller39 does not exist and is NOT created here.",
+      "what_controller39_will_have_to_do": "RECORDED FOR THE NEXT MISSION, NOT PERFORMED HERE. Enumerate docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json as the THIRTY-NINTH entry of IMMUTABLE_BY_CONVENTION, update the adjacent count comment, and ADVANCE the absence control in tests/ods/ods-controller.test.ts to the mechanically-next version. That advancement is Controller39's act, not this one."
+    },
+    "WHAT_CONTROLLER39_BLOCKS": {
+      "binding": "STATED EXPLICITLY AND IN BOTH DIRECTIONS, because conflating the two is the recurring error this clause exists to prevent.",
+      "IT_BLOCKS": "The NEXT ODS LINEAGE ALLOCATION ONLY — any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29 or HPO-ODS-W2-27, derived by any mission in any lane.",
+      "IT_DOES_NOT_BLOCK": "The CE-1 IMPLEMENTATION this addendum grants, and it does not block the separate registration act in AUTHORIZED_FUTURE_REGISTRATION_SURFACE either. Once this addendum has been independently audited and integrated, CE-1 may be registered and implemented with Controller39 still open.",
+      "why": "Conflating the two would deadlock the node behind a Controller maintenance with no bearing on it. This is the IDENTICAL adjudication made seven times before and never once departed from: tenancy amendment v1.0.2 for Controller32, v1.0.3 for Controller33, v1.0.4 for Controller34, v1.0.5 for Controller35, v1.0.6 for Controller36, v1.0.7 for Controller37 and v1.0.8 / ODS v1.0.27 for Controller38. Each states in its own words that the Controller cycle blocks the next lineage allocation only.",
+      "IMPLEMENTATION_BEFORE_CONTROLLER39_ALLOWED": true,
+      "NEXT_ODS_LINEAGE_ALLOCATION_BLOCKED_UNTIL_CONTROLLER39": true
+    },
+    "controller_39_must_close_before": "any further ODS lineage allocation — that is, before any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29 or HPO-ODS-W2-27 is derived by any mission in any lane",
+    "enforcement": "A mission that finds v1.0.28 unenumerated in the live Controller and attempts to allocate a further ODS lineage MUST STOP_FOR_LINEAGE_SEQUENCING rather than proceed.",
+    "no_controller_edit_in_this_lane": "scripts/ods-controller.ts is NOT among this mission's changed paths and MUST NOT be edited here. Controller39 is NOT implemented by this mission.",
+    "no_preallocation": "This addendum allocates NOTHING beyond ODS v1.0.28 and HPO-ODS-W2-26. It does not reserve, name-as-allocated or pre-create any v1.0.29, HPO-ODS-W2-27, tenancy v1.0.9 or Controller39 artefact. Naming them in the clauses above is a PROHIBITION, never an allocation."
+  },
+
+  "self_inclusion_rule": {
+    "binding": "This addendum is NOT self-including. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json is NOT added to the Controller's IMMUTABLE_BY_CONVENTION by this mission, and MUST NOT be.",
+    "why": "The Controller closed world is EXACT membership, extended by a SEPARATE governed maintenance mission. A lane that both allocated a lineage version and enumerated its own artifact would be self-approving.",
+    "the_one_historical_exception_is_not_precedent": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.13.json DID authorize its own future enumeration, and said so openly under prospective_enumeration_note. That was a Controller-maintenance addendum whose whole subject WAS the enumeration list, funding a successor that had to close two gaps at once (22 -> 24). This addendum's subject is a protected-grant allocation for an unrelated node; it has no such standing and claims none. Since v1.0.14 the practice has been uniform and unbroken: allocate, and let the next Controller mission enumerate.",
+    "negative_control_note": "MEASURED. tests/ods/ods-controller.test.ts asserts IMMUTABLE_BY_CONVENTION does NOT contain docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json — Controller38 already ADVANCED that absence assertion from v1.0.27 to v1.0.28, and its own comment block states that the literal 'is ONLY the next mechanical absence-control literal', asserts ABSENCE only, and 'neither creates such a file nor entitles any lane to create one.' This mission's entitlement comes from the DISCHARGED Controller38 precondition and the live collision sweep, not from that comment; and this mission leaves the assertion true.",
+    "MERGING_THIS_ADDENDUM_CANNOT_REDDEN_CI": "MEASURED, and this is the load-bearing check. The assertion is a LIST-MEMBERSHIP assertion against a STATIC LITERAL ARRAY at scripts/ods-controller.ts:50, NOT a filesystem-existence assertion. Creating the FILE does not touch the ARRAY. Verified additionally that NO gate asserts enumeration COMPLETENESS: there is no readdirSync, no glob, no fast-glob and no directory listing of docs/ops/ods/ anywhere under tests/ods/ or in scripts/ods-*.ts. And the second negative control, tests/ods/ods-scope.test.ts's assertion that no PROTECTED_GRANTS row carries HPO-ODS-W2-26, likewise quantifies over the ROW ARRAY and not over this document — see lineage_derivation.COLLISION_SWEEP.THE_NEGATIVE_CONTROLS_CANNOT_REDDEN_CI.",
+    "controller39_will_advance_it": "Controller39 will enumerate v1.0.28 and advance the absence assertion to the mechanically-next version. That is Controller39's act, not this one."
+  },
+
+  "TEST_EVIDENCE": {
+    "this_mission_writes_no_test": "TRUE. No test file is created, modified or deleted. The two registration-surface test edits named in AUTHORIZED_FUTURE_REGISTRATION_SURFACE are authorized for a LATER mission and are not performed here.",
+    "gates_run_at_this_base": [
+      "pnpm ods:prestate -- --branch codex/commercial-account-ce1-lineage-authority-r1 --head 88eb89c7829085a33fb02f032d6482fc4a58524b --tree 916975d35b991c32ed779562f796e8e91003d549 --clean => ODS_PRESTATE=PASS (all four sub-gates PASS).",
+      "vitest run tests/ods/ods-controller.test.ts tests/ods/ods-scope.test.ts, executed BEFORE any file was written, to establish a pre-change baseline."
+    ],
+    "PRE_EXISTING_BASELINE_CONDITION": {
+      "binding": "DISCLOSED RATHER THAN ABSORBED. This condition exists at the UNTOUCHED base and is not caused by this addendum.",
+      "measured": "tests/ods/ods-controller.test.ts passes in full. tests/ods/ods-scope.test.ts reports 2 failed / 253 passed across the two files (255 tests). Both failures are 'Test timed out in 5000ms' inside the real-CLI end-to-end describe block 'ods:scope --protected-authority (repeated) — real CLI', which spawns tsx subprocesses per assertion; the named failing test is 'M1-E2E-SCOPE: HPO-ODS-W2-08 + HPO-ODS-W2-09 together, in ONE canonical invocation, authorize their exact union'.",
+      "classification": "ENVIRONMENTAL TIMEOUT on this Windows host, not a logic failure and not a governance failure. The assertion under it is a pure-function union check whose inputs this mission does not touch.",
+      "obligation_discharged": "The SAME two files were re-run AFTER this addendum was written, and the failure set is IDENTICAL — same file, same describe block, same count. This addendum adds one docs/ops/ods/ JSON file and can have no effect on either test, and the measurement confirms it rather than assuming it.",
+      "not_a_new_known_condition": "NO new KTC identifier is coined. Per docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json's own same-condition rule, a condition is identified by test_file + test_id and is governed only if it exists in that registry. Coining a KTC-CE1-* identifier for a host-speed timeout is exactly the act W2_B5_AUTHORITY_v1.0.0.json prohibits, and it is not done here.",
+      "not_grounds_to_weaken_anything": "No timeout is raised, no test is skipped, no assertion is loosened by this mission."
+    }
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "count": 1,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json"
+    ],
+    "is_new_file": true,
+    "no_registry_edit": true,
+    "no_controller_edit": true,
+    "no_test_edit": true,
+    "no_implementation_code": true,
+    "closed_world": "This list is EXHAUSTIVE. A path not enumerated here is NOT authorized for this mission, and its appearance in the diff is an UNEXPECTED_CHANGED_PATH stop — never a retroactive authorization on the grounds that it 'changed anyway'.",
+    "explicitly_not_touched": [
+      "scripts/ods-scope.ts — authorized for the SEPARATE registration act only; byte-unchanged here, PROTECTED_GRANTS still 13 rows",
+      "tests/ods/ods-scope.test.ts — authorized for the SEPARATE registration act only; byte-unchanged here",
+      "scripts/ods-controller.ts and tests/ods/ods-controller.test.ts — Controller39's surface, not this mission's; byte-unchanged",
+      "scripts/ods-prestate.ts, scripts/ods-poststate.ts, scripts/ods-program-state.ts — the machine gates themselves; a node never edits its own referee",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json — frozen, byte-unchanged",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json — frozen, byte-unchanged; no placeholder filled in, no v1.0.2 created",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json and its companion test manifest — frozen, byte-unchanged",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json through v1.0.27.json — byte-unchanged and fully in force",
+      "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, ODS_CONTROLLER_AUTHORITY_v1.0.0.json, ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json, KNOWN_TEST_CONDITIONS_v1.0.0.json — byte-unchanged",
+      "docs/ops/tenancy/** — the S3 lane's artifacts; byte-unchanged, and no tenancy v1.0.9 is created",
+      "db/**, app/**, lib/**, components/**, artifacts/** — no database, schema, migration, baseline, journal, service, action or UI change of any kind"
+    ],
+    "program_state_registry_deliberately_not_edited": "MEASURED AND DECIDED, not overlooked. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11 and v1.0.16 each edited docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json in the same act, because each was materializing a wave2 node authority whose unit belonged in that registry. No FORM_B addendum since v1.0.19 has touched it, no CE-1 unit exists in it (it holds four units, W2-B1 through W2-B4), and the registry's own purpose field states that adding a unit is 'ordinary tooling maintenance, not an authority act'. Editing it here would be scope expansion dressed as completeness.",
+    "no_second_path": "Any second tracked path in this candidate is a STOP."
+  },
+
+  "CROSS_ARTIFACT_AGREEMENT": {
+    "rule": "Every fact this addendum states about another artifact was read out of that artifact at START_HEAD, and every artifact it names is left byte-unchanged.",
+    "agreements": [
+      "protected_grant.patterns EQUALS COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json FUTURE_PROTECTED_GRANT_SHAPE.patterns, element for element and in order.",
+      "protected_grant.authorityId and .branch BIND the two strings that artifact left as the literal 'UNALLOCATED', by the mechanism that artifact itself named.",
+      "MIGRATION_ORDINAL.MIGRATION_ORDINAL_ALLOCATED = false AGREES with the base authority's self_check.expected_migration_ordinal_allocated = 'NONE' and with the amendment's MIGRATION_ORDINAL.allocated_by_this_amendment = 'NONE'.",
+      "BASELINE_POSITION.BASELINE_ORDINAL_ALLOCATED = false AGREES with the amendment's JOURNAL_RULE.wrapper_ordinal_allocated_by_this_authority = 'NONE'.",
+      "controller_39_sequencing_rule DISCHARGES, rather than contradicts, v1.0.27's controller_38_sequencing_rule.CE1_MUST_NOT_CONSUME_THE_NEXT_LINEAGE_FIRST — the condition it names is measured satisfied before this addendum allocates anything.",
+      "GRANT_ID HPO-ODS-W2-26 is the id that v1.0.24 through v1.0.27 and tenancy v1.0.5 through v1.0.8 each declined to allocate, in clauses that each state naming it is a prohibition and not an allocation. Those clauses forbade THOSE lanes from allocating it. None purports to forbid a different, later, properly-sequenced lane from doing so, and this addendum does not read them as if they did."
+    ],
+    "no_predecessor_reinterpreted": "This addendum quotes predecessors; it does not reinterpret them. Where a predecessor's numbers are now stale (the CE-1 amendment's 78/66/79 baseline contract), the staleness is NAMED and the live values are measured — see BASELINE_POSITION.the_growth_contract_MUST_be_re_measured_not_inherited — rather than the predecessor being edited."
+  },
+
+  "risks_and_open_findings": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "id": "CE1-L-F-1",
+        "class": "TRANSITIONAL_CONTROLLER_GAP",
+        "finding": "Between this addendum's integration and Controller39's, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json is unenumerated by IMMUTABLE_BY_CONVENTION and is therefore not classified as a PROTECTED_SURFACE_CHANGE by the Controller, nor covered by DEFAULT_PROTECTED_PATTERNS.",
+        "disposition": "RECORDED AND BOUNDED, not denied. It is the identical transitional interval every addendum from v1.0.14 onward has occupied, and it ends when Controller39 lands. CONTROLLER_DB_EXECUTION is DISABLED, so the guard has no production effect during the interval."
+      },
+      {
+        "id": "CE1-L-F-2",
+        "class": "SEPARATE_ACT_NOT_YET_PERFORMED",
+        "finding": "HPO-ODS-W2-26 is DECLARED_NOT_REGISTERED. Until a mission installs the row in scripts/ods-scope.ts, resolveProtectedGrant returns 'unknown protected authority' and CE-1 remains unimplementable in fact.",
+        "disposition": "RECORDED AND AUTHORIZED FORWARD. The exact two-path surface of that act is enumerated in AUTHORIZED_FUTURE_REGISTRATION_SURFACE. This is the deliberate DECLARE/REGISTER split established by v1.0.19 through v1.0.27, not an omission."
+      },
+      {
+        "id": "CE1-L-F-3",
+        "class": "STALE_PREDECESSOR_MEASUREMENT",
+        "finding": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json BASELINE_GROWTH_CONTRACT is bound to base a8a61a1 and every numeric endpoint in it (78 units, 66 drizzle, 79 first-provisioning steps, 79 journal files, ceiling 0065) is stale at START_HEAD, where the live values are 80, 68, 81, 81 and 0067. Its line-number references into the pin sites are likewise unverified across the two intervening integrated batches.",
+        "disposition": "RECORDED, AND THE AMENDMENT ANTICIPATED IT ('Re-measure if the base moves'). The frozen artifact is NOT edited. A CE-1 implementation mission MUST re-measure both the values and the line numbers at its own base. See BASELINE_POSITION."
+      },
+      {
+        "id": "CE1-L-F-4",
+        "class": "PRE_EXISTING_ENVIRONMENTAL_CONDITION",
+        "finding": "Two real-CLI end-to-end assertions in tests/ods/ods-scope.test.ts time out at 5000ms on this Windows host, at the untouched base and identically after this addendum was written.",
+        "disposition": "RECORDED AS PRE-EXISTING. No KTC identifier is coined, no timeout is raised, no test is skipped or weakened. See TEST_EVIDENCE.PRE_EXISTING_BASELINE_CONDITION."
+      },
+      {
+        "id": "CE1-L-F-5",
+        "class": "CARRIED_FORWARD_UNCLOSED",
+        "finding": "CE1-F-1 (PG-1 and PG-3 real-PostgreSQL probes) and CE1-F-3 (the ENABLE+FORCE+zero-policy novel pattern) from the base authority remain OPEN.",
+        "disposition": "CARRIED FORWARD UNCHANGED. A lineage grant discharges neither. Both remain hard preconditions of CE-1's own close and belong to the implementation mission."
+      }
+    ]
+  },
+
+  "candidate_self_check": {
+    "note": "Deterministic checks verifiable by inspection or a one-line command. Not a script, and not a substitute for the independent audit.",
+    "SC-1_one_file": "authorized_changed_paths_this_mission.count == 1 and the single path is this artifact. FAILS if the candidate diff carries any second tracked path.",
+    "SC-2_no_registry_edit": "scripts/ods-scope.ts is byte-unchanged and PROTECTED_GRANTS still holds 13 rows on this branch. FAILS if a fourteenth row is present.",
+    "SC-3_no_controller_edit": "scripts/ods-controller.ts is byte-unchanged and IMMUTABLE_BY_CONVENTION still holds 38 entries, final element v1.0.27, and does NOT contain this artifact's path. FAILS otherwise.",
+    "SC-4_grant_shape_matches_the_frozen_amendment": "protected_grant.patterns equals the amendment's FUTURE_PROTECTED_GRANT_SHAPE.patterns element for element and in order, pattern_count == 3, and 'db/prepared/**' appears nowhere as a granted pattern. FAILS otherwise.",
+    "SC-5_no_migration_or_baseline_allocation": "MIGRATION_ORDINAL.MIGRATION_ORDINAL_ALLOCATED == false and BASELINE_POSITION.BASELINE_ORDINAL_ALLOCATED == false; 0068, 81 and 081 appear only inside measured_for_information_only blocks carrying an explicit_non_allocation clause. FAILS if any is stated as allocated or reserved.",
+    "SC-6_no_new_lineage_beyond_this_one": "Neither ODS v1.0.29, nor HPO-ODS-W2-27, nor tenancy v1.0.9, nor any COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2 appears as an ALLOCATION anywhere in this artefact; where any appears it is inside a PROHIBITION clause. FAILS otherwise.",
+    "SC-7_controller38_discharged_before_allocating": "controller_39_precondition_discharged records IMMUTABLE_BY_CONVENTION length 38 with final element v1.0.27, measured by real import. FAILS if v1.0.27 is unenumerated at the candidate base, in which case the correct outcome is STOP_FOR_LINEAGE_SEQUENCING.",
+    "SC-8_predecessors_byte_unchanged": "ODS v1.0.1 through v1.0.27, both CE-1 artifacts, the parent entitlement authority and its manifest, and all tenancy amendments are byte-unchanged. FAILS on any modification.",
+    "SC-9_json_valid": "This file parses as valid JSON. No repository JSON-schema exists for authority documents — only test manifests validate against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, and this is not one.",
+    "SC-10_no_secrets": "No secret, credential, token, connection string or environment value is referenced or embedded anywhere in this file.",
+    "SC-11_no_companion_invented": "companion_execution_scope_authority points at a PRE-EXISTING integrated artifact and no new companion, manifest or evidence artifact is created. FAILS if any second docs/ops/** file appears in the diff."
+  },
+
+  "final_state": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_INTEGRATION",
+  "READY_FOR_CE1_IMPLEMENTATION": "NO_UNTIL_THIS_ADDENDUM_INTEGRATES_AND_HPO_ODS_W2_26_IS_REGISTERED",
+  "next_gate": "Independent Opus exact-object audit of this addendum against the frozen CE-1 base authority and its amendment, against ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json's controller_38_sequencing_rule, and against the repository at START_HEAD 88eb89c7829085a33fb02f032d6482fc4a58524b. Merge only after that audit returns PASS with zero blocking and zero unknown findings. Controller39 follows integration and blocks only the NEXT lineage allocation."
+}
