@@ -12,6 +12,8 @@
     "ods_authority_line": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
     "latest_ods_maintenance_addendum_present": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json",
     "derivation_rule": "Every CODE_FACT and CONFIG_FACT in this artifact was re-derived against the working tree at the derivation_tree above. No fact, count, or path was carried forward from prior synthesis without re-measurement. Where re-measurement contradicted the prior synthesis, the correction is recorded in CORRECTIONS_AGAINST_PRIOR_SYNTHESIS and the prior claim is NOT preserved.",
+    "revision": "R2",
+    "r2_correction_note": "R1 (commit 75df4b98) is superseded by this revision on two findings, both from ONE root cause: R1's searches were scoped to lib/ and app/ and looked for a file named middleware.ts, so they never read the repository-root proxy.ts. Because this repository pins next 16.2.9 — where the middleware file is named proxy.ts — that omission caused R1 to (a) miss the fail-open API limiter entirely and wrongly report the prior synthesis's fail-open finding as false, and (b) report that no middleware or app-wide security-header layer existed. Both are corrected here; see CORR-1, HTF-06, HTF-16 and RATE_LIMIT_CONTROL_MATRIX. Every OTHER finding in R1 was independently re-derived at R2 and stands unchanged. No legal conclusion, counsel question, forbidden claim or stage gate was altered for prose reasons.",
     "prior_synthesis_in_repository": false,
     "prior_synthesis_note": "No LC0 artifact, and no textual reference to 'LC0', existed anywhere under docs/ at the derivation tree. This artifact is therefore the first materialization of that identifier in the repository, and it stands on re-derivation alone rather than on continuity with an in-repository predecessor."
   },
@@ -56,19 +58,27 @@
     "corrections": [
       {
         "id": "CORR-1",
+        "status": "WITHDRAWN_AT_R2_AS_ITSELF_DEFECTIVE",
         "prior_claim": "rate-limit fail-open behavior",
-        "measured_state": "The Stella limiter fails CLOSED, not open. lib/stella/rate-limit.ts returns { allowed: false, reason: 'unavailable' } from its catch when the distributed limiter is unavailable, and again when the limiter cannot be constructed. Its own header comment records that an earlier fallback DID behave like a working limiter (allowed: true) and that this was corrected precisely because it was a security hole.",
-        "corrected_finding_id": "HTF-07",
+        "r1_claim_now_withdrawn": "R1 of this artifact asserted globally that the fail-open finding was false, on the basis that lib/stella/rate-limit.ts fails closed.",
+        "why_r1_was_wrong": "R1 measured ONE limiter and generalized to ALL of them. The prior synthesis's fail-open finding referred to a DIFFERENT control — the root-level proxy.ts — which R1 never examined, because R1's searches were scoped to lib/ and app/ and to a file named middleware.ts. The repository runs Next.js 16.2.9, where the middleware file is named proxy.ts, so a search for middleware.ts returned nothing and R1 read that absence as 'no middleware layer'. The generalization was invalid independently of the miss: a property of one limiter is not a property of the set.",
+        "measured_state_at_r2": "The prior synthesis was CORRECT and is reinstated. proxy.ts fails OPEN in two distinct ways (HTF-16). lib/stella/rate-limit.ts separately fails CLOSED in staging and production (HTF-17). Both are true simultaneously because they are different controls. There is no global fail-open answer for this repository, and this artifact no longer states one.",
+        "corrected_finding_id": ["HTF-07", "HTF-16", "HTF-17", "HTF-18"],
         "evidence_class": "CODE_FACT",
-        "why_the_correction_matters": "Carrying 'fail-open' forward would have documented a defect the code does not have, and would simultaneously have hidden the defect it does have — which is of a different KIND (per-instance in-memory state under horizontal scale), lives in DIFFERENT modules, and has a different remedy."
+        "why_the_correction_matters": "The failure was one of TAXONOMY, not of measurement: every individual fact R1 recorded about lib/stella/rate-limit.ts survives re-derivation unchanged. What was wrong was the scope of the conclusion drawn from it. A per-control matrix (RATE_LIMIT_CONTROL_MATRIX) replaces the global statement, and no global fail-open/fail-closed verdict is emitted anywhere in this artifact.",
+        "generalization_rule_adopted": "No aggregate security verdict may be stated over a class of controls unless every member of that class has been individually enumerated and measured. Where enumeration is incomplete, the artifact says so instead of aggregating."
       },
       {
         "id": "CORR-2",
+        "status": "REFINEMENT_NOT_CONTRADICTION",
         "prior_claim": "evidence_chunks delete capability",
-        "measured_state": "Half-true, and the half that is true is true for a different reason than erasure. A DELETE grant and a DELETE RLS policy on public.evidence_chunks both exist, scoped exclusively to the definer role uellix_cap_grounding. The in-package rationale states the purpose as REINDEXING ('this index is regenerable, and reindexing a version is delete + insert'), not erasure. No SECURITY DEFINER function in the uellix_grounding capability schema exposes DELETE, and no repository method or application path invokes it.",
+        "relationship_to_prior_synthesis": "The prior synthesis is NOT contradicted. It said a delete capability exists on evidence_chunks, and it does. This entry SPLITS that single statement into two independently true sub-statements that have different owners, different costs and different verification, because collapsing them is what would mislead a reader about what remains to be built.",
+        "sub_statement_1_DELETE_SUBSTRATE_PRESENT": "CONFIRMED. GRANT SELECT, INSERT, DELETE ON public.evidence_chunks TO uellix_cap_grounding, plus RLS policy evidence_chunks_definer_delete FOR DELETE TO uellix_cap_grounding. Both exist at the derivation tree. No new migration, no new grant and no new RLS policy is required to delete a chunk row.",
+        "sub_statement_2_CALLABLE_APPLICATION_PURGE_PATH_ABSENT": "CONFIRMED ABSENT. The uellix_grounding capability schema exposes exactly six functions and none performs a DELETE. db/grounding/grounding-chunk-repository.ts has no delete method. requestGovernedEvidenceErasure never reaches a chunk. The application role uellix_app holds SELECT only, so no application principal can exercise the substrate even in principle.",
+        "measured_state": "Both sub-statements hold simultaneously. The in-package rationale additionally records the substrate's PURPOSE as reindexing ('this index is regenerable, and reindexing a version is delete + insert'), not erasure — so the capability exists, but was not built for the use LC0 needs it for.",
         "corrected_finding_id": "HTF-02",
         "evidence_class": "CONFIG_FACT",
-        "why_the_correction_matters": "Recording the capability as simply present would imply a derivative purge is reachable. Recording it as simply absent would imply new schema authority is required to build one. Neither is correct, and the difference changes what the remediation costs: the substrate is in place, the callable path is not."
+        "why_the_correction_matters": "Recording the capability as simply present would imply a derivative purge is reachable today. Recording it as simply absent would imply new schema authority is required to build one. Neither is correct, and the difference changes what the remediation costs: the substrate is in place, the callable path is not."
       }
     ]
   },
@@ -124,15 +134,17 @@
       },
       {
         "control": "HTTP security response headers on the application",
-        "state": "ABSENT",
+        "state": "PRESENT_APP_WIDE_BUT_OMITS_CSP",
         "evidence_class": "CODE_FACT",
-        "detail": "No Content-Security-Policy anywhere in application code, no next.config.ts headers() function, and no middleware.ts file exists. X-Frame-Options and Strict-Transport-Security are set only in lib/supabase/proxy.ts, which governs the Supabase proxy route and not the application's rendered pages. See HTF-06."
+        "detail": "Six security headers are applied to every matched request via the Next.js 16 middleware (proxy.ts -> updateSession -> applySecurityHeaders), including X-Frame-Options: DENY and HSTS. Content-Security-Policy is the one absent from the set; next.config.ts declares no headers() function. See HTF-06, corrected at R2.",
+        "residual_risk": "No CSP and therefore no script-source or frame-ancestors policy, despite the other five headers being present."
       },
       {
         "control": "Rate limiting",
-        "state": "PRESENT_WITH_A_SCALE_LIMITATION_NOT_A_FAIL_OPEN",
+        "state": "FOUR_CONTROLS_WITH_DIVERGENT_FAILURE_SEMANTICS",
         "evidence_class": "CODE_FACT",
-        "detail": "Stella's limiter fails closed. Two other limiters are process-local Maps. See HTF-07 and CORR-1."
+        "detail": "No single state is stateable. proxy.ts (/api/ only) fails OPEN on both missing configuration and backend error. lib/stella/rate-limit.ts fails CLOSED, but only in staging and production. lib/security/rate-limit.ts and lib/marketing/demo-request-rate-limit.ts are process-local Maps. See RATE_LIMIT_CONTROL_MATRIX and HTF-07, HTF-16, HTF-17, HTF-18.",
+        "residual_risk": "proxy.ts and the Stella limiter read the SAME two environment variables and disagree on what their absence means, so one missing variable simultaneously unlimits the public API and disables Stella."
       },
       {
         "control": "Source licensing / third-party content register",
@@ -229,32 +241,97 @@
     },
     {
       "id": "HTF-06",
-      "title": "No Content-Security-Policy, and no application-level security header layer",
+      "title": "A security-header layer DOES exist and applies app-wide; Content-Security-Policy is the header it omits",
       "evidence_class": "CODE_FACT",
+      "corrected_at_r2": "R1 stated that no middleware existed and that the security headers 'govern the Supabase proxy route only'. BOTH halves were wrong, from the same root cause as CORR-1: the repository runs Next.js 16.2.9, where the middleware file is named proxy.ts, so R1's search for middleware.ts found nothing and R1 read that as the absence of a middleware layer. The CSP finding itself survives; its scope and reasoning did not.",
       "paths": [
+        "lib/supabase/proxy.ts:5-20",
+        "lib/supabase/proxy.ts:101",
+        "proxy.ts:47-51",
         "next.config.ts",
-        "lib/supabase/proxy.ts:7-11"
+        "package.json:134"
       ],
-      "measured": "next.config.ts sets only experimental.serverActions.bodySizeLimit and wraps the config in withSentryConfig. It declares no headers() function. No middleware.ts exists at the repository root. A case-insensitive search for content-security-policy across all non-docs TypeScript, TSX and JSON returns zero hits. X-Frame-Options: DENY and Strict-Transport-Security: max-age=31536000; includeSubDomains are set in lib/supabase/proxy.ts and asserted by tests/proxy-security.test.ts, but that module governs the Supabase proxy route only.",
-      "significance": "Rendered application pages ship with no CSP, no frame-ancestors restriction, and no HSTS from the application layer. The proxy's headers do not extend to them.",
-      "status": "OPEN",
+      "measured": "lib/supabase/proxy.ts defines SECURITY_HEADERS with exactly six entries — X-Content-Type-Options: nosniff, X-Frame-Options: DENY, X-XSS-Protection: 1; mode=block, Referrer-Policy: strict-origin-when-cross-origin, Permissions-Policy: camera=(), microphone=(), geolocation=(), and Strict-Transport-Security: max-age=31536000; includeSubDomains. applySecurityHeaders sets all six. updateSession returns applySecurityHeaders(...) on EVERY exit path — the unauthenticated redirect, the authenticated /login redirect, and the ordinary supabaseResponse. proxy.ts calls updateSession first and returns its response, under a matcher covering every path except _next/static, _next/image, favicon.ico and common image extensions. Content-Security-Policy is NOT among the six, and a case-insensitive search for it across all non-docs TypeScript, TSX and JSON returns zero hits. next.config.ts declares no headers() function.",
+      "significance": "The remediation is materially smaller than R1 implied: the delivery mechanism exists, is already applied app-wide, and is already asserted by tests/proxy-security.test.ts. What is missing is one header in one object literal — plus the non-trivial work of authoring a policy that does not break the application. Framing this as 'no security header layer' would have overstated the gap and mis-scoped the fix.",
+      "status": "OPEN_NARROWED",
       "classification_note": "Recorded as SECURITY_BEST_PRACTICE in remediation terms. This artifact does NOT assert that the absence of a CSP constitutes a violation of any statute or standard; whether any applicable framework requires it is carried in COUNSEL_CHECKPOINT_1 as CQ-08."
     },
     {
       "id": "HTF-07",
-      "title": "Stella's limiter fails closed; two other limiters are per-instance in-memory",
+      "title": "Rate limiting is four distinct controls with incompatible failure semantics; no global verdict is available",
       "evidence_class": "CODE_FACT",
       "paths": [
-        "lib/stella/rate-limit.ts:43-49",
-        "lib/stella/rate-limit.ts:253-257",
-        "lib/stella/rate-limit.ts:274-280",
-        "lib/security/rate-limit.ts:1-15",
-        "lib/marketing/demo-request-rate-limit.ts:1-19"
+        "proxy.ts:11-42",
+        "lib/stella/rate-limit.ts:95-99",
+        "lib/stella/rate-limit.ts:239-289",
+        "lib/security/rate-limit.ts:1-44",
+        "lib/marketing/demo-request-rate-limit.ts:1-25"
       ],
-      "measured": "lib/stella/rate-limit.ts returns { allowed: false, reason: 'unavailable' } from the catch around the distributed limiter, and again on the construction-failure path. Its header records that a prior fallback returned allowed: true with a plausible remaining count, that no caller could detect it, and that the current design 'still fails CLOSED, before any' call is permitted. By contrast lib/security/rate-limit.ts (login, password reset) and lib/marketing/demo-request-rate-limit.ts (public demo form) are module-level Map stores; both headers state they are not Redis-backed, reset on server restart, and do not share state across serverless instances.",
-      "significance": "The AI-cost and abuse boundary is fail-closed. The auth-adjacent and public-form boundaries are effective only per process: under horizontal scaling the realized cap is the configured limit multiplied by the number of live instances. Both modules describe this as accepted defense-in-depth alongside Supabase Auth's own limiting, not as sole protection.",
-      "status": "OPEN_BOUNDED",
+      "measured": "Four production-facing limiters exist. They do NOT share a failure disposition, a backend, a keying strategy, or a request-surface. The per-control detail is in RATE_LIMIT_CONTROL_MATRIX and in HTF-16, HTF-17 and HTF-18; this entry records only the aggregate structural fact that they differ.",
+      "significance": "The single most important structural property is that proxy.ts and lib/stella/rate-limit.ts read the SAME two environment variables — KV_REST_API_URL and KV_REST_API_TOKEN — and take OPPOSITE dispositions when those are absent or when the backend errors. proxy.ts skips limiting silently and continues the request; the Stella limiter refuses the operation. One misconfiguration therefore produces an unlimited public API surface and a fully disabled Stella surface at the same time, in the same deployment, from the same missing variable.",
+      "explicit_non_aggregation": "This artifact states NO global RATE_LIMIT_FAIL_OPEN value. Any consumer requiring one must read the matrix per control. An aggregate would be false in at least one direction whichever value it took.",
+      "status": "OPEN_SEE_MATRIX",
       "supersedes": "CORR-1"
+    },
+    {
+      "id": "HTF-16",
+      "title": "The Next.js middleware API limiter fails OPEN, in two independent ways",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "proxy.ts:12-16",
+        "proxy.ts:17-38",
+        "proxy.ts:39-41",
+        "proxy.ts:44",
+        "proxy.ts:47-51",
+        "lib/supabase/proxy.ts:22-27"
+      ],
+      "reinstates": "The prior synthesis's proxy.ts fail-open finding, which R1 of this artifact wrongly reported as false. Independently re-derived at the derivation tree and CONFIRMED.",
+      "measured": "proxy.ts is the Next.js 16 middleware (the repository pins next 16.2.9, where the middleware file is named proxy.ts rather than middleware.ts) and declares a broad matcher covering every path except _next/static, _next/image, favicon.ico and common image extensions. Its rate-limit block is a per-request Upstash sliding window of 60 requests per minute keyed global_api_${extractClientIp(request)}, with analytics: false. FAIL-OPEN PATH 1 (configuration): the entire block is guarded by `request.nextUrl.pathname.startsWith('/api/') && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN`. If either variable is absent the limiter never executes, no warning is emitted, and control falls through to `return sessionResponse`. FAIL-OPEN PATH 2 (runtime): the limiter call is wrapped in `try { ... } catch (error: unknown) { console.error('[proxy] API rate limit check failed', error) }` — the catch logs and does NOT return, so execution continues to `return sessionResponse` and the request is served. Only an explicit `success === false` produces a 429.",
+      "significance": "An Upstash outage, an expired token, a network fault, or a single missing environment variable each remove API rate limiting entirely, silently, and without any signal a caller or a health probe could distinguish from normal operation. The 429 path is the ONLY path that limits; every error path serves the request.",
+      "additional_measured_properties": [
+        "SCOPE IS /api/ ONLY. Next.js Server Actions POST to the page route, not to /api/, so they are NOT covered by this limiter. Login, password reset, demo request, evidence upload, and every Stella action are Server Actions.",
+        "extractClientIp (lib/supabase/proxy.ts:22-27) takes the FIRST element of x-forwarded-for, then x-real-ip, then the literal string 'anonymous'. The first two are client-supplied headers unless the hosting platform overwrites them (PSU-09). The 'anonymous' fallback places every request lacking both headers into ONE shared bucket, so those requests collectively share a 60/min budget."
+      ],
+      "status": "OPEN_FAIL_OPEN_CONFIRMED",
+      "related_unknowns": ["PSU-09", "PSU-10"],
+      "related_hpo_decision": "HPO-LC0-08"
+    },
+    {
+      "id": "HTF-17",
+      "title": "The Stella limiter fails CLOSED, but only in staging and production",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "lib/stella/rate-limit.ts:95-99",
+        "lib/stella/rate-limit.ts:239-289",
+        "lib/stella/operation-ticket/issue-governed-ticket.ts:116-123",
+        "app/actions/stella/grounded-query.ts:1116-1123"
+      ],
+      "reconfirmed_at_r2": "Every fact R1 recorded about this module survives re-derivation unchanged. What R1 omitted is the environment conditionality below, and what R1 wrongly did was generalize this module's disposition to every limiter.",
+      "measured": "consumeStellaRateLimit resolves the distributed limiter PER CALL (never at import, never memoised, so a rotated credential is not pinned by a warm instance). Both KV variables must be present or getDistributedLimiter returns null — 'BOTH, or neither. Half a configuration is not a configuration.' When a limiter exists, a thrown error is caught and returns { allowed: false, reason: 'unavailable' }. When no limiter exists, the disposition depends on DISTRIBUTED_REQUIRED_ENVIRONMENTS, which contains exactly 'staging' and 'production': in those, it logs and returns allowed: false; in development, test and CI it warns once and serves a per-instance in-memory Map. The header states the reasoning: 'For local development that fallback is correct and wanted. For a Preview or Production deployment it reports a guarantee it does not have.'",
+      "caller_disposition_verified": "The module's fail-closed is NOT undone downstream. Both call sites wrap the call in .catch(() => null) and then treat null as a refusal — returning RATE_LIMIT_UNAVAILABLE rather than proceeding. Verified at issue-governed-ticket.ts:117-123 and grounded-query.ts:1117-1123. A thrown exception and an unavailable backend therefore both stop the operation before any ticket is minted, any quota unit is held, or any provider call is made.",
+      "significance": "This is the strongest of the four limiters and the only one that refuses on failure. Its guarantee is nonetheless CONDITIONAL on resolveEnvironmentDecision classifying the deployment as staging or production; a deployment misclassified as development would silently fall back to a per-instance Map while appearing to function.",
+      "status": "CONTROL_PRESENT_ENVIRONMENT_CONDITIONAL",
+      "related_unknowns": ["PSU-11"]
+    },
+    {
+      "id": "HTF-18",
+      "title": "The auth-adjacent and demo limiters are process-local Maps; the auth one is keyed by identifier, not by origin",
+      "evidence_class": "CODE_FACT",
+      "paths": [
+        "lib/security/rate-limit.ts:1-15",
+        "lib/security/rate-limit.ts:29-44",
+        "app/(public)/login/actions.ts:28",
+        "app/(public)/login/actions.ts:71",
+        "app/(public)/forgot-password/actions.ts:20",
+        "lib/marketing/demo-request-rate-limit.ts:1-25",
+        "app/actions/marketing/demo-request.ts:63-66"
+      ],
+      "reconfirmed_at_r2": "R1's scaling-weakness finding is independently re-derived and CONFIRMED. The keying property below was not recorded by R1 and is added.",
+      "measured": "Both modules hold a module-level `const store = new Map(...)`. Their own headers state they are not Redis-backed, reset on server restart, and do not share state across serverless instances; lib/security/rate-limit.ts adds that this is 'acceptable for the MVP as a defense-in-depth layer, not the sole protection (Supabase Auth also rate-limits at its own layer)'. KEYING DIFFERS BY CONTROL: lib/security/rate-limit.ts is keyed by the submitted IDENTIFIER — `login:${email}`, `signup:${email}`, `reset:${email}` — not by client origin. lib/marketing/demo-request-rate-limit.ts is keyed by IP at 5 per hour, behind a honeypot field that returns a fake success to bots without sending.",
+      "significance": "Two independent weakenings, and they compound. (1) Per-instance state means the realized cap is the configured limit multiplied by the number of live instances, a number not knowable from inside the process. (2) Identifier keying means the login and reset limits bound attempts PER ACCOUNT, not per attacker: an actor rotating the email address across a credential-stuffing list is not throttled by this layer at all, on any instance. The email keying is a deliberate and correct choice for the enumeration threat the forgot-password action documents (it declines to reveal whether an address is registered or rate limited), but it does not bound a distributed-guessing threat.",
+      "status": "OPEN_BOUNDED",
+      "related_unknowns": ["PSU-07"],
+      "related_hpo_decision": "HPO-LC0-08"
     },
     {
       "id": "HTF-08",
@@ -373,6 +450,77 @@
       "status": "CONTROL_PRESENT_APPLICATION_LAYER"
     }
   ],
+
+  "RATE_LIMIT_CONTROL_MATRIX": {
+    "purpose": "Rate limiting in this repository is not one control. R1 of this artifact stated a global verdict from a single measurement and was wrong. This matrix enumerates every production-facing limiter found at the derivation tree and records the same nine attributes for each, so that no consumer needs an aggregate.",
+    "no_global_verdict": "This artifact emits NO value for RATE_LIMIT_FAIL_OPEN. Members of this set differ on that very property, so any aggregate would be false in at least one direction.",
+    "enumeration_method": "Search for rateLimit / RateLimit / rate_limit / checkAndRecord / Ratelimit across all non-test TypeScript and TSX at the derivation tree, then trace every hit to a limiter definition or a call site. Repository-root files were included — the omission of the repository root from R1's search is the specific defect this re-derivation corrects.",
+    "enumeration_completeness": "Four limiter DEFINITIONS were found. The API route handlers under app/api/ define no limiter of their own; those under /api/ inherit CONTROL-1 only. This enumeration is believed complete for in-repository limiters and says nothing about limiting applied by the hosting platform or by Supabase Auth (PSU-12).",
+    "controls": [
+      {
+        "id": "CONTROL-1",
+        "module": "proxy.ts (repository root — the Next.js 16 middleware)",
+        "scope": "Every request whose pathname starts with /api/, and ONLY those. The middleware matcher itself is broad (all paths except _next/static, _next/image, favicon.ico, common image extensions), but the rate-limit block is guarded by an additional startsWith('/api/') test.",
+        "trigger": "One token per matched request, consumed before the response is returned.",
+        "backend_storage": "Upstash Redis via @upstash/ratelimit, dynamically imported per request. Sliding window, 60 requests per 1 minute, analytics: false. Key: global_api_${extractClientIp(request)}.",
+        "failure_mode": "TWO independent failure paths, both permissive. (a) Configuration: if KV_REST_API_URL or KV_REST_API_TOKEN is absent, the block is skipped entirely with no log and no warning. (b) Runtime: any throw inside the block is caught, logged to console.error, and execution CONTINUES to return sessionResponse.",
+        "fail_open_or_closed": "FAIL_OPEN",
+        "instance_semantics": "Distributed when configured and reachable — this is the only limiter with genuinely shared state across instances.",
+        "environment_variable_dependency": "KV_REST_API_URL and KV_REST_API_TOKEN. Both required; absence of either disables the control silently.",
+        "server_action_coverage": "NONE. Next.js Server Actions POST to the page route rather than to /api/, so every Server Action — login, signup, password reset, demo request, evidence upload, and all Stella actions — bypasses this control entirely.",
+        "production_state_unknowns": ["PSU-09", "PSU-10", "PSU-12"],
+        "finding": "HTF-16"
+      },
+      {
+        "id": "CONTROL-2",
+        "module": "lib/stella/rate-limit.ts",
+        "scope": "Stella operations, per organization. Reached from issueGovernedStellaTicket and from the grounded-query Server Action.",
+        "trigger": "One hourly token per organization, consumed at ticket MINTING — before any reservation, quota hold, or provider call.",
+        "backend_storage": "Upstash Redis via @upstash/ratelimit, constructed PER CALL and never memoised, so a rotated credential is not pinned by a warm instance. Sliding window, stellaConfig.rateLimitPerHour (default 100) per 1 hour, analytics: true. Key: stella_org_${organizationId}. Falls back to an in-process Map ONLY where the environment permits.",
+        "failure_mode": "Backend error is caught and returns { allowed: false, reason: 'unavailable' }. Missing configuration returns null from getDistributedLimiter ('BOTH, or neither'), after which the disposition is decided by environment.",
+        "fail_open_or_closed": "FAIL_CLOSED in staging and production; FAIL_OPEN_BY_DESIGN in development, test and CI, where an in-process Map fallback is intended. Callers do not weaken this: both call sites wrap in .catch(() => null) and treat null as RATE_LIMIT_UNAVAILABLE rather than proceeding.",
+        "instance_semantics": "Distributed where required and configured. Per-instance in development, test and CI by deliberate policy.",
+        "environment_variable_dependency": "KV_REST_API_URL and KV_REST_API_TOKEN (the SAME pair as CONTROL-1, with the opposite disposition on absence), plus STELLA_RATE_LIMIT_PER_HOUR (default 100). Environment classification comes from resolveEnvironmentDecision in db/safety/database-access.ts.",
+        "server_action_coverage": "YES — this is the control that actually covers the Stella Server Actions, which CONTROL-1 does not reach.",
+        "production_state_unknowns": ["PSU-11", "PSU-12"],
+        "finding": "HTF-17"
+      },
+      {
+        "id": "CONTROL-3",
+        "module": "lib/security/rate-limit.ts",
+        "scope": "Auth-adjacent Server Actions: login, signup and password reset.",
+        "trigger": "checkAndRecordRateLimit checks and records one attempt in a single call, keyed by the SUBMITTED IDENTIFIER — login:${email}, signup:${email}, reset:${email} — not by client origin.",
+        "backend_storage": "Module-level in-memory Map, fixed window. Not Redis-backed.",
+        "failure_mode": "No external dependency, so no availability failure mode exists. The weakness is not a failure path but the storage semantics: state resets on server restart and is not shared across instances.",
+        "fail_open_or_closed": "NOT_APPLICABLE_NO_EXTERNAL_DEPENDENCY. Recording it as fail-closed would imply a resilience property it does not have; recording it as fail-open would imply a failure path it does not have.",
+        "instance_semantics": "SINGLE_INSTANCE. Realized cap is the configured limit multiplied by the number of live instances, a count not knowable from inside the process.",
+        "environment_variable_dependency": "NONE.",
+        "server_action_coverage": "YES — and it is the ONLY limiter covering the login and password-reset surfaces, since CONTROL-1 does not see Server Actions.",
+        "production_state_unknowns": ["PSU-07", "PSU-12"],
+        "finding": "HTF-18",
+        "additional_note": "Identifier keying bounds attempts per ACCOUNT, not per attacker. An actor rotating the email across a credential-stuffing list is not throttled by this layer. The module's own header positions it as defense-in-depth alongside Supabase Auth's limiting, not as sole protection."
+      },
+      {
+        "id": "CONTROL-4",
+        "module": "lib/marketing/demo-request-rate-limit.ts",
+        "scope": "The public, unauthenticated demo-request Server Action.",
+        "trigger": "5 requests per UTC hour, keyed by IP resolved via clientIp(), behind a honeypot field that returns a fake success to bots without sending anything.",
+        "backend_storage": "Module-level in-memory Map with lazy hour-key expiry. Not Redis-backed.",
+        "failure_mode": "No external dependency; same storage-semantics weakness as CONTROL-3.",
+        "fail_open_or_closed": "NOT_APPLICABLE_NO_EXTERNAL_DEPENDENCY.",
+        "instance_semantics": "SINGLE_INSTANCE. Realized cap is 5 multiplied by the number of live instances.",
+        "environment_variable_dependency": "NONE.",
+        "server_action_coverage": "YES — it exists precisely because this is a Server Action and CONTROL-1 does not reach it.",
+        "production_state_unknowns": ["PSU-07", "PSU-12"],
+        "finding": "HTF-18"
+      }
+    ],
+    "cross_control_observations": [
+      "CONTROL-1 and CONTROL-2 depend on the SAME two environment variables and disagree about what their absence means. A deployment missing them has an unlimited /api/ surface and a fully refusing Stella surface simultaneously.",
+      "CONTROL-1 is the only distributed limiter that is unconditionally distributed, and it is also the only one that fails open. The strongest storage and the weakest disposition are in the same control.",
+      "No limiter covers Server Actions generally. Coverage is per-action and opt-in: Stella, login/signup/reset, and demo request each carry their own. Any Server Action not individually limited — including evidence upload — is unlimited by every control in this matrix."
+    ]
+  },
 
   "PRODUCT_STAGE_GATE_MATRIX": {
     "rule": "LC0 gates the stages it names and NO OTHER. A stage absent from the blocked list is not blocked by LC0, and this artifact must not be cited to delay it. Stages remain subject to their own independent authority chains, which LC0 neither supersedes nor relaxes.",
@@ -535,6 +683,42 @@
       "priority": "MEDIUM"
     },
     {
+      "id": "PSU-09",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "Whether the hosting platform overwrites the x-forwarded-for and x-real-ip headers before they reach the middleware, or forwards client-supplied values.",
+      "why_unmeasurable": "A property of the edge/hosting layer. extractClientIp (lib/supabase/proxy.ts:22-27) takes the first element of x-forwarded-for with no validation, so the trustworthiness of the key is entirely a platform property.",
+      "consequence_if_wrong": "If client-supplied values survive, CONTROL-1's per-IP bucket is attacker-selectable and the 60/min limit is trivially evaded by varying the header.",
+      "resolution_path": "Platform documentation plus an observed request trace.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PSU-10",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "Whether KV_REST_API_URL and KV_REST_API_TOKEN are set in each deployment environment, and whether the Upstash instance is reachable from them.",
+      "why_unmeasurable": "Deployment configuration and network reachability. Note that stellaRateLimitAttestation() reads variable PRESENCE only and explicitly cannot say the backend is reachable or the token valid.",
+      "consequence_if_wrong": "Absence disables CONTROL-1 silently (fail-open) while simultaneously making CONTROL-2 refuse every Stella operation in staging and production. The two symptoms look unrelated but have one cause.",
+      "resolution_path": "The existing /api/health/stella-preconditions surface reports the presence half. Reachability requires a live probe that this repository deliberately does not perform.",
+      "priority": "HIGHEST"
+    },
+    {
+      "id": "PSU-11",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "What resolveEnvironmentDecision() classifies each live deployment as.",
+      "why_unmeasurable": "Resolved at runtime from the deployment's own environment.",
+      "consequence_if_wrong": "CONTROL-2's fail-closed guarantee applies only to 'staging' and 'production'. A production deployment misclassified as development would silently serve a per-instance in-memory Map while appearing to operate normally.",
+      "resolution_path": "Operator observation of the attestation surface per environment.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PSU-12",
+      "evidence_class": "PRODUCTION_STATE_UNKNOWN",
+      "unknown": "What rate limiting, WAF, or bot protection the hosting platform and Supabase Auth apply independently of this repository.",
+      "why_unmeasurable": "External to the codebase. Two limiter modules explicitly rely on it: lib/security/rate-limit.ts positions itself as defense-in-depth 'not the sole protection (Supabase Auth also rate-limits at its own layer)'.",
+      "consequence_if_wrong": "The in-repository limiters are designed on the assumption that another layer exists. If it does not, CONTROL-3's per-instance, per-email limit is the only bound on credential stuffing.",
+      "resolution_path": "Platform and Supabase configuration review.",
+      "priority": "HIGH"
+    },
+    {
       "id": "PSU-08",
       "evidence_class": "PRODUCTION_STATE_UNKNOWN",
       "unknown": "Whether any data subject has already exercised, or been told they may exercise, a right this repository has no path to satisfy (export, HTF-12; Stella-response erasure, HTF-08).",
@@ -602,10 +786,25 @@
     },
     {
       "id": "HPO-LC0-08",
-      "decision_required": "Whether the auth-adjacent and public-form limiters (HTF-07) must move to shared state before public launch, or whether Supabase Auth's own limiting is accepted as the effective control.",
+      "decision_required": "Whether the auth-adjacent and public-form limiters (HTF-18) must move to shared state before public launch, or whether Supabase Auth's own limiting is accepted as the effective control.",
       "evidence_class": "SECURITY_BEST_PRACTICE",
-      "depends_on": ["HTF-07", "PSU-07"],
-      "note": "Both modules already state the trade-off as accepted for MVP. The decision is whether that acceptance survives the change of stage."
+      "depends_on": ["HTF-18", "PSU-07", "PSU-12"],
+      "note": "Both modules already state the trade-off as accepted for MVP. The decision is whether that acceptance survives the change of stage. Note the added dimension from R2: CONTROL-3 is keyed by email, so it bounds attempts per account rather than per attacker — moving it to shared state fixes the instance multiplier but not the keying."
+    },
+    {
+      "id": "HPO-LC0-09",
+      "decision_required": "Whether the middleware API limiter (HTF-16) must fail CLOSED, and whether missing KV configuration should be a deployment-time refusal rather than a silent skip.",
+      "evidence_class": "SECURITY_BEST_PRACTICE",
+      "depends_on": ["HTF-16", "PSU-10"],
+      "note": "Raised at R2. The repository already contains the opposite disposition for the same variables in lib/stella/rate-limit.ts, together with a written rationale for failing closed and an attestation surface for configuration presence. The decision is whether that reasoning should be extended to the middleware, or whether serving an unlimited API is preferable to refusing traffic when the limiter is unreachable — a genuine availability-versus-abuse trade-off that this artifact does not resolve.",
+      "explicitly_not_recommended_here": "This artifact records the divergence as a fact and does not assert which disposition is correct. An API that refuses all traffic during an Upstash outage may be a worse outcome than an unlimited one; that judgement is the HPO's."
+    },
+    {
+      "id": "HPO-LC0-10",
+      "decision_required": "Whether Server Action coverage should be systematic rather than per-action opt-in.",
+      "evidence_class": "SECURITY_BEST_PRACTICE",
+      "depends_on": ["HTF-16", "RATE_LIMIT_CONTROL_MATRIX"],
+      "note": "Raised at R2. CONTROL-1 covers /api/ only, so every Server Action is unlimited unless it carries its own limiter. Three do. Evidence upload — which accepts a 30 MB body per next.config.ts — does not."
     }
   ],
 
@@ -818,6 +1017,8 @@
       "No live database was observed. Every CONFIG_FACT describes declared schema, not applied schema.",
       "No test suite was executed as part of this derivation. CODE_FACTs were established by reading source, not by running it.",
       "The prior adversarial synthesis was not available in the repository, so its full fact list could not be diffed against this one. Only the fact families named in the lane brief were re-derived; a fact the synthesis found that the brief did not name would not have been caught.",
+      "R1 OF THIS ARTIFACT WAS ITSELF DEFECTIVE, in a way worth recording rather than quietly fixing. It searched lib/ and app/ and a file named middleware.ts, never the repository root, and on Next.js 16 the middleware lives at the root as proxy.ts. From that single blind spot R1 both missed a fail-open limiter and wrongly contradicted the prior synthesis. Two lessons are adopted: (a) a search scoped by directory is a search scoped by assumption, and the repository root is not a place findings are absent from; (b) no aggregate security verdict may be stated over a class of controls until every member is enumerated — R1's global claim would have been invalid reasoning even had it found proxy.ts.",
+      "Where this artifact contradicts a prior synthesis, the contradiction is now required to name the specific control measured rather than the property class. 'Rate limiting does not fail open' is not a statement this artifact is capable of making; 'CONTROL-2 fails closed' is.",
       "Line numbers are accurate at the derivation_tree and will drift. The HTF-04 discrepancy is recorded rather than reconciled as a worked example of that drift."
     ]
   }
