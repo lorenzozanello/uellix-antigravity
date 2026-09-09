@@ -1,0 +1,558 @@
+{
+  "package_id": "WAVE3_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "WAVE3_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_DISPOSITION_CORRECTION_TO_AN_INTEGRATED_AMENDMENT",
+  "document_class": "AUTHORITY",
+  "append_only": true,
+  "amends": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "base_authority": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "supersedes_note": "This artifact SUPERSEDES NOTHING wholesale. It corrects three frozen dispositions, one evidence anchor, one verification obligation and the arithmetic that depends on them. Every other clause of v1.0.1 remains in force verbatim and is carried forward by WHAT_IS_PRESERVED_EXACTLY, not restated here. Where this artifact is silent, v1.0.1 governs.",
+  "companion_manifest": "docs/ops/wave3/WAVE3_TEST_MANIFEST_v1.0.0.json - UNAMENDED. MANIFEST_DISPOSITION is carried forward unchanged; see WHAT_IS_PRESERVED_EXACTLY.",
+  "mission_id": "WAVE3-AUTHORITY-AMENDMENT-V1.0.2-DISPOSITION-CORRECTION-R1",
+  "lane": "LANE GC",
+  "role": "BOUNDED_WAVE3_SUCCESSOR_AUTHORITY_WRITER",
+  "mode": "DOCS_ONLY_APPEND_ONLY_AUTHORITY_CORRECTION",
+  "materialization_date": "2026-09-09",
+
+  "RESOLVES": {
+    "rule": "This artifact is the successor disposition-correction whose absence withheld FIBIU-19 P1 implementation authority. It resolves both findings of the integrated post-integration audit.",
+    "F-FQ-1": {
+      "severity_in_source": "BLOCKING",
+      "source_artifact": "docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1_0_1_POST_INTEGRATION_EXACT_OBJECT_AUDIT_v1.0.0.json",
+      "resolution": "RESOLVED by CORRECTED_DISPOSITIONS. I-1, I-2 and I-4 are re-frozen as ALREADY_SATISFIED_AT_AS_OF_HEAD, each naming the existing constraint-backed index that discharges it. They leave the CREATE roster and emit no DDL.",
+      "resolution_class": "DISPOSITION_CORRECTED_AFTER_MEASUREMENT"
+    },
+    "F-FQ-2": {
+      "severity_in_source": "NON_BLOCKING",
+      "resolution": "RESOLVED by CORRECTED_EVIDENCE_ANCHORS.B18_CORRECTED. The existing-identifier census is re-measured over the complete index-producing population rather than over declared indexes alone.",
+      "resolution_class": "MEASUREMENT_POPULATION_CORRECTED"
+    },
+    "adjudication_input": {
+      "rule": "The independent GA adjudication and the integrated audit artifact were treated as input claims to re-derive, not as settled facts to copy. Every claim carried forward was independently re-measured against the CURRENT live repository state by this mission. See RE_DERIVATION.",
+      "where_this_mission_went_further_than_its_input": [
+        "The audit reasoned from UNIQUE constraint semantics alone. This mission additionally measured the NOT NULL property of every constrained column, which closes the one semantic gap a UNIQUE index could otherwise have had against a plain index. See M-4.",
+        "The audit re-measured the identifier census as declared indexes plus UNIQUE-constraint-backed indexes. This mission measured the COMPLETE index-producing population, which additionally includes 51 PRIMARY KEY-backed indexes the audit did not enumerate. See B18_CORRECTED.",
+        "The audit measured at HEAD 4160fcad. This mission re-measured at HEAD 9a414fac and additionally characterised the intervening database delta exactly, proving the defect was neither introduced nor cured by drift. See DRIFT_FROM_INHERITED_BASELINE."
+      ]
+    }
+  },
+
+  "AS_OF_HEAD": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
+  "AS_OF_TREE": "60ac29a27c91c51e08da12a45120919b8006d462",
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "AS_OF_SCHEMA_SNAPSHOT": "db/migrations/meta/0067_snapshot.json",
+  "AS_OF_MAX_MIGRATION_ORDINAL": "0067_tenancy_refusal_audit_insert_policy.sql",
+
+  "INHERITED_BASELINE": {
+    "v1_0_1_AS_OF_HEAD": "a8a61a1e2aecb413e7113fdf3fbb179b6ae8f303",
+    "v1_0_1_AS_OF_TREE": "57952b24486ce0fae84e3977e8fbc56aed895db7",
+    "v1_0_1_schema_snapshot_era": "db/migrations/meta/0065_snapshot.json",
+    "audit_measured_at_head": "4160fcad339243b5e9c25dd344fa3e13ba48a908",
+    "why_a_new_AS_OF_HEAD_is_declared": "The corrected dispositions are frozen against the state this mission actually measured, not against an inherited state it did not observe. Declaring v1.0.1's AS_OF_HEAD would assert a measurement this mission did not perform."
+  },
+
+  "DRIFT_FROM_INHERITED_BASELINE": {
+    "value": "NONE_MATERIAL_TO_THIS_CORRECTION",
+    "how_measured": [
+      "git diff --stat a8a61a1e..9a414fac -- db/ : 87 files changed. The database surface DID move between the inherited baseline and AS_OF_HEAD. This is stated plainly rather than characterised as 'no drift'.",
+      "Migrations 0066_multiorg_s1_founder_traceability.sql and 0067_tenancy_refusal_audit_insert_policy.sql were added. Neither file mentions domain_object_versions, evidence_versions or financial_proxy_versions. Measured by grep -l over both files: no match.",
+      "Index-producing identifier population at the 0065 snapshot = 164. At the 0067 snapshot = 165. The set difference is exactly one identifier: organizations_self_service_founder_unique, length 41.",
+      "The longest index-producing identifier is evidence_sufficiency_determinations_outcome_run_ordinal_unique at 62 characters in BOTH the 0065 and the 0067 snapshot. The B18 defect was therefore live at v1.0.1's own AS_OF_HEAD and is not an artefact of later drift."
+    ],
+    "consequence": "Both corrections hold at the inherited baseline and at AS_OF_HEAD. Neither was introduced by drift, and neither has been cured by drift. The corrected dispositions are not an accident of when they were measured."
+  },
+
+  "PURPOSE": {
+    "statement": "Correct three FIBDB-052 index dispositions that were frozen without the measurement the same authority applied elsewhere, correct the evidence anchor whose measurement population was inconsistent with that same rule, and re-derive every count that depends on either. Nothing else is reopened.",
+    "what_this_is": [
+      "A docs-only, append-only successor authority correcting dispositions inside an integrated amendment.",
+      "The successor whose absence caused the integrated audit to withhold FIBIU-19 P1 implementation authorization.",
+      "A re-freeze of the FIBDB-052 disposition partition and its dependent arithmetic."
+    ],
+    "what_this_is_not": [
+      "NOT an implementation of FIBDB-052 or any phase of it. No DDL is written, authorized or scheduled by this artifact.",
+      "NOT a migration. No db/migrations/** file is created, and no migration ordinal is allocated, reserved or implied.",
+      "NOT a lineage allocation. No ODS addendum ordinal, no HPO grant, no scope allowlist row and no Controller enumeration is allocated, reserved or implied.",
+      "NOT a retraction of v1.0.1. The integrated amendment stands; its exact-object delivery was already audited PASS and is not disturbed.",
+      "NOT an authorization to drop any existing index. See ADDITIONAL_FINDINGS.",
+      "NOT a reopening of the STAGED decision, the G2 boundaries, the FIBDB-053 protections, the HPO ratification, the 24 reason-code contract or the manifest disposition."
+    ],
+    "fail_closed_rule": "Where a v1.0.1 clause is not named by this artifact, v1.0.1 governs unchanged. This artifact never silently widens its own reach: a count it does not re-derive is a count it does not change."
+  },
+
+  "RE_DERIVATION": {
+    "rule": "Every fact below was measured by this mission against the CURRENT live repository at AS_OF_HEAD 9a414fac / tree 60ac29a2. None is carried on assertion from the audit artifact or from the GA adjudication. Where a measurement reproduces an input claim, it is marked CONFIRMED; where it goes beyond the input, it is marked EXTENDS.",
+    "M-1": {
+      "claim": "The PR118 post-integration audit artifact is integrated and readable at AS_OF_HEAD.",
+      "measurement": "git merge-base --is-ancestor 61ca8017 HEAD returns 0. The blob docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1_0_1_POST_INTEGRATION_EXACT_OBJECT_AUDIT_v1.0.0.json resolves at HEAD to f0cb686f161a512a49a26423c2f0a660bd2ffa17.",
+      "status": "CONFIRMED"
+    },
+    "M-2": {
+      "claim": "Each of the three relations carries a UNIQUE constraint over exactly the column list its proposed index would have created, and each constraint was created once and never dropped.",
+      "measurement": [
+        "db/migrations/0045_fib_domain_object_version_lineage.sql:40 - CONSTRAINT domain_object_versions_object_ordinal_unique UNIQUE(object_type, object_id, ordinal).",
+        "db/migrations/0048_fib_evidence_versions.sql:45 - CONSTRAINT evidence_versions_evidence_ordinal_unique UNIQUE(evidence_id, ordinal).",
+        "db/migrations/0053_fib_proxy_versions_provenance.sql:85 - CONSTRAINT financial_proxy_versions_proxy_ordinal_unique UNIQUE(financial_proxy_id, ordinal).",
+        "A grep for DROP CONSTRAINT across db/migrations/*.sql restricted to the three relations returns no match. The three constraint identifiers appear in the migration corpus exactly once each: at their point of creation."
+      ],
+      "status": "CONFIRMED"
+    },
+    "M-3": {
+      "claim": "All three UNIQUE constraints are live at the current schema snapshot with exactly those column lists in exactly that order.",
+      "measurement": "db/migrations/meta/0067_snapshot.json, uniqueConstraints: domain_object_versions_object_ordinal_unique -> [object_type, object_id, ordinal]; evidence_versions_evidence_ordinal_unique -> [evidence_id, ordinal]; financial_proxy_versions_proxy_ordinal_unique -> [financial_proxy_id, ordinal]. Column ORDER is preserved by the snapshot and matches the proposed leading-column order in all three cases.",
+      "status": "CONFIRMED"
+    },
+    "M-4": {
+      "claim": "Every column covered by the three constraints is NOT NULL, which closes the only semantic gap a UNIQUE index could have had against a plain index over the same columns.",
+      "measurement": "0067_snapshot.json columns: object_type varchar(100) notNull=true, object_id uuid notNull=true, ordinal integer notNull=true; evidence_id uuid notNull=true, ordinal integer notNull=true; financial_proxy_id uuid notNull=true, ordinal integer notNull=true. All three constraints carry nullsNotDistinct=false.",
+      "why_this_matters": "nullsNotDistinct=false means the constraint treats NULLs as distinct, which in the general case is a real difference in the tuple space a UNIQUE index constrains. Because every constrained column is NOT NULL, that difference is unreachable: no row can carry a NULL in any covered column, so the constraint-backed btree indexes exactly the tuple space a plain index over the same columns would index. The discharge does not rest on tolerating a gap; it rests on the gap being unreachable.",
+      "status": "EXTENDS - this measurement was not performed by the source audit."
+    },
+    "M-5": {
+      "claim": "A PostgreSQL UNIQUE table constraint is implemented by an automatically created unique btree index over exactly those columns in that order, and a btree index supports backward scans, so an index recorded ASC serves DESC ordering over the same column list.",
+      "measurement": "NOT a new machine measurement by this docs-only mission. This is the SAME derived semantic that v1.0.1 asserts at evidence anchor B10 and relies upon to discharge I-16 against FIBDB-022 and I-18 against FIBDB-050. This artifact applies that rule consistently rather than introducing it.",
+      "status": "DERIVED - carried as an implementation-time verification obligation, see CORRECTED_VERIFICATION_OBLIGATION. It is not asserted as a machine fact by this mission."
+    },
+    "M-6": {
+      "claim": "The disposition precedent for the correction already exists inside the object being corrected.",
+      "measurement": "v1.0.1 FIBDB052_INVENTORY item I-11 carries disposition ALREADY_SATISFIED_AT_AS_OF_HEAD, governed_index_name uq_readiness_assessments_calculation_run and governed_definition 'Existing UNIQUE index on readiness_assessments (calculation_run_id)'. I-1, I-2 and I-4 sit in the same evidence class and are re-frozen in exactly that shape.",
+      "status": "CONFIRMED"
+    },
+    "M-7": {
+      "claim": "I-3 is correctly excluded from this correction.",
+      "measurement": "I-3 is a PARTIAL index on evidence_versions (evidence_id) WHERE review_status = 'approved'. A full-tuple UNIQUE over (evidence_id, ordinal) carries no predicate and cannot satisfy a partial-predicate index. I-3 remains REQUIRED_NEW and is a CREATE target.",
+      "status": "CONFIRMED - see PRESERVED_DISPOSITIONS."
+    },
+    "M-8": {
+      "claim": "The four existing objects named by ALREADY_SATISFIED items are present in the live index-producing population at AS_OF_HEAD.",
+      "measurement": "Set membership test against the 165-identifier population derived from 0067_snapshot.json: domain_object_versions_object_ordinal_unique PRESENT, evidence_versions_evidence_ordinal_unique PRESENT, financial_proxy_versions_proxy_ordinal_unique PRESENT, uq_readiness_assessments_calculation_run PRESENT.",
+      "status": "CONFIRMED"
+    }
+  },
+
+  "CORRECTED_DISPOSITIONS": {
+    "rule": "The three items below REPLACE their v1.0.1 entries in FIBDB052_INVENTORY.items. Every field not shown is carried forward from v1.0.1 unchanged. No alias index is created for any of them: each names the EXISTING constraint-backed object directly, in the shape v1.0.1 already established for I-11.",
+    "no_alias_rule": "An implementing mission MUST NOT create a second index under the former rule-derived name, and MUST NOT create an alias, synonym or renamed copy of the existing constraint-backed index. The former rule-derived names are RETIRED from the CREATE roster and are listed in RETIRED_CREATE_TARGET_NAMES so that a future reader cannot mistake their absence for an omission.",
+    "items": [
+      {
+        "id": "I-1",
+        "fibdb052_text": "domain_object_versions (object_type, object_id, ordinal DESC)",
+        "relation": "domain_object_versions",
+        "disposition": "ALREADY_SATISFIED_AT_AS_OF_HEAD",
+        "prior_disposition_in_v1_0_1": "REQUIRED_NEW",
+        "governed_index_name": "domain_object_versions_object_ordinal_unique",
+        "governed_definition": "Existing UNIQUE constraint-backed unique btree index on domain_object_versions (object_type, object_id, ordinal)",
+        "constraint_lineage": "db/migrations/0045_fib_domain_object_version_lineage.sql:40",
+        "emits_ddl": false,
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "The obligation is discharged by the full-tuple UNIQUE constraint, not by the prefix index. v1.0.1's note correctly observed that idx_domain_object_versions_object covers only (object_type, object_id) and is not a substitute; what it did not measure is that a THIRD object, the constraint-backed unique index over all three columns in the required leading order, already exists. All three columns are NOT NULL (M-4). The verification obligation is to confirm the existing constraint and its backing index are present and unchanged, NOT to create anything."
+      },
+      {
+        "id": "I-2",
+        "fibdb052_text": "evidence_versions (evidence_id, ordinal DESC)",
+        "relation": "evidence_versions",
+        "disposition": "ALREADY_SATISFIED_AT_AS_OF_HEAD",
+        "prior_disposition_in_v1_0_1": "REQUIRED_NEW",
+        "governed_index_name": "evidence_versions_evidence_ordinal_unique",
+        "governed_definition": "Existing UNIQUE constraint-backed unique btree index on evidence_versions (evidence_id, ordinal)",
+        "constraint_lineage": "db/migrations/0048_fib_evidence_versions.sql:45",
+        "emits_ddl": false,
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "Both columns are NOT NULL (M-4). Distinct from I-3 on the same relation, which remains REQUIRED_NEW because a partial-predicate index cannot be discharged by an unconditional UNIQUE constraint (M-7). Verification obligation only; emits no DDL."
+      },
+      {
+        "id": "I-4",
+        "fibdb052_text": "financial_proxy_versions (financial_proxy_id, ordinal DESC)",
+        "relation": "financial_proxy_versions",
+        "disposition": "ALREADY_SATISFIED_AT_AS_OF_HEAD",
+        "prior_disposition_in_v1_0_1": "REQUIRED_NEW",
+        "governed_index_name": "financial_proxy_versions_proxy_ordinal_unique",
+        "governed_definition": "Existing UNIQUE constraint-backed unique btree index on financial_proxy_versions (financial_proxy_id, ordinal)",
+        "constraint_lineage": "db/migrations/0053_fib_proxy_versions_provenance.sql:85",
+        "emits_ddl": false,
+        "phase": "FIBDB-052/P1",
+        "executed_by": "FIBIU-19",
+        "dag_level": "3.1",
+        "notes": "Both columns are NOT NULL (M-4). The constraint identifier abbreviates financial_proxy_id to proxy, which is why a name-shaped search for a financial_proxy_id index does not surface it. The identifier is authoritative as spelled. Distinct from I-5, which remains REQUIRED_NEW_AFTER_S3_RESOLUTION because it is a partial index. Verification obligation only; emits no DDL."
+      }
+    ],
+    "RETIRED_CREATE_TARGET_NAMES": {
+      "rule": "These three rule-derived names were CREATE targets in v1.0.1 and are NOT CREATE targets under this authority. They name nothing that exists and nothing that may be created. No index may be created under any of them.",
+      "names": [
+        "idx_domain_object_versions_object_type_object_id_ordinal",
+        "idx_evidence_versions_evidence_id_ordinal",
+        "idx_financial_proxy_versions_financial_proxy_id_ordinal"
+      ],
+      "why_recorded_rather_than_deleted": "B20 holds that CREATE INDEX IF NOT EXISTS resolves on the index NAME, not on its DEFINITION. A retired name is therefore not inert: an implementing mission that re-derived it from INDEX_NAMING_RULE without reading this correction would create three duplicate indexes and the IF NOT EXISTS guard would not stop it. Recording the retired names makes their retirement legible instead of leaving it as an absence."
+    },
+    "PRESERVED_DISPOSITIONS": {
+      "rule": "These dispositions were examined by this mission and are DELIBERATELY UNCHANGED. Their appearance here is a positive statement that they were checked, not an omission.",
+      "I-3": "REQUIRED_NEW. Partial index; not discharged by a full-tuple UNIQUE (M-7). Remains a CREATE target.",
+      "I-5": "REQUIRED_NEW_AFTER_S3_RESOLUTION. Partial index on financial_proxy_versions; the S3 resolution is untouched. Remains a CREATE target.",
+      "I-10": "NOT_CONSTRUCTIBLE_AS_WRITTEN__RE_EXPRESSED_AS_AN_ACCESS_PATH_OBLIGATION. The S2 determination gate is untouched.",
+      "I-11": "ALREADY_SATISFIED_AT_AS_OF_HEAD. Unchanged. It is the precedent this correction follows, not an object this correction alters.",
+      "I-6_I-8_I-9_I-12": "REQUIRED_NEW. These sit on the INVERSE axis recorded by v1.0.1's F-A1, where the proposed two-column index subsumes an existing single-column index. That is not the axis corrected here and their dispositions are unchanged.",
+      "I-14_through_I-19": "All six blocked obligations are unchanged, including both DISCHARGED_BY_OWNING_OBJECT items."
+    }
+  },
+
+  "CORRECTED_CREATE_ROSTER": {
+    "rule": "This is the complete and closed roster of index names an implementing mission is authorized to CREATE under FIBDB-052. A name absent from this roster is not authorized. The roster is 12 names, superseding v1.0.1's 15.",
+    "P1_CREATE_TARGETS": {
+      "count": 8,
+      "ids": ["I-3", "I-5", "I-6", "I-7", "I-8", "I-9", "I-12", "I-13"],
+      "names": [
+        "idx_evidence_versions_evidence_id_approved",
+        "idx_financial_proxy_versions_financial_proxy_id_approved",
+        "idx_outcome_monetization_dispositions_run_id_outcome_id",
+        "idx_evidence_sufficiency_determinations_run_id_outcome_id",
+        "idx_counterfactual_assessments_run_id_outcome_id",
+        "idx_sensitivity_candidates_run_id_disposition",
+        "idx_methodological_assumptions_project_id_materiality_flag",
+        "idx_sroi_run_reviews_calculation_run_id_approved"
+      ],
+      "explicitly_not_created_in_P1": "I-1, I-2 and I-4 are NOT created. I-10 emits no DDL pending the S2 determination. I-11 emits no DDL and is verified only."
+    },
+    "NON_P1_CREATE_TARGETS": {
+      "count": 4,
+      "ids": ["I-14", "I-15", "I-17", "I-19"],
+      "note": "All four are BLOCKED at AS_OF_HEAD and remain so. They are CREATE targets by disposition, not executable work. Their phases P2, P4 and P5 remain G2-gated exactly as v1.0.1 froze them."
+    },
+    "total_create_targets": 12,
+    "length_safety": {
+      "longest_create_target_name": "idx_methodological_assumptions_project_id_materiality_flag",
+      "longest_create_target_length": 58,
+      "postgres_identifier_limit_bytes": 63,
+      "unchanged_from_v1_0_1_and_why": "The maximum is still 58 because none of the three retired names was the maximum. Their lengths were 55, 41 and 55. Removing them narrows the roster without moving its ceiling. This is stated because an unchanged number across a changed population is exactly the kind of value that looks stale when it is in fact re-derived.",
+      "collisions_among_create_targets": 0,
+      "collisions_with_the_live_index_producing_population": 0,
+      "how_measured": "Each of the 12 names was tested for set membership against the complete 165-identifier index-producing population derived from db/migrations/meta/0067_snapshot.json. Zero matched. The 12 names were then tested against each other for duplicates. Zero duplicates."
+    }
+  },
+
+  "CORRECTED_PHASE_ARITHMETIC": {
+    "rule": "Every count below is re-derived from the corrected 19-item inventory. The partition is exhaustive and disjoint, and it closes exactly.",
+    "inventory_items": 19,
+    "phase_item_counts": {
+      "FIBDB-052/P1": 13,
+      "FIBDB-052/P2": 2,
+      "FIBDB-052/P3": 1,
+      "FIBDB-052/P4": 1,
+      "FIBDB-052/P5": 2,
+      "sum": 19,
+      "unchanged_from_v1_0_1": "YES. This correction moves no item between phases. Only dispositions within P1 change."
+    },
+    "P1_INTERNAL_PARTITION": {
+      "REQUIRED_NEW": 8,
+      "REQUIRED_NEW_ids": ["I-3", "I-5", "I-6", "I-7", "I-8", "I-9", "I-12", "I-13"],
+      "ALREADY_SATISFIED": 4,
+      "ALREADY_SATISFIED_ids": ["I-1", "I-2", "I-4", "I-11"],
+      "NOT_CONSTRUCTIBLE": 1,
+      "NOT_CONSTRUCTIBLE_ids": ["I-10"],
+      "sum": 13,
+      "closes": true,
+      "prior_partition_in_v1_0_1": "11 REQUIRED_NEW + 1 ALREADY_SATISFIED + 1 NOT_CONSTRUCTIBLE = 13. Three items moved from the first bucket to the second; the phase total is unchanged."
+    },
+    "P1_DDL_EMISSION": {
+      "value": 8,
+      "derivation": "One CREATE INDEX per P1 REQUIRED_NEW item. The 4 ALREADY_SATISFIED items and the 1 NOT_CONSTRUCTIBLE item emit none.",
+      "prior_value_in_v1_0_1": 11,
+      "note": "v1.0.1's FIBDB052_PHASE_MODEL.phases[P1].emits_ddl_for = 11 and emits_no_ddl_for listed only I-10 and I-11. Both are corrected: emits_ddl_for = 8, and emits_no_ddl_for is I-1, I-2, I-4, I-10, I-11."
+    },
+    "GLOBAL_PARTITION": {
+      "total_create_targets": 12,
+      "already_satisfied": 4,
+      "not_constructible": 1,
+      "discharged_by_owning_object": 2,
+      "sum": 19,
+      "closes": true,
+      "derivation": "12 + 4 + 1 + 2 = 19, which equals inventory_items. Every one of the 19 obligations falls in exactly one bucket and no obligation falls in two.",
+      "prior_global_partition_in_v1_0_1": "15 + 1 + 1 + 2 = 19. The correction moves 3 obligations from create_targets to already_satisfied. The total is invariant, as it must be: no obligation was added or removed."
+    },
+    "BLOCKED_OBLIGATIONS": {
+      "value": 6,
+      "ids": ["I-14", "I-15", "I-16", "I-17", "I-18", "I-19"],
+      "unchanged_from_v1_0_1": "YES",
+      "why_blocked_and_create_target_are_orthogonal": "Blocked describes whether an obligation's relation or column exists yet. Create-target describes whether the obligation requires new DDL at all. Four of the six blocked obligations are CREATE targets (I-14, I-15, I-17, I-19) and two are discharged by an owning object (I-16, I-18). The 12-name roster therefore contains 8 executable P1 names and 4 blocked names."
+    },
+    "RELATION_COUNTS_UNCHANGED": {
+      "distinct_relations": 16,
+      "relations_present_on_the_drizzle_track": 12,
+      "relations_absent": 4,
+      "obligations_on_present_relations": 13,
+      "note": "This correction changes no relation's existence. These counts are carried forward from v1.0.1 and were re-confirmed, not re-derived from scratch."
+    }
+  },
+
+  "CORRECTED_EVIDENCE_ANCHORS": {
+    "rule": "v1.0.1's anchors B1..B20 are carried forward. B18 is CORRECTED IN PLACE, retaining its identifier because downstream clauses cite B18 by name and the anchor's SUBJECT - identifier-length and collision safety - is unchanged; only its measurement population and resulting value are corrected. One anchor is ADDED. No anchor is deleted.",
+    "B18_CORRECTED": {
+      "id": "B18",
+      "status": "CORRECTED_IN_PLACE_BY_v1.0.2",
+      "prior_text_in_v1_0_1": "The longest index identifier existing at AS_OF_HEAD is idx_evidence_sufficiency_determinations_outcome_run at 51 characters.",
+      "why_the_prior_text_was_wrong": "It measured the DECLARED-index sub-population only. Its cited source, a sweep of db/schema.ts, structurally cannot see an identifier generated by a table constraint. That is the same measurement inconsistency as F-FQ-1: B10 of the same artifact treats a UNIQUE table constraint as an index-producing object, and B18 did not.",
+      "corrected_fact": "Measured over the COMPLETE index-producing population at AS_OF_HEAD, the longest existing index-producing identifier is evidence_sufficiency_determinations_outcome_run_ordinal_unique at 62 characters. PostgreSQL's identifier limit is 63 bytes. Every name this authority authorizes for CREATE is at most 58 characters, every such name is unique among the roster, and none collides with any identifier in the existing population.",
+      "population_definition": {
+        "size": 165,
+        "composition": {
+          "DECLARED_INDEX": 96,
+          "SINGLE_COLUMN_PRIMARY_KEY_BACKED": 51,
+          "UNIQUE_CONSTRAINT_BACKED": 18,
+          "COMPOSITE_PRIMARY_KEY_BACKED": 0
+        },
+        "explicitly_excluded": "FOREIGN KEY constraints. 174 are present in the snapshot and NONE is counted, because a FOREIGN KEY constraint produces no index in PostgreSQL. Excluding them is not an omission of the same class as the original defect; it is the correct boundary of an index-producing population.",
+        "source": "db/migrations/meta/0067_snapshot.json, enumerated over tables[].indexes, tables[].uniqueConstraints, tables[].compositePrimaryKeys, and the implied <table>_pkey identifier for every table carrying a single-column primary key.",
+        "where_this_exceeds_the_source_audit": "The source audit re-measured declared indexes plus UNIQUE-constraint-backed indexes. It did not enumerate the 51 PRIMARY KEY-backed identifiers. Including them is what makes this a complete census rather than a second partial one. The result is unaffected: the longest identifier remains the 62-character UNIQUE-backed one."
+      },
+      "ordered_top_of_population": [
+        "62 - evidence_sufficiency_determinations_outcome_run_ordinal_unique - UNIQUE_CONSTRAINT_BACKED",
+        "57 - proxy_material_fields_registry_version_table_field_unique - UNIQUE_CONSTRAINT_BACKED",
+        "51 - idx_evidence_sufficiency_determinations_outcome_run - DECLARED_INDEX",
+        "50 - idx_evidence_sufficiency_determinations_outcome_id - DECLARED_INDEX",
+        "50 - idx_evidence_sufficiency_determinations_project_id - DECLARED_INDEX"
+      ],
+      "adjacency_note": "The 51-character declared index and the 62-character constraint identifier are created by the SAME migration file on adjacent lines: db/migrations/0052_fib_evidence_sufficiency_run_binding.sql creates the index at :26 and adds the UNIQUE constraint at :27. The longer identifier was one line away from the measurement that missed it.",
+      "identifiers_exceeding_the_63_byte_limit": 0,
+      "operative_safety_conclusion": "UNCHANGED AND RE-PROVEN. Maximum CREATE-target length 58, strictly below both the 63-byte limit and the 62-character longest existing identifier. Zero collisions among CREATE targets. Zero collisions between CREATE targets and the 165-identifier existing population. The correction changes the measured population and the reported maximum; it does not change the safety conclusion.",
+      "source": "db/migrations/meta/0067_snapshot.json, complete index-producing enumeration, plus CORRECTED_CREATE_ROSTER.length_safety"
+    },
+    "B21_ADDED": {
+      "id": "B21",
+      "fact": "Three FIBDB-052 obligations on EXISTING relations are already satisfied at AS_OF_HEAD by constraint-backed unique btree indexes: domain_object_versions_object_ordinal_unique UNIQUE(object_type, object_id, ordinal) from db/migrations/0045_fib_domain_object_version_lineage.sql:40; evidence_versions_evidence_ordinal_unique UNIQUE(evidence_id, ordinal) from db/migrations/0048_fib_evidence_versions.sql:45; and financial_proxy_versions_proxy_ordinal_unique UNIQUE(financial_proxy_id, ordinal) from db/migrations/0053_fib_proxy_versions_provenance.sql:85. Each was created exactly once, never dropped, and is live in db/migrations/meta/0067_snapshot.json with exactly the column list and column order shown. Every column covered by all three constraints is NOT NULL.",
+      "discharges": ["I-1", "I-2", "I-4"],
+      "relies_on": "B10 for the rule that a UNIQUE table constraint is implemented by an automatically created unique btree index over exactly those columns in that order, and on the btree backward-scan property for the DESC spelling in the frozen FIBDB-052 text. Both are DERIVED semantics carried as an implementation-time verification obligation, not asserted as machine facts by this docs-only mission. See CORRECTED_VERIFICATION_OBLIGATION.",
+      "source": "db/migrations/0045, 0048, 0053 plus db/migrations/meta/0067_snapshot.json"
+    },
+    "anchor_count_derivation": {
+      "carried_forward_from_v1_0_1": 20,
+      "corrected_in_place": 1,
+      "corrected_in_place_ids": ["B18"],
+      "corrected_in_place_effect_on_count": 0,
+      "added": 1,
+      "added_ids": ["B21"],
+      "deleted": 0,
+      "final_count": 21,
+      "why_not_22": "The B18 correction was deliberately NOT issued as a second anchor. A new anchor asserting a different longest-existing-identifier value while B18 still asserted 51 would leave two live anchors making contradictory claims about the same fact inside one authority. Correcting B18 in place keeps the citation chain intact - INDEX_NAMING_RULE and the length self-checks cite B18 by name - and leaves exactly one live claim per fact.",
+      "why_not_20": "B21 records a genuinely new measurement class that no existing anchor covers. Folding it into B18 would conflate a three-object liveness measurement with a whole-population census, which is the very conflation that produced F-FQ-2.",
+      "final_anchor_ids": ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20", "B21"]
+    }
+  },
+
+  "CORRECTED_COMPLETION_SEMANTICS": {
+    "rule": "Four conditions of v1.0.1's FIBDB052_COMPLETE_DEFINITION and one clause of its G2_GATING carry counts invalidated by this correction. They are restated here with corrected counts. C1 and C5 are unchanged and are not restated.",
+    "C2_CORRECTED": {
+      "prior": "C2. Every one of the 15 REQUIRED_NEW indexes exists under EXACTLY its governed name from FIBDB052_INVENTORY.",
+      "corrected": "C2. Every one of the 12 CREATE-target indexes exists under EXACTLY its governed name from CORRECTED_CREATE_ROSTER."
+    },
+    "C3_UNCHANGED_IN_SUBSTANCE": {
+      "text": "C3. The 2 DISCHARGED_BY_OWNING_OBJECT items (I-16, I-18) are VERIFIED - the owning object's constraint and its backing unique index are present - and NO duplicate index was created for them.",
+      "note": "Carried forward verbatim. The count 2 is unaffected by this correction."
+    },
+    "C4_CORRECTED": {
+      "prior": "C4. The 1 ALREADY_SATISFIED item (I-11) is VERIFIED present and unchanged, with no second index created.",
+      "corrected": "C4. The 4 ALREADY_SATISFIED items (I-1, I-2, I-4, I-11) are each VERIFIED present and unchanged, with no second index created for any of them and no index created under any name in RETIRED_CREATE_TARGET_NAMES."
+    },
+    "C6_CORRECTED": {
+      "prior": "C6. No index was created under a name other than an enumerated governed name.",
+      "corrected": "C6. No index was created under a name other than one of the 12 names in CORRECTED_CREATE_ROSTER. The names in RETIRED_CREATE_TARGET_NAMES are explicitly NOT enumerated governed CREATE names and an index created under any of them violates C6.",
+      "why_restated": "v1.0.1's C6 pointed at 'an enumerated governed name'. After this correction, 16 items carry a governed_index_name but only 12 of those names are CREATE targets; the other 4 name existing objects. The unqualified phrasing would have permitted creating an index under I-1's, I-2's, I-4's or I-11's governed name, which is precisely the duplicate this correction exists to prevent."
+    },
+    "G2_GATING_what_is_NOT_gated_CORRECTED": {
+      "prior": "P1 and P3 are not G2-gated. P1's 11 indexes are executable as soon as an implementing mission holds ordinary authority.",
+      "corrected": "P1 and P3 are not G2-gated. P1's 8 CREATE-target indexes are executable as soon as an implementing mission holds ordinary authority; nothing in this amendment or the base authority requires a human G2 action for them. P1 additionally carries 4 verification-only obligations that emit no DDL.",
+      "explicitly_preserved": "P1 remains NOT G2-gated. This correction reduces P1's DDL emission from 11 to 8; it does not gate P1, and no clause here may be read as introducing a gate on P1 or P3."
+    },
+    "phase_discharge_definition_unchanged": "A phase is DISCHARGED when every item assigned to it has reached its disposition's terminal state: created for REQUIRED_NEW, verified for DISCHARGED_BY_OWNING_OBJECT and ALREADY_SATISFIED, determined-and-actioned for I-10. Carried forward verbatim; it already accommodates the corrected dispositions without amendment because ALREADY_SATISFIED already had a terminal state of 'verified'."
+  },
+
+  "CORRECTED_VERIFICATION_OBLIGATION": {
+    "rule": "v1.0.1's F-A6 carries B20's name-based IF NOT EXISTS semantics as an implementation-time verification obligation covering I-11, I-16 and I-18. That obligation is WIDENED to cover all six items whose discharge depends on an object that already exists.",
+    "prior_coverage": ["I-11", "I-16", "I-18"],
+    "corrected_coverage": ["I-1", "I-2", "I-4", "I-11", "I-16", "I-18"],
+    "coverage_count": 6,
+    "coverage_composition": "4 items whose governed_index_name names an existing object directly (I-1, I-2, I-4, I-11) plus 2 items discharged by an owning object's constraint without naming an index themselves (I-16, I-18).",
+    "the_obligation": "Before discharging any of these six items, the implementing mission MUST verify against the live database that the named existing object - or, for I-16 and I-18, the owning object's constraint and its backing unique index - is present, covers exactly the stated columns in the stated order, and is unchanged. It MUST NOT emit CREATE INDEX for any of the six. It MUST NOT emit CREATE INDEX under any name in RETIRED_CREATE_TARGET_NAMES.",
+    "why_this_is_load_bearing": "B20 holds that CREATE INDEX IF NOT EXISTS resolves on the index NAME, not on the index DEFINITION. For all six items a definitionally equivalent index already exists under a name the rule-derived scheme would not produce. IF NOT EXISTS therefore provides NO protection: emitting the rule-derived name would silently create a permanent duplicate rather than being inert.",
+    "epistemic_status_preserved": "B20's name-based matching remains DERIVED, not machine-proven by any docs-only mission. LANE BL machine-proved that a name is REQUIRED; it did not machine-prove name-based rather than definition-based matching, and neither this mission nor v1.0.1 executed DDL. The conservative disposition is chosen in all six cases - verify, do not emit - so if the semantics were somehow otherwise, the result is a no-op rather than a wrong index.",
+    "owner": "The FIBDB-052/P1, P3 and P5 implementing missions."
+  },
+
+  "ADDITIONAL_FINDINGS": {
+    "rule": "Observational only. Nothing in this section is DDL authority, and nothing here authorizes dropping, altering or replacing any existing object.",
+    "F-GC-1": {
+      "id": "F-GC-1",
+      "severity": "NON_BLOCKING",
+      "class": "PRE_EXISTING_REDUNDANT_PREFIX_INDEXES_OBSERVED_NOT_ACTIONED",
+      "finding": "Three standalone indexes are strict leading prefixes of the constraint-backed UNIQUE indexes that now discharge I-1, I-2 and I-4: idx_domain_object_versions_object over (object_type, object_id) is a strict leading prefix of domain_object_versions_object_ordinal_unique over (object_type, object_id, ordinal); idx_evidence_versions_evidence_id over (evidence_id) is a strict leading prefix of evidence_versions_evidence_ordinal_unique over (evidence_id, ordinal); idx_financial_proxy_versions_proxy_id over (financial_proxy_id) is a strict leading prefix of financial_proxy_versions_proxy_ordinal_unique over (financial_proxy_id, ordinal).",
+      "how_measured": "Column lists read from db/migrations/meta/0067_snapshot.json for both the declared index and the unique constraint on each of the three relations, and cross-checked against the CREATE INDEX statements at 0045:52, 0048:53 and 0053:99.",
+      "consequence_if_true": "Each prefix index is redundant for lookup, since a btree over (a, b) serves any query a btree over (a) serves. The cost is write amplification and storage, never correctness. No query returns a different result.",
+      "DISPOSITION": "OBSERVED. NOT ACTIONED. NO DROP IS AUTHORIZED. Dropping an existing index is a behavioural change on a live surface and is outside this docs-only mission's authority. Recorded as a redundancy CANDIDATE so a future mission holding the appropriate authority decides deliberately rather than inheriting the redundancy unnoticed.",
+      "relationship_to_v1_0_1_F_A1": "F-A1 records the same redundancy CLASS on a different axis and with a different time signature. F-A1's redundancy is PROSPECTIVE: it would be created by the P1 mission when the new two-column indexes on I-6, I-8, I-9 and I-12 subsume existing single-column ones. F-GC-1's redundancy is PRE-EXISTING: it exists in the live database today and is entirely unaffected by P1, because under this correction P1 creates nothing on those three relations. F-A1 is unchanged by this artifact and remains owned by the P1 implementing mission.",
+      "owner": "A future mission holding authority over existing index objects. NOT the FIBDB-052/P1 implementing mission, which has no authority to drop anything."
+    }
+  },
+
+  "WHAT_IS_PRESERVED_EXACTLY": {
+    "rule": "Everything listed here is carried forward from v1.0.1 and the base authority UNCHANGED. This artifact touches none of it. The list is a positive statement that each item was considered and deliberately left alone.",
+    "preserved": [
+      "STAGED_VS_ATOMIC.decision = STAGED, with all four structural arguments and the accepted cost, unchanged.",
+      "P1 is NOT G2-gated. P3 is NOT G2-gated. Neither is gated by this artifact.",
+      "The G2 boundaries on P2, P4 and P5, including G2_BOUNDARY.transitive_stop_rule and the requirement of an explicit human G2 action, unchanged.",
+      "FIBDB-053 protections and BOUNDARIES.FIBDB053_CAN_PROCEED_INDEPENDENTLY, unchanged.",
+      "The HPO ratification carried by the base authority, unchanged and unreopened.",
+      "The 24 reason-code contract. This artifact adds, removes, renames and reorders zero reason codes and contains no reason-code list at all.",
+      "MANIFEST_DISPOSITION. MANIFEST_AMENDMENT_REQUIRED remains NO. The companion manifest WAVE3_TEST_MANIFEST_v1.0.0.json is not edited and no manifest amendment is required by this correction, because the corrected obligations move from a create-and-verify duty to a verify-only duty, which C4 already covers.",
+      "I-3 REQUIRED_NEW, unchanged.",
+      "I-10 NOT_CONSTRUCTIBLE_AS_WRITTEN and the S2 access-path determination gate, unchanged and NOT DETERMINED by this artifact.",
+      "The FIBIU-20, FIBIU-24 and FIBIU-26 restrictions, unchanged.",
+      "INDEX_NAMING_RULE's derivation rule and its prohibition on renaming, abbreviating or re-deriving an enumerated name. The rule is unchanged; this correction removes three names from the CREATE roster without altering the rule that produced them.",
+      "SPECIFICATION_DEFECTS S1, S2, S3 and S4 and all four resolutions, unchanged.",
+      "The five-phase model, every phase's relation_precondition, and NO_PHASE_MAY_PRECEDE_ITS_RELATION, unchanged.",
+      "COMPLETION_SEMANTICS C1 and C5, and PARTIAL_COMPLETION_REPRESENTATION, unchanged.",
+      "All eight of v1.0.1's non-blocking findings F-A1..F-A8 remain open and owned as v1.0.1 assigned them. None is closed by this artifact.",
+      "WHAT_IS_UNCHANGED and its four frozen artifacts not edited, unchanged.",
+      "The ownership semantics: FIBDB-052 remains ONE FIB object whose OWNING UNIT is FIBIU-19."
+    ],
+    "no_bypass": "No clause of this artifact may be read as bypassing the base authority's no_bypass_clause, the G2 gate, or any HPO decision. A future mission that believes this correction unlocked something beyond FIBIU-19 P1's eight CREATE targets and four verification obligations has misread it."
+  },
+
+  "NO_ALLOCATION": {
+    "rule": "This mission allocates nothing. Each item was explicitly considered and explicitly not allocated.",
+    "ods_addendum_ordinal": "NONE allocated, reserved or implied.",
+    "hpo_ods_id": "NONE allocated, reserved or implied.",
+    "grant_id": "NONE. docs/ops/wave3/** is not a member of DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts, so this docs-only write requires no grant row and none is requested.",
+    "migration_ordinal": "NONE. No db/migrations/** ordinal is allocated, reserved or implied. FIBDB-052 is not implemented by this artifact.",
+    "controller_change": "NONE. No Controller enumeration, version or digest is touched.",
+    "scope_allowlist_row": "NONE requested or implied.",
+    "re_derivation_rule": "A future mission needing any of these must re-derive them against the then-current repository state. Nothing here may be cited as a reservation."
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking_for_this_docs_only_amendment": [],
+    "blocking_for_fibdb052_implementation": [],
+    "blocking_note": "blocking_for_fibdb052_implementation is EMPTY for a DIFFERENT reason than in v1.0.1. v1.0.1 asserted it empty because it believed its four defect resolutions were complete; that assertion was falsified by F-FQ-1. This artifact asserts it empty because F-FQ-1 has been RESOLVED by measurement and re-freeze, and because this mission independently re-derived the finding rather than accepting it. The distinction matters: an empty array that was never tested is not evidence, and v1.0.1's empty array was the surface F-FQ-1 falsified.",
+    "non_blocking": [
+      {
+        "id": "F-GC-1",
+        "summary": "Three pre-existing standalone prefix indexes are strictly subsumed by the constraint-backed UNIQUE indexes that discharge I-1, I-2 and I-4. Observed as redundancy candidates. No drop authorized. See ADDITIONAL_FINDINGS."
+      },
+      {
+        "id": "F-GC-2",
+        "class": "MEASUREMENT_INCONSISTENCY_ROOT_CAUSE_NOT_STRUCTURALLY_PREVENTED",
+        "finding": "F-FQ-1 and F-FQ-2 share one root cause: db/schema.ts is the natural sweep surface for index discovery, and a sweep of it structurally cannot see an identifier generated by a table constraint. This correction fixes the two instances that were found. It installs no mechanism that would prevent a third instance in a future authority that sweeps db/schema.ts for indexes.",
+        "why_not_blocking": "Every FIBDB-052 obligation has now been measured against the complete index-producing population, so no instance survives inside this object's scope. The risk is to FUTURE authorities, not to this one.",
+        "mitigation_recorded_here": "Any future authority enumerating existing indexes MUST measure over the complete index-producing population - declared indexes, UNIQUE-constraint-backed indexes and PRIMARY KEY-backed indexes - as defined in B18_CORRECTED.population_definition, and MUST NOT sweep db/schema.ts alone.",
+        "owner": "Any future mission enumerating existing index objects."
+      }
+    ],
+    "unknown": [],
+    "unknown_note": "unknown[] is EMPTY and that is a substantive claim. Every present-tense fact this correction relies on was measured at AS_OF_HEAD against the live repository. The two DERIVED semantics this artifact leans on - B10's constraint-backed index rule and B20's name-based IF NOT EXISTS matching - are not UNKNOWNs: they are labelled DERIVED and carried as explicit implementation-time verification obligations in CORRECTED_VERIFICATION_OBLIGATION, exactly as v1.0.1 carried them."
+  },
+
+  "self_check": {
+    "note": "Every count is asserted here and is verifiable by machine against this artifact's own content and against the live repository at AS_OF_HEAD. The field expected_governed_index_name_count from v1.0.1 is RETIRED as ambiguous and is replaced by the two explicitly distinguished fields below.",
+    "RETIRED_AMBIGUOUS_FIELD": {
+      "field": "expected_governed_index_name_count",
+      "prior_value": 15,
+      "why_retired": "The name conflated two different populations that were equal in size by coincidence in v1.0.1 and are not equal after this correction. It could be read as 'how many items carry a governed_index_name field' (16 in v1.0.1) or as 'how many governed names are CREATE targets' (15 in v1.0.1). v1.0.1's own check C-3 disambiguated it in prose while the field name did not. After this correction the two populations are 16 and 12, so the ambiguity is no longer harmless.",
+      "replaced_by": ["expected_rule_produced_governed_names", "expected_items_carrying_a_governed_index_name"]
+    },
+    "expected_rule_produced_governed_names": 12,
+    "expected_rule_produced_governed_names_definition": "Governed index names that are CREATE targets, i.e. names an implementing mission is authorized to bring into existence. Equals total_create_targets.",
+    "expected_items_carrying_a_governed_index_name": 16,
+    "expected_items_carrying_a_governed_index_name_definition": "Inventory items whose entry carries a governed_index_name field at all, whether that name denotes a CREATE target or an existing object. 12 CREATE targets plus 4 existing-object names. The 3 items carrying no such field are I-10, I-16 and I-18.",
+    "expected_governed_names_denoting_existing_objects": 4,
+    "expected_governed_names_denoting_existing_objects_ids": ["I-1", "I-2", "I-4", "I-11"],
+    "expected_inventory_item_count": 19,
+    "expected_create_target_count": 12,
+    "expected_create_target_count_prior": 15,
+    "expected_p1_create_target_count": 8,
+    "expected_p1_create_target_count_prior": 11,
+    "expected_p1_ddl_emission": 8,
+    "expected_p1_already_satisfied_count": 4,
+    "expected_p1_not_constructible_count": 1,
+    "expected_p1_item_count": 13,
+    "expected_already_satisfied_count": 4,
+    "expected_already_satisfied_count_prior": 1,
+    "expected_not_constructible_count": 1,
+    "expected_discharged_by_owning_object_count": 2,
+    "expected_blocked_obligation_count": 6,
+    "expected_blocked_obligation_ids": ["I-14", "I-15", "I-16", "I-17", "I-18", "I-19"],
+    "expected_phase_count": 5,
+    "expected_phase_item_counts": { "P1": 13, "P2": 2, "P3": 1, "P4": 1, "P5": 2 },
+    "expected_g2_gated_phases": ["FIBDB-052/P2", "FIBDB-052/P4", "FIBDB-052/P5"],
+    "expected_p1_g2_gated": false,
+    "expected_retired_create_target_name_count": 3,
+    "expected_max_create_target_name_length": 58,
+    "expected_postgres_identifier_limit": 63,
+    "expected_longest_existing_index_producing_identifier": "evidence_sufficiency_determinations_outcome_run_ordinal_unique",
+    "expected_longest_existing_index_producing_identifier_length": 62,
+    "expected_index_producing_population_size": 165,
+    "expected_index_producing_population_composition": { "DECLARED_INDEX": 96, "SINGLE_COLUMN_PRIMARY_KEY_BACKED": 51, "UNIQUE_CONSTRAINT_BACKED": 18, "COMPOSITE_PRIMARY_KEY_BACKED": 0 },
+    "expected_create_target_self_collisions": 0,
+    "expected_create_target_collisions_with_existing_population": 0,
+    "expected_evidence_anchor_count": 21,
+    "expected_evidence_anchor_ids": ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20", "B21"],
+    "expected_anchors_added_by_this_artifact": ["B21"],
+    "expected_anchors_corrected_in_place_by_this_artifact": ["B18"],
+    "expected_anchors_deleted_by_this_artifact": 0,
+    "expected_verification_obligation_coverage_count": 6,
+    "expected_verification_obligation_coverage_ids": ["I-1", "I-2", "I-4", "I-11", "I-16", "I-18"],
+    "expected_resolved_finding_ids": ["F-FQ-1", "F-FQ-2"],
+    "expected_new_non_blocking_ids": ["F-GC-1", "F-GC-2"],
+    "expected_blocking_count": 0,
+    "expected_unknown_count": 0,
+    "expected_reason_code_count_unchanged": 24,
+    "expected_new_files_created_by_this_mission": 1,
+    "expected_manifest_amendment_required": "NO",
+    "expected_staged_or_atomic": "STAGED",
+    "expected_migration_ordinals_allocated": 0,
+    "expected_lineage_allocations": 0,
+    "checks": [
+      "D-1. No stale value survives. The strings 15 and 11 do not appear anywhere in this artifact as a live CREATE-target or P1-DDL count. Where they appear they are explicitly labelled prior, retired or superseded.",
+      "D-2. The global partition closes exactly: 12 create targets + 4 already satisfied + 1 not constructible + 2 discharged by owning object = 19 = expected_inventory_item_count.",
+      "D-3. The P1 partition closes exactly: 8 required new + 4 already satisfied + 1 not constructible = 13 = expected_p1_item_count.",
+      "D-4. The phase item counts sum to 19: 13 + 2 + 1 + 1 + 2.",
+      "D-5. expected_rule_produced_governed_names (12) + expected_governed_names_denoting_existing_objects (4) = expected_items_carrying_a_governed_index_name (16), and 19 - 16 = 3, which is exactly the count of items carrying no governed_index_name (I-10, I-16, I-18).",
+      "D-6. The P1 CREATE-target roster is exactly I-3, I-5, I-6, I-7, I-8, I-9, I-12, I-13, and contains none of I-1, I-2, I-4.",
+      "D-7. Every one of the 12 CREATE-target names is at most 58 characters, all 12 are distinct, and none is a member of the 165-identifier existing index-producing population.",
+      "D-8. All three retired names are absent from CORRECTED_CREATE_ROSTER and are listed in RETIRED_CREATE_TARGET_NAMES.",
+      "D-9. All four ALREADY_SATISFIED governed names are members of the live index-producing population at AS_OF_HEAD.",
+      "D-10. The evidence anchor count derivation is arithmetic, not assertion: 20 carried + 0 net from 1 in-place correction + 1 added - 0 deleted = 21, and expected_evidence_anchor_ids has exactly 21 entries B1..B21 with no gap.",
+      "D-11. The verification obligation covers exactly 6 ids, comprising the 4 items naming an existing object and the 2 discharged by an owning object.",
+      "D-12. No section of this artifact authorizes a db/** write, a migration ordinal, a G2 apply, an ODS or HPO allocation, a Controller change, or the dropping of any existing index.",
+      "D-13. P1 is asserted NOT G2-gated in CORRECTED_COMPLETION_SEMANTICS and expected_p1_g2_gated is false. The G2-gated phase list is unchanged from v1.0.1 at P2, P4, P5.",
+      "D-14. This artifact contains no reason-code list, so the 24 reason codes are unchanged by construction rather than by assertion.",
+      "D-15. Exactly one file is created by this mission: docs/ops/wave3/WAVE3_AUTHORITY_AMENDMENT_v1.0.2.json. No second file and no protected surface is touched.",
+      "D-16. Every count that this correction leaves unchanged - phase counts, blocked count, discharged count, not-constructible count, relation counts, max CREATE-target length 58, identifier limit 63 - is stated with its derivation so that an unchanged number is distinguishable from an uncorrected one."
+    ]
+  },
+
+  "AMENDMENT_HISTORY": [
+    {
+      "version": "1.0.1",
+      "date": "2026-09-06",
+      "mission": "WAVE3-FIBDB052-SEQUENCING-SUCCESSOR-AUTHORITY-R1",
+      "summary": "Resolved FIBDB-052 specification defects S1..S4, enumerated 19 obligations with dispositions, froze the five-phase model, the STAGED decision and the completion semantics. Integrated by PR84. Exact-object audit PASS.",
+      "status": "INTEGRATED. Corrected, not retracted, by v1.0.2."
+    },
+    {
+      "version": "1.0.2",
+      "date": "2026-09-09",
+      "mission": "WAVE3-AUTHORITY-AMENDMENT-V1.0.2-DISPOSITION-CORRECTION-R1",
+      "lane": "LANE GC",
+      "summary": "Re-froze I-1, I-2 and I-4 as ALREADY_SATISFIED_AT_AS_OF_HEAD against their existing constraint-backed UNIQUE indexes, removing three names from the CREATE roster (15 to 12) and reducing P1 DDL emission from 11 to 8. Corrected evidence anchor B18's measurement population from declared indexes alone to the complete 165-identifier index-producing population, raising the longest existing identifier from 51 to 62 while leaving the safety conclusion intact. Added anchor B21. Widened the B20/F-A6 existing-object verification obligation from 3 items to 6. Split the ambiguous expected_governed_index_name_count into two explicitly defined fields. Resolves F-FQ-1 and F-FQ-2.",
+      "resolves": ["F-FQ-1", "F-FQ-2"],
+      "status": "FROZEN. Awaiting independent Opus exact-object audit."
+    }
+  ],
+
+  "final_state": "WAVE3_AUTHORITY_AMENDMENT_v1_0_2_FROZEN_AWAITING_INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT",
+  "next_gate": "Independent Opus exact-object audit of this artifact against AS_OF_HEAD 9a414fac0858a86e738cb41e2f024502cf5efc8d / tree 60ac29a27c91c51e08da12a45120919b8006d462. FIBIU-19 P1 implementation authority is NOT conferred by this artifact's existence; it is conferred by that audit passing. Until then no FIBDB-052 DDL may be written."
+}
