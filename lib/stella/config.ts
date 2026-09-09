@@ -26,6 +26,16 @@ function envPositiveInt(name: string, fallback: number): number {
  * allowlist (it only rejects non-strings and `..`/`?`/`&`), so a new id needs
  * no SDK change — but it also means a typo reaches Google as a 404 rather than
  * failing locally.
+ *
+ * F-EU-1 — `??` IS THE WRONG OPERATOR HERE, AND WAS THE BUG.
+ *
+ * `??` only falls back on `null`/`undefined`. `.env.example` ships
+ * `GEMINI_MODEL=` (empty) so that copying it into a deployment can never pin
+ * a stale model id — but an empty env var is read by Node as `''`, not
+ * `undefined`, so `process.env.GEMINI_MODEL ?? STELLA_DEFAULT_GEMINI_MODEL`
+ * resolved to `''` and every Gemini call silently sent an empty model
+ * string. `.trim() || default` treats `undefined`, `''` and whitespace-only
+ * identically (all fall back), while a real id survives trimmed.
  */
 export const STELLA_DEFAULT_GEMINI_MODEL = 'gemini-3.6-flash'
 
@@ -33,8 +43,8 @@ export const stellaConfig = {
   // API Key: read from environment, never log or expose
   geminiApiKey: process.env.GEMINI_API_KEY ?? '',
 
-  // Model: see STELLA_DEFAULT_GEMINI_MODEL above.
-  geminiModel: process.env.GEMINI_MODEL ?? STELLA_DEFAULT_GEMINI_MODEL,
+  // Model: see STELLA_DEFAULT_GEMINI_MODEL and the F-EU-1 note above.
+  geminiModel: process.env.GEMINI_MODEL?.trim() || STELLA_DEFAULT_GEMINI_MODEL,
 
   // Feature flags: all default to false in MVP
   // Enabled only if explicitly set to 'true' (string)

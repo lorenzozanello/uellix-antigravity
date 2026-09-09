@@ -1,0 +1,791 @@
+{
+  "package_id": "PORTFOLIO_PF2_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "mission_id": "PORTFOLIO-PF2-EXECUTION-AUTHORITY-R1",
+  "materialization_date": "2026-09-08",
+  "companion_manifest": null,
+  "AS_OF_HEAD": "635ed04605bd7d9f1a66f55511c5e2ae79175aaa",
+  "AS_OF_TREE": "51c7ab3aafeaefaed149a03cf3947f8ad3d6a468",
+  "AS_OF_REF": "codex/portfolio-pf2-execution-authority-r1",
+  "starting_ref_measurement": {
+    "branch": "codex/portfolio-pf2-execution-authority-r1",
+    "head": "635ed04605bd7d9f1a66f55511c5e2ae79175aaa",
+    "tree": "51c7ab3aafeaefaed149a03cf3947f8ad3d6a468",
+    "worktree_clean_at_start": true,
+    "live_base_expected_matched": true,
+    "integration_tip_relationship": "IDENTICAL. `git rev-parse origin/integration/commercial-v1` == 635ed04605bd7d9f1a66f55511c5e2ae79175aaa == HEAD; `git rev-list --left-right --count HEAD...origin/integration/commercial-v1` == 0\t0; merge-base == HEAD. The branch is neither ahead of nor behind the live integration tip, so `pnpm ods:scope --base 635ed046...` diffs two endpoints that share the true base and cannot produce the phantom-deletion FAIL class that arises when a branch sits behind integration.",
+    "node_modules_state_at_start": "ABSENT — fresh worktree. `pnpm install --frozen-lockfile` was run before any gate, because `tsx` (and therefore every gate script) is otherwise unresolvable and a gate that cannot resolve its interpreter reports no failure of its own. This installs dependencies only; it changes no tracked file and the lockfile is frozen.",
+    "pf1_implementation_integrated": "YES. PR #103 (PF1 approved-run aggregate) merged at 635ed046, and PR #104 (Controller37) merged at 94222b89 into the same tip. lib/portfolios/analytics.ts is 20949 working-tree bytes at AS_OF_TREE, against the 9506 bytes PF1's own authority recorded at its AS_OF_TREE, so the PF1 correction is present rather than pending."
+  },
+  "NAMING_DERIVATION": {
+    "decision": "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json",
+    "derivation": "The repository now carries two prior EXECUTION_AUTHORITY lineages, measured by `find docs -iname '*EXECUTION_AUTHORITY*'`: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json with its v1.0.1 amendment, and docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json with its v1.0.1 amendment. Both apply the same rule: <PACKAGE_STEM>_AUTHORITY_v<semver>.json in the domain directory named by the mission. The domain directory is docs/ops/portfolio/, the mission title PORTFOLIO-PF2-EXECUTION-AUTHORITY-R1 supplies the stem PORTFOLIO_PF2 and the type EXECUTION_AUTHORITY, and the version is the first materialization, 1.0.0.",
+    "ambiguity_with_siblings": "NONE. The three stems in this directory are PORTFOLIO_COMMERCIAL_V1 (the PRODUCT_AUTHORITY and its batch TEST_MANIFEST), PORTFOLIO_PF1 (the sibling node authority and its amendment) and PORTFOLIO_PF2 (this artifact). No filename and no artifact_id collides.",
+    "stop_condition": "NOT TRIGGERED. Governance is not ambiguous: two directly analogous precedents exist, both were independently audited and both are integrated, and they resolve the naming and the single-versus-paired-artifact question identically."
+  },
+  "ARTIFACT_FORM": {
+    "decision": "SINGLE ARTIFACT. One execution authority; NO companion PORTFOLIO_PF2_TEST_MANIFEST_v1.0.0.json is created.",
+    "instruction_followed": "The source packet directed: 'Prefer the smallest truthful authority surface. Do not create a redundant manifest if the integrated parent Portfolio manifest already governs PF2.' It does, and the smaller form is used.",
+    "precedent_chain": {
+      "first": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json — companion_manifest = null plus a MANIFEST_DISPOSITION block.",
+      "second": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json — the same shape applied to the immediately adjacent node of this same lane, independently audited and integrated at 635ed046.",
+      "structural_match_here": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json declares node_or_batch = 'batch' and authority_reference = the parent product authority, and it already carries PF2-scoped ids by name: POS-COMP-1..4, POS-SIZE-1..2, NEG-PERM-1..3, NEG-TENANT-1..3, NEG-COMP-1..2, NEG-AUDIT-1, MUT-PERM-1, MUT-COMP-1, MUT-TENANT-1, MUT-ENTRYPOINT-1, MUT-AUDIT-1 and SENT-PF-CROSS-ORG-PROJECT."
+    },
+    "how_new_controls_are_frozen_without_forking": {
+      "problem": "PF2 requires seven controls that the batch manifest does not contain — the status-input refusal, the unarchive refusal, the aggregate-page refusal, the role-enforcement-layer refusal, the entrypoint derived-total reconciliation and the two mutations that make the first and the fourth non-vacuous. They must be frozen somewhere, and the batch manifest is integrated and immutable.",
+      "resolution": "They are frozen in THIS artifact, under the reserved prefix PF2-, in the PF2_NEW_CONTROLS block. The batch manifest remains the sole contract for every id it defines; this authority defines only strictly-new ids and redefines none.",
+      "measured_disjointness_proof": "The batch manifest contains 55 control and sentinel ids in exactly four prefixes — POS (16), NEG (24), MUT (12), SENT (3) — enumerated over positive_controls, negative_controls, mutation_controls and sentinels, with zero duplicates. Zero of those 55 ids begin with 'PF2-'. A repository-wide `grep -o 'PF2-[A-Z0-9-]*' -r docs/` returns no match at AS_OF_TREE, so the PF2- namespace is free in the whole of docs/, not merely in the batch manifest.",
+      "why_this_is_not_a_second_manifest": "A second manifest would restate the batch manifest's PF2-scoped ids under a new manifest_id, creating two documents that both claim authority over POS-COMP-1 and its siblings. This artifact restates none of them: it CITES them by id as inherited and binding, and adds seven ids that exist nowhere else."
+    }
+  },
+  "PARENT_AUTHORITY": {
+    "product_authority": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
+    "product_authority_class": "PRODUCT_AUTHORITY",
+    "batch_test_manifest": "docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json",
+    "sibling_node_authority": "docs/ops/portfolio/PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json and its amendment PORTFOLIO_PF1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "immutability": "ALL FOUR ARE IMMUTABLE AND ARE NOT EDITED BY THIS MISSION. This authority's changed-path set contains exactly one file, itself. No parent or sibling artifact appears in the diff.",
+    "governed_by": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md (FIBC-038, FIBC-040, FIBC-041, FIBC-042, section 7 PORTFOLIO, section 10, FIBIU-27), docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json — inherited from the parent's governed_by field, with FIBC-040 named explicitly because PF2 is the node that carries the audit verb/object correspondence obligation.",
+    "relationship": "SUCCESSOR. This artifact does not supersede, refine or correct any parent. It consumes the parent's already-frozen product decisions and converts the parent's frozen future implementation surface for PF2 — and only PF2 — into explicit write permission."
+  },
+  "PURPOSE": "Materialize the minimum append-only execution authority needed to convert the already-integrated PF2 frozen future surface into explicit write permission. The parent product authority carries PORTFOLIO_IMPLEMENTATION_AUTHORIZED = false and a null GRANT_ID: it froze WHAT may eventually be written and WHERE, and granted no permission to write it. PF1's successor supplied that permission for PF1 alone and has been implemented and integrated. This successor supplies it for PF2 alone — Portfolio composition, lifecycle and permissions — once independently audited, integrated, and once the two implementation preconditions recorded under LOCKS are released. It authorizes no implementation now.",
+  "SOURCE_CONSUMPTION": {
+    "packet": "LANE EB — PORTFOLIO-PF2-EXECUTION-AUTHORITY-R1",
+    "role": "Zero-discovery input. Every obligation the packet states is either (a) already frozen in the parent product authority and re-cited here without alteration, or (b) an additive gap-fill on a question the parent authority is measurably silent about. Category (b) is enumerated exhaustively in NO_PRODUCT_DECISION_REOPENED.additive_gap_fills.",
+    "prohibition_honoured": "The packet's instruction 'Independently derive exact future write surface from live authority' and 'Do not invent filenames' are both discharged structurally: PF2_WRITE_SURFACE is identical, path for path and in order, to the parent's authorized_future_implementation_surface.PF2_composition_and_permissions, and every path in it was existence-checked against AS_OF_TREE."
+  },
+  "NO_PRODUCT_DECISION_REOPENED": {
+    "method": "Each obligation this authority states was checked against the parent's permissions, composition_contract, portfolio_cardinality, portfolio_size_contract and authorized_future_implementation_surface keys, and against a targeted occurrence count over the parent artifact for the terms that would signal a competing decision. A decision is REOPENED only if the parent states X and this artifact states not-X. A decision is INHERITED if the parent states X and this artifact restates X. A decision is an ADDITIVE GAP-FILL if the parent is silent on the question and this artifact answers it without contradicting anything the parent does state.",
+    "inherited_unchanged": [
+      "permissions.canManagePortfolio — hasRole(role,'impact_manager'), resolving to super_admin, organization_admin and impact_manager, governing create, rename, update description, archive, assign, unassign and move.",
+      "permissions.analyst_adjudication — analyst is EXCLUDED from portfolio management; the narrowing is deliberate and user-visible.",
+      "permissions.read_level — viewer and above may read every Portfolio surface; reviewer and viewer perform no composition.",
+      "permissions.no_approval_bypass — no Portfolio surface writes to any Measure object.",
+      "permissions.canManagePortfolio.location — the helper lives in lib/auth/permissions.ts and no inline role array may survive implementation.",
+      "composition_contract.create / rename_or_update / archive / assign_project / unassign_project / move_project — all six behaviours, their permissions, their preconditions and their audit verbs.",
+      "composition_contract.move_project.decision — ONE ATOMIC UPDATE, not an unassign followed by an assign.",
+      "composition_contract.archive.behaviour — archiving is a grouping-only status change; it does not unassign, archive or otherwise alter member projects.",
+      "composition_contract.archive.unarchive — out of scope for V1, not authorized, and no path may perform it implicitly.",
+      "composition_contract.audit_verb_contract — the five new verbs, their entityTypes, the no-CORRESPONDENCE_EXCEPTIONS property, the distinct-verbs rationale and the entrypoint registration obligation.",
+      "composition_contract.same_org_validation — non-waivable on every composition path, in the same transaction as the write.",
+      "portfolio_cardinality.decision — A, zero-or-one portfolio per project; the bridge table is a named POST_V1 successor and is not authorized.",
+      "portfolio_size_contract.decision — C, no hard product maximum on portfolio membership; a hard cap is a product refusal invented to simplify an implementation and is forbidden.",
+      "portfolio_size_contract.aggregate_coverage_invariant — the authoritative aggregate is ALWAYS computed over every member project, never over the current page.",
+      "authorized_future_implementation_surface.PF2_composition_and_permissions — the thirteen paths.",
+      "authorized_future_implementation_surface.PF2_audit_contract_test_inclusion_rationale_R1 — including its prohibition on loosening any assertion in tests/audit-action-contract.test.ts.",
+      "authorized_future_implementation_surface.explicitly_not_authorized — including the three Portfolio pages' auth branches.",
+      "shared_writer_serialization.rule — PF2 OWNS lib/audit/logger.ts, tests/database-entrypoint-inventory.json and tests/audit-action-contract.test.ts for the Portfolio lane, synchronises with integration before editing them, and resolves a conflict by RE-APPLYING Portfolio's entries rather than overwriting another lane's.",
+      "multi_org_dependency — Portfolio performs no multi-org work; the page-auth coupling successor is separate and is not absorbed here."
+    ],
+    "additive_gap_fills": [
+      {
+        "question": "Which layer enforces the analyst exclusion, given that the parent says application and database both refuse and neither is trusted alone?",
+        "parent_state": "SILENT ON THE ROLE AXIS. permissions.no_approval_bypass and composition_contract.same_org_validation both speak of RLS, and same_org_validation names projects_update_allowed_roles and portfolios_* as the independent database refusal. Measured, that claim is exact on the ORGANIZATION axis and has no counterpart on the ROLE axis: db/migrations/0031_rls_core.sql:232-241 (portfolios_update_allowed_roles) and :266-275 (projects_update_allowed_roles), reproduced identically in db/baseline/stella_g2_schema.sql:9366, both admit 'analyst' in USING and WITH CHECK. The parent nowhere states which layer refuses an analyst.",
+        "answer_frozen_here": "ROLE_ENFORCEMENT_LAYER.",
+        "contradiction_check": "NONE. The parent's sentence is scoped to same-organization validation, and on that axis both layers do refuse independently, exactly as MUT-TENANT-1 asserts. This authority leaves that reading intact and answers only the role axis the parent left open."
+      },
+      {
+        "question": "May the create and update input surfaces accept a caller-supplied status, and what forbids an implicit unarchive?",
+        "parent_state": "SILENT ON THE INPUT SURFACE. composition_contract.create fixes the written value at 'active' and composition_contract.rename_or_update states 'Status is NOT updatable through this path', but neither addresses the request schema, and archive.unarchive states only that unarchive is out of scope. Measured at AS_OF_TREE the live create path contradicts both: PortfolioInputSchema (lib/portfolios/service.ts:11-15) declares status as an enum of 'active' and 'archived' defaulting to 'active', and createPortfolioForCurrentOrganization writes data.status straight through at :54, so a caller can create a portfolio directly into 'archived' and no portfolio.archived verb is ever emitted for it. The database does not close this: db/schema.ts:138's status_check admits both values and constrains no transition between them.",
+        "answer_frozen_here": "STATUS_INPUT_CONTRACT, pinned by PF2-NEG-STATUS-1, PF2-NEG-UNARCHIVE-1 and PF2-MUT-STATUS-1.",
+        "contradiction_check": "NONE. The SET of statuses is inherited unchanged and unextended, and archive remains the only authorized writer of 'archived'; only the input surface and the transition direction are added."
+      },
+      {
+        "question": "Which node owns the three SIZE controls, and what is PF2's share of the aggregate-coverage invariant?",
+        "parent_state": "SILENT ON THE NODE ASSIGNMENT. PF1's integrated authority lists POS-SIZE-1, POS-SIZE-2 and MUT-SIZE-1 under explicitly_not_pf1 with the disposition 'PF2 or PF3 obligations' and does not choose between them. Measured, all three name the read model — POS-SIZE-2 names PORTFOLIO_READ_MODEL_CHUNK_SIZE and 'the read model', POS-SIZE-1 names 'the paginated surface', MUT-SIZE-1 names feeding the paginated row set into aggregatePortfolioSroi — and lib/portfolios/read-model.ts appears only in authorized_future_implementation_surface.PF3_comparison_health_and_intelligence, never in PF2's. The discriminator is the path, not the prose.",
+        "answer_frozen_here": "PAGINATION_DISPOSITION, pinned negatively for PF2 by PF2-NEG-AGGREGATE-PAGE-1.",
+        "contradiction_check": "NONE. The aggregate_coverage_invariant is inherited verbatim. This authority assigns the three positive SIZE obligations to the node whose authorized path carries them and states PF2's share as the negative obligation not to introduce pagination into the aggregate path."
+      },
+      {
+        "question": "What does registering a new server action in tests/database-entrypoint-inventory.json actually require, beyond adding the map row?",
+        "parent_state": "SILENT ON THE DERIVED TOTALS. composition_contract.audit_verb_contract.entrypoint_registration requires that 'every new server action is registered in tests/database-entrypoint-inventory.json in the same commit that introduces it', and MUT-ENTRYPOINT-1 pins the map row. Measured, the file carries two derived header counters — checkedModules 143 and databaseReaching 119 — and tests/database-runtime-entrypoints.test.ts:993-995 asserts that databaseReaching equals the map's key count and that checkedModules equals the AST scan's module count. Adding one entry without moving both counters leaves the inventory internally inconsistent, and neither the parent nor MUT-ENTRYPOINT-1 says so.",
+        "answer_frozen_here": "ENTRYPOINT_REGISTRATION_CONTRACT, pinned by PF2-POS-ENTRYPOINT-TOTALS-1.",
+        "contradiction_check": "NONE. The registration obligation is inherited unchanged; only its arithmetic consequence inside the same authorized file is made explicit."
+      },
+      {
+        "question": "Does the PF2 PostgreSQL contract require a committed probe manifest beside its .pg.test.ts, as PF1's does?",
+        "parent_state": "SILENT, AND ASYMMETRIC WITH ITS OWN PF1 ENTRY. authorized_future_implementation_surface.PF1_tests names both tests/postgres/portfolio-aggregate.pg.test.ts and tests/postgres/portfolio-aggregate.probes.json; PF2_composition_and_permissions names only tests/postgres/portfolio-composition.pg.test.ts, with no probes.json companion. Measured, the repository carries both patterns at AS_OF_TREE: an external probe template (tests/postgres/portfolio-aggregate.pg.test.ts:58, and the b3/b4/b5 harnesses) and a self-contained in-module probe builder (tests/postgres/s1-founder-cardinality.pg.test.ts:212-519, which commits no probes.json at all).",
+        "answer_frozen_here": "POSTGRES_CONTRACT.",
+        "contradiction_check": "NONE. The asymmetry is resolved in favour of the enumerated write surface, which is the operative question for an execution grant, by requiring the self-contained pattern the repository already supports. No fourteenth path is created."
+      }
+    ],
+    "reopened": [],
+    "reopened_count": 0
+  },
+  "PF2_WRITE_SURFACE": {
+    "authorized_paths_exactly_thirteen": [
+      "lib/portfolios/service.ts",
+      "lib/projects/service.ts",
+      "lib/auth/permissions.ts",
+      "lib/audit/logger.ts",
+      "app/app/portfolios/page.tsx",
+      "app/app/portfolios/new/page.tsx",
+      "app/app/portfolios/[portfolioId]/page.tsx",
+      "app/app/portfolios/[portfolioId]/actions.ts",
+      "tests/database-entrypoint-inventory.json",
+      "tests/audit-action-contract.test.ts",
+      "tests/portfolios.service.test.ts",
+      "tests/auth/permissions.test.ts",
+      "tests/postgres/portfolio-composition.pg.test.ts"
+    ],
+    "provenance": "Identical, path for path and in order, to the parent product authority's authorized_future_implementation_surface.PF2_composition_and_permissions. This authority narrows nothing and widens nothing. The parent's list annotates two of them '(new)'; the annotation is dropped from the path strings here and carried instead in measured_existence_at_AS_OF_TREE.",
+    "measured_existence_at_AS_OF_TREE": {
+      "lib/portfolios/service.ts": "PRESENT, 2444 blob bytes (2513 in the CRLF working tree) — modified in place by PF2. 69 lines; carries create only.",
+      "lib/projects/service.ts": "PRESENT, 14917 blob bytes (15392 working tree) — extended by PF2 with the assign, unassign and move paths.",
+      "lib/auth/permissions.ts": "PRESENT, 8725 blob bytes (8945 working tree) — extended by PF2 with canManagePortfolio.",
+      "lib/audit/logger.ts": "PRESENT, 21353 blob bytes (21783 working tree) — extended by PF2 with five AUDIT_ACTIONS constants. LOCKED; see LOCKS.LOCK_AUDIT_ACTION_VOCABULARY.",
+      "app/app/portfolios/page.tsx": "PRESENT, 4488 blob bytes (4584 working tree) — its inline role array at :22 is replaced by canManagePortfolio.",
+      "app/app/portfolios/new/page.tsx": "PRESENT, 2690 blob bytes (2754 working tree) — its inline role array at :17-19 is replaced by canManagePortfolio.",
+      "app/app/portfolios/[portfolioId]/page.tsx": "PRESENT, 8992 blob bytes (9196 working tree) — gains the composition surface. Shared with PF3; see OPEN_FINDINGS.F-PF2-5.",
+      "app/app/portfolios/[portfolioId]/actions.ts": "ABSENT — created by PF2. Its creation moves a pin outside this write surface; see LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN and OPEN_FINDINGS.F-PF2-1.",
+      "tests/database-entrypoint-inventory.json": "PRESENT, 9752 blob bytes (9878 working tree) — checkedModules 143, databaseReaching 119, 119 map entries, of which 118 are under app/ and one under components/; 103 classified contextualized and 16 allowlisted.",
+      "tests/audit-action-contract.test.ts": "PRESENT, 12051 blob bytes (12305 working tree) — edited by PF2 for registration and scan-root coverage ONLY; no assertion may be loosened.",
+      "tests/portfolios.service.test.ts": "PRESENT, 3807 blob bytes (3886 working tree) — extended by PF2; its four existing test cases are preserved, never weakened.",
+      "tests/auth/permissions.test.ts": "PRESENT, 6848 blob bytes (7048 working tree) — extended by PF2 with the canManagePortfolio describe block.",
+      "tests/postgres/portfolio-composition.pg.test.ts": "ABSENT — created by PF2."
+    },
+    "byte_count_note": "Blob byte counts are the canonical figures, read with `git cat-file -s HEAD:<path>`. The working-tree counts are larger because .gitattributes pins only docs/**, db/baseline/**, db/prepared/** and *.sh to LF, so every path in this write surface round-trips through core.autocrlf on checkout while the stored blob stays LF. An auditor comparing `wc -c` against a blob size will see a difference equal to the line count and it is not drift.",
+    "no_fourteenth_path": "PF2 may not create, rename or modify any path outside this list of thirteen. In particular it may not create tests/postgres/portfolio-composition.probes.json, even though its PF1 sibling committed tests/postgres/portfolio-aggregate.probes.json and the b3/b4/b5 completeness suites each commit one; see POSTGRES_CONTRACT.probe_pattern for the self-contained pattern that makes the probe file unnecessary. Nor may it create a tests/postgres/<stem>-harness.ts module.",
+    "prohibited_surfaces_restated_from_parent_and_sibling": [
+      "lib/portfolios/analytics.ts and lib/portfolios/analytics.test.ts — PF1 owns them; PF2 must not edit them.",
+      "tests/portfolios.analytics.service.test.ts, tests/postgres/portfolio-aggregate.pg.test.ts and tests/postgres/portfolio-aggregate.probes.json — PF1's, already implemented and integrated.",
+      "lib/portfolios/read-model.ts, lib/portfolios/evidence-health.ts, lib/portfolios/intelligence.ts and their three unit test files — PF3's.",
+      "components/portfolios/** and tests/postgres/portfolio-read-model.pg.test.ts — PF3's.",
+      "tests/database-runtime-entrypoints.test.ts — NOT in the parent's PF2 surface. PF2 may not edit it under this authority; see LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN.",
+      "lib/audit/__tests__/logger.test.ts — not authorized. PF2's five verbs satisfy its shape and uniqueness assertions unchanged; see AUDIT_VOCABULARY_CONTRACT.",
+      "The three Portfolio pages' unauthenticated / no-selection auth branches — app/app/portfolios/page.tsx:15 and :19, app/app/portfolios/[portfolioId]/page.tsx:41 and :53, app/app/portfolios/new/page.tsx:14 and :15. Editable pages, prohibited branches.",
+      "db/schema.ts — no schema change.",
+      "db/migrations/** — no migration is required or permitted; ordinal 0067 is claimed by the open multi-org S3 refusal lane (PR #105) and by no Portfolio node.",
+      "db/prepared/**, db/baseline/**, db/policies/** — no prepared package, no baseline unit, no RLS policy change.",
+      "lib/stella/** and app/actions/stella/** — no Stella surface in V1.",
+      "Every Measure object: sroi_calculation_runs, sroi_run_reviews, sroi_reports, evidence_items, evidence_versions, evidence_sufficiency_determinations, outcome_monetization_dispositions and readiness_assessments.",
+      "docs/ops/ods/** — no ODS artifact."
+    ],
+    "shared_writer_rule_inherited": "The parent's shared_writer_serialization.rule makes PF2 the owner of lib/audit/logger.ts, tests/database-entrypoint-inventory.json and tests/audit-action-contract.test.ts for the Portfolio lane. Ownership within the lane is not exclusivity across lanes: the rule requires PF2 to synchronise with integration before editing them and to resolve a conflict by RE-APPLYING Portfolio's entries on top of whatever is already there. At AS_OF_TREE exactly one concurrent writer is open against one of the three; see LOCKS.LOCK_AUDIT_ACTION_VOCABULARY."
+  },
+  "PF2_SEMANTICS_FROZEN": {
+    "scope_statement": "PF2 owns Portfolio composition, Portfolio lifecycle, Portfolio permissions, project assignment, unassignment and move, and archive semantics. It owns nothing else.",
+    "create": {
+      "permission": "canManagePortfolio",
+      "behaviour": "Insert into portfolios with organization_id = the request scope, name required, description optional, status 'active', created_by = the caller.",
+      "status_input": "REFUSED. The caller may not supply status on this path; see STATUS_INPUT_CONTRACT.",
+      "audit_verb": "portfolio.created — EXISTS at lib/audit/logger.ts:154 as AUDIT_ACTIONS.PORTFOLIO_CREATED. PF2 adds no constant for it.",
+      "entity_type": "portfolio"
+    },
+    "update": {
+      "permission": "canManagePortfolio",
+      "behaviour": "Update name and/or description of a portfolio in the caller's organization.",
+      "status_input": "REFUSED. Status is not updatable through this path, and the input surface may not accept it.",
+      "audit_verb": "portfolio.updated — NEW.",
+      "entity_type": "portfolio"
+    },
+    "archive": {
+      "permission": "canManagePortfolio",
+      "behaviour": "Set status='archived'. The archived portfolio remains readable, keeps its aggregate, and is READ-ONLY for composition: assign, unassign and move all refuse against it.",
+      "grouping_only": "Archiving a Portfolio MUST NOT archive its member projects, MUST NOT delete them, MUST NOT detach them (portfolio_id is not nulled), and MUST NOT alter any project evidence or any other Measure object. A portfolio is a grouping construct and never an ownership transfer (RE_U4 ownership_vs_access, PRESERVED). The write touches exactly one column of exactly one portfolios row.",
+      "unarchive": "OUT OF SCOPE for V1. Not authorized, and no path may perform it implicitly; see STATUS_INPUT_CONTRACT.",
+      "audit_verb": "portfolio.archived — NEW.",
+      "entity_type": "portfolio"
+    },
+    "assign_project": {
+      "permission": "canManagePortfolio",
+      "precondition": "The project and the portfolio both belong to the request-scope organization, verified in the same transaction as the write. The portfolio is not archived.",
+      "behaviour": "UPDATE projects SET portfolio_id = <portfolio> WHERE id = <project> AND organization_id = <scope> AND portfolio_id IS NULL",
+      "same_organization_only": "Non-waivable. A project in another organization may never be assigned, and the refusal is an application-layer refusal that RLS independently corroborates on the organization axis.",
+      "audit_verb": "project.portfolio_assigned — NEW.",
+      "entity_type": "project"
+    },
+    "unassign_project": {
+      "permission": "canManagePortfolio",
+      "behaviour": "UPDATE projects SET portfolio_id = NULL WHERE id = <project> AND organization_id = <scope> AND portfolio_id = <portfolio>",
+      "project_intact": "The project remains fully intact; only the grouping is removed. No project status change, no soft delete, no evidence change.",
+      "audit_verb": "project.portfolio_unassigned — NEW.",
+      "entity_type": "project"
+    },
+    "move_project": {
+      "decision": "ONE HUMAN DECISION, ONE UPDATE. Not an unassign followed by an assign.",
+      "behaviour": "UPDATE projects SET portfolio_id = <target> WHERE id = <project> AND organization_id = <scope> AND portfolio_id = <source>, with both portfolios verified to be in the scope organization and the target not archived.",
+      "no_partial_move": "Zero rows updated means the source no longer matched. The operation is REFUSED — never retried, never silently converted into an assign, and never followed by a compensating write. There is no state in which the project belongs to no portfolio, so no concurrent aggregate read can observe a state no one chose.",
+      "audit_verb": "project.portfolio_moved — NEW, carrying both endpoints in beforeJson and afterJson.",
+      "entity_type": "project",
+      "audit_row_count": "EXACTLY ONE per move. Two rows for one move is the defect MUT-COMP-1 exists to catch."
+    },
+    "permissions": {
+      "read": "viewer and above. Reviewer and viewer are read-only: no create, no update, no archive, no composition.",
+      "manage_composition": "canManagePortfolio(role) = hasRole(role, 'impact_manager'), resolving to super_admin, organization_admin and impact_manager — the exact parent-authority role, restated without widening.",
+      "analyst": "EXCLUDED from every composition capability. This is the parent's adjudicated narrowing of current behaviour and it is not softened here. Analyst gains no composition-management capability, and no implementation may grant it on the strength of the live inline arrays, which admit analyst today.",
+      "no_inline_role_arrays": "After implementation, no inline role array may survive on any Portfolio path. The three live sites are lib/portfolios/service.ts:41, app/app/portfolios/page.tsx:22 and app/app/portfolios/new/page.tsx:17-19; all three carry the identical four-element array including 'analyst'. Every gate consults canManagePortfolio."
+    },
+    "pagination_and_aggregate": {
+      "page_membership_may_be_paginated": "Permitted, not required, and not implemented by PF2 — see PAGINATION_DISPOSITION. Nothing in this authority obliges PF2 to paginate.",
+      "aggregate_covers_all_members": "Non-waivable and inherited verbatim: the authoritative aggregate is ALWAYS computed over every member project of the portfolio, never over the current page, and projectCount, includedCount and the excluded list continue to describe the WHOLE portfolio on every page.",
+      "no_artificial_hard_denial": "PF2 may not introduce a hard maximum on portfolio membership and may not refuse a write on member count. PORTFOLIO_SOFT_SIZE_THRESHOLD = 250 gates an informational notice and refuses nothing; treating it as a cap is a product refusal invented to simplify an implementation, which the parent forbids."
+    },
+    "database_entrypoint_inventory": "PF2 creates a database entrypoint — app/app/portfolios/[portfolioId]/actions.ts — so registration in tests/database-entrypoint-inventory.json is required in the same commit that introduces it, together with the derived header totals; see ENTRYPOINT_REGISTRATION_CONTRACT."
+  },
+  "ROLE_ENFORCEMENT_LAYER": {
+    "decision": "The analyst exclusion and every other role distinction in canManagePortfolio are enforced at the APPLICATION layer ONLY. The organization boundary is enforced at BOTH layers.",
+    "measured_basis": {
+      "portfolios_update_allowed_roles": "db/migrations/0031_rls_core.sql:231-241 — USING and WITH CHECK both read current_user_role_in_org(organization_id) IN ('super_admin','organization_admin','impact_manager','analyst') OR current_user_is_super_admin(). 'analyst' is admitted.",
+      "projects_update_allowed_roles": "db/migrations/0031_rls_core.sql:265-275, and identically in db/baseline/stella_g2_schema.sql:9366 and db/policies/001_initial_auth_rls.sql:265 — the same four-role array including 'analyst'. No later migration redefines either policy: the only later statement touching public.portfolios is db/migrations/0033_public_api_grants.sql:29, a GRANT, not a policy.",
+      "consequence": "An analyst who reached the database directly through the identity context would NOT be refused an UPDATE of projects.portfolio_id or of portfolios.status by RLS. The refusal exists only in canManagePortfolio."
+    },
+    "rule": "PF2 may not claim, assert in a comment, or design a control around a database-layer refusal of an analyst. It may not alter, add or drop any RLS policy to create one: db/migrations/**, db/policies/** and db/baseline/** are all outside the write surface and FIBC-038 is NO_DB_OBJECT. A PostgreSQL control that attempted to prove the analyst denial against RLS would be a FALSE control and its green result would be vacuous.",
+    "what_the_database_does_refuse": "The organization boundary, on both tables, through current_user_role_in_org(organization_id) and current_user_org_ids(). MUT-TENANT-1's claim that removing the application-layer organization predicate still leaves RLS refusing is therefore exact, and it is exact only on that axis.",
+    "pinned_by": [
+      "PF2-NEG-ROLE-RLS-1",
+      "PF2-MUT-ROLE-RLS-1",
+      "NEG-PERM-1 (inherited)",
+      "MUT-PERM-1 (inherited)"
+    ]
+  },
+  "STATUS_INPUT_CONTRACT": {
+    "decision": "portfolios.status is written by exactly two authorized paths and by no input surface: create writes the literal 'active', archive writes the literal 'archived'. No request schema on any PF2 path may accept a status field, and no PF2 path may write a status value derived from caller input.",
+    "live_defect_this_corrects": {
+      "ref": "lib/portfolios/service.ts:11-15 and :54",
+      "fact": "PortfolioInputSchema declares status: z.enum(['active','archived']).default('active') and createPortfolioForCurrentOrganization passes data.status into the insert. A caller supplying status='archived' creates an archived portfolio through the create verb, so the row reaches the archived state with a portfolio.created audit row and no portfolio.archived row anywhere in the trail.",
+      "not_reachable_from_the_current_form": "app/app/portfolios/new/page.tsx builds its input from name and description only, so the defect is not reachable through the shipped form today. It is reachable through the exported service function, which is what tests/portfolios.service.test.ts calls directly, and PF2 is the node that adds new callers."
+    },
+    "unarchive_prohibition": "No PF2 path may write status='active' onto a row whose current status is 'archived'. The database does not prevent it: db/schema.ts:138's status_check constrains the VALUE to one of two literals and constrains no TRANSITION, and portfolios_update_allowed_roles admits the update. The prohibition is therefore application-only and must be asserted directly rather than inferred from a green suite.",
+    "pinned_by": [
+      "PF2-NEG-STATUS-1",
+      "PF2-NEG-UNARCHIVE-1",
+      "PF2-MUT-STATUS-1"
+    ]
+  },
+  "PAGINATION_DISPOSITION": {
+    "decision": "PF2 does NOT implement pagination, does not consume PORTFOLIO_COMPARISON_PAGE_SIZE or PORTFOLIO_READ_MODEL_CHUNK_SIZE, and does not discharge POS-SIZE-1, POS-SIZE-2 or MUT-SIZE-1. Those three controls belong to PF3.",
+    "measured_discriminator": "All three name the read model. POS-SIZE-2 names PORTFOLIO_READ_MODEL_CHUNK_SIZE and 'the read model'; POS-SIZE-1 names 'the paginated surface'; MUT-SIZE-1 names feeding the paginated row set into aggregatePortfolioSroi. lib/portfolios/read-model.ts appears in authorized_future_implementation_surface.PF3_comparison_health_and_intelligence and in no other node's path set. PF1's integrated authority left the assignment open as 'PF2 or PF3 obligations'; the path closes it.",
+    "pf2_share_is_negative_only": "PF2 must not introduce a page, limit, offset or cursor parameter into getPortfolioAnalytics, and must not pass a partial member set into aggregatePortfolioSroi from any authorized path.",
+    "why_this_needs_a_control_rather_than_a_type": "The type system does not prevent it. Measured at AS_OF_TREE after PF1's integration, lib/portfolios/analytics.ts:144 exports aggregatePortfolioSroi(projects: ProjectRunSummary[]), which accepts ANY array, including a page of one; only lib/portfolios/analytics.ts:346's getPortfolioAnalytics(portfolioId: string) is structurally incapable of receiving a page. The invariant therefore rests on the call sites, and PF2 adds call sites.",
+    "unpaginated_membership_read_at_AS_OF_TREE": "lib/projects/service.ts:44-50 exports listProjectsForPortfolio(portfolioId), which returns every member project with no limit and no offset, and app/app/portfolios/[portfolioId]/page.tsx:48 is its only caller. PF2 inherits this shape and is not obliged to change it.",
+    "pinned_by": [
+      "PF2-NEG-AGGREGATE-PAGE-1",
+      "POS-SIZE-1 (inherited, PF3)",
+      "MUT-SIZE-1 (inherited, PF3)"
+    ]
+  },
+  "AUDIT_VOCABULARY_CONTRACT": {
+    "new_constants_exactly_five": [
+      {
+        "constant": "PORTFOLIO_UPDATED",
+        "value": "portfolio.updated",
+        "entity_type": "portfolio"
+      },
+      {
+        "constant": "PORTFOLIO_ARCHIVED",
+        "value": "portfolio.archived",
+        "entity_type": "portfolio"
+      },
+      {
+        "constant": "PROJECT_PORTFOLIO_ASSIGNED",
+        "value": "project.portfolio_assigned",
+        "entity_type": "project"
+      },
+      {
+        "constant": "PROJECT_PORTFOLIO_UNASSIGNED",
+        "value": "project.portfolio_unassigned",
+        "entity_type": "project"
+      },
+      {
+        "constant": "PROJECT_PORTFOLIO_MOVED",
+        "value": "project.portfolio_moved",
+        "entity_type": "project"
+      }
+    ],
+    "constant_names_are_illustrative_not_frozen": "The five VALUES are frozen by the parent's composition_contract.audit_verb_contract.new_verbs and are binding. The five CONSTANT identifiers are the repository-native uppercase transliteration of those values and are recorded so an auditor can locate them; a different but equally conventional constant name is not a deviation, a different value is.",
+    "correspondence_rule_satisfied_without_an_exception": "tests/audit-action-contract.test.ts:174-180 computes expectedPrefix = CORRESPONDENCE_EXCEPTIONS[entityType] ?? entityType. Every frozen verb's object prefix equals its entityType — portfolio.* against 'portfolio', project.portfolio_* against 'project' — so no entry is added to CORRESPONDENCE_EXCEPTIONS. Requiring no exception is not the same as requiring no edit to that file.",
+    "shape_and_uniqueness_pins_are_satisfied_unchanged": {
+      "shape": "lib/audit/__tests__/logger.test.ts:34 asserts every governed value matches /^[a-z_]+\\.[a-z_]+$/ — a TWO-segment shape. All five PF2 values split into exactly two segments on '.': portfolio|updated, portfolio|archived, project|portfolio_assigned, project|portfolio_unassigned, project|portfolio_moved. The underscore inside the second segment is inside the character class.",
+      "uniqueness": "lib/audit/__tests__/logger.test.ts:40 asserts new Set(values).size === values.length. Measured at AS_OF_TREE the AUDIT_ACTIONS object literal carries 104 entries and exactly one Portfolio value, 'portfolio.created' at lib/audit/logger.ts:154; none of the five new values occurs anywhere in the file.",
+      "non_vacuity_floor": "tests/audit-action-contract.test.ts:68 asserts GOVERNED_VALUES.size > 50. At 104 today and 109 after PF2, the floor is not approached from either side and PF2 moves no pinned exact count.",
+      "why_this_is_stated": "Because lib/audit/__tests__/logger.test.ts is NOT in PF2's write surface. If any of these three assertions bound PF2's verbs, PF2 would be unable to satisfy it without an unauthorized edit. Measured, none does. This is the check the concurrent lane failed; see LOCKS.LOCK_AUDIT_ACTION_VOCABULARY."
+    },
+    "content_modifying_registration": "Four of the five verbs modify a row's own content in place — portfolio.updated, portfolio.archived, project.portfolio_assigned, project.portfolio_unassigned — and project.portfolio_moved is required by the parent to carry beforeJson and afterJson, so all five belong in CONTENT_MODIFYING_SITES (tests/audit-action-contract.test.ts:200-228 at the parent's measurement; the list is 15 entries at AS_OF_TREE). Each registered site is {file, action} where file is the lib/ module that emits the call, matching every existing entry: the fifteen live entries name lib/pipeline/** modules only.",
+    "scan_root_extension": "CORRESPONDENCE_SCAN_ROOTS (tests/audit-action-contract.test.ts:86-99) is lib/pipeline, lib/projects/service.ts, lib/portfolios/service.ts and lib/admin, and excludes app/**. If PF2 places any logAuditAction call inside app/app/portfolios/[portfolioId]/actions.ts, that call falls outside the verb/object correspondence scan entirely and the omission produces no red gate. PF2 must either keep every logAuditAction call inside the two already-scanned service modules, or extend the roots to reach the new module. Either discharges NEG-AUDIT-1; neither may loosen an assertion.",
+    "prohibition": "No edit to tests/audit-action-contract.test.ts may loosen an assertion, add a CORRESPONDENCE_EXCEPTIONS entry, remove a registered site, or narrow CORRESPONDENCE_SCAN_ROOTS. The authorized edits are additive registration and additive scan coverage only.",
+    "pinned_by": [
+      "NEG-AUDIT-1 (inherited)",
+      "MUT-AUDIT-1 (inherited)",
+      "POS-COMP-2 (inherited)"
+    ]
+  },
+  "ENTRYPOINT_REGISTRATION_CONTRACT": {
+    "obligation": "app/app/portfolios/[portfolioId]/actions.ts is registered in tests/database-entrypoint-inventory.json in the same commit that introduces it, with its classification, AND both derived header totals are moved with it.",
+    "measured_state_at_AS_OF_TREE": {
+      "header": "checkedModules = 143, databaseReaching = 119.",
+      "map": "119 entries — 118 under app/, 1 under components/ — of which 103 are 'contextualized' and 16 'allowlisted'. lib/** is not scanned and carries no entry, so lib/portfolios/service.ts and lib/projects/service.ts require none.",
+      "portfolio_entries_present": "app/app/portfolios/page.tsx, app/app/portfolios/new/page.tsx and app/app/portfolios/[portfolioId]/page.tsx, all three 'contextualized'."
+    },
+    "expected_post_implementation_state": "checkedModules 143 -> 144, databaseReaching 119 -> 120, map 119 -> 120 entries, contextualized 103 -> 104, allowlisted UNCHANGED at 16. The new module is 'contextualized', not allowlisted: it must open the identity context around every governed write exactly as its siblings do (app/app/organization/members/actions.ts, app/(authenticated)/app/organizations/select/actions.ts). An ALLOWLIST row would be an unauthorized weakening.",
+    "why_the_totals_are_stated": "tests/database-runtime-entrypoints.test.ts:993-995 asserts inventory.databaseReaching === Object.keys(inventory.modules).length and inventory.checkedModules === result.checkedModules.length. Registering the map row alone leaves both assertions red; MUT-ENTRYPOINT-1 pins the row and says nothing about the counters. Both files are inside the write surface, so the obligation is dischargeable — unlike the second pin recorded under LOCK_ENTRYPOINT_REGEX_LAYER_PIN.",
+    "pinned_by": [
+      "PF2-POS-ENTRYPOINT-TOTALS-1",
+      "MUT-ENTRYPOINT-1 (inherited)"
+    ]
+  },
+  "POSTGRES_CONTRACT": {
+    "file_resolution": "The single PF2 PostgreSQL file is tests/postgres/portfolio-composition.pg.test.ts, exactly as the product authority's authorized_future_implementation_surface.PF2_composition_and_permissions names it. The batch manifest's postgres_requirements names tests/postgres/portfolio-v1.setup.json and tests/postgres/portfolio-v1.probes.json; neither exists at AS_OF_TREE and no *setup.json exists anywhere under tests/postgres/. The divergence is the same one PF1 recorded as F-PF1-1 and is resolved the same way, in favour of the product authority, which is the artifact that enumerates the write surface. Neither parent artifact is edited.",
+    "probe_pattern": "SELF-CONTAINED. The probe set is built inside the .pg.test.ts module and no probes.json is committed, following tests/postgres/s1-founder-cardinality.pg.test.ts:212-519, which constructs its probes array in-module and derives EXPECTED_PROBE_IDS from it. The alternative repository pattern — an external template read at tests/postgres/portfolio-aggregate.pg.test.ts:58, and the three b3/b4/b5 harness modules — would require a fourteenth path that the parent did not authorize.",
+    "execution": "Run exclusively through pnpm db:audit:disposable against a throwaway container; never staging, never production, never the canonical local stack.",
+    "what_a_real_database_must_prove": [
+      "The cross-organization refusal on assign and on move, with SENT-PF-CROSS-ORG-PROJECT absent from every read (NEG-TENANT-1, NEG-TENANT-2, NEG-PG-1).",
+      "The read path for an impact_manager in organization A with the identity context open (POS-PG-1).",
+      "That a move is one UPDATE affecting one row, and that a move whose source no longer matches affects zero rows and is refused (POS-COMP-3, NEG-COMP-2).",
+      "That archiving a portfolio changes exactly one column of one portfolios row and leaves every member project's row byte-identical (POS-COMP-4)."
+    ],
+    "what_a_real_database_cannot_prove": "The analyst denial. Both governing policies admit 'analyst'; see ROLE_ENFORCEMENT_LAYER. NEG-PERM-1 and MUT-PERM-1 are discharged at the application layer, in tests/auth/permissions.test.ts and tests/portfolios.service.test.ts, and a PostgreSQL assertion of the analyst denial would be a false control.",
+    "heavy_pg_for_this_mission": "NONE. HEAVY_PG_REQUIRED is false on the parent and remains false here; this authority-only mission runs no PostgreSQL of any kind."
+  },
+  "MANIFEST_DISPOSITION": {
+    "decision": "NO new companion test manifest is created for PF2. The batch manifest docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json remains the binding test contract for every id it defines. This authority cites those ids and adds seven strictly-new ids under the disjoint PF2- prefix.",
+    "precedent": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json and PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json, both MANIFEST_DISPOSITION. See ARTIFACT_FORM.",
+    "pf2_relevant_inherited_ids": {
+      "positive_controls": [
+        "POS-COMP-1",
+        "POS-COMP-2",
+        "POS-COMP-3",
+        "POS-COMP-4"
+      ],
+      "negative_controls": [
+        "NEG-PERM-1",
+        "NEG-PERM-2",
+        "NEG-PERM-3",
+        "NEG-TENANT-1",
+        "NEG-TENANT-2",
+        "NEG-COMP-1",
+        "NEG-COMP-2",
+        "NEG-AUDIT-1"
+      ],
+      "mutation_controls": [
+        "MUT-PERM-1",
+        "MUT-COMP-1",
+        "MUT-TENANT-1",
+        "MUT-ENTRYPOINT-1",
+        "MUT-AUDIT-1"
+      ],
+      "sentinels": [
+        "SENT-PF-CROSS-ORG-PROJECT"
+      ],
+      "shared_with_other_nodes": {
+        "ids": [
+          "POS-PG-1",
+          "NEG-PG-1",
+          "NEG-TENANT-3",
+          "NEG-BYPASS-1",
+          "NEG-STELLA-1",
+          "NEG-PERF-1",
+          "NEG-SCOPE-1",
+          "NEG-TENANCY-COUPLING-1"
+        ],
+        "disposition": "Binding on PF2 to the extent of PF2's own paths, queries and writes. PF2 discharges its share; the remainder of each control is discharged by PF1 (already integrated) or PF3. PF2 may not be recorded as having closed any of these ids outright."
+      }
+    },
+    "explicitly_not_pf2": {
+      "ids": [
+        "POS-AGG-1",
+        "POS-AGG-2",
+        "POS-AGG-3",
+        "POS-AGG-4",
+        "POS-AGG-5",
+        "POS-AGG-6",
+        "POS-SIZE-1",
+        "POS-SIZE-2",
+        "POS-EH-1",
+        "POS-EH-2",
+        "POS-TI-1",
+        "NEG-AGG-1",
+        "NEG-AGG-2",
+        "NEG-AGG-3",
+        "NEG-AGG-4",
+        "NEG-AGG-5",
+        "NEG-AGG-6",
+        "NEG-AGG-7",
+        "NEG-AGG-8",
+        "NEG-READINESS-1",
+        "MUT-AGG-1",
+        "MUT-AGG-2",
+        "MUT-AGG-3",
+        "MUT-AGG-4",
+        "MUT-TRACE-1",
+        "MUT-READINESS-1",
+        "MUT-SIZE-1",
+        "SENT-PF-UNAPPROVED-RUN",
+        "SENT-PF-LEGACY-RUN"
+      ],
+      "disposition": "PF1 obligations (already implemented and integrated at 635ed046) or PF3 obligations. PF2 neither implements nor stubs them, and their absence from a PF2 run is correct. The three SIZE ids are PF3's by the path discriminator recorded in PAGINATION_DISPOSITION."
+    },
+    "exit_gates_inherited_from_batch_manifest": [
+      "typecheck",
+      "secrets_scan",
+      "authority_seal_verify",
+      "ods_scope",
+      "ods_poststate",
+      "postgres_disposable_probe",
+      "targeted_tests"
+    ],
+    "exit_gates_note": "These are the IMPLEMENTATION node's exit gates, inherited by PF2 from the batch manifest's exit_gates array. They are not the gates of the present authority-only mission, which are recorded separately under VALIDATION_PERFORMED_BY_THIS_MISSION."
+  },
+  "PF2_NEW_CONTROLS": {
+    "namespace_rule": "Every id in this block begins with 'PF2-'. The prefix is reserved for this authority. Measured disjointness: the batch manifest's 55 ids use only the prefixes POS, NEG, MUT and SENT, and a repository-wide search of docs/ returns no existing 'PF2-' id.",
+    "positive_controls": [
+      {
+        "id": "PF2-POS-ENTRYPOINT-TOTALS-1",
+        "description": "After PF2 registers app/app/portfolios/[portfolioId]/actions.ts, tests/database-entrypoint-inventory.json satisfies both derived-total assertions: databaseReaching equals the map's key count and checkedModules equals the AST scan's module count. Measured expected values are 120 and 144 against 119 and 143 at AS_OF_TREE, and the new entry is classified 'contextualized'.",
+        "why_it_is_stated_separately_from_MUT_ENTRYPOINT_1": "MUT-ENTRYPOINT-1 pins the MAP ROW and nothing else. The two header counters are a distinct obligation asserted by tests/database-runtime-entrypoints.test.ts:993-995, and an implementer who adds the row alone leaves both red.",
+        "test_file": "tests/database-entrypoint-inventory.json, verified by the existing tests/database-runtime-entrypoints.test.ts"
+      }
+    ],
+    "negative_controls": [
+      {
+        "id": "PF2-NEG-STATUS-1",
+        "description": "No PF2 request schema accepts a status field and no PF2 path writes a status value derived from caller input. Creating a portfolio always yields status 'active' regardless of what the caller supplies, and the update path can never change status.",
+        "why_a_control_is_needed": "The live create path admits it today: PortfolioInputSchema (lib/portfolios/service.ts:11-15) declares status as a two-value enum and :54 writes it through, so a caller can create a portfolio directly into 'archived' with no portfolio.archived audit row. The database does not close it — db/schema.ts:138's status_check admits both values.",
+        "test_file": "tests/portfolios.service.test.ts"
+      },
+      {
+        "id": "PF2-NEG-UNARCHIVE-1",
+        "description": "No PF2 path writes status='active' onto a portfolio whose current status is 'archived'. Unarchive is unreachable through create, update, archive, assign, unassign and move alike, and no path performs it implicitly.",
+        "why_a_control_is_needed": "Neither layer prevents it structurally: db/schema.ts:138 constrains the VALUE, not the TRANSITION, and portfolios_update_allowed_roles admits the UPDATE. The parent states unarchive is out of scope but no inherited control asserts it.",
+        "test_file": "tests/portfolios.service.test.ts and tests/postgres/portfolio-composition.pg.test.ts"
+      },
+      {
+        "id": "PF2-NEG-AGGREGATE-PAGE-1",
+        "description": "No PF2 authorized path adds a page, limit, offset or cursor parameter to getPortfolioAnalytics, and no PF2 authorized path passes a partial or paginated member set into aggregatePortfolioSroi. The aggregate reached from any PF2 surface covers every member project.",
+        "why_a_static_control_is_appropriate": "The call shape is a syntactic property of the call site. A static assertion over the thirteen authorized paths catches an introduction that a fixture-based test would catch only when a fixture happens to exceed one page — and PF2 builds no page, so no such fixture exists on PF2's side.",
+        "scope_boundary": "Scoped to the thirteen PF2 authorized paths. It discharges neither POS-SIZE-1 nor MUT-SIZE-1, which require the PF3 read model, and it makes no claim about pagination elsewhere in the repository.",
+        "test_file": "tests/portfolios.service.test.ts"
+      },
+      {
+        "id": "PF2-NEG-ROLE-RLS-1",
+        "description": "No PF2 path relies on, asserts, or documents a database-layer refusal of an analyst, and no PF2 change touches db/migrations/**, db/policies/**, db/baseline/** or db/schema.ts. Every role gate on every composition path is canManagePortfolio, evaluated in application code before the write.",
+        "measured_basis": "portfolios_update_allowed_roles and projects_update_allowed_roles both admit 'analyst' (db/migrations/0031_rls_core.sql:231-241 and :265-275). A control that asserted the analyst denial against RLS would fail, and a comment claiming RLS refuses an analyst would be false.",
+        "test_file": "tests/portfolios.service.test.ts and tests/postgres/portfolio-composition.pg.test.ts"
+      }
+    ],
+    "mutation_controls": [
+      {
+        "id": "PF2-MUT-STATUS-1",
+        "description": "Re-admitting a status field into the create or update input schema — restoring PortfolioInputSchema's status enum and writing it through — makes PF2-NEG-STATUS-1 and PF2-NEG-UNARCHIVE-1 fail: a portfolio can be created directly into 'archived' with no portfolio.archived audit row, and an update can move a row from 'archived' back to 'active'.",
+        "non_vacuity_basis": "The mutated form is the form the live tree carries today at lib/portfolios/service.ts:14 and :54, so this control asserts a real correction rather than guarding a hypothetical regression. No fixture is required to make the two orderings disagree: the two states are distinguishable by the written column value and by the audit-row count."
+      },
+      {
+        "id": "PF2-MUT-ROLE-RLS-1",
+        "description": "Replacing the application-layer canManagePortfolio gate on any composition path with reliance on the RLS policy alone — deleting the role check and letting the UPDATE reach the database — makes NEG-PERM-1 fail while every tenancy control stays green: the analyst's write SUCCEEDS, because both governing policies admit 'analyst'.",
+        "non_vacuity_basis": "The policy text is measured, not assumed: db/migrations/0031_rls_core.sql:231-241 and :265-275, reproduced in db/baseline/stella_g2_schema.sql:9366. This is the control that proves the application gate is the ONLY role gate, which is exactly what MUT-TENANT-1 does NOT prove — that control operates on the organization axis, where both layers genuinely refuse.",
+        "boundary": "The mutation is applied to a PF2 authorized path and restored byte-exactly. It does not authorize editing any RLS policy, and a green result obtained by widening a policy would be a fabricated pass."
+      }
+    ]
+  },
+  "MUTATION_CONTRACT": {
+    "required_non_vacuous_controls": [
+      {
+        "requirement": "analyst widened into composition management",
+        "control_id": "MUT-PERM-1",
+        "origin": "inherited"
+      },
+      {
+        "requirement": "move implemented as unassign followed by assign",
+        "control_id": "MUT-COMP-1",
+        "origin": "inherited"
+      },
+      {
+        "requirement": "organization predicate removed from the assign lookup",
+        "control_id": "MUT-TENANT-1",
+        "origin": "inherited"
+      },
+      {
+        "requirement": "server action added without inventory registration",
+        "control_id": "MUT-ENTRYPOINT-1",
+        "origin": "inherited"
+      },
+      {
+        "requirement": "Portfolio verb removed from CONTENT_MODIFYING_SITES, or contentModifying/beforeJson dropped",
+        "control_id": "MUT-AUDIT-1",
+        "origin": "inherited"
+      },
+      {
+        "requirement": "status re-admitted into the create/update input surface",
+        "control_id": "PF2-MUT-STATUS-1",
+        "origin": "new"
+      },
+      {
+        "requirement": "role gate delegated to RLS instead of canManagePortfolio",
+        "control_id": "PF2-MUT-ROLE-RLS-1",
+        "origin": "new"
+      }
+    ],
+    "coverage_check": "7 required, 7 mapped, 0 unmapped.",
+    "non_vacuity_definition": "A mutation control is non-vacuous only if applying the mutation to the real working tree makes at least one NAMED control fail, and if that control passes on the unmutated tree. A mutation that leaves the suite green proves the guarded assertion does not exist, and is itself a BLOCKING finding for the implementation node.",
+    "execution_obligations": {
+      "real_bytes": "Each mutation MUST be applied to real working-tree bytes and then restored byte-exactly. A mutation reasoned about but never applied does not discharge its control.",
+      "pristine_capture_ordering": "Capture the pristine copy of every file to be mutated BEFORE the first edit of the sequence, never inside the edit loop. Capturing a pristine copy after an earlier mutation has landed poisons the restore baseline and makes byte-exact restoration unverifiable.",
+      "restoration_proof": "Restoration is proven by hashing each mutated file before the first edit and after the final restore and comparing the two digests, and by confirming a clean `git status --porcelain --untracked-files=all` at the end of the mutation sequence. A visual re-read is not proof.",
+      "chunking": "The mutation sequence MUST be chunked so that no single command invocation can be interrupted mid-control. An interrupted run can leave a mutation on disk, which silently converts the working tree into a mutated tree for every subsequent gate.",
+      "crlf_hazard": "Every path in PF2's write surface is CRLF in the working tree — .gitattributes pins only docs/**, db/baseline/**, db/prepared/** and *.sh to LF. A mutation anchored on a bare newline will match nothing and the control will pass VACUOUSLY, reported as a false PASS. Anchor on \\r?\\n and confirm the occurrence count changed.",
+      "scope": "Mutations may touch only the thirteen authorized paths. A mutation that would require editing a fourteenth path is out of scope and its control must be redesigned within the thirteen."
+    }
+  },
+  "TENANCY_DISPOSITION": {
+    "status": "SEPARATE_GOVERNED_TENANCY_COUPLING_SUCCESSOR_REQUIRED",
+    "ownership": "PF2 does NOT own the Portfolio tenancy coupling successor and does not need it in order to implement the thirteen authorized files.",
+    "prohibited_branches": [
+      "app/app/portfolios/page.tsx:15 and :19",
+      "app/app/portfolios/[portfolioId]/page.tsx:41 and :53",
+      "app/app/portfolios/new/page.tsx:14 and :15"
+    ],
+    "rule": "PF2 must not modify the three Portfolio pages' unauthenticated / no-selection auth branches, and must not read, re-throw, translate or render the S3 refusal codes TENANCY_NO_ORGANIZATION_SELECTED or TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER. The prohibition is unconditional and does not depend on who eventually owns them; the parent records the owner as TO_BE_MAPPED.",
+    "why_pf2_is_more_exposed_than_pf1_was": "PF1's write surface contained no path under app/, so the prohibition was enforced by the write surface itself. PF2 EDITS all three of those pages. Here the prohibition is a line-level obligation inside authorized files, not a consequence of the path set, and it must be verified by inspecting the diff rather than by observing that no app/ path changed.",
+    "organization_binding_pf2_relies_on": "PF2 reads the caller's organization through the existing session helpers already imported by its own modules: getCurrentOrganizationContext (lib/portfolios/service.ts:4, lib/projects/service.ts), runWithOrganizationAccess and runWithOptionalOrganizationAccess in the pages. PF2 introduces no new tenancy mechanism, no new principal resolution and no RLS dependency, and manufactures none.",
+    "pinned_by": [
+      "NEG-TENANCY-COUPLING-1 (inherited)",
+      "NEG-TENANT-3 (inherited)",
+      "NEG-SCOPE-1 (inherited)"
+    ]
+  },
+  "LOCKS": {
+    "ODS_REQUIRED": "NO",
+    "MIGRATION_REQUIRED": "NO",
+    "PROTECTED_GRANT_REQUIRED": "NO",
+    "CONTROLLER_REQUIRED": "NO",
+    "protected_grant_measured_basis": "scripts/ods-scope.ts declares DEFAULT_PROTECTED_PATTERNS as docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. Neither docs/ops/portfolio/** nor any of the thirteen PF2 implementation paths matches any of these, so no --protected-authority grant is required for this authority mission or for the PF2 implementation node.",
+    "migration_measured_basis": "The parent records that Portfolio consumes no migration ordinal, no journal wrapper ordinal and no baseline unit ordinal, and explicitly does not allocate 0067. PF2 touches no file under db/, so it cannot consume one. Measured at AS_OF_TREE, ordinal 0067 is claimed by an unrelated open lane — PR #105 adds db/migrations/0067_tenancy_refusal_audit_insert_policy.sql — which corroborates rather than threatens the parent's statement: Portfolio never reserved it.",
+    "LOCK_AUDIT_ACTION_VOCABULARY": {
+      "id": "LOCK-AUDIT-ACTION-VOCABULARY",
+      "status": "HELD BY ANOTHER LANE AT AS_OF_TREE. Must be RELEASED before PF2 implementation writes lib/audit/logger.ts.",
+      "holder": "PR #105, 'feat(tenancy): S3 refusal audit implementation (HPO-ODS-W2-25)', open and draft at AS_OF_TREE, head codex/multiorg-s3-refusal-audit-implementation-r1, base integration/commercial-v1. Its changed-file set includes lib/audit/logger.ts.",
+      "what_it_holds": "The AUDIT_ACTIONS object literal in lib/audit/logger.ts. PR #105 appends two constants to it — TENANCY_ORGANIZATION_SELECTION_REFUSED = 'tenancy.organization.selection_refused' and TENANCY_MEMBERSHIP_REVALIDATION_REFUSED = 'tenancy.membership.revalidation_refused' — in the same region PF2 must append its five.",
+      "measured_defect_class_of_the_holder_and_why_pf2_does_not_share_it": "Both of PR #105's values carry THREE dot-separated segments. lib/audit/__tests__/logger.test.ts:34 asserts every governed value matches /^[a-z_]+\\.[a-z_]+$/, a TWO-segment shape, and that test file is in neither lane's write surface. PF2's five values are all two-segment and satisfy the pin unchanged, so PF2 does not inherit that lane's blocker. The lock exists for CONCURRENCY on a shared writer, not for a shared defect.",
+      "release_condition": "The lock is released when PR #105 is either integrated into integration/commercial-v1 or closed. On integration, PF2 re-measures lib/audit/logger.ts at the new tip and appends its five constants on top of whatever is there, per the parent's shared_writer_serialization.rule, never overwriting the other lane's entries and never removing them to obtain a green pin.",
+      "what_is_authorized_now": "THIS AUTHORITY may materialize now and is not blocked by the lock. PF2 does NOT edit lib/audit/logger.ts in the present mission, and no file of the PF2 write surface is touched by it."
+    },
+    "LOCK_ENTRYPOINT_REGEX_LAYER_PIN": {
+      "id": "LOCK-ENTRYPOINT-REGEX-LAYER-PIN",
+      "status": "OPEN. Must be RELEASED before PF2 implementation creates app/app/portfolios/[portfolioId]/actions.ts.",
+      "what_it_holds": "tests/database-runtime-entrypoints.test.ts:775, which asserts the exact quadruple { inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 } over the REGEX layer's app/** entry points. That file is NOT in the parent's authorized_future_implementation_surface.PF2_composition_and_permissions and is therefore outside PF2's write surface.",
+      "measured_basis": "ENTRY_POINT_PATTERNS (tests/database-runtime-entrypoints.test.ts:172-192) includes /^actions\\.tsx?$/, and ENTRY_POINTS is built at :221 by walking app/ and filtering with isEntryPoint. An independent recomputation of that walk and filter at AS_OF_TREE yields 141, reproducing the pinned 'inventoried' value exactly, and finds exactly three portfolio entry points — the three pages, no actions module. Creating app/app/portfolios/[portfolioId]/actions.ts therefore moves the quadruple to { 142, 117, 101, 16 }, and the assertion goes red.",
+      "why_it_is_not_dischargeable_within_the_current_surface": "It is an equality assertion, so it cannot be satisfied by adding anything to an authorized file. The repository's own established practice for every prior wave that added an entry point — W2-B1-R4, W2-B2, W2-B3, W2-B4, W2-B5 and MULTIORG-S2, each documented in that file's own comment block at :703-774 — is to move the quadruple and record the reason beside it. That practice requires editing tests/database-runtime-entrypoints.test.ts, which the parent did not authorize for PF2. It authorized tests/database-entrypoint-inventory.json, which is the AST layer's data file, not the regex layer's assertion.",
+      "release_condition": "ONE of: (a) a bounded append-only amendment to the parent product authority adding tests/database-runtime-entrypoints.test.ts to PF2_composition_and_permissions for REGISTRATION ONLY, with an explicit prohibition on loosening any assertion in it; or (b) an HPO adjudication that assigns the pin move to another owner. Until one of these exists, PF2 implementation may not create the actions module.",
+      "what_may_not_be_done_instead": [
+        "Editing tests/database-runtime-entrypoints.test.ts under this authority. It is not in the write surface.",
+        "Weakening the assertion at :775 from toEqual to a comparison that tolerates drift. Never weaken a gate to obtain a PASS.",
+        "Placing the composition server actions inline inside app/app/portfolios/[portfolioId]/page.tsx to avoid creating an entry point. The parent states as fact that PF-2 introduces app/app/portfolios/[portfolioId]/actions.ts and NEG-AUDIT-1 names that module by path, so relocating it is a unilateral product change, not an implementation detail — and page.tsx is itself already an entry point, so the same quadruple would still move if its classification changed.",
+        "Deferring the registration to a later commit. The parent's entrypoint_registration is 'in the same commit that introduces it' and is non-waivable."
+      ],
+      "what_is_authorized_now": "THIS AUTHORITY may materialize now. The lock binds the implementation node only."
+    },
+    "implementation_lock": {
+      "id": "LOCK-HEAVY-LOCAL-PG",
+      "when": "The PF2 implementation node MAY take this lock, and only while executing its real-PostgreSQL verification.",
+      "release": "Released as soon as the disposable container is torn down. The lock is not held across the whole implementation node.",
+      "not_taken_by_this_mission": "The present authority-only mission takes NO lock of this kind. It runs no PostgreSQL of any kind."
+    }
+  },
+  "EXECUTION_AUTHORIZATION": {
+    "resolution_of_the_integrated_field": {
+      "integrated_field": "PORTFOLIO_IMPLEMENTATION_AUTHORIZED = false, in docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_v1.0.0.json.",
+      "corroborating_fields": "PORTFOLIO_IMPLEMENTATION_STATUS = 'NOT_STARTED ...'; GRANT_ID = null; authority_class = 'PRODUCT_AUTHORITY'.",
+      "reading": "The integrated product authority froze the future implementation surfaces and granted write permission to no one. Its false value is a statement about ITS OWN grant, not a prohibition that a successor contradicts. The same reading was applied by PF1's successor, independently audited and integrated.",
+      "consequence": "The integrated field is NOT altered, NOT superseded and NOT reinterpreted. Write permission is created HERE, by a separate artifact of authority_class EXECUTION_AUTHORITY, for one node."
+    },
+    "PF2_IMPLEMENTATION_AUTHORIZED_NOW": "NO",
+    "PF2_IMPLEMENTATION_AUTHORIZED_AFTER_THIS_AUTHORITY_INTEGRATES": "CONDITIONAL — YES for the twelve paths that do not depend on a held lock, and NO for lib/audit/logger.ts and app/app/portfolios/[portfolioId]/actions.ts until LOCK-AUDIT-ACTION-VOCABULARY and LOCK-ENTRYPOINT-REGEX-LAYER-PIN are released respectively. Because the five audit verbs and the composition actions module are load-bearing for almost every frozen semantic, the practical effect is that PF2 implementation should not start until both locks are released.",
+    "PF1_IMPLEMENTATION_AUTHORIZED": "SPENT — granted by PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json, implemented and integrated at 635ed046.",
+    "PF3_IMPLEMENTATION_AUTHORIZED": "NO",
+    "conditions_precedent": [
+      "This artifact passes an independent Opus exact-object audit.",
+      "This artifact is integrated into integration/commercial-v1.",
+      "LOCK-AUDIT-ACTION-VOCABULARY is released before lib/audit/logger.ts is written.",
+      "LOCK-ENTRYPOINT-REGEX-LAYER-PIN is released before app/app/portfolios/[portfolioId]/actions.ts is created."
+    ],
+    "scope_of_the_grant": "Write permission for the thirteen paths in PF2_WRITE_SURFACE, and for nothing else. The grant does not extend to PF1's or PF3's path sets, does not extend to any protected surface, and does not authorize a migration, a schema change, an RLS policy change, an ODS artifact or a Controller enumeration.",
+    "what_this_authority_does_not_do": [
+      "It does not implement PF2. The working tree's PF2 paths are unchanged by this mission.",
+      "It does not authorize PF3, which requires its own successor.",
+      "It does not release either lock, and it does not amend the parent to widen PF2's surface.",
+      "It does not close the Portfolio tenancy coupling successor.",
+      "It does not edit, supersede or amend any parent or sibling artifact."
+    ]
+  },
+  "MEASURED_BASELINE_OF_THE_IMPLEMENTATION_SURFACE": {
+    "purpose": "Record the live pre-PF2 state of the composition surface at AS_OF_TREE, so that an audit of the PF2 implementation node can distinguish what PF2 changed from what it inherited, and so that the mutation controls' non-vacuity claims are checkable against a fixed baseline.",
+    "measured_facts": [
+      {
+        "ref": "lib/portfolios/service.ts (whole file, 69 lines)",
+        "fact": "Exports exactly three functions: listPortfoliosForCurrentOrganization, getPortfolioByIdForCurrentOrganization and createPortfolioForCurrentOrganization. There is NO update path, NO archive path and NO composition path of any kind."
+      },
+      {
+        "ref": "lib/portfolios/service.ts:41",
+        "fact": "An inline role array ['super_admin','organization_admin','impact_manager','analyst'] gates create. It admits analyst, which the parent's adjudication removes."
+      },
+      {
+        "ref": "lib/portfolios/service.ts:11-15 and :54",
+        "fact": "PortfolioInputSchema accepts status as a two-value enum defaulting to 'active', and the insert writes data.status through. Creating directly into 'archived' is reachable from the exported function."
+      },
+      {
+        "ref": "lib/projects/service.ts:44-50",
+        "fact": "listProjectsForPortfolio(portfolioId) returns every member project, organization-bound, with no limit and no offset."
+      },
+      {
+        "ref": "lib/projects/service.ts:74-83",
+        "fact": "The same-organization verification precedent the parent cites: a portfolio reference supplied at project creation is checked against the caller's organization before the insert. This is the only place projects.portfolio_id is ever written today — at :90, on INSERT. No UPDATE of that column exists anywhere in lib/ or app/."
+      },
+      {
+        "ref": "lib/auth/permissions.ts",
+        "fact": "Twenty-three exported functions: hasRole at :24 (the ROLE_HIERARCHY comparator) and twenty-two discrete permission helpers built on it, plus the set-inclusion STELLA_ROLES constant at :104-110. canCreateProject requires impact_manager at :62-64. canManagePortfolio does NOT exist."
+      },
+      {
+        "ref": "lib/audit/logger.ts:153-154",
+        "fact": "The AUDIT_ACTIONS object literal carries 104 entries and exactly one Portfolio verb, PORTFOLIO_CREATED = 'portfolio.created'. PF2's five new values occur nowhere in the file."
+      },
+      {
+        "ref": "app/app/portfolios/page.tsx:22 and app/app/portfolios/new/page.tsx:17-19",
+        "fact": "Both carry the identical inline four-role array including analyst. app/app/portfolios/[portfolioId]/page.tsx carries no role gate at all — it renders read-only content, so PF2 adds the first composition gate to it."
+      },
+      {
+        "ref": "app/app/portfolios/new/page.tsx:21-22",
+        "fact": "An inline 'use server' action handleCreate already exists inside the page and is covered by the page's own inventory row. It is a precedent for inline actions and is NOT a precedent for skipping the actions module PF2 must create."
+      },
+      {
+        "ref": "tests/database-entrypoint-inventory.json",
+        "fact": "checkedModules 143, databaseReaching 119, 119 map entries (118 app/, 1 components/), 103 contextualized, 16 allowlisted. No lib/** entry exists, so PF2's two service modules need none."
+      },
+      {
+        "ref": "tests/audit-action-contract.test.ts:86-99, :174-180, :200-228, :68",
+        "fact": "CORRESPONDENCE_SCAN_ROOTS is lib/pipeline, lib/projects/service.ts, lib/portfolios/service.ts and lib/admin — both PF2 service modules are ALREADY covered, app/** is not. CONTENT_MODIFYING_SITES carries 15 entries, all naming lib/pipeline modules. The correspondence rule and the >50 vocabulary floor are as the parent described."
+      },
+      {
+        "ref": "tests/portfolios.service.test.ts",
+        "fact": "Four existing test cases across two describe blocks, carrying five expect() calls: create allows authorized roles, create rejects unauthorized roles, create fails validation without a name, and the readiness statistic is labelled LEGACY_NON_AUTHORITATIVE. PF2 extends this file; it may not weaken or delete any of these. The second of them currently passes against an analyst-admitting array and must keep passing against canManagePortfolio, which excludes analyst."
+      },
+      {
+        "ref": "tests/auth/permissions.test.ts",
+        "fact": "One describe block per helper, each with an allow case and a deny case. PF2 adds the canManagePortfolio block in the same shape."
+      },
+      {
+        "ref": "lib/portfolios/analytics.ts:144 and :346",
+        "fact": "Post-PF1. aggregatePortfolioSroi(projects: ProjectRunSummary[]) accepts any array; getPortfolioAnalytics(portfolioId: string) accepts the id only. The aggregate-coverage invariant rests on call sites, not on types."
+      },
+      {
+        "ref": "db/schema.ts:128-140 and :180-221",
+        "fact": "portfolios carries status varchar default 'active' with status_check IN ('active','archived') at :138; projects carries portfolio_id as a nullable FK at :183 with idx_projects_portfolio_id at :218. Both match the parent's citations exactly. No schema change is needed and none is authorized."
+      }
+    ],
+    "implication": "PF2 is a from-scratch build of the composition surface, not a correction of one: five of the six frozen behaviours have no implementation at all at AS_OF_TREE, the sixth (create) carries two defects the parent's decisions correct, and no UPDATE of projects.portfolio_id exists anywhere in the tree."
+  },
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "scope_note": "These are the gates of the AUTHORITY-ONLY mission. The implementation node's own exit gates are listed under MANIFEST_DISPOSITION.exit_gates_inherited_from_batch_manifest and are NOT discharged here.",
+    "prestate": {
+      "branch": "codex/portfolio-pf2-execution-authority-r1 — matches the lane's required branch.",
+      "head": "635ed04605bd7d9f1a66f55511c5e2ae79175aaa — matches the packet's BASE.",
+      "tree": "51c7ab3aafeaefaed149a03cf3947f8ad3d6a468",
+      "clean": "`git status --porcelain --untracked-files=all` returned empty.",
+      "gate_output": "PRESTATE_BRANCH=PASS, PRESTATE_HEAD=PASS, PRESTATE_TREE=PASS, PRESTATE_CLEAN=PASS, ODS_PRESTATE=PASS."
+    },
+    "json_validation": "The artifact parses as JSON via json.load and re-serializes without loss, and is additionally parsed with JSON.parse. Structural self-consistency of its own cross-references is asserted in self_check.",
+    "schema_applicability": {
+      "repository_json_schemas_measured": "Exactly one JSON Schema artifact exists in the repository: docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json.",
+      "applies_to_this_artifact": false,
+      "proof": "That schema declares required = [manifest_id, node_or_batch, exit_gates, positive_controls, negative_controls] and additionalProperties = false. This artifact has ZERO of those five keys at top level — its control blocks are nested inside PF2_NEW_CONTROLS, never hoisted — so it does not claim, and cannot be read as claiming, to be a test manifest.",
+      "consistency_with_precedent": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json and PORTFOLIO_PF1_EXECUTION_AUTHORITY_v1.0.0.json likewise declare neither manifest_id nor node_or_batch. Execution authorities are not schema-governed in this repository; test manifests are.",
+      "consequence": "The JSON/schema validation gate is discharged by parse validity plus the cross-artifact and self-consistency checks recorded here, because no schema binds this artifact class. Had this mission materialized a second, companion test manifest, that manifest WOULD have been bound by UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json — one further reason the single-artifact form is the honest one."
+    },
+    "authority_consistency": "Every inherited claim in this authority was read out of the parent and sibling JSON BY KEY, not paraphrased from prose: permissions.*, composition_contract.*, portfolio_cardinality.*, portfolio_size_contract.*, authorized_future_implementation_surface.*, shared_writer_serialization.* on the product authority; positive_controls / negative_controls / mutation_controls / sentinels / exit_gates / postgres_requirements on the batch manifest; MANIFEST_DISPOSITION.explicitly_not_pf1 and PF1_WRITE_SURFACE on the sibling. Every line-number citation of live code in this artifact was re-measured at AS_OF_TREE and is not inherited from the parent's own measurement base.",
+    "authority_seal_verify_baseline": "PASS on the clean tree before any edit: ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9, PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS, AUTHORITY_SEAL_VERIFY=PASS. The protected corpus is a fixed set of 9, not a directory enumeration of docs/ops, so adding this artifact cannot perturb it.",
+    "secrets_scan_baseline": "PASS on the clean tree before any edit: 'CURRENT_TREE: no credential material found.'",
+    "node_modules_precondition": "pnpm install --frozen-lockfile completed with exit code 0 BEFORE the first gate. A gate run in a worktree without node_modules cannot resolve tsx and reports a vacuous result; this mission does not accept one.",
+    "gate_results_after_materialization": "Recorded in the mission report and reproducible from the final commit; see final_state."
+  },
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-PF2-1",
+      "severity": "NON_BLOCKING",
+      "title": "PF2's frozen new server-action module moves an exact pin that lives outside PF2's authorized write surface.",
+      "detail": "tests/database-runtime-entrypoints.test.ts:775 asserts { inventoried: 141, reaching: 116, contextualized: 100, allowlisted: 16 } over the regex layer's app/** entry points. ENTRY_POINT_PATTERNS at :172-192 includes /^actions\\.tsx?$/, so app/app/portfolios/[portfolioId]/actions.ts — which the parent freezes in PF2's surface — is an entry point, and creating it moves the quadruple to { 142, 117, 101, 16 }. The parent's PF2 path set contains tests/database-entrypoint-inventory.json (the AST layer's data file) but NOT tests/database-runtime-entrypoints.test.ts (the regex layer's assertion). The parent artifact, the batch manifest and the PF1 authority each contain ZERO occurrences of the string 'database-runtime-entrypoints'.",
+      "why_non_blocking": "It blocks the IMPLEMENTATION node, not this authority-only mission. It is fully measured, it has a named release condition, and it is disclosed rather than resolved by silently widening a frozen parent enumeration — which would be exactly the authority expansion the operating rules forbid.",
+      "disposition": "Recorded as LOCKS.LOCK_ENTRYPOINT_REGEX_LAYER_PIN, with its release condition and an explicit list of what may NOT be done instead. Neither parent artifact is edited and PF2's write surface is not widened."
+    },
+    {
+      "id": "F-PF2-2",
+      "severity": "NON_BLOCKING",
+      "title": "The 'application and database both refuse' guarantee holds on the organization axis and has no counterpart on the role axis.",
+      "detail": "The parent's composition_contract.same_org_validation states that composition is enforced by the application and additionally by RLS, naming projects_update_allowed_roles and portfolios_*. Measured, both policies (db/migrations/0031_rls_core.sql:231-241 and :265-275, reproduced in db/baseline/stella_g2_schema.sql:9366 and db/policies/001_initial_auth_rls.sql:265) admit 'analyst' in USING and WITH CHECK. The analyst exclusion adjudicated in permissions.analyst_adjudication is therefore enforced by canManagePortfolio alone.",
+      "why_non_blocking": "The parent's sentence is scoped to same-ORGANIZATION validation and is exact within that scope; the gap is a silence about the role axis, not a false statement. Nothing needs to change in the database: FIBC-038 is NO_DB_OBJECT and closing it would require a migration the parent forbids.",
+      "disposition": "Frozen as ROLE_ENFORCEMENT_LAYER and pinned by PF2-NEG-ROLE-RLS-1 and PF2-MUT-ROLE-RLS-1, so that a PF2 implementer cannot write a PostgreSQL control asserting an analyst denial that the database will not deliver, and cannot record a green RLS run as evidence of the narrowing."
+    },
+    {
+      "id": "F-PF2-3",
+      "severity": "NON_BLOCKING",
+      "title": "The live create path can produce an archived portfolio with no portfolio.archived audit row.",
+      "detail": "PortfolioInputSchema (lib/portfolios/service.ts:11-15) declares status as z.enum(['active','archived']).default('active') and createPortfolioForCurrentOrganization writes data.status straight into the insert at :54. db/schema.ts:138's status_check admits both values and constrains no transition. The shipped form does not supply status, so the defect is unreachable from the UI today and reachable from the exported service function.",
+      "why_non_blocking": "PF2's create and update contracts close it as a consequence of implementing this authority, and it is recorded because it is a distinct defect from the inline-role-array defect and an auditor should see both named.",
+      "disposition": "Closed by STATUS_INPUT_CONTRACT when PF2 is implemented, pinned by PF2-NEG-STATUS-1, PF2-NEG-UNARCHIVE-1 and PF2-MUT-STATUS-1."
+    },
+    {
+      "id": "F-PF2-4",
+      "severity": "NON_BLOCKING",
+      "title": "One concurrent lane is open against a Portfolio shared writer at AS_OF_TREE.",
+      "detail": "PR #105 (open, draft, base integration/commercial-v1) changes lib/audit/logger.ts, one of the three shared-writer files the parent assigns to PF2 for the Portfolio lane. Its two appended verbs are three-segment values, which the two-segment shape pin at lib/audit/__tests__/logger.test.ts:34 does not admit; PF2's five verbs are two-segment and satisfy that pin unchanged.",
+      "why_non_blocking": "The parent already anticipated ordinary concurrency on these three files and prescribes the resolution — synchronise before editing, re-apply rather than overwrite. This finding supplies the measured identity of the concurrent lane at AS_OF_TREE and the measured proof that PF2 does not share its defect class.",
+      "disposition": "Recorded as LOCKS.LOCK_AUDIT_ACTION_VOCABULARY with an explicit release condition."
+    },
+    {
+      "id": "F-PF2-5",
+      "severity": "NON_BLOCKING",
+      "title": "app/app/portfolios/[portfolioId]/page.tsx is authorized to two different nodes with no serialization rule.",
+      "detail": "The parent lists that path in BOTH authorized_future_implementation_surface.PF2_composition_and_permissions and .PF3_comparison_health_and_intelligence. shared_writer_serialization names only lib/audit/logger.ts, tests/database-entrypoint-inventory.json and tests/audit-action-contract.test.ts, so the one file two Portfolio nodes are both authorized to write is the one file the serialization rule does not cover.",
+      "why_non_blocking": "PF3 is not authorized and has no successor artifact, so no concurrent Portfolio writer exists at AS_OF_TREE. The exposure begins only when a PF3 execution authority is materialized.",
+      "disposition": "Disclosed here so that the PF3 successor addresses it rather than discovering it as a conflict. This authority does not resolve it and does not edit the parent; PF2's own obligation is unchanged."
+    }
+  ],
+  "self_check": {
+    "artifact_count_this_mission": 1,
+    "changed_paths_this_mission": [
+      "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json"
+    ],
+    "parents_edited": 0,
+    "siblings_edited": 0,
+    "product_decisions_reopened": 0,
+    "write_surface_path_count": 13,
+    "write_surface_paths_present_at_AS_OF_TREE": 11,
+    "write_surface_paths_absent_at_AS_OF_TREE": 2,
+    "frozen_composition_behaviours": 6,
+    "new_audit_verbs": 5,
+    "new_control_ids": [
+      "PF2-POS-ENTRYPOINT-TOTALS-1",
+      "PF2-NEG-STATUS-1",
+      "PF2-NEG-UNARCHIVE-1",
+      "PF2-NEG-AGGREGATE-PAGE-1",
+      "PF2-NEG-ROLE-RLS-1",
+      "PF2-MUT-STATUS-1",
+      "PF2-MUT-ROLE-RLS-1"
+    ],
+    "new_control_id_count": 7,
+    "new_control_ids_collide_with_batch_manifest": false,
+    "batch_manifest_ids_redefined": 0,
+    "batch_manifest_id_count_measured": 55,
+    "additive_gap_fill_count": 5,
+    "mutation_requirements_required": 7,
+    "mutation_requirements_mapped": 7,
+    "locks_recorded": [
+      "LOCK-AUDIT-ACTION-VOCABULARY",
+      "LOCK-ENTRYPOINT-REGEX-LAYER-PIN",
+      "LOCK-HEAVY-LOCAL-PG"
+    ],
+    "locks_taken_by_this_mission": [],
+    "locks_released_by_this_mission": [],
+    "migrations_consumed": 0,
+    "ods_artifacts_touched": 0,
+    "protected_paths_touched": 0,
+    "grants_consumed": 0,
+    "heavy_pg_runs": 0,
+    "blocking_findings": 0,
+    "unknown_findings": 0,
+    "non_blocking_findings": 5
+  },
+  "final_state": "PORTFOLIO_PF2_EXECUTION_AUTHORITY_MATERIALIZED_AWAITING_INDEPENDENT_AUDIT",
+  "PF2_IMPLEMENTATION_AUTHORIZED": false,
+  "READY_FOR_PF2_IMPLEMENTATION": "NO — an independent Opus exact-object audit of this artifact, followed by integration into integration/commercial-v1, followed by the release of LOCK-AUDIT-ACTION-VOCABULARY and LOCK-ENTRYPOINT-REGEX-LAYER-PIN, are all required first.",
+  "next_gate": "INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT_OF_PF2_EXECUTION_AUTHORITY, at base 635ed04605bd7d9f1a66f55511c5e2ae79175aaa"
+}

@@ -49,6 +49,36 @@
 // silently ingesting a summary in place of the content. See the G-01 design
 // note; this resolver becomes correct for text the moment that path stores what
 // it hashed, and needs no change to do so.
+//
+// ---------------------------------------------------------------------------
+// F-ED-4 — WHY CLASSIFICATION IS CHECKED BEFORE ANYTHING IS READ
+// ---------------------------------------------------------------------------
+// Every existing Stella model-bound context builder
+// (`lib/stella/context/build-*-context.ts`) already refuses to hand an
+// external model any evidence whose CURRENT `sensitivity_classification` is
+// not exactly `'non_sensitive'` — unclassified included. Grounding had no
+// equivalent boundary: an evidence row's bytes could reach the chunk store,
+// and from there a `grounded_query` answer, regardless of its classification.
+// This resolver closes that gap at the one seam every ingested byte must
+// cross, so the boundary holds for every future grounding write path without
+// each one having to re-implement it.
+//
+// The check runs BEFORE the kind branch, so it precedes even text evidence's
+// read of its own row (`resolveTextBytes` reads `description` directly, with
+// no storage round trip to gate on otherwise) — INSIDE this resolver, it is a
+// decision about which bytes may be looked at, not merely one about which
+// bytes may be persisted.
+//
+// That property is local to this function. The caller
+// (app/actions/grounding/ingest-evidence.ts) already selects `description`
+// off `evidence_items` — for text evidence, the very content this gate
+// exists to keep out — in the SAME query that finds the row, before this
+// resolver or its classification is ever reached; and the classification
+// lookup itself (`getLatestEvidenceVersionsByEvidenceIds`) selects every
+// column of the matching `evidence_versions` rows, `content` included, for a
+// decision that needs one varchar. Neither is a bypass of this gate — nothing
+// downstream is more permissive — but "no byte is looked at" is not literally
+// true one layer up, and a caller relying on that stronger claim should not.
 
 import crypto from 'node:crypto'
 
@@ -78,6 +108,16 @@ export interface EvidenceSourceRecord {
   readonly fileSize: number | null
   readonly mimeType: string | null
   readonly contentHash: string | null
+  /**
+   * `evidence_versions.sensitivity_classification` for this item's CURRENT
+   * version — `string` rather than the FIBIU-05 vocabulary union for the same
+   * reason `type` is: the resolver checks the one value it is allowed to act
+   * on (`'non_sensitive'`) and leaves every other value, including a value the
+   * vocabulary does not define, refused rather than narrowed. `null` covers
+   * both "never classified" and "no version exists yet" — both are UNCLEARED,
+   * not exempt.
+   */
+  readonly sensitivityClassification: string | null
 }
 
 /**
@@ -103,6 +143,12 @@ export type EvidenceSourceRefusal =
   | 'unsupported_kind'
   /** The row belongs to another organization or project, or the scope is not project-bound. */
   | 'scope_mismatch'
+  /**
+   * Sensitivity classification is not the single value cleared for grounding
+   * ingestion. Covers every restricted classification AND a missing one —
+   * one reason for all of them, so the refusal itself names no classification.
+   */
+  | 'classification_restricted'
   /** No stored content: no path, no object, or no text. */
   | 'missing_bytes'
   /** Absent or unparseable MIME type, or no hash to verify against. */
@@ -186,7 +232,27 @@ export async function resolveEvidenceSource(
     return refuse('scope_mismatch', 'evidence row is outside the requested scope')
   }
 
-  // 2. KIND — before any read, and `url` is named rather than defaulted so its
+  // 2. CLASSIFICATION — before the kind branch and before ANY byte is read,
+  //    text included: `resolveTextBytes` below reads the row's own `description`
+  //    column, which is exactly the content this gate exists to keep out of the
+  //    corpus, so the gate must run before that branch is reached, not only
+  //    before the storage reader is consulted.
+  //
+  //    Mirrors the one rule every Stella model-bound context builder already
+  //    enforces (`lib/stella/context/build-*-context.ts`, FIBIU-05): only the
+  //    single explicit value `'non_sensitive'` clears an item. Missing,
+  //    unrecognized, and every other classification in the FIBIU-05 vocabulary
+  //    ('personal_data', 'identifiable_restricted', 'confidential_third_party',
+  //    'special_category') refuse identically — this predicate does not grade
+  //    them, so the refusal below cannot leak which one applied.
+  if (evidence.sensitivityClassification !== 'non_sensitive') {
+    return refuse(
+      'classification_restricted',
+      'evidence sensitivity classification is not cleared for grounding ingestion',
+    )
+  }
+
+  // 3. KIND — before any read, and `url` is named rather than defaulted so its
   //    refusal is a decision a reader can find.
   if (evidence.type === 'url') {
     return refuse('unsupported_kind', 'url evidence is not ingested; remote content is never fetched')
@@ -195,7 +261,7 @@ export async function resolveEvidenceSource(
     return refuse('unsupported_kind', `unsupported evidence type: ${evidence.type}`)
   }
 
-  // 3. INTEGRITY ANCHOR — there must be something to verify against, whatever
+  // 4. INTEGRITY ANCHOR — there must be something to verify against, whatever
   //    the kind. Without it the checks below would be decorative.
   if (typeof evidence.contentHash !== 'string' || evidence.contentHash.trim() === '') {
     return refuse('malformed_metadata', 'evidence row carries no content hash')
@@ -210,7 +276,7 @@ export async function resolveEvidenceSource(
 
   const { bytes, mimeType } = resolved
 
-  // 4. ACTUAL SIZE — the declared size was checked before reading; this is the
+  // 5. ACTUAL SIZE — the declared size was checked before reading; this is the
   //    one that binds, because `file_size` is a claim and `bytes.length` is not.
   if (bytes.length > MAX_GROUNDING_INPUT_BYTES) {
     return refuse(
@@ -222,7 +288,7 @@ export async function resolveEvidenceSource(
     return refuse('missing_bytes', 'resolved content is empty')
   }
 
-  // 5. INTEGRITY — the bytes about to be ingested are the bytes the row was
+  // 6. INTEGRITY — the bytes about to be ingested are the bytes the row was
   //    created over, or they are not ingested.
   if (sha256Hex(bytes) !== evidence.contentHash) {
     return refuse(

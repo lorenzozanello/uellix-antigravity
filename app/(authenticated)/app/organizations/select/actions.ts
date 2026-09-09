@@ -39,6 +39,38 @@ import {
   setSelectedOrganization,
   clearSelectedOrganization,
 } from '@/lib/auth/selected-organization'
+import { withAuthenticatedDatabaseContext } from '@/lib/auth/database-context'
+import { emitOrganizationSelectionRefused } from '@/lib/audit/tenancy-refusal'
+
+/**
+ * Record a refused selection attempt, BEFORE the redirect that ends the act.
+ *
+ * TWO MEASURED HAZARDS SHAPE THIS HELPER, and neither is hypothetical.
+ *
+ * ORDERING. `redirect()` from next/navigation THROWS to unwind the request.
+ * An emission placed after it is unreachable, so every call below runs first.
+ * Equally, this must not be wrapped in a try/catch that also swallows
+ * redirect's control-flow throw — so it is not wrapped at all. A failure to
+ * record the refusal propagates and the request fails, which is the intended
+ * fail-closed behaviour: a refusal must not complete while the row recording
+ * it is missing.
+ *
+ * CONTEXT. `withAuthenticatedDatabaseContext` opens exactly the unscoped
+ * { userId, organizationId: null } context the emitter requires, and is one of
+ * the context openers tests/database-runtime-entrypoints.test.ts recognises.
+ * Importing the emitter makes this module database-reaching; opening the
+ * context here is what keeps it `contextualized` rather than dropping the
+ * pinned magnitude by one.
+ *
+ * The raw submitted value is passed through UNCLASSIFIED. Deciding Form A from
+ * Form B is the emitter's job, precisely so that malformed bytes are shape-
+ * checked in exactly one place instead of at every call site.
+ */
+async function recordRefusedSelection(attempted: string | null | undefined): Promise<void> {
+  await withAuthenticatedDatabaseContext(async ({ user }) => {
+    await emitOrganizationSelectionRefused({ userId: user.id, attemptedOrganizationId: attempted })
+  })
+}
 
 /**
  * Select an organization as a session-scoped carrier.
@@ -58,6 +90,11 @@ export async function selectOrganizationAction(formData: FormData): Promise<void
 
   const requestedOrganizationId = (formData.get('organizationId') as string | null)?.trim()
   if (!requestedOrganizationId) {
+    // FORM A. An explicit selection act that supplied no usable organisation
+    // id. This is a genuine ATTEMPT and is therefore audited — unlike the
+    // routine "signed in, nothing selected yet" state, which is not an attempt
+    // and emits nothing (see lib/auth/database-context.ts).
+    await recordRefusedSelection(requestedOrganizationId)
     redirect('/app/organizations/select?error=missing_organization')
   }
 
@@ -70,6 +107,12 @@ export async function selectOrganizationAction(formData: FormData): Promise<void
     // instead — this check is deliberately independent of any prior
     // selection, so a caller has no way to bootstrap a wrong write from a
     // stale carrier.
+    //
+    // FORM B when the submitted value is a valid UUID; FORM A when it is
+    // malformed. The emitter classifies, so hostile bytes never reach the
+    // uuid subject column, and no organisation existence lookup is added
+    // merely to record the event.
+    await recordRefusedSelection(requestedOrganizationId)
     redirect('/app/organizations/select?error=not_a_member')
   }
 

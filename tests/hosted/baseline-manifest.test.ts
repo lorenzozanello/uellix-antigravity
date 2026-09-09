@@ -102,20 +102,26 @@ describe('the baseline manifest describes the corpus that is actually checked in
   // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability) —
   // + 0066_multiorg_s1_founder_traceability.sql (MO-10/MO-11/MO-01) =
   // 79 units, 67 Drizzle.
-  it('has 79 units: 67 Drizzle, 2 Supabase, 10 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(79)
+  // HPO-ODS-W2-25 (multi-org S3 refusal audit) —
+  // + 0067_tenancy_refusal_audit_insert_policy.sql (the additive audit_logs
+  // INSERT policy for NULL-organisation refusal rows) =
+  // 80 units, 68 Drizzle. It is a DRIZZLE unit, not a `policy` one: `kind`
+  // records which checked-in SET a unit comes from, and this one comes from
+  // db/migrations/, so the `policy` pin below is unmoved by it.
+  it('has 80 units: 68 Drizzle, 2 Supabase, 10 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(80)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(67)
+    expect(byKind('drizzle-migration')).toBe(68)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(10)
   })
 
-  it('numbers ordinals 1..79 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..80 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 79 }, (_, i) => i + 1),
+      Array.from({ length: 80 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(79)
+    expect(new Set(BASELINE_ORDER).size).toBe(80)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
