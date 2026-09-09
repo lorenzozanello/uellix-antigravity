@@ -1,0 +1,302 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.29",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29",
+  "authority_class": "ODS_V1_MAINTENANCE_ADDENDUM_INSTRUCTION_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-26",
+  "hpo_mission_id": "CE1-ODS-V1.0.29-MINIMAL-SUCCESSOR-AUTHORITY-R1",
+  "predecessor_hpo_mission_id": "COMMERCIAL-ACCOUNT-CE1-LINEAGE-ALLOCATION-AUTHORITY-R1",
+  "materialization_date": "2026-09-09",
+  "supersedes": null,
+  "refines": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json",
+  "refines_note": "REFINES, NOT SUPERSEDES. Every operative clause of v1.0.28 remains in force, unamended and unweakened: the HPO-ODS-W2-26 allocation, its branch binding, its three patterns, the two-path future registration surface, the closed world, the prohibitions and the CE-1 sequencing. This successor ADDS exactly one authority that v1.0.28 does not carry — the LIVE_COUNT_GUARD_TRANSFER of section THE_AUTHORITY_GAP — and changes nothing else. supersedes is null because nothing in the predecessor is withdrawn.",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+
+  "purpose": "Close the single authority gap that makes the HPO-ODS-W2-26 registration act, as authorized by v1.0.28, impossible to perform without violating v1.0.28's own narrowness clause. v1.0.28 declares the post-registration count 14 but never binds it to any operation, and never reaches the live-count guard that registering W2-26 is guaranteed to break. This addendum authorizes the atomic predecessor-demotion / live-count-promotion pair that resolves the deadlock, and authorizes nothing else.",
+
+  "scope_note": "MINIMAL APPEND-ONLY SUCCESSOR. This artifact registers nothing, implements nothing, allocates no new grant, and edits no other path. It is one JSON file.",
+
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "START_HEAD": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
+    "START_TREE": "60ac29a27c91c51e08da12a45120919b8006d462",
+    "BRANCH": "codex/ce1-ods-v1029-successor-r1",
+    "LATEST_INTEGRATION_HEAD": "9a414fac0858a86e738cb41e2f024502cf5efc8d",
+    "INTERVENING_DELTA": "NONE. Measured with `git fetch origin integration/commercial-v1` followed by `git rev-parse origin/integration/commercial-v1`, which resolves to 9a414fac0858a86e738cb41e2f024502cf5efc8d — byte-identical to this mission's START_HEAD and to this worktree's HEAD. `git log 9a414fac..origin/integration/commercial-v1` is empty and `git merge-base --is-ancestor` confirms ancestry. No stale-base reconciliation is owed.",
+    "WORKTREE_FIDELITY": "MEASURED, not assumed. The four files this mission reasons about were compared blob-for-blob against the live ref with `git hash-object` rather than `git diff`, because `git diff <ref> -- <path>` has previously diffed against the working tree unexpectedly in this repository and because CRLF round-tripping can mask a textual difference that the stored blob does not have. scripts/ods-controller.ts = 911e083d50e2652bd7f26f402cdd50b7d02b07c1, scripts/ods-scope.ts = fd772c4e7f82b8c6d6e955b7373f4dbb1e0e2670, tests/ods/ods-scope.test.ts = fcc3cf2b49e27c6ca58a04740d06f86c6f2dba30, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json = 04420dc645c30c95829b0ed4fcdbf167b318d014. All four MATCH origin/integration/commercial-v1.",
+    "remeasurement_rule": "Every count in this artifact is bound to START_HEAD 9a414fac. A mission whose base differs from 9a414fac by even one commit MUST re-measure all of them and MUST NOT inherit them. The PROTECTED_GRANTS row count and the ODS lineage ordinal are shared, globally-serialized resources that any other lane can move."
+  },
+
+  "PRESTATE_MEASURED": {
+    "measurement_method": "STRUCTURAL, NOT TEXTUAL. The IMMUTABLE_BY_CONVENTION and PROTECTED_GRANTS array literals were extracted by a string-aware balanced-bracket scan anchored on the ASSIGNMENT operator and then evaluated as JavaScript, so the reported figures are properties of the ARRAY OBJECT and not of the lines that happen to match a regular expression. This distinction is load-bearing in this repository: a textual sweep for grant identifiers over scripts/ods-scope.ts and tests/ods/ods-scope.test.ts counts occurrences that are comments and negative controls, not registry rows. A scan anchored on the first bracket rather than on the assignment silently returns an EMPTY array, because `readonly string[] =` and `ProtectedGrant[] =` each place a closed empty bracket pair between the identifier and the real literal; that failure mode was encountered and corrected during this mission's own measurement, and a zero-length extraction now raises rather than reporting a count.",
+    "CONTROLLER_COUNT": 39,
+    "CONTROLLER_FINAL_ITEM": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json",
+    "CONTROLLER_DUPLICATE_ENTRIES": 0,
+    "CONTROLLER_ENUMERATES_v1_0_29": false,
+    "V1_0_29_ABSENCE": "CONFIRMED FIRST FREE. docs/ops/ods/ holds exactly 28 ODS_V1_MAINTENANCE_ADDENDUM files, v1.0.1 through v1.0.28 with no gap and no v1.0.29. Swept across ALL 370 named refs in the repository: ZERO refs carry any docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29 blob. No other lane has consumed this ordinal.",
+    "W2_26_ALLOCATION": "ALLOCATED. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json carries GRANT_ID 'HPO-ODS-W2-26' with protected_grant.registration_status 'DECLARED_NOT_REGISTERED'.",
+    "W2_26_REGISTRATION_STATE": "UNREGISTERED. The evaluated PROTECTED_GRANTS array holds no row with authorityId 'HPO-ODS-W2-26'. Swept across ALL 370 named refs: ZERO refs carry a scripts/ods-scope.ts blob mentioning HPO-ODS-W2-26 or HPO-ODS-W2-27. The single textual occurrence of 'HPO-ODS-W2-26' in tests/ods/ods-scope.test.ts is a NEGATIVE CONTROL asserting its absence, not a registration.",
+    "W2_27_ABSENCE": "UNALLOCATED. No addendum carries GRANT_ID 'HPO-ODS-W2-27', no PROTECTED_GRANTS row carries it, and the all-refs sweep above returns zero hits. This addendum does not allocate it.",
+    "PROTECTED_GRANTS_COUNT": 13,
+    "PROTECTED_GRANTS_IDS": [
+      "HPO-ODS-W2-01",
+      "HPO-ODS-W2-02",
+      "HPO-ODS-W2-03",
+      "HPO-ODS-W2-07",
+      "HPO-ODS-W2-08",
+      "HPO-ODS-W2-09",
+      "HPO-ODS-W2-11",
+      "HPO-ODS-W2-12",
+      "HPO-ODS-W2-16",
+      "HPO-ODS-W2-17",
+      "HPO-ODS-W2-20",
+      "HPO-ODS-W2-21",
+      "HPO-ODS-W2-25"
+    ],
+    "PROTECTED_GRANTS_UNIQUE_IDS": 13,
+    "W2_22_IS_NOT_A_REGISTRY_ROW": "CONFIRMED. HPO-ODS-W2-22 is an ADDENDUM IDENTITY carried by v1.0.21 with protected_grant = null. The evaluated registry contains no row with that id. A lineage identifier is not a protected-path grant, and the existing control at the site asserting this MUST survive the registration act unchanged.",
+    "ALL_PRESTATE_REQUIREMENTS_MET": true,
+    "STOP_FOR_LINEAGE_RECONCILIATION": "NOT TRIGGERED. v1.0.29 is first free and HPO-ODS-W2-27 is unconsumed at the live tip and across every ref."
+  },
+
+  "MINIMALITY": {
+    "form": "MINIMAL APPEND-ONLY",
+    "the_single_gap_this_artifact_closes": "LIVE_COUNT_GUARD_TRANSFER",
+    "INHERITED_BY_REFERENCE_NOT_RESTATED": "The following are governed ENTIRELY by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json and are NOT re-enumerated, re-derived, paraphrased or restated in weaker words here: the grant identity and its allocation disposition; the bound branch codex/commercial-account-ce1-implementation-r1 and its STOP_FOR_GRANT_BRANCH_MISMATCH rule; the three grant patterns and their narrowness rationales; the NO_BLANKET_DB_PREPARED prohibition; the grant_does_not_replace_allow mechanism; the why_existing_grants_cannot_be_reused measurement; the separate_entry_rule; the five registration operations already enumerated on the two authorized paths; the closed_world list; the who_may_perform_it disposition; the NEITHER_PATH_IS_PROTECTED measurement; the a_node_does_not_edit_its_own_referee reconciliation; the CE-1 implementation branch; and every prohibition v1.0.28 carries. Where this artifact repeats a v1.0.28 field it does so ONLY to the extent needed to make the demote/promote pair independently verifiable without opening the predecessor, and the predecessor remains the source of truth on every such field.",
+    "NO_SEMANTIC_WIDENING_BY_PARAPHRASE": "BINDING. Nothing restated here may be read as broader than the predecessor's own words. Where this artifact's phrasing and v1.0.28's phrasing could be read to differ in scope, the NARROWER reading governs and v1.0.28 controls.",
+    "why_a_successor_rather_than_an_amendment_to_v1_0_28": "v1.0.28 is integrated and frozen. Editing it to add the missing authority would rewrite historical evidence and would break the digest and self-inclusion controls that bind it. The repository's established correction discipline for exactly this situation is a forward successor that refines the frozen predecessor — the discipline v1.0.25, v1.0.26 and v1.0.27 each used for the S3 ceiling, and the one v1.0.28 itself invoked when it resolved the CE-1 amendment's open point forward instead of editing the frozen amendment."
+  },
+
+  "THE_AUTHORITY_GAP": {
+    "name": "LIVE_COUNT_GUARD_TRANSFER",
+    "statement": "Registering HPO-ODS-W2-26 moves the live PROTECTED_GRANTS array from 13 rows to 14. Exactly one assertion in tests/ods/ods-scope.test.ts compares a FROZEN artifact field against the LIVE array length. That assertion currently reads the v1.0.25 field PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25, whose frozen value is 13. After registration it evaluates 13 against 14 and FAILS. v1.0.28 neither anticipates this nor authorizes touching it.",
+    "GAP_MEASURED_NOT_ASSERTED": {
+      "PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26_occurrences_in_v1_0_28": 1,
+      "occurrence_disposition": "Its own declaration, with value 14. It is never referenced by any other clause of v1.0.28 and is never bound to any future operation. The predecessor states the number and stops.",
+      "PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25_occurrences_in_v1_0_28": 0,
+      "occurrence_disposition_2": "v1.0.28 never names the field whose assertion registration is guaranteed to break, and never names the live-count guard at all. The words 'demote', 'promote' and 'rebound' appear zero times in v1.0.28 in any casing."
+    },
+    "WHY_THE_PREDECESSOR_CANNOT_SIMPLY_BE_READ_BROADLY": "v1.0.28 AUTHORIZED_FUTURE_REGISTRATION_SURFACE authorizes, on tests/ods/ods-scope.test.ts, the count update from 13 to 14, the row-shape and duplicate additions, and the single absence-literal advance — and then closes the enumeration with 'NO existing control may be weakened, skipped, loosened to an inequality, or deleted. Additions, the count update, and the single absence-literal advance only.' The live-count guard is none of those three authorized operations: it is not the length assertion, not the Set-cardinality assertion, and not the absence literal. Worse, the ONLY correct repair — replacing a binding to the live array with a frozen literal — is on its face the 'weakening of an existing control' the same clause prohibits. A registering mission is therefore simultaneously GUARANTEED to break this control and NOT AUTHORIZED to repair it. That is a fail-closed deadlock, and closing it is the entire reason this successor exists.",
+    "THE_THIRD_WAY_IS_PROHIBITED": "Editing docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json so that its field reads 14 would make the assertion pass. It is PROHIBITED. v1.0.25 is frozen, integrated, enumerated by the Controller under IMMUTABLE_BY_CONVENTION, and its figure is a true statement about the state that obtained when it was written. Changing it would corrupt the historical record to satisfy a present-tense guard. This prohibition is not novel: the surviving comment at the S1 demotion site in tests/ods/ods-scope.test.ts already states it in the repository's own words — 'editing the artefacts to say 13 would corrupt the historical record'."
+  },
+
+  "DEMOTE": {
+    "operation": "PREDECESSOR_DEMOTION",
+    "path": "tests/ods/ods-scope.test.ts",
+    "SEMANTIC_IDENTIFICATION_NOT_LINE_NUMBER": {
+      "rule": "The target is THE UNIQUE assertion in tests/ods/ods-scope.test.ts whose RECEIVED expression is the v1.0.25 addendum field PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25 and whose EXPECTED argument is the bare expression PROTECTED_GRANTS.length. It is identified by that pairing and by nothing else.",
+      "why_not_a_line_number": "Line numbers are not authority. The registration act itself adds rows to this file and moves every line below its insertion point, and any figure stated here would be stale before the implementer reached it. v1.0.28 already learned this and required re-measurement for the absence literal; the same discipline applies here.",
+      "DISAMBIGUATION_MEASURED": "The expression PROTECTED_GRANTS.length occurs at EXACTLY TWO sites in this file at START_HEAD. The FIRST is the live registry-size assertion of the form `expect(PROTECTED_GRANTS.length).toBe(13)`, where the live array is the RECEIVED value and the literal is the EXPECTED value; that site is NOT this target and is governed by v1.0.28's already-authorized count update from 13 to 14. The SECOND is this target, where the operands are the other way round. The two are distinguished by which side the live array sits on, which is a property of the source and not of its position.",
+      "uniqueness_requirement": "The implementer MUST re-measure at their own base and MUST confirm that exactly ONE site matches the rule. If zero or more than one site matches, that is a STOP: the file has changed in a way this authority did not anticipate, and the implementer must escalate rather than choose."
+    },
+    "required_result": "The expected argument becomes the historically frozen literal 13. The assertion thereafter reads: the v1.0.25 field PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25 equals 13.",
+    "frozen_literal": 13,
+    "literal_derivation": "MEASURED, not chosen. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25 holds the integer 13 at START_HEAD. The literal is the value the frozen artifact actually asserts — it is not the pre-registration live count that happens to share the number, and it must be re-derived from the artifact rather than copied from this sentence.",
+    "exactness_is_unchanged": "The demoted assertion remains an exact equality against an exact integer. Nothing is loosened to an inequality, skipped, or deleted. What changes is WHICH fact the assertion pins: it stops tracking the live array and starts pinning the historical claim of a frozen artifact, which is the only claim that artifact ever made.",
+    "MEASURED_PRECEDENT": "This exact operation has been performed once before in this exact file, and the record of it survives in place. When HPO-ODS-W2-25 was registered, the S1 guards were demoted to the historical literal 12 and the live binding moved to the newest registration. The surviving comment states the reasoning in full — that rebinding frozen artefacts to the live length 'would make two frozen authority artefacts appear to predict a count they never claimed', that editing the artefacts instead 'would corrupt the historical record', and that therefore 'the guard is demoted to the literal those artefacts actually assert, and the LIVE binding moves to the newest registration below. The exactness is unchanged.' This addendum authorizes the same operation one turn later and adds no new doctrine."
+  },
+
+  "PROMOTE": {
+    "operation": "LIVE_COUNT_PROMOTION",
+    "path": "tests/ods/ods-scope.test.ts",
+    "source_field": "PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26",
+    "source_artifact": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json",
+    "frozen_value": 14,
+    "required_result": "After W2-26 is registered, the v1.0.28 field PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26 becomes THE ONE assertion bound to the live expression PROTECTED_GRANTS.length. It is the successor of the demoted guard and inherits its role exactly: a registry that grew by more or fewer than the one authorized entry fails here.",
+    "reading_the_predecessor_artifact_is_an_addition": "The v1.0.28 JSON is not currently read by this test at START_HEAD. Reading it is an ADDITION to the file, which v1.0.28's own narrowness clause permits without further authority. This addendum notes it so the implementer does not mistake a necessary new read for an unauthorized widening.",
+    "EXACTLY_ONE_LIVE_GUARD": "BINDING. After the pair completes there must be EXACTLY ONE assertion in this file binding a frozen addendum field to the live expression PROTECTED_GRANTS.length, and it must be the v1.0.28 field. Two live-count guards is a defect, not extra safety: the older one would fail on the next registration for a reason the next lane did not cause, and the whole point of the demotion discipline is that only the NEWEST registry change holds the live binding.",
+    "value_derivation": "MEASURED. The integer 14 is read from the frozen v1.0.28 field, and it is also the arithmetic successor of the measured live count 13. Both derivations agree at START_HEAD. The implementer MUST re-derive both at their own base rather than inheriting 14 from this sentence, because the PROTECTED_GRANTS row count is a shared, globally-serialized resource that another lane can move; if the two derivations disagree, that is a STOP."
+  },
+
+  "ATOMICITY": {
+    "requirement": "BINDING. DEMOTE and PROMOTE are ONE INDIVISIBLE registration act. Both MUST land in the SAME registration commit as the HPO-ODS-W2-26 row itself. Neither may be deferred to a follow-up commit, a follow-up PR, or a follow-up mission.",
+    "DEMOTE_WITHOUT_PROMOTE": "PROHIBITED. The suite would be green and the repository would hold NO live-count guard at all. The registry could then grow, shrink or be silently reordered by any later lane with nothing to catch it. This is the more dangerous half precisely because it is the half that looks fine.",
+    "PROMOTE_WITHOUT_DEMOTE": "PROHIBITED. The demoted assertion would still evaluate the frozen 13 against a live 14 and the suite would be red. The obvious local repairs are both prohibited elsewhere in this artifact — editing v1.0.25 corrupts frozen history, and deleting the assertion weakens an existing control — so this half leaves the registering mission with no authorized way forward.",
+    "why_atomicity_is_load_bearing_and_not_stylistic": "Each half, taken alone, produces a state that a later reader would reasonably mistake for a finished one: the first is green with no guard, the second is red with no authorized repair. Requiring the pair in one commit is what makes the transfer verifiable as a transfer — the count of live-count guards goes from one to one, never through zero and never through two.",
+    "verification": "An auditor confirms atomicity by observing, in the SINGLE registration commit, that the demoted literal is present, that the promoted live binding is present, and that the number of assertions binding a frozen addendum field to PROTECTED_GRANTS.length is exactly one before and exactly one after."
+  },
+
+  "AUTHORIZED_FUTURE_REGISTRATION_SURFACE": {
+    "AUTHORIZED_PATH_COUNT": 2,
+    "paths": [
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts"
+    ],
+    "NO_THIRD_PATH": "BINDING. The surface is EXACTLY the two paths v1.0.28 enumerated. This successor adds NO path. The demote and the promote both fall inside tests/ods/ods-scope.test.ts, which is already on the surface; that is why this gap can be closed without widening it. v1.0.28's closed_world list — no ods-controller, no prestate, no poststate, no program-state, no package.json, no docs/ops/ods artifact, no database, migration, schema or baseline path, and no second protected grant — is carried here unchanged.",
+    "NEITHER_PATH_IS_EDITED_BY_THIS_ACT": "This addendum edits NEITHER path. It is AUTHORITY_ONLY. The only path changed by this mission is this file.",
+    "role_delta_versus_v1_0_28": "On scripts/ods-scope.ts: NO CHANGE WHATSOEVER to the role or narrowness v1.0.28 defines. On tests/ods/ods-scope.test.ts: the role v1.0.28 defines is unchanged and remains in force; the DEMOTE and PROMOTE operations of this artifact are ADDED to it, and the narrowness clause is correspondingly read to permit exactly those two operations and nothing further."
+  },
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-26",
+    "branch": "codex/commercial-account-ce1-implementation-r1",
+    "patterns": [
+      "db/migrations/**",
+      "db/prepared/journal/**",
+      "db/prepared/checkpoint-b0/observation.sql"
+    ],
+    "pattern_count": 3,
+    "registration_status": "DECLARED_NOT_REGISTERED",
+    "ORDER_IS_BINDING": "The three patterns are stated in the order above and MUST be registered in that order. Order is part of the row's identity because the registration control asserts the row with a whole-object equality, not a set comparison.",
+    "VERBATIM_FROM_THE_PREDECESSOR": "This object's three axes are reproduced field for field from docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json protected_grant, which in turn carries them field for field from the frozen CE-1 execution authority amendment. It is repeated here ONLY so the registration controls below are checkable without opening the predecessor. NO fourth pattern is added, NO pattern is widened, and the literal db/prepared/checkpoint-b0/observation.sql is NOT generalized to a directory glob. v1.0.28 remains the source of truth; if this object and v1.0.28 ever disagree, v1.0.28 governs and the disagreement is a STOP.",
+    "NO_DB_PREPARED_WIDENING": "BINDING AND CARRIED UNCHANGED. The grant is db/prepared/journal/** and the single literal db/prepared/checkpoint-b0/observation.sql — NEVER a blanket db/prepared/**. The predecessor's measurement and rationale for this are incorporated by reference and are not restated in weaker words."
+  },
+
+  "REQUIRED_REGISTRATION_CONTROLS": {
+    "binding": "The future registration act MUST carry controls establishing every item below. These are the controls this authority requires; the list is CLOSED and adds no product requirement beyond them. Controls already required by v1.0.28 remain required and are marked INHERITED.",
+    "controls": [
+      {
+        "id": "RC-1",
+        "requires": "The PROTECTED_GRANTS registry moves from 13 rows to 14, append-only.",
+        "inherited": true
+      },
+      {
+        "id": "RC-2",
+        "requires": "HPO-ODS-W2-26 appears EXACTLY ONCE. A filter on that authorityId has length 1.",
+        "inherited": true
+      },
+      {
+        "id": "RC-3",
+        "requires": "The Set cardinality of authorityId values is 14, forbidding a duplicate id registered beside an existing row rather than replacing it.",
+        "inherited": true
+      },
+      {
+        "id": "RC-4",
+        "requires": "No row carries HPO-ODS-W2-27. The absence literal advances from W2-26 to W2-27 as v1.0.28 already directs.",
+        "inherited": true
+      },
+      {
+        "id": "RC-5",
+        "requires": "The registered row's branch equals codex/commercial-account-ce1-implementation-r1 by exact string equality.",
+        "inherited": true
+      },
+      {
+        "id": "RC-6",
+        "requires": "The registered row's patterns equal the three declared patterns exactly and IN ORDER, asserted as a whole-object equality rather than a membership test.",
+        "inherited": true
+      },
+      {
+        "id": "RC-7",
+        "requires": "NEGATIVE CONTROL: the grant does NOT resolve on a foreign branch. Resolution against any branch other than the bound one contributes zero patterns.",
+        "inherited": true
+      },
+      {
+        "id": "RC-8",
+        "requires": "NEGATIVE CONTROL: the grant does NOT authorize a db/prepared sibling path outside the single checkpoint-b0 observation literal.",
+        "inherited": true
+      },
+      {
+        "id": "RC-9",
+        "requires": "The 13 predecessor grant rows are preserved byte-unchanged — none widened, narrowed, rebranched or reordered.",
+        "inherited": true
+      },
+      {
+        "id": "RC-10",
+        "requires": "HPO-ODS-W2-22 remains an addendum identity and NOT a registry row. The existing control asserting this survives unchanged.",
+        "inherited": true
+      },
+      {
+        "id": "RC-11",
+        "requires": "THE DEMOTE: the v1.0.25 field PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25 is asserted against the frozen literal 13, identified semantically per the DEMOTE section.",
+        "inherited": false,
+        "added_by": "v1.0.29"
+      },
+      {
+        "id": "RC-12",
+        "requires": "THE PROMOTE: the v1.0.28 field PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26 is asserted against the live expression PROTECTED_GRANTS.length, and is the ONLY assertion doing so.",
+        "inherited": false,
+        "added_by": "v1.0.29"
+      },
+      {
+        "id": "RC-13",
+        "requires": "THE ATOMICITY: RC-11 and RC-12 land in the SAME commit as the row itself. Neither half ships alone.",
+        "inherited": false,
+        "added_by": "v1.0.29"
+      }
+    ],
+    "NO_CONTROL_MAY_BE_WEAKENED": "Carried unchanged from v1.0.28. No existing control may be weakened, skipped, loosened to an inequality, or deleted. The DEMOTE is not an exception to this rule: it replaces one exact equality with another exact equality, and it is authorized by name rather than by adjective."
+  },
+
+  "CONTROLLER_40_RULE": {
+    "requirement": "Controller40 is REQUIRED to enumerate docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json in IMMUTABLE_BY_CONVENTION after this successor is integrated, taking the array from 39 entries to 40 with v1.0.29 as the final item.",
+    "NOT_ALLOCATED_HERE": "This addendum does NOT allocate Controller40, does NOT edit scripts/ods-controller.ts, and does NOT edit tests/ods/ods-controller.test.ts. Those paths are outside this mission's authorized surface and outside the registration surface.",
+    "CONTROLLER_40_BLOCKS": [
+      "THE NEXT ODS LINEAGE ALLOCATION (v1.0.30 and beyond)"
+    ],
+    "CONTROLLER_40_DOES_NOT_BLOCK": [
+      "The HPO-ODS-W2-26 registration act authorized by v1.0.28 as refined here",
+      "The CE-1 implementation, once W2-26 is registered"
+    ],
+    "why_the_two_axes_are_decoupled": "The Controller's IMMUTABLE_BY_CONVENTION array governs which artifacts may not be edited and gates the allocation of the NEXT lineage ordinal. The PROTECTED_GRANTS registry governs which branch may touch which protected path. They are independent registries with independent controls. A missing Controller enumeration would let a later lane edit v1.0.29 without tripping the immutable guard — which is why it is required — but it does not and cannot prevent a grant from resolving. Conflating the two would stall CE-1 behind a bookkeeping step that has no bearing on it. This decoupling is the same one v1.0.28 records for the Controller39 precondition."
+  },
+
+  "NO_PREALLOCATION": {
+    "binding": "This act allocates NONE of the following. Any artifact or commit claiming otherwise on the strength of this addendum is misreading it.",
+    "explicitly_not_allocated": [
+      "ODS v1.0.30",
+      "HPO-ODS-W2-27",
+      "any migration ordinal",
+      "any baseline unit",
+      "any journal prefix",
+      "any new protected grant",
+      "the Controller40 implementation"
+    ],
+    "what_this_act_does_allocate": "The ODS lineage ordinal v1.0.29, and nothing else. HPO-ODS-W2-26 is REUSED from v1.0.28, not allocated here.",
+    "declaring_is_not_registering": "Restated because it is the recurring misreading in this lineage: declaring a grant in an authority artifact is SAFE and is what v1.0.28 did; REGISTERING it in scripts/ods-scope.ts is a separate governed act that neither v1.0.28 nor this successor performs."
+  },
+
+  "GRANT_ID_REUSE_DISPOSITION": {
+    "GRANT_ID": "HPO-ODS-W2-26",
+    "disposition": "REUSED FROM THE PREDECESSOR, NOT NEWLY ALLOCATED.",
+    "why_reuse_is_correct": "This successor governs the SAME registration act on the SAME two paths for the SAME grant. Allocating a second grant id for one registration would create two authorities competing to install one row and would make the Set-cardinality control ambiguous about which id it is guarding.",
+    "PRECEDENT": "Reuse of a predecessor's GRANT_ID by a refining successor is established in this lineage rather than novel; the S3 refusal-audit chain reused a single grant id across successive refining addenda for one act. The test that this reuse is legitimate is whether the successor performs a DIFFERENT act needing a different branch binding — it does not.",
+    "no_new_grant_is_registered_by_this_act": true
+  },
+
+  "PROTECTED_GRANTS_CHANGED": false,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 13,
+  "PROTECTED_GRANTS_COUNT_AFTER": 13,
+  "protected_grants_count_rule": "MEASURED AT START_HEAD BY EVALUATING THE LIVE REGISTRY, not carried from the predecessor. scripts/ods-scope.ts PROTECTED_GRANTS holds exactly 13 rows at 9a414fac. This authority lane registers NOTHING, so the live count stays 13 through its integration. The future registration act moves it to 14, and the figure 14 lives in v1.0.28's PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26 field, which this artifact deliberately does NOT duplicate as a competing field of its own — a second declared post-registration figure would give the promoted guard two candidate sources and reintroduce the ambiguity this successor exists to remove.",
+
+  "authorized_changed_paths_this_mission": {
+    "AUTHORIZED_PATH_COUNT": 1,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json"
+    ],
+    "closed_world": "EXHAUSTIVE. NO second path. In particular: NO scripts/ods-scope.ts, NO tests/ods/ods-scope.test.ts, NO scripts/ods-controller.ts, NO tests/ods/ods-controller.test.ts, NO package.json, NO other docs/ops/ods artifact, and NO database, migration, schema or baseline path.",
+    "self_inclusion_note": "This artifact is not yet enumerated by the Controller at its own materialization, which is the normal and expected state for a newly created addendum. Controller40 discharges it, per CONTROLLER_40_RULE."
+  },
+
+  "risks_and_open_findings": [
+    {
+      "id": "F-GI-1",
+      "severity": "INFORMATIONAL",
+      "finding": "The negative control asserting that no PROTECTED_GRANTS row carries HPO-ODS-W2-26 is accompanied in the source by the comment 'W2-26 is NOT allocated by this node.' That sentence was true of the node that wrote it and is now stale in its first clause: W2-26 IS allocated, by v1.0.28, and remains unregistered. The ASSERTION is correct and must stay until registration; only the comment's wording is dated.",
+      "disposition": "NOT REPAIRED HERE. Editing a comment on the registration surface is outside this AUTHORITY_ONLY mission. The registering mission advances this site anyway under v1.0.28's absence-literal instruction and should refresh the comment as part of that authorized edit. Recorded so an auditor does not read the stale clause as a contradiction of this artifact's allocation claim."
+    },
+    {
+      "id": "F-GI-2",
+      "severity": "OPEN",
+      "finding": "The PROTECTED_GRANTS row count and the ODS lineage ordinal are shared, globally-serialized resources. Another lane can consume v1.0.30 or move the registry between this artifact's materialization and the registration act.",
+      "disposition": "MITIGATED BY RULE, NOT BY MEASUREMENT. Every count here is bound to START_HEAD 9a414fac and the remeasurement_rule requires re-derivation at the implementer's own base. The PROMOTE section additionally requires that the arithmetic and artifact derivations of 14 agree, and makes a disagreement a STOP."
+    },
+    {
+      "id": "F-GI-3",
+      "severity": "OPEN",
+      "finding": "This successor is unaudited at materialization and is not enumerated by the Controller.",
+      "disposition": "EXPECTED. An independent exact-object audit is the declared next gate, and Controller40 is required after integration. Neither is performed by this mission."
+    }
+  ],
+
+  "final_state": {
+    "authority_status": "MATERIALIZED_UNAUDITED",
+    "registration_performed": false,
+    "implementation_performed": false,
+    "controller_enumeration_performed": false,
+    "READY_FOR_W2_26_REGISTRATION": "YES, subject to the independent audit of this artifact. With this successor integrated, the registration act has a complete and non-contradictory authority: v1.0.28 for the row, the branch, the patterns and the surface; v1.0.29 for the atomic live-count guard transfer.",
+    "READY_FOR_CE1_IMPLEMENTATION": "NO. CE-1 implementation remains gated on the W2-26 registration act, which this artifact does not perform."
+  },
+
+  "next_gate": "CE1_ODS_V1029_INDEPENDENT_EXACT_OBJECT_AUDIT"
+}
