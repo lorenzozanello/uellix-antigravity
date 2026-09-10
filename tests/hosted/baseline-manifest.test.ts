@@ -108,20 +108,23 @@ describe('the baseline manifest describes the corpus that is actually checked in
   // 80 units, 68 Drizzle. It is a DRIZZLE unit, not a `policy` one: `kind`
   // records which checked-in SET a unit comes from, and this one comes from
   // db/migrations/, so the `policy` pin below is unmoved by it.
-  it('has 80 units: 68 Drizzle, 2 Supabase, 10 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(80)
+  // HPO-ODS-W2-26 (CE-1, CommercialAccount relation and live association) —
+  // + 0068_commercial_account_ce1.sql (CREATE TABLE commercial_accounts,
+  // ADD COLUMN organizations.commercial_account_id) = 81 units, 69 Drizzle.
+  it('has 81 units: 69 Drizzle, 2 Supabase, 10 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(81)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(68)
+    expect(byKind('drizzle-migration')).toBe(69)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(10)
   })
 
-  it('numbers ordinals 1..80 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..81 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 80 }, (_, i) => i + 1),
+      Array.from({ length: 81 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(80)
+    expect(new Set(BASELINE_ORDER).size).toBe(81)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {

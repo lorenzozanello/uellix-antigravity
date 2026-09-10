@@ -91,25 +91,29 @@ describe('S1 schema — the frozen shape (P-1, S1-1)', () => {
 })
 
 describe('S1 migration — exactly the authorized DDL, one scanner-visible structural backfill', () => {
-  // FINAL-UNIT DISPLACEMENT (HPO-ODS-W2-25). S1 was the highest migration when
-  // it landed; 0067_tenancy_refusal_audit_insert_policy.sql has since been
-  // appended above it. What this control actually protects is that S1's own
-  // journal row and snapshot exist and stay consistent — being LAST was only
-  // ever how that was expressed while nothing followed it. The pin is
-  // RETARGETED to S1's own position and the displacing unit is NAMED, so a
-  // second, unannounced displacement still fails here. It is not relaxed into
+  // FINAL-UNIT DISPLACEMENT (HPO-ODS-W2-25, then HPO-ODS-W2-26 /
+  // COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2). S1 was the
+  // highest migration when it landed; 0067_tenancy_refusal_audit_insert_policy.sql
+  // was appended above it first, and 0068_commercial_account_ce1.sql has since
+  // been appended above THAT. What this control actually protects is that
+  // S1's own journal row and snapshot exist and stay consistent — being LAST
+  // was only ever how that was expressed while nothing followed it. The pin
+  // is RETARGETED to S1's own position with BOTH displacing units NAMED, so a
+  // THIRD, unannounced displacement still fails here. It is not relaxed into
   // "somewhere in the list".
-  it('has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit', () => {
+  it('has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit, then exactly the CE-1 unit', () => {
     const S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql'
+    const CE1_UNIT_ID = '0068_commercial_account_ce1.sql'
     const files = readdirSync(path.join(ROOT, 'db/migrations')).filter((f) => f.endsWith('.sql')).sort()
-    expect(files[files.length - 2]).toBe(S1_UNIT.id)
-    expect(files[files.length - 1]).toBe(S3_UNIT_ID)
+    expect(files[files.length - 3]).toBe(S1_UNIT.id)
+    expect(files[files.length - 2]).toBe(S3_UNIT_ID)
+    expect(files[files.length - 1]).toBe(CE1_UNIT_ID)
     const journal = JSON.parse(read('db/migrations/meta/_journal.json')) as { entries: { idx: number; tag: string }[] }
     const own = journal.entries.find((e) => `${e.tag}.sql` === S1_UNIT.id)
     expect(own).toBeDefined()
     expect(existsSync(path.join(ROOT, `db/migrations/meta/${String(own!.idx).padStart(4, '0')}_snapshot.json`))).toBe(true)
     const last = journal.entries[journal.entries.length - 1]
-    expect(`${last.tag}.sql`).toBe(S3_UNIT_ID)
+    expect(`${last.tag}.sql`).toBe(CE1_UNIT_ID)
     expect(last.idx).toBe(journal.entries.length - 1)
     expect(existsSync(path.join(ROOT, `db/migrations/meta/${String(last.idx).padStart(4, '0')}_snapshot.json`))).toBe(true)
   })

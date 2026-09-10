@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 20/81: 0019_lazy_overlord.sql
+-- GENERATED — DO NOT EDIT. Unit 81/81: 0068_commercial_account_ce1.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0019_lazy_overlord.sql
--- Source SHA256: dea903f29e6852049c11dc6bd61a5940e9689d4a5ef310afa54a70fc0a83f884
+-- Includes:      db/migrations/0068_commercial_account_ce1.sql
+-- Source SHA256: f04e73571e234944e642ad23e8740814d9a76ac16c43d6c13d9effa7f284b099
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/020_0019_lazy_overlord.sql
+--        -f db/prepared/journal/081_0068_commercial_account_ce1.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0019_lazy_overlord.sql
+\ir ../../../db/migrations/0068_commercial_account_ce1.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0019_lazy_overlord.sql', 'PHASE_BASELINE',
-   'dea903f29e6852049c11dc6bd61a5940e9689d4a5ef310afa54a70fc0a83f884', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0068_commercial_account_ce1.sql', 'PHASE_BASELINE',
+   'f04e73571e234944e642ad23e8740814d9a76ac16c43d6c13d9effa7f284b099', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'
