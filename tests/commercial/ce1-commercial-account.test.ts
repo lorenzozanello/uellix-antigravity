@@ -17,7 +17,8 @@
 // commercial_account_id and found absent). P-2, P-3's PG half and N-4's
 // dynamic half live in the .pg.test.ts file.
 
-import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -187,8 +188,7 @@ describe('CE-1 baseline manifest — the registered unit (BASELINE_UNIT_SHAPE)',
   })
 
   it('the pinned sha256 matches the LF-normalized migration bytes on disk', () => {
-    const crypto = require('node:crypto') as typeof import('node:crypto')
-    const digest = crypto.createHash('sha256').update(MIGRATION_LF, 'utf8').digest('hex')
+    const digest = createHash('sha256').update(MIGRATION_LF, 'utf8').digest('hex')
     expect(CE1_UNIT!.sha256).toBe(digest)
   })
 })
@@ -216,9 +216,8 @@ describe('CE-1 compatibility — legacy commercial columns and readers/writers u
 
 describe('CE-1 authority-negative — no RLS predicate anywhere references commercial_account_id (PG-1 static half)', () => {
   it('sweeps every db/migrations/**/*.sql for a policy predicate mentioning commercial_account_id', () => {
-    const fs = require('node:fs') as typeof import('node:fs')
     const migrationsDir = path.join(ROOT, 'db', 'migrations')
-    const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'))
+    const files = readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'))
     const offenders: string[] = []
     for (const file of files) {
       const sql = read(path.join('db', 'migrations', file))
