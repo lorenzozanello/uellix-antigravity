@@ -7,13 +7,11 @@
   "lane_id": "LANE_IA",
   "materialization_date": "2026-09-10",
   "companion_manifest": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_TEST_MANIFEST_v1.0.0.json",
-
   "GRANT_ID": {
     "value": null,
     "reason": "This lane creates AUTHORITY ONLY. It writes no application code, no schema, no migration, no environment value and no ODS registration."
   },
   "GRANT_ID_DISPOSITION": "NO GRANT IS DECLARED OR REGISTERED BY THIS ARTIFACT. The entire future write surface named in EXACT_FUTURE_IMPLEMENTATION_SURFACE is CLOSED and FROZEN here, and is opened only by the successor implementation lane named in FUTURE_IMPLEMENTATION_BRANCH. No ODS addendum is allocated, no node is registered, and no ODS surface is amended.",
-
   "REVISION_HISTORY": [
     {
       "revision": "R1",
@@ -25,19 +23,75 @@
       "revision": "R2",
       "commit": "THIS COMMIT",
       "summary": "MEASUREMENT CORRECTION ONLY. No contract clause, no routing rule, no prohibition, no control and no scope boundary is changed by R2 - the frozen contract of R1 stands unaltered. R1 recorded every machine gate as unrunnable, on the evidence that pnpm could not resolve tsx, and asserted on that basis that a prior operational note claiming the ODS gates run without node_modules was false. BOTH CLAIMS ARE WITHDRAWN. The gate scripts import only Node builtins and run directly under node --experimental-strip-types; four of them were run and passed at 10b475df, including a strong negative proving ods_scope adjudicates. R2 records the results, downgrades F-IA-7 from MEDIUM to LOW, and keeps the erroneous R1 reasoning visible rather than overwriting it. It is a NEW commit; R1 is not amended and not squashed."
+    },
+    {
+      "revision": "R3",
+      "commit": "THIS COMMIT",
+      "trigger": "Independent IE audit of PR 132: BLOCKING=1, AUDIT_UNKNOWN=0. The blocker is a CLOSED-WORLD MEASUREMENT AND SCOPE defect, not a reversal of Packet B policy.",
+      "policy_preserved_unchanged": [
+        "email_confirmed_at is the provider truth source; confirmed_at remains REFUSED",
+        "provider gate PLUS application gate, fail closed",
+        "B0 evaluated before the super-admin rule",
+        "the /verify-email destination and its derivation",
+        "hosted provider state remains UNKNOWN",
+        "no new audit verb inside Packet B",
+        "R1 and R2 remain valid history"
+      ],
+      "what_R3_CORRECTS": "THE CLOSED-WORLD CENSUS AND THE ENFORCEMENT TOPOLOGY WERE BOTH WRONG. R2 asserted EXACTLY FOUR enforcement points and that any more would duplicate the predicate. That claim is FALSE and is withdrawn in full. R2 missed lib/auth/session.ts:281 getCurrentOrganizationContext, which resolves the principal directly and is the authorization decision for roughly twenty library services and four Route Handlers; it also missed lib/auth/database-context.ts:629 requirePrincipal and :810 withOptionalDatabaseIdentityContext. The root reasoning error is recorded in ROUTE_HANDLERS_ESCAPE_LAYOUTS: R2 treated app/app/layout.tsx as gating everything beneath app/app/, but a LAYOUT DOES NOT WRAP A ROUTE HANDLER, so a route.ts under app/app/ was never gated by it at all. R3 re-derives the topology from the measured convergence point rather than enumerating siblings, which both CLOSES the missed paths and REMOVES two enforcement points R2 required.",
+      "also_in_R3": "F-IA-6 is RESOLVED: IE verified email_confirmed_at against the exact pinned SDK, so the provenance moves from REPO_INFERRED to SDK_VERIFIED. Four Route Handler seams and two health seams are classified with explicit E identifiers. The future implementation surface is re-derived from scratch, not appended to. New Route Handler negative controls and a convergence-point mutation are added to the companion manifest.",
+      "history_discipline": "R3 is a NEW commit on top of R2. R1 and R2 remain ancestors, are not amended and are not squashed, and their erroneous claims stay visible with the corrections attached rather than overwritten."
     }
   ],
-
   "AS_OF_REF": "codex/email-verification-packet-b-authority-r1",
   "AS_OF_HEAD": "38dde64695612e9f151e6827a85b4054bab46b5b",
   "AS_OF_TREE": "681ca0bfba493fe97051b7962969ff728d6d76cc",
   "as_of_measurement_note": "HEAD equals the mission declared BASE and equals CURRENT_LIVE_AT_HANDOFF. The working tree was clean at prestate: git status --porcelain --untracked-files=all returned zero lines. Every file:line anchor in this artifact was read at this tree and mechanically re-read in a verification pass before freeze.",
-
-  "LIVE_RECONCILIATION": {
+  "LIVE_RECONCILIATION_R3": {
+    "performed_at": "2026-09-10, at the start of R3, before any file was edited.",
+    "R2_base_generation": "38dde64695612e9f151e6827a85b4054bab46b5b",
+    "live_tip_now": "62d9f07269abb3b87af32a7ef55d8d4f54215bea",
+    "matches_expected": "YES. The handoff declared CURRENT_LIVE_EXPECTED = 62d9f072 and git rev-parse origin/integration/commercial-v1 returns exactly that.",
+    "movement_since_R2_base": {
+      "commits": [
+        "029b9178 feat(ods): Controller41 enumerates ODS v1.0.30 and advances the absence control",
+        "82ec931d feat(ods): register HPO-ODS-W2-27 with the indivisible live-count guard transfer",
+        "0bbeb92f Merge pull request 133 (codex/ods-controller41-r1)",
+        "62d9f072 Merge pull request 134 (codex/fibdb052-p1-w227-registration-r1)"
+      ],
+      "files": [
+        "M scripts/ods-controller.ts",
+        "M scripts/ods-scope.ts",
+        "M tests/ods/ods-controller.test.ts",
+        "M tests/ods/ods-scope.test.ts"
+      ],
+      "HT_drift": "NONE. Zero files under docs/** changed.",
+      "HV_drift": "PRESENT BUT DISJOINT: four executable files, all ODS tooling (Controller41 and the W2-27 registration). Zero overlap with the auth, session, tenancy, route-handler or provider-configuration surface this artifact measures."
+    },
+    "disjointness_was_PROVEN_not_ASSUMED": {
+      "why_it_had_to_be": "A diff summary showing four unrelated filenames is an argument that the anchors still hold, not a measurement of it. The handoff is explicit: do not simply assume the old anchors still represent current live.",
+      "method": "For each of the seventeen files this artifact anchors into, git rev-parse HEAD:<path> was compared against git rev-parse origin/integration/commercial-v1:<path> - a BLOB IDENTITY comparison, which is stronger than a line-anchor re-read because it proves the whole file is byte-identical rather than that one line still reads the same.",
+      "result": "SAME for all seventeen: lib/auth/session.ts, lib/auth/identity.ts, lib/auth/database-context.ts, lib/supabase/proxy.ts, proxy.ts, app/(public)/login/actions.ts, app/auth/callback/route.ts, app/(authenticated)/app/onboarding/actions.ts, app/(authenticated)/layout.tsx, app/app/layout.tsx, app/invite/accept/page.tsx, app/(authenticated)/app/organizations/select/actions.ts, app/(public)/reset-password/actions.ts, lib/audit/logger.ts, db/baseline/stella_g2_schema.sql, supabase/config.toml, tests/auth/route-authorization-boundary.test.ts.",
+      "consequence": "Every anchor in this artifact - including every anchor newly added by R3 - describes current live, not a superseded tree. The corrected census below was measured against the working tree at this branch tip, which is blob-identical to live for the entire measured surface."
+    },
+    "one_drifted_file_that_DOES_touch_this_lane": {
+      "path": "scripts/ods-scope.ts",
+      "why_it_matters": "It is one of the gates R2 ran and R3 re-runs. This branch carries the PRE-Controller41 version; live carries the post-Controller41 version. A gate result produced by the branch copy is therefore a result from a slightly older adjudicator.",
+      "disposition": "Recorded, not silently ignored. The R3 gate results below are reported with this caveat attached, and re-running under the live copy is left to the successor re-audit, which will inherit a merged tree. This lane does not merge live into the branch: the handoff forbids new branches and new PRs, and a merge would mix an unrelated ODS tooling change into an authority-only diff."
+    },
+    "HT_HV_DRIFT_CLASSIFICATION": {
+      "vocabulary_disposition": "HT and HV are MISSION-SUPPLIED SHORTHAND, not repository vocabulary. grep over docs/** returns ZERO hits for either token as a governance term. They are DEFINED here rather than cited, exactly as Packet A defined NO_AUTO_SELECTION rather than pretending to cite it.",
+      "HT_definition": "HT equals documentation/authority drift: movement in docs/** only, carrying no executable surface.",
+      "HV_definition": "HV equals code drift: movement in any executable surface (app/**, lib/**, db/**, scripts/**, tests/**, supabase/**, root config).",
+      "HT": "NONE",
+      "HV": "PRESENT, DISJOINT - four ODS tooling files, proven not to touch the measured surface by blob-identity comparison."
+    }
+  },
+  "LIVE_RECONCILIATION_R1_R2_SUPERSEDED": {
+    "note": "Retained as history. Superseded by LIVE_RECONCILIATION_R3 above, which reconciles against a tip that has since moved.",
     "performed_at": "2026-09-10, before any file was written.",
     "method": "git fetch origin, then compare origin/integration/commercial-v1 against BASE and against the handoff CURRENT_LIVE_AT_HANDOFF.",
     "live_tip": "38dde64695612e9f151e6827a85b4054bab46b5b",
-    "movement": "NONE. origin/integration/commercial-v1 equals BASE equals CURRENT_LIVE_AT_HANDOFF. git log BASE..origin/integration/commercial-v1 is empty and git diff --name-status between them produces zero rows.",
+    "movement": "NONE at the time of measurement. origin/integration/commercial-v1 equalled BASE and CURRENT_LIVE_AT_HANDOFF.",
     "HT_HV_DRIFT_CLASSIFICATION": {
       "vocabulary_disposition": "HT and HV are MISSION-SUPPLIED SHORTHAND, not repository vocabulary. grep over docs/** at AS_OF_TREE returns ZERO hits for either token as a governance term. They are therefore DEFINED here rather than cited, exactly as Packet A defined NO_AUTO_SELECTION rather than pretending to cite it.",
       "HT_definition": "HT equals documentation/authority drift: movement in docs/** only, carrying no executable surface.",
@@ -48,7 +102,6 @@
       "remote_branch_state": "git ls-remote --heads origin codex/email-verification-packet-b-authority-r1 returned no rows at measurement time: this lane branch did not yet exist on the remote."
     }
   },
-
   "PARENT_AUTHORITY": {
     "how_derived": "RE-DERIVED MECHANICALLY, NOT GUESSED. The handoff names Packet A selector reachability as integrated. docs/ops/tenancy/ was enumerated in full and the artifact carrying ROUTING_CONTRACT and NO_AUTO_SELECTION as TOP-LEVEL sections was read directly. Its own PARENT_AUTHORITY block was then followed one level up to the node authority, rather than re-deriving the node authority by name.",
     "immediate_parent": {
@@ -73,14 +126,12 @@
     },
     "narrowing_declaration": "Packet B ADDS an ordered rule B0 that runs BEFORE Packet A R1 wherever Packet A contract is evaluated, and adds enforcement at three sites Packet A contract never reached: organisation bootstrap, invitation acceptance, and the AUTHENTICATED layout. It CHANGES NO destination, NO branch and NO precondition of R1 through R5 for a subject whose email is provider-confirmed. For such a subject the observable behaviour of the application is identical to BASE. That is the whole preservation claim, and PACKET_A_PRESERVATION states how it is proven rather than asserted."
   },
-
   "BINDING_HPO_DECISION": {
     "EMAIL_VERIFICATION": "PROVIDER_GATE_PLUS_APPLICATION_GATE",
     "FAILURE_MODE": "FAIL_CLOSED",
     "provenance": "Supplied by HPO to this mission verbatim: EMAIL VERIFICATION equals PROVIDER GATE plus APPLICATION GATE. FAIL CLOSED.",
     "consequence": "Neither half alone discharges the decision. A provider that requires confirmation but an application that never asks leaves every non-password entry path ungated and cannot survive a provider misconfiguration. An application that asks but a provider that never sends leaves the gate permanently closed against every real user and is an outage, not a control. The two halves are therefore frozen TOGETHER in DUAL_GATE, with distinct evidence obligations, and neither may be declared satisfied by evidence belonging to the other."
   },
-
   "MEASUREMENT_LIMITS": {
     "declared_before_any_claim": "These limits are stated FIRST so that no reader has to infer which claims below are measured and which are inferred.",
     "node_modules_absent": {
@@ -91,18 +142,15 @@
       "what_remains_genuinely_blocked": "typecheck, targeted_tests, and ods_poststate (through typecheck). These are recorded as NOT_RUN with the reason, never as PASS, and are owed by the successor implementation lane.",
       "scan_secrets_note": "scripts/scan-secrets.ts is NOT builtin-only: it imports ../db/hosted/target-identity with no file extension, which Node's ESM resolver rejects where tsx does not. It was run under a resolution-only loader hook that appends .ts to extensionless relative specifiers and changes nothing else - not module content, not the gate logic, not its verdict. Note also that this gate scans the GIT TREE, so it was run AFTER the artifacts were committed; running it against an untracked file would have produced a vacuous PASS."
     },
-    "supabase_sdk_typings_unreadable": {
-      "measured": "package.json:125 declares @supabase/supabase-js ^2.108.2; pnpm-lock.yaml:2115 and :7248 resolve 2.108.2, with @supabase/auth-js 2.108.2 at :2047. The package sources are NOT on disk, no node_modules, and no install is permitted.",
-      "consequence": "The exact TypeScript property name on the SDK User object returned by supabase.auth.getUser() could NOT be read from the dependency itself.",
-      "how_the_gap_was_closed_instead": "From repository evidence: db/baseline/stella_g2_schema.sql is a real dump of this project Postgres including the GoTrue auth schema, and it carries auth.users.email_confirmed_at at :3688 and the generated auth.users.confirmed_at at :3708. The adjudication in PROVIDER_TRUTH_SOURCE rests on those two measured lines.",
-      "residual_obligation": "The mapping from the auth.users column to the SDK User field of the same name is GoTrue standard serialisation but is NOT proven by any artifact in this repository. It is therefore classified REPO_INFERRED and carries a MANDATORY first-step verification in the implementation lane, EXACT_FUTURE_IMPLEMENTATION_SURFACE V-1. An implementation that skips V-1 and guesses the field name would read undefined and, under a naive truthiness test, refuse every user, which fails closed; under an inverted test it would admit every user, which does not. V-1 is not optional."
+    "supabase_sdk_typings_RESOLVED_IN_R3": {
+      "status_at_R1_R2": "REPO_INFERRED. The package sources were not on disk, no install was permitted, and the field name was grounded only in the auth.users schema dump.",
+      "status_at_R3": "SDK_VERIFIED. See PROVIDER_TRUTH_SOURCE.PROVENANCE. F-IA-6 is RESOLVED and V-1 is retired as a blocking first step.",
+      "what_changed": "The FACT did not change - email_confirmed_at was and remains the frozen source. Only its PROVENANCE changed, from an inference over the database schema to a direct reading of the pinned SDK typing. That distinction is kept explicit because an artifact that quietly upgrades the confidence of a claim teaches nothing about which of its other claims are still inferences."
     },
     "hosted_provider_unobservable": "No hosted Supabase project configuration is readable from this worktree, and this lane performs no environment mutation and no network call to a provider. See HOSTED_PROVIDER_STATE."
   },
-
   "LIVE_AUTH_FLOW_RECONSTRUCTION": {
     "method": "Traced from measured code, never from route names. Every entry point that resolves an authenticated subject was enumerated by grepping the four semantic execution seams the codebase actually uses: requireAuth(), getCurrentUser(), a direct supabase.auth.getUser(), and withAuthenticatedDatabaseContext(), across app/**, lib/** and components/**, excluding tests. Route names were then checked AGAINST that census, not used to build it. Two facts found this way are invisible from route names: app/invite/accept/ is NOT under any authenticated route group, and app/(authenticated)/app/onboarding/actions.ts reads the provider subject directly rather than through the session helpers.",
-
     "outermost_layer": {
       "file": "proxy.ts",
       "anchors": "proxy.ts:9, export async function proxy, and :48-52, matcher covering every path except _next and static image extensions. Next.js routing middleware, named proxy.ts; there is NO middleware.ts in the repository, git ls-files returns none.",
@@ -116,7 +164,6 @@
       ],
       "consequence_for_packet_b": "The proxy sees the verified subject one hop before any layout, so it is the cheapest place to redirect. It is NOT the boundary: /invite/accept is outside its isProtected predicate, and its own comment disclaims authorization. Packet B therefore treats the proxy as DEFENCE IN DEPTH and places the enforceable refusal in the server-side helpers, mirroring the existing division of labour that app/(authenticated)/layout.tsx:66-69 already documents for authentication."
     },
-
     "identity_layer": {
       "file": "lib/auth/identity.ts",
       "self_description": "Its header calls it THE ONE PLACE A DATABASE IDENTITY IS ALLOWED TO COME FROM and explains at :21-30 why getUser() is used rather than getSession(): the cookie is attacker-supplied data, getUser() sends the token to GoTrue and gets back a verified subject.",
@@ -131,7 +178,6 @@
       "the_load_bearing_observation": "Provider truth about email confirmation ALREADY crosses this function once per request, verified, server-side, from GoTrue. Packet B does not introduce a new trust path, a new network call or a new credential: it widens an existing return value by one derived boolean. That is why the application gate can be built without weakening the property lib/auth/identity.ts exists to hold.",
       "failure_vocabulary_already_fail_closed": "AuthIdentityFailure at :58-66 already separates NO_SESSION, SESSION_REJECTED, MALFORMED_SUBJECT and AUTH_UNAVAILABLE, and :95-108 already converts a thrown createClient() or a thrown getUser() into AUTH_UNAVAILABLE rather than into a logout. Packet B inherits this rather than inventing a provider-error path."
     },
-
     "principal_layer": {
       "file": "lib/auth/database-context.ts",
       "anchors": [
@@ -144,7 +190,6 @@
       ],
       "consequence_for_packet_b": "Because :536 already funnels through the identity layer, a boolean added at lib/auth/identity.ts:125 reaches every principal consumer with NO second GoTrue round trip and NO new query. The 403-versus-401 mapping at :181-199 already encodes the rule Packet B needs for its refusal: an unverified subject holds a VALID session and must not be told to sign in again."
     },
-
     "session_helper_layer": {
       "file": "lib/auth/session.ts",
       "anchors": [
@@ -161,14 +206,12 @@
       ],
       "the_sibling_fact_is_load_bearing": "requireOrganizationAccess does NOT call requireAuth. An implementation that adds the verification refusal to requireAuth alone would leave every route under app/app/** ungated, because that subtree is gated by app/app/layout.tsx:27 which calls requireOrganizationAccess. This is the single most likely incomplete implementation of Packet B and is why ROUTING_CONTRACT_PACKET_B names BOTH helpers explicitly rather than saying the session guard."
     },
-
     "authenticated_boundary_topology": {
       "two_boundaries": "app/(authenticated)/layout.tsx:76 calls ONLY requireAuth(), the AUTHENTICATED boundary. app/app/layout.tsx:27 calls requireOrganizationAccess(), the ORGANIZATION_REQUIRED boundary.",
       "why_the_group_exists": "app/(authenticated)/layout.tsx:8-30 records a MEASURED production incident: /app/onboarding once lived inside the layout that redirects to it, producing ERR_TOO_MANY_REDIRECTS with dozens of GET /app/onboarding 307 and zero 500s. The route group exists specifically so a pre-organisation destination is not gated on the thing it exists to obtain.",
       "why_this_is_the_governing_precedent_for_packet_b": "Packet B needs a pre-VERIFICATION destination for exactly the same structural reason that repository needed a pre-ORGANISATION one. The measured failure signature is identical: destination equals the thing the gate demands. ROUTING_CONTRACT_PACKET_B B5_TERMINATION applies that lesson rather than rediscovering it.",
       "the_exception_set_is_machine_enforced": "tests/auth/route-authorization-boundary.test.ts:281-298 recursively enumerates every route-serving path contributed by any app/(group)/app/** directory and asserts the set is EXACTLY onboarding and organizations/select at :297. A third pre-organisation route cannot be added silently."
     },
-
     "entry_point_closed_world": {
       "how_derived": "Union of the four seam greps, restricted to app/**, lib/** and components/**, tests excluded. This is the CLOSED WORLD an authenticated but unverified subject can reach today. It is complete with respect to those seams; a fifth seam would be a new way to authenticate, which does not exist at AS_OF_TREE.",
       "entries": [
@@ -234,7 +277,8 @@
           "site": "app/app/layout.tsx:27",
           "guard_today": "requireOrganizationAccess()",
           "reachable_by_unverified_today": true,
-          "what_it_exposes": "THE ENTIRE PRODUCT: dashboard, organization, portfolios, projects, trust-center and every descendant. Reached by an unverified subject as soon as they hold any membership, which E3 and E7 both hand out."
+          "what_it_exposes": "Every PAGE under app/app/: dashboard, organization, portfolios, projects, trust-center and every descendant. Reached by an unverified subject as soon as they hold any membership, which E3 and E7 both hand out.",
+          "R3_CORRECTION": "R1 and R2 described this entry as covering THE ENTIRE PRODUCT. That is FALSE and is withdrawn. A layout wraps PAGES. It does not wrap ROUTE HANDLERS. See ROUTE_HANDLERS_ESCAPE_LAYOUTS and entries E14 through E17, one of which - the report PDF export - lives at app/app/projects/[projectId]/report/[reportId]/pdf/route.ts, physically INSIDE this directory and never gated by this layout."
         },
         {
           "id": "E10",
@@ -263,19 +307,110 @@
           "guard_today": "none, a health probe",
           "reachable_by_unverified_today": true,
           "what_it_exposes": "Liveness of the auth dependency. No customer data, no tenant scope, no write. Classified OUT_OF_SCOPE."
+        },
+        {
+          "id": "E14",
+          "site": "app/app/projects/[projectId]/report/[reportId]/pdf/route.ts:52",
+          "added_in": "R3",
+          "method": "GET",
+          "principal_seam": "getCurrentOrganizationContext() at :52, then runWithOptionalOrganizationAccess at :59 - so it transits BOTH the C5 and the C7 boundaries and NEITHER of the two R2 enforcement points.",
+          "tenant_data_reach": "MAXIMAL IN THE CLOSED WORLD. The full SROI report: report draft, project row, calculation run detail, outcome mappings, evidence list with its latest versions, methodology reviews, funder breakdown, FX trail, line items and the organisation logo. Its own header at :77-81 calls it a governed EXPORT surface subject to FIBIU-05 evidence-sensitivity filtering.",
+          "read_write_effect": "READ, then RENDER to a PDF buffer returned to the caller.",
+          "verification_bypass_consequence": "An authenticated, email-unverified subject holding a membership exports a complete, audit-ready report of that organisation's impact data as a downloadable file. This is the single worst consequence in the corrected census, and it was entirely invisible to R2 because the route sits inside app/app/ and R2 believed app/app/layout.tsx gated everything there.",
+          "gated_by_corrected_topology": "C5, and independently C7.",
+          "reachable_by_unverified_today": true
+        },
+        {
+          "id": "E15",
+          "site": "app/api/proxies/[id]/suggest/route.ts:16",
+          "added_in": "R3",
+          "method": "POST",
+          "principal_seam": "getCurrentOrganizationContext() at :16, then withOrganizationDatabaseContext at :41 - so it transits C5 and C6.",
+          "tenant_data_reach": "A financial proxy in the caller's organisation, addressed by id.",
+          "read_write_effect": "WRITE. It calls updateFinancialProxyReviewStatusForContext at :43, the canonical governed live/version transition primitive, moving a proxy to pending_review with provenance suggested inside a locked transaction.",
+          "verification_bypass_consequence": "An unverified subject mutates governed review state in a tenant, and the write is recorded with their provenance. The route's own contract at :34-40 is that a cross-tenant id must read as 404, so the refusal must not disturb that: a verification refusal must be indistinguishable in the cross-tenant case from what the caller would otherwise see.",
+          "gated_by_corrected_topology": "C5, and independently C6.",
+          "reachable_by_unverified_today": true
+        },
+        {
+          "id": "E16",
+          "site": "app/api/fx-rates/fetch/route.ts:8",
+          "added_in": "R3",
+          "method": "POST",
+          "principal_seam": "getCurrentOrganizationContext() at :8, then runWithOptionalOrganizationAccess at :33 - so it transits C5 and C7.",
+          "tenant_data_reach": "FX rate rows. Note that getOrCreateSharedCopRate at :36 writes a SHARED rate, not a tenant-scoped one, so the blast radius of this write is not confined to the caller's own organisation.",
+          "read_write_effect": "WRITE. The service upserts an fx_rates row; the route's own comment at :31-32 states the lookup and insert are one unit of work.",
+          "verification_bypass_consequence": "An unverified subject causes a durable financial-reference write, potentially shared across tenants, and can drive outbound rate-fetch traffic.",
+          "gated_by_corrected_topology": "C5, and independently C7.",
+          "reachable_by_unverified_today": true
+        },
+        {
+          "id": "E17",
+          "site": "app/api/proxies/search/route.ts:14",
+          "added_in": "R3",
+          "method": "GET",
+          "principal_seam": "getCurrentOrganizationContext() at :14, then withOrganizationDatabaseContext at :29 - so it transits C5 and C6.",
+          "tenant_data_reach": "Approved GLOBAL financial proxies, organizationId IS NULL, matched by a caller-supplied substring. Not another tenant's private rows, but it is the platform's curated proxy catalogue and it is only offered to authenticated members.",
+          "read_write_effect": "READ.",
+          "verification_bypass_consequence": "The lowest-severity of the four: an unverified subject enumerates the approved global proxy catalogue by substring. Still a protected customer capability - it is behind an authentication check today precisely because it is not public - so it is IN SCOPE, and its low severity is recorded rather than used to excuse it.",
+          "gated_by_corrected_topology": "C5, and independently C6.",
+          "reachable_by_unverified_today": true
+        },
+        {
+          "id": "E18",
+          "site": "app/api/health/runtime-identity/route.ts:49",
+          "added_in": "R3",
+          "method": "GET",
+          "principal_seam": "getVerifiedAuthIdentityResult() DIRECTLY - it never resolves a request principal and never touches the tenancy layer.",
+          "tenant_data_reach": "NONE. Independently re-measured at R3: it reports whether the runtime database role can bypass RLS, via observeRuntimeIdentityReport at :65. No organisation scope, no customer row, no write. It 401s without an identity at :51-61 and 503s on an Auth outage.",
+          "read_write_effect": "READ of deployment posture only.",
+          "verification_bypass_consequence": "No protected customer capability is exposed. CLASSIFIED OUT_OF_SCOPE - and the classification is the RESULT of the re-measurement, not the reason for skipping it.",
+          "honest_residual": "It does disclose DEPLOYMENT POSTURE - whether the runtime identity is correct - to any authenticated subject, verified or not. That is operational information, not customer data. Recorded as F-IA-10 rather than silently waved through.",
+          "reachable_by_unverified_today": true
+        },
+        {
+          "id": "E19",
+          "site": "app/api/health/stella-preconditions/route.ts:67",
+          "added_in": "R3",
+          "method": "GET",
+          "principal_seam": "getVerifiedAuthIdentityResult() DIRECTLY, same shape as E18.",
+          "tenant_data_reach": "NONE. Independently re-measured at R3: config PRESENCE booleans, model names, capability blockers and a rate-limit attestation. Its own comment at :108-110 states it makes no network call and no database query. Note :88 deliberately reports the PRESENCE of the Gemini key, never its value.",
+          "read_write_effect": "READ of configuration posture only.",
+          "verification_bypass_consequence": "No protected customer capability is exposed. CLASSIFIED OUT_OF_SCOPE by re-measurement.",
+          "honest_residual": "Same as E18: deployment posture disclosure to an unverified authenticated subject. F-IA-10.",
+          "reachable_by_unverified_today": true
         }
       ],
-      "enumeration_completeness_statement": "Thirteen entries. E1 through E10 and E12 are the authenticated surface; E11 is the outer redirect layer; E13 is a probe. Any implementation that gates fewer than the four enforcement points named in ROUTING_CONTRACT_PACKET_B leaves at least one of E1 through E10 open, and the manifest negative controls are chosen to make each such omission visible."
+      "ROUTE_HANDLERS_ESCAPE_LAYOUTS": {
+        "the_error_R2_made": "R2's entry E9 asserted that app/app/layout.tsx:27 gates THE ENTIRE PRODUCT under app/app/. It gates every PAGE under app/app/. IT DOES NOT GATE ROUTE HANDLERS. In the App Router a layout composes around page.tsx; a route.ts is a standalone request handler and no layout runs for it.",
+        "why_the_repository_encourages_the_error": "app/app/layout.tsx:9-11 states in its own words that a route added there is organisation-gated because of WHERE IT SITS, not because someone remembered to gate it. That is true for pages and false for route handlers, and the comment does not distinguish them. app/app/projects/[projectId]/report/[reportId]/pdf/route.ts sits in exactly that directory and has never been gated by that layout.",
+        "why_the_existing_boundary_test_did_not_catch_it": "tests/auth/route-authorization-boundary.test.ts:247 DOES include route.ts and route.tsx in ROUTE_SERVING_FILE_NAMES - but it applies that enumeration only to app/(group)/app/** to police the pre-organization carve-out. It never asks whether a route handler under the NON-grouped app/app/ is gated at all, because the layout was assumed to answer that.",
+        "measured_scope_of_the_escape": "All twelve route handlers under app/** were enumerated at R3 and classified by their auth seam. Four use getCurrentOrganizationContext (E14-E17), two use getVerifiedAuthIdentityResult directly (E18-E19), one uses supabase.auth.getUser (E13), one is the auth callback (part of D-seam routing), and four carry NO user-authentication seam by design: app/(public)/verify/[hash]/pdf/route.ts, app/api/marketing/lead/route.ts, app/api/webhooks/stripe/route.ts and app/auth/signout/route.ts.",
+        "generalisation_for_the_successor": "Any future authorization invariant expressed as a LAYOUT is silently absent for route handlers. This is a standing hazard beyond Packet B and is recorded as F-IA-9."
+      },
+      "enumeration_completeness_statement": "NINETEEN entries at R3, up from thirteen at R2. E1-E10 and E12 are the page/action authenticated surface; E11 is the outer redirect layer; E13, E18 and E19 are probes classified OUT_OF_SCOPE by re-measurement; E14-E17 are the Route Handler seams R2 missed entirely. The census is complete with respect to the five seams the codebase actually uses to authenticate - requireAuth, getCurrentUser/getCurrentMembership, getCurrentOrganizationContext, requirePrincipal via the withXDatabaseContext family, and a direct supabase.auth.getUser or getVerifiedAuthIdentityResult - plus an exhaustive enumeration of every route.ts under app/**. NO UNCLASSIFIED AUTH SEAM REMAINS.",
+      "what_made_R2_INCOMPLETE_stated_plainly": "R2 enumerated CALLERS OF TWO HELPERS and then reasoned about coverage from directory structure. R3 enumerates CONSUMERS OF THE PRINCIPAL and then verifies coverage by following each one to its terminal effect. The first method cannot see a sibling helper it did not think to grep for, and cannot see that a directory-based invariant does not apply to a file type."
     },
-
     "unverified_reachability_verdict": "AT BASE, AN AUTHENTICATED BUT EMAIL-UNVERIFIED SUBJECT CAN REACH ALL SIX SURFACES SECTION 1 ASKS ABOUT: onboarding via E1 and E2, organization selection via E4, organization creation via E3, /app via E9, and commercial activation and product data via E9 transitively, once E3 or E7 has produced a membership. There is ZERO application-side email-verification control at AS_OF_TREE: grep over app/**, lib/**, components/** and db/** for email_confirmed_at, emailConfirmedAt, emailVerified and email_verified returns ZERO hits outside db/baseline/stella_g2_schema.sql. The only thing standing between an unverified subject and the product today is the PROVIDER, and the only repo-visible provider configuration has confirmations OFF at supabase/config.toml:247."
   },
-
   "PROVIDER_TRUTH_SOURCE": {
     "FROZEN_SOURCE": "The GoTrue-verified subject returned by supabase.auth.getUser(), field email_confirmed_at, read server-side, per request, at lib/auth/identity.ts:105 and nowhere else.",
+    "PROVENANCE": {
+      "classification": "SDK_VERIFIED",
+      "was_at_R1_R2": "REPO_INFERRED",
+      "resolved_by": "The independent IE audit of PR 132, which read the field from the exact pinned Supabase SDK rather than inferring it from the database schema. That measurement is attributed to IE and is NOT re-performed here: node_modules remains absent in this worktree and the lane forbids installing it, so re-deriving it locally is impossible and claiming to have done so would be false.",
+      "which_package_owns_the_type": "The User object returned by auth.getUser() is defined by @supabase/auth-js, NOT by @supabase/supabase-js. supabase-js re-exports it. Naming the wrong package is the most likely way a future reader fails to re-verify this, so it is stated explicitly.",
+      "version_pin_re_derived_locally_from_the_repository": {
+        "declared": "package.json:125 - @supabase/supabase-js ^2.108.2",
+        "resolved_supabase_js": "pnpm-lock.yaml:7248-7250 - @supabase/supabase-js@2.108.2 depends on @supabase/auth-js 2.108.2",
+        "resolved_auth_js": "pnpm-lock.yaml:2047-2049 - @supabase/auth-js@2.108.2, with its integrity hash pinned in the lockfile",
+        "note": "These three anchors are re-derived HERE from the repository and are independent of IE. They fix WHICH artifact IE read. The content of that artifact - the field name on the User interface - is IE's measurement."
+      },
+      "separation_of_evidence": "Repository-derived, verifiable at this tree: the version pin, the package that owns the type, and the auth.users columns at db/baseline/stella_g2_schema.sql:3688 and :3708 that make the confirmed_at refusal decidable. IE-derived, not re-performed here: that the SDK User interface spells the field email_confirmed_at.",
+      "consequence_for_the_implementation_lane": "V-1 is RETIRED as a blocking first step. An implementer should still not take the spelling on faith at compile time - a typo reads as undefined, which under a truthiness test refuses every user and under an inverted test admits every user - but that is now covered by ordinary typechecking against the real typing rather than by a governed STOP condition."
+    },
     "FROZEN_PREDICATE": "emailVerified equals true if and only if email_confirmed_at is a non-empty value. A null, undefined, empty-string or absent field is NOT VERIFIED. There is no third state at the predicate: the third state lives in the FAILURE channel, not in the boolean. See fail_closed_on_error.",
     "why_this_call_and_not_another": "lib/auth/identity.ts:21-30 already argues, in the repository own words, that getSession() decodes an attacker-supplied cookie in-process while getUser() sends the token to GoTrue and gets back a verified subject, and accepts a network round trip per request as the cost of the property. The email confirmation state must inherit exactly that property. Reading it from any locally decoded token would reintroduce the precise weakness that comment exists to refuse.",
-
     "ADJUDICATION_BETWEEN_CANDIDATE_FIELDS": {
       "instruction": "Section 2 requires adjudication when the provider exposes more than one candidate. It does. Seven were considered and six are refused.",
       "candidates": [
@@ -323,20 +458,16 @@
       ],
       "also_prohibited_by_construction": "Query parameters, cookies invented by the application, and the mere presence of a non-empty email string. None is a proof of mailbox control. The last is worth naming because signup requires an email string at app/(public)/login/actions.ts:80, so the statement that the user has an email is trivially true for every subject in the system and would make the gate vacuous."
     },
-
     "fail_closed_on_error": {
       "rule": "If the provider status cannot be READ, the subject is REFUSED. If the provider call ERRORS, the subject is REFUSED. Neither is treated as verified, and neither is treated as a logout.",
       "how_it_composes_with_what_exists": "lib/auth/identity.ts already returns AUTH_UNAVAILABLE rather than a null session for a thrown createClient() at :95-101 or a thrown getUser() at :106-108, and lib/auth/database-context.ts:187-188 already maps AUTH_UNAVAILABLE to 503. Packet B ADDS NO NEW ERROR PATH: it requires that the existing AUTH_UNAVAILABLE path continue to refuse, and forbids any catch that converts it into a verified subject.",
       "the_prohibited_shape": "A try around the read whose catch assigns verified equals true, and every rewriting of it, including a default parameter of true, a nullish coalesce to true, and an if-we-could-not-determine-it-do-not-block-the-user comment. M-B-3 is the mutation control for exactly this shape.",
       "why_a_503_and_not_a_redirect": "An auth outage is not an unverified user. Redirecting an outage to the verification-pending page would tell every signed-in user that their email is unconfirmed, which is false, and would generate support load proportional to the outage. The existing 503 mapping is the honest answer and is preserved."
     },
-
     "cardinality_rule": "EXACTLY ONE MODULE MAY DERIVE THE PREDICATE. The derivation from the provider field to the boolean lives in one place and is imported everywhere else. A second derivation is a second source of truth, and the two can disagree by one release. Sentinel S-IA-PREDICATE-CARDINALITY asserts this mechanically."
   },
-
   "DUAL_GATE": {
     "status": "BINDING. Both halves required. Neither discharges the other.",
-
     "GATE_A_PROVIDER": {
       "requirement": "The hosted authentication provider MUST require and perform email confirmation for email/password signup.",
       "concrete_setting": "Supabase Auth, [auth.email] enable_confirmations true, on each hosted project, staging and production, plus a working sender for the confirmation mail.",
@@ -344,7 +475,6 @@
       "what_it_does_NOT_provide": "It does not gate any non-signup entry path, it does not survive a dashboard misconfiguration, and it leaves no evidence in the repository. An application that trusts it blindly has an unauditable control.",
       "evidence_obligation": "A hosted observation, captured by the operator, recording enable_confirmations for each hosted project. THIS LANE PERFORMS NO ENVIRONMENT MUTATION AND MAKES NO SUCH OBSERVATION. See HOSTED_PROVIDER_STATE."
     },
-
     "GATE_B_APPLICATION": {
       "requirement": "Uellix application code MUST INDEPENDENTLY refuse protected customer entry when the authenticated subject email is not provider-confirmed.",
       "independence_meaning": "The refusal must hold even if Gate A is off. That is testable offline with a mocked provider subject, which is why every negative control in the companion manifest is a pure unit control and none of them requires a live provider.",
@@ -352,43 +482,35 @@
       "what_it_does_NOT_provide": "It cannot prove the confirmation mail is deliverable. An application gate with Gate A off refuses every real user forever, because nothing ever sets email_confirmed_at. THAT IS AN OUTAGE, AND IT IS THE SPECIFIC RISK OF SHIPPING GATE B FIRST.",
       "sequencing_consequence": "Gate A SHOULD be enabled on a given environment BEFORE or AT THE SAME TIME AS Gate B reaches it. This is an operational ordering, not a code dependency; it is recorded in OPEN_FINDINGS F-IA-2 rather than encoded in the application, because encoding it would mean the application deciding to fail open when it thinks the provider is off, which is M-B-3."
     },
-
     "the_asymmetry_that_makes_both_necessary": "Gate A is the only thing that can make verification HAPPEN. Gate B is the only thing that can make verification MATTER. Neither substitutes for the other, and the failure modes are opposite: A-without-B is a control that is not enforced, B-without-A is an enforcement with nothing to satisfy it."
   },
-
   "AUTH_MECHANISM_SEMANTICS": {
     "governing_rule": "THE RULE CONSUMES PROVIDER-CONFIRMED IDENTITY STATE. IT NEVER CONSUMES THE AUTHENTICATION MECHANISM. One predicate, evaluated per request against email_confirmed_at, applies to every mechanism below. The subsections do not create per-mechanism rules; they record what the SINGLE rule yields for each mechanism, and where the routing, not the predicate, must differ.",
-
     "the_flow_keying_prohibition": {
       "rule": "No branch of the verification gate may be keyed on how the session was created: not on app_metadata.provider, not on a recovery marker, not on the presence of a next parameter, not on which action or route handler produced the session.",
       "why": "Section 4 gives two failure directions and a flow-keyed rule produces BOTH. Keyed to refuse a flow, it falsely refuses provider-confirmed OAuth subjects. Keyed to trust a flow, it creates precisely the recovery bypass section 4 forbids. A single predicate over provider state has neither failure mode, and it needs no per-mechanism maintenance as mechanisms are added.",
       "structural_reason_this_is_not_merely_stylistic": "app/auth/callback/route.ts:14 is ONE handler that serves email confirmation links, magic links, OAuth PKCE returns and recovery returns, all through the same exchangeCodeForSession call. THE APPLICATION CANNOT RELIABLY TELL THESE APART AT THAT LINE. A flow-keyed rule would have to guess the flow from a URL parameter, which is client-supplied. Provider state is the only thing available there that is not."
     },
-
     "email_password_signup": {
       "measured_today": "app/(public)/login/actions.ts:74-108. signUp at :89; the ONLY failure check is error or missing data.user at :91. data.session IS NEVER INSPECTED. On success syncUserProfile at :96, then redirect to redirectTo if present at :103-105, else /app/onboarding at :108.",
       "with_gate_A_OFF_today": "signUp returns BOTH a user and a session. The subject is authenticated and unverified and lands directly on the organisation creation form. This is the primary hazard.",
       "with_gate_A_ON_today": "signUp returns a user but a null session. Because :91 checks only data.user, the code redirects to /app/onboarding ANYWAY, with no session. proxy.ts then finds no user for an /app path and bounces to /login?redirect=/app/onboarding at lib/supabase/proxy.ts:83-88. The subject sees a login screen with no explanation that a confirmation mail is waiting. THIS IS A REAL DEFECT THAT TURNING ON GATE A CREATES AT BASE, and it is why Gate B routing work is not cosmetic.",
       "packet_b_rule": "Refused by the predicate until email_confirmed_at is set. Routing: signup MUST send the subject to the verification-pending destination in BOTH provider configurations, when a session exists and when it does not. The session-presence branch is a ROUTING detail; it is NEVER a predicate input."
     },
-
     "email_password_login": {
       "measured_today": "app/(public)/login/actions.ts:18-72. signInWithPassword at :33; on success syncUserProfile at :40; explicit redirectTo wins at :48-50; otherwise Packet A enumerate-then-route at :62-69.",
       "packet_b_rule": "Refused by the predicate. Note that with Gate A ON, GoTrue itself refuses signInWithPassword for an unconfirmed subject, so :35 takes the auth_failed branch and the application gate is never consulted. THAT IS DEFENCE IN DEPTH WORKING AS INTENDED AND MUST NOT BE READ AS THE APPLICATION GATE BEING UNTESTABLE: the application gate is proven offline against a mocked unverified subject, which is a state Gate-A-off and legacy accounts both produce."
     },
-
     "oauth_identity": {
       "measured_provider_state": "ZERO OAuth providers are enabled in the repo-visible configuration. supabase/config.toml:343-344, [auth.external.apple] enabled false, is the ONLY external provider block present; [auth.web3.solana] :361, [auth.third_party.firebase] :365, [auth.third_party.auth0] :370, [auth.third_party.aws_cognito] :376, [auth.third_party.clerk] :382 and [auth.oauth_server] :389 are all false. [auth] enable_anonymous_sign_ins is false at :199.",
       "measured_application_state": "app/auth/callback/route.ts EXISTS and handles the PKCE code exchange, so the application-side OAuth return path is present even though no provider is enabled.",
       "packet_b_rule": "An OAuth subject whose provider confirmed the mailbox arrives with email_confirmed_at SET, and is therefore ADMITTED BY THE SAME PREDICATE, WITH NO SPECIAL CASE. This is the direct discharge of the section 4 warning: the rule does not classify non-password identities as unverified, because it never asks which identity it is looking at.",
       "residual": "An OAuth provider configured with email_optional true, the setting exists at supabase/config.toml:356 and is currently false, can return no email at all. Such a subject has no email to confirm and is refused by the predicate, correctly and fail-closed. Recorded as OPEN_FINDINGS F-IA-4 because the product answer, collect and confirm an address or refuse the provider, is a product decision this packet does not take."
     },
-
     "magic_link": {
       "measured_today": "No application code initiates a magic link: grep for signInWithOtp over app/** and lib/** returns zero hits. The RETURN path exists and is shared at app/auth/callback/route.ts:14.",
       "packet_b_rule": "Clicking a magic link proves mailbox control, so GoTrue sets email_confirmed_at and the subject is ADMITTED by the same predicate. No special case, and no exemption: the admission is a consequence of provider state, not of the flow."
     },
-
     "password_recovery": {
       "measured_today": [
         "app/(public)/forgot-password/ initiates the reset.",
@@ -396,7 +518,7 @@
         "app/(public)/reset-password/actions.ts:23 reads the subject and :28 calls updateUser with a password; on success it redirects to /login?success=password_updated at :33."
       ],
       "the_hazard_section_4_names": "Recovery must not become an alternate path that bypasses verification policy. At BASE it plainly is one: a recovery return lands in the same smart-redirect as a login and reaches /app/onboarding or /app/dashboard with no verification question asked anywhere.",
-      "packet_b_rule_part_1_the_gate_is_not_bypassable_by_recovery": "Because the gate is a per-request read of provider state and is NOT keyed on the flow, a recovery session is evaluated exactly like any other session. If email_confirmed_at is set the subject proceeds; if it is not, the subject is refused at the same four enforcement points. There is no recovery-shaped hole to close, because there is no recovery-shaped branch to begin with. THIS IS THE ARCHITECTURAL REASON THE FLOW-KEYING PROHIBITION IS LOAD-BEARING RATHER THAN TIDY.",
+      "packet_b_rule_part_1_the_gate_is_not_bypassable_by_recovery": "Because the gate is a per-request read of provider state and is NOT keyed on the flow, a recovery session is evaluated exactly like any other session. If email_confirmed_at is set the subject proceeds; if it is not, the subject is refused at the same completeness points C4, C5, C6 and C7. There is no recovery-shaped hole to close, because there is no recovery-shaped branch to begin with. THIS IS THE ARCHITECTURAL REASON THE FLOW-KEYING PROHIBITION IS LOAD-BEARING RATHER THAN TIDY.",
       "packet_b_rule_part_2_the_password_change_itself_is_NOT_gated": "E12, app/(public)/reset-password/actions.ts, is DELIBERATELY EXCLUDED from the enforcement points. Refusing an unverified subject the ability to set a password would trap an account that cannot recover and cannot be recovered, and a password change grants access to NOTHING: the subject who completes it is returned to /login at :33 and meets the gate on the next authenticated entry. The refusal belongs where access is granted, not where a credential is rotated.",
       "packet_b_rule_part_3_the_provider_side_effect_is_UNKNOWN_AND_MUST_NOT_BE_ASSUMED": {
         "the_question": "Does GoTrue set email_confirmed_at as a side effect of a successful recovery verification, on the reasoning that clicking a mailed link proves mailbox control?",
@@ -406,24 +528,20 @@
         "residual": "Recorded as OPEN_FINDINGS F-IA-3 with owner TO_BE_MAPPED and BLOCKS_THIS_NODE false. It is a PRODUCT question, whether recovery is an acceptable proof of mailbox control, that becomes answerable by observation once a hosted provider is available; it is not a correctness question for this contract."
       }
     },
-
     "invitation_acceptance": {
       "measured_today": "app/invite/accept/page.tsx:24 reads the subject non-redirectingly and :53 accepts the invitation inside an authenticated context, CREATING A MEMBERSHIP. The route is under app/invite/, outside every route group, and outside the proxy isProtected predicate at lib/supabase/proxy.ts:80. Both app/(public)/login/actions.ts:44-50 and :100-105 carry explicit comments routing an invited user to this link ahead of the membership-based redirect, so the path is intentional and exercised.",
       "the_tension_stated_honestly": "An invitation is evidence that SOMEBODY who controls an organisation believes this address should have access. It is NOT evidence that the person now holding the session controls that mailbox. A stolen or forwarded invitation link plus an unverified signup at the invited address produces a member of a tenant the subject never proved they own.",
       "packet_b_rule": "REFUSED. Invitation acceptance is a membership WRITE into another party tenant and is therefore protected customer entry. The invitation is not consumed, not expired and not revoked by the refusal: the subject is routed to the verification-pending destination and returns to the same link afterwards. The token-carrying URL must be preserved across the refusal so the journey completes without the inviter re-issuing anything.",
       "explicitly_not_absorbed": "Packet B does not touch invitation issuance, expiry, revocation, the INVITATION_SENT audit ordering, or Resend delivery. See BOUNDARIES."
     },
-
     "already_authenticated_legacy_accounts": {
       "the_case": "Accounts created while Gate A was off have a null email_confirmed_at and hold valid sessions. Turning on Gate A does not retroactively confirm them; turning on Gate B refuses them.",
       "packet_b_rule": "They are refused, correctly: their mailbox control was never proven. They are routed to the verification-pending destination, from which a confirmation mail can be requested. This is a MIGRATION consequence, not a defect, and it is the single largest operational impact of this packet. Recorded as OPEN_FINDINGS F-IA-5 so it is planned rather than discovered."
     }
   },
-
   "ROUTING_CONTRACT_PACKET_B": {
     "applies_to": "An AUTHENTICATED subject. An UNAUTHENTICATED subject is entirely out of scope and every existing redirect to /login is preserved verbatim at every site, exactly as Packet A preserved it.",
     "evaluation_order_is_normative": "B0 is evaluated BEFORE every rule of Packet A ROUTING_CONTRACT wherever that contract is evaluated. An implementation that evaluates B0 after R1 or after R2 produces a different destination for the same principal, so the order is part of the contract.",
-
     "B0_VERIFICATION_PRECEDES_TENANCY": {
       "rule": "If the authenticated subject email is not provider-confirmed, the request is REFUSED and routed to the verification-pending destination. No tenancy question is asked. No enumeration is performed. No carrier is read, written or cleared. No organisation is created. No membership is created.",
       "precondition": "principal resolved AND emailVerified is false.",
@@ -432,51 +550,122 @@
       "why_this_is_NOT_a_redesign_of_platform_admin_identity": "Section 6 forbids using Packet B to redesign platform-admin identity, and this does not. SUPERADMIN_BOUNDARY is untouched: super-admins still reach tenant data through their own explicit door, they are still never routed to the tenant selector, R1 keeps its position ahead of every selector question and keeps its destination. B0 applies the SAME predicate to them as to everyone, which is the opposite of a special identity design. The operational escape is provider-side and needs no code: confirming the address at the provider clears B0.",
       "counter_argument_recorded": "A reviewer may hold that a platform operator locked out by their own unverified address is a worse outcome than an unverified operator session. That argument is real and is recorded rather than suppressed. It is REJECTED here because the lockout is recoverable by a provider action that requires no deploy, while the alternative is unrecoverable if exploited. If the independent audit adjudicates otherwise, the change is a REORDERING of B0 relative to R1 and nothing else: the predicate, the destination and the other three enforcement points are unaffected."
     },
-
-    "B1_ENFORCEMENT_POINTS": {
-      "rule": "The refusal is enforced at EXACTLY FOUR points. Fewer leaves a hole; more duplicates the predicate.",
-      "points": [
-        {
-          "id": "B1-P1",
-          "site": "lib/auth/session.ts:137 requireAuth()",
-          "covers": "E1, E2, E4, E5, E6, E10",
-          "note": "requireAdminAccess reaches it via :268, so /admin is covered without a fifth point."
+    "B1_ENFORCEMENT_TOPOLOGY": {
+      "R2_CLAIM_WITHDRAWN": {
+        "the_false_claim": "R2 stated: the refusal is enforced at EXACTLY FOUR points; fewer leaves a hole, more duplicates the predicate. BOTH HALVES ARE FALSE.",
+        "why_fewer_was_wrong": "The four named points were requireAuth, requireOrganizationAccess, the onboarding action and the invite page. That set is INCOMPLETE: it does not cover getCurrentOrganizationContext (E14-E17 plus roughly twenty library services), requirePrincipal, or withOptionalDatabaseIdentityContext.",
+        "why_more_was_wrong": "Two of the four named points - the onboarding action and the invite page - are NOT needed for completeness at all once the principal-consuming boundaries are gated, because both reach their protected effect through withAuthenticatedDatabaseContext, which transits requirePrincipal. R2 required work that the corrected topology REMOVES.",
+        "the_deeper_error": "'More duplicates the predicate' conflated the PREDICATE with its TRANSLATION. The predicate is derived once. What the boundaries do is translate one predicate into whichever refusal vocabulary each already speaks - redirect, null, or throw. Calling that duplication argued for a smaller enforcement set than completeness permits, which is how an authority talks itself into a hole."
+      },
+      "CONVERGENCE_POINT": {
+        "claim": "For the request-principal family, lib/auth/database-context.ts:536, inside resolveRequestPrincipal, is the SOLE consumer of getVerifiedAuthIdentityResult().",
+        "proof_by_exhaustive_enumeration": {
+          "method": "grep for getVerifiedAuthIdentityResult and getVerifiedAuthIdentity across the CODE files of app/**, lib/**, db/**, scripts/** and components/**, tests excluded. The grep also returns db/README.md:147, which DESCRIBES the helper in prose and does not call it; it is a documentation mention, not a consumer, and is excluded by inspection rather than by a filename filter so the exclusion is visible.",
+          "consumers_found": "EXACTLY FOUR CALL SITES in five files - identity.ts DEFINES the helper and the thin wrapper, and four other places CALL one of them. No fifth caller exists.",
+          "c1": "lib/auth/database-context.ts:536 - inside resolveRequestPrincipal. THE CONVERGENCE POINT for every principal-resolving path.",
+          "c2": "lib/auth/session.ts:378 - inside syncUserProfile, via the thin getVerifiedAuthIdentity wrapper at lib/auth/identity.ts:135. This is the two-subjects cross-check, NOT a principal resolution and NOT an authorization decision. It MUST NOT be gated: it writes the public.users row that a brand-new subject needs before any principal can exist, so gating it would make first-login profile creation depend on a state reachable only after first login.",
+          "c3_c4": "app/api/health/runtime-identity/route.ts:49 and app/api/health/stella-preconditions/route.ts:67 - entries E18 and E19, both OUT_OF_SCOPE by re-measurement."
         },
-        {
-          "id": "B1-P2",
-          "site": "lib/auth/session.ts:222 requireOrganizationAccess(), ahead of the R1 super-admin branch at :229",
-          "covers": "E9, the entire product surface",
-          "note": "REQUIRED SEPARATELY BECAUSE requireOrganizationAccess DOES NOT CALL requireAuth. It calls loadRequestPrincipal directly at :223. This is the single most likely incomplete implementation of Packet B."
-        },
-        {
-          "id": "B1-P3",
-          "site": "app/(authenticated)/app/onboarding/actions.ts, between the subject read at :42 and the membership check at :50",
-          "covers": "E3, organisation creation",
-          "note": "The provider subject is already in hand at :40-42, so no new call is introduced. The position is normative: after the null check at :44 and BEFORE any tenancy question, mirroring B0 precedence."
-        },
-        {
-          "id": "B1-P4",
-          "site": "app/invite/accept/page.tsx, between the subject read at :24 and the acceptance at :53",
-          "covers": "E7 and, transitively, E8",
-          "note": "Cannot be reached by P1 or P2: the route is under app/invite/, in no route group, and outside the proxy isProtected predicate."
-        }
-      ],
-      "defence_in_depth_not_a_point": "lib/supabase/proxy.ts MAY additionally redirect an unverified subject away from /app and /admin as a cheap outer hop. It is OPTIONAL, it is NOT one of the four points, and NO control may depend on it. The proxy own comment at :97-99 disclaims authorization, and a control that depended on it would be asserting on a convenience layer."
+        "downstream_convergence_also_proven": "Every principal-consuming helper reaches the principal through loadRequestPrincipal or resolveRequestPrincipal, and there are exactly six such call sites outside database-context.ts's own internals: lib/auth/session.ts:102 getCurrentUser, :122 getCurrentMembership, :223 requireOrganizationAccess, :283 getCurrentOrganizationContext, and lib/auth/database-context.ts:632 requirePrincipal and :814 withOptionalDatabaseIdentityContext. THERE IS NO SEVENTH.",
+        "consequence": "The verified fact needs to be DERIVED once at lib/auth/identity.ts:125 and PROPAGATED once at lib/auth/database-context.ts:536 onto RequestPrincipal. From there it is available to every boundary with no second GoTrue round trip, no new query, and no re-derivation."
+      },
+      "WHY_THE_REFUSAL_CANNOT_ALSO_BE_CENTRALISED": {
+        "the_tempting_move": "Refuse inside resolveRequestPrincipal itself - return a null principal with a new failure code - so exactly one line enforces the policy.",
+        "why_it_is_REFUSED": "A null principal means NOT SIGNED IN to every existing caller. lib/auth/session.ts:139 would then redirect an unverified subject to /login; lib/supabase/proxy.ts:91 sees a live session on /login and redirects to /app/dashboard; app/app/layout.tsx:27 resolves a null principal again and redirects to /login. THAT IS AN INFINITE LOOP, and it is the exact ERR_TOO_MANY_REDIRECTS signature app/(authenticated)/layout.tsx:8-30 already records as measured in production.",
+        "the_second_reason": "lib/auth/database-context.ts:189-190 states the principle in the repository's own words: telling a signed-in user to sign in again is a loop, not a fix. An unverified subject HOLDS A VALID SESSION. Collapsing them into the no-session case contradicts the vocabulary the codebase already built to keep them apart.",
+        "therefore": "ONE derivation, ONE propagation, and N translations - where N is fixed by how many distinct refusal vocabularies the codebase already has, not by how many places the policy is restated."
+      },
+      "COMPLETENESS_POINTS": {
+        "rule": "These four are REQUIRED. Each is a place where a principal becomes either a returned/rendered organisation context or an opened database context - that is, a place where a protected effect becomes reachable. Removing any one of them leaves a measured path open.",
+        "points": [
+          {
+            "id": "C4",
+            "site": "lib/auth/requireOrganizationAccess, lib/auth/session.ts:222, refusal inserted BEFORE the R1 super-admin branch at :229",
+            "refusal_vocabulary": "redirect to /verify-email",
+            "covers": "E9 - every page under app/app/",
+            "why_it_is_required_and_not_covered_by_C6": "It RETURNS the OrganizationContext, and app/app/layout.tsx:28 and :48 render organization.name and the role label straight from it into the TopBar. That is tenant data rendered from the principal without any further database-context transit."
+          },
+          {
+            "id": "C5",
+            "site": "lib/auth/getCurrentOrganizationContext, lib/auth/session.ts:281-292",
+            "refusal_vocabulary": "return null - the value every caller already treats as refusal",
+            "covers": "E14, E15, E16, E17 and roughly twenty library services",
+            "why_it_is_required_and_not_covered_by_C6": "MEASURED, NOT ASSUMED. Its consumers take the context and then query the RAW db client, scoping by ctx.organization.id in the WHERE clause, without transiting withOrganizationDatabaseContext: lib/projects/service.ts:39-41, lib/taxonomies/service.ts:64-69, lib/pipeline/fx-rates.ts:57-62. For those callers this null check IS the authorization decision. THIS IS THE SEAM R2 MISSED ENTIRELY.",
+            "fail_closed_by_construction": "Every measured caller already handles null as refusal - 401 at E14:53, E15:18, E16:10, E17:16; a thrown Unauthenticated at lib/projects/service.ts:40 and lib/taxonomies/service.ts:65; a returned null at lib/projects/service.ts:57. So the refusal composes with existing behaviour rather than requiring twenty edits."
+          },
+          {
+            "id": "C6",
+            "site": "requirePrincipal, lib/auth/database-context.ts:629-646",
+            "refusal_vocabulary": "throw AuthContextError with a new code, mapped to 403 - never 401, which would be the loop",
+            "covers": "E3 and E7/E8 transitively, plus withOrganizationDatabaseContext, withSuperAdminDatabaseContext and listSelectableMemberships",
+            "why_it_REPLACES_two_R2_points": "app/invite/accept/page.tsx:53 reaches acceptInvitation through withAuthenticatedDatabaseContext, and app/(authenticated)/app/onboarding/actions.ts reaches both the allowlist read at :76 and the organisation insert at :99 the same way. Both therefore become unreachable for an unverified subject once C6 refuses, WITHOUT editing either file. R2's B1-P3 and B1-P4 are retired as completeness points."
+          },
+          {
+            "id": "C7",
+            "site": "withOptionalDatabaseIdentityContext, lib/auth/database-context.ts:810-836",
+            "refusal_vocabulary": "invoke the callback with null, exactly as it already does when there is no membership",
+            "covers": "E14 and E16 independently of C5, via runWithOptionalOrganizationAccess",
+            "why_it_is_required_separately": "It does NOT call getCurrentOrganizationContext. It reads the principal at :814-815 and CONSTRUCTS its own OrganizationContext at :821-825. It is a third, independent context construction, so gating C4 and C5 leaves it open."
+          }
+        ]
+      },
+      "ROUTING_POINTS_NOT_COMPLETENESS_POINTS": {
+        "rule": "These do not close any path that the four completeness points leave open. They exist so that an unverified subject meets a COHERENT REFUSAL instead of an unhandled throw or an avoidable bounce. They are REQUIRED for the contract to be usable, and they are explicitly NOT the boundary.",
+        "points": [
+          {
+            "id": "C3",
+            "site": "requireAuth, lib/auth/session.ts:137",
+            "refusal_vocabulary": "redirect to /verify-email",
+            "why_routing_only": "Every protected effect behind it transits C6 anyway - the selector page reaches listSelectableMemberships, the admin pages reach withSuperAdminDatabaseContext, the onboarding page's writes reach withAuthenticatedDatabaseContext. Without C3 those subjects would still be refused, but by a thrown AuthContextError rendered as a server error rather than by a redirect.",
+            "correction_of_R2": "R2 named this its FIRST enforcement point. It is real and it is required, but it is a routing point, not a completeness point, and R2's mutation M-B-6 was built on the mistaken belief that it was the primary boundary."
+          },
+          {
+            "id": "D1",
+            "site": "app/(authenticated)/app/onboarding/actions.ts, between :44 and :50",
+            "why_routing_only": "C6 already makes the writes unreachable. This turns the refusal into a redirect instead of a throw."
+          },
+          {
+            "id": "D2",
+            "site": "app/(public)/login/actions.ts:62 and :89-108",
+            "why_routing_only": "See B4. Also the only legitimate place to inspect session PRESENCE, which Gate A makes null on signup."
+          },
+          {
+            "id": "D3",
+            "site": "app/auth/callback/route.ts:16-39",
+            "why_routing_only": "See B4. Applies even when a safe next parameter is present."
+          },
+          {
+            "id": "D5",
+            "site": "lib/supabase/proxy.ts",
+            "why_routing_only": "OPTIONAL defence in depth. NOT a point, and NO control may depend on it - its own comment at :97-99 disclaims authorization. If implemented, /verify-email must stay outside isProtected at :80 or the B5 termination proof is void."
+          }
+        ]
+      },
+      "EXPLICITLY_NOT_GATED": {
+        "syncUserProfile": "lib/auth/session.ts:371-412 and its identity cross-check at :378. Gating it would make first-login profile creation depend on a state that only exists after first login.",
+        "E12_password_change": "app/(public)/reset-password/actions.ts. See AUTH_MECHANISM_SEMANTICS.password_recovery part 2.",
+        "E13_E18_E19_probes": "No protected customer capability, by re-measurement. F-IA-10 records the residual posture disclosure.",
+        "getCurrentUser_and_getCurrentMembership": "lib/auth/session.ts:101 and :121. They return a user or a membership and grant nothing on their own; every downstream effect transits C4, C5, C6 or C7. Gating them would be the duplication R2 wrongly feared everywhere else, and here the fear is correct."
+      },
+      "TOPOLOGY_PROPERTIES": {
+        "complete": "Every measured path from a resolved principal to a protected effect transits at least one of C4, C5, C6, C7. Established by following each of the nineteen census entries to its terminal effect, not by directory reasoning.",
+        "non_duplicative": "One derivation at lib/auth/identity.ts:125. One propagation at lib/auth/database-context.ts:536. One shared refusal helper carrying the policy. Four translations, each into a vocabulary the boundary already speaks.",
+        "fail_closed": "Every translation resolves to the refusing value of an existing branch - a redirect that already exists, a null that every caller already treats as refusal, a throw that authContextErrorStatus already maps. No new permissive path is introduced anywhere.",
+        "loop_free": "C4 and C3 redirect to /verify-email, which is served from app/(public)/ and is behind none of the seven boundaries. C5, C6 and C7 do not redirect at all - they return null or throw - so they cannot participate in a cycle. The 401-instead-of-403 trap is refused explicitly in C6."
+      }
     },
-
     "B2_MINIMUM_SAFE_DESTINATION": {
       "frozen_destination": "/verify-email, served from app/(public)/verify-email/page.tsx.",
-      "derivation_not_preference": "The destination must satisfy four measured constraints simultaneously. One: it must be reachable by an AUTHENTICATED subject, so it cannot redirect authenticated users away. Two: it must NOT be behind any of the four enforcement points, or it redirects to itself, the exact failure app/(authenticated)/layout.tsx:8-30 records as MEASURED in production, ERR_TOO_MANY_REDIRECTS, dozens of 307s, zero 500s. Since B1-P1 is requireAuth() itself, the destination cannot call requireAuth() and cannot sit under app/(authenticated)/layout.tsx, whose only statement is requireAuth() at :76. Three: it must be able to READ the principal, to show which address is awaiting confirmation and to offer a resend, which is possible without requireAuth, because resolving a principal and enforcing a gate are already separate concerns in this codebase, lib/auth/session.ts:101 getCurrentUser does not redirect. Four: it must not be swept up by the proxy isProtected predicate, which is exactly pathname.startsWith('/app') or pathname.startsWith('/admin') at lib/supabase/proxy.ts:80. Only a route outside app/(authenticated)/ and outside /app satisfies all four. app/(public)/ satisfies all four and app/(public)/layout.tsx makes no auth call of any kind: grep for requireAuth, getCurrentUser, loadRequestPrincipal and redirect over it returns zero hits.",
+      "derivation_not_preference": "The destination must satisfy four measured constraints simultaneously. One: it must be reachable by an AUTHENTICATED subject, so it cannot redirect authenticated users away. Two: it must NOT be behind any enforcement point of B1_ENFORCEMENT_TOPOLOGY, or it redirects to itself, the exact failure app/(authenticated)/layout.tsx:8-30 records as MEASURED in production, ERR_TOO_MANY_REDIRECTS, dozens of 307s, zero 500s. Since C3 is requireAuth() itself and C5 is getCurrentOrganizationContext(), the destination cannot call either and cannot sit under app/(authenticated)/layout.tsx, whose only statement is requireAuth() at :76. Three: it must be able to READ the principal, to show which address is awaiting confirmation and to offer a resend, which is possible without requireAuth, because resolving a principal and enforcing a gate are already separate concerns in this codebase, lib/auth/session.ts:101 getCurrentUser does not redirect. Four: it must not be swept up by the proxy isProtected predicate, which is exactly pathname.startsWith('/app') or pathname.startsWith('/admin') at lib/supabase/proxy.ts:80. Only a route outside app/(authenticated)/ and outside /app satisfies all four. app/(public)/ satisfies all four and app/(public)/layout.tsx makes no auth call of any kind: grep for requireAuth, getCurrentUser, loadRequestPrincipal and redirect over it returns zero hits.",
       "naming_collision_refused": "/verify IS ALREADY TAKEN. app/(public)/verify/[hash]/page.tsx and app/(public)/verify/[hash]/pdf/route.ts serve PUBLIC EVIDENCE and REPORT verification and have nothing to do with email. Naming this route /verify or nesting under it would collide with an existing public product surface. The name /verify-email is measured-absent: git ls-files matching verify-email returns zero rows at AS_OF_TREE.",
       "consequence_for_the_route_boundary_test": "Because the destination is NOT under app/(group)/app/**, the assertion at tests/auth/route-authorization-boundary.test.ts:297, which requires the ungated set to equal onboarding and organizations/select, REMAINS TRUE UNCHANGED. Packet B forces NO edit to that line. A NEW control, T-B-2, is required instead, asserting the destination is not under app/(authenticated)/app/**, so the choice is pinned rather than merely made.",
-      "alternative_considered_and_rejected": "app/(authenticated)/app/verify-email/ was considered because it groups the pre-organisation journeys together and reuses the established carve-out pattern. IT IS REJECTED: that group layout is requireAuth() at :76, which is B1-P1, so the destination would be gated by the gate that sends users to it, a self-redirect with the precise signature the repository already measured once. It would additionally force an edit to :297. If a future adjudication moves the gate off requireAuth, this rejection must be re-derived, not merely reversed.",
+      "alternative_considered_and_rejected": "app/(authenticated)/app/verify-email/ was considered because it groups the pre-organisation journeys together and reuses the established carve-out pattern. IT IS REJECTED: that group layout is requireAuth() at :76, which is the C3 routing translation, so the destination would be gated by the gate that sends users to it, a self-redirect with the precise signature the repository already measured once. It would additionally force an edit to :297. If a future adjudication moves the gate off requireAuth, this rejection must be re-derived, not merely reversed.",
       "behaviour_at_the_destination": [
         "AUTHENTICATED and UNVERIFIED: RENDER. Never redirect. This is the terminal state.",
         "AUTHENTICATED and VERIFIED: redirect to /app/dashboard, so the page is not a dead end after confirmation. Terminates, because /app/dashboard passes B0 for a verified subject and proceeds into Packet A R1 through R5.",
         "UNAUTHENTICATED: redirect to /login. Terminates, because /login is public and the proxy :91 rule only fires when a user EXISTS."
       ]
     },
-
     "B3_PROHIBITED_SIDE_EFFECTS_OF_THE_REFUSAL": {
       "rule": "The refusal path performs NO state change. It is a routing decision and nothing else.",
       "prohibitions": [
@@ -490,14 +679,13 @@
         "MUST NOT echo the subject id, the token, or the session in any log or error text, preserving lib/auth/identity.ts:40-41 and :120-122."
       ]
     },
-
     "B4_ROUTING_AT_THE_SESSION_PRODUCING_SITES": {
       "rule": "The three sites that CREATE a session and then choose a destination must send an unverified subject to /verify-email instead of to their current destination. These are ROUTING improvements that make the journey coherent and prevent avoidable bounces; they are NOT the boundary, and B1 four points remain the enforceable control.",
       "sites": [
         {
           "site": "app/(public)/login/actions.ts:62-71, login",
           "today": "membership null routes to enumerate, then /app/onboarding or /app/organizations/select; otherwise /app/dashboard.",
-          "packet_b": "If unverified, redirect to /verify-email BEFORE the membership question at :62. Without this the subject reaches /app/dashboard, is bounced by B1-P2, and arrives at /verify-email one hop later, correct but noisy."
+          "packet_b": "If unverified, redirect to /verify-email BEFORE the membership question at :62. Without this the subject reaches /app/dashboard, is bounced by C4, and arrives at /verify-email one hop later, correct but noisy."
         },
         {
           "site": "app/(public)/login/actions.ts:89-108, signup",
@@ -512,11 +700,10 @@
       ],
       "invitation_target_preservation": "Where a safe redirect target was supplied, isSafeRedirectPath at app/(public)/login/actions.ts:22 and :78 and app/auth/callback/route.ts:10, the refusal MUST carry it forward so the subject resumes the invitation journey after confirming. The carried value must remain subject to the EXISTING isSafeRedirectPath validation: Packet B introduces no new redirect-target vocabulary and no new open-redirect surface."
     },
-
     "B5_TERMINATION": {
       "rule": "The routing graph must terminate. No destination of this contract may re-enter this contract with the same principal state.",
       "proof": [
-        "/verify-email is served from app/(public)/, whose layout makes NO auth call. Measured: zero hits for requireAuth, getCurrentUser, loadRequestPrincipal and redirect in app/(public)/layout.tsx. It is therefore behind none of the four enforcement points and cannot redirect to itself.",
+        "/verify-email is served from app/(public)/, whose layout makes NO auth call. Measured: zero hits for requireAuth, getCurrentUser, loadRequestPrincipal and redirect in app/(public)/layout.tsx. It is therefore behind none of the seven enforcement points - C3, C4, C5, C6, C7 and the D-seams - and cannot redirect to itself.",
         "It is outside the proxy isProtected predicate at lib/supabase/proxy.ts:80, so the proxy cannot redirect it either.",
         "The longest constructible cycle candidate is: authenticated unverified subject requests /login, proxy :91 sends them to /app/dashboard, app/app/layout.tsx:27 calls requireOrganizationAccess, B0 sends them to /verify-email, TERMINAL. Length three, strictly decreasing, no repeat state.",
         "After confirmation the subject at /verify-email is verified, so the page redirects to /app/dashboard, which passes B0 and enters Packet A R1 through R5, itself proven terminal by Packet A R5_TERMINATION and by tests/auth/route-authorization-boundary.test.ts."
@@ -524,7 +711,6 @@
       "control": "T-B-1 asserts termination over the enumerated topology; T-B-2 pins the destination location, which is the structural precondition for the proof."
     }
   },
-
   "RETURNING_USERS": {
     "instruction_discharged": "Section 6 enumerates six subjects explicitly. All six are covered below, plus the two the closed world adds.",
     "matrix": [
@@ -581,19 +767,23 @@
         "id": "RU-8",
         "subject": "UNVERIFIED holder of a valid invitation token",
         "today": "app/invite/accept/page.tsx:24 reads the subject and :53 CREATES A MEMBERSHIP, outside every route group and outside the proxy protected predicate.",
-        "packet_b": "Refused at B1-P4. The invitation is NOT consumed, NOT expired and NOT revoked; the token-carrying URL is preserved so the journey resumes after confirmation.",
+        "packet_b": "Refused at C6, requirePrincipal, reached through the withAuthenticatedDatabaseContext call at app/invite/accept/page.tsx:53 - NOT by an edit to that file, which R3 removed from the surface. The invitation is NOT consumed, NOT expired and NOT revoked; the token-carrying URL is preserved so the journey resumes after confirmation.",
         "control": "N-B-3"
       }
     ]
   },
-
   "PACKET_A_PRESERVATION": {
     "claim": "For any subject with email_confirmed_at set, the observable behaviour of the application after Packet B is IDENTICAL to its behaviour at BASE.",
     "why_the_claim_is_structurally_credible": "B0 is a PREFIX, not a rewrite. It returns control to Packet A R1 through R5 untouched when the predicate passes, and it never reads, writes or clears the carrier, never enumerates, and never changes a destination.",
     "how_it_is_PROVEN_rather_than_asserted": "P-B-2 through P-B-6 re-drive the Packet A OWN control scenarios, zero candidates, exactly one candidate, two candidates, stale carrier, super-admin, and RETURN SITE 3, with a VERIFIED subject, and require the SAME destinations the Packet A manifest requires. If any of them changes, Packet B has silently redesigned tenancy and the node stops.",
-    "the_specific_regression_this_guards": "An implementer who places B0 AFTER Packet A R2, rather than before, would leave enumeration running for unverified subjects. That change is invisible in the verified path, every positive control still passes, and is caught only by the N-B-2 assertion that NO enumeration occurs on the unverified path. This is why N-B-2 asserts on the ENUMERATOR CALL and not merely on the destination."
+    "the_specific_regression_this_guards": "An implementer who places B0 AFTER Packet A R2, rather than before, would leave enumeration running for unverified subjects. That change is invisible in the verified path, every positive control still passes, and is caught only by the N-B-2 assertion that NO enumeration occurs on the unverified path. This is why N-B-2 asserts on the ENUMERATOR CALL and not merely on the destination.",
+    "R3_ADDITION_THE_PRESERVATION_PROOF_HAS_A_PREREQUISITE": {
+      "discovered_at_R3": "P-B-2 through P-B-6 are hosted in tests/auth/route-authorization-boundary.test.ts, and that file drives Packet A through SIX RequestPrincipal literals it constructs itself (:136-140, :146-151, :157-162, :166-171, :174-179, :559-563). I-2 extends RequestPrincipal with the verified flag.",
+      "the_trap": "If those six fixtures are not repinned as VERIFIED, every Packet A control in the file becomes a control about an UNVERIFIED subject. The suite would still be GREEN - the subjects would simply be refused at B0 before reaching R1..R5 - and the Packet A preservation proof would be measuring nothing at all. A green preservation suite that proves nothing is worse than a red one.",
+      "requirement": "The six fixtures MUST be repinned EXPLICITLY as verified. The flag MUST NOT be optional-with-a-true-default, because a defaulting flag would mask exactly this class of omission and is itself the fail-open shape X-B-03 forbids.",
+      "R2_did_not_see_this": "R2's forced-test census knew of only two changed object shapes and did not include RequestPrincipal, so it did not notice that its own preservation argument depended on fixtures it had not enumerated."
+    }
   },
-
   "HOSTED_PROVIDER_STATE": {
     "classification": "REPO_LOCAL_ONLY for the value that exists, and HOSTED_UNKNOWN for every hosted project.",
     "measured_repo_local_value": {
@@ -624,7 +814,22 @@
       "statement": "BEFORE Gate B reaches a hosted environment, that environment Supabase project MUST have [auth.email] enable_confirmations true AND a sender capable of delivering the confirmation mail.",
       "why_the_sender_half_is_named_separately": "enable_confirmations true with no working sender is the worst of the three states: the application refuses every subject and the provider never sends the mail that would clear the refusal. No repo-visible SMTP sender is configured, :257-265 commented out, and the default rate limit is two mails per hour at :220.",
       "environments_in_scope": "staging and production.",
-      "this_lane_performs_no_environment_mutation": "Confirmed. No env value is read, written, pulled or pushed by this lane."
+      "this_lane_performs_no_environment_mutation": "Confirmed. No env value is read, written, pulled or pushed by this lane, at R1, R2 or R3."
+    },
+    "DUAL_DEPLOYMENT_PROHIBITION": {
+      "status": "BINDING. Both halves. Neither is advisory.",
+      "P1_DO_NOT_DEPLOY_GATE_A_ALONE": {
+        "rule": "Enabling provider email confirmation on an environment whose application code does not yet carry B0 is PROHIBITED.",
+        "why_it_is_not_merely_incomplete_but_actively_harmful": "It is not a partial control - it BREAKS SIGNUP. F-IA-8: app/(public)/login/actions.ts:91 checks only error or a missing data.user and never inspects data.session. With confirmations on, signUp returns a user and a NULL session, so :108 redirects a sessionless subject to /app/onboarding, and lib/supabase/proxy.ts:83-88 bounces them to /login with no indication that a confirmation mail is waiting. Every new signup lands on a bare login screen.",
+        "and_it_gates_nothing_new": "Provider confirmation does not reach E3, E7, E9 or E14-E17 for any subject who already holds a session."
+      },
+      "P2_DO_NOT_DEPLOY_B0_INTO_AN_ENVIRONMENT_WHERE_PROVIDER_CONFIRMATION_IS_DISABLED": {
+        "rule": "Shipping the application fail-closed gate to an environment whose provider still has enable_confirmations false is PROHIBITED.",
+        "why": "Nothing would ever set email_confirmed_at, so B0 refuses EVERY subject, permanently, including every existing account. That is a total outage presented as a security control, and no application-side escape exists by design - an application that decided to fail open when it believed the provider was off would be X-B-03.",
+        "the_escape_is_provider_side_only": "Confirming addresses at the provider clears the refusal with no deploy."
+      },
+      "therefore": "Gate A and Gate B reach any given environment TOGETHER, or the environment is left alone. PRE-IA-1 is the precondition; F-IA-2 and F-IA-5 are the operational consequences to plan for - F-IA-5 in particular, since every legacy account created while confirmations were off is refused the moment B0 lands.",
+      "not_encoded_in_the_application": "Deliberately. This is a deployment-sequencing obligation on the operator. Encoding it as runtime behaviour would require the application to detect the provider's configuration and relax itself, which is the fail-open defect."
     },
     "RESEND_IS_NOT_SUBSTITUTED": {
       "rule": "The Supabase verification email is NOT replaced by Resend by this packet.",
@@ -632,155 +837,193 @@
       "known_context_not_absorbed": "Resend is used elsewhere in this product for best-effort application email with no durable delivery record. That is a separate, already-recorded operational weakness and is explicitly OUT OF SCOPE here."
     }
   },
-
   "EXACT_FUTURE_IMPLEMENTATION_SURFACE": {
-    "derivation_statement": "DERIVED FROM SEMANTIC EXECUTION SEAMS AND AN EXHAUSTIVE MOCK-FACTORY CENSUS, NOT FROM A GUESSED PATH COUNT. The implementation set is the four enforcement points of B1 plus the predicate host plus the destination plus the three routing sites; the test set is the measured set of fixtures that construct the two object shapes the change alters. Both are closed and enumerated below. NOTHING OUTSIDE THIS LIST IS AUTHORIZED.",
-
+    "R3_REDERIVATION_NOTICE": "THE R2 SURFACE IS VOID, NOT AMENDED. R2 declared nine implementation entries and six forced test anchors, derived from an enforcement topology that has since been withdrawn. R3 re-derives the whole surface from the corrected topology rather than appending the four Route Handlers to the old count. The re-derivation both ADDS paths R2 could not see and REMOVES paths R2 required: centralising at the principal-consuming boundaries means app/invite/accept/page.tsx needs NO edit at all, and app/(authenticated)/app/onboarding/actions.ts drops from a completeness point to a routing nicety. A surface that only ever grows under audit is a surface that was never re-derived.",
+    "derivation_statement": "DERIVED FROM THE MEASURED CONVERGENCE POINT AND AN EXHAUSTIVE CONSUMER CENSUS, NOT FROM A GUESSED PATH COUNT AND NOT FROM DIRECTORY STRUCTURE. The implementation set is: one predicate derivation, one propagation, one shared refusal-policy host, the four completeness translations, the routing translations, and the destination. The test set is the measured set of fixtures that construct the THREE object shapes the change alters - R2 knew of two and missed RequestPrincipal. Both are closed and enumerated below. NOTHING OUTSIDE THIS LIST IS AUTHORIZED.",
     "FUTURE_IMPLEMENTATION_BRANCH": "codex/email-verification-packet-b-implementation-r1",
     "closed_world_rule": "No implementation authority may escape this list. A path not named here is NOT authorized by this artifact, and discovering that one is needed is a STOP-and-escalate event, not a scope inference.",
-
     "IMPLEMENTATION_REQUIRED": [
-      {
-        "id": "V-1",
-        "path": "MANDATORY FIRST STEP - verification, not a code change",
-        "classification": "IMPLEMENTATION_REQUIRED",
-        "what": "Read the @supabase/supabase-js 2.108.2 User typing from node_modules once the dependency is installed, and CONFIRM the field is spelled email_confirmed_at on the SDK object returned by auth.getUser().",
-        "why_it_is_first": "MEASUREMENT_LIMITS.supabase_sdk_typings_unreadable classifies the field name as REPO_INFERRED from db/baseline/stella_g2_schema.sql:3688. If the SDK spelling differs, EVERY subsequent step is wrong at the source, and a naive truthiness test on an undefined field would refuse every user in the system.",
-        "stop_condition": "If the field is not present under that name, STOP and escalate. Do not substitute confirmed_at, do not guess a camelCase variant, and do not fall back to a metadata field."
-      },
       {
         "id": "I-1",
         "path": "lib/auth/identity.ts",
         "classification": "IMPLEMENTATION_REQUIRED",
+        "role": "THE SOLE PREDICATE DERIVATION",
         "anchors": ":54-56 VerifiedAuthIdentity, :105 getUser, :110 authUser, :125 the narrowing return",
-        "what": "Carry the derived boolean on VerifiedAuthIdentity and set it at :125 from the subject already in scope at :110. THIS MODULE IS THE SOLE PREDICATE HOST, see PROVIDER_TRUTH_SOURCE.cardinality_rule.",
-        "constraints": "No new network call. No new import of a Supabase type beyond what is already imported. The four AuthIdentityFailure values and the AUTH_UNAVAILABLE behaviour at :95-108 are preserved verbatim. The subject, the token and the claims still never reach a log, :40-41."
+        "what": "Add the derived boolean to VerifiedAuthIdentity and set it at :125 from email_confirmed_at on the subject already in scope at :110.",
+        "constraints": "No new network call. No new import beyond what is already imported. The four AuthIdentityFailure values and the AUTH_UNAVAILABLE behaviour at :95-108 are preserved verbatim - that is the fail-closed provider-error path, not a new one. The subject, the token and the claims still never reach a log (:40-41). NO OTHER MODULE MAY READ email_confirmed_at: sentinel S-IA-PREDICATE-CARDINALITY.",
+        "R3_status": "Unchanged from R2, except that V-1 no longer gates it - the field name is SDK_VERIFIED."
       },
       {
         "id": "I-2",
         "path": "lib/auth/database-context.ts",
         "classification": "IMPLEMENTATION_REQUIRED",
-        "anchors": ":123-144 RequestPrincipal, :536 resolveRequestPrincipal reads the identity result",
-        "what": "Propagate the boolean onto RequestPrincipal so B1-P2 can read it without a second GoTrue round trip.",
-        "constraints": "organizationRefusalCode keeps its exact two-valued union and its meaning. The three return sites at :448, :472 and :511 keep their codes, their audit disposition and their membership nullability. No new AuthContextErrorCode is added in the TENANCY_ family."
+        "role": "THE SOLE PROPAGATION, plus two of the four completeness translations",
+        "anchors": ":123-144 RequestPrincipal, :146-168 AuthContextErrorCode, :181-199 authContextErrorStatus, :536 resolveRequestPrincipal (THE CONVERGENCE POINT), :629-646 requirePrincipal (C6), :810-836 withOptionalDatabaseIdentityContext (C7)",
+        "what": "Four changes in one file. (a) Carry the boolean on RequestPrincipal. (b) Set it at :536 from the identity result - the ONLY propagation. (c) C6: requirePrincipal throws a new AuthContextError code for an unverified principal. (d) C7: withOptionalDatabaseIdentityContext invokes its callback with null, extending the existing :817 condition.",
+        "new_error_code": "Add ONE member to the AuthContextErrorCode union at :146-168, in the AUTH_ identity family and NOT in the TENANCY_ family - this is not a tenancy refusal. Map it in authContextErrorStatus at :181-199 to 403. IT MUST NOT BE 401: :189-190 states that telling a signed-in user to sign in again is a loop, not a fix, and an unverified subject holds a valid session.",
+        "constraints": "organizationRefusalCode keeps its exact two-valued union and its meaning. The three return sites at :448, :472 and :511 keep their codes, their audit disposition and their membership nullability. resolveRequestPrincipal MUST STILL RETURN A PRINCIPAL for an unverified subject - returning null there is the infinite loop refused in B1_ENFORCEMENT_TOPOLOGY.WHY_THE_REFUSAL_CANNOT_ALSO_BE_CENTRALISED.",
+        "R3_status": "EXPANDED. R2 asked only for propagation here and missed C6 and C7 entirely."
       },
       {
         "id": "I-3",
         "path": "lib/auth/session.ts",
         "classification": "IMPLEMENTATION_REQUIRED",
-        "anchors": ":137-141 requireAuth is B1-P1, :222-249 requireOrganizationAccess is B1-P2 with the refusal ahead of :229",
-        "what": "Both enforcement points. In requireOrganizationAccess the refusal is inserted BEFORE the R1 super-admin branch at :229.",
-        "constraints": "R1 through R4 keep their order, their conjunctions and their destinations for a verified subject. clearSelectedOrganization keeps its single call site at :243 and its clear-before-redirect ordering. syncUserProfile at :371-412 is NOT gated: it writes the profile row a brand-new subject needs before any principal can exist, and gating it would make first-login profile creation depend on a state that only exists after first login."
+        "role": "The other two completeness translations, plus one routing translation",
+        "anchors": ":137-141 requireAuth (C3, routing), :222-249 requireOrganizationAccess (C4, completeness), :281-292 getCurrentOrganizationContext (C5, completeness)",
+        "what": "C4: refuse BEFORE the R1 super-admin branch at :229, redirecting to /verify-email. C5: extend the :284 condition so an unverified principal yields null. C3: redirect to /verify-email instead of falling through.",
+        "C5_is_the_seam_R2_MISSED": "It is the authorization decision for E14-E17 and roughly twenty library services that query the RAW db client scoped by ctx.organization.id - lib/projects/service.ts:39-41, lib/taxonomies/service.ts:64-69, lib/pipeline/fx-rates.ts:57-62. One added clause at :284 closes all of them, because every measured caller already treats null as refusal.",
+        "constraints": "R1 through R4 keep their order, conjunctions and destinations for a verified subject. clearSelectedOrganization keeps its single call site at :243 and its clear-before-redirect ordering. syncUserProfile at :371-412 is NOT gated. getCurrentUser at :101 and getCurrentMembership at :121 are NOT gated - they grant nothing on their own.",
+        "R3_status": "EXPANDED. R2 named requireAuth and requireOrganizationAccess and MISSED getCurrentOrganizationContext."
       },
       {
         "id": "I-4",
-        "path": "app/(authenticated)/app/onboarding/actions.ts",
-        "classification": "IMPLEMENTATION_REQUIRED",
-        "anchors": ":40-42 the subject already in hand, :44 the null check, :50 the first tenancy question",
-        "what": "B1-P3, between :44 and :50.",
-        "constraints": "The Packet A submit-side twin at :61-64 is preserved verbatim. The allowlist gate at :74-79, the founder-provenance write at :127-128 and both audit rows at :145 and :154 are untouched."
+        "path": "lib/auth/email-verification.ts",
+        "classification": "IMPLEMENTATION_REQUIRED - NEW FILE",
+        "role": "THE SOLE REFUSAL-POLICY HOST",
+        "what": "The destination constant and the shared question the four completeness translations and the routing translations all ask. The POLICY lives here once; each boundary supplies only its own refusal vocabulary - redirect, null, or throw.",
+        "why_a_module_rather_than_a_repeated_conditional": "Without it, seven call sites each restate the policy, and the next boundary added to the codebase restates it an eighth time or forgets to. This is the module that makes the corrected topology non-duplicative rather than merely complete.",
+        "constraints": "It MUST NOT re-derive the predicate from the provider - it consumes the flag carried by I-1 and I-2. A second read of email_confirmed_at here would violate S-IA-PREDICATE-CARDINALITY.",
+        "R3_status": "NEW in R3. R2 had no policy host, which is part of why it mistook translation for duplication."
       },
       {
         "id": "I-5",
-        "path": "app/invite/accept/page.tsx",
-        "classification": "IMPLEMENTATION_REQUIRED",
-        "anchors": ":24 getCurrentUser, :53 acceptInvitation",
-        "what": "B1-P4, between :24 and :53, preserving the token-carrying URL across the refusal.",
-        "constraints": "The unauthenticated branch at :26-48, including its existing /login?redirect= link at :39, is preserved verbatim. The invitation is not consumed, expired or revoked by the refusal. lib/invitations/service.ts is NOT modified: it is covered transitively."
-      },
-      {
-        "id": "I-6",
         "path": "app/(public)/verify-email/page.tsx",
         "classification": "IMPLEMENTATION_REQUIRED - NEW FILE",
         "what": "The terminal destination, with the three behaviours frozen in B2_MINIMUM_SAFE_DESTINATION.behaviour_at_the_destination.",
-        "constraints": "MUST NOT call requireAuth() or requireOrganizationAccess(). MUST NOT be placed under app/(authenticated)/ or under any /app path. MUST NOT display the subject id or any token. MAY read the principal non-redirectingly to show the pending address."
+        "constraints": "MUST NOT call requireAuth, requireOrganizationAccess or getCurrentOrganizationContext - all three now refuse, and the destination cannot be behind the gate that sends users to it. It MAY call loadRequestPrincipal directly, which still returns a principal for an unverified subject by I-2's constraint. MUST NOT be placed under app/(authenticated)/ or any /app path. MUST NOT display the subject id or any token.",
+        "R3_status": "Unchanged in intent; the constraint list now names C5 explicitly because C5 did not exist as a concept in R2."
+      },
+      {
+        "id": "I-6",
+        "path": "app/(public)/login/actions.ts",
+        "classification": "IMPLEMENTATION_REQUIRED - routing (D2)",
+        "anchors": ":62 login destination, :89-93 signUp result handling, :108 signup destination",
+        "what": "Route an unverified subject to /verify-email, and handle the null data.session that Gate A produces on signup (F-IA-8).",
+        "constraints": "isSafeRedirectPath validation at :22 and :78 unchanged; no new redirect-target vocabulary. Rate limiters at :28 and :84 untouched. Session presence is inspected for ROUTING only, never as a predicate input."
       },
       {
         "id": "I-7",
-        "path": "app/(public)/login/actions.ts",
-        "classification": "IMPLEMENTATION_REQUIRED",
-        "anchors": ":62 login destination, :89-93 signUp result handling, :108 signup destination",
-        "what": "B4 routing at the login and signup sites, including the null data.session case Gate A creates.",
-        "constraints": "isSafeRedirectPath validation at :22 and :78 is unchanged; no new redirect-target vocabulary. The rate limiters at :28 and :84 are untouched. Session presence is inspected for ROUTING only, never as a predicate input."
+        "path": "app/auth/callback/route.ts",
+        "classification": "IMPLEMENTATION_REQUIRED - routing (D3)",
+        "anchors": ":14 exchangeCodeForSession, :20-22 the next parameter, :30 the membership question",
+        "what": "Route an unverified subject to /verify-email, INCLUDING when a safe next parameter is present - a caller-supplied parameter must not outrank the gate.",
+        "constraints": "The unauthenticated fallthrough to /login at :43 is preserved. No branch may be keyed on which flow produced the code."
       },
       {
         "id": "I-8",
-        "path": "app/auth/callback/route.ts",
-        "classification": "IMPLEMENTATION_REQUIRED",
-        "anchors": ":14 exchangeCodeForSession, :20-22 the next parameter, :30 the membership question",
-        "what": "B4 routing at the shared return path, INCLUDING when a safe next parameter is present.",
-        "constraints": "The unauthenticated fallthrough to /login at :43 is preserved. No branch may be keyed on which flow produced the code: the handler cannot reliably know, and guessing would be flow-keying."
+        "path": "app/(authenticated)/app/onboarding/actions.ts",
+        "classification": "IMPLEMENTATION_REQUIRED - routing only (D1). DOWNGRADED FROM A COMPLETENESS POINT.",
+        "anchors": ":40-42 the subject in hand, :44 the null check, :50 the first tenancy question",
+        "what": "Redirect an unverified subject to /verify-email between :44 and :50.",
+        "why_it_is_no_longer_load_bearing": "C6 already makes every write here unreachable: the allowlist read at :76 and the organisation insert at :99 both run inside withAuthenticatedDatabaseContext, and listSelectableMemberships at :61 transits requirePrincipal. Without I-8 an unverified subject is still refused - by a thrown AuthContextError instead of a redirect. I-8 buys a coherent refusal, not a closed hole.",
+        "constraints": "The Packet A submit-side twin at :61-64 preserved verbatim. Allowlist gate at :74-79, founder-provenance write at :127-128 and both audit rows at :145 and :154 untouched."
       },
       {
         "id": "I-9",
         "path": "lib/supabase/proxy.ts",
-        "classification": "IMPLEMENTATION_REQUIRED_OPTIONAL - defence in depth only",
+        "classification": "IMPLEMENTATION_REQUIRED_OPTIONAL - defence in depth only (D5)",
         "anchors": ":76 getUser, :80 isProtected, :91 the /login rule",
         "what": "MAY redirect an unverified subject away from /app and /admin as a cheap outer hop.",
-        "constraints": "It is NOT one of the four enforcement points and NO control may depend on it. If implemented, /verify-email must remain outside isProtected, or the B5_TERMINATION proof is void."
+        "constraints": "NOT a completeness point and NO control may depend on it. If implemented, /verify-email must remain outside isProtected at :80, or the B5_TERMINATION proof is void. Note it would NOT have covered E14-E17 anyway for the API routes, since /api is outside isProtected."
+      },
+      {
+        "id": "REMOVED-R2-I5",
+        "path": "app/invite/accept/page.tsx",
+        "classification": "NO LONGER REQUIRED - REMOVED FROM THE SURFACE BY THE R3 RE-DERIVATION",
+        "what_R2_required": "R2 named this its fourth enforcement point (B1-P4) and required an edit between :24 and :53.",
+        "why_R3_removes_it": "MEASURED: :53 reaches acceptInvitation through withAuthenticatedDatabaseContext, which transits requirePrincipal - C6. An unverified subject is refused there, before any membership row is created, with no edit to this file.",
+        "residual_note": "The catch at :54-61 renders err.message through ErrorState, so the new error's message must be generic and must never carry a subject id - covered by X-B-07 and asserted by sentinel S-IA-NO-SUBJECT-IN-OUTPUT. An implementer MAY still add a routing redirect here for a better journey; that is optional polish, explicitly NOT required, and NOT a completeness point.",
+        "why_this_entry_exists_at_all": "So the successor audit can see that the surface SHRANK here rather than silently losing an entry between revisions."
+      },
+      {
+        "id": "RETIRED-R2-V1",
+        "path": "SDK field-name verification",
+        "classification": "RETIRED",
+        "why": "F-IA-6 is RESOLVED by IE against the pinned SDK. The provenance is SDK_VERIFIED. The blocking STOP condition R2 attached to it no longer applies; ordinary typechecking against the real typing now covers it."
       }
     ],
-
     "TEST_MECHANICALLY_FORCED": {
-      "derivation": "The change alters exactly TWO object shapes: the VerifiedAuthIdentity literal returned by getVerifiedAuthIdentityResult, and the GoTrue user literal returned by a mocked supabase.auth.getUser(). Every test fixture that constructs either shape is forced. The census below is EXHAUSTIVE over tests/** at AS_OF_TREE and was produced by grepping the constructors, not by listing files that merely import auth helpers.",
-      "why_a_naive_census_would_be_wrong_by_an_order_of_magnitude": "A grep for requireAuth, requireOrganizationAccess or getCurrentUser across tests/** returns 52 files. Almost none is forced: they module-mock the HELPER and return a ready-made context, so they never construct either changed shape. Conversely a grep for an identity object literal returns matches in tests/hosted/** and tests/auth/session.test.ts:122 that are a DIFFERENT identity type, the withDatabaseIdentityContext identity of userId, organizationId and isSuperAdmin, and must NOT be counted. The forced set below is six anchors in six files.",
-      "layer_a_verified_auth_identity_literals": [
+      "derivation": "The change alters THREE object shapes, not two. R2 counted the VerifiedAuthIdentity literal and the GoTrue user literal and MISSED RequestPrincipal, which I-2 now extends. Every test fixture that constructs any of the three is forced. The census was produced by grepping the CONSTRUCTORS, never by listing files that merely import an auth helper.",
+      "why_a_naive_census_is_wrong_by_an_order_of_magnitude": "A grep for requireAuth, requireOrganizationAccess or getCurrentUser across tests/** returns 52 files, and a grep for getCurrentOrganizationContext returns 22 more. Almost none is forced: they module-mock the HELPER and return a ready-made context, so they never construct any changed shape. Conversely, identity object literals in tests/hosted/** and at tests/auth/session.test.ts:122 are a DIFFERENT type - the withDatabaseIdentityContext identity of userId, organizationId and isSuperAdmin - and must NOT be counted.",
+      "total": "SEVEN files, TWELVE anchors. R2 said six files, six anchors.",
+      "layer_a_VerifiedAuthIdentity_literals": [
         {
           "file": "tests/runtime-identity-observability.test.ts",
-          "anchor": ":1029 vi.mock of @/lib/auth/identity, and :1032 const SIGNED_IN carrying an identity of userId with a null failure",
-          "forced_if": "the new field is REQUIRED on VerifiedAuthIdentity",
-          "edit": "add the field to the SIGNED_IN literal at :1032"
+          "anchor": ":1029 vi.mock of @/lib/auth/identity, and :1032 the SIGNED_IN literal",
+          "forced_if": "the new field is REQUIRED on VerifiedAuthIdentity"
         },
         {
           "file": "tests/tenancy/s3-refusal-audit.test.ts",
-          "anchor": ":138 getVerifiedAuthIdentityResult mock, and :392 mockIdentity.mockResolvedValue carrying an identity of USER_A with a null failure",
-          "forced_if": "the new field is REQUIRED on VerifiedAuthIdentity",
-          "edit": "add the field to the literal at :392"
+          "anchor": ":138 the mock, and :392 mockIdentity.mockResolvedValue",
+          "forced_if": "the new field is REQUIRED on VerifiedAuthIdentity"
         }
       ],
-      "layer_b_gotrue_user_literals": [
+      "layer_b_GoTrue_user_literals": [
         {
           "file": "tests/auth/session.test.ts",
-          "anchor": ":158 - const AUTH_USER with an id of 11111111-1111-4111-8111-111111111111 and an email of user@org.com",
-          "fan_out": "ONE fixture covers 17 of the 20 mockGetUser.mockResolvedValue sites in the file; the other three resolve a null user and are unaffected. Editing this ONE literal repins the whole file.",
-          "forced_because": "without a confirmation timestamp the fixture becomes UNVERIFIED and every test in the file that expects a successful principal flips to a refusal.",
-          "note": "This file also contains the Packet A single-candidate control whose behaviour must be preserved for a VERIFIED subject."
+          "anchor": ":158 AUTH_USER",
+          "fan_out": "ONE fixture covers 17 of the 20 mockGetUser sites; the other three resolve a null user and are unaffected."
         },
         {
           "file": "tests/authenticated-database-context.test.ts",
-          "anchor": ":130 - function signedInAs(userId) resolving a user of that id with a null error",
-          "fan_out": "ONE helper covers every signed-in case in the file.",
-          "not_forced_in_the_same_file": ":125, :149, :383 and :547 resolve a null user; :158 is the GoTrue-rejected case; :168 and :192 are malformed subjects. All SEVEN are refused BEFORE verification is asked and MUST remain unchanged. If any of them changes, the refusal ordering has been altered."
+          "anchor": ":130 signedInAs",
+          "not_forced_in_the_same_file": ":125, :149, :383, :547 resolve a null user; :158 is the GoTrue-rejected case; :168 and :192 are malformed subjects. All SEVEN are refused BEFORE verification is asked and MUST remain unchanged - if any changes, the refusal ordering has been altered."
         },
         {
           "file": "tests/tenancy/s3-request-principal.test.ts",
-          "anchor": ":232 - the same signedInAs helper shape",
-          "fan_out": "ONE helper covers the S3 principal suite.",
-          "note": "This suite pins the two-valued refusal discriminator and the three return sites. Its assertions must survive unchanged for a verified subject."
+          "anchor": ":232 signedInAs",
+          "note": "This suite pins the two-valued refusal discriminator and the three return sites; its assertions must survive unchanged for a verified subject."
         },
         {
           "file": "tests/tenancy/s1-founder-traceability.test.ts",
-          "anchor": ":264 - an INLINE literal supplying a getUser mock with an id and founder@example.org",
-          "fan_out": "one inline site, no helper. The founder-traceability path runs through createFirstOrganization, which is B1-P3.",
-          "note": "The ONLY forced fixture that is not behind a named helper, and therefore the one most likely to be missed."
+          "anchor": ":264, an INLINE literal with no helper",
+          "note": "The only forced fixture not behind a named helper, and therefore the one most likely to be missed."
+        }
+      ],
+      "layer_c_RequestPrincipal_literals_MISSED_BY_R2": [
+        {
+          "file": "tests/auth/route-authorization-boundary.test.ts",
+          "anchors": "SIX literal sites, each a mockLoadRequestPrincipal.mockResolvedValue whose object carries organizationRefusalCode: :136-140 noCarrierNoCandidates, :146-151 noCarrierWithCandidates, :157-162 staleCarrier, :166-171 memberWithUnreadableOrganization, :174-179 member, and :559-563.",
+          "forced_because": "I-2 extends RequestPrincipal. Every one of these literals becomes an UNVERIFIED principal by default, so every Packet A control in this file flips to a verification refusal unless the fixtures are updated.",
+          "why_this_matters_more_than_the_count": "This is the file that holds the Packet A preservation controls P-B-2 through P-B-6. If its fixtures are not repinned as VERIFIED, the entire Packet A preservation proof silently becomes a proof about unverified subjects instead - it would still be GREEN, and it would be measuring nothing. R2 not only missed these six anchors, it missed that its own preservation argument depended on them.",
+          "mandatory_discipline": "Each fixture must be repinned EXPLICITLY as verified, never by a default that makes the flag optional. An optional flag defaulting to true is a fail-open default and is refused by X-B-03."
         }
       ],
       "not_forced_and_why": [
-        "tests/supabase-project-coherence.test.ts:552 - getUser resolves a null user, and :601-613 drive updateSession for coherence, not for authorisation. Unaffected.",
-        "tests/auth/session.test.ts:122, tests/tenancy/s3-refusal-audit.test.ts:98 and :188 and :347, tests/tenancy/s3-request-principal.test.ts:92, tests/tenancy/s2-selected-org-carrier.test.ts:108 - all are the withDatabaseIdentityContext identity of userId, organizationId and isSuperAdmin, a DIFFERENT type. NOT forced. Counting them is the classic false positive in this census.",
-        "tests/hosted/** identity literals - an unrelated installer and statement identity. NOT forced.",
-        "tests/integration/rls.test.ts:57 - user_metadata in an integration fixture, not a verification input.",
-        "The roughly 46 remaining files that mock requireOrganizationAccess or getCurrentUser wholesale - they never construct either changed shape."
-      ],
-      "new_test_files_authorized": [
-        "tests/auth/email-verification-gate.test.ts - the B0 predicate and the four enforcement points.",
-        "tests/auth/email-verification-routing.test.ts - B2, B4 and the B5 termination topology."
-      ],
-      "existing_test_file_extension_authorized": [
-        "tests/auth/route-authorization-boundary.test.ts - ADD T-B-2, the destination is not under app/(authenticated)/app/**. The assertion at :297 REMAINS onboarding and organizations/select and MUST NOT be edited under the frozen destination; editing it is a signal that the destination was moved, which is a STOP."
+        "tests/supabase-project-coherence.test.ts:552 - getUser resolves a null user; :601-613 drive updateSession for coherence, not authorisation.",
+        "tests/proxy-suggest-route.test.ts and tests/report-pdf-route.evidence-sensitivity.test.ts - they vi.mock the WHOLE of @/lib/auth/session and supply getCurrentOrganizationContext directly (:70-71 and :22-24 respectively), so they never construct a principal and are not forced. SEE THE WARNING IN NEW_TEST_REQUIRED: that same mocking is why they CANNOT host the new controls.",
+        "The ~22 further files that module-mock getCurrentOrganizationContext wholesale - same reason.",
+        "tests/hosted/** identity literals - an unrelated installer/statement identity.",
+        "tests/integration/rls.test.ts:57 - user_metadata in an integration fixture, not a verification input."
       ]
     },
-
+    "NEW_TEST_REQUIRED": {
+      "why_this_category_exists_separately": "A mechanically forced edit is one the compiler or an existing assertion demands. A NEW control is one nothing demands and whose absence is invisible. The four Route Handler seams are entirely in the second category - which is precisely how they survived R1 and R2.",
+      "THE_MOCKING_TRAP": {
+        "measured": "tests/proxy-suggest-route.test.ts:70-71 and tests/report-pdf-route.evidence-sensitivity.test.ts:22-24 both vi.mock the entire @/lib/auth/session module and hand getCurrentOrganizationContext a canned return value.",
+        "consequence": "A verification control added to either file WOULD PASS WITHOUT THE GATE EXISTING. Mocking the boundary means the test asserts the mock, not the policy. tests/proxy-suggest-route.test.ts:257 already sets that mock to null to drive a 401 - a new control that did the same thing would be indistinguishable from the existing one and would prove nothing about verification.",
+        "requirement": "The Route Handler controls MUST drive the REAL getCurrentOrganizationContext, mocking only BELOW it - at the identity or principal layer - so the null it returns is PRODUCED BY THE GATE. This is the same discipline as N-B-2 asserting on the enumerator call rather than the destination.",
+        "host": "A NEW file, tests/auth/email-verification-route-handlers.test.ts, because the two existing route tests cannot be retrofitted without unpicking their whole mock strategy - which would put a large, unrelated refactor inside Packet B."
+      },
+      "files": [
+        {
+          "path": "tests/auth/email-verification-gate.test.ts",
+          "hosts": "the predicate, the four completeness translations, provider-error fail-closed, and the client-source refusals"
+        },
+        {
+          "path": "tests/auth/email-verification-routing.test.ts",
+          "hosts": "the destination behaviours, the B4 routing sites, recovery, and the B5 termination topology"
+        },
+        {
+          "path": "tests/auth/email-verification-route-handlers.test.ts",
+          "hosts": "N-B-10 through N-B-13, driving the REAL C5 and C7 per THE_MOCKING_TRAP"
+        }
+      ],
+      "existing_file_extension_authorized": [
+        "tests/auth/route-authorization-boundary.test.ts - repin the six layer-c fixtures as VERIFIED, and ADD T-B-2. The carve-out assertion at :297 REMAINS onboarding and organizations/select and MUST NOT be edited under the frozen destination; editing it signals the destination moved, which is a STOP.",
+        "OPTIONAL: a route-handler gating invariant in the same file, per F-IA-9 - asserting that every route.ts under app/app/ resolves its principal through a gated boundary. Recommended but NOT required by Packet B, since it polices a hazard wider than this node."
+      ]
+    },
     "ENV_ONLY": [
       {
         "id": "ENV-1",
@@ -800,7 +1043,6 @@
         "classification": "ENV_ONLY"
       }
     ],
-
     "OUT_OF_SCOPE": [
       "A new audit verb for the verification refusal. See BOUNDARIES.audit_verb_is_out_of_scope: it is refused by the DATABASE, not merely by scope.",
       "Any db/migrations/** change, any db/schema change, any RLS policy change.",
@@ -810,12 +1052,15 @@
       "Email CHANGE re-verification: supabase/config.toml:245 double_confirm_changes true is provider-side and untouched.",
       "Enabling any OAuth provider; anonymous sign-ins, already false at :199.",
       "TENANCY_ORGANIZATION_READABILITY_INVARIANT_SUCCESSOR_REQUIRED, the Packet A RETURN SITE 3 question, still open and still unowned here.",
-      "app/api/health/auth/route.ts, E13, a liveness probe exposing no customer data.",
+      "app/api/health/auth/route.ts (E13), app/api/health/runtime-identity/route.ts (E18) and app/api/health/stella-preconditions/route.ts (E19) - all three independently re-measured at R3 and confirmed to expose no protected customer capability. Residual deployment-posture disclosure recorded as F-IA-10.",
+      "The four route handlers with NO user-authentication seam by design, named by full path so the census is machine-checkable rather than selective: app/(public)/verify/[hash]/pdf/route.ts (public evidence verification - the route whose name /verify is why the destination is /verify-email), app/api/marketing/lead/route.ts (public lead capture), app/api/webhooks/stripe/route.ts (signature-authenticated, not user-authenticated, so there is no subject to verify) and app/auth/signout/route.ts (ends a session; refusing it would strand an unverified subject signed in, which is the opposite of fail-closed).",
+      "app/invite/accept/page.tsx - REMOVED from the required surface at R3, not merely deprioritised: C6 refuses before acceptInvitation runs. An optional routing redirect there is permitted polish, never a completeness requirement.",
+      "The GENERAL layout-versus-route-handler gating hazard (F-IA-9). Packet B closes only the verification dimension for E14-E17; a general route-handler gating invariant is recommended and explicitly not required here.",
+      "Retrofitting tests/proxy-suggest-route.test.ts and tests/report-pdf-route.evidence-sensitivity.test.ts onto a non-mocking auth strategy (F-IA-11) - a large unrelated refactor.",
       "app/(public)/reset-password/actions.ts, E12, deliberately excluded per AUTH_MECHANISM_SEMANTICS.password_recovery part 2.",
       "The /forgot-password redirect target at app/(public)/reset-password/actions.ts:25: the route exists at app/(public)/forgot-password/page.tsx, so there is no defect here; named only because the census had to check it."
     ]
   },
-
   "SECURITY_PROHIBITIONS": {
     "X-B-01": "MUST NOT read the verification state from a client-writable source: user_metadata, a query parameter, a cookie the application invented, or any request header.",
     "X-B-02": "MUST NOT read it from a profile-table copy, public.users or any new column beside it. One source, per request, from the provider.",
@@ -830,26 +1075,66 @@
     "X-B-11": "MUST NOT weaken, delete or re-scope any Packet A control to obtain a green run. A Packet A control that fails under Packet B is a STOP.",
     "X-B-12": "MUST NOT add a real credential, a real address or a real project ref to any fixture or artifact. Sentinel values only."
   },
-
   "BOUNDARIES": {
     "statement": "Packet B is an IDENTITY-PROOF GATE. It proves the subject controls the mailbox their account is keyed to. It proves nothing else and absorbs nothing else.",
     "explicitly_not_absorbed": [
-      { "surface": "Platform legal acceptance", "relationship": "SEPARATE. Consent to terms is a different act from proving mailbox control and has its own record and its own timing. Packet B neither implies nor implements it." },
-      { "surface": "Commercial acceptance", "relationship": "SEPARATE, and DOWNSTREAM: a commercial acceptance recorded against an unproven address is worth less, so it depends on this gate without being part of it." },
-      { "surface": "CommercialAccount bootstrap", "relationship": "SEPARATE. Packet B refuses an unverified subject BEFORE any commercial activation is reachable, which is a precondition it supplies, not a component it owns." },
-      { "surface": "Entitlements", "relationship": "SEPARATE. Verification is not an entitlement and grants no capability; it only removes a refusal." },
-      { "surface": "Billing", "relationship": "SEPARATE. No billing surface is read or written." },
-      { "surface": "Support", "relationship": "SEPARATE, with an operational note: legacy unverified accounts, F-IA-5, will generate support contact, which is a rollout concern, not a scope expansion." },
-      { "surface": "Platform Roles", "relationship": "SEPARATE AND EXPLICITLY NOT REDESIGNED. Packet B applies the same predicate to a super-admin as to anyone; it adds no role, no privilege, no principal shape and no admin door. SUPERADMIN_BOUNDARY is untouched." },
-      { "surface": "S6 and S7", "relationship": "SEPARATE except for the one-directional dependency that they may not admit an unverified subject. Nothing in S6 or S7 is opened, amended or anticipated here." },
-      { "surface": "Resend durable notification architecture", "relationship": "SEPARATE AND EXPLICITLY REFUSED as a substitute for provider mail, HOSTED_PROVIDER_STATE.RESEND_IS_NOT_SUBSTITUTED." },
-      { "surface": "MFA and AAL2", "relationship": "SEPARATE. A second factor is a different property from mailbox control. All MFA settings are false at supabase/config.toml:324-330." },
-      { "surface": "Email CHANGE re-verification", "relationship": "SEPARATE and provider-side, double_confirm_changes true at :245. Packet B reads confirmation state; it does not manage address changes." }
+      {
+        "surface": "Platform legal acceptance",
+        "relationship": "SEPARATE. Consent to terms is a different act from proving mailbox control and has its own record and its own timing. Packet B neither implies nor implements it."
+      },
+      {
+        "surface": "Commercial acceptance",
+        "relationship": "SEPARATE, and DOWNSTREAM: a commercial acceptance recorded against an unproven address is worth less, so it depends on this gate without being part of it."
+      },
+      {
+        "surface": "CommercialAccount bootstrap",
+        "relationship": "SEPARATE. Packet B refuses an unverified subject BEFORE any commercial activation is reachable, which is a precondition it supplies, not a component it owns."
+      },
+      {
+        "surface": "Entitlements",
+        "relationship": "SEPARATE. Verification is not an entitlement and grants no capability; it only removes a refusal."
+      },
+      {
+        "surface": "Billing",
+        "relationship": "SEPARATE. No billing surface is read or written."
+      },
+      {
+        "surface": "Support",
+        "relationship": "SEPARATE, with an operational note: legacy unverified accounts, F-IA-5, will generate support contact, which is a rollout concern, not a scope expansion."
+      },
+      {
+        "surface": "Platform Roles",
+        "relationship": "SEPARATE AND EXPLICITLY NOT REDESIGNED. Packet B applies the same predicate to a super-admin as to anyone; it adds no role, no privilege, no principal shape and no admin door. SUPERADMIN_BOUNDARY is untouched."
+      },
+      {
+        "surface": "S6 and S7",
+        "relationship": "SEPARATE except for the one-directional dependency that they may not admit an unverified subject. Nothing in S6 or S7 is opened, amended or anticipated here."
+      },
+      {
+        "surface": "Resend durable notification architecture",
+        "relationship": "SEPARATE AND EXPLICITLY REFUSED as a substitute for provider mail, HOSTED_PROVIDER_STATE.RESEND_IS_NOT_SUBSTITUTED."
+      },
+      {
+        "surface": "MFA and AAL2",
+        "relationship": "SEPARATE. A second factor is a different property from mailbox control. All MFA settings are false at supabase/config.toml:324-330."
+      },
+      {
+        "surface": "Email CHANGE re-verification",
+        "relationship": "SEPARATE and provider-side, double_confirm_changes true at :245. Packet B reads confirmation state; it does not manage address changes."
+      }
     ],
     "audit_verb_is_out_of_scope": {
       "verdict": "NO NEW AUDIT VERB. The refusal is NOT audited by Packet B.",
       "why_this_is_a_measured_boundary_and_not_a_preference": "A verification refusal has NO owning tenant, because the subject holds no organisation, so its row would need a null organization_id. lib/audit/logger.ts:31-38 states that the two tenancy refusal verbs are the ONLY two audit verbs whose rows carry organization_id NULL, and db/migrations/0067_tenancy_refusal_audit_insert_policy.sql:68-101 is a CREATE POLICY that permits organization_id IS NULL at :75 for EXACTLY TWO enumerated action literals. A third org-less verb is refused BY THE DATABASE, not by review. Emitting one would require widening a governed RLS policy: a migration, a schema surface, and a privilege decision this packet has no authority to take.",
       "consequence": "If the refusal must be audited, that is a SUCCESSOR node with its own migration and its own authority. Recorded as OPEN_FINDINGS F-IA-1, owner TO_BE_MAPPED, BLOCKS_THIS_NODE false.",
+      "SUCCESSOR_OBLIGATION_NAMED_AT_R3": {
+        "name": "TENANCY_ORGLESS_AUDIT_VOCABULARY_EXPANSION_SUCCESSOR_REQUIRED",
+        "what_it_would_own": "Whether the set of audit verbs permitted to carry organization_id NULL may grow beyond the two enumerated in db/migrations/0067_tenancy_refusal_audit_insert_policy.sql:68-101, and under what policy shape - a widened disjunct list, a predicate over a verb class, or a separate table.",
+        "why_it_is_NAMED_but_not_ALLOCATED": "Naming it gives the open question a stable handle so a future lane can find it instead of rediscovering the constraint from the migration. Allocating it would be scope this lane does not hold.",
+        "explicitly_NOT_allocated": "NO migration. NO ODS lineage. NO grant. NO ordinal. NO node registration. This artifact allocates none of those and must not be read as reserving them.",
+        "is_it_a_prerequisite_for_Packet_B": "NO. No existing binding authority requires the verification refusal to be audited. Packet B is complete and enforceable without it. It is recorded as a gap, not as a blocker, and F-IA-1 keeps BLOCKS_THIS_NODE false.",
+        "IE_confirmation": "The independent audit confirmed that current DB policy cannot admit a new org-less email-verification verb. R3 records that confirmation rather than re-deriving it, while the policy anchor above remains independently verifiable at this tree."
+      },
       "what_is_NOT_lost": "The refusal is still observable: it is a deterministic redirect proven by the controls in the companion manifest, and the provider retains its own confirmation record. What is absent is a durable application-side row, which is a gap, honestly recorded, not a silently accepted one."
     },
     "dependencies_stated_clearly": [
@@ -860,43 +1145,130 @@
       "IS DEPENDED ON BY: commercial acceptance, CommercialAccount bootstrap and any S6 or S7 surface that must not admit an unverified subject. Those depend on this gate; none is implemented here."
     ]
   },
-
   "VALIDATION_PERFORMED_BY_THIS_MISSION": {
     "honest_summary": "The evidence-based validations were performed AND four machine gates were actually run and passed, including one strong negative. Three gates remain genuinely blocked by the absent node_modules and are recorded NOT_RUN with the reason. Nothing is reported as PASS that did not run.",
     "machine_gates_run": {
       "how": "Directly under Node 24 as node --experimental-strip-types scripts/<gate>.ts, bypassing the pnpm/tsx runner layer that is unavailable in this worktree. The gate scripts import only Node builtins, so the runner is not a dependency of the adjudication.",
       "measured_at_commit": "The gate results below were measured at the FIRST commit of this branch, 10b475df, tree 089c8333, which is the commit that introduced the two artifacts. This correction lands as a SECOND commit on top; the successor lane re-runs them at whatever tip it inherits.",
       "results": [
-        { "gate": "ods_prestate", "invocation": "--branch codex/email-verification-packet-b-authority-r1 --head 10b475df --tree 089c8333 --clean", "result": "ODS_PRESTATE=PASS, exit 0, with PRESTATE_BRANCH, PRESTATE_HEAD, PRESTATE_TREE and PRESTATE_CLEAN all PASS." },
-        { "gate": "ods_scope", "invocation": "--base 38dde646 --allow docs/ops/tenancy/**, where the base is git merge-base HEAD origin/integration/commercial-v1 computed EXPLICITLY rather than taken as the live tip - the two-endpoint diff makes a wrongly chosen base accuse another lane of paths it never touched.", "result": "ODS_SCOPE=PASS, exit 0. CHANGED_FILE_COUNT=2, UNAUTHORIZED_PATHS=0, PROTECTED_AUTHORITY=NONE, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0." },
-        { "gate": "ods_scope STRONG NEGATIVE", "invocation": "the same base with a deliberately wrong allowlist, --allow db/migrations/**", "result": "ODS_SCOPE=FAIL, exit 1, UNAUTHORIZED_PATHS=2 naming both artifacts. THE GATE ADJUDICATES; the PASS above is not a vacuous run over an empty or mis-globbed change set." },
-        { "gate": "authority_seal_verify", "invocation": "no arguments", "result": "AUTHORITY_SEAL_VERIFY=PASS, exit 0. ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9 with PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS. Confirms this artifact seals nothing and disturbs no sealed corpus member." },
-        { "gate": "secrets_scan", "invocation": "under the resolution-only loader hook described in MEASUREMENT_LIMITS.scan_secrets_note, run AFTER the artifacts were committed so the git-tree scan actually sees them", "result": "PASS, exit 0: CURRENT_TREE, no credential material found." }
+        {
+          "gate": "ods_prestate",
+          "invocation": "--branch codex/email-verification-packet-b-authority-r1 --head 10b475df --tree 089c8333 --clean",
+          "result": "ODS_PRESTATE=PASS, exit 0, with PRESTATE_BRANCH, PRESTATE_HEAD, PRESTATE_TREE and PRESTATE_CLEAN all PASS."
+        },
+        {
+          "gate": "ods_scope",
+          "invocation": "--base 38dde646 --allow docs/ops/tenancy/**, where the base is git merge-base HEAD origin/integration/commercial-v1 computed EXPLICITLY rather than taken as the live tip - the two-endpoint diff makes a wrongly chosen base accuse another lane of paths it never touched.",
+          "result": "ODS_SCOPE=PASS, exit 0. CHANGED_FILE_COUNT=2, UNAUTHORIZED_PATHS=0, PROTECTED_AUTHORITY=NONE, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0."
+        },
+        {
+          "gate": "ods_scope STRONG NEGATIVE",
+          "invocation": "the same base with a deliberately wrong allowlist, --allow db/migrations/**",
+          "result": "ODS_SCOPE=FAIL, exit 1, UNAUTHORIZED_PATHS=2 naming both artifacts. THE GATE ADJUDICATES; the PASS above is not a vacuous run over an empty or mis-globbed change set."
+        },
+        {
+          "gate": "authority_seal_verify",
+          "invocation": "no arguments",
+          "result": "AUTHORITY_SEAL_VERIFY=PASS, exit 0. ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9 with PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS. Confirms this artifact seals nothing and disturbs no sealed corpus member."
+        },
+        {
+          "gate": "secrets_scan",
+          "invocation": "under the resolution-only loader hook described in MEASUREMENT_LIMITS.scan_secrets_note, run AFTER the artifacts were committed so the git-tree scan actually sees them",
+          "result": "PASS, exit 0: CURRENT_TREE, no credential material found."
+        }
       ]
     },
     "performed": [
-      { "check": "JSON well-formedness and schema conformance", "how": "node JSON.parse of both artifacts; the companion manifest additionally validated field by field against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json including additionalProperties false, the required set, the control definition and the closed exit_gates enum.", "result": "PASS" },
-      { "check": "Authority collision", "how": "Both target paths tested for existence at AS_OF_TREE, plus git ls-files greps for packet_b and packet-b and for email-verification artifacts across the whole index.", "result": "PASS - both ABSENT, zero prior Packet B artifact anywhere. No STOP_FOR_AUTHORITY_COLLISION." },
-      { "check": "Anchor verification", "how": "Every file:line anchor cited was re-read with sed against the working tree in a mechanical pass; 35 anchors verified, zero mismatches. Repeated after materialisation over the anchors extracted FROM the artifacts themselves.", "result": "PASS" },
-      { "check": "Parent authority reference integrity", "how": "Both parent paths resolved and parsed; the Packet A PARENT_AUTHORITY block read and followed one level up rather than guessed by filename.", "result": "PASS" },
-      { "check": "Packet A integration on the live tree", "how": "cf0fbd7d confirmed an ancestor of BASE; the ROUTING_CONTRACT confirmed present in executable form at lib/auth/session.ts:177-249.", "result": "PASS" },
-      { "check": "Closed-world surface completeness", "how": "Four semantic seam greps, requireAuth, getCurrentUser, direct supabase.auth.getUser and withAuthenticatedDatabaseContext, unioned across app/**, lib/** and components/**, tests excluded, yielding 13 entries.", "result": "PASS" },
-      { "check": "Mock-factory census exhaustiveness", "how": "Greps for both changed object-shape constructors across tests/**, with the withDatabaseIdentityContext identity type explicitly separated as a false positive; fan-out counted per file, 20 mockGetUser sites in tests/auth/session.test.ts collapse to ONE fixture at :158.", "result": "PASS - six forced anchors in six files" },
-      { "check": "Routing topology termination", "how": "Longest constructible cycle traced by hand over the measured redirect edges: proxy :83-95, app/app/layout.tsx:27, lib/auth/session.ts:222-249, and the destination three behaviours. Length three, terminal.", "result": "PASS" },
-      { "check": "Destination name collision", "how": "git ls-files matched against verify-email, zero rows, and the existing app/(public)/verify/[hash]/ evidence routes identified.", "result": "PASS - collision avoided by construction" },
-      { "check": "Safe secrets", "how": "No credential, connection string, project ref, API key, real email address or token appears in either artifact. All identifiers are repo-visible paths, line numbers, commit SHAs and synthetic fixture ids already present in tests.", "result": "PASS" },
-      { "check": "Prohibitions completeness", "how": "Each of the twelve X-B prohibitions traced to at least one negative or mutation control in the companion manifest.", "result": "PASS" }
+      {
+        "check": "JSON well-formedness and schema conformance",
+        "how": "node JSON.parse of both artifacts; the companion manifest additionally validated field by field against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json including additionalProperties false, the required set, the control definition and the closed exit_gates enum.",
+        "result": "PASS"
+      },
+      {
+        "check": "Authority collision",
+        "how": "Both target paths tested for existence at AS_OF_TREE, plus git ls-files greps for packet_b and packet-b and for email-verification artifacts across the whole index.",
+        "result": "PASS - both ABSENT, zero prior Packet B artifact anywhere. No STOP_FOR_AUTHORITY_COLLISION."
+      },
+      {
+        "check": "Anchor verification",
+        "how": "Every file:line anchor cited was re-read with sed against the working tree in a mechanical pass; 35 anchors verified, zero mismatches. Repeated after materialisation over the anchors extracted FROM the artifacts themselves.",
+        "result": "PASS"
+      },
+      {
+        "check": "Parent authority reference integrity",
+        "how": "Both parent paths resolved and parsed; the Packet A PARENT_AUTHORITY block read and followed one level up rather than guessed by filename.",
+        "result": "PASS"
+      },
+      {
+        "check": "Packet A integration on the live tree",
+        "how": "cf0fbd7d confirmed an ancestor of BASE; the ROUTING_CONTRACT confirmed present in executable form at lib/auth/session.ts:177-249.",
+        "result": "PASS"
+      },
+      {
+        "check": "Closed-world surface completeness",
+        "how": "Four semantic seam greps, requireAuth, getCurrentUser, direct supabase.auth.getUser and withAuthenticatedDatabaseContext, unioned across app/**, lib/** and components/**, tests excluded, yielding 13 entries.",
+        "result": "PASS"
+      },
+      {
+        "check": "Mock-factory census exhaustiveness",
+        "how": "Greps for both changed object-shape constructors across tests/**, with the withDatabaseIdentityContext identity type explicitly separated as a false positive; fan-out counted per file, 20 mockGetUser sites in tests/auth/session.test.ts collapse to ONE fixture at :158.",
+        "result": "PASS - six forced anchors in six files"
+      },
+      {
+        "check": "Routing topology termination",
+        "how": "Longest constructible cycle traced by hand over the measured redirect edges: proxy :83-95, app/app/layout.tsx:27, lib/auth/session.ts:222-249, and the destination three behaviours. Length three, terminal.",
+        "result": "PASS"
+      },
+      {
+        "check": "Destination name collision",
+        "how": "git ls-files matched against verify-email, zero rows, and the existing app/(public)/verify/[hash]/ evidence routes identified.",
+        "result": "PASS - collision avoided by construction"
+      },
+      {
+        "check": "Safe secrets",
+        "how": "No credential, connection string, project ref, API key, real email address or token appears in either artifact. All identifiers are repo-visible paths, line numbers, commit SHAs and synthetic fixture ids already present in tests.",
+        "result": "PASS"
+      },
+      {
+        "check": "Prohibitions completeness",
+        "how": "Each of the twelve X-B prohibitions traced to at least one negative or mutation control in the companion manifest.",
+        "result": "PASS"
+      }
     ],
     "NOT_PERFORMED_AND_WHY": [
-      { "gate": "typecheck", "status": "NOT_RUN", "reason": "tsc --noEmit requires node_modules/typescript. Irreducibly blocked; install forbidden by the lane.", "substituted_by": "Nothing equivalent. This lane writes no TypeScript, so the gate has no subject in this diff - but it is still owed by the implementation lane, which does." },
-      { "gate": "targeted_tests", "status": "NOT_RUN", "reason": "vitest run requires node_modules. Irreducibly blocked.", "substituted_by": "Nothing, and nothing should be: COLLECTED greater than zero belongs to the implementation lane. This lane produces a test CONTRACT, not tests, and a manifest that claimed a test result would be claiming a result for tests that do not exist." },
-      { "gate": "ods_poststate", "status": "NOT_RUN", "reason": "Blocked THROUGH typecheck, not in its own right. Its step list is a function of the flags: invoked without --test and without --clean it declares typecheck, secrets-scan, authority-seal-verify and ods-scope, three of which were run directly and passed above.", "substituted_by": "Three of the four steps that a flagless invocation would declare are individually discharged above. That is a partial discharge and is NOT reported as ODS_POSTSTATE=PASS." },
-      { "gate": "ops:test-diff", "status": "NOT_APPLICABLE, NOT MERELY UNRUN", "reason": "The gate RUNS - it exits with ODS_TEST_DIFF=USAGE_ERROR asking for --base and --head, which are refs or test-run capture files. This lane produced no test run, so there is nothing to diff.", "substituted_by": "known_conditions is an EMPTY ARRAY in the companion manifest: an explicit, honest empty set. No condition id is claimed from memory, which is what the skill forbids." },
-      { "gate": "ops:program-state", "status": "RUN, AND IT CARRIES NONE OF THIS NODE DEPENDENCIES", "reason": "The gate runs and reports correctly - probed against the registered unit W2-B5 it returned ODS_PROGRAM_STATE=REPORTED, exit 0, with a full AUTHORITY/IMPLEMENTATION/AUDIT/INTEGRATION breakdown. But docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json contains EXACTLY FIVE units - W2-B1 through W2-B5 - and NONE of this node's five declared dependencies is among them. They are tenancy authority artifacts, not registered program-state units, so the gate cannot measure them by construction.", "substituted_by": "The one dependency whose satisfaction actually gates this node, Packet A integration, was verified by git ancestry - cf0fbd7d is an ancestor of BASE - and by reading its contract in executable form at lib/auth/session.ts:177-249. That is stronger evidence than a registry status field, and it is the evidence P-B-10 records." }
+      {
+        "gate": "typecheck",
+        "status": "NOT_RUN",
+        "reason": "tsc --noEmit requires node_modules/typescript. Irreducibly blocked; install forbidden by the lane.",
+        "substituted_by": "Nothing equivalent. This lane writes no TypeScript, so the gate has no subject in this diff - but it is still owed by the implementation lane, which does."
+      },
+      {
+        "gate": "targeted_tests",
+        "status": "NOT_RUN",
+        "reason": "vitest run requires node_modules. Irreducibly blocked.",
+        "substituted_by": "Nothing, and nothing should be: COLLECTED greater than zero belongs to the implementation lane. This lane produces a test CONTRACT, not tests, and a manifest that claimed a test result would be claiming a result for tests that do not exist."
+      },
+      {
+        "gate": "ods_poststate",
+        "status": "NOT_RUN",
+        "reason": "Blocked THROUGH typecheck, not in its own right. Its step list is a function of the flags: invoked without --test and without --clean it declares typecheck, secrets-scan, authority-seal-verify and ods-scope, three of which were run directly and passed above.",
+        "substituted_by": "Three of the four steps that a flagless invocation would declare are individually discharged above. That is a partial discharge and is NOT reported as ODS_POSTSTATE=PASS."
+      },
+      {
+        "gate": "ops:test-diff",
+        "status": "NOT_APPLICABLE, NOT MERELY UNRUN",
+        "reason": "The gate RUNS - it exits with ODS_TEST_DIFF=USAGE_ERROR asking for --base and --head, which are refs or test-run capture files. This lane produced no test run, so there is nothing to diff.",
+        "substituted_by": "known_conditions is an EMPTY ARRAY in the companion manifest: an explicit, honest empty set. No condition id is claimed from memory, which is what the skill forbids."
+      },
+      {
+        "gate": "ops:program-state",
+        "status": "RUN, AND IT CARRIES NONE OF THIS NODE DEPENDENCIES",
+        "reason": "The gate runs and reports correctly - probed against the registered unit W2-B5 it returned ODS_PROGRAM_STATE=REPORTED, exit 0, with a full AUTHORITY/IMPLEMENTATION/AUDIT/INTEGRATION breakdown. But docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json contains EXACTLY FIVE units - W2-B1 through W2-B5 - and NONE of this node's five declared dependencies is among them. They are tenancy authority artifacts, not registered program-state units, so the gate cannot measure them by construction.",
+        "substituted_by": "The one dependency whose satisfaction actually gates this node, Packet A integration, was verified by git ancestry - cf0fbd7d is an ancestor of BASE - and by reading its contract in executable form at lib/auth/session.ts:177-249. That is stronger evidence than a registry status field, and it is the evidence P-B-10 records."
+      }
     ],
     "owed_to_the_successor": "The implementation lane MUST run typecheck, targeted_tests and ods_poststate, and MUST re-run the four gates discharged here at whatever tip it inherits. Four gates passing on a docs-only diff at 10b475df says nothing about a diff that touches application code."
   },
-
   "OPEN_FINDINGS": [
     {
       "id": "F-IA-1",
@@ -941,12 +1313,12 @@
     },
     {
       "id": "F-IA-6",
-      "finding": "The SDK field name email_confirmed_at is REPO_INFERRED from the auth.users schema dump, not read from @supabase/supabase-js 2.108.2, which is not on disk.",
-      "severity": "MEDIUM",
-      "owner": "IMPLEMENTATION_LANE",
+      "finding": "The SDK field name email_confirmed_at was REPO_INFERRED from the auth.users schema dump at R1 and R2, not read from the pinned SDK, which is not on disk here.",
+      "severity": "RESOLVED",
+      "owner": "CLOSED",
       "BLOCKS_THIS_NODE": false,
-      "blocks_implementation": true,
-      "disposition": "V-1 is the mandatory first step of the implementation lane and carries an explicit STOP condition."
+      "blocks_implementation": false,
+      "disposition": "RESOLVED AT R3 by the independent IE audit, which read the field from the exact pinned SDK. Provenance is now SDK_VERIFIED - see PROVIDER_TRUTH_SOURCE.PROVENANCE, which separates what is repository-verifiable here (the version pin at package.json:125 and pnpm-lock.yaml:2047-2049 and :7248-7250, and which package owns the User type) from what is IE's measurement (the field spelling). V-1 is retired as a blocking first step. The FACT is unchanged; only its provenance improved."
     },
     {
       "id": "F-IA-7",
@@ -963,24 +1335,54 @@
       "severity": "MEDIUM",
       "owner": "IMPLEMENTATION_LANE",
       "BLOCKS_THIS_NODE": false,
-      "disposition": "Repaired by I-7 as part of B4 routing. Named separately because it is the concrete proof that Gate A alone is not deployable."
+      "disposition": "Repaired by I-6 as part of B4 routing. Named separately because it is the concrete proof that Gate A alone is not deployable, and it is the evidence behind DUAL_DEPLOYMENT_PROHIBITION.P1."
+    },
+    {
+      "id": "F-IA-9",
+      "finding": "AN AUTHORIZATION INVARIANT EXPRESSED AS A LAYOUT IS SILENTLY ABSENT FOR ROUTE HANDLERS. app/app/layout.tsx:9-11 states that a route added under app/app/ is organisation-gated because of WHERE IT SITS. That is true for pages and FALSE for route handlers, and app/app/projects/[projectId]/report/[reportId]/pdf/route.ts has sat in that directory ungated by it the whole time.",
+      "severity": "HIGH",
+      "owner": "TO_BE_MAPPED",
+      "BLOCKS_THIS_NODE": false,
+      "discovered_at": "R3, by the IE audit and independently re-measured here across all twelve route handlers under app/**.",
+      "disposition": "Packet B closes the VERIFICATION dimension of this for E14-E17 via C5 and C7. IT DOES NOT CLOSE THE GENERAL HAZARD, and must not be read as having done so: the same structural gap applies to any future invariant placed in a layout, and to the organisation gate itself for any route handler added later. The existing boundary test does include route.ts in ROUTE_SERVING_FILE_NAMES at tests/auth/route-authorization-boundary.test.ts:247, but applies it only to the app/(group)/app/** carve-out, never asking whether a route handler under the non-grouped app/app/ is gated at all. A general control is RECOMMENDED and explicitly NOT REQUIRED by Packet B, because it polices a hazard wider than this node.",
+      "why_it_is_recorded_at_HIGH_despite_not_blocking": "It is the root cause of the R1/R2 blocker. Recording it only as 'four routes we now gate' would leave the next lane free to repeat the reasoning error."
+    },
+    {
+      "id": "F-IA-10",
+      "finding": "The two health seams E18 and E19 disclose DEPLOYMENT POSTURE to any authenticated subject, verified or not: whether the runtime database role can bypass RLS (app/api/health/runtime-identity/route.ts), and Stella configuration presence, model targets, capability blockers and rate-limit attestation (app/api/health/stella-preconditions/route.ts).",
+      "severity": "LOW",
+      "owner": "TO_BE_MAPPED",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "Both are classified OUT_OF_SCOPE for Packet B, and that classification is the RESULT of independent re-measurement at R3, not a reason for skipping the measurement. Neither reaches tenant scope, a customer row, or a write; stella-preconditions states at :108-110 that it makes no network call and no database query, and reports the Gemini key's PRESENCE at :88, never its value. The residual is operational-information disclosure, not customer-data exposure, and it is recorded rather than waved through so that a future decision to gate the health surface has a starting point."
+    },
+    {
+      "id": "F-IA-11",
+      "finding": "THE TWO EXISTING ROUTE-HANDLER TEST FILES CANNOT PROVE THE NEW GATE. tests/proxy-suggest-route.test.ts:70-71 and tests/report-pdf-route.evidence-sensitivity.test.ts:22-24 both vi.mock the entire @/lib/auth/session module and hand getCurrentOrganizationContext a canned value, so a verification control added there would pass whether or not the gate exists.",
+      "severity": "MEDIUM",
+      "owner": "IMPLEMENTATION_LANE",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "Addressed by EXACT_FUTURE_IMPLEMENTATION_SURFACE.NEW_TEST_REQUIRED.THE_MOCKING_TRAP: the Route Handler controls N-B-10 through N-B-13 are hosted in a NEW file that drives the REAL getCurrentOrganizationContext and mocks only BELOW it. Retrofitting the existing files would require unpicking their whole mock strategy, which is a large unrelated refactor and is explicitly out of scope.",
+      "the_general_lesson": "A control that mocks the boundary it is testing asserts the mock, not the policy. tests/proxy-suggest-route.test.ts:257 already drives a 401 by setting that mock to null - a naive verification control would be indistinguishable from it and would prove nothing."
     }
   ],
-
   "self_check": {
     "SC-1": "Both output artifacts were ABSENT before this mission and are the only two files it creates. No third path.",
     "SC-2": "No application code, schema, migration, test or environment value is modified by this lane. The diff is docs-only.",
     "SC-3": "Every provider-truth claim traces to a measured line in db/baseline/stella_g2_schema.sql or supabase/config.toml; the one inference, the SDK field spelling, is labelled REPO_INFERRED and carries a mandatory verification with a STOP condition.",
     "SC-4": "Hosted provider state is HOSTED_UNKNOWN. No hosted claim is made anywhere in this artifact.",
     "SC-5": "The Packet A ROUTING_CONTRACT and NO_AUTO_SELECTION are preserved for verified subjects, and the preservation is asserted by controls P-B-2 through P-B-6 rather than by prose.",
-    "SC-6": "The future surface is closed: nine implementation entries, six mechanically forced test anchors, two new test files, one test extension, three ENV_ONLY entries, and an explicit OUT_OF_SCOPE list.",
+    "SC-6": "SUPERSEDED BY SC-6-R3. R2's surface count - nine implementation entries, six forced anchors, two new test files - was derived from a topology that has been withdrawn.",
+    "SC-6-R3": "The future surface is closed and RE-DERIVED, not appended to: nine implementation entries plus one explicit REMOVAL (app/invite/accept, no longer required) and one explicit RETIREMENT (V-1); twelve mechanically forced test anchors across seven files, including the six RequestPrincipal literals R2 missed; three new test files; one existing-file extension; three ENV_ONLY entries; and an explicit OUT_OF_SCOPE list.",
+    "SC-11": "The R2 claim of EXACTLY FOUR enforcement points, and its justification that more would duplicate the predicate, are BOTH withdrawn in terms, with the reasoning error named. The corrected topology is four completeness points plus five routing points, derived from a measured convergence point rather than from sibling enumeration, and it is simultaneously complete, non-duplicative, fail-closed and loop-free - each property argued from measurement in TOPOLOGY_PROPERTIES.",
+    "SC-12": "The closed-world census is nineteen entries with NO unclassified auth seam. All twelve route.ts files under app/** were enumerated and classified by auth seam, method, tenant reach, read/write effect and bypass consequence. The two health seams are OUT_OF_SCOPE by re-measurement, with their residual posture disclosure recorded as F-IA-10 rather than suppressed.",
+    "SC-13": "The re-derivation REMOVES work as well as adding it - app/invite/accept/page.tsx needs no edit, and the onboarding action drops to routing-only. A surface that only grows under audit has not been re-derived, and the removals are recorded explicitly so the successor can see the surface shrink rather than suspect a lost entry.",
+    "SC-14": "Provider truth is unchanged; only its provenance moved from REPO_INFERRED to SDK_VERIFIED, and PROVIDER_TRUTH_SOURCE.PROVENANCE separates what is repository-verifiable at this tree from what is IE's measurement, rather than absorbing IE's result as if this lane had made it.",
     "SC-7": "Four machine gates were RUN and PASSED at 10b475df, including a strong negative that proves ods_scope adjudicates rather than passing vacuously. Three - typecheck, targeted_tests, ods_poststate - are recorded NOT_RUN with the reason. No gate is reported as PASS that did not run, and no gate is reported as unrunnable on the evidence of its runner alone.",
     "SC-7b": "This artifact records a correction to its OWN first conclusion rather than overwriting it. R1 asserted every gate was unrunnable and that a prior operational note to the contrary was false; both claims are withdrawn in MEASUREMENT_LIMITS and F-IA-7, with the reasoning error named.",
     "SC-8": "The refusal is unaudited, and the database reason for that is measured, the 0067 policy enumerates exactly two org-less verbs, rather than asserted as a scope preference.",
     "SC-9": "HT and HV are declared MISSION-SUPPLIED SHORTHAND and defined, not falsely cited as repository vocabulary.",
     "SC-10": "Nothing in this artifact opens implementation. IMPLEMENTATION_AUTHORIZED is false."
   },
-
   "final_state": "AUTHORITY_R1_FROZEN_AWAITING_INDEPENDENT_AUDIT",
   "IMPLEMENTATION_AUTHORIZED": false,
   "IMPLEMENTATION_AUTHORIZED_NOTE": "This artifact FREEZES the contract. It does NOT open implementation. No application code, no test, no schema, no migration and no environment value may be written on the strength of this artifact alone. Implementation is opened only on codex/email-verification-packet-b-implementation-r1, after the independent audit named in next_gate, and is bounded by EXACT_FUTURE_IMPLEMENTATION_SURFACE.",

@@ -11,7 +11,6 @@
   ],
   "protected_surfaces": [],
   "protected_authority": null,
-  "known_conditions": [],
   "sentinels": [
     {
       "id": "S-IA-PREDICATE-CARDINALITY",
@@ -44,12 +43,21 @@
     {
       "id": "S-IA-NO-REAL-SECRETS",
       "purpose": "No real credential, real email address, real Supabase project ref or real token may enter a fixture or an artifact. Sentinel: all fixture addresses remain example.org or example.test, all ids remain the existing synthetic UUIDs, and no environment value is embedded. Authority X-B-12."
+    },
+    {
+      "id": "S-IA-PRINCIPAL-FIXTURES-EXPLICITLY-VERIFIED",
+      "purpose": "The six RequestPrincipal literals in tests/auth/route-authorization-boundary.test.ts (:136-140, :146-151, :157-162, :166-171, :174-179, :559-563) must each be repinned EXPLICITLY as verified. Sentinel: the verified field is present as a literal in all six, and the field is REQUIRED on the type rather than optional. If it were optional with a permissive default, the six Packet A preservation controls would keep passing while silently measuring unverified subjects - a green suite proving nothing - and the fail-open default would itself violate X-B-03. Authority PACKET_A_PRESERVATION.R3_ADDITION and EXACT_FUTURE_IMPLEMENTATION_SURFACE.TEST_MECHANICALLY_FORCED layer c."
+    },
+    {
+      "id": "S-IA-ROUTE-HANDLER-CONTROLS-DRIVE-THE-REAL-GATE",
+      "purpose": "The Route Handler controls must not mock the boundary they test. Sentinel: tests/auth/email-verification-route-handlers.test.ts does NOT vi.mock the whole of @/lib/auth/session, and the null returned by getCurrentOrganizationContext in those tests is PRODUCED by the real helper from a mocked identity or principal, never supplied by a mock of the helper itself. F-IA-11 measured that the two existing route tests do exactly the forbidden thing - tests/proxy-suggest-route.test.ts:70-71 and tests/report-pdf-route.evidence-sensitivity.test.ts:22-24 - and that tests/proxy-suggest-route.test.ts:257 already drives a 401 that way, so a naive new control would be indistinguishable from it and would prove nothing. Authority F-IA-11."
     }
   ],
+  "known_conditions": [],
   "positive_controls": [
     {
       "id": "P-B-1",
-      "description": "VERIFIED USER CAN PROCEED. A provider-confirmed subject - email_confirmed_at set to a non-empty value on the subject returned by the mocked supabase.auth.getUser() - passes B0 at all four enforcement points and reaches the destination Packet A would have chosen for the same principal. This is the control that proves the gate is a PREFIX and not a wall; if it fails the node has broken every user, not merely unverified ones. Authority ROUTING_CONTRACT_PACKET_B B0 and PACKET_A_PRESERVATION.",
+      "description": "VERIFIED USER CAN PROCEED. A provider-confirmed subject - email_confirmed_at set to a non-empty value on the subject returned by the mocked supabase.auth.getUser() - passes B0 at EVERY enforcement point of the corrected topology (C3, C4, C5, C6, C7) and reaches the destination Packet A would have chosen for the same principal. Assert the verified subject through each of the four completeness points EXPLICITLY, not just through one: a gate added to C5 that accidentally refuses verified subjects would break roughly twenty library services and all four Route Handlers while every C4-only control stayed green. This is the control that proves the gate is a PREFIX and not a wall; if it fails the node has broken every user, not merely unverified ones. Authority ROUTING_CONTRACT_PACKET_B B0, B1_ENFORCEMENT_TOPOLOGY, PACKET_A_PRESERVATION.",
       "test_file": "tests/auth/email-verification-gate.test.ts"
     },
     {
@@ -153,12 +161,32 @@
       "id": "N-B-9",
       "description": "THE VERIFICATION STATE IS NEVER READ FROM A CLIENT-CONTROLLED SOURCE. Drive the gate with a subject whose user_metadata claims email_verified true, whose identity_data claims email_verified true, and whose request carries a query parameter and a cookie asserting verification - while email_confirmed_at remains null. The subject MUST be refused in every combination. Authority X-B-01, X-B-02 and PROVIDER_TRUTH_SOURCE.ADJUDICATION_BETWEEN_CANDIDATE_FIELDS.",
       "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "N-B-10",
+      "description": "REPORT PDF EXPORT (E14) IS REFUSED BEFORE PROTECTED REPORT DATA IS READ OR RENDERED. Subject: authenticated, email_confirmed_at null, HOLDING A VALID MEMBERSHIP AND A READABLE ORGANISATION - the state in which every Packet A rule passes and the export would otherwise succeed. Drive GET on app/app/projects/[projectId]/report/[reportId]/pdf/route.ts. MANDATORY MOCKING DISCIPLINE per F-IA-11: mock BELOW getCurrentOrganizationContext - at the identity or principal layer - and let the REAL C5 produce the null, so the test asserts the gate and not a canned mock. ASSERT ALL OF: (1) the response is a refusal, not a PDF; (2) getReportDraft, getProjectByIdForCurrentOrganization, getCalculationRunDetail, listOutcomeMappingsForProject, listEvidenceForProject and listMethodologyReviewsForProject are ALL uncalled - call counts zero, not merely absent from the output; (3) renderToBuffer is uncalled, so no report is materialised even transiently; (4) no organisation name, project name, evidence title or funder appears in the response body. A destination-or-status-only assertion is INSUFFICIENT and is explicitly rejected: a 401 emitted after the report was read still means the data was read. Authority ENTRY E14, C5, C7.",
+      "test_file": "tests/auth/email-verification-route-handlers.test.ts"
+    },
+    {
+      "id": "N-B-11",
+      "description": "PROXY SUGGEST WRITE (E15) IS REFUSED BEFORE THE GOVERNED TRANSITION RUNS. Same subject shape as N-B-10, same mocking discipline. Drive POST on app/api/proxies/[id]/suggest/route.ts. ASSERT: (1) refusal status; (2) updateFinancialProxyReviewStatusForContext is UNCALLED - the write primitive itself, not a proxy for it, because the whole point is that the locked transaction at :41-60 never opens; (3) no financial_proxies or financial_proxy_versions row is mutated. PRESERVE THE ROUTE'S OWN 404 CONTRACT: the route freezes at :34-40 that a proxy id outside the caller's organisation must read exactly like an unknown id, never a 403 that would confirm the id belongs to someone else's tenant. The verification refusal MUST NOT become a new existence oracle - assert that an unverified subject supplying a CROSS-TENANT id sees the same refusal as one supplying an id in their own organisation. Authority ENTRY E15, C5, C6.",
+      "test_file": "tests/auth/email-verification-route-handlers.test.ts"
+    },
+    {
+      "id": "N-B-12",
+      "description": "FX-RATE WRITE (E16) IS REFUSED BEFORE THE UPSERT. Same subject shape and mocking discipline. Drive POST on app/api/fx-rates/fetch/route.ts. ASSERT: (1) refusal status; (2) getOrCreateFxRate AND getOrCreateSharedCopRate are BOTH uncalled - both, because the COP branch at :36 writes a SHARED rate whose blast radius is not confined to the caller's tenant; (3) no fx_rates row is written; (4) no outbound rate-fetch is attempted, so an unverified subject cannot drive third-party traffic. Note the route already returns 502 when the inner callback yields null, so a test asserting only on status could pass while the write still happened - the uncalled-service assertion is the load-bearing one. Authority ENTRY E16, C5, C7.",
+      "test_file": "tests/auth/email-verification-route-handlers.test.ts"
+    },
+    {
+      "id": "N-B-13",
+      "description": "PROXY SEARCH READ (E17) IS REFUSED BEFORE THE CATALOGUE IS QUERIED. Same subject shape and mocking discipline. Drive GET on app/api/proxies/search/route.ts with a substring that WOULD match approved global proxies. ASSERT: (1) refusal status; (2) the financialProxies select inside withOrganizationDatabaseContext at :29-46 is never executed; (3) the response body contains no proxy name, description or thematic area. This is the lowest-severity of the four seams - a global approved catalogue rather than another tenant's private rows - and it is included precisely BECAUSE it is the one an implementer would be tempted to skip. It is behind an authentication check today, which makes it a protected customer capability regardless of severity. Authority ENTRY E17, C5, C6.",
+      "test_file": "tests/auth/email-verification-route-handlers.test.ts"
     }
   ],
   "mutation_controls": [
     {
       "id": "M-B-1",
-      "description": "MUTATION: REMOVE THE APPLICATION VERIFICATION GATE. Delete the B0 refusal from all four enforcement points, leaving the predicate derived but unconsumed - the shape a revert or a merge resolution most plausibly produces. REQUIRED OUTCOME: N-B-1, N-B-2, N-B-3, N-B-4 and N-B-8 MUST ALL FAIL, because every unverified subject now proceeds. NON-VACUITY: every positive control P-B-1 through P-B-7 MUST SURVIVE, since removing a gate cannot change verified behaviour; if any positive control dies, the mutation was too coarse and removed more than the gate. Authority DUAL_GATE.GATE_B_APPLICATION.",
+      "description": "MUTATION: REMOVE THE APPLICATION VERIFICATION GATE. Delete the B0 refusal from ALL FOUR completeness points (C4, C5, C6, C7) and from the routing points, leaving the predicate derived at lib/auth/identity.ts:125 and propagated at lib/auth/database-context.ts:536 but unconsumed - the shape a revert or a bad merge resolution most plausibly produces. REQUIRED OUTCOME: N-B-1, N-B-2, N-B-3, N-B-4, N-B-8 and ALL FOUR Route Handler controls N-B-10 through N-B-13 MUST FAIL, because every unverified subject now proceeds everywhere. NON-VACUITY: every positive control P-B-1 through P-B-7 MUST SURVIVE, since removing a gate cannot change verified behaviour; if any positive control dies, the mutation was too coarse and removed more than the gate. Authority DUAL_GATE.GATE_B_APPLICATION.",
       "test_file": "tests/auth/email-verification-gate.test.ts"
     },
     {
@@ -183,7 +211,7 @@
     },
     {
       "id": "M-B-6",
-      "description": "MUTATION: GATE ONLY requireAuth, NOT requireOrganizationAccess. Remove the B0 refusal from lib/auth/session.ts:222 while leaving it at :137 - the most likely INCOMPLETE implementation, because requireOrganizationAccess does not call requireAuth and the two guards are siblings rather than a chain. REQUIRED OUTCOME: N-B-8 MUST FAIL, because an unverified member now reaches the entire product surface. NON-VACUITY: N-B-1, N-B-3 and N-B-4 MUST SURVIVE, since they are reached through requireAuth, the invite route, and requireAdminAccess respectively. This mutation is the reason ROUTING_CONTRACT_PACKET_B names both helpers explicitly instead of saying the session guard. Authority B1-P1 and B1-P2 and session_helper_layer.the_sibling_fact_is_load_bearing.",
+      "description": "MUTATION: GATE ONLY THE REDIRECTING SIBLINGS, NOT THE CONTEXT-RETURNING ONES. ADAPTED AT R3 - the R2 form of this mutation, gate requireAuth but not requireOrganizationAccess, was built on the withdrawn belief that those two were the whole boundary. The corrected mutation removes the refusal from C5 (lib/auth/session.ts:281 getCurrentOrganizationContext), C6 (lib/auth/database-context.ts:629 requirePrincipal) and C7 (lib/auth/database-context.ts:810 withOptionalDatabaseIdentityContext) while LEAVING C3 and C4 intact. This is now the most likely INCOMPLETE implementation, because C3 and C4 are the two an implementer reading only the Packet A contract would find. REQUIRED OUTCOME: N-B-10, N-B-11, N-B-12 and N-B-13 MUST ALL FAIL - all four Route Handlers become reachable again - AND N-B-3 MUST FAIL, because invitation acceptance is covered only by C6. NON-VACUITY: N-B-8 MUST SURVIVE, since pages under app/app are gated by C4, which the mutation leaves in place; if N-B-8 also dies, the mutation was too coarse to attribute the kill. THE POINT OF THIS MUTATION IS THAT IT IS INVISIBLE TO EVERY PAGE-LEVEL CONTROL - which is exactly how the real defect survived R1 and R2. Authority B1_ENFORCEMENT_TOPOLOGY.COMPLETENESS_POINTS.",
       "test_file": "tests/auth/email-verification-gate.test.ts"
     },
     {
@@ -195,6 +223,11 @@
       "id": "M-B-8",
       "description": "MUTATION: MOVE THE DESTINATION INSIDE THE AUTHENTICATED GROUP. Relocate the verification-pending page to app/(authenticated)/app/verify-email/page.tsx, so it is served by a layout whose only statement is requireAuth() - which is B1-P1. REQUIRED OUTCOME: T-B-2 MUST FAIL on the filesystem assertion, and T-B-1 MUST FAIL because the walk no longer terminates: the gate now redirects to a page the gate itself guards, reproducing the measured ERR_TOO_MANY_REDIRECTS signature recorded at app/(authenticated)/layout.tsx:8-30. The route carve-out assertion at tests/auth/route-authorization-boundary.test.ts:297 MUST ALSO FAIL, since the ungated set gains a third member. THREE independent controls must die; if only the filesystem one does, the termination proof is not actually executable and T-B-1 is asserting on a static list rather than on a walk. Authority B2_MINIMUM_SAFE_DESTINATION and B5_TERMINATION.",
       "test_file": "tests/auth/email-verification-routing.test.ts"
+    },
+    {
+      "id": "M-B-9",
+      "description": "MUTATION: BYPASS THE CONVERGENCE POINT WHILE LEAVING THE DIRECT SEAMS INTACT. Remove the propagation at lib/auth/database-context.ts:536 - resolveRequestPrincipal stops setting the verified flag on RequestPrincipal - while LEAVING the derivation at lib/auth/identity.ts:125 in place AND leaving every direct provider-subject seam (D1 onboarding, D2 login and signup, D3 callback) fully gated. This is the most dangerous shape available to an implementer, because the predicate still exists, the direct seams still refuse, and the signup and login journeys still visibly route to /verify-email - so the feature LOOKS implemented end to end. REQUIRED OUTCOME: ALL FOUR Route Handler controls N-B-10 through N-B-13 MUST TURN RED, and N-B-2, N-B-3, N-B-4 and N-B-8 MUST ALSO FAIL, because every principal-consuming boundary now sees a permissive flag. NON-VACUITY: the D-seam routing assertions inside N-B-5 and the signup branch of the routing suite MUST SURVIVE - they are driven by the direct seams the mutation deliberately leaves alone; if those also die, the mutation removed the derivation rather than the propagation and must be re-narrowed to :536. SECOND NON-VACUITY REQUIREMENT: if declaring the field as optional-defaulting-to-verified makes this mutation SURVIVE, the implementation has a fail-open default and is refused by X-B-03 regardless of what the suite reports. Authority B1_ENFORCEMENT_TOPOLOGY.CONVERGENCE_POINT and X-B-03.",
+      "test_file": "tests/auth/email-verification-route-handlers.test.ts"
     }
   ],
   "exit_gates": [
