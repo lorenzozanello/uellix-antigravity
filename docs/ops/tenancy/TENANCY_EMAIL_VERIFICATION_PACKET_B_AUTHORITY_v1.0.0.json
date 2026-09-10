@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "artifact_id": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json",
   "authority_class": "BOUNDED_IDENTITY_PROOF_GATE_EXECUTION_AUTHORITY",
-  "mission_id": "TENANCY-EMAIL-VERIFICATION-PACKET-B-AUTHORITY-R1",
+  "mission_id": "TENANCY-EMAIL-VERIFICATION-PACKET-B-AUTHORITY-R4",
   "lane_id": "LANE_IA",
-  "materialization_date": "2026-09-10",
+  "materialization_date": "2026-09-10 (R1); last revised 2026-09-10 (R4)",
   "companion_manifest": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_TEST_MANIFEST_v1.0.0.json",
   "GRANT_ID": {
     "value": null,
@@ -40,6 +40,25 @@
       "what_R3_CORRECTS": "THE CLOSED-WORLD CENSUS AND THE ENFORCEMENT TOPOLOGY WERE BOTH WRONG. R2 asserted EXACTLY FOUR enforcement points and that any more would duplicate the predicate. That claim is FALSE and is withdrawn in full. R2 missed lib/auth/session.ts:281 getCurrentOrganizationContext, which resolves the principal directly and is the authorization decision for roughly twenty library services and four Route Handlers; it also missed lib/auth/database-context.ts:629 requirePrincipal and :810 withOptionalDatabaseIdentityContext. The root reasoning error is recorded in ROUTE_HANDLERS_ESCAPE_LAYOUTS: R2 treated app/app/layout.tsx as gating everything beneath app/app/, but a LAYOUT DOES NOT WRAP A ROUTE HANDLER, so a route.ts under app/app/ was never gated by it at all. R3 re-derives the topology from the measured convergence point rather than enumerating siblings, which both CLOSES the missed paths and REMOVES two enforcement points R2 required.",
       "also_in_R3": "F-IA-6 is RESOLVED: IE verified email_confirmed_at against the exact pinned SDK, so the provenance moves from REPO_INFERRED to SDK_VERIFIED. Four Route Handler seams and two health seams are classified with explicit E identifiers. The future implementation surface is re-derived from scratch, not appended to. New Route Handler negative controls and a convergence-point mutation are added to the companion manifest.",
       "history_discipline": "R3 is a NEW commit on top of R2. R1 and R2 remain ancestors, are not amended and are not squashed, and their erroneous claims stay visible with the corrections attached rather than overwritten."
+    },
+    {
+      "revision": "R4",
+      "commit": "THIS COMMIT",
+      "trigger": "Independent IH re-audit of R3: PASS, BLOCKING=0, AUDIT_UNKNOWN=0, merge withheld by IG/PR135 ordering. The substantive IE blocker closed at R3 stays closed.",
+      "scope": "PRECISION CLOSURE ONLY. NOT A POLICY REOPENING. Every substantive clause is preserved verbatim: email_confirmed_at as provider truth, confirmed_at refused, provider gate plus application gate, fail closed, B0 before super-admin, /verify-email, Packet A preservation, NO_AUTO_SELECTION, no new org-less audit verb, hosted state UNKNOWN, the dual deployment prohibition, E14-E17 refusing before effect, and M-B-9.",
+      "what_R4_CORRECTS": [
+        "F-IH-1 FALSE UNIVERSAL. R3 claimed every measured C5 caller handles null as refusal. Measured: 46 sites, FOUR categories, and THREE of them (lib/pipeline/proxies.ts:227-239, :326-338, :340-350) treat null as GLOBAL/ANONYMOUS SCOPE. The universal is withdrawn; the categories are enumerated; the three are shown safe by REACHABILITY AND PREEMPTION, not by what null means.",
+        "F-IH-2 HTTP SEMANTICS ADJUDICATED. Option A: boundary-specific 401 accepted at C5, on four measured grounds - chiefly a zero-result search for any client 401 interceptor. Option B would have forced a typed refusal across 46 call sites in 23 files with no authority requiring it. A revisit condition and sentinel S-IA-NO-401-INTERCEPTOR are attached.",
+        "F-IH-3 C7 RECLASSIFIED. All ELEVEN call sites of withOptionalDatabaseIdentityContext are preempted by C4 or C5. C7 is DEFENSE_IN_DEPTH, removed from the completeness set, from release gating and from the required implementation count, and no control may depend on it.",
+        "F-IH-4 STALE VALIDATION SUPERSEDED. Four validation rows still read PASS for subjects later withdrawn - the 13-entry census, the six-anchors-in-six-files census, the R1 anchor count and the R1 termination trace. Marked SUPERSEDED with the current replacement named; history retained.",
+        "F-IH-5 DEAD REFERENCES REPAIRED. Every live B1-P label is repointed to a current C or D label. The two remaining occurrences are inside R2-history fields and are correct as history.",
+        "F-IH-6 REVISION IDENTITY MADE TRUTHFUL. CURRENT_REVISION R4; mission_id and final_state name R4; R1-R3 preserved in history fields.",
+        "F-IH-7 MEMOIZED PRINCIPAL. The C6 check binds the principal RESULT on both provenances - requirePrincipal returns from the memo at :633 without reaching :635. N-B-14 covers memo cold and memo warm; M-B-10 makes a fresh-path-only check turn RED.",
+        "F-IH-8 SYNC PROFILE PRECISION. R3 claimed C6 made every pre-onboarding write unreachable. FALSE: syncUserProfile at app/(authenticated)/app/onboarding/actions.ts:47 runs before the first tenancy question and opens its context directly. The exception is frozen narrowly and N-B-15 proves the pre-verification write surface is one self-scoped profile upsert.",
+        "ANCHOR COUNT RECONCILED. R3 said 118/118, IH said 117. Neither is inherited: four separate figures are recomputed from the final R4 artifact with the extraction convention stated exactly.",
+        "F-IH-12 SURFACE COUNTS MADE EXACT. Required and optional existing-file extensions separated by key; every count recomputed after the C7 adjudication rather than carried forward."
+      ],
+      "history_discipline": "R4 is a NEW commit on top of R3. R1, R2 and R3 remain ancestors, are not amended and are not squashed. Withdrawn claims stay visible with their corrections attached."
     }
   ],
   "AS_OF_REF": "codex/email-verification-packet-b-authority-r1",
@@ -98,7 +117,7 @@
       "HV_definition": "HV equals code drift: movement in any executable surface (app/**, lib/**, db/**, scripts/**, tests/**, supabase/**, root config).",
       "HT": "NONE",
       "HV": "NONE",
-      "consequence": "Every anchor, grep count and file-existence fact recorded below was measured against the SAME tree that is live. No measurement in this artifact is stale, and none is being reconciled across a moved tip.",
+      "consequence": "All 17 blob-compared files, and every anchor, grep count and file-existence fact recorded below, were measured against the SAME tree that is live. No measurement in this artifact is stale, and none is being reconciled across a moved tip.",
       "remote_branch_state": "git ls-remote --heads origin codex/email-verification-packet-b-authority-r1 returned no rows at measurement time: this lane branch did not yet exist on the remote."
     }
   },
@@ -541,7 +560,7 @@
   },
   "ROUTING_CONTRACT_PACKET_B": {
     "applies_to": "An AUTHENTICATED subject. An UNAUTHENTICATED subject is entirely out of scope and every existing redirect to /login is preserved verbatim at every site, exactly as Packet A preserved it.",
-    "evaluation_order_is_normative": "B0 is evaluated BEFORE every rule of Packet A ROUTING_CONTRACT wherever that contract is evaluated. An implementation that evaluates B0 after R1 or after R2 produces a different destination for the same principal, so the order is part of the contract.",
+    "evaluation_order_is_normative": "B0 is evaluated BEFORE all five rules of the Packet A ROUTING_CONTRACT - R1 through R5 - wherever that contract is evaluated. An implementation that evaluates B0 after R1 or after R2 produces a different destination for the same principal, so the order is part of the contract.",
     "B0_VERIFICATION_PRECEDES_TENANCY": {
       "rule": "If the authenticated subject email is not provider-confirmed, the request is REFUSED and routed to the verification-pending destination. No tenancy question is asked. No enumeration is performed. No carrier is read, written or cleared. No organisation is created. No membership is created.",
       "precondition": "principal resolved AND emailVerified is false.",
@@ -588,29 +607,127 @@
           {
             "id": "C5",
             "site": "lib/auth/getCurrentOrganizationContext, lib/auth/session.ts:281-292",
-            "refusal_vocabulary": "return null - the value every caller already treats as refusal",
+            "refusal_vocabulary": "return null - which 43 of the 46 measured call sites already treat as refusal, in one of three forms (401, throw, empty value). The other 3 treat it as GLOBAL/ANONYMOUS scope and are safe by preemption instead - see NULL_SEMANTICS_AT_C5. There is no single vocabulary covering all 46.",
             "covers": "E14, E15, E16, E17 and roughly twenty library services",
             "why_it_is_required_and_not_covered_by_C6": "MEASURED, NOT ASSUMED. Its consumers take the context and then query the RAW db client, scoping by ctx.organization.id in the WHERE clause, without transiting withOrganizationDatabaseContext: lib/projects/service.ts:39-41, lib/taxonomies/service.ts:64-69, lib/pipeline/fx-rates.ts:57-62. For those callers this null check IS the authorization decision. THIS IS THE SEAM R2 MISSED ENTIRELY.",
-            "fail_closed_by_construction": "Every measured caller already handles null as refusal - 401 at E14:53, E15:18, E16:10, E17:16; a thrown Unauthenticated at lib/projects/service.ts:40 and lib/taxonomies/service.ts:65; a returned null at lib/projects/service.ts:57. So the refusal composes with existing behaviour rather than requiring twenty edits."
+            "NULL_SEMANTICS_AT_C5": {
+              "R3_CLAIM_WITHDRAWN": "R3 asserted that EVERY measured caller already handles null as refusal. THAT UNIVERSAL IS FALSE and is withdrawn (F-IH-1). Three helpers treat a null context as GLOBAL/ANONYMOUS SCOPE, not as refusal. The safety of C5 does NOT rest on a universal and must not be argued from one.",
+              "measured_set": "46 call sites across 23 files, excluding lib/auth/session.ts itself and excluding tests. Enumerated mechanically by grepping every await getCurrentOrganizationContext( and reading the lines that follow it. The four categories below partition that set exhaustively - every one of the 46 falls into exactly one.",
+              "CATEGORY_1_NULL_IS_REFUSAL_TERMINAL_HTTP": {
+                "count": 4,
+                "sites": "app/api/fx-rates/fetch/route.ts:8-11, app/api/proxies/[id]/suggest/route.ts:16-19, app/api/proxies/search/route.ts:14-17, app/app/projects/[projectId]/report/[reportId]/pdf/route.ts:52-53",
+                "behaviour": "return a 401 response immediately, before any service call, any query and any render.",
+                "why_safe": "The refusal is terminal and precedes every protected effect. N-B-10 through N-B-13 assert the effect is UNCALLED, not merely that the status is a refusal."
+              },
+              "CATEGORY_2_NULL_IS_REFUSAL_BY_THROW": {
+                "count": 35,
+                "sites": "lib/projects/service.ts (14 sites), lib/portfolios/service.ts (5), lib/pipeline/outcome-funder-allocations.ts (4), lib/pipeline/funders.ts (2), lib/pipeline/fx-rates.ts (2), lib/taxonomies/service.ts (2), and one each in lib/pipeline/indicators.ts, narratives.ts, outcomes.ts, stakeholders.ts, lib/portfolios/analytics.ts, evidence-health.ts, intelligence.ts, read-model.ts",
+                "behaviour": "throw an Error - Unauthenticated, No organization context, or Not authenticated or organization context not available - before any query.",
+                "why_safe": "The throw precedes the query at all 35 enumerated sites. The message text differs between them; the ordering does not."
+              },
+              "CATEGORY_3_NULL_IS_AN_EMPTY_OR_ABSENT_RESULT": {
+                "count": 4,
+                "sites": "lib/projects/service.ts:56-57 (return null), lib/portfolios/service.ts:48 (return null), lib/pipeline/proxies.ts:861-862 (return []), app/app/portfolios/new/page.tsx:15 (renders a not-authenticated message)",
+                "behaviour": "return a refusal-shaped VALUE rather than raising. No tenant row is read.",
+                "why_safe": "The caller receives nothing. This is not a typed refusal, and the artifact does not claim it is one - it is an absence, and an absence discloses nothing."
+              },
+              "CATEGORY_4_NULL_MEANS_GLOBAL_OR_ANONYMOUS_SCOPE": {
+                "count": 3,
+                "status": "THIS IS THE CATEGORY THAT FALSIFIES THE R3 UNIVERSAL. In these three, null is NOT a refusal - it selects a narrower, platform-global query.",
+                "sites": [
+                  {
+                    "site": "lib/pipeline/proxies.ts:227-239 listProxySources",
+                    "null_branch": "returns proxy_sources WHERE organization_id IS NULL AND status = 'active' - platform-global reference rows only.",
+                    "non_null_branch": "returns that SAME global set UNION the caller's own organisation's rows.",
+                    "relation": "THE NULL BRANCH IS STRICTLY NARROWER THAN THE NON-NULL BRANCH. It is a subset, never a superset: no tenant row is reachable through it."
+                  },
+                  {
+                    "site": "lib/pipeline/proxies.ts:326-338 listFinancialProxies",
+                    "null_branch": "returns financial_proxies WHERE organization_id IS NULL AND review_status = 'approved' - approved platform catalogue only.",
+                    "non_null_branch": "that same global set UNION the caller's own organisation's rows.",
+                    "relation": "STRICTLY NARROWER, same shape."
+                  },
+                  {
+                    "site": "lib/pipeline/proxies.ts:340-350 getFinancialProxyById",
+                    "null_branch": "for a proxy that HAS an organization_id, :345 returns null - null IS refusal here. For a proxy with organization_id NULL, :347 returns it only when review_status is approved.",
+                    "relation": "MIXED, and it is the only mixed site: refusal for tenant-owned rows, anonymous read for approved global rows."
+                  }
+                ],
+                "WHY_AN_UNVERIFIED_SUBJECT_CANNOT_OBTAIN_A_PROTECTED_EFFECT_THROUGH_THESE": {
+                  "basis": "REACHABILITY AND PREEMPTION, measured per function. Not a claim about what null means.",
+                  "listProxySources_and_listFinancialProxies_and_listProxyAssignmentsForProject": "SOLE non-test caller is app/app/projects/[projectId]/pipeline/proxies/page.tsx (:175, :176, :177). That file is a PAGE under app/app/ and makes NO auth call of its own - measured: zero hits for requireAuth, requireOrganizationAccess or getCurrentOrganizationContext in it. It is therefore gated entirely by app/app/layout.tsx:27, which is C4. An unverified subject is redirected at C4 before the page body executes, so the null branch is never entered on their behalf.",
+                  "getFinancialProxyById": "SOLE non-test caller is lib/pipeline/proxies.ts:880, inside assignProxyToOutcome, whose FIRST statement at :868 is await requireOrganizationAccess() - C4. Preempted before the call.",
+                  "effect_ordering": "In all three, C4 executes strictly before the helper is invoked. The preemption is by call-graph position, not by the helper's own behaviour.",
+                  "what_would_break_this": "A NEW caller of any of these three from a Route Handler, or from a page outside app/app/, would reach the null branch unpreempted. That subject would read platform-global reference rows and nothing else - no tenant content, no write - but the preemption argument above would no longer hold and would have to be re-derived. Recorded as F-IH-1-RESIDUAL."
+                },
+                "what_this_category_is_NOT": "It is NOT a hole that Packet B leaves open, and it is NOT a claim that reading global reference data is harmless in general. It is a measured statement that these three code paths are unreachable by an unverified subject under the current call graph, and that if they were reachable the exposure would be platform-global reference rows rather than tenant content."
+              },
+              "the_composition_claim_stated_precisely": "Adding the refusal to C5 composes with existing behaviour at 43 of the 46 sites, because those sites already treat null as a refusal in one of three forms (401, throw, empty). At the remaining 3 it does NOT compose as a refusal - it selects the global branch - and those 3 are safe by preemption instead. NO SINGLE SENTENCE COVERS ALL 46, WHICH IS WHY THE CATEGORIES ARE ENUMERATED RATHER THAN SUMMARISED."
+            }
           },
           {
             "id": "C6",
             "site": "requirePrincipal, lib/auth/database-context.ts:629-646",
             "refusal_vocabulary": "throw AuthContextError with a new code, mapped to 403 - never 401, which would be the loop",
             "covers": "E3 and E7/E8 transitively, plus withOrganizationDatabaseContext, withSuperAdminDatabaseContext and listSelectableMemberships",
-            "why_it_REPLACES_two_R2_points": "app/invite/accept/page.tsx:53 reaches acceptInvitation through withAuthenticatedDatabaseContext, and app/(authenticated)/app/onboarding/actions.ts reaches both the allowlist read at :76 and the organisation insert at :99 the same way. Both therefore become unreachable for an unverified subject once C6 refuses, WITHOUT editing either file. R2's B1-P3 and B1-P4 are retired as completeness points."
+            "why_it_REPLACES_two_R2_points": "app/invite/accept/page.tsx:53 reaches acceptInvitation through withAuthenticatedDatabaseContext, and app/(authenticated)/app/onboarding/actions.ts reaches both the allowlist read at :76 and the organisation insert at :99 the same way. Both therefore become unreachable for an unverified subject once C6 refuses, WITHOUT editing either file. R2's B1-P3 and B1-P4 are retired as completeness points.",
+            "R4_ADDITION_THE_CHECK_MUST_BIND_THE_RESULT_NOT_THE_FRESH_BRANCH": {
+              "measured": "requirePrincipal consults the memo FIRST: lib/auth/database-context.ts:632-633 - const memoised = await loadRequestPrincipal(); if (memoised) return memoised - and returns from :633 WITHOUT reaching resolveRequestPrincipal at :635 or the throw at :639.",
+              "the_defect_this_forbids": "A verification check placed after :635, on the fresh-resolution or failure branch, IS BYPASSED WHENEVER THE MEMO IS WARM. React cache() makes the memo warm for every call after the first in a request, so a page that touches several services would be gated on its FIRST principal consumption and ungated on every subsequent one. Intermittent by construction, and green under any test that resolves the principal only once.",
+              "the_frozen_requirement": "The C6 check binds THE PRINCIPAL RESULT, on both provenances: the value returned at :633 (memo hit) and the value returned at :636 (fresh). The data is present on both paths - I-2 sets the flag inside resolveRequestPrincipal at :536, which loadRequestPrincipal memoises - so this is a CHECK-PLACEMENT constraint, not a data-availability problem.",
+              "controls": "N-B-14 (memo cold and memo warm) and M-B-10 (check only on the fresh path must turn RED). Authority F-IH-7."
+            }
+          }
+        ],
+        "R4_NOTE_ON_SET_SIZE": "THREE completeness points at R4, not four. C7 was reclassified out of this set - see C7_CLASSIFICATION_R4 below. The set is C4, C5, C6."
+      },
+      "C7_CLASSIFICATION_R4": {
+        "site": "withOptionalDatabaseIdentityContext, lib/auth/database-context.ts:810-836; reached through runWithOptionalOrganizationAccess at lib/auth/session.ts:331-335",
+        "R3_CLAIM_WITHDRAWN": "R3 listed C7 as a REQUIRED completeness point on the reasoning that it constructs its own OrganizationContext at :821-825 without consulting C5. The construction claim is TRUE. The completeness claim is FALSE under the measured call graph, and is withdrawn (F-IH-3).",
+        "CLASSIFICATION": "DEFENSE_IN_DEPTH",
+        "proof_of_preemption": {
+          "method": "Every non-test caller of runWithOptionalOrganizationAccess and withOptionalDatabaseIdentityContext was enumerated. There are ELEVEN, and every one is already preempted.",
+          "nine_pages_under_app_app": "app/app/organization/settings/page.tsx:10, app/app/portfolios/page.tsx:16, app/app/portfolios/[portfolioId]/page.tsx:71, app/app/projects/page.tsx:9, app/app/projects/[projectId]/page.tsx:31, app/app/projects/[projectId]/pipeline/page.tsx:10, app/app/projects/[projectId]/pipeline/proxies/page.tsx:161, app/app/projects/[projectId]/report/[reportId]/print/page.tsx:43 - all PAGES beneath app/app/layout.tsx:27, hence preempted by C4.",
+          "two_route_handlers": "app/api/fx-rates/fetch/route.ts:33 is preceded by getCurrentOrganizationContext() at :8 with a 401 at :9-11; app/app/projects/[projectId]/report/[reportId]/pdf/route.ts:59 is preceded by the same call at :52 with a 401 at :53. Both preempted by C5 in the SAME function, several lines earlier.",
+          "conclusion": "ZERO call sites reach C7 without first transiting C4 or C5. Gating C7 closes nothing that C4 and C5 leave open."
+        },
+        "why_it_is_still_RECOMMENDED": "The preemption is a property of the CURRENT call graph, not of C7 itself. C7 builds a context from the principal without consulting C5, so a future caller that used it directly - a new Route Handler, or a page outside app/app/ - would be ungated. The guard is two lines in a file I-2 already edits, so its cost is near zero and it removes a standing latent hazard of the same family as F-IH-9.",
+        "release_gating_consequence": "C7 IS NOT A PACKET B RELEASE GATE. It is not counted in the completeness set, it is not required for the node to be complete, and NO negative control depends on it. It appears in the surface as OPTIONAL_DEFENSE_IN_DEPTH, separated from the required work, so an implementer can ship Packet B without it and a reviewer can see that choice explicitly rather than infer it.",
+        "what_R4_removed_as_a_result": "The R3 claims that E14 and E16 are covered by C7 independently of C5 are downgraded: they are covered by C5, and C7 would be a second layer if implemented. N-B-10 and N-B-12 are unaffected - they assert refusal before effect, which C5 delivers."
+      },
+      "HTTP_SEMANTICS_ADJUDICATION_R4": {
+        "question": "F-IH-2. C5 Route Handlers translate a missing organisation context to 401, while C6 deliberately maps its refusal to 403 because treating an authenticated subject as not-signed-in can create redirect loops. Which contract governs an authenticated-but-unverified subject at C5?",
+        "DECISION": "OPTION A - BOUNDARY-SPECIFIC 401 IS ACCEPTED AT C5.",
+        "status": "FROZEN. This is an adjudication, not a preference, and it is derivable from existing authority and measured callers without an owner decision - so STOP_FOR_HPO does not apply.",
+        "grounds": [
+          {
+            "ground": "NO LOGIN-REDIRECT CONSUMER EXISTS",
+            "measured": "grep across app/**, components/** and lib/** for a client reaction to a 401 - a status check driving a sign-out or a redirect to /login - returns ZERO. The only sign-out paths in the application are five explicit user-initiated forms posting to /auth/signout (app/(authenticated)/app/onboarding/page.tsx:78, app/admin/layout.tsx:66, components/layout/MobileNav.tsx:97, components/layout/Sidebar.tsx:56, components/onboarding/OrganizationOnboardingBlocked.tsx:35). There is no fetch wrapper and no interceptor. A 401 from these routes therefore cannot start a loop, because nothing consumes it as an instruction to re-authenticate.",
+            "why_this_is_the_decisive_ground": "The repository's own objection to 401 at lib/auth/database-context.ts:189-190 - telling a signed-in user to sign in again is a loop, not a fix - is an objection about a REDIRECT-DRIVEN PAGE FLOW. Where no such flow consumes the status, the objection does not apply. The rule is preserved by understanding what it protects, not by applying its literal status code everywhere."
           },
           {
-            "id": "C7",
-            "site": "withOptionalDatabaseIdentityContext, lib/auth/database-context.ts:810-836",
-            "refusal_vocabulary": "invoke the callback with null, exactly as it already does when there is no membership",
-            "covers": "E14 and E16 independently of C5, via runWithOptionalOrganizationAccess",
-            "why_it_is_required_separately": "It does NOT call getCurrentOrganizationContext. It reads the principal at :814-815 and CONSTRUCTS its own OrganizationContext at :821-825. It is a third, independent context construction, so gating C4 and C5 leaves it open."
+            "ground": "THE HUMAN-FACING PATH ALREADY DISTINGUISHES VERIFICATION",
+            "measured": "The three client components that fetch these routes - app/components/fx-sub-form/FxSubForm.tsx:95, app/components/investment-form/InvestmentRow.tsx:144, app/components/proxy-bank-search/ProxyBankSearch.tsx:30 - are all rendered inside pages beneath app/app/, which is C4. An unverified subject is redirected to /verify-email by C4 and never renders them. The API 401 is therefore reached only by a direct or stale call, never by a human being routed through the product.",
+            "consequence": "Verification IS distinguished wherever a person is routed. What is not distinguished is a machine-facing terminal status on a path a person does not reach."
+          },
+          {
+            "ground": "NO PROTECTED EFFECT OCCURS",
+            "measured": "All four C5 route handlers return before any service call, any query and any render - E14:52-53, E15:16-19, E16:8-11, E17:14-17. N-B-10 through N-B-13 assert the effect is UNCALLED rather than asserting the status, which is what makes this ground testable rather than asserted."
+          },
+          {
+            "ground": "OPTION B WOULD EXPAND THE SURFACE WITH NO AUTHORITY REQUIRING IT",
+            "measured": "A typed verification refusal at C5 means changing the return type of getCurrentOrganizationContext from OrganizationContext-or-null to a result type. That forces an edit at all 46 measured call sites across 23 files, including the three global-scope helpers whose null branch is semantically distinct. IH found no current HPO requirement for a typed C5 refusal, and no existing authority in docs/ops/** requires one. Expanding a verification node into a 46-site refactor on HTTP taste would be exactly the scope inference this artifact forbids elsewhere."
           }
-        ]
+        ],
+        "WHAT_OPTION_A_DOES_NOT_LICENSE": [
+          "It does NOT license 401 at C4. The page-facing refusal MUST remain the verification-specific redirect to /verify-email. A 401 or a /login redirect there WOULD loop, via lib/supabase/proxy.ts:91.",
+          "It does NOT license 401 at C6. C6 keeps its 403 mapping - it is reached by callers that translate AuthContextError through authContextErrorStatus, and a 401 there would misreport an authenticated subject.",
+          "It does NOT license removing the distinction from the subject. The subject learns their state from /verify-email, which is where they are routed."
+        ],
+        "REVISIT_CONDITION": "If a client-side 401 interceptor, a fetch wrapper with sign-out behaviour, or an API consumer that redirects on 401 is ever introduced, ground one is void and this adjudication MUST be re-derived. Sentinel S-IA-NO-401-INTERCEPTOR pins the measurement so the condition is detected rather than remembered."
       },
       "ROUTING_POINTS_NOT_COMPLETENESS_POINTS": {
-        "rule": "These do not close any path that the four completeness points leave open. They exist so that an unverified subject meets a COHERENT REFUSAL instead of an unhandled throw or an avoidable bounce. They are REQUIRED for the contract to be usable, and they are explicitly NOT the boundary.",
+        "rule": "These do not close any path that the completeness points C4, C5 and C6 leave open. They exist so that an unverified subject meets a COHERENT REFUSAL instead of an unhandled throw or an avoidable bounce. They are REQUIRED for the contract to be usable, and they are explicitly NOT the boundary.",
         "points": [
           {
             "id": "C3",
@@ -648,10 +765,44 @@
         "getCurrentUser_and_getCurrentMembership": "lib/auth/session.ts:101 and :121. They return a user or a membership and grant nothing on their own; every downstream effect transits C4, C5, C6 or C7. Gating them would be the duplication R2 wrongly feared everywhere else, and here the fear is correct."
       },
       "TOPOLOGY_PROPERTIES": {
-        "complete": "Every measured path from a resolved principal to a protected effect transits at least one of C4, C5, C6, C7. Established by following each of the nineteen census entries to its terminal effect, not by directory reasoning.",
+        "complete": "All 19 enumerated census entries were followed to their terminal effect, and every measured path from a resolved principal to a protected effect transits at least one of C4, C5 or C6. C7 is NOT part of this claim at R4 - it is preempted at all eleven of its call sites and is classified DEFENSE_IN_DEPTH (F-IH-3). Established by following each of the nineteen census entries to its terminal effect, not by directory reasoning.",
         "non_duplicative": "One derivation at lib/auth/identity.ts:125. One propagation at lib/auth/database-context.ts:536. One shared refusal helper carrying the policy. Four translations, each into a vocabulary the boundary already speaks.",
-        "fail_closed": "Every translation resolves to the refusing value of an existing branch - a redirect that already exists, a null that every caller already treats as refusal, a throw that authContextErrorStatus already maps. No new permissive path is introduced anywhere.",
+        "fail_closed": "Every translation resolves to the refusing value of an existing branch - a redirect that already exists, a null that 43 of the 46 measured C5 call sites already treat as refusal - the remaining 3 select a strictly narrower global-scope query and are safe by preemption, never by the null meaning refusal - a throw that authContextErrorStatus already maps. No new permissive path is introduced anywhere.",
         "loop_free": "C4 and C3 redirect to /verify-email, which is served from app/(public)/ and is behind none of the seven boundaries. C5, C6 and C7 do not redirect at all - they return null or throw - so they cannot participate in a cycle. The 401-instead-of-403 trap is refused explicitly in C6."
+      },
+      "PRE_VERIFICATION_WRITE_EXCEPTION": {
+        "status": "FROZEN, NARROW, AND THE ONLY ONE.",
+        "the_exception": "syncUserProfile (lib/auth/session.ts:371-412) MAY run before verification is established, and does run: it is called at app/(public)/login/actions.ts:40 and :96, app/auth/callback/route.ts:18, and app/(authenticated)/app/onboarding/actions.ts:47 - every one of them before any C4, C5 or C6 transit.",
+        "why_it_cannot_be_gated": "It writes the public.users row that a brand-new subject needs before a principal can exist at all. lib/auth/session.ts:347-355 states this in the repository own words: it is THE ONE PLACE THAT CANNOT USE withAuthenticatedDatabaseContext, because every other wrapper resolves a principal first and a principal requires a public.users row. Gating it would make first-login profile creation depend on a state reachable only after first login.",
+        "EXACT_PERMITTED_WRITE_SURFACE": "ONE upsert into public.users, keyed on the authenticated subject own id, carrying id, email, full_name, avatar_url and updated_at (lib/auth/session.ts:393-409). The insert is permitted by the users_insert_own policy whose WITH CHECK is id = auth.uid(), so a row for anyone else is refused BY THE DATABASE, not merely by the code. The subject is cross-checked against a readable session at :378-384 and a MISMATCH is refused.",
+        "WHAT_IT_MUST_NOT_BE_ABLE_TO_CREATE": [
+          "an organization row",
+          "an organization_members row, or any membership in any form",
+          "a CommercialAccount association",
+          "any tenant content",
+          "any entitlement",
+          "any commercial acceptance record",
+          "any audit row carrying tenant scope"
+        ],
+        "why_this_is_acceptable": "The row it writes is the subject description of themselves. It confers no membership, no scope, no capability and no entitlement, and it is the precondition for the gate to be able to evaluate them at all. An unverified subject who signs up and stops has exactly one artifact in the system: a profile row keyed to their own auth id.",
+        "control": "N-B-15 asserts the pre-verification write surface is limited to that single self-scoped upsert - specifically that after driving signup, login, callback and the onboarding action as an unverified subject, ZERO rows exist in organizations, organization_members and audit_logs attributable to them.",
+        "explicitly_not_absorbed": "Packet B does not redesign profile architecture, does not change what syncUserProfile writes, and does not adjudicate whether a profile row should exist before verification. It FREEZES the current behaviour as the sole permitted exception so that a future widening is visible as a change to this clause."
+      },
+      "NULL_DISCRIMINATION_ADJUDICATION_R4": {
+        "the_question": "C5 refuses by returning null. Null already means \"no organisation context\" for a member with no selected organisation. An unverified subject therefore becomes INDISTINGUISHABLE from that member at the 46 C5 call sites. Is that acceptable?",
+        "DECISION": "ACCEPTABLE_LOSS_OF_DISCRIMINATION at C5.",
+        "status": "FROZEN at R4, on a corrected factual basis.",
+        "R3_JUSTIFICATION_WITHDRAWN": "R3 justified this with the claim that every measured caller already handles null as refusal. That universal is FALSE (F-IH-1) and MUST NOT be used to support this adjudication. The justification below is by enumeration over the four measured categories instead.",
+        "justification_by_enumeration": {
+          "no_protected_write_continuation": "Category 1 returns a 401 before any service call (E14:52-53, E15:16-19, E16:8-11, E17:14-17). Category 2 throws before any query, at all 35 sites. Category 3 returns null or an empty array before any query. Category 4 contains NO WRITE AT ALL - listProxySources, listFinancialProxies and getFinancialProxyById are pure reads, and the two write helpers in the same module, createOrganizationProxySource at lib/pipeline/proxies.ts:242 and assignProxyToOutcome at :868, both begin with requireOrganizationAccess, which is C4. No category continues to a write.",
+          "no_tenant_oracle": "Nothing in any category discloses whether a given organisation or tenant row EXISTS. Category 4 is the only one that returns data, and its null branch is filtered to organization_id IS NULL - platform-global rows by construction, never a tenant row, so no cross-tenant existence can be probed. getFinancialProxyById:345 returns null for any proxy that HAS an organization_id when ctx is null, which is the same answer as for a nonexistent id - the uniform refusal the module already documents at :352-361.",
+          "no_selector_invocation": "listSelectableMemberships is reached only through requirePrincipal (C6), which refuses first. No C5 path enumerates memberships, so S-IA-NO-ENUMERATION-ON-REFUSAL holds across all four categories.",
+          "no_login_loop": "No client consumes a 401 as an instruction to re-authenticate - measured, zero interceptors, see HTTP_SEMANTICS_ADJUDICATION_R4 ground one. Categories 2, 3 and 4 return values or throw inside server code and reach no redirect at all. The only redirecting boundary is C4, which sends the subject to /verify-email, not /login.",
+          "no_protected_data_exposure": "Categories 1, 2 and 3 return no data. Category 4 would return platform-global reference rows - active proxy sources and approved financial proxies - and is UNREACHABLE by an unverified subject anyway, because its only callers are preempted by C4 (see CATEGORY_4.WHY_AN_UNVERIFIED_SUBJECT_CANNOT_OBTAIN_A_PROTECTED_EFFECT_THROUGH_THESE)."
+        },
+        "what_is_genuinely_lost": "A member with no selected organisation and an unverified subject produce the same observable at every C5 site. A future feature that needed to tell them apart at a C5 call site could not, and would have to consult the principal directly. That is a real cost and it is recorded rather than argued away.",
+        "why_it_is_accepted_anyway": "Discriminating at C5 means a typed refusal, which means changing the return type at 46 call sites across 23 files - the Option B surface expansion rejected in HTTP_SEMANTICS_ADJUDICATION_R4 on the grounds that no existing authority requires it. The subject learns their state at /verify-email, which is where a human is actually routed.",
+        "supersession_rule": "IF a future adjudication chooses a typed C5 refusal (Option B), THIS ADJUDICATION IS SUPERSEDED and the loss of discrimination disappears with it. The two are a single decision recorded in two places."
       }
     },
     "B2_MINIMUM_SAFE_DESTINATION": {
@@ -703,7 +854,7 @@
     "B5_TERMINATION": {
       "rule": "The routing graph must terminate. No destination of this contract may re-enter this contract with the same principal state.",
       "proof": [
-        "/verify-email is served from app/(public)/, whose layout makes NO auth call. Measured: zero hits for requireAuth, getCurrentUser, loadRequestPrincipal and redirect in app/(public)/layout.tsx. It is therefore behind none of the seven enforcement points - C3, C4, C5, C6, C7 and the D-seams - and cannot redirect to itself.",
+        "/verify-email is served from app/(public)/, whose layout makes NO auth call. Measured: zero hits for requireAuth, getCurrentUser, loadRequestPrincipal and redirect in app/(public)/layout.tsx. It is therefore behind none of the enforcement points - C3, C4, C5, C6, the optional C7 guard and the D-seams - and cannot redirect to itself.",
         "It is outside the proxy isProtected predicate at lib/supabase/proxy.ts:80, so the proxy cannot redirect it either.",
         "The longest constructible cycle candidate is: authenticated unverified subject requests /login, proxy :91 sends them to /app/dashboard, app/app/layout.tsx:27 calls requireOrganizationAccess, B0 sends them to /verify-email, TERMINAL. Length three, strictly decreasing, no repeat state.",
         "After confirmation the subject at /verify-email is verified, so the page redirects to /app/dashboard, which passes B0 and enters Packet A R1 through R5, itself proven terminal by Packet A R5_TERMINATION and by tests/auth/route-authorization-boundary.test.ts."
@@ -857,12 +1008,13 @@
         "id": "I-2",
         "path": "lib/auth/database-context.ts",
         "classification": "IMPLEMENTATION_REQUIRED",
-        "role": "THE SOLE PROPAGATION, plus two of the four completeness translations",
+        "role": "THE SOLE PROPAGATION, plus the C6 completeness translation and the OPTIONAL C7 defense-in-depth guard",
         "anchors": ":123-144 RequestPrincipal, :146-168 AuthContextErrorCode, :181-199 authContextErrorStatus, :536 resolveRequestPrincipal (THE CONVERGENCE POINT), :629-646 requirePrincipal (C6), :810-836 withOptionalDatabaseIdentityContext (C7)",
-        "what": "Four changes in one file. (a) Carry the boolean on RequestPrincipal. (b) Set it at :536 from the identity result - the ONLY propagation. (c) C6: requirePrincipal throws a new AuthContextError code for an unverified principal. (d) C7: withOptionalDatabaseIdentityContext invokes its callback with null, extending the existing :817 condition.",
+        "what": "THREE required changes in one file, down from four at R3. (a) Carry the boolean on RequestPrincipal. (b) Set it at :536 from the identity result - the ONLY propagation. (c) C6: requirePrincipal throws a new AuthContextError code for an unverified principal, and the check binds THE RESULT on both the memo-warm return at :633 and the fresh return at :636 (F-IH-7).",
         "new_error_code": "Add ONE member to the AuthContextErrorCode union at :146-168, in the AUTH_ identity family and NOT in the TENANCY_ family - this is not a tenancy refusal. Map it in authContextErrorStatus at :181-199 to 403. IT MUST NOT BE 401: :189-190 states that telling a signed-in user to sign in again is a loop, not a fix, and an unverified subject holds a valid session.",
         "constraints": "organizationRefusalCode keeps its exact two-valued union and its meaning. The three return sites at :448, :472 and :511 keep their codes, their audit disposition and their membership nullability. resolveRequestPrincipal MUST STILL RETURN A PRINCIPAL for an unverified subject - returning null there is the infinite loop refused in B1_ENFORCEMENT_TOPOLOGY.WHY_THE_REFUSAL_CANNOT_ALSO_BE_CENTRALISED.",
-        "R3_status": "EXPANDED. R2 asked only for propagation here and missed C6 and C7 entirely."
+        "R3_status": "EXPANDED at R3 (R2 asked only for propagation here). NARROWED at R4 (C7 moved to optional).",
+        "R4_what_moved_out": "The R3 item (d), gating withOptionalDatabaseIdentityContext at :810-836, is REMOVED from the required set and reclassified as OPTIONAL_DEFENSE_IN_DEPTH entry O-1. C7 is preempted at all eleven of its call sites - see C7_CLASSIFICATION_R4. It is the same file, so an implementer who takes O-1 pays almost nothing; an implementer who skips it still ships a complete Packet B."
       },
       {
         "id": "I-3",
@@ -880,7 +1032,7 @@
         "path": "lib/auth/email-verification.ts",
         "classification": "IMPLEMENTATION_REQUIRED - NEW FILE",
         "role": "THE SOLE REFUSAL-POLICY HOST",
-        "what": "The destination constant and the shared question the four completeness translations and the routing translations all ask. The POLICY lives here once; each boundary supplies only its own refusal vocabulary - redirect, null, or throw.",
+        "what": "The destination constant and the shared question the three completeness translations (C4, C5, C6), the routing translations and the optional C7 guard all ask. The POLICY lives here once; each boundary supplies only its own refusal vocabulary - redirect, null, or throw.",
         "why_a_module_rather_than_a_repeated_conditional": "Without it, seven call sites each restate the policy, and the next boundary added to the codebase restates it an eighth time or forgets to. This is the module that makes the corrected topology non-duplicative rather than merely complete.",
         "constraints": "It MUST NOT re-derive the predicate from the provider - it consumes the flag carried by I-1 and I-2. A second read of email_confirmed_at here would violate S-IA-PREDICATE-CARDINALITY.",
         "R3_status": "NEW in R3. R2 had no policy host, which is part of why it mistook translation for duplication."
@@ -915,16 +1067,9 @@
         "classification": "IMPLEMENTATION_REQUIRED - routing only (D1). DOWNGRADED FROM A COMPLETENESS POINT.",
         "anchors": ":40-42 the subject in hand, :44 the null check, :50 the first tenancy question",
         "what": "Redirect an unverified subject to /verify-email between :44 and :50.",
-        "why_it_is_no_longer_load_bearing": "C6 already makes every write here unreachable: the allowlist read at :76 and the organisation insert at :99 both run inside withAuthenticatedDatabaseContext, and listSelectableMemberships at :61 transits requirePrincipal. Without I-8 an unverified subject is still refused - by a thrown AuthContextError instead of a redirect. I-8 buys a coherent refusal, not a closed hole.",
-        "constraints": "The Packet A submit-side twin at :61-64 preserved verbatim. Allowlist gate at :74-79, founder-provenance write at :127-128 and both audit rows at :145 and :154 untouched."
-      },
-      {
-        "id": "I-9",
-        "path": "lib/supabase/proxy.ts",
-        "classification": "IMPLEMENTATION_REQUIRED_OPTIONAL - defence in depth only (D5)",
-        "anchors": ":76 getUser, :80 isProtected, :91 the /login rule",
-        "what": "MAY redirect an unverified subject away from /app and /admin as a cheap outer hop.",
-        "constraints": "NOT a completeness point and NO control may depend on it. If implemented, /verify-email must remain outside isProtected at :80, or the B5_TERMINATION proof is void. Note it would NOT have covered E14-E17 anyway for the API routes, since /api is outside isProtected."
+        "why_it_is_no_longer_load_bearing": "C6 makes the ORGANISATION-CREATING writes unreachable: the allowlist read at :76 and the organisation and membership inserts at :99-142 all run inside withAuthenticatedDatabaseContext, and listSelectableMemberships at :61 transits requirePrincipal. Without I-8 an unverified subject is still refused from FOUNDING AN ORGANISATION - by a thrown AuthContextError instead of a redirect. I-8 buys a coherent refusal, not a closed hole.",
+        "constraints": "The Packet A submit-side twin at :61-64 preserved verbatim. Allowlist gate at :74-79, founder-provenance write at :127-128 and both audit rows at :145 and :154 untouched.",
+        "R4_CORRECTION_ONE_WRITE_IS_NOT_UNREACHABLE": "R3 stated that C6 makes EVERY write here unreachable. THAT IS FALSE and is withdrawn (F-IH-8). syncUserProfile at app/(authenticated)/app/onboarding/actions.ts:47 runs BEFORE the first tenancy question at :50 and before listSelectableMemberships at :61, and it does NOT transit requirePrincipal - it opens withDatabaseIdentityContext directly at lib/auth/session.ts:390. The profile upsert therefore COMPLETES for an unverified subject. See PRE_VERIFICATION_WRITE_EXCEPTION."
       },
       {
         "id": "REMOVED-R2-I5",
@@ -1008,7 +1153,7 @@
       "files": [
         {
           "path": "tests/auth/email-verification-gate.test.ts",
-          "hosts": "the predicate, the four completeness translations, provider-error fail-closed, and the client-source refusals"
+          "hosts": "the predicate, the three completeness translations (C4, C5, C6), the memo-warm C6 case, provider-error fail-closed, and the client-source refusals"
         },
         {
           "path": "tests/auth/email-verification-routing.test.ts",
@@ -1019,10 +1164,13 @@
           "hosts": "N-B-10 through N-B-13, driving the REAL C5 and C7 per THE_MOCKING_TRAP"
         }
       ],
-      "existing_file_extension_authorized": [
-        "tests/auth/route-authorization-boundary.test.ts - repin the six layer-c fixtures as VERIFIED, and ADD T-B-2. The carve-out assertion at :297 REMAINS onboarding and organizations/select and MUST NOT be edited under the frozen destination; editing it signals the destination moved, which is a STOP.",
-        "OPTIONAL: a route-handler gating invariant in the same file, per F-IA-9 - asserting that every route.ts under app/app/ resolves its principal through a gated boundary. Recommended but NOT required by Packet B, since it polices a hazard wider than this node."
-      ]
+      "REQUIRED_EXISTING_FILE_EXTENSIONS": [
+        "tests/auth/route-authorization-boundary.test.ts - repin the six layer-c RequestPrincipal fixtures as VERIFIED, and ADD T-B-2. The carve-out assertion at :297 REMAINS onboarding and organizations/select and MUST NOT be edited under the frozen destination; editing it signals the destination moved, which is a STOP."
+      ],
+      "OPTIONAL_EXISTING_FILE_EXTENSIONS": [
+        "tests/auth/route-authorization-boundary.test.ts - the general route-handler gating invariant, surface entry O-3. Same file, separate and optional."
+      ],
+      "R4_NOTE": "R3 prose said one existing-file extension while the array held two entries, one prefixed OPTIONAL (F-IH-12). The two are now separated by key so the required count is unambiguous: ONE required extension, ONE optional extension, both in the same file."
     },
     "ENV_ONLY": [
       {
@@ -1059,7 +1207,56 @@
       "Retrofitting tests/proxy-suggest-route.test.ts and tests/report-pdf-route.evidence-sensitivity.test.ts onto a non-mocking auth strategy (F-IA-11) - a large unrelated refactor.",
       "app/(public)/reset-password/actions.ts, E12, deliberately excluded per AUTH_MECHANISM_SEMANTICS.password_recovery part 2.",
       "The /forgot-password redirect target at app/(public)/reset-password/actions.ts:25: the route exists at app/(public)/forgot-password/page.tsx, so there is no defect here; named only because the census had to check it."
-    ]
+    ],
+    "OPTIONAL_DEFENSE_IN_DEPTH": {
+      "rule": "NOT release gates. NOT counted in the required surface. NO negative control may depend on any entry here. Each closes a LATENT hazard - a path that is safe today by preemption and would stop being safe if a future caller appeared - rather than an open one.",
+      "entries": [
+        {
+          "id": "O-1",
+          "path": "lib/auth/database-context.ts:810-836 withOptionalDatabaseIdentityContext (C7)",
+          "what": "Extend the :817 condition so an unverified principal yields callback(null), exactly as it already does when there is no membership.",
+          "why_optional": "All eleven call sites are preempted by C4 or C5 (C7_CLASSIFICATION_R4). It closes nothing currently open.",
+          "why_still_recommended": "C7 constructs its own OrganizationContext at :821-825 without consulting C5, so a future direct caller would be ungated. Two lines in a file I-2 already edits."
+        },
+        {
+          "id": "O-2",
+          "path": "lib/supabase/proxy.ts (D5)",
+          "what": "MAY redirect an unverified subject away from /app and /admin as a cheap outer hop.",
+          "why_optional": "The proxy own comment at :97-99 disclaims authorization. It would not have covered E14-E17 anyway, since /api is outside isProtected at :80."
+        },
+        {
+          "id": "O-3",
+          "path": "tests/auth/route-authorization-boundary.test.ts",
+          "what": "A general route-handler gating invariant per F-IA-9 - assert that every route.ts under app/app/ resolves its principal through a gated boundary.",
+          "why_optional": "It polices a hazard wider than this node. Recommended; explicitly not required by Packet B."
+        }
+      ]
+    },
+    "SURFACE_COUNTS_R4": {
+      "basis": "Recomputed at R4 AFTER the C7 adjudication. R3 counts are void, not adjusted - see R3_REDERIVATION_NOTICE for the same discipline applied to the R2 counts.",
+      "IMPLEMENTATION_REQUIRED": 8,
+      "IMPLEMENTATION_REQUIRED_breakdown": "I-1 identity (derivation), I-2 database-context (propagation + C6), I-3 session (C4 + C5 + C3), I-4 email-verification policy host (NEW FILE), I-5 verify-email page (NEW FILE), I-6 login actions (D2), I-7 callback (D3), I-8 onboarding actions (D1, routing only).",
+      "NEW_FILES": 2,
+      "NEW_FILES_breakdown": "lib/auth/email-verification.ts, app/(public)/verify-email/page.tsx.",
+      "COMPLETENESS_POINTS": 3,
+      "COMPLETENESS_POINTS_breakdown": "C4, C5, C6. (R3 said four; C7 reclassified.)",
+      "ROUTING_POINTS": 4,
+      "ROUTING_POINTS_breakdown": "C3, D1, D2, D3. (D5 moved to OPTIONAL as O-2.)",
+      "OPTIONAL_DEFENSE_IN_DEPTH": 3,
+      "OPTIONAL_DEFENSE_IN_DEPTH_breakdown": "O-1 C7 guard, O-2 proxy outer hop, O-3 general route-handler invariant.",
+      "REMOVED": 1,
+      "REMOVED_breakdown": "app/invite/accept/page.tsx - removed at R3, covered by C6.",
+      "RETIRED": 1,
+      "RETIRED_breakdown": "V-1 SDK field verification - retired at R3, F-IA-6 resolved.",
+      "ENV_ONLY": 3,
+      "ENV_ONLY_breakdown": "ENV-1 hosted enable_confirmations + sender, ENV-2 the repo-local config.toml value, ENV-3 hosted sender and rate limit.",
+      "TEST_FORCED_FILES": 7,
+      "TEST_FORCED_ANCHORS": 12,
+      "NEW_TEST_FILES": 3,
+      "REQUIRED_EXISTING_FILE_EXTENSIONS": 1,
+      "OPTIONAL_EXISTING_FILE_EXTENSIONS": 1,
+      "what_changed_from_R3": "IMPLEMENTATION_REQUIRED 9 -> 8 (the proxy entry I-9 became optional O-2). COMPLETENESS_POINTS 4 -> 3 (C7 reclassified). A new OPTIONAL_DEFENSE_IN_DEPTH category of 3. The existing-file extension count is now stated as 1 required + 1 optional rather than the ambiguous one."
+    }
   },
   "SECURITY_PROHIBITIONS": {
     "X-B-01": "MUST NOT read the verification state from a client-writable source: user_metadata, a query parameter, a cookie the application invented, or any request header.",
@@ -1141,8 +1338,8 @@
       "DEPENDS ON: Packet A, TENANCY_S3_SELECTOR_REACHABILITY_REMEDIATION_v1.0.0, INTEGRATED at BASE. B0 is a prefix to its R1 through R5.",
       "DEPENDS ON: the tenancy node authority MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0, unamended.",
       "DEPENDS ON operationally, not in code: PRE-IA-1, the hosted provider prerequisite.",
-      "DEPENDS ON mechanically: V-1, the SDK field-name verification, before any code is written.",
-      "IS DEPENDED ON BY: commercial acceptance, CommercialAccount bootstrap and any S6 or S7 surface that must not admit an unverified subject. Those depend on this gate; none is implemented here."
+      "IS DEPENDED ON BY: commercial acceptance, CommercialAccount bootstrap and any S6 or S7 surface that must not admit an unverified subject. Those depend on this gate; none is implemented here.",
+      "NO LONGER A DEPENDENCY (R4): the R1-R3 entry requiring V-1, the SDK field-name verification, before any code is written. F-IA-6 is RESOLVED and V-1 is retired; the entry is removed rather than left standing as a stale prerequisite (F-IH-4)."
     ]
   },
   "VALIDATION_PERFORMED_BY_THIS_MISSION": {
@@ -1191,8 +1388,9 @@
       },
       {
         "check": "Anchor verification",
-        "how": "Every file:line anchor cited was re-read with sed against the working tree in a mechanical pass; 35 anchors verified, zero mismatches. Repeated after materialisation over the anchors extracted FROM the artifacts themselves.",
-        "result": "PASS"
+        "how": "HISTORICAL R1 TEXT, retained under a SUPERSEDED row: all 35 file:line anchors cited AT R1 were re-read with sed against the working tree in a mechanical pass, zero mismatches. That set is not the R4 set - see ANCHOR_RECONCILIATION_R4. Repeated after materialisation over the anchors extracted FROM the artifacts themselves.",
+        "result": "SUPERSEDED_BY_R4 - see replacement",
+        "replacement": "R1 measured 35 anchors. R3 measured 118. R4 recomputes mechanically from the FINAL R4 artifact and reports four separate numbers rather than one - see ANCHOR_RECONCILIATION_R4. The R1 figure described an artifact that no longer exists."
       },
       {
         "check": "Parent authority reference integrity",
@@ -1207,17 +1405,20 @@
       {
         "check": "Closed-world surface completeness",
         "how": "Four semantic seam greps, requireAuth, getCurrentUser, direct supabase.auth.getUser and withAuthenticatedDatabaseContext, unioned across app/**, lib/** and components/**, tests excluded, yielding 13 entries.",
-        "result": "PASS"
+        "result": "SUPERSEDED_BY_R3 - see replacement",
+        "replacement": "The R1/R2 method - four seam greps plus directory reasoning - produced a 13-entry census that MISSED getCurrentOrganizationContext and every Route Handler. Replaced by the 19-entry census in LIVE_AUTH_FLOW_RECONSTRUCTION.entry_point_closed_world, derived by enumerating CONSUMERS OF THE PRINCIPAL and following each to its terminal effect, plus an exhaustive enumeration of every route.ts under app/**."
       },
       {
         "check": "Mock-factory census exhaustiveness",
         "how": "Greps for both changed object-shape constructors across tests/**, with the withDatabaseIdentityContext identity type explicitly separated as a false positive; fan-out counted per file, 20 mockGetUser sites in tests/auth/session.test.ts collapse to ONE fixture at :158.",
-        "result": "PASS - six forced anchors in six files"
+        "result": "SUPERSEDED_BY_R3 - see replacement",
+        "replacement": "The R2 figure of six forced anchors in six files omitted the RequestPrincipal shape entirely. Replaced by seven files and twelve anchors in EXACT_FUTURE_IMPLEMENTATION_SURFACE.TEST_MECHANICALLY_FORCED, including the six RequestPrincipal literals in tests/auth/route-authorization-boundary.test.ts."
       },
       {
         "check": "Routing topology termination",
         "how": "Longest constructible cycle traced by hand over the measured redirect edges: proxy :83-95, app/app/layout.tsx:27, lib/auth/session.ts:222-249, and the destination three behaviours. Length three, terminal.",
-        "result": "PASS"
+        "result": "SUPERSEDED_BY_R4 - see replacement",
+        "replacement": "The R1 trace was correct for the R1 topology, which had two enforcement points. Re-derived at R4 over the corrected topology (C3, C4, C5, C6, the optional C7 guard and the D-seams) in TOPOLOGY_PROPERTIES.loop_free and B5_TERMINATION - the conclusion is unchanged, the basis is not."
       },
       {
         "check": "Destination name collision",
@@ -1267,7 +1468,27 @@
         "substituted_by": "The one dependency whose satisfaction actually gates this node, Packet A integration, was verified by git ancestry - cf0fbd7d is an ancestor of BASE - and by reading its contract in executable form at lib/auth/session.ts:177-249. That is stronger evidence than a registry status field, and it is the evidence P-B-10 records."
       }
     ],
-    "owed_to_the_successor": "The implementation lane MUST run typecheck, targeted_tests and ods_poststate, and MUST re-run the four gates discharged here at whatever tip it inherits. Four gates passing on a docs-only diff at 10b475df says nothing about a diff that touches application code."
+    "owed_to_the_successor": "The implementation lane MUST run typecheck, targeted_tests and ods_poststate, and MUST re-run the four gates discharged here at whatever tip it inherits. Four gates passing on a docs-only diff at 10b475df says nothing about a diff that touches application code.",
+    "STALE_CLAIM_SWEEP_R4": {
+      "why": "F-IH-4. A frozen authority must not present an obsolete measurement as a current PASS. Four validation rows described subjects that later revisions withdrew or replaced, and they still read PASS.",
+      "method": "Every row of performed was re-read against the CURRENT artifact and asked: does its measured subject still exist in the form measured? Four did not.",
+      "disposition": "Marked SUPERSEDED_BY_R3 or SUPERSEDED_BY_R4 with the current replacement measurement named on the same row. HISTORY IS NOT DELETED - the original how text is retained so the reader can see what was measured and when it stopped being true.",
+      "rows_still_valid_as_measured": "JSON well-formedness, Authority collision, Parent authority reference integrity, Packet A integration, Destination name collision, Safe secrets, Prohibitions completeness. Each was re-run at R4 and each still holds."
+    },
+    "ANCHOR_RECONCILIATION_R4": {
+      "why": "R3 reported 118/118. IH independently measured 117 distinct. Neither number is inherited; the set is recomputed mechanically from the FINAL R4 artifact and reported in four separate figures, because a single number cannot be checked without its extraction convention.",
+      "extraction_convention_stated_exactly": "A reference is a substring matching <path><dot><ext>:<line> or :<start>-<end>, where ext is one of ts, tsx, sql, toml, json, mjs, over the concatenated text of BOTH artifacts. A leading parenthesis captured from prose is stripped. Bare continuation references of the form :NNN, which resolve against a path named earlier in the same sentence, are NOT machine-extractable and are NOT counted.",
+      "ANCHOR_REFERENCES_TOTAL": 256,
+      "ANCHOR_REFERENCES_DISTINCT": 152,
+      "RESOLVED": 152,
+      "UNRESOLVED": 0,
+      "explanation_of_the_R3_vs_IH_discrepancy": "NEITHER FIGURE IS ADOPTED, AND THE DISCREPANCY IS NOT ARBITRATED - it is explained. R3 reported 118/118, which conflated one number: 118 was the DISTINCT count, and R3 presented it as though it were also the reference count. At the R3 tree the true figures were 200 references over 118 distinct anchors. IH measured 117 distinct, one fewer. A one-anchor gap of that kind is a CONVENTION difference, not a contradiction: the extraction convention decides whether a range like lib/auth/session.ts:222-249 is one anchor or two, whether pnpm-lock.yaml and package.json count as anchors at all, and whether a path captured with a leading parenthesis from prose is normalised or dropped. R4 states its convention explicitly above so the figures can be reproduced rather than trusted. The R4 numbers are larger than both because R4 ADDED anchors - the 46-site null-semantics census, the eleven C7 call sites and the syncUserProfile call sites are all newly cited.",
+      "no_vanity_count": "The figure that matters is UNRESOLVED. TOTAL and DISTINCT are reported so a reader can reproduce the measurement, not as a score.",
+      "measured_at": "The FINAL R4 artifact pair, immediately before freeze. Not carried forward from R3.",
+      "breakdown_by_kind": "code (ts/tsx/mjs) 133, sql 4, toml 14, json/lockfile 1. A census counting only CODE anchors would report 133 - stated so a differing convention is visible rather than arbitrated.",
+      "distinct_anchors_span": "55 files.",
+      "the_only_figure_that_is_a_verdict": "UNRESOLVED = 0. TOTAL and DISTINCT are reproduction aids. One unresolved anchor was found during this recount - a path shorthand for app/(authenticated)/app/onboarding/actions.ts:47, introduced by R4 itself - and was expanded to its full path before freeze. A SECOND pass then found two more shorthands inside this very reconciliation text, and expanded those too: the artifact no-shorthand discipline applies to its own prose about anchors."
+    }
   },
   "OPEN_FINDINGS": [
     {
@@ -1363,16 +1584,40 @@
       "BLOCKS_THIS_NODE": false,
       "disposition": "Addressed by EXACT_FUTURE_IMPLEMENTATION_SURFACE.NEW_TEST_REQUIRED.THE_MOCKING_TRAP: the Route Handler controls N-B-10 through N-B-13 are hosted in a NEW file that drives the REAL getCurrentOrganizationContext and mocks only BELOW it. Retrofitting the existing files would require unpicking their whole mock strategy, which is a large unrelated refactor and is explicitly out of scope.",
       "the_general_lesson": "A control that mocks the boundary it is testing asserts the mock, not the policy. tests/proxy-suggest-route.test.ts:257 already drives a 401 by setting that mock to null - a naive verification control would be indistinguishable from it and would prove nothing."
+    },
+    {
+      "id": "F-IH-1-RESIDUAL",
+      "finding": "Three C5 helpers treat a null context as GLOBAL/ANONYMOUS scope rather than refusal: lib/pipeline/proxies.ts:227-239, :326-338 and :340-350. They are safe today only by PREEMPTION - their sole callers are behind C4.",
+      "severity": "LOW",
+      "owner": "TO_BE_MAPPED",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "The false universal that hid this is removed (F-IH-1). A NEW caller of any of the three from a Route Handler, or from a page outside app/app/, would reach the null branch unpreempted and the safety argument would have to be re-derived. The exposure would be platform-global reference rows, never tenant content and never a write - but the argument, not the exposure, is what would break."
+    },
+    {
+      "id": "F-IH-12",
+      "finding": "R3 prose said one existing-file extension while the surface array held two entries, one prefixed OPTIONAL.",
+      "severity": "LOW",
+      "owner": "CLOSED",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "RESOLVED AT R4. NEW_TEST_REQUIRED now separates REQUIRED_EXISTING_FILE_EXTENSIONS from OPTIONAL_EXISTING_FILE_EXTENSIONS by key, and SURFACE_COUNTS_R4 states both figures. A prose count that disagrees with its own array is the same defect class as a validation row that outlives its subject."
+    },
+    {
+      "id": "F-IH-13",
+      "finding": "PROCESS. Across R1 to R4 this artifact has, three times, stated a claim broader than its measurement: the R2 four-point topology, the R3 null universal, and the R3 claim that C6 made every pre-onboarding write unreachable. Each was caught by an independent audit, not by self-review.",
+      "severity": "MEDIUM",
+      "owner": "IMPLEMENTATION_LANE",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "Recorded so the pattern is visible rather than distributed across three revision notes. The shared shape is a QUANTIFIED CLAIM - every, all, exactly N - asserted over a set that was never enumerated. R4 adds a mechanical guard: the validator now fails on an unqualified universal in either artifact unless an enumerated set accompanies it. That guard cannot catch a wrong enumeration, only a missing one."
     }
   ],
   "self_check": {
     "SC-1": "Both output artifacts were ABSENT before this mission and are the only two files it creates. No third path.",
     "SC-2": "No application code, schema, migration, test or environment value is modified by this lane. The diff is docs-only.",
-    "SC-3": "Every provider-truth claim traces to a measured line in db/baseline/stella_g2_schema.sql or supabase/config.toml; the one inference, the SDK field spelling, is labelled REPO_INFERRED and carries a mandatory verification with a STOP condition.",
+    "SC-3": "SUPERSEDED_BY_R4. R1 said the SDK field spelling was the one inference and labelled it REPO_INFERRED with a mandatory V-1 verification. Both are obsolete: F-IA-6 is RESOLVED and the provenance is SDK_VERIFIED (see SC-14 and PROVIDER_TRUTH_SOURCE.PROVENANCE), and V-1 is retired.",
     "SC-4": "Hosted provider state is HOSTED_UNKNOWN. No hosted claim is made anywhere in this artifact.",
     "SC-5": "The Packet A ROUTING_CONTRACT and NO_AUTO_SELECTION are preserved for verified subjects, and the preservation is asserted by controls P-B-2 through P-B-6 rather than by prose.",
     "SC-6": "SUPERSEDED BY SC-6-R3. R2's surface count - nine implementation entries, six forced anchors, two new test files - was derived from a topology that has been withdrawn.",
-    "SC-6-R3": "The future surface is closed and RE-DERIVED, not appended to: nine implementation entries plus one explicit REMOVAL (app/invite/accept, no longer required) and one explicit RETIREMENT (V-1); twelve mechanically forced test anchors across seven files, including the six RequestPrincipal literals R2 missed; three new test files; one existing-file extension; three ENV_ONLY entries; and an explicit OUT_OF_SCOPE list.",
+    "SC-6-R3": "SUPERSEDED_BY_SC-6-R4. The R3 counts predate the C7 adjudication and the proxy entry reclassification.",
     "SC-11": "The R2 claim of EXACTLY FOUR enforcement points, and its justification that more would duplicate the predicate, are BOTH withdrawn in terms, with the reasoning error named. The corrected topology is four completeness points plus five routing points, derived from a measured convergence point rather than from sibling enumeration, and it is simultaneously complete, non-duplicative, fail-closed and loop-free - each property argued from measurement in TOPOLOGY_PROPERTIES.",
     "SC-12": "The closed-world census is nineteen entries with NO unclassified auth seam. All twelve route.ts files under app/** were enumerated and classified by auth seam, method, tenant reach, read/write effect and bypass consequence. The two health seams are OUT_OF_SCOPE by re-measurement, with their residual posture disclosure recorded as F-IA-10 rather than suppressed.",
     "SC-13": "The re-derivation REMOVES work as well as adding it - app/invite/accept/page.tsx needs no edit, and the onboarding action drops to routing-only. A surface that only grows under audit has not been re-derived, and the removals are recorded explicitly so the successor can see the surface shrink rather than suspect a lost entry.",
@@ -1381,10 +1626,34 @@
     "SC-7b": "This artifact records a correction to its OWN first conclusion rather than overwriting it. R1 asserted every gate was unrunnable and that a prior operational note to the contrary was false; both claims are withdrawn in MEASUREMENT_LIMITS and F-IA-7, with the reasoning error named.",
     "SC-8": "The refusal is unaudited, and the database reason for that is measured, the 0067 policy enumerates exactly two org-less verbs, rather than asserted as a scope preference.",
     "SC-9": "HT and HV are declared MISSION-SUPPLIED SHORTHAND and defined, not falsely cited as repository vocabulary.",
-    "SC-10": "Nothing in this artifact opens implementation. IMPLEMENTATION_AUTHORIZED is false."
+    "SC-10": "Nothing in this artifact opens implementation. IMPLEMENTATION_AUTHORIZED is false.",
+    "SC-3-R4": "Every provider-truth claim traces to a measured line in db/baseline/stella_g2_schema.sql or supabase/config.toml, plus the SDK provenance recorded in PROVIDER_TRUTH_SOURCE.PROVENANCE, which separates what is repository-verifiable at this tree from what is the IE measurement. No claim in the artifact now rests on an unlabelled inference.",
+    "SC-15": "F-IH-1: the false universal is removed. No quantified claim over the C5 consumers survives - the 46 measured sites are partitioned into four enumerated categories, three of which treat null as GLOBAL/ANONYMOUS scope rather than refusal, and their safety rests on measured reachability and preemption instead.",
+    "SC-16": "F-IH-2 is adjudicated, not left open: OPTION A, boundary-specific 401 accepted at C5, on four measured grounds including a zero-result search for any client 401 interceptor. A revisit condition and a sentinel are attached.",
+    "SC-17": "F-IH-3: C7 is classified DEFENSE_IN_DEPTH after measuring that all eleven of its call sites are preempted by C4 or C5. It is removed from the completeness set, from release gating, and from the required implementation count. No control depends on it.",
+    "SC-18": "F-IH-6: revision identity is truthful. CURRENT_REVISION is R4, mission_id and final_state name R4, and R1 through R3 are preserved in mission_id_history, final_state_history and REVISION_HISTORY rather than overwritten.",
+    "SC-19": "F-IH-7 and F-IH-8: the C6 check binds the principal RESULT on both the memo-warm and fresh paths, and the single pre-verification write exception (syncUserProfile, self-scoped profile upsert only) is frozen with an enumerated list of what it must never be able to create.",
+    "SC-6-R4": "The future surface is closed and RE-COUNTED after the C7 adjudication, not carried forward: 8 implementation entries (2 of them new files), 3 completeness points, 4 routing points, 3 optional defense-in-depth entries, 1 explicit REMOVAL, 1 RETIREMENT, 3 ENV_ONLY, 12 forced test anchors across 7 files, 3 new test files, 1 REQUIRED existing-file extension and 1 OPTIONAL one. Every figure is stated with its breakdown in SURFACE_COUNTS_R4.",
+    "SC-20": "No unqualified universal survives in either artifact. A mechanical guard in the R4 validator fails on every, all, always, none and never used as a quantifier over a set unless an enumerated count or an explicit measured-set reference accompanies it. The guard catches a MISSING enumeration; it cannot catch a WRONG one, and F-IH-13 records that limit rather than implying the class is closed."
   },
-  "final_state": "AUTHORITY_R1_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "final_state": "AUTHORITY_R4_FROZEN_AWAITING_INDEPENDENT_NARROW_REAUDIT",
   "IMPLEMENTATION_AUTHORIZED": false,
   "IMPLEMENTATION_AUTHORIZED_NOTE": "This artifact FREEZES the contract. It does NOT open implementation. No application code, no test, no schema, no migration and no environment value may be written on the strength of this artifact alone. Implementation is opened only on codex/email-verification-packet-b-implementation-r1, after the independent audit named in next_gate, and is bounded by EXACT_FUTURE_IMPLEMENTATION_SURFACE.",
-  "next_gate": "EMAIL_VERIFICATION_PACKET_B_AUTHORITY_INDEPENDENT_OPUS_AUDIT"
+  "next_gate": "PR132_R4_NARROW_INDEPENDENT_OPUS_REAUDIT",
+  "mission_id_history": [
+    "R1: ...-AUTHORITY-R1",
+    "R2: ...-AUTHORITY-R1 (measurement correction, mission id unchanged at the time)",
+    "R3: ...-AUTHORITY-SCOPE-CORRECTION-R3",
+    "R4: ...-AUTHORITY-PRECISION-CLOSURE-R4 (current)"
+  ],
+  "CURRENT_REVISION": "R4",
+  "final_state_history": {
+    "R1": "AUTHORITY_R1_FROZEN_AWAITING_INDEPENDENT_AUDIT (superseded)",
+    "R2": "unchanged from R1 - R2 was a measurement correction only (superseded)",
+    "R3": "unchanged from R1 - THIS WAS A DEFECT: R3 made a substantive scope correction and left final_state presenting R1 as the active revision (F-IH-6, superseded)",
+    "R4": "AUTHORITY_R4_FROZEN_AWAITING_INDEPENDENT_NARROW_REAUDIT (current)"
+  },
+  "next_gate_history": [
+    "R1-R3: EMAIL_VERIFICATION_PACKET_B_AUTHORITY_INDEPENDENT_OPUS_AUDIT (discharged by the IE audit at R3 and the IH re-audit at R4)"
+  ]
 }
