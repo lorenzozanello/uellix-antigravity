@@ -1,0 +1,366 @@
+{
+  "manifest_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0",
+    "TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0",
+    "TENANCY_S3_SELECTOR_REACHABILITY_REMEDIATION_v1.0.0",
+    "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0",
+    "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0",
+    "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "probe_manifest": "UNKNOWN — allocated by the implementing mission, via pnpm db:audit:disposable only",
+    "rationale": "A real PostgreSQL probe is REQUIRED and cannot be substituted by unit tests, for four properties that only exist at the database boundary. ONE: append-only enforcement (I-T2-2, I-T3-2, I-T4-2) is a property of privileges and triggers, and a mocked client will happily accept an UPDATE the database would refuse. TWO: the uniqueness invariants I-T3-1 and I-T4-1 are the CONCURRENCY control for simultaneous acceptance, and a race is only observable against a real transaction manager. THREE: the RLS postures I-T2-7, I-T3-8 and I-T4-9 — in particular the self-scoped write predicate of I-T3-6 and the independent-of-super-admin membership check of I-T4-6 — are policy behaviour, and the authoring lane ran NO probe, so U-AO-1 is open. FOUR: the AB-2 rollback controls assert that a partial failure leaves ZERO rows across five relations, which is a transaction property. The probe runs against the disposable harness ONLY — never staging, never production, never the canonical local stack."
+  },
+  "sentinels": [
+    {
+      "id": "S-AO-NO-PRE-VERIFICATION-ACCEPTANCE",
+      "purpose": "No acceptance row may exist for a subject who has not passed B0. Sentinel: after driving signup, login, the auth callback and the onboarding action as an UNVERIFIED subject, the account-class and organization-class acceptance relations contain ZERO rows. This extends Packet B N-B-15, whose own list of forbidden pre-verification creations already names any commercial acceptance record verbatim. Authority X-AO-01."
+    },
+    {
+      "id": "S-AO-PREDICATE-CARDINALITY",
+      "purpose": "EXACTLY ONE module may derive the acceptance-currency fact. Sentinel: after implementation, the set of modules that query the acceptance relations for gating purposes is a single element on the principal path. A second derivation anywhere — a helper, a page, a route handler, a test utility that re-derives rather than imports — is an automatic STOP: two derivations are two sources of truth and can disagree by one release. This mirrors Packet B S-IA-PREDICATE-CARDINALITY for the same reason."
+    },
+    {
+      "id": "S-AO-NO-CURRENCY-COLUMN",
+      "purpose": "Acceptance currency must never acquire a durable stored copy. Sentinel: no column named is_current, is_valid, current, active or superseded exists on any acceptance relation, and no acceptance boolean is added to users, organizations, organization_members or commercial_accounts. A stored flag would require a system-wide UPDATE on every reaccept_required publication — contradicting append-only, creating partial-failure states, and making the most safety-critical value in the model a cache. Authority I-X-1, I-X-5, I-T3-3, I-T4-3."
+    },
+    {
+      "id": "S-AO-NO-CARRIER-WRITE-ON-REFUSAL",
+      "purpose": "The acceptance refusal path must never touch the selected-organization carrier. Sentinel: the set of modules that write or clear the carrier is UNCHANGED from BASE — app/(authenticated)/app/organizations/select/actions.ts remains the sole writer, and the sole clear site remains the one reached only by Packet A R3. A carrier mutation appearing on any L0 or L1 path is an automatic STOP regardless of what any assertion reports. Authority FC_1.PROHIBITED_SIDE_EFFECTS_OF_THE_REFUSAL and Packet A NO_CARRIER_WRITE_DURING_ROUTING."
+    },
+    {
+      "id": "S-AO-NO-ENUMERATION-ON-REFUSAL",
+      "purpose": "listSelectableMemberships must not be called for a subject who has not accepted the account instruments. Sentinel: on every unaccepted path the enumerator call count is ZERO. This is the ONLY observable that discriminates L0-before-R2 from L0-after-R2 — both produce the same redirect, so a destination assertion alone cannot tell them apart. Authority PACKET_A_PRESERVATION.the_specific_regression_this_guards."
+    },
+    {
+      "id": "S-AO-NO-INSTRUMENT-TEXT-IN-AUDIT",
+      "purpose": "Instrument text must never reach audit_logs. Sentinel: a synthetic instrument body carrying a unique canary string is published and accepted; that canary appears in the instrument-version relation ONLY, and appears in NO audit_logs before_json or after_json payload, no log line and no rendered error. Prior repository evidence records that those columns carry verbatim content in many verbs and that operator surfaces read them. Authority X-AO-05."
+    },
+    {
+      "id": "S-AO-NO-ACCEPTANCE-ON-A-GET",
+      "purpose": "No GET request in the invitation or acceptance journey may mutate any row. Sentinel: a full-table snapshot taken before and after a GET of the invitation URL — including the EXPIRED and REVOKED cases, which are the ones that mutate today — is byte-identical. app/invite/accept/page.tsx:53 and lib/invitations/service.ts:175-178 are the measured defects this pins. Authority X-AO-07 and HPO-A decision 7."
+    },
+    {
+      "id": "S-AO-PRINCIPAL-FIXTURES-EXPLICITLY-ACCEPTED",
+      "purpose": "Every RequestPrincipal literal in the Packet A preservation suite must be repinned EXPLICITLY as acceptance-current, and the field must be REQUIRED on the type rather than optional-with-a-permissive-default. Sentinel: no fixture relies on a default. If it were optional and permissive, every Packet A preservation control would keep passing while silently measuring an UNACCEPTED subject — a green suite proving nothing — which is the exact trap Packet B recorded for its own verification flag, compounded here by a second field. The six anchors Packet B names are at ITS AS_OF_HEAD and MUST be re-measured, never replayed. Authority PACKET_A_PRESERVATION.THE_FIXTURE_TRAP_IS_INHERITED_AND_COMPOUNDS, F-AO-16."
+    },
+    {
+      "id": "S-AO-NO-CONTROL-DEPENDS-ON-K7",
+      "purpose": "K7 — the L0 translation at withOptionalDatabaseIdentityContext — is DEFENSE_IN_DEPTH, not a completeness point, inheriting Packet B C7_CLASSIFICATION_R4 which proved all eleven call sites preempted. Sentinel: NO positive, negative or mutation control in this manifest asserts a refusal produced by K7. Every control must remain satisfiable with K7 UNIMPLEMENTED. If one starts depending on it, the manifest has quietly promoted an optional guard into a release gate."
+    },
+    {
+      "id": "S-AO-NO-REAL-INSTRUMENT-TEXT-AND-NO-REAL-SECRETS",
+      "purpose": "No real legal instrument text, no real credential, no real email address and no real project reference may enter a fixture or an artifact. Sentinel: all fixture instrument bodies are synthetic placeholder strings clearly marked as such, all addresses remain example.org or example.test, and no environment value is embedded. Publishing real instrument text into a test fixture would also create a second, unversioned copy of a document whose whole purpose is to have exactly one content identity."
+    },
+    {
+      "id": "S-AO-NO-ACCEPTANCE-METADATA-CREEP",
+      "purpose": "No identifying metadata beyond the subject identifier may be added to an acceptance relation without an answered LRF-03 and an owner decision. Sentinel: the acceptance relations carry NO ip_address, user_agent, device or fingerprint column. db/schema.ts:130 already declares audit_logs.ipAddress for other verbs, and its existence must not be read as authorization to capture one here. Authority I-T3-9, LEGAL_REVIEW_FLAGS.LRF-03."
+    },
+    {
+      "id": "S-AO-NO-COMMERCIAL-ACCOUNT-LEVEL-ACCEPTANCE",
+      "purpose": "Acceptance must never be recorded at, or inherited from, CommercialAccount level. Sentinel: no acceptance relation carries a commercial_account_id, and no uniqueness index on an acceptance relation is keyed by it. Two organizations governed by ONE CommercialAccount must produce two independent L1 states. Authority X-AO-09, I-T4-8, ratification CA-08."
+    },
+    {
+      "id": "S-AO-INTERIM-EMPTY-REGISTRY-POSTURE-IS-VISIBLE",
+      "purpose": "The empty-instrument-registry behaviour is STOP_FOR_HPO (F-AO-14) with an interim REFUSE posture. Sentinel: the interim posture is asserted by an explicit control, so that if the owner later chooses vacuous pass the change is a deliberate edit to a named assertion rather than a silent behavioural drift. A model whose most dangerous edge case is untested at initial deployment is untested exactly where mistakes are most likely."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "P-AO-1",
+      "description": "ACCEPTED SUBJECT CAN PROCEED. A subject who is current on every published account-class instrument passes L0 at EVERY translation point — K3, K4, K5 and K6 — and reaches the destination Packet A would have chosen for the same principal. Assert through each of the three completeness points K4, K5 and K6 EXPLICITLY, not just one: a gate added at K5 that accidentally refuses accepted subjects would break the library services and Route Handlers that consume getCurrentOrganizationContext while every K4-only control stayed green. This is the control that proves L0 is a PREFIX and not a wall; if it fails, the node has broken every user, not merely unaccepted ones. Authority CANONICAL_JOURNEY, ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-2",
+      "description": "L0 DISCHARGE IS ATOMIC AND COMPLETE. A subject accepting Terms and Privacy in one act produces BOTH account-class acceptance rows and their audit rows in ONE transaction, each row binding instrument_key, version, the snapshotted content digest, the subject and accepted_at. Assert that the subject is never left current on one account-class instrument and stale on the other — that half-state is indistinguishable from a deliberate partial acceptance. Authority AB-1, HPO-A decision 4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-3",
+      "description": "L1 DISCHARGE BY AN ORGANIZATION_ADMIN. A subject holding an ACTIVE organization_admin membership discharges L1 for that organization: exactly one organization-class acceptance row plus one audit row carrying the organization scope, with accepted_by_role recorded as held AT ACCEPT TIME. Assert that the transaction creates NO entitlement, mutates NO CommercialAccount, changes NO membership and changes NO organizations.status — acceptance grants nothing. Authority AB-3, I-T4-6, I-T4-7, I-T4-10, HPO-A decision 3, ratification CA-03.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-4",
+      "description": "FOUNDER JOURNEY IN ORDER. Drive J-FOUNDER end to end and assert the ORDER, not merely the endpoint: B0 then L0 then Packet A R2 branch_zero then AB-2 then L1 then entitlement then product. Assert specifically that L0 is reached BEFORE any organization exists and that L1 is NOT reachable before AB-2 commits. An implementation that produces the right final state by a different order will pass an endpoint-only assertion and will have a different observable for every intermediate principal. Authority JOURNEY_FOUNDER.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-5",
+      "description": "INVITED-MEMBER JOURNEY IN ORDER. Drive J-INVITED end to end: B0 then L0 then the POST invitation acceptance, into an EXISTING organization. Assert the invited subject discharges L0 PERSONALLY and is NEVER prompted for commercial acceptance. Assert the invitation target is carried forward across both the B0 and the L0 refusals via the existing safe-path validation and that the subject resumes the invitation after satisfying them. Authority JOURNEY_INVITED_MEMBER, ADJUDICATION_FOUNDER_VS_INVITED.A1 and A2, INVITATIONS.R5.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-6",
+      "description": "A LATER UNMARKED VERSION DOES NOT REFUSE. Publish version 2 and version 3 of an account-class instrument with reaccept_required FALSE on both; a subject who accepted version 1 REMAINS CURRENT and passes L0. This is the control that distinguishes HPO-A decision 5 from the naive model. If it fails, the implementation refuses on any version change and the failure mode is a false lockout of the entire user base on a typo correction. Authority REACCEPTANCE.THE_CURRENCY_PREDICATE, FC_2.the_asymmetry_that_must_be_preserved.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-7",
+      "description": "THE ACCEPTANCE DESTINATION IS REACHABLE AND TERMINAL. A subject who FAILS L0 can reach the account-acceptance destination and it RENDERS rather than redirecting — it sits outside every one of K3 through K7, the same structural requirement Packet B imposes on /verify-email. Assert also that the four instrument presentation pages at app/(public)/{terms,terminos,privacy,privacidad} remain publicly reachable and ungated: a subject cannot be asked to accept a document they are refused permission to read. Authority ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT.explicitly_not_gated_by_L0.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-8",
+      "description": "NO ORGANIZATION SELECTED REACHES THE PACKET A DESTINATION UNCHANGED. A subject who has passed B0 and L0 but has no organization in request scope reaches the destination Packet A R2 or R3 dictates, with L1 NOT EVALUATED. Assert the absence of any acceptance query on that path, not merely the destination — the destination alone cannot distinguish skipped from passed. Authority FC_5, L1_ATTACHMENT.binding_properties.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-9",
+      "description": "PACKET A PRESERVATION — ZERO CANDIDATES. Re-drive the Packet A R2 branch_zero scenario with a subject who is acceptance-CURRENT and require the SAME destination Packet A requires: /app/onboarding. The fixture must state its acceptance state EXPLICITLY. Authority PACKET_A_PRESERVATION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-10",
+      "description": "PACKET A PRESERVATION — EXACTLY ONE CANDIDATE. Re-drive R2 branch_one_or_more with candidates.length === 1 and an acceptance-current subject; the destination is the SELECTOR, with no shortcut. This is Packet A NO_AUTO_SELECTION, whose load-bearing case is precisely the single-candidate one because auto-selection is invisible there. Assert the carrier does NOT exist after routing. Authority PACKET_A_PRESERVATION, NO_AUTO_SELECTION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-11",
+      "description": "PACKET A PRESERVATION — TWO OR MORE CANDIDATES. Re-drive R2 with two or more candidates and an acceptance-current subject; destination is the selector, unchanged. Authority PACKET_A_PRESERVATION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-12",
+      "description": "PACKET A PRESERVATION — STALE CARRIER. Re-drive R3 with an acceptance-current subject: the stale carrier is cleared FIRST and the redirect to the selector is issued SECOND, in that order, carrying the existing not_a_member semantics. Assert the ORDER: reversing it re-enters R3 with the same carrier and the graph does not terminate. Assert also that no fallback to another membership occurs, not even when the subject holds exactly one other active membership. Authority PACKET_A_PRESERVATION, Packet A R3.ordering_is_normative and R3.fallback_prohibition.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-13",
+      "description": "PACKET A PRESERVATION — SUPER-ADMIN AND RETURN SITE 3. Re-drive R1 with an acceptance-current super-admin: the destination remains /admin and the subject is NEVER routed to the tenant selector. Re-drive R4 RETURN SITE 3 — membership NON-NULL with the reused refusal code — and assert it is matched by NEITHER R2 NOR R3 and that its valid carrier is NOT cleared. Authority PACKET_A_PRESERVATION, Packet A R1 and R4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-14",
+      "description": "MULTI-ORG — ACCOUNT ACCEPTANCE IS ONCE PER SUBJECT. A subject holding ACTIVE memberships in two organizations accepts each account-class instrument EXACTLY ONCE and passes L0 in both organization scopes. Assert the acceptance relation contains one row per instrument for that subject, not one per membership. This control is only meaningful once HPO-A decision 8 has been discharged by its own lineage; until then it is asserted against whatever multi-membership substrate exists and is marked as depending on BD-5. Authority MULTI_ORG.WHAT_MULTI_ORG_MEANS_FOR_THE_ACCEPTANCE_MODEL.account_class_is_unaffected.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "T-AO-1",
+      "description": "TERMINATION OVER THE EXTENDED STATE SPACE. The combined routing graph B0, L0, R1..R5, L1 terminates for EVERY principal state, including the three-state case Packet B B5 does not cover: a VERIFIED but UNACCEPTED subject landing on /verify-email is redirected to /app/dashboard, refused at K4, and redirected to the acceptance destination. Assert that this BOUNCE terminates and that no destination re-enters the chain with the same principal state. Packet B termination proof was derived over a two-state graph and MUST be re-derived here rather than assumed to carry. Authority ENFORCEMENT_TOPOLOGY.TERMINATION, F-AO-12.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-15",
+      "description": "INTERIM EMPTY-REGISTRY POSTURE IS EXPLICIT. With ZERO published instruments for a class, the corresponding gate REFUSES, loudly. This asserts the INTERIM posture of F-AO-14, which is STOP_FOR_HPO: the control exists so that if the owner later chooses vacuous pass, the change is a deliberate edit to a named assertion rather than silent behavioural drift. Authority FC_7.INTERIM_POSTURE_UNTIL_ADJUDICATED.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-AO-1",
+      "description": "NO ACCEPTANCE BEFORE VERIFICATION. Drive signup, login, the auth callback and the onboarding action as an UNVERIFIED subject and assert that BOTH acceptance relations contain ZERO rows, and that no acceptance write is even attempted. This extends Packet B N-B-15, whose forbidden-creation list already names any commercial acceptance record verbatim. The concrete shape this refuses is a Terms checkbox on the signup form. Authority X-AO-01, Packet B PRE_VERIFICATION_WRITE_EXCEPTION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-2",
+      "description": "NO REPURPOSED TIMESTAMP COUNTS AS ACCEPTANCE. A subject for whom db/schema.ts:148 invitations.acceptedAt IS SET, but who has no row in the account-class acceptance relation, is REFUSED at L0. Assert the same for any users or organizations column, for session or cookie state, and for a dismissed banner. Authority X-AO-02, ADJUDICATION_FOUNDER_VS_INVITED.A4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-3",
+      "description": "NO INSTRUMENT TEXT IN AUDIT. Publish a synthetic instrument whose body carries a unique canary string, accept it, and assert the canary appears in the instrument-version relation ONLY — never in any audit_logs before_json or after_json, never in a log line, never in a rendered error. Authority X-AO-05, AUDIT.THE_CONTENT_LEAK_PROHIBITION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-4",
+      "description": "A LATER MARKED VERSION REFUSES. Publish version 2 with reaccept_required TRUE; a subject who accepted version 1 becomes NON-CURRENT and is REFUSED at L0, at the same gate and the same position as a subject who never accepted, with no grace period. Assert the prior acceptance row is UNTOUCHED — no UPDATE, no DELETE, no flag flipped. Authority FC_2, REACCEPTANCE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-5",
+      "description": "NO ENUMERATION AND NO TENANCY DISCLOSURE ON REFUSAL. For an UNACCEPTED subject, assert listSelectableMemberships call count is ZERO, no organization is created, no organization is auto-selected, the selected-organization carrier is neither written nor cleared, no acceptance row is created or defaulted, no entitlement is evaluated, and NO audit row is emitted. The enumerator count is the ONLY observable that discriminates L0-before-R2 from L0-after-R2. Authority FC_1.PROHIBITED_SIDE_EFFECTS_OF_THE_REFUSAL, X-AO-10.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-6",
+      "description": "A SUPER-ADMIN CANNOT ACCEPT ON A CUSTOMER BEHALF. A platform super-admin who is NOT an active organization_admin of the target organization is REFUSED when attempting to write an organization-class acceptance. Assert the refusal is produced by the membership check INDEPENDENTLY of the super-admin bit — not by a branch the bit could satisfy. The measured hazard is the !check.is_super_admin clause at db/identity-context.ts:217, which ratification MO-07 records as CONTRADICTS_PRODUCT_INTENT and which this node must not depend on being open. Authority X-AO-06, I-T4-6.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-7",
+      "description": "REFUSAL ON THE MEMO-WARM PATH. Exercise a request in which the principal has ALREADY been resolved earlier in the same request, so requirePrincipal returns from the memo at lib/auth/database-context.ts:632-633 WITHOUT reaching resolveRequestPrincipal at :635. Assert the unaccepted subject is STILL refused. A check placed on the fresh-resolution branch passes a cold test and opens on every warm path — an INTERMITTENT gate failure, the worst class. The line anchors are Packet B measurements at ITS AS_OF_HEAD and MUST be re-measured. Authority L0_ATTACHMENT.THE_MEMO_TRAP_IS_INHERITED, F-AO-16.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-8",
+      "description": "A GET MUTATES NOTHING. Snapshot every relevant table, issue a GET of the invitation URL, and assert the snapshot is byte-identical — for the PENDING, EXPIRED and REVOKED cases alike. The expired case is the one that mutates today, at lib/invitations/service.ts:175-178 reached from app/invite/accept/page.tsx:53. Authority X-AO-07, HPO-A decision 7, INVITATIONS.R1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-9",
+      "description": "THE EXPIRED TRANSITION IS DURABLE ACROSS THE REFUSAL. After an expired invitation is presented and REFUSED, assert the invitation status is OBSERVABLE as expired in a SUBSEQUENT, SEPARATE transaction. This is the only assertion that catches F-AO-01: today the UPDATE at lib/invitations/service.ts:175-178 is rolled back by the throw at :179, because the caller opened one transaction that db/identity-context.ts:110-112 documents as rolling back on any throw. Converting the verb to POST does NOT fix this by itself. Authority AB-5, FC_4.REQUIRED_CORRECTIONS.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-10",
+      "description": "THE POST HANDLER REFUSES AN UNACCEPTED SUBJECT. POST the invitation acceptance as a subject who has passed B0 but NOT L0 and assert refusal with NO organization_members row created. Assert the refusal is produced by the real gate transit, not by a mock of the boundary. Authority INVITATIONS.R4, ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-11",
+      "description": "ORGANIZATION_PENDING_COMMERCIAL_ACCEPTANCE IS NOT A PARTIAL FAILURE. After AB-2 commits and before AB-3 happens, assert the organization, its founder membership as organization_admin, its CommercialAccount association and its audit rows are ALL INTACT, that the founder can still discharge L1, and that NO cleanup path treats the organization as incomplete. An operator or job hunting for organizations without commercial acceptance would otherwise find every freshly founded organization and could delete real customer data. Authority FC_3.THE_STATE_THAT_IS_NOT_A_PARTIAL_FAILURE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-12",
+      "description": "L1 IS PER-ORGANIZATION, NOT PER-COMMERCIALACCOUNT. With organizations A and B governed by the SAME CommercialAccount, discharge L1 for A and assert B is STILL REFUSED. Assert no acceptance relation carries a commercial_account_id and no uniqueness index on one is keyed by it. Authority X-AO-09, I-T4-8, MULTI_ORG.the_CommercialAccount_trap, ratification CA-08.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-13",
+      "description": "L1 IS SKIPPED, NOT FAILED, WITH NO SCOPE. With no organization in request scope, assert NO acceptance query for organization-class instruments is issued at all — the question is not asked. An implementation that refuses instead would refuse every subject at the selector, the very place they go to acquire a scope, producing a lockout indistinguishable from a loop. Authority FC_5.THE_TRAP_THIS_CASE_EXISTS_TO_FORBID.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-14",
+      "description": "AB-2 ROLLBACK LEAVES ZERO ROWS. Force a failure at each step of the composed bootstrap in turn and assert that after each, ZERO rows exist across commercial_accounts, organizations, organization_members, the entitlement substrate and the bootstrap audit rows. There must be no state in which an organization exists without its CommercialAccount, its founding membership, its initial entitlement state, or its audit. Requires the PostgreSQL probe. Authority FC_3, AB-2, HPO-A decision 6.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-15",
+      "description": "AB-2 ROLLBACK DOES NOT DESTROY AB-1. With an account-class acceptance already committed, force AB-2 to fail and assert the acceptance row SURVIVES. A failed bootstrap does not un-accept the Terms. An implementation that wraps L0 and AB-2 in one transaction to simplify the flow destroys evidence on an unrelated failure, and this is the only control that catches it. Authority FC_3.WHAT_MUST_NOT_BE_ROLLED_BACK, ATOMICITY_BOUNDARIES.CROSS_BOUNDARY_RULE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-16",
+      "description": "CONCURRENT IDENTICAL ACCOUNT ACCEPTANCE YIELDS EXACTLY ONE ROW. Two concurrent transactions accept the SAME instrument version for the SAME subject; assert exactly one row exists afterwards and the loser is refused by the I-T3-1 uniqueness invariant rather than producing a duplicate. Requires a real transaction manager — a mocked client cannot observe the race. Authority I-T3-1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-17",
+      "description": "CONCURRENT L1 BY TWO ADMINS YIELDS EXACTLY ONE ROW. Two different active organization_admins of the SAME organization concurrently accept the SAME organization-class instrument version; assert exactly one row exists and the second adds no new fact. Requires the PostgreSQL probe. Authority I-T4-1, HPO-A decision 2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-18",
+      "description": "CONCURRENT BOOTSTRAP YIELDS EXACTLY ONE ORGANIZATION. Two concurrent bootstrap attempts by the same subject produce exactly ONE organization. Assert idempotency by key, not by luck: the live path today has NO idempotency key at all — CAP_05_ORGANIZATION_BOOTSTRAP.md section 1.2 — and its slug uniqueness is check-then-act between the SELECT at app/(authenticated)/app/onboarding/actions.ts:101-105 and the INSERT at :110. Assert also that founder cardinality is still enforced by organizations_self_service_founder_unique. Requires the PostgreSQL probe. Authority BOOTSTRAP_ATOMICITY.PROPERTIES_THAT_MUST_BE_ADDED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-19",
+      "description": "ACCEPTANCE AND VERSION ROWS ARE APPEND-ONLY AT THE DATABASE. Attempt UPDATE and DELETE against an account-class acceptance row, an organization-class acceptance row and a published instrument-version row; assert every attempt is REFUSED by the database, not merely absent from the application surface. This is a privilege and trigger property that a mocked client will happily accept. Requires the PostgreSQL probe. Authority I-T2-2, I-T3-2, I-T4-2, I-X-3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-20",
+      "description": "INSTRUMENT CLASS IS ENFORCED IN BOTH DIRECTIONS. Attempt to record an ORGANIZATION-class instrument through the account-acceptance path and an ACCOUNT-class instrument through the organization-acceptance path; assert BOTH are refused. Assert also that an instrument_key cannot change instrument_class between versions — a class change would move the gate a subject must pass mid-journey. Authority I-T1-2, I-T3-5, I-T4-5.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-21",
+      "description": "A DIGEST MISMATCH IS REFUSED. Attempt to write an acceptance whose snapshotted content digest does NOT equal the referenced version digest; assert refusal. This is what makes tampering with a version row DETECTABLE rather than silently authoritative, and it must be enforced rather than assumed. Authority I-T3-4, I-T4-4, ACCEPTANCE_MODEL.CONTENT_IDENTITY_IS_SNAPSHOTTED_ONTO_THE_ACCEPTANCE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-22",
+      "description": "A VERSION WITHOUT AN EXPLICIT REACCEPT_REQUIRED IS REFUSED. Attempt to publish an instrument version omitting reaccept_required; assert the write is REFUSED because the column is NOT NULL with NO DEFAULT. Assert also that a published version's reaccept_required cannot later be flipped — acceptances have already been evaluated against it, and flipping it would silently revoke or restore currency for subjects who acted on the prior value. Authority I-T2-3, INSTRUMENT_MODEL.reaccept_required.why_no_default.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-23",
+      "description": "A NON-ADMIN MEMBER CANNOT DISCHARGE L1. A subject holding an active membership in the target organization with any role OTHER than organization_admin — viewer included, which is the role an unparseable invitation falls back to at lib/invitations/service.ts:190 — is REFUSED when attempting an organization-class acceptance write. Assert the membership-and-role check is re-verified at the database boundary in the same transaction and is never taken from a client-supplied value. Authority I-T4-6, HPO-A decision 3, ratification MO-05.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-24",
+      "description": "NO SUBJECT CAN ACCEPT FOR ANOTHER SUBJECT. Attempt to write an account-class acceptance whose subject is NOT the authenticated caller — as an organization_admin, as a platform super-admin, and as an ordinary member. Assert all three are refused by the self-scoped write predicate. HPO-A grants no delegation of account-class acceptance and this artifact creates none. Authority I-T3-6, ACCEPTANCE_MODEL.WHO_MAY_WRITE_AN_ACCEPTANCE, ADJUDICATION_FOUNDER_VS_INVITED.A1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-25",
+      "description": "ACCOUNT-CLASS ACCEPTANCE CARRIES NO FABRICATED TENANT SCOPE. Assert that an account-class acceptance row carries no organization_id, and that its audit row is written with a GENUINELY ABSENT organization scope — not a borrowed, fabricated or later-backfilled one. The column is nullable at db/schema.ts:118 and the emitter parameter optional at lib/audit/logger.ts:288 and :407, both measured; whether the RLS insert policy on audit_logs ADMITS such a row was NOT measured by the authoring lane and is the substance of this control. Authority I-T3-7, AUDIT.TENANT_SCOPE_OF_THE_AUDIT_ROW, F-AO-15.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-AO-1",
+      "description": "Replace the stored content identity with one computed by rendering the instrument page or hashing the component file at acceptance time. A control MUST turn RED. If none does, the model has no immutable content identity and every acceptance names a document that changes silently with each deploy. Authority X-AO-03, INSTRUMENT_MODEL.INSTRUMENT_OF_RECORD_VERSUS_PRESENTATION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-2",
+      "description": "Delete the snapshotted digest from the acceptance relation, leaving only the foreign key to the version row. A control MUST turn RED — specifically N-AO-21, which becomes unsatisfiable. Without the snapshot, tampering with a version row is silently authoritative rather than detectable. Authority ACCEPTANCE_MODEL.CONTENT_IDENTITY_IS_SNAPSHOTTED_ONTO_THE_ACCEPTANCE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-3",
+      "description": "Replace the currency predicate with accepted_version == latest_version. P-AO-6 MUST turn RED. This mutation is the naive model HPO-A decision 5 exists to forbid, and its production failure mode is a false lockout of the entire user base on any typo correction. Authority REACCEPTANCE.THE_CURRENCY_PREDICATE.WHAT_THIS_PREDICATE_IS_NOT.not_latest_version_equality.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-4",
+      "description": "Replace the conjunction over the live registry of published account-class instruments with a hardcoded list of instrument keys in application code. A control MUST turn RED when a NEW published account-class instrument that the subject has not accepted fails to make L0 refuse. A hardcoded list silently stops gating every instrument added after it was written. Authority REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-5",
+      "description": "Wrap the currency query in a try/catch whose catch branch returns a permissive value. A control MUST turn RED. This is the single most likely way the entire model is defeated, and it is invisible in every positive test — which is why the mutation must be exercised deliberately rather than trusted to review. Authority FC_6, X-AO-08.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-6",
+      "description": "Move the L0 check from the RESULT of principal resolution to the fresh-resolution branch, after lib/auth/database-context.ts:635. N-AO-7 MUST turn RED. If it does not, the gate is bypassed on every memo-warm path and the defect is intermittent rather than deterministic. Anchors re-measured, not replayed. Authority L0_ATTACHMENT.THE_MEMO_TRAP_IS_INHERITED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-7",
+      "description": "Have the invitation POST handler open its own transaction directly, bypassing withAuthenticatedDatabaseContext in order to own its AB-4 boundary. N-AO-10 MUST turn RED. Owning the transaction boundary and transiting the gate are TWO requirements, and this mutation satisfies the first by breaking the second — bypassing requirePrincipal bypasses both B0 and L0. Authority INVITATIONS.R4.the_trap_in_the_conversion, AB-4.requirement.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-8",
+      "description": "Make L1 REFUSE rather than be SKIPPED when no organization is in request scope. P-AO-8 MUST turn RED. Under this mutation every subject is refused at the selector — the very place they go to acquire a scope — producing a lockout indistinguishable from a loop. Authority FC_5.THE_TRAP_THIS_CASE_EXISTS_TO_FORBID.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-9",
+      "description": "Make the acceptance field on RequestPrincipal optional with a permissive default, and leave one Packet A preservation fixture relying on that default. A Packet A preservation control MUST turn RED. Without this, the suite stays GREEN while silently measuring an UNACCEPTED subject refused before reaching R1..R5 — a green suite proving nothing. This is Packet B's own recorded trap for its verification flag, compounded by a second field. Authority PACKET_A_PRESERVATION.THE_FIXTURE_TRAP_IS_INHERITED_AND_COMPOUNDS.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-10",
+      "description": "Discharge HPO-A decision 8 by dropping ONLY the physical index at db/schema.ts:112, leaving the application-level ceiling at lib/invitations/service.ts:185-187 in place. A control MUST turn RED: invitation acceptance still refuses at :186 before reaching any INSERT the index would have refused. There are TWO ceilings and BOTH must die. Assert separately that dropping the index without a replacement serialisation mechanism makes db/prepared/stella_0006_invitation_capability.sql and db/prepared/stella_0010_organization_bootstrap_capability.sql REFUSE TO APPLY by their own explicit preconditions at :165/:169 and :140/:144. Authority F-AO-02, F-AO-03, MULTI_ORG.REMOVAL_IS_NOT_A_DROP_INDEX.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-11",
+      "description": "Remove the EXISTS-an-actual-acceptance clause from the currency predicate, leaving only the comparison against the greatest reaccept_required version. A control MUST turn RED for a subject with ZERO acceptances. This mutation is the dangerous one: with one instrument version and no version ever marked reaccept_required, a subject who has accepted NOTHING passes. It would appear to work in any environment where no reacceptance has been published — staging included — while the gate is wide open. Authority REACCEPTANCE.THE_CURRENCY_PREDICATE.WHAT_THIS_PREDICATE_IS_NOT.why_that_second_error_is_the_dangerous_one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-12",
+      "description": "Give reaccept_required a DEFAULT of false. N-AO-22 MUST turn RED. Under this mutation an instrument published with a genuine reacceptance obligation silently keeps every stale acceptance current — the fail-open shape Packet B X-B-03 forbids for the same class of reason. Assert also that the opposite default is not silently adopted instead: defaulting true would force the entire user base to reaccept on any correction. NO DEFAULT is the only value that cannot be wrong by omission. Authority I-T2-3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-13",
+      "description": "Add a stored is_current column to an acceptance relation and maintain it on publication. A control MUST turn RED — N-AO-19, because maintaining it requires an UPDATE that append-only forbids. Assert also that no acceptance boolean is denormalized onto organizations, users, organization_members or commercial_accounts. A cached acceptance flag is the same correctness error with a wider blast radius, and it introduces a partial-failure state in which some subjects are correctly marked stale and others are not. Authority I-X-1, I-X-5, I-T3-3, I-T4-3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-14",
+      "description": "Fold the L1 acceptance write into the AB-2 bootstrap transaction, or fold the L0 write into it. A control MUST turn RED — N-AO-15 for the L0 case, and for the L1 case the ordering assertion in P-AO-4 that L1 is not reachable before AB-2 commits. Folding L1 in also makes the model unimplementable for any organization whose administrator later changes or whose instrument later requires reacceptance, both of which reopen the window the fold was meant to eliminate. Authority BOOTSTRAP_ATOMICITY.WHAT_IS_DELIBERATELY_OUTSIDE_THE_BOOTSTRAP_TRANSACTION, CANONICAL_JOURNEY.THE_WINDOW_THIS_CREATES.must_not_be_engineered_away.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests",
+    "ods_poststate"
+  ]
+}
