@@ -369,12 +369,23 @@ export type Eh5Result = {
 
 /**
  * Bound through outcome_proxy_assignments — organization_id NOT NULL,
- * project_id NOT NULL, constrained to the portfolio's member projects — and
- * the joined financial_proxy_versions row's review_status is read with NO
- * organization predicate on that row, so a globally-approved proxy version
- * (organization_id IS NULL) stays reachable. See TENANCY_CONTRACT and
- * MUT-PF3-TENANT-1 — replacing this join with a predicate on
- * financial_proxy_versions.organization_id must make this indicator wrong.
+ * project_id NOT NULL, constrained to the portfolio's SELECTED-RUN member
+ * projects — and the joined financial_proxy_versions row's review_status is
+ * read with NO organization predicate on that row, so a globally-approved
+ * proxy version (organization_id IS NULL) stays reachable. See
+ * TENANCY_CONTRACT and MUT-PF3-TENANT-1 — replacing this join with a
+ * predicate on financial_proxy_versions.organization_id must make this
+ * indicator wrong.
+ *
+ * HPO-PF3-EH5-01 (R2): EH5_SELECTED_RUN_POPULATION =
+ * MEMBER_PROJECTS_WITH_A_SELECTED_RUN. "Assignments belonging to the
+ * selected run" is operationalized as assignments of member projects for
+ * which the frozen PF1/PF3 selected-run derivation actually returned a
+ * selected run — the SAME runScopedMembers population EH-2/EH-3/EH-4/EH-6
+ * already use, never the full member-project list. outcome_proxy_assignments
+ * carries no run FK and PF3's authority defines no run-specific assignment
+ * snapshot, so a project with NO selected run contributes NOTHING to EH-5
+ * (R1's defect: it contributed via the unscoped member-project list).
  */
 type Eh5Assignment = { id: string; projectId: string; proxyId: string; financialProxyVersionId: string | null }
 
@@ -417,13 +428,22 @@ export function eh5FromRows(
   }
 }
 
-async function computeEh5(
-  memberProjectIds: readonly string[],
+/**
+ * Exported (unlike the other computeEh* functions) specifically so
+ * GZ-R2-SCOPING-CONTROL can call it directly with a deliberately WRONG
+ * population (M-EH5-R2-1's mutation) as well as the correct
+ * runScopedMembers population — see lib/portfolios/evidence-health.test.ts.
+ */
+export async function computeEh5(
+  members: readonly RunScopedMember[],
   organizationId: string
 ): Promise<Eh5Result> {
-  if (memberProjectIds.length === 0) {
+  if (members.length === 0) {
     return { numerator: 0, denominator: 0, unbound: 0, denominatorRows: [], unboundRows: [] }
   }
+  // HPO-PF3-EH5-01: the SELECTED-RUN project population, never the full
+  // member-project list — see the doc comment above.
+  const memberProjectIds = members.map((m) => m.projectId)
 
   const assignments: Eh5Assignment[] = []
   for (const chunk of chunkArray(memberProjectIds, PORTFOLIO_READ_MODEL_CHUNK_SIZE)) {
@@ -566,10 +586,9 @@ export async function getPortfolioEvidenceHealth(portfolioId: string): Promise<P
     computeEh2(runScopedMembers, ctx.organization.id),
     computeEh3(runScopedMembers),
     computeEh4(runScopedMembers, ctx.organization.id),
-    computeEh5(
-      memberProjects.map((p) => p.id),
-      ctx.organization.id
-    ),
+    // HPO-PF3-EH5-01: runScopedMembers (selected-run population), NOT
+    // memberProjects (the unscoped full member-project list — R1's defect).
+    computeEh5(runScopedMembers, ctx.organization.id),
     computeEh6(runScopedMembers, ctx.organization.id),
   ])
 
