@@ -1,0 +1,371 @@
+{
+  "manifest_id": "COMMERCIAL_STATE_ENTITLEMENT_BILLING_TEST_MANIFEST_v1.0.0",
+  "node_or_batch": "CB-1..CB-9 (LANE AP implementation packages)",
+  "authority_reference": "docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json",
+  "AS_OF_HEAD": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
+
+  "status": "FROZEN_BEFORE_IMPLEMENTATION. No test in this manifest exists at AS_OF. The manifest is the contract each CB package is measured against, not a description of an existing suite.",
+
+  "dependencies": {
+    "authority": [
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json (CE-1..CE-9, preserved)",
+      "docs/ops/capabilities/CAP_03_STRIPE.md"
+    ],
+    "code_preconditions": [
+      "CB-1 and CB-2 for every state control.",
+      "CE-3 and CE-4 for every grant control (EC-6: no enforcement-changing test may assert a live grant before CE-4 seeds one).",
+      "CE-5 for every projection control.",
+      "CE-8 and tenancy S5 for the manual-activation controls."
+    ],
+    "lineage": "Every DDL-bearing control is blocked on FUTURE_DDL.LINEAGE_REDERIVATION_REQUIRED = YES. A control cannot be written green against DDL that has no allocated lineage."
+  },
+
+  "protected_surfaces": [
+    "db/migrations/0068_commercial_account_ce1.sql - SHIPPED, NEVER EDITED. A control that requires editing it has misread MC-1.",
+    "db/prepared/stella_0008_stripe_webhook_identity.sql - its COALESCE identity protection at :782 and :788, its actor_user_id NULL rule at :795-797, its event_id PRIMARY KEY idempotency, and its rolbypassrls-false postcondition at :938 are all PRESERVED. A control that turns any of them green after removal is measuring the wrong thing.",
+    "The CE-3 ENTITLEMENT_GRANT target_shape - no control may assert a column, source or limit_kind this authority added, because it added none.",
+    "organizations.status - no control may assert that a commercial transition writes it. Several MUST assert that it does NOT (PI-1)."
+  ],
+
+  "postgres_requirements": {
+    "real_postgres": "REQUIRED for every RLS, policy, advisory-lock, partial-unique-index and CHECK-constraint control. A mock cannot refuse a write the way FORCE ROW LEVEL SECURITY refuses it, and a control that passes against a mock proves nothing about the posture it claims to test.",
+    "roles": "The disposable harness must create the capability role and the app role as SEPARATE logins. A control run as the table owner cannot observe FORCE RLS at all.",
+    "harness_caution": "setupStatus 'SKIPPED' is the INITIALIZATION value of the disposable PG harness, not a verdict. A control suite that reads it as 'no PostgreSQL needed' silently skips every control in this section. Assert the harness reached a terminal setup state before trusting any skip."
+  },
+
+  "sentinels": [
+    "SENTINEL-FREE-10: the literal integer 10 must be unreachable from any commercial write path. A grep-plus-runtime sentinel, because the constant legitimately survives for display.",
+    "SENTINEL-ARRIVAL-ORDER: received_at must not appear in any ordering comparison. Its presence there is the MC-2 defect restored.",
+    "SENTINEL-ONE-TRANSACTION: no test fixture may observe a commercial state write and an entitlement_grants write sharing a transaction id."
+  ],
+
+  "known_conditions": [
+    "CAP-03 is feature-flagged off and stella_0008 is applied in no database at AS_OF. Webhook controls run against the prepared package in the disposable harness, never against a live environment.",
+    "entitlement_grants does not exist at AS_OF; every grant control is BLOCKED until CE-3 and CE-4.",
+    "All organizations.commercial_account_id are NULL at AS_OF; a control asserting a governed association must seed it through the CE-2 transfer contract, not beside it.",
+    "event.created has second granularity (OF-2). The equal-timestamp control asserts ESCALATION, not resolution."
+  ],
+
+  "positive_controls": [
+    {
+      "id": "P-01",
+      "requires": "first binding",
+      "asserts": "A first-party authenticated org-admin call to the binding verb on an account with stripe_customer_id NULL creates exactly one Stripe Customer and persists the RETURNED id onto commercial_accounts.",
+      "package": "CB-3"
+    },
+    {
+      "id": "P-02",
+      "requires": "idempotency",
+      "asserts": "Two sequential binding calls for the SAME commercial_account_id yield ONE customer id, one persisted value, and the second call returns the existing id as a NO-OP rather than an error (OD-2).",
+      "package": "CB-3"
+    },
+    {
+      "id": "P-03",
+      "requires": "idempotency",
+      "asserts": "Two CONCURRENT binding calls for the same account, both admitted past the application check, yield one customer id. Serialized by the advisory lock; if the lock is bypassed, UNIQUE(stripe_customer_id) refuses the second.",
+      "package": "CB-3",
+      "postgres": true
+    },
+    {
+      "id": "P-04",
+      "requires": "duplicate webhook",
+      "asserts": "The same event_id delivered twice completes once. The second delivery writes no second audit row, applies no second state transition and closes no grant a second time.",
+      "package": "CB-5"
+    },
+    {
+      "id": "P-05",
+      "requires": "out-of-order webhook",
+      "asserts": "An event whose source_event_created_at is newer than the last completed in scope is APPLIED.",
+      "package": "CB-5"
+    },
+    {
+      "id": "P-06",
+      "requires": "past_due",
+      "asserts": "An observed past_due transitions commercial_status to PAST_DUE and writes exactly ONE audit row of action commercial.state.entered.",
+      "package": "CB-5"
+    },
+    {
+      "id": "P-07",
+      "requires": "past_due",
+      "asserts": "Recovery from PAST_DUE (observed active, or observed paid invoice) returns the account to ACTIVE_STRIPE with capacity unchanged throughout.",
+      "package": "CB-5"
+    },
+    {
+      "id": "P-08",
+      "requires": "unpaid",
+      "asserts": "An observed unpaid transitions to SUSPENDED, sets the EC-4 gate to BLOCKED, and closes every live PLAN grant with one audit row per closure naming the commercial cause.",
+      "package": "CB-5, CB-6, CB-7"
+    },
+    {
+      "id": "P-09",
+      "requires": "unpaid",
+      "asserts": "A SUSPENDED tenant retains sign-in, membership, role, and READ access to its own historical evidence and reports (PAYMENT_SUSPENSION.read_side_rule).",
+      "package": "CB-7"
+    },
+    {
+      "id": "P-10",
+      "requires": "cancel",
+      "asserts": "An observed cancellation transitions to BOOTSTRAP, sets stripe_subscription_id to NULL, RETAINS stripe_customer_id, and closes every live PLAN grant.",
+      "package": "CB-5, CB-6"
+    },
+    {
+      "id": "P-11",
+      "requires": "reactivation",
+      "asserts": "SUSPENDED with the SAME subscription observed active returns to ACTIVE_STRIPE and opens NEW grant rows - never un-closing the old ones (CE-3 append_only_rule).",
+      "package": "CB-5, CB-6"
+    },
+    {
+      "id": "P-12",
+      "requires": "reactivation",
+      "asserts": "BOOTSTRAP after cancellation re-subscribing REUSES the retained stripe_customer_id and creates no second Stripe Customer.",
+      "package": "CB-3, CB-4"
+    },
+    {
+      "id": "P-13",
+      "requires": "subscription replacement",
+      "asserts": "A replacement closes the outgoing subscription's effect and opens the incoming one's as ONE governed act, with ONE audit row naming BOTH subscription ids.",
+      "package": "CB-5"
+    },
+    {
+      "id": "P-14",
+      "requires": "manual activation",
+      "asserts": "An authorized platform-admin activation from BOOTSTRAP with stripe_subscription_id NULL enters ACTIVE_WITHOUT_STRIPE, opens grants of source COMMERCIAL_EXCEPTION with commercial_account_id NOT NULL, and audits with a non-NULL actor_user_id and a non-empty reason.",
+      "package": "CB-8"
+    },
+    {
+      "id": "P-15",
+      "requires": "manual activation",
+      "asserts": "Re-executing the SAME authorization_reference is a NO-OP: one activation, one audit row.",
+      "package": "CB-8"
+    },
+    {
+      "id": "P-16",
+      "requires": "RLS",
+      "asserts": "The capability role, with app.commercial_account_id set to account A, can UPDATE the permitted columns of A's row.",
+      "package": "CB-1",
+      "postgres": true
+    },
+    {
+      "id": "P-17",
+      "requires": "grant close/reopen",
+      "asserts": "Closing a live grant sets effective_to exactly once and a subsequent reopen INSERTS a new row, leaving exactly one live row per (organization_id, capability_key) at every instant.",
+      "package": "CB-6",
+      "postgres": true
+    },
+    {
+      "id": "P-18",
+      "requires": "no legacy Free=10 semantic",
+      "asserts": "After a cancellation, the projected stella_monthly_quota is 0 (limit_kind BLOCKED), and a Stella call refuses with entitlement_blocked.",
+      "package": "CB-9"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "N-01",
+      "requires": "first binding",
+      "asserts": "A binding attempt supplying a Stripe customer id from the REQUEST is REFUSED. No inbound field reaches the persisted value.",
+      "package": "CB-3"
+    },
+    {
+      "id": "N-02",
+      "requires": "cross-tenant customer binding attack",
+      "asserts": "An org-admin of account B attempting to bind a stripe_customer_id already held by account A is REFUSED and ESCALATES. Asserted at BOTH layers: the verb refuses, AND a direct ORM write bypassing the verb is refused by UNIQUE(stripe_customer_id).",
+      "package": "CB-3",
+      "postgres": true,
+      "tier": "A"
+    },
+    {
+      "id": "N-03",
+      "requires": "cross-tenant customer binding attack",
+      "asserts": "A webhook event resolving to an account is resolved ONLY from the Stripe identity columns. An event carrying a buyer-supplied client_reference_id naming a different organization does NOT reach that organization (STRIPE_BOUNDARY.identity_rule).",
+      "package": "CB-5",
+      "tier": "A"
+    },
+    {
+      "id": "N-04",
+      "requires": "out-of-order webhook",
+      "asserts": "An event whose source_event_created_at is STRICTLY OLDER than the last completed in scope is REFUSED as stale_event, marked terminally ignored, answered 200 (not 503), and writes NO state change and NO grant change.",
+      "package": "CB-5"
+    },
+    {
+      "id": "N-05",
+      "requires": "out-of-order webhook",
+      "asserts": "Two events with EQUAL source_event_created_at where the second would move state BACKWARDS: REFUSED as ambiguous_order, marked failed, ESCALATES. Not silently applied and not silently dropped (OF-2).",
+      "package": "CB-5"
+    },
+    {
+      "id": "N-06",
+      "requires": "past_due",
+      "asserts": "Entering PAST_DUE writes ZERO rows to entitlement_grants and ZERO entitlement audit rows. The ABSENCE is the control (OD-4). Asserted by counting rows before and after, not by inspecting a code path.",
+      "package": "CB-5",
+      "note": "This is the single most easily regressed clause of the authority."
+    },
+    {
+      "id": "N-07",
+      "requires": "unpaid",
+      "asserts": "Entering SUSPENDED does NOT write organizations.status, does NOT delete any organization_members row, and does NOT delete any evidence or report row (PI-1).",
+      "package": "CB-5, CB-6"
+    },
+    {
+      "id": "N-08",
+      "requires": "cancel",
+      "asserts": "The cancellation path never invokes a price resolver. mapStripePriceToQuota is not called, and the value 10 appears in no write, no grant and no projection (SENTINEL-FREE-10).",
+      "package": "CB-9"
+    },
+    {
+      "id": "N-09",
+      "requires": "manual activation",
+      "asserts": "Manual activation is REFUSED from ACTIVE_STRIPE, from PAST_DUE, from SUSPENDED, from ACTIVE_WITHOUT_STRIPE and from CLOSED. Only BOOTSTRAP is eligible (OD-7). Five refusals, enumerated, not sampled.",
+      "package": "CB-8"
+    },
+    {
+      "id": "N-10",
+      "requires": "manual activation",
+      "asserts": "Manual activation with a NULL actor_user_id, or an empty reason, is REFUSED. A machine cannot manually activate.",
+      "package": "CB-8"
+    },
+    {
+      "id": "N-11",
+      "requires": "RLS",
+      "asserts": "The app role (uellix_app) can NEITHER read NOR write commercial_accounts, before and after the CB-1 policy is added. The policy admits the capability role only and opens nothing tenant-facing.",
+      "package": "CB-1",
+      "postgres": true
+    },
+    {
+      "id": "N-12",
+      "requires": "RLS",
+      "asserts": "The capability role with app.commercial_account_id set to account A CANNOT touch account B's row - neither UPDATE nor SELECT. One row per transaction, enforced by the policy predicate and not by the verb.",
+      "package": "CB-1",
+      "postgres": true
+    },
+    {
+      "id": "N-13",
+      "requires": "RLS",
+      "asserts": "The capability role has rolbypassrls false, rolsuper false, rolcreaterole false, rolcreatedb false - asserted as a postcondition, exactly as stella_0008:938 does for uellix_cap_stripe.",
+      "package": "CB-1",
+      "postgres": true
+    },
+    {
+      "id": "N-14",
+      "requires": "grant close/reopen",
+      "asserts": "A second UPDATE of effective_to on an already-closed grant is REFUSED, and a DELETE of any grant row is REFUSED (CE-3 append_only_rule).",
+      "package": "CB-6",
+      "postgres": true
+    },
+    {
+      "id": "N-15",
+      "requires": "subscription replacement",
+      "asserts": "An event carrying a subscription id that is neither the live one nor NULL, for an account already holding a different live subscription, is REFUSED as subscription_conflict and ESCALATES. It is NOT applied by overwriting.",
+      "package": "CB-5"
+    },
+    {
+      "id": "N-16",
+      "requires": "duplicate webhook",
+      "asserts": "A duplicate delivery of an event already marked completed re-applies NOTHING - asserted by comparing full table snapshots before and after, not by reading a status field.",
+      "package": "CB-5"
+    },
+    {
+      "id": "N-17",
+      "requires": "no legacy Free=10 semantic",
+      "asserts": "No commercial write path reaches STRIPE_QUOTAS.free. Asserted at runtime by instrumenting the accessor, not only by grep - a grep passes while an alias survives.",
+      "package": "CB-9"
+    },
+    {
+      "id": "N-18",
+      "requires": "out-of-order webhook",
+      "asserts": "ANY event arriving for a CLOSED account is recorded and terminally ignored with cause account_closed, regardless of its ordering position. CLOSED is terminal.",
+      "package": "CB-5"
+    },
+    {
+      "id": "N-19",
+      "requires": "manual activation",
+      "asserts": "A Stripe event carrying a subscription id for an account in ACTIVE_WITHOUT_STRIPE is REFUSED as manual_basis_conflict and ESCALATES. It does not silently convert the account to ACTIVE_STRIPE.",
+      "package": "CB-5, CB-8"
+    },
+    {
+      "id": "N-20",
+      "requires": "state machine closure",
+      "asserts": "Every transition NOT in the enumerated legal-pair table is REFUSED as illegal_transition. Asserted over the FULL 6x6 cross product minus the legal pairs - a sampled subset would leave the untested pairs exactly where a defect hides.",
+      "package": "CB-2"
+    }
+  ],
+
+  "mutation_controls": {
+    "principle": "A mutation control must be a change that a CORRECT suite turns RED. Weakening an assertion (toBe to toContain, deleting an assertion) can never do that - it makes a passing suite pass differently. Every mutation below therefore mutates the IMPLEMENTATION toward the pre-authority defect and names the control that must go RED.",
+    "mutations": [
+      {
+        "id": "M-01",
+        "mutate": "Restore the unconditional UPDATE: remove the ORD-3 staleness guard from the apply verb.",
+        "must_turn_red": "N-04",
+        "defect_restored": "MC-3"
+      },
+      {
+        "id": "M-02",
+        "mutate": "Order by received_at instead of source_event_created_at.",
+        "must_turn_red": "N-04",
+        "defect_restored": "MC-2",
+        "note": "This mutation is subtle: with events that arrive in order it changes nothing. The control must therefore deliver a stale event LATE, or the mutation survives and the control is vacuous."
+      },
+      {
+        "id": "M-03",
+        "mutate": "Close PLAN grants on entry to PAST_DUE (the intuitive 'downgrade now, restore on payment').",
+        "must_turn_red": "N-06",
+        "defect_restored": "OD-4 violation"
+      },
+      {
+        "id": "M-04",
+        "mutate": "Route the cancellation path through the price resolver with priceId null.",
+        "must_turn_red": "N-08 and P-18",
+        "defect_restored": "MC-4 / the Free=10 inversion. Two controls must go red, because a mutation that reddens only the sentinel and not the behavioural assertion has not been caught where it matters."
+      },
+      {
+        "id": "M-05",
+        "mutate": "Drop UNIQUE(stripe_customer_id).",
+        "must_turn_red": "N-02's second layer specifically",
+        "note": "N-02's verb layer stays GREEN under this mutation - the application check still refuses. That is the point: if N-02 is written as one assertion it survives, and the schema defence is untested. N-02 MUST assert both layers separately."
+      },
+      {
+        "id": "M-06",
+        "mutate": "Move the ORD-3/ORD-4 guard OUTSIDE the advisory lock (evaluate, then lock, then write).",
+        "must_turn_red": "a concurrency control derived from P-03's shape applied to N-04",
+        "defect_restored": "ORD-6. A guard two concurrent events can both pass is not a guard, and only a concurrent control can see it."
+      },
+      {
+        "id": "M-07",
+        "mutate": "Merge the state write and the grant write into ONE transaction.",
+        "must_turn_red": "SENTINEL-ONE-TRANSACTION",
+        "defect_restored": "The CC-3 fusion; STRIPE_BOUNDARY.downstream_reaction violation."
+      },
+      {
+        "id": "M-08",
+        "mutate": "Make ACTIVE_WITHOUT_STRIPE reachable from SUSPENDED.",
+        "must_turn_red": "N-09",
+        "defect_restored": "OD-7 violation - manual activation papering over an unpaid live subscription."
+      },
+      {
+        "id": "M-09",
+        "mutate": "Give the capability role BYPASSRLS instead of a policy.",
+        "must_turn_red": "N-13, and N-12 must ALSO go red",
+        "note": "N-13 alone is a role-attribute assertion and could be satisfied by a role that is merely differently over-privileged. N-12 going red proves the row bound actually held."
+      },
+      {
+        "id": "M-10",
+        "mutate": "Return 503 instead of 200 for a stale event.",
+        "must_turn_red": "N-04",
+        "defect_restored": "An infinite refusal loop: Stripe redelivers, the event is still stale, forever."
+      }
+    ]
+  },
+
+  "exit_gates": [
+    "G-1 Every positive control GREEN and every negative control GREEN, on real PostgreSQL for every control marked postgres:true.",
+    "G-2 Every mutation control turns its named control RED. A mutation that leaves the suite green is a GAP in the suite, not a pass.",
+    "G-3 The full 6x6 transition cross product is enumerated by N-20 - not sampled.",
+    "G-4 SENTINEL-FREE-10, SENTINEL-ARRIVAL-ORDER and SENTINEL-ONE-TRANSACTION all clean.",
+    "G-5 No control edits db/migrations/0068_commercial_account_ce1.sql or any other shipped migration.",
+    "G-6 pnpm ods:prestate, pnpm authority:seal:verify, pnpm ods:scope and pnpm ods:poststate all PASS for the implementing lane, under lineage separately derived.",
+    "G-7 The independent audit named as NEXT has run and returned PASS."
+  ]
+}
