@@ -1,0 +1,229 @@
+{
+  "evidence_id": "COMMERCIAL_ACCOUNT_CE1_IMPLEMENTATION_EVIDENCE_v1.0.0",
+  "document_class": "IMPLEMENTATION_EVIDENCE_NOT_AUTHORITY_NOT_AUDIT",
+  "is_authority": false,
+  "self_certification": "NONE — this file records measured outputs only. It does not certify CE-1 closed and does not replace the independent Opus exact-object audit this mission's NEXT gate names.",
+
+  "mission": "COMMERCIAL-ACCOUNT-CE1-IMPLEMENTATION-R1 (Lane HC)",
+
+  "authority_references": {
+    "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
+    "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json — governs CE1_IMPLEMENTATION_SURFACE, BASELINE_GROWTH_CONTRACT, BASELINE_UNIT_SHAPE, JOURNAL_RULE",
+    "grant": "HPO-ODS-W2-26 (scripts/ods-scope.ts PROTECTED_GRANTS, 14th row, bound to codex/commercial-account-ce1-implementation-r1, patterns db/migrations/**, db/prepared/journal/**, db/prepared/checkpoint-b0/observation.sql) — already registered and integrated (PR #125, merge 21c3fc21) before this mission began; not re-registered here."
+  },
+
+  "prestate": {
+    "BASE_AT_START": "07c33c953bd8e0888d13786011e54a5ce98b196a",
+    "CURRENT_LIVE_AT_FINALIZATION": "07c33c953bd8e0888d13786011e54a5ce98b196a — origin/integration/commercial-v1 measured identical to BASE_AT_START at every checkpoint of this mission (initial, pre-heavy-lock resume, post-heavy-lock resume). Zero intervening commits.",
+    "open_sibling_prs_at_finalization": "PR #123 (FIBDB-052 P1 authority+manifest) and PR #126 (Portfolio PF3 implementation), both open against integration/commercial-v1, neither merged — measured via `gh pr list`. Neither changed db/schema.ts, db/migrations/**, or any CE-1 write surface at BASE_AT_START, and neither is reachable from origin/integration/commercial-v1.",
+    "migration_ordinal_re_measured_before_generation": "Ceiling was still 0067 (68 journal entries) at the exact moment of generation — unmoved since BASE_AT_START. 0068 taken.",
+    "dependency_install": {
+      "command": "pnpm install --frozen-lockfile",
+      "result": "SUCCESS — 916 resolved, 0 downloaded outside the lockfile",
+      "provenance": "git hash-object package.json pnpm-lock.yaml unchanged before/after (d0341dec.../2faa38c7...); node_modules and every .pnpm symlink resolve inside this worktree (fs.realpathSync('node_modules') === this worktree path); drizzle-kit/vitest/tsc/tsx binaries all point inside node_modules/.bin of this worktree. C:\\node_modules never consulted."
+    }
+  },
+
+  "schema_diff": {
+    "path": "db/schema.ts",
+    "commercial_accounts": "7 columns exactly as frozen (id, legal_name, billing_country, billing_contact_email, commercial_status, created_at, updated_at), one CHECK constraint (commercial_status_check, 4-value closed set in order).",
+    "organizations_commercial_account_id": "uuid, nullable, no default, FK -> commercial_accounts(id) ON DELETE RESTRICT, appended into the ALREADY-EXISTING organizations (table) => [...] callback (added by the intervening Multi-org S1 migration 0066) rather than creating a new one — CE1-A-F-2 of the amendment is moot at this base, re-measured rather than inherited.",
+    "index": "index('idx_organizations_commercial_account_id').on(table.commercialAccountId) — ordinary non-unique b-tree."
+  },
+
+  "migration": {
+    "generation_method": "pnpm db:generate (drizzle-kit generate, NO --custom) — inspected, contained only CE-1-authorized DDL (CREATE TABLE commercial_accounts, ADD COLUMN + FK + CREATE INDEX on organizations). No unrelated DDL produced.",
+    "ordinal": "0068",
+    "file": "db/migrations/0068_commercial_account_ce1.sql",
+    "slug_disposition": "drizzle-kit's own random slug (lonely_silver_fox) was renamed to the descriptive commercial_account_ce1 before any snapshot/journal reference was written, matching repo convention (0065_fib_sensitivity_model, 0066_multiorg_s1_founder_traceability, 0067_tenancy_refusal_audit_insert_policy).",
+    "sha256_lf_normalized": "f04e73571e234944e642ad23e8740814d9a76ac16c43d6c13d9effa7f284b099",
+    "rls_hand_extension": "ALTER TABLE commercial_accounts ENABLE ROW LEVEL SECURITY; ALTER TABLE commercial_accounts FORCE ROW LEVEL SECURITY; — appended after the generated DDL, in the same migration, zero CREATE POLICY statements. Matches the repo's established 'generated cleanly by drizzle-kit generate; RLS is hand-authored below' pattern (0051/0063/0064/0065).",
+    "scanner_proof": "db/hosted/baseline-scanner.ts scanBaselineSql() applied to the final file: tablesCreated=['public.commercial_accounts'], rlsEnabledTables=['public.commercial_accounts'] (length 1, not 2 — FORCE is invisible to the ENABLE-only regex, exactly as the amendment's SCANNER_BEHAVIOUR_RE_DERIVED predicted), policiesCreated=[], securitySurface=[] (digest e3b0c442... = SHA-256 of the empty string, matching the manifest's omission convention).",
+    "snapshot_chain": "db/migrations/meta/0068_snapshot.json.prevId === 0067_snapshot.json.id (70ed037e-9ef7-461c-9899-2488b129b570) — verified.",
+    "journal_entry": "{ idx: 68, tag: '0068_commercial_account_ce1', version: '7', breakpoints: true } appended to db/migrations/meta/_journal.json (69 entries total, 0..68)."
+  },
+
+  "baseline_and_journal": {
+    "baseline_unit": {
+      "ordinal": 81,
+      "id": "0068_commercial_account_ce1.sql",
+      "kind": "drizzle-migration",
+      "dependsOn": ["0067_tenancy_refusal_audit_insert_policy.sql"],
+      "dml": "none",
+      "reapply": "destructive-on-reapply",
+      "expect": "{ rlsEnabledTableCount: 1 } — securitySurfaceDigest correctly OMITTED (empty surface)."
+    },
+    "baseline_verify": "PASS — 81 units, order pinned, hashes match, derived scan matches every pinned expectation.",
+    "journal_generate": "82 wrapper files written (000 bootstrap + 81 units): 1 new (081_0068_commercial_account_ce1.sql) + 80 EXISTING non-bootstrap wrappers header-regenerated in place (git diff --stat: 80 files changed, 80 insertions(+), 80 deletions(-) — exactly one line per file, the 'Unit N/80' -> 'Unit N/81' header; \\ir target, Source SHA256 pin and spliced SQL untouched on every one; db/prepared/journal/000_journal_bootstrap.sql unaffected).",
+    "journal_verify": "PASS — all 82 wrappers regenerate byte-identically.",
+    "b0_observation": {
+      "generate": "pnpm b0:observation:generate",
+      "verify": "PASS — the probe regenerates byte-identically from the corpus.",
+      "diff": "+2 lines: one new UNION ALL arm for public.commercial_accounts row-count, nothing else changed."
+    },
+    "a1_status": {
+      "write": "pnpm a1:status:write",
+      "verify": "PASS — the recorded verdict is what the contract computes over the recorded corroboration.",
+      "diff": "Deterministic drift only: 'refused: 30 baseline unit(s) missing' -> 'refused: 31 baseline unit(s) missing' (pre-existing PROVISIONING_BASELINE_INCOMPLETE refusal against a stale hosted corroboration target, unrelated to CE-1, present before this mission and unchanged in kind)."
+    },
+    "baseline_rehearsal": {
+      "requirement": "OPTIONAL per the amendment's KNOWN_CONDITIONS.rehearsal_artifact_disposition — regenerated anyway once LOCK-HEAVY-LOCAL-PG was available, clearing both governed conditions rather than leaving them deferred.",
+      "command": "pnpm baseline:rehearsal:local",
+      "result": "PRISTINE cluster true; RUN A failed at 0039 as predicted true; RUN N1 failed at 0042 with 42704 true; IDENTITY applied 0 tables true; RUN B applied all 81 units true; 0044 guard true; CHECKPOINT B0 clean true; S1 post-baseline bootstrap true; PRESENT control created the 6th trigger true; 0 leftover containers true.",
+      "sole_write": "artifacts/baseline-rehearsal/latest.json (authorized: artifacts/** is not in DEFAULT_PROTECTED_PATTERNS; ordinary --allow only)."
+    }
+  },
+
+  "reactive_pins": {
+    "rule_applied": "Every count re-measured at this mission's own base, never inherited from the amendment's stale 78/68/79 figures (two intervening lanes, HPO-ODS-W2-20/21 and HPO-ODS-W2-25, had already advanced live state to 80/68/80/81 before this mission started).",
+    "hosts": [
+      { "path": "tests/hosted/baseline-manifest.test.ts", "moved": "80->81 units, 68->69 drizzle; supabase(2)/policy(10) untouched" },
+      { "path": "tests/hosted/baseline-journal-wrapper.test.ts", "moved": "80->81 (BASELINE_UNITS.length+1 self-adapting sites left untouched)" },
+      { "path": "tests/hosted/operator-runner.test.ts", "moved": "80->81 (per-unit non-pins at 0031_rls_core.sql left untouched)" },
+      { "path": "tests/eval/stella-release/hosted-baseline-gate.test.ts", "moved": "evidence.unitCount/superuserFreeUnits 80->81" },
+      { "path": "tests/eval/stella-release/hosted-baseline-gate.ts", "moved": "the raw pin (line ~435, manifestOk) 80->81 and the DERIVED N+1 trap (line ~411, firstProvisioning.steps.length) 81->82 — plus the missing HPO-ODS-W2-25 derivation comment this mission found absent from one block was added alongside CE-1's own line, without touching the prior lane's history." }
+    ]
+  },
+
+  "structural_tests": {
+    "path": "tests/commercial/ce1-commercial-account.test.ts",
+    "result": "25/25 PASS",
+    "proves": "exact 7-column shape and names; exact 4-value CHECK in order; organizations.commercial_account_id nullable/no-default; FK ON DELETE RESTRICT (not CASCADE/SET NULL); non-unique index; ADD COLUMN carries no DEFAULT and zero DML statements; ENABLE present; FORCE present (asserted directly — the scanner is blind to it, CE1-A-F-1); ENABLE precedes FORCE in the same migration as CREATE TABLE; zero CREATE POLICY; empty security-surface digest; manifest unit shape (kind/dml/reapply/expect/dependsOn with no false edge to 0031_rls_core.sql); sha256 matches the on-disk migration; every legacy organizations commercial column still live; db/identity-context.ts never reads commercial_account_id (M-10 static half); no RLS predicate anywhere in db/migrations/**/*.sql references commercial_account_id (PG-1 static half, exhaustive sweep)."
+  },
+
+  "real_pg": {
+    "path": "tests/postgres/ce1-commercial-account.pg.test.ts",
+    "gate": "UELLIX_PG_TESTS=1, canonical disposable harness (scripts/db-audit-disposable.ts), throwaway container on 127.0.0.1, ephemeral port, no bind mounts, teardown in finally.",
+    "probe_count": 19,
+    "test_file_total": 23,
+    "result": "23/23 PASS on the second run — the first run surfaced 4 genuine test-authoring bugs (not implementation defects), each fixed with the measured evidence: (1) two fixture UUIDs used invalid hex digits 'x'/'y'; (2) PG-3-2 demanded the RLS-wall message specifically, but CE-1's migration grants uellix_writer NO table privilege on commercial_accounts at all (measured: db/baseline/stella_g2_schema.sql grants every OTHER public table per-table, no ALTER DEFAULT PRIVILEGES covers schema public, and CE-1 issues no GRANT) — the ACL wall is equally correct denial evidence, so the assertion was widened to accept either message, with the RLS mechanism itself independently proven by PG-3-0c/0d and the two FORCE/policy mutation controls; (3) CE1-FK-1 expected SQLSTATE 23001 (restrict_violation) but PostgreSQL implements ON DELETE RESTRICT via 23503 (foreign_key_violation) — corrected and renamed; (4) MUT-PG-CE1-2 had a bare SELECT inside a DO block (PL/pgSQL requires PERFORM) and, once fixed, exposed that a hypothetical policy alone cannot leak data without a table GRANT either — the mutation now adds both, modeling the real regression; (5) MUT-PG-CE1-3's CASCADE mutation was blocked by the fixture's own unrelated organization_members FK, unrelated to what the control was proving — fixed by clearing those rows first, inside the same rolled-back transaction.",
+    "proves": {
+      "PG-3": "uellix_app (tenant-facing runtime role) denied SELECT/INSERT/UPDATE/DELETE on commercial_accounts (PG-3-1..4); platform super-admin ALSO denied (PG-3-5, Platform Admin access is CE-8's, not CE-1's); role is asserted NOT rolbypassrls and the table's asserted owner is uellix_owner not uellix_app (PG-3-0a/0b); pg_class.relrowsecurity AND relforcerowsecurity both true (PG-3-0c); zero rows in pg_policies for the table (PG-3-0d).",
+      "PG-1": "an OrgA-scoped subject sees exactly 1 organization and the SENTINEL_SIBLING_ORG_CANARY_ROW (OrgB, sharing CommercialAccount X) never appears (PG-1-1); the reverse holds for OrgB (PG-1-2); current_user_org_ids() is not widened by the shared account (PG-1-3).",
+      "N-16": "SENTINEL_UNGOVERNED_ORG's commercial_account_id reads NULL and grants no extra visibility.",
+      "P-3": "reassigning commercial_account_id overwrites the scalar, never stacks.",
+      "FK/reapply": "ON DELETE RESTRICT refuses 23503 naming the CE-1 FK by name; a second CREATE TABLE refuses 42P07 (destructive-on-reapply, as classified).",
+      "mutations": "FORCE removed -> table owner CAN then read (proving FORCE was load-bearing); a hypothetical GRANT+POLICY pair added -> tenant reads leak (proving PG-3-0d/PG-3-1 would catch a real regression); RESTRICT relaxed to CASCADE -> deleting the account silently drops the organization (proving RESTRICT was load-bearing)."
+    },
+    "leaked_containers": {
+      "pre_state_containers": "19 pre-existing local containers recorded by name/image/status before any CE-1 PG run.",
+      "post_state_containers": "Identical, save one UNRELATED pre-existing crash-looping container's elapsed-time text (same name/image, still 'Restarting') — not created or removed by this campaign.",
+      "result": "ZERO leaked containers from either CE-1 campaign."
+    }
+  },
+
+  "full_regression": {
+    "command": "pnpm test (vitest run, default project)",
+    "raw_result": "381 failed test files -> 8 failed test files | 10644 passed | 406 skipped (11075 total), 25 individual test failures",
+    "classification": {
+      "CE1_CAUSED_BLOCKING": [
+        {
+          "test_file": "tests/tenancy/s1-founder-traceability.test.ts",
+          "test_id": "has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit",
+          "finding": "This pre-existing test hardcodes the exact migration that displaces S1 from the tail of db/migrations (previously the S3-refusal-audit lane, HPO-ODS-W2-25, which itself RETARGETED this same assertion when it displaced S1). CE-1's migration 0068 is now a SECOND, unannounced displacement, and the test's own comment states it is deliberately 'not relaxed into somewhere in the list' for exactly this reason.",
+          "disposition": "NOT FIXED BY THIS MISSION. tests/tenancy/s1-founder-traceability.test.ts is NOT one of the amendment's five EXISTING_TEST_INSTRUCTIONS paths and is explicitly outside the CE1_IMPLEMENTATION_SURFACE closed world. Per the amendment's own rule ('If a CE-1 implementation mission finds a sixth existing product-test host mechanically required at ITS OWN base, it MUST STOP_FOR_AUTHORITY_DELTA rather than extend this list on its own judgement'), this finding is recorded and left for a successor authority to retarget, exactly as HPO-ODS-W2-25's authority once retargeted this same site.",
+          "isolated_measurement": "20/21 other tests in this file pass; this is the only failure, deterministic, reproduced identically in isolation and under full-suite load."
+        }
+      ],
+      "CE1_CAUSED_EXPECTED_TRANSIENT": [
+        {
+          "test_file": "tests/hosted/evidence-immutability.test.ts",
+          "test_id": "artifacts/hosted-a1-status.json is unchanged",
+          "finding": "Compares the WORKING-TREE file against the blob committed at HEAD; failed only because artifacts/hosted-a1-status.json was a staged-but-uncommitted regeneration at measurement time.",
+          "disposition": "Resolved by the commit in this same mission (8ca2ff9b). Not re-verified as a separate full-suite run post-commit because its own logic is self-evidently satisfied once the working tree matches HEAD, which the post-commit 'git status --porcelain' clean check already confirms."
+        }
+      ],
+      "RESOURCE_TIMEOUT": {
+        "count": 16,
+        "files": ["tests/ods/ods-scope.test.ts (11)", "tests/ods/ods-poststate.test.ts (5)"],
+        "evidence": "Every failure is 'Test timed out in 5000ms' on a test that spawns a REAL subprocess (tsx CLI or pnpm run). Re-run in isolation (--no-file-parallelism, single file): ods-scope.test.ts drops to 1/146 failing (M1-E2E-SCOPE, the heaviest test, spawning two grants); ods-poststate.test.ts drops to 1/55 failing (a real `pnpm run` spawn). Both remaining single failures pass cleanly when given --testTimeout=30000 (confirmed: 5/5 pass for the ods-scope filter, including M1-E2E-SCOPE). Under the full 11075-test suite's parallel load, subprocess-spawn latency on this machine exceeds each test's hardcoded 5000ms ceiling more often; none of these tests reference CE-1's content."
+      },
+      "ENVIRONMENTAL": {
+        "count": 7,
+        "files": ["tests/design-system/form-accessibility.test.tsx (3)", "tests/hosted/baseline-apply-authorization.test.ts (1)", "tests/p1a-bootstrap-gate.test.ts (2)", "tests/scan-secrets.test.ts (1)"],
+        "evidence": "All 4 files re-run together in isolation: 165/166 pass (the one failure being the already-classified evidence-immutability transient in the same batch) — every one of these 7 individual failures passed cleanly outside full-suite load, confirming full-suite resource contention rather than a real defect."
+      }
+    },
+    "collected_gt_zero": "Confirmed for every file touched by this classification and for both new CE-1 test files; no COLLECTED=0 vacuous pass anywhere."
+  },
+
+  "ktc_classification": {
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "CLEARED — tests/eval/stella-release/hosted-baseline-gate.test.ts 'the six baseline gates all pass' now passes (7/7 in the file) after artifacts/baseline-rehearsal/latest.json was regenerated fresh.",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "CLEARED — same file, 'the four words this report may not say' test, same regeneration.",
+    "no_new_ktc_coined": "Confirmed. No KTC-CE1-* identifier exists anywhere in this diff or this evidence artifact."
+  },
+
+  "gates": {
+    "typecheck": { "command": "pnpm exec tsc --noEmit", "result": "PASS", "when": "pre-commit and post-commit, both clean" },
+    "journal_verify": { "result": "PASS", "output": "all 82 wrappers regenerate byte-identically" },
+    "baseline_verify": { "result": "PASS", "output": "81 units, order pinned, hashes match" },
+    "b0_observation_verify": { "result": "PASS" },
+    "a1_status_verify": { "result": "PASS" },
+    "secrets_scan": { "result": "PASS", "when": "run on the tracked tree both before staging and again after the commit (git-tree scanner; the post-commit run is the one that actually covers every new file)." },
+    "authority_seal_verify": { "result": "PASS", "output": "PROTECTED_CORPUS_COUNT=9, all PASS — docs/ops/commercial/** is not in this gate's corpus, correctly." },
+    "ods_scope": {
+      "command": "node scripts/ods-scope.ts --base 07c33c95... --allow <14 CE-1 paths> --protected-authority HPO-ODS-W2-26",
+      "result": "PASS",
+      "output": "CHANGED_FILE_COUNT=96 PROTECTED_AUTHORIZED_PATH_COUNT=85 PROTECTED_PATH_VIOLATIONS=0 UNAUTHORIZED_PATHS=0",
+      "negative_controls": [
+        "Same diff, --protected-authority omitted => ODS_SCOPE=FAIL (proves the grant is load-bearing, not vacuous).",
+        "Same diff, --allow db/schema.ts omitted => UNAUTHORIZED_PATH=db/schema.ts, ODS_SCOPE=FAIL (proves --allow is genuinely checked per path)."
+      ]
+    },
+    "ods_poststate": {
+      "command": "tsx scripts/ods-poststate.ts --base 07c33c95... --allow <14 CE-1 paths> --protected-authority HPO-ODS-W2-26 --test <5 authorized existing hosts + this mission's own structural test> --clean",
+      "result": "PASS",
+      "output": "ODS_POSTSTATE_STEPS=typecheck,targeted-tests,secrets-scan,authority-seal-verify,ods-scope,clean-state — STEP typecheck=PASS STEP targeted-tests=PASS (307/307) STEP secrets-scan=PASS STEP authority-seal-verify=PASS STEP ods-scope=PASS STEP clean-state=PASS ODS_POSTSTATE=PASS",
+      "no_governed_ktc_mechanism_triggered": true
+    }
+  },
+
+  "live_reconciliation": {
+    "fetch_before_finalization": "origin/integration/commercial-v1 = 07c33c953bd8e0888d13786011e54a5ce98b196a — identical to BASE_AT_START, zero intervening commits across the entire mission.",
+    "open_sibling_prs": "PR #123 (FIBDB-052 P1) and PR #126 (Portfolio PF3 implementation) both open against integration/commercial-v1, both unmerged, neither touching db/schema.ts or db/migrations/** at BASE_AT_START.",
+    "merge_tree_prediction": "git merge-tree --write-tree origin/integration/commercial-v1 HEAD => 00831d278bd95c1a94a5369dca895ee9103cd3bd — EXACTLY this commit's own tree hash. Zero conflicts; the predicted merge result IS this branch's content, proving Controller40 (still 40, unmoved), the W2-26 registration (scripts/ods-scope.ts untouched, still 14 rows), and migration ordinal 0068 (no collision) all survive integration unchanged."
+  },
+
+  "commits_this_mission": [
+    {
+      "sha": "8ca2ff9bf6c7ea305829a4586f60d2f4f948bb6a",
+      "tree": "00831d278bd95c1a94a5369dca895ee9103cd3bd",
+      "type": "feat",
+      "summary": "feat(commercial): CE-1 CommercialAccount relation and live association — the full 96-path implementation surface, with the s1-founder-traceability finding disclosed in the commit message.",
+      "changed_files": 96
+    }
+  ],
+
+  "changed_paths_this_mission": [
+    "db/schema.ts",
+    "db/migrations/0068_commercial_account_ce1.sql",
+    "db/migrations/meta/0068_snapshot.json",
+    "db/migrations/meta/_journal.json",
+    "db/hosted/baseline-manifest.ts",
+    "db/prepared/journal/001_0000_quick_husk.sql .. 080_0067_tenancy_refusal_audit_insert_policy.sql (80 files, header-only)",
+    "db/prepared/journal/081_0068_commercial_account_ce1.sql",
+    "db/prepared/checkpoint-b0/observation.sql",
+    "artifacts/hosted-a1-status.json",
+    "artifacts/baseline-rehearsal/latest.json",
+    "tests/hosted/baseline-manifest.test.ts",
+    "tests/hosted/baseline-journal-wrapper.test.ts",
+    "tests/hosted/operator-runner.test.ts",
+    "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+    "tests/eval/stella-release/hosted-baseline-gate.ts",
+    "tests/commercial/ce1-commercial-account.test.ts",
+    "tests/postgres/ce1-commercial-account.pg.test.ts"
+  ],
+
+  "blocking_findings": 1,
+  "unknown_findings": 0,
+
+  "final_state": {
+    "CE1_IMPLEMENTATION_STATUS": "LOCALLY_VERIFIED_CANDIDATE_AWAITING_INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT",
+    "not_claimed": [
+      "CE-1 is NOT certified closed by this artifact.",
+      "tests/tenancy/s1-founder-traceability.test.ts is NOT green — see full_regression.classification.CE1_CAUSED_BLOCKING. This must be resolved by a successor authority before CE-1 can be considered fully closed, not silently patched by this mission.",
+      "No hosted, staging, or production apply of any kind was performed.",
+      "PR is opened as DRAFT and is NOT merged by this mission."
+    ]
+  }
+}
