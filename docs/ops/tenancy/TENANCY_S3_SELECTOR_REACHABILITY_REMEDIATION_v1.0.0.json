@@ -10,6 +10,34 @@
   "GRANT_ID": null,
   "GRANT_ID_DISPOSITION": "NO GRANT IS DECLARED OR REGISTERED BY THIS ARTIFACT. The entire write surface of the authoring mission is docs/ops/tenancy/**, which is not matched by any entry of DEFAULT_PROTECTED_PATTERNS (scripts/ods-scope.ts:82-90, measured this mission: the seven entries are docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json). A protected-surface grant would therefore authorize nothing that --allow does not already authorize, and DECLARING a grant is not the same act as REGISTERING one. Neither act is performed here.",
 
+  "REVISION_HISTORY": [
+    {
+      "revision": "R1",
+      "commit": "ceaf46219e6e328d82f0a635fd43c544ccac097d",
+      "disposition": "AUDITED BY HK — RESULT=FAIL, R2_REQUIRED=YES, BLOCKING=3, AUDIT_UNKNOWN=0.",
+      "blocking_findings_upheld": [
+        "B1 — CLOSED-WORLD SURFACE DEFECT. R1 authorized 7 future paths; the real surface is 10. Three mechanically forced existing tests were omitted: tests/auth/session.test.ts, tests/design-system/form-accessibility.test.tsx, tests/tenancy/s1-founder-traceability.test.ts. Independently re-measured this revision and UPHELD — see EXACT_FUTURE_WRITE_SURFACE and MECHANICALLY_FORCED_EXISTING_TEST_EDITS E3/E4/E5.",
+        "B2 — FALSE CONSUMER PROSE. R1 asserted that every AuthContextError catcher branches on 'instanceof' alone and none reads .code. That is FALSE: two API routes pass error.code to authContextErrorStatus(). Independently re-measured and UPHELD — see DEFECT.discriminator_has_zero_inbound_routing.",
+        "B3 — STALE ANCHOR AND OVERSTATED MUTATION. The 'organisation-gated workspace routes' describe was cited at :375 and is at :376; and M-A1-3 claimed exactly one control dies when a second, repo-native load-bearing control also dies. Independently re-measured and UPHELD — see ANCHOR_CORRECTIONS_R2 and the companion manifest's mutation controls."
+      ],
+      "what_R1_got_right_and_is_carried_unchanged": "The parent derivation, the defect classification, R1-R5 including the R4 third-return-site conjunction, the NO_AUTO_SELECTION narrowing declaration, the audit semantics, the 18 prohibitions, and the two exclusions of lib/auth/database-context.ts and tests/tenancy/s3-request-principal.test.ts. Each exclusion was RE-TESTED this revision under the corrected census method and each survives."
+    },
+    {
+      "revision": "R2",
+      "supersedes_nothing_historical": "R1's measurements are NOT rewritten. R1 measured a true tree; it measured it INCOMPLETELY. Where R2 changes a number, the R1 number and the reason it was wrong are preserved alongside it.",
+      "corrections_applied": "B1, B2, B3 above, plus the consumer-census method defect that CAUSED B1 (see MECHANICALLY_FORCED_EXISTING_TEST_EDITS.census_completeness.R1_METHOD_DEFECT), the CE-1 concurrency contract on the shared S1 test file, and the removal of the dynamic-consumer UNKNOWN."
+    }
+  ],
+
+  "LIVE_RECONCILIATION_R2": {
+    "performed_at": "2026-09-09, start of R2.",
+    "method": "git fetch origin, then compare origin/integration/commercial-v1 against both BASE_AT_START and the handoff's CURRENT_LIVE_AT_HANDOFF.",
+    "live_tip_at_R2": "07c33c953bd8e0888d13786011e54a5ce98b196a",
+    "movement_since_R1": "NONE. origin/integration/commercial-v1 is byte-identical to BASE_AT_START and to CURRENT_LIVE_AT_HANDOFF; git log BASE..origin/integration/commercial-v1 is empty.",
+    "consequence": "Every line anchor, grep count and file-existence fact measured in R1 was measured against the SAME tree that is live at R2. R2's corrections are therefore corrections of MEASUREMENT COMPLETENESS, never of measurement staleness. No historical measurement is rewritten on the grounds that the tree moved, because it did not.",
+    "R1_branch_head_unchanged": "The R1 commit ceaf4621 remains the tip of this branch and of PR #127; R2 lands as a NEW commit on top, never an amend."
+  },
+
   "AS_OF_REF": "codex/tenancy-s3-selector-reachability-authority-r1",
   "AS_OF_HEAD": "07c33c953bd8e0888d13786011e54a5ce98b196a",
   "AS_OF_TREE": "a811ca8d4cf4eada34c25b7028b3734c05ddc386",
@@ -95,8 +123,36 @@
 
     "discriminator_has_zero_inbound_routing": {
       "measurement": "grep -rn 'organizationRefusalCode' over *.ts and *.tsx at AS_OF_TREE, excluding node_modules, returns hits in exactly ONE application file and three TEST files. The application file is lib/auth/database-context.ts: the type declaration (:140-:142), the three emission sites (:448, :472, :511), and TWO PROPAGATION READS at :739-:740 inside withOrganizationDatabaseContext (:726), which turn the code into the message and code of a thrown AuthContextError. The test files are tests/authenticated-database-context.test.ts, tests/tenancy/s3-refusal-audit.test.ts and tests/tenancy/s3-request-principal.test.ts.",
-      "the_propagation_read_is_not_a_routing_read": "MEASURED, BECAUSE IT IS THE OBVIOUS OBJECTION. The code IS propagated out of lib/auth/ as a typed error code at :739-:740, so a consumer COULD route on it. None does. grep for AuthContextError across app/, lib/ and components/ returns catchers in app/admin/access/actions.ts, app/admin/organizations/actions.ts, app/admin/proxies/actions.ts, app/admin/services/actions.ts, app/app/organization/members/actions.ts, app/api/proxies/search/route.ts and app/api/proxies/[id]/suggest/route.ts — and EVERY ONE of them branches on 'instanceof AuthContextError' alone, collapsing the refusal to a generic not_authorized without ever reading .code. A grep for a caught TENANCY_ code anywhere under app/ returns nothing.",
-      "conclusion": "ZERO application modules outside lib/auth/database-context.ts read organizationRefusalCode, and zero modules anywhere route on it — not directly, and not through the AuthContextError code it is propagated into. The field is produced, propagated, tested, and never consumed by any routing decision. The selector route exists and has no inbound edge that depends on the discriminator."
+      "the_propagation_read_is_not_a_routing_read": {
+        "R1_CLAIM_WAS_FALSE_AND_IS_CORRECTED_HERE": {
+          "what_R1_said": "'EVERY ONE of them branches on instanceof AuthContextError alone, collapsing the refusal to a generic not_authorized without ever reading .code.'",
+          "why_it_was_false": "TWO route handlers DO read .code and pass it onward: app/api/proxies/search/route.ts:56 and app/api/proxies/[id]/suggest/route.ts:80, both as 'status: authContextErrorStatus(error.code)'. R1's own grep output contained both lines; the prose over-generalised from the redirect-style catchers to the whole set. HK's blocking finding B2, upheld on independent re-measurement.",
+          "why_the_error_mattered": "It is the kind of overstatement that, if believed, would let a later mission conclude the discriminator has no consumers at all and delete or repurpose it."
+        },
+        "corrected_measurement": {
+          "catchers_that_branch_on_instanceof_ONLY_and_never_read_code": [
+            "app/admin/access/actions.ts:34 and :56",
+            "app/admin/organizations/actions.ts:33",
+            "app/admin/proxies/actions.ts:53, :104, :131, :160, :186",
+            "app/admin/services/actions.ts:42",
+            "app/app/organization/members/actions.ts:49 and :72"
+          ],
+          "catchers_that_DO_read_code": [
+            "app/api/proxies/search/route.ts:53-58 — 'if (error instanceof AuthContextError) return NextResponse.json({ error: \"Unauthorized\" }, { status: authContextErrorStatus(error.code) })'",
+            "app/api/proxies/[id]/suggest/route.ts:77-82 — structurally identical."
+          ]
+        },
+        "what_those_two_routes_actually_do_with_the_code": {
+          "mapping_measured": "authContextErrorStatus is defined at lib/auth/database-context.ts:181-:200. 'TENANCY_NO_ORGANIZATION_SELECTED' (:196) and 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' (:197) are ADJACENT CASE LABELS that fall through to the SAME 'return 403' (:198), alongside AUTH_NO_PROFILE, AUTH_USER_DEACTIVATED, AUTH_NO_ORGANIZATION, AUTH_ORGANIZATION_FORBIDDEN and AUTH_NOT_SUPER_ADMIN.",
+          "therefore": [
+            "Both TENANCY refusal codes collapse to the SAME HTTP 403. The two routes read the code but the mapping does not DISCRIMINATE the two codes.",
+            "Neither route redirects. Both return a JSON body with a fixed 'Unauthorized' string; neither reaches the selector, onboarding, or any other route.",
+            "Both remain FAIL-CLOSED: a 403 denies. Neither degrades to 200, to a fallback organisation, or to a best-effort path."
+          ]
+        },
+        "conclusion_PRESERVED_evidence_CORRECTED": "The security conclusion is unchanged and now rests on correct evidence: NO module anywhere ROUTES on the discriminator. Two API routes read the propagated code, and what they do with it is map both tenancy codes onto one status that denies. Reading a code to choose a denial status is not routing on it — routing is choosing a DESTINATION, and no destination anywhere in the repository depends on which of the two codes was raised."
+      },
+      "conclusion": "ZERO application modules outside lib/auth/database-context.ts read organizationRefusalCode. Exactly TWO modules read the AuthContextError code it is propagated into, and both collapse the two tenancy codes to a single fail-closed 403 without redirecting. The field is produced, propagated, tested, and consumed by no routing decision. The selector route exists and has no inbound edge that depends on the discriminator."
     },
 
     "the_conflating_helper": {
@@ -213,17 +269,25 @@
 
     "COUNT_WARNING_READ_THIS_BEFORE_COMPARING_TOTALS": {
       "he_candidate_count": 7,
-      "authorized_count": 7,
-      "the_trap": "THE TOTALS MATCH AND THE SETS DO NOT. HE's list and this list are both seven paths, but they are not the same seven: tests/tenancy/s3-request-principal.test.ts was REJECTED and tests/auth/onboarding-escape-path.test.tsx was ADDED. A reviewer who reconciles only the totals will conclude the surface was carried forward unchanged, which is false. The substitution is the finding.",
+      "R1_authorized_count": 7,
+      "R2_authorized_count": 10,
+      "the_R1_trap_still_true_and_still_worth_reading": "HE's list and R1's list were BOTH seven paths and were NOT the same seven: tests/tenancy/s3-request-principal.test.ts was REJECTED and tests/auth/onboarding-escape-path.test.tsx was ADDED. A reviewer reconciling only the totals would have concluded the surface was carried forward unchanged. That substitution is preserved below and both halves of it survive R2's re-measurement.",
+      "the_R2_correction": "R1's SEVEN WAS ALSO WRONG, in a way the count warning above did not protect against. R1 caught a substitution at a fixed total and then under-counted the total itself: three further mechanically forced existing tests were never measured, because R1 DESCRIBED a census method it did not EXECUTE (see MECHANICALLY_FORCED_EXISTING_TEST_EDITS.census_completeness.R1_METHOD_DEFECT). Guarding the composition of a number is not the same as guarding its magnitude.",
       "set_difference_rejected_from_he_list": ["tests/tenancy/s3-request-principal.test.ts"],
-      "set_difference_added_beyond_he_list": ["tests/auth/onboarding-escape-path.test.tsx"]
+      "set_difference_added_beyond_he_list": ["tests/auth/onboarding-escape-path.test.tsx"],
+      "added_in_R2_after_independent_remeasurement": [
+        "tests/auth/session.test.ts",
+        "tests/design-system/form-accessibility.test.tsx",
+        "tests/tenancy/s1-founder-traceability.test.ts"
+      ],
+      "hk_list_was_not_copied": "HK named these three. Each was re-derived from the working tree BEFORE consulting HK's reasoning, and each is admitted here on a derivation stated in its own entry — a specific mock factory, a specific execution seam, a specific assertion that inverts. A fourth candidate surfaced during that re-measurement and was REFUTED (tests/database-runtime-entrypoints.test.ts, see EXCLUDED_PATHS.database_runtime_entrypoints), which is the evidence that the re-measurement was independent rather than a transcription."
     },
 
     "authorized_paths": [
       {
         "path": "lib/auth/session.ts",
         "class": "IMPLEMENTATION",
-        "required_because": "Hosts requireOrganizationAccess (:173-:186), whose :177 conjunction is the gate for the entire organisation-gated workspace via app/app/layout.tsx:27. R1/R2/R3/R4 cannot be applied to workspace routes without editing this function. The enumerator it must call is ALREADY exported from this same module at :83, so the edit needs no new import from outside lib/auth/.",
+        "required_because": "Hosts requireOrganizationAccess (:173-:186), whose :177 conjunction is the gate for the entire organisation-gated workspace via app/app/layout.tsx:27. R1/R2/R3/R4 cannot be applied to workspace routes without editing this function. The enumerator it must call is ALREADY exported from this same module at lib/auth/session.ts:83, so the edit needs no new import from outside lib/auth/.",
         "must_not": "getCurrentMembership (:120-:124) keeps its signature, return type and semantics VERBATIM. See EXCLUDED_PATHS.lib_invitations_service for the measured reason."
       },
       {
@@ -259,13 +323,36 @@
         "path": "tests/auth/onboarding-escape-path.test.tsx",
         "class": "EXISTING_TEST_MECHANICALLY_FORCED",
         "required_because": "See MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E2. Its vi.mock factory for @/lib/auth/session is EXHAUSTIVE and omits the enumerator, so the repaired page throws inside it."
+      },
+      {
+        "path": "tests/auth/session.test.ts",
+        "class": "EXISTING_TEST_MECHANICALLY_FORCED",
+        "added_in": "R2",
+        "required_because": "See MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E3. It imports the REAL @/lib/auth/session (:141-:150) and EXECUTES requireOrganizationAccess against an in-memory database double, so it exercises the repaired routing for real. Its assertion at :380 pins the exact scenario this node INVERTS, and its title asserts a claim this node makes false.",
+        "seam_class": "SEMANTIC EXECUTION SEAM — it does not mock the module under repair, it runs it. Invisible to any census keyed on mock factories or on token presence."
+      },
+      {
+        "path": "tests/design-system/form-accessibility.test.tsx",
+        "class": "EXISTING_TEST_MECHANICALLY_FORCED",
+        "added_in": "R2",
+        "required_because": "See MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E4. Its vi.mock factory for @/lib/auth/session at :43-:46 is EXHAUSTIVE (requireAuth + getCurrentMembership only) and it renders the repaired onboarding page at :110, :123 and :135 via DYNAMIC import.",
+        "seam_class": "EXHAUSTIVE MOCK FACTORY + DYNAMIC IMPORT. R1 missed it on both axes: its census never ran the mock-factory grep it described, and a static-import scan would not have seen the dynamic 'await import' either."
+      },
+      {
+        "path": "tests/tenancy/s1-founder-traceability.test.ts",
+        "class": "EXISTING_TEST_MECHANICALLY_FORCED",
+        "added_in": "R2",
+        "required_because": "See MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E5. It mocks BOTH @/lib/auth/session (:263-:266, exporting only syncUserProfile and getCurrentMembership) AND @/lib/auth/database-context (:273-:282, exporting only withAuthenticatedDatabaseContext), and it EXECUTES the repaired createFirstOrganization at tests/tenancy/s1-founder-traceability.test.ts:308 and :327.",
+        "concurrency_hazard": "SHARED FILE WITH CE-1 PR #128. See CE1_CONCURRENCY_CONTRACT — mandatory reading before this path is edited."
       }
     ],
-    "authorized_path_count": 7,
-    "authorized_path_count_derivation": "Derived by counting EXACT_FUTURE_WRITE_SURFACE.authorized_paths, not asserted independently. Five entries carry class IMPLEMENTATION and two carry class EXISTING_TEST_MECHANICALLY_FORCED; 5 + 2 = 7.",
+    "authorized_path_count": 10,
+    "authorized_path_count_derivation": "Derived by counting EXACT_FUTURE_WRITE_SURFACE.authorized_paths, not asserted independently and not copied from HK. Five entries carry class IMPLEMENTATION and five carry class EXISTING_TEST_MECHANICALLY_FORCED; 5 + 5 = 10.",
+    "authorized_path_count_R1_value": 7,
+    "authorized_path_count_R1_error": "R1 published 7. The three missing entries are the ones marked added_in R2. R1's implementation half (5) was correct and is unchanged; the entire error was in the forced-test half, which R1 measured as 2 and is 5.",
 
     "new_test_files_permitted": {
-      "rule": "NONE. The new controls of the companion manifest land in tests/auth/route-authorization-boundary.test.ts, which is already the repository's home for the redirect-graph suites ('redirect graph: /app/onboarding' at :343 and 'redirect graph: organisation-gated workspace routes' at :375).",
+      "rule": "NONE. The new controls of the companion manifest land in tests/auth/route-authorization-boundary.test.ts, which is already the repository's home for the redirect-graph suites ('redirect graph: /app/onboarding' at :343 and 'redirect graph: organisation-gated workspace routes' at :376).",
       "why": "A new test file would be a new path allocation, and the existing file must be edited regardless. Splitting the redirect graph across two files would also weaken T-A1-1, which is a statement about the graph as a whole."
     },
 
@@ -305,6 +392,14 @@
         ],
         "verdict": "NOT AUTHORIZED",
         "derivation": "The selector is the DESTINATION of this repair and already works: the page enumerates candidates at :52, renders a governed explanation at :88 when there are none, and the action independently revalidates candidacy at :101-:103 before writing the carrier and already emits not_a_member at :116. This node builds the inbound edge; it does not modify the node the edge points at. Editing the sole permitted carrier writer while repairing routing would also blur the boundary NO_CARRIER_WRITE_DURING_ROUTING depends on."
+      },
+      "database_runtime_entrypoints": {
+        "path": "tests/database-runtime-entrypoints.test.ts",
+        "verdict": "NOT AUTHORIZED — CANDIDATE SURFACED AND REFUTED DURING R2 RE-MEASUREMENT",
+        "why_it_looked_forced": "Its ALLOWLIST at :451 carries a row for the repaired page — 'app/(authenticated)/app/onboarding/page.tsx': 'requireAuth() + getCurrentMembership(); both read the memoised principal.' (tests/database-runtime-entrypoints.test.ts:466-:467). After the repair that sentence is an incomplete description of what the page calls, so it LOOKS like a forced edit.",
+        "why_it_is_not": "MEASURED. The four assertions over ALLOWLIST check that each file (a) still exists (:811), (b) is still an entry point (:817), (c) carries a reason whose LENGTH exceeds 30 characters (:821), and (d) is a row the reachability check would otherwise consult (:829). NONE of them compares the reason TEXT to the module's actual calls. Separately, the gate at :343 passes a file if it opens a context OR is allowlisted, and CONTEXT_OPENERS (:231-:243) does not contain listSelectableMemberships — so the repaired page still textually opens no context and its allowlist row stays valid. And CONTEXT_MODULES (:305) already skips '@/lib/auth/session' by import specifier at :324, so importing one more name from a module the page ALREADY imports moves no inventory.",
+        "consequence": "The reason string becomes STALE PROSE, exactly the class of F-HH-3, and is recorded as F-HH-5 rather than authorized. Editing it would be a comment-only change in an unauthorized file, covered by no control.",
+        "why_this_exclusion_is_load_bearing": "It is the evidence that R2's re-measurement was independent rather than a transcription of HK's three names: the corrected method surfaced a FOURTH candidate that HK did not name, and refuted it on measurement instead of admitting it for symmetry."
       },
       "phase2_onboarding_trap": {
         "paths": [
@@ -411,10 +506,134 @@
       "why_missing_this_would_have_failed_the_node": "Had it stayed unlisted, the implementing mission would have hit four failures in an unauthorized file and faced a choice between editing outside its ceiling and weakening its own repair. Both are STOP conditions. Enumerating it here is what keeps the ceiling closed AND achievable."
     },
 
+    "E3": {
+      "file": "tests/auth/session.test.ts",
+      "added_in": "R2",
+      "seam": "SEMANTIC EXECUTION. This suite does NOT mock @/lib/auth/session — it imports the real module (:141-:150) and drives requireOrganizationAccess against doubles placed one layer BELOW it (@/db/client at :68, @/db/identity-context at :118, next/headers at :56, next/navigation at :26). The repaired routing therefore executes for real here.",
+      "the_assertion_that_inverts": {
+        "anchor": ":380",
+        "current_title": "'S3 / single_membership_is_not_an_exception: redirects a non-admin with an ACTIVE membership but NO organization selected to /app/onboarding — route topology is unchanged by S3, only membership derivation is'",
+        "current_fixture": "mockDbData.users = [DB_USER]; mockDbData.organizationMembers = [DB_MEMBERSHIP]; mockDbData.organizations = [DB_ORG]; NO selectOrganization() call.",
+        "why_this_is_exactly_one_selectable_candidate": "MEASURED, not assumed. loadSelectableMembershipsWithinContext (lib/auth/database-context.ts:334-:356) issues db.select().from(organizationMembers).where(...) with NO .limit(), and this suite's db double returns the whole mockDbData.organizationMembers array from its .where() thenable (tests/auth/session.test.ts:79-:83). It then resolves each row's organisation through loadOrganizationWithinContext, which the double serves from mockDbData.organizations. One membership row plus one readable organisation row yields exactly ONE candidate.",
+        "current_expectation": "rejects.toThrow('REDIRECT:/app/onboarding')",
+        "governed_new_expectation": "rejects.toThrow('REDIRECT:/app/organizations/select')",
+        "authority": "ROUTING_CONTRACT.R2.branch_one_or_more. This is the P-A1-2 scenario occurring in a pre-existing repo-native suite."
+      },
+      "the_title_claim_that_becomes_false": {
+        "clause": "'— route topology is unchanged by S3, only membership derivation is'",
+        "status_after_this_node": "FALSE. This node changes route topology precisely: the same principal state that resolved to /app/onboarding resolves to /app/organizations/select. The clause must be removed or restated; it may NOT be carried forward as decoration.",
+        "why_it_must_not_survive": "A test title is read as a claim. Leaving a false claim attached to a passing assertion is how a suite starts documenting the opposite of what it proves. The other half of the title — 'single_membership_is_not_an_exception' — is still TRUE and gets TRUER: one candidate still receives no shortcut, it simply receives the selector instead of onboarding.",
+        "authority": "NO_AUTO_SELECTION; PARENT_NARROWING_DECLARATION."
+      },
+      "controls_preserved_without_semantic_change": [
+        {
+          "anchor": ":364",
+          "control": "'redirects a super admin with no membership to /admin' — organizationMembers = [] and users = [{...isSuperAdmin: true}].",
+          "requirement": "PRESERVED VERBATIM IN DESTINATION. This is the repo-native live protection for ROUTING_CONTRACT.R1 and for P-A1-4. If this destination changes, the super-admin branch has been reordered behind the enumerator and X-11 is violated."
+        },
+        {
+          "anchor": ":372",
+          "control": "'redirects a non-admin with no membership to /app/onboarding' — organizationMembers = [], i.e. ZERO candidates.",
+          "requirement": "PRESERVED VERBATIM. This is the repo-native live protection for R2.branch_zero and for P-A1-1. The genuine founding path must be untouched."
+        },
+        {
+          "anchor": ":393",
+          "control": "'redirects to /app/onboarding when the SELECTED membership references a deleted organization' — selectOrganization(...) called, organizationMembers = [DB_MEMBERSHIP], organizations = [].",
+          "requirement": "PRESERVED VERBATIM, AND IT IS THE MOST IMPORTANT CONTROL IN THIS FILE FOR THIS NODE.",
+          "why": "This is RETURN SITE 3 (lib/auth/database-context.ts:511) reached in a pre-existing repo-native suite: the membership EXISTS and is returned, only the organisation row is unreadable, and the refusal code is the reused carrier TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER. Under a correct implementation the R4 conjunction excludes this state from both R2 and R3, the preserved conjunction at lib/auth/session.ts:177 still fires, and the destination stays /app/onboarding. Under an implementation that keys R3 on the refusal code ALONE, this principal is swept into the stale-carrier branch, its carrier is cleared and it is redirected to the selector — and THIS ASSERTION DIES.",
+          "consequence": "R4 is not protected only by the new control N-A1-4 that this node introduces; it is ALSO protected by an independent control that predates this node and was written for another purpose. That is materially stronger evidence, and it is why M-A1-3's kill list had to be corrected — see the companion manifest.",
+          "authority": "ROUTING_CONTRACT.R4; prohibition X-12; X-15."
+        },
+        {
+          "anchor": ":403",
+          "control": "'returns the full OrganizationContext when everything resolves'.",
+          "requirement": "PRESERVED VERBATIM. A subject with a resolved carrier and membership is outside this contract entirely."
+        }
+      ],
+      "mock_changes_required": {
+        "verdict": "NONE MEASURED.",
+        "derivation": "The suite already doubles @/db/client with a chain whose .where() is itself a thenable, which serves the enumerator's un-limited select; and its @/db/identity-context double binds through the REAL async-local store (:118-:140), which serves listSelectableMemberships' withDatabaseIdentityContext call at lib/auth/database-context.ts:671-:675. No new factory export is needed because the suite mocks nothing in @/lib/auth/*.",
+        "if_wrong": "If the implementing mission finds a missing double here, that is a new measurement and the entry is amended — but it must be a measured failure, not a precaution."
+      }
+    },
+
+    "E4": {
+      "file": "tests/design-system/form-accessibility.test.tsx",
+      "added_in": "R2",
+      "seam": "EXHAUSTIVE MOCK FACTORY + DYNAMIC IMPORT — both axes R1's census was blind to.",
+      "derivation": "vi.mock('@/lib/auth/session', () => ({ requireAuth, getCurrentMembership })) at :43-:46 REPLACES the module; any export not listed is undefined. The suite then renders the repaired onboarding page via 'const OnboardingPage = (await import('@/app/(authenticated)/app/onboarding/page')).default' at :110, :123 and :135. The repaired page must call listSelectableMemberships, which this factory does not provide, so all three onboarding tests fail with a TypeError before reaching any assertion. Mechanical, not a judgement call — structurally the same break as E2, in a suite whose subject is accessibility rather than auth.",
+      "forced_edits": [
+        {
+          "anchor": ":43-:46 vi.mock factory",
+          "correction": "Add the enumerator to the factory, stubbed to return ZERO candidates. Zero is the correct stub: all three onboarding tests here are about a subject being SHOWN the creation form (invalid_slug, invalid_name, not_allowlisted), which after the repair is the 0-candidate founding path. A stub returning >=1 would redirect the page away and delete three accessibility tests by side effect."
+        },
+        {
+          "anchor": ":109, :122, :134 — the three onboarding accessibility assertions",
+          "correction": "PRESERVED UNCHANGED IN SUBSTANCE. 'invalid_slug connects to the slug field, alongside its existing hint', 'invalid_name connects to the name field only', and 'not_allowlisted (an account-level authorization failure) is attached to no field' must all keep passing and keep asserting the same aria-invalid / aria-describedby wiring.",
+          "prohibition": "The accessibility assertions may NOT be weakened, relaxed, skipped or deleted to accommodate the routing change. The ONLY authorized change in this file is what the page's new session/enumerator dependency mechanically requires. If the accessibility semantics cannot be preserved, that is a STOP, not a trade."
+        },
+        {
+          "anchor": ":49, :65, :82, :99 — the FxSubForm and brand-field assertions",
+          "correction": "UNTOUCHED. They render components that have nothing to do with the onboarding page or with auth, and they are in this file only because it is organised by accessibility concern rather than by module."
+        },
+        {
+          "anchor": ":153 — the source-text read of the onboarding page",
+          "correction": "RE-MEASURE BEFORE EDITING. It reads app/(authenticated)/app/onboarding/page.tsx as text. Whether it still holds depends on what it asserts about that text; the implementing mission must run it rather than assume. Recorded as a conditional, not asserted as safe."
+        }
+      ]
+    },
+
+    "E5": {
+      "file": "tests/tenancy/s1-founder-traceability.test.ts",
+      "added_in": "R2",
+      "seam": "TWO EXHAUSTIVE MOCK FACTORIES + EXECUTION OF A REPAIRED SERVER ACTION.",
+      "derivation": "The suite mocks @/lib/auth/session at :263-:266 with only { syncUserProfile, getCurrentMembership }, and @/lib/auth/database-context at :273-:282 with only { withAuthenticatedDatabaseContext }. It then imports and EXECUTES the real createFirstOrganization from the repaired app/(authenticated)/app/onboarding/actions.ts at tests/tenancy/s1-founder-traceability.test.ts:308 and :327. The repaired action must consult the refusal code and the enumerator; whichever of the two modules it reads them from, that module's factory is incomplete and the action throws.",
+      "forced_edits": [
+        {
+          "anchor": ":263-:266 vi.mock('@/lib/auth/session')",
+          "correction": "Add whatever the repaired action reads — at minimum the enumerator — stubbed to return ZERO candidates."
+        },
+        {
+          "anchor": ":273-:282 vi.mock('@/lib/auth/database-context')",
+          "correction": "CONDITIONAL. Required only if the implementation reads the discriminator or enumerator from @/lib/auth/database-context rather than from @/lib/auth/session. EXACT_FUTURE_WRITE_SURFACE.EXCLUDED_PATHS.lib_auth_database_context directs the implementation to import from session.ts, in which case this factory needs no change. Recorded so the implementing mission checks rather than assumes."
+        },
+        {
+          "anchor": ":307-:323 POSITIVE founding test",
+          "correction": "PRESERVED IN SUBSTANCE, and the ZERO-candidate stub is what preserves it. The test drives a subject with getCurrentMembership -> null who is allowlisted, and asserts the organizations insert carries foundedBy and foundingProvenance='self_service', that the membership insert lands in the SAME context and AFTER the organisation insert, and that the audit row records the founding act. Under the repair a 0-candidate subject still proceeds to found, so every one of those assertions survives unchanged. Under a >=1-candidate stub the action would redirect to the selector and all of them would die at once."
+        },
+        {
+          "anchor": ":325-:329 NEGATIVE allowlist test",
+          "correction": "PRESERVED UNCHANGED. 'a non-allowlisted subject is redirected before any insert — S1 did not weaken the pre-existing gate' must still reach REDIRECT:/app/onboarding?error=not_allowlisted with zero inserts. Prohibition X-16 forbids weakening it."
+        },
+        {
+          "anchor": ":223 source-text read of the onboarding action, and its assertions at :225-:234",
+          "correction": "CONDITIONAL, RE-MEASURE. It slices the action's source between '.insert(organizations)' and '.returning()', and between 'withAuthenticatedDatabaseContext(async () => {' and the end, then asserts foundedBy/foundingProvenance and insert ordering. Those anchors sit AFTER the guard at :50-:52 that this node repairs, so a guard-local change should not move them. 'Should not' is not 'does not': the implementing mission runs this file and amends only if it actually fails."
+        }
+      ],
+      "unrelated_S1_semantics_NOT_authorized": "This node authorizes NOTHING about founder traceability itself. foundedBy, foundingProvenance, the MO-11 backfill, the baseline-unit registration at :180-:191 (including the exact ordinal pin S1_UNIT.ordinal === 79), the manifest digest, the SQL scanner facts and the PI-3 'no authorization surface reads founded_by' suite at :332+ are all OUT OF SCOPE and must be left byte-identical."
+    },
+
     "census_completeness": {
-      "method": "Mechanical, not recalled. (1) grep -rln 'membership: null' over tests/, app/, lib/ returns exactly four files: tests/auth/route-authorization-boundary.test.ts, tests/tenancy/s2-selected-org-carrier.test.ts, tests/tenancy/s3-refusal-audit.test.ts, lib/auth/database-context.ts. (2) grep for getCurrentMembership( over app/, lib/, components/ returns six call sites: app/(authenticated)/app/onboarding/actions.ts:50, app/(authenticated)/app/onboarding/page.tsx:36, app/(public)/login/actions.ts:53, app/auth/callback/route.ts:25, lib/auth/session.ts:151, lib/invitations/service.ts:185. (3) grep for vi.mock('@/lib/auth/session' over tests/ identifies every suite whose exhaustive factory could break.",
+      "R1_METHOD_DEFECT": {
+        "what_happened": "R1's census_completeness described THREE greps and executed only TWO. Its own published text said '(3) grep for vi.mock(\\'@/lib/auth/session\\' over tests/ identifies every suite whose exhaustive factory could break.' That grep was never run. Had it been run it would have returned 80 files, three of which are the omissions HK found.",
+        "the_deeper_error": "Even executed, the two greps R1 did run were the WRONG SHAPE. They keyed on TOKEN PRESENCE ('membership: null') and on CALL SITES of one helper. Neither can see a suite that executes the repaired module through doubles placed one layer below it (E3), and neither can see a dynamic 'await import' of a repaired page (E4).",
+        "classification": "This is a METHOD defect, not a tree-staleness defect. LIVE_RECONCILIATION_R2 confirms the tree never moved. R1 measured the right tree with the wrong instrument, and then described an instrument it had not picked up.",
+        "rule_adopted": "A census method stated in an artifact is a CLAIM. It must be executed and its output recorded, or it must not be stated."
+      },
+      "R2_METHOD_SEMANTIC_SEAMS": {
+        "principle": "A test file is mechanically forced iff it EXECUTES a module in the write surface while SUBSTITUTING a dependency that the repair makes incomplete, OR it ASSERTS an outcome the repair inverts. Token presence and fixture shape are consequences of those seams, never the definition.",
+        "seams_enumerated_and_each_one_executed": [
+          "SEAM 1 — exhaustive mock factory over a module the repair adds a dependency on. grep -rn \"vi.mock('@/lib/auth/session'\" over tests/, app/, lib/, components/ => 80 files. Cross-cut with 'renders or executes a write-surface module' to reduce to the forced set; the other ~76 substitute requireOrganizationAccess for service tests and never execute the repaired routing.",
+          "SEAM 2 — semantic execution of a repaired module through lower-layer doubles. grep -rln \"from '@/lib/auth/session'\" over tests/ => 45 files that import the REAL module; intersected with 'executes requireOrganizationAccess' => tests/auth/session.test.ts.",
+          "SEAM 3 — static OR dynamic import of a repaired page/action. grep -rln for the onboarding and select page specifiers => 7 files; plus grep -rnE 'await import\\(' over tests/ filtered to auth/onboarding/select specifiers => surfaces tests/design-system/form-accessibility.test.tsx, which SEAM 3's static half alone would have missed.",
+          "SEAM 4 — dynamic and string-built specifiers in APPLICATION code. grep -rnE 'await import\\(|import\\(\\s*[A-Za-z_`]' over app/, lib/, components/ filtered to the auth and repaired-route specifiers => ZERO hits. The single string-built specifier in the repository is app/app/projects/[projectId]/__tests__/grounded-query-readiness.test.ts:82, whose SECTION_MODULE is a CONSTANT declared at :66 naming '@/app/app/projects/[projectId]/pipeline/StellaGroundedQuerySection' — a Stella pipeline component, unrelated to auth routing.",
+          "SEAM 5 — aliased or star re-export of the discriminator, enumerator or helper. grep -rnE \"export \\{[^}]*(listSelectableMemberships|getCurrentMembership|organizationRefusalCode|loadRequestPrincipal)|export \\* from '@/lib/auth\" over app/, lib/, components/ => exactly ONE hit, lib/auth/session.ts:83, which is the known authorized re-export. There is no second name for any of these symbols anywhere in the repository.",
+          "SEAM 6 — CommonJS require() of the auth modules. grep -rnE \"require\\(['\\\"][^'\\\"]*auth/(session|database-context)\" over app/, lib/, components/, tests/ => ZERO hits."
+        ]
+      },
+      "carried_measurements_from_R1_still_true": "grep -rln 'membership: null' over tests/, app/, lib/ returns exactly four files. grep for getCurrentMembership( over app/, lib/, components/ returns six call sites: app/(authenticated)/app/onboarding/actions.ts:50, app/(authenticated)/app/onboarding/page.tsx:36, app/(public)/login/actions.ts:53, app/auth/callback/route.ts:25, lib/auth/session.ts:151, lib/invitations/service.ts:185. Both re-run at R2 against the unmoved tree with identical results.",
       "sixth_call_site_disposition": "lib/auth/session.ts:151 is inside requireRole(), which redirects to /app/dashboard on insufficient ROLE. It is a role gate, not an organisation-selection gate, and a subject reaching it has already resolved a membership. Unaffected; NOT authorized.",
-      "known_limit": "This census covers *.ts and *.tsx under tests/, app/, lib/ and components/. A consumer reached only through a dynamic import or a string-built module specifier would not appear. None was observed, and none is claimed to be impossible — the implementing mission's targeted_tests gate is what would surface one."
+      "UNKNOWN_CLOSED": "R1 carried an open finding F-HH-4 admitting that a dynamically-imported consumer would not appear in its census. SEAM 4, SEAM 5 and SEAM 6 close it: there are ZERO dynamic, string-built, aliased or require()-based consumers of the repaired modules in application code, and the one string-built specifier in the repository resolves to a constant naming an unrelated component. F-HH-4 is RESOLVED, not carried."
     }
   },
 
@@ -438,10 +657,65 @@
       { "id": "X-15", "rule": "Absorbing RETURN SITE 3 into this node under any destination or verb.", "source": "CARRIED — THIRD_SITE_DISPOSITION; successor TENANCY_ORGANIZATION_READABILITY_INVARIANT_SUCCESSOR_REQUIRED stays open with owner TO_BE_MAPPED." },
       { "id": "X-16", "rule": "Weakening the signup allowlist, the onboarding fail-closed RLS posture, or the not_allowlisted explanation.", "source": "MISSION SCOPE — this node narrows who is ROUTED to founding; it does not change who may found." },
       { "id": "X-17", "rule": "Adding a route, moving a route, or changing which routes sit outside the organisation gate.", "source": "Pinned by tests/auth/route-authorization-boundary.test.ts:217 and :278; also the basis of R5 termination." },
-      { "id": "X-18", "rule": "Persisting the selection anywhere that outlives the browser session — a users column, a database preference, localStorage/sessionStorage, a URL parameter, or a client-set header.", "source": "CARRIED — SESSION_SCOPE.session_scoped_means and SELECTED_ORG_CARRIER.prohibited_carriers." }
+      { "id": "X-18", "rule": "Persisting the selection anywhere that outlives the browser session — a users column, a database preference, localStorage/sessionStorage, a URL parameter, or a client-set header.", "source": "CARRIED — SESSION_SCOPE.session_scoped_means and SELECTED_ORG_CARRIER.prohibited_carriers." },
+      { "id": "X-19", "rule": "Reverting, overwriting, relaxing or 'restoring' CE-1's migration-tail proof in tests/tenancy/s1-founder-traceability.test.ts:102-:115. If CE-1 has integrated, its retargeted tail assertions are authoritative and this node's pre-CE1 measurement of them is stale by construction.", "source": "ADDED IN R2 — CE1_CONCURRENCY_CONTRACT obligations O-2 and O-3." },
+      { "id": "X-20", "rule": "Weakening, relaxing, skipping or deleting any accessibility assertion in tests/design-system/form-accessibility.test.tsx in order to accommodate the routing change. The only authorized edit there is the mock-factory completion the repaired page mechanically requires.", "source": "ADDED IN R2 — MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E4." },
+      { "id": "X-21", "rule": "Carrying forward a test title, comment or artifact sentence that the repair makes FALSE. Specifically the clause 'route topology is unchanged by S3, only membership derivation is' at tests/auth/session.test.ts:380, which this node falsifies.", "source": "ADDED IN R2 — MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E3.the_title_claim_that_becomes_false." },
+      { "id": "X-22", "rule": "Stating a census or verification method in an artifact without executing it and recording its output.", "source": "ADDED IN R2 — census_completeness.R1_METHOD_DEFECT.rule_adopted. This is the prohibition that would have prevented R1's blocking finding B1." }
     ],
-    "prohibition_count": 18,
-    "prohibition_count_derivation": "Derived by counting SECURITY_PROHIBITIONS.prohibited (X-01 through X-18, contiguous), not asserted independently."
+    "prohibition_count": 22,
+    "prohibition_count_derivation": "Derived by counting SECURITY_PROHIBITIONS.prohibited (X-01 through X-22, contiguous), not asserted independently. R1 published 18; R2 adds X-19 through X-22, each traceable to a specific blocking finding or to the method defect that caused one."
+  },
+
+  "CE1_CONCURRENCY_CONTRACT": {
+    "why_this_section_exists": "Exactly one path in the write surface is SHARED with another in-flight governed correction. Discovering that during implementation would mean discovering it as a merge conflict, which is the worst moment to adjudicate whose change is authoritative.",
+    "shared_path": "tests/tenancy/s1-founder-traceability.test.ts",
+    "other_owner": {
+      "pr": "https://github.com/lorenzozanello/uellix-antigravity/pull/128",
+      "title": "feat(commercial): CE-1 CommercialAccount relation and live association",
+      "state_measured_at_R2": "OPEN, DRAFT, base integration/commercial-v1, head codex/commercial-account-ce1-implementation-r1, MERGEABLE.",
+      "correction_owned": "The MIGRATION-TAIL LADDER. PR #128 adds db/migrations/0068_commercial_account_ce1.sql and db/prepared/journal/081_0068_commercial_account_ce1.sql, and restamps every existing journal wrapper.",
+      "FORWARD_REFERENCES_NOT_PRESENT_AT_AS_OF_TREE": {
+        "paths": [
+          "db/migrations/0068_commercial_account_ce1.sql",
+          "db/prepared/journal/081_0068_commercial_account_ce1.sql"
+        ],
+        "why_declared": "These two paths are named in this contract but DO NOT EXIST at AS_OF_TREE 07c33c95 — they exist only on PR #128's branch. Every other path this artifact names is asserted to exist and is machine-verified to exist. Declaring the exception here, rather than letting a validator silently skip unresolvable paths, keeps 'this path does not exist' a governed statement instead of a tolerated failure. The artifact validator reads THIS LIST and exempts exactly these two paths, so a future artifact cannot acquire a dangling reference by accident.",
+        "expected_transition": "Both become real when CE-1 integrates. At that point they stop being forward references and this declaration should be removed by whichever mission next amends this artifact."
+      },
+      "measured_at_R2": "PR #128's CURRENT diff does NOT yet include tests/tenancy/s1-founder-traceability.test.ts. Its correction to this file is therefore FUTURE, not integrated. Measured by listing the PR's changed files, not assumed."
+    },
+    "the_exact_tail_proof_this_node_must_never_touch": {
+      "anchor": "tests/tenancy/s1-founder-traceability.test.ts:102-:115, the test 'has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit'.",
+      "assertions_CE1_will_have_to_retarget": [
+        ":105 — expect(files[files.length - 2]).toBe(S1_UNIT.id)",
+        ":106 — expect(files[files.length - 1]).toBe(S3_UNIT_ID), where S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql' (:103)",
+        ":112 — expect(`${last.tag}.sql`).toBe(S3_UNIT_ID) over the journal's last entry",
+        ":113 — expect(last.idx).toBe(journal.entries.length - 1)"
+      ],
+      "why_CE1_breaks_them": "All four are TAIL-RELATIVE. When 0068 lands it becomes the last .sql in db/migrations and the last journal entry, so S1 moves to len-3 and S3 to len-2. This is the SAME displacement the file has already survived once: its own comment at :95-:101 records that S1 was once last and that 0067 displaced it, and that the pin was RETARGETED to S1's own position with the displacing unit NAMED rather than relaxed into 'somewhere in the list'. CE-1 owns doing that a second time — the S1 -> S3 -> CE1 ladder.",
+      "this_node_touches_none_of_it": "The authorized region of this file for THIS node is the mock factory at :263-:266 and, conditionally, :273-:282 — plus re-measurement of :223. Those are DISJOINT from :102-:115. The two corrections do not overlap by line, only by file."
+    },
+    "binding_obligations_on_the_selector_implementing_mission": [
+      "O-1 — RE-MEASURE, NEVER REPLAY. Before editing this file, re-measure it against CURRENT live. The anchors in E5 were measured at 07c33c95 and are only valid there.",
+      "O-2 — PRESERVE ANY INTEGRATED CE-1 RETARGET. If CE-1 has integrated by then, the tail assertions will already name 0068. They must be left exactly as CE-1 wrote them. The selector node has no authority over the migration tail and must not 'restore' the S3 tail it measured at 07c33c95.",
+      "O-3 — NEVER REVERT OR OVERWRITE CE-1's EXACT TAIL PROOF. Reverting it would silently un-prove the CE-1 migration ordering while every routing control still passed — a green suite hiding a lost proof. Explicitly prohibited; see prohibition X-19.",
+      "O-4 — IF CE-1 INTEGRATES FIRST, START FROM POST-CE1 LIVE. Rebase or re-derive from the post-CE1 tree rather than carrying a pre-CE1 measurement forward. BASELINE_UNITS.length moves from 80 to 81 and the generator restamps all wrappers, so any pin expressed against it changes value even where its TEXT does not.",
+      "O-5 — IF THIS NODE INTEGRATES FIRST, CE-1 IS UNOBSTRUCTED. The mock-factory edit at :263-:266 does not move :102-:115, so CE-1's future retarget lands on unchanged lines. No coordination is owed in that direction beyond not widening this node's region."
+    ],
+    "what_is_NOT_claimed": "This section does not adjudicate CE-1's correction, does not approve it, and does not assert it is correct. It records that the file is shared, where the two regions are, and which obligations fall on this node. CE-1's tail retarget is governed by CE-1's own authority.",
+    "relative_pins_that_are_NOT_at_risk": "S1_UNIT is DERIVED from the live manifest by regex (:43), never named by ordinal, and its ordinal pin at :181 is the EXACT literal 79 with its array position derived from it (:182). CE-1 appends at a higher ordinal, so 79 does not move. The wrapper-count pin at :218 is expressed as BASELINE_UNITS.length + 1 and re-derives automatically. These were checked so that the contract names the assertions genuinely at risk rather than every assertion in the file."
+  },
+
+  "ANCHOR_CORRECTIONS_R2": {
+    "finding": "HK reported one stale anchor: the 'redirect graph: organisation-gated workspace routes' describe cited at :375.",
+    "independently_remeasured": "NOT COPIED. grep -n for the describe title in tests/auth/route-authorization-boundary.test.ts returns line 376. sed -n '373,378p' shows :373 '})', :374 '})', :375 blank, :376 the describe, :377 the '4/5' it(). HK's :375 -> :376 is CONFIRMED; R1 was off by one and had cited the blank line.",
+    "corrected": ":375 -> :376 in MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E1.",
+    "why_R1s_anchor_validator_missed_it": {
+      "cause": "R1's validator ran a HAND-CURATED list of (file, line, substring) triples. That list was assembled by hand from memory of what the artifact said, so an anchor that appeared in artifact PROSE but was never transcribed into the list was never checked. :375 was such an anchor.",
+      "structural_fix_applied_in_R2": "The validator no longer accepts a hand-curated list as sufficient. It now EXTRACTS every (path, line) reference from the artifacts themselves — including bare ':NNN' continuations, which it binds to the most recent path named in the same string — and FAILS if any extracted anchor has no curated expectation. An anchor can no longer enter an artifact without the validator demanding proof of it.",
+      "generalisation": "A validator driven by a list the author writes can only re-check what the author remembered. A validator driven by extraction from the artifact re-checks what the author actually wrote. R1's was the first kind."
+    }
   },
 
   "CONTROL_INDEX": {
@@ -466,7 +740,8 @@
     "known_conditions": {
       "declared": [],
       "how_grounded": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json was read at AS_OF_TREE and carries exactly TWO condition ids: KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and KTC-HOSTED-BASELINE-REHEARSAL-STALE-02.",
-      "derivation_of_the_empty_array": "Both conditions concern hosted baseline REHEARSAL staleness. This node touches no migration, no db/baseline surface, no prepared journal and no rehearsal artefact, and its targeted test scope is tests/auth/**. Neither condition can surface in that scope, so the empty array is an explicit 'none expected' rather than an unmeasured omission.",
+      "derivation_of_the_empty_array": "RE-DERIVED AT R2 ON STRONGER GROUNDS, because the R2 surface grew to include a test that does reference rehearsal. Both conditions are BOUND BY test_file to tests/eval/stella-release/hosted-baseline-gate.test.ts (semantic_category HOSTED_BASELINE_REHEARSAL_FRESHNESS, status PRE_EXISTING_DEFERRED). That file is in neither the write surface nor the targeted test scope, so neither condition can surface here. The empty array is an explicit 'none expected' resting on a measured file binding, not on a topical argument.",
+      "R1_derivation_was_weaker_and_is_superseded": "R1 argued from topic ('this node touches no migration, no db/baseline surface, no prepared journal and no rehearsal artefact, and its targeted test scope is tests/auth/**'). That argument became FALSE at R2 in one respect: tests/tenancy/s1-founder-traceability.test.ts is now in the surface and DOES read the baseline manifest and wrappers and does mention rehearsal. The conclusion survives only because the conditions are pinned to a different test_file entirely — which is why the derivation was re-done rather than carried.",
       "falsifier": "If either condition appears in the implementing mission's test-diff for this node, the empty array was wrong and the manifest must be amended before the node closes."
     }
   },
@@ -477,16 +752,31 @@
     "internal_references": "Every docs/** path and every control id named in either artifact is checked to resolve.",
     "cross_artifact_control_ids": "CONTROL_INDEX is checked to equal, exactly and in both directions, the set of control ids defined in the companion manifest's positive_controls, negative_controls and mutation_controls arrays — 14 ids, no id in one artifact and absent from the other. The weaker claim (that every id the authority's prose happens to mention resolves) is deliberately NOT the check performed, because it would be satisfied by a manifest carrying extra unreferenced controls.",
     "future_surface_proof": "Every path in EXACT_FUTURE_WRITE_SURFACE.authorized_paths is checked to EXIST at AS_OF_TREE, and so is every path named in EXCLUDED_PATHS. A future write surface naming a path that does not exist would be a derivation error, not a forward-looking allowance — this node creates no files.",
-    "line_anchor_verification": {
+    "line_anchor_verification_R2": {
       "performed": true,
-      "method": "Every load-bearing (file, line, expected-substring) triple asserted anywhere in either artifact was executed against the working tree at AS_OF_TREE. An anchor is PASS only if the cited line literally contains the claimed text.",
+      "method_R2": "EXTRACTION-DRIVEN, replacing R1's hand-curated list. The validator parses BOTH artifacts, extracts every (path, line) reference — including bare ':NNN' continuations, which it binds to the most recent path named in the same string, and both endpoints of every ':NNN-:NNN' range — and then requires a curated expected-substring for EVERY extracted anchor. An anchor with no expectation is reported UNPROVEN and fails the run, so an anchor cannot enter an artifact without the validator demanding proof of it.",
+      "anchors_extracted": 118,
+      "anchors_proven": 118,
+      "anchors_unproven": 0,
+      "anchors_failed": 0,
+      "result_R2": "ANCHOR_VERIFICATION_R2=PASS",
+      "defects_the_R2_method_caught_that_R1s_could_not": [
+        "AMBIGUOUS BARE ANCHORS — five places where a bare line reference bound to the WRONG file because a different path was named more recently in the same sentence. The clearest case named the onboarding server action and then gave two bare line numbers that are actually lines in the s1-founder-traceability test, so they pointed 147 lines past the end of a 161-line file. Every one is now fully qualified. This is the SAME defect class as the stale describe anchor HK found: a reference nobody transcribed into a checklist. NOTE FOR FUTURE EDITORS: state such examples in words, never as a live path-plus-line token, or the example itself is extracted and re-reported as a defect — which is exactly what happened on the first attempt to write this sentence.",
+        "THREE OFF-BY-ONE RANGES — 'return 403' cited at :199 (it is :198); the withDatabaseIdentityContext call cited at :672-:676 (it is :671-:675); the s1 database-context mock factory cited at :273-:281 (it closes at :282).",
+        "The stale describe-block anchor HK reported (off by one, pointing at a blank line rather than the describe), re-derived from the tree rather than copied."
+      ],
+      "R1_result_preserved": "R1 reported ANCHOR_VERIFICATION=PASS over 66 hand-curated anchors. That result was TRUE for the 66 it checked and MEANINGLESS for the anchors it did not, which included :375. A validator driven by a list the author writes can only re-check what the author remembered."
+    },
+    "line_anchor_verification_R1_historical": {
+      "performed": true,
+      "method": "Hand-curated (file, line, expected-substring) triples executed against the working tree at AS_OF_TREE.",
       "anchors_checked": 66,
       "result": "ANCHOR_VERIFICATION=PASS",
       "defects_this_check_caught_and_corrected": [
         "The site-1 rationale span was cited as :434-:446; the comment begins at :433. Corrected.",
         "The HPO ADJUDICATION D span was cited as :400-:407; it ends at :406. Corrected.",
         "The S3-7 module-inventory span was cited as :518-:529; the describe begins at :517. Corrected.",
-        "app/app/layout.tsx's gate call was cited at :22, which is inside the file header comment; the call is at :27. Corrected.",
+        "The app/app/layout.tsx gate call was cited at line 22, which is inside that file's header comment; the call is at app/app/layout.tsx:27. Corrected.",
         "MATERIAL: the site-2 audit discharge was cited at :735-:741, which is NOT a discharge at all — it is the AuthContextError throw inside withOrganizationDatabaseContext (:726). The real discharge is :597-:606. Corrected, and the second (borrowed-transaction) discharge branch at :554-:570 was added, having been missed entirely.",
         "MATERIAL: :739-:740 were described as 'audit-obligation reads'. They are REFUSAL-CODE PROPAGATION reads that construct a thrown AuthContextError. Re-measured, corrected, and the resulting objection (that a catcher could route on the propagated code) was closed by measuring every AuthContextError catcher in the repository."
       ],
@@ -519,8 +809,18 @@
     {
       "id": "F-HH-4",
       "severity": "INFORMATIONAL",
-      "finding": "The dynamic-import limit stated at MECHANICALLY_FORCED_EXISTING_TEST_EDITS.census_completeness.known_limit: the consumer census is a static text search and would not observe a consumer reached only through a dynamic or string-built module specifier.",
-      "disposition": "Accepted. No such consumer was observed. The targeted_tests exit gate is the mechanism that would surface one."
+      "status": "RESOLVED IN R2 — NO LONGER AN OPEN FINDING",
+      "finding_as_stated_in_R1": "The consumer census is a static text search and would not observe a consumer reached only through a dynamic or string-built module specifier.",
+      "resolution": "Closed by measurement, not by assertion. SEAM 4 found ZERO dynamic or string-built imports of the repaired modules in application code; the repository's single string-built specifier (app/app/projects/[projectId]/__tests__/grounded-query-readiness.test.ts:82) resolves to a CONSTANT declared at :66 naming an unrelated Stella pipeline component. SEAM 5 found exactly one re-export of any relevant symbol (the known lib/auth/session.ts:83). SEAM 6 found zero require() consumers. There is no residual 'a dynamic consumer may exist' UNKNOWN.",
+      "ironic_note": "R1 was right that its census had a blind spot and wrong about where. The blind spot it declared (dynamic imports in application code) turned out to be empty; the blind spots it did NOT declare (exhaustive mock factories and semantic execution seams in TESTS) held all three omissions — and one of those was reached by a dynamic import, in a test."
+    },
+    {
+      "id": "F-HH-5",
+      "severity": "COSMETIC",
+      "added_in": "R2",
+      "finding": "tests/database-runtime-entrypoints.test.ts:466-:467 describes the onboarding page's database reach as 'requireAuth() + getCurrentMembership(); both read the memoised principal.' After the repair the page also calls the enumerator, so the sentence is an incomplete description.",
+      "disposition": "NOT AUTHORIZED FOR REPAIR. Measured to be prose only: the four ALLOWLIST assertions check existence, entry-point status, reason LENGTH > 30, and database reachability — never the reason's text. Same class as F-HH-3. Recorded for a future documentation successor; editing it here would be a comment-only change in an unauthorized file.",
+      "falsifier": "If the implementing mission observes tests/database-runtime-entrypoints.test.ts failing against the repaired tree, this classification is wrong and the path must be admitted by amendment."
     }
   ],
 
@@ -530,8 +830,12 @@
     "SC-3_defect_measured_with_anchors": "PASS — five conflating consumers, each with file and line, plus the zero-inbound-routing measurement for the discriminator.",
     "SC-4_no_auto_selection_binding_including_one": "PASS — R2.branch_one_or_more states INCLUDING candidates.length === 1, and NO_AUTO_SELECTION lists the prohibited strategies and names the observable that distinguishes compliance.",
     "SC-5_third_site_discriminated": "PASS — R4 requires every routing predicate to conjoin membership === null, derives the hazard from the code's own audit-dimension defence, and excludes site 3 without absorbing it.",
-    "SC-6_write_surface_closed_and_derived": "PASS — seven paths, each with a required_because; two candidates rejected with derivations; one path added with a derivation; database-context.ts excluded exactly as the brief demanded and on measured grounds.",
-    "SC-7_count_trap_disclosed": "PASS — COUNT_WARNING_READ_THIS_BEFORE_COMPARING_TOTALS states that HE's seven and this seven are not the same seven and names the substitution in both directions.",
+    "SC-6_write_surface_closed_and_derived": "PASS AT R2, FAILED AT R1. TEN paths, each with a required_because: five IMPLEMENTATION and five EXISTING_TEST_MECHANICALLY_FORCED, the split verified by counting the array's class field. R1 asserted this same self-check as PASS over SEVEN paths, and it was wrong — the check passed because it verified that every LISTED path carried a derivation, never that every REQUIRED path was listed. A closed-world self-check must test the closure, not the annotation. Restated at R2 to test both: (a) every authorized path carries a derivation, and (b) every seam in census_completeness.R2_METHOD_SEMANTIC_SEAMS was executed and its output recorded, which is what makes the absence of a ninth or eleventh path a measurement rather than an assumption.",
+    "SC-7_count_trap_disclosed": "PASS — and now discloses BOTH traps. R1's trap: HE's seven and R1's seven were not the same seven (composition). R2's trap: R1's seven was itself wrong (magnitude). COUNT_WARNING states both, names the R1->R2 additions, and records that a fourth candidate was surfaced and refuted so the re-measurement is demonstrably independent of HK's list.",
+    "SC-13_R2_blocking_findings_each_independently_remeasured": "PASS — B1 re-derived from the working tree (three files admitted on their own seams; a fourth candidate refuted), B2 re-derived by reading both route handlers and the status mapping, B3 re-derived by sed over lines 373-378. None was accepted on HK's authority alone.",
+    "SC-14_no_historical_measurement_rewritten": "PASS — LIVE_RECONCILIATION_R2 proves the tree never moved, so every R1 number is preserved beside its correction with the reason it was wrong (authorized_path_count_R1_value, prohibition_count_derivation, F-HH-4.finding_as_stated_in_R1, the_R1_trap_still_true_and_still_worth_reading). No R1 figure is silently overwritten.",
+    "SC-15_shared_file_concurrency_declared": "PASS — CE1_CONCURRENCY_CONTRACT names the shared path, measures that PR #128's correction to it is FUTURE rather than integrated, locates both regions by line, proves them disjoint, and binds five obligations plus prohibition X-19.",
+    "SC-16_R4_protected_by_a_control_this_node_did_not_write": "PASS — tests/auth/session.test.ts:393 is a pre-existing repo-native control that dies if R3 is keyed on the refusal code alone. R4's protection therefore does not rest solely on a control this node introduces.",
     "SC-8_counts_derived_from_arrays": "PASS — conflating_consumer_count, authorized_path_count and prohibition_count each carry an explicit derivation naming the array they were counted from.",
     "SC-9_audit_semantics_frozen_both_ways": "PASS — no new event for an absent carrier (with the carried site-1 rationale), site-2 refusal preserved including its transaction split, and the no-emitter-keyed-on-the-code rule stated as deliberately vacuous.",
     "SC-10_test_edits_classified_and_justified": "PASS — classified MECHANICAL with a stated falsifier, and E2 carries the exact mechanical break (an exhaustive vi.mock factory) that makes it unavoidable.",
@@ -539,8 +843,8 @@
     "SC-12_no_protected_path_in_scope": "PASS — the write surface of the authoring mission is docs/ops/tenancy/** only, which matches no entry of DEFAULT_PROTECTED_PATTERNS as measured at scripts/ods-scope.ts:82-90."
   },
 
-  "final_state": "AUTHORITY_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "final_state": "AUTHORITY_R2_FROZEN_AWAITING_INDEPENDENT_REAUDIT",
   "IMPLEMENTATION_AUTHORIZED": false,
   "IMPLEMENTATION_AUTHORIZED_NOTE": "This artifact FREEZES the contract. It does NOT open implementation. No application code, test, migration, ODS surface or grant was written by the authoring mission. Implementation opens only after the independent audit disposes of this artifact and its companion manifest.",
-  "next_gate": "TENANCY_S3_SELECTOR_REACHABILITY_AUTHORITY_INDEPENDENT_AUDIT"
+  "next_gate": "PR127_SELECTOR_AUTHORITY_R2_INDEPENDENT_REAUDIT"
 }
