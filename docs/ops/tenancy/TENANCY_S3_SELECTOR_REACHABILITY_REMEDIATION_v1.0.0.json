@@ -1,0 +1,546 @@
+{
+  "package_id": "TENANCY_S3_SELECTOR_REACHABILITY_REMEDIATION",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/tenancy/TENANCY_S3_SELECTOR_REACHABILITY_REMEDIATION_v1.0.0.json",
+  "authority_class": "BOUNDED_DEFECT_REMEDIATION_EXECUTION_AUTHORITY",
+  "mission_id": "TENANCY-S3-SELECTOR-REACHABILITY-AUTHORITY-R1",
+  "lane_id": "LANE_HH",
+  "materialization_date": "2026-09-09",
+  "companion_manifest": "docs/ops/tenancy/TENANCY_S3_SELECTOR_REACHABILITY_TEST_MANIFEST_v1.0.0.json",
+  "GRANT_ID": null,
+  "GRANT_ID_DISPOSITION": "NO GRANT IS DECLARED OR REGISTERED BY THIS ARTIFACT. The entire write surface of the authoring mission is docs/ops/tenancy/**, which is not matched by any entry of DEFAULT_PROTECTED_PATTERNS (scripts/ods-scope.ts:82-90, measured this mission: the seven entries are docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json). A protected-surface grant would therefore authorize nothing that --allow does not already authorize, and DECLARING a grant is not the same act as REGISTERING one. Neither act is performed here.",
+
+  "AS_OF_REF": "codex/tenancy-s3-selector-reachability-authority-r1",
+  "AS_OF_HEAD": "07c33c953bd8e0888d13786011e54a5ce98b196a",
+  "AS_OF_TREE": "a811ca8d4cf4eada34c25b7028b3734c05ddc386",
+  "as_of_measurement_note": "HEAD equals the mission's declared BASE_AT_START and the working tree was clean at prestate. Every line anchor in this artifact was read at this exact tree and is only valid against it. ods:prestate returned PRESTATE_BRANCH=PASS, PRESTATE_HEAD=PASS, PRESTATE_TREE=PASS, PRESTATE_CLEAN=PASS, ODS_PRESTATE=PASS.",
+
+  "PARENT_AUTHORITY": {
+    "how_derived": "RE-DERIVED MECHANICALLY, NOT GUESSED. The four governed subjects named by the binding HPO (REQUEST_PRINCIPAL, SESSION_SCOPE, FAILURE_CODES, SECOND_ORG_MEMBERSHIP B4) were grepped across docs/**. Exactly one artifact carries all four as TOP-LEVEL sections. Note that docs/ops/tenancy/ contains NO file named for S3 authority — only S3 IMPLEMENTATION EVIDENCE — so an artifact guessed by name would have been wrong.",
+    "node_authority": {
+      "path": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+      "artifact_id": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0",
+      "authority_class_at_source": "EXECUTABLE_TENANCY_AUTHORITY_FROZEN_WAITING_FOR_LINEAGE_ALLOCATION",
+      "AS_OF_HEAD_at_source": "60c93804a37bbae050959cb2709003dc6d92d8f3",
+      "AS_OF_TREE_at_source": "796ecf4a76752ffde32bcf5dfe3f7298e1bf7fda",
+      "companion_manifest_at_source": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+      "governing_sections_bound_by_this_artifact": [
+        "SESSION_SCOPE — including SESSION_SCOPE.no_selection_behavior and its three sub-rules (rule, single_membership_case, multi_membership_case).",
+        "SELECTED_ORG_CARRIER — including trust_model ('THE CARRIER IS AN ASSERTION, NEVER A GRANT').",
+        "REQUEST_PRINCIPAL — the target principal shape and its supersession of SI-2.",
+        "REQUEST_REVALIDATION — per-request re-derivation with no permitted grace window.",
+        "SECOND_ORG_MEMBERSHIP — contract item B4 and its B4_classification.",
+        "FAILURE_CODES — the two S3-node codes and their must_not clauses.",
+        "SUPERADMIN_BOUNDARY — the /admin control-plane door preserved by P-A1-4.",
+        "AUDIT_VERBS — tenancy.membership.revalidation_refused and the prohibition on recording tenant CONTENT."
+      ]
+    },
+    "execution_scope_amendments_in_force_for_S3": [
+      {
+        "path": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4.json",
+        "relevance": "Opened and froze the S3 CORE execution ceiling: REQUEST_PRINCIPAL_CONTRACT, REQUEST_PRINCIPAL_SHAPE and SELECTOR_DECIRCULARISATION — the last of which is why the selector route can be reached without an already-selected principal at all."
+      },
+      {
+        "path": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6.json",
+        "relevance": "Carries REFUSAL_EVENT_CONTRACT and THIRD_SITE_DISPOSITION, and records THIRD_SITE_SUCCESSOR_ID = TENANCY_ORGANIZATION_READABILITY_INVARIANT_SUCCESSOR_REQUIRED (v1.0.6:320 and :723). This is the amendment that makes the third-return-site discrimination in ROUTING_CONTRACT below a CARRIED constraint rather than a new invention."
+      },
+      {
+        "path": "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.8.json",
+        "relevance": "The terminal S3 REFUSAL AUDIT amendment; carries PER_ENTRY_DISPOSITION and S3_SEMANTICS_PRESERVED. Nothing in this remediation reopens it."
+      }
+    ],
+    "implementation_evidence_consulted_read_only": [
+      "docs/ops/tenancy/MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+      "docs/ops/tenancy/MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "companion_ods_addendum_of_record": {
+      "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json",
+      "relevance": "Records the same third-site successor id at :265 and :805 and the SC-13 self-check at :893. Cited as EVIDENCE ONLY. This artifact allocates NO ODS addendum, registers NO node, and amends NO ODS surface."
+    },
+    "tokens_that_do_NOT_exist_in_the_corpus": {
+      "measured": "grep over docs/** at AS_OF_TREE returns ZERO hits for the literal token NO_AUTO_SELECTION and ZERO hits for the literal token requestPrincipal.",
+      "consequence": "NO_AUTO_SELECTION is a BINDING HPO NAME introduced by this mission for a rule the parent already states in prose; it is NOT a citation of a pre-existing named principle, and this artifact does not pretend otherwise. The rule it names is SESSION_SCOPE.no_selection_behavior."
+    }
+  },
+
+  "BINDING_HPO_DECISION": {
+    "SELF_SERVICE_CREATION_DEADLOCK": "ACCIDENTAL_NOT_INTENTIONAL",
+    "ENTRY_ROUTE_RESOLUTION": "BOUNDED_S3_DEFECT_REMEDIATION",
+    "NO_AUTO_SELECTION": "BINDING",
+    "provenance": "Supplied by HPO to this mission. HE independently derived this node as the head of the Commercial Spine critical path.",
+    "consequence_of_ACCIDENTAL": "Because the deadlock is adjudicated ACCIDENTAL rather than an intentional gate, repairing it is a DEFECT REMEDIATION inside the existing S3 semantics and requires no new tenancy privilege, no schema change and no widening of who may found an organization. This is the whole reason the write surface below is as small as it is."
+  },
+
+  "PARENT_NARROWING_DECLARATION": {
+    "why_this_section_exists": "The binding HPO is STRICTER than the parent authority at exactly one point. Stating that explicitly is required; discovering it during audit is not acceptable.",
+    "parent_text": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 SESSION_SCOPE.no_selection_behavior.single_membership_case: 'Where the subject has exactly one selectable membership, the application MAY present that organization as the selection, but it MUST do so by making an explicit selection (writing the carrier), not by inferring a scope at request time.'",
+    "hpo_text": "NO_AUTO_SELECTION = BINDING. Candidates >= 1, INCLUDING candidates = 1, routes to the selector. No carrier write during routing.",
+    "relationship": "NARROWING, NOT CONFLICT. The parent grants a discretionary MAY; the HPO declines to exercise it. Declining a permission is always available to a subordinate authority. The parent's MUST (that any selection be an explicit carrier write, never a request-time inference) is preserved intact and is in fact strengthened: under this artifact the carrier is written ONLY by the pre-existing governed selection act at app/(authenticated)/app/organizations/select/actions.ts, never by a routing decision.",
+    "fail_closed_check": "If a future adjudication reads this as a CONFLICT rather than a NARROWING, the correct disposition is STOP AND ESCALATE, not silent reconciliation in either direction. It is recorded here so that the question is answerable from the artifact.",
+    "what_would_have_been_a_real_conflict": "An HPO instruction to auto-select for candidates = 1 WITHOUT writing the carrier. That would violate the parent's MUST and its 'why' clause ('Inference at request time is exactly SI-2, re-created under a new name'). No such instruction was given."
+  },
+
+  "DEFECT": {
+    "classification": "ROUTING DEFECT. NOT a schema defect, NOT a privilege defect, NOT an S3 semantics defect.",
+    "one_sentence": "S3 gave the request principal a two-valued refusal discriminator, but every routing consumer still asks the pre-S3 boolean question 'is membership null', which is TRUE under both values — so a returning member who simply has no selected-organization carrier is routed to organization CREATION instead of organization SELECTION.",
+
+    "discriminator_exists": {
+      "type_declaration": "lib/auth/database-context.ts:140-142 — readonly organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED' | 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' | null.",
+      "emission_sites": [
+        "RETURN SITE 1 — lib/auth/database-context.ts:448. Carrier absent (or malformed). Code = TENANCY_NO_ORGANIZATION_SELECTED. membership = null. pendingRevalidationRefusal = null.",
+        "RETURN SITE 2 — lib/auth/database-context.ts:472. Carrier names an organization with no active membership for this subject. Code = TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER. membership = null. pendingRevalidationRefusal = the attempted organization id.",
+        "RETURN SITE 3 — lib/auth/database-context.ts:511. Membership EXISTS and is returned; only the organization ROW could not be read. Code = TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER as a REUSED CARRIER. membership = NON-NULL. pendingRevalidationRefusal = null."
+      ]
+    },
+
+    "discriminator_has_zero_inbound_routing": {
+      "measurement": "grep -rn 'organizationRefusalCode' over *.ts and *.tsx at AS_OF_TREE, excluding node_modules, returns hits in exactly ONE application file and three TEST files. The application file is lib/auth/database-context.ts: the type declaration (:140-:142), the three emission sites (:448, :472, :511), and TWO PROPAGATION READS at :739-:740 inside withOrganizationDatabaseContext (:726), which turn the code into the message and code of a thrown AuthContextError. The test files are tests/authenticated-database-context.test.ts, tests/tenancy/s3-refusal-audit.test.ts and tests/tenancy/s3-request-principal.test.ts.",
+      "the_propagation_read_is_not_a_routing_read": "MEASURED, BECAUSE IT IS THE OBVIOUS OBJECTION. The code IS propagated out of lib/auth/ as a typed error code at :739-:740, so a consumer COULD route on it. None does. grep for AuthContextError across app/, lib/ and components/ returns catchers in app/admin/access/actions.ts, app/admin/organizations/actions.ts, app/admin/proxies/actions.ts, app/admin/services/actions.ts, app/app/organization/members/actions.ts, app/api/proxies/search/route.ts and app/api/proxies/[id]/suggest/route.ts — and EVERY ONE of them branches on 'instanceof AuthContextError' alone, collapsing the refusal to a generic not_authorized without ever reading .code. A grep for a caught TENANCY_ code anywhere under app/ returns nothing.",
+      "conclusion": "ZERO application modules outside lib/auth/database-context.ts read organizationRefusalCode, and zero modules anywhere route on it — not directly, and not through the AuthContextError code it is propagated into. The field is produced, propagated, tested, and never consumed by any routing decision. The selector route exists and has no inbound edge that depends on the discriminator."
+    },
+
+    "the_conflating_helper": {
+      "site": "lib/auth/session.ts:120-124",
+      "body": "getCurrentMembership(userId) resolves loadRequestPrincipal(), checks the userId matches, and returns principal.membership.",
+      "why_it_conflates": "principal.membership is null at RETURN SITE 1 and at RETURN SITE 2 alike. The refusal code is the ONLY thing that distinguishes them, and getCurrentMembership discards it. Every consumer that asks '!membership' therefore cannot tell 'has not chosen yet' from 'chose an organization it may not have'.",
+      "stale_prose_observed_not_authorized_for_repair": "The docstring at lib/auth/session.ts:108-119 still says 'In the MVP a user belongs to at most one organisation, so we simply return the first active membership found.' That description is false after S3 (the read is now qualified by the selected organization). It is RECORDED as an observation and is NOT authorized for repair by this artifact, because comment-only edits to a file already in the write surface invite scope drift and prove nothing. See OPEN_FINDINGS.F-HH-3."
+    },
+
+    "conflating_routing_consumers_measured": [
+      {
+        "site": "lib/auth/session.ts:177",
+        "predicate": "if (!principal.membership || !principal.organization) {",
+        "current_effect": "Line 179 redirects a super-admin to /admin; line 180 redirects everyone else to /app/onboarding.",
+        "defect": "Reached identically for RETURN SITE 1 and RETURN SITE 2. A member with no carrier is sent to organization creation. This is the gate for the ENTIRE organisation-gated workspace, because app/app/layout.tsx:27 calls requireOrganizationAccess() and every route under app/app/ inherits it."
+      },
+      {
+        "site": "app/(public)/login/actions.ts:53-58",
+        "predicate": "const membership = await getCurrentMembership(data.user.id); if (!membership) { redirect('/app/onboarding') } ... redirect('/app/dashboard')",
+        "defect": "The comment at :52 calls this the 'Smart redirect'. It is exactly the pre-S3 boolean. A returning member logging in on a fresh browser session ALWAYS has no carrier (SESSION_SCOPE: 'A new session starts with no selection'), so this branch is not an edge case at login — it is the ORDINARY case."
+      },
+      {
+        "site": "app/auth/callback/route.ts:25-30",
+        "predicate": "const membership = await getCurrentMembership(data.user.id); if (!membership) { return NextResponse.redirect(new URL('/app/onboarding', request.url)) }",
+        "defect": "Same boolean, same consequence, on the OAuth/magic-link entry path. Structurally identical to the login site and must not be repaired only at one of the two."
+      },
+      {
+        "site": "app/(authenticated)/app/onboarding/page.tsx:36-38",
+        "predicate": "const membership = await getCurrentMembership(user.id); if (membership) { redirect('/app/dashboard') }",
+        "defect": "THE DEADLOCK SITE. The guard only bounces a subject OUT when membership is truthy. A member with no carrier has membership === null, so it falls THROUGH and is served the organization-creation form. That form is allowlist-gated (app/(authenticated)/app/onboarding/actions.ts:60-68 redirects to /app/onboarding?error=not_allowlisted), so an existing member who is not on the signup allowlist reaches a terminal explanation offering only sign-out and a support mailto. This is the ACCIDENTAL deadlock the binding HPO adjudicated."
+      },
+      {
+        "site": "app/(authenticated)/app/onboarding/actions.ts:50-52",
+        "predicate": "const existingMembership = await getCurrentMembership(authUser.id); if (existingMembership) { redirect('/app/dashboard') }",
+        "defect": "The SUBMIT-side twin of the page guard, and the more dangerous of the two: it is the check whose stated job is 'Enforce: user must not already have an org'. Under the conflation a subject who IS a member but has no carrier passes this check and proceeds toward founding a SECOND organization. Today that attempt is stopped downstream by the allowlist and by RLS (the action's own header documents the fail-closed wall), but the guard itself is not doing the job it claims, and repairing the page without repairing the action would leave the claim false."
+      }
+    ],
+    "conflating_consumer_count": 5,
+    "conflating_consumer_count_derivation": "Derived by counting DEFECT.conflating_routing_consumers_measured, not asserted independently. Five entries, five sites, across four files (lib/auth/session.ts, app/(public)/login/actions.ts, app/auth/callback/route.ts, and the two app/(authenticated)/app/onboarding/ modules).",
+
+    "why_this_is_not_a_schema_defect": "No table, column, constraint, policy or migration is implicated. organization_members already carries the (organization_id, user_id) uniqueness the qualified predicate relies on, the enumerator already returns the right candidate set, and the selector route already renders. Every fact the repair needs is already produced by the running system; only the branch that consumes it is missing."
+  },
+
+  "ROUTING_CONTRACT": {
+    "applies_to": "An AUTHENTICATED subject. An unauthenticated subject is out of scope and its existing redirect to /login is preserved verbatim at every site.",
+    "evaluation_order_is_normative": "The four rules below are ORDERED. An implementation that evaluates them in a different order can produce a different destination for the same principal, so the order is part of the contract, not a presentation choice.",
+
+    "R1_SUPER_ADMIN_PRESERVED_VERBATIM": {
+      "rule": "Where the existing super-admin contract applies, it is preserved VERBATIM and is evaluated BEFORE any selector question.",
+      "concrete": "lib/auth/session.ts:179 — if (principal.user.isSuperAdmin) redirect('/admin') — keeps its position ahead of the /app/onboarding branch and keeps its destination.",
+      "prohibition": "A super-admin without a membership MUST NOT be routed to /app/organizations/select. SUPERADMIN_BOUNDARY.what_superadmins_retain is explicit that superadmins reach tenant data 'through a different, explicit door'; sending them to the tenant selector would be that door reopened by accident.",
+      "control": "P-A1-4."
+    },
+
+    "R2_NO_CARRIER": {
+      "precondition": "principal.membership === null AND principal.organizationRefusalCode === 'TENANCY_NO_ORGANIZATION_SELECTED'.",
+      "action": "Call the EXISTING selectable-membership enumerator: listSelectableMemberships(), exported from lib/auth/session.ts:83 as a re-export of lib/auth/database-context.ts:661.",
+      "branch_zero": "candidates.length === 0 -> route to /app/onboarding.",
+      "branch_one_or_more": "candidates.length >= 1 -> route to /app/organizations/select. THIS INCLUDES candidates.length === 1.",
+      "controls": "P-A1-1, P-A1-2, P-A1-3."
+    },
+
+    "R3_STALE_OR_NON_MEMBER_CARRIER": {
+      "precondition": "principal.membership === null AND principal.organizationRefusalCode === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'.",
+      "action": "Clear the stale carrier, THEN route to /app/organizations/select carrying the governed refusal/error semantics already implemented for that route.",
+      "ordering_is_normative": "The carrier is cleared BEFORE the redirect is issued. If the redirect were issued first, the next request would re-enter R3 with the same stale carrier and the graph would not terminate.",
+      "error_semantics_reuse": "The selector route already renders a governed explanation for this exact condition under the existing key not_a_member (app/(authenticated)/app/organizations/select/page.tsx:42 — 'No perteneces a esa organización, o tu membresía ya no está activa.'), reached today via app/(authenticated)/app/organizations/select/actions.ts:116. This contract REUSES that key and MUST NOT invent a new error vocabulary.",
+      "fallback_prohibition": "Never fall back to another membership, not even when the subject holds exactly one other active membership. This is SECOND_ORG_MEMBERSHIP B4, whose B4_classification names it 'the failure mode most likely to be introduced as a UX nicety'. Routing the subject to the selector is not a fallback: the subject chooses, the application does not choose for them.",
+      "controls": "N-A1-2."
+    },
+
+    "R4_THIRD_RETURN_SITE_IS_NOT_A_SELECTOR_CONDITION": {
+      "derivation": "DERIVED BY THIS MISSION FROM MEASURED CODE. It was not supplied by the HPO and it corrects a latent hazard in a contract keyed on the refusal code alone.",
+      "precondition": "principal.membership !== null AND principal.organizationRefusalCode === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' (lib/auth/database-context.ts:511, RETURN SITE 3).",
+      "the_hazard": "At this site the code is a REUSED CARRIER for an unreadable ORGANISATION ROW, and the membership DEMONSTRABLY EXISTS — it was loaded, is non-null, and is returned in the same object. A routing rule keyed on the CODE ALONE would treat this subject as holding a stale carrier, CLEAR a perfectly valid carrier, and evict a genuine member from their chosen scope on a transient organisation-read failure.",
+      "why_this_is_a_carried_constraint_not_an_invention": "The repository already defends its AUDIT emitter against exactly this trap and says so in terms: lib/auth/database-context.ts:415-418 states that pendingRevalidationRefusal 'is deliberately NOT derived from organizationRefusalCode: that code is returned at TWO structurally different sites below and is TRUE at only one of them', and :495-:501 states that 'An emitter keyed on organizationRefusalCode would therefore write a FALSE audit row here'. This rule transposes that same discipline from the AUDIT dimension to the ROUTING dimension, where it had not yet been stated.",
+      "rule": "Every routing predicate in this contract is a CONJUNCTION of the refusal code AND membership === null. The code alone is NEVER sufficient to route. RETURN SITE 3 is therefore matched by NEITHER R2 NOR R3.",
+      "disposition_of_site_3": "EXCLUDED FROM THIS NODE, NOT ABSORBED. It remains the pre-existing open governed question TENANCY_ORGANIZATION_READABILITY_INVARIANT_SUCCESSOR_REQUIRED (recorded at MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6.json:320 and :723, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json:265 and :805, owner TO_BE_MAPPED, BLOCKS_THIS_NODE false). This artifact allocates it no verb, no destination and no carrier mutation. Its existing behaviour — the requireOrganizationAccess membership-AND-organization conjunction at lib/auth/session.ts:177 — is preserved unchanged, which keeps it fail-closed.",
+      "controls": "N-A1-4, M-A1-3."
+    },
+
+    "R5_TERMINATION": {
+      "rule": "The routing graph must terminate. No destination of this contract may itself re-enter the contract with the same principal state.",
+      "measured_basis": "app/(authenticated)/app/organizations/select/page.tsx calls only requireAuth() at :50 and renders; with candidates.length === 0 it renders an explanation at :88 rather than redirecting. The selector is TERMINAL — it has no outbound redirect on any candidate count — so no cycle through it is constructible. /app/onboarding is likewise served from app/(authenticated)/, whose layout calls only requireAuth() (app/(authenticated)/layout.tsx:76), and is therefore outside the organisation gate that would otherwise redirect back to it.",
+      "controls": "T-A1-1."
+    },
+
+    "NO_CARRIER_WRITE_DURING_ROUTING": {
+      "rule": "No rule of this contract writes the selected-organization carrier. R3 CLEARS a carrier; clearing is not selecting, and it leaves the subject with no scope rather than with a scope they did not choose.",
+      "sole_permitted_writer_unchanged": "The carrier is written only by the pre-existing governed selection act at app/(authenticated)/app/organizations/select/actions.ts, which independently revalidates candidacy at :101-:103 before writing.",
+      "controls": "N-A1-1, M-A1-1."
+    }
+  },
+
+  "NO_AUTO_SELECTION": {
+    "status": "BINDING",
+    "rule": "For candidates.length === 1 the destination is the SELECTOR, identically to candidates.length >= 2. The single-candidate case gets no shortcut.",
+    "prohibited_selection_strategies": [
+      "automatic selection of the sole candidate",
+      "most-recent selection",
+      "alphabetical selection",
+      "pick-first / .limit(1) over an unqualified user predicate",
+      "any inference of scope from whatever memberships happen to exist",
+      "any carrier write performed by a routing decision rather than by the governed selection act"
+    ],
+    "why_the_single_candidate_case_is_the_load_bearing_one": "It is the only case where auto-selection is invisible in ordinary use — with one membership the user cannot tell an automatic choice from their own. It is therefore the case that will be introduced as a convenience and never noticed. SESSION_SCOPE.no_selection_behavior.why names the consequence exactly: 'Inference at request time is exactly SI-2, re-created under a new name.'",
+    "observability_of_compliance": "The parent supplies the discriminating observation directly: SESSION_SCOPE.no_selection_behavior.single_membership_case — 'The distinction is observable: after the selection the carrier exists; under inference it never would.' N-A1-1 asserts precisely that, on the single-candidate route.",
+    "relationship_to_parent": "See PARENT_NARROWING_DECLARATION. This is the parent's discretionary MAY declined, not the parent's MUST contradicted."
+  },
+
+  "EXACT_FUTURE_WRITE_SURFACE": {
+    "status": "CLOSED WORLD. A path absent from authorized_paths below is NOT authorized for the implementing mission, and 'it changed anyway' is not a derivation.",
+    "measurement_method": "Each candidate supplied by HE was re-measured at AS_OF_TREE and admitted ONLY on a factual derivation of why an edit is unavoidable. Two candidates were REJECTED and one path HE did not list was ADDED.",
+
+    "COUNT_WARNING_READ_THIS_BEFORE_COMPARING_TOTALS": {
+      "he_candidate_count": 7,
+      "authorized_count": 7,
+      "the_trap": "THE TOTALS MATCH AND THE SETS DO NOT. HE's list and this list are both seven paths, but they are not the same seven: tests/tenancy/s3-request-principal.test.ts was REJECTED and tests/auth/onboarding-escape-path.test.tsx was ADDED. A reviewer who reconciles only the totals will conclude the surface was carried forward unchanged, which is false. The substitution is the finding.",
+      "set_difference_rejected_from_he_list": ["tests/tenancy/s3-request-principal.test.ts"],
+      "set_difference_added_beyond_he_list": ["tests/auth/onboarding-escape-path.test.tsx"]
+    },
+
+    "authorized_paths": [
+      {
+        "path": "lib/auth/session.ts",
+        "class": "IMPLEMENTATION",
+        "required_because": "Hosts requireOrganizationAccess (:173-:186), whose :177 conjunction is the gate for the entire organisation-gated workspace via app/app/layout.tsx:27. R1/R2/R3/R4 cannot be applied to workspace routes without editing this function. The enumerator it must call is ALREADY exported from this same module at :83, so the edit needs no new import from outside lib/auth/.",
+        "must_not": "getCurrentMembership (:120-:124) keeps its signature, return type and semantics VERBATIM. See EXCLUDED_PATHS.lib_invitations_service for the measured reason."
+      },
+      {
+        "path": "app/(public)/login/actions.ts",
+        "class": "IMPLEMENTATION",
+        "required_because": "login() at :53-:58 routes on the conflated boolean. This is the ordinary post-authentication path for a returning member, who by SESSION_SCOPE always arrives with no carrier.",
+        "scope_note": "signup() at :95 redirects unconditionally to /app/onboarding. A genuinely new subject has zero candidates, so R2 sends them to the same destination and the observable behaviour is unchanged. It is admitted to the surface because it sits in this same authorized file and because an authenticated subject who already holds memberships must not be routed to founding from ANY entry; it is NOT a separate path allocation.",
+        "must_not": "The validated-redirect precedence at :49-:51 and :91-:93 is preserved AHEAD of any selector question. An invited subject accepting an invitation must still reach their accept link. Reordering it would break invitation acceptance, which section 9 prohibits."
+      },
+      {
+        "path": "app/auth/callback/route.ts",
+        "class": "IMPLEMENTATION",
+        "required_because": ":25-:30 is the structurally identical conflation on the OAuth/magic-link entry path. Repairing login() alone would leave a second, equally ordinary door still routing members to founding.",
+        "must_not": "The validated-`next` precedence at :22-:24 is preserved ahead of any selector question, for the same invitation reason."
+      },
+      {
+        "path": "app/(authenticated)/app/onboarding/page.tsx",
+        "class": "IMPLEMENTATION",
+        "required_because": "THE DEADLOCK SITE. :36-:38 bounces a subject out only when membership is truthy, so a member with no carrier is served the allowlist-gated creation form. This is the specific accident the binding HPO adjudicated, and no edit elsewhere repairs it: a subject can reach /app/onboarding directly by URL without transiting login, callback or the workspace gate."
+      },
+      {
+        "path": "app/(authenticated)/app/onboarding/actions.ts",
+        "class": "IMPLEMENTATION",
+        "required_because": "The SUBMIT-side twin at :50-:52, whose stated job is 'Enforce: user must not already have an org'. Under the conflation a member with no carrier passes it and proceeds toward founding a second organization. Leaving it while repairing the page would leave a false guard behind a repaired form.",
+        "must_not": "The allowlist gate (:60-:68) and the fail-closed RLS posture documented in the action header are preserved UNWEAKENED. This node does not make founding easier for anyone; it stops routing NON-founders into it."
+      },
+      {
+        "path": "tests/auth/route-authorization-boundary.test.ts",
+        "class": "EXISTING_TEST_MECHANICALLY_FORCED",
+        "required_because": "See MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E1. Its single memberless() fixture cannot express both operands of the distinction the repair introduces."
+      },
+      {
+        "path": "tests/auth/onboarding-escape-path.test.tsx",
+        "class": "EXISTING_TEST_MECHANICALLY_FORCED",
+        "required_because": "See MECHANICALLY_FORCED_EXISTING_TEST_EDITS.E2. Its vi.mock factory for @/lib/auth/session is EXHAUSTIVE and omits the enumerator, so the repaired page throws inside it."
+      }
+    ],
+    "authorized_path_count": 7,
+    "authorized_path_count_derivation": "Derived by counting EXACT_FUTURE_WRITE_SURFACE.authorized_paths, not asserted independently. Five entries carry class IMPLEMENTATION and two carry class EXISTING_TEST_MECHANICALLY_FORCED; 5 + 2 = 7.",
+
+    "new_test_files_permitted": {
+      "rule": "NONE. The new controls of the companion manifest land in tests/auth/route-authorization-boundary.test.ts, which is already the repository's home for the redirect-graph suites ('redirect graph: /app/onboarding' at :343 and 'redirect graph: organisation-gated workspace routes' at :375).",
+      "why": "A new test file would be a new path allocation, and the existing file must be edited regardless. Splitting the redirect graph across two files would also weaken T-A1-1, which is a statement about the graph as a whole."
+    },
+
+    "EXCLUDED_PATHS": {
+      "note": "Each exclusion is a factual derivation, not an omission. A future mission that believes one of these is required must produce a NEW measurement, not an appeal to convenience.",
+      "lib_auth_database_context": {
+        "path": "lib/auth/database-context.ts",
+        "verdict": "NOT AUTHORIZED",
+        "derivation": "The implementation READS two things from this module — organizationRefusalCode and listSelectableMemberships — and needs to EDIT neither. The refusal code is already on the principal shape the consumers receive (:140-:142). The enumerator is already re-exported from lib/auth/session.ts:83, and tests/tenancy/s3-request-principal.test.ts:536-:537 pins that the two exports are the SAME function object, so importing it from session.ts is not a duplicate query. Reading an export is not a reason to open its defining file for writing. This exclusion is required explicitly by the mission brief and it survives measurement.",
+        "additional_consequence": "Keeping this file closed also preserves the S3-7 module inventory pinned at tests/tenancy/s3-request-principal.test.ts:517-:529, which asserts lib/auth/ contains exactly seven .ts files."
+      },
+      "tests_tenancy_s3_request_principal": {
+        "path": "tests/tenancy/s3-request-principal.test.ts",
+        "verdict": "NOT AUTHORIZED — REJECTED FROM HE'S CANDIDATE LIST",
+        "derivation": "Every assertion in this file was examined for a pin that the repair would break. It pins (a) principal resolution semantics under a real Postgres harness, (b) that the enumerator is keyed on (user, active) alone and never reads the carrier (:552-:559), (c) that the enumerator is exported from both permitted hosts and is the same function object (:531-:537), (d) that the SELECTOR PAGE does not import getCurrentMembership/getCurrentOrganizationContext (:566-:572), and (e) the lib/auth/ module inventory (:518-:529). This node changes NONE of those: it does not touch principal construction, does not touch the enumerator, does not touch the selector page, and adds no lib/auth module. The controls it would host are unit-level routing controls over mocked principals, which belong with the redirect graph, not with the real-Postgres principal suite.",
+        "if_this_is_wrong": "The falsifier is concrete: if the implementing mission finds ANY assertion in this file that fails against the repaired tree, that failure is the derivation and the path is admitted by amendment. Absent such a failure it stays closed."
+      },
+      "lib_invitations_service": {
+        "path": "lib/invitations/service.ts",
+        "verdict": "NOT AUTHORIZED",
+        "derivation": "It consumes the same helper at :185-:188 ('You already belong to an organization'). It is named here PRECISELY BECAUSE it is the measured reason getCurrentMembership must keep its semantics: broadening that helper to mean 'holds any membership' rather than 'holds the selected membership' would silently change who may accept an invitation. Section 9 prohibits changing invitation semantics, so the helper is frozen and this file stays closed."
+      },
+      "app_app_layout": {
+        "path": "app/app/layout.tsx",
+        "verdict": "NOT AUTHORIZED",
+        "derivation": "It obtains its gate by calling requireOrganizationAccess() at :22. Repairing that function in lib/auth/session.ts repairs this layout and every route beneath it with no edit here."
+      },
+      "app_authenticated_layout": {
+        "path": "app/(authenticated)/layout.tsx",
+        "verdict": "NOT AUTHORIZED",
+        "derivation": "It calls only requireAuth() (:76) and asks no organisation question. It must KEEP asking none — that is the property that keeps /app/onboarding and /app/organizations/select outside the gate and makes R5 terminate."
+      },
+      "app_organizations_select": {
+        "paths": [
+          "app/(authenticated)/app/organizations/select/page.tsx",
+          "app/(authenticated)/app/organizations/select/actions.ts"
+        ],
+        "verdict": "NOT AUTHORIZED",
+        "derivation": "The selector is the DESTINATION of this repair and already works: the page enumerates candidates at :52, renders a governed explanation at :88 when there are none, and the action independently revalidates candidacy at :101-:103 before writing the carrier and already emits not_a_member at :116. This node builds the inbound edge; it does not modify the node the edge points at. Editing the sole permitted carrier writer while repairing routing would also blur the boundary NO_CARRIER_WRITE_DURING_ROUTING depends on."
+      },
+      "phase2_onboarding_trap": {
+        "paths": [
+          "tests/auth/phase2-onboarding-trap.test.tsx",
+          "app/app/organization/onboarding/page.tsx"
+        ],
+        "verdict": "NOT AUTHORIZED",
+        "derivation": "NAME COLLISION, DIFFERENT ROUTE. This suite imports @/app/app/organization/onboarding/page (SINGULAR 'organization', under the org-gated app/app/ tree) and mocks requireOrganizationAccess, not getCurrentMembership. It is the post-selection Phase-2 setup page for a subject who ALREADY has a scope. It is unaffected, and tests/auth/route-authorization-boundary.test.ts:230 already pins that the singular subtree stays organisation-gated."
+      },
+      "s2_and_s3_refusal_audit_suites": {
+        "paths": [
+          "tests/tenancy/s2-selected-org-carrier.test.ts",
+          "tests/tenancy/s3-refusal-audit.test.ts",
+          "tests/authenticated-database-context.test.ts"
+        ],
+        "verdict": "NOT AUTHORIZED",
+        "derivation": "These are the other three files whose text contains 'membership: null' or asserts on organizationRefusalCode at AS_OF_TREE. In each the construct is an ASSERTION about principal resolution or refusal-audit emission, not a ROUTING fixture, and this node changes neither producer. The census was mechanical: grep for the literal 'membership: null' over tests/, app/ and lib/ returns exactly four files, of which one (tests/auth/route-authorization-boundary.test.ts) is a routing fixture and is authorized above."
+      }
+    }
+  },
+
+  "AUDIT_SEMANTICS": {
+    "frozen": "THIS NODE ADDS NO AUDIT EVENT AND REMOVES NONE.",
+    "no_new_event_for_absent_carrier": {
+      "rule": "Routing a subject away from an absent selected-organization carrier (R2) MUST NOT emit an audit event, on either branch — neither the 0-candidate route to onboarding nor the >=1-candidate route to the selector.",
+      "carried_rationale": "The site-1 rationale is already frozen in the implementation and is carried, not re-derived: lib/auth/database-context.ts:433-:446 — 'RETURN SITE 1 — AND IT AUDITS NOTHING, WHICH IS THE POINT... reaching this line does not mean anyone ATTEMPTED anything. In the overwhelmingly common case it is an ordinary signed-in user who has not selected yet — onboarding, not refusal. An audit row here would record a refusal of an attempt that never happened, on almost every request such a user makes.'",
+      "why_routing_does_not_change_it": "Routing is an observation of the absence, not an attempt. Making the absence REACHABLE by a new destination does not convert it into an attempt. If anything the argument strengthens: after this repair the no-carrier state is the ORDINARY state of every returning member at the start of every session, so an event here would be pure volume with no refusal behind it.",
+      "control": "N-A1-5."
+    },
+    "existing_site_2_refusal_preserved": {
+      "rule": "The membership-revalidation refusal audit at RETURN SITE 2 is PRESERVED EXACTLY: same verb, same subject, same emission site, same split between the deciding transaction and the write.",
+      "verb": "tenancy.membership.revalidation_refused (MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 AUDIT_VERBS, node S3).",
+      "mechanism_preserved": "lib/auth/database-context.ts:471-:474 returns pendingRevalidationRefusal rather than writing it, and :597-:606 discharges the obligation through a SEPARATE withDatabaseIdentityContext that calls emitMembershipRevalidationRefused. The architectural reason is frozen at :400-:406: writing the audit row inside the deciding transaction 'would couple the observation to the decision: a failing INSERT would roll the whole transaction back, so the audit surface could change what the authorization surface answers' (HPO ADJUDICATION D).",
+      "borrowed_transaction_branch_also_preserved": "There is a SECOND discharge path at lib/auth/database-context.ts:554-:570: when the deciding transaction was BORROWED from a caller, the audit cannot be isolated, and the implementation refuses LOUDLY (throws) rather than writing the row into the caller's transaction or silently skipping it — 'Both remaining options are failures; this picks the LOUD one.' Routing must not convert that loud failure into a redirect. A subject whose principal resolution throws here is not a subject with no carrier, and must not be routed as if they were.",
+      "consequence_for_R3": "R3 routes AFTER the principal has already been resolved, so the refusal is recorded by the existing mechanism before routing runs. R3 must not re-emit it, must not suppress it, and must not move it.",
+      "control": "P-A1-5."
+    },
+    "no_emitter_may_be_keyed_on_the_code": {
+      "rule": "No audit emitter added or modified by this node may key on organizationRefusalCode. This node adds none, so the rule is satisfied vacuously — it is stated so that the vacuity is deliberate and auditable rather than accidental.",
+      "reason": "lib/auth/database-context.ts:495-:501 — an emitter keyed on the code writes a FALSE row at RETURN SITE 3, asserting an absent membership that the same return value disproves."
+    },
+    "no_tenant_content": "AUDIT_VERBS.prohibited is carried unchanged: no audit verb may record the CONTENT of tenant data. Attribution and outcome only. This node records nothing at all, so it cannot violate it."
+  },
+
+  "MECHANICALLY_FORCED_EXISTING_TEST_EDITS": {
+    "classification": "MECHANICAL TEST CORRECTION, NOT AUTHORITY WEAKENING.",
+    "why_that_classification_is_defensible": "Every assertion these suites make today is TRUE of the pre-repair system and remains a property somebody wants. What changes is that a single fixture is no longer EXPRESSIVE ENOUGH: it names a principal state ('member-less') that the repair splits into two states with two different correct destinations. The edits ADD the missing operand and RE-PIN each existing assertion to the operand it was always about. No assertion is deleted, no expectation is loosened, and no destination that is correct today becomes unasserted. If any edit removes a control instead of re-pinning it, this classification fails and the mission STOPS.",
+
+    "E1": {
+      "file": "tests/auth/route-authorization-boundary.test.ts",
+      "the_conflating_construct": "The memberless() fixture at :99-:100 — mockLoadRequestPrincipal.mockResolvedValue({ user, membership: null, organization: null }). It sets NO organizationRefusalCode at all and stubs NO enumerator, so once routing reads either one, this single fixture cannot distinguish genuine memberless/founding from member-with-no-carrier. It is the direct fixture-level image of the production defect.",
+      "forced_edits": [
+        {
+          "anchor": ":99-:100 memberless()",
+          "correction": "Split into two explicitly named fixtures that differ ONLY in the enumerator's answer: one with organizationRefusalCode 'TENANCY_NO_ORGANIZATION_SELECTED' and zero candidates (genuine founding), one with the same code and one or more candidates (member without a carrier). Both must set the refusal code explicitly — a fixture that omits it is under-specified against the repaired shape and must not survive.",
+          "naming_requirement": "The two fixtures must NOT both be called memberless(). The whole defect is that one word covered two states; preserving the word preserves the confusion in the test vocabulary."
+        },
+        {
+          "anchor": ":350-:365, test '2. authenticated, membership=null -> RENDERS, and never redirects to itself'",
+          "correction": "RE-PIN to the zero-candidate fixture. Left on an ambiguous fixture this test asserts that the onboarding page does NOT redirect a member-less user — which after the repair is exactly the DEADLOCK for a member with no carrier. It would become a control that pins the defect in place.",
+          "severity": "HIGHEST. This is the assertion most likely to be 'preserved' out of caution and thereby block the repair."
+        },
+        {
+          "anchor": ":377-:383, test '4/5. authenticated, membership=null -> /app/onboarding'",
+          "correction": "RE-PIN to the zero-candidate fixture, and add the sibling asserting the >=1-candidate fixture routes to /app/organizations/select. The existing assertNoSelfRedirect('/app/dashboard', location) call is preserved on both."
+        },
+        {
+          "anchor": ":367-:373, test '3. authenticated, membership exists -> /app/dashboard'",
+          "correction": "PRESERVED UNCHANGED. A subject with a resolved membership is unaffected by this contract."
+        },
+        {
+          "anchor": ":391-:395, test '7. super admin without a membership -> /admin, contract preserved'",
+          "correction": "PRESERVED UNCHANGED IN DESTINATION. Its fixture gains the refusal code for shape-correctness only. If this test's destination changes, R1 has been violated. It is the direct control for P-A1-4."
+        },
+        {
+          "anchor": ":448-:462 and :464-:476, the URL-contract pins",
+          "correction": "PRESERVED. These assert that the /app/onboarding string contract still exists in login actions and the callback route. The repair keeps /app/onboarding as the 0-candidate destination, so they continue to hold. If an implementation makes one of them fail, it has removed the onboarding destination rather than narrowing when it is reached — which is out of contract."
+        },
+        {
+          "anchor": ":217 and :278, the ungated-route sweeps expecting exactly ['onboarding', 'organizations/select']",
+          "correction": "PRESERVED UNCHANGED. This node adds no route and moves none. These are the controls that would catch an implementation that tried to solve routing by relocating a page."
+        }
+      ]
+    },
+
+    "E2": {
+      "file": "tests/auth/onboarding-escape-path.test.tsx",
+      "not_in_HE_candidate_list": true,
+      "derivation": "This suite imports @/app/(authenticated)/app/onboarding/page (:17) — the SAME module authorized for repair — and mocks its dependency module with an EXHAUSTIVE factory at :12-:15: vi.mock('@/lib/auth/session', () => ({ requireAuth, getCurrentMembership })). A vi.mock factory REPLACES the module; any export not listed is undefined. The repaired page must call listSelectableMemberships, which this factory does not provide, so all four tests in the suite fail with a TypeError before reaching any assertion. This is a hard mechanical break, not a judgement call.",
+      "forced_edits": [
+        {
+          "anchor": ":12-:15 vi.mock factory",
+          "correction": "Add the enumerator to the factory, stubbed to return zero candidates so the page still RENDERS the blocked state these four tests are about."
+        },
+        {
+          "anchor": ":14 getCurrentMembership stub",
+          "correction": "Whatever principal shape the repaired page reads must be supplied here consistently with the zero-candidate intent — an allowlist-blocked founder is precisely the 0-candidate case, so this suite's subject stays on /app/onboarding and its four assertions keep their meaning."
+        },
+        {
+          "anchor": ":19-:47, all four escape-path assertions",
+          "correction": "PRESERVED UNCHANGED. The sign-out control, the support affordance, the unweakened not_allowlisted explanation and the no-false-success rule are all still required. In particular ':34 preserves the fail-closed not_allowlisted explanation, unweakened' must keep passing — this node narrows WHO reaches that state, and must not soften the state itself."
+        }
+      ],
+      "why_missing_this_would_have_failed_the_node": "Had it stayed unlisted, the implementing mission would have hit four failures in an unauthorized file and faced a choice between editing outside its ceiling and weakening its own repair. Both are STOP conditions. Enumerating it here is what keeps the ceiling closed AND achievable."
+    },
+
+    "census_completeness": {
+      "method": "Mechanical, not recalled. (1) grep -rln 'membership: null' over tests/, app/, lib/ returns exactly four files: tests/auth/route-authorization-boundary.test.ts, tests/tenancy/s2-selected-org-carrier.test.ts, tests/tenancy/s3-refusal-audit.test.ts, lib/auth/database-context.ts. (2) grep for getCurrentMembership( over app/, lib/, components/ returns six call sites: app/(authenticated)/app/onboarding/actions.ts:50, app/(authenticated)/app/onboarding/page.tsx:36, app/(public)/login/actions.ts:53, app/auth/callback/route.ts:25, lib/auth/session.ts:151, lib/invitations/service.ts:185. (3) grep for vi.mock('@/lib/auth/session' over tests/ identifies every suite whose exhaustive factory could break.",
+      "sixth_call_site_disposition": "lib/auth/session.ts:151 is inside requireRole(), which redirects to /app/dashboard on insufficient ROLE. It is a role gate, not an organisation-selection gate, and a subject reaching it has already resolved a membership. Unaffected; NOT authorized.",
+      "known_limit": "This census covers *.ts and *.tsx under tests/, app/, lib/ and components/. A consumer reached only through a dynamic import or a string-built module specifier would not appear. None was observed, and none is claimed to be impossible — the implementing mission's targeted_tests gate is what would surface one."
+    }
+  },
+
+  "SECURITY_PROHIBITIONS": {
+    "note": "Each entry is a prohibition on the IMPLEMENTING mission. Several are restatements of parent invariants and are marked as such so that a reader can tell what this node invents (nothing) from what it carries.",
+    "prohibited": [
+      { "id": "X-01", "rule": "Automatic carrier inference — deriving a scope at request time from whatever memberships exist.", "source": "CARRIED — SESSION_SCOPE.no_selection_behavior.rule; this is SI-2." },
+      { "id": "X-02", "rule": "Fallback to any membership when the selected one is absent, stale, or non-member — including when exactly one alternative exists.", "source": "CARRIED — SECOND_ORG_MEMBERSHIP B4 and both FAILURE_CODES must_not clauses." },
+      { "id": "X-03", "rule": "Silent organization selection, including auto-selecting a sole candidate.", "source": "BINDING HPO — NO_AUTO_SELECTION; narrows the parent's discretionary MAY." },
+      { "id": "X-04", "rule": "Any new audit event for an absent selected-organization carrier.", "source": "CARRIED — site-1 rationale, lib/auth/database-context.ts:433-:446." },
+      { "id": "X-05", "rule": "Widening S7 — no change to when or whether a subject may hold a second membership.", "source": "OUT OF NODE — MEMBERSHIP_CARDINALITY.change_node is S7." },
+      { "id": "X-06", "rule": "Changing membership cardinality, in either direction, and in particular enforcing FOUNDER cardinality using the MEMBERSHIP carrier or the reverse.", "source": "CARRIED — MEMBERSHIP_CARDINALITY.distinction_that_must_not_collapse." },
+      { "id": "X-07", "rule": "Changing invitation semantics, including who may accept an invitation and the guard at lib/invitations/service.ts:185.", "source": "MISSION BRIEF, and the measured reason getCurrentMembership is frozen." },
+      { "id": "X-08", "rule": "Any schema, migration, RLS policy, GUC or database-role change.", "source": "MISSION BRIEF — NO migration. Also DEFECT.why_this_is_not_a_schema_defect." },
+      { "id": "X-09", "rule": "Any write to a protected path (docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json).", "source": "scripts/ods-scope.ts:82-90." },
+      { "id": "X-10", "rule": "Treating the carrier as authorization. Membership must be re-derived from live database state on every request; no caching, no memoisation across requests, no grace window.", "source": "CARRIED — SELECTED_ORG_CARRIER.trust_model and REQUEST_REVALIDATION.revocation_latency_requirement." },
+      { "id": "X-11", "rule": "Routing a super-admin without a membership to the tenant selector, or otherwise reopening the SI-3 membership exemption under a routing name.", "source": "CARRIED — SUPERADMIN_BOUNDARY.impersonation.anti_pattern; enforced by R1." },
+      { "id": "X-12", "rule": "Keying any routing decision on organizationRefusalCode ALONE, without conjoining membership === null.", "source": "DERIVED THIS MISSION — R4; the RETURN SITE 3 reused-carrier hazard." },
+      { "id": "X-13", "rule": "Changing the signature, return type or semantics of getCurrentMembership, or of loadRequestPrincipal and the three return sites.", "source": "DERIVED THIS MISSION — six call sites including invitation acceptance; see EXCLUDED_PATHS.lib_invitations_service." },
+      { "id": "X-14", "rule": "Weakening or deleting any existing control in the two authorized test files, as distinct from re-pinning it to the operand it was always about.", "source": "MECHANICALLY_FORCED_EXISTING_TEST_EDITS.why_that_classification_is_defensible." },
+      { "id": "X-15", "rule": "Absorbing RETURN SITE 3 into this node under any destination or verb.", "source": "CARRIED — THIRD_SITE_DISPOSITION; successor TENANCY_ORGANIZATION_READABILITY_INVARIANT_SUCCESSOR_REQUIRED stays open with owner TO_BE_MAPPED." },
+      { "id": "X-16", "rule": "Weakening the signup allowlist, the onboarding fail-closed RLS posture, or the not_allowlisted explanation.", "source": "MISSION SCOPE — this node narrows who is ROUTED to founding; it does not change who may found." },
+      { "id": "X-17", "rule": "Adding a route, moving a route, or changing which routes sit outside the organisation gate.", "source": "Pinned by tests/auth/route-authorization-boundary.test.ts:217 and :278; also the basis of R5 termination." },
+      { "id": "X-18", "rule": "Persisting the selection anywhere that outlives the browser session — a users column, a database preference, localStorage/sessionStorage, a URL parameter, or a client-set header.", "source": "CARRIED — SESSION_SCOPE.session_scoped_means and SELECTED_ORG_CARRIER.prohibited_carriers." }
+    ],
+    "prohibition_count": 18,
+    "prohibition_count_derivation": "Derived by counting SECURITY_PROHIBITIONS.prohibited (X-01 through X-18, contiguous), not asserted independently."
+  },
+
+  "CONTROL_INDEX": {
+    "purpose": "The complete set of control ids frozen by the companion manifest, so that cross-artifact agreement is checkable in BOTH directions from either artifact alone.",
+    "positive": ["P-A1-1", "P-A1-2", "P-A1-3", "P-A1-4", "P-A1-5", "T-A1-1"],
+    "negative": ["N-A1-1", "N-A1-2", "N-A1-3", "N-A1-4", "N-A1-5"],
+    "mutation": ["M-A1-1", "M-A1-2", "M-A1-3"],
+    "total": 14,
+    "total_derivation": "Derived by summing the three arrays above: 6 positive + 5 negative + 3 mutation = 14. Not asserted independently.",
+    "T_A1_1_placement_note": "T-A1-1 is a TERMINATION proof and is carried in the manifest's positive_controls array, because docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json declares additionalProperties:false at the root and offers no termination category. It is indexed under 'positive' here for the same reason. This is a schema accommodation, not a reclassification of what it proves.",
+    "ids_named_in_this_authority_but_defined_in_the_manifest": "R1 names P-A1-4; R2 names P-A1-1/2/3; R3 names N-A1-2; R4 names N-A1-4 and M-A1-3; R5 names T-A1-1; NO_CARRIER_WRITE_DURING_ROUTING names N-A1-1 and M-A1-1; AUDIT_SEMANTICS names N-A1-5 and P-A1-5. The two ids this authority's prose does NOT name inline are N-A1-3 (enumerator failure fails closed) and M-A1-2 (restore the pre-repair boolean); both are required by the mission brief and both are indexed here, so the union above is exact."
+  },
+
+  "TEST_CONTRACT_GROUNDING_LIMITS": {
+    "why_this_section_exists": "Two manifest fields are conventionally verified by a machine gate. Neither gate is applicable to this node, and saying so is required rather than leaving an empty array to imply a measurement that was not taken.",
+    "dependencies": {
+      "declared": ["MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0", "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4", "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6", "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.8"],
+      "how_grounded": "By READING each artifact at AS_OF_TREE and confirming its artifact_id, version and in-force sections. NOT by ops:program-state.",
+      "why_not_ops_program_state": "MEASURED, NOT ASSUMED: scripts/ods-program-state.ts requires --unit <id> (it prints ODS_PROGRAM_STATE=USAGE_ERROR without one, at :332-:335). Its unit space is the FIB unit space. This tenancy node has no FIB unit id, so the gate has nothing to answer about it. Running it here would produce a USAGE_ERROR, not a closure verdict.",
+      "residual_risk": "Closure of the parent lineage is asserted from artifact content rather than from a program-state verdict. An auditor challenging a dependency should challenge the artifact, not the missing gate output."
+    },
+    "known_conditions": {
+      "declared": [],
+      "how_grounded": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json was read at AS_OF_TREE and carries exactly TWO condition ids: KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and KTC-HOSTED-BASELINE-REHEARSAL-STALE-02.",
+      "derivation_of_the_empty_array": "Both conditions concern hosted baseline REHEARSAL staleness. This node touches no migration, no db/baseline surface, no prepared journal and no rehearsal artefact, and its targeted test scope is tests/auth/**. Neither condition can surface in that scope, so the empty array is an explicit 'none expected' rather than an unmeasured omission.",
+      "falsifier": "If either condition appears in the implementing mission's test-diff for this node, the empty array was wrong and the manifest must be amended before the node closes."
+    }
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "json_validity": "Both artifacts parse under JSON.parse.",
+    "schema_validity": "The companion test manifest is validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json structurally and dependency-free (ajv is NOT installed in this repository). The schema declares additionalProperties:false at the root and on the control definition, so key-set conformance is checked exactly, not approximately. This authority artifact has NO governing schema in the repository — find over docs/ for '*SCHEMA*' returns only the test-manifest schema and two unrelated audit markdown files — so it is validated for JSON validity, internal reference integrity and cross-artifact control-id agreement only.",
+    "internal_references": "Every docs/** path and every control id named in either artifact is checked to resolve.",
+    "cross_artifact_control_ids": "CONTROL_INDEX is checked to equal, exactly and in both directions, the set of control ids defined in the companion manifest's positive_controls, negative_controls and mutation_controls arrays — 14 ids, no id in one artifact and absent from the other. The weaker claim (that every id the authority's prose happens to mention resolves) is deliberately NOT the check performed, because it would be satisfied by a manifest carrying extra unreferenced controls.",
+    "future_surface_proof": "Every path in EXACT_FUTURE_WRITE_SURFACE.authorized_paths is checked to EXIST at AS_OF_TREE, and so is every path named in EXCLUDED_PATHS. A future write surface naming a path that does not exist would be a derivation error, not a forward-looking allowance — this node creates no files.",
+    "line_anchor_verification": {
+      "performed": true,
+      "method": "Every load-bearing (file, line, expected-substring) triple asserted anywhere in either artifact was executed against the working tree at AS_OF_TREE. An anchor is PASS only if the cited line literally contains the claimed text.",
+      "anchors_checked": 66,
+      "result": "ANCHOR_VERIFICATION=PASS",
+      "defects_this_check_caught_and_corrected": [
+        "The site-1 rationale span was cited as :434-:446; the comment begins at :433. Corrected.",
+        "The HPO ADJUDICATION D span was cited as :400-:407; it ends at :406. Corrected.",
+        "The S3-7 module-inventory span was cited as :518-:529; the describe begins at :517. Corrected.",
+        "app/app/layout.tsx's gate call was cited at :22, which is inside the file header comment; the call is at :27. Corrected.",
+        "MATERIAL: the site-2 audit discharge was cited at :735-:741, which is NOT a discharge at all — it is the AuthContextError throw inside withOrganizationDatabaseContext (:726). The real discharge is :597-:606. Corrected, and the second (borrowed-transaction) discharge branch at :554-:570 was added, having been missed entirely.",
+        "MATERIAL: :739-:740 were described as 'audit-obligation reads'. They are REFUSAL-CODE PROPAGATION reads that construct a thrown AuthContextError. Re-measured, corrected, and the resulting objection (that a catcher could route on the propagated code) was closed by measuring every AuthContextError catcher in the repository."
+      ],
+      "why_recorded": "Two of these were substantive misreadings, not formatting drift. Recording them is what lets an auditor distinguish anchors that were verified from anchors that merely look precise."
+    },
+    "validator_defect_disclosed": "The first run of the artifact validator reported seven unresolved code anchors. All seven were FALSE POSITIVES produced by the validator's own extractor: its extension alternation was ordered (ts|tsx|sql), so the regex matched 'ts' first and truncated every .tsx path to a nonexistent .ts. The extractor was corrected (tsx before ts) rather than the check relaxed, and the corrected run resolves all 27 code paths. Disclosed because a validator that silently truncates its inputs is exactly the failure mode that makes a green validation meaningless.",
+    "gates": "ods:prestate, authority:seal:verify, ods:scope and scope negative controls, all run dependency-free with plain node (this worktree has NO node_modules; pnpm cannot resolve tsx, so each gate is invoked as 'node scripts/<gate>.ts'). Results recorded in the mission report."
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-HH-1",
+      "severity": "INFORMATIONAL",
+      "finding": "RETURN SITE 3 (lib/auth/database-context.ts:511) remains an open governed question — a membership that exists whose organisation row cannot be read. Its behaviour is unchanged and fail-closed under the preserved conjunction at lib/auth/session.ts:177.",
+      "disposition": "NOT ABSORBED. Owner remains TO_BE_MAPPED under TENANCY_ORGANIZATION_READABILITY_INVARIANT_SUCCESSOR_REQUIRED. BLOCKS_THIS_NODE: false."
+    },
+    {
+      "id": "F-HH-2",
+      "severity": "INFORMATIONAL",
+      "finding": "getSelectedOrganizationId() returns null for BOTH an absent carrier and a present-but-MALFORMED one, so a malformed carrier resolves to RETURN SITE 1 and is routed by R2 rather than R3 — it is never distinguished, and never audited. The implementation comment at lib/auth/database-context.ts:443-:446 already adjudicated this for the audit dimension and declined to change the reader.",
+      "routing_consequence": "A subject with a malformed carrier and >=1 candidates is routed to the selector, which is the correct destination anyway. A subject with a malformed carrier and 0 candidates is routed to onboarding, also correct. The conflation is therefore ROUTING-NEUTRAL at both branches, which is why this node does not touch the reader.",
+      "disposition": "RECORDED, NOT REPAIRED. Changing getSelectedOrganizationId is outside this ceiling."
+    },
+    {
+      "id": "F-HH-3",
+      "severity": "COSMETIC",
+      "finding": "The getCurrentMembership docstring at lib/auth/session.ts:108-:119 is stale after S3: it still describes returning 'the first active membership found' under an at-most-one-organisation MVP assumption, whereas the read has been qualified by the selected organization since S3.",
+      "disposition": "NOT AUTHORIZED FOR REPAIR by this node, although the file is in the write surface. A comment-only edit proves nothing, is not covered by any control, and would widen the diff for no behavioural reason. Recorded for a future documentation successor."
+    },
+    {
+      "id": "F-HH-4",
+      "severity": "INFORMATIONAL",
+      "finding": "The dynamic-import limit stated at MECHANICALLY_FORCED_EXISTING_TEST_EDITS.census_completeness.known_limit: the consumer census is a static text search and would not observe a consumer reached only through a dynamic or string-built module specifier.",
+      "disposition": "Accepted. No such consumer was observed. The targeted_tests exit gate is the mechanism that would surface one."
+    }
+  ],
+
+  "self_check": {
+    "SC-1_parent_re_derived_not_guessed": "PASS — the parent was located by grepping the four governed subjects, and the artifact records that docs/ops/tenancy/ contains no S3-named authority file, which is what would have made a guess wrong.",
+    "SC-2_narrowing_declared": "PASS — PARENT_NARROWING_DECLARATION states the parent's MAY, the HPO's stricter rule, and classifies the relationship as NARROWING with an explicit fail-closed instruction if a future reader disagrees.",
+    "SC-3_defect_measured_with_anchors": "PASS — five conflating consumers, each with file and line, plus the zero-inbound-routing measurement for the discriminator.",
+    "SC-4_no_auto_selection_binding_including_one": "PASS — R2.branch_one_or_more states INCLUDING candidates.length === 1, and NO_AUTO_SELECTION lists the prohibited strategies and names the observable that distinguishes compliance.",
+    "SC-5_third_site_discriminated": "PASS — R4 requires every routing predicate to conjoin membership === null, derives the hazard from the code's own audit-dimension defence, and excludes site 3 without absorbing it.",
+    "SC-6_write_surface_closed_and_derived": "PASS — seven paths, each with a required_because; two candidates rejected with derivations; one path added with a derivation; database-context.ts excluded exactly as the brief demanded and on measured grounds.",
+    "SC-7_count_trap_disclosed": "PASS — COUNT_WARNING_READ_THIS_BEFORE_COMPARING_TOTALS states that HE's seven and this seven are not the same seven and names the substitution in both directions.",
+    "SC-8_counts_derived_from_arrays": "PASS — conflating_consumer_count, authorized_path_count and prohibition_count each carry an explicit derivation naming the array they were counted from.",
+    "SC-9_audit_semantics_frozen_both_ways": "PASS — no new event for an absent carrier (with the carried site-1 rationale), site-2 refusal preserved including its transaction split, and the no-emitter-keyed-on-the-code rule stated as deliberately vacuous.",
+    "SC-10_test_edits_classified_and_justified": "PASS — classified MECHANICAL with a stated falsifier, and E2 carries the exact mechanical break (an exhaustive vi.mock factory) that makes it unavoidable.",
+    "SC-11_no_grant_declared_or_registered": "PASS — GRANT_ID is null and GRANT_ID_DISPOSITION states why no grant is needed and that neither declaring nor registering was performed.",
+    "SC-12_no_protected_path_in_scope": "PASS — the write surface of the authoring mission is docs/ops/tenancy/** only, which matches no entry of DEFAULT_PROTECTED_PATTERNS as measured at scripts/ods-scope.ts:82-90."
+  },
+
+  "final_state": "AUTHORITY_FROZEN_AWAITING_INDEPENDENT_AUDIT",
+  "IMPLEMENTATION_AUTHORIZED": false,
+  "IMPLEMENTATION_AUTHORIZED_NOTE": "This artifact FREEZES the contract. It does NOT open implementation. No application code, test, migration, ODS surface or grant was written by the authoring mission. Implementation opens only after the independent audit disposes of this artifact and its companion manifest.",
+  "next_gate": "TENANCY_S3_SELECTOR_REACHABILITY_AUTHORITY_INDEPENDENT_AUDIT"
+}

@@ -1,0 +1,129 @@
+{
+  "manifest_id": "TENANCY-S3-SELECTOR-REACHABILITY",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/tenancy/TENANCY_S3_SELECTOR_REACHABILITY_REMEDIATION_v1.0.0.json",
+
+  "dependencies": [
+    "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.8"
+  ],
+
+  "protected_surfaces": [],
+
+  "protected_authority": null,
+
+  "known_conditions": [],
+
+  "sentinels": [
+    {
+      "id": "S-HH-ENUMERATOR-IS-THE-EXISTING-ONE",
+      "purpose": "The routing branch calls listSelectableMemberships as re-exported from lib/auth/session.ts:83, which tests/tenancy/s3-request-principal.test.ts:536-537 pins to be the SAME function object implemented at lib/auth/database-context.ts:661. If a second, parallel enumerator query appears anywhere in the write surface, the node has duplicated the candidate source and the two can disagree. Sentinel: no new query over organization_members is introduced by this node."
+    },
+    {
+      "id": "S-HH-CARRIER-WRITER-CARDINALITY",
+      "purpose": "Exactly one module writes the selected-organization carrier: app/(authenticated)/app/organizations/select/actions.ts. Sentinel: after the repair, the set of modules that write the carrier is unchanged. A carrier write appearing in lib/auth/session.ts, either onboarding module, the login actions or the auth callback is an automatic STOP — it is NO_AUTO_SELECTION violated at the mechanism level regardless of what any assertion reports."
+    },
+    {
+      "id": "S-HH-ROUTING-PREDICATE-IS-A-CONJUNCTION",
+      "purpose": "Every routing predicate introduced by this node conjoins the refusal code with membership === null (authority R4). Sentinel: no branch keys on organizationRefusalCode alone. A predicate that tests only the code silently mis-handles RETURN SITE 3 (lib/auth/database-context.ts:511), where the code is a reused carrier and the membership exists."
+    },
+    {
+      "id": "S-HH-LIB-AUTH-MODULE-INVENTORY",
+      "purpose": "lib/auth/ contains exactly seven .ts files and this node adds none, as already pinned by tests/tenancy/s3-request-principal.test.ts:517-529. Sentinel: that inventory assertion still passes unmodified, which is also the proof that lib/auth/database-context.ts was never opened for writing."
+    },
+    {
+      "id": "S-HH-UNGATED-ROUTE-SET",
+      "purpose": "Exactly two routes sit outside the organisation gate — onboarding and organizations/select — as pinned by tests/auth/route-authorization-boundary.test.ts:217 and :278. Sentinel: that set is unchanged. An implementation that 'fixes' routing by moving a page rather than by branching would show up here and nowhere else."
+    }
+  ],
+
+  "positive_controls": [
+    {
+      "id": "P-A1-1",
+      "description": "ZERO CANDIDATES -> ONBOARDING. Authenticated non-super-admin; principal.membership === null; principal.organizationRefusalCode === 'TENANCY_NO_ORGANIZATION_SELECTED'; the enumerator returns []. Every routing entry under contract must resolve to /app/onboarding: the workspace gate (requireOrganizationAccess via PrivateLayout), the login action, the auth callback, and the onboarding page itself (which must RENDER rather than redirect, since it is the destination). Proves the genuine founding path is preserved exactly as it behaves today — this node narrows WHO reaches onboarding and must not change what happens when the right subject does. Authority: ROUTING_CONTRACT.R2.branch_zero.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-A1-2",
+      "description": "ONE CANDIDATE, NO CARRIER -> SELECTOR. Authenticated non-super-admin; membership === null; code === 'TENANCY_NO_ORGANIZATION_SELECTED'; the enumerator returns exactly ONE candidate. The destination MUST be /app/organizations/select and MUST NOT be /app/dashboard and MUST NOT be /app/onboarding. This is the load-bearing positive control of the whole node: it is the state of every returning single-organization member at the start of every browser session (SESSION_SCOPE: 'A new session starts with no selection'), it is the state the pre-repair system sent to organization CREATION, and it is the case where auto-selection would be invisible to the user. Asserted at the workspace gate, the login action and the auth callback. Authority: ROUTING_CONTRACT.R2.branch_one_or_more; NO_AUTO_SELECTION. Killed by mutation M-A1-2.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-A1-3",
+      "description": "TWO CANDIDATES, NO CARRIER -> SELECTOR. Same principal state as P-A1-2 but the enumerator returns TWO candidates. Destination /app/organizations/select. Held separately from P-A1-2 so that a regression collapsing the two branches is visible: an implementation that auto-selects at length===1 passes THIS control while failing P-A1-2 and N-A1-1, which is exactly the signature that identifies the auto-selection defect rather than a generic routing break. Also proves multi_membership_case ('The subject is asked to select. No pick-first, no most-recent, no alphabetical default'). Authority: ROUTING_CONTRACT.R2.branch_one_or_more.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-A1-4",
+      "description": "SUPER-ADMIN BEHAVIOR PRESERVED VERBATIM. A super-admin principal with membership === null reaching the organisation-gated workspace resolves to /admin, exactly as it does today at lib/auth/session.ts:179, and is evaluated AHEAD of any enumerator call or selector question. Asserted in two forms: (a) destination is /admin and is neither /app/organizations/select nor /app/onboarding, for BOTH zero-candidate and one-or-more-candidate enumerator answers — the super-admin branch must be insensitive to the candidate count, which proves it is ordered before the enumeration; (b) the existing suite's super-admin test keeps its destination unchanged. Prevents SUPERADMIN_BOUNDARY.impersonation.anti_pattern — the SI-3 exemption reopened under a routing name. Authority: ROUTING_CONTRACT.R1; prohibition X-11.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-A1-5",
+      "description": "EXISTING SITE-2 REFUSAL AUDIT PRESERVED. A principal resolved at RETURN SITE 2 (carrier names an organization with no active membership) still produces exactly one tenancy.membership.revalidation_refused obligation, carrying the attempted organization id, discharged OUTSIDE the deciding transaction by the existing mechanism at lib/auth/database-context.ts:597-606. Asserted as: the obligation is emitted exactly once, with the same subject and attempted-organization attribution as before the repair, and routing neither re-emits nor suppresses nor relocates it. Guards the HPO ADJUDICATION D split recorded at lib/auth/database-context.ts:400-406, under which coupling the audit write to the deciding transaction would let the audit surface change what the authorization surface answers. Authority: AUDIT_SEMANTICS.existing_site_2_refusal_preserved.",
+      "test_file": "tests/tenancy/s3-refusal-audit.test.ts"
+    },
+    {
+      "id": "T-A1-1",
+      "description": "TERMINATION: THE SELECTOR GRAPH HAS NO REDIRECT LOOP. Starting from each routing entry under contract and following redirects to a fixed point, every principal state in this manifest reaches a RENDER in a bounded number of hops, and no destination re-issues a redirect to a route already visited on that walk. Specifically asserted: (a) the >=1-candidate walk terminates at /app/organizations/select rendering; (b) the 0-candidate walk terminates at /app/onboarding rendering; (c) the stale-carrier walk of N-A1-2 terminates at the selector in a bounded number of hops and does NOT re-enter R3, which is the property that depends on the carrier being cleared BEFORE the redirect is issued; (d) neither /app/onboarding nor /app/organizations/select acquires an outbound redirect for any candidate count — the selector must keep rendering its own explanation at zero candidates rather than bouncing to onboarding, which would be a two-node cycle with the 0-candidate rule. Held as a POSITIVE control because the schema has no termination category and this is a proof about the graph, not a refusal. Authority: ROUTING_CONTRACT.R5.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "N-A1-1",
+      "description": "AFTER THE ONE-CANDIDATE ROUTE, THE CARRIER IS STILL ABSENT. Drive the exact P-A1-2 scenario, then assert the selected-organization carrier was NOT written: no Set-Cookie for it, and the cookie store still answers absent. This is the observable the parent authority itself nominates for this distinction — SESSION_SCOPE.no_selection_behavior.single_membership_case: 'The distinction is observable: after the selection the carrier exists; under inference it never would.' Asserted for BOTH the one-candidate and two-candidate routes, and for the zero-candidate route, so that no branch of R2 writes a carrier. This is the single most important control in the manifest: it is the only one that can tell a compliant selector redirect apart from an auto-selection that happens to redirect to the selector afterwards. Authority: ROUTING_CONTRACT.NO_CARRIER_WRITE_DURING_ROUTING; NO_AUTO_SELECTION. Killed by mutation M-A1-1.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "N-A1-2",
+      "description": "STALE / NON-MEMBER CARRIER -> SELECTOR, AND THE STALE ORGANIZATION IS NOT SILENTLY SELECTED, AND NO OTHER MEMBERSHIP IS SUBSTITUTED. Principal state: membership === null; code === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'; carrier names organization B; the enumerator returns exactly one candidate, organization A (A !== B). Assert ALL of: (a) destination is /app/organizations/select carrying the existing governed not_a_member error semantics — not a newly invented error key; (b) the carrier no longer names B afterwards, i.e. it was CLEARED; (c) the carrier does NOT name A afterwards — clearing must not become substituting, and this is the assertion that distinguishes the two; (d) no request proceeds with organization A's scope. This is SECOND_ORG_MEMBERSHIP B4 — 'a refusal on the next request, not a silent fallback to the other membership. A silent fallback would re-create SI-2 as an error path' — whose B4_classification names it the failure mode most likely to be introduced as a UX nicety. Sub-assertion (c) is the half that a fallback implementation passes (a) and (b) while failing. Authority: ROUTING_CONTRACT.R3; prohibition X-02.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "N-A1-3",
+      "description": "ENUMERATOR FAILURE FAILS CLOSED, NEVER TO A MEMBERSHIP FALLBACK. Make listSelectableMemberships reject (a thrown error, standing in for a database or context failure). Assert that the routing decision does NOT: select any organization, write the carrier, resolve to /app/dashboard, or grant any tenant scope. The failure must surface as a failure or as a refusal-shaped outcome — never as a successfully scoped request, and never as a silent degradation to 'route as if there were zero candidates' when the truth is unknown. An enumerator that throws means the candidate set is UNKNOWN, and UNKNOWN must not be rendered as EMPTY: routing an unknown-candidate subject to onboarding would put a possibly-returning member back into the founding path, which is the very deadlock this node repairs, restored as an error path. Authority: FAILURE_CODES.rule ('Every code below fails CLOSED — it denies and records. No code in this list has a fallback, degraded, or best-effort path'); prohibition X-02.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "N-A1-4",
+      "description": "RETURN SITE 3 IS NOT TREATED AS A STALE CARRIER. Principal state: membership NON-NULL and organization null and code === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' — the reused-carrier shape emitted at lib/auth/database-context.ts:511. Assert that routing does NOT clear the carrier and does NOT route to /app/organizations/select on the strength of the code, and that the existing fail-closed behaviour of the preserved conjunction at lib/auth/session.ts:177 is unchanged. Proves that the routing predicate is a CONJUNCTION of code AND membership === null rather than a test of the code alone. Without this control, an implementation keyed on the code alone passes every other control in this manifest while evicting a genuine member from their chosen scope whenever an organisation row transiently fails to read. Authority: ROUTING_CONTRACT.R4; prohibition X-12. Killed by mutation M-A1-3.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "N-A1-5",
+      "description": "NO NEW AUDIT EVENT FOR AN ABSENT CARRIER. Drive all three R2 scenarios (zero, one and two candidates, code 'TENANCY_NO_ORGANIZATION_SELECTED') and assert that ZERO audit rows are written by the routing decision on every branch — in particular no tenancy.organization.selection_refused and no tenancy.membership.revalidation_refused. Carried rationale, not re-derived: lib/auth/database-context.ts:433-446 — reaching site 1 'does not mean anyone ATTEMPTED anything', so an event here 'would record a refusal of an attempt that never happened, on almost every request such a user makes'. The argument strengthens after this repair, because the no-carrier state becomes the ordinary state of every returning member at the start of every session. Asserted as a count of zero, not as the absence of a specific verb, so that a newly invented verb cannot slip past. Authority: AUDIT_SEMANTICS.no_new_event_for_absent_carrier; prohibition X-04.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "M-A1-1",
+      "description": "MUTATION: make the one-candidate branch auto-select — replace the candidates.length >= 1 selector route with a carrier write plus a redirect to /app/dashboard for the length === 1 case (the 'UX nicety' an implementer would plausibly add). REQUIRED OUTCOME: N-A1-1 MUST FAIL, because the carrier now exists after routing. NON-VACUITY: this mutation is a real behavioural change on a branch the suite actually executes, and the mutant is SPECIFICALLY LETHAL to N-A1-1 rather than broadly lethal — P-A1-1 (zero candidates) and P-A1-3 (two candidates) MUST STILL PASS under it, and P-A1-2 also fails on destination. If N-A1-1 survives this mutation, N-A1-1 is asserting on the redirect rather than on the carrier and is not testing what it claims; if P-A1-1 or P-A1-3 also die, the mutation was too coarse to attribute the kill and must be re-narrowed to the length === 1 branch alone. Authority: NO_AUTO_SELECTION; prohibition X-03.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "M-A1-2",
+      "description": "MUTATION: restore the pre-repair boolean — route on membership === null alone and ignore organizationRefusalCode entirely, sending every member-less principal to /app/onboarding. REQUIRED OUTCOME: P-A1-2 MUST FAIL, because the one-candidate member with no carrier is routed to onboarding instead of the selector. NON-VACUITY: this is precisely the defect frozen in the authority's DEFECT section, so the mutant is the pre-repair system itself — it MUST be caught, or the node has not been proven to change anything. P-A1-3 must also fail (two candidates likewise mis-routed) while P-A1-1 (zero candidates) and P-A1-4 (super-admin) MUST STILL PASS, since the pre-repair system routes those two correctly. That asymmetric signature — some controls die, those two survive — is what proves the suite discriminates the defect rather than merely detecting that the code changed. Authority: DEFECT.conflating_routing_consumers_measured; ROUTING_CONTRACT.R2.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "M-A1-3",
+      "description": "MUTATION: weaken the R3 predicate from (code === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' AND membership === null) to the code alone. REQUIRED OUTCOME: N-A1-4 MUST FAIL, because the RETURN SITE 3 principal — membership non-null, organization null, same code — is now swept into the stale-carrier branch, has its valid carrier cleared and is redirected to the selector. NON-VACUITY: the mutant is behaviourally identical to the correct implementation for EVERY other principal state in this manifest, so N-A1-4 must be the ONLY control that dies. If any other control also dies, the mutation is not isolating the conjunction; if N-A1-4 survives, the site-3 fixture is not actually exercising the reused-carrier shape (most likely because it left membership null) and must be corrected before the control counts. Authority: ROUTING_CONTRACT.R4; prohibition X-12.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "targeted_tests",
+    "ods_poststate"
+  ]
+}
