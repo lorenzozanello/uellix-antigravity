@@ -47,6 +47,7 @@ import {
   type OrganizationContext,
   type SelectableMembership,
 } from './database-context'
+import { clearSelectedOrganization } from './selected-organization'
 import type { Role } from './roles'
 import { hasRole } from './permissions'
 
@@ -162,21 +163,88 @@ export async function requireRole(userId: string, minimumRole: Role): Promise<Me
 /**
  * Ensures the user is authenticated AND has an active organisation.
  * - No session → redirects to `/login`
- * - No organisation → redirects to `/app/onboarding`
+ * - No organisation → redirects to `/app/onboarding` or
+ *   `/app/organizations/select`, per the TENANCY-S3-SELECTOR-REACHABILITY
+ *   ROUTING_CONTRACT below.
  *
  * Returns the full `OrganizationContext`.
  *
  * NOTE: this returns the context; it does NOT leave a database context open.
  * An entry point that goes on to query must be wrapped in
  * `runWithOrganizationAccess()`.
+ *
+ * ---------------------------------------------------------------------------
+ * TENANCY-S3-SELECTOR-REACHABILITY — ROUTING_CONTRACT (Packet A)
+ * ---------------------------------------------------------------------------
+ * docs/ops/tenancy/TENANCY_S3_SELECTOR_REACHABILITY_REMEDIATION_v1.0.0.json
+ *
+ * S3 gave the request principal a two-valued refusal discriminator
+ * (`organizationRefusalCode`), but this gate used to ask only the pre-S3
+ * boolean question "is membership null" — TRUE at all three return sites of
+ * `loadRequestPrincipal`, so a returning member with no selected-organization
+ * carrier was routed to organisation CREATION instead of SELECTION. The four
+ * rules below are ORDERED and each is a CONJUNCTION of the refusal code AND
+ * `membership === null` — never the code alone, which is what would silently
+ * mis-handle RETURN SITE 3 (see R4).
+ *
+ * R1 — SUPER-ADMIN, preserved verbatim, evaluated before any selector
+ *      question. A super-admin without a membership never reaches the
+ *      selector (SUPERADMIN_BOUNDARY): they reach tenant data through a
+ *      different, explicit door.
+ *
+ * R2 — NO CARRIER AT ALL (RETURN SITE 1: membership === null,
+ *      organizationRefusalCode === 'TENANCY_NO_ORGANIZATION_SELECTED').
+ *      Enumerate the caller's selectable memberships. Zero candidates is
+ *      genuine founding → /app/onboarding. One OR MORE candidates —
+ *      INCLUDING exactly one — routes to the selector: NO_AUTO_SELECTION is
+ *      BINDING, so the single-candidate case gets no shortcut. No carrier is
+ *      ever written here; the selector's own governed action is the sole
+ *      writer.
+ *
+ * R3 — STALE / NON-MEMBER CARRIER (RETURN SITE 2: membership === null,
+ *      organizationRefusalCode === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER').
+ *      Clear the stale carrier, THEN redirect to the selector — clearing
+ *      BEFORE the redirect so the next request does not re-enter this branch
+ *      with the same stale carrier. Never falls back to another membership,
+ *      not even when exactly one exists (SECOND_ORG_MEMBERSHIP B4): the
+ *      subject chooses, the application does not choose for them.
+ *
+ * R4 — RETURN SITE 3 (membership !== null, same reused refusal code, but the
+ *      membership DEMONSTRABLY EXISTS — only the organisation row could not
+ *      be read). This is EXCLUDED from R2 and R3 by the conjunction above,
+ *      not absorbed: sweeping it into R3 would clear a genuine member's
+ *      valid carrier on a transient organisation-read failure. Its
+ *      behaviour is the pre-existing fail-closed fallthrough, unchanged. The
+ *      open governed question this state represents
+ *      (TENANCY_ORGANIZATION_READABILITY_INVARIANT_SUCCESSOR_REQUIRED) is not
+ *      resolved here.
  */
 export const requireOrganizationAccess = cache(async (): Promise<OrganizationContext> => {
   const principal = await loadRequestPrincipal()
   if (!principal) redirect('/login')
 
   if (!principal.membership || !principal.organization) {
-    // SuperAdmin may not have a membership — redirect to admin
+    // R1 — SuperAdmin may not have a membership — redirect to admin, ahead
+    // of any selector question and insensitive to the enumerator.
     if (principal.user.isSuperAdmin) redirect('/admin')
+
+    // R2 — no carrier at all: enumerate, then route on candidate count.
+    if (principal.membership === null && principal.organizationRefusalCode === 'TENANCY_NO_ORGANIZATION_SELECTED') {
+      const candidates = await listSelectableMemberships()
+      if (candidates.length === 0) redirect('/app/onboarding')
+      redirect('/app/organizations/select')
+    }
+
+    // R3 — stale/non-member carrier: clear it, then route to the selector.
+    if (
+      principal.membership === null &&
+      principal.organizationRefusalCode === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'
+    ) {
+      await clearSelectedOrganization()
+      redirect('/app/organizations/select')
+    }
+
+    // R4 — RETURN SITE 3, excluded from R2/R3 above: preserved unchanged.
     redirect('/app/onboarding')
   }
 

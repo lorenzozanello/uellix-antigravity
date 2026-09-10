@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { syncUserProfile, getCurrentMembership } from '@/lib/auth/session'
+import { syncUserProfile, getCurrentMembership, listSelectableMemberships } from '@/lib/auth/session'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 import { checkAndRecordRateLimit } from '@/lib/security/rate-limit'
 
@@ -49,10 +49,23 @@ export async function login(formData: FormData) {
     redirect(redirectTo)
   }
 
-  // Smart redirect: go to onboarding if no org, otherwise dashboard
+  // Smart redirect: go to onboarding if no org, otherwise dashboard.
+  //
+  // TENANCY-S3-SELECTOR-REACHABILITY (Packet A): a null membership here is
+  // TRUE both for a genuinely memberless subject AND for a returning member
+  // who simply has no selected-organization carrier for this session
+  // (SESSION_SCOPE: "A new session starts with no selection" — the ORDINARY
+  // case at login, not an edge case). Enumerate before deciding: zero
+  // candidates is genuine founding; one or more — including exactly one,
+  // NO_AUTO_SELECTION — routes to the selector. See the full ROUTING_CONTRACT
+  // at lib/auth/session.ts requireOrganizationAccess().
   const membership = await getCurrentMembership(data.user.id)
   if (!membership) {
-    redirect('/app/onboarding')
+    const candidates = await listSelectableMemberships()
+    if (candidates.length === 0) {
+      redirect('/app/onboarding')
+    }
+    redirect('/app/organizations/select')
   }
 
   redirect('/app/dashboard')

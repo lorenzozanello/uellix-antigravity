@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db/client'
 import { organizations, organizationMembers } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { syncUserProfile, getCurrentMembership } from '@/lib/auth/session'
+import { syncUserProfile, getCurrentMembership, listSelectableMemberships } from '@/lib/auth/session'
 import { createClient } from '@/lib/supabase/server'
 import { logAuditAction } from '@/lib/audit/logger'
 import { ROLES } from '@/lib/auth/roles'
@@ -50,6 +50,17 @@ export async function createFirstOrganization(formData: FormData) {
   const existingMembership = await getCurrentMembership(authUser.id)
   if (existingMembership) {
     redirect('/app/dashboard')
+  }
+
+  // TENANCY-S3-SELECTOR-REACHABILITY (Packet A) — the SUBMIT-side twin of the
+  // page guard. A member with no carrier also has existingMembership===null
+  // above, so without this check they would pass straight through to
+  // founding a SECOND organization. Only a subject with ZERO selectable
+  // memberships may proceed; one or more routes to the selector instead —
+  // this does not change who may found, only who is routed to founding.
+  const candidates = await listSelectableMemberships()
+  if (candidates.length > 0) {
+    redirect('/app/organizations/select')
   }
 
   // Self-serve org creation is gated: only allowlisted emails/domains may

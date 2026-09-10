@@ -1,5 +1,5 @@
 import { requireAuth } from '@/lib/auth/session'
-import { getCurrentMembership } from '@/lib/auth/session'
+import { getCurrentMembership, listSelectableMemberships } from '@/lib/auth/session'
 import { redirect } from 'next/navigation'
 import { createFirstOrganization } from './actions'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -36,6 +36,19 @@ export default async function OnboardingPage(props: { searchParams: Promise<{ er
   const membership = await getCurrentMembership(user.id)
   if (membership) {
     redirect('/app/dashboard')
+  }
+
+  // TENANCY-S3-SELECTOR-REACHABILITY (Packet A) — THE DEADLOCK SITE. A
+  // member with no selected-organization carrier also has membership===null
+  // here, so without this check they would fall through to the
+  // allowlist-gated creation form below — routing a RETURNING member into
+  // organisation FOUNDING. Only a subject with ZERO selectable memberships
+  // (genuine founding) may reach the form; one or more routes to the
+  // selector, INCLUDING exactly one (NO_AUTO_SELECTION). See the full
+  // ROUTING_CONTRACT at lib/auth/session.ts requireOrganizationAccess().
+  const candidates = await listSelectableMemberships()
+  if (candidates.length > 0) {
+    redirect('/app/organizations/select')
   }
 
   const searchParams = await props.searchParams
