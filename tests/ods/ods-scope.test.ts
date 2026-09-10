@@ -313,9 +313,9 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant, plus the HPO-ODS-W2-12 Wave 2 batch B4 grant, plus the HPO-ODS-W2-16 W2-B4 remediation checkpoint-b0 probe grant, plus the HPO-ODS-W2-17 Wave 2 batch B5 grant, plus the HPO-ODS-W2-20 multi-org S1 migration grant and the HPO-ODS-W2-21 multi-org S1 journal grant, plus the HPO-ODS-W2-25 multi-org S3 refusal-audit grant, plus the HPO-ODS-W2-26 Commercial Account CE-1 grant', () => {
-    expect(PROTECTED_GRANTS.length).toBe(14)
-    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(14)
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant, plus the HPO-ODS-W2-12 Wave 2 batch B4 grant, plus the HPO-ODS-W2-16 W2-B4 remediation checkpoint-b0 probe grant, plus the HPO-ODS-W2-17 Wave 2 batch B5 grant, plus the HPO-ODS-W2-20 multi-org S1 migration grant and the HPO-ODS-W2-21 multi-org S1 journal grant, plus the HPO-ODS-W2-25 multi-org S3 refusal-audit grant, plus the HPO-ODS-W2-26 Commercial Account CE-1 grant, plus the HPO-ODS-W2-27 FIBDB-052 P1 index grant', () => {
+    expect(PROTECTED_GRANTS.length).toBe(15)
+    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(15)
     // HPO-ODS-W2-25 (multi-org S3 refusal audit). ONE row, TWO patterns, bound
     // to the implementation branch by exact string equality. The set-size
     // assertion above is what forbids a duplicate id from being registered
@@ -353,11 +353,34 @@ describe('resolveProtectedGrant — pure', () => {
       'db/prepared/checkpoint-b0/observation.sql',
       'db/prepared/journal/**',
     ])
-    // W2-27 is NOT allocated by this node. Registering one would be a silent
-    // grant-lineage advance. This literal ADVANCED from W2-26 to W2-27 when
-    // W2-26 was registered above, exactly as it advanced from W2-25 to W2-26
-    // when W2-25 was registered.
-    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-27')).toBe(false)
+    // HPO-ODS-W2-27 (FIBDB-052 phase P1 index sub-package), registered by
+    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json. ONE row, TWO
+    // patterns, bound to the P1 implementation branch by exact string
+    // equality. Asserted as a WHOLE-OBJECT equality, not a membership test,
+    // because pattern ORDER is part of the row's identity under v1.0.30
+    // ORDER_IS_BINDING.
+    const w2_27 = PROTECTED_GRANTS[14]
+    expect(w2_27).toEqual({
+      authorityId: 'HPO-ODS-W2-27',
+      branch: 'codex/fibdb052-p1-implementation-r1',
+      patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+    })
+    expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-27').length).toBe(1)
+    // TWO PATTERNS, NOT THREE. The predecessor W2-26 immediately above carries
+    // db/prepared/checkpoint-b0/observation.sql as a third pattern; W2-27 does
+    // NOT. Asserting the exclusion is what distinguishes a deliberate
+    // narrowing from an omission (v1.0.30 RC-8).
+    expect(w2_27.patterns.length).toBe(2)
+    expect(w2_27.patterns).not.toContain('db/prepared/**')
+    expect(w2_27.patterns).not.toContain('db/prepared/checkpoint-b0/observation.sql')
+    expect(w2_27.patterns.filter((p) => p.startsWith('db/prepared/'))).toEqual([
+      'db/prepared/journal/**',
+    ])
+    // W2-28 is NOT allocated by this node. Registering one would be a silent
+    // grant-lineage advance. This literal ADVANCED from W2-27 to W2-28 when
+    // W2-27 was registered above, exactly as it advanced from W2-26 to W2-27
+    // when W2-26 was registered (v1.0.30 RC-4).
+    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-28')).toBe(false)
     const w2_03 = PROTECTED_GRANTS[2]
     expect(w2_03.authorityId).toBe('HPO-ODS-W2-03')
     expect(w2_03.branch).toBe('codex/u0-u9-reengineering-resume-r1')
@@ -661,19 +684,19 @@ describe('resolveProtectedGrant — pure', () => {
     expect(addendumS3Refusal.PROTECTED_GRANTS_COUNT_BEFORE).toBe(12)
     expect(addendumS3Refusal.PROTECTED_GRANTS_COUNT_AFTER).toBe(12)
     expect(addendumS3Refusal.PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25).toBe(13)
-    // LIVE-COUNT GUARD, PROMOTED (HPO-ODS-W2-26,
-    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json PROMOTE). The
-    // newest registry change is now the CE-1 registration, so ITS declared
-    // post-registration figure — frozen in v1.0.28 as 14 — is the one bound to
-    // the LIVE array. It is the successor of the demoted guard and inherits its
-    // role exactly: a registry that grew by more or fewer than the one
-    // authorized entry fails here. Reading the v1.0.28 artefact is an ADDITION
-    // to this file, which v1.0.28's own narrowness clause permits.
-    //
-    // EXACTLY ONE. This must be the ONLY assertion in this file binding a
-    // frozen addendum field to the live expression PROTECTED_GRANTS.length.
-    // Two live-count guards is a defect, not extra safety: the older one would
-    // fail on the NEXT registration for a reason the next lane did not cause.
+    // DEMOTED TO A HISTORICAL LITERAL (HPO-ODS-W2-27,
+    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json DEMOTE). This
+    // figure was bound to the LIVE array while the CE-1 registration was the
+    // newest registry change. It no longer is: registering W2-27 moved the
+    // array to 15, and v1.0.28 still describes the state as it stood at 14.
+    // Rebinding it to the live length would make a frozen authority artefact
+    // appear to predict a count it never claimed; editing the artefact to say
+    // 15 would corrupt the historical record. So the guard is demoted to the
+    // literal that artefact actually asserts, and the LIVE binding moves to
+    // the newest registration below. The exactness is unchanged — one exact
+    // equality replaces another, nothing is loosened to an inequality, skipped
+    // or deleted. This is the same operation the v1.0.25 guard above underwent
+    // one turn earlier, and the S1 guards one turn before that.
     const addendumCe1 = JSON.parse(
       readFileSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json'), 'utf8'),
     ) as {
@@ -682,9 +705,7 @@ describe('resolveProtectedGrant — pure', () => {
       PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26: number
     }
     expect(addendumCe1.GRANT_ID).toBe('HPO-ODS-W2-26')
-    expect(addendumCe1.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26).toBe(
-      PROTECTED_GRANTS.length,
-    )
+    expect(addendumCe1.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26).toBe(14)
     // The registered row must equal the authority's declaration field for
     // field — the artefact and the code cannot drift apart. Patterns are
     // compared with toEqual, so ORDER is enforced, not just membership.
@@ -694,6 +715,41 @@ describe('resolveProtectedGrant — pure', () => {
     expect(addendumCe1.protected_grant.patterns).toEqual(w2_26_live.patterns)
     expect(addendumCe1.protected_grant.pattern_count).toBe(w2_26_live.patterns.length)
     expect(w2_26_live.patterns.length).toBe(3)
+    // LIVE-COUNT GUARD, PROMOTED (HPO-ODS-W2-27,
+    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json PROMOTE). The
+    // newest registry change is now the FIBDB-052 P1 registration, so ITS
+    // declared post-registration figure — frozen in v1.0.30 as 15 — is the one
+    // bound to the LIVE array. It is the successor of the demoted guard and
+    // inherits its role exactly: a registry that grew by more or fewer than the
+    // one authorized entry fails here. Reading the v1.0.30 artefact is an
+    // ADDITION to this file, which that artefact's own narrowness clause
+    // permits.
+    //
+    // EXACTLY ONE. This must be the ONLY assertion in this file binding a
+    // frozen addendum field to the live expression PROTECTED_GRANTS.length.
+    // Two live-count guards is a defect, not extra safety: the older one would
+    // fail on the NEXT registration for a reason the next lane did not cause.
+    const addendumP1 = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json'), 'utf8'),
+    ) as {
+      GRANT_ID: string
+      protected_grant: { authorityId: string; branch: string; patterns: string[]; pattern_count: number }
+      PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_27: number
+    }
+    expect(addendumP1.GRANT_ID).toBe('HPO-ODS-W2-27')
+    expect(addendumP1.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_27).toBe(
+      PROTECTED_GRANTS.length,
+    )
+    // The registered row must equal the authority's declaration field for
+    // field — the artefact and the code cannot drift apart. Patterns are
+    // compared with toEqual, so ORDER is enforced, not just membership
+    // (v1.0.30 RC-6).
+    const w2_27_live = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-27')!
+    expect(addendumP1.protected_grant.authorityId).toBe(w2_27_live.authorityId)
+    expect(addendumP1.protected_grant.branch).toBe(w2_27_live.branch)
+    expect(addendumP1.protected_grant.patterns).toEqual(w2_27_live.patterns)
+    expect(addendumP1.protected_grant.pattern_count).toBe(w2_27_live.patterns.length)
+    expect(w2_27_live.patterns.length).toBe(2)
     // The registered row must equal the authority's declaration field for
     // field — the artefact and the code cannot drift apart.
     const w2_25_live = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-25')!
@@ -1128,10 +1184,16 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     expect(resolveProtectedGrant('HPO-ODS-W2-26', CE1_BRANCH).grant).toBeDefined()
   })
 
-  it('ABSENCE (CE1-GRANT-N4): HPO-ODS-W2-27 is unallocated and unregistered, and resolves nowhere', () => {
-    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-27')).toBe(false)
+  it('ABSENCE (CE1-GRANT-N4): HPO-ODS-W2-28 is unallocated and unregistered, and resolves nowhere', () => {
+    // ADVANCED from W2-27 to W2-28 when W2-27 was registered under
+    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json RC-4. This is one
+    // of the two executable clusters that assert the next id absent; the other
+    // lives in the frozen-registry test above and advanced in the same act.
+    // W2-28 is named here as a PROHIBITION — it is not allocated, not reserved
+    // and not implied.
+    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-28')).toBe(false)
     for (const branch of [CE1_BRANCH, 'main', 'codex/ce1-w2-26-registration-r1']) {
-      expect(resolveProtectedGrant('HPO-ODS-W2-27', branch).grant).toBeUndefined()
+      expect(resolveProtectedGrant('HPO-ODS-W2-28', branch).grant).toBeUndefined()
     }
   })
 
@@ -1157,8 +1219,15 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     expect(PROTECTED_GRANTS.slice(0, 13).map((g) => [g.authorityId, g.branch])).toEqual(
       PREDECESSORS.map(([id, branch]) => [id, branch]),
     )
-    // W2-26 is the LAST row, so the growth was an append and not an insert.
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-26')
+    // W2-26 sits at index 13, immediately after those 13 predecessors, so ITS
+    // arrival was an append and not an insert. Pinned by POSITION rather than
+    // by "is the last row": the latter was only true while CE-1 was the newest
+    // registration, and W2-27 has since been appended after it under
+    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json. The position pin
+    // is the durable form of the same claim — it still fails on an insert, a
+    // reorder or a drop — and the LIVE last-row binding moves to the newest
+    // registration (P1-GRANT-N5), exactly as the live-count guard does.
+    expect(PROTECTED_GRANTS[13].authorityId).toBe('HPO-ODS-W2-26')
     // The checkpoint-b0 observation literal did not leak sideways. The set of
     // PREDECESSORS carrying it is pinned to exactly the four that already did
     // before this registration — W2-07 and W2-16 as single-pattern probe
@@ -1186,7 +1255,7 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     }
   })
 
-  it('LIVE_COUNT_GUARD_TRANSFER (CE1-GRANT-N6): exactly ONE assertion binds a frozen addendum field to the live PROTECTED_GRANTS.length, and it is the v1.0.28 field', () => {
+  it('LIVE_COUNT_GUARD_TRANSFER (CE1-GRANT-N6, advanced by v1.0.30): exactly ONE assertion binds a frozen addendum field to the live PROTECTED_GRANTS.length, and it is the v1.0.30 field', () => {
     // MUTATION CONTROL for the indivisible transfer. This reads THIS file's
     // own source, because the property being guarded is a property of the
     // source: the count of live-count guards must be exactly one.
@@ -1198,7 +1267,10 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     const liveGuard = /expect\(\s*([A-Za-z0-9_.]*PROTECTED_GRANTS_COUNT[A-Za-z0-9_]*)\s*\)\s*\.toBe\(\s*PROTECTED_GRANTS\.length\s*,?\s*\)/g
     const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
     expect(bound.length).toBe(1)
-    expect(bound[0]).toBe('addendumCe1.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26')
+    // ADVANCED under docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json
+    // RC-13: advancing the count without advancing the pinned NAME would leave
+    // a control that passes while guarding the wrong field.
+    expect(bound[0]).toBe('addendumP1.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_27')
   })
 
   it('LIVE_COUNT_GUARD_TRANSFER (CE1-GRANT-N7): PROMOTE-WITHOUT-DEMOTE would be red — the v1.0.25 frozen figure no longer equals the live count', () => {
@@ -1214,10 +1286,12 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     expect(addendumS3.PROTECTED_GRANTS_COUNT_AFTER_IMPLEMENTATION_REGISTERS_W2_25).not.toBe(
       PROTECTED_GRANTS.length,
     )
-    // Editing that frozen artefact to say 14 is PROHIBITED — it would corrupt
+    // Editing that frozen artefact away from 13 to match the live count is
+    // PROHIBITED — it would corrupt
     // the historical record to satisfy a present-tense guard. This assertion
-    // fails if anyone does it.
-    expect(PROTECTED_GRANTS.length).toBe(14)
+    // fails if anyone does it. The live literal is re-derived, not inherited:
+    // it advanced 14 -> 15 when W2-27 was registered.
+    expect(PROTECTED_GRANTS.length).toBe(15)
   })
 
   it('SEPARATION (CE1-GRANT-N8): no OTHER registered grant authorizes the CE-1 families on the CE-1 branch', () => {
@@ -1235,6 +1309,257 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
       'db/prepared/checkpoint-b0/observation.sql',
     ]
     expect(classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, resolved.grants).protectedViolations).toEqual(paths)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-W2-27 — FIBDB-052 phase P1 grant registration controls.
+// docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json, REQUIRED_REGISTRATION_
+// CONTROLS RC-1..RC-14 and LIVE_COUNT_GUARD_TRANSFER.
+// ---------------------------------------------------------------------------
+
+describe('HPO-ODS-W2-27 — FIBDB-052 P1 grant: narrowness, branch binding and mutation controls', () => {
+  const P1_BRANCH = 'codex/fibdb052-p1-implementation-r1'
+
+  it('NON-VACUITY (P1-GRANT-P1/N1, RC-11): the two granted families are protected violations WITHOUT W2-27 and grant-authorized WITH it', () => {
+    const granted = [
+      'db/migrations/0099_p1_index_fixture.sql',
+      'db/prepared/journal/082_0099_p1_index_fixture.sql',
+    ]
+    const withoutGrant = classifyPaths(granted, DEFAULT_PROTECTED_PATTERNS, granted, [])
+    expect(withoutGrant.protectedViolations).toEqual(granted)
+    expect(withoutGrant.grantAuthorized).toEqual([])
+    const resolved = resolveProtectedGrant('HPO-ODS-W2-27', P1_BRANCH)
+    expect(resolved.grant).toBeDefined()
+    const withGrant = classifyPaths(granted, DEFAULT_PROTECTED_PATTERNS, granted, [resolved.grant!])
+    expect(withGrant.protectedViolations).toEqual([])
+    expect(withGrant.grantAuthorized).toEqual(granted)
+    // The migration meta corpus a drizzle generate necessarily drags with it
+    // is inside db/migrations/** and therefore inside the grant.
+    const meta = ['db/migrations/meta/_journal.json', 'db/migrations/meta/0069_snapshot.json']
+    expect(classifyPaths(meta, DEFAULT_PROTECTED_PATTERNS, meta, [resolved.grant!]).protectedViolations).toEqual([])
+  })
+
+  it('NARROWNESS (P1-GRANT-N2, RC-8): W2-27 does not widen to db/prepared/** — checkpoint-b0, hosted and every other prepared sibling stay protected violations even WITH it', () => {
+    const siblings = [
+      // THE ONE THE PREDECESSOR CARRIES. W2-26 grants this literal; W2-27
+      // deliberately does not. Asserting it refused here is what distinguishes
+      // a deliberate narrowing from an omission (v1.0.30 RC-8
+      // why_checkpoint_b0_is_named_explicitly).
+      'db/prepared/checkpoint-b0/observation.sql',
+      'db/prepared/checkpoint-b0/rollback.sql',
+      // G2-gated apply surfaces a blanket db/prepared/** would have reached.
+      'db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql',
+      'db/prepared/hosted/governed/anything.sql',
+      'db/prepared/other/observation.sql',
+      'db/prepared/stella_0010_organization_bootstrap_capability.sql',
+      'db/prepared/checkpoint-a1/corroboration.sql',
+      'db/prepared/README.md',
+    ]
+    const resolved = resolveProtectedGrant('HPO-ODS-W2-27', P1_BRANCH)
+    expect(resolved.grant).toBeDefined()
+    const result = classifyPaths(siblings, DEFAULT_PROTECTED_PATTERNS, siblings, [resolved.grant!])
+    expect(result.protectedViolations).toEqual(siblings)
+    expect(result.grantAuthorized).toEqual([])
+    // ...while the journal family in that same directory still passes, so the
+    // control above is narrowness and not a blanket denial.
+    const journal = ['db/prepared/journal/082_0099_p1_index_fixture.sql']
+    expect(
+      classifyPaths(journal, DEFAULT_PROTECTED_PATTERNS, journal, [resolved.grant!]).protectedViolations,
+    ).toEqual([])
+    // db/baseline/** is protected and ungranted by this row.
+    const baseline = ['db/baseline/MANIFEST.sha256']
+    expect(
+      classifyPaths(baseline, DEFAULT_PROTECTED_PATTERNS, baseline, [resolved.grant!]).protectedViolations,
+    ).toEqual(baseline)
+  })
+
+  it('ZERO GRANT AUTHORITY OVER UNPROTECTED SURFACES (P1-GRANT-N2b): scripts/ods/** and tests/ods/** are not members of DEFAULT_PROTECTED_PATTERNS, so W2-27 confers nothing on them', () => {
+    // v1.0.30 why_the_unprotected_entries_are_listed_anyway: these are named in
+    // the prohibition list so that no reader infers, from their absence, that
+    // the grant was silently understood to cover them. The honest assertion is
+    // that the grant contributes ZERO authority — they are governed by the
+    // ordinary --allow list alone, exactly as they were before this row
+    // existed.
+    const unprotected = ['scripts/ods/helper.ts', 'tests/ods/extra.test.ts', 'docs/ops/wave3/anything.json']
+    const resolved = resolveProtectedGrant('HPO-ODS-W2-27', P1_BRANCH)
+    expect(resolved.grant).toBeDefined()
+    for (const p of unprotected) {
+      expect(matchesAnyPattern(p, resolved.grant!.patterns)).toBe(false)
+    }
+    // With no ordinary allowlist they are UNAUTHORIZED, and the grant does not
+    // rescue them.
+    const withGrantNoAllow = classifyPaths(unprotected, DEFAULT_PROTECTED_PATTERNS, [], [resolved.grant!])
+    expect(withGrantNoAllow.unauthorized.sort()).toEqual([...unprotected].sort())
+    expect(withGrantNoAllow.grantAuthorized).toEqual([])
+    // With an ordinary allowlist they pass on the allowlist's authority only —
+    // never counted as grant-authorized.
+    const withAllow = classifyPaths(unprotected, DEFAULT_PROTECTED_PATTERNS, unprotected, [resolved.grant!])
+    expect(withAllow.grantAuthorized).toEqual([])
+    expect(withAllow.protectedViolations).toEqual([])
+  })
+
+  it('BRANCH BINDING (P1-GRANT-N3, RC-7): W2-27 resolves to no grant on any foreign branch, and contributes zero patterns there', () => {
+    for (const branch of [
+      'main',
+      'integration/commercial-v1',
+      'feature/sprint-0-foundation',
+      'codex/w2-methodology-objects-r1',
+      'codex/commercial-account-ce1-implementation-r1',
+      'codex/multiorg-s3-refusal-audit-implementation-r1',
+      // The REGISTERING branch is itself foreign to the grant it registers: a
+      // registration lane gains no protected-write authority by registering.
+      'codex/fibdb052-p1-w227-registration-r1',
+      // Near-misses. Resolution is exact string equality, never prefix or
+      // family (v1.0.30 BRANCH_BINDING_IS_EXACT).
+      'codex/fibdb052-p1-implementation-r2',
+      'codex/fibdb052-p1-implementation',
+      'codex/fibdb052-p1-implementation-r1-fix',
+    ]) {
+      expect(resolveProtectedGrant('HPO-ODS-W2-27', branch).grant).toBeUndefined()
+      const union = resolveProtectedGrants(['HPO-ODS-W2-27'], branch)
+      expect(union.grants).toEqual([])
+      const paths = ['db/migrations/0099_p1_index_fixture.sql']
+      expect(classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, union.grants).protectedViolations).toEqual(paths)
+    }
+    expect(resolveProtectedGrant('HPO-ODS-W2-27', P1_BRANCH).grant).toBeDefined()
+  })
+
+  it('APPEND-ONLY (P1-GRANT-N5, RC-1/RC-9): the 14 predecessor rows are preserved, in order, with their branches unchanged, and W2-27 is LAST', () => {
+    // Mutation control for RC-9. Reordering, rebranching, widening or dropping
+    // any predecessor row fails here. W2-27 is appended LAST and touches none
+    // of them.
+    const PREDECESSORS: ReadonlyArray<readonly [string, string]> = [
+      ['HPO-ODS-W2-01', 'codex/w2-methodology-objects-r1'],
+      ['HPO-ODS-W2-02', 'codex/u0-u9-reengineering-resume-r1'],
+      ['HPO-ODS-W2-03', 'codex/u0-u9-reengineering-resume-r1'],
+      ['HPO-ODS-W2-07', 'codex/product-commercial-v1-pr-r1'],
+      ['HPO-ODS-W2-08', 'codex/commercial-v1-wave2-reconciliation-r1'],
+      ['HPO-ODS-W2-09', 'codex/commercial-v1-wave2-reconciliation-r1'],
+      ['HPO-ODS-W2-11', 'codex/p1a-full-bootstrap-r1'],
+      ['HPO-ODS-W2-12', 'codex/w2-b4-r1'],
+      ['HPO-ODS-W2-16', 'codex/w2-b4-r1'],
+      ['HPO-ODS-W2-17', 'codex/w2-b5-r1'],
+      ['HPO-ODS-W2-20', 'codex/multiorg-s1-founder-traceability-r1'],
+      ['HPO-ODS-W2-21', 'codex/multiorg-s1-founder-traceability-r1'],
+      ['HPO-ODS-W2-25', 'codex/multiorg-s3-refusal-audit-implementation-r1'],
+      ['HPO-ODS-W2-26', 'codex/commercial-account-ce1-implementation-r1'],
+    ]
+    expect(PROTECTED_GRANTS.slice(0, 14).map((g) => [g.authorityId, g.branch])).toEqual(
+      PREDECESSORS.map(([id, branch]) => [id, branch]),
+    )
+    // W2-27 is the LAST row, so the growth was an append and not an insert
+    // (RC-1). This is the LIVE last-row binding, inherited from CE1-GRANT-N5
+    // when W2-27 was registered, exactly as the live-count guard is inherited.
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-27')
+    expect(PROTECTED_GRANTS.length).toBe(15)
+    // The checkpoint-b0 observation literal did not leak sideways. Across the
+    // WHOLE registry the carriers are exactly the five that already carried it
+    // before this registration — W2-27 gained NOTHING. Asserted as a set
+    // equality rather than a per-row exclusion, so that a row GAINING the
+    // literal and a row LOSING it both fail.
+    const OBSERVATION = 'db/prepared/checkpoint-b0/observation.sql'
+    expect(PROTECTED_GRANTS.filter((g) => g.patterns.includes(OBSERVATION)).map((g) => g.authorityId)).toEqual([
+      'HPO-ODS-W2-07',
+      'HPO-ODS-W2-08',
+      'HPO-ODS-W2-16',
+      'HPO-ODS-W2-17',
+      'HPO-ODS-W2-26',
+    ])
+    // No grant anywhere in the registry carries a blanket db/prepared/**.
+    for (const g of PROTECTED_GRANTS) {
+      expect(g.patterns).not.toContain('db/prepared/**')
+    }
+  })
+
+  it('LIVE_COUNT_GUARD_TRANSFER (P1-GRANT-N6, RC-12): PROMOTE-WITHOUT-DEMOTE would be red — the v1.0.28 frozen figure no longer equals the live count', () => {
+    // MUTATION CONTROL for the DEMOTE half. Had the v1.0.28 guard been left
+    // bound to the live array, it would now evaluate 14 against 15 and fail.
+    // This asserts that divergence directly, which is what makes the demotion
+    // NECESSARY rather than cosmetic — and it pins that the demoted literal is
+    // the figure the frozen artefact actually asserts, not the live count.
+    const addendumCe1Frozen = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json'), 'utf8'),
+    ) as { PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26: number }
+    expect(addendumCe1Frozen.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26).toBe(14)
+    expect(addendumCe1Frozen.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26).not.toBe(
+      PROTECTED_GRANTS.length,
+    )
+    // Editing that frozen artefact away from 14 to match the live count is
+    // PROHIBITED (v1.0.30 THE_THIRD_WAY_IS_PROHIBITED) — it would corrupt the
+    // historical record to satisfy a present-tense guard. This assertion fails
+    // if anyone does it.
+    expect(PROTECTED_GRANTS.length).toBe(15)
+  })
+
+  it('ATOMICITY (P1-GRANT-N7, RC-14): the demoted literal and the promoted live binding are both present in this file, and the live binding is unique', () => {
+    // The auditor's atomicity check, made executable. DEMOTE-WITHOUT-PROMOTE
+    // would leave ZERO live bindings — green with no guard at all, the
+    // dangerous half precisely because it looks fine. PROMOTE-WITHOUT-DEMOTE
+    // would leave TWO. Both halves fail here.
+    const selfSource = readFileSync(path.join(REPO_ROOT, 'tests/ods/ods-scope.test.ts'), 'utf8')
+    const liveGuard =
+      /expect\(\s*([A-Za-z0-9_.]*PROTECTED_GRANTS_COUNT[A-Za-z0-9_]*)\s*\)\s*\.toBe\(\s*PROTECTED_GRANTS\.length\s*,?\s*\)/g
+    const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
+    expect(bound).toEqual(['addendumP1.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_27'])
+    // THE DEMOTE landed: the v1.0.28 field is pinned to its exact historical
+    // literal, not to the live array and not to an inequality.
+    expect(selfSource).toContain(
+      'expect(addendumCe1.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26).toBe(14)',
+    )
+    // THE PROMOTE landed against the v1.0.30 artefact specifically.
+    expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json')
+  })
+
+  it('SEPARATION (P1-GRANT-N8): no OTHER registered grant authorizes the P1 families on the P1 branch', () => {
+    // Six registered grants carry db/migrations/** and/or db/prepared/journal/**
+    // — W2-01, W2-07, W2-16, W2-20, W2-21 and W2-25 — and W2-26 carries them
+    // too. Every one is bound to a DIFFERENT branch, so on the P1 branch they
+    // resolve to nothing and W2-27 is doing real work rather than duplicating
+    // an existing grant (v1.0.30 why_existing_grants_cannot_be_reused).
+    const ceiling = [
+      'HPO-ODS-W2-01',
+      'HPO-ODS-W2-07',
+      'HPO-ODS-W2-16',
+      'HPO-ODS-W2-20',
+      'HPO-ODS-W2-21',
+      'HPO-ODS-W2-25',
+      'HPO-ODS-W2-26',
+    ]
+    const resolved = resolveProtectedGrants(ceiling, P1_BRANCH)
+    expect(resolved.grants).toEqual([])
+    const paths = [
+      'db/migrations/0099_p1_index_fixture.sql',
+      'db/prepared/journal/082_0099_p1_index_fixture.sql',
+    ]
+    expect(classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, resolved.grants).protectedViolations).toEqual(paths)
+  })
+
+  it('IMPLEMENTATION PREDICATE (P1-GRANT-N9): GRANT_ALREADY_REGISTERED is TRUE for HPO-ODS-W2-27 under KEY-POSITION semantics, and a textual sweep is not the evaluator', () => {
+    // v1.0.30 IMPLEMENTATION_REGISTRY_PREDICATE. The predicate is evaluated by
+    // parsing the PROTECTED_GRANTS array literal and reading the authorityId
+    // KEY POSITION — never by a textual mention, never by an occurrence count.
+    // This control evaluates it the authorized way against the real source and
+    // demonstrates, in the same test, that the unauthorized way disagrees.
+    const scopeSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-scope.ts'), 'utf8')
+    // KEY-POSITIONAL: the evaluated array object, not the text of the file.
+    const registeredByKeyPosition = PROTECTED_GRANTS.map((g) => g.authorityId)
+    expect(registeredByKeyPosition).toContain('HPO-ODS-W2-27')
+    expect(registeredByKeyPosition).not.toContain('HPO-ODS-W2-28')
+    expect(registeredByKeyPosition.filter((id) => id === 'HPO-ODS-W2-27').length).toBe(1)
+    // The bound branch resolves; that is the operative consequence of the
+    // predicate being TRUE.
+    expect(resolveProtectedGrant('HPO-ODS-W2-27', P1_BRANCH).grant).toBeDefined()
+    // TEXTUAL SWEEP IS NOT THE EVALUATOR. The id also appears in the
+    // explanatory comment block above its row, so counting occurrences
+    // overcounts. This asserts the two methods genuinely disagree, which is
+    // why the authority forbids the textual one.
+    const textualHits = scopeSource.split('HPO-ODS-W2-27').length - 1
+    expect(textualHits).toBeGreaterThan(1)
+    // And the converse trap: W2-28 has textual occurrences nowhere in this
+    // file, but the load-bearing fact is its absence from the KEY POSITION,
+    // which is asserted above rather than inferred from the text.
+    expect(scopeSource.split('HPO-ODS-W2-28').length - 1).toBe(0)
   })
 })
 
