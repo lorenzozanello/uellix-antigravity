@@ -4,11 +4,12 @@
   "is_authority": false,
   "self_certification": "NONE — this file records measured outputs only. It does not certify CE-1 closed and does not replace the independent Opus exact-object audit this mission's NEXT gate names.",
 
-  "mission": "COMMERCIAL-ACCOUNT-CE1-IMPLEMENTATION-R1 (Lane HC)",
+  "mission": "COMMERCIAL-ACCOUNT-CE1-IMPLEMENTATION-R1 (Lane HC), extended by HC-R2 (COMMERCIAL-ACCOUNT-CE1-TAIL-PIN-RETARGET-AND-FINALIZATION-R2) — see r2_tail_pin_retarget_and_finalization below for the R2 record. Everything above that section is the R1 record and is preserved byte-for-byte, including counts measured before the R2 live sync.",
 
   "authority_references": {
     "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
     "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json — governs CE1_IMPLEMENTATION_SURFACE, BASELINE_GROWTH_CONTRACT, BASELINE_UNIT_SHAPE, JOURNAL_RULE",
+    "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json — integrated via PR #129 (merge c898d72c) DURING this mission's R2 extension. Corrects EXISTING_TEST_INSTRUCTIONS.sixth_host_adjudication, adds tests/tenancy/s1-founder-traceability.test.ts as the sixth authorized host, and freezes the exact three-position retarget contract applied in r2_tail_pin_retarget_and_finalization below.",
     "grant": "HPO-ODS-W2-26 (scripts/ods-scope.ts PROTECTED_GRANTS, 14th row, bound to codex/commercial-account-ce1-implementation-r1, patterns db/migrations/**, db/prepared/journal/**, db/prepared/checkpoint-b0/observation.sql) — already registered and integrated (PR #125, merge 21c3fc21) before this mission began; not re-registered here."
   },
 
@@ -214,14 +215,164 @@
     "tests/postgres/ce1-commercial-account.pg.test.ts"
   ],
 
-  "blocking_findings": 1,
+  "blocking_findings_R1": 1,
+  "unknown_findings": 0,
+
+  "r2_tail_pin_retarget_and_finalization": {
+    "mission": "COMMERCIAL-ACCOUNT-CE1-TAIL-PIN-RETARGET-AND-FINALIZATION-R2 (Lane HC-R2), same chat and worktree as R1.",
+    "trigger": "PR #129 (CE-1 tail-pin authority amendment v1.0.2) and PR #126 (Portfolio PF3) both integrated into origin/integration/commercial-v1 during this mission.",
+
+    "live_sync": {
+      "PR129_diff": "07c33c95..c898d72c — exactly one file: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json (355 insertions, 0 other changes). Verified by git diff --stat.",
+      "PR126_diff": "c898d72c..3a312c2d — 11 files, 3132 insertions, 7 deletions, entirely app/components/lib/tests/postgres under portfolios/. Zero overlap with db/schema.ts, db/migrations/**, db/hosted/**, db/prepared/**. Verified by git diff --stat.",
+      "PR128_mergeable_check": "gh pr view 128 measured mergeable=MERGEABLE, mergeStateStatus=UNSTABLE at the time this mission checked — the user-reported mergeable=false was stale/transient by the time of measurement; the reason was not inferred, it was independently re-measured.",
+      "merge_tree_precheck": "git merge-tree --write-tree origin/integration/commercial-v1 HEAD (pre-sync) => 6291074d10df8faaf9a3644b32d295b86c068d2b, exit 0 — conflict-free, confirmed before merging.",
+      "merge_command": "git merge --no-ff --no-edit origin/integration/commercial-v1 (normal merge, no rebase, no squash)",
+      "merge_commit": "71af546c9f67fa5b29cd31485ef979c7346c5428",
+      "merge_tree": "6291074d10df8faaf9a3644b32d295b86c068d2b — identical to the merge-tree prediction. Zero conflicts.",
+      "merge_parents": ["28e9a439a7c8c6d939bd646dff9b937b52fb2f5c (prior CE-1 HEAD)", "3a312c2d861b5c5f63032fc33725d50cc5c58b3c (live integration)"]
+    },
+
+    "ce1_invariants_reverified_post_sync": {
+      "migration_ordinal": "0068 — db/migrations/0068_commercial_account_ce1.sql present, byte-unchanged.",
+      "migration_sha256_lf_normalized": "f04e73571e234944e642ad23e8740814d9a76ac16c43d6c13d9effa7f284b099 — IDENTICAL to R1.",
+      "commercial_accounts_schema": "db/schema.ts:23 export const commercialAccounts = pgTable('commercial_accounts', {...} — present, unchanged.",
+      "organizations_commercial_account_id": "db/schema.ts:83 commercialAccountId: uuid(...).references(() => commercialAccounts.id, { onDelete: 'restrict' }) — present, unchanged.",
+      "baseline_unit_81": "db/hosted/baseline-manifest.ts:1447 ordinal: 81 — present, unchanged.",
+      "journal_wrapper_081": "db/prepared/journal/081_0068_commercial_account_ce1.sql — present.",
+      "rls_enable_force_zero_policies": "grep on the migration: ENABLE ROW LEVEL SECURITY and FORCE ROW LEVEL SECURITY both present, zero CREATE POLICY — unchanged.",
+      "evidence_artifact": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_IMPLEMENTATION_EVIDENCE_v1.0.0.json present (this file) — being updated in place by this R2 section, not replaced.",
+      "baseline_verify_post_sync": "PASS — 81 units, order pinned, hashes match.",
+      "journal_verify_post_sync": "PASS — all 82 wrappers regenerate byte-identically.",
+      "conclusion": "Zero CE-1 bytes lost by the live synchronization."
+    },
+
+    "authority_v1_0_2_application": {
+      "defect_corrected_by_v1_0_2": "CE1-TAILPIN-01 — v1.0.1's sixth_host_adjudication never examined tests/tenancy/s1-founder-traceability.test.ts, which readdirSyncs db/migrations and is not self-adapting at its migration-tail block.",
+      "authorized_new_path": "tests/tenancy/s1-founder-traceability.test.ts, unprotected, ordinary --allow only. EXISTING_TEST_INSTRUCTIONS.count moves 5 -> 6.",
+      "authorized_adjustment_scope": "ONLY the migration-tail displacement retarget, confined to the single it() block at the file's 'S1 migration' describe (comment block + one it()). Everything else in the 455-line file — including line 181's literal S1 ordinal 79, the derived wrapper-header/count sites, and every DDL/backfill/cardinality/RLS/provenance/onboarding assertion — is explicitly prohibited from edit and was left untouched."
+    },
+
+    "s1_tail_before": {
+      "blob": "472f8006729a0a8ebc263bb85eb520bb9cb20b12 (confirmed byte-identical to R1's commit 8ca2ff9b and to BASE_AT_START — zero drift).",
+      "reactive_it_block_verbatim": "const S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql'; const files = readdirSync(...).sort(); expect(files[files.length - 2]).toBe(S1_UNIT.id); expect(files[files.length - 1]).toBe(S3_UNIT_ID); ...; expect(`${last.tag}.sql`).toBe(S3_UNIT_ID); expect(last.idx).toBe(journal.entries.length - 1); ...",
+      "it_title": "'has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit'"
+    },
+
+    "s1_tail_after": {
+      "diff": "15 insertions, 11 deletions, confined to lines 94-115 (the comment block + the single it() block) — verified by git diff, nothing else in the 455-line file touched.",
+      "reactive_it_block_verbatim": "const S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql'; const CE1_UNIT_ID = '0068_commercial_account_ce1.sql'; const files = readdirSync(...).sort(); expect(files[files.length - 3]).toBe(S1_UNIT.id); expect(files[files.length - 2]).toBe(S3_UNIT_ID); expect(files[files.length - 1]).toBe(CE1_UNIT_ID); ...; expect(`${last.tag}.sql`).toBe(CE1_UNIT_ID); expect(last.idx).toBe(journal.entries.length - 1); ...",
+      "it_title": "'has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit, then exactly the CE-1 unit'",
+      "equality_style": "Every assertion remains toBe exact equality against a string literal or a derived value. No toContain, no bounds-only check, no membership semantics (includes/indexOf/find/some), no expect.any, no regex relaxation. S3_UNIT_ID retained as a named anchor, not replaced. Line 113's journal.entries.length - 1 form is byte-unchanged and still derived. Lines 181-182 (S1's literal ordinal 79 and its derived array-position check) are byte-unchanged.",
+      "prohibitions_confirmed_respected": "No edit outside lines 94-115. No S1 DDL/backfill/cardinality/RLS/provenance/onboarding assertion touched. No new it()/describe(). No skip/todo/xit."
+    },
+
+    "old_red_proof": {
+      "method": "The pre-retarget blob (472f8006...) was restored to the working tree via `git checkout HEAD -- tests/tenancy/s1-founder-traceability.test.ts` (HEAD = the merge commit 71af546c, which still carried the OLD two-position pin), the single reactive test was run in isolation, then the corrected version was restored from a scratch backup.",
+      "command": "vitest run tests/tenancy/s1-founder-traceability.test.ts -t \"displaced from the top\"",
+      "result": "RED, exactly as predicted: AssertionError at line 105 — expected '0067_tenancy_refusal_audit_insert_policy.sql' to be '0066_multiorg_s1_founder_traceability.sql' (files[files.length - 2] no longer equals S1_UNIT.id once CE-1 is the new tail).",
+      "conclusion": "The old two-position pin is genuinely RED under the synchronized CE-1 candidate, not merely asserted to be."
+    },
+
+    "new_green_proof": {
+      "command": "vitest run tests/tenancy/s1-founder-traceability.test.ts",
+      "result": "21/21 PASS (the retargeted it() plus all 20 previously-passing tests in the same file, confirming no collateral damage to S1 semantics)."
+    },
+
+    "mutation_nonvacuity": {
+      "mutation_applied": "The S3 middle anchor was corrupted in place: const S3_UNIT_ID changed from '0067_tenancy_refusal_audit_insert_policy.sql' to the wrong value '0066_multiorg_s1_founder_traceability.sql' (a duplicate of S1's own id), then reverted after the proof.",
+      "command": "vitest run tests/tenancy/s1-founder-traceability.test.ts -t \"displaced from the top\"",
+      "result": "RED — AssertionError at the (now line-shifted) files[files.length - 2] assertion: expected '0067_tenancy_refusal_audit_insert_policy.sql' to be '0066_multiorg_s1_founder_traceability.sql'.",
+      "conclusion": "The three-position ladder is genuinely load-bearing: corrupting the middle anchor alone — without touching the S1 or CE-1 anchors — is independently sufficient to turn the control red. The assertion is not vacuous."
+    },
+
+    "gates_r2": {
+      "typecheck": "PASS (clean, no output)",
+      "ce1_structural_and_tenancy_suite": "tests/commercial/ce1-commercial-account.test.ts + tests/tenancy/s1-founder-traceability.test.ts => 46/46 PASS",
+      "baseline_verify": "PASS — 81 units",
+      "journal_verify": "PASS — 82 wrappers",
+      "b0_observation_verify": "PASS",
+      "a1_status_verify": "PASS",
+      "hosted_baseline_gates_suite": "tests/eval/stella-release/hosted-baseline-gate.test.ts + tests/hosted/baseline-manifest.test.ts + tests/hosted/baseline-journal-wrapper.test.ts + tests/hosted/operator-runner.test.ts => 282/282 PASS",
+      "dependency_tree_provenance_reverified": "fs.realpathSync('node_modules') and node_modules/.bin/vitest both resolve inside this worktree — unchanged from R1's provenance proof.",
+      "ods_scope_positive": {
+        "command": "node scripts/ods-scope.ts --base 3a312c2d... --allow <15 CE-1 paths incl. tests/tenancy/s1-founder-traceability.test.ts and the evidence artifact> --protected-authority HPO-ODS-W2-26",
+        "note_on_base": "merge-base(HEAD, origin/integration/commercial-v1) now resolves to 3a312c2d itself, because that ref became an ancestor of HEAD via the --no-ff merge. The base..HEAD diff therefore correctly still contains the FULL CE-1 surface (it is not yet merged into integration), not merely the R2 delta.",
+        "result": "PASS — CHANGED_FILE_COUNT=98 PROTECTED_AUTHORIZED_PATH_COUNT=85 PROTECTED_PATH_VIOLATIONS=0 UNAUTHORIZED_PATHS=0"
+      },
+      "ods_scope_negative_controls": [
+        "Same diff, tests/tenancy/s1-founder-traceability.test.ts omitted from --allow => UNAUTHORIZED_PATH=tests/tenancy/s1-founder-traceability.test.ts, ODS_SCOPE=FAIL.",
+        "Same diff, --protected-authority omitted => ODS_SCOPE=FAIL."
+      ],
+      "authority_seal_verify": "PASS — PROTECTED_CORPUS_COUNT=9, all PASS.",
+      "secrets_scan": "PASS — run before staging and will be re-run after the R2 commit."
+    },
+
+    "real_pg_r2": {
+      "command": "UELLIX_PG_TESTS=1 vitest run tests/postgres/ce1-commercial-account.pg.test.ts --no-file-parallelism, against the LIVE-SYNCHRONIZED candidate (post-merge of v1.0.2 authority + PF3)",
+      "result": "23/23 PASS — identical outcome to R1's second (corrected) run; no interaction with PF3's product surface or the new authority doc.",
+      "leaked_containers": "19 pre-existing containers before, 19 after (one unrelated pre-existing crash-looping container's elapsed-time text differs, same name/image, still Restarting) — ZERO leaked containers, confirmed independently of R1's own container-leak measurement."
+    },
+
+    "full_regression_r2": {
+      "command": "pnpm test, against the live-synchronized candidate (post-merge, pre-R2-commit, with the s1-founder-traceability.test.ts correction applied in the working tree)",
+      "raw_result": "9 failed test files | 383 passed | 9 skipped (401 files); 47 failed | 10650 passed | 420 skipped (11117 tests total) — the suite grew by ~42 tests, almost entirely PF3's new lib/portfolios/**.test.ts and tests/postgres/portfolio-read-model.pg.test.ts files, none of which failed.",
+      "tests_tenancy_s1_founder_traceability_status": "ABSENT from the failure list. The former CE1_CAUSED_BLOCKING finding is CLOSED — confirmed by its total absence from all 47 failures, not merely by the isolated run above.",
+      "classification": {
+        "CE1_CAUSED": { "count": 0, "note": "Zero. The only CE-1-attributable failure this mission ever produced is now resolved." },
+        "RESOURCE_TIMEOUT": {
+          "count": 38,
+          "files": ["tests/ods/ods-scope.test.ts (22)", "tests/ods/ods-poststate.test.ts (9)", "tests/ods/ods-prestate.test.ts (6)", "tests/ods/authority-seal-verify.test.ts (1)"],
+          "evidence": "Every failure is 'Test timed out in 5000ms' on a test spawning a real subprocess (tsx CLI, pnpm run, or the authority-seal-verify CLI). Isolated re-run: the 7 smaller suspect files (form-accessibility, baseline-apply-authorization, hosted-managed-role-attributes, ods-prestate, p1a-bootstrap-gate, scan-secrets, authority-seal-verify) drop to 1/7 files failing (authority-seal-verify's one real-CLI-spawn test), which itself passes cleanly with --testTimeout=30000. Separately, ods-scope.test.ts + ods-poststate.test.ts together drop to 3/201 failing in isolation (--no-file-parallelism) — the same three heaviest real-subprocess tests identified in R1, already proven to pass with a longer timeout. PF3's larger suite increases full-run system contention, which is why more of these hardcoded-5000ms tests than in R1 (16) now cross the ceiling under full load (38) — the mechanism is identical, not new."
+        },
+        "ENVIRONMENTAL": {
+          "count": 9,
+          "files": ["tests/design-system/form-accessibility.test.tsx (4)", "tests/hosted/baseline-apply-authorization.test.ts (1)", "tests/hosted/hosted-managed-role-attributes.test.ts (1)", "tests/p1a-bootstrap-gate.test.ts (1)", "tests/scan-secrets.test.ts (2)"],
+          "evidence": "All 6 of the smaller files re-run together in isolation (minus authority-seal-verify, classified under RESOURCE_TIMEOUT above): 190/199 pass, with the sole failure being authority-seal-verify's timeout, already accounted for above. None of these six carry any CE-1 or PF3 content."
+        }
+      },
+      "preexisting_real_count": 0,
+      "new_ktc_coined": false,
+      "collected_gt_zero": "Confirmed for every file in this classification."
+    },
+
+    "ktc_r2": {
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "Still CLEARED post-sync — confirmed by the 282/282 hosted-baseline-gates PASS in gates_r2 above.",
+      "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "Still CLEARED post-sync, same evidence.",
+      "no_new_ktc_coined": "Confirmed."
+    },
+
+    "commits": [
+      {
+        "sha": "71af546c9f67fa5b29cd31485ef979c7346c5428",
+        "type": "merge",
+        "summary": "Merge origin/integration/commercial-v1 (PR129 v1.0.2 authority + PR126 PF3) into the CE-1 branch — --no-ff, no conflicts."
+      },
+      {
+        "sha": "this commit — necessarily unknowable to its own content at write time; see the R2 mission report's R2_SHA for the exact value, and `git log --oneline -3` on this branch for direct confirmation",
+        "type": "fix+docs",
+        "summary": "fix(tenancy): retarget the S1 migration-tail displacement pin to the three-position ladder (S1/S3/CE-1) per COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2; docs(commercial): update the CE-1 evidence artifact in place with the R2 record."
+      }
+    ],
+
+    "final_state_r2": {
+      "CE1_IMPLEMENTATION_STATUS": "LOCALLY_VERIFIED_CANDIDATE_LIVE_SYNCHRONIZED_FORMER_BLOCKER_CLOSED_AWAITING_FINAL_INDEPENDENT_OPUS_AUDIT",
+      "blocker_closed": "The single CE1_CAUSED_BLOCKING finding from R1 (tests/tenancy/s1-founder-traceability.test.ts) is RESOLVED by a RETARGET (not a relaxation), authorized by COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2, proven old-red / new-green / mutation-non-vacuous, and confirmed absent from the full-regression failure list.",
+      "not_claimed": [
+        "CE-1 is NOT certified closed by this artifact.",
+        "No hosted, staging, or production apply of any kind was performed.",
+        "PR128 is NOT merged by this mission."
+      ]
+    }
+  },
+
+  "blocking_findings": 0,
   "unknown_findings": 0,
 
   "final_state": {
-    "CE1_IMPLEMENTATION_STATUS": "LOCALLY_VERIFIED_CANDIDATE_AWAITING_INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT",
+    "CE1_IMPLEMENTATION_STATUS": "LOCALLY_VERIFIED_CANDIDATE_AWAITING_INDEPENDENT_OPUS_EXACT_OBJECT_AUDIT — see r2_tail_pin_retarget_and_finalization.final_state_r2 for the current disposition; the R1 blocker recorded above is CLOSED, not open.",
     "not_claimed": [
       "CE-1 is NOT certified closed by this artifact.",
-      "tests/tenancy/s1-founder-traceability.test.ts is NOT green — see full_regression.classification.CE1_CAUSED_BLOCKING. This must be resolved by a successor authority before CE-1 can be considered fully closed, not silently patched by this mission.",
       "No hosted, staging, or production apply of any kind was performed.",
       "PR is opened as DRAFT and is NOT merged by this mission."
     ]
