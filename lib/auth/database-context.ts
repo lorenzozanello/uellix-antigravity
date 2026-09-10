@@ -141,6 +141,15 @@ export interface RequestPrincipal {
     | 'TENANCY_NO_ORGANIZATION_SELECTED'
     | 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'
     | null
+  /**
+   * PACKET B — B0. Propagated verbatim from lib/auth/identity.ts
+   * VerifiedAuthIdentity.emailVerified (the sole derivation site) at the ONE
+   * propagation site below (resolveRequestPrincipal). REQUIRED, never
+   * optional: an optional field with a permissive default would let every
+   * existing fixture keep passing while silently measuring an unverified
+   * subject as verified (X-B-03, S-IA-PRINCIPAL-FIXTURES-EXPLICITLY-VERIFIED).
+   */
+  readonly emailVerified: boolean
 }
 
 export type AuthContextErrorCode =
@@ -166,6 +175,10 @@ export type AuthContextErrorCode =
   // fallback dressed as a rename) harder to catch by code alone.
   | 'TENANCY_NO_ORGANIZATION_SELECTED'
   | 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'
+  // PACKET B — C6. A valid session whose email the provider has not
+  // confirmed. Deliberately in the AUTH_ family, not TENANCY_: this is not a
+  // tenancy question, it fires before any organisation is considered.
+  | 'AUTH_EMAIL_NOT_VERIFIED'
 
 export class AuthContextError extends Error {
   readonly name = 'AuthContextError'
@@ -195,6 +208,7 @@ export function authContextErrorStatus(code: AuthContextErrorCode): number {
     case 'AUTH_NOT_SUPER_ADMIN':
     case 'TENANCY_NO_ORGANIZATION_SELECTED':
     case 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER':
+    case 'AUTH_EMAIL_NOT_VERIFIED':
       return 403
   }
 }
@@ -419,7 +433,10 @@ interface PrincipalRead {
   readonly pendingRevalidationRefusal: string | null
 }
 
-async function readPrincipalUnderOpenContext(userId: string): Promise<PrincipalRead> {
+async function readPrincipalUnderOpenContext(
+  userId: string,
+  emailVerified: boolean
+): Promise<PrincipalRead> {
   const user = await loadCurrentUserWithinContext(userId)
   if (!user) return { principal: null, pendingRevalidationRefusal: null }
 
@@ -445,7 +462,13 @@ async function readPrincipalUnderOpenContext(userId: string): Promise<PrincipalR
     // It costs nothing observable: a caller who actually attempts to use a
     // malformed value through the governed selection act IS audited there.
     return {
-      principal: { user, membership: null, organization: null, organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED' },
+      principal: {
+        user,
+        membership: null,
+        organization: null,
+        organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
+        emailVerified,
+      },
       pendingRevalidationRefusal: null,
     }
   }
@@ -469,7 +492,13 @@ async function readPrincipalUnderOpenContext(userId: string): Promise<PrincipalR
     //
     // The obligation is RETURNED, not discharged: see PrincipalRead.
     return {
-      principal: { user, membership: null, organization: null, organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER' },
+      principal: {
+        user,
+        membership: null,
+        organization: null,
+        organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+        emailVerified,
+      },
       pendingRevalidationRefusal: selectedOrganizationId,
     }
   }
@@ -509,6 +538,7 @@ async function readPrincipalUnderOpenContext(userId: string): Promise<PrincipalR
       membership,
       organization,
       organizationRefusalCode: organization ? null : 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+      emailVerified,
     },
     pendingRevalidationRefusal: null,
   }
@@ -549,7 +579,7 @@ async function resolveRequestPrincipal(
   // context is both correct and cheaper than opening a second transaction.
   const bound = getBoundDatabaseContext()
   if (bound !== undefined && bound.identity.userId === identity.userId) {
-    const read = await readPrincipalUnderOpenContext(identity.userId)
+    const read = await readPrincipalUnderOpenContext(identity.userId, identity.emailVerified)
 
     if (read.pendingRevalidationRefusal !== null) {
       // BORROWED TRANSACTION, SO THE AUDIT CANNOT BE ISOLATED — AND IS
@@ -579,7 +609,7 @@ async function resolveRequestPrincipal(
 
   const read = await withDatabaseIdentityContext(
     { userId: identity.userId, organizationId: null, isSuperAdmin: false },
-    () => readPrincipalUnderOpenContext(identity.userId),
+    () => readPrincipalUnderOpenContext(identity.userId, identity.emailVerified),
     options
   )
 
@@ -626,14 +656,34 @@ export interface AuthenticatedContext {
   readonly organization: Organization | null
 }
 
+/**
+ * PACKET B — C6. Binds the refusal to the PRINCIPAL RESULT, not to a
+ * particular resolution branch. `requirePrincipal` has two return sites that
+ * each produce a principal — the memo hit below and the fresh resolution —
+ * and this is called from BOTH, so a memo-warm call (every principal
+ * consumption after the first in a request, via React `cache()`) refuses
+ * exactly as the first, memo-cold call did. Checking only after the fresh
+ * branch would make the defect intermittent by construction: invisible to
+ * any test that resolves the principal once (F-IH-7, N-B-14, M-B-10).
+ */
+function assertEmailVerifiedPrincipal(principal: RequestPrincipal): RequestPrincipal {
+  if (!principal.emailVerified) {
+    throw new AuthContextError(
+      'AUTH_EMAIL_NOT_VERIFIED',
+      'The session is valid but the email address has not been confirmed by the provider yet.'
+    )
+  }
+  return principal
+}
+
 async function requirePrincipal(options: DatabaseContextOptions): Promise<RequestPrincipal> {
   // The memo is consulted first so a page that opens several contexts pays for
   // one GoTrue round trip and one unscoped transaction, not several.
   const memoised = await loadRequestPrincipal()
-  if (memoised) return memoised
+  if (memoised) return assertEmailVerifiedPrincipal(memoised)
 
   const { principal, failure } = await resolveRequestPrincipal(options)
-  if (principal) return principal
+  if (principal) return assertEmailVerifiedPrincipal(principal)
 
   const code = failure ?? 'AUTH_NO_SESSION'
   throw new AuthContextError(
@@ -814,7 +864,12 @@ export async function withOptionalDatabaseIdentityContext<T>(
   const memoised = await loadRequestPrincipal()
   const principal = memoised ?? (await resolveRequestPrincipal(options)).principal
 
-  if (!principal || !principal.membership || !principal.organization) {
+  // PACKET B — C7, DEFENSE_IN_DEPTH ONLY (R4: all call sites are preempted by
+  // C4 or C5). No control in this repository may depend on this line —
+  // S-IA-NO-CONTROL-DEPENDS-ON-C7 — it is included because it is free and an
+  // unverified subject is denied a claims-bearing context here too, for the
+  // same reason a member-less one already is.
+  if (!principal || !principal.membership || !principal.organization || !principal.emailVerified) {
     return callback(null)
   }
 

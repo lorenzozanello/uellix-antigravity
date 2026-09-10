@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { syncUserProfile, getCurrentMembership, listSelectableMemberships } from '@/lib/auth/session'
+import { syncUserProfile, getCurrentMembership, listSelectableMemberships, loadRequestPrincipal } from '@/lib/auth/session'
+import { VERIFY_EMAIL_PATH } from '@/lib/auth/email-verification'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 import { checkAndRecordRateLimit } from '@/lib/security/rate-limit'
 
@@ -47,6 +48,17 @@ export async function login(formData: FormData) {
   // "no membership -> onboarding" branch would otherwise strand them.
   if (redirectTo) {
     redirect(redirectTo)
+  }
+
+  // PACKET B — B0. Evaluated before the membership question below, and
+  // before listSelectableMemberships could ever be called for an unverified
+  // subject (S-IA-NO-ENUMERATION-ON-REFUSAL): listSelectableMemberships
+  // transits requirePrincipal (C6), which now refuses an unverified
+  // principal, so without this check an unverified re-login would surface
+  // an unhandled AuthContextError instead of a clean redirect.
+  const principal = await loadRequestPrincipal()
+  if (principal && !principal.emailVerified) {
+    redirect(VERIFY_EMAIL_PATH)
   }
 
   // Smart redirect: go to onboarding if no org, otherwise dashboard.
@@ -97,11 +109,27 @@ export async function signup(formData: FormData) {
 
   revalidatePath('/', 'layout')
 
+  // PACKET B — Gate A (provider confirmation) may be enabled with no
+  // auto-created session: signUp then returns a user but a null session, and
+  // there is no cookie for loadRequestPrincipal to read a principal from.
+  // The pending-verification destination applies unconditionally here —
+  // there is nothing else this subject could do yet, invite link or not.
+  if (!data.session) {
+    redirect(VERIFY_EMAIL_PATH)
+  }
+
   // Same rationale as login(): an invited user accepting via a fresh
   // signup should land on the accept link, not go through onboarding
   // and create a brand-new organization.
   if (redirectTo) {
     redirect(redirectTo)
+  }
+
+  // PACKET B — B0, same rationale as login(): evaluated before the
+  // unconditional onboarding redirect below.
+  const principal = await loadRequestPrincipal()
+  if (principal && !principal.emailVerified) {
+    redirect(VERIFY_EMAIL_PATH)
   }
 
   // New users with no pending invite always go to onboarding

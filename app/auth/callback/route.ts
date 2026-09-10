@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { syncUserProfile, getCurrentMembership, listSelectableMemberships } from '@/lib/auth/session'
+import { syncUserProfile, getCurrentMembership, listSelectableMemberships, loadRequestPrincipal } from '@/lib/auth/session'
+import { VERIFY_EMAIL_PATH } from '@/lib/auth/email-verification'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 
 export async function GET(request: Request) {
@@ -19,6 +20,17 @@ export async function GET(request: Request) {
 
       if (next) {
         return NextResponse.redirect(new URL(next, request.url))
+      }
+
+      // PACKET B — B0, evaluated AFTER `next` (N-B-5: a password-recovery or
+      // other caller-supplied safe target must never be outranked by the
+      // gate — this callback serves recovery-return, OAuth-return, magic
+      // link and confirmation-link uniformly, with no mechanism field
+      // consulted) and BEFORE the enumerator below could ever be reached for
+      // an unverified subject.
+      const principal = await loadRequestPrincipal()
+      if (principal && !principal.emailVerified) {
+        return NextResponse.redirect(new URL(VERIFY_EMAIL_PATH, request.url))
       }
 
       // Smart redirect based on org membership.

@@ -127,7 +127,16 @@ beforeEach(() => {
 })
 
 function signedInAs(userId: string): void {
-  mockGetUser.mockResolvedValue({ data: { user: { id: userId } }, error: null })
+  // PACKET B — feeds the REAL lib/auth/identity.ts under the LIVE-gated
+  // suites below, which exercise withOrganizationDatabaseContext /
+  // withSuperAdminDatabaseContext (both transit requirePrincipal, C6).
+  // Pinned PROVIDER-CONFIRMED: this file proves S3/context behaviour, not
+  // Packet B, and an omitted field would throw AUTH_EMAIL_NOT_VERIFIED
+  // instead of the codes these tests assert on.
+  mockGetUser.mockResolvedValue({
+    data: { user: { id: userId, email_confirmed_at: '2024-01-01T00:00:00.000Z' } },
+    error: null,
+  })
 }
 
 async function captureCode(run: () => Promise<unknown>): Promise<string | undefined> {

@@ -229,7 +229,16 @@ function selectOrganization(organizationId: string): void {
 }
 
 function signedInAs(userId: string): void {
-  mockGetUser.mockResolvedValue({ data: { user: { id: userId } }, error: null })
+  // PACKET B — this feeds the REAL lib/auth/identity.ts, which derives
+  // `emailVerified` from `email_confirmed_at`. This suite exists to prove S3
+  // request-principal/refusal-code behaviour, not Packet B, so every signed-in
+  // fixture is pinned PROVIDER-CONFIRMED: an omitted field here would make
+  // requirePrincipal (C6) throw AUTH_EMAIL_NOT_VERIFIED instead of the
+  // TENANCY_* codes this file asserts on.
+  mockGetUser.mockResolvedValue({
+    data: { user: { id: userId, email_confirmed_at: '2024-01-01T00:00:00.000Z' } },
+    error: null,
+  })
 }
 
 async function captureCode(run: () => Promise<unknown>): Promise<string | undefined> {
@@ -515,10 +524,19 @@ describe('S3-6: the role on the resulting principal comes solely from the SELECT
 /* -------------------------------------------------------------------------- */
 
 describe('S3-7: the selectable-memberships enumerator is exported from an EXISTING context module; NO new lib/auth/* module exists', () => {
-  it('lib/auth/ contains exactly the files that existed before S3 — no new module was added', () => {
+  it('lib/auth/ contains exactly the files S3 left behind, plus the ONE module a LATER authority (Packet B) deliberately added', () => {
+    // PACKET B (docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY
+    // _v1.0.0.json) added lib/auth/email-verification.ts — a single exported
+    // constant (the /verify-email destination), not a second derivation of
+    // the verified boolean (S-IA-PREDICATE-CARDINALITY still names
+    // lib/auth/identity.ts as the sole reader of email_confirmed_at). S3's
+    // OWN constraint — that the enumerator was hosted in an existing module —
+    // is unchanged; this list is widened because a later, separately
+    // authorized lane added a new module, not because S3-7 was relaxed.
     const files = readdirSync(path.join(ROOT, 'lib', 'auth')).filter((f) => f.endsWith('.ts')).sort()
     expect(files).toEqual([
       'database-context.ts',
+      'email-verification.ts',
       'identity.ts',
       'permissions.ts',
       'roles.ts',

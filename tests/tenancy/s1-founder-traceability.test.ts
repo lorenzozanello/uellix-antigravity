@@ -275,6 +275,12 @@ describe('S1 live self-service founding — behaviour under mocks (S1-6 atomicit
     // POSITIVE founding test (a 0-candidate subject still proceeds to found)
     // and the NEGATIVE allowlist test unchanged.
     listSelectableMemberships: vi.fn(async () => []),
+    // PACKET B — createFirstOrganization now reads loadRequestPrincipal
+    // directly for its B0 routing check (routing-only; the real refusal for
+    // an unverified subject lives in requirePrincipal/C6, reached through
+    // withAuthenticatedDatabaseContext, mocked below). This suite is about
+    // S1 founding, not Packet B, so the founder is pinned verified.
+    loadRequestPrincipal: vi.fn(async () => ({ emailVerified: true })),
   }))
   vi.mock('@/lib/admin/signup-allowlist', () => ({
     isEmailAllowlisted: vi.fn(async () => state.allowlisted),
