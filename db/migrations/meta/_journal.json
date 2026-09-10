@@ -484,6 +484,13 @@
       "when": 1788985475720,
       "tag": "0068_commercial_account_ce1",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1789056590944,
+      "tag": "0069_fib_fibdb052_p1_indexes",
+      "breakpoints": true
     }
   ]
 }

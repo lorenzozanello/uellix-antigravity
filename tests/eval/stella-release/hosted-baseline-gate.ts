@@ -407,10 +407,14 @@ export function buildHostedBaselineGateEvidence(
     // + 1 journal bootstrap step = 81 — DERIVED as BASELINE_ORDER.length + 1
     // from planProvisioningPhase, never grepped from the old count.
     // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81 baseline
-    // units + 1 journal bootstrap step = 82 — DERIVED, not grepped.
+    // units + 1 journal bootstrap step = 82 (CE-1).
+    // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 = 82 baseline units
+    // + 1 journal bootstrap step = 83. This pin is N+1, NEVER N: a mechanical
+    // 81 -> 82 sweep leaves it reading 82 — correct for the PREVIOUS N — so it
+    // looks already-updated while demanding 82 steps from a plan producing 83 — DERIVED, not grepped.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 82 &&
+      firstProvisioning.steps.length === 83 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -435,7 +439,8 @@ export function evaluateHostedBaselineGates(
   // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability): + 0066 = 79.
   // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80.
   // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 81
+  // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 = 82.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 82
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

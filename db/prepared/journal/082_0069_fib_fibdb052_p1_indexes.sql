@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 1/82: 0000_quick_husk.sql
+-- GENERATED — DO NOT EDIT. Unit 82/82: 0069_fib_fibdb052_p1_indexes.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0000_quick_husk.sql
--- Source SHA256: b818022f9931ebf15eedcb97fd932dc27be5d313cf9977e975e26b745173b94d
+-- Includes:      db/migrations/0069_fib_fibdb052_p1_indexes.sql
+-- Source SHA256: c7808ef43221662a27d7a227a6271f34cea09f1167cf70597948924fefcab379
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/001_0000_quick_husk.sql
+--        -f db/prepared/journal/082_0069_fib_fibdb052_p1_indexes.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0000_quick_husk.sql
+\ir ../../../db/migrations/0069_fib_fibdb052_p1_indexes.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0000_quick_husk.sql', 'PHASE_BASELINE',
-   'b818022f9931ebf15eedcb97fd932dc27be5d313cf9977e975e26b745173b94d', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0069_fib_fibdb052_p1_indexes.sql', 'PHASE_BASELINE',
+   'c7808ef43221662a27d7a227a6271f34cea09f1167cf70597948924fefcab379', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

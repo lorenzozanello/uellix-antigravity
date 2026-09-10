@@ -237,7 +237,8 @@ describe('unit source verification', () => {
     // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability): + 0066 = 79.
     // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80.
     // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81.
-    expect(BASELINE_UNITS).toHaveLength(81)
+    // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 = 82.
+    expect(BASELINE_UNITS).toHaveLength(82)
     for (const u of BASELINE_UNITS) expect(u.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 })
