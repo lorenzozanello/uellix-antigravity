@@ -205,7 +205,7 @@
     },
     {
       "id": "M-7",
-      "description": "WEAKEN EXACT CARDINALITY PINS => RED. Relaxing expect(BASELINE_UNITS).toHaveLength(81) to a bound, relaxing the contiguous-ordinals 1..81 assertion, or relaxing the 8-statement equality in the migration must FAIL the suite. There are SIX literal assertion sites across THREE files (mechanically enumerated; R1 said four): baseline-manifest.test.ts carries three (toHaveLength, Array.from length, Set size), baseline-journal-wrapper.test.ts carries two (BASELINE_UNITS, BASELINE_ORDER) and operator-runner.test.ts carries one (BASELINE_UNITS). Every OTHER cardinality assertion in those files is expressed relative to BASELINE_UNITS.length, moves on its own, and must NOT be touched.",
+      "description": "WEAKEN EXACT CARDINALITY PINS => RED. Relaxing any surviving baseline-count equality into a bound, a range or a contains form must FAIL the suite. Scope is the FULL repo-wide census (REACTIVE_BASELINE_COUNT_CENSUS.REACTIVE_REQUIRED, 13 sites across 6 files), NOT the three hosted test files R1 and R2 covered. Every DERIVED_AUTO_MOVING form (BASELINE_UNITS.length, BASELINE_ORDER.length, length + 1, length - 1) moves on its own and must NOT be touched; editing one is scope expansion and must also FAIL.",
       "test_file": "tests/hosted/baseline-manifest.test.ts"
     },
     {
@@ -224,8 +224,33 @@
       "test_file": "UNKNOWN"
     },
     {
-      "id": "M-11",
+      "id": "M-16",
       "description": "SELF-REGISTERING THE P1 GRANT => REFUSED. If the P1 protected-grant is not present at the authorityId key position in PROTECTED_GRANTS, the implementation mission must STOP rather than add the row to its own diff. Registration is a separate governed act on a different surface from declaration; a mission that registers the grant it then relies on has authorized its own diff.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-11",
+      "description": "REPO-WIDE PIN COVERAGE, NON-VACUOUS. Freeze this exact mutation: apply the P1 append, update ONLY the three hosted test files R1/R2 covered (baseline-manifest.test.ts, baseline-journal-wrapper.test.ts, operator-runner.test.ts), and deliberately LEAVE tests/eval/stella-release/hosted-baseline-gate.ts:435 at 80. The suite MUST turn RED. If it stays green, the coverage is vacuous and the control has proven nothing. This is the mutation that would have caught R1 and R2, both of which shipped a census whose scope was three hosted files.",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+    },
+    {
+      "id": "M-12",
+      "description": "REHEARSAL EVIDENCE LEFT STALE => RED. Apply the P1 append and deliberately leave artifacts/baseline-rehearsal/latest.json at manifestApplied 80. rehearsalAppliedAll must flip TRUE -> FALSE and the hosted-baseline-rehearsal-ready gate must FAIL on that conjunct. The pre-existing rehearsalFresh failure (KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02) must NOT be accepted as covering this: the control must distinguish the two conjuncts, or it cannot tell a new breakage from an old one.",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+    },
+    {
+      "id": "M-13",
+      "description": "N+1 TRAP => RED. Apply the P1 append and set tests/eval/stella-release/hosted-baseline-gate.ts:411 to 81 — the value a mechanical 80 -> 81 sweep produces, and the value that was CORRECT for the previous N. The suite MUST turn RED, because the correct post-append value is 82 (BASELINE_ORDER.length + 1). A control that accepts 81 here cannot distinguish 'already updated' from 'never updated', which is exactly the confusion this pin is known to produce.",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+    },
+    {
+      "id": "M-14",
+      "description": "DERIVED FORM EDITED => RED. Replacing any DERIVED_AUTO_MOVING expression with a literal — for example rewriting BASELINE_UNITS.length + 1 as 82, or evidence.unitCount === BASELINE_UNITS.length as === 81 — must FAIL the suite. A derived form that is 'helpfully' pinned to a literal is a future stale pin, and this control exists so that converting one is caught at the moment it is introduced rather than at the next append.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-15",
+      "description": "HAND-EDITED REHEARSAL EVIDENCE => RED. Hand-editing artifacts/baseline-rehearsal/latest.json to carry manifestApplied 81 and a recomputed manifestDigest, WITHOUT actually re-running the rehearsal, must FAIL. Prior integrated evidence records that the forgery is detected in practice (MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0: 'R4-M4 hand-edited artefact, manifestApplied 79 -> 80 -> gate spec 2 failed + tenancy relation check failed'). The artefact asserts that a run happened; typing its outputs asserts a run that did not.",
       "test_file": "UNKNOWN"
     }
   ],

@@ -10,19 +10,19 @@
   "role": "BOUNDED_FIBDB052_P1_AUTHORITY_AND_TEST_MANIFEST_WRITER",
   "mode": "DOCS_ONLY",
   "materialization_date": "2026-09-09",
-  "revision": "R2",
+  "revision": "R3",
   "companion_manifest": "docs/ops/wave3/FIBDB052_P1_TEST_MANIFEST_v1.0.0.json",
 
   "R2_CORRECTION": {
     "rule": "This artifact was corrected in place at R2 in response to the independent GY audit of R1 (commit 0ae88adc). The artifact is a DRAFT and was never integrated, so correcting it in place is the correct disposition — no integrated object is edited and no append-only rule is broken. R1's historical AS_OF_* measurements are PRESERVED UNCHANGED; R2 adds a bounded successor reconciliation rather than restamping them.",
-    "audit_verdict_applied": "R2_REQUIRED = YES, AUDIT_UNKNOWN = 0",
+    "audit_verdict_applied": "R1 audit (GY): R2_REQUIRED = YES, AUDIT_UNKNOWN = 0. R2 audit (HG): R3_REQUIRED = YES, BLOCKING = 1, AUDIT_UNKNOWN = 0.",
     "r1_commit": "0ae88adc82fca17ee634bfbfac75f8112c25295f",
     "findings_applied": [
       "C-1 — artifacts/hosted-a1-status.json promoted from CONDITIONAL/UNKNOWN to REQUIRED_REACTIVE_PATH, with the deterministic derivation recorded. R1's F-GV-3 is thereby RESOLVED, not carried.",
       "C-2 — the two ODS-registry conditionals replaced with exact machine-deterministic predicates over authorityId key-position membership in PROTECTED_GRANTS. No bare UNKNOWN remains on either path.",
       "C-3 — the prepared-journal wrapper surface corrected from 1 changed file to 81, because the generator stamps BASELINE_UNITS.length into EVERY wrapper header.",
       "C-4 — all 4 dangling internal references repaired, including both binding HPO machine_contract pointers. DANGLING_INTERNAL_REFERENCES = 0.",
-      "C-5 — reactive literal-80 pin count corrected from four to SIX, by mechanical enumeration; the detailed enumeration and the summary now agree.",
+      "C-5 — reactive pin count corrected by mechanical enumeration. SUPERSEDED AT R3: R2 corrected the count but not the METHOD, and its scan still covered only three hosted files. See R3_CORRECTION and REACTIVE_BASELINE_COUNT_CENSUS, which is now the canonical enumeration every count in this artifact derives from.",
       "SURFACE_REPARTITION — IN/CONDITIONAL/OUT recomputed after C-1 moved one path between buckets."
     ],
     "what_R2_did_NOT_change": "The P1 partition (8 + 4 + 1 = 13), the eight governed CREATE targets and their exact names, columns, key order and predicates, the four verification-only objects, the I-10 semantics, the retired-name roster and its re-measured byte lengths, the deployment boundary, and the NO_ALLOCATION posture are all UNCHANGED. R2 corrects surface derivation and reference integrity; it invents no product semantics."
@@ -174,7 +174,7 @@
         "db/**": "UNTOUCHED. The migration tail (0067), journal entry count (68), journal max idx (67), baseline unit count (80) and prepared-journal max ordinal (080) are all unchanged.",
         "scripts/ods-controller.ts": "UNTOUCHED. Re-measured after the delta: IMMUTABLE_BY_CONVENTION still holds exactly 39 entries and still does not enumerate v1.0.29. Controller40 remains required.",
         "scripts/ods-scope.ts": "UNTOUCHED. Re-measured after the delta: zero PROTECTED_GRANTS rows carry authorityId HPO-ODS-W2-26. The W2-26 axis has not moved.",
-        "tests/**": "UNTOUCHED. The migration-tail tripwire and the four reactive cardinality pins are unchanged.",
+        "tests/**": "UNTOUCHED. The migration-tail tripwire and every site in REACTIVE_BASELINE_COUNT_CENSUS are unchanged by the delta.",
         "docs/ops/wave3/**": "UNTOUCHED by the delta. The integrated Wave3 authority chain this artifact is scoped under is unchanged.",
         "docs/ops/ods/**": "UNTOUCHED. The ODS lineage still terminates at v1.0.29 and no new addendum was allocated.",
         "docs/ops/portfolio/**": "The sole surface the delta touches. FIBDB-052 P1 shares no relation, no column, no file and no authority with the Portfolio PF3 execution authority."
@@ -738,7 +738,7 @@
         "path": "tests/hosted/baseline-manifest.test.ts",
         "disposition": "IN",
         "class": "REACTIVE_CARDINALITY_PIN",
-        "why": "Carries THREE of the six reactive assertion sites (census refs R-1, R-2, R-3), plus three prose sites. See REACTIVE_CARDINALITY_PIN_CENSUS for the authoritative enumeration.",
+        "why": "Carries census sites R-1, R-2, R-3 and R-4 — including R-2, the Drizzle sub-count 68 -> 69, which R2 recorded only as prose and never listed as an assertion site. Plus three prose sites. See REACTIVE_BASELINE_COUNT_CENSUS.",
         "bounded_change": "80 -> 81 and 68 -> 69 Drizzle, at exactly those sites. The assertion SHAPES — toHaveLength, contiguous 1..N, Set size — must be PRESERVED as exact equalities. Relaxing any of them to a bound is prohibited by the same principle as HPO-FIBP1-01.",
         "protected": false
       },
@@ -746,7 +746,7 @@
         "path": "tests/hosted/baseline-journal-wrapper.test.ts",
         "disposition": "IN",
         "class": "REACTIVE_CARDINALITY_PIN",
-        "why": "Carries TWO of the six reactive assertion sites (census refs R-4, R-5), plus the line-473 derivation comment. See REACTIVE_CARDINALITY_PIN_CENSUS.",
+        "why": "Carries census sites R-5 and R-6, plus the line-473 derivation comment. Its three BASELINE_UNITS.length + 1 forms are DERIVED_AUTO_MOVING and must not be touched. See REACTIVE_BASELINE_COUNT_CENSUS.",
         "bounded_change": "80 -> 81 at both sites; the line 473 derivation comment extended by one term naming the P1 unit. Assertions at lines 51, 444 and 479 are expressed relative to BASELINE_UNITS.length and MOVE ON THEIR OWN — they must NOT be touched.",
         "protected": false
       },
@@ -754,8 +754,37 @@
         "path": "tests/hosted/operator-runner.test.ts",
         "disposition": "IN",
         "class": "REACTIVE_CARDINALITY_PIN",
-        "why": "Carries ONE of the six reactive assertion sites (census ref R-6). See REACTIVE_CARDINALITY_PIN_CENSUS.",
+        "why": "Carries census site R-7. Its six relative forms are DERIVED_AUTO_MOVING and must not be touched. See REACTIVE_BASELINE_COUNT_CENSUS.",
         "bounded_change": "80 -> 81 at exactly that site. Every other assertion in the file is expressed relative to BASELINE_UNITS.length (lines 399, 406, 906, 908, 1446, 1459) and MUST NOT be touched.",
+        "protected": false
+      },
+      {
+        "path": "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "disposition": "IN",
+        "class": "REQUIRED_REACTIVE_PATH__RELEASE_GATE_LOGIC",
+        "why": "Carries census sites R-8 and R-9. This is GATE LOGIC, not a test file: R-9 feeds manifestOk, which is the passed value of the hosted-baseline-manifest-ready release gate. See REACTIVE_BASELINE_COUNT_CENSUS.DEPENDENCY_PROOF_A.",
+        "R3_ADDITION": "NOT PRESENT IN R1 OR R2. Missed because both scans were limited to tests/hosted/**. Raised as part of F-HG-1 (BLOCKING).",
+        "bounded_change": "R-9 (evidence.unitCount === 80) becomes 81. R-8 (firstProvisioning.steps.length === 81) becomes 82, NOT 81 — see REACTIVE_BASELINE_COUNT_CENSUS.N_PLUS_1_TRAP. The file's three BASELINE_UNITS.length / BASELINE_ORDER.length forms (lines 346, 354, 590) are DERIVED_AUTO_MOVING and MUST NOT be touched.",
+        "highest_risk_site_in_the_whole_surface": "R-8. It is the only site whose correct new value is not the new baseline count, it lives in a .ts rather than a .test.ts, and a mechanical 80 -> 81 sweep leaves it holding the PREVIOUS N's correct value while looking already-updated.",
+        "protected": false
+      },
+      {
+        "path": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+        "disposition": "IN",
+        "class": "REQUIRED_REACTIVE_PATH",
+        "why": "Carries census sites R-10 and R-11 — expect(evidence.unitCount).toBe(80) and expect(evidence.superuserFreeUnits).toBe(80).",
+        "R3_ADDITION": "NOT PRESENT IN R1 OR R2. Part of F-HG-1 (BLOCKING).",
+        "bounded_change": "Both literals 80 -> 81. R-11 moves only because the P1 unit is itself superuser-free; eight plain CREATE INDEX statements carry no role, ownership or extension statement.",
+        "protected": false
+      },
+      {
+        "path": "artifacts/baseline-rehearsal/latest.json",
+        "disposition": "IN",
+        "class": "REQUIRED_REACTIVE_PATH__REHEARSAL_EVIDENCE",
+        "why": "Carries census sites R-12 (manifestApplied: 80) and R-13 (manifestDigest). manifestApplied feeds rehearsalAppliedAll, a conjunct of the hosted-baseline-rehearsal-ready release gate. See REACTIVE_BASELINE_COUNT_CENSUS.DEPENDENCY_PROOF_B.",
+        "R3_ADDITION": "NOT PRESENT IN R1 OR R2. Part of F-HG-1 (BLOCKING).",
+        "REGENERATE_DO_NOT_HAND_EDIT": "This is rehearsal EVIDENCE. It MUST be produced by re-running the rehearsal against a disposable PostgreSQL container, never by typing the new numbers. Hand-editing fabricates a run that did not happen, and prior integrated evidence records that the forgery is additionally DETECTED (MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0: 'R4-M4 hand-edited artefact, manifestApplied 79 -> 80 -> gate spec 2 failed'). See REACTIVE_BASELINE_COUNT_CENSUS.REGENERATION_NOT_HAND_EDIT.",
+        "new_breakage_versus_pre_existing": "rehearsalAppliedAll is TRUE today and P1 flips it FALSE. That is a NEW breakage, distinct from the pre-existing rehearsalFresh failure recorded in KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02. The pre-existing failure is not cover for the new one.",
         "protected": false
       },
       {
@@ -795,7 +824,14 @@
         "R2_CORRECTION": "R1 recorded this path as CONDITIONAL with status UNKNOWN. That was wrong, and it was wrong in the avoidable direction: the question was answerable by reading the actual derivation rather than by declaring it unmeasurable. R1's F-GV-3 is RESOLVED by this entry. No future mission may call this path UNKNOWN.",
         "DERIVATION": {
           "function": "missingBaselineUnits(installed, storageUnitState) in db/hosted/hosted-provisioning-runner.ts:591",
-          "rule": "const have = new Set(installed); BASELINE_ORDER.filter(id => !have.has(id))",
+          "rule": "const have = new Set(installed); if (storageUnitState === undefined || !isStorageUnitInstalled(storageUnitState)) have.delete(STORAGE_UNIT_ID); return BASELINE_ORDER.filter(id => !have.has(id))",
+          "the_storage_unit_branch": {
+            "R3_CORRECTION": "R2 quoted the derivation without this branch. F-HG-4. The branch is part of the real function and is restored here verbatim in substance.",
+            "STORAGE_UNIT_ID": "20260716000001_storage_policies.sql",
+            "what_it_does": "Unit 41 has two halves. Its PART B — three policies on storage.objects — is applied by a human through a managed channel, so a ledger row saying 41 ran does not mean 41 is installed. When the storage unit state is undefined or not verifiably installed, the unit is DELETED from the have-set and therefore counted as missing.",
+            "effect_on_the_arithmetic": "NONE. It is a constant subtraction applied identically before and after the append, so it cancels in the delta. The verified +1 arithmetic (30 -> 31) is UNCHANGED and is not reopened.",
+            "why_it_still_matters": "It explains WHY 30 and not some other number, and it is the reason an implementer cannot reproduce the count by naively differencing two array lengths. A derivation quoted without its fail-closed branch invites exactly that reconstruction."
+          },
           "measured_now": {
             "baseline_units": 80,
             "observed_installed_intersecting_BASELINE_ORDER": 50,
@@ -908,74 +944,186 @@
       }
     },
 
-    "REACTIVE_CARDINALITY_PIN_CENSUS": {
-      "rule": "The complete, MECHANICALLY ENUMERATED set of literal-80 assertion sites that turn red when BASELINE_UNITS gains one entry. This census is the authority; any summary count elsewhere in this artifact must equal it.",
-      "R2_CORRECTION": "R1's SURFACE_SUMMARY said FOUR. Mechanical enumeration returns SIX. R1 undercounted by conflating assertion SITES with the number of file entries carrying them: tests/hosted/baseline-manifest.test.ts alone carries three distinct pins, not one. The detailed enumeration and the summary now agree.",
-      "how_enumerated": "grep -rnE '\\b80\\b' over the three hosted test files, filtered to lines in an assertion position (expect / toBe / toHaveLength / Array.from length). Counted as SITES, not as files.",
-      "ASSERTION_SITES": {
-        "count": 6,
-        "sites": [
-          { "ref": "R-1", "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 112, "text": "expect(BASELINE_UNITS).toHaveLength(80)", "becomes": "81" },
-          { "ref": "R-2", "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 121, "text": "Array.from({ length: 80 }, (_, i) => i + 1)", "becomes": "81" },
-          { "ref": "R-3", "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 124, "text": "expect(new Set(BASELINE_ORDER).size).toBe(80)", "becomes": "81" },
-          { "ref": "R-4", "file": "tests/hosted/baseline-journal-wrapper.test.ts", "line_at_measurement": 474, "text": "expect(BASELINE_UNITS).toHaveLength(80)", "becomes": "81" },
-          { "ref": "R-5", "file": "tests/hosted/baseline-journal-wrapper.test.ts", "line_at_measurement": 475, "text": "expect(BASELINE_ORDER).toHaveLength(80)", "becomes": "81" },
-          { "ref": "R-6", "file": "tests/hosted/operator-runner.test.ts", "line_at_measurement": 239, "text": "expect(BASELINE_UNITS).toHaveLength(80)", "becomes": "81" }
+    "REACTIVE_BASELINE_COUNT_CENSUS": {
+      "rule": "THE CANONICAL CENSUS. Every summary count anywhere in this artifact derives from this section; no count is restated alongside it. It enumerates every literal in the repository that becomes INVALID when BASELINE_UNITS moves 80 -> 81.",
+      "R3_CORRECTION": "R2's census called itself 'complete' while its own how_enumerated confessed a scan limited to three hosted test files. That is the defect this section exists to remove: verifying the NUMBER is not verifying the UNIVERSE. A census is complete only within the scope it actually measured, and a scope narrower than the claim makes the claim false regardless of whether the number happens to be right. Raised as F-HG-1 (BLOCKING) by the independent R2 audit and NOT reclassified as disclosed.",
+      "SCOPE": {
+        "population": "EVERY tracked file in the repository, via `git ls-files`.",
+        "exclusions_and_why": [
+          "node_modules/** — not tracked as source.",
+          ".claude/skills/** — vendored skill data (CSV colour/typography tables) whose numerals are unrelated to the baseline."
         ],
-        "distinct_files": 3,
-        "why_sites_and_files_are_both_stated": "R1 reported the file count as though it were the site count. Stating both, explicitly labelled, removes the ambiguity that produced the error."
+        "explicitly_NOT_excluded": "tests/eval/**, artifacts/**, db/**, scripts/**, lib/**, app/**, components/**, docs/**. R2's scan reached none of the first two, which is precisely where the missed pins were.",
+        "method": "For each tracked file: require baseline vocabulary somewhere in the file (BASELINE_UNITS, BASELINE_ORDER, baselineUnits, unitCount, manifestApplied, journalCount, baselineUnitsInstalled, manifestOk, rehearsalFresh, appliedAll, manifestDigest, baselineApplied, 'baseline unit'), then flag each standalone literal 80 whose +/-4-line window also carries that vocabulary. A second pass swept the N+1 literal 81 and the Drizzle sub-count literal 68 under the same rule, because the reactive value is not always the baseline count itself.",
+        "why_a_bare_literal_sweep_is_insufficient": "A bare sweep for '80' returns pixel values, opacities, ports and percentages across app/ and components/. A sweep restricted to one directory returns a clean-looking but false census. The vocabulary window is what makes the scan both repo-wide AND precise.",
+        "candidate_hits": 147,
+        "candidate_files": 21
       },
-      "PROSE_SITES_THAT_ALSO_MOVE": {
-        "rule": "Not assertions, but they carry the same numerals and become false if left behind.",
-        "sites": [
-          { "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 108, "kind": "comment", "content": "80 units, 68 Drizzle" },
-          { "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 111, "kind": "test title", "content": "has 80 units: 68 Drizzle, 2 Supabase, 10 policies" },
-          { "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 119, "kind": "test title", "content": "numbers ordinals 1..80 contiguously" },
-          { "file": "tests/hosted/baseline-journal-wrapper.test.ts", "line_at_measurement": 473, "kind": "comment", "content": "running derivation ending '+ 0067 = 80'" }
-        ],
-        "note": "The Drizzle sub-count 68 -> 69 moves with the total, since the P1 unit is a Drizzle migration. The 2 Supabase and 10 policies figures do NOT move."
+      "CLASSIFICATION_RULE": {
+        "REACTIVE_REQUIRED": "A LITERAL whose value is invalidated by the append and which MUST be edited by the P1 implementation.",
+        "DERIVED_AUTO_MOVING": "An expression written in terms of BASELINE_UNITS.length / BASELINE_ORDER.length. It re-evaluates correctly on its own and MUST NOT be touched. Editing one is scope expansion.",
+        "PRE_EXISTING_BROKEN": "A pin already false at this base, before P1 does anything. Recorded so that a P1 mission neither claims to have broken it nor silently repairs it.",
+        "NON_REACTIVE": "A literal inside frozen, append-only authority prose recording a measurement at that artifact's own AS_OF. It is a historical record, not a live assertion, and editing it would violate append-only.",
+        "FALSE_POSITIVE": "A numeral coincidentally equal to 80 with no baseline semantics."
       },
-      "ASSERTIONS_THAT_MUST_NOT_BE_TOUCHED": {
-        "rule": "Every other cardinality assertion in these three files is expressed RELATIVE to BASELINE_UNITS.length and moves on its own.",
+      "REACTIVE_REQUIRED": {
+        "site_count": 13,
+        "file_count": 6,
+        "R2_claimed_site_count": 6,
+        "R2_claimed_file_count": 3,
         "sites": [
-          "tests/hosted/baseline-journal-wrapper.test.ts lines 51, 444, 479 (BASELINE_UNITS.length + 1)",
-          "tests/hosted/operator-runner.test.ts lines 399, 406, 906, 908, 1446, 1459 (BASELINE_UNITS.length, and length - 1)"
+          { "ref": "R-1", "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 112, "text": "expect(BASELINE_UNITS).toHaveLength(80)", "from": 80, "to": 81, "kind": "COUNT" },
+          { "ref": "R-2", "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 114, "text": "expect(byKind('drizzle-migration')).toBe(68)", "from": 68, "to": 69, "kind": "SUBCOUNT", "note": "The P1 unit is a drizzle-migration, so the Drizzle sub-count moves with the total. The sibling pins byKind('supabase-migration') = 2 and the policy count 10 do NOT move. R2 mentioned 68 -> 69 only in prose and never listed this as an assertion site." },
+          { "ref": "R-3", "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 121, "text": "Array.from({ length: 80 }, (_, i) => i + 1)", "from": 80, "to": 81, "kind": "COUNT" },
+          { "ref": "R-4", "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 124, "text": "expect(new Set(BASELINE_ORDER).size).toBe(80)", "from": 80, "to": 81, "kind": "COUNT" },
+          { "ref": "R-5", "file": "tests/hosted/baseline-journal-wrapper.test.ts", "line_at_measurement": 474, "text": "expect(BASELINE_UNITS).toHaveLength(80)", "from": 80, "to": 81, "kind": "COUNT" },
+          { "ref": "R-6", "file": "tests/hosted/baseline-journal-wrapper.test.ts", "line_at_measurement": 475, "text": "expect(BASELINE_ORDER).toHaveLength(80)", "from": 80, "to": 81, "kind": "COUNT" },
+          { "ref": "R-7", "file": "tests/hosted/operator-runner.test.ts", "line_at_measurement": 239, "text": "expect(BASELINE_UNITS).toHaveLength(80)", "from": 80, "to": 81, "kind": "COUNT" },
+          { "ref": "R-8", "file": "tests/eval/stella-release/hosted-baseline-gate.ts", "line_at_measurement": 411, "text": "firstProvisioning.steps.length === 81", "from": 81, "to": 82, "kind": "N_PLUS_1_TRAP", "note": "SEE N_PLUS_1_TRAP. This literal is already 81 and becomes 82. It does NOT become 81." },
+          { "ref": "R-9", "file": "tests/eval/stella-release/hosted-baseline-gate.ts", "line_at_measurement": 435, "text": "const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 80", "from": 80, "to": 81, "kind": "COUNT__GATE_LOGIC", "note": "GATE LOGIC, not a test assertion. See DEPENDENCY_PROOF_A." },
+          { "ref": "R-10", "file": "tests/eval/stella-release/hosted-baseline-gate.test.ts", "line_at_measurement": 71, "text": "expect(evidence.unitCount).toBe(80)", "from": 80, "to": 81, "kind": "COUNT" },
+          { "ref": "R-11", "file": "tests/eval/stella-release/hosted-baseline-gate.test.ts", "line_at_measurement": 72, "text": "expect(evidence.superuserFreeUnits).toBe(80)", "from": 80, "to": 81, "kind": "COUNT", "note": "Moves only because the P1 unit is itself superuser-free. Eight plain CREATE INDEX statements carry no role, ownership or extension statement, so the P1 unit qualifies. An implementation that emitted a superuser dependency would have to leave this at 80 — and would be violating GENERATE_GUARD_PATCH_CONTRACT.PROHIBITED_ABSOLUTELY to get there." },
+          { "ref": "R-12", "file": "artifacts/baseline-rehearsal/latest.json", "line_at_measurement": 4, "text": "\"manifestApplied\": 80", "from": 80, "to": 81, "kind": "COUNT__EVIDENCE_ARTEFACT", "note": "See DEPENDENCY_PROOF_B and REGENERATION_NOT_HAND_EDIT." },
+          { "ref": "R-13", "file": "artifacts/baseline-rehearsal/latest.json", "line_at_measurement": 2, "text": "\"manifestDigest\": \"96181f09...\"", "from": "a sha256 over every unit", "to": "a different sha256", "kind": "DERIVED_DIGEST_LITERAL", "note": "baselineManifestDigest() hashes every unit's ordinal:id:sha256, so appending one unit NECESSARILY changes it. Proven in prior integrated authority (ODS v1.0.24 and v1.0.25 both record this derivation) and re-confirmed here by reading the function." }
+        ]
+      },
+      "N_PLUS_1_TRAP": {
+        "site": "R-8, tests/eval/stella-release/hosted-baseline-gate.ts:411",
+        "rule": "This pin is DERIVED as BASELINE_ORDER.length + 1, because planProvisioningPhase emits one step per baseline unit PLUS the 000_journal_bootstrap step. Its correct post-append value is 82, not 81.",
+        "why_it_is_a_trap": "Every OTHER reactive site in this census retargets to the new N. This one alone retargets to N+1. A mission that mechanically advances every literal 80 to 81 leaves this line reading 81 — which was the CORRECT value for the PREVIOUS N — and it then looks already-updated while demanding 81 steps from a plan that produces 82. The failure is silent at edit time and surfaces only as a gate failure.",
+        "corroboration": "This exact trap is named by number in prior integrated authority: ODS_V1_MAINTENANCE_ADDENDUM v1.0.26/v1.0.27 and MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT v1.0.7/v1.0.8 all record it, and MULTI_ORG_S1_S2_..._v1.0.1 states 'L407 MUST BE IDENTIFIED BY DERIVATION, NEVER BY GREP'. The line has since moved from 407 to 411, which is itself the reason the rule says derivation rather than line number.",
+        "identification_rule": "Identify R-8 by its expression shape — firstProvisioning.steps.length === <literal> — never by line number and never by the literal's value."
+      },
+      "DEPENDENCY_PROOF_A": {
+        "claim": "R-9 is not a cosmetic literal: it gates a release gate.",
+        "chain": [
+          "tests/eval/stella-release/hosted-baseline-gate.ts:354 — the evidence builder sets `unitCount: BASELINE_UNITS.length`, so evidence.unitCount becomes 81 the moment a unit is appended.",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:435 — `const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 80`.",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:436-438 — `gates.push({ id: 'hosted-baseline-manifest-ready', passed: manifestOk, ... })`."
         ],
-        "consequence": "Editing any of these is scope expansion and is prohibited. The distinction between a LITERAL pin (must be updated) and a RELATIVE pin (must not be touched) is the whole content of this census."
+        "consequence_if_left_at_80": "evidence.unitCount is 81, the literal is 80, manifestOk is FALSE, and the gate hosted-baseline-manifest-ready FAILS. The failure is a release-gate failure produced by gate LOGIC, not by a test file, so a mission that only updates *.test.ts files will not have touched it.",
+        "measured": true
+      },
+      "DEPENDENCY_PROOF_B": {
+        "claim": "R-12 is not a cosmetic literal: it gates a release gate.",
+        "chain": [
+          "artifacts/baseline-rehearsal/latest.json:4 — the committed rehearsal evidence carries `\"manifestApplied\": 80`.",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:345-346 — `const rehearsalAppliedAll = rehearsal?.manifestFailedAt === null && rehearsal?.manifestApplied === BASELINE_UNITS.length`.",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:368 — rehearsalAppliedAll is carried onto the evidence object.",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:523 — `evidence.rehearsalAppliedAll` is a conjunct of the hosted-baseline-rehearsal-ready gate (id declared at :53)."
+        ],
+        "current_state": "rehearsalAppliedAll is currently TRUE: the artefact's 80 equals BASELINE_UNITS.length of 80.",
+        "consequence_if_left_at_80": "BASELINE_UNITS.length becomes 81 while the artefact still says 80, so rehearsalAppliedAll flips TRUE -> FALSE. This is a NEW breakage introduced by P1.",
+        "distinguish_from_the_known_conditions": "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02 record that the SAME gate already fails on a DIFFERENT conjunct — rehearsalFresh, via the manifestDigest comparison at :342. Those are pre-existing and deferred. rehearsalAppliedAll is NOT among them and is TRUE today. A P1 mission must not point at the pre-existing rehearsalFresh failure as cover for having additionally broken rehearsalAppliedAll.",
+        "measured": true
+      },
+      "REGENERATION_NOT_HAND_EDIT": {
+        "rule": "artifacts/baseline-rehearsal/latest.json is REHEARSAL EVIDENCE. It MUST be produced by actually re-running the rehearsal against a disposable PostgreSQL container. It MUST NOT be hand-edited to carry the new numbers.",
+        "why": "Hand-editing it would fabricate evidence that a rehearsal was performed. Both reactive fields make this concrete: manifestApplied is a COUNT OF UNITS ACTUALLY APPLIED by a run, and manifestDigest is a hash of the manifest that run applied. Typing 81 and a recomputed digest asserts a run that never happened.",
+        "it_is_also_detected": "Prior integrated evidence records the attempt and its outcome: MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0 logs 'R4-M4 hand-edited artefact, manifestApplied 79 -> 80 -> gate spec 2 failed + tenancy relation check failed'. The forgery does not even work.",
+        "boundary": "Re-running the rehearsal against a fresh, destroyed-afterwards container is PERMITTED by DEPLOYMENT_BOUNDARY. Nothing here authorizes a staging, remote, production or canonical-local-Supabase run."
+      },
+      "DERIVED_AUTO_MOVING": {
+        "rule": "Expressed in terms of BASELINE_UNITS.length / BASELINE_ORDER.length. These re-evaluate correctly on their own. Editing ANY of them is scope expansion and is prohibited.",
+        "site_count": 15,
+        "sites": [
+          "tests/eval/stella-release/hosted-baseline-gate.ts:346 (rehearsal?.manifestApplied === BASELINE_UNITS.length)",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:354 (unitCount: BASELINE_UNITS.length)",
+          "tests/eval/stella-release/hosted-baseline-gate.ts:590 (all ${BASELINE_ORDER.length} units are planned)",
+          "tests/hosted/baseline-journal-wrapper.test.ts:51, :444, :479 (BASELINE_UNITS.length + 1)",
+          "tests/hosted/operator-runner.test.ts:399, :406, :906, :908, :1446, :1459 (BASELINE_UNITS.length, and length - 1)",
+          "tests/postgres/b3-completeness-harness.ts:187, tests/postgres/b4-completeness-harness.ts:185, tests/postgres/b5-completeness-harness.ts:212 (BASELINE_UNITS.length in a progress label)"
+        ],
+        "the_distinction_is_the_whole_content_of_this_census": "A literal pin MUST be edited; a relative pin MUST NOT be touched. Both live in the same files, often within a few lines of each other. Getting the distinction backwards produces either a red suite or a silently weakened one."
+      },
+      "PRE_EXISTING_BROKEN": {
+        "rule": "Already false at this base, before P1 acts. Recorded so a P1 mission neither claims to have broken it nor silently repairs it under cover of an authorized diff.",
+        "sites": [
+          {
+            "file": "tests/postgres/s1-founder-cardinality.pg.test.ts",
+            "line_at_measurement": 549,
+            "text": "expect(S1_INDEX).toBe(BASELINE_UNITS.length - 1)",
+            "why_already_false": "S1_INDEX is BASELINE_UNITS.indexOf(S1_UNIT). S1 sits at ordinal 79, so S1_INDEX is 78, while BASELINE_UNITS.length - 1 is 79. The assertion asserts S1 is the LAST baseline unit, and 0067 displaced it before this mission existed.",
+            "effect_of_P1": "The gap widens from 78-vs-79 to 78-vs-80. P1 makes an already-false assertion more false; it does not introduce the failure.",
+            "disposition": "OUT OF SCOPE for P1. Repairing it is a separate governed act — it is the same class of final-unit displacement that HPO-FIBP1-01 governs for the tenancy tripwire, and it deserves the same deliberate treatment rather than a drive-by edit.",
+            "corroboration": "Independently recorded in integrated evidence: MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0 states 'tests/postgres/s1-founder-cardinality.pg.test.ts:549 carries a latent last-unit pin that is false at N=80.'"
+          }
+        ]
+      },
+      "NON_REACTIVE": {
+        "rule": "Literals inside frozen, append-only authority artefacts under docs/ops/**, each recording a measurement true at that artefact's own AS_OF. They are historical records, not live assertions.",
+        "files": [
+          "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.20.json",
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.24.json",
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.25.json",
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.26.json",
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json",
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json",
+          "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+          "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.1.json",
+          "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6.json",
+          "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.7.json",
+          "docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.8.json",
+          "docs/ops/tenancy/MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+        ],
+        "file_count": 13,
+        "prohibition": "The P1 implementation MUST NOT edit any of them. They are integrated and append-only; several are additionally protected by DEFAULT_PROTECTED_PATTERNS.",
+        "value_to_this_mission": "Read, not edited. Several of them independently corroborate this census — the N+1 trap, the wrapper-header amplification and the hand-edit detection are each recorded in prior integrated authority. Their agreement with an independently-run census is evidence; their prose is not."
+      },
+      "FALSE_POSITIVE": {
+        "rule": "Numerals coincidentally equal to 80 with no baseline semantics — opacity values, pixel sizes, percentages, timeouts and vendored skill data across app/**, components/**, README.md and .claude/skills/**.",
+        "disposition": "Excluded by the vocabulary-window rule, not by directory. A future re-run of this census will exclude them the same way without needing a hand-maintained ignore list."
+      },
+      "COMPLETENESS_STATEMENT": {
+        "claim": "COMPLETE OVER EVERY TRACKED FILE, subject to the two exclusions stated in SCOPE.",
+        "what_this_claim_does_and_does_not_cover": "It covers literals invalidated by BASELINE_UNITS moving 80 -> 81, found by baseline-vocabulary proximity. It does NOT claim to find a reactive value that carries no baseline vocabulary within four lines and no literal 80, 81 or 68 — for example a count encoded in a fixture filename or a base64 blob. No such case was found, and none is asserted to be impossible.",
+        "why_stated_this_way": "R2 failed by claiming completeness its method did not support. The fix is not a louder claim of completeness but a claim scoped to what the method actually establishes, with its residual stated."
       }
     },
 
     "SURFACE_SUMMARY": {
-      "R2_RECOMPUTED": true,
-      "recomputation_method": "COUNTED FROM THE PATHS ARRAY ITSELF, not restated from R1. Each entry's disposition field was classified mechanically (prefix IN / prefix CONDITIONAL / exactly OUT) and the buckets summed.",
-      "IN_unconditional": 14,
+      "R3_RECOMPUTED": true,
+      "recomputation_method": "COUNTED FROM THE PATHS ARRAY ITSELF after all R3 edits, never restated from a prior revision or copied from the auditor's expectation. Each entry's disposition is classified mechanically (prefix IN / prefix CONDITIONAL / exactly OUT) and the buckets summed, then machine-checked against the stated figures.",
+      "IN_total": 17,
+      "IN_unqualified": 16,
+      "IN_HPO_qualified": 1,
+      "IN_HPO_qualified_paths": [
+        "tests/tenancy/s1-founder-traceability.test.ts (disposition IN__UNDER_HPO-FIBP1-01_ONLY)"
+      ],
+      "F_HG_3_TERMINOLOGY_CORRECTION": "R2 labelled this bucket IN_unconditional while it contained a path whose inclusion IS conditioned — on HPO-FIBP1-01, and then only for the tail retarget. The label asserted something the classification rule did not support. R3 renames the bucket to IN_total and states the qualified subset explicitly, so the terminology now matches the rule that produced it. The classification itself never changed; only the word that described it was wrong.",
       "CONDITIONAL": 2,
       "OUT_explicitly_evaluated": 4,
-      "total_paths_evaluated": 20,
-      "partition_closes": "14 + 2 + 4 = 20, which equals the length of the PATHS array. Exhaustive and disjoint: every evaluated path falls in exactly one bucket and none falls in two.",
-      "change_from_R1": {
+      "total_paths_evaluated": 23,
+      "partition_closes": "17 + 2 + 4 = 23, which equals the length of the PATHS array. Exhaustive and disjoint: every evaluated path falls in exactly one bucket and none falls in two.",
+      "revision_history": {
         "r1_stated": "12 IN / 3 CONDITIONAL / 5 OUT = 20",
         "r1_actual_when_counted": "13 IN / 3 CONDITIONAL / 4 OUT = 20",
-        "r2_actual": "14 IN / 2 CONDITIONAL / 4 OUT = 20",
-        "two_distinct_corrections": [
-          "R1's stated counts did not match R1's own PATHS array: it understated IN by one and overstated OUT by one. The stated total happened to be right, which is exactly why the error survived — a correct sum made the addends look checked. Recorded as F-GV-7.",
-          "C-1 then moved artifacts/hosted-a1-status.json from CONDITIONAL to IN, taking IN from 13 to 14 and CONDITIONAL from 3 to 2."
-        ],
-        "total_invariant": "20 throughout. No path was added or removed by R2 — one was reclassified and the bucket arithmetic was corrected."
+        "r2_stated_and_actual": "14 IN / 2 CONDITIONAL / 4 OUT = 20",
+        "r3_actual": "17 IN / 2 CONDITIONAL / 4 OUT = 23",
+        "what_moved_at_R3": "THREE paths ADDED, all of them newly proven reactive by the repo-wide census: tests/eval/stella-release/hosted-baseline-gate.ts, tests/eval/stella-release/hosted-baseline-gate.test.ts and artifacts/baseline-rehearsal/latest.json. The total is NOT invariant at R3 — unlike R2, where a path was reclassified, R3 genuinely enlarges the surface. Saying so plainly matters: a surface that grows by three because the previous scan was too narrow is a different event from one that is merely re-bucketed.",
+        "F_GV_7_still_closed": "R1's stated-vs-actual mismatch remains corrected. The summary is derived from the array and machine-verified against it at every revision."
       },
       "CONDITIONAL_paths_remaining": [
         "scripts/ods-scope.ts",
         "tests/ods/ods-scope.test.ts"
       ],
-      "why_those_two_remain_conditional": "Their disposition genuinely depends on a fact about the future repository state — whether a P1 grant row has been registered by a separate act. Unlike R1, that dependence is now discharged by an EXACT MACHINE PREDICATE (ODS_REGISTRY_PREDICATE) rather than by a bare UNKNOWN, and both of its outcomes resolve to OUT for the implementation diff. No bare UNKNOWN remains on any path in this surface.",
+      "why_those_two_remain_conditional": "Their disposition genuinely depends on a fact about the future repository state — whether a P1 grant row has been registered by a separate act. That dependence is discharged by an EXACT MACHINE PREDICATE (ODS_REGISTRY_PREDICATE) rather than by a bare UNKNOWN, and both of its outcomes resolve to OUT for the implementation diff. No bare UNKNOWN remains on any path in this surface.",
       "protected_paths_among_IN": ["db/migrations/**", "db/prepared/journal/**"],
+      "unprotected_but_required_paths_added_at_R3": [
+        "tests/eval/stella-release/hosted-baseline-gate.ts",
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+        "artifacts/baseline-rehearsal/latest.json"
+      ],
       "changed_protected_file_count_expected": {
         "db/migrations/**": 3,
         "db/migrations/**_derivation": "the migration .sql + meta/<ORD>_snapshot.json + meta/_journal.json",
         "db/prepared/journal/**": 81,
         "db/prepared/journal/**_derivation": "80 existing wrappers with regenerated headers + 1 new wrapper",
+        "protected_total": 84,
         "note": "Stated so that a reviewer seeing an 84-file protected diff can recognise it as the expected shape rather than as scope expansion — and, equally, so that a diff of any OTHER shape is immediately visible as wrong."
       },
+      "every_count_here_derives_from": "REACTIVE_BASELINE_COUNT_CENSUS for reactive sites, and from the PATHS array itself for bucket totals. No count in this artifact is stated independently of the enumeration that produces it. That is the structural fix for F-HG-2: a stale summary literal cannot survive, because there is no second place for one to live.",
       "note": "The IN count is a MINIMUM. A path not listed here is not thereby authorized; the allocating mission's own ods:scope --allow list is the binding surface and must be derived at that time, not copied from here."
     }
   },
@@ -1251,7 +1399,7 @@
       "severity": "INFORMATIONAL",
       "finding": "R1 undercounted the reactive literal-80 assertion sites as four; mechanical enumeration returns six.",
       "root_cause": "Assertion SITES were conflated with the number of file entries carrying them. One file carries three distinct pins.",
-      "disposition": "Corrected at R2. REACTIVE_CARDINALITY_PIN_CENSUS is now the single authority and the summary is derived from it rather than restated alongside it."
+      "disposition": "Corrected at R2 as to the NUMBER, and at R3 as to the METHOD — R2's scan was still limited to three hosted files while calling itself complete. REACTIVE_BASELINE_COUNT_CENSUS is now repo-wide and is the single authority every count derives from. See F-HG-1."
     },
     {
       "id": "F-GV-7",
@@ -1261,6 +1409,45 @@
       "why_it_survived_R1": "The stated TOTAL (20) was correct, because the two errors were equal and opposite — one path counted OUT instead of IN. A correct sum makes the addends look verified, which is precisely the shape of arithmetic error that manual review does not catch.",
       "disposition": "Corrected at R2. SURFACE_SUMMARY is now recomputed FROM the PATHS array and machine-checked against it, so the summary can no longer drift from the enumeration it summarises.",
       "status": "CLOSED."
+    },
+    {
+      "id": "F-HG-1",
+      "severity": "WAS_BLOCKING__NOW_RESOLVED_AT_R3",
+      "finding": "R2 declared its reactive census COMPLETE while its own how_enumerated limited the scan to three hosted test files. Four further required paths existed, one of them release-gate LOGIC.",
+      "why_it_was_blocking": "A P1 implementation following R2 would have updated the hosted trio, seen a green hosted suite, and shipped with hosted-baseline-manifest-ready and hosted-baseline-rehearsal-ready broken. The census was not merely incomplete; it actively asserted a completeness that would have stopped a careful implementer from looking further.",
+      "resolution": "The METHOD was replaced, not the number. REACTIVE_BASELINE_COUNT_CENSUS now scans every tracked file via git ls-files, classifies each candidate into four buckets, and states its residual explicitly. 13 REACTIVE_REQUIRED sites across 6 files.",
+      "NOT_reclassified_as_disclosed": "This was applied as a defect in the artifact. Recording a too-narrow scan as a disclosed limitation would have preserved exactly the failure mode the audit caught.",
+      "lesson_recorded": "Verifying the NUMBER is not verifying the UNIVERSE. R2 corrected four to six and treated the finding as closed, when the open question was which files had been looked at.",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-HG-2",
+      "severity": "RESOLVED_AT_R3",
+      "finding": "A stale literal pin summary survived elsewhere in the artifact after R2 corrected the census.",
+      "resolution": "Removed. Structurally prevented rather than merely fixed: every count now derives from REACTIVE_BASELINE_COUNT_CENSUS or from the PATHS array, and no count is stated in a second place where it could go stale. Machine-checked (the validator fails if the old census name or any stale site summary reappears).",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-HG-3",
+      "severity": "RESOLVED_AT_R3",
+      "finding": "SURFACE_SUMMARY.IN_unconditional counted a path whose inclusion is HPO-qualified (tests/tenancy/s1-founder-traceability.test.ts, IN only under HPO-FIBP1-01 and only for the tail retarget).",
+      "resolution": "The bucket is renamed IN_total and split into IN_unqualified (16) and IN_HPO_qualified (1), with the qualified path named. The classification never changed; the label describing it was wrong.",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-HG-4",
+      "severity": "RESOLVED_AT_R3",
+      "finding": "The C-1 derivation prose omitted the have.delete(STORAGE_UNIT_ID) branch of missingBaselineUnits.",
+      "resolution": "The branch is restored in the quoted rule and explained in the_storage_unit_branch. The verified +1 arithmetic (30 -> 31) is UNCHANGED and was not reopened: the branch is a constant subtraction applied identically on both sides of the append, so it cancels in the delta.",
+      "why_it_still_mattered": "It explains why the count is 30 rather than something else, and it is why an implementer cannot reconstruct the figure by differencing two array lengths.",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-GV-8",
+      "severity": "INFORMATIONAL",
+      "finding": "tests/postgres/s1-founder-cardinality.pg.test.ts:549 asserts S1 is the LAST baseline unit and is ALREADY FALSE at this base (S1_INDEX 78 vs BASELINE_UNITS.length - 1 = 79), because 0067 displaced S1 before this mission existed.",
+      "found_at": "R3, by the repo-wide census. Independently corroborated by integrated evidence (MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0).",
+      "disposition": "OUT OF SCOPE for P1 and deliberately NOT repaired here. P1 widens the gap (78 vs 80) but does not introduce the failure. Recorded so a P1 mission neither claims to have broken it nor silently fixes it inside an authorized diff — it is the same class of final-unit displacement that HPO-FIBP1-01 governs deliberately for the tenancy tripwire, and it deserves the same treatment rather than a drive-by edit."
     },
     {
       "id": "F-A1",
@@ -1298,13 +1485,13 @@
     "R2_dangling_internal_references": 0,
     "R2_internal_references_resolved": 13,
     "R2_reactive_pin_sites": 6,
-    "R2_surface_partition": "14 IN + 2 CONDITIONAL + 4 OUT = 20, exhaustive and disjoint, equal to the PATHS array length. Counted from the array, then machine-checked against the stated summary (see F-GV-7).",
+    "R3_surface_partition": "17 IN (16 unqualified + 1 HPO-qualified) + 2 CONDITIONAL + 4 OUT = 23, exhaustive and disjoint, equal to the PATHS array length. Counted from the array, then machine-checked against the stated summary.","R3_reactive_census_scope": "REPO-WIDE over every tracked file via git ls-files; 13 REACTIVE_REQUIRED sites across 6 files, 15 DERIVED_AUTO_MOVING sites, 1 PRE_EXISTING_BROKEN, 13 NON_REACTIVE frozen-authority files.","R3_blocking_finding_applied_not_reclassified": "F-HG-1 was applied as a scope defect and the census method was replaced. It was NOT downgraded to a disclosure.",
     "R2_changed_protected_wrapper_files": 81,
     "R2_historical_measurements_preserved": "No AS_OF_* value from R1 was rewritten. Supersessions are recorded with both values visible.",
     "R2_product_semantics_invented": "NONE. The P1 partition, the eight CREATE targets, the four verify-only objects, the I-10 semantics, the retired names and the deployment boundary are byte-identical in substance to R1."
   },
 
-  "final_state": "FIBDB052_P1_EXECUTION_AUTHORITY_FROZEN_R2__COMPANION_MANIFEST_FROZEN_R2__GY_R1_FINDINGS_APPLIED__NO_ALLOCATION_MADE__AWAITING_GY_R2_INDEPENDENT_EXACT_OBJECT_REAUDIT",
+  "final_state": "FIBDB052_P1_EXECUTION_AUTHORITY_FROZEN_R3__COMPANION_MANIFEST_FROZEN_R3__GY_R1_AND_HG_R2_FINDINGS_APPLIED__REPO_WIDE_CENSUS_ESTABLISHED__NO_ALLOCATION_MADE__AWAITING_R3_INDEPENDENT_EXACT_OBJECT_REAUDIT",
 
-  "next_gate": "GY_R2_INDEPENDENT_EXACT_OBJECT_REAUDIT of this corrected artifact pair. R1 was audited at commit 0ae88adc and returned R2_REQUIRED=YES with AUDIT_UNKNOWN=0; the five findings C-1..C-5 plus the surface repartition are applied here. Historical measurements remain anchored at AS_OF_HEAD 4c19c3c7a96213a26af4d9a937e29973601fd949 / tree cd5ef6a3064de50126095479032182a7f3156d5d, with a bounded successor reconciliation at live 07c33c953bd8e0888d13786011e54a5ce98b196a. FIBDB-052 P1 IMPLEMENTATION AUTHORITY IS NOT CONFERRED BY THIS ARTIFACT'S EXISTENCE; it is conferred by that audit passing AND by the separate allocation of a migration ordinal, an ODS lineage and a protected grant, none of which this artifact makes. Until all four hold, no FIBDB-052 P1 DDL may be written."
+  "next_gate": "PR123_R3_INDEPENDENT_EXACT_OBJECT_REAUDIT of this corrected artifact pair. R1 was audited at commit 0ae88adc and returned R2_REQUIRED=YES with AUDIT_UNKNOWN=0; the five findings C-1..C-5 plus the surface repartition are applied here. Historical measurements remain anchored at AS_OF_HEAD 4c19c3c7a96213a26af4d9a937e29973601fd949 / tree cd5ef6a3064de50126095479032182a7f3156d5d, with a bounded successor reconciliation at live 07c33c953bd8e0888d13786011e54a5ce98b196a. FIBDB-052 P1 IMPLEMENTATION AUTHORITY IS NOT CONFERRED BY THIS ARTIFACT'S EXISTENCE; it is conferred by that audit passing AND by the separate allocation of a migration ordinal, an ODS lineage and a protected grant, none of which this artifact makes. Until all four hold, no FIBDB-052 P1 DDL may be written."
 }
