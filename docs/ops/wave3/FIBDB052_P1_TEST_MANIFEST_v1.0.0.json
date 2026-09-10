@@ -31,10 +31,7 @@
 
   "sentinels": [],
 
-  "known_conditions": [
-    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
-    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
-  ],
+  "known_conditions": [],
 
   "positive_controls": [
     {
@@ -86,6 +83,11 @@
       "id": "P-14",
       "description": "A1 STATUS REGENERATION. artifacts/hosted-a1-status.json is regenerated and its missing-baseline-unit count moves from 30 to 31 in BOTH chainPlan.message and blockers[0]. The 'starting with 0040_governed_model_registry.sql' clause is UNCHANGED (the P1 unit appends at the end of BASELINE_ORDER, so it is the last missing id, never the first). packageCount and packageStates are UNCHANGED, being governed by A1_OBSERVED_CHAIN rather than by BASELINE_ORDER.",
       "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-15",
+      "description": "CANONICAL REHEARSAL PROVENANCE RECORDED. The P1 implementation evidence records, for the rehearsal that produced artifacts/baseline-rehearsal/latest.json: the exact command invoked, its exit status, the resulting manifestDigest, the resulting manifestApplied count, and the disposable-PostgreSQL outcome. This is the evidence that the artefact was REGENERATED rather than authored. It is a provenance record, not a byte assertion — see M-21 for why a byte assertion cannot carry this weight.",
+      "test_file": "N/A — PROVENANCE EVIDENCE, NOT AN EXECUTABLE CONTROL"
     },
     {
       "id": "P-9",
@@ -162,7 +164,7 @@
     },
     {
       "id": "N-11",
-      "description": "DEPENDENCY MEASURABILITY, FAIL CLOSED. At R2, re-measured against live 07c33c95: ODS_CONTROLLER40_ENUMERATES_v1.0.29 is now SATISFIED (Controller array = 40, final item v1.0.29, PR #124) and HPO-ODS-W2-26 is REGISTERED (PROTECTED_GRANTS = 14 by authorityId key position, PR #125). The three P1 allocations — FIBDB052_P1_MIGRATION_ORDINAL_ALLOCATION, FIBDB052_P1_ODS_LINEAGE_ALLOCATION, FIBDB052_P1_PROTECTED_GRANT_ALLOCATION — remain UNALLOCATED and therefore UNKNOWN. Additionally, docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json enumerates only W2-B1..W2-B5, so NONE of this node's dependencies is measurable via pnpm ops:program-state; the Wave3 dependencies were instead measured by file presence at AS_OF_TREE plus git ancestry of merge commits ab6d9ccf and 4c19c3c7. The implementing mission MUST re-measure all four allocation dependencies at its own AS_OF_HEAD and REFUSE to proceed while any remains UNKNOWN. Absence of a measurement is not satisfaction.",
+      "description": "DEPENDENCY MEASURABILITY, FAIL CLOSED. Re-measured again at R4 against live 07c33c95 (unmoved): Controller 40 / final v1.0.29, PROTECTED_GRANTS 14, W2-26 registered, W2-27 and v1.0.30 absent, live migration ceiling 0067 — and PR #128 (DRAFT, OPEN) already carries an unmerged 0068_commercial_account_ce1.sql together with db/hosted/baseline-manifest.ts and db/migrations/meta/_journal.json, so P1 MUST NOT assume 0068 and MUST re-derive every baseline-count numeral in this manifest at its own AS_OF_HEAD. At R2, re-measured against live 07c33c95: ODS_CONTROLLER40_ENUMERATES_v1.0.29 is now SATISFIED (Controller array = 40, final item v1.0.29, PR #124) and HPO-ODS-W2-26 is REGISTERED (PROTECTED_GRANTS = 14 by authorityId key position, PR #125). The three P1 allocations — FIBDB052_P1_MIGRATION_ORDINAL_ALLOCATION, FIBDB052_P1_ODS_LINEAGE_ALLOCATION, FIBDB052_P1_PROTECTED_GRANT_ALLOCATION — remain UNALLOCATED and therefore UNKNOWN. Additionally, docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json enumerates only W2-B1..W2-B5, so NONE of this node's dependencies is measurable via pnpm ops:program-state; the Wave3 dependencies were instead measured by file presence at AS_OF_TREE plus git ancestry of merge commits ab6d9ccf and 4c19c3c7. The implementing mission MUST re-measure all four allocation dependencies at its own AS_OF_HEAD and REFUSE to proceed while any remains UNKNOWN. Absence of a measurement is not satisfaction.",
       "test_file": "UNKNOWN"
     },
     {
@@ -229,29 +231,29 @@
       "test_file": "UNKNOWN"
     },
     {
-      "id": "M-11",
+      "id": "M-17",
       "description": "REPO-WIDE PIN COVERAGE, NON-VACUOUS. Freeze this exact mutation: apply the P1 append, update ONLY the three hosted test files R1/R2 covered (baseline-manifest.test.ts, baseline-journal-wrapper.test.ts, operator-runner.test.ts), and deliberately LEAVE tests/eval/stella-release/hosted-baseline-gate.ts:435 at 80. The suite MUST turn RED. If it stays green, the coverage is vacuous and the control has proven nothing. This is the mutation that would have caught R1 and R2, both of which shipped a census whose scope was three hosted files.",
       "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
     },
     {
-      "id": "M-12",
-      "description": "REHEARSAL EVIDENCE LEFT STALE => RED. Apply the P1 append and deliberately leave artifacts/baseline-rehearsal/latest.json at manifestApplied 80. rehearsalAppliedAll must flip TRUE -> FALSE and the hosted-baseline-rehearsal-ready gate must FAIL on that conjunct. The pre-existing rehearsalFresh failure (KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02) must NOT be accepted as covering this: the control must distinguish the two conjuncts, or it cannot tell a new breakage from an old one.",
+      "id": "M-18",
+      "description": "REHEARSAL EVIDENCE LEFT STALE => RED. LOAD-BEARING, and it must be discharged by an ACTUAL GREEN-THEN-RED PROOF on the raw tests, never by a known-condition waiver. REQUIRED BASELINE (before any P1 mutation): tests/eval/stella-release/hosted-baseline-gate.test.ts runs RAW — no known-condition suppression, no audit-batch filtering — and is GREEN, with COLLECTED > 0. REQUIRED MUTATION: perform the baseline append and leave the rehearsal evidence unregenerated. REQUIRED RESULT: the raw tests turn RED, and the failure detail names rehearsalFresh and/or appliedAll rather than some unrelated conjunct. MEASURED AT R4 ON THE CANDIDATE STATE: baseline 7/7 GREEN; with the staleness mutation applied, exactly 2 of 7 turn RED — the six-gates-all-pass test and the four-words test — with detail rehearsalFresh=false while reproducedDefect, appliedAll, postconditionsClean, firstProvisioningPlannable and phaseSkipRefused all remain true. The green-then-red transition is therefore empirical, not asserted. audit-batch suppression alone CANNOT satisfy this control.",
       "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
     },
     {
-      "id": "M-13",
+      "id": "M-19",
       "description": "N+1 TRAP => RED. Apply the P1 append and set tests/eval/stella-release/hosted-baseline-gate.ts:411 to 81 — the value a mechanical 80 -> 81 sweep produces, and the value that was CORRECT for the previous N. The suite MUST turn RED, because the correct post-append value is 82 (BASELINE_ORDER.length + 1). A control that accepts 81 here cannot distinguish 'already updated' from 'never updated', which is exactly the confusion this pin is known to produce.",
       "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
     },
     {
-      "id": "M-14",
-      "description": "DERIVED FORM EDITED => RED. Replacing any DERIVED_AUTO_MOVING expression with a literal — for example rewriting BASELINE_UNITS.length + 1 as 82, or evidence.unitCount === BASELINE_UNITS.length as === 81 — must FAIL the suite. A derived form that is 'helpfully' pinned to a literal is a future stale pin, and this control exists so that converting one is caught at the moment it is introduced rather than at the next append.",
+      "id": "M-20",
+      "description": "DERIVED FORM EDITED => RED. Replacing any DERIVED_AUTO_MOVING expression with a literal — for example rewriting BASELINE_UNITS.length + 1 as 82, or evidence.unitCount === BASELINE_UNITS.length as === 81 — must FAIL the suite. A derived form that is 'helpfully' pinned to a literal is a future stale pin, and this control exists so that converting one is caught at the moment it is introduced rather than at the next append. This one IS mechanically checkable: the substitution is visible in the source diff.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "M-15",
-      "description": "HAND-EDITED REHEARSAL EVIDENCE => RED. Hand-editing artifacts/baseline-rehearsal/latest.json to carry manifestApplied 81 and a recomputed manifestDigest, WITHOUT actually re-running the rehearsal, must FAIL. Prior integrated evidence records that the forgery is detected in practice (MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0: 'R4-M4 hand-edited artefact, manifestApplied 79 -> 80 -> gate spec 2 failed + tenancy relation check failed'). The artefact asserts that a run happened; typing its outputs asserts a run that did not.",
-      "test_file": "UNKNOWN"
+      "id": "M-21",
+      "description": "PROVENANCE OBLIGATION, NOT A BYTE TEST. RECLASSIFIED AT R4 (F-HJ-5). A COHERENT hand edit of artifacts/baseline-rehearsal/latest.json — one that sets manifestApplied to the new count AND recomputes manifestDigest correctly — produces bytes this repository has NO deterministic mechanism to distinguish from a genuine rehearsal output. R3 claimed such a forgery would be caught; that claim is WITHDRAWN, because the prior evidence it leaned on (MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0 R4-M4) records an INCOHERENT edit being caught, which does not establish that a coherent one would be. The obligation is therefore discharged by RECORDED PROVENANCE, not by a test: the P1 implementation evidence MUST record the canonical rehearsal command actually invoked, its exit status, the resulting manifestDigest, the resulting applied count, and the disposable-PostgreSQL outcome. A byte-level check of the artefact does NOT prove the command ran, and this manifest does not claim otherwise.",
+      "test_file": "N/A — PROVENANCE EVIDENCE, NOT AN EXECUTABLE CONTROL"
     }
   ],
 

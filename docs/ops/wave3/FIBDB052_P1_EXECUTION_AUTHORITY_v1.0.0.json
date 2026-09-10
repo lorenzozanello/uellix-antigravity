@@ -10,12 +10,12 @@
   "role": "BOUNDED_FIBDB052_P1_AUTHORITY_AND_TEST_MANIFEST_WRITER",
   "mode": "DOCS_ONLY",
   "materialization_date": "2026-09-09",
-  "revision": "R3",
+  "revision": "R4",
   "companion_manifest": "docs/ops/wave3/FIBDB052_P1_TEST_MANIFEST_v1.0.0.json",
 
   "R2_CORRECTION": {
     "rule": "This artifact was corrected in place at R2 in response to the independent GY audit of R1 (commit 0ae88adc). The artifact is a DRAFT and was never integrated, so correcting it in place is the correct disposition — no integrated object is edited and no append-only rule is broken. R1's historical AS_OF_* measurements are PRESERVED UNCHANGED; R2 adds a bounded successor reconciliation rather than restamping them.",
-    "audit_verdict_applied": "R1 audit (GY): R2_REQUIRED = YES, AUDIT_UNKNOWN = 0. R2 audit (HG): R3_REQUIRED = YES, BLOCKING = 1, AUDIT_UNKNOWN = 0.",
+    "audit_verdict_applied": "R1 (GY): R2_REQUIRED=YES, AUDIT_UNKNOWN=0. R2 (HG): R3_REQUIRED=YES, BLOCKING=1, AUDIT_UNKNOWN=0. R3 (HJ): RESULT=FAIL, R4_REQUIRED=YES, BLOCKING=1, AUDIT_UNKNOWN=0.",
     "r1_commit": "0ae88adc82fca17ee634bfbfac75f8112c25295f",
     "findings_applied": [
       "C-1 — artifacts/hosted-a1-status.json promoted from CONDITIONAL/UNKNOWN to REQUIRED_REACTIVE_PATH, with the deterministic derivation recorded. R1's F-GV-3 is thereby RESOLVED, not carried.",
@@ -255,6 +255,121 @@
       "how_measured": "A repository sweep for FIBDB052-P1 / FIBDB-052/P1 tokens across scripts/** and tests/** returns zero hits. No PROTECTED_GRANTS row names FIBDB-052, P1 or FIBIU-19. No ODS_V1_MAINTENANCE_ADDENDUM allocates a FIBDB-052 P1 lineage. The FIBDB-052 token appears only in authority prose and in the FIB baseline.",
       "consequence": "P1 currently has NO lineage ordinal, NO grant id, NO migration ordinal and NO scope-allowlist row. All four remain to be allocated by a separate, later, governed act. This artifact allocates none of them; see NO_ALLOCATION."
     }
+  },
+
+  "R4_LIVE_RECONCILIATION": {
+    "rule": "Bounded successor measurement at R4. It does NOT rewrite any historical AS_OF value; R1 measurements stay anchored at 4c19c3c7 and R2/R3 successor blocks stay as written.",
+    "R4_LIVE_HEAD": "07c33c953bd8e0888d13786011e54a5ce98b196a",
+    "live_moved_since_R3_handoff": false,
+    "CONTROLLER_IMMUTABLE_COUNT": 40,
+    "CONTROLLER_FINAL_ITEM": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json",
+    "ODS_FINAL_ADDENDUM": "v1.0.29",
+    "ODS_v1_0_30_PRESENT": false,
+    "PROTECTED_GRANTS_COUNT": 14,
+    "W2_26_REGISTERED": true,
+    "W2_27_REGISTERED": false,
+    "MIGRATION_CEILING_LIVE": "0067_tenancy_refusal_audit_insert_policy.sql",
+    "P1_ALLOCATIONS": "NONE. No P1 migration ordinal, ODS lineage or protected grant exists.",
+    "CONCURRENT_ORDINAL_OWNERSHIP": {
+      "finding": "PR #128 (DRAFT, OPEN, branch codex/commercial-account-ce1-implementation-r1) ALREADY CARRIES an unmerged db/migrations/0068_commercial_account_ce1.sql, together with db/hosted/baseline-manifest.ts, db/migrations/meta/_journal.json and tests/hosted/baseline-manifest.test.ts.",
+      "consequence_for_P1": "P1 MUST NOT assume 0068. The next free ordinal is a function of what has MERGED at the allocating mission AS_OF_HEAD, and an unmerged draft that already claims 0068 makes a naive successor-of-the-live-ceiling derivation collide.",
+      "consequence_for_every_baseline_numeral_in_this_artifact": "If PR #128 merges first, BASELINE_UNITS moves 80 -> 81 BEFORE P1 acts. Every literal in REACTIVE_BASELINE_COUNT_CENSUS then shifts by one and the C-3 wrapper arithmetic becomes 81 regenerated + 1 new = 82 changed, 83 total. The census numerals are AS_OF-DATED MEASUREMENTS, never constants: the implementing mission RE-DERIVES all of them at its own head. This is exactly the re-derivation obligation this authority has carried since R1, now with a live example of why.",
+      "what_this_authority_does_NOT_do": "It does not adjudicate PR #128, reserve an ordinal, or claim priority over it."
+    }
+  },
+  "R4_KTC_REMEASUREMENT": {
+    "rule": "F-HJ-1 (BLOCKING). R3 asserted that the hosted-baseline-rehearsal-ready gate ALREADY FAILS on its rehearsalFresh conjunct, citing KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02. That assertion was INHERITED FROM THE REGISTRY, NOT MEASURED. It is false at the candidate state. This section records the independent re-measurement that refutes it. It is not weakened, contextualised or explained away.",
+    "what_R3_claimed": "KTC-...-STALE-01/02 record that the SAME gate already fails on a DIFFERENT conjunct — rehearsalFresh, via the manifestDigest comparison at :342. Those are pre-existing and deferred.",
+    "what_is_actually_true": "rehearsalFresh is TRUE. The gate does not fail. Both named tests are GREEN.",
+    "how_measured": {
+      "method_1_dependency_free_derivation": "The BASELINE_UNITS array literal in db/hosted/baseline-manifest.ts was brace-matched (string- and comment-aware) and each unit's ordinal/id/sha256 extracted, then baselineManifestDigest()'s own derivation replayed: sha256 over the newline-joined `ordinal:id:sha256` triples, with CRLF normalised exactly as sha256OfSql does. No project dependency was installed and no module was imported.",
+      "fail_closed_guard": "The extractor refuses to report on an empty or partial parse. This mattered: a first, stricter field-order regex extracted only 40 of the 80 units and was REFUSED by the guard rather than silently producing a wrong digest and a wrong verdict. The anchor is the ASSIGNMENT `= [`, never a bare `[`, which would hook the empty pair in `readonly BaselineUnit[]`.",
+      "method_2_raw_test_execution": "tests/eval/stella-release/hosted-baseline-gate.test.ts was executed directly by the vitest runner, with no known-condition suppression and no audit-batch filtering."
+    },
+    "MEASURED_VALUES": {
+      "BASELINE_UNITS_length": 80,
+      "final_unit": "0067_tenancy_refusal_audit_insert_policy.sql",
+      "computed_manifest_digest": "96181f099d69fef6ef7b976b6979dd79feabe9cd5692c96b2b7d7c98a6cf991a",
+      "latest_json_manifestDigest": "96181f099d69fef6ef7b976b6979dd79feabe9cd5692c96b2b7d7c98a6cf991a",
+      "digest_match": true,
+      "latest_json_manifestApplied": 80,
+      "latest_json_manifestFailedAt": null,
+      "rehearsalFresh": true,
+      "rehearsalAppliedAll": true,
+      "rehearsalReproducedDefect": true,
+      "rehearsalPostconditionsClean": true
+    },
+    "REGISTRY_FINGERPRINT_VERSUS_MEASUREMENT": {
+      "registry_claims": {
+        "rehearsalFresh": false,
+        "manifestApplied": 50,
+        "manifestDigest": "8f754f275d280e14130746b3271566d9073e4f3653b7780d47c943b60a7f050a"
+      },
+      "measured_now": {
+        "rehearsalFresh": true,
+        "manifestApplied": 80,
+        "manifestDigest": "96181f099d69fef6ef7b976b6979dd79feabe9cd5692c96b2b7d7c98a6cf991a"
+      },
+      "verdict": "THE KTC PREMISE NO LONGER REPRODUCES. The rehearsal artefact was regenerated against the 80-unit manifest at some point after the conditions were recorded against a 50-unit-era manifest. Every one of the three fingerprint fields differs."
+    },
+    "RAW_TEST_RESULT_AT_CANDIDATE_STATE": {
+      "file": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "collected": 7,
+      "passed": 7,
+      "failed": 0,
+      "verdict": "GREEN",
+      "the_two_KTC_named_tests": {
+        "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01": "test_id 'the six baseline gates all pass' — PASSED.",
+        "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02": "test_id 'the four words this report may not say reports baselineApplied, stagingApplied, hostedReady and providerReady as false — unconditionally' — PASSED."
+      },
+      "non_vacuity": "COLLECTED = 7 > 0. A run that collects zero tests is not green, and this one collected and executed seven."
+    },
+    "GREEN_THEN_RED_PROOF": {
+      "rule": "Measuring the tests green is only half the obligation. A green suite proves nothing about P1 unless the P1 failure mode actually turns it red. This is the M-18 contract, discharged empirically at R4 rather than asserted.",
+      "mutation_applied": "artifacts/baseline-rehearsal/latest.json perturbed to simulate 'baseline appended, rehearsal evidence left unregenerated': the recorded manifestDigest no longer matches the manifest.",
+      "result": "2 of 7 tests turned RED — exactly the two KTC-named tests, and no others.",
+      "failure_detail_observed": "hosted-baseline-rehearsal-ready: rehearsalFresh=false, reproducedDefect=true, appliedAll=true, postconditionsClean=true, firstProvisioningPlannable=true, phaseSkipRefused=true.",
+      "why_the_detail_matters": "It isolates the conjunct. The gate fails on rehearsalFresh alone while every other conjunct stays true, which is what makes this a proof that the control detects THIS failure mode rather than merely failing for some reason.",
+      "restoration": "The mutation was reverted via git checkout and the pristine state re-measured: digest match true, rehearsalFresh true. The tracked tree carries zero net change from the proof."
+    },
+    "CONSEQUENCE_FOR_THIS_AUTHORITY": [
+      "DEPENDENCY_PROOF_B's premise is corrected: BOTH rehearsalFresh and rehearsalAppliedAll are TRUE today, and BOTH are flipped FALSE by an append that leaves the evidence unregenerated. R3 described only one of them as newly broken and mischaracterised the other as already failing.",
+      "The two KTC ids are REMOVED from the companion manifest's ACTIVE known_conditions set. A green test may not sit behind a known-failing waiver.",
+      "M-18 (formerly M-12) is re-frozen as a RAW green-then-red obligation that a known-condition waiver cannot discharge."
+    ]
+  },
+
+  "R4_CONTROL_ID_LEDGER": {
+    "rule": "F-HJ-4. Every control id in the companion manifest must have EXACTLY ONE canonical meaning across the whole revision history. Where a revision changed what an id meant, the id is RETIRED rather than reused, and the supersession is recorded here instead of being left implicit in a diff.",
+    "the_defect": "R2 introduced M-11 = 'self-registering the P1 grant is refused'. R3 renamed that control to M-16 and then reused the freed id M-11 for a NEW, unrelated control ('repo-wide pin coverage'). The id was therefore ambiguous across revisions: a reader citing M-11 could mean either. R3 also introduced M-12..M-15 in that same freed block.",
+    "the_fix": "Every control R3 introduced has been reassigned to an id that has NEVER carried any other meaning. M-11 through M-15 are now RETIRED and unused. No live id has two meanings.",
+    "RETIRED_IDS": {
+      "M-11": "RETIRED. Meant 'self-registration refused' in R2 and 'repo-wide pin coverage' in R3. Never reuse. Its R2 meaning lives at M-16; its R3 meaning lives at M-17.",
+      "M-12": "RETIRED. Its R3 meaning (rehearsal evidence left stale) lives at M-18.",
+      "M-13": "RETIRED. Its R3 meaning (N+1 trap) lives at M-19.",
+      "M-14": "RETIRED. Its R3 meaning (derived form pinned to a literal) lives at M-20.",
+      "M-15": "RETIRED. Its R3 meaning (hand-edited rehearsal evidence) lives at M-21, reclassified as a provenance obligation."
+    },
+    "LIVE_IDS_AND_PROVENANCE": {
+      "M-1..M-10": "Unchanged since R1/R2. Meanings never altered.",
+      "M-16": "Self-registering the P1 grant is refused. Introduced at R2 as M-11; reassigned at R3.",
+      "M-17": "Repo-wide pin coverage, non-vacuous. Introduced at R3 as M-11; reassigned at R4.",
+      "M-18": "Rehearsal evidence left stale => RED. Introduced at R3 as M-12; reassigned at R4 and re-frozen as a RAW green-then-red obligation.",
+      "M-19": "N+1 trap set to the previous N's correct value => RED. Introduced at R3 as M-13; reassigned at R4.",
+      "M-20": "A DERIVED form pinned to a literal => RED. Introduced at R3 as M-14; reassigned at R4.",
+      "M-21": "Rehearsal-evidence provenance. Introduced at R3 as M-15 claiming machine detection; reassigned at R4 AND reclassified as a PROVENANCE obligation after that claim was withdrawn (F-HJ-5)."
+    },
+    "MACHINE_RECOMPUTED": "The live id set is recomputed from the manifest at validation time and checked for duplicates, and every retired id is checked to be absent. It is not asserted from this table.",
+    "why_a_ledger_rather_than_a_silent_renumber": "A silent renumber leaves prior audit reports, PR comments and evidence artifacts pointing at ids whose meaning has moved underneath them. HJ found this by noticing M-11 carried two meanings; the ledger is what makes that discoverable next time instead of requiring an auditor to reconstruct it."
+  },
+
+  "R4_EXTERNAL_KTC_REGISTRY": {
+    "rule": "Recorded explicitly so that closing P1's authority does not silently assert that the global registry is healthy.",
+    "finding": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json contains TWO OBSOLETE ENTRIES. KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02 are recorded as PRE_EXISTING_DEFERRED with a cause fingerprint of rehearsalFresh=false / manifestApplied=50 / manifestDigest=8f754f27..., and none of those three values reproduces at the candidate state. Both named tests are GREEN.",
+    "scope_boundary": "That file is OUTSIDE this PR's two-path write surface and is NOT edited by this lane. Repairing the registry is a separate governed maintenance act with its own authority, and doing it here would be a third write path.",
+    "binding_rule_for_P1": "For P1 specifically, the stale external registry MUST NOT be accepted as a waiver for the raw M-18 control. The implementing mission executes the affected tests DIRECTLY, without known-condition suppression, and reports the raw result. `pnpm ops:test-diff` output that suppresses these two ids is evidence about the REGISTRY, not about the tests.",
+    "why_this_is_stated_rather_than_fixed": "An obsolete waiver is a live hazard: it lets a real regression in exactly this gate pass as 'the known one'. Naming it and refusing to rely on it is the most this lane may do within its write surface, and saying nothing would have left P1's authority resting on a premise this mission has measured to be false.",
+    "successor_obligation": "A future governed maintenance act should re-adjudicate both entries against a current measurement. This authority records the measurement it took; it does not adjudicate the registry."
   },
 
   "BINDING_HPO_RATIFICATIONS": {
@@ -738,7 +853,7 @@
         "path": "tests/hosted/baseline-manifest.test.ts",
         "disposition": "IN",
         "class": "REACTIVE_CARDINALITY_PIN",
-        "why": "Carries census sites R-1, R-2, R-3 and R-4 — including R-2, the Drizzle sub-count 68 -> 69, which R2 recorded only as prose and never listed as an assertion site. Plus three prose sites. See REACTIVE_BASELINE_COUNT_CENSUS.",
+        "why": "Carries census sites R-1, R-2, R-3 and R-4 — including R-2, the Drizzle sub-count 68 -> 69, which R2 recorded only as prose and never listed as an assertion site. Also carries three PROSE_SITES entries (a comment and two test titles). See REACTIVE_BASELINE_COUNT_CENSUS.PROSE_SITES.",
         "bounded_change": "80 -> 81 and 68 -> 69 Drizzle, at exactly those sites. The assertion SHAPES — toHaveLength, contiguous 1..N, Set size — must be PRESERVED as exact equalities. Relaxing any of them to a bound is prohibited by the same principle as HPO-FIBP1-01.",
         "protected": false
       },
@@ -783,8 +898,9 @@
         "class": "REQUIRED_REACTIVE_PATH__REHEARSAL_EVIDENCE",
         "why": "Carries census sites R-12 (manifestApplied: 80) and R-13 (manifestDigest). manifestApplied feeds rehearsalAppliedAll, a conjunct of the hosted-baseline-rehearsal-ready release gate. See REACTIVE_BASELINE_COUNT_CENSUS.DEPENDENCY_PROOF_B.",
         "R3_ADDITION": "NOT PRESENT IN R1 OR R2. Part of F-HG-1 (BLOCKING).",
-        "REGENERATE_DO_NOT_HAND_EDIT": "This is rehearsal EVIDENCE. It MUST be produced by re-running the rehearsal against a disposable PostgreSQL container, never by typing the new numbers. Hand-editing fabricates a run that did not happen, and prior integrated evidence records that the forgery is additionally DETECTED (MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0: 'R4-M4 hand-edited artefact, manifestApplied 79 -> 80 -> gate spec 2 failed'). See REACTIVE_BASELINE_COUNT_CENSUS.REGENERATION_NOT_HAND_EDIT.",
-        "new_breakage_versus_pre_existing": "rehearsalAppliedAll is TRUE today and P1 flips it FALSE. That is a NEW breakage, distinct from the pre-existing rehearsalFresh failure recorded in KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02. The pre-existing failure is not cover for the new one.",
+        "REGENERATE_VIA_CANONICAL_REHEARSAL__NEVER_HAND_EDIT": "FROZEN. This artefact MUST be produced by re-running the canonical rehearsal against a disposable PostgreSQL container. It MUST NOT be hand-edited to carry the new numbers, because the artefact asserts that a run happened and typing its outputs asserts a run that did not.",
+        "WHAT_THIS_AUTHORITY_DOES_NOT_CLAIM": "It does NOT claim that a COHERENT hand edit is mechanically distinguishable from regenerated bytes. R3 made that claim and it is WITHDRAWN (F-HJ-5). A forger who sets manifestApplied to the new count AND recomputes manifestDigest correctly produces bytes this repository has no deterministic mechanism to tell apart from a real run. The prior evidence R3 leaned on records an INCOHERENT edit being caught, which establishes nothing about a coherent one. The obligation is therefore carried by RECORDED PROVENANCE — command, exit status, resulting digest, applied count, disposable-PG outcome — not by a byte test. See companion manifest P-15 and M-21.",
+        "state_measured_at_R4": "BOTH rehearsalAppliedAll AND rehearsalFresh are TRUE today; the gate PASSES and both its named tests are GREEN (7/7 raw, COLLECTED > 0). An append that leaves this artefact unregenerated flips BOTH conjuncts FALSE and turns exactly those two tests RED — proven by mutation at R4, then reverted. The obsolete KTC entries are NOT cover for either conjunct.",
         "protected": false
       },
       {
@@ -956,6 +1072,13 @@
         "explicitly_NOT_excluded": "tests/eval/**, artifacts/**, db/**, scripts/**, lib/**, app/**, components/**, docs/**. R2's scan reached none of the first two, which is precisely where the missed pins were.",
         "method": "For each tracked file: require baseline vocabulary somewhere in the file (BASELINE_UNITS, BASELINE_ORDER, baselineUnits, unitCount, manifestApplied, journalCount, baselineUnitsInstalled, manifestOk, rehearsalFresh, appliedAll, manifestDigest, baselineApplied, 'baseline unit'), then flag each standalone literal 80 whose +/-4-line window also carries that vocabulary. A second pass swept the N+1 literal 81 and the Drizzle sub-count literal 68 under the same rule, because the reactive value is not always the baseline count itself.",
         "why_a_bare_literal_sweep_is_insufficient": "A bare sweep for '80' returns pixel values, opacities, ports and percentages across app/ and components/. A sweep restricted to one directory returns a clean-looking but false census. The vocabulary window is what makes the scan both repo-wide AND precise.",
+        "SCOPE_BOUNDARY__WHAT_THIS_CENSUS_IS_NOT_THE_AUTHORITY_FOR": {
+          "rule": "F-HJ-2. This census governs LITERAL, hand-maintained values that a human must edit. It is NOT the authority for the GENERATED journal-wrapper corpus, and it does not discover that family.",
+          "why_the_scanner_cannot_find_it": "Each wrapper header carries `Unit N/80` as generated text. The scanner would flag those 80 lines as literal-80 hits indistinguishable from hand-maintained pins, and it has no way to know they are regenerated wholesale by db/hosted/baseline-journal-wrapper.ts rather than edited one by one. Claiming the vocabulary scanner DISCOVERS that family would be a false method claim.",
+          "who_IS_the_authority": "C-3 — the db/prepared/journal/** PATHS entry — which derives the family independently from the generator: 81 CHANGED files (80 regenerated headers + 1 new wrapper) and 82 total afterward, plus the HEADER_TOTAL_REGENERATION_ONLY wrapper-body invariant. That derivation stands on the generator, not on a text scan.",
+          "the_partition": "LITERAL / REACTIVE, hand-edited, enumerated by this census; versus GENERATED CORPUS, regenerated by tooling, governed by C-3. Disjoint, and neither is evidence for the other.",
+          "consequence": "db/prepared/journal/** does not appear in REACTIVE_REQUIRED and its absence there is NOT an omission."
+        },
         "candidate_hits": 147,
         "candidate_files": 21
       },
@@ -1012,16 +1135,27 @@
           "tests/eval/stella-release/hosted-baseline-gate.ts:368 — rehearsalAppliedAll is carried onto the evidence object.",
           "tests/eval/stella-release/hosted-baseline-gate.ts:523 — `evidence.rehearsalAppliedAll` is a conjunct of the hosted-baseline-rehearsal-ready gate (id declared at :53)."
         ],
-        "current_state": "rehearsalAppliedAll is currently TRUE: the artefact's 80 equals BASELINE_UNITS.length of 80.",
-        "consequence_if_left_at_80": "BASELINE_UNITS.length becomes 81 while the artefact still says 80, so rehearsalAppliedAll flips TRUE -> FALSE. This is a NEW breakage introduced by P1.",
-        "distinguish_from_the_known_conditions": "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01/02 record that the SAME gate already fails on a DIFFERENT conjunct — rehearsalFresh, via the manifestDigest comparison at :342. Those are pre-existing and deferred. rehearsalAppliedAll is NOT among them and is TRUE today. A P1 mission must not point at the pre-existing rehearsalFresh failure as cover for having additionally broken rehearsalAppliedAll.",
+        "current_state_MEASURED_AT_R4": "BOTH conjuncts are TRUE. rehearsalAppliedAll is TRUE (the artefact's 80 equals BASELINE_UNITS.length of 80, and manifestFailedAt is null) AND rehearsalFresh is TRUE (the artefact's manifestDigest 96181f09... equals the recomputed baselineManifestDigest() exactly). The gate hosted-baseline-rehearsal-ready PASSES today, and both of its named tests are GREEN. See R4_KTC_REMEASUREMENT.",
+        "consequence_if_left_unregenerated": "BASELINE_UNITS.length becomes 81 while the artefact still says 80, so rehearsalAppliedAll flips TRUE -> FALSE; and baselineManifestDigest() necessarily changes because it hashes every unit, so rehearsalFresh independently flips TRUE -> FALSE. TWO conjuncts break, not one, and BOTH are new. The gate goes from passing to failing and the two named tests go from GREEN to RED — measured at R4, not asserted.",
+        "R4_CORRECTION__THE_KNOWN_CONDITIONS_PREMISE_WAS_FALSE": "R3 stated here that the gate ALREADY FAILS on rehearsalFresh and that KTC-...-STALE-01/02 were live. That was inherited from the registry rather than measured, and it is WRONG: rehearsalFresh is TRUE, the gate passes, and both named tests are GREEN. The correction matters in the direction that costs P1 something — R3's version understated the damage by treating one of the two conjuncts as already broken, when in fact P1 breaks a PASSING gate outright. The obsolete registry entries must not be used as cover for either conjunct. See R4_KTC_REMEASUREMENT and R4_EXTERNAL_KTC_REGISTRY.",
         "measured": true
       },
       "REGENERATION_NOT_HAND_EDIT": {
         "rule": "artifacts/baseline-rehearsal/latest.json is REHEARSAL EVIDENCE. It MUST be produced by actually re-running the rehearsal against a disposable PostgreSQL container. It MUST NOT be hand-edited to carry the new numbers.",
         "why": "Hand-editing it would fabricate evidence that a rehearsal was performed. Both reactive fields make this concrete: manifestApplied is a COUNT OF UNITS ACTUALLY APPLIED by a run, and manifestDigest is a hash of the manifest that run applied. Typing 81 and a recomputed digest asserts a run that never happened.",
-        "it_is_also_detected": "Prior integrated evidence records the attempt and its outcome: MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0 logs 'R4-M4 hand-edited artefact, manifestApplied 79 -> 80 -> gate spec 2 failed + tenancy relation check failed'. The forgery does not even work.",
+        "R4_WITHDRAWAL_OF_THE_DETECTION_CLAIM": "F-HJ-5. R3 claimed here that the forgery does not even work, citing MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0 R4-M4. That citation records an INCOHERENT hand edit being caught — manifestApplied advanced without the digest — which establishes NOTHING about a COHERENT one. A forger who advances the count AND recomputes manifestDigest correctly produces bytes this repository has no deterministic mechanism to distinguish from a real run. The detection claim is WITHDRAWN. The obligation is carried by RECORDED PROVENANCE instead: see companion manifest P-15 and M-21.",
         "boundary": "Re-running the rehearsal against a fresh, destroyed-afterwards container is PERMITTED by DEPLOYMENT_BOUNDARY. Nothing here authorizes a staging, remote, production or canonical-local-Supabase run."
+      },
+      "PROSE_SITES": {
+        "rule": "F-HJ-3. R3 removed this subsection when it replaced the census wholesale, while a PATHS entry still pointed at three prose sites. Restored, because the sites are real: they are not assertions, but they carry the same numerals and become false statements if left behind.",
+        "site_count": 4,
+        "sites": [
+          { "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 108, "kind": "comment", "content": "80 units, 68 Drizzle" },
+          { "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 111, "kind": "test title", "content": "has 80 units: 68 Drizzle, 2 Supabase, 10 policies" },
+          { "file": "tests/hosted/baseline-manifest.test.ts", "line_at_measurement": 119, "kind": "test title", "content": "numbers ordinals 1..80 contiguously" },
+          { "file": "tests/hosted/baseline-journal-wrapper.test.ts", "line_at_measurement": 473, "kind": "comment", "content": "running derivation ending + 0067 = 80" }
+        ],
+        "note": "Three of the four sit in baseline-manifest.test.ts, which is what the PATHS entry refers to. The 2 Supabase and 10 policies figures do NOT move; the Drizzle sub-count does."
       },
       "DERIVED_AUTO_MOVING": {
         "rule": "Expressed in terms of BASELINE_UNITS.length / BASELINE_ORDER.length. These re-evaluate correctly on their own. Editing ANY of them is scope expansion and is prohibited.",
@@ -1450,6 +1584,50 @@
       "disposition": "OUT OF SCOPE for P1 and deliberately NOT repaired here. P1 widens the gap (78 vs 80) but does not introduce the failure. Recorded so a P1 mission neither claims to have broken it nor silently fixes it inside an authorized diff — it is the same class of final-unit displacement that HPO-FIBP1-01 governs deliberately for the tenancy tripwire, and it deserves the same treatment rather than a drive-by edit."
     },
     {
+      "id": "F-HJ-1",
+      "severity": "WAS_BLOCKING__NOW_RESOLVED_AT_R4",
+      "finding": "R3 asserted that the hosted-baseline-rehearsal-ready gate already failed on rehearsalFresh, citing KTC-...-STALE-01/02. Independently re-measured, that premise is FALSE: rehearsalFresh is TRUE, the digest matches exactly, the gate PASSES, and both named tests are GREEN (7/7 raw, COLLECTED > 0).",
+      "root_cause": "The claim was INHERITED FROM THE REGISTRY rather than measured. Every fact in this artifact is supposed to be re-derived; this one was taken on the registry word because it was recorded as PRE_EXISTING_DEFERRED and therefore looked already-adjudicated.",
+      "why_it_was_blocking": "It let a stale waiver stand in for a real control. Under R3, a P1 mission could have broken a PASSING release gate and pointed at an obsolete known-condition entry as cover, and the manifest listed both ids as active waivers, which would have suppressed exactly the tests that detect the breakage.",
+      "resolution": "Re-measured two independent ways (dependency-free digest derivation, and a raw vitest run), the two ids REMOVED from the manifest ACTIVE known_conditions set, DEPENDENCY_PROOF_B corrected, and M-18 re-frozen as a raw green-then-red obligation that a waiver cannot discharge. The green-then-red transition was then PROVEN by mutation and reverted.",
+      "correction_direction": "AGAINST this mission. R3 understated the damage by treating one conjunct as already broken; the truth is that P1 breaks a passing gate on TWO conjuncts.",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-HJ-2",
+      "severity": "RESOLVED_AT_R4",
+      "finding": "The repo-wide literal-pin census left it ambiguous whether it was also the authority for the generated journal-wrapper corpus.",
+      "resolution": "Explicitly partitioned. The census governs LITERAL, hand-maintained values; the generated corpus is governed independently by C-3. The census does NOT discover that family and no longer implies it does — the scanner would see 80 generated Unit N/80 headers as indistinguishable from hand-maintained pins.",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-HJ-3",
+      "severity": "RESOLVED_AT_R4",
+      "finding": "A PATHS entry still said Plus three prose sites while the PROSE_SITES subsection it referred to had been dropped when R3 replaced the census wholesale.",
+      "resolution": "PROSE_SITES restored with its four enumerated entries and the pointer made explicit. Wholesale section replacement is how this happened: the new block was written from scratch and a subsection with live inbound references was silently lost.",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-HJ-4",
+      "severity": "RESOLVED_AT_R4",
+      "finding": "M-11 carried two different meanings across revisions: self-registration refusal in R2, repo-wide pin coverage in R3.",
+      "resolution": "Every R3-introduced control reassigned to a never-used id (M-17..M-21); M-11..M-15 RETIRED. R4_CONTROL_ID_LEDGER records each supersession, and the validator recomputes the live id set and asserts no retired id reappears.",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-HJ-5",
+      "severity": "RESOLVED_AT_R4",
+      "finding": "R3 claimed a hand-edited rehearsal artefact would be mechanically detected. A COHERENT hand edit is not distinguishable from regenerated bytes by any mechanism this repository has.",
+      "resolution": "The claim is WITHDRAWN, not softened. M-21 is reclassified from a byte test to a PROVENANCE obligation, and P-15 requires the implementation evidence to record the canonical rehearsal command, exit status, resulting digest, applied count and disposable-PG outcome. A byte check does not prove a command ran, and this authority no longer says it does.",
+      "status": "CLOSED."
+    },
+    {
+      "id": "F-GV-9",
+      "severity": "INFORMATIONAL",
+      "finding": "PR #128 (draft, open) already carries an unmerged 0068_commercial_account_ce1.sql plus baseline-manifest and journal edits.",
+      "disposition": "Recorded, not adjudicated. It is a live demonstration of why every baseline numeral here is an AS_OF-dated measurement rather than a constant: if PR #128 merges first, BASELINE_UNITS is 81 before P1 acts and every census literal and the C-3 wrapper arithmetic shift by one."
+    },
+    {
       "id": "F-A1",
       "severity": "CARRIED_FORWARD_NON_BLOCKING",
       "finding": "I-6, I-8 and I-12 each subsume an existing single-column prefix index, rendering it redundant.",
@@ -1491,7 +1669,7 @@
     "R2_product_semantics_invented": "NONE. The P1 partition, the eight CREATE targets, the four verify-only objects, the I-10 semantics, the retired names and the deployment boundary are byte-identical in substance to R1."
   },
 
-  "final_state": "FIBDB052_P1_EXECUTION_AUTHORITY_FROZEN_R3__COMPANION_MANIFEST_FROZEN_R3__GY_R1_AND_HG_R2_FINDINGS_APPLIED__REPO_WIDE_CENSUS_ESTABLISHED__NO_ALLOCATION_MADE__AWAITING_R3_INDEPENDENT_EXACT_OBJECT_REAUDIT",
+  "final_state": "FIBDB052_P1_EXECUTION_AUTHORITY_FROZEN_R4__COMPANION_MANIFEST_FROZEN_R4__GY_HG_AND_HJ_FINDINGS_APPLIED__KTC_PREMISE_REMEASURED_AND_REFUTED__M18_GREEN_THEN_RED_PROVEN__NO_ALLOCATION_MADE__AWAITING_R4_INDEPENDENT_EXACT_OBJECT_REAUDIT",
 
-  "next_gate": "PR123_R3_INDEPENDENT_EXACT_OBJECT_REAUDIT of this corrected artifact pair. R1 was audited at commit 0ae88adc and returned R2_REQUIRED=YES with AUDIT_UNKNOWN=0; the five findings C-1..C-5 plus the surface repartition are applied here. Historical measurements remain anchored at AS_OF_HEAD 4c19c3c7a96213a26af4d9a937e29973601fd949 / tree cd5ef6a3064de50126095479032182a7f3156d5d, with a bounded successor reconciliation at live 07c33c953bd8e0888d13786011e54a5ce98b196a. FIBDB-052 P1 IMPLEMENTATION AUTHORITY IS NOT CONFERRED BY THIS ARTIFACT'S EXISTENCE; it is conferred by that audit passing AND by the separate allocation of a migration ordinal, an ODS lineage and a protected grant, none of which this artifact makes. Until all four hold, no FIBDB-052 P1 DDL may be written."
+  "next_gate": "PR123_R4_INDEPENDENT_EXACT_OBJECT_REAUDIT of this corrected artifact pair. R1 was audited at commit 0ae88adc and returned R2_REQUIRED=YES with AUDIT_UNKNOWN=0; the five findings C-1..C-5 plus the surface repartition are applied here. Historical measurements remain anchored at AS_OF_HEAD 4c19c3c7a96213a26af4d9a937e29973601fd949 / tree cd5ef6a3064de50126095479032182a7f3156d5d, with a bounded successor reconciliation at live 07c33c953bd8e0888d13786011e54a5ce98b196a. FIBDB-052 P1 IMPLEMENTATION AUTHORITY IS NOT CONFERRED BY THIS ARTIFACT'S EXISTENCE; it is conferred by that audit passing AND by the separate allocation of a migration ordinal, an ODS lineage and a protected grant, none of which this artifact makes. Until all four hold, no FIBDB-052 P1 DDL may be written."
 }
