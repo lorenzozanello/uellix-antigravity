@@ -1,0 +1,128 @@
+{
+  "manifest_id": "TENANCY-EMAIL-VERIFICATION-PACKET-B-NO-SESSION-AMENDMENT",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0.json",
+  "dependencies": [
+    "TENANCY-EMAIL-VERIFICATION-PACKET-B"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "S-AZ-NO-IDENTITY-IN-GENERIC-RENDER",
+      "purpose": "A fictional sentinel address - never a real address, per X-B-12 - is planted in EVERY channel a caller can influence on a no-session request to /verify-email: the query string, the request body, a request header, and a cookie the test sets. The rendered output of the generic state MUST NOT contain the sentinel in any of the four cases. This proves AM-B-A2 as a property of the RENDERED BYTES rather than as a property of the code path the implementation happens to take, so a future change that reintroduces a reflected input is caught by the sentinel even if it takes a route no control names."
+    },
+    {
+      "id": "S-AZ-NO-TENANCY-IN-EITHER-REPRESENTATION",
+      "purpose": "A fictional sentinel organisation name and a fictional membership role label are seeded into the fixtures behind BOTH the generic and the subject-aware representations. Neither string may appear in either rendered output. This proves AM-B-C2 - verification precedes tenancy, so a subject who has failed the verification test has had no tenancy question answered about them - as a rendering property, covering layout chrome and link targets as well as body copy."
+    },
+    {
+      "id": "S-AZ-NO-SUBJECT-ID-OR-TOKEN",
+      "purpose": "The fixture subject id and a fictional confirmation token are asserted absent from the rendered output of all four states and from anything the page logs. Preserves X-B-07 and the existing P-B-8 assertion, extended to the two states P-B-8 did not cover."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "P-BNS-1",
+      "description": "SUCCESSFUL SIGNUP WITH NO SESSION REACHES AND RENDERS THE GENERIC STATE. Drive app/(public)/login/actions.ts signup with a mocked provider result of user != null and data.session == null - the exact shape signUp returns once provider confirmation is correctly enabled. ASSERT THREE THINGS, NOT ONE: (1) the destination is /verify-email; (2) the request to /verify-email in that no-session condition RENDERS and issues NO redirect; (3) the response is NOT a redirect to /login. Assertion (3) is stated separately from (2) because a control that only asserts 'renders' would still pass against an implementation that rendered an interstitial and then redirected client-side. This is the control the ratified decision exists to make true, and the walk it pins - signup -> /verify-email -> RENDER - is the one that replaced signup -> /verify-email -> /login. Authority AM-B-N1, AM-B-S1, ROUTING_TERMINATION state B.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-BNS-2",
+      "description": "A DIRECT ANONYMOUS VISIT IS SAFE AND RECEIVES THE SAME GENERIC STATE. Request /verify-email with no session, no cookie, no query string and no referrer. ASSERT: the page RENDERS, issues no redirect, and its output is IDENTICAL to the output P-BNS-1 observed. Identity of output is asserted directly rather than inferred, because the security property at AM-B-N2 is that states A and B are indistinguishable to any observer, and two renders that merely both succeed are not thereby the same. Authority AM-B-N1, AM-B-N2, ROUTING_TERMINATION state A.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-BNS-3",
+      "description": "AN EXPIRED-SESSION VISIT IS SAFE AND RECEIVES THE SAME GENERIC STATE. Request /verify-email carrying an expired or otherwise unresolvable session artifact, such that resolving the principal server-side yields null. ASSERT: the page RENDERS, issues no redirect, does not attempt a sign-out, does not clear or write the selected-organization carrier, and produces output IDENTICAL to P-BNS-2. The carrier assertion is included because an expired session is the state in which an implementation is most tempted to 'tidy up', and any such write breaches X-B-08 and B3 on a path that is not even authenticated. Authority AM-B-N1, AM-B-N3, X-B-08.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-BNS-4",
+      "description": "AN AUTHENTICATED UNVERIFIED SUBJECT SEES ONLY ITS OWN SUBJECT IDENTITY. With a resolved principal whose provider email_confirmed_at is null, ASSERT: /verify-email RENDERS, issues no redirect, and MAY display that principal's own address. ASSERT ADDITIONALLY, and separately: the displayed address is sourced from the SERVER-RESOLVED PRINCIPAL and from nothing else - drive the same request with a DIFFERENT address supplied in the query string and body and assert the rendered address is the principal's, not the supplied one. ASSERT FINALLY: sentinel S-AZ-NO-TENANCY-IN-EITHER-REPRESENTATION is absent, and sentinel S-AZ-NO-SUBJECT-ID-OR-TOKEN is absent. The second assertion is what distinguishes this control from the unamended P-B-8: P-B-8 asserts the address is shown, this asserts WHERE IT CAME FROM, which is the boundary AM-B-C1 actually draws. Authority AM-B-C1, AM-B-C2, AM-B-A2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-BNS-5",
+      "description": "AN AUTHENTICATED VERIFIED SUBJECT EXITS TO THE GOVERNED APPLICATION FLOW WITH PACKET A SEMANTICS INTACT. With a resolved principal whose provider email_confirmed_at is set to a non-empty value, ASSERT: /verify-email redirects onward to the governed application destination and does not render. ASSERT ADDITIONALLY, parameterised over membership counts ZERO, ONE and TWO: NO organisation is auto-selected at or before this exit, the selected-organization carrier is NOT written, and the subject is handed to the Packet A contract in the same state a subject who never visited this page would be. The ONE-membership case is the load-bearing parameter: it is the only count at which an exactly-one auto-selection is even constructible, and it is the short-circuit NO_AUTO_SELECTION exists to forbid. Authority AM-B-D1, PACKET_A_PRESERVATION, NO_AUTO_SELECTION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-BNS-6",
+      "description": "THE FOUR-STATE ROUTING GRAPH TERMINATES. Extend the edge set driven by the unamended T-B-1 from three destination behaviours to FOUR states - anonymous, signup-with-no-session, authenticated-unverified, authenticated-verified - and assert that every walk reaches a terminal node with no repeated state. Two walks must be shown specifically: the parent's longest constructible walk, /login to /app/dashboard to /verify-email, still terminates at length three; and the new walk, signup to /verify-email to RENDER, terminates at length two. Extending an enumeration to cover a state the authority now names is not a weakening of T-B-1, whose assertion is unchanged and remains binding. Authority ROUTING_TERMINATION, B5_TERMINATION, open finding F-AZ-2.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-BNS-1",
+      "description": "THERE IS NO LOGIN-TO-VERIFY-EMAIL-TO-LOGIN LOOP, AND THE SUPERSEDED EDGE IS ABSENT. Drive /verify-email in each of the three no-session conditions - anonymous, post-signup, expired session - and ASSERT that the response is NOT a redirect to /login, NOT a redirect to /verify-email itself, and NOT a redirect at all. ASSERT SEPARATELY that no walk over the enumerated edge set visits /login twice. This control asserts the ABSENCE of an edge rather than the presence of a destination, because the harm being prevented - F-IA-8 reinstated as signup to /verify-email to /login - is an edge that once WAS authority and therefore reads as correct to any reviewer holding only the frozen parent. Authority AM-B-S1, ROUTING_TERMINATION.PROHIBITED_CYCLES.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-BNS-2",
+      "description": "NO IDENTITY CAN BE INJECTED FROM THE REQUEST, INCLUDING FOR DISPLAY ONLY. Request /verify-email with no session while supplying sentinel S-AZ-NO-IDENTITY-IN-GENERIC-RENDER in each of four channels independently - query string, request body, request header, and an application cookie - and ASSERT the sentinel appears in NONE of the four rendered outputs and in nothing the page logs. ASSERT ADDITIONALLY that the four outputs are identical to one another and to P-BNS-2's baseline. The display-only case is tested explicitly because 'we only render it, we never trust it' is the reasoning by which a reflected-content surface is introduced onto a public route with good intent, and AM-B-A2 grants no display-only exemption. Authority AM-B-A2, X-B-01, X-B-07.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-BNS-3",
+      "description": "NO QUERY PARAMETER CAN SELECT WHICH REPRESENTATION IS RENDERED. Request /verify-email with no session while supplying plausible state-selecting parameters - pending=1, signup=1, state=authenticated, verified=true - and ASSERT the generic representation is rendered in every case, byte-identical to P-BNS-2. Then request it WITH a resolved unverified principal while supplying parameters that would suppress the subject-aware state, and ASSERT the subject-aware representation is rendered regardless. Both directions are required: a parameter that can only downgrade the state is still an oracle, and a parameter that can only upgrade it is a disclosure. This is a distinct mistake from N-BNS-2 - these parameters carry no identity at all and would pass a naive reading of AM-B-A2. Authority AM-B-A4, AM-B-G3, X-B-04.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-BNS-4",
+      "description": "THE GENERIC STATE DISCLOSES NO EMAIL, NO ACCOUNT AND NO TENANCY. Over all three no-session conditions, ASSERT the rendered output contains: no email address in any form including masked or partial; no subject id; no display name, avatar or initials; no provider metadata field; no organisation name, id, role label, membership list or membership count; no organisation selector and no selection control; and neither of sentinels S-AZ-NO-TENANCY-IN-EITHER-REPRESENTATION nor S-AZ-NO-SUBJECT-ID-OR-TOKEN. ASSERT ADDITIONALLY that no sentence of the rendered copy asserts or presupposes that any account exists - specifically that the output contains no second-person possessive presupposing an account. Authority AM-B-N3, AM-B-G2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-BNS-5",
+      "description": "THERE IS NO RESEND ACTION. ASSERT that /verify-email exposes NO resend affordance in ANY of the four states: no form, no button, no server action, no route handler, and no client-side fetch target that would re-issue a verification mail. ASSERT ADDITIONALLY that the page performs no provider write of any kind and consults no provider configuration. Tested in the AUTHENTICATED states as well as the no-session ones, because the authenticated-unverified state is where a resend control is most plausible and would be most defensible-looking, and it is prohibited there too. B2 constraint Three's phrase 'and to offer a resend' is a derivation of why the route must not be gated, not a grant - see open finding F-AZ-3. Authority NON_AUTHORIZATIONS.no_resend, AM-B-N3, AM-B-S1.a_clarification_that_is_not_a_supersession.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-BNS-6",
+      "description": "A SAFE NEXT PARAMETER NEVER OUTRANKS B0. Drive app/auth/callback/route.ts with an authenticated UNVERIFIED subject and a SAFE next parameter present, parameterised over a next naming a protected path and a next naming an unprotected one. ASSERT: the destination is /verify-email in BOTH cases, the next target is NOT honoured before the gate, the carried target remains validated by the EXISTING isSafeRedirectPath, and no new redirect-target vocabulary was introduced. ASSERT SEPARATELY that the target is CARRIED FORWARD across the refusal so the journey resumes after confirmation - carrying a target forward and honouring it early are different acts and this control must not permit the second while proving the first. I-7 is NOT amended by the no-session amendment; this control restates it because independent audit IM measured an implementation serving next BEFORE B0. Authority I-7, B4 site three, X-B-04, X-B-10, NEXT_PARAMETER.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-BNS-7",
+      "description": "THE ORIGINAL N-B-5 SEMANTICS REMAIN BINDING AND ARE ASSERTED IN THEIR ORIGINAL DIRECTION. An unverified subject arriving through the recovery return path with a safe next parameter, INCLUDING a next naming a protected path, is REFUSED and routed to /verify-email. ASSERT the refusal, NOT the admission. ASSERT ADDITIONALLY, preserving the frozen control's other three assertions: the password-change action at app/(public)/reset-password/actions.ts is NOT gated and returns the subject to /login; the carried target is still validated by the existing isSafeRedirectPath; no open-redirect surface was opened. This control exists because independent audit IM measured a PR136 test asserting the OPPOSITE, and an inverted test is the most dangerous defect class in this packet precisely because it is GREEN - it reports that a property holds while proving its negation. The no-session amendment does NOT normalize that inversion. Authority N-B-5 unamended, N_B_5_NOT_AMENDED, open finding F-AZ-4.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-BNS-1",
+      "description": "MUTATION: RESTORE THE SUPERSEDED BEHAVIOUR - REDIRECT THE NO-SESSION STATE BACK TO /login. Replace the generic render at /verify-email with an automatic redirect to /login for any request that resolves no principal, which is exactly the superseded B2 bullet three. REQUIRED OUTCOME: this mutation MUST turn P-BNS-1 RED, and MUST also turn P-BNS-2, P-BNS-3 and N-BNS-1 RED. NON-VACUITY: P-BNS-4 and P-BNS-5 MUST SURVIVE - the authenticated states are untouched by this mutation, so a run in which they also fail indicates the harness broke rather than that the mutation was caught. THIS IS THE CONTROL THAT PINS THE RATIFIED DECISION. Without it a future refactor could restore the superseded behaviour and no test would notice, because that behaviour WAS authority and still reads as correct to anyone holding only the frozen parent. Authority AM-B-S1, RAT-EV-01, TEST_CONTRACT_AMENDMENT.the_required_mutation_control.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-BNS-2",
+      "description": "MUTATION: M-B-4 VARIANT B MUST REMAIN CAPABLE OF TURNING THE RELEVANT CONTROL RED. Apply the frozen M-B-4 variant B mutation - trust any session that arrived through app/auth/callback/route.ts, or that carries a next parameter. REQUIRED OUTCOME: it MUST turn N-BNS-7 RED, and it MUST turn the corrected N-B-5 RED. NON-VACUITY: P-B-7 MUST SURVIVE, per the frozen M-B-4's own non-vacuity clause - a genuinely provider-confirmed subject is admitted either way, which is why P-B-7 must assert that NO mechanism field was consulted rather than merely that the subject was admitted. WHY THIS CONTROL IS NEEDED AT ALL: against the inverted PR136 test, M-B-4 variant B is VACUOUS - a test that asserts the inversion cannot be reddened by the mutation designed to kill it, so the mutation control reports success while proving nothing. This control requires that variant B's kill be OBSERVED, not assumed. Authority M-B-4 unamended, N_B_5_NOT_AMENDED.M_B_4_variant_B_remains_the_check_on_this.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-BNS-3",
+      "description": "MUTATION: RENDER SUBJECT-AWARE CONTENT IN THE NO-SESSION STATE. Two variants, because they fail differently. Variant A: render 'we sent an email to X' in the generic state using an address taken from the request. Variant B: render a membership count or organisation name in the subject-aware state. REQUIRED OUTCOME: variant A MUST turn N-BNS-2 and N-BNS-4 RED; variant B MUST turn P-BNS-4 RED via sentinel S-AZ-NO-TENANCY-IN-EITHER-REPRESENTATION. NON-VACUITY: P-BNS-1 MUST SURVIVE BOTH variants - the routing is untouched and only the rendered content changed, so a mutation that also breaks routing has not isolated the disclosure property. Authority AM-B-N3, AM-B-G2, AM-B-C2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-BNS-4",
+      "description": "MUTATION: LET A QUERY PARAMETER SELECT THE REPRESENTATION. Add a branch that renders the subject-aware state when a parameter such as pending=1 is present, without a resolved principal - the plausible convenience for making the post-signup message friendlier. REQUIRED OUTCOME: MUST turn N-BNS-3 RED, and MUST turn N-BNS-2 RED once the selected state renders any request-supplied value. NON-VACUITY: P-BNS-2 MUST SURVIVE when no parameter is supplied - the mutation is conditional, so an unconditional failure means the branch was mis-applied rather than caught. Authority AM-B-A4, AM-B-G3, X-B-04.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-BNS-5",
+      "description": "MUTATION: SERVE A SAFE NEXT BEFORE B0. Move the safe-next return in app/auth/callback/route.ts AHEAD of the B0 refusal, which is the shape independent audit IM measured in PR136. REQUIRED OUTCOME: MUST turn N-BNS-6 RED, and MUST turn N-BNS-7 RED in the case where next names a protected path. NON-VACUITY: P-B-7 MUST SURVIVE - a provider-confirmed subject arriving through the same callback is admitted either way, so its failure would indicate the callback was broken outright rather than that the ordering defect was caught. This mutation is included even though I-7 is NOT amended, because a defect that has been MEASURED IN AN IMPLEMENTATION deserves a control that would catch its reintroduction, and the amendment lane is where the absence was noticed. Authority I-7 unamended, NEXT_PARAMETER, open finding F-AZ-4.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "targeted_tests",
+    "ods_poststate"
+  ]
+}
