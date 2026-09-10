@@ -14,6 +14,20 @@
   },
   "GRANT_ID_DISPOSITION": "NO GRANT IS DECLARED OR REGISTERED BY THIS ARTIFACT. The entire future write surface named in EXACT_FUTURE_IMPLEMENTATION_SURFACE is CLOSED and FROZEN here, and is opened only by the successor implementation lane named in FUTURE_IMPLEMENTATION_BRANCH. No ODS addendum is allocated, no node is registered, and no ODS surface is amended.",
 
+  "REVISION_HISTORY": [
+    {
+      "revision": "R1",
+      "commit": "10b475df5516752cf58c799630dad4820c3d9587",
+      "tree": "089c83333d55e8bd900146d62fdaea03272d4b92",
+      "summary": "Initial freeze of the Packet B contract: provider truth source, dual gate, auth-mechanism semantics, ROUTING_CONTRACT_PACKET_B, returning-user matrix, closed future surface, boundaries, and the companion test manifest."
+    },
+    {
+      "revision": "R2",
+      "commit": "THIS COMMIT",
+      "summary": "MEASUREMENT CORRECTION ONLY. No contract clause, no routing rule, no prohibition, no control and no scope boundary is changed by R2 - the frozen contract of R1 stands unaltered. R1 recorded every machine gate as unrunnable, on the evidence that pnpm could not resolve tsx, and asserted on that basis that a prior operational note claiming the ODS gates run without node_modules was false. BOTH CLAIMS ARE WITHDRAWN. The gate scripts import only Node builtins and run directly under node --experimental-strip-types; four of them were run and passed at 10b475df, including a strong negative proving ods_scope adjudicates. R2 records the results, downgrades F-IA-7 from MEDIUM to LOW, and keeps the erroneous R1 reasoning visible rather than overwriting it. It is a NEW commit; R1 is not amended and not squashed."
+    }
+  ],
+
   "AS_OF_REF": "codex/email-verification-packet-b-authority-r1",
   "AS_OF_HEAD": "38dde64695612e9f151e6827a85b4054bab46b5b",
   "AS_OF_TREE": "681ca0bfba493fe97051b7962969ff728d6d76cc",
@@ -71,9 +85,11 @@
     "declared_before_any_claim": "These limits are stated FIRST so that no reader has to infer which claims below are measured and which are inferred.",
     "node_modules_absent": {
       "measured": "ls -d node_modules returns nothing at AS_OF_TREE; node_modules/.bin/tsx and a global tsx are both absent, command -v tsx empty.",
-      "consequence": "Every governed machine gate in this repository is a tsx entry point: pnpm ods:prestate, ods:scope, ods:poststate, authority:seal:verify, ops:program-state, ops:test-diff, audit:batch. ALL OF THEM ARE UNRUNNABLE IN THIS WORKTREE. pnpm ods:prestate was attempted and failed with tsx not recognised and ELIFECYCLE exit 1. The lane forbids dependency install, so this is not remediable inside the lane.",
-      "disposition": "RECORDED AS NOT_RUN, NEVER AS PASS. VALIDATION_PERFORMED_BY_THIS_MISSION lists what was substituted, namely node-based JSON validation and a git-grounded anchor verifier, and what remains owed. The successor implementation lane MUST run the full gate set; this artifact does not and cannot discharge it.",
-      "corrects_a_prior_belief": "A prior operational note held that ODS gates run without node_modules with poststate as the sole exception. Measured here that is FALSE for a worktree with NO node_modules directory at all: the tsx shim itself is a node_modules binary, so every gate fails at spawn. The earlier note described worktrees that had node_modules present."
+      "consequence_at_the_pnpm_LAYER_ONLY": "The pnpm script layer is unusable: pnpm ods:prestate was attempted and failed with tsx not recognised and ELIFECYCLE exit 1. THAT FAILURE IS THE RUNNER, NOT THE GATE.",
+      "consequence_at_the_GATE_layer": "The governed gates are builtin-only TypeScript and run directly under Node 24 with --experimental-strip-types, for which tsx is only the package.json runner and not a real dependency. FOUR GATES WERE ACTUALLY RUN AND PASSED at the commit this artifact was frozen in; see VALIDATION_PERFORMED_BY_THIS_MISSION.machine_gates_run. Only typecheck (tsc --noEmit) and targeted tests (vitest run) are irreducibly blocked by the absent node_modules, and ods:poststate is blocked THROUGH typecheck rather than in its own right.",
+      "correction_of_this_mission_own_first_conclusion": "R1 of this artifact initially recorded ALL gates as NOT_RUN and asserted that a prior operational note claiming ODS gates run without node_modules was FALSE. THAT ASSERTION WAS WRONG AND IS WITHDRAWN. The prior note was correct: the failure observed was pnpm resolving tsx, and the gate scripts themselves import only Node builtins. The error is recorded rather than quietly overwritten, because an authority that silently repairs its own measurements teaches nothing about which of its remaining claims were checked. Concretely: a gate reported as unrunnable on the evidence of its RUNNER failing is not a measurement of the gate.",
+      "what_remains_genuinely_blocked": "typecheck, targeted_tests, and ods_poststate (through typecheck). These are recorded as NOT_RUN with the reason, never as PASS, and are owed by the successor implementation lane.",
+      "scan_secrets_note": "scripts/scan-secrets.ts is NOT builtin-only: it imports ../db/hosted/target-identity with no file extension, which Node's ESM resolver rejects where tsx does not. It was run under a resolution-only loader hook that appends .ts to extensionless relative specifiers and changes nothing else - not module content, not the gate logic, not its verdict. Note also that this gate scans the GIT TREE, so it was run AFTER the artifacts were committed; running it against an untracked file would have produced a vacuous PASS."
     },
     "supabase_sdk_typings_unreadable": {
       "measured": "package.json:125 declares @supabase/supabase-js ^2.108.2; pnpm-lock.yaml:2115 and :7248 resolve 2.108.2, with @supabase/auth-js 2.108.2 at :2047. The package sources are NOT on disk, no node_modules, and no install is permitted.",
@@ -846,7 +862,18 @@
   },
 
   "VALIDATION_PERFORMED_BY_THIS_MISSION": {
-    "honest_summary": "The evidence-based validations were performed. The MACHINE GATES WERE NOT RUN AND COULD NOT BE. What was substituted is named, and what remains owed is named.",
+    "honest_summary": "The evidence-based validations were performed AND four machine gates were actually run and passed, including one strong negative. Three gates remain genuinely blocked by the absent node_modules and are recorded NOT_RUN with the reason. Nothing is reported as PASS that did not run.",
+    "machine_gates_run": {
+      "how": "Directly under Node 24 as node --experimental-strip-types scripts/<gate>.ts, bypassing the pnpm/tsx runner layer that is unavailable in this worktree. The gate scripts import only Node builtins, so the runner is not a dependency of the adjudication.",
+      "measured_at_commit": "The gate results below were measured at the FIRST commit of this branch, 10b475df, tree 089c8333, which is the commit that introduced the two artifacts. This correction lands as a SECOND commit on top; the successor lane re-runs them at whatever tip it inherits.",
+      "results": [
+        { "gate": "ods_prestate", "invocation": "--branch codex/email-verification-packet-b-authority-r1 --head 10b475df --tree 089c8333 --clean", "result": "ODS_PRESTATE=PASS, exit 0, with PRESTATE_BRANCH, PRESTATE_HEAD, PRESTATE_TREE and PRESTATE_CLEAN all PASS." },
+        { "gate": "ods_scope", "invocation": "--base 38dde646 --allow docs/ops/tenancy/**, where the base is git merge-base HEAD origin/integration/commercial-v1 computed EXPLICITLY rather than taken as the live tip - the two-endpoint diff makes a wrongly chosen base accuse another lane of paths it never touched.", "result": "ODS_SCOPE=PASS, exit 0. CHANGED_FILE_COUNT=2, UNAUTHORIZED_PATHS=0, PROTECTED_AUTHORITY=NONE, PROTECTED_PATH_VIOLATIONS=0, NON_CANONICAL_PROTECTED_PATHS=0." },
+        { "gate": "ods_scope STRONG NEGATIVE", "invocation": "the same base with a deliberately wrong allowlist, --allow db/migrations/**", "result": "ODS_SCOPE=FAIL, exit 1, UNAUTHORIZED_PATHS=2 naming both artifacts. THE GATE ADJUDICATES; the PASS above is not a vacuous run over an empty or mis-globbed change set." },
+        { "gate": "authority_seal_verify", "invocation": "no arguments", "result": "AUTHORITY_SEAL_VERIFY=PASS, exit 0. ODS_AUTHORITY_INPUT_INTEGRITY=PASS, PROTECTED_CORPUS_COUNT=9 with PROTECTED_CORPUS_INTEGRITY=PASS, TRANSITIVE_ATTESTATION_COUNT=4, NATIVE_RELATIONSHIPS=PASS. Confirms this artifact seals nothing and disturbs no sealed corpus member." },
+        { "gate": "secrets_scan", "invocation": "under the resolution-only loader hook described in MEASUREMENT_LIMITS.scan_secrets_note, run AFTER the artifacts were committed so the git-tree scan actually sees them", "result": "PASS, exit 0: CURRENT_TREE, no credential material found." }
+      ]
+    },
     "performed": [
       { "check": "JSON well-formedness and schema conformance", "how": "node JSON.parse of both artifacts; the companion manifest additionally validated field by field against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json including additionalProperties false, the required set, the control definition and the closed exit_gates enum.", "result": "PASS" },
       { "check": "Authority collision", "how": "Both target paths tested for existence at AS_OF_TREE, plus git ls-files greps for packet_b and packet-b and for email-verification artifacts across the whole index.", "result": "PASS - both ABSENT, zero prior Packet B artifact anywhere. No STOP_FOR_AUTHORITY_COLLISION." },
@@ -861,14 +888,13 @@
       { "check": "Prohibitions completeness", "how": "Each of the twelve X-B prohibitions traced to at least one negative or mutation control in the companion manifest.", "result": "PASS" }
     ],
     "NOT_PERFORMED_AND_WHY": [
-      { "gate": "pnpm ods:prestate", "status": "NOT_RUN", "reason": "tsx unavailable, no node_modules, install forbidden. ATTEMPTED and failed with ELIFECYCLE exit 1.", "substituted_by": "Branch, HEAD, tree and cleanliness measured directly with git rev-parse and git status --porcelain --untracked-files=all, and recorded in the AS_OF fields." },
-      { "gate": "pnpm authority:seal:verify", "status": "NOT_RUN", "reason": "same", "substituted_by": "Nothing equivalent. This artifact is NEW and seals nothing, but the gate is still owed." },
-      { "gate": "pnpm ods:scope", "status": "NOT_RUN", "reason": "same", "substituted_by": "The diff is docs-only by construction: exactly two new files under docs/ops/tenancy/, zero modifications, verified with git status --porcelain --untracked-files=all." },
-      { "gate": "pnpm ods:poststate", "status": "NOT_RUN", "reason": "same", "substituted_by": "Nothing equivalent." },
-      { "gate": "pnpm ops:test-diff", "status": "NOT_RUN", "reason": "same", "substituted_by": "known_conditions is an empty array in the companion manifest, an explicit empty set rather than an unverified guess. The skill requires ops:test-diff to pick condition ids; since it cannot run, NO condition id is claimed." },
-      { "gate": "pnpm ops:program-state", "status": "NOT_RUN", "reason": "same", "substituted_by": "The single dependency whose status matters, Packet A integrated, was verified by git ancestry and by reading the executable contract, which is stronger evidence than a status field." }
+      { "gate": "typecheck", "status": "NOT_RUN", "reason": "tsc --noEmit requires node_modules/typescript. Irreducibly blocked; install forbidden by the lane.", "substituted_by": "Nothing equivalent. This lane writes no TypeScript, so the gate has no subject in this diff - but it is still owed by the implementation lane, which does." },
+      { "gate": "targeted_tests", "status": "NOT_RUN", "reason": "vitest run requires node_modules. Irreducibly blocked.", "substituted_by": "Nothing, and nothing should be: COLLECTED greater than zero belongs to the implementation lane. This lane produces a test CONTRACT, not tests, and a manifest that claimed a test result would be claiming a result for tests that do not exist." },
+      { "gate": "ods_poststate", "status": "NOT_RUN", "reason": "Blocked THROUGH typecheck, not in its own right. Its step list is a function of the flags: invoked without --test and without --clean it declares typecheck, secrets-scan, authority-seal-verify and ods-scope, three of which were run directly and passed above.", "substituted_by": "Three of the four steps that a flagless invocation would declare are individually discharged above. That is a partial discharge and is NOT reported as ODS_POSTSTATE=PASS." },
+      { "gate": "ops:test-diff", "status": "NOT_APPLICABLE, NOT MERELY UNRUN", "reason": "The gate RUNS - it exits with ODS_TEST_DIFF=USAGE_ERROR asking for --base and --head, which are refs or test-run capture files. This lane produced no test run, so there is nothing to diff.", "substituted_by": "known_conditions is an EMPTY ARRAY in the companion manifest: an explicit, honest empty set. No condition id is claimed from memory, which is what the skill forbids." },
+      { "gate": "ops:program-state", "status": "RUN, AND IT CARRIES NONE OF THIS NODE DEPENDENCIES", "reason": "The gate runs and reports correctly - probed against the registered unit W2-B5 it returned ODS_PROGRAM_STATE=REPORTED, exit 0, with a full AUTHORITY/IMPLEMENTATION/AUDIT/INTEGRATION breakdown. But docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json contains EXACTLY FIVE units - W2-B1 through W2-B5 - and NONE of this node's five declared dependencies is among them. They are tenancy authority artifacts, not registered program-state units, so the gate cannot measure them by construction.", "substituted_by": "The one dependency whose satisfaction actually gates this node, Packet A integration, was verified by git ancestry - cf0fbd7d is an ancestor of BASE - and by reading its contract in executable form at lib/auth/session.ts:177-249. That is stronger evidence than a registry status field, and it is the evidence P-B-10 records." }
     ],
-    "owed_to_the_successor": "The implementation lane MUST run the full gate set. This artifact does not discharge any of it and must not be read as having done so."
+    "owed_to_the_successor": "The implementation lane MUST run typecheck, targeted_tests and ods_poststate, and MUST re-run the four gates discharged here at whatever tip it inherits. Four gates passing on a docs-only diff at 10b475df says nothing about a diff that touches application code."
   },
 
   "OPEN_FINDINGS": [
@@ -924,11 +950,12 @@
     },
     {
       "id": "F-IA-7",
-      "finding": "No machine gate could be run in this worktree: every ODS and authority gate is a tsx entry point and node_modules is absent while installation is forbidden.",
-      "severity": "MEDIUM",
+      "finding": "node_modules is absent and installation is forbidden, so typecheck, targeted tests and ods_poststate cannot run in this worktree. The other four gates CAN and DID run directly under node --experimental-strip-types.",
+      "severity": "LOW",
       "owner": "IMPLEMENTATION_LANE",
       "BLOCKS_THIS_NODE": false,
-      "disposition": "Recorded as NOT_RUN with substitutions named. The successor lane owes the full gate set. A prior operational note claiming ODS gates run without node_modules is CORRECTED by this measurement."
+      "disposition": "prestate, scope (with a strong negative), authority-seal-verify and secrets-scan all PASS at 10b475df. typecheck, targeted_tests and poststate are NOT_RUN with the reason recorded. Downgraded from MEDIUM after measurement.",
+      "process_finding_worth_more_than_the_technical_one": "R1 of this artifact recorded ALL gates as unrunnable on the evidence of pnpm failing to resolve tsx, and went on to assert that a prior operational note saying otherwise was FALSE. The runner failing is not the gate failing. A negative capability claim - X cannot be done here - deserves the same standard of evidence as a positive one, and this one did not get it until the artifact was re-read against the note it was contradicting. See MEASUREMENT_LIMITS.correction_of_this_mission_own_first_conclusion."
     },
     {
       "id": "F-IA-8",
@@ -947,7 +974,8 @@
     "SC-4": "Hosted provider state is HOSTED_UNKNOWN. No hosted claim is made anywhere in this artifact.",
     "SC-5": "The Packet A ROUTING_CONTRACT and NO_AUTO_SELECTION are preserved for verified subjects, and the preservation is asserted by controls P-B-2 through P-B-6 rather than by prose.",
     "SC-6": "The future surface is closed: nine implementation entries, six mechanically forced test anchors, two new test files, one test extension, three ENV_ONLY entries, and an explicit OUT_OF_SCOPE list.",
-    "SC-7": "Machine gates are recorded as NOT_RUN with the reason and the substitutions. No gate is reported as PASS that did not run.",
+    "SC-7": "Four machine gates were RUN and PASSED at 10b475df, including a strong negative that proves ods_scope adjudicates rather than passing vacuously. Three - typecheck, targeted_tests, ods_poststate - are recorded NOT_RUN with the reason. No gate is reported as PASS that did not run, and no gate is reported as unrunnable on the evidence of its runner alone.",
+    "SC-7b": "This artifact records a correction to its OWN first conclusion rather than overwriting it. R1 asserted every gate was unrunnable and that a prior operational note to the contrary was false; both claims are withdrawn in MEASUREMENT_LIMITS and F-IA-7, with the reasoning error named.",
     "SC-8": "The refusal is unaudited, and the database reason for that is measured, the 0067 policy enumerates exactly two org-less verbs, rather than asserted as a scope preference.",
     "SC-9": "HT and HV are declared MISSION-SUPPLIED SHORTHAND and defined, not falsely cited as repository vocabulary.",
     "SC-10": "Nothing in this artifact opens implementation. IMPLEMENTATION_AUTHORIZED is false."
