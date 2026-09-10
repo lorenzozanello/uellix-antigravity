@@ -620,6 +620,48 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/checkpoint-b0/observation.sql',
     ],
   },
+  // HPO-ODS-W2-27 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json):
+  // the FIBDB-052 phase P1 index sub-package. TWO patterns, carried field for
+  // field from that authority's own `protected_grant` declaration — the
+  // migration family, and the journal wrapper family a migration necessarily
+  // drags with it because the generator stamps BASELINE_UNITS.length into the
+  // header of EVERY wrapper, so appending one baseline unit rewrites all of
+  // them.
+  //
+  // TWO PATTERNS, NOT THREE. The predecessor W2-26 directly above carries a
+  // THIRD pattern, the literal db/prepared/checkpoint-b0/observation.sql. It
+  // is DELIBERATELY ABSENT here. v1.0.30 CHECKPOINT_B0_EXCLUSION measured that
+  // probe to be index-insensitive — it reads no pg_index/pg_indexes, and both
+  // of its pg_class sites filter relkind to tables/partitions/views, excluding
+  // index relkinds — so P1 does not move it and the authority's condition for
+  // inclusion ("proves that it does", not "might") is not met. Copying the
+  // predecessor's grant shape is the most likely way this registration would
+  // have silently widened the protected surface while looking like
+  // precedent-following.
+  //
+  // NOT db/prepared/**. The DEFAULT protected pattern above is the broad
+  // db/prepared/**, but the breadth of the PROTECTION is not a licence for
+  // breadth in the GRANT: a blanket pattern would additionally authorize
+  // db/prepared/hosted/** and db/prepared/hosted/governed/**, which are
+  // G2-gated apply surfaces P1 has no business touching. A sibling under
+  // db/prepared/ that matches the default pattern but not this narrower one is
+  // correctly refused.
+  //
+  // W2-01, W2-07, W2-16, W2-20, W2-21 and W2-25 carry the same migration
+  // and/or journal families, and W2-26 carries them too, but every one of them
+  // is bound to a DIFFERENT branch and resolution is by exact branch equality
+  // — so on codex/fibdb052-p1-implementation-r1 all of them contribute zero
+  // patterns and none can stand in for this row.
+  //
+  // DECLARED BY v1.0.30, REGISTERED HERE. Declaring a grant and registering it
+  // are separate governed acts on separate surfaces. The P1 implementation
+  // mission is PROHIBITED from performing this one for itself: a node that
+  // registers the grant it is about to rely on has authorized its own diff.
+  {
+    authorityId: 'HPO-ODS-W2-27',
+    branch: 'codex/fibdb052-p1-implementation-r1',
+    patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+  },
 ]
 
 export interface ProtectedGrantResolution {
