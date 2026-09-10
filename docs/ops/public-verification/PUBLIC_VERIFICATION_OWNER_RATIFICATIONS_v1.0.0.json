@@ -1,0 +1,215 @@
+{
+  "package_id": "PUBLIC_VERIFICATION_OWNER_RATIFICATIONS",
+  "version": "1.0.0",
+  "artifact_id": "PUBLIC_VERIFICATION_OWNER_RATIFICATIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "hpo_mission_id": "OWNER-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-10",
+  "materialized_at_base": {
+    "branch": "codex/owner-ratifications-materialization-r1",
+    "base_head": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+    "base_tree": "97006bebd7e496135967d05d59b01e798cdc7394"
+  },
+
+  "provenance_classification": "OWNER_RATIFIED_PRIOR_TO_THIS_MATERIALIZATION_LANE. The binding decisions HPO-PVRI-01 through HPO-PVRI-20 below (ids recorded here as PVRI-01..PVRI-20) were ratified by the product/mission owner in prior sessions whose raw transcripts are not repository artifacts and are not reproduced or claimed as available here. THIS FILE IS NOT A VERBATIM TRANSCRIPT of any prior chat, and it is not a new adjudication. It is a canonical normalized ratification record produced by Lane AM (OWNER-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1) so that successor lanes can cite a stable repository artifact instead of re-deriving, re-litigating, or informally re-summarizing decisions already made by the owner.",
+
+  "purpose": "Machine-citable, normalized ledger of product-owner ratifications PVRI-01..PVRI-20 governing the future Public Verification / Report Integrity capability. Records WHAT was ratified and its provenance classification, not whether or how it is implemented. It grants no schema, no migration ordinal, no ODS/HPO grant id, and no executable authority. A future Public Verification authority/implementation lane cites this file's ratification ids instead of re-deriving or re-opening the underlying decisions.",
+
+  "precedence_note": "This file is canonical for product-owner intent on Public Verification / Report Integrity only. It does NOT override executable FIB/ODS/database/security authority, and it does NOT itself authorize hosted apply, production deployment, release, schema, migration, or ODS allocation (including no allocation of FIBDB-053 or any Wave4 identifier). Where a ratification here has no corresponding executable authority yet, that is an open implementation gap for a future governed lane, not a contradiction to resolve here.",
+
+  "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen or re-adjudicate PVRI-01 through PVRI-20. Do not re-litigate any decision below unless repository evidence proves an actual contradiction requiring escalation; absence of implementation is not a contradiction. A conflict between this record and active executable authority fails closed (STOP_FOR_AUTHORITY_CONFLICT), it is not silently resolved in either direction.",
+
+  "doctrine_preserved": [
+    "No anonymous SELECT on live tenant tables. Use a safe snapshot/disclosure read model.",
+    "Old CAP-02 / stella_0007 (docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md, db/prepared/stella_0007_public_verification_capability.sql) is classified RETIRED_DO_NOT_APPLY by this ratification, superseded by the locator/digest model in PVRI-05..PVRI-08. See superseded_authority_references.CAP_02_STELLA_0007 below for the precise measured status and the nuance between that classification and the file's own current header text.",
+    "Locator and digest remain permanently distinct identifiers (PVRI-05).",
+    "Human/security/legal review requirements remain binding — see required_independent_reviews below.",
+    "Owner ratification does NOT authorize hosted apply, production deployment, release, or unrelated migration allocation."
+  ],
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 20,
+    "expected_id_set": [
+      "PVRI-01", "PVRI-02", "PVRI-03", "PVRI-04", "PVRI-05", "PVRI-06", "PVRI-07", "PVRI-08", "PVRI-09", "PVRI-10",
+      "PVRI-11", "PVRI-12", "PVRI-13", "PVRI-14", "PVRI-15", "PVRI-16", "PVRI-17", "PVRI-18", "PVRI-19", "PVRI-20"
+    ],
+    "checks": [
+      "ratifications.length == 20",
+      "every id in ratifications is unique (no duplicate id values)",
+      "the set of ids in ratifications, compared as sets, equals expected_id_set exactly (no missing id, no extra id)",
+      "no PVRI-21 or any other id beyond expected_id_set is present"
+    ]
+  },
+
+  "required_independent_reviews": {
+    "note": "Owner-flagged decisions requiring independent security review before release. Flagging is itself part of the ratification and is not satisfied by this materialization.",
+    "flagged_ids": ["PVRI-10"],
+    "rationale": {
+      "PVRI-10": "The deliberate fail-open behavior of the minimal public-core page under shared-limiter failure (bounded degraded in-process limiter) is explicitly required by the owner ratification to undergo independent security review before release; PDF/public_document delivery fails closed (503) and is not subject to this flag."
+    }
+  },
+
+  "superseded_authority_references": {
+    "CAP_02_STELLA_0007": {
+      "path": "docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md",
+      "package_ref": "db/prepared/stella_0007_public_verification_capability.sql (rollback: db/prepared/stella_0007_rollback.sql)",
+      "measured_state_at_materialization": "The file's own header, verbatim, reads 'Estado: DISEÑO. No aplicado. No habilitado.' (design status; not applied; not enabled) as of repository HEAD (88d95c65). The literal string 'RETIRED_DO_NOT_APPLY' does not appear anywhere against stella_0007 in the repository; that exact literal is used elsewhere only for stella_0002, stella_0002b, and stella_hosted_0008 (e.g. docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md, db/prepared/README.md, db/migrations/0044_fib_audit_hardening_supersession.sql).",
+      "classification": "SUPERSEDED",
+      "note": "This ratification is what establishes CAP-02/stella_0007 as RETIRED_DO_NOT_APPLY going forward: its hash-as-bearer-token model (verification_hash on sroi_reports, [hash] route segment) is materially superseded by the PVRI-05..PVRI-08 locator/digest model (separate CSPRNG locator, RFC 8785/JCS canonical integrity digest, permanently distinct identifiers). CAP-02's own document is NOT edited, rewritten, or annotated by this materialization lane — editing historical design evidence is out of scope (see DOCTRINE TO PRESERVE / fail-closed rules). A future Public Verification authority lane must supersede CAP-02/stella_0007 explicitly rather than resurrect its design, consistent with the already-ratified RI-01 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json ('Do NOT resurrect obsolete report/hash/RPC designs merely because they appeared in prior packets')."
+    }
+  },
+
+  "explicit_non_authorizations": [
+    "This artifact does not implement, scaffold, or scope any Public Verification application code, route, RPC, or API.",
+    "This artifact does not allocate any ODS grant id, HPO mission id (beyond the materialization lane itself), protected grant, or migration ordinal — including no allocation of a FIBDB-053 package number and no allocation of any Wave4 identifier for PVRI-16/PVRI-17 below.",
+    "This artifact does not create, alter, revoke, or authorize any database schema, table, RPC, or migration, including no mutation of db/prepared/stella_0007_public_verification_capability.sql.",
+    "This artifact does not authorize hosted apply, staging apply, or production deployment of anything Public-Verification-related.",
+    "This artifact does not resolve the PVRI-10 flagged item; it records that it requires independent security review before release.",
+    "This artifact does not edit, annotate, or rewrite docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md or any db/prepared/stella_0007_*.sql file."
+  ],
+
+  "ratifications": [
+    {
+      "id": "PVRI-01",
+      "domain": "PUBLIC_VERIFICATION_RESPONSE_STATES",
+      "statement": "SUPERSEDED is a derived response state, not a disclosure_state value.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no locator, disclosure_state, or SUPERSEDED response-state model exists in the repository at HEAD; CAP-02/stella_0007 has no versioning or supersession concept at all (see superseded_authority_references.CAP_02_STELLA_0007)."
+    },
+    {
+      "id": "PVRI-02",
+      "domain": "PUBLIC_VERIFICATION_RESPONSE_STATES",
+      "statement": "A superseded locator returns the named version's complete safe public core. Successor identity/link is disclosed only when the successor is active and eligible for public disclosure.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no versioned-report/successor-linking model exists in the repository at HEAD."
+    },
+    {
+      "id": "PVRI-03",
+      "domain": "PUBLIC_VERIFICATION_RESPONSE_STATES",
+      "statement": "REVOKED returns only revoked status and revocation date. No substantive report content is returned.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_CONSISTENT_AT_DESIGN_LEVEL_ONLY — CAP-02's unapplied design already models revocation via report_public_disclosures.revoked_at (revoked disclosures return zero rows, collapsed into the endpoint's generic 404, not a distinct REVOKED status/body). This ratification requires a distinct REVOKED response shape (status + revocation date, explicitly separated from NOT_FOUND per PVRI-04), which is NOT present in CAP-02's design and is NOT implemented anywhere at HEAD."
+    },
+    {
+      "id": "PVRI-04",
+      "domain": "PUBLIC_VERIFICATION_RESPONSE_STATES",
+      "statement": "NOT_FOUND must collapse the observable response semantics for: unknown locator, not_disclosed, absent, ineligible, and other non-public cases, using the same status/body/public cache semantics. Literal constant-time processing must not be promised. Malformed tokens may reject before DB access. A useful timing oracle must not be deliberately introduced.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_CONSISTENT_AT_DESIGN_LEVEL_ONLY — CAP-02's verify_report RPC already collapses 'hash inexistente, reporte sin disclosure, disclosure revocada, borrador con disclosure' into one indistinguishable empty result set by construction of its JOIN (docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md section 4.1), and explicitly records the residual timing risk as RR-CAP-02-E (result is indistinguishable by construction; latency is not equalized or measured). This is consistent in spirit with PVRI-04's no-timing-oracle framing but predates and does not implement PVRI-04's REVOKED/NOT_FOUND split from PVRI-03, and no malformed-token pre-DB-access rejection is specified in CAP-02 beyond basic shape validation (section 7)."
+    },
+    {
+      "id": "PVRI-05",
+      "domain": "PUBLIC_VERIFICATION_IDENTIFIERS",
+      "statement": "Public locator and integrity/content digest are permanently independent identifiers.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — CAP-02/stella_0007 uses a single identifier (verification_hash) as both lookup token and implicit content reference; no separate locator/digest pair exists in the repository at HEAD. This ratification supersedes that single-identifier model."
+    },
+    {
+      "id": "PVRI-06",
+      "domain": "PUBLIC_VERIFICATION_INTEGRITY_DIGEST",
+      "statement": "Integrity digest uses a governed explicit allow-list projection, RFC 8785/JCS canonicalization, UTF-8, SHA-256 lower-case hexadecimal. Numeric quantities in the canonical projection use canonical decimal-string semantics where defined by the projection. Ordering must be explicit. At least three test vectors must be frozen.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no JCS/RFC 8785 canonicalization, allow-list projection, or SHA-256 integrity digest mechanism exists in the repository at HEAD; this ratification is a forward specification with no frozen test vectors materialized yet (frozen test vectors are not authored by this docs-only materialization lane)."
+    },
+    {
+      "id": "PVRI-07",
+      "domain": "PUBLIC_VERIFICATION_IDENTIFIERS",
+      "statement": "Locator is a 160-bit CSPRNG value, Crockford Base32 encoded, 32 uppercase canonical characters, with case-insensitive input normalization.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — CAP-02/stella_0007's verification_hash is a varchar(255) hash value, not a 160-bit CSPRNG Crockford-Base32 locator; no locator generation mechanism exists in the repository at HEAD."
+    },
+    {
+      "id": "PVRI-08",
+      "domain": "PUBLIC_VERIFICATION_IDENTIFIERS",
+      "statement": "Locator is immutable. Revocation kills that locator permanently. Any later reactivation/publication requires a new locator.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no locator lifecycle/immutability mechanism exists in the repository at HEAD; CAP-02's disclosure can be reinstated (report.disclosure.reinstated audit event, section 10) which is a different lifecycle than 'revocation kills the locator permanently, new publication needs a new locator' and would require rework under this ratification."
+    },
+    {
+      "id": "PVRI-09",
+      "domain": "PUBLIC_VERIFICATION_RATE_LIMITING",
+      "statement": "Rate limiting uses multiple dimensions, including a mandatory distinct-locator-per-IP counter. Any numeric thresholds proposed in the authority are INITIAL V1 DEFAULTS in governed/versioned operational configuration, not immutable product constants.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_CONSISTENT_AT_DESIGN_LEVEL_ONLY — CAP-02's design already proposes per-IP and global rate limits on /verify/* (docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md section 9: 30/min per IP, 600/min global), framed there as 'proposed' values, but it has no distinct-locator-per-IP counter dimension (it has no locator concept at all — see PVRI-05/PVRI-07) and is unapplied/unenabled at HEAD, so no rate limiting is live."
+    },
+    {
+      "id": "PVRI-10",
+      "domain": "PUBLIC_VERIFICATION_RATE_LIMITING",
+      "statement": "On shared limiter failure, the minimal public core page may deliberately fail open only to a bounded degraded in-process limiter. PDF/public_document delivery fails closed with 503. This deliberate fail-open requires independent security review before release.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no shared/degraded limiter tiering exists in the repository at HEAD. See required_independent_reviews above; this ratification's fail-open behavior is not to be implemented or released without the flagged review."
+    },
+    {
+      "id": "PVRI-11",
+      "domain": "PUBLIC_VERIFICATION_ROUTES_AND_UX",
+      "statement": "Implement a canonical /verify entry route with one locator field and one submit action that redirects to the canonical locator route.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no /verify entry route with a locator-submission form exists in the repository at HEAD; only app/(public)/verify/[hash]/page.tsx (direct hash-in-path access) and app/(public)/verify/[hash]/pdf/route.ts exist."
+    },
+    {
+      "id": "PVRI-12",
+      "domain": "PUBLIC_VERIFICATION_ROUTES_AND_UX",
+      "statement": "Rename the route semantic from [hash] to [locator]. No legacy redirect is required.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — the live route segment at HEAD is literally app/(public)/verify/[hash]/... ; renaming to [locator] is application-code work explicitly out of scope for this DOCS_ONLY materialization lane and is left to a future implementation lane."
+    },
+    {
+      "id": "PVRI-13",
+      "domain": "PUBLIC_VERIFICATION_ROUTES_AND_UX",
+      "statement": "Public verification surfaces require robots/noindex controls consistent with the authority's anti-indexing posture.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "FUTURE_MEASUREMENT_REQUIRED — whether app/(public)/verify/** currently emits noindex/robots controls was not re-measured by this docs-only materialization lane; not asserted here either way."
+    },
+    {
+      "id": "PVRI-14",
+      "domain": "PUBLIC_VERIFICATION_CACHING",
+      "statement": "VALID and SUPERSEDED use the same HTTP cache policy per representation. REVOKED and NOT_FOUND must be strict no-store/no-cache. Maximum cached VALID-core revocation lag is 60 seconds. Contradictory cache-header prose must be removed or avoided.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no HTTP cache-policy differentiation by response state exists in the repository at HEAD for the /verify surface; CAP-02's design does not specify cache headers at all."
+    },
+    {
+      "id": "PVRI-15",
+      "domain": "PUBLIC_VERIFICATION_CACHING",
+      "statement": "The internal rendered-artifact cache key must bind at minimum: content digest, representation kind, and renderer/version identity. Locator/disclosure identity is added only when it affects rendered bytes. This internal artifact cache must not be conflated with HTTP authorization/cache semantics.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no internal rendered-artifact cache exists for public verification content in the repository at HEAD."
+    },
+    {
+      "id": "PVRI-16",
+      "domain": "PUBLIC_VERIFICATION_FIBDB053_AUTHORING",
+      "statement": "The FIBDB-053 AUTHORING lane is authorized, with precommitted G2 acceptance criteria. This does NOT authorize hosted/staging apply, and it does not automatically unblock downstream FIBIU units whose dependencies remain unmet.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no FIBDB-053 artifact exists anywhere in the repository at HEAD (confirmed by exact-pattern search of docs/**); this ratification authorizes a FUTURE governed authoring lane to allocate and author FIBDB-053. Per this materialization lane's DOCS_ONLY hard boundary (no ODS allocation, no protected grant, no migration ordinal), THIS artifact does not itself allocate FIBDB-053, assign it a package number, or author its G2 acceptance criteria — it only records that the owner has ratified opening that lane. The nearest existing precedent for the target artifact shape is docs/ops/wave3/FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json and its companion FIBDB052_P1_TEST_MANIFEST_v1.0.0.json."
+    },
+    {
+      "id": "PVRI-17",
+      "domain": "PUBLIC_VERIFICATION_WAVE4_FIBIU",
+      "statement": "Materialize one Wave4 authority artifact governing FIBIU21 through FIBIU25. Do not create five unrelated competing policy authorities.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no docs/ops/wave4/ directory and no FIBIU21..FIBIU25 identifier exists anywhere in the repository at HEAD (confirmed by exact-pattern search); Wave1/Wave2/Wave3 exist as closed prior waves (see docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json for the target Wave-authority shape) but no Wave4 has been opened. Per this materialization lane's DOCS_ONLY hard boundary (no ODS allocation, no speculative future migration ordinal), THIS artifact does not itself create docs/ops/wave4/ or allocate a Wave4 authority document — it records that the owner has ratified that exactly ONE consolidated Wave4 authority artifact (not five separate ones) must govern FIBIU21-25 when a future governed lane opens it."
+    },
+    {
+      "id": "PVRI-18",
+      "domain": "PUBLIC_VERIFICATION_WAVE4_FIBIU",
+      "statement": "Prioritize FIBIU23 within the future Wave4 authority.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_APPLICABLE_YET — governs internal sequencing of a Wave4 authority that does not yet exist (see PVRI-17); binding on whichever future governed lane authors it."
+    },
+    {
+      "id": "PVRI-19",
+      "domain": "PUBLIC_VERIFICATION_DATA_EXPOSURE",
+      "statement": "Public locator values are prohibited from broad audit payloads. This requires column/field-level exclusion and a test proving the exclusion.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_APPLICABLE_YET — no locator concept exists yet (see PVRI-05/PVRI-07), so there is no locator column to exclude from audit payloads today. CAP-02's own before_json/after_json-style audit design (docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md section 10) already stores public_summary only as a SHA-256 digest+length rather than verbatim text, which is a directionally consistent minimization precedent this ratification's future locator-exclusion test should follow, but it does not by itself satisfy PVRI-19 (which is locator-specific and not yet implementable)."
+    },
+    {
+      "id": "PVRI-20",
+      "domain": "PUBLIC_VERIFICATION_DATA_EXPOSURE",
+      "statement": "The anonymous/public read model must use an explicit allow-list projection that excludes tenant/internal fields by construction.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "PARTIALLY_CONSISTENT_AT_DESIGN_LEVEL_ONLY — CAP-02/stella_0007's verify_report RPC already returns a fixed, explicit column list (11 named scalars, each behind a per-field show_* boolean CASE WHEN) rather than SELECT *, and its SECURITY DEFINER role has zero grants on evidence_items, sroi_report_sections, projects, organization_members, stella_interactions, or methodology_review_matrix (docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md sections 4.1 and 5). This is a real, applied-in-design allow-list precedent. It is unapplied at HEAD (see superseded_authority_references.CAP_02_STELLA_0007) and is scoped to the hash/report model being superseded by PVRI-05..PVRI-08, so a future PVRI-20-compliant read model must be re-authored against the locator/digest model, not merely re-enabled as-is."
+    }
+  ]
+}

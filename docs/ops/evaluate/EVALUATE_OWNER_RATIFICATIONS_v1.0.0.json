@@ -1,0 +1,184 @@
+{
+  "package_id": "EVALUATE_OWNER_RATIFICATIONS",
+  "version": "1.0.0",
+  "artifact_id": "EVALUATE_OWNER_RATIFICATIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "hpo_mission_id": "OWNER-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-10",
+  "materialized_at_base": {
+    "branch": "codex/owner-ratifications-materialization-r1",
+    "base_head": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+    "base_tree": "97006bebd7e496135967d05d59b01e798cdc7394"
+  },
+
+  "provenance_classification": "OWNER_RATIFIED_PRIOR_TO_THIS_MATERIALIZATION_LANE. The binding decisions HD-01 through HD-16 below were ratified by the product/mission owner in prior sessions whose raw transcripts are not repository artifacts and are not reproduced or claimed as available here. THIS FILE IS NOT A VERBATIM TRANSCRIPT of any prior chat, and it is not a new adjudication. It is a canonical normalized ratification record produced by Lane AM (OWNER-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1) so that successor lanes can cite a stable repository artifact instead of re-deriving, re-litigating, or informally re-summarizing decisions already made by the owner.",
+
+  "purpose": "Machine-citable, normalized ledger of product-owner ratifications HD-01..HD-16 governing the future Evaluate capability. Records WHAT was ratified and its provenance classification, not whether or how it is implemented. It grants no schema, no migration ordinal, no ODS/HPO grant id, and no executable authority. A future Evaluate authority/implementation lane cites this file's ratification ids instead of re-deriving or re-opening the underlying decisions.",
+
+  "precedence_note": "This file is canonical for product-owner intent on Evaluate only. It does NOT override executable FIB/ODS/database/security authority, and it does NOT itself authorize hosted apply, production deployment, release, schema, migration, or ODS allocation. Where a ratification here has no corresponding executable authority yet, that is an open implementation gap for a future governed lane, not a contradiction to resolve here.",
+
+  "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen or re-adjudicate HD-01 through HD-16. Do not re-litigate any decision below unless repository evidence proves an actual contradiction requiring escalation; absence of implementation is not a contradiction. A conflict between this record and active executable authority fails closed (STOP_FOR_AUTHORITY_CONFLICT), it is not silently resolved in either direction.",
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 16,
+    "expected_id_set": [
+      "HD-01", "HD-02", "HD-03", "HD-04", "HD-05", "HD-06", "HD-07", "HD-08",
+      "HD-09", "HD-10", "HD-11", "HD-12", "HD-13", "HD-14", "HD-15", "HD-16"
+    ],
+    "checks": [
+      "ratifications.length == 16",
+      "every id in ratifications is unique (no duplicate id values)",
+      "the set of ids in ratifications, compared as sets, equals expected_id_set exactly (no missing id, no extra id)",
+      "no HD-17 or any other id beyond expected_id_set is present"
+    ]
+  },
+
+  "required_independent_reviews": {
+    "note": "Owner-flagged decisions requiring independent security/legal/operator-boundary review before or alongside any implementation lane that relies on them. Flagging is itself part of the ratification and is not satisfied by this materialization.",
+    "flagged_ids": ["HD-05", "HD-09", "HD-10", "HD-12"],
+    "rationale": {
+      "HD-05": "Defines the decision-role boundary (organization_admin / impact_manager) and explicitly forbids any '+' hierarchy notation from implicitly admitting super_admin — a security/role-boundary decision.",
+      "HD-09": "Splits draft-vs-publish authority for templates (impact_manager may draft; organization_admin must publish/retire) — an operator/role-boundary decision.",
+      "HD-10": "Confines Evaluate templates to organization scope only — a tenancy-boundary decision with security implications if violated.",
+      "HD-12": "Prohibits platform superadmin bypass for all Evaluate tenant content and routes any platform support access through a separately authorized bounded support capability — a security/operator-boundary decision directly analogous to ratified MO-07/MO-09 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json."
+    }
+  },
+
+  "superseded_authority_references": {
+    "PR106": {
+      "description": "GitHub PR #106, 'docs(evaluate): Evaluate V1 executable authority + test manifest (R3)', base=integration/commercial-v1, head=codex/evaluate-v1-authority-materialization-r1.",
+      "measured_state_at_materialization": "OPEN, UNMERGED (mergedAt: null) as measured via `gh pr view 106` on 2026-09-10 during this materialization mission. No repository-local artifact under docs/** references PR106 by number; it exists only as a live, unmerged GitHub pull request on a separate branch, not as committed content in this lineage.",
+      "classification": "SUPERSEDED",
+      "note": "Per HD-16, PR106 is superseded. The successor Evaluate authority must be a fresh authority lane opened from current live (this repository state), not an amendment performed inside PR106. This materialization record does NOT close, comment on, or otherwise mutate PR106 on GitHub — that is an explicit-permission, side-effectful GitHub action outside the DOCS_ONLY scope of this lane. Closing PR106 with a reference to this artifact is recorded as a NEXT AUTHORIZED ACTION candidate, not performed here."
+    }
+  },
+
+  "explicit_non_authorizations": [
+    "This artifact does not implement, scaffold, or scope any Evaluate application code, route, component, or API.",
+    "This artifact does not allocate any ODS grant id, HPO mission id (beyond the materialization lane itself), protected grant, or migration ordinal for Evaluate.",
+    "This artifact does not create, alter, or authorize any database schema, table (including no 'evaluation_results' table per HD-14), or migration.",
+    "This artifact does not authorize hosted apply, staging apply, or production deployment of anything Evaluate-related.",
+    "This artifact does not resolve the HD-05/HD-09/HD-10/HD-12 flagged items; it records that they require independent review before/alongside implementation.",
+    "This artifact does not close, edit, or comment on GitHub PR #106."
+  ],
+
+  "ratifications": [
+    {
+      "id": "HD-01",
+      "domain": "EVALUATE_DECISION_ENGINE",
+      "statement": "The recommended Evaluate result is deterministic SYSTEM output derived from the deterministic Score plus an immutable/versioned DecisionPolicy. Stella may provide rationale/analysis only and may not choose the authoritative recommendation.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate module, DecisionPolicy, or recommendation engine exists under app/app or lib at repository HEAD (88d95c65). This ratification binds a future Evaluate authority, not present code. Consistent with EV-02/EV-03 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json, which record the same Stella-may-not-decide boundary at DOCTRINE_LEVEL."
+    },
+    {
+      "id": "HD-02",
+      "domain": "EVALUATE_DECISION_ENGINE",
+      "statement": "When the denominator is zero or all applicable items are N/A, the Evaluate result is SCORE_NOT_COMPUTABLE. This is a fail-closed transition reason and blocks a decision.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no SCORE_NOT_COMPUTABLE state or equivalent fail-closed arithmetic guard exists in the repository at HEAD; string not found anywhere under docs/** or code."
+    },
+    {
+      "id": "HD-03",
+      "domain": "EVALUATE_DECISION_ENGINE",
+      "statement": "DecisionPolicy bands must be ordered, non-overlapping and exhaustive inside the immutable policy version.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no DecisionPolicy concept exists in the repository at HEAD."
+    },
+    {
+      "id": "HD-04",
+      "domain": "EVALUATE_DECISION_ENGINE",
+      "statement": "Decision outcomes are exactly: approve, approve_with_conditions, reject. No other outcome value is authorized.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no decision-outcome enum exists in the repository at HEAD."
+    },
+    {
+      "id": "HD-05",
+      "domain": "EVALUATE_DECISION_GOVERNANCE",
+      "statement": "Default decision role is organization_admin. Allowed designated decision roles are organization_admin and impact_manager. super_admin, analyst, reviewer, and viewer are forbidden as decision roles. No '+' hierarchy notation may implicitly admit super_admin.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate decision-role model exists in the repository at HEAD. See required_independent_reviews above; this decision is directly analogous to the ratified MO-07 superadmin-bypass prohibition."
+    },
+    {
+      "id": "HD-06",
+      "domain": "EVALUATE_DECISION_GOVERNANCE",
+      "statement": "Divergence is derived from the snapshotted recommended_outcome versus the decision_outcome. A rationale is mandatory when they diverge.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no recommended_outcome/decision_outcome snapshot or divergence/rationale mechanism exists in the repository at HEAD."
+    },
+    {
+      "id": "HD-07",
+      "domain": "EVALUATE_STELLA_BOUNDARY",
+      "statement": "Stella Evaluate analysis reuses the existing 'advisor' capability with pipeline_step='evaluate_analysis'. No new G2 category is created by this decision.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — lib/stella/advisor exists at HEAD as the general advisor capability; an 'evaluate_analysis' pipeline_step value does not yet exist. This ratification is a forward constraint: any future Evaluate-Stella integration must reuse advisor/pipeline_step rather than allocate a new G2 category (see docs/ops/gates/G2_PACKAGE.md and its addendum for the existing G2 category set, which this decision does not amend)."
+    },
+    {
+      "id": "HD-08",
+      "domain": "EVALUATE_LIFECYCLE",
+      "statement": "Terminal Evaluate lifecycle state is ARCHIVED. Archiving is allowed only before DECIDED and requires impact_manager or the specific separately-authorized role semantics that do NOT admit platform super_admin by hierarchy.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate lifecycle state machine exists in the repository at HEAD."
+    },
+    {
+      "id": "HD-09",
+      "domain": "EVALUATE_TEMPLATE_GOVERNANCE",
+      "statement": "impact_manager may draft an Evaluate template. Publishing or retiring a template requires organization_admin.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate template draft/publish/retire workflow exists in the repository at HEAD. See required_independent_reviews above."
+    },
+    {
+      "id": "HD-10",
+      "domain": "EVALUATE_TEMPLATE_GOVERNANCE",
+      "statement": "Evaluate templates are organization-scoped only.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate template concept exists in the repository at HEAD. See required_independent_reviews above."
+    },
+    {
+      "id": "HD-11",
+      "domain": "EVALUATE_NAVIGATION",
+      "statement": "Evaluate routes are: project evaluations, and organization templates. No new first-level navigation item is required solely by this authority.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate route tree exists under app/app at HEAD; this ratification constrains the shape of a future route tree, it does not itself add one."
+    },
+    {
+      "id": "HD-12",
+      "domain": "EVALUATE_PLATFORM_BOUNDARY",
+      "statement": "Platform superadmin bypass is prohibited for all Evaluate tenant content. Platform support may access Evaluate content only through a separately authorized bounded support capability under the operator model.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate tenant content or platform-support access path exists in the repository at HEAD. This ratification is the Evaluate-domain instance of the same superadmin-bypass prohibition already ratified generally as MO-07/MO-09 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json, where MO-07 is recorded as CONTRADICTS_PRODUCT_INTENT against current db/identity-context.ts:217 superadmin membership-check bypass logic. See required_independent_reviews above."
+    },
+    {
+      "id": "HD-13",
+      "domain": "EVALUATE_COMMERCIAL_SCOPE",
+      "statement": "Evaluate is included in Commercial V1. The future capability key evaluate.v1 is reserved. The key itself is not authority to implement a new entitlement system.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — the capability key 'evaluate.v1' does not exist anywhere in lib/capabilities or elsewhere in the repository at HEAD; this ratification reserves the key without allocating an entitlement mechanism."
+    },
+    {
+      "id": "HD-14",
+      "domain": "EVALUATE_ARTIFACT_AND_DEPENDENCY_SCOPE",
+      "statement": "Evaluate V1 uses the in-app read model only. No Evaluate PDF/report/public-verification artifact, and no table named evaluation_results, is authorized by this decision.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no evaluation_results table or Evaluate PDF/report/public-verification artifact exists in the repository at HEAD (confirmed by targeted search of db/schema.ts, db/baseline, and db/prepared); this ratification is a scope ceiling on future work, not a description of present state."
+    },
+    {
+      "id": "HD-15",
+      "domain": "EVALUATE_ARTIFACT_AND_DEPENDENCY_SCOPE",
+      "statement": "Evaluate V1 does NOT use first-class stella_findings and does NOT require an approved SROI run. Therefore broad Evaluate does not depend on Wave3. A narrow run-review FIB surface may retain its independent Wave3 dependency.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "NOT_APPLICABLE_YET — governs the dependency shape of a future Evaluate authority; Wave3 (docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json and its amendments) exists in the repository at HEAD as its own closed authority domain, unrelated to Evaluate under this ratification except for the narrow run-review FIB surface carve-out, which this ratification explicitly preserves rather than resolves."
+    },
+    {
+      "id": "HD-16",
+      "domain": "EVALUATE_SUPERSESSION",
+      "statement": "PR106 is superseded. The successor Evaluate authority must be a fresh authority lane from current live, not an amendment performed inside PR106.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "implementation_status_as_of_head": "SEE superseded_authority_references.PR106 above — PR106 is measured OPEN and UNMERGED on GitHub as of this materialization; classified SUPERSEDED per this ratification, not edited or closed by this docs-only lane."
+    }
+  ]
+}

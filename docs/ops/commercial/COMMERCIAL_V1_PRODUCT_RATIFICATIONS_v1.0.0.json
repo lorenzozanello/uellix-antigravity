@@ -9,6 +9,9 @@
   "amendment_mission_id": "COMMERCIAL-V1-CA06-CA08-RATIFICATION-MATERIALIZATION-R1",
   "amendment_date": "2026-09-05",
   "amendment_note": "Adds CA-06, CA-07, CA-08 per explicit product-owner ratification (Lane AA — COMMERCIAL-ACCOUNT-PRODUCT-DECISION-ADJUDICATION-R1). All 27 pre-existing ratifications below are preserved byte-for-byte in statement/status/implementation_status_as_of_head; only self_check aggregate metadata was mechanically grown to admit the 3 new ids.",
+  "second_amendment_mission_id": "OWNER-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1",
+  "second_amendment_date": "2026-09-10",
+  "second_amendment_note": "Adds a 'materialized_by' cross-reference field to EV-01, EV-02, EV-03, and RI-01 only, pointing to the two new full-detail canonical decision ledgers this mission created (docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json for HD-01..HD-16, and docs/ops/public-verification/PUBLIC_VERIFICATION_OWNER_RATIFICATIONS_v1.0.0.json for PVRI-01..PVRI-20). All 30 ratifications below (including EV-01/EV-02/EV-03/RI-01 themselves) are preserved byte-for-byte in id/domain/statement/status/implementation_status_as_of_head; no ratification id is added, removed, or reworded, and self_check is unchanged (expected_ratification_count remains 30 — EV-01/EV-02/EV-03/RI-01 are existing framing-level doctrine rows here, not the same ledger as the new HD-*/PVRI-* ids, which live in their own dedicated files and are not added to this array).",
 
   "purpose": "Machine-citable list of product-owner ratifications for Commercial V1, extracted verbatim from the alignment-baseline mission prompt. This artifact records WHAT was ratified and by whom (product owner, this mission), not whether it is implemented. It grants no schema, no migration ordinal, no ODS/HPO id, and no executable authority. A future mission that needs one of these decisions cites this file's ratification id instead of re-deriving or re-litigating the decision.",
 
@@ -240,28 +243,32 @@
       "domain": "EVALUATE",
       "statement": "Governed N/A requires explicit state, rationale and human provenance. For Evaluate scoring, N/A is excluded from numerator AND denominator. Readiness may use a different governed-N/A arithmetic because Measure readiness and Evaluate are different domains.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate module located under app/app or lib at AS_OF_HEAD; this ratification binds a future Evaluate authority, not present code."
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED — no Evaluate module located under app/app or lib at AS_OF_HEAD; this ratification binds a future Evaluate authority, not present code.",
+      "materialized_by": "docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json (HD-01..HD-16) — that file is the full-detail canonical decision ledger; this row is preserved unchanged as framing-level doctrine."
     },
     {
       "id": "EV-02",
       "domain": "EVALUATE",
       "statement": "DecisionPolicy belongs to an immutable/versioned template policy. System recommendation is deterministic. Human decision remains decisive. Decision/recommendation divergence is explicit and auditable.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "NOT_IMPLEMENTED."
+      "implementation_status_as_of_head": "NOT_IMPLEMENTED.",
+      "materialized_by": "docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json (HD-01..HD-16) — that file is the full-detail canonical decision ledger; this row is preserved unchanged as framing-level doctrine."
     },
     {
       "id": "EV-03",
       "domain": "EVALUATE",
       "statement": "Stella may analyze, explain, suggest, draft rationale. Stella may NOT score, produce the authoritative recommendation, decide, or approve.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "DOCTRINE_LEVEL — this is the same human-control boundary already carried by 'la IA propone y analiza; el sistema controla y calcula; las personas deciden y aprueban' for Stella generally (lib/stella); its Evaluate-specific instance has no code to check yet because Evaluate is NOT_IMPLEMENTED."
+      "implementation_status_as_of_head": "DOCTRINE_LEVEL — this is the same human-control boundary already carried by 'la IA propone y analiza; el sistema controla y calcula; las personas deciden y aprueban' for Stella generally (lib/stella); its Evaluate-specific instance has no code to check yet because Evaluate is NOT_IMPLEMENTED.",
+      "materialized_by": "docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json (HD-01..HD-16) — that file is the full-detail canonical decision ledger; this row is preserved unchanged as framing-level doctrine."
     },
     {
       "id": "RI-01",
       "domain": "REPORT_INTEGRITY",
       "statement": "Do NOT resurrect obsolete report/hash/RPC designs merely because they appeared in prior packets. Current Report Integrity requires its own future authority against the live repository.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "AUTHORITY_GAP — no report_hash/report-integrity RPC located by targeted grep of app/lib/db at AS_OF_HEAD; lib/reports exists but its relationship to a live Report Integrity design is unresolved. See baseline Known Alignment Gap #3."
+      "implementation_status_as_of_head": "AUTHORITY_GAP — no report_hash/report-integrity RPC located by targeted grep of app/lib/db at AS_OF_HEAD; lib/reports exists but its relationship to a live Report Integrity design is unresolved. See baseline Known Alignment Gap #3.",
+      "materialized_by": "docs/ops/public-verification/PUBLIC_VERIFICATION_OWNER_RATIFICATIONS_v1.0.0.json (PVRI-01..PVRI-20) — that file is the full-detail canonical decision ledger and is the future authority this row already anticipates; this row is preserved unchanged as framing-level doctrine."
     },
     {
       "id": "AG-01",
