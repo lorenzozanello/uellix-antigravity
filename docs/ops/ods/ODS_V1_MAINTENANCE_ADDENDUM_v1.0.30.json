@@ -1,0 +1,522 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.30",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30",
+  "authority_class": "ODS_V1_MAINTENANCE_ADDENDUM_INSTRUCTION_ONLY",
+  "materialization_step": "AUTHORITY_ONLY",
+  "GRANT_ID": "HPO-ODS-W2-27",
+  "hpo_mission_id": "FIBDB052-P1-ODS-LINEAGE-AND-GRANT-ALLOCATION-R1",
+  "predecessor_hpo_mission_id": "CE1-ODS-V1.0.29-MINIMAL-SUCCESSOR-AUTHORITY-R1",
+  "materialization_date": "2026-09-10",
+  "supersedes": null,
+  "refines": null,
+  "succeeds": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+
+  "succeeds_note": "SUCCESSOR OF THE LINEAGE, NOT A REFINEMENT OF THE PREDECESSOR. This distinction is load-bearing and is the reason `refines` is null where v1.0.29 set it to v1.0.28. v1.0.29 refined v1.0.28 because both governed THE SAME registration act on THE SAME two paths for THE SAME grant, which is exactly the condition its GRANT_ID_REUSE_DISPOSITION names as making reuse correct. This artifact governs a DIFFERENT act, on a DIFFERENT branch, for a DIFFERENT protected-path union, so the same reasoning that made reuse correct there makes a NEW grant id correct here: two authorities competing to install one row would make the Set-cardinality control ambiguous about which id it guards. Every operative clause of v1.0.28 and v1.0.29 remains in force, unamended and unweakened, and neither is edited, reopened or reinterpreted by this artifact.",
+
+  "purpose": "Allocate the ODS lineage ordinal v1.0.30 and the protected grant HPO-ODS-W2-27 for the FIBDB-052 phase P1 index sub-package, bind that grant to the future P1 implementation branch and to exactly two protected patterns, and freeze the separate registration act, the implementation registry predicate, the post-CE1 baseline arithmetic, the re-derivation obligation on every reactive literal, and the raw-M-18 known-condition rule. It allocates nothing else, registers nothing, implements nothing, and edits no path but its own.",
+
+  "scope_note": "MINIMAL APPEND-ONLY ALLOCATION. This artifact DECLARES a grant; it does not REGISTER one. It writes exactly one file. It does not allocate a migration ordinal, does not create a migration, does not touch scripts/ods-scope.ts, does not touch the Controller, and does not implement FIBDB-052 P1.",
+
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "START_HEAD": "e7ee106dbd42eeb921d067fd675014e0a055a6dc",
+    "START_TREE": "25d1e55aad211d64c272d376dda02af72a5742b4",
+    "BRANCH": "codex/fibdb052-p1-ods-lineage-grant-allocation-r1",
+    "LATEST_INTEGRATION_HEAD": "e7ee106dbd42eeb921d067fd675014e0a055a6dc",
+    "INTERVENING_DELTA": "NONE. Measured by `git fetch origin` followed by `git rev-parse origin/integration/commercial-v1`, which resolves to e7ee106dbd42eeb921d067fd675014e0a055a6dc — byte-identical to this mission's START_HEAD and to this worktree's HEAD. `git log HEAD..origin/integration/commercial-v1` is empty and `git merge-base --is-ancestor` confirms ancestry. No stale-base reconciliation is owed.",
+    "STALE_LOCAL_REF_HAZARD_MEASURED": "The repository-local branch `integration/commercial-v1` resolves to 547ac36405c47b1be386d37ba1f387173c867252 in this worktree and is BEHIND the remote-tracking ref. Every measurement in this artifact was taken against `origin/integration/commercial-v1`, never against the local branch. A mission that measures the local ref will read a pre-CE-1 repository and will conclude, falsely, that the baseline still holds 80 units and that CE-1 is unintegrated.",
+    "remeasurement_rule": "Every count in this artifact is bound to START_HEAD e7ee106d. A mission whose base differs from e7ee106d by even one commit MUST re-measure all of them and MUST NOT inherit them. The PROTECTED_GRANTS row count, the ODS lineage ordinal and the migration ordinal are shared, globally-serialized resources that any other lane can move."
+  },
+
+  "PRESTATE_MEASURED": {
+    "measurement_method": "STRUCTURAL AND KEY-POSITIONAL, NOT TEXTUAL. Registry cardinalities are properties of the ARRAY OBJECT, obtained by anchoring on the ASSIGNMENT operator rather than on a bare bracket — anchoring on the first `[` hooks the empty pair in `ProtectedGrant[] =` and silently yields a zero-length extraction. Grant identity is resolved by KEY POSITION (`authorityId:` / `GRANT_ID:`) and never by a value-exact sweep: a value-exact sweep for HPO-ODS-W2-27 returns 22 hits across this repository at START_HEAD, and EVERY ONE of them sits in a prohibition, an absence control or explanatory prose. Counting occurrences would report the id allocated; reading key position reports it unallocated, which is what is true. Baseline cardinality was additionally corroborated by a second, independent route (the generated `Unit N/M` denominator stamped into every journal wrapper) rather than by re-reading the same array twice.",
+
+    "MIGRATION_CEILING": "0068_commercial_account_ce1.sql",
+    "MIGRATION_META_JOURNAL_MAX_IDX": 68,
+    "MIGRATION_META_JOURNAL_ENTRY_COUNT": 69,
+    "SCHEMA_SNAPSHOT_CEILING": "db/migrations/meta/0068_snapshot.json",
+
+    "BASELINE_UNITS": 81,
+    "BASELINE_UNITS_ORDINALS": "CONTIGUOUS 1..81, verified with no gap and no duplicate.",
+    "BASELINE_UNITS_CORROBORATION": "Every one of the 81 generated wrappers under db/prepared/journal/ carries the denominator 81 in its `-- GENERATED — DO NOT EDIT. Unit N/81` header, emitted by db/hosted/baseline-journal-wrapper.ts from BASELINE_UNITS.length. The distinct-denominator census over all wrappers returns exactly one value, 81. The array literal and the generated corpus agree.",
+
+    "PREPARED_JOURNAL_TOTAL": 82,
+    "PREPARED_JOURNAL_MAX_ORDINAL": "081_0068_commercial_account_ce1.sql",
+    "PREPARED_JOURNAL_RECONCILIATION": "82 files = 81 unit wrappers + db/prepared/journal/000_journal_bootstrap.sql. The bootstrap file carries the header `Unit ZERO of PHASE_BASELINE` and NO N/M denominator, which is why it is excluded from the denominator census above and why it is NOT rewritten when the manifest grows. This reconciles the apparent 82-versus-81 discrepancy that F-GV-4 recorded as unresolved at an earlier base.",
+
+    "CONTROLLER_COUNT": 40,
+    "CONTROLLER_FINAL_ITEM": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json",
+    "CONTROLLER_DUPLICATE_ENTRIES": 0,
+    "CONTROLLER_ENUMERATES_v1_0_29": true,
+    "CONTROLLER_ENUMERATES_v1_0_30": false,
+
+    "FINAL_ODS_LINEAGE": "v1.0.29",
+    "V1_0_30_ABSENCE": "CONFIRMED FIRST FREE. docs/ops/ods/ holds exactly 29 ODS_V1_MAINTENANCE_ADDENDUM files, v1.0.1 through v1.0.29 with no gap and no v1.0.30. Swept across ALL 421 named refs in this repository: ZERO refs carry any docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json blob. No other lane has consumed this ordinal. The string `1.0.30` occurs under docs/, scripts/ and tests/ only inside v1.0.29 prohibition clauses and inside the Controller's own absence-control block, never as an allocation.",
+
+    "PROTECTED_GRANTS_COUNT": 14,
+    "PROTECTED_GRANTS_IDS": [
+      "HPO-ODS-W2-01",
+      "HPO-ODS-W2-02",
+      "HPO-ODS-W2-03",
+      "HPO-ODS-W2-07",
+      "HPO-ODS-W2-08",
+      "HPO-ODS-W2-09",
+      "HPO-ODS-W2-11",
+      "HPO-ODS-W2-12",
+      "HPO-ODS-W2-16",
+      "HPO-ODS-W2-17",
+      "HPO-ODS-W2-20",
+      "HPO-ODS-W2-21",
+      "HPO-ODS-W2-25",
+      "HPO-ODS-W2-26"
+    ],
+    "PROTECTED_GRANTS_UNIQUE_IDS": 14,
+    "HIGHEST_ALLOCATED_GRANT_ID": "HPO-ODS-W2-26",
+    "W2_26_REGISTRATION_STATE": "REGISTERED. The evaluated PROTECTED_GRANTS array holds exactly one row with authorityId 'HPO-ODS-W2-26', and it is the LAST row, so its arrival was an append and not an insert. This DISCHARGES the re-measurement obligation that FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json ODS_SEQUENCING step 2 places on this mission.",
+    "W2_27_ABSENCE_AT_START_HEAD": "UNALLOCATED AND UNREGISTERED AT START_HEAD. No addendum carries GRANT_ID 'HPO-ODS-W2-27'; no PROTECTED_GRANTS row carries it at the authorityId key position; the executable absence controls in tests/ods/ods-scope.test.ts assert it absent at two sites. This artifact is the act that ALLOCATES it. It remains UNREGISTERED after this act.",
+    "W2_28_ABSENCE": "UNALLOCATED. The string 'W2-28' does not occur anywhere in the repository at START_HEAD. This artifact does not allocate it; it is named below only as the mechanically-next absence literal, which is a PROHIBITION and never an allocation.",
+
+    "ALL_PRESTATE_REQUIREMENTS_MET": true,
+    "STOP_FOR_LIVE_RECONCILIATION": "NOT TRIGGERED. Every expected fact this mission was handed was re-measured independently against origin/integration/commercial-v1 and matched: migration ceiling 0068, BASELINE_UNITS 81, journal total 82, Controller 40, final lineage v1.0.29, registered grants 14, W2-26 registered, W2-27 unallocated, v1.0.30 unconsumed. No figure was inherited from the handoff."
+  },
+
+  "CONTROLLER_40_DISCHARGE": {
+    "requirement_source": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json CONTROLLER_40_RULE, which requires Controller40 to enumerate v1.0.29 in IMMUTABLE_BY_CONVENTION and names CONTROLLER_40_BLOCKS = ['THE NEXT ODS LINEAGE ALLOCATION (v1.0.30 and beyond)'].",
+    "status": "DISCHARGED, MEASURED AT START_HEAD.",
+    "measurement": "scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION holds exactly 40 entries with docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json in the final slot and zero duplicates. tests/ods/ods-controller.test.ts pins the boundary by index and asserts the array does not contain v1.0.30.",
+    "consequence": "The predecessor sequencing gate on THIS allocation is satisfied. v1.0.30 may be allocated. This artifact does NOT re-open, re-authorize or restate Controller40; it records that the gate it was blocked by is met.",
+    "what_is_NOT_discharged": "Controller41. See CONTROLLER_41_RULE."
+  },
+
+  "MINIMALITY": {
+    "form": "MINIMAL APPEND-ONLY ALLOCATION",
+    "the_single_thing_this_artifact_allocates": "The ODS lineage ordinal v1.0.30 and the protected grant HPO-ODS-W2-27. Nothing else.",
+    "INHERITED_BY_REFERENCE_NOT_RESTATED": "The following are governed ENTIRELY by their own frozen artifacts and are NOT re-enumerated, re-derived, paraphrased or restated in weaker words here: the FIBDB-052 P1 partition, the eight CREATE targets, the four verify-only objects, the I-10 semantics, the retired names, the generate-plus-guard-patch contract and the migration-tail retarget contract, all of which live in docs/ops/wave3/FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json; the executable proof obligations, which live in docs/ops/wave3/FIBDB052_P1_TEST_MANIFEST_v1.0.0.json; and the HPO-ODS-W2-26 grant, its branch, its three patterns and its registration mechanics, which live in v1.0.28 and v1.0.29. Where this artifact repeats a field it does so ONLY to the extent needed to make the controls below checkable without opening the source, and the source remains the source of truth on every such field.",
+    "NO_SEMANTIC_WIDENING_BY_PARAPHRASE": "BINDING. Nothing restated here may be read as broader than the source's own words. Where this artifact's phrasing and the source's phrasing could be read to differ in scope, the NARROWER reading governs and the source controls.",
+    "why_a_new_addendum_rather_than_an_amendment_to_v1_0_29": "v1.0.29 is integrated, frozen, and enumerated by the Controller under IMMUTABLE_BY_CONVENTION. Editing it to carry a new grant would rewrite historical evidence and break the digest and self-inclusion controls that bind it. A forward successor is this repository's established discipline for exactly this situation."
+  },
+
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-27",
+    "branch": "codex/fibdb052-p1-implementation-r1",
+    "patterns": [
+      "db/migrations/**",
+      "db/prepared/journal/**"
+    ],
+    "pattern_count": 2,
+    "registration_status": "DECLARED_NOT_REGISTERED",
+    "ORDER_IS_BINDING": "The two patterns are stated in the order above and MUST be registered in that order. Order is part of the row's identity because the registration control asserts the row with a whole-object equality, not a set comparison.",
+    "BRANCH_BINDING_IS_EXACT": "The bound branch is the exact string `codex/fibdb052-p1-implementation-r1`. Resolution is by exact string equality, never by prefix, pattern or family. This branch does not exist at START_HEAD — measured across local and remote refs — which is correct and expected: the grant is declared before the implementation branch is cut.",
+    "STOP_FOR_GRANT_BRANCH_MISMATCH": "If the P1 implementation is ever attempted from a branch whose name is not byte-identical to the bound branch, the grant contributes zero patterns, the protected write is refused, and the mission STOPS. A gate that refuses is the control working, not an obstacle to route around. Renaming the branch to match, or rebinding the grant to the branch that happens to exist, are both PROHIBITED without a governed successor.",
+    "PATTERN_COUNT_IS_TWO_NOT_THREE": "BINDING. The predecessor grant HPO-ODS-W2-26 carries THREE patterns, the third being the literal db/prepared/checkpoint-b0/observation.sql. That third pattern is DELIBERATELY ABSENT here. See CHECKPOINT_B0_EXCLUSION. Copying a predecessor's grant shape is the most likely way this mission would have silently widened its own protected surface, and it would have looked like precedent-following rather than expansion.",
+    "NO_DB_PREPARED_WIDENING": "BINDING. The grant is the narrow db/prepared/journal/** — NEVER a blanket db/prepared/**. The DEFAULT protected pattern in scripts/ods-scope.ts is the broad db/prepared/**, and the breadth of the PROTECTION is not a licence for breadth in the GRANT. A blanket grant would additionally authorize db/prepared/hosted/** and db/prepared/hosted/governed/**, which are G2-gated apply surfaces P1 has no business touching. A sibling under db/prepared/ that matches the default pattern but not this grant's narrower pattern is correctly refused.",
+    "EXPLICITLY_NOT_AUTHORIZED": [
+      "db/prepared/**",
+      "db/prepared/hosted/**",
+      "db/prepared/checkpoint-b0/observation.sql",
+      "db/baseline/**",
+      "scripts/ods/**",
+      "tests/ods/**",
+      "docs/ops/wave3/**",
+      "docs/ops/fib/**",
+      "docs/ops/pc01b/**",
+      "docs/ops/im01b/**",
+      "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"
+    ],
+    "why_the_unprotected_entries_are_listed_anyway": "docs/ops/wave3/**, scripts/ods/** and tests/ods/** are NOT members of DEFAULT_PROTECTED_PATTERNS and therefore need no grant to be written. They are named in the prohibition list so that no reader infers, from their absence, that the grant was silently understood to cover them. Naming a path in a prohibition is never an allocation and never a grant.",
+    "grant_does_not_replace_allow": "The grant widens what the bound branch MAY write; it does not populate the mission's --allow list. The implementing mission must still derive its own --allow list from its own measured diff at its own base, and a protected path in that diff that this grant does not cover is a SCOPE DELTA requiring adjudication — never a silent addition on the ground that it changed anyway.",
+    "why_existing_grants_cannot_be_reused": "MEASURED, NOT ASSERTED. Six registered grants carry the db/migrations/** and db/prepared/journal/** families — W2-01, W2-07, W2-16, W2-20, W2-21 and W2-25 — and W2-26 carries them too. Every one of them is bound to a DIFFERENT branch. Resolution is by exact branch equality, so on codex/fibdb052-p1-implementation-r1 all of them contribute zero patterns. A new row is therefore doing real work and is not a duplicate of an existing grant."
+  },
+
+  "CHECKPOINT_B0_EXCLUSION": {
+    "included": false,
+    "rule": "db/prepared/checkpoint-b0/observation.sql is NOT part of this grant and MUST NOT be added on the strength of precedent, convenience, or the predecessor grant's shape.",
+    "authority_basis": "docs/ops/wave3/FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json PROTECTED_SURFACE.CHECKPOINT_B0_EXPLICITLY_EXCLUDED, which permits inclusion ONLY IF a live re-measurement proves that P1 actually changes it — not that it might; that it does.",
+    "INDEPENDENT_REPRODUCTION_AT_START_HEAD": {
+      "method": "The observation script was read directly and its catalog reads enumerated, rather than inheriting the authority's conclusion.",
+      "file": "db/prepared/checkpoint-b0/observation.sql",
+      "file_lines": 216,
+      "observed_keys": [
+        "projectRef",
+        "schemas",
+        "tables",
+        "columns",
+        "constraints",
+        "functions",
+        "triggers",
+        "rlsEnabledTables",
+        "policies",
+        "roles",
+        "grants",
+        "functionGrants",
+        "rowCounts",
+        "extensions",
+        "storageBuckets",
+        "storagePolicies",
+        "journal",
+        "packages",
+        "environments",
+        "projectRefs",
+        "statuses",
+        "environmentSecretNames"
+      ],
+      "no_index_census_exists": "The file contains ZERO references to pg_index, pg_indexes, indexname, indexdef or CREATE INDEX. There is no key in its output whose value is an index census. An index cannot change a census that does not exist.",
+      "pg_class_is_relkind_filtered": "pg_catalog.pg_class is read at exactly two sites. The rlsEnabledTables site filters `relkind IN ('r','p')`; the grants site filters `relkind IN ('r','p','v','m')`. Index relkinds — 'i' for an index and 'I' for a partitioned index — are excluded from BOTH. This is the load-bearing filter: pg_class DOES hold index rows, so the exclusion has to be demonstrated rather than assumed from the absence of the word 'index'.",
+      "constraints_key_is_conditionally_safe": "The constraints key reads pg_catalog.pg_constraint.conname. A UNIQUE or PRIMARY KEY constraint would create a row there AND an index, so this key is the one route by which index-shaped DDL could move the observation. It does not apply: all eight P1 CREATE targets are bare `CREATE INDEX IF NOT EXISTS ... ON ... (...)` statements — verified target by target against EIGHT_CREATE_TARGETS.targets[*].governed_definition — with no ADD CONSTRAINT and no UNIQUE INDEX among them. Zero pg_constraint rows are emitted.",
+      "columns_key_is_unaffected": "The columns key reads information_schema.columns. CREATE INDEX adds no column.",
+      "remaining_keys_unaffected": "pg_proc, pg_trigger, pg_policies, pg_roles and pg_extension are not written by index DDL.",
+      "conclusion": "observation.sql produces byte-identical output before and after all eight P1 indexes exist. checkpoint-b0 is INDEX-INSENSITIVE at START_HEAD, so P1 does not change it, so the condition for inclusion is not met and the pattern is excluded."
+    },
+    "condition_for_a_future_successor": "If a future live re-measurement ever proves that a P1-family change DOES move this file, that is a governed successor act with its own authority. It is not a widening this artifact permits in advance."
+  },
+
+  "AUTHORIZED_FUTURE_REGISTRATION_SURFACE": {
+    "binding": "The registration of HPO-ODS-W2-27 is a SEPARATE governed act, performed by a SEPARATE mission, on the two paths below and no others. This artifact DOES NOT perform it and edits NEITHER path.",
+    "AUTHORIZED_PATH_COUNT": 2,
+    "paths": [
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-scope.test.ts"
+    ],
+    "NO_THIRD_PATH": "BINDING. The registering mission's job is registration ONLY. Its closed world excludes: scripts/ods-controller.ts, tests/ods/ods-controller.test.ts, scripts/ods-prestate.ts, scripts/ods-poststate.ts, any program-state artifact, package.json, any other docs/ops/ods artifact, any docs/ops/wave3 artifact, and every database, migration, schema, journal and baseline path. It registers no second grant.",
+    "NEITHER_PATH_IS_PROTECTED": "MEASURED AT START_HEAD. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts holds exactly docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and the single literal docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. Neither registration path is a member, so the registering act needs no protected grant of its own. Registering a grant does not require a grant.",
+    "a_node_does_not_edit_its_own_referee": "The registering mission is not the P1 implementation mission. Keeping the two apart is what makes the grant registry an independent control rather than a formality the implementer fills in on the way past.",
+    "who_may_perform_it": "Any governed lane whose mission is the registration act itself, operating on its own branch, with its own prestate and poststate gates, and re-measuring every figure below at its own base."
+  },
+
+  "REQUIRED_REGISTRATION_CONTROLS": {
+    "binding": "The future registration act MUST carry controls establishing every item below. The list is CLOSED and adds no product requirement beyond them. Every figure in it is stated AS MEASURED AT START_HEAD and MUST be re-derived by the registering mission at its own base; a disagreement between the re-derivation and the figure stated here is a STOP, not a licence to use either number.",
+    "controls": [
+      {
+        "id": "RC-1",
+        "requires": "The PROTECTED_GRANTS registry moves from 14 rows to 15, append-only. The new row is LAST, so the growth is provably an append and not an insert.",
+        "measured_basis": "PROTECTED_GRANTS holds 14 rows by authorityId key position at START_HEAD."
+      },
+      {
+        "id": "RC-2",
+        "requires": "HPO-ODS-W2-27 appears EXACTLY ONCE. A filter on that authorityId has length 1."
+      },
+      {
+        "id": "RC-3",
+        "requires": "The Set cardinality of authorityId values moves from 14 to 15, forbidding a duplicate id registered beside an existing row rather than replacing it."
+      },
+      {
+        "id": "RC-4",
+        "requires": "No row carries HPO-ODS-W2-28. The absence literal ADVANCES from HPO-ODS-W2-27 to HPO-ODS-W2-28 at every site that currently asserts W2-27 absent.",
+        "measured_basis": "Two executable clusters assert W2-27 absent at START_HEAD: the membership assertion inside the frozen-registry test, and the CE1-GRANT-N4 absence test, which additionally asserts that the id resolves to no grant on any branch. BOTH clusters advance. Their line numbers are NOT stated, because registering a row moves every line below it; each is identified by its assertion shape.",
+        "note": "W2-28 is named here as a PROHIBITION and an absence literal. It is NOT allocated, NOT reserved and NOT implied."
+      },
+      {
+        "id": "RC-5",
+        "requires": "The registered row's branch equals codex/fibdb052-p1-implementation-r1 by exact string equality."
+      },
+      {
+        "id": "RC-6",
+        "requires": "The registered row's patterns equal the TWO declared patterns exactly and IN ORDER, asserted as a whole-object equality rather than a membership test, and pattern_count is asserted to be 2."
+      },
+      {
+        "id": "RC-7",
+        "requires": "NEGATIVE CONTROL: the grant does NOT resolve on a foreign branch. Resolution against any branch other than the bound one yields no grant and contributes zero patterns."
+      },
+      {
+        "id": "RC-8",
+        "requires": "NEGATIVE CONTROL, NARROWNESS: the grant does NOT widen to db/prepared/**. A sibling prepared path outside db/prepared/journal/** — specifically including db/prepared/checkpoint-b0/observation.sql and any db/prepared/hosted/** path — remains a protected violation even WITH the grant resolved on the bound branch.",
+        "why_checkpoint_b0_is_named_explicitly": "The predecessor grant W2-26 DOES carry that literal. Asserting that W2-27 does not is what distinguishes a deliberate narrowing from an omission."
+      },
+      {
+        "id": "RC-9",
+        "requires": "The 14 predecessor grant rows are preserved byte-unchanged — none widened, narrowed, rebranched or reordered."
+      },
+      {
+        "id": "RC-10",
+        "requires": "HPO-ODS-W2-22 remains an addendum identity and NOT a registry row. The existing control asserting this survives unchanged."
+      },
+      {
+        "id": "RC-11",
+        "requires": "NON-VACUITY: the two granted families are protected violations WITHOUT the grant and grant-authorized WITH it, on the bound branch. A grant that authorizes nothing new is not doing work."
+      },
+      {
+        "id": "RC-12",
+        "requires": "THE DEMOTE. See LIVE_COUNT_GUARD_TRANSFER."
+      },
+      {
+        "id": "RC-13",
+        "requires": "THE PROMOTE. See LIVE_COUNT_GUARD_TRANSFER."
+      },
+      {
+        "id": "RC-14",
+        "requires": "THE ATOMICITY. RC-12 and RC-13 land in the SAME commit as the row itself. See LIVE_COUNT_GUARD_TRANSFER."
+      }
+    ],
+    "NO_CONTROL_MAY_BE_WEAKENED": "No existing control may be weakened, skipped, loosened to an inequality, or deleted. The DEMOTE is not an exception: it replaces one exact equality with another exact equality, and it is authorized by name rather than by adjective."
+  },
+
+  "LIVE_COUNT_GUARD_TRANSFER": {
+    "name": "LIVE_COUNT_GUARD_TRANSFER (W2-27 TURN)",
+    "why_this_section_exists": "DERIVED FROM LIVE MEASUREMENT, NOT INHERITED. v1.0.29 exists because v1.0.28 authorized a registration act that was GUARANTEED to break a control the same act was NOT authorized to repair — a fail-closed deadlock. That deadlock is structural and RECURS ON EVERY REGISTRATION, so it recurs here. Freezing only the count and cardinality advances would hand the registering mission the identical deadlock one turn later. This section closes it in advance, for this turn only.",
+    "the_deadlock_measured_at_START_HEAD": "Exactly ONE assertion in tests/ods/ods-scope.test.ts binds a frozen addendum field to the live expression PROTECTED_GRANTS.length. Its RECEIVED expression is the v1.0.28 field PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26, whose frozen value is 14, and its EXPECTED argument is the bare expression PROTECTED_GRANTS.length. Registering W2-27 moves the live array to 15, so that assertion evaluates 14 against 15 and FAILS.",
+    "SEMANTIC_IDENTIFICATION_NOT_LINE_NUMBER": {
+      "rule": "The live-count guard is identified by the OPERAND SIDE of its expect — the frozen addendum field is the RECEIVED value and the live array is the EXPECTED value — and by NOTHING ELSE. Never by line number and never by the literal's value.",
+      "DISAMBIGUATION_MEASURED": "The expression PROTECTED_GRANTS.length occurs at several sites in this file at START_HEAD. The registry-size assertion has the form `expect(PROTECTED_GRANTS.length).toBe(14)`, with the live array as the RECEIVED value and a literal as the EXPECTED value; that site is NOT the guard, and it is governed by RC-1 instead. A third shape indexes the array to reach its last element and is governed by RC-1's append proof. The three are distinguished by which side the live array sits on, which is a property of the source and not of its position.",
+      "why_not_a_line_number": "Registering a row inserts lines into this file and moves every line below the insertion point, including the guard itself. Any line number stated here would be stale before the implementer reached it.",
+      "uniqueness_requirement": "The registering mission MUST re-measure at its own base and MUST confirm that exactly ONE site matches the operand-side rule. If zero or more than one site matches, that is a STOP: the file has changed in a way this authority did not anticipate, and the mission must escalate rather than choose."
+    },
+    "DEMOTE": {
+      "operation": "PREDECESSOR_DEMOTION",
+      "path": "tests/ods/ods-scope.test.ts",
+      "target": "The unique assertion whose RECEIVED expression is the v1.0.28 field PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26 and whose EXPECTED argument is the bare expression PROTECTED_GRANTS.length.",
+      "required_result": "The expected argument becomes the historically frozen literal 14. The assertion thereafter reads: the v1.0.28 field PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26 equals 14.",
+      "frozen_literal": 14,
+      "literal_derivation": "MEASURED, not chosen. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_26 holds the integer 14 at START_HEAD. The literal is the value the frozen artifact actually asserts — it is not the pre-registration live count that happens to share the number, and it MUST be re-derived from the artifact rather than copied from this sentence.",
+      "exactness_is_unchanged": "The demoted assertion remains an exact equality against an exact integer. Nothing is loosened to an inequality, skipped, or deleted. What changes is WHICH fact the assertion pins: it stops tracking the live array and starts pinning the historical claim of a frozen artifact, which is the only claim that artifact ever made.",
+      "MEASURED_PRECEDENT": "This exact operation has been performed twice before in this exact file and the record of both survives in place: the S1 guards were demoted to the historical literal 12 when W2-25 was registered, and the v1.0.25 guard was demoted to the historical literal 13 when W2-26 was registered under v1.0.29 DEMOTE. This artifact authorizes the same operation one turn later and adds no new doctrine."
+    },
+    "PROMOTE": {
+      "operation": "LIVE_COUNT_PROMOTION",
+      "path": "tests/ods/ods-scope.test.ts",
+      "source_field": "PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_27",
+      "source_artifact": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json",
+      "frozen_value": 15,
+      "required_result": "After W2-27 is registered, the field PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_27 of THIS artifact becomes THE ONE assertion bound to the live expression PROTECTED_GRANTS.length. It is the successor of the demoted guard and inherits its role exactly: a registry that grew by more or fewer than the one authorized entry fails there.",
+      "reading_this_artifact_is_an_addition": "This JSON is not read by that test at START_HEAD. Reading it is an ADDITION to the file, which the narrowness clause permits. It is noted so the registering mission does not mistake a necessary new read for an unauthorized widening.",
+      "EXACTLY_ONE_LIVE_GUARD": "BINDING. After the pair completes there must be EXACTLY ONE assertion in this file binding a frozen addendum field to the live expression PROTECTED_GRANTS.length, and it must be the v1.0.30 field. Two live-count guards is a defect, not extra safety: the older one would fail on the NEXT registration for a reason the next lane did not cause, and the whole point of the demotion discipline is that only the NEWEST registry change holds the live binding.",
+      "value_derivation": "MEASURED. The integer 15 is the arithmetic successor of the measured live count 14 at START_HEAD. The registering mission MUST re-derive it at its own base rather than inheriting 15 from this sentence, because the PROTECTED_GRANTS row count is a shared, globally-serialized resource that another lane can move; if the artifact figure and the arithmetic derivation disagree at that base, that is a STOP.",
+      "existing_uniqueness_control_must_advance": "The existing mutation control that reads this test file's own source and asserts that exactly one live-count guard exists ALSO pins the NAME of the bound field. That pinned name advances from the v1.0.28 field to the v1.0.30 field in the same act. Advancing the count without advancing the pinned name leaves a control that passes while guarding the wrong field."
+    },
+    "THE_THIRD_WAY_IS_PROHIBITED": "Editing docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json so that its field reads 15 would make the assertion pass. It is PROHIBITED. v1.0.28 is frozen, integrated, enumerated by the Controller under IMMUTABLE_BY_CONVENTION, and its figure is a true statement about the state that obtained when it was written. Changing it would corrupt the historical record to satisfy a present-tense guard.",
+    "ATOMICITY": {
+      "requirement": "BINDING. DEMOTE and PROMOTE are ONE INDIVISIBLE registration act. Both MUST land in the SAME registration commit as the HPO-ODS-W2-27 row itself. Neither may be deferred to a follow-up commit, a follow-up PR, or a follow-up mission.",
+      "DEMOTE_WITHOUT_PROMOTE": "PROHIBITED. The suite would be green and the repository would hold NO live-count guard at all. The registry could then grow, shrink or be silently reordered by any later lane with nothing to catch it. This is the more dangerous half precisely because it is the half that looks fine.",
+      "PROMOTE_WITHOUT_DEMOTE": "PROHIBITED. The demoted assertion would still evaluate the frozen 14 against a live 15 and the suite would be red, with no authorized local repair available.",
+      "verification": "An auditor confirms atomicity by observing, in the SINGLE registration commit, that the demoted literal is present, that the promoted live binding is present, and that the number of assertions binding a frozen addendum field to PROTECTED_GRANTS.length is exactly one before and exactly one after — never zero and never two."
+    }
+  },
+
+  "PROTECTED_GRANTS_CHANGED": false,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 14,
+  "PROTECTED_GRANTS_COUNT_AFTER": 14,
+  "PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_27": 15,
+  "protected_grants_count_rule": "MEASURED AT START_HEAD BY EVALUATING THE LIVE REGISTRY BY KEY POSITION, not carried from any predecessor. scripts/ods-scope.ts PROTECTED_GRANTS holds exactly 14 rows at e7ee106d. This authority lane registers NOTHING, so the live count stays 14 through its integration. The field PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_27 exists so that the future PROMOTE has exactly one declared source to bind to; it is a declaration about a future state, never an assertion that the state has been reached.",
+
+  "IMPLEMENTATION_REGISTRY_PREDICATE": {
+    "binding": "FIBDB-052 P1 implementation may START only when GRANT_ALREADY_REGISTERED is TRUE for HPO-ODS-W2-27. If it is FALSE, the implementation mission MUST STOP.",
+    "PREDICATE": {
+      "name": "GRANT_ALREADY_REGISTERED",
+      "definition": "Parse the PROTECTED_GRANTS array literal in scripts/ods-scope.ts at the implementing mission's own AS_OF_HEAD. GRANT_ALREADY_REGISTERED is TRUE if and only if some element of that array carries 'HPO-ODS-W2-27' at the `authorityId` KEY POSITION. Otherwise it is FALSE.",
+      "evaluated_by": "KEY POSITION ONLY",
+      "source": "docs/ops/wave3/FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json FUTURE_IMPLEMENTATION_SURFACE.ODS_REGISTRY_PREDICATE, carried here unchanged so that the two artifacts cannot resolve it inconsistently.",
+      "MUST_NOT_be_evaluated_by": [
+        "A textual mention of the id anywhere in the file. Every grant id also appears in the explanatory comment block above its row, and several appear in comments belonging to OTHER grants, so a textual sweep overcounts and can report a grant registered when only its rationale is present.",
+        "A count of occurrences. grep -c counts occurrences, not rows, and matches substrings of longer identifiers.",
+        "The presence of a declaration in an ODS addendum — including THIS one. Declaring and registering are different acts on different surfaces."
+      ],
+      "worked_example_from_live": "At e7ee106d this predicate yields 14 registered ids by key position — W2-01, 02, 03, 07, 08, 09, 11, 12, 16, 17, 20, 21, 25, 26 — and FALSE for HPO-ODS-W2-27. A value-exact sweep over the same repository returns 22 hits for HPO-ODS-W2-27, every one of them a prohibition, an absence control or prose. The two methods disagree, and the key-positional one is correct."
+    },
+    "SELF_REGISTRATION_IS_PROHIBITED": {
+      "rule": "The P1 implementation mission is PROHIBITED from registering its own grant, under any framing.",
+      "explicitly_not_permitted": "Adding the grant row as part of the implementation diff, on the ground that the diff needs it to pass ods:scope. A gate that refuses is the control working, not an obstacle to route around.",
+      "disposition_of_both_registry_paths_in_the_implementation_diff": "OUT, under BOTH outcomes of the predicate. If TRUE, there is nothing left to register and including an unchanged file is scope expansion. If FALSE, the mission stops. Neither scripts/ods-scope.ts nor tests/ods/ods-scope.test.ts may appear in the P1 implementation diff.",
+      "why_it_matters": "A mission that self-registers the grant it is about to rely on has authorized its own diff. The refusal is what keeps the grant registry an independent control rather than a formality the implementer fills in on the way past.",
+      "measured_precedent": "HPO-ODS-W2-26 was DECLARED by v1.0.28, REUSED by v1.0.29, and REGISTERED later by a dedicated lane whose only job was the registration. The declaring missions did not register it and the registering mission did not implement anything. That separation is the doctrine, measured from this repository rather than asserted."
+    }
+  },
+
+  "POST_CE1_REDERIVATION": {
+    "rule": "Every baseline figure in the P1 authority chain was measured at a PRE-CE-1 base and is now stale in the same direction: what those artifacts record as the `to` value is now the live `from` value. This section re-derives the arithmetic at START_HEAD. It supplies the SHAPE a reviewer should expect; it does not supply figures the implementing mission may inherit.",
+    "P1_START_STATE_MEASURED": {
+      "BASELINE_UNITS": 81,
+      "prepared_journal_total": 82,
+      "migration_ceiling": "0068_commercial_account_ce1.sql"
+    },
+    "P1_EXPECTED_APPEND_EFFECT": {
+      "BASELINE_UNITS": "81 -> 82",
+      "journal_wrappers_regenerated": 81,
+      "new_wrapper": 1,
+      "changed_journal_wrappers": 82,
+      "journal_total_after": 83,
+      "derivation": "db/hosted/baseline-journal-wrapper.ts stamps `Unit ${unit.ordinal}/${BASELINE_UNITS.length}` into the header of EVERY wrapper it emits. Appending one unit changes the DENOMINATOR in all 81 existing wrappers and emits 1 new wrapper, so 82 files under db/prepared/journal/ change. The 82nd existing file, 000_journal_bootstrap.sql, carries `Unit ZERO of PHASE_BASELINE` with no denominator and is NOT rewritten, which is why the journal total moves 82 -> 83 while the CHANGED count is 82.",
+      "why_this_is_stated": "A reviewer who expects a one-file journal diff will read an 82-file one as scope expansion. It is not: it is the canonical generator doing what it has always done. Equally, a journal diff of any OTHER shape is immediately visible as wrong."
+    },
+    "PROTECTED_WRITE_FAMILY_ARITHMETIC": {
+      "db/migrations/**": 3,
+      "db/migrations/**_derivation": "the migration <ORD>_<TAG>.sql + meta/<ORD>_snapshot.json + meta/_journal.json",
+      "db/prepared/journal/**": 82,
+      "db/prepared/journal/**_derivation": "81 existing wrappers with regenerated headers + 1 new wrapper",
+      "total_protected": 85,
+      "delta_versus_the_pre_CE1_authority": "docs/ops/wave3/FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json SURFACE_SUMMARY records 3 + 81 = 84, measured when BASELINE_UNITS was 80. Post-CE-1 the journal family is 82 and the total is 85. The migration family is UNCHANGED at 3, because it does not scale with the manifest.",
+      "not_an_allow_list": "These figures describe the expected SHAPE of the protected diff. They are not an --allow list and they do not substitute for one. The implementing mission derives its own --allow list from its own measured diff at its own base."
+    },
+    "MIGRATION_ORDINAL_IS_NOT_ALLOCATED_HERE": "BINDING. See NO_PREALLOCATION. The ordinal MUST be re-measured by the migration-allocation mission at its own live head and produced by the normal drizzle-kit generate path, never read off the figures above."
+  },
+
+  "REACTIVE_COUNT_REDERIVATION": {
+    "binding": "Every reactive literal named in the P1 authority chain MUST be re-derived at the implementing mission's own head. NONE may be inherited. The census below was re-measured at START_HEAD and is dated evidence of the SHAPE of the obligation, not a set of values to copy.",
+    "why": "The P1 authority's canonical census enumerates literals invalidated by BASELINE_UNITS moving 80 -> 81. CE-1 performed exactly that move. Every `to` value in that census is now the live `from` value, and a mission that applies the census literally would edit values that have already been edited.",
+    "REMEASURED_AT_START_HEAD": [
+      { "ref": "R-1", "file": "tests/hosted/baseline-manifest.test.ts", "shape": "expect(BASELINE_UNITS).toHaveLength(<N>)", "live": 81, "p1_target": 82 },
+      { "ref": "R-2", "file": "tests/hosted/baseline-manifest.test.ts", "shape": "expect(byKind('drizzle-migration')).toBe(<N>)", "live": 69, "p1_target": 70, "note": "SUBCOUNT. Moves only because the P1 unit is a drizzle-migration. The sibling pins byKind('supabase-migration') = 2 and byKind('policy') = 10 do NOT move." },
+      { "ref": "R-3", "file": "tests/hosted/baseline-manifest.test.ts", "shape": "Array.from({ length: <N> }, (_, i) => i + 1)", "live": 81, "p1_target": 82 },
+      { "ref": "R-4", "file": "tests/hosted/baseline-manifest.test.ts", "shape": "expect(new Set(BASELINE_ORDER).size).toBe(<N>)", "live": 81, "p1_target": 82 },
+      { "ref": "R-5", "file": "tests/hosted/baseline-journal-wrapper.test.ts", "shape": "expect(BASELINE_UNITS).toHaveLength(<N>)", "live": 81, "p1_target": 82 },
+      { "ref": "R-6", "file": "tests/hosted/baseline-journal-wrapper.test.ts", "shape": "expect(BASELINE_ORDER).toHaveLength(<N>)", "live": 81, "p1_target": 82 },
+      { "ref": "R-7", "file": "tests/hosted/operator-runner.test.ts", "shape": "expect(BASELINE_UNITS).toHaveLength(<N>)", "live": 81, "p1_target": 82 },
+      { "ref": "R-8", "file": "tests/eval/stella-release/hosted-baseline-gate.ts", "shape": "firstProvisioning.steps.length === <N>", "live": 82, "p1_target": 83, "kind": "N_PLUS_1_TRAP" },
+      { "ref": "R-9", "file": "tests/eval/stella-release/hosted-baseline-gate.ts", "shape": "evidence.unitCount === <N>", "live": 81, "p1_target": 82, "kind": "GATE_LOGIC, not a test assertion" },
+      { "ref": "R-10", "file": "tests/eval/stella-release/hosted-baseline-gate.test.ts", "shape": "expect(evidence.unitCount).toBe(<N>)", "live": 81, "p1_target": 82 },
+      { "ref": "R-11", "file": "tests/eval/stella-release/hosted-baseline-gate.test.ts", "shape": "expect(evidence.superuserFreeUnits).toBe(<N>)", "live": 81, "p1_target": 82, "note": "Moves only because the P1 unit is itself superuser-free. Eight plain CREATE INDEX statements carry no role, ownership or extension statement, so the P1 unit qualifies." },
+      { "ref": "R-12", "file": "artifacts/baseline-rehearsal/latest.json", "shape": "\"manifestApplied\": <N>", "live": 81, "p1_target": 82, "kind": "EVIDENCE_ARTEFACT, regenerated not hand-edited" },
+      { "ref": "R-13", "file": "artifacts/baseline-rehearsal/latest.json", "shape": "\"manifestDigest\": \"<sha256>\"", "live": "2c2ee70325ad691bf88eff023f6370ae6e758b580fd57dbd1c6c2d7064bb91a0", "p1_target": "a different sha256", "kind": "DERIVED_DIGEST_LITERAL", "note": "baselineManifestDigest() hashes every unit's ordinal:id:sha256, so appending one unit NECESSARILY changes it. The digest recorded in the pre-CE-1 authority, 96181f09..., is now historical." }
+    ],
+    "R_8_N_PLUS_1_TRAP": {
+      "site": "tests/eval/stella-release/hosted-baseline-gate.ts",
+      "rule": "This pin is DERIVED as BASELINE_ORDER.length + 1, because planProvisioningPhase emits one step per baseline unit PLUS the 000_journal_bootstrap step. Its correct live value is 82 and its correct post-P1 value is 83.",
+      "why_it_is_a_trap_post_CE1": "Every OTHER reactive site in this census currently reads 81. R-8 alone reads 82. A mission that mechanically advances every literal 81 -> 82 leaves R-8 reading 82 — which is the CORRECT value for the CURRENT N — so the line LOOKS already-updated while demanding 82 steps from a plan that will produce 83. The failure is silent at edit time and surfaces only as a gate failure.",
+      "identification_rule": "Identify R-8 by its expression shape — firstProvisioning.steps.length === <literal> — never by line number and never by the literal's value. Prior integrated authority records that this line has already moved from 407 to 411 to 413 across successive appends, which is itself the reason the rule says derivation rather than grep.",
+      "verified_at_START_HEAD": "The trap is live and reproduces: R-8 reads 82 while all eleven of its sibling count sites read 81."
+    },
+    "DERIVED_AUTO_MOVING_MUST_NOT_BE_TOUCHED": "An expression written in terms of BASELINE_UNITS.length or BASELINE_ORDER.length re-evaluates correctly on its own and MUST NOT be edited. Editing one is scope expansion.",
+    "PRE_EXISTING_BROKEN_MUST_NOT_BE_SILENTLY_REPAIRED": "A pin already false at the implementing mission's base is neither that mission's breakage nor its repair. It is recorded and escalated, not fixed in passing. See risks_and_open_findings F-HS-2."
+  },
+
+  "F_HR_1__DERIVATION_LADDER_COMMENTARY": {
+    "finding_carried_forward": "The PROSE_SITES census in docs/ops/wave3/FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json enumerates 4 sites across 2 files. Three ADDITIONAL files carry running derivation ladders — a per-grant append history whose final rung recites the current total — and none of them appears in that census.",
+    "INDEPENDENTLY_REPRODUCED_AT_START_HEAD": {
+      "method": "A repository-wide sweep for the ladder-rung shape, then a targeted sweep for the CE-1 rung specifically, rather than accepting the count of three on the handoff's word.",
+      "files_carrying_ladders_and_their_rung_counts": {
+        "tests/eval/stella-release/hosted-baseline-gate.ts": 12,
+        "tests/hosted/baseline-journal-wrapper.test.ts": 8,
+        "tests/hosted/operator-runner.test.ts": 7,
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts": 3,
+        "tests/hosted/baseline-manifest.test.ts": 1
+      },
+      "census_membership": "PROSE_SITES enumerates tests/hosted/baseline-manifest.test.ts (3 sites) and tests/hosted/baseline-journal-wrapper.test.ts (1 site). The three ladder-bearing files it does NOT enumerate are therefore exactly: tests/hosted/operator-runner.test.ts, tests/eval/stella-release/hosted-baseline-gate.ts and tests/eval/stella-release/hosted-baseline-gate.test.ts. The figure of three is confirmed, not inherited.",
+      "CE_1_rung_already_present": "The rung `HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81` is already written at four sites across those files, so the ladders demonstrably ARE maintained turn by turn and were simply not enumerated by the census."
+    },
+    "OBLIGATION_FROZEN": "The P1 implementing mission MUST keep implementation-facing derivation commentary TRUTHFUL wherever it edits the same authorized hosts. Leaving a ladder whose final rung recites 81 in a file whose assertion now reads 82 makes the file state something false about itself.",
+    "NO_AUTHORITY_EXPANSION": "BINDING. All three files are ALREADY inside the P1 implementation surface as REACTIVE hosts — they carry R-7, R-8/R-9 and R-10/R-11 respectively — so keeping their commentary truthful requires NO new path, NO new grant and NO widened protected surface. The presence of a comment is NOT a reason to expand protected authority, and a file that carries a ladder but is NOT otherwise in the surface does not enter it on that ground.",
+    "none_of_these_files_is_protected": "MEASURED. tests/** and artifacts/** are not members of DEFAULT_PROTECTED_PATTERNS, so none of this commentary sits behind HPO-ODS-W2-27. The grant remains exactly two patterns."
+  },
+
+  "KTC_RULE": {
+    "binding": "For FIBDB-052 P1, the active known_conditions set is EMPTY and MUST remain empty. The affected baseline gates are executed RAW.",
+    "manifest_state_measured_at_START_HEAD": "docs/ops/wave3/FIBDB052_P1_TEST_MANIFEST_v1.0.0.json known_conditions = [] — an empty array, verified by evaluating the parsed JSON rather than by reading prose.",
+    "THE_OBSOLETE_EXTERNAL_REGISTRY": {
+      "file": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json",
+      "measured_at_START_HEAD": "Holds exactly 2 conditions, KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02, both status PRE_EXISTING_DEFERRED, both naming tests/eval/stella-release/hosted-baseline-gate.test.ts.",
+      "why_they_are_obsolete": "Their cause_fingerprint records rehearsalFresh=false, manifestApplied=50 and manifestDigest 8f754f27.... The live artefact artifacts/baseline-rehearsal/latest.json records manifestApplied 81 and manifestDigest 2c2ee703..., and rehearsalFresh is TRUE. Not one of the three fingerprint fields reproduces. The premise the waiver rests on is measured false.",
+      "MUST_NOT_WAIVE_M18": "BINDING. The obsolete registry MUST NOT be accepted as a waiver for the raw M-18 control. Nothing in the P1 authority chain may rest on it.",
+      "why_the_empty_set_is_NECESSARY_rather_than_merely_tidy": "MEASURED FROM THE CLASSIFIER. scripts/ods-test-diff.ts matches a known condition on test identity plus a comparable failure signature — test_file, test_id and the failure's leading line — and NOT on cause_fingerprint. The fingerprint is descriptive metadata that is never compared. Both obsolete entries name the very test file M-18 turns red, so had they remained ACTIVE in the P1 manifest they would have absorbed an M-18 failure under byte-identical identity, silently converting the load-bearing green-then-red proof into a recognised known condition. `known_conditions: []` is therefore a control, not housekeeping.",
+      "SCOPE_BOUNDARY": "The stale global registry is OUTSIDE this lane's write surface and is NOT edited here. Repairing it is a separate governed maintenance act with its own authority; doing it here would be a second write path. Naming it and refusing to rely on it is the most this lane may do."
+    },
+    "M18_EXECUTION_RULE": {
+      "requirement": "The P1 implementing mission executes tests/eval/stella-release/hosted-baseline-gate.test.ts DIRECTLY — no known-condition suppression, no audit-batch filtering — and reports the raw result, with COLLECTED > 0 recorded alongside it.",
+      "why_collected_is_reported": "A run that collects zero tests is not green. A cache-busted or mis-targeted invocation returns COLLECTED=0 and reads as a pass; reporting the collected count is what distinguishes a real green from an empty one.",
+      "green_then_red_is_the_contract": "A green baseline discharges only half of M-18. The mission must also demonstrate that the P1 failure mode — baseline appended, rehearsal evidence left unregenerated — actually turns those raw tests RED, with the failure detail naming rehearsalFresh and/or appliedAll rather than some unrelated conjunct.",
+      "audit_batch_suppression_cannot_satisfy_it": "`pnpm ops:test-diff` output that suppresses those two ids is evidence about the REGISTRY, not about the tests."
+    }
+  },
+
+  "NO_PREALLOCATION": {
+    "binding": "This act allocates EXACTLY TWO things: the ODS lineage ordinal v1.0.30 and the protected grant HPO-ODS-W2-27. It allocates NONE of the following. Any artifact or commit claiming otherwise on the strength of this addendum is misreading it.",
+    "MIGRATION_ORDINAL_ALLOCATED": "NO",
+    "migration_ordinal_disposition": {
+      "allocated": false,
+      "reserved": false,
+      "implied": false,
+      "FIRST_FREE_CANDIDATE_AS_OF_THIS_HEAD": "0069",
+      "candidate_derivation": "The highest existing db/migrations/NNNN_*.sql ordinal at START_HEAD is 0068_commercial_account_ce1.sql and db/migrations/meta/_journal.json holds max idx 68. 0069 is therefore the first free candidate AT THIS HEAD.",
+      "THIS_IS_NOT_A_RESERVATION": "BINDING. 0069 is recorded as a DATED OBSERVATION and nothing more. It is not allocated, not reserved, and confers no entitlement. Concurrent lanes may land a migration between this artifact and the allocating mission, and reading 0069 off 0068 here and carrying it forward would be exactly the stale-count inheritance the P1 authority chain forbids.",
+      "re_measurement_obligation": "The migration ordinal MUST be re-measured by the migration-allocation mission at its OWN live head and produced by the normal drizzle-kit generate path. It is not computed by this artifact."
+    },
+    "CONTROLLER41_ALLOCATED": "NO",
+    "P1_IMPLEMENTATION_AUTHORIZED_NOW": "NO",
+    "explicitly_not_allocated": [
+      "ODS v1.0.31",
+      "HPO-ODS-W2-28",
+      "migration ordinal 0069 or any other ordinal",
+      "any migration tag",
+      "any baseline unit",
+      "any journal prefix",
+      "any second protected grant",
+      "the Controller41 implementation",
+      "the HPO-ODS-W2-27 REGISTRATION act itself",
+      "the FIBDB-052 P1 implementation"
+    ],
+    "naming_is_prohibition_never_allocation": "Where any of the ids above is named anywhere in this artifact, it is named inside a PROHIBITION, a sequencing clause or an absence-control literal. That is the same form v1.0.15 through v1.0.29 used, and it is never an allocation.",
+    "when_P1_becomes_implementation_authorized": "P1 becomes implementation-authorized only AFTER the HPO-ODS-W2-27 registration is INTEGRATED — that is, only when GRANT_ALREADY_REGISTERED evaluates TRUE at the implementing mission's own head under key-position semantics. Integration of THIS artifact does not confer it. Neither does the existence of the P1 execution authority, whose own next_gate states the same thing in its own words."
+  },
+
+  "CONTROLLER_41_RULE": {
+    "requirement": "Controller41 is REQUIRED to enumerate docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json in IMMUTABLE_BY_CONVENTION after this successor is integrated, taking the array from 40 entries to 41 with v1.0.30 as the final item, and advancing the absence-control literal from v1.0.30 to the mechanically-next version.",
+    "NOT_ALLOCATED_HERE": "This addendum does NOT allocate Controller41, does NOT edit scripts/ods-controller.ts, and does NOT edit tests/ods/ods-controller.test.ts. Those paths are outside this mission's authorized surface and outside the registration surface.",
+    "CONTROLLER_41_BLOCKS": [
+      "THE NEXT ODS LINEAGE ALLOCATION (v1.0.31 and beyond)"
+    ],
+    "CONTROLLER_41_DOES_NOT_BLOCK": [
+      "The HPO-ODS-W2-27 registration act authorized here",
+      "The FIBDB-052 P1 implementation, once W2-27 is registered"
+    ],
+    "DECOUPLING_PRESERVED": "The Controller's IMMUTABLE_BY_CONVENTION array gates the NEXT LINEAGE allocation. The PROTECTED_GRANTS registry gates which branch may touch which protected path. They are independent registries with independent controls. A missing Controller enumeration does NOT and CANNOT prevent a grant from resolving. Conflating them would stall P1 behind a bookkeeping step that has no bearing on it. This is the same decoupling v1.0.28 and v1.0.29 each record.",
+    "measured_state_of_the_absence_control": "tests/ods/ods-controller.test.ts asserts at START_HEAD that IMMUTABLE_BY_CONVENTION does not contain v1.0.30, pins the length at exactly 40, pins index 39 to v1.0.29, and asserts index 40 is undefined. All four are assertions about the ARRAY. None of them is a filesystem-existence assertion, so materializing this file does not move any of them — verified by reading the assertions rather than by running the suite."
+  },
+
+  "authorized_changed_paths_this_mission": {
+    "AUTHORIZED_PATH_COUNT": 1,
+    "paths": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json"
+    ],
+    "closed_world": "EXHAUSTIVE. NO second path. In particular: NO scripts/ods-scope.ts, NO tests/ods/ods-scope.test.ts, NO scripts/ods-controller.ts, NO tests/ods/ods-controller.test.ts, NO docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json, NO package.json, NO other docs/ops/ods artifact, NO docs/ops/wave3 artifact, and NO database, migration, schema, journal or baseline path.",
+    "this_path_is_not_protected": "MEASURED. DEFAULT_PROTECTED_PATTERNS covers docs/ops/ods only through the single literal docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json. This file is not that literal, so this mission's own write requires no protected grant and none is requested.",
+    "no_test_globs_this_directory": "MEASURED. No test or script in the repository enumerates docs/ops/ods/ by directory read, so materializing a new addendum file changes no existing assertion. The only test that reads this directory does so by explicit path for specific frozen artifacts.",
+    "self_inclusion_note": "This artifact is not yet enumerated by the Controller at its own materialization, which is the normal and expected state for a newly created addendum. Controller41 discharges it, per CONTROLLER_41_RULE."
+  },
+
+  "risks_and_open_findings": [
+    {
+      "id": "F-HS-1",
+      "severity": "OPEN",
+      "finding": "The PROTECTED_GRANTS row count, the ODS lineage ordinal and the migration ordinal are shared, globally-serialized resources. Another lane can consume v1.0.31, move the registry, or land a migration between this artifact's materialization and either the registration act or the implementation act.",
+      "disposition": "MITIGATED BY RULE, NOT BY MEASUREMENT. Every count here is bound to START_HEAD e7ee106d and the remeasurement_rule requires re-derivation at each successor's own base. LIVE_COUNT_GUARD_TRANSFER.PROMOTE additionally requires that the artifact figure and the arithmetic derivation of 15 agree, and makes a disagreement a STOP."
+    },
+    {
+      "id": "F-HS-2",
+      "severity": "OPEN__NOT_REPAIRED_HERE",
+      "finding": "M-18 is discharged only IN ITS OWN TERMS. The staleness mutation that turns the hosted baseline gate red is measured to redden exactly the two tests M-18 names — but tests/postgres/s1-founder-cardinality.pg.test.ts also asserts that the S1 unit is the LAST baseline unit, an assertion the P1 authority chain records as ALREADY FALSE at a pre-CE-1 base (F-GV-8) and which no known condition covers. A P1 append moves it further from true.",
+      "disposition": "RECORDED, NOT REPAIRED AND NOT WAIVED. It is neither this lane's breakage nor this lane's repair, and it sits outside this lane's single write path. The implementing mission must not read a green M-18 as evidence that the whole affected surface is green, and must not silently repair a pin that was already false at its base."
+    },
+    {
+      "id": "F-HS-3",
+      "severity": "INFORMATIONAL",
+      "finding": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json still carries two obsolete conditions whose premise this artifact measures to be false. An obsolete waiver is a live hazard: it lets a real regression in exactly that gate pass as the known one.",
+      "disposition": "OUTSIDE THIS LANE'S WRITE SURFACE. Editing it would be a second write path. KTC_RULE refuses to rely on it and requires raw execution. A future governed maintenance act should re-adjudicate both entries against a current measurement."
+    },
+    {
+      "id": "F-HS-4",
+      "severity": "INFORMATIONAL",
+      "finding": "The bound branch codex/fibdb052-p1-implementation-r1 does not exist at START_HEAD, so the branch binding cannot be corroborated against a real ref and rests on the exact string alone.",
+      "disposition": "EXPECTED AND CORRECT. A grant is declared before its implementation branch is cut; the same was true of every predecessor grant in this registry at its own declaration. The binding is enforced at resolution time by exact string equality, and RC-5 and RC-7 make both the positive and the negative case executable once the row exists."
+    },
+    {
+      "id": "F-HS-5",
+      "severity": "OPEN",
+      "finding": "This artifact is unaudited at materialization and is not enumerated by the Controller.",
+      "disposition": "EXPECTED. An independent exact-object audit is the declared next gate, and Controller41 is required after integration. Neither is performed by this mission."
+    }
+  ],
+
+  "final_state": {
+    "authority_status": "MATERIALIZED_UNAUDITED",
+    "ods_lineage_allocated": "v1.0.30",
+    "grant_allocated": "HPO-ODS-W2-27",
+    "grant_registered": false,
+    "migration_ordinal_allocated": false,
+    "controller_enumeration_performed": false,
+    "registration_performed": false,
+    "implementation_performed": false,
+    "READY_FOR_W2_27_REGISTRATION": "YES, subject to the independent audit of this artifact. With it integrated, the registration act has a complete and non-contradictory authority: the grant identity, the branch, the two patterns, the two-path surface, the fourteen registration controls, and the atomic live-count guard transfer.",
+    "READY_FOR_P1_IMPLEMENTATION": "NO. P1 implementation remains gated on the W2-27 registration act, which this artifact does not perform, AND on a separately allocated migration ordinal, which this artifact does not allocate."
+  },
+
+  "next_gate": "FIBDB052_P1_V1030_W2_27_ALLOCATION_INDEPENDENT_OPUS_AUDIT"
+}
