@@ -12,6 +12,12 @@ import { describe, it, expect, vi } from 'vitest'
 vi.mock('@/lib/auth/session', () => ({
   requireAuth: vi.fn().mockResolvedValue({ id: 'u1', email: 'u1@example.test' }),
   getCurrentMembership: vi.fn().mockResolvedValue(null),
+  // TENANCY-S3-SELECTOR-REACHABILITY (Packet A): the repaired onboarding page
+  // now also calls the enumerator. Zero candidates is the correct stub — an
+  // allowlist-blocked founder is precisely the 0-candidate case, so this
+  // suite's subject stays on /app/onboarding and its four assertions keep
+  // their meaning unchanged.
+  listSelectableMemberships: vi.fn().mockResolvedValue([]),
 }))
 
 import OnboardingPage from '@/app/(authenticated)/app/onboarding/page'

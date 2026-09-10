@@ -53,11 +53,26 @@ vi.mock('next/navigation', () => ({
 }))
 
 const mockLoadRequestPrincipal = vi.fn()
+// TENANCY-S3-SELECTOR-REACHABILITY (Packet A): the enumerator
+// requireOrganizationAccess() now calls for R2. Reset to a rejection by
+// default (never a silent []) so a test that forgets to arm it fails loudly
+// instead of quietly behaving like the zero-candidate case.
+const mockListSelectableMemberships = vi.fn()
 vi.mock('@/lib/auth/database-context', () => ({
   loadRequestPrincipal: () => mockLoadRequestPrincipal(),
+  listSelectableMemberships: () => mockListSelectableMemberships(),
   withOptionalDatabaseIdentityContext: (cb: any) => cb(null),
   withOrganizationDatabaseContext: (cb: any) => cb(),
   withSuperAdminDatabaseContext: (cb: any) => cb(),
+}))
+
+// R3 clears the carrier through this module. Mocked here (rather than left
+// real) because this suite never opens next/headers' cookie jar — the
+// mechanism itself is proven against a real cookie store in
+// tests/auth/session.test.ts and tests/tenancy/s2-selected-org-carrier.test.ts.
+const mockClearSelectedOrganization = vi.fn(async () => undefined)
+vi.mock('@/lib/auth/selected-organization', () => ({
+  clearSelectedOrganization: () => mockClearSelectedOrganization(),
 }))
 
 // The onboarding page imports its server action, which reaches `@/db/client`.
@@ -95,11 +110,74 @@ const SUPER = { ...USER, isSuperAdmin: true }
 const ORG = { id: '00000000-0000-4000-8000-0000000000aa', name: 'Org', onboardingCompleted: true }
 const MEMBERSHIP = { id: 'm1', role: 'organization_admin', organizationId: ORG.id, userId: USER.id }
 
+// One SelectableMembership per candidate organization — the enumerator's
+// shape (lib/auth/database-context.ts SelectableMembership), never a
+// principal.
+const CANDIDATE_A = {
+  membership: { id: 'sm-a', role: 'organization_admin', organizationId: 'org-a', userId: USER.id, status: 'active' },
+  organization: { id: 'org-a', name: 'Org A', onboardingCompleted: true },
+}
+const CANDIDATE_B = {
+  membership: { id: 'sm-b', role: 'analyst', organizationId: 'org-b', userId: USER.id, status: 'active' },
+  organization: { id: 'org-b', name: 'Org B', onboardingCompleted: true },
+}
+
 const anonymous = () => mockLoadRequestPrincipal.mockResolvedValue(null)
-const memberless = (user = USER) =>
-  mockLoadRequestPrincipal.mockResolvedValue({ user, membership: null, organization: null })
+
+// TENANCY-S3-SELECTOR-REACHABILITY (Packet A) — E1 forced edit. The single
+// memberless() fixture used to set NO organizationRefusalCode and stub NO
+// enumerator, so it could not distinguish genuine memberless/founding from
+// member-with-no-carrier: the direct fixture-level image of the production
+// defect. Split into two fixtures that differ ONLY in the enumerator's
+// answer, both carrying the SAME refusal code (R2's precondition).
+
+/** RETURN SITE 1, zero candidates — genuine founding (R2.branch_zero). */
+const noCarrierNoCandidates = (user = USER) => {
+  mockLoadRequestPrincipal.mockResolvedValue({
+    user,
+    membership: null,
+    organization: null,
+    organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
+  })
+  mockListSelectableMemberships.mockResolvedValue([])
+}
+
+/** RETURN SITE 1, one-or-more candidates — member without a carrier (R2.branch_one_or_more). */
+const noCarrierWithCandidates = (user = USER, candidates: unknown[] = [CANDIDATE_A]) => {
+  mockLoadRequestPrincipal.mockResolvedValue({
+    user,
+    membership: null,
+    organization: null,
+    organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
+  })
+  mockListSelectableMemberships.mockResolvedValue(candidates)
+}
+
+/** RETURN SITE 2 — stale/non-member carrier (R3's precondition). */
+const staleCarrier = (user = USER) =>
+  mockLoadRequestPrincipal.mockResolvedValue({
+    user,
+    membership: null,
+    organization: null,
+    organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+  })
+
+/** RETURN SITE 3 — membership DEMONSTRABLY EXISTS; only the organisation row is unreadable (R4's precondition). */
+const memberWithUnreadableOrganization = () =>
+  mockLoadRequestPrincipal.mockResolvedValue({
+    user: USER,
+    membership: MEMBERSHIP,
+    organization: null,
+    organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+  })
+
 const member = () =>
-  mockLoadRequestPrincipal.mockResolvedValue({ user: USER, membership: MEMBERSHIP, organization: ORG })
+  mockLoadRequestPrincipal.mockResolvedValue({
+    user: USER,
+    membership: MEMBERSHIP,
+    organization: ORG,
+    organizationRefusalCode: null,
+  })
 
 /** Run a route entry point and report the redirect it issued, or null. */
 async function locationOf(entry: () => Promise<unknown>): Promise<string | null> {
@@ -124,6 +202,8 @@ function assertNoSelfRedirect(pathname: string, location: string | null) {
 beforeEach(() => {
   mockRedirect.mockClear()
   mockLoadRequestPrincipal.mockReset()
+  mockListSelectableMemberships.mockReset()
+  mockClearSelectedOrganization.mockClear()
 })
 
 // ---------------------------------------------------------------------------
@@ -347,8 +427,8 @@ describe('redirect graph: /app/onboarding', () => {
     expect(location).toBe('/login')
   })
 
-  it('2. authenticated, membership=null -> RENDERS, and never redirects to itself', async () => {
-    memberless()
+  it('2. authenticated, membership=null, ZERO candidates -> RENDERS, and never redirects to itself', async () => {
+    noCarrierNoCandidates()
 
     const layoutLocation = await locationOf(
       () => AuthenticatedLayout({ children: null }) as Promise<unknown>
@@ -358,10 +438,18 @@ describe('redirect graph: /app/onboarding', () => {
     const pageLocation = await locationOf(
       () => OnboardingPage({ searchParams: Promise.resolve({}) }) as Promise<unknown>
     )
-    expect(pageLocation, 'the onboarding page redirected a member-less user').toBeNull()
+    expect(pageLocation, 'the onboarding page redirected a member-less user with zero candidates').toBeNull()
 
     assertNoSelfRedirect('/app/onboarding', layoutLocation)
     assertNoSelfRedirect('/app/onboarding', pageLocation)
+  })
+
+  it('P-A1-2 (onboarding page entry point): membership=null, ONE candidate -> /app/organizations/select, never the creation form', async () => {
+    noCarrierWithCandidates()
+    const pageLocation = await locationOf(
+      () => OnboardingPage({ searchParams: Promise.resolve({}) }) as Promise<unknown>
+    )
+    expect(pageLocation).toBe('/app/organizations/select')
   })
 
   it('3. authenticated, membership exists -> /app/dashboard', async () => {
@@ -374,12 +462,25 @@ describe('redirect graph: /app/onboarding', () => {
 })
 
 describe('redirect graph: organisation-gated workspace routes', () => {
-  it('4/5. authenticated, membership=null -> /app/onboarding', async () => {
-    memberless()
+  it('4. authenticated, membership=null, ZERO candidates -> /app/onboarding', async () => {
+    noCarrierNoCandidates()
     const location = await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
     expect(location).toBe('/app/onboarding')
     // …and the destination is NOT this layout, which is the whole repair.
     assertNoSelfRedirect('/app/dashboard', location)
+  })
+
+  it('P-A1-2: authenticated, membership=null, exactly ONE candidate -> /app/organizations/select — the load-bearing positive control (NO_AUTO_SELECTION, no shortcut)', async () => {
+    noCarrierWithCandidates(USER, [CANDIDATE_A])
+    const location = await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
+    expect(location).toBe('/app/organizations/select')
+    assertNoSelfRedirect('/app/dashboard', location)
+  })
+
+  it('P-A1-3: authenticated, membership=null, TWO candidates -> /app/organizations/select — held separately from P-A1-2 so a collapsed single-candidate branch is visible', async () => {
+    noCarrierWithCandidates(USER, [CANDIDATE_A, CANDIDATE_B])
+    const location = await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
+    expect(location).toBe('/app/organizations/select')
   })
 
   it('6. authenticated, membership exists -> allowed', async () => {
@@ -388,10 +489,32 @@ describe('redirect graph: organisation-gated workspace routes', () => {
     expect(location).toBeNull()
   })
 
-  it('7. super admin without a membership -> /admin, contract preserved', async () => {
-    memberless(SUPER)
+  it.each([
+    ['zero candidates', () => noCarrierNoCandidates(SUPER)],
+    ['one-or-more candidates', () => noCarrierWithCandidates(SUPER, [CANDIDATE_A])],
+  ])(
+    'P-A1-4 / 7. super admin without a membership -> /admin, contract preserved, insensitive to the enumerator (%s)',
+    async (_label, setup) => {
+      setup()
+      const location = await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
+      expect(location).toBe('/admin')
+    }
+  )
+
+  it('N-A1-4: RETURN SITE 3 (membership exists, organisation row unreadable) -> /app/onboarding, unchanged — NOT swept into the stale-carrier branch', async () => {
+    memberWithUnreadableOrganization()
     const location = await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
-    expect(location).toBe('/admin')
+    expect(location).toBe('/app/onboarding')
+    expect(mockClearSelectedOrganization, 'a valid member\'s carrier must never be cleared').not.toHaveBeenCalled()
+    expect(mockListSelectableMemberships, 'R4 is excluded before the enumerator is ever consulted').not.toHaveBeenCalled()
+  })
+
+  it('N-A1-2 / R3: stale/non-member carrier -> selector, carrier cleared, enumerator never consulted (no substitution is possible if no candidate is even read)', async () => {
+    staleCarrier()
+    const location = await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
+    expect(location).toBe('/app/organizations/select')
+    expect(mockClearSelectedOrganization).toHaveBeenCalledTimes(1)
+    expect(mockListSelectableMemberships).not.toHaveBeenCalled()
   })
 
   it('unauthenticated -> /login, ahead of any organisation question', async () => {
@@ -402,12 +525,108 @@ describe('redirect graph: organisation-gated workspace routes', () => {
 })
 
 // ---------------------------------------------------------------------------
+// E. N-A1-1 — NO CARRIER WRITE DURING ROUTING (R2)
+// ---------------------------------------------------------------------------
+//
+// The single most important negative control in the manifest: it is the
+// only one that can tell a compliant selector redirect apart from an
+// auto-selection that happens to redirect to the selector afterwards
+// (NO_AUTO_SELECTION; ROUTING_CONTRACT.NO_CARRIER_WRITE_DURING_ROUTING).
+
+describe('N-A1-1: no carrier write during routing', () => {
+  it('lib/auth/session.ts contains no path capable of WRITING (selecting) the carrier — only clearSelectedOrganization is imported, never setSelectedOrganization', () => {
+    const source = read('lib/auth/session.ts')
+    expect(source).not.toMatch(/\bsetSelectedOrganization\b/)
+  })
+
+  it.each([
+    ['zero candidates', () => noCarrierNoCandidates()],
+    ['one candidate', () => noCarrierWithCandidates(USER, [CANDIDATE_A])],
+    ['two candidates', () => noCarrierWithCandidates(USER, [CANDIDATE_A, CANDIDATE_B])],
+  ])('%s: R2 never calls the carrier-clearing mechanism either — it only enumerates, it never touches the carrier', async (_label, setup) => {
+    setup()
+    await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
+    expect(mockClearSelectedOrganization).not.toHaveBeenCalled()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// F. N-A1-3 — ENUMERATOR FAILURE FAILS CLOSED
+// ---------------------------------------------------------------------------
+
+describe('N-A1-3: enumerator failure fails closed, never a membership fallback', () => {
+  it('a rejected enumerator propagates as a failure — never a redirect to onboarding, dashboard, or the selector', async () => {
+    mockLoadRequestPrincipal.mockResolvedValue({
+      user: USER,
+      membership: null,
+      organization: null,
+      organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
+    })
+    mockListSelectableMemberships.mockRejectedValue(new Error('enumerator unavailable'))
+
+    await expect(PrivateLayout({ children: null }) as Promise<unknown>).rejects.toThrow('enumerator unavailable')
+    expect(mockRedirect).not.toHaveBeenCalled()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// G. N-A1-5 — NO NEW AUDIT EVENT FOR AN ABSENT CARRIER
+// ---------------------------------------------------------------------------
+
+describe('N-A1-5: no new audit event for an absent carrier', () => {
+  it('none of the repaired routing files import any audit emitter', () => {
+    for (const file of [
+      'lib/auth/session.ts',
+      'app/(public)/login/actions.ts',
+      'app/auth/callback/route.ts',
+      'app/(authenticated)/app/onboarding/page.tsx',
+    ]) {
+      const source = read(file)
+      expect(
+        source,
+        `${file} must not emit any audit event from routing`
+      ).not.toMatch(/emitOrganizationSelectionRefused|emitMembershipRevalidationRefused|logAuditAction/)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// H. T-A1-1 — TERMINATION: THE SELECTOR GRAPH HAS NO REDIRECT LOOP
+// ---------------------------------------------------------------------------
+
+describe('T-A1-1: the selector graph has no redirect loop', () => {
+  it('the selector page never calls requireOrganizationAccess and issues no redirect at all — it cannot re-enter the organisation gate or cycle back to itself', () => {
+    const selectorPage = read('app/(authenticated)/app/organizations/select/page.tsx')
+    expect(selectorPage).not.toMatch(/requireOrganizationAccess/)
+    expect(selectorPage).not.toMatch(/redirect\(/)
+  })
+
+  it('neither /app/onboarding nor /app/organizations/select acquires an outbound redirect to itself, for any candidate count', () => {
+    const onboardingPage = read('app/(authenticated)/app/onboarding/page.tsx')
+    expect(onboardingPage).not.toMatch(/redirect\('\/app\/onboarding'\)/)
+  })
+
+  it('one-or-more candidates: the workspace gate -> selector walk terminates in one hop (the selector is TERMINAL, proven structurally above)', async () => {
+    noCarrierWithCandidates()
+    const location = await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
+    expect(location).toBe('/app/organizations/select')
+  })
+
+  it('stale-carrier walk: the workspace gate clears the carrier and reaches the selector in one hop, and never re-enters R3 (the clear happens BEFORE the redirect)', async () => {
+    staleCarrier()
+    const location = await locationOf(() => PrivateLayout({ children: null }) as Promise<unknown>)
+    expect(location).toBe('/app/organizations/select')
+    expect(mockClearSelectedOrganization).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
 // C. TERMINATION
 // ---------------------------------------------------------------------------
 
 describe('8. the authenticated redirect graph reaches a terminal state', () => {
   it('member-less: /app/dashboard -> /app/onboarding -> RENDER, in two hops', async () => {
-    memberless()
+    noCarrierNoCandidates()
 
     const hops: string[] = []
     let current: string | null = '/app/dashboard'
@@ -480,5 +699,34 @@ describe('invitation and signup redirect contracts are untouched', () => {
     expect(actions).toMatch(/withAuthenticatedDatabaseContext/)
     // It must not have gained an organisation-scoped context or a bypass.
     expect(actions).not.toMatch(/withSuperAdminDatabaseContext|runWithOrganizationAccess/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// I. P-A1-1/2/3 AT THE LOGIN ACTION AND THE AUTH CALLBACK
+// ---------------------------------------------------------------------------
+//
+// Neither file is executed in this suite (see the existing source-text style
+// above — both entry points reach @/lib/supabase/server and
+// @/lib/security/rate-limit, which this file does not mock). The behavioural
+// proof of the same defect and its repair is driven fully against the
+// workspace gate and the onboarding page above, and independently again
+// against the real requireOrganizationAccess in tests/auth/session.test.ts.
+// This block proves the STRUCTURAL half: both files now enumerate before
+// deciding, rather than routing on the conflated boolean alone.
+
+describe('P-A1-1/2/3 at the login action and the auth callback: enumerate before deciding', () => {
+  it('login: the smart redirect enumerates candidates and no longer routes on the conflated boolean alone', () => {
+    const actions = read('app/(public)/login/actions.ts')
+    expect(actions).toMatch(/listSelectableMemberships/)
+    expect(actions).toMatch(/candidates\.length === 0/)
+    expect(actions).toMatch(/redirect\('\/app\/organizations\/select'\)/)
+  })
+
+  it('auth callback: the smart redirect enumerates candidates and no longer routes on the conflated boolean alone', () => {
+    const callback = read('app/auth/callback/route.ts')
+    expect(callback).toMatch(/listSelectableMemberships/)
+    expect(callback).toMatch(/candidates\.length === 0/)
+    expect(callback).toMatch(/\/app\/organizations\/select/)
   })
 })

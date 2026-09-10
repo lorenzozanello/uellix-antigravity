@@ -43,6 +43,14 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/auth/session', () => ({
   requireAuth: vi.fn().mockResolvedValue({ id: 'u1', email: 'u1@example.test' }),
   getCurrentMembership: vi.fn().mockResolvedValue(null),
+  // TENANCY-S3-SELECTOR-REACHABILITY (Packet A): the repaired onboarding page
+  // now also calls the enumerator. Zero candidates is the correct stub — all
+  // three onboarding tests here are about a subject being SHOWN the creation
+  // form (invalid_slug, invalid_name, not_allowlisted), which after the
+  // repair is the 0-candidate founding path. A stub returning >=1 would
+  // redirect the page away and delete three accessibility tests by side
+  // effect.
+  listSelectableMemberships: vi.fn().mockResolvedValue([]),
 }))
 
 describe('FxSubForm — live per-field validation feedback is wired to the field', () => {

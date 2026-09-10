@@ -267,6 +267,11 @@ describe('S1 live self-service founding — behaviour under mocks (S1-6 atomicit
   vi.mock('@/lib/auth/session', () => ({
     syncUserProfile: vi.fn(async () => undefined),
     getCurrentMembership: vi.fn(async () => null),
+    // TENANCY-S3-SELECTOR-REACHABILITY (Packet A): createFirstOrganization
+    // now also calls the enumerator. Zero candidates preserves both the
+    // POSITIVE founding test (a 0-candidate subject still proceeds to found)
+    // and the NEGATIVE allowlist test unchanged.
+    listSelectableMemberships: vi.fn(async () => []),
   }))
   vi.mock('@/lib/admin/signup-allowlist', () => ({
     isEmailAllowlisted: vi.fn(async () => state.allowlisted),

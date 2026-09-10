@@ -377,17 +377,18 @@ describe('requireOrganizationAccess', () => {
     await expect(requireOrganizationAccess()).rejects.toThrow('REDIRECT:/app/onboarding')
   })
 
-  it('S3 / single_membership_is_not_an_exception: redirects a non-admin with an ACTIVE membership but NO organization selected to /app/onboarding — route topology is unchanged by S3, only membership derivation is', async () => {
+  it('S3 / single_membership_is_not_an_exception: redirects a non-admin with an ACTIVE membership but NO organization selected to /app/organizations/select — TENANCY-S3-SELECTOR-REACHABILITY (Packet A) makes this exact state P-A1-2: one selectable candidate, no carrier', async () => {
     mockGetUser.mockResolvedValue({ data: { user: AUTH_USER } })
     mockDbData.users = [DB_USER]
     mockDbData.organizationMembers = [DB_MEMBERSHIP]
     mockDbData.organizations = [DB_ORG]
     // No selectOrganization() call — an active membership exists, but the
     // carrier is absent. REQUEST_PRINCIPAL_CONTRACT.NO_FALLBACK.
-    // single_membership_is_not_an_exception: this is a REFUSAL, not an
-    // inference, even though the caller has exactly one membership.
+    // single_membership_is_not_an_exception: this is still not an inference —
+    // the enumerator finds exactly one candidate and NO_AUTO_SELECTION routes
+    // it to the selector rather than choosing on the caller's behalf.
 
-    await expect(requireOrganizationAccess()).rejects.toThrow('REDIRECT:/app/onboarding')
+    await expect(requireOrganizationAccess()).rejects.toThrow('REDIRECT:/app/organizations/select')
   })
 
   it('redirects to /app/onboarding when the SELECTED membership references a deleted organization', async () => {
