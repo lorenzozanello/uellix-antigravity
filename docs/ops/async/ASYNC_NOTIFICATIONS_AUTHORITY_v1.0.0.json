@@ -1,0 +1,257 @@
+{
+  "package_id": "ASYNC_NOTIFICATIONS_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/async/ASYNC_NOTIFICATIONS_AUTHORITY_v1.0.0.json",
+  "authority_class": "BOUNDED_ASYNC_NOTIFICATION_MINIMUM_SUBSTRATE_AUTHORITY",
+  "mission_id": "ASYNC-NOTIFICATIONS-AUTHORITY-R1",
+  "lane_id": "LANE_AQ",
+  "role": "ASYNC_NOTIFICATION_AUTHORITY_WRITER",
+  "mode": "DOCS_ONLY_BOUNDED_AUTHORITY",
+  "materialization_date": "2026-09-10",
+  "companion_manifest": "docs/ops/async/ASYNC_NOTIFICATIONS_TEST_MANIFEST_v1.0.0.json",
+
+  "GRANT_ID": {
+    "value": null,
+    "reason": "This lane creates AUTHORITY ONLY. It writes no application code, no schema, no migration, no environment value, no hosted Resend configuration, no scheduler and no ODS registration. It matches the pattern of docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json §GRANT_ID."
+  },
+  "GRANT_ID_DISPOSITION": "NO GRANT IS DECLARED OR REGISTERED BY THIS ARTIFACT. The entire future write surface named in future_ddl and reconciled_current_state.successor_surface is CLOSED and FROZEN here, and is opened only by a successor implementation lane. No ODS addendum is allocated, no node is registered, no migration ordinal is claimed, and no CONTRACT_LEDGER.md row is opened (this is a single-owner authority freeze, not a cross-line contract negotiation).",
+
+  "identity": {
+    "task": "ASYNC-NOTIFICATIONS-AUTHORITY-R1",
+    "chat": "NEW",
+    "model": "SONNET_5",
+    "effort": "HIGH",
+    "branch": "codex/async-notifications-authority-r1",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-async-notifications-authority-r1",
+    "base_ref_declared": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+    "base_head_measured": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+    "base_tree_measured": "97006bebd7e496135967d05d59b01e798cdc7394",
+    "prestate": {
+      "branch_matches_declared": true,
+      "head_matches_declared_base": true,
+      "working_tree_clean_before": true,
+      "working_tree_clean_after": true,
+      "method": "git branch --show-current; git rev-parse HEAD; git status --untracked-files=all; git rev-parse HEAD^{tree} — all run before any file in this artifact was written."
+    }
+  },
+
+  "scope_declaration": {
+    "no_implementation": "This artifact contains no application code changes.",
+    "no_migration": "No file under db/migrations/** or db/prepared/** is created or edited by this artifact.",
+    "no_ordinal_assignment": "No migration ordinal is claimed. The last applied-shape ordinal measured on this branch is db/migrations/0069_fib_fibdb052_p1_indexes.sql (PR #135); 0070 is measured (LANE F11, [[project_billing_commercial_lifecycle_r2_census]]) to already be contended by the Billing/Controller42 successor lock. Any future DDL under this authority MUST re-derive the live next-available ordinal at implementation time, never assume 0070 or any other fixed number.",
+    "no_scheduler": "No pg_cron job, no Vercel cron, no queue worker, no `after()`-based background task and no polling loop is authorized or implied anywhere in this artifact.",
+    "no_hosted_resend_configuration": "No RESEND_API_KEY value, sending-domain, webhook secret, or any other Resend hosted configuration is set, read, or referenced as present in any environment by this artifact.",
+    "any_ddl_disposition": "LINEAGE_REDERIVATION_REQUIRED=YES for every DDL sketch in this artifact (see future_ddl). A sketch is an illustrative shape frozen for a successor lane to implement against, not a migration text to apply verbatim without re-measuring the live baseline immediately before writing it."
+  },
+
+  "owner_ratified_hpo_c_binding_target": {
+    "source_disposition": "Supplied verbatim in the owning session's dispatch to this lane (ROLE=ASYNC_NOTIFICATION_AUTHORITY_WRITER, 'Consume owner-ratified HPO-C'). Searched for a separately filed HPO-C artifact under docs/ops/** at base 88d95c65 (grep -ril \"HPO-C\\b\") and found ZERO hits: no prior lane registered a document under that exact identifier. This artifact therefore treats the dispatch's 'Binding target' block as the full, verbatim content of HPO-C, and records it here rather than citing a path that does not exist.",
+    "no_general_queue_platform_for_commercial_v1": true,
+    "invitation_email_durability_uses_dedicated_email_deliveries": true,
+    "logical_row_created_transactionally_with_invitation_or_event_persistence": true,
+    "provider_send_occurs_after_commit": true,
+    "v1_resend_rotates_invitation_token": true,
+    "raw_invitation_token_must_not_be_stored_encrypted_for_resend": true,
+    "states_exactly_at_minimum": ["queued", "accepted", "failed_retryable", "failed_permanent", "cancelled"],
+    "accepted_means_accepted_by_provider_not_delivered": true,
+    "no_automatic_retry_or_cron_required_for_v1": true,
+    "manual_resend_is_required": true,
+    "erasure_partial_must_become_re_sweepable_retryable": true,
+    "demo_request_must_persist": true,
+    "retention_pii_duration_governed_by_hpo_f_legal_do_not_invent_days": true,
+    "must_not_unify_stripe_events_into_email_deliveries": true,
+    "must_not_build_generalized_queue_abstraction": true
+  },
+
+  "reconciled_current_state": {
+    "method": "Every fact below was re-measured against this branch's working tree (HEAD 88d95c65, tree 97006beb), not inherited unread from prior census memory. Where a fact matches a prior LANE F4/F12 census finding, that census is cited as corroboration, not as the source of truth.",
+
+    "existing_invitation_flow": {
+      "token_identity": "The raw invitation token is 32 random bytes, hex-encoded, generated server-side at lib/invitations/service.ts:66; only its SHA-256 (lib/invitations/service.ts:35-37,67) is persisted, in invitations.tokenHash (db/schema.ts:145). The raw token exists only in the HTTP response of the create call and in the email body — never in a durable row.",
+      "consequence_for_resend": "Because the raw token cannot be reconstructed from tokenHash, any resend that must produce a working accept link again has exactly two options: (a) rotate — mint a new raw token, persist its new hash, invalidate the old one, or (b) additionally persist the raw token (plaintext or reversibly encrypted) so it can be re-emitted. HPO-C selects (a) explicitly and forbids (b) explicitly ('raw invitation token must NOT be stored encrypted for resend'). This authority treats that selection as settled, not as an open design question.",
+      "commit_before_send_already_implemented": "app/app/organization/members/actions.ts:36-42 already implements 'commit before send' for the CURRENT invitation flow: createInvitation() runs inside withOrganizationDatabaseContext (db/identity-context.ts) — a real db.transaction — and returns a `sendEmail` closure without invoking it; the closure is invoked at actions.ts:42, strictly after the transaction that persisted the invitation and its INVITATION_SENT audit row has returned (committed). The in-code comment at actions.ts:37-38 and the module header at lib/invitations/service.ts:1-11 both state the reasoning this authority now generalizes: a token emailed inside an open transaction that then rolls back would be a live link resolving to nothing.",
+      "audit_ordering": "logAuditAction(AUDIT_ACTIONS.INVITATION_SENT) is called at lib/invitations/service.ts:83-90, INSIDE createInvitation, which itself runs inside the withOrganizationDatabaseContext transaction opened by the caller (actions.ts:39-41). So INVITATION_SENT is committed to audit_logs together with the invitations row, BEFORE the provider is ever called. It records that a send was ATTEMPTED-TO-BE-ATTEMPTED, not that a send succeeded, and its afterJson (service.ts:89) carries no delivery outcome. This is exactly the reconciliation problem: introducing email_deliveries must not touch AUDIT_ACTIONS.INVITATION_SENT's meaning or timing, which is authorized, correct, and orthogonal to delivery — see email_delivery_model.audit_relationship below.",
+      "no_resend_action_exists_today": "grep across lib/invitations/service.ts and app/app/organization/members/**/*.ts found no `resend` symbol of any kind. Only createInvitation (send once) and revokeInvitation (terminate) exist. HPO-C's 'manual resend is required' is therefore a NEW capability, not a fix to an existing one.",
+      "provider_failure_is_currently_silent": "lib/invitations/email.ts:38-46 and lib/email/resend-client.ts:23-43 both collapse every provider outcome — missing API key, Resend-reported error, and success with no message id — to either `void` (email.ts swallows the exception) or `null` (resend-client.ts returns null for both the no-key case and the error case, discarding `error.message` after only console.error-ing it, resend-client.ts:37-39). No caller inspects the result. This is the exact defect email_deliveries.status must close: distinguishing accepted from failed_retryable/failed_permanent requires the provider result to survive past resend-client.ts, which today it does not."
+    },
+
+    "invitation_sent_audit_ordering": {
+      "restated": "See existing_invitation_flow.audit_ordering above. AUDIT_ACTIONS.INVITATION_SENT (lib/audit/logger.ts:21, value 'invitation.sent') is committed before any provider call and is never updated afterward. It is a governance record of an invite action being taken, not a delivery record. This authority does not rename, repurpose, or move it."
+    },
+
+    "resend_adapter": {
+      "file": "lib/email/resend-client.ts (45 lines, read in full)",
+      "construction": "ResendEmailProvider is constructed with `emailConfig.resendApiKey` by default; if empty, `this.client` is null and isReady() returns false (resend-client.ts:16,19-21).",
+      "no_key_behavior": "send() no-ops and returns null with a console.warn when no key is configured (resend-client.ts:24-27) — this is why lib/invitations/service.ts's header (lines 1-11) can call the send 'best-effort': an unconfigured environment never throws.",
+      "error_behavior": "On a Resend-reported error, send() logs `error.message` to console.error and returns null (resend-client.ts:37-40) — the SDK's structured error (which almost certainly carries a `name`/type distinguishing e.g. validation vs rate-limit vs transient) is discarded at this boundary. A future email_deliveries write path needs resend-client.ts (or a thin wrapper around it) to return a discriminated result instead of collapsing to null, so failed_retryable vs failed_permanent can be assigned (see provider_semantics.result_categories below). This authority does NOT specify that wrapper's shape — only that the current null-collapse is the exact reason the two failure states cannot yet be distinguished.",
+      "idempotency_key_support": "resend npm package version and idempotencyKey support UNKNOWN without node_modules present in this worktree (consistent with LANE F12's finding) — not re-verified here because it is immaterial to this authority: identity/idempotency is defined at the email_deliveries row level (see email_delivery_model), not delegated to a provider-side idempotency key. If the SDK later exposes one, wiring it is an implementation-time strengthening, not a prerequisite this authority blocks on."
+    },
+
+    "stripe_webhook_specialized_ledger": {
+      "file": "db/prepared/stella_0008_stripe_webhook_identity.sql (1163 lines; the stripe_webhook_events table and its three governing functions were read in full)",
+      "status": "PREPARED, NOT APPLIED to any database. WEBHOOK_DATABASE_IDENTITY_AVAILABLE stays false; the live handler still answers 503 (file header, lines 8-11).",
+      "why_it_is_the_pattern_to_copy": "stripe_webhook_events (lines 208-224) is the most complete claim/lease/attempts state machine in the repository: `event_id text PRIMARY KEY` as the idempotency key itself (not a separate unique index over derived data), `attempts integer NOT NULL DEFAULT 1`, a `status` CHECK enumerating a CLOSED state set ('received','processing','completed','failed','ignored'), a `last_error_code` CHECK enumerating a CLOSED, non-free-text error vocabulary, and an `ON CONFLICT (event_id) DO UPDATE ... WHERE (status conditions) RETURNING` claim (stripe_begin_event, lines 530-553) that turns 're-claim an existing id under the same identity' into a single atomic statement while refusing 're-claim under a different identity' (lines 543-552, 567-574). The 15-minute lease (`received_at > now() - interval '15 minutes'`, e.g. line 545) recovers a row stuck in-flight without any cron (no pg_cron in this project — file header lines 32-38 of INT-INT-001 makes the same measurement independently).",
+      "why_it_must_not_be_reused_as_the_object": "stripe_webhook_events is scoped, by its CHECK constraints, RLS policies (lines 402-463) and column set, to Stripe's own event identity (stripe_customer_id/stripe_subscription_id) and to the 'organization already carries this billing identity' tenancy bound (RR-CAP-14, lines 226-397). It has no column for a recipient email address, no column for an invitation/entity reference, and its RESTRICTIVE policies are keyed to `app.stripe_event_id`. HPO-C's explicit prohibition ('do not unify Stripe events into email_deliveries') matches this measurement exactly: the PATTERN (server-issued PK-as-idempotency-key, closed-vocabulary status/error CHECKs, lease-based reclaim, no payload column) generalizes cleanly; the OBJECT (one ledger row per Stripe event, addressed to a Stripe identity) does not.",
+      "additional_pattern_note": "db/prepared/stella_0014_operation_tickets.sql (INT-INT-001, read in full) independently reinforces the same principle from a different capability: an idempotency-bearing identity must be ISSUED by governed surface before the operation runs (§1, 'la identidad tiene que ser emitida, y emitida antes de que la operación corra'), never derived from caller-supplied content after the fact. email_delivery_model.identity_and_idempotency below applies this exact argument to email_deliveries."
+    },
+
+    "operation_tickets": {
+      "file": "docs/ops/contracts/INT-INT-001_operation_ticket_protocol.md (read in full)",
+      "status": "DESIGN — not applied to any database (file header, table row 'Estado'); no server action calls it.",
+      "why_it_is_not_a_delivery_ledger": "operation_tickets exists to meter Stella quota consumption exactly once per grounded query; its `category` CHECK ties it to that domain (§3 invariant 3), it expires within a CHECK-bounded 15-minute window unconditionally (§3 invariant 4 — a queued email waiting for manual resend must be able to sit far longer than 15 minutes without being treated as abandoned), it is a bearer credential once issued (§5 — no runtime principal even has SELECT on it), and it charges a quota unit on completion (§4) — none of which describes an email send attempt. It is cited here only for the 'identity is issued, not computed' principle noted above, and because its complete absence of a payload column (§5, 'columnas_de_payload=0') is the same PII-minimization discipline this authority requires of email_deliveries (see pii_minimization below)."
+    },
+
+    "marketing_leads_and_demo": {
+      "two_distinct_features_measured": "The repository has TWO separate, non-overlapping public capture surfaces that HPO-C's 'demo request' language could be conflated with. This authority disambiguates them explicitly because the binding target names only one.",
+      "marketing_leads_CAP_04": {
+        "entry_point": "app/api/marketing/lead/route.ts (POST), backing the SROI calculator / landing lead capture.",
+        "persistence": "Writes directly to marketing_leads via db.insert, bypassing the CAP-04 `submit_lead` definer (docs/ops/capabilities/CAP_04_PUBLIC_LEADS.md §1, 'Contexto de BD: Ninguno: db.insert(marketingLeads) sin abrir contexto'). CAP-04 itself is DESIGN, not applied.",
+        "in_scope_here": "NO. This capability already persists (a durable marketing_leads row exists in the code path, even though its governed definer is unapplied). It is out of scope for this authority's 'demo request must persist' clause and is not touched."
+      },
+      "demo_request_action": {
+        "entry_point": "app/actions/marketing/demo-request.ts, submitDemoRequest() (read in full, 87 lines) — backs the 'Solicitar demo' CTAs (module header, lines 2-6).",
+        "persistence_today": "ZERO. The module header states it outright: 'No DB write: this is a lead notification, not a persisted business record' (lines 3-6). submitDemoRequest validates (Zod, lines 16-24), checks an in-memory honeypot (lines 58-61) and an in-memory per-IP rate limit (lib/marketing/demo-request-rate-limit.ts, a bare `Map`, resets on server restart — file header lines 1-5), then calls `provider.send()` once to hola@uellix.com (lines 68-79) and returns ok/not-ok based on whether that email THREW (lines 68-85) — it never inspects whether Resend accepted the message, matching the same null-collapse defect as the invitation path.",
+        "this_is_the_object_HPO_C_names": "YES. 'demo request must persist' refers to THIS action. It currently has no durable row of any kind; a demo request that arrives while RESEND_API_KEY is unset (resend-client.ts:24-27, silent no-op) or while the send throws (demo-request.ts:82-85, caught and reported as a user-facing failure) leaves NO trace anywhere in the database — not even the audit_logs table, since this action is unauthenticated and never opens an identity/database context."
+      }
+    },
+
+    "evidence_erasure": {
+      "file": "lib/pipeline/evidence.ts, requestGovernedEvidenceErasure (lines 936-1000-ish, the terminal guard and state-transition block read in full at lines 890-990)",
+      "current_terminal_guard": "Line 948: `if (current.erasureState === 'erasure_complete' || current.erasureState === 'erasure_partial') { throw new Error('Evidence content has already been erased') }` — evaluated against the CURRENT (latest) version only, and it refuses re-entry for BOTH terminal outcomes alike.",
+      "why_erasure_partial_is_reachable": "partial is set (line 973, 980) when either the storage `.remove()` call fails (lines 971-974) or an individual version's `eraseEvidenceVersionContent` call throws (lines 976-982) during the STEP 2 sweep; finalErasureState becomes 'erasure_partial' (line 984) whenever at least one of those external operations failed, even though STEP 1 (line 961) already durably recorded every targeted version as 'erasure_requested' before either external call was attempted.",
+      "the_defect_HPO_C_names": "Because line 948 treats erasure_partial as equally terminal to erasure_complete, an evidence item that partially failed to erase (e.g. the storage object was removed but one version's content write threw) can NEVER be swept again through this governed path. The FIBC-009 erasure obligation becomes permanently unsatisfiable for that item's remaining un-erased content, with no operator-visible recovery route.",
+      "existing_scaffolding_this_authority_reuses": "versionsToSweep (line 954) already filters OUT versions at erasure_complete ('Forward-only ... a version already at the terminal erasure_complete state ... is never regressed') — the per-version idempotence a retry needs is already present in the function; only the OUTER guard at line 948 currently prevents reaching it a second time when the aggregate state is erasure_partial.",
+      "tombstone_vocabulary": "evidence_tombstones.erasure_state CHECK already accepts exactly {erasure_complete, erasure_partial, erasure_blocked} (comment at lines 916-917); EVIDENCE_TOMBSTONE_ERASURE_COMPLETED already covers the partial case in logger.ts per prior LANE F12 measurement (the verb name overstates what the payload records, which the payload itself corrects — LANE F12 finding, corroborated, not re-verified line-by-line here since AUDIT_ACTIONS content is unchanged since that census per the F12→F4 STILL_TRUE reconciliation)."
+    }
+  },
+
+  "minimum_substrate": {
+    "disposition": "OPTION C from LANE F12's candidate set, ratified by HPO-C as the binding target's five states plus the transactional/post-commit split — not re-opened for debate here.",
+    "one_new_durable_object": "email_deliveries — a dedicated table, distinct from stripe_webhook_events and from operation_tickets, scoped to Resend-backed notification sends only (invitation and, per demo_persistence_semantics, the demo request's own row references its own send the same way).",
+    "one_existing_object_reused_unmodified_in_shape": "stripe_webhook_events remains exactly what CAP-03 defines it as. Nothing in this authority adds a column to it, widens its CHECK constraints, or routes any non-Stripe event through it.",
+    "one_existing_flow_generalized": "the commit-then-send split already implemented for invitations (existing_invitation_flow.commit_before_send_already_implemented) becomes the general rule for every notification this authority governs, not a pattern reinvented per-caller.",
+    "two_state_fixes_required_no_new_object": "erasure_partial recovery (erasure_partial_recovery_semantics) and demo request persistence (demo_persistence_semantics) — both close a gap in EXISTING code paths and do not require a new table beyond, at most, one narrow demo_requests-shaped row for the second.",
+    "explicitly_not_built": [
+      "a general-purpose queue, job, or outbox table serving more than one notification kind",
+      "a worker process, cron job, or scheduled function of any kind",
+      "a retry/backoff engine",
+      "a unification of stripe_webhook_events and email_deliveries under one schema or one set of functions"
+    ]
+  },
+
+  "hpo_dispositions": {
+    "HPO-ASY-01": {
+      "title": "SCOPE — one table, no queue platform, no generalization",
+      "disposition": "email_deliveries is authorized as a single, purpose-built table for Resend-backed notification sends (invitation email today; demo-request notification per HPO-ASY-10). It is NOT a queue, NOT a job table, and carries NO `kind`/`payload` polymorphism that would let an unrelated future notification type be bolted on without its own HPO review. stripe_webhook_events and operation_tickets are reconciled as PATTERN references only (reconciled_current_state above) and are not modified, extended, or merged."
+    },
+    "HPO-ASY-02": {
+      "title": "Email delivery identity and idempotency",
+      "disposition": "Identity is SERVER-ISSUED at row-creation time and IS the idempotency boundary, mirroring the argument in operation_tickets (`reconciled_current_state.operation_tickets`) and the mechanism in stripe_webhook_events (`event_id` as PRIMARY KEY). email_deliveries.id (a server-generated UUID or an opaque digest of two independent random UUIDs, in the style of INT-INT-001 §5's ticket_id — the exact form is an implementation-time choice, not fixed here) is the PRIMARY KEY and the ONLY idempotency key: it is never derived from message content, recipient address, or invitation id, because a derived key would let two logically distinct send attempts (e.g. the original send and a rotated resend) collide or, conversely, would let a client-controlled retry of the identical logical attempt mint a second row. A manual RETRY of an existing attempt (HPO-ASY-08) re-uses the SAME row id and transitions its state; a RESEND (HPO-ASY-05) is a logically NEW attempt bound to a NEW invitation token and therefore gets a NEW email_deliveries row — it is never modeled as a retry of the old one.",
+      "closed_field_list_minimum": ["id (PK, server-issued)", "organization_id (tenancy bound, NOT NULL)", "reference_type (closed vocabulary, e.g. 'invitation' | 'demo_request' — NOT free text)", "reference_id (the invitations.id or demo_requests.id this delivery is FOR)", "status (CHECK, exactly the five HPO-C states)", "attempts (integer, counts manual attempts only — never incremented by anything automatic)", "last_error_code (CHECK, closed vocabulary, NOT the provider's free-text message — see pii_minimization)", "queued_at / accepted_at / failed_at / cancelled_at (nullable timestamps, at most one of accepted_at/failed_at/cancelled_at ever set, matching stripe_webhook_events' completed_at/failed_at split)"],
+      "explicitly_absent_fields": ["no email body / html column", "no raw token column (see HPO-ASY-05)", "no provider raw response/payload column", "no free-text error message column"]
+    },
+    "HPO-ASY-03": {
+      "title": "Transaction boundary",
+      "disposition": "The email_deliveries row is created in status='queued' inside the SAME database transaction that persists the referenced business row (the invitations insert, or — per HPO-ASY-10 — the demo_requests insert) and its audit entry. This generalizes the EXISTING, already-correct pattern at app/app/organization/members/actions.ts:36-42 / lib/invitations/service.ts:70-90 rather than introducing a new one. The provider.send() call happens STRICTLY AFTER that transaction has returned (committed) — never inside it, and never inside any transaction at all. A resend (HPO-ASY-05) follows the same rule: the new invitations token-rotation UPDATE, the new email_deliveries 'queued' row, and the cancellation of the superseded email_deliveries row are one transaction; the new provider.send() call happens after it commits.",
+      "explicit_negative": "A transaction is never held open across a provider network call. This is not a performance preference; it is the same correctness argument already recorded in the current code (a token/business row that commits and then a provider call that stalls holding row locks is the exact hazard actions.ts:36-38's comment names)."
+    },
+    "HPO-ASY-04": {
+      "title": "Provider attempt semantics and result categories",
+      "disposition": "Exactly ONE provider.send() call is made per manual attempt (initial create, or an explicit manual retry/resend). The result of that single call is classified into exactly one of the five HPO-C states before the function returns control to its caller — never left as an untyped null the way resend-client.ts:24,39 and lib/invitations/email.ts:44-46 do today.",
+      "result_categories": {
+        "queued": "The email_deliveries row exists and no provider call has yet been attempted, or an attempt is about to be made. This is the state the row is created in, inside the transaction (HPO-ASY-03).",
+        "accepted": "The provider call returned successfully (a message id was returned, matching the `data.id` branch at resend-client.ts:42). This means the PROVIDER ACCEPTED THE MESSAGE FOR DELIVERY. It is a terminal-for-this-attempt state but it is explicitly NOT a claim of delivery, bounce-free receipt, or the recipient having seen the message (see accepted_never_means_delivered).",
+        "failed_retryable": "The provider call failed in a way a human-initiated retry could plausibly succeed at (e.g. a transient network/5xx condition, a rate limit, a temporary provider-side error). Classification detail (which Resend error shapes map here) is an implementation-time decision against the pinned SDK version, not fixed by this authority — but the row MUST carry a closed-vocabulary last_error_code, never the raw SDK error text (pii_minimization).",
+        "failed_permanent": "The provider call failed in a way no retry of the SAME message will fix (e.g. a malformed/rejected recipient address, a policy rejection). A failed_permanent invitation delivery does not block a RESEND once the operator changes something material (typically nothing changes for an invitation resend except the token — if the recipient address itself was the defect, the underlying invitation must be revoked and re-created, which is out of scope for the delivery ledger to decide).",
+        "cancelled": "The row was superseded before (or without) a terminal provider outcome — the only two authorized triggers are a resend (HPO-ASY-05, the OLD delivery for a rotated token is cancelled) and a revoke (revokeInvitation already exists at lib/invitations/service.ts:119-151; a queued/accepted delivery for a revoked invitation is cancelled, never fired at nor left dangling)."
+      },
+      "accepted_never_means_delivered": "Restated because HPO-C is explicit and this is the state most likely to be misread in a UI: 'accepted' records that Resend's API returned success for the send call. It carries NO information about bounce, spam-folder placement, or the recipient opening the message. No UI text, audit action name, or variable name introduced under this authority may use the word 'delivered' for this state."
+    },
+    "HPO-ASY-05": {
+      "title": "Resend / token-rotation semantics",
+      "disposition": "A manual 'Resend' action on a pending invitation (i) generates a NEW raw token exactly as createInvitation does today (lib/invitations/service.ts:66-67), (ii) UPDATEs the SAME invitations row's tokenHash and expiresAt to the new values (the invitation's identity — id, email, role — does not change; only its credential does), (iii) transitions any prior email_deliveries row for that invitation that is still in 'queued' or 'accepted' to 'cancelled' (a stale accepted delivery pointed a working link at a now-invalidated token hash — leaving it 'accepted' would be a lie about what that link now does), and (iv) creates a NEW email_deliveries row in 'queued', bound to the SAME invitation reference_id, in the SAME transaction as (ii) and (iii). The provider send for the new token happens after that transaction commits (HPO-ASY-03). Because the raw token is only ever transient (existing_invitation_flow.token_identity), rotation is not a workaround for an inability to resend the old link — it is the ONLY mechanism that can produce a working link a second time, which is exactly why HPO-C forbids the alternative (encrypting the raw token at rest) rather than merely declining to require it: that alternative is a materially larger PII/secret-custody surface for a capability rotation already satisfies for free.",
+      "explicit_prohibition": "No column anywhere (invitations, email_deliveries, or any future table) may store the raw token in a form recoverable by the application — hashed-only remains the sole persisted form, unchanged from today's schema (db/schema.ts:145)."
+    },
+    "HPO-ASY-06": {
+      "title": "PII minimization",
+      "disposition": "email_deliveries follows stripe_webhook_events' discipline exactly (reconciled_current_state.stripe_webhook_specialized_ledger): NO payload column, ever. Specifically: (a) no email HTML/body is persisted — the template is regenerable from the referenced invitation/demo_request row plus the (already-existing) template functions, so persisting a rendered copy would be a second, driftable copy of the same PII for no operational gain; (b) no raw provider response is persisted, only the closed-vocabulary last_error_code (HPO-ASY-02); (c) the recipient email address is NOT duplicated onto email_deliveries — it is reached via reference_id -> invitations.email (or -> demo_requests.email per HPO-ASY-10), so there is exactly one durable copy of the address, not two that can diverge; (d) attempts is a count, never a log of each attempt's raw error text.",
+      "retention": "Explicitly NOT decided here. HPO-C is unambiguous: 'Retention/PII duration remains governed by HPO-F/legal review; do not invent number of days.' This authority defines NO default TTL, NO cron-based purge, and NO column implying one (e.g. no `purge_after` default value). A successor lane may add a nullable retention marker only once HPO-F fixes a number; inventing a placeholder number now would itself be the prohibited act."
+    },
+    "HPO-ASY-07": {
+      "title": "UI-visible semantics",
+      "disposition": "The organization members UI (app/app/organization/members/**, currently rendering only invitations.status: pending/accepted/revoked/expired) is authorized to additionally surface email_deliveries.status per pending invitation, as a SEPARATE, clearly-labeled field — never merged into or overwritten by invitations.status, since the two answer different questions (has the invite been accepted vs did the email get to the provider). Required UI vocabulary: 'queued' MAY render as 'Enviando…'/'Sending…'; 'accepted' MUST render as language equivalent to 'Sent' or 'Accepted by provider' and MUST NOT render as 'Delivered' or imply the recipient received it (HPO-ASY-04.accepted_never_means_delivered); 'failed_retryable' and 'failed_permanent' MUST both surface a visible 'Resend' affordance (HPO-ASY-08 governs who may click it); 'cancelled' MAY be hidden from the default view (it is superseded, not actionable) but MUST remain queryable for support/audit. This closes the specific defect LANE F16's census recorded (a prior independent measurement, corroborated not re-verified here) that invitation confirmations are otherwise invisible in this UI."
+    },
+    "HPO-ASY-08": {
+      "title": "Manual retry authorization",
+      "disposition": "A manual retry (re-attempting the SAME email_deliveries row, e.g. after failed_retryable) or a resend (HPO-ASY-05, a new row) is authorized under the EXACT SAME actor and tenancy boundary as the existing invite/revoke actions: `canInviteUsers(membership.role)` (lib/invitations/service.ts:42,121) gates the action, and the acting organization's id MUST equal the referenced invitation's organizationId (mirroring revokeInvitation's explicit cross-org check, lib/invitations/service.ts:131, 'if (invitation.organizationId !== ctx.organization.id) throw new Error(\"Forbidden\")'). No lesser role, and no actor from a different organization even holding a valid session, may retry or resend a delivery belonging to another organization's invitation. This is a negative control this authority requires be tested (see companion manifest, cross-org authorization)."
+    },
+    "HPO-ASY-09": {
+      "title": "erasure_partial recovery semantics",
+      "disposition": "The terminal guard at lib/pipeline/evidence.ts:948 is authorized to be narrowed so that erasure_partial no longer blocks re-entry into requestGovernedEvidenceErasure for the SAME evidence item, while erasure_complete continues to block it exactly as today. The retry MUST reuse the existing versionsToSweep filter (evidence.ts:954, already excludes erasure_complete versions) unchanged — a retry only ever re-attempts versions that are NOT already at the terminal complete state, never all versions unconditionally. The three-step sequence (durable erasure_requested write FIRST, then the external/content operation, then the durable terminal/partial write) is unchanged and applies identically on retry. A NEW governed audit verb is authorized for this specific transition — 'evidence_tombstone.erasure_retry_requested' — logged the same way and at the same point AC-1 logs 'erasure_requested' today (evidence.ts comment block, lines 913-925), so a retry is auditably distinguishable from a first attempt rather than silently re-emitting the same verb. erasure_blocked is unaffected: it remains unreachable at this stage exactly as documented (evidence.ts comment, lines 927-934) and this authority does not activate it.",
+      "explicit_non_goal": "This is a state-machine correction, not a durability/queue mechanism. Re-sweeping remains a SYNCHRONOUS, manually-triggered call — the same shape as today's single call — not a background retry loop. No automatic re-sweep is authorized (consistent with HPO-C's 'no automatic retry/cron is required for V1')."
+    },
+    "HPO-ASY-10": {
+      "title": "Demo persistence semantics",
+      "disposition": "submitDemoRequest (app/actions/marketing/demo-request.ts) is authorized to gain exactly one new durable row per submission, written BEFORE the notification email is attempted (the REVERSE order-of-priority from the invitation flow, and deliberately so: here the demo request itself — not a delivery record about it — is the business fact HPO-C requires survive a provider outage). Minimum column set, mirroring the PII-minimization discipline of HPO-ASY-06: id, name, organization (free text as submitted), email, message (nullable, as submitted), ip (already collected at demo-request.ts:41-45, for rate-limit correlation — retained at the same minimization level already in force, not expanded), created_at. This is a NEW table (name not fixed here — NOT `marketing_leads`, per reconciled_current_state.marketing_leads_and_demo's explicit disambiguation of the two features) or, if a successor lane finds it materially simpler, a narrowly-scoped `reference_type='demo_request'` row referenced by an email_deliveries entry the same way an invitation is — that choice is left open for implementation, but creating NO row at all is no longer authorized. The honeypot short-circuit (demo-request.ts:58-61, silently returns ok without sending or persisting) is UNCHANGED: a tripped honeypot must continue to produce zero durable trace, since it is deliberately not a real submission. The existing in-memory per-IP rate limit (lib/marketing/demo-request-rate-limit.ts) is UNCHANGED and out of scope — HPO-C does not ask for durable rate limiting, and generalizing it is exactly the scope creep §1 of this authority forbids.",
+      "notification_send_relationship": "The notification email to hola@uellix.com MAY still be attempted synchronously in the same request, after the demo_request row commits, and MAY reuse the same email_deliveries table (reference_type='demo_request') for its own queued/accepted/failed_retryable/failed_permanent/cancelled tracking — but a failure of that send MUST NOT cause the demo_requests row itself to be rolled back or deleted; the two are governed by the transaction boundary rule (HPO-ASY-03) exactly as invitations are, with the demo_requests insert playing the role invitations.insert plays today."
+    }
+  },
+
+  "email_delivery_model": {
+    "identity_and_idempotency": "See HPO-ASY-02 verbatim.",
+    "closed_state_set": ["queued", "accepted", "failed_retryable", "failed_permanent", "cancelled"],
+    "state_diagram": "queued -[provider call succeeds]-> accepted (terminal-for-attempt) ; queued -[provider call fails, retryable]-> failed_retryable -[manual retry]-> queued ; queued -[provider call fails, permanent]-> failed_permanent (terminal, no auto-retry; a resend creates a NEW row instead of transitioning this one) ; {queued|accepted} -[superseded by resend or by invitation revoke]-> cancelled (terminal)",
+    "no_state_named_delivered": "Deliberate. 'delivered'/'bounced'/'opened' would require a provider webhook (Resend delivery events) this authority does not authorize wiring — see out_of_scope.",
+    "audit_relationship": "email_deliveries is a STATE ledger, not a replacement for audit_logs. AUDIT_ACTIONS.INVITATION_SENT keeps its current meaning and timing exactly (reconciled_current_state.invitation_sent_audit_ordering). New audit verbs authorized for governed vocabulary, to be added to lib/audit/logger.ts's AUDIT_ACTIONS map by a successor lane (not created by this artifact): 'email_delivery.accepted', 'email_delivery.failed_retryable', 'email_delivery.failed_permanent', 'email_delivery.cancelled', 'email_delivery.resend_requested' (HPO-ASY-05), 'email_delivery.retry_requested' (HPO-ASY-08), 'evidence_tombstone.erasure_retry_requested' (HPO-ASY-09), 'demo_request.received' (HPO-ASY-10). A successor lane MUST use these exact literal strings rather than inventing alternatives, so this authority's naming is the single source of truth for the vocabulary, not a suggestion re-derived per implementer."
+  },
+
+  "out_of_scope": [
+    "A general async job/queue/outbox table serving more than one notification kind (HPO-ASY-01).",
+    "Any scheduler, cron job, or background worker — pg_cron is not installed in this project's baseline (LANE F12 measurement, corroborated by INT-INT-001 §4 independently) and this authority does not propose installing one.",
+    "Resend delivery-event webhooks (bounce/open/click tracking) and any 'delivered' state derived from them.",
+    "Hosted Resend configuration of any kind (API key provisioning, sending domain, DNS records).",
+    "Unifying stripe_webhook_events and email_deliveries under one table, one set of functions, or one migration file (HPO-C explicit prohibition).",
+    "Generalizing marketing_leads / CAP-04 or wiring its unapplied `submit_lead` definer — untouched, per reconciled_current_state.marketing_leads_and_demo.",
+    "Fixing the CAP-03/CAP-04 RLS/definer gaps noted in reconciled_current_state — those belong to their own capability lanes, not this one.",
+    "Deciding or defaulting a PII retention/purge duration for email_deliveries or demo_requests (HPO-ASY-06 — HPO-F/legal owns this).",
+    "Any change to AUDIT_ACTIONS.INVITATION_SENT's timing, meaning, or afterJson shape.",
+    "Any change to operation_tickets (INT-INT-001) — cited as pattern precedent only."
+  ],
+
+  "future_ddl": {
+    "LINEAGE_REDERIVATION_REQUIRED": "YES",
+    "reason": "No migration is written by this artifact. The sketches below freeze SHAPE (columns, CHECK vocabularies, the identity argument) for a successor implementation lane; they do not freeze an ordinal, a filename, or an 'apply now' authorization. The successor lane MUST re-run the live baseline measurement (current max applied-shape ordinal, current DDL-lock contention state per the Billing/Controller42/Wave successor queue noted in scope_declaration.no_ordinal_assignment) immediately before authoring any migration file, exactly as every other DDL-producing lane in this repository's history has had to.",
+    "illustrative_shape_email_deliveries": {
+      "status": "ILLUSTRATIVE ONLY — not a migration text, not applied, not ordinal-assigned.",
+      "sketch": "CREATE TABLE public.email_deliveries (id <server-issued PK, uuid or ticket-style digest>, organization_id uuid NOT NULL REFERENCES organizations(id), reference_type text NOT NULL, reference_id uuid NOT NULL, status text NOT NULL CHECK (status IN ('queued','accepted','failed_retryable','failed_permanent','cancelled')), attempts integer NOT NULL DEFAULT 0, last_error_code text, queued_at timestamptz NOT NULL DEFAULT now(), accepted_at timestamptz, failed_at timestamptz, cancelled_at timestamptz); -- no payload column, no raw-token column, no rendered-body column, per HPO-ASY-06.",
+      "explicitly_deferred_decisions": ["exact PK generation mechanism (uuid vs sha256 digest, see HPO-ASY-02)", "exact last_error_code closed vocabulary (depends on the pinned resend SDK's error shapes at implementation time)", "whether reference_type covers 'demo_request' from day one or is added when HPO-ASY-10 is implemented", "index strategy (at minimum an index on (reference_type, reference_id) is expected, mirroring stripe_webhook_events' status/received_at index, but is not fixed here)"]
+    },
+    "illustrative_shape_demo_requests": {
+      "status": "ILLUSTRATIVE ONLY — not a migration text, not applied, not ordinal-assigned.",
+      "sketch": "CREATE TABLE public.demo_requests (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, organization text NOT NULL, email text NOT NULL, message text, ip text, created_at timestamptz NOT NULL DEFAULT now());",
+      "explicitly_deferred_decisions": ["RLS/grant model for an unauthenticated write path (CAP-04's stripe_webhook_events-adjacent measured RLS pitfalls, reconciled_current_state.marketing_leads_and_demo's CAP-04 findings, are the precedent to consult, not to copy blindly)", "whether this becomes its own table or a reference_type on a shared intake table with marketing_leads — left to the successor lane, NOT decided as 'reuse marketing_leads' by this authority"]
+    }
+  },
+
+  "boundaries_and_prohibitions": [
+    "Fail-closed: any ambiguity between this artifact's HPO dispositions and a future measurement of live code is resolved by STOPPING and escalating, never by silently reconciling in the successor lane's favor (CLAUDE.md §5).",
+    "No silent authority expansion: a successor implementation lane may not treat 'email_deliveries' as license to also touch stripe_webhook_events, marketing_leads, or operation_tickets — each requires its own HPO if a change is later found necessary.",
+    "No historical evidence rewriting: reconciled_current_state describes the repository AT base 88d95c65b9c9a942195319f09aabaa7b127f7e30/tree 97006beb; it is not re-derived if this document is read later against a moved tip without a fresh reconciliation pass.",
+    "This artifact does not itself authorize implementation. NEXT (below) is an independent audit of THIS authority, not a green light to build against it."
+  ],
+
+  "open_unknowns": [
+    "UNKNOWN: exact Resend SDK (npm `resend`) error shape/discriminants for classifying failed_retryable vs failed_permanent — could not be verified without node_modules in this worktree; deferred to implementation time against the pinned version.",
+    "UNKNOWN: PII/retention duration — explicitly owned by HPO-F/legal, not this authority (HPO-ASY-06).",
+    "UNKNOWN: the live next-available migration ordinal and DDL-lock contention state at the moment a successor lane actually implements this — explicitly NOT assumed to be 0070 (scope_declaration.no_ordinal_assignment).",
+    "UNKNOWN: whether demo_requests should be its own table or a reference_type sharing a table with a future intake object — left open (HPO-ASY-10)."
+  ],
+
+  "test_manifest_disposition": {
+    "path": "docs/ops/async/ASYNC_NOTIFICATIONS_TEST_MANIFEST_v1.0.0.json",
+    "conforms_to": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+    "status": "A pre-implementation COMMITMENT, not a report of tests already run — nothing under this authority has been implemented, so no test file paths exist yet (declared 'UNKNOWN' per the schema's own instruction for that field)."
+  },
+
+  "NEXT": "ASYNC_NOTIFICATIONS_AUTHORITY_INDEPENDENT_OPUS_AUDIT"
+}
