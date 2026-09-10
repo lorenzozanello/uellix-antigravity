@@ -68,8 +68,13 @@ describe('the six baseline gates', () => {
     // founding_provenance, the MO-01 partial unique carrier and the MO-11
     // structural backfill; no superuser dependency, so superuserFreeUnits
     // advances in lockstep with unitCount) = 79.
-    expect(evidence.unitCount).toBe(80)
-    expect(evidence.superuserFreeUnits).toBe(80)
+    // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80 (no superuser
+    // dependency).
+    // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 (CREATE TABLE
+    // commercial_accounts, ADD COLUMN organizations.commercial_account_id;
+    // no superuser dependency, so superuserFreeUnits advances in lockstep) = 81.
+    expect(evidence.unitCount).toBe(81)
+    expect(evidence.superuserFreeUnits).toBe(81)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',

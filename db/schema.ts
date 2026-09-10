@@ -14,6 +14,24 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+// CE-1 (COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json, HPO-ODS-W2-26).
+// Structural existence only: no user_id, no membership, no role, no Stripe
+// column and no entitlement/quota column. commercial_status is a closed
+// four-value commercial-lifecycle set; 'suspended' is NEVER organizations.status
+// (PI-1). RLS is ENABLE + FORCE with ZERO policies in the migration — this
+// table is not tenant data and no tenant role gains access to it at CE-1.
+export const commercialAccounts = pgTable('commercial_accounts', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  legalName: varchar('legal_name', { length: 255 }),
+  billingCountry: varchar('billing_country', { length: 2 }),
+  billingContactEmail: varchar('billing_contact_email', { length: 255 }),
+  commercialStatus: varchar('commercial_status', { length: 50 }).default('active').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('commercial_status_check', sql`${table.commercialStatus} IN ('active', 'past_due', 'suspended', 'closed')`),
+])
+
 export const organizations = pgTable('organizations', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -55,6 +73,14 @@ export const organizations = pgTable('organizations', {
   // carrier predicates on. 'unknown' is the honest default for every
   // historical row; only the live self-service founding act writes 'self_service'.
   foundingProvenance: varchar('founding_provenance', { length: 20 }).default('unknown').notNull(),
+
+  // CE-1 (COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json +
+  // AMENDMENT_v1.0.1.json, HPO-ODS-W2-26). NULLABLE, NO DEFAULT, NO CE-1
+  // BACKFILL: NULL means no CommercialAccount governs this Organization.
+  // Every existing row is NULL immediately after CE-1 lands; no writer at
+  // CE-1 sets it. ON DELETE RESTRICT: a CommercialAccount that still governs
+  // a live Organization is not deletable.
+  commercialAccountId: uuid('commercial_account_id').references(() => commercialAccounts.id, { onDelete: 'restrict' }),
 }, (table) => [
   // MO-01 founder cardinality: at most ONE SELF-SERVICE-founded organization
   // per subject. Binds the self-service founding ACT, never founded_by
@@ -65,6 +91,10 @@ export const organizations = pgTable('organizations', {
     .where(sql`${table.foundedBy} IS NOT NULL AND ${table.foundingProvenance} = 'self_service'`),
   check('organizations_founding_provenance_check', sql`${table.foundingProvenance} IN ('self_service', 'platform', 'unknown')`),
   check('organizations_self_service_requires_founder_check', sql`${table.foundingProvenance} <> 'self_service' OR ${table.foundedBy} IS NOT NULL`),
+  // CE-1: ordinary non-unique b-tree. Uniqueness would re-impose the 1:1
+  // cardinality CC-4 exists to remove (one CommercialAccount governs
+  // one-or-more Organizations, per CA-02).
+  index('idx_organizations_commercial_account_id').on(table.commercialAccountId),
 ])
 
 export const organizationMembers = pgTable('organization_members', {

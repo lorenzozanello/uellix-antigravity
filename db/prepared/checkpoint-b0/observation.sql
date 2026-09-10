@@ -92,6 +92,8 @@ SELECT jsonb_pretty(jsonb_build_object(
     UNION ALL
     SELECT 'public.audit_logs' AS t, count(*) AS n FROM "public"."audit_logs"
     UNION ALL
+    SELECT 'public.commercial_accounts' AS t, count(*) AS n FROM "public"."commercial_accounts"
+    UNION ALL
     SELECT 'public.counterfactual_assessments' AS t, count(*) AS n FROM "public"."counterfactual_assessments"
     UNION ALL
     SELECT 'public.domain_object_versions' AS t, count(*) AS n FROM "public"."domain_object_versions"

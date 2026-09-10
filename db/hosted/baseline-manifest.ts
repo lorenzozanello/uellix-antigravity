@@ -1434,6 +1434,37 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: 'e4936fd55cf51a24d66f5325820eb5ad05348f5496e58ecebf2d6d5a9ff64788',
     },
   },
+  // CE-1 (HPO-ODS-W2-26, COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json
+  // + AMENDMENT_v1.0.1.json): CommercialAccount relation and live association.
+  // CREATE TABLE commercial_accounts (structural existence only -- no
+  // user_id, no membership, no role, no Stripe/entitlement/quota column) and
+  // ADD COLUMN organizations.commercial_account_id (nullable, no default, no
+  // CE-1 backfill, FK ON DELETE RESTRICT) plus its ordinary non-unique index.
+  // No dependency on 0031_rls_core.sql or any policy unit: CE-1 enables RLS
+  // without referencing current_user_org_ids()/current_user_is_super_admin()
+  // or any other helper function -- a dependency on 0031 would be a false edge.
+  {
+    ordinal: 81,
+    id: '0068_commercial_account_ce1.sql',
+    kind: D,
+    file: 'db/migrations/0068_commercial_account_ce1.sql',
+    sha256: 'f04e73571e234944e642ad23e8740814d9a76ac16c43d6c13d9effa7f284b099',
+    dependsOn: ['0067_tenancy_refusal_audit_insert_policy.sql'],
+    dml: 'none',
+    managed: 'A-hosted-compatible',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'CE-1: CREATE TABLE commercial_accounts (7 columns, one CHECK on ' +
+      'commercial_status) and ADD COLUMN organizations.commercial_account_id ' +
+      '(uuid, FK ON DELETE RESTRICT) plus its non-unique index. ' +
+      'commercial_accounts is created with ENABLE + FORCE ROW LEVEL SECURITY ' +
+      'and ZERO CREATE POLICY statements -- deliberate: the table is not ' +
+      'tenant data and no tenant role gains access to it at CE-1.',
+    rollback:
+      'CREATE TABLE / ADD COLUMN / ADD CONSTRAINT / CREATE INDEX have no IF NOT EXISTS guard and no ' +
+      'reverse script -- forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: { rlsEnabledTableCount: 1 },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

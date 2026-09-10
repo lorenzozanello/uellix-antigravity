@@ -406,9 +406,11 @@ export function buildHostedBaselineGateEvidence(
     // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80 baseline units
     // + 1 journal bootstrap step = 81 — DERIVED as BASELINE_ORDER.length + 1
     // from planProvisioningPhase, never grepped from the old count.
+    // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81 baseline
+    // units + 1 journal bootstrap step = 82 — DERIVED, not grepped.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 81 &&
+      firstProvisioning.steps.length === 82 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -432,7 +434,8 @@ export function evaluateHostedBaselineGates(
   // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.
   // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability): + 0066 = 79.
   // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 80
+  // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 81
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

@@ -471,8 +471,9 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
     // HPO-ODS-W2-17 (W2-B5 governed models): + 0064/0065 = 78.
     // HPO-ODS-W2-20/W2-21 (multi-org S1 founder traceability): + 0066 = 79.
     // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80.
-    expect(BASELINE_UNITS).toHaveLength(80)
-    expect(BASELINE_ORDER).toHaveLength(80)
+    // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81.
+    expect(BASELINE_UNITS).toHaveLength(81)
+    expect(BASELINE_ORDER).toHaveLength(81)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {
