@@ -1,0 +1,208 @@
+{
+  "manifest_id": "TENANCY-EMAIL-VERIFICATION-PACKET-B",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "TENANCY_S3_SELECTOR_REACHABILITY_REMEDIATION_v1.0.0",
+    "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.4",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.6",
+    "MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.8"
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "sentinels": [
+    {
+      "id": "S-IA-PREDICATE-CARDINALITY",
+      "purpose": "EXACTLY ONE module may derive the verified boolean from the provider field. Sentinel: after implementation, the set of modules that read email_confirmed_at is the single element lib/auth/identity.ts. A second read anywhere - a helper, a page, a route handler, a test utility that re-derives rather than imports - is an automatic STOP: two derivations are two sources of truth and can disagree by one release. Authority X-B-06."
+    },
+    {
+      "id": "S-IA-NO-PROFILE-COLUMN",
+      "purpose": "The verification state must never acquire a durable application-side copy. Sentinel: db/schema and db/migrations/** are unchanged by this node, and no column named emailVerified, email_verified or email_confirmed_at is added to public.users or to any other application table. A copy can drift from the provider between requests, which is precisely the defect M-B-2 exists to catch. Authority X-B-02."
+    },
+    {
+      "id": "S-IA-NO-CARRIER-WRITE-ON-REFUSAL",
+      "purpose": "The refusal path must never touch the selected-organization carrier. Sentinel: the set of modules that write or clear the carrier is unchanged from BASE - app/(authenticated)/app/organizations/select/actions.ts remains the sole writer at :119, and lib/auth/session.ts:243 remains the sole clear site, reached only by Packet A R3. A carrier mutation appearing on any Packet B code path is an automatic STOP regardless of what any assertion reports. Authority X-B-08 and Packet A NO_CARRIER_WRITE_DURING_ROUTING."
+    },
+    {
+      "id": "S-IA-NO-ENUMERATION-ON-REFUSAL",
+      "purpose": "listSelectableMemberships must not be called for a subject who has not proven mailbox control. Sentinel: on every unverified path the enumerator call count is ZERO. This is the observable that discriminates B0-before-R2 from B0-after-R2; a destination assertion alone cannot tell them apart, because both produce the same redirect. Authority ROUTING_CONTRACT_PACKET_B B3 and B0."
+    },
+    {
+      "id": "S-IA-NO-SUBJECT-IN-OUTPUT",
+      "purpose": "Neither the subject id, the session, the access token, nor any confirmation token may appear in rendered output, in an error message, or in a log line on any Packet B path. Sentinel: a synthetic subject id and a synthetic token value planted in the fixture must not appear in any captured stdout, rendered markup or thrown error text. Preserves the property lib/auth/identity.ts:40-41 and :120-122 already hold. Authority X-B-07."
+    },
+    {
+      "id": "S-IA-NO-NEW-AUDIT-VERB",
+      "purpose": "No audit verb is added for the verification refusal. Sentinel: AUDIT_ACTIONS in lib/audit/logger.ts is unchanged, and db/migrations/0067_tenancy_refusal_audit_insert_policy.sql still enumerates exactly two action literals under organization_id IS NULL. A third org-less verb is refused by the DATABASE, so adding one silently would fail at runtime rather than at review. Authority BOUNDARIES.audit_verb_is_out_of_scope."
+    },
+    {
+      "id": "S-IA-ROUTE-CARVEOUT-UNCHANGED",
+      "purpose": "The pre-organization route carve-out must not widen. Sentinel: the assertion at tests/auth/route-authorization-boundary.test.ts:297 still requires the ungated set to equal exactly onboarding and organizations/select, UNEDITED. Under the frozen destination /verify-email, served from app/(public)/, this assertion is not mechanically forced; an implementer editing it is a signal that the destination was moved into the authenticated group, which is a STOP. Authority B2_MINIMUM_SAFE_DESTINATION."
+    },
+    {
+      "id": "S-IA-NO-REAL-SECRETS",
+      "purpose": "No real credential, real email address, real Supabase project ref or real token may enter a fixture or an artifact. Sentinel: all fixture addresses remain example.org or example.test, all ids remain the existing synthetic UUIDs, and no environment value is embedded. Authority X-B-12."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "P-B-1",
+      "description": "VERIFIED USER CAN PROCEED. A provider-confirmed subject - email_confirmed_at set to a non-empty value on the subject returned by the mocked supabase.auth.getUser() - passes B0 at all four enforcement points and reaches the destination Packet A would have chosen for the same principal. This is the control that proves the gate is a PREFIX and not a wall; if it fails the node has broken every user, not merely unverified ones. Authority ROUTING_CONTRACT_PACKET_B B0 and PACKET_A_PRESERVATION.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "P-B-2",
+      "description": "PACKET A R2 ZERO CANDIDATES PRESERVED FOR A VERIFIED SUBJECT. Verified, non-super-admin, membership null, organizationRefusalCode TENANCY_NO_ORGANIZATION_SELECTED, enumerator returns an empty array. Every routing entry under contract must still resolve to /app/onboarding: requireOrganizationAccess via app/app/layout.tsx, the login action, the auth callback, and the onboarding page itself which must RENDER rather than redirect. Re-drives Packet A P-A1-1 with the verification dimension added. This control and P-B-3 through P-B-6 are also the executable form of X-B-11: a Packet A control that fails under Packet B is a STOP, never a control to be weakened, re-scoped or deleted to obtain a green run. Authority PACKET_A_PRESERVATION, X-B-11, and Packet A ROUTING_CONTRACT R2.branch_zero.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-B-3",
+      "description": "PACKET A R2 ONE OR MORE CANDIDATES PRESERVED, NO_AUTO_SELECTION INTACT. Verified subject, membership null, same refusal code, enumerator returns exactly ONE candidate: destination is /app/organizations/select, NOT /app/dashboard, and NO carrier exists after routing. Repeated with TWO candidates. The single-candidate case is asserted separately because it is the only one where auto-selection is invisible in ordinary use. Re-drives Packet A P-A1-2, P-A1-3 and N-A1-1 with the verification dimension added. Authority Packet A NO_AUTO_SELECTION and ROUTING_CONTRACT R2.branch_one_or_more.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-B-4",
+      "description": "PACKET A R3 STALE CARRIER PRESERVED FOR A VERIFIED SUBJECT. Verified, membership null, organizationRefusalCode TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER: the carrier is CLEARED BEFORE the redirect is issued, the destination is /app/organizations/select with the existing not_a_member error key, and there is NO fallback to another membership even when exactly one other active membership exists. The clear-before-redirect ORDERING is asserted, not merely the pair of effects, because reversing it fails to terminate. Authority Packet A ROUTING_CONTRACT R3 and SECOND_ORG_MEMBERSHIP B4.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-B-5",
+      "description": "PACKET A R1 SUPER-ADMIN PRESERVED FOR A VERIFIED SUBJECT. Verified super-admin with no membership redirects to /admin, ahead of any selector question and insensitive to the enumerator, and is NEVER routed to /app/organizations/select. Re-drives Packet A P-A1-4. Proves B0 did not disturb SUPERADMIN_BOUNDARY for the case that actually matters operationally. Authority Packet A ROUTING_CONTRACT R1 and BOUNDARIES.Platform_Roles.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-B-6",
+      "description": "PACKET A R4 RETURN SITE 3 PRESERVED AND NOT ABSORBED. Verified subject with membership NON-NULL and organizationRefusalCode TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER - the reused-code site where the organisation row could not be read. Its pre-existing fail-closed fallthrough at lib/auth/session.ts:248 is unchanged, its carrier is NOT cleared, and Packet B allocates it no verb and no destination. Proves Packet B did not sweep an open governed question into itself. Authority Packet A ROUTING_CONTRACT R4 and RETURNING_USERS RU-7.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-B-7",
+      "description": "OAUTH AND PROVIDER-CONFIRMED SUBJECTS ARE NOT FALSELY REFUSED. A subject arriving through app/auth/callback/route.ts exchangeCodeForSession whose provider set email_confirmed_at is ADMITTED, with app_metadata.provider set to a non-password value and with identities present. The control must ALSO assert that the code path consulted NO provider, flow or mechanism field in reaching that decision - the admission must be a consequence of provider confirmation state alone. This is the direct discharge of the section 4 requirement not to classify every non-password identity as unverified. Authority AUTH_MECHANISM_SEMANTICS.oauth_identity and the_flow_keying_prohibition.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "P-B-8",
+      "description": "THE DESTINATION IS TERMINAL FOR AN AUTHENTICATED UNVERIFIED SUBJECT. /verify-email RENDERS and issues no redirect. It shows the pending address without displaying the subject id or any token. It reads the principal WITHOUT calling requireAuth() or requireOrganizationAccess(), which is what keeps it outside the four enforcement points. Authority B2_MINIMUM_SAFE_DESTINATION.behaviour_at_the_destination.",
+      "test_file": "tests/auth/email-verification-routing.test.ts"
+    },
+    {
+      "id": "P-B-9",
+      "description": "THE DESTINATION IS NOT A DEAD END AFTER CONFIRMATION. A now-VERIFIED subject at /verify-email is redirected to /app/dashboard, and an UNAUTHENTICATED visitor is redirected to /login. Both onward edges are asserted to terminate rather than to re-enter the contract. Without this control a user who confirms their address is stranded on a page that describes a state they are no longer in. Authority B2_MINIMUM_SAFE_DESTINATION and B5_TERMINATION.",
+      "test_file": "tests/auth/email-verification-routing.test.ts"
+    },
+    {
+      "id": "T-B-1",
+      "description": "REDIRECT TOPOLOGY TERMINATES. Drive the enumerated edge set - proxy /login rule at lib/supabase/proxy.ts:91, the proxy protected-route rule at :83, app/app/layout.tsx:27 through requireOrganizationAccess, app/(authenticated)/layout.tsx:76 through requireAuth, the three B4 session-producing sites, and the three destination behaviours - for an authenticated UNVERIFIED principal and for an authenticated VERIFIED principal, and assert that every walk reaches a terminal node with no repeated state. The specific cycle candidate that MUST be shown to terminate is /login to /app/dashboard to /verify-email, which is the longest constructible walk. Authority B5_TERMINATION.",
+      "test_file": "tests/auth/email-verification-routing.test.ts"
+    },
+    {
+      "id": "T-B-2",
+      "description": "THE DESTINATION IS PINNED OUTSIDE EVERY GATE. Filesystem assertions: app/(public)/verify-email/page.tsx EXISTS; app/(authenticated)/app/verify-email/ DOES NOT EXIST; app/app/verify-email/ DOES NOT EXIST; and the recursive pre-organization carve-out set at tests/auth/route-authorization-boundary.test.ts:297 still equals exactly onboarding and organizations/select. Mechanically identical in spirit to the existing circular-gate control at :300-308, which pins the selector out of the layout that would gate it. Without T-B-2 a later refactor could move the destination inside the gate and reproduce the measured ERR_TOO_MANY_REDIRECTS incident. Authority B2_MINIMUM_SAFE_DESTINATION.",
+      "test_file": "tests/auth/route-authorization-boundary.test.ts"
+    },
+    {
+      "id": "P-B-10",
+      "description": "DEPENDENCY STATUS IS EXPLICITLY UNKNOWN FOR THE MACHINE-MEASURED ROUTE. pnpm ops:program-state could NOT be run in the authority worktree - node_modules is absent and installation was forbidden - so no dependency in this manifest carries a program-state-measured CLOSED status. The single dependency whose satisfaction actually gates this node, Packet A integration, was instead verified by git ancestry: cf0fbd7d is an ancestor of BASE 38dde646, and its ROUTING_CONTRACT is present in executable form at lib/auth/session.ts:177-249. Every OTHER dependency listed above is recorded as UNKNOWN and MUST be re-measured with pnpm ops:program-state at the start of the implementation lane before it is treated as satisfied. Authority MEASUREMENT_LIMITS.node_modules_absent and OPEN_FINDINGS F-IA-7.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-B-1",
+      "description": "UNVERIFIED PASSWORD USER WITH ZERO MEMBERSHIPS IS REFUSED AND CANNOT BOOTSTRAP AN ORGANISATION. email_confirmed_at null. Assert three things, not one: the destination is /verify-email and NOT /app/onboarding; the enumerator was NOT called; and driving createFirstOrganization DIRECTLY - the server action at app/(authenticated)/app/onboarding/actions.ts, bypassing the page - performs ZERO inserts into organizations and organization_members and writes ZERO audit rows. Asserting the action directly is required because the page redirect alone does not prove the submit path is closed. Authority B0, B1-P3, B3, X-B-09, RETURNING_USERS RU-1.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "N-B-2",
+      "description": "UNVERIFIED USER WITH ONE, AND SEPARATELY WITH MULTIPLE, MEMBERSHIPS IS REFUSED WITHOUT ENUMERATING. Parameterised over candidate counts one and two. Assert: destination /verify-email; listSelectableMemberships call count ZERO; no carrier written; and driving selectOrganizationAction directly writes NO carrier and returns the refusal. THE ENUMERATOR CALL COUNT IS THE LOAD-BEARING ASSERTION - it is the only observable that discriminates B0 evaluated BEFORE Packet A R2 from B0 evaluated after it, since both orderings produce the same redirect. Authority B0.evaluation_order_is_normative, B3, RETURNING_USERS RU-2 and RU-3.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "N-B-3",
+      "description": "AN UNVERIFIED SUBJECT CANNOT ACCEPT AN INVITATION. Drive app/invite/accept/page.tsx with a valid token and an unverified subject. Assert: acceptInvitation is NOT called, NO membership row is created, the invitation is NOT consumed, expired or revoked, and the token-carrying URL is preserved so the journey can resume after confirmation. This entry is reachable by neither B1-P1 nor B1-P2 - the route is under app/invite/, in no route group, and outside the proxy isProtected predicate at lib/supabase/proxy.ts:80 - so a gate placed only in the session helpers leaves it open and this control is the only thing that would notice. Authority B1-P4 and RETURNING_USERS RU-8.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "N-B-4",
+      "description": "AN UNVERIFIED PLATFORM SUPER-ADMIN IS REFUSED. isSuperAdmin true, email_confirmed_at null: the destination is /verify-email and NOT /admin, proving B0 is evaluated BEFORE Packet A R1 at lib/auth/session.ts:229. The control must also assert the subject is NOT routed to /app/organizations/select, so that refusing them does not accidentally open the tenant selector door SUPERADMIN_BOUNDARY closes. Authority B0.why_it_precedes_R1_super_admin and RETURNING_USERS RU-6.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "N-B-5",
+      "description": "PASSWORD RECOVERY CANNOT BYPASS THE GATE. A session created through the recovery return path - app/auth/callback/route.ts:14 exchangeCodeForSession, with a recovery-shaped code and, separately, with a safe next parameter supplied - carrying an unverified subject is REFUSED and routed to /verify-email, INCLUDING when next names a protected path. Assert additionally that the password-change action at app/(public)/reset-password/actions.ts is NOT gated: an unverified subject may still set a password and is returned to /login, because trapping an account that cannot recover is a worse failure than a credential rotation that grants nothing. Assert finally that the carried redirect target is still validated by the EXISTING isSafeRedirectPath and that no new redirect-target vocabulary was introduced, so the refusal did not open an open-redirect surface. Authority AUTH_MECHANISM_SEMANTICS.password_recovery parts 1 and 2, B4 site three, and X-B-10.",
+      "test_file": "tests/auth/email-verification-routing.test.ts"
+    },
+    {
+      "id": "N-B-6",
+      "description": "A PHONE-CONFIRMED, EMAIL-UNCONFIRMED SUBJECT IS REFUSED. Fixture: email_confirmed_at null, phone_confirmed_at set, and confirmed_at set - the exact shape db/baseline/stella_g2_schema.sql:3708 produces, since confirmed_at is GENERATED ALWAYS AS LEAST of the two. The subject MUST be refused. This is the control that proves the adjudication in PROVIDER_TRUTH_SOURCE was implemented rather than merely written down; without it, an implementation keyed on confirmed_at passes every other control in this manifest. Authority X-B-05 and PROVIDER_TRUTH_SOURCE.ADJUDICATION_BETWEEN_CANDIDATE_FIELDS.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "N-B-7",
+      "description": "A PROVIDER-STATUS LOOKUP ERROR IS REFUSED, AND IS NOT A LOGOUT. Three separate failures, asserted separately because they are not interchangeable: createClient() throws; supabase.auth.getUser() throws; and getUser() resolves with a null user and an error object. The first two must yield AUTH_UNAVAILABLE mapped to 503 by authContextErrorStatus, NOT a verified subject and NOT a redirect to /login; the third must remain AUTH_SESSION_REJECTED as it is at BASE. No path may produce a verified principal. Authority PROVIDER_TRUTH_SOURCE.fail_closed_on_error and X-B-03.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "N-B-8",
+      "description": "AN UNVERIFIED SUBJECT CANNOT REACH /app. Drive app/app/layout.tsx through requireOrganizationAccess with an unverified principal that HOLDS a valid membership and a valid organisation - the state in which every Packet A rule would otherwise pass and the product would render. Assert: redirect to /verify-email, no organisation-scoped query opened, and no layout chrome naming the organisation emitted before the redirect. This is the control for E9, the entire product surface, and it is the one a gate placed only in requireAuth would fail. Authority B1-P2 and B3.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "N-B-9",
+      "description": "THE VERIFICATION STATE IS NEVER READ FROM A CLIENT-CONTROLLED SOURCE. Drive the gate with a subject whose user_metadata claims email_verified true, whose identity_data claims email_verified true, and whose request carries a query parameter and a cookie asserting verification - while email_confirmed_at remains null. The subject MUST be refused in every combination. Authority X-B-01, X-B-02 and PROVIDER_TRUTH_SOURCE.ADJUDICATION_BETWEEN_CANDIDATE_FIELDS.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-B-1",
+      "description": "MUTATION: REMOVE THE APPLICATION VERIFICATION GATE. Delete the B0 refusal from all four enforcement points, leaving the predicate derived but unconsumed - the shape a revert or a merge resolution most plausibly produces. REQUIRED OUTCOME: N-B-1, N-B-2, N-B-3, N-B-4 and N-B-8 MUST ALL FAIL, because every unverified subject now proceeds. NON-VACUITY: every positive control P-B-1 through P-B-7 MUST SURVIVE, since removing a gate cannot change verified behaviour; if any positive control dies, the mutation was too coarse and removed more than the gate. Authority DUAL_GATE.GATE_B_APPLICATION.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "M-B-2",
+      "description": "MUTATION: TRUST A CLIENT OR PROFILE COPY INSTEAD OF PROVIDER TRUTH. Replace the read of email_confirmed_at with a read of user_metadata.email_verified, and separately with a read of a public.users column, keeping every other line identical. REQUIRED OUTCOME: N-B-9 MUST FAIL - it is the only control that plants a lying client claim beside a null provider field, and it is therefore the primary kill. N-B-6 MUST ALSO FAIL under the profile-copy variant, since a copy written at signup records the address and not its confirmation. NON-VACUITY: P-B-1 MUST SURVIVE, because a subject who is genuinely verified is verified in both sources; a mutation that kills P-B-1 has broken the read rather than relocated it. Authority X-B-01, X-B-02.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "M-B-3",
+      "description": "MUTATION: FAIL OPEN ON PROVIDER ERROR. Wrap the provider read so that a thrown createClient() or a thrown getUser() yields verified true - the shape an implementer produces under the reasoning that an outage should not block users. Test the three rewritings separately: a catch assigning true, a default parameter of true, and a nullish coalesce to true. REQUIRED OUTCOME: N-B-7 MUST FAIL on the first two failure modes it drives. NON-VACUITY: N-B-1, N-B-2 and N-B-8 MUST ALL SURVIVE, because a non-erroring unverified subject is unaffected by this mutation; if they die, the mutation changed the predicate itself rather than only its error path, and must be re-narrowed. Authority X-B-03 and PROVIDER_TRUTH_SOURCE.fail_closed_on_error.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "M-B-4",
+      "description": "MUTATION: KEY THE GATE ON THE FLOW. Two variants. Variant A: trust any session whose app_metadata.provider is not the password provider - the plausible mis-fix for the false-refusal fear section 4 names. Variant B: trust any session that arrived through app/auth/callback/route.ts, or that carries a next parameter - the plausible recovery convenience. REQUIRED OUTCOME: variant A MUST kill N-B-9 and the OAuth half of N-B-6 style fixtures that carry a non-password provider with a null email_confirmed_at; variant B MUST kill N-B-5. NON-VACUITY: P-B-7 MUST SURVIVE BOTH variants - a genuinely provider-confirmed OAuth subject is admitted either way - which is exactly why P-B-7 must assert that NO mechanism field was consulted, not merely that the subject was admitted. A P-B-7 that asserts only admission cannot attribute this kill and is not testing what it claims. Authority X-B-04 and the_flow_keying_prohibition.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "M-B-5",
+      "description": "MUTATION: SUBSTITUTE confirmed_at FOR email_confirmed_at. A one-token change, and the single most likely implementation error, since confirmed_at is shorter, appears in older documentation, and reads as the general case. REQUIRED OUTCOME: N-B-6 MUST FAIL, and it must be the ONLY control that fails. NON-VACUITY: every other negative control MUST SURVIVE, because for a subject with no phone confirmation the two fields are both null and the mutant is behaviourally identical. If any other control dies, the fixture set has accidentally given subjects a phone confirmation and the discrimination N-B-6 exists to make is not actually being made. Authority X-B-05 and db/baseline/stella_g2_schema.sql:3708.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "M-B-6",
+      "description": "MUTATION: GATE ONLY requireAuth, NOT requireOrganizationAccess. Remove the B0 refusal from lib/auth/session.ts:222 while leaving it at :137 - the most likely INCOMPLETE implementation, because requireOrganizationAccess does not call requireAuth and the two guards are siblings rather than a chain. REQUIRED OUTCOME: N-B-8 MUST FAIL, because an unverified member now reaches the entire product surface. NON-VACUITY: N-B-1, N-B-3 and N-B-4 MUST SURVIVE, since they are reached through requireAuth, the invite route, and requireAdminAccess respectively. This mutation is the reason ROUTING_CONTRACT_PACKET_B names both helpers explicitly instead of saying the session guard. Authority B1-P1 and B1-P2 and session_helper_layer.the_sibling_fact_is_load_bearing.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "M-B-7",
+      "description": "MUTATION: EVALUATE B0 AFTER PACKET A R2 INSTEAD OF BEFORE. Move the refusal below the enumerate-then-route branch at lib/auth/session.ts:232-236, so an unverified subject is enumerated first and refused second. REQUIRED OUTCOME: the enumerator-call assertion inside N-B-2 MUST FAIL. NON-VACUITY: the DESTINATION assertions in N-B-1 and N-B-2 MUST SURVIVE, because the subject still ends at /verify-email - which is the whole point: this mutation is invisible to any control that asserts only on the destination. If N-B-2 survives this mutation, it is asserting on the redirect rather than on the enumerator and the evaluation-order clause of the contract has no executable control at all. Authority B0.evaluation_order_is_normative.",
+      "test_file": "tests/auth/email-verification-gate.test.ts"
+    },
+    {
+      "id": "M-B-8",
+      "description": "MUTATION: MOVE THE DESTINATION INSIDE THE AUTHENTICATED GROUP. Relocate the verification-pending page to app/(authenticated)/app/verify-email/page.tsx, so it is served by a layout whose only statement is requireAuth() - which is B1-P1. REQUIRED OUTCOME: T-B-2 MUST FAIL on the filesystem assertion, and T-B-1 MUST FAIL because the walk no longer terminates: the gate now redirects to a page the gate itself guards, reproducing the measured ERR_TOO_MANY_REDIRECTS signature recorded at app/(authenticated)/layout.tsx:8-30. The route carve-out assertion at tests/auth/route-authorization-boundary.test.ts:297 MUST ALSO FAIL, since the ungated set gains a third member. THREE independent controls must die; if only the filesystem one does, the termination proof is not actually executable and T-B-1 is asserting on a static list rather than on a walk. Authority B2_MINIMUM_SAFE_DESTINATION and B5_TERMINATION.",
+      "test_file": "tests/auth/email-verification-routing.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "targeted_tests",
+    "ods_poststate"
+  ]
+}
