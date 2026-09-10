@@ -1,0 +1,221 @@
+{
+  "package_id": "WAVE4_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "WAVE4_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTABLE_WAVE4_DOMAIN_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT_AND_LINEAGE_ALLOCATION",
+  "document_class": "AUTHORITY_ONLY__NO_IMPLEMENTATION__NO_ALLOCATION",
+  "append_only": true,
+  "supersedes": "NONE — this is the first Wave 4 authority artifact in the repository.",
+  "mission_id": "LANE_AS__REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_R1",
+  "lane": "AS",
+  "revision": "R1",
+  "materialization_date": "2026-09-10",
+  "governing_domain_authority": "docs/ops/verification/REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_v1.0.0.json",
+  "companion_manifest": "docs/ops/verification/REPORT_INTEGRITY_PUBLIC_VERIFICATION_TEST_MANIFEST_v1.0.0.json",
+  "predecessor_wave_authority": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json",
+
+  "AS_OF_BASE": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
+  "AS_OF_BRANCH": "codex/report-integrity-public-verification-authority-r1",
+
+  "NAMING_DERIVATION": {
+    "rule": "Derived from the repository's existing wave-authority convention, not invented.",
+    "precedents_measured_at_AS_OF_BASE": [
+      "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json + docs/ops/wave3/WAVE3_TEST_MANIFEST_v1.0.0.json",
+      "docs/ops/wave2/W2_B4_AUTHORITY_v1.0.0.json, docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json"
+    ],
+    "why_not_the_wave2_batch_form": "docs/ops/wave2/ names artifacts per BATCH because Wave 2 was executed as five audited batches. Wave 4 has no batch partition yet; like Wave 3, it is a single wave-level domain authority. A batch partition, if one is later adjudicated, is a successor artifact, not a rename of this one."
+  },
+
+  "SCOPE": {
+    "governs": ["FIBIU-21", "FIBIU-22", "FIBIU-23", "FIBIU-24", "FIBIU-25"],
+    "source_of_membership": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json `waves` entry id '4', read at AS_OF_BASE. Membership is not asserted from memory.",
+    "DOES_NOT_GOVERN": ["FIBIU-26", "FIBIU-27", "FIBIU-31", "FIBIU-32", "FIBIU-30"],
+    "EXPLICIT_EXCLUSION_OF_FIBIU_26": "FIBIU-26 — the public disclosure object, the least-privilege public read model, the locator, and the `/verify` routes (FIBC-037; FIBDB-029, FIBDB-030, FIBDB-050) — is WAVE 5. It is excluded from this authority by measurement, not by preference. NO public verification surface, locator, or anonymous read model may ship under Wave 4. An implementation that ships one has crossed a wave boundary regardless of whether its tests pass.",
+    "what_wave_4_actually_delivers": "Report version lineage (FIBIU-23); Stella abstentions and governance events (FIBIU-21, FIBIU-22); the complete methodological snapshot, the lock transaction, the narrative attestation and the limitations declaration — and with them the content-integrity digest substrate (FIBIU-24); and the two official report representations with the mandatory methodological notice (FIBIU-25)."
+  },
+
+  "AUTHORITY_TIERS": {
+    "AUTHORITY_TO_AUTHOR": true,
+    "AUTHORITY_TO_IMPLEMENT": false,
+    "AUTHORITY_TO_APPLY_HOSTED": false,
+    "rule": "This artifact authorizes the WRITING of Wave 4 authority. It authorizes no code, no schema, no migration, and no hosted execution. Per-node tier state and the conditions that would flip AUTHORITY_TO_IMPLEMENT are defined in the governing domain authority under AUTHORITY_TIERS.IMPLEMENTATION_UNBLOCKING_PREDICATE, and are not restated here so that there is exactly one place where they can be changed.",
+    "hosted_apply_is_permanently_false_here": "No combination of audits, gates, or successor missions makes AUTHORITY_TO_APPLY_HOSTED true through THIS artifact. Hosted apply requires a separate hosted-apply authority."
+  },
+
+  "INHERITED_PRECONDITION_FIBDB_053": {
+    "statement": "FIBDB-053 is an EXTERNAL PREPARED_G2 gate owned by FIBIU-20 (Wave 3). It is not a Wave 4 object, but it sits inside the hard-dependency closure of four of the five Wave 4 nodes and therefore gates them.",
+    "measured_identity": "FIBDB-053 = stella_governed_completion_risk_parameters; change_type PREPARED_FUNCTION_REVISION; source_of_truth_track PREPARED_G2; prepared unit id stella_0017b_governed_risk_parameters; supersedes stella_0017_governed_stella_consumption; chain position = tail of TICKET_PACKAGE_CHAIN after stella_0018_category_bound_operation_tickets; owning unit FIBIU-20.",
+    "authority_state": "AUTHORING ONLY, granted by PVRI-16 with eight precommitted G2 acceptance criteria. AUTHORITY_TO_IMPLEMENT = FALSE. AUTHORITY_TO_APPLY_HOSTED = FALSE. NO HOSTED APPLY.",
+    "acceptance_criteria_reference": "docs/ops/verification/REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_v1.0.0.json -> PVRI_CLAUSES.PVRI-16, criteria G2-AC-1 .. G2-AC-8. They are referenced, not duplicated, so a correction lands in one place.",
+    "gate_effect_on_this_wave": "FIBIU-21, FIBIU-22, FIBIU-24 and FIBIU-25 are transitively gated on FIBDB-053. FIBIU-23 is NOT."
+  },
+
+  "NODE_AUTHORITY": {
+    "FIBIU-23": {
+      "priority": "FIRST — the only dependency-admissible Wave 4 entry point at AS_OF_BASE.",
+      "topological_level": "4.1",
+      "contracts_served": ["FIBC-031"],
+      "authorities_served": ["V-08"],
+      "db_changes": ["FIBDB-022", "FIBDB-023"],
+      "hard_dependencies": ["FIBIU-19", "FIBIU-02"],
+      "soft_dependencies": ["FIBIU-24"],
+      "closure_size": 17,
+      "gated_on_FIBDB_053": false,
+      "PRIORITY_PROOF": "The transitive hard-dependency closure of FIBIU-23 is {FIBIU-01,02,03,04,06,08,09,10,11,12,13,14,15,16,17,18,19} — 17 nodes, and FIBIU-20 is not among them. Every other Wave 4 node carries FIBIU-20, and therefore FIBDB-053, in its closure (FIBIU-21 size 19, FIBIU-22 size 20, FIBIU-24 size 23, FIBIU-25 size 24 — all containing FIBIU-20). FIBIU-23 is consequently the ONLY Wave 4 node that can open without the external G2 gate clearing. The owner's prioritization is confirmed by measurement rather than assumed.",
+      "binding_semantics": [
+        "`report_version` is an increasing integer within a lineage; `UNIQUE(lineage_id, report_version)`; both columns immutable once locked.",
+        "Draft edits create NO version. The version consolidates at lock.",
+        "A post-lock modification requires a NEW draft version linked to the prior via `supersedes_report_id`; the historical artifact is untouched.",
+        "Distinct versions may share one run when the change is narrative, editorial, or presentational; changed methodological inputs require a new run AND a new version bound to it.",
+        "`superseded` never retroactively invalidates.",
+        "BACKFILL: FIBDB-022 and FIBDB-023 are SAFE_AUTOMATIC_BACKFILL — `report_version = 1` and self-lineage for every existing report. This is the only Wave 4 DB change class that is safely automatic; it must not be used as precedent for the others.",
+        "PVRI-01 additionally binds the PUBLIC exposure rule: `report_version` may be exposed publicly; `lineage_id` and `supersedes_report_id` may not."
+      ],
+      "exit_gate": "A post-lock change produces a new version (FIB §12, FIBIU-23).",
+      "fib_model_recommendation": "SONNET_HIGH",
+      "fib_risk": "MEDIUM",
+      "AUTHORITY_TO_AUTHOR": true,
+      "AUTHORITY_TO_IMPLEMENT": false,
+      "AUTHORITY_TO_APPLY_HOSTED": false
+    },
+    "FIBIU-21": {
+      "priority": "SECOND — opens only once FIBIU-20 is CLOSED, which requires the FIBDB-053 gate.",
+      "topological_level": "4.1",
+      "contracts_served": ["FIBC-026", "FIBC-027", "FIBC-028", "FIBC-014"],
+      "db_changes": ["FIBDB-021"],
+      "hard_dependencies": ["FIBIU-20", "FIBIU-08"],
+      "closure_size": 19,
+      "gated_on_FIBDB_053": true,
+      "binding_semantics": [
+        "FIBDB-021 `stella_abstentions`, NEW_TABLE, migration stage [A,E], owning unit FIBIU-21.",
+        "FIBDB-049 vocabulary (owned by FIBIU-20) is CONSUMED here; this node does not own it and must not redefine it.",
+        "PVRI-10 binds one consequence on this node: no Stella artifact produced here — finding, disposition, abstention, event kind, count, or timestamp — is ever publicly exposed. That is a constraint on FIBIU-26's read model, but the substrate must be shaped so the constraint is expressible."
+      ],
+      "AUTHORITY_TO_AUTHOR": true,
+      "AUTHORITY_TO_IMPLEMENT": false,
+      "AUTHORITY_TO_APPLY_HOSTED": false
+    },
+    "FIBIU-22": {
+      "priority": "THIRD.",
+      "topological_level": "4.2",
+      "contracts_served": ["FIBC-029", "FIBC-030"],
+      "db_changes": ["FIBDB-055"],
+      "hard_dependencies": ["FIBIU-21"],
+      "closure_size": 20,
+      "gated_on_FIBDB_053": true,
+      "binding_semantics": [
+        "FIBDB-055 `stella_governance_events`, NEW_TABLE, migration stage [A,E].",
+        "Per FIB §snapshot-effect: `proposal_applied` events on the locked version enter the snapshot as Stella provenance and are the only ones determining material participation, which triggers the single V-09 transparency note. `review_omitted_by_user` and `review_unavailable` enter as V-17 governance context and NEVER trigger the note, because no participation occurred.",
+        "NO EVENT KIND IS EVER EXPOSED ON THE PUBLIC SURFACE. The public surface may carry the V-09 note; it may never carry what produced it."
+      ],
+      "AUTHORITY_TO_AUTHOR": true,
+      "AUTHORITY_TO_IMPLEMENT": false,
+      "AUTHORITY_TO_APPLY_HOSTED": false
+    },
+    "FIBIU-24": {
+      "priority": "FOURTH — the longest pole on the critical path, and the node that produces the integrity digest substrate.",
+      "topological_level": "4.3",
+      "contracts_served": ["FIBC-032", "FIBC-033", "FIBC-034"],
+      "db_changes": ["FIBDB-024", "FIBDB-025", "FIBDB-026", "FIBDB-027", "FIBDB-028", "FIBDB-038"],
+      "hard_dependencies": ["FIBIU-23", "FIBIU-19", "FIBIU-20", "FIBIU-22", "FIBIU-02", "FIBIU-17", "FIBIU-18"],
+      "closure_size": 23,
+      "gated_on_FIBDB_053": true,
+      "fib_risk": "HIGH — mandatory OPUS review (FIB §12).",
+      "binding_semantics": [
+        "Validation, snapshot capture, and the transition to `locked` form ONE governed operation that FAILS CLOSED if the package cannot be built in full.",
+        "PVRI-02 BINDS AN ADDITIONAL OBLIGATION ON THIS NODE: the content integrity digest is computed INSIDE that same transaction and stored immutably alongside the snapshot. It is never computed at read time and never from live tables. The digest algorithm, the canonical projection, and the four frozen conformance vectors are in the governing domain authority (PVRI-02, PVRI-03, PVRI-20) and are binding here.",
+        "PVRI-15 BINDS A SECOND OBLIGATION: the `internal_artifact_key` is minted and stored alongside the snapshot, is not derived from anything, and never crosses the public boundary.",
+        "Post-lock, EVERY representation reconstructs from the snapshot and NEVER from live methodology tables. This removes listEvidenceForProject / listMethodologyReviewsForProject / listOutcomeMappingsForProject from the locked render path.",
+        "FIBDB-024 canonical identity is `report_snapshots` and nothing else. FIB §4 records that an earlier hardening draft transiently overloaded this ID for the Stella risk-parameter revision; that revision is exclusively FIBDB-053. Any successor that conflates them is reintroducing a corrected error.",
+        "FIBDB-024 BACKFILL_CLASS = IMPOSSIBLE_TO_BACKFILL. Pre-boundary locked reports become `legacy_locked_without_pc01b_snapshot` with NO retrospective construction — and therefore, by PVRI-06, are permanently ineligible for public disclosure and, by PVRI-02, permanently carry `integrity_digest_kind='none'`.",
+        "FIBDB-025 and FIBDB-026 are stage E ONLY, never stage A: today the application permits editing solely by an application-layer guard, so these are behavioral changes, not schema-only ones.",
+        "FIBDB-038 is stage A and `NOT VALID`, so it does not invalidate history.",
+        "Reference authority is restricted to eligible evidence at its concrete used version; today's admission of any evidence in any state is closed here."
+      ],
+      "exit_gate": "Zero live reads post-lock (FIB §12, FIBIU-24). PVRI-20 adds: the four frozen digest vectors reproduce byte for byte.",
+      "AUTHORITY_TO_AUTHOR": true,
+      "AUTHORITY_TO_IMPLEMENT": false,
+      "AUTHORITY_TO_APPLY_HOSTED": false
+    },
+    "FIBIU-25": {
+      "priority": "FIFTH.",
+      "topological_level": "4.4",
+      "contracts_served": ["FIBC-035", "FIBC-036"],
+      "db_changes": [],
+      "db_disposition": "NO_DB_OBJECT — REASONED. Representation is a render-time selection; `report_variant` and its CHECK are preserved with no schema change, resemantized as the version's default preset. No chosen representation is stored. FIB records this as one of four reasoned NO_DB_OBJECT contracts; it does not introduce a 56th database item.",
+      "hard_dependencies": ["FIBIU-24"],
+      "closure_size": 24,
+      "gated_on_FIBDB_053": true,
+      "binding_semantics": [
+        "`Executive Summary Report` and `Full Methodological Report` are the two mandatory official representations, both rendered exclusively from the same immutable snapshot with identical figures, methodology, versions, decisions, scope and limitations.",
+        "`audit` and `methodological` become LEGACY_ALIAS for the Full Methodological Report; `funder` is retained as an OPTIONAL_PRESENTATION_PRESET.",
+        "Representation is independent of report identity and version: switching representation creates no version and requires no new run.",
+        "No calculation occurs at render time.",
+        "The FIBC-036 notice accompanies every representation in product, PDF, print, and the public surface, as a CANONICAL BLOCK — not only a lock banner — and its wording must carry the causality guarantee, which today's copy does not.",
+        "PVRI-11 BINDS THE PUBLIC CONSEQUENCE: the `funder` preset is NOT publicly disclosable; `public_document ∈ {none, executive_summary, full_methodological_report}`; and the public document path fails closed on any render failure rather than emitting a partial or placeholder document."
+      ],
+      "exit_gate": "Both representations show identical figures from a single snapshot (FIB §12, FIBIU-25).",
+      "AUTHORITY_TO_AUTHOR": true,
+      "AUTHORITY_TO_IMPLEMENT": false,
+      "AUTHORITY_TO_APPLY_HOSTED": false
+    }
+  },
+
+  "NODE_ORDER": {
+    "authorized_order": ["FIBIU-23", "FIBIU-21", "FIBIU-22", "FIBIU-24", "FIBIU-25"],
+    "derivation": "FIBIU-23 first because it is the only node whose closure excludes the FIBDB-053 gate. FIBIU-21 -> FIBIU-22 -> FIBIU-24 -> FIBIU-25 is forced by hard dependencies (22 depends on 21; 24 depends on 23 and 22; 25 depends on 24).",
+    "parallelism": "FIBIU-23 may proceed in parallel with FIBDB-053 authoring, since neither is in the other's dependency closure. That parallelism is the practical value of the priority proof: it converts an external gate from a full-wave stall into a partial one.",
+    "FIB_can_parallelize_flags_as_measured": "FIB §12 marks FIBIU-23, FIBIU-24 and FIBIU-25 CAN_PARALLELIZE: no. Those flags concern parallelism WITHIN the wave's dependent chain; they do not contradict the statement above, which concerns FIBIU-23 against an out-of-wave prepared-track authoring task."
+  },
+
+  "FUTURE_DDL": {
+    "LINEAGE_REDERIVATION_REQUIRED": "YES",
+    "rule": "Every DDL-bearing object in this wave — FIBDB-021, FIBDB-022, FIBDB-023, FIBDB-024, FIBDB-025, FIBDB-026, FIBDB-027, FIBDB-028, FIBDB-038, FIBDB-055 — requires its migration lineage to be RE-DERIVED against the then-current journal at the time of its own execution authority. This artifact allocates NOTHING.",
+    "NO_ALLOCATION_DECLARATION": {
+      "migration_ordinal_allocated": "NONE",
+      "ods_addendum_allocated": "NONE",
+      "w2_grant_allocated": "NONE",
+      "controller_lineage_allocated": "NONE",
+      "measured_ceilings_for_reference_only": {
+        "last_migration_file": "db/migrations/0069_fib_fibdb052_p1_indexes.sql",
+        "journal_entries": 70,
+        "journal_last_idx": 69,
+        "ods_maintenance_addendum_ceiling": "v1.0.30"
+      },
+      "explicit": "These ceilings are measurements at AS_OF_BASE, not reservations. A successor that treats 0070 or v1.0.31 as claimed by this artifact has misread it."
+    },
+    "stage_discipline": "FIB assigns migration stages per object (A = additive, E = hardening/behavioral, F = retirement). Stage assignments are FIB's, not this artifact's, and may not be advanced to obtain a passing gate — most pointedly FIBDB-025 and FIBDB-026, which are stage E only."
+  },
+
+  "SCOPE_DISCIPLINE": {
+    "rule": "Each node's implementation, when it is eventually authorized, runs under its own ods:scope allowlist derived at that time. This artifact declares no allowlist and registers no grant.",
+    "protected_surface_expectation": "Wave 4 nodes are expected to touch db/migrations/**, db/schema.ts, lib/pipeline/**, lib/reports/**, and app/app/projects/**. Whether any of those falls under ods-scope's DEFAULT_PROTECTED_PATTERNS is determined by reading scripts/ods-scope.ts at execution time, never asserted from this document.",
+    "no_silent_expansion": "A file that changed 'anyway' is not thereby in scope. Scope expansion is an authority act."
+  },
+
+  "OPEN_FINDINGS": {
+    "F-W4-1": {
+      "severity": "MATERIAL",
+      "finding": "Four of five Wave 4 nodes are blocked on an external PREPARED_G2 gate (FIBDB-053) for which only AUTHORING is authorized. Wave 4 therefore cannot complete under current authority, no matter how much implementation capacity is applied.",
+      "disposition": "Stated, not worked around. The correct sequence is: author FIBDB-053 to its eight precommitted criteria, obtain a separate hosted-apply authority, close FIBIU-20, then open FIBIU-21. In the meantime FIBIU-23 is genuinely openable."
+    },
+    "F-W4-2": {
+      "severity": "MATERIAL",
+      "finding": "FIBIU-24 carries FIB risk HIGH with a mandatory OPUS review, and PVRI-02/PVRI-15 add two further obligations to it (the digest and the internal artifact key) that FIB does not itself name.",
+      "disposition": "Both obligations are frozen in the governing domain authority with executable conformance vectors, so they are testable before they are implemented. The mandatory OPUS review is unchanged and is not satisfied by this artifact."
+    },
+    "F-W4-3": {
+      "severity": "OBSERVATION",
+      "finding": "FIBIU-25 has zero DB changes but is not therefore low-risk: it is the node that must add the causality guarantee to the FIBC-036 notice wording and render it as a canonical block, which is a governed copy change on a compliance-bearing surface.",
+      "disposition": "Recorded so that a successor does not treat a NO_DB_OBJECT node as mechanical."
+    },
+    "F-W4-4": {
+      "severity": "OBSERVATION",
+      "finding": "No Wave 4 batch partition exists. Wave 2 was executed as five audited batches; Wave 3 and Wave 4 are wave-level authorities.",
+      "disposition": "Not a defect. If a batch partition is later adjudicated, it is a successor artifact."
+    }
+  },
+
+  "NEXT_AUTHORIZED_ACTION": "REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_INDEPENDENT_OPUS_AUDIT — this artifact is audited together with the governing domain authority and the companion test manifest."
+}
