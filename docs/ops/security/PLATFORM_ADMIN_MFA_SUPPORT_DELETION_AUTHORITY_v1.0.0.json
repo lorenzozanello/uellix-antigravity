@@ -1,0 +1,414 @@
+{
+  "authority_id": "PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY_v1.0.0",
+  "title": "Platform admin principal, MFA/AAL2 step-up, tenant-authorized support capability, and destructive-deletion separation of duties",
+  "status": "DRAFT_AUTHORITY_PENDING_INDEPENDENT_AUDIT",
+  "lane": "AV",
+  "tier": "A_SECURITY_OPERATOR_AUTHORITY",
+  "mode": "DOCS_ONLY",
+  "base": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "base_tree": "97006bebd7e496135967d05d59b01e798cdc7394",
+  "branch": "codex/platform-admin-mfa-support-deletion-authority-r1",
+
+  "scope_exclusions": {
+    "statement": "This artifact is authority only. It defines contracts; it implements none of them.",
+    "excluded": [
+      "No runtime implementation.",
+      "No migration authored or applied.",
+      "No migration ordinal allocated or reserved.",
+      "No ODS allocation, unit id, or program-state registration.",
+      "No hosted auth configuration (supabase/config.toml is not modified).",
+      "No existing RLS policy is edited, dropped, or replaced by this artifact."
+    ]
+  },
+
+  "source_authority": {
+    "primary": "HPO-D, owner-ratified, consumed verbatim via the LANE AV directive",
+    "provenance_finding": {
+      "id": "PROV-01",
+      "measurement": "grep for a standalone HPO-D token across docs/, db/, lib/, app/ and scripts/ at tree 97006beb returns ZERO hits. The only near-matches are HPO-DEC-1..3, which are a different identifier.",
+      "consequence": "This artifact is the FIRST materialization of HPO-D in the repository. Its binding clauses are therefore reproduced verbatim below and are load-bearing as ratified input, not as a citation of pre-existing repository text. No clause here may be justified by appeal to an HPO-D document that does not exist in-tree.",
+      "precedent": "The same condition held for HPO-B (commercial state/entitlement authority) and HPO-G (staging/release authority)."
+    },
+    "binding_clauses_verbatim": [
+      "platform admin has NO standing tenant-content access",
+      "tenant role super_admin is not platform admin",
+      "platform/admin principal and tenant membership role must not be conflated",
+      "MFA/AAL2 required for platform admin and destructive/high-risk operations",
+      "support tenant-content access requires explicit tenant-authorized capability",
+      "capability is purpose-bound and expires; no automatic renewal",
+      "standing support ceilings already governed as 60-minute normal access / 4-hour maximum escalation ceiling",
+      "destructive deletion requires: two distinct human actors, fresh AAL2, reason, typed confirmation, durable audit",
+      "platform admin may operate on non-content commercial/operational metadata only under explicitly enumerated scope"
+    ],
+    "ceiling_clause_provenance": {
+      "id": "PROV-02",
+      "measurement": "The 60-minute / 4-hour support ceilings are asserted by the directive as ALREADY GOVERNED. A grep of docs/ for '60-minute', '60 minute', '4-hour', 'four-hour' and '240 minute' at tree 97006beb returns ZERO hits.",
+      "consequence": "The ceilings are carried here as ratified owner input. This artifact does NOT claim they are evidenced by a pre-existing repository document, and a successor MUST NOT cite a repository source for them that does not exist.",
+      "disposition": "BINDING_AS_RATIFIED_INPUT"
+    },
+    "reconciled_inputs": [
+      "F13 platform-admin/operator/MFA census R1 (62d9f072)",
+      "F17 privacy/security/AI-compliance census R1 (62d9f072 -> c2b59fa5)",
+      "LANE AU tenancy S4/S5 authority R1, finding F-AU-3"
+    ]
+  },
+
+  "principal_model": {
+    "PM-01": {
+      "clause": "PLATFORM_PRINCIPAL and TENANT_PRINCIPAL are DISJOINT principal kinds. They are not two values of one enumeration, not two rows of one role table, and not two branches of one predicate. A subject may hold both simultaneously; holding one NEVER implies the other.",
+      "binding": true
+    },
+    "PLATFORM_PRINCIPAL": {
+      "definition": "A natural person authenticated as an operator of the Uellix platform itself, acting outside and across all tenants.",
+      "identified_by": "A platform operator identity that is NOT a tenant membership row.",
+      "must_not_be": [
+        "A value of organization_members.role.",
+        "A boolean column on the shared users row that silently participates in tenant row-level predicates.",
+        "Implied by any tenant-scoped grant, relation, or helper."
+      ],
+      "grants": "ONLY the operations explicitly enumerated in commercial_metadata_boundary.enumerated_scope, plus operator_metadata reads. Nothing else.",
+      "denies": "All TENANT_CONTENT, at all times, absent a live SUPPORT_CAPABILITY. This denial is unconditional and has no administrative override.",
+      "measured_current_implementation": {
+        "predicate": "current_user_is_super_admin()",
+        "definition_site": "db/migrations/0031_rls_core.sql",
+        "body": "SELECT COALESCE((SELECT is_super_admin FROM users WHERE id = auth.uid() LIMIT 1), false)",
+        "properties": "LANGUAGE sql, STABLE, SECURITY DEFINER, SET search_path = public",
+        "finding": "The platform principal is a persistent boolean column on the tenant-shared users row. It carries no authentication-assurance input, no time bound, no purpose, no tenant authorization and no expiry. It is by construction STANDING access.",
+        "app_layer_gate": "lib/auth/session.ts requireAdminAccess() — reduces to `user.isSuperAdmin` and nothing else."
+      }
+    },
+    "TENANT_PRINCIPAL": {
+      "definition": "A natural person acting inside exactly one tenant, by virtue of an accepted membership in that tenant.",
+      "identified_by": "organization_members (user_id, organization_id, role, status).",
+      "roles_measured": "organization_members.role is a tenant-scoped value whose domain includes the literal 'super_admin'.",
+      "critical_conflation_finding": {
+        "id": "PM-CONFLATE-01",
+        "statement": "The string 'super_admin' is BOTH a tenant membership role value AND the colloquial name of the platform principal. They are unrelated authorities that share a name.",
+        "evidence": "lib/projects/service.ts approveProjectDeletion() gates on ctx.membership.role !== 'super_admin' — a TENANT role — while lib/auth/session.ts requireAdminAccess() gates on user.isSuperAdmin — the PLATFORM bit. Two different authorities, one name.",
+        "consequence": "Any successor that reasons about 'super admin' by name rather than by principal kind will silently conflate them. Reviews MUST resolve the name to a principal kind at every site.",
+        "binding_rule": "A tenant membership role value MUST NEVER be accepted as evidence of PLATFORM_PRINCIPAL, and PLATFORM_PRINCIPAL MUST NEVER be accepted as evidence of tenant membership or of any tenant role hierarchy position."
+      }
+    },
+    "PM-02": {
+      "clause": "There is no hierarchy between the two principal kinds. PLATFORM_PRINCIPAL is not 'above' organization_admin. A tenant role hierarchy comparison (for example a numeric rank where super_admin outranks all) MUST NOT be reachable from a platform principal.",
+      "known_hazard": "The documented bypass property that hasRole('super_admin', X) is always true means any rank-comparison helper reintroduces the conflation even when the literal 'super_admin' does not appear in the diff."
+    },
+    "PM-03": {
+      "clause": "A single subject holding both principals MUST have the two evaluated independently and MUST NOT have them combined disjunctively in a single predicate. Disjunction is precisely the defect the RLS successor contract exists to remove."
+    }
+  },
+
+  "support_capability": {
+    "SC-00": {
+      "clause": "SUPPORT_CAPABILITY is the ONLY mechanism by which a PLATFORM_PRINCIPAL may read or write TENANT_CONTENT. There is no second path, no administrative override, and no break-glass path defined by this authority."
+    },
+    "scope_model": {
+      "SC-01": "A capability is scoped to EXACTLY ONE organization_id. A capability with a NULL, wildcard, list, or 'all tenants' organization scope is INVALID and MUST be refused at issue time, not merely at use time.",
+      "SC-02": "A capability MAY be further narrowed to an enumerated set of entity kinds and/or entity ids within that organization. Narrowing is optional; widening beyond the single organization is impossible by SC-01.",
+      "SC-03": "Scope is evaluated at every access. A capability that was in scope for one row grants nothing for a row outside its scope.",
+      "SC-04": "Absence of scope is NOT universal scope. An unset or unparseable scope MUST fail closed to zero access. This is stated explicitly because the prevailing in-tree failure mode is the opposite: a null organization context that resolves to GLOBAL rather than to refusal."
+    },
+    "consent_authorization_act": {
+      "SC-05": "A capability comes into existence ONLY by an explicit authorizing act performed by a TENANT_PRINCIPAL of the target organization who holds a tenant role authorized to grant it. The platform MUST NOT be able to issue a capability to itself.",
+      "SC-06": "The authorizing act MUST be a distinct, affirmative, recorded act. It MUST NOT be inferred from a support ticket existing, from an email, from a contract, from a prior capability, or from the tenant's silence.",
+      "SC-07": "The authorizing act MUST record the purpose presented to the tenant at the moment of authorization. A capability whose recorded purpose differs from the purpose presented is INVALID.",
+      "SC-08": "Acceptance of terms, onboarding, or any commercial agreement MUST NOT constitute standing authorization for future support access."
+    },
+    "fields": {
+      "purpose": {
+        "required": true,
+        "semantics": "A bounded, human-readable statement of why access is needed, recorded at issue and immutable thereafter. Purpose is BINDING, not descriptive: an access whose actual use falls outside the recorded purpose is a violation even while the capability is otherwise live.",
+        "constraint": "Free text is permitted but MUST be non-empty and MUST be presented verbatim to the authorizing tenant principal before authorization."
+      },
+      "issued_by": {
+        "required": true,
+        "semantics": "The TENANT_PRINCIPAL who performed the authorizing act. MUST be a natural person. MUST be a member of the target organization at the moment of issue.",
+        "constraint": "MUST NOT be a platform principal, a service account, or a machine identity."
+      },
+      "issued_to": {
+        "required": true,
+        "semantics": "The single PLATFORM_PRINCIPAL the capability empowers. MUST be a natural person.",
+        "constraint": "A capability MUST NOT be issued to a group, a role, a team, or a service account. It is not transferable and not delegable."
+      },
+      "issued_at": {
+        "required": true,
+        "semantics": "Server-authoritative timestamp of the authorizing act.",
+        "constraint": "MUST be server-generated. MUST NOT be client-supplied."
+      },
+      "expires_at": {
+        "required": true,
+        "semantics": "Server-authoritative hard expiry.",
+        "constraint": "MUST be non-null. A capability with a null expiry is INVALID and MUST be refused at issue. Expiry is absolute wall-clock, NOT idle timeout: activity MUST NOT extend it."
+      },
+      "ceilings": {
+        "normal_access_ceiling_minutes": 60,
+        "maximum_escalation_ceiling_minutes": 240,
+        "SC-09": "expires_at MUST NOT exceed issued_at + 60 minutes for normal access.",
+        "SC-10": "An escalation MAY raise the ceiling to at most issued_at + 240 minutes. The 240-minute value is an ABSOLUTE CEILING on the escalated capability measured from ITS OWN issued_at, never a renewable window and never additive to a prior capability.",
+        "SC-11": "An escalation is itself a fresh authorizing act meeting SC-05..SC-08 and a fresh AAL2 challenge. Escalation MUST NOT be a unilateral platform action.",
+        "provenance": "The two ceilings are ratified owner input (see source_authority.ceiling_clause_provenance). They are not evidenced by pre-existing repository text."
+      },
+      "no_auto_renew": {
+        "SC-12": "A capability MUST NOT renew, extend, refresh, or roll over by any mechanism: not on activity, not on session refresh, not on token refresh, not on a subsequent request, and not by an operator action.",
+        "SC-13": "Obtaining continued access after expiry REQUIRES a wholly new capability, which REQUIRES a new authorizing act under SC-05..SC-08 and a fresh AAL2 challenge.",
+        "SC-14": "Back-to-back issuance is permitted but MUST be visible as separate capabilities in the audit record. It MUST NOT be represented as one continuous access, and each instance MUST independently satisfy SC-09/SC-10 from its own issued_at."
+      },
+      "revocation": {
+        "SC-15": "The issuing organization MUST be able to revoke a live capability unilaterally and at any time, without platform cooperation and without platform ability to refuse or delay.",
+        "SC-16": "Revocation takes effect for all evaluations after the revoking act commits. A revoked capability grants nothing thereafter.",
+        "SC-17": "Revocation MUST be durable and MUST NOT be reversible by un-revoking. Restoring access REQUIRES a new capability.",
+        "SC-18": "A revoked or expired capability MUST be distinguishable from a capability that never existed, in the audit record. It MUST NOT be deleted."
+      },
+      "aal_evidence": {
+        "SC-19": "A capability MUST record the authentication-assurance evidence of BOTH the authorizing tenant principal at issue AND the platform principal at each use.",
+        "SC-20": "Recorded AAL evidence MUST include the assurance level reached and the server-authoritative time at which it was reached, so that freshness is decidable after the fact and not merely at the moment of the check.",
+        "SC-21": "AAL evidence MUST be server-derived. A client-asserted assurance level is not evidence and MUST be refused."
+      }
+    },
+    "allowed_content_operations": {
+      "SC-22": "READ of TENANT_CONTENT rows within scope, for the recorded purpose, while the capability is live and the acting platform principal holds fresh AAL2.",
+      "SC-23": "WRITE to TENANT_CONTENT is DENIED BY DEFAULT. A write, if ever authorized, REQUIRES an explicitly write-scoped capability whose authorizing act presented the write intent to the tenant. A read-scoped capability MUST NEVER permit a write.",
+      "SC-24": "Every content access performed under a capability MUST be individually audited (see audit_requirements). Access is not audited at issue; it is audited at USE."
+    },
+    "prohibited_operations": {
+      "SC-25": "Deletion of TENANT_CONTENT under a support capability is PROHIBITED without exception. Destructive deletion is governed solely by destructive_sod and is not a support operation.",
+      "SC-26": "Bulk export, bulk read, or enumeration of TENANT_CONTENT across the scope is PROHIBITED absent an explicitly bulk-scoped authorizing act.",
+      "SC-27": "Cross-tenant access under a single capability is PROHIBITED by SC-01 and MUST fail closed rather than degrade to a broader scope.",
+      "SC-28": "A capability MUST NOT be used to alter its own scope, purpose, expiry, or revocation state, nor to issue another capability.",
+      "SC-29": "A capability MUST NOT be used to alter audit records, membership, roles, or the platform principal set.",
+      "SC-30": "Use of a capability to satisfy either actor of a destructive-deletion SoD pair is PROHIBITED."
+    },
+    "measured_current_state": {
+      "finding": "ZERO substrate exists. There is no capability table, no issuing act, no expiry, no revocation, and no purpose anywhere in db/, lib/ or app/ at tree 97006beb. Support access today is indistinguishable from standing platform access.",
+      "consequence": "Every clause in support_capability is a forward contract with no current implementation to reconcile against."
+    }
+  },
+
+  "mfa_aal2": {
+    "vendor_neutrality": {
+      "MA-00": "This authority defines assurance SEMANTICS and evidence obligations only. It selects no vendor, no factor type, no library, and no hosted configuration. Any successor MUST satisfy these semantics; it is free to satisfy them with any mechanism that does."
+    },
+    "MA-01": "AAL1 means a single authentication factor was presented. AAL2 means at least two distinct factors of different kinds were presented. The distinction MUST be server-derived and MUST NOT be inferable from client-controlled input.",
+    "MA-02": "FRESH AAL2 means an AAL2 challenge was satisfied within a bounded freshness window ending at the moment of the guarded operation. Holding a session that once reached AAL2 is NOT fresh AAL2.",
+    "MA-03": "The freshness window MUST be strictly shorter than the session lifetime, and MUST be evaluated server-side against a server-authoritative timestamp of the challenge.",
+    "MA-04": "Step-up means: the guarded operation is REFUSED, an AAL2 challenge is required, and the operation is retried only after the challenge succeeds. Step-up MUST NOT silently proceed, MUST NOT downgrade to a warning, and MUST NOT be satisfiable by re-presenting the first factor.",
+    "MA-05": "AAL ABSENT and AAL STALE are distinct conditions and MUST be distinguishable in refusal handling and in audit. Both MUST refuse. Neither MUST be treated as satisfied.",
+    "MA-06": "Where assurance state cannot be determined at all, the operation MUST refuse. Undeterminable assurance is NOT satisfied assurance.",
+    "guarded_operations": {
+      "MA-07": "Assuming PLATFORM_PRINCIPAL for any operation.",
+      "MA-08": "Issuing, escalating, or using a SUPPORT_CAPABILITY (issue by the tenant principal; use by the platform principal).",
+      "MA-09": "Both actors of a destructive deletion, independently.",
+      "MA-10": "Any change to the platform principal set itself."
+    },
+    "measured_current_state": {
+      "finding": "No AAL or MFA substrate exists in application code. A repository-wide search for aal2, assuranceLevel, mfa, totp, enrollFactor and related tokens across lib/, app/ and db/ returns hits in only two files: db/baseline/stella_g2_schema.sql, where auth.aal_level and auth.mfa_amr_claims are part of the vendor's own auth schema and are unused by Uellix, and a passing textual mention in a tenancy authority document.",
+      "corroboration": "Consistent with F13's measurement that session claims carry only {sub, role}, so no assurance level reaches the database at all.",
+      "consequence": "Every AAL2 obligation in this authority is unimplementable at tree 97006beb without new substrate. This is recorded as a gap, not as a satisfied control."
+    }
+  },
+
+  "destructive_sod": {
+    "SD-00": "A DESTRUCTIVE OPERATION is one that removes, tombstones, or renders unrecoverable tenant data or a tenant itself. The enumeration of destructive operations is a successor obligation; project deletion is the one instance measured and governed here.",
+    "SD-01": {
+      "clause": "TWO DISTINCT HUMAN ACTORS. requester != approver, compared by natural-person identity.",
+      "detail": "The comparison MUST be on the persisted identity of the requesting person, not on a session, a role, a request, or a transaction. Two sessions of one person are ONE actor."
+    },
+    "SD-02": {
+      "clause": "BOTH ACTORS MUST BE HUMAN.",
+      "detail": "Neither role may be filled by a service account, an automation, a scheduled job, or a machine identity. A destructive operation MUST NOT be completable without two natural persons."
+    },
+    "SD-03": {
+      "clause": "FRESH AAL2 FOR BOTH ACTORS, INDEPENDENTLY.",
+      "detail": "The requester's freshness is evaluated at request time; the approver's at approval time. The requester's earlier AAL2 MUST NOT satisfy the approver's obligation."
+    },
+    "SD-04": { "clause": "REASON.", "detail": "A non-empty reason MUST be recorded. Both the request and the approval carry their own reason; the approval's reason MUST NOT be defaulted from the request's." },
+    "SD-05": { "clause": "TYPED CONFIRMATION.", "detail": "The approver MUST type an exact confirmation token. It MUST NOT be pre-filled, defaulted, or satisfiable by a click alone." },
+    "SD-06": { "clause": "DURABLE AUDIT.", "detail": "Request and approval MUST each produce a durable audit record naming the actor, the reason, the assurance evidence, and the time. The records MUST survive the deletion they describe." },
+    "SD-07": {
+      "clause": "NO TENANT SUPER_ADMIN HIERARCHY SUBSTITUTION.",
+      "detail": "Holding the tenant role 'super_admin' MUST NOT substitute for either SoD actor, MUST NOT permit one person to fill both roles, and MUST NOT be treated as outranking the requirement. The requirement is structural (two people) and is not a permission that a sufficiently privileged role can satisfy alone."
+    },
+    "SD-08": {
+      "clause": "PLATFORM PRINCIPAL IS NOT AN SoD ACTOR BY DEFAULT.",
+      "detail": "A platform principal MUST NOT supply either actor for a tenant's destructive operation absent an explicitly enumerated authority, and never via a support capability (SC-30)."
+    },
+    "measured_current_state": {
+      "site": "lib/projects/service.ts approveProjectDeletion() (declared at line 289)",
+      "satisfied_today": [
+        "SD-04 reason — deleteReason is required and is recorded.",
+        "SD-05 typed confirmation — the approver must supply the exact literal 'ELIMINAR'; it is compared strictly.",
+        "SD-06 durable audit — logAuditAction writes PROJECT_DELETION_APPROVED with actor, reason and timestamp."
+      ],
+      "violated_today": [
+        {
+          "clause": "SD-01 requester != approver",
+          "finding": "approveProjectDeletion() performs NO comparison between the approving user and the requesting user. One person holding the tenant role 'super_admin' can both request and approve the same deletion.",
+          "expressibility": "FULLY EXPRESSIBLE TODAY WITH ZERO DDL. projects.deletion_requested_by already exists, is already written by requestProjectDeletion() at lib/projects/service.ts:265, and is already guaranteed non-null whenever a request is active by the existing CHECK constraint deletion_request_consistency_check (db/schema.ts:245). The approval path simply never reads it.",
+          "disposition": "CODE_FIX_ONLY. This is the single highest-value, lowest-cost closure in this authority."
+        },
+        {
+          "clause": "SD-03 fresh AAL2",
+          "finding": "No assurance check of any kind exists on either the request or the approval path.",
+          "disposition": "REQUIRES_NEW_SUBSTRATE. Blocked on mfa_aal2."
+        },
+        {
+          "clause": "SD-07 no tenant super_admin substitution",
+          "finding": "The approval gate IS ctx.membership.role !== 'super_admin' — it is precisely the tenant role hierarchy substitution this clause prohibits, and it is the only gate present.",
+          "disposition": "REQUIRES_REDESIGN under principal_model."
+        },
+        {
+          "clause": "SD-02 both actors human",
+          "finding": "No actor-kind check exists on either path.",
+          "disposition": "REQUIRES_NEW_SUBSTRATE."
+        }
+      ]
+    }
+  },
+
+  "commercial_metadata_boundary": {
+    "CM-00": "A platform principal may operate on non-content commercial and operational metadata ONLY under an explicitly enumerated scope. Enumeration is the mechanism; 'it is not content' is NOT sufficient justification for access.",
+    "CM-01": "The enumerated scope is a CLOSED WORLD. An operation not enumerated is DENIED. Silence is denial, never permission.",
+    "CM-02": "The boundary is drawn on the classified census categories: OPERATOR_METADATA and the enumerated subset of TENANT_METADATA are in scope; TENANT_CONTENT is NEVER in scope; GLOBAL_REFERENCE is in scope only for its genuinely tenantless rows (see CM-05).",
+    "enumerated_scope": {
+      "CM-03_operator_metadata": {
+        "tables": ["audit_logs", "domain_object_versions", "marketing_leads", "signup_allowlist", "operation_tickets"],
+        "operations": "READ. Plus INSERT to audit_logs, which is append-only.",
+        "prohibited": "UPDATE or DELETE of audit_logs or domain_object_versions by any principal, platform included. The audit record MUST NOT be editable by the party it audits.",
+        "hazard": "audit_logs.after_json and domain_object_versions carry VERBATIM prior object state across 40+ audited verbs. Reading these tables can therefore constitute reading TENANT_CONTENT by another name. A successor MUST establish that operator reads of these tables do not return tenant content, or MUST bring them under support_capability. Recorded as an open finding, not as a resolved boundary."
+      },
+      "CM-04_tenant_metadata": {
+        "tables": ["organizations", "organization_members", "invitations"],
+        "operations_permitted": "READ of the tenant's existence, status, plan/commercial fields, membership edges and pending invitations, for enumerated commercial and operational purposes. WRITE limited to the commercial and lifecycle status fields the platform is authorized to set.",
+        "prohibited": "Writing membership or roles to grant a platform principal tenant access. Self-invitation. Self-promotion. Any write whose effect is to create a tenant principal for the operator.",
+        "hazard": "organizations is simultaneously the tenant record and the tenant ENUMERATOR. Platform read access to organizations reveals the full customer list. This is accepted as in scope for commercial operation, but a successor MUST NOT reuse that read as justification for reaching the tenant's contents."
+      },
+      "CM-05_global_reference": {
+        "tables": ["fx_rates", "proxy_sources", "financial_proxies", "financial_proxy_versions"],
+        "measured_property": "All four carry a NULLABLE organization_id. A NULL row is SHARED reference data; a non-NULL row is that tenant's own content.",
+        "operations": "Platform operation is permitted ONLY on rows where organization_id IS NULL. Rows with a non-NULL organization_id are TENANT_CONTENT and are governed by support_capability.",
+        "binding_hazard": "A predicate of the shape (organization_id IS NULL OR organization_id = <current org>) is a PERMANENT CROSS-TENANT CHANNEL when the current-org value is itself null or unset, and MUST NOT be used. The NULL-means-shared and NULL-means-tenantless cases are distinct and MUST be distinguished explicitly, never welded together."
+      }
+    },
+    "CM-06": "Every platform operation on commercial or operational metadata MUST be audited with actor, operation, target and assurance evidence. Metadata scope reduces the authorization bar; it does NOT reduce the audit bar."
+  },
+
+  "rls_successor_contract": {
+    "RS-00": "This authority OWNS the policy-level standing platform-admin bypass. The problem is not delegated to any other lane, and no other lane's success may be reported as its closure.",
+    "RS-01": {
+      "clause": "CLOSED WORLD",
+      "detail": "The successor MUST close the UNION of all three declared lineages: 140 superadmin policy disjuncts. Closing db/migrations alone (127) is INSUFFICIENT and MUST NOT be reported as closure.",
+      "census": "docs/ops/security/PLATFORM_ADMIN_RLS_SUPERADMIN_POLICY_CENSUS_v1.0.0.json"
+    },
+    "RS-02": {
+      "clause": "PER-CATEGORY DISPOSITION IS FROZEN",
+      "dispositions": {
+        "TENANT_CONTENT": {
+          "count_policies": 106,
+          "count_tables": 39,
+          "disposition": "REPLACE_WITH_SUPPORT_CAPABILITY",
+          "detail": "The current_user_is_super_admin() disjunct MUST be REMOVED and replaced by a predicate that grants access only under a live, in-scope, unexpired, unrevoked SUPPORT_CAPABILITY held by the acting platform principal with fresh AAL2. Removal alone, leaving no successor predicate, is also acceptable and is STRICTLY SAFER; it MUST NOT be treated as a regression."
+        },
+        "TENANT_METADATA": {
+          "count_policies": 12,
+          "count_tables": 3,
+          "disposition": "REPLACE_WITH_ENUMERATED_OPERATOR_SCOPE",
+          "detail": "The disjunct MUST be replaced by a predicate naming the enumerated operator scope of CM-04, not by a generic platform-principal test."
+        },
+        "GLOBAL_REFERENCE": {
+          "count_policies": 12,
+          "count_tables": 4,
+          "disposition": "SPLIT_THEN_REPLACE",
+          "detail": "Each policy MUST FIRST be split so that the organization_id IS NULL (shared) case and the organization_id IS NOT NULL (tenant) case are separately expressed. Only then may the disjunct be replaced per case. A single welded predicate MUST NOT be used (see CM-05 binding hazard)."
+        },
+        "OPERATOR_METADATA": {
+          "count_policies": 9,
+          "count_tables": 5,
+          "disposition": "RETAIN_UNDER_OPERATOR_PRINCIPAL",
+          "detail": "The access may be retained but MUST be re-expressed against PLATFORM_PRINCIPAL rather than against a boolean on the tenant-shared users row, and MUST be narrowed to the operations of CM-03 (notably: no UPDATE or DELETE of audit_logs)."
+        },
+        "OTHER": {
+          "count_policies": 1,
+          "count_tables": 1,
+          "disposition": "ADJUDICATE_INDIVIDUALLY",
+          "detail": "users.users_select_own carries the disjunct. users is the table that HOSTS is_super_admin, so its policy and the predicate are mutually referential. This MUST be adjudicated explicitly and MUST NOT be swept into a category rule."
+        }
+      }
+    },
+    "RS-03": {
+      "clause": "REMOVAL MUST BE OBSERVABLE",
+      "detail": "The successor MUST prove removal by re-deriving the census and showing the count fall, per lineage and per category. A prose claim of removal is not evidence.",
+      "reproducibility_note": "The census METHOD is fully specified in the census artifact's method block and is deterministic, but no census TOOL is committed by this DOCS_ONLY authority. Committing a re-runnable census gate is a separate authorized action and is a precondition of any machine-checkable RS-03 claim. Until then RS-03 is satisfiable only by re-deriving the measurement, and a successor MUST NOT report RS-03 as gate-enforced."
+    },
+    "RS-04": {
+      "clause": "NO SILENT SUBSTITUTION",
+      "detail": "Replacing current_user_is_super_admin() with a differently-named helper of identical semantics is NOT closure. The successor MUST show the new predicate's truth conditions are strictly narrower, not merely differently spelled. A helper that reduces to a persistent boolean is the SAME defect renamed."
+    },
+    "RS-05": {
+      "clause": "RESTRICTIVE LAYER",
+      "detail": "Zero RESTRICTIVE policies exist in the effective migration lineage; all 18 in the repository live in unapplied db/prepared packets. Every existing superadmin disjunct is therefore purely ADDITIVE and cannot be narrowed by any applied RESTRICTIVE layer. A successor relying on a RESTRICTIVE layer MUST introduce and apply it; it MUST NOT assume one is present."
+    },
+    "RS-06": {
+      "clause": "THE PREDICATE ITSELF",
+      "detail": "current_user_is_super_admin() is SECURITY DEFINER and reads users.is_super_admin. Closing the 140 policies while leaving the function and column in place leaves the mechanism intact for any future policy. The successor MUST state the disposition of BOTH the function and the users.is_super_admin column, not only of the policies that call it."
+    },
+    "RS-07": {
+      "clause": "QUERY-LEVEL BYPASS IS IN SCOPE",
+      "detail": "The bypass is not confined to the /admin console. Because the disjunct sits in ordinary tenant policies, EVERY ordinary application query executed by a platform-flagged user silently returns cross-tenant rows. Closure MUST be evaluated on ordinary tenant query paths, not only on admin surfaces. Measured corroboration: all admin server actions in app/admin/*/actions.ts DO independently call requireAdminAccess(), so the console is gated — the leak is in the normal application, not in the console."
+    },
+    "RS-08": "No policy is edited by this authority. All dispositions are frozen contracts for a successor implementation."
+  },
+
+  "au_dependency": {
+    "AD-00": {
+      "clause": "FROZEN DEPENDENCY",
+      "detail": "LANE AU S4/S5 MAY implement its selected-organization weld. It MUST NOT claim full MO-07 or platform-admin isolation until THIS authority's successor implementation closes the policy-level standing bypass enumerated in rls_successor_contract."
+    },
+    "AD-01": "The selected-org weld and the standing-bypass closure are INDEPENDENT defects. The weld constrains which organization a TENANT principal acts in; it does not remove a PLATFORM principal's disjunct. A weld can be fully correct and every one of the 140 disjuncts still fire.",
+    "AD-02": "AU MUST NOT be required to solve the standing platform-admin bypass as a side effect of S4/S5, and MUST NOT be blamed for its persistence. Ownership sits here.",
+    "AD-03": {
+      "clause": "GREEN-STAGING HAZARD",
+      "detail": "A selected-org weld applied to the organizations table collapses the tenant enumerator and can present as isolation while the bypass remains. AU passing its own gates is NOT evidence that platform-admin isolation holds."
+    },
+    "AD-04": "Any MO-07 closure claim MUST cite a re-run of this authority's census showing the disjunct count fallen. A claim citing only AU's gates is INSUFFICIENT and MUST be refused.",
+    "f_au_3_ownership": {
+      "AD-05": "F-AU-3 reported approximately 100 policy-level superadmin disjuncts with no owning node. THIS AUTHORITY OWNS THAT PROBLEM.",
+      "reconciliation": {
+        "finding": "The '~100' figure is reproducible, but it measures a narrower surface than the true closed world.",
+        "measured": {
+          "hosted_baseline_superadmin_policies": 101,
+          "migration_lineage_superadmin_policies": 127,
+          "tenant_content_superadmin_policies": 106,
+          "true_closed_world_all_three_lineages": 140
+        },
+        "adjudication": "F-AU-3's approximation is consistent with the hosted baseline surface (101), which is the deployed surface and the natural thing to measure. It UNDERSTATES the forward migration lineage (127) and the full declared corpus (140). The discrepancy is a lineage-scope difference, not an error of counting.",
+        "binding_consequence": "The successor's closed world is 140, not 100 and not 127. Any successor that adopts F-AU-3's figure as its target will under-close by at least 39 policies and will leave the prepared and hosted-baseline-only surfaces entirely untouched."
+      }
+    }
+  },
+
+  "future_ddl": {
+    "FD-00": {
+      "LINEAGE_REDERIVATION_REQUIRED": "YES",
+      "detail": "Every DDL item below, when authored, REQUIRES lineage re-derivation. No ordinal is allocated, reserved, or implied by this authority. No migration is authored here."
+    },
+    "items": [
+      { "id": "FD-01", "need": "SUPPORT_CAPABILITY substrate: purpose, issued_by, issued_to, issued_at, expires_at, scope, revocation state, AAL evidence at issue.", "why": "Zero substrate exists.", "ddl": "REQUIRED" },
+      { "id": "FD-02", "need": "Per-use support access audit substrate (audit at USE, not only at issue).", "why": "SC-24 has no current expression.", "ddl": "REQUIRED" },
+      { "id": "FD-03", "need": "AAL evidence reachable inside RLS predicates.", "why": "Session claims carry only {sub, role}; no assurance level reaches the database, so no policy can test freshness.", "ddl": "REQUIRED", "note": "Also requires hosted auth configuration, which is explicitly OUT OF SCOPE here." },
+      { "id": "FD-04", "need": "PLATFORM_PRINCIPAL representation disjoint from users.is_super_admin and from organization_members.role.", "why": "PM-01 cannot be expressed against a boolean on the tenant-shared users row.", "ddl": "REQUIRED" },
+      { "id": "FD-05", "need": "RESTRICTIVE policy layer in the APPLIED lineage.", "why": "RS-05 — zero applied RESTRICTIVE policies exist.", "ddl": "REQUIRED" },
+      { "id": "FD-06", "need": "Disposition of current_user_is_super_admin() and users.is_super_admin.", "why": "RS-06 — closing callers without disposing of the mechanism leaves it available to future policies.", "ddl": "REQUIRED" },
+      { "id": "FD-07", "need": "Enable RLS on marketing_leads in the migration lineage.", "why": "CEN-01 — the table is created with no RLS and no policies; its only policies exist in the hosted baseline.", "ddl": "REQUIRED" },
+      { "id": "FD-08", "need": "NONE for destructive-deletion requester != approver.", "why": "SD-01 is fully expressible today: projects.deletion_requested_by exists, is written, and is CHECK-guaranteed non-null at approval time.", "ddl": "NOT_REQUIRED", "disposition": "CODE_FIX_ONLY" }
+    ]
+  },
+
+  "authority_gaps": [
+    { "id": "AG-01", "gap": "The enumeration of destructive operations beyond project deletion is not established. Only project deletion was measured.", "disposition": "FAIL_CLOSED — an unenumerated destructive operation is not thereby exempt from destructive_sod." },
+    { "id": "AG-02", "gap": "Whether operator reads of audit_logs.after_json and domain_object_versions constitute TENANT_CONTENT access is NOT adjudicated here.", "disposition": "FAIL_CLOSED — treat as content until adjudicated." },
+    { "id": "AG-03", "gap": "The applied state of the nine PREPARED_PACKET_ONLY superadmin policies is UNKNOWN from the repository alone.", "disposition": "FAIL_CLOSED — inside the closed world; the successor must enumerate, not assume inert." },
+    { "id": "AG-04", "gap": "No live pg_policies snapshot of staging or production was taken. The census measures declared SQL.", "disposition": "FAIL_CLOSED — closure requires reconciliation against a live snapshot." },
+    { "id": "AG-05", "gap": "The tenant role authorized to perform the SC-05 authorizing act is not fixed here.", "disposition": "FAIL_CLOSED — must be adjudicated before issuance is implemented; it MUST NOT default to any role that a platform principal can obtain." },
+    { "id": "AG-06", "gap": "Whether a support capability may ever permit writes (SC-23) is left as a default-deny with a defined escalation path, not a settled permission.", "disposition": "DEFAULT_DENY." }
+  ]
+}

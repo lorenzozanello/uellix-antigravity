@@ -1,0 +1,185 @@
+{
+  "manifest_id": "AV-PLATFORM-ADMIN-MFA-SUPPORT-DELETION",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/security/PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY_v1.0.0.json (whole artifact; census at docs/ops/security/PLATFORM_ADMIN_RLS_SUPERADMIN_POLICY_CENSUS_v1.0.0.json)",
+  "dependencies": [
+    "LANE-AU-TENANCY-S4-S5: status UNKNOWN — measured as an unmerged draft lane at base 88d95c65; pnpm ops:program-state could not be run in this worktree (no node_modules). Fails closed: no control below may assume AU is CLOSED.",
+    "MO-07: status UNKNOWN — this manifest's own controls are a precondition of any MO-07 closure claim, per authority clause AD-04."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "The majority of these controls assert ROW-LEVEL SECURITY behaviour (disjunct removal, capability-gated content reads, cross-tenant refusal, NULL-organization split). RLS is only decidable against a real PostgreSQL instance; it cannot be proven by unit tests against a mock. The setup and probe manifests do not exist yet because this authority is DOCS_ONLY and authors no implementation — recorded as UNKNOWN so a validator fails closed rather than treating the requirement as satisfied. They MUST be authored by the successor implementation and MUST run via pnpm db:audit:disposable, never against staging or production."
+  },
+  "sentinels": [
+    {
+      "id": "SENTINEL-TENANT-B-CANARY",
+      "purpose": "A canary row planted in tenant B's TENANT_CONTENT. It must NEVER appear in any result set read by a platform principal acting without a live support capability scoped to tenant B. Its appearance is direct proof of standing tenant-content access."
+    },
+    {
+      "id": "SENTINEL-PURPOSE-STRING",
+      "purpose": "A unique purpose string recorded at capability issue. It must appear verbatim in the per-use audit record of every access performed under that capability, proving purpose is bound to use and not merely to issuance."
+    },
+    {
+      "id": "SENTINEL-REVOKED-CAPABILITY-ID",
+      "purpose": "The identifier of a revoked capability. It must remain present and distinguishable in the audit record after revocation, proving revocation is durable and non-destructive (SC-18) rather than implemented as a delete."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "AV-P-01",
+      "description": "STANDING-CONTENT-DENIAL, positive face: a platform principal holding a live, in-scope, unexpired, unrevoked support capability for organization A, with fresh AAL2, CAN read the specific TENANT_CONTENT rows of organization A that the capability's scope names.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-P-02",
+      "description": "PURPOSE/SCOPE binding: issuing a capability records purpose, issued_by, issued_to, issued_at and expires_at; SENTINEL-PURPOSE-STRING appears verbatim in the per-use audit record of each access made under it, proving audit occurs at USE and carries the bound purpose (SC-07, SC-24).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-P-03",
+      "description": "DESTRUCTIVE SoD happy path: user X requests a project deletion with a reason; a DISTINCT human user Y, with independently fresh AAL2, types the exact confirmation token and supplies their own reason; the deletion completes and BOTH the request and the approval produce durable audit records naming their own actor, reason, assurance evidence and time (SD-01..SD-06).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-P-04",
+      "description": "COMMERCIAL METADATA BOUNDARY, positive face: a platform principal without any support capability CAN read the enumerated commercial/operational metadata of CM-03 and CM-04 (organization existence, status, membership edges, audit ledger) and each such read is audited with actor, operation, target and assurance evidence (CM-06).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-P-05",
+      "description": "GLOBAL_REFERENCE split, positive face: after the SPLIT_THEN_REPLACE disposition, a platform principal CAN operate on rows of fx_rates, proxy_sources, financial_proxies and financial_proxy_versions where organization_id IS NULL, and each of those four tables' policies expresses the NULL and NOT NULL cases SEPARATELY rather than in one welded predicate (RS-02 GLOBAL_REFERENCE, CM-05).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-P-06",
+      "description": "CENSUS FALSIFIABILITY: re-running the deterministic policy census at the successor's tree reports a superadmin disjunct count strictly lower than the frozen baseline of 140, broken down per lineage (MIGRATION 127 / HOSTED_BASELINE_ONLY 4 / PREPARED_PACKET_ONLY 9) and per category, so that removal is observable rather than asserted (RS-03).",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "AV-N-01",
+      "description": "STANDING-CONTENT-DENIAL: a platform principal with NO support capability reads TENANT_CONTENT and is REFUSED. SENTINEL-TENANT-B-CANARY must not appear in any result set. This must hold on ORDINARY tenant query paths, not only on /admin surfaces (RS-07), and must be asserted for at least one table from each of the 39 TENANT_CONTENT tables' distinct policy shapes.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-02",
+      "description": "SUPPORT EXPIRY: a capability whose expires_at has passed grants NOTHING. Asserted at expires_at + 1 unit, and separately asserted that a capability issued with expires_at more than 60 minutes after issued_at is REFUSED AT ISSUE for normal access, and more than 240 minutes for escalated access (SC-09, SC-10).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-03",
+      "description": "SUPPORT REVOCATION: a capability revoked by the issuing organization grants NOTHING for every evaluation after the revoking act commits, the revocation succeeds without platform cooperation and cannot be refused or delayed by the platform, and SENTINEL-REVOKED-CAPABILITY-ID remains present and distinguishable in the audit record afterwards (SC-15..SC-18).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-04",
+      "description": "PURPOSE/SCOPE refusal: a capability scoped to entity set E grants nothing for a row outside E; a capability with a NULL, wildcard, list or 'all tenants' organization scope is REFUSED AT ISSUE, not merely at use (SC-01); and an unset or unparseable scope resolves to ZERO access, never to global access (SC-04).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-05",
+      "description": "NO AUTO-RENEW: activity, session refresh, token refresh and a subsequent request each fail to extend expires_at. After expiry, access requires a wholly new capability with a new authorizing act; back-to-back issuance appears as SEPARATE capabilities in the audit record, each independently bounded from its OWN issued_at, never as one continuous access (SC-12..SC-14).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-06",
+      "description": "AAL STALE: a platform principal whose AAL2 challenge was satisfied outside the freshness window is REFUSED, even though the session is valid and once reached AAL2. Asserted separately for capability use, for capability issue, and for each destructive-deletion actor (MA-02, MA-05, SD-03).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-07",
+      "description": "AAL ABSENT: a platform principal who has never satisfied an AAL2 challenge is REFUSED, and the refusal is DISTINGUISHABLE from the AAL-stale refusal of AV-N-06 in both handling and audit. Additionally, where assurance state cannot be determined at all, the operation REFUSES rather than proceeding (MA-05, MA-06).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-08",
+      "description": "SAME-PERSON REQUESTER/APPROVER: the person who requested a deletion CANNOT approve it. Asserted by natural-person identity, and asserted to still refuse when the two acts arrive in different sessions, different requests and different transactions — two sessions of one person are ONE actor (SD-01). Must also refuse when that person holds the tenant role 'super_admin' (SD-07).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-09",
+      "description": "PLATFORM-VS-TENANT ROLE CONFUSION: holding the TENANT membership role 'super_admin' grants NO platform-principal capability whatsoever; and holding PLATFORM_PRINCIPAL grants NO tenant membership, no tenant role, and no position in any tenant role hierarchy. Asserted against a rank/hierarchy comparison helper as well as against the literal role string, because the documented bypass travels with the relation and with hasRole() rather than with the literal 'super_admin' appearing in a diff (PM-CONFLATE-01, PM-02).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-10",
+      "description": "CROSS-TENANT SUPPORT CAPABILITY: a capability scoped to organization A grants NOTHING in organization B. Asserted to FAIL CLOSED — the refusal must not degrade to a broader scope, and must not be satisfiable by a null/unset current-organization context resolving to GLOBAL (SC-27, SC-04).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-11",
+      "description": "PROHIBITED OPERATIONS refuse: under a live support capability, DELETE of tenant content is refused (SC-25); bulk export/enumeration without a bulk-scoped authorizing act is refused (SC-26); self-modification of the capability's own scope, purpose, expiry or revocation state is refused, as is issuing another capability (SC-28); modification of audit records, membership, roles or the platform principal set is refused (SC-29); and the capability cannot satisfy either destructive-deletion SoD actor (SC-30, SD-08).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-12",
+      "description": "SELF-ISSUANCE refusal: a platform principal cannot issue a support capability to itself, cannot perform the authorizing act, and cannot write membership or roles to manufacture a tenant principal for itself (SC-05, CM-04 prohibited). Asserted including the case where the platform principal also legitimately holds tenant membership elsewhere.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-13",
+      "description": "AUDIT LEDGER IMMUTABILITY: UPDATE and DELETE of audit_logs and domain_object_versions are refused for every principal including PLATFORM_PRINCIPAL — the audit record is not editable by the party it audits (CM-03 prohibited).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-14",
+      "description": "NON-HUMAN ACTOR refusal: a service account, automation, scheduled job or machine identity is refused as either destructive-deletion SoD actor, and refused as issued_by or issued_to on a support capability (SD-02, SC fields issued_by/issued_to).",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "AV-M-01",
+      "description": "POLICY-LEVEL SUPERADMIN DISJUNCT REMOVAL/REPLACEMENT: re-introducing a current_user_is_super_admin() disjunct into ANY policy on a TENANT_CONTENT table must turn the suite RED via AV-N-01. The control must be proven non-vacuous by actually re-adding the disjunct to at least one such policy and observing the failure — a census count that merely drops is not sufficient evidence that the guard bites.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-02",
+      "description": "SILENT SUBSTITUTION: replacing current_user_is_super_admin() with a differently-named helper whose truth conditions are IDENTICAL (i.e. reducing to a persistent boolean on the users row) must turn the suite RED. This is the mutation that a name-based or grep-based check cannot catch, and it is the specific failure mode RS-04 exists to prevent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-03",
+      "description": "QUERY-LEVEL ADMIN BYPASS: deleting the capability predicate from an ORDINARY (non-/admin) tenant query path, while leaving every /admin surface correctly gated, must turn the suite RED. This mutation is specifically designed to fail any suite that tests only admin surfaces — measured fact: all app/admin/*/actions.ts already call requireAdminAccess() independently, so an admin-only suite passes while the ordinary application still leaks.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-04",
+      "description": "SoD COMPARISON REMOVAL: deleting the requester != approver comparison from the deletion approval path must turn the suite RED via AV-N-08. Non-vacuity is directly checkable at the frozen base, where the comparison is ABSENT: the control must be RED at base 88d95c65 and GREEN only after the fix, proving it measures the defect rather than the fix's spelling.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-05",
+      "description": "EXPIRY WELD: changing the expiry comparison from absolute wall-clock against issued_at to an idle/activity-based timeout must turn the suite RED via AV-N-05, proving no-auto-renew is enforced structurally and not merely by the initial value of expires_at.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-06",
+      "description": "NULL-ORGANIZATION WELD: replacing a split GLOBAL_REFERENCE policy with the single welded predicate (organization_id IS NULL OR organization_id = <current org>) must turn the suite RED via AV-N-10, because that shape opens a permanent cross-tenant channel whenever the current-organization value is itself null (CM-05 binding hazard).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-07",
+      "description": "CLOSED-WORLD UNDER-CLOSURE: closing only the 127 MIGRATION-lineage disjuncts while leaving the 4 HOSTED_BASELINE_ONLY and 9 PREPARED_PACKET_ONLY disjuncts intact must NOT be reportable as closure — the census control AV-P-06 must fail on the residual lineages. This mutation encodes the exact under-closure that adopting F-AU-3's '~100' figure as the target would produce (AD-05).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-08",
+      "description": "REVOCATION-AS-DELETE: implementing revocation as a row delete rather than a durable state change must turn the suite RED via AV-N-03's SENTINEL-REVOKED-CAPABILITY-ID assertion, proving a revoked capability stays distinguishable from one that never existed (SC-18).",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests",
+    "postgres_disposable_probe"
+  ]
+}
