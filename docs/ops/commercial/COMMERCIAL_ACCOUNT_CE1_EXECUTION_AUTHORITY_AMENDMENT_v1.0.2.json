@@ -1,0 +1,355 @@
+{
+  "package_id": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_NODE_AUTHORITY",
+  "document_class": "EXECUTABLE_TECHNICAL_AUTHORITY_AMENDMENT",
+  "append_only": true,
+  "mission_id": "COMMERCIAL-ACCOUNT-CE1-TAIL-PIN-AUTHORITY-AMENDMENT-R1",
+  "source_compiler": "COMMERCIAL-ACCOUNT-CE1-TAIL-PIN-AUTHORITY-AMENDMENT-R1 (Lane HI)",
+  "materialization_date": "2026-09-09",
+
+  "amends": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
+  "amends_amendment": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "supersedes": null,
+  "companion_manifest": null,
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+
+  "AS_OF": {
+    "BRANCH": "codex/ce1-tail-pin-authority-amendment-r1",
+    "START_HEAD": "07c33c953bd8e0888d13786011e54a5ce98b196a",
+    "START_TREE": "a811ca8d4cf4eada34c25b7028b3734c05ddc386",
+    "worktree_state": "clean — git status --porcelain --untracked-files=all produced zero output at START_HEAD",
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/ce1-tail-pin-authority-amendment-r1 --head 07c33c953bd8e0888d13786011e54a5ce98b196a --tree a811ca8d4cf4eada34c25b7028b3734c05ddc386 --clean => PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS",
+    "remeasurement_rule": "Every count, ordinal, blob sha and file name in this amendment was measured at START_HEAD or at the named CE-1 candidate commit, never carried over from prose. An implementation mission consuming this amendment MUST re-measure at ITS OWN base before applying the contract below — see EXACT_RETARGET_CONTRACT.rebase_rule."
+  },
+
+  "CE1_CANDIDATE_MEASURED": {
+    "pull_request": "PR128",
+    "implementation_commit": "8ca2ff9b",
+    "candidate_head_at_compile_time": "28e9a439a7c8c6d939bd646dff9b937b52fb2f5c",
+    "migration_unit": "0068_commercial_account_ce1.sql",
+    "migration_unit_measurement": "git ls-tree --name-only 8ca2ff9b db/migrations/ => db/migrations/0068_commercial_account_ce1.sql present. The unit name is MEASURED from the candidate tree, not taken from mission prose.",
+    "candidate_is_not_merged": "8ca2ff9b is NOT an ancestor of START_HEAD. This amendment does not consume, ratify, audit or mutate PR128; it only measures it to freeze an exact retarget contract.",
+    "not_mutated_by_this_lane": "This lane opens no file in PR128 and pushes nothing to its branch."
+  },
+
+  "VERSION_COLLISION_CHECK": {
+    "question": "Does COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json already exist at START_HEAD?",
+    "measured": "NO. ls docs/ops/commercial/ at START_HEAD returns exactly two CE1 authority artifacts: COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json and COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json.",
+    "verdict": "NO_COLLISION — this mission is authorized to create exactly that successor amendment.",
+    "successor_ordinal_rule": "v1.0.2 is the immediate successor of v1.0.1 in the same package stem. No version is skipped and none is reused."
+  },
+
+  "AUTHORITY_CHAIN": {
+    "base": {
+      "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
+      "read_in_full": true,
+      "relevant_holding": "MULTIORG_CP2.ordinal_rule — NO MIGRATION ORDINAL IS ALLOCATED BY THIS AUTHORITY. The measured ceiling 0065 at its own AS_OF_HEAD is a MEASUREMENT, not a reservation. A future CE-1 implementation mission must re-measure the ceiling at ITS OWN base before allocating.",
+      "not_modified": "Consumed exactly as frozen. Byte-unchanged by this lane."
+    },
+    "amendment_v1_0_1": {
+      "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "read_in_full": true,
+      "relevant_holdings": [
+        "EXISTING_TEST_INSTRUCTIONS.count == 5, enumerating exactly five existing product-test hosts CE-1 may adjust, path by path.",
+        "EXISTING_TEST_INSTRUCTIONS.no_wildcard — 'No tests/** grant. No tests/hosted/** grant. No tests/eval/** grant. No lib/** grant. No other existing product test is authorized by this amendment.'",
+        "CE1_IMPLEMENTATION_SURFACE.EXPLICITLY_NOT_AUTHORIZED — 'Any existing product test other than the five enumerated in EXISTING_TEST_INSTRUCTIONS.'",
+        "EXISTING_TEST_INSTRUCTIONS.sixth_host_adjudication.stop_rule — 'If a CE-1 implementation mission finds a sixth existing product-test host mechanically required at ITS OWN base, it MUST STOP_FOR_AUTHORITY_DELTA rather than extend this list on its own judgement.'"
+      ],
+      "not_modified": "Consumed exactly as frozen. Byte-unchanged by this lane. This amendment is APPEND-ONLY over it and re-litigates none of its rulings."
+    },
+    "s1_product_authority": {
+      "path": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+      "role": "The node authority the amended test proves. Its founder-traceability semantics are NOT touched by this amendment.",
+      "not_modified": true
+    },
+    "hc_refusal_disposition": {
+      "claim": "The CE-1 implementation lane (HC) found exactly one CE1-caused blocker outside its frozen write surface and refused to edit it.",
+      "independently_verified": "VERIFIED, not accepted on prose. git rev-parse 07c33c95:tests/tenancy/s1-founder-traceability.test.ts and git rev-parse 8ca2ff9b:tests/tenancy/s1-founder-traceability.test.ts BOTH return blob 472f8006729a0a8ebc263bb85eb520bb9cb20b12. The file is byte-identical at the base and at the CE-1 implementation commit: the refusal is real.",
+      "refusal_was_compelled_not_discretionary": "sixth_host_adjudication.stop_rule REQUIRED the stop. HC had no authority to extend the host list on its own judgement. This lane is the STOP_FOR_AUTHORITY_DELTA the stop_rule demands."
+    }
+  },
+
+  "DEFECT_CORRECTED": {
+    "id": "CE1-TAILPIN-01",
+    "class": "INCOMPLETE_NEGATIVE_CENSUS_IN_A_FROZEN_ADJUDICATION",
+    "base_clause_quoted_verbatim": "EXISTING_TEST_INSTRUCTIONS.sixth_host_adjudication.answer == 'NO — measured, not assumed.'",
+    "why_it_is_incomplete": "The negative conclusion is sound for every candidate it examined, but tests/tenancy/s1-founder-traceability.test.ts was never among the candidates examined and cleared. That file DOES readdirSync db/migrations (line 104) and is NOT self-adapting at its migration-tail block: it carries the literal '0067_tenancy_refusal_audit_insert_policy.sql' and two end-relative positional assertions. Appending a unit above 0067 makes it red.",
+    "sweep_reproduction": "Independently reproduced sweep (2) at START_HEAD: every tests/**/*.ts containing readdirSync AND referencing db/migrations, db/policies or db/prepared. The reproduction returns 16 files, and tests/tenancy/s1-founder-traceability.test.ts is one of them. The reproduction is deliberately BROADER than the parent's stated scope, so the count difference alone is not asserted as the defect. The load-bearing, scope-independent fact is narrower and is not in dispute: this file readdirSyncs db/migrations, is not self-adapting at its tail block, and does not appear in the cleared-candidates list.",
+    "second_independent_signal": "The parent's sweep (1) grepped tests/**/*.ts for the literals 78, 79, 66 and 65 in an assertion position and reported 'exactly the eleven family-A/B sites plus the one family-C site'. tests/tenancy/s1-founder-traceability.test.ts:181 carries `expect(S1_UNIT.ordinal).toBe(79)` — a literal 79 in an assertion position in tests/**/*.ts. That site is correctly NON-reactive (see TAIL_PIN_CURRENT_STATE.stable_sites), so its omission changed no count, but both sweeps had a path to this file and neither surfaced it.",
+    "what_survives_unchanged": "Every affirmative ruling of v1.0.1 survives: the five granted paths and their per-file authorized adjustments and prohibitions, the BASELINE_GROWTH_CONTRACT, the JOURNAL_RULE, the MIGRATION_ORDINAL rule, the CE1 frozen semantics, and the no_wildcard rule. This amendment does not widen any of them. It adds exactly one enumerated path and nothing else.",
+    "correction": "EXISTING_TEST_INSTRUCTIONS.count moves 5 -> 6. The sixth host is enumerated below with the same path-by-path precision, the same no-wildcard discipline, and its own prohibition list.",
+    "not_a_re_litigation": "v1.0.1 remains frozen and byte-unchanged. This is an append-only correction of one negative census result, in the exact manner v1.0.1's own stop_rule contemplated."
+  },
+
+  "TAIL_PIN_CURRENT_STATE": {
+    "path": "tests/tenancy/s1-founder-traceability.test.ts",
+    "blob_at_START_HEAD": "472f8006729a0a8ebc263bb85eb520bb9cb20b12",
+    "total_lines": 455,
+    "measured_at_START_HEAD": {
+      "migration_sql_tail_sorted": ["0066_multiorg_s1_founder_traceability.sql", "0067_tenancy_refusal_audit_insert_policy.sql"],
+      "journal_entries": 68,
+      "journal_last": "idx 67, tag 0067_tenancy_refusal_audit_insert_policy",
+      "BASELINE_UNITS_length": 80,
+      "S1_unit": "ordinal 79, id 0066_multiorg_s1_founder_traceability.sql",
+      "S3_refusal_unit": "ordinal 80, id 0067_tenancy_refusal_audit_insert_policy.sql",
+      "ordinals_contiguous_1_to_80": true
+    },
+    "measured_at_CE1_candidate_8ca2ff9b": {
+      "migration_sql_tail_sorted": ["0066_multiorg_s1_founder_traceability.sql", "0067_tenancy_refusal_audit_insert_policy.sql", "0068_commercial_account_ce1.sql"],
+      "journal_entries": 69,
+      "journal_last": "idx 68, tag 0068_commercial_account_ce1",
+      "BASELINE_UNITS_length": 81,
+      "S1_unit": "ordinal 79 — UNCHANGED, measured directly from the candidate tree, not inferred",
+      "CE1_unit": "ordinal 81, id 0068_commercial_account_ce1.sql"
+    },
+    "the_reactive_block": {
+      "describe_anchor": "line 93 — describe('S1 migration — exactly the authorized DDL, one scanner-visible structural backfill', ...)",
+      "comment_block": "lines 94-101 — the FINAL-UNIT DISPLACEMENT (HPO-ODS-W2-25) rationale",
+      "it_anchor": "line 102 — it('has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit', ...)",
+      "block_range": "lines 102-115 inclusive",
+      "verbatim_current_assertions": [
+        "103: const S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql'",
+        "104: const files = readdirSync(path.join(ROOT, 'db/migrations')).filter((f) => f.endsWith('.sql')).sort()",
+        "105: expect(files[files.length - 2]).toBe(S1_UNIT.id)",
+        "106: expect(files[files.length - 1]).toBe(S3_UNIT_ID)",
+        "107: const journal = JSON.parse(read('db/migrations/meta/_journal.json')) as { entries: { idx: number; tag: string }[] }",
+        "108: const own = journal.entries.find((e) => `${e.tag}.sql` === S1_UNIT.id)",
+        "109: expect(own).toBeDefined()",
+        "110: expect(existsSync(path.join(ROOT, `db/migrations/meta/${String(own!.idx).padStart(4, '0')}_snapshot.json`))).toBe(true)",
+        "111: const last = journal.entries[journal.entries.length - 1]",
+        "112: expect(`${last.tag}.sql`).toBe(S3_UNIT_ID)",
+        "113: expect(last.idx).toBe(journal.entries.length - 1)",
+        "114: expect(existsSync(path.join(ROOT, `db/migrations/meta/${String(last.idx).padStart(4, '0')}_snapshot.json`))).toBe(true)"
+      ],
+      "exactly_which_assertions_turn_red_under_CE1": [
+        "105 — files[files.length - 2] becomes 0067_tenancy_refusal_audit_insert_policy.sql, asserted equal to S1_UNIT.id (0066_...). FAILS.",
+        "106 — files[files.length - 1] becomes 0068_commercial_account_ce1.sql, asserted equal to S3_UNIT_ID (0067_...). FAILS.",
+        "112 — last.tag + '.sql' becomes 0068_commercial_account_ce1.sql, asserted equal to S3_UNIT_ID (0067_...). FAILS."
+      ],
+      "assertions_in_the_same_block_that_stay_green": [
+        "108-110 — S1's OWN journal row and its own snapshot. Position-independent; unaffected by an append.",
+        "113 — last.idx === journal.entries.length - 1 is DERIVED on both sides: 68 === 69 - 1 holds at the candidate. It MUST remain derived and MUST NOT be converted to a literal.",
+        "114 — existsSync of the last unit's snapshot, derived from last.idx. Satisfied by the CE-1 snapshot the candidate already generates."
+      ]
+    },
+    "stable_sites": {
+      "note": "Measured, not assumed. These sites are in the same file, look displacement-related, and MUST NOT be edited by the authorized adjustment.",
+      "line_181": "expect(S1_UNIT.ordinal).toBe(79) — the ONLY literal number pin in the file. CE-1 appends at ordinal 81, so S1 remains 79. Verified directly against the candidate tree at 8ca2ff9b. NOT reactive. Its neighbouring comment block at lines 175-179 also cites HPO-ODS-W2-25 but is NOT a tail pin and is out of scope.",
+      "line_182": "expect(BASELINE_UNITS[S1_UNIT.ordinal - 1]).toBe(S1_UNIT) — derived from the ordinal above; stable for the same reason.",
+      "line_215": "the journal wrapper header assertion uses `Unit ${S1_UNIT.ordinal}/${BASELINE_UNITS.length}` — FULLY DERIVED. It self-heals to Unit 79/81 once CE-1 regenerates the wrapper family, which is already a v1.0.1 BASELINE_WRITER obligation. NOT a host edit.",
+      "line_218": "expect(wrappers).toHaveLength(BASELINE_UNITS.length + 1) — derived. Self-heals.",
+      "lines_374_396": "the eleven governed count pins are all interpolated from live `n = BASELINE_UNITS.length` and `drizzle`. They self-heal PROVIDED CE-1 updates the five v1.0.1-granted host files. They impose no new grant and are not part of this amendment's authorized adjustment."
+    },
+    "universe_claim": "The reactive census above is over the WHOLE file (455 lines), not over the tail block alone: every literal number, every readdirSync site and every corpus-derived interpolation in the file was classified. Exactly one it() block — lines 102-115 — and exactly three assertions within it are reactive to CE-1."
+  },
+
+  "PRECEDENT": {
+    "id": "HPO-ODS-W2-25 / MULTI_ORG_S3_REFUSAL_AUDIT",
+    "what_happened": "S1 (0066) was the highest migration when it landed. The S3 refusal unit (0067_tenancy_refusal_audit_insert_policy.sql) was then appended above it, making S1 no longer last. The identical control turned red for the identical mechanical reason.",
+    "how_it_was_resolved": "The S3 refusal implementation was authorized to RETARGET this exact control rather than delete or relax it.",
+    "evidence_artifact": "docs/ops/tenancy/MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+    "precedent_quoted_verbatim": [
+      "REACTIVE_PIN_HOSTS.method — 'Every pin was RETARGETED to a newly measured value. No pin was weakened into a bound, a range, a filter or expect.any -- asserted by the repository's own meta-control in tests/tenancy/s1-founder-traceability.test.ts.'",
+      "REACTIVE_PIN_HOSTS.hosts[6].host — 'tests/tenancy/s1-founder-traceability.test.ts'",
+      "REACTIVE_PIN_HOSTS.hosts[6].edits — 'S1 FINAL-UNIT DISPLACEMENT: S1's ordinal pinned to its own literal 79 with its array position DERIVED from that ordinal; the displacing unit NAMED so a second displacement still fails; the wrapper header numerator/denominator now Unit 79/80.'",
+      "EXACT_CHANGED_PATHS.unprotected[21] — 'tests/tenancy/s1-founder-traceability.test.ts'"
+    ],
+    "the_precedent_anticipated_this_exact_event": "The in-file comment the precedent left behind, at lines 99-101, states the pin is retargeted 'so a second, unannounced displacement still fails here. It is not relaxed into \"somewhere in the list\".' CE-1 is that second displacement. The control firing now is the precedent's design working as intended.",
+    "binding_force": "This amendment authorizes the SAME remedy the precedent established, under the same non-weakening discipline, for the second displacement. It invents no new remedy class."
+  },
+
+  "AUTHORIZED_NEW_PATH": {
+    "count_before": 5,
+    "count_after": 6,
+    "the_sixth_host": {
+      "path": "tests/tenancy/s1-founder-traceability.test.ts",
+      "protection_status": "NOT protected. It matches no entry of DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts (docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json). It needs an ordinary --allow only.",
+      "protected_grant_required": false,
+      "authorized_adjustment": "ONLY the migration-tail displacement retarget specified in EXACT_RETARGET_CONTRACT, confined to lines 94-115 (the comment block and the single it() block).",
+      "prohibited_in_the_same_file": [
+        "Do NOT touch line 181 `expect(S1_UNIT.ordinal).toBe(79)` or line 182's derived array-position assertion. Measured: S1 stays at ordinal 79 after CE-1. Moving either would be a defect, not a repair.",
+        "Do NOT convert line 213-218's derived wrapper header or wrapper-count assertions to literals. They must remain self-adapting.",
+        "Do NOT touch the eleven governed count pins at lines 374-396. They are derived from live BASELINE_UNITS and self-heal.",
+        "Do NOT touch any assertion in the S1 DDL, backfill, cardinality, RLS, provenance or onboarding-action describes.",
+        "Do NOT convert line 113's `journal.entries.length - 1` to a literal.",
+        "Do NOT add, remove or re-title any it() or describe() other than the single it() at line 102."
+      ]
+    },
+    "no_wildcard": "No tests/** grant. No tests/tenancy/** grant. This amendment enumerates exactly ONE additional path and authorizes exactly ONE adjustment within it. Every other existing product test remains unauthorized, exactly as v1.0.1 left it.",
+    "seventh_host_stop_rule": "If a CE-1 implementation mission finds a SEVENTH existing product-test host mechanically required at ITS OWN base, it MUST STOP_FOR_AUTHORITY_DELTA rather than extend this list on its own judgement. The v1.0.1 stop_rule is restated here, not relaxed, and it now governs a list of six."
+  },
+
+  "EXACT_RETARGET_CONTRACT": {
+    "principle": "Retarget the exact name and the exact position. Preserve exact equality on every assertion. Name the CE-1 displacement explicitly. Keep every previously named displacing unit named.",
+    "required_after_state": {
+      "S3_anchor_retained": "The existing `const S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql'` MUST be RETAINED, not replaced. Dropping it would silently stop proving the intermediate position and is a WEAKENING.",
+      "CE1_anchor_added": "A new sibling const naming the CE-1 unit MUST be introduced, e.g. `const CE1_UNIT_ID = '0068_commercial_account_ce1.sql'`, so the CE-1 displacement is EXPLICITLY NAMED in the test source.",
+      "positional_ladder": [
+        "expect(files[files.length - 3]).toBe(S1_UNIT.id)",
+        "expect(files[files.length - 2]).toBe(S3_UNIT_ID)",
+        "expect(files[files.length - 1]).toBe(CE1_UNIT_ID)"
+      ],
+      "journal_tail": "expect(`${last.tag}.sql`).toBe(CE1_UNIT_ID)",
+      "unchanged_assertions": [
+        "line 108-110 — S1's own journal row and its own snapshot: byte-unchanged.",
+        "line 113 — expect(last.idx).toBe(journal.entries.length - 1): byte-unchanged and still DERIVED.",
+        "line 114 — existsSync of the last snapshot, derived from last.idx: byte-unchanged."
+      ],
+      "it_title": "The it() title at line 102 MUST be updated so it names the CE-1 displacement rather than asserting the S3 refusal unit is the top. The title must remain a statement of exact displacement, not of membership.",
+      "comment_block": "The comment block at lines 94-101 MUST be updated to record the SECOND displacement, cite this amendment (COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2), and preserve the standing sentence that a further unannounced displacement must still fail here."
+    },
+    "ladder_rationale": "The precedent's two-position ladder proved S1's exact position with every unit above it named. With two units now above S1, the faithful retarget is a three-position ladder. This preserves proof strength exactly; it neither adds nor removes protection. Collapsing to a single 'CE-1 is last' assertion would drop the S3 anchor and is PROHIBITED.",
+    "equality_semantics": "Every retargeted assertion MUST remain a toBe exact equality against a string literal or a derived value. No assertion may become a bound, a range, a set membership, a filter, a regex or expect.any.",
+    "rebase_rule": "The literals above are measured at candidate commit 8ca2ff9b. Consistent with the base authority's MULTIORG_CP2.ordinal_rule, the implementation mission MUST re-measure db/migrations, db/migrations/meta/_journal.json and db/hosted/baseline-manifest.ts at ITS OWN base before applying this contract. If CE-1 lands at an ordinal other than 0068, or if a further unit lands above it, the mission MUST apply the SHAPE frozen here to the re-measured names and positions, and if the shape itself no longer fits it MUST STOP_FOR_AUTHORITY_DELTA rather than improvise. Never assume 0068 is still the tail.",
+    "verification": "After the edit, tests/tenancy/s1-founder-traceability.test.ts MUST pass in full at the implementation base, and the passing run MUST be recorded in the CE-1 evidence artifact per EVIDENCE_CONSEQUENCE."
+  },
+
+  "PROHIBITIONS": {
+    "binding": "Every item below is a hard prohibition on the implementation mission consuming this amendment. Violating any one of them voids the authorization.",
+    "on_the_assertion_style": [
+      "toContain is PROHIBITED.",
+      "Bounds-only checks are PROHIBITED (toBeGreaterThan, toBeGreaterThanOrEqual, toBeLessThan, and any inequality substituted for an equality).",
+      "'somewhere in the list' membership semantics are PROHIBITED (includes, indexOf, find, some, arrayContaining as a substitute for the positional pin).",
+      "expect.any, regex relaxation and filter-based softening are PROHIBITED.",
+      "Deleting the tail assertion is PROHIBITED.",
+      "Skipping, xit-ing, todo-ing or otherwise disabling the it() block is PROHIBITED.",
+      "Weakening equality in any form is PROHIBITED."
+    ],
+    "on_scope": [
+      "Changing unrelated S1 semantics is PROHIBITED.",
+      "Changing founder-cardinality semantics is PROHIBITED.",
+      "Changing tenancy behaviour is PROHIBITED.",
+      "Changing any migration is PROHIBITED.",
+      "Changing any CE1 schema is PROHIBITED.",
+      "Editing any existing product test other than the six now enumerated is PROHIBITED."
+    ],
+    "on_allocation": [
+      "New ODS lineage is PROHIBITED — this amendment allocates none.",
+      "New protected grant is PROHIBITED — the sixth host is unprotected and needs none.",
+      "New Controller is PROHIBITED.",
+      "New migration ordinal is PROHIBITED — this amendment allocates none and 0068 is a MEASUREMENT of the candidate, not a reservation.",
+      "No HPO id is allocated by this amendment."
+    ],
+    "on_the_frozen_chain": [
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json — frozen, byte-unchanged.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json — frozen, byte-unchanged.",
+      "docs/ops/tenancy/** — frozen, byte-unchanged by this lane.",
+      "scripts/ods-scope.ts — no PROTECTED_GRANTS registration is part of this amendment."
+    ]
+  },
+
+  "WHY_THIS_IS_MECHANICAL": {
+    "frozen_derivation": [
+      "1. The S1 test intentionally proves EXACT displacement — not membership. That is its stated design at lines 96-101.",
+      "2. The S3 refusal unit became the FIRST named displacer under HPO-ODS-W2-25, which retargeted the pin rather than relaxing it.",
+      "3. CE-1's 0068_commercial_account_ce1.sql is now the next ACTUAL tail unit, measured at 8ca2ff9b.",
+      "4. Therefore the old assertion turning red is EXPECTED MECHANICAL REACTIVITY — the control noticing exactly what it was built to notice — and is NOT evidence that CE-1 invalidates S1."
+    ],
+    "what_is_load_bearing": "The load-bearing content of the control is the EQUALITY: S1 sits at an exactly known position, and every unit above it is named. The specific NAME of the top unit was never the invariant; it was the expression of the invariant while that unit happened to be last.",
+    "what_this_amendment_does": "Authorizes updating the exact NAME and the exact POSITION while preserving the load-bearing EQUALITY in full.",
+    "what_would_be_a_defect": "Relaxing the control so that no future displacement is noticed. That would convert a live control into a permanently green one and is prohibited above.",
+    "S1_semantics_untouched": "No founder-traceability, cardinality, provenance, RLS, backfill or onboarding assertion is opened. CE-1 and S1 remain semantically independent exactly as the base authority's MULTIORG_CP2.collision_statement froze them."
+  },
+
+  "EVIDENCE_CONSEQUENCE": {
+    "existing_artifact": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+    "already_present_in_PR128": true,
+    "do_not_create_another": "That evidence path is ALREADY authorized and already exists in PR128. The implementation mission MUST update it in place. Creating a second or successor evidence artifact for this correction is PROHIBITED.",
+    "required_updates_after_the_test_correction": [
+      "CLOSE the blocker: record that the single CE1-caused blocker outside the frozen write surface (tests/tenancy/s1-founder-traceability.test.ts) is resolved, and that the resolution was a retarget, not a relaxation.",
+      "RECORD this authority amendment: COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2, its merge commit, and the fact that it moved EXISTING_TEST_INSTRUCTIONS.count from 5 to 6.",
+      "RECORD the exact test result: the measured pass of tests/tenancy/s1-founder-traceability.test.ts at the implementation base, with the run's own output, not a narrative claim.",
+      "RECORD the retarget verbatim: the before and after of each of the three changed assertions and the it() title.",
+      "PRESERVE all previous PG/gate evidence already recorded in the artifact. Nothing already proven may be dropped, summarized away or rewritten."
+    ],
+    "ordering_constraint": "The evidence update happens AFTER the test correction and AFTER this amendment is merged. An evidence artifact citing an unmerged amendment would be recording an authority that does not yet exist."
+  },
+
+  "WRITE_SURFACE_OF_THIS_LANE": {
+    "exactly_one_path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+    "no_implementation_edit": "This lane writes NO test. tests/tenancy/s1-founder-traceability.test.ts is NOT opened by this lane and remains byte-identical at blob 472f8006729a0a8ebc263bb85eb520bb9cb20b12.",
+    "no_PR128_mutation": "This lane pushes nothing to PR128 and opens no file in it.",
+    "ods_scope_allow": "docs/ops/commercial/**",
+    "protected_grant": "NONE — the written path is not inside any DEFAULT_PROTECTED_PATTERNS surface."
+  },
+
+  "CROSS_LANE_CONSTRAINTS": {
+    "vs_MULTIORG_S1": "S1 is already implemented and merged (0066). This amendment touches its TEST's displacement pin only, never its migration, schema or semantics.",
+    "vs_MULTIORG_S3": "S3's refusal unit (0067) is already implemented and merged. Its position is RETAINED as a named anchor by the retarget contract, so S3's own displacement proof survives intact.",
+    "vs_FIBDB052_P1": "FIBDB-052 P1 (DRAFT PR #123) also moves corpus-cardinality pins. It is NOT an ancestor of START_HEAD and is NOT consumed here. If it lands first, the implementation mission's rebase_rule re-measurement governs; this amendment allocates no cardinality and pins no corpus count, so it creates no collision with that lane.",
+    "stale_claim_rule": "Every count in this amendment is stamped with the commit it was measured at. A consumer that finds a different value at its own base MUST trust its own measurement and apply the rebase_rule, not this document's number."
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "json_valid": "Parsed with JSON.parse after write. Valid.",
+    "internal_references_resolved": "Every repository path named in this file was existence-checked at START_HEAD, except db/migrations/0068_commercial_account_ce1.sql which was existence-checked at candidate commit 8ca2ff9b and is explicitly labelled as such.",
+    "parent_chain_verified": "Base v1.0.0 and amendment v1.0.1 both read in full and both left byte-unchanged.",
+    "exact_test_anchors_verified": "Lines 93-115 and 175-182 read verbatim from the working tree and reproduced in this file character-for-character. Every line number cited was confirmed by direct numbered extraction, not inferred by arithmetic.",
+    "prior_displacement_precedent_verified": "Quoted verbatim from MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0.json.",
+    "no_scope_widening": "EXISTING_TEST_INSTRUCTIONS grows by exactly one enumerated path. No wildcard is introduced. The stop_rule is restated, not relaxed.",
+    "no_allocation": "No ODS lineage, no HPO id, no protected grant, no Controller, no migration ordinal, no journal wrapper ordinal is allocated by this amendment.",
+    "gates": "prestate, authority seal verify, ods scope (positive and negative controls), secrets corroboration — see the mission report."
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "unknown": [],
+    "non_blocking": [
+      {
+        "id": "NB-1",
+        "finding": "v1.0.1's sixth_host_adjudication reached a correct-for-its-candidates but incomplete negative conclusion; its two sweeps each had a path to tests/tenancy/s1-founder-traceability.test.ts and neither surfaced it. Corrected here by enumeration rather than by re-running the parent's census.",
+        "why_non_blocking": "The correction is contained: exactly one path is added, and the reactive census over that file was performed here across all 455 lines."
+      },
+      {
+        "id": "NB-2",
+        "finding": "CE-1's growth from 80 to 81 baseline units also reactivates literal-80 pins outside this file, including gate LOGIC. Those sites are the v1.0.1 five-host grant's responsibility, not this lane's.",
+        "why_non_blocking": "Already enumerated and authorized by v1.0.1 EXISTING_TEST_INSTRUCTIONS. This amendment neither widens nor narrows that grant."
+      },
+      {
+        "id": "NB-3",
+        "finding": "PR128 is unmerged and its head may move. The literals frozen here are candidate measurements.",
+        "why_non_blocking": "EXACT_RETARGET_CONTRACT.rebase_rule requires re-measurement at the implementation base and freezes the SHAPE, which is stable under renumbering."
+      }
+    ]
+  },
+
+  "self_check": {
+    "expected_files_written_by_this_mission": 1,
+    "expected_file_path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+    "expected_existing_test_host_count_before": 5,
+    "expected_existing_test_host_count_after": 6,
+    "expected_new_authorized_paths": 1,
+    "expected_reactive_assertions_in_the_sixth_host": 3,
+    "expected_reactive_it_blocks_in_the_sixth_host": 1,
+    "expected_baseline_units_at_START_HEAD": 80,
+    "expected_baseline_units_at_CE1_candidate": 81,
+    "expected_S1_ordinal_before_and_after": 79,
+    "expected_ods_hpo_allocated": "NONE",
+    "expected_migration_ordinal_allocated": "NONE",
+    "expected_protected_grants_registered": "NONE",
+    "expected_blocking_findings": 0,
+    "expected_unknown_findings": 0,
+    "checks": [
+      "version is 1.0.2 and no artifact of that version existed at START_HEAD",
+      "amends v1.0.0 and append-only over v1.0.1; both left byte-unchanged",
+      "EXISTING_TEST_INSTRUCTIONS count moves 5 -> 6 and exactly one path is added",
+      "no wildcard grant of any kind is introduced",
+      "the seventh-host stop_rule is restated and not relaxed",
+      "every prohibition demanded by the mission is present verbatim in PROHIBITIONS",
+      "the retarget contract preserves toBe exact equality on every assertion",
+      "the CE-1 displacement is explicitly named in the required after-state",
+      "the S3 anchor is retained rather than replaced",
+      "line 113's derived form is explicitly required to stay derived",
+      "line 181's literal 79 is explicitly protected from edit and proven stable by measurement",
+      "the evidence consequence names the existing artifact and forbids creating another",
+      "no ODS lineage, protected grant, Controller or migration ordinal is allocated"
+    ]
+  },
+
+  "final_state": "COMMERCIAL_ACCOUNT_CE1_TAIL_PIN_AUTHORITY_AMENDMENT_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT",
+  "READY_FOR_CE1_TEST_CORRECTION": "NO_UNTIL_THIS_AMENDMENT_IS_AUDITED_AND_MERGED",
+  "next_gate": "CE1_TAIL_PIN_AUTHORITY_AMENDMENT_INDEPENDENT_AUDIT — independent Opus exact-object audit of this amendment against the frozen base v1.0.0, the frozen amendment v1.0.1, the S3 displacement precedent, and the repository at START_HEAD. Merge only after that audit returns PASS."
+}
