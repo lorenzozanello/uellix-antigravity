@@ -1465,6 +1465,17 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'reverse script -- forward-only, recovered by DESTROY_AND_REPROVISION.',
     expect: { rlsEnabledTableCount: 1 },
   },
+  // FIBDB-052 P1 (FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json, HPO-FIBP1-02).
+  // Eight governed CREATE INDEX IF NOT EXISTS statements and nothing else: no
+  // table, column, constraint, policy, function, trigger or role statement, so
+  // the unit is superuser-free and carries no security surface. The governed
+  // names preserve FIBDB-052's own run_id spelling while the definitions target
+  // the live calculation_run_id column (S4_RUN_ID_NAMING); the asymmetry is
+  // deliberate. The three subsumed single-column prefix indexes are NOT dropped
+  // (F-A1 records the redundancy; it does not authorize the cleanup).
+  { ordinal: 82, id: '0069_fib_fibdb052_p1_indexes.sql', kind: D, file: 'db/migrations/0069_fib_fibdb052_p1_indexes.sql', sha256: 'c7808ef43221662a27d7a227a6271f34cea09f1167cf70597948924fefcab379', dependsOn: ['0068_commercial_account_ce1.sql'], ...PLAIN_DDL, reapply: 'idempotent',
+    rollback: 'Every index is CREATE INDEX IF NOT EXISTS; re-running converges. Dropping is safe and lossless.',
+    expect: {} },
 ]
 
 /** The order, derived so the two cannot disagree. */

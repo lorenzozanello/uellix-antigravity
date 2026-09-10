@@ -1,0 +1,8 @@
+CREATE INDEX IF NOT EXISTS "idx_counterfactual_assessments_run_id_outcome_id" ON "counterfactual_assessments" USING btree ("calculation_run_id","outcome_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_evidence_sufficiency_determinations_run_id_outcome_id" ON "evidence_sufficiency_determinations" USING btree ("calculation_run_id","outcome_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_evidence_versions_evidence_id_approved" ON "evidence_versions" USING btree ("evidence_id") WHERE "evidence_versions"."review_status" = 'approved';--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_financial_proxy_versions_financial_proxy_id_approved" ON "financial_proxy_versions" USING btree ("financial_proxy_id") WHERE "financial_proxy_versions"."review_status" = 'approved';--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_methodological_assumptions_project_id_materiality_flag" ON "methodological_assumptions" USING btree ("project_id","materiality_flag");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_outcome_monetization_dispositions_run_id_outcome_id" ON "outcome_monetization_dispositions" USING btree ("calculation_run_id","outcome_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_sensitivity_candidates_run_id_disposition" ON "sensitivity_candidates" USING btree ("calculation_run_id","disposition");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_sroi_run_reviews_calculation_run_id_approved" ON "sroi_run_reviews" USING btree ("calculation_run_id") WHERE "sroi_run_reviews"."status" = 'approved';

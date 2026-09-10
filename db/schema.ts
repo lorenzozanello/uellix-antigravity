@@ -422,6 +422,7 @@ export const evidenceVersions = pgTable('evidence_versions', {
   check('evidence_versions_erasure_state_check', sql`${table.erasureState} IS NULL OR ${table.erasureState} IN ('erasure_requested', 'erasure_in_progress', 'erasure_complete', 'erasure_partial', 'erasure_blocked')`),
   index('idx_evidence_versions_evidence_id').on(table.evidenceId),
   index('idx_evidence_versions_organization_id').on(table.organizationId),
+  index('idx_evidence_versions_evidence_id_approved').on(table.evidenceId).where(sql`${table.reviewStatus} = 'approved'`),
 ])
 
 // FIBIU-06 — evidence sufficiency determinations (FIBDB-014/FIBC-008). One
@@ -455,6 +456,7 @@ export const evidenceSufficiencyDeterminations = pgTable('evidence_sufficiency_d
   index('idx_evidence_sufficiency_determinations_outcome_id').on(table.outcomeId),
   index('idx_evidence_sufficiency_determinations_project_id').on(table.projectId),
   index('idx_evidence_sufficiency_determinations_outcome_run').on(table.outcomeId, table.calculationRunId),
+  index('idx_evidence_sufficiency_determinations_run_id_outcome_id').on(table.calculationRunId, table.outcomeId),
 ])
 
 // FIBIU-07 — evidence tombstones (FIBDB-031/FIBC-009). Append-only record of
@@ -701,6 +703,7 @@ export const financialProxyVersions = pgTable('financial_proxy_versions', {
   ),
   index('idx_financial_proxy_versions_proxy_id').on(table.financialProxyId),
   index('idx_financial_proxy_versions_organization_id').on(table.organizationId),
+  index('idx_financial_proxy_versions_financial_proxy_id_approved').on(table.financialProxyId).where(sql`${table.reviewStatus} = 'approved'`),
 ])
 
 // FIBIU-10 (FIBC-013/FIBDB-007) — the versioned field->category map
@@ -934,6 +937,7 @@ export const outcomeMonetizationDispositions = pgTable('outcome_monetization_dis
   check('outcome_monetization_dispositions_justification_pair_check', sql`${table.reason} IS NULL OR ${table.justification} IS NOT NULL`),
   uniqueIndex('uq_outcome_monetization_dispositions_outcome_run').on(table.outcomeId, table.calculationRunId),
   index('idx_outcome_monetization_dispositions_run_id').on(table.calculationRunId),
+  index('idx_outcome_monetization_dispositions_run_id_outcome_id').on(table.calculationRunId, table.outcomeId),
 ])
 
 export const sroiRunReviews = pgTable('sroi_run_reviews', {
@@ -962,6 +966,7 @@ export const sroiRunReviews = pgTable('sroi_run_reviews', {
   check('sroi_run_reviews_score_check', sql`${table.readinessScore} >= 0 AND ${table.readinessScore} <= 100`),
   index('idx_sroi_run_reviews_calculation_run_id').on(table.calculationRunId),
   index('idx_sroi_run_reviews_project_id').on(table.projectId),
+  index('idx_sroi_run_reviews_calculation_run_id_approved').on(table.calculationRunId).where(sql`${table.status} = 'approved'`),
 ])
 
 export const sroiRunReviewItems = pgTable('sroi_run_review_items', {
@@ -1368,6 +1373,7 @@ export const methodologicalAssumptions = pgTable('methodological_assumptions', {
   check('methodological_assumptions_provenance_reference_check', sql`${table.basisType} <> 'evidence_or_external_source' OR ${table.provenanceReference} IS NOT NULL`),
   index('idx_methodological_assumptions_project_id').on(table.projectId),
   index('idx_methodological_assumptions_organization_id').on(table.organizationId),
+  index('idx_methodological_assumptions_project_id_materiality_flag').on(table.projectId, table.materialityFlag),
 ])
 
 // FIBIU-15 (FIBC-019, FIBDB-013). Assumption <-> affected object/decision
@@ -1425,6 +1431,7 @@ export const counterfactualAssessments = pgTable('counterfactual_assessments', {
   check('counterfactual_assessments_baseline_available_fields_check', sql`${table.baselineAvailability} <> 'available' OR (${table.baselineValue} IS NOT NULL AND ${table.baselinePeriod} IS NOT NULL AND ${table.baselineSource} IS NOT NULL AND ${table.baselineContext} IS NOT NULL)`),
   uniqueIndex('uq_counterfactual_assessments_outcome_run').on(table.outcomeId, table.calculationRunId),
   index('idx_counterfactual_assessments_run_id').on(table.calculationRunId),
+  index('idx_counterfactual_assessments_run_id_outcome_id').on(table.calculationRunId, table.outcomeId),
 ])
 
 // FIBIU-17 (FIBC-021, FIBDB-015). Canonical readiness — SROI_READINESS_MODEL_v1.0.0.
@@ -1492,6 +1499,7 @@ export const sensitivityCandidates = pgTable('sensitivity_candidates', {
   uniqueIndex('uq_sensitivity_candidates_run_key').on(table.calculationRunId, table.candidateKey),
   index('idx_sensitivity_candidates_run_id').on(table.calculationRunId),
   index('idx_sensitivity_candidates_organization_id').on(table.organizationId),
+  index('idx_sensitivity_candidates_run_id_disposition').on(table.calculationRunId, table.disposition),
 ])
 
 // FIBIU-18 (FIBC-022, FIBDB-018/048). Governed scenario for a
