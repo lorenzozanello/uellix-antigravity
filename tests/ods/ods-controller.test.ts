@@ -881,6 +881,7 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.26.json',
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.27.json',
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json',
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json',
     ]
 
