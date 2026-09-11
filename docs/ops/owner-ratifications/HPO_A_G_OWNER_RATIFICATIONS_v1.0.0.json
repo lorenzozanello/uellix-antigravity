@@ -1,0 +1,245 @@
+{
+  "package_id": "HPO_A_G_OWNER_RATIFICATIONS",
+  "version": "1.0.0",
+  "artifact_id": "HPO_A_G_OWNER_RATIFICATIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "hpo_mission_id": "OWNER-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1",
+  "completion_mission_id": "OWNER-RATIFICATIONS-CANONICAL-MATERIALIZATION-COMPLETION-R2",
+  "materialization_date": "2026-09-10",
+  "r2_note": "R1 (this same lane, commit 7b988129) materialized HD-01..HD-16 (docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json) and PVRI-01..PVRI-20 (docs/ops/public-verification/PUBLIC_VERIFICATION_OWNER_RATIFICATIONS_v1.0.0.json) but omitted HPO-A..HPO-G, which the owner ratified before Lane AM ran. This file (R2) closes that gap. R1's two artifacts are NOT modified, rewritten, or weakened by R2 — they are unchanged siblings of this file.",
+  "materialized_at_base": {
+    "branch": "codex/owner-ratifications-materialization-r1",
+    "r1_head": "7b988129fed69fb9856e72e2453f2ef4476d46e5",
+    "r1_tree": "df83027784c2845766024061c4b701f4ef80568d",
+    "pr": 137
+  },
+
+  "provenance_classification": "OWNER_RATIFIED_PRIOR_TO_THIS_MATERIALIZATION_LANE. The binding packages HPO-A through HPO-G below were ratified by the product/mission owner in prior sessions whose raw transcripts are not repository artifacts and are not reproduced or claimed as available here. THIS FILE IS NOT A VERBATIM TRANSCRIPT of any prior chat, and it is not a new adjudication. It is a canonical normalized ratification record produced by Lane AM's completion pass (R2) so that successor lanes can cite a stable repository artifact instead of re-deriving, re-litigating, or informally re-summarizing decisions already made by the owner.",
+
+  "r3_note": {
+    "mission": "OWNER-RATIFICATIONS-FACTUAL-MEASUREMENT-REMEDIATION-R3",
+    "date": "2026-09-10",
+    "effect_on_this_file": "NONE to any ratification. Independent audit BD returned RESULT=FAIL with 3 BLOCKING items, all false negative repository measurements; none of the three was located in this file. HPO-A..HPO-G statements, clauses, statuses and review flags are unchanged at R3. Only the owner_source_completeness disposition below was added.",
+    "cross_reference": "The three corrected measurements (FIBDB-053 exists and is frozen; stella_0007 -> RETIRED_DO_NOT_APPLY already frozen in sealed FIB authority; FIBIU-21..25 exist as frozen wave-4 nodes) are recorded in docs/ops/public-verification/PUBLIC_VERIFICATION_OWNER_RATIFICATIONS_v1.0.0.json r3_measurement_corrections, plus the PR106 drift record in docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json.",
+    "standing_caveat_reaffirmed": "This file's prior_audit_context entries remain explicitly non-re-verified prior measurements, per implementation_status_methodology_note. The R3 findings reinforce why that caveat matters: three separately-reported 'confirmed exact-pattern' searches turned out to be false negatives. Any successor lane must re-measure before relying on a prior_audit_context entry as current fact."
+  },
+
+  "owner_source_completeness": {
+    "disposition": "OWNER_SOURCE_COMPLETENESS_CONFIRMED=YES",
+    "source": "Coordinator disposition recorded at R3 (2026-09-10).",
+    "meaning": "The product owner has explicitly ratified the HD, PVRI and HPO-A..G packages used by this materialization. The completeness of the owner-ratified source set is therefore confirmed and is not an open question for successor lanes.",
+    "boundary_preserved": "This external owner confirmation is NOT a claim that the source was repository-local. The underlying owner ratifications remain non-repository-local prior-session decisions (see provenance_classification). OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout this artifact: an owner ratification is binding product intent; a repository measurement is a falsifiable claim about this codebase that any successor lane may and should re-measure."
+  },
+
+  "purpose": "Machine-citable, normalized ledger of product-owner ratifications HPO-A..HPO-G, each a binding multi-clause package spanning customer lifecycle, commercial/entitlement/billing, async delivery, platform admin, Stella, privacy/legal, and release governance. Records WHAT was ratified and its provenance classification, not whether or how it is implemented. It grants no schema, no migration ordinal, no ODS/HPO grant id, and no executable authority.",
+
+  "precedence_note": "This file is canonical for product-owner intent on HPO-A..HPO-G only. It does NOT override executable FIB/ODS/database/security authority, and it does NOT itself authorize migration, hosted mutation, staging mutation, production mutation, future ordinal allocation, exact price freezing, or exact retention-duration freezing. Where a ratification here has no corresponding executable authority yet, that is an open implementation gap for a future governed lane, not a contradiction to resolve here.",
+
+  "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen or re-adjudicate HPO-A through HPO-G, and do NOT reopen, rewrite, or weaken HD-01..HD-16 or PVRI-01..PVRI-20 from R1. Do not re-litigate any decision below unless repository evidence proves an actual contradiction requiring escalation; absence of implementation is not a contradiction. A conflict between this record and active executable authority fails closed (STOP_FOR_AUTHORITY_CONFLICT), it is not silently resolved in either direction.",
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 7,
+    "expected_id_set": ["HPO-A", "HPO-B", "HPO-C", "HPO-D", "HPO-E", "HPO-F", "HPO-G"],
+    "checks": [
+      "ratifications.length == 7",
+      "every id in ratifications is unique (no duplicate id values)",
+      "the set of ids in ratifications, compared as sets, equals expected_id_set exactly (no missing id, no extra id)",
+      "no HPO-H or any other id beyond expected_id_set is present",
+      "sibling artifacts docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json (16 ids) and docs/ops/public-verification/PUBLIC_VERIFICATION_OWNER_RATIFICATIONS_v1.0.0.json (20 ids) are unmodified by this file's commit"
+    ]
+  },
+
+  "implementation_status_methodology_note": "Each package's implementation_status_as_of_head carries a 'prior_audit_context' array. These entries cite SPECIFIC PRIOR MEASUREMENT LANES run against this same repository lineage (ancestors of current HEAD, commit range e7ee106d..c2b59fa5..88d95c65) — they are NOT freshly re-grepped or re-verified by this R2 docs-only materialization session. They are included because they are the most concrete evidence available and because re-deriving them here would violate this lane's own context-economy and DOCS_ONLY scope. Any successor implementation lane MUST re-measure against its own current HEAD before relying on a prior_audit_context entry as current fact.",
+
+  "required_independent_reviews": {
+    "note": "Owner-flagged package-level review requirements. Flagging is itself part of the ratification and is not satisfied by this materialization.",
+    "flagged_ids": ["HPO-A", "HPO-D", "HPO-F", "HPO-G"],
+    "rationale": {
+      "HPO-A": "Explicitly states legal review remains mandatory for Terms/Privacy/commercial-acceptance instruments and their reaccept semantics.",
+      "HPO-D": "Destructive/high-risk platform-admin operations explicitly require AAL2/MFA, two-person approval, and audit — a security-boundary decision.",
+      "HPO-F": "Explicitly requires legal review for instruments/retention/subprocessors/AI transfers, and security review for platform admin, public disclosure, and deletion.",
+      "HPO-G": "Production readiness explicitly requires security and legal signoff alongside recovery evidence and observability before production mutation."
+    }
+  },
+
+  "explicit_non_authorizations": [
+    "NO migration authorization.",
+    "NO hosted mutation.",
+    "NO staging mutation.",
+    "NO production mutation.",
+    "NO future ordinal allocation (no ODS grant id, no migration number, no FIB/FIBDB/FIBIU/Wave identifier is allocated by this file).",
+    "NO exact price freeze (HPO-B's 'prices/discounts not frozen' clause is preserved as ratified, not resolved by a number here).",
+    "NO exact retention-duration freeze (HPO-C's/HPO-F's retention clauses are preserved as ratified governance requirements, not resolved by a specific duration here).",
+    "This artifact does not implement, scaffold, or scope any application code, route, RPC, schema, or API for any of HPO-A..HPO-G.",
+    "This artifact does not resolve any required_independent_reviews item; it records that review is required before/alongside implementation.",
+    "This artifact does not edit, weaken, or reopen HD-01..HD-16 or PVRI-01..PVRI-20 from R1."
+  ],
+
+  "ratifications": [
+    {
+      "id": "HPO-A",
+      "domain": "CUSTOMER_LIFECYCLE",
+      "statement": "Account-level Terms/Privacy acceptance is required before product access, distinct from and prior to any organization-level commercial acceptance. Organization commercial acceptance is a separate act. The accepting role for organization commercial acceptance is organization_admin. Acceptance binds the specific legal instrument, its version, a content hash, and a timestamp — not merely a boolean flag. Reacceptance is required only when a governed reaccept_required version transition occurs, not on every login or unrelated change. Registration is an atomic bootstrap: organization creation, founder membership, CommercialAccount creation, an initial entitlement/bootstrap state, and an audit record are all part of one atomic operation, not a sequence of independently-failable steps. Invitation acceptance is a mutation and must occur via POST (or another proper mutating verb), never as a side effect of a render-time GET request. The physical database-level incompatibility between a single-active-membership ceiling and multi-organization membership must be removed. Legal review of the acceptance instruments and flow remains mandatory regardless of implementation status.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "clauses": [
+        { "id": "HPO-A.1", "text": "Account Terms/Privacy acceptance required before product access." },
+        { "id": "HPO-A.2", "text": "Organization commercial acceptance is a separate, distinct act." },
+        { "id": "HPO-A.3", "text": "Accepting role for organization commercial acceptance is organization_admin." },
+        { "id": "HPO-A.4", "text": "Acceptance binds instrument identity, version, content hash, and timestamp." },
+        { "id": "HPO-A.5", "text": "Reacceptance triggers only on a governed reaccept_required version transition." },
+        { "id": "HPO-A.6", "text": "Atomic bootstrap: organization + founder membership + CommercialAccount + initial entitlement/bootstrap state + audit, as one atomic operation." },
+        { "id": "HPO-A.7", "text": "Invitation acceptance must be a POST mutation, not a render-time GET side effect." },
+        { "id": "HPO-A.8", "text": "The single-active-membership physical incompatibility with multi-org membership must be removed." },
+        { "id": "HPO-A.9", "text": "Legal review remains mandatory." }
+      ],
+      "implementation_status_as_of_head": {
+        "overall": "NOT_IMPLEMENTED_AS_RATIFIED — no CommercialAccount, no versioned/hashed acceptance-instrument binding, and no atomic bootstrap-with-CommercialAccount exists in the repository (see CA-01/CA-02/SS-03 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json, already NOT_IMPLEMENTED). MO-02 in that same file already records the single-active-membership index (db/schema.ts 'user_single_active_membership') as CONTRADICTS_PRODUCT_INTENT against HPO-A.8, which this ratification directly reaffirms.",
+        "prior_audit_context": [
+          "project_ux_a11y_l10n_browser_e2e_census_r1 (2026-09-10, base c2b59fa5): recorded that '/invite/accept' mutates in a GET request with English-language errors — directly contradicting HPO-A.7. Not re-verified by this R2 session.",
+          "project_customer_spine_residual_census_r1 (base 62d9f072): recorded that founding and invitation both fail closed under RLS and that only super_admin can found today, i.e. atomic self-service bootstrap per HPO-A.6 does not exist. Not re-verified by this R2 session."
+        ]
+      }
+    },
+    {
+      "id": "HPO-B",
+      "domain": "COMMERCIAL_ENTITLEMENT_BILLING",
+      "statement": "There is exactly one canonical commercial state machine governing entitlement and billing, not multiple competing ones. The first Stripe customer/subscription binding originates from the CommercialAccount, occurs before checkout, and is idempotent. No commercial identity may be first-established from a webhook payload or a checkout success_url callback. A recoverable past_due state does not immediately remove product capacity. An unpaid or canceled state closes commercial capacity. Cancellation closes both entitlement grants and the active subscription identity together. An ACTIVE_WITHOUT_STRIPE state may only be reached by explicit manual activation, never inferred. Billing/commercial event ordering must be persisted, and a stale state regression (an out-of-order or superseded event) must be rejected, not applied. Prices and discounts are not frozen by this ratification.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "HPO-B.1", "text": "One canonical commercial state machine." },
+        { "id": "HPO-B.2", "text": "First Stripe binding originates from CommercialAccount, pre-checkout, idempotent." },
+        { "id": "HPO-B.3", "text": "No first commercial identity from webhook or success_url." },
+        { "id": "HPO-B.4", "text": "Recoverable past_due does not immediately remove product capacity." },
+        { "id": "HPO-B.5", "text": "Unpaid/canceled closes commercial capacity." },
+        { "id": "HPO-B.6", "text": "Cancellation closes entitlement grants and active subscription identity together." },
+        { "id": "HPO-B.7", "text": "ACTIVE_WITHOUT_STRIPE only via explicit manual activation." },
+        { "id": "HPO-B.8", "text": "Event ordering persisted; stale state regression rejected." },
+        { "id": "HPO-B.9", "text": "Prices/discounts not frozen by this ratification." }
+      ],
+      "implementation_status_as_of_head": {
+        "overall": "NOT_IMPLEMENTED — no CommercialAccount, no single canonical commercial state machine, and no CommercialAccount-first Stripe binding exist in the repository (depends on CA-01/CA-02/CA-05/CA-07/CA-08 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json, already NOT_IMPLEMENTED/FUTURE_MEASUREMENT_REQUIRED). This ratification's payment_suspension_semantics (HPO-B.4/B.5/B.6) is consistent with, and elaborates on, the already-ratified payment_suspension_semantics block in that same file.",
+        "prior_audit_context": [
+          "project_billing_commercial_lifecycle_r2_census (base 62d9f072): recorded 0 billing files changed since a prior census point, hosted baseline B0 with 0 uellix_capability rows, and no guard against out-of-order webhook application — directly relevant to HPO-B.1/B.2/B.3/B.8. Not re-verified by this R2 session."
+        ]
+      }
+    },
+    {
+      "id": "HPO-C",
+      "domain": "ASYNC_DELIVERY",
+      "statement": "No general-purpose job queue is required to satisfy this ratification. A durable email_deliveries record is required. That record is written in the same transaction (row-transactionally) as the logical invitation (or other triggering) event, not as an afterthought. The provider send attempt happens after that transaction commits, never before. A resend rotates the delivery token; the raw token is not persisted for reuse on resend. The delivery record's status is one of: queued, accepted, failed_retryable, failed_permanent, cancelled. 'accepted' by the provider is explicitly distinct from 'delivered'. Automatic retry may be deferred to a future authority; a manual resend path must exist regardless. Partial erasure (erasure_partial) is retryable, not terminal. Demo/lead requests must be durably recorded. Retention of these records is governed by HPO-F.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "HPO-C.1", "text": "No general queue required." },
+        { "id": "HPO-C.2", "text": "Durable email_deliveries record required." },
+        { "id": "HPO-C.3", "text": "Written row-transactionally with the logical invitation event." },
+        { "id": "HPO-C.4", "text": "Provider send attempt occurs after commit." },
+        { "id": "HPO-C.5", "text": "Resend rotates the token; raw token not stored for resend." },
+        { "id": "HPO-C.6", "text": "Status vocabulary: queued / accepted / failed_retryable / failed_permanent / cancelled." },
+        { "id": "HPO-C.7", "text": "'accepted' != 'delivered'." },
+        { "id": "HPO-C.8", "text": "Automatic retry may be deferred; manual resend required regardless." },
+        { "id": "HPO-C.9", "text": "erasure_partial is retryable, not terminal." },
+        { "id": "HPO-C.10", "text": "Demo/lead requests must be durably recorded." },
+        { "id": "HPO-C.11", "text": "Retention governed by HPO-F." }
+      ],
+      "implementation_status_as_of_head": {
+        "overall": "NOT_IMPLEMENTED — no email_deliveries table, no queued/accepted/failed_retryable/failed_permanent/cancelled status vocabulary, and no row-transactional delivery-record-with-invitation-event pattern exist in the repository at HEAD.",
+        "prior_audit_context": [
+          "project_async_notifications_r2_minimum_substrate_census (base 62d9f072): recorded that a raw invitation token lives only in the outbound request (so any resend today is a full ROTATION, not a queued retry, consistent with HPO-C.5 but for the opposite reason — there is no queue to retry from), that INVITATION_SENT is audited/committed BEFORE the send attempt (contradicting HPO-C.4's after-commit ordering), that stripe_webhook_events' claim/lease/attempts pattern is the nearest reusable precedent (not to be over-generalized), and that pg_cron/pg_net exist in the baseline but are unused. Also recorded erasure_partial as TERMINAL at evidence.ts:948, directly contradicting HPO-C.9's retryable requirement. Not re-verified by this R2 session."
+        ]
+      }
+    },
+    {
+      "id": "HPO-D",
+      "domain": "PLATFORM_ADMIN",
+      "statement": "Platform admin has no standing (always-on, un-time-bounded) access to tenant content. AAL2/MFA is required for platform admin actions and for any destructive or high-risk operation. Tenant-content support access must be tenant-authorized, purpose-bound, time-expiring, and must not auto-renew. Destructive deletion requires a distinct two-person approval, a fresh AAL2 challenge at the time of the destructive action, an explicit reason, a typed confirmation, and an audit record. A tenant's own super_admin role is not the same principal or privilege as platform admin.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "clauses": [
+        { "id": "HPO-D.1", "text": "No standing tenant-content access for platform admin." },
+        { "id": "HPO-D.2", "text": "AAL2/MFA required for platform admin and destructive/high-risk operations." },
+        { "id": "HPO-D.3", "text": "Tenant-content support access: tenant-authorized, purpose-bound, expiring, no auto-renew." },
+        { "id": "HPO-D.4", "text": "Destructive deletion requires two-person approval, fresh AAL2, reason, typed confirmation, audit." },
+        { "id": "HPO-D.5", "text": "Tenant super_admin != platform admin." }
+      ],
+      "implementation_status_as_of_head": {
+        "overall": "CONTRADICTS_PRODUCT_INTENT_IN_PART — MO-07 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json already records db/identity-context.ts:217's explicit '!check.is_super_admin' membership-check bypass as a real, present-day superadmin bypass, which is the same failure mode HPO-D.1/D.5 prohibit. No AAL2/MFA enforcement, no two-person destructive-approval flow, and no time-bounded/purpose-bound support-access grant exist in the repository at HEAD.",
+        "prior_audit_context": [
+          "project_platform_admin_operator_mfa_census_r1 (base 62d9f072): recorded 0 MFA in the repository, that JWT claims carry only {sub, role} so AAL never reaches the database layer, and that approveProjectDeletion requires super_admin MEMBERSHIP but does not prohibit requester == approver (i.e. no real two-person rule) — directly contradicting HPO-D.2 and HPO-D.4. Not re-verified by this R2 session."
+        ]
+      }
+    },
+    {
+      "id": "HPO-E",
+      "domain": "STELLA",
+      "statement": "Stella remains dark in production until staging alignment and provider gates are satisfied. The Uellix AI Gateway (already ratified as AG-01 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json) is required for production/release use of Stella; a controlled pilot may use a server-only provider adapter only if the frontend cannot bypass it. Every Stella run persists prompt identity, template identity/version, and a content hash, together with model/provider identity and a run record. A human decision or its application to product state links back to that run via an interactionId. The dead/disconnected risk_level write path (referred to as D8-4) must be repaired. The retry-after-abort defect, where a retried ticket re-presents as 'aborted' and is therefore permanently unauthorized, must be repaired. Retention of Stella response_json is finite and governed, not indefinite.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "HPO-E.1", "text": "Production dark until staging alignment + provider gates." },
+        { "id": "HPO-E.2", "text": "Uellix AI Gateway required for production/release." },
+        { "id": "HPO-E.3", "text": "Controlled pilot may use a server-only adapter only if frontend cannot bypass it." },
+        { "id": "HPO-E.4", "text": "Persist prompt/template identity+version+hash and model/provider/run identity." },
+        { "id": "HPO-E.5", "text": "Human decision/application links interactionId." },
+        { "id": "HPO-E.6", "text": "Repair risk_level / D8-4 dead write path." },
+        { "id": "HPO-E.7", "text": "Repair retry-after-abort defect." },
+        { "id": "HPO-E.8", "text": "response_json retention finite and governed." }
+      ],
+      "implementation_status_as_of_head": {
+        "overall": "NOT_IMPLEMENTED_AS_RATIFIED — AG-01 (Uellix AI Gateway) is already recorded NOT_IMPLEMENTED in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json: only a direct provider adapter (lib/stella/adapter/gemini-client.ts) exists, with no intervening Gateway layer, which directly bears on HPO-E.2/E.3.",
+        "prior_audit_context": [
+          "project_stella_commercial_v1_current_live_readiness_r1 (base c2b59fa5): recorded a single direct-adapter path to the provider with the AG-01 gateway NOT_IMPLEMENTED (HPO-E.2/E.3); response_json persisted verbatim while prompt/template/commit identity is not (HPO-E.4 unmet); risk_level not written since migration 0017 making the D8-4 code path dead (HPO-E.6 unmet, matches ratified defect description exactly); interactionId never reaching recordStellaDecision (HPO-E.5 unmet); and retry re-presenting a ticket as 'aborted' (a terminal state) so retries always resolve UNAUTHORIZED (HPO-E.7 unmet, matches ratified defect description exactly). Not re-verified by this R2 session."
+        ]
+      }
+    },
+    {
+      "id": "HPO-F",
+      "domain": "PRIVACY_LEGAL",
+      "statement": "No data class is retained indefinitely by default. Retention lifecycle is governed per data class, including audit records and Stella interaction records specifically. Data-subject access, export, correction, and deletion rights are honored subject to justified, documented exceptions. Partial erasure (erasure_partial) is resumable, not a dead end (this elaborates HPO-C.9's retryability requirement into the privacy domain). Personally identifiable information is minimized in audit before_json/after_json payloads. Legal review is required for legal instruments, retention policy, subprocessor relationships, and any AI cross-border/cross-provider data transfer. Security review is required for platform admin capability, public disclosure surfaces, and deletion capability.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "clauses": [
+        { "id": "HPO-F.1", "text": "No indefinite retention by default." },
+        { "id": "HPO-F.2", "text": "Governed lifecycle by data class." },
+        { "id": "HPO-F.3", "text": "Explicit audit/Stella retention policy." },
+        { "id": "HPO-F.4", "text": "Access/export/correction/deletion rights subject to justified exceptions." },
+        { "id": "HPO-F.5", "text": "erasure_partial resumable." },
+        { "id": "HPO-F.6", "text": "Minimize PII in before_json/after_json." },
+        { "id": "HPO-F.7", "text": "Legal review for instruments, retention, subprocessors, AI transfers." },
+        { "id": "HPO-F.8", "text": "Security review for platform admin, public disclosure, deletion." }
+      ],
+      "implementation_status_as_of_head": {
+        "overall": "NOT_IMPLEMENTED_AS_RATIFIED — no per-data-class governed retention lifecycle, no documented access/export/correction/deletion-rights exception framework, and no PII-minimization policy for audit_logs before_json/after_json exist in the repository at HEAD as a unified mechanism.",
+        "prior_audit_context": [
+          "project_privacy_security_ai_compliance_census_r1 (base 62d9f072→c2b59fa5): recorded 3 CRITICAL findings with no isolated code fix available (standing access, near-zero substrate for legal acceptance, and data-subject rights), that audit_logs before_json/after_json carries verbatim content in 40+ verbs (contradicting HPO-F.6), and 0 SCA (software composition analysis) in place. Directly relevant to HPO-F.4/F.6. Not re-verified by this R2 session.",
+          "project_async_notifications_r2_minimum_substrate_census (base 62d9f072): recorded erasure_partial as TERMINAL at evidence.ts:948, directly contradicting HPO-F.5's resumability requirement (same underlying defect as HPO-C.9). Not re-verified by this R2 session."
+        ]
+      }
+    },
+    {
+      "id": "HPO-G",
+      "domain": "RELEASE_GOVERNANCE",
+      "statement": "The F18 release-certification gate ledger is the canonical release readiness model; it is not duplicated or replaced by a competing ledger. Before any hosted DDL is applied, a fresh observation, a backup/restore plan, a compatibility plan, the exact migration corpus, and a successor ACL (access control list) must all be in place. Browser-driven golden journeys are exercised with Playwright. CI must run against an exact SHA with collected-file reconciliation, not a loosely-scoped run. Staging schema and code must reach parity while provider capabilities remain dark, before browser/provider gates are attempted. Browser/provider gates are attempted only after that parity is reached. Release Candidate (RC) status follows only after browser/provider gates pass. Production requires recovery evidence, observability, security and legal signoff, and a normal integration-branch-to-main lineage — not a shortcut merge.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "clauses": [
+        { "id": "HPO-G.1", "text": "F18 release ledger is the canonical model." },
+        { "id": "HPO-G.2", "text": "Before hosted DDL: fresh observation + backup/restore + compatibility plan + exact migration corpus + successor ACL." },
+        { "id": "HPO-G.3", "text": "Playwright for browser golden journeys." },
+        { "id": "HPO-G.4", "text": "Exact-SHA CI + collected-file reconciliation." },
+        { "id": "HPO-G.5", "text": "Staging schema/code parity while provider capabilities dark." },
+        { "id": "HPO-G.6", "text": "Then browser/provider gates." },
+        { "id": "HPO-G.7", "text": "Then RC." },
+        { "id": "HPO-G.8", "text": "Production requires recovery evidence, observability, security/legal signoff, and normal integration->main lineage." }
+      ],
+      "implementation_status_as_of_head": {
+        "overall": "PARTIALLY_CONSISTENT_AT_LEDGER_LEVEL — a canonical multi-stage release ledger with a DAG exists at the design/ledger level (HPO-G.1), but the gate/browser/provider/RC/production sequence it defines (HPO-G.3..G.8) is not yet satisfied.",
+        "prior_audit_context": [
+          "project_release_certification_gate_compiler_r1 (base c2b59fa5): recorded a canonical 6-stage ledger + DAG (consistent with HPO-G.1), gate G3 INSATISFIABLE due to a pin loopback, gate G1 blocked on a legal precondition (LC0, stella_real_provider BLOCKED), and 0 of 9 human gates executed. Not re-verified by this R2 session.",
+          "project_ux_a11y_l10n_browser_e2e_census_r1 (base c2b59fa5): recorded 0 Playwright/Cypress browser E2E coverage in the repository, directly contradicting HPO-G.3/G.6 as of that measurement. Not re-verified by this R2 session.",
+          "project_commercial_v1_release_reliability_census_r1 (base e7ee106d): recorded production as a frozen 'main' branch 774 commits behind, with no branch protection, and Sentry/Resend/Stripe absent in all environments — relevant to HPO-G.8's observability/recovery-evidence requirement. Not re-verified by this R2 session."
+        ]
+      }
+    }
+  ]
+}
