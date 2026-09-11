@@ -90,6 +90,10 @@
     {
       "id": "S-AO-MUTATING-VERB-NOT-LITERAL-POST",
       "purpose": "The invitation requirement is a PROPERTY, not a verb literal. Sentinel: no control asserts the literal string POST as the requirement; controls assert that a safe-method request mutates nothing and that the mutating request declares a mutating method. Canonical HPO-A permits POST or another proper mutating verb, and a POST-literal control would REJECT a compliant PUT handler — R1 over-narrowing, corrected as F-AO-20. This sentinel exists because that mutation makes the suite STRICTER and is therefore invisible to any weakening check. Authority INVITATIONS.R2_CORRECTION_MUTATING_VERB."
+    },
+    {
+      "id": "S-AO-EVIDENCE-FLOOR-IS-THE-CEILING-OF-REQUIREMENT",
+      "purpose": "Nothing outside the required evidence floor may be enforced as a requirement. Sentinel: the set of acceptance-evidence elements any control, invariant or exit gate FAILS an implementation for lacking is exactly {instrument identity, version, content digest + algorithm, timestamp, structurally required actor}. Retained bytes, an immutable content reference, IP address, user agent, device data and notice-acknowledgement records are all OUTSIDE that set and MUST NOT appear in any failure condition. Canonical HPO-A.4 names four elements and the fifth is entailed by HPO-A.1/A.3; everything else is IMPLEMENTATION_CHOICE. Authority ACCEPTANCE_MODEL.REQUIRED_ACCEPTANCE_EVIDENCE_FLOOR, I-T3-9, LRF-01, LRF-03, LRF-04."
     }
   ],
   "known_conditions": [],
@@ -192,6 +196,11 @@
     {
       "id": "P-AO-19",
       "description": "A VERSION WITH NO EFFECTIVE_AT IS IN EFFECT ON PUBLICATION. Publish a later version with reaccept_required TRUE and effective_at NULL; a subject who accepted the earlier version becomes NON-CURRENT immediately. This pins the fail-closed reading of the optional field: treating NULL as not-yet-effective would turn an omitted optional value into a permanent silent bypass. The semantics are DERIVED_NOT_GRANTED, so this control is the place the derivation is made visible and challengeable. Authority REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.THE_CORRECTED_CURRENCY_PREDICATE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-20",
+      "description": "A DIGEST-ONLY IMPLEMENTATION IS CONFORMANT. Drive the full acceptance journey against an implementation that retains ONLY the required evidence floor — instrument identity, version, content digest with its algorithm, timestamp, and the accepting subject or actor where the act structurally requires one — and retains NO instrument bytes and NO immutable content reference. ASSERT the journey completes, L0 and L1 both pass for a current subject and organization, and NOTHING in this manifest or in the authority rejects the implementation for the absence of retained bytes. Canonical HPO-A.4 requires a content HASH, not retrievable content; R1 and R2 elevated retention to a binding invariant (former I-T2-4 and a NOT NULL T2 column) and R3 withdrew that. This control exists so the withdrawal is executable rather than only asserted in prose. Authority INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_RETENTION_SHAPE, ACCEPTANCE_MODEL.REQUIRED_ACCEPTANCE_EVIDENCE_FLOOR, DELTA_1B_RETAINED_TEXT_OR_BYTES.",
       "test_file": "UNKNOWN"
     }
   ],
@@ -486,6 +495,11 @@
     {
       "id": "M-AO-22",
       "description": "Scope the invitation mutating-verb control to the literal string POST. N-AO-33 MUST FAIL TO DISTINGUISH a compliant PUT handler from a render-time GET mutation — assert that the control, so scoped, REJECTS an implementation canonical HPO-A explicitly permits. NON-VACUITY: this mutation makes the suite STRICTER, not weaker, and is therefore invisible to any check that only looks for weakening. It reproduces R1 own over-narrowing (F-AO-20) and exists so the correction cannot be silently reverted by a future tightening. Authority INVITATIONS.R2_CORRECTION_MUTATING_VERB.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-23",
+      "description": "Reinstate byte retention as a requirement — make the T2 content reference NOT NULL again, or restore the R1/R2 form of I-T2-4 that required the bytes to be written with the digest, or add any gate, control or checklist item that fails an implementation holding only the evidence floor. P-AO-20 MUST turn RED. NON-VACUITY: this mutation is the REGRESSION most likely to be introduced by someone reading the model and finding a digest without retrievable content unsatisfying — which is a reasonable engineering instinct and was exactly R1 reasoning. It is also invisible to every other control in this manifest, because no other control exercises a byte-less implementation. Note the asymmetry that makes it dangerous: the mutation makes the authority STRICTER, so it cannot be caught by any check that looks only for weakening. Authority DELTA_1B_RETAINED_TEXT_OR_BYTES, I-T2-4 as amended at R3.",
       "test_file": "UNKNOWN"
     }
   ],
