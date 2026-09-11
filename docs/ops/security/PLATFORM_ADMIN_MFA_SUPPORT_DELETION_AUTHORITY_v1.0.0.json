@@ -53,6 +53,34 @@
     ]
   },
 
+  "ratification_consumption": {
+    "RAT-OP-01": {
+      "RAT_OP_01_STATUS": "RATIFIED_BY_PRODUCT_OWNER",
+      "consumed_at_round": "R3",
+      "provenance": {
+        "CANONICAL_MICRO_RATIFICATION_ARTIFACT": "PR146 / commit 1cddd3109762f84710fdb81ad72820a87066a24f",
+        "artifact_path": "docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json",
+        "package_id": "COMMERCIAL_V1_MICRO_RATIFICATIONS v1.0.0 (LANE_BK, HPO mission COMMERCIAL-V1-MICRO-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1)",
+        "commit_tree": "c3fc745d936e279f0d3c30d77ee115dae30fb6b7",
+        "commit_parent": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+        "ratification_package_base": "base_commit 88d95c65 / base_tree 97006beb — the SAME base as this authority's R1, so the two artifacts share a lineage base and no rebase reconciliation is implied.",
+        "inspection_mode": "READ ONLY. PR146 was fetched and read at the exact object; it was not modified, and nothing from it was copied into this branch's tree.",
+        "CANONICAL_MICRO_RATIFICATION_INTEGRATED": "NO",
+        "integration_measurement": "Fresh git measurement at R3: 1cddd310 is NOT an ancestor of origin/integration/commercial-v1, origin/feature/sprint-0-foundation, or origin/main. gh reports PR #146 state=OPEN, isDraft=true, mergedAt=null, base=integration/commercial-v1.",
+        "artifact_self_declared_authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+        "artifact_precedence_note_summary": "The ratification package declares itself canonical for product-owner INTENT only. It explicitly does NOT override executable FIB/ODS/database/security authority and authorizes no runtime implementation, migration, DDL, ODS allocation, hosted mutation, support-capability implementation or RLS mutation."
+      },
+      "binding_note": "The owner ratification is BINDING on this authority regardless of PR146's merge state. Integration state governs only when PR145 may itself be integrated (see merge_dependency), never whether RAT-OP-01 is in force.",
+      "statement_verbatim": "Commercial V1 permits issuance of a SUPPORT_CAPABILITY only to a natural person who holds an ACTIVE membership in the affected organization with role EXACTLY organization_admin. hasRole('>=') / role-hierarchy / '+' notation and implicit admission of tenant super_admin are all excluded. Tenant super_admin is not automatically an authorizer. A platform principal can never authorize a support capability for itself. This rule can become operational only after the standing platform-admin path capable of self-assigning tenant memberships has been closed; until that prerequisite is satisfied, this must fail closed. This ratification does not grant standing tenant-content access.",
+      "delegation_to_this_authority_verbatim": "The ratification's own explicit_non_authorizations state: 'Does not close the standing platform-admin self-assignment path — that closure is a separate, required prerequisite tracked by the platform-admin/MFA/support/deletion authority successor.' Its known_consumers_or_dependencies names 'Platform Admin / MFA / Support / Deletion authority successor (PR145 lineage)'. The prerequisite is therefore delegated to THIS authority by name, not merely inherited.",
+      "merge_dependency": {
+        "statement": "PR145 may be authored and audited now. Its FINAL INTEGRATION must wait for stable ratification provenance while PR146 remains unmerged.",
+        "reason": "Integrating PR145 first would leave this authority citing a ratification artifact that is not in the integrated tree, i.e. a dangling provenance reference.",
+        "measured_state": "PR146 UNMERGED at R3. Therefore PR145 integration is BLOCKED_ON_PROVENANCE, not on any defect in PR145."
+      }
+    }
+  },
+
   "principal_model": {
     "PM-01": {
       "clause": "PLATFORM_PRINCIPAL and TENANT_PRINCIPAL are DISJOINT principal kinds. They are not two values of one enumeration, not two rows of one role table, and not two branches of one predicate. A subject may hold both simultaneously; holding one NEVER implies the other.",
@@ -109,7 +137,54 @@
       "SC-04": "Absence of scope is NOT universal scope. An unset or unparseable scope MUST fail closed to zero access. This is stated explicitly because the prevailing in-tree failure mode is the opposite: a null organization context that resolves to GLOBAL rather than to refusal."
     },
     "consent_authorization_act": {
-      "SC-05": "A capability comes into existence ONLY by an explicit authorizing act performed by a TENANT_PRINCIPAL of the target organization who holds a tenant role authorized to grant it. The platform MUST NOT be able to issue a capability to itself.",
+      "SC-05": "A capability comes into existence ONLY by an explicit authorizing act performed by a TENANT_PRINCIPAL of the target organization who holds a tenant role authorized to grant it. The platform MUST NOT be able to issue a capability to itself. The authorizing role is FIXED by RAT-OP-01 and enumerated in SC-05A..SC-05G below; it is no longer open (see authority_gaps AG-05).",
+      "SC-05A": {
+        "clause": "NATURAL PERSON ONLY",
+        "detail": "The authorizer MUST be a natural person. A service principal, machine identity, automation, scheduled job, or platform principal MUST NEVER be a valid authorizer.",
+        "source": "RAT-OP-01 binding_semantics.natural_person_authorizer_only"
+      },
+      "SC-05B": {
+        "clause": "ACTIVE MEMBERSHIP IN THE AFFECTED ORGANIZATION",
+        "detail": "The authorizer MUST hold an ACTIVE membership in the organization the capability is scoped to. A membership in any other state (pending, suspended, revoked, removed) MUST NOT authorize. Membership in a DIFFERENT organization MUST NOT authorize for this one.",
+        "source": "RAT-OP-01 binding_semantics.exact_role_and_active_membership"
+      },
+      "SC-05C": {
+        "clause": "ROLE EXACTLY organization_admin",
+        "detail": "The authorizer's role MUST be EXACTLY the string organization_admin. This is EXACT EQUALITY, not a threshold. The evaluation MUST be an equality test against that single value and MUST NOT be a membership test against a set, a comparison against a ranked hierarchy, or a predicate satisfied by more than one role.",
+        "source": "RAT-OP-01 binding_semantics.exact_role_and_active_membership"
+      },
+      "SC-05D": {
+        "clause": "NO HIERARCHY, NO DOMINANCE, NO IMPLICIT ADMISSION",
+        "detail": "The following are EXPLICITLY EXCLUDED as authorization paths and MUST NOT be used: hasRole('>=') or any at-or-above threshold check; numeric role dominance or rank comparison; '+' role-hierarchy notation; and implicit admission of any role on the grounds that it is 'higher', 'broader' or 'semantically superior'.",
+        "tenant_super_admin": "Tenant super_admin does NOT qualify as an authorizer. It does not qualify by being numerically higher, semantically higher, or an administrative superset. It qualifies only if its role string is exactly organization_admin, which by definition it is not. This exclusion is deliberate and is not an oversight to be 'fixed' by a successor.",
+        "hazard": "This clause is written against a measured in-tree property: hasRole('super_admin', X) is always true because super_admin outranks everything. ANY rank-based implementation therefore silently admits tenant super_admin and violates RAT-OP-01 while appearing to implement it.",
+        "source": "RAT-OP-01 binding_semantics.no_hierarchy_or_super_admin_shortcut"
+      },
+      "SC-05E": {
+        "clause": "PLATFORM PRINCIPAL IS NEVER THE ISSUER",
+        "detail": "A PLATFORM_PRINCIPAL MUST NEVER authorize a SUPPORT_CAPABILITY for itself, and MUST NEVER be the issuer of one. A platform principal does NOT become a valid issuer by holding, acquiring, or self-assigning an organization_admin membership. Issuer identity MUST satisfy the tenant-authorizer rules of SC-05A..SC-05D INDEPENDENTLY of, and in addition to, any platform standing it holds.",
+        "detail_2": "issued_by and issued_to MUST be distinct natural persons. A single subject holding both a platform principal and a tenant organization_admin membership MUST NOT be able to occupy both ends of the issuance.",
+        "source": "RAT-OP-01 binding_semantics.no_self_authorization"
+      },
+      "SC-05F": {
+        "clause": "OPERATIONAL PRECONDITION — LOAD-BEARING, FAIL CLOSED",
+        "detail": "RAT-OP-01 does NOT make issuance operational. This authorization rule may be treated as operational ONLY AFTER the standing platform-admin path capable of self-assigning tenant memberships has been PROVEN CLOSED. Until that proof exists, SUPPORT_CAPABILITY ISSUANCE MUST FAIL CLOSED — it MUST refuse, and MUST NOT default-permit.",
+        "why_load_bearing": "A current organization_admin membership is NOT trustworthy as authorization while a platform principal can manufacture that very membership through the standing bypass. The authorizer test and the bypass closure are not independent: without the closure, SC-05C is satisfiable by an attacker-chosen membership row and the entire issuer contract is circumventable by a single INSERT.",
+        "measured_state_of_the_precondition": {
+          "verdict": "OPEN — the precondition is NOT satisfied at this tree.",
+          "evidence": "db/migrations/0031_rls_core.sql policy members_insert_admin on organization_members has WITH CHECK ( current_user_role_in_org(organization_id) IN ('super_admin','organization_admin') OR current_user_is_super_admin() ). The trailing disjunct lets any principal with users.is_super_admin = true INSERT an arbitrary organization_members row — including granting ITSELF role organization_admin in ANY organization. The policy is TO PUBLIC.",
+          "scope": "All four organization_members policies carry the disjunct: members_insert_admin (INSERT), members_update_admin (UPDATE), members_delete_admin (DELETE), members_select_own_org (SELECT). So the standing path can create, alter, remove and enumerate memberships.",
+          "closure_is_effective_at_the_db_layer": "The runtime role uellix_app is declared NOBYPASSRLS, so removing these disjuncts does close the path for the runtime role. NOTE that the roles postgres and service_role ARE declared BYPASSRLS; any code path executing as either bypasses RLS entirely and is outside the policy census. Whether a live path does so is NOT measured here (see AG-07).",
+          "stale_comment_warning": "The in-policy comment in 0031 asserts that onboarding uses a Drizzle service client via DATABASE_URL which 'bypasses RLS entirely'. That comment is STALE with respect to db/client.ts, which states the runtime connection now comes from UELLIX_RUNTIME_DATABASE_URL and must declare uellix_app, explicitly no longer DATABASE_URL. A successor MUST NOT rely on the stale comment in either direction."
+        },
+        "closure_proof_obligation": "The precondition is proven closed ONLY by the rls_successor_contract closing the organization_members disjuncts as part of the 140 closed world, evidenced by a re-derived census, AND by resolving AG-07. A prose assertion of closure is not proof.",
+        "source": "RAT-OP-01 binding_semantics.operational_prerequisite_fail_closed"
+      },
+      "SC-05G": {
+        "clause": "NO STANDING ACCESS GRANTED BY THE RATIFICATION",
+        "detail": "RAT-OP-01 constrains WHO may authorize a capability once the mechanism exists. It does NOT itself grant standing tenant-content access to any platform-admin or support principal, and MUST NOT be cited as authorizing any access.",
+        "source": "RAT-OP-01 binding_semantics.no_standing_access_granted"
+      },
       "SC-06": "The authorizing act MUST be a distinct, affirmative, recorded act. It MUST NOT be inferred from a support ticket existing, from an email, from a contract, from a prior capability, or from the tenant's silence.",
       "SC-07": "The authorizing act MUST record the purpose presented to the tenant at the moment of authorization. A capability whose recorded purpose differs from the purpose presented is INVALID.",
       "SC-08": "Acceptance of terms, onboarding, or any commercial agreement MUST NOT constitute standing authorization for future support access."
@@ -122,8 +197,10 @@
       },
       "issued_by": {
         "required": true,
-        "semantics": "The TENANT_PRINCIPAL who performed the authorizing act. MUST be a natural person. MUST be a member of the target organization at the moment of issue.",
-        "constraint": "MUST NOT be a platform principal, a service account, or a machine identity."
+        "semantics": "The TENANT_PRINCIPAL who performed the authorizing act. MUST be a natural person. MUST hold an ACTIVE membership in the affected organization at the moment of issue, with role EXACTLY organization_admin.",
+        "constraint": "MUST NOT be a platform principal, a service account, or a machine identity. MUST NOT be admitted by role hierarchy, numeric dominance, '>=' threshold or '+' notation. Tenant super_admin MUST NOT be admitted. MUST NOT equal issued_to. A platform principal MUST NOT qualify by holding or self-assigning an organization_admin membership.",
+        "authority": "Fixed by RAT-OP-01; enumerated as SC-05A..SC-05G. Issuance MUST FAIL CLOSED until the SC-05F operational precondition is proven closed.",
+        "evaluation_shape": "An equality test against the single literal organization_admin, conjoined with an ACTIVE-membership test scoped to the capability's own organization_id. Any set-membership, ranked or threshold evaluation violates SC-05D even if it happens to admit the same role today."
       },
       "issued_to": {
         "required": true,
@@ -423,7 +500,19 @@
     { "id": "AG-02", "gap": "Whether operator reads of audit_logs.after_json and domain_object_versions constitute TENANT_CONTENT access is NOT adjudicated here.", "disposition": "FAIL_CLOSED — treat as content until adjudicated." },
     { "id": "AG-03", "gap": "The applied state of the nine PREPARED_PACKET_ONLY superadmin policies is UNKNOWN from the repository alone.", "disposition": "FAIL_CLOSED — inside the closed world; the successor must enumerate, not assume inert." },
     { "id": "AG-04", "gap": "No live pg_policies snapshot of staging or production was taken. The census measures declared SQL.", "disposition": "FAIL_CLOSED — closure requires reconciliation against a live snapshot." },
-    { "id": "AG-05", "gap": "The tenant role authorized to perform the SC-05 authorizing act is not fixed here.", "disposition": "FAIL_CLOSED — must be adjudicated before issuance is implemented; it MUST NOT default to any role that a platform principal can obtain." },
+    {
+      "id": "AG-05",
+      "gap": "R1/R2: the tenant role authorized to perform the SC-05 authorizing act was not fixed, and required an owner decision.",
+      "PRODUCT_DECISION_STATUS": "RESOLVED_BY_RAT_OP_01",
+      "IMPLEMENTATION_STATUS": "IMPLEMENTATION_GAP_OPEN",
+      "resolution": "RAT-OP-01 (RATIFIED_BY_PRODUCT_OWNER, PR146 / 1cddd310) fixes the authorizer as a natural person holding an ACTIVE membership in the affected organization with role EXACTLY organization_admin, excluding hierarchy, numeric dominance, '+' notation and implicit tenant super_admin admission. Materialized here as SC-05A..SC-05G.",
+      "what_is_resolved": "The PRODUCT DECISION only — which role authorizes. This gap is no longer OWNER_DECISION_REQUIRED and MUST NOT be re-escalated to the owner.",
+      "what_remains_open": "The IMPLEMENTATION and SECURITY prerequisite. No runtime satisfies RAT-OP-01 today: there is no support-capability substrate at all, and the SC-05F operational precondition is measurably OPEN because organization_members.members_insert_admin still carries the current_user_is_super_admin() disjunct, letting a platform principal self-assign the very organization_admin membership the rule requires.",
+      "explicit_non_claim": "This authority does NOT claim the current runtime satisfies RAT-OP-01. It claims only that the product decision is settled and the contract is frozen.",
+      "disposition": "FAIL_CLOSED for issuance until SC-05F is proven closed. The product decision itself is CLOSED.",
+      "r1_anticipation_note": "R1's AG-05 required that the authorizing role 'MUST NOT default to any role that a platform principal can obtain'. RAT-OP-01 selects organization_admin, which a platform principal CAN currently obtain via the standing bypass — and resolves that tension not by choosing a different role but by making the bypass closure a load-bearing precondition. The R1 constraint is therefore satisfied CONDITIONALLY, on SC-05F, not unconditionally."
+    },
+    { "id": "AG-07", "gap": "R3. The roles postgres and service_role are declared BYPASSRLS in db/baseline/stella_g2_roles.sql. Any code path executing as either bypasses RLS entirely and is therefore outside the 140-policy census. Whether any live path does so was NOT measured under this authority. The runtime role uellix_app is NOBYPASSRLS, and the 0031 in-policy comment asserting a DATABASE_URL service-client bypass is STALE with respect to db/client.ts.", "disposition": "FAIL_CLOSED — the SC-05F closure proof is INCOMPLETE until this is measured. Closing the RLS disjuncts does not close a path that never consults RLS." },
     { "id": "AG-06", "gap": "Whether a support capability may ever permit writes (SC-23) is left as a default-deny with a defined escalation path, not a settled permission.", "disposition": "DEFAULT_DENY." }
   ]
 }

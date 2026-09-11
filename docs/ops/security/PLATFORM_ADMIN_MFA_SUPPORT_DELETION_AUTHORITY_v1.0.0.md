@@ -198,6 +198,73 @@ No override, no break-glass.
 - **Authorization** is an affirmative, recorded act by a tenant principal of the
   target org. The platform cannot issue to itself. It is never inferred from a
   ticket, an email, a contract, onboarding, or silence.
+
+### The authorizer — fixed by RAT-OP-01 (R3)
+
+`RAT_OP_01_STATUS = RATIFIED_BY_PRODUCT_OWNER`. Materialized at **PR146 /
+`1cddd310`** in `docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json`,
+read here **read-only**. The owner decision **binds regardless of PR146's merge
+state**; merge state governs only when *this* PR may be integrated (§11).
+
+The authorizer must be a **natural person**, holding an **ACTIVE membership in
+the affected organization**, with role **exactly `organization_admin`**
+(`SC-05A`–`SC-05C`).
+
+**Exact equality — not a threshold** (`SC-05D`). Excluded explicitly:
+`hasRole('>=')`, numeric dominance, `'+'` notation, set membership, and
+implicit admission of any "higher" role. **Tenant `super_admin` does not
+qualify** — not by rank, not by semantics, not as an administrative superset.
+
+That exclusion is load-bearing against a measured property of this codebase:
+
+> `lib/auth/permissions.ts:25` — `hasRole(userRole, requiredRole)` returns
+> `ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole]`, and
+> `lib/auth/roles.ts` sets `super_admin: 100`, `organization_admin: 80`.
+
+So `hasRole('super_admin', 'organization_admin')` is **`true`**. **Any**
+rank-based implementation silently admits precisely the role RAT-OP-01
+excludes, while looking like a faithful implementation. `AV-M-10` exists to
+catch exactly that, and it is written so the control that must go RED is the
+*tenant super_admin* case — because `organization_admin` satisfies both the
+equality and the threshold, only `super_admin` distinguishes them.
+
+**A platform principal is never the issuer** (`SC-05E`), and does **not**
+become one by holding — or self-assigning — an `organization_admin` membership.
+`issued_by` must differ from `issued_to` by natural-person identity.
+
+### The operational precondition — fail closed (`SC-05F`)
+
+**RAT-OP-01 does not make issuance operational.** The rule becomes effective
+only *after* the standing platform-admin path that can self-assign tenant
+memberships is **proven closed**. Until then, **issuance must fail closed** —
+refuse, never default-permit.
+
+This is not a formality, and the precondition is **measurably open today**:
+
+> `db/migrations/0031_rls_core.sql`, policy `members_insert_admin` on
+> `organization_members`:
+> `WITH CHECK ( current_user_role_in_org(organization_id) IN ('super_admin','organization_admin') OR current_user_is_super_admin() )`
+
+That trailing disjunct lets any principal with `users.is_super_admin = true`
+INSERT an arbitrary membership row — **including granting itself
+`organization_admin` in any organization**. The policy is `TO PUBLIC`. All four
+`organization_members` policies carry the disjunct, so the standing path can
+create, alter, delete and enumerate memberships.
+
+**So an `organization_admin` membership is not trustworthy as authorization
+while the bypass stands.** Without the closure, `SC-05C` is satisfiable by an
+attacker-chosen row and the whole issuer contract is circumventable **by a
+single INSERT**.
+
+Closure is effective at the DB layer — `uellix_app` is declared `NOBYPASSRLS`,
+so removing the disjuncts does close the runtime path. Two cautions, both
+recorded rather than assumed: `postgres` and `service_role` **are** `BYPASSRLS`
+and anything running as either never consults RLS at all (**`AG-07`**, open);
+and the in-policy comment in `0031` claiming onboarding bypasses RLS via
+`DATABASE_URL` is **stale** — `db/client.ts` states the runtime connection now
+comes from `UELLIX_RUNTIME_DATABASE_URL` and must declare `uellix_app`.
+
+RAT-OP-01 grants **no** standing tenant-content access (`SC-05G`).
 - **Fields**: `purpose` (binding, not descriptive — use outside the recorded
   purpose is a violation while the capability is otherwise live), `issued_by`,
   `issued_to` (a single natural person; not a group, role or service account;
@@ -351,6 +418,42 @@ must be refused.
 `AG-02` whether operator reads of `after_json` / `domain_object_versions`
 constitute content access · `AG-03` applied state of the nine prepared-only
 policies is UNKNOWN from the repository alone · `AG-04` no live `pg_policies`
-snapshot was taken; the census measures declared SQL · `AG-05` which tenant role
-may perform the authorizing act — must never default to one a platform principal
-can obtain · `AG-06` whether a capability may ever permit writes (default deny).
+snapshot was taken; the census measures declared SQL · `AG-06` whether a
+capability may ever permit writes (default deny) · **`AG-07` (R3, new)**
+`postgres` and `service_role` are `BYPASSRLS`, so any path running as either is
+outside the 140-policy census entirely — whether a live path does so was not
+measured, and the `SC-05F` closure proof is incomplete until it is, because
+closing RLS cannot close a path that never consults RLS.
+
+### `AG-05` — resolved as a product decision, open as implementation
+
+`AG-05` is **no longer `OWNER_DECISION_REQUIRED`** and must not be re-escalated
+to the owner. The two halves are tracked separately:
+
+| | status |
+|---|---|
+| `PRODUCT_DECISION_STATUS` | **`RESOLVED_BY_RAT_OP_01`** — the authorizer is fixed: natural person, ACTIVE membership in the affected org, role exactly `organization_admin` |
+| `IMPLEMENTATION_STATUS` | **`IMPLEMENTATION_GAP_OPEN`** — no runtime satisfies it |
+
+**This authority does not claim the current runtime satisfies RAT-OP-01.** There
+is no support-capability substrate at all, and `SC-05F` is measurably open.
+
+One honest wrinkle worth stating: R1's `AG-05` required that the authorizing
+role *"must never default to one a platform principal can obtain."* RAT-OP-01
+selects `organization_admin` — which a platform principal **can** currently
+obtain, via the standing bypass. The ratification resolves that tension not by
+picking a different role but by making the bypass closure a **load-bearing
+precondition**. So the R1 constraint is satisfied **conditionally, on `SC-05F`**
+— never unconditionally.
+
+## 11. Integration dependency
+
+`CANONICAL_MICRO_RATIFICATION_INTEGRATED = **NO**`, by fresh measurement at R3:
+`1cddd310` is not an ancestor of `origin/integration/commercial-v1`,
+`origin/feature/sprint-0-foundation` or `origin/main`, and `gh` reports PR #146
+`state=OPEN`, `isDraft=true`, `mergedAt=null`.
+
+PR145 **may be authored and audited now**. Its **final integration must wait**
+while PR146 is unmerged — otherwise this authority would cite a ratification
+artifact absent from the integrated tree. That is a provenance dependency, not a
+defect in PR145.

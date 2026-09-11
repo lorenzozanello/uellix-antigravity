@@ -1,7 +1,7 @@
 {
   "manifest_id": "AV-PLATFORM-ADMIN-MFA-SUPPORT-DELETION",
   "node_or_batch": "batch",
-  "authority_reference": "docs/ops/security/PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY_v1.0.0.json (whole artifact; census at docs/ops/security/PLATFORM_ADMIN_RLS_SUPERADMIN_POLICY_CENSUS_v1.0.0.json)",
+  "authority_reference": "docs/ops/security/PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY_v1.0.0.json (whole artifact; census at docs/ops/security/PLATFORM_ADMIN_RLS_SUPERADMIN_POLICY_CENSUS_v1.0.0.json). The issuer controls AV-P-07 and AV-N-16..AV-N-22, and the mutation controls AV-M-10/AV-M-11, are scoped under RAT-OP-01 (RATIFIED_BY_PRODUCT_OWNER), materialized at PR146 / commit 1cddd3109762f84710fdb81ad72820a87066a24f in docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json, and consumed by this authority's ratification_consumption block as SC-05A..SC-05G. PR146 was measured UNMERGED at R3; the ratification binds regardless, but final integration of PR145 waits on that provenance.",
   "dependencies": [
     "LANE-AU-TENANCY-S4-S5: status UNKNOWN — measured as an unmerged draft lane at base 88d95c65; pnpm ops:program-state could not be run in this worktree (no node_modules). Fails closed: no control below may assume AU is CLOSED.",
     "MO-07: status UNKNOWN — this manifest's own controls are a precondition of any MO-07 closure claim, per authority clause AD-04."
@@ -51,6 +51,11 @@
     {
       "id": "AV-P-05",
       "description": "GLOBAL_REFERENCE split, positive face: after the SPLIT_THEN_REPLACE disposition, a platform principal CAN operate on rows of fx_rates, proxy_sources, financial_proxies and financial_proxy_versions where organization_id IS NULL, and each of those four tables' policies expresses the NULL and NOT NULL cases SEPARATELY rather than in one welded predicate (RS-02 GLOBAL_REFERENCE, CM-05).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-P-07",
+      "description": "RAT-OP-01 AUTHORIZER, positive face: once every prerequisite is satisfied — including the SC-05F closure of the standing self-assignment path — a NATURAL PERSON holding an ACTIVE membership in the affected organization with role EXACTLY 'organization_admin' CAN authorize issuance of a support capability for that organization, and the issued capability records that person as issued_by. This control is expected to be UNRUNNABLE until SC-05F is closed; while the precondition is open it must be represented as such rather than reported green (see AV-N-19).",
       "test_file": "UNKNOWN"
     },
     {
@@ -134,6 +139,41 @@
       "id": "AV-N-15",
       "description": "APPROVER'S OWN REASON (SD-04): the approval is REFUSED server-side when the approval reason is absent, empty, or whitespace-only — asserted at the service boundary, not only in the UI. Separately, the approval is REFUSED when its reason is DEFAULTED OR DERIVED from the requester's reason, since SD-04 forbids that explicitly. The second assertion is the load-bearing one: at base 88d95c65 the sole caller supplies a non-empty synthesized template literal, so an emptiness check alone passes vacuously.",
       "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-16",
+      "description": "NON-QUALIFYING TENANT ROLES DENIED (SC-05C, RAT-OP-01): a natural person with an ACTIVE membership in the affected organization is REFUSED as authorizer when their role is anything other than exactly 'organization_admin'. Asserted individually and by name for every other member of the closed role set in lib/auth/roles.ts: 'impact_manager' DENIED, 'analyst' DENIED, 'viewer' DENIED, and 'reviewer' DENIED. 'reviewer' is included for closed-world completeness even though it sits outside ROLE_HIERARCHY — a role absent from the hierarchy map must not be admitted by accident either.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-17",
+      "description": "TENANT super_admin DENIED AS AUTHORIZER (SC-05D, RAT-OP-01): a natural person with an ACTIVE membership whose role is exactly 'super_admin' is REFUSED as authorizer. It must be refused DESPITE outranking organization_admin — measured: ROLE_HIERARCHY in lib/auth/roles.ts sets super_admin=100 and organization_admin=80, so hasRole('super_admin','organization_admin') at lib/auth/permissions.ts:25 returns TRUE. This control exists precisely to prove the implementation is NOT that comparison. Tenant super_admin is excluded deliberately and this refusal must never be relaxed as a convenience.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-18",
+      "description": "PLATFORM PRINCIPAL DENIED AS AUTHORIZER, EVEN PRESENTING organization_admin (SC-05E, RAT-OP-01): a PLATFORM_PRINCIPAL is REFUSED as issuer even when it presents a genuine ACTIVE organization_admin membership in the affected organization — whether that membership was pre-existing, granted to it, or self-assigned. The platform standing must be evaluated independently of and in addition to the tenant-authorizer test, so possessing the qualifying role never launders the platform identity into a valid issuer.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-19",
+      "description": "OPERATIONAL PRECONDITION FAILS CLOSED (SC-05F, RAT-OP-01): while the standing platform-admin self-assignment path remains OPEN, ANY support-capability issuance is REFUSED — including an issuance whose authorizer fully satisfies SC-05A..SC-05E. The refusal must be attributable to the unmet precondition, must not default-permit, and must not be silently skipped. Openness is decided by measurement, not configuration: at base 88d95c65 the path is open because db/migrations/0031_rls_core.sql policy members_insert_admin carries 'OR current_user_is_super_admin()' in its WITH CHECK.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-20",
+      "description": "NO SELF-AUTHORIZATION (SC-05E, SC-28): a capability cannot authorize itself and cannot be used to authorize another. issued_by MUST NOT equal issued_to, asserted by natural-person identity — so a single subject who is simultaneously a platform principal and an ACTIVE organization_admin cannot occupy both ends of one issuance. Also asserted: an existing live capability cannot be presented as the authorizing act for a new one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-21",
+      "description": "CROSS-ORG AUTHORIZER DENIED (SC-05B, SC-01): a natural person holding an ACTIVE membership with role exactly 'organization_admin' in organization A is REFUSED as authorizer for a capability scoped to organization B. The membership must be in the AFFECTED organization. Asserted to fail closed, not to degrade to a broader scope.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-22",
+      "description": "INACTIVE MEMBERSHIP DENIED (SC-05B): a natural person whose organization_admin membership in the affected organization is not ACTIVE — pending, suspended, revoked or removed — is REFUSED as authorizer. Role equality alone is insufficient; the membership state is a separate conjunct and must be evaluated at the moment of issue.",
+      "test_file": "UNKNOWN"
     }
   ],
   "mutation_controls": [
@@ -180,6 +220,16 @@
     {
       "id": "AV-M-09",
       "description": "SYNTHESIZED-REASON VACUITY (SD-04): replacing the approver-supplied reason input with a value derived from the requester's reason — the exact shape present at base 88d95c65, a non-empty template literal — must turn the suite RED via AV-N-15. This mutation exists because an emptiness-only check CANNOT catch it: the synthesized string always passes. It also guards the audit-integrity consequence, since that string is what lands in audit_logs.reason and afterJson.deleteReason and would otherwise credit the requester's justification to the approval.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-10",
+      "description": "EXACT-EQUALITY REPLACED BY HIERARCHY/DOMINANCE (SC-05C/SC-05D, RAT-OP-01): replacing the exact-role equality test with a hierarchy or numeric-dominance comparison — hasRole(role,'organization_admin'), ROLE_HIERARCHY[role] >= ROLE_HIERARCHY['organization_admin'], a '>=' threshold, a '+' notation, or set membership such as role IN ('super_admin','organization_admin') — MUST turn the suite RED, and specifically the TENANT super_admin ADMISSION assertion AV-N-17 must be the control that goes RED. That directionality is the point of this mutation: the substitution is invisible to a suite that only tests the positive organization_admin case, because organization_admin satisfies BOTH the equality and the threshold. Only the super_admin case distinguishes them — measured: super_admin=100 >= organization_admin=80, so every dominance form silently admits the role RAT-OP-01 excludes.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-11",
+      "description": "PRECONDITION BYPASS (SC-05F): deleting or short-circuiting the SC-05F fail-closed precondition check — so that issuance proceeds on a satisfied authorizer test while the standing self-assignment path is still open — MUST turn the suite RED via AV-N-19. This guards the specific failure in which a correct-looking SC-05A..SC-05E implementation ships and is reported as satisfying RAT-OP-01, while remaining circumventable by a single INSERT into organization_members.",
       "test_file": "UNKNOWN"
     }
   ],
