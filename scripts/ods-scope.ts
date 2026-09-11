@@ -662,6 +662,71 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
     branch: 'codex/fibdb052-p1-implementation-r1',
     patterns: ['db/migrations/**', 'db/prepared/journal/**'],
   },
+  // HPO-ODS-W2-28 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.31.json):
+  // the Customer Lifecycle CL-1 legal-acceptance substrate. THREE patterns,
+  // carried field for field from that authority's own `protected_grant`
+  // declaration and in the order it states them — under v1.0.31
+  // ORDER_IS_BINDING the order is part of the row's identity, because the
+  // registration control asserts the row as a whole-object equality rather
+  // than as a set comparison.
+  //
+  // THREE PATTERNS, NOT TWO. The predecessor W2-27 directly above carries
+  // only the migration and journal families and DELIBERATELY excludes
+  // db/prepared/checkpoint-b0/observation.sql. Copying the most recent
+  // grant's shape — the most likely way this registration would have
+  // silently UNDER-granted while looking like precedent-following — would
+  // have produced two patterns here and stopped the CL-1 mission on a scope
+  // violation it could not lawfully route around. v1.0.31
+  // WHY_THREE_PATTERNS_AND_NOT_TWO measured the discriminator in BOTH
+  // directions on real commits: observation.sql builds its rowCounts key
+  // from a UNION ALL chain with one arm per governed relation, so a
+  // TABLE-creating commit rewrites its bytes (CE-1 at 8ca2ff9b, 2
+  // insertions) while an INDEX-only commit leaves the path absent from the
+  // commit entirely (P1 at e9c84ff3). CL-1 creates relations; P1 created
+  // only indexes. The exclusion was correct for W2-27 and would be wrong
+  // here.
+  //
+  // NOT db/prepared/**. The DEFAULT protected pattern above is the broad
+  // db/prepared/**, but the breadth of the PROTECTION is not a licence for
+  // breadth in the GRANT: a blanket pattern would additionally authorize
+  // db/prepared/hosted/** and db/prepared/hosted/governed/**, which are
+  // G2-gated apply surfaces CL-1 has no business touching, and the separate
+  // db/prepared/stella_*.sql numbering family CL-1 does not extend. A
+  // sibling under db/prepared/ that matches the default pattern but not
+  // these two narrower ones is correctly refused.
+  //
+  // NO EXISTING ROW CAN STAND IN. Measured against this registry, not
+  // asserted: EIGHT rows already carry db/migrations/** and/or
+  // db/prepared/journal/** (W2-01, W2-12, W2-17, W2-20, W2-21, W2-25, W2-26
+  // and W2-27) and FIVE already carry the observation literal (W2-07,
+  // W2-08, W2-16, W2-17 and W2-26). Every one of them is bound to a
+  // DIFFERENT branch, and resolution is by exact string equality, so on
+  // codex/customer-lifecycle-cl1-implementation-r1 all of them contribute
+  // zero patterns.
+  //
+  // THIS ROW ALLOCATES NO ORDINAL AND NO CONTROLLER. v1.0.31
+  // MIGRATION_ORDINAL_DISPOSITION is posture B: no migration ordinal is
+  // allocated, reserved or implied, and the implementing mission re-derives
+  // it at its OWN head by the normal drizzle-kit generate path. The
+  // Controller IMMUTABLE_BY_CONVENTION array gates the NEXT LINEAGE
+  // allocation and can never prevent a grant from resolving — two
+  // independent registries with independent controls.
+  //
+  // DECLARED BY v1.0.31, REGISTERED HERE. Declaring a grant and registering
+  // it are separate governed acts on separate surfaces; v1.0.31 lists this
+  // very file under EXPLICITLY_NOT_AUTHORIZED for exactly that reason. The
+  // CL-1 implementation mission is PROHIBITED from performing this act for
+  // itself: a node that registers the grant it is about to rely on has
+  // authorized its own diff.
+  {
+    authorityId: 'HPO-ODS-W2-28',
+    branch: 'codex/customer-lifecycle-cl1-implementation-r1',
+    patterns: [
+      'db/migrations/**',
+      'db/prepared/journal/**',
+      'db/prepared/checkpoint-b0/observation.sql',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
