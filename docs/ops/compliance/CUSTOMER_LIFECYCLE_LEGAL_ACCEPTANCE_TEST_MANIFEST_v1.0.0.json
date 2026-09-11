@@ -61,15 +61,15 @@
     },
     {
       "id": "S-AO-NO-ACCEPTANCE-METADATA-CREEP",
-      "purpose": "No identifying metadata beyond the subject identifier may be added to an acceptance relation without an answered LRF-03 and an owner decision. Sentinel: the acceptance relations carry NO ip_address, user_agent, device or fingerprint column. db/schema.ts:130 already declares audit_logs.ipAddress for other verbs, and its existence must not be read as authorization to capture one here. Authority I-T3-9, LEGAL_REVIEW_FLAGS.LRF-03."
+      "purpose": "No identifying metadata beyond the subject identifier may be added to an acceptance relation without an answered LRF-03 and an owner decision. Sentinel: the acceptance relations carry NO ip_address, user_agent, device or fingerprint column. db/schema.ts:130 already declares audit_logs.ipAddress for other verbs, and its existence must not be read as authorization to capture one here. Authority I-T3-9, LEGAL_REVIEW.FLAGS.LRF-03."
     },
     {
       "id": "S-AO-NO-COMMERCIAL-ACCOUNT-LEVEL-ACCEPTANCE",
       "purpose": "Acceptance must never be recorded at, or inherited from, CommercialAccount level. Sentinel: no acceptance relation carries a commercial_account_id, and no uniqueness index on an acceptance relation is keyed by it. Two organizations governed by ONE CommercialAccount must produce two independent L1 states. Authority X-AO-09, I-T4-8, ratification CA-08."
     },
     {
-      "id": "S-AO-INTERIM-EMPTY-REGISTRY-POSTURE-IS-VISIBLE",
-      "purpose": "The empty-instrument-registry behaviour is STOP_FOR_HPO (F-AO-14) with an interim REFUSE posture. Sentinel: the interim posture is asserted by an explicit control, so that if the owner later chooses vacuous pass the change is a deliberate edit to a named assertion rather than a silent behavioural drift. A model whose most dangerous edge case is untested at initial deployment is untested exactly where mistakes are most likely."
+      "id": "S-AO-REQUIRED-REGISTRY-COMPLETENESS-IS-FAIL-CLOSED",
+      "purpose": "The empty and partial required-instrument registry cases are FAIL-CLOSED BY DERIVATION, not an interim posture. Sentinel: the gate evaluates the CLOSED REQUIRED SET fixed by ratification, so for every required key lacking a currently applicable governed version the conjunct is FALSE and the gate refuses — and NO code path anywhere evaluates a conjunction over the set of published keys, which is the model that made an empty registry look ambiguous. RE-SCOPED AND RENAMED AT R4: through R3 this sentinel asserted an owner-decision-pending posture for F-AO-14 with an interim REFUSE behaviour, which CONTRADICTED the R3 reclassification of F-AO-14 in the authority itself — the authority said derived, the manifest said pending. Audit BU measured the contradiction. A model whose most dangerous edge case is misclassified at initial deployment is misclassified exactly where mistakes are most likely. Authority FAIL_CLOSED.FC_7_NO_INSTRUMENT_PUBLISHED.THE_CORRECTED_DEFINITION, REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION, F-AO-14, F-AO-28."
     },
     {
       "id": "S-AO-ACCEPTING-ROLE-IS-EXACT",
@@ -93,7 +93,7 @@
     },
     {
       "id": "S-AO-EVIDENCE-FLOOR-IS-THE-CEILING-OF-REQUIREMENT",
-      "purpose": "Nothing outside the required evidence floor may be enforced as a requirement. Sentinel: the set of acceptance-evidence elements any control, invariant or exit gate FAILS an implementation for lacking is exactly {instrument identity, version, content digest + algorithm, timestamp, structurally required actor}. Retained bytes, an immutable content reference, IP address, user agent, device data and notice-acknowledgement records are all OUTSIDE that set and MUST NOT appear in any failure condition. Canonical HPO-A.4 names four elements and the fifth is entailed by HPO-A.1/A.3; everything else is IMPLEMENTATION_CHOICE. Authority ACCEPTANCE_MODEL.REQUIRED_ACCEPTANCE_EVIDENCE_FLOOR, I-T3-9, LRF-01, LRF-03, LRF-04."
+      "purpose": "Nothing outside the required evidence floor may be enforced as a requirement. Sentinel: the set of acceptance-evidence elements any control, invariant or exit gate FAILS an implementation for lacking is exactly {instrument identity, version, content hash, timestamp, structurally required actor}. Retained bytes, an immutable content reference, a SEPARATELY PERSISTED HASH-ALGORITHM FIELD, IP address, user agent, device data and notice-acknowledgement records are ALL OUTSIDE that set and MUST NOT appear in any failure condition. HASH_VERIFIABILITY is required, but it is a property of the system and may be delivered by a self-describing digest, a system-governed algorithm identity, or a persisted field — the authority ratifies none of them. Canonical HPO-A.4 names four elements and the fifth is entailed by HPO-A.1/A.3; everything else is IMPLEMENTATION_CHOICE. The algorithm field was added to this list at R4 after audit BU measured that R3 had made it mandatory. Authority ACCEPTANCE_MODEL.REQUIRED_ACCEPTANCE_EVIDENCE_FLOOR, content_identity.CONTENT_ALGORITHM_STORAGE_SHAPE, I-T3-9, LRF-01, LRF-03, LRF-04."
     }
   ],
   "known_conditions": [],
@@ -120,7 +120,7 @@
     },
     {
       "id": "P-AO-5",
-      "description": "INVITED-MEMBER JOURNEY IN ORDER. Drive J-INVITED end to end: B0 then L0 then the POST invitation acceptance, into an EXISTING organization. Assert the invited subject discharges L0 PERSONALLY and is NEVER prompted for commercial acceptance. Assert the invitation target is carried forward across both the B0 and the L0 refusals via the existing safe-path validation and that the subject resumes the invitation after satisfying them. Authority JOURNEY_INVITED_MEMBER, ADJUDICATION_FOUNDER_VS_INVITED.A1 and A2, INVITATIONS.R5.",
+      "description": "INVITED-MEMBER JOURNEY IN ORDER. Drive J-INVITED end to end: B0 then L0 then the mutating-verb invitation acceptance, into an EXISTING organization. Assert the invited subject discharges L0 PERSONALLY and is NEVER prompted for commercial acceptance. Assert the invitation target is carried forward across both the B0 and the L0 refusals via the existing safe-path validation and that the subject resumes the invitation after satisfying them. Authority JOURNEY_INVITED_MEMBER, ADJUDICATION_FOUNDER_VS_INVITED.A1 and A2, INVITATIONS.R5.",
       "test_file": "UNKNOWN"
     },
     {
@@ -175,7 +175,7 @@
     },
     {
       "id": "P-AO-15",
-      "description": "INTERIM EMPTY-REGISTRY POSTURE IS EXPLICIT. With ZERO published instruments for a class, the corresponding gate REFUSES, loudly. This asserts the INTERIM posture of F-AO-14, which is STOP_FOR_HPO: the control exists so that if the owner later chooses vacuous pass, the change is a deliberate edit to a named assertion rather than silent behavioural drift. Authority FC_7.INTERIM_POSTURE_UNTIL_ADJUDICATED.",
+      "description": "EMPTY REQUIRED-INSTRUMENT REGISTRY REFUSES, FAIL CLOSED. With ZERO published instruments, every conjunct of the CLOSED REQUIRED SET is FALSE and the corresponding gate REFUSES. Assert refusal at L0 for a subject and at L1 for an organization, and assert that the refusal arises because a REQUIRED key has no currently applicable governed version — NOT because a conjunction over an empty published set was evaluated. This is a DERIVED requirement, not an interim posture pending an owner decision: the required set is fixed by ratification (HPO-A.1 Terms AND Privacy; HPO-A.2 with HPO-A.3 the commercial instrument), so there is no empty set to be vacuously true over. RE-SCOPED AT R4 — through R3 this control still asserted an interim posture pending an owner decision, and cited a block R3 had itself moved into a superseded container; audit BU measured that the R2-to-R3 manifest diff was addition-only. This control now asserts a DERIVED requirement and no owner decision is pending on it. Authority FAIL_CLOSED.FC_7_NO_INSTRUMENT_PUBLISHED.THE_CORRECTED_DEFINITION, REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION.EMPTY_REGISTRY, F-AO-14, F-AO-28.",
       "test_file": "UNKNOWN"
     },
     {
@@ -200,7 +200,12 @@
     },
     {
       "id": "P-AO-20",
-      "description": "A DIGEST-ONLY IMPLEMENTATION IS CONFORMANT. Drive the full acceptance journey against an implementation that retains ONLY the required evidence floor — instrument identity, version, content digest with its algorithm, timestamp, and the accepting subject or actor where the act structurally requires one — and retains NO instrument bytes and NO immutable content reference. ASSERT the journey completes, L0 and L1 both pass for a current subject and organization, and NOTHING in this manifest or in the authority rejects the implementation for the absence of retained bytes. Canonical HPO-A.4 requires a content HASH, not retrievable content; R1 and R2 elevated retention to a binding invariant (former I-T2-4 and a NOT NULL T2 column) and R3 withdrew that. This control exists so the withdrawal is executable rather than only asserted in prose. Authority INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_RETENTION_SHAPE, ACCEPTANCE_MODEL.REQUIRED_ACCEPTANCE_EVIDENCE_FLOOR, DELTA_1B_RETAINED_TEXT_OR_BYTES.",
+      "description": "A FLOOR-ONLY IMPLEMENTATION IS CONFORMANT. Drive the full acceptance journey against an implementation that retains ONLY the required evidence floor — instrument identity, version, the content hash, timestamp, and the accepting subject or actor where the act structurally requires one — with NO retained instrument bytes, NO immutable content reference, and NO separately persisted hash-algorithm field, the hash being verifiable by a self-describing digest representation. ASSERT the journey completes, L0 and L1 both pass for a current subject and organization, and NOTHING in this manifest or in the authority rejects the implementation for the absence of retained bytes OR of an algorithm field. Canonical HPO-A.4 requires instrument identity, version, content HASH and timestamp — not retrievable content and not a stored algorithm identity. R1/R2 made bytes mandatory and R3 withdrew that; R3 then made the algorithm field mandatory and R4 withdrew that. This control exists so BOTH withdrawals are executable rather than only asserted in prose. Authority INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_ALGORITHM_STORAGE_SHAPE and .CONTENT_RETENTION_SHAPE, ACCEPTANCE_MODEL.REQUIRED_ACCEPTANCE_EVIDENCE_FLOOR, DRIFT_COMPARISON.DELTA_1B_RETAINED_TEXT_OR_BYTES.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-21",
+      "description": "A COMPLETE REQUIRED REGISTRY IS ELIGIBLE TO CONTINUE. With every key of the CLOSED REQUIRED SET carrying a currently applicable governed version, and with valid current acceptances for the subject and for the organization, ASSERT the conjunction is TRUE and the journey proceeds past L0 and L1 — subject to every OTHER gate in the chain, which this control does not weaken and must not be read as bypassing. Assert ALSO the two alternative verifiability shapes are accepted: a self-describing digest with no algorithm field, and a system-governed algorithm identity with no per-row field, each producing the SAME pass. This is the positive counterpart to P-AO-15 and N-AO-37: without it, a predicate that refused everything would satisfy both refusal controls and look correct. Authority REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION.ALL_PRESENT, content_identity.CONTENT_ALGORITHM_STORAGE_SHAPE.",
       "test_file": "UNKNOWN"
     }
   ],
@@ -247,12 +252,12 @@
     },
     {
       "id": "N-AO-9",
-      "description": "THE EXPIRED TRANSITION IS DURABLE ACROSS THE REFUSAL. After an expired invitation is presented and REFUSED, assert the invitation status is OBSERVABLE as expired in a SUBSEQUENT, SEPARATE transaction. This is the only assertion that catches F-AO-01: today the UPDATE at lib/invitations/service.ts:175-178 is rolled back by the throw at :179, because the caller opened one transaction that db/identity-context.ts:110-112 documents as rolling back on any throw. Converting the verb to POST does NOT fix this by itself. Authority AB-5, FC_4.REQUIRED_CORRECTIONS.",
+      "description": "THE EXPIRED TRANSITION IS DURABLE ACROSS THE REFUSAL. After an expired invitation is presented and REFUSED, assert the invitation status is OBSERVABLE as expired in a SUBSEQUENT, SEPARATE transaction. This is the only assertion that catches F-AO-01: today the UPDATE at lib/invitations/service.ts:175-178 is rolled back by the throw at :179, because the caller opened one transaction that db/identity-context.ts:110-112 documents as rolling back on any throw. Converting the verb does NOT fix this by itself — the same write-then-throw inside the same transaction fails identically under any verb. Authority AB-5, FC_4.REQUIRED_CORRECTIONS.",
       "test_file": "UNKNOWN"
     },
     {
       "id": "N-AO-10",
-      "description": "THE POST HANDLER REFUSES AN UNACCEPTED SUBJECT. POST the invitation acceptance as a subject who has passed B0 but NOT L0 and assert refusal with NO organization_members row created. Assert the refusal is produced by the real gate transit, not by a mock of the boundary. Authority INVITATIONS.R4, ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT.",
+      "description": "THE MUTATING-VERB HANDLER REFUSES AN UNACCEPTED SUBJECT. Submit the invitation acceptance via its mutating verb as a subject who has passed B0 but NOT L0 and assert refusal with NO organization_members row created. Assert the refusal is produced by the real gate transit, not by a mock of the boundary. Authority INVITATIONS.R4, ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT.",
       "test_file": "UNKNOWN"
     },
     {
@@ -292,7 +297,7 @@
     },
     {
       "id": "N-AO-18",
-      "description": "CONCURRENT BOOTSTRAP YIELDS EXACTLY ONE ORGANIZATION. Two concurrent bootstrap attempts by the same subject produce exactly ONE organization. Assert idempotency by key, not by luck: the live path today has NO idempotency key at all — CAP_05_ORGANIZATION_BOOTSTRAP.md section 1.2 — and its slug uniqueness is check-then-act between the SELECT at app/(authenticated)/app/onboarding/actions.ts:101-105 and the INSERT at :110. Assert also that founder cardinality is still enforced by organizations_self_service_founder_unique. Requires the PostgreSQL probe. Authority BOOTSTRAP_ATOMICITY.PROPERTIES_THAT_MUST_BE_ADDED.",
+      "description": "CONCURRENT BOOTSTRAP YIELDS EXACTLY ONE ORGANIZATION. Two concurrent bootstrap attempts by the same subject produce exactly ONE organization. Assert idempotency by key, not by luck: the live path today has NO idempotency key at all — CAP_05_ORGANIZATION_BOOTSTRAP.md section 1.2 — and its slug uniqueness is check-then-act between the SELECT at app/(authenticated)/app/onboarding/actions.ts:101-105 and the INSERT at :110. Assert also that founder cardinality is still enforced by organizations_self_service_founder_unique. Requires the PostgreSQL probe. Authority BOOTSTRAP_ATOMICITY.PROPERTIES_THE_SUCCESSOR_MUST_PRESERVE.properties_that_must_be_ADDED — the real measured key; the R2 citation BOOTSTRAP_ATOMICITY.PROPERTIES_THAT_MUST_BE_ADDED was dangling, repaired at R4.",
       "test_file": "UNKNOWN"
     },
     {
@@ -384,6 +389,11 @@
       "id": "N-AO-36",
       "description": "A NON-ADMIN IS BLOCKED, NOT WAVED THROUGH. Assert BOTH halves of RAT-AO-01 for the same subject in one control: the non-admin CANNOT write the acceptance, AND the non-admin does NOT receive entitled product capability in that organization. Refusing to let them accept is not the same as letting them through, and an implementation that gets the first half right while granting access anyway satisfies every write-refusal control while defeating the gate entirely. Authority RAT-AO-01 AO1_C1 and AO1_C2.",
       "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-37",
+      "description": "PARTIAL REQUIRED-INSTRUMENT REGISTRY REFUSES, FAIL CLOSED. Publish a currently applicable governed version of SOME required instruments but not all — for example account-class Terms published and Privacy absent — and assert the gate REFUSES. Assert the same for a required key whose only published versions are NOT YET APPLICABLE, since an unapplicable version is not a currently applicable one. This case is exercised separately from the empty registry because a publishing process that ships Terms and forgets Privacy produces exactly this state, and a predicate written only against the empty case PASSES it — the partial case is where a registry-derived required set does its real damage. Authority REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION.PARTIAL_REGISTRY, FAIL_CLOSED.FC_7_NO_INSTRUMENT_PUBLISHED.THE_CORRECTED_DEFINITION.",
+      "test_file": "UNKNOWN"
     }
   ],
   "mutation_controls": [
@@ -404,7 +414,7 @@
     },
     {
       "id": "M-AO-4",
-      "description": "Replace the conjunction over the live registry of published account-class instruments with a hardcoded list of instrument keys in application code. A control MUST turn RED when a NEW published account-class instrument that the subject has not accepted fails to make L0 refuse. A hardcoded list silently stops gating every instrument added after it was written. Authority REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION.",
+      "description": "Pin the APPLICABLE VERSION of a required instrument in application code, so version resolution no longer consults the live registry. A control MUST turn RED: publishing a NEW applicable governed version of a REQUIRED instrument that the subject has not accepted must make L0 refuse with NO application code change. NON-VACUITY AND R4 RE-SCOPE: through R3 this control mutated a conjunction over the PUBLISHED key set, which encoded the very defect F-AO-28 diagnosed — so the control was testing the wrong model from the control side. The two levels are distinct and only one may be hardcoded. WHICH instruments are required is fixed by RATIFICATION and application code may faithfully encode that closed set; WHICH VERSION of a required instrument is applicable must come from the live registry. This mutation attacks the second level, which is the one that silently stops the gate reacting to a newly published version. Authority REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION.THE_TWO_LEVELS_MUST_NOT_BE_CONFLATED.",
       "test_file": "UNKNOWN"
     },
     {
@@ -419,7 +429,7 @@
     },
     {
       "id": "M-AO-7",
-      "description": "Have the invitation POST handler open its own transaction directly, bypassing withAuthenticatedDatabaseContext in order to own its AB-4 boundary. N-AO-10 MUST turn RED. Owning the transaction boundary and transiting the gate are TWO requirements, and this mutation satisfies the first by breaking the second — bypassing requirePrincipal bypasses both B0 and L0. Authority INVITATIONS.R4.the_trap_in_the_conversion, AB-4.requirement.",
+      "description": "Have the invitation mutating-verb handler open its own transaction directly, bypassing withAuthenticatedDatabaseContext in order to own its AB-4 boundary. N-AO-10 MUST turn RED. Owning the transaction boundary and transiting the gate are TWO requirements, and this mutation satisfies the first by breaking the second — bypassing requirePrincipal bypasses both B0 and L0. Authority INVITATIONS.R4.the_trap_in_the_conversion, AB-4.requirement.",
       "test_file": "UNKNOWN"
     },
     {
@@ -500,6 +510,11 @@
     {
       "id": "M-AO-23",
       "description": "Reinstate byte retention as a requirement — make the T2 content reference NOT NULL again, or restore the R1/R2 form of I-T2-4 that required the bytes to be written with the digest, or add any gate, control or checklist item that fails an implementation holding only the evidence floor. P-AO-20 MUST turn RED. NON-VACUITY: this mutation is the REGRESSION most likely to be introduced by someone reading the model and finding a digest without retrievable content unsatisfying — which is a reasonable engineering instinct and was exactly R1 reasoning. It is also invisible to every other control in this manifest, because no other control exercises a byte-less implementation. Note the asymmetry that makes it dangerous: the mutation makes the authority STRICTER, so it cannot be caught by any check that looks only for weakening. Authority DELTA_1B_RETAINED_TEXT_OR_BYTES, I-T2-4 as amended at R3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-24",
+      "description": "Make a separately persisted hash-algorithm field MANDATORY — restore the R3 form of I-T2-4, or the NOT NULL algorithm column, or add any gate, control or checklist item that fails an implementation whose hash is verifiable WITHOUT such a field. P-AO-20 MUST turn RED, and P-AO-21 MUST turn RED on its self-describing-digest and system-governed-identity branches. DRIVE THE MUTATION BEHAVIOURALLY, NOT BY NAME: build the candidate implementation with a self-describing digest and no algorithm column and run the authority-conformance controls against it — do NOT satisfy this control by grepping for the string content_digest_algorithm, because a rename defeats a name-based check while the requirement survives. NON-VACUITY: this is the exact regression R3 introduced in the same edit that removed the byte-retention one, so it is a demonstrated failure mode rather than a hypothetical, and it is the mirror of M-AO-23 for retention. Note the shared asymmetry: both mutations make the authority STRICTER, so neither is visible to any check that only looks for weakening. Authority content_identity.CONTENT_ALGORITHM_STORAGE_SHAPE, I-T2-4 as amended at R4, F-AO-31.",
       "test_file": "UNKNOWN"
     }
   ],

@@ -1,12 +1,12 @@
 {
   "package_id": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "artifact_id": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json",
   "authority_class": "BOUNDED_CUSTOMER_LIFECYCLE_ACCEPTANCE_GATE_EXECUTION_AUTHORITY",
-  "mission_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-BOUNDED-REMEDIATION",
+  "mission_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-FINAL-BOUNDED-REMEDIATION",
   "lane_id": "LANE_AO",
-  "role": "CUSTOMER_LIFECYCLE_R3_BOUNDED_REMEDIATION_WRITER",
-  "materialization_date": "2026-09-10 (R1); revised 2026-09-11 (R2); revised 2026-09-11 (R3)",
+  "role": "CUSTOMER_LIFECYCLE_R4_FINAL_BOUNDED_REMEDIATION_WRITER",
+  "materialization_date": "2026-09-10 (R1); revised 2026-09-11 (R2, R3, R4)",
   "companion_manifest": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_TEST_MANIFEST_v1.0.0.json",
   "REVISION_HISTORY": [
     {
@@ -44,6 +44,18 @@
       "what_it_did": "Bounded docs-only remediation. Closed BQ blocker B-1 by withdrawing the byte-retention requirement; split DELTA_1 into two oppositely-dispositioned deltas and recomputed the drift assertion; materialized the mutating-verb correction in the normative text rather than leaving it as a note beside unchanged clauses; narrowed the over-broad service-principal claim; re-grounded the effective_at NULL semantics on cited clauses instead of an eliminative argument; reclassified F-AO-14 out of STOP_FOR_HPO; closed U-AO-7 and U-AO-8 as external limits, with U-AO-8 MEASURED OPEN; refreshed four stale base-movement statements; corrected three measurement values; and added a deterministic citation-resolution convention.",
       "what_it_did_NOT_do": "It did NOT redesign the authority. The gate chain B0 to L0 to Packet A to L1 to entitlement to product, the RAT-AO-01/02/03 semantics, the fail-closed cases, the atomicity boundaries, the legal and counsel boundaries and every non-authorization are unchanged. No migration, no ordinal, no ODS allocation, no hosted action, no acceptance write.",
       "diff_character": "ADDITIVE WITH TARGETED WITHDRAWALS. Where a clause was wrong it is REPLACED and the superseded text is retained under an explicit ..._SUPERSEDED key, so an auditor can see what was believed and when. No R1 or R2 clause text is deleted outright."
+    },
+    {
+      "revision": "R4",
+      "mission_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-FINAL-BOUNDED-REMEDIATION",
+      "role": "CUSTOMER_LIFECYCLE_R4_FINAL_BOUNDED_REMEDIATION_WRITER",
+      "date": "2026-09-11",
+      "as_of_head": "98b39cd7ce9e39a439eeeb3cd5e1349cdb8d40a5",
+      "as_of_tree": "9586ce8ed27586047e35936a582fa39e27e82ca4",
+      "current_live_observed": "e78edeb74cd1295e873628d5998398f79792156e",
+      "trigger": "Independent final audit BU returned FAIL with BLOCKING=2, AUDIT_UNKNOWN=0, OWNER_DECISION_REQUIRED=NONE, MERGE_CANDIDATE=NO.",
+      "what_it_did": "Fixed only the two blockers and the bounded precision findings BU identified. B-1 prime: withdrew the separately persisted hash-algorithm requirement R3 had created, separating HASH_VERIFIABILITY (required invariant) from CONTENT_ALGORITHM_STORAGE_SHAPE (implementation choice, three non-ratified shapes). B-2: materialized the F-AO-14 reclassification in the LIVE predicate and ACTUALLY in the manifest, adding the missing partial-registry and all-present cases. Plus: POST-handler wording in five control descriptions, three citation repairs, citation-form normalization over 19 occurrences, self-check REFERENCES-versus-REQUIRES correction, and a measured DERIVED_NOT_GRANTED sweep classifying all six live label keys.",
+      "what_it_did_NOT_do": "No redesign. No owner decision reopened. Everything BU passed is preserved, including the R3 byte-retention correction, which is kept as LIVE reasoning rather than buried. No migration, ordinal, ODS allocation or hosted action."
     }
   ],
   "home_directory_derivation": "docs/ops/compliance/ was chosen, not docs/ops/tenancy/ and not docs/ops/commercial/, because the decision this artifact discharges is a PENDING DECISION OF LC0 - HPO-LC0-04, recorded at docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json. The lineage home of a discharge is the home of the authority that raised it. The artifact reconciles WITH tenancy and commercial authority; it does not descend from either.",
@@ -207,7 +219,7 @@
       "id": "CQ-06",
       "verbatim": "Given HTF-11, what acceptance evidence must be captured, from whom, at what granularity, and with what version binding, for the instruments Uellix will offer? Is organization-level acceptance by an administrator sufficient for individual users of that organization?",
       "evidence_class": "LEGAL_INTERPRETATION_REQUIRES_COUNSEL",
-      "status_after_this_artifact": "STILL OPEN. HPO-A answers the PRODUCT half of CQ-06 - what the platform will capture and at which granularity. It does NOT and cannot answer the LEGAL half - whether what is captured is SUFFICIENT for any obligation, and specifically whether organization-level acceptance by an administrator binds the individual users of that organization. That second question is a legal interpretation and is carried forward unchanged to counsel. See LEGAL_REVIEW_FLAGS.LRF-01.",
+      "status_after_this_artifact": "STILL OPEN. HPO-A answers the PRODUCT half of CQ-06 - what the platform will capture and at which granularity. It does NOT and cannot answer the LEGAL half - whether what is captured is SUFFICIENT for any obligation, and specifically whether organization-level acceptance by an administrator binds the individual users of that organization. That second question is a legal interpretation and is carried forward unchanged to counsel. See LEGAL_REVIEW.FLAGS.LRF-01.",
       "the_distinction_that_must_not_be_collapsed": "HPO-A decides that the platform will record account-level acceptance from every subject AND organization-level commercial acceptance from an organization_admin. That design choice makes the individual-user question less load-bearing than it would be under an organization-only model, because every subject signs the account instruments themselves. It does NOT answer it, because the commercial instrument is still accepted by one person on the organization's behalf."
     },
     "stage_gates_this_artifact_addresses": {
@@ -270,9 +282,9 @@
     ],
     "WHAT_HPO_A_DOES_NOT_DECIDE": [
       "It does not decide the TEXT of any instrument. No instrument content is authored, reviewed or approved anywhere in this lane.",
-      "It does not decide which LOCALE of an instrument is the binding one, and the repository currently ships two language surfaces per instrument. See LEGAL_REVIEW_FLAGS.LRF-02 and OPEN_FINDINGS.F-AO-04.",
+      "It does not decide which LOCALE of an instrument is the binding one, and the repository currently ships two language surfaces per instrument. See LEGAL_REVIEW.FLAGS.LRF-02 and OPEN_FINDINGS.F-AO-04.",
       "It does not decide whether organization-level acceptance by an administrator legally binds that organization individual users. That is CQ-06 and remains with counsel.",
-      "It does not decide what identifying metadata may be captured alongside an acceptance - IP address, user agent, device - which is itself a data-protection question. This artifact therefore MANDATES none of it. See LEGAL_REVIEW_FLAGS.LRF-03.",
+      "It does not decide what identifying metadata may be captured alongside an acceptance - IP address, user agent, device - which is itself a data-protection question. This artifact therefore MANDATES none of it. See LEGAL_REVIEW.FLAGS.LRF-03.",
       "It does not decide retention or erasure of acceptance evidence, which interacts with LC0 HPO-LC0-03. See OPEN_FINDINGS.F-AO-09.",
       "It does not allocate any migration ordinal, ODS ordinal, grant, or lineage position, and this artifact allocates none on its behalf."
     ],
@@ -613,7 +625,7 @@
       "NO hosted environment was observed. No Supabase project setting, no Vercel environment variable, no live database was read. Every statement about a live environment in this artifact is inherited with attribution, never asserted.",
       "NO test was executed beyond the authority seal gate. The companion test manifest is a PRE-IMPLEMENTATION COMMITMENT whose test_file values are UNKNOWN by design.",
       "NO PostgreSQL probe was run, so every claim about RLS refusal BEHAVIOUR is derived from policy text and from the repository own recorded reasoning, not from an observed 42501.",
-      "NO legal review of any kind was obtained or attempted. See LEGAL_REVIEW_FLAGS.",
+      "NO legal review of any kind was obtained or attempted. See LEGAL_REVIEW.FLAGS.",
       "NO instrument text was authored, read for legal content, or assessed for adequacy. The four instrument pages were measured STRUCTURALLY ONLY - line counts and the absence of version markers."
     ],
     "inherited_without_re_derivation": [
@@ -937,7 +949,7 @@
           "state_name": "ORGANIZATION_PENDING_COMMERCIAL_ACCEPTANCE",
           "description": "An organization exists, has a founder who is organization_admin, has a CommercialAccount association, and has NO commercial acceptance. This state is REAL, LEGITIMATE and UNAVOIDABLE - it is forced by decision 2 making the two acceptances separate.",
           "must_not_be_engineered_away": "A future implementation must NOT close this window by folding L1 into the bootstrap transaction. Doing so would (a) contradict decision 2 separateness, (b) make acceptance a byproduct of founding rather than a discrete act, and (c) be impossible for any organization whose administrator later changes or whose instrument later requires reacceptance - both of which reopen the window anyway. The window must be HANDLED, not eliminated.",
-          "how_it_is_handled": "L1 refuses, and the refusal is actionable by the subject standing in front of it - the founder, who IS the organization_admin. See FAIL_CLOSED.FC-1 and NO_DEADLOCK_PROOF."
+          "how_it_is_handled": "L1 refuses, and the refusal is actionable by the subject standing in front of it - the founder, who IS the organization_admin. See FAIL_CLOSED.FC_1 and NO_DEADLOCK_PROOF."
         }
       },
       "NO_DEADLOCK_PROOF": {
@@ -1139,32 +1151,87 @@
         "explicitly_not_decided": "Whether versions are integers, dates, or semver strings. Any total order satisfies the contract. Pinning the format here would be an implementation choice masquerading as authority."
       },
       "content_identity": {
-        "definition": "A cryptographic digest over the EXACT bytes of the instrument text as published, together with the algorithm that produced it.",
+        "definition": "A cryptographic digest over the EXACT bytes of the instrument text as published, governed so that it remains verifiable.",
         "REQUIRED_constraints": [
           "The digest is computed over the published bytes at publication time and is IMMUTABLE thereafter. The row is append-only.",
-          "The digest algorithm MUST be recorded alongside the digest, not assumed, so that a future algorithm change does not silently reinterpret old rows."
+          "HASH_VERIFIABILITY: the system MUST be able to determine how a given content hash is interpreted and verified. That is the required property. HOW it is achieved is not fixed by this authority — see CONTENT_ALGORITHM_STORAGE_SHAPE."
         ],
-        "CONTENT_RETENTION_SHAPE": "IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED",
-        "R3_CORRECTION": {
+        "HASH_VERIFIABILITY": {
+          "classification": "REQUIRED_INVARIANT",
+          "statement": "A stored content hash MUST be interpretable and verifiable. A digest that nobody can re-derive or check is not a content identity — it is an opaque string, and an acceptance bound to it proves nothing about which document was accepted.",
+          "canonical_basis": "Entailed by HPO-A.4 itself: the clause requires acceptance to BIND a content hash. A binding to an uninterpretable value is not a binding. This is the minimum needed for the ratified element to mean anything, and no more.",
+          "what_it_does_NOT_require": "It does NOT require any particular STORAGE SHAPE for the algorithm identity, and it does NOT require a per-row algorithm field."
+        },
+        "CONTENT_ALGORITHM_STORAGE_SHAPE": {
+          "classification": "IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED",
+          "statement": "How algorithm identity is represented and where it lives is an IMPLEMENTATION CHOICE. This authority requires verifiability, permits more than one conforming representation, and ratifies NONE of them.",
+          "conforming_representations_NON_EXHAUSTIVE_AND_NONE_RATIFIED": [
+            "A SELF-DESCRIBING DIGEST REPRESENTATION — the stored value encodes its own algorithm (a prefixed or multihash-style encoding, for example). Verifiability comes from the value itself and no separate field exists.",
+            "A REPOSITORY- OR SYSTEM-GOVERNED ALGORITHM IDENTITY — the algorithm is fixed and governed at the system level rather than per row, so every digest in the relation is interpretable by reference to that governance. No per-row field exists.",
+            "A SEPARATELY PERSISTED ALGORITHM FIELD — an explicit column or attribute alongside the digest."
+          ],
+          "explicit_non_ratification": "The three shapes above are ILLUSTRATIVE. Listing them does not rank them, does not ratify any one, and does not make the list exhaustive. A fourth conforming shape that delivers verifiability is equally conformant.",
+          "no_algorithm_chosen": "This authority selects NO hash algorithm. Which function is used is an implementation and security decision outside its scope.",
+          "the_forward_risk_that_motivated_the_R3_over_reach": "R3 reasoned that without a recorded algorithm, a future algorithm change could silently reinterpret old rows. That risk is REAL and is why verifiability is a required invariant. But the risk is discharged by ANY of the shapes above — a self-describing digest cannot be silently reinterpreted, and a system-governed identity with change control cannot either. R3 mistook one sufficient remedy for the requirement itself."
+        },
+        "R3_OVER_REQUIREMENT_WITHDRAWN": {
+          "what_R3_did": "R3 corrected the byte-retention over-reach and, in the same edit, created a new one. It defined content identity as the digest together with the algorithm that produced it, made the constraint the digest algorithm MUST be recorded alongside the digest, put content_digest_algorithm - NOT NULL in the T2 illustration, wrote I-T2-4 as content_digest and content_digest_algorithm are REQUIRED, listed digest with algorithm in the evidence floor, and asserted in derivation_scope_note that the floor including the algorithm is canonical, not derived.",
+          "why_it_was_wrong": "Canonical HPO-A.4 requires instrument identity, version, content HASH and timestamp. It does not require a separately persisted hash-algorithm field, and no other HPO-A clause or RAT-AO adds one. An authority that mandates the field REJECTS a conforming implementation using a self-describing digest or a system-governed algorithm identity — a constraint the owner never set.",
+          "the_irony_recorded_deliberately": "R3 own self-check named this exact pattern — label a clause DERIVED_NOT_GRANTED and then enforce it anyway — as the thing an auditor should hunt for elsewhere in the artifact. Audit BU applied that probe and found R3 had introduced a fresh instance of it in the very edit that removed the previous one. The lesson is recorded rather than smoothed over: a revision that corrects an over-reach is at ELEVATED risk of substituting a neighbouring one, because the author is reasoning about the same clause under the same engineering instinct that produced the first.",
+          "corrected_at": [
+            "INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity — this key",
+            "ACCEPTANCE_MODEL.REQUIRED_ACCEPTANCE_EVIDENCE_FLOOR.elements and EXPLICITLY_OUTSIDE_THE_FLOOR",
+            "FUTURE_DDL.T2_legal_instrument_versions.conceptual_columns",
+            "FUTURE_DDL.T2_legal_instrument_versions.invariants I-T2-4",
+            "the companion manifest P-AO-20 and S-AO-EVIDENCE-FLOOR-IS-THE-CEILING-OF-REQUIREMENT"
+          ]
+        },
+        "conformance_rule": "An implementation that retains ONLY instrument identity, version, the content hash and the timestamp — plus the accepting subject or actor where the acceptance act structurally requires one — and that keeps the hash VERIFIABLE by any means, is FULLY CONFORMANT. It MUST NOT be rejected by this authority, its companion manifest, or any exit gate derived from either, for having no separately persisted algorithm field and no retained bytes.",
+        "WHY_RETENTION_IS_STILL_RECOMMENDED": {
+          "status": "PRESERVED FROM R3 UNCHANGED. The bytes-retention correction R3 made was correct and audit BU passed it.",
+          "the_practical_argument": "A digest alone lets you PROVE that a candidate document is the one that was accepted; it does not let you PRODUCE that document. If the bytes are lost, the acceptance record still proves an act occurred against a specific content identity, but the content itself must be reconstructed from some other source or is gone.",
+          "why_that_argument_does_NOT_make_it_mandatory_here": "Whether the platform must be able to reproduce the instrument text — and for how long — is a legal, privacy and retention question, not an engineering one. It sits with LRF-01 and LRF-04, both COUNSEL_REQUIRED and both unresolved. This authority must not pre-empt either by making retention structural, and must not pre-empt them in the other direction either.",
+          "no_duration_chosen": "This artifact selects NO retention duration, NO storage medium and NO reproduction obligation."
+        },
+        "DERIVED_NOT_GRANTED": true,
+        "derivation_scope_note": "SCOPE OF THE LABEL, CORRECTED AT R4. The DERIVED_NOT_GRANTED label on this key attaches to the RECOMMENDATIONS ONLY — byte retention, and any particular algorithm storage shape. The CANONICAL required evidence is instrument identity, version, content HASH and timestamp, plus the structurally entailed accepting actor. HASH_VERIFIABILITY is an entailed REQUIRED_INVARIANT, because a binding to an uninterpretable value is not a binding. The R3 formulation of this note said the floor including digest with algorithm is canonical, not derived — THAT IS WITHDRAWN: the algorithm STORAGE SHAPE was never canonical, and treating it as such is what made this key structurally reject a conforming implementation.",
+        "clause_classification_R4": "IMPLEMENTATION_CHOICE for retention and algorithm shape; the only enforced element of this key is HASH_VERIFIABILITY, which is AUTHORIZED_ENFORCED_DERIVATION entailed directly by HPO-A.4.",
+        "R3_BYTE_RETENTION_CORRECTION_PRESERVED": {
           "what_R1_and_R2_got_wrong": "R1 defined content identity as the digest PLUS the stored bytes or an immutable reference, and made storing them together a CONSTRAINT. R2 then described that reading as a DERIVED design requirement that STANDS. Between them they elevated durable retention of the instrument text to a binding element of the model — visible in this key's former definition and constraint list, in FUTURE_DDL.T2 where content_bytes was NOT NULL, and in I-T2-4.",
           "why_it_was_wrong": "Canonical HPO-A.4 reads: Acceptance binds instrument identity, version, content hash, and timestamp. It requires a HASH. It does not require that the hashed bytes remain retrievable, and no other HPO-A clause or RAT-AO adds that requirement. An authority that makes retention mandatory REJECTS a conforming implementation that keeps only the canonical digest evidence — which is a constraint the owner never set.",
           "the_correction": "Durable retention of instrument bytes, or of an immutable reference to them, is an IMPLEMENTATION CHOICE. It is RECOMMENDED and it is NOT REQUIRED. It is explicitly NOT an ENTAILED_INVARIANT, NOT an OWNER_RATIFIED_REQUIREMENT, and NOT part of REQUIRED_ACCEPTANCE_EVIDENCE.",
-          "conformance_rule": "An implementation that retains ONLY instrument identity, version, content digest (with its algorithm) and timestamp — plus the accepting subject or actor where the acceptance act structurally requires one — is FULLY CONFORMANT to this authority and MUST NOT be rejected by it, by its companion manifest, or by any exit gate derived from either."
+          "STATUS_AT_R4": "PRESERVED AS LIVE REASONING. Audit BU PASSED the byte-retention correction recorded here. Only its conformance_rule field is superseded, because that field read content digest (with its algorithm) and so re-imported the algorithm requirement R4 withdraws; the corrected rule is at content_identity.conformance_rule."
         },
-        "WHY_RETENTION_IS_STILL_RECOMMENDED": {
-          "the_practical_argument": "A digest alone lets you PROVE that a candidate document is the one that was accepted; it does not let you PRODUCE that document. If the bytes are lost, the acceptance record still proves an act occurred against a specific content identity, but the content itself must be reconstructed from some other source or is gone.",
-          "why_that_argument_does_NOT_make_it_mandatory_here": "Whether the platform must be able to reproduce the instrument text — and for how long — is a legal, privacy and retention question, not an engineering one. It sits with LRF-01 (what evidence is sufficient) and LRF-04 (retention versus erasure), both COUNSEL_REQUIRED and both unresolved. This authority must not pre-empt either by making retention a structural requirement, and it must not pre-empt them in the other direction either.",
-          "no_duration_chosen": "This artifact selects NO retention duration, NO storage medium and NO reproduction obligation. Those are for whichever authority answers LRF-01 and LRF-04."
-        },
-        "DERIVED_NOT_GRANTED": true,
-        "derivation_scope_note": "The DERIVED_NOT_GRANTED label now attaches to the RECOMMENDATION only. The required floor — identity, version, digest with algorithm, timestamp, and the structurally required actor — is canonical, not derived."
+        "R3_KEY_SUPERSEDED": {
+          "SUPERSEDED_AT": "R4",
+          "why": "Its definition, first required constraint, conformance_rule and derivation_scope_note all made a separately persisted algorithm identity mandatory, which canonical HPO-A.4 does not require.",
+          "definition": "A cryptographic digest over the EXACT bytes of the instrument text as published, together with the algorithm that produced it.",
+          "REQUIRED_constraints": [
+            "The digest is computed over the published bytes at publication time and is IMMUTABLE thereafter. The row is append-only.",
+            "The digest algorithm MUST be recorded alongside the digest, not assumed, so that a future algorithm change does not silently reinterpret old rows."
+          ],
+          "CONTENT_RETENTION_SHAPE": "IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED",
+          "R3_CORRECTION": {
+            "what_R1_and_R2_got_wrong": "R1 defined content identity as the digest PLUS the stored bytes or an immutable reference, and made storing them together a CONSTRAINT. R2 then described that reading as a DERIVED design requirement that STANDS. Between them they elevated durable retention of the instrument text to a binding element of the model — visible in this key's former definition and constraint list, in FUTURE_DDL.T2 where content_bytes was NOT NULL, and in I-T2-4.",
+            "why_it_was_wrong": "Canonical HPO-A.4 reads: Acceptance binds instrument identity, version, content hash, and timestamp. It requires a HASH. It does not require that the hashed bytes remain retrievable, and no other HPO-A clause or RAT-AO adds that requirement. An authority that makes retention mandatory REJECTS a conforming implementation that keeps only the canonical digest evidence — which is a constraint the owner never set.",
+            "the_correction": "Durable retention of instrument bytes, or of an immutable reference to them, is an IMPLEMENTATION CHOICE. It is RECOMMENDED and it is NOT REQUIRED. It is explicitly NOT an ENTAILED_INVARIANT, NOT an OWNER_RATIFIED_REQUIREMENT, and NOT part of REQUIRED_ACCEPTANCE_EVIDENCE.",
+            "conformance_rule": "An implementation that retains ONLY instrument identity, version, content digest (with its algorithm) and timestamp — plus the accepting subject or actor where the acceptance act structurally requires one — is FULLY CONFORMANT to this authority and MUST NOT be rejected by it, by its companion manifest, or by any exit gate derived from either."
+          },
+          "WHY_RETENTION_IS_STILL_RECOMMENDED": {
+            "the_practical_argument": "A digest alone lets you PROVE that a candidate document is the one that was accepted; it does not let you PRODUCE that document. If the bytes are lost, the acceptance record still proves an act occurred against a specific content identity, but the content itself must be reconstructed from some other source or is gone.",
+            "why_that_argument_does_NOT_make_it_mandatory_here": "Whether the platform must be able to reproduce the instrument text — and for how long — is a legal, privacy and retention question, not an engineering one. It sits with LRF-01 (what evidence is sufficient) and LRF-04 (retention versus erasure), both COUNSEL_REQUIRED and both unresolved. This authority must not pre-empt either by making retention a structural requirement, and it must not pre-empt them in the other direction either.",
+            "no_duration_chosen": "This artifact selects NO retention duration, NO storage medium and NO reproduction obligation. Those are for whichever authority answers LRF-01 and LRF-04."
+          },
+          "DERIVED_NOT_GRANTED": true,
+          "derivation_scope_note": "The DERIVED_NOT_GRANTED label now attaches to the RECOMMENDATION only. The required floor — identity, version, digest with algorithm, timestamp, and the structurally required actor — is canonical, not derived."
+        }
       },
       "locale": {
         "status": "CARRIED, NOT ADJUDICATED",
         "measured_problem": "Terms exists at app/(public)/terms/page.tsx (182 lines) and app/(public)/terminos/page.tsx (173 lines); Privacy at /privacy (164) and /privacidad (155). Nothing declares which is canonical or asserts they are translations of one binding text.",
         "why_this_artifact_does_not_decide_it": "Which language of an instrument binds a signer is a legal question, not an engineering one, and HPO-A does not address it. Deciding it here would be exactly the invention of owner policy the mission forbids.",
         "what_is_decided": "The DDL MUST carry a locale on the version row so that the choice is not foreclosed by the schema, and the acceptance MUST bind the specific localized version the subject was shown. That is decidable now and is fail-closed under either eventual answer: binding the shown text is correct whether or not another locale is also authoritative.",
-        "flag": "LEGAL_REVIEW_FLAGS.LRF-02"
+        "flag": "LEGAL_REVIEW.FLAGS.LRF-02"
       },
       "reaccept_required": {
         "definition": "An explicit boolean on a VERSION, declaring that publishing this version invalidates acceptances of all earlier versions of the same instrument_key.",
@@ -1225,7 +1292,7 @@
       "positive_claim": "At accepted_at, this subject performed an affirmative act indicating assent to the exact bytes identified by this content identity, being version V of instrument_key K.",
       "explicitly_NOT_claimed": [
         "It does not claim the subject read the text.",
-        "It does not claim the act is legally effective, enforceable, or sufficient for any obligation. That is CQ-06 and LEGAL_REVIEW_FLAGS.LRF-01.",
+        "It does not claim the act is legally effective, enforceable, or sufficient for any obligation. That is CQ-06 and LEGAL_REVIEW.FLAGS.LRF-01.",
         "It does not claim the instrument text is adequate, lawful, or reviewed."
       ],
       "why_this_matters_in_an_authority": "An acceptance table invites the reading that its rows prove consent. They prove a recorded act. FORBIDDEN_CLAIMS below prohibits the stronger reading being made on the basis of this artifact."
@@ -1237,7 +1304,7 @@
         "Reacceptance ADDS a row for the newer version. It never overwrites the older one - so the history of what a subject accepted and when is fully reconstructible.",
         "A withdrawal - if the owner ever defines one - would also be a new row of a different kind, never a deletion."
       ],
-      "the_tension_that_must_be_recorded": "Append-only acceptance evidence about a natural person interacts with erasure obligations, and LC0 HPO-LC0-03 is an open decision about exactly that tension for a different append-only surface (stella_interactions.response_json). This artifact does NOT resolve it and must not be read as having chosen retention over erasure. See OPEN_FINDINGS.F-AO-09 and LEGAL_REVIEW_FLAGS.LRF-04."
+      "the_tension_that_must_be_recorded": "Append-only acceptance evidence about a natural person interacts with erasure obligations, and LC0 HPO-LC0-03 is an open decision about exactly that tension for a different append-only surface (stella_interactions.response_json). This artifact does NOT resolve it and must not be read as having chosen retention over erasure. See OPEN_FINDINGS.F-AO-09 and LEGAL_REVIEW.FLAGS.LRF-04."
     },
     "CONTENT_IDENTITY_IS_SNAPSHOTTED_ONTO_THE_ACCEPTANCE": {
       "ruling": "Each acceptance row stores the content identity itself, not only a foreign key to the version row.",
@@ -1270,17 +1337,38 @@
       "elements": [
         "instrument identity — the instrument_key the acceptance is against",
         "version — which published edition of that instrument was accepted",
-        "content digest — the cryptographic identity of the accepted bytes, with the algorithm recorded alongside it",
+        "content hash — the cryptographic identity of the accepted bytes",
         "timestamp — accepted_at",
         "the accepting subject or actor, WHERE STRUCTURALLY REQUIRED BY THE ACCEPTANCE ACT — the subject for an account-class acceptance, and the organization plus the acting organization_admin for an organization-class acceptance"
       ],
-      "canonical_basis": "HPO-A.4 names the first four. The fifth is ENTAILED by HPO-A.1 and HPO-A.3, which fix a different accepting principal for each instrument class; an acceptance that recorded no actor could not satisfy either clause. See HPO_A_PROVENANCE_R2.DRIFT_COMPARISON.DELTA_1A_SUBJECT.",
+      "canonical_basis": "HPO-A.4 names the first four verbatim: instrument identity, version, content hash, timestamp. The fifth is ENTAILED by HPO-A.1 and HPO-A.3, which fix a different accepting principal for each instrument class; an acceptance recording no actor could satisfy neither clause. See HPO_A_PROVENANCE_R2.DRIFT_COMPARISON.DELTA_1A_SUBJECT. That subject/actor conclusion is UNCHANGED at R4.",
+      "R4_CORRECTION": "The R3 form of element three read content digest — the cryptographic identity of the accepted bytes, with the algorithm recorded alongside it. The trailing clause is WITHDRAWN. A separately persisted algorithm identity is NOT a canonical evidence element. What is required is that the hash be VERIFIABLE, which is an invariant about the system rather than a field on the row. See INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_ALGORITHM_STORAGE_SHAPE.",
       "EXPLICITLY_OUTSIDE_THE_FLOOR": [
-        "Durable retention of instrument bytes or an immutable content reference — RECOMMENDED_NOT_REQUIRED, see INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_RETENTION_SHAPE.",
-        "Any identifying metadata beyond the actor identity — no IP address, user agent, device or fingerprint is required, and none may be added without LRF-03 answered. Unchanged from R1.",
-        "Any notice, acknowledgement or display record. Notice is permitted and is not acceptance."
+        "A separately persisted hash-algorithm field — IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED. Added at R4. Verifiability is required; this particular shape of delivering it is not.",
+        "Durable retention of instrument bytes or an immutable content reference — RECOMMENDED_NOT_REQUIRED, unchanged from R3.",
+        "Any identifying metadata beyond the actor identity — no IP address, user agent, device or fingerprint is required, and none may be added without LRF-03 answered. Unchanged.",
+        "Any notice, acknowledgement or display record. Notice is permitted and is not acceptance. Unchanged."
       ],
-      "conformance_consequence": "A control, gate, invariant or review checklist derived from this authority MUST be satisfiable by an implementation holding exactly the floor above and nothing else."
+      "conformance_consequence": "A control, gate, invariant or review checklist derived from this authority MUST be satisfiable by an implementation holding exactly the five floor elements and nothing else, with the hash verifiable by ANY conforming means.",
+      "R3_BLOCK_SUPERSEDED": {
+        "SUPERSEDED_AT": "R4",
+        "why": "Element three carried with the algorithm recorded alongside it, making a storage shape part of the canonical floor.",
+        "status": "BINDING. This is the complete required minimum. Nothing outside it may be enforced as a requirement by this authority.",
+        "elements": [
+          "instrument identity — the instrument_key the acceptance is against",
+          "version — which published edition of that instrument was accepted",
+          "content digest — the cryptographic identity of the accepted bytes, with the algorithm recorded alongside it",
+          "timestamp — accepted_at",
+          "the accepting subject or actor, WHERE STRUCTURALLY REQUIRED BY THE ACCEPTANCE ACT — the subject for an account-class acceptance, and the organization plus the acting organization_admin for an organization-class acceptance"
+        ],
+        "canonical_basis": "HPO-A.4 names the first four. The fifth is ENTAILED by HPO-A.1 and HPO-A.3, which fix a different accepting principal for each instrument class; an acceptance that recorded no actor could not satisfy either clause. See HPO_A_PROVENANCE_R2.DRIFT_COMPARISON.DELTA_1A_SUBJECT.",
+        "EXPLICITLY_OUTSIDE_THE_FLOOR": [
+          "Durable retention of instrument bytes or an immutable content reference — RECOMMENDED_NOT_REQUIRED, see INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_RETENTION_SHAPE.",
+          "Any identifying metadata beyond the actor identity — no IP address, user agent, device or fingerprint is required, and none may be added without LRF-03 answered. Unchanged from R1.",
+          "Any notice, acknowledgement or display record. Notice is permitted and is not acceptance."
+        ],
+        "conformance_consequence": "A control, gate, invariant or review checklist derived from this authority MUST be satisfiable by an implementation holding exactly the floor above and nothing else."
+      }
     }
   },
   "REACCEPTANCE": {
@@ -1332,9 +1420,39 @@
       "why_a_stored_is_current_column_is_forbidden": "It would have to be UPDATEd on every publication of a marked version - across every subject in the system - which contradicts APPEND_ONLY, makes the most safety-critical value in the model a cached one, and creates a partial-failure state in which some subjects are correctly marked stale and others are not. Computing the predicate has a read cost; storing it has a correctness cost."
     },
     "MULTI_INSTRUMENT_CONJUNCTION": {
-      "ruling": "L0 passes only if the subject is current on EVERY published account-class instrument_key. L1 passes only if the organization is current on EVERY published organization-class instrument_key.",
-      "fail_closed_shape": "The gate is a conjunction over the CLOSED SET of published keys for the class, evaluated against the live registry - never against a hardcoded list of keys in application code. A hardcoded list silently stops gating any instrument added later.",
-      "control": "M-AO-4 asserts that adding a published account-class instrument that the subject has not accepted turns L0 refusing, without any application code change."
+      "status": "BINDING. Rewritten at R4 to materialize the F-AO-28 adjudication in the live predicate clause.",
+      "ruling": "L0 passes only if the subject is current on EVERY instrument in the CLOSED REQUIRED ACCOUNT-CLASS SET. L1 passes only if the organization is current on EVERY instrument in the CLOSED REQUIRED ORGANIZATION-CLASS SET. The conjunction is over the REQUIRED set, NOT over whatever instrument keys happen to have been published.",
+      "THE_CLOSED_REQUIRED_SET": {
+        "what_fixes_it": "RATIFICATION, not the registry. HPO-A.1 requires account-level Terms AND Privacy acceptance before product access. HPO-A.2 with HPO-A.3 require an organization-level commercial acceptance. That is the required set, and it is closed.",
+        "account_class_required_keys": "Terms and Privacy — two required keys.",
+        "organization_class_required_keys": "The commercial instrument — one required key.",
+        "how_the_set_may_change": "Only by new owner policy. A new required instrument class — a DPA, for example — would be a new ratification, not a publication. See HPO_LC0_04_DISCHARGE.question_1_which_instruments.closed_world_status and OPEN_FINDINGS F-AO-10.",
+        "R3_FORM_WITHDRAWN": "The R3 clause read: L0 passes only if the subject is current on EVERY PUBLISHED account-class instrument_key, with a fail_closed_shape describing a conjunction over the CLOSED SET OF PUBLISHED KEYS. Both are WITHDRAWN. R3 corrected this defect in FC_7 and in finding F-AO-28 but never propagated the correction into this clause, which is the live predicate — the same failure mode as R2 leaving POST-exclusive wording standing beside a prose correction. A correction that is not IN the normative clause is not made."
+      },
+      "THE_TWO_LEVELS_MUST_NOT_BE_CONFLATED": {
+        "why_this_subsection_exists": "Replacing a registry-derived required set with a hardcoded one would swap one dynamic-set defect for a static-set defect. The correct model has TWO levels with DIFFERENT sources of truth, and the fix is only correct if both are stated.",
+        "level_1_WHICH_INSTRUMENTS_ARE_REQUIRED": "Fixed by RATIFICATION. Closed. Application code may legitimately encode this set, because encoding a ratified constant is faithful rather than brittle — and if the owner later ratifies a new required class, a code change is the CORRECT consequence of a policy change.",
+        "level_2_WHICH_VERSION_OF_A_REQUIRED_INSTRUMENT_IS_APPLICABLE": "Resolved from the LIVE REGISTRY at evaluation time, subject to effective_at and reaccept_required. This level MUST NOT be hardcoded: pinning versions in code stops the gate reacting to a newly published applicable version, which is the real regression the R3 hardcoded-list warning was reaching for.",
+        "the_precise_statement": "For each key K in the closed required set for the class: resolve the currently applicable governed version of K from the live registry, then evaluate currency against it. The SET is ratified; the VERSION is live."
+      },
+      "fail_closed_shape": "For every key in the CLOSED REQUIRED SET, the conjunct is FALSE unless BOTH (a) a currently applicable governed version of that instrument exists, AND (b) the subject or organization is current on it per the corrected currency predicate. A required key with no currently applicable governed version therefore yields FALSE — there is no empty set to be vacuously true over, and no vacuous truth is available anywhere in this predicate.",
+      "EMPTY_REGISTRY": "ZERO published instruments means every required conjunct is FALSE. The gate REFUSES, fail closed. This is DERIVED — see FAIL_CLOSED.FC_7_NO_INSTRUMENT_PUBLISHED.THE_CORRECTED_DEFINITION — and is not an owner question.",
+      "PARTIAL_REGISTRY": "A registry containing SOME required instruments but missing at least one — or containing a required key whose only versions are not yet applicable — yields FALSE for the missing conjunct and the gate REFUSES, fail closed. Partial is not a special case: it is the general rule applied to one key. Stating it separately matters because a publishing process that ships Terms and forgets Privacy produces exactly this state, and a predicate written only against the empty case would pass it.",
+      "ALL_PRESENT": "When every required key has a currently applicable governed version AND the subject or organization is current on each, the conjunction is TRUE and the journey continues — subject to every OTHER gate in the chain, which this clause does not weaken.",
+      "preserved_semantics": "effective_at and reaccept_required are UNCHANGED. Currency per key is still evaluated by the corrected predicate at REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.THE_CORRECTED_CURRENCY_PREDICATE, including the fail-closed EXISTS-an-actual-acceptance clause and the three conjuncts for a refusing version.",
+      "controls": [
+        "P-AO-15 (empty registry refuses)",
+        "N-AO-37 (partial registry refuses)",
+        "P-AO-21 (all present and accepted is eligible)",
+        "M-AO-4 (version resolution must stay live)"
+      ],
+      "R3_BLOCK_SUPERSEDED": {
+        "SUPERSEDED_AT": "R4",
+        "why": "Its ruling and fail_closed_shape both defined the conjunction over PUBLISHED keys. R3 corrected that model in FC_7 and F-AO-28 but never propagated the correction into this clause, which is the live predicate.",
+        "ruling": "L0 passes only if the subject is current on EVERY published account-class instrument_key. L1 passes only if the organization is current on EVERY published organization-class instrument_key.",
+        "fail_closed_shape": "The gate is a conjunction over the CLOSED SET of published keys for the class, evaluated against the live registry - never against a hardcoded list of keys in application code. A hardcoded list silently stops gating any instrument added later.",
+        "control": "M-AO-4 asserts that adding a published account-class instrument that the subject has not accepted turns L0 refusing, without any application code change."
+      }
     },
     "THE_REACCEPTANCE_JOURNEY_POSITION": {
       "ruling": "Reacceptance is enforced at the SAME gate and the SAME position as first acceptance. There is no separate reacceptance flow and no grace period.",
@@ -1541,7 +1659,7 @@
       "rule": "Decision 6 names five concerns. Neither acceptance is among them, and that omission is CORRECT and is preserved here deliberately rather than treated as an oversight.",
       "L0_is_outside": "Account acceptance happened EARLIER in the journey, is per-subject, and applies to subjects who never found anything. Folding it in would scope a per-subject record inside a per-organization transaction and would leave every invited member unaccepted.",
       "L1_is_outside": "Organization acceptance requires the organization to EXIST and requires an organization_admin to exist - both of which are products of this transaction. It cannot be inside the transaction that creates its own preconditions.",
-      "the_consequence_that_must_be_accepted": "A committed bootstrap leaves the organization in ORGANIZATION_PENDING_COMMERCIAL_ACCEPTANCE. That is not a partial failure and must not be reported as one. See FAIL_CLOSED.FC-3."
+      "the_consequence_that_must_be_accepted": "A committed bootstrap leaves the organization in ORGANIZATION_PENDING_COMMERCIAL_ACCEPTANCE. That is not a partial failure and must not be reported as one. See FAIL_CLOSED.FC_3."
     }
   },
   "ATOMICITY_BOUNDARIES": {
@@ -1837,7 +1955,7 @@
     },
     "FC_2_VERSION_SUPERSEDED_WITH_REACCEPT_REQUIRED": {
       "case": "A later version of an already-accepted instrument is published and marked reaccept_required.",
-      "behaviour": "IDENTICAL TO FC-1. The subject or organization is non-current and is refused at the same gate, in the same position, with the same vocabulary.",
+      "behaviour": "IDENTICAL TO FC_1. The subject or organization is non-current and is refused at the same gate, in the same position, with the same vocabulary.",
       "grounds": "REACCEPTANCE.THE_REACCEPTANCE_JOURNEY_POSITION - decision 5 changes when the predicate goes false, not how many gates exist.",
       "the_prior_acceptance_is_UNTOUCHED": "No UPDATE, no DELETE, no is_current flip. The prior row remains as evidence of what was accepted and when. Currency is recomputed, never rewritten.",
       "no_grace_period": "NOT AUTHORIZED. HPO-A grants none, and a grace period is by definition a window in which the gate is open. See OPEN_FINDINGS.F-AO-08.",
@@ -1913,7 +2031,7 @@
       "the_operational_reading": "A deployment with no published instruments cannot onboard anyone. That is the correct behaviour and it is detected immediately. It is an IMPLEMENTATION AND PUBLISHING DEPENDENCY — publish the required instruments — not an unresolved product question.",
       "what_remains_with_counsel": "WHICH TEXT each required instrument carries, whether it is legally sufficient, and which locale is controlling. LRF-01 and LRF-02 are untouched by this reclassification. Counsel controls the CONTENT; the owner has already fixed the CLASSES and the cardinality; this artifact derives the gate behaviour.",
       "recorded_as": "OPEN_FINDINGS.F-AO-14, reclassified IMPLEMENTATION_PUBLISHING_DEPENDENCY.",
-      "control": "P-AO-15 is RETAINED and RE-SCOPED: it asserts refusal when a REQUIRED instrument has no published applicable version, which is now a derived requirement rather than an interim posture pending an owner decision.",
+      "control": "P-AO-15 asserts refusal when a REQUIRED instrument has no currently applicable governed version (empty registry). N-AO-37 asserts refusal for a PARTIAL registry missing a required instrument. P-AO-21 asserts that an all-present-and-accepted registry is eligible to continue subject to the other gates. M-AO-4 asserts version resolution stays live. ACTUALLY RE-SCOPED AT R4: R3 claimed P-AO-15 was retained and re-scoped, but the R2-to-R3 manifest diff was addition-only and P-AO-15 still asserted the STOP_FOR_HPO interim posture, citing a block that R3 had itself superseded. Audit BU measured that. The controls are edited at R4.",
       "R2_BLOCK_SUPERSEDED": {
         "SUPERSEDED_AT": "R3",
         "case": "The registry contains no published instrument for a class - the state at first deployment, before any instrument exists.",
@@ -1925,7 +2043,8 @@
         "why_this_is_not_derivable": "The first reading follows from the logic of the predicate. The second follows from the purpose of the gate. HPO-A does not choose, and the choice has a real operational consequence in exactly the situation where a mistake is most likely - initial deployment. Guessing here would be inventing owner policy on the highest-risk edge of the model.",
         "INTERIM_POSTURE_UNTIL_ADJUDICATED": "REFUSE, and make the refusal loud. That is the fail-closed direction, it is reversible if the owner chooses vacuous pass, and its failure mode - nobody can onboard until instruments are published - is detected immediately, whereas the other reading fails silently and is detected by an auditor months later.",
         "recorded_as": "OPEN_FINDINGS.F-AO-14 with STOP_FOR_HPO."
-      }
+      },
+      "R4_MATERIALIZATION_NOTE": "R3 rewrote this section and reclassified F-AO-14 correctly, but the decision did not reach the two live surfaces that implement it: REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION still evaluated over published keys, and the companion manifest still asserted STOP_FOR_HPO. Both are corrected at R4. This is the second time in this lineage that a correct adjudication failed to reach its normative surface — the first was the mutating verb at R2 — so the pattern is recorded as OPEN_FINDINGS F-AO-33."
     }
   },
   "AUDIT": {
@@ -2011,7 +2130,7 @@
         "version - NOT NULL, totally ordered within instrument_key",
         "locale - NOT NULL",
         "content_digest - NOT NULL",
-        "content_digest_algorithm - NOT NULL, recorded not assumed",
+        "content_digest_algorithm - OPTIONAL. AUTHORIZED_IMPLEMENTATION_SHAPE / RECOMMENDED_NOT_REQUIRED, never NOT NULL from this authority perspective. Present in this illustration because a separately persisted algorithm field is ONE conforming way to deliver HASH_VERIFIABILITY; a self-describing digest representation or a system-governed algorithm identity delivers it with NO such column and is equally conformant. See INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_ALGORITHM_STORAGE_SHAPE.",
         "content_bytes or an immutable content reference - OPTIONAL. RECOMMENDED_NOT_REQUIRED, never NOT NULL from this authority perspective. Retaining the bytes lets the platform PRODUCE the accepted document rather than only prove a candidate matches; whether it must be able to is a legal/privacy/retention question sitting with LRF-01 and LRF-04, both COUNSEL_REQUIRED. See INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_RETENTION_SHAPE.",
         "reaccept_required - boolean NOT NULL, NO DEFAULT",
         "effective_at - OPTIONAL per RAT-AO-03 AO3_C2; NULL means IN EFFECT ON PUBLICATION (fail-closed derivation, see REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT)",
@@ -2023,7 +2142,7 @@
         "I-T2-1: UNIQUE (instrument_key, version, locale). One edition per key per version per locale.",
         "I-T2-2: APPEND-ONLY. No UPDATE of any column, no DELETE. A correction is a new version. This is the invariant the entire model rests on: an editable version row would let a published document be swapped under acceptances that already reference it.",
         "I-T2-3: reaccept_required is NOT NULL with NO DEFAULT. See INSTRUMENT_MODEL.reaccept_required.why_no_default. A defaulting flag is the fail-open shape Packet B X-B-03 forbids.",
-        "I-T2-4 (AMENDED AT R3 — NO LONGER A REQUIREMENT): content_digest and content_digest_algorithm are REQUIRED and are written with the version row. Retention of the content bytes, or of an immutable reference to them, is RECOMMENDED_NOT_REQUIRED / IMPLEMENTATION_CHOICE and is NOT an invariant of this authority. WHERE an implementation DOES retain them, they MUST be written in the SAME transaction as the digest — a digest whose bytes were written separately could be committed without them. That conditional is the whole of what survives; the R1/R2 form made retention itself mandatory and is WITHDRAWN. A conforming implementation retaining only the canonical digest evidence satisfies I-T2-4 vacuously and MUST NOT be rejected. This invariant MUST NOT be used as an exit-gate requirement for byte retention.",
+        "I-T2-4 (AMENDED AT R3, FURTHER AMENDED AT R4): content_digest is REQUIRED and is written with the version row. HASH_VERIFIABILITY is REQUIRED — the system must be able to determine how a given content hash is interpreted and verified. NEITHER a separately persisted algorithm field NOR retention of the content bytes is required. A conforming implementation with NO content_digest_algorithm column satisfies this invariant PROVIDED the hash remains governed and verifiable by some conforming means (self-describing digest, system-governed algorithm identity, or a persisted field — see CONTENT_ALGORITHM_STORAGE_SHAPE). WHERE an implementation DOES retain bytes, or DOES persist an algorithm field, those values MUST be written in the SAME transaction as the digest, because a value written separately could be committed without it. Those conditionals are the whole of what this invariant enforces. The R3 form of this invariant, which made a separately persisted algorithm field mandatory, is WITHDRAWN, as is the R1/R2 form that made byte retention mandatory. Both earlier texts are preserved verbatim under I_T2_4_REVISION_TRAIL, which is where a withdrawn requirement belongs — quoting it inside the live invariant makes the live text match a search for the requirement it removed. This invariant MUST NOT be used as an exit-gate requirement for either byte retention or a separate algorithm field.",
         "I-T2-5: the version ordering within an instrument_key must be a genuine TOTAL order, because the currency predicate searches an interval of it. A partial or ambiguous order makes the predicate ill-defined rather than merely awkward.",
         "I-T2-6: publication writes the audit row in the same transaction.",
         "I-T2-7: RLS enabled. The relation is PLATFORM-GLOBAL reference data, not tenant data: every subject must be able to READ the instrument they are being asked to accept, and NO tenant role may write. The read/write asymmetry is the whole access-control content of this table.",
@@ -2035,8 +2154,15 @@
         "whether content_bytes is inline text or an immutable external reference",
         "the digest algorithm",
         "which platform principal may publish - governed by the platform-roles lineage, not here",
-        "WHETHER content bytes are retained at all — that is RECOMMENDED_NOT_REQUIRED and belongs to whichever authority answers LRF-01 and LRF-04. No retention duration, storage medium or reproduction obligation is chosen here."
-      ]
+        "WHETHER content bytes are retained at all — that is RECOMMENDED_NOT_REQUIRED and belongs to whichever authority answers LRF-01 and LRF-04. No retention duration, storage medium or reproduction obligation is chosen here.",
+        "WHERE algorithm identity lives, and whether it is persisted per row at all — that is an IMPLEMENTATION_CHOICE. Only verifiability is required. Added at R4."
+      ],
+      "I_T2_4_REVISION_TRAIL": {
+        "R1_R2_form": "content_digest and the content bytes are written in the SAME transaction. A digest whose bytes are absent proves only that something was accepted. — WITHDRAWN at R3 (byte retention made mandatory).",
+        "R3_form": "I-T2-4 (AMENDED AT R3 — NO LONGER A REQUIREMENT): content_digest and content_digest_algorithm are REQUIRED and are written with the version row. Retention of the content bytes, or of an immutable reference to them, is RECOMMENDED_NOT_REQUIRED / IMPLEMENTATION_CHOICE and is NOT an invariant of this authority. WHERE an implementation DOES retain them, they MUST be written in the SAME transaction as the digest — a digest whose bytes were written separately could be committed without them. That conditional is the whole of what survives; the R1/R2 form made retention itself mandatory and is WITHDRAWN. A conforming implementation retaining only the canonical digest evidence satisfies I-T2-4 vacuously and MUST NOT be rejected. This invariant MUST NOT be used as an exit-gate requirement for byte retention. — WITHDRAWN at R4 (separately persisted algorithm field made mandatory).",
+        "R4_form": "Digest required; verifiability required; neither bytes nor a separate algorithm field required; co-transaction conditional on whichever optional values an implementation chooses to keep.",
+        "what_this_trail_shows": "Two successive revisions each corrected an over-requirement on this single invariant and each introduced a neighbouring one. The trail is kept visible because the pattern — not either instance — is the durable finding."
+      }
     },
     "T3_account_legal_acceptances": {
       "purpose": "Evidence that one subject assented to one instrument version.",
@@ -2058,7 +2184,7 @@
         "I-T3-6: WRITABLE ONLY BY THE SUBJECT, FOR THEMSELVES. The write predicate is the subject own id, in the shape the repository already uses for self-scoped writes - the users_insert_own policy pattern whose WITH CHECK is id = auth.uid(), cited by Packet B PRE_VERIFICATION_WRITE_EXCEPTION.EXACT_PERMITTED_WRITE_SURFACE. No administrator, platform role or support path may write another subject row.",
         "I-T3-7: NOT tenant data. It carries no organization_id and MUST NOT acquire one. A subject accepts before they belong to any organization - in J-FOUNDER they demonstrably belong to none - so an organization column would be NULL at exactly the moment it mattered and would invite a fabricated value.",
         "I-T3-8: RLS enabled and FORCED. Read restricted to the subject themselves plus whatever platform read path the platform-roles lineage authorizes - which this artifact does not name.",
-        "I-T3-9: NO identifying metadata beyond user_id is mandated. No ip_address, no user_agent, no device fingerprint. See LEGAL_REVIEW_FLAGS.LRF-03."
+        "I-T3-9: NO identifying metadata beyond user_id is mandated. No ip_address, no user_agent, no device fingerprint. See LEGAL_REVIEW.FLAGS.LRF-03."
       ]
     },
     "T4_organization_commercial_acceptances": {
@@ -2597,11 +2723,15 @@
     },
     {
       "id": "F-AO-21",
-      "severity": "TRANSCRIPTION_DELTA_NO_DRIFT",
+      "severity": "TRANSCRIPTION_DELTA_SUBJECT_HALF_NO_DRIFT_RETENTION_HALF_SUPERSEDED",
       "title": "R1 bound five evidence elements where canonical HPO-A.4 names four",
       "detail": "R1 added subject. It is ENTAILED by HPO-A.1 and HPO-A.3 together, which fix the accepting principal for each class, so no drift. Separately R1 read content identity as requiring retained TEXT and not only a digest; R1 already labelled that DERIVED_NOT_GRANTED, and comparison against canonical HPO-A.4, which says content hash, CONFIRMS the labelling was correct.",
-      "disposition": "RECORDED, NO CORRECTION REQUIRED. See HPO_A_PROVENANCE_R2.DRIFT_COMPARISON.DELTA_1_SUBJECT_AND_RETAINED_TEXT.",
-      "new_at_this_revision": true
+      "disposition": "PARTIALLY SUPERSEDED. The SUBJECT half stands: it remains ENTAILED with no drift, at HPO_A_PROVENANCE_R2.DRIFT_COMPARISON.DELTA_1A_SUBJECT. The RETAINED-TEXT half is SUPERSEDED — R3 withdrew the byte-retention requirement (F-AO-25) and R4 withdrew the algorithm-field requirement that replaced it (F-AO-31), so the R2 conclusion that the derived reading STANDS is void. Current disposition lives at HPO_A_PROVENANCE_R2.DRIFT_COMPARISON.DELTA_1B_RETAINED_TEXT_OR_BYTES. The R2 wording NO CORRECTION REQUIRED is retained above under R2_DISPOSITION_SUPERSEDED because it records what was believed, and is NOT the current disposition.",
+      "new_at_this_revision": true,
+      "R2_DISPOSITION_SUPERSEDED": {
+        "SUPERSEDED_AT": "R3, restated at R4",
+        "text": "RECORDED, NO CORRECTION REQUIRED. See HPO_A_PROVENANCE_R2.DRIFT_COMPARISON.DELTA_1_SUBJECT_AND_RETAINED_TEXT."
+      }
     },
     {
       "id": "F-AO-22",
@@ -2674,6 +2804,52 @@
       "detail": "db/migrations/0031_rls_core.sql:126-134 creates policy members_insert_admin ON organization_members FOR INSERT WITH CHECK ( current_user_role_in_org(organization_id) IN (super_admin, organization_admin) OR current_user_is_super_admin() ), materialized at db/baseline/stella_g2_schema.sql:9061. FOUR organization_members policies carry a current_user_is_super_admin() disjunct — :9054 delete, :9061 insert, :9068 select, :9075 update — and NO later migration drops, replaces or narrows any of them; 0031_rls_core.sql is the only migration referencing members_insert_admin. A principal for whom current_user_is_super_admin() returns true satisfies the INSERT check on its own and can manufacture a genuine ACTIVE organization_admin membership for any organization.",
       "disposition": "CLOSES U-AO-8 as MEASURED OPEN, classified EXTERNAL IMPLEMENTATION / SECURITY PRECONDITION. PR143 does NOT close it, authorizes no policy change, and does not claim the path is exploited — only that the policy admits it. It corroborates the unmet prerequisite RAT-OP-01 states for itself, and it is the measured form of F-AO-23.",
       "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-31",
+      "severity": "R3_OVER_REQUIREMENT_CORRECTED",
+      "title": "R3 made a separately persisted hash-algorithm field mandatory, which canonical HPO-A.4 does not require",
+      "detail": "Canonical HPO-A.4 binds instrument identity, version, content HASH and timestamp. R3 defined content identity as the digest together with the algorithm that produced it, constrained the algorithm to be recorded alongside the digest, put content_digest_algorithm - NOT NULL in the T2 illustration, wrote I-T2-4 as content_digest and content_digest_algorithm are REQUIRED, listed digest with algorithm in the evidence floor, and asserted in derivation_scope_note that this floor is canonical, not derived. Together these REJECTED a conforming implementation using a self-describing digest or a system-governed algorithm identity.",
+      "disposition": "CORRECTED AT R4. HASH_VERIFIABILITY = REQUIRED_INVARIANT; CONTENT_ALGORITHM_STORAGE_SHAPE = IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED with three non-ratified conforming shapes. Floor, T2 column, I-T2-4, P-AO-20 and the evidence-floor sentinel all corrected; M-AO-24 added as the behavioural guard.",
+      "why_it_matters_beyond_itself": "R3 introduced this in the SAME edit that removed the byte-retention over-reach, and R3 own self-check named this exact pattern as the thing to hunt for elsewhere. A revision correcting an over-reach is at ELEVATED risk of substituting a neighbouring one, because it is reasoning about the same clause under the same instinct that produced the first.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-32",
+      "severity": "R3_MATERIALIZATION_FAILURE_CORRECTED",
+      "title": "The F-AO-14 reclassification never reached the live predicate or the manifest",
+      "detail": "R3 rewrote FC_7 over the CLOSED REQUIRED SET and reclassified F-AO-14, but REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION still ruled over EVERY PUBLISHED instrument_key with a fail_closed_shape describing a conjunction over the CLOSED SET OF PUBLISHED KEYS. The manifest was addition-only: P-AO-15 still asserted the STOP_FOR_HPO interim posture and cited FC_7.INTERIM_POSTURE_UNTIL_ADJUDICATED, a block R3 had itself moved into R2_BLOCK_SUPERSEDED, and the empty-registry sentinel still said STOP_FOR_HPO.",
+      "disposition": "CORRECTED AT R4 in the live clause and in the manifest. Includes the previously missing PARTIAL registry case (N-AO-37) and the positive all-present case (P-AO-21), without which a predicate that refused everything would satisfy both refusal controls.",
+      "pattern_note": "This is the SECOND time in this lineage a correct adjudication failed to reach its normative surface — the first was the mutating verb at R2, corrected at R3. Recorded as F-AO-33 so the pattern has its own identity.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-33",
+      "severity": "PROCESS_PATTERN",
+      "title": "A correct adjudication that does not reach its normative surface is not made",
+      "detail": "Twice in this lineage a revision reasoned correctly, recorded the conclusion in a finding and a narrative section, and left the LIVE normative clause untouched. R2 corrected the mutating verb in prose while governing_decision, REQUIRED_SHAPE and the journey step still said POST. R3 reclassified F-AO-14 while MULTI_INSTRUMENT_CONJUNCTION still evaluated published keys and the manifest still asserted STOP_FOR_HPO. In both cases an audit measured the gap.",
+      "disposition": "RECORDED AS A STANDING CHECK, not fixed — it is a process property, not a defect in a clause. The check: for every adjudication a revision claims to have made, name the LIVE clause that carries it and verify the clause text, not the narrative. A supersession note beside a clause does not change the clause; a finding about a clause does not change the clause; and a claim that a control was re-scoped is falsifiable against the manifest diff.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-34",
+      "severity": "MEASUREMENT_METHOD_DEFECT_IN_THIS_LANE",
+      "title": "Four R4 checkers produced false results and were corrected by re-measurement",
+      "detail": "FOUR distinct instances, all in THIS lane own validation. ONE: a substring test for _SUPERSEDED in the JSON path classified one citation occurrence as historical. FALSE POSITIVE — the LIVE key FAIL_CLOSED.FC_2_VERSION_SUPERSEDED_WITH_REACCEPT_REQUIRED contains the word SUPERSEDED in the sense of a superseded VERSION. Re-measured with a suffix-anchored predicate: all 19 occurrences are live, zero historical. TWO: a count of strings CONTAINING a pattern was used as a count of OCCURRENCES, giving 15 where the true occurrence count was 18 at that moment; the patch guard fired and blocked the write rather than normalizing under a wrong premise.",
+      "disposition": "BOTH CORRECTED BEFORE ANY WRITE. Recorded because they are the same token-shape error class this lineage keeps finding in its own and others artifacts — a checker whose token or path shape does not match the data produces a confident false answer, and a negative or classification result from such a checker is worthless until the shape is verified. The guarded-patch discipline is what caught the second one.",
+      "new_at_this_revision": true,
+      "THREE_AND_FOUR_CHECKER_LOCUS_ERRORS": "THREE: the cross-reference checker looked for the RAT-AO clause index under CITATION_RESOLUTION_R4.CITATION_RESOLUTION_R3_SUPERSEDED.index when it actually lives at RAT_AO_CONSUMPTION.CLAUSE_ID_RESOLUTION.index, reporting all 15 clause citations as dangling. FOUR: the stale-citation checker tested the JSON PATH for a repair marker when the marker is in the PROSE — so a control whose text says the old citation was dangling, repaired at R4 was itself flagged as a live stale citation. Both were corrected to test the right locus.",
+      "the_pattern": "All four are the same failure: a checker whose token shape, path shape or LOCUS does not match where the evidence actually lives. Each produced a CONFIDENT result — 15 danglings, 2 stale citations, 1 historical occurrence, a count of 15 — and each was wrong. Three of the four were FALSE POSITIVES, which are the benign direction; the count error was a FALSE PREMISE that would have written a wrong number into the artifact had the guard not fired.",
+      "what_this_means_for_the_next_audit": "Do not trust this lane validator output as evidence. Re-derive. The validator is useful because it FAILS LOUDLY and blocks writes, not because its classifications are reliable — four of its checks had to be corrected during a single revision."
+    },
+    {
+      "id": "F-AO-35",
+      "severity": "AUTHORING_HYGIENE_CORRECTED_IN_LANE",
+      "title": "Quoting a withdrawn requirement inside live text makes the live text match a search for it",
+      "detail": "Four places in the first R4 draft reproduced the very token they were removing: the citation-convention section spelled the forbidden citation form in order to forbid it, P-AO-15 and the registry sentinel used the literal owner-decision-pending marker while explaining that they no longer assert it, and the live I-T2-4 quoted the R3 requirement text verbatim inside its own withdrawal. Each is defensible as prose and each defeats a mechanical check: a grep for the requirement finds the clause that removed it, and an auditor cannot distinguish assertion from withdrawal without reading context.",
+      "disposition": "CORRECTED AT R4 BEFORE COMMIT, caught by this lane own validator rather than by an audit. The withdrawn texts are preserved verbatim in explicitly historical containers — I_T2_4_REVISION_TRAIL and the ..._SUPERSEDED blocks — which is where a superseded requirement belongs. Live text now DESCRIBES what was withdrawn instead of quoting it.",
+      "the_general_rule": "Historical text belongs in a historical container. Live text should describe a withdrawn requirement, not reproduce it. Otherwise the artifact is simultaneously the best and the worst evidence about its own state.",
+      "new_at_this_revision": true
     }
   ],
   "R2_FINDINGS_DISPOSITION": {
@@ -2738,6 +2914,21 @@
         "F-AO-30"
       ],
       "count_check": "R1 recorded F-AO-01..17 (17). R2 added F-AO-18..24 (7), total 24. R3 adds F-AO-25..30 (6), total 30. Verified against OPEN_FINDINGS length at write time."
+    },
+    "R4_UPDATE": {
+      "rule": "Every finding is dispositioned again at R4.",
+      "measured_basis": "Integration is unchanged at e78edeb7 — exactly the mission LAST_KNOWN_INTEGRATION — so no code-path finding can have changed since R3, and none is re-measured.",
+      "CORRECTED_AT_R4": {
+        "F-AO-21": "Disposition SUPERSEDED. It said NO CORRECTION REQUIRED and cited the pre-split DELTA key. The subject half stands; the retention half is void after R3 and R4. Old wording retained under R2_DISPOSITION_SUPERSEDED.",
+        "F-AO-25": "STANDS, and is now only HALF the story: R3 removed the byte requirement and simultaneously created the algorithm requirement. F-AO-31 records the second half."
+      },
+      "NEW_AT_R4": [
+        "F-AO-31",
+        "F-AO-32",
+        "F-AO-33",
+        "F-AO-34"
+      ],
+      "count_check_note": "Total finding count is asserted against OPEN_FINDINGS length by the validator rather than stated here, after R3 demonstrated that a hand-written count goes stale within the same revision."
     }
   },
   "UNKNOWN": [
@@ -2966,7 +3157,7 @@
     "did_this_artifact_represent_legal_review_as_owner_approval": "NO. LEGAL_REVIEW.THE_DISTINCTION_THAT_MUST_NEVER_BE_COLLAPSED states the separation first, five flags carry the open questions, and FORBIDDEN_CLAIMS prohibits the conflation explicitly and symmetrically.",
     "did_this_artifact_claim_the_LC0_gates_are_lifted": "NO. LEGAL_REVIEW.FLAGS.LRF-05 states the opposite and names the three independent events required.",
     "are_all_nine_HPO_A_decisions_consumed": "YES. 1 and 2 in CANONICAL_JOURNEY and ACCEPTANCE_MODEL; 3 in ACCEPTANCE_MODEL.WHO_MAY_WRITE_AN_ACCEPTANCE and I-T4-6; 4 in INSTRUMENT_MODEL and ACCEPTANCE_MODEL; 5 in REACCEPTANCE; 6 in BOOTSTRAP_ATOMICITY and AB-2; 7 in INVITATIONS; 8 in MULTI_ORG; 9 in LEGAL_REVIEW.",
-    "are_all_five_required_fail_closed_cases_defined": "YES, plus two this lane derived as necessary: FC-1 acceptance missing, FC-2 version superseded with reaccept_required, FC-3 bootstrap partially fails, FC-4 invitation expired or revoked, FC-5 no organization selected, plus FC-6 acceptance state unreadable and FC-7 no instrument published.",
+    "are_all_five_required_fail_closed_cases_defined": "YES, plus two this lane derived as necessary: FC_1 acceptance missing, FC_2 version superseded with reaccept_required, FC_3 bootstrap partially fails, FC_4 invitation expired or revoked, FC_5 no organization selected, plus FC_6 acceptance state unreadable and FC_7 no instrument published.",
     "is_the_invitation_versus_founder_adjudication_explicit": "YES. ADJUDICATION_FOUNDER_VS_INVITED, five rulings A1 through A5, each with grounds, and with A3 remedy explicitly deferred to the owner rather than invented.",
     "does_the_test_manifest_cover_every_required_category": "YES - positive, negative, mutation, concurrency, rollback, multi-org, mutating-verb-vs-safe-method, version/reaccept, Packet A preservation, Packet B ordering and evidence-floor conformance. Coverage is carried by the control ids themselves; the manifest schema is additionalProperties:false so no separate coverage key is permitted. RECOMPUTED AT R3 FROM THE LIVE MANIFEST AFTER ALL R3 ADDITIONS: positive = 21 (P-AO-1..P-AO-20 plus T-AO-1); negative = 36 (N-AO-1..N-AO-36, contiguous); mutation = 23 (M-AO-1..M-AO-23, contiguous); sentinels = 19. Category mapping: concurrency N-AO-16/17/18; rollback N-AO-14/15; multi-org P-AO-14 and N-AO-12; mutating-verb-vs-safe-method N-AO-8/9/10/33 and M-AO-7/22; version/reaccept P-AO-6/17/18/19, N-AO-4/22/30/31/32 and M-AO-3/11/12/17/18/19; Packet A preservation P-AO-9..13 and M-AO-9; Packet B ordering N-AO-1 and T-AO-1; evidence-floor conformance P-AO-20 and M-AO-23. The R2 ranges P-AO-1..15 / N-AO-1..25 / M-AO-1..14 were stale the moment R2 appended its own controls and are WITHDRAWN; the intermediate R3 figures 20/36/22/18 were also stale once P-AO-20, M-AO-23 and the evidence-floor sentinel were added, which is why this value is recomputed from the artifact rather than restated.",
     "known_weaknesses_of_this_artifact": [
@@ -3011,37 +3202,97 @@
       "are_there_AUDIT_UNKNOWNS_after_R3": "NO. U-AO-7 is EXTERNAL_PROVENANCE_LIMIT (not answerable by any repository measurement, disclosed rather than discovered) and U-AO-8 is EXTERNAL_IMPLEMENTATION_AND_SECURITY_PRECONDITION with a measured answer. U-AO-1 through U-AO-6 remain as scope limits with stated reasons, not as unresolved audit questions about this artifact own claims.",
       "did_R3_redesign_anything": "NO. Preserved unchanged: the gate order B0 to L0 to Packet A to L1 to entitlement to product; L0 tenancy-independent and L1 organization-scoped and undefined before scope exists; no carrier write on an L0 or L1 refusal; RAT-AO-01 blocked-state and CTA semantics; RAT-AO-02 no assisted override; RAT-AO-03 no universal grace period; manual activation is not legal acceptance; zero-acceptance cannot pass vacuously; no is_current or is_valid cache; no notification authority; the founder-versus-invited rulings A1 through A5 in substance, with only factual and provenance precision applied to their supporting measurements; every legal and counsel boundary; and every non-authorization. R3 is a precision and classification remediation.",
       "known_weaknesses_after_R3": [
-        "R3 corrected an over-requirement that R2 had already labelled DERIVED_NOT_GRANTED and then enforced. That pattern — label it derived, enforce it anyway — is the one an auditor should search for elsewhere in this artifact. The three surviving DERIVED_NOT_GRANTED clauses are the effective_at NULL semantics, the support-capability corollary and the positive-clause reading of RAT-AO-02; none of the three is enforced as a structural requirement, but that should be checked rather than trusted.",
+        "R3 corrected an over-requirement that R2 had already labelled DERIVED_NOT_GRANTED and then enforced. That pattern — label it derived, enforce it anyway — is the one an auditor should search for elsewhere in this artifact. The three surviving DERIVED_NOT_GRANTED clauses are the effective_at NULL semantics, the support-capability corollary and the positive-clause reading of RAT-AO-02; none of the three is enforced as a structural requirement, but that should be checked rather than trusted. [R4 CORRECTION: the count three was WRONG IN BOTH DIRECTIONS — it named the positive-clause reading of RAT-AO-02, which carries no such label, and missed A3, A5 and content_identity, which do. Measured at R4: 6 live label keys over 5 distinct derivations. Worse, the sentence that stated the wrong count is the same sentence that recommended the probe which would have corrected it — and audit BU, applying exactly that probe, found R3 had introduced a fresh instance of the pattern in content_identity. See DERIVED_NOT_GRANTED_SWEEP_R4.]",
         "RAT-AO-01..03 still have no second normalization to compare against (U-AO-7). Only HPO-A got a genuine cross-check.",
         "Still NO PostgreSQL probe. Every RLS and append-only posture is a design intention (U-AO-1). Note that the U-AO-8 measurement is a POLICY-TEXT measurement, not an observed refusal — it reads what the policy admits, which is sufficient for the claim made but is not a runtime observation.",
         "F-AO-24 stands: the Packet B implementation branch was not re-measured at R2 or R3."
+      ],
+      "R4_CORRECTION_OF_THIS_STATEMENT": "THE R3 WORDING WAS FALSE AS WRITTEN. It said no control references content_bytes or byte retention. Audit BU measured that controls DO reference those concepts — deliberately, in the PROHIBITIVE direction. The distinction R3 collapsed is REFERENCES versus REQUIRES: M-AO-23 exists precisely to reference byte retention in order to forbid making it mandatory, and P-AO-20 references it to assert its absence is conformant. A control that names a concept in order to prohibit requiring it is the OPPOSITE of a control that requires it. The corrected statement is at R4_self_check.does_any_control_or_gate_REQUIRE_bytes_or_an_algorithm_field."
+    },
+    "R4_self_check": {
+      "did_R4_close_BU_blocker_B1_prime": "YES. HASH_VERIFIABILITY is classified REQUIRED_INVARIANT and CONTENT_ALGORITHM_STORAGE_SHAPE is IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED, with three non-ratified conforming representations named and none preferred. The evidence floor element reads content hash, not digest plus algorithm. The T2 column is OPTIONAL / AUTHORIZED_IMPLEMENTATION_SHAPE. I-T2-4 permits a conforming implementation with NO algorithm column provided the hash stays governed and verifiable. No hash algorithm is chosen and no retention duration is chosen.",
+      "did_R4_close_BU_blocker_B2": "YES, and in the LIVE clause rather than only in the finding. REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION.ruling and .fail_closed_shape now evaluate the CLOSED REQUIRED SET fixed by ratification, with EMPTY_REGISTRY and PARTIAL_REGISTRY both refusing fail closed and ALL_PRESENT continuing subject to the other gates. FC_7.control is re-anchored. The manifest is ACTUALLY edited this time: P-AO-15 no longer asserts STOP_FOR_HPO and no longer cites the superseded block; the empty-registry sentinel is re-scoped and renamed.",
+      "did_R4_replace_one_dynamic_set_bug_with_another": "NO, and the guard against it is explicit. THE_TWO_LEVELS_MUST_NOT_BE_CONFLATED separates WHICH instruments are required (fixed by ratification, may be faithfully encoded in code) from WHICH VERSION is applicable (must come from the live registry). M-AO-4 was re-scoped to attack the second level, because as written through R3 it mutated the published-set model and so tested the wrong thing from the control side.",
+      "does_any_control_or_gate_REQUIRE_bytes_or_an_algorithm_field": "NO — and this is now stated as a REQUIRES claim, not a REFERENCES claim. Measured at write time: controls that REFERENCE byte retention are [P-AO-20, M-AO-23] and controls that REFERENCE an algorithm are [P-AO-20, P-AO-21, M-AO-24]. Every one of those references is PROHIBITIVE or CONFORMANCE-ASSERTING — they exist to forbid requiring the thing, or to assert that its absence is conformant. ZERO controls FAIL an implementation for lacking either. The R3 statement that no control references them was false; the true claim is about requirement, not mention.",
+      "is_the_algorithm_regression_provably_gone": "YES, behaviourally rather than by name. P-AO-20 drives a floor-only implementation with a self-describing digest and no algorithm field and asserts it is not rejected. P-AO-21 asserts the same pass for a system-governed algorithm identity. M-AO-24 reinstates the mandatory field and requires P-AO-20 to turn RED, and it explicitly forbids satisfying itself by grepping for the field name, because a rename defeats a name-based check while the requirement survives.",
+      "measured_DERIVED_NOT_GRANTED_state": "6 live label keys over 5 distinct derivations, each classified in DERIVED_NOT_GRANTED_SWEEP_R4 as EXPLANATORY_ONLY, AUTHORIZED_ENFORCED_DERIVATION, IMPLEMENTATION_CHOICE or PROHIBITIVE_FAIL_CLOSED_COROLLARY. NONE structurally rejects a conforming implementation beyond the canonical grant. The counts are computed from the artifact at write time, not remembered.",
+      "did_R4_normalize_citations_without_rewriting_history": "YES. 19 variant occurrences across 13 strings were normalized to FC_n and LEGAL_REVIEW.FLAGS. Scope was measured TWICE: a first substring test for _SUPERSEDED reported one occurrence as historical, which was a FALSE POSITIVE from the LIVE key FC_2_VERSION_SUPERSEDED_WITH_REACCEPT_REQUIRED whose name contains the word SUPERSEDED. Re-measured with a suffix-anchored predicate, all 19 are live and zero are historical. Recorded as F-AO-34.",
+      "did_R4_reopen_any_owner_decision": "NO. OWNER_DECISION_REQUIRED remains NONE. F-AO-14 stays reclassified as an implementation and publishing dependency, and R4 adds no owner question. The standing owner set is unchanged at two: the notification residue of F-AO-05, and F-AO-22.",
+      "did_R4_preserve_everything_BU_passed": "YES. The byte/content retention correction is preserved and its R3 reasoning is kept LIVE at content_identity.R3_BYTE_RETENTION_CORRECTION_PRESERVED rather than buried as superseded — only its conformance_rule field was superseded, because that field re-imported the algorithm requirement. Also unchanged: the subject/actor conclusion, proper-mutating-verb semantics, service-principal precision, the effective_at NULL derivation and its grounds, U-AO-7, U-AO-8, base-movement measurements, gate order, RAT-AO-01/02/03, manual activation is not legal acceptance, zero-acceptance refusal, no notification authority, A1 through A5, legal and counsel boundaries, and every non-authorization.",
+      "known_weaknesses_after_R4": [
+        "This lineage has now corrected an over-requirement on the SAME invariant (I-T2-4) twice, each time introducing a neighbouring one. The revision trail is preserved at FUTURE_DDL.T2.I_T2_4_REVISION_TRAIL because the PATTERN is the durable finding, not either instance. A fifth revision touching that invariant should assume it is the most likely place to over-reach again.",
+        "Two of my own checkers produced false results during R4 and were corrected by measurement: a substring path test misclassified a live key as historical (F-AO-34), and a string-count test conflated strings-containing-a-pattern with occurrences (the first normalization guard fired on 18 versus 15). Both are the token-shape error class. A future auditor should assume MY checkers carry the same risk and re-derive rather than trust their output.",
+        "Still no PostgreSQL probe: every RLS, append-only and verifiability posture is a design intention (U-AO-1). HASH_VERIFIABILITY in particular is an authority requirement with no runtime test in this lane.",
+        "RAT-AO-01..03 still have no second normalization to compare against (U-AO-7).",
+        "F-AO-24 stands: the Packet B implementation branch was not re-measured at R2, R3 or R4."
       ]
     }
   },
-  "final_state": "AUTHORITY_R3_FROZEN_AWAITING_FOCUSED_FINAL_AUDIT",
+  "final_state": "AUTHORITY_R4_FROZEN_AWAITING_FINAL_FOCUSED_AUDIT",
   "IMPLEMENTATION_AUTHORIZED": false,
   "IMPLEMENTATION_AUTHORIZED_NOTE": "This artifact FREEZES a contract. It does NOT open implementation. No application code, no test, no schema, no migration, no prepared capability, no ODS allocation and no environment change is authorized by it. The write surface of the authoring mission was docs/** and nothing else.",
   "LINEAGE_REDERIVATION_REQUIRED": "YES - for every future DDL object, without exception. See FUTURE_DDL.LINEAGE_REDERIVATION_REQUIRED.",
-  "next_gate": "PR143_CUSTOMER_LIFECYCLE_R3_FOCUSED_FINAL_AUDIT",
-  "CURRENT_REVISION": "R3",
+  "next_gate": "PR143_CUSTOMER_LIFECYCLE_R4_FINAL_FOCUSED_AUDIT",
+  "CURRENT_REVISION": "R4",
   "mission_id_history": [
     "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-AUTHORITY-R1",
     "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-OWNER-DECISION-CLOSURE",
-    "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-BOUNDED-REMEDIATION"
+    "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-BOUNDED-REMEDIATION",
+    "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-FINAL-BOUNDED-REMEDIATION"
   ],
   "filename_version_note": "The FILENAME keeps v1.0.0 deliberately: the companion manifest, PR143 and every prior citation point at that path, and renaming the file would break them for a revision that is an amendment rather than a new package. The package version field is 1.1.0 and CURRENT_REVISION is R2. This mirrors the convention TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json follows at its own R4.",
   "final_state_history": {
     "R1": "AUTHORITY_R1_FROZEN_AWAITING_INDEPENDENT_OPUS_AUDIT",
-    "R2": "AUTHORITY_R2_FROZEN_AWAITING_INDEPENDENT_OPUS_AUDIT"
+    "R2": "AUTHORITY_R2_FROZEN_AWAITING_INDEPENDENT_OPUS_AUDIT",
+    "R3": "AUTHORITY_R3_FROZEN_AWAITING_FOCUSED_FINAL_AUDIT"
   },
   "next_gate_history": [
     "CUSTOMER_LIFECYCLE_AUTHORITY_INDEPENDENT_OPUS_AUDIT",
-    "PR143_CUSTOMER_LIFECYCLE_R2_INDEPENDENT_OPUS_AUDIT"
+    "PR143_CUSTOMER_LIFECYCLE_R2_INDEPENDENT_OPUS_AUDIT",
+    "PR143_CUSTOMER_LIFECYCLE_R3_FOCUSED_FINAL_AUDIT"
   ],
-  "CITATION_RESOLUTION_R3": {
-    "why_this_section_exists": "R2 added CLAUSE_ID_RESOLUTION for the AOn_Cm ids because short citations are PREFIXES of descriptive declaration keys, so an exact-match checker reports false danglings. The same hazard applies to SECTION-PATH citations used throughout this artifact — FUTURE_DDL.T2, ATOMICITY_BOUNDARIES.AB-4, FAIL_CLOSED.FC_7, LEGAL_REVIEW.FLAGS.LRF-02 and others. Each cites a real object under a key that is longer than the citation. Without an explicit convention an auditor gets false danglings in both directions and cannot tell a citation error from a naming convention.",
-    "RESOLUTION_RULE": "A section-path citation of the form PARENT.SHORT resolves to the UNIQUE key under PARENT that either equals SHORT or begins with SHORT followed by an underscore. Where that rule yields exactly one key the citation is RESOLVED; where it yields zero or more than one, the citation is DANGLING or AMBIGUOUS and is a defect.",
-    "determinism_requirement": "The rule must yield EXACTLY ONE key. The index below materializes every short-form section citation used in this artifact together with the full key it resolves to, so that exact-match resolution is possible without applying the prefix rule at all.",
+  "BQ_AUDIT_DISPOSITION": {
+    "audit": "BQ — independent Opus audit of PR143 at revision R2",
+    "result_reported": "FAIL. BLOCKING=1. AUDIT_UNKNOWN=0. OWNER_DECISION_REQUIRED=NONE.",
+    "blocker_B1": {
+      "finding": "Byte or text retention was elevated to a binding invariant beyond what canonical HPO-A.4 requires.",
+      "status": "CLOSED AT R3 via BQ option A.",
+      "disposition_applied": "CONTENT_RETENTION_SHAPE = IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED — explicitly NOT ENTAILED_INVARIANT, NOT OWNER_RATIFIED_REQUIREMENT, NOT REQUIRED_ACCEPTANCE_EVIDENCE.",
+      "recorded_as": "F-AO-25"
+    },
+    "non_blocking_addressed": [
+      "NB-1 — mutating-verb correction materialized in the live normative text (INVITATIONS.governing_decision, INVITATIONS.REQUIRED_SHAPE, CANONICAL_JOURNEY.JOURNEY_INVITED_MEMBER step 4, AB-4 requirement, and two dependent clauses). F-AO-20 stands; the residual POST-exclusive wording is gone.",
+      "NB-2 — service-principal claim narrowed to what AO2_C2 actually tests. F-AO-27.",
+      "NB-3 — effective_at NULL re-grounded on HPO-A.5 plus AO3_C2/AO3_C4. F-AO-26.",
+      "NB-4 — F-AO-14 reclassified IMPLEMENTATION_PUBLISHING_DEPENDENCY; FC_7 rewritten over the CLOSED REQUIRED INSTRUMENT SET. F-AO-28.",
+      "NB-5 and NB-6 — three measurement values and the stale self_check control ranges re-measured and recomputed. F-AO-29."
+    ],
+    "unknowns_closed": [
+      "U-AO-7 to EXTERNAL_PROVENANCE_LIMIT — owner-source completeness is repository-resolved by the canonical artifact own owner_source_completeness disposition; only the normalized-versus-verbatim property remains, and it is not answerable by any repository measurement.",
+      "U-AO-8 to EXTERNAL_IMPLEMENTATION_AND_SECURITY_PRECONDITION, answer MEASURED OPEN. F-AO-30."
+    ],
+    "AUDIT_UNKNOWN_after_R3": 0,
+    "owner_decisions_required_by_this_revision": "NONE. No clause added at R3 requires an owner decision, and removing F-AO-14 from STOP_FOR_HPO reduces the standing set rather than adding to it.",
+    "what_R3_deliberately_did_not_touch": "Every settled semantic the mission enumerated for preservation. R3 is a precision and classification remediation, not a redesign."
+  },
+  "CITATION_RESOLUTION_R4": {
+    "supersedes": "CITATION_RESOLUTION_R3, retained below. R3 covered object-key section paths and array-hosted ids but did NOT cover the short-form INCONSISTENCIES audit BU measured — two spellings for the same target.",
+    "why_this_section_exists": "A citation convention only works if every form the LIVE artifact actually uses resolves uniquely. BU measured two families where it did not: the hyphen-joined fail-closed form versus the underscore-joined declaration keys, and the underscore-joined form (LEGAL_REVIEW and FLAGS joined by an underscore rather than a dot) versus LEGAL_REVIEW.FLAGS. Two spellings for one target means a checker either reports false danglings or silently accepts a form the index does not define — the same class of defect as a short id that is a prefix of its declaration key.",
+    "R4_NORMALIZATION_APPLIED": {
+      "action": "Every occurrence was rewritten to ONE canonical form in both artifacts: the hyphen-joined fail-closed citations became the underscore form matching the declaration keys FC_1_ through FC_7_, and the underscore-joined form (LEGAL_REVIEW and FLAGS joined by an underscore rather than a dot) became LEGAL_REVIEW.FLAGS, matching the real path LEGAL_REVIEW.FLAGS[].",
+      "occurrences_normalized": 19,
+      "strings_touched": 13,
+      "scope_check": "MEASURED, and the first measurement was WRONG. A substring test for _SUPERSEDED in the JSON path reported one occurrence as historical; that was a FALSE POSITIVE caused by the LIVE key FAIL_CLOSED.FC_2_VERSION_SUPERSEDED_WITH_REACCEPT_REQUIRED, whose NAME contains the word SUPERSEDED in the sense of a superseded version. Re-measured with a suffix-anchored predicate, ALL 19 occurrences sit in LIVE text and ZERO in historical blocks, so normalization erased no historical record. Recorded as F-AO-34 because it is the same token-shape error class this lineage keeps finding.",
+      "residual": "ZERO occurrences of either variant remain in either artifact, asserted by the patch itself."
+    },
+    "RESOLUTION_RULE": "A section-path citation PARENT.SHORT resolves to the UNIQUE key under PARENT that equals SHORT or begins with SHORT followed by an underscore. Exactly one key must match; zero or more than one is a defect.",
+    "CANONICAL_FORMS": {
+      "fail-closed cases": "FC_n — underscore, matching the declaration keys. FC-n is NOT a permitted form.",
+      "legal review flags": "LEGAL_REVIEW.FLAGS, optionally suffixed .LRF-nn. The underscore-joined form (LEGAL_REVIEW and FLAGS joined by an underscore rather than a dot) is NOT a permitted form.",
+      "DDL relations": "FUTURE_DDL.Tn.",
+      "atomicity boundaries": "AB-n, or AB-n.field for a field of that element.",
+      "array-hosted ids": "Exact id match — see ARRAY_HOSTED_IDS."
+    },
     "index": {
       "FUTURE_DDL.T1": "FUTURE_DDL.T1_legal_instruments",
       "FUTURE_DDL.T2": "FUTURE_DDL.T2_legal_instrument_versions",
@@ -3066,30 +3317,120 @@
         "UNKNOWN.U-AO-n": "UNKNOWN[] element with id === \"U-AO-n\" (exact match)"
       },
       "note": "Only OBJECT-KEY citations need the prefix rule and the index above. The two classes are distinguished here so an auditor does not apply the prefix rule where exact match already works, nor exact match where the prefix rule is needed."
-    }
+    },
+    "FIELD_SUFFIXED_ARRAY_CITATIONS": {
+      "convention": "A citation of the form AB-n.field or LRF-nn.field addresses a FIELD of the array element whose id matches exactly. It resolves in two steps: exact id match to find the element, then plain key lookup for the field. No prefix rule applies at either step.",
+      "example": "AB-4.requirement resolves to the ATOMICITY_BOUNDARIES.boundaries[] element with id AB-4, field requirement."
+    },
+    "CITATION_REPAIRS_AT_R4": [
+      "N-AO-18 cited BOOTSTRAP_ATOMICITY.PROPERTIES_THAT_MUST_BE_ADDED, which does not exist. The real key is BOOTSTRAP_ATOMICITY.PROPERTIES_THE_SUCCESSOR_MUST_PRESERVE.properties_that_must_be_ADDED — two levels deeper and differently spelled. Repaired.",
+      "P-AO-15 cited FC_7.INTERIM_POSTURE_UNTIL_ADJUDICATED, which R3 moved into FC_7.R2_BLOCK_SUPERSEDED. Re-anchored to FC_7.THE_CORRECTED_DEFINITION, the measured live key.",
+      "F-AO-21 cited DRIFT_COMPARISON.DELTA_1_SUBJECT_AND_RETAINED_TEXT, split at R3. Re-anchored to DELTA_1A_SUBJECT and DELTA_1B_RETAINED_TEXT_OR_BYTES."
+    ],
+    "requirement": "ZERO ambiguous citations and ZERO dangling CURRENT citations. Historical text in a ..._SUPERSEDED block may cite a key that was live when it was written; such citations are NOT current and are excluded from the zero-dangling requirement, which is why superseded blocks are explicitly named rather than merged into live text.",
+    "CITATION_RESOLUTION_R3_SUPERSEDED": {
+      "SUPERSEDED_AT": "R4",
+      "why_this_section_exists": "R2 added CLAUSE_ID_RESOLUTION for the AOn_Cm ids because short citations are PREFIXES of descriptive declaration keys, so an exact-match checker reports false danglings. The same hazard applies to SECTION-PATH citations used throughout this artifact — FUTURE_DDL.T2, ATOMICITY_BOUNDARIES.AB-4, FAIL_CLOSED.FC_7, LEGAL_REVIEW.FLAGS.LRF-02 and others. Each cites a real object under a key that is longer than the citation. Without an explicit convention an auditor gets false danglings in both directions and cannot tell a citation error from a naming convention.",
+      "RESOLUTION_RULE": "A section-path citation of the form PARENT.SHORT resolves to the UNIQUE key under PARENT that either equals SHORT or begins with SHORT followed by an underscore. Where that rule yields exactly one key the citation is RESOLVED; where it yields zero or more than one, the citation is DANGLING or AMBIGUOUS and is a defect.",
+      "determinism_requirement": "The rule must yield EXACTLY ONE key. The index below materializes every short-form section citation used in this artifact together with the full key it resolves to, so that exact-match resolution is possible without applying the prefix rule at all.",
+      "index": {
+        "FUTURE_DDL.T1": "FUTURE_DDL.T1_legal_instruments",
+        "FUTURE_DDL.T2": "FUTURE_DDL.T2_legal_instrument_versions",
+        "FUTURE_DDL.T3": "FUTURE_DDL.T3_account_legal_acceptances",
+        "FUTURE_DDL.T4": "FUTURE_DDL.T4_organization_commercial_acceptances",
+        "FAIL_CLOSED.FC_1": "FAIL_CLOSED.FC_1_ACCEPTANCE_MISSING",
+        "FAIL_CLOSED.FC_2": "FAIL_CLOSED.FC_2_VERSION_SUPERSEDED_WITH_REACCEPT_REQUIRED",
+        "FAIL_CLOSED.FC_3": "FAIL_CLOSED.FC_3_BOOTSTRAP_PARTIALLY_FAILS",
+        "FAIL_CLOSED.FC_4": "FAIL_CLOSED.FC_4_INVITATION_EXPIRED_OR_REVOKED",
+        "FAIL_CLOSED.FC_5": "FAIL_CLOSED.FC_5_NO_ORGANIZATION_SELECTED",
+        "FAIL_CLOSED.FC_6": "FAIL_CLOSED.FC_6_ACCEPTANCE_STATE_UNREADABLE",
+        "FAIL_CLOSED.FC_7": "FAIL_CLOSED.FC_7_NO_INSTRUMENT_PUBLISHED"
+      },
+      "ARRAY_HOSTED_IDS": {
+        "convention": "Ids carried in ARRAY elements are addressed by their id FIELD, not by an object key, so the prefix hazard does not arise for them. They resolve by scanning the named array for an element whose id equals the citation exactly.",
+        "arrays": {
+          "ATOMICITY_BOUNDARIES.AB-n": "ATOMICITY_BOUNDARIES.boundaries[] element with id === \"AB-n\" (ids AB-1..AB-5, exact match)",
+          "LEGAL_REVIEW.FLAGS.LRF-n": "LEGAL_REVIEW.FLAGS[] element with id === \"LRF-n\" (ids LRF-01..LRF-05, exact match)",
+          "BLOCKING_DEPENDENCIES.BD-n": "BLOCKING_DEPENDENCIES.items[] element with id === \"BD-n\" (ids BD-1..BD-6, exact match)",
+          "OPEN_FINDINGS.F-AO-n": "OPEN_FINDINGS[] element with id === \"F-AO-n\" (exact match)",
+          "SECURITY_REVIEW.SECURITY_PROHIBITIONS.X-AO-n": "SECURITY_REVIEW.SECURITY_PROHIBITIONS[] element with id === \"X-AO-n\" (exact match)",
+          "UNKNOWN.U-AO-n": "UNKNOWN[] element with id === \"U-AO-n\" (exact match)"
+        },
+        "note": "Only OBJECT-KEY citations need the prefix rule and the index above. The two classes are distinguished here so an auditor does not apply the prefix rule where exact match already works, nor exact match where the prefix rule is needed."
+      }
+    },
+    "NOTE_ON_NOT_REPRODUCING_FORBIDDEN_FORMS": "This section describes the non-canonical forms rather than spelling them. A convention document that reproduces a forbidden token in order to forbid it becomes a source of that token, defeats its own zero-variant requirement, and forces every future checker to special-case the very section that defines the rule. Measured: four such self-inflicted occurrences existed in the first R4 draft and were removed."
   },
-  "BQ_AUDIT_DISPOSITION": {
-    "audit": "BQ — independent Opus audit of PR143 at revision R2",
-    "result_reported": "FAIL. BLOCKING=1. AUDIT_UNKNOWN=0. OWNER_DECISION_REQUIRED=NONE.",
-    "blocker_B1": {
-      "finding": "Byte or text retention was elevated to a binding invariant beyond what canonical HPO-A.4 requires.",
-      "status": "CLOSED AT R3 via BQ option A.",
-      "disposition_applied": "CONTENT_RETENTION_SHAPE = IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED — explicitly NOT ENTAILED_INVARIANT, NOT OWNER_RATIFIED_REQUIREMENT, NOT REQUIRED_ACCEPTANCE_EVIDENCE.",
-      "recorded_as": "F-AO-25"
+  "DERIVED_NOT_GRANTED_SWEEP_R4": {
+    "purpose": "Audit BU applied the probe R3 own self-check recommended and found R3 had introduced a fresh instance of the pattern it warned about. This section runs that sweep over the FINAL R4 artifact and classifies every surviving derived clause, so the classification is measured rather than asserted.",
+    "method": "Structural walk of the artifact for the literal key DERIVED_NOT_GRANTED, excluding keys nested under any ..._SUPERSEDED block. Prose MENTIONS of the string are not clauses and are excluded — counting them is what produced R3 miscount in the other direction.",
+    "R3_SELF_CHECK_COUNT_WITHDRAWN": {
+      "what_R3_said": "The three surviving DERIVED_NOT_GRANTED clauses are the effective_at NULL semantics, the support-capability corollary and the positive-clause reading of RAT-AO-02.",
+      "what_is_measured": "That count was wrong in BOTH directions. It NAMED one item that carries no such label at all — the positive-clause reading of RAT-AO-02 is narrative prose (why_this_reasoning_is_recorded_rather_than_silently_applied), not a labelled clause. And it MISSED three that do carry the label: A3, A5 and content_identity itself. Hard-coding a count without measuring is the defect; the measured live count is recorded below.",
+      "lesson": "A self-check that states a count must derive it from the artifact at write time. R3 stated a remembered count in the same breath as recommending the probe that would have corrected it."
+    },
+    "LIVE_CLAUSE_COUNT": 6,
+    "CLASSIFICATION": {
+      "CANONICAL_JOURNEY.ADJUDICATION_FOUNDER_VS_INVITED.A3_AN_INVITED_MEMBER_IS_STILL_AFFECTED_BY_AN_UNDISCHARGED_L1.DERIVED_NOT_GRANTED": {
+        "classification": "PROHIBITIVE_FAIL_CLOSED_COROLLARY",
+        "enforces_beyond_canonical": false,
+        "reasoning": "It derives that a member of an organization with an undischarged L1 has no entitled product capability there, from the journey order plus CA-04/CA-08. It REFUSES access rather than granting anything, and it imposes no structural requirement on an implementation — an implementation that gates entitlement on organization acceptance satisfies it with no extra artifact. The remedy it does NOT decide is carried as F-AO-22."
+      },
+      "CANONICAL_JOURNEY.ADJUDICATION_FOUNDER_VS_INVITED.A5_ROLE_CHANGE_DOES_NOT_RETROACTIVELY_CREATE_OR_DESTROY_ACCEPTANCE.DERIVED_NOT_GRANTED": {
+        "classification": "EXPLANATORY_ONLY",
+        "enforces_beyond_canonical": false,
+        "reasoning": "It states that an acceptance survives the accepting admin later losing the role, derived from HPO-A.4 binding the act to a moment. It PERMITS rather than requires. Its one structural consequence — recording accepted_by_role at accept time — is itself derived from HPO-A.3 needing the role to be the authority for the act, and it is inside the floor as the structurally required actor, not additional to it. If the owner intends acceptance to lapse on departure, that is a different policy, which the clause says explicitly."
+      },
+      "INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.DERIVED_NOT_GRANTED": {
+        "classification": "IMPLEMENTATION_CHOICE",
+        "enforces_beyond_canonical": false,
+        "reasoning": "CORRECTED AT R4 AND THIS IS THE PRIMARY REGRESSION THE SWEEP MUST PROVE GONE. The label now attaches ONLY to the recommendations — byte retention and algorithm storage shape — both explicitly RECOMMENDED_NOT_REQUIRED. The one enforced element of the key, HASH_VERIFIABILITY, is reclassified AUTHORIZED_ENFORCED_DERIVATION because it is entailed directly by HPO-A.4: a binding to an uninterpretable value is not a binding. Through R3 this key enforced a separately persisted algorithm field while carrying the derived label, which is exactly the forbidden shape."
+      },
+      "REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.THE_CORRECTED_CURRENCY_PREDICATE.DERIVED_NOT_GRANTED": {
+        "classification": "AUTHORIZED_ENFORCED_DERIVATION",
+        "enforces_beyond_canonical": false,
+        "reasoning": "The effective_at NULL semantics ARE enforced — a NULL-dated marked version bites on publication — so this is an enforced derivation and is labelled as such rather than pretending otherwise. It is AUTHORIZED because it is derived from cited clauses (HPO-A.5 base transition rule plus AO3_C2/AO3_C4 optional deferral), and because it imposes NO artifact on an implementation: it fixes how an existing optional field is INTERPRETED, adding no column, no record and no retention. The alternative reading would create a permanent silent bypass."
+      },
+      "REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.THE_CORRECTED_CURRENCY_PREDICATE.EFFECTIVE_AT_NULL_GROUNDS_R3.DERIVED_NOT_GRANTED": {
+        "classification": "AUTHORIZED_ENFORCED_DERIVATION",
+        "enforces_beyond_canonical": false,
+        "reasoning": "The same derivation, labelled a second time inside its own grounds subsection. Same classification. Noted as a DUPLICATE LABEL on one clause rather than two clauses, which is why a naive key count reads 5 live labels across 4 distinct clauses."
+      },
+      "PLATFORM_ADMIN_BOUNDARY.THE_RECONCILIATION.DERIVED_NOT_GRANTED": {
+        "classification": "PROHIBITIVE_FAIL_CLOSED_COROLLARY",
+        "enforces_beyond_canonical": false,
+        "reasoning": "The corollary that a support capability confers no acceptance authority is derived from RAT-AO-02 AO2_C2 conjoined with RAT-OP-01. It PROHIBITS — it withholds an authority neither ratification grants — and creates no requirement on any implementation. F-AO-27 further narrowed the adjacent service-principal claim at R3, and F-AO-23 plus U-AO-8 carry the membership-provenance dependency it cannot close."
+      }
+    },
+    "duplicate_label_note": "SIX live label KEYS, FIVE distinct derivations. Two of the six keys — THE_CORRECTED_CURRENCY_PREDICATE.DERIVED_NOT_GRANTED and its nested EFFECTIVE_AT_NULL_GROUNDS_R3.DERIVED_NOT_GRANTED — label the SAME derivation about effective_at NULL semantics. Both numbers are stated because a reader checking a count needs to know which is being counted, and because a key count and a clause count differ here by exactly one duplicate. Every one of the six keys is classified above; the classification set and the measured key set are the same size, asserted at write time rather than trusted.",
+    "VERDICT": "NO live clause carries DERIVED_NOT_GRANTED while structurally rejecting a conforming implementation beyond the canonical grant. Two are prohibitive, one is explanatory, one is an implementation choice, and two label an enforced derivation that adds no artifact and is grounded in cited clauses. The separately persisted hash-algorithm requirement — the primary regression this section exists to prove gone — is WITHDRAWN and is now classified IMPLEMENTATION_CHOICE with an executable control, M-AO-24, guarding against its return.",
+    "HOW_A_FUTURE_AUDITOR_SHOULD_RE_RUN_THIS": "Do not trust the count above. Walk the final artifact for the DERIVED_NOT_GRANTED key, exclude ..._SUPERSEDED subtrees, and for each hit ask the only question that matters: does this clause cause a conforming implementation to be REJECTED for something canonical text does not require? Name-based or count-based checks miss the defect, because the defect is behavioural. That is how BU found the algorithm regression that R3 own recommendation pointed at but R3 own count obscured.",
+    "LIVE_LABEL_KEYS": 6,
+    "DISTINCT_DERIVATIONS": 5,
+    "MEASURED_AT": "R4, by structural walk of the final artifact at write time. The counts above are computed, not remembered."
+  },
+  "BU_AUDIT_DISPOSITION": {
+    "audit": "BU — independent final audit of PR143 at revision R3",
+    "result_reported": "FAIL. BLOCKING=2. AUDIT_UNKNOWN=0. OWNER_DECISION_REQUIRED=NONE. MERGE_CANDIDATE=NO.",
+    "blocker_B1_prime": {
+      "finding": "A separately persisted hash-algorithm field was made a mandatory evidence element beyond canonical HPO-A.4.",
+      "status": "CLOSED AT R4.",
+      "recorded_as": "F-AO-31"
+    },
+    "blocker_B2": {
+      "finding": "The F-AO-14 reclassification was not materialized in the live currency predicate or in the companion manifest, which was addition-only.",
+      "status": "CLOSED AT R4.",
+      "recorded_as": "F-AO-32"
     },
     "non_blocking_addressed": [
-      "NB-1 — mutating-verb correction materialized in the live normative text (INVITATIONS.governing_decision, INVITATIONS.REQUIRED_SHAPE, CANONICAL_JOURNEY.JOURNEY_INVITED_MEMBER step 4, AB-4 requirement, and two dependent clauses). F-AO-20 stands; the residual POST-exclusive wording is gone.",
-      "NB-2 — service-principal claim narrowed to what AO2_C2 actually tests. F-AO-27.",
-      "NB-3 — effective_at NULL re-grounded on HPO-A.5 plus AO3_C2/AO3_C4. F-AO-26.",
-      "NB-4 — F-AO-14 reclassified IMPLEMENTATION_PUBLISHING_DEPENDENCY; FC_7 rewritten over the CLOSED REQUIRED INSTRUMENT SET. F-AO-28.",
-      "NB-5 and NB-6 — three measurement values and the stale self_check control ranges re-measured and recomputed. F-AO-29."
+      "POST-handler wording in current control descriptions — five sites rewritten to mutating-verb handler; the render-time GET prohibition is untouched.",
+      "Citation repairs — N-AO-18 to the real nested key, P-AO-15 re-anchored to FC_7.THE_CORRECTED_DEFINITION, F-AO-21 to the split DELTA keys with its NO CORRECTION REQUIRED wording moved under a superseded field.",
+      "Citation-form normalization — the hyphen-joined fail-closed form to the underscore form, and the underscore-joined legal-review-flags form to LEGAL_REVIEW.FLAGS. 19 occurrences across 13 strings, all measured LIVE, zero in historical blocks.",
+      "Self-check — the false no control references content_bytes statement corrected to a REQUIRES claim with measured control lists.",
+      "DERIVED_NOT_GRANTED sweep — re-run and measured; the R3 count of three was wrong in both directions."
     ],
-    "unknowns_closed": [
-      "U-AO-7 to EXTERNAL_PROVENANCE_LIMIT — owner-source completeness is repository-resolved by the canonical artifact own owner_source_completeness disposition; only the normalized-versus-verbatim property remains, and it is not answerable by any repository measurement.",
-      "U-AO-8 to EXTERNAL_IMPLEMENTATION_AND_SECURITY_PRECONDITION, answer MEASURED OPEN. F-AO-30."
-    ],
-    "AUDIT_UNKNOWN_after_R3": 0,
-    "owner_decisions_required_by_this_revision": "NONE. No clause added at R3 requires an owner decision, and removing F-AO-14 from STOP_FOR_HPO reduces the standing set rather than adding to it.",
-    "what_R3_deliberately_did_not_touch": "Every settled semantic the mission enumerated for preservation. R3 is a precision and classification remediation, not a redesign."
+    "OWNER_DECISION_REQUIRED_after_R4": "NONE",
+    "AUDIT_UNKNOWN_after_R4": 0,
+    "what_R4_deliberately_did_not_touch": "Every settled semantic BU passed, enumerated in self_check.R4_self_check.did_R4_preserve_everything_BU_passed."
   }
 }
