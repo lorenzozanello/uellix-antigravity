@@ -1,145 +1,212 @@
 {
-  "manifest_id": "ASYNC-NOTIFICATIONS-AUTHORITY-R1",
+  "manifest_id": "ASYNC-NOTIFICATIONS-AUTHORITY-R2",
   "node_or_batch": "batch",
   "authority_reference": "docs/ops/async/ASYNC_NOTIFICATIONS_AUTHORITY_v1.0.0.json",
   "dependencies": [],
   "protected_surfaces": [
-    "db/migrations/**",
-    "db/prepared/**",
-    "db/baseline/**",
-    "lib/audit/logger.ts"
+    "db/migrations/**"
   ],
   "protected_authority": null,
   "postgres_requirements": {
-    "setup_manifest": "UNKNOWN — no setup manifest exists yet; a successor implementation lane must write one against pnpm db:audit:disposable before any real-Postgres proof, per docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json's AG-B3-5 precedent (never staging, never production, never the canonical persistent DB).",
+    "setup_manifest": "UNKNOWN",
     "probe_manifest": "UNKNOWN",
-    "rationale": "email_deliveries' claim/lease behavior (HPO-ASY-02/03/04) and the erasure_partial retry guard (HPO-ASY-09) both depend on real transaction and constraint semantics (a CHECK-enumerated status column, a transaction boundary around a business row plus its delivery row) that a mocked ORM layer cannot prove — the same class of requirement stripe_webhook_events' own dry-run (scripts/stella-ticket-dry-run.sh precedent for operation_tickets) exists to satisfy."
+    "rationale": "Both paths are the schema's explicit UNKNOWN because no harness manifest for this batch exists yet: this is a pre-implementation commitment, and claiming a path that does not exist would be a false statement in a field a validator reads. A real PostgreSQL probe IS required before this batch can close, and exit_gates therefore carries postgres_disposable_probe so the declaration and the gate agree. The properties that cannot be proven without a real engine are: the durable, transactionally enforced uniqueness boundary for action_request_id (HPO-ASY-02); the at-most-one-live-pending-invitation invariant under genuine concurrency (HPO-ASY-13); the serialization invariant for concurrent resend intents (HPO-ASY-11); and the guarded, eligibility-conditioned delivery transition that makes cancelled absorbing (HPO-ASY-12). Each of these is a statement about what two simultaneous transactions can and cannot do, which a mocked or single-connection harness cannot decide. When the harness manifests are authored they must run via the governed disposable-PostgreSQL runner — never staging, never production, never the canonical persistent database."
   },
   "sentinels": [],
   "known_conditions": [],
   "positive_controls": [
     {
       "id": "P-ASY-1-commit-before-send",
-      "description": "Creating an invitation (or, per HPO-ASY-10, a demo request) persists its business row AND its email_deliveries row in status='queued' inside one committed transaction BEFORE provider.send() is invoked. Proven by instrumenting/spying provider.send() and asserting it is called strictly after the transaction promise has resolved, mirroring the existing pattern already provable today at app/app/organization/members/actions.ts:36-42.",
+      "description": "Creating an invitation persists the invitation row AND its delivery row in status='queued' inside one committed transaction BEFORE any provider call is made. Proven by observing that the provider send is invoked strictly after the transaction has returned, mirroring the split already measurable at app/app/organization/members/actions.ts:36-42.",
       "test_file": "UNKNOWN"
     },
     {
       "id": "P-ASY-2-accepted-state-on-success",
-      "description": "A successful provider.send() (a message id is returned) transitions the email_deliveries row to status='accepted' and sets accepted_at, with failed_at/cancelled_at left NULL.",
+      "description": "A provider call that succeeds transitions the delivery row to status='accepted' and sets accepted_at, leaving failed_at and cancelled_at NULL.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "P-ASY-3-manual-resend-rotates-token",
-      "description": "Invoking the manual resend action on a pending invitation: (a) mints a new raw token distinct from the original, (b) updates the SAME invitations row's tokenHash to the new hash and leaves invitations.id/email/role unchanged, (c) cancels any prior email_deliveries row for that invitation still in queued/accepted, and (d) creates a new email_deliveries row in status='queued' referencing the same invitation id. All four effects land in one transaction.",
+      "id": "P-ASY-3-deliberate-resend-new-intent",
+      "description": "A deliberate resend carrying a NEW action_request_id: mints a new raw token, rewrites the SAME invitation row's token hash (invitation id, email and role unchanged), transitions any prior still-actionable delivery to 'cancelled', and creates a NEW delivery row in 'queued' bound to that new action_request_id. All four effects commit together; the provider call follows the commit.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "P-ASY-4-manual-retry-same-row",
-      "description": "Invoking manual retry on a delivery in failed_retryable transitions the SAME email_deliveries row (same id) back through 'queued' to a terminal-for-attempt state, incrementing attempts by exactly 1, without creating a second row.",
+      "id": "P-ASY-4-manual-retry-same-attempt-row",
+      "description": "Manual retry of a delivery in failed_retryable transitions the SAME delivery row (same delivery_attempt_id) back through 'queued' to a terminal-for-attempt state and increments attempts by exactly 1, without creating a second row.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "P-ASY-5-erasure-partial-resweepable",
-      "description": "Calling requestGovernedEvidenceErasure a second time on an evidence item whose current version is at erasureState='erasure_partial' is ACCEPTED (does not throw the lib/pipeline/evidence.ts:948 guard), re-sweeps only the versions not already at erasure_complete (reusing the existing versionsToSweep filter, evidence.ts:954), and logs the new 'evidence_tombstone.erasure_retry_requested' audit verb distinct from the first attempt's 'erasure_requested'.",
+      "id": "P-ASY-5-erasure-partial-re-entry-allowed",
+      "description": "Re-entering the governed erasure path for an evidence item whose state is erasure_partial is ACCEPTED rather than refused, and the re-entry is auditable through the EXISTING erasure request/completion vocabulary and its existing afterJson state (versionsRequested / versionsSwept / erasureState). This control must NOT require, assert, or depend on any newly allocated audit verb.",
       "test_file": "UNKNOWN"
     },
     {
       "id": "P-ASY-6-erasure-complete-still-terminal",
-      "description": "Calling requestGovernedEvidenceErasure on an evidence item already at erasure_complete is STILL refused with the existing error, unchanged by the HPO-ASY-09 narrowing — proves the guard was narrowed for exactly one state, not removed.",
+      "description": "Re-entering the governed erasure path for an item already at erasure_complete is STILL refused, unchanged. Proves the terminal guard was narrowed for exactly one state rather than removed.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "P-ASY-7-demo-request-persists",
-      "description": "submitDemoRequest, given valid non-honeypot input, creates exactly one durable row (whatever table/reference_type a successor lane selects per HPO-ASY-10) BEFORE the notification email is attempted, and that row survives even when provider.send() subsequently throws.",
+      "id": "P-ASY-7-demo-and-lead-durable-before-notification",
+      "description": "An accepted (validated, non-honeypot) demo request is durably recorded BEFORE any notification send is attempted, and the record survives a provider call that subsequently throws or no-ops. The same durability property is asserted for the lead surface to the extent that surface is reachable in the implementation under test; where it is not yet reachable the control must record that explicitly rather than silently narrowing to the demo half.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "P-ASY-8-honeypot-still-produces-no-trace",
-      "description": "submitDemoRequest with the honeypot field populated still returns {ok:true} and creates ZERO durable rows and ZERO provider calls — unchanged from today's demo-request.ts:58-61 behavior after HPO-ASY-10 is implemented.",
+      "id": "P-ASY-8-honeypot-produces-no-trace",
+      "description": "A honeypot-tripped demo submission still reports success to the submitter and creates ZERO durable rows and ZERO provider calls, unchanged from the measured short-circuit at app/actions/marketing/demo-request.ts:58-61.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "P-ASY-9-ui-shows-accepted-not-delivered",
-      "description": "The members UI renders email_deliveries.status='accepted' using copy that does not contain the word 'delivered' (or a localized equivalent implying receipt), and renders a visible resend affordance for failed_retryable and failed_permanent.",
+      "id": "P-ASY-9-ui-renders-accepted-not-delivered",
+      "description": "The members surface renders delivery status='accepted' with copy that does not contain 'delivered' or a localized equivalent implying receipt, renders delivery status separately from the invitation's own status, and exposes a resend affordance for failed_retryable and failed_permanent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-ASY-10-same-action-request-id-replay-is-idempotent",
+      "description": "Replaying the SAME action_request_id (transport retry, network retry, double-click, repeated submission) produces the effects of ONE intent only: at most one invitation, at most one token rotation, at most one delivery attempt row, and exactly one provider call in total across all replays. Asserted for both the create intent and the resend intent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-ASY-11-partial-erasure-retry-converges",
+      "description": "After a first attempt that ends erasure_partial, a retry whose remaining work succeeds reaches erasure_complete. Includes the case where the storage object is permanently absent: if no governed content remains, the item converges to erasure_complete rather than remaining pinned at erasure_partial because an individual removal call reported an error for an object that was already gone.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-ASY-12-rotation-exactly-once-per-new-intent",
+      "description": "One deliberate resend intent rotates the invitation token EXACTLY ONCE. Asserted by capturing the persisted token hash before and after, and by proving no second rotation occurs for that same intent regardless of how many times it is submitted.",
       "test_file": "UNKNOWN"
     }
   ],
   "negative_controls": [
     {
-      "id": "N-ASY-1-rollback-drops-delivery-row",
-      "description": "If the transaction that would persist the business row and the email_deliveries 'queued' row is rolled back (e.g. a downstream constraint violation after the insert), NEITHER row exists afterward, and provider.send() is never called. Proves the transaction boundary (HPO-ASY-03) is a real transaction, not two separate writes that could diverge.",
+      "id": "N-ASY-1-rollback-drops-both-rows",
+      "description": "If the transaction persisting the business row and the 'queued' delivery row rolls back, NEITHER row exists afterward and no provider call is made. Proves the boundary is one real transaction rather than two independent writes.",
       "test_file": "UNKNOWN"
     },
     {
       "id": "N-ASY-2-provider-failure-does-not-roll-back-business-row",
-      "description": "A provider.send() failure (thrown or returning an error) AFTER the business-row transaction has committed does NOT retroactively delete or roll back the invitation/demo_request row — only the email_deliveries row transitions to failed_retryable/failed_permanent. Proves 'commit before send' is honored in the failure direction too.",
+      "description": "A provider failure occurring AFTER the business-row transaction committed does not delete or roll back the invitation (or demo/lead) row; only the delivery row transitions to a failure state.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "N-ASY-3-duplicate-submit-does-not-double-create",
-      "description": "Two concurrent or rapid duplicate invocations of the SAME logical create action (e.g. a double-click resubmitting the same create-invitation form) do not each mint an independent, uncorrelated email_deliveries row for what is meant to be one attempt — the create path's existing 'active pending invitation already exists' check (lib/invitations/service.ts:52-64) is exercised, and the second call is refused rather than silently producing a second queued delivery for the same invitation.",
+      "id": "N-ASY-3-duplicate-submit-yields-one-live-effect",
+      "description": "Two duplicate submissions of the same create intent — whether sequential or genuinely concurrent — leave exactly ONE live pending invitation relationship and exactly ONE same-intent effect. The control asserts the OUTCOME property only; it must NOT assert which request wins, must NOT require that 'the second' be the one refused, and must NOT presume a deterministic ordering that concurrency does not provide. Either request may be the one that takes effect.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "N-ASY-4-manual-resend-invalidates-old-token",
-      "description": "After a manual resend, the ORIGINAL raw token (from before rotation) no longer accepts the invitation via acceptInvitation() — its hash no longer matches any invitations row, since tokenHash was overwritten in place (HPO-ASY-05). Proves token invalidation, not merely token addition.",
+      "id": "N-ASY-4-rotated-token-is-invalidated",
+      "description": "After a deliberate resend, the ORIGINAL raw token no longer accepts the invitation: its hash matches no invitation row, because the hash was overwritten in place rather than added alongside.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "N-ASY-5-accepted-is-not-treated-as-delivered-anywhere",
-      "description": "No code path introduced under this authority reads email_deliveries.status='accepted' and treats it as proof of delivery (e.g. no logic suppresses a manual resend option, and no UI copy, solely because status='accepted' — accepted invitations that are never opened must remain resendable).",
+      "id": "N-ASY-5-accepted-is-not-treated-as-delivered",
+      "description": "No code path treats status='accepted' as proof of delivery: a resend affordance is not suppressed, and no downstream decision is gated, solely because a delivery reached 'accepted'.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "N-ASY-6-cross-org-resend-refused",
-      "description": "An authenticated org_admin of organization B cannot retry or resend an email_deliveries row / invitation belonging to organization A, even by guessing/enumerating a valid id — refused with the same 'Forbidden' class of error revokeInvitation already raises at lib/invitations/service.ts:131. Must be proven against a real cross-tenant fixture, not a same-org negative.",
+      "id": "N-ASY-6-cross-org-retry-and-resend-refused",
+      "description": "A principal of organization B cannot retry or resend a delivery or invitation belonging to organization A, including by supplying a valid identifier directly. Refused with the same class of refusal already present for cross-organization invitation access at lib/invitations/service.ts:131. Must be proven against a real two-tenant fixture, never a same-organization stand-in.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "N-ASY-7-insufficient-role-cannot-retry-or-resend",
-      "description": "A member whose role fails canInviteUsers() (lib/invitations/service.ts:42) cannot invoke manual retry or resend, even within their own organization and even targeting a real pending invitation.",
+      "id": "N-ASY-7-roles-below-organization-admin-refused",
+      "description": "A member whose role ranks BELOW organization_admin in the tenant role hierarchy cannot invoke manual retry or resend, even within their own organization on a real pending invitation. The control must be written knowing that the tenant role value 'super_admin' ranks ABOVE organization_admin and therefore PASSES this predicate (measured: lib/auth/permissions.ts:24-26 and :48-50 with lib/auth/roles.ts:38-41) — it must not assert that 'only organization_admin' is authorized, which would pin a falsehood about the current system.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "N-ASY-8-erasure-retry-does-not-resweep-completed-versions",
-      "description": "On an erasure_partial retry, a version that already reached erasure_complete in the FIRST attempt is not re-targeted, not re-logged, and not re-written — only versions still short of erasure_complete are swept, per the existing versionsToSweep filter (evidence.ts:954).",
+      "id": "N-ASY-8-retry-does-not-resurrect-cleared-content",
+      "description": "Premise that is actually reachable: a FIRST attempt that ends erasure_partial having already cleared at least one version's content. On retry, that already-cleared content is NOT rewritten, NOT restored and NOT re-populated — the already-null content is skipped — while the remaining work is attempted. Replaces the R1 control whose premise set was empty because no version is left at erasure_complete after a partial attempt.",
       "test_file": "UNKNOWN"
     },
     {
       "id": "N-ASY-9-erasure-blocked-unaffected",
-      "description": "The HPO-ASY-09 guard narrowing does not make erasure_blocked reachable and does not change its (currently unreachable) semantics — a regression here would mean the narrowing leaked beyond the one state it targeted.",
+      "description": "Narrowing the terminal guard does not make erasure_blocked reachable and does not alter its semantics — proves the change did not leak beyond the one state it targeted.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "N-ASY-10-no-automatic-retry-fires",
-      "description": "A email_deliveries row left in failed_retryable is NOT transitioned by any timer, cron, or background process over an observed window — proves 'no automatic retry/cron required for V1' was actually honored and not quietly implemented as a convenience.",
+      "id": "N-ASY-10-no-automatic-transition-fires",
+      "description": "A delivery left in failed_retryable is not transitioned by any timer, cron, scheduler or background process over an observed window. Proves no automatic retry was quietly implemented.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "N-ASY-11-no-payload-persisted",
-      "description": "Static/structural check: email_deliveries' column set (and demo_requests', if separate) contains no email-body/html column and no raw-provider-response column, mirroring the structural assertion pattern already used for stripe_webhook_events (columnas_de_payload=0, INT-INT-001 §5).",
+      "id": "N-ASY-11-no-payload-and-no-recoverable-token-persisted",
+      "description": "Structural check over the delivery table (and any demo/lead durability object): no rendered-body column, no raw-provider-response column, no free-text provider error column, and NO column storing the invitation's raw token in any form recoverable by the application — no plaintext, no reversible encryption, no keyed derivation permitting re-emission. Hash-only remains the sole persisted form of the token.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-ASY-12-late-result-cannot-resurrect-cancelled",
+      "description": "A provider result that arrives for a delivery row which has since become 'cancelled' does NOT transition that row to accepted, failed_retryable, failed_permanent or any other non-cancelled state. The row remains cancelled. The classifier's 'no eligible row' outcome is handled as a normal superseded-attempt result, not as an error and not by re-attempting the write unguarded.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-ASY-13-concurrent-resend-intents-serialize",
+      "description": "Two concurrent deliberate resend intents for the SAME invitation do not interleave: exactly one rotation takes effect, the resulting token hash corresponds to exactly one of the two intents, no supersession is lost, and no delivery row is left actionable for a token that is no longer current. Asserts the outcome property without asserting which intent wins.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-ASY-14-at-most-one-live-pending-invitation",
+      "description": "For one organization and one NORMALIZED email address, two live pending invitation relationships cannot coexist — including when the two submissions differ only by letter case or surrounding whitespace, since normalization is part of the uniqueness key. The refusal must come from a durable, transactionally enforced boundary, proven by exercising it concurrently rather than by the application's advisory pre-check alone.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-ASY-15-unclassifiable-provider-outcome-is-not-accepted",
+      "description": "A provider outcome that is unconfigured (no API key), unclassifiable, or otherwise unmappable does NOT produce status='accepted'. It fails closed into a non-success state, defaulting to failed_retryable where the condition may succeed after correction. Explicitly covers the measured case where the adapter returns the same empty result for the unconfigured and the provider-error paths.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-ASY-16-no-foreign-audit-verb-is-required",
+      "description": "An implementation that emits ONLY the existing erasure request/completion vocabulary for an erasure retry satisfies the suite in full. No control anywhere in this manifest requires, asserts, or is made load-bearing by a verb in another domain's namespace — specifically not by any newly allocated evidence_tombstone.* retry verb, which the authority withdrew.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-ASY-17-async-domain-verbs-are-covered-by-the-audit-contract",
+      "description": "If (and only if) an implementation introduces async-domain audit verbs, every module containing their logAuditAction call sites is REACHED by CORRESPONDENCE_SCAN_ROOTS — including lib/invitations/** and app/actions/marketing/** as applicable — and each verb satisfies the action-value shape pin as it reads at that implementation's own tip. Asserted by direct coverage inspection, because the correspondence mechanism fails OPEN today: its scan roots exclude those modules, so an omitted correspondence would otherwise produce a fully green suite. No assertion in the audit contract test or the logger test may be loosened, no scan root narrowed, and no correspondence exception added, to obtain that green.",
       "test_file": "UNKNOWN"
     }
   ],
   "mutation_controls": [
     {
       "id": "M-ASY-1-remove-transaction-wrapping",
-      "description": "If the business-row insert and the email_deliveries 'queued' insert are pulled out of their shared transaction into two independent statements, N-ASY-1 (rollback-drops-delivery-row) must turn RED — it is the control that would catch this specific regression.",
+      "description": "Pulling the business-row insert and the 'queued' delivery insert out of their shared transaction into two independent statements must turn N-ASY-1 RED.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "M-ASY-2-remove-erasure-partial-narrowing",
-      "description": "If the line 948 guard is reverted to blocking both erasure_complete and erasure_partial (i.e. HPO-ASY-09 is silently undone), P-ASY-5 (erasure-partial-resweepable) must turn RED.",
+      "id": "M-ASY-2-revert-erasure-partial-narrowing",
+      "description": "Reverting the terminal guard so erasure_partial again refuses re-entry must turn P-ASY-5 RED.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "M-ASY-3-remove-cross-org-check-on-resend",
-      "description": "If the resend/retry action's organization-scope check is deleted or weakened to compare against the wrong id, N-ASY-6 (cross-org-resend-refused) must turn RED.",
+      "id": "M-ASY-3-remove-cross-org-check",
+      "description": "Deleting the organization-scope comparison on the retry/resend path, or comparing against the wrong identifier, must turn N-ASY-6 RED.",
       "test_file": "UNKNOWN"
     },
     {
-      "id": "M-ASY-4-collapse-result-classification-to-null",
-      "description": "If provider result classification is reverted to the current null-collapse (resend-client.ts:37-40 style, discarding success/failure distinction), P-ASY-2 (accepted-state-on-success) and the failed_retryable/failed_permanent branches of the state model must turn RED rather than silently defaulting every outcome to one state.",
+      "id": "M-ASY-4-collapse-provider-classification-to-success",
+      "description": "Collapsing provider result classification so that a completed call is treated as success regardless of outcome — the shape the current adapter's uniform empty return invites — must turn N-ASY-15 RED, and must not be silently absorbed by P-ASY-2 remaining green.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-ASY-5-remove-action-request-id-uniqueness-or-replay-guard",
+      "description": "Removing the durable uniqueness boundary for action_request_id, or removing the replay guard that consults it, must turn the governing idempotency controls RED — specifically P-ASY-10 and N-ASY-3. Downgrading the boundary to a UI-side, in-memory or per-process guard counts as removal for this mutation and must produce the same RED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-ASY-6-allow-cancelled-to-accepted",
+      "description": "Removing the eligibility condition from the post-commit classifier so that a late provider result can transition a cancelled delivery to accepted must turn N-ASY-12 RED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-ASY-7-add-recoverable-raw-token-storage",
+      "description": "Adding any column or mechanism that persists the raw invitation token in an application-recoverable form — plaintext, reversibly encrypted, or derived so as to permit re-emission — must turn the structural control N-ASY-11 RED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-ASY-8-derive-terminal-erasure-state-from-attempt-outcome",
+      "description": "Deriving the terminal erasure state from whether the current attempt's operations all succeeded — rather than from whether any governed content remains — must turn P-ASY-11 RED, since a permanently absent storage object would then pin the item at erasure_partial forever and convergence would never be reached.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-ASY-9-remove-resend-serialization",
+      "description": "Replacing the serialization mechanism (row lock, compare-and-swap, or equivalent version guard) with an unguarded read-then-write must turn N-ASY-13 RED.",
       "test_file": "UNKNOWN"
     }
   ],
@@ -148,6 +215,7 @@
     "secrets_scan",
     "authority_seal_verify",
     "ods_scope",
+    "postgres_disposable_probe",
     "targeted_tests"
   ]
 }

@@ -3,255 +3,513 @@
   "version": "1.0.0",
   "artifact_id": "docs/ops/async/ASYNC_NOTIFICATIONS_AUTHORITY_v1.0.0.json",
   "authority_class": "BOUNDED_ASYNC_NOTIFICATION_MINIMUM_SUBSTRATE_AUTHORITY",
-  "mission_id": "ASYNC-NOTIFICATIONS-AUTHORITY-R1",
+  "mission_id": "ASYNC-NOTIFICATIONS-AUTHORITY-R2",
   "lane_id": "LANE_AQ",
-  "role": "ASYNC_NOTIFICATION_AUTHORITY_WRITER",
-  "mode": "DOCS_ONLY_BOUNDED_AUTHORITY",
-  "materialization_date": "2026-09-10",
+  "role": "ASYNC_NOTIFICATIONS_AUTHORITY_R2_WRITER",
+  "mode": "DOCS_ONLY_AUTHORITY_CORRECTION",
+  "CURRENT_REVISION": "R2",
+  "materialization_date": "2026-09-10 (R1); revised 2026-09-10 (R2)",
   "companion_manifest": "docs/ops/async/ASYNC_NOTIFICATIONS_TEST_MANIFEST_v1.0.0.json",
+
+  "REVISION_HISTORY": [
+    {
+      "revision": "R1",
+      "commit": "100169b972960c053473a0b1aed5359e8a30a60f",
+      "tree": "4a981c49386b32ee8443a9665b449da587250f88",
+      "base": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+      "summary": "Initial freeze: HPO-ASY-01..10, minimum substrate, email_deliveries model, transaction boundary, provider semantics, resend/rotation, PII, UI semantics, manual retry authorization, erasure_partial recovery, demo persistence, out-of-scope, future DDL, companion test manifest.",
+      "disposition": "SUPERSEDED IN PART BY R2. R1 is not amended and not squashed; it remains an ancestor commit. Every claim R2 withdraws is listed in WITHDRAWN_R1_CLAIMS below with its correction attached, rather than silently overwritten."
+    },
+    {
+      "revision": "R2",
+      "commit": "THIS COMMIT",
+      "trigger": "Independent audit AX of PR #138 at 100169b9 / tree 4a981c49: RESULT=FAIL, BLOCKING=4, AUDIT_UNKNOWN=0. R2 does not defend R1. All four blockers plus the explicitly identified non-blocking defects are corrected here.",
+      "blockers_corrected": {
+        "B-1": "RESEND CONCURRENCY. R1 treated transaction atomicity as sufficient concurrency control and carried zero serialization vocabulary. Worse, no race is needed to break it: R1's own HPO-ASY-03 puts send and classification AFTER commit while HPO-ASY-05(iii) cancels the prior delivery INSIDE the transaction, so a resend issued while the first send is still in flight lets the first send's post-commit classifier write 'accepted' onto a row another transaction already cancelled. R2 freezes a SERIALIZATION INVARIANT (HPO-ASY-11) and makes CANCELLED TERMINAL with an eligibility-conditioned classifier (HPO-ASY-12).",
+        "B-2": "DELIVERY / REQUEST IDENTITY. R1 declared a server-issued per-call primary key to be 'the ONLY idempotency key'. A per-call key is by construction not an idempotency key against duplicate submission: two submits mint two keys and both send. R2 separates INVITATION_ID / ACTION_REQUEST_ID / DELIVERY_ATTEMPT_ID (HPO-ASY-02), requires a durable, transactionally enforced uniqueness boundary for action_request_id, and freezes the outstanding-invitation invariant (HPO-ASY-13).",
+        "B-3": "AUDIT VOCABULARY. R1 allocated 'evidence_tombstone.erasure_retry_requested' into a namespace governed by another domain, and made a test control depend on it. Canonical HPO-C.9 authorizes retry BEHAVIOUR, not vocabulary. R2 removes the verb entirely, shows the existing verbs already carry the distinguishing state, and discharges the audit vocabulary contract for the async-domain verbs that remain (HPO-ASY-14).",
+        "B-4": "ERASURE IDEMPOTENCE MISATTRIBUTION. R1 claimed the versionsToSweep filter supplied 'the per-version idempotence a retry needs'. Re-measured: false. R2 replaces the claim with the measured mechanism, reframes the terminal determination around residual work rather than per-attempt operation outcomes so a retry can converge, and replaces the vacuous N-ASY-8 control."
+      },
+      "nonblocking_corrected": {
+        "C-1": "PROVIDER ERROR DEFAULT — unclassifiable/no-key provider outcomes must fail closed into a non-success state, never 'accepted' (HPO-ASY-04).",
+        "C-2": "PLATFORM/TENANT ROLE INHERITANCE — canInviteUsers inherits tenant role-hierarchy semantics under which the TENANT role value 'super_admin' satisfies an organization_admin-level check. Recorded explicitly; not conflated with PLATFORM_PRINCIPAL; platform-admin boundary deferred (HPO-ASY-08).",
+        "C-5": "MANIFEST EXIT-GATE CONSISTENCY — postgres_requirements is now schema-consistent with exit_gates, and path fields carry the schema's own explicit UNKNOWN rather than prose in a path slot.",
+        "C-6": "CANONICAL HPO-C WORDING — R1 narrowed HPO-C.10 to demo only. Canonical clause is 'Demo/lead requests must be durably recorded.' Both halves preserved (HPO-ASY-10).",
+        "C-7": "EVIDENCE PROVENANCE — every memory-note/session-note reference is removed. This artifact now cites only repository artifacts and paths measured at the R2 base tree."
+      },
+      "history_discipline": "R2 is a NEW commit on top of R1 on the SAME branch (codex/async-notifications-authority-r1). R1 is not amended, not squashed and not force-replaced. Withdrawn claims stay visible with their corrections attached."
+    }
+  ],
 
   "GRANT_ID": {
     "value": null,
-    "reason": "This lane creates AUTHORITY ONLY. It writes no application code, no schema, no migration, no environment value, no hosted Resend configuration, no scheduler and no ODS registration. It matches the pattern of docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json §GRANT_ID."
+    "reason": "This lane creates AUTHORITY ONLY. It writes no application code, no schema, no migration, no environment value, no hosted Resend configuration, no executable audit verb and no ODS registration."
   },
-  "GRANT_ID_DISPOSITION": "NO GRANT IS DECLARED OR REGISTERED BY THIS ARTIFACT. The entire future write surface named in future_ddl and reconciled_current_state.successor_surface is CLOSED and FROZEN here, and is opened only by a successor implementation lane. No ODS addendum is allocated, no node is registered, no migration ordinal is claimed, and no CONTRACT_LEDGER.md row is opened (this is a single-owner authority freeze, not a cross-line contract negotiation).",
+  "GRANT_ID_DISPOSITION": "NO GRANT IS DECLARED OR REGISTERED BY THIS ARTIFACT. The future write surface named here is CLOSED and FROZEN, and is opened only by a successor implementation lane. No ODS addendum is allocated, no node is registered, no migration ordinal is claimed, no successor identifier is reserved, and LOCK-AUDIT-ACTION-VOCABULARY is neither acquired nor reserved by this lane.",
 
   "identity": {
-    "task": "ASYNC-NOTIFICATIONS-AUTHORITY-R1",
-    "chat": "NEW",
-    "model": "SONNET_5",
-    "effort": "HIGH",
+    "task": "ASYNC-NOTIFICATIONS-AUTHORITY-BLOCKING-REMEDIATION-R2",
     "branch": "codex/async-notifications-authority-r1",
     "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-async-notifications-authority-r1",
-    "base_ref_declared": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
-    "base_head_measured": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
-    "base_tree_measured": "97006bebd7e496135967d05d59b01e798cdc7394",
-    "prestate": {
+    "pr": 138,
+    "mission_base_head": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+    "r2_parent_head_measured": "100169b972960c053473a0b1aed5359e8a30a60f",
+    "r2_parent_tree_measured": "4a981c49386b32ee8443a9665b449da587250f88",
+    "prestate_r2": {
       "branch_matches_declared": true,
-      "head_matches_declared_base": true,
-      "working_tree_clean_before": true,
-      "working_tree_clean_after": true,
-      "method": "git branch --show-current; git rev-parse HEAD; git status --untracked-files=all; git rev-parse HEAD^{tree} — all run before any file in this artifact was written."
+      "head_matches_declared_current_head": true,
+      "tree_matches_declared_current_tree": true,
+      "working_tree_clean_before_r2_edits": true,
+      "method": "git branch --show-current; git rev-parse HEAD; git rev-parse HEAD^{tree}; git status --porcelain --untracked-files=all (zero lines) — all run before any R2 edit."
     }
   },
 
-  "scope_declaration": {
-    "no_implementation": "This artifact contains no application code changes.",
-    "no_migration": "No file under db/migrations/** or db/prepared/** is created or edited by this artifact.",
-    "no_ordinal_assignment": "No migration ordinal is claimed. The last applied-shape ordinal measured on this branch is db/migrations/0069_fib_fibdb052_p1_indexes.sql (PR #135); 0070 is measured (LANE F11, [[project_billing_commercial_lifecycle_r2_census]]) to already be contended by the Billing/Controller42 successor lock. Any future DDL under this authority MUST re-derive the live next-available ordinal at implementation time, never assume 0070 or any other fixed number.",
-    "no_scheduler": "No pg_cron job, no Vercel cron, no queue worker, no `after()`-based background task and no polling loop is authorized or implied anywhere in this artifact.",
-    "no_hosted_resend_configuration": "No RESEND_API_KEY value, sending-domain, webhook secret, or any other Resend hosted configuration is set, read, or referenced as present in any environment by this artifact.",
-    "any_ddl_disposition": "LINEAGE_REDERIVATION_REQUIRED=YES for every DDL sketch in this artifact (see future_ddl). A sketch is an illustrative shape frozen for a successor lane to implement against, not a migration text to apply verbatim without re-measuring the live baseline immediately before writing it."
+  "EVIDENCE_PROVENANCE": {
+    "rule": "C-7 CORRECTION. Every factual claim in this artifact is anchored to a repository artifact at the R2 parent tree (4a981c49) or to a named git object. No session memory note, no chat transcript and no prior-lane recollection is cited as authority or as evidence anywhere in this file.",
+    "audit_input_disposition": "The AX audit findings are consumed as INPUT — a list of things to check — not as evidence. Every finding R2 acts on was independently re-measured against the working tree before being frozen, and where re-measurement disagreed with an upstream description, the re-measurement wins and the disagreement is recorded (see MEASURED_CORRECTIONS_R2.audit_action_shape_pin_is_not_two_segment_at_this_tree)."
   },
 
-  "owner_ratified_hpo_c_binding_target": {
-    "source_disposition": "Supplied verbatim in the owning session's dispatch to this lane (ROLE=ASYNC_NOTIFICATION_AUTHORITY_WRITER, 'Consume owner-ratified HPO-C'). Searched for a separately filed HPO-C artifact under docs/ops/** at base 88d95c65 (grep -ril \"HPO-C\\b\") and found ZERO hits: no prior lane registered a document under that exact identifier. This artifact therefore treats the dispatch's 'Binding target' block as the full, verbatim content of HPO-C, and records it here rather than citing a path that does not exist.",
-    "no_general_queue_platform_for_commercial_v1": true,
-    "invitation_email_durability_uses_dedicated_email_deliveries": true,
-    "logical_row_created_transactionally_with_invitation_or_event_persistence": true,
-    "provider_send_occurs_after_commit": true,
-    "v1_resend_rotates_invitation_token": true,
-    "raw_invitation_token_must_not_be_stored_encrypted_for_resend": true,
-    "states_exactly_at_minimum": ["queued", "accepted", "failed_retryable", "failed_permanent", "cancelled"],
-    "accepted_means_accepted_by_provider_not_delivered": true,
-    "no_automatic_retry_or_cron_required_for_v1": true,
-    "manual_resend_is_required": true,
-    "erasure_partial_must_become_re_sweepable_retryable": true,
-    "demo_request_must_persist": true,
-    "retention_pii_duration_governed_by_hpo_f_legal_do_not_invent_days": true,
-    "must_not_unify_stripe_events_into_email_deliveries": true,
-    "must_not_build_generalized_queue_abstraction": true
+  "RAT_ASY_01": {
+    "id": "RAT-ASY-01",
+    "title": "INVITATION INTENT IDEMPOTENCY",
+    "status": "RATIFIED_BY_PRODUCT_OWNER",
+    "frozen_verbatim": {
+      "outstanding_relationship_rule": "For one organization and one normalized email address there may be at most one LIVE PENDING invitation representing the same outstanding invitation relationship.",
+      "action_request_id_properties": [
+        "opaque",
+        "generated once by the application/UI for that user intent",
+        "reused across transport retry, network retry, double-click and repeated submission of the SAME intent",
+        "a deliberately NEW resend intent receives a NEW action_request_id"
+      ],
+      "replay_of_same_action_request_id_MUST_NOT": [
+        "create a second invitation",
+        "create a second logical resend intent",
+        "rotate the invitation token again",
+        "create another provider-send attempt",
+        "cause a second provider call"
+      ],
+      "new_resend_with_new_action_request_id_MAY": [
+        "rotate the invitation token once",
+        "create a new delivery attempt",
+        "call the provider once after commit"
+      ],
+      "prohibition": "Do not invent a time-based cooldown."
+    },
+    "no_cooldown_restated": "No implementation under this authority may substitute a time window, debounce interval, or rate-limit bucket for the action_request_id identity. Idempotency here is identity-based, not time-based. A time-based approximation would refuse legitimate distinct intents inside the window and admit duplicates outside it — both failures of the ratified property."
   },
 
-  "reconciled_current_state": {
-    "method": "Every fact below was re-measured against this branch's working tree (HEAD 88d95c65, tree 97006beb), not inherited unread from prior census memory. Where a fact matches a prior LANE F4/F12 census finding, that census is cited as corroboration, not as the source of truth.",
-
-    "existing_invitation_flow": {
-      "token_identity": "The raw invitation token is 32 random bytes, hex-encoded, generated server-side at lib/invitations/service.ts:66; only its SHA-256 (lib/invitations/service.ts:35-37,67) is persisted, in invitations.tokenHash (db/schema.ts:145). The raw token exists only in the HTTP response of the create call and in the email body — never in a durable row.",
-      "consequence_for_resend": "Because the raw token cannot be reconstructed from tokenHash, any resend that must produce a working accept link again has exactly two options: (a) rotate — mint a new raw token, persist its new hash, invalidate the old one, or (b) additionally persist the raw token (plaintext or reversibly encrypted) so it can be re-emitted. HPO-C selects (a) explicitly and forbids (b) explicitly ('raw invitation token must NOT be stored encrypted for resend'). This authority treats that selection as settled, not as an open design question.",
-      "commit_before_send_already_implemented": "app/app/organization/members/actions.ts:36-42 already implements 'commit before send' for the CURRENT invitation flow: createInvitation() runs inside withOrganizationDatabaseContext (db/identity-context.ts) — a real db.transaction — and returns a `sendEmail` closure without invoking it; the closure is invoked at actions.ts:42, strictly after the transaction that persisted the invitation and its INVITATION_SENT audit row has returned (committed). The in-code comment at actions.ts:37-38 and the module header at lib/invitations/service.ts:1-11 both state the reasoning this authority now generalizes: a token emailed inside an open transaction that then rolls back would be a live link resolving to nothing.",
-      "audit_ordering": "logAuditAction(AUDIT_ACTIONS.INVITATION_SENT) is called at lib/invitations/service.ts:83-90, INSIDE createInvitation, which itself runs inside the withOrganizationDatabaseContext transaction opened by the caller (actions.ts:39-41). So INVITATION_SENT is committed to audit_logs together with the invitations row, BEFORE the provider is ever called. It records that a send was ATTEMPTED-TO-BE-ATTEMPTED, not that a send succeeded, and its afterJson (service.ts:89) carries no delivery outcome. This is exactly the reconciliation problem: introducing email_deliveries must not touch AUDIT_ACTIONS.INVITATION_SENT's meaning or timing, which is authorized, correct, and orthogonal to delivery — see email_delivery_model.audit_relationship below.",
-      "no_resend_action_exists_today": "grep across lib/invitations/service.ts and app/app/organization/members/**/*.ts found no `resend` symbol of any kind. Only createInvitation (send once) and revokeInvitation (terminate) exist. HPO-C's 'manual resend is required' is therefore a NEW capability, not a fix to an existing one.",
-      "provider_failure_is_currently_silent": "lib/invitations/email.ts:38-46 and lib/email/resend-client.ts:23-43 both collapse every provider outcome — missing API key, Resend-reported error, and success with no message id — to either `void` (email.ts swallows the exception) or `null` (resend-client.ts returns null for both the no-key case and the error case, discarding `error.message` after only console.error-ing it, resend-client.ts:37-39). No caller inspects the result. This is the exact defect email_deliveries.status must close: distinguishing accepted from failed_retryable/failed_permanent requires the provider result to survive past resend-client.ts, which today it does not."
-    },
-
-    "invitation_sent_audit_ordering": {
-      "restated": "See existing_invitation_flow.audit_ordering above. AUDIT_ACTIONS.INVITATION_SENT (lib/audit/logger.ts:21, value 'invitation.sent') is committed before any provider call and is never updated afterward. It is a governance record of an invite action being taken, not a delivery record. This authority does not rename, repurpose, or move it."
-    },
-
-    "resend_adapter": {
-      "file": "lib/email/resend-client.ts (45 lines, read in full)",
-      "construction": "ResendEmailProvider is constructed with `emailConfig.resendApiKey` by default; if empty, `this.client` is null and isReady() returns false (resend-client.ts:16,19-21).",
-      "no_key_behavior": "send() no-ops and returns null with a console.warn when no key is configured (resend-client.ts:24-27) — this is why lib/invitations/service.ts's header (lines 1-11) can call the send 'best-effort': an unconfigured environment never throws.",
-      "error_behavior": "On a Resend-reported error, send() logs `error.message` to console.error and returns null (resend-client.ts:37-40) — the SDK's structured error (which almost certainly carries a `name`/type distinguishing e.g. validation vs rate-limit vs transient) is discarded at this boundary. A future email_deliveries write path needs resend-client.ts (or a thin wrapper around it) to return a discriminated result instead of collapsing to null, so failed_retryable vs failed_permanent can be assigned (see provider_semantics.result_categories below). This authority does NOT specify that wrapper's shape — only that the current null-collapse is the exact reason the two failure states cannot yet be distinguished.",
-      "idempotency_key_support": "resend npm package version and idempotencyKey support UNKNOWN without node_modules present in this worktree (consistent with LANE F12's finding) — not re-verified here because it is immaterial to this authority: identity/idempotency is defined at the email_deliveries row level (see email_delivery_model), not delegated to a provider-side idempotency key. If the SDK later exposes one, wiring it is an implementation-time strengthening, not a prerequisite this authority blocks on."
-    },
-
-    "stripe_webhook_specialized_ledger": {
-      "file": "db/prepared/stella_0008_stripe_webhook_identity.sql (1163 lines; the stripe_webhook_events table and its three governing functions were read in full)",
-      "status": "PREPARED, NOT APPLIED to any database. WEBHOOK_DATABASE_IDENTITY_AVAILABLE stays false; the live handler still answers 503 (file header, lines 8-11).",
-      "why_it_is_the_pattern_to_copy": "stripe_webhook_events (lines 208-224) is the most complete claim/lease/attempts state machine in the repository: `event_id text PRIMARY KEY` as the idempotency key itself (not a separate unique index over derived data), `attempts integer NOT NULL DEFAULT 1`, a `status` CHECK enumerating a CLOSED state set ('received','processing','completed','failed','ignored'), a `last_error_code` CHECK enumerating a CLOSED, non-free-text error vocabulary, and an `ON CONFLICT (event_id) DO UPDATE ... WHERE (status conditions) RETURNING` claim (stripe_begin_event, lines 530-553) that turns 're-claim an existing id under the same identity' into a single atomic statement while refusing 're-claim under a different identity' (lines 543-552, 567-574). The 15-minute lease (`received_at > now() - interval '15 minutes'`, e.g. line 545) recovers a row stuck in-flight without any cron (no pg_cron in this project — file header lines 32-38 of INT-INT-001 makes the same measurement independently).",
-      "why_it_must_not_be_reused_as_the_object": "stripe_webhook_events is scoped, by its CHECK constraints, RLS policies (lines 402-463) and column set, to Stripe's own event identity (stripe_customer_id/stripe_subscription_id) and to the 'organization already carries this billing identity' tenancy bound (RR-CAP-14, lines 226-397). It has no column for a recipient email address, no column for an invitation/entity reference, and its RESTRICTIVE policies are keyed to `app.stripe_event_id`. HPO-C's explicit prohibition ('do not unify Stripe events into email_deliveries') matches this measurement exactly: the PATTERN (server-issued PK-as-idempotency-key, closed-vocabulary status/error CHECKs, lease-based reclaim, no payload column) generalizes cleanly; the OBJECT (one ledger row per Stripe event, addressed to a Stripe identity) does not.",
-      "additional_pattern_note": "db/prepared/stella_0014_operation_tickets.sql (INT-INT-001, read in full) independently reinforces the same principle from a different capability: an idempotency-bearing identity must be ISSUED by governed surface before the operation runs (§1, 'la identidad tiene que ser emitida, y emitida antes de que la operación corra'), never derived from caller-supplied content after the fact. email_delivery_model.identity_and_idempotency below applies this exact argument to email_deliveries."
-    },
-
-    "operation_tickets": {
-      "file": "docs/ops/contracts/INT-INT-001_operation_ticket_protocol.md (read in full)",
-      "status": "DESIGN — not applied to any database (file header, table row 'Estado'); no server action calls it.",
-      "why_it_is_not_a_delivery_ledger": "operation_tickets exists to meter Stella quota consumption exactly once per grounded query; its `category` CHECK ties it to that domain (§3 invariant 3), it expires within a CHECK-bounded 15-minute window unconditionally (§3 invariant 4 — a queued email waiting for manual resend must be able to sit far longer than 15 minutes without being treated as abandoned), it is a bearer credential once issued (§5 — no runtime principal even has SELECT on it), and it charges a quota unit on completion (§4) — none of which describes an email send attempt. It is cited here only for the 'identity is issued, not computed' principle noted above, and because its complete absence of a payload column (§5, 'columnas_de_payload=0') is the same PII-minimization discipline this authority requires of email_deliveries (see pii_minimization below)."
-    },
-
-    "marketing_leads_and_demo": {
-      "two_distinct_features_measured": "The repository has TWO separate, non-overlapping public capture surfaces that HPO-C's 'demo request' language could be conflated with. This authority disambiguates them explicitly because the binding target names only one.",
-      "marketing_leads_CAP_04": {
-        "entry_point": "app/api/marketing/lead/route.ts (POST), backing the SROI calculator / landing lead capture.",
-        "persistence": "Writes directly to marketing_leads via db.insert, bypassing the CAP-04 `submit_lead` definer (docs/ops/capabilities/CAP_04_PUBLIC_LEADS.md §1, 'Contexto de BD: Ninguno: db.insert(marketingLeads) sin abrir contexto'). CAP-04 itself is DESIGN, not applied.",
-        "in_scope_here": "NO. This capability already persists (a durable marketing_leads row exists in the code path, even though its governed definer is unapplied). It is out of scope for this authority's 'demo request must persist' clause and is not touched."
+  "RATIFICATION_PROVENANCE": {
+    "OWNER_RATIFICATION": "RAT-ASY-01 is RATIFIED_BY_PRODUCT_OWNER and was supplied to this lane as a binding owner decision. It authorizes THIS AUTHORITY CORRECTION (R2) and nothing else.",
+    "IMPLEMENTATION_AUTHORIZATION": "NOT GRANTED BY RAT-ASY-01 AND NOT GRANTED BY THIS ARTIFACT. The ratification does not authorize runtime implementation, migration, new schema, ODS allocation, hosted Resend configuration, or deployment. These are distinct acts requiring their own governed lane.",
+    "distinction_is_load_bearing": "An owner ratification fixes INTENT. An execution authority fixes PERMISSION TO WRITE. This artifact is the former made precise; it is not the latter, and no clause of it may be read as opening a write surface.",
+    "CANONICAL_OWNER_RATIFICATION_MATERIALIZATION_PENDING": "YES",
+    "pending_basis_measured": "grep over docs/ for 'RAT-ASY' at the R2 parent tree returns exactly one file — this artifact itself. No canonical repository-level RAT-ASY-01 ratification artifact exists at the mission base, and no docs/ops/ratifications/ directory exists. RAT-ASY-01 therefore has no stable repository provenance independent of this authority file.",
+    "consequence": "This does NOT prevent authoring R2 and does not invalidate any clause frozen here. It DOES prevent final merge if repository governance requires stable owner-ratification provenance before authority integration. Recorded as a merge precondition, not as a defect of the content.",
+    "parent_hpo_c_provenance": {
+      "canonical_artifact": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json",
+      "integration_status_measured": "NOT INTEGRATED AT THE MISSION BASE. `git cat-file -e 88d95c65:docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json` fails — the path does not exist at 88d95c65. The artifact exists on the unmerged branch origin/codex/owner-ratifications-materialization-r1 at 209f4ab18f2890dc42d5b9b26c7bdc091d3dba32 (PR #137, open/draft).",
+      "read_only_disposition": "This lane READ that artifact via `git show <branch>:<path>` to quote HPO-C's canonical clause text exactly rather than paraphrasing it. It did not modify, fetch-into, merge, or otherwise touch PR #137 or its branch, as the dispatch requires.",
+      "canonical_hpo_c_clauses_quoted_verbatim": {
+        "HPO-C.1": "No general queue required.",
+        "HPO-C.2": "Durable email_deliveries record required.",
+        "HPO-C.3": "Written row-transactionally with the logical invitation event.",
+        "HPO-C.4": "Provider send attempt occurs after commit.",
+        "HPO-C.5": "Resend rotates the token; raw token not stored for resend.",
+        "HPO-C.6": "Status vocabulary: queued / accepted / failed_retryable / failed_permanent / cancelled.",
+        "HPO-C.7": "'accepted' != 'delivered'.",
+        "HPO-C.8": "Automatic retry may be deferred; manual resend required regardless.",
+        "HPO-C.9": "erasure_partial is retryable, not terminal.",
+        "HPO-C.10": "Demo/lead requests must be durably recorded.",
+        "HPO-C.11": "Retention governed by HPO-F."
       },
-      "demo_request_action": {
-        "entry_point": "app/actions/marketing/demo-request.ts, submitDemoRequest() (read in full, 87 lines) — backs the 'Solicitar demo' CTAs (module header, lines 2-6).",
-        "persistence_today": "ZERO. The module header states it outright: 'No DB write: this is a lead notification, not a persisted business record' (lines 3-6). submitDemoRequest validates (Zod, lines 16-24), checks an in-memory honeypot (lines 58-61) and an in-memory per-IP rate limit (lib/marketing/demo-request-rate-limit.ts, a bare `Map`, resets on server restart — file header lines 1-5), then calls `provider.send()` once to hola@uellix.com (lines 68-79) and returns ok/not-ok based on whether that email THREW (lines 68-85) — it never inspects whether Resend accepted the message, matching the same null-collapse defect as the invitation path.",
-        "this_is_the_object_HPO_C_names": "YES. 'demo request must persist' refers to THIS action. It currently has no durable row of any kind; a demo request that arrives while RESEND_API_KEY is unset (resend-client.ts:24-27, silent no-op) or while the send throws (demo-request.ts:82-85, caught and reported as a user-facing failure) leaves NO trace anywhere in the database — not even the audit_logs table, since this action is unauthenticated and never opens an identity/database context."
+      "why_the_quote_matters_for_B3_and_C6": "HPO-C.9 says 'retryable, not terminal' — a statement about BEHAVIOUR containing no vocabulary allocation. HPO-C.10 says 'Demo/lead requests', not 'demo requests'. R1 over-read the first and under-read the second; both are corrected in R2 against this quoted text.",
+      "precedence_note_quoted": "That artifact states of itself: 'This file is canonical for product-owner intent on HPO-A..HPO-G only. It does NOT override executable FIB/ODS/database/security authority, and it does NOT itself authorize migration, hosted mutation, staging mutation, production mutation, future ordinal allocation, exact price freezing, or exact retention-duration freezing.' R2 adopts that precedence rule unchanged for RAT-ASY-01."
+    }
+  },
+
+  "WITHDRAWN_R1_CLAIMS": [
+    {
+      "id": "W-R2-1",
+      "r1_claim": "HPO-ASY-02: 'email_deliveries.id ... is the PRIMARY KEY and the ONLY idempotency key'.",
+      "withdrawn_because": "A primary key minted per call cannot be an idempotency key for a user intent: two submissions of the same intent mint two distinct keys and both proceed to a provider call. The claim confused row identity with request identity.",
+      "replaced_by": "HPO-ASY-02 (three-identity model) and HPO-ASY-13."
+    },
+    {
+      "id": "W-R2-2",
+      "r1_claim": "HPO-ASY-03's transaction boundary, presented as sufficient to make the cancel-then-resend sequence correct.",
+      "withdrawn_because": "Atomicity is not isolation. R1 contained no serialization vocabulary of any kind, and its own post-commit classification rule admits a late 'accepted' write onto a row cancelled by a concurrent resend — no race between the two resends is even required.",
+      "replaced_by": "HPO-ASY-11 (serialization invariant) and HPO-ASY-12 (cancelled is terminal; eligibility-conditioned classification)."
+    },
+    {
+      "id": "W-R2-3",
+      "r1_claim": "The proposed audit verb 'evidence_tombstone.erasure_retry_requested', and R1's positive control P-ASY-5 which required an implementation to emit it.",
+      "withdrawn_because": "It allocates into an audit namespace governed by another domain, on the strength of a ratified clause that authorizes behaviour only, and it is unnecessary: the existing verbs already carry the distinguishing state.",
+      "replaced_by": "HPO-ASY-09 (no new verb; existing vocabulary + existing afterJson state) and HPO-ASY-14 (contract discharge for the async-domain verbs that remain)."
+    },
+    {
+      "id": "W-R2-4",
+      "r1_claim": "'versionsToSweep (line 954) already filters OUT versions at erasure_complete ... the per-version idempotence a retry needs is already present in the function'.",
+      "withdrawn_because": "FALSE, and re-measured as false. After a partial attempt NO version is left at erasure_complete, because the terminal state is applied uniformly from one scalar flag. The filter therefore excludes nothing on a retry and protects nothing. The actual idempotence is a CONTENT check, not a STATE check.",
+      "replaced_by": "MEASURED_CORRECTIONS_R2.erasure_idempotence_mechanism and HPO-ASY-09."
+    },
+    {
+      "id": "W-R2-5",
+      "r1_claim": "HPO-ASY-10 framed as 'demo request must persist', with the lead surface declared out of scope.",
+      "withdrawn_because": "The canonical owner clause is HPO-C.10 'Demo/lead requests must be durably recorded.' R1 narrowed the owner statement.",
+      "replaced_by": "HPO-ASY-10 (both halves preserved; storage object left to implementation)."
+    },
+    {
+      "id": "W-R2-6",
+      "r1_claim": "Several R1 fields attributed facts to prior-lane census memory (e.g. 'LANE F12 measurement', 'LANE F16's census', 'corroborated, not re-verified here').",
+      "withdrawn_because": "Session memory notes are not repository evidence. Any fact worth freezing is worth measuring.",
+      "replaced_by": "EVIDENCE_PROVENANCE and MEASURED_CORRECTIONS_R2 — every retained fact is re-anchored to a repository path measured at tree 4a981c49, or dropped."
+    },
+    {
+      "id": "W-R2-7",
+      "r1_claim": "R1 negative control N-ASY-3 required that 'the second call is refused' under concurrent duplicate submission.",
+      "withdrawn_because": "Unsatisfiable as written on two counts: there is no unique constraint behind the check-then-act in ANY schema lineage, and 'the second' presumes a deterministic ordering that concurrency does not provide.",
+      "replaced_by": "N-ASY-3 rewritten in the companion manifest to assert the outcome property (exactly one live relationship / one same-intent effect) rather than which request wins."
+    }
+  ],
+
+  "MEASURED_CORRECTIONS_R2": {
+    "method": "Each fact below was measured against the working tree at the R2 parent (100169b9 / tree 4a981c49) by reading the named file at the named lines. Line numbers are this lane's own count, not inherited from any other document.",
+
+    "erasure_idempotence_mechanism": {
+      "file": "lib/pipeline/evidence.ts, requestGovernedEvidenceErasure",
+      "measured_sequence": {
+        "969": "let partial = false — a SINGLE SCALAR for the whole sweep.",
+        "970_974": "if (evidence.type === 'file' && evidence.filePath) { ... supabase.storage.from('uellix-evidence').remove([evidence.filePath]); if (error) partial = true } — the storage removal is attempted UNCONDITIONALLY on every entry, including a retry, and any returned error latches `partial`.",
+        "975_982": "for (const v of versionsToSweep) { if (v.content === null) continue; try { await eraseEvidenceVersionContent(v.id) } catch { partial = true } } — the guard at :976 is a CONTENT check (`v.content === null`), not a STATE check.",
+        "984": "const finalErasureState = partial ? 'erasure_partial' : 'erasure_complete' — derived from whether THIS ATTEMPT's operations all succeeded, not from whether any work remains.",
+        "987": "await markEvidenceVersionsErasureState(versionsToSweep.map((v) => v.id), finalErasureState) — applied UNIFORMLY to every swept version (statement at :987; its STEP 3 comment at :986)."
+      },
+      "consequence_1_the_filter_protects_nothing": "Because :987 writes one state to all swept versions, a partial attempt leaves ZERO versions at erasure_complete. The versionsToSweep filter at :954 (which excludes only erasure_complete) therefore excludes nothing on the retry, and R1's attribution of retry idempotence to it is withdrawn (W-R2-4). The real idempotence on the content path is :976.",
+      "consequence_2_non_convergence": "Because :970-974 retries the storage removal unconditionally and latches `partial` on ANY error, a permanently absent storage object whose removal reports an error pins the item at erasure_partial forever, even when the requested end state — content gone — has in fact been achieved. This is the convergence defect HPO-ASY-09 must close.",
+      "existing_audit_state_is_already_sufficient": "The two governed log calls at :1017-1026 and :1028-1036 already carry, in afterJson, `versionsRequested` and `erasureState` + `versionsSwept` respectively, against AUDIT_ACTIONS.EVIDENCE_TOMBSTONE_ERASURE_REQUESTED / _COMPLETED. A retry is therefore already distinguishable from a first attempt through existing vocabulary and existing payload fields — which is why the verb R1 proposed was unnecessary as well as unauthorized."
+    },
+
+    "invitation_uniqueness_census_all_lineages": {
+      "why_a_census": "A uniqueness claim cannot be settled by reading one lineage. Four were read: db/migrations/**, db/baseline/**, db/prepared/**, db/policies/**, plus the Drizzle schema.",
+      "db_migrations": "db/migrations/0013_performance_indexes.sql:12-13 creates idx_invitations_token_hash and idx_invitations_organization_id — both NON-UNIQUE (CREATE INDEX).",
+      "db_baseline": "db/baseline/stella_g2_schema.sql:6700 and :6707 carry the same two indexes, both NON-UNIQUE.",
+      "db_prepared": "db/prepared/stella_0006_invitation_capability.sql:264 creates UNIQUE INDEX uq_invitations_token_hash — but (a) it is a PREPARED package, not applied to any database, and (b) it is keyed on token_hash, which is not the duplicate-submission dimension.",
+      "drizzle_schema": "db/schema.ts:152-156 declares exactly two index(...) entries for invitations and NO uniqueIndex and NO unique(...).",
+      "conclusion": "There is NO applied uniqueness constraint on invitations in any lineage, and none at all on (organization_id, normalized email, live-pending). The existing duplicate guard at lib/invitations/service.ts:52-64 is a SELECT-then-INSERT check-then-act with nothing behind it — a TOCTOU window, which is precisely why RAT-ASY-01's property must be made durable and transactional rather than assumed.",
+      "in_repo_precedent_for_the_shape_needed": "db/schema.ts:112 — uniqueIndex('user_single_active_membership').on(table.userId).where(sql`${table.status} = 'active'`) — shows this codebase already expresses 'at most one LIVE row per key' as a PARTIAL UNIQUE INDEX in its own schema idiom. Cited as an existing precedent class, NOT prescribed as the mechanism (see HPO-ASY-13.mechanism_left_open)."
+    },
+
+    "serialization_precedent_in_repo": {
+      "advisory_lock": "db/prepared/grounding_0002_document_versions.sql:787 — PERFORM pg_advisory_xact_lock(hashtextextended(p_evidence_id::text, 0)).",
+      "row_lock": "db/prepared/grounding_0002_document_versions.sql:893 — SELECT ... FOR UPDATE; and db/prepared/grounding_0005_claim_advisory_lock.sql:207-223 asserts structurally that the installed function body actually takes the lock, rather than trusting that it does.",
+      "why_cited": "To establish that row-level locking and transaction-scoped advisory locking are both already-present mechanism classes in this repository, so HPO-ASY-11 can require the INVARIANT while leaving the mechanism open without inventing anything."
+    },
+
+    "audit_vocabulary_contract_surface": {
+      "executable_contract_1": "tests/audit-action-contract.test.ts — present (measured, 13015 bytes). CORRESPONDENCE_SCAN_ROOTS is declared at :87-99 as exactly ['lib/pipeline', 'lib/projects/service.ts', 'lib/portfolios/service.ts', 'lib/admin']. The correspondence check itself runs at :158-172 and derives the object prefix as value.split('.')[0] at :172, comparing it against the call site's literal entityType.",
+      "measured_scan_root_gap": "CORRESPONDENCE_SCAN_ROOTS does NOT include lib/invitations/**, app/** or app/actions/marketing/**. Every call site an async-domain implementation would add is therefore OUTSIDE the correspondence scan today: the omission would produce NO red gate. This mechanism fails OPEN, which is why HPO-ASY-14 makes extending the roots an obligation of the implementing lane rather than an optional tidy-up.",
+      "executable_contract_2": "lib/audit/__tests__/logger.test.ts — present (measured, 8157 bytes). It declares AUDIT_ACTION_VALUE_PATTERN at :24 and applies it to every governed value at :43, to a further value at :53, and as a NEGATIVE assertion at :66.",
+      "audit_action_shape_pin_is_not_two_segment_at_this_tree": {
+        "measured_pattern": "lib/audit/__tests__/logger.test.ts:24 — /^[a-z_]+(\\.[a-z_]+)+$/",
+        "what_it_admits": "TWO OR MORE dot-separated lowercase-and-underscore segments. Not exactly two.",
+        "corroborating_case_in_the_same_file": "The table-driven case list in that file includes ['tenancy.organization.selection_refused', 'three segments (S3 refusal)'] as an ADMITTED value alongside the two-segment cases.",
+        "divergence_recorded_deliberately": "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json:554 describes this pin as '/^[a-z_]+\\.[a-z_]+$/, a TWO-segment shape'. That description is STALE at the R2 parent tree. R2 does not repeat it. This matters for honesty in both directions: the shape pin is NOT what would have rejected R1's foreign verb — 'evidence_tombstone.erasure_retry_requested' satisfies the pattern perfectly. What makes it unauthorized is NAMESPACE OWNERSHIP, the vocabulary LOCK, and the absence of any ratified clause allocating it — not its shape."
+      },
+      "vocabulary_lock": {
+        "id": "LOCK-AUDIT-ACTION-VOCABULARY",
+        "declared_at": "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json:554 and restated in docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json:265-270.",
+        "what_it_holds_quoted": "'The AUDIT_ACTIONS object literal in lib/audit/logger.ts.'",
+        "release_condition_quoted": "'The lock is released when PR #105 is either integrated into integration/commercial-v1 or closed. On integration, PF2 re-measures lib/audit/logger.ts at the new tip and appends its five constants on top of whatever is there ... never overwriting the other lane's entries and never removing them to obtain a green pin.'",
+        "this_lane_disposition": "NOT ACQUIRED, NOT RESERVED, NOT RELEASED, NOT REINTERPRETED by this docs-only lane. R2 names the lock so a successor cannot claim it was unknown; it does not take it."
       }
     },
 
-    "evidence_erasure": {
-      "file": "lib/pipeline/evidence.ts, requestGovernedEvidenceErasure (lines 936-1000-ish, the terminal guard and state-transition block read in full at lines 890-990)",
-      "current_terminal_guard": "Line 948: `if (current.erasureState === 'erasure_complete' || current.erasureState === 'erasure_partial') { throw new Error('Evidence content has already been erased') }` — evaluated against the CURRENT (latest) version only, and it refuses re-entry for BOTH terminal outcomes alike.",
-      "why_erasure_partial_is_reachable": "partial is set (line 973, 980) when either the storage `.remove()` call fails (lines 971-974) or an individual version's `eraseEvidenceVersionContent` call throws (lines 976-982) during the STEP 2 sweep; finalErasureState becomes 'erasure_partial' (line 984) whenever at least one of those external operations failed, even though STEP 1 (line 961) already durably recorded every targeted version as 'erasure_requested' before either external call was attempted.",
-      "the_defect_HPO_C_names": "Because line 948 treats erasure_partial as equally terminal to erasure_complete, an evidence item that partially failed to erase (e.g. the storage object was removed but one version's content write threw) can NEVER be swept again through this governed path. The FIBC-009 erasure obligation becomes permanently unsatisfiable for that item's remaining un-erased content, with no operator-visible recovery route.",
-      "existing_scaffolding_this_authority_reuses": "versionsToSweep (line 954) already filters OUT versions at erasure_complete ('Forward-only ... a version already at the terminal erasure_complete state ... is never regressed') — the per-version idempotence a retry needs is already present in the function; only the OUTER guard at line 948 currently prevents reaching it a second time when the aggregate state is erasure_partial.",
-      "tombstone_vocabulary": "evidence_tombstones.erasure_state CHECK already accepts exactly {erasure_complete, erasure_partial, erasure_blocked} (comment at lines 916-917); EVIDENCE_TOMBSTONE_ERASURE_COMPLETED already covers the partial case in logger.ts per prior LANE F12 measurement (the verb name overstates what the payload records, which the payload itself corrects — LANE F12 finding, corroborated, not re-verified line-by-line here since AUDIT_ACTIONS content is unchanged since that census per the F12→F4 STILL_TRUE reconciliation)."
+    "role_hierarchy_semantics": {
+      "measured": "lib/auth/permissions.ts:48-50 — canInviteUsers(role) returns hasRole(role, 'organization_admin'); hasRole at lib/auth/permissions.ts:24-26 is ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole]; lib/auth/roles.ts:38-41 gives ROLE_HIERARCHY super_admin = 100, organization_admin = 80.",
+      "consequence": "The TENANT role value 'super_admin' (ROLES.SUPER_ADMIN, a value of organization_members.role) satisfies every organization_admin-level permission check by numeric dominance, including canInviteUsers. Any control that asserts 'only organization_admin may resend' must be written knowing this, or it will assert a falsehood about the current system.",
+      "what_this_is_NOT": "This is a TENANT role hierarchy fact. It is NOT a statement about a platform principal, and the two must not be conflated — see HPO-ASY-08.platform_admin_boundary_deferred."
+    },
+
+    "demo_and_lead_surfaces": {
+      "demo_surface": "app/actions/marketing/demo-request.ts — submitDemoRequest performs ZERO durable writes; its module header states 'No DB write: this is a lead notification, not a persisted business record.' A validated, non-honeypot submission that arrives while the provider is unconfigured or failing leaves no durable trace of any kind.",
+      "lead_surface_is_NOT_operationally_discharged": "app/api/marketing/lead/route.ts declares LEAD_CAPTURE_POLICY_AVAILABLE = false and refuses explicitly BEFORE attempting any write, and its header records the reason the write would fail anyway: the marketing_leads policies are role-scoped to anon/authenticated, the runtime connects as uellix_app which is a member of neither, so no policy applies and RLS refuses. MEASURED CONCLUSION: the lead half is NOT durably recorded today either. R2 therefore does not claim the lead half is already discharged; it records that HPO-C.10's policy reaches both surfaces and that the lead surface's repair is owned by its own capability lane (CAP-04 / docs/ops/capabilities/CAP_04_PUBLIC_LEADS.md), not opened here.",
+      "honeypot_unchanged": "app/actions/marketing/demo-request.ts:58-61 short-circuits a honeypot submission to {ok:true} with no send and no write. That must remain true after durability lands: a honeypot hit is deliberately not a real submission."
+    },
+
+    "provider_adapter_outcomes": {
+      "measured": "lib/email/resend-client.ts — send() returns null at :24-27 when no API key is configured (console.warn only), and returns null at :37-40 when Resend reports an error (console.error of error.message only, then discard). A successful send returns { id } at :42.",
+      "consequence": "At this tree the three outcomes — unconfigured, provider error, success-without-id — are INDISTINGUISHABLE to every caller, all arriving as null. Any classifier built on the current return type would have to map null to something; mapping it to a success state is the specific failure C-1 forbids (HPO-ASY-04.fail_closed_default)."
     }
   },
 
-  "minimum_substrate": {
-    "disposition": "OPTION C from LANE F12's candidate set, ratified by HPO-C as the binding target's five states plus the transactional/post-commit split — not re-opened for debate here.",
-    "one_new_durable_object": "email_deliveries — a dedicated table, distinct from stripe_webhook_events and from operation_tickets, scoped to Resend-backed notification sends only (invitation and, per demo_persistence_semantics, the demo request's own row references its own send the same way).",
-    "one_existing_object_reused_unmodified_in_shape": "stripe_webhook_events remains exactly what CAP-03 defines it as. Nothing in this authority adds a column to it, widens its CHECK constraints, or routes any non-Stripe event through it.",
-    "one_existing_flow_generalized": "the commit-then-send split already implemented for invitations (existing_invitation_flow.commit_before_send_already_implemented) becomes the general rule for every notification this authority governs, not a pattern reinvented per-caller.",
-    "two_state_fixes_required_no_new_object": "erasure_partial recovery (erasure_partial_recovery_semantics) and demo request persistence (demo_persistence_semantics) — both close a gap in EXISTING code paths and do not require a new table beyond, at most, one narrow demo_requests-shaped row for the second.",
-    "explicitly_not_built": [
-      "a general-purpose queue, job, or outbox table serving more than one notification kind",
-      "a worker process, cron job, or scheduled function of any kind",
-      "a retry/backoff engine",
-      "a unification of stripe_webhook_events and email_deliveries under one schema or one set of functions"
-    ]
+  "IDENTITY_MODEL": {
+    "correction_of": "B-2.",
+    "INVITATION_ID": {
+      "what_it_is": "The stable business relationship/request record: public.invitations.id (db/schema.ts:140). One per outstanding invitation relationship between an organization and a normalized email address.",
+      "lifecycle": "Created once. A resend does NOT create a new one — it rotates the credential ON this row (HPO-ASY-05). Its status vocabulary (pending/accepted/revoked/expired) is the INVITATION's lifecycle and is never merged with delivery status."
+    },
+    "ACTION_REQUEST_ID": {
+      "what_it_is": "The idempotency identity of ONE USER INTENT, per RAT-ASY-01. Opaque, generated once by the application/UI for that intent.",
+      "same_intent_replay": "Transport retry, network retry, double-click and repeated submission of the SAME intent all carry the SAME action_request_id, and must produce the effects of ONE intent: at most one invitation, at most one rotation, at most one delivery attempt, at most one provider call.",
+      "new_intent": "A deliberately new resend is a NEW intent and carries a NEW action_request_id.",
+      "enforcement_requirement": "MUST be durable and transactionally enforced. A UI-side guard, a client-side disabled button, an in-memory map, or any process-local structure is NOT sufficient and does not discharge this requirement."
+    },
+    "DELIVERY_ATTEMPT_ID": {
+      "what_it_is": "The identity of a SINGLE provider-attempt row in email_deliveries.",
+      "relationship_to_pk": "The delivery table's primary key MAY equal DELIVERY_ATTEMPT_ID.",
+      "explicit_prohibition": "It MUST NOT be described, relied upon, or tested as sufficient idempotency identity for a user intent. R1 made exactly that error (W-R2-1). A per-call identifier answers 'which attempt row is this?' and can never answer 'is this the same intent I already served?'"
+    },
+    "collapsing_any_two_is_a_defect": "The three answer three different questions — which relationship, which intent, which attempt. An implementation that uses one identifier for two of these roles reintroduces either the duplicate-submission defect (intent collapsed into attempt) or the rotation defect (relationship collapsed into intent)."
   },
 
   "hpo_dispositions": {
     "HPO-ASY-01": {
       "title": "SCOPE — one table, no queue platform, no generalization",
-      "disposition": "email_deliveries is authorized as a single, purpose-built table for Resend-backed notification sends (invitation email today; demo-request notification per HPO-ASY-10). It is NOT a queue, NOT a job table, and carries NO `kind`/`payload` polymorphism that would let an unrelated future notification type be bolted on without its own HPO review. stripe_webhook_events and operation_tickets are reconciled as PATTERN references only (reconciled_current_state above) and are not modified, extended, or merged."
+      "revision": "UNCHANGED FROM R1.",
+      "disposition": "email_deliveries is authorized as a single, purpose-built table for provider-backed notification sends. It is NOT a queue, NOT a job table, and carries NO kind/payload polymorphism that would let an unrelated future notification type be bolted on without its own ratified decision. stripe_webhook_events and operation_tickets are reconciled as PATTERN references only and are not modified, extended, or merged. Discharges canonical HPO-C.1 and HPO-C.2."
     },
+
     "HPO-ASY-02": {
-      "title": "Email delivery identity and idempotency",
-      "disposition": "Identity is SERVER-ISSUED at row-creation time and IS the idempotency boundary, mirroring the argument in operation_tickets (`reconciled_current_state.operation_tickets`) and the mechanism in stripe_webhook_events (`event_id` as PRIMARY KEY). email_deliveries.id (a server-generated UUID or an opaque digest of two independent random UUIDs, in the style of INT-INT-001 §5's ticket_id — the exact form is an implementation-time choice, not fixed here) is the PRIMARY KEY and the ONLY idempotency key: it is never derived from message content, recipient address, or invitation id, because a derived key would let two logically distinct send attempts (e.g. the original send and a rotated resend) collide or, conversely, would let a client-controlled retry of the identical logical attempt mint a second row. A manual RETRY of an existing attempt (HPO-ASY-08) re-uses the SAME row id and transitions its state; a RESEND (HPO-ASY-05) is a logically NEW attempt bound to a NEW invitation token and therefore gets a NEW email_deliveries row — it is never modeled as a retry of the old one.",
-      "closed_field_list_minimum": ["id (PK, server-issued)", "organization_id (tenancy bound, NOT NULL)", "reference_type (closed vocabulary, e.g. 'invitation' | 'demo_request' — NOT free text)", "reference_id (the invitations.id or demo_requests.id this delivery is FOR)", "status (CHECK, exactly the five HPO-C states)", "attempts (integer, counts manual attempts only — never incremented by anything automatic)", "last_error_code (CHECK, closed vocabulary, NOT the provider's free-text message — see pii_minimization)", "queued_at / accepted_at / failed_at / cancelled_at (nullable timestamps, at most one of accepted_at/failed_at/cancelled_at ever set, matching stripe_webhook_events' completed_at/failed_at split)"],
-      "explicitly_absent_fields": ["no email body / html column", "no raw token column (see HPO-ASY-05)", "no provider raw response/payload column", "no free-text error message column"]
+      "title": "Delivery / request identity and idempotency",
+      "revision": "REVISED AT R2 — B-2. R1's 'the PK is the ONLY idempotency key' is withdrawn (W-R2-1).",
+      "disposition": "The three identities of IDENTITY_MODEL are distinct and must remain distinct in schema, in code and in tests. Idempotency of a user intent is carried by ACTION_REQUEST_ID and by nothing else.",
+      "enforceable_uniqueness_boundary": {
+        "required_property": "For a given invitation relationship, an action_request_id may take effect AT MOST ONCE. A replay of the same action_request_id must be recognized and must produce no second invitation, no second rotation, no second delivery attempt and no second provider call.",
+        "durability_requirement": "The property MUST be durable and transactionally enforced — the recognition of a replay and the effects it guards must be decided inside the same transaction that would perform those effects, so that two concurrent replays cannot both pass the check.",
+        "mechanism_left_open": "The implementer MAY discharge this as a database UNIQUE key, an invitation-scoped request table, a constraint on the delivery row, or another equivalent durable mechanism. This authority deliberately does not choose, and a successor lane must NOT be required to infer a choice that was never frozen.",
+        "explicitly_insufficient": ["a UI-side or client-side guard", "an in-memory or per-process map", "a time-based debounce or cooldown (prohibited outright by RAT-ASY-01)", "a check-then-act SELECT with no constraint behind it — the measured shape of the current duplicate guard at lib/invitations/service.ts:52-64"]
+      },
+      "closed_field_list_minimum": ["delivery_attempt_id (PK, server-issued)", "organization_id (tenancy bound, NOT NULL)", "reference_type (closed vocabulary — NOT free text)", "reference_id (the invitation or demo/lead record this delivery is FOR)", "action_request_id (the intent that produced this attempt)", "status (CHECK, exactly the five ratified states)", "attempts (integer; incremented only by manual attempts)", "last_error_code (CHECK, closed vocabulary — never the provider's free-text message)", "queued_at / accepted_at / failed_at / cancelled_at (nullable; at most one terminal timestamp set)"],
+      "explicitly_absent_fields": ["no email body / html column", "no raw token column", "no provider raw response/payload column", "no free-text error message column"]
     },
+
     "HPO-ASY-03": {
       "title": "Transaction boundary",
-      "disposition": "The email_deliveries row is created in status='queued' inside the SAME database transaction that persists the referenced business row (the invitations insert, or — per HPO-ASY-10 — the demo_requests insert) and its audit entry. This generalizes the EXISTING, already-correct pattern at app/app/organization/members/actions.ts:36-42 / lib/invitations/service.ts:70-90 rather than introducing a new one. The provider.send() call happens STRICTLY AFTER that transaction has returned (committed) — never inside it, and never inside any transaction at all. A resend (HPO-ASY-05) follows the same rule: the new invitations token-rotation UPDATE, the new email_deliveries 'queued' row, and the cancellation of the superseded email_deliveries row are one transaction; the new provider.send() call happens after it commits.",
-      "explicit_negative": "A transaction is never held open across a provider network call. This is not a performance preference; it is the same correctness argument already recorded in the current code (a token/business row that commits and then a provider call that stalls holding row locks is the exact hazard actions.ts:36-38's comment names)."
+      "revision": "REVISED AT R2 — B-1. R1's implication that this boundary was sufficient is withdrawn (W-R2-2).",
+      "disposition": "The email_deliveries row is created in status='queued' inside the SAME database transaction that persists the referenced business row and its audit entry — discharging canonical HPO-C.3. The provider call happens STRICTLY AFTER that transaction commits, never inside it and never inside any transaction — discharging canonical HPO-C.4. The measured precedent for this split already exists at app/app/organization/members/actions.ts:36-42, where createInvitation returns an unsent closure that is invoked only after withOrganizationDatabaseContext returns.",
+      "atomicity_is_not_isolation": "STATED EXPLICITLY BECAUSE R1'S OMISSION OF IT WAS A BLOCKER. Wrapping writes in one transaction makes them all-or-nothing; it does NOT order them against a concurrent transaction, and it does NOT protect a row from being transitioned by work that is still in flight from an earlier committed transaction. Everything this boundary does not provide is provided by HPO-ASY-11 and HPO-ASY-12, and no clause of this disposition may be read as supplying it."
     },
+
     "HPO-ASY-04": {
       "title": "Provider attempt semantics and result categories",
-      "disposition": "Exactly ONE provider.send() call is made per manual attempt (initial create, or an explicit manual retry/resend). The result of that single call is classified into exactly one of the five HPO-C states before the function returns control to its caller — never left as an untyped null the way resend-client.ts:24,39 and lib/invitations/email.ts:44-46 do today.",
+      "revision": "REVISED AT R2 — C-1 (fail-closed default) and B-1 (eligibility-conditioned transition).",
+      "disposition": "Exactly ONE provider call is made per authorized attempt. The result is classified into exactly one of the five ratified states before control returns, and the transition is applied subject to HPO-ASY-12's eligibility condition.",
       "result_categories": {
-        "queued": "The email_deliveries row exists and no provider call has yet been attempted, or an attempt is about to be made. This is the state the row is created in, inside the transaction (HPO-ASY-03).",
-        "accepted": "The provider call returned successfully (a message id was returned, matching the `data.id` branch at resend-client.ts:42). This means the PROVIDER ACCEPTED THE MESSAGE FOR DELIVERY. It is a terminal-for-this-attempt state but it is explicitly NOT a claim of delivery, bounce-free receipt, or the recipient having seen the message (see accepted_never_means_delivered).",
-        "failed_retryable": "The provider call failed in a way a human-initiated retry could plausibly succeed at (e.g. a transient network/5xx condition, a rate limit, a temporary provider-side error). Classification detail (which Resend error shapes map here) is an implementation-time decision against the pinned SDK version, not fixed by this authority — but the row MUST carry a closed-vocabulary last_error_code, never the raw SDK error text (pii_minimization).",
-        "failed_permanent": "The provider call failed in a way no retry of the SAME message will fix (e.g. a malformed/rejected recipient address, a policy rejection). A failed_permanent invitation delivery does not block a RESEND once the operator changes something material (typically nothing changes for an invitation resend except the token — if the recipient address itself was the defect, the underlying invitation must be revoked and re-created, which is out of scope for the delivery ledger to decide).",
-        "cancelled": "The row was superseded before (or without) a terminal provider outcome — the only two authorized triggers are a resend (HPO-ASY-05, the OLD delivery for a rotated token is cancelled) and a revoke (revokeInvitation already exists at lib/invitations/service.ts:119-151; a queued/accepted delivery for a revoked invitation is cancelled, never fired at nor left dangling)."
+        "queued": "The row exists; no provider call has been made yet. This is the creation state, written inside the transaction.",
+        "accepted": "The provider accepted the message for delivery. Terminal for this attempt. Discharges canonical HPO-C.7: it is NOT a claim of delivery, receipt, bounce-freedom, or the recipient having seen anything.",
+        "failed_retryable": "The attempt failed in a way a human-initiated retry could plausibly succeed at.",
+        "failed_permanent": "The attempt failed in a way no retry of the same message will fix.",
+        "cancelled": "The row was superseded before or without a terminal provider outcome — by a resend (HPO-ASY-05) or by revocation of the underlying invitation. TERMINAL (HPO-ASY-12)."
       },
-      "accepted_never_means_delivered": "Restated because HPO-C is explicit and this is the state most likely to be misread in a UI: 'accepted' records that Resend's API returned success for the send call. It carries NO information about bounce, spam-folder placement, or the recipient opening the message. No UI text, audit action name, or variable name introduced under this authority may use the word 'delivered' for this state."
+      "fail_closed_default": {
+        "rule": "If the provider adapter has no configured key, returns an unclassifiable operational error, or presents a failure this authority's closed error vocabulary cannot map safely, the delivery MUST fail closed into a NON-SUCCESS state. Classifying any of these as 'accepted' is prohibited.",
+        "default_state": "A configuration or provider condition that MAY succeed after correction is represented as failed_retryable, unless a measured permanent condition proves otherwise. An unconfigured provider key is the canonical example: correcting the configuration and retrying is exactly the path to success, so it is retryable, not permanent.",
+        "no_invented_discriminants": "This authority does NOT enumerate Resend SDK error shapes and does not invent discriminants for them. The classification table is built at implementation time against the pinned SDK, and until it exists every unmapped outcome takes the fail-closed default above.",
+        "why_this_needed_saying": "MEASURED: lib/email/resend-client.ts returns null for BOTH the unconfigured case (:24-27) and the provider-error case (:37-40). An implementer wiring status onto today's return type sees only null and has no shape to discriminate on — so the default must be stated, or the cheapest implementation is to treat a completed call as success."
+      },
+      "accepted_never_means_delivered": "No UI string, audit verb, column name, variable name or test description introduced under this authority may use 'delivered' (or a localized equivalent implying receipt) for the accepted state."
     },
+
     "HPO-ASY-05": {
       "title": "Resend / token-rotation semantics",
-      "disposition": "A manual 'Resend' action on a pending invitation (i) generates a NEW raw token exactly as createInvitation does today (lib/invitations/service.ts:66-67), (ii) UPDATEs the SAME invitations row's tokenHash and expiresAt to the new values (the invitation's identity — id, email, role — does not change; only its credential does), (iii) transitions any prior email_deliveries row for that invitation that is still in 'queued' or 'accepted' to 'cancelled' (a stale accepted delivery pointed a working link at a now-invalidated token hash — leaving it 'accepted' would be a lie about what that link now does), and (iv) creates a NEW email_deliveries row in 'queued', bound to the SAME invitation reference_id, in the SAME transaction as (ii) and (iii). The provider send for the new token happens after that transaction commits (HPO-ASY-03). Because the raw token is only ever transient (existing_invitation_flow.token_identity), rotation is not a workaround for an inability to resend the old link — it is the ONLY mechanism that can produce a working link a second time, which is exactly why HPO-C forbids the alternative (encrypting the raw token at rest) rather than merely declining to require it: that alternative is a materially larger PII/secret-custody surface for a capability rotation already satisfies for free.",
-      "explicit_prohibition": "No column anywhere (invitations, email_deliveries, or any future table) may store the raw token in a form recoverable by the application — hashed-only remains the sole persisted form, unchanged from today's schema (db/schema.ts:145)."
+      "revision": "REVISED AT R2 — B-1 and B-2 (serialization, intent identity, exactly-once rotation).",
+      "disposition": "A manual resend carrying a NEW action_request_id: (i) mints a new raw token, (ii) rewrites the SAME invitation row's token hash and expiry — the relationship identity (id, email, role) is unchanged, only the credential rotates, (iii) transitions any prior still-actionable delivery for that invitation to 'cancelled', and (iv) creates a NEW delivery row in 'queued' bound to the same invitation and to the new action_request_id. Steps (ii)-(iv) occur in ONE transaction, under the serialization invariant of HPO-ASY-11. The provider call for the new token happens after that transaction commits.",
+      "rotation_is_exactly_once_per_intent": "One new resend intent rotates the token EXACTLY ONCE. A replay of that intent's action_request_id rotates NOTHING and calls the provider NOT AT ALL (RAT-ASY-01). An implementation that rotates on every request to the resend endpoint violates the ratification even if each rotation is individually atomic.",
+      "why_rotation_rather_than_re_emission": "MEASURED: the raw token exists only in the request that mints it — lib/invitations/service.ts:66-67 generates it and persists only its SHA-256 at db/schema.ts:145. It cannot be reconstructed from what is stored. Rotation is therefore the only mechanism that can produce a working link a second time, which is why canonical HPO-C.5 forbids the alternative rather than merely declining to require it.",
+      "explicit_prohibition": "No column in any table may store the raw token in a form recoverable by the application — no plaintext, no reversible encryption, no keyed derivation that permits re-emission. Hash-only remains the sole persisted form."
     },
+
     "HPO-ASY-06": {
       "title": "PII minimization",
-      "disposition": "email_deliveries follows stripe_webhook_events' discipline exactly (reconciled_current_state.stripe_webhook_specialized_ledger): NO payload column, ever. Specifically: (a) no email HTML/body is persisted — the template is regenerable from the referenced invitation/demo_request row plus the (already-existing) template functions, so persisting a rendered copy would be a second, driftable copy of the same PII for no operational gain; (b) no raw provider response is persisted, only the closed-vocabulary last_error_code (HPO-ASY-02); (c) the recipient email address is NOT duplicated onto email_deliveries — it is reached via reference_id -> invitations.email (or -> demo_requests.email per HPO-ASY-10), so there is exactly one durable copy of the address, not two that can diverge; (d) attempts is a count, never a log of each attempt's raw error text.",
-      "retention": "Explicitly NOT decided here. HPO-C is unambiguous: 'Retention/PII duration remains governed by HPO-F/legal review; do not invent number of days.' This authority defines NO default TTL, NO cron-based purge, and NO column implying one (e.g. no `purge_after` default value). A successor lane may add a nullable retention marker only once HPO-F fixes a number; inventing a placeholder number now would itself be the prohibited act."
+      "revision": "UNCHANGED FROM R1 in substance; retention clause re-anchored to canonical HPO-C.11.",
+      "disposition": "No payload column, ever: (a) no rendered email body — it is regenerable from the referenced row plus the existing templates, so a stored copy is a second, driftable copy of the same PII for no operational gain; (b) no raw provider response — only a closed-vocabulary error CODE; (c) the recipient address is NOT duplicated onto the delivery row, but reached through reference_id, so exactly one durable copy exists; (d) attempts is a count, not a log of raw errors.",
+      "retention": "NOT DECIDED HERE. Canonical HPO-C.11 assigns retention of these records to HPO-F. This authority defines no TTL, no purge, and no column whose default implies a duration. Inventing a placeholder number would itself be the prohibited act."
     },
+
     "HPO-ASY-07": {
       "title": "UI-visible semantics",
-      "disposition": "The organization members UI (app/app/organization/members/**, currently rendering only invitations.status: pending/accepted/revoked/expired) is authorized to additionally surface email_deliveries.status per pending invitation, as a SEPARATE, clearly-labeled field — never merged into or overwritten by invitations.status, since the two answer different questions (has the invite been accepted vs did the email get to the provider). Required UI vocabulary: 'queued' MAY render as 'Enviando…'/'Sending…'; 'accepted' MUST render as language equivalent to 'Sent' or 'Accepted by provider' and MUST NOT render as 'Delivered' or imply the recipient received it (HPO-ASY-04.accepted_never_means_delivered); 'failed_retryable' and 'failed_permanent' MUST both surface a visible 'Resend' affordance (HPO-ASY-08 governs who may click it); 'cancelled' MAY be hidden from the default view (it is superseded, not actionable) but MUST remain queryable for support/audit. This closes the specific defect LANE F16's census recorded (a prior independent measurement, corroborated not re-verified here) that invitation confirmations are otherwise invisible in this UI."
+      "revision": "REVISED AT R2 — evidence re-anchored (C-7); memory-note citation removed.",
+      "disposition": "The members surface may render delivery status per invitation as a SEPARATE, clearly-labelled field, never merged into or overwritten by the invitation's own status — the two answer different questions. Required vocabulary: 'accepted' must render as 'sent'/'accepted by provider' or equivalent and MUST NOT imply receipt; 'failed_retryable' and 'failed_permanent' must both surface a resend affordance; 'cancelled' may be hidden from the default view but must remain queryable for support and audit.",
+      "measured_basis": "app/app/organization/members/actions.ts redirects to a fixed ?success=invited on every non-throwing path (:55), so the current surface cannot distinguish a delivered invite from one whose send silently no-opped. That is the defect this disposition closes, measured in the route itself rather than cited from elsewhere."
     },
+
     "HPO-ASY-08": {
-      "title": "Manual retry authorization",
-      "disposition": "A manual retry (re-attempting the SAME email_deliveries row, e.g. after failed_retryable) or a resend (HPO-ASY-05, a new row) is authorized under the EXACT SAME actor and tenancy boundary as the existing invite/revoke actions: `canInviteUsers(membership.role)` (lib/invitations/service.ts:42,121) gates the action, and the acting organization's id MUST equal the referenced invitation's organizationId (mirroring revokeInvitation's explicit cross-org check, lib/invitations/service.ts:131, 'if (invitation.organizationId !== ctx.organization.id) throw new Error(\"Forbidden\")'). No lesser role, and no actor from a different organization even holding a valid session, may retry or resend a delivery belonging to another organization's invitation. This is a negative control this authority requires be tested (see companion manifest, cross-org authorization)."
+      "title": "Manual retry / resend authorization",
+      "revision": "REVISED AT R2 — C-2 (tenant role inheritance recorded; platform boundary deferred).",
+      "disposition": "A manual retry or resend is authorized under the SAME actor and tenancy boundary as the existing invite/revoke actions: the permission predicate is canInviteUsers(membership.role) (lib/auth/permissions.ts:48-50), and the acting organization's id MUST equal the referenced invitation's organizationId — mirroring the explicit cross-organization refusal already present at lib/invitations/service.ts:131.",
+      "tenant_role_inheritance_recorded": "MEASURED AND STATED SO NO CONTROL ASSERTS A FALSEHOOD: canInviteUsers inherits tenant role-hierarchy semantics (hasRole, lib/auth/permissions.ts:24-26, numeric dominance over ROLE_HIERARCHY at lib/auth/roles.ts:38-41). The TENANT role value 'super_admin' scores 100 against organization_admin's 80 and therefore SATISFIES this permission. A negative control may assert that roles BELOW organization_admin are refused; it may NOT assert that 'only organization_admin' passes.",
+      "platform_admin_boundary_deferred": "The tenant role value 'super_admin' is NOT a PLATFORM_PRINCIPAL and must not be conflated with one. This authority does not resolve, narrow, widen or interpret the platform-admin boundary; that boundary is deferred to HPO-D and its lane. R2 fails closed against it: NO clause here introduces, authorizes or relies upon any platform-admin bypass of the tenancy check.",
+      "cross_org_is_mandatory_and_unconditional": "Cross-organization authorization is mandatory regardless of role. No role value, tenant or otherwise, may retry or resend a delivery belonging to another organization's invitation."
     },
+
     "HPO-ASY-09": {
       "title": "erasure_partial recovery semantics",
-      "disposition": "The terminal guard at lib/pipeline/evidence.ts:948 is authorized to be narrowed so that erasure_partial no longer blocks re-entry into requestGovernedEvidenceErasure for the SAME evidence item, while erasure_complete continues to block it exactly as today. The retry MUST reuse the existing versionsToSweep filter (evidence.ts:954, already excludes erasure_complete versions) unchanged — a retry only ever re-attempts versions that are NOT already at the terminal complete state, never all versions unconditionally. The three-step sequence (durable erasure_requested write FIRST, then the external/content operation, then the durable terminal/partial write) is unchanged and applies identically on retry. A NEW governed audit verb is authorized for this specific transition — 'evidence_tombstone.erasure_retry_requested' — logged the same way and at the same point AC-1 logs 'erasure_requested' today (evidence.ts comment block, lines 913-925), so a retry is auditably distinguishable from a first attempt rather than silently re-emitting the same verb. erasure_blocked is unaffected: it remains unreachable at this stage exactly as documented (evidence.ts comment, lines 927-934) and this authority does not activate it.",
-      "explicit_non_goal": "This is a state-machine correction, not a durability/queue mechanism. Re-sweeping remains a SYNCHRONOUS, manually-triggered call — the same shape as today's single call — not a background retry loop. No automatic re-sweep is authorized (consistent with HPO-C's 'no automatic retry/cron is required for V1')."
+      "revision": "REVISED AT R2 — B-3 (foreign verb removed) and B-4 (mechanism corrected, convergence required).",
+      "disposition": "Discharges canonical HPO-C.9 ('erasure_partial is retryable, not terminal') as BEHAVIOUR ONLY. The terminal guard that today refuses re-entry for both terminal outcomes (lib/pipeline/evidence.ts:948) is authorized to be narrowed so that erasure_partial admits a further governed sweep, while erasure_complete continues to refuse re-entry exactly as today.",
+      "frozen_requirements": [
+        "erasure_complete REMAINS TERMINAL — re-entry stays refused.",
+        "erasure_partial MAY BE RE-ENTERED through the same governed entry point.",
+        "A retry MUST NOT resurrect content. Nothing on the retry path may write content back, restore a prior value, or re-populate a cleared field.",
+        "Already-null database content is SKIPPED. This is the actual idempotence mechanism at this tree (the content check measured at lib/pipeline/evidence.ts:976) and it must be preserved, not replaced by a state check — because after a partial attempt no version carries erasure_complete to check against (MEASURED_CORRECTIONS_R2.erasure_idempotence_mechanism).",
+        "Deletion of an already-absent storage object MUST be treated idempotently, or otherwise monotonically, so a retry can converge.",
+        "A permanently missing storage object MUST NOT pin the item at erasure_partial forever when the requested end state has already been achieved.",
+        "A retry remains tenant- and project-scoped by the EXISTING authorization chain (requireOrganizationAccess, the erase-permission predicate, and project-ownership verification already present at the head of the function). No retry path may bypass, weaken or shortcut that chain."
+      ],
+      "terminal_determination_must_follow_RESIDUAL_WORK_not_ATTEMPT_OUTCOME": {
+        "the_correction": "At this tree the terminal state is derived from whether THIS ATTEMPT's operations all returned success (the scalar at :984, applied uniformly at :987). That is what makes a permanently-absent object latch erasure_partial forever. The frozen requirement is that the terminal determination be a function of WHAT REMAINS — is any governed content still present? — rather than of whether each operation in this pass reported success.",
+        "consequence": "If nothing remains to erase, the end state is erasure_complete even though an individual removal call reported an error for an object that was already gone. If something does remain, the state stays erasure_partial and the item stays retryable. This is what makes convergence reachable in finitely many manual attempts.",
+        "no_vendor_strings": "The 'already absent' condition MUST NOT be established by matching vendor-specific storage error text. This authority freezes no such string and forbids pinning one. Acceptable means include making the removal monotone (an absent object is a satisfied postcondition) or verifying absence after the attempt — the choice is an implementation decision measured against the pinned client, not frozen here."
+      },
+      "NO_NEW_AUDIT_VERB": {
+        "withdrawn": "R1's 'evidence_tombstone.erasure_retry_requested' is WITHDRAWN IN FULL (W-R2-3). No implementation under this authority may introduce it, and no control may require it.",
+        "why_unauthorized": "Canonical HPO-C.9 authorizes retry behaviour; it allocates no vocabulary. The evidence_tombstone.* namespace is governed by another domain, and the canonical ratification artifact states of itself that it does not override executable authority. A behaviour clause is not an allocation licence.",
+        "why_also_unnecessary": "MEASURED: the existing calls at lib/pipeline/evidence.ts:1017-1026 and :1028-1036 already emit EVIDENCE_TOMBSTONE_ERASURE_REQUESTED and EVIDENCE_TOMBSTONE_ERASURE_COMPLETED carrying versionsRequested, versionsSwept and erasureState in afterJson. A retry is already distinguishable from a first attempt through existing vocabulary and existing payload state.",
+        "auditability_requirement_that_remains": "The retry MUST remain auditable through that existing vocabulary and its existing afterJson state. If a future audit-vocabulary authority separately authorizes a new verb, that is its decision to make — not this authority's, and not an implementer's."
+      }
     },
+
     "HPO-ASY-10": {
-      "title": "Demo persistence semantics",
-      "disposition": "submitDemoRequest (app/actions/marketing/demo-request.ts) is authorized to gain exactly one new durable row per submission, written BEFORE the notification email is attempted (the REVERSE order-of-priority from the invitation flow, and deliberately so: here the demo request itself — not a delivery record about it — is the business fact HPO-C requires survive a provider outage). Minimum column set, mirroring the PII-minimization discipline of HPO-ASY-06: id, name, organization (free text as submitted), email, message (nullable, as submitted), ip (already collected at demo-request.ts:41-45, for rate-limit correlation — retained at the same minimization level already in force, not expanded), created_at. This is a NEW table (name not fixed here — NOT `marketing_leads`, per reconciled_current_state.marketing_leads_and_demo's explicit disambiguation of the two features) or, if a successor lane finds it materially simpler, a narrowly-scoped `reference_type='demo_request'` row referenced by an email_deliveries entry the same way an invitation is — that choice is left open for implementation, but creating NO row at all is no longer authorized. The honeypot short-circuit (demo-request.ts:58-61, silently returns ok without sending or persisting) is UNCHANGED: a tripped honeypot must continue to produce zero durable trace, since it is deliberately not a real submission. The existing in-memory per-IP rate limit (lib/marketing/demo-request-rate-limit.ts) is UNCHANGED and out of scope — HPO-C does not ask for durable rate limiting, and generalizing it is exactly the scope creep §1 of this authority forbids.",
-      "notification_send_relationship": "The notification email to hola@uellix.com MAY still be attempted synchronously in the same request, after the demo_request row commits, and MAY reuse the same email_deliveries table (reference_type='demo_request') for its own queued/accepted/failed_retryable/failed_permanent/cancelled tracking — but a failure of that send MUST NOT cause the demo_requests row itself to be rolled back or deleted; the two are governed by the transaction boundary rule (HPO-ASY-03) exactly as invitations are, with the demo_requests insert playing the role invitations.insert plays today."
-    }
-  },
-
-  "email_delivery_model": {
-    "identity_and_idempotency": "See HPO-ASY-02 verbatim.",
-    "closed_state_set": ["queued", "accepted", "failed_retryable", "failed_permanent", "cancelled"],
-    "state_diagram": "queued -[provider call succeeds]-> accepted (terminal-for-attempt) ; queued -[provider call fails, retryable]-> failed_retryable -[manual retry]-> queued ; queued -[provider call fails, permanent]-> failed_permanent (terminal, no auto-retry; a resend creates a NEW row instead of transitioning this one) ; {queued|accepted} -[superseded by resend or by invitation revoke]-> cancelled (terminal)",
-    "no_state_named_delivered": "Deliberate. 'delivered'/'bounced'/'opened' would require a provider webhook (Resend delivery events) this authority does not authorize wiring — see out_of_scope.",
-    "audit_relationship": "email_deliveries is a STATE ledger, not a replacement for audit_logs. AUDIT_ACTIONS.INVITATION_SENT keeps its current meaning and timing exactly (reconciled_current_state.invitation_sent_audit_ordering). New audit verbs authorized for governed vocabulary, to be added to lib/audit/logger.ts's AUDIT_ACTIONS map by a successor lane (not created by this artifact): 'email_delivery.accepted', 'email_delivery.failed_retryable', 'email_delivery.failed_permanent', 'email_delivery.cancelled', 'email_delivery.resend_requested' (HPO-ASY-05), 'email_delivery.retry_requested' (HPO-ASY-08), 'evidence_tombstone.erasure_retry_requested' (HPO-ASY-09), 'demo_request.received' (HPO-ASY-10). A successor lane MUST use these exact literal strings rather than inventing alternatives, so this authority's naming is the single source of truth for the vocabulary, not a suggestion re-derived per implementer."
-  },
-
-  "out_of_scope": [
-    "A general async job/queue/outbox table serving more than one notification kind (HPO-ASY-01).",
-    "Any scheduler, cron job, or background worker — pg_cron is not installed in this project's baseline (LANE F12 measurement, corroborated by INT-INT-001 §4 independently) and this authority does not propose installing one.",
-    "Resend delivery-event webhooks (bounce/open/click tracking) and any 'delivered' state derived from them.",
-    "Hosted Resend configuration of any kind (API key provisioning, sending domain, DNS records).",
-    "Unifying stripe_webhook_events and email_deliveries under one table, one set of functions, or one migration file (HPO-C explicit prohibition).",
-    "Generalizing marketing_leads / CAP-04 or wiring its unapplied `submit_lead` definer — untouched, per reconciled_current_state.marketing_leads_and_demo.",
-    "Fixing the CAP-03/CAP-04 RLS/definer gaps noted in reconciled_current_state — those belong to their own capability lanes, not this one.",
-    "Deciding or defaulting a PII retention/purge duration for email_deliveries or demo_requests (HPO-ASY-06 — HPO-F/legal owns this).",
-    "Any change to AUDIT_ACTIONS.INVITATION_SENT's timing, meaning, or afterJson shape.",
-    "Any change to operation_tickets (INT-INT-001) — cited as pattern precedent only."
-  ],
-
-  "future_ddl": {
-    "LINEAGE_REDERIVATION_REQUIRED": "YES",
-    "reason": "No migration is written by this artifact. The sketches below freeze SHAPE (columns, CHECK vocabularies, the identity argument) for a successor implementation lane; they do not freeze an ordinal, a filename, or an 'apply now' authorization. The successor lane MUST re-run the live baseline measurement (current max applied-shape ordinal, current DDL-lock contention state per the Billing/Controller42/Wave successor queue noted in scope_declaration.no_ordinal_assignment) immediately before authoring any migration file, exactly as every other DDL-producing lane in this repository's history has had to.",
-    "illustrative_shape_email_deliveries": {
-      "status": "ILLUSTRATIVE ONLY — not a migration text, not applied, not ordinal-assigned.",
-      "sketch": "CREATE TABLE public.email_deliveries (id <server-issued PK, uuid or ticket-style digest>, organization_id uuid NOT NULL REFERENCES organizations(id), reference_type text NOT NULL, reference_id uuid NOT NULL, status text NOT NULL CHECK (status IN ('queued','accepted','failed_retryable','failed_permanent','cancelled')), attempts integer NOT NULL DEFAULT 0, last_error_code text, queued_at timestamptz NOT NULL DEFAULT now(), accepted_at timestamptz, failed_at timestamptz, cancelled_at timestamptz); -- no payload column, no raw-token column, no rendered-body column, per HPO-ASY-06.",
-      "explicitly_deferred_decisions": ["exact PK generation mechanism (uuid vs sha256 digest, see HPO-ASY-02)", "exact last_error_code closed vocabulary (depends on the pinned resend SDK's error shapes at implementation time)", "whether reference_type covers 'demo_request' from day one or is added when HPO-ASY-10 is implemented", "index strategy (at minimum an index on (reference_type, reference_id) is expected, mirroring stripe_webhook_events' status/received_at index, but is not fixed here)"]
+      "title": "Demo / lead durability",
+      "revision": "REVISED AT R2 — C-6. R1's narrowing to demo-only is withdrawn (W-R2-5).",
+      "canonical_clause": "HPO-C.10, quoted verbatim: 'Demo/lead requests must be durably recorded.' The dispatch's operative refinement is that the durable record precedes the notification attempt.",
+      "disposition": "DURABILITY IS THE POLICY. A demo or lead request that has been validated and accepted (i.e. is not a honeypot hit and is not refused upstream) must be durably recorded BEFORE any notification send is attempted, so that a provider outage, an unconfigured provider, or a thrown send can never be the reason the business fact is lost. This is the reverse priority from the invitation flow, and deliberately so: here the request itself is the business fact, not a delivery ledger entry about it.",
+      "storage_object_is_an_implementation_choice": "This authority does NOT force a demo_requests table, does NOT force reuse of marketing_leads, and does NOT force a shared intake object. The storage object is an implementation choice subject to the existing schema authority that governs those tables. What is frozen is the property (durable record before notification attempt), not the container.",
+      "measured_state_of_both_halves": {
+        "demo": "app/actions/marketing/demo-request.ts performs zero durable writes today (module header and body measured). The policy is unmet here.",
+        "lead": "app/api/marketing/lead/route.ts refuses before writing (LEAD_CAPTURE_POLICY_AVAILABLE = false) and, per its own measured header, would be refused by RLS in any case because the marketing_leads policies are scoped to database roles the runtime is not a member of. The policy is unmet here too.",
+        "honest_consequence": "NEITHER half is operationally discharged at this tree. R2 records that rather than claiming the lead side is already satisfied. The lead surface's repair belongs to its own capability lane (docs/ops/capabilities/CAP_04_PUBLIC_LEADS.md); this authority states the durability policy that reaches it and opens no write surface there."
+      },
+      "honeypot_unchanged": "A honeypot-tripped submission must continue to produce zero durable rows and zero provider calls (measured short-circuit at app/actions/marketing/demo-request.ts:58-61). Durability applies to accepted submissions, not to deliberately-rejected bot traffic.",
+      "rate_limiting_out_of_scope": "The existing per-IP in-memory limiter is unchanged and out of scope. Nothing in the canonical clause asks for durable rate limiting, and generalizing it would be the scope creep HPO-ASY-01 forbids."
     },
-    "illustrative_shape_demo_requests": {
-      "status": "ILLUSTRATIVE ONLY — not a migration text, not applied, not ordinal-assigned.",
-      "sketch": "CREATE TABLE public.demo_requests (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, organization text NOT NULL, email text NOT NULL, message text, ip text, created_at timestamptz NOT NULL DEFAULT now());",
-      "explicitly_deferred_decisions": ["RLS/grant model for an unauthenticated write path (CAP-04's stripe_webhook_events-adjacent measured RLS pitfalls, reconciled_current_state.marketing_leads_and_demo's CAP-04 findings, are the precedent to consult, not to copy blindly)", "whether this becomes its own table or a reference_type on a shared intake table with marketing_leads — left to the successor lane, NOT decided as 'reuse marketing_leads' by this authority"]
+
+    "HPO-ASY-11": {
+      "title": "SERIALIZATION INVARIANT for token rotation",
+      "revision": "NEW AT R2 — B-1.",
+      "invariant": "FOR ONE INVITATION, CONCURRENT RESEND INTENTS MUST SERIALIZE. Two resend intents for the same invitation may not interleave such that both rotate, both supersede, or one's supersession is lost.",
+      "what_a_resend_transaction_must_bind_together": [
+        "the CURRENT invitation version / token identity it observed",
+        "the action_request_id of the intent being served",
+        "the NEW token hash",
+        "the NEW delivery attempt",
+        "the supersession/cancellation of the prior still-actionable delivery"
+      ],
+      "binding_requirement": "These five must be decided against a single, consistent observation of the invitation's state and committed together. A transaction that reads the current token, then writes a new one without having excluded a concurrent writer from doing the same, satisfies atomicity and violates this invariant.",
+      "mechanism_left_open": "The implementation MAY use a row-level lock on the invitation row, a compare-and-swap against the current token/version identity, or an equivalent version guard — PROVIDED the externally observable invariant is identical. Both mechanism classes already exist in this repository (MEASURED_CORRECTIONS_R2.serialization_precedent_in_repo), so nothing new is being invented.",
+      "provider_call_stays_outside": "The provider call remains AFTER COMMIT. No lock, no version guard and no serialization mechanism may be held across a provider network call — the boundary of HPO-ASY-03 is unchanged by this invariant and is not relaxed to accommodate it."
+    },
+
+    "HPO-ASY-12": {
+      "title": "CANCELLED IS TERMINAL — late provider results",
+      "revision": "NEW AT R2 — B-1, the defect that needs no race.",
+      "frozen_rule": "CANCELLED IS TERMINAL. A late provider result for a delivery row that has since become cancelled MUST NOT transition that row to accepted, failed_retryable, failed_permanent, or any other non-cancelled state.",
+      "eligibility_conditioned_classification": "The post-commit result classifier MUST condition its transition on the delivery STILL BEING ELIGIBLE for that result. The state write is a guarded transition — it applies only to a row still in the state the attempt was launched from — and an outcome of 'no row was eligible' is a NORMAL, EXPECTED result meaning the attempt was superseded. It is not an error, not a retry trigger, and must never be handled by re-attempting the write unguarded.",
+      "why_no_race_is_required": "STATED PLAINLY BECAUSE R1 MISSED IT ON EXACTLY THIS POINT: HPO-ASY-03 places the send and its classification AFTER the transaction commits, while HPO-ASY-05(iii) cancels the prior delivery INSIDE a later transaction. A resend issued while the first send is still in flight is therefore an ORDINARY sequence, not a race — and without this rule the first send's classifier would write 'accepted' onto a row that was already cancelled, defeating the cancellation's entire stated purpose (a row left 'accepted' asserts that a now-invalidated link was successfully sent).",
+      "late_result_observability": "A late result may be recorded ONLY through already-authorized bounded diagnostic/audit mechanisms. It cannot resurrect delivery state.",
+      "no_new_vocabulary_for_this": "NO new audit verb, status value, or column may be allocated merely to observe that a late result arrived for a superseded delivery. The five-state vocabulary is closed and this observation does not extend it."
+    },
+
+    "HPO-ASY-13": {
+      "title": "OUTSTANDING-INVITATION UNIQUENESS",
+      "revision": "NEW AT R2 — B-2, RAT-ASY-01.",
+      "invariant": "For one organization and one NORMALIZED email address, Commercial V1 MUST NOT create two simultaneously live PENDING invitation relationships representing the same outstanding invitation.",
+      "normalization_is_part_of_the_key": "The comparison dimension is the NORMALIZED address — the trim-and-lowercase form the current create path already computes at lib/invitations/service.ts:50 before both its duplicate check and its insert. A uniqueness boundary keyed on the raw address would be trivially defeated by case or whitespace variation and would not express this invariant.",
+      "durability_requirement": "The property MUST be durable and transactionally enforced. MEASURED: today it is neither — the guard at lib/invitations/service.ts:52-64 is a SELECT-then-INSERT with no constraint behind it in ANY schema lineage (MEASURED_CORRECTIONS_R2.invitation_uniqueness_census_all_lineages), so two concurrent creates can both observe 'no pending invitation' and both insert.",
+      "mechanism_left_open": "A database UNIQUE key over the live-pending subset, an invitation-scoped request table, or another equivalent durable mechanism all discharge this. The implementer is not required to infer a choice: this authority states the property and leaves the mechanism open. The codebase's own precedent for the shape — a partial unique index expressing 'at most one LIVE row per key' — already exists at db/schema.ts:112 and is cited as precedent, not prescription.",
+      "future_ddl_disposition": "If discharging this requires DDL: LINEAGE_REDERIVATION_REQUIRED=YES, and NO ordinal is allocated here (see FUTURE_DDL).",
+      "relationship_to_action_request_id": "This invariant and HPO-ASY-02's are DIFFERENT and both are required. Intent uniqueness (action_request_id) stops the SAME intent from taking effect twice. Relationship uniqueness (this clause) stops TWO DIFFERENT intents from creating two live pending invitations for the same person. Neither implies the other."
+    },
+
+    "HPO-ASY-14": {
+      "title": "AUDIT VOCABULARY CONTRACT DISCHARGE for async-domain verbs",
+      "revision": "NEW AT R2 — B-3.",
+      "scope": "Applies to async-domain verbs only — verbs whose object prefix names an object this authority governs (delivery records and demo/lead request records). It does NOT reach, extend, or reinterpret any other domain's namespace.",
+      "named_and_preserved": {
+        "LOCK-AUDIT-ACTION-VOCABULARY": "NAMED AND PRESERVED. Declared at docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json:554 and restated at docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json:265-270. It holds the AUDIT_ACTIONS object literal in lib/audit/logger.ts. THIS DOCS-ONLY LANE NEITHER ACQUIRES NOR RESERVES IT. A successor implementation lane must observe its release condition before writing that literal.",
+        "action_shape_rule": "The executable shape pin is AUDIT_ACTION_VALUE_PATTERN at lib/audit/__tests__/logger.test.ts:24, applied to every governed value at :43 and asserted negatively at :66. MEASURED AT THIS TREE it is /^[a-z_]+(\\.[a-z_]+)+$/ — two OR MORE lowercase segments. R2 records this precisely rather than repeating the stale two-segment description carried by an older authority (MEASURED_CORRECTIONS_R2.audit_action_shape_pin_is_not_two_segment_at_this_tree). Any async-domain verb must satisfy the pin as it actually reads at the tip where it is introduced.",
+        "executable_contract": "tests/audit-action-contract.test.ts is the executable contract governing AUDIT_ACTIONS. It is PROTECTED: no edit may loosen an assertion, remove a registered site, add a correspondence exception for an async-domain verb, or narrow the scan roots. Authorized edits are ADDITIVE registration and ADDITIVE scan coverage only.",
+        "correspondence_requirement": "Every logAuditAction call site must carry an entityType whose name corresponds to the action's object prefix, as enforced at tests/audit-action-contract.test.ts:158-172 (prefix derived at :172 via value.split('.')[0])."
+      },
+      "scan_root_extension_is_an_OBLIGATION_not_a_courtesy": {
+        "measured_gap": "CORRESPONDENCE_SCAN_ROOTS at tests/audit-action-contract.test.ts:87-99 is exactly ['lib/pipeline', 'lib/projects/service.ts', 'lib/portfolios/service.ts', 'lib/admin']. It does NOT include lib/invitations/**, app/** or app/actions/marketing/**.",
+        "consequence": "Every call site an async-domain implementation would add falls OUTSIDE the correspondence scan today. The mechanism fails OPEN: an implementer who omits the correspondence entirely would see a fully green suite.",
+        "obligation": "Any future implementation introducing async-domain verbs MUST extend CORRESPONDENCE_SCAN_ROOTS to include the actual new call sites — including, as needed, lib/invitations/** and app/actions/marketing/** — so the correspondence is genuinely enforced rather than vacuously satisfied.",
+        "protected_audit_contract_surfaces": ["tests/audit-action-contract.test.ts", "lib/audit/__tests__/logger.test.ts"]
+      },
+      "async_domain_verbs_that_remain": {
+        "status": "PROPOSED VOCABULARY, NOT ALLOCATED AND NOT CREATED BY THIS ARTIFACT. No executable verb is added here; lib/audit/logger.ts is not touched by this lane.",
+        "list": ["email_delivery.accepted", "email_delivery.failed_retryable", "email_delivery.failed_permanent", "email_delivery.cancelled", "email_delivery.resend_requested", "email_delivery.retry_requested"],
+        "conditions_on_use": "A successor lane may introduce these ONLY after LOCK-AUDIT-ACTION-VOCABULARY's release condition is satisfied, only with the scan-root extension above, only preserving the protected surfaces, and only if they satisfy the shape pin as measured at that lane's own tip.",
+        "demo_lead_verb_deliberately_not_fixed": "No demo/lead audit verb is proposed. The demo/lead surfaces are unauthenticated and open no identity or database context (measured), so whether their durable record is accompanied by an audit entry at all is an implementation question this authority does not pre-empt.",
+        "no_foreign_namespace": "NO verb in any other domain's namespace — evidence_tombstone.*, tenancy.*, stripe.*, portfolio.* or any other — is proposed, required, or made load-bearing by this authority or by its companion manifest."
+      }
     }
   },
 
-  "boundaries_and_prohibitions": [
-    "Fail-closed: any ambiguity between this artifact's HPO dispositions and a future measurement of live code is resolved by STOPPING and escalating, never by silently reconciling in the successor lane's favor (CLAUDE.md §5).",
-    "No silent authority expansion: a successor implementation lane may not treat 'email_deliveries' as license to also touch stripe_webhook_events, marketing_leads, or operation_tickets — each requires its own HPO if a change is later found necessary.",
-    "No historical evidence rewriting: reconciled_current_state describes the repository AT base 88d95c65b9c9a942195319f09aabaa7b127f7e30/tree 97006beb; it is not re-derived if this document is read later against a moved tip without a fresh reconciliation pass.",
-    "This artifact does not itself authorize implementation. NEXT (below) is an independent audit of THIS authority, not a green light to build against it."
+  "DELIVERY_STATE_MACHINE": {
+    "closed_state_set": ["queued", "accepted", "failed_retryable", "failed_permanent", "cancelled"],
+    "transitions": [
+      "queued -> accepted            [provider accepted; applied only if still eligible per HPO-ASY-12]",
+      "queued -> failed_retryable    [failure classified retryable, or unclassifiable/no-key fail-closed default per HPO-ASY-04]",
+      "queued -> failed_permanent    [failure classified permanent by a measured condition]",
+      "queued -> cancelled           [superseded by a new resend intent, or invitation revoked]",
+      "accepted -> cancelled         [superseded by a new resend intent, or invitation revoked — the link it sent is no longer valid]",
+      "failed_retryable -> queued    [MANUAL retry of the SAME attempt row; attempts incremented]"
+    ],
+    "terminal_states": {
+      "cancelled": "TERMINAL AND ABSORBING. No transition out, including from a late provider result (HPO-ASY-12).",
+      "failed_permanent": "Terminal for this attempt. A new intent creates a NEW attempt row; it never transitions this one.",
+      "accepted": "Terminal for this attempt, except for supersession to cancelled."
+    },
+    "no_state_named_delivered": "Deliberate. A delivered/bounced/opened state would require provider delivery-event webhooks, which this authority does not authorize (see OUT_OF_SCOPE).",
+    "no_automatic_transition": "No timer, cron, scheduler or background process may effect ANY transition in this machine. Every transition is caused by an authorized human-initiated attempt or by the post-commit classification of one such attempt. Discharges canonical HPO-C.8."
+  },
+
+  "OUT_OF_SCOPE": [
+    "A general async job/queue/outbox platform serving more than one notification kind.",
+    "Any scheduler, cron job, or background worker.",
+    "Provider delivery-event webhooks (bounce/open/click) and any 'delivered' state derived from them.",
+    "Hosted Resend configuration of any kind (API key provisioning, sending domain, DNS).",
+    "Unifying the Stripe webhook event ledger with the delivery ledger under one table, one function set, or one migration.",
+    "Repairing the public lead-capture capability's policy/definer gap — named as measured context, owned by its own capability lane.",
+    "Deciding or defaulting a PII retention duration (canonical HPO-C.11 assigns this to HPO-F).",
+    "Any change to the timing, meaning, or payload shape of the existing invitation audit verb.",
+    "Any change to operation_tickets, cited as pattern precedent only.",
+    "Allocating, acquiring or releasing LOCK-AUDIT-ACTION-VOCABULARY.",
+    "Resolving the platform-admin boundary (deferred to HPO-D and its lane).",
+    "Introducing any executable audit verb, in any namespace."
   ],
 
-  "open_unknowns": [
-    "UNKNOWN: exact Resend SDK (npm `resend`) error shape/discriminants for classifying failed_retryable vs failed_permanent — could not be verified without node_modules in this worktree; deferred to implementation time against the pinned version.",
-    "UNKNOWN: PII/retention duration — explicitly owned by HPO-F/legal, not this authority (HPO-ASY-06).",
-    "UNKNOWN: the live next-available migration ordinal and DDL-lock contention state at the moment a successor lane actually implements this — explicitly NOT assumed to be 0070 (scope_declaration.no_ordinal_assignment).",
-    "UNKNOWN: whether demo_requests should be its own table or a reference_type sharing a table with a future intake object — left open (HPO-ASY-10)."
+  "FUTURE_DDL": {
+    "LINEAGE_REDERIVATION_REQUIRED": "YES",
+    "applies_to": "Every DDL consequence of this authority without exception, including the delivery table, the action_request_id uniqueness boundary (HPO-ASY-02), the outstanding-invitation uniqueness boundary (HPO-ASY-13), and any demo/lead durability object (HPO-ASY-10).",
+    "reason": "No migration is written by this artifact. Shapes are frozen for a successor lane to implement against; ordinals, filenames and apply-order are not. The successor lane MUST re-derive the live next-available ordinal and the current DDL-lock contention state immediately before authoring any migration file.",
+    "no_identifier_is_allocated_or_reserved": "This artifact allocates and reserves NOTHING: not ordinal 0070, not W2-28, not ODS v1.0.31, not Controller42, and no other successor identifier. Where such identifiers appear in prior measurement context they appear as MEASUREMENTS of what other lanes hold, never as claims by this one.",
+    "measured_ordinal_context": "The highest-numbered file in db/migrations/ at the R2 parent tree is 0069_fib_fibdb052_p1_indexes.sql. This is recorded as a measurement only; it does not imply that 0070 is this authority's to take, and the successor lane must re-measure rather than rely on this line."
+  },
+
+  "BOUNDARIES_AND_PROHIBITIONS": [
+    "Fail-closed: any ambiguity between these dispositions and a future measurement of live code is resolved by STOPPING and escalating, never by silently reconciling in the implementer's favour.",
+    "No silent authority expansion: 'delivery ledger' is not licence to touch the Stripe event ledger, the lead-capture capability, operation_tickets, or any other domain's tables or vocabulary.",
+    "No historical evidence rewriting: MEASURED_CORRECTIONS_R2 describes the repository at tree 4a981c49 and must be re-measured, not re-cited, by any lane reading this at a moved tip.",
+    "This artifact does not authorize implementation. It is an authority correction; NEXT is an independent audit of it, not a green light to build.",
+    "R1's withdrawn claims stay visible in WITHDRAWN_R1_CLAIMS. No future revision may delete that record to make the history read cleaner."
   ],
 
-  "test_manifest_disposition": {
+  "OPEN_UNKNOWNS": [
+    "UNKNOWN: the pinned provider SDK's error shapes and discriminants — not measurable in this worktree (no node_modules) and deliberately not invented; the fail-closed default of HPO-ASY-04 governs until they are measured.",
+    "UNKNOWN: PII retention duration — owned by HPO-F, not this authority.",
+    "UNKNOWN: the live next-available migration ordinal and DDL-lock contention state at future implementation time — explicitly not assumed.",
+    "UNKNOWN: the storage object for demo/lead durability (own table vs shared intake vs reference_type) — deliberately left open by HPO-ASY-10.",
+    "UNKNOWN: whether LOCK-AUDIT-ACTION-VOCABULARY's release condition is satisfied at any future implementation tip — must be re-measured there, never inferred from this file."
+  ],
+
+  "TEST_MANIFEST_DISPOSITION": {
     "path": "docs/ops/async/ASYNC_NOTIFICATIONS_TEST_MANIFEST_v1.0.0.json",
     "conforms_to": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
-    "status": "A pre-implementation COMMITMENT, not a report of tests already run — nothing under this authority has been implemented, so no test file paths exist yet (declared 'UNKNOWN' per the schema's own instruction for that field)."
+    "status": "A pre-implementation COMMITMENT, not a report. No implementation exists, so every test_file is the schema's explicit UNKNOWN rather than a path claimed to exist.",
+    "r2_changes": "Controls added for action_request_id replay, deliberate-resend new intent, concurrent resend serialization, late-result non-resurrection, at-most-one live pending invitation, structural token non-persistence, rotation exactly once per intent, fail-closed provider outcome, partial-erasure convergence, non-resurrection of already-null content, and absence of any foreign audit verb requirement. N-ASY-3 is rewritten to assert the outcome property rather than which request wins; N-ASY-8 is replaced with a satisfiable premise; P-ASY-5's dependency on the withdrawn foreign verb is removed."
   },
 
-  "NEXT": "ASYNC_NOTIFICATIONS_AUTHORITY_INDEPENDENT_OPUS_AUDIT"
+  "NEXT": "PR138_ASYNC_NOTIFICATIONS_FOCUSED_R2_INDEPENDENT_OPUS_AUDIT"
 }
