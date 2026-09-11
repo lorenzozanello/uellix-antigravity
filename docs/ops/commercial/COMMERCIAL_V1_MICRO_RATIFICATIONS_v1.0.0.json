@@ -1,0 +1,346 @@
+{
+  "package_id": "COMMERCIAL_V1_MICRO_RATIFICATIONS",
+  "version": "1.0.0",
+  "artifact_id": "COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "hpo_mission_id": "COMMERCIAL-V1-MICRO-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1",
+  "lane_id": "LANE_BK",
+  "materialization_date": "2026-09-10",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "branch": "codex/commercial-v1-micro-ratifications-r1",
+  "base_commit_sha": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "base_tree_sha": "97006bebd7e496135967d05d59b01e798cdc7394",
+
+  "purpose": "Machine-citable ledger of exactly twelve product-owner decisions that were already explicitly ratified before this mission and are materialized here for the first time as a repository-citable artifact. This artifact records WHAT was ratified and by whom (product owner), not whether or how it is implemented. It grants no schema, no migration ordinal, no ODS/HPO id, and no executable authority. A future mission that needs one of these decisions cites this file's ratification id instead of re-deriving or re-litigating the decision.",
+
+  "precedence_note": "This file is canonical for product-owner intent only. It does NOT override executable FIB/ODS/database/security authority, and it does NOT itself authorize any runtime implementation, migration, schema, DDL, ODS allocation, W2 allocation, Controller allocation, hosted Supabase mutation, Resend configuration, Stripe call, deployment, staging mutation, production mutation, public route activation, support-capability implementation, or RLS mutation. Where a ratification here conflicts with current executable authority or current schema, that conflict is an AUTHORITY_GAP requiring a governed successor before implementation, not something this artifact resolves.",
+
+  "reopening_rule": "Do not re-open any ratification below. This lane materializes decisions already ratified by the product owner; it does not adjudicate them and does not infer new product decisions beyond the twelve listed. Absence of implementation is not a contradiction and is not grounds for reopening.",
+
+  "scope_boundary": {
+    "decisions_materialized_count": 12,
+    "protected_prs_not_modified": ["PR137", "PR138", "PR139", "PR141", "PR142", "PR144", "PR145"],
+    "note": "This lane does not read, edit, or otherwise touch the diffs of PR137, PR138, PR139, PR141, PR142, PR144 or PR145. Consumer relationships to those lineages (see each ratification's known_consumers_or_dependencies) are recorded as semantic pointers only."
+  },
+
+  "canonical_backbone_dependency": {
+    "referenced_lineage": "PR137 — canonical broad owner-ratification backbone",
+    "pr137_integration_status_as_of_this_artifact": "NOT_ASSERTED_HERE — PR137 may still be under remediation/audit at materialization time; this artifact does not observe, assert, or depend on any specific PR137 SHA.",
+    "merge_order_precondition": "The canonical broad owner-ratification backbone (PR137) must be integrated before, or reconciled within, the same governed merge train as this micro-ratification artifact and any successor authority that consumes it. This artifact itself may be authored, committed, and independently audited now — its citability does not require PR137 to have merged first — but downstream implementation authority that relies on BOTH the broad backbone and one of these twelve micro-ratifications should not proceed until that reconciliation is governed and explicit.",
+    "no_future_sha_fabricated": true
+  },
+
+  "global_non_authorizations": [
+    "NO runtime implementation",
+    "NO migration",
+    "NO schema",
+    "NO DDL",
+    "NO next migration ordinal",
+    "NO ODS allocation",
+    "NO W2 allocation",
+    "NO Controller allocation",
+    "NO hosted Supabase mutation",
+    "NO Resend configuration",
+    "NO Stripe call",
+    "NO deployment",
+    "NO staging mutation",
+    "NO production mutation",
+    "NO public route activation",
+    "NO support capability implementation",
+    "NO RLS mutation",
+    "Owner ratification is NOT implementation authorization"
+  ],
+
+  "global_review_requirements_preserved": {
+    "note": "Materializing these ratifications as a citable artifact does NOT satisfy any of the following reviews. Each ratification below additionally lists which of these apply to it specifically.",
+    "legal_review": "REQUIRED_BEFORE_RELEASE — for legal-instrument semantics (applies to RAT-AO-03).",
+    "security_review_public_verification": "REQUIRED_BEFORE_RELEASE — for the Public Verification surface (applies to RAT-PV-01, RAT-PV-02, RAT-PV-03).",
+    "security_review_platform_admin_support": "REQUIRED_BEFORE_RELEASE — for the platform-admin/support capability surface (applies to RAT-OP-01).",
+    "release_review": "REQUIRED_BEFORE_RELEASE — standard release-gate review, unaffected by this artifact.",
+    "privacy_review": "REQUIRED_BEFORE_RELEASE — standard privacy-gate review, unaffected by this artifact.",
+    "lrf_02_status": "COUNSEL_REQUIRED — LRF-02 (which locale/language is legally controlling for reacceptance notice) remains counsel-required and is explicitly NOT decided by RAT-AO-03 or any other ratification in this artifact."
+  },
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file.",
+    "expected_ratification_count": 12,
+    "expected_id_set": [
+      "RAT-EV-01", "RAT-AO-01", "RAT-AO-02", "RAT-AO-03",
+      "RAT-EV-02", "RAT-EV-03", "RAT-ASY-01", "RAT-OP-01",
+      "RAT-PV-01", "RAT-PV-02", "RAT-PV-03", "RAT-PV-04"
+    ],
+    "checks": [
+      "ratifications.length == 12",
+      "every id in ratifications is unique (no duplicate id values)",
+      "every ratification.status == 'RATIFIED_BY_PRODUCT_OWNER'",
+      "the set of ids in ratifications, compared as sets, equals expected_id_set exactly (no missing id, no extra id)",
+      "no id outside expected_id_set is present"
+    ]
+  },
+
+  "ratifications": [
+    {
+      "id": "RAT-EV-01",
+      "domain": "EMAIL_VERIFICATION_PENDING_STATE",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "For a successful signup that produces a user record without an active session (user != null, session == null), /verify-email must be able to render a generic, public-safe verification-pending representation. It must NOT automatically redirect the caller to /login.",
+      "binding_semantics": {
+        "no_session_generic_view": "Without a verified principal, the /verify-email representation shows no email address, asserts no account identity, asserts no account existence, exposes no provider metadata, performs no tenant lookup, and offers no resend capability absent separate authority for that capability.",
+        "anonymous_and_expired_session_visits": "A direct anonymous visit and a visit with an expired session MAY/SHOULD render this same generic public-safe representation rather than being distinguished from the no-session signup case.",
+        "unverified_authenticated_principal": "An authenticated principal whose email is not yet verified may see only its own subject identity, including its own email address — this is a strictly narrower disclosure than any other principal's view.",
+        "verified_authenticated_principal": "An authenticated, email-verified principal exits /verify-email through the governed application flow rather than remaining on the pending view.",
+        "packet_a_interaction": "Packet A's NO_AUTO_SELECTION rule remains binding and is not altered or narrowed by this ratification."
+      },
+      "explicit_non_authorizations": [
+        "Does not authorize any specific route-handler, layout, or middleware implementation.",
+        "Does not authorize a resend-email capability; resend requires separate authority.",
+        "Does not modify or supersede Packet A NO_AUTO_SELECTION."
+      ],
+      "review_requirements": ["release_review"],
+      "known_consumers_or_dependencies": [
+        "Packet B no-session amendment / PR144 successor lineage",
+        "Email Verification implementation correction (successor to the PR136/PR132 Packet B lineage)"
+      ]
+    },
+    {
+      "id": "RAT-AO-01",
+      "domain": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "A member who is not organization_admin, whose organization still lacks current commercial acceptance, cannot satisfy or bypass that obligation themselves. They receive a non-sensitive blocked state. The organization_admin receives the completion call-to-action instead.",
+      "binding_semantics": {
+        "non_admin_member_experience": "Any member role other than organization_admin sees a non-sensitive blocked state when the organization's commercial acceptance is not current — the blocked state does not disclose sensitive acceptance detail beyond what is needed to explain that access is pending.",
+        "admin_experience": "Only organization_admin sees the completion CTA that lets the obligation actually be satisfied.",
+        "no_bypass_by_elevated_non_admin_role": "There is no viewer, reviewer, analyst, or impact_manager bypass for this specific blocking cause — role elevation short of organization_admin does not lift the block."
+      },
+      "explicit_non_authorizations": [
+        "Does not authorize any specific UI copy, route, or component.",
+        "Does not create a platform-admin or support override for this obligation (see RAT-AO-02).",
+        "Does not decide the acceptance record's schema or storage."
+      ],
+      "review_requirements": ["release_review"],
+      "known_consumers_or_dependencies": [
+        "Customer Lifecycle + Legal Acceptance authority (successor to the PR143 lineage)"
+      ]
+    },
+    {
+      "id": "RAT-AO-02",
+      "domain": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "Commercial V1 has NO platform-admin, support, or commercial-team mechanism that unilaterally records application legal/commercial acceptance on behalf of an organization. Application commercial acceptance is performed only by an active organization_admin. Manual commercial activation under HPO-B does not substitute for legal or commercial acceptance.",
+      "binding_semantics": {
+        "no_unilateral_platform_recording": "No platform-admin, support, or commercial-team actor may record an organization's application legal/commercial acceptance on that organization's behalf.",
+        "who_may_accept": "Only an active organization_admin of the affected organization performs application commercial acceptance.",
+        "hpo_b_is_orthogonal": "Manual commercial activation performed under HPO-B is a distinct operational action and does not substitute for, or satisfy, legal or commercial acceptance."
+      },
+      "explicit_non_authorizations": [
+        "Does not authorize building any platform-admin acceptance-recording tool, now or as a future convenience.",
+        "Does not alter HPO-B's own scope beyond clarifying it is not an acceptance substitute."
+      ],
+      "review_requirements": ["release_review"],
+      "known_consumers_or_dependencies": [
+        "Customer Lifecycle + Legal Acceptance authority (successor to the PR143 lineage)",
+        "Platform-admin/support/deletion authority successor (PR145 lineage) — as a negative constraint on that authority's scope"
+      ]
+    },
+    {
+      "id": "RAT-AO-03",
+      "domain": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "There is no universal reacceptance grace period. Each legal-instrument version may carry a governed effective_at. Before effective_at the product may inform the user. From effective_at onward, if that version's reaccept_required flag is true, a prior acceptance no longer satisfies the gate until the new version is accepted. Legal sufficiency, notice requirements, and timing remain counsel-required, and this ratification does not decide which locale/language is legally controlling.",
+      "binding_semantics": {
+        "no_universal_grace_period": "No blanket grace period after a new legal-instrument version's effective_at applies across all versions or all organizations.",
+        "per_version_effective_at": "Each legal-instrument version may carry its own governed effective_at timestamp.",
+        "pre_effective_notice": "Before effective_at, the product may inform the user of the upcoming version, but is not required to block on it.",
+        "post_effective_gate": "From effective_at, when reaccept_required=true for that version, any prior acceptance of an earlier version stops satisfying the acceptance gate until the new version is accepted.",
+        "counsel_required_boundary": "Legal sufficiency of notice, the specific notice requirements, and their timing remain COUNSEL_REQUIRED and are not decided by this ratification.",
+        "locale_controlling_language_undecided": "This ratification does NOT decide which locale or language text is legally controlling; that question, tracked as LRF-02, remains COUNSEL_REQUIRED."
+      },
+      "explicit_non_authorizations": [
+        "Does not decide legal sufficiency of any specific notice copy or timing.",
+        "Does not decide which locale/language is legally controlling (LRF-02 stays open).",
+        "Does not authorize any schema for legal-instrument versioning or effective_at storage."
+      ],
+      "review_requirements": ["legal_review", "release_review"],
+      "known_consumers_or_dependencies": [
+        "Customer Lifecycle + Legal Acceptance authority (successor to the PR143 lineage)"
+      ],
+      "lrf_02_status": "COUNSEL_REQUIRED"
+    },
+    {
+      "id": "RAT-EV-02",
+      "domain": "EVALUATE_V1",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "Evaluate criterion responses may be created or edited before their governing lock only by the exact explicit role set {analyst, impact_manager, organization_admin}. reviewer does not edit criterion responses. viewer is read-only. super_admin is excluded from this edit set. No '+' hierarchy notation and no implicit higher-role admission apply.",
+      "binding_semantics": {
+        "exact_role_set": "The editing role set is exactly analyst, impact_manager, organization_admin — enumerated, not open-ended.",
+        "reviewer_excluded": "reviewer may not create or edit criterion responses before lock, regardless of any other capability reviewer holds elsewhere in Evaluate.",
+        "viewer_read_only": "viewer has no write capability over criterion responses.",
+        "super_admin_excluded": "Tenant super_admin is not implicitly admitted into this edit set merely by virtue of being super_admin.",
+        "no_hierarchy_notation": "No '+' or greater-than-or-equal role-hierarchy notation may be used to admit a role beyond the three named roles; each admitted role must be checked by exact identity, not by rank."
+      },
+      "explicit_non_authorizations": [
+        "Does not authorize any specific authorization-check implementation (e.g. a particular hasRole call shape).",
+        "Does not decide lock timing/state-machine mechanics beyond 'before the governing lock'."
+      ],
+      "review_requirements": ["release_review"],
+      "known_consumers_or_dependencies": [
+        "Evaluate V1 authority successor (successor to the PR106 / RE_U3 lineage)"
+      ]
+    },
+    {
+      "id": "RAT-EV-03",
+      "domain": "EVALUATE_V1",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "Commercial V1 does not require person-inequality between the criterion-input author, the reviewer, and the decision maker. The system must nevertheless preserve actor, role, version, and timestamp traceability sufficient for an organization to impose stricter separation of duties if it chooses. Existing decision-role, divergence, and mandatory-rationale rules are unchanged by this ratification.",
+      "binding_semantics": {
+        "no_mandatory_segregation_of_duties": "The same natural person may author a criterion input, review it, and make the decision — Commercial V1 does not enforce distinct people across these three roles.",
+        "traceability_floor": "Actor identity, role at time of action, response/version, and timestamp must be preserved for every criterion-input, review, and decision action, regardless of whether the same or different people performed them.",
+        "org_level_stricter_policy_permitted": "An organization may layer a stricter separation-of-duties policy on top of this floor; this ratification does not forbid that, it only refuses to mandate it at the Commercial V1 platform level.",
+        "unchanged_rules": "Existing decision-role assignment, divergence handling, and mandatory-rationale-on-divergence rules are not altered by this ratification."
+      },
+      "explicit_non_authorizations": [
+        "Does not authorize an organization-configurable segregation-of-duties feature; it only permits one to exist as future scope.",
+        "Does not alter existing divergence/mandatory-rationale mechanics."
+      ],
+      "review_requirements": ["release_review"],
+      "known_consumers_or_dependencies": [
+        "Evaluate V1 authority successor (successor to the PR106 / RE_U3 lineage)"
+      ]
+    },
+    {
+      "id": "RAT-ASY-01",
+      "domain": "ASYNC_NOTIFICATIONS_INVITATIONS",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "For one organization and one normalized email, at most one live PENDING invitation relationship may exist for the same outstanding invitation. Every create/resend user intent carries an opaque action_request_id generated once per intent and reused across transport retry, network retry, double submit, and double click; the same action_request_id must never create a second invitation, rotate the token again, create a second resend intent, or cause a second provider attempt/call. A deliberately new resend gets a new action_request_id. Concurrent resend intents must serialize token rotation via row lock, CAS, version guard, or an equivalent mechanism; no temporal cooldown is required. A cancelled delivery is terminal — a late provider result cannot transition it back to accepted or to any other non-cancelled state.",
+      "binding_semantics": {
+        "single_live_pending_per_org_email": "At most one live PENDING invitation relationship exists per (organization, normalized email) pair for a given outstanding invitation.",
+        "idempotent_intent_key": "action_request_id is generated once per user-initiated create/resend intent and is reused, unchanged, across transport retry, network retry, double submit, and double click for that same intent.",
+        "idempotency_guarantee": "Replaying the same action_request_id must not create a second invitation, must not rotate the token a second time, must not create a second resend intent, and must not cause a second provider call/attempt.",
+        "new_intent_gets_new_key": "A user's deliberately new resend action is a new intent and receives a new action_request_id — this is not a violation of the idempotency guarantee above.",
+        "concurrency_control": "Token rotation for concurrent resend intents on the same invitation must serialize using a row lock, compare-and-swap, version guard, or a semantically equivalent mechanism sufficient to prevent lost updates or double rotation.",
+        "no_cooldown_required": "This ratification does not require any temporal cooldown between resend attempts; concurrency correctness must not depend on rate-limiting timing.",
+        "cancellation_is_terminal": "A cancelled delivery is a terminal state; a provider result arriving after cancellation cannot transition the delivery to accepted or to any other non-cancelled state."
+      },
+      "explicit_non_authorizations": [
+        "Does not authorize any specific queue, outbox, or worker infrastructure.",
+        "Does not allocate a migration ordinal, index, or constraint for action_request_id or the concurrency-control mechanism.",
+        "Does not decide the specific locking primitive (row lock vs CAS vs version guard) — any semantically equivalent mechanism satisfies this ratification."
+      ],
+      "review_requirements": ["release_review"],
+      "known_consumers_or_dependencies": [
+        "Async Notifications authority / PR138 successor lineage"
+      ]
+    },
+    {
+      "id": "RAT-OP-01",
+      "domain": "PLATFORM_ADMIN_SUPPORT_CAPABILITY",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "Commercial V1 permits issuance of a SUPPORT_CAPABILITY only to a natural person who holds an ACTIVE membership in the affected organization with role EXACTLY organization_admin. hasRole('>=') / role-hierarchy / '+' notation and implicit admission of tenant super_admin are all excluded. Tenant super_admin is not automatically an authorizer. A platform principal can never authorize a support capability for itself. This rule can become operational only after the standing platform-admin path capable of self-assigning tenant memberships has been closed; until that prerequisite is satisfied, this must fail closed. This ratification does not grant standing tenant-content access.",
+      "binding_semantics": {
+        "natural_person_authorizer_only": "Only a natural person — never a platform/service principal — may authorize issuance of a SUPPORT_CAPABILITY.",
+        "exact_role_and_active_membership": "The authorizer must hold an ACTIVE membership in the affected organization with role exactly organization_admin — not any role at or above a hierarchy threshold.",
+        "no_hierarchy_or_super_admin_shortcut": "hasRole('>=') checks, '+' role-hierarchy notation, and implicit admission of tenant super_admin are all explicitly excluded as valid authorization paths for this decision.",
+        "no_self_authorization": "A platform principal (e.g. a platform-admin acting principal) can never authorize a support capability for itself.",
+        "operational_prerequisite_fail_closed": "This authorization rule may only be treated as operational after the standing platform-admin path that can self-assign tenant memberships has been closed. Until that prerequisite is verified closed, any attempt to operate this rule must FAIL CLOSED rather than default-permit.",
+        "no_standing_access_granted": "This ratification does not itself grant standing tenant-content access to any platform-admin or support principal; it only constrains who may authorize the capability once it exists."
+      },
+      "explicit_non_authorizations": [
+        "Does not implement or activate any support-capability issuance mechanism.",
+        "Does not close the standing platform-admin self-assignment path — that closure is a separate, required prerequisite tracked by the platform-admin/MFA/support/deletion authority successor.",
+        "Does not grant standing tenant-content access under any circumstance."
+      ],
+      "review_requirements": ["security_review_platform_admin_support", "release_review"],
+      "known_consumers_or_dependencies": [
+        "Platform Admin / MFA / Support / Deletion authority successor (PR145 lineage)"
+      ]
+    },
+    {
+      "id": "RAT-PV-01",
+      "domain": "PUBLIC_VERIFICATION_REPORT_INTEGRITY",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "The Public Verification REVOKED response uses HTTP 410 Gone. The public body contains only status and revocation_date — no locator echo, no tenant/internal fields. The response uses strict no-store / non-cacheable semantics. This does not change permanent-revocation semantics.",
+      "binding_semantics": {
+        "http_status": "HTTP 410 Gone.",
+        "body_shape": "Exactly {status, revocation_date} — no locator echo, no tenant or internal field of any kind.",
+        "cache_semantics": "Strict no-store / non-cacheable — the response must not be cached by any intermediary or client.",
+        "no_change_to_revocation_semantics": "This ratification governs response shape and transport only; it does not alter what makes a report permanently revoked."
+      },
+      "explicit_non_authorizations": [
+        "Does not implement or activate the /verify or public-report route.",
+        "Does not decide the revocation-trigger mechanism."
+      ],
+      "review_requirements": ["security_review_public_verification", "release_review"],
+      "known_consumers_or_dependencies": [
+        "Public Verification implementation authority/runtime contract (PR141 / PVRI successor lineage)"
+      ]
+    },
+    {
+      "id": "RAT-PV-02",
+      "domain": "PUBLIC_VERIFICATION_REPORT_INTEGRITY",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "A normal refusal by a HEALTHY rate limiter uses HTTP 429 Too Many Requests, with a generic body carrying no locator echo and no account/report existence signal. Retry-After may be derived from the governed limiter window. The response uses no-store caching. This is NOT part of the PVRI-04 NOT_FOUND equivalence set. Limiter infrastructure failure remains governed separately by PVRI-10.",
+      "binding_semantics": {
+        "http_status": "HTTP 429 Too Many Requests, only when the rate limiter itself is healthy.",
+        "body_shape": "Generic body — no locator echo, no signal of account or report existence.",
+        "retry_after": "Retry-After MAY be derived from the governed limiter window; it is not required to be a fixed constant.",
+        "cache_semantics": "no-store.",
+        "not_part_of_notfound_equivalence_set": "This 429 response is explicitly excluded from the PVRI-04 NOT_FOUND equivalence set — it is a distinct response class, not a disguised NOT_FOUND.",
+        "limiter_failure_out_of_scope": "A limiter INFRASTRUCTURE failure (as opposed to a healthy limiter's normal refusal) is governed separately by PVRI-10 and is not covered by this ratification."
+      },
+      "explicit_non_authorizations": [
+        "Does not implement the rate limiter itself.",
+        "Does not decide the limiter's window, key, or threshold values.",
+        "Does not govern limiter infrastructure-failure behavior (see PVRI-10)."
+      ],
+      "review_requirements": ["security_review_public_verification", "release_review"],
+      "known_consumers_or_dependencies": [
+        "Public Verification implementation authority/runtime contract (PR141 / PVRI successor lineage)"
+      ]
+    },
+    {
+      "id": "RAT-PV-03",
+      "domain": "PUBLIC_VERIFICATION_REPORT_INTEGRITY",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "A public-document/PDF render failure uses HTTP 503 Service Unavailable with a generic body and no-store caching. It must not collapse to NOT_FOUND, and it must not serve a stale public document as a substitute when current validity cannot be established. This is distinct from normal rate limiting (RAT-PV-02) and from revoked state (RAT-PV-01).",
+      "binding_semantics": {
+        "http_status": "HTTP 503 Service Unavailable.",
+        "body_shape": "Generic body.",
+        "cache_semantics": "no-store.",
+        "must_not_collapse_to_not_found": "A render failure must be distinguishable from NOT_FOUND — it must not be reported as if the document/report does not exist.",
+        "must_not_serve_stale_substitute": "When current validity of the public document cannot be established, the system must not silently serve a stale cached copy as if it were current.",
+        "distinct_from_pv01_pv02": "This response class is distinct from the REVOKED (RAT-PV-01) and rate-limited (RAT-PV-02) response classes and must not be conflated with either."
+      },
+      "explicit_non_authorizations": [
+        "Does not implement the PDF/document rendering pipeline.",
+        "Does not decide retry, backoff, or alerting behavior for render failures."
+      ],
+      "review_requirements": ["security_review_public_verification", "release_review"],
+      "known_consumers_or_dependencies": [
+        "Public Verification implementation authority/runtime contract (PR141 / PVRI successor lineage)"
+      ]
+    },
+    {
+      "id": "RAT-PV-04",
+      "domain": "PUBLIC_VERIFICATION_REPORT_INTEGRITY",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "statement": "The FIBC-036 obligation associated with FIBIU-25 for the public surface is explicitly deferred to FIBIU-26. FIBIU-25 may prepare, author, validate, and test the notice/content contract, but has no authority to publish the Public Verification route, activate the public surface, or ship public disclosure. FIBIU-26 owns integration of that notice into the Public Verification surface. This ratification does not reallocate FIBIU node identities.",
+      "binding_semantics": {
+        "fibiu25_authorized_work": "FIBIU-25 (wave 4, contracts_served FIBC-035 and FIBC-036 per docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json) may prepare, author, validate, and test the notice/content contract underlying FIBC-036.",
+        "fibiu25_prohibited_work": "FIBIU-25 has no authority to publish the Public Verification route, activate the public surface, or ship public disclosure of that notice/content.",
+        "fibiu26_owns_public_integration": "FIBIU-26 (wave 5, contracts_served FIBC-037, db_changes including FIBDB-029/FIBDB-030/FIBDB-050 per the same index) owns integration of the FIBC-036 notice/content into the live Public Verification surface.",
+        "no_node_reallocation": "This ratification does not move FIBC-036 to FIBIU-26's contracts_served list or otherwise reallocate any FIBIU/FIBC node identity — it defers an obligation's PUBLIC-SURFACE ACTIVATION step, it does not renumber the FIB graph."
+      },
+      "explicit_non_authorizations": [
+        "Does not reallocate FIBIU-25's or FIBIU-26's contracts_served or db_changes.",
+        "Does not authorize FIBIU-26's implementation ahead of its own governed authority.",
+        "Does not activate any public route."
+      ],
+      "review_requirements": ["security_review_public_verification", "release_review"],
+      "known_consumers_or_dependencies": [
+        "FIBIU-25/FIBIU-26 boundary (docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json)",
+        "Public Verification implementation authority/runtime contract (PR141 / PVRI successor lineage, WAVE4_AUTHORITY FIBIU21..25 tracking)"
+      ]
+    }
+  ]
+}
