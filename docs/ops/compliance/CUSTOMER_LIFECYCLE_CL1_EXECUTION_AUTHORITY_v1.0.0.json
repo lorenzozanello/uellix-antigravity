@@ -230,7 +230,7 @@
     "status": "BINDING. CL-1 adds a SECOND explicit gate after B0. It does not modify, replace or absorb the first.",
     "MEASURED_STATE_CHANGE_SINCE_THE_PARENT_WAS_WRITTEN": {
       "finding": "The parent BD-1 records Packet B as unimplemented in the integrated tree on the measured basis that grep for emailVerified across lib/auth/ returns ZERO. That is FALSE at START_HEAD.",
-      "measured_at_START_HEAD": "PR136 is integrated at merge eb5a422c. lib/auth/database-context.ts declares readonly emailVerified: boolean; the token occurs 21 times across lib/auth/; lib/auth/email-verification.ts exists; app/(public)/verify-email exists; lib/auth/identity.ts computes emailVerified from Boolean(authUser.email_confirmed_at).",
+      "measured_at_START_HEAD": "PR136 is integrated at merge eb5a422c. lib/auth/database-context.ts declares readonly emailVerified: boolean; the token emailVerified occurs 18 times across lib/auth/ (database-context.ts 10, identity.ts 4, session.ts 4); lib/auth/email-verification.ts exists; app/(public)/verify-email exists; lib/auth/identity.ts computes emailVerified as Boolean(authUser.email_confirmed_at). CORRECTED AT R2: the R1 figure of 21 counted LINES matching emailVerified OR email_confirmed_at and reported it as a count of the single token.",
       "consequence": "BD-1 is CLOSED. The seam L0 attaches to now EXISTS. This is what makes CL-1 implementable and it is also what makes every inherited line anchor stale."
     },
     "REQUIRED": [
@@ -250,7 +250,7 @@
     "THE_MEMO_TRAP_IS_INHERITED_AND_ITS_ANCHORS_HAVE_MOVED": {
       "the_constraint": "requirePrincipal consults the memo FIRST and returns without reaching fresh resolution. An L0 check placed only on the fresh-resolution branch is BYPASSED whenever the memo is warm. The failure is INTERMITTENT - it depends on whether an earlier call in the same request already resolved the principal - which makes it the worst class of gate defect: it passes tests that happen to run cold and opens in production paths that run warm.",
       "parent_anchor_as_written": "lib/auth/database-context.ts:632-633 for the memo consult, :635 for resolveRequestPrincipal, :639 for the throw.",
-      "MEASURED_AT_START_HEAD": "requirePrincipal spans lib/auth/database-context.ts:680-697. The memo consult is at :682 (const memoised = await loadRequestPrincipal()) and returns at :683 through assertEmailVerifiedPrincipal(memoised). resolveRequestPrincipal is called at :685 and its result also passes through assertEmailVerifiedPrincipal at :686. The throw is at :689.",
+      "MEASURED_AT_PR148_HEAD": "The durable identities are SYMBOLS, and the anchors below are their positions at PR148 HEAD b9549fcf only. The function requirePrincipal is declared at lib/auth/database-context.ts:679 and closes at :696. The memo consult const memoised = await loadRequestPrincipal() is at :682 and returns at :683 through assertEmailVerifiedPrincipal(memoised). resolveRequestPrincipal is called at :685 and its result passes through the SAME helper at :686. The throw new AuthContextError is at :689. CORRECTED AT R2: the R1 span 680-697 was off by one at both ends; the three load-bearing anchors :682, :685 and :689 were and remain correct. The span is the most brittle and least load-bearing part of this description, which is why the symbols are named first.",
       "A_SECOND_MEMO_SITE_EXISTS": "lib/auth/database-context.ts:864-865 consults loadRequestPrincipal() and falls back to resolveRequestPrincipal in a different function. It is recorded because the memo-warm hazard is structural to the memo, not to one call site. Whether it is a required L0 translation point is a re-derivation the implementing mission owes - the parent classifies the corresponding Packet B point K7 as DEFENSE_IN_DEPTH_ONLY and NOT a release gate, and that classification is CONSUMED, not re-litigated.",
       "THE_MEASURED_SHAPE_THE_IMPLEMENTATION_SHOULD_FOLLOW": "Packet B solved this by binding the RESULT of principal resolution on BOTH branches through a single assertion helper, rather than by placing a check on one branch. L0 has the same obligation and the same solution is available. A control MUST exercise the MEMO-WARM path specifically, not only the cold one.",
       "ANCHORS_ARE_RE_MEASUREMENT_OBLIGATIONS": "Every line number in this section is AS OF START_HEAD and is NOT pinned. The implementing mission MUST re-locate each site by reading the file. An insertion anywhere above moves every anchor below it in the same file en bloc, so resolving a stale anchor to whatever line now looks plausible is not verification. The SYMBOL - the function and the assertion - is the durable identity."
@@ -291,9 +291,43 @@
       "the_obsolete_global_registry": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json holds 2 PRE_EXISTING_DEFERRED conditions whose premise v1.0.30 measured false. It MUST NOT be relied on as a waiver for any CL-1 control, and it is NOT edited here."
     },
     "AUTHORIZED_TEST_UPDATES": {
-      "scope": "Updating an assertion listed in the companion addendum MEASURED_TEST_PINS_THE_IMPLEMENTING_MISSION_WILL_MOVE, because the migration or baseline tail legitimately advanced.",
-      "NOT_AUTHORIZED": "Updating any other assertion, or updating a listed one for any other reason. A grant is not a licence to make a suite green, and a tail advance is not a general licence to edit tests.",
-      "the_distinction_that_must_survive": "One of the listed assertions - that journal last.idx equals entries.length - 1 - SURVIVES a well-formed tail advance and is therefore a live control on the new entry, not a stale pin. Retiring it along with the genuinely stale tail-tag assertions would delete a control while appearing to do bookkeeping."
+      "REVISION": "WIDENED AT R2 TO THE COMPLETE INVENTORY. The R1 boundary referenced an inventory that covered only the MIGRATION-TAIL family and was therefore too NARROW: a mission following it would have updated four tail assertions, left thirteen baseline-count sites red, and held no authority covering them. Widening here is a correction toward the measured causal set, NOT a broadening of discretion.",
+
+      "scope": "Updating an assertion enumerated in the companion addendum MEASURED_TEST_PINS_THE_IMPLEMENTING_MISSION_WILL_MOVE - FAMILY_A_BASELINE_COUNT (the canonical v1.0.30 census refs R-1 through R-13, re-measured) and FAMILY_B_MIGRATION_TAIL - together with the reactive evidence artefacts artifacts/baseline-rehearsal/latest.json and artifacts/hosted-a1-status.json, because the baseline unit count or the migration tail legitimately advanced as a direct consequence of the CL-1 unit.",
+
+      "THE_AUTHORIZATION_IS_CAUSAL_NOT_POSITIONAL": "What is authorized is updating an assertion THAT THE CL-1 APPEND CAUSALLY MOVED. Membership in the inventory is EVIDENCE of that causation, not a substitute for it. Two consequences follow and both are binding. FIRST: an inventory entry that does NOT in fact move for this particular unit must NOT be edited - R-2 moves only if the CL-1 unit is a drizzle-migration, R-11 moves only if it is superuser-free, and the s1 dmlUnits entry moves only if it carries DML. Editing one that did not move is fabrication, not bookkeeping. SECOND: an assertion the inventory MISSED but which the CL-1 append demonstrably moved IS within this authorization, and the implementing mission records the omission as an inventory defect rather than routing around the boundary.",
+
+      "NOT_AUTHORIZED": [
+        "Updating any assertion the CL-1 append did not causally move.",
+        "Editing anything in SURVIVING_INVARIANTS_MUST_NOT_BE_TOUCHED - the DERIVED_AUTO_MOVING expressions and the relational invariants. That is scope expansion.",
+        "Repairing an assertion already false at the implementing mission's own base. Carried from v1.0.30 PRE_EXISTING_BROKEN_MUST_NOT_BE_SILENTLY_REPAIRED: a pin already broken at the base is neither that mission's breakage nor its repair. It is recorded and escalated, not fixed in passing.",
+        "Weakening, deleting, skipping or relaxing any control to obtain a green result.",
+        "Any unrelated failing test. A grant is not a licence to make a suite green, and a tail advance is not a general licence to edit tests."
+      ],
+
+      "THE_THREE_DISTINCTIONS_THAT_MUST_SURVIVE_THE_EDIT": [
+        {
+          "id": "D-1",
+          "distinction": "MOVING CONSTANT versus SURVIVING INVARIANT",
+          "moving": "A LITERAL that goes stale - expect(BASELINE_UNITS).toHaveLength(82).",
+          "surviving": "A DERIVATION that stays correct - expect(commands).toHaveLength(BASELINE_UNITS.length + 1) - and a RELATION that stays correct - superuserFreeUnits !== unitCount, and last.idx === entries.length - 1.",
+          "the_hazard": "They look like the same kind of assertion and are the opposite kind. Rewriting a derivation into the new literal converts a self-maintaining control into one that will be wrong at the next append, while appearing diligent. Deleting last.idx === entries.length - 1 alongside the genuinely stale tail-tag assertion in the same block removes a live control on the new entry while looking like cleanup."
+        },
+        {
+          "id": "D-2",
+          "distinction": "N versus N+1",
+          "detail": "Census ref R-8, firstProvisioning.steps.length, is DERIVED as BASELINE_ORDER.length + 1 and is therefore always ONE AHEAD of every sibling count site. At PR148 HEAD it reads 83 while its eleven siblings read 82.",
+          "the_hazard": "A mechanical sweep advancing every 82 to 83 leaves R-8 reading 83 - which is CORRECT for the current N - so the line LOOKS already-updated while demanding 83 steps from a plan that will produce 84. The failure is silent at edit time and surfaces only as a gate failure. Identify R-8 by expression shape, never by line number and never by the literal's value."
+        },
+        {
+          "id": "D-3",
+          "distinction": "TOTAL versus SUBCOUNT",
+          "detail": "R-2, byKind('drizzle-migration'), is a subcount. Its siblings byKind('supabase-migration') = 2 and byKind('policy') = 10 do NOT move when a drizzle unit is appended.",
+          "the_hazard": "If the CL-1 unit lands as a policy unit rather than a drizzle unit, a DIFFERENT subcount moves and R-2 does not. The mission determines which from its own unit's kind, never from the census row."
+        }
+      ],
+
+      "RE_DERIVATION_IS_MANDATORY": "Every value in the inventory is dated to PR148 HEAD b9549fcf and every anchor is a line number that will have moved. The implementing mission re-derives the whole set at ITS head, by EXPRESSION SHAPE, before editing anything. v1.0.30 records R-8 alone moving through lines 407, 411, 413 and 417 across successive appends, which is why the rule is derivation rather than grep."
     },
     "POSTGRES_PROBE_IS_REQUIRED_AND_CANNOT_BE_SUBSTITUTED": {
       "grounds": "The parent test manifest postgres_requirements.rationale, carried unchanged for the CL-1 subset.",
@@ -339,7 +373,8 @@
     {"id": "F-AO-15", "item": "Whether the audit_logs INSERT policy admits an organization-less acceptance row.", "status": "MEASURED AT START_HEAD: IT DOES NOT. See ORGLESS_AUDIT_AUTHORITY.", "closes_how": "The additive policy authorized here, proven by probe."},
     {"id": "U-AO-8 / F-AO-23", "item": "The organization_members self-assignment path at db/migrations/0031_rls_core.sql:126-134 is MEASURED OPEN. A super-admin principal can manufacture a genuine organization_admin membership.", "status": "OPEN, EXTERNAL", "cl1_disposition": "CL-1 neither closes nor depends on it. It bears on L1 accepting-role trust, which is out of CL-1 scope. Recorded so a successor does not read CL-1 completion as closing it."},
     {"id": "X-AO-06", "item": "The super-admin membership-check exception at db/identity-context.ts:217.", "status": "OPEN, EXTERNAL", "cl1_disposition": "CL-1 does not fix it and must not depend on it being open."},
-    {"id": "INHERITED_COMPLETENESS_LIMIT", "item": "COMPLETENESS of the enforcement topology is NOT claimed by the parent; it is INHERITED from Packet B, proved at ITS head against a 19-entry census the parent did not re-run. If the Packet B topology is wrong, L0 inherits the error.", "status": "STANDING LIMIT", "cl1_disposition": "Disclosed, not resolved. This lane re-ran no census either."}
+    {"id": "INHERITED_COMPLETENESS_LIMIT", "item": "COMPLETENESS of the enforcement topology is NOT claimed by the parent; it is INHERITED from Packet B, proved at ITS head against a 19-entry census the parent did not re-run. If the Packet B topology is wrong, L0 inherits the error.", "status": "STANDING LIMIT", "cl1_disposition": "Disclosed, not resolved. This lane re-ran no census either."},
+    {"id": "F-CE-4", "item": "db/prepared/stella_hosted_0008_audit_log_write_capability.sql rests on a premise that public.audit_logs carries EXACTLY ONE policy and no INSERT policy. Against the local chain it already carries two INSERT policies (0042 and 0067), and the CL-1 additive policy would make three.", "status": "PREEXISTING_SUPERSEDED_NON_BLOCKING", "measured": "The file declares itself NOT YET APPLIED TO ANY DATABASE and a PRECHAIN ADMINISTRATIVE UNIT that is NOT a member of HOSTED_CHAIN; migration 0042 independently records it as retired without being applied.", "cl1_disposition": "RECORDED, NOT REPAIRED. The file is not edited, db/prepared/hosted/** is not added to the grant, and the path itself sits at the db/prepared/ root which the grant's narrow patterns already exclude. Repairing a retired, never-applied prechain unit is a separate governed act. Carried so that a successor does not read CL-1's silence as a claim that no such conflict exists."}
   ],
 
   "PLATFORM_PUBLISHER_DEPENDENCY": {
