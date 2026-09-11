@@ -1,0 +1,415 @@
+{
+  "package_id": "CUSTOMER_LIFECYCLE_CL1_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "CUSTOMER_LIFECYCLE_CL1_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "BOUNDED_EXECUTION_CONTRACT",
+  "mission_id": "CUSTOMER-LIFECYCLE-CL1-ODS-MIGRATION-LINEAGE-AUTHORITY-R1",
+  "lane_id": "LANE_CC",
+  "role": "CL1_ODS_AND_MIGRATION_AUTHORITY_WRITER",
+  "materialization_date": "2026-09-11",
+
+  "companion_allocation": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.31.json",
+  "PARENT_AUTHORITY": {
+    "primary": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json (R5, integrated via PR143 at merge d76fa3f2)",
+    "companion_manifest_of_the_parent": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_TEST_MANIFEST_v1.0.0.json",
+    "regulatory_baseline": "docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json",
+    "owner_ratifications": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json (HPO-A, RAT-AO-01, RAT-AO-02, RAT-AO-03)",
+    "packet_b": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json and its no-session amendment",
+    "relationship": "This artifact ADDS NOTHING to the parent contract and CHANGES NOTHING in it. It BOUNDS a subset of it for one implementation mission, carries the allocation the parent explicitly declined to make, and re-measures the parent facts that have gone stale. Where this artifact and the parent appear to differ, the parent governs and the difference is a defect in this artifact."
+  },
+
+  "AS_OF": {
+    "branch": "codex/cl1-ods-migration-authority-r1",
+    "START_HEAD": "d76fa3f22ed34897567043a79700b1321f13085e",
+    "START_TREE": "6c6adedfa6373bb02e232a14c7f7a28afaf7ca4f",
+    "LIVE_MOVED": "NO"
+  },
+
+  "WHY_THIS_ARTIFACT_EXISTS": "The parent authority sets GRANT_ID null, IMPLEMENTATION_AUTHORIZED false, and LINEAGE_REDERIVATION_REQUIRED YES for every future DDL object without exception. It froze a contract and deliberately allocated nothing. Something had to allocate, and something had to bound the first implementable slice. The companion addendum allocates; this artifact bounds.",
+
+  "CL1_SCOPE": {
+    "THE_LABEL_IS_NOT_THE_OBJECT": "CL-1 is a lane label from a read-only discovery compiler, not a term of frozen authority. A structural search for the token CL-1 across docs/ops/ returns hits only in unrelated Wave-2 and tenancy artifacts where it means something else. The bounded object below is defined by CONTENT drawn from the parent authority, and the label is a convenience for referring to it.",
+    "IN_SCOPE": [
+      {
+        "id": "CL1-S1",
+        "object": "The legal-instrument identity and published-version substrate required by L0",
+        "parent_anchor": "FUTURE_DDL.T1_legal_instruments and FUTURE_DDL.T2_legal_instrument_versions",
+        "note": "T1 and T2 are PLATFORM-GLOBAL reference data, not tenant data. They are in scope because L0 cannot evaluate currency without them, not because organization-class acceptance needs them."
+      },
+      {
+        "id": "CL1-S2",
+        "object": "The personal (account-class) acceptance evidence relation",
+        "parent_anchor": "FUTURE_DDL.T3_account_legal_acceptances"
+      },
+      {
+        "id": "CL1-S3",
+        "object": "The current/applicable-version resolver - the currency predicate over the CLOSED REQUIRED INSTRUMENT SET",
+        "parent_anchor": "REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION as corrected at R4, and FAIL_CLOSED.FC_7.THE_CORRECTED_DEFINITION"
+      },
+      {
+        "id": "CL1-S4",
+        "object": "The personal acceptance mutation - the subject writing their own acceptance row",
+        "parent_anchor": "ATOMICITY_BOUNDARIES AB-1 and invariant I-T3-6"
+      },
+      {
+        "id": "CL1-S5",
+        "object": "B0 to L0 enforcement: derivation on the principal path, propagation onto RequestPrincipal, and translation at the boundaries that already have refusal vocabularies",
+        "parent_anchor": "ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT, translations K3 through K6"
+      },
+      {
+        "id": "CL1-S6",
+        "object": "The audit events the acceptance and publication acts require, including the organization-less audit row for an account-class acceptance",
+        "parent_anchor": "AUDIT.WHAT_MUST_BE_AUDITED entries 1 and 3, and AUDIT.TENANT_SCOPE_OF_THE_AUDIT_ROW"
+      },
+      {
+        "id": "CL1-S7",
+        "object": "RLS for exactly the surfaces above",
+        "parent_anchor": "Invariants I-T2-7, I-T3-6, I-T3-8, plus the audit INSERT policy obligation recorded at OPEN_FINDINGS F-AO-15"
+      }
+    ],
+    "OUT_OF_SCOPE": [
+      {"object": "Organization bootstrap", "parent_anchor": "ATOMICITY_BOUNDARIES AB-2", "also_blocked_by": "BD-3 and BD-4"},
+      {"object": "CommercialAccount bootstrap", "parent_anchor": "The CommercialAccount/Entitlement lineage"},
+      {"object": "L1 organization commercial acceptance", "parent_anchor": "FUTURE_DDL.T4_organization_commercial_acceptances and ENFORCEMENT_TOPOLOGY.L1_ATTACHMENT, which the parent specifies as SHAPE ONLY"},
+      {"object": "Entitlement grants and the entitlement substrate", "parent_anchor": "BD-2, and WHAT_THIS_SECTION_DELIBERATELY_DOES_NOT_DEFINE"},
+      {"object": "Billing and Stripe", "parent_anchor": "Not a subject of this authority at any point"},
+      {"object": "Invitation and multi-org implementation", "parent_anchor": "AB-4, AB-5, MULTI_ORG, BD-5"},
+      {"object": "Evaluate", "parent_anchor": "A separate lineage entirely"},
+      {"object": "Platform-support implementation", "parent_anchor": "PLATFORM_ADMIN_BOUNDARY, and U-AO-2 which leaves the publishing principal to the platform-roles lineage"}
+    ],
+    "THE_ONE_BOUNDARY_THE_PARENT_FORCES_OUTWARD_AND_IT_IS_REPORTED_NOT_TAKEN": {
+      "issue": "CL1-S1 puts T2 publication in scope as a SUBSTRATE, but the parent leaves WHICH PLATFORM PRINCIPAL MAY PUBLISH open at U-AO-2, delegating it to the platform-roles lineage and forbidding its redesign from an adjacent lane.",
+      "consequence": "CL-1 may create the relation and its read posture. CL-1 may NOT decide, invent or implement the publisher identity.",
+      "disposition": "The publisher WRITE posture is a PLATFORM_PUBLISHER_DEPENDENCY, recorded below. It is reported rather than silently resolved, and rather than silently expanding CL-1 to include a platform-roles decision.",
+      "what_CL1_MUST_do_instead": "Implement T2 with RLS enabled and NO tenant-role write path. An absent write path fails closed and leaves the publisher decision entirely intact for the lineage that owns it."
+    }
+  },
+
+  "MIGRATION_LINEAGE_POSTURE": {
+    "ordinal": "NOT ALLOCATED. Posture B. See the companion addendum MIGRATION_ORDINAL_DISPOSITION.",
+    "re_measurement_obligation": "The implementing mission derives its ordinal at its own live head via the normal drizzle-kit generate path, and re-runs the tail measurement rather than inheriting 0070 from this record.",
+    "measured_tail_at_START_HEAD": "db/migrations/0069_fib_fibdb052_p1_indexes.sql; journal max idx 69 across 70 entries; db/prepared/journal tail 082_0069_fib_fibdb052_p1_indexes.sql.",
+    "grant": "HPO-ODS-W2-28, DECLARED_NOT_REGISTERED, bound to codex/customer-lifecycle-cl1-implementation-r1, three patterns."
+  },
+
+  "SCHEMA_CONCEPT_CLASSIFICATION": {
+    "status": "BINDING AS A CLASSIFICATION. The conceptual column names in the parent are DESCRIPTIVE PLACEHOLDERS which the parent itself states an implementing lineage may rename freely provided the invariants survive. This section classifies the CONCEPTS, not the names.",
+    "NOTHING_HERE_IS_DDL": "No DDL text is authored, quoted or implied. The parent HARD_PROHIBITIONS_ON_THIS_SECTION apply unchanged.",
+    "concepts": [
+      {"concept": "legal instrument continuing identity (instrument_key)", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T1-1, I-T1-2, I-T1-4"},
+      {"concept": "instrument_class constrained to a closed two-value set", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T1-3. A third value requires new owner policy, not a schema migration."},
+      {"concept": "a SEPARATE T1 relation versus collapsing identity onto every version row", "class": "IMPLEMENTATION_CHOICE", "grounds": "FUTURE_DDL.T1.collapse_alternative_recorded permits either PROVIDED I-T1-2 survives - structurally under the separate relation, as a constraint under the collapsed shape. Having NEITHER is not permitted."},
+      {"concept": "immutable published version row, append-only", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-2. The parent calls this the invariant the entire model rests on."},
+      {"concept": "UNIQUE (instrument_key, version, locale)", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-1"},
+      {"concept": "a genuine TOTAL order on version within instrument_key", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-5. The currency predicate searches an interval of it; a partial order makes the predicate ill-defined."},
+      {"concept": "the version FORMAT", "class": "IMPLEMENTATION_CHOICE", "grounds": "FUTURE_DDL.T2.explicitly_not_decided"},
+      {"concept": "content_digest present and written with the version row", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-4 in its R4 form"},
+      {"concept": "HASH_VERIFIABILITY - the system can determine how a content hash is interpreted and verified", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-4 R4"},
+      {"concept": "a separately persisted content_digest_algorithm column", "class": "IMPLEMENTATION_CHOICE", "grounds": "I-T2-4 R4 explicitly withdraws the R3 form that made it mandatory. A conforming implementation with NO such column satisfies the invariant provided verifiability is delivered by some conforming means. MUST NOT be used as an exit-gate requirement."},
+      {"concept": "retained content bytes or an immutable content reference", "class": "IMPLEMENTATION_CHOICE", "grounds": "RECOMMENDED_NOT_REQUIRED. I-T2-4 R4 withdraws the R1/R2 form that made retention mandatory. MUST NOT be used as an exit-gate requirement. Whether bytes must be retained sits with LRF-01 and LRF-04, both COUNSEL_REQUIRED."},
+      {"concept": "co-transactional write of whichever optional values are kept", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-4 R4. Conditional: it binds only the optional values an implementation actually chooses to keep. A value written separately could be committed without the digest."},
+      {"concept": "reaccept_required, NOT NULL, NO DEFAULT", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-3. A defaulting flag is the fail-open shape Packet B X-B-03 forbids."},
+      {"concept": "effective_at, OPTIONAL, immutable once published, a property of the VERSION only", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-8. NULL means IN EFFECT ON PUBLICATION, by fail-closed derivation."},
+      {"concept": "effective_at and reaccept_required as INDEPENDENT conjuncts", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T2-9. effective_at answers WHEN the version applies; reaccept_required answers WHETHER applying it invalidates earlier acceptances."},
+      {"concept": "per-subject acceptance evidence bound to a specific version id", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T3 conceptual columns and HPO-A decision 4"},
+      {"concept": "UNIQUE (user_id, instrument_version_id)", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T3-1. A second identical acceptance is a no-op, not a new fact."},
+      {"concept": "snapshotted content_digest on the acceptance row, enforced equal to the referenced version digest at write time", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T3-4. This is what makes tampering with a version row DETECTABLE rather than silently authoritative."},
+      {"concept": "instrument_class of the referenced instrument constrained to ACCOUNT on the personal relation", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T3-5"},
+      {"concept": "NO organization_id on the personal acceptance relation", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T3-7. A subject accepts before they belong to any organization, so the column would be NULL at exactly the moment it mattered and would invite a fabricated value."},
+      {"concept": "NO identifying metadata beyond user_id - no ip_address, user_agent or device fingerprint", "class": "REQUIRED_BY_AUTHORITY", "grounds": "I-T3-9 and LRF-03. The parent states an implementing mission MUST NOT add such a column on its own initiative."},
+      {"concept": "actor, role and timestamp recording on the ORGANIZATION-class relation", "class": "OUT_OF_SCOPE_FOR_CL1", "grounds": "I-T4-7 belongs to T4, which is L1."}
+    ],
+    "SHAPES_EXPLICITLY_REJECTED_BY_THE_PARENT_AND_NOT_TO_BE_REINTRODUCED": [
+      {"shape": "mandatory retained content bytes", "grounds": "I-T2-4 R1/R2 form, WITHDRAWN at R3"},
+      {"shape": "mandatory separately persisted hash-algorithm field", "grounds": "I-T2-4 R3 form, WITHDRAWN at R4"},
+      {"shape": "a stored is_current or is_valid flag on any acceptance relation", "grounds": "I-T3-3 and I-X-1. Currency is COMPUTED at read time. A stored flag would require a system-wide UPDATE on every marked publication, contradicting append-only and creating partial-failure states."},
+      {"shape": "one polymorphic acceptance relation over subject and organization", "grounds": "I-X-2"},
+      {"shape": "a denormalized acceptance boolean on organizations, users, organization_members or commercial_accounts", "grounds": "I-X-5"},
+      {"shape": "repurposing invitations.acceptedAt, or reading audit_logs.ipAddress as acceptance metadata", "grounds": "I-X-4 and X-AO-02"},
+      {"shape": "any application-reachable DELETE path on an acceptance relation", "grounds": "I-X-3. Retention and erasure of acceptance evidence is an OPEN question and no erasure path is authorized."}
+    ],
+    "WHY_THE_WITHDRAWN_SHAPES_ARE_NAMED_RATHER_THAN_OMITTED": "The parent records that two successive revisions each corrected an over-requirement on I-T2-4 and each introduced a neighbouring one, and keeps the trail visible because the PATTERN is the durable finding. Naming the withdrawn shapes here is what stops an implementing mission from reconstructing one of them from a stale reading. Each is named as a PROHIBITION; naming is never reinstatement."
+  },
+
+  "RLS_AUTHORITY": {
+    "status": "BINDING AS PROPERTIES. No policy TEXT is authored here - the parent states that policies are the database lineage to write, and postures are stated as invariants.",
+    "NOT_CLAIMED_TO_BE_ACHIEVABLE": "The parent SECURITY_REVIEW.PROPERTIES_NOT_CLAIMED states explicitly that it does NOT claim the required RLS policies are achievable as stated, because no PostgreSQL probe was run. U-AO-1 is OPEN. This artifact runs no probe either and inherits that limit unchanged.",
+    "properties_CL1_must_prove": [
+      {
+        "id": "R-CL1-1",
+        "surface": "instrument identity and version relations (T1, T2)",
+        "property": "RLS ENABLED. READ is available to every subject who may be asked to accept the instrument. NO tenant role may write.",
+        "grounds": "I-T2-7. The parent calls the read/write asymmetry the whole access-control content of this table.",
+        "note": "PLATFORM-GLOBAL reference data, not tenant data. Scoping it by organization would make an instrument unreadable to precisely the tenantless subject L0 exists to gate."
+      },
+      {
+        "id": "R-CL1-2",
+        "surface": "T2 publisher write posture",
+        "property": "NO tenant-role write path exists. The publisher identity is NOT decided by CL-1.",
+        "grounds": "U-AO-2 and PLATFORM_ADMIN_BOUNDARY",
+        "disposition": "PLATFORM_PUBLISHER_DEPENDENCY. Absent write path is the fail-closed posture and preserves the decision for the platform-roles lineage."
+      },
+      {
+        "id": "R-CL1-3",
+        "surface": "personal acceptance relation (T3) INSERT",
+        "property": "WRITABLE ONLY BY THE SUBJECT, FOR THEMSELVES. The write predicate is the subject own id, in the shape the repository already uses for self-scoped writes - the users_insert_own pattern whose WITH CHECK is id = auth.uid(). No administrator, platform role or support path may write another subject row.",
+        "grounds": "I-T3-6, and Packet B PRE_VERIFICATION_WRITE_EXCEPTION.EXACT_PERMITTED_WRITE_SURFACE which the parent cites for the pattern."
+      },
+      {
+        "id": "R-CL1-4",
+        "surface": "personal acceptance relation (T3) SELECT",
+        "property": "RLS ENABLED and FORCED. Read restricted to the subject themselves, plus whatever platform read path the platform-roles lineage authorizes - which this artifact does NOT name and does NOT create.",
+        "grounds": "I-T3-8"
+      },
+      {
+        "id": "R-CL1-5",
+        "surface": "acceptance relations, all commands",
+        "property": "APPEND-ONLY at the database boundary. No UPDATE, no DELETE reachable from any application path.",
+        "grounds": "I-T3-2 and I-X-3. The parent test manifest states this is a property of privileges and triggers and that a mocked client will happily accept an UPDATE the database would refuse - which is why it requires a real PostgreSQL probe."
+      },
+      {
+        "id": "R-CL1-6",
+        "surface": "audit_logs INSERT for an account-class acceptance",
+        "property": "A row with organization_id NULL, written by the acceptance path, must be admitted - and NOTHING ELSE new may become admissible.",
+        "grounds": "AUDIT.TENANT_SCOPE_OF_THE_AUDIT_ROW.what_remains_an_obligation and OPEN_FINDINGS F-AO-15. See ORGLESS_AUDIT_AUTHORITY below."
+      }
+    ],
+    "NO_SUPERADMIN_BYPASS_MAY_BE_NEWLY_ADDED": {
+      "binding": "No policy CL-1 writes may introduce a current_user_is_super_admin() disjunct, a hasRole hierarchy comparison, or any other principal-class escape hatch.",
+      "measured_reason_this_needs_saying": "The existing generic audit INSERT policy audit_logs_insert_member_or_admin (db/migrations/0042_fib_audit_insert_policy.sql) DOES carry OR current_user_is_super_admin(). Copying its shape would import that disjunct. The narrower sibling policy audit_logs_insert_tenancy_refusal (db/migrations/0067_tenancy_refusal_audit_insert_policy.sql) carries NONE, and is the correct model.",
+      "what_is_NOT_in_scope": "CL-1 does NOT close pre-existing super-admin bypasses. U-AO-8 measures the organization_members self-assignment path at db/migrations/0031_rls_core.sql:126-134 as OPEN, and X-AO-06 names db/identity-context.ts:217. Both are OTHER lineages work. The obligation here is only that CL-1 ADDS none and DEPENDS on none."
+    }
+  },
+
+  "ORGLESS_AUDIT_AUTHORITY": {
+    "status": "BINDING. This is the one narrow database permission CL-1 is authorized to add beyond its own relations.",
+    "THE_FINDING_IS_RE_MEASURED_NOT_INHERITED": {
+      "method": "Both live audit_logs INSERT policies were read in full at START_HEAD and their WITH CHECK predicates evaluated against the shape of an account-class acceptance row.",
+      "policy_1": {
+        "name": "audit_logs_insert_member_or_admin",
+        "source": "db/migrations/0042_fib_audit_insert_policy.sql",
+        "predicate_summary": "actor_user_id = auth.uid() AND ( (organization_id IS NOT NULL AND organization_id = ANY(current_user_org_ids())) OR current_user_is_super_admin() )",
+        "verdict_for_an_orgless_acceptance_row": "REFUSES. The first disjunct requires organization_id IS NOT NULL. The second is a super-admin escape an ordinary accepting subject does not satisfy and must not be made to satisfy."
+      },
+      "policy_2": {
+        "name": "audit_logs_insert_tenancy_refusal",
+        "source": "db/migrations/0067_tenancy_refusal_audit_insert_policy.sql",
+        "predicate_summary": "actor_user_id = auth.uid() AND organization_id IS NULL AND project_id IS NULL AND before_json IS NULL AND after_json IS NULL AND ip_address IS NULL AND user_agent IS NULL AND exactly one of three correlated action/reason/entity_type disjuncts, all three of them tenancy refusal verbs",
+        "verdict_for_an_orgless_acceptance_row": "REFUSES. It admits organization_id IS NULL, but only for a CLOSED set of three tenancy-refusal action values. An acceptance verb matches none of them."
+      },
+      "CONCLUSION": "CONFIRMED. An organization-less account-class acceptance audit INSERT is refused at START_HEAD by BOTH live policies, by construction rather than by oversight. The discovery compiler finding is independently reproduced.",
+      "what_the_parent_had_already_established_and_what_it_had_not": "The parent MEASURED the necessary conditions - db/schema.ts:118 declares auditLogs.organizationId with no .notNull(), and lib/audit/logger.ts declares organizationId as optional at two sites - and correctly recorded that these are NECESSARY BUT NOT SUFFICIENT because a policy could still refuse. It explicitly did NOT measure the policy, recording that gap as F-AO-15. This section closes F-AO-15."
+    },
+    "AUTHORIZED": "CL-1 MAY add ONE additive, narrowly scoped INSERT policy on audit_logs admitting exactly the organization-less audit rows the L0 acceptance path requires.",
+    "REQUIRED_PROPERTIES": [
+      "ADDITIVE, NOT WIDENING. The 0042 policy clause is byte-unchanged. Widening the generic policy to admit NULL-organization rows would also admit every other NULL-organization write, which is the opposite of what this needs. This is the reasoning 0067 states in its own words and it is adopted unchanged.",
+      "ORGANIZATION-LESS ONLY WHERE L0 AUTHORITY ACTUALLY REQUIRES IT. The policy admits organization_id IS NULL for the acceptance verbs and for nothing else. It does not become a general NULL-organization write permission.",
+      "ACTOR BOUND TO THE CURRENT PRINCIPAL. actor_user_id = auth.uid(), as both live policies require. An acceptance attributed to anyone but the caller the database itself sees is not evidence.",
+      "CLOSED VERB SET. The admitted action values are an explicit closed enumeration, in the correlated form 0067 uses. An open action predicate would make the policy a generic anonymous write path.",
+      "NO SUPERADMIN DISJUNCT. See RLS_AUTHORITY.NO_SUPERADMIN_BYPASS_MAY_BE_NEWLY_ADDED.",
+      "NO GENERIC ANONYMOUS OR MEMBER AUDIT WRITE. The enlargement must be bounded and DISCLOSED in the migration itself, in the form 0067 uses, because PostgreSQL combines PERMISSIVE policies for the same command with OR and a new policy therefore genuinely enlarges what uellix_app may insert.",
+      "NO CONTENT LEAK. Instrument TEXT MUST NOT reach before_json or after_json. The row carries instrument_key, version, content DIGEST, subject identifier and timestamp. Grounds: X-AO-05 and AUDIT.THE_CONTENT_LEAK_PROHIBITION.",
+      "NO PERSONAL DATA BEYOND THE SUBJECT IDENTIFIER. In particular no ip_address and no user_agent, consistent with I-T3-9 and LRF-03, and consistent with 0067 which pins both to NULL."
+    ],
+    "NOT_AUTHORIZED": [
+      "Any edit to the 0042 policy clause",
+      "Any generic anonymous or member-level audit write",
+      "Any super-admin disjunct",
+      "Any widening of db/policies/** or of the tenancy-refusal policy",
+      "Any new AUDIT_ACTIONS verb name chosen here - see THE_ACTION_NAMES_ARE_NOT_PINNED"
+    ],
+    "THE_ACTION_NAMES_ARE_NOT_PINNED": {
+      "binding": "The parent AUDIT.action_name_disposition states that the three conceptual action names are CONCEPTUAL, that their literal string values are a FUTURE ALLOCATION by whichever mission extends AUDIT_ACTIONS, and that the parent pins that the events must be auditable, not what they are called. This artifact allocates no verb string either.",
+      "CARRY_FORWARD_HAZARD": "Extending the AUDIT_ACTIONS vocabulary is itself a governed and shape-pinned act with its own lock in the FIB lineage. The implementing mission MUST resolve that lock at its own head before introducing a verb, and MUST NOT assume that adding a key to AUDIT_ACTIONS is ordinary work. The policy predicate and the vocabulary entry must name the SAME literal, so the verb decision precedes the policy text.",
+      "consequence_for_the_closed_verb_set": "Because the verb strings are not allocated here, the CLOSED VERB SET requirement above binds the SHAPE (a closed explicit enumeration correlated with the row form) and not the contents."
+    },
+    "WHAT_REMAINS_UNPROVEN": "That the policy as eventually written actually admits the row. This artifact ran NO PostgreSQL probe. The proof is a disposable-harness probe obligation on the implementing mission, and is one of the four properties the parent test manifest states cannot be substituted by unit tests."
+  },
+
+  "B0_PRESERVATION": {
+    "status": "BINDING. CL-1 adds a SECOND explicit gate after B0. It does not modify, replace or absorb the first.",
+    "MEASURED_STATE_CHANGE_SINCE_THE_PARENT_WAS_WRITTEN": {
+      "finding": "The parent BD-1 records Packet B as unimplemented in the integrated tree on the measured basis that grep for emailVerified across lib/auth/ returns ZERO. That is FALSE at START_HEAD.",
+      "measured_at_START_HEAD": "PR136 is integrated at merge eb5a422c. lib/auth/database-context.ts declares readonly emailVerified: boolean; the token emailVerified occurs 18 times across lib/auth/ (database-context.ts 10, identity.ts 4, session.ts 4); lib/auth/email-verification.ts exists; app/(public)/verify-email exists; lib/auth/identity.ts computes emailVerified as Boolean(authUser.email_confirmed_at). CORRECTED AT R2: the R1 figure of 21 counted LINES matching emailVerified OR email_confirmed_at and reported it as a count of the single token.",
+      "consequence": "BD-1 is CLOSED. The seam L0 attaches to now EXISTS. This is what makes CL-1 implementable and it is also what makes every inherited line anchor stale."
+    },
+    "REQUIRED": [
+      "ADD a second explicit legal-acceptance state. Do not overload the existing one.",
+      "PRESERVE emailVerified as the email-verification fact. It keeps its meaning, its derivation site and its required (never optional) presence on the principal type.",
+      "PRESERVE requirePrincipal B0 completeness. Every existing B0 refusal must still refuse for the same reason after L0 exists.",
+      "PRESERVE the Packet B callback, login and signup B0 ordering, including the no-session amendment behaviour where signup routes to the verify destination.",
+      "PRESERVE safe-next behaviour. The existing safe-redirect handling is not relaxed, widened or bypassed by an acceptance redirect.",
+      "REMAIN AFTER B0. L0 is evaluated only for a subject who has already satisfied B0. An unverified subject is refused by B0, not by L0."
+    ],
+    "FORBIDDEN": [
+      "REPLACING emailVerified with, or folding it into, an acceptance state.",
+      "REUSING legal acceptance as email verification, or vice versa.",
+      "EXTENDING lib/auth/email-verification.ts into a generic legal-state helper. That is a redesign of a frozen Packet B surface and is NOT authorized by this artifact. If it proves necessary, it requires its own governed authority.",
+      "ALLOWING L0 acceptance before email verification. This is X-AO-01, whose concrete forbidden shape the parent names: a Terms checkbox on the signup form. It records assent by a party whose control of the address is unproven, which is worse than no evidence because it looks like evidence."
+    ],
+    "THE_MEMO_TRAP_IS_INHERITED_AND_ITS_ANCHORS_HAVE_MOVED": {
+      "the_constraint": "requirePrincipal consults the memo FIRST and returns without reaching fresh resolution. An L0 check placed only on the fresh-resolution branch is BYPASSED whenever the memo is warm. The failure is INTERMITTENT - it depends on whether an earlier call in the same request already resolved the principal - which makes it the worst class of gate defect: it passes tests that happen to run cold and opens in production paths that run warm.",
+      "parent_anchor_as_written": "lib/auth/database-context.ts:632-633 for the memo consult, :635 for resolveRequestPrincipal, :639 for the throw.",
+      "MEASURED_AT_PR148_HEAD": "The durable identities are SYMBOLS, and the anchors below are their positions at PR148 HEAD b9549fcf only. The function requirePrincipal is declared at lib/auth/database-context.ts:679 and closes at :696. The memo consult const memoised = await loadRequestPrincipal() is at :682 and returns at :683 through assertEmailVerifiedPrincipal(memoised). resolveRequestPrincipal is called at :685 and its result passes through the SAME helper at :686. The throw new AuthContextError is at :689. CORRECTED AT R2: the R1 span 680-697 was off by one at both ends; the three load-bearing anchors :682, :685 and :689 were and remain correct. The span is the most brittle and least load-bearing part of this description, which is why the symbols are named first.",
+      "A_SECOND_MEMO_SITE_EXISTS": "lib/auth/database-context.ts:864-865 consults loadRequestPrincipal() and falls back to resolveRequestPrincipal in a different function. It is recorded because the memo-warm hazard is structural to the memo, not to one call site. Whether it is a required L0 translation point is a re-derivation the implementing mission owes - the parent classifies the corresponding Packet B point K7 as DEFENSE_IN_DEPTH_ONLY and NOT a release gate, and that classification is CONSUMED, not re-litigated.",
+      "THE_MEASURED_SHAPE_THE_IMPLEMENTATION_SHOULD_FOLLOW": "Packet B solved this by binding the RESULT of principal resolution on BOTH branches through a single assertion helper, rather than by placing a check on one branch. L0 has the same obligation and the same solution is available. A control MUST exercise the MEMO-WARM path specifically, not only the cold one.",
+      "ANCHORS_ARE_RE_MEASUREMENT_OBLIGATIONS": "Every line number in this section is AS OF START_HEAD and is NOT pinned. The implementing mission MUST re-locate each site by reading the file. An insertion anywhere above moves every anchor below it in the same file en bloc, so resolving a stale anchor to whatever line now looks plausible is not verification. The SYMBOL - the function and the assertion - is the durable identity."
+    },
+    "THE_TERMINATION_OBLIGATION_IS_LIVE_NOW": {
+      "finding": "The parent records F-AO-12: once L0 exists, the Packet B verified-subject redirect to /app/dashboard no longer necessarily passes, producing a BOUNCE through an extra hop. The parent ruling is that the bounce TERMINATES and is therefore not a loop, but that the Packet B termination proof - which reasons about a two-state graph - must be RE-STATED over the three-state one rather than assumed to carry.",
+      "why_it_is_live_now_rather_than_hypothetical": "Packet B is integrated at START_HEAD, so the two-state graph it proved is the real live graph. CL-1 is the change that makes it three-state.",
+      "obligation": "The implementing mission MUST re-derive termination over the extended state space, and a control MUST assert it.",
+      "the_cleaner_alternative_is_RECORDED_NOT_MANDATED": "The parent records that the Packet B verified-subject redirect could target the next unsatisfied gate rather than /app/dashboard unconditionally, and states explicitly that this is an EDIT TO A FROZEN PACKET B CLAUSE which it has no authority to make. This artifact has no such authority either. It is recorded as a recommendation, not authorized."
+    }
+  },
+
+  "EMPTY_INSTRUMENT_REGISTRY": {
+    "status": "BINDING. CONSUMED UNCHANGED from the parent FAIL_CLOSED.FC_7 as corrected at R3 and re-scoped at R4.",
+    "THE_BEHAVIOUR": "Where a REQUIRED instrument has no published applicable version, the gate REFUSES. Fail closed.",
+    "IT_IS_DERIVED_NOT_AN_OWNER_DECISION": "The parent WITHDREW its own earlier STOP_FOR_HPO classification. The withdrawn reasoning defined the conjunction over whatever keys happen to be published, which makes the required set a function of registry contents; under that definition an empty registry genuinely is ambiguous, but the definition itself was wrong. The conjunction is over the CLOSED REQUIRED INSTRUMENT SET fixed by ratification (HPO-A.1 for account-level Terms and Privacy). A required instrument with no published applicable version cannot be current for anyone, so the conjunct is FALSE and the gate refuses. There is no empty set and therefore no vacuous truth.",
+    "THIS_IS_NOT_AN_IMPLEMENTATION_BUG": "A deployment with no published instruments cannot onboard anyone. That is the CORRECT behaviour and it is detected immediately.",
+    "CL1_MAY_MERGE_WITH_AN_EMPTY_REGISTRY": "PROVIDED the system correctly fails closed, and provided that is PROVEN by a control rather than asserted. The parent names P-AO-15 for the empty-registry refusal and N-AO-37 for a PARTIAL registry missing a required instrument.",
+    "WHAT_PROMOTION_ADDITIONALLY_REQUIRES": [
+      "Published instrument CONTENT for every member of the closed required set",
+      "A valid publisher path - see PLATFORM_PUBLISHER_DEPENDENCY",
+      "Counsel answers to LRF-01 through LRF-05"
+    ],
+    "CLASSIFICATION": {
+      "instrument_legal_content": "COUNSEL_REQUIRED",
+      "publisher_path": "PLATFORM_PUBLISHER_DEPENDENCY",
+      "the_gate_behaviour_itself": "DERIVED - neither counsel nor owner is required to settle it"
+    },
+    "NO_INSTRUMENT_LEGAL_CONTENT_IS_AUTHORIZED_HERE": "This artifact authors, reviews, approves and publishes NO instrument text. The parent read none for legal content by design, and neither did this lane.",
+    "WHAT_THE_PARENT_FORBIDS_CLAIMING": "The parent FORBIDDEN_CLAIMS list is carried by reference and is NOT weakened by this artifact. In particular it remains forbidden to claim that Uellix records acceptance of its Terms or Privacy Policy, that implementing this lifts the LC0 commercial_activation or self_service_onboarding gates, or that any of this was reviewed by counsel. The prohibition is SYMMETRIC: citing this work as evidence of breach is as unsupported as citing it as evidence of compliance."
+  },
+
+  "TEST_AUTHORITY": {
+    "known_conditions": {
+      "FROZEN_HERE": "NO. Deliberately.",
+      "obligation": "The implementing mission MUST rederive known_conditions at its OWN exact HEAD, in its own test manifest.",
+      "why_not_frozen_empty": "scripts/ods-test-diff.ts matches a known condition on test identity plus a comparable failure signature - test_file, test_id and the failure leading line - and NOT on cause_fingerprint. A condition frozen here against a stale HEAD could silently absorb a real CL-1 failure under byte-identical identity, converting a load-bearing red into a recognised condition.",
+      "the_obsolete_global_registry": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json holds 2 PRE_EXISTING_DEFERRED conditions whose premise v1.0.30 measured false. It MUST NOT be relied on as a waiver for any CL-1 control, and it is NOT edited here."
+    },
+    "AUTHORIZED_TEST_UPDATES": {
+      "REVISION": "WIDENED AT R2 TO THE COMPLETE INVENTORY. The R1 boundary referenced an inventory that covered only the MIGRATION-TAIL family and was therefore too NARROW: a mission following it would have updated four tail assertions, left thirteen baseline-count sites red, and held no authority covering them. Widening here is a correction toward the measured causal set, NOT a broadening of discretion.",
+
+      "scope": "Updating an assertion enumerated in the companion addendum MEASURED_TEST_PINS_THE_IMPLEMENTING_MISSION_WILL_MOVE - FAMILY_A_BASELINE_COUNT (the canonical v1.0.30 census refs R-1 through R-13, re-measured) and FAMILY_B_MIGRATION_TAIL - together with the reactive evidence artefacts artifacts/baseline-rehearsal/latest.json and artifacts/hosted-a1-status.json, because the baseline unit count or the migration tail legitimately advanced as a direct consequence of the CL-1 unit.",
+
+      "THE_AUTHORIZATION_IS_CAUSAL_NOT_POSITIONAL": "What is authorized is updating an assertion THAT THE CL-1 APPEND CAUSALLY MOVED. Membership in the inventory is EVIDENCE of that causation, not a substitute for it. Two consequences follow and both are binding. FIRST: an inventory entry that does NOT in fact move for this particular unit must NOT be edited - R-2 moves only if the CL-1 unit is a drizzle-migration, R-11 moves only if it is superuser-free, and the s1 dmlUnits entry moves only if it carries DML. Editing one that did not move is fabrication, not bookkeeping. SECOND: an assertion the inventory MISSED but which the CL-1 append demonstrably moved IS within this authorization, and the implementing mission records the omission as an inventory defect rather than routing around the boundary.",
+
+      "NOT_AUTHORIZED": [
+        "Updating any assertion the CL-1 append did not causally move.",
+        "Editing anything in SURVIVING_INVARIANTS_MUST_NOT_BE_TOUCHED - the DERIVED_AUTO_MOVING expressions and the relational invariants. That is scope expansion.",
+        "Repairing an assertion already false at the implementing mission's own base. Carried from v1.0.30 PRE_EXISTING_BROKEN_MUST_NOT_BE_SILENTLY_REPAIRED: a pin already broken at the base is neither that mission's breakage nor its repair. It is recorded and escalated, not fixed in passing.",
+        "Weakening, deleting, skipping or relaxing any control to obtain a green result.",
+        "Any unrelated failing test. A grant is not a licence to make a suite green, and a tail advance is not a general licence to edit tests."
+      ],
+
+      "THE_THREE_DISTINCTIONS_THAT_MUST_SURVIVE_THE_EDIT": [
+        {
+          "id": "D-1",
+          "distinction": "MOVING CONSTANT versus SURVIVING INVARIANT",
+          "moving": "A LITERAL that goes stale - expect(BASELINE_UNITS).toHaveLength(82).",
+          "surviving": "A DERIVATION that stays correct - expect(commands).toHaveLength(BASELINE_UNITS.length + 1) - and a RELATION that stays correct - superuserFreeUnits !== unitCount, and last.idx === entries.length - 1.",
+          "the_hazard": "They look like the same kind of assertion and are the opposite kind. Rewriting a derivation into the new literal converts a self-maintaining control into one that will be wrong at the next append, while appearing diligent. Deleting last.idx === entries.length - 1 alongside the genuinely stale tail-tag assertion in the same block removes a live control on the new entry while looking like cleanup."
+        },
+        {
+          "id": "D-2",
+          "distinction": "N versus N+1",
+          "detail": "Census ref R-8, firstProvisioning.steps.length, is DERIVED as BASELINE_ORDER.length + 1 and is therefore always ONE AHEAD of every sibling count site. At PR148 HEAD it reads 83 while its eleven siblings read 82.",
+          "the_hazard": "A mechanical sweep advancing every 82 to 83 leaves R-8 reading 83 - which is CORRECT for the current N - so the line LOOKS already-updated while demanding 83 steps from a plan that will produce 84. The failure is silent at edit time and surfaces only as a gate failure. Identify R-8 by expression shape, never by line number and never by the literal's value."
+        },
+        {
+          "id": "D-3",
+          "distinction": "TOTAL versus SUBCOUNT",
+          "detail": "R-2, byKind('drizzle-migration'), is a subcount. Its siblings byKind('supabase-migration') = 2 and byKind('policy') = 10 do NOT move when a drizzle unit is appended.",
+          "the_hazard": "If the CL-1 unit lands as a policy unit rather than a drizzle unit, a DIFFERENT subcount moves and R-2 does not. The mission determines which from its own unit's kind, never from the census row."
+        }
+      ],
+
+      "RE_DERIVATION_IS_MANDATORY": "Every value in the inventory is dated to PR148 HEAD b9549fcf and every anchor is a line number that will have moved. The implementing mission re-derives the whole set at ITS head, by EXPRESSION SHAPE, before editing anything. v1.0.30 records R-8 alone moving through lines 407, 411, 413 and 417 across successive appends, which is why the rule is derivation rather than grep."
+    },
+    "POSTGRES_PROBE_IS_REQUIRED_AND_CANNOT_BE_SUBSTITUTED": {
+      "grounds": "The parent test manifest postgres_requirements.rationale, carried unchanged for the CL-1 subset.",
+      "the_properties_that_only_exist_at_the_database_boundary": [
+        "Append-only enforcement (I-T2-2, I-T3-2) is a property of privileges and triggers; a mocked client will happily accept an UPDATE the database would refuse.",
+        "The uniqueness invariant I-T3-1 is the CONCURRENCY control for simultaneous acceptance, and a race is only observable against a real transaction manager.",
+        "The RLS postures R-CL1-1, R-CL1-3 and R-CL1-4 are policy behaviour, and no lane in this chain has yet run a probe - U-AO-1 is open.",
+        "The org-less audit INSERT admission (R-CL1-6) is policy behaviour and is the specific gap F-AO-15 records."
+      ],
+      "harness_boundary": "The disposable harness ONLY. Never staging, never production, never the canonical local stack.",
+      "harness_hazard_carried_forward": "The disposable harness reports setupStatus SKIPPED as its INITIALIZATION value, not only as a genuine skip. A probe run that reports SKIPPED has not necessarily run. COLLECTED must be reported alongside every result - a run that collects zero tests is not green."
+    },
+    "MANIFEST_OBLIGATION": "The implementing mission authors its own test manifest against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, whose schema is STRICT and Controller-validated. Its protected_authority field takes HPO-ODS-W2-28. Note that the parent manifest carries protected_authority null and protected_surfaces empty, correctly, because the authoring lane held no grant; the implementing manifest will not."
+  },
+
+  "IMPLEMENTATION_LOCKS": {
+    "status": "SPECIFIED HERE. NOT ACQUIRED HERE. This lane acquires no lock.",
+    "required_at_implementation": [
+      {"lock": "LOCK_MIGRATION_WRITER", "holder": "CL1", "why": "CL-1 writes db/migrations and advances the journal tail. Two concurrent migration writers produce an ordinal collision that the generate path cannot detect."},
+      {"lock": "LOCK_DEPENDENCY_INSTALL", "holder": "CL1", "why": "The PostgreSQL probe and the targeted suites require node_modules, which is ABSENT at START_HEAD. Installation is a shared mutable surface."},
+      {"lock": "REAL_POSTGRESQL_EXCLUSIVE", "holder": "CL1", "why": "The disposable-harness probe is required and is not safely concurrent."}
+    ],
+    "FULL_REGRESSION_LOCK": {
+      "determination": "REQUIRED AT FINAL CERTIFICATION, NOT AT EVERY IMPLEMENTATION CYCLE.",
+      "reasoning": "CL-1 touches the principal-resolution path, which is transited by a large share of the suite, so a full regression is genuinely load-bearing for this node. But the four tail pins the companion addendum enumerates are TARGETED and can be exercised directly during implementation. Holding a full-regression lock across every cycle would serialise the whole program against one node for no additional evidence.",
+      "NOT_A_LICENCE_TO_SKIP_IT": "The full regression is required before certification. This determination is about WHEN, not WHETHER."
+    },
+    "ORDERING_AGAINST_SIBLING_LANES": "CL-1 must not hold LOCK_MIGRATION_WRITER concurrently with any other lane that writes db/migrations. At least four sibling authorities are live and each has disclaimed the next ordinal rather than taken it, which is precisely the situation in which two lanes can both believe the tail is free."
+  },
+
+  "COUNSEL_REQUIRED": [
+    {"id": "LRF-01", "question": "Is the acceptance evidence sufficient to establish assent, and does organization-level acceptance by an administrator bind that organization individual users?", "status": "OPEN", "must_not_be_represented_as": "Answered, mitigated, or reduced to low risk by any design choice. Narrowing a question is not answering it."},
+    {"id": "LRF-02", "question": "Which locale of an instrument binds the signer, given four language surfaces with different line counts and no declaration that they are translations of one text?", "status": "OPEN", "cl1_relevance": "DIRECT. T2 carries a locale and the acceptance binds the SPECIFIC LOCALIZED VERSION shown, which is fail-closed under either eventual answer."},
+    {"id": "LRF-03", "question": "What identifying metadata may or must be captured alongside an acceptance, and is capturing it lawful, necessary and proportionate?", "status": "OPEN", "cl1_relevance": "DIRECT AND BINDING. CL-1 MANDATES NONE. An implementing mission MUST NOT add such a column on its own initiative."},
+    {"id": "LRF-04", "question": "How does append-only acceptance evidence about a natural person interact with erasure and data-subject-rights obligations?", "status": "OPEN", "cl1_relevance": "DIRECT. CL-1 authorizes NO erasure path, which preserves owner and counsel freedom to define one."},
+    {"id": "LRF-05", "question": "Is the RELEASE SUFFICIENT - may Uellix onboard commercial customers once this mechanism exists and instruments are published?", "status": "OPEN", "the_misreading_to_prevent": "That implementing CL-1 lifts the LC0 commercial_activation or self_service_onboarding gates. IT DOES NOT."},
+    {"id": "INSTRUMENT_LEGAL_CONTENT", "question": "The actual text of each required instrument.", "status": "OPEN", "note": "Not authored, reviewed or authorized by this artifact or its parent."}
+  ],
+  "COUNSEL_ITEMS_ARE_NOT_OWNER_DECISIONS": "None of the above is converted into an OWNER_DECISION_REQUIRED by this artifact. Owner ratification is not legal review, and the parent states that rule first precisely because this artifact class puts an owner decision and a legal subject matter in one document. The owner has already fixed the instrument CLASSES and their cardinality; counsel controls the CONTENT and the sufficiency.",
+
+  "SECURITY_REVIEW_REQUIRED": [
+    {"id": "U-AO-1", "item": "Whether the required RLS policies are achievable as stated against the live role model.", "status": "OPEN", "closes_how": "The CL-1 disposable-harness probe, for the CL-1 subset only."},
+    {"id": "F-AO-15", "item": "Whether the audit_logs INSERT policy admits an organization-less acceptance row.", "status": "MEASURED AT START_HEAD: IT DOES NOT. See ORGLESS_AUDIT_AUTHORITY.", "closes_how": "The additive policy authorized here, proven by probe."},
+    {"id": "U-AO-8 / F-AO-23", "item": "The organization_members self-assignment path at db/migrations/0031_rls_core.sql:126-134 is MEASURED OPEN. A super-admin principal can manufacture a genuine organization_admin membership.", "status": "OPEN, EXTERNAL", "cl1_disposition": "CL-1 neither closes nor depends on it. It bears on L1 accepting-role trust, which is out of CL-1 scope. Recorded so a successor does not read CL-1 completion as closing it."},
+    {"id": "X-AO-06", "item": "The super-admin membership-check exception at db/identity-context.ts:217.", "status": "OPEN, EXTERNAL", "cl1_disposition": "CL-1 does not fix it and must not depend on it being open."},
+    {"id": "INHERITED_COMPLETENESS_LIMIT", "item": "COMPLETENESS of the enforcement topology is NOT claimed by the parent; it is INHERITED from Packet B, proved at ITS head against a 19-entry census the parent did not re-run. If the Packet B topology is wrong, L0 inherits the error.", "status": "STANDING LIMIT", "cl1_disposition": "Disclosed, not resolved. This lane re-ran no census either."},
+    {"id": "F-CE-4", "item": "db/prepared/stella_hosted_0008_audit_log_write_capability.sql rests on a premise that public.audit_logs carries EXACTLY ONE policy and no INSERT policy. Against the local chain it already carries two INSERT policies (0042 and 0067), and the CL-1 additive policy would make three.", "status": "PREEXISTING_SUPERSEDED_NON_BLOCKING", "measured": "The file declares itself NOT YET APPLIED TO ANY DATABASE and a PRECHAIN ADMINISTRATIVE UNIT that is NOT a member of HOSTED_CHAIN; migration 0042 independently records it as retired without being applied.", "cl1_disposition": "RECORDED, NOT REPAIRED. The file is not edited, db/prepared/hosted/** is not added to the grant, and the path itself sits at the db/prepared/ root which the grant's narrow patterns already exclude. Repairing a retired, never-applied prechain unit is a separate governed act. Carried so that a successor does not read CL-1's silence as a claim that no such conflict exists."}
+  ],
+
+  "PLATFORM_PUBLISHER_DEPENDENCY": {
+    "item": "Which platform principal may publish an instrument version.",
+    "status": "OPEN. U-AO-2.",
+    "owner": "The platform-roles lineage. Packet B section 6 forbids redesigning platform-admin identity from an adjacent lane and the parent honours that; so does this artifact.",
+    "cl1_posture": "CL-1 creates T2 with RLS enabled and NO tenant-role write path. An absent write path fails closed and leaves the decision intact.",
+    "consequence_for_promotion": "Until a publisher path exists, no instrument can be published, so the registry stays empty, so the gate refuses everyone. That is correct fail-closed behaviour and it is also why CL-1 completion does not by itself enable onboarding."
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "class": "DOCS/AUTHORITY-ONLY",
+    "no_dependencies_installed": true,
+    "no_postgres": true,
+    "no_migration": true,
+    "no_runtime_edit": true,
+    "no_hosted_mutation": true,
+    "performed": [
+      "git fetch and prestate identity verification against origin/integration/commercial-v1",
+      "Strict JSON parse of both materialized artifacts",
+      "Structural allocation-position collision sweep over every tracked file",
+      "Row-by-row enumeration of PROTECTED_GRANTS",
+      "Addendum ledger enumeration with filename-versus-field cross-check across all 30 addenda",
+      "Direct reading of both live audit_logs INSERT policies",
+      "Commit-diff measurement of the two most recent migration-adding commits"
+    ],
+    "NOT_PERFORMED_AND_NOT_CLAIMED": [
+      "Any test suite execution",
+      "Any PostgreSQL probe",
+      "Any hosted or live environment observation"
+    ]
+  },
+
+  "IMPLEMENTATION_AUTHORIZED": false,
+  "IMPLEMENTATION_AUTHORIZED_NOTE": "This artifact BOUNDS a contract and carries an allocation. It does NOT open implementation. Implementation opens only on codex/customer-lifecycle-cl1-implementation-r1, and only after HPO-ODS-W2-28 is REGISTERED in scripts/ods-scope.ts by a separate governed act and that registration is INTEGRATED.",
+  "final_state": "CL1_EXECUTION_CONTRACT_BOUNDED_AWAITING_INDEPENDENT_AUDIT_AND_GRANT_REGISTRATION",
+  "next_gate": "CL1_ODS_AUTHORITY_INDEPENDENT_AUDIT"
+}
