@@ -8,7 +8,9 @@
     "TENANCY_S3_SELECTOR_REACHABILITY_REMEDIATION_v1.0.0",
     "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0",
     "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0",
-    "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0"
+    "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0",
+    "HPO_A_G_OWNER_RATIFICATIONS_v1.0.0",
+    "COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0"
   ],
   "protected_surfaces": [],
   "protected_authority": null,
@@ -68,6 +70,26 @@
     {
       "id": "S-AO-INTERIM-EMPTY-REGISTRY-POSTURE-IS-VISIBLE",
       "purpose": "The empty-instrument-registry behaviour is STOP_FOR_HPO (F-AO-14) with an interim REFUSE posture. Sentinel: the interim posture is asserted by an explicit control, so that if the owner later chooses vacuous pass the change is a deliberate edit to a named assertion rather than a silent behavioural drift. A model whose most dangerous edge case is untested at initial deployment is untested exactly where mistakes are most likely."
+    },
+    {
+      "id": "S-AO-ACCEPTING-ROLE-IS-EXACT",
+      "purpose": "The L1 accepting-role predicate must never be a hierarchy threshold and its role set must never contain super_admin. Sentinel: no hasRole( call and no ROLE_HIERARCHY comparison appears on any acceptance-write path, and the accepting role set is the SINGLETON organization_admin. Measured context: hasRole is a >= comparison (lib/auth/permissions.ts:24-26), hasRole(super_admin, organization_admin) is TRUE (lib/auth/roles.ts:38-44), super_admin is a permitted membership role value (db/schema.ts:113), hasRole( has 18 call sites in permissions.ts and 60 repo-wide, and BOTH role-set literals in permissions.ts include super_admin. L1 predicate must be the FIRST in this codebase that is neither a threshold nor super_admin-inclusive, so following local convention faithfully produces the violating form. Authority X-AO-11, RAT-AO-01 AO1_C6, corroborated by RAT-OP-01."
+    },
+    {
+      "id": "S-AO-NO-COMMERCIAL-STATE-READ-BY-THE-GATE",
+      "purpose": "No commercial state may influence the acceptance gate. Sentinel: the acceptance-currency predicate reads ONLY the acceptance relations and the instrument-version registry — commercial_status, commercial_accounts and any manual-activation state are NOT among its inputs. An input that is never read cannot become a bypass. Authority X-AO-12, RAT-AO-02 AO2_C3."
+    },
+    {
+      "id": "S-AO-NO-PER-TENANT-EFFECTIVE-AT",
+      "purpose": "effective_at is a property of the VERSION only. Sentinel: no per-organization, per-subject or per-tenant effective_at, deferral, waiver or exemption exists in any relation, column or configuration surface. A per-tenant date is the grace period RAT-AO-03 AO3_C1 forbids, re-expressed as data and arriving under a permitted name. Authority X-AO-16."
+    },
+    {
+      "id": "S-AO-NO-OUTBOUND-SIDE-EFFECT",
+      "purpose": "The gate and its refusal emit nothing outbound. Sentinel: driving the blocked and undischarged-L1 states produces ZERO email, in-app notification, queue row, webhook or other outbound effect. RAT-AO-01 says the organization_admin RECEIVES the completion CTA; it does not say the system SENDS anything, and inventing that would create an async-delivery obligation owned by the HPO-C lineage. Authority X-AO-14."
+    },
+    {
+      "id": "S-AO-MUTATING-VERB-NOT-LITERAL-POST",
+      "purpose": "The invitation requirement is a PROPERTY, not a verb literal. Sentinel: no control asserts the literal string POST as the requirement; controls assert that a safe-method request mutates nothing and that the mutating request declares a mutating method. Canonical HPO-A permits POST or another proper mutating verb, and a POST-literal control would REJECT a compliant PUT handler — R1 over-narrowing, corrected as F-AO-20. This sentinel exists because that mutation makes the suite STRICTER and is therefore invisible to any weakening check. Authority INVITATIONS.R2_CORRECTION_MUTATING_VERB."
     }
   ],
   "known_conditions": [],
@@ -150,6 +172,26 @@
     {
       "id": "P-AO-15",
       "description": "INTERIM EMPTY-REGISTRY POSTURE IS EXPLICIT. With ZERO published instruments for a class, the corresponding gate REFUSES, loudly. This asserts the INTERIM posture of F-AO-14, which is STOP_FOR_HPO: the control exists so that if the owner later chooses vacuous pass, the change is a deliberate edit to a named assertion rather than silent behavioural drift. Authority FC_7.INTERIM_POSTURE_UNTIL_ADJUDICATED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-16",
+      "description": "ORGANIZATION_ADMIN GETS THE COMPLETION AFFORDANCE. A subject holding an ACTIVE membership with role EXACTLY organization_admin in an organization whose commercial acceptance is not current receives the completion call-to-action — the affordance that lets the obligation actually be satisfied — and can then discharge L1 successfully. Assert the affordance is present for this subject and ABSENT for every non-admin role. Do NOT assert any specific copy, route or component: RAT-AO-01 explicit_non_authorizations forbids authorizing those, so the control asserts the AFFORDANCE IS REACHABLE AND THE ACT SUCCEEDS, not what it looks like. Authority RAT-AO-01 AO1_C4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-17",
+      "description": "A PRE-EFFECTIVE MARKED VERSION DOES NOT REFUSE. Publish a later version with reaccept_required TRUE and effective_at in the FUTURE; a subject who accepted the earlier version REMAINS CURRENT and passes the gate. This is the control that proves the R2 time dimension exists. Without it, publishing a future-dated instrument version would refuse the entire affected population immediately on publication — a false lockout arriving through the door R1 predicate did not model. Authority RAT-AO-03 AO3_C3, REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT, F-AO-19.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-18",
+      "description": "AN ACCEPTANCE OF A PRE-EFFECTIVE VERSION COUNTS ONCE IT TAKES EFFECT. If the product offers acceptance of a version before its effective_at, that acceptance is a REAL acceptance of that version: assert the subject is current both before and after effective_at arrives, with no second act required. The acceptance binds the VERSION, not the moment the gate closes. Authority REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.PRE_EFFECTIVE_NOTICE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-AO-19",
+      "description": "A VERSION WITH NO EFFECTIVE_AT IS IN EFFECT ON PUBLICATION. Publish a later version with reaccept_required TRUE and effective_at NULL; a subject who accepted the earlier version becomes NON-CURRENT immediately. This pins the fail-closed reading of the optional field: treating NULL as not-yet-effective would turn an omitted optional value into a permanent silent bypass. The semantics are DERIVED_NOT_GRANTED, so this control is the place the derivation is made visible and challengeable. Authority REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.THE_CORRECTED_CURRENCY_PREDICATE.",
       "test_file": "UNKNOWN"
     }
   ],
@@ -278,6 +320,61 @@
       "id": "N-AO-25",
       "description": "ACCOUNT-CLASS ACCEPTANCE CARRIES NO FABRICATED TENANT SCOPE. Assert that an account-class acceptance row carries no organization_id, and that its audit row is written with a GENUINELY ABSENT organization scope — not a borrowed, fabricated or later-backfilled one. The column is nullable at db/schema.ts:118 and the emitter parameter optional at lib/audit/logger.ts:288 and :407, both measured; whether the RLS insert policy on audit_logs ADMITS such a row was NOT measured by the authoring lane and is the substance of this control. Authority I-T3-7, AUDIT.TENANT_SCOPE_OF_THE_AUDIT_ROW, F-AO-15.",
       "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-26",
+      "description": "THE ACCEPTING-ROLE PREDICATE IS EXACT, NOT A THRESHOLD. Attempt an organization-class acceptance write as each of the FOUR non-admin tenant roles named by RAT-AO-01 — viewer, reviewer, analyst, impact_manager — each holding an ACTIVE membership in the target organization, and assert ALL FOUR are refused. The enumeration is EXHAUSTIVE over non-admin tenant roles: lib/auth/roles.ts:13-19 and db/schema.ts:113 both declare exactly six values, partitioned as one accepting role, these four, and super_admin. Assert also that impact_manager — the highest-ranked of the four at 60 in ROLE_HIERARCHY — is refused, because a threshold predicate set just below organization_admin would admit it. Authority RAT-AO-01 AO1_C1, AO1_C5, AO1_C6; X-AO-11.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-27",
+      "description": "A TENANT SUPER_ADMIN IS NOT AN ACCEPTING PRINCIPAL. A subject holding an ACTIVE organization_members row with role super_admin — a value db/schema.ts:113 permits — is REFUSED when attempting an organization-class acceptance write. This is the control that catches the ambient-convention defect: hasRole('super_admin','organization_admin') is 100 >= 80 = TRUE at lib/auth/permissions.ts:24-26 with lib/auth/roles.ts:38-44, so an L1 check written in the idiom of canManageUsers at :33-35 would ADMIT this subject. Assert refusal, and assert it is produced by an exact-role predicate rather than by any platform-principal check that could be satisfied for a different reason. Authority RAT-AO-01 AO1_C6, RAT-AO-02 AO2_C2, F-AO-18, X-AO-11.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-28",
+      "description": "MANUAL COMMERCIAL ACTIVATION IS NOT ACCEPTANCE. An organization in a manual commercial activation state — ACTIVE_WITHOUT_STRIPE per HPO-B.7, or any successor manual-activation state — with NO organization-class acceptance row is REFUSED at L1 and receives no entitlement. Assert that no commercial state value is read by the acceptance-currency predicate at all. The state does not exist in the repository at this tree (grep over db/ and lib/ returns zero; commercial_status is constrained to four other values at db/schema.ts:33), so this control is written against the state as it will exist and must be marked as depending on that materialization. Authority RAT-AO-02 AO2_C3, X-AO-12.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-29",
+      "description": "NO PLATFORM OR SUPPORT PATH RECORDS AN ACCEPTANCE. Attempt an organization-class acceptance write as a platform-admin principal, as a principal holding a support capability for the affected organization, and as a service or operator principal with no membership at all. Assert ALL are refused. Assert specifically that holding a support capability confers NO acceptance authority — the derived corollary of RAT-AO-02 with RAT-OP-01, labelled DERIVED_NOT_GRANTED, which makes this the control an auditor should use to test that derivation. Authority RAT-AO-02 AO2_C1, PLATFORM_ADMIN_BOUNDARY, X-AO-13.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-30",
+      "description": "A PRE-EFFECTIVE NOTICE IS NOT AN ACCEPTANCE. Display, dismiss and acknowledge a pre-effective version notice, then assert ZERO acceptance rows were created and that the subject does NOT satisfy the gate once effective_at arrives. Assert also that the notice itself never blocks: the subject retains product access throughout the pre-effective window. Two opposite errors are covered by one control — refusing early is an outage, and treating a dismissal as assent manufactures evidence of an act that never occurred. Authority RAT-AO-03 AO3_C3, X-AO-15.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-31",
+      "description": "NO UNIVERSAL GRACE PERIOD AND NO PER-TENANT DEFERRAL. After a version effective_at has passed with reaccept_required TRUE, assert the gate refuses IMMEDIATELY — there is no interval in which it is applying and being ignored. Assert additionally that no per-organization, per-subject or per-tenant effective_at, deferral, waiver or exemption exists in any relation or configuration: a per-tenant date is the forbidden grace period re-expressed as data. Authority RAT-AO-03 AO3_C1, X-AO-16.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-32",
+      "description": "ZERO PRIOR ACCEPTANCE NEVER PASSES BY A VACUOUS PREDICATE — BOTH ROUTES. A subject with ZERO acceptance rows is REFUSED in BOTH vacuous conditions: (a) no published version carries reaccept_required TRUE, and (b) every version carrying reaccept_required TRUE is still PRE-EFFECTIVE. Route (b) is new at R2 and is the MORE LIKELY of the two in practice, because a team publishing a future-dated version has deliberately created exactly that state. A control exercising only (a) is incomplete. Authority REACCEPTANCE.THE_CURRENCY_PREDICATE, REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.WHAT_IS_PRESERVED_FROM_R1_UNCHANGED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-33",
+      "description": "A SAFE-METHOD REQUEST MUTATES NOTHING, AND THE MUTATING REQUEST DECLARES A MUTATING METHOD. Assert the PROPERTY, not the literal verb: a GET or HEAD of the invitation URL leaves every table byte-identical (including the EXPIRED and REVOKED cases, which mutate today at lib/invitations/service.ts:175-178 from app/invite/accept/page.tsx:53), and the acceptance effect is reachable only through a request whose declared method is a mutating one. A control asserting the literal string POST would REFUSE a PUT or DELETE handler that canonical HPO-A explicitly permits — R1 over-narrowing, corrected as F-AO-20. This control SUPERSEDES the verb-literal scope of N-AO-8 while preserving its snapshot assertion. Authority HPO-A.7 with its statement parenthetical, INVITATIONS.R2_CORRECTION_MUTATING_VERB.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-34",
+      "description": "NO AUTOMATIC NOTIFICATION IS REQUIRED OR EMITTED. Drive a non-admin into the blocked state and an organization into an undischarged-L1 state, and assert that NO email, in-app notification, queue row, webhook or outbound side effect is produced by the gate or its refusal. RAT-AO-01 says the organization_admin RECEIVES the completion CTA; it does not say the system SENDS anything. This control exists so that a future implementer who adds a notification has to change a named assertion rather than quietly create an async-delivery obligation belonging to the HPO-C lineage. Authority X-AO-14, A3_REMEDY_RESOLUTION.WHAT_REMAINS_UNRATIFIED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-35",
+      "description": "THE BLOCKED STATE IS NON-SENSITIVE AND DOES NOT LEAK. A non-admin blocked by an undischarged organization acceptance receives a state that explains access is pending and discloses nothing further: assert the response contains no instrument text, no instrument version identifier, no content digest, no accepting-admin identity, no acceptance timestamp and no commercial-state value. What counts as sensitive is not fully enumerated by the ratification (F-AO-22), so this control asserts the SPECIFIC ITEMS the acceptance model actually holds rather than a general standard, and must be extended if the owner later enumerates more. Authority RAT-AO-01 AO1_C3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-AO-36",
+      "description": "A NON-ADMIN IS BLOCKED, NOT WAVED THROUGH. Assert BOTH halves of RAT-AO-01 for the same subject in one control: the non-admin CANNOT write the acceptance, AND the non-admin does NOT receive entitled product capability in that organization. Refusing to let them accept is not the same as letting them through, and an implementation that gets the first half right while granting access anyway satisfies every write-refusal control while defeating the gate entirely. Authority RAT-AO-01 AO1_C1 and AO1_C2.",
+      "test_file": "UNKNOWN"
     }
   ],
   "mutation_controls": [
@@ -349,6 +446,46 @@
     {
       "id": "M-AO-14",
       "description": "Fold the L1 acceptance write into the AB-2 bootstrap transaction, or fold the L0 write into it. A control MUST turn RED — N-AO-15 for the L0 case, and for the L1 case the ordering assertion in P-AO-4 that L1 is not reachable before AB-2 commits. Folding L1 in also makes the model unimplementable for any organization whose administrator later changes or whose instrument later requires reacceptance, both of which reopen the window the fold was meant to eliminate. Authority BOOTSTRAP_ATOMICITY.WHAT_IS_DELIBERATELY_OUTSIDE_THE_BOOTSTRAP_TRANSACTION, CANONICAL_JOURNEY.THE_WINDOW_THIS_CREATES.must_not_be_engineered_away.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-15",
+      "description": "Replace the exact-equality accepting-role check with the ambient idiom hasRole(role, 'organization_admin') — the same shape canManageUsers uses at lib/auth/permissions.ts:33-35. N-AO-27 MUST turn RED, because hasRole('super_admin','organization_admin') is 100 >= 80 = TRUE. NON-VACUITY: this mutation is a real, compiling, idiomatic alternative that a reviewer would plausibly accept, not a syntactic break — which is exactly why the control must exist. Assert additionally that adding super_admin to an otherwise-exact role set also turns N-AO-27 RED, since both existing role-set literals in permissions.ts include it (2 of 2) and an implementer copying that pattern would too. Authority X-AO-11, F-AO-18.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-16",
+      "description": "Make the acceptance-currency predicate treat a manual commercial activation state as satisfying the organization gate. N-AO-28 MUST turn RED. NON-VACUITY: the mutation is a plausible convenience — an operator manually activated the organization and presumably knew what they were doing — and it converts an OPERATIONAL decision into LEGAL EVIDENCE recorded against a party the operator never represented. It would pass every positive control, because every positive control uses an organization that actually accepted. Authority X-AO-12, RAT-AO-02 AO2_C3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-17",
+      "description": "Delete the effective_at conjunct from the currency predicate, so a marked version refuses on publication. P-AO-17 MUST turn RED. NON-VACUITY: this mutation restores R1 predicate exactly — it is not a contrived break but the previously-authoritative form — and its production failure is a false lockout of the entire affected population at the moment a future-dated version is published. Authority REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT, F-AO-19.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-18",
+      "description": "Invert the effective_at NULL semantics so a NULL effective_at means NOT-YET-EFFECTIVE. P-AO-19 MUST turn RED. NON-VACUITY: NULL-means-not-yet is a defensible-sounding reading of an OPTIONAL field, and under it a version published with reaccept_required TRUE and no date NEVER bites — an omitted optional value becomes a permanent silent bypass that no positive control would notice. Authority REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.THE_CORRECTED_CURRENCY_PREDICATE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-19",
+      "description": "Introduce a per-organization effective_at override, or a per-tenant deferral column, presented as operational flexibility. N-AO-31 MUST turn RED. NON-VACUITY: a per-tenant date is not obviously a grace period — it reads as a legitimate configuration knob — and that is precisely how the thing RAT-AO-03 AO3_C1 forbids would enter the system under a permitted name. Authority X-AO-16.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-20",
+      "description": "Grant the organization_admin completion affordance to any role at or above impact_manager, as a convenience so more members can unblock their organization. P-AO-16 MUST turn RED on the ABSENT half, and N-AO-26 MUST turn RED for impact_manager. NON-VACUITY: this is the single most likely product-pressure mutation, because a blocked organization whose sole admin is unavailable is a real support burden, and broadening the role is the obvious relief. RAT-AO-01 AO1_C5 forecloses it by name. Authority RAT-AO-01 AO1_C5, X-AO-11.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-21",
+      "description": "Add an automatic email to the organization_admin when a member is blocked. N-AO-34 MUST turn RED. NON-VACUITY: this mutation makes the product BETTER by most measures and is the one a well-intentioned implementer is most likely to add, which is exactly why the prohibition needs an executable control rather than only prose. The control does not assert that notifying is wrong; it asserts that this lane did not decide it, and that adding it must be a deliberate edit to a named assertion. Authority X-AO-14.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-AO-22",
+      "description": "Scope the invitation mutating-verb control to the literal string POST. N-AO-33 MUST FAIL TO DISTINGUISH a compliant PUT handler from a render-time GET mutation — assert that the control, so scoped, REJECTS an implementation canonical HPO-A explicitly permits. NON-VACUITY: this mutation makes the suite STRICTER, not weaker, and is therefore invisible to any check that only looks for weakening. It reproduces R1 own over-narrowing (F-AO-20) and exists so the correction cannot be silently reverted by a future tightening. Authority INVITATIONS.R2_CORRECTION_MUTATING_VERB.",
       "test_file": "UNKNOWN"
     }
   ],

@@ -1,13 +1,38 @@
 {
   "package_id": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "artifact_id": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json",
   "authority_class": "BOUNDED_CUSTOMER_LIFECYCLE_ACCEPTANCE_GATE_EXECUTION_AUTHORITY",
-  "mission_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-AUTHORITY-R1",
+  "mission_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-OWNER-DECISION-CLOSURE",
   "lane_id": "LANE_AO",
-  "role": "CUSTOMER_LIFECYCLE_AUTHORITY_WRITER",
-  "materialization_date": "2026-09-10",
+  "role": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_R2_WRITER",
+  "materialization_date": "2026-09-10 (R1); revised 2026-09-11 (R2)",
   "companion_manifest": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_TEST_MANIFEST_v1.0.0.json",
+  "REVISION_HISTORY": [
+    {
+      "revision": "R1",
+      "mission_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-AUTHORITY-R1",
+      "date": "2026-09-10",
+      "as_of_head": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+      "as_of_tree": "97006bebd7e496135967d05d59b01e798cdc7394",
+      "commit": "91cd32d5a4754f36ec162458f6c42189ecb5a290",
+      "what_it_did": "First materialization. Discharged HPO-LC0-04 as a product decision from HPO-A as transmitted in the mission prompt, defined the L0/L1 gate chain, the instrument and acceptance models, five atomicity boundaries, seven fail-closed cases and four conceptual relations. Recorded F-AO-01..F-AO-17.",
+      "state_at_the_time": "HPO-A had NO repository substrate. COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json carried no legal-acceptance ratification in any of its thirty entries, and no docs/** file named HPO-A. R1 said so explicitly rather than implying canonical provenance it did not have.",
+      "role": "CUSTOMER_LIFECYCLE_AUTHORITY_WRITER"
+    },
+    {
+      "revision": "R2",
+      "mission_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-OWNER-DECISION-CLOSURE",
+      "date": "2026-09-11",
+      "as_of_head": "91cd32d5a4754f36ec162458f6c42189ecb5a290",
+      "as_of_tree": "d759448aca0c70e81c2af82c384c205f5b3d2782",
+      "current_live_observed": "f0d81d1dfb9bc567eb0d0cd90cee6f028d003077",
+      "what_it_did": "Consumed the now-resident canonical HPO-A (PR137) and the owner micro-ratifications RAT-AO-01..03 (PR146). Resolved three previously open STOP_FOR_HPO findings, corrected two R1 claims by comparison against canonical text, corrected the currency predicate to carry the ratified effective_at dimension, and added the platform-admin boundary reconciliation RAT-AO-02 requires.",
+      "what_it_did_NOT_do": "It did not rewrite R1 history, did not amend Packet A or Packet B, did not touch PR145 or PR146, and did not authorize implementation. IMPLEMENTATION_AUTHORIZED remains false.",
+      "role": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_R2_WRITER",
+      "diff_character": "ADDITIVE. 880 insertions, 12 deletions. Of the 12: four are header fields whose R1 values are preserved in materialization_date, mission_id_history, final_state_history and next_gate_history; one is the deliberate effective_from to effective_at rename (RAT-AO-03 vocabulary); and the remaining seven are comma-only reflows from JSON reserialization where an array or object gained a sibling. NO R1 clause text was removed."
+    }
+  ],
   "home_directory_derivation": "docs/ops/compliance/ was chosen, not docs/ops/tenancy/ and not docs/ops/commercial/, because the decision this artifact discharges is a PENDING DECISION OF LC0 - HPO-LC0-04, recorded at docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json. The lineage home of a discharge is the home of the authority that raised it. The artifact reconciles WITH tenancy and commercial authority; it does not descend from either.",
   "GRANT_ID": null,
   "GRANT_ID_DISPOSITION": "NO GRANT IS DECLARED OR REGISTERED BY THIS ARTIFACT. The entire write surface of the authoring mission is docs/** - this artifact and its companion manifest. Every future write surface named in FUTURE_DDL and EXACT_FUTURE_IMPLEMENTATION_SURFACE is DESCRIBED, not authorized, and no ODS ordinal, migration ordinal, grant id or lineage position is allocated here. See LINEAGE_REDERIVATION_REQUIRED.",
@@ -15,6 +40,59 @@
   "AS_OF_HEAD": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
   "AS_OF_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
   "as_of_measurement_note": "HEAD equals the mission's declared BASE 88d95c65b9c9a942195319f09aabaa7b127f7e30 and the working tree was clean at prestate - git status --porcelain --untracked-files=all returned zero lines. Every line anchor, count and absence claim in this artifact was re-derived at this tree. Where re-derivation contradicted an inherited status, the correction is recorded in LIVE_RECONCILIATION.STALE_STATUS_CORRECTIONS and the inherited claim is NOT preserved.",
+  "R2_CURRENT_LIVE_RECONCILIATION": {
+    "purpose": "R1 was authored against an integration tip that has since advanced. A design reasoning from a superseded tip is reasoning from nothing, so the advance is measured here before any clause is edited.",
+    "fetch_performed": "git fetch origin --prune, at the start of this revision.",
+    "branch_state": {
+      "branch": "codex/customer-lifecycle-legal-acceptance-authority-r1",
+      "head_at_r2_start": "91cd32d5a4754f36ec162458f6c42189ecb5a290",
+      "tree_at_r2_start": "d759448aca0c70e81c2af82c384c205f5b3d2782",
+      "matches_declared_prestate": true,
+      "working_tree_clean": "git status --porcelain --untracked-files=all returned ZERO lines"
+    },
+    "integration_advance": {
+      "r1_base": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+      "current_live": "f0d81d1dfb9bc567eb0d0cd90cee6f028d003077",
+      "commits_between_measured": [
+        "f0d81d1d Merge pull request #146 from lorenzozanello/codex/commercial-v1-micro-ratifications-r1",
+        "a3f3419e Merge pull request #137 from lorenzozanello/codex/owner-ratifications-materialization-r1",
+        "1cddd310 docs(commercial): materialize 12 owner micro-ratifications (RAT-EV/AO/ASY/OP/PV)",
+        "39f61be4 docs(authority): R3 factual measurement remediation (audit BD, 3 blockers)",
+        "209f4ab1 docs(authority): materialize HPO-A..G owner ratifications (R2 completion)",
+        "7b988129 docs(authority): materialize Evaluate + Public Verification owner ratifications"
+      ],
+      "character_of_the_advance": "DOCS-ONLY. All six commits are owner-ratification materializations. NO code, NO schema, NO migration landed between the R1 base and current live."
+    },
+    "pr_states_measured": {
+      "PR137": "MERGED 2026-09-11T01:13:11Z, merge commit a3f3419e, base integration/commercial-v1.",
+      "PR146": "MERGED 2026-09-11T01:44:08Z, merge commit f0d81d1d, base integration/commercial-v1. The exact object named by the mission, 1cddd3109762f84710fdb81ad72820a87066a24f, is in that merged history.",
+      "PR143": "OPEN, DRAFT — this artifact own PR.",
+      "PR145": "OPEN, DRAFT — NOT modified, NOT read for diff content by this revision. Only its sibling ratification RAT-OP-01, which is resident in integration, is consumed."
+    },
+    "canonical_artifacts_now_RESIDENT": [
+      {
+        "path": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json",
+        "verified": "git rev-parse --verify origin/integration/commercial-v1:<path> resolves. PRESENT.",
+        "carries": "HPO-A..HPO-G, seven ratifications, array form."
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json",
+        "verified": "PRESENT.",
+        "carries": "Twelve micro-ratifications including RAT-AO-01, RAT-AO-02, RAT-AO-03 and the sibling RAT-OP-01."
+      }
+    ],
+    "MERGE_ORDER_PRECONDITION_SATISFIED": {
+      "the_precondition": "COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json canonical_backbone_dependency.merge_order_precondition requires that the broad backbone (PR137) be integrated before, or reconciled within, the same governed merge train as the micro-ratification artifact and any successor authority consuming it.",
+      "measured": "SATISFIED. PR137 merged at a3f3419e; PR146 merged at f0d81d1d, which is a DESCENDANT of a3f3419e in the same integration line. The backbone landed first.",
+      "why_it_matters_here": "This artifact is exactly the successor that relies on BOTH the broad backbone (HPO-A) and the micro-ratifications (RAT-AO-01..03). The precondition governing that combination is therefore discharged by measurement, not assumed.",
+      "both_artifacts_authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY, for both files. Consuming them settles PRODUCT INTENT. Neither grants executable authority, and this artifact gains none from them. IMPLEMENTATION_AUTHORIZED stays false."
+    },
+    "what_did_NOT_change_and_was_re_verified": {
+      "HTF-11": "STILL_TRUE. The acceptance substrate remains entirely absent; the six intervening commits are docs-only, so no acceptance relation could have appeared.",
+      "the_role_model": "Re-measured directly at this tree rather than inherited — see RAT_AO_CONSUMPTION.RAT_AO_01.THE_EXACT_ROLE_PREDICATE.",
+      "R1_technical_findings": "F-AO-01, F-AO-02, F-AO-03 and F-AO-12 all rest on code paths in lib/, app/ and db/, and NO code landed between the R1 base and current live. They are PRESERVED UNCHANGED. See R2_FINDINGS_DISPOSITION."
+    }
+  },
   "PARENT_AUTHORITY": {
     "primary": {
       "artifact": "docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json",
@@ -113,7 +191,8 @@
       "It does not decide retention or erasure of acceptance evidence, which interacts with LC0 HPO-LC0-03. See OPEN_FINDINGS.F-AO-09.",
       "It does not allocate any migration ordinal, ODS ordinal, grant, or lineage position, and this artifact allocates none on its behalf."
     ],
-    "SCOPE_DISCIPLINE": "Nine decisions were supplied and nine are consumed. Where a decision is silent, this artifact either DERIVES the answer from frozen authority and measured code and says so explicitly, or records it as UNKNOWN and stops. It invents no tenth decision. Every clause below that is derived rather than granted carries a derivation field naming its grounds."
+    "SCOPE_DISCIPLINE": "Nine decisions were supplied and nine are consumed. Where a decision is silent, this artifact either DERIVES the answer from frozen authority and measured code and says so explicitly, or records it as UNKNOWN and stops. It invents no tenth decision. Every clause below that is derived rather than granted carries a derivation field naming its grounds.",
+    "R2_FORWARD_POINTER": "THE PROVENANCE STATEMENT ABOVE IS PRESERVED AS A HISTORICAL MEASUREMENT AT R1 AS_OF_TREE 97006beb AND IS STILL TRUE OF THAT TREE. It is NO LONGER the current provenance: canonical HPO-A is now RESIDENT at docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json via PR137. A reader must not stop here. See HPO_A_PROVENANCE_R2, which preserves the historical fact, records current residency, and carries the clause-by-clause drift comparison including the one R1 over-narrowing that R2 corrects."
   },
   "HPO_LC0_04_DISCHARGE": {
     "rule": "HPO-LC0-04 asks three questions. Each is answered below by naming the HPO-A decision that answers it. A question with no answering decision is recorded as NOT discharged rather than papered over.",
@@ -144,6 +223,256 @@
       "the_non_obvious_half": "Decision 5 is the substantive part. Under a naive model, publishing any later version invalidates every prior acceptance. Decision 5 forbids that: a later version invalidates prior acceptances ONLY where it is explicitly marked reaccept_required. This changes the currency predicate from a comparison against the latest version into a search for an intervening reaccept_required marking, and REACCEPTANCE below states the predicate in the only fail-closed-correct form."
     },
     "discharge_status": "HPO-LC0-04 is DISCHARGED AS A PRODUCT DECISION by HPO-A. It is NOT discharged as a legal question - CQ-06 remains open - and it is NOT discharged as an implementation, because HTF-11 is STILL_TRUE at this AS_OF_TREE and no substrate exists. The two LC0-gated stages therefore REMAIN GATED after this artifact."
+  },
+  "HPO_A_PROVENANCE_R2": {
+    "rule": "R1 historical measurement is PRESERVED, not rewritten. Current provenance is ADDED alongside it. Both statements are true of their own moment and the artifact says which moment each belongs to.",
+    "HISTORICAL_FACT_PRESERVED": {
+      "measured_at": "AS_OF_TREE 97006bebd7e496135967d05d59b01e798cdc7394 (R1 base 88d95c65)",
+      "statement": "HPO-A had NO repository substrate. A search of docs/** for the identifier returned nothing, and COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json contained no legal-acceptance ratification in any of its thirty entries. R1 therefore stood on the mission prompt plus re-derivation.",
+      "status": "TRUE AT THAT TREE AND NOT WITHDRAWN. BINDING_HPO_DECISION.provenance retains this wording deliberately. A later canonical materialization does not make the earlier absence false."
+    },
+    "CURRENT_PROVENANCE_ADDED": {
+      "HPO_A_CANONICAL_RESIDENT": "YES",
+      "resident_at": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json, in current live f0d81d1d, via PR137 (merge a3f3419e).",
+      "canonical_form": "One ratification object, id HPO-A, domain CUSTOMER_LIFECYCLE, status RATIFIED_BY_PRODUCT_OWNER, with a prose statement plus NINE numbered clauses HPO-A.1 through HPO-A.9.",
+      "canonical_flag": "flag_for_independent_review: true. This artifact honours that flag: its next_gate is an independent audit.",
+      "canonical_provenance_classification": "OWNER_RATIFIED_PRIOR_TO_THIS_MATERIALIZATION_LANE. The canonical file states that HPO-A..HPO-G were ratified in prior sessions whose raw transcripts are NOT repository artifacts, and that the file is NOT a verbatim transcript but a canonical normalized ratification record.",
+      "what_this_means_for_R1_transcription": "R1 transcription and the canonical record are TWO NORMALIZATIONS OF THE SAME OWNER INTENT, neither of which is a transcript of the original. That is precisely why a clause-by-clause comparison is required rather than assumed, and why a difference between them is a question about which normalization is more faithful, not automatically an R1 error."
+    },
+    "DRIFT_COMPARISON": {
+      "method": "Each of R1 nine decisions_verbatim items was compared against the canonical clause covering the same subject, and against the canonical prose statement where the clause is terser than the statement. Nine comparisons, none skipped.",
+      "verdict": "SEVEN of nine are semantically identical. TWO carry a recorded difference, both identified below, one of which is a genuine R1 over-narrowing that is CORRECTED in this revision.",
+      "comparisons": [
+        {
+          "n": 1,
+          "r1": "Account-level Terms/Privacy acceptance before product access.",
+          "canonical": "HPO-A.1 Account Terms/Privacy acceptance required before product access.",
+          "verdict": "IDENTICAL"
+        },
+        {
+          "n": 2,
+          "r1": "Commercial acceptance is separate and organization-level.",
+          "canonical": "HPO-A.2 Organization commercial acceptance is a separate, distinct act.",
+          "verdict": "IDENTICAL. R1 organization-level is carried by the canonical phrase Organization commercial acceptance, and the canonical statement adds distinct from and prior to, which R1 encodes as the gate ordering."
+        },
+        {
+          "n": 3,
+          "r1": "organization_admin is the organizational accepting role.",
+          "canonical": "HPO-A.3 Accepting role for organization commercial acceptance is organization_admin.",
+          "verdict": "IDENTICAL"
+        },
+        {
+          "n": 4,
+          "r1": "Acceptance evidence binds: instrument_key, version, immutable text/content identity or hash, subject, accepted_at.",
+          "canonical": "HPO-A.4 Acceptance binds instrument identity, version, content hash, and timestamp.",
+          "verdict": "DIFFERENCE RECORDED — see DELTA_1_SUBJECT_AND_RETAINED_TEXT."
+        },
+        {
+          "n": 5,
+          "r1": "Reaccept only when a later instrument version is explicitly marked reaccept_required.",
+          "canonical": "HPO-A.5 Reacceptance triggers only on a governed reaccept_required version transition. Statement adds: not on every login or unrelated change.",
+          "verdict": "IDENTICAL in substance. The canonical word GOVERNED is the hook RAT-AO-03 later uses to attach effective_at; R1 had no time dimension, which R2 corrects — see R2_CORRECTION in REACCEPTANCE."
+        },
+        {
+          "n": 6,
+          "r1": "Commercial bootstrap must be atomic for: organization, founder membership, CommercialAccount, initial entitlement/bootstrap state, audit.",
+          "canonical": "HPO-A.6 Atomic bootstrap: organization + founder membership + CommercialAccount + initial entitlement/bootstrap state + audit, as one atomic operation.",
+          "verdict": "IDENTICAL — the same five concerns in the same order. The canonical statement frames it as Registration is an atomic bootstrap where R1 said commercial bootstrap; the same operation, and the canonical adds not a sequence of independently-failable steps, which R1 encodes as AB-2."
+        },
+        {
+          "n": 7,
+          "r1": "Invitation acceptance must mutate by POST, never render-time GET.",
+          "canonical": "HPO-A.7 Invitation acceptance must be a POST mutation, not a render-time GET side effect. Statement reads: must occur via POST (or another proper mutating verb).",
+          "verdict": "DIFFERENCE RECORDED — R1 IS NARROWER THAN CANONICAL. See DELTA_2_MUTATING_VERB."
+        },
+        {
+          "n": 8,
+          "r1": "The physical single-active-membership constraint incompatible with multi-org must be removed in the future implementation.",
+          "canonical": "HPO-A.8 The single-active-membership physical incompatibility with multi-org membership must be removed.",
+          "verdict": "IDENTICAL. The canonical implementation_status independently cites MO-02 recording db/schema.ts user_single_active_membership as CONTRADICTS_PRODUCT_INTENT against HPO-A.8, which corroborates R1 MULTI_ORG section from the canonical side."
+        },
+        {
+          "n": 9,
+          "r1": "Qualified legal review remains mandatory for actual legal instruments and release sufficiency.",
+          "canonical": "HPO-A.9 Legal review remains mandatory. Statement reads: Legal review of the acceptance instruments and flow remains mandatory regardless of implementation status.",
+          "verdict": "IDENTICAL in substance. R1 actual legal instruments maps to the canonical acceptance instruments; R1 release sufficiency is supported by the canonical regardless of implementation status, which is the same claim that implementation progress does not discharge the review."
+        }
+      ],
+      "DELTA_1_SUBJECT_AND_RETAINED_TEXT": {
+        "the_difference": "R1 binds FIVE elements; canonical HPO-A.4 names FOUR. R1 adds subject, and R1 reads content identity as requiring the retained TEXT and not only a digest.",
+        "disposition_of_subject": "ENTAILED, NOT INVENTED. The subject is fixed by HPO-A.1 and HPO-A.3 together: A.1 makes the acceptance account-level, which presupposes an account holder, and A.3 names the accepting role for the organization-level act. An acceptance that did not record WHO accepted could not satisfy either clause. R1 made the entailment explicit in the evidence tuple; canonical leaves it in the granularity clauses. NO SEMANTIC DRIFT. No correction required.",
+        "disposition_of_retained_text": "ALREADY SELF-LABELLED BY R1 AND NOW CHECKABLE. R1 INSTRUMENT_MODEL.content_identity carries DERIVED_NOT_GRANTED: true and states in terms that it reads decision 4 as requiring the identity AND retaining the text, recording that as an interpretation rather than a grant. Comparison against canonical CONFIRMS the labelling was correct: HPO-A.4 says content hash and does not require retention. The interpretation therefore stands as a DERIVED design requirement with its grounds stated, and an auditor may challenge it without challenging owner intent.",
+        "why_the_interpretation_is_retained_rather_than_relaxed": "A digest alone lets you PROVE a candidate document matches; it does not let you PRODUCE the document. For an instrument whose purpose is to be shown to a person later, that difference is the whole point. Relaxing it would be a defensible alternative and is recorded as such; it is not required by canonical text in either direction.",
+        "classification": "NO_DRIFT_ON_OWNER_INTENT. One entailed addition, one correctly-labelled derivation."
+      },
+      "DELTA_2_MUTATING_VERB": {
+        "the_difference": "Canonical HPO-A statement reads must occur via POST (or another proper mutating verb). R1 wrote must mutate by POST, never render-time GET and pinned POST exclusively throughout INVITATIONS.",
+        "direction": "R1 IS NARROWER THAN CANONICAL. R1 forbids nothing canonical permits at the level of safety — every verb R1 allows, canonical allows — but R1 would REFUSE an implementation canonical explicitly permits, for example a PUT or DELETE handler.",
+        "why_it_matters_even_though_it_is_the_safe_direction": "An authority that is stricter than its owner ratification is still wrong, in a specific and costly way: it converts a permitted implementation choice into an apparent authority violation, and a future implementer who chose PUT would be told to change working code to satisfy a constraint the owner never set. Over-narrowing also hides which part of the rule is load-bearing. The load-bearing property is PROPER MUTATING VERB, NOT RENDER-TIME GET; POST is the expected instance of it, not the rule.",
+        "R2_CORRECTION": "APPLIED. INVITATIONS.R2_CORRECTION_MUTATING_VERB restates the requirement as canonical does, and the companion manifest control is re-scoped to assert the property rather than the literal verb.",
+        "classification": "GENUINE_DRIFT_CORRECTED_IN_R2."
+      },
+      "ZERO_SEMANTIC_DRIFT_ASSERTION": {
+        "requirement": "The mission requires zero semantic drift between R1 transcription and the resident canonical HPO-A.",
+        "status_after_correction": "SATISFIED. Seven clauses were identical on comparison. DELTA_1 is an entailed addition plus a correctly self-labelled derivation, neither of which alters owner intent. DELTA_2 was a real over-narrowing and is CORRECTED in this revision rather than argued away.",
+        "honesty_note": "The assertion is made AFTER a correction, not instead of one. R1 did not transcribe HPO-A with zero drift; R1 plus this correction does."
+      }
+    }
+  },
+  "RAT_AO_CONSUMPTION": {
+    "status": "BINDING. Three owner micro-ratifications consumed from integration.",
+    "source": "docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json, resident in current live f0d81d1d via PR146 (exact object 1cddd310). Read from integration, NOT from the PR branch. PR146 is NOT modified by this revision.",
+    "source_authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY. These settle PRODUCT INTENT and grant no executable authority.",
+    "relationship_to_HPO_A": "The three are REFINEMENTS of HPO-A, not replacements. RAT-AO-01 and RAT-AO-02 refine HPO-A.3 (the accepting role) by fixing what happens to everyone who is NOT that role. RAT-AO-03 refines HPO-A.5 (the reacceptance trigger) by adding the time dimension the canonical word GOVERNED left open.",
+    "RAT_AO_01": {
+      "id": "RAT-AO-01",
+      "domain": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE",
+      "statement_verbatim": "A member who is not organization_admin, whose organization still lacks current commercial acceptance, cannot satisfy or bypass that obligation themselves. They receive a non-sensitive blocked state. The organization_admin receives the completion call-to-action instead.",
+      "FROZEN_CLAUSES": {
+        "AO1_C1_NON_ADMIN_CANNOT_SATISFY": "A member whose role is not organization_admin CANNOT satisfy the organization commercial acceptance obligation. The L1 write is refused for them.",
+        "AO1_C2_NON_ADMIN_CANNOT_BYPASS": "That member also cannot BYPASS the obligation. They do not get product access in lieu of acceptance. Refusing to let them accept is not the same as letting them through, and both halves are binding.",
+        "AO1_C3_NON_SENSITIVE_BLOCKED_STATE": "The non-admin receives a NON-SENSITIVE blocked state: enough to explain that access is pending, and no more. The canonical binding_semantics says the blocked state does not disclose sensitive acceptance detail beyond what is needed to explain that access is pending.",
+        "AO1_C4_ADMIN_GETS_THE_CTA": "ONLY organization_admin receives the completion call-to-action — the affordance that lets the obligation actually be satisfied.",
+        "AO1_C5_NO_ELEVATED_NON_ADMIN_BYPASS": "There is NO viewer, reviewer, analyst or impact_manager bypass for this blocking cause. Role elevation short of organization_admin does not lift the block.",
+        "AO1_C6_NO_HIERARCHY_PREDICATE": "The accepting role MUST NOT be broadened by a hierarchy predicate. See THE_EXACT_ROLE_PREDICATE — this is the clause with the sharpest implementation consequence."
+      },
+      "THE_FOUR_NAMED_ROLES_ARE_EXHAUSTIVE_OVER_NON_ADMIN_TENANT_ROLES": {
+        "claim": "RAT-AO-01 names viewer, reviewer, analyst and impact_manager, and those FOUR are the complete set of tenant roles that are neither the accepting role nor platform-adjacent. The enumeration has no gap.",
+        "measured": "lib/auth/roles.ts:13-19 declares SIX role values: super_admin, organization_admin, impact_manager, analyst, reviewer, viewer. db/schema.ts:113 constrains organization_members.role to the SAME six via check('role_check', role IN ('super_admin','organization_admin','impact_manager','analyst','reviewer','viewer')).",
+        "the_partition": "6 = 1 accepting role (organization_admin, AO1_C4) + 4 named non-admin roles (AO1_C5) + 1 platform-adjacent value (super_admin, governed by RAT-AO-02 and the platform-admin boundary). CLOSED WORLD, no residue.",
+        "why_this_matters": "A control asserting no bypass for four named roles could otherwise be satisfied while a fifth role slipped through. There is no fifth. The closed world is a measured property of the role enum, not an assumption, and a control may therefore assert refusal across the COMPLETE non-admin set."
+      },
+      "THE_EXACT_ROLE_PREDICATE": {
+        "status": "THE CENTRAL IMPLEMENTATION CONSEQUENCE OF RAT-AO-01, AND A NEW FINDING OF THIS REVISION. Recorded as F-AO-18.",
+        "requirement": "The L1 accepting-role predicate MUST be EXACT EQUALITY on organization_admin, over an ACTIVE membership in the affected organization. It MUST NOT be a hierarchy threshold, and its role set MUST NOT contain super_admin.",
+        "measured_why": [
+          "lib/auth/permissions.ts:24-26 defines hasRole(userRole, requiredRole) as ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole] — a RANGE predicate.",
+          "lib/auth/roles.ts:38-44 assigns super_admin 100 and organization_admin 80. Therefore hasRole('super_admin','organization_admin') evaluates 100 >= 80 = TRUE.",
+          "db/schema.ts:113 permits super_admin as an organization_members.role VALUE. So a membership row can carry role super_admin, and a range predicate would admit it as an accepting principal.",
+          "CONSEQUENCE: an L1 check written in the ambient idiom — hasRole(role,'organization_admin'), exactly the shape canManageUsers uses at lib/auth/permissions.ts:33-35 — WOULD ADMIT a tenant super_admin, which RAT-AO-02 forbids. The ratification would be violated by code that looks idiomatic and passes review."
+        ],
+        "THE_AMBIENT_CONVENTION_PRODUCES_THE_WRONG_ANSWER": {
+          "measured": "hasRole( appears at 18 call sites inside lib/auth/permissions.ts and 60 times repo-wide across lib/, app/ and components/, excluding tests and the definition. Separately, BOTH role-set literals in permissions.ts — STELLA_ROLES and REVIEW_ROLES — INCLUDE super_admin (2 of 2).",
+          "the_structural_fact": "Every existing authorization predicate in this codebase either uses a hierarchy threshold or uses a role set whose FIRST element is super_admin. L1 accepting-role predicate must be the FIRST predicate in this codebase that does NEITHER.",
+          "why_it_is_worth_stating_as_a_finding": "This is not a warning about carelessness. An implementer following the established local convention faithfully will produce a predicate that violates RAT-AO-02, because the convention itself encodes an assumption — platform principals are always at least as authorized — that RAT-AO-02 reverses for this one act. Novelty against a consistent local pattern is exactly the condition under which a mutation control is required rather than optional."
+        },
+        "THE_REPOSITORY_ALREADY_HAS_THE_RIGHT_IDIOM": {
+          "measured": "lib/auth/permissions.ts:109-115 and :164-166 both state, in the repository own words, SET INCLUSION, not a hierarchy threshold, and explain that reviewer ranks below analyst in ROLE_HIERARCHY yet is the dedicated reviewing role, so it is checked by explicit membership.",
+          "consequence": "The discipline RAT-AO-01 requires is a CARRIED convention, not an invention by this artifact. L1 extends it one step further: a SINGLETON set that, uniquely, excludes super_admin."
+        },
+        "corroborated_by_a_sibling_ratification": "RAT-OP-01, in the same canonical file, independently reaches the identical conclusion for a different decision: role EXACTLY organization_admin, with hasRole('>=') / role-hierarchy / '+' notation and implicit admission of tenant super_admin all excluded. Two owner ratifications converging on the same predicate shape over two different acts is strong evidence the shape is the intent and not a drafting artifact.",
+        "controls": [
+          "N-AO-26",
+          "N-AO-27",
+          "M-AO-15"
+        ]
+      },
+      "WHAT_RAT_AO_01_DOES_NOT_AUTHORIZE": [
+        "No specific UI copy, route or component — canonical explicit_non_authorizations says so in terms, and this artifact designs none.",
+        "No platform-admin or support override — canonical points at RAT-AO-02.",
+        "No acceptance record schema or storage decision — that remains this artifact FUTURE_DDL, which is conceptual only.",
+        "NO AUTOMATIC NOTIFICATION. Canonical says the organization_admin RECEIVES the completion CTA. It does NOT say the system sends anything. See A3_REMEDY_RESOLUTION.WHAT_REMAINS_UNRATIFIED."
+      ],
+      "review_requirements_carried": [
+        "release_review"
+      ]
+    },
+    "RAT_AO_02": {
+      "id": "RAT-AO-02",
+      "domain": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE",
+      "statement_verbatim": "Commercial V1 has NO platform-admin, support, or commercial-team mechanism that unilaterally records application legal/commercial acceptance on behalf of an organization. Application commercial acceptance is performed only by an active organization_admin. Manual commercial activation under HPO-B does not substitute for legal or commercial acceptance.",
+      "FROZEN_CLAUSES": {
+        "AO2_C1_NO_UNILATERAL_PLATFORM_RECORDING": "No platform-admin, support or commercial-team actor may record an organization application legal or commercial acceptance on that organization behalf.",
+        "AO2_C2_ONLY_ACTIVE_ORGANIZATION_ADMIN": "Application commercial acceptance is performed ONLY by an ACTIVE organization_admin of the affected organization. The word ACTIVE is part of the clause: a suspended, removed or pending membership does not qualify.",
+        "AO2_C3_HPO_B_IS_ORTHOGONAL": "Manual commercial activation performed under HPO-B is a DISTINCT operational action and does NOT substitute for, or satisfy, legal or commercial acceptance."
+      },
+      "THE_POSITIVE_CLAUSE_DOES_THE_WORK": {
+        "observation": "The mission prompt enumerates five categories — platform-admin, support, operator, commercial-team, manual back-office. The canonical statement enumerates three — platform-admin, support, commercial-team.",
+        "adjudication": "NO CONFLICT, and no new enumeration is invented here. AO2_C2 is a POSITIVE CLOSED CLAUSE: acceptance is performed ONLY by an active organization_admin. A positive-only clause excludes every actor who is not that, whether or not the actor is named in the negative list. The negative enumeration is ILLUSTRATIVE of the categories the owner had in mind; the positive clause is EXHAUSTIVE by construction.",
+        "consequence": "An operator, a back-office tool, a migration script, a cron job, a support macro and a service principal are all excluded by AO2_C2 without needing to appear in any list. This is the stronger reading and it is also the one that cannot be defeated by inventing a category nobody enumerated.",
+        "why_this_reasoning_is_recorded_rather_than_silently_applied": "Relying on a positive clause to exclude unnamed actors is exactly the kind of inference an auditor should be able to check. Stating it makes it challengeable. If the owner intended the negative list to be exhaustive and some unnamed actor to be permitted, that is a different ratification and this reading would be wrong."
+      },
+      "ACTIVE_WITHOUT_STRIPE_IS_NOT_ACCEPTANCE": {
+        "the_prohibition": "ACTIVE_WITHOUT_STRIPE, and any other manual commercial activation state, MUST NOT be treated as acceptance evidence and MUST NOT bypass L0 or L1.",
+        "provenance_of_the_state_name_measured": "ACTIVE_WITHOUT_STRIPE is ratified vocabulary from HPO-B.7 — ACTIVE_WITHOUT_STRIPE only via explicit manual activation — in the same canonical HPO_A_G file. It is NOT this artifact invention and NOT a term borrowed from code.",
+        "materialization_state_measured": "The state DOES NOT EXIST in the repository. grep for ACTIVE_WITHOUT_STRIPE across db/ and lib/ returns ZERO matches, and commercial_accounts.commercial_status is constrained by commercial_status_check to exactly ('active','past_due','suspended','closed') — see db/schema.ts:33.",
+        "therefore": "The conflation RAT-AO-02 forbids is a FORWARD prohibition on a state that does not exist yet, not the correction of a present defect. Stating it that way matters: an auditor must not read this clause as evidence that a bypass exists today, and an implementer must not read the state absence as permission to skip the constraint when the state lands.",
+        "the_shape_of_the_error_being_prevented": "Two facts about an organization will exist side by side — it is commercially active, and it has not accepted. The convenient move is to treat the first as implying the second, because an operator manually activated it and presumably knew what they were doing. That inference converts an OPERATIONAL decision into LEGAL EVIDENCE, and the operator who made it was never the organization authorized representative.",
+        "controls": [
+          "N-AO-28",
+          "M-AO-16"
+        ]
+      },
+      "WHAT_RAT_AO_02_DOES_NOT_AUTHORIZE": [
+        "Building any platform-admin acceptance-recording tool, now or as a future convenience — canonical explicit_non_authorizations says exactly this.",
+        "Altering HPO-B scope beyond clarifying that it is not an acceptance substitute.",
+        "Any change to the measured super-admin membership-check exception at db/identity-context.ts:217. That remains MO-07 REQUIRED_RESOLUTION and needs its own authority. RAT-AO-02 prevents the acceptance model from DEPENDING on it, which is what X-AO-06 already prohibited in R1 and what RAT-AO-02 now raises from a derived prohibition to a ratified one."
+      ],
+      "R1_X_AO_06_IS_NOW_RATIFIED_NOT_MERELY_DERIVED": {
+        "before": "R1 SECURITY_PROHIBITIONS.X-AO-06 forbade the super-admin membership-check exception becoming an acceptance-writing capability, and R1 derived that prohibition from ACCEPTANCE_MODEL.WHO_MAY_WRITE_AN_ACCEPTANCE plus ratification MO-07.",
+        "after": "RAT-AO-02 AO2_C1 states it as owner policy directly. X-AO-06 is UPGRADED from DERIVED to RATIFIED. Its text is unchanged; its standing is stronger, and a future mission may no longer argue it away as an over-cautious derivation."
+      },
+      "review_requirements_carried": [
+        "release_review"
+      ]
+    },
+    "RAT_AO_03": {
+      "id": "RAT-AO-03",
+      "domain": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE",
+      "statement_verbatim": "There is no universal reacceptance grace period. Each legal-instrument version may carry a governed effective_at. Before effective_at the product may inform the user. From effective_at onward, if that version's reaccept_required flag is true, a prior acceptance no longer satisfies the gate until the new version is accepted. Legal sufficiency, notice requirements, and timing remain counsel-required, and this ratification does not decide which locale/language is legally controlling.",
+      "FROZEN_CLAUSES": {
+        "AO3_C1_NO_UNIVERSAL_GRACE_PERIOD": "No blanket grace period after a version effective_at applies across all versions or all organizations. There is no grace duration to configure and none to invent.",
+        "AO3_C2_PER_VERSION_EFFECTIVE_AT": "Each legal-instrument version MAY carry its own governed effective_at timestamp. MAY, not MUST — a version without one is not thereby invalid, and the currency predicate must handle its absence.",
+        "AO3_C3_PRE_EFFECTIVE_NOTICE_IS_PERMITTED_NOT_REQUIRED": "Before effective_at the product MAY inform the user of the upcoming version, and is NOT REQUIRED to block on it. Notice is a permission, not an obligation, and it is not a gate.",
+        "AO3_C4_POST_EFFECTIVE_GATE": "From effective_at onward, when reaccept_required is true for that version, any prior acceptance of an earlier version STOPS satisfying the gate until the new version is accepted.",
+        "AO3_C5_COUNSEL_BOUNDARY_PRESERVED": "Legal sufficiency of notice, the specific notice requirements, and their timing remain COUNSEL_REQUIRED and are NOT decided by this ratification.",
+        "AO3_C6_LOCALE_UNDECIDED": "This ratification does NOT decide which locale or language text is legally controlling. Canonical states explicitly that the question, tracked as LRF-02, remains COUNSEL_REQUIRED, and carries lrf_02_status: COUNSEL_REQUIRED as a field."
+      },
+      "NO_GRACE_DURATION_IS_INVENTED": {
+        "requirement": "AO3_C1 forbids a universal grace period and no number is supplied. This artifact invents none.",
+        "what_replaces_the_idea_of_a_grace_period": "effective_at does the work a grace period was reaching for, and does it per version rather than globally. The interval between publication and effective_at IS the notice window, it is set by the publisher per version, and during it the gate does not refuse. That is structurally different from a grace period, which is an interval AFTER the gate should have closed during which it is held open.",
+        "the_distinction_that_must_not_be_collapsed": "A pre-effective window is the gate NOT YET APPLYING. A grace period is the gate APPLYING AND BEING IGNORED. The first is a property of the version; the second is a bypass. RAT-AO-03 grants the first and forbids the second, and an implementation that models the second as the first has built the bypass under a permitted name.",
+        "control": "N-AO-31"
+      },
+      "review_requirements_carried": [
+        "legal_review",
+        "release_review"
+      ]
+    },
+    "WHAT_THE_THREE_RATIFICATIONS_RESOLVE_AND_WHAT_THEY_DO_NOT": {
+      "resolved": [
+        "F-AO-05 — the A3 remedy question. RESOLVED by RAT-AO-01 to exactly two states. See A3_REMEDY_RESOLUTION.",
+        "F-AO-07 — the assisted or negotiated commercial acceptance path. RESOLVED by RAT-AO-02: no such mechanism exists in Commercial V1, and building one is explicitly non-authorized.",
+        "F-AO-08 — the reacceptance grace period. RESOLVED by RAT-AO-03: no universal grace period, and effective_at replaces the need for one."
+      ],
+      "explicitly_NOT_resolved": [
+        "F-AO-14 — the empty-instrument-registry behaviour. NO RAT-AO addresses it. It remains STOP_FOR_HPO with the R1 interim posture (refuse, loudly) unchanged. A revision that quietly marked it resolved because three neighbouring questions were answered would be exactly the drift this section exists to prevent.",
+        "LRF-02 — the legally controlling locale. RAT-AO-03 AO3_C6 states in terms that it does NOT decide this and that LRF-02 remains COUNSEL_REQUIRED. It is not merely unresolved; the ratification affirmatively refuses to resolve it.",
+        "LRF-01, LRF-03, LRF-04, LRF-05 — all remain COUNSEL_REQUIRED. No RAT-AO touches them.",
+        "Notification behaviour. See A3_REMEDY_RESOLUTION.WHAT_REMAINS_UNRATIFIED."
+      ]
+    },
+    "CLAUSE_ID_RESOLUTION": {
+      "why_this_index_exists": "Clauses are DECLARED under descriptive keys (AO1_C6_NO_HIERARCHY_PREDICATE) and CITED by their short id (AO1_C6). The short id is a PREFIX of the declared key, so a naive exact-match cross-reference checker reports every citation as dangling — a FALSE NEGATIVE produced by comparing the wrong token shape, not by a real gap. This index makes exact-match resolution possible so an auditor gets the true answer without having to know the prefix convention.",
+      "resolution_rule": "A citation AOn_Cm resolves to the single key under RAT_AO_CONSUMPTION.RAT_AO_0n.FROZEN_CLAUSES beginning with AOn_Cm followed by an underscore. The mapping is one-to-one and is materialized below rather than left to be inferred.",
+      "index": {
+        "AO1_C1": "RAT_AO_01.FROZEN_CLAUSES.AO1_C1_NON_ADMIN_CANNOT_SATISFY",
+        "AO1_C2": "RAT_AO_01.FROZEN_CLAUSES.AO1_C2_NON_ADMIN_CANNOT_BYPASS",
+        "AO1_C3": "RAT_AO_01.FROZEN_CLAUSES.AO1_C3_NON_SENSITIVE_BLOCKED_STATE",
+        "AO1_C4": "RAT_AO_01.FROZEN_CLAUSES.AO1_C4_ADMIN_GETS_THE_CTA",
+        "AO1_C5": "RAT_AO_01.FROZEN_CLAUSES.AO1_C5_NO_ELEVATED_NON_ADMIN_BYPASS",
+        "AO1_C6": "RAT_AO_01.FROZEN_CLAUSES.AO1_C6_NO_HIERARCHY_PREDICATE",
+        "AO2_C1": "RAT_AO_02.FROZEN_CLAUSES.AO2_C1_NO_UNILATERAL_PLATFORM_RECORDING",
+        "AO2_C2": "RAT_AO_02.FROZEN_CLAUSES.AO2_C2_ONLY_ACTIVE_ORGANIZATION_ADMIN",
+        "AO2_C3": "RAT_AO_02.FROZEN_CLAUSES.AO2_C3_HPO_B_IS_ORTHOGONAL",
+        "AO3_C1": "RAT_AO_03.FROZEN_CLAUSES.AO3_C1_NO_UNIVERSAL_GRACE_PERIOD",
+        "AO3_C2": "RAT_AO_03.FROZEN_CLAUSES.AO3_C2_PER_VERSION_EFFECTIVE_AT",
+        "AO3_C3": "RAT_AO_03.FROZEN_CLAUSES.AO3_C3_PRE_EFFECTIVE_NOTICE_IS_PERMITTED_NOT_REQUIRED",
+        "AO3_C4": "RAT_AO_03.FROZEN_CLAUSES.AO3_C4_POST_EFFECTIVE_GATE",
+        "AO3_C5": "RAT_AO_03.FROZEN_CLAUSES.AO3_C5_COUNSEL_BOUNDARY_PRESERVED",
+        "AO3_C6": "RAT_AO_03.FROZEN_CLAUSES.AO3_C6_LOCALE_UNDECIDED"
+      }
+    }
   },
   "MEASUREMENT_LIMITS": {
     "what_this_lane_measured": "The repository working tree at AS_OF_TREE 97006bebd7e496135967d05d59b01e798cdc7394, by direct read and grep of db/**, lib/**, app/**, tests/** and docs/ops/**, plus one machine gate (authority:seal:verify).",
@@ -712,6 +1041,21 @@
         "Publication of a version with reaccept_required true is the single highest-impact operation this model defines and must be independently confirmable from audit alone."
       ],
       "NOT_DECIDED_HERE": "Whether publication is a UI, a governed migration, or an operator runbook. All three satisfy the constraints. See OPEN_FINDINGS.F-AO-06."
+    },
+    "R2_VOCABULARY_ALIGNMENT_EFFECTIVE_AT": {
+      "change": "R1 named the version timestamp effective_from. The ratified vocabulary is effective_at (RAT-AO-03 AO3_C2, and the canonical binding_semantics key per_version_effective_at). This artifact ALIGNS to effective_at throughout.",
+      "why_a_rename_matters_in_an_authority": "R1 declared its object and column names to be descriptive placeholders, so the rename costs nothing structurally. But a ratified term used with a different spelling invites exactly the drift this revision exists to remove: a future reader comparing artifact to ratification would have to decide whether two names mean one thing. They do, and the artifact now says so in the ratified spelling.",
+      "scope": "FUTURE_DDL.T2 conceptual column, and every reference in REACCEPTANCE_R2. No other clause depended on the name."
+    },
+    "R2_EFFECTIVE_AT_SEMANTICS": {
+      "definition": "The governed timestamp from which a published instrument version takes effect for gating purposes.",
+      "constraints": [
+        "OPTIONAL per AO3_C2 — a version MAY carry one. Absence means IN EFFECT ON PUBLICATION, per the fail-closed derivation in REACCEPTANCE_R2.",
+        "IMMUTABLE once published, for the same reason reaccept_required is immutable: acceptances and refusals have already been evaluated against it, and moving it retroactively would silently change who was current when.",
+        "It is a property of the VERSION, never of an organization or a subject. There is no per-tenant effective_at, because AO3_C1 forbids a grace period applying across organizations and a per-tenant date is that grace period with a different name."
+      ],
+      "interaction_with_reaccept_required": "The two are INDEPENDENT fields and both are required for a version to refuse. effective_at answers WHEN the version applies; reaccept_required answers WHETHER applying it invalidates earlier acceptances. A version may be in effect and not require reacceptance — that is the ordinary case for a typo correction — and a version may require reacceptance and not yet be in effect.",
+      "what_is_NOT_decided": "The precision or timezone handling of the timestamp, and whether effective_at may be edited before publication as opposed to before effectiveness. Both are implementation choices no ratification constrains."
     }
   },
   "ACCEPTANCE_MODEL": {
@@ -762,6 +1106,20 @@
       "organization_class": "Only a subject holding an ACTIVE organization_admin membership in the target organization, at the moment of the write, re-verified at the database boundary and never taken from a client-supplied role. Grounds: HPO-A decision 3, plus ratification MO-05 requirement that membership be revalidated on every request.",
       "platform_admin": "NOT AUTHORIZED to accept on a customer behalf by this artifact. A platform operator accepting a commercial instrument for a customer is a materially different act with a materially different evidentiary value, and HPO-A does not authorize it. If the owner wants an assisted/negotiated path, it needs its own decision. Recorded as OPEN_FINDINGS.F-AO-07.",
       "superadmin_bypass_note": "db/identity-context.ts:217 contains a measured super-admin exception to the membership check, which ratification MO-07 records as CONTRADICTS_PRODUCT_INTENT. That exception must NOT become an implicit acceptance-writing capability. See SECURITY_PROHIBITIONS.X-AO-06."
+    },
+    "R2_WHO_MAY_WRITE_AN_ACCEPTANCE_RATIFIED": {
+      "status": "R1 clause is CONFIRMED by ratification and TIGHTENED in one respect.",
+      "account_class_unchanged": "Only the subject, for themselves. RAT-AO-01 and RAT-AO-02 both concern the ORGANIZATION-class act and neither touches this. R1 A1 ruling stands: HPO-A.1 is account-level and grants no delegation.",
+      "organization_class_now_RATIFIED_not_merely_derived": {
+        "before": "R1 derived the requirement — an active organization_admin, re-verified at the database boundary — from HPO-A.3 plus ratification MO-05.",
+        "after": "RAT-AO-02 AO2_C2 states it as owner policy: performed ONLY by an ACTIVE organization_admin of the affected organization. The word ACTIVE is ratified text, not a derivation.",
+        "the_tightening": "The predicate must be EXACT EQUALITY on organization_admin and MUST NOT be a hierarchy threshold, and its role set MUST NOT contain super_admin. R1 said an active organization_admin without specifying how the role comparison is written; RAT-AO-01 AO1_C6 closes that, and the measured consequence is F-AO-18. See RAT_AO_CONSUMPTION.RAT_AO_01.THE_EXACT_ROLE_PREDICATE."
+      },
+      "platform_admin_now_RATIFIED_prohibition": {
+        "before": "R1 recorded NOT AUTHORIZED for a platform operator accepting on a customer behalf, and filed the gap as F-AO-07 requiring new owner policy.",
+        "after": "RAT-AO-02 AO2_C1 forbids it as owner policy, and canonical explicit_non_authorizations forbids building such a tool now or as a future convenience. F-AO-07 is RESOLVED — and resolved in the prohibitive direction, which is the direction R1 held pending a decision."
+      },
+      "manual_commercial_activation_is_not_acceptance": "ADDED AT R2. No commercial state — including ACTIVE_WITHOUT_STRIPE from HPO-B.7 — may be read as acceptance evidence or bypass L0 or L1. RAT-AO-02 AO2_C3. See RAT_AO_CONSUMPTION.RAT_AO_02.ACTIVE_WITHOUT_STRIPE_IS_NOT_ACCEPTANCE."
     }
   },
   "REACCEPTANCE": {
@@ -822,6 +1180,52 @@
       "grounds": "HPO-A decision 5 changes only WHEN the predicate goes false; it does not create a second gate. A subject who becomes non-current is refused exactly as a subject who never accepted, which keeps the topology at one gate per class.",
       "grace_period_disposition": "NOT AUTHORIZED. HPO-A grants none, and a grace period is precisely a period during which the gate is open. If the owner wants one, it is new policy. Recorded as OPEN_FINDINGS.F-AO-08.",
       "the_operational_consequence_that_must_be_stated": "Publishing a version marked reaccept_required refuses EVERY affected subject or organization at their next request, immediately. For an account-class instrument that is the entire user base. This is the correct fail-closed behaviour and it is also an operational event of the highest severity - which is why PUBLICATION_IS_A_GOVERNED_ACT restricts who may cause it."
+    },
+    "R2_CORRECTION_EFFECTIVE_AT": {
+      "status": "BINDING CORRECTION. R1 predicate is SUPERSEDED in one dimension and preserved in every other.",
+      "governing_ratification": "RAT-AO-03, clauses AO3_C2, AO3_C3 and AO3_C4.",
+      "WHAT_R1_GOT_WRONG": {
+        "the_R1_predicate": "current(P,K) := EXISTS v_a in accepted(P,K) such that NOT EXISTS v_r in published(K) with v_r > v_a AND v_r.reaccept_required = true.",
+        "the_defect": "It has NO TIME DIMENSION. Publication alone makes a marked version bite. Under RAT-AO-03 that is WRONG: a version carrying reaccept_required true whose effective_at is in the FUTURE must NOT yet refuse, because AO3_C3 says the pre-effective period is for notice and the product is NOT REQUIRED to block on it.",
+        "the_consequence_if_uncorrected": "Publishing a future-dated instrument version would refuse the entire affected population IMMEDIATELY, on publication, weeks before the version takes effect. That is the exact false-lockout failure R1 warned about for a different wrong predicate, arriving through a door R1 had not modelled.",
+        "R1_status": "SUPERSEDED IN THIS DIMENSION ONLY. R1 text is retained above for auditability; this correction governs."
+      },
+      "THE_CORRECTED_CURRENCY_PREDICATE": {
+        "informal": "A subject or organization is CURRENT on instrument_key K if they have accepted some version V of K, and no version of K that is later than V, marked reaccept_required, and already in effect has superseded it.",
+        "formal": "current(P, K, t) := EXISTS v_a in accepted(P, K) such that NOT EXISTS v_r in published(K) with v_r > v_a AND v_r.reaccept_required = true AND effective(v_r, t). Where v_a is the greatest accepted version, and effective(v_r, t) := (v_r.effective_at IS NULL) OR (v_r.effective_at <= t).",
+        "the_three_conjuncts_that_must_ALL_hold_for_a_version_to_refuse": [
+          "it is LATER than the accepted version",
+          "it is MARKED reaccept_required",
+          "it is ALREADY IN EFFECT at evaluation time"
+        ],
+        "why_effective_at_NULL_means_IN_EFFECT": "AO3_C2 says a version MAY carry an effective_at — MAY, not MUST. A version without one is not invalid, so the predicate must handle its absence, and there are only two candidate readings. Treating NULL as NOT-YET-EFFECTIVE would mean a version published with reaccept_required true and no date NEVER bites, which converts an omitted optional field into a permanent silent bypass. Treating NULL as IN EFFECT ON PUBLICATION makes the omission mean the version takes effect immediately, which is the fail-closed reading and matches R1 behaviour for the case R1 modelled.",
+        "DERIVED_NOT_GRANTED": "RAT-AO-03 does not state the NULL semantics. This is a derivation, labelled as one, and its grounds are the fail-closed rule plus the observation that the alternative reading turns a missing value into a bypass.",
+        "control": "N-AO-32"
+      },
+      "WHAT_IS_PRESERVED_FROM_R1_UNCHANGED": {
+        "the_EXISTS_clause": "THE FAIL-CLOSED PROPERTY IS PRESERVED VERBATIM AND IS NOT WEAKENED BY THE TIME DIMENSION. A subject with NO acceptance record must NEVER pass merely because no version currently has reaccept_required true, and must equally never pass merely because every marked version is not yet effective. The EXISTS clause over an ACTUAL acceptance is load-bearing and must not be optimised away. R1 named this the dangerous wrong form and that judgement stands unchanged.",
+        "why_the_new_dimension_makes_the_old_trap_WORSE": "Before the correction there was one way to reach a vacuous pass: no version marked. Now there are TWO: no version marked, OR every marked version still pre-effective. The second is MORE likely in practice, because a team publishing a future-dated version has deliberately created exactly that state. A subject with zero acceptances must be refused in BOTH, and a control that only exercises the first is incomplete.",
+        "no_stored_currency_flag": "PRESERVED. I-X-1 and I-X-5 stand: no is_current, no is_valid, no denormalized acceptance boolean anywhere. The time dimension STRENGTHENS this — a cached flag would now have to be invalidated by the CLOCK, not merely by a publication event, which means no write-time hook could keep it correct.",
+        "append_only": "PRESERVED. Reacceptance adds a row; prior acceptances are never deleted or invalidated in place.",
+        "multi_instrument_conjunction": "PRESERVED. The gate is a conjunction over the live registry of published instruments for the class, never a hardcoded list.",
+        "same_gate_same_position": "PRESERVED. Reacceptance is enforced at the same gate and position as first acceptance. There is no separate reacceptance flow."
+      },
+      "GRACE_PERIOD_DISPOSITION_UPDATED": {
+        "R1_said": "NOT AUTHORIZED, recorded as F-AO-08 STOP_FOR_HPO awaiting an owner decision.",
+        "R2_says": "RESOLVED BY RATIFICATION. RAT-AO-03 AO3_C1: there is NO universal reacceptance grace period. F-AO-08 moves from STOP_FOR_HPO to RESOLVED_BY_RATIFICATION, and the R1 posture was correct.",
+        "no_number_invented": "No grace duration appears anywhere in this artifact. See RAT_AO_CONSUMPTION.RAT_AO_03.NO_GRACE_DURATION_IS_INVENTED for why effective_at is structurally not a grace period."
+      },
+      "PRE_EFFECTIVE_NOTICE": {
+        "status": "PERMITTED, NOT REQUIRED, AND NOT A GATE.",
+        "grounds": "AO3_C3 — before effective_at the product MAY inform the user and is NOT REQUIRED to block on it.",
+        "binding_consequences": [
+          "A pre-effective version MUST NOT refuse at L0 or L1.",
+          "Notice is NOT an acceptance. Displaying, dismissing or acknowledging a pre-effective notice creates NO acceptance row and does NOT pre-satisfy the future gate. An acceptance may only bind a version the subject actually accepted.",
+          "Accepting a pre-effective version, if the product offers that, IS a real acceptance of that version and counts once the version takes effect. The acceptance binds the version, not the moment the gate closes.",
+          "No notice copy, surface or timing is designed or required here. AO3_C5 keeps notice sufficiency and timing COUNSEL_REQUIRED."
+        ],
+        "control": "N-AO-30"
+      }
     }
   },
   "ENFORCEMENT_TOPOLOGY": {
@@ -1105,6 +1509,20 @@
     "ROLE_FALLBACK_NOTE": {
       "measured": "lib/invitations/service.ts:190 falls back to ROLES.VIEWER when the stored invitation role fails isValidRole.",
       "disposition": "PRESERVED AS FAIL-CLOSED IN DIRECTION - viewer is the least privileged role, so an unparseable role grants least. This artifact does not change it and does not endorse it as a design: silently substituting a role also means an invitation that was authored to grant organization_admin can land as viewer with no signal. Recorded, not adjudicated - it belongs to the invitations lane. See OPEN_FINDINGS.F-AO-13."
+    },
+    "R2_CORRECTION_MUTATING_VERB": {
+      "status": "BINDING CORRECTION of an R1 over-narrowing.",
+      "what_R1_said": "Invitation acceptance must mutate by POST, never render-time GET — with POST pinned exclusively throughout REQUIRED_SHAPE.R2 and the surrounding clauses.",
+      "what_canonical_says": "HPO-A statement: Invitation acceptance is a mutation and must occur via POST (or another proper mutating verb), never as a side effect of a render-time GET request. Clause HPO-A.7 states the POST form; the statement carries the parenthetical.",
+      "THE_CORRECTED_REQUIREMENT": "Invitation acceptance MUST occur via a PROPER MUTATING VERB — POST being the expected instance — and MUST NOT occur as a side effect of a render-time GET. An implementation using PUT or DELETE where that is the semantically correct verb SATISFIES this requirement and MUST NOT be refused on the basis of this artifact.",
+      "what_is_load_bearing_and_what_is_not": "Load-bearing: the request must be a mutation by its own declared semantics, and a GET render must not mutate. NOT load-bearing: the literal string POST. R1 conflated the instance with the rule.",
+      "what_does_NOT_change": [
+        "The measured defect is unchanged. app/invite/accept/page.tsx:53 calls acceptInvitation during the render of a GET, and that violates the requirement under either phrasing.",
+        "F-AO-01 is unchanged and is not a verb question at all. The expiry write at lib/invitations/service.ts:175-178 is rolled back by the throw at :179 regardless of which verb reaches it. AB-5 stands.",
+        "R4 of REQUIRED_SHAPE is unchanged: the handler must transit the gate AND own its transaction boundary, and satisfying one by breaking the other is the trap M-AO-7 exists to catch.",
+        "R1 of REQUIRED_SHAPE is unchanged and is the half that actually carries the safety property: the link target renders and mutates nothing, asserted by N-AO-8 over a byte-identical snapshot."
+      ],
+      "manifest_consequence": "The companion manifest control is re-scoped to assert the PROPERTY — a safe-method request performs no mutation, and the mutating request declares a mutating method — rather than asserting the literal verb POST. See N-AO-33."
     }
   },
   "MULTI_ORG": {
@@ -1155,6 +1573,53 @@
       "organization_class_is_per_organization": "L1 is evaluated against the organization in request scope. A subject who is organization_admin of two organizations may face L1 in one and not the other, and discharging it in one does NOT discharge it in the other. Grounds: HPO-A decision 2 makes the acceptance organization-level; there is no account-level or CommercialAccount-level shortcut.",
       "the_CommercialAccount_trap": "One CommercialAccount may govern several organizations (CA-02, and the FK carrier exists at db/schema.ts:83). It is tempting to record commercial acceptance once per CommercialAccount rather than once per organization. THAT IS FORBIDDEN: HPO-A decision 2 says organization-level, and CA-08 already establishes that CommercialAccount-level aggregation does NOT create implicit shared authorization or pooled runtime state. An acceptance recorded at CommercialAccount level would grant an organization that never accepted anything a passing L1 by inheritance.",
       "control": "N-AO-12 asserts that discharging L1 for organization A leaves organization B refusing, including when both are governed by the same CommercialAccount."
+    }
+  },
+  "A3_REMEDY_RESOLUTION": {
+    "status": "RESOLVED BY RAT-AO-01, PARTIALLY. The resolution is bounded and the boundary is stated.",
+    "what_R1_left_open": "R1 ADJUDICATION_FOUNDER_VS_INVITED.A3 derived that a member of an organization with an undischarged L1 has no entitled product capability there, then recorded the REMEDY as STOP_FOR_HPO (F-AO-05): what the blocked member is told, and whether the administrator is notified.",
+    "WHAT_IS_NOW_RESOLVED": {
+      "the_blocked_non_admin": "Receives a NON-SENSITIVE BLOCKED STATE — enough to explain that access is pending, and no more. They cannot satisfy the obligation and cannot bypass it. RAT-AO-01 AO1_C2 and AO1_C3.",
+      "the_authorized_organization_admin": "Receives the COMPLETION CALL-TO-ACTION on an appropriate governed surface — the affordance that lets the obligation actually be satisfied. RAT-AO-01 AO1_C4.",
+      "the_gate_itself": "UNCHANGED from R1. A3 derivation that the block reaches the member stands, and RAT-AO-01 confirms it from the owner side: the member is blocked, which presupposes there is a block to receive."
+    },
+    "WHAT_REMAINS_UNRATIFIED": {
+      "automatic_notification": "NOT RATIFIED AND NOT INVENTED. Canonical RAT-AO-01 says the organization_admin RECEIVES the completion CTA. Receiving an affordance on a surface you visit is not the same as being sent a message. Whether any email, in-app notification, digest or webhook fires is OUTSIDE this ratification.",
+      "the_specific_prohibition": "This artifact MUST NOT infer, require, design or assert an automatic notification side effect, and no control in the companion manifest may depend on one. See SECURITY_PROHIBITIONS.X-AO-14.",
+      "why_the_temptation_is_real": "A blocked member and an unaware admin is an obviously bad outcome, and sending the admin an email is the obvious fix. That is product reasoning, and it is good product reasoning — but it is not this lane to decide, it would create an async-delivery obligation that belongs to the HPO-C lineage, and RAT-ASY-01 governs that domain separately.",
+      "UI_copy_route_and_component": "NOT AUTHORIZED. Canonical explicit_non_authorizations for RAT-AO-01 says it does not authorize any specific UI copy, route or component. This artifact designs none, and appropriate governed surface is deliberately not resolved to a path.",
+      "what_non_sensitive_means_precisely": "Canonical gives the standard — does not disclose sensitive acceptance detail beyond what is needed to explain that access is pending — but does not enumerate what counts as sensitive. This artifact does NOT enumerate it either. Recorded as F-AO-22, a bounded open question, because a gate whose refusal wording is undecided still refuses correctly."
+    },
+    "F_AO_05_DISPOSITION": "PARTIALLY_RESOLVED_BY_RATIFICATION. The two states are frozen; the notification question and the precise non-sensitive boundary are carried forward as F-AO-22 rather than silently closed."
+  },
+  "PLATFORM_ADMIN_BOUNDARY": {
+    "status": "BINDING. Added at R2 because RAT-AO-02 creates an obligation R1 had no ratified basis to state.",
+    "purpose": "RAT-AO-02 must remain consistent with RAT-OP-01 and HPO-D. This section records the reconciliation, and it does so WITHOUT reading or modifying the PR145 lineage that owns platform-admin authority.",
+    "boundary_discipline": "PR145 is OPEN and DRAFT. Its diff is NOT read by this revision. What IS consumed is RAT-OP-01, which is RESIDENT in integration in the same canonical file as RAT-AO-01..03. A sibling ratification is a legitimate input; another lane in-flight diff is not.",
+    "THE_RECONCILIATION": {
+      "RAT_OP_01_verbatim_relevant_half": "Commercial V1 permits issuance of a SUPPORT_CAPABILITY only to a natural person who holds an ACTIVE membership in the affected organization with role EXACTLY organization_admin. hasRole('>=') / role-hierarchy / '+' notation and implicit admission of tenant super_admin are all excluded. Tenant super_admin is not automatically an authorizer.",
+      "RAT_AO_02_relevant_half": "No platform-admin, support or commercial-team actor may record an organization application legal or commercial acceptance on that organization behalf. Acceptance is performed only by an active organization_admin.",
+      "they_are_consistent_and_mutually_reinforcing": "Both require an ACTIVE membership with role EXACTLY organization_admin, both explicitly exclude a hierarchy threshold, and both explicitly exclude implicit admission of tenant super_admin. RAT-OP-01 constrains who may AUTHORIZE a support capability; RAT-AO-02 constrains who may PERFORM an acceptance. Different acts, identical predicate shape.",
+      "the_derived_corollary": "SUPPORT CAPABILITY DOES NOT CONFER ACCEPTANCE AUTHORITY. A platform principal that has been issued a support capability under RAT-OP-01 has thereby acquired a support capability and nothing else. Acceptance authority is not among the things a support capability can carry, because RAT-AO-02 AO2_C2 restricts the act to an active organization_admin of the affected organization, and a platform principal holding a support capability is not thereby an active organization_admin.",
+      "DERIVED_NOT_GRANTED": "The corollary is a DERIVATION from the conjunction of the two ratifications. Neither states it in those words. It is labelled so that an auditor can challenge the derivation rather than mistake it for ratified text — though note that RAT-OP-01 explicit_non_authorizations independently says it does not grant standing tenant-content access, which points the same way.",
+      "no_platform_bypass": "There is NO platform path — support capability, super-admin bit, tenant super_admin role value, impersonation, or operator tooling — that records or satisfies L0 or L1. L0 is writable only by the subject for themselves; L1 only by an active organization_admin of the affected organization.",
+      "controls": [
+        "N-AO-27",
+        "N-AO-29"
+      ]
+    },
+    "WHAT_THIS_SECTION_DOES_NOT_DO": [
+      "It does NOT modify PR145, read its diff, or adjudicate its content.",
+      "It does NOT close the standing platform-admin self-assignment path. RAT-OP-01 explicit_non_authorizations assigns that closure to the platform-admin lineage as a separate prerequisite, and RAT-OP-01 operational_prerequisite_fail_closed makes its own rule fail closed until that closure is verified. This artifact inherits neither the closure nor the authority to perform it.",
+      "It does NOT redesign platform-admin identity. Packet B section 6 forbids doing that from an adjacent lane and R1 already honoured that constraint; R2 continues to.",
+      "It does NOT assert that the measured super-admin exception at db/identity-context.ts:217 is closed. It is not. X-AO-06 prevents the acceptance model from depending on it."
+    ],
+    "THE_RESIDUAL_HAZARD_RECORDED": {
+      "id": "F-AO-23",
+      "hazard": "RAT-OP-01 names a standing platform-admin path capable of self-assigning tenant memberships, and makes its own rule fail closed until that path is closed. If that path is open, a platform principal could self-assign an organization_admin membership and then satisfy L1 predicate legitimately — passing an exact-equality check, because they would genuinely hold the role.",
+      "why_the_exact_predicate_does_not_defeat_this": "Exact equality on organization_admin over an active membership is the correct predicate and it is not what fails here. What fails is the INTEGRITY OF MEMBERSHIP ASSIGNMENT upstream of it. No predicate over membership can defend against an actor who can mint the membership.",
+      "disposition": "OUT OF SCOPE FOR THIS LANE AND NOT REPAIRED HERE. It is recorded because an auditor reading only the exact-predicate requirement could conclude RAT-AO-02 is fully enforced by it, and it is not — enforcement is conditional on membership-assignment integrity owned by the platform-admin lineage. The acceptance model states its dependency rather than claiming a guarantee it cannot deliver.",
+      "not_measured_by_this_lane": "Whether that standing path is currently open was NOT measured by this revision. Prior repository evidence and LANE AV record an open self-assignment concern, and RAT-OP-01 treats the closure as an unmet prerequisite; this artifact inherits that with attribution and asserts nothing of its own."
     }
   },
   "FAIL_CLOSED": {
@@ -1339,7 +1804,7 @@
         "content_digest_algorithm - NOT NULL, recorded not assumed",
         "content_bytes or an immutable content reference - NOT NULL",
         "reaccept_required - boolean NOT NULL, NO DEFAULT",
-        "effective_from - NOT NULL",
+        "effective_at - OPTIONAL per RAT-AO-03 AO3_C2; NULL means IN EFFECT ON PUBLICATION (fail-closed derivation, see REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT)",
         "published_by - the platform principal that published it, NOT NULL",
         "published_at - NOT NULL",
         "audit_log_id - the publication audit row"
@@ -1351,7 +1816,9 @@
         "I-T2-4: content_digest and the content bytes are written in the SAME transaction. A digest whose bytes are absent proves only that something was accepted.",
         "I-T2-5: the version ordering within an instrument_key must be a genuine TOTAL order, because the currency predicate searches an interval of it. A partial or ambiguous order makes the predicate ill-defined rather than merely awkward.",
         "I-T2-6: publication writes the audit row in the same transaction.",
-        "I-T2-7: RLS enabled. The relation is PLATFORM-GLOBAL reference data, not tenant data: every subject must be able to READ the instrument they are being asked to accept, and NO tenant role may write. The read/write asymmetry is the whole access-control content of this table."
+        "I-T2-7: RLS enabled. The relation is PLATFORM-GLOBAL reference data, not tenant data: every subject must be able to READ the instrument they are being asked to accept, and NO tenant role may write. The read/write asymmetry is the whole access-control content of this table.",
+        "I-T2-8 (R2): effective_at is OPTIONAL, IMMUTABLE once published, and is a property of the VERSION only. There is NO per-organization, per-subject or per-tenant effective_at, deferral or waiver — that would be the grace period RAT-AO-03 AO3_C1 forbids, re-expressed as data. Authority X-AO-16.",
+        "I-T2-9 (R2): effective_at and reaccept_required are INDEPENDENT and BOTH are required for a version to refuse. effective_at answers WHEN the version applies; reaccept_required answers WHETHER applying it invalidates earlier acceptances. Authority RAT-AO-03 AO3_C4."
       ],
       "explicitly_not_decided": [
         "the version format",
@@ -1623,6 +2090,66 @@
         "prohibition": "MUST NOT enumerate memberships, disclose organization existence, or reveal tenancy shape on any acceptance refusal path.",
         "grounds": "Packet A NO_AUTO_SELECTION and Packet B B3 prohibitions, carried into FC_1.",
         "control": "N-AO-5"
+      },
+      {
+        "id": "X-AO-11",
+        "prohibition": "MUST NOT express the L1 accepting-role check as a hierarchy threshold, and MUST NOT include super_admin in its role set.",
+        "grounds": "RAT-AO-01 AO1_C6, RAT-AO-02 AO2_C2, and the corroborating RAT-OP-01 which excludes hasRole('>='), role-hierarchy and '+' notation by name.",
+        "measured_why": "hasRole is ROLE_HIERARCHY[user] >= ROLE_HIERARCHY[required] at lib/auth/permissions.ts:24-26; super_admin is 100 and organization_admin is 80 at lib/auth/roles.ts:38-44, so hasRole('super_admin','organization_admin') is TRUE; and db/schema.ts:113 permits super_admin as an organization_members.role value. The idiomatic check therefore admits a tenant super_admin membership.",
+        "the_required_form": "EXACT EQUALITY on organization_admin over an ACTIVE membership in the affected organization, re-verified at the database boundary, never taken from a client-supplied value.",
+        "controls": [
+          "N-AO-26",
+          "N-AO-27",
+          "M-AO-15"
+        ]
+      },
+      {
+        "id": "X-AO-12",
+        "prohibition": "MUST NOT treat any commercial state as acceptance evidence, and MUST NOT let any commercial state bypass L0 or L1.",
+        "named_target": "ACTIVE_WITHOUT_STRIPE (HPO-B.7) and any other manual commercial activation state.",
+        "grounds": "RAT-AO-02 AO2_C3 — manual commercial activation under HPO-B does not substitute for legal or commercial acceptance.",
+        "note": "The state does not exist in the repository at this tree — grep over db/ and lib/ returns zero, and commercial_status is constrained to four other values at db/schema.ts:33. This is therefore a FORWARD prohibition, and its absence today must not be read as evidence that a bypass exists.",
+        "controls": [
+          "N-AO-28",
+          "M-AO-16"
+        ]
+      },
+      {
+        "id": "X-AO-13",
+        "prohibition": "MUST NOT provide any platform-admin, support, operator, commercial-team or back-office mechanism that records or satisfies an organization acceptance, and MUST NOT let a support capability confer acceptance authority.",
+        "grounds": "RAT-AO-02 AO2_C1 and AO2_C2, reconciled with RAT-OP-01 in PLATFORM_ADMIN_BOUNDARY. The positive clause AO2_C2 excludes every actor who is not an active organization_admin, whether or not that actor appears in any negative enumeration.",
+        "relationship_to_X_AO_06": "X-AO-06 forbade the super-admin membership-check exception becoming an acceptance-writing capability and was DERIVED at R1. X-AO-13 is the broader, RATIFIED prohibition. X-AO-06 is retained and upgraded to ratified standing rather than absorbed, because it names a specific measured code site and X-AO-13 does not.",
+        "controls": [
+          "N-AO-27",
+          "N-AO-29"
+        ]
+      },
+      {
+        "id": "X-AO-14",
+        "prohibition": "MUST NOT infer, require, design or assert an automatic notification side effect of an acceptance refusal or of an acceptance becoming due, and NO control may depend on one.",
+        "grounds": "RAT-AO-01 says the organization_admin RECEIVES the completion CTA. It does not say the system SENDS anything. Receiving an affordance on a governed surface is not being sent a message, and the ratification stops where it stops.",
+        "why_an_explicit_prohibition_is_needed": "A blocked member plus an unaware admin is an obviously bad product outcome whose obvious fix is an email. Inventing it here would create an async-delivery obligation belonging to the HPO-C lineage, governed separately by RAT-ASY-01, and would attribute to the owner a decision they did not make.",
+        "controls": [
+          "N-AO-34"
+        ]
+      },
+      {
+        "id": "X-AO-15",
+        "prohibition": "MUST NOT refuse at L0 or L1 on the basis of a version whose effective_at has not yet arrived, and MUST NOT treat display, dismissal or acknowledgement of a pre-effective notice as an acceptance.",
+        "grounds": "RAT-AO-03 AO3_C3 and AO3_C4. Before effective_at the product may inform and is not required to block; from effective_at the gate applies.",
+        "the_two_opposite_errors_this_forbids": "Refusing early converts a notice window into an outage. Treating a dismissed notice as acceptance manufactures evidence of an act that never occurred. Both are failures of the same clause in opposite directions.",
+        "controls": [
+          "N-AO-30",
+          "N-AO-32"
+        ]
+      },
+      {
+        "id": "X-AO-16",
+        "prohibition": "MUST NOT introduce a per-organization, per-subject or per-tenant effective_at, deferral, waiver or exemption.",
+        "grounds": "RAT-AO-03 AO3_C1 forbids a grace period applying across all versions or all organizations; a per-tenant date or waiver is that grace period re-expressed as data. effective_at is a property of the VERSION only.",
+        "controls": [
+          "N-AO-31"
+        ]
       }
     ],
     "SECURITY_PROPERTIES_CLAIMED": {
@@ -1814,8 +2341,96 @@
       "title": "Four ratification statuses in COMMERCIAL_V1_PRODUCT_RATIFICATIONS are stale",
       "detail": "MO-01, MO-10, CA-01 and CA-02 carry implementation_status_as_of_head values that are FALSE at this AS_OF_TREE. See LIVE_RECONCILIATION.STALE_STATUS_CORRECTIONS.",
       "disposition": "Corrected locally for this artifact reasoning. That file is NOT edited by this lane - it is product-owner alignment reference and amending it is not this lane authority."
+    },
+    {
+      "id": "F-AO-18",
+      "severity": "RATIFICATION_CONFORMANCE_HAZARD",
+      "title": "The ambient role-check convention would violate RAT-AO-02 while looking idiomatic",
+      "detail": "hasRole is a range predicate (lib/auth/permissions.ts:24-26) and hasRole('super_admin','organization_admin') is 100 >= 80 = TRUE (lib/auth/roles.ts:38-44). super_admin is a permitted organization_members.role value (db/schema.ts:113). hasRole( appears at 18 call sites in permissions.ts and 60 repo-wide, and BOTH role-set literals in permissions.ts include super_admin (2 of 2). An L1 check written as canManageUsers is written at lib/auth/permissions.ts:33-35 would therefore admit a tenant super_admin as an accepting principal.",
+      "why_it_is_a_finding_and_not_a_note": "The defect arises from FOLLOWING the local convention faithfully, not from ignoring it. L1 predicate must be the first in this codebase that is neither a hierarchy threshold nor a super_admin-inclusive set. Novelty against a consistent local pattern is precisely when a mutation control is mandatory.",
+      "mitigating_precedent_measured": "The repository already documents the correct idiom at lib/auth/permissions.ts:109-115 and :164-166 — SET INCLUSION, not a hierarchy threshold — so the discipline is carried, not invented. L1 extends it to a singleton set that uniquely excludes super_admin.",
+      "disposition": "X-AO-11. Controls N-AO-26, N-AO-27, M-AO-15.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-19",
+      "severity": "R1_CLAIM_CORRECTED",
+      "title": "R1 currency predicate had no time dimension and would refuse on publication",
+      "detail": "RAT-AO-03 AO3_C2 and AO3_C3 introduce a per-version effective_at and a pre-effective period in which the product is not required to block. R1 predicate keyed refusal to publication plus the reaccept_required mark alone, so a future-dated marked version would have refused the entire affected population immediately on publication.",
+      "disposition": "CORRECTED in REACCEPTANCE_R2.THE_CORRECTED_CURRENCY_PREDICATE. The R1 fail-closed EXISTS clause is preserved and is now MORE load-bearing, because there are two routes to a vacuous pass instead of one.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-20",
+      "severity": "R1_CLAIM_CORRECTED",
+      "title": "R1 narrowed HPO-A.7 to POST exclusively; canonical permits any proper mutating verb",
+      "detail": "Canonical HPO-A statement reads must occur via POST (or another proper mutating verb). R1 pinned POST. R1 was stricter than the ratification and would have refused a PUT or DELETE handler the owner explicitly permits.",
+      "disposition": "CORRECTED in INVITATIONS_R2.R2_CORRECTION_MUTATING_VERB. The measured defect, F-AO-01 and the AB-5 durability requirement are all unaffected.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-21",
+      "severity": "TRANSCRIPTION_DELTA_NO_DRIFT",
+      "title": "R1 bound five evidence elements where canonical HPO-A.4 names four",
+      "detail": "R1 added subject. It is ENTAILED by HPO-A.1 and HPO-A.3 together, which fix the accepting principal for each class, so no drift. Separately R1 read content identity as requiring retained TEXT and not only a digest; R1 already labelled that DERIVED_NOT_GRANTED, and comparison against canonical HPO-A.4, which says content hash, CONFIRMS the labelling was correct.",
+      "disposition": "RECORDED, NO CORRECTION REQUIRED. See HPO_A_PROVENANCE_R2.DRIFT_COMPARISON.DELTA_1_SUBJECT_AND_RETAINED_TEXT.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-22",
+      "severity": "BOUNDED_OPEN_QUESTION",
+      "title": "What counts as sensitive in the non-admin blocked state is not enumerated",
+      "detail": "RAT-AO-01 gives the standard — does not disclose sensitive acceptance detail beyond what is needed to explain that access is pending — but does not enumerate what is sensitive. This artifact does not enumerate it either, and canonical explicit_non_authorizations forbids authorizing UI copy.",
+      "disposition": "CARRIED FORWARD. A gate whose refusal wording is undecided still refuses correctly, so this does not block the gate. It is the residue of F-AO-05 that the ratification did not close.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-23",
+      "severity": "DEPENDENCY_ON_ANOTHER_LINEAGE",
+      "title": "Exact-equality on organization_admin cannot defend against an actor who can mint the membership",
+      "detail": "RAT-OP-01 names a standing platform-admin path capable of self-assigning tenant memberships and makes its own rule FAIL CLOSED until that path is closed. A platform principal who can self-assign an organization_admin membership would pass an exact-equality L1 check legitimately, because they would genuinely hold the role. No predicate over membership can defend against an actor upstream of membership assignment.",
+      "disposition": "OUT OF SCOPE, NOT REPAIRED HERE, RECORDED SO THE GUARANTEE IS NOT OVERSTATED. Whether the path is currently open was NOT measured by this revision; RAT-OP-01 treats its closure as an unmet prerequisite and this artifact inherits that with attribution.",
+      "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-24",
+      "severity": "RE_MEASUREMENT_OBLIGATION",
+      "title": "PACKET_B_IMPLEMENTATION_CONCURRENCY was measured at the R1 base and is not re-measured here",
+      "detail": "That section recorded origin/codex/email-verification-packet-b-implementation-r1 at 365a4b2f with 19 files and +1848. This revision did NOT re-measure that branch, because no clause of R2 depends on its current state. Prior repository evidence records that the Packet B implementation was subsequently BLOCKED in audit, which if true would change the imminence claim but not the shared-write-surface obligations.",
+      "disposition": "The six shared write surfaces and their obligations stand on the topology, not on the branch SHA. The imminence characterisation is explicitly stale and flagged as such. RE-MEASURE, NEVER REPLAY.",
+      "new_at_this_revision": true
     }
   ],
+  "R2_FINDINGS_DISPOSITION": {
+    "rule": "Every R1 finding is dispositioned explicitly. A revision that silently dropped one would be the drift this section exists to prevent.",
+    "PRESERVED_UNCHANGED_BY_FRESH_MEASUREMENT": {
+      "basis": "All six commits between the R1 base 88d95c65 and current live f0d81d1d are DOCS-ONLY owner-ratification materializations. No file under lib/, app/, db/ or tests/ changed. Every finding resting on a code path therefore cannot have changed, and this is a measured basis rather than an assumption.",
+      "findings": {
+        "F-AO-01": "PRESERVED. Invitation expiry write rolled back by the throw at lib/invitations/service.ts:179. Unaffected by the mutating-verb correction — see INVITATIONS_R2.",
+        "F-AO-02": "PRESERVED. Two single-membership ceilings: db/schema.ts:112 and lib/invitations/service.ts:185-187.",
+        "F-AO-03": "PRESERVED. stella_0006:165,169 and stella_0010:140,144 assert the index as a precondition and RAISE without it. Independently corroborated from the canonical side: HPO-A implementation_status cites MO-02 recording user_single_active_membership as CONTRADICTS_PRODUCT_INTENT against HPO-A.8.",
+        "F-AO-12": "PRESERVED. Packet B B5 termination proof does not carry to the extended state space, and L0 now adds a THIRD refusing state rather than a second — the acceptance gate plus the pre-effective boundary do not add a state here, but the bounce argument is unchanged. Still recorded for the Packet B authority holder; still not edited from this lane.",
+        "F-AO-04": "PRESERVED and NOW PARTIALLY RATIFIED. Instrument identity is still unversioned and locale-ambiguous. RAT-AO-03 AO3_C6 confirms the locale question is COUNSEL_REQUIRED rather than an oversight.",
+        "F-AO-06": "PRESERVED. The publication mechanism remains unchosen. RAT-AO-03 adds effective_at to what publication must carry, which narrows the requirement without choosing the mechanism.",
+        "F-AO-09": "PRESERVED. Append-only versus erasure remains unresolved; no RAT-AO addresses it.",
+        "F-AO-10": "PRESERVED. No DPA instrument class. No RAT-AO adds one.",
+        "F-AO-11": "PRESERVED. L0 adds a third state indistinguishable at C5; accepted on the same grounds.",
+        "F-AO-13": "PRESERVED. Invitation role falls back to viewer at lib/invitations/service.ts:190. NOW MORE SIGNIFICANT: under RAT-AO-01 AO1_C5, viewer is one of the four roles explicitly denied any bypass, so a silent downgrade to viewer lands the subject in the blocked class. Recorded, still not adjudicated here — it belongs to the invitations lane.",
+        "F-AO-15": "PRESERVED. The audit insert policy for a NULL-organization acceptance row is still unverified; no PostgreSQL probe was run at R1 or R2.",
+        "F-AO-16": "PRESERVED AND REINFORCED. Every line anchor is a re-measurement obligation. R2 re-measured the role-model anchors it newly depends on and left the rest as obligations.",
+        "F-AO-17": "PRESERVED. Four ratification statuses in COMMERCIAL_V1_PRODUCT_RATIFICATIONS are stale. NOT re-litigated at R2 and that file remains untouched."
+      }
+    },
+    "RESOLVED_BY_RATIFICATION": {
+      "F-AO-05": "PARTIALLY_RESOLVED by RAT-AO-01. Two states frozen; the notification question and the non-sensitive boundary carried forward as F-AO-22. See A3_REMEDY_RESOLUTION.",
+      "F-AO-07": "RESOLVED by RAT-AO-02, in the prohibitive direction. No assisted or negotiated platform-side acceptance mechanism exists in Commercial V1, and building one is explicitly non-authorized.",
+      "F-AO-08": "RESOLVED by RAT-AO-03 AO3_C1. No universal grace period. The R1 posture was correct and no duration is invented."
+    },
+    "STILL_STOP_FOR_HPO": {
+      "F-AO-14": "The empty-instrument-registry behaviour. NO RAT-AO addresses it. Interim posture UNCHANGED: refuse, loudly. Marking it resolved because three neighbouring questions were answered would be unfounded."
+    },
+    "count_check": "R1 recorded F-AO-01..F-AO-17, which is 17 findings. Every one is dispositioned above exactly once: 13 PRESERVED (01, 02, 03, 04, 06, 09, 10, 11, 12, 13, 15, 16, 17), 3 RESOLVED_BY_RATIFICATION (05 partially, 07, 08), and 1 STILL_STOP_FOR_HPO (14). 13 + 3 + 1 = 17, with no finding counted twice and none dropped. R2 adds 7 new findings, F-AO-18 through F-AO-24, giving 24 in total."
+  },
   "UNKNOWN": [
     {
       "id": "U-AO-1",
@@ -1846,8 +2461,35 @@
       "id": "U-AO-6",
       "question": "Whether the four instrument pages are translations of one text or independent documents.",
       "why_unknown": "Measured structurally only - line counts and absent version markers. No instrument text was read for content, by design."
+    },
+    {
+      "id": "U-AO-7",
+      "question": "Whether PR137 and PR146 faithfully normalized the original owner intent for HPO-A and RAT-AO-01..03.",
+      "why_unknown": "Both canonical files state they are normalized ratification records and NOT verbatim transcripts of the originating sessions, whose transcripts are not repository artifacts. HPO-A could be cross-checked against R1 independent transcription and was; RAT-AO-01..03 have no second normalization to compare against, so they are consumed as canonical on their face."
+    },
+    {
+      "id": "U-AO-8",
+      "question": "Whether the standing platform-admin path capable of self-assigning tenant memberships is currently open.",
+      "why_unknown": "NOT measured by this revision. RAT-OP-01 treats its closure as an unmet prerequisite and makes its own rule fail closed until then; this artifact inherits that with attribution. See F-AO-23."
     }
   ],
+  "RATIFICATION_PROVENANCE": {
+    "HPO_A_CANONICAL_RESIDENT": "YES",
+    "HPO_A_resident_path": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json",
+    "HPO_A_resident_via": "PR137, merge commit a3f3419e, merged 2026-09-11T01:13:11Z, present in current live f0d81d1d.",
+    "CANONICAL_MICRO_RATIFICATIONS_RESIDENT": "YES",
+    "micro_ratifications_resident_path": "docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json",
+    "micro_ratifications_resident_via": "PR146, merge commit f0d81d1d, merged 2026-09-11T01:44:08Z. The exact object named by the mission, 1cddd3109762f84710fdb81ad72820a87066a24f, is in that merged history.",
+    "MERGE_DEPENDENCY_PR146": "NO — PR146 is MERGED. No integration dependency on it remains.",
+    "MERGE_DEPENDENCY_PR137": "NO — PR137 is MERGED.",
+    "DANGLING_RATIFICATION_PROVENANCE": "NONE. Every ratification this artifact consumes — HPO-A, HPO-A.1..A.9, RAT-AO-01, RAT-AO-02, RAT-AO-03, and the sibling RAT-OP-01 used only for the boundary reconciliation — is resident in current live f0d81d1d at a named path. No clause of this artifact cites a ratification that exists only on an unmerged branch.",
+    "consumed_read_only": "Both canonical files were read via git show against origin/integration/commercial-v1. NEITHER FILE IS MODIFIED by this revision, and neither appears in this revision diff.",
+    "ratifications_referenced_but_NOT_consumed_as_authority": {
+      "HPO-B.7": "Cited only to establish the PROVENANCE of the state name ACTIVE_WITHOUT_STRIPE. This artifact consumes no HPO-B authority and adjudicates nothing in the commercial state machine.",
+      "RAT-OP-01": "Consumed ONLY for the PLATFORM_ADMIN_BOUNDARY reconciliation that RAT-AO-02 requires. This artifact adjudicates nothing about support-capability issuance, which belongs to the platform-admin lineage.",
+      "MO-01, MO-02, MO-07, MO-10, CA-01, CA-02, CA-03, CA-04, CA-05, CA-08, SS-01": "Product-alignment reference entries cited by R1 and retained. Four of their statuses were corrected locally at R1; see LIVE_RECONCILIATION.STALE_STATUS_CORRECTIONS. Those corrections are NOT re-litigated at R2 and that file remains untouched."
+    }
+  },
   "VALIDATION_PERFORMED_BY_THIS_MISSION": {
     "prestate": {
       "branch": "codex/customer-lifecycle-legal-acceptance-authority-r1",
@@ -1882,7 +2524,64 @@
       "Audit substrate: AUDIT_ACTIONS key count 111 computed from lib/audit/logger.ts; auditLogs.organizationId nullability read at db/schema.ts:118; logAuditAction optional parameter read at lib/audit/logger.ts:288 and :407.",
       "Founder cardinality: db/schema.ts:89-93 read directly."
     ],
-    "self_correction_recorded": "One inherited claim was CORRECTED by measurement rather than carried: the prior belief that only two audit verbs admit organization_id NULL was about which verbs PASS the value, not about whether the column and emitter admit its absence. Both do - measured. See AUDIT.TENANT_SCOPE_OF_THE_AUDIT_ROW."
+    "self_correction_recorded": "One inherited claim was CORRECTED by measurement rather than carried: the prior belief that only two audit verbs admit organization_id NULL was about which verbs PASS the value, not about whether the column and emitter admit its absence. Both do - measured. See AUDIT.TENANT_SCOPE_OF_THE_AUDIT_ROW.",
+    "R2_VALIDATION": {
+      "prestate": {
+        "branch": "codex/customer-lifecycle-legal-acceptance-authority-r1",
+        "head_at_r2_start": "91cd32d5a4754f36ec162458f6c42189ecb5a290",
+        "tree_at_r2_start": "d759448aca0c70e81c2af82c384c205f5b3d2782",
+        "matches_declared": "YES for both HEAD and TREE.",
+        "working_tree_clean": "git status --porcelain --untracked-files=all returned ZERO lines",
+        "fetch": "git fetch origin --prune performed before any read of integration state"
+      },
+      "measurements_performed_at_R2": [
+        "Integration advance: git log 88d95c65..origin/integration/commercial-v1 — SIX commits, all docs-only owner-ratification materializations. Current live f0d81d1d.",
+        "PR states via gh pr view for 137, 143, 145, 146 — PR137 MERGED a3f3419e, PR146 MERGED f0d81d1d, PR143 OPEN DRAFT, PR145 OPEN DRAFT.",
+        "Canonical residency: git rev-parse --verify origin/integration/commercial-v1:<path> for both canonical files — both PRESENT.",
+        "Canonical HPO-A read in full from integration and compared clause by clause against R1 nine transcribed decisions — nine comparisons, seven identical, two deltas recorded.",
+        "RAT-AO-01, RAT-AO-02, RAT-AO-03 read verbatim from integration, plus the sibling RAT-OP-01 for the boundary reconciliation.",
+        "Role model re-measured at this tree: lib/auth/roles.ts:13-19 (six ROLES values), :38-44 (ROLE_HIERARCHY super_admin 100 / organization_admin 80), lib/auth/permissions.ts:24-26 (hasRole is a >= comparison), :33-35 (canManageUsers uses it), db/schema.ts:104 and :113 (role_check permits super_admin as a membership role value).",
+        "Ambient-convention census: hasRole( counted at 18 call sites inside lib/auth/permissions.ts and 60 repo-wide across lib/, app/, components/ excluding tests and the definition; both readonly Role[] literals in permissions.ts extracted structurally and BOTH contain super_admin.",
+        "Correct-idiom precedent read at lib/auth/permissions.ts:109-115 and :164-166 — SET INCLUSION, not a hierarchy threshold.",
+        "ACTIVE_WITHOUT_STRIPE provenance and materialization: present as ratified vocabulary in HPO-B.7; grep over db/ and lib/ returns ZERO; commercial_status constrained to four other values at db/schema.ts:33.",
+        "Merge-order precondition: PR137 merge a3f3419e confirmed to be an ANCESTOR of PR146 merge f0d81d1d in the same integration line."
+      ],
+      "gates_run_at_R2": [
+        {
+          "gate": "authority_seal_verify",
+          "invocation": "node --experimental-strip-types scripts/authority-seal-verify.ts",
+          "result": "recorded in the R2 commit message and PR body"
+        },
+        {
+          "gate": "ods_scope",
+          "invocation": "node --experimental-strip-types scripts/ods-scope.ts --base 91cd32d5 --allow docs/ops/compliance/**",
+          "result": "recorded in the R2 commit message and PR body"
+        },
+        {
+          "gate": "json_validity",
+          "invocation": "JSON.parse of both artifacts"
+        },
+        {
+          "gate": "manifest_schema",
+          "invocation": "structural validation against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json including additionalProperties:false at root and on control"
+        },
+        {
+          "gate": "cross_reference",
+          "invocation": "every control, finding, prohibition, flag, blocking-dependency and unknown id referenced in the authority resolved against its declaration"
+        },
+        {
+          "gate": "changed_file_secret_inspection",
+          "invocation": "grep for credential-shaped tokens over the two changed files"
+        }
+      ],
+      "gates_NOT_run_at_R2_and_why": [
+        "typecheck and targeted_tests — node_modules is ABSENT and this revision contains no code and no test. No dependency was installed, per the mission instruction not to install merely for poststate.",
+        "ods_poststate — it is the one ODS gate that requires node_modules. No ODS node is allocated or claimed by this revision, and the deterministic facts poststate would report were captured directly via git.",
+        "postgres_disposable_probe — no schema object was created or changed.",
+        "Re-measurement of the Packet B implementation branch — deliberately NOT re-run. No R2 clause depends on its current state, and the staleness is flagged as F-AO-24 rather than silently carried."
+      ],
+      "self_correction_recorded_at_R2": "TWO R1 claims were corrected by comparison against canonical text rather than defended: R1 pinned POST exclusively where canonical permits any proper mutating verb (F-AO-20), and R1 currency predicate had no time dimension and would have refused on publication (F-AO-19). Both corrections are recorded as withdrawals with the R1 text preserved for auditability, in the pattern the Packet B authority uses for its own withdrawn claims."
+    }
   },
   "self_check": {
     "did_this_artifact_edit_frozen_authority": "NO. docs/ops/tenancy/**, docs/ops/commercial/**, docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, docs/ops/ods/** and docs/ops/compliance/LC0_*.json are all UNTOUCHED. The write surface is two new files.",
@@ -1901,11 +2600,46 @@
       "L1 is specified as SHAPE ONLY, with no enumerated call sites, because the surface is being moved by two other lineages. That is a deliberate thinness and it means L1 has no completeness proof.",
       "Every line anchor is a re-measurement obligation, not a pin - F-AO-16 - because Packet B must land first and will edit several of the named sites.",
       "No PostgreSQL probe was run, so every RLS posture is a design intention rather than a verified behaviour."
-    ]
+    ],
+    "R2_self_check": {
+      "did_R2_rewrite_R1_history": "NO. BINDING_HPO_DECISION.provenance retains its original wording, which was true at R1 AS_OF_TREE, and a forward pointer was ADDED beside it. HPO_A_PROVENANCE_R2.HISTORICAL_FACT_PRESERVED restates the historical measurement and marks it NOT WITHDRAWN. Where R1 was substantively wrong, the correction is an explicit withdrawal that keeps the R1 text visible.",
+      "did_R2_modify_PR146_or_its_artifact": "NO. docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json was read via git show against origin/integration/commercial-v1 and does not appear in this revision diff.",
+      "did_R2_modify_PR145": "NO. Its diff was never read. Only the resident sibling ratification RAT-OP-01 was consumed, and only for the boundary reconciliation RAT-AO-02 requires.",
+      "did_R2_amend_Packet_A_or_Packet_B": "NO. F-AO-12 remains recorded FOR the Packet B authority holder and no Packet B clause is edited. The mutating-verb correction touches this artifact own INVITATIONS section, not Packet B.",
+      "did_R2_invent_owner_policy": "NO. Every R2 clause traces to a cited RAT-AO or HPO-A clause, or is labelled DERIVED_NOT_GRANTED with its grounds named. Three derivations are so labelled: the effective_at NULL semantics, the support-capability corollary in PLATFORM_ADMIN_BOUNDARY, and the positive-clause reading of RAT-AO-02.",
+      "did_R2_invent_a_notification": "NO. X-AO-14 forbids it explicitly, A3_REMEDY_RESOLUTION.WHAT_REMAINS_UNRATIFIED states why the temptation is real and why it is still not this lane decision, and no control depends on one.",
+      "did_R2_invent_a_grace_duration": "NO. No number appears. RAT_AO_CONSUMPTION.RAT_AO_03.NO_GRACE_DURATION_IS_INVENTED explains why effective_at is structurally not a grace period, and X-AO-16 forbids re-expressing one as per-tenant data.",
+      "did_R2_select_a_controlling_locale": "NO. LRF-02 remains COUNSEL_REQUIRED, which RAT-AO-03 AO3_C6 affirmatively requires — the ratification does not merely leave it open, it refuses to decide it and carries lrf_02_status COUNSEL_REQUIRED as a field.",
+      "did_R2_broaden_the_accepting_role": "NO. The opposite. X-AO-11 narrows it to EXACT EQUALITY and forbids both a hierarchy threshold and a super_admin-inclusive set, grounded in a re-measured role model.",
+      "did_R2_claim_the_legal_gates_are_lifted": "NO. LRF-05 stands unchanged and no RAT-AO touches it. Implementing the substrate does not lift the LC0 commercial_activation or self_service_onboarding gates, and HTF-11 remains STILL_TRUE.",
+      "is_every_R1_finding_dispositioned": "YES. R2_FINDINGS_DISPOSITION accounts for all 17 exactly once — 13 preserved, 3 resolved by ratification, 1 still STOP_FOR_HPO — and records the measured basis for the preservations, namely that all six intervening commits are docs-only.",
+      "is_ratification_provenance_dangling": "NO. RATIFICATION_PROVENANCE records HPO_A_CANONICAL_RESIDENT=YES and CANONICAL_MICRO_RATIFICATIONS_RESIDENT=YES, both at named paths in current live f0d81d1d, with MERGE_DEPENDENCY_PR146=NO because PR146 is merged. No clause cites a ratification that exists only on an unmerged branch.",
+      "did_R2_preserve_the_fail_closed_predicate_property": "YES, and strengthened its control obligation. The EXISTS-an-actual-acceptance clause is preserved verbatim, and REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT records that the time dimension creates a SECOND route to a vacuous pass — every marked version still pre-effective — which is more likely in practice than the first and must be exercised by its own control.",
+      "did_R2_add_a_durable_currency_cache": "NO. I-X-1 and I-X-5 stand, and the time dimension strengthens them: a cached flag would now need invalidation by the clock, which no write-time hook can deliver.",
+      "known_weaknesses_of_R2": [
+        "It CONSUMES canonical ratifications without auditing the materialization lanes that produced them. If PR137 or PR146 mis-normalized owner intent, this artifact inherits that. The clause-by-clause HPO-A comparison mitigates this only for HPO-A, not for RAT-AO-01..03, which have no second normalization to compare against.",
+        "The support-capability corollary in PLATFORM_ADMIN_BOUNDARY is DERIVED from the conjunction of two ratifications and is labelled as such. An auditor should test it.",
+        "F-AO-23 records that exact-equality on organization_admin cannot defend against an actor able to mint the membership. That dependency is stated, not closed, and whether the upstream path is open was NOT measured here.",
+        "PACKET_B_IMPLEMENTATION_CONCURRENCY was measured at the R1 base and is NOT re-measured; its imminence characterisation is explicitly stale per F-AO-24.",
+        "Still no PostgreSQL probe, so every RLS and append-only posture remains a design intention rather than verified behaviour (U-AO-1)."
+      ]
+    }
   },
-  "final_state": "AUTHORITY_R1_FROZEN_AWAITING_INDEPENDENT_OPUS_AUDIT",
+  "final_state": "AUTHORITY_R2_FROZEN_AWAITING_INDEPENDENT_OPUS_AUDIT",
   "IMPLEMENTATION_AUTHORIZED": false,
   "IMPLEMENTATION_AUTHORIZED_NOTE": "This artifact FREEZES a contract. It does NOT open implementation. No application code, no test, no schema, no migration, no prepared capability, no ODS allocation and no environment change is authorized by it. The write surface of the authoring mission was docs/** and nothing else.",
   "LINEAGE_REDERIVATION_REQUIRED": "YES - for every future DDL object, without exception. See FUTURE_DDL.LINEAGE_REDERIVATION_REQUIRED.",
-  "next_gate": "CUSTOMER_LIFECYCLE_AUTHORITY_INDEPENDENT_OPUS_AUDIT"
+  "next_gate": "PR143_CUSTOMER_LIFECYCLE_R2_INDEPENDENT_OPUS_AUDIT",
+  "CURRENT_REVISION": "R2",
+  "mission_id_history": [
+    "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-AUTHORITY-R1",
+    "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-OWNER-DECISION-CLOSURE"
+  ],
+  "filename_version_note": "The FILENAME keeps v1.0.0 deliberately: the companion manifest, PR143 and every prior citation point at that path, and renaming the file would break them for a revision that is an amendment rather than a new package. The package version field is 1.1.0 and CURRENT_REVISION is R2. This mirrors the convention TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json follows at its own R4.",
+  "final_state_history": {
+    "R1": "AUTHORITY_R1_FROZEN_AWAITING_INDEPENDENT_OPUS_AUDIT"
+  },
+  "next_gate_history": [
+    "CUSTOMER_LIFECYCLE_AUTHORITY_INDEPENDENT_OPUS_AUDIT"
+  ]
 }
