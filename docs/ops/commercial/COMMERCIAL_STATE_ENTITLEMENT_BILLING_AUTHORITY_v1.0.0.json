@@ -61,7 +61,7 @@
     "R-01_commercial_accounts_FORCE_RLS_zero_policies": {
       "status": "MEASURED_FACT plus DECIDED",
       "measured": "db/migrations/0068_commercial_account_ce1.sql:44-45 issues ENABLE ROW LEVEL SECURITY then FORCE ROW LEVEL SECURITY with ZERO CREATE POLICY statements. The migration's own header (0068:20-27) states this is deliberate and that FORCE additionally binds the table owner, so a SECURITY DEFINER function owned by the table owner ALSO cannot read or write rows through ordinary DML.",
-      "consequence": "There is today no role, definer or otherwise, that can write commercial_accounts without either a policy or BYPASSRLS. BYPASSRLS is refused by repository doctrine: db/prepared/stella_0008_stripe_webhook_identity.sql:938 asserts rolbypassrls is false for the capability role as a postcondition.",
+      "consequence": "There is today no role, definer or otherwise, that can write commercial_accounts without either a policy or BYPASSRLS. BYPASSRLS is refused by repository doctrine: db/prepared/stella_0008_stripe_webhook_identity.sql:938-941 asserts rolbypassrls false as a postcondition for uellix_stripe, the Stripe capability's LOGIN identity. See RLS.stella_0008_provenance - this authority extends that refusal to the CAPABILITY role as well, which 0008 does not.",
       "decided": "See RLS. The writer is a capability role admitted by a PERMISSIVE policy and bounded to one row by a RESTRICTIVE policy, together conferring no tenant reach. Adding the pair is a PRIVILEGE DECISION and is authorized by OD-1, which cannot be true of a relation nothing may write."
     },
 
@@ -626,14 +626,55 @@
 
   "RLS": {
     "measured_state": "commercial_accounts: ENABLE + FORCE ROW LEVEL SECURITY, ZERO policies (db/migrations/0068_commercial_account_ce1.sql:44-45). FORCE binds the table owner, so a SECURITY DEFINER function owned by the owner is equally locked out. This is the first application table in the repository to combine ENABLE + FORCE with zero policies and its migration header states the choice is deliberate.",
-    "the_problem_this_creates": "OD-1 requires a canonical state machine over this column. A state machine needs a transition writer. At AS_OF no role can write, and the two ways out are both refused by existing doctrine: BYPASSRLS is asserted false as a postcondition for capability roles (db/prepared/stella_0008_stripe_webhook_identity.sql:938), and an owner-privileged definer is defeated by FORCE.",
+    "the_problem_this_creates": "OD-1 requires a canonical state machine over this column. A state machine needs a transition writer. At AS_OF no role can write, and the two ways out are both refused by existing doctrine: BYPASSRLS is refused for the Stripe capability's LOGIN identity as a postcondition (db/prepared/stella_0008_stripe_webhook_identity.sql:938-941, which asserts NOT (rolbypassrls OR rolcreaterole OR rolcreatedb OR rolsuper) for uellix_stripe), and an owner-privileged definer is defeated by FORCE.",
+    "stella_0008_provenance": {
+      "re_measured_at_AS_OF": "db/prepared/stella_0008_stripe_webhook_identity.sql, section 4.1 Role attributes, read directly at AS_OF_TREE.",
+      "lines_935_937": "uellix_stripe must be LOGIN. Asserts rolcanlogin TRUE for the LOGIN role.",
+      "lines_938_941": "uellix_stripe has no forbidden role attribute. Asserts NOT (rolbypassrls OR rolcreaterole OR rolcreatedb OR rolsuper) - for the LOGIN role uellix_stripe.",
+      "lines_942_947": "uellix_stripe is a member of no role. Asserts zero rows WHERE m.member = uellix_stripe - the OUTBOUND membership direction, for the LOGIN role.",
+      "lines_948_950": "uellix_cap_stripe must be NOLOGIN. Asserts rolcanlogin FALSE - the first assertion in the file that is about the CAPABILITY role.",
+      "lines_951_956": "uellix_cap_stripe has a member; it must have none. Asserts zero rows WHERE m.roleid = uellix_cap_stripe - the INBOUND membership direction. THIS is the capability-role zero-member precedent.",
+      "correction_of_R1_and_R2": "R1 and R2 cited :938 as the precedent for CAPABILITY-role attributes in four places. That was TRANSPOSED: :938-941 is about uellix_stripe, the LOGIN role. The capability-role precedent is :948-950 (NOLOGIN) and :951-956 (zero members). Corrected at every site; no false line-number provenance is retained.",
+      "this_authority_requires_MORE_than_the_precedent": "stella_0008 asserts only NOLOGIN and zero-members for its capability role; the forbidden-attribute assertion it applies to the LOGIN role is NOT applied to uellix_cap_stripe. This authority requires NOBYPASSRLS, NOCREATEDB, NOCREATEROLE and NOSUPERUSER of uellix_cap_commercial IN ADDITION to NOLOGIN and zero members. That is a STRENGTHENING, stated as one rather than dressed up as inherited precedent - a capability role whose entire purpose is to be bounded by RLS must be provably unable to bypass it, and claiming an existing assertion covers that would be claiming provenance this repository does not have."
+    },
     "r1_defect": {
       "what_R1_said": "R1 specified 'a dedicated capability role, admitted by a RESTRICTIVE policy bound to a session GUC' and wrote 'The policy admits a row only when its id equals the GUC'.",
       "why_it_is_wrong": "A RESTRICTIVE policy NEVER admits a row. PostgreSQL evaluates PERMISSIVE policies as a disjunction and then ANDs every RESTRICTIVE policy against that result. With ZERO permissive policies the permissive disjunction is empty - false - and no quantity of restrictive clauses can raise it. R1's design therefore admitted NOTHING and would have left commercial_accounts exactly as unwritable as it is today, while reading as though the problem had been solved.",
       "correction": "An explicit PERMISSIVE + RESTRICTIVE PAIR. The permissive member admits; the restrictive member intersects."
     },
     "decision": {
-      "role": "A dedicated capability role, uellix_cap_commercial. NOLOGIN, NOSUPERUSER, NOBYPASSRLS, NOCREATEROLE, NOCREATEDB - asserted as postconditions exactly as db/prepared/stella_0008_stripe_webhook_identity.sql:938 asserts them for uellix_cap_stripe. FORCE ROW LEVEL SECURITY on commercial_accounts is PRESERVED and is never dropped.",
+      "role": {
+        "name": "uellix_cap_commercial",
+        "kind": "A DEDICATED, ISOLATED capability / definer role. It exists to be the subject of the policy pair below and for nothing else.",
+        "required_attributes": [
+          "NOLOGIN - rolcanlogin = false. The role is never authenticated against directly.",
+          "NOBYPASSRLS - rolbypassrls = false. The whole point of the pair is that the row bound is enforced, and BYPASSRLS would make it decorative.",
+          "NOCREATEDB - rolcreatedb = false.",
+          "NOCREATEROLE - rolcreaterole = false. A role that can create roles can create a member of itself, which would defeat the membership boundary from inside.",
+          "NOSUPERUSER - rolsuper = false."
+        ],
+        "ZERO_ROLE_MEMBERS": {
+          "requirement": "uellix_cap_commercial MUST have ZERO role members. No login role, no application runtime role, no tenant role, no operator role, no human role and no service login may hold membership in it.",
+          "explicitly_forbidden_grantees": [
+            "uellix_app - the application runtime role. It must NEVER be granted membership.",
+            "ANY role with rolcanlogin = true, without exception.",
+            "ANY tenant identity.",
+            "ANY platform operator or human identity.",
+            "ANY other capability role - capability roles do not compose by membership."
+          ],
+          "status": "ASSERTED POSTCONDITION, NOT CONVENTION. It is proven from the catalogue on every apply, and the apply FAILS if any membership edge points into the role.",
+          "catalogue_proof": "SELECT 1 FROM pg_auth_members m WHERE m.roleid = (SELECT oid FROM pg_roles WHERE rolname = 'uellix_cap_commercial') must return ZERO rows. RAISE EXCEPTION otherwise.",
+          "direction_matters": "The assertion is on roleid, NOT on member. pg_auth_members.roleid is the role being granted and member is the grantee, so WHERE roleid = uellix_cap_commercial asks 'who has been granted INTO this role' - the INBOUND edge, which is the one that lets a foreign login inherit the capability. WHERE member = uellix_cap_commercial asks the OUTBOUND question 'what is this role a member of', which is a different property and does not close this hole. Getting the direction backwards produces an assertion that passes while the boundary is wide open."
+        },
+        "force_rls": "FORCE ROW LEVEL SECURITY on commercial_accounts is PRESERVED and is never dropped. FORCE binds the table owner too, which is why the capability role and its policy pair are the only write path rather than one of several."
+      },
+      "membership_boundary_is_a_security_boundary_of_the_policy_pair": {
+        "postgres_implication": "A policy written TO uellix_cap_commercial applies to any role that IS uellix_cap_commercial and to any role that has INHERITED it through role membership. PostgreSQL policy applicability follows role membership; it is not restricted to the role named literally in the TO clause.",
+        "the_attack": "Grant a foreign login membership in uellix_cap_commercial. That login now inherits the PERMISSIVE admission of P1. It then sets app.commercial_account_id to any value it chooses - the GUC is caller-controlled, set by whoever holds the session - and P2's row bound resolves to the row it named. The pair behaves exactly as designed and hands a foreign caller a commercial_accounts row.",
+        "why_the_GUC_cannot_close_it": "The row bound answers WHICH ROW may be touched. It does not answer WHO IS ENTITLED TO ACTIVATE THE ROLE. Those are different questions, and the GUC only ever answers the first. A caller who should not be inside the admitted set at all is not excluded by a predicate that assumes the caller already legitimately is.",
+        "conclusion": "ZERO ROLE MEMBERS is therefore not hygiene and not defence in depth. It is the control that establishes who may be admitted at all, and without it the PERMISSIVE member admits whoever was granted membership. The pair has THREE load-bearing parts, not two: P1 admits, P2 bounds the row, and the membership boundary bounds the set of callers P1 can ever admit.",
+        "relation_to_the_degenerate_cases": "RLS.r1_defect records that deleting P1 admits nothing and deleting P2 admits every row. Granting membership is the third failure and it is worse than either, because both policies remain present and correct - nothing in the policy text changes, and a reviewer reading only the DDL of the pair sees a working bound."
+      },
       "commands": "SELECT, INSERT, UPDATE. NO DELETE - neither a policy nor a table grant. The capability cannot erase what it did, mirroring the stripe_webhook_events posture.",
       "policy_pair": {
         "P1_permissive": {
@@ -654,7 +695,12 @@
           "predicate": "id = NULLIF(pg_catalog.current_setting('app.commercial_account_id', true), '')::uuid",
           "SELECT": "USING (<predicate>).",
           "INSERT": "WITH CHECK (<predicate>) - the NEW row's id must equal the bound.",
-          "UPDATE": "USING (<predicate>) AND WITH CHECK (<predicate>). USING selects WHICH existing row may be updated; WITH CHECK validates the row AFTER the update. Both are required: USING alone would let an admitted row be rewritten to a different id, and WITH CHECK alone would let any row be selected for update.",
+          "UPDATE": "USING (<predicate>) AND WITH CHECK (<predicate>), BOTH STATED EXPLICITLY. USING selects WHICH existing row may be updated; WITH CHECK validates the row AFTER the update.",
+          "UPDATE_rationale": {
+            "what_postgres_actually_does": "When an UPDATE policy omits WITH CHECK, PostgreSQL REUSES the USING expression as the WITH CHECK expression. So USING alone does NOT permit an admitted row to be rewritten outside the bound - the post-image is still checked against the same predicate. R2 claimed otherwise; that claim was FALSE and is withdrawn.",
+            "why_both_are_still_written": "The design is UNCHANGED and both clauses remain mandatory, for three reasons that do not depend on the false claim. (1) EXPLICITNESS: the pre-row predicate and the post-row predicate are two distinct semantic obligations, and a reader should not have to know an implicit-reuse rule to see that both are bounded. (2) AUDITABILITY: pg_policies exposes qual and with_check as separate columns; a policy relying on the implicit reuse shows with_check NULL, so an audit asserting 'the post-image is bounded' has nothing to assert against. (3) DRIFT RESISTANCE: the day someone narrows or widens USING for an unrelated reason, an explicit WITH CHECK is a second site that must be changed deliberately, whereas implicit reuse silently follows the edit.",
+            "the_asymmetry_that_is_real": "WITH CHECK alone is genuinely weaker, and this half of R2's claim stands. A RESTRICTIVE UPDATE policy carrying only WITH CHECK contributes NO conjunct on the row-selection side, so the restrictive intersection is lost there and row selection falls back to whatever the permissive member allows - which is USING (true). There is no implicit reuse in that direction: PostgreSQL does not synthesise a USING clause from WITH_CHECK."
+          },
           "unset_guc_denies": "current_setting(..., true) returns NULL when unset; NULLIF maps the empty string to NULL; id = NULL evaluates to NULL, and NULL is not TRUE, so the row is DENIED. An unset context fails CLOSED, and this is the same NULL-is-not-TRUE reasoning stella_0008's bounds already rely on."
         },
         "composition": "Effective access = (P1 OR ...no other permissive...) AND P2. Because P1 is the only permissive member, the effective predicate reduces exactly to P2's row bound for the capability role, and to FALSE for every other role. Both halves are load-bearing: delete P1 and the capability can touch nothing; delete P2 and the capability can touch every row."
@@ -736,9 +782,17 @@
       {
         "id": "D-6",
         "title": "commercial_accounts capability role and the PERMISSIVE + RESTRICTIVE policy pair.",
-        "content": "Role uellix_cap_commercial (NOLOGIN, NOBYPASSRLS, NOSUPERUSER, NOCREATEROLE, NOCREATEDB); three PERMISSIVE policies (SELECT, INSERT, UPDATE) admitting only that role; three matching RESTRICTIVE policies bounding the row to app.commercial_account_id; column-scoped table GRANTs; no DELETE policy and no DELETE grant. FORCE RLS preserved. Exact USING / WITH CHECK semantics per command are frozen in RLS.decision.policy_pair.",
-        "resolves": "R-01 and the R1 defect recorded in RLS.r1_defect",
-        "note": "PRIVILEGE DECISION. It must be reviewed as one, with the same adversarial posture stella_0008 received, and its postconditions must assert rolbypassrls false exactly as stella_0008:938 does. Both halves of the pair must be probed on real PostgreSQL: the permissive-only and restrictive-only degenerate cases are the two ways this lands wrong, and neither is visible by reading the SQL."
+        "content": "Role uellix_cap_commercial (NOLOGIN, NOBYPASSRLS, NOSUPERUSER, NOCREATEROLE, NOCREATEDB, and ZERO ROLE MEMBERS); three PERMISSIVE policies (SELECT, INSERT, UPDATE) admitting only that role; three matching RESTRICTIVE policies bounding the row to app.commercial_account_id; column-scoped table GRANTs; no DELETE policy and no DELETE grant. FORCE RLS preserved. Exact USING / WITH CHECK semantics per command are frozen in RLS.decision.policy_pair.",
+        "resolves": "R-01, the R1 defect recorded in RLS.r1_defect, and the R2 membership gap recorded in RLS.decision.membership_boundary_is_a_security_boundary_of_the_policy_pair",
+        "mandatory_postconditions": [
+          "PC-1 rolcanlogin = false for uellix_cap_commercial.",
+          "PC-2 NOT (rolbypassrls OR rolcreaterole OR rolcreatedb OR rolsuper) for uellix_cap_commercial.",
+          "PC-3 ZERO ROLE MEMBERS, proved from the catalogue: SELECT 1 FROM pg_auth_members m WHERE m.roleid = (SELECT oid FROM pg_roles WHERE rolname = 'uellix_cap_commercial') must return zero rows, and the apply MUST RAISE otherwise. The assertion must FAIL if ANY membership edge points INTO uellix_cap_commercial, whatever the grantee is and whatever the grant option or inheritance setting is.",
+          "PC-4 relforcerowsecurity = true for commercial_accounts, re-asserted after the policies are created.",
+          "PC-5 exactly three PERMISSIVE and three RESTRICTIVE policies on commercial_accounts, all TO uellix_cap_commercial, none TO PUBLIC, and no policy for DELETE."
+        ],
+        "PC3_is_not_satisfied_by_NOLOGIN": "Asserting NOLOGIN alone is INSUFFICIENT and must not be substituted for PC-3. NOLOGIN stops the role being authenticated against DIRECTLY; it does nothing to stop a role that CAN log in from being granted membership and inheriting the capability. The two assertions close different holes and both are required. This is exactly the shape stella_0008 uses at :948-950 and :951-956, where NOLOGIN and zero-members are two separate IF blocks rather than one.",
+        "note": "PRIVILEGE DECISION. It must be reviewed as one, with the same adversarial posture stella_0008 received. Its postconditions are STRONGER than stella_0008's capability-role postconditions - see RLS.stella_0008_provenance.this_authority_requires_MORE_than_the_precedent; the forbidden-attribute assertion at 0008:938-941 is applied there to the LOGIN role uellix_stripe, not to uellix_cap_stripe, and PC-2 extends it. All THREE load-bearing parts must be probed on real PostgreSQL: the permissive-only case, the restrictive-only case, and the membership case. None of the three is visible by reading the SQL of the pair, and the membership case is the only one in which both policies remain textually correct while the boundary is open."
       },
       {
         "id": "D-8",
@@ -909,6 +963,16 @@
       "id": "OF-9",
       "finding": "The cancellation capability is the only identity authorized to write commercial_accounts and entitlement_grants in one transaction.",
       "disposition": "Concentration of privilege, deliberate and bounded. The whole safety argument is the CLOSING-DIRECTION-ONLY restriction, which must be an asserted postcondition on the verb (it cannot open a PLAN grant), not a convention. Recorded so the D-8 reviewer treats that assertion as the gate rather than as documentation."
+    },
+    {
+      "id": "OF-10",
+      "finding": "D-8's cancellation capability role will need the same membership boundary as uellix_cap_commercial, and this authority freezes that boundary only for uellix_cap_commercial.",
+      "disposition": "PROPAGATION OBLIGATION, recorded not resolved. The membership argument is general: ANY policy written TO a capability role is only as strong as the set of roles that can inherit it. D-8's node MUST carry its own ZERO ROLE MEMBERS postcondition with the same pg_auth_members proof; this authority does not pre-author D-8's postconditions because it does not allocate D-8. Recorded so the omission is visible rather than inherited by silence."
+    },
+    {
+      "id": "OF-11",
+      "finding": "This authority requires NOBYPASSRLS, NOCREATEDB, NOCREATEROLE and NOSUPERUSER of a CAPABILITY role, which db/prepared/stella_0008_stripe_webhook_identity.sql asserts only of its LOGIN role.",
+      "disposition": "DELIBERATE STRENGTHENING, stated rather than disguised as precedent. It creates an asymmetry with the shipped uellix_cap_stripe, whose postconditions at :948-956 cover NOLOGIN and zero members but not the forbidden attributes. Whether uellix_cap_stripe should be brought up to the same bar is NOT adjudicated here - it is a change to a shipped prepared package under CAP-03's authority, not this one. Recorded so the asymmetry is a known state rather than a discovered inconsistency."
     }
   ],
 
@@ -920,6 +984,8 @@
     "SC-5_amendments_are_explicit": "Five contradictions are named MC-1..MC-5, each with the frozen text, the owner requirement, why it is a contradiction rather than a preference, and the amendment. No frozen clause is altered silently. MC-5 additionally records a reinterpretation this authority's OWN first round committed, rather than quietly correcting it.",
     "SC-10_transition_closure_is_conjunctive_and_total": "COMMERCIAL_STATE_MACHINE.transition_table_closure.cross_product_6x6 enumerates all 36 ordered pairs with counts LEGAL 18 + NO_OP 5 + ILLEGAL 13 = 36. Every LEGAL pair appears in BOTH the source state's exit_events and the target state's enter_events. FAILS if any LEGAL pair is one-sided, if the counts do not sum to 36, or if the rule is stated disjunctively.",
     "SC-11_rls_pair_admits_and_intersects": "RLS.decision.policy_pair declares a PERMISSIVE member that admits only uellix_cap_commercial and a RESTRICTIVE member that intersects on app.commercial_account_id, with USING / WITH CHECK stated per command for SELECT, INSERT and UPDATE, no DELETE, no TO PUBLIC, no tenant role, no BYPASSRLS and FORCE RLS preserved. FAILS if any command lacks its applicable clause, if a restrictive policy is described as admitting, or if the pair is reduced to one member.",
+    "SC-13_membership_boundary_is_asserted": "RLS.decision.role.ZERO_ROLE_MEMBERS declares zero role members as an ASSERTED POSTCONDITION with a pg_auth_members catalogue proof keyed on roleid (not member), naming uellix_app and every LOGIN, tenant and operator identity as forbidden grantees; FUTURE_DDL.D-6 carries the same requirement as PC-3 and states that NOLOGIN does not satisfy it. FAILS if the property is described as convention, if the catalogue predicate is keyed on member rather than roleid, or if NOLOGIN is offered as a substitute.",
+    "SC-14_stella_0008_provenance_is_measured": "Every citation of db/prepared/stella_0008_stripe_webhook_identity.sql attributes :938-941 to the LOGIN role uellix_stripe and attributes the capability-role precedent to :948-950 and :951-956, and the places where this authority requires MORE than that precedent say so. FAILS if any site attributes the forbidden-attribute assertion to uellix_cap_stripe.",
     "SC-12_cancellation_is_one_transaction": "CANCELLATION.atomicity and FAILURE_AND_CONCURRENCY Shape B place the state transition, the subscription-identity clearing and the PLAN grant closures in ONE transaction. FAILS if any conjunct is deferred, if a re-evaluation request is emitted by the cancellation path, or if a state exists in which BOOTSTRAP coexists with a live PLAN grant.",
     "SC-6_every_state_has_nine_attributes": "Each of the six states declares enter_events, exit_events, commercial_access_result, entitlement_result, stripe_requirements, manual_activation_eligibility, audit_effect, idempotency_key and ordering_rules. FAILS if any state is missing one.",
     "SC-7_three_layers_separated": "STELLA_RECONCILIATION declares L1, L2 and L3 with distinct owners, distinct enforcement moments and distinct refusal codes. FAILS if any two share a refusal code.",
@@ -939,6 +1005,15 @@
       "B-3_atomic_cancellation": "R1 reinterpreted HPO-B.6's 'together' as 'eventually'. Recorded as MC-5 and corrected to one atomic durable transaction, with INV-STALE-GRANT closing the adjacent Shape-A exposure.",
       "B-4_manifest_schema": "The companion manifest was rewritten into strict UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0 shape. Substantive tests preserved; representation corrected; controls added for the policy pair, cancellation atomicity, stale-grant reappearance and full transition closure.",
       "mechanical_corrections": "Dangling control reference MC-T-PAST-DUE repointed to N-06; R-01's stale 'RESTRICTIVE policy admits' wording corrected; self_check grown to SC-1..SC-12; OPEN_FINDINGS grown by OF-7, OF-8, OF-9; companion_manifest declared."
+    },
+    "R3": {
+      "cause": "Independent focused audit BH returned RESULT=FAIL, BLOCKING=1, AUDIT_UNKNOWN=0. BH independently proved all four AW blockers CLOSED; those surfaces are NOT recomputed or redesigned here.",
+      "scope": "BOUNDED SECURITY CORRECTION. One new blocker plus two nonblocking precisions. Nothing in the state machine, the closure counts, first binding, event ordering, past_due, atomic cancellation, PLAN-grant closure, the Free=10 prohibition, CE-3's shape or lineage non-allocation is touched.",
+      "blocker_membership_boundary": "R2 froze uellix_cap_commercial's attributes but never bounded WHO MAY INHERIT IT. A PostgreSQL policy written TO a role applies through role membership, so a foreign login granted membership would inherit P1's permissive admission and combine it with a caller-controlled app.commercial_account_id. The row bound answers WHICH ROW, never WHO MAY ACTIVATE THE ROLE. ZERO ROLE MEMBERS is now an asserted postcondition with a pg_auth_members catalogue proof keyed on roleid, named in RLS.decision.role, argued in RLS.decision.membership_boundary_is_a_security_boundary_of_the_policy_pair, and carried into FUTURE_DDL.D-6 as PC-3.",
+      "provenance_correction": "R1 and R2 cited stella_0008:938 as the CAPABILITY-role precedent in four places. Re-measured at AS_OF: :938-941 asserts the forbidden attributes for uellix_stripe, the LOGIN role; the capability-role precedent is :948-950 (NOLOGIN) and :951-956 (zero members). All four sites corrected, and the places where this authority requires MORE than the precedent now say so instead of borrowing authority they do not have.",
+      "NB-1_precision": "R2's rationale claimed USING alone would let an admitted row be rewritten outside the bound. FALSE - PostgreSQL reuses USING as WITH CHECK when WITH CHECK is absent. The claim is withdrawn and replaced with the real reasons both clauses are written (explicitness, auditability via pg_policies.with_check, drift resistance). The DDL design is UNCHANGED: both clauses remain mandatory.",
+      "NB-2_precision": "M-16's non-vacuity condition made explicit and imperative, matching the M-02 pattern. Transition closure is not otherwise re-opened.",
+      "manifest": "One negative control (N-29) and one mutation control (M-18) added for the membership boundary; N-13 extended to carry the zero-members assertion and its corrected provenance. Strict schema preserved."
     }
   },
 
