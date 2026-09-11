@@ -50,9 +50,17 @@ import { createClient } from '@/lib/supabase/server'
  * vouch for on its own. `isSuperAdmin`, the organisation, the profile — none
  * of those are knowable without the database, and pretending otherwise is how
  * a client-supplied privilege claim gets in.
+ *
+ * `emailVerified` (PACKET B) is the one exception to "nothing else": it is
+ * not a database attribute, it is a second fact GoTrue itself vouches for on
+ * the same verified subject, from the same round trip. THIS IS THE ONLY
+ * MODULE ALLOWED TO DERIVE IT — every other reader consumes the value
+ * propagated from here (lib/auth/database-context.ts RequestPrincipal),
+ * never `email_confirmed_at` itself again.
  */
 export interface VerifiedAuthIdentity {
   readonly userId: string
+  readonly emailVerified: boolean
 }
 
 export type AuthIdentityFailure =
@@ -122,7 +130,15 @@ export const getVerifiedAuthIdentityResult = cache(async (): Promise<AuthIdentit
     return { identity: null, failure: 'MALFORMED_SUBJECT' }
   }
 
-  return { identity: { userId: authUser.id }, failure: null }
+  // PACKET B — PROVIDER_TRUTH_SOURCE.FROZEN_PREDICATE. `email_confirmed_at`
+  // is read HERE and NOWHERE ELSE (S-IA-PREDICATE-CARDINALITY). Verified iff
+  // non-empty; null/undefined/absent is NOT verified — there is no third
+  // state at the predicate. `confirmed_at` (LEAST of email and phone
+  // confirmation) is deliberately never read: it would admit a
+  // phone-confirmed, email-unconfirmed subject silently.
+  const emailVerified = Boolean(authUser.email_confirmed_at)
+
+  return { identity: { userId: authUser.id, emailVerified }, failure: null }
 })
 
 /**

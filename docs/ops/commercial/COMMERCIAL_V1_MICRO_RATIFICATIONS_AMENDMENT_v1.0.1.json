@@ -1,0 +1,158 @@
+{
+  "package_id": "COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_PRODUCT_ALIGNMENT_REFERENCE",
+  "document_class": "PRODUCT_ALIGNMENT_REFERENCE_AMENDMENT_NOT_EXECUTABLE_AUTHORITY",
+  "append_only": true,
+  "hpo_mission_id": "EVALUATE-TEMPLATE-DRAFT-ROLE-OWNER-RATIFICATION-MATERIALIZATION-R1",
+  "lane_id": "LANE_BS",
+  "role": "OWNER_RATIFICATION_CANONICAL_MATERIALIZER",
+  "materialization_date": "2026-09-11",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "amends": "docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json",
+  "supersedes": null,
+  "companion_manifest": null,
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "BRANCH": "codex/evaluate-draft-ratification-materialization-r1",
+    "START_HEAD": "e78edeb74cd1295e873628d5998398f79792156e",
+    "START_TREE": "408573e8573872e5db465faabbec33e62b113270",
+    "LATEST_INTEGRATION_HEAD_OBSERVED": "e78edeb74cd1295e873628d5998398f79792156e",
+    "INTERVENING_DELTA": "NONE. Measured with `git fetch origin` followed by `git rev-parse origin/integration/commercial-v1`, which returned the same value as START_HEAD. The integration branch had not advanced past this mission's prescribed BASE_SHA at the time this artifact was authored; no cardinality or reference below is inherited from a moved base.",
+    "prestate_gate": "git rev-parse --abbrev-ref HEAD / git rev-parse HEAD / git rev-parse HEAD^{tree} / git status --untracked-files=all all matched the mission's required branch=codex/evaluate-draft-ratification-materialization-r1, HEAD=e78edeb7, TREE=408573e8, clean working tree. pnpm ods:prestate was not runnable at this base because node_modules is absent (tsx unresolved) and this is a DOCS_ONLY mission with an explicit instruction not to install dependencies merely for validation; the equivalent facts were confirmed by direct git plumbing instead and are reported as such, not claimed as an ods:prestate PASS."
+  },
+
+  "NAMING_DERIVATION": "The directing mission text proposed COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.1.json as a full successor-ledger reissue, while also instructing that an established repository convention for a different successor naming take precedence and be explained if found. Such a convention exists and has three prior instances at repository HEAD, all under docs/ops/: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, docs/ops/wave2/W2_B4_AUTHORITY_AMENDMENT_v1.0.1.json, and docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json (plus its own _v1.0.2.json successor). Each names itself <BASE_PACKAGE_STEM>_AMENDMENT_v<semver>.json in the same directory as the base it amends, and each leaves its base BYTE-UNCHANGED rather than reissuing the base's full content under a new version. Applying that same convention to base package_id COMMERCIAL_V1_MICRO_RATIFICATIONS yields this artifact's path and package_id. A full-ledger reissue (restating all twelve v1.0.0 ratifications verbatim inside a second, differently-versioned artifact_id) was rejected in favor of the amendment convention because a reissue would create two documents simultaneously claiming to be the citable list of the same twelve decisions, which is the exact drift risk the amendment convention exists to avoid — v1.0.0 remains the sole, unchanged, citable source for RAT-EV-01/02/03, RAT-AO-01/02/03, RAT-ASY-01, RAT-OP-01, and RAT-PV-01..04, and this amendment is the sole citable source for the thirteenth decision, RAT-EV-04.",
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json is left BYTE-UNCHANGED and remains HISTORICAL AND CANONICAL for all twelve ratifications it already carries (RAT-EV-01, RAT-AO-01..03, RAT-EV-02, RAT-EV-03, RAT-ASY-01, RAT-OP-01, RAT-PV-01..04). This artifact rewrites, deletes, reopens, or reinterprets none of them.",
+    "what_this_amendment_does": "It adds exactly ONE new product-owner ratification, RAT-EV-04, to the same closed ledger domain, and records the combined id-set a citing mission must treat as the complete COMMERCIAL_V1_MICRO_RATIFICATIONS ledger going forward (base's 12 plus this amendment's 1 = 13).",
+    "what_this_amendment_is_not": [
+      "NOT an implementation. No runtime code, schema, migration, DDL, RLS policy, route, or hosted mutation is created or changed by this artifact.",
+      "NOT an ODS/HPO allocation. No ODS grant id, W2 allocation, Controller allocation, or migration ordinal is allocated or reserved.",
+      "NOT a re-adjudication of any of the twelve v1.0.0 ratifications, nor of HD-01..HD-16 in docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json.",
+      "NOT a rewording or narrowing of HD-09; see RELATION_TO_HD09 below.",
+      "NOT satisfaction of any review requirement preserved by the base or by HD-09's own flagged-review status."
+    ],
+    "conflict_rule": "Where this amendment and the base v1.0.0 ledger disagree, this can only occur for RAT-EV-04 itself since the base is unmodified; for every other ratification id the base alone controls. This amendment's binding effect is scoped to RAT-EV-04 only."
+  },
+
+  "RAT_EV_04": {
+    "id": "RAT-EV-04",
+    "domain": "EVALUATE_TEMPLATE_GOVERNANCE",
+    "status": "RATIFIED_BY_PRODUCT_OWNER",
+    "statement": "impact_manager y organization_admin pueden crear borradores de templates de Evaluate; solo organization_admin puede publicar o retirar.",
+    "statement_en": "impact_manager and organization_admin may create Evaluate template drafts; only organization_admin may publish or retire.",
+    "binding_semantics": {
+      "canDraftEvaluationTemplate": ["impact_manager", "organization_admin"],
+      "canPublishEvaluateTemplateVersion": ["organization_admin"],
+      "canRetireEvaluateTemplate": ["organization_admin"],
+      "closed_sets": "Each of the three role sets above is EXACT and CLOSED. Membership is by exact role identity, never by rank, threshold, or '+' hierarchy notation.",
+      "draft_set_exclusions": "super_admin, analyst, reviewer, and viewer are NOT admitted to the draft set merely by hierarchy or 'higher role' semantics. None of the four is named in canDraftEvaluationTemplate.",
+      "publish_retire_set_exclusions": "super_admin, impact_manager, analyst, reviewer, and viewer are NOT admitted to the publish or retire sets. impact_manager's draft authority does not extend to publish or retire.",
+      "no_hierarchy_widening": "hasRole('>='), numeric role-rank dominance (e.g. permissions.ts ROLE_HIERARCHY values), and '+' hierarchy notation may never be used to admit a role into any of the three sets above beyond what is named exactly.",
+      "draft_does_not_confer_publish_or_retire": "impact_manager being in canDraftEvaluationTemplate confers no publish or retire authority; publish and retire remain organization_admin-only.",
+      "draft_predicate_stays_separate": "organization_admin being admitted to canDraftEvaluationTemplate does not collapse canDraftEvaluationTemplate, canPublishEvaluateTemplateVersion, and canRetireEvaluateTemplate into a single predicate; a future implementation must express and test all three as distinct checks even though organization_admin satisfies all three."
+    },
+    "explicit_non_authorizations": [
+      "Does not authorize any specific authorization-check implementation shape (e.g. a particular hasRole/array-membership call).",
+      "Does not authorize any Evaluate template runtime implementation, schema, migration, DDL, RLS policy, route, or hosted mutation.",
+      "Does not allocate any ODS/HPO grant id, W2 allocation, Controller allocation, or migration ordinal.",
+      "Does not modify HD-09 or any other ratification in docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json or docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json.",
+      "Does not decide RAT-EV-02 criterion-edit roles or RAT-EV-03 separation-of-duties semantics; both stand exactly as ratified.",
+      "Does not alter HD-08 archive semantics, HD-10 organization scope, HD-11 route-family semantics, or HD-12 platform-bypass prohibition.",
+      "Does not satisfy security review, legal review, operator-boundary review, or release review for this decision or for HD-09."
+    ],
+    "review_requirements": ["release_review"],
+    "known_consumers_or_dependencies": [
+      "Evaluate V1 authority successor (PR140 / codex/evaluate-v1-authority-r4 lineage) — this ratification closes the draft-role ambiguity blocker identified against PR140 R2 head aba284444bb1d0113e71e6d4ea834b55aed03cba; it does not by itself close any separate docs carry-forward or review-requirement blocker recorded against that lineage."
+    ]
+  },
+
+  "HD09_RELATION": {
+    "hd09_source": "docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json, ratifications[].id == 'HD-09'",
+    "hd09_statement_verbatim": "impact_manager may draft an Evaluate template. Publishing or retiring a template requires organization_admin.",
+    "hd09_flag_for_independent_review": true,
+    "ambiguity_resolved": "HD-09's 'may draft' names impact_manager as A role that may draft; it does not, by itself, state that impact_manager is the ONLY role that may draft. That silence was independently identified (Evaluate V1 authority successor lineage, residual note RN-01 / independent audit BR against PR140 R2 head aba284444bb1d0113e71e6d4ea834b55aed03cba) as an open product-decision gap, not a defect in HD-09's wording.",
+    "rat_ev_04_effect": "RAT-EV-04 resolves that silence by explicitly ratifying that organization_admin may ALSO draft, alongside impact_manager. It is additive to HD-09's named draft set, not a correction of it.",
+    "hd09_left_unchanged": "HD-09's own record in docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json is not edited, reworded, or reweighted by this amendment. Its publish/retire assignment to organization_admin is restated by RAT-EV-04, not altered.",
+    "flagged_review_status_preserved": "HD-09 remains one of the four flagged_ids (HD-05, HD-09, HD-10, HD-12) in EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json's required_independent_reviews, requiring independent security/legal/operator-boundary review before or alongside any implementation lane that relies on it. This amendment does not satisfy, narrow, or discharge that flag."
+  },
+
+  "MEASURED_MOTIVATION": {
+    "classification": "REPOSITORY_MEASUREMENT, not owner rationale. This section records why the owner question arose; the owner's decision (RAT_EV_04 above) is the binding source regardless of this measurement's continued truth.",
+    "measurement": "The self-service organization-founding flow creates exactly one membership row for the founding user, with role hard-coded to ROLES.ORGANIZATION_ADMIN ('organization_admin'). No other role is assigned to a newly bootstrapped organization's first member by this path.",
+    "evidence": "app/(authenticated)/app/onboarding/actions.ts:132-138 — `db.insert(organizationMembers).values({ organizationId: org.id, userId: authUser.id, role: ROLES.ORGANIZATION_ADMIN, status: 'active', joinedAt: new Date() })`, confirmed against lib/auth/roles.ts:14-19 where ROLES.ORGANIZATION_ADMIN === 'organization_admin' and ROLES.IMPACT_MANAGER === 'impact_manager' are distinct, non-overlapping role identifiers.",
+    "consequence_if_draft_set_had_remained_impact_manager_only": "A newly founded organization whose only member is its founding organization_admin would have had no member able to create an Evaluate template draft until a second person was invited and/or promoted to impact_manager — the first Evaluate template would have been unreachable for that organization.",
+    "boundary": "This measurement motivated the owner question; it is not itself elevated to an independent normative rule, and its continued accuracy should be re-measured by any implementing lane against its own base rather than inherited from this timestamped observation."
+  },
+
+  "REVIEW_REQUIREMENTS_CARRIED_FORWARD": {
+    "note": "This amendment satisfies none of the following. They are restated for citability, not re-adjudicated or narrowed.",
+    "hd09_hd05_hd10_hd12_independent_review": "REQUIRED_BEFORE_OR_ALONGSIDE_IMPLEMENTATION — per docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json required_independent_reviews (flagged_ids HD-05, HD-09, HD-10, HD-12). Flagging is not satisfied by this or any prior materialization.",
+    "rat_ev_02_release_review": "REQUIRED_BEFORE_RELEASE — unchanged, per docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json ratifications[id=RAT-EV-02].review_requirements.",
+    "rat_ev_03_release_review": "REQUIRED_BEFORE_RELEASE — unchanged, per docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json ratifications[id=RAT-EV-03].review_requirements.",
+    "rat_ev_04_release_review": "REQUIRED_BEFORE_RELEASE — see RAT_EV_04.review_requirements above.",
+    "release_review_general": "REQUIRED_BEFORE_RELEASE — standard release-gate review, unaffected by this artifact, per the base's global_review_requirements_preserved.release_review."
+  },
+
+  "CONSUMER_MAP": {
+    "primary_consumer": "Evaluate V1 authority successor lineage: PR140, branch codex/evaluate-v1-authority-r4, R2 head aba284444bb1d0113e71e6d4ea834b55aed03cba.",
+    "audit_context": "An independent audit of PR140 R2 head aba284444bb1d0113e71e6d4ea834b55aed03cba found the candidate authority blocked on the draft-role ambiguity this amendment resolves (HD-09 naming impact_manager for draft without stating whether organization_admin may also draft). This corroborates the residual note (RN-01) already carried in this session's own project memory for that lineage, which independently recorded the identical gap.",
+    "scope_of_closure": "This ratification closes ONLY the product-decision blocker described above. It does NOT by itself close any separate docs-carry-forward blocker for review requirements, nor any other finding against that lineage's audit.",
+    "not_modified": "This mission does not read, edit, or otherwise touch PR140 or the codex/evaluate-v1-authority-r4 branch's diff."
+  },
+
+  "COMBINED_LEDGER_SELF_CHECK": {
+    "note": "Deterministic, test-free self-check to run by inspection. A citing mission must combine this amendment with the base to obtain the complete COMMERCIAL_V1_MICRO_RATIFICATIONS ledger; neither file alone is complete after this amendment exists.",
+    "base_artifact": "docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json",
+    "base_ratification_count": 12,
+    "amendment_ratification_count": 1,
+    "combined_expected_count": 13,
+    "combined_expected_id_set": [
+      "RAT-EV-01", "RAT-AO-01", "RAT-AO-02", "RAT-AO-03",
+      "RAT-EV-02", "RAT-EV-03", "RAT-ASY-01", "RAT-OP-01",
+      "RAT-PV-01", "RAT-PV-02", "RAT-PV-03", "RAT-PV-04",
+      "RAT-EV-04"
+    ],
+    "checks": [
+      "base ratifications.length == 12 (unchanged from v1.0.0)",
+      "this amendment carries exactly one ratification object, RAT_EV_04, with id 'RAT-EV-04'",
+      "RAT-EV-04 does not duplicate any id already present in the base's expected_id_set",
+      "the union of base ids and this amendment's id, compared as sets, equals combined_expected_id_set exactly (no missing id, no extra id)",
+      "no id outside combined_expected_id_set is present in either file"
+    ]
+  },
+
+  "NON_AUTHORIZATIONS": [
+    "NO runtime implementation",
+    "NO Evaluate schema",
+    "NO Evaluate migration",
+    "NO DDL",
+    "NO RLS",
+    "NO route creation",
+    "NO template creation",
+    "NO hosted mutation",
+    "NO deployment",
+    "NO ODS/FIB allocation",
+    "NO migration ordinal",
+    "NO Stella changes",
+    "Owner ratification is NOT implementation authorization",
+    "Does NOT satisfy security review, legal review, operator-boundary review, or release review",
+    "Does NOT alter RAT-EV-02 criterion edit roles",
+    "Does NOT alter RAT-EV-03 separation-of-duties semantics",
+    "Does NOT alter HD-05 decision roles",
+    "Does NOT alter HD-08 archive semantics",
+    "Does NOT alter HD-10 organization scope",
+    "Does NOT alter HD-11 route-family semantics",
+    "Does NOT alter HD-12 platform bypass prohibition",
+    "Does NOT alter HD-15 Wave3 boundary",
+    "Does NOT modify PR140 or its branch"
+  ]
+}

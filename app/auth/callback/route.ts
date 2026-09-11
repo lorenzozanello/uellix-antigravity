@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { syncUserProfile, getCurrentMembership, listSelectableMemberships } from '@/lib/auth/session'
+import { syncUserProfile, getCurrentMembership, listSelectableMemberships, loadRequestPrincipal } from '@/lib/auth/session'
+import { VERIFY_EMAIL_PATH } from '@/lib/auth/email-verification'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 
 export async function GET(request: Request) {
@@ -16,6 +17,24 @@ export async function GET(request: Request) {
     if (!error && data?.user) {
       // Sync user profile (idempotent)
       await syncUserProfile(data.user)
+
+      // PACKET B — B0, evaluated BEFORE `next` (IM audit BLOCKING-1 / N-BNS-6:
+      // a caller-supplied safe target must NEVER outrank the gate — this
+      // callback serves recovery-return, OAuth-return, magic link and
+      // confirmation-link uniformly, with no mechanism field consulted). A
+      // safe `next` is CARRIED FORWARD across the refusal — never honoured
+      // early — so the journey resumes once the subject is verified
+      // (B4.invitation_target_preservation, N-BNS-6). Carrying forward is
+      // not the same act as honouring early: the target is still validated
+      // here by the EXISTING isSafeRedirectPath, and no new redirect-target
+      // vocabulary is introduced (X-B-10).
+      const principal = await loadRequestPrincipal()
+      if (principal && !principal.emailVerified) {
+        const destination = next
+          ? `${VERIFY_EMAIL_PATH}?next=${encodeURIComponent(next)}`
+          : VERIFY_EMAIL_PATH
+        return NextResponse.redirect(new URL(destination, request.url))
+      }
 
       if (next) {
         return NextResponse.redirect(new URL(next, request.url))

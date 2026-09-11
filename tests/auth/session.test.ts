@@ -155,7 +155,19 @@ function selectOrganization(organizationId: string): void {
   fakeCookieStore.set(SELECTED_ORGANIZATION_COOKIE_NAME, organizationId)
 }
 
-const AUTH_USER = { id: '11111111-1111-4111-8111-111111111111', email: 'user@org.com' }
+// PACKET B — this file mocks supabase.auth.getUser() at the raw GoTrue
+// level, so the REAL lib/auth/identity.ts derives `emailVerified` from
+// `email_confirmed_at` for every test below. This suite predates Packet B
+// and exists to prove Packet A's own branching, so the fixture is pinned
+// PROVIDER-CONFIRMED by default — an omitted field here would silently
+// measure every test as an unverified subject and redirect all of them to
+// /verify-email instead of exercising requireAuth/requireOrganizationAccess
+// at all.
+const AUTH_USER = {
+  id: '11111111-1111-4111-8111-111111111111',
+  email: 'user@org.com',
+  email_confirmed_at: '2024-01-01T00:00:00.000Z',
+}
 
 const DB_USER = {
   id: '11111111-1111-4111-8111-111111111111',

@@ -45,9 +45,11 @@ import {
   type Membership,
   type Organization,
   type OrganizationContext,
+  type RequestPrincipal,
   type SelectableMembership,
 } from './database-context'
 import { clearSelectedOrganization } from './selected-organization'
+import { VERIFY_EMAIL_PATH } from './email-verification'
 import type { Role } from './roles'
 import { hasRole } from './permissions'
 
@@ -61,7 +63,15 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 // Defined in lib/auth/database-context.ts and re-exported here so the ~40
 // modules that import them from this path keep working.
 
-export type { AuthUser, Membership, Organization, OrganizationContext, SelectableMembership }
+export type { AuthUser, Membership, Organization, OrganizationContext, RequestPrincipal, SelectableMembership }
+
+// PACKET B — routing translations (login, signup, the auth callback, the
+// onboarding action) need the RAW principal to read `.emailVerified` without
+// going through a redirecting helper. Re-exported here for the same reason
+// `listSelectableMemberships` is: the actual implementation lives in
+// lib/auth/database-context.ts, and this stays the reader surface pages and
+// actions import from.
+export { loadRequestPrincipal }
 
 // ---------------------------------------------------------------------------
 // listSelectableMemberships
@@ -135,9 +145,17 @@ export async function getCurrentMembership(userId: string): Promise<Membership |
  * Server Action.
  */
 export async function requireAuth(): Promise<AuthUser> {
-  const user = await getCurrentUser()
-  if (!user) redirect('/login')
-  return user
+  const principal = await loadRequestPrincipal()
+  if (!principal) redirect('/login')
+
+  // PACKET B — C3. Gates the AUTHENTICATED route group, which is where
+  // onboarding (E1/E2) and the organisation selector (E4/E5/E6) live. A gate
+  // placed only on requireOrganizationAccess (C4) would leave this group
+  // reachable, since app/(authenticated)/layout.tsx calls requireAuth, never
+  // requireOrganizationAccess (they are siblings, not a chain).
+  if (!principal.emailVerified) redirect(VERIFY_EMAIL_PATH)
+
+  return principal.user
 }
 
 // ---------------------------------------------------------------------------
@@ -223,6 +241,17 @@ export const requireOrganizationAccess = cache(async (): Promise<OrganizationCon
   const principal = await loadRequestPrincipal()
   if (!principal) redirect('/login')
 
+  // ---------------------------------------------------------------------
+  // PACKET B — B0 (VERIFICATION_PRECEDES_TENANCY)
+  // ---------------------------------------------------------------------
+  // Evaluated BEFORE R1 (super-admin) and before any selector question, and
+  // BEFORE the enumerator below is ever consulted (S-IA-NO-ENUMERATION-ON-
+  // REFUSAL): a privilege bit is not proof of mailbox control, and an
+  // unverified subject must not be routed to the selector either. For a
+  // verified subject this is a no-op and R1-R4 below run exactly as Packet A
+  // left them — B0 is a PREFIX, never a rewrite.
+  if (!principal.emailVerified) redirect(VERIFY_EMAIL_PATH)
+
   if (!principal.membership || !principal.organization) {
     // R1 — SuperAdmin may not have a membership — redirect to admin, ahead
     // of any selector question and insensitive to the enumerator.
@@ -281,7 +310,13 @@ export async function requireAdminAccess(): Promise<AuthUser> {
 export const getCurrentOrganizationContext = cache(
   async (): Promise<OrganizationContext | null> => {
     const principal = await loadRequestPrincipal()
-    if (!principal || !principal.membership || !principal.organization) return null
+    // PACKET B — C5. `null` already means "no context can be built" for a
+    // missing session or a missing organisation; an unverified subject folds
+    // into the SAME refusal shape, which is why every existing `if (!ctx)`
+    // caller (all four Route Handlers included) refuses it for free.
+    if (!principal || !principal.membership || !principal.organization || !principal.emailVerified) {
+      return null
+    }
 
     return {
       user: principal.user,

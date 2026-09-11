@@ -1,0 +1,1026 @@
+{
+  "package_id": "COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json",
+  "authority_class": "TIER_A_COMMERCIAL_AUTHORITY",
+  "mission_id": "LANE_AP_COMMERCIAL_ENTITLEMENT_BILLING_AUTHORITY_R1",
+  "role": "COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_WRITER",
+  "materialization_mode": "DOCS_ONLY",
+
+  "AS_OF_HEAD": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
+  "AS_OF_BRANCH": "codex/commercial-entitlement-billing-authority-r1",
+  "AS_OF_PORCELAIN": "clean, --untracked-files=all, measured before any write",
+
+  "PROHIBITIONS_HONOURED": {
+    "NO_MIGRATION": "This artefact creates no file under db/migrations/** and edits none.",
+    "NO_ORDINAL": "No migration ordinal is allocated, reserved or named-as-allocated. Every ordinal appearing below appears inside a PROHIBITION or a measurement of an EXISTING file.",
+    "NO_ODS_ALLOCATION": "No ODS addendum version, no HPO-ODS grant, no Controller entry and no scope-allowlist pattern is allocated. HPO-ODS-W2-27 is the highest grant REGISTERED in scripts/ods-scope.ts:661 as measured; W2-28 is named here only as a PROHIBITION and a future need.",
+    "NO_STRIPE_API_CALL": "No Stripe API was contacted. Every Stripe behaviour cited below is cited from repository code or from the frozen authority, never from a live account.",
+    "NO_HOSTED_MUTATION": "No hosted or prepared package was applied, and no database was contacted.",
+    "DDL_RULE": "LINEAGE_REDERIVATION_REQUIRED = YES for every item of FUTURE_DDL. No node below may be implemented until its own lineage (addendum, grant, ordinal, Controller enumeration) is separately derived and enumerated."
+  },
+
+  "PROVENANCE_OF_HPO_B": {
+    "measured": "grep -rl for HPO-B / HPO_B / HPO-BIL across docs/ at AS_OF_TREE returns ZERO files.",
+    "consequence": "HPO-B exists at AS_OF only as the owner-ratified directive that opened this lane. This artefact is its FIRST repository materialization. A later reader must treat the BINDING_OWNER_DECISIONS block below as the transcription of record, and must not expect an earlier docs/** source to corroborate it.",
+    "related_but_not_identical": "docs/ops/commercial/ carries no HPO-BIL packet either. The nine HPO-BIL recommendations produced by LANE F11 live in that lane's session scratchpad only; where a decision below coincides with an F11 recommendation this artefact says so, but the AUTHORITY is HPO-B, never F11."
+  },
+
+  "BINDING_OWNER_DECISIONS": {
+    "note": "Transcribed verbatim in substance from the owner directive that opened LANE AP. These are ratified inputs, not derivations. Every clause of this authority is traceable to one of them or to a measured repository fact.",
+    "OD-1": "One canonical commercial state machine governs billing and entitlement effects.",
+    "OD-2": "First Stripe Customer binding originates idempotently from CommercialAccount before checkout.",
+    "OD-3": "Webhook and success_url cannot establish first commercial identity.",
+    "OD-4": "past_due does NOT immediately suspend product capacity while recoverable.",
+    "OD-5": "unpaid and canceled close commercial capacity.",
+    "OD-6": "Cancellation closes grant, transitions to the correct bootstrap / non-commercial state, and clears active subscription identity.",
+    "OD-7": "ACTIVE_WITHOUT_STRIPE only by explicitly authorized manual activation.",
+    "OD-8": "Persist source-event ordering identity such as Stripe event.created, and refuse state regression from old or replayed events.",
+    "OD-9": "Exact catalogue prices and discounts remain OUTSIDE this authority."
+  },
+
+  "PRESERVED_AUTHORITY": {
+    "unchanged": [
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json in its entirety EXCEPT the single amendment recorded in MEASURED_CONTRADICTIONS.MC-1.",
+      "ENTITLEMENT_GRANT (CE-3) target_shape, effective_key, distinctness_rule, append_only_rule, plan_snapshot_rule and prohibitions: NOT redesigned, NOT extended, NOT reinterpreted. This authority consumes CE-3; it does not author it.",
+      "PLAN_ENTITLEMENT_BOUNDARY, USAGE_QUOTA_BOUNDARY, PAYMENT_SUSPENSION, STRIPE_BOUNDARY, MULTIORG_INTERSECTION.",
+      "SEC-1..SEC-12 and the MUTATION_CONTROLS of the entitlement authority.",
+      "docs/ops/capabilities/CAP_03_STRIPE.md and the CAP-03 posture of db/prepared/stella_0008_stripe_webhook_identity.sql."
+    ],
+    "explicitly_not_authored_here": [
+      "Price identities, price amounts, discounts, coupons, proration policy, tax treatment, currency and the plan catalogue itself (OD-9).",
+      "Grace-window durations, dunning schedules and Stripe retry timing. PAYMENT_SUSPENSION.grace_period leaves these unratified and this authority does not ratify them; it freezes only WHICH STATE a recoverable failure occupies, never for how long.",
+      "Any ODS lineage, ordinal, Controller entry or scope pattern."
+    ]
+  },
+
+  "EXISTING_AUTHORITY_RECONCILIATION": {
+    "method": "Each reconciliation item named by the directive is resolved to one of: MEASURED_FACT (observed in the tree at AS_OF), FROZEN (already decided by preserved authority and merely cited), DECIDED (decided here under HPO-B), or AMENDED (a measured contradiction with frozen authority, corrected explicitly).",
+
+    "R-01_commercial_accounts_FORCE_RLS_zero_policies": {
+      "status": "MEASURED_FACT plus DECIDED",
+      "measured": "db/migrations/0068_commercial_account_ce1.sql:44-45 issues ENABLE ROW LEVEL SECURITY then FORCE ROW LEVEL SECURITY with ZERO CREATE POLICY statements. The migration's own header (0068:20-27) states this is deliberate and that FORCE additionally binds the table owner, so a SECURITY DEFINER function owned by the table owner ALSO cannot read or write rows through ordinary DML.",
+      "consequence": "There is today no role, definer or otherwise, that can write commercial_accounts without either a policy or BYPASSRLS. BYPASSRLS is refused by repository doctrine: db/prepared/stella_0008_stripe_webhook_identity.sql:938-941 asserts rolbypassrls false as a postcondition for uellix_stripe, the Stripe capability's LOGIN identity. See RLS.stella_0008_provenance - this authority extends that refusal to the CAPABILITY role as well, which 0008 does not.",
+      "decided": "See RLS. The writer is a capability role admitted by a PERMISSIVE policy and bounded to one row by a RESTRICTIVE policy, together conferring no tenant reach. Adding the pair is a PRIVILEGE DECISION and is authorized by OD-1, which cannot be true of a relation nothing may write."
+    },
+
+    "R-02_no_current_writer": {
+      "status": "MEASURED_FACT",
+      "measured": "Zero runtime readers or writers of commercial_accounts or commercial_status exist at AS_OF. The single non-schema mention, lib/auth/selected-organization.ts:13, is a comment.",
+      "consequence": "commercial_status has a DEFAULT of 'active' (0068:34) and no writer. Every row that ever exists is born 'active' and stays 'active'. A state machine asserted over a column with no transition writer is a description, not a control - which is precisely why COMMERCIAL_STATE_MACHINE below is inseparable from IMPLEMENTATION_PACKAGES CB-2."
+    },
+
+    "R-03_CE1": {
+      "status": "FROZEN plus AMENDED",
+      "frozen": "CommercialAccount relation, organizations.commercial_account_id nullable with no backfill, FK ON DELETE RESTRICT, non-unique index (one account governs one-or-more Organizations).",
+      "amended": "The four-value commercial_status CHECK. See MEASURED_CONTRADICTIONS.MC-1."
+    },
+
+    "R-04_CE3": {
+      "status": "FROZEN, CONSUMED, NOT REDESIGNED",
+      "consumed": "entitlement_grants keyed Organization x capability_key, exactly one LIVE row per key by partial unique index WHERE effective_to IS NULL, append-only (INSERT and CLOSE only), limit_kind in UNMETERED | BLOCKED | CAPPED, source in PLAN | PLATFORM_ADMIN | BOOTSTRAP_DEFAULT | COMMERCIAL_EXCEPTION, evaluator takes an EXPLICIT organization_id.",
+      "this_authority_adds_zero_columns_to_it": "The commercial state machine reaches entitlement ONLY through (a) the source discriminator that already exists, and (b) the conjunctive closing gate of EC-4, which is an evaluation rule, not a column."
+    },
+
+    "R-05_entitlement_gap": {
+      "status": "MEASURED_FACT",
+      "measured": "entitlement_grants does not exist at AS_OF; CE-3 is unimplemented. 100 percent of organizations carry commercial_account_id NULL (no backfill; 0068 header states it explicitly).",
+      "consequence": "Any consumer of the CE-3 evaluator wired before CE-4 denies every Organization. This authority therefore forbids wiring the evaluator into an enforcement path before CE-4 completes, and states the interim rule in ENTITLEMENT_CONTRACT.EC-6."
+    },
+
+    "R-06_stella_quota_versus_commercial_entitlement": {
+      "status": "MEASURED_FACT plus DECIDED",
+      "measured": "The only commercially gated capability at AS_OF is Stella, via organizations.stella_monthly_quota, decided in exactly one place: bind_operation_ticket (prepared stella_0014..0018). lib/stella/quota.ts:1-3 records that quotas are assigned MANUALLY by a super_admin via /admin/services and that every organization defaults to 0 (blocked).",
+      "decided": "See STELLA_RECONCILIATION. Three layers are separated by name, by refusal code and by owner."
+    },
+
+    "R-07_legacy_free_10_behaviour": {
+      "status": "MEASURED_FACT, DANGEROUS, RETIRED BY THIS AUTHORITY",
+      "measured_chain": [
+        "lib/stripe/client.ts:26-30 defines STRIPE_QUOTAS = { free: 10, pro: 250, enterprise: 1000 }.",
+        "lib/stripe/client.ts:53-55 mapStripePriceToQuota(null) returns STRIPE_QUOTAS.free, i.e. 10.",
+        "lib/stripe/client.ts:58-60 mapStripePriceToLabel(null) returns the string 'Free' - NOT the 'Custom' sentinel.",
+        "lib/capabilities/stripe-webhook.ts:314-320 stripePlanResolverFrom refuses an unmapped price ONLY under the condition priceId !== null AND label === unmappedLabel.",
+        "lib/capabilities/stripe-webhook.ts:255-258 the customer.subscription.deleted branch deliberately passes stripePriceId = null."
+      ],
+      "consequence": "The refusal guard was built and the cancellation path walks around it. Because the deleted branch supplies null, the guard's first conjunct is false, the label is 'Free' rather than 'Custom', and the resolver returns quota 10. A CANCELLATION therefore GRANTS ten Stella interactions per month instead of closing capacity. This is the precise inversion OD-5 and OD-6 forbid.",
+      "retired_by": "NO_LEGACY_FREE (see ENTITLEMENT_CONTRACT.EC-5). Cancellation yields limit_kind BLOCKED, which projects to 0, never to 10."
+    },
+
+    "R-08_stripe_first_binding": {
+      "status": "MEASURED_FACT (absent) plus DECIDED",
+      "measured": "grep for customers.create / checkout.sessions.create across app, lib and db at AS_OF returns ZERO hits. The only Stripe write surface is billingPortal.sessions.create at app/app/organization/billing/actions.ts:22.",
+      "deadlock": "app/app/organization/billing/actions.ts:20 gates the portal on organization.stripeCustomerId being already present; its else branch (:27-34) throws 'No active subscription found. Please contact sales to upgrade.' The ONLY writer of organizations.stripe_customer_id is stripe_apply_subscription (db/prepared/stella_0008_stripe_webhook_identity.sql:781-783), whose RLS bound cap_stripe_only_claimed_org requires the organizations row to ALREADY match the claimed customer or subscription id. No row can acquire a customer id it must already have. First binding is not merely unimplemented; it is structurally unreachable.",
+      "decided": "See STRIPE_FIRST_BINDING. Bind-then-checkout, originating from CommercialAccount, idempotent by commercial_account_id."
+    },
+
+    "R-09_checkout_absence": {
+      "status": "MEASURED_FACT plus DECIDED",
+      "measured": "No checkout session is created anywhere in the tree. The comment block at app/app/organization/billing/actions.ts:27-33 is deliberative prose, not a code path.",
+      "decided": "See CHECKOUT_BOUNDARY. Checkout is admissible ONLY after a binding exists, and carries no identity of its own."
+    },
+
+    "R-10_webhook_ledger": {
+      "status": "MEASURED_FACT plus AMENDED",
+      "measured_columns": "public.stripe_webhook_events (db/prepared/stella_0008_stripe_webhook_identity.sql:208-225 plus 247-249) = event_id text PRIMARY KEY, event_type, status, attempts, received_at timestamptz DEFAULT now(), completed_at, failed_at, last_error_code, organization_id, stripe_customer_id, stripe_subscription_id.",
+      "contradiction": "There is NO column carrying Stripe event.created. received_at is ARRIVAL order, defaulted to now() at claim time, and arrival order is exactly the order OD-8 says must not be trusted. See MEASURED_CONTRADICTIONS.MC-2.",
+      "preserved": "event_id as PRIMARY KEY is the idempotency key and is preserved unchanged. The ledger holds no payload and no error message, only a fixed error code, and that posture is preserved."
+    },
+
+    "R-11_invoice_events": {
+      "status": "MEASURED_FACT (absent)",
+      "measured": "planStripeEvent (lib/capabilities/stripe-webhook.ts:229-278) has exactly three cases: customer.subscription.updated, customer.subscription.deleted, checkout.session.completed. Every other type falls to default and returns kind 'unsupported'. ZERO invoice.* events are handled anywhere in the tree.",
+      "consequence": "past_due and unpaid cannot be LEARNED today by any path. OD-4 and OD-5 are therefore not repairs of an existing behaviour; they specify a capability that must be built. Recorded so that no implementer reads OD-4 as 'stop suspending on past_due' - nothing suspends on past_due today because nothing observes past_due at all."
+    },
+
+    "R-12_subscription_events": {
+      "status": "MEASURED_FACT plus AMENDED",
+      "measured": "stripe_apply_subscription (db/prepared/stella_0008_stripe_webhook_identity.sql:781-793) writes stripe_customer_id, stripe_subscription_id, stripe_price_id, stella_monthly_quota, stella_plan_label, updated_at. It persists NEITHER subscription.status NOR cancel_at_period_end NOR current_period_end; those three identifiers have zero reads across lib, app and db at AS_OF.",
+      "consequence": "trialing, active, past_due, unpaid and canceled are today INDISTINGUISHABLE in the database: every one of them arrives as a customer.subscription.updated and is applied identically. A state machine cannot be asserted over data that is not stored. See FUTURE_DDL.D-7.",
+      "second_contradiction": "The UPDATE at :781-789 assigns stripe_price_id, stella_monthly_quota and stella_plan_label unconditionally. See MEASURED_CONTRADICTIONS.MC-3."
+    },
+
+    "R-13_manual_activation": {
+      "status": "FROZEN (locus) plus DECIDED (semantics)",
+      "frozen_locus": "PLATFORM_ADMIN_BOUNDARY PA-1..PA-6 is delivered by CE-8, which depends_on CE-2, CE-3, CE-5 and externally on tenancy S5.",
+      "measured": "Both admin override surfaces at AS_OF call definers from prepared stella_0011, which is applied in NO database (hosted B0 observation artifacts/hosted-b0-observation.json records zero uellix_capability objects), so both raise 42883 today.",
+      "decided": "See MANUAL_ACTIVATION. ACTIVE_WITHOUT_STRIPE is reachable by exactly one verb, from exactly one node, with a mandatory actor, reason and expiry review."
+    }
+  },
+
+  "MEASURED_CONTRADICTIONS": {
+    "MC-1": {
+      "title": "The frozen four-value commercial_status set cannot carry the states HPO-B distinguishes.",
+      "frozen_text": "db/migrations/0068_commercial_account_ce1.sql:37 CONSTRAINT commercial_status_check CHECK (commercial_status IN ('active','past_due','suspended','closed')); header line 9 calls it 'a closed four-value CHECK-constrained lifecycle set'.",
+      "owner_requirement": "OD-6 requires a distinguishable bootstrap / non-commercial state to land in after cancellation. OD-7 requires ACTIVE_WITHOUT_STRIPE to be reachable ONLY by explicitly authorized manual activation.",
+      "why_it_is_a_contradiction_and_not_a_preference": "commercial_status DEFAULT is 'active' (0068:34). Under the frozen set, an account created for a tenant that has never paid is born in the same value as a tenant with a live paid subscription, and a tenant returning from cancellation lands in that same value again. 'active' would therefore simultaneously mean paid-and-current, never-paid, and manually-activated-without-Stripe. OD-7 says the third of those requires explicit authorization; a value every row is born in by DEFAULT cannot be a value that requires authorization to enter. The set is not merely coarse - it makes an owner decision unrepresentable.",
+      "amendment": "The status set is widened from four values to six. See COMMERCIAL_STATE_MACHINE.states. The amendment is scoped to CE-1's status vocabulary and touches NO part of CE-3.",
+      "amendment_is_forward_only": "0068 is shipped and is NOT edited. The widening is a NEW forward migration under FUTURE_DDL.D-1, subject to LINEAGE_REDERIVATION_REQUIRED = YES. Editing 0068 would be historical evidence rewriting and is PROHIBITED.",
+      "default_amendment": "The column DEFAULT moves from 'active' to 'BOOTSTRAP' in the same forward migration, because a default that requires authorization is a contradiction in terms."
+    },
+    "MC-2": {
+      "title": "OD-8 is unsatisfiable on the ledger as it exists.",
+      "frozen_text": "stripe_webhook_events has no column for Stripe event.created (db/prepared/stella_0008_stripe_webhook_identity.sql:208-249, measured column list in R-10).",
+      "owner_requirement": "OD-8 requires source-event ordering identity to be PERSISTED and state regression from old or replayed events to be REFUSED.",
+      "amendment": "One additive, never-rewritable column, source_event_created_at timestamptz NOT NULL, written at CLAIM time from event.created. See FUTURE_DDL.D-3. It is added to the UPDATE-exclusion set exactly as event_id and event_type already are (db/prepared/stella_0008_stripe_webhook_identity.sql:307): what arrived cannot be rewritten.",
+      "not_a_substitute": "received_at CANNOT serve. It defaults to now() at claim, so it records when Uellix saw the event, which is the very ordering OD-8 declares untrustworthy."
+    },
+    "MC-3": {
+      "title": "stripe_apply_subscription has no ordering guard, so a redelivered old event silently regresses commercial state.",
+      "frozen_text": "db/prepared/stella_0008_stripe_webhook_identity.sql:781-789 UPDATE public.organizations SET ... stripe_price_id = p_stripe_price_id, stella_monthly_quota = p_quota, stella_plan_label = p_plan_label ... WHERE id = v_org_id. The COALESCE protection at :782 and :788 guards the two IDENTITY columns only; price, quota and label are bare assignments.",
+      "owner_requirement": "OD-8, second clause: refuse state regression from old or replayed events.",
+      "consequence_if_unamended": "Stripe redelivers on 5xx with backoff. The handler returns 503 for every unfinished disposition (lib/capabilities/stripe-webhook.ts:337-341), which maximises redelivery - correctly, for delivery. But a redelivered customer.subscription.updated carrying an OLDER price arriving after a newer one has completed downgrades a paying tenant, and every layer says yes because the older price is perfectly valid.",
+      "amendment": "ORD-1..ORD-6 of WEBHOOK_ORDERING become preconditions of the apply verb, evaluated inside the same transaction and under the same lock as the write."
+    },
+    "MC-4": {
+      "title": "The refusal guard for unmapped prices does not cover the cancellation path.",
+      "frozen_text": "lib/capabilities/stripe-webhook.ts:314-319 refuses only when priceId !== null AND label === unmappedLabel; lib/stripe/client.ts:58-59 returns 'Free' for a null price, not the 'Custom' sentinel the guard tests for.",
+      "owner_requirement": "OD-5 and OD-6: canceled closes commercial capacity.",
+      "amendment": "EC-5 NO_LEGACY_FREE. A null price is not a price and must never be resolved to a quota at all. Cancellation is a STATE TRANSITION handled by the state machine, not a price lookup, and the resolver is never consulted on the cancellation path. STRIPE_BOUNDARY.unknown_price_rule already forbids the free-tier fallback from being an input to any grant; this amendment extends the same rule to the absent-price case the existing guard misses."
+    },
+    "MC-5": {
+      "title": "R1 reinterpreted HPO-B.6's 'together' as 'eventually', splitting one atomic owner requirement across two transactions.",
+      "owner_text": "OD-6 / HPO-B.6: 'cancellation closes grant, transitions to correct bootstrap/non-commercial state, and clears active subscription identity.' Three conjuncts of ONE act. 'Together' is not a hint about ordering; it is a durability requirement.",
+      "frozen_text_in_tension": "STRIPE_BOUNDARY.downstream_reaction: 'A webhook transaction that both records a subscription and moves a quota is prohibited by this authority regardless of how the code is factored.'",
+      "what_R1_did": "R1 read the frozen webhook prohibition as a universal two-transaction rule (EC-2 'two acts never one', extended in R1's own words 'from webhooks to EVERY cause'), placed the state write and subscription-identity clearing in T1 and the grant closures in T2, and then argued the resulting window was safe because EC-4's gate closes it. That is a reinterpretation of an owner decision, and the argument does not even hold: EC-4's gate reads commercial_status, which in this window says BOOTSTRAP - a NON-COMMERCIAL state whose gate is PASS-THROUGH for BOOTSTRAP_DEFAULT grants. R1 therefore left a durable window in which an account sat in a non-commercial state with LIVE PLAN grants, with no gate closing them. The defect was not the window's length; it was that the window is a state the data model says cannot exist.",
+      "why_the_tension_is_only_apparent": "The frozen prohibition binds the WEBHOOK - an identity that must never acquire tenant or entitlement reach - and its stated purpose is to stop a billing event from silently BECOMING a runtime capability change. It is a prohibition on CREATION travelling through an untrusted identity. Cancellation closure travels the opposite direction: it only ever CLOSES. Nothing is created, no limit rises, no capability appears. So the atomic act does not violate the prohibition's purpose, and the prohibition's letter is honoured by construction because the webhook does not perform it - the webhook records the observed fact and hands off; a distinct governed cancellation capability performs the atomic transition under its own identity.",
+      "amendment": "CANCELLATION.atomicity. The commercial state transition, the clearing of active subscription identity, and the closure of applicable commercial PLAN entitlement grants COMMIT TOGETHER OR ROLL BACK TOGETHER, in one durable transaction, for the affected CommercialAccount. EC-2 is scoped to the general rule it was always about (a plan write is not a grant write) and its R1 over-extension to 'EVERY cause' is withdrawn."
+    }
+  },
+
+  "COMMERCIAL_STATE_MACHINE": {
+    "canonicity": "OD-1. There is exactly ONE commercial state machine. Its single carrier is commercial_accounts.commercial_status. No second state is derived from a Stripe column, from organizations.status, from the presence of a subscription id, or from a plan label. A reader that needs commercial state reads this column and nothing else.",
+    "separation_preserved": "organizations.status is the tenant-operational control and is NEVER written by this machine, in either direction (PI-1, preserved). Commercial suspension and tenant suspension remain two verbs with two authorities.",
+    "carrier_scope": "The machine is CommercialAccount-scoped. An account governing several Organizations has ONE commercial state; its entitlement effects are applied per Organization, because entitlement is Organization-scoped by CE-3's effective_key and CA-08's no-pooled-quota rule. One state, N applications - never one pooled entitlement.",
+    "closed_world": "The six states below are the complete set. A value outside them is a violation, not an extension, and the widened CHECK of FUTURE_DDL.D-1 is what makes that structurally true rather than merely intended.",
+
+    "states": [
+      {
+        "id": "BOOTSTRAP",
+        "meaning": "Non-commercial. The account exists, no commercial relationship is live, and nothing has been sold. This is the DEFAULT and the state every account is born in.",
+        "enter_events": [
+          "CommercialAccount creation (the DEFAULT of the widened column).",
+          "CE-4 backfill seeding of a pre-existing Organization that has no Stripe identity.",
+          "From ACTIVE_STRIPE, PAST_DUE or SUSPENDED: cancellation completing atomically (OD-6) - the correct bootstrap / non-commercial landing state.",
+          "From ACTIVE_WITHOUT_STRIPE: an authorized manual deactivation, or the review horizon lapsing without renewal."
+        ],
+        "exit_events": [
+          "-> ACTIVE_STRIPE: a first-party binding completed AND a subscription observed in Stripe status active or trialing.",
+          "-> ACTIVE_WITHOUT_STRIPE: an authorized manual activation (OD-7).",
+          "-> CLOSED: an authorized platform-admin account closure."
+        ],
+        "commercial_access_result": "NON_COMMERCIAL. The tenant may sign in, may read all of its own historical evidence, reports and audit history, and may exercise every capability whose grant source is BOOTSTRAP_DEFAULT. No PLAN capability is available.",
+        "entitlement_result": "Live grants of source BOOTSTRAP_DEFAULT only. Any live PLAN grant is CLOSED on entry to this state. No PLAN grant may be opened while in it.",
+        "stripe_requirements": "stripe_subscription_id MUST be NULL. stripe_customer_id MAY be non-NULL and is RETAINED across cancellation - the customer relationship survives the subscription (OD-6 clears the SUBSCRIPTION identity, not the customer identity; retaining it is what makes reactivation idempotent rather than a second customer).",
+        "manual_activation_eligibility": "ELIGIBLE. This is the only state from which manual activation is a normal transition rather than a correction.",
+        "audit_effect": "action commercial.state.entered, entity_type commercial_account, before_json and after_json carrying the prior and new state, reason naming the cause. Entry by DEFAULT at creation is audited by the creating verb, not by a trigger.",
+        "idempotency_key": "(commercial_account_id, 'BOOTSTRAP', cause_identity) where cause_identity is the Stripe event_id for a cancellation-caused entry and the creating audit_log id otherwise. Re-entering BOOTSTRAP when already in BOOTSTRAP is a NO-OP, never a second audit row.",
+        "ordering_rules": "A transition into BOOTSTRAP caused by a Stripe event is subject to ORD-1..ORD-6 in full. A transition caused by an admin verb is ordered by the per-account advisory lock alone."
+      },
+      {
+        "id": "ACTIVE_STRIPE",
+        "meaning": "A live, paid, current commercial relationship backed by a Stripe subscription.",
+        "enter_events": [
+          "From BOOTSTRAP: subscription observed active or trialing after a first-party binding.",
+          "From PAST_DUE: recovery, i.e. a subscription observed active, or an invoice observed paid for the subscription (OD-4 - past_due is recoverable and recovery returns here).",
+          "From SUSPENDED: reactivation of the SAME subscription observed active. See REACTIVATION.",
+          "From ACTIVE_STRIPE (SELF): a subscription replacement, or an in-subscription plan change. This is a real transition carrying content, not an idempotent re-entry - see transition_table_closure.self_pairs.",
+          "From ACTIVE_WITHOUT_STRIPE: conversion to Stripe-backed activation. The manual COMMERCIAL_EXCEPTION basis is closed in the SAME governed act that opens the Stripe basis; the two never coexist."
+        ],
+        "entry_precondition": "INV-STALE-GRANT. No transition may enter this state while an unconsumed grant-closure obligation is outstanding for the account. See CANCELLATION.INV_STALE_GRANT.",
+        "exit_events": [
+          "-> PAST_DUE: subscription observed past_due, or an invoice payment failure observed for the subscription.",
+          "-> SUSPENDED: subscription observed unpaid (OD-5).",
+          "-> BOOTSTRAP: subscription observed canceled or deleted (OD-6).",
+          "-> ACTIVE_STRIPE (self): a subscription replacement or plan change. See SUBSCRIPTION_REPLACEMENT.",
+          "-> CLOSED: authorized platform-admin account closure."
+        ],
+        "commercial_access_result": "FULL. Every capability the live plan grants is available at its granted limit.",
+        "entitlement_result": "Live grants of source PLAN, opened by governed re-evaluation with plan_ref SNAPSHOTTED at grant time (CE-3 plan_snapshot_rule, preserved). BOOTSTRAP_DEFAULT grants for the same capability_key are CLOSED first - CE-3 permits exactly one live grant per (organization_id, capability_key) and the partial unique index enforces it.",
+        "stripe_requirements": "stripe_customer_id NOT NULL. stripe_subscription_id NOT NULL. The persisted subscription status MUST be active or trialing.",
+        "manual_activation_eligibility": "NOT ELIGIBLE. Manual activation into a state already backed by Stripe would create two commercial bases for one account. A platform operator who needs to override a limit while Stripe is live uses a COMMERCIAL_EXCEPTION grant (PAYMENT_SUSPENSION, preserved), which is an entitlement act, not a state act.",
+        "audit_effect": "commercial.state.entered plus, separately, the entitlement re-evaluation's own audit rows. Two acts, two audit rows, per PLAN_ENTITLEMENT_BOUNDARY - a single row covering both would re-create the CC-3 fusion.",
+        "idempotency_key": "(commercial_account_id, stripe_subscription_id, stripe_event_id). The ledger's event_id PRIMARY KEY already makes the Stripe side idempotent; this key makes the STATE side idempotent for non-Stripe causes too.",
+        "ordering_rules": "ORD-1..ORD-6 in full. An event that would enter ACTIVE_STRIPE but is stale under ORD-3 is refused, not applied."
+      },
+      {
+        "id": "PAST_DUE",
+        "meaning": "Payment has failed and the relationship is RECOVERABLE. Capacity is deliberately retained (OD-4).",
+        "enter_events": [
+          "From ACTIVE_STRIPE: subscription observed past_due, or an invoice payment failure observed for the subscription."
+        ],
+        "exit_events": [
+          "-> ACTIVE_STRIPE: recovery (subscription active, or invoice paid).",
+          "-> SUSPENDED: subscription observed unpaid, i.e. Stripe has exhausted its dunning and the relationship is no longer recoverable (OD-5).",
+          "-> BOOTSTRAP: subscription observed canceled or deleted while past_due (OD-6).",
+          "-> CLOSED: authorized platform-admin account closure."
+        ],
+        "commercial_access_result": "FULL, UNCHANGED FROM ACTIVE_STRIPE. This is OD-4 and it is the single most easily lost clause of this authority: entering PAST_DUE has NO product effect. It changes what the platform knows and what it may tell the tenant; it changes nothing the tenant may do.",
+        "entitlement_result": "NO GRANT IS TOUCHED. No grant is closed, no limit is reduced, no replacement row is written. An implementation that closes or downgrades a grant on entry to PAST_DUE has violated OD-4 regardless of how briefly.",
+        "stripe_requirements": "stripe_customer_id NOT NULL, stripe_subscription_id NOT NULL, persisted subscription status past_due.",
+        "manual_activation_eligibility": "NOT ELIGIBLE. A live subscription exists; see ACTIVE_STRIPE. An operator extending goodwill beyond Stripe's dunning uses a COMMERCIAL_EXCEPTION grant.",
+        "audit_effect": "commercial.state.entered ONLY. The absence of a companion entitlement audit row is itself the evidence that OD-4 was honoured, and negative control N-06 of the companion manifest tests exactly that absence, by row count rather than by code inspection.",
+        "idempotency_key": "(commercial_account_id, stripe_subscription_id, stripe_event_id). Repeated past_due notifications for the same subscription re-enter no state and write no second audit row.",
+        "ordering_rules": "ORD-1..ORD-6. Note the asymmetry ORD-6 exists for: a stale past_due arriving after a completed recovery must NOT re-enter PAST_DUE.",
+        "duration_is_not_frozen": "How long an account may remain in PAST_DUE is NOT ratified here and is NOT a Uellix timer. PAYMENT_SUSPENSION.grace_period leaves collections timing to future configurable policy, and the transition out of PAST_DUE is driven by OBSERVED Stripe state, never by an elapsed Uellix clock. An implementation that hard-codes a grace window into the entitlement path has exceeded this authority and the preserved one alike."
+      },
+      {
+        "id": "SUSPENDED",
+        "meaning": "Payment has definitively failed (Stripe unpaid). Commercial capacity is CLOSED; the record is not (OD-5).",
+        "enter_events": [
+          "From PAST_DUE or ACTIVE_STRIPE: subscription observed unpaid."
+        ],
+        "exit_events": [
+          "-> ACTIVE_STRIPE: the same subscription observed active again (reactivation).",
+          "-> BOOTSTRAP: subscription observed canceled or deleted (OD-6).",
+          "-> CLOSED: authorized platform-admin account closure."
+        ],
+        "commercial_access_result": "CLOSED FOR PAID CAPACITY, OPEN FOR RECORD. The tenant retains sign-in, retains membership, retains role, and retains READ access to all of its own historical evidence, reports and audit history. PAYMENT_SUSPENSION.read_side_rule is preserved verbatim: loss of a paid capability is loss of the capability, not of the record.",
+        "entitlement_result": "Every live PLAN grant is CLOSED (effective_to set once, per CE-3 append_only_rule). Where the capability has a BOOTSTRAP_DEFAULT entitlement, a replacement row of source BOOTSTRAP_DEFAULT MAY be opened; where it does not, the capability is simply absent and the evaluator fails closed. Revocation is EXPLICIT, AUDITABLE and names the commercial cause, per PAYMENT_SUSPENSION, preserved.",
+        "not_tenant_suspension": "organizations.status is NOT written. Membership is NOT deleted. Tenant identity is NOT destroyed. Evidence is NOT destroyed.",
+        "stripe_requirements": "stripe_customer_id NOT NULL, stripe_subscription_id NOT NULL and RETAINED (this is what makes reactivation of the same subscription distinguishable from a new one), persisted subscription status unpaid.",
+        "manual_activation_eligibility": "NOT ELIGIBLE while a subscription id is retained. An account whose subscription is later canceled lands in BOOTSTRAP and becomes eligible there. This ordering is deliberate: manual activation must never be a way to paper over an unpaid live subscription.",
+        "audit_effect": "commercial.state.entered, plus one entitlement audit row PER CLOSED GRANT naming the commercial cause. Two authorities, two acts, separately audited.",
+        "idempotency_key": "(commercial_account_id, stripe_subscription_id, stripe_event_id) for the state; (organization_id, capability_key, closing_event_identity) for each grant closure. A redelivered unpaid event finds every grant already closed and closes nothing a second time - CE-3 forbids a second UPDATE of effective_to, so the second attempt is a refusal, not a rewrite.",
+        "ordering_rules": "ORD-1..ORD-6."
+      },
+      {
+        "id": "ACTIVE_WITHOUT_STRIPE",
+        "meaning": "A live commercial relationship NOT backed by a Stripe subscription - an invoiced, contracted, granted or otherwise off-Stripe arrangement. Reachable ONLY by explicitly authorized manual activation (OD-7).",
+        "enter_events": [
+          "From BOOTSTRAP: an authorized manual activation verb, executed by a platform principal, carrying an actor, a reason and a review horizon."
+        ],
+        "entry_precondition": "INV-STALE-GRANT. No transition may enter this state while an unconsumed grant-closure obligation is outstanding for the account. Because the sole entry is from BOOTSTRAP, and BOOTSTRAP is only reachable by a COMMITTED atomic cancellation, a stale PLAN grant cannot be present here by construction; the precondition is asserted anyway, because a construction argument that is never checked degrades into a comment.",
+        "exit_events": [
+          "-> BOOTSTRAP: authorized manual deactivation, or the review horizon expiring without renewal.",
+          "-> ACTIVE_STRIPE: a first-party binding completing and a Stripe subscription becoming active. The manual basis is closed in the same governed act that opens the Stripe basis; the two never coexist.",
+          "-> CLOSED: authorized platform-admin account closure."
+        ],
+        "commercial_access_result": "FULL, at the limits the manual activation names. Identical in product effect to ACTIVE_STRIPE; distinct in commercial basis and therefore in audit, in reporting and in what an operator may infer.",
+        "entitlement_result": "Live grants of source COMMERCIAL_EXCEPTION, carrying commercial_account_id NOT NULL (CE-3's CHECK requires exactly that for this source), an actor, a reason and an effective period. NOT source PLAN: there is no plan. NOT source PLATFORM_ADMIN: CE-3's CHECK forbids a commercial_account_id on that source, and an off-Stripe commercial arrangement HAS a commercial basis. This is why COMMERCIAL_EXCEPTION is the correct source and the other three are wrong.",
+        "stripe_requirements": "stripe_subscription_id MUST be NULL. A non-NULL subscription id in this state is a violation and the state verb refuses it. stripe_customer_id MAY be non-NULL (an account that once paid by card and now invoices keeps its customer identity).",
+        "manual_activation_eligibility": "ALREADY ACTIVATED. Re-activation is a NO-OP under the idempotency key; RENEWAL of the review horizon is a distinct, separately audited verb.",
+        "audit_effect": "commercial.manual_activation with a MANDATORY non-NULL actor_user_id, a MANDATORY reason, and the review horizon in after_json. There is no unaudited override (PAYMENT_SUSPENSION, preserved), and unlike a Stripe-caused transition the actor here MUST be a person: stella_0005c's reasoning applied from the other side - a decision a human made must not be attributed to a machine, exactly as a machine's must not be attributed to a human.",
+        "idempotency_key": "(commercial_account_id, 'MANUAL_ACTIVATION', authorization_reference). The authorization_reference is the platform-admin decision identity; two executions of the same authorization produce one activation.",
+        "ordering_rules": "Not Stripe-ordered - no source event exists. Ordered by the per-account advisory lock. A Stripe event that arrives for an account in this state and carries a subscription id is REFUSED with cause manual_basis_conflict and escalates; it does not silently convert the account."
+      },
+      {
+        "id": "CLOSED",
+        "meaning": "Terminal. The commercial relationship is over and the account is not to be reused.",
+        "enter_events": [
+          "From BOOTSTRAP: an authorized platform-admin account closure verb.",
+          "From ACTIVE_STRIPE: the same verb. It cancels or refuses first - CLOSED requires stripe_subscription_id NULL on entry.",
+          "From PAST_DUE: the same verb, same precondition.",
+          "From SUSPENDED: the same verb, same precondition.",
+          "From ACTIVE_WITHOUT_STRIPE: the same verb. The manual basis is closed in the same act."
+        ],
+        "enter_events_enumeration_note": "R1 said 'from any state', which silently included CLOSED -> CLOSED and therefore contradicted the exit_events of this state. The five sources are enumerated because 'any' is not an enumeration and a conjunctive closure rule cannot be checked against it. Re-closing a CLOSED account is a NO_OP absorbed by the idempotency key, not a transition.",
+        "exit_events": [
+          "NONE. CLOSED is terminal. A tenant returning commercially receives a NEW CommercialAccount; the FK ON DELETE RESTRICT of 0068:41 already guarantees a closed account that still governs a live Organization cannot be deleted, so terminality costs no history."
+        ],
+        "commercial_access_result": "CLOSED FOR PAID CAPACITY, OPEN FOR RECORD, exactly as SUSPENDED. Closure is a commercial act, never a data-destruction act.",
+        "entitlement_result": "Every live grant of every source is CLOSED, including BOOTSTRAP_DEFAULT. An Organization still governed by a CLOSED account and still operationally live is a governance anomaly that ESCALATES; this authority does not silently re-home it.",
+        "stripe_requirements": "stripe_subscription_id MUST be NULL on entry (the closure verb cancels or refuses). stripe_customer_id is RETAINED for the record.",
+        "manual_activation_eligibility": "NOT ELIGIBLE, in any circumstance. Terminal means terminal.",
+        "audit_effect": "commercial.account.closed with mandatory actor and reason, plus one entitlement audit row per closed grant.",
+        "idempotency_key": "(commercial_account_id, 'CLOSED'). Closing a CLOSED account is a NO-OP.",
+        "ordering_rules": "Ordered by the per-account advisory lock. ANY Stripe event arriving for a CLOSED account is recorded in the ledger and terminally IGNORED with cause account_closed; it is never applied, and it is never a reason to leave CLOSED."
+      }
+    ],
+
+    "transition_table_closure": {
+      "rule": "CONJUNCTIVE, and it stays conjunctive. A transition exists if and only if it is listed as an exit_event of the SOURCE state AND as an enter_event of the TARGET state. Listed on one side only, it DOES NOT EXIST and the verb refuses it. The rule is NOT relaxed to 'exit OR enter': a disjunctive rule would let a single-sided edit create an edge, which is exactly the failure R1 shipped.",
+      "r1_defect": "R1 asserted this rule and then violated it four times. ACTIVE_STRIPE -> ACTIVE_STRIPE, ACTIVE_WITHOUT_STRIPE -> BOOTSTRAP and ACTIVE_WITHOUT_STRIPE -> ACTIVE_STRIPE appeared only in the source exits; CLOSED -> CLOSED appeared only in the target enters, via the unenumerated phrase 'from any state'. Under the conjunctive rule those four edges did not exist, so three documented behaviours - subscription replacement, manual lapse and manual-to-Stripe conversion - were unreachable, and one impossible edge was admitted. Corrected by adding the three to their target enter enumerations and by enumerating CLOSED's five sources.",
+      "dispositions": {
+        "LEGAL": "A real transition. Listed on BOTH sides. Writes state, writes audit, may carry an entitlement effect.",
+        "NO_OP": "Same-state re-entry absorbed by the state's idempotency key. Writes NOTHING - no state change, no audit row, no entitlement effect. It is not a transition and it is not an error. Distinguishing NO_OP from ILLEGAL matters at the verb boundary: a redelivered event that re-asserts the current state must be absorbed silently, while an event asserting an impossible move must escalate.",
+        "ILLEGAL": "Refused with cause illegal_transition. Never applied, never partially applied."
+      },
+      "self_pairs": "ACTIVE_STRIPE -> ACTIVE_STRIPE is the ONLY LEGAL self-pair, because it is the only one carrying content: a subscription replacement or an in-subscription plan change genuinely changes the account while leaving the state name unchanged. Every other self-pair is NO_OP.",
+      "cross_product_6x6": {
+        "note": "Complete. 36 ordered pairs over {BOOTSTRAP, ACTIVE_STRIPE, PAST_DUE, SUSPENDED, ACTIVE_WITHOUT_STRIPE, CLOSED}. 18 LEGAL + 5 NO_OP + 13 ILLEGAL = 36. Enumerated rather than sampled: an untested pair is exactly where a defect hides.",
+        "BOOTSTRAP": {
+          "BOOTSTRAP": "NO_OP",
+          "ACTIVE_STRIPE": "LEGAL - subscription observed active or trialing after a first-party binding",
+          "PAST_DUE": "ILLEGAL - there is no subscription whose payment can fail",
+          "SUSPENDED": "ILLEGAL - there is no paid capacity to close",
+          "ACTIVE_WITHOUT_STRIPE": "LEGAL - authorized manual activation (OD-7)",
+          "CLOSED": "LEGAL - authorized platform-admin account closure"
+        },
+        "ACTIVE_STRIPE": {
+          "BOOTSTRAP": "LEGAL - atomic cancellation (OD-6)",
+          "ACTIVE_STRIPE": "LEGAL - subscription replacement or in-subscription plan change",
+          "PAST_DUE": "LEGAL - subscription observed past_due, or an invoice payment failure observed",
+          "SUSPENDED": "LEGAL - subscription observed unpaid (OD-5)",
+          "ACTIVE_WITHOUT_STRIPE": "ILLEGAL - OD-7 admits manual activation only from BOOTSTRAP; a live Stripe subscription and a manual commercial basis would be two bases for one account",
+          "CLOSED": "LEGAL - authorized closure, subscription cancelled or refused first"
+        },
+        "PAST_DUE": {
+          "BOOTSTRAP": "LEGAL - atomic cancellation while past_due",
+          "ACTIVE_STRIPE": "LEGAL - recovery (subscription active, or invoice paid)",
+          "PAST_DUE": "NO_OP",
+          "SUSPENDED": "LEGAL - subscription observed unpaid",
+          "ACTIVE_WITHOUT_STRIPE": "ILLEGAL - OD-7, as above",
+          "CLOSED": "LEGAL - authorized closure"
+        },
+        "SUSPENDED": {
+          "BOOTSTRAP": "LEGAL - atomic cancellation while suspended",
+          "ACTIVE_STRIPE": "LEGAL - reactivation of the SAME subscription observed active",
+          "PAST_DUE": "ILLEGAL - unpaid is Stripe's dunning already exhausted; a past_due observed after a completed unpaid for the same subscription is STALE and is refused by ORD-3 before the transition table is consulted. Listed ILLEGAL so the table is total even where ordering already refuses.",
+          "SUSPENDED": "NO_OP",
+          "ACTIVE_WITHOUT_STRIPE": "ILLEGAL - OD-7, and additionally: manual activation must never be a way to paper over an unpaid live subscription",
+          "CLOSED": "LEGAL - authorized closure"
+        },
+        "ACTIVE_WITHOUT_STRIPE": {
+          "BOOTSTRAP": "LEGAL - authorized manual deactivation, or review horizon lapsing",
+          "ACTIVE_STRIPE": "LEGAL - conversion to Stripe-backed activation; the manual basis closes in the same act",
+          "PAST_DUE": "ILLEGAL - there is no Stripe subscription whose payment can fail",
+          "SUSPENDED": "ILLEGAL - there is no Stripe subscription to be unpaid; withdrawal of a manual arrangement is deactivation to BOOTSTRAP, not suspension",
+          "ACTIVE_WITHOUT_STRIPE": "NO_OP - re-executing the same authorization_reference; RENEWAL of the review horizon is a distinct verb, not a transition",
+          "CLOSED": "LEGAL - authorized closure"
+        },
+        "CLOSED": {
+          "BOOTSTRAP": "ILLEGAL - terminal",
+          "ACTIVE_STRIPE": "ILLEGAL - terminal",
+          "PAST_DUE": "ILLEGAL - terminal",
+          "SUSPENDED": "ILLEGAL - terminal",
+          "ACTIVE_WITHOUT_STRIPE": "ILLEGAL - terminal",
+          "CLOSED": "NO_OP - closing a CLOSED account writes nothing"
+        }
+      },
+      "counts": {
+        "LEGAL": 18,
+        "NO_OP": 5,
+        "ILLEGAL": 13,
+        "total": 36
+      },
+      "forbidden_pairs_worth_naming": [
+        "PAST_DUE -> (any entitlement closure). OD-4.",
+        "BOOTSTRAP -> ACTIVE_STRIPE without a completed first-party binding. OD-2, OD-3.",
+        "any -> ACTIVE_WITHOUT_STRIPE from a state other than BOOTSTRAP. OD-7.",
+        "CLOSED -> anything. Terminal.",
+        "any -> any, caused by a Stripe webhook, that also writes an entitlement_grants row in the same transaction. STRIPE_BOUNDARY.webhook_prohibitions, preserved."
+      ]
+    }
+  },
+
+  "ENTITLEMENT_CONTRACT": {
+    "EC-1_source_of_limit": "The live EntitlementGrant is the sole source of a runtime limit, per USAGE_QUOTA_BOUNDARY, preserved. The commercial state machine NEVER writes a limit. It writes a STATE, and the state's effect on entitlement is realised by the governed entitlement writer of CE-5 and by no other writer.",
+    "EC-2_plan_write_is_not_a_grant_write": {
+      "rule": "A commercial PLAN write and an entitlement GRANT write are two acts in two authorities, each separately audited, the second refusable. The WEBHOOK identity in particular may never write a grant, in any transaction, regardless of code factoring - STRIPE_BOUNDARY.downstream_reaction and webhook_prohibitions, preserved verbatim.",
+      "direction_is_the_whole_rule": "The prohibition is about CREATION: a billing fact must never silently BECOME a runtime capability. It is not a general ban on one transaction touching two relations.",
+      "r1_over_extension_withdrawn": "R1 extended this to 'EVERY cause including manual activation' and used the extension to split cancellation across two transactions. That extension is WITHDRAWN (MC-5). What survives is the webhook prohibition as frozen, plus the creation-direction rule.",
+      "named_exception": "CANCELLATION closure is atomic with its state transition (OD-6, CANCELLATION.atomicity). It is admissible under the direction rule because it only ever CLOSES, and it does not breach the webhook prohibition because the webhook does not perform it."
+    },
+    "EC-3_emission": "Where a state transition's entitlement effect is NOT atomic with it - suspension, reactivation, plan re-evaluation - the transition EMITS a governed re-evaluation request, recorded in the same transaction as the state write (it is a request row, not an effect) and consumed by the CE-5 entitlement writer in a SEPARATE transaction. See FUTURE_DDL.D-4. CANCELLATION is the exception: it emits nothing because it closes in-transaction.",
+    "EC-4_closing_conjunction": {
+      "rule": "The EFFECTIVE entitlement for (organization, capability) is the live grant CONJOINED with the commercial gate of the governing account's state. The gate can only ever REDUCE. It can never create, raise or extend a limit.",
+      "gate_values": "BOOTSTRAP -> pass-through (grants of source BOOTSTRAP_DEFAULT are unaffected; a stale PLAN grant is gated to BLOCKED). ACTIVE_STRIPE, ACTIVE_WITHOUT_STRIPE, PAST_DUE -> pass-through. SUSPENDED, CLOSED -> BLOCKED.",
+      "why_it_exists": "For the transitions that remain asynchronous under EC-3 - suspension above all - the window between the state write and the grant closure would otherwise fail OPEN: the account is SUSPENDED and the grant is still live, so a suspended tenant keeps spending. The conjunction closes that window without making the webhook write a grant.",
+      "why_it_is_not_sufficient_for_cancellation": "The gate is keyed on commercial_status, and cancellation's target status is BOOTSTRAP, whose gate is PASS-THROUGH (it must be, so BOOTSTRAP_DEFAULT grants work). A pass-through gate closes nothing. R1's claim that EC-4 covered the cancellation window was therefore false on its own terms, which is why cancellation is atomic instead (MC-5) rather than gated.",
+      "why_it_does_not_violate_PLAN_ENTITLEMENT_BOUNDARY": "That boundary forbids a code path in which reading a PLAN value produces an effective limit WITHOUT an intervening grant row. A monotonically reducing gate produces no limit from any plan value; with no grant row the conjunction is empty and the evaluator still fails closed. The prohibited direction is creation, and this gate cannot create.",
+      "not_a_second_source_of_truth": "The gate reads commercial_status, which OD-1 makes the single canonical state. It is one source read at two moments, not two sources."
+    },
+    "EC-5_NO_LEGACY_FREE": {
+      "rule": "There is NO free tier of ten. Cancellation, suspension and closure yield limit_kind BLOCKED, which projects to stella_monthly_quota 0, per USAGE_QUOTA_BOUNDARY.limit_projection, preserved.",
+      "prohibitions": [
+        "mapStripePriceToQuota MUST NOT appear on any write path. Its display-only admissibility is already the preserved STRIPE_BOUNDARY.unknown_price_rule; this extends the same rule to the null-price case that rule's existing guard misses (MC-4).",
+        "A null or absent price MUST NOT be resolved to a quota AT ALL. Cancellation is a state transition, not a price lookup.",
+        "STRIPE_QUOTAS.free MUST NOT be reachable from any grant, any projection, any state effect or any enforcement read.",
+        "A capability with no declared metered semantic FAILS CLOSED. USAGE_QUOTA_BOUNDARY.null_semantic_prohibition is preserved: the null-means-unlimited overload is retained for the Stella capability ALONE and is not a general rule."
+      ],
+      "test_obligation": "A negative control asserts that no write path reaches the value 10 from a cancellation, and a mutation control asserts that restoring the legacy fallback turns that control RED."
+    },
+    "EC-6_pre_CE4_interim_rule": {
+      "measured_precondition": "entitlement_grants does not exist and every organizations.commercial_account_id is NULL (R-05).",
+      "rule": "The CE-3 evaluator MUST NOT be wired into any enforcement path before CE-4 has seeded accounts, associations and grants. Wired earlier it denies every Organization - not as a bug but as its correct fail-closed behaviour on empty inputs.",
+      "consequence_for_sequencing": "Every implementation package below that CHANGES an enforcement decision is gated on CE-4. Packages that build substrate are not."
+    },
+    "EC-7_no_pooled_quota": "Preserved verbatim from USAGE_QUOTA_BOUNDARY: there is no shared live quota pool in Commercial V1. Exhaustion in one Organization has no effect on any sibling under the same CommercialAccount. One commercial state, N independent Organization-scoped entitlements."
+  },
+
+  "STRIPE_FIRST_BINDING": {
+    "OD_basis": "OD-2 and OD-3.",
+    "origin": "The binding originates from the CommercialAccount, first-party authenticated, BEFORE any checkout exists.",
+    "verb": {
+      "name": "governed first-binding verb (bind_commercial_stripe_customer)",
+      "precondition": "The caller is authenticated, holds an organization-admin-or-above role in an Organization governed by the target CommercialAccount, and the account's stripe_customer_id is NULL.",
+      "act": "Create a Stripe Customer via the Stripe API with an idempotency key derived from commercial_account_id, then persist the RETURNED customer id onto commercial_accounts.stripe_customer_id.",
+      "idempotency_key": "commercial_account_id. This is the whole of OD-2's 'idempotently': a retried, duplicated or concurrent first binding for the same account yields the SAME Stripe Customer, never a second one. Stripe's own idempotency window bounds the API side; the UNIQUE constraint of FUTURE_DDL.D-2 bounds the database side; the per-account advisory lock bounds the concurrent side. Three bounds because each fails differently.",
+      "refusals": [
+        "stripe_customer_id already non-NULL -> NO-OP, return the existing id. Not an error: OD-2 says idempotent.",
+        "caller lacks the role -> refusal.",
+        "account state CLOSED -> refusal.",
+        "the Stripe API returns a customer id already bound to a DIFFERENT commercial_account -> refusal and ESCALATION. See the attack below."
+      ]
+    },
+    "customer_id_is_never_client_supplied": {
+      "rule": "NO API surface, server action, form field, query parameter or webhook payload may supply a Stripe customer id that becomes a binding. The only admissible source is the value RETURNED by the platform's own customers.create call.",
+      "preserved_reasoning": "This is the same reasoning that removed the checkout.session.completed branch: client_reference_id is buyer-supplied and 'a value an attacker chooses cannot be the anchor of a tenancy bound' (db/prepared/stella_0008_stripe_webhook_identity.sql:238-240). The rule is generalised here from that one field to every inbound path."
+    },
+    "cross_tenant_binding_attack": {
+      "threat": "An organization admin binds a Stripe customer id belonging to ANOTHER account - by guessing it, by reading it from an invoice, or by replaying it - and thereby attaches a foreign paying subscription to their own tenant.",
+      "measured_exposure_today": "F11 recorded this as Tier-A because no binding path is governed. Measured here: no binding path EXISTS at all (R-08), so the exposure at AS_OF is latent rather than live. It becomes live the moment a binding path is added without these controls.",
+      "defence_in_depth": [
+        "D1 no client-supplied id (above) - the attacker has no field to put it in.",
+        "D2 UNIQUE(stripe_customer_id) on commercial_accounts (FUTURE_DDL.D-2) - if a path is ever added, the second account claiming the id fails at the database, not at a check someone can forget.",
+        "D3 UNIQUE(stripe_subscription_id) likewise.",
+        "D4 the webhook resolves WHICH account an event addresses from the Stripe identity columns ONLY, never from a buyer-supplied checkout field (STRIPE_BOUNDARY.identity_rule, preserved).",
+        "D5 refusal plus escalation on a detected collision - a collision is evidence of either an attack or a corrupted binding and neither may be auto-resolved."
+      ],
+      "why_four_controls_and_not_one": "D1 is code and can be regressed by a refactor. D2 and D3 are schema and survive a refactor. D4 bounds the read side, which D1 to D3 do not touch. D5 makes the failure loud. A single control here would be a single point of silent failure on a Tier-A path."
+    }
+  },
+
+  "CHECKOUT_BOUNDARY": {
+    "OD_basis": "OD-2 and OD-3.",
+    "rule": "Checkout is admissible ONLY for an account that ALREADY has a bound stripe_customer_id. The checkout session is created with that customer, and it establishes NO identity of its own.",
+    "success_url_carries_nothing": "success_url is a REDIRECT TARGET and nothing else. It MUST NOT carry, encode or imply account identity, organization identity, plan identity or entitlement. A success_url that is trusted for identity is a buyer-supplied binding wearing a different hat.",
+    "webhook_cannot_bind": "Preserved and restated: 'First binding remains first-party authenticated. A webhook never establishes a binding it did not already have' (STRIPE_BOUNDARY.target). checkout.session.completed remains RECORDED, NEVER APPLIED - lib/capabilities/stripe-webhook.ts:261-273 already returns not_applicable with reason first_binding_requires_first_party_flow, and that disposition is FROZEN by this authority rather than merely inherited.",
+    "ordering_of_the_journey": "bind (first-party, idempotent) -> checkout (Stripe-hosted, identity-free) -> subscription event (webhook, applied to an ALREADY KNOWN account) -> state transition -> emitted re-evaluation -> grant write. Six steps, five boundaries. The first binding is step one precisely so that no later step ever has to invent identity.",
+    "portal_deadlock_resolution": "app/app/organization/billing/actions.ts:20-34 gates the portal on an id nothing can write (R-08). Once the first-binding verb exists, the portal's else branch becomes reachable-by-construction and its 'contact sales' throw is replaced by the bind-then-checkout journey. This authority states the target; the replacement itself is CB-4."
+  },
+
+  "WEBHOOK_ORDERING": {
+    "OD_basis": "OD-8.",
+    "source_of_truth": {
+      "rule": "Stripe is the source of truth for SUBSCRIPTION FACTS. Uellix is the source of truth for COMMERCIAL STATE and for ENTITLEMENT. The webhook reports a fact; the state machine decides what the fact means; the entitlement writer decides what the decision costs.",
+      "consequence": "A Stripe status is never stored AS the commercial state. It is stored as an observed subscription fact (FUTURE_DDL.D-7) and MAPPED. The mapping is enumerated in COMMERCIAL_STATE_MACHINE and is the only place the two vocabularies meet.",
+      "why_not_store_stripe_status_directly": "Stripe's vocabulary has no BOOTSTRAP and no ACTIVE_WITHOUT_STRIPE, because Stripe has no concept of a tenant that is commercially live without Stripe. Adopting Stripe's set would make OD-6 and OD-7 unrepresentable - the same failure mode as MC-1, imported instead of inherited."
+    },
+    "ORD-1_persist": "source_event_created_at timestamptz NOT NULL is written at CLAIM time from the signed event's created field, into stripe_webhook_events. It joins event_id and event_type in the never-rewritable set (db/prepared/stella_0008_stripe_webhook_identity.sql:307 - what arrived cannot be rewritten). received_at is retained and is NEVER used for ordering.",
+    "ORD-2_scope": "The ordering scope is the STRIPE OBJECT the event addresses: stripe_subscription_id when present, else stripe_customer_id. Ordering is per object, never global - two subscriptions of one account are independently ordered, and a global order would make an unrelated event stale.",
+    "ORD-3_regression_refusal": "An event whose source_event_created_at is STRICTLY LESS than that of the most recent COMPLETED event in the same ordering scope is REFUSED as stale_event, marked terminally ignored, and answered 200. 200 and not 503: redelivery cannot make an event newer, so inviting redelivery would be an infinite refusal loop. This is the one place this authority departs from the handler's blanket-503 rule (lib/capabilities/stripe-webhook.ts:337-341), and it departs deliberately, because that rule exists to protect UNFINISHED work and a stale event is finished.",
+    "ORD-4_equal_timestamp": "event.created has second granularity, so two distinct events in one scope CAN share it. Where source_event_created_at is EQUAL and event_id differs: apply in arrival order IF and ONLY IF the resulting transition is legal and non-regressive under the transition table. A transition that would move commercial state BACKWARDS at an equal timestamp is REFUSED as ambiguous_order and ESCALATES. Fail closed: an ambiguity the data cannot resolve is not resolved by guessing.",
+    "ORD-5_duplicate": "A duplicate event_id is absorbed by the existing PRIMARY KEY. A duplicate of an event already completed is a NO-OP: nothing is re-applied, no second audit row is written, no grant is closed twice. stripe_begin_event's ON CONFLICT (event_id) DO UPDATE (db/prepared/stella_0008_stripe_webhook_identity.sql:530-534) is the existing carrier of this property and is preserved.",
+    "ORD-6_guard_is_a_precondition_not_a_check": "ORD-3 and ORD-4 are evaluated INSIDE the apply transaction, AFTER the per-account advisory lock is taken, in the same statement scope as the write. A guard evaluated before the lock is a guard two concurrent events can both pass. This is MC-3's amendment and it is the reason the unconditional UPDATE at db/prepared/stella_0008_stripe_webhook_identity.sql:781-789 cannot simply be wrapped in an IF.",
+    "out_of_order_behaviour_summary": {
+      "older_than_last_completed": "REFUSED stale_event, terminal ignored, 200, no write, no audit beyond the ledger row.",
+      "equal_and_forward": "APPLIED.",
+      "equal_and_backward": "REFUSED ambiguous_order, failed, ESCALATES.",
+      "newer": "APPLIED subject to the transition table.",
+      "duplicate_event_id": "NO-OP.",
+      "for_a_CLOSED_account": "recorded, terminally ignored, cause account_closed - regardless of ordering.",
+      "for_an_ACTIVE_WITHOUT_STRIPE_account_carrying_a_subscription": "REFUSED manual_basis_conflict, ESCALATES."
+    }
+  },
+
+  "PAST_DUE": {
+    "decision": "OD-4. Entering past_due has NO product effect while the relationship is recoverable.",
+    "what_changes": "commercial_status becomes PAST_DUE. The persisted subscription status becomes past_due. An audit row records the transition. The tenant MAY be notified.",
+    "what_does_not_change": "No grant is closed. No limit is reduced. No replacement grant is written. No capability becomes unavailable. organizations.status is untouched. Membership and roles are untouched.",
+    "recovery": "An observed subscription active, or an observed paid invoice for the subscription, returns the account to ACTIVE_STRIPE. Because nothing was closed, recovery writes no grant either - it is a state transition with an empty entitlement effect in both directions.",
+    "escalation": "Only an OBSERVED unpaid moves the account to SUSPENDED. Uellix runs no dunning clock of its own; Stripe's exhaustion of retries is the signal, and PAYMENT_SUSPENSION.grace_period's refusal to ratify a window is preserved rather than quietly filled in.",
+    "the_trap_this_clause_exists_to_close": "The intuitive implementation of past_due is 'downgrade now, restore on payment'. It is wrong twice: it violates OD-4, and it makes recovery a GRANT REOPENING, which CE-3's append_only_rule forbids (a closed row is never un-closed; a restoration is a NEW row). Doing nothing on past_due is not laziness - it is the only shape that leaves the append-only invariant intact."
+  },
+
+  "SUSPENSION": {
+    "decision": "OD-5. Observed unpaid closes commercial capacity.",
+    "closes": "Every live PLAN grant for every Organization governed by the account. Each closure is explicit (effective_to set once), auditable (its own row naming the commercial cause) and reversible by policy (reinstatement is a NEW grant, never an un-closing).",
+    "retains": "Sign-in, membership, roles, tenant identity, organizations.status, and READ access to all historical evidence, reports and audit history. PAYMENT_SUSPENSION.read_side_rule preserved.",
+    "gate": "EC-4 sets the commercial gate to BLOCKED on entry, so the enforcement path is closed at the instant of the state write even though the grant closures land in a later transaction.",
+    "distinct_from_tenant_suspension": "PI-1 preserved. organizations.status = 'suspended' is a different verb under a different authority and is measured at AS_OF to be inert (no tenant path compares it). This authority does not make it live and does not wire the two together."
+  },
+
+  "CANCELLATION": {
+    "decision": "OD-6. Cancellation closes grant, transitions to the correct bootstrap / non-commercial state, and clears active subscription identity.",
+    "trigger": "An observed customer.subscription.deleted, or an observed subscription status canceled.",
+    "performed_by": {
+      "not_the_webhook": "The webhook identity RECORDS the observed fact into the ledger and hands off. It does not write a grant, in this transaction or any other. STRIPE_BOUNDARY.webhook_prohibitions is preserved in its letter, not merely in its spirit.",
+      "the_cancellation_capability": "A distinct governed capability, running under its own database identity, performs the atomic transition. It is the only identity in the system authorized to write commercial_accounts and entitlement_grants in one transaction, and it is authorized for the CLOSING direction only.",
+      "future_authority_surface": "This capability SPANS TWO RELATIONS and therefore needs privileges on both. That is a FUTURE IMPLEMENTATION AUTHORITY SURFACE, recorded at FUTURE_DDL.D-8. Its migration, its role, its policies and its ODS grant are NOT allocated here.",
+      "the_residual_window_that_remains": "Between the webhook recording the fact and the capability committing, the account still reads ACTIVE_STRIPE (or PAST_DUE / SUSPENDED) with its grants live. That is a PRE-transition window, not a torn one: the state and the grants agree with each other and with the last applied truth. It is bounded by the capability running, and it is categorically different from R1's window, in which the state and the grants DISAGREED. See OPEN_FINDINGS.OF-7."
+    },
+    "atomicity": {
+      "rule": "ONE ATOMIC DURABLE TRANSACTION for the affected CommercialAccount. The commercial state transition, the clearing of active subscription identity, and the closure of applicable commercial PLAN entitlement grants COMMIT TOGETHER OR ROLL BACK TOGETHER. There is no interleaving, no emitted request, and no consumer to wait for.",
+      "authority": "OD-6 / HPO-B.6, restored by MC-5 after R1 split it.",
+      "on_rollback": "Every conjunct reverts. The account remains in its pre-cancellation state (ACTIVE_STRIPE, PAST_DUE or SUSPENDED) with its subscription identity and its live PLAN grants intact - which is the PRE-cancellation truth, not a stale remnant. The ledger row remains unfinished and the handler answers 503, inviting redelivery.",
+      "spans_two_relations": "commercial_accounts AND entitlement_grants. This is deliberate and is the reason FUTURE_DDL.D-8 exists."
+    },
+    "effects_in_order": [
+      "1. Take the per-account advisory lock.",
+      "2. Evaluate ORD-1..ORD-6. A stale cancellation is refused before anything is written.",
+      "3. OPEN THE SINGLE TRANSACTION. Everything from here to step 8 commits together or not at all.",
+      "4. Write commercial_status = BOOTSTRAP.",
+      "5. CLEAR stripe_subscription_id to NULL, explicitly and typed (see below). RETAIN stripe_customer_id.",
+      "6. CLOSE every live PLAN grant for every Organization governed by the account - effective_to set once, per CE-3 append_only_rule - and open BOOTSTRAP_DEFAULT replacements where the capability catalogue declares one.",
+      "7. Write the state audit row AND one entitlement audit row per closed grant. Separate ROWS, one transaction: the two-rows-never-one rule of AUDIT is about attribution and reviewability, never about durability.",
+      "8. Mark the ledger row completed. COMMIT.",
+      "9. There is no step 9. No re-evaluation request is emitted, because there is nothing left to re-evaluate."
+    ],
+    "INV_STALE_GRANT": {
+      "invariant": "No account in ACTIVE_STRIPE or ACTIVE_WITHOUT_STRIPE may carry a live PLAN grant that a cancellation was supposed to close. A failed cancellation leaves NOTHING to clean up, because a failed cancellation leaves nothing at all.",
+      "why_it_holds_for_cancellation": "By atomicity. The only two outcomes are (a) committed - state is BOOTSTRAP and the grants are closed, or (b) rolled back - state is unchanged and the grants are legitimately live. Neither outcome is a stale grant in an active state.",
+      "why_it_still_needs_asserting_elsewhere": "SUSPENSION remains two-act under EC-3, so an account CAN sit in SUSPENDED with grant closures not yet consumed. The dangerous move is then SUSPENDED -> ACTIVE_STRIPE (reactivation): without a check, reactivation would find the old PLAN grants still live and the tenant would resume on grants that were already condemned. Therefore: EVERY transition INTO ACTIVE_STRIPE or ACTIVE_WITHOUT_STRIPE asserts that no unconsumed grant-closure obligation is outstanding for the account, and REFUSES with cause pending_closure_obligation if one is. The reactivation verb either waits for the consumer or performs the outstanding closure itself, in its own transaction, before opening the new grants.",
+      "refusal_is_not_a_stall": "pending_closure_obligation is retryable and escalates on repetition. It is a refusal to proceed on unsettled state, not a deadlock: the consumer is independently making progress, and repeated failure is already an escalating condition under FAILURE_AND_CONCURRENCY."
+    },
+    "clearing_the_subscription_id_is_load_bearing": {
+      "measured_defect": "db/prepared/stella_0008_stripe_webhook_identity.sql:788 assigns stripe_subscription_id = COALESCE(p_stripe_subscription_id, stripe_subscription_id). The COALESCE was added for a good reason - a customer-addressed event with a NULL subscription argument used to silently DETACH the subscription, after which the subscription branch of the policy stopped matching and DP-CAP-15 forbade a webhook from re-binding it. But its effect is that a DELETION cannot clear the id either, because a deletion also arrives with the subscription argument that COALESCE preserves.",
+      "consequence_if_unamended": "A canceled subscription's id lingers, so re-subscription is ambiguous: the account looks like it still has a subscription that Stripe says is gone. F11 recorded this as gap (4).",
+      "amendment": "Clearing is EXPLICIT and TYPED. The cancellation path does not pass a NULL subscription argument and rely on COALESCE to do nothing; it invokes a distinct clearing act that sets the column to NULL as its stated purpose. The COALESCE protection on the ORDINARY update path is preserved untouched. A silent NULL and a stated NULL are different acts and must be different code."
+    },
+    "no_free_10": "EC-5. The cancellation path never consults a price resolver, so mapStripePriceToQuota(null) is never reached and the value 10 is unreachable from a cancellation by construction rather than by check."
+  },
+
+  "REACTIVATION": {
+    "same_subscription": "An account in SUSPENDED whose SAME subscription is observed active returns to ACTIVE_STRIPE. Grants are re-opened as NEW rows of source PLAN (CE-3 append_only_rule: a closed row is never un-closed).",
+    "after_cancellation": "An account in BOOTSTRAP re-subscribing goes through the FULL journey: the existing stripe_customer_id is reused (that is why cancellation retains it), a NEW checkout is created, a NEW subscription id is bound, and the state moves BOOTSTRAP -> ACTIVE_STRIPE. No first binding is repeated, because OD-2's idempotency key is the account and the account already has its customer.",
+    "subscription_replacement": {
+      "definition": "The account's live subscription id changes - an upgrade that Stripe implements as a new subscription, a migration between products, or a re-subscribe after cancellation.",
+      "rule": "Exactly ONE subscription id may be live per CommercialAccount. A replacement CLOSES the outgoing subscription's commercial effect and OPENS the incoming one's, as one governed act under one lock, with one audit row naming both ids.",
+      "refusal": "An event carrying a subscription id that is neither the live one nor NULL, for an account already carrying a different live subscription id, is REFUSED as subscription_conflict and ESCALATES. It is never applied by overwriting, because overwriting is indistinguishable from the cross-tenant binding attack seen from the inside.",
+      "unique_constraint": "FUTURE_DDL.D-2's UNIQUE(stripe_subscription_id) makes a replacement that forgets to clear the outgoing id fail at the database rather than produce two accounts claiming one subscription."
+    },
+    "plan_change_within_one_subscription": "A price change on the SAME subscription is a self-transition ACTIVE_STRIPE -> ACTIVE_STRIPE. It emits a re-evaluation exactly like any other transition; the plan write and the grant write remain two acts (PLAN_ENTITLEMENT_BOUNDARY, preserved). Re-evaluation is DETERMINISTIC given (plan_ref, catalogue, organization), so a replay is a no-op rather than a second grant."
+  },
+
+  "MANUAL_ACTIVATION": {
+    "decision": "OD-7. ACTIVE_WITHOUT_STRIPE only by explicitly authorized manual activation.",
+    "sole_locus": "CE-8, the Platform Admin commercial control plane. No tenant-facing surface, no self-service path and no webhook may reach this state. CE-8 depends_on CE-2, CE-3, CE-5 and externally on tenancy S5; manual activation is therefore NOT implementable before those close, and this authority does not pretend otherwise.",
+    "eligibility": "ONLY from BOOTSTRAP, and only when stripe_subscription_id IS NULL. An account with a live subscription - in any state including SUSPENDED - is INELIGIBLE. An operator extending capacity to a tenant with a live subscription uses a COMMERCIAL_EXCEPTION grant, which is an entitlement act, not a state act.",
+    "mandatory_inputs": [
+      "actor_user_id NOT NULL - a person. Machine-originated manual activation is a contradiction and is refused.",
+      "reason, non-empty, recorded verbatim in the audit row.",
+      "authorization_reference - the platform-admin decision identity, which is also the idempotency key.",
+      "review horizon - the date by which the arrangement must be renewed or it lapses to BOOTSTRAP."
+    ],
+    "entitlement_source": "COMMERCIAL_EXCEPTION, with commercial_account_id NOT NULL. CE-3's CHECK constraints make the other three sources structurally wrong here: PLAN and COMMERCIAL_EXCEPTION require a non-NULL commercial_account_id and PLATFORM_ADMIN and BOOTSTRAP_DEFAULT require it NULL - and an off-Stripe commercial arrangement HAS a commercial basis, so PLATFORM_ADMIN would lose exactly the fact that matters.",
+    "no_unaudited_override": "PAYMENT_SUSPENSION preserved: 'There is no unaudited override.' Every manual activation, renewal, and deactivation writes its own audit row with actor and reason.",
+    "lapse": "The review horizon expiring transitions the account to BOOTSTRAP by the same governed path as any other transition, with a machine actor and reason manual_activation_lapsed. A lapse is a transition, not a deletion, and it is auditable like any other.",
+    "measured_precondition": "Both existing admin override surfaces call stella_0011 definers applied in NO database and raise 42883 at AS_OF (R-13). Manual activation cannot be delivered by extending a surface that does not execute."
+  },
+
+  "STELLA_RECONCILIATION": {
+    "principle": "Three limits govern a Stella call. They are enforced at three different moments, by three different owners, for three different reasons, and they produce three different refusals. Conflating any two of them makes at least one unenforceable.",
+    "L1_technical_rate_limit": {
+      "what": "Per-organization requests per hour, lib/stella/rate-limit.ts.",
+      "owner": "Infrastructure. NOT commercial.",
+      "purpose": "Protect the platform and the provider from burst load and abuse.",
+      "measured_posture": "Distributed backend REQUIRED on staging and production; without it the function returns reason 'unavailable' and allowed false. In development, test and ci an in-memory Map fallback is retained and warned once. The module's own header records WHY: a per-instance Map on serverless gives one organization N times the limit, with N unknowable from inside the process.",
+      "enforced_when": "At issuance, BEFORE any reservation. lib/stella/rate-limit.ts's header records that the only caller is issueGovernedStellaTicket and that issuance precedes reservation, so a rate-limited call mints no ticket, holds no quota unit and makes no provider call.",
+      "refusal_code": "RATE_LIMIT_EXCEEDED, and RATE_LIMIT_UNAVAILABLE when the backend is absent in an environment that requires it.",
+      "commercial_status": "NEVER SOLD. It is not a plan feature, is not an entitlement, is not a grant, and MUST NOT appear in the capability catalogue. An account that pays more does not get a higher rate limit by paying; if a higher rate limit is ever sold, it becomes a capability with its own grant and STOPS being L1."
+    },
+    "L2_usage_quota": {
+      "what": "The monthly Stella capacity ledger and its reservations: uellix_stella.stella_capacity (prepared stella_0016), decided in exactly one place, bind_operation_ticket.",
+      "owner": "The Stella governed consumption chain, stella_0013..0018.",
+      "purpose": "Meter and reserve the units actually consumed.",
+      "measured_posture": "Organization-scoped, taken under a per-organization advisory lock, reserving in the same statement. lib/stella/quota.ts records that checkStellaQuota was REMOVED because it had no lock, no reservation awareness and was advisory only, and that readStellaCapacity is now an INFORMATIONAL reader that authorizes nothing.",
+      "enforced_when": "At binding, under the lock, in the same statement as the reservation.",
+      "refusal_code": "quota_exceeded.",
+      "commercial_status": "The LEDGER is not commercial. The LIMIT it compares against is. USAGE_QUOTA_BOUNDARY, preserved: 'The LIMIT becomes a projection of the live EntitlementGrant; the LEDGER stays exactly where the prepared chain puts it.'"
+    },
+    "L3_commercial_entitlement": {
+      "what": "The live EntitlementGrant for (organization, stella capability), CE-3.",
+      "owner": "The CE-5 governed entitlement writer, single-writer.",
+      "purpose": "Answer whether the capability is purchased or allowed for this Organization, and up to what limit.",
+      "projection": "limit_kind UNMETERED -> stella_monthly_quota NULL; BLOCKED -> 0; CAPPED -> limit_value. Written by the entitlement writer and by nobody else. USAGE_QUOTA_BOUNDARY.limit_projection, preserved.",
+      "gate": "Conjoined with the commercial state gate of EC-4, which can only reduce.",
+      "refusal_code": "entitlement_absent when no live grant exists; entitlement_blocked when the grant or the gate yields BLOCKED. DISTINCT from quota_exceeded: 'you have no allowance' and 'you have spent your allowance' are different facts and a tenant shown the wrong one cannot act correctly.",
+      "measured_gap": "No grant exists at AS_OF; the limit's live source is organizations.stella_monthly_quota, assigned MANUALLY by a super_admin, defaulting to 0. L3 becomes real at CE-5 and is a manual assignment until then."
+    },
+    "the_three_refusals_must_stay_three": "A single generic refusal would make L1's platform protection indistinguishable from L2's exhausted allowance and from L3's absent purchase. The tenant's correct next action differs in each case: wait, buy more, or buy at all. Collapsing them is a product defect wearing an implementation shortcut.",
+    "display_consistency": "A display surface reads readStellaCapacity, which is reservation-aware, so a screen and a refusal cannot tell a user two different stories. F10 measured that the billing page counts stella_interactions directly while enforcement uses stella_capacity - two numbers that can disagree. That divergence is closed by CB-7, not by this sentence."
+  },
+
+  "RLS": {
+    "measured_state": "commercial_accounts: ENABLE + FORCE ROW LEVEL SECURITY, ZERO policies (db/migrations/0068_commercial_account_ce1.sql:44-45). FORCE binds the table owner, so a SECURITY DEFINER function owned by the owner is equally locked out. This is the first application table in the repository to combine ENABLE + FORCE with zero policies and its migration header states the choice is deliberate.",
+    "the_problem_this_creates": "OD-1 requires a canonical state machine over this column. A state machine needs a transition writer. At AS_OF no role can write, and the two ways out are both refused by existing doctrine: BYPASSRLS is refused for the Stripe capability's LOGIN identity as a postcondition (db/prepared/stella_0008_stripe_webhook_identity.sql:938-941, which asserts NOT (rolbypassrls OR rolcreaterole OR rolcreatedb OR rolsuper) for uellix_stripe), and an owner-privileged definer is defeated by FORCE.",
+    "stella_0008_provenance": {
+      "re_measured_at_AS_OF": "db/prepared/stella_0008_stripe_webhook_identity.sql, section 4.1 Role attributes, read directly at AS_OF_TREE.",
+      "lines_935_937": "uellix_stripe must be LOGIN. Asserts rolcanlogin TRUE for the LOGIN role.",
+      "lines_938_941": "uellix_stripe has no forbidden role attribute. Asserts NOT (rolbypassrls OR rolcreaterole OR rolcreatedb OR rolsuper) - for the LOGIN role uellix_stripe.",
+      "lines_942_947": "uellix_stripe is a member of no role. Asserts zero rows WHERE m.member = uellix_stripe - the OUTBOUND membership direction, for the LOGIN role.",
+      "lines_948_950": "uellix_cap_stripe must be NOLOGIN. Asserts rolcanlogin FALSE - the first assertion in the file that is about the CAPABILITY role.",
+      "lines_951_956": "uellix_cap_stripe has a member; it must have none. Asserts zero rows WHERE m.roleid = uellix_cap_stripe - the INBOUND membership direction. THIS is the capability-role zero-member precedent.",
+      "correction_of_R1_and_R2": "R1 and R2 cited :938 as the precedent for CAPABILITY-role attributes in four places. That was TRANSPOSED: :938-941 is about uellix_stripe, the LOGIN role. The capability-role precedent is :948-950 (NOLOGIN) and :951-956 (zero members). Corrected at every site; no false line-number provenance is retained.",
+      "this_authority_requires_MORE_than_the_precedent": "stella_0008 asserts only NOLOGIN and zero-members for its capability role; the forbidden-attribute assertion it applies to the LOGIN role is NOT applied to uellix_cap_stripe. This authority requires NOBYPASSRLS, NOCREATEDB, NOCREATEROLE and NOSUPERUSER of uellix_cap_commercial IN ADDITION to NOLOGIN and zero members. That is a STRENGTHENING, stated as one rather than dressed up as inherited precedent - a capability role whose entire purpose is to be bounded by RLS must be provably unable to bypass it, and claiming an existing assertion covers that would be claiming provenance this repository does not have."
+    },
+    "r1_defect": {
+      "what_R1_said": "R1 specified 'a dedicated capability role, admitted by a RESTRICTIVE policy bound to a session GUC' and wrote 'The policy admits a row only when its id equals the GUC'.",
+      "why_it_is_wrong": "A RESTRICTIVE policy NEVER admits a row. PostgreSQL evaluates PERMISSIVE policies as a disjunction and then ANDs every RESTRICTIVE policy against that result. With ZERO permissive policies the permissive disjunction is empty - false - and no quantity of restrictive clauses can raise it. R1's design therefore admitted NOTHING and would have left commercial_accounts exactly as unwritable as it is today, while reading as though the problem had been solved.",
+      "correction": "An explicit PERMISSIVE + RESTRICTIVE PAIR. The permissive member admits; the restrictive member intersects."
+    },
+    "decision": {
+      "role": {
+        "name": "uellix_cap_commercial",
+        "kind": "A DEDICATED, ISOLATED capability / definer role. It exists to be the subject of the policy pair below and for nothing else.",
+        "required_attributes": [
+          "NOLOGIN - rolcanlogin = false. The role is never authenticated against directly.",
+          "NOBYPASSRLS - rolbypassrls = false. The whole point of the pair is that the row bound is enforced, and BYPASSRLS would make it decorative.",
+          "NOCREATEDB - rolcreatedb = false.",
+          "NOCREATEROLE - rolcreaterole = false. A role that can create roles can create a member of itself, which would defeat the membership boundary from inside.",
+          "NOSUPERUSER - rolsuper = false."
+        ],
+        "ZERO_ROLE_MEMBERS": {
+          "requirement": "uellix_cap_commercial MUST have ZERO role members. No login role, no application runtime role, no tenant role, no operator role, no human role and no service login may hold membership in it.",
+          "explicitly_forbidden_grantees": [
+            "uellix_app - the application runtime role. It must NEVER be granted membership.",
+            "ANY role with rolcanlogin = true, without exception.",
+            "ANY tenant identity.",
+            "ANY platform operator or human identity.",
+            "ANY other capability role - capability roles do not compose by membership."
+          ],
+          "status": "ASSERTED POSTCONDITION, NOT CONVENTION. It is proven from the catalogue on every apply, and the apply FAILS if any membership edge points into the role.",
+          "catalogue_proof": "SELECT 1 FROM pg_auth_members m WHERE m.roleid = (SELECT oid FROM pg_roles WHERE rolname = 'uellix_cap_commercial') must return ZERO rows. RAISE EXCEPTION otherwise.",
+          "direction_matters": "The assertion is on roleid, NOT on member. pg_auth_members.roleid is the role being granted and member is the grantee, so WHERE roleid = uellix_cap_commercial asks 'who has been granted INTO this role' - the INBOUND edge, which is the one that lets a foreign login inherit the capability. WHERE member = uellix_cap_commercial asks the OUTBOUND question 'what is this role a member of', which is a different property and does not close this hole. Getting the direction backwards produces an assertion that passes while the boundary is wide open."
+        },
+        "force_rls": "FORCE ROW LEVEL SECURITY on commercial_accounts is PRESERVED and is never dropped. FORCE binds the table owner too, which is why the capability role and its policy pair are the only write path rather than one of several."
+      },
+      "membership_boundary_is_a_security_boundary_of_the_policy_pair": {
+        "postgres_implication": "A policy written TO uellix_cap_commercial applies to any role that IS uellix_cap_commercial and to any role that has INHERITED it through role membership. PostgreSQL policy applicability follows role membership; it is not restricted to the role named literally in the TO clause.",
+        "the_attack": "Grant a foreign login membership in uellix_cap_commercial. That login now inherits the PERMISSIVE admission of P1. It then sets app.commercial_account_id to any value it chooses - the GUC is caller-controlled, set by whoever holds the session - and P2's row bound resolves to the row it named. The pair behaves exactly as designed and hands a foreign caller a commercial_accounts row.",
+        "why_the_GUC_cannot_close_it": "The row bound answers WHICH ROW may be touched. It does not answer WHO IS ENTITLED TO ACTIVATE THE ROLE. Those are different questions, and the GUC only ever answers the first. A caller who should not be inside the admitted set at all is not excluded by a predicate that assumes the caller already legitimately is.",
+        "conclusion": "ZERO ROLE MEMBERS is therefore not hygiene and not defence in depth. It is the control that establishes who may be admitted at all, and without it the PERMISSIVE member admits whoever was granted membership. The pair has THREE load-bearing parts, not two: P1 admits, P2 bounds the row, and the membership boundary bounds the set of callers P1 can ever admit.",
+        "relation_to_the_degenerate_cases": "RLS.r1_defect records that deleting P1 admits nothing and deleting P2 admits every row. Granting membership is the third failure and it is worse than either, because both policies remain present and correct - nothing in the policy text changes, and a reviewer reading only the DDL of the pair sees a working bound."
+      },
+      "commands": "SELECT, INSERT, UPDATE. NO DELETE - neither a policy nor a table grant. The capability cannot erase what it did, mirroring the stripe_webhook_events posture.",
+      "policy_pair": {
+        "P1_permissive": {
+          "name": "cap_commercial_admit",
+          "kind": "PERMISSIVE (the PostgreSQL default; written explicitly as AS PERMISSIVE so no reader has to infer it)",
+          "commands": "one policy per command: SELECT, INSERT, UPDATE. Never FOR ALL - FOR ALL would silently cover DELETE the day a DELETE grant is added by someone else.",
+          "to": "TO uellix_cap_commercial. NEVER TO PUBLIC. No tenant role, no application role, no owner role is named.",
+          "SELECT": "USING (true). WITH CHECK does not apply to SELECT and is not written.",
+          "INSERT": "WITH CHECK (true). USING does not apply to INSERT and is not written.",
+          "UPDATE": "USING (true) and WITH CHECK (true).",
+          "why_true": "This member's ONLY job is to put the capability role inside the admitted set. It carries no row predicate on purpose: putting the row bound here as well would duplicate it, and a duplicated bound is one that can be weakened in one copy without the other copy failing. The row bound lives in exactly one place - P2."
+        },
+        "P2_restrictive": {
+          "name": "cap_commercial_row_bound",
+          "kind": "AS RESTRICTIVE",
+          "commands": "one policy per command: SELECT, INSERT, UPDATE. Mirrors P1 command-for-command; a restrictive policy that covers fewer commands than its permissive counterpart leaves the uncovered command unbounded.",
+          "to": "TO uellix_cap_commercial.",
+          "predicate": "id = NULLIF(pg_catalog.current_setting('app.commercial_account_id', true), '')::uuid",
+          "SELECT": "USING (<predicate>).",
+          "INSERT": "WITH CHECK (<predicate>) - the NEW row's id must equal the bound.",
+          "UPDATE": "USING (<predicate>) AND WITH CHECK (<predicate>), BOTH STATED EXPLICITLY. USING selects WHICH existing row may be updated; WITH CHECK validates the row AFTER the update.",
+          "UPDATE_rationale": {
+            "what_postgres_actually_does": "When an UPDATE policy omits WITH CHECK, PostgreSQL REUSES the USING expression as the WITH CHECK expression. So USING alone does NOT permit an admitted row to be rewritten outside the bound - the post-image is still checked against the same predicate. R2 claimed otherwise; that claim was FALSE and is withdrawn.",
+            "why_both_are_still_written": "The design is UNCHANGED and both clauses remain mandatory, for three reasons that do not depend on the false claim. (1) EXPLICITNESS: the pre-row predicate and the post-row predicate are two distinct semantic obligations, and a reader should not have to know an implicit-reuse rule to see that both are bounded. (2) AUDITABILITY: pg_policies exposes qual and with_check as separate columns; a policy relying on the implicit reuse shows with_check NULL, so an audit asserting 'the post-image is bounded' has nothing to assert against. (3) DRIFT RESISTANCE: the day someone narrows or widens USING for an unrelated reason, an explicit WITH CHECK is a second site that must be changed deliberately, whereas implicit reuse silently follows the edit.",
+            "the_asymmetry_that_is_real": "WITH CHECK alone is genuinely weaker, and this half of R2's claim stands. A RESTRICTIVE UPDATE policy carrying only WITH CHECK contributes NO conjunct on the row-selection side, so the restrictive intersection is lost there and row selection falls back to whatever the permissive member allows - which is USING (true). There is no implicit reuse in that direction: PostgreSQL does not synthesise a USING clause from WITH_CHECK."
+          },
+          "unset_guc_denies": "current_setting(..., true) returns NULL when unset; NULLIF maps the empty string to NULL; id = NULL evaluates to NULL, and NULL is not TRUE, so the row is DENIED. An unset context fails CLOSED, and this is the same NULL-is-not-TRUE reasoning stella_0008's bounds already rely on."
+        },
+        "composition": "Effective access = (P1 OR ...no other permissive...) AND P2. Because P1 is the only permissive member, the effective predicate reduces exactly to P2's row bound for the capability role, and to FALSE for every other role. Both halves are load-bearing: delete P1 and the capability can touch nothing; delete P2 and the capability can touch every row."
+      },
+      "insert_requires_the_verb_to_choose_the_id": "P2's INSERT WITH CHECK compares the NEW row's id to the context value, so the creating verb must GENERATE the uuid, SET the context to it, and THEN insert. It cannot rely on the column DEFAULT gen_random_uuid(), because the default is evaluated during the insert and the bound would be comparing against a value the verb never saw. Stated because an implementation that hits this will otherwise be tempted to relax the INSERT bound.",
+      "context_binding": {
+        "name": "app.commercial_account_id",
+        "set_with": "pg_catalog.set_config('app.commercial_account_id', <id>, true) - the third argument true makes it TRANSACTION-LOCAL, so it cannot leak into a later statement on a pooled connection.",
+        "one_row_per_transaction": "The verb sets it to the single account it is acting on. The capability can therefore reach ONE row per transaction and cannot reach a second.",
+        "NOT_A_TENANT_SCOPE_CARRIER": "app.commercial_account_id is a CAPABILITY-LOCAL bound on which commercial_accounts row one privileged verb may touch. It is NOT app.organization_id, it is not read by any tenant-facing policy, it does not select tenant scope, it confers no membership, no role and no organization visibility, and no tenant path ever sets it. A CommercialAccount is explicitly NOT tenant data (0068:20). Binding a privileged capability to one row of a non-tenant relation is the OPPOSITE of a tenant-scope carrier: it is what stops the capability from reaching rows it was not sent to.",
+        "scope_of_the_ambient_principal_prohibition": "The CE-3 rule that the entitlement evaluator takes an EXPLICIT organization_id and never an ambient principal is preserved, and it is about the ENTITLEMENT EVALUATOR's organization argument - not a blanket claim that no commercial identifier may ever appear as a database context value. Read as such a blanket, it would forbid the very pattern stella_0008 already ships (app.stripe_event_id) and would leave commercial_accounts permanently unwritable. It is scoped here so no implementer treats it as that blanket."
+      },
+      "grants": "Column-scoped at TABLE level, exactly as stella_0008 does. UPDATE is granted on commercial_status, stripe_customer_id, stripe_subscription_id, the subscription-fact columns and updated_at. UPDATE is NOT granted on id or created_at - column grants and the row bound are two different bounds and both are kept.",
+      "zero_tenant_reach_preserved": "This pair is an ACTOR bound intersected with a ROW bound. It grants no membership, no role, no organization visibility and no tenant-facing read. The migration header's claim that commercial_accounts is NOT tenant data survives intact: nothing here makes it tenant-readable.",
+      "no_tenant_read_policy_is_authored_here": "A tenant-facing SELECT policy is NOT granted by this authority. If a billing screen must show commercial state, it reads it through a governed definer that returns a bounded projection, not through a policy that opens the table."
+    },
+    "this_is_a_privilege_decision": "F10 correctly classified adding a policy to this table as a privilege decision requiring authority rather than a fix. The authority is OD-1: a canonical state machine over a relation nothing may write is not a control. The DDL remains gated - FUTURE_DDL.D-6, LINEAGE_REDERIVATION_REQUIRED = YES.",
+    "entitlement_grants_rls": "entitlement_grants is authored by CE-3 and its RLS posture is CE-3's to set. This authority adds no policy to it and states only the consumption rule: the evaluator takes an EXPLICIT organization_id and never an ambient principal (CE-3, preserved), which is what lets it be correct independently of whatever policy CE-3 chooses."
+  },
+
+  "AUDIT": {
+    "verbs": [
+      "commercial.state.entered - every transition, from every cause. before_json and after_json carry the prior and new state; reason names the cause; entity_type is commercial_account.",
+      "commercial.stripe.bound - the first binding. Actor is the authenticated person who initiated it.",
+      "commercial.stripe.subscription_replaced - names BOTH the outgoing and incoming subscription ids.",
+      "commercial.manual_activation - actor MANDATORY non-NULL, reason MANDATORY, review horizon in after_json.",
+      "commercial.manual_activation.renewed and commercial.manual_activation.lapsed.",
+      "commercial.account.closed - actor and reason mandatory.",
+      "entitlement.grant.opened and entitlement.grant.closed - written by the CE-5 entitlement writer, NEVER by the state verb, each naming the commercial cause."
+    ],
+    "actor_rule": "A Stripe-caused transition carries actor_user_id NULL. A person-caused transition carries a non-NULL actor. Both directions are enforced, not just one: db/prepared/stella_0008_stripe_webhook_identity.sql:795-797 already refuses to attribute a billing change to a person who did not make it, and this authority adds the mirror - a manual activation MUST NOT be attributed to a machine.",
+    "two_rows_never_one": "A state transition and its entitlement effect write SEPARATE audit rows in SEPARATE transactions. One row covering both would make the CC-3 fusion invisible again, and the separation is exactly what a reviewer checks to confirm PLAN_ENTITLEMENT_BOUNDARY held.",
+    "no_payload_in_the_ledger": "stripe_webhook_events holds no payload and no error message, only a fixed error CODE. Preserved. source_event_created_at is an ordering identity, not a payload, and it is the only addition.",
+    "verbatim_content_caution": "LANE HB measured that audit_logs before_json / after_json carries VERBATIM content in 40-plus verbs. The verbs above carry commercial state values, Stripe identifiers, a reason string and a review date. The reason string is operator-authored free text and is the only field of these verbs that can carry arbitrary content; an implementing node must treat it under whatever disclosure posture the audit surface adopts, and MUST NOT put a Stripe payload, an email body or a tenant record into it."
+  },
+
+  "FUTURE_DDL": {
+    "LINEAGE_REDERIVATION_REQUIRED": "YES",
+    "global_rule": "Every item below is a FORWARD migration. No shipped migration is edited, and 0068 in particular is NOT edited - editing it would be historical evidence rewriting. No ordinal is allocated here; each item's ordinal, ODS grant, addendum version and Controller enumeration are derived separately at implementation time under lane coordination.",
+    "measured_lineage_state": "scripts/ods-scope.ts registers HPO-ODS-W2-27 at :661, bound to codex/fibdb052-p1-implementation-r1 with db/migrations/** plus journal patterns; 0069 is claimed by PR #135, now merged at c2b59fa5. The next DDL node of this package therefore needs a NEWLY DERIVED addendum, grant, ordinal and Controller entry. This artefact names none of them.",
+    "items": [
+      {
+        "id": "D-1",
+        "title": "Widen commercial_status to the six-state closed set and move the DEFAULT.",
+        "content": "Drop and recreate commercial_status_check over {BOOTSTRAP, ACTIVE_STRIPE, PAST_DUE, SUSPENDED, ACTIVE_WITHOUT_STRIPE, CLOSED}; move the column DEFAULT from 'active' to 'BOOTSTRAP'; migrate any existing row forward.",
+        "resolves": "MC-1",
+        "blast_radius": "commercial_accounts only. Zero readers exist at AS_OF (R-02), so the value migration has no consumer to break - the ONE moment at which this widening is free.",
+        "note": "The existing lowercase four-value vocabulary and the new uppercase six-value vocabulary must not coexist. The migration is a REPLACEMENT of the constraint, and a row carrying an old value after it is a violation, not a legacy tolerance."
+      },
+      {
+        "id": "D-2",
+        "title": "Stripe identity on commercial_accounts, with uniqueness.",
+        "content": "stripe_customer_id text NULL UNIQUE; stripe_subscription_id text NULL UNIQUE.",
+        "resolves": "STRIPE_FIRST_BINDING D2 and D3; REACTIVATION.subscription_replacement.unique_constraint",
+        "belongs_to": "CE-6, whose compatibility note already states Stripe identity columns MOVE to commercial_accounts rather than being duplicated permanently.",
+        "note": "UNIQUE is the point, not the columns. Without it the cross-tenant binding defence rests entirely on code."
+      },
+      {
+        "id": "D-3",
+        "title": "Source-event ordering identity on the webhook ledger.",
+        "content": "ALTER TABLE public.stripe_webhook_events ADD COLUMN source_event_created_at timestamptz NOT NULL; add it to the never-rewritable set by EXCLUDING it from the capability's UPDATE grant, exactly as event_id and event_type are excluded today; index the ordering scope so the last-completed lookup of ORD-3 is not a scan.",
+        "resolves": "MC-2, ORD-1, ORD-2",
+        "note": "NOT NULL on an existing table needs a backfill decision. The table is measured ABSENT in hosted B0, so at the time of writing there are no rows to backfill - but the implementing node must RE-MEASURE rather than inherit that, because absence is a fact about a moment."
+      },
+      {
+        "id": "D-4",
+        "title": "Governed re-evaluation request relation.",
+        "content": "A relation recording (commercial_account_id, cause_identity, requested_at, consumed_at, outcome). Written by the state verb in the state transaction; consumed by the CE-5 entitlement writer in a separate one.",
+        "resolves": "EC-3",
+        "note": "F12 measured ZERO queue, job, outbox or cron substrate, and INT-INT-001:39 explicitly discards an outbox. This relation is therefore NOT a general outbox and MUST NOT be argued into one. It is a single-purpose request log with a claim/lease/attempts shape, and the pattern to copy is stripe_webhook_events itself, which F12 identified as the repository's existing worked example."
+      },
+      {
+        "id": "D-5",
+        "title": "entitlement_grants.",
+        "content": "Exactly the CE-3 target_shape. UNCHANGED by this authority - listed only so no implementer believes this package supersedes it.",
+        "resolves": "nothing new",
+        "belongs_to": "CE-3"
+      },
+      {
+        "id": "D-6",
+        "title": "commercial_accounts capability role and the PERMISSIVE + RESTRICTIVE policy pair.",
+        "content": "Role uellix_cap_commercial (NOLOGIN, NOBYPASSRLS, NOSUPERUSER, NOCREATEROLE, NOCREATEDB, and ZERO ROLE MEMBERS); three PERMISSIVE policies (SELECT, INSERT, UPDATE) admitting only that role; three matching RESTRICTIVE policies bounding the row to app.commercial_account_id; column-scoped table GRANTs; no DELETE policy and no DELETE grant. FORCE RLS preserved. Exact USING / WITH CHECK semantics per command are frozen in RLS.decision.policy_pair.",
+        "resolves": "R-01, the R1 defect recorded in RLS.r1_defect, and the R2 membership gap recorded in RLS.decision.membership_boundary_is_a_security_boundary_of_the_policy_pair",
+        "mandatory_postconditions": [
+          "PC-1 rolcanlogin = false for uellix_cap_commercial.",
+          "PC-2 NOT (rolbypassrls OR rolcreaterole OR rolcreatedb OR rolsuper) for uellix_cap_commercial.",
+          "PC-3 ZERO ROLE MEMBERS, proved from the catalogue: SELECT 1 FROM pg_auth_members m WHERE m.roleid = (SELECT oid FROM pg_roles WHERE rolname = 'uellix_cap_commercial') must return zero rows, and the apply MUST RAISE otherwise. The assertion must FAIL if ANY membership edge points INTO uellix_cap_commercial, whatever the grantee is and whatever the grant option or inheritance setting is.",
+          "PC-4 relforcerowsecurity = true for commercial_accounts, re-asserted after the policies are created.",
+          "PC-5 exactly three PERMISSIVE and three RESTRICTIVE policies on commercial_accounts, all TO uellix_cap_commercial, none TO PUBLIC, and no policy for DELETE."
+        ],
+        "PC3_is_not_satisfied_by_NOLOGIN": "Asserting NOLOGIN alone is INSUFFICIENT and must not be substituted for PC-3. NOLOGIN stops the role being authenticated against DIRECTLY; it does nothing to stop a role that CAN log in from being granted membership and inheriting the capability. The two assertions close different holes and both are required. This is exactly the shape stella_0008 uses at :948-950 and :951-956, where NOLOGIN and zero-members are two separate IF blocks rather than one.",
+        "note": "PRIVILEGE DECISION. It must be reviewed as one, with the same adversarial posture stella_0008 received. Its postconditions are STRONGER than stella_0008's capability-role postconditions - see RLS.stella_0008_provenance.this_authority_requires_MORE_than_the_precedent; the forbidden-attribute assertion at 0008:938-941 is applied there to the LOGIN role uellix_stripe, not to uellix_cap_stripe, and PC-2 extends it. All THREE load-bearing parts must be probed on real PostgreSQL: the permissive-only case, the restrictive-only case, and the membership case. None of the three is visible by reading the SQL of the pair, and the membership case is the only one in which both policies remain textually correct while the boundary is open."
+      },
+      {
+        "id": "D-8",
+        "title": "Governed cancellation capability spanning commercial_accounts and entitlement_grants.",
+        "content": "A single SECURITY DEFINER verb, under its own identity, privileged on BOTH relations, authorized for the CLOSING direction only: set commercial_status = BOOTSTRAP, clear stripe_subscription_id, close live PLAN grants, write the audit rows - in one transaction. Requires its own role, its own policy admissions on entitlement_grants (whose base RLS posture remains CE-3's to set), and postconditions proving it cannot OPEN a PLAN grant.",
+        "resolves": "MC-5; CANCELLATION.atomicity; OD-6",
+        "belongs_to": "A node spanning CE-3 and CE-6. Neither node owns it alone, which is precisely why it is recorded as its own future authority surface rather than folded into either.",
+        "note": "FUTURE IMPLEMENTATION AUTHORITY SURFACE. Its migration, ordinal, role, policies and ODS grant are NOT allocated here. The closing-direction-only restriction is the whole safety argument for letting one identity touch both relations, so it must be an asserted postcondition, not a convention."
+      },
+      {
+        "id": "D-7",
+        "title": "Persisted subscription facts.",
+        "content": "On commercial_accounts: the observed Stripe subscription status, cancel_at_period_end, current_period_end.",
+        "resolves": "R-12",
+        "note": "Without these, past_due, unpaid and canceled are indistinguishable in the database and the state machine has nothing to map from. These are OBSERVED FACTS, not commercial state: WEBHOOK_ORDERING.source_of_truth forbids storing a Stripe status AS the commercial state."
+      }
+    ],
+    "explicitly_not_ddl": [
+      "The plan and price catalogue. OD-9.",
+      "Any grace-window, dunning-schedule or retry-timing column. PAYMENT_SUSPENSION.grace_period, preserved.",
+      "Any tenant-facing SELECT policy on commercial_accounts.",
+      "Any trigger on commercial_accounts that writes entitlement_grants. PLAN_ENTITLEMENT_BOUNDARY.prohibited_shortcut, preserved and restated: it would recreate CC-3 in a new location."
+    ]
+  },
+
+  "FAILURE_AND_CONCURRENCY": {
+    "lock": "A per-CommercialAccount advisory lock is taken before any state read that a write depends on, mirroring the per-organization lock of stella_0016 that lib/stella/quota.ts records as the fix for the read-then-write race.",
+    "lock_ordering": "Where both an account lock and an organization lock are needed, the ACCOUNT lock is taken FIRST, always. A fixed global order is what makes deadlock structurally impossible rather than rare.",
+    "two_shapes_not_one": "There are TWO transaction shapes, and which one applies is determined by the transition, not by the caller.",
+    "transaction_boundaries": [
+      "SHAPE A - SPLIT (the default, for suspension, reactivation and plan re-evaluation). T1 state transaction: ledger completion + commercial state write + subscription-fact write + re-evaluation request row + state audit row. T2 entitlement transaction: grant closures and openings + entitlement audit rows + legacy projection write; separate, idempotent by the request's cause_identity.",
+      "SHAPE B - ATOMIC (CANCELLATION ONLY). TC: ledger completion + commercial state write + subscription-identity clearing + PLAN grant closures + BOOTSTRAP_DEFAULT replacements + state audit row + per-grant entitlement audit rows. ONE transaction, commit together or roll back together. No request row is emitted because nothing is deferred."
+    ],
+    "why_shape_A_is_split": "STRIPE_BOUNDARY.downstream_reaction prohibits the WEBHOOK from one transaction that both records a subscription and moves a quota. The split is not an optimisation; it is that boundary.",
+    "why_shape_B_is_atomic": "OD-6 requires the three conjuncts of cancellation to happen together (MC-5). It does not breach the webhook prohibition because the webhook does not perform it - a distinct governed capability does (CANCELLATION.performed_by), and that capability is authorized for the CLOSING direction only, so the creation risk the prohibition exists to stop is absent by construction.",
+    "the_window_in_shape_A": "Closed by EC-4's conjunctive gate, evaluated from commercial_status at enforcement time. For SUSPENDED the gate is BLOCKED, so T1 having committed is sufficient and the window fails CLOSED. The gate is NOT sufficient for cancellation, whose target gate is pass-through - which is why cancellation is Shape B.",
+    "there_is_no_window_in_shape_B": "TC either committed, in which case the state is BOOTSTRAP and the grants are closed, or it did not, in which case nothing changed. A torn cancellation is not a state the database can represent.",
+    "T2_failure": "If T2 fails, the request row stays unconsumed and is retried. The gate keeps a SUSPENDED account closed meanwhile. Repeated failure ESCALATES. An unconsumed obligation additionally REFUSES any transition into ACTIVE_STRIPE or ACTIVE_WITHOUT_STRIPE with cause pending_closure_obligation - see CANCELLATION.INV_STALE_GRANT, which is what stops a reactivation from resuming on condemned grants.",
+    "TC_failure": "The whole cancellation rolls back. The account keeps its pre-cancellation state, its subscription identity and its live grants - the pre-transition truth, not a remnant. The ledger row remains unfinished, the handler answers 503, and Stripe redelivers. Repeated failure ESCALATES.",
+    "T1_failure": "The ledger row remains 'processing' and the handler answers 503, inviting redelivery. stripe_fail_event marks it failed from the handler's catch block AFTER the apply has raised and rolled back - the existing separation (db/prepared/stella_0008_stripe_webhook_identity.sql:43-46, 854-885) that exists precisely because an UPDATE followed by a RAISE in one transaction rolls its own bookkeeping back. Preserved.",
+    "concurrent_events_same_account": "Serialized by the advisory lock. The loser re-reads state inside its own lock hold and then evaluates ORD-3 and ORD-4 against the winner's committed result, which is why ORD-6 requires the guard to be inside the lock.",
+    "concurrent_first_bindings": "Serialized by the lock; the loser observes a non-NULL stripe_customer_id and returns it as a NO-OP. Should the lock ever be bypassed, UNIQUE(stripe_customer_id) refuses the second write. Should the API call itself be duplicated, the Stripe idempotency key keyed on commercial_account_id returns the same customer. Three independent bounds.",
+    "partial_multi_org_application": "An account governing N Organizations applies its entitlement effect N times. In Shape A, T2 is atomic across all N: a state change that lands for some Organizations and not others is PROHIBITED; if N is large enough that one transaction is impractical, the request row is split per Organization with per-Organization idempotency, and EC-4's gate keeps every not-yet-applied Organization correct in the meantime. In Shape B, TC is atomic across all N BY DEFINITION - splitting it would reintroduce exactly the torn cancellation OD-6 forbids. An account whose N makes one cancellation transaction impractical is an ESCALATION, not a licence to split.",
+    "escalation_means": "STOP and surface. An escalating condition (ambiguous_order, subscription_conflict, manual_basis_conflict, binding collision, repeated T2 failure, repeated TC failure, repeated pending_closure_obligation) is never auto-resolved, never guessed, and never silently retried into a different outcome. Fail closed where authority is ambiguous."
+  },
+
+  "IMPLEMENTATION_PACKAGES": {
+    "allocation_note": "CB-ids are LOCAL to this authority. They are not ODS unit ids, not FIB node ids, not HPO grants and not migration ordinals. Each package requires its own lineage derivation before implementation.",
+    "packages": [
+      {
+        "id": "CB-1",
+        "title": "State vocabulary and commercial_accounts write path",
+        "delivers": "FUTURE_DDL D-1 and D-6",
+        "depends_on": "CE-1 (done)",
+        "gated_on": "new ODS lineage",
+        "changes_enforcement": false
+      },
+      {
+        "id": "CB-2",
+        "title": "Canonical state verb and transition table",
+        "delivers": "COMMERCIAL_STATE_MACHINE as executable code; the enumerated legal-pair refusal",
+        "depends_on": "CB-1",
+        "changes_enforcement": false,
+        "note": "Without this package the state machine is a description, not a control (R-02)."
+      },
+      {
+        "id": "CB-3",
+        "title": "First binding verb",
+        "delivers": "STRIPE_FIRST_BINDING; FUTURE_DDL D-2",
+        "depends_on": "CB-1, CB-2",
+        "changes_enforcement": false,
+        "note": "This is the package that breaks the R-08 deadlock. It is the earliest package with an outward-facing effect and carries the Tier-A cross-tenant attack surface."
+      },
+      {
+        "id": "CB-4",
+        "title": "Checkout journey and portal replacement",
+        "delivers": "CHECKOUT_BOUNDARY; replaces the 'contact sales' throw at app/app/organization/billing/actions.ts:27-34",
+        "depends_on": "CB-3",
+        "changes_enforcement": false
+      },
+      {
+        "id": "CB-5",
+        "title": "Webhook ordering identity and guard",
+        "delivers": "WEBHOOK_ORDERING ORD-1..ORD-6; FUTURE_DDL D-3 and D-7; the CE-6 recomposition of the apply verb",
+        "depends_on": "CB-1, CB-2, and CE-5 (CE-6 depends_on CE-5 because a recomposed apply that no longer writes a quota is only safe once the quota has another source)",
+        "changes_enforcement": true,
+        "note": "Resolves MC-2 and MC-3. Also the package that adds invoice.* handling, which does not exist at all today (R-11)."
+      },
+      {
+        "id": "CB-6",
+        "title": "Re-evaluation request relation and its consumer (Shape A), and the atomic cancellation capability (Shape B)",
+        "delivers": "EC-3; FUTURE_DDL D-4; CANCELLATION.atomicity; FUTURE_DDL D-8; CANCELLATION.INV_STALE_GRANT",
+        "depends_on": "CB-2, CE-3, CE-4, CE-5",
+        "changes_enforcement": true,
+        "note": "The two transaction shapes land in ONE package deliberately. Landing the request relation without the atomic cancellation capability would leave cancellation on the split path - the MC-5 defect - live in the interval between them, and an interval in which a known defect is authorized is worse than one in which it is merely unfixed. INV-STALE-GRANT lands here too, because it is the precondition that makes Shape A safe at the boundary where it meets an active state."
+      },
+      {
+        "id": "CB-7",
+        "title": "Closing gate and the three-refusal separation",
+        "delivers": "EC-4; STELLA_RECONCILIATION's three distinct refusal codes; closes the billing-page versus enforcement divergence",
+        "depends_on": "CB-2, CE-5",
+        "changes_enforcement": true,
+        "gated_on": "EC-6 - not before CE-4"
+      },
+      {
+        "id": "CB-8",
+        "title": "Manual activation control plane",
+        "delivers": "MANUAL_ACTIVATION",
+        "depends_on": "CB-1, CB-2, CE-8",
+        "external_depends_on": "tenancy S5",
+        "changes_enforcement": true
+      },
+      {
+        "id": "CB-9",
+        "title": "Legacy Free=10 retirement",
+        "delivers": "EC-5 NO_LEGACY_FREE; removal of every write-path reach to STRIPE_QUOTAS.free",
+        "depends_on": "CB-5, CB-7",
+        "changes_enforcement": true,
+        "note": "LAST, by the same reasoning as CE-9's RETIREMENT_LAST_RULE: a retirement's blast radius should be exactly the compatibility surface it removes and nothing else."
+      }
+    ],
+    "ordering_summary": "CB-1 -> CB-2 -> {CB-3 -> CB-4} and {CB-5 after CE-5} -> CB-6 -> CB-7 -> CB-8 -> CB-9. Nothing that CHANGES an enforcement decision may land before CE-4 (EC-6)."
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-1",
+      "finding": "HPO-B has no repository source at AS_OF. This artefact is its first materialization and therefore its own only corroboration.",
+      "disposition": "Recorded, not resolved. An independent audit should confirm the BINDING_OWNER_DECISIONS transcription against the owner directive rather than against this file.",
+      "sibling_lanes_checked": "origin/codex/owner-ratifications-materialization-r1 was measured against BASE: its only commercial-directory change adds a materialized_by cross-reference to EV-01, EV-02, EV-03 and RI-01 of COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json - Evaluate and Report Integrity rows, not billing. It carries no HPO-B. It also does not collide with this lane: this lane creates two NEW files and modifies none."
+    },
+    {
+      "id": "OF-2",
+      "finding": "event.created has SECOND granularity and Stripe exposes no public per-object sequence number on subscription events. ORD-4 therefore cannot fully order two events sharing a timestamp; it fails closed instead of guessing.",
+      "disposition": "RESIDUAL, deliberately. Escalation on an equal-timestamp backward transition is the fail-closed disposition. If Stripe later exposes a stronger discriminator, ORD-4 becomes tightenable; until then this is a known bound, not an oversight."
+    },
+    {
+      "id": "OF-3",
+      "finding": "The six-state vocabulary replaces a four-value one that is already shipped in 0068 and already carried by db/schema.ts and any test asserting it.",
+      "disposition": "CB-1's blast radius. Free at AS_OF because zero runtime readers exist (R-02); NOT free later. An implementing node must re-measure the reader count rather than inherit this."
+    },
+    {
+      "id": "OF-4",
+      "finding": "CE-6 depends_on CE-5, and CE-5 depends_on CE-4. CB-5 therefore cannot land early even though MC-3 is a live correctness defect on the apply path.",
+      "disposition": "UNRESOLVED TENSION, stated rather than hidden. The mitigating measurement is that CAP-03 is switched off (the webhook route answers 503 under the feature flag) and stella_0008 is applied in no database, so the defect is not currently reachable in any environment. If CAP-03 is ever enabled before CB-5, MC-3 becomes live and this authority's answer is that CAP-03 MUST NOT be enabled before CB-5."
+    },
+    {
+      "id": "OF-5",
+      "finding": "EC-4's gate is an evaluation-time read of commercial_status, so every enforcement path acquires a dependency on a relation that is FORCE-RLS with no read policy.",
+      "disposition": "Resolved by shape, not by policy: the gate is read through the same governed definer that CB-2 introduces, returning a bounded projection. No tenant-facing SELECT policy is created. An implementer who reaches for a read policy here has taken a privilege decision this authority did not grant."
+    },
+    {
+      "id": "OF-6",
+      "finding": "This authority names no ODS lineage, so every package is blocked on lineage derivation that a different lane must perform.",
+      "disposition": "BY DESIGN. NO_ODS_ALLOCATION. Recorded so the block is visible rather than discovered."
+    },
+    {
+      "id": "OF-7",
+      "finding": "Cancellation has a PRE-transition window: between the webhook recording the observed cancellation and the cancellation capability committing, the tenant still holds live capacity.",
+      "disposition": "BOUNDED RESIDUAL, accepted and stated. In this window the commercial state and the grants AGREE with each other and with the last applied truth - the account still reads ACTIVE_STRIPE with live grants, which is simply the state before the transition is applied. It is categorically unlike R1's window, in which state said BOOTSTRAP while PLAN grants stayed live and no gate closed them. Eliminating this window entirely would require the webhook itself to perform the entitlement write, which STRIPE_BOUNDARY.webhook_prohibitions forbids outright. The tradeoff is therefore forced, not chosen, and the safe side of it is the one taken."
+    },
+    {
+      "id": "OF-8",
+      "finding": "SUSPENSION remains Shape A (split), so an unconsumed closure obligation can coexist with a SUSPENDED account, and a reactivation arriving in that window must not resume on condemned grants.",
+      "disposition": "Resolved by CANCELLATION.INV_STALE_GRANT, which makes 'no unconsumed closure obligation' a PRECONDITION of every transition into ACTIVE_STRIPE and ACTIVE_WITHOUT_STRIPE, refusing with pending_closure_obligation. Recorded as a finding rather than buried in the invariant because it is the one place where Shape A's asynchrony reaches a state OTHER than the one it was gating."
+    },
+    {
+      "id": "OF-9",
+      "finding": "The cancellation capability is the only identity authorized to write commercial_accounts and entitlement_grants in one transaction.",
+      "disposition": "Concentration of privilege, deliberate and bounded. The whole safety argument is the CLOSING-DIRECTION-ONLY restriction, which must be an asserted postcondition on the verb (it cannot open a PLAN grant), not a convention. Recorded so the D-8 reviewer treats that assertion as the gate rather than as documentation."
+    },
+    {
+      "id": "OF-10",
+      "finding": "D-8's cancellation capability role will need the same membership boundary as uellix_cap_commercial, and this authority freezes that boundary only for uellix_cap_commercial.",
+      "disposition": "PROPAGATION OBLIGATION, recorded not resolved. The membership argument is general: ANY policy written TO a capability role is only as strong as the set of roles that can inherit it. D-8's node MUST carry its own ZERO ROLE MEMBERS postcondition with the same pg_auth_members proof; this authority does not pre-author D-8's postconditions because it does not allocate D-8. Recorded so the omission is visible rather than inherited by silence."
+    },
+    {
+      "id": "OF-11",
+      "finding": "This authority requires NOBYPASSRLS, NOCREATEDB, NOCREATEROLE and NOSUPERUSER of a CAPABILITY role, which db/prepared/stella_0008_stripe_webhook_identity.sql asserts only of its LOGIN role.",
+      "disposition": "DELIBERATE STRENGTHENING, stated rather than disguised as precedent. It creates an asymmetry with the shipped uellix_cap_stripe, whose postconditions at :948-956 cover NOLOGIN and zero members but not the forbidden attributes. Whether uellix_cap_stripe should be brought up to the same bar is NOT adjudicated here - it is a change to a shipped prepared package under CAP-03's authority, not this one. Recorded so the asymmetry is a known state rather than a discovered inconsistency."
+    }
+  ],
+
+  "self_check": {
+    "SC-1_no_migration_file": "This artefact creates and edits zero files under db/migrations/**. VERIFIABLE by the diff.",
+    "SC-2_no_ordinal_allocated": "Every migration ordinal appearing in this file (0008, 0011, 0013-0018, 0037, 0068, 0069) appears as a MEASUREMENT of an existing file or inside a prohibition. No ordinal is allocated.",
+    "SC-3_no_ods_allocation": "No ODS addendum version, HPO-ODS grant id or Controller entry is allocated. W2-28 appears nowhere as an allocation; W2-27 appears only as a measurement of scripts/ods-scope.ts:661.",
+    "SC-4_CE3_not_redesigned": "ENTITLEMENT_GRANT target_shape is cited, never modified. This authority adds zero columns, zero sources, zero limit_kinds and zero constraints to it. The only entitlement-side addition is EC-4, an evaluation rule that is monotonically reducing.",
+    "SC-5_amendments_are_explicit": "Five contradictions are named MC-1..MC-5, each with the frozen text, the owner requirement, why it is a contradiction rather than a preference, and the amendment. No frozen clause is altered silently. MC-5 additionally records a reinterpretation this authority's OWN first round committed, rather than quietly correcting it.",
+    "SC-10_transition_closure_is_conjunctive_and_total": "COMMERCIAL_STATE_MACHINE.transition_table_closure.cross_product_6x6 enumerates all 36 ordered pairs with counts LEGAL 18 + NO_OP 5 + ILLEGAL 13 = 36. Every LEGAL pair appears in BOTH the source state's exit_events and the target state's enter_events. FAILS if any LEGAL pair is one-sided, if the counts do not sum to 36, or if the rule is stated disjunctively.",
+    "SC-11_rls_pair_admits_and_intersects": "RLS.decision.policy_pair declares a PERMISSIVE member that admits only uellix_cap_commercial and a RESTRICTIVE member that intersects on app.commercial_account_id, with USING / WITH CHECK stated per command for SELECT, INSERT and UPDATE, no DELETE, no TO PUBLIC, no tenant role, no BYPASSRLS and FORCE RLS preserved. FAILS if any command lacks its applicable clause, if a restrictive policy is described as admitting, or if the pair is reduced to one member.",
+    "SC-13_membership_boundary_is_asserted": "RLS.decision.role.ZERO_ROLE_MEMBERS declares zero role members as an ASSERTED POSTCONDITION with a pg_auth_members catalogue proof keyed on roleid (not member), naming uellix_app and every LOGIN, tenant and operator identity as forbidden grantees; FUTURE_DDL.D-6 carries the same requirement as PC-3 and states that NOLOGIN does not satisfy it. FAILS if the property is described as convention, if the catalogue predicate is keyed on member rather than roleid, or if NOLOGIN is offered as a substitute.",
+    "SC-14_stella_0008_provenance_is_measured": "Every citation of db/prepared/stella_0008_stripe_webhook_identity.sql attributes :938-941 to the LOGIN role uellix_stripe and attributes the capability-role precedent to :948-950 and :951-956, and the places where this authority requires MORE than that precedent say so. FAILS if any site attributes the forbidden-attribute assertion to uellix_cap_stripe.",
+    "SC-12_cancellation_is_one_transaction": "CANCELLATION.atomicity and FAILURE_AND_CONCURRENCY Shape B place the state transition, the subscription-identity clearing and the PLAN grant closures in ONE transaction. FAILS if any conjunct is deferred, if a re-evaluation request is emitted by the cancellation path, or if a state exists in which BOOTSTRAP coexists with a live PLAN grant.",
+    "SC-6_every_state_has_nine_attributes": "Each of the six states declares enter_events, exit_events, commercial_access_result, entitlement_result, stripe_requirements, manual_activation_eligibility, audit_effect, idempotency_key and ordering_rules. FAILS if any state is missing one.",
+    "SC-7_three_layers_separated": "STELLA_RECONCILIATION declares L1, L2 and L3 with distinct owners, distinct enforcement moments and distinct refusal codes. FAILS if any two share a refusal code.",
+    "SC-8_no_stripe_api_call": "No network call was made. Every Stripe behaviour is cited from repository code or frozen authority.",
+    "SC-9_ddl_gated": "FUTURE_DDL.LINEAGE_REDERIVATION_REQUIRED = YES and each of D-1..D-7 is a forward migration; 0068 is explicitly not edited."
+  },
+
+  "companion_manifest": "docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_TEST_MANIFEST_v1.0.0.json, conforming to docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json.",
+
+  "revision_history": {
+    "note": "This artefact has never been merged. PR #139 is DRAFT, so amending v1.0.0 in place is a revision of an unshipped draft, NOT a rewrite of frozen evidence. Nothing below edits a shipped artefact, and the version is not bumped because v1.0.0 was never frozen.",
+    "R1": "Commit 5d241bfe. First materialization of HPO-B; MC-1..MC-4; six-state machine; CB-1..CB-9.",
+    "R2": {
+      "cause": "Independent audit AW returned BLOCKING=4, AUDIT_UNKNOWN=0.",
+      "B-1_transition_closure": "R1 asserted a conjunctive closure rule and violated it four times. Three edges appeared only in source exits (ACTIVE_STRIPE to ACTIVE_STRIPE, ACTIVE_WITHOUT_STRIPE to BOOTSTRAP, ACTIVE_WITHOUT_STRIPE to ACTIVE_STRIPE) and one appeared only in target enters (CLOSED to CLOSED, via the unenumerated phrase 'from any state'). Corrected by completing both enumerations and by replacing the prose rule with a total 6x6 cross-product. The rule stays CONJUNCTIVE; it was not weakened to exit-OR-enter.",
+      "B-2_rls": "R1 treated a RESTRICTIVE policy as row-admitting, which PostgreSQL never does. Corrected to an explicit PERMISSIVE + RESTRICTIVE pair with per-command USING / WITH CHECK semantics.",
+      "B-3_atomic_cancellation": "R1 reinterpreted HPO-B.6's 'together' as 'eventually'. Recorded as MC-5 and corrected to one atomic durable transaction, with INV-STALE-GRANT closing the adjacent Shape-A exposure.",
+      "B-4_manifest_schema": "The companion manifest was rewritten into strict UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0 shape. Substantive tests preserved; representation corrected; controls added for the policy pair, cancellation atomicity, stale-grant reappearance and full transition closure.",
+      "mechanical_corrections": "Dangling control reference MC-T-PAST-DUE repointed to N-06; R-01's stale 'RESTRICTIVE policy admits' wording corrected; self_check grown to SC-1..SC-12; OPEN_FINDINGS grown by OF-7, OF-8, OF-9; companion_manifest declared."
+    },
+    "R3": {
+      "cause": "Independent focused audit BH returned RESULT=FAIL, BLOCKING=1, AUDIT_UNKNOWN=0. BH independently proved all four AW blockers CLOSED; those surfaces are NOT recomputed or redesigned here.",
+      "scope": "BOUNDED SECURITY CORRECTION. One new blocker plus two nonblocking precisions. Nothing in the state machine, the closure counts, first binding, event ordering, past_due, atomic cancellation, PLAN-grant closure, the Free=10 prohibition, CE-3's shape or lineage non-allocation is touched.",
+      "blocker_membership_boundary": "R2 froze uellix_cap_commercial's attributes but never bounded WHO MAY INHERIT IT. A PostgreSQL policy written TO a role applies through role membership, so a foreign login granted membership would inherit P1's permissive admission and combine it with a caller-controlled app.commercial_account_id. The row bound answers WHICH ROW, never WHO MAY ACTIVATE THE ROLE. ZERO ROLE MEMBERS is now an asserted postcondition with a pg_auth_members catalogue proof keyed on roleid, named in RLS.decision.role, argued in RLS.decision.membership_boundary_is_a_security_boundary_of_the_policy_pair, and carried into FUTURE_DDL.D-6 as PC-3.",
+      "provenance_correction": "R1 and R2 cited stella_0008:938 as the CAPABILITY-role precedent in four places. Re-measured at AS_OF: :938-941 asserts the forbidden attributes for uellix_stripe, the LOGIN role; the capability-role precedent is :948-950 (NOLOGIN) and :951-956 (zero members). All four sites corrected, and the places where this authority requires MORE than the precedent now say so instead of borrowing authority they do not have.",
+      "NB-1_precision": "R2's rationale claimed USING alone would let an admitted row be rewritten outside the bound. FALSE - PostgreSQL reuses USING as WITH CHECK when WITH CHECK is absent. The claim is withdrawn and replaced with the real reasons both clauses are written (explicitness, auditability via pg_policies.with_check, drift resistance). The DDL design is UNCHANGED: both clauses remain mandatory.",
+      "NB-2_precision": "M-16's non-vacuity condition made explicit and imperative, matching the M-02 pattern. Transition closure is not otherwise re-opened.",
+      "manifest": "One negative control (N-29) and one mutation control (M-18) added for the membership boundary; N-13 extended to carry the zero-members assertion and its corrected provenance. Strict schema preserved."
+    }
+  },
+
+  "final_state": {
+    "RESULT": "FROZEN",
+    "authority_class": "TIER_A_COMMERCIAL_AUTHORITY",
+    "supersedes": "NOTHING. It CONSUMES COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0 and AMENDS it in exactly the places named MC-1..MC-4. MC-5 amends NOT the preserved authority but this authority's OWN first round, and is recorded as a contradiction rather than edited away silently.",
+    "next_authorized_action": "PR139_COMMERCIAL_AUTHORITY_FOCUSED_R2_INDEPENDENT_AUDIT"
+  }
+}
