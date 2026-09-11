@@ -84,7 +84,26 @@
       "distinct_policies": 105,
       "with_superadmin": 97,
       "superadmin_outside_union": 0,
-      "note": "Zero outside the union — mechanically confirms db/policies content is sourced into migrations 0031/0032 and adds no independent surface."
+      "note": "db/policies adds ZERO NEW SUPERADMIN DISJUNCTS to the census union. That is the precise and only claim supported by the measurement, and it is what preserves the closed-world total of 140.",
+      "precision_correction_r2": {
+        "supersedes": "R1 stated that this 'mechanically confirms db/policies content is sourced into migrations 0031/0032 and adds no independent surface'. That was TOO STRONG and is withdrawn.",
+        "measured": {
+          "distinct_policy_keys": 105,
+          "keys_present_in_effective_migration_lineage": 100,
+          "keys_ABSENT_from_effective_migration_lineage": 5,
+          "absent_keys_carrying_a_superadmin_disjunct": 1,
+          "absent_keys_without_a_superadmin_disjunct": 4
+        },
+        "why_the_union_total_is_unchanged": "The single absent key that carries a superadmin disjunct is marketing_leads.super_admins_read_marketing_leads, which is ALREADY counted in the union under the HOSTED_BASELINE_ONLY lineage. It is therefore not a new disjunct, and the closed-world total remains 140. This is also why the automated check reported superadmin_outside_union = 0: the key was already in the union set, contributed by the baseline.",
+        "orphan_keys": [
+          { "key": "marketing_leads.super_admins_read_marketing_leads", "superadmin": true, "first_file": "db/policies/008_marketing_leads_rls.sql", "note": "Already in the union via HOSTED_BASELINE_ONLY. Adds no new disjunct. Corroborates CEN-01 from a SECOND non-migration lineage." },
+          { "key": "marketing_leads.anon_insert_marketing_leads", "superadmin": false, "first_file": "db/policies/008_marketing_leads_rls.sql" },
+          { "key": "marketing_leads.authenticated_insert_marketing_leads", "superadmin": false, "first_file": "db/policies/008_marketing_leads_rls.sql" },
+          { "key": "governed_model_registry.governed_model_registry_select", "superadmin": false, "first_file": "db/policies/009_governed_model_registry_rls.sql", "note": "The table has NO policies at all in the effective migration lineage." },
+          { "key": "proxy_material_fields_registry.proxy_material_fields_registry_select", "superadmin": false, "first_file": "db/policies/010_proxy_material_fields_registry_rls.sql", "note": "The table has NO policies at all in the effective migration lineage." }
+        ],
+        "consequence": "db/policies is NOT merely a mirror of 0031/0032. Five of its keys have no counterpart in the effective migration lineage, and two of its tables (governed_model_registry, proxy_material_fields_registry) have no effective migration policies whatsoever. A successor MUST NOT treat db/policies as redundant with the migration lineage, even though it contributes no new superadmin disjunct."
+      }
     },
     "db_prepared": {
       "dir": "db/prepared",
@@ -1976,6 +1995,11 @@
       "id": "CEN-05",
       "finding": "The census measures declared SQL, not a live database. No pg_policies snapshot of staging or production was taken under this authority.",
       "disposition": "UNKNOWN — the successor MUST reconcile against a live snapshot before claiming closure. Fails closed."
+    },
+    {
+      "id": "CEN-06",
+      "finding": "R2 PRECISION. db/policies is not a pure mirror of the migration lineage: 5 of its 105 keys have no counterpart in the effective migration lineage, and two of its tables (governed_model_registry, proxy_material_fields_registry) have no effective migration policies at all. Only ONE orphan carries a superadmin disjunct — marketing_leads.super_admins_read_marketing_leads — and it is already counted under HOSTED_BASELINE_ONLY.",
+      "disposition": "The closed-world total of 140 is UNCHANGED: db/policies adds ZERO NEW superadmin disjuncts. But the R1 claim that it 'adds no independent surface' is WITHDRAWN — a successor MUST NOT treat db/policies as redundant with db/migrations. Corroborates CEN-01 from a second non-migration lineage."
     }
   ]
 }

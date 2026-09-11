@@ -129,6 +129,11 @@
       "id": "AV-N-14",
       "description": "NON-HUMAN ACTOR refusal: a service account, automation, scheduled job or machine identity is refused as either destructive-deletion SoD actor, and refused as issued_by or issued_to on a support capability (SD-02, SC fields issued_by/issued_to).",
       "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-N-15",
+      "description": "APPROVER'S OWN REASON (SD-04): the approval is REFUSED server-side when the approval reason is absent, empty, or whitespace-only — asserted at the service boundary, not only in the UI. Separately, the approval is REFUSED when its reason is DEFAULTED OR DERIVED from the requester's reason, since SD-04 forbids that explicitly. The second assertion is the load-bearing one: at base 88d95c65 the sole caller supplies a non-empty synthesized template literal, so an emptiness check alone passes vacuously.",
+      "test_file": "UNKNOWN"
     }
   ],
   "mutation_controls": [
@@ -170,6 +175,11 @@
     {
       "id": "AV-M-08",
       "description": "REVOCATION-AS-DELETE: implementing revocation as a row delete rather than a durable state change must turn the suite RED via AV-N-03's SENTINEL-REVOKED-CAPABILITY-ID assertion, proving a revoked capability stays distinguishable from one that never existed (SC-18).",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "AV-M-09",
+      "description": "SYNTHESIZED-REASON VACUITY (SD-04): replacing the approver-supplied reason input with a value derived from the requester's reason — the exact shape present at base 88d95c65, a non-empty template literal — must turn the suite RED via AV-N-15. This mutation exists because an emptiness-only check CANNOT catch it: the synthesized string always passes. It also guards the audit-integrity consequence, since that string is what lands in audit_logs.reason and afterJson.deleteReason and would otherwise credit the requester's justification to the approval.",
       "test_file": "UNKNOWN"
     }
   ],

@@ -110,8 +110,20 @@ taxonomy reads, and two self-scoped `users` writes.
 | `db/prepared/**` only | 9 |
 | **closed world (union)** | **140** |
 
-`db/policies/**` adds **zero** outside the union — mechanically confirming its
-content is sourced into migrations 0031/0032.
+`db/policies/**` adds **zero new superadmin disjuncts** to the union — which is
+what preserves the total of 140.
+
+That is the *precise* claim, and it is narrower than it first looks. **R2
+correction:** `db/policies` is **not** a pure mirror of the migration lineage.
+Of its 105 keys, **100 match an effective migration policy and 5 do not**; two
+of its tables — `governed_model_registry` and `proxy_material_fields_registry` —
+have **no effective migration policies at all**. Exactly one orphan carries a
+superadmin disjunct (`marketing_leads.super_admins_read_marketing_leads`), and
+it is **already counted** under `HOSTED_BASELINE_ONLY` — which is precisely why
+the automated check reported zero outside the union. **The 140 total is
+unchanged**, but a successor must not treat `db/policies` as redundant with
+`db/migrations`. It also corroborates the `marketing_leads` finding from a
+*second* non-migration lineage.
 
 Two consequences worth stating plainly:
 
@@ -236,13 +248,49 @@ Measured at `lib/projects/service.ts` `approveProjectDeletion()` (line 289):
 
 | clause | status today |
 |---|---|
-| SD-04 reason | **satisfied** — required and recorded |
 | SD-05 typed confirmation | **satisfied** — exact literal `'ELIMINAR'`, strictly compared |
-| SD-06 durable audit | **satisfied** — `PROJECT_DELETION_APPROVED` with actor, reason, time |
+| SD-06 durable audit | **PARTIAL** — actor, action and time satisfied; **assurance evidence VIOLATED** |
+| SD-04 reason (approver's own) | **VIOLATED** — no validation, and the reason is synthesized from the requester's |
 | SD-01 requester ≠ approver | **VIOLATED** — no comparison exists |
 | SD-03 fresh AAL2 | **VIOLATED** — no assurance check on either path |
 | SD-07 no tenant-role substitution | **VIOLATED** — the *only* gate is the tenant role |
 | SD-02 both actors human | **VIOLATED** — no actor-kind check |
+
+**SD-04 (R2 correction — was previously recorded as satisfied).**
+`approveProjectDeletion()` performs **no** server-side check that `deleteReason`
+is present or non-empty. The contrast sits in the same file:
+`requestProjectDeletion()` *does* validate, with
+`if (!reason || reason.trim().length === 0)`; the approval path has no
+equivalent, and `logAuditAction()` validates only `entityType`, `entityId` and
+`action`.
+
+Worse, the sole caller never asks the approver for a reason at all —
+`app/admin/project-deletions/client.tsx:53` **synthesizes** it:
+
+> `` `Aprobado por SuperAdmin. Motivo original: ${selectedRequest.deletionReason}` ``
+
+SD-04 already anticipated exactly this: *"the approval's reason MUST NOT be
+defaulted from the request's."* Two consequences follow.
+
+- **A server-side non-empty check alone would be vacuous.** The synthesized
+  value is a non-empty template literal, so it always passes. Closure needs
+  **both** the validation **and** an approver-supplied input; either alone
+  leaves the clause unmet.
+- **The audit trail misattributes.** That synthesized string is written to both
+  `audit_logs.reason` and `afterJson.deleteReason`, so the durable record
+  credits the *requester's* justification to the *approval*.
+
+Disposition: **`CODE_FIX_ONLY`, zero DDL** — `projects.delete_reason` and
+`audit_logs.reason` already exist and are already written.
+
+**SD-06 (R2 qualification).** The durable record carries **no assurance
+evidence**: `audit_logs` has no AAL/assurance/factor/amr column — its columns
+are `action`, `actor_user_id`, `after_json`, `before_json`, `created_at`,
+`entity_id`, `entity_type`, `id`, `ip_address`, `organization_id`,
+`project_id`, `reason`, `user_agent` — and `logAuditAction()` writes no such
+field. Actor, action and time remain satisfied; the assurance portion is
+`REQUIRES_NEW_SUBSTRATE`, blocked on the MFA gap and FD-03. **No MFA substrate
+is assumed to exist.**
 
 The sharpest finding in this authority:
 

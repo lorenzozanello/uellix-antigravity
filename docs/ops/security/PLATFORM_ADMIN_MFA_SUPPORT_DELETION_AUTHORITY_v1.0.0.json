@@ -235,11 +235,25 @@
     "measured_current_state": {
       "site": "lib/projects/service.ts approveProjectDeletion() (declared at line 289)",
       "satisfied_today": [
-        "SD-04 reason — deleteReason is required and is recorded.",
         "SD-05 typed confirmation — the approver must supply the exact literal 'ELIMINAR'; it is compared strictly.",
-        "SD-06 durable audit — logAuditAction writes PROJECT_DELETION_APPROVED with actor, reason and timestamp."
+        "SD-06 durable audit, PARTIALLY — logAuditAction writes a durable PROJECT_DELETION_APPROVED row carrying actor (actor_user_id), action and time (created_at). The ACTOR, ACTION and TIME components are satisfied. The ASSURANCE-EVIDENCE component is NOT (see violated_today), and the REASON component is satisfied only in the weak sense that a string is stored — that string is synthesized, not approver-supplied (see the SD-04 entry in violated_today)."
       ],
       "violated_today": [
+        {
+          "clause": "SD-04 reason (approver's own)",
+          "finding": "approveProjectDeletion() performs NO server-side validation that deleteReason is present or non-empty. It validates membership, the typed confirmation, project existence and an active request — and never the reason. The contrast is direct and in the same file: requestProjectDeletion() DOES validate its reason with `if (!reason || reason.trim().length === 0)`; the approval path has no equivalent. logAuditAction() likewise validates only entityType, entityId and action, never reason.",
+          "caller_finding": "The sole caller never asks the approver for a reason at all. app/admin/project-deletions/client.tsx:53 SYNTHESIZES it from a fixed template plus the REQUESTER's original reason: `Aprobado por SuperAdmin. Motivo original: ${selectedRequest.deletionReason}`. There is no approver reason input in the dialog. app/app/projects/projects.actions.ts passes that synthesized string straight through.",
+          "clause_text_already_anticipated_this": "SD-04 states: 'Both the request and the approval carry their own reason; the approval's reason MUST NOT be defaulted from the request's.' The measured behaviour is precisely the prohibited defaulting.",
+          "precision": "A server-side non-empty check alone would be VACUOUS against this caller: the synthesized value is a non-empty template literal and therefore always passes such a check. The defect is not merely missing validation — it is that no approver-supplied reason exists to validate. Closure REQUIRES BOTH a server-side non-empty validation AND an approver-supplied input; either alone leaves the clause unmet.",
+          "audit_integrity_consequence": "Because the synthesized string is written to both audit_logs.reason and afterJson.deleteReason, the durable audit record attributes the REQUESTER's reason to the APPROVAL. The audit trail therefore misrepresents who justified the destructive act.",
+          "disposition": "CODE_FIX_ONLY. ZERO_DDL — projects.delete_reason and audit_logs.reason already exist and are already written."
+        },
+        {
+          "clause": "SD-06 durable audit — ASSURANCE-EVIDENCE COMPONENT ONLY",
+          "finding": "The durable record carries NO assurance evidence. audit_logs has no AAL, assurance, factor or amr column — its full column set is action, actor_user_id, after_json, before_json, created_at, entity_id, entity_type, id, ip_address, organization_id, project_id, reason, user_agent. logAuditAction() writes no such field, and the deletion call sites pass afterJson: { deletedAt, deleteReason } only.",
+          "scope_of_this_entry": "This entry qualifies ONLY the assurance-evidence portion of SD-06. The actor, action and time components ARE satisfied today and remain listed in satisfied_today. The reason component is addressed by the SD-04 entry above.",
+          "disposition": "REQUIRES_NEW_SUBSTRATE. Blocked on mfa_aal2 and on FD-03 — no assurance level reaches the database at all, so there is nothing to record. No MFA substrate is asserted or assumed here to exist."
+        },
         {
           "clause": "SD-01 requester != approver",
           "finding": "approveProjectDeletion() performs NO comparison between the approving user and the requesting user. One person holding the tenant role 'super_admin' can both request and approve the same deletion.",
@@ -399,7 +413,8 @@
       { "id": "FD-05", "need": "RESTRICTIVE policy layer in the APPLIED lineage.", "why": "RS-05 — zero applied RESTRICTIVE policies exist.", "ddl": "REQUIRED" },
       { "id": "FD-06", "need": "Disposition of current_user_is_super_admin() and users.is_super_admin.", "why": "RS-06 — closing callers without disposing of the mechanism leaves it available to future policies.", "ddl": "REQUIRED" },
       { "id": "FD-07", "need": "Enable RLS on marketing_leads in the migration lineage.", "why": "CEN-01 — the table is created with no RLS and no policies; its only policies exist in the hosted baseline.", "ddl": "REQUIRED" },
-      { "id": "FD-08", "need": "NONE for destructive-deletion requester != approver.", "why": "SD-01 is fully expressible today: projects.deletion_requested_by exists, is written, and is CHECK-guaranteed non-null at approval time.", "ddl": "NOT_REQUIRED", "disposition": "CODE_FIX_ONLY" }
+      { "id": "FD-08", "need": "NONE for destructive-deletion requester != approver.", "why": "SD-01 is fully expressible today: projects.deletion_requested_by exists, is written, and is CHECK-guaranteed non-null at approval time.", "ddl": "NOT_REQUIRED", "disposition": "CODE_FIX_ONLY" },
+      { "id": "FD-09", "need": "NONE for the approver's own non-empty reason (SD-04).", "why": "R2. projects.delete_reason and audit_logs.reason already exist and are already written; only a server-side non-empty validation and an approver-supplied input are missing. NOTE: the validation alone is VACUOUS against the current caller, whose synthesized template literal always passes it — both halves are required.", "ddl": "NOT_REQUIRED", "disposition": "CODE_FIX_ONLY" }
     ]
   },
 
