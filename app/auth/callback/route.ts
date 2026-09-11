@@ -18,19 +18,26 @@ export async function GET(request: Request) {
       // Sync user profile (idempotent)
       await syncUserProfile(data.user)
 
-      if (next) {
-        return NextResponse.redirect(new URL(next, request.url))
-      }
-
-      // PACKET B — B0, evaluated AFTER `next` (N-B-5: a password-recovery or
-      // other caller-supplied safe target must never be outranked by the
-      // gate — this callback serves recovery-return, OAuth-return, magic
-      // link and confirmation-link uniformly, with no mechanism field
-      // consulted) and BEFORE the enumerator below could ever be reached for
-      // an unverified subject.
+      // PACKET B — B0, evaluated BEFORE `next` (IM audit BLOCKING-1 / N-BNS-6:
+      // a caller-supplied safe target must NEVER outrank the gate — this
+      // callback serves recovery-return, OAuth-return, magic link and
+      // confirmation-link uniformly, with no mechanism field consulted). A
+      // safe `next` is CARRIED FORWARD across the refusal — never honoured
+      // early — so the journey resumes once the subject is verified
+      // (B4.invitation_target_preservation, N-BNS-6). Carrying forward is
+      // not the same act as honouring early: the target is still validated
+      // here by the EXISTING isSafeRedirectPath, and no new redirect-target
+      // vocabulary is introduced (X-B-10).
       const principal = await loadRequestPrincipal()
       if (principal && !principal.emailVerified) {
-        return NextResponse.redirect(new URL(VERIFY_EMAIL_PATH, request.url))
+        const destination = next
+          ? `${VERIFY_EMAIL_PATH}?next=${encodeURIComponent(next)}`
+          : VERIFY_EMAIL_PATH
+        return NextResponse.redirect(new URL(destination, request.url))
+      }
+
+      if (next) {
+        return NextResponse.redirect(new URL(next, request.url))
       }
 
       // Smart redirect based on org membership.

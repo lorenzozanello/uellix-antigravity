@@ -51,14 +51,24 @@ vi.mock('next/navigation', () => ({
   redirect: (p: string) => mockRedirect(p),
 }))
 
+// signup()/login() call this outside a real request scope in this harness;
+// Next.js's revalidatePath needs a static-generation store that only exists
+// inside an actual request. No assertion in this file depends on real cache
+// invalidation.
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}))
+
 const mockGetUser = vi.fn()
 const mockExchangeCodeForSession = vi.fn()
+const mockSignUp = vi.fn()
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () =>
     Promise.resolve({
       auth: {
         getUser: () => mockGetUser(),
         exchangeCodeForSession: (code: string) => mockExchangeCodeForSession(code),
+        signUp: (credentials: unknown) => mockSignUp(credentials),
       },
     }),
 }))
@@ -180,6 +190,7 @@ vi.mock('@/lib/audit/logger', () => ({ logAuditAction: vi.fn(async () => undefin
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import VerifyEmailPage from '@/app/(public)/verify-email/page'
 import { GET as authCallback } from '@/app/auth/callback/route'
+import { signup } from '@/app/(public)/login/actions'
 
 /* -------------------------------------------------------------------------- */
 /* Fixtures                                                                    */
@@ -246,7 +257,7 @@ beforeEach(() => {
 describe('P-B-8: /verify-email is terminal for an authenticated unverified subject', () => {
   it('renders (no redirect) and shows the pending address, not the subject id', async () => {
     unverified()
-    const element = await VerifyEmailPage()
+    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
     expect(mockRedirect).not.toHaveBeenCalled()
     const markup = JSON.stringify(element)
     expect(markup).toContain(USER_ROW.email)
@@ -266,16 +277,212 @@ describe('P-B-8: /verify-email is terminal for an authenticated unverified subje
 /* -------------------------------------------------------------------------- */
 
 describe('P-B-9: /verify-email is not a dead end', () => {
-  it('a now-verified subject is redirected to /app/dashboard', async () => {
+  it('a now-verified subject is redirected to /app/dashboard (FIRST assertion — UNCHANGED, not superseded)', async () => {
     verified()
-    const location = await locationOf(() => VerifyEmailPage())
+    const location = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
     expect(location).toBe('/app/dashboard')
   })
 
-  it('an unauthenticated visitor is redirected to /login', async () => {
+  // AM-B-S2 (docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_
+  // AUTHORITY_AMENDMENT_v1.0.0.json): P-B-9's SECOND assertion — that an
+  // UNAUTHENTICATED visitor is redirected to /login — is SUPERSEDED. This is
+  // the ONE permitted edit to a frozen control, and it is bounded to exactly
+  // this assertion; the first assertion above is untouched. Replaced by
+  // P-BNS-2/P-BNS-3 below.
+  it('AM-B-S2: an unauthenticated visitor RENDERS the generic state and is NOT redirected to /login', async () => {
     loggedOut()
-    const location = await locationOf(() => VerifyEmailPage())
-    expect(location).toBe('/login')
+    const location = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(location, 'AM-B-S2 supersedes the redirect-to-/login behaviour for the no-session case').toBeNull()
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* RAT-EV-01 — the no-session state (docs/ops/tenancy/                       */
+/* TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_{AUTHORITY,TEST_MANIFEST}_  */
+/* AMENDMENT_v1.0.0.json)                                                    */
+/* -------------------------------------------------------------------------- */
+
+const SIGNUP_RATE_LIMIT_EMAIL_COUNTER = { n: 0 }
+function freshSignupFormData(): FormData {
+  SIGNUP_RATE_LIMIT_EMAIL_COUNTER.n += 1
+  const fd = new FormData()
+  fd.set('email', `no-session-${SIGNUP_RATE_LIMIT_EMAIL_COUNTER.n}@example.test`)
+  fd.set('password', 'correct-horse-battery')
+  return fd
+}
+
+describe('P-BNS-1: successful signup with NO session reaches and RENDERS the generic state', () => {
+  it('signup(user != null, session == null) -> /verify-email -> RENDER, never /login', async () => {
+    mockSignUp.mockResolvedValue({
+      data: { user: { id: USER_ID, email_confirmed_at: null }, session: null },
+      error: null,
+    })
+
+    const hop1 = await locationOf(() => signup(freshSignupFormData()))
+    expect(hop1).toBe('/verify-email')
+
+    // Hop 2 — the no-session destination itself. No cookie was ever set (no
+    // session), so the principal cannot resolve.
+    loggedOut()
+    const hop2 = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(hop2, 'the walk did not terminate by rendering').toBeNull()
+  })
+})
+
+describe('P-BNS-2 / P-BNS-3: a direct anonymous visit and an expired-session visit are FORCED to be identical (AM-B-N2)', () => {
+  it('anonymous (no session at all) renders the generic state', async () => {
+    loggedOut()
+    const location = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(location).toBeNull()
+  })
+
+  it('expired/rejected session renders BYTE-IDENTICAL output to the anonymous case', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: { message: 'JWT expired' } })
+    const expiredElement = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+
+    loggedOut()
+    const anonymousElement = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+
+    expect(JSON.stringify(expiredElement)).toBe(JSON.stringify(anonymousElement))
+  })
+
+  it('the generic branch never touches the selected-organization carrier', () => {
+    const source = read('app/(public)/verify-email/page.tsx')
+    expect(source).not.toMatch(/selected-organization/)
+  })
+})
+
+describe('P-BNS-4: an authenticated unverified subject sees ONLY its own subject identity, sourced from the principal', () => {
+  it('shows the principal\'s own address, ignoring a different address supplied in the query string', async () => {
+    unverified()
+    const element = await VerifyEmailPage({
+      searchParams: Promise.resolve({ next: undefined, email: 'attacker-supplied@example.test' } as never),
+    })
+    const markup = JSON.stringify(element)
+    expect(markup).toContain(USER_ROW.email)
+    expect(markup).not.toContain('attacker-supplied@example.test')
+  })
+
+  it('discloses no tenancy: no organization name appears', async () => {
+    unverified()
+    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+    expect(JSON.stringify(element)).not.toContain(ORG_ROW.name)
+  })
+})
+
+describe('P-BNS-5: an authenticated VERIFIED subject exits with Packet A semantics intact, no auto-selection', () => {
+  it('exits to /app/dashboard (deferring to C4/requireOrganizationAccess, not selecting anything itself)', async () => {
+    verified()
+    const location = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(location).toBe('/app/dashboard')
+  })
+
+  it('honours a carried, validated `next` over the default', async () => {
+    verified()
+    const location = await locationOf(() =>
+      VerifyEmailPage({ searchParams: Promise.resolve({ next: '/app/organization' }) })
+    )
+    expect(location).toBe('/app/organization')
+  })
+
+  it('rejects an UNSAFE next and falls back to the default', async () => {
+    verified()
+    const location = await locationOf(() =>
+      VerifyEmailPage({ searchParams: Promise.resolve({ next: 'https://evil.example/phish' }) })
+    )
+    expect(location).toBe('/app/dashboard')
+  })
+
+  it('performs no tenancy selection of its own: does not import the enumerator or the carrier writer', () => {
+    const source = read('app/(public)/verify-email/page.tsx')
+    expect(source).not.toMatch(/listSelectableMemberships|setSelectedOrganization|selected-organization/)
+  })
+})
+
+describe('N-BNS-1: no redirect at all is issued for any of the three no-session conditions', () => {
+  it.each([
+    ['anonymous', () => loggedOut()],
+    ['post-signup no-session', () => loggedOut()],
+    ['expired session', () => mockGetUser.mockResolvedValue({ data: { user: null }, error: { message: 'expired' } })],
+  ])('%s: response is a RENDER, not a redirect to /login or anywhere else', async (_label, setup) => {
+    setup()
+    const location = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(location).toBeNull()
+  })
+})
+
+describe('N-BNS-2: no identity can be injected from the request, including for display only', () => {
+  const SENTINEL = 'sentinel-injected-value@example.test'
+
+  it('a sentinel supplied via searchParams never appears in the no-session render', async () => {
+    loggedOut()
+    const element = await VerifyEmailPage({
+      searchParams: Promise.resolve({ email: SENTINEL, user: SENTINEL } as never),
+    })
+    expect(JSON.stringify(element)).not.toContain(SENTINEL)
+  })
+})
+
+describe('N-BNS-3: no query parameter can select which representation is rendered', () => {
+  it.each(['pending=1', 'signup=1', 'state=authenticated', 'verified=true'])(
+    'no-session + ?%s still renders the GENERIC state, never the subject-aware one',
+    async (paramPair) => {
+      loggedOut()
+      const [key, value] = paramPair.split('=')
+      const element = await VerifyEmailPage({
+        searchParams: Promise.resolve({ [key]: value } as never),
+      })
+      expect(JSON.stringify(element)).not.toContain(USER_ROW.email)
+    }
+  )
+
+  it('an authenticated unverified principal still renders the SUBJECT-AWARE state regardless of a suppressing param', async () => {
+    unverified()
+    const element = await VerifyEmailPage({
+      searchParams: Promise.resolve({ generic: '1', anonymous: 'true' } as never),
+    })
+    expect(JSON.stringify(element)).toContain(USER_ROW.email)
+  })
+})
+
+describe('N-BNS-4: the generic state discloses no email, no account and no tenancy', () => {
+  it('contains none of: an email address, the subject id, or the organisation name', async () => {
+    loggedOut()
+    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+    const markup = JSON.stringify(element)
+    expect(markup).not.toContain(USER_ROW.email)
+    expect(markup).not.toContain(USER_ID)
+    expect(markup).not.toContain(ORG_ROW.name)
+  })
+
+  it('contains no second-person possessive presupposing an account ("tu correo", "tu cuenta")', async () => {
+    loggedOut()
+    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+    const markup = JSON.stringify(element)
+    expect(markup).not.toMatch(/tu correo|tu cuenta|tu enlace/i)
+  })
+})
+
+describe('N-BNS-5: there is no resend action in any state', () => {
+  it('the generic (no-session) state has no form and no button of any kind', async () => {
+    loggedOut()
+    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+    const markup = JSON.stringify(element)
+    expect(markup).not.toMatch(/"form"|"button"/)
+  })
+
+  it('the subject-aware (authenticated unverified) state has exactly the sign-out form, nothing that re-sends mail', async () => {
+    unverified()
+    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+    const markup = JSON.stringify(element)
+    // The only form present posts to /auth/signout — never to a resend
+    // endpoint, and no fetch/action string mentioning resend exists anywhere.
+    expect(markup).not.toMatch(/resend|reenviar/i)
+  })
+
+  it('the page source contains no resend call, no provider write and no route handler for resending', () => {
+    const source = stripComments(read('app/(public)/verify-email/page.tsx'))
+    expect(source).not.toMatch(/resend|reenviar|resendVerification/i)
   })
 })
 
@@ -296,10 +503,45 @@ describe('T-B-1: /login -> /app/dashboard -> /verify-email terminates in two hop
     hops.push(hop1!)
 
     // Hop 2: the destination itself. Must RENDER, not redirect again.
-    const hop2 = await locationOf(() => VerifyEmailPage())
+    const hop2 = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
     expect(hop2, 'the walk did not terminate — /verify-email redirected again').toBeNull()
 
     expect(new Set(hops).size, 'a pathname repeated — the graph cycles').toBe(hops.length)
+  })
+
+  // P-BNS-6: the parent's three-behaviour enumeration is extended to FOUR
+  // states (ROUTING_TERMINATION). Not a weakening of T-B-1 — its assertion
+  // (every walk terminates, no repeated state) is unchanged; only the driven
+  // edge set grows to cover the state RAT-EV-01 now names.
+  it('P-BNS-6: state B (signup, no session) terminates at length two: signup -> /verify-email -> RENDER', async () => {
+    mockSignUp.mockResolvedValue({
+      data: { user: { id: USER_ID, email_confirmed_at: null }, session: null },
+      error: null,
+    })
+    const hops: string[] = []
+
+    const hop1 = await locationOf(() => signup(freshSignupFormData()))
+    expect(hop1).toBe('/verify-email')
+    hops.push(hop1!)
+
+    loggedOut()
+    const hop2 = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(hop2).toBeNull()
+
+    expect(new Set(hops).size).toBe(hops.length)
+  })
+
+  it('P-BNS-6: state A (anonymous) terminates at length zero: a direct visit RENDERS immediately', async () => {
+    loggedOut()
+    const location = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(location).toBeNull()
+  })
+
+  it('P-BNS-6: state D (verified) terminates at length one: redirect out of the contract, never back into it', async () => {
+    verified()
+    const location = await locationOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(location).not.toBe('/verify-email')
+    expect(location).not.toBeNull()
   })
 })
 
@@ -307,8 +549,59 @@ describe('T-B-1: /login -> /app/dashboard -> /verify-email terminates in two hop
 /* N-B-5 — password recovery cannot be trapped by the gate                   */
 /* -------------------------------------------------------------------------- */
 
-describe('N-B-5: password recovery cannot bypass, or be bypassed by, the gate', () => {
-  it('the callback follows a safe `next` param BEFORE B0, even for an unverified subject, even when next names a protected path', async () => {
+describe('N-B-5 / N-BNS-6 / N-BNS-7: a safe `next` NEVER outranks B0 — the corrected direction', () => {
+  // IM's audit of PR136 R1 found the FIRST version of this test asserted the
+  // OPPOSITE of the frozen control: it affirmed that a safe `next` was
+  // honoured BEFORE B0, which is exactly the shape N-B-5 exists to catch. An
+  // inverted test is the most dangerous defect class in this packet because
+  // it is GREEN. This block asserts the frozen semantic in its ORIGINAL
+  // direction: N_B_5_NOT_AMENDED (the no-session authority amendment leaves
+  // N-B-5 untouched) and N-BNS-6/N-BNS-7 (docs/ops/tenancy/
+  // TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_TEST_MANIFEST_AMENDMENT_
+  // v1.0.0.json) restate it precisely because IM measured an implementation
+  // that got it backwards.
+
+  it.each([
+    ['a next naming a protected path', '/reset-password'],
+    ['a next naming an unprotected path', '/app/dashboard'],
+  ])('N-BNS-6: unverified + safe next (%s) -> /verify-email, NEVER the next target', async (_label, nextPath) => {
+    unverified()
+    mockExchangeCodeForSession.mockResolvedValue({
+      data: { user: { id: USER_ID, email_confirmed_at: null } },
+      error: null,
+    })
+
+    const request = new Request(
+      `https://example.test/auth/callback?code=abc123&next=${encodeURIComponent(nextPath)}`
+    )
+    const response = await authCallback(request)
+    const location = response.headers.get('location') ?? ''
+    expect(location).toContain('/verify-email')
+    expect(location).not.toContain(nextPath)
+  })
+
+  it('N-BNS-6: the next target is CARRIED FORWARD across the refusal, not discarded, so the journey can resume after confirmation', async () => {
+    unverified()
+    mockExchangeCodeForSession.mockResolvedValue({
+      data: { user: { id: USER_ID, email_confirmed_at: null } },
+      error: null,
+    })
+
+    const request = new Request(
+      'https://example.test/auth/callback?code=abc123&next=%2Finvite%2Faccept%3Ftoken%3Dabc'
+    )
+    const response = await authCallback(request)
+    const location = response.headers.get('location') ?? ''
+    expect(location).toContain('/verify-email')
+    // Carried forward as a query parameter on the refusal destination — NOT
+    // honoured as the redirect target itself (that would be the inversion).
+    expect(location).toContain(encodeURIComponent('/invite/accept?token=abc'))
+  })
+
+  it('N-BNS-7 (= corrected N-B-5, recovery case): the ORIGINAL semantic — refusal, not admission', async () => {
+    // Same fixture shape as the recovery-return path: an unverified subject
+    // arriving through the callback with a safe next naming a protected
+    // path. The frozen control asserts the REFUSAL.
     unverified()
     mockExchangeCodeForSession.mockResolvedValue({
       data: { user: { id: USER_ID, email_confirmed_at: null } },
@@ -319,6 +612,19 @@ describe('N-B-5: password recovery cannot bypass, or be bypassed by, the gate', 
     const response = await authCallback(request)
     expect(response.status).toBeGreaterThanOrEqual(300)
     expect(response.status).toBeLessThan(400)
+    expect(response.headers.get('location')).not.toContain('/reset-password')
+    expect(response.headers.get('location')).toContain('/verify-email')
+  })
+
+  it('a VERIFIED subject with a safe next DOES proceed to the governed target — B0 is a prefix, not a universal block', async () => {
+    verified()
+    mockExchangeCodeForSession.mockResolvedValue({
+      data: { user: { id: USER_ID, email_confirmed_at: CONFIRMED_AT } },
+      error: null,
+    })
+
+    const request = new Request('https://example.test/auth/callback?code=abc123&next=%2Freset-password')
+    const response = await authCallback(request)
     expect(response.headers.get('location')).toContain('/reset-password')
   })
 

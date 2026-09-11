@@ -42,23 +42,28 @@ export async function login(formData: FormData) {
 
   revalidatePath('/', 'layout')
 
+  // PACKET B — B0. Evaluated BEFORE honouring redirectTo (the same class of
+  // defect IM's audit found at the auth callback: a caller-supplied safe
+  // target must never outrank the gate) and before listSelectableMemberships
+  // could ever be called for an unverified subject (S-IA-NO-ENUMERATION-ON-
+  // REFUSAL — listSelectableMemberships transits requirePrincipal, C6, which
+  // refuses an unverified principal). redirectTo is CARRIED FORWARD across
+  // the refusal, not honoured early, so the invite (or other) journey
+  // resumes once verification completes.
+  const principal = await loadRequestPrincipal()
+  if (principal && !principal.emailVerified) {
+    const destination = redirectTo
+      ? `${VERIFY_EMAIL_PATH}?next=${encodeURIComponent(redirectTo)}`
+      : VERIFY_EMAIL_PATH
+    redirect(destination)
+  }
+
   // An explicit, validated redirect target (e.g. an invitation accept link)
   // takes priority over the smart org-membership redirect below — a user
   // accepting an invite doesn't have a membership yet, so the default
   // "no membership -> onboarding" branch would otherwise strand them.
   if (redirectTo) {
     redirect(redirectTo)
-  }
-
-  // PACKET B — B0. Evaluated before the membership question below, and
-  // before listSelectableMemberships could ever be called for an unverified
-  // subject (S-IA-NO-ENUMERATION-ON-REFUSAL): listSelectableMemberships
-  // transits requirePrincipal (C6), which now refuses an unverified
-  // principal, so without this check an unverified re-login would surface
-  // an unhandled AuthContextError instead of a clean redirect.
-  const principal = await loadRequestPrincipal()
-  if (principal && !principal.emailVerified) {
-    redirect(VERIFY_EMAIL_PATH)
   }
 
   // Smart redirect: go to onboarding if no org, otherwise dashboard.
@@ -118,18 +123,23 @@ export async function signup(formData: FormData) {
     redirect(VERIFY_EMAIL_PATH)
   }
 
+  // PACKET B — B0, same rationale as login(): evaluated BEFORE honouring
+  // redirectTo. A session exists past the !data.session check above, so a
+  // principal is resolvable here; redirectTo is carried forward across the
+  // refusal rather than honoured early.
+  const principal = await loadRequestPrincipal()
+  if (principal && !principal.emailVerified) {
+    const destination = redirectTo
+      ? `${VERIFY_EMAIL_PATH}?next=${encodeURIComponent(redirectTo)}`
+      : VERIFY_EMAIL_PATH
+    redirect(destination)
+  }
+
   // Same rationale as login(): an invited user accepting via a fresh
   // signup should land on the accept link, not go through onboarding
   // and create a brand-new organization.
   if (redirectTo) {
     redirect(redirectTo)
-  }
-
-  // PACKET B — B0, same rationale as login(): evaluated before the
-  // unconditional onboarding redirect below.
-  const principal = await loadRequestPrincipal()
-  if (principal && !principal.emailVerified) {
-    redirect(VERIFY_EMAIL_PATH)
   }
 
   // New users with no pending invite always go to onboarding
