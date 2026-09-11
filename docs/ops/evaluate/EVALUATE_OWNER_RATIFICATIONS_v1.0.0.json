@@ -13,6 +13,25 @@
 
   "provenance_classification": "OWNER_RATIFIED_PRIOR_TO_THIS_MATERIALIZATION_LANE. The binding decisions HD-01 through HD-16 below were ratified by the product/mission owner in prior sessions whose raw transcripts are not repository artifacts and are not reproduced or claimed as available here. THIS FILE IS NOT A VERBATIM TRANSCRIPT of any prior chat, and it is not a new adjudication. It is a canonical normalized ratification record produced by Lane AM (OWNER-RATIFICATIONS-CANONICAL-MATERIALIZATION-R1) so that successor lanes can cite a stable repository artifact instead of re-deriving, re-litigating, or informally re-summarizing decisions already made by the owner.",
 
+  "r3_measurement_corrections": {
+    "mission": "OWNER-RATIFICATIONS-FACTUAL-MEASUREMENT-REMEDIATION-R3",
+    "date": "2026-09-10",
+    "trigger": "Independent audit BD returned RESULT=FAIL with 3 BLOCKING items, all of them FALSE NEGATIVE REPOSITORY MEASUREMENTS; the ratification semantics themselves passed. Two of the three defects were located in the sibling Public Verification ledger (FIBDB-053 and FIBIU-21..25) and are corrected there; the drift item affecting this file is PR106.",
+    "scope_rule": "R3 edits measurement/status prose only. No ratification id, statement, status value, or ratified semantic in HD-01..HD-16 is added, removed, reworded, or weakened.",
+    "PR106_DRIFT": {
+      "handling": "PRESERVED, NOT REWRITTEN. The R1 measurement (OPEN, unmerged) and the R3 re-measurement (CLOSED 2026-09-10T21:42:41Z, still unmerged) are both recorded in superseded_authority_references.PR106 with their own timestamps. A timestamped historical measurement is never retroactively restated as though the later state had always been true.",
+      "classification_effect": "None. SUPERSEDED remains correct under HD-16 in both the open and closed states."
+    },
+    "negative_claims_revalidated_at_R3": "The three negative existence claims carried by this file were independently re-measured at R3 against docs/, db/, lib/ and app/, excluding this lane's own artifacts, and all three still hold with zero hits: 'SCORE_NOT_COMPUTABLE' (HD-02), 'evaluate.v1' (HD-13), and 'evaluation_results' (HD-14). The claim that no pre-existing repository artifact asserted any HD-* id also still holds — the only matches outside this lane's own files are the materialized_by cross-references this lane itself added to docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json."
+  },
+
+  "owner_source_completeness": {
+    "disposition": "OWNER_SOURCE_COMPLETENESS_CONFIRMED=YES",
+    "source": "Coordinator disposition recorded at R3 (2026-09-10).",
+    "meaning": "The product owner has explicitly ratified the HD, PVRI and HPO-A..G packages used by this materialization. The completeness of the owner-ratified source set is therefore confirmed and is not an open question for successor lanes.",
+    "boundary_preserved": "This external owner confirmation is NOT a claim that the source was repository-local. The underlying owner ratifications remain non-repository-local prior-session decisions (see provenance_classification). OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout this artifact: an owner ratification is binding product intent; a repository measurement is a falsifiable claim about this codebase that any successor lane may and should re-measure."
+  },
+
   "purpose": "Machine-citable, normalized ledger of product-owner ratifications HD-01..HD-16 governing the future Evaluate capability. Records WHAT was ratified and its provenance classification, not whether or how it is implemented. It grants no schema, no migration ordinal, no ODS/HPO grant id, and no executable authority. A future Evaluate authority/implementation lane cites this file's ratification ids instead of re-deriving or re-opening the underlying decisions.",
 
   "precedence_note": "This file is canonical for product-owner intent on Evaluate only. It does NOT override executable FIB/ODS/database/security authority, and it does NOT itself authorize hosted apply, production deployment, release, schema, migration, or ODS allocation. Where a ratification here has no corresponding executable authority yet, that is an open implementation gap for a future governed lane, not a contradiction to resolve here.",
@@ -48,9 +67,11 @@
   "superseded_authority_references": {
     "PR106": {
       "description": "GitHub PR #106, 'docs(evaluate): Evaluate V1 executable authority + test manifest (R3)', base=integration/commercial-v1, head=codex/evaluate-v1-authority-materialization-r1.",
-      "measured_state_at_materialization": "OPEN, UNMERGED (mergedAt: null) as measured via `gh pr view 106` on 2026-09-10 during this materialization mission. No repository-local artifact under docs/** references PR106 by number; it exists only as a live, unmerged GitHub pull request on a separate branch, not as committed content in this lineage.",
+      "measured_state_at_materialization_R1": "OPEN, UNMERGED (mergedAt: null) as measured via `gh pr view 106` on 2026-09-10 during the R1 materialization pass. This is a TIMESTAMPED HISTORICAL MEASUREMENT and is preserved exactly as measured; it is not retroactively rewritten. No repository-local artifact under docs/** referenced PR106 by number; it existed only as a live, unmerged GitHub pull request on a separate branch, not as committed content in this lineage.",
+      "measured_state_at_R3": "CLOSED, STILL UNMERGED — re-measured via `gh pr view 106` during the R3 factual-remediation pass: state CLOSED, closedAt 2026-09-10T21:42:41Z, mergedAt null. The PR was therefore closed WITHOUT merge at some point after the R1 measurement and before R3.",
+      "drift_note": "PR106 drifted OPEN -> CLOSED between R1 and R3, in both cases unmerged. Both observations are retained deliberately. Recording only the later state would misrepresent what was true when the R1 classification was made; recording only the earlier state would leave a stale fact standing. SUPERSEDED was and remains the correct classification under HD-16 in both states — closure without merge is consistent with supersession, and supersession never depended on the PR's open/closed status.",
       "classification": "SUPERSEDED",
-      "note": "Per HD-16, PR106 is superseded. The successor Evaluate authority must be a fresh authority lane opened from current live (this repository state), not an amendment performed inside PR106. This materialization record does NOT close, comment on, or otherwise mutate PR106 on GitHub — that is an explicit-permission, side-effectful GitHub action outside the DOCS_ONLY scope of this lane. Closing PR106 with a reference to this artifact is recorded as a NEXT AUTHORIZED ACTION candidate, not performed here."
+      "note": "Per HD-16, PR106 is superseded. The successor Evaluate authority must be a fresh authority lane opened from current live (this repository state), not an amendment performed inside PR106. Neither the R1 nor the R3 pass of this materialization lane closed, commented on, or otherwise mutated PR106 on GitHub — that is an explicit-permission, side-effectful GitHub action outside the DOCS_ONLY scope of this lane. The closure recorded above was performed outside this lane and is reported here as an observation only, not as an action taken by it."
     }
   },
 
@@ -178,7 +199,7 @@
       "domain": "EVALUATE_SUPERSESSION",
       "statement": "PR106 is superseded. The successor Evaluate authority must be a fresh authority lane from current live, not an amendment performed inside PR106.",
       "status": "RATIFIED_BY_PRODUCT_OWNER",
-      "implementation_status_as_of_head": "SEE superseded_authority_references.PR106 above — PR106 is measured OPEN and UNMERGED on GitHub as of this materialization; classified SUPERSEDED per this ratification, not edited or closed by this docs-only lane."
+      "implementation_status_as_of_head": "SEE superseded_authority_references.PR106 above — measured OPEN and UNMERGED at the R1 pass, re-measured CLOSED (closedAt 2026-09-10T21:42:41Z) and STILL UNMERGED at the R3 pass. Both timestamped observations are preserved. Classified SUPERSEDED per this ratification under either state; neither pass of this docs-only lane edited or closed the PR."
     }
   ]
 }

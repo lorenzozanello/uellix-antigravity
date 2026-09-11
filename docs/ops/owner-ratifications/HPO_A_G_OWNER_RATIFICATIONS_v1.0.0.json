@@ -16,6 +16,21 @@
 
   "provenance_classification": "OWNER_RATIFIED_PRIOR_TO_THIS_MATERIALIZATION_LANE. The binding packages HPO-A through HPO-G below were ratified by the product/mission owner in prior sessions whose raw transcripts are not repository artifacts and are not reproduced or claimed as available here. THIS FILE IS NOT A VERBATIM TRANSCRIPT of any prior chat, and it is not a new adjudication. It is a canonical normalized ratification record produced by Lane AM's completion pass (R2) so that successor lanes can cite a stable repository artifact instead of re-deriving, re-litigating, or informally re-summarizing decisions already made by the owner.",
 
+  "r3_note": {
+    "mission": "OWNER-RATIFICATIONS-FACTUAL-MEASUREMENT-REMEDIATION-R3",
+    "date": "2026-09-10",
+    "effect_on_this_file": "NONE to any ratification. Independent audit BD returned RESULT=FAIL with 3 BLOCKING items, all false negative repository measurements; none of the three was located in this file. HPO-A..HPO-G statements, clauses, statuses and review flags are unchanged at R3. Only the owner_source_completeness disposition below was added.",
+    "cross_reference": "The three corrected measurements (FIBDB-053 exists and is frozen; stella_0007 -> RETIRED_DO_NOT_APPLY already frozen in sealed FIB authority; FIBIU-21..25 exist as frozen wave-4 nodes) are recorded in docs/ops/public-verification/PUBLIC_VERIFICATION_OWNER_RATIFICATIONS_v1.0.0.json r3_measurement_corrections, plus the PR106 drift record in docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json.",
+    "standing_caveat_reaffirmed": "This file's prior_audit_context entries remain explicitly non-re-verified prior measurements, per implementation_status_methodology_note. The R3 findings reinforce why that caveat matters: three separately-reported 'confirmed exact-pattern' searches turned out to be false negatives. Any successor lane must re-measure before relying on a prior_audit_context entry as current fact."
+  },
+
+  "owner_source_completeness": {
+    "disposition": "OWNER_SOURCE_COMPLETENESS_CONFIRMED=YES",
+    "source": "Coordinator disposition recorded at R3 (2026-09-10).",
+    "meaning": "The product owner has explicitly ratified the HD, PVRI and HPO-A..G packages used by this materialization. The completeness of the owner-ratified source set is therefore confirmed and is not an open question for successor lanes.",
+    "boundary_preserved": "This external owner confirmation is NOT a claim that the source was repository-local. The underlying owner ratifications remain non-repository-local prior-session decisions (see provenance_classification). OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout this artifact: an owner ratification is binding product intent; a repository measurement is a falsifiable claim about this codebase that any successor lane may and should re-measure."
+  },
+
   "purpose": "Machine-citable, normalized ledger of product-owner ratifications HPO-A..HPO-G, each a binding multi-clause package spanning customer lifecycle, commercial/entitlement/billing, async delivery, platform admin, Stella, privacy/legal, and release governance. Records WHAT was ratified and its provenance classification, not whether or how it is implemented. It grants no schema, no migration ordinal, no ODS/HPO grant id, and no executable authority.",
 
   "precedence_note": "This file is canonical for product-owner intent on HPO-A..HPO-G only. It does NOT override executable FIB/ODS/database/security authority, and it does NOT itself authorize migration, hosted mutation, staging mutation, production mutation, future ordinal allocation, exact price freezing, or exact retention-duration freezing. Where a ratification here has no corresponding executable authority yet, that is an open implementation gap for a future governed lane, not a contradiction to resolve here.",
