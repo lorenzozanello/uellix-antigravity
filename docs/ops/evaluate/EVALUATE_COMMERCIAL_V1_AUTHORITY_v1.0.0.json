@@ -1,12 +1,12 @@
 {
   "package_id": "EVALUATE_COMMERCIAL_V1_AUTHORITY",
   "version": "v1.0.0",
-  "revision": "R3",
+  "revision": "R4",
   "artifact_id": "docs/ops/evaluate/EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
   "authority_class": "A",
-  "lane": "AN-R3 - EVALUATE-COMMERCIAL-V1-AUTHORITY-FINAL-REMEDIATION",
-  "role": "EVALUATE_AUTHORITY_R3_FINAL_REMEDIATION_WRITER",
-  "mode": "AUTHORITY_REMEDIATION_AND_CURRENT_LIVE_ALIGNMENT",
+  "lane": "AN-R4 - PR140-EVALUATE-PREDICATE-IDENTITY-FINAL-REPAIR",
+  "role": "PR140_R4_PREDICATE_IDENTITY_REPAIR_WRITER",
+  "mode": "BOUNDED_DOCS_ONLY_AUTHORITY_REPAIR",
   "materialization_date": "2026-09-11",
   "ORIGINAL_BASE": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
   "ORIGINAL_BASE_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
@@ -37,6 +37,13 @@
       "what_changed_in_the_world": "PR147 merged the canonical RAT-EV-04 amendment (docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1.json), resolving the exact draft-role silence R2 recorded as residual note RN-01 and BR raised as blocker B-01. PR145 merged the platform-admin/support AUTHORITY. PR143 merged the Customer Lifecycle authority. PR136 merged the Packet-B runtime.",
       "what_R3_does": "Consumes repository-resident RAT-EV-04 instead of the conversation; closes BR B-01 and B-02; addresses BR NB-01..NB-04; re-measures every current-state claim against the aligned tree; separates owner-authority gaps from review requirements, implementation dependencies and future design limitations.",
       "what_R3_does_not_do": "It makes NO new owner decision, edits no canonical ratification artifact, and adds no implementation, migration, schema, ordinal, allocation or hosted-action authority."
+    },
+    {
+      "revision": "R4",
+      "written_against": "integration/commercial-v1 at d76fa3f2, tree 6c6adedf, on the already-aligned PR140 branch. No further alignment merge was needed or performed: integration had not advanced since R3.",
+      "trigger": "Independent audit CA against R3 head 8be07c13 returned RESULT=FAIL, OWNER_DECISION_REQUIRED=NONE, BLOCKING=1, AUDIT_UNKNOWN=0, MERGE_CANDIDATE=NO. CA independently confirmed fourteen R3 surfaces as correct and found exactly one blocking defect, CA-B-01.",
+      "what_R4_does": "Closes CA-B-01 by giving archive and create their own named closed constants, extends the predicate-identity model from six concepts to seven, replaces the hand-written prohibition subset with a systematic pairwise matrix generated over all ordered pairs, makes N-22 satisfiable and GREEN at the pristine artifact, adds M-13, and addresses CA-NB-01..NB-04.",
+      "what_R4_does_not_do": "It changes NO admitted role extension, makes NO new owner decision, reopens NO owner decision, and rewrites none of the fourteen surfaces CA passed except where sections 2-15 of the repair scope require it."
     }
   ],
   "supersedes": {
@@ -1174,7 +1181,16 @@
       "count": 2,
       "closed": true,
       "anchor": "HD-05",
-      "semantics": "SET INCLUSION over an exhaustively enumerated two-element set, checked by exact identity."
+      "semantics": "SET INCLUSION over an exhaustively enumerated two-element set, checked by exact identity.",
+      "excluded": [
+        "super_admin",
+        "analyst",
+        "reviewer",
+        "viewer"
+      ],
+      "excluded_count": 4,
+      "role_space_partition": "2 + 4 = 6, equal to the six values in the db/schema.ts role CHECK.",
+      "uniformity_note": "R4 mirrors the exclusion list onto this set so all SEVEN closed sets carry the same shape (members + excluded + partition). R2/R3 kept the decision exclusions only in the sibling key forbidden_decision_roles, which is preserved unchanged for existing citations - but a validator iterating the seven sets uniformly could not read them, and a set whose exclusions live somewhere else is a set whose partition cannot be checked the same way as its peers."
     },
     "EVALUATE_CRITERION_EDIT_ROLES": {
       "members": [
@@ -1224,8 +1240,8 @@
           "organization_admin",
           "impact_manager"
         ],
-        "mechanism": "EXACT_SET_INCLUSION over EVALUATE_DECISION_ROLES (consumed, not redefined)",
-        "grant": "Not separately ratified. Creating an evaluation binds a project to a template version - a governance act, kept at the decision set rather than widened by inference."
+        "mechanism": "EXACT_SET_INCLUSION over EVALUATE_CREATE_ROLES",
+        "grant": "NOT SEPARATELY OWNER-RATIFIED. Classified BOUNDED_IMPLEMENTATION_CHOICE; see CREATE_AUTHORITY_DISCLOSURE and RESIDUAL_NOTES.RN-04. R4 gives this its OWN constant - R3 read EVALUATE_DECISION_ROLES, which was CA-B-01."
       },
       {
         "permission": "canEditEvaluationCriterionResponse",
@@ -1252,8 +1268,8 @@
           "impact_manager",
           "organization_admin"
         ],
-        "mechanism": "EXACT_SET_INCLUSION over EVALUATE_DECISION_ROLES (consumed, not redefined)",
-        "grant": "HD-08 requires 'impact_manager or the specific separately-authorized role semantics that do NOT admit platform super_admin by hierarchy'. impact_manager is the HD-08-named role; organization_admin is admitted by this authority's explicit enumeration, which is precisely the separately-authorized role semantics HD-08 permits - an exact two-element set admitting super_admin by neither hierarchy nor enumeration."
+        "mechanism": "EXACT_SET_INCLUSION over EVALUATE_ARCHIVE_ROLES",
+        "grant": "HD-08. impact_manager is named in HD-08; organization_admin is admitted under HD-08's 'specific separately-authorized role semantics that do NOT admit platform super_admin by hierarchy', exercised here as an exact two-element enumeration. R4 gives this its OWN constant - R3 read EVALUATE_DECISION_ROLES, which was CA-B-01."
       },
       {
         "permission": "canDraftEvaluationTemplate",
@@ -1350,6 +1366,67 @@
       "excluded_count": 5,
       "role_space_partition": "1 admitted + 5 excluded = 6.",
       "distinct_from_publish_despite_equal_extension": "Retire and publish have IDENTICAL extensions today. They remain two authority concepts with two predicates. See PREDICATE_IDENTITY_SEPARATION."
+    },
+    "EVALUATE_ARCHIVE_ROLES": {
+      "members": [
+        "impact_manager",
+        "organization_admin"
+      ],
+      "count": 2,
+      "closed": true,
+      "anchor": "HD-08, verbatim: 'Terminal Evaluate lifecycle state is ARCHIVED. Archiving is allowed only before DECIDED and requires impact_manager or the specific separately-authorized role semantics that do NOT admit platform super_admin by hierarchy.'",
+      "canonical_derivation": "impact_manager is admitted BY NAME in HD-08. organization_admin is admitted because HD-08 expressly permits 'the specific separately-authorized role semantics that do NOT admit platform super_admin by hierarchy', and this authority exercises that clause with an EXACT two-element enumeration that admits super_admin neither by hierarchy nor by enumeration. The constant is therefore HD-08-anchored in both of its members.",
+      "semantics": "SET INCLUSION by EXACT ROLE IDENTITY over an exhaustively enumerated two-element set.",
+      "excluded": [
+        "super_admin",
+        "analyst",
+        "reviewer",
+        "viewer"
+      ],
+      "excluded_count": 4,
+      "role_space_partition": "2 + 4 = 6, equal to the six values in the db/schema.ts role CHECK.",
+      "NOT_derived_from": [
+        "EVALUATE_DECISION_ROLES",
+        "EVALUATE_TEMPLATE_DRAFT_ROLES",
+        "ROLE_HIERARCHY or any numeric rank",
+        "generic admin semantics"
+      ],
+      "R3_DEFECT_CLOSED": "R3 bound canArchiveEvaluation to EVALUATE_DECISION_ROLES and annotated it 'consumed, not redefined'. That annotation described a violation of R3's own rule rather than curing it. canArchiveEvaluation now reads THIS constant and only this constant. The extension is unchanged; only its identity is now its own.",
+      "extensional_equality_is_irrelevant": "This set is extensionally equal to EVALUATE_DECISION_ROLES and to EVALUATE_TEMPLATE_DRAFT_ROLES today. That is a coincidence of current membership, not an identity. A future amendment to HD-05 or RAT-EV-04 must not move this set, and a future amendment to HD-08 must not move theirs."
+    },
+    "EVALUATE_CREATE_ROLES": {
+      "members": [
+        "organization_admin",
+        "impact_manager"
+      ],
+      "count": 2,
+      "closed": true,
+      "authority_classification": "BOUNDED_IMPLEMENTATION_CHOICE",
+      "explicitly_not": [
+        "OWNER_RATIFIED",
+        "HD_DERIVED",
+        "RAT_EV_DERIVED",
+        "UNIQUELY_REQUIRED"
+      ],
+      "canonical_status": "NO canonical ratification addresses who may CREATE an Evaluate evaluation. Measured for this revision: a case-insensitive search for 'creat* an evaluation', 'evaluation creation', 'canCreateEvaluation' and 'who may create' across all three canonical ledgers (EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json, COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json, COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1.json) returns ZERO hits in each.",
+      "semantics": "SET INCLUSION by EXACT ROLE IDENTITY over an exhaustively enumerated two-element set.",
+      "excluded": [
+        "super_admin",
+        "analyst",
+        "reviewer",
+        "viewer"
+      ],
+      "excluded_count": 4,
+      "role_space_partition": "2 + 4 = 6.",
+      "current_chosen_extension_rationale": "Creating an evaluation binds a project to a pinned immutable template version. This authority keeps that act at the same membership as the governance acts rather than widening it, because widening would be the only unsafe direction available without a ratification. The extension is UNCHANGED from R3; R4 changes its IDENTITY, not its membership.",
+      "NOT_derived_from": [
+        "EVALUATE_DECISION_ROLES",
+        "EVALUATE_ARCHIVE_ROLES",
+        "EVALUATE_TEMPLATE_DRAFT_ROLES",
+        "ROLE_HIERARCHY or any numeric rank"
+      ],
+      "R3_DEFECT_CLOSED": "R3's permission_matrix bound canCreateEvaluation to EVALUATE_DECISION_ROLES. It now reads THIS constant and only this constant, so a future amendment to HD-05 cannot silently move the create set.",
+      "future_authority": "Widening or otherwise changing this extension beyond the current bounded choice requires future owner ratification and, where applicable, the corresponding review. Narrowing it is likewise a future decision, not an implementation liberty. See CREATE_AUTHORITY_DISCLOSURE and RESIDUAL_NOTES.RN-04."
     }
   },
   "SEPARATION_OF_DUTIES": {
@@ -1510,7 +1587,18 @@
       "the container is not retired"
     ],
     "retired_container_does_not_orphan_evaluations": "Retiring OBJ-1 must NOT cascade to OBJ-2 or OBJ-3. A decided evaluation whose template container was later retired remains fully readable and fully explainable. Stated because a CASCADE here would silently destroy decision provenance.",
-    "AG-01_closed_by": "HD-09 (draft/publish/retire split) as additively resolved by RAT-EV-04 (draft set membership)."
+    "AG-01_closed_by": "HD-09 (draft/publish/retire split) as additively resolved by RAT-EV-04 (draft set membership).",
+    "denial_space_derived": {
+      "note": "The number of template-act refusal cells is DERIVED from the role matrix, not asserted in prose. CA-NB-02 found R3's N-16 prose said 'Twelve' while the control enumerated fourteen cells; a prose count next to a structural list is a second source of truth that can drift.",
+      "per_act_excluded_counts": {
+        "draft": 4,
+        "publish": 5,
+        "retire": 5
+      },
+      "total_refusal_cells": 14,
+      "formula": "sum over the three template acts of len(excluded) = 4 + 5 + 5 = 14",
+      "consumed_by": "companion manifest N-16, which enumerates exactly this denial space and cites the derived total rather than a hand-written number."
+    }
   },
   "STELLA_BOUNDARY": {
     "anchors": [
@@ -2115,6 +2203,16 @@
       "was": "HD-12's bounded support capability does not exist; PR145 OPEN/DRAFT.",
       "now": "Reclassified as IMPLEMENTATION_DEPENDENCIES.IMP-02. Its status was re-measured: PR145 is MERGED, so the AUTHORITY is resident while the RUNTIME remains absent. See PLATFORM_SUPPORT_DEPENDENCY.",
       "status": "RECLASSIFIED and RE-MEASURED, not open as an owner gap."
+    },
+    {
+      "id": "RN-04",
+      "class": "BOUNDED_IMPLEMENTATION_CHOICE / UNRESOLVED_FUTURE_AUTHORITY_SURFACE",
+      "note": "canCreateEvaluation's role binding (EVALUATE_CREATE_ROLES = {organization_admin, impact_manager}) is NOT separately owner-ratified. Measured: zero canonical hits for any text addressing the act of creating an evaluation.",
+      "raised_by": "Independent audit CA as CA-NB-04, a DISCLOSURE gap rather than a role-set error.",
+      "disposition": "Disclosed, not promoted. The extension is preserved exactly as R3 had it; R4 changes only its structural identity so a future amendment to HD-05 or HD-08 cannot silently move it. Full reasoning, including why it does not convert OWNER_AUTHORITY_GAPS from 0 to 1, is in CREATE_AUTHORITY_DISCLOSURE.",
+      "why_not_an_owner_gap": "Proceeding does not require inventing an answer to a question canonical text asked. Canonical text does not name the act, the chosen extension widens nothing and weakens no ratified exclusion, and creation is preparatory and reversible (a DRAFT evaluation, archivable, carrying no snapshot and conferring no decision/publish/retire authority).",
+      "obligation": "The implementing node must not widen it and must not share its constant. A future owner ratification may narrow or widen it; an implementation may not.",
+      "status": "OPEN AS A DISCLOSURE, NOT BLOCKING."
     }
   ],
   "RISKS_AND_OPEN_FINDINGS": [
@@ -2267,6 +2365,24 @@
       "risk": "An implementer enables a platform-support read path because the platform-admin AUTHORITY is now resident.",
       "impact": "HD-12 violated. Authority residency is not runtime availability, and RAT-OP-01's own text makes the capability inoperable until the platform-admin self-assignment path is closed.",
       "control": "PLATFORM_SUPPORT_DEPENDENCY's two-dimension split and operational_prerequisite_from_the_ratification_itself, NSB-07, plus manifest N-14."
+    },
+    {
+      "id": "R-26",
+      "risk": "An implementer implements canArchiveEvaluation or canCreateEvaluation by reading EVALUATE_DECISION_ROLES, exactly as the R3 artifact itself did.",
+      "impact": "Their extensions are equal today, so every role-varying fixture stays green while a future amendment to HD-05 silently moves the archive and create sets. This is the defect CA-B-01 caught in the authority document; the same defect in code would be invisible to behaviour tests.",
+      "control": "PREDICATE_IDENTITY_SEPARATION.pairwise_prohibition_matrix (42 ordered pairs, 14 behaviourally undetectable), plus manifest N-22 and mutations M-12, M-13, M-14."
+    },
+    {
+      "id": "R-27",
+      "risk": "A reviewer treats the create-role binding as owner-ratified because it sits in the same permission matrix as six ratified bindings.",
+      "impact": "An unratified choice acquires the standing of a ratification, and a future owner decision is foreclosed by precedent rather than made.",
+      "control": "EVALUATE_CREATE_ROLES.authority_classification = BOUNDED_IMPLEMENTATION_CHOICE with an explicit explicitly_not list, CREATE_AUTHORITY_DISCLOSURE, RESIDUAL_NOTES.RN-04, and GAP_TAXONOMY.BOUNDED_IMPLEMENTATION_CHOICES.BIC-01."
+    },
+    {
+      "id": "R-28",
+      "risk": "A validator checks that predicate NAMES are distinct and concludes predicate identity is satisfied.",
+      "impact": "Exactly how R3 passed its own validator while violating its own rule: R3 checked the seven predicate names and the collision count, never the constants. A name-only check is one field away from the defect.",
+      "control": "The R4 validator checks distinct predicates AND distinct named constants AND that the pairwise matrix is complete over all ordered pairs, and it proves N-22 non-vacuous by mutating the model and requiring RED."
     }
   ],
   "DDL_FUTURE": {
@@ -2307,7 +2423,7 @@
     },
     {
       "id": "MC-07",
-      "control": "PR145 measured OPEN and DRAFT. No claim is made that a bounded platform-support capability exists or is implemented."
+      "control": "Platform-support status measured in TWO dimensions rather than one. AUTHORITY: repository-resident and merged - docs/ops/security/PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY_v1.0.0.json and RAT-OP-01 are tracked at integration d76fa3f2. RUNTIME: ABSENT - zero hits for support_capability / supportCapability across lib/, app/ and db/. No claim is made that a bounded platform-support capability exists, is implemented, or is available, and PR status is NOT treated as runtime evidence in either direction. Evaluate's support path fails closed. (Corrected in R4 per CA-NB-01: this control previously carried a stale OPEN/DRAFT present-tense claim.)"
     },
     {
       "id": "MC-08",
@@ -2360,13 +2476,45 @@
     {
       "id": "MC-20",
       "control": "No new owner decision was made. Where canonical text was silent and no ratification resolved it, the item was classified into a non-owner dimension (review, implementation dependency, or design limitation) rather than decided."
+    },
+    {
+      "id": "MC-21",
+      "control": "Prestate verified against all six required exact objects before any mutation: branch, HEAD 8be07c13, tree e5a325cf, PR140 head == HEAD, integration d76fa3f2, integration tree 6c6adedf, clean tree. Nothing had moved, so no STOP and no alignment merge was needed."
+    },
+    {
+      "id": "MC-22",
+      "control": "CA-B-01 closed WITHOUT changing any admitted role extension. Every one of the seven extensions is byte-identical to R3; only identity changed. The validator asserts extension preservation explicitly so the repair cannot have silently moved a set."
+    },
+    {
+      "id": "MC-23",
+      "control": "The prohibition matrix is GENERATED over all ordered pairs of the seven concepts (42), not hand-written. R3's hand-written subset of five is precisely how the archive and create sharing survived R3's own rule, so completeness is now a property of construction rather than of attention."
+    },
+    {
+      "id": "MC-24",
+      "control": "HD-08 was re-read verbatim before binding EVALUATE_ARCHIVE_ROLES, and both members are anchored in its text: impact_manager by name, organization_admin under its 'specific separately-authorized role semantics' clause exercised as an exact enumeration. The constant is not derived from the decision set."
+    },
+    {
+      "id": "MC-25",
+      "control": "The create-role binding was independently re-evaluated against this artifact's own gap definition rather than accepting CA's classification on faith. The conclusion (disclosure, not owner gap) is recorded together with the asymmetry against BR B-01 that justifies it, so an auditor can check the reasoning and disagree with it."
+    },
+    {
+      "id": "MC-26",
+      "control": "The four owner_rationale_verbatim values are assigned programmatically from the canonical ledger, so CA-NB-03's punctuation drift cannot recur by retyping. The validator byte-compares all four."
+    },
+    {
+      "id": "MC-27",
+      "control": "N-22's baseline colour is PROVEN, not assumed: the validator runs the identity checker on the pristine artifact (must be GREEN), then applies the M-12, M-13 and M-14 substitutions to in-memory copies and requires RED for each, then re-runs on the pristine artifact (must be GREEN again). CA's methodological finding was that a mutation proves nothing unless the baseline colour is known."
+    },
+    {
+      "id": "MC-28",
+      "control": "Mutations are applied to IN-MEMORY COPIES only; the tracked artifacts are never written during mutation testing. The validator hashes both tracked files before and after the mutation sequence and requires the hashes to match, so 'reverted' is proven rather than asserted and the worktree cannot be left dirty."
     }
   ],
   "VALIDATION": {
     "json_parse": "Both artifacts must parse as JSON.",
     "test_manifest_schema": "The companion manifest must validate against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, whose control objects are additionalProperties:false over exactly {id, description, test_file} and whose exit_gates is a closed enum of nine.",
     "self_check": {
-      "revision": "R3",
+      "revision": "R4",
       "cs_to_hd_map_rows": 19,
       "hd_contradictions_found": 0,
       "hd_ratifications_consumed": 16,
@@ -2384,24 +2532,30 @@
       "decision_outcomes_count": 3,
       "evaluate_decision_roles_count": 2,
       "forbidden_decision_roles_count": 4,
-      "decision_role_space_partition": "2 + 4 = 6, equal to the six values in the db/schema.ts role CHECK",
       "evaluate_criterion_edit_roles_count": 3,
       "criterion_edit_excluded_count": 3,
-      "criterion_edit_role_space_partition": "3 + 3 = 6",
       "template_draft_roles_count": 2,
       "template_draft_excluded_count": 4,
-      "template_draft_role_space_partition": "2 + 4 = 6",
       "template_publish_roles_count": 1,
       "template_publish_excluded_count": 5,
-      "template_publish_role_space_partition": "1 + 5 = 6",
       "template_retire_roles_count": 1,
       "template_retire_excluded_count": 5,
-      "template_retire_role_space_partition": "1 + 5 = 6",
-      "closed_sets_defined": 5,
-      "super_admin_membership_across_all_closed_sets": 0,
-      "distinct_authority_concepts": 6,
+      "evaluate_archive_roles_count": 2,
+      "archive_excluded_count": 4,
+      "evaluate_create_roles_count": 2,
+      "create_excluded_count": 4,
+      "every_role_space_partitions_to_six": true,
+      "distinct_authority_concepts": 7,
+      "distinct_predicates": 7,
+      "distinct_named_constants": 7,
       "distinct_extensions_today": 3,
+      "pairwise_ordered_pairs": 42,
+      "pairwise_expected_ordered_pairs": 42,
+      "pairwise_behaviourally_undetectable": 14,
+      "closed_sets_defined": 7,
+      "super_admin_membership_across_all_closed_sets": 0,
       "permission_matrix_rows": 8,
+      "template_denial_space_cells": 14,
       "audit_new_keys_count": 11,
       "audit_actions_before": 111,
       "audit_actions_after": 122,
@@ -2416,23 +2570,35 @@
       "review_matrix_open": 10,
       "review_matrix_evidenced": 0,
       "review_canonical_but_not_applicable_count": 3,
+      "owner_rationale_verbatim_rows": 4,
       "implementation_dependencies_count": 3,
+      "bounded_implementation_choices_count": 2,
       "future_design_limitations_count": 3,
-      "residual_notes_count": 3,
-      "risks_count": 25,
+      "residual_notes_count": 4,
+      "risks_count": 28,
       "zero_denominator_controls_count": 6,
       "divergence_controls_count": 7,
       "no_superadmin_bypass_controls_count": 7,
       "superadmin_sweep_vectors_count": 14,
-      "superadmin_closed_world_disjuncts_three_lineages": 140,
       "rls_invariants_count": 12,
       "stella_controls_count": 8,
       "nav_constraints_count": 3,
-      "mission_controls_count": 20,
+      "mission_controls_count": 28,
       "br_blockers_closed": 2,
-      "br_nonblocking_addressed": 4
+      "br_nonblocking_addressed": 4,
+      "ca_blockers_closed": 1,
+      "ca_nonblocking_addressed": 4,
+      "ca_surfaces_confirmed": 14,
+      "manifest_positive_controls": 15,
+      "manifest_negative_controls": 23,
+      "manifest_mutation_controls": 14,
+      "manifest_sentinels": 3,
+      "manifest_exit_gates": 8,
+      "manifest_total_controls": 52
     },
-    "dependency_free_rule": "Every gate in this lane was run dependency-free (node --experimental-strip-types for the ODS gates, python for JSON/schema/self-check/cross-reference/secret inspection). node_modules was NOT installed to validate documentation. No gate is reported as PASS unless it was actually run, and no PostgreSQL or hosted action was involved."
+    "dependency_free_rule": "Every gate in this lane was run dependency-free (node --experimental-strip-types for the ODS gates, python for JSON/schema/self-check/cross-reference/secret inspection). node_modules was NOT installed to validate documentation. No gate is reported as PASS unless it was actually run, and no PostgreSQL or hosted action was involved.",
+    "self_check_non_vacuity": "Every field above is DERIVED from the artifact's own structure (len() over the actual arrays and objects), written by one script, and then RE-DERIVED independently by the validator with its own expressions before comparison. A self-check that compared stored values against themselves would be vacuous; this one caught a real error in R3 (mission_controls_count captured before the R3 controls were appended).",
+    "baseline_colour_obligation": "CA's methodological finding: a mutation control proves nothing unless the pristine baseline colour is known. The validator therefore reports N22_BASELINE_AFTER_REPAIR, then M12/M13/M14 mutated colours, then N22_FINAL after revert. Mutations are applied to IN-MEMORY COPIES; the tracked files are hashed before and after and the hashes must match, so 'reverted' is proven rather than asserted."
   },
   "final_state": "AWAITING_INDEPENDENT_OPUS_AUDIT",
   "HD_CANONICAL_RESIDENT": "YES",
@@ -2454,7 +2620,7 @@
   "INDEPENDENT_OPUS_AUDIT_REQUIRED": true,
   "READY_FOR_MERGE": false,
   "MAIN_UNCHANGED": true,
-  "next_gate": "PR140_EVALUATE_R3_FINAL_INDEPENDENT_OPUS_AUDIT",
+  "next_gate": "PR140_EVALUATE_R4_FINAL_FOCUSED_INDEPENDENT_AUDIT",
   "R2_HEAD": "aba284444bb1d0113e71e6d4ea834b55aed03cba",
   "R2_TREE": "b44fcedf97783c9eb9f115aeabc86a1503ea90bb",
   "R2_OBSERVED_INTEGRATION_HISTORICAL": "f0d81d1dfb9bc567eb0d0cd90cee6f028d003077",
@@ -2524,72 +2690,92 @@
   },
   "PREDICATE_IDENTITY_SEPARATION": {
     "principle": "EXTENSIONAL_EQUALITY != AUTHORITY_IDENTITY.",
-    "carried_from": "Independent audit observation O-BT-5 (PR147 audit lane BT), and required verbatim by RAT-EV-04's binding_semantics.draft_predicate_stays_separate.",
-    "statement": "Two authority concepts whose role sets happen to be equal TODAY are still two concepts. Each binds to its own canonical grant, gets its own named predicate, and is tested by its own control. A future amendment to one must not silently widen another.",
-    "six_distinct_authority_concepts": [
+    "carried_from": "Independent audit observation O-BT-5 (PR147 audit lane BT); required verbatim by RAT-EV-04's binding_semantics.draft_predicate_stays_separate; and enforced against this artifact itself by independent audit CA (CA-B-01).",
+    "statement": "Seven authority concepts. Each has its OWN named predicate AND its OWN named closed constant. Role extensions MAY coincide - that is permitted and currently true for five of the seven. Shared CONSTANT IDENTITY is never permitted. A future amendment to one grant must not be capable of moving another concept's set.",
+    "what_R3_got_wrong": "R3 declared this rule and then violated it twice: canArchiveEvaluation and canCreateEvaluation both read EVALUATE_DECISION_ROLES. R3 annotated them 'consumed, not redefined', which documented the sharing rather than curing it. CA-B-01. Both now have their own constants with identical extensions.",
+    "seven_distinct_authority_concepts": [
       {
         "concept": "criterion response edit authority",
         "predicate": "canEditEvaluationCriterionResponse",
-        "set": "EVALUATE_CRITERION_EDIT_ROLES",
+        "named_constant": "EVALUATE_CRITERION_EDIT_ROLES",
         "extension": [
           "analyst",
           "impact_manager",
           "organization_admin"
         ],
-        "grant": "RAT-EV-02"
+        "canonical_source": "RAT-EV-02",
+        "authority_classification": "OWNER_RATIFIED"
       },
       {
         "concept": "template draft authority",
         "predicate": "canDraftEvaluationTemplate",
-        "set": "EVALUATE_TEMPLATE_DRAFT_ROLES",
+        "named_constant": "EVALUATE_TEMPLATE_DRAFT_ROLES",
         "extension": [
           "impact_manager",
           "organization_admin"
         ],
-        "grant": "RAT-EV-04"
+        "canonical_source": "RAT-EV-04",
+        "authority_classification": "OWNER_RATIFIED"
       },
       {
         "concept": "template publish authority",
         "predicate": "canPublishEvaluateTemplateVersion",
-        "set": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
+        "named_constant": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
         "extension": [
           "organization_admin"
         ],
-        "grant": "RAT-EV-04 (restating HD-09)"
+        "canonical_source": "RAT-EV-04, restating HD-09",
+        "authority_classification": "OWNER_RATIFIED"
       },
       {
         "concept": "template retire authority",
         "predicate": "canRetireEvaluateTemplate",
-        "set": "EVALUATE_TEMPLATE_RETIRE_ROLES",
+        "named_constant": "EVALUATE_TEMPLATE_RETIRE_ROLES",
         "extension": [
           "organization_admin"
         ],
-        "grant": "RAT-EV-04 (restating HD-09)"
+        "canonical_source": "RAT-EV-04, restating HD-09",
+        "authority_classification": "OWNER_RATIFIED"
       },
       {
         "concept": "evaluation decision authority",
         "predicate": "canDecideEvaluation",
-        "set": "EVALUATE_DECISION_ROLES",
+        "named_constant": "EVALUATE_DECISION_ROLES",
         "extension": [
           "organization_admin",
           "impact_manager"
         ],
-        "grant": "HD-05"
+        "canonical_source": "HD-05",
+        "authority_classification": "OWNER_RATIFIED"
       },
       {
         "concept": "archive authority",
         "predicate": "canArchiveEvaluation",
-        "set": "EVALUATE_DECISION_ROLES (consumed, not redefined)",
+        "named_constant": "EVALUATE_ARCHIVE_ROLES",
         "extension": [
           "impact_manager",
           "organization_admin"
         ],
-        "grant": "HD-08"
+        "canonical_source": "HD-08",
+        "authority_classification": "OWNER_RATIFIED"
+      },
+      {
+        "concept": "evaluation create authority",
+        "predicate": "canCreateEvaluation",
+        "named_constant": "EVALUATE_CREATE_ROLES",
+        "extension": [
+          "organization_admin",
+          "impact_manager"
+        ],
+        "canonical_source": "NONE - no canonical ratification addresses this act",
+        "authority_classification": "BOUNDED_IMPLEMENTATION_CHOICE"
       }
     ],
-    "concept_count": 6,
+    "concept_count": 7,
+    "distinct_predicates": 7,
+    "distinct_named_constants": 7,
     "measured_extensional_collisions_today": {
-      "note": "Six authority concepts collapse into only THREE distinct extensions at this revision. This is precisely why extensional testing alone is insufficient.",
+      "note": "Seven authority concepts collapse into only THREE distinct extensions at this revision. That is precisely why extensional testing alone cannot detect a mis-bound predicate, and why N-22 must assert over constants and call sites instead.",
       "collision_groups": [
         {
           "extension": [
@@ -2599,9 +2785,10 @@
           "concepts": [
             "template draft authority",
             "evaluation decision authority",
-            "archive authority"
+            "archive authority",
+            "evaluation create authority"
           ],
-          "size": 3
+          "size": 4
         },
         {
           "extension": [
@@ -2627,15 +2814,275 @@
       ],
       "distinct_extensions": 3
     },
-    "prohibitions": [
-      "canDraftEvaluationTemplate MUST NOT be implemented as, aliased to, or delegated to canDecideEvaluation, even though their extensions are equal today. RAT-EV-04 and HD-05 are different grants; a future amendment to either would silently widen the other.",
-      "canArchiveEvaluation MUST NOT be implemented as canDraftEvaluationTemplate for the same reason, in either direction.",
-      "canRetireEvaluateTemplate MUST NOT be implemented as canPublishEvaluateTemplateVersion.",
-      "No Evaluate predicate may be derived from another by reference to its role array; each names its own closed constant.",
-      "No Evaluate predicate may be written with hasRole, '>=', ROLE_HIERARCHY comparison or '+' notation."
+    "pairwise_prohibition_matrix": {
+      "generation": "Generated systematically over ALL ordered pairs of the seven concepts, so it is complete BY CONSTRUCTION rather than hand-written. R3 carried a hand-written subset of five prohibitions, which is how the archive and create sharing survived its own rule.",
+      "ordered_pairs": 42,
+      "expected_ordered_pairs": 42,
+      "rule": "For every ordered pair (X, Y) with X != Y: predicate X MUST NOT read constant Y, and MUST NOT be implemented as, aliased to, re-exported as, or delegated to predicate Y. The extensions_equal_today flag is INFORMATIONAL ONLY - a pair is prohibited whether or not its extensions coincide, and the flag exists to mark which prohibitions are behaviourally undetectable and therefore require the structural control.",
+      "pairs_with_equal_extensions_today": 14,
+      "pairs_behaviourally_undetectable": "The pairs flagged extensions_equal_today are exactly those a role-varying fixture cannot catch. There are that many undetectable substitutions available to an implementer, which is the measured size of the hazard.",
+      "pairs": [
+        {
+          "subject_predicate": "canEditEvaluationCriterionResponse",
+          "must_not_read": "EVALUATE_TEMPLATE_DRAFT_ROLES",
+          "must_not_delegate_to": "canDraftEvaluationTemplate",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canEditEvaluationCriterionResponse",
+          "must_not_read": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
+          "must_not_delegate_to": "canPublishEvaluateTemplateVersion",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canEditEvaluationCriterionResponse",
+          "must_not_read": "EVALUATE_TEMPLATE_RETIRE_ROLES",
+          "must_not_delegate_to": "canRetireEvaluateTemplate",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canEditEvaluationCriterionResponse",
+          "must_not_read": "EVALUATE_DECISION_ROLES",
+          "must_not_delegate_to": "canDecideEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canEditEvaluationCriterionResponse",
+          "must_not_read": "EVALUATE_ARCHIVE_ROLES",
+          "must_not_delegate_to": "canArchiveEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canEditEvaluationCriterionResponse",
+          "must_not_read": "EVALUATE_CREATE_ROLES",
+          "must_not_delegate_to": "canCreateEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canDraftEvaluationTemplate",
+          "must_not_read": "EVALUATE_CRITERION_EDIT_ROLES",
+          "must_not_delegate_to": "canEditEvaluationCriterionResponse",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canDraftEvaluationTemplate",
+          "must_not_read": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
+          "must_not_delegate_to": "canPublishEvaluateTemplateVersion",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canDraftEvaluationTemplate",
+          "must_not_read": "EVALUATE_TEMPLATE_RETIRE_ROLES",
+          "must_not_delegate_to": "canRetireEvaluateTemplate",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canDraftEvaluationTemplate",
+          "must_not_read": "EVALUATE_DECISION_ROLES",
+          "must_not_delegate_to": "canDecideEvaluation",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canDraftEvaluationTemplate",
+          "must_not_read": "EVALUATE_ARCHIVE_ROLES",
+          "must_not_delegate_to": "canArchiveEvaluation",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canDraftEvaluationTemplate",
+          "must_not_read": "EVALUATE_CREATE_ROLES",
+          "must_not_delegate_to": "canCreateEvaluation",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canPublishEvaluateTemplateVersion",
+          "must_not_read": "EVALUATE_CRITERION_EDIT_ROLES",
+          "must_not_delegate_to": "canEditEvaluationCriterionResponse",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canPublishEvaluateTemplateVersion",
+          "must_not_read": "EVALUATE_TEMPLATE_DRAFT_ROLES",
+          "must_not_delegate_to": "canDraftEvaluationTemplate",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canPublishEvaluateTemplateVersion",
+          "must_not_read": "EVALUATE_TEMPLATE_RETIRE_ROLES",
+          "must_not_delegate_to": "canRetireEvaluateTemplate",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canPublishEvaluateTemplateVersion",
+          "must_not_read": "EVALUATE_DECISION_ROLES",
+          "must_not_delegate_to": "canDecideEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canPublishEvaluateTemplateVersion",
+          "must_not_read": "EVALUATE_ARCHIVE_ROLES",
+          "must_not_delegate_to": "canArchiveEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canPublishEvaluateTemplateVersion",
+          "must_not_read": "EVALUATE_CREATE_ROLES",
+          "must_not_delegate_to": "canCreateEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canRetireEvaluateTemplate",
+          "must_not_read": "EVALUATE_CRITERION_EDIT_ROLES",
+          "must_not_delegate_to": "canEditEvaluationCriterionResponse",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canRetireEvaluateTemplate",
+          "must_not_read": "EVALUATE_TEMPLATE_DRAFT_ROLES",
+          "must_not_delegate_to": "canDraftEvaluationTemplate",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canRetireEvaluateTemplate",
+          "must_not_read": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
+          "must_not_delegate_to": "canPublishEvaluateTemplateVersion",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canRetireEvaluateTemplate",
+          "must_not_read": "EVALUATE_DECISION_ROLES",
+          "must_not_delegate_to": "canDecideEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canRetireEvaluateTemplate",
+          "must_not_read": "EVALUATE_ARCHIVE_ROLES",
+          "must_not_delegate_to": "canArchiveEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canRetireEvaluateTemplate",
+          "must_not_read": "EVALUATE_CREATE_ROLES",
+          "must_not_delegate_to": "canCreateEvaluation",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canDecideEvaluation",
+          "must_not_read": "EVALUATE_CRITERION_EDIT_ROLES",
+          "must_not_delegate_to": "canEditEvaluationCriterionResponse",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canDecideEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_DRAFT_ROLES",
+          "must_not_delegate_to": "canDraftEvaluationTemplate",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canDecideEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
+          "must_not_delegate_to": "canPublishEvaluateTemplateVersion",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canDecideEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_RETIRE_ROLES",
+          "must_not_delegate_to": "canRetireEvaluateTemplate",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canDecideEvaluation",
+          "must_not_read": "EVALUATE_ARCHIVE_ROLES",
+          "must_not_delegate_to": "canArchiveEvaluation",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canDecideEvaluation",
+          "must_not_read": "EVALUATE_CREATE_ROLES",
+          "must_not_delegate_to": "canCreateEvaluation",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canArchiveEvaluation",
+          "must_not_read": "EVALUATE_CRITERION_EDIT_ROLES",
+          "must_not_delegate_to": "canEditEvaluationCriterionResponse",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canArchiveEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_DRAFT_ROLES",
+          "must_not_delegate_to": "canDraftEvaluationTemplate",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canArchiveEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
+          "must_not_delegate_to": "canPublishEvaluateTemplateVersion",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canArchiveEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_RETIRE_ROLES",
+          "must_not_delegate_to": "canRetireEvaluateTemplate",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canArchiveEvaluation",
+          "must_not_read": "EVALUATE_DECISION_ROLES",
+          "must_not_delegate_to": "canDecideEvaluation",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canArchiveEvaluation",
+          "must_not_read": "EVALUATE_CREATE_ROLES",
+          "must_not_delegate_to": "canCreateEvaluation",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canCreateEvaluation",
+          "must_not_read": "EVALUATE_CRITERION_EDIT_ROLES",
+          "must_not_delegate_to": "canEditEvaluationCriterionResponse",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canCreateEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_DRAFT_ROLES",
+          "must_not_delegate_to": "canDraftEvaluationTemplate",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canCreateEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
+          "must_not_delegate_to": "canPublishEvaluateTemplateVersion",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canCreateEvaluation",
+          "must_not_read": "EVALUATE_TEMPLATE_RETIRE_ROLES",
+          "must_not_delegate_to": "canRetireEvaluateTemplate",
+          "extensions_equal_today": false
+        },
+        {
+          "subject_predicate": "canCreateEvaluation",
+          "must_not_read": "EVALUATE_DECISION_ROLES",
+          "must_not_delegate_to": "canDecideEvaluation",
+          "extensions_equal_today": true
+        },
+        {
+          "subject_predicate": "canCreateEvaluation",
+          "must_not_read": "EVALUATE_ARCHIVE_ROLES",
+          "must_not_delegate_to": "canArchiveEvaluation",
+          "extensions_equal_today": true
+        }
+      ]
+    },
+    "global_prohibitions": [
+      "No Evaluate predicate may be written with hasRole, '>=', ROLE_HIERARCHY comparison, '+' notation, or any 'higher role' semantics.",
+      "No Evaluate constant may be derived from, spread from, or computed out of another Evaluate constant.",
+      "No Evaluate constant may be derived from isInReviewSet, REVIEW_ROLES or STELLA_ROLES - reviewer is a member of the repository review set and is excluded from every Evaluate write set.",
+      "No Evaluate predicate may accept a role set as a parameter, which would reintroduce sharing through the call site."
     ],
-    "why_behaviour_tests_are_insufficient": "A behaviour fixture varying the ROLE cannot distinguish two predicates whose extensions are equal: substituting canDecideEvaluation for canDraftEvaluationTemplate produces identical results for all six roles, so every role-varying test stays green. Detection therefore requires a STRUCTURAL control over the DECLARATION SITE and the CALL SITE - which constant each predicate reads, and which predicate each action calls. See the companion manifest N-22 and M-12.",
-    "cross_reference": "This is the same failure class recorded repository-wide as 'extensional set equality makes role tests vacuous': the mis-bound predicate matches on every role, so it is undetectable by varying the role."
+    "why_behaviour_tests_are_insufficient": "A fixture varying the ROLE cannot distinguish two predicates whose extensions are equal. Substituting canDecideEvaluation for canArchiveEvaluation, or for canDraftEvaluationTemplate, or for canCreateEvaluation, produces identical results for all six roles, so every role-varying test stays green. Detection requires a STRUCTURAL control over declaration sites and call sites: see the companion manifest N-22, proved non-vacuous by M-12 (draft), M-13 (archive) and M-14 (create)."
   },
   "AUTHORITY_RESOLUTION_IS_NOT_REVIEW_COMPLETION": {
     "rule": "AUTHORITY_GAP_CLOSED does NOT mean, imply, or contribute evidence toward SECURITY_REVIEW_COMPLETE, LEGAL_REVIEW_COMPLETE, OPERATOR_BOUNDARY_REVIEW_COMPLETE, PRIVACY_REVIEW_COMPLETE or RELEASE_REVIEW_COMPLETE.",
@@ -2664,7 +3111,7 @@
         "authority_gap_state": "CLOSED",
         "independent_review_requirement": "REQUIRED_BEFORE_OR_ALONGSIDE_IMPLEMENTATION - independent security/legal/operator-boundary review",
         "independent_review_source": "docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json required_independent_reviews.flagged_ids",
-        "owner_rationale_verbatim": "Defines the decision-role boundary (organization_admin / impact_manager) and explicitly forbids any '+' hierarchy notation from implicitly admitting super_admin - a security/role-boundary decision.",
+        "owner_rationale_verbatim": "Defines the decision-role boundary (organization_admin / impact_manager) and explicitly forbids any '+' hierarchy notation from implicitly admitting super_admin — a security/role-boundary decision.",
         "release_review_requirement": "REQUIRED_BEFORE_RELEASE via the ledger's global release_review gate",
         "implementation_dependency": "W-EV-3 (permissions) and W-EV-5 (decision action) may not be released before this review",
         "completion_state": "REQUIRED_OPEN",
@@ -2678,7 +3125,7 @@
         "authority_gap_state": "CLOSED",
         "independent_review_requirement": "REQUIRED_BEFORE_OR_ALONGSIDE_IMPLEMENTATION - independent security/legal/operator-boundary review",
         "independent_review_source": "docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json required_independent_reviews.flagged_ids; expressly preserved by the RAT-EV-04 amendment's HD09_RELATION.flagged_review_status_preserved",
-        "owner_rationale_verbatim": "Splits draft-vs-publish authority for templates (impact_manager may draft; organization_admin must publish/retire) - an operator/role-boundary decision.",
+        "owner_rationale_verbatim": "Splits draft-vs-publish authority for templates (impact_manager may draft; organization_admin must publish/retire) — an operator/role-boundary decision.",
         "release_review_requirement": "REQUIRED_BEFORE_RELEASE via the ledger's global release_review gate",
         "implementation_dependency": "W-EV-5 template actions (draft / publish / retire) may not be released before this review",
         "completion_state": "REQUIRED_OPEN",
@@ -2692,7 +3139,7 @@
         "authority_gap_state": "CLOSED",
         "independent_review_requirement": "REQUIRED_BEFORE_OR_ALONGSIDE_IMPLEMENTATION - independent security/legal/operator-boundary review",
         "independent_review_source": "docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json required_independent_reviews.flagged_ids",
-        "owner_rationale_verbatim": "Confines Evaluate templates to organization scope only - a tenancy-boundary decision with security implications if violated.",
+        "owner_rationale_verbatim": "Confines Evaluate templates to organization scope only — a tenancy-boundary decision with security implications if violated.",
         "release_review_requirement": "REQUIRED_BEFORE_RELEASE via the ledger's global release_review gate",
         "implementation_dependency": "W-EV-1 (organization_id NOT NULL on every template relation) and its RLS policies may not be released before this review",
         "completion_state": "REQUIRED_OPEN",
@@ -2706,7 +3153,7 @@
         "authority_gap_state": "CLOSED",
         "independent_review_requirement": "REQUIRED_BEFORE_OR_ALONGSIDE_IMPLEMENTATION - independent security/legal/operator-boundary review",
         "independent_review_source": "docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json required_independent_reviews.flagged_ids",
-        "owner_rationale_verbatim": "Prohibits platform superadmin bypass for all Evaluate tenant content and routes any platform support access through a separately authorized bounded support capability - a security/operator-boundary decision directly analogous to ratified MO-07/MO-09 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json.",
+        "owner_rationale_verbatim": "Prohibits platform superadmin bypass for all Evaluate tenant content and routes any platform support access through a separately authorized bounded support capability — a security/operator-boundary decision directly analogous to ratified MO-07/MO-09 in docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json.",
         "release_review_requirement": "REQUIRED_BEFORE_RELEASE via the ledger's global release_review gate",
         "implementation_dependency": "Every Evaluate RLS policy (W-EV-1); additionally INHERITS the RAT-OP-01 dependency row below",
         "completion_state": "REQUIRED_OPEN",
@@ -2815,7 +3262,8 @@
         "why": "LRF-02 concerns which locale is legally controlling for reacceptance notice, explicitly tied to RAT-AO-03. Evaluate issues no notice."
       }
     ],
-    "not_applicable_count": 3
+    "not_applicable_count": 3,
+    "owner_rationale_verbatim_provenance": "The four owner_rationale_verbatim values are assigned PROGRAMMATICALLY from docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json required_independent_reviews.rationale, so byte-identity is produced by construction rather than by retyping. CA-NB-03 found all four had been punctuation-normalized (U+2014 EM DASH to U+002D HYPHEN) in R3 - a field named *_verbatim that has been normalized is not verbatim. The validator byte-compares all four against the canonical source."
   },
   "OBJ_4_SHAPE_CLASSIFICATION": {
     "classification": "AUTHORIZED_IMPLEMENTATION_SHAPE",
@@ -2982,7 +3430,7 @@
     ],
     "vector_count": 14,
     "closed_set_inventory": {
-      "note": "Every closed set defined by owner authority, with its exact membership. super_admin appears in NONE of them.",
+      "note": "Every closed set defined by this artifact, one per authority concept, with its exact membership, its bound predicate and its grant. super_admin appears in NONE of them. R4 completes this inventory to all SEVEN sets: R2/R3 listed only five because archive and create had no constants of their own, which is the same root defect CA raised as CA-B-01 - an incomplete inventory could not have revealed the sharing.",
       "sets": [
         {
           "set": "EVALUATE_CRITERION_EDIT_ROLES",
@@ -2991,7 +3439,9 @@
             "impact_manager",
             "organization_admin"
           ],
-          "grant": "RAT-EV-02"
+          "predicate": "canEditEvaluationCriterionResponse",
+          "grant": "RAT-EV-02",
+          "authority_classification": "OWNER_RATIFIED"
         },
         {
           "set": "EVALUATE_TEMPLATE_DRAFT_ROLES",
@@ -2999,21 +3449,27 @@
             "impact_manager",
             "organization_admin"
           ],
-          "grant": "RAT-EV-04"
+          "predicate": "canDraftEvaluationTemplate",
+          "grant": "RAT-EV-04",
+          "authority_classification": "OWNER_RATIFIED"
         },
         {
           "set": "EVALUATE_TEMPLATE_PUBLISH_ROLES",
           "members": [
             "organization_admin"
           ],
-          "grant": "RAT-EV-04 / HD-09"
+          "predicate": "canPublishEvaluateTemplateVersion",
+          "grant": "RAT-EV-04, restating HD-09",
+          "authority_classification": "OWNER_RATIFIED"
         },
         {
           "set": "EVALUATE_TEMPLATE_RETIRE_ROLES",
           "members": [
             "organization_admin"
           ],
-          "grant": "RAT-EV-04 / HD-09"
+          "predicate": "canRetireEvaluateTemplate",
+          "grant": "RAT-EV-04, restating HD-09",
+          "authority_classification": "OWNER_RATIFIED"
         },
         {
           "set": "EVALUATE_DECISION_ROLES",
@@ -3021,10 +3477,32 @@
             "organization_admin",
             "impact_manager"
           ],
-          "grant": "HD-05"
+          "predicate": "canDecideEvaluation",
+          "grant": "HD-05",
+          "authority_classification": "OWNER_RATIFIED"
+        },
+        {
+          "set": "EVALUATE_ARCHIVE_ROLES",
+          "members": [
+            "impact_manager",
+            "organization_admin"
+          ],
+          "predicate": "canArchiveEvaluation",
+          "grant": "HD-08",
+          "authority_classification": "OWNER_RATIFIED"
+        },
+        {
+          "set": "EVALUATE_CREATE_ROLES",
+          "members": [
+            "organization_admin",
+            "impact_manager"
+          ],
+          "predicate": "canCreateEvaluation",
+          "grant": "NONE - no canonical ratification addresses this act",
+          "authority_classification": "BOUNDED_IMPLEMENTATION_CHOICE"
         }
       ],
-      "set_count": 5,
+      "set_count": 7,
       "super_admin_membership_count": 0
     },
     "canonical_census": {
@@ -3064,7 +3542,7 @@
       "OWNER_AUTHORITY_GAPS": {
         "definition": "A product decision that no canonical ratification answers, where proceeding would require this authority to invent the answer.",
         "count": 0,
-        "recomputed_independently": "YES - recomputed from the canonical corpus at d76fa3f2, not inherited from R2's count. The six R1 gaps were re-checked one by one against resident text, and R2's own residual note RN-01 (HD-09 draft-set silence) was re-checked against RAT-EV-04.",
+        "recomputed_independently": "YES - recomputed again for R4 against the canonical corpus at d76fa3f2, and re-tested against CA-NB-04. The create-role binding was examined under this artifact's own gap definition and classified as a BOUNDED_IMPLEMENTATION_CHOICE disclosure rather than an owner gap; the reasoning and the asymmetry with BR B-01 are recorded in CREATE_AUTHORITY_DISCLOSURE so the classification is checkable rather than asserted.",
         "members": []
       },
       "REVIEW_REQUIREMENTS": {
@@ -3102,13 +3580,37 @@
         "definition": "A capability the authorized V1 shape does not provide, where canonical text does not require it. Never an owner gap.",
         "count": 3,
         "see": "FUTURE_DESIGN_LIMITATIONS"
+      },
+      "BOUNDED_IMPLEMENTATION_CHOICES": {
+        "definition": "A binding this authority had to make executable where canonical text addresses the act nowhere. Disclosed, never presented as owner-ratified, and never counted as an owner gap. Distinct from an IMPLEMENTATION_DEPENDENCY, which is a missing runtime fact rather than an undisclosed choice.",
+        "count": 2,
+        "members": [
+          {
+            "id": "BIC-01",
+            "subject": "EVALUATE_CREATE_ROLES / canCreateEvaluation",
+            "extension": [
+              "organization_admin",
+              "impact_manager"
+            ],
+            "canonical_status": "no canonical text addresses the act",
+            "see": "CREATE_AUTHORITY_DISCLOSURE, RESIDUAL_NOTES.RN-04"
+          },
+          {
+            "id": "BIC-02",
+            "subject": "Exact leaf pathnames inside the two HD-11 route families",
+            "extension": "N/A - not a role set",
+            "canonical_status": "HD-11 ratifies the two route FAMILIES and their scopes, not pathnames",
+            "see": "ROUTING.route_family_contract.pathnames_are_bounded_implementation_choice"
+          }
+        ]
       }
     },
     "prohibited_conflations": [
       "A REVIEW_REQUIREMENT is not an OWNER_AUTHORITY_GAP. Ten open reviews do not reopen a single decision.",
       "An IMPLEMENTATION_DEPENDENCY is not an OWNER_AUTHORITY_GAP. The absent bounded support capability is a runtime fact, not an undecided question.",
       "A FUTURE_DESIGN_LIMITATION is not an OWNER_AUTHORITY_GAP. HD-07 requiring no evaluation-level Stella attribution means its absence is in scope, not missing.",
-      "Closing an OWNER_AUTHORITY_GAP discharges nothing in any other dimension."
+      "Closing an OWNER_AUTHORITY_GAP discharges nothing in any other dimension.",
+      "A BOUNDED_IMPLEMENTATION_CHOICE is not an OWNER_AUTHORITY_GAP and is not an IMPLEMENTATION_DEPENDENCY. It is a disclosed choice: the act exists, the authority had to bind it to be executable, and canonical text is silent on the act itself rather than silent inside a statement about it."
     ]
   },
   "BR_BLOCKERS_CLOSED": 2,
@@ -3122,5 +3624,96 @@
   "RELEASABLE_ON_THIS_AUTHORITY_ALONE": false,
   "RAT_EV_04_RESIDENT_AND_CONSUMED": true,
   "NEW_OWNER_DECISION_MADE_BY_THIS_REVISION": false,
-  "CANONICAL_RATIFICATION_ARTIFACTS_EDITED": 0
+  "CANONICAL_RATIFICATION_ARTIFACTS_EDITED": 0,
+  "R3_HEAD": "8be07c13dd55ba64e3e7678457e5117bafbfe162",
+  "R3_TREE": "e5a325cf53c62f57f700e21ccafccf918957a2c7",
+  "CA_AUDIT_DISPOSITION": {
+    "audit": "Independent audit CA of PR140 R3 head 8be07c13dd55ba64e3e7678457e5117bafbfe162",
+    "audit_result_received": "RESULT=FAIL, OWNER_DECISION_REQUIRED=NONE, BLOCKING=1, AUDIT_UNKNOWN=0, MERGE_CANDIDATE=NO",
+    "surfaces_CA_independently_confirmed": [
+      "BR B-01 CLOSED",
+      "BR B-02 CLOSED",
+      "RAT-EV-04 exact",
+      "REVIEW_MATRIX canonically grounded",
+      "19/19 owner statements exact",
+      "4/4 owner review flags preserved",
+      "OBJ-4 correction valid",
+      "known_conditions correction valid",
+      "support authority/runtime distinction valid",
+      "HD-07 attribution treatment valid",
+      "route topology valid",
+      "superadmin census valid",
+      "synthetic merge clean",
+      "no runtime/schema/migration/ODS/hosted changes"
+    ],
+    "blockers": [
+      {
+        "id": "CA-B-01",
+        "finding": "The pristine R3 artifact violated its OWN predicate-identity contract. R3's PREDICATE_IDENTITY_SEPARATION.prohibitions stated 'No Evaluate predicate may be derived from another by reference to its role array; each names its own closed constant' - yet R3's own model had canArchiveEvaluation consuming EVALUATE_DECISION_ROLES, and its permission_matrix had canCreateEvaluation consuming EVALUATE_DECISION_ROLES as well.",
+        "verdict": "CA WAS CORRECT, and the defect is of the exact class R3 itself identified. R3 wrote the rule, enumerated the extensional collisions that make the rule necessary, built N-22 to enforce it - and then two of its own six concepts shared a constant. Writing 'consumed, not redefined' next to a shared constant does not make the sharing conform; it documents the violation.",
+        "why_R3_missed_it": "R3's validator checked that the six PREDICATES were distinct names and that the declared collision count matched the extensions. It never checked that the six CONSTANTS were distinct. The check was one field away from the defect.",
+        "closed_by": "This revision. EVALUATE_ARCHIVE_ROLES and EVALUATE_CREATE_ROLES are introduced as distinct named constants, the model is extended to seven concepts, and the pairwise prohibition matrix is generated over all ordered pairs so it is complete by construction rather than by hand.",
+        "role_semantics_changed": "NONE. Every admitted extension is byte-identical to R3. This repair is structural only.",
+        "status": "CLOSED"
+      }
+    ],
+    "nonblocking": [
+      {
+        "id": "CA-NB-01",
+        "finding": "Two stale present-tense strings still said PR145 is OPEN/DRAFT: this_mission_controls MC-07 and manifest N-14.",
+        "verdict": "CA WAS CORRECT - R3 corrected the PLATFORM_SUPPORT_DEPENDENCY block but left these two carried strings behind it.",
+        "resolution": "Both rewritten to the current truth: authority repository-resident/merged, support-capability runtime ABSENT. The substantive conclusion is preserved unchanged, and PR status is explicitly disclaimed as runtime evidence.",
+        "status": "ADDRESSED"
+      },
+      {
+        "id": "CA-NB-02",
+        "finding": "N-16 prose said 'Twelve refusals' while the control actually enumerates FOURTEEN refusal cells.",
+        "verdict": "CA WAS CORRECT.",
+        "resolution": "The brittle prose count is replaced by a STRUCTURALLY DERIVED denial space: the sum of the three template acts' excluded-role list lengths, 4 + 5 + 5 = 14, recomputed by the validator from the role matrix rather than asserted in prose.",
+        "status": "ADDRESSED"
+      },
+      {
+        "id": "CA-NB-03",
+        "finding": "Four owner_rationale_verbatim values in REVIEW_MATRIX differed from canonical by exactly U+2014 EM DASH normalized to U+002D HYPHEN.",
+        "verdict": "CA WAS CORRECT. A field named *_verbatim that has been punctuation-normalized is not verbatim, and the four were the only strings in the artifact copied from canonical prose without a byte check.",
+        "resolution": "All four restored by reading the canonical rationale values DIRECTLY from docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json required_independent_reviews.rationale and assigning them programmatically, so byte-identity is produced by construction rather than by retyping. The validator now byte-compares all four.",
+        "status": "ADDRESSED"
+      },
+      {
+        "id": "CA-NB-04",
+        "finding": "canCreateEvaluation's role binding is not separately owner-ratified and R3 did not disclose that in the gap taxonomy.",
+        "verdict": "CA WAS CORRECT that it is a DISCLOSURE gap rather than a role-set error.",
+        "resolution": "EVALUATE_CREATE_ROLES is classified BOUNDED_IMPLEMENTATION_CHOICE, disclosed in RESIDUAL_NOTES.RN-04 and in the gap taxonomy's own dimension, with an explicit statement of why it does NOT convert OWNER_AUTHORITY_GAPS from 0 to 1. See CREATE_AUTHORITY_DISCLOSURE.",
+        "status": "ADDRESSED"
+      }
+    ]
+  },
+  "CREATE_AUTHORITY_DISCLOSURE": {
+    "subject": "canCreateEvaluation / EVALUATE_CREATE_ROLES",
+    "classification": "BOUNDED_IMPLEMENTATION_CHOICE",
+    "current_chosen_extension": [
+      "organization_admin",
+      "impact_manager"
+    ],
+    "canonical_status_measured": "NO canonical ratification addresses the act of creating an Evaluate evaluation. Measured at integration d76fa3f2: zero hits across all three canonical ledgers for any of 'creat* an evaluation', 'evaluation creation', 'canCreateEvaluation', 'who may create'.",
+    "what_is_explicitly_NOT_claimed": [
+      "That this binding is owner-ratified",
+      "That it is derived from any HD-* ratification",
+      "That it is derived from any RAT-EV-* ratification",
+      "That it is uniquely required, logically forced, or the only conforming choice"
+    ],
+    "why_this_does_NOT_convert_OWNER_AUTHORITY_GAPS_from_0_to_1": {
+      "taxonomy_test": "This artifact's own definition of an OWNER_AUTHORITY_GAP is 'a product decision that no canonical ratification answers, where PROCEEDING WOULD REQUIRE THIS AUTHORITY TO INVENT THE ANSWER'. The operative clause is the second one.",
+      "asymmetry_with_BR_B-01": "BR blocker B-01 was a blocker because HD-09 NAMED the act ('impact_manager may draft') and was silent only on whether organization_admin may also draft. There was a ratified statement whose scope R2 narrowed by encoding one reading. Here canonical text NAMES NO SUCH ACT at all, so there is no ratified statement being narrowed, widened or contradicted. This asymmetry is stated explicitly so an auditor can check the reasoning rather than accept the conclusion.",
+      "the_choice_widens_nothing": "The chosen extension is a strict SUBSET of EVALUATE_CRITERION_EDIT_ROLES, is equal to the decision and archive extensions, and excludes all four roles HD-05 forbids from deciding plus super_admin. No role gains any capability it lacks elsewhere in the artifact, and no ratified exclusion is weakened.",
+      "the_act_is_preparatory_and_reversible": "T1 produces a DRAFT evaluation: no Score snapshot, no recommended outcome, no decision, no immutable state, and it is archivable from DRAFT (T6). It confers no decision, publish or retire authority. Nothing irreversible or externally visible follows from creation alone.",
+      "conclusion": "The create binding does NOT block this authority package. It is disclosed as an unresolved future authority surface rather than counted as an owner gap, and the implementing node is bound not to widen it."
+    },
+    "obligation_on_the_implementing_node": "Implement EVALUATE_CREATE_ROLES exactly as enumerated. Do NOT widen it, do NOT derive it from another constant, and do NOT treat its extensional equality with the decision or archive sets as licence to share a constant.",
+    "future_authority_path": "If the owner wishes to ratify create-role authority, it is a one-clause amendment to the micro-ratifications ledger and would carry whatever review requirement the owner attaches. Until then this classification stands and is disclosed on every read of this artifact.",
+    "structural_benefit_of_separating_it_now": "Because create now reads its own constant, a future amendment to HD-05 (decision) or HD-08 (archive) cannot silently move the create set - which is exactly the failure mode CA-B-01 left open."
+  },
+  "CA_BLOCKERS_CLOSED": 1,
+  "CA_NONBLOCKING_ADDRESSED": 4,
+  "BOUNDED_IMPLEMENTATION_CHOICES_DISCLOSED": 2
 }
