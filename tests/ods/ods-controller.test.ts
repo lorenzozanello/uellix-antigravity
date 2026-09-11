@@ -939,7 +939,7 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     it('CONTINUITY: OLD41 minus its final element reproduces the Controller41 OLD40 pin exactly', () => {
       const priorClosedWorld = OLD41.slice(0, -1)
       expect(priorClosedWorld.length).toBe(40)
-      expect(OLD41[40]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json')
+      expect(OLD41[40]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json')
       expect(orderedDigest(priorClosedWorld)).toBe(OLD40_DIGEST_CONTROLLER41_PIN)
     })
 
@@ -952,7 +952,7 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     it('CONTINUITY: OLD41 minus its final two elements reproduces the Controller40 OLD39 pin exactly', () => {
       const twoBack = OLD41.slice(0, -2)
       expect(twoBack.length).toBe(39)
-      expect(OLD41[39]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.28.json')
+      expect(OLD41[39]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.29.json')
       expect(orderedDigest(twoBack)).toBe(OLD39_DIGEST_CONTROLLER40_PIN)
     })
 
