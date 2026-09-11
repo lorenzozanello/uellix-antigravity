@@ -10,7 +10,7 @@
   "role": "COMMERCIAL_V1_RELEASE_AUTHORITY_WRITER",
   "mode": "DOCS_ONLY_TIER_A_RELEASE_AUTHORITY",
   "materialization_date": "2026-09-10",
-  "revision": "R1",
+  "revision": "R2",
   "companion_authority": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
 
   "amends": "NOTHING. This artifact is a NEW canonical gate ledger. It does not amend, supersede or relax FIB, PC-01B, IM-01B, the frozen ODS authority artifact, or LC0.",
@@ -75,15 +75,21 @@
   },
 
   "STATE_VOCABULARY": {
-    "PASS": "Evidence was executed and is current under RULE_OBSERVATION_FRESHNESS.",
-    "PASS_OVER_STALE_INPUT": "The gate mechanism passes, but the observation it derives from is stale. Not creditable for a stage transition.",
-    "PARTIAL": "The gate exists and runs, but its pass criteria are not fully met or not fully non-vacuous.",
-    "PREPARED": "A package or criterion exists with zero execution. Preparation is NOT readiness.",
-    "STALE": "Evidence exists but predates the current state of the thing it describes.",
-    "ABSENT": "Neither gate nor evidence exists.",
-    "UNKNOWN": "Not measurable from the repository; requires an operator observation.",
-    "UNSATISFIABLE": "The criterion as written cannot be met by any execution, so it must be retired or restated rather than attempted.",
-    "OPEN": "An adjudication or decision is outstanding."
+    "CLOSURE_RULE": "This vocabulary is CLOSED. Every gate current_state MUST be exactly one of the eleven state keys below, and the pair validator FAILS on any undeclared value. R1 shipped two undeclared values, NO on four staging gates and BLOCKED on one provider gate, which is what motivated closing the vocabulary rather than merely adding a word to it.",
+    "NON_COLLAPSE_RULE": "UNKNOWN and NOT_SATISFIED must NEVER be merged. NOT_SATISFIED asserts the criterion IS unmet, which is a positive claim requiring evidence. UNKNOWN asserts only that nothing is known. Collapsing UNKNOWN into NOT_SATISFIED manufactures an unevidenced claim; collapsing it into PASS or PARTIAL manufactures readiness. Both directions are forbidden.",
+    "states": {
+      "PASS": "Evidence was executed and is current under RULE_OBSERVATION_FRESHNESS.",
+      "PASS_OVER_STALE_INPUT": "The gate mechanism passes, but the observation it derives from is stale. Not creditable for a stage transition.",
+      "PARTIAL": "Some of the evidence the criterion names exists and is current, but not all of it. Never creditable for a stage transition.",
+      "NOT_SATISFIED": "MEASURED, and the criterion is not satisfied. The measurement is of a repository-side fact the criterion depends on, such as an absent artifact, an absent package, or a branch position, so the shortfall is ESTABLISHED rather than suspected. Distinct from UNKNOWN: here the criterion is known to be unmet.",
+      "BLOCKED": "The criterion cannot currently be ATTEMPTED because an external or organizational decision forbids it. Distinct from ABSENT, where there is nothing to attempt, and from NOT_SATISFIED, where an attempt was possible and fell short. A BLOCKED gate is unblocked by a DECISION, not by engineering.",
+      "PREPARED": "A package or criterion exists with zero execution. Preparation is NOT readiness.",
+      "STALE": "Evidence exists but predates the current state of the thing it describes.",
+      "ABSENT": "Neither gate nor evidence exists.",
+      "OPEN": "An adjudication or decision is outstanding.",
+      "UNKNOWN": "The fact the criterion turns on is NOT measurable from the repository and no fresh observation exists to settle it. UNKNOWN is never a pass and never a fail; it is the absence of knowledge.",
+      "UNSATISFIABLE": "The criterion as written cannot be met by any execution, so it must be retired or restated rather than attempted."
+    }
   },
 
   "NON_REGRESSION_RULE": "A gate is listed once, at the EARLIEST stage that requires it, in first_required_at_stage. A gate required at stage N remains required at every later stage; a later stage inherits all earlier gates and may not be declared while an inherited gate has regressed. Per-stage gate sets are therefore DERIVED from this field and are never restated, so the two artifacts in this pair cannot drift apart.",
@@ -394,7 +400,8 @@
       "category": "STAGING",
       "enforcement": "HUMAN_AND_MACHINE",
       "owner": "operator",
-      "current_state": "NO",
+      "current_state": "NOT_SATISFIED",
+      "state_basis": "NOT_SATISFIED, not UNKNOWN: the criterion REQUIRES a fresh observation artifact, and the measurable repository fact is that no such artifact exists, so the shortfall in the CRITERION is established. The underlying live journal position remains separately UNKNOWN, recorded as AT-U-01. The two are deliberately not conflated.",
       "pass_criteria": "A FRESH remote observation shows the contiguous APPLIED prefix of the staging journal equal to the exact migration corpus of the SHA being certified, by unit count AND by manifest digest.",
       "evidence_class": "FRESH_STAGING_OBSERVATION",
       "dependencies": ["D1", "S8", "G12", "PROD-MIG-AUTH"],
@@ -428,7 +435,8 @@
       "category": "STAGING",
       "enforcement": "HUMAN_AND_MACHINE",
       "owner": "operator",
-      "current_state": "NO",
+      "current_state": "NOT_SATISFIED",
+      "state_basis": "NOT_SATISFIED: the successor ACL package does not exist in the repository, which is directly measurable here, so the criterion is established as unmet rather than unknown.",
       "pass_criteria": "A privilege sweep shows the runtime role holds the required privileges on EVERY table the application enumerates, with zero permission-denied results, verified by a successor ACL package rather than assumed.",
       "evidence_class": "ACL_SUCCESSOR_PROOF",
       "dependencies": ["S1"],
@@ -450,7 +458,8 @@
       "category": "STAGING",
       "enforcement": "HUMAN_AND_MACHINE",
       "owner": "operator",
-      "current_state": "NO",
+      "current_state": "NOT_SATISFIED",
+      "state_basis": "NOT_SATISFIED: the only deployment scope bound to staging is driven by a branch whose position is far behind AS_OF_HEAD, which is measurable in the repository, so the criterion is established as unmet.",
       "pass_criteria": "The Preview deployment pointed at staging was built from the EXACT SHA whose migration corpus is applied to staging, confirmed by a build identity and a runtime identity endpoint that agree.",
       "evidence_class": "CODE_SCHEMA_COMPATIBILITY_PROOF",
       "dependencies": ["S1", "S2", "S3"],
@@ -517,7 +526,8 @@
       "category": "DATA",
       "enforcement": "HUMAN",
       "owner": "owner",
-      "current_state": "NO",
+      "current_state": "NOT_SATISFIED",
+      "state_basis": "NOT_SATISFIED: zero backup or restore scripts exist in the repository and no backup record exists, both measurable here, so the criterion is established as unmet.",
       "pass_criteria": "A backup of the staging target is taken and VERIFIED RESTORABLE within the window immediately preceding the DDL, recorded with a backup identifier and the target identifier.",
       "evidence_class": "BACKUP_PACKET",
       "dependencies": ["D1"],
@@ -546,16 +556,32 @@
       "id": "S10",
       "name": "zero real provider calls from staging",
       "category": "PROVIDER",
-      "enforcement": "MACHINE",
+      "enforcement": "HUMAN_AND_MACHINE",
       "owner": "operator",
-      "current_state": "PASS",
-      "pass_criteria": "No real model-provider call originates from the staging environment, enforced by a network guard and by the absence of a provider key in that scope.",
+      "current_state": "UNKNOWN",
+      "pass_criteria": "A FRESH observation of the staging target and its deployment scope establishes ALL THREE of: (a) no real model-provider credential NAME is present in that environment scope; (b) every governing capability and feature flag that could reach the provider is observed in its dark state in that live environment; (c) zero real provider calls are attributable to that environment across a declared evidence window. The three are CONJUNCTIVE. A repository default, a committed configuration file, a documented matrix value, or any test-time control satisfies NONE of them.",
       "evidence_class": "PROVIDER_DARK_PROOF",
       "dependencies": [],
       "first_required_at_stage": "STAGING_ALIGNED",
-      "retest_after": "change to the provider adapter",
-      "source_of_truth": ["lib/stella/"],
-      "hpo_g_binding": "first reach staging parity with provider calls dark"
+      "retest_after": "every environment change, every deploy, and any change to the provider adapter",
+      "source_of_truth": ["docs/ops/staging/STELLA_HOSTED_ENVIRONMENT_MATRIX.md", "docs/ops/G1_B_POST_GATE_PILOT_BLOCKERS.md"],
+      "hpo_g_binding": "first reach staging parity with provider calls dark",
+      "R2_CORRECTION": {
+        "audit_finding": "AT-B-01",
+        "r1_error": "R1 recorded current_state PASS and grounded it on a runtime network guard plus key absence, citing lib/stella/ as source of truth.",
+        "measured_at_AS_OF_HEAD": {
+          "network_guard_occurrences_in_lib_or_app": 0,
+          "where_the_guard_actually_lives": ["vitest.setup.network-guard.ts", "tests/no-real-gemini-network-guard.test.ts"],
+          "how_it_is_wired": "as a vitest setupFiles entry in vitest.config.ts and vitest.e2e.config.ts",
+          "what_it_therefore_proves": "that the TEST SUITE cannot reach the real provider",
+          "what_it_does_not_prove": "anything whatsoever about a deployed staging environment"
+        },
+        "why_this_was_the_blocking_defect": "The cited control is a TEST-TIME construct, so R1 credited an offline artifact as hosted evidence. That is the precise failure this same ledger declares forbidden in RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE, and it made S10 the only staging gate reading PASS, which is exactly how an unearned green survives a review.",
+        "enforcement_change": "MACHINE to HUMAN_AND_MACHINE, a consequence of the corrected criterion: observing an environment scope, live flag values and a call window is operator-initiated work, matching S1, S2 and S9, the other fresh-observation gates. The derived stage sets in the companion authority are updated accordingly."
+      },
+      "why_unknown_and_not_not_satisfied": "Asserting that staging DOES make real provider calls would be an unevidenced claim in the opposite direction. Nothing is known either way, so the state is UNKNOWN.",
+      "why_unknown_while_s7_is_partial": "S7 is PARTIAL because a documented flag matrix exists, which is some of the substrate the S7 criterion names. S10 has NO valid repository-side substrate for any of its three conjuncts once the test-harness control is excluded, so there is nothing partial to credit.",
+      "alignment": "Aligned with the S7 evidentiary standard, that a value must be observed in the LIVE environment and a documented default is not an observation, and with RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE."
     },
 
     {
@@ -620,6 +646,7 @@
       "enforcement": "HUMAN",
       "owner": "owner_and_counsel",
       "current_state": "BLOCKED",
+      "state_basis": "BLOCKED is now an explicitly DECLARED state in the closed STATE_VOCABULARY. It is the correct value here and is not a synonym for ABSENT or NOT_SATISFIED: the governing regulatory baseline forbids ATTEMPTING this stage, so the gate is unblocked by an owner and counsel decision rather than by any engineering work.",
       "pass_criteria": "The provider's legal and data-handling terms are resolved, the provider credential is scoped and rotated for the target environment, and the governed first-call rehearsal has been executed.",
       "evidence_class": "PROVIDER_GOVERNANCE_DECISION",
       "dependencies": ["L3"],
@@ -1470,7 +1497,7 @@
           "the CI workflow runs a secret scan, seal verification, derived-artifact verifications and a build that the release document does not list",
           "poststate omits lint and build",
           "the manifest schema enumeration omits lint, build, browser end-to-end and full CI greenness",
-          "four test manifests declare an exit gate that is outside the schema enumeration, so the declaration cannot be validated",
+          "ONE committed test manifest declares an exit gate outside the schema enumeration, so that declaration cannot be validated; a second file, an authority, repeats the same out-of-enum list as its own manifest-contract",
           "dependency audit and schema drift appear only in the beta baseline"
         ],
         "canonical": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M10", "M13", "M14", "M15"],
@@ -1683,7 +1710,7 @@
     {"id": "AT-F-05", "finding": "The real-provider stage is blocked by an organizational governance decision that the evaluation gate package does not mention.", "gates": ["PV4", "G1"], "disposition": "RESOLVED_BY_ORDERING_IN_DGR_09"},
     {"id": "AT-F-06", "finding": "The destroy-and-reprovision doctrine is calibrated for an empty target and is not a recovery path for a target holding data.", "gates": ["D1", "S8", "D3"], "disposition": "RESOLVED_BY_FROZEN_CORRECTION_IN_DGR_06"},
     {"id": "AT-F-07", "finding": "An authority merging is not a capability existing. The email-verification Packet B authority merged at AS_OF_HEAD with no enforcement code, and must not be credited as provider readiness.", "gates": ["PV1"], "disposition": "RECORDED_AS_EXPLICIT_NON_CREDIT"},
-    {"id": "AT-F-08", "finding": "Four committed test manifests declare an exit gate that the manifest schema does not define, so that declaration cannot be validated today.", "gates": ["M6"], "disposition": "REQUIRES_SUCCESSOR_SCHEMA_VERSION"},
+    {"id": "AT-F-08", "finding": "An out-of-enum exit gate named full_ci_green is DECLARED as an array member in exactly TWO files: one test manifest, docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json at .exit_gates, and one authority manifest-contract, docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json at .test_manifest_contract.exit_gates. In both it is element index 9 of a ten-element list whose first nine match the schema enumeration exactly. Because the schema enumeration is closed at nine values, neither declaration can be validated today.", "gates": ["M6"], "disposition": "REQUIRES_SUCCESSOR_SCHEMA_VERSION", "R2_CORRECTION": {"audit_finding": "AT-N-02", "r1_error": "R1 asserted FOUR committed test manifests declare it, which conflated two different statements.", "measured_truth": {"files_containing_the_literal": 4, "files_DECLARING_it_as_an_exit_gates_array_member": 2, "of_those_that_are_test_manifests": 1, "of_those_that_are_authority_manifest_contracts": 1, "files_referencing_it_only_in_prose": ["docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json, seven references, all by index as exit_gates[9]", "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json, one reference, itself a prior finding recording this same schema defect"]}, "lesson": "A literal appearing in N files is not N declarations. Counting grep hits and counting declarations are different measurements, and only the structural one, array membership, supports the claim."}},
     {"id": "AT-F-09", "finding": "Whether the offline release-candidate criteria still hold at AS_OF_HEAD is UNKNOWN. This lane executed no tests, and an older recorded pass is not a current pass.", "gates": ["C1-C18"], "disposition": "UNKNOWN_BY_CONSTRUCTION"},
     {"id": "AT-F-10", "finding": "Branch protection is not observable from the repository and was measured absent by an earlier lane. Until observed, a green CI run is not proof that a merge was gated.", "gates": ["M1", "P1"], "disposition": "UNKNOWN_REQUIRES_HOSTED_OBSERVATION"}
   ],
@@ -1706,6 +1733,6 @@
     "validation_method": "machine-checked by the lane validator over this file and its companion; see the VALIDATION section of the report"
   },
 
-  "final_state": "RELEASE_GATE_LEDGER_FROZEN_R1__62_CANONICAL_GATES__12_DUPLICATE_RESOLUTIONS__1_GATE_RETIRED_AS_UNSATISFIABLE__READINESS_INHERITED_AND_NON_BINDING",
+  "final_state": "RELEASE_GATE_LEDGER_FROZEN_R2__78_CANONICAL_GATES__11_VALUE_CLOSED_STATE_VOCABULARY__12_DUPLICATE_RESOLUTIONS__1_GATE_RETIRED_AS_UNSATISFIABLE__S10_CORRECTED_TO_UNKNOWN__READINESS_INHERITED_AND_NON_BINDING",
   "next_gate": "STAGING_RELEASE_PRODUCTION_AUTHORITY_INDEPENDENT_OPUS_AUDIT of this ledger and its companion authority, at AS_OF_HEAD, read-only."
 }

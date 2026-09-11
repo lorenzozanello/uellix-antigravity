@@ -10,7 +10,7 @@
   "role": "COMMERCIAL_V1_RELEASE_AUTHORITY_WRITER",
   "mode": "DOCS_ONLY_TIER_A_RELEASE_AUTHORITY",
   "materialization_date": "2026-09-10",
-  "revision": "R1",
+  "revision": "R2",
   "companion_ledger": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
 
   "amends": "NOTHING. This artifact is a NEW release-process authority. It does not amend, supersede or relax the frozen FIB, PC-01B or IM-01B authority, the frozen ODS authority artifact, any prior owner decision, or the canonical regulatory data-governance baseline.",
@@ -71,8 +71,8 @@
         "stage": "STAGING_ALIGNED",
         "meaning": "The staging target's schema matches the exact migration corpus of the certified SHA, the runtime can actually read the tables, the deployed code was built from that SHA, and the real provider is dark. This is the first stage that requires a hosted mutation, so it is the first stage gated by HOSTED_DDL_PRECONDITIONS.",
         "new_machine_gates": ["M11", "M12", "S1", "S2", "S3", "S4", "S6", "S9", "S10"],
-        "new_human_gates": ["S1", "S2", "S3", "S4", "S5", "S7", "S8", "D1", "G12", "PROD-MIG-AUTH"],
-        "required_environment_evidence": "S5 as the environment-name inventory for the Preview scope, S7 as observed-dark feature flags, S10 as zero real provider calls. Names only: no gate at any stage records, compares or chooses a value.",
+        "new_human_gates": ["S1", "S2", "S3", "S4", "S5", "S7", "S8", "S10", "D1", "G12", "PROD-MIG-AUTH"],
+        "required_environment_evidence": "S5 as the environment-name inventory for the Preview scope, S7 as feature flags observed dark in the live environment, and S10 as a fresh three-part provider-dark observation: credential-name absence in scope, governing flags dark, and zero attributable provider calls across a declared window. Names only: no gate at any stage records, compares or chooses a value. A repository default or a documented matrix value satisfies none of these.",
         "required_security_review": "No NEW security gate. The inherited set must not have regressed. A hosted apply does not by itself require a human security review; what it requires is S3, because an apply without the successor ACL yields a runtime that is denied on its own tables.",
         "required_legal_review": "NONE. The regulatory baseline does not gate foundational engineering, and this artifact must not be cited to delay it.",
         "required_rollback_recovery_evidence": "D1 as the backup and restore CAPABILITY with at least one proven restore, and S8 as a verified backup taken in the window immediately preceding the data-definition change. For a target holding data, recovery is RESTORE_REQUIRED: destroy and reprovision is NOT a recovery posture.",
@@ -298,8 +298,14 @@
       {
         "packet": "PROVIDER_DARK_PROOF",
         "gates": ["S7", "S10", "LC0-PILOT"],
-        "contents": ["the observed value of every provider-bearing feature flag in the LIVE environment", "confirmation that no provider credential name is present in that scope", "the network guard state", "zero real provider calls in the logs for the window"],
-        "binding": "A documented default is NOT an observation. The flags must be observed in the live environment, because a document records intent and an environment records fact.",
+        "contents": ["the target identifier and the deployment scope observed", "the observation timestamp and the declared evidence window", "confirmation that no real provider credential NAME is present in that environment scope", "the observed value of every governing capability and feature flag that could reach the provider, read from the LIVE environment", "zero real provider calls attributable to that environment across the declared window"],
+        "binding": "A documented default is NOT an observation. Flags and credential names must be observed in the live environment, because a document records intent and an environment records fact.",
+        "R2_CORRECTION": {
+          "audit_finding": "AT-B-01",
+          "removed_requirement": "the network guard state",
+          "why_removed": "Measured at AS_OF_HEAD there are ZERO network-guard occurrences in lib/ or app/. The only such control is vitest.setup.network-guard.ts, wired as a setupFiles entry in vitest.config.ts and vitest.e2e.config.ts, plus tests/no-real-gemini-network-guard.test.ts. That is a TEST-TIME control proving the test suite cannot reach the provider. It proves nothing about a deployed environment, so requiring it as hosted evidence both demanded an artifact the repository does not contain and violated RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE.",
+          "replaced_by": "the three conjunctive observations now listed in contents: credential-name absence in scope, governing flags observed dark in the live environment, and zero attributable provider calls across a declared window."
+        },
         "scope": "Dark means: the real model provider is not called, and the two capability stages the regulatory baseline blocks are disabled. It does NOT mean the product is disabled."
       },
       {
@@ -453,7 +459,7 @@
       {"step": 5, "action": "Apply schema, then the successor ACL, then deploy the code built from the certified SHA.", "gates": ["S1", "S2", "S3", "S4"], "critical_path": true, "ordering": "forced; code-first is impossible"},
       {"step": 6, "action": "Corroborate: fresh post-apply observation, runtime identity, environment names, flags dark, zero provider calls, and the deployment smoke.", "gates": ["S5", "S6", "S7", "S9", "S10", "M11", "M12"], "declares": "STAGING_ALIGNED"},
       {"step": 7, "action": "Stand up the Playwright runner and the three journeys, and configure every provider except the real model provider.", "gates": ["M9", "J1", "J2", "J3", "J4", "PV1", "PV2", "PV3", "PV5", "PV6", "G13"], "declares": "FEATURE_COMPLETE_STAGING"},
-      {"step": 8, "action": "Run the legal and security tracks, which can start IMMEDIATELY and in parallel with everything above, and which become blocking here.", "gates": ["L1", "L2", "L3", "L4", "G7", "LC0-RC", "SEC1", "SEC2", "SEC3", "SEC4", "SEC6", "SEC8", "SEC9"], "parallelizable": true, "note": "Starting these late is the most common way a release slips, because they have the longest external dependency and the least ability to be compressed."},
+      {"step": 8, "action": "Run the legal and security tracks, which can start IMMEDIATELY and in parallel with everything above, and which become blocking here.", "gates": ["L1", "L2", "L3", "L4", "G7", "LC0-RC", "SEC1", "SEC2", "SEC3", "SEC4", "SEC5", "SEC6", "SEC7", "SEC8", "SEC9"], "parallelizable": true, "R2_CORRECTION": {"audit_finding": "AT-N-04", "added": ["SEC5", "SEC7"], "why": "R1 omitted them from the narrative security track although both are canonical SEC gates. The omission was narrative only: the NORMATIVE placement is the ledger field first_required_at_stage, which already required both at FEATURE_COMPLETE_STAGING, and that placement is UNCHANGED by this correction."}, "normative_source": "This step is a NARRATIVE ordering aid. The binding per-stage requirement is the ledger first_required_at_stage field, never this list. Where the two appear to disagree, the ledger governs.", "note": "Starting these late is the most common way a release slips, because they have the longest external dependency and the least ability to be compressed."},
       {"step": 9, "action": "Resolve provider governance, then run the real-provider evaluation, then nominate and tag the candidate.", "gates": ["PV4", "G1", "G5", "G8", "C1-C18"], "declares": "RELEASE_CANDIDATE"},
       {"step": 10, "action": "Close the pilot preconditions and sign pilot entry.", "gates": ["PB-01", "LC0-PILOT", "G4", "G10A"], "declares": "PILOT_READY"},
       {"step": 11, "action": "Run the pilot, then calibrate real cost, then prove production recovery, observability, environment, lineage and signoff, then sign production readiness.", "gates": ["G9", "D2", "D3", "D4", "D5", "P1", "P2", "P3", "P5", "P6", "P7", "P8", "LC0-PP", "G10B"], "declares": "PRODUCTION_READY"},
@@ -496,6 +502,20 @@
     ]
   },
 
+  "R2_REMEDIATION": {
+    "trigger": "Independent audit AY against PR 142 at HEAD 37c9b54c returned BLOCKING=1, AUDIT_UNKNOWN=0.",
+    "scope_rule": "R2 corrects exactly the five measured defects and nothing else. No stage was added or removed, no gate was added or removed, no first_required_at_stage was changed, and no gate criterion was weakened.",
+    "corrections": [
+      {"id": "AT-B-01", "severity": "BLOCKING", "defect": "S10 read PASS on the strength of a runtime network guard the repository does not contain; the only such control is the vitest harness.", "fix": "S10.current_state PASS to UNKNOWN; criterion rewritten as three conjunctive FRESH observations; the network-guard requirement removed from both the gate and the PROVIDER_DARK_PROOF packet; S10 enforcement MACHINE to HUMAN_AND_MACHINE as a consequence, with the derived stage sets updated."},
+      {"id": "AT-N-01", "severity": "NONBLOCKING", "defect": "Ledger final_state said 62_CANONICAL_GATES while the measured count is 78.", "fix": "final_state corrected to 78_CANONICAL_GATES. R1 had already corrected self_check.gate_count to 78 but left the final_state string stale, so the two disagreed."},
+      {"id": "AT-N-02", "severity": "NONBLOCKING", "defect": "R1 claimed FOUR committed test manifests declare an out-of-enum exit gate.", "fix": "Corrected to the measured truth: the literal appears in four files, but it is DECLARED as an exit_gates array member in exactly two, of which one is a test manifest and one is an authority manifest-contract; the other two reference it only in prose."},
+      {"id": "AT-N-03", "severity": "NONBLOCKING", "defect": "STATE_VOCABULARY was open: NO was used by four staging gates and BLOCKED by one provider gate, neither declared.", "fix": "Vocabulary CLOSED at eleven states. NOT_SATISFIED introduced for measured-and-unmet and applied to S1, S3, S4 and S8, each with its measurement basis recorded. BLOCKED explicitly declared and justified on PV4. A NON_COLLAPSE_RULE forbids merging UNKNOWN with NOT_SATISFIED in either direction."},
+      {"id": "AT-N-04", "severity": "NONBLOCKING", "defect": "PRODUCTION_PATH step 8 security track omitted SEC5 and SEC7.", "fix": "Both added, with an explicit note that the step list is a narrative aid and the ledger first_required_at_stage field remains the normative source of truth."}
+    ],
+    "validator_strengthened": "The pair validator now additionally enforces that every gate current_state is a member of the closed vocabulary, and that the ledger final_state gate count equals the measured gate count. Both new checks FAIL on the R1 content, which is how they were confirmed non-vacuous.",
+    "constraints_honoured": ["no staging access", "no hosted state mutated", "no migration lineage allocated", "no dependencies installed for this validation"]
+  },
+
   "self_check": {
     "canonical_stage_count": 7,
     "stages_are_strictly_ordered_and_non_skippable": true,
@@ -516,9 +536,13 @@
     "no_shared_registry_edited": true,
     "protected_surfaces_touched": 0,
     "stale_observation_quarantined": "staging at 50 of 82, recorded as history only",
+    "state_vocabulary_is_closed": true,
+    "gate_state_values_all_declared": true,
+    "r2_corrections_applied": 5,
+    "r2_blocking_corrections_applied": 1,
     "validation_method": "machine-checked by the lane validator across this artifact and the companion ledger"
   },
 
-  "final_state": "STAGING_RELEASE_PRODUCTION_AUTHORITY_FROZEN_R1__7_CANONICAL_STAGES__5_CONJUNCTIVE_HOSTED_DDL_PRECONDITIONS__10_EVIDENCE_PACKETS__7_FROZEN_RULES__16_STOP_LINES__PILOT_READY_IS_THE_SOLE_STRUCTURAL_EXTENSION_OF_THE_F18_MODEL",
-  "next_gate": "STAGING_RELEASE_PRODUCTION_AUTHORITY_INDEPENDENT_OPUS_AUDIT of this artifact and its companion ledger, at AS_OF_HEAD, read-only, with no hosted access."
+  "final_state": "STAGING_RELEASE_PRODUCTION_AUTHORITY_FROZEN_R2__7_CANONICAL_STAGES__5_CONJUNCTIVE_HOSTED_DDL_PRECONDITIONS__10_EVIDENCE_PACKETS__7_FROZEN_RULES__16_STOP_LINES__AT_B_01_PROVIDER_DARK_CORRECTED__PILOT_READY_IS_THE_SOLE_STRUCTURAL_EXTENSION_OF_THE_F18_MODEL",
+  "next_gate": "PR142_RELEASE_AUTHORITY_FOCUSED_R2_INDEPENDENT_AUDIT of this artifact and its companion ledger, read-only, with no hosted access, bounded to the five R2 corrections and to any new defect they introduce."
 }
