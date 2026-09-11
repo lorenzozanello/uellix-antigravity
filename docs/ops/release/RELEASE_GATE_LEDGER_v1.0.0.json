@@ -1,0 +1,1738 @@
+{
+  "package_id": "RELEASE_GATE_LEDGER",
+  "version": "1.0.0",
+  "artifact_id": "RELEASE_GATE_LEDGER_v1.0.0",
+  "authority_class": "CANONICAL_GATE_LEDGER",
+  "document_class": "AUTHORITY_ONLY__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT",
+  "append_only": true,
+  "mission_id": "LANE_AT__STAGING_RELEASE_PRODUCTION_AUTHORITY_R1",
+  "lane": "AT",
+  "role": "COMMERCIAL_V1_RELEASE_AUTHORITY_WRITER",
+  "mode": "DOCS_ONLY_TIER_A_RELEASE_AUTHORITY",
+  "materialization_date": "2026-09-10",
+  "revision": "R2",
+  "companion_authority": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+
+  "amends": "NOTHING. This artifact is a NEW canonical gate ledger. It does not amend, supersede or relax FIB, PC-01B, IM-01B, the frozen ODS authority artifact, or LC0.",
+  "supersedes": null,
+  "supersession_semantics": "This ledger canonicalizes gate IDENTITY and gate IDs. It does not retire any source document. A legacy gate resolved here to a canonical ID remains readable as a historical record at its original path; what this ledger freezes is which ID a release decision must cite.",
+
+  "AS_OF_BRANCH": "codex/staging-release-production-authority-r1",
+  "AS_OF_HEAD": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
+  "AS_OF_BASE": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_PRESTATE": "ODS_PRESTATE=PASS (branch, head, tree, clean all PASS)",
+
+  "AS_OF_MEASURED_CORPUS": {
+    "note": "Measured at AS_OF_HEAD by this lane. These are OBSERVATIONS OF THE REPOSITORY, which is readable. They are NOT observations of any hosted environment, which is not.",
+    "migration_sql_files": 70,
+    "migration_max_ordinal_file": "db/migrations/0069_fib_fibdb052_p1_indexes.sql",
+    "journal_entry_count": 70,
+    "journal_max_idx": 69,
+    "journal_last_tag": "0069_fib_fibdb052_p1_indexes",
+    "schema_snapshot_max": "db/migrations/meta/0069_snapshot.json",
+    "baseline_manifest_unit_count": 82,
+    "baseline_manifest_digest": "bf157f179f5899a63a4f50b2fd74c5ec76ba0986babeabe43d46a148132c48dd",
+    "baseline_manifest_digest_source": "artifacts/baseline-rehearsal/latest.json (manifestApplied=82, local rehearsal)",
+    "tracked_test_files": 409,
+    "tracked_pg_test_files": 11,
+    "tracked_e2e_vitest_files": 3,
+    "ci_workflow_count": 5,
+    "human_gate_packages_present": ["G1", "G2", "G3", "G4", "G5", "G7", "G8", "G9", "G10"],
+    "human_gate_packages_absent": ["G6"],
+    "NO_NEXT_MIGRATION_ORDINAL": "This ledger records the corpus as observed and DOES NOT declare, reserve or imply any next migration ordinal. Allocating an ordinal is outside this artifact's authority."
+  },
+
+  "AS_OF_F18_RECONCILIATION": {
+    "f18_lane": "LANE F18 COMMERCIAL_V1_RELEASE_CERTIFICATION_GATE_COMPILER_R1",
+    "f18_measured_at_head": "c2b59fa5e1d3274a08267220ad7d369d3efc8142",
+    "delta_f18_head_to_this_base": {
+      "commits": "c2b59fa5..88d95c65 is the merge of the tenancy email-verification Packet B authority pair",
+      "files_changed": 2,
+      "paths": [
+        "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json",
+        "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_TEST_MANIFEST_v1.0.0.json"
+      ],
+      "gate_surface_touched": false,
+      "consequence": "The delta is DOCS_ONLY and touches no workflow, script, migration, test or gate document. Every F18 gate-corpus measurement is therefore byte-valid at AS_OF_HEAD and is inherited rather than re-derived."
+    },
+    "f18_claim_corrected": {
+      "claim": "F18 recorded that the email-verification Packet B pull request was not merged at its HEAD.",
+      "at_this_base": "It IS merged at AS_OF_HEAD.",
+      "precision_required": "What merged is the AUTHORITY AND TEST MANIFEST PAIR ONLY. No enforcement code merged. An authority being closed is not a capability being implemented, and PV1 must not be credited for this merge."
+    },
+    "f18_claims_reverified_at_this_base": [
+      "ci.yml has no ref: input on checkout, so a pull_request run tests the merge ref and not the head SHA: CONFIRMED",
+      "ci.yml has zero timeout-minutes and zero concurrency: CONFIRMED",
+      "no workflow triggers on a push to the integration branch: CONFIRMED",
+      "the operator runner pins EXPECTED_BRANCH to a single branch name at scripts/baseline-operator-runner.ts:70: CONFIRMED",
+      "the hosted provisioning runner refuses a non-virgin target with PROVISIONING_TARGET_NOT_VIRGIN: CONFIRMED",
+      "zero backup, restore or PITR scripts exist: CONFIRMED",
+      "zero word-boundary RPO or RTO literals exist under docs, scripts, db or lib: CONFIRMED by a word-boundary search. A substring search appears to find matches only because the Spanish word ABIERTO contains the letters RTO; that is a false positive and not a recovery objective.",
+      "three health endpoints exist and none is consumed by automation: CONFIRMED",
+      "no browser automation dependency is present: CONFIRMED"
+    ]
+  },
+
+  "STATE_VOCABULARY": {
+    "CLOSURE_RULE": "This vocabulary is CLOSED. Every gate current_state MUST be exactly one of the eleven state keys below, and the pair validator FAILS on any undeclared value. R1 shipped two undeclared values, NO on four staging gates and BLOCKED on one provider gate, which is what motivated closing the vocabulary rather than merely adding a word to it.",
+    "NON_COLLAPSE_RULE": "UNKNOWN and NOT_SATISFIED must NEVER be merged. NOT_SATISFIED asserts the criterion IS unmet, which is a positive claim requiring evidence. UNKNOWN asserts only that nothing is known. Collapsing UNKNOWN into NOT_SATISFIED manufactures an unevidenced claim; collapsing it into PASS or PARTIAL manufactures readiness. Both directions are forbidden.",
+    "states": {
+      "PASS": "Evidence was executed and is current under RULE_OBSERVATION_FRESHNESS.",
+      "PASS_OVER_STALE_INPUT": "The gate mechanism passes, but the observation it derives from is stale. Not creditable for a stage transition.",
+      "PARTIAL": "Some of the evidence the criterion names exists and is current, but not all of it. Never creditable for a stage transition.",
+      "NOT_SATISFIED": "MEASURED, and the criterion is not satisfied. The measurement is of a repository-side fact the criterion depends on, such as an absent artifact, an absent package, or a branch position, so the shortfall is ESTABLISHED rather than suspected. Distinct from UNKNOWN: here the criterion is known to be unmet.",
+      "BLOCKED": "The criterion cannot currently be ATTEMPTED because an external or organizational decision forbids it. Distinct from ABSENT, where there is nothing to attempt, and from NOT_SATISFIED, where an attempt was possible and fell short. A BLOCKED gate is unblocked by a DECISION, not by engineering.",
+      "PREPARED": "A package or criterion exists with zero execution. Preparation is NOT readiness.",
+      "STALE": "Evidence exists but predates the current state of the thing it describes.",
+      "ABSENT": "Neither gate nor evidence exists.",
+      "OPEN": "An adjudication or decision is outstanding.",
+      "UNKNOWN": "The fact the criterion turns on is NOT measurable from the repository and no fresh observation exists to settle it. UNKNOWN is never a pass and never a fail; it is the absence of knowledge.",
+      "UNSATISFIABLE": "The criterion as written cannot be met by any execution, so it must be retired or restated rather than attempted."
+    }
+  },
+
+  "NON_REGRESSION_RULE": "A gate is listed once, at the EARLIEST stage that requires it, in first_required_at_stage. A gate required at stage N remains required at every later stage; a later stage inherits all earlier gates and may not be declared while an inherited gate has regressed. Per-stage gate sets are therefore DERIVED from this field and are never restated, so the two artifacts in this pair cannot drift apart.",
+
+  "EVIDENCE_IDENTITY_RULE": "Every gate's evidence must name the exact SHA it was produced against, plus the exact target identifier where a hosted target is involved. Evidence that cannot name its SHA is not evidence for any stage transition.",
+
+  "GATES": [
+    {
+      "id": "M1",
+      "name": "CI green on the exact SHA",
+      "category": "CI",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Every ci.yml step exits 0 for BOTH the exact head SHA being merged AND the resulting merge commit. A run whose checkout resolved a merge ref does NOT satisfy this gate, because the tree tested is not the tree that lands.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "every commit",
+      "source_of_truth": [".github/workflows/ci.yml"],
+      "hpo_g_binding": "release CI binds exact SHA",
+      "measured_at_base": {
+        "triggers": "push to main, pull_request unfiltered, workflow_dispatch",
+        "checkout": "actions/checkout@v4 with fetch-depth 0 and no ref input",
+        "push_to_integration_branch": "no workflow triggers on it, so an integration merge commit is never tested as an exact SHA",
+        "timeout_minutes": 0,
+        "concurrency": 0,
+        "branch_protection": "UNKNOWN from the repository; requires a hosted API observation"
+      }
+    },
+    {
+      "id": "M2",
+      "name": "typecheck",
+      "category": "CI",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PASS",
+      "pass_criteria": "The TypeScript compiler exits 0 with no emit.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "every commit",
+      "source_of_truth": [".github/workflows/ci.yml", "scripts/ods-poststate.ts"]
+    },
+    {
+      "id": "M3",
+      "name": "lint under an executable warning policy",
+      "category": "CI",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The linter exits 0 with zero errors AND the warning count satisfies a declared executable policy, either an explicit maximum-warnings bound or a committed ratchet artifact.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "every commit",
+      "source_of_truth": [".github/workflows/ci.yml"],
+      "measured_at_base": {
+        "max_warnings_bound": "absent",
+        "lint_in_ods_poststate": "absent",
+        "lint_in_test_manifest_exit_gates_enum": "absent",
+        "consequence": "warnings are currently unbounded, so the gate is non-vacuous for errors only"
+      }
+    },
+    {
+      "id": "M4",
+      "name": "unit suite with collected and executed reconciliation",
+      "category": "CI",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The unit runner exits 0 AND the set of test files the reporter records as actually collected and executed is reconciled against an independently enumerated candidate set, with every discrepancy raised as LOST_FILE and failing the gate. An exit code alone does NOT satisfy this gate.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA_PLUS_SET_DIFF",
+      "dependencies": ["M1"],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "every commit",
+      "source_of_truth": [".github/workflows/ci.yml", "scripts/ods-test-diff.ts"],
+      "hpo_g_binding": "release CI reconciles actually collected and executed files",
+      "why_an_exit_code_is_insufficient": [
+        "A worker process that dies produces a non-zero exit with NO reporter row, so the lost file is invisible in the report even though the run is red.",
+        "A file skipped for an environmental reason produces neither a failure nor a row, so it is invisible in a green run.",
+        "Therefore set reconciliation, not the exit code, is what makes this gate non-vacuous."
+      ],
+      "measured_at_base": {
+        "tracked_test_files": 409,
+        "reconciliation_implemented": false,
+        "ods_test_diff_own_test_count": 0
+      }
+    },
+    {
+      "id": "M5",
+      "name": "real-PostgreSQL matrix",
+      "category": "CI",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The three dedicated real-PostgreSQL workflows are green AND every tracked pg test file is forced by a REQUIRED self-check, so that an environmental skip is reported as a failure and never as a pass.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "change under db or tests/postgres",
+      "source_of_truth": [
+        ".github/workflows/m2-real-pg-gate.yml",
+        ".github/workflows/p1a-bootstrap-gate.yml",
+        ".github/workflows/s3-refusal-real-pg-gate.yml"
+      ],
+      "measured_at_base": {
+        "dedicated_workflows": 3,
+        "pg_test_files_tracked": 11,
+        "pg_test_files_forced_in_ci": 3,
+        "pg_test_files_never_forced": 8,
+        "known_environmental_failure_mode": "the shared container registry answers with a rate-limit error; the same SHA turns green on a rerun. A red run from this cause is not evidence of a code defect, and a mirror or retry is the fix rather than a weakened assertion."
+      }
+    },
+    {
+      "id": "M6",
+      "name": "ODS gate set for the mission",
+      "category": "ODS",
+      "enforcement": "MACHINE",
+      "owner": "mission",
+      "current_state": "PARTIAL",
+      "pass_criteria": "prestate, scope, poststate and authority seal verification all PASS, each citing the exact branch, HEAD and tree it measured.",
+      "evidence_class": "GATE_STDOUT_CITED_BY_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "every mission",
+      "source_of_truth": [
+        "scripts/ods-prestate.ts",
+        "scripts/ods-scope.ts",
+        "scripts/ods-poststate.ts",
+        "scripts/authority-seal-verify.ts"
+      ],
+      "measured_at_base": {
+        "poststate_composed_steps": "typecheck, optional targeted tests, secret scan, authority seal verify, optional scope, optional clean state",
+        "poststate_omits": ["lint", "build"],
+        "consequence": "a poststate PASS is not a full-CI PASS and must not be cited as one"
+      }
+    },
+    {
+      "id": "M7",
+      "name": "secret scan",
+      "category": "SECURITY",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PASS",
+      "pass_criteria": "The scan exits 0 with zero findings over the tracked git tree, and runs before any step that could echo a file into the log.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "every commit",
+      "source_of_truth": [".github/workflows/ci.yml", "scripts/scan-secrets.ts"],
+      "known_limitation": "It scans the tracked tree, so an untracked working-tree file is not covered, and history is out of scope by accepted design."
+    },
+    {
+      "id": "M8",
+      "name": "authority seal integrity",
+      "category": "ODS",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PASS",
+      "pass_criteria": "The frozen ODS authority artifact, its nine-member protected corpus and every native seal relationship verify byte-exact against the external anchor commit.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "every commit",
+      "source_of_truth": ["scripts/authority-seal-verify.ts", "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"],
+      "requires": "a checkout with full history, because the gate resolves historical blobs at two anchor commits",
+      "relationship_to_this_artifact": "This ledger is NOT a member of the protected corpus and MUST NOT be added to it. Adding it would require mutating the frozen ODS authority artifact, which this lane has no authority to touch."
+    },
+    {
+      "id": "M9",
+      "name": "browser Golden Journey runner green",
+      "category": "JOURNEY",
+      "enforcement": "MACHINE",
+      "owner": "unassigned",
+      "current_state": "ABSENT",
+      "pass_criteria": "The Playwright runner executes J1, J2 and J3 against a Preview deployment that satisfies S4, all three green, each carrying at least one negative control, with the run bound to the exact SHA that produced the deployment.",
+      "evidence_class": "BROWSER_RUN_PLUS_TRACES_BOUND_TO_SHA",
+      "dependencies": ["S4"],
+      "dependency_direction_note": "M9 is the RUNNER. J1, J2 and J3 depend on M9, not the reverse: a runner must exist before a journey can be expressed in it. Stating the dependency both ways would make the pair circular and therefore unorderable.",
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "every deploy to the Preview target",
+      "source_of_truth": [".claude/skills/uellix-golden-e2e/SKILL.md"],
+      "hpo_g_binding": "Playwright is the browser Golden Journey runner",
+      "measured_at_base": {
+        "browser_automation_dependency": "absent",
+        "browser_e2e_files": 0,
+        "note": "The existing e2e vitest files are node processes against a disposable PostgreSQL, launched by shell scripts outside CI. They are not browser journeys and do not satisfy this gate."
+      }
+    },
+    {
+      "id": "M10",
+      "name": "build with environment validation",
+      "category": "CI",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The production build exits 0 AND the build refuses to succeed when a required environment NAME for the target environment is missing.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "every commit",
+      "source_of_truth": [".github/workflows/ci.yml"],
+      "measured_at_base": {
+        "build_succeeds_without_secrets": true,
+        "env_schema_with_refusal": "absent",
+        "consequence": "a green build is not evidence that any environment is correctly configured"
+      }
+    },
+    {
+      "id": "M11",
+      "name": "deployment smoke",
+      "category": "DEPLOY",
+      "enforcement": "MACHINE",
+      "owner": "unassigned",
+      "current_state": "ABSENT",
+      "pass_criteria": "After every deployment each health endpoint answers in conformance with an ADJUDICATED contract, recorded against the deployment identifier and the exact SHA deployed.",
+      "evidence_class": "SMOKE_LOG_BOUND_TO_DEPLOYMENT_ID_AND_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every deploy",
+      "source_of_truth": [
+        "app/api/health/auth/route.ts",
+        "app/api/health/runtime-identity/route.ts",
+        "app/api/health/stella-preconditions/route.ts"
+      ],
+      "measured_at_base": {
+        "endpoints_present": 3,
+        "automation": "none",
+        "blocking_contract_conflict": "The auth endpoint is documented to answer 200 with an unauthenticated body for an anonymous caller; production was observed answering 503. Either behaviour could be encoded as expected, so automating the smoke before adjudication would freeze an arbitrary choice. Adjudication is a P6 precondition."
+      }
+    },
+    {
+      "id": "M12",
+      "name": "derived-artifact verification",
+      "category": "EVIDENCE",
+      "enforcement": "MACHINE",
+      "owner": "repo_ci",
+      "current_state": "PASS_OVER_STALE_INPUT",
+      "pass_criteria": "All seven verify scripts regenerate and byte-compare their artifacts AND the observation each artifact derives from is fresh under RULE_OBSERVATION_FRESHNESS.",
+      "evidence_class": "CI_RUN_PLUS_OBSERVATION_TIMESTAMP",
+      "dependencies": ["S9"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every hosted apply",
+      "source_of_truth": [".github/workflows/ci.yml"],
+      "note": "A green verify proves FAITHFUL DERIVATION from a recorded observation. It never proves that the observed world still looks that way. This distinction is why the gate currently reads PASS_OVER_STALE_INPUT rather than PASS."
+    },
+    {
+      "id": "M13",
+      "name": "offline evaluation gates",
+      "category": "EVAL",
+      "enforcement": "MACHINE",
+      "owner": "mission",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The offline evaluation scripts that the release workstream document declares mandatory exit 0 inside CI, not only on a developer machine.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "change under the Stella library surface",
+      "source_of_truth": ["docs/ops/workstreams/RELEASE.md", "tests/eval/stella-release/"],
+      "measured_at_base": {
+        "declared_mandatory_by_release_doc": true,
+        "present_in_ci_workflow": false
+      },
+      "deliberate_design_note": "The hosted and local release-gate scripts hardcode a blocked staging declaration, a blocked hosted declaration and a false provider-ready flag. That is DESIGN, not defect: it guarantees that no offline green can ever be read as staging or hosted readiness."
+    },
+    {
+      "id": "M14",
+      "name": "dependency vulnerability audit",
+      "category": "SECURITY",
+      "enforcement": "MACHINE",
+      "owner": "unassigned",
+      "current_state": "ABSENT",
+      "pass_criteria": "A production-scope dependency audit reports zero high or critical advisories, or each outstanding advisory is explicitly accepted by the owner with a recorded rationale.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "lockfile change",
+      "source_of_truth": ["docs/ops/BETA_RELEASE_BASELINE.md"],
+      "measured_at_base": {
+        "in_ci": false,
+        "last_known_execution": "the 2026-07-21 beta baseline only",
+        "software_composition_analysis": "absent"
+      }
+    },
+    {
+      "id": "M15",
+      "name": "schema drift",
+      "category": "DB",
+      "enforcement": "MACHINE",
+      "owner": "unassigned",
+      "current_state": "ABSENT",
+      "pass_criteria": "Regenerating from the schema source produces no diff against the committed migration corpus.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": [],
+      "first_required_at_stage": "DEVELOPMENT_COMPLETE",
+      "retest_after": "change to the schema source",
+      "source_of_truth": ["docs/ops/BETA_RELEASE_BASELINE.md"],
+      "measured_at_base": {
+        "in_ci": false,
+        "last_known_execution": "the 2026-07-21 beta baseline only"
+      }
+    },
+
+    {
+      "id": "S1",
+      "name": "staging journal parity with the exact migration corpus",
+      "category": "STAGING",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "operator",
+      "current_state": "NOT_SATISFIED",
+      "state_basis": "NOT_SATISFIED, not UNKNOWN: the criterion REQUIRES a fresh observation artifact, and the measurable repository fact is that no such artifact exists, so the shortfall in the CRITERION is established. The underlying live journal position remains separately UNKNOWN, recorded as AT-U-01. The two are deliberately not conflated.",
+      "pass_criteria": "A FRESH remote observation shows the contiguous APPLIED prefix of the staging journal equal to the exact migration corpus of the SHA being certified, by unit count AND by manifest digest.",
+      "evidence_class": "FRESH_STAGING_OBSERVATION",
+      "dependencies": ["D1", "S8", "G12", "PROD-MIG-AUTH"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every hosted apply and every new migration",
+      "source_of_truth": ["artifacts/baseline-rehearsal/latest.json", "db/migrations/meta/_journal.json"],
+      "last_known_observation": {
+        "value": "50 of 82 units",
+        "status": "STALE_BY_CONSTRUCTION",
+        "binding": "This value is recorded as HISTORY ONLY and is explicitly NOT a current fact. It may not be used as an execution input, and no arithmetic over it produces an observation."
+      }
+    },
+    {
+      "id": "S2",
+      "name": "hosted package chain complete and evidenced at apply time",
+      "category": "STAGING",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "operator",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Every hosted chain entry is CONSUMED and each package has apply-time evidence, including the two packages whose staging state is currently unevidenced.",
+      "evidence_class": "FRESH_STAGING_OBSERVATION",
+      "dependencies": ["S1"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every hosted package",
+      "source_of_truth": ["docs/ops/staging/STELLA_HOSTED_MIGRATION_JOURNAL.md"],
+      "note": "Two hosted packages are documented as pending with zero evidence artifacts, so their staging state is HOSTED_UNKNOWN. One later migration converges on the same policy name, which means a naive presence check cannot distinguish which package created it. The observation must therefore record provenance, not only presence."
+    },
+    {
+      "id": "S3",
+      "name": "runtime ACL covers every table the runtime reads",
+      "category": "STAGING",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "operator",
+      "current_state": "NOT_SATISFIED",
+      "state_basis": "NOT_SATISFIED: the successor ACL package does not exist in the repository, which is directly measurable here, so the criterion is established as unmet rather than unknown.",
+      "pass_criteria": "A privilege sweep shows the runtime role holds the required privileges on EVERY table the application enumerates, with zero permission-denied results, verified by a successor ACL package rather than assumed.",
+      "evidence_class": "ACL_SUCCESSOR_PROOF",
+      "dependencies": ["S1"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every new table",
+      "source_of_truth": ["db/prepared/"],
+      "measured_at_base": {
+        "hosted_acl_package_enumerates_tables": 37,
+        "fib_tables_added_after_that_package": 15,
+        "grant_target_of_those_tables": "the authenticated role only, not the runtime application role",
+        "successor_acl_package": "DOES NOT EXIST",
+        "consequence": "until a successor ACL package exists, the runtime role receives permission-denied on the newer tables, so a schema-only apply produces a broken deployment rather than an aligned one"
+      },
+      "hpo_g_binding": "hosted DDL requires successor ACL"
+    },
+    {
+      "id": "S4",
+      "name": "deployed code matches the applied schema",
+      "category": "STAGING",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "operator",
+      "current_state": "NOT_SATISFIED",
+      "state_basis": "NOT_SATISFIED: the only deployment scope bound to staging is driven by a branch whose position is far behind AS_OF_HEAD, which is measurable in the repository, so the criterion is established as unmet.",
+      "pass_criteria": "The Preview deployment pointed at staging was built from the EXACT SHA whose migration corpus is applied to staging, confirmed by a build identity and a runtime identity endpoint that agree.",
+      "evidence_class": "CODE_SCHEMA_COMPATIBILITY_PROOF",
+      "dependencies": ["S1", "S2", "S3"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every deploy",
+      "source_of_truth": ["app/api/health/runtime-identity/route.ts"],
+      "measured_at_base": {
+        "only_branch_scoped_to_staging": "codex/stella-staging",
+        "that_branch_position": "far behind AS_OF_HEAD",
+        "why_code_first_is_impossible": "The data layer enumerates every column of the current schema on ordinary reads, so running the newer code against an older database raises an undefined-column error on the login and selector path. The ordering is therefore forced: schema first, then ACL, then code."
+      },
+      "hpo_g_binding": "hosted DDL requires a compatibility plan"
+    },
+    {
+      "id": "S5",
+      "name": "Preview environment matrix complete by NAME",
+      "category": "STAGING",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Every environment variable NAME that the target stage requires is present in the correct scope. Names only: this gate never records, compares or chooses a value.",
+      "evidence_class": "ENVIRONMENT_NAME_INVENTORY",
+      "dependencies": [],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every environment change",
+      "source_of_truth": ["docs/ops/staging/STELLA_HOSTED_ENVIRONMENT_MATRIX.md"],
+      "measured_at_base": {
+        "present_only_in_a_branch_scope": ["the key-value store names"],
+        "absent_in_every_environment": ["the transactional email key", "the payment provider keys", "the error-reporting DSN"]
+      }
+    },
+    {
+      "id": "S6",
+      "name": "runtime database identity is the least-privileged role",
+      "category": "STAGING",
+      "enforcement": "MACHINE",
+      "owner": "operator",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The runtime identity endpoint reports the intended application role, with no row-level-security bypass attribute, and the runtime gate armed deny-by-default.",
+      "evidence_class": "FRESH_STAGING_OBSERVATION",
+      "dependencies": ["S4"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every deploy",
+      "source_of_truth": ["app/api/health/runtime-identity/route.ts"]
+    },
+    {
+      "id": "S7",
+      "name": "provider-bearing feature flags are dark",
+      "category": "STAGING",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Every Stella feature flag is observed false in the LIVE environment that points at staging. A documented default is not an observation.",
+      "evidence_class": "PROVIDER_DARK_PROOF",
+      "dependencies": [],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every environment change",
+      "source_of_truth": ["docs/ops/staging/STELLA_HOSTED_ENVIRONMENT_MATRIX.md"],
+      "hpo_g_binding": "first reach staging parity with flags dark"
+    },
+    {
+      "id": "S8",
+      "name": "verified backup immediately before any staging DDL",
+      "category": "DATA",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "NOT_SATISFIED",
+      "state_basis": "NOT_SATISFIED: zero backup or restore scripts exist in the repository and no backup record exists, both measurable here, so the criterion is established as unmet.",
+      "pass_criteria": "A backup of the staging target is taken and VERIFIED RESTORABLE within the window immediately preceding the DDL, recorded with a backup identifier and the target identifier.",
+      "evidence_class": "BACKUP_PACKET",
+      "dependencies": ["D1"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "before every apply",
+      "source_of_truth": ["docs/ops/staging/STELLA_STAGING_MIGRATION_PLAN.md"],
+      "hpo_g_binding": "hosted DDL requires backup and restore capability",
+      "note": "Staging is no longer an empty database, so the destroy-and-reprovision doctrine, which was calibrated for an empty target, no longer constitutes a recovery path. Recovery for staging is RESTORE_REQUIRED."
+    },
+    {
+      "id": "S9",
+      "name": "post-apply corroboration",
+      "category": "STAGING",
+      "enforcement": "MACHINE",
+      "owner": "operator",
+      "current_state": "STALE",
+      "pass_criteria": "After the apply, the status artifact re-derived from a FRESH observation shows every expected package present and the checkpoint passed.",
+      "evidence_class": "FRESH_STAGING_OBSERVATION",
+      "dependencies": ["S1"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every apply",
+      "source_of_truth": ["artifacts/"],
+      "note": "The current artifact reports a failed checkpoint and several absent packages. It is STALE rather than a live failure, which is precisely why it may not be cited in either direction."
+    },
+    {
+      "id": "S10",
+      "name": "zero real provider calls from staging",
+      "category": "PROVIDER",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "operator",
+      "current_state": "UNKNOWN",
+      "pass_criteria": "A FRESH observation of the staging target and its deployment scope establishes ALL THREE of: (a) no real model-provider credential NAME is present in that environment scope; (b) every governing capability and feature flag that could reach the provider is observed in its dark state in that live environment; (c) zero real provider calls are attributable to that environment across a declared evidence window. The three are CONJUNCTIVE. A repository default, a committed configuration file, a documented matrix value, or any test-time control satisfies NONE of them.",
+      "evidence_class": "PROVIDER_DARK_PROOF",
+      "dependencies": [],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every environment change, every deploy, and any change to the provider adapter",
+      "source_of_truth": ["docs/ops/staging/STELLA_HOSTED_ENVIRONMENT_MATRIX.md", "docs/ops/G1_B_POST_GATE_PILOT_BLOCKERS.md"],
+      "hpo_g_binding": "first reach staging parity with provider calls dark",
+      "R2_CORRECTION": {
+        "audit_finding": "AT-B-01",
+        "r1_error": "R1 recorded current_state PASS and grounded it on a runtime network guard plus key absence, citing lib/stella/ as source of truth.",
+        "measured_at_AS_OF_HEAD": {
+          "network_guard_occurrences_in_lib_or_app": 0,
+          "where_the_guard_actually_lives": ["vitest.setup.network-guard.ts", "tests/no-real-gemini-network-guard.test.ts"],
+          "how_it_is_wired": "as a vitest setupFiles entry in vitest.config.ts and vitest.e2e.config.ts",
+          "what_it_therefore_proves": "that the TEST SUITE cannot reach the real provider",
+          "what_it_does_not_prove": "anything whatsoever about a deployed staging environment"
+        },
+        "why_this_was_the_blocking_defect": "The cited control is a TEST-TIME construct, so R1 credited an offline artifact as hosted evidence. That is the precise failure this same ledger declares forbidden in RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE, and it made S10 the only staging gate reading PASS, which is exactly how an unearned green survives a review.",
+        "enforcement_change": "MACHINE to HUMAN_AND_MACHINE, a consequence of the corrected criterion: observing an environment scope, live flag values and a call window is operator-initiated work, matching S1, S2 and S9, the other fresh-observation gates. The derived stage sets in the companion authority are updated accordingly."
+      },
+      "why_unknown_and_not_not_satisfied": "Asserting that staging DOES make real provider calls would be an unevidenced claim in the opposite direction. Nothing is known either way, so the state is UNKNOWN.",
+      "why_unknown_while_s7_is_partial": "S7 is PARTIAL because a documented flag matrix exists, which is some of the substrate the S7 criterion names. S10 has NO valid repository-side substrate for any of its three conjuncts once the test-harness control is excluded, so there is nothing partial to credit.",
+      "alignment": "Aligned with the S7 evidentiary standard, that a value must be observed in the LIVE environment and a documented default is not an observation, and with RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE."
+    },
+
+    {
+      "id": "PV1",
+      "name": "authentication provider",
+      "category": "PROVIDER",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The auth health contract is adjudicated and met for the target environment, and project coherence holds per environment.",
+      "evidence_class": "PROVIDER_CONFIGURATION_PROOF",
+      "dependencies": ["S5"],
+      "cross_reference_not_a_dependency": "The multi-factor and assurance-level disposition is SEC3, which is first required at RELEASE_CANDIDATE. It is deliberately NOT a dependency of PV1: a gate required at an earlier stage may never depend on one required later, or the stage order becomes unsatisfiable.",
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "credential rotation or provider change",
+      "source_of_truth": ["app/api/health/auth/route.ts"],
+      "explicit_non_credit": "The email-verification Packet B AUTHORITY merged at AS_OF_HEAD. No enforcement code merged with it, so this gate receives NO credit for that merge."
+    },
+    {
+      "id": "PV2",
+      "name": "transactional email provider",
+      "category": "PROVIDER",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "The provider key NAME is present in each environment that sends, a sending domain is verified, one governed test send succeeds, and the failure path is recorded rather than silently swallowed.",
+      "evidence_class": "PROVIDER_CONFIGURATION_PROOF",
+      "dependencies": ["S5"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "credential rotation or provider change",
+      "source_of_truth": ["lib/email/config.ts"],
+      "measured_at_base": {
+        "key_name_present_in_any_environment": false,
+        "send_semantics": "best effort, with the invitation audit event committed BEFORE the send is attempted, so the audit log can record a send that never happened",
+        "delivery_table": "absent"
+      }
+    },
+    {
+      "id": "PV3",
+      "name": "payment provider in test mode",
+      "category": "PROVIDER",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "Test-mode key NAMES are present, the webhook endpoint and signing secret are configured, the capability packages are applied to the target, and a replay and duplicate-delivery test passes in Preview.",
+      "evidence_class": "PROVIDER_CONFIGURATION_PROOF",
+      "dependencies": ["S5"],
+      "cross_reference_not_a_dependency": "Webhook integrity is SEC7, which depends on THIS gate. Stating it both ways would be circular.",
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "credential rotation or provider change",
+      "source_of_truth": ["lib/stripe/client.ts"],
+      "measured_at_base": {
+        "key_names_present_in_any_environment": false,
+        "client_behaviour_without_configuration": "throws a not-configured error",
+        "capability_packages_applied_to_staging": false
+      }
+    },
+    {
+      "id": "PV4",
+      "name": "model provider governance resolved",
+      "category": "PROVIDER",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "BLOCKED",
+      "state_basis": "BLOCKED is now an explicitly DECLARED state in the closed STATE_VOCABULARY. It is the correct value here and is not a synonym for ABSENT or NOT_SATISFIED: the governing regulatory baseline forbids ATTEMPTING this stage, so the gate is unblocked by an owner and counsel decision rather than by any engineering work.",
+      "pass_criteria": "The provider's legal and data-handling terms are resolved, the provider credential is scoped and rotated for the target environment, and the governed first-call rehearsal has been executed.",
+      "evidence_class": "PROVIDER_GOVERNANCE_DECISION",
+      "dependencies": ["L3"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "provider or model change",
+      "source_of_truth": ["docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json"],
+      "blocking_relationship": "The regulatory baseline records the real-provider stage as BLOCKED by an organizational governance decision, unblocked only when provider legal and data terms are resolved. PV4 therefore PRECEDES G1. The G1 package does not list this precondition, and that omission is resolved here in favour of the baseline.",
+      "explicit_non_assertion": "The baseline states that no provider-governance gate exists in code. This ledger does NOT assert one exists. The gate is organizational."
+    },
+    {
+      "id": "PV5",
+      "name": "rate-limit and quota backing store",
+      "category": "PROVIDER",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The backing store NAMES are present in every environment that enforces a limit, the preconditions endpoint attests the store is reachable, and the fail-open versus fail-closed disposition of each limiter is adjudicated.",
+      "evidence_class": "PROVIDER_CONFIGURATION_PROOF",
+      "dependencies": ["S5"],
+      "cross_reference_not_a_dependency": "Limiter disposition is SEC9, which depends on THIS gate. Stating it both ways would be circular.",
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "credential rotation or provider change",
+      "source_of_truth": ["app/api/health/stella-preconditions/route.ts"],
+      "measured_at_base": {
+        "store_names_present": "in a branch Preview scope only",
+        "limiter_dispositions_differ": "the general request path fails OPEN while the Stella path fails CLOSED, so one surface silently stops limiting when the store is unreachable"
+      }
+    },
+    {
+      "id": "PV6",
+      "name": "error reporting and telemetry provider",
+      "category": "PROVIDER",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "The reporting DSN NAME is present per environment, one test event is received end to end, and the payload sanitisation test is green.",
+      "evidence_class": "PROVIDER_CONFIGURATION_PROOF",
+      "dependencies": ["S5"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "infrastructure change",
+      "source_of_truth": ["lib/"],
+      "measured_at_base": {
+        "dsn_present_in_any_environment": false,
+        "reporting_enabled_expression": "derived from the presence of the DSN, so with the DSN absent reporting is OFF in every environment"
+      }
+    },
+
+    {
+      "id": "J1",
+      "name": "customer Golden Journey",
+      "category": "JOURNEY",
+      "enforcement": "MACHINE",
+      "owner": "unassigned",
+      "current_state": "ABSENT",
+      "pass_criteria": "A browser journey traverses signup, organisation founding, roles and users, project creation, evidence, proxy, outcomes and filters, the social-return computation, the governed assistant, report generation, portfolio, evaluation, and review and approval, against a Preview deployment satisfying S4, with at least one negative control, and with NO manual or development-only workaround anywhere in the path.",
+      "evidence_class": "BROWSER_RUN_PLUS_TRACES_BOUND_TO_SHA",
+      "dependencies": ["M9", "S4"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "every deploy to the Preview target",
+      "source_of_truth": [".claude/skills/uellix-golden-e2e/SKILL.md"],
+      "known_blockers_upstream_of_this_journey": [
+        "organisation founding and invitation have been measured to fail closed under row-level security in a live environment, so the journey cannot pass until that is resolved",
+        "the evaluation surface has no runtime, so the evaluation leg has nothing to traverse",
+        "two client-side navigations target a route with no page component, which terminates the journey in a not-found response"
+      ],
+      "scope_boundary": "This ledger DEFINES the journey. It does NOT contain the test, and this lane is not authorized to write one."
+    },
+    {
+      "id": "J2",
+      "name": "operator Golden Journey",
+      "category": "JOURNEY",
+      "enforcement": "MACHINE",
+      "owner": "unassigned",
+      "current_state": "ABSENT",
+      "pass_criteria": "A browser journey traverses the operator surfaces: signup allowlist, organisations, audit logs, statistics, proxies, assistant services, deletion approval and commercial accounts, with at least one negative control proving a non-operator principal is refused on each surface.",
+      "evidence_class": "BROWSER_RUN_PLUS_TRACES_BOUND_TO_SHA",
+      "dependencies": ["M9", "S4"],
+      "cross_reference_not_a_dependency": "SEC2 and SEC3 are first required at RELEASE_CANDIDATE. J2 must not depend on them, because J2 asserts how the operator surface behaves TODAY; it is the evidence that motivates SEC2 and SEC3, not their consequence.",
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "every deploy to the Preview target",
+      "source_of_truth": [".claude/skills/uellix-golden-e2e/SKILL.md"],
+      "known_blockers_upstream_of_this_journey": [
+        "the platform principal is a single flag that is also a tenant role value, so a negative control must prove the distinction rather than assume it",
+        "the deletion-approval path does not prohibit the requester from being the approver, so the separation-of-duties negative control currently has nothing to assert against"
+      ],
+      "scope_boundary": "This ledger DEFINES the journey and does NOT contain the test."
+    },
+    {
+      "id": "J3",
+      "name": "public verifier Golden Journey",
+      "category": "JOURNEY",
+      "enforcement": "MACHINE",
+      "owner": "unassigned",
+      "current_state": "ABSENT",
+      "pass_criteria": "A browser journey resolves a public verification locator and its document rendering for an anonymous caller, with a negative control proving a non-existent or revoked locator is refused, and with the rate-limit disposition of the public surface exercised.",
+      "evidence_class": "BROWSER_RUN_PLUS_TRACES_BOUND_TO_SHA",
+      "dependencies": ["M9", "S4", "SEC4"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "every deploy to the Preview target",
+      "source_of_truth": [".claude/skills/uellix-golden-e2e/SKILL.md"],
+      "known_blockers_upstream_of_this_journey": [
+        "the verification locator is generated as a random identifier and is a lookup token rather than a content hash, so a journey must not assert hash-verification semantics that the code does not implement",
+        "no user interface surfaces the locator, so the journey needs an adjudicated way to obtain one",
+        "the public verification surface has no rate limiting"
+      ],
+      "scope_boundary": "This ledger DEFINES the journey and does NOT contain the test."
+    },
+    {
+      "id": "J4",
+      "name": "governed assistant journey against real PostgreSQL",
+      "category": "JOURNEY",
+      "enforcement": "MACHINE",
+      "owner": "unassigned",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The existing governed-evidence, ticket and quota journeys run inside CI against a real PostgreSQL matrix rather than only from a shell script.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": ["M5"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "change to the assistant surface",
+      "source_of_truth": ["tests/e2e/"],
+      "measured_at_base": {
+        "files_present": 3,
+        "launched_by": "shell scripts outside CI"
+      }
+    },
+
+    {
+      "id": "D1",
+      "name": "backup and restore capability",
+      "category": "DATA",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "A named, repeatable procedure produces a backup of a given target AND a restore from that backup has been performed at least once, recorded with target identifier, backup identifier and timestamps.",
+      "evidence_class": "BACKUP_PACKET_PLUS_RESTORE_PROOF",
+      "dependencies": [],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "doctrine change",
+      "source_of_truth": ["docs/ops/SUPABASE_MIGRATION_GATE.md", "docs/ops/CLOSED_BETA_READINESS.md"],
+      "measured_at_base": {
+        "backup_scripts": 0,
+        "restore_scripts": 0,
+        "only_restore_oriented_artifact": "a single post-restore baseline SQL file"
+      },
+      "staging_versus_production_distinction": "STAGING_ALIGNED requires the CAPABILITY plus one proven restore. PRODUCTION_READY additionally requires D5, a rehearsal against a production-like target, and D2 objectives."
+    },
+    {
+      "id": "D2",
+      "name": "declared recovery objectives",
+      "category": "DATA",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "A recovery point objective and a recovery time objective are declared per environment AND at least one measurement shows the restore procedure meets them.",
+      "evidence_class": "DECLARED_OBJECTIVE_PLUS_MEASUREMENT",
+      "dependencies": ["D1"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "doctrine or plan change",
+      "source_of_truth": [],
+      "measured_at_base": {
+        "word_boundary_literals_found": 0,
+        "measurement_method_note": "A substring search appears to find matches because the Spanish word ABIERTO contains the letters RTO. Only a word-boundary search answers this question, and it returns zero."
+      }
+    },
+    {
+      "id": "D3",
+      "name": "roll-forward after restore",
+      "category": "DATA",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "operator",
+      "current_state": "PARTIAL",
+      "pass_criteria": "A documented procedure restores a target and then re-applies the corpus forward to the intended point, exercised at least once.",
+      "evidence_class": "RESTORE_PROOF",
+      "dependencies": ["D1"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "doctrine change",
+      "source_of_truth": ["docs/ops/staging/STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md"],
+      "note": "The corpus is forward-only and the baseline carries no rollbacks, so recovery is RESTORE THEN ROLL FORWARD. Three prepared packages are explicitly non-reversible, which means for those the only recovery is restore."
+    },
+    {
+      "id": "D4",
+      "name": "point-in-time recovery posture",
+      "category": "DATA",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "UNKNOWN",
+      "pass_criteria": "The retention and point-in-time recovery posture of each hosted target is observed and recorded.",
+      "evidence_class": "HOSTED_PLAN_OBSERVATION",
+      "dependencies": [],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "hosting plan change",
+      "source_of_truth": [],
+      "note": "This is a property of the hosting plan, not of the repository, so it is UNKNOWN here by construction rather than by omission."
+    },
+    {
+      "id": "D5",
+      "name": "restore rehearsal",
+      "category": "DATA",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "A restore rehearsal against a production-like target is executed and recorded with date, snapshot identity and post-restore verification results.",
+      "evidence_class": "RESTORE_PROOF",
+      "dependencies": ["D1"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "each quarter or any major change",
+      "source_of_truth": ["docs/ops/staging/STELLA_STAGING_MIGRATION_PLAN.md"],
+      "measured_at_base": {"executions": 0}
+    },
+
+    {
+      "id": "SEC1",
+      "name": "tenant isolation",
+      "category": "SECURITY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "mission",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The real-PostgreSQL isolation gates are green in CI AND a closed-world census of policies and row-level-security enablement is taken against the live target, covering all three SQL corpora in one sweep.",
+      "evidence_class": "CI_RUN_PLUS_FRESH_OBSERVATION",
+      "dependencies": ["M5", "S1"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "any change to the isolation surface",
+      "source_of_truth": ["tests/postgres/", "db/migrations/", "db/prepared/", "db/baseline/"],
+      "canonical_replacement_note": "This gate REPLACES the legacy requirement phrased as running the integration row-level-security suite against staging. That phrasing is UNSATISFIABLE because the integration test setup pins a loopback connection; pointing it at a hosted target is not something the harness can do. The canonical form is real-PostgreSQL gates in CI plus a read-only census of the hosted catalog.",
+      "measured_at_base": {
+        "existing_sweeps_are_partial": "one test reads only the migrations corpus, another reads only the prepared corpus, and no test unions all three, so a policy present in one corpus and absent from another is not detected"
+      }
+    },
+    {
+      "id": "SEC2",
+      "name": "platform administration boundary",
+      "category": "SECURITY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "A platform-roles authority exists and is enforced, such that the platform principal is distinguishable from a tenant role value, and privileged destructive actions require separation of duties.",
+      "evidence_class": "AUTHORITY_PLUS_TEST",
+      "dependencies": [],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "change to the administration surface",
+      "source_of_truth": ["docs/ops/tenancy/"],
+      "measured_at_base": {
+        "platform_principal": "a single flag that is also a tenant role value",
+        "deletion_approval_requires_distinct_approver": false
+      }
+    },
+    {
+      "id": "SEC3",
+      "name": "operator multi-factor and assurance level disposition",
+      "category": "SECURITY",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "A recorded decision states whether multi-factor authentication is required for privileged principals, and if required it is enforced and verifiable at the authorization point.",
+      "evidence_class": "ADJUDICATED_DECISION_PLUS_ENFORCEMENT",
+      "dependencies": [],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "change to the authentication surface",
+      "source_of_truth": [],
+      "measured_at_base": {
+        "multi_factor_references_in_code_or_migrations": 0,
+        "assurance_level_reaches_the_database": false,
+        "consequence": "the database cannot express an assurance-level predicate today, so a policy that claimed to require one would be decorative"
+      }
+    },
+    {
+      "id": "SEC4",
+      "name": "public disclosure surface",
+      "category": "SECURITY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The public verification surface has an adjudicated disclosure decision, a rate limit, and a green negative control for a non-existent or revoked locator.",
+      "evidence_class": "ADJUDICATED_DECISION_PLUS_TEST",
+      "dependencies": [],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "change to the public surface",
+      "source_of_truth": ["app/(public)/verify/"],
+      "measured_at_base": {"rate_limit_on_public_verify": "absent"}
+    },
+    {
+      "id": "SEC5",
+      "name": "secret custody and hygiene",
+      "category": "SECURITY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The secret scan is green in CI AND an inventory records which humans and systems hold each privileged credential, with a rotation record.",
+      "evidence_class": "CI_RUN_PLUS_INVENTORY",
+      "dependencies": ["M7"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "credential rotation",
+      "source_of_truth": ["docs/ops/CREDENTIAL_HYGIENE.md"]
+    },
+    {
+      "id": "SEC6",
+      "name": "assistant safety controls",
+      "category": "SECURITY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Injection and redaction suites are green, the human-review requirement is enforced rather than literal, and the provider governance decision under PV4 is resolved.",
+      "evidence_class": "CI_RUN_PLUS_ADJUDICATED_DECISION",
+      "dependencies": ["PV4"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "change to the assistant surface",
+      "source_of_truth": ["lib/stella/"]
+    },
+    {
+      "id": "SEC7",
+      "name": "billing webhook integrity",
+      "category": "SECURITY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Signature verification, claim and lease semantics and duplicate handling are green, an out-of-order delivery is either guarded or explicitly accepted, and the capability packages are applied to the target.",
+      "evidence_class": "CI_RUN_PLUS_FRESH_OBSERVATION",
+      "dependencies": ["PV3"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "change to the billing surface",
+      "source_of_truth": ["lib/stripe/"],
+      "measured_at_base": {"ordering_guard": "absent, currently unadjudicated rather than decided"}
+    },
+    {
+      "id": "SEC8",
+      "name": "response headers and content policy",
+      "category": "SECURITY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "The header set is adjudicated per environment, including an explicit decision on a content security policy.",
+      "evidence_class": "ADJUDICATED_DECISION",
+      "dependencies": [],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "change to the edge surface",
+      "source_of_truth": ["lib/"],
+      "measured_at_base": {"content_security_policy": "absent"}
+    },
+    {
+      "id": "SEC9",
+      "name": "rate limiting disposition",
+      "category": "SECURITY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Every limiter has an adjudicated fail-open or fail-closed disposition and a durable backing store where the disposition requires one.",
+      "evidence_class": "ADJUDICATED_DECISION_PLUS_ENFORCEMENT",
+      "dependencies": ["PV5"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "change to the limiter surface",
+      "source_of_truth": ["lib/"],
+      "measured_at_base": {
+        "distinct_dispositions": "the limiters do not agree with each other",
+        "login_limiter_state": "keyed per identifier in process memory, so it does not survive a restart and does not span instances"
+      }
+    },
+
+    {
+      "id": "L1",
+      "name": "legal instruments approved",
+      "category": "LEGAL",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "PREPARED",
+      "pass_criteria": "Terms, privacy and retention instruments are approved by counsel and published with a real effective date.",
+      "evidence_class": "COUNSEL_SIGNOFF",
+      "dependencies": [],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "any change to a legal instrument",
+      "source_of_truth": ["docs/ops/gates/G7_PACKAGE.md"],
+      "measured_at_base": {
+        "published_privacy_page_last_updated": "a literal pending placeholder",
+        "english_instrument_state": "marked as a draft pending legal review",
+        "retention_policy_state": "draft offering multiple options rather than one decision"
+      }
+    },
+    {
+      "id": "L2",
+      "name": "versioned acceptance capture",
+      "category": "LEGAL",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "The system records which instrument version a given principal accepted, and when, with a test proving the record is created on the acceptance path.",
+      "evidence_class": "SCHEMA_PLUS_UI_PLUS_TEST",
+      "dependencies": ["L1"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "any change to a legal instrument",
+      "source_of_truth": ["docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json"],
+      "measured_at_base": {
+        "acceptance_column_or_table": "absent, so there is zero substrate for acceptance today"
+      },
+      "regulatory_linkage": "The regulatory baseline gates commercial activation and self-service onboarding on this finding. A pilot may instead rely on an instrument the participants sign out of band; whether that is acceptable is an owner and counsel decision that this artifact does NOT make."
+    },
+    {
+      "id": "L3",
+      "name": "privacy and security review opened and answered",
+      "category": "LEGAL",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "ABSENT",
+      "pass_criteria": "The counsel checkpoint is OPENED and every question answered, and the pending governance decisions are adjudicated, whatever their outcome. The requirement is that they be ANSWERED, not that they be answered a particular way.",
+      "evidence_class": "COUNSEL_SIGNOFF",
+      "dependencies": [],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "material change to the processing surface",
+      "source_of_truth": ["docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json"],
+      "measured_at_base": {
+        "counsel_checkpoint_opened": false,
+        "pending_governance_decisions_adjudicated": 0,
+        "baseline_derivation_tree": "predates AS_OF_HEAD, so the baseline itself needs re-derivation before it can be cited as current"
+      }
+    },
+    {
+      "id": "L4",
+      "name": "subprocessor inventory",
+      "category": "LEGAL",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "ABSENT",
+      "pass_criteria": "A subprocessor inventory lists every third party that processes customer data, is consistent with what the published privacy instrument names, and each entry has the review counsel requires.",
+      "evidence_class": "COUNSEL_SIGNOFF",
+      "dependencies": ["L1"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "adding or removing a third party",
+      "source_of_truth": ["docs/ops/gates/G7_PACKAGE.md"],
+      "measured_at_base": {
+        "subprocessor_register": "absent",
+        "inconsistency": "the published privacy instrument names a strict subset of the third parties the system actually depends on"
+      }
+    },
+    {
+      "id": "LC0-RC",
+      "name": "regulatory baseline gate for the release candidate stage",
+      "category": "LEGAL",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "ABSENT",
+      "pass_criteria": "The conditions the regulatory baseline attaches to the release-candidate stage are satisfied: the counsel checkpoint opened and the pending decisions adjudicated.",
+      "evidence_class": "COUNSEL_SIGNOFF",
+      "dependencies": ["L3"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "baseline re-derivation",
+      "source_of_truth": ["docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json"]
+    },
+    {
+      "id": "LC0-PILOT",
+      "name": "regulatory baseline condition for the pilot stage",
+      "category": "LEGAL",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "OPEN",
+      "pass_criteria": "The pilot runs with the two blocked capability stages disabled, subject to the commercial-activation condition and to whatever instrument the pilot participants sign.",
+      "evidence_class": "COUNSEL_SIGNOFF_PLUS_PROVIDER_DARK_PROOF",
+      "dependencies": ["L2", "S7"],
+      "first_required_at_stage": "PILOT_READY",
+      "retest_after": "baseline re-derivation",
+      "source_of_truth": ["docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json"],
+      "note": "The baseline records the pilot stage as CONDITIONAL rather than blocked. It is the only stage in the baseline with that status, which is what makes PILOT_READY a materially different stage from PRODUCTION_READY rather than a sub-step of it."
+    },
+    {
+      "id": "LC0-PP",
+      "name": "regulatory baseline gate for the pre-production stage",
+      "category": "LEGAL",
+      "enforcement": "HUMAN",
+      "owner": "operator",
+      "current_state": "ABSENT",
+      "pass_criteria": "The production-state unknowns the baseline enumerates are resolved by an operator observation against the live environment.",
+      "evidence_class": "FRESH_PRODUCTION_OBSERVATION",
+      "dependencies": [],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "baseline re-derivation",
+      "source_of_truth": ["docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json"]
+    },
+    {
+      "id": "LC0-PL",
+      "name": "regulatory baseline gate for public launch",
+      "category": "LEGAL",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "ABSENT",
+      "pass_criteria": "Counsel output on the checkpoint is delivered and the successor legal packet is complete.",
+      "evidence_class": "COUNSEL_SIGNOFF",
+      "dependencies": ["L3"],
+      "first_required_at_stage": "GO_LIVE",
+      "retest_after": "baseline re-derivation",
+      "source_of_truth": ["docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json"],
+      "conditional_applicability": "Required only where the go-live is a PUBLIC launch. A private pilot or a named-customer go-live does not engage this gate, and this gate must not be cited to delay one."
+    },
+
+    {
+      "id": "G1",
+      "name": "real provider evaluation",
+      "category": "HUMAN",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PREPARED",
+      "pass_criteria": "The evaluation package acceptance criteria are met over the real provider, with run artifacts recorded.",
+      "evidence_class": "HUMAN_GATE_PACKAGE_SIGNOFF",
+      "dependencies": ["PV4", "S4", "M9"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "model or prompt change",
+      "source_of_truth": ["docs/ops/gates/G1_PACKAGE.md"],
+      "unlisted_precondition_resolved_here": "The package does not list the provider-governance precondition. PV4 is hereby a HARD precondition of G1, and G1 may not be attempted while PV4 is BLOCKED.",
+      "measured_at_base": {"certified_real_provider_calls": 0}
+    },
+    {
+      "id": "G4",
+      "name": "per-role flag rollout with an observation window",
+      "category": "HUMAN",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PREPARED",
+      "pass_criteria": "Each role is enabled behind its flag and observed stable for the declared window, or rolled back, with the per-role signoff recorded.",
+      "evidence_class": "HUMAN_GATE_PACKAGE_SIGNOFF",
+      "dependencies": ["PV5", "S7"],
+      "first_required_at_stage": "PILOT_READY",
+      "retest_after": "each role",
+      "source_of_truth": ["docs/ops/gates/G4_PACKAGE.md"],
+      "stage_placement_note": "F18_EXTENSION. F18 placed this at PRODUCTION_READY because F18 had no PILOT_READY stage. A pilot necessarily enables product flags for real users, so the per-role window is a PILOT_READY mechanism and is inherited forward."
+    },
+    {
+      "id": "G5",
+      "name": "grounding product decision",
+      "category": "HUMAN",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PREPARED",
+      "pass_criteria": "The decision is recorded in the decisions register. The gate requires a RECORDED decision, not a particular decision.",
+      "evidence_class": "RECORDED_PRODUCT_DECISION",
+      "dependencies": [],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "never once recorded",
+      "source_of_truth": ["docs/ops/gates/G5_PACKAGE.md"]
+    },
+    {
+      "id": "G7",
+      "name": "legal review signoff act",
+      "category": "LEGAL",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "PREPARED",
+      "pass_criteria": "The signature block of the legal review package is completed against L1 to L4.",
+      "evidence_class": "COUNSEL_SIGNOFF",
+      "dependencies": ["L1", "L2", "L3", "L4"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "any change to a legal instrument",
+      "source_of_truth": ["docs/ops/gates/G7_PACKAGE.md"],
+      "canonical_role": "G7 is the SIGNATURE ACT. The substantive requirements live in L1 to L4, and the counsel questionnaire lives in the regulatory baseline. These three are not duplicates of each other."
+    },
+    {
+      "id": "G8",
+      "name": "human acceptance smoke in Preview",
+      "category": "HUMAN",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PREPARED",
+      "pass_criteria": "The human walks the acceptance script against a Preview deployment satisfying S4 and records timestamped evidence.",
+      "evidence_class": "HUMAN_GATE_PACKAGE_SIGNOFF",
+      "dependencies": ["S4", "M9"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "every release candidate",
+      "source_of_truth": ["docs/ops/gates/G8_PACKAGE.md"],
+      "canonical_role": "G8 is the HUMAN ACCEPTANCE ACT and is NOT a substitute for the automated journeys. M9 and J1 to J3 prove the journeys mechanically; G8 records that a human accepted what they saw."
+    },
+    {
+      "id": "G9",
+      "name": "real cost calibration",
+      "category": "HUMAN",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PREPARED",
+      "pass_criteria": "Real consumption is measured against the cost model over pilot traffic.",
+      "evidence_class": "HUMAN_GATE_PACKAGE_SIGNOFF",
+      "dependencies": ["G1", "G10A"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "model or pricing change",
+      "source_of_truth": ["docs/ops/gates/G9_PACKAGE.md"],
+      "stage_placement_note": "Requires real traffic, which only exists after PILOT_READY is declared and the pilot runs. It therefore gates PRODUCTION_READY and cannot gate anything earlier."
+    },
+    {
+      "id": "G10A",
+      "name": "pilot entry signature",
+      "category": "HUMAN",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PREPARED",
+      "pass_criteria": "The owner signs that the pilot may receive real users and real data, with zero open blocking defects on the pilot path and the pilot-traffic blocker resolved or explicitly accepted.",
+      "evidence_class": "OWNER_SIGNATURE",
+      "dependencies": ["PB-01", "LC0-PILOT", "G4"],
+      "first_required_at_stage": "PILOT_READY",
+      "retest_after": "never once signed, unless the pilot scope changes",
+      "source_of_truth": ["docs/ops/gates/G10_PACKAGE.md"],
+      "stage_placement_note": "F18_EXTENSION. The legacy G10 package carries TWO signatures in one gate. The seven-stage model separates them: this is the first."
+    },
+    {
+      "id": "G10B",
+      "name": "production readiness signature",
+      "category": "HUMAN",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PREPARED",
+      "pass_criteria": "The owner signs that production deployment is authorized, after the pilot has run and its acceptance criteria are met, and after the accepted-risk register entries are accepted in writing.",
+      "evidence_class": "OWNER_SIGNATURE",
+      "dependencies": ["G10A", "G9", "P8"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "never once signed, unless the release scope changes",
+      "source_of_truth": ["docs/ops/gates/G10_PACKAGE.md"],
+      "stage_placement_note": "F18_EXTENSION. The second of the two legacy G10 signatures."
+    },
+    {
+      "id": "G12",
+      "name": "read-only hosted catalog inspection",
+      "category": "STAGING",
+      "enforcement": "HUMAN",
+      "owner": "operator",
+      "current_state": "STALE",
+      "pass_criteria": "A read-only catalog inspection of the hosted target is performed and reported, FRESH under RULE_OBSERVATION_FRESHNESS, before any mutation.",
+      "evidence_class": "FRESH_STAGING_OBSERVATION",
+      "dependencies": [],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "before every apply",
+      "source_of_truth": ["docs/ops/staging/STELLA_STAGING_GATE_PLAN.md"],
+      "note": "A prior manual pass exists but predates the current state, so it is STALE and carries no execution credit."
+    },
+    {
+      "id": "G13",
+      "name": "staging end-to-end without the real provider",
+      "category": "JOURNEY",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "operator",
+      "current_state": "PREPARED",
+      "pass_criteria": "The staging end-to-end case set runs against the aligned staging target with the real provider dark, and the result ledger is recorded.",
+      "evidence_class": "FRESH_STAGING_OBSERVATION",
+      "dependencies": ["S1", "S2", "S3", "S4", "S10"],
+      "first_required_at_stage": "FEATURE_COMPLETE_STAGING",
+      "retest_after": "every release candidate",
+      "source_of_truth": ["docs/ops/staging/STELLA_STAGING_GATE_PLAN.md"]
+    },
+    {
+      "id": "PB-01",
+      "name": "pilot-traffic blocking defect",
+      "category": "HUMAN",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "OPEN",
+      "pass_criteria": "The defect is RESOLVED, or explicitly ACCEPTED in writing with a rationale and a bound on the exposure.",
+      "evidence_class": "RECORDED_PRODUCT_DECISION",
+      "dependencies": [],
+      "first_required_at_stage": "PILOT_READY",
+      "retest_after": "never once closed",
+      "source_of_truth": ["docs/ops/G1_B_POST_GATE_PILOT_BLOCKERS.md"],
+      "note": "Recorded as blocking pilot traffic, which is exactly the PILOT_READY boundary."
+    },
+    {
+      "id": "C1-C18",
+      "name": "offline release-candidate criteria without regression",
+      "category": "EVAL",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "mission",
+      "current_state": "UNKNOWN",
+      "pass_criteria": "The offline release-candidate criteria are re-executed at the candidate SHA with no regression against the last recorded pass.",
+      "evidence_class": "CI_RUN_BOUND_TO_SHA",
+      "dependencies": ["M13"],
+      "first_required_at_stage": "RELEASE_CANDIDATE",
+      "retest_after": "every release candidate",
+      "source_of_truth": ["docs/ops/STELLA_FABLE_RELEASE_CRITERIA.md", "docs/ops/STELLA_FABLE_TEST_LEDGER.md"],
+      "note": "A pass is recorded at an older commit. Whether it still holds at AS_OF_HEAD is UNKNOWN because this lane executed no tests. An old pass is not a current pass."
+    },
+
+    {
+      "id": "PROD-MIG-AUTH",
+      "name": "hosted migration authority prerequisite",
+      "category": "AUTHORITY",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "A governed, owner-ratified authority exists that names the exact target, the exact migration corpus to be applied, the ordered path, the recovery posture and the successor ACL, BEFORE any hosted mutation is attempted.",
+      "evidence_class": "RATIFIED_AUTHORITY_ARTIFACT",
+      "dependencies": ["D1", "S8", "G12"],
+      "first_required_at_stage": "STAGING_ALIGNED",
+      "retest_after": "every new target or corpus change",
+      "source_of_truth": ["docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json"],
+      "two_distinct_instances": {
+        "staging_instance": "Required at STAGING_ALIGNED. Does not exist. The resumable applier pins a single expected branch name, so the authority must also resolve that pin.",
+        "production_instance": "Required at PRODUCTION_READY as gate P2. Does not exist, AND the hosted tooling vetoes production targets by design, so the production instance additionally requires a governed way to address a production target at all."
+      }
+    },
+    {
+      "id": "P1",
+      "name": "production branch lineage",
+      "category": "PRODUCTION",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Production deploys from the default branch, reached by a REVIEWED pull request from the integration branch, with M1 green on the exact SHA, a release tag on that SHA, and branch protection active.",
+      "evidence_class": "PULL_REQUEST_PLUS_CI_RUN_BOUND_TO_SHA",
+      "dependencies": ["M1"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "every release",
+      "source_of_truth": [".github/workflows/ci.yml"],
+      "hpo_g_binding": "production requires normal integration to main lineage",
+      "measured_at_base": {
+        "integration_to_default_pull_requests": 0,
+        "default_branch_distance_behind_head": "many hundreds of commits",
+        "branch_protection": "UNKNOWN from the repository"
+      }
+    },
+    {
+      "id": "P2",
+      "name": "production schema parity under a governed migration authority",
+      "category": "PRODUCTION",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "A fresh production observation plus a governed migration authority plus an executed backup and restore proof, together establishing that the production schema matches the exact corpus of the SHA being deployed.",
+      "evidence_class": "FRESH_PRODUCTION_OBSERVATION_PLUS_RATIFIED_AUTHORITY",
+      "dependencies": ["PROD-MIG-AUTH", "D1", "D5", "S1"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "every migration",
+      "source_of_truth": ["db/hosted/"],
+      "measured_at_base": {
+        "hosted_tooling_vetoes_production_targets": "by design, via a known-production-identifier refusal",
+        "consequence": "this veto is a SAFETY FEATURE. Satisfying P2 means writing a governed authority and path, never disabling the veto.",
+        "last_known_production_schema_state": "STALE and ENVIRONMENT_UNKNOWN"
+      }
+    },
+    {
+      "id": "P3",
+      "name": "production environment matrix by NAME",
+      "category": "PRODUCTION",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Every environment variable NAME that production requires is present. Names only, never values.",
+      "evidence_class": "ENVIRONMENT_NAME_INVENTORY",
+      "dependencies": ["M10"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "every environment change",
+      "source_of_truth": ["docs/ops/staging/STELLA_HOSTED_ENVIRONMENT_MATRIX.md"],
+      "measured_at_base": {
+        "absent_names_include": ["the transactional email key", "the key-value store names", "the error-reporting DSN", "the payment provider keys", "the runtime database URL"]
+      }
+    },
+    {
+      "id": "P5",
+      "name": "production rollback and recovery runbook",
+      "category": "PRODUCTION",
+      "enforcement": "HUMAN",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "A runbook covers code rollback, flag kill-switch and database recovery by restore, and has been rehearsed at least once.",
+      "evidence_class": "RUNBOOK_PLUS_REHEARSAL",
+      "dependencies": ["D1", "D3", "D5"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "every release",
+      "source_of_truth": ["docs/ops/runbooks/"],
+      "note": "Code rollback by redeploy and flag kill-switches are documented. The DATABASE leg is the gap, because the corpus is forward-only and the baseline carries no rollbacks."
+    },
+    {
+      "id": "P6",
+      "name": "adjudicated production health contract",
+      "category": "PRODUCTION",
+      "enforcement": "MACHINE",
+      "owner": "owner",
+      "current_state": "PARTIAL",
+      "pass_criteria": "Each health endpoint has ONE adjudicated expected response per caller class, and an external monitor observes it.",
+      "evidence_class": "ADJUDICATED_DECISION_PLUS_MONITOR",
+      "dependencies": ["M11"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "every deploy",
+      "source_of_truth": ["app/api/health/"],
+      "blocking_adjudication": "The documented and observed behaviours of the auth endpoint for an anonymous caller disagree. This must be adjudicated before M11 can be automated against production, because otherwise the smoke would encode whichever behaviour the author happened to believe.",
+      "measured_at_base": {"external_monitor": "absent"}
+    },
+    {
+      "id": "P7",
+      "name": "observability",
+      "category": "PRODUCTION",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "Error reporting is receiving events per environment, structured logging exists, and the declared alerts are armed and have been proven to fire.",
+      "evidence_class": "OBSERVABILITY_PROOF",
+      "dependencies": ["PV6"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "infrastructure change",
+      "source_of_truth": ["lib/"],
+      "hpo_g_binding": "production requires observability",
+      "measured_at_base": {
+        "reporting_dsn_present_in_any_environment": false,
+        "structured_logger": "absent",
+        "alerts": "described in a gate document only, not armed"
+      }
+    },
+    {
+      "id": "P8",
+      "name": "security and legal signoff for production",
+      "category": "PRODUCTION",
+      "enforcement": "HUMAN",
+      "owner": "owner_and_counsel",
+      "current_state": "ABSENT",
+      "pass_criteria": "The legal signature act is complete, the counsel checkpoint is answered, the accepted-risk register entries are accepted in writing, and the pre-production security checklist has an owner and a criterion for each item.",
+      "evidence_class": "COUNSEL_SIGNOFF_PLUS_OWNER_SIGNATURE",
+      "dependencies": ["G7", "L3", "SEC1", "SEC2", "SEC3"],
+      "first_required_at_stage": "PRODUCTION_READY",
+      "retest_after": "material change to the processing surface",
+      "source_of_truth": ["docs/08_SECURITY_PRIVACY.md"],
+      "hpo_g_binding": "production requires security and legal signoff",
+      "measured_at_base": {
+        "pre_production_security_checklist_items": 9,
+        "those_items_with_an_owner_or_criterion": 0
+      }
+    },
+    {
+      "id": "GL1",
+      "name": "production cutover execution record",
+      "category": "PRODUCTION",
+      "enforcement": "HUMAN_AND_MACHINE",
+      "owner": "owner",
+      "current_state": "ABSENT",
+      "pass_criteria": "One record binds the whole cutover: the merged pull request and its exact SHA, the backup identifier taken immediately before the production migration, the migration applied under the production migration authority, the post-deploy smoke result, the armed alerts, and the cohort flag state. Any missing element makes the cutover unevidenced.",
+      "evidence_class": "CUTOVER_RECORD_BOUND_TO_SHA_AND_TARGET",
+      "dependencies": ["P1", "P2", "D1", "M11", "P6", "P7", "G4", "G10B"],
+      "first_required_at_stage": "GO_LIVE",
+      "retest_after": "every production release",
+      "source_of_truth": ["docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json"],
+      "stage_placement_note": "F18_EXTENSION. F18 expressed go-live as prose composition of earlier gate IDs. A single execution record gives the stage one citable artifact and makes a partial cutover visible."
+    }
+  ],
+
+  "DUPLICATE_GATE_RESOLUTION": {
+    "rule": "Each entry names the legacy gates that were competing for the same decision, the canonical ID that now carries it, and the DISPOSITION of each legacy gate. A release decision cites the canonical ID. Disposition CANONICALIZED_INTO means the legacy document remains readable as history but is no longer the thing a release cites; RETIRED_AS_UNSATISFIABLE means the criterion as written cannot be met by any execution and must not be attempted; AWAITING_ADJUDICATION means this artifact does NOT resolve it and has no authority to.",
+    "resolutions": [
+      {
+        "id": "DGR-01",
+        "contested_decision": "which machine gates are mandatory before a change is considered done",
+        "legacy_sources": [
+          "the release workstream document list of mandatory local gates",
+          "the CI workflow step list",
+          "the poststate composed step list",
+          "the test manifest schema exit-gate enumeration",
+          "an exit gate named for full CI greenness that the schema never defines",
+          "the beta release baseline list"
+        ],
+        "disagreements": [
+          "the release document requires offline evaluations that the CI workflow does not run",
+          "the CI workflow runs a secret scan, seal verification, derived-artifact verifications and a build that the release document does not list",
+          "poststate omits lint and build",
+          "the manifest schema enumeration omits lint, build, browser end-to-end and full CI greenness",
+          "ONE committed test manifest declares an exit gate outside the schema enumeration, so that declaration cannot be validated; a second file, an authority, repeats the same out-of-enum list as its own manifest-contract",
+          "dependency audit and schema drift appear only in the beta baseline"
+        ],
+        "canonical": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M10", "M13", "M14", "M15"],
+        "disposition": "CANONICALIZED_INTO",
+        "required_follow_on": "The manifest schema must gain the missing exit-gate names in a successor version so that a manifest can declare them validly. That is an implementation change and is NOT performed by this lane."
+      },
+      {
+        "id": "DGR-02",
+        "contested_decision": "what it means for staging to have the schema applied",
+        "legacy_sources": [
+          "the human gate for applying database packages to staging",
+          "a proposed operator gate for the assistant chain",
+          "two checkpoints in the staging migration plan",
+          "the hosted chain actually executed in a prior train",
+          "the staging migration checklist",
+          "the staging advancement plan"
+        ],
+        "disagreements": [
+          "the human gate scope predates the current corpus and covers only a subset of it",
+          "the executed chain achieved the proposed gate objective without the gate ever being formalized",
+          "no source states the ACL consequence of tables added after the last ACL package"
+        ],
+        "canonical": ["S1", "S2", "S3", "S4", "S9", "G12"],
+        "disposition": "CANONICALIZED_INTO",
+        "note": "The legacy human gate remains a historical record of what was applied in its own window. It must not be cited as covering the current corpus, because its scope is strictly smaller."
+      },
+      {
+        "id": "DGR-03",
+        "contested_decision": "how tenant isolation is verified against a hosted target",
+        "legacy_sources": [
+          "the human gate requiring the integration row-level-security suite to be green against staging",
+          "the legacy validation workflow",
+          "a line in the pilot gate document asserting isolation is verified in staging",
+          "an enumerated production-state unknown about live isolation posture"
+        ],
+        "disagreements": [
+          "the integration test setup pins a loopback connection, so the suite cannot address a hosted target at all",
+          "the legacy validation workflow is self-documented as unable to pass"
+        ],
+        "canonical": ["SEC1"],
+        "disposition": "RETIRED_AS_UNSATISFIABLE",
+        "retired_ids": ["G3"],
+        "retirement_reason": "The criterion as written is not merely unmet, it is unmeetable: the harness pins a loopback connection. Leaving it open invites someone to satisfy it by repointing the harness at a hosted database, which would run a mutating test suite against a live target. Retiring it is a SAFETY action, not a relaxation.",
+        "canonical_replacement": "Real-PostgreSQL isolation gates in CI, plus a READ-ONLY closed-world census of the hosted catalog. Never a mutating suite against a hosted target."
+      },
+      {
+        "id": "DGR-04",
+        "contested_decision": "what constitutes an end-to-end journey",
+        "legacy_sources": [
+          "the human smoke gate",
+          "a staging plan checkpoint",
+          "a proposed provider-dark staging end-to-end gate",
+          "a closed-beta user-acceptance gate",
+          "the Golden end-to-end procedure skill"
+        ],
+        "disagreements": [
+          "four of these are human walkthroughs and one is a procedure with no implementation",
+          "none is an automated browser journey, and no browser automation exists in the repository"
+        ],
+        "canonical": ["M9", "J1", "J2", "J3", "J4", "G13", "G8"],
+        "disposition": "CANONICALIZED_INTO",
+        "separation_of_roles": "M9 with J1 to J3 is the AUTOMATED proof. G8 is the HUMAN ACCEPTANCE act. G13 is the provider-dark staging run. J4 is the governed-assistant journey against real PostgreSQL. These four are complementary, and no one of them substitutes for another.",
+        "hpo_g_binding": "Playwright is the browser Golden Journey runner"
+      },
+      {
+        "id": "DGR-05",
+        "contested_decision": "what legal clearance is required",
+        "legacy_sources": [
+          "the human legal review gate",
+          "the regulatory baseline counsel checkpoint",
+          "a closed-beta item to verify legal claims",
+          "the security and privacy document checklist"
+        ],
+        "canonical": ["L1", "L2", "L3", "L4", "G7", "LC0-RC", "LC0-PILOT", "LC0-PP", "LC0-PL"],
+        "disposition": "CANONICALIZED_INTO",
+        "separation_of_roles": "L1 to L4 are the SUBSTANTIVE requirements. G7 is the SIGNATURE ACT. The regulatory baseline gates are the STAGE CONDITIONS. Collapsing them loses the distinction between a requirement, a signature and a stage condition."
+      },
+      {
+        "id": "DGR-06",
+        "contested_decision": "what backup is required before a hosted mutation",
+        "legacy_sources": [
+          "a step in the production migration approval sequence",
+          "a staging plan checkpoint",
+          "the closed-beta production gate",
+          "the provisioning requirement for destroy and reprovision"
+        ],
+        "disagreements": [
+          "the destroy-and-reprovision doctrine was calibrated for an EMPTY target, and staging is no longer empty, so it is not a recovery path for staging"
+        ],
+        "canonical": ["D1", "S8", "D3", "D5"],
+        "disposition": "CANONICALIZED_INTO",
+        "frozen_correction": "For any non-empty target, recovery is RESTORE_REQUIRED. Destroy and reprovision is NOT an acceptable recovery posture for a target holding data."
+      },
+      {
+        "id": "DGR-07",
+        "contested_decision": "what a health endpoint should answer for an anonymous caller",
+        "legacy_sources": [
+          "the documented endpoint contract",
+          "the behaviour observed in production"
+        ],
+        "disagreements": ["the documented response and the observed response differ"],
+        "canonical": ["P6"],
+        "disposition": "AWAITING_ADJUDICATION",
+        "binding": "This artifact does NOT choose. Either behaviour could legitimately be the intended one, and choosing without the owner would freeze an arbitrary contract into the smoke gate. M11 may not be automated against production until P6 is adjudicated."
+      },
+      {
+        "id": "DGR-08",
+        "contested_decision": "what the release stages are called",
+        "legacy_sources": [
+          "the assistant-programme vocabulary of an offline release candidate and a production-ready state",
+          "the release workstream vocabulary of local, staging, hosted, release candidate and production",
+          "the regulatory baseline vocabulary from foundational engineering through public launch",
+          "the closed-beta vocabulary of preview, pilot and production",
+          "the seven-step production migration approval sequence"
+        ],
+        "canonical": "the seven canonical stages frozen in the companion authority",
+        "disposition": "CANONICALIZED_INTO",
+        "note": "Five vocabularies were competing. The mapping table lives in the companion authority so that a legacy document can still be read."
+      },
+      {
+        "id": "DGR-09",
+        "contested_decision": "whether the real provider evaluation has a legal precondition",
+        "legacy_sources": [
+          "the evaluation gate package, which lists none",
+          "the regulatory baseline, which records the real-provider stage as blocked pending provider terms"
+        ],
+        "canonical": ["PV4", "G1"],
+        "disposition": "CANONICALIZED_INTO",
+        "resolution": "PV4 PRECEDES G1. The package omission is resolved in favour of the regulatory baseline, because a package cannot waive a governance block by not mentioning it."
+      },
+      {
+        "id": "DGR-10",
+        "contested_decision": "what the derived hosted-state artifacts currently assert",
+        "legacy_sources": [
+          "an apply-status artifact",
+          "a migration journal document",
+          "a prior live observation",
+          "a local rehearsal result"
+        ],
+        "disagreements": ["all four describe different moments and none is current"],
+        "canonical": ["S1", "S9", "M12"],
+        "disposition": "CANONICALIZED_INTO",
+        "frozen_correction": "All four are STALE with respect to different dates. A byte-exact derived artifact proves faithful derivation, never current truth. None may be cited as a current hosted fact in either direction."
+      },
+      {
+        "id": "DGR-11",
+        "contested_decision": "whether two grounding packages are applied to staging",
+        "legacy_sources": [
+          "the environment example and matrix documents, which say they are not applied",
+          "the executed hosted chain, which indicates they are"
+        ],
+        "canonical": ["S2"],
+        "disposition": "AWAITING_ADJUDICATION",
+        "binding": "This is an open documentary contradiction that only a FRESH observation can settle. It must be settled by observation, never by choosing the more convenient document."
+      },
+      {
+        "id": "DGR-12",
+        "contested_decision": "documentary drift that could be mistaken for a gate",
+        "legacy_sources": [
+          "a workflow comment naming an outdated corpus range",
+          "a journal document naming an outdated wrapper count"
+        ],
+        "canonical": "none: these are documentation defects, not gates",
+        "disposition": "DOCUMENTARY_DRIFT_ONLY",
+        "binding": "These must be corrected as documentation. They must NOT be promoted into gates, and they do not block any stage."
+      }
+    ]
+  },
+
+  "READINESS": {
+    "status": "INHERITED_FROM_F18_UNCHANGED",
+    "justification": "The delta from the F18 measurement HEAD to AS_OF_HEAD is two documentation files and touches no gate surface, so no readiness input changed.",
+    "figures": {
+      "machine_gate_readiness": "7.0 of 13",
+      "human_gate_execution_readiness": "packages prepared 9 of 9; executed with current evidence 0 of 9",
+      "staging_certification_readiness": "2.75 of 10",
+      "release_candidate_readiness": "about 5.07 of 21",
+      "production_certification_readiness": "about 3.24 of 25"
+    },
+    "BINDING_LIMITATION": "These figures are PLANNING AIDS ONLY. They are explicitly NOT an execution input, NOT a stage-transition criterion, and NOT evidence of any kind. A stage is declared by the named gates in the companion authority being individually satisfied with fresh, SHA-bound evidence, never by a readiness percentage crossing a threshold. Any increase in a readiness figure that is not accompanied by named gate evidence is an accounting artifact, not progress."
+  },
+
+  "FUTURE_IMPLEMENTATION_SURFACE": {
+    "rule": "Named here so a successor lane can find them. NONE of these is created, reserved or allocated by this DOCS_ONLY lane.",
+    "items": [
+      {"id": "FIS-01", "surface": "exact-SHA CI binding, a trigger on pushes to the integration branch, step timeouts, run concurrency, and branch protection", "gates": ["M1"]},
+      {"id": "FIS-02", "surface": "collected-and-executed test set reconciliation raising LOST_FILE, plus tests for the reconciliation script itself", "gates": ["M4"]},
+      {"id": "FIS-03", "surface": "a successor test-manifest schema version adding the missing exit-gate names, and a poststate composition that includes lint and build", "gates": ["M3", "M6"]},
+      {"id": "FIS-04", "surface": "a workflow forcing every tracked pg test file, plus a registry mirror or retry for the shared container image", "gates": ["M5"]},
+      {"id": "FIS-05", "surface": "the Playwright runner and the three journey suites", "gates": ["M9", "J1", "J2", "J3"]},
+      {"id": "FIS-06", "surface": "automated post-deploy smoke against an adjudicated health contract, and an external monitor", "gates": ["M11", "P6"]},
+      {"id": "FIS-07", "surface": "a single sweep unioning all three SQL corpora, and a closed-world hosted policy census", "gates": ["SEC1"]},
+      {"id": "FIS-08", "surface": "parameterizing the applier expected-branch pin, a bounded stop-after control, a successor ACL package generator, and re-derivation of the hosted status artifact from a fresh observation", "gates": ["S3", "S9", "PROD-MIG-AUTH"]},
+      {"id": "FIS-09", "surface": "a governed production migration path and production target identity, given that the hosted tooling vetoes production targets by design", "gates": ["P2"]},
+      {"id": "FIS-10", "surface": "backup and restore scripts, an evidence class for a backup identifier and a restore rehearsal, and declared recovery objectives", "gates": ["D1", "D2", "D5"]},
+      {"id": "FIS-11", "surface": "an environment schema that refuses a deploy when a required name is missing for the target environment", "gates": ["M10", "P3"]},
+      {"id": "FIS-12", "surface": "versioned legal acceptance capture: schema, interface and test", "gates": ["L2"]},
+      {"id": "FIS-13", "surface": "structured logging, per-environment error reporting, and armed alerts", "gates": ["P7"]},
+      {"id": "FIS-14", "surface": "a platform-roles authority with enforcement, and a multi-factor disposition", "gates": ["SEC2", "SEC3"]},
+      {"id": "FIS-15", "surface": "a gate-ledger evaluator command that derives stage readiness from evidence artifacts rather than from prose", "gates": ["ALL"], "note": "This ledger is the DATA. The evaluator is the code and does not exist. No package script is added by this lane, because adding a script name without its implementation would create a broken reference."},
+      {"id": "FIS-16", "surface": "documentation correction of the drifted workflow comment and journal counts", "gates": [], "note": "see DGR-12: documentation defects, not gates"}
+    ]
+  },
+
+  "OPEN_FINDINGS": [
+    {"id": "AT-F-01", "finding": "The health contract conflict for an anonymous caller is unadjudicated. Automating a smoke gate before adjudication would freeze an arbitrary contract.", "gates": ["P6", "M11"], "disposition": "AWAITING_OWNER_ADJUDICATION"},
+    {"id": "AT-F-02", "finding": "No successor ACL package exists for the tables added after the last hosted ACL package, so a schema-only apply produces a deployment where the runtime role is denied on those tables.", "gates": ["S3"], "disposition": "BLOCKING_STAGING_ALIGNED"},
+    {"id": "AT-F-03", "finding": "The only resumable applier pins a single expected branch name measured from the LOCAL branch, so the authority that opens a staging apply must also resolve that pin. Advancing that branch by pushing it would deploy new code against the old database, which is the inverse of the required order.", "gates": ["PROD-MIG-AUTH", "S4"], "disposition": "BLOCKING_STAGING_ALIGNED"},
+    {"id": "AT-F-04", "finding": "The legacy isolation gate is unsatisfiable as written, and the obvious way to make it pass would point a mutating suite at a live database.", "gates": ["SEC1"], "disposition": "RESOLVED_BY_RETIREMENT_IN_DGR_03"},
+    {"id": "AT-F-05", "finding": "The real-provider stage is blocked by an organizational governance decision that the evaluation gate package does not mention.", "gates": ["PV4", "G1"], "disposition": "RESOLVED_BY_ORDERING_IN_DGR_09"},
+    {"id": "AT-F-06", "finding": "The destroy-and-reprovision doctrine is calibrated for an empty target and is not a recovery path for a target holding data.", "gates": ["D1", "S8", "D3"], "disposition": "RESOLVED_BY_FROZEN_CORRECTION_IN_DGR_06"},
+    {"id": "AT-F-07", "finding": "An authority merging is not a capability existing. The email-verification Packet B authority merged at AS_OF_HEAD with no enforcement code, and must not be credited as provider readiness.", "gates": ["PV1"], "disposition": "RECORDED_AS_EXPLICIT_NON_CREDIT"},
+    {"id": "AT-F-08", "finding": "An out-of-enum exit gate named full_ci_green is DECLARED as an array member in exactly TWO files: one test manifest, docs/ops/wave2/W2_B5_TEST_MANIFEST_v1.json at .exit_gates, and one authority manifest-contract, docs/ops/wave2/W2_B5_AUTHORITY_v1.0.0.json at .test_manifest_contract.exit_gates. In both it is element index 9 of a ten-element list whose first nine match the schema enumeration exactly. Because the schema enumeration is closed at nine values, neither declaration can be validated today.", "gates": ["M6"], "disposition": "REQUIRES_SUCCESSOR_SCHEMA_VERSION", "R2_CORRECTION": {"audit_finding": "AT-N-02", "r1_error": "R1 asserted FOUR committed test manifests declare it, which conflated two different statements.", "measured_truth": {"files_containing_the_literal": 4, "files_DECLARING_it_as_an_exit_gates_array_member": 2, "of_those_that_are_test_manifests": 1, "of_those_that_are_authority_manifest_contracts": 1, "files_referencing_it_only_in_prose": ["docs/ops/wave2/W2_B5_AUTHORITY_AMENDMENT_v1.0.1.json, seven references, all by index as exit_gates[9]", "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json, one reference, itself a prior finding recording this same schema defect"]}, "lesson": "A literal appearing in N files is not N declarations. Counting grep hits and counting declarations are different measurements, and only the structural one, array membership, supports the claim."}},
+    {"id": "AT-F-09", "finding": "Whether the offline release-candidate criteria still hold at AS_OF_HEAD is UNKNOWN. This lane executed no tests, and an older recorded pass is not a current pass.", "gates": ["C1-C18"], "disposition": "UNKNOWN_BY_CONSTRUCTION"},
+    {"id": "AT-F-10", "finding": "Branch protection is not observable from the repository and was measured absent by an earlier lane. Until observed, a green CI run is not proof that a merge was gated.", "gates": ["M1", "P1"], "disposition": "UNKNOWN_REQUIRES_HOSTED_OBSERVATION"}
+  ],
+
+  "self_check": {
+    "gate_count": 78,
+    "every_gate_has_first_required_at_stage": true,
+    "every_first_required_at_stage_is_a_canonical_stage": true,
+    "every_dependency_resolves_to_a_gate_id_in_this_ledger": true,
+    "no_gate_depends_on_a_gate_first_required_at_a_later_stage": true,
+    "duplicate_resolution_canonical_ids_all_exist": true,
+    "retired_ids_absent_from_the_gate_list": ["G3"],
+    "no_next_migration_ordinal_declared": true,
+    "no_secret_value_present": true,
+    "no_hosted_observation_performed": true,
+    "no_migration_applied": true,
+    "no_playwright_test_written": true,
+    "no_shared_registry_edited": true,
+    "protected_surfaces_touched": 0,
+    "validation_method": "machine-checked by the lane validator over this file and its companion; see the VALIDATION section of the report"
+  },
+
+  "final_state": "RELEASE_GATE_LEDGER_FROZEN_R2__78_CANONICAL_GATES__11_VALUE_CLOSED_STATE_VOCABULARY__12_DUPLICATE_RESOLUTIONS__1_GATE_RETIRED_AS_UNSATISFIABLE__S10_CORRECTED_TO_UNKNOWN__READINESS_INHERITED_AND_NON_BINDING",
+  "next_gate": "STAGING_RELEASE_PRODUCTION_AUTHORITY_INDEPENDENT_OPUS_AUDIT of this ledger and its companion authority, at AS_OF_HEAD, read-only."
+}

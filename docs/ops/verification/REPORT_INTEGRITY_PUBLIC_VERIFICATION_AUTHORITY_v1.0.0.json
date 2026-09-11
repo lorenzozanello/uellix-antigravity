@@ -1,0 +1,651 @@
+{
+  "package_id": "REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_v1.0.0",
+  "authority_class": "TIER_A_PUBLIC_SECURITY_DOMAIN_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_AUDIT",
+  "document_class": "AUTHORITY_ONLY__NO_IMPLEMENTATION__NO_ALLOCATION",
+  "append_only": true,
+  "supersedes": "NONE — first materialization of the PVRI contract in this repository.",
+  "mission_id": "LANE_AS__REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_R1",
+  "correction_mission_id": "LANE_AS_R2__PVRI_RATIFICATION_CONFORMANCE_CORRECTION",
+  "lane": "AS",
+  "role": "REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_WRITER",
+  "mode": "DOCS_ONLY_TIER_A_PUBLIC_SECURITY_AUTHORITY",
+  "revision": "R2",
+  "materialization_date": "2026-09-10",
+  "companion_manifest": "docs/ops/verification/REPORT_INTEGRITY_PUBLIC_VERIFICATION_TEST_MANIFEST_v1.0.0.json",
+  "companion_wave_authority": "docs/ops/wave4/WAVE4_AUTHORITY_v1.0.0.json",
+
+  "AS_OF_BASE": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
+  "AS_OF_BRANCH": "codex/report-integrity-public-verification-authority-r1",
+  "R1_COMMIT_CORRECTED": "1426d0a1eec31ec56f4d531d19dc301632c81375",
+
+  "R2_CORRECTION": {
+    "rule": "This artifact was corrected IN PLACE at R2 after the owner supplied the ratified PVRI-01..20 semantics. The artifact is a DRAFT on an unmerged branch and was never integrated, so correcting it in place is the correct disposition — no integrated object is edited and no append-only rule is broken. This follows the precedent recorded in docs/ops/wave3/FIBDB052_P1_EXECUTION_AUTHORITY_v1.0.0.json -> R2_CORRECTION.",
+    "why_R1_diverged": "R1 was written with verbatim scope for only six clause SUBJECTS and no clause NUMBERING. It therefore invented a clause-to-domain mapping. That mapping was wrong in nearly every slot, and several of R1's substantive positions contradicted decisions the owner had already ratified. R1 is corrected, not defended.",
+    "R1_DIVERGENCES_CORRECTED": {
+      "D-1_CLAUSE_NUMBERING": "R1 assigned PVRI numbers to domains of its own choosing. The ratified mapping differs in essentially every slot — the digest is PVRI-06 (R1 said PVRI-02), the locator format is PVRI-07 (R1 said PVRI-05), limiter infrastructure failure is PVRI-10 (R1 put the public core there), audit exclusion is PVRI-19 (R1 said PVRI-13). Every clause is renumbered to the ratified contract.",
+      "D-2_DIGEST_PREFIX": "R1 prepended the byte sequences `UELLIX-RCD-v1\\n` and `UELLIX-RSD-v1\\n` outside the canonicalized projection. PVRI-06 prohibits an extra domain-separation byte prefix outside the governed projection, and no already-frozen higher authority requires one. REMOVED. Domain separation is retained INSIDE the projection via the `content_schema` constant, which the prohibition does not reach. All vectors recomputed.",
+      "D-3_REVOKED_COLLAPSED_INTO_NOT_FOUND": "R1 collapsed a revoked locator into NOT_FOUND and argued at length that a tombstone is an oracle leak. PVRI-03 ratifies the opposite: REVOKED is a real representation carrying status and revocation date, and nothing else. R1's position is withdrawn.",
+      "D-4_SYMMETRIC_CACHING": "R1 imposed byte-identical Cache-Control on every outcome to remove a header-level existence distinguisher. PVRI-14 ratifies an ASYMMETRIC posture: VALID and SUPERSEDED share a policy per representation; REVOKED and NOT_FOUND are strict no-store. The owner considered the distinguisher and ratified the asymmetric posture. R1's symmetry rule is withdrawn — and see CACHE_DISTINGUISHER_ANALYSIS, which records why R1's objection did not survive its own premises once REVOKED became a disclosed representation.",
+      "D-5_LATENCY_FLOOR": "R1 invented a uniform minimum response latency floor pinned to the successful path's p95. PVRI-04 states there is NO literal constant-time promise. REMOVED, and replaced with the ratified obligation: no deliberately useful timing oracle.",
+      "D-6_LIMITER_BEFORE_FORMAT": "R1 required the rate limiter to run before format validation so a malformed locator would consume budget. PVRI-04 permits a malformed locator to be rejected PRE-DB. R1's ordering rule is withdrawn, and the corresponding manifest control and mutation are DELETED rather than weakened.",
+      "D-7_NOT_FOUND_OVERBREADTH": "R1 collapsed limiter refusal, limiter unavailability, PDF render failure, sensitivity fail-closed, not-locked and snapshot-unreadable into NOT_FOUND. The ratified collapse set is exactly {unknown, not_disclosed, absent, ineligible}. Limiter infrastructure failure is governed separately by PVRI-10; normal rate-limit refusal and document render failure are NOT collapsed and are recorded as authority gaps rather than invented.",
+      "D-8_LIMITER_FAIL_CLOSED": "R1 made the whole surface fail closed when the limiter is unavailable in a hosted environment. PVRI-10 ratifies a split: the minimal core page fails OPEN to a bounded in-process degraded limiter; the PDF / public_document path fails CLOSED with 503. R1's uniform hosted fail-closed is withdrawn and must not be reinstated.",
+      "D-9_LIMITER_NUMERALS": "R1 froze invented integer thresholds. PVRI-09 makes the dimensions governed, versioned ops config, makes any numerals initial V1 defaults rather than constants, and directs that unavailable ratified numerals must not be invented. ALL R1 integers are REMOVED and recorded as AG-1, not replaced with different invented ones.",
+      "D-10_LOCATOR_FORMAT": "R1 specified '>=128 bits, opaque, fixed alphabet'. PVRI-07 fixes it exactly: 160-bit CSPRNG, Crockford Base32, 32 uppercase canonical characters, case-insensitive accepted input.",
+      "D-11_LOCATOR_ROTATION": "R1 permitted locator rotation as revoke-plus-activate on the same disclosure. PVRI-08 makes the locator IMMUTABLE and revocation PERMANENT; reactivation gets a NEW locator. R1's rotation model is withdrawn.",
+      "D-12_ARTIFACT_KEY": "R1 defined the internal artifact key as a stored 256-bit random value explicitly NOT derived from anything. PVRI-15 defines it as a BOUND composite over content digest, representation kind and renderer/version identity, plus locator/disclosure only when those change rendered bytes. R1's anti-derivation rule is inverted to the ratified binding rule.",
+      "D-13_MISSING_CLAUSES": "R1 had no equivalent of PVRI-01 (SUPERSEDED is derived, not a disclosure_state), PVRI-02 (superseded locator returns a named-version safe core), PVRI-11 (one-field /verify entry route), PVRI-13 (robots/noindex), or PVRI-09's mandatory distinct-locator-per-IP counter. All are added.",
+      "D-14_SECURITY_REVIEW_FRAMING": "R1 phrased the mandatory security review in a way that read as blocking the audit and merge of the authority document itself. It is REQUIRED_BEFORE_RELEASE of the public surface, and is not a precondition for auditing or merging this document."
+    },
+    "what_R2_did_NOT_change": "The FIB dependency DAG and its computed closures; the FIBIU-23 priority proof; the Wave 5 placement of FIBIU-26; the preserved doctrine; the three-tier authority model with hosted apply false everywhere; the zero-allocation posture and LINEAGE_REDERIVATION_REQUIRED=YES; the canonical projection key set, ordering, NFC and decimal-string rules; and the identity and inputs of the four test vectors. Only the digest ALGORITHM changed, so vector VALUES are recomputed while the vector DESIGN is preserved."
+  },
+
+  "PVRI_CONTRACT_PROVENANCE": {
+    "rule": "PVRI-01..20 was ratified by the owner. This artifact is its first repository materialization; it consumes the contract and does not reopen it.",
+    "measured_prior_materialization": "ZERO at AS_OF_BASE. `grep -ro \"PVRI-[0-9]*\" docs/` returned 0 matches, corroborated by the LANE FM master program recording HD-01..16 and PVRI-01..20 as level-5-only.",
+    "R2_ratification_state": "All twenty clauses now carry owner-ratified SEMANTICS supplied to this mission. R1's composition-from-doctrine rule no longer applies to any clause subject.",
+    "WHAT_REMAINS_DERIVED": {
+      "rule": "A derived item is one the ratified text does not fix. Each is marked at its clause and, where the owner explicitly declined to fix it, is carried as an AUTHORITY_GAP rather than as a derived value.",
+      "items": [
+        "PVRI-06 — the projection KEY SET, the decimal scales, the timestamp precision, and the four vector INPUTS. The algorithm itself is now fully ratified.",
+        "PVRI-15 — the concrete composition function over the bound tuple. The BINDING (which inputs must be bound) is ratified.",
+        "PVRI-19 / PVRI-20 — the enforcement mechanism (writer-boundary field exclusion; explicit allowlist) realizing the ratified prohibitions.",
+        "PVRI-09 numerals are NOT derived here. The owner directed that unavailable ratified numerals must not be invented; they are AG-1."
+      ]
+    }
+  },
+
+  "PRESERVED_DOCTRINE": {
+    "D-1": "NO anonymous SELECT on live tenant tables. Ever.",
+    "D-2": "Public verification reads a safe snapshot/disclosure model only — the immutable snapshot (FIBDB-024) and the disclosure object (FIBDB-029), through a least-privilege read model.",
+    "D-3": "CAP-02 / db/prepared/stella_0007_public_verification_capability.sql = RETIRED_DO_NOT_APPLY, per FIB §5 row 507. Realized on uellix_app via view + RLS, with NO new database role.",
+    "D-4": "locator != content integrity digest. Different objects, different lifetimes, different threat models, different exposure rules. Restated as ratified PVRI-05.",
+    "D-5": "Fail closed where eligibility, sensitivity, or integrity cannot be positively established — within the response model of PUBLIC_RESPONSE_MODEL, never by inventing a collapse the contract does not authorize."
+  },
+
+  "AUTHORITY_TIERS": {
+    "rule": "Three tiers, never conflated. A tier is TRUE only where explicitly stated TRUE.",
+    "AUTHORITY_TO_AUTHOR": "Permission to write frozen authority text and machine-readable contracts. Produces documents only.",
+    "AUTHORITY_TO_IMPLEMENT": "Permission to write runtime code, schema, migrations, or tests against that authority.",
+    "AUTHORITY_TO_APPLY_HOSTED": "Permission to execute DDL or prepared units against any hosted database.",
+    "TIER_STATE_AT_THIS_REVISION": {
+      "THIS_ARTIFACT": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false },
+      "WAVE4_AUTHORITY": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false, "granting_clause": "PVRI-17" },
+      "FIBDB_053": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false, "granting_clause": "PVRI-16" },
+      "FIBIU_21": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false },
+      "FIBIU_22": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false },
+      "FIBIU_23": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false },
+      "FIBIU_24": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false },
+      "FIBIU_25": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false },
+      "FIBIU_26": { "AUTHORITY_TO_AUTHOR": true, "AUTHORITY_TO_IMPLEMENT": false, "AUTHORITY_TO_APPLY_HOSTED": false }
+    },
+    "IMPLEMENTATION_UNBLOCKING_PREDICATE": [
+      "1. This artifact has passed REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_INDEPENDENT_OPUS_AUDIT with a non-FAIL verdict and zero unresolved BLOCKING findings.",
+      "2. The node's own execution authority exists and names a migration ordinal allocated at that time (LINEAGE_REDERIVATION_REQUIRED=YES).",
+      "3. The node's test manifest is frozen before implementation, per docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json.",
+      "4. The AUTHORITY_GAPS this artifact marks blocking for that node are closed BY RATIFICATION — never by the implementer choosing a value.",
+      "AUTHORITY_TO_APPLY_HOSTED remains FALSE under every combination above.",
+      "SECURITY_REVIEW is a precondition for RELEASE of the public surface. It is not a precondition for implementation authority, and not for auditing or merging this document."
+    ]
+  },
+
+  "PVRI_CLAUSES": {
+    "PVRI-01": {
+      "subject": "SUPERSEDED is derived, not a disclosure_state",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "SUPERSEDED is a DERIVED condition, computed from the report lineage at read time. It is NOT a value of `disclosure_state` and it is NOT stored on the disclosure object.",
+        "`disclosure_state` keeps exactly the vocabulary FIBDB-050 already freezes: {not_disclosed, active, revoked}. This clause and that frozen vocabulary agree; no new state is introduced.",
+        "A version is SUPERSEDED when a later version exists in the same lineage (FIBC-031 / FIBDB-023). Being superseded does not revoke, alter, or invalidate it, and never implies it was invalid when issued.",
+        "Because it is derived, SUPERSEDED cannot drift out of sync with the lineage, and no backfill or migration of a superseded flag is required or permitted."
+      ]
+    },
+    "PVRI-02": {
+      "subject": "superseded locator resolution",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "A locator whose version is SUPERSEDED continues to resolve. It returns that version's SAFE CORE, explicitly NAMED as that version — the reader must be able to see which version they are looking at.",
+        "Successor IDENTITY and LINK are exposed ONLY when the successor's own disclosure is itself active and eligible at read time.",
+        "When the successor is not publicly disclosed, the response carries no successor identity, no successor link, and nothing from which the successor's existence could be inferred. Otherwise the surface would leak the existence of an undisclosed report version.",
+        "A superseded version is not a degraded or partial representation: it is the same safe core the version would serve when current, plus the version naming, plus a successor reference when and only when the condition above holds."
+      ]
+    },
+    "PVRI-03": {
+      "subject": "REVOKED representation",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "A revoked locator returns a REVOKED representation carrying exactly two things: the revocation STATUS, and the revocation DATE. Nothing else.",
+        "No report title, no organisation, no version, no digest, no figures, no document, no successor, no reason, no actor.",
+        "REVOKED is therefore NOT a member of the PVRI-04 NOT_FOUND collapse set. R1's contrary position is withdrawn.",
+        "This is a deliberate disclosure: it tells a holder of a previously-published link that the publication was withdrawn and when, without re-disclosing any of the withdrawn content."
+      ]
+    },
+    "PVRI-04": {
+      "subject": "NOT_FOUND collapse and timing posture",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "THE COLLAPSE SET IS EXACTLY FOUR CAUSES: unknown locator; not_disclosed; absent; ineligible. These four produce the same public NOT_FOUND status, the same body, and the same cache semantics.",
+        "'Ineligible' carries FIBC-037's ineligibility list: drafts, preliminary runs, unlocked reports, versions whose integrity or sensitivity prevents building the core, and any report classified `legacy_locked_without_pc01b_snapshot`. A sensitivity fail-closed evaluation prevents activation, so it presents as not_disclosed and collapses.",
+        "NO LITERAL CONSTANT-TIME PROMISE IS MADE. This authority does not require, and must not be read as requiring, constant-time response construction.",
+        "A MALFORMED LOCATOR MAY BE REJECTED PRE-DB. Cheap format rejection before any database access is explicitly permitted.",
+        "THE OBLIGATION IS NARROWER AND STATED POSITIVELY: no deliberately useful timing oracle. An implementation must not introduce, or knowingly leave, a timing difference that is a practical distinguisher between the four collapsed causes. Incidental timing variation inherent to a pre-DB format rejection is accepted.",
+        "The four collapsed causes are not distinguishable by status, body, or cache semantics. Server-side each cause is still distinguished and logged; the indistinguishability is a property of the response.",
+        "The submitted locator is not echoed in the NOT_FOUND body.",
+        "DO NOT BROADEN THIS COLLAPSE. Limiter infrastructure failure is governed by PVRI-10. Normal rate-limit refusal (AG-3) and document render failure (AG-4) are NOT members of this set and are not to be mapped into it by an implementer's discretion."
+      ]
+    },
+    "PVRI-05": {
+      "subject": "locator and digest are independent",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "The locator and the content integrity digest are independent objects. Neither is derived from the other, neither substitutes for the other, and neither may be labelled or presented as the other.",
+        "Changing the locator does not change the digest. Test vector TV-03 is the frozen proof.",
+        "The digest is not a lookup key: no public route, query, index, or cache is addressed by it.",
+        "FIBDB-050's naming rule stands: the token column is `locator_token`, and no column, route, or copy may ever be named `hash`."
+      ]
+    },
+    "PVRI-06": {
+      "subject": "content integrity digest",
+      "provenance": "OWNER_RATIFIED for the algorithm; DERIVED for the projection key set and vector inputs.",
+      "binding": [
+        "DIGEST = the lowercase hexadecimal SHA-256 of the UTF-8 encoding of the RFC 8785 (JCS) canonicalization of the governed projection. 64 lowercase hex characters.",
+        "NO EXTRA DOMAIN-SEPARATION BYTE PREFIX is applied outside the governed projection. R1's `UELLIX-RCD-v1` prefix is REMOVED; no already-frozen higher authority requires one.",
+        "Domain separation is retained INSIDE the governed projection, by the `content_schema` constant key, which is part of the canonicalized object and therefore not an external prefix. This is what makes a v2 contract non-confusable with v1 without violating the prohibition.",
+        "SECTION DIGEST = the lowercase hexadecimal SHA-256 of the UTF-8 encoding of the section body in Unicode NFC. No prefix. Section digests are separated structurally, by being keyed inside `section_content_digests` within the governed projection, not by a byte prefix.",
+        "ORDERING IS EXPLICIT: JCS sorts object keys ascending by UTF-16 code unit. Array order is significant under JCS, so every array in the projection is explicitly sorted — `limitations` ascending by UTF-16 code unit, `section_content_digests` ascending by `section_type`. A duplicate `section_type` is a hard error, never a merge.",
+        "NFC IS EXPLICIT: every string is Unicode NFC before serialization.",
+        "CANONICAL DECIMAL STRINGS ARE EXPLICIT: all monetary and ratio values are decimal STRINGS, never JSON numbers, which removes IEEE-754 canonicalization from the trust boundary entirely. Monetary values carry exactly 2 fractional digits; `sroi_ratio` carries exactly 4; a negative value carries a single leading `-`; the integer part carries no leading zeros except a single `0`. The only JSON number in the projection is `report_version`, a non-negative integer; a non-integer number anywhere is a hard error.",
+        "TIMESTAMP: `locked_at` is RFC 3339 UTC at second precision with a literal `Z`. Dates are `YYYY-MM-DD`.",
+        "The digest is computed ONCE, inside the governed fail-closed lock transaction that captures the snapshot (FIBC-032 / FIBC-033), and stored immutably alongside it. Never recomputed at read time, never from live tables.",
+        "The projection is a CLOSED key set: an extra, missing, or renamed key produces a different digest and is non-conformant by definition.",
+        "AT LEAST THREE FROZEN VECTORS ARE REQUIRED. Four are frozen in CANONICAL_DIGEST_TEST_VECTORS.",
+        "`integrity_digest_kind` remains FIBDB-050's frozen vocabulary {none, content_digest_sha256}, default `none`."
+      ],
+      "CANONICAL_CONTENT_PROJECTION_v1_KEYS": [
+        { "key": "calculation_engine_version", "type": "string" },
+        { "key": "content_schema", "type": "string", "constant": "UELLIX_REPORT_CONTENT_DIGEST_v1" },
+        { "key": "currency", "type": "string", "format": "ISO-4217 uppercase" },
+        { "key": "governed_state", "type": "string", "constant": "locked" },
+        { "key": "limitations", "type": "array<string>", "note": "sorted ascending; or the single element `no_material_limitations_identified` per FIBC-034. Never empty." },
+        { "key": "locked_at", "type": "string", "format": "RFC3339 UTC second precision, Z" },
+        { "key": "methodology_version", "type": "string" },
+        { "key": "net_social_value", "type": "string", "format": "decimal, scale 2" },
+        { "key": "organization_public_name", "type": "string" },
+        { "key": "project_public_name", "type": "string" },
+        { "key": "report_title", "type": "string" },
+        { "key": "report_version", "type": "integer" },
+        { "key": "reporting_period_end", "type": "string", "format": "YYYY-MM-DD" },
+        { "key": "reporting_period_start", "type": "string", "format": "YYYY-MM-DD" },
+        { "key": "run_version", "type": "string" },
+        { "key": "section_content_digests", "type": "array<{digest,section_type}>", "note": "sorted ascending by section_type" },
+        { "key": "snapshot_identity", "type": "string", "format": "lowercase UUID" },
+        { "key": "sroi_ratio", "type": "string", "format": "decimal, scale 4" },
+        { "key": "total_investment", "type": "string", "format": "decimal, scale 2" }
+      ],
+      "PROJECTION_KEY_COUNT": 19,
+      "FORBIDDEN_IN_PROJECTION": [
+        "locator_token", "disclosure_state", "internal_artifact_cache_key", "organization_id", "project_id",
+        "report_id", "lineage_id", "supersedes_report_id", "calculation_run_id", "locked_by",
+        "approved_by", "approved_at", "revoked_at", "created_at", "updated_at", "public_document",
+        "bundle_public_project_context", "bundle_public_sroi_summary",
+        "any raw evidence payload", "any Stella interaction", "any audit trail row"
+      ],
+      "EXCLUSION_RULE": "The projection builder receives the snapshot and MUST drop every key not in the closed set. TV-03 exists to prove the builder drops them rather than passing them through."
+    },
+    "PVRI-07": {
+      "subject": "locator format",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "160 bits from a cryptographically secure pseudo-random number generator. Not a UUID, not a counter, not a timestamp, not derived from content, the digest, or any tenant identifier.",
+        "Encoded in CROCKFORD BASE32.",
+        "CANONICAL FORM is exactly 32 UPPERCASE characters. 160 bits at 5 bits per symbol is exactly 32 symbols — no padding and no remainder. The width is exact, not truncated or padded.",
+        "The Crockford alphabet is `0123456789ABCDEFGHJKMNPQRSTVWXYZ` — 32 symbols, excluding I, L, O and U.",
+        "ACCEPTED INPUT IS CASE-INSENSITIVE. Input is normalized to the canonical uppercase form before lookup.",
+        "Crockford Base32 is a named specification, and its decoding rules ordinarily come with the name: on input, `I` and `L` are treated as `1`, and `O` as `0`. That inference is recorded as AG-6 and flagged for the audit rather than silently adopted or silently dropped, since the ratified text names the encoding and fixes case-insensitivity without separately enumerating the confusable mapping.",
+        "FORMAT VECTOR (synthetic and deterministic — NOT from a CSPRNG and NOT a live locator; provided so an implementation can check its encoder): the 160-bit value `fb79b7cf329543c52def25e8718e6aaefd77f9a8` encodes to `ZDWVFKSJJN1WABFF4QM733KANVYQFYD8`, which is 32 characters, every one within the Crockford alphabet.",
+        "`locator_token` is UNIQUE; FIBDB-052 provides the unique index.",
+        "Format validation applies at the boundary, and per PVRI-04 may reject pre-DB."
+      ]
+    },
+    "PVRI-08": {
+      "subject": "locator immutability and revocation permanence",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "A LOCATOR IS IMMUTABLE. It is never rotated, re-pointed, re-issued, or re-used. R1's rotate-in-place model is withdrawn.",
+        "REVOCATION IS PERMANENT. A revoked locator never becomes valid again, and never resolves to anything but the PVRI-03 REVOKED representation.",
+        "REACTIVATION GETS A NEW LOCATOR. Publishing a previously-revoked version again is a fresh authorized act creating a fresh disclosure with a fresh locator, and requires a fresh full policy evaluation including a fresh V-26 fail-closed evaluation. It is not an undo.",
+        "Consequence, stated so it is not discovered later: a link shared before revocation is permanently dead, and re-publishing does not resurrect it. Anyone holding the old link must be given the new one out of band. This is the correct posture — a revoked capability that could be revived is not revoked.",
+        "Revocation leaves the snapshot, the digest, the content and the history intact (FIBC-037). It changes what the public surface answers, and nothing else.",
+        "MINTING: a locator is created ONLY by an explicit act of an authorized person on a concrete `locked` version. Locking mints nothing. This closes today's `verificationHash: crypto.randomUUID()` minted automatically at every lock in lib/pipeline/sroi-results.ts:914.",
+        "RETIREMENT OF THE LEGACY LOCATOR: `sroi_reports.verification_hash` is retired per FIBDB-030 at migration stage F, only once FIBIU-26 is in production. Already-minted values are NOT migrated into active disclosures — that would fabricate a publication decision never made."
+      ]
+    },
+    "PVRI-09": {
+      "subject": "rate limiting — governed, versioned operations configuration",
+      "provenance": "OWNER_RATIFIED for structure and for the mandatory counter; numerals explicitly NOT to be invented.",
+      "binding": [
+        "LIMITER DIMENSIONS ARE GOVERNED, VERSIONED OPERATIONS CONFIGURATION. They are not source constants, not per-environment toggles, and not an implementer's choice. A change to a dimension or a threshold is a versioned configuration change with an audit trail.",
+        "MANDATORY DIMENSION — DISTINCT-LOCATOR-PER-IP COUNTER. A counter of how many DISTINCT locators a single client address has addressed within a window is REQUIRED. This is the dimension that actually detects enumeration: a reader refreshing one legitimate locator looks nothing like a scanner sweeping many, and a plain per-request counter cannot tell them apart.",
+        "Further dimensions (per client address, per locator, per route) are part of the same governed configuration.",
+        "ANY NUMERIC VALUES ARE INITIAL V1 DEFAULTS, NOT IMMUTABLE CONSTANTS. Nothing in this contract fixes a threshold for the life of the system.",
+        "THIS ARTIFACT SETS NO NUMERALS. The ratified numerals were not available to this mission, and inventing them would manufacture an owner decision. They are recorded as AG-1 and must be established in the governed ops configuration before release. R1's invented integers are REMOVED, not replaced.",
+        "The configuration artifact must carry, at minimum: a version identifier; each dimension's key, window and threshold; the effective date; and the authority under which it was set.",
+        "Limiter state is never keyed by, and never stores, the content digest.",
+        "The PVRI-11 entry route is a locator-resolution surface and is subject to the same governed limiter, including the distinct-locator-per-IP counter.",
+        "NORMAL RATE-LIMIT REFUSAL — the response when a threshold is exceeded under a HEALTHY limiter — is not ratified here and is NOT a member of the PVRI-04 collapse set. See AG-3."
+      ]
+    },
+    "PVRI-10": {
+      "subject": "limiter INFRASTRUCTURE FAILURE disposition",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "THIS CLAUSE GOVERNS INFRASTRUCTURE FAILURE ONLY — the limiter backend being absent, unreachable, mis-credentialed, or timing out. It does not govern a healthy limiter refusing a request over threshold (PVRI-09 / AG-3).",
+        "THE MINIMAL CORE PAGE FAILS OPEN, AND ONLY TO A BOUNDED IN-PROCESS DEGRADED LIMITER. It does not fail open to no limiter at all, and it does not fail closed. The degraded path serves the minimal core under an in-process limiter whose bound is part of the governed configuration.",
+        "THE PDF / public_document PATH FAILS CLOSED WITH HTTP 503. The expensive rendering path is refused outright while the limiter is unavailable, and the refusal is an explicit 503 — not a NOT_FOUND, and not a silent degradation.",
+        "R1's uniform hosted fail-closed for the core page is WITHDRAWN and MUST NOT BE REINSTATED. The asymmetry is the ratified decision: a verification page that cannot be read is itself a harm, and the minimal core is cheap enough to serve under a degraded limiter, while a document render is not.",
+        "The degraded state must be OPERATIONALLY DETECTABLE — an operator must be able to see that the surface is running degraded. The clause requires detectability by the operator; it does not require, and this authority does not add, any indication to the anonymous caller.",
+        "The bound on the in-process degraded limiter is not fixed here (AG-5). A per-instance in-process counter is not a distributed guarantee — on serverless it is N times weaker for N warm instances (F-AS-R2-4). It is nonetheless the ratified disposition because it bounds a minimal, cheap, read-only page during an outage, while the expensive path stays closed.",
+        "INDEPENDENT SECURITY REVIEW REMAINS MANDATORY for this clause and for the public disclosure boundary, before release."
+      ]
+    },
+    "PVRI-11": {
+      "subject": "/verify one-field entry route",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "There is a `/verify` entry route presenting ONE field, into which a person pastes or types a locator.",
+        "One field. Not a search, not a filter, not a browse, not a list, and not a form that accepts anything but a locator.",
+        "Submission resolves to the locator's own route (PVRI-12). The entry route never enumerates, never suggests, never autocompletes, and never returns a result set.",
+        "Input is accepted case-insensitively and normalized per PVRI-07 before resolution.",
+        "The entry route is subject to the same governed limiter (PVRI-09), including the distinct-locator-per-IP counter, because it is a locator-resolution surface. An entry route exempted from the limiter would be the enumeration surface the limiter exists to close.",
+        "The entry route is noindex (PVRI-13)."
+      ]
+    },
+    "PVRI-12": {
+      "subject": "route model",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "The dynamic segment is renamed `[hash]` -> `[locator]`.",
+        "MEASURED CURRENT STATE at AS_OF_BASE: `app/(public)/verify/[hash]/page.tsx` and `app/(public)/verify/[hash]/pdf/route.ts`. The segment is literally named `hash`, which FIBDB-050 forbids for a route.",
+        "NO LEGACY REDIRECT. `/verify/[hash]` is not retained as a redirect, an alias, or a compatibility route. A redirect would resurrect the locator FIBDB-030 exists to retire.",
+        "Until FIBIU-26 ships, the existing route stays exactly as it is — returning 404 for everyone under RLS — and no change may make it return anything else.",
+        "The directory rename is part of FIBIU-26's diff, not a cosmetic follow-up.",
+        "No route on this surface accepts a query parameter that alters the projection, the document selection, or the eligibility evaluation. Selection is a publishing decision recorded on the disclosure object, never caller-supplied.",
+        "Any metadata, preview, embed, or OG-image route that resolves a locator IS this surface and inherits every clause here."
+      ]
+    },
+    "PVRI-13": {
+      "subject": "robots / noindex",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "The verification surface is marked noindex. A published verification page is meant to be reachable by someone holding the link, not discoverable by someone who is not.",
+        "This applies to the entry route, the locator routes, and the document routes, across every outcome — VALID, SUPERSEDED, REVOKED and NOT_FOUND alike.",
+        "No sitemap entry. No robots.txt allowance implying enumerability.",
+        "noindex is a directive to cooperating crawlers and is NOT an access control. It is one layer on top of locator entropy (PVRI-07) and the governed limiter (PVRI-09), never a substitute for either."
+      ]
+    },
+    "PVRI-14": {
+      "subject": "cache semantics",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "VALID AND SUPERSEDED SHARE THE SAME CACHE POLICY, per representation. The core representation has one policy; the document representation has its own; within each, VALID and SUPERSEDED are treated identically.",
+        "REVOKED AND NOT_FOUND ARE STRICT NO-STORE / NO-CACHE. They are never stored by any cache, shared or private.",
+        "MAXIMUM CACHED VALID-CORE REVOCATION LAG IS 60 SECONDS. The cached lifetime of the VALID core representation is bounded so that a revocation takes effect within 60 seconds.",
+        "The ceiling must hold with NO CACHE PURGE AT ALL. A purge may be issued as an optimization; a guarantee that depends on a successful purge is a guarantee that fails when the purge fails.",
+        "Directives that extend a cached lifetime beyond the ceiling — `stale-while-revalidate`, `stale-if-error`, `immutable` — are prohibited on the VALID core representation. `stale-if-error` in particular would serve a revoked disclosure from cache during an origin failure, which is exactly when the ceiling matters most.",
+        "R1's SYMMETRIC-CACHING RULE IS WITHDRAWN. The owner considered the header-level distinguisher and ratified the asymmetric no-store posture. See CACHE_DISTINGUISHER_ANALYSIS.",
+        "The framework's own cache layer must not add an unbounded tier above these headers: the routes are explicitly dynamic with explicit headers, not statically revalidated at an interval this authority does not control.",
+        "The concrete directive token list per representation, and any ceiling for the DOCUMENT representation, are not fixed here (AG-7 / F-AS-R2-2)."
+      ]
+    },
+    "PVRI-15": {
+      "subject": "internal artifact cache key",
+      "provenance": "OWNER_RATIFIED for the binding; DERIVED for the composition function.",
+      "binding": [
+        "The internal artifact cache key BINDS, at minimum: the CONTENT DIGEST; the REPRESENTATION KIND; and the RENDERER / VERSION IDENTITY.",
+        "It binds the LOCATOR and the DISCLOSURE state ONLY WHEN those change the rendered bytes — for example when the rendered document prints the verification link, or when a disclosure-dependent notice appears on the page. When they do not affect the output they are NOT bound, so two disclosures of identical content share one cache entry instead of duplicating the render.",
+        "R1's rule that the key must NOT be derived from anything is INVERTED: the key is precisely a binding over these inputs. R1's stored 256-bit random column is withdrawn — the key is COMPUTED, not stored as an independent secret, so PVRI-15 adds no schema object.",
+        "WHY THE BINDING IS THE CORRECT SHAPE: a cache key that omits the renderer version serves stale bytes after a renderer upgrade; one that omits the representation kind serves an executive summary where a full report was requested; one that omits the content digest serves the previous version's bytes after a re-lock. Each omission is a correctness failure that presents as a cache hit.",
+        "DERIVED COMPOSITION: the key is the lowercase hexadecimal SHA-256 of the JCS canonicalization of the bound tuple, so no input can be smuggled across a field boundary by concatenation and the key never literally contains the locator. Marked DERIVED — the ratified text fixes WHAT is bound, not HOW it is composed.",
+        "The cache key is INTERNAL. It is never exposed in a response body, a response header, a URL, a redirect target, or a client-visible signed URL, and it is subject to PVRI-19's exclusion because it may bind the locator.",
+        "Revoking a disclosure does not delete the cached artifact — FIBC-037 requires revocation to leave content and history intact — but it terminates every path by which the public surface will serve it."
+      ]
+    },
+    "PVRI-16": {
+      "subject": "FIBDB-053 authoring boundary",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "AUTHORITY_TO_AUTHOR = TRUE for FIBDB-053. AUTHORITY_TO_IMPLEMENT = FALSE. AUTHORITY_TO_APPLY_HOSTED = FALSE.",
+        "NO HOSTED APPLY, under any circumstance, including a 'dry run' that opens a transaction on a hosted database.",
+        "MEASURED IDENTITY: FIBDB-053 = `stella_governed_completion_risk_parameters`; change_type PREPARED_FUNCTION_REVISION; source_of_truth_track PREPARED_G2; prepared unit id `stella_0017b_governed_risk_parameters`; supersedes `stella_0017_governed_stella_consumption`; chain position = tail of TICKET_PACKAGE_CHAIN after `stella_0018_category_bound_operation_tickets`; owning unit FIBIU-20.",
+        "WHY IT IS SCOPED HERE: FIBDB-053 is not a verification object, but it is the single external gate on the Wave 4 critical path. Four of the five Wave 4 nodes carry FIBIU-20 in their hard-dependency closure, and FIBIU-24 owns the snapshot from which the PVRI-06 digest is computed. Authoring it is the unblocking act for the digest substrate.",
+        "PRECOMMITTED G2 ACCEPTANCE CRITERIA — all must hold before any successor mission may propose applying it:",
+        "  G2-AC-1 A PREPARED unit in db/prepared/, following the existing prepared-track wrapper convention. NOT a Drizzle migration. Track confusion is a hard fail.",
+        "  G2-AC-2 Occupies the declared chain position (tail, after stella_0018) and declares its supersession of stella_0017 explicitly. Does not renumber, rewrite, or delete stella_0017.",
+        "  G2-AC-3 Allocates NO migration ordinal and adds NO journal entry. The journal at AS_OF_BASE holds 70 entries, last idx 69, tag `0069_fib_fibdb052_p1_indexes`; authoring leaves that ceiling untouched.",
+        "  G2-AC-4 Idempotent and re-runnable, matching the prepared-track pattern already in the repository.",
+        "  G2-AC-5 Every object it creates or revises is enumerated by exact name, signature and privilege — no wildcard, no 'and related objects'.",
+        "  G2-AC-6 Grants no privilege to any anonymous or public role, and creates no new database role.",
+        "  G2-AC-7 Acceptance verified by a frozen test manifest written BEFORE the unit, per docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, with at least one negative and one mutation control.",
+        "  G2-AC-8 A hosted-apply proposal is a SEPARATE authority with its own audit. Satisfying G2-AC-1..7 authorizes nothing beyond the authored artifact existing in the repository."
+      ]
+    },
+    "PVRI-17": {
+      "subject": "one Wave 4 authority for FIBIU-21..25",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "ONE Wave 4 authority governs FIBIU-21, FIBIU-22, FIBIU-23, FIBIU-24 and FIBIU-25. Not five node authorities, and not a batch partition.",
+        "Materialized at docs/ops/wave4/WAVE4_AUTHORITY_v1.0.0.json, following the WAVE3_AUTHORITY_v1.0.0.json convention.",
+        "Wave membership is read from the sealed FIB index `waves` entry id '4' at AS_OF_BASE, not asserted from memory.",
+        "FIBIU-26 IS WAVE 5 and is outside that authority. No public verification surface, locator, or anonymous read model ships under Wave 4."
+      ]
+    },
+    "PVRI-18": {
+      "subject": "prioritize FIBIU-23",
+      "provenance": "OWNER_RATIFIED; the dependency proof is DERIVED and confirms it.",
+      "binding": [
+        "FIBIU-23 is the prioritized Wave 4 node.",
+        "MEASURED CONFIRMATION: FIBIU-23's transitive hard-dependency closure is 17 nodes and EXCLUDES FIBIU-20. Every other Wave 4 node includes FIBIU-20 — FIBIU-21 (19), FIBIU-22 (20), FIBIU-24 (23), FIBIU-25 (24) — and FIBIU-20 owns FIBDB-053. FIBIU-23 is therefore the only Wave 4 node not transitively gated on the external PREPARED_G2 gate.",
+        "PRACTICAL CONSEQUENCE: FIBIU-23 may proceed in parallel with FIBDB-053 authoring, converting an external gate from a full-wave stall into a partial one.",
+        "The priority is ratified; the proof is offered as confirmation, not as the source of the instruction."
+      ]
+    },
+    "PVRI-19": {
+      "subject": "locator prohibited in broad audit payloads",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "The locator is PROHIBITED in broad audit payloads. It must not appear in `audit_logs.before_json`, `audit_logs.after_json`, any audit metadata column, any admin log view, any exported log, any error message, any client-visible payload, or any third-party telemetry sink.",
+        "MEASURED DEFECT THIS CLOSES: today the lock writes the whole report row into `audit_logs.after_json`, so `verification_hash` — the capability token — is readable by anyone holding `canViewAuditLogs`. The audit trail currently distributes the capability it is supposed to witness.",
+        "ENFORCEMENT IS FIELD-LEVEL EXCLUSION at the audit-writer boundary — a named field is stripped from the payload as it is written, not omitted by each caller remembering to omit it. A guarantee that depends on every future caller remembering is not a guarantee, and there are 40+ call sites that log verbatim row content.",
+        "A TEST IS REQUIRED, not merely the exclusion. The companion manifest carries it as a negative control with a planted sentinel, queried over the whole table rather than over the events the test itself wrote.",
+        "Audit events for activation and revocation record a locator REFERENCE — the disclosure row identity — sufficient to correlate events and insufficient to reconstruct the locator.",
+        "The internal artifact cache key is subject to the same exclusion, because PVRI-15 may bind the locator into it.",
+        "THE CONTENT DIGEST IS NOT EXCLUDED. It may be audited freely: it is an integrity statement, not a capability."
+      ]
+    },
+    "PVRI-20": {
+      "subject": "public read model explicit allowlist",
+      "provenance": "OWNER_RATIFIED",
+      "binding": [
+        "The public read model is an EXPLICIT ALLOWLIST. A field is public because it is named in the allowlist, never because it was not remembered as private. A denylist fails the first time a column is added.",
+        "TENANT AND INTERNAL FIELDS ARE EXCLUDED: organization_id, project_id, report_id, lineage_id, supersedes_report_id, calculation_run_id, locked_by, approved_by, approved_at, revoked_by, the internal artifact cache key, and every audit column.",
+        "THE ALLOWLIST — the verification core, per FIBC-037, exposed as a unit or not at all: public organisation name; report version title; `report_version`; lock date; governed state `locked`; `run_version`; `methodology_version`; `calculation_engine_version`; public verification state; and, when the version's integrity contract provides a governed digest, that digest's KIND and VALUE, labelled as an integrity mechanism and never conflated with the locator.",
+        "THE CORE IS NOT INDIVIDUALLY TOGGLEABLE. If any element needed to identify and explain what is being verified cannot be safely exposed, verification is not enabled for that version. There is no partial core.",
+        "OPTIONAL BUNDLES, independently false by default: `public_project_context` (public project/programme name, reporting period) and `public_sroi_summary` (authoritative ratio, net social value, total investment, and a monetization-coverage synthesis).",
+        "THE RATIO MAY NOT BE PUBLISHED ALONE. `public_sroi_summary` is atomic: the ratio always ships with the coverage synthesis making clear it covers only defensibly monetized outcomes.",
+        "`public_document ∈ {none, executive_summary, full_methodological_report}`, default `none`. Authorizing the summary does not authorize the full report. The `funder` preset is not publicly disclosable (FIBC-035).",
+        "STELLA INTERACTIONS ARE NEVER PUBLICLY EXPOSED, in any form, including counts, timestamps, and the mere existence of an interaction. The V-09 transparency note may appear; what produced it may not.",
+        "The FIBC-036 methodological notice appears as a CANONICAL BLOCK — not a banner — carrying all four semantic guarantees including the causality guarantee.",
+        "SOURCE RESTRICTION: the read model is built EXCLUSIVELY from the immutable snapshot and the disclosure object, never from live tables. Today `lib/reports/public-verify.ts` returns whole rows from four tables plus a project-wide evidence sweep plus the methodology review matrix plus outcome mappings — that is what this closes.",
+        "PRIVILEGE: the anonymous principal holds SELECT on exactly one object, the least-privilege public read model view, implemented on `uellix_app` via view + RLS with NO new database role (FIB §5 row 507). The locator is an INPUT PREDICATE, never an output column.",
+        "The existing fail-closed default (zero rows for an anonymous caller) is REPLACED BY A NARROWER POSITIVE GRANT, never by a bypass. Restoring public verification by widening privileges, disabling RLS, or reintroducing a bypass connection is a hard violation regardless of what it returns."
+      ]
+    }
+  },
+
+  "PUBLIC_RESPONSE_MODEL": {
+    "rule": "Four outcomes. This is the single place the response model is defined; clauses refer to it rather than restating it.",
+    "VALID": {
+      "condition": "disclosure_state='active', eligible at read time, no later version in the lineage.",
+      "body": "The PVRI-20 allowlisted core, plus any authorized bundles, plus the FIBC-036 notice.",
+      "cache": "Cacheable, bounded so the VALID-core revocation lag is at most 60 s (PVRI-14).",
+      "clauses": ["PVRI-20", "PVRI-14"]
+    },
+    "SUPERSEDED": {
+      "condition": "disclosure_state='active', eligible, AND a later version exists in the lineage. Derived, never stored (PVRI-01).",
+      "body": "The same safe core, explicitly NAMED as that version. Successor identity and link ONLY when the successor's own disclosure is active and eligible (PVRI-02).",
+      "cache": "Same policy as VALID, per representation (PVRI-14).",
+      "clauses": ["PVRI-01", "PVRI-02", "PVRI-14"]
+    },
+    "REVOKED": {
+      "condition": "disclosure_state='revoked'. Permanent (PVRI-08).",
+      "body": "Revocation STATUS and revocation DATE. Nothing else (PVRI-03).",
+      "cache": "Strict no-store / no-cache (PVRI-14).",
+      "clauses": ["PVRI-03", "PVRI-08", "PVRI-14"],
+      "http_status": "NOT RATIFIED — see AG-2."
+    },
+    "NOT_FOUND": {
+      "condition": "Exactly four causes: unknown locator; not_disclosed; absent; ineligible (PVRI-04).",
+      "body": "One body, identical across all four causes. No locator echo, no cause, no code, no correlation id.",
+      "cache": "Strict no-store / no-cache (PVRI-14) — the same posture as REVOKED, so the cache header does not separate those two.",
+      "clauses": ["PVRI-04", "PVRI-14"]
+    },
+    "NOT_MEMBERS_OF_ANY_OUTCOME_ABOVE": [
+      "Limiter INFRASTRUCTURE failure — PVRI-10 (core fails open to a bounded in-process degraded limiter; PDF fails closed with 503).",
+      "Normal rate-limit refusal under a healthy limiter — AG-3.",
+      "Document render failure — AG-4."
+    ]
+  },
+
+  "CACHE_DISTINGUISHER_ANALYSIS": {
+    "why_this_section_exists": "R1 argued that a Cache-Control value differing between found and not-found is an existence oracle, and imposed symmetric caching on every outcome. The owner ratified the asymmetric posture. This section records why the ratified posture is sound, so an audit does not re-raise R1's objection as though it were unexamined.",
+    "the_partition_the_headers_create": "{VALID, SUPERSEDED} are cacheable; {REVOKED, NOT_FOUND} are no-store. The header separates the first pair from the second pair, and nothing finer.",
+    "why_that_leaks_nothing_new": [
+      "VALID and SUPERSEDED are already fully disclosed by their own bodies — they are successful, intentional publications. A header telling an observer 'this is a published report' adds nothing to a page that says so.",
+      "REVOKED is deliberately disclosed by PVRI-03: it returns a status and a date precisely so a link-holder learns the publication was withdrawn. A cache header cannot leak a fact the body states outright.",
+      "REVOKED and NOT_FOUND SHARE the no-store posture, so the header does NOT distinguish them. That is the one pair where a distinguisher would matter, and the ratified posture happens to collapse exactly that pair.",
+      "The four NOT_FOUND causes share one body, one status and one cache posture (PVRI-04), so the header does not separate them from each other either."
+    ],
+    "conclusion": "R1's objection did not survive its own premises once REVOKED became a deliberately disclosed representation. The asymmetric posture leaks nothing PVRI-03 does not already publish on purpose, and it buys a correctness property symmetric caching cannot: a revoked or not-found answer is never served from a cache at all.",
+    "residual_for_the_security_review": "The 60-second ceiling is stated for the VALID CORE. PVRI-14 states no ceiling for the DOCUMENT representation, so a cached public document could outlive a revocation by longer than 60 seconds. Recorded as F-AS-R2-2 and AG-7, and referred to the security review rather than resolved here by inventing a second ceiling."
+  },
+
+  "CANONICAL_DIGEST_TEST_VECTORS": {
+    "algorithm": "content digest = lowercase hex SHA-256 of the UTF-8 encoding of JCS(CANONICAL_CONTENT_PROJECTION_v1). Section digest = lowercase hex SHA-256 of the UTF-8 encoding of the NFC section body. NO external domain-separation prefix on either — corrected at R2 per PVRI-06.",
+    "generation_note": "COMPUTED at R2 from the vector inputs stored in this artifact, then re-derived from this artifact's own stored strings as a self-check. Not transcribed.",
+    "r1_values_superseded": "R1's values were computed with the prohibited `UELLIX-RCD-v1` / `UELLIX-RSD-v1` prefixes and are VOID. They are deliberately not retained anywhere in this artifact: a void digest that looks like a digest is a trap for an implementer.",
+    "TV-01": {
+      "purpose": "Baseline. Minimal locked version, no material limitations. The reference TV-02 and TV-03 are compared against.",
+      "section_inputs": [
+        { "section_type": "executive_summary", "body": "Total social value created exceeds invested capital.", "section_digest": "2c84d6c9dcfb421310a1b3de5842aab3d069af890da8b74c39302c0e0acfd0b3" },
+        { "section_type": "methodology", "body": "SROI per PC-01B, engine 2.4.0.", "section_digest": "d050f58a2cce5871aba7eebbc919aa1344422ca9f50573db39e9bcd622ef57cd" }
+      ],
+      "jcs": "{\"calculation_engine_version\":\"2.4.0\",\"content_schema\":\"UELLIX_REPORT_CONTENT_DIGEST_v1\",\"currency\":\"COP\",\"governed_state\":\"locked\",\"limitations\":[\"no_material_limitations_identified\"],\"locked_at\":\"2026-03-14T09:20:00Z\",\"methodology_version\":\"PC01B-1.0.0\",\"net_social_value\":\"128450000.00\",\"organization_public_name\":\"Fundacion Ejemplo\",\"project_public_name\":\"Programa Agua Seguro\",\"report_title\":\"Informe SROI 2025\",\"report_version\":1,\"reporting_period_end\":\"2025-12-31\",\"reporting_period_start\":\"2025-01-01\",\"run_version\":\"run-7\",\"section_content_digests\":[{\"digest\":\"2c84d6c9dcfb421310a1b3de5842aab3d069af890da8b74c39302c0e0acfd0b3\",\"section_type\":\"executive_summary\"},{\"digest\":\"d050f58a2cce5871aba7eebbc919aa1344422ca9f50573db39e9bcd622ef57cd\",\"section_type\":\"methodology\"}],\"snapshot_identity\":\"0f3d5a2c-7b18-4c60-9a11-5e2d8c4b6f90\",\"sroi_ratio\":\"3.1750\",\"total_investment\":\"40456692.91\"}",
+      "jcs_byte_length": 894,
+      "content_digest_sha256": "91f29946409b88808df663221ff02c31d463f53cc233f72f37a7fef6b7ba4481"
+    },
+    "TV-02": {
+      "purpose": "DIGEST CHANGE. Same lineage, version 2: engine version and one section body changed. MUST NOT equal TV-01.",
+      "section_inputs": [
+        { "section_type": "executive_summary", "body": "Total social value created exceeds invested capital.", "section_digest": "2c84d6c9dcfb421310a1b3de5842aab3d069af890da8b74c39302c0e0acfd0b3" },
+        { "section_type": "methodology", "body": "SROI per PC-01B, engine 2.4.1.", "section_digest": "22aa93042d68c38f28ffe71001aeb85043f79efa2426ee7ee6c661b516dca7d7" }
+      ],
+      "delta_from_TV-01": "calculation_engine_version 2.4.0 -> 2.4.1; report_version 1 -> 2; methodology section digest changed. All other keys identical to TV-01.",
+      "jcs_byte_length": 894,
+      "content_digest_sha256": "56120b0513fd036c2a7f471659a37ae234857fbeb64d64d946f7cb4e74505550",
+      "adversarial_property": "TV-01 and TV-02 serialize to the IDENTICAL byte length (894). Serialized length is not a distinguisher between two different report versions, and no implementation may treat length as a cheap integrity proxy."
+    },
+    "TV-03": {
+      "purpose": "LOCATOR INDEPENDENCE (PVRI-05). TV-01's content presented to the projection builder WITH a conformant locator, disclosure_state='revoked', an internal artifact cache key and an organization_id. MUST equal TV-01 exactly.",
+      "extra_input_fields_that_must_be_dropped": {
+        "locator_token": "ZDWVFKSJJN1WABFF4QM733KANVYQFYD8",
+        "disclosure_state": "revoked",
+        "internal_artifact_cache_key": "a4f1c07e9b2d4358aa61c8e05f37b9d2c6e84a10f52b7d39c081e6a4b5f27c3d",
+        "organization_id": "8c1f2e7a-4d93-4b5e-9c02-1a7b3d6e8f45"
+      },
+      "jcs_byte_length": 894,
+      "content_digest_sha256": "91f29946409b88808df663221ff02c31d463f53cc233f72f37a7fef6b7ba4481",
+      "asserted_equality": "TV-03.content_digest_sha256 == TV-01.content_digest_sha256",
+      "proves": "PVRI-05 (locator and digest are independent); PVRI-06's exclusion rule (the builder DROPS non-projection keys rather than passing them through); PVRI-08 (a permanently revoked locator does not alter the digest).",
+      "note": "The locator here is the PVRI-07 format vector, so this vector also exercises a conformant 32-character Crockford Base32 token rather than an arbitrary string."
+    },
+    "TV-04": {
+      "purpose": "CANONICALIZATION EDGE CASES. Non-ASCII requiring NFC, an embedded double quote requiring escaping, guillemets and an em dash, a NEGATIVE net social value, a ZERO ratio at scale 4, and a three-element sorted limitations array.",
+      "section_inputs": [
+        { "section_type": "executive_summary", "body": "La \"cobertura\" fue parcial — se monetizó 42 % de los resultados.", "section_digest": "7cfa95d7de611a37337e2bacd08582a4c6baf388f8d2dcb96875a91bbdb6cf93" },
+        { "section_type": "limitations", "body": "Contrafactual débil en la línea base.", "section_digest": "a453d633874c301b046b781f72daf5dc37f43761e4d6bbf236e8eefc1c9e802b" }
+      ],
+      "jcs": "{\"calculation_engine_version\":\"2.4.0\",\"content_schema\":\"UELLIX_REPORT_CONTENT_DIGEST_v1\",\"currency\":\"USD\",\"governed_state\":\"locked\",\"limitations\":[\"counterfactual_weak\",\"evidence_provenance_restricted\",\"material_outcome_not_monetized\"],\"locked_at\":\"2026-01-05T00:00:00Z\",\"methodology_version\":\"PC01B-1.0.0\",\"net_social_value\":\"-9500.50\",\"organization_public_name\":\"Asociación Camiño Verde\",\"project_public_name\":\"Proyecto «Río Limpio»\",\"report_title\":\"Informe SROI 2025 — versión revisada\",\"report_version\":3,\"reporting_period_end\":\"2025-06-30\",\"reporting_period_start\":\"2024-07-01\",\"run_version\":\"run-11\",\"section_content_digests\":[{\"digest\":\"7cfa95d7de611a37337e2bacd08582a4c6baf388f8d2dcb96875a91bbdb6cf93\",\"section_type\":\"executive_summary\"},{\"digest\":\"a453d633874c301b046b781f72daf5dc37f43761e4d6bbf236e8eefc1c9e802b\",\"section_type\":\"limitations\"}],\"snapshot_identity\":\"b71e40d9-3c25-4f8a-8e13-9d0c5a2b7e64\",\"sroi_ratio\":\"0.0000\",\"total_investment\":\"19001.00\"}",
+      "jcs_byte_length": 973,
+      "content_digest_sha256": "396a129f00d2f19fb9438a8a824aaaca1506398259d1fc2216bf5b99adb1b4ab",
+      "note": "jcs_byte_length 973 exceeds the character count, because the non-ASCII characters are multi-byte in UTF-8. An implementation that measures or truncates in characters rather than bytes will diverge. This vector is also where an R1 byte-level drift was caught, which is why the vectors live as DATA inside this artifact and are re-derived from these stored strings as a self-check."
+    }
+  },
+
+  "FIB_DEPENDENCY_DAG": {
+    "status_at_R2": "PRESERVED FROM R1 UNCHANGED — re-checked against the ratified contract and still consistent. PVRI-17 and PVRI-18 ratify exactly what it recorded.",
+    "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json at AS_OF_BASE. Closures computed mechanically over the hard_dependencies register.",
+    "verification_chain_nodes": {
+      "FIBIU-19": { "wave": 3, "level": "3.1", "contracts": ["FIBC-023"], "db": ["FIBDB-052"] },
+      "FIBIU-20": { "wave": 3, "level": "3.2", "contracts": ["FIBC-024", "FIBC-025"], "db": ["FIBDB-019", "FIBDB-020", "FIBDB-040", "FIBDB-049", "FIBDB-053"], "note": "owns the external PREPARED_G2 gate FIBDB-053" },
+      "FIBIU-21": { "wave": 4, "level": "4.1", "contracts": ["FIBC-026", "FIBC-027", "FIBC-028", "FIBC-014"], "db": ["FIBDB-021"], "hard_dependencies": ["FIBIU-20", "FIBIU-08"] },
+      "FIBIU-22": { "wave": 4, "level": "4.2", "contracts": ["FIBC-029", "FIBC-030"], "db": ["FIBDB-055"], "hard_dependencies": ["FIBIU-21"] },
+      "FIBIU-23": { "wave": 4, "level": "4.1", "contracts": ["FIBC-031"], "db": ["FIBDB-022", "FIBDB-023"], "hard_dependencies": ["FIBIU-19", "FIBIU-02"] },
+      "FIBIU-24": { "wave": 4, "level": "4.3", "contracts": ["FIBC-032", "FIBC-033", "FIBC-034"], "db": ["FIBDB-024", "FIBDB-025", "FIBDB-026", "FIBDB-027", "FIBDB-028", "FIBDB-038"], "hard_dependencies": ["FIBIU-23", "FIBIU-19", "FIBIU-20", "FIBIU-22", "FIBIU-02", "FIBIU-17", "FIBIU-18"] },
+      "FIBIU-25": { "wave": 4, "level": "4.4", "contracts": ["FIBC-035", "FIBC-036"], "db": [], "hard_dependencies": ["FIBIU-24"] },
+      "FIBIU-26": { "wave": 5, "level": "5.1", "contracts": ["FIBC-037"], "db": ["FIBDB-029", "FIBDB-030", "FIBDB-050"], "hard_dependencies": ["FIBIU-24", "FIBIU-05", "FIBIU-29"] }
+    },
+    "COMPUTED_HARD_DEPENDENCY_CLOSURES": {
+      "method": "transitive closure over hard_dependencies only; soft dependencies excluded; computed at materialization.",
+      "FIBIU-21": { "size": 19, "contains_FIBIU-20": true, "gated_on_FIBDB-053": true },
+      "FIBIU-22": { "size": 20, "contains_FIBIU-20": true, "gated_on_FIBDB-053": true },
+      "FIBIU-23": { "size": 17, "contains_FIBIU-20": false, "gated_on_FIBDB-053": false, "closure": ["FIBIU-01", "FIBIU-02", "FIBIU-03", "FIBIU-04", "FIBIU-06", "FIBIU-08", "FIBIU-09", "FIBIU-10", "FIBIU-11", "FIBIU-12", "FIBIU-13", "FIBIU-14", "FIBIU-15", "FIBIU-16", "FIBIU-17", "FIBIU-18", "FIBIU-19"] },
+      "FIBIU-24": { "size": 23, "contains_FIBIU-20": true, "gated_on_FIBDB-053": true },
+      "FIBIU-25": { "size": 24, "contains_FIBIU-20": true, "gated_on_FIBDB-053": true },
+      "FIBIU-26": { "size": 25, "contains_FIBIU-20": true, "gated_on_FIBDB-053": true }
+    },
+    "MEASURED_CONSEQUENCE_FIBIU_23_PRIORITY": "FIBIU-23 is the ONLY Wave 4 node whose hard-dependency closure excludes FIBIU-20, and therefore the only one not transitively gated on FIBDB-053. This confirms PVRI-18.",
+    "MEASURED_CONSEQUENCE_DIGEST_SUBSTRATE_IS_GATED": "The PVRI-06 digest is computed inside the FIBC-032 lock/snapshot operation owned by FIBIU-24, whose closure DOES contain FIBIU-20 and therefore FIBDB-053. The digest substrate is blocked behind a gate PVRI-16 authorizes only to AUTHOR. Freezing the digest contract is not blocked by the gate; implementing it is.",
+    "MEASURED_CONSEQUENCE_PUBLIC_SURFACE_IS_WAVE_5": "FIBIU-26 — the public disclosure object, the public read model, the locator, and the /verify routes (FIBC-037; FIBDB-029/030/050) — is WAVE 5. This confirms PVRI-17's exclusion.",
+    "CRITICAL_PATH_AS_MEASURED": "FIBIU-01 -> FIBIU-03 -> FIBIU-15 -> FIBIU-16 -> FIBIU-17 -> FIBIU-19 -> FIBIU-20 -> FIBIU-21 -> FIBIU-22 -> FIBIU-24 -> {FIBIU-25 | FIBIU-26}, length 11 (FIB §12).",
+    "FIBDB_030_DUAL_LISTING_OBSERVATION": "FIBDB-030 is owned by FIBIU-26 (wave 5) and also appears in FIBIU-30's db_changes (wave 6). Wave ordering makes this consistent. Observation, not a finding."
+  },
+
+  "AUTHORITY_GAPS": {
+    "rule": "A gap is a decision the ratified contract does not fix and that this authority must not invent. Each states what IS bound, what is NOT, and what must not be done meanwhile. A gap is closed by ratification, never by an implementer choosing a value.",
+    "AG-1": {
+      "subject": "PVRI-09 numeric thresholds and windows",
+      "bound": "The dimensions are governed, versioned ops configuration; the distinct-locator-per-IP counter is mandatory; any numerals are initial V1 defaults, not constants.",
+      "not_bound": "Every threshold and window value.",
+      "directive": "The owner directed that unavailable ratified numerals must not be invented. R1's integers are REMOVED and NOT replaced. Values must be established in the governed ops configuration before release.",
+      "blocking_for": "release of the public surface"
+    },
+    "AG-2": {
+      "subject": "HTTP status of the REVOKED representation",
+      "bound": "The body carries revocation status and date only (PVRI-03); the cache posture is strict no-store (PVRI-14); it is not a NOT_FOUND member (PVRI-04).",
+      "not_bound": "The status code. Both 200 (a successful lookup returning a revoked state) and 410 (the resource is deliberately gone) are consistent with the ratified semantics.",
+      "directive": "Choose by ratification before implementation. Whichever is chosen must be stable across every revoked locator, so it never becomes a distinguisher among revoked disclosures.",
+      "blocking_for": "FIBIU-26 implementation"
+    },
+    "AG-3": {
+      "subject": "Response to a normal rate-limit refusal under a HEALTHY limiter",
+      "bound": "It is NOT a member of the PVRI-04 collapse set (explicit correction). PVRI-10 governs infrastructure failure, which this is not.",
+      "not_bound": "The status and body. HTTP 429 is the conventional answer and is not contradicted by anything ratified, but it is not ratified either.",
+      "directive": "Do not map it into NOT_FOUND. Do not invent it here.",
+      "blocking_for": "FIBIU-26 implementation"
+    },
+    "AG-4": {
+      "subject": "Response to a document / PDF RENDER failure",
+      "bound": "It must NOT be collapsed into NOT_FOUND (explicit correction). It must not serve a partial document, placeholder values, or a fallback rendered from live tables — that follows from FIBC-032 / FIBC-037's fail-closed doctrine, not from an invention here. PVRI-10's 503 covers the distinct case of limiter infrastructure failure on this path.",
+      "not_bound": "The status code for a render failure that is not a limiter failure.",
+      "directive": "Fail closed without serving a wrong document; obtain ratification for the status. A verification document that is wrong is worse than one that is absent.",
+      "blocking_for": "FIBIU-26 implementation"
+    },
+    "AG-5": {
+      "subject": "The bound on PVRI-10's in-process degraded limiter",
+      "bound": "The core page fails OPEN only to a BOUNDED in-process degraded limiter; the PDF path fails CLOSED with 503; the degraded state must be operator-detectable.",
+      "not_bound": "The numeric bound, and its window.",
+      "directive": "Part of the same governed ops configuration as AG-1. An in-process counter is per-instance and is not a distributed guarantee; it is accepted here because it bounds a cheap read-only page during an outage.",
+      "blocking_for": "release of the public surface"
+    },
+    "AG-6": {
+      "subject": "Crockford Base32 confusable input mapping",
+      "bound": "160-bit CSPRNG; Crockford Base32; 32 uppercase canonical characters; case-insensitive accepted input (PVRI-07).",
+      "not_bound": "Whether the I/L -> 1 and O -> 0 input mapping the Crockford specification defines is in scope, since the ratified text names the encoding and fixes case-insensitivity without separately enumerating it.",
+      "directive": "Recorded as an inference from the named specification and flagged for the audit, rather than silently adopted or silently dropped. Naming an encoding ordinarily imports its decoding rules; that inference is stated, not hidden.",
+      "blocking_for": "audit confirmation"
+    },
+    "AG-7": {
+      "subject": "Concrete cache directive tokens per representation, and a DOCUMENT-representation ceiling",
+      "bound": "VALID and SUPERSEDED share a policy per representation; REVOKED and NOT_FOUND are strict no-store/no-cache; the VALID-core revocation lag ceiling is 60 s and must hold with no purge; lifetime-extending directives are prohibited on the VALID core (PVRI-14).",
+      "not_bound": "The exact directive token list, and any ceiling for the DOCUMENT representation.",
+      "directive": "See F-AS-R2-2: without a document-representation ceiling, a cached public document may outlive a revocation by more than 60 s. Referred to the security review, not resolved here by inventing a second ceiling.",
+      "blocking_for": "release of the public surface"
+    }
+  },
+
+  "SECURITY_REVIEW": {
+    "status": "REQUIRED_BEFORE_RELEASE",
+    "explicitly_not_a_blocker_for": "Auditing this authority document, merging this authority document, or opening implementation authority for a node. It gates RELEASE of the public verification surface.",
+    "mandatory_scope": [
+      "PVRI-10 — the limiter infrastructure-failure split (core fails open to a bounded degraded limiter; PDF fails closed with 503).",
+      "PVRI-20 — the public read model allowlist.",
+      "The public disclosure boundary as a whole: PVRI-02, PVRI-03, PVRI-04, PVRI-11, PVRI-12, PVRI-13, PVRI-14, PVRI-19."
+    ],
+    "review_must_positively_answer": [
+      "Do the four PVRI-04 causes differ in status, body, or cache semantics?",
+      "Is there a timing difference between the four collapsed causes that is practically useful to an attacker? (Not: is the surface constant-time — it is not required to be.)",
+      "Does the REVOKED representation carry anything beyond status and date?",
+      "Does a superseded version's response reveal a successor whose own disclosure is not active and eligible?",
+      "Can any allowlisted field be traced to a live tenant table rather than to the snapshot or the disclosure object?",
+      "Does the anonymous principal hold SELECT on anything other than the single read model view?",
+      "Can the locator be recovered from audit_logs, admin views, exported logs, telemetry, or an error path?",
+      "Under limiter infrastructure failure, does the core page serve under a BOUNDED degraded limiter — neither unbounded nor closed — and does the PDF path return 503?",
+      "Does the 60-second VALID-core ceiling hold with no cache purge at all, and what is the actual worst-case lag for the DOCUMENT representation (F-AS-R2-2)?",
+      "Are REVOKED and NOT_FOUND genuinely never stored by any cache, shared or private?",
+      "Does the artifact cache key bind the renderer version, so a renderer upgrade cannot serve stale bytes?",
+      "Is the surface noindex on every outcome, including the entry route?"
+    ]
+  },
+
+  "FUTURE_DDL": {
+    "LINEAGE_REDERIVATION_REQUIRED": "YES",
+    "rule": "Every DDL-bearing object named here — FIBDB-021, FIBDB-022, FIBDB-023, FIBDB-024, FIBDB-025, FIBDB-026, FIBDB-027, FIBDB-028, FIBDB-029, FIBDB-030, FIBDB-038, FIBDB-050, FIBDB-055 — requires its migration lineage to be RE-DERIVED at the time of its own execution authority, against the then-current journal. No ordinal is allocated here.",
+    "MEASURED_CEILINGS_AT_AS_OF_BASE_FOR_REFERENCE_ONLY": {
+      "last_migration_file": "db/migrations/0069_fib_fibdb052_p1_indexes.sql",
+      "journal_entries": 70,
+      "journal_last_idx": 69,
+      "journal_last_tag": "0069_fib_fibdb052_p1_indexes",
+      "ods_maintenance_addendum_ceiling": "v1.0.30",
+      "explicitly_not_an_allocation": "Measurements at AS_OF_BASE, not reservations. This mission allocates NO migration ordinal, NO ODS addendum version, NO W2 grant, and NO Controller lineage. A successor treating 0070 or v1.0.31 as reserved by this artifact has misread it."
+    },
+    "prepared_track_note": "FIBDB-053 is PREPARED_G2, not Drizzle. It takes no migration ordinal and no journal entry at any point — PVRI-16 G2-AC-3.",
+    "R2_note": "PVRI-15's artifact cache key is COMPUTED, not stored, so R2 removes R1's implication that it needs a schema column. R2 adds and removes no DDL."
+  },
+
+  "OPEN_FINDINGS": {
+    "F-AS-R2-1": {
+      "severity": "MATERIAL",
+      "finding": "Seven AUTHORITY_GAPS are open. Four (AG-2, AG-3, AG-4, AG-6) are decisions an implementer would otherwise make silently; three (AG-1, AG-5, AG-7) are release-gating configuration.",
+      "disposition": "Recorded as gaps rather than filled. AG-1 in particular is closed by ratification only, on the owner's explicit direction."
+    },
+    "F-AS-R2-2": {
+      "severity": "MATERIAL",
+      "finding": "PVRI-14 fixes a 60-second revocation-lag ceiling for the VALID CORE but states no ceiling for the DOCUMENT representation. A cached public document may therefore outlive a revocation by longer than 60 seconds.",
+      "disposition": "Surfaced, not resolved. Inventing a second ceiling would manufacture an owner decision. Referred to the security review and carried as AG-7."
+    },
+    "F-AS-R2-3": {
+      "severity": "MATERIAL",
+      "finding": "PVRI-08 makes revocation permanent and locators immutable, so a link shared before revocation is permanently dead and re-publication does not resurrect it. Publishers will encounter this as surprising.",
+      "disposition": "Accepted as ratified, and the correct posture — a revoked capability that could be revived is not revoked. Requires product copy at the revoke action, a FIBIU-26 UI obligation."
+    },
+    "F-AS-R2-4": {
+      "severity": "MATERIAL",
+      "finding": "PVRI-10's core-page fail-open means that during a limiter outage the public core is served under a per-instance in-process counter, which on serverless is N times weaker than intended for N warm instances.",
+      "disposition": "Accepted as ratified, and stated rather than obscured. The mitigation is that the degraded path serves only the minimal core and the expensive path stays closed. Named explicitly for the security review."
+    },
+    "F-AS-R2-5": {
+      "severity": "OBSERVATION",
+      "finding": "R1's cache-oracle argument was withdrawn. CACHE_DISTINGUISHER_ANALYSIS records why the ratified asymmetric posture is sound, so the objection is not re-raised as though unexamined.",
+      "disposition": "Closed. R1's premise did not survive PVRI-03 making REVOKED a deliberately disclosed representation."
+    },
+    "F-AS-R2-6": {
+      "severity": "OBSERVATION",
+      "finding": "FIBC-037 requires the public core to carry the digest 'when the version's integrity contract provides a governed digest', but the digest is produced by FIBIU-24 (wave 4) while the public core is FIBIU-26 (wave 5). A version locked before FIBIU-24 ships carries `integrity_digest_kind='none'` permanently.",
+      "disposition": "Consistent with FIBDB-024's IMPOSSIBLE_TO_BACKFILL class. No retrospective digest may be computed for a version locked without a snapshot."
+    }
+  },
+
+  "NON_GOALS": [
+    "This artifact allocates no migration ordinal, no ODS addendum, no W2 grant, and no Controller lineage.",
+    "This artifact does not modify, restate, or supersede FIB, PC-01B, or IM-01B.",
+    "This artifact does not grant AUTHORITY_TO_IMPLEMENT to any node.",
+    "This artifact does not grant AUTHORITY_TO_APPLY_HOSTED to anything, under any condition.",
+    "This artifact does not reopen the PVRI contract; R2 corrects R1 toward the ratified contract rather than re-arguing it.",
+    "This artifact does not fill an AUTHORITY_GAP with an invented value."
+  ],
+
+  "NEXT_AUTHORIZED_ACTION": "REPORT_INTEGRITY_PUBLIC_VERIFICATION_AUTHORITY_INDEPENDENT_OPUS_AUDIT — an independent adversarial audit of this artifact, its companion test manifest, and the Wave 4 authority, in a clean conversation."
+}

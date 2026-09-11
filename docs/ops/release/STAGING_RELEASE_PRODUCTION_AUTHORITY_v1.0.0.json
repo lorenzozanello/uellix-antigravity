@@ -1,0 +1,548 @@
+{
+  "package_id": "STAGING_RELEASE_PRODUCTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0",
+  "authority_class": "RELEASE_PROCESS_AUTHORITY",
+  "document_class": "AUTHORITY_ONLY__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT__NO_DATABASE_MUTATION",
+  "append_only": true,
+  "mission_id": "LANE_AT__STAGING_RELEASE_PRODUCTION_AUTHORITY_R1",
+  "lane": "AT",
+  "role": "COMMERCIAL_V1_RELEASE_AUTHORITY_WRITER",
+  "mode": "DOCS_ONLY_TIER_A_RELEASE_AUTHORITY",
+  "materialization_date": "2026-09-10",
+  "revision": "R2",
+  "companion_ledger": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+
+  "amends": "NOTHING. This artifact is a NEW release-process authority. It does not amend, supersede or relax the frozen FIB, PC-01B or IM-01B authority, the frozen ODS authority artifact, any prior owner decision, or the canonical regulatory data-governance baseline.",
+  "supersedes": null,
+
+  "AS_OF_BRANCH": "codex/staging-release-production-authority-r1",
+  "AS_OF_HEAD": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
+  "AS_OF_BASE": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_PRESTATE": "ODS_PRESTATE=PASS",
+
+  "PURPOSE": "To freeze, as owner-ratified process authority, the canonical release path from a development-complete state to go-live for Commercial V1: the seven canonical stages, the gates each stage requires, the evidence packets that constitute proof, the preconditions on any hosted mutation, and the stop lines that fail closed. It confers NO execution authority over any environment and allocates nothing.",
+
+  "BINDING_HPO_RATIFICATIONS": {
+    "HPO-G": {
+      "status": "OWNER_RATIFIED",
+      "consumed_from": "owner direction to this lane",
+      "repository_materialization": "HPO-G had NO repository artifact before this one. This pair is its materialization. A successor audit should treat the bindings below as the authoritative statement of HPO-G and verify this pair against them.",
+      "bindings": [
+        {"id": "HPO-G-01", "binding": "The F18 release-ledger model becomes canonical.", "materialized_by": "the companion ledger, whose gate identifiers and categories are the F18 model"},
+        {"id": "HPO-G-02", "binding": "Hosted data-definition changes require: fresh observation, backup and restore capability, a compatibility plan, the exact migration corpus, and a successor ACL.", "materialized_by": "HOSTED_DDL_PRECONDITIONS, which makes all five conjunctive"},
+        {"id": "HPO-G-03", "binding": "Playwright is the browser Golden Journey runner.", "materialized_by": "GOLDEN_JOURNEY_RUNNER and ledger gates M9, J1, J2, J3"},
+        {"id": "HPO-G-04", "binding": "Release CI binds the exact SHA and reconciles the files actually collected and executed.", "materialized_by": "ledger gates M1 and M4, and TEST_EVIDENCE_MODEL"},
+        {"id": "HPO-G-05", "binding": "First reach staging schema and code parity with provider calls and flags dark.", "materialized_by": "stage STAGING_ALIGNED, whose new gates include S7 and S10"},
+        {"id": "HPO-G-06", "binding": "Then browser journeys and provider gates.", "materialized_by": "stage FEATURE_COMPLETE_STAGING"},
+        {"id": "HPO-G-07", "binding": "Then Release Candidate.", "materialized_by": "stage RELEASE_CANDIDATE, which may not be entered before FEATURE_COMPLETE_STAGING is declared"},
+        {"id": "HPO-G-08", "binding": "Production requires backup and restore evidence, observability, security and legal signoff, and a normal integration-to-default-branch lineage.", "materialized_by": "stage PRODUCTION_READY, gates D1, D2, D3, D4, D5, P7, P8, P1"}
+      ]
+    },
+    "consumed_lane_conclusions": {
+      "F18": "The release-certification gate compiler, whose ledger model, duplicate-gate findings and stage mapping are canonicalized here. Measured at a HEAD that differs from AS_OF_HEAD by two documentation files only, so its gate-corpus measurements are inherited rather than re-derived. See the ledger section AS_OF_F18_RECONCILIATION.",
+      "F14": "The staging advancement plan, whose three structural blockers are frozen here as ordering constraints rather than restated as discoveries: the provisioning applier refuses a non-virgin target, the resumable applier pins a single expected branch name, and the hosted ACL package predates fifteen newer tables."
+    }
+  },
+
+  "CANONICAL_STAGES": {
+    "rule": "These seven stages are the ONLY canonical release vocabulary. A release decision names one of them. Stages are strictly ordered and non-skippable: a stage may not be declared while any gate required at it or at any earlier stage is unsatisfied or has regressed.",
+    "gate_set_derivation": "A stage's full required gate set is DERIVED from the companion ledger as every gate whose first_required_at_stage is this stage or any earlier stage. Only the gates NEW at each stage are listed below. The derivation is machine-checkable, which is why the full set is deliberately not restated here: restating it would let the two artifacts drift.",
+    "declaration_rule": "A stage declaration is an artifact, not an opinion. It must name the exact SHA, the exact target identifier for every hosted gate, and one evidence reference per required gate. A declaration missing any of these is not a declaration.",
+    "stages": [
+      {
+        "ordinal": 1,
+        "stage": "DEVELOPMENT_COMPLETE",
+        "meaning": "The tree at an exact SHA is internally proven. Says NOTHING about any environment.",
+        "new_machine_gates": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M10", "M13", "M15"],
+        "new_human_gates": [],
+        "required_environment_evidence": "NONE. This stage is deliberately environment-free. No offline green may be read as evidence about staging or production.",
+        "required_security_review": "M7 only, as the machine secret scan. No human security review is required at this stage.",
+        "required_legal_review": "NONE.",
+        "required_rollback_recovery_evidence": "NONE. Nothing has been mutated.",
+        "exact_sha_evidence_identity": "Every gate cites one CI run bound to the exact head SHA AND to the resulting merge commit. A run that tested a merge ref does not satisfy this stage.",
+        "entry_preconditions": [],
+        "exit_declaration": "DEVELOPMENT_COMPLETE at SHA <sha>, with one run reference per gate.",
+        "anti_pattern": "Declaring this stage on the strength of a poststate PASS. Poststate omits lint and build, so it is a mission gate and not a full-CI gate."
+      },
+      {
+        "ordinal": 2,
+        "stage": "STAGING_ALIGNED",
+        "meaning": "The staging target's schema matches the exact migration corpus of the certified SHA, the runtime can actually read the tables, the deployed code was built from that SHA, and the real provider is dark. This is the first stage that requires a hosted mutation, so it is the first stage gated by HOSTED_DDL_PRECONDITIONS.",
+        "new_machine_gates": ["M11", "M12", "S1", "S2", "S3", "S4", "S6", "S9", "S10"],
+        "new_human_gates": ["S1", "S2", "S3", "S4", "S5", "S7", "S8", "S10", "D1", "G12", "PROD-MIG-AUTH"],
+        "required_environment_evidence": "S5 as the environment-name inventory for the Preview scope, S7 as feature flags observed dark in the live environment, and S10 as a fresh three-part provider-dark observation: credential-name absence in scope, governing flags dark, and zero attributable provider calls across a declared window. Names only: no gate at any stage records, compares or chooses a value. A repository default or a documented matrix value satisfies none of these.",
+        "required_security_review": "No NEW security gate. The inherited set must not have regressed. A hosted apply does not by itself require a human security review; what it requires is S3, because an apply without the successor ACL yields a runtime that is denied on its own tables.",
+        "required_legal_review": "NONE. The regulatory baseline does not gate foundational engineering, and this artifact must not be cited to delay it.",
+        "required_rollback_recovery_evidence": "D1 as the backup and restore CAPABILITY with at least one proven restore, and S8 as a verified backup taken in the window immediately preceding the data-definition change. For a target holding data, recovery is RESTORE_REQUIRED: destroy and reprovision is NOT a recovery posture.",
+        "exact_sha_evidence_identity": "Every staging gate cites the exact SHA whose corpus was applied AND the exact target identifier. An observation that cannot name its target is not an observation of that target.",
+        "entry_preconditions": ["DEVELOPMENT_COMPLETE declared at the same SHA", "all five HOSTED_DDL_PRECONDITIONS satisfied", "RULE_NO_APPLY_ON_DRIFT_ALONE satisfied"],
+        "exit_declaration": "STAGING_ALIGNED at SHA <sha> against target <target id>, citing a fresh observation per staging gate.",
+        "forced_ordering": "Schema, then ACL, then code. Code first is IMPOSSIBLE, not merely inadvisable: the data layer enumerates every column of the current schema on ordinary reads, so newer code against an older database raises an undefined-column error on the login and selector path."
+      },
+      {
+        "ordinal": 3,
+        "stage": "FEATURE_COMPLETE_STAGING",
+        "meaning": "On the aligned staging target, the product's journeys actually work end to end in a browser, and every third-party provider is configured and exercised. This is the stage that converts parity into working software.",
+        "new_machine_gates": ["M9", "PV1", "J1", "J2", "J3", "J4", "SEC1", "SEC4", "SEC5", "SEC7", "G13"],
+        "new_human_gates": ["PV1", "PV2", "PV3", "PV5", "PV6", "SEC1", "SEC4", "SEC5", "SEC7", "G13"],
+        "required_environment_evidence": "PV1, PV2, PV3, PV5 and PV6 each configured by NAME in the Preview scope and exercised at least once. The real model provider is explicitly NOT included: it remains dark until PV4 at RELEASE_CANDIDATE.",
+        "required_security_review": "SEC1 tenant isolation, including a read-only closed-world census of the live catalog; SEC4 public disclosure surface; SEC5 secret custody; SEC7 billing webhook integrity.",
+        "required_legal_review": "NONE NEW. Note that the journeys exercise surfaces the regulatory baseline gates for commercial activation, but exercising them in a controlled staging environment with synthetic data engages no blocking finding.",
+        "required_rollback_recovery_evidence": "No NEW requirement. Inherited D1 and S8 continue to apply to every further apply.",
+        "exact_sha_evidence_identity": "Every browser journey run is bound to the exact SHA that produced the Preview deployment it ran against, and to that deployment's identifier.",
+        "entry_preconditions": ["STAGING_ALIGNED declared at the same SHA"],
+        "exit_declaration": "FEATURE_COMPLETE_STAGING at SHA <sha> against target <target id>, citing three green browser journeys with negative controls plus one configuration proof per provider.",
+        "hpo_g_binding": "then browser journeys and provider gates"
+      },
+      {
+        "ordinal": 4,
+        "stage": "RELEASE_CANDIDATE",
+        "meaning": "A specific SHA is nominated as shippable. This is the stage where the real model provider, the legal instruments and the remaining security dispositions become mandatory.",
+        "new_machine_gates": ["M14", "SEC2", "SEC6", "SEC8", "SEC9", "L2", "C1-C18"],
+        "new_human_gates": ["PV4", "SEC2", "SEC3", "SEC6", "SEC8", "SEC9", "L1", "L2", "L3", "L4", "LC0-RC", "G1", "G5", "G7", "G8", "C1-C18"],
+        "required_environment_evidence": "PV4 as the resolved provider-governance decision. PV4 PRECEDES G1 and is a hard precondition of it.",
+        "required_security_review": "M14 dependency audit, SEC2 platform-administration boundary, SEC3 multi-factor disposition, SEC6 assistant safety, SEC8 headers and content policy, SEC9 rate-limit disposition. SEC3 requires a RECORDED DECISION; if the decision is that multi-factor is required, it must also be enforceable, and today the database cannot express an assurance-level predicate.",
+        "required_legal_review": "L1 instruments approved, L2 versioned acceptance capture, L3 counsel checkpoint opened and answered, L4 subprocessor inventory, LC0-RC regulatory stage condition, and G7 as the signature act. L1 to L4 are the substance, G7 is the signature, LC0-RC is the stage condition; these are three different things and none substitutes for another.",
+        "required_rollback_recovery_evidence": "No NEW requirement. Inherited only.",
+        "exact_sha_evidence_identity": "The candidate is a TAG on one exact SHA. Every release-candidate gate cites that SHA. A release candidate that names a branch rather than a SHA is not a release candidate.",
+        "entry_preconditions": ["FEATURE_COMPLETE_STAGING declared at the same SHA"],
+        "exit_declaration": "RELEASE_CANDIDATE <tag> at SHA <sha>, citing one evidence reference per gate plus an observed stable window.",
+        "unresolved_tension_recorded_not_decided": "G1 requires the real provider, and the regulatory baseline records the real-provider stage as BLOCKED pending provider legal and data terms. Therefore RELEASE_CANDIDATE cannot be declared with G1 satisfied while that block stands. Resolving this is an owner and counsel decision with exactly two shapes: resolve the provider terms, or define a release-candidate scope in which the real provider stays dark and G1 is formally out of scope. This artifact does NOT choose between them and has no authority to."
+      },
+      {
+        "ordinal": 5,
+        "stage": "PILOT_READY",
+        "meaning": "Real users and real data may be admitted to a bounded pilot. This is the first stage at which a human outside the team is exposed to the system, which is why it is a stage and not a sub-step.",
+        "new_machine_gates": [],
+        "new_human_gates": ["LC0-PILOT", "G4", "G10A", "PB-01"],
+        "required_environment_evidence": "No NEW environment names. What is new is that the two capability stages the regulatory baseline blocks must remain DISABLED for the pilot, and G4 governs enabling product flags per role behind an observation window.",
+        "required_security_review": "No NEW security gate. The inherited set, in particular SEC2, SEC3 and SEC4, must hold, because the pilot is the first time a non-team principal reaches those surfaces.",
+        "required_legal_review": "LC0-PILOT. The regulatory baseline records the pilot stage as CONDITIONAL rather than blocked: permissible with the two blocked capability stages disabled, subject to the commercial-activation condition and to whatever instrument the pilot participants sign. Whether a signed out-of-band instrument substitutes for L2 acceptance capture for pilot participants is an owner and counsel decision this artifact does NOT make.",
+        "required_rollback_recovery_evidence": "Inherited D1 plus an exercised flag kill-switch, since a pilot is withdrawn by disabling flags, not by rolling back a deployment.",
+        "exact_sha_evidence_identity": "The pilot runs one named release-candidate tag at one exact SHA. If the pilot is patched, the stage is re-declared at the new SHA.",
+        "entry_preconditions": ["RELEASE_CANDIDATE declared", "PB-01 resolved or explicitly accepted in writing"],
+        "exit_declaration": "PILOT_READY at SHA <sha>, citing the pilot-entry signature and the per-role flag state.",
+        "f18_extension_note": "F18 had SIX stages and folded the pilot into PRODUCTION_READY, where the legacy pilot gate package carries TWO signatures. HPO-G's seven-stage model splits them: G10A is the pilot-entry signature here, G10B is the production-readiness signature at the next stage, and G4 and G9 are re-placed accordingly. This is the only structural extension of the F18 model in this pair, and it is flagged in every affected ledger row."
+      },
+      {
+        "ordinal": 6,
+        "stage": "PRODUCTION_READY",
+        "meaning": "Production deployment is authorized but has NOT happened. Everything the production environment needs is proven to exist and to work, including the ability to recover.",
+        "new_machine_gates": ["D3", "P1", "P2", "P6", "P7"],
+        "new_human_gates": ["D2", "D3", "D4", "D5", "LC0-PP", "G9", "G10B", "P1", "P2", "P3", "P5", "P7", "P8"],
+        "required_environment_evidence": "P3 as the production environment-name inventory. Names only.",
+        "required_security_review": "P8, which closes the legal signature act, the counsel checkpoint, the accepted-risk register and the pre-production security checklist. The checklist currently has nine items with zero owners and zero criteria, so P8 requires giving each one an owner and a criterion before it can be satisfied at all.",
+        "required_legal_review": "LC0-PP, which requires an operator observation resolving the production-state unknowns the regulatory baseline enumerates. These are unmeasurable from the repository by construction.",
+        "required_rollback_recovery_evidence": "D2 declared and measured recovery objectives, D3 roll-forward after restore, D4 observed point-in-time recovery posture, D5 an executed restore rehearsal, and P5 a rehearsed production rollback runbook whose DATABASE leg is real. The corpus is forward-only and the baseline carries no rollbacks, so the database leg of rollback IS restore-then-roll-forward and nothing else.",
+        "exact_sha_evidence_identity": "P1 requires a reviewed pull request from the integration branch to the default branch, with CI green on the EXACT SHA and a release tag on that SHA. A production authorization that cannot name the SHA it authorizes is void.",
+        "entry_preconditions": ["PILOT_READY declared and the pilot executed with its acceptance criteria met", "PROD-MIG-AUTH satisfied in its PRODUCTION instance"],
+        "exit_declaration": "PRODUCTION_READY at SHA <sha>, citing the production-readiness signature and one evidence reference per gate.",
+        "hpo_g_binding": "production requires backup and restore evidence, observability, security and legal signoff, and a normal integration-to-default-branch lineage"
+      },
+      {
+        "ordinal": 7,
+        "stage": "GO_LIVE",
+        "meaning": "The authorized deployment is executed against production, and the execution itself is evidenced.",
+        "new_machine_gates": ["GL1"],
+        "new_human_gates": ["LC0-PL", "GL1"],
+        "required_environment_evidence": "Re-evidence, against the PRODUCTION target, of every gate whose evidence was previously produced against staging or Preview. Staging evidence is NEVER production evidence.",
+        "required_security_review": "No NEW security gate, but the inherited set must be re-asserted against production, since a policy census against staging says nothing about production.",
+        "required_legal_review": "LC0-PL, required ONLY where the go-live is a public launch. A private pilot or named-customer go-live does not engage it, and it must not be cited to delay one.",
+        "required_rollback_recovery_evidence": "A backup identifier taken immediately before the production migration, plus the rehearsed rollback runbook on standby. Captured as part of GL1.",
+        "exact_sha_evidence_identity": "GL1 binds the whole cutover to one exact SHA and one target identifier: the merged pull request, the pre-migration backup identifier, the migration applied under the production migration authority, the post-deploy smoke result, the armed alerts and the cohort flag state. Any missing element makes the cutover UNEVIDENCED.",
+        "entry_preconditions": ["PRODUCTION_READY declared at the same SHA"],
+        "exit_declaration": "GO_LIVE at SHA <sha> against target <target id>, citing the single cutover record."
+      }
+    ]
+  },
+
+  "STAGE_VOCABULARY_RECONCILIATION": {
+    "rule": "Five vocabularies were competing before this artifact. A legacy document remains readable; this table says which canonical stage a legacy term maps to. A legacy term is NEVER a release decision.",
+    "mappings": [
+      {"legacy_vocabulary": "assistant-programme offline release candidate", "maps_to": "DEVELOPMENT_COMPLETE", "note": "It is an OFFLINE criterion set. It deliberately hardcodes blocked staging and hosted declarations, so it can never evidence a hosted stage."},
+      {"legacy_vocabulary": "assistant-programme production-ready", "maps_to": "PRODUCTION_READY", "note": "Defined as the full human gate set, which this pair decomposes into named canonical gates."},
+      {"legacy_vocabulary": "release workstream local integration", "maps_to": "DEVELOPMENT_COMPLETE"},
+      {"legacy_vocabulary": "release workstream staging", "maps_to": "STAGING_ALIGNED"},
+      {"legacy_vocabulary": "release workstream hosted", "maps_to": "FEATURE_COMPLETE_STAGING"},
+      {"legacy_vocabulary": "release workstream release candidate", "maps_to": "RELEASE_CANDIDATE"},
+      {"legacy_vocabulary": "release workstream production", "maps_to": "GO_LIVE"},
+      {"legacy_vocabulary": "regulatory baseline foundational engineering", "maps_to": "DEVELOPMENT_COMPLETE", "note": "NOT_BLOCKED by the baseline."},
+      {"legacy_vocabulary": "regulatory baseline pilot", "maps_to": "PILOT_READY", "note": "CONDITIONAL in the baseline. This is the anchor that makes PILOT_READY a real stage rather than an invention of this artifact."},
+      {"legacy_vocabulary": "regulatory baseline release candidate", "maps_to": "RELEASE_CANDIDATE", "note": "GATED in the baseline; see LC0-RC."},
+      {"legacy_vocabulary": "regulatory baseline pre-production", "maps_to": "PRODUCTION_READY", "note": "GATED in the baseline; see LC0-PP."},
+      {"legacy_vocabulary": "regulatory baseline public launch", "maps_to": "GO_LIVE", "note": "GATED in the baseline; see LC0-PL, and only for a public launch."},
+      {"legacy_vocabulary": "regulatory baseline commercial activation and self-service onboarding", "maps_to": "NOT A STAGE IN THIS MODEL", "note": "These are CAPABILITY stages, not release stages. They are gated on legal instruments and are orthogonal to the seven stages. They must not be mapped onto a release stage, and neither may be cited to delay a release stage the baseline does not name."},
+      {"legacy_vocabulary": "closed-beta preview", "maps_to": "FEATURE_COMPLETE_STAGING"},
+      {"legacy_vocabulary": "closed-beta pilot", "maps_to": "PILOT_READY"},
+      {"legacy_vocabulary": "closed-beta production", "maps_to": "GO_LIVE"},
+      {"legacy_vocabulary": "the seven-step production migration approval sequence", "maps_to": "PRODUCTION_READY and GO_LIVE", "note": "Its step requiring a restorable backup is canonically D1 with D5. The sequence was written for an older corpus range and its step list must not be read as covering the current corpus."}
+    ]
+  },
+
+  "FROZEN_RULES": {
+    "RULE_NO_APPLY_ON_DRIFT_ALONE": {
+      "statement": "Staging being behind the repository is NOT, by itself, authority to apply anything to staging. Drift is an observation, never a permission.",
+      "rationale": "The gap between a target and the repository is the NORMAL resting state of a governed system. Treating the gap as self-authorizing converts every measurement into an action and removes the human decision point entirely. It is also how an apply gets attempted without a backup, because the urgency the drift creates is felt before the preconditions are checked.",
+      "binding": "Every hosted apply requires an affirmative, owner-ratified authority naming the exact target and the exact corpus, satisfying all five HOSTED_DDL_PRECONDITIONS. Absent that authority the correct action is to do NOTHING and report the drift.",
+      "explicitly_insufficient_justifications": [
+        "staging is N units behind",
+        "the migration corpus grew",
+        "a readiness figure went down",
+        "the rehearsal passed locally",
+        "the apply would have happened anyway",
+        "the previous apply used the same path"
+      ]
+    },
+    "RULE_OBSERVATION_FRESHNESS": {
+      "statement": "An observation of a hosted target is valid ONLY for the mutation window it immediately precedes. It expires the moment anything mutates that target, and it is never extended by computation.",
+      "freshness_criteria": [
+        "it was taken AFTER the last completed mutation of that target",
+        "it was taken BEFORE the mutation now being authorized, with no intervening mutation",
+        "it names the exact target identifier",
+        "it names the exact SHA of the tooling and corpus it was evaluated against",
+        "it carries an observation timestamp"
+      ],
+      "arithmetic_is_not_observation": "Deriving a current state by computing over a prior observation produces a PREDICTION, not an observation. A figure of the form prior-count plus planned-units is frozen arithmetic and carries no evidentiary weight whatsoever. This has already been measured as a real failure mode in this programme and is the single most likely way a stale number re-enters an execution decision.",
+      "derived_artifacts": "A derived artifact that byte-verifies proves FAITHFUL DERIVATION from the observation it was built on. It never proves that the observed world still looks that way. A green verification over a stale observation is PASS_OVER_STALE_INPUT and is not creditable for a stage transition.",
+      "known_stale_value_explicitly_quarantined": {
+        "value": "staging previously observed at 50 of 82 units",
+        "status": "STALE_BY_CONSTRUCTION",
+        "binding": "Recorded as HISTORY ONLY. It is NOT a current fact, it may NOT be used as an execution input, and no arithmetic over it yields an observation. Any document, plan or conversation that treats it as current is wrong on this point regardless of its other merits."
+      }
+    },
+    "RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE": {
+      "statement": "No test, gate or evaluation that runs without touching a hosted target may be cited as evidence about a hosted target.",
+      "supporting_design": "The release-gate scripts deliberately hardcode a blocked staging declaration, a blocked hosted declaration and a false provider-ready flag. That is design, not defect: it makes this rule mechanically true rather than merely stated.",
+      "corollary": "A local rehearsal that applies the full corpus to a disposable database proves the corpus is internally applicable. It proves NOTHING about any hosted target."
+    },
+    "RULE_PREPARATION_IS_NOT_READINESS": {
+      "statement": "A gate package existing, however complete, is PREPARED and not PASSED. A signature block that exists but is blank is evidence of preparation only.",
+      "measured_basis": "Nine human gate packages are fully prepared and zero have been executed with current evidence. Conflating the two is the single largest source of overstated readiness in this programme's history."
+    },
+    "RULE_AUTHORITY_CLOSED_IS_NOT_CAPABILITY_BUILT": {
+      "statement": "An authority artifact merging does not make the capability it describes exist.",
+      "measured_basis": "The email-verification Packet B authority and test manifest merged at AS_OF_HEAD with zero enforcement code. The provider gate receives NO credit for that merge.",
+      "corollary_for_this_pair": "This artifact pair is itself an authority. Its existence moves no gate from ABSENT to PASS, and a successor must not read its merge as progress against any gate."
+    },
+    "RULE_FAIL_CLOSED_ON_UNKNOWN": {
+      "statement": "Where a required fact is UNKNOWN or two sources conflict, the release stops and escalates. It does not pick the more convenient source, and it does not proceed on the assumption that the discrepancy is benign.",
+      "applies_to_open_items": ["the health contract conflict", "the grounding package contradiction", "branch protection", "the point-in-time recovery posture"]
+    },
+    "RULE_NO_GATE_WEAKENING": {
+      "statement": "A gate is never relaxed, narrowed or made conditional in order to obtain a pass. If a gate is wrong, it is corrected through a successor authority with the reason recorded, never edited quietly at the point of use.",
+      "distinction_from_retirement": "Retiring a gate because its criterion is UNSATISFIABLE is not weakening: see the retirement of the legacy isolation gate, which was retired precisely because the only way to make it pass would have been to point a mutating suite at a live database. Weakening lowers a bar that can be met; retirement removes a bar that cannot be met and that invites an unsafe workaround."
+    }
+  },
+
+  "HOSTED_DDL_PRECONDITIONS": {
+    "rule": "All five are CONJUNCTIVE and must be satisfied immediately before any data-definition change against any hosted target. Four of five satisfied is zero authority. There is no partial credit and no emergency path in this artifact.",
+    "hpo_g_binding": "HPO-G-02",
+    "preconditions": [
+      {"id": "HDP-1", "name": "fresh observation", "gates": ["S1", "G12", "S9"], "packet": "STAGING_OBSERVATION_PACKET", "criterion": "An observation satisfying RULE_OBSERVATION_FRESHNESS, taken against the exact target, with no intervening mutation."},
+      {"id": "HDP-2", "name": "backup and restore capability", "gates": ["D1", "S8"], "packet": "BACKUP_PACKET", "criterion": "A backup of this target taken in the immediately preceding window, AND a demonstrated ability to restore it. A backup that has never been restored from is an untested assumption, not a capability."},
+      {"id": "HDP-3", "name": "compatibility plan", "gates": ["S4"], "packet": "CODE_SCHEMA_COMPATIBILITY_PROOF", "criterion": "A written statement of which code runs against which schema during and after the change, including the ordering. For this system the order is forced: schema, then ACL, then code."},
+      {"id": "HDP-4", "name": "exact migration corpus", "gates": ["S1"], "packet": "MIGRATION_CORPUS_PACKET", "criterion": "The enumerated, digest-bound set of units to be applied, derived from the exact SHA. A range expressed as from-here-to-the-end is NOT an exact corpus."},
+      {"id": "HDP-5", "name": "successor ACL", "gates": ["S3"], "packet": "ACL_SUCCESSOR_PROOF", "criterion": "A package granting the runtime role the privileges it needs on every table the change introduces, verified by privilege sweep after the apply. Without this the apply yields a schema the runtime cannot read, which is a broken deployment rather than an aligned one."}
+    ],
+    "applies_equally_to_production": "All five apply to a production target as well, where HDP-1 becomes a fresh PRODUCTION observation and HDP-2 additionally requires D5, an executed restore rehearsal. The production instance further requires PROD-MIG-AUTH in its production form, because the hosted tooling vetoes production targets by design."
+  },
+
+  "EVIDENCE_PACKETS": {
+    "rule": "A packet is the UNIT OF PROOF. A gate is satisfied by a packet, never by prose, a recollection, or a figure computed from an older packet. Every packet carries the exact SHA and, where a hosted target is involved, the exact target identifier.",
+    "packets": [
+      {
+        "packet": "STAGING_OBSERVATION_PACKET",
+        "gates": ["S1", "S2", "S6", "S9", "G12"],
+        "contents": ["target identifier", "observation timestamp", "tooling SHA", "the contiguous applied journal prefix as observed", "the unit count and manifest digest compared against the corpus of the certified SHA", "hosted package states with provenance, not merely presence", "runtime identity as reported by the runtime identity endpoint", "any discrepancy, enumerated rather than summarized"],
+        "freshness": "governed by RULE_OBSERVATION_FRESHNESS",
+        "explicit_exclusions": ["any value of any secret", "any figure computed from a prior observation", "any count inherited from a document rather than observed"],
+        "provenance_requirement": "Where two different packages can produce an identically named object, the packet must record which one did. Presence alone cannot distinguish them, and one later migration is known to converge on the same policy name as an earlier hosted package."
+      },
+      {
+        "packet": "MIGRATION_CORPUS_PACKET",
+        "gates": ["S1", "P2"],
+        "contents": ["the exact SHA the corpus is derived from", "the enumerated ordered unit list", "the manifest digest", "the journal entry count and maximum index", "the schema snapshot identity", "the per-unit classification of whether a unit transforms existing rows or only changes structure", "the explicit list of units that change the semantics of an existing object"],
+        "measured_at_this_base": {"migration_sql_files": 70, "journal_entries": 70, "journal_max_index": 69, "baseline_manifest_units": 82, "baseline_manifest_digest": "bf157f179f5899a63a4f50b2fd74c5ec76ba0986babeabe43d46a148132c48dd"},
+        "NO_NEXT_ORDINAL": "This packet definition records the corpus as OBSERVED. It does NOT declare, reserve or imply a next migration ordinal, and no part of this artifact pair allocates one.",
+        "why_row_transformations_must_be_listed": "A structure-only change is replayable after a restore; a row transformation may not be. The recovery plan differs, so the classification is part of the packet rather than a footnote."
+      },
+      {
+        "packet": "BACKUP_PACKET",
+        "gates": ["D1", "S8"],
+        "contents": ["target identifier", "backup identifier", "backup timestamp", "the method used", "the scope covered", "confirmation that no mutation occurred between the backup and the change it precedes"],
+        "current_state": "There is no backup or restore script in the repository, so this packet cannot be produced today. It is the first blocking item on the critical path."
+      },
+      {
+        "packet": "RESTORE_PROOF",
+        "gates": ["D1", "D3", "D5"],
+        "contents": ["the backup identifier restored from", "the target restored into", "timestamps for start and completion, which are what make a recovery time objective measurable", "post-restore verification results", "the roll-forward performed afterwards and to which point"],
+        "binding": "A backup that has never been restored from is an untested assumption. D1 therefore requires at least one actual restore, and D5 requires a rehearsal against a production-like target.",
+        "doctrine_correction": "For a target holding data, recovery is RESTORE_REQUIRED. The destroy-and-reprovision doctrine was calibrated for an EMPTY target and is not a recovery path for staging or production."
+      },
+      {
+        "packet": "ACL_SUCCESSOR_PROOF",
+        "gates": ["S3"],
+        "contents": ["the enumerated table list the runtime reads", "a per-table, per-role privilege check result", "the successor package that granted anything newly granted", "zero permission-denied results"],
+        "current_state": "The last hosted ACL package enumerates 37 tables. Fifteen tables added afterwards grant only to the authenticated role and not to the runtime application role, and no successor package exists. Until one does, a schema-only apply produces a deployment where the runtime is denied on those tables.",
+        "anti_pattern": "Inferring privilege from ownership, or from the fact that an earlier package granted something similar. The packet requires a per-table check result, not an inference."
+      },
+      {
+        "packet": "CODE_SCHEMA_COMPATIBILITY_PROOF",
+        "gates": ["S4", "S6"],
+        "contents": ["the SHA the deployment was built from", "the corpus applied to the target it points at", "a build identity and a runtime identity that AGREE", "the ordering actually followed"],
+        "forced_ordering": "Schema, then ACL, then code. The data layer enumerates every column of the current schema on ordinary reads, so newer code against an older database fails on the login and selector path. Code-first is therefore impossible, not merely discouraged.",
+        "known_hazard": "The only deployment scope currently bound to staging is driven by a branch that is far behind. Advancing that branch by PUSHING it would deploy new code against the old database, which is exactly the inverse of the required order. The branch must be advanced without triggering a deployment, and the applier's branch pin must be resolved by the authority that opens the apply."
+      },
+      {
+        "packet": "PROVIDER_DARK_PROOF",
+        "gates": ["S7", "S10", "LC0-PILOT"],
+        "contents": ["the target identifier and the deployment scope observed", "the observation timestamp and the declared evidence window", "confirmation that no real provider credential NAME is present in that environment scope", "the observed value of every governing capability and feature flag that could reach the provider, read from the LIVE environment", "zero real provider calls attributable to that environment across the declared window"],
+        "binding": "A documented default is NOT an observation. Flags and credential names must be observed in the live environment, because a document records intent and an environment records fact.",
+        "R2_CORRECTION": {
+          "audit_finding": "AT-B-01",
+          "removed_requirement": "the network guard state",
+          "why_removed": "Measured at AS_OF_HEAD there are ZERO network-guard occurrences in lib/ or app/. The only such control is vitest.setup.network-guard.ts, wired as a setupFiles entry in vitest.config.ts and vitest.e2e.config.ts, plus tests/no-real-gemini-network-guard.test.ts. That is a TEST-TIME control proving the test suite cannot reach the provider. It proves nothing about a deployed environment, so requiring it as hosted evidence both demanded an artifact the repository does not contain and violated RULE_OFFLINE_GREEN_IS_NOT_HOSTED_EVIDENCE.",
+          "replaced_by": "the three conjunctive observations now listed in contents: credential-name absence in scope, governing flags observed dark in the live environment, and zero attributable provider calls across a declared window."
+        },
+        "scope": "Dark means: the real model provider is not called, and the two capability stages the regulatory baseline blocks are disabled. It does NOT mean the product is disabled."
+      },
+      {
+        "packet": "DEPLOYMENT_SMOKE",
+        "gates": ["M11", "P6"],
+        "contents": ["deployment identifier", "the SHA deployed", "the target", "one request and response summary per health endpoint", "the adjudicated expected response each was compared against"],
+        "blocking_precondition": "The expected response for an anonymous caller on the auth endpoint is UNADJUDICATED: the documented behaviour and the behaviour observed in production disagree. Automating this packet before adjudication would freeze whichever behaviour the author happened to believe into the gate. Adjudication first."
+      },
+      {
+        "packet": "OBSERVABILITY_PROOF",
+        "gates": ["P7"],
+        "contents": ["the reporting destination NAME present per environment", "one test event demonstrably received end to end", "the structured logging surface", "each declared alert, armed, with evidence it actually fired in a test"],
+        "binding": "An alert that is configured but has never fired is UNPROVEN. The packet requires a demonstrated firing, because the common failure is an alert that was never wired to anything.",
+        "current_state": "Reporting is off in every environment because it is enabled by the presence of a destination name and none is present. There is no structured logger. The alerts exist only as prose in a gate document."
+      },
+      {
+        "packet": "CUTOVER_RECORD",
+        "gates": ["GL1"],
+        "contents": ["the merged pull request and its exact SHA", "the pre-migration backup identifier", "the migration applied and under which authority", "the post-deploy smoke result", "the armed alert state", "the cohort flag state"],
+        "binding": "One record, all elements. Any missing element makes the cutover UNEVIDENCED, which is a different and worse condition than a cutover that failed, because a failure is visible and an unevidenced success is not."
+      }
+    ]
+  },
+
+  "GOLDEN_JOURNEY_RUNNER": {
+    "hpo_g_binding": "HPO-G-03",
+    "runner": "Playwright",
+    "runner_status": "NOT PRESENT in the repository at AS_OF_HEAD. No browser automation dependency of any kind exists.",
+    "binding": "Playwright is THE browser Golden Journey runner for J1, J2 and J3. A node-level test against a disposable database is not a browser journey and may not be cited for M9, however end-to-end its name.",
+    "target": "A Preview deployment satisfying S4, so that the journey exercises the certified SHA against the matching schema.",
+    "common_requirements": [
+      "at least one negative control per journey, because a journey that only proves the happy path cannot distinguish working software from an absent guard",
+      "no manual step and no development-only workaround anywhere in the path",
+      "the run bound to the exact SHA and the deployment identifier",
+      "traces retained as the evidence artifact"
+    ],
+    "journeys": [
+      {
+        "id": "J1",
+        "name": "customer journey",
+        "path": "signup, organisation founding, roles and users, project creation, evidence, proxy, outcomes and filters, the social-return computation, the governed assistant, report generation, portfolio, evaluation, review and approval",
+        "negative_control_intent": "a principal from another tenant must be refused at each tenant-scoped step",
+        "known_upstream_blockers": ["organisation founding and invitation have been measured to fail closed under row-level security in a live environment", "the evaluation surface has no runtime, so the evaluation leg has nothing to traverse", "two client-side navigations target a route with no page component, terminating the journey in a not-found response"]
+      },
+      {
+        "id": "J2",
+        "name": "operator journey",
+        "path": "signup allowlist, organisations, audit logs, statistics, proxies, assistant services, deletion approval, commercial accounts",
+        "negative_control_intent": "a non-operator principal must be refused on every operator surface, and the control must prove the platform principal is distinguishable from a tenant role value rather than assuming it",
+        "known_upstream_blockers": ["the platform principal is a single flag that is also a tenant role value", "the deletion-approval path does not prohibit the requester from being the approver, so a separation-of-duties control has nothing to assert against yet"]
+      },
+      {
+        "id": "J3",
+        "name": "public verifier journey",
+        "path": "resolve a public verification locator as an anonymous caller, then its document rendering",
+        "negative_control_intent": "a non-existent or revoked locator must be refused, and the rate-limit disposition of the public surface must be exercised",
+        "known_upstream_blockers": ["the locator is a randomly generated lookup token and NOT a content hash, so the journey must not assert hash-verification semantics the code does not implement", "no interface surfaces the locator, so obtaining one requires an adjudicated route", "the public verification surface has no rate limiting"]
+      }
+    ],
+    "explicit_non_authorization": "This artifact DEFINES the three journeys. It does NOT contain them, and this lane is NOT authorized to write a Playwright test. The blockers above are recorded so the implementing lane does not discover them at the end."
+  },
+
+  "TEST_EVIDENCE_MODEL": {
+    "hpo_g_binding": "HPO-G-04",
+    "principle": "Evidence is a SET RECONCILIATION, not an exit code. The question a release must answer is not whether the runner returned zero, but which files actually ran.",
+    "why_an_exit_code_is_insufficient": [
+      "a worker process that dies yields a non-zero exit with NO reporter row, so the lost file is invisible in the report even though the run is red",
+      "a file skipped for an environmental reason yields neither a failure nor a row, so it is invisible in a green run",
+      "a harness whose setup status initializes to a skipped value can report that value through several early bail-outs, so a skip can be indistinguishable from a deliberate exclusion unless the set is reconciled",
+      "therefore the set difference, not the exit code, is what makes the evidence non-vacuous"
+    ],
+    "required_of_every_release_test_run": [
+      "the exact SHA, with no merge-ref substitution",
+      "the enumerated candidate file set",
+      "the set the reporter records as collected AND executed",
+      "the difference between them, raised as LOST_FILE and failing the run if non-empty",
+      "for every conditional suite, whether the condition was met, recorded explicitly rather than inferred from the absence of a failure"
+    ],
+    "measured_at_this_base": {
+      "tracked_test_files": 409,
+      "tracked_real_postgres_test_files": 11,
+      "real_postgres_files_forced_in_continuous_integration": 3,
+      "reconciliation_implemented": false,
+      "reconciliation_script_own_test_count": 0
+    },
+    "comparability_rule": "Two test runs are comparable only under comparable load. Timeout-shaped failures in this suite have been measured to increase under parallel load, so comparing a candidate run under load against a parent run at rest manufactures a regression that does not exist. A regression claim must state the load conditions of both runs.",
+    "mutation_control_rule": "A mutation control is only meaningful if the mutation it applies could actually have been caught. A mutation that does not change behaviour, or that is applied against an anchor that does not exist in the working tree because of line-ending differences, produces a vacuous green. A control must prove the mutated tree goes RED.",
+    "explicit_non_authorization": "This lane executed ZERO tests. Every test-related state in the companion ledger is either inherited from a prior measurement or marked UNKNOWN. No test result in this pair is a fresh measurement by this lane."
+  },
+
+  "SECURITY_STOP_LINES": {
+    "rule": "A stop line is not a risk to be weighed. Crossing one stops the release until the named gate is satisfied or the owner accepts the risk IN WRITING with a bounded rationale. Silence is not acceptance.",
+    "stop_lines": [
+      {"id": "SSL-01", "stop_line": "No stage beyond DEVELOPMENT_COMPLETE may be declared while tenant isolation lacks a closed-world census against the live target.", "gate": "SEC1", "reason": "Per-test isolation evidence proves the cases that were written. Only a closed-world census can show a table or policy that nobody wrote a test for, and the existing sweeps read one SQL corpus each while three exist."},
+      {"id": "SSL-02", "stop_line": "The legacy isolation criterion must NOT be satisfied by pointing the integration suite at a hosted database.", "gate": "SEC1", "reason": "The criterion is unsatisfiable because the harness pins a loopback connection. The available workaround would run a MUTATING suite against a live target. This stop line exists because the unsafe path is the convenient one."},
+      {"id": "SSL-03", "stop_line": "PILOT_READY may not be declared while the platform-administration boundary is a single flag that is also a tenant role value, unless the owner accepts that in writing.", "gate": "SEC2", "reason": "The pilot is the first time a principal outside the team reaches the operator surface, and privileged destructive actions do not currently require a distinct approver."},
+      {"id": "SSL-04", "stop_line": "A decision that multi-factor authentication is required may not be recorded as satisfied until it is enforceable at the authorization point.", "gate": "SEC3", "reason": "The assurance level does not currently reach the database, so a policy claiming to require one would be decorative. A decorative control is worse than a documented absence because it stops anyone looking."},
+      {"id": "SSL-05", "stop_line": "The public verification surface may not be exposed at PILOT_READY or beyond without a rate limit and an adjudicated disclosure decision.", "gate": "SEC4", "reason": "It is anonymous and unauthenticated by design, the locator is a random lookup token rather than a content hash, and there is no rate limit."},
+      {"id": "SSL-06", "stop_line": "No privileged credential may be held without an inventory recording who and what holds it.", "gate": "SEC5", "reason": "A prior credential incident in this programme was remediated forward-only, which means the custody question is the live one."},
+      {"id": "SSL-07", "stop_line": "A limiter whose disposition is fail-open may not be relied upon as a control at any stage.", "gate": "SEC9", "reason": "The limiters do not agree with each other: one surface fails open and another fails closed, and the login limiter keeps state in process memory so it neither survives a restart nor spans instances. A fail-open limiter is a performance measure, not a security control, and must not be cited as one."},
+      {"id": "SSL-08", "stop_line": "No secret VALUE appears in any evidence packet, gate record or stage declaration, at any stage, ever.", "gate": "SEC5", "reason": "Evidence artifacts are committed and widely read. Every environment gate in this model is satisfied by NAMES only, which is a design constraint and not an inconvenience."},
+      {"id": "SSL-09", "stop_line": "The production-target veto in the hosted tooling may not be disabled, bypassed or worked around to satisfy any gate.", "gate": "P2", "reason": "The veto is a SAFETY FEATURE. Satisfying production parity means writing a governed authority and path, never removing the refusal that currently prevents an accidental production mutation."}
+    ]
+  },
+
+  "LEGAL_STOP_LINES": {
+    "rule": "These are PROCESS stop lines. This artifact does not interpret law, does not assess the sufficiency of any instrument, and does not substitute for counsel. It records that a question must be ANSWERED, never how.",
+    "stop_lines": [
+      {"id": "LSL-01", "stop_line": "RELEASE_CANDIDATE may not be declared while the counsel checkpoint is unopened or its questions unanswered, or while the pending governance decisions are unadjudicated.", "gate": "LC0-RC", "reason": "The regulatory baseline gates the release-candidate stage on the questions being answered, whatever the answers are."},
+      {"id": "LSL-02", "stop_line": "No real user may be admitted at PILOT_READY without either versioned acceptance capture or an instrument the participants actually sign.", "gate": "LC0-PILOT", "reason": "There is currently ZERO substrate for acceptance: no column and no table. Which of the two routes is acceptable is an owner and counsel decision, and this artifact does not choose."},
+      {"id": "LSL-03", "stop_line": "Published legal instruments carrying a placeholder effective date or a draft-pending-review marker may not be presented to any real user.", "gate": "L1", "reason": "The published privacy page currently carries a literal pending placeholder and the retention policy is a draft offering multiple options rather than one decision."},
+      {"id": "LSL-04", "stop_line": "The real model provider may not be enabled while its legal and data-handling terms are unresolved.", "gate": "PV4", "reason": "The regulatory baseline records that stage as BLOCKED by an organizational governance decision. The gate is organizational; this artifact asserts no code-level provider gate exists, because none was found."},
+      {"id": "LSL-05", "stop_line": "The published subprocessor set must match the third parties the system actually depends on before any real user is admitted.", "gate": "L4", "reason": "The published instrument currently names a strict subset of the actual third parties, and there is no subprocessor register."},
+      {"id": "LSL-06", "stop_line": "The regulatory baseline's own derivation predates AS_OF_HEAD, so it must be re-derived before it is cited as current.", "gate": "L3", "reason": "A stale compliance baseline cited as current is the legal analogue of frozen arithmetic about staging."},
+      {"id": "LSL-07", "stop_line": "The public-launch legal gate must NOT be cited to delay a go-live that is not a public launch.", "gate": "LC0-PL", "reason": "The baseline gates the stages it names and no others, and explicitly forbids being cited to delay a stage it does not name. A stop line used beyond its scope is itself a governance defect."}
+    ]
+  },
+
+  "PRODUCTION_MIGRATION_AUTHORITY_PREREQUISITE": {
+    "gate": "PROD-MIG-AUTH",
+    "statement": "No hosted data-definition change, against staging OR production, may be attempted without a governed, owner-ratified migration authority that exists BEFORE the attempt.",
+    "required_contents": [
+      "the exact target identifier",
+      "the exact enumerated migration corpus, digest-bound, derived from a named SHA",
+      "the ordered path, including the schema-then-ACL-then-code ordering",
+      "the recovery posture, naming restore as the database recovery path",
+      "the successor ACL package",
+      "the resolution of the applier's expected-branch pin",
+      "the batch boundary, since the resumable applier has no stop-after control and a batch break is an interruption between units"
+    ],
+    "two_instances": {
+      "staging": {
+        "status": "DOES NOT EXIST",
+        "additional_constraint": "The provisioning applier refuses a non-virgin target, and staging is not virgin, so the only resumable route is the operator applier. That applier pins a single expected branch name measured from the LOCAL branch, so the authority must resolve the pin WITHOUT pushing the branch: pushing it would deploy new code against the old database, the exact inverse of the required order."
+      },
+      "production": {
+        "status": "DOES NOT EXIST",
+        "additional_constraint": "The hosted tooling vetoes production targets by design through a known-production-identifier refusal. That veto is a safety feature. A production authority must therefore also define a governed way to address a production target at all, and SSL-09 forbids satisfying this by disabling the veto.",
+        "compounding_unknown": "The production schema state is STALE and ENVIRONMENT_UNKNOWN, and the default branch is many hundreds of commits behind AS_OF_HEAD with zero integration pull requests. The production corpus gap is therefore not yet even enumerable without a fresh production observation."
+      }
+    },
+    "explicit_non_authorization": "This artifact is the PREREQUISITE DEFINITION. It is NOT a migration authority, it authorizes no apply against any target, and it allocates no ordinal."
+  },
+
+  "PRODUCTION_PATH": {
+    "ordered_path": [
+      {"step": 1, "action": "Close the machine-gate infrastructure at DEVELOPMENT_COMPLETE: exact-SHA binding, collected-and-executed reconciliation, the forced real-PostgreSQL matrix, lint and build in the composed gate set, dependency audit and schema drift.", "gates": ["M1", "M3", "M4", "M5", "M6", "M14", "M15"], "parallelizable": true},
+      {"step": 2, "action": "Produce the backup and restore capability, since it is the precondition of every hosted step that follows and nothing else can proceed past it.", "gates": ["D1"], "parallelizable": true, "critical_path": true},
+      {"step": 3, "action": "Open the staging migration authority, resolving the applier branch pin and naming the exact corpus and the successor ACL.", "gates": ["PROD-MIG-AUTH"], "critical_path": true},
+      {"step": 4, "action": "Take the fresh read-only observation and the verified backup immediately before any change.", "gates": ["G12", "S8"], "critical_path": true},
+      {"step": 5, "action": "Apply schema, then the successor ACL, then deploy the code built from the certified SHA.", "gates": ["S1", "S2", "S3", "S4"], "critical_path": true, "ordering": "forced; code-first is impossible"},
+      {"step": 6, "action": "Corroborate: fresh post-apply observation, runtime identity, environment names, flags dark, zero provider calls, and the deployment smoke.", "gates": ["S5", "S6", "S7", "S9", "S10", "M11", "M12"], "declares": "STAGING_ALIGNED"},
+      {"step": 7, "action": "Stand up the Playwright runner and the three journeys, and configure every provider except the real model provider.", "gates": ["M9", "J1", "J2", "J3", "J4", "PV1", "PV2", "PV3", "PV5", "PV6", "G13"], "declares": "FEATURE_COMPLETE_STAGING"},
+      {"step": 8, "action": "Run the legal and security tracks, which can start IMMEDIATELY and in parallel with everything above, and which become blocking here.", "gates": ["L1", "L2", "L3", "L4", "G7", "LC0-RC", "SEC1", "SEC2", "SEC3", "SEC4", "SEC5", "SEC6", "SEC7", "SEC8", "SEC9"], "parallelizable": true, "R2_CORRECTION": {"audit_finding": "AT-N-04", "added": ["SEC5", "SEC7"], "why": "R1 omitted them from the narrative security track although both are canonical SEC gates. The omission was narrative only: the NORMATIVE placement is the ledger field first_required_at_stage, which already required both at FEATURE_COMPLETE_STAGING, and that placement is UNCHANGED by this correction."}, "normative_source": "This step is a NARRATIVE ordering aid. The binding per-stage requirement is the ledger first_required_at_stage field, never this list. Where the two appear to disagree, the ledger governs.", "note": "Starting these late is the most common way a release slips, because they have the longest external dependency and the least ability to be compressed."},
+      {"step": 9, "action": "Resolve provider governance, then run the real-provider evaluation, then nominate and tag the candidate.", "gates": ["PV4", "G1", "G5", "G8", "C1-C18"], "declares": "RELEASE_CANDIDATE"},
+      {"step": 10, "action": "Close the pilot preconditions and sign pilot entry.", "gates": ["PB-01", "LC0-PILOT", "G4", "G10A"], "declares": "PILOT_READY"},
+      {"step": 11, "action": "Run the pilot, then calibrate real cost, then prove production recovery, observability, environment, lineage and signoff, then sign production readiness.", "gates": ["G9", "D2", "D3", "D4", "D5", "P1", "P2", "P3", "P5", "P6", "P7", "P8", "LC0-PP", "G10B"], "declares": "PRODUCTION_READY"},
+      {"step": 12, "action": "Execute the cutover under one evidenced record.", "gates": ["GL1", "LC0-PL"], "declares": "GO_LIVE", "note": "The public-launch gate applies only to a public launch."}
+    ],
+    "critical_path": "backup and restore capability, then the staging migration authority, then fresh observation and backup, then schema, ACL and code, then corroboration, then journeys and providers, then the real provider, then the pilot, then production recovery and signoff, then cutover.",
+    "longest_pole_warning": "The legal track and the backup capability are the two items with no technical dependency on anything above them and the longest lead time. Both can start today. Neither has."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Enumerated so that a successor cannot read this artifact as conferring any of them. The presence of a detailed plan for an action is NOT authority to take it.",
+    "non_authorizations": [
+      "NO hosted access of any kind was performed or is authorized by this artifact.",
+      "NO deployment to any environment is authorized.",
+      "NO database mutation, data-definition change, data change or grant change is authorized against any target.",
+      "NO migration is applied, and NO next migration ordinal is declared, reserved or implied.",
+      "NO secret value is chosen, recorded, rotated or compared. Every environment gate in this model is satisfied by NAMES only.",
+      "NO Playwright test or any other test is written by this lane, which executed zero tests.",
+      "NO shared registry edited by parallel writers is touched: specifically no maintenance-addendum ordinal is taken, no program-state registry entry is added, and no package script is registered.",
+      "NO protected surface is touched: the frozen authority corpus, the sealed baseline documents, the migration corpus, the prepared corpus and the baseline corpus are all untouched, and this pair is deliberately NOT added to the protected corpus because that would require mutating the frozen authority artifact.",
+      "NO readiness figure in this pair is an execution input or a stage criterion.",
+      "NO legal sufficiency is assessed and NO law is interpreted.",
+      "NO existing gate is weakened, narrowed or made conditional. One gate is RETIRED as unsatisfiable, with the reason recorded, which is a different act.",
+      "NO historical evidence is rewritten, and no stale observation is refreshed by computation.",
+      "NO authority outside this lane's scope is expanded: owner ratification of HPO-G is consumed as given and is not extended by inference."
+    ]
+  },
+
+  "UNKNOWN": {
+    "rule": "UNKNOWN is a first-class state. It is never silently promoted to a pass, and it is never treated as a fail that can be argued away. Each item names what would resolve it.",
+    "items": [
+      {"id": "AT-U-01", "unknown": "The live state of the staging journal, policy posture, flag values and backing-store reachability.", "resolved_by": "a fresh staging observation packet", "note": "The last known figure is quarantined under RULE_OBSERVATION_FRESHNESS."},
+      {"id": "AT-U-02", "unknown": "The production schema state, which has been ENVIRONMENT_UNKNOWN since a manual intervention.", "resolved_by": "a fresh production observation packet"},
+      {"id": "AT-U-03", "unknown": "Whether branch protection is active on the default branch.", "resolved_by": "a hosted repository-settings observation", "consequence": "Until resolved, a green CI run is not proof that any merge was gated."},
+      {"id": "AT-U-04", "unknown": "Whether the auth health endpoint should answer 200 or 503 for an anonymous caller.", "resolved_by": "owner adjudication under P6", "consequence": "The smoke gate cannot be automated first without freezing an arbitrary contract."},
+      {"id": "AT-U-05", "unknown": "The hosting plan's retention and point-in-time recovery posture.", "resolved_by": "an operator observation of the hosting plan", "note": "A property of the plan, not of the repository, so UNKNOWN here by construction."},
+      {"id": "AT-U-06", "unknown": "Whether the offline release-candidate criteria still hold at AS_OF_HEAD.", "resolved_by": "re-executing them at AS_OF_HEAD", "note": "This lane ran no tests. An older recorded pass is not a current pass."},
+      {"id": "AT-U-07", "unknown": "Whether the two grounding packages are applied to staging; the documents and the executed chain disagree.", "resolved_by": "a fresh observation recording provenance, never by choosing the more convenient document"},
+      {"id": "AT-U-08", "unknown": "Whether the regulatory baseline's findings still hold at AS_OF_HEAD, given its derivation predates it.", "resolved_by": "re-deriving the baseline at AS_OF_HEAD"}
+    ]
+  },
+
+  "R2_REMEDIATION": {
+    "trigger": "Independent audit AY against PR 142 at HEAD 37c9b54c returned BLOCKING=1, AUDIT_UNKNOWN=0.",
+    "scope_rule": "R2 corrects exactly the five measured defects and nothing else. No stage was added or removed, no gate was added or removed, no first_required_at_stage was changed, and no gate criterion was weakened.",
+    "corrections": [
+      {"id": "AT-B-01", "severity": "BLOCKING", "defect": "S10 read PASS on the strength of a runtime network guard the repository does not contain; the only such control is the vitest harness.", "fix": "S10.current_state PASS to UNKNOWN; criterion rewritten as three conjunctive FRESH observations; the network-guard requirement removed from both the gate and the PROVIDER_DARK_PROOF packet; S10 enforcement MACHINE to HUMAN_AND_MACHINE as a consequence, with the derived stage sets updated."},
+      {"id": "AT-N-01", "severity": "NONBLOCKING", "defect": "Ledger final_state said 62_CANONICAL_GATES while the measured count is 78.", "fix": "final_state corrected to 78_CANONICAL_GATES. R1 had already corrected self_check.gate_count to 78 but left the final_state string stale, so the two disagreed."},
+      {"id": "AT-N-02", "severity": "NONBLOCKING", "defect": "R1 claimed FOUR committed test manifests declare an out-of-enum exit gate.", "fix": "Corrected to the measured truth: the literal appears in four files, but it is DECLARED as an exit_gates array member in exactly two, of which one is a test manifest and one is an authority manifest-contract; the other two reference it only in prose."},
+      {"id": "AT-N-03", "severity": "NONBLOCKING", "defect": "STATE_VOCABULARY was open: NO was used by four staging gates and BLOCKED by one provider gate, neither declared.", "fix": "Vocabulary CLOSED at eleven states. NOT_SATISFIED introduced for measured-and-unmet and applied to S1, S3, S4 and S8, each with its measurement basis recorded. BLOCKED explicitly declared and justified on PV4. A NON_COLLAPSE_RULE forbids merging UNKNOWN with NOT_SATISFIED in either direction."},
+      {"id": "AT-N-04", "severity": "NONBLOCKING", "defect": "PRODUCTION_PATH step 8 security track omitted SEC5 and SEC7.", "fix": "Both added, with an explicit note that the step list is a narrative aid and the ledger first_required_at_stage field remains the normative source of truth."}
+    ],
+    "validator_strengthened": "The pair validator now additionally enforces that every gate current_state is a member of the closed vocabulary, and that the ledger final_state gate count equals the measured gate count. Both new checks FAIL on the R1 content, which is how they were confirmed non-vacuous.",
+    "constraints_honoured": ["no staging access", "no hosted state mutated", "no migration lineage allocated", "no dependencies installed for this validation"]
+  },
+
+  "self_check": {
+    "canonical_stage_count": 7,
+    "stages_are_strictly_ordered_and_non_skippable": true,
+    "per_stage_gate_sets_are_derived_not_restated": true,
+    "every_gate_id_cited_here_exists_in_the_companion_ledger": true,
+    "every_stage_cited_in_the_companion_ledger_exists_here": true,
+    "all_five_hosted_ddl_preconditions_are_conjunctive": true,
+    "hpo_g_bindings_materialized": 8,
+    "frozen_rules": 7,
+    "evidence_packets": 10,
+    "security_stop_lines": 9,
+    "legal_stop_lines": 7,
+    "no_next_migration_ordinal_declared": true,
+    "no_secret_value_present": true,
+    "no_hosted_access_performed": true,
+    "no_migration_applied": true,
+    "no_playwright_test_written": true,
+    "no_shared_registry_edited": true,
+    "protected_surfaces_touched": 0,
+    "stale_observation_quarantined": "staging at 50 of 82, recorded as history only",
+    "state_vocabulary_is_closed": true,
+    "gate_state_values_all_declared": true,
+    "r2_corrections_applied": 5,
+    "r2_blocking_corrections_applied": 1,
+    "validation_method": "machine-checked by the lane validator across this artifact and the companion ledger"
+  },
+
+  "final_state": "STAGING_RELEASE_PRODUCTION_AUTHORITY_FROZEN_R2__7_CANONICAL_STAGES__5_CONJUNCTIVE_HOSTED_DDL_PRECONDITIONS__10_EVIDENCE_PACKETS__7_FROZEN_RULES__16_STOP_LINES__AT_B_01_PROVIDER_DARK_CORRECTED__PILOT_READY_IS_THE_SOLE_STRUCTURAL_EXTENSION_OF_THE_F18_MODEL",
+  "next_gate": "PR142_RELEASE_AUTHORITY_FOCUSED_R2_INDEPENDENT_AUDIT of this artifact and its companion ledger, read-only, with no hosted access, bounded to the five R2 corrections and to any new defect they introduce."
+}
