@@ -85,12 +85,16 @@ function GenericVerificationPending() {
           <CardTitle className="text-lg">Verificación de correo requerida</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* RAT-EV-01 AM-B-G2: impersonal by construction — no second-person
+              possessive, no assertion that the visitor holds an account.
+              Equally true and equally appropriate for someone who has never
+              visited the product before, per AM-B-G2's own test. */}
           <p className="text-sm text-muted-foreground">
-            Es necesario verificar tu correo electrónico antes de continuar.
+            La verificación del correo electrónico es necesaria antes de continuar.
           </p>
           <p className="text-sm text-muted-foreground">
-            Si has creado una cuenta hace poco, revisa tu bandeja de entrada y sigue el enlace de
-            verificación que te enviamos.
+            Si se ha creado una cuenta recientemente, conviene revisar la bandeja de entrada y
+            seguir el enlace de verificación enviado por correo.
           </p>
         </CardContent>
       </Card>

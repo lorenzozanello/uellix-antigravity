@@ -10,6 +10,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import type { ReactElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 
 const ROOT = path.resolve(process.cwd())
 const read = (p: string) => readFileSync(path.join(ROOT, p), 'utf8')
@@ -241,6 +243,30 @@ async function locationOf(run: () => Promise<unknown>): Promise<string | null> {
   }
 }
 
+/**
+ * BV independent audit (LANE IL-R3): every content assertion in this file
+ * used to read `JSON.stringify(await VerifyEmailPage(...))` — the UNRENDERED
+ * element. `VerifyEmailPage` returns `<GenericVerificationPending />` or
+ * `<SubjectAwareVerificationPending email={...} />`: a shallow element whose
+ * `type` is a FUNCTION REFERENCE. `JSON.stringify` drops function-valued
+ * properties silently, so the entire subtree those components would produce
+ * — every string of copy, every form, every button — was NEVER serialized.
+ * Verified empirically: `JSON.stringify(React.createElement(Outer))` where
+ * `Outer` renders `<p>secret-text-here</p>` yields
+ * `{"key":null,"props":{},"_owner":null,"_store":{}}` — no trace of the text.
+ * Every prior N-BNS and P-BNS content assertion built on that oracle was vacuous:
+ * `not.toContain(X)` passed regardless of X because there was nothing to
+ * contain X in the first place.
+ *
+ * This helper actually RENDERS the returned element to static HTML via
+ * `react-dom/server`, so assertions observe real text, attributes, forms,
+ * buttons and descendants — the same output a browser would receive.
+ */
+async function renderedMarkupOf(run: () => Promise<unknown>): Promise<string> {
+  const element = await run()
+  return renderToStaticMarkup(element as ReactElement)
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   mockRedirect.mockClear()
@@ -257,9 +283,8 @@ beforeEach(() => {
 describe('P-B-8: /verify-email is terminal for an authenticated unverified subject', () => {
   it('renders (no redirect) and shows the pending address, not the subject id', async () => {
     unverified()
-    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+    const markup = await renderedMarkupOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
     expect(mockRedirect).not.toHaveBeenCalled()
-    const markup = JSON.stringify(element)
     expect(markup).toContain(USER_ROW.email)
     expect(markup).not.toContain(USER_ID)
   })
@@ -336,14 +361,18 @@ describe('P-BNS-2 / P-BNS-3: a direct anonymous visit and an expired-session vis
     expect(location).toBeNull()
   })
 
-  it('expired/rejected session renders BYTE-IDENTICAL output to the anonymous case', async () => {
+  it('expired/rejected session renders IDENTICAL rendered HTML to the anonymous case', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null }, error: { message: 'JWT expired' } })
-    const expiredElement = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+    const expiredMarkup = await renderedMarkupOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
 
     loggedOut()
-    const anonymousElement = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
+    const anonymousMarkup = await renderedMarkupOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
 
-    expect(JSON.stringify(expiredElement)).toBe(JSON.stringify(anonymousElement))
+    // Real rendered HTML compared directly — not the props of an unrendered
+    // element. Both must be non-trivial (prove the comparison isn't
+    // vacuously equal on two empty strings) and byte-identical to each other.
+    expect(expiredMarkup.length).toBeGreaterThan(20)
+    expect(expiredMarkup).toBe(anonymousMarkup)
   })
 
   it('the generic branch never touches the selected-organization carrier', () => {
@@ -355,18 +384,19 @@ describe('P-BNS-2 / P-BNS-3: a direct anonymous visit and an expired-session vis
 describe('P-BNS-4: an authenticated unverified subject sees ONLY its own subject identity, sourced from the principal', () => {
   it('shows the principal\'s own address, ignoring a different address supplied in the query string', async () => {
     unverified()
-    const element = await VerifyEmailPage({
-      searchParams: Promise.resolve({ next: undefined, email: 'attacker-supplied@example.test' } as never),
-    })
-    const markup = JSON.stringify(element)
+    const markup = await renderedMarkupOf(() =>
+      VerifyEmailPage({
+        searchParams: Promise.resolve({ next: undefined, email: 'attacker-supplied@example.test' } as never),
+      })
+    )
     expect(markup).toContain(USER_ROW.email)
     expect(markup).not.toContain('attacker-supplied@example.test')
   })
 
   it('discloses no tenancy: no organization name appears', async () => {
     unverified()
-    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
-    expect(JSON.stringify(element)).not.toContain(ORG_ROW.name)
+    const markup = await renderedMarkupOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(markup).not.toContain(ORG_ROW.name)
   })
 })
 
@@ -416,10 +446,10 @@ describe('N-BNS-2: no identity can be injected from the request, including for d
 
   it('a sentinel supplied via searchParams never appears in the no-session render', async () => {
     loggedOut()
-    const element = await VerifyEmailPage({
-      searchParams: Promise.resolve({ email: SENTINEL, user: SENTINEL } as never),
-    })
-    expect(JSON.stringify(element)).not.toContain(SENTINEL)
+    const markup = await renderedMarkupOf(() =>
+      VerifyEmailPage({ searchParams: Promise.resolve({ email: SENTINEL, user: SENTINEL } as never) })
+    )
+    expect(markup).not.toContain(SENTINEL)
   })
 })
 
@@ -429,54 +459,59 @@ describe('N-BNS-3: no query parameter can select which representation is rendere
     async (paramPair) => {
       loggedOut()
       const [key, value] = paramPair.split('=')
-      const element = await VerifyEmailPage({
-        searchParams: Promise.resolve({ [key]: value } as never),
-      })
-      expect(JSON.stringify(element)).not.toContain(USER_ROW.email)
+      const markup = await renderedMarkupOf(() =>
+        VerifyEmailPage({ searchParams: Promise.resolve({ [key]: value } as never) })
+      )
+      expect(markup).not.toContain(USER_ROW.email)
+      // Not merely "no email" — must be the ACTUAL generic copy, proving the
+      // branch itself did not shift, not just that this one field is absent.
+      expect(markup).toContain('verificación')
     }
   )
 
   it('an authenticated unverified principal still renders the SUBJECT-AWARE state regardless of a suppressing param', async () => {
     unverified()
-    const element = await VerifyEmailPage({
-      searchParams: Promise.resolve({ generic: '1', anonymous: 'true' } as never),
-    })
-    expect(JSON.stringify(element)).toContain(USER_ROW.email)
+    const markup = await renderedMarkupOf(() =>
+      VerifyEmailPage({ searchParams: Promise.resolve({ generic: '1', anonymous: 'true' } as never) })
+    )
+    expect(markup).toContain(USER_ROW.email)
   })
 })
 
 describe('N-BNS-4: the generic state discloses no email, no account and no tenancy', () => {
   it('contains none of: an email address, the subject id, or the organisation name', async () => {
     loggedOut()
-    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
-    const markup = JSON.stringify(element)
+    const markup = await renderedMarkupOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(markup.length, 'the render produced no content at all — the oracle is vacuous').toBeGreaterThan(20)
     expect(markup).not.toContain(USER_ROW.email)
     expect(markup).not.toContain(USER_ID)
     expect(markup).not.toContain(ORG_ROW.name)
   })
 
-  it('contains no second-person possessive presupposing an account ("tu correo", "tu cuenta")', async () => {
+  it('contains no second-person possessive presupposing an account ("tu correo", "tu cuenta", "tu enlace")', async () => {
     loggedOut()
-    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
-    const markup = JSON.stringify(element)
-    expect(markup).not.toMatch(/tu correo|tu cuenta|tu enlace/i)
+    const markup = await renderedMarkupOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(markup).not.toMatch(/tu correo|tu cuenta|tu enlace|te enviamos|tu bandeja/i)
   })
 })
 
 describe('N-BNS-5: there is no resend action in any state', () => {
-  it('the generic (no-session) state has no form and no button of any kind', async () => {
+  it('the generic (no-session) state has no <form> and no <button> in the rendered HTML', async () => {
     loggedOut()
-    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
-    const markup = JSON.stringify(element)
-    expect(markup).not.toMatch(/"form"|"button"/)
+    const markup = await renderedMarkupOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    expect(markup.length).toBeGreaterThan(20)
+    expect(markup).not.toMatch(/<form[\s>]/i)
+    expect(markup).not.toMatch(/<button[\s>]/i)
   })
 
   it('the subject-aware (authenticated unverified) state has exactly the sign-out form, nothing that re-sends mail', async () => {
     unverified()
-    const element = await VerifyEmailPage({ searchParams: Promise.resolve({}) })
-    const markup = JSON.stringify(element)
-    // The only form present posts to /auth/signout — never to a resend
-    // endpoint, and no fetch/action string mentioning resend exists anywhere.
+    const markup = await renderedMarkupOf(() => VerifyEmailPage({ searchParams: Promise.resolve({}) }))
+    // Exactly one form, posting to /auth/signout — never to a resend
+    // endpoint, and no fetch/action string mentioning resend anywhere.
+    const formMatches = markup.match(/<form[\s>]/gi) ?? []
+    expect(formMatches).toHaveLength(1)
+    expect(markup).toContain('action="/auth/signout"')
     expect(markup).not.toMatch(/resend|reenviar/i)
   })
 
