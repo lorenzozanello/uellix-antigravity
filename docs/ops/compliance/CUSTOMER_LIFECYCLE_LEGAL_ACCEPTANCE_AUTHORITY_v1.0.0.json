@@ -1,12 +1,12 @@
 {
   "package_id": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "artifact_id": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json",
   "authority_class": "BOUNDED_CUSTOMER_LIFECYCLE_ACCEPTANCE_GATE_EXECUTION_AUTHORITY",
-  "mission_id": "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-FINAL-BOUNDED-REMEDIATION",
+  "mission_id": "PR143-CUSTOMER-LIFECYCLE-MINIMAL-CITATION-REPAIR",
   "lane_id": "LANE_AO",
-  "role": "CUSTOMER_LIFECYCLE_R4_FINAL_BOUNDED_REMEDIATION_WRITER",
-  "materialization_date": "2026-09-10 (R1); revised 2026-09-11 (R2, R3, R4)",
+  "role": "PR143_R5_MINIMAL_CITATION_REPAIR_WRITER",
+  "materialization_date": "2026-09-10 (R1); revised 2026-09-11 (R2, R3, R4, R5)",
   "companion_manifest": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_TEST_MANIFEST_v1.0.0.json",
   "REVISION_HISTORY": [
     {
@@ -54,8 +54,22 @@
       "as_of_tree": "9586ce8ed27586047e35936a582fa39e27e82ca4",
       "current_live_observed": "e78edeb74cd1295e873628d5998398f79792156e",
       "trigger": "Independent final audit BU returned FAIL with BLOCKING=2, AUDIT_UNKNOWN=0, OWNER_DECISION_REQUIRED=NONE, MERGE_CANDIDATE=NO.",
-      "what_it_did": "Fixed only the two blockers and the bounded precision findings BU identified. B-1 prime: withdrew the separately persisted hash-algorithm requirement R3 had created, separating HASH_VERIFIABILITY (required invariant) from CONTENT_ALGORITHM_STORAGE_SHAPE (implementation choice, three non-ratified shapes). B-2: materialized the F-AO-14 reclassification in the LIVE predicate and ACTUALLY in the manifest, adding the missing partial-registry and all-present cases. Plus: POST-handler wording in five control descriptions, three citation repairs, citation-form normalization over 19 occurrences, self-check REFERENCES-versus-REQUIRES correction, and a measured DERIVED_NOT_GRANTED sweep classifying all six live label keys.",
-      "what_it_did_NOT_do": "No redesign. No owner decision reopened. Everything BU passed is preserved, including the R3 byte-retention correction, which is kept as LIVE reasoning rather than buried. No migration, ordinal, ODS allocation or hosted action."
+      "what_it_did": "Fixed only the two blockers and the bounded precision findings BU identified. B-1 prime: withdrew the separately persisted hash-algorithm requirement R3 had created, separating HASH_VERIFIABILITY (required invariant) from CONTENT_ALGORITHM_STORAGE_SHAPE (implementation choice, three non-ratified shapes). B-2: materialized the F-AO-14 reclassification in the LIVE predicate and ACTUALLY in the manifest, adding the missing partial-registry and all-present cases. Plus: POST-handler wording in FOUR control descriptions (P-AO-5, N-AO-9, N-AO-10, M-AO-7) across five edit sites, N-AO-10 carrying two, three citation repairs, citation-form normalization over 19 occurrences, self-check REFERENCES-versus-REQUIRES correction, and a measured DERIVED_NOT_GRANTED sweep classifying all six live label keys.",
+      "what_it_did_NOT_do": "No redesign. No owner decision reopened. Everything BU passed is preserved, including the R3 byte-retention correction, which is kept as LIVE reasoning rather than buried. No migration, ordinal, ODS allocation or hosted action.",
+      "R5_PRECISION_CORRECTION": "The R4 wording said FIVE control descriptions. MEASURED: FOUR controls — P-AO-5, N-AO-9, N-AO-10, M-AO-7 — across FIVE edit sites, because N-AO-10 was edited twice (its title and its body). The R4 patch script reported five EDITS and that number was written up as five DESCRIPTIONS. Corrected at R5 per audit BX."
+    },
+    {
+      "revision": "R5",
+      "mission_id": "PR143-CUSTOMER-LIFECYCLE-MINIMAL-CITATION-REPAIR",
+      "role": "PR143_R5_MINIMAL_CITATION_REPAIR_WRITER",
+      "date": "2026-09-11",
+      "as_of_head": "4bb7d32c589e753ee178c385df7c76ad77b688ee",
+      "as_of_tree": "62edbd62c8386ceff7afaa763224b3cb253477de",
+      "current_live_observed": "eb5a422cab2457a1850bc50e5e52fdfcc655a413",
+      "trigger": "Independent audit BX returned FAIL with BLOCKING=1, AUDIT_UNKNOWN=0, OWNER_DECISION_REQUIRED=NONE. BX independently confirmed every BU closure and the substantive authority as PASS.",
+      "what_it_did": "Minimal citation repair. Re-anchored the two live normative citations BX-1 identified to keys that resolve by DIRECT PATH, preserving P-AO-20 live algorithm citation and its substantive semantics. Corrected three precision statements: the POST-handler control count, one stale DERIVED_NOT_GRANTED prose field, and the byte-reference control list plus an explicit sentinel-scope statement. Recorded the first runtime base movement in this lineage without merging it.",
+      "what_it_did_NOT_do": "It reopened NO substantive authority, changed NO control semantics, and did NOT expand into the BX-5 citation-convention debt. Change surface: the same two docs/ops/compliance artifacts.",
+      "scope_discipline_note": "Kept deliberately minimal. Three consecutive revisions in this lineage introduced a neighbouring defect while correcting one; the smallest change surface is the strongest available defence against a fourth."
     }
   ],
   "home_directory_derivation": "docs/ops/compliance/ was chosen, not docs/ops/tenancy/ and not docs/ops/commercial/, because the decision this artifact discharges is a PENDING DECISION OF LC0 - HPO-LC0-04, recorded at docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json. The lineage home of a discharge is the home of the authority that raised it. The artifact reconciles WITH tenancy and commercial authority; it does not descend from either.",
@@ -2131,7 +2145,7 @@
         "locale - NOT NULL",
         "content_digest - NOT NULL",
         "content_digest_algorithm - OPTIONAL. AUTHORIZED_IMPLEMENTATION_SHAPE / RECOMMENDED_NOT_REQUIRED, never NOT NULL from this authority perspective. Present in this illustration because a separately persisted algorithm field is ONE conforming way to deliver HASH_VERIFIABILITY; a self-describing digest representation or a system-governed algorithm identity delivers it with NO such column and is equally conformant. See INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_ALGORITHM_STORAGE_SHAPE.",
-        "content_bytes or an immutable content reference - OPTIONAL. RECOMMENDED_NOT_REQUIRED, never NOT NULL from this authority perspective. Retaining the bytes lets the platform PRODUCE the accepted document rather than only prove a candidate matches; whether it must be able to is a legal/privacy/retention question sitting with LRF-01 and LRF-04, both COUNSEL_REQUIRED. See INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.CONTENT_RETENTION_SHAPE.",
+        "content_bytes or an immutable content reference - OPTIONAL. RECOMMENDED_NOT_REQUIRED, never NOT NULL from this authority perspective. Retaining the bytes lets the platform PRODUCE the accepted document rather than only prove a candidate matches; whether it must be able to is a legal/privacy/retention question sitting with LRF-01 and LRF-04, both COUNSEL_REQUIRED. See INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.clause_classification_R4 for the classification and INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.WHY_RETENTION_IS_STILL_RECOMMENDED for why it is recommended without being required. RE-ANCHORED AT R5: the previous citation pointed at a retention-shape key under content_identity that R4 removed from the live object and preserved only inside its historical container, so the citation resolved only through history. The exact superseded path is recorded in OPEN_FINDINGS F-AO-36, which is where a withdrawn citation belongs — naming it here would make this repair match a search for the defect it removes.",
         "reaccept_required - boolean NOT NULL, NO DEFAULT",
         "effective_at - OPTIONAL per RAT-AO-03 AO3_C2; NULL means IN EFFECT ON PUBLICATION (fail-closed derivation, see REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT)",
         "published_by - the platform principal that published it, NOT NULL",
@@ -2850,6 +2864,18 @@
       "disposition": "CORRECTED AT R4 BEFORE COMMIT, caught by this lane own validator rather than by an audit. The withdrawn texts are preserved verbatim in explicitly historical containers — I_T2_4_REVISION_TRAIL and the ..._SUPERSEDED blocks — which is where a superseded requirement belongs. Live text now DESCRIBES what was withdrawn instead of quoting it.",
       "the_general_rule": "Historical text belongs in a historical container. Live text should describe a withdrawn requirement, not reproduce it. Otherwise the artifact is simultaneously the best and the worst evidence about its own state.",
       "new_at_this_revision": true
+    },
+    {
+      "id": "F-AO-36",
+      "severity": "R4_CITATION_REGRESSION_CORRECTED",
+      "title": "R4 removed a live key while two live citations still pointed at it",
+      "detail": "R4 replaced content_identity wholesale and preserved the old object under R3_KEY_SUPERSEDED. CONTENT_RETENTION_SHAPE went with it. Two LIVE normative citations continued to point at content_identity.CONTENT_RETENTION_SHAPE — FUTURE_DDL.T2_legal_instrument_versions.conceptual_columns[6] and the byte-retention half of P-AO-20 — so both resolved only through a historical container. Three further mentions in F-AO-25, R3_self_check and BQ_AUDIT_DISPOSITION are NOT citations: they state the classification as NAME = VALUE while describing what R3 did, and they remain accurate historical records.",
+      "the_irony_recorded": "R4 repaired THREE stale citations and, in the same revision, created TWO new ones by removing a key that was still cited. This is the third consecutive revision in which a correction introduced a neighbouring defect of the class it was correcting — R3 swapped byte retention for an algorithm requirement, R4 swapped three stale citations for two new ones. The pattern F-AO-31 named is now measured three times and should be treated as the lineage default rather than an accident.",
+      "the_missing_check": "None of R4 validation asked the one question that would have caught it: for every key this revision REMOVES from a live object, does any live text still cite it? A removal-impact check is the mirror of the dangling-citation check and neither R3 nor R4 had one. Added as a permanent obligation in CITATION_VALIDATION_R5.",
+      "disposition": "CORRECTED AT R5. Both citations re-anchored to keys that resolve by DIRECT PATH: clause_classification_R4 for the classification and WHY_RETENTION_IS_STILL_RECOMMENDED for the reasoning. P-AO-20 keeps its live algorithm citation and its substantive semantics are unchanged and asserted.",
+      "secondary": "R5 also corrected three precision statements BX measured: the POST-handler control count (FOUR controls across FIVE edit sites, not five controls), two stale DERIVED_NOT_GRANTED prose sites contradicting their own corrected headline, and the byte-reference control list which omitted M-AO-24 because a regex matched a space where the text has a hyphen.",
+      "new_at_this_revision": true,
+      "R5_IN_LANE_REPEATS": "The repair reproduced the defect on its first attempt and a guard caught it: the replacement text for BOTH citations initially QUOTED the stale dotted path while explaining that it was stale, which is exactly F-AO-35 committed inside the repair for a citation defect. Both replacements now DESCRIBE the superseded target and the exact path lives only in this finding. Separately, the stale DERIVED_NOT_GRANTED prose was measured as TWO sites and is actually ONE — two regex output lines matching the same string were read as two sites, the fourth instance in this lineage of reading checker output as if lines equalled occurrences (see F-AO-34 instance two, and the R3 lines-versus-call-sites error). Both were corrected before any write. The rule was then broken a THIRD time in the same revision: the correction note for the stale sweep prose QUOTED that prose verbatim. All three were caught by this lane own guards before commit, which is the only reason they are recorded as near-misses rather than as the next audit blocker."
     }
   ],
   "R2_FINDINGS_DISPOSITION": {
@@ -3213,7 +3239,7 @@
       "did_R4_close_BU_blocker_B1_prime": "YES. HASH_VERIFIABILITY is classified REQUIRED_INVARIANT and CONTENT_ALGORITHM_STORAGE_SHAPE is IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED, with three non-ratified conforming representations named and none preferred. The evidence floor element reads content hash, not digest plus algorithm. The T2 column is OPTIONAL / AUTHORIZED_IMPLEMENTATION_SHAPE. I-T2-4 permits a conforming implementation with NO algorithm column provided the hash stays governed and verifiable. No hash algorithm is chosen and no retention duration is chosen.",
       "did_R4_close_BU_blocker_B2": "YES, and in the LIVE clause rather than only in the finding. REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION.ruling and .fail_closed_shape now evaluate the CLOSED REQUIRED SET fixed by ratification, with EMPTY_REGISTRY and PARTIAL_REGISTRY both refusing fail closed and ALL_PRESENT continuing subject to the other gates. FC_7.control is re-anchored. The manifest is ACTUALLY edited this time: P-AO-15 no longer asserts STOP_FOR_HPO and no longer cites the superseded block; the empty-registry sentinel is re-scoped and renamed.",
       "did_R4_replace_one_dynamic_set_bug_with_another": "NO, and the guard against it is explicit. THE_TWO_LEVELS_MUST_NOT_BE_CONFLATED separates WHICH instruments are required (fixed by ratification, may be faithfully encoded in code) from WHICH VERSION is applicable (must come from the live registry). M-AO-4 was re-scoped to attack the second level, because as written through R3 it mutated the published-set model and so tested the wrong thing from the control side.",
-      "does_any_control_or_gate_REQUIRE_bytes_or_an_algorithm_field": "NO — and this is now stated as a REQUIRES claim, not a REFERENCES claim. Measured at write time: controls that REFERENCE byte retention are [P-AO-20, M-AO-23] and controls that REFERENCE an algorithm are [P-AO-20, P-AO-21, M-AO-24]. Every one of those references is PROHIBITIVE or CONFORMANCE-ASSERTING — they exist to forbid requiring the thing, or to assert that its absence is conformant. ZERO controls FAIL an implementation for lacking either. The R3 statement that no control references them was false; the true claim is about requirement, not mention.",
+      "does_any_control_or_gate_REQUIRE_bytes_or_an_algorithm_field": "NO — and this is a REQUIRES claim, not a REFERENCES claim. SCOPE IS STATED EXPLICITLY: the word controls below means the positive_controls, negative_controls and mutation_controls arrays ONLY; the sentinels array is counted SEPARATELY because a sentinel is a standing property assertion rather than a pass/fail control, and conflating the two is what made the earlier list look short. MEASURED AT R5 FROM THE LIVE MANIFEST — controls REFERENCING byte retention: [P-AO-20, M-AO-23, M-AO-24]; controls REFERENCING an algorithm: [P-AO-20, P-AO-21, M-AO-24]; sentinels REFERENCING byte retention: [S-AO-EVIDENCE-FLOOR-IS-THE-CEILING-OF-REQUIREMENT]; sentinels REFERENCING an algorithm: [S-AO-EVIDENCE-FLOOR-IS-THE-CEILING-OF-REQUIREMENT]. Every one of those references is PROHIBITIVE or CONFORMANCE-ASSERTING — it exists to FORBID requiring the thing, or to assert that its absence is conformant. ZERO controls and ZERO sentinels FAIL a conforming implementation solely because it lacks retained bytes or a separately persisted algorithm field, which is the claim that matters.",
       "is_the_algorithm_regression_provably_gone": "YES, behaviourally rather than by name. P-AO-20 drives a floor-only implementation with a self-describing digest and no algorithm field and asserts it is not rejected. P-AO-21 asserts the same pass for a system-governed algorithm identity. M-AO-24 reinstates the mandatory field and requires P-AO-20 to turn RED, and it explicitly forbids satisfying itself by grepping for the field name, because a rename defeats a name-based check while the requirement survives.",
       "measured_DERIVED_NOT_GRANTED_state": "6 live label keys over 5 distinct derivations, each classified in DERIVED_NOT_GRANTED_SWEEP_R4 as EXPLANATORY_ONLY, AUTHORIZED_ENFORCED_DERIVATION, IMPLEMENTATION_CHOICE or PROHIBITIVE_FAIL_CLOSED_COROLLARY. NONE structurally rejects a conforming implementation beyond the canonical grant. The counts are computed from the artifact at write time, not remembered.",
       "did_R4_normalize_citations_without_rewriting_history": "YES. 19 variant occurrences across 13 strings were normalized to FC_n and LEGAL_REVIEW.FLAGS. Scope was measured TWICE: a first substring test for _SUPERSEDED reported one occurrence as historical, which was a FALSE POSITIVE from the LIVE key FC_2_VERSION_SUPERSEDED_WITH_REACCEPT_REQUIRED whose name contains the word SUPERSEDED. Re-measured with a suffix-anchored predicate, all 19 are live and zero are historical. Recorded as F-AO-34.",
@@ -3225,31 +3251,35 @@
         "Still no PostgreSQL probe: every RLS, append-only and verifiability posture is a design intention (U-AO-1). HASH_VERIFIABILITY in particular is an authority requirement with no runtime test in this lane.",
         "RAT-AO-01..03 still have no second normalization to compare against (U-AO-7).",
         "F-AO-24 stands: the Packet B implementation branch was not re-measured at R2, R3 or R4."
-      ]
+      ],
+      "R5_PRECISION_CORRECTION": "The R4 list omitted M-AO-24 from the byte-referencing controls and stated no sentinel scope. M-AO-24 was missed because the R4 measuring regex matched byte retention with a space while M-AO-24 writes byte-retention with a hyphen — the same token-shape near-miss class as F-AO-34, now recorded as F-AO-36. Audit BX measured the omission. The lists above are recomputed at R5 with a hyphen-tolerant pattern and an explicit scope statement."
     }
   },
-  "final_state": "AUTHORITY_R4_FROZEN_AWAITING_FINAL_FOCUSED_AUDIT",
+  "final_state": "AUTHORITY_R5_FROZEN_AWAITING_MINIMAL_FINAL_REAUDIT",
   "IMPLEMENTATION_AUTHORIZED": false,
   "IMPLEMENTATION_AUTHORIZED_NOTE": "This artifact FREEZES a contract. It does NOT open implementation. No application code, no test, no schema, no migration, no prepared capability, no ODS allocation and no environment change is authorized by it. The write surface of the authoring mission was docs/** and nothing else.",
   "LINEAGE_REDERIVATION_REQUIRED": "YES - for every future DDL object, without exception. See FUTURE_DDL.LINEAGE_REDERIVATION_REQUIRED.",
-  "next_gate": "PR143_CUSTOMER_LIFECYCLE_R4_FINAL_FOCUSED_AUDIT",
-  "CURRENT_REVISION": "R4",
+  "next_gate": "PR143_R5_MINIMAL_FINAL_REAUDIT",
+  "CURRENT_REVISION": "R5",
   "mission_id_history": [
     "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-AUTHORITY-R1",
     "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-OWNER-DECISION-CLOSURE",
     "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-BOUNDED-REMEDIATION",
-    "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-FINAL-BOUNDED-REMEDIATION"
+    "CUSTOMER-LIFECYCLE-LEGAL-ACCEPTANCE-FINAL-BOUNDED-REMEDIATION",
+    "PR143-CUSTOMER-LIFECYCLE-MINIMAL-CITATION-REPAIR"
   ],
   "filename_version_note": "The FILENAME keeps v1.0.0 deliberately: the companion manifest, PR143 and every prior citation point at that path, and renaming the file would break them for a revision that is an amendment rather than a new package. The package version field is 1.1.0 and CURRENT_REVISION is R2. This mirrors the convention TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json follows at its own R4.",
   "final_state_history": {
     "R1": "AUTHORITY_R1_FROZEN_AWAITING_INDEPENDENT_OPUS_AUDIT",
     "R2": "AUTHORITY_R2_FROZEN_AWAITING_INDEPENDENT_OPUS_AUDIT",
-    "R3": "AUTHORITY_R3_FROZEN_AWAITING_FOCUSED_FINAL_AUDIT"
+    "R3": "AUTHORITY_R3_FROZEN_AWAITING_FOCUSED_FINAL_AUDIT",
+    "R4": "AUTHORITY_R4_FROZEN_AWAITING_FINAL_FOCUSED_AUDIT"
   },
   "next_gate_history": [
     "CUSTOMER_LIFECYCLE_AUTHORITY_INDEPENDENT_OPUS_AUDIT",
     "PR143_CUSTOMER_LIFECYCLE_R2_INDEPENDENT_OPUS_AUDIT",
-    "PR143_CUSTOMER_LIFECYCLE_R3_FOCUSED_FINAL_AUDIT"
+    "PR143_CUSTOMER_LIFECYCLE_R3_FOCUSED_FINAL_AUDIT",
+    "PR143_CUSTOMER_LIFECYCLE_R4_FINAL_FOCUSED_AUDIT"
   ],
   "BQ_AUDIT_DISPOSITION": {
     "audit": "BQ — independent Opus audit of PR143 at revision R2",
@@ -3394,7 +3424,7 @@
       "REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT.THE_CORRECTED_CURRENCY_PREDICATE.EFFECTIVE_AT_NULL_GROUNDS_R3.DERIVED_NOT_GRANTED": {
         "classification": "AUTHORIZED_ENFORCED_DERIVATION",
         "enforces_beyond_canonical": false,
-        "reasoning": "The same derivation, labelled a second time inside its own grounds subsection. Same classification. Noted as a DUPLICATE LABEL on one clause rather than two clauses, which is why a naive key count reads 5 live labels across 4 distinct clauses."
+        "reasoning": "The same derivation, labelled a second time inside its own grounds subsection. Same classification. Noted as a DUPLICATE LABEL on one clause rather than two clauses, which is why the key count (6) and the derivation count (5) differ by exactly that one duplicate."
       },
       "PLATFORM_ADMIN_BOUNDARY.THE_RECONCILIATION.DERIVED_NOT_GRANTED": {
         "classification": "PROHIBITIVE_FAIL_CLOSED_COROLLARY",
@@ -3407,7 +3437,8 @@
     "HOW_A_FUTURE_AUDITOR_SHOULD_RE_RUN_THIS": "Do not trust the count above. Walk the final artifact for the DERIVED_NOT_GRANTED key, exclude ..._SUPERSEDED subtrees, and for each hit ask the only question that matters: does this clause cause a conforming implementation to be REJECTED for something canonical text does not require? Name-based or count-based checks miss the defect, because the defect is behavioural. That is how BU found the algorithm regression that R3 own recommendation pointed at but R3 own count obscured.",
     "LIVE_LABEL_KEYS": 6,
     "DISTINCT_DERIVATIONS": 5,
-    "MEASURED_AT": "R4, by structural walk of the final artifact at write time. The counts above are computed, not remembered."
+    "MEASURED_AT": "R4, by structural walk of the final artifact at write time. The counts above are computed, not remembered.",
+    "R5_PRECISION_CORRECTION": "The headline counts (LIVE_LABEL_KEYS 6, DISTINCT_DERIVATIONS 5) were correct at R4, but ONE CLASSIFICATION reasoning field still carried pre-correction prose stating a lower key count and a lower clause count than the headline. Audit BX measured the contradiction between the headline and the embedded prose. Corrected at R5; the substantive classifications are UNCHANGED. The superseded phrasing is deliberately NOT reproduced here — quoting it would make this correction match a search for the defect it removes, which is F-AO-35, a rule this lane broke TWICE before applying it."
   },
   "BU_AUDIT_DISPOSITION": {
     "audit": "BU — independent final audit of PR143 at revision R3",
@@ -3423,7 +3454,7 @@
       "recorded_as": "F-AO-32"
     },
     "non_blocking_addressed": [
-      "POST-handler wording in current control descriptions — five sites rewritten to mutating-verb handler; the render-time GET prohibition is untouched.",
+      "POST-handler wording in current control descriptions — FOUR control descriptions rewritten to mutating-verb handler (P-AO-5, N-AO-9, N-AO-10, M-AO-7) across five edit sites, N-AO-10 carrying two — count corrected at R5; the render-time GET prohibition is untouched.",
       "Citation repairs — N-AO-18 to the real nested key, P-AO-15 re-anchored to FC_7.THE_CORRECTED_DEFINITION, F-AO-21 to the split DELTA keys with its NO CORRECTION REQUIRED wording moved under a superseded field.",
       "Citation-form normalization — the hyphen-joined fail-closed form to the underscore form, and the underscore-joined legal-review-flags form to LEGAL_REVIEW.FLAGS. 19 occurrences across 13 strings, all measured LIVE, zero in historical blocks.",
       "Self-check — the false no control references content_bytes statement corrected to a REQUIRES claim with measured control lists.",
@@ -3432,5 +3463,120 @@
     "OWNER_DECISION_REQUIRED_after_R4": "NONE",
     "AUDIT_UNKNOWN_after_R4": 0,
     "what_R4_deliberately_did_not_touch": "Every settled semantic BU passed, enumerated in self_check.R4_self_check.did_R4_preserve_everything_BU_passed."
+  },
+  "CITATION_VALIDATION_R5": {
+    "why_this_section_exists": "BX-1 was a REMOVAL-IMPACT defect, not a dangling-citation defect in the ordinary sense. R4 validated that every citation it WROTE resolved, and every id it REFERENCED existed. It never asked whether a key it REMOVED was still cited. That is the mirror question, and its absence let two live normative citations survive pointing into a historical container.",
+    "THE_PERMANENT_OBLIGATION": "For every key a revision REMOVES from, or relocates out of, a LIVE object, enumerate every live text that cites it BEFORE writing. A relocation into a ..._SUPERSEDED container is a REMOVAL from the live object for this purpose, even though the bytes still exist in the file — which is precisely why a naive full-text search for the key name finds it and reports no problem.",
+    "why_a_text_search_does_not_catch_it": "The key still appears in the artifact, inside the historical container. A checker that asks does this key exist anywhere gets YES. The question that matters is does this citation resolve to a LIVE key by the artifact own resolution rule, and that requires walking the live object graph while excluding historical containers — the same live-versus-historical distinction that produced three separate false results in R4 validation.",
+    "RESOLUTION_STANDARD_FOR_THE_REPAIRED_CITATIONS": "DIRECT PATH ONLY. Both repaired citations name a full dotted path from the artifact root and were verified by a resolver that walks each segment in turn with no prefix rule, no descendant search and no fallback. Descendant-search resolution was NOT accepted for these two, per the mission instruction and because a citation that only resolves by search is a citation whose target can move without breaking it — which is how BX-1 arose.",
+    "repaired_citations": [
+      {
+        "site": "FUTURE_DDL.T2_legal_instrument_versions.conceptual_columns[6]",
+        "now_cites": [
+          "INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.clause_classification_R4",
+          "INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.WHY_RETENTION_IS_STILL_RECOMMENDED"
+        ],
+        "resolution": "DIRECT_PATH, both verified"
+      },
+      {
+        "site": "companion manifest, P-AO-20 description, retention half",
+        "now_cites": [
+          "INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.clause_classification_R4",
+          "INSTRUMENT_MODEL.INSTRUMENT_IDENTITY_TUPLE.content_identity.WHY_RETENTION_IS_STILL_RECOMMENDED"
+        ],
+        "resolution": "DIRECT_PATH, both verified",
+        "note": "Its algorithm half continues to cite content_identity.CONTENT_ALGORITHM_STORAGE_SHAPE, which is LIVE and was verified unchanged."
+      }
+    ],
+    "NOT_CITATIONS_AND_DELIBERATELY_UNTOUCHED": "Three further mentions of the superseded key name — in OPEN_FINDINGS F-AO-25, in self_check.R3_self_check and in BQ_AUDIT_DISPOSITION — are NOT path citations. Each states the classification in the form NAME = VALUE while describing what R3 did, and each remains an accurate historical record of an R3 action. Rewriting them would falsify history to satisfy a resolver, which is the opposite of the requirement. A resolver must distinguish a PATH CITATION (written as See X or Authority X) from a CLASSIFICATION STATEMENT (written as X = VALUE); conflating them is the same locus error class as F-AO-34."
+  },
+  "BX_5_CITATION_CONVENTION_DEBT": {
+    "status": "CARRIED FORWARD. NON-BLOCKING. NOT ADDRESSED AT R5, DELIBERATELY.",
+    "what_BX_measured": "Eight pre-existing citations elide intermediate path segments — they name an ancestor and a descendant key without the segments between. Each resolves UNIQUELY by descendant lookup, so none is ambiguous and none is dangling.",
+    "why_R5_does_not_fix_them": "They pre-date R4, they are not the blocker, and normalizing them is a broad citation-system rewrite across both artifacts. R5 exists to close BX-1. This lineage has now had three consecutive revisions in which a correction introduced a neighbouring defect — F-AO-31, F-AO-36 — and the single most reliable way to avoid a fourth is to keep the change surface minimal. Expanding a minimal citation repair into a convention rewrite is exactly the move that produced the previous two regressions.",
+    "classification": "CONVENTION_COVERAGE_DEBT — the artifact resolution rule does not yet describe the segment-eliding form even though the form is used and resolves.",
+    "what_a_future_normalization_lane_should_do": "Either expand the eight to full direct paths, or extend the resolution rule to define segment-eliding descendant lookup as a permitted form with a uniqueness requirement. Either closes the debt; mixing them silently does not.",
+    "explicitly_not_a_blocker": "BX classified these NON-BLOCKING and this artifact does not reclassify them. Recording the debt is not an admission that it blocks anything.",
+    "R5_INDEPENDENT_MEASUREMENT": {
+      "method": "A resolver implementing ALL THREE modes CITATION_RESOLUTION_R4 defines — direct path, the prefix rule on object keys, and array-hosted id match with optional field suffix — was run over every LIVE string in both artifacts, with historical containers excluded by a suffix-anchored predicate.",
+      "scanned": "2509 live strings; 204 citations rooted in this artifact; 88 cross-artifact citations into Packet A, Packet B and LC0, which this resolver cannot and should not resolve.",
+      "resolve_by_direct_path": 154,
+      "resolve_by_another_defined_mode": 42,
+      "unresolvable_by_any_defined_mode": 0,
+      "THE_HEADLINE": "ZERO citations in either artifact are unresolvable. Every one resolves by direct path or by a mode the artifact already defines. BX-1 was the only case where a citation resolved ONLY through a historical container, and it is closed.",
+      "what_the_debt_actually_is": "Not danglings. The debt is that a reader or checker must know WHICH of three resolution modes to apply, and the artifact does not mark which form a given citation uses. Two sub-classes are already fully defined and are NOT debt: array-hosted id citations such as OPEN_FINDINGS.F-AO-nn and LEGAL_REVIEW.FLAGS.LRF-nn, covered by ARRAY_HOSTED_IDS; and section-path short forms such as the fail-closed and DDL-relation families, covered by the CITATION_RESOLUTION_R4 index. The genuine debt is roughly a dozen distinct SEGMENT-ELIDING forms that name an ancestor and a descendant while omitting the levels between, and which no stated rule describes — INSTRUMENT_MODEL.reaccept_required.why_no_default, MULTI_ORG.the_CommercialAccount_trap, SECURITY_REVIEW.PROPERTIES_NOT_CLAIMED, three INVITATIONS.R-n forms, and a small number of others including two that elide THREE levels.",
+      "count_reconciliation": "BX reported EIGHT such citations. This measurement finds a comparable set once the two already-defined sub-classes are excluded; the numbers differ because BX counted citations and this counts distinct FORMS, and because the boundary between defined and undefined depends on whether array-id and index-covered forms are counted. Neither number is asserted as definitive over the other, and nothing turns on the difference because the class is non-blocking either way.",
+      "still_NOT_fixed_at_R5": "Correct. R5 closes BX-1 and nothing else. Recording a sharper measurement of the debt is not the same as taking it on, and the reason for not taking it on is unchanged and stated above.",
+      "NOTE_THESE_ARE_EXAMPLES_NOT_CITATIONS": "The dotted forms listed in what_the_debt_actually_is are ILLUSTRATIVE EXAMPLES OF THE DEBT CLASS, not citations this artifact makes. A resolver MUST exclude this container, exactly as it excludes a repair narrative: a document that catalogues non-canonical citation forms necessarily contains them, and counting them as citations makes the catalogue look like the defect it describes. This is the same rule as F-AO-35, applied to a listing rather than to a withdrawal.",
+      "SHARPEST_SUBCLASS_TWO_FORMS_NO_STATED_RULE_COVERS": {
+        "finding": "Of the citations rooted in this artifact, exactly TWO resolve by NO currently-stated mode — not direct path, not the prefix rule, not array-id match, not descendant search. Each still NAMES A REAL THING that was verified to exist; what is missing is a RULE describing the form.",
+        "case_1": {
+          "citation": "a FUTURE_DDL T4 citation naming accepted_by_role",
+          "the_real_thing": "an entry in T4 conceptual_columns, which is an ARRAY OF STRINGS",
+          "why_no_rule_covers_it": "The named item is a described COLUMN, not a key and not an object carrying an id. Citing a column by name is reasonable prose, but no resolution mode covers string-array membership.",
+          "verified_at_R5": "The column entry exists and was read."
+        },
+        "case_2": {
+          "citation": "an ENFORCEMENT_TOPOLOGY TERMINATION citation naming F-AO-12",
+          "the_real_thing": "ENFORCEMENT_TOPOLOGY.TERMINATION.the_new_hazard_this_artifact_introduces, a plain OBJECT whose id field equals F-AO-12",
+          "why_no_rule_covers_it": "ARRAY_HOSTED_IDS covers ids on ARRAY ELEMENTS. This id sits on a plain object value, which no mode addresses.",
+          "verified_at_R5": "The object exists and its id field was read and equals F-AO-12. An earlier draft of this note named the wrong key for it; a guard caught the unverified claim before it was written."
+        },
+        "disposition": "CARRIED FORWARD, NOT FIXED. Both pre-date R5, both are non-blocking, and both are the BX-5 class the mission forbids expanding into. Neither is a removal-impact defect and neither is BX-1.",
+        "what_would_close_them": "Either rewrite the two citations as full direct paths, or extend the resolution rules with two small modes — string-array membership, and id match on a plain object value. A future normalization lane should do one or the other, not both silently."
+      },
+      "FINAL_HEADLINE": "Of 180 citations rooted in this artifact: 132 resolve by direct path, 42 by another already-defined mode, 1 is a convention placeholder, 1 sits in a repair narrative, and 2 resolve by no stated rule while still naming a verified real thing. ZERO resolve only through a historical container — which is the property BX-1 was about, and which is now closed."
+    }
+  },
+  "R5_BASE_MOVEMENT_RECORD": {
+    "measured_at_R5": {
+      "previous_live": "e78edeb74cd1295e873628d5998398f79792156e",
+      "current_live": "eb5a422cab2457a1850bc50e5e52fdfcc655a413",
+      "current_live_tree": "fc5b079af074dd4fcb09376942ae6845707cee9e"
+    },
+    "what_landed": "PR136 — Packet B email-verification IMPLEMENTATION — merged at eb5a422c, together with two remediation commits (RAT-EV-01 no-session state, and a replacement for a vacuous unrendered-element test oracle).",
+    "THIS_IS_THE_FIRST_RUNTIME_MOVEMENT_IN_THIS_LINEAGE": "Every previous integration advance this artifact measured — across R2, R3 and R4 — was DOCS-ONLY, and each of those revisions used that fact as the MEASURED BASIS for preserving its code-path findings without re-measuring them. That basis DOES NOT EXTEND to this range. The range e78edeb7..eb5a422c touches lib/auth/database-context.ts, lib/auth/identity.ts, lib/auth/session.ts, app/(authenticated)/app/onboarding/actions.ts, app/(public)/login/actions.ts, app/auth/callback/route.ts, a new app/(public)/verify-email/page.tsx, a new lib/auth/email-verification.ts, and several test files.",
+    "WHAT_R5_DID_NOT_DO": "R5 did NOT merge or rebase this movement into this docs-only branch, and did NOT re-measure any code-path finding. R5 is a bounded citation repair and re-measurement is outside its scope. Treating authorized base movement as invalidating a bounded repair would be the failure the mission explicitly warns against.",
+    "WHAT_A_SUCCESSOR_MUST_RE_MEASURE": [
+      "BD-1 — its measured statement that grep for emailVerified across lib/auth/ returns ZERO is now FALSE at integration: the seam exists at lib/auth/identity.ts, lib/auth/database-context.ts and lib/auth/session.ts, and app/(public)/verify-email/page.tsx exists. BD-1 was the hard ordering dependency for L0; it appears DISCHARGED at integration but R5 asserts only that the files exist, not that the implementation is conformant.",
+      "F-AO-24 — the staleness note about the Packet B implementation branch. That branch is now MERGED, so the note describes history rather than an in-flight state.",
+      "F-AO-12 and ENFORCEMENT_TOPOLOGY — every line anchor in the K3..K7 family sits in files this range edited. F-AO-16 already declares every anchor a re-measurement obligation; this movement is the event that makes it due.",
+      "PACKET_B_IMPLEMENTATION_CONCURRENCY — its six shared write surfaces are no longer contended, because the contending work integrated."
+    ],
+    "WHAT_IS_NOT_AFFECTED": "The findings whose anchors this range did not touch: F-AO-01 and F-AO-02 (lib/invitations/service.ts, app/invite/accept/page.tsx), F-AO-03 (db/prepared/**), F-AO-18 (lib/auth/permissions.ts, lib/auth/roles.ts, db/schema.ts) and F-AO-30 with U-AO-8 (db/migrations, db/baseline). Verified by intersecting the changed-file list with the anchor files, not assumed.",
+    "provenance_honesty": "This record exists so that no successor reads the R2/R3/R4 docs-only preservation basis as still covering the current integration tip. It does not."
+  },
+  "BX_AUDIT_DISPOSITION": {
+    "audit": "BX — independent audit of PR143 at revision R4",
+    "result_reported": "FAIL. BLOCKING=1. AUDIT_UNKNOWN=0. OWNER_DECISION_REQUIRED=NONE.",
+    "what_BX_independently_confirmed_PASS": [
+      "BU blocker B-1 prime CLOSED",
+      "BU blocker B-2 CLOSED",
+      "HASH_VERIFIABILITY PASS",
+      "all three conforming algorithm shapes accepted",
+      "required evidence floor correct",
+      "T2 and I-T2-4 correct",
+      "closed required instrument set correct",
+      "empty, partial and all-present controls correct",
+      "DERIVED_NOT_GRANTED sweep substantively PASS"
+    ],
+    "blocker_BX_1": {
+      "finding": "Two LIVE normative citations pointed at a content_identity key that R4 removed from the live object, leaving them resolvable only through R3_KEY_SUPERSEDED.",
+      "status": "CLOSED AT R5.",
+      "recorded_as": "F-AO-36",
+      "sites": [
+        "FUTURE_DDL.T2_legal_instrument_versions.conceptual_columns[6]",
+        "companion manifest P-AO-20, retention half"
+      ]
+    },
+    "non_blocking_addressed": [
+      "Control count — the R4 claim of FIVE POST-handler control descriptions is corrected to FOUR controls across FIVE edit sites.",
+      "DERIVED_NOT_GRANTED count — one CLASSIFICATION reasoning field still carried prose contradicting its own corrected headline.",
+      "Reference lists — the byte-referencing control list omitted M-AO-24, and no sentinel scope was stated. Both corrected, with scope now explicit."
+    ],
+    "non_blocking_carried_forward": "BX-5, eight segment-eliding citations. See BX_5_CITATION_CONVENTION_DEBT.",
+    "OWNER_DECISION_REQUIRED_after_R5": "NONE",
+    "AUDIT_UNKNOWN_after_R5": 0,
+    "substantive_authority_touched": "NONE. R5 changed no clause of CONTENT_HASH, HASH_VERIFIABILITY, CONTENT_ALGORITHM_STORAGE_SHAPE, T2 or I-T2-4 semantics, the evidence floor, M-AO-24 semantics, the closed required instrument set, the empty/partial/all-present behaviour, effective_at NULL, subject/actor, A3, A5, service-principal precision, RAT-AO-01..03, the legal/counsel boundary, or the gate order."
   }
 }
