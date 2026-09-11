@@ -1,12 +1,12 @@
 {
   "package_id": "EVALUATE_COMMERCIAL_V1_AUTHORITY",
   "version": "v1.0.0",
-  "revision": "R4",
+  "revision": "R5",
   "artifact_id": "docs/ops/evaluate/EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
   "authority_class": "A",
-  "lane": "AN-R4 - PR140-EVALUATE-PREDICATE-IDENTITY-FINAL-REPAIR",
-  "role": "PR140_R4_PREDICATE_IDENTITY_REPAIR_WRITER",
-  "mode": "BOUNDED_DOCS_ONLY_AUTHORITY_REPAIR",
+  "lane": "AN-R5 - PR140-R5-SUPERADMIN-SWEEP-CITATION-REPAIR",
+  "role": "PR140_R5_SUPERADMIN_SWEEP_CITATION_REPAIR_WRITER",
+  "mode": "BOUNDED_TWO_CITATION_REPAIR",
   "materialization_date": "2026-09-11",
   "ORIGINAL_BASE": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
   "ORIGINAL_BASE_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
@@ -44,6 +44,13 @@
       "trigger": "Independent audit CA against R3 head 8be07c13 returned RESULT=FAIL, OWNER_DECISION_REQUIRED=NONE, BLOCKING=1, AUDIT_UNKNOWN=0, MERGE_CANDIDATE=NO. CA independently confirmed fourteen R3 surfaces as correct and found exactly one blocking defect, CA-B-01.",
       "what_R4_does": "Closes CA-B-01 by giving archive and create their own named closed constants, extends the predicate-identity model from six concepts to seven, replaces the hand-written prohibition subset with a systematic pairwise matrix generated over all ordered pairs, makes N-22 satisfiable and GREEN at the pristine artifact, adds M-13, and addresses CA-NB-01..NB-04.",
       "what_R4_does_not_do": "It changes NO admitted role extension, makes NO new owner decision, reopens NO owner decision, and rewrites none of the fourteen surfaces CA passed except where sections 2-15 of the repair scope require it."
+    },
+    {
+      "revision": "R5",
+      "written_against": "integration/commercial-v1 at d76fa3f2, tree 6c6adedf, on the already-aligned PR140 branch. Integration had not advanced since R3, so no alignment merge was needed or performed.",
+      "trigger": "Independent focused audit CD against R4 head 70d9512c returned RESULT=BLOCK, OWNER_DECISION_REQUIRED=NONE, BLOCKING=1, AUDIT_UNKNOWN=0. CD independently confirmed every substantive R4 repair, including 7/7 extensions preserved, 42 complete ordered pairs, an independently recomputed 14 equal-extension pairs, and the full N22/M12/M13/M14 colour sequence.",
+      "what_R5_does": "Repairs exactly two citations that R4 left byte-identical from R3 while renaming the structures they pointed at, adds a removal-impact / symbol-survival resolver that catches this whole defect class, and tightens the hierarchy detector by one role-defining leaf name.",
+      "what_R5_does_not_do": "It changes NO role set, NO predicate identity, NO pair in the prohibition matrix, NO control, NO review-matrix row, NO owner rationale, and no classification. It is a citation repair plus one new checker."
     }
   ],
   "supersedes": {
@@ -2383,6 +2390,12 @@
       "risk": "A validator checks that predicate NAMES are distinct and concludes predicate identity is satisfied.",
       "impact": "Exactly how R3 passed its own validator while violating its own rule: R3 checked the seven predicate names and the collision count, never the constants. A name-only check is one field away from the defect.",
       "control": "The R4 validator checks distinct predicates AND distinct named constants AND that the pairwise matrix is complete over all ordered pairs, and it proves N-22 non-vacuous by mutating the model and requiring RED."
+    },
+    {
+      "id": "R-29",
+      "risk": "A future revision renames or removes a key and leaves live citations naming the old symbol - the CD-B-01 defect class.",
+      "impact": "A normative specification that names a non-existent path reads as coverage while inspecting nothing, and a control whose anchor has vanished cannot be checked against its authority. R4 renamed two structures and validated the new ones thoroughly while nothing asked which live strings still named the old ones.",
+      "control": "SYMBOL_SURVIVAL_RESOLVER, with UNRESOLVED=0 required before commit and both denominators required non-zero. The standing obligation is recorded in the resolver itself: a rename is not complete until its citations are swept."
     }
   ],
   "DDL_FUTURE": {
@@ -2508,13 +2521,41 @@
     {
       "id": "MC-28",
       "control": "Mutations are applied to IN-MEMORY COPIES only; the tracked artifacts are never written during mutation testing. The validator hashes both tracked files before and after the mutation sequence and requires the hashes to match, so 'reverted' is proven rather than asserted and the worktree cannot be left dirty."
+    },
+    {
+      "id": "MC-29",
+      "control": "Prestate verified against all six required exact objects before any mutation: branch, HEAD 70d9512c, tree ceef58fb, PR140 head == HEAD, integration d76fa3f2, integration tree 6c6adedf, clean tree. Nothing had moved, so no STOP."
+    },
+    {
+      "id": "MC-30",
+      "control": "Both replacement targets were MEASURED before editing, not guessed. R3's removed prohibitions key was read from git at 8be07c13 and found to be a MIXED list; the hasRole prohibition was its global entry, so citation B resolves to global_prohibitions alone and deliberately not to the pairwise matrix."
+    },
+    {
+      "id": "MC-31",
+      "control": "All fourteen vectors_checked controls were re-resolved against the current key set rather than trusting the audit's enumeration. Exactly one was stale. CD's scope was complete, and that is now measured rather than assumed."
+    },
+    {
+      "id": "MC-32",
+      "control": "The symbol-survival resolver was run BEFORE the repair and required to FAIL (UNRESOLVED=2, reproducing CD-B-01 and nothing else) and again AFTER the repair requiring UNRESOLVED=0. A checker only ever run on a repaired artifact proves nothing."
+    },
+    {
+      "id": "MC-33",
+      "control": "The resolver's own first-pass false positive - the English word 'prohibitions' in prose - was cured by making the match CITATION-SHAPED, not by narrowing the symbol list. Correct the question, never relax the answer."
+    },
+    {
+      "id": "MC-34",
+      "control": "The detector scope question from the repair brief was answered by MEASUREMENT and by category, not by broadening: *.excluded added (29 more leaves, 0 findings, same semantics as *.members), global_prohibitions and pairwise_prohibition_matrix explicitly EXCLUDED from the hierarchy detector with the reason - the former would produce four guaranteed false positives, the latter holds names that cannot admit a role."
+    },
+    {
+      "id": "MC-35",
+      "control": "R4 preservation asserted mechanically: the validator compares all seven role sets, the seven predicate/constant identities, the 42 pairs, the review-matrix rows, the owner rationale strings and every control id against the R4 commit and requires byte equality."
     }
   ],
   "VALIDATION": {
     "json_parse": "Both artifacts must parse as JSON.",
     "test_manifest_schema": "The companion manifest must validate against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, whose control objects are additionalProperties:false over exactly {id, description, test_file} and whose exit_gates is a closed enum of nine.",
     "self_check": {
-      "revision": "R4",
+      "revision": "R5",
       "cs_to_hd_map_rows": 19,
       "hd_contradictions_found": 0,
       "hd_ratifications_consumed": 16,
@@ -2575,7 +2616,7 @@
       "bounded_implementation_choices_count": 2,
       "future_design_limitations_count": 3,
       "residual_notes_count": 4,
-      "risks_count": 28,
+      "risks_count": 29,
       "zero_denominator_controls_count": 6,
       "divergence_controls_count": 7,
       "no_superadmin_bypass_controls_count": 7,
@@ -2583,7 +2624,7 @@
       "rls_invariants_count": 12,
       "stella_controls_count": 8,
       "nav_constraints_count": 3,
-      "mission_controls_count": 28,
+      "mission_controls_count": 35,
       "br_blockers_closed": 2,
       "br_nonblocking_addressed": 4,
       "ca_blockers_closed": 1,
@@ -2594,11 +2635,18 @@
       "manifest_mutation_controls": 14,
       "manifest_sentinels": 3,
       "manifest_exit_gates": 8,
-      "manifest_total_controls": 52
+      "manifest_total_controls": 52,
+      "cd_blockers_closed": 1,
+      "cd_surfaces_confirmed": 13,
+      "superadmin_vectors_checked_rows": 14,
+      "removed_symbols_examined": 9,
+      "live_citations_examined_after_repair": 15,
+      "symbol_survival_unresolved": 0
     },
     "dependency_free_rule": "Every gate in this lane was run dependency-free (node --experimental-strip-types for the ODS gates, python for JSON/schema/self-check/cross-reference/secret inspection). node_modules was NOT installed to validate documentation. No gate is reported as PASS unless it was actually run, and no PostgreSQL or hosted action was involved.",
     "self_check_non_vacuity": "Every field above is DERIVED from the artifact's own structure (len() over the actual arrays and objects), written by one script, and then RE-DERIVED independently by the validator with its own expressions before comparison. A self-check that compared stored values against themselves would be vacuous; this one caught a real error in R3 (mission_controls_count captured before the R3 controls were appended).",
-    "baseline_colour_obligation": "CA's methodological finding: a mutation control proves nothing unless the pristine baseline colour is known. The validator therefore reports N22_BASELINE_AFTER_REPAIR, then M12/M13/M14 mutated colours, then N22_FINAL after revert. Mutations are applied to IN-MEMORY COPIES; the tracked files are hashed before and after and the hashes must match, so 'reverted' is proven rather than asserted."
+    "baseline_colour_obligation": "CA's methodological finding: a mutation control proves nothing unless the pristine baseline colour is known. The validator therefore reports N22_BASELINE_AFTER_REPAIR, then M12/M13/M14 mutated colours, then N22_FINAL after revert. Mutations are applied to IN-MEMORY COPIES; the tracked files are hashed before and after and the hashes must match, so 'reverted' is proven rather than asserted.",
+    "self_check_ordering_hazard": "Counts must be recomputed AFTER every content mutation in a revision, never during. This artifact has now been bitten by the same ordering bug twice - R3's mission_controls_count and R5's risks_count were both captured before the revision's final append - and both times the validator caught it rather than a reader. The lesson is not 'be careful'; it is that a self-check written inline with content edits is written against a mid-flight structure."
   },
   "final_state": "AWAITING_INDEPENDENT_OPUS_AUDIT",
   "HD_CANONICAL_RESIDENT": "YES",
@@ -3360,7 +3408,8 @@
       {
         "vector": "hasRole(...)",
         "disposition": "PROHIBITED for every Evaluate predicate",
-        "control": "NSB-01, PREDICATE_IDENTITY_SEPARATION.prohibitions"
+        "control": "NSB-01, PREDICATE_IDENTITY_SEPARATION.global_prohibitions",
+        "R5_citation_repair": "CD-B-01 citation B. This control previously cited PREDICATE_IDENTITY_SEPARATION.prohibitions, a key R4 split in two. Measured: R3's prohibitions list mixed pairwise and global rules, and the hasRole prohibition was its global entry - now global_prohibitions[0], verbatim 'No Evaluate predicate may be written with hasRole, '>=', ROLE_HIERARCHY comparison, '+' notation, or any 'higher role' semantics.' The pairwise matrix is deliberately NOT cited here: it governs predicate aliasing, which is a different vector (index 7)."
       },
       {
         "vector": "numeric hierarchy / ROLE_HIERARCHY comparison",
@@ -3531,9 +3580,18 @@
       "v1_keyword_detector": "A first pass matched any hasRole(role, ...) or '+'-shorthand occurrence anywhere in either artifact and classified it by nearby prohibitive keywords. It reported SIX occurrences it could not clear.",
       "v1_findings_adjudicated": "All six were FALSE POSITIVES on inspection, and every one sits in a NON-NORMATIVE field: two are measurements of EXISTING repository helpers (CURRENT_LIVE_SURFACE.hasRole_semantics_measured and ROLE_MATRIX.enforcement_mechanism.measured_reason, which exist to explain why the shorthand is wrong), two are RISK descriptions (R-01, R-02), one is a negative-control description (N-10) and one is a mutation instruction (M-12). Not one of them defines an Evaluate rule.",
       "why_the_detector_was_replaced_not_relaxed": "Loosening a keyword list until a sweep goes green produces a sweep that proves nothing. The correct question is not whether the artifact MENTIONS a hierarchy expression - it must, in order to forbid one - but whether any field that DEFINES an Evaluate rule contains one.",
-      "v2_path_aware_detector": "The sweep is therefore evaluated over JSON PATHS. NORMATIVE paths are those that define a rule: every *.members array, ROLE_MATRIX.permission_matrix[].mechanism, ROLE_MATRIX.enforcement_mechanism.required, TEMPLATE_LIFECYCLE.role_bindings.*.roles, TRANSITION_MATRIX.transitions[].guards, and PREDICATE_IDENTITY_SEPARATION.six_distinct_authority_concepts[].extension. DESCRIPTIVE paths are those that measure, forbid, risk-assess or mutate. A hierarchy expression in a NORMATIVE path is a failure; in a DESCRIPTIVE path it is the artifact doing its job.",
+      "v2_path_aware_detector": "The sweep is evaluated over JSON PATHS. NORMATIVE paths are those that DEFINE a role rule, identified by leaf name: every *.members array, every *.excluded array, ROLE_MATRIX.permission_matrix[].mechanism, ROLE_MATRIX.enforcement_mechanism.required, TEMPLATE_LIFECYCLE.role_bindings.*.roles, TRANSITION_MATRIX.transitions[].guards, and PREDICATE_IDENTITY_SEPARATION.seven_distinct_authority_concepts[].extension. DESCRIPTIVE paths are those that measure, forbid, risk-assess or mutate. A hierarchy expression in a NORMATIVE path is a failure; in a DESCRIPTIVE path it is the artifact doing its job.",
       "v2_result": "ZERO hierarchy expressions in any NORMATIVE path. Every Evaluate rule is an enumerated closed set.",
-      "residual_note": "This detector inspects the ARTIFACT. The implementation-side equivalent is the companion manifest's N-22, which asserts over declaration sites and call sites in code, plus M-12 which proves N-22 is not vacuous."
+      "residual_note": "This detector inspects the ARTIFACT. The implementation-side equivalent is the companion manifest's N-22, which asserts over declaration sites and call sites in code, plus M-12 which proves N-22 is not vacuous.",
+      "R5_citation_repair": "CD-B-01 citation A. This specification previously enumerated PREDICATE_IDENTITY_SEPARATION.six_distinct_authority_concepts[].extension, a symbol R4 renamed to seven_distinct_authority_concepts. The path is corrected to the measured current name. A normative-surface specification that names a non-existent path is worse than silent: it reads as coverage while inspecting nothing.",
+      "R5_scope_tightening": "Every *.excluded array is now inspected alongside every *.members array. The exclusion lists are role-DEFINING arrays exactly as the membership lists are, and R4's detector omitted them. Measured effect of the addition: 29 further leaves inspected, ZERO hierarchy expressions found. This is the SAME semantics (role-defining leaves), not a broadening of detector scope - no new class of path is admitted, only the sibling half of a class already admitted.",
+      "R5_new_R4_keys_scope_adjudication": {
+        "question": "R4 introduced three identity structures. Are they hierarchy-detector NORMATIVE surfaces?",
+        "seven_distinct_authority_concepts": "YES, via its [].extension leaves - covered, and this is the citation R5 repaired.",
+        "global_prohibitions": "NO, and it must NOT be added. Its four entries deliberately CONTAIN the strings hasRole, ROLE_HIERARCHY and '+' in order to FORBID them. Adding it to the normative set would produce four guaranteed false positives - precisely the failure R4's path-aware redesign eliminated when it replaced the keyword detector. It is a PROHIBITIVE surface, and prohibitive surfaces must name what they prohibit.",
+        "pairwise_prohibition_matrix": "NO for the HIERARCHY detector, and yes for the IDENTITY checker. Its leaves hold constant and predicate NAMES (must_not_read, must_not_delegate_to); they cannot admit a role, so a hierarchy expression there would be a category error rather than a widening. These 42 pairs are enforced by the companion manifest's N-22 identity control and by the symbol-survival resolver, not by the hierarchy sweep.",
+        "principle": "A surface belongs in the hierarchy detector only if a hierarchy expression there could ADMIT a role. Surfaces that merely NAME or FORBID one belong to the identity checker. Conflating the two is what made the pre-R4 keyword detector useless."
+      }
     }
   },
   "GAP_TAXONOMY": {
@@ -3715,5 +3773,85 @@
   },
   "CA_BLOCKERS_CLOSED": 1,
   "CA_NONBLOCKING_ADDRESSED": 4,
-  "BOUNDED_IMPLEMENTATION_CHOICES_DISCLOSED": 2
+  "BOUNDED_IMPLEMENTATION_CHOICES_DISCLOSED": 2,
+  "R4_HEAD": "70d9512c8c58887849f5aaddc49f92895c89f7cd",
+  "R4_TREE": "ceef58fbad5f484dd32fb6d23ce69a9fba0e355a",
+  "CD_AUDIT_DISPOSITION": {
+    "audit": "Independent focused audit CD of PR140 R4 head 70d9512c8c58887849f5aaddc49f92895c89f7cd",
+    "audit_result_received": "RESULT=BLOCK, OWNER_DECISION_REQUIRED=NONE, BLOCKING=1, AUDIT_UNKNOWN=0",
+    "surfaces_CD_independently_confirmed": [
+      "7/7 role extensions preserved",
+      "7 predicates / 7 constants",
+      "42 ordered prohibition pairs complete",
+      "equal-extension pairs independently recomputed = 14",
+      "N22_BASELINE=GREEN",
+      "M12=RED",
+      "M13=RED",
+      "M14=RED",
+      "N22_FINAL=GREEN",
+      "CA-NB-01..04 closed",
+      "OWNER_AUTHORITY_GAPS=0 coherent",
+      "synthetic merge clean",
+      "manifest/schema/seal/ODS scope all PASS"
+    ],
+    "blockers": [
+      {
+        "id": "CD-B-01",
+        "finding": "R4 renamed two structures but left two live citations byte-identical from R3, so they now point at symbols that no longer exist: SUPERADMIN_PRESSURE_SWEEP.detector_method.v2_path_aware_detector still enumerated PREDICATE_IDENTITY_SEPARATION.six_distinct_authority_concepts[].extension, and SUPERADMIN_PRESSURE_SWEEP.vectors_checked[0].control still cited PREDICATE_IDENTITY_SEPARATION.prohibitions.",
+        "verdict": "CD WAS CORRECT. This is a rename-without-citation-sweep defect, and it is the third consecutive revision in which correcting one thing created a neighbouring defect of the same family - R4 renamed the symbols and validated the NEW structures thoroughly while never asking which live strings still named the OLD ones. A validator that checks what exists cannot detect a reference to what does not.",
+        "why_R4_missed_it": "R4's validator verified the seven concepts, the seven constants and the 42 pairs - all properties of the structures it had just built. Nothing in it walked the artifact's own prose looking for names that had ceased to exist. The defect was in the citations, and the check was over the referents.",
+        "closed_by": "This revision. Both citations repaired against MEASURED targets, plus a removal-impact / symbol-survival resolver that makes this defect class detectable rather than relying on attention.",
+        "measurement_before_editing": "The replacement targets were measured, not guessed. R3's removed key PREDICATE_IDENTITY_SEPARATION.prohibitions was a MIXED list of five entries: [0][1][2] were pairwise predicate-aliasing prohibitions, now generalized into pairwise_prohibition_matrix; [3][4] were global rules, now global_prohibitions. Citation B is the control for the hasRole(...) vector, and the hasRole prohibition was entry [4] - a GLOBAL rule. Its correct single target is therefore global_prohibitions, NOT the pairwise matrix, which governs predicate aliasing rather than hierarchy expressions. Citation A's rename is one-to-one: six_distinct_authority_concepts became seven_distinct_authority_concepts.",
+        "independent_scope_verification": "All FOURTEEN vectors_checked controls were re-resolved against the current key set rather than trusting CD's enumeration to be exhaustive. Exactly one - index 0 - was stale; the other thirteen resolve. CD's enumeration was complete, and that is now a measured fact rather than an assumption.",
+        "role_semantics_changed": "NONE.",
+        "status": "CLOSED"
+      }
+    ],
+    "nonblocking": []
+  },
+  "SYMBOL_SURVIVAL_RESOLVER": {
+    "purpose": "A removal-impact resolver for the defect class CD-B-01 belongs to: a revision renames or removes a key and a live citation elsewhere keeps naming the old symbol. R4's validator checked properties of the structures it had built; nothing walked the artifact's own prose for names that had ceased to exist.",
+    "method": "Enumerate every key name present in the R3 artifact (8be07c13) and absent from the current artifact and manifest. For each such removed symbol, scan every live string value with its JSON path for CITATION-SHAPED references, and classify each hit.",
+    "citation_shaped_definition": "An identifier bearing an underscore is never ordinary English, so any occurrence of it counts. A symbol that is ALSO an English word - 'prohibitions' is the live example - counts ONLY inside a dotted or bracketed path citation. This distinction is load-bearing: the first pass of this resolver flagged the prose phrase 'which prohibitions are behaviourally undetectable' inside pairwise_prohibition_matrix.rule as a stale reference. It is not one; it is the English word. The resolver was made citation-shaped rather than having its symbol list narrowed, on the same principle that replaced the keyword superadmin detector with a path-aware one: when a check produces a false positive, correct the QUESTION, never relax the answer.",
+    "classifications": {
+      "RESOLVES_CURRENT_DIRECT": "The cited symbol still exists in the current artifact.",
+      "RESOLVES_CURRENT_ELIDED_CONTAINER": "A house-style short id that legitimately omits its container path - OBJ-4, SB-03, T5, BIC-01, N-22, HD-05, RAT-EV-02 and the like - which resolves to a real current object.",
+      "HISTORICAL_ONLY": "The reference sits in a field whose subject IS a prior revision or an audit finding (correction_history, what_R3_got_wrong, R3_DEFECT_CLOSED, the BR/CA/CD dispositions, detector_method.v1_*). Naming a removed symbol there is correct and must not be 'repaired' - erasing it would rewrite the historical record.",
+      "UNRESOLVED": "Cited as current, symbol gone. A defect."
+    },
+    "non_vacuity_proof": "The resolver was run BEFORE the repair and FAILED with UNRESOLVED=2, independently reproducing CD-B-01 and nothing else, then run again AFTER the repair requiring UNRESOLVED=0. A resolver that had only ever been run on the repaired artifact would be indistinguishable from one that inspects nothing - the same baseline-colour discipline CA required for mutation controls, applied to a checker.",
+    "zero_denominator_rule": "Both denominators are reported and both must exceed zero. REMOVED_SYMBOLS_EXAMINED=0 or LIVE_CITATIONS_EXAMINED=0 is an INVALID pass, not a clean one: a resolver with nothing to examine reports success for the same reason an empty grep does.",
+    "measured_at_R5": {
+      "REMOVED_SYMBOLS_EXAMINED": 9,
+      "LIVE_STRINGS_SCANNED": 2429,
+      "LIVE_CITATIONS_EXAMINED_BEFORE_REPAIR": 3,
+      "UNRESOLVED_BEFORE_REPAIR": 2,
+      "removed_symbols": [
+        "criterion_edit_role_space_partition",
+        "cross_reference",
+        "decision_role_space_partition",
+        "prohibitions",
+        "six_distinct_authority_concepts",
+        "superadmin_closed_world_disjuncts_three_lineages",
+        "template_draft_role_space_partition",
+        "template_publish_role_space_partition",
+        "template_retire_role_space_partition"
+      ],
+      "note": "Seven of the nine removed symbols carry zero live citations and required no action. Reporting the full denominator rather than only the symbols with findings is what makes the pass meaningful.",
+      "LIVE_CITATIONS_EXAMINED_AFTER_REPAIR": 15,
+      "RESOLVES_CURRENT_DIRECT": 0,
+      "RESOLVES_CURRENT_ELIDED_CONTAINER": 0,
+      "HISTORICAL_ONLY": 15,
+      "UNRESOLVED_AFTER_REPAIR": 0,
+      "why_citations_rose_from_3_to_15": "The repair itself ADDED legitimate references to the removed symbols: each R5_citation_repair field names the symbol it repaired, and the resolver's own measured_at_R5.removed_symbols inventory lists all nine by name. The denominator growing while UNRESOLVED fell to zero is the expected shape - a repair that records what it repaired necessarily cites the old names."
+    },
+    "standing_obligation": "Any future revision of this artifact that renames or removes a key MUST run this resolver and require UNRESOLVED=0 before commit. The rule generalizes beyond this artifact: for every key a revision removes, enumerate the live strings that still name it - a rename is not complete until its citations are swept.",
+    "self_reference_discovery": {
+      "what_happened": "Running the resolver on the REPAIRED artifact surfaced ten new UNRESOLVED hits, all of them inside R5's own output: the R5_citation_repair fields that record which citation was fixed, and the resolver's own removed_symbols inventory.",
+      "adjudication": "Not defects. These are fields whose SUBJECT is the removed symbol - the same class as what_R3_got_wrong and detector_method.v1_findings_adjudicated, which the resolver already classified HISTORICAL_ONLY. The historical-path classification was incomplete, not the artifact.",
+      "why_this_matters": "A repair record that cites what it repaired is evidence. 'Repairing' it would erase the historical record, which is the opposite of the rule this lane exists to enforce. The resolver had to learn the difference between naming a dead symbol AS DEAD and citing it as live.",
+      "scoping_discipline": "The fix names the three exact paths (*_citation_repair, measured_at_R5.removed_symbols, citation_shaped_definition) rather than excluding the whole SYMBOL_SURVIVAL_RESOLVER subtree, so a genuine stale citation introduced inside that subtree later would still surface. An exclusion wide enough to be convenient is an exclusion wide enough to hide the next defect.",
+      "sequence_of_colours": "UNRESOLVED=2 before repair (reproducing CD-B-01 and nothing else) -> UNRESOLVED=10 immediately after repair (all self-referential) -> UNRESOLVED=0 after the classification was completed. All three states are reported; reporting only the last would hide that the resolver needed correcting too."
+    }
+  }
 }
