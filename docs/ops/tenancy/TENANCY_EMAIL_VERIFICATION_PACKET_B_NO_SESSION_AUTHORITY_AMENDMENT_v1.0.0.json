@@ -1,0 +1,404 @@
+{
+  "package_id": "TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT",
+  "version": "1.0.0",
+  "artifact_id": "TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0",
+  "authority_class": "APPEND_ONLY_SECURITY_IDENTITY_AUTHORITY_AMENDMENT",
+  "mission_id": "LANE-AZ-EMAIL-VERIFICATION-PACKET-B-NO-SESSION-AUTHORITY-AMENDMENT-R1",
+  "lane_id": "AZ",
+  "materialization_date": "2026-09-10",
+  "companion_manifest": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_TEST_MANIFEST_AMENDMENT_v1.0.0.json",
+
+  "AS_OF_REF": "codex/email-verification-packet-b-amendment-r1",
+  "AS_OF_HEAD": "88d95c65b9c9a942195319f09aabaa7b127f7e30",
+  "AS_OF_TREE": "97006bebd7e496135967d05d59b01e798cdc7394",
+  "as_of_measurement_note": "Every repository fact asserted here was measured at AS_OF_TREE in the worktree C:/Users/Lorenzo/Documents/uellix-email-verification-packet-b-amendment-r1, branch codex/email-verification-packet-b-amendment-r1, working tree clean at prestate. This lane wrote no code, ran no migration, and mutated no environment.",
+
+  "AMENDS": {
+    "parent_authority": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json",
+    "parent_manifest": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_TEST_MANIFEST_v1.0.0.json",
+    "parent_status": "INTEGRATED AND FROZEN. Merged at 88d95c65 via PR #132.",
+    "amendment_mode": "APPEND_ONLY. This artifact does not edit, rewrite, reformat, re-seal or re-version the parent authority or the parent test manifest. Neither parent file is touched by this lane's diff. The parent remains the controlling record of what was decided at its own materialization; this artifact is the controlling record of the ONE narrow respect in which one of its clauses no longer controls, and of nothing else.",
+    "how_to_read_the_two_together": "Where this amendment is silent, the parent controls verbatim. Where this amendment names a parent clause under SUPERSEDED_CLAUSE, the parent clause is superseded ONLY in the respect this amendment states, and every other sentence of that same clause continues to control. A reader who has only the parent is reading a rule that was true when written and is now incomplete; a reader who has only this amendment is reading a delta and not a contract. Both are required."
+  },
+
+  "SOURCE_CONTRADICTION": {
+    "found_by": "Independent audit lane IM of PR136, which is the implementation lane for this packet. The gap was ESCALATED rather than patched unilaterally in the implementation lane, which is the correct disposition under the fail-closed rule: an implementer who resolves an authority contradiction by choosing one side has silently written authority.",
+    "the_two_clauses_in_tension": {
+      "first": {
+        "clause": "ROUTING_CONTRACT_PACKET_B.B4_ROUTING_AT_THE_SESSION_PRODUCING_SITES, site two - app/(public)/login/actions.ts:89-108, signup",
+        "verbatim_parent_text": "Redirect to /verify-email. This site must ALSO handle a null data.session, which is what signUp returns once Gate A is on, otherwise the subject is bounced to /login by the proxy with no explanation. This is the one place where session PRESENCE is legitimately inspected, and it is inspected for ROUTING, never as a predicate input.",
+        "and_its_implementation_entry": "EXACT_FUTURE_IMPLEMENTATION_SURFACE.IMPLEMENTATION_REQUIRED entry I-6, which states: 'Route an unverified subject to /verify-email, and handle the null data.session that Gate A produces on signup (F-IA-8).'",
+        "and_the_harm_it_names": "OPEN_FINDINGS entry F-IA-8: 'app/(public)/login/actions.ts:91 checks only error or a missing data.user and never inspects data.session. Turning Gate A on therefore sends a sessionless subject to /app/onboarding, where the proxy bounces them to /login with no explanation.' Severity MEDIUM. Disposition: 'Repaired by I-6 as part of B4 routing.'"
+      },
+      "second": {
+        "clause": "ROUTING_CONTRACT_PACKET_B.B2_MINIMUM_SAFE_DESTINATION.behaviour_at_the_destination, third bullet",
+        "verbatim_parent_text": "UNAUTHENTICATED: redirect to /login. Terminates, because /login is public and the proxy :91 rule only fires when a user EXISTS."
+      }
+    },
+    "the_composition": "Compose the two under a CORRECTLY enabled provider email confirmation - the state DUAL_DEPLOYMENT_PROHIBITION.P2 requires before B0 may ship at all. signUp then returns user != null and session == null. B4 site two routes that subject to /verify-email. At /verify-email that subject presents NO SESSION, so it is UNAUTHENTICATED by the only test the destination can perform. B2 bullet three therefore fires and redirects to /login. The composed journey is: successful signup -> /verify-email -> /login.",
+    "why_this_is_a_genuine_authority_defect_and_not_an_implementation_defect": "The two clauses are each internally correct and were each derived against a real constraint. B2 bullet three was derived for the ANONYMOUS visitor, for whom /login is the right destination and the redirect terminates. B4 site two was derived for the POST-SIGNUP subject, for whom being deposited at a bare login screen IS the harm. Neither clause is wrong about its own case. What is absent from the parent is the observation that at the destination these two cases PRESENT IDENTICALLY, so one rule fires on both, and the rule that fires is the one that reproduces F-IA-8. No implementation choice avoids this: an implementer obeying both clauses literally produces the loop, and an implementer who picks a side has adjudicated an authority conflict without authority.",
+    "the_defect_is_exactly_reinstatement_of_F_IA_8": "F-IA-8 is the concrete evidence behind DUAL_DEPLOYMENT_PROHIBITION.P1 - the proof that Gate A alone is not deployable. B4 site two exists to repair it. Composed with B2 bullet three, the repair delivers the subject to the same terminal screen by a different route: /app/onboarding -> proxy -> /login becomes /verify-email -> /login. The number of hops changed. The harm did not. An amendment is therefore required for B4 and I-6 to be EXECUTABLE AT ALL.",
+    "measured_grounding": [
+      "The parent authority text quoted above was read at AS_OF_TREE from docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json and is reproduced verbatim, not paraphrased.",
+      "git ls-files matching verify-email returns ZERO rows at AS_OF_TREE. The destination route does not exist in this tree. This amendment therefore constrains a surface that has not yet been written, which is the correct time to constrain it.",
+      "This worktree is at the parent's own integration commit 88d95c65 and contains no PR136 implementation. The contradiction is derived from the AUTHORITY TEXT, not from PR136's code, and would hold against any implementation that obeyed the parent literally."
+    ]
+  },
+
+  "OWNER_RATIFICATION": {
+    "decision_id": "RAT-EV-01",
+    "status": "RATIFIED BY THE HUMAN PRODUCT OWNER. BINDING.",
+    "ratified_on": "2026-09-10",
+    "instrument": "LANE AZ mission packet, sections 2 and 3, issued by the owner to this lane.",
+    "why_a_ratification_and_not_a_lane_derivation": "The resolution is a SECURITY-IDENTITY posture choice, not a derivation from measurement. The measurement establishes only that the two clauses collide. Which side yields - and what an anonymous visitor is permitted to see at a verification-pending URL - is an anti-enumeration decision with a real trade-off on both sides, and the fail-closed rule sends that to the owner rather than to the writer. This lane records the decision and derives its consequences; it did not make it.",
+    "the_decision": "A successful signup for which the provider returns user != null and session == null MUST be able to REACH and RENDER a GENERIC verification-pending state at /verify-email, without automatically redirecting to /login. A direct anonymous visit and an expired-session visit MAY receive the SAME generic representation, because that representation contains no account-specific assertion.",
+    "what_the_owner_did_not_decide": "The owner did not authorize a resend affordance, did not authorize any subject-specific content in the no-session state, did not amend I-7, did not amend N-B-5, did not authorize any provider mutation, and did not authorize any runtime implementation. Those limits are recorded under NON_AUTHORIZATIONS and are as binding as the grant."
+  },
+
+  "SUPERSEDED_CLAUSE": {
+    "supersession_is_narrow_and_enumerated": "Exactly TWO frozen items are superseded, each in exactly one respect. Both are named by id and quoted verbatim so that the supersession cannot later be read more broadly than it was written. Nothing else in the parent authority or the parent manifest is superseded, weakened, re-scoped or re-opened by this artifact.",
+
+    "AM-B-S1": {
+      "target": "ROUTING_CONTRACT_PACKET_B.B2_MINIMUM_SAFE_DESTINATION.behaviour_at_the_destination, third bullet",
+      "OLD_verbatim": "UNAUTHENTICATED: redirect to /login. Terminates, because /login is public and the proxy :91 rule only fires when a user EXISTS.",
+      "NEW": "NO VERIFIED PRINCIPAL AND NO SESSION: RENDER the generic public-safe verification-pending representation defined in GENERIC_PAGE. Do not redirect. Terminates by rendering, which is a stronger termination than the redirect it replaces: a rendered terminal node has NO outbound edge at all, whereas the superseded bullet terminated only because the node it pointed at happened not to bounce back.",
+      "the_respect_in_which_it_is_superseded": "ONLY the destination for the no-session case. The bullet's own stated reason - that /login is public and the proxy :91 rule fires only when a user exists - remains a TRUE measured statement about /login and is not withdrawn. It is simply no longer the reason for a redirect that no longer happens.",
+      "what_is_NOT_superseded_in_B2": [
+        "frozen_destination: /verify-email, served from app/(public)/verify-email/page.tsx. UNCHANGED and reaffirmed. The generic state is served from the SAME route as the subject-aware state; this amendment creates no second URL.",
+        "derivation_not_preference, all four constraints: UNCHANGED. The destination must still be reachable by an authenticated subject, must still sit behind none of the B1 enforcement points, must still be able to read the principal without requireAuth, and must still fall outside the proxy isProtected predicate at lib/supabase/proxy.ts:80. This amendment adds a FIFTH constraint under AM-B-N1 and removes none of the four.",
+        "naming_collision_refused: UNCHANGED. /verify remains taken by app/(public)/verify/[hash]/ public evidence and report verification. The name /verify-email is unaffected.",
+        "consequence_for_the_route_boundary_test: UNCHANGED. The destination is still not under app/(group)/app/**, so tests/auth/route-authorization-boundary.test.ts:297 remains true unedited, and T-B-2 remains required and unamended.",
+        "alternative_considered_and_rejected: UNCHANGED and STRENGTHENED. Placing the destination under app/(authenticated)/app/verify-email/ was already rejected for self-redirect. Under this amendment it becomes worse still: a no-session subject could not reach the page AT ALL, so the rejection now has two independent grounds instead of one.",
+        "behaviour_at_the_destination bullets ONE and TWO: UNCHANGED. AUTHENTICATED and UNVERIFIED still RENDERS and never redirects. AUTHENTICATED and VERIFIED still redirects onward so the page is not a dead end after confirmation."
+      ],
+      "a_clarification_that_is_not_a_supersession": "B2.derivation_not_preference constraint Three reads, in part, that the destination must be able to read the principal 'to show which address is awaiting confirmation and to offer a resend'. That sentence is a DERIVATION OF A CAPABILITY - it explains why the route must not be gated - and is NOT a grant of a resend affordance. NON_AUTHORIZATIONS.no_resend is binding, and an implementer must not read constraint Three as authorizing a resend control. The capability half of constraint Three is preserved exactly: the page may read the principal, and under AUTHENTICATED_UNVERIFIED_STATE it may show that principal's own address."
+    },
+
+    "AM-B-S2": {
+      "target": "Parent test manifest TENANCY_EMAIL_VERIFICATION_PACKET_B_TEST_MANIFEST_v1.0.0.json, positive_controls entry P-B-9, SECOND ASSERTION ONLY",
+      "OLD_verbatim": "THE DESTINATION IS NOT A DEAD END AFTER CONFIRMATION. A now-VERIFIED subject at /verify-email is redirected to /app/dashboard, and an UNAUTHENTICATED visitor is redirected to /login. Both onward edges are asserted to terminate rather than to re-enter the contract.",
+      "why_this_had_to_be_found_and_named": "The superseded rule has a TEST-SIDE TWIN. P-B-9 encodes B2 bullet three as an executable assertion. Superseding the prose clause alone would leave a frozen control that goes RED the moment the ratified behaviour ships, and the implementation lane would then face a failing control with no authority to change it - whose most likely resolution is a silent weakening, which is precisely the move X-B-11 prohibits. An amendment that supersedes a clause and not its control has not finished superseding it.",
+      "NEW": "P-B-9's FIRST assertion is UNCHANGED and remains binding: a now-VERIFIED subject at /verify-email is redirected to the governed application destination, and that edge terminates. P-B-9's SECOND assertion - that an UNAUTHENTICATED visitor is redirected to /login - is SUPERSEDED. It is replaced, in the companion manifest amendment, by P-BNS-1 and P-BNS-2, which assert that a no-session visitor RENDERS the generic representation and is NOT redirected.",
+      "authority_to_change_the_control": "This clause, cited by artifact_id, is the authority under which the implementation lane may change P-B-9's second assertion. Any edit to P-B-9 that does not cite TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0 AM-B-S2 is an unauthorized weakening of a frozen control and is a STOP under X-B-11.",
+      "the_permitted_edit_is_exactly_one_assertion": "The implementation lane MUST NOT delete P-B-9, MUST NOT relax its first assertion, and MUST NOT widen the edit beyond the /login half of the second assertion. Deleting the control entirely would discard the after-confirmation dead-end proof, which nothing in this amendment touches."
+    },
+
+    "controls_that_are_AFFECTED_but_NOT_superseded": {
+      "T-B-1": {
+        "status": "NOT SUPERSEDED. RE-DERIVATION REQUIRED.",
+        "why": "T-B-1 drives an enumerated edge set that includes, in its own words, 'the three destination behaviours'. ROUTING_TERMINATION below re-derives the destination over FOUR states, not three. T-B-1's assertion - that every walk reaches a terminal node with no repeated state - is unchanged and remains binding; its ENUMERATION must be extended to the fourth state. Extending an enumeration to cover a state the authority now names is not a weakening.",
+        "the_specific_extension": "The walk 'successful signup with session == null -> /verify-email -> RENDER' must be added to the driven edge set and shown terminal, and the walk '/verify-email -> /login' must be shown ABSENT for the no-session case."
+      },
+      "M-B-8": {
+        "status": "NOT SUPERSEDED. STRENGTHENED.",
+        "why": "M-B-8 mutates the destination into app/(authenticated)/app/verify-email/. Before this amendment that mutation was fatal because the page would be gated by the gate that sends users to it. After this amendment it is fatal for a SECOND independent reason: a no-session subject could not reach the page at all, so the mutation would additionally kill P-BNS-1. A mutation control that acquires a second independent kill is stronger, not weaker."
+      },
+      "P-B-8": {
+        "status": "NOT SUPERSEDED. SCOPE CLARIFIED.",
+        "why": "P-B-8 asserts the destination is terminal for an AUTHENTICATED UNVERIFIED subject and shows the pending address without displaying the subject id or any token. That is state C. It is unaffected: this amendment does not change what an authenticated unverified subject sees. AUTHENTICATED_UNVERIFIED_STATE below only adds a tenancy restriction P-B-8 did not previously state."
+      }
+    }
+  },
+
+  "PRESERVED_PACKET_B_CLAUSES": {
+    "rule": "Every clause of the parent not named under SUPERSEDED_CLAUSE controls verbatim. The following are singled out because a careless reading of this amendment could be thought to touch them, and does not.",
+    "B0_VERIFICATION_PRECEDES_TENANCY": "PRESERVED WHOLE. The predicate, its position ahead of Packet A R1 through R5, and the rejection of the platform-operator counter-argument are untouched. This amendment changes only what the verification-pending DESTINATION does, never whether or when the refusal fires.",
+    "B1_ENFORCEMENT_TOPOLOGY": "PRESERVED WHOLE. C4, C5, C6, C7, the convergence point at lib/auth/database-context.ts:536, the one-derivation-one-propagation-N-translations shape, NULL_SEMANTICS_AT_C5 and the withdrawal of the R2 and R3 false universals are untouched. This amendment adds no enforcement point and removes none.",
+    "B3_PROHIBITED_SIDE_EFFECTS_OF_THE_REFUSAL": "PRESERVED WHOLE, and all eight prohibitions apply to the generic page unchanged. In particular: no organisation is auto-created, no organisation is auto-selected, the selected-organization carrier is not written, cleared or read for decision, memberships are not enumerated, no audit row is emitted, and the subject id, token and session are never echoed. Rendering a page instead of issuing a redirect changes none of these.",
+    "B5_TERMINATION": "PRESERVED IN RULE, EXTENDED IN PROOF. The rule - the routing graph must terminate, no destination may re-enter the contract with the same principal state - is unchanged and is the standard this amendment's own ROUTING_TERMINATION section must meet. The parent's proof enumerated three destination behaviours; ROUTING_TERMINATION re-derives it over four states and shows the fourth terminal.",
+    "B4_and_I_6": "PRESERVED IN INTENT, MADE EXECUTABLE. See B4_I6_PRESERVATION.",
+    "I_7_and_the_next_parameter": "PRESERVED WHOLE AND EXPLICITLY NOT AMENDED. See NEXT_PARAMETER.",
+    "N_B_5": "PRESERVED WHOLE AND EXPLICITLY NOT AMENDED. See N_B_5_NOT_AMENDED.",
+    "M_B_4": "PRESERVED WHOLE, BOTH VARIANTS. See NEXT_PARAMETER.the_flow_keying_prohibition_is_untouched.",
+    "SECURITY_PROHIBITIONS_X_B_01_through_X_B_12": "PRESERVED WHOLE. All twelve apply to the generic page and to the no-session branch without exception. X-B-01 and X-B-04 are load-bearing for this amendment and are re-derived under ANTI_ENUMERATION rather than merely cited.",
+    "PACKET_A_PRESERVATION_and_NO_AUTO_SELECTION": "PRESERVED WHOLE. NO_AUTO_SELECTION remains BINDING and this amendment adds no exception to it. The generic page performs no selection, offers no selector, and enumerates nothing; the verified-subject exit under VERIFIED_STATE hands off to the unmodified Packet A contract rather than short-circuiting it.",
+    "HOSTED_PROVIDER_STATE_and_RESEND_IS_NOT_SUBSTITUTED": "PRESERVED WHOLE. This amendment authorizes no provider mutation and no substitution of the provider's confirmation mail.",
+    "DUAL_DEPLOYMENT_PROHIBITION_P1_and_P2": "PRESERVED WHOLE, BOTH HALVES, NEITHER ADVISORY. See DUAL_DEPLOYMENT.",
+    "BOUNDARIES_audit_verb_is_out_of_scope": "PRESERVED. No audit verb is introduced for the generic page, for the no-session branch, or for anything else in this amendment."
+  },
+
+  "NO_SESSION_STATE": {
+    "AM-B-N1": {
+      "rule": "A successful signup for which the provider returns user != null and session == null MUST be able to REACH and RENDER the generic verification-pending representation at /verify-email. The destination MUST NOT automatically redirect that subject to /login, and MUST NOT redirect it anywhere else.",
+      "this_is_the_fifth_constraint_on_the_destination": "B2.derivation_not_preference derived the destination from four constraints. This amendment adds a fifth: the destination must be RENDERABLE WITH NO SESSION AT ALL. The frozen destination app/(public)/verify-email/page.tsx satisfies it for the same measured reason it satisfied the other four - app/(public)/layout.tsx makes no auth call of any kind, measured as zero hits for requireAuth, getCurrentUser, loadRequestPrincipal and redirect. No new route, no second URL and no relocation is required or permitted."
+    },
+    "AM-B-N2_THE_EQUIVALENCE_IS_FORCED_NOT_MERELY_PERMITTED": {
+      "owner_text": "The owner permitted that a direct anonymous visit and an expired-session visit MAY receive the SAME generic representation, on the ground that the generic page contains no account-specific assertion.",
+      "the_stronger_derivation_this_lane_adds": "The equivalence is not merely permissible. It is the ONLY implementable option that does not violate a frozen prohibition. States A, B and the expired-session case present IDENTICALLY to the server: none carries a session, so the principal resolves to null in all three. To render a DIFFERENT representation for state B, the application would have to consult something the subject's browser carried - a query parameter, a cookie the application invented, or a request header. X-B-01 prohibits reading verification state from exactly those sources, and ANTI_ENUMERATION.AM-B-A4 below prohibits trusting any query parameter to decide whether the generic state is shown. There is therefore no compliant mechanism by which the three cases could be told apart.",
+      "why_recording_this_matters": "An implementer who believes the equivalence is a stylistic concession will look for a way to improve on it - a signup=1 flag, a short-lived cookie, an email carried in the URL for a friendlier message. Each of those is a prohibited enumeration oracle and each would be introduced with good intent. Recording that the equivalence is FORCED closes that search before it starts."
+    },
+    "AM-B-N3_PROHIBITED_CONTENT_OF_THE_NO_SESSION_STATE": {
+      "rule": "The no-session verification-pending state MUST NOT do any of the following. Each is prohibited independently; satisfying some is not a defence for breaching another.",
+      "prohibitions": [
+        "MUST NOT display an email address, in any form, from any source.",
+        "MUST NOT display account identity of any kind - subject id, display name, avatar, initials, or a masked or partial address.",
+        "MUST NOT assert that a particular account exists, or that any account exists.",
+        "MUST NOT expose provider metadata - app_metadata, user_metadata, provider name, confirmation timestamps, or any GoTrue field.",
+        "MUST NOT expose organization or membership state, in text, in chrome, or in a link target.",
+        "MUST NOT allow organization selection.",
+        "MUST NOT auto-select any organization. NO_AUTO_SELECTION is preserved without exception.",
+        "MUST NOT disclose whether a specific email address is registered, by content, by status code, by response timing, by redirect target, or by any other observable difference.",
+        "MUST NOT implement resend functionality. A resend affordance requires separate authority which this amendment does not grant and does not anticipate.",
+        "MUST NOT read, write or clear the selected-organization carrier, preserving X-B-08 and B3.",
+        "MUST NOT emit an audit row, preserving B3 and BOUNDARIES.audit_verb_is_out_of_scope.",
+        "MUST NOT accept, echo or render any value supplied in a query string or request body."
+      ],
+      "why_the_list_is_this_long_when_the_page_is_this_small": "The page is reachable by anyone on the internet with no credential. Every one of these prohibitions describes a way that a page with nothing to say could be induced to say something about a specific person. The prohibition list is long because the attack surface of a public page is defined by what it can be MADE to reveal, not by what it was designed to show."
+    },
+    "AM-B-N4_WHAT_THE_NO_SESSION_STATE_COSTS": {
+      "recorded_rather_than_suppressed": "This amendment makes /verify-email render for an entirely anonymous visitor. That is a new unauthenticated render surface and it should be named as one rather than left implicit.",
+      "the_assessment": "The surface is strictly less capable than surfaces that already exist publicly at AS_OF_TREE. It accepts no input, reads no database, resolves no principal for the generic branch, holds no form, and produces byte-identical output for every no-session caller. /login, already public, accepts credentials and consults the provider. A page that cannot be given an input cannot be given a malicious one.",
+      "the_residual": "The page is a static public target like any other public route, and inherits the platform's existing public-route posture. It introduces no new rate-limiting obligation because it has no state-changing or credential-consuming action to limit. If a resend affordance is ever separately authorized, THAT grant must re-derive rate limiting and anti-enumeration from scratch, because a resend control would make the page input-accepting and account-touching for the first time. This amendment does not pre-authorize any part of that derivation."
+    }
+  },
+
+  "GENERIC_PAGE": {
+    "AM-B-G1_MINIMUM_SEMANTICS": {
+      "rule": "The generic representation must convey, in substance, exactly two things and no third: that email verification is required before continuing, and that a person who recently created an account should check their email and follow the link there.",
+      "substance_reference_not_frozen_copy": "The following is a REFERENCE for the required substance. It is NOT frozen copy and this amendment does not freeze marketing, tone, translation or layout: 'Email verification is required before continuing. If you recently created an account, check your email for the verification message and follow the link there.'",
+      "why_copy_is_deliberately_not_frozen": "Freezing exact wording would put a translation change or a tone edit into authority-amendment territory, which is disproportionate and would encourage the implementation lane to route around the artifact rather than through it. What must be frozen is the SEMANTIC BOUNDARY - what the page may and may not assert - because that is the security property. Wording is free above that boundary and forbidden below it."
+    },
+    "AM-B-G2_PROHIBITED_ASSERTIONS": {
+      "rule": "The generic representation MUST NOT state, imply, or allow to be inferred, any of the following, unless an AUTHENTICATED principal is present and that principal is the subject of the statement.",
+      "prohibited_statements": [
+        "'we sent an email to X' - names an address and confirms delivery to it.",
+        "'your account exists' - confirms registration.",
+        "'your account is unverified' - confirms registration AND discloses its state.",
+        "Any second-person possessive that presupposes an account: 'your email', 'your address', 'your verification link'.",
+        "Any statement whose truth value differs between a registered and an unregistered visitor."
+      ],
+      "the_test_an_implementer_can_apply": "Read every sentence on the page and ask: would this sentence be equally true, and equally appropriate, shown to a person who has never visited this product before? If the answer is no, the sentence belongs to the authenticated state, not to the generic one. The conditional phrasing 'if you recently created an account' passes this test precisely because it asserts nothing about the reader."
+    },
+    "AM-B-G3_ONE_ROUTE_TWO_REPRESENTATIONS": {
+      "rule": "The generic representation and the subject-aware representation are served from the SAME route, app/(public)/verify-email/page.tsx. This amendment creates no second URL, no /verify-email/generic, no /verify-email/pending and no query-parameterised variant.",
+      "why": "A second URL would itself be an enumeration oracle: which URL a subject lands on would encode whether they hold a session, and any link, redirect or bookmark carrying the distinction would leak it. One route, whose representation is chosen SOLELY by whether a principal resolves server-side, leaks nothing that the presence of the session did not already establish to its own holder.",
+      "the_branch_input_is_exhaustively_specified": "The choice between representations is made on ONE input: whether resolving the principal server-side yields a principal. Nothing else may be consulted - not a query parameter, not a cookie, not a header, not a referrer, not the request method. This is the same one-derivation discipline S-IA-PREDICATE-CARDINALITY imposes on the verification predicate, applied to the representation choice."
+    }
+  },
+
+  "AUTHENTICATED_UNVERIFIED_STATE": {
+    "AM-B-C1": {
+      "rule": "For an AUTHENTICATED subject whose email is not provider-confirmed, /verify-email MAY display that authenticated subject's OWN email address.",
+      "why_this_is_not_a_disclosure": "The information is already known to that authenticated principal. A session holder can read their own address by other means; showing it discloses nothing they could not already obtain, and withholding it produces a page that cannot tell a signed-in person which mailbox to open. The anti-enumeration property protects information ABOUT A SUBJECT FROM A THIRD PARTY, and a subject is not a third party to themselves.",
+      "the_boundary_is_the_principal_not_the_page": "What makes the disclosure permissible is the resolved principal, not the URL. The SAME page must show nothing when no principal resolves. An implementation that renders the address from any source other than the server-resolved principal has moved the boundary and breached AM-B-A2."
+    },
+    "AM-B-C2_TENANCY_REMAINS_INVISIBLE": {
+      "rule": "The subject-aware representation MUST NOT reveal tenancy information: no organization name, no organization id, no membership list, no membership count, no role label, no selector, no invitation state, and no chrome that names an organisation.",
+      "why_the_authenticated_case_does_not_relax_this": "B0's whole shape is that VERIFICATION PRECEDES TENANCY. A subject at this page has, by construction, failed the verification test, so no tenancy question has been asked about them and none may be answered. B3 already prohibits enumerating memberships on the refusal path; this clause states the rendering consequence that B3's prohibition implies but does not spell out. Displaying a membership count would be an enumeration performed for a subject who has not proven mailbox control, which is exactly what B0 was ordered ahead of R2 to prevent.",
+      "preserved_parent_prohibitions_that_still_bind_here": "X-B-07 - the subject id, the session, the access token and any confirmation token are never logged, echoed or rendered. P-B-8 already asserts the address is shown WITHOUT the subject id or any token, and that assertion is unchanged."
+    }
+  },
+
+  "VERIFIED_STATE": {
+    "AM-B-D1": {
+      "rule": "For an AUTHENTICATED subject whose email IS provider-confirmed, /verify-email MUST redirect to the normal governed application destination. The page is not a dead end after confirmation.",
+      "unchanged_from_parent": "This restates B2.behaviour_at_the_destination bullet two, which is NOT superseded, and P-B-9's first assertion, which is NOT superseded. It is restated here only so that the four-state derivation under ROUTING_TERMINATION is complete on its face.",
+      "PACKET_A_SELECTION_SEMANTICS_ARE_PRESERVED": "The exit hands the subject to the unmodified Packet A ROUTING_CONTRACT R1 through R5. NO exactly-one auto-selection may be introduced at this exit or anywhere on the path to it. NO_AUTO_SELECTION remains BINDING and this amendment adds no exception to it. A verified subject with exactly one membership is routed by Packet A exactly as they would have been had they never visited this page.",
+      "why_this_needs_saying_at_a_verification_page": "The exit is the single most tempting place in the packet to introduce a convenience auto-selection: the subject has just confirmed, they have one organisation, and sending them straight into it feels like finishing the journey. It is the same short-circuit NO_AUTO_SELECTION was written to forbid, arriving through a door Packet A never anticipated. Naming it here means an implementer meets the prohibition at the moment the temptation occurs."
+    }
+  },
+
+  "ANTI_ENUMERATION": {
+    "AM-B-A1_THE_PROPERTY": "An observer who does not hold a session must not be able to learn, from any interaction with /verify-email, whether a given email address is registered with this product, or whether any account is in any particular verification state.",
+    "AM-B-A2_NO_IDENTITY_FROM_THE_REQUEST": {
+      "rule": "No email address, subject id, account identifier or verification state may be accepted from a query parameter, a request body, a request header, a cookie the application invented, or a referrer - not for a decision, and NOT MERELY FOR DISPLAY.",
+      "display_is_not_a_lesser_use": "Accepting a value 'only to display it' is the enumeration vector in its purest form: the page becomes a mirror that renders whatever the caller asserts. It also produces a reflected-content surface on a public route. There is no display-only exemption and this amendment grants none.",
+      "preserves": "X-B-01, which prohibits reading verification state from a client-writable source, and X-B-07, which prohibits echoing the subject id or any token."
+    },
+    "AM-B-A3_NO_OBSERVABLE_DIFFERENCE": {
+      "rule": "Every no-session request to /verify-email must produce the same observable result: the same representation, the same status code, and the same redirect behaviour, which is none.",
+      "the_oracle_this_closes": "If a no-session visit differed observably by whether some supplied address existed - different copy, different status, a redirect in one case and a render in the other - the page would answer the registration question for any address an attacker cared to try. AM-B-A2 already prevents an address from being supplied at all, which makes this property easy to hold; AM-B-A3 states it as an assertable property so that a future change which reintroduces an input is caught by a control rather than by review."
+    },
+    "AM-B-A4_NO_QUERY_PARAMETER_MAY_SELECT_THE_STATE": {
+      "rule": "No query parameter may be trusted to decide whether the generic state is shown. The representation is chosen SOLELY by whether a principal resolves server-side, per AM-B-G3.",
+      "why_it_is_stated_separately_from_AM-B-A2": "AM-B-A2 forbids taking IDENTITY from the request. AM-B-A4 forbids taking the BRANCH from the request. They are different mistakes: a parameter like ?pending=1 carries no identity at all and would pass a naive reading of AM-B-A2, yet it would let a caller force the page's state and, composed with any later subject-aware content, select which state is rendered for whom.",
+      "preserves_and_extends": "X-B-04 prohibits keying any branch on the authentication mechanism, the flow, app_metadata.provider, or a next parameter. AM-B-A4 is the same prohibition applied to the representation branch at the destination, and is consistent with it rather than an exception to it."
+    },
+    "AM-B-A5_STATE_B_IS_NOT_SPECIALLY_MARKED": {
+      "rule": "The application MUST NOT mark, flag, or otherwise carry a signal that distinguishes a post-signup arrival from an anonymous arrival at /verify-email.",
+      "why": "Such a marker is the only way state B could be given distinct content, and any marker durable enough to survive the redirect from the signup action is a marker an attacker can set or observe. This is the operative consequence of NO_SESSION_STATE.AM-B-N2: the equivalence is forced, so the mechanism that would break it is prohibited rather than merely unused."
+    }
+  },
+
+  "NEXT_PARAMETER": {
+    "status": "I-7 IS NOT AMENDED. NOT IN ANY RESPECT.",
+    "the_finding_this_responds_to": "Independent audit IM found that PR136 serves a safe next return BEFORE B0 at app/auth/callback/route.ts. That is a CODE DEFECT measured against unchanged authority. It is NOT an authority ambiguity, and it is NOT resolved by this amendment.",
+    "why_it_is_not_an_ambiguity": "The parent is explicit and unambiguous on this point in three separate places, all of which agree: B4 site three states 'If unverified, redirect to /verify-email, INCLUDING when a safe next parameter is present. A next parameter is caller-supplied and must not outrank the gate.' I-7 states the same requirement with the same emphasis. X-B-04 prohibits keying any branch on a next parameter. Three concurring clauses is not an ambiguity; it is a rule that an implementation did not yet meet.",
+    "the_preserved_binding_rule_restated_for_avoidance_of_doubt": "An authenticated unverified subject MUST be routed through B0 to /verify-email EVEN WHEN a safe next parameter exists. Caller-supplied next MUST NOT outrank B0.",
+    "explicitly_not_weakened_by_this_amendment": [
+      "I-7, in full, including its constraint that the unauthenticated fallthrough to /login at app/auth/callback/route.ts:43 is preserved and that no branch may be keyed on which flow produced the code.",
+      "B4 site three, in full, including the recorded reason that it is the recovery-return, OAuth-return, magic-link and confirmation-link path all at once, which is why it gets no exception.",
+      "The flow-keying prohibition X-B-04, in full.",
+      "M-B-4 variant B, in full - the mutation that trusts any session arriving through app/auth/callback/route.ts or carrying a next parameter. Its required outcome, that variant B MUST kill N-B-5, is unchanged and remains binding.",
+      "B4.invitation_target_preservation - a safe redirect target supplied at the session-producing sites must still be CARRIED FORWARD across the refusal so the subject resumes the invitation journey after confirming, and the carried value must remain subject to the EXISTING isSafeRedirectPath validation. Carrying a target forward is not the same as honouring it early, and this amendment neither conflates nor relaxes them.",
+      "X-B-10 - no new redirect-target vocabulary and no bypass of isSafeRedirectPath."
+    ],
+    "the_boundary_between_this_amendment_and_that_defect": "This amendment concerns what happens AT the destination for a subject with NO SESSION. The next-parameter defect concerns whether a subject WITH a session reaches the destination at all. They touch different states, different code sites and different clauses. Repairing one neither repairs nor excuses the other.",
+    "disposition": "THE IMPLEMENTATION LANE MUST FIX THAT CODE SEPARATELY, against unchanged authority. No amendment is required, available, or implied for it."
+  },
+
+  "N_B_5_NOT_AMENDED": {
+    "status": "N-B-5 IS NOT AMENDED. ITS ORIGINAL SEMANTIC IS PRESERVED WHOLE.",
+    "the_preserved_semantic": "An unverified subject arriving with a safe next parameter, INCLUDING a next that names a protected path, is REFUSED and routed to /verify-email.",
+    "the_full_frozen_control_remains_binding_including_its_other_three_assertions": [
+      "A session created through the recovery return path carrying an unverified subject is refused and routed to /verify-email.",
+      "The password-change action at app/(public)/reset-password/actions.ts is NOT gated: an unverified subject may still set a password and is returned to /login, because trapping an account that cannot recover is a worse failure than a credential rotation that grants nothing.",
+      "The carried redirect target is still validated by the EXISTING isSafeRedirectPath, and no new redirect-target vocabulary was introduced, so the refusal did not open an open-redirect surface."
+    ],
+    "the_defect_this_responds_to": "Independent audit IM found that the PR136 test for N-B-5 asserts the OPPOSITE of the frozen control - it affirms the shape the control exists to catch. That is an IMPLEMENTATION AND TEST DEFECT.",
+    "THIS_AMENDMENT_MUST_NOT_NORMALIZE_THE_INVERSION": "An inverted test is the most dangerous defect class in this packet, because it is GREEN. It reports that a property holds while proving its negation, and it will keep reporting green through every future refactor that breaks the real property. An amendment that quietly redescribed N-B-5 to match the code would convert a detectable test defect into an undetectable authority defect. This amendment explicitly refuses that.",
+    "disposition": "The PR136 test must be corrected to assert the frozen semantic. The correction is an implementation-lane obligation against unchanged authority, requires no amendment, and is not granted one here.",
+    "M_B_4_variant_B_remains_the_check_on_this": "M-B-4 variant B must remain CAPABLE of turning N-B-5 RED. A test that asserts the inversion cannot be turned red by the mutation designed to kill it, so the mutation control is currently VACUOUS on that path. Restoring N-B-5's semantic restores M-B-4 variant B's non-vacuity, and the companion manifest amendment requires that restoration be PROVEN rather than assumed - see M-BNS-2."
+  },
+
+  "ROUTING_TERMINATION": {
+    "rule_inherited_from_B5": "The routing graph must terminate. No destination of this contract may re-enter this contract with the same principal state. This amendment is held to that standard, not exempted from it.",
+    "why_a_re_derivation_is_required": "The parent's termination proof enumerated THREE destination behaviours. The ratified decision makes the fourth state - a successful signup with no session - a first-class routing input rather than an accident of the anonymous case. A proof over three states does not cover four, and extending it is not optional.",
+    "the_four_states": {
+      "A": {
+        "state": "UNAUTHENTICATED, direct anonymous visit to /verify-email. No session, no principal.",
+        "destination": "RENDER the generic verification-pending representation.",
+        "terminal": "YES. A render has no outbound edge. This is a strictly stronger termination than the superseded redirect to /login, which terminated only because /login happened not to bounce back."
+      },
+      "B": {
+        "state": "SUCCESSFUL SIGNUP, provider returned user != null and session == null, routed here by B4 site two.",
+        "destination": "RENDER the generic verification-pending representation.",
+        "terminal": "YES, and identically to A - because A and B are indistinguishable to the server, as derived at AM-B-N2. The walk is: signup -> /verify-email -> RENDER. Length two, no repeated state.",
+        "the_walk_that_is_now_ABSENT": "signup -> /verify-email -> /login. This walk was constructible under the parent and is the reinstatement of F-IA-8. It is removed by AM-B-S1 and its absence is asserted by N-BNS-1."
+      },
+      "C": {
+        "state": "AUTHENTICATED and email-UNVERIFIED. Session present, principal resolves, provider field not confirmed.",
+        "destination": "RENDER the subject-aware verification-pending representation - own address permitted, tenancy prohibited.",
+        "terminal": "YES. Unchanged from B2 bullet one, which is not superseded, and asserted by the unamended P-B-8."
+      },
+      "D": {
+        "state": "AUTHENTICATED and email-VERIFIED.",
+        "destination": "Redirect to the governed application destination, entering Packet A R1 through R5 with selection semantics preserved.",
+        "terminal": "YES. Unchanged from B2 bullet two, which is not superseded. Packet A is itself proven terminal by its own R5_TERMINATION and by tests/auth/route-authorization-boundary.test.ts."
+      }
+    },
+    "exhaustiveness": "The four states partition the input space. The first discriminator is whether a principal resolves server-side, which is total: it either does or it does not. Where it does not, states A and B are the same state by AM-B-N2 and the expired-session case joins them. Where it does, the verification predicate is total: the provider field is either confirmed or it is not, giving C and D. There is no fifth state, and no input falls outside the four.",
+    "PROHIBITED_CYCLES": {
+      "no_login_verify_loop": "There MUST be no /login to /verify-email to /login cycle. Under AM-B-S1 the /verify-email to /login edge does not exist for the no-session case, so the cycle is not constructible rather than merely unlikely.",
+      "no_verify_email_self_redirect": "There MUST be no /verify-email to /verify-email edge in any state. All four states terminate in either a render or a single onward redirect out of the contract.",
+      "the_parent_cycle_candidate_still_terminates": "The parent's longest constructible walk - authenticated unverified requests /login, proxy at lib/supabase/proxy.ts:91 sends them to /app/dashboard, app/app/layout.tsx:27 through requireOrganizationAccess fires B0, destination /verify-email, RENDER - is unchanged, length three, strictly decreasing, no repeat state. This amendment shortens no walk and lengthens none."
+    },
+    "the_structural_reason_this_proof_is_easier_than_the_parent_s": "Two of the four states now terminate by RENDERING rather than by redirecting. A rendered node cannot participate in a cycle at all, because it emits no edge. The amendment therefore reduces the graph's edge count while increasing its state count, which is why the four-state proof is not harder than the three-behaviour one it extends."
+  },
+
+  "DUAL_DEPLOYMENT": {
+    "status": "PRESERVED WHOLE. BOTH HALVES. NEITHER ADVISORY.",
+    "P1_preserved": "Enabling provider email confirmation on an environment whose application code does not yet carry B0 remains PROHIBITED.",
+    "P2_preserved": "Shipping the application fail-closed gate to an environment whose provider still has enable_confirmations false remains PROHIBITED, because nothing would ever set email_confirmed_at and B0 would refuse every subject permanently, including every existing account.",
+    "what_this_amendment_changes_about_deployability": "NOTHING about the sequencing obligation, and ONE thing about its feasibility. Correct provider configuration plus application Gate B must remain JOINTLY deployable - that was already the rule. What was not true before this amendment is that the joint deployment produced a coherent journey: under the parent as frozen, the moment the provider setting was correctly enabled, every new signup composed B4 and B2 into /verify-email -> /login and landed at the same bare login screen F-IA-8 describes. The amendment removes the APPLICATION-LEVEL CONTRADICTION that would strand users once the provider setting is correctly enabled. It does not relax, reorder or condition either prohibition.",
+    "NO_PROVIDER_MUTATION_IS_AUTHORIZED": "This amendment does NOT authorize changing the hosted provider setting, does not read it, does not write it, and does not adjudicate when it should be changed. HOSTED_PROVIDER_STATE and its deployment-sequencing obligation on the operator are untouched. The operator's sequencing decision remains exactly where the parent put it.",
+    "the_sequencing_obligation_is_still_not_encoded_in_the_application": "PRESERVED verbatim in intent: encoding it as runtime behaviour would require the application to detect the provider's configuration and relax itself, which is the fail-open defect. The generic page does not detect provider configuration and must not."
+  },
+
+  "TEST_CONTRACT_AMENDMENT": {
+    "companion_artifact": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_TEST_MANIFEST_AMENDMENT_v1.0.0.json",
+    "append_only": "The frozen parent manifest TENANCY_EMAIL_VERIFICATION_PACKET_B_TEST_MANIFEST_v1.0.0.json is NOT edited by this lane. The companion is a separate manifest carrying only the controls this amendment adds, validated against the same docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json.",
+    "control_id_namespace": "New controls use the -BNS- infix - P-BNS-n, N-BNS-n, M-BNS-n - chosen so that no id collides with any P-B-n, N-B-n, M-B-n or T-B-n in the frozen parent. Collision was checked mechanically against the parent's 12 positive, 15 negative and 10 mutation controls at AS_OF_TREE.",
+    "required_proofs": [
+      "A successful signup with user != null and session == null REACHES and RENDERS the generic /verify-email state.",
+      "The generic state discloses no email address, no account identity and no tenancy state.",
+      "A direct anonymous visit to /verify-email is safe and renders the same generic state.",
+      "An expired-session visit is safe and renders the same generic state.",
+      "An authenticated unverified subject may see only their OWN subject identity, and no tenancy.",
+      "An authenticated verified subject exits to the governed application flow with Packet A selection semantics preserved and no auto-selection.",
+      "No /login to /verify-email to /login loop is constructible in any of the four states.",
+      "No query parameter can inject identity into the page or select which representation is rendered.",
+      "No resend action exists on the page.",
+      "A safe next parameter NEVER outranks B0.",
+      "The ORIGINAL N-B-5 semantics remain binding and are asserted in their original direction.",
+      "M-B-4 variant B remains CAPABLE of turning the relevant control RED - proven, not assumed."
+    ],
+    "the_required_mutation_control": "Changing the generic no-session /verify-email behaviour back to an automatic redirect to /login MUST turn the new control RED. This is the control that pins the ratified decision: without it, a future refactor could restore the superseded behaviour and no test would notice, because the superseded behaviour was itself once authority and reads as correct to anyone holding only the parent.",
+    "non_vacuity_discipline_inherited_from_the_parent": "The parent's M-B-4 entry records that a mutation control which cannot ATTRIBUTE its kill is not testing what it claims. The same discipline binds every control added here: each mutation control names the exact control it must turn RED, and names at least one control that must SURVIVE, so that a mutation which reddens the whole suite cannot be mistaken for a targeted kill."
+  },
+
+  "NON_AUTHORIZATIONS": {
+    "rule": "The following are NOT authorized by this amendment. This list is as binding as the grant, and nothing in the grant may be read to imply any item on it.",
+    "items": [
+      "NO runtime implementation. This lane wrote no application code and authorizes none by its own act; implementation proceeds in its own lane under the parent's IMPLEMENTATION_AUTHORIZED terms as amended here.",
+      "NO modification of PR136. This lane does not touch that branch, its commits or its tests.",
+      "NO hosted Supabase configuration change.",
+      "NO provider mutation of any kind, including enable_confirmations.",
+      "NO migration.",
+      "NO schema change. S-IA-NO-PROFILE-COLUMN is preserved: the verification state acquires no durable application-side copy.",
+      "NO ODS allocation.",
+      "NO new audit vocabulary. BOUNDARIES.audit_verb_is_out_of_scope is preserved.",
+      "NO resend implementation, and no pre-authorization of one. A resend affordance requires separate authority which must re-derive rate limiting and anti-enumeration from scratch.",
+      "NO deployment.",
+      "NO amendment of I-7, B4 site three, the flow-keying prohibition X-B-04, or M-B-4 variant B.",
+      "NO amendment of N-B-5 in any respect.",
+      "NO relaxation of NO_AUTO_SELECTION, and no exception to it.",
+      "NO second URL, no route relocation, and no new redirect-target vocabulary.",
+      "NO edit to the frozen parent authority or the frozen parent test manifest."
+    ]
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "lane_class": "DOCS-ONLY. The diff contains exactly two new JSON files under docs/ops/tenancy/. No code, no test, no migration, no schema, no environment value.",
+    "installation_constraint": "node_modules was NOT installed for this lane, per the mission packet. Gates were run in their dependency-free form where one exists, and are reported NOT_RUN with a reason where one does not. No gate result is claimed that was not observed.",
+    "gates": "See the VALIDATION section of the lane report and the EVIDENCE block of the commit. Each gate is recorded with its exact command, its exit status and, where NOT_RUN, the measured reason.",
+    "negative_capability_claims_are_held_to_the_same_standard_as_positive_ones": "The parent authority records a process finding worth repeating here: 'The runner failing is not the gate failing. A negative capability claim - X cannot be done here - deserves the same standard of evidence as a positive one.' This lane therefore attempted each gate in its dependency-free invocation before recording it as unrunnable, rather than inferring unavailability from a package-manager failure."
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-AZ-1",
+      "finding": "The frozen control P-B-9 carries the superseded rule as its second assertion. Until the implementation lane applies AM-B-S2, the frozen manifest and this amendment disagree in an executable way: shipping the ratified behaviour turns P-B-9 RED.",
+      "severity": "MEDIUM",
+      "owner": "IMPLEMENTATION_LANE",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "AM-B-S2 is the authority for the edit and bounds it to exactly one assertion. Recorded as a finding rather than left implicit because a RED frozen control with no visible authority to change it is the precondition for a silent weakening under X-B-11."
+    },
+    {
+      "id": "F-AZ-2",
+      "finding": "T-B-1's driven edge set enumerates three destination behaviours and must be extended to four. Its assertion is unchanged; only its enumeration is incomplete against the amended contract.",
+      "severity": "LOW",
+      "owner": "IMPLEMENTATION_LANE",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "Extension specified at SUPERSEDED_CLAUSE.controls_that_are_AFFECTED_but_NOT_superseded.T-B-1 and re-asserted by P-BNS-5 in the companion manifest."
+    },
+    {
+      "id": "F-AZ-3",
+      "finding": "B2.derivation_not_preference constraint Three contains the phrase 'and to offer a resend' as part of its derivation of why the destination must be able to read the principal. Read carelessly, it appears to authorize a resend affordance, which NON_AUTHORIZATIONS prohibits.",
+      "severity": "LOW",
+      "owner": "IMPLEMENTATION_LANE",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "Clarified at AM-B-S1.a_clarification_that_is_not_a_supersession. The phrase is a capability derivation, not a grant. N-BNS-5 asserts no resend action exists. Recorded because it is a sentence in FROZEN authority that an implementer will read as permission."
+    },
+    {
+      "id": "F-AZ-4",
+      "finding": "The two implementation defects escalated by audit IM - the safe next served before B0, and the inverted N-B-5 test - remain OPEN against unchanged authority. This amendment deliberately does not repair them and must not be read as having done so.",
+      "severity": "MEDIUM",
+      "owner": "IMPLEMENTATION_LANE",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "NEXT_PARAMETER and N_B_5_NOT_AMENDED record both as implementation obligations against unchanged authority. Naming them in the amendment's own findings prevents the amendment from being cited later as having closed them."
+    },
+    {
+      "id": "F-AZ-5",
+      "finding": "This amendment introduces a new unauthenticated render surface at /verify-email.",
+      "severity": "LOW",
+      "owner": "IMPLEMENTATION_LANE",
+      "BLOCKS_THIS_NODE": false,
+      "disposition": "Assessed and bounded at NO_SESSION_STATE.AM-B-N4. The surface accepts no input, reads no database and produces byte-identical output for every no-session caller, making it strictly less capable than the already-public /login. Recorded rather than suppressed because a new public route should never be an unnamed consequence of an amendment about something else."
+    }
+  ],
+
+  "self_check": {
+    "did_this_lane_edit_frozen_authority": "NO. Measured: the diff contains two ADDED files and zero modified files. Neither TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json nor TENANCY_EMAIL_VERIFICATION_PACKET_B_TEST_MANIFEST_v1.0.0.json appears in the diff.",
+    "did_this_lane_write_authority_the_owner_did_not_ratify": "The ratified decision is RAT-EV-01. This lane DERIVED consequences from it: the forced-equivalence argument at AM-B-N2, the discovery and supersession of the P-B-9 twin at AM-B-S2, the fifth destination constraint at AM-B-N1, the four-state termination re-derivation, and the resend clarification at F-AZ-3. Each derivation is marked as a derivation and grounded in a frozen clause or a measured fact, and none extends the grant beyond what RAT-EV-01 states. Where this lane could not derive - such as whether an anonymous visitor should see the page at all - it recorded the owner's decision rather than reasoning to one.",
+    "does_the_amendment_terminate": "YES, re-derived over four states at ROUTING_TERMINATION, with the prohibited cycles shown non-constructible rather than merely unlikely.",
+    "is_the_supersession_narrow": "YES. Exactly two items, each quoted verbatim, each superseded in exactly one named respect, with the surviving parts of the same clauses enumerated so the supersession cannot be read more broadly than written.",
+    "was_any_escalated_defect_silently_absorbed": "NO. Both defects audit IM escalated that are NOT authority ambiguities - the next-before-B0 code path and the inverted N-B-5 test - are explicitly REFUSED amendment and recorded as open implementation obligations at F-AZ-4.",
+    "the_temptation_this_lane_had_to_refuse": "The inverted N-B-5 test could have been made green by redescribing N-B-5 to match the code, and the packet's own subject matter - routing at the callback - made that redescription look adjacent to this amendment's scope. It was refused because it converts a detectable test defect into an undetectable authority defect. This is recorded because the refusal is the load-bearing decision of the lane, and an artifact that only records what it did adds nothing about what it nearly did."
+  },
+
+  "final_state": "AUTHORITY_AMENDMENT_MATERIALIZED_DOCS_ONLY_AWAITING_INDEPENDENT_AUDIT",
+  "IMPLEMENTATION_AUTHORIZED": false,
+  "IMPLEMENTATION_AUTHORIZED_NOTE": "This amendment is NOT implementation authority and does not open one. It amends the routing contract an already-authorized implementation lane must satisfy. No runtime change is authorized by this artifact, and the parent's own implementation terms are unchanged except in the two respects named under SUPERSEDED_CLAUSE.",
+  "next_gate": "PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_INDEPENDENT_OPUS_AUDIT"
+}
