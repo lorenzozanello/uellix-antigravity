@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { syncUserProfile, getCurrentMembership, listSelectableMemberships } from '@/lib/auth/session'
+import { syncUserProfile, getCurrentMembership, listSelectableMemberships, loadRequestPrincipal } from '@/lib/auth/session'
+import { VERIFY_EMAIL_PATH } from '@/lib/auth/email-verification'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 import { checkAndRecordRateLimit } from '@/lib/security/rate-limit'
 
@@ -40,6 +41,22 @@ export async function login(formData: FormData) {
   await syncUserProfile(data.user)
 
   revalidatePath('/', 'layout')
+
+  // PACKET B — B0. Evaluated BEFORE honouring redirectTo (the same class of
+  // defect IM's audit found at the auth callback: a caller-supplied safe
+  // target must never outrank the gate) and before listSelectableMemberships
+  // could ever be called for an unverified subject (S-IA-NO-ENUMERATION-ON-
+  // REFUSAL — listSelectableMemberships transits requirePrincipal, C6, which
+  // refuses an unverified principal). redirectTo is CARRIED FORWARD across
+  // the refusal, not honoured early, so the invite (or other) journey
+  // resumes once verification completes.
+  const principal = await loadRequestPrincipal()
+  if (principal && !principal.emailVerified) {
+    const destination = redirectTo
+      ? `${VERIFY_EMAIL_PATH}?next=${encodeURIComponent(redirectTo)}`
+      : VERIFY_EMAIL_PATH
+    redirect(destination)
+  }
 
   // An explicit, validated redirect target (e.g. an invitation accept link)
   // takes priority over the smart org-membership redirect below — a user
@@ -96,6 +113,27 @@ export async function signup(formData: FormData) {
   await syncUserProfile(data.user)
 
   revalidatePath('/', 'layout')
+
+  // PACKET B — Gate A (provider confirmation) may be enabled with no
+  // auto-created session: signUp then returns a user but a null session, and
+  // there is no cookie for loadRequestPrincipal to read a principal from.
+  // The pending-verification destination applies unconditionally here —
+  // there is nothing else this subject could do yet, invite link or not.
+  if (!data.session) {
+    redirect(VERIFY_EMAIL_PATH)
+  }
+
+  // PACKET B — B0, same rationale as login(): evaluated BEFORE honouring
+  // redirectTo. A session exists past the !data.session check above, so a
+  // principal is resolvable here; redirectTo is carried forward across the
+  // refusal rather than honoured early.
+  const principal = await loadRequestPrincipal()
+  if (principal && !principal.emailVerified) {
+    const destination = redirectTo
+      ? `${VERIFY_EMAIL_PATH}?next=${encodeURIComponent(redirectTo)}`
+      : VERIFY_EMAIL_PATH
+    redirect(destination)
+  }
 
   // Same rationale as login(): an invited user accepting via a fresh
   // signup should land on the accept link, not go through onboarding

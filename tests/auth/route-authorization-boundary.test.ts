@@ -131,6 +131,14 @@ const anonymous = () => mockLoadRequestPrincipal.mockResolvedValue(null)
 // defect. Split into two fixtures that differ ONLY in the enumerator's
 // answer, both carrying the SAME refusal code (R2's precondition).
 
+// PACKET B — S-IA-PRINCIPAL-FIXTURES-EXPLICITLY-VERIFIED: every fixture in
+// this suite is a Packet A scenario re-driven under Packet B, so each one is
+// pinned EXPLICITLY as a VERIFIED principal. `emailVerified` is REQUIRED on
+// RequestPrincipal precisely so this cannot be left implicit — an omitted
+// field here would silently measure every one of these fixtures as
+// unverified and redirect them all to /verify-email instead of exercising
+// Packet A's own routing at all.
+
 /** RETURN SITE 1, zero candidates — genuine founding (R2.branch_zero). */
 const noCarrierNoCandidates = (user = USER) => {
   mockLoadRequestPrincipal.mockResolvedValue({
@@ -138,6 +146,7 @@ const noCarrierNoCandidates = (user = USER) => {
     membership: null,
     organization: null,
     organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
+    emailVerified: true,
   })
   mockListSelectableMemberships.mockResolvedValue([])
 }
@@ -149,6 +158,7 @@ const noCarrierWithCandidates = (user = USER, candidates: unknown[] = [CANDIDATE
     membership: null,
     organization: null,
     organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
+    emailVerified: true,
   })
   mockListSelectableMemberships.mockResolvedValue(candidates)
 }
@@ -160,6 +170,7 @@ const staleCarrier = (user = USER) =>
     membership: null,
     organization: null,
     organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+    emailVerified: true,
   })
 
 /** RETURN SITE 3 — membership DEMONSTRABLY EXISTS; only the organisation row is unreadable (R4's precondition). */
@@ -169,6 +180,7 @@ const memberWithUnreadableOrganization = () =>
     membership: MEMBERSHIP,
     organization: null,
     organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
+    emailVerified: true,
   })
 
 const member = () =>
@@ -177,6 +189,7 @@ const member = () =>
     membership: MEMBERSHIP,
     organization: ORG,
     organizationRefusalCode: null,
+    emailVerified: true,
   })
 
 /** Run a route entry point and report the redirect it issued, or null. */
@@ -295,6 +308,36 @@ describe('route topology: AUTHENTICATED is separated from ORGANIZATION_REQUIRED'
     }
 
     expect([...new Set(ungated)].sort()).toEqual(['onboarding', 'organizations/select'])
+  })
+
+  // -------------------------------------------------------------------------
+  // T-B-2 (Packet B) — the verification destination is pinned outside every
+  // completeness point and outside C3.
+  // -------------------------------------------------------------------------
+  //
+  // Mechanically identical in spirit to the circular-gate control just below:
+  // if /verify-email is ever served from inside a group that calls
+  // requireAuth() or requireOrganizationAccess(), either one would redirect
+  // an unverified subject straight back to it, reproducing the exact
+  // ERR_TOO_MANY_REDIRECTS shape recorded at app/(authenticated)/layout.tsx
+  // :8-30 for the pre-organization case. This does not edit the carve-out
+  // assertion above — doing so would itself be a STOP signal
+  // (S-IA-ROUTE-CARVEOUT-UNCHANGED), because /verify-email is served from
+  // app/(public)/, not from either organisation-gated route group.
+
+  it('T-B-2: app/(public)/verify-email/page.tsx exists', () => {
+    expect(existsSync(path.join(ROOT, 'app/(public)/verify-email/page.tsx'))).toBe(true)
+  })
+
+  it('T-B-2: the verification destination is NOT served from either organisation-gated route group', () => {
+    expect(
+      existsSync(path.join(ROOT, 'app/(authenticated)/app/verify-email')),
+      'the verification destination is back inside the C3-only authenticated group'
+    ).toBe(false)
+    expect(
+      existsSync(path.join(ROOT, 'app/app/verify-email')),
+      'the verification destination is back inside the C4-gated workspace'
+    ).toBe(false)
   })
 
   it('does NOT authorize the organization-gated location for the selector — the circular gate', () => {
@@ -561,6 +604,7 @@ describe('N-A1-3: enumerator failure fails closed, never a membership fallback',
       membership: null,
       organization: null,
       organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
+      emailVerified: true,
     })
     mockListSelectableMemberships.mockRejectedValue(new Error('enumerator unavailable'))
 

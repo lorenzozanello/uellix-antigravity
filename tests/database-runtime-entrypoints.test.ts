@@ -465,6 +465,12 @@ const ALLOWLIST: Record<string, string> = {
   // tests/auth/route-authorization-boundary.test.ts.
   'app/(authenticated)/app/onboarding/page.tsx':
     'requireAuth() + getCurrentMembership(); both read the memoised principal.',
+  // PACKET B — served at /verify-email, outside every route group. It must
+  // NOT call requireAuth() or requireOrganizationAccess() — either would
+  // redirect an unverified subject straight back here. It reads
+  // loadRequestPrincipal() directly instead, the same shape as the
+  // onboarding page row above.
+  'app/(public)/verify-email/page.tsx': 'loadRequestPrincipal() reads the memoised principal directly.',
 
   // ---- Observes the CONNECTION, deliberately outside any context ----------
   'app/api/health/runtime-identity/route.ts':
@@ -780,7 +786,18 @@ describe('every entry point that can reach the database opens an identity contex
     // It calls runWithOrganizationAccess around each of its five governed
     // composition writes, exactly like its sibling app/app/portfolios/new/
     // page.tsx, so it is `contextualized`, not allowlisted.
-    }).toEqual({ inventoried: 142, reaching: 117, contextualized: 101, allowlisted: 16 })
+    //
+    // 142 -> 143, 117 -> 118, contextualized UNCHANGED at 101, allowlisted
+    // 16 -> 17: TENANCY-EMAIL-VERIFICATION-PACKET-B (docs/ops/tenancy/
+    // TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json) adds one new
+    // entry point — app/(public)/verify-email/page.tsx. It reads
+    // loadRequestPrincipal() directly, the same shape as its precedent
+    // app/(authenticated)/app/onboarding/page.tsx, and for the same reason:
+    // it must NOT call requireAuth() or requireOrganizationAccess(), either
+    // of which would redirect an unverified subject straight back to this
+    // page. So it is `allowlisted`, not contextualized: +1 inventoried, +1
+    // reaching, +1 allowlisted.
+    }).toEqual({ inventoried: 143, reaching: 118, contextualized: 101, allowlisted: 17 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

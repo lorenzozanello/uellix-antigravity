@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db/client'
 import { organizations, organizationMembers } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { syncUserProfile, getCurrentMembership, listSelectableMemberships } from '@/lib/auth/session'
+import { syncUserProfile, getCurrentMembership, listSelectableMemberships, loadRequestPrincipal } from '@/lib/auth/session'
+import { VERIFY_EMAIL_PATH } from '@/lib/auth/email-verification'
 import { createClient } from '@/lib/supabase/server'
 import { logAuditAction } from '@/lib/audit/logger'
 import { ROLES } from '@/lib/auth/roles'
@@ -45,6 +46,16 @@ export async function createFirstOrganization(formData: FormData) {
 
   // Sync user profile first (idempotent)
   await syncUserProfile(authUser)
+
+  // PACKET B — B0, routing only: the write surface below is already
+  // unreachable for an unverified subject (listSelectableMemberships and
+  // withAuthenticatedDatabaseContext both transit requirePrincipal, C6,
+  // which now refuses it). This redirect exists so a direct form submission
+  // gets a clean destination instead of an unhandled AuthContextError.
+  const principal = await loadRequestPrincipal()
+  if (principal && !principal.emailVerified) {
+    redirect(VERIFY_EMAIL_PATH)
+  }
 
   // Enforce: user must not already have an org
   const existingMembership = await getCurrentMembership(authUser.id)
