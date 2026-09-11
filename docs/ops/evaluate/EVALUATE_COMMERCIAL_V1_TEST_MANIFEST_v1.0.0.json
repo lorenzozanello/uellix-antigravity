@@ -1,0 +1,307 @@
+{
+  "manifest_id": "EVALUATE-COMMERCIAL-V1-R4",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/evaluate/EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "AUTHORITY: docs/ops/evaluate/EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json (R3) must be MERGED and independently Opus-audited before any control here is written.",
+    "OWNER RATIFICATIONS CONSUMED AND REPOSITORY-RESIDENT: docs/ops/evaluate/EVALUATE_OWNER_RATIFICATIONS_v1.0.0.json (HD-01..HD-16, PR137) and the micro-ratifications ledger which is now TWO files - docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json (RAT-EV-02, RAT-EV-03, RAT-OP-01 and nine others) PLUS docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1.json (RAT-EV-04, PR147). NEITHER micro file alone is complete; the combined ledger is 13 ids.",
+    "OWNER AUTHORITY GAPS: zero. Every control here rests on ratified text; none waits on an adjudication.",
+    "REVIEW OBLIGATIONS ARE NOT SATISFIED BY THIS MANIFEST OR BY ANY CONTROL IN IT. Ten review rows are open (four flagged independent reviews for HD-05/HD-09/HD-10/HD-12, release reviews for RAT-EV-02/RAT-EV-03/RAT-EV-04, the inherited RAT-OP-01 security review, and the global release and privacy gates). A GREEN suite is not review evidence and is not release evidence. See the authority's REVIEW_MATRIX and AUTHORITY_RESOLUTION_IS_NOT_REVIEW_COMPLETION.",
+    "INVARIANT VERSUS SHAPE: RAT-EV-03 ratifies a TRACEABILITY INVARIANT (actor, role-at-action, version, timestamp preserved per action; prior action history not destroyed), NOT one physical representation. Controls below test the INVARIANT. Where a control is specific to the authority's AUTHORIZED_IMPLEMENTATION_SHAPE (append-only rows with an ordinal), it says so in its own description and must be re-expressed rather than deleted if a different conforming shape is chosen.",
+    "IMPLEMENTATION DEPENDENCY, NOT A BLOCKER ON THIS MANIFEST: HD-12's bounded platform-support capability has RESIDENT AUTHORITY (PR145 merged, RAT-OP-01) and ABSENT RUNTIME (zero hits for support_capability across lib/, app/, db/). N-14 therefore proves its ABSENCE, and must be rewritten - not deleted - when that capability is both ratified and implemented.",
+    "BOUNDED IMPLEMENTATION CHOICE: exact leaf pathnames inside the two HD-11 route families are an implementation decision. N-20 tests the FAMILY CONTRACT and must NOT be written to assert a specific invented URL. It must also enumerate BOTH route groups that serve /app/* URLs - app/app/** and app/(authenticated)/app/** - because asserting on one subtree alone is vacuous for a page placed in the other.",
+    "known_conditions below is NOT_YET_REDERIVED_PLACEHOLDER. It does NOT mean ZERO_KNOWN_CONDITIONS_EXIST. The implementing node MUST re-derive it via pnpm ops:test-diff against docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json at its OWN implementation HEAD and replace the placeholder before committing. No implementation, audit or release gate may use the empty array as release evidence; an unreplaced placeholder is itself a release blocker.",
+    "SEVEN AUTHORITY CONCEPTS, SEVEN CONSTANTS: criterion-response edit, template draft, template publish, template retire, evaluation decision, archive and evaluation create each have their own named predicate AND their own named closed constant. Extensions MAY coincide and five of seven do; sharing a CONSTANT is never permitted. 14 of the 42 ordered pairs are behaviourally undetectable, which is the measured size of the hazard N-22 exists to cover. Independent audit CA found the R3 authority document itself sharing a constant across three concepts (CA-B-01), so this is a reproduction of an observed defect.",
+    "BASELINE COLOUR IS PART OF EVERY MUTATION CONTROL. A mutation proves nothing unless the pristine baseline colour is known first. Every mutation control here is discharged as the ordered triple: assert the target control GREEN at the pristine tree, apply the mutation and assert RED, revert and assert GREEN again. A RED under mutation is NOT evidence when the baseline was already RED.",
+    "SYMBOL SURVIVAL IS A COMMIT GATE ON THE AUTHORITY, NOT A TEST OF THE IMPLEMENTATION. Every revision of the authority artifact that renames or removes a key must run the removal-impact resolver (AUTHORITY.SYMBOL_SURVIVAL_RESOLVER) and require UNRESOLVED=0 with both denominators non-zero. No control in this manifest changed in R5: the R5 repair was to two citations inside the authority's superadmin-sweep specification, and every control id, description and test_file here is byte-identical to R4."
+  ],
+  "protected_surfaces": [
+    "db/migrations/**"
+  ],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "probe_manifest": "tests/postgres/evaluate-rls.probes.json",
+    "rationale": "Twelve RLS_SECURITY_INVARIANTS and seven NO_SUPERADMIN_BYPASS_CONTROLS are properties of POLICY EVALUATION, not of SQL text. Grepping a migration for the absence of current_user_is_super_admin proves the string is absent; it does NOT prove that a super_admin principal cannot read a row, that a DECIDED row rejects UPDATE, that OBJ-4 rejects UPDATE and DELETE outright, that UPDATE/DELETE denial-by-omission actually denies, that a no-organization principal sees zero rows rather than all rows, or that FORCE RLS applies to the table owner. Those require a real PostgreSQL instance with real roles, via pnpm db:audit:disposable against the disposable harness — never staging, never production, never the canonical local stack.",
+    "setup_manifest": "tests/postgres/evaluate-rls.setup.json"
+  },
+  "sentinels": [
+    {
+      "id": "EVAL-RATIONALE-CANARY",
+      "purpose": "A fictional, unmistakable decision-rationale string planted as the decision_rationale of a divergent decision. Its appearance anywhere in audit_logs.before_json or audit_logs.after_json proves the NSB-04 payload contract was violated and that tenant decision content became readable through a relation whose SELECT policy carries the platform-superadmin bypass. Never a real credential and never real tenant text."
+    },
+    {
+      "id": "EVAL-NA-RATIONALE-CANARY",
+      "purpose": "A fictional governed-N/A rationale string, planted the same way, proving na_rationale text likewise never reaches an audit payload."
+    },
+    {
+      "id": "EVAL-SUPERSEDED-RESPONSE-CANARY",
+      "purpose": "A fictional score-rationale marker planted on the FIRST version of a criterion response and never reused on its replacement. Its survival after the response is superseded proves RAT-EV-03's traceability floor is real — the prior action's row still exists with its own actor, role and timestamp. Its disappearance proves an overwriting upsert was built instead."
+    }
+  ],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "P-01",
+      "description": "EV-01 arithmetic: an evaluation whose criteria mix SCORED and governed NOT_APPLICABLE current responses yields a Score in which every NOT_APPLICABLE criterion is absent from BOTH numerator and denominator. Proven by a fixture where excluding-from-both, excluding-from-numerator-only, and scoring-N/A-as-zero each produce a DIFFERENT number, so the test distinguishes the ratified rule from the two plausible wrong ones.",
+      "test_file": "lib/evaluate/__tests__/scoring.test.ts"
+    },
+    {
+      "id": "P-02",
+      "description": "Determinism (HD-01): the scoring function called twice with identical (criteria, responses) returns byte-identical results, and its module imports nothing from db, no fetch, no Date, no Math.random and no process.env — asserted structurally over the module source, not only behaviourally.",
+      "test_file": "lib/evaluate/__tests__/scoring.test.ts"
+    },
+    {
+      "id": "P-03",
+      "description": "DecisionPolicy totality (HD-03): for a published policy, every representable COMPUTED score — including each band boundary value approached from both sides — maps to exactly one member of ('approve','approve_with_conditions','reject'). No score yields zero outcomes and none yields two.",
+      "test_file": "lib/evaluate/__tests__/decision-policy.test.ts"
+    },
+    {
+      "id": "P-04",
+      "description": "Default designated decider (HD-05): an evaluation created with no explicit designated_decision_role carries 'organization_admin', and an actor whose role in THAT organization is organization_admin completes T5 successfully.",
+      "test_file": "app/actions/evaluate/__tests__/record-decision.test.ts"
+    },
+    {
+      "id": "P-05",
+      "description": "Designated impact_manager (HD-05): an evaluation explicitly designated to impact_manager is decidable by an impact_manager of that organization, proving the decision set genuinely has two members rather than organization_admin plus a comment.",
+      "test_file": "app/actions/evaluate/__tests__/record-decision.test.ts"
+    },
+    {
+      "id": "P-06",
+      "description": "Snapshot atomicity: a successful T5 writes all nine snapshot values — score_snapshot, score_status_snapshot, recommended_outcome_snapshot, decision_policy_hash_snapshot, decision_outcome, decision_rationale (where applicable), decided_by, decided_by_role, decided_at — in the same transaction as the state change, and the evaluation.decision_recorded audit row exists in that same transaction. A partial snapshot is asserted to be absent, not merely unobserved.",
+      "test_file": "app/actions/evaluate/__tests__/record-decision.test.ts"
+    },
+    {
+      "id": "P-07",
+      "description": "Snapshot is read, not recomputed (HD-06): after a decision is recorded, publishing a NEW template version with a different DecisionPolicy leaves the decided evaluation's rendered recommended outcome and derived divergence UNCHANGED, because both come from recommended_outcome_snapshot. This is the control that catches a read path which recomputes from the current template.",
+      "test_file": "app/actions/evaluate/__tests__/decision-read-model.test.ts"
+    },
+    {
+      "id": "P-08",
+      "description": "Archive from every pre-DECIDED state (HD-08): T6 (from DRAFT), T7 (from IN_PROGRESS) and T8 (from READY_FOR_DECISION) each succeed and each emit evaluation.archived. All three are exercised, proving ARCHIVED is reachable from the whole pre-decision region rather than only from DRAFT.",
+      "test_file": "app/actions/evaluate/__tests__/state-machine.test.ts"
+    },
+    {
+      "id": "P-09",
+      "description": "Template version identity and pinning: (template_id, version) and (template_id, ordinal) are unique; definition_hash and decision_policy_hash are computed server-side over a canonical serialization and are stable across recomputation; and an evaluation that pinned version N is unaffected in every observable way by the publication of version N+1 or by the retirement of its container.",
+      "test_file": "lib/evaluate/__tests__/template-version.test.ts"
+    },
+    {
+      "id": "P-10",
+      "description": "Stella-independence (SB-07): with the Stella provider unreachable, disabled and unconfigured in three separate arrangements, every transition T1 through T8 still completes. Evaluate is proven functional without AI rather than merely believed to be.",
+      "test_file": "app/actions/evaluate/__tests__/stella-independence.test.ts"
+    },
+    {
+      "id": "P-11",
+      "description": "TRACEABILITY INVARIANT under supersession (RAT-EV-03): a criterion response is recorded by actor A, then superseded by actor B. Afterwards BOTH actions remain recoverable with their OWN actor, role-at-action, version and timestamp; the EVAL-SUPERSEDED-RESPONSE-CANARY planted on A's action is still readable; and the current projection resolves to B. Asserted against the INVARIANT (four facts per action survive, no prior action destroyed), NOT against one physical representation - a conforming implementation using a separate history relation or an event log must satisfy this same control unchanged.",
+      "test_file": "app/actions/evaluate/__tests__/criterion-response-lineage.test.ts"
+    },
+    {
+      "id": "P-12",
+      "description": "Template draft/publish/retire positive paths under RAT-EV-04: impact_manager CAN draft; organization_admin CAN draft; organization_admin CAN publish; organization_admin CAN retire. All four exercised individually and each emitting its own audit key. organization_admin's draft path is asserted explicitly because R2 denied it and BR blocked on that - a suite carrying only the impact_manager draft case would pass on the superseded narrow set.",
+      "test_file": "app/actions/evaluate/__tests__/template-lifecycle.test.ts"
+    },
+    {
+      "id": "P-13",
+      "description": "No mandatory person-inequality (RAT-EV-03): ONE organization_admin records every criterion response, submits for decision, and records the decision on the same evaluation. The journey completes successfully. Proves Commercial V1 does not enforce distinct natural persons across author, reviewer and decision maker — and the same test asserts the full traceability floor is still populated on every action that person performed.",
+      "test_file": "app/actions/evaluate/__tests__/single-person-journey.test.ts"
+    },
+    {
+      "id": "P-14",
+      "description": "The criterion-edit set admits all three of its members (RAT-EV-02): analyst, impact_manager and organization_admin each successfully create and edit a criterion response on a pre-lock evaluation, exercised individually. analyst is included deliberately and explicitly — it is the member no hierarchy-threshold expression of the DECISION set would ever admit, so its positive path must be proven, not assumed.",
+      "test_file": "app/actions/evaluate/__tests__/criterion-response-roles.test.ts"
+    },
+    {
+      "id": "P-15",
+      "description": "Each of the three template predicates records its own actor and role-at-action: a draft by impact_manager writes created_by/created_by_role='impact_manager'; a publish by organization_admin writes published_by/published_by_role='organization_admin'; a retire writes retired_by/retired_by_role. Proves the traceability floor reaches the template lifecycle and not only criterion responses and decisions.",
+      "test_file": "app/actions/evaluate/__tests__/template-lifecycle.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-01",
+      "description": "super_admin is REFUSED as a decider at two layers (HD-05): canDecideEvaluation('super_admin') returns false, and a T5 attempt by a super_admin principal against an organization_admin-designated evaluation is refused server-side and audited as evaluation.decision_refused. The single most important control in the manifest — the exact violation the hierarchy shorthand introduces invisibly.",
+      "test_file": "app/actions/evaluate/__tests__/record-decision.test.ts"
+    },
+    {
+      "id": "N-02",
+      "description": "Zero denominator (HD-02): an evaluation in which EVERY criterion has a current governed NOT_APPLICABLE response yields score_status 'SCORE_NOT_COMPUTABLE', produces NO recommended outcome at all (not a defaulted one), and REFUSES T5 with an audited refusal. Additionally asserts the returned score is neither 0, nor -1, nor null-coerced, nor NaN, nor Infinity (ZD-03).",
+      "test_file": "lib/evaluate/__tests__/scoring.test.ts"
+    },
+    {
+      "id": "N-03",
+      "description": "No standing platform-superadmin bypass (HD-12): the Evaluate migration contains zero occurrences of current_user_is_super_admin, AND — proven against real PostgreSQL — a super_admin principal with no membership in the target organization reads ZERO rows from every Evaluate relation. Additionally asserts no Evaluate content row exists in domain_object_versions, so DRR-01's refusal is enforced and not merely documented.",
+      "test_file": "tests/postgres/evaluate-rls.pg.test.ts"
+    },
+    {
+      "id": "N-04",
+      "description": "Audit payload contract (NSB-04): after a divergent decision whose decision_rationale is EVAL-RATIONALE-CANARY and whose governed-N/A rationale is EVAL-NA-RATIONALE-CANARY, neither sentinel appears anywhere in audit_logs.before_json or audit_logs.after_json, while the audit row still carries enough prior state to reconstruct the transition (satisfying the fail-closed logger's FIBC-040 contract). Proves the contract and its reconciliation together, not one at the other's expense.",
+      "test_file": "app/actions/evaluate/__tests__/audit-payload.test.ts"
+    },
+    {
+      "id": "N-05",
+      "description": "Divergence rationale is mandatory (HD-06): a T5 attempt whose decision_outcome differs from recommended_outcome_snapshot and whose decision_rationale is missing, null, empty or whitespace-only is REFUSED server-side; and the same row is UNREPRESENTABLE at the database, proven by a direct INSERT/UPDATE bypassing the action being rejected by the CHECK constraint.",
+      "test_file": "tests/postgres/evaluate-rls.pg.test.ts"
+    },
+    {
+      "id": "N-06",
+      "description": "No override path for decisions (NSB-05): an actor whose role is in EVALUATE_DECISION_ROLES but does NOT match the evaluation's designated_decision_role is REFUSED at T5. Additionally, a repository-wide assertion proves no exported action, route handler, script or database function outside the single authorized decision path writes decision_outcome, decided_by or decided_at — the control that proves an ABSENCE rather than testing a presence.",
+      "test_file": "app/actions/evaluate/__tests__/no-override-path.test.ts"
+    },
+    {
+      "id": "N-07",
+      "description": "UNANSWERED is not governed N/A: an evaluation with at least one criterion carrying NO response row is REFUSED at T3, and its criteria are NOT excluded from the denominator. Proven against the adjacent case — the same criterion with an explicit NOT_APPLICABLE plus rationale — which DOES pass T3 and IS excluded, so the two cases are demonstrably distinguished.",
+      "test_file": "app/actions/evaluate/__tests__/state-machine.test.ts"
+    },
+    {
+      "id": "N-08",
+      "description": "Narrow FIB run-review surface preserved (HD-15): no Evaluate module imports from or writes to lib/pipeline/methodology-review.ts, lib/pipeline/sroi-results.ts or the sroi_run_reviews relation; assertRunMethodologyApprovalAllowed, isInReviewSet and canApproveRunMethodology are byte-unchanged; the existing methodology-review suite is green; and no Evaluate relation carries a foreign key to any FIBIU-19 or FIBIU-20 object. Proves broad Evaluate is structurally Wave3-independent AND that the narrow surface was not annexed — the two halves of HD-15 in one control.",
+      "test_file": "lib/evaluate/__tests__/fib-boundary.test.ts"
+    },
+    {
+      "id": "N-09",
+      "description": "The other three forbidden decision roles (HD-05): analyst, reviewer and viewer are each REFUSED at T5, individually and explicitly. Enumerated separately from N-01 because a hierarchy-threshold implementation refuses these three CORRECTLY while admitting super_admin — so a test that only checks 'low roles are denied' passes on the broken implementation.",
+      "test_file": "app/actions/evaluate/__tests__/record-decision.test.ts"
+    },
+    {
+      "id": "N-10",
+      "description": "super_admin is REFUSED from criterion editing (RAT-EV-02): canEditEvaluationCriterionResponse('super_admin') returns false, and a T2 attempt by a super_admin principal on a pre-lock evaluation is refused server-side and audited as evaluation_criterion_response.edit_refused. RAT-EV-02 excludes super_admin from the edit set by name; this is the control that proves it, and it is the one a hasRole(role,'analyst') implementation fails while passing everything else.",
+      "test_file": "app/actions/evaluate/__tests__/criterion-response-roles.test.ts"
+    },
+    {
+      "id": "N-11",
+      "description": "reviewer and viewer are REFUSED from criterion editing (RAT-EV-02): each is refused individually at T2. Additionally a structural assertion proves neither Evaluate role set is derived from isInReviewSet or from REVIEW_ROLES — reviewer is a member of the repository's review set but is excluded from BOTH Evaluate sets, so deriving either from isInReviewSet would admit it in one move.",
+      "test_file": "app/actions/evaluate/__tests__/criterion-response-roles.test.ts"
+    },
+    {
+      "id": "N-12",
+      "description": "The two Evaluate role sets are NOT the same set: in one test, an analyst SUCCEEDS at editing a criterion response and is REFUSED at recording a decision on the same evaluation. Proves the criterion-edit set and the decision set are distinct and that neither was collapsed into the other — a single shared helper cannot satisfy both halves of this control.",
+      "test_file": "app/actions/evaluate/__tests__/criterion-response-roles.test.ts"
+    },
+    {
+      "id": "N-13",
+      "description": "role_at_action is stored, never derived (TRACEABILITY_FLOOR): a criterion response is recorded by an impact_manager whose organization role is then CHANGED to analyst. The stored recorded_by_role still reads 'impact_manager'. Likewise a decision recorded by an organization_admin whose role later changes still reports 'organization_admin' in decided_by_role. Proves the role is a snapshot of the act and not a join to current membership.",
+      "test_file": "app/actions/evaluate/__tests__/criterion-response-lineage.test.ts"
+    },
+    {
+      "id": "N-14",
+      "description": "No platform-support access path exists at RUNTIME (HD-12, NSB-07): a repository-wide assertion proves no Evaluate action, route handler, policy, view or database function grants read or write on Evaluate content to a platform principal, support role, operator capability or impersonation mechanism. Proves an ABSENCE. Status distinguished in two dimensions and neither is inferred from the other: the platform-admin/support AUTHORITY is repository-resident and merged (docs/ops/security/PLATFORM_ADMIN_MFA_SUPPORT_DELETION_AUTHORITY_v1.0.0.json plus RAT-OP-01), while the support-capability RUNTIME is ABSENT (zero hits for support_capability / supportCapability across lib/, app/, db/). PR state is NOT runtime evidence in either direction. RAT-OP-01 additionally makes the capability inoperable by its own precondition until the platform-admin self-assignment path is closed. This control must be REWRITTEN, not deleted, when a bounded support capability is both ratified and implemented.",
+      "test_file": "app/actions/evaluate/__tests__/no-platform-support-path.test.ts"
+    },
+    {
+      "id": "N-15",
+      "description": "A defective DecisionPolicy is REFUSED AT PUBLICATION (HD-03): three separate policies are each rejected by the publish path — one whose bands are UNORDERED in the stored policy, one with a GAP, one with an OVERLAP — plus a fourth carrying a fallback branch. Refusal is at publication, not at evaluation, because HD-03 constrains the stored policy inside the immutable version.",
+      "test_file": "app/actions/evaluate/__tests__/template-lifecycle.test.ts"
+    },
+    {
+      "id": "N-16",
+      "description": "Template role denials, exhaustive over the DERIVED denial space (RAT-EV-04 / HD-09). The denial space is computed from the role matrix as the sum of the three template acts' excluded-role list lengths: sum over the three template acts of len(excluded) = 4 + 5 + 5 = 14 refusal cells, and the control enumerates exactly that many - no prose count is carried, because a hand-written number beside a structural list is a second source of truth that drifts (CA-NB-02 caught R3 saying 'Twelve' for fourteen cells). Concretely: draft refuses super_admin, analyst, reviewer and viewer; publish refuses super_admin, impact_manager, analyst, reviewer and viewer; retire refuses the same five. Each cell is asserted individually. The super_admin cells are the ones a hierarchical helper would pass; the impact_manager publish/retire cells are the ones a single collapsed helper would pass.",
+      "test_file": "app/actions/evaluate/__tests__/template-lifecycle.test.ts"
+    },
+    {
+      "id": "N-17",
+      "description": "The governing lock is real and DECIDED is terminal: after T5, a criterion-response create and a criterion-response edit are each REFUSED and audited; T5-then-archive is REFUSED (HD-08); every other transition out of DECIDED is REFUSED; and — proven against real PostgreSQL — an UPDATE against a DECIDED row, any UPDATE against OBJ-4, and any DELETE against OBJ-3 or OBJ-4 are all denied by RLS even for a member of the owning organization. Separately asserts a criterion edit on an ARCHIVED evaluation is refused too, which is a different refusal with a different reason.",
+      "test_file": "tests/postgres/evaluate-rls.pg.test.ts"
+    },
+    {
+      "id": "N-18",
+      "description": "Tenant isolation by predicate (RLS-11): a principal who is a member of organization B reads ZERO Evaluate rows belonging to organization A; and a principal resolving to NO organization reads ZERO rows rather than ALL rows. The second half is the important one — an ambient or null scope has previously resolved to GLOBAL rather than to refusal in this repository.",
+      "test_file": "tests/postgres/evaluate-rls.pg.test.ts"
+    },
+    {
+      "id": "N-19",
+      "description": "Template version immutability (RLS-04): UPDATE of criteria_json, decision_policy_json, version, ordinal or either hash on a published evaluation_template_versions row is denied by policy omission AND independently rejected by the uellix_forbid_mutation trigger; DELETE is denied; and the ONLY permitted mutation is the single write-once NULL-to-value publication transition, which is proven to succeed once and be refused a second time. Both defence layers are asserted separately so removing either one is visible. Also asserts a version with zero criteria cannot be published (ZD-06).",
+      "test_file": "tests/postgres/evaluate-rls.pg.test.ts"
+    },
+    {
+      "id": "N-20",
+      "description": "Route-family contract without inventing a pathname (HD-11), enumerated over BOTH route groups that serve /app/* URLs. A structural assertion over app/app/** AND app/(authenticated)/app/** proves every Evaluate page falls in either the project-scoped family or the organization-scoped family, that no Evaluate route exists outside the authenticated /app/* space, that none is public or anonymous, that no template surface appears at project scope and no evaluation surface at organization scope, and that NAV_LINKS gained no Evaluate entry. Enumerating both groups is load-bearing: the (authenticated) route group does not appear in the URL, so a single-subtree assertion would pass for a page placed in the other group. Written against subtree membership and scope, deliberately NOT against any specific leaf URL.",
+      "test_file": "app/__tests__/evaluate-route-families.test.ts"
+    },
+    {
+      "id": "N-21",
+      "description": "Stella cannot produce the authoritative recommendation (HD-01, SB-03): a Stella advisor response returning an outcome-shaped suggestion that DIFFERS from the deterministic recommended outcome leaves recommended_outcome_snapshot equal to the SYSTEM value, leaves the derived divergence computed from the SYSTEM value only, and the Stella suggestion appears in no Evaluate column. Additionally a structural assertion proves the scoring and decision-policy functions accept no Stella-derived argument, and that OBJ-3 has no stella_* column — so SB-04 is verified as structural, not conventional. Also asserts stella_role is 'advisor' and pipeline_step is exactly 'evaluate_analysis' (HD-07) and that no new stella_role value was added.",
+      "test_file": "app/actions/evaluate/__tests__/stella-boundary.test.ts"
+    },
+    {
+      "id": "N-22",
+      "description": "PREDICATE IDENTITY over all SEVEN Evaluate authority concepts, asserted STRUCTURALLY because it is undetectable behaviourally. The seven are: canEditEvaluationCriterionResponse, canDraftEvaluationTemplate, canPublishEvaluateTemplateVersion, canRetireEvaluateTemplate, canDecideEvaluation, canArchiveEvaluation and canCreateEvaluation. The control asserts, over DECLARATION SITES and CALL SITES: (1) each of the seven exists as its own named export; (2) each reads its OWN named closed constant - EVALUATE_CRITERION_EDIT_ROLES, EVALUATE_TEMPLATE_DRAFT_ROLES, EVALUATE_TEMPLATE_PUBLISH_ROLES, EVALUATE_TEMPLATE_RETIRE_ROLES, EVALUATE_DECISION_ROLES, EVALUATE_ARCHIVE_ROLES, EVALUATE_CREATE_ROLES respectively; (3) for every ordered pair of distinct concepts, the subject predicate neither reads the other's constant nor is an alias, re-export or delegation of the other's predicate - 42 ordered pairs, complete by construction; (4) no constant is derived, spread or computed from another; (5) none of the seven contains hasRole, ROLE_HIERARCHY, '>=' or a derivation from isInReviewSet / REVIEW_ROLES / STELLA_ROLES; (6) each Evaluate server action calls the predicate matching its own act. THIS CONTROL MUST NOT ASSERT THAT THE SEVEN ROLE SETS DIFFER. Five of the seven extensions coincide today (14 of the 42 ordered pairs are behaviourally undetectable), and requiring them to differ would contradict the ratified role semantics. What must differ is CONSTANT IDENTITY, never extension. The control is satisfiable and GREEN at the pristine R4 artifact and implementation.",
+      "test_file": "lib/auth/__tests__/evaluate-predicate-identity.test.ts"
+    },
+    {
+      "id": "N-23",
+      "description": "Superadmin closed world over ALL THREE policy lineages (RLS-03 part 3): the assertion sweeps db/migrations/**, db/prepared/** and the hosted baseline, and proves the Evaluate relations contribute ZERO new current_user_is_super_admin disjuncts in ANY of them. Scoped narrowly: Evaluate is not responsible for the 140 pre-existing disjuncts the canonical census (docs/ops/security/PLATFORM_ADMIN_RLS_SUPERADMIN_POLICY_CENSUS_v1.0.0.json) distributes 127/9/4 across those lineages; Evaluate is responsible for adding none. A single-lineage check is explicitly insufficient - the census states that closing db/migrations alone MUST NOT be reported as closure.",
+      "test_file": "tests/postgres/evaluate-rls.pg.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-01",
+      "description": "Replace the decision predicate with the hierarchy shorthand — canDecideEvaluation(role) = hasRole(role, 'organization_admin') — and N-01 MUST turn RED while N-09 stays GREEN. The asymmetry is the proof: a suite that goes fully green under this mutation is only testing that low roles are denied. Mutates the implementation to reintroduce the real hazard (7 existing helpers use that exact shape), so it is a strengthening mutation and not a weakened test."
+    },
+    {
+      "id": "M-02",
+      "description": "Add OR current_user_is_super_admin() to the Evaluate SELECT policies and N-03 MUST turn RED at BOTH of its halves — the text assertion and the real-PostgreSQL read. If only the text half goes red, the RLS probe is not actually exercising a super_admin principal and N-03 is half-vacuous."
+    },
+    {
+      "id": "M-03",
+      "description": "Make the scoring function return 0 with score_status 'COMPUTED' when the denominator is zero, and N-02 MUST turn RED. If N-02 stays green it is asserting on the status field alone and would not catch a sentinel number reaching the DecisionPolicy bands."
+    },
+    {
+      "id": "M-04",
+      "description": "Add a second write path to decision_outcome — an admin action, a script, or a direct repository helper — and N-06 MUST turn RED. If it stays green, N-06 is testing the authorized path rather than proving the absence of others, and NSB-05 is unproven."
+    },
+    {
+      "id": "M-05",
+      "description": "Add an UPDATE policy permitting a snapshot column to be changed on a DECIDED row, and BOTH P-06 and N-17 MUST turn RED. Separately: mutate a stored snapshot value out-of-band and assert the snapshot-versus-recomputation comparison detects it, which is what gives the deliberate score redundancy its purpose."
+    },
+    {
+      "id": "M-06",
+      "description": "Add a stored divergence boolean column, switch the read model to read it instead of deriving, and set it to disagree with the two snapshots — P-07 MUST turn RED. Proves the derivation is genuinely a derivation and that no consumer reads a cached divergence."
+    },
+    {
+      "id": "M-07",
+      "description": "Destroy the traceability invariant rather than merely change the shape: make the criterion-response write path OVERWRITE a prior action's actor, role-at-action and timestamp (for the authorized shape, an upsert on conflict; for any other conforming shape, whatever mutation erases the prior action's four facts). P-11 and N-13 MUST turn RED with the EVAL-SUPERSEDED-RESPONSE-CANARY provably gone. The mutation targets the INVARIANT, so it remains meaningful under any conforming representation - which is the point BR NB-01 raised: a mutation that merely swapped one lawful shape for another would prove nothing about owner authority."
+    },
+    {
+      "id": "M-08",
+      "description": "Collapse canDraftEvaluationTemplate, canPublishEvaluateTemplateVersion and canRetireEvaluateTemplate into one canManageTemplate helper, run twice under each role choice, and N-16 MUST turn RED both times. With {impact_manager, organization_admin} it admits impact_manager to publishing and retiring, which RAT-EV-04 forbids; with {organization_admin} it denies impact_manager drafting, which RAT-EV-04 permits. Both collapses must be caught, so the control runs under both."
+    },
+    {
+      "id": "M-09",
+      "description": "Replace the criterion-edit predicate with hasRole(role, 'analyst') — the shape an implementer would naturally reach for, since analyst is the lowest-ranked member of the edit set — and N-10 MUST turn RED while N-11 and P-14 stay GREEN. This mutation is correct for five of six roles: it admits analyst, impact_manager and organization_admin and correctly denies reviewer and viewer. It is wrong for exactly the one role RAT-EV-02 excludes by name. A suite that survives it entirely is not testing RAT-EV-02 at all."
+    },
+    {
+      "id": "M-10",
+      "description": "Remove the publication-time band-order validation while leaving the evaluator able to sort bands before evaluating, and N-15's unordered case MUST turn RED while its gap and overlap cases stay GREEN. The asymmetry proves HD-03 is enforced over the STORED policy and not merely satisfied by a tolerant evaluator — an evaluator that produces the right answer from an unordered stored policy still violates HD-03."
+    },
+    {
+      "id": "M-11",
+      "description": "Replace recorded_by_role and decided_by_role reads with a join to current organization membership, and N-13 MUST turn RED. If it stays green the test is asserting the column exists rather than that it is a snapshot, and a role change after the act would silently falsify the traceability record."
+    },
+    {
+      "id": "M-12",
+      "description": "Replace canDraftEvaluationTemplate's body with a call to canDecideEvaluation, whose extension is IDENTICAL today ({impact_manager, organization_admin}). Every role-varying behaviour fixture - P-12, P-14, N-16 - MUST stay GREEN, and N-22 MUST turn RED. That asymmetry is the whole control: it proves the suite can detect a mis-bound predicate that no role substitution can reveal, which is the only defence against a future amendment to HD-05 silently widening the RAT-EV-04 draft set. Re-run substituting a generic hierarchical helper (hasRole(role,'impact_manager')) for the same predicate: N-16's super_admin draft case AND N-22 must both turn RED. A suite in which M-12 leaves everything green has no predicate-identity coverage at all, regardless of how many role fixtures it carries.",
+      "test_file": "lib/auth/__tests__/evaluate-predicate-identity.test.ts"
+    },
+    {
+      "id": "M-13",
+      "description": "ARCHIVE substitution, independent of M-12. Replace canArchiveEvaluation's body with a call to canDecideEvaluation, or equivalently make the archive predicate read EVALUATE_DECISION_ROLES. The role extension is UNCHANGED - both are {impact_manager, organization_admin} today. Required: every role-behaviour fixture stays GREEN (P-08 archive-from-each-pre-DECIDED-state, N-17, and the whole role-varying suite), and N-22 turns RED. That asymmetry is the proof that archive/decision structural separation is non-vacuous. This mutation is exactly the defect independent audit CA found in the R3 AUTHORITY DOCUMENT itself (CA-B-01), so it is a reproduction of a real, already-observed failure rather than a hypothetical one - which is the strongest available argument that the control is worth its cost.",
+      "test_file": "lib/auth/__tests__/evaluate-predicate-identity.test.ts"
+    },
+    {
+      "id": "M-14",
+      "description": "CREATE substitution. Make canCreateEvaluation read EVALUATE_DECISION_ROLES (or delegate to canDecideEvaluation) with the extension unchanged. Required: all role-behaviour fixtures stay GREEN and N-22 turns RED. Included rather than left to N-22's structural coverage alone because create is the one concept of the seven whose binding is NOT owner-ratified (BOUNDED_IMPLEMENTATION_CHOICE, CREATE_AUTHORITY_DISCLOSURE): an unratified binding is the most likely of the seven to be quietly folded into a neighbouring constant by an implementer who reads the equal extensions and concludes the separation is cosmetic. The mutation proves it is not.",
+      "test_file": "lib/auth/__tests__/evaluate-predicate-identity.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "targeted_tests",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "postgres_disposable_probe"
+  ]
+}
