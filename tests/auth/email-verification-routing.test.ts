@@ -75,6 +75,15 @@ vi.mock('@/lib/supabase/server', () => ({
     }),
 }))
 
+// CL-1 (HPO-ODS-W2-28) — this suite is about B0 (Packet B) routing, not L0.
+// The in-memory @/db/client double has no SQL engine capable of evaluating
+// deriveAccountAcceptanceCurrent's raw query, and this suite has no business
+// exercising it: every fixture here is pinned explicitly acceptance-current.
+vi.mock('@/lib/auth/legal-acceptance', () => ({
+  deriveAccountAcceptanceCurrent: async () => true,
+  ACCEPT_LEGAL_PATH: '/accept-legal',
+}))
+
 vi.mock('@/db/identity-context', async () => {
   const store = await import('@/db/identity-store')
   return {

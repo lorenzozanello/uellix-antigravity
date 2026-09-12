@@ -50,6 +50,7 @@ import {
 } from './database-context'
 import { clearSelectedOrganization } from './selected-organization'
 import { VERIFY_EMAIL_PATH } from './email-verification'
+import { ACCEPT_LEGAL_PATH } from './legal-acceptance'
 import type { Role } from './roles'
 import { hasRole } from './permissions'
 
@@ -155,6 +156,11 @@ export async function requireAuth(): Promise<AuthUser> {
   // requireOrganizationAccess (they are siblings, not a chain).
   if (!principal.emailVerified) redirect(VERIFY_EMAIL_PATH)
 
+  // CL-1 — K3/L0, REMAIN AFTER B0. Gates the AUTHENTICATED route group,
+  // exactly as the emailVerified check above gates it for B0 — same
+  // reasoning, same placement, one gate later.
+  if (!principal.accountAcceptanceCurrent) redirect(ACCEPT_LEGAL_PATH)
+
   return principal.user
 }
 
@@ -252,6 +258,19 @@ export const requireOrganizationAccess = cache(async (): Promise<OrganizationCon
   // left them — B0 is a PREFIX, never a rewrite.
   if (!principal.emailVerified) redirect(VERIFY_EMAIL_PATH)
 
+  // ---------------------------------------------------------------------
+  // CL-1 — K4/L0, REMAIN AFTER B0.
+  // ---------------------------------------------------------------------
+  // Evaluated immediately after B0 and, like B0, BEFORE R1 (super-admin) and
+  // before any selector question or enumerator consultation
+  // (S-AO-NO-ENUMERATION-ON-REFUSAL): L0 is a PREFIX, not a rewrite, and
+  // applies uniformly — a super-admin who has not accepted is refused here
+  // exactly like an ordinary subject (PACKET_A_PRESERVATION P-AO-13 re-drives
+  // R1 with an ACCEPTANCE-CURRENT super-admin reaching /admin, never an
+  // unaccepted one). For an accepted subject this is a no-op and R1-R4 below
+  // run exactly as Packet A left them.
+  if (!principal.accountAcceptanceCurrent) redirect(ACCEPT_LEGAL_PATH)
+
   if (!principal.membership || !principal.organization) {
     // R1 — SuperAdmin may not have a membership — redirect to admin, ahead
     // of any selector question and insensitive to the enumerator.
@@ -310,11 +329,18 @@ export async function requireAdminAccess(): Promise<AuthUser> {
 export const getCurrentOrganizationContext = cache(
   async (): Promise<OrganizationContext | null> => {
     const principal = await loadRequestPrincipal()
-    // PACKET B — C5. `null` already means "no context can be built" for a
-    // missing session or a missing organisation; an unverified subject folds
-    // into the SAME refusal shape, which is why every existing `if (!ctx)`
-    // caller (all four Route Handlers included) refuses it for free.
-    if (!principal || !principal.membership || !principal.organization || !principal.emailVerified) {
+    // PACKET B — C5, extended by CL-1. `null` already means "no context can
+    // be built" for a missing session or a missing organisation; an
+    // unverified or unaccepted subject folds into the SAME refusal shape,
+    // which is why every existing `if (!ctx)` caller (all four Route
+    // Handlers included) refuses it for free.
+    if (
+      !principal ||
+      !principal.membership ||
+      !principal.organization ||
+      !principal.emailVerified ||
+      !principal.accountAcceptanceCurrent
+    ) {
       return null
     }
 

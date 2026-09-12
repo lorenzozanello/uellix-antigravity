@@ -234,6 +234,7 @@ const CONTEXT_OPENERS = [
   'withSuperAdminDatabaseContext',
   'withOptionalDatabaseIdentityContext',
   'withDatabaseIdentityContext',
+  'withAccountAcceptanceDischargeContext',
 ] as const
 
 const ALLOWLIST: Record<string, string> = {
@@ -382,7 +383,7 @@ describe('NEG-PF3-ARCH-1 — components/portfolios/** does not move the AST entr
   // testTimeout. An explicit per-test timeout is the correct fix: this is a
   // slow REAL scan, not a hang, and the assertions below are otherwise
   // unchanged.
-  it('the real scanner reports the 145/121/104/17 quadruple (PACKET B +1 checked/reaching/allowlisted, contextualized unchanged), with components/portfolios/** populated', () => {
+  it('the real scanner reports the 147/123/106/17 quadruple (CL-1 +2 checked/reaching/contextualized, allowlisted unchanged), with components/portfolios/** populated', () => {
     const scanner = new EntrypointScanner({
       root: ROOT,
       scanDirs: ['app', 'components', 'lib', 'db'],
@@ -406,7 +407,7 @@ describe('NEG-PF3-ARCH-1 — components/portfolios/** does not move the AST entr
       databaseReaching: result.databaseReaching.length,
       contextualized,
       allowlisted,
-    }).toEqual({ checkedModules: 145, databaseReaching: 121, contextualized: 104, allowlisted: 17 })
+    }).toEqual({ checkedModules: 147, databaseReaching: 123, contextualized: 106, allowlisted: 17 })
 
     const portfoliosFiles = walkFiles(COMPONENTS_PORTFOLIOS_DIR)
     expect(portfoliosFiles.length).toBeGreaterThan(0)

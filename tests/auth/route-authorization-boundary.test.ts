@@ -147,6 +147,7 @@ const noCarrierNoCandidates = (user = USER) => {
     organization: null,
     organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
     emailVerified: true,
+    accountAcceptanceCurrent: true,
   })
   mockListSelectableMemberships.mockResolvedValue([])
 }
@@ -159,6 +160,7 @@ const noCarrierWithCandidates = (user = USER, candidates: unknown[] = [CANDIDATE
     organization: null,
     organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
     emailVerified: true,
+    accountAcceptanceCurrent: true,
   })
   mockListSelectableMemberships.mockResolvedValue(candidates)
 }
@@ -171,6 +173,7 @@ const staleCarrier = (user = USER) =>
     organization: null,
     organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
     emailVerified: true,
+    accountAcceptanceCurrent: true,
   })
 
 /** RETURN SITE 3 — membership DEMONSTRABLY EXISTS; only the organisation row is unreadable (R4's precondition). */
@@ -181,6 +184,7 @@ const memberWithUnreadableOrganization = () =>
     organization: null,
     organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
     emailVerified: true,
+    accountAcceptanceCurrent: true,
   })
 
 const member = () =>
@@ -190,6 +194,7 @@ const member = () =>
     organization: ORG,
     organizationRefusalCode: null,
     emailVerified: true,
+    accountAcceptanceCurrent: true,
   })
 
 /** Run a route entry point and report the redirect it issued, or null. */
@@ -605,6 +610,7 @@ describe('N-A1-3: enumerator failure fails closed, never a membership fallback',
       organization: null,
       organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
       emailVerified: true,
+      accountAcceptanceCurrent: true,
     })
     mockListSelectableMemberships.mockRejectedValue(new Error('enumerator unavailable'))
 

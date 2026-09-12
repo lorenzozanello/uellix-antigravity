@@ -52,6 +52,10 @@ import {
   type WithDatabaseIdentityContextOptions,
 } from '@/db/identity-context'
 import { getVerifiedAuthIdentityResult, type AuthIdentityFailure } from './identity'
+// CL-1 (HPO-ODS-W2-28) — the ONE derivation site for account-class
+// acceptance currency (S-AO-PREDICATE-CARDINALITY). Consulted here, once,
+// alongside the emailVerified propagation, and never re-derived downstream.
+import { deriveAccountAcceptanceCurrent } from './legal-acceptance'
 import { isValidRole, type Role } from './roles'
 // S3 (docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json
 // REQUEST_PRINCIPAL): the ONLY read of the S2 carrier's VALUE anywhere in the
@@ -150,6 +154,16 @@ export interface RequestPrincipal {
    * subject as verified (X-B-03, S-IA-PRINCIPAL-FIXTURES-EXPLICITLY-VERIFIED).
    */
   readonly emailVerified: boolean
+  /**
+   * CL-1 (L0) — PACKET B analogue. Whether the subject is CURRENT on every
+   * ACCOUNT-class instrument in the closed required set
+   * (lib/auth/legal-acceptance.ts deriveAccountAcceptanceCurrent, the SOLE
+   * derivation site). REQUIRED, never optional, for the same reason
+   * `emailVerified` is: an optional field with a permissive default would
+   * let every existing fixture keep passing while silently measuring an
+   * unaccepted subject as current (S-AO-PRINCIPAL-FIXTURES-EXPLICITLY-ACCEPTED).
+   */
+  readonly accountAcceptanceCurrent: boolean
 }
 
 export type AuthContextErrorCode =
@@ -179,6 +193,13 @@ export type AuthContextErrorCode =
   // confirmed. Deliberately in the AUTH_ family, not TENANCY_: this is not a
   // tenancy question, it fires before any organisation is considered.
   | 'AUTH_EMAIL_NOT_VERIFIED'
+  // CL-1 (HPO-ODS-W2-28) — K6/C6 analogue for L0. A verified subject who is
+  // not current on every required ACCOUNT-class instrument. Deliberately in
+  // the AUTH_ family, not TENANCY_: L0 fires before any organisation is
+  // considered, exactly like AUTH_EMAIL_NOT_VERIFIED, and REMAINS AFTER B0
+  // (B0_PRESERVATION.REQUIRED) — this is thrown only once emailVerified is
+  // already true.
+  | 'AUTH_LEGAL_ACCEPTANCE_REQUIRED'
 
 export class AuthContextError extends Error {
   readonly name = 'AuthContextError'
@@ -209,6 +230,7 @@ export function authContextErrorStatus(code: AuthContextErrorCode): number {
     case 'TENANCY_NO_ORGANIZATION_SELECTED':
     case 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER':
     case 'AUTH_EMAIL_NOT_VERIFIED':
+    case 'AUTH_LEGAL_ACCEPTANCE_REQUIRED':
       return 403
   }
 }
@@ -440,6 +462,13 @@ async function readPrincipalUnderOpenContext(
   const user = await loadCurrentUserWithinContext(userId)
   if (!user) return { principal: null, pendingRevalidationRefusal: null }
 
+  // CL-1 — the ONE evaluation of the L0 currency predicate per principal
+  // resolution, alongside the B0 fact already propagated as a parameter.
+  // ONE set-returning query, not a loop over instruments
+  // (ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT.consequence_for_the_read) — read
+  // once here and carried on every return site below, exactly like `user`.
+  const accountAcceptanceCurrent = await deriveAccountAcceptanceCurrent(userId)
+
   // S3 — REQUEST_PRINCIPAL_CONTRACT.authoritative_rederivation: re-read on
   // EVERY call, never cached beyond this one request's memoised principal.
   // The carrier is an ASSERTION ONLY — reaching this line proves nothing by
@@ -468,6 +497,7 @@ async function readPrincipalUnderOpenContext(
         organization: null,
         organizationRefusalCode: 'TENANCY_NO_ORGANIZATION_SELECTED',
         emailVerified,
+        accountAcceptanceCurrent,
       },
       pendingRevalidationRefusal: null,
     }
@@ -498,6 +528,7 @@ async function readPrincipalUnderOpenContext(
         organization: null,
         organizationRefusalCode: 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
         emailVerified,
+        accountAcceptanceCurrent,
       },
       pendingRevalidationRefusal: selectedOrganizationId,
     }
@@ -539,6 +570,7 @@ async function readPrincipalUnderOpenContext(
       organization,
       organizationRefusalCode: organization ? null : 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER',
       emailVerified,
+      accountAcceptanceCurrent,
     },
     pendingRevalidationRefusal: null,
   }
@@ -676,14 +708,38 @@ function assertEmailVerifiedPrincipal(principal: RequestPrincipal): RequestPrinc
   return principal
 }
 
+/**
+ * CL-1 (HPO-ODS-W2-28) — the L0 counterpart of `assertEmailVerifiedPrincipal`,
+ * bound the SAME way, for the SAME reason
+ * (ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT.THE_MEMO_TRAP_IS_INHERITED): a check
+ * placed on only one of `requirePrincipal`'s two return sites is bypassed
+ * whenever the memo is warm, intermittently and invisibly. Called ONLY from
+ * `assertPrincipalGates`, AFTER B0 — L0 is evaluated only for a subject who
+ * has already satisfied B0 (B0_PRESERVATION.REQUIRED).
+ */
+function assertAccountAcceptanceCurrentPrincipal(principal: RequestPrincipal): RequestPrincipal {
+  if (!principal.accountAcceptanceCurrent) {
+    throw new AuthContextError(
+      'AUTH_LEGAL_ACCEPTANCE_REQUIRED',
+      'The session is valid and verified, but the account is not current on every required legal instrument.'
+    )
+  }
+  return principal
+}
+
+/** B0 THEN L0, bound to the principal RESULT on both of requirePrincipal's return sites. */
+function assertPrincipalGates(principal: RequestPrincipal): RequestPrincipal {
+  return assertAccountAcceptanceCurrentPrincipal(assertEmailVerifiedPrincipal(principal))
+}
+
 async function requirePrincipal(options: DatabaseContextOptions): Promise<RequestPrincipal> {
   // The memo is consulted first so a page that opens several contexts pays for
   // one GoTrue round trip and one unscoped transaction, not several.
   const memoised = await loadRequestPrincipal()
-  if (memoised) return assertEmailVerifiedPrincipal(memoised)
+  if (memoised) return assertPrincipalGates(memoised)
 
   const { principal, failure } = await resolveRequestPrincipal(options)
-  if (principal) return assertEmailVerifiedPrincipal(principal)
+  if (principal) return assertPrincipalGates(principal)
 
   const code = failure ?? 'AUTH_NO_SESSION'
   throw new AuthContextError(
@@ -744,6 +800,71 @@ export async function withAuthenticatedDatabaseContext<T>(
       // Read from the database under the user's own claims, never from a
       // caller. db/identity-context.ts re-checks it against
       // current_user_is_super_admin() before this callback runs.
+      isSuperAdmin: principal.user.isSuperAdmin,
+    },
+    () =>
+      callback({
+        user: principal.user,
+        membership: principal.membership,
+        organization: principal.organization,
+      }),
+    options
+  )
+}
+
+/**
+ * CL-1 (HPO-ODS-W2-28) — independent-certification BLOCKING B-1 repair.
+ *
+ * THE ONE SURFACE EXEMPT FROM THE L0 GATE: the L0 discharge path itself.
+ * Asserts B0 (`assertEmailVerifiedPrincipal`) — authentication and email
+ * verification are still fully required — but DELIBERATELY never reaches
+ * `assertAccountAcceptanceCurrentPrincipal`, because the one surface whose
+ * PURPOSE is to let a subject discharge L0 cannot itself require L0 to
+ * already be satisfied. Requiring it is exactly what B-1 measured: a subject
+ * who is verified but not yet accepted could reach neither the acceptance
+ * PAGE nor the acceptance ACTION, because both transited
+ * `withAuthenticatedDatabaseContext` -> `requirePrincipal` ->
+ * `assertPrincipalGates` -> `assertAccountAcceptanceCurrentPrincipal`, a
+ * self-lock no subject could ever escape.
+ *
+ * WHAT THIS DOES NOT DO. It grants nothing `withAuthenticatedDatabaseContext`
+ * does not already grant to any verified subject: the SAME unscoped identity
+ * context under the SAME RLS, scoped to the caller's own id. It does not
+ * bypass RLS (T3's self-scoped write predicate is unaffected), does not
+ * touch L1 or entitlement (neither exists on this path), and does not accept
+ * a caller-supplied list of gates to skip — the one omitted gate is fixed in
+ * this function's own body, never parameterised. It is not a general
+ * "skipGates" escape hatch: nothing else in the codebase may reach it, and
+ * tests/auth/accept-legal-callsite-census.test.ts fails the moment a third
+ * call site appears.
+ *
+ * The ONLY authorised callers are the L0 discharge surfaces:
+ * app/(public)/accept-legal/page.tsx and app/(public)/accept-legal/actions.ts.
+ */
+export async function withAccountAcceptanceDischargeContext<T>(
+  callback: (context: AuthenticatedContext) => Promise<T>,
+  options: DatabaseContextOptions = {}
+): Promise<T> {
+  const memoised = await loadRequestPrincipal()
+  const principal = memoised
+    ? assertEmailVerifiedPrincipal(memoised)
+    : await (async () => {
+        const { principal: fresh, failure } = await resolveRequestPrincipal(options)
+        if (fresh) return assertEmailVerifiedPrincipal(fresh)
+        const code = failure ?? 'AUTH_NO_SESSION'
+        throw new AuthContextError(
+          code,
+          code === 'AUTH_NO_PROFILE'
+            ? 'The session is valid but the account has no readable profile row. Refusing to continue: ' +
+                'every organisation and role decision downstream reads that row.'
+            : 'No verified session is attached to this request.'
+        )
+      })()
+
+  return withDatabaseIdentityContext(
+    {
+      userId: principal.user.id,
+      organizationId: null,
       isSuperAdmin: principal.user.isSuperAdmin,
     },
     () =>
@@ -869,7 +990,13 @@ export async function withOptionalDatabaseIdentityContext<T>(
   // S-IA-NO-CONTROL-DEPENDS-ON-C7 — it is included because it is free and an
   // unverified subject is denied a claims-bearing context here too, for the
   // same reason a member-less one already is.
-  if (!principal || !principal.membership || !principal.organization || !principal.emailVerified) {
+  if (
+    !principal ||
+    !principal.membership ||
+    !principal.organization ||
+    !principal.emailVerified ||
+    !principal.accountAcceptanceCurrent
+  ) {
     return callback(null)
   }
 

@@ -88,6 +88,8 @@ SELECT jsonb_pretty(jsonb_build_object(
                        WHERE n.nspname = 'public' AND a.privilege_type = 'EXECUTE') y),
 
   'rowCounts', (SELECT coalesce(jsonb_object_agg(t, n), '{}'::jsonb) FROM (
+    SELECT 'public.account_legal_acceptances' AS t, count(*) AS n FROM "public"."account_legal_acceptances"
+    UNION ALL
     SELECT 'public.assumption_object_links' AS t, count(*) AS n FROM "public"."assumption_object_links"
     UNION ALL
     SELECT 'public.audit_logs' AS t, count(*) AS n FROM "public"."audit_logs"
@@ -121,6 +123,10 @@ SELECT jsonb_pretty(jsonb_build_object(
     SELECT 'public.indicators' AS t, count(*) AS n FROM "public"."indicators"
     UNION ALL
     SELECT 'public.invitations' AS t, count(*) AS n FROM "public"."invitations"
+    UNION ALL
+    SELECT 'public.legal_instrument_versions' AS t, count(*) AS n FROM "public"."legal_instrument_versions"
+    UNION ALL
+    SELECT 'public.legal_instruments' AS t, count(*) AS n FROM "public"."legal_instruments"
     UNION ALL
     SELECT 'public.marketing_leads' AS t, count(*) AS n FROM "public"."marketing_leads"
     UNION ALL

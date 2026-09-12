@@ -75,6 +75,17 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: () => Promise.resolve({ auth: { getUser: () => mockGetUser() } }),
 }))
 
+// CL-1 (HPO-ODS-W2-28) — this suite is about B0 (Packet B), not L0. The
+// in-memory @/db/client double below has no SQL engine capable of evaluating
+// deriveAccountAcceptanceCurrent's raw query, and this suite has no business
+// exercising it: every fixture here is pinned explicitly acceptance-current,
+// so L0 is a no-op prefix and B0's own predicate is what is actually under
+// test.
+vi.mock('@/lib/auth/legal-acceptance', () => ({
+  deriveAccountAcceptanceCurrent: async () => true,
+  ACCEPT_LEGAL_PATH: '/accept-legal',
+}))
+
 /* -------------------------------------------------------------------------- */
 /* The mechanism, mocked to a pass-through — real transaction/claims/rollback  */
 /* coverage lives in tests/authenticated-database-context.test.ts (LIVE-gated) */

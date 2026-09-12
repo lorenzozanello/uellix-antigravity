@@ -1,0 +1,393 @@
+// tests/postgres/legal-acceptance.pg.test.ts
+// CL-1 — customer-lifecycle L0 legal-acceptance substrate (T1/T2/T3), REAL
+// PostgreSQL controls, run through the CANONICAL disposable harness
+// scripts/db-audit-disposable.ts: a throwaway postgres container on
+// 127.0.0.1, ephemeral port, no bind mounts, teardown in `finally`, leftover
+// check. Never staging, never production, never the canonical local stack.
+//
+// Gated: UELLIX_PG_TESTS=1 (Docker required). Skipped — never silently
+// passed — otherwise.
+//
+// WHAT THIS FILE PROVES that no mocked unit test can:
+//   - append-only enforcement on legal_instrument_versions and
+//     account_legal_acceptances (I-T2-2, I-T3-2) is a property of RLS/omitted
+//     policies, not application discipline;
+//   - the I-T3-1 uniqueness invariant is a real database constraint;
+//   - the T3 cross-table invariants (I-T3-4 digest equality, I-T3-5
+//     instrument_class ACCOUNT) enforced by the BEFORE INSERT trigger;
+//   - the RLS postures R-CL1-1 (T1/T2 read-open/write-closed),
+//     R-CL1-3/R-CL1-4 (T3 self-scoped read/write);
+//   - the org-less audit INSERT admission (R-CL1-6, F-AO-15) against BOTH
+//     sibling policies (0042, 0067) unedited;
+//   - the L0 currency predicate (REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT),
+//     including the empty/partial-registry fail-closed cases and the
+//     pre-effective-version non-refusal case, evaluated as the identical SQL
+//     shape lib/auth/legal-acceptance.ts issues;
+//   - presentation binding (independent-audit continuation): a version's
+//     retained content_bytes are genuinely retrievable byte-for-byte from a
+//     real row under RLS, and computeSelfDescribingDigest (the exact function
+//     the acceptance page uses to re-verify what it renders) recognizes those
+//     retrieved bytes as matching the row's own content_digest — a real
+//     round trip through Postgres, not an assumption about column shape.
+
+import { describe, expect, it, beforeAll } from 'vitest'
+
+import { BASELINE_UNITS } from '@/db/hosted/baseline-manifest'
+import { runDisposableHarness, DEFAULT_IMAGE, type HarnessOutcome, type ProbeManifest } from '../../scripts/db-audit-disposable'
+import {
+  IDS,
+  DIGEST_V1,
+  DIGEST_V2,
+  DIGEST_V3,
+  DIGEST_PRIVACY_V1,
+  DIGEST_WRONG,
+  DIGEST_ORG_V1,
+  SYNTHETIC_TERMS_V4_TEXT,
+  SYNTHETIC_TERMS_V4_DIGEST,
+  asUser,
+  buildSetupManifest,
+} from './legal-acceptance-fixtures'
+
+export const PG_TESTS_ENABLED = process.env.UELLIX_PG_TESTS === '1'
+export { IDS, DIGEST_V1, DIGEST_V2, DIGEST_V3, DIGEST_PRIVACY_V1, asUser, buildSetupManifest }
+
+/** The CL-1 unit, DERIVED from the live manifest — never named by ordinal. */
+const CL1_UNIT = BASELINE_UNITS.find((u) => /^\d{4}_customer_lifecycle_cl1_legal_acceptance\.sql$/.test(u.id))
+if (!CL1_UNIT) throw new Error('the CL-1 legal-acceptance baseline unit is not registered in db/hosted/baseline-manifest.ts')
+
+/**
+ * The EXACT currency-predicate SQL shape lib/auth/legal-acceptance.ts
+ * deriveAccountAcceptanceCurrent issues, parameterised over an arbitrary
+ * required-key list so the empty/partial-registry cases can be tested
+ * without disturbing the shared fixture other probes depend on.
+ *
+ * Returns a bare boolean EXPRESSION (no SELECT/INTO) so callers can embed it
+ * as `SELECT (${currencySql(...)}) INTO cur;` — plpgsql's INTO must follow
+ * the select-list directly, which a trailing `AS alias` would break.
+ */
+function currencySql(userId: string, requiredKeys: string[]): string {
+  const values = requiredKeys.map((k) => `('${k}'::varchar)`).join(', ')
+  return `
+    NOT EXISTS (
+      SELECT 1
+      FROM (VALUES ${values}) AS required(instrument_key)
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM legal_instrument_versions v
+        JOIN account_legal_acceptances a
+          ON a.instrument_version_id = v.id
+          AND a.user_id = '${userId}'::uuid
+        WHERE v.instrument_key = required.instrument_key
+          AND NOT EXISTS (
+            SELECT 1
+            FROM legal_instrument_versions v2
+            WHERE v2.instrument_key = v.instrument_key
+              AND v2.version > v.version
+              AND v2.reaccept_required = true
+              AND (v2.effective_at IS NULL OR v2.effective_at <= now())
+          )
+      )
+    )`
+}
+
+export function buildProbeManifest(): ProbeManifest {
+  const probes: { id: string; sql: string }[] = []
+  const add = (id: string, sql: string) => probes.push({ id, sql })
+
+  // --- R-CL1-1: T1/T2 read-open, write-closed --------------------------------
+  add('R-CL1-1a-any-authenticated-subject-reads-T1-and-T2',
+    asUser(IDS.u1) + `DO $w$ DECLARE n1 int; n2 int; BEGIN
+  SELECT count(*) INTO n1 FROM public.legal_instruments;
+  SELECT count(*) INTO n2 FROM public.legal_instrument_versions;
+  IF n1 <> 3 THEN RAISE EXCEPTION 'R-CL1-1a legal_instruments count=% expected=3', n1; END IF;
+  IF n2 <> 6 THEN RAISE EXCEPTION 'R-CL1-1a legal_instrument_versions count=% expected=6', n2; END IF;
+END $w$;
+ROLLBACK;`)
+
+  // --- Presentation binding (independent-audit continuation) -----------------
+  add('PRESENTATION-BINDING-content-bytes-retrieved-byte-for-byte-and-verifies-against-content-digest',
+    asUser(IDS.u1) + `DO $w$ DECLARE bytes text; digest text; BEGIN
+  SELECT content_bytes, content_digest INTO bytes, digest
+    FROM public.legal_instrument_versions
+    WHERE instrument_key = 'terms_of_service' AND version = 4;
+  IF bytes IS DISTINCT FROM '${SYNTHETIC_TERMS_V4_TEXT.replace(/'/g, "''")}' THEN
+    RAISE EXCEPTION 'PRESENTATION-BINDING retrieved content_bytes does not match the fixture byte-for-byte: %', bytes;
+  END IF;
+  IF digest IS DISTINCT FROM '${SYNTHETIC_TERMS_V4_DIGEST}' THEN
+    RAISE EXCEPTION 'PRESENTATION-BINDING retrieved content_digest=% expected=${SYNTHETIC_TERMS_V4_DIGEST}', digest;
+  END IF;
+END $w$;
+ROLLBACK;`)
+
+  // The EXACT query shape lib/auth/legal-acceptance.ts loadRequiredInstrumentsPendingAcceptance
+  // issues (DISTINCT ON greatest effective version per required key, excluding
+  // already-accepted): for u1 (zero acceptances), terms_of_service resolves to
+  // v4 — the greatest EFFECTIVE version — carrying its own content_bytes, not
+  // v3's (pre-effective, correctly excluded) and not an older version's.
+  add('PRESENTATION-BINDING-pending-instrument-query-resolves-to-the-greatest-EFFECTIVE-version-with-its-own-bytes',
+    asUser(IDS.u1) + `DO $w$ DECLARE resolved_version int; bytes text; BEGIN
+  SELECT v.version, v.content_bytes INTO resolved_version, bytes
+    FROM (VALUES ('terms_of_service'::varchar), ('privacy_policy'::varchar)) AS required(instrument_key)
+    JOIN public.legal_instrument_versions v ON v.instrument_key = required.instrument_key
+    WHERE (v.effective_at IS NULL OR v.effective_at <= now())
+      AND NOT EXISTS (
+        SELECT 1 FROM public.account_legal_acceptances a
+        WHERE a.instrument_version_id = v.id AND a.user_id = '${IDS.u1}'::uuid
+      )
+      AND required.instrument_key = 'terms_of_service'
+    ORDER BY v.version DESC
+    LIMIT 1;
+  IF resolved_version <> 4 THEN RAISE EXCEPTION 'PRESENTATION-BINDING resolved version=% expected=4 (v3 is pre-effective and must be excluded)', resolved_version; END IF;
+  IF bytes IS DISTINCT FROM '${SYNTHETIC_TERMS_V4_TEXT.replace(/'/g, "''")}' THEN RAISE EXCEPTION 'PRESENTATION-BINDING resolved row carries the wrong bytes: %', bytes; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('R-CL1-2a-T2-INSERT-denied-no-tenant-role-write-path-PLATFORM_PUBLISHER_DEPENDENCY',
+    asUser(IDS.u1) + `DO $w$ DECLARE caught text := 'none'; msg text := ''; BEGIN
+  BEGIN
+    INSERT INTO public.legal_instrument_versions (instrument_key, version, locale, content_digest, reaccept_required, published_by)
+    VALUES ('terms_of_service', 99, 'es', '${DIGEST_WRONG}', false, '${IDS.u1}');
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; msg := SQLERRM; END;
+  IF caught <> '42501' THEN RAISE EXCEPTION 'R-CL1-2a caught=% expected=42501 (%)', caught, msg; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('I-T2-2-T2-UPDATE-denied-append-only',
+    asUser(IDS.u1) + `DO $w$ DECLARE caught text := 'none'; n int; BEGIN
+  BEGIN
+    UPDATE public.legal_instrument_versions SET reaccept_required = false WHERE instrument_key = 'terms_of_service' AND version = 2;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n <> 0 THEN RAISE EXCEPTION 'I-T2-2 UPDATE affected % rows instead of being denied', n; END IF;
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;
+  IF caught NOT IN ('none','42501') THEN RAISE EXCEPTION 'I-T2-2 unexpected SQLSTATE=%', caught; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('I-T2-2-T2-DELETE-denied-append-only',
+    asUser(IDS.u1) + `DO $w$ DECLARE caught text := 'none'; n int; BEGIN
+  BEGIN
+    DELETE FROM public.legal_instrument_versions WHERE instrument_key = 'terms_of_service' AND version = 1;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n <> 0 THEN RAISE EXCEPTION 'I-T2-2 DELETE affected % rows instead of being denied', n; END IF;
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;
+  IF caught NOT IN ('none','42501') THEN RAISE EXCEPTION 'I-T2-2 unexpected SQLSTATE=%', caught; END IF;
+END $w$;
+ROLLBACK;`)
+
+  // --- R-CL1-3/R-CL1-4: T3 self-scoped write/read ----------------------------
+  add('R-CL1-3a-T3-INSERT-for-SELF-succeeds',
+    asUser(IDS.u1) + `DO $w$ BEGIN
+  INSERT INTO public.account_legal_acceptances (user_id, instrument_version_id, content_digest)
+  VALUES ('${IDS.u1}', '0c110000-0000-4000-8000-0000000010b1', '${DIGEST_PRIVACY_V1}');
+END $w$;
+ROLLBACK;`)
+
+  add('N-AO-24-T3-INSERT-for-ANOTHER-subject-denied',
+    asUser(IDS.u1) + `DO $w$ DECLARE caught text := 'none'; msg text := ''; BEGIN
+  BEGIN
+    INSERT INTO public.account_legal_acceptances (user_id, instrument_version_id, content_digest)
+    VALUES ('${IDS.u2}', '0c110000-0000-4000-8000-0000000010b1', '${DIGEST_PRIVACY_V1}');
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; msg := SQLERRM; END;
+  IF caught <> '42501' THEN RAISE EXCEPTION 'N-AO-24 caught=% expected=42501 (%)', caught, msg; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('I-T3-8-T3-SELECT-scoped-to-SELF-only',
+    asUser(IDS.u2) + `DO $w$ DECLARE n int; leaked int; BEGIN
+  SELECT count(*) INTO n FROM public.account_legal_acceptances WHERE user_id = '${IDS.u2}';
+  IF n <> 2 THEN RAISE EXCEPTION 'I-T3-8 own-row count=% expected=2', n; END IF;
+  SELECT count(*) INTO leaked FROM public.account_legal_acceptances WHERE user_id = '${IDS.u3}';
+  IF leaked <> 0 THEN RAISE EXCEPTION 'I-T3-8 u3''s acceptance leaked into u2''s scoped read (count=%)', leaked; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('I-T3-2-T3-UPDATE-denied-append-only',
+    asUser(IDS.u2) + `DO $w$ DECLARE caught text := 'none'; n int; BEGIN
+  BEGIN
+    UPDATE public.account_legal_acceptances SET content_digest = '${DIGEST_WRONG}' WHERE id = '${IDS.acceptU2Terms}';
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n <> 0 THEN RAISE EXCEPTION 'I-T3-2 UPDATE affected % rows instead of being denied', n; END IF;
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;
+  IF caught NOT IN ('none','42501') THEN RAISE EXCEPTION 'I-T3-2 unexpected SQLSTATE=%', caught; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('I-T3-2-T3-DELETE-denied-append-only',
+    asUser(IDS.u2) + `DO $w$ DECLARE caught text := 'none'; n int; BEGIN
+  BEGIN
+    DELETE FROM public.account_legal_acceptances WHERE id = '${IDS.acceptU2Terms}';
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n <> 0 THEN RAISE EXCEPTION 'I-T3-2 DELETE affected % rows instead of being denied', n; END IF;
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;
+  IF caught NOT IN ('none','42501') THEN RAISE EXCEPTION 'I-T3-2 unexpected SQLSTATE=%', caught; END IF;
+END $w$;
+ROLLBACK;`)
+
+  // --- I-T3-1: uniqueness is the concurrency control -------------------------
+  add('I-T3-1-duplicate-acceptance-of-the-SAME-version-refused-23505',
+    asUser(IDS.u2) + `DO $w$ DECLARE caught text := 'none'; BEGIN
+  BEGIN
+    INSERT INTO public.account_legal_acceptances (user_id, instrument_version_id, content_digest)
+    VALUES ('${IDS.u2}', '0c110000-0000-4000-8000-0000000010a2', '${DIGEST_V2}');
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;
+  IF caught <> '23505' THEN RAISE EXCEPTION 'I-T3-1 caught=% expected=23505 (unique_violation)', caught; END IF;
+END $w$;
+ROLLBACK;`)
+
+  // --- I-T3-4 / I-T3-5: the cross-table trigger invariants -------------------
+  add('I-T3-4-digest-mismatch-refused-by-trigger',
+    asUser(IDS.u1) + `DO $w$ DECLARE caught text := 'none'; msg text := ''; BEGIN
+  BEGIN
+    INSERT INTO public.account_legal_acceptances (user_id, instrument_version_id, content_digest)
+    VALUES ('${IDS.u1}', '0c110000-0000-4000-8000-0000000010b1', '${DIGEST_WRONG}');
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; msg := SQLERRM; END;
+  IF caught <> '23514' THEN RAISE EXCEPTION 'I-T3-4 caught=% expected=23514 (check_violation) (%)', caught, msg; END IF;
+  IF msg !~ 'I-T3-4' THEN RAISE EXCEPTION 'I-T3-4 refused for the wrong reason: %', msg; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('I-T3-5-ORGANIZATION-class-instrument-refused-on-the-account-acceptance-path',
+    asUser(IDS.u1) + `DO $w$ DECLARE caught text := 'none'; msg text := ''; BEGIN
+  BEGIN
+    INSERT INTO public.account_legal_acceptances (user_id, instrument_version_id, content_digest)
+    VALUES ('${IDS.u1}', '0c110000-0000-4000-8000-0000000010c1', '${DIGEST_ORG_V1}');
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; msg := SQLERRM; END;
+  IF caught <> '23514' THEN RAISE EXCEPTION 'I-T3-5 caught=% expected=23514 (check_violation) (%)', caught, msg; END IF;
+  IF msg !~ 'I-T3-5' THEN RAISE EXCEPTION 'I-T3-5 refused for the wrong reason: %', msg; END IF;
+END $w$;
+ROLLBACK;`)
+
+  // --- the currency predicate, the exact SQL shape L0 issues -----------------
+  add('N-AO-32-zero-acceptances-never-passes-vacuously',
+    asUser(IDS.u1) + `DO $w$ DECLARE cur boolean; BEGIN
+  SELECT (${currencySql(IDS.u1, ['terms_of_service', 'privacy_policy'])}) INTO cur;
+  IF cur IS DISTINCT FROM false THEN RAISE EXCEPTION 'N-AO-32 zero-acceptance subject measured current=%, expected false', cur; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('N-AO-4-a-later-MARKED-EFFECTIVE-version-refuses-a-stale-acceptor',
+    asUser(IDS.u3) + `DO $w$ DECLARE cur boolean; BEGIN
+  SELECT (${currencySql(IDS.u3, ['terms_of_service'])}) INTO cur;
+  IF cur IS DISTINCT FROM false THEN RAISE EXCEPTION 'N-AO-4 u3 (accepted only v1) measured current=%, expected false (v2 supersedes)', cur; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('P-AO-6-P-AO-17-P-AO-21-current-on-the-latest-EFFECTIVE-marked-version-passes-despite-a-PRE-EFFECTIVE-later-one',
+    asUser(IDS.u2) + `DO $w$ DECLARE cur boolean; BEGIN
+  SELECT (${currencySql(IDS.u2, ['terms_of_service', 'privacy_policy'])}) INTO cur;
+  IF cur IS DISTINCT FROM true THEN RAISE EXCEPTION 'P-AO-21 u2 (current on v2 + privacy v1) measured current=%, expected true (v3 is not yet effective)', cur; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('P-AO-15-N-AO-37-empty-and-partial-registry-both-refuse-fail-closed',
+    asUser(IDS.u2) + `DO $w$ DECLARE cur boolean; BEGIN
+  -- u2 is current on the two REAL required keys (proven above), but adding a
+  -- required key with ZERO published versions must still refuse the whole
+  -- conjunction — there is no empty set to be vacuously true over.
+  SELECT (${currencySql(IDS.u2, ['terms_of_service', 'privacy_policy', 'nonexistent_required_key_for_fail_closed_probe'])}) INTO cur;
+  IF cur IS DISTINCT FROM false THEN RAISE EXCEPTION 'P-AO-15/N-AO-37 measured current=% with an unpublished required key present, expected false', cur; END IF;
+END $w$;
+ROLLBACK;`)
+
+  // --- R-CL1-6 / ORGLESS_AUDIT_AUTHORITY --------------------------------------
+  add('R-CL1-6-orgless-acceptance-audit-INSERT-admitted-for-the-authorized-subject',
+    asUser(IDS.u1) + `DO $w$ BEGIN
+  INSERT INTO public.audit_logs (actor_user_id, entity_type, entity_id, action, organization_id, after_json)
+  VALUES ('${IDS.u1}', 'user', '${IDS.u1}', 'legal.account_instrument_accepted', NULL,
+    jsonb_build_object('instrumentKey', 'privacy_policy', 'version', 1, 'contentDigest', '${DIGEST_PRIVACY_V1}'));
+END $w$;
+ROLLBACK;`)
+
+  add('N-AO-25-orgless-audit-refuses-a-DIFFERENT-closed-verb-even-with-organization_id-NULL',
+    asUser(IDS.u1) + `DO $w$ DECLARE caught text := 'none'; BEGIN
+  BEGIN
+    INSERT INTO public.audit_logs (actor_user_id, entity_type, entity_id, action, organization_id)
+    VALUES ('${IDS.u1}', 'user', '${IDS.u1}', 'legal.account_instrument_accepted_but_not_really', NULL);
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;
+  IF caught <> '42501' THEN RAISE EXCEPTION 'N-AO-25 caught=% expected=42501', caught; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('ORGLESS_AUDIT-refuses-an-actor-mismatch-cannot-attribute-the-acceptance-to-someone-else',
+    asUser(IDS.u1) + `DO $w$ DECLARE caught text := 'none'; BEGIN
+  BEGIN
+    INSERT INTO public.audit_logs (actor_user_id, entity_type, entity_id, action, organization_id)
+    VALUES ('${IDS.u2}', 'user', '${IDS.u2}', 'legal.account_instrument_accepted', NULL);
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;
+  IF caught <> '42501' THEN RAISE EXCEPTION 'ORGLESS_AUDIT actor-mismatch caught=% expected=42501', caught; END IF;
+END $w$;
+ROLLBACK;`)
+
+  add('ORGLESS_AUDIT-0042-and-0067-remain-unedited-a-normal-org-scoped-audit-insert-still-works',
+    `DO $w$ DECLARE n int; BEGIN
+  -- Sanity: the additive policy did not disturb 0042's ordinary tenant path.
+  -- Run as postgres (owner) so this is purely a policy-existence smoke check,
+  -- not a second RLS probe.
+  SELECT count(*) INTO n FROM pg_policies WHERE schemaname = 'public' AND tablename = 'audit_logs' AND cmd = 'INSERT';
+  IF n <> 3 THEN RAISE EXCEPTION 'ORGLESS_AUDIT expected exactly 3 audit_logs INSERT policies (0042, 0067, CL-1), measured %', n; END IF;
+END $w$;`)
+
+  return { probes }
+}
+
+const EXPECTED_PROBE_IDS = buildProbeManifest().probes.map((p) => p.id)
+
+describe.skipIf(!PG_TESTS_ENABLED)('CL-1 legal acceptance — real PostgreSQL (canonical disposable harness)', { timeout: 1_200_000 }, () => {
+  let outcome: HarnessOutcome
+
+  beforeAll(() => {
+    outcome = runDisposableHarness({
+      image: DEFAULT_IMAGE,
+      setup: buildSetupManifest(),
+      probe: buildProbeManifest(),
+    })
+    console.log(`CL1_PG_OUTCOME=${JSON.stringify({
+      setupStatus: outcome.setupStatus,
+      probeStatus: outcome.probeStatus,
+      probeCount: outcome.probeCount,
+      probeFailureCount: outcome.probeFailureCount,
+      teardownStatus: outcome.teardownStatus,
+      leftoverDatabaseCount: outcome.leftoverDatabaseCount,
+      lifecycleState: outcome.lifecycleState,
+      failureReason: outcome.failureReason,
+      failed: outcome.probeResults.filter((p) => !p.ok).map((p) => ({ id: p.id, detail: p.detail })),
+    })}`)
+  }, 1_200_000)
+
+  // FINAL-UNIT DISPLACEMENT: the CL-1 legal-acceptance unit (0070) is no
+  // longer last — 0071_customer_lifecycle_cl1_content_bytes.sql (the
+  // presentation-binding repair, same mission) was appended immediately
+  // above it. Retargeted the same way S1's own displacement control is
+  // (tests/tenancy/s1-founder-traceability.test.ts): to 0070's own position
+  // with the ONE displacing unit named, not to "the tail".
+  it('the CL-1 unit is displaced from the top by exactly the CL-1 content-bytes unit', () => {
+    const index = BASELINE_UNITS.indexOf(CL1_UNIT!)
+    expect(index).toBe(BASELINE_UNITS.length - 2)
+    expect(BASELINE_UNITS[BASELINE_UNITS.length - 1].id).toBe('0071_customer_lifecycle_cl1_content_bytes.sql')
+  })
+
+  it(`the harness provisioned the full baseline (${BASELINE_UNITS.length} units, CL-1 included) and tore itself down with zero leftovers`, () => {
+    expect(outcome.failureReason).toBeNull()
+    expect(outcome.setupStatus).toBe('SUCCESS')
+    expect(outcome.teardownStatus).toBe('SUCCESS')
+    expect(outcome.leftoverDatabaseCount).toBe(0)
+    expect(outcome.lifecycleState).toBe('VERIFIED_GONE')
+    expect(outcome.targetLocality).toBe('LOCAL')
+  })
+
+  it('ran every probe, in the declared order', () => {
+    expect(outcome.probeResults.map((p) => p.id)).toEqual(EXPECTED_PROBE_IDS)
+  })
+
+  it.each(EXPECTED_PROBE_IDS)('%s', (id) => {
+    const probe = outcome.probeResults.find((p) => p.id === id)
+    expect(probe, `probe ${id} did not run`).toBeDefined()
+    expect(probe!.detail ?? '').toBe('')
+    expect(probe!.ok).toBe(true)
+  })
+
+  it('POSTGRES_FAILURES=0 (harness verdict)', () => {
+    expect(outcome.probeFailureCount).toBe(0)
+    expect(outcome.harnessStatus).toBe('SUCCESS')
+  })
+})

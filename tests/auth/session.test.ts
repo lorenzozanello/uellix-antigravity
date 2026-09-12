@@ -27,6 +27,16 @@ vi.mock('next/navigation', () => ({
   redirect: (path: string) => mockRedirect(path),
 }))
 
+// CL-1 (HPO-ODS-W2-28) — this suite is about session.ts's pre-existing gates,
+// not L0. The in-memory @/db/client double elsewhere in this file has no SQL
+// engine capable of evaluating deriveAccountAcceptanceCurrent's raw query,
+// and this suite has no business exercising it: every fixture here is pinned
+// explicitly acceptance-current.
+vi.mock('@/lib/auth/legal-acceptance', () => ({
+  deriveAccountAcceptanceCurrent: async () => true,
+  ACCEPT_LEGAL_PATH: '/accept-legal',
+}))
+
 // S3 — lib/auth/database-context.ts now reads the S2 carrier
 // (lib/auth/selected-organization.ts, unmocked and exercised for real below)
 // to resolve which organization's membership to derive. That module's only

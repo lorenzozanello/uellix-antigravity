@@ -8,7 +8,12 @@
 // WHAT A GREEN RUN HERE ACTUALLY PROVES, on a real cluster and not a mock:
 //
 //   * the additive policy exists BESIDE the two pre-existing ones (three, by
-//     name) and RLS is still enabled on audit_logs;
+//     name) and RLS is still enabled on audit_logs. CL-1 (HPO-ODS-W2-28,
+//     db/migrations/0070) later adds a FOURTH additive INSERT policy
+//     (audit_logs_insert_legal_acceptance) beside these three, unedited —
+//     SEC-ACL-1/2 below are re-measured for four total / three INSERT, and
+//     this file's own write surface does not include that policy's own
+//     correctness, which tests/postgres/legal-acceptance.pg.test.ts owns;
 //   * all THREE authorised action/form combinations insert;
 //   * `tenancy.membership.revalidation_refused` in FORM A shape is REFUSED BY
 //     THE DATABASE (RA-ACTION-1) — the single row the predecessor's uncoupled
@@ -44,7 +49,7 @@ export const PG_TESTS_ENABLED = process.env.UELLIX_PG_TESTS === '1'
  * deleting a probe would still show green. Deleting one here fails.
  */
 const EXPECTED_PROBE_IDS = [
-  'SEC-ACL-1-audit_logs-RLS-enabled-and-exactly-three-policies',
+  'SEC-ACL-1-audit_logs-RLS-enabled-and-exactly-four-policies',
   'SEC-ACL-2-exactly-one-SELECT-policy-and-it-is-unchanged',
   'SEC-ACL-3-no-UPDATE-or-DELETE-policy-on-audit_logs',
   'PG-POS-1-selection_refused-FORM-A-accepted',
