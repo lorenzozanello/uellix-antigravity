@@ -1536,3 +1536,75 @@ export const sensitivityScenarios = pgTable('sensitivity_scenarios', {
   index('idx_sensitivity_scenarios_run_id').on(table.calculationRunId),
   index('idx_sensitivity_scenarios_organization_id').on(table.organizationId),
 ])
+
+// CL-1 (docs/ops/compliance/CUSTOMER_LIFECYCLE_CL1_EXECUTION_AUTHORITY_v1.0.0.json,
+// HPO-ODS-W2-28). T1 — the continuing identity of a legal instrument,
+// independent of any published edition (parent authority
+// FUTURE_DDL.T1_legal_instruments). PLATFORM-GLOBAL reference data, not
+// tenant data: no organization_id anywhere on this table. instrument_class is
+// fixed at creation and never changes (I-T1-2); a third class requires new
+// owner policy, not a migration (I-T1-3). Append-only: no UPDATE/DELETE
+// policy exists in the migration, and the mutation trigger is defense in
+// depth (I-T1-4).
+export const legalInstruments = pgTable('legal_instruments', {
+  instrumentKey: varchar('instrument_key', { length: 100 }).primaryKey().notNull(),
+  instrumentClass: varchar('instrument_class', { length: 20 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('legal_instruments_instrument_class_check', sql`${table.instrumentClass} IN ('ACCOUNT', 'ORGANIZATION')`),
+])
+
+// T2 — one immutable published edition of an instrument, content-addressed
+// (FUTURE_DDL.T2_legal_instrument_versions). content_digest is a
+// SELF-DESCRIBING digest ('sha256:<hex>'): this delivers HASH_VERIFIABILITY
+// (I-T2-4 R4) with no separately persisted algorithm column, which the
+// parent authority classifies IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED
+// and forbids treating as an exit-gate requirement. No content_bytes column
+// either, for the same reason (RECOMMENDED_NOT_REQUIRED, LRF-01/LRF-04
+// COUNSEL_REQUIRED). reaccept_required has NO DEFAULT (I-T2-3) — a defaulting
+// flag is the fail-open shape Packet B X-B-03 forbids. published_by names the
+// platform principal that published the version; WHICH principal may do so
+// is a PLATFORM_PUBLISHER_DEPENDENCY (U-AO-2) this unit does not decide, and
+// there is deliberately no tenant-role write path onto this table at all.
+export const legalInstrumentVersions = pgTable('legal_instrument_versions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  instrumentKey: varchar('instrument_key', { length: 100 }).references(() => legalInstruments.instrumentKey).notNull(),
+  version: integer('version').notNull(),
+  locale: varchar('locale', { length: 10 }).notNull(),
+  contentDigest: text('content_digest').notNull(),
+  reacceptRequired: boolean('reaccept_required').notNull(),
+  effectiveAt: timestamp('effective_at'),
+  publishedBy: uuid('published_by').references(() => users.id).notNull(),
+  publishedAt: timestamp('published_at').defaultNow().notNull(),
+  auditLogId: uuid('audit_log_id').references(() => auditLogs.id),
+}, (table) => [
+  check('legal_instrument_versions_content_digest_check', sql`${table.contentDigest} ~ '^sha256:[0-9a-f]{64}$'`),
+  uniqueIndex('uq_legal_instrument_versions_key_version_locale').on(table.instrumentKey, table.version, table.locale),
+  index('idx_legal_instrument_versions_instrument_key').on(table.instrumentKey),
+])
+
+// T3 — evidence that one subject assented to one ACCOUNT-class instrument
+// version (FUTURE_DDL.T3_account_legal_acceptances). NOT tenant data: no
+// organization_id (I-T3-7). NO identifying metadata beyond user_id — no
+// ip_address, no user_agent, no device fingerprint (I-T3-9, LRF-03). The
+// redundant conceptual `instrument_key` column the parent illustration lists
+// is DELIBERATELY OMITTED here: an unenforceable duplicate of
+// instrument_version_id's own instrument_key would be a second, driftable
+// source of the same fact, and every consumer already joins through
+// instrument_version_id. content_digest is snapshotted and a trigger
+// (enforce_account_legal_acceptance_invariants, in the migration) enforces
+// I-T3-4 (digest equals the referenced version's digest at write time) and
+// I-T3-5 (the referenced instrument is instrument_class ACCOUNT) — neither
+// is expressible as a plain CHECK constraint because both cross tables.
+export const accountLegalAcceptances = pgTable('account_legal_acceptances', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  instrumentVersionId: uuid('instrument_version_id').references(() => legalInstrumentVersions.id).notNull(),
+  contentDigest: text('content_digest').notNull(),
+  acceptedAt: timestamp('accepted_at').defaultNow().notNull(),
+  auditLogId: uuid('audit_log_id').references(() => auditLogs.id),
+}, (table) => [
+  check('account_legal_acceptances_content_digest_check', sql`${table.contentDigest} ~ '^sha256:[0-9a-f]{64}$'`),
+  uniqueIndex('uq_account_legal_acceptances_user_version').on(table.userId, table.instrumentVersionId),
+  index('idx_account_legal_acceptances_user_id').on(table.userId),
+])

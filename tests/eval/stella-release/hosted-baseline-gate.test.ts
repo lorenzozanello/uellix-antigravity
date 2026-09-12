@@ -76,8 +76,11 @@ describe('the six baseline gates', () => {
     // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 (eight plain CREATE
     // INDEX IF NOT EXISTS statements — no role, ownership or extension
     // statement, so superuserFreeUnits advances in lockstep) = 82.
-    expect(evidence.unitCount).toBe(82)
-    expect(evidence.superuserFreeUnits).toBe(82)
+    // CL-1 (HPO-ODS-W2-28): + 0070_customer_lifecycle_cl1_legal_acceptance.sql
+    // (three CREATE TABLE, RLS, triggers and policies — no role, ownership or
+    // extension statement, so superuserFreeUnits advances in lockstep) = 83.
+    expect(evidence.unitCount).toBe(83)
+    expect(evidence.superuserFreeUnits).toBe(83)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',

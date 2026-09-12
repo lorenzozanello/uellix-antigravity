@@ -1,0 +1,75 @@
+{
+  "manifest_id": "CL-1-IMPLEMENTATION",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/compliance/CUSTOMER_LIFECYCLE_CL1_EXECUTION_AUTHORITY_v1.0.0.json",
+  "dependencies": [
+    "HPO-ODS-W2-28",
+    "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0",
+    "TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0",
+    "TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0"
+  ],
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/journal/**",
+    "db/prepared/checkpoint-b0/observation.sql"
+  ],
+  "protected_authority": "HPO-ODS-W2-28",
+  "postgres_requirements": {
+    "probe_manifest": "tests/postgres/legal-acceptance.pg.test.ts",
+    "rationale": "A real PostgreSQL probe is required and cannot be substituted by unit tests for four properties that only exist at the database boundary: (1) append-only enforcement on legal_instrument_versions and account_legal_acceptances (I-T2-2, I-T3-2) is a property of RLS/omitted policies, and a mocked client would happily accept an UPDATE the database refuses; (2) the I-T3-1 uniqueness invariant is the concurrency control for simultaneous acceptance; (3) the RLS postures R-CL1-1, R-CL1-3, R-CL1-4 are policy behaviour, never probed before this unit (U-AO-1 was open); (4) the org-less audit INSERT admission (R-CL1-6) is policy behaviour and is the specific gap F-AO-15 records. Run exclusively via the canonical disposable harness (scripts/db-audit-disposable.ts) — never staging, never production, never the canonical local stack."
+  },
+  "known_conditions": [],
+  "positive_controls": [
+    { "id": "R-CL1-1a", "description": "Any authenticated subject reads T1 (legal_instruments) and T2 (legal_instrument_versions) in full.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "R-CL1-3a", "description": "A subject may INSERT their own account-class acceptance row (T3).", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "I-T3-8", "description": "T3 SELECT is scoped to the subject themselves; another subject's acceptance never leaks into a scoped read.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "P-AO-6/P-AO-17/P-AO-21", "description": "A subject current on the latest EFFECTIVE marked version passes the currency predicate even though a later version exists that is not yet effective (pre-effective versions never refuse).", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "R-CL1-6", "description": "The org-less account-class acceptance audit INSERT (organization_id NULL, action legal.account_instrument_accepted, actor = auth.uid()) is admitted.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "ORGLESS_AUDIT-sanity", "description": "0042 and 0067's audit_logs INSERT policies remain byte-unchanged and functioning: exactly three INSERT policies exist on audit_logs after this unit (0042, 0067, CL-1).", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "K3-accepted-passes", "description": "requireAuth: a verified, accepted subject passes through with no redirect.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K4-accepted-passes", "description": "requireOrganizationAccess: an accepted member with a selected organization reaches the ordinary Packet A destination unchanged.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K4-accepted-superadmin", "description": "requireOrganizationAccess: an ACCEPTED super-admin with no membership still reaches /admin — L0 does not disturb R1 once satisfied.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K5-accepted-passes", "description": "getCurrentOrganizationContext returns the context for an accepted subject.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K6-accepted-passes", "description": "withAuthenticatedDatabaseContext succeeds for a verified, accepted subject.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "STRUCTURAL-single-helper", "description": "Both of requirePrincipal's return sites (memo-hit and fresh) route through the SAME assertPrincipalGates helper, which asserts B0 (assertEmailVerifiedPrincipal) before L0 (assertAccountAcceptanceCurrentPrincipal).", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" }
+  ],
+  "negative_controls": [
+    { "id": "R-CL1-2a", "description": "T2 INSERT is denied for any tenant role — no publisher write path exists (PLATFORM_PUBLISHER_DEPENDENCY).", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "I-T2-2-update", "description": "T2 UPDATE is denied — append-only.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "I-T2-2-delete", "description": "T2 DELETE is denied — append-only.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "N-AO-24", "description": "T3 INSERT for another subject is denied — no delegation of account-class acceptance.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "I-T3-2-update", "description": "T3 UPDATE is denied — append-only.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "I-T3-2-delete", "description": "T3 DELETE is denied — append-only.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "I-T3-1", "description": "A duplicate acceptance of the same (user, version) pair is refused by the unique constraint (23505), not silently accepted as a second row.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "I-T3-4", "description": "An acceptance whose snapshotted content_digest does not equal the referenced version's digest is refused by the BEFORE INSERT trigger.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "I-T3-5", "description": "An ORGANIZATION-class instrument version cannot be accepted through the account-acceptance (T3) path — refused by the trigger.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "N-AO-32", "description": "A subject with ZERO acceptances never passes the currency predicate vacuously.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "N-AO-4", "description": "A subject current only on a superseded version (a later version is marked reaccept_required and already effective) is refused, identically to never having accepted.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "P-AO-15/N-AO-37", "description": "Adding a required key with ZERO published versions to the conjunction refuses the WHOLE gate, even for a subject otherwise current on every other required key — empty/partial registry fail closed, no vacuous truth.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "N-AO-25", "description": "The org-less audit policy refuses a different action string even with organization_id NULL — the verb set is closed, not a generic anonymous write.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "ORGLESS_AUDIT-actor-mismatch", "description": "The org-less audit policy refuses an actor_user_id that does not match auth.uid() — an acceptance cannot be attributed to someone else.", "test_file": "tests/postgres/legal-acceptance.pg.test.ts" },
+    { "id": "K3-unaccepted-redirect", "description": "requireAuth redirects a verified, unaccepted subject to ACCEPT_LEGAL_PATH.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K3-B0-before-L0", "description": "requireAuth redirects an UNVERIFIED, unaccepted subject to /verify-email, never to ACCEPT_LEGAL_PATH — B0 precedes L0.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K4-unaccepted-redirect", "description": "requireOrganizationAccess redirects an unaccepted member to ACCEPT_LEGAL_PATH, never reaching R1 through R4.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K4-unaccepted-superadmin", "description": "PACKET_A_PRESERVATION P-AO-13 analogue: an UNACCEPTED super-admin is ALSO redirected to ACCEPT_LEGAL_PATH, never auto-routed to /admin — L0 applies uniformly, no principal-class bypass.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K5-unaccepted-null", "description": "getCurrentOrganizationContext returns null for an unaccepted subject even with a full membership and organization.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K6-unaccepted-throws", "description": "withAuthenticatedDatabaseContext throws AUTH_LEGAL_ACCEPTANCE_REQUIRED for a verified, unaccepted subject, mapped to HTTP 403 (never 401).", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" },
+    { "id": "K6-B0-before-L0", "description": "N-AO-1 analogue: an UNVERIFIED, unaccepted subject is refused with AUTH_EMAIL_NOT_VERIFIED, not AUTH_LEGAL_ACCEPTANCE_REQUIRED.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" }
+  ],
+  "mutation_controls": [
+    { "id": "MUT-CL1-1-fail-open-currency-query", "description": "The currency-predicate function (lib/auth/legal-acceptance.ts deriveAccountAcceptanceCurrent) is deliberately never wrapped in a try/catch that could convert a query failure into a permissive `true` (FAIL_CLOSED.FC_6) — removing that discipline (e.g. wrapping the db.execute call and returning true on error) would defeat the entire model and is guarded by the function's own contract; the real-PostgreSQL suite exercises the function against a live connection so any accidental catch-and-pass would need to be introduced and reviewed as a visible code change, not a config flag.", "test_file": "lib/auth/legal-acceptance.ts" },
+    { "id": "MUT-CL1-2-single-helper-non-vacuity", "description": "Structural control proving requirePrincipal's memo-hit and fresh-resolution return sites are bound to the SAME assertPrincipalGates helper — moving the L0 check to only the fresh branch (the memo-trap regression class) would be caught by this control failing.", "test_file": "tests/auth/legal-acceptance-enforcement.test.ts" }
+  ],
+  "sentinels": [
+    { "id": "S-CL1-NO-INSTRUMENT-TEXT-IN-AUDIT", "purpose": "The org-less acceptance audit row (R-CL1-6) carries only instrumentKey, version and contentDigest in afterJson — never instrument text. Verified by inspection of the exact payload shape the server action (app/(public)/accept-legal/actions.ts) constructs; no raw instrument content field exists anywhere on the write path." },
+    { "id": "S-CL1-NO-SUPERADMIN-DISJUNCT", "purpose": "None of the five policies this unit adds (legal_instruments_select, legal_instrument_versions_select, account_legal_acceptances_select, account_legal_acceptances_insert, audit_logs_insert_legal_acceptance) contains current_user_is_super_admin() or any hasRole comparison — verified by direct reading of db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql and by the db/hosted/baseline-scanner.ts securitySurfaceDigest pinned in db/hosted/baseline-manifest.ts, which changes if any predicate's TEXT changes." }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}

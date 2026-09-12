@@ -63,6 +63,18 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: () => Promise.resolve({ auth: { getUser: () => mockGetUser() } }),
 }))
 
+// CL-1 (HPO-ODS-W2-28) — this suite is about S3 tenancy/principal resolution,
+// not L0. The in-memory @/db/client double below has no SQL engine capable of
+// evaluating deriveAccountAcceptanceCurrent's raw query, and this suite has no
+// business exercising it: every fixture here is pinned explicitly
+// acceptance-current, the CL-1 analogue of S-IA-PRINCIPAL-FIXTURES-
+// EXPLICITLY-VERIFIED, so L0 is a no-op prefix and S3's own predicates are
+// what is actually under test.
+vi.mock('@/lib/auth/legal-acceptance', () => ({
+  deriveAccountAcceptanceCurrent: async () => true,
+  ACCEPT_LEGAL_PATH: '/accept-legal',
+}))
+
 /* -------------------------------------------------------------------------- */
 /* The mechanism, mocked to a pass-through — REAL_PG lives in                  */
 /* tests/authenticated-database-context.test.ts, not here.                    */
@@ -524,20 +536,25 @@ describe('S3-6: the role on the resulting principal comes solely from the SELECT
 /* -------------------------------------------------------------------------- */
 
 describe('S3-7: the selectable-memberships enumerator is exported from an EXISTING context module; NO new lib/auth/* module exists', () => {
-  it('lib/auth/ contains exactly the files S3 left behind, plus the ONE module a LATER authority (Packet B) deliberately added', () => {
+  it('lib/auth/ contains exactly the files S3 left behind, plus the modules LATER authorities (Packet B, CL-1) deliberately added', () => {
     // PACKET B (docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY
     // _v1.0.0.json) added lib/auth/email-verification.ts — a single exported
     // constant (the /verify-email destination), not a second derivation of
     // the verified boolean (S-IA-PREDICATE-CARDINALITY still names
-    // lib/auth/identity.ts as the sole reader of email_confirmed_at). S3's
-    // OWN constraint — that the enumerator was hosted in an existing module —
-    // is unchanged; this list is widened because a later, separately
-    // authorized lane added a new module, not because S3-7 was relaxed.
+    // lib/auth/identity.ts as the sole reader of email_confirmed_at).
+    // CL-1 (HPO-ODS-W2-28) added lib/auth/legal-acceptance.ts — the ONE
+    // derivation site for account-class acceptance currency
+    // (S-AO-PREDICATE-CARDINALITY), analogous in shape and in the same
+    // reason it does not collapse S3-7's constraint. S3's OWN constraint —
+    // that the enumerator was hosted in an existing module — is unchanged;
+    // this list is widened because later, separately authorized lanes added
+    // new modules, not because S3-7 was relaxed.
     const files = readdirSync(path.join(ROOT, 'lib', 'auth')).filter((f) => f.endsWith('.ts')).sort()
     expect(files).toEqual([
       'database-context.ts',
       'email-verification.ts',
       'identity.ts',
+      'legal-acceptance.ts',
       'permissions.ts',
       'roles.ts',
       'safe-redirect.ts',

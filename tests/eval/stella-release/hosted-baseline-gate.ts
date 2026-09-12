@@ -412,9 +412,13 @@ export function buildHostedBaselineGateEvidence(
     // + 1 journal bootstrap step = 83. This pin is N+1, NEVER N: a mechanical
     // 81 -> 82 sweep leaves it reading 82 — correct for the PREVIOUS N — so it
     // looks already-updated while demanding 82 steps from a plan producing 83 — DERIVED, not grepped.
+    // CL-1 (HPO-ODS-W2-28): + 0070_customer_lifecycle_cl1_legal_acceptance.sql
+    // = 83 baseline units + 1 journal bootstrap step = 84. Same N+1 trap: a
+    // mechanical 82 -> 83 sweep would leave this reading 83 — correct for the
+    // PREVIOUS N — while demanding 83 steps from a plan now producing 84.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 83 &&
+      firstProvisioning.steps.length === 84 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -440,7 +444,8 @@ export function evaluateHostedBaselineGates(
   // HPO-ODS-W2-25 (multi-org S3 refusal audit): + 0067 = 80.
   // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81.
   // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 = 82.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 82
+  // CL-1 (HPO-ODS-W2-28): + 0070_customer_lifecycle_cl1_legal_acceptance.sql = 83.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 83
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

@@ -205,12 +205,19 @@ describe('FIBDB-052 P1 — P-6 schema / migration / snapshot agreement', () => {
     }
   })
 
-  it('P-7: the journal gained exactly one entry and it is the P1 unit at the tail', () => {
+  // FINAL-UNIT DISPLACEMENT (CL-1, HPO-ODS-W2-28): P1 is no longer the last
+  // unit — 0070_customer_lifecycle_cl1_legal_acceptance.sql was appended above
+  // it — so, following the same retargeting the S1 control already applies
+  // (tests/tenancy/s1-founder-traceability.test.ts), the pin moves to P1's own
+  // position with the ONE displacing unit NAMED, rather than to "the tail".
+  it('P-7: the journal gained exactly one entry and it is the P1 unit, displaced from the top by exactly the CL-1 legal-acceptance unit', () => {
     const journal = JSON.parse(read('db/migrations/meta/_journal.json')) as {
       entries: { idx: number; tag: string }[]
     }
     const last = journal.entries[journal.entries.length - 1]
-    expect(last.tag).toBe('0069_fib_fibdb052_p1_indexes')
+    const own = journal.entries[journal.entries.length - 2]
+    expect(own.tag).toBe('0069_fib_fibdb052_p1_indexes')
+    expect(last.tag).toBe('0070_customer_lifecycle_cl1_legal_acceptance')
     expect(last.idx).toBe(journal.entries.length - 1)
   })
 })

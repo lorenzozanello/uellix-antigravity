@@ -37,6 +37,16 @@ export const AUDIT_ACTIONS = {
   TENANCY_ORGANIZATION_SELECTION_REFUSED: 'tenancy.organization.selection_refused',
   TENANCY_MEMBERSHIP_REVALIDATION_REFUSED: 'tenancy.membership.revalidation_refused',
 
+  // CL-1 (HPO-ODS-W2-28) -- account-class legal-instrument acceptance (L0,
+  // AB-1). The ONLY audit verb whose row carries organization_id NULL for a
+  // reason other than tenancy refusal: an account-class acceptance happens
+  // before the subject belongs to any organization at all
+  // (AUDIT.TENANT_SCOPE_OF_THE_AUDIT_ROW). Admitted by the additive policy
+  // audit_logs_insert_legal_acceptance in db/migrations/0070. The row MUST
+  // NOT carry instrument text -- only instrument_key, version, the content
+  // digest, the subject and the timestamp (AUDIT.THE_CONTENT_LEAK_PROHIBITION).
+  LEGAL_ACCOUNT_INSTRUMENT_ACCEPTED: 'legal.account_instrument_accepted',
+
   // Signup allowlist
   SIGNUP_ALLOWLIST_CREATED: 'signup_allowlist.created',
   SIGNUP_ALLOWLIST_REMOVED: 'signup_allowlist.removed',

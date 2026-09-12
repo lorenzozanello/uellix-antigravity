@@ -6,6 +6,7 @@ import { organizations, organizationMembers } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { syncUserProfile, getCurrentMembership, listSelectableMemberships, loadRequestPrincipal } from '@/lib/auth/session'
 import { VERIFY_EMAIL_PATH } from '@/lib/auth/email-verification'
+import { ACCEPT_LEGAL_PATH } from '@/lib/auth/legal-acceptance'
 import { createClient } from '@/lib/supabase/server'
 import { logAuditAction } from '@/lib/audit/logger'
 import { ROLES } from '@/lib/auth/roles'
@@ -55,6 +56,15 @@ export async function createFirstOrganization(formData: FormData) {
   const principal = await loadRequestPrincipal()
   if (principal && !principal.emailVerified) {
     redirect(VERIFY_EMAIL_PATH)
+  }
+
+  // CL-1 — L0, routing only, same reasoning as the B0 check immediately
+  // above: withAuthenticatedDatabaseContext below transits requirePrincipal
+  // (K6), which now refuses an unaccepted subject there too. This redirect
+  // exists so a direct form submission gets a clean destination instead of
+  // an unhandled AuthContextError.
+  if (principal && !principal.accountAcceptanceCurrent) {
+    redirect(ACCEPT_LEGAL_PATH)
   }
 
   // Enforce: user must not already have an org
