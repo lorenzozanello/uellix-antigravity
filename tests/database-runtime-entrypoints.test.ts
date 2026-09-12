@@ -238,6 +238,10 @@ const CONTEXT_OPENERS = [
   'withAuthenticatedDatabaseContext',
   'withSuperAdminDatabaseContext',
   'withOptionalDatabaseIdentityContext',
+  // lib/auth/database-context.ts — the ONE surface exempt from the L0 gate
+  // (CL-1 B-1 repair): app/(public)/accept-legal/{page.tsx,actions.ts} only,
+  // enforced by tests/auth/accept-legal-callsite-census.test.ts.
+  'withAccountAcceptanceDischargeContext',
   // db/identity-context.ts — the mechanism, for the auth layer itself
   'withDatabaseIdentityContext',
 ] as const

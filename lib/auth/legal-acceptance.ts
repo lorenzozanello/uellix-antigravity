@@ -146,7 +146,23 @@ export interface RequiredInstrumentForDisplay {
  * exactly like a key with no published version at all).
  *
  * "Currently applicable": the greatest published version of the key that is
- * already in effect (effective_at IS NULL OR effective_at <= now()).
+ * already in effect (effective_at IS NULL OR effective_at <= now()) AND that
+ * THIS subject has not already accepted by its exact instrumentVersionId.
+ *
+ * D-5 CORRECTION (independent-certification remediation): an earlier version
+ * of this comment said "the greatest ... version ... in effect", full stop —
+ * true only for a subject who has accepted nothing. The exclusion is scoped
+ * to the SPECIFIC accepted row, not to "any version at or above what the
+ * subject needs": a subject who accepted version N sees version N+2 offered
+ * here the moment it publishes, even though N was, at the time, the greatest
+ * in-effect version and satisfied deriveAccountAcceptanceCurrent. This is
+ * harmless in the real application flow — app/(public)/accept-legal/page.tsx
+ * never calls this resolver for a subject whose accountAcceptanceCurrent is
+ * already true, it redirects away first — but the resolver itself, read on
+ * its own, offers "the greatest in-effect version I have not personally
+ * accepted", not "the greatest in-effect version, if I'm not current on it".
+ * Proven directly against a real accepted-but-superseded fixture in
+ * tests/postgres/legal-acceptance-real-derivation.pg.test.ts.
  */
 export async function loadRequiredInstrumentsPendingAcceptance(
   userId: string
@@ -171,7 +187,17 @@ export async function loadRequiredInstrumentsPendingAcceptance(
         SELECT 1 FROM account_legal_acceptances a
         WHERE a.instrument_version_id = v.id AND a.user_id = ${userId}::uuid
       )
-    ORDER BY required.instrument_key, v.version DESC
+    -- D-6 CORRECTION (independent-certification remediation): the unique
+    -- index on (instrument_key, version, locale) permits two rows with the
+    -- SAME key and version in DIFFERENT locales, which ORDER BY ... v.version
+    -- DESC alone does not disambiguate for DISTINCT ON — PostgreSQL's own
+    -- documentation is explicit that which row survives a tie is otherwise
+    -- unspecified. Ordering by v.id ASC is a purely mechanical, content-free
+    -- tie-break (a UUID carries no locale preference) chosen ONLY to make the result
+    -- deterministic and reproducible across runs — it is NOT a decision about
+    -- which locale a multi-locale version should display, which remains an
+    -- open product question this remediation has no authority to settle.
+    ORDER BY required.instrument_key, v.version DESC, v.id ASC
   `)
 
   const candidates = rows as unknown as Array<{

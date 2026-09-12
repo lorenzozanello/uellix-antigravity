@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { loadRequestPrincipal } from '@/lib/auth/session'
 import { VERIFY_EMAIL_PATH } from '@/lib/auth/email-verification'
 import { loadRequiredInstrumentsPendingAcceptance } from '@/lib/auth/legal-acceptance'
-import { withAuthenticatedDatabaseContext } from '@/lib/auth/database-context'
+import { withAccountAcceptanceDischargeContext } from '@/lib/auth/database-context'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -51,8 +51,13 @@ export default async function AcceptLegalPage({
 
   // CL1-S3 resolver, read within a context so RLS scopes it to this subject —
   // the SAME predicate accountAcceptanceCurrent was derived from, never a
-  // second one (S-AO-PREDICATE-CARDINALITY).
-  const pending = await withAuthenticatedDatabaseContext((ctx) =>
+  // second one (S-AO-PREDICATE-CARDINALITY). B-1 REPAIR: this MUST NOT use
+  // withAuthenticatedDatabaseContext — that helper's requirePrincipal
+  // re-asserts L0 (assertPrincipalGates), which throws for the EXACT subject
+  // this page exists to serve, self-locking the discharge surface. B0 is
+  // still required (already asserted at :42, and again inside the discharge
+  // context itself); L0 is deliberately not re-asserted here.
+  const pending = await withAccountAcceptanceDischargeContext((ctx) =>
     loadRequiredInstrumentsPendingAcceptance(ctx.user.id)
   )
 

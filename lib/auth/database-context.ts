@@ -812,6 +812,71 @@ export async function withAuthenticatedDatabaseContext<T>(
   )
 }
 
+/**
+ * CL-1 (HPO-ODS-W2-28) — independent-certification BLOCKING B-1 repair.
+ *
+ * THE ONE SURFACE EXEMPT FROM THE L0 GATE: the L0 discharge path itself.
+ * Asserts B0 (`assertEmailVerifiedPrincipal`) — authentication and email
+ * verification are still fully required — but DELIBERATELY never reaches
+ * `assertAccountAcceptanceCurrentPrincipal`, because the one surface whose
+ * PURPOSE is to let a subject discharge L0 cannot itself require L0 to
+ * already be satisfied. Requiring it is exactly what B-1 measured: a subject
+ * who is verified but not yet accepted could reach neither the acceptance
+ * PAGE nor the acceptance ACTION, because both transited
+ * `withAuthenticatedDatabaseContext` -> `requirePrincipal` ->
+ * `assertPrincipalGates` -> `assertAccountAcceptanceCurrentPrincipal`, a
+ * self-lock no subject could ever escape.
+ *
+ * WHAT THIS DOES NOT DO. It grants nothing `withAuthenticatedDatabaseContext`
+ * does not already grant to any verified subject: the SAME unscoped identity
+ * context under the SAME RLS, scoped to the caller's own id. It does not
+ * bypass RLS (T3's self-scoped write predicate is unaffected), does not
+ * touch L1 or entitlement (neither exists on this path), and does not accept
+ * a caller-supplied list of gates to skip — the one omitted gate is fixed in
+ * this function's own body, never parameterised. It is not a general
+ * "skipGates" escape hatch: nothing else in the codebase may reach it, and
+ * tests/auth/accept-legal-callsite-census.test.ts fails the moment a third
+ * call site appears.
+ *
+ * The ONLY authorised callers are the L0 discharge surfaces:
+ * app/(public)/accept-legal/page.tsx and app/(public)/accept-legal/actions.ts.
+ */
+export async function withAccountAcceptanceDischargeContext<T>(
+  callback: (context: AuthenticatedContext) => Promise<T>,
+  options: DatabaseContextOptions = {}
+): Promise<T> {
+  const memoised = await loadRequestPrincipal()
+  const principal = memoised
+    ? assertEmailVerifiedPrincipal(memoised)
+    : await (async () => {
+        const { principal: fresh, failure } = await resolveRequestPrincipal(options)
+        if (fresh) return assertEmailVerifiedPrincipal(fresh)
+        const code = failure ?? 'AUTH_NO_SESSION'
+        throw new AuthContextError(
+          code,
+          code === 'AUTH_NO_PROFILE'
+            ? 'The session is valid but the account has no readable profile row. Refusing to continue: ' +
+                'every organisation and role decision downstream reads that row.'
+            : 'No verified session is attached to this request.'
+        )
+      })()
+
+  return withDatabaseIdentityContext(
+    {
+      userId: principal.user.id,
+      organizationId: null,
+      isSuperAdmin: principal.user.isSuperAdmin,
+    },
+    () =>
+      callback({
+        user: principal.user,
+        membership: principal.membership,
+        organization: principal.organization,
+      }),
+    options
+  )
+}
+
 export interface WithOrganizationOptions extends DatabaseContextOptions {
   /**
    * Assert that the request operates in this organisation.

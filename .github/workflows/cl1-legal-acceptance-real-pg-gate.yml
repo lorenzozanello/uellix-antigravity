@@ -1,0 +1,88 @@
+name: CL-1 Legal Acceptance Real PostgreSQL Gate
+
+# Dedicated, isolated real-PostgreSQL proof of the CL-1 legal-acceptance
+# contract (HPO-ODS-W2-28; docs/ops/compliance/CUSTOMER_LIFECYCLE_CL1_EXECUTION_AUTHORITY_v1.0.0.json).
+#
+# CLOSES D-7 of the CL-1 certification remediation: prior to this workflow,
+# tests/postgres/legal-acceptance.pg.test.ts and
+# tests/postgres/legal-acceptance-real-derivation.pg.test.ts (the disposable
+# real-Postgres suites, UELLIX_PG_TESTS=1-gated) ran ONLY when a developer
+# happened to invoke them locally with Docker present and the flag set. No
+# GitHub Actions workflow ever set UELLIX_PG_TESTS=1 for CL-1's own suites, so
+# a required GitHub check could report green while these suites had never
+# executed a single probe — a SKIPPED suite is indistinguishable from a
+# PASSING one in a bare checkmark.
+#
+# Modeled directly on .github/workflows/s3-refusal-real-pg-gate.yml, the
+# existing precedent for this exact problem in this repository:
+#   * a DEDICATED workflow, not a line folded into ci.yml, so a Docker-heavy
+#     job never silently races or serializes against unrelated CI work;
+#   * UELLIX_PG_TESTS=1 set EXPLICITLY, never inherited by luck;
+#   * UELLIX_CL1_PG_REQUIRED=1 arms an UNGATED self-check inside
+#     legal-acceptance-real-derivation.pg.test.ts that FAILS if the gated
+#     suite was skipped — see that file's own
+#     "CL-1 real-PostgreSQL composition gate self-check" describe block;
+#   * --passWithNoTests is NOT set, so a zero-test collection fails the step
+#     rather than exiting 0.
+#
+# This gate must fail on each of:
+#   * the suite being skipped              -> the ungated self-check fails;
+#   * zero tests collected                 -> vitest exits non-zero;
+#   * a real-PG setup/teardown failure     -> setupStatus/teardownStatus/
+#                                              leftover assertions inside the
+#                                              suites themselves;
+#   * a probe or a real-function-composition assertion failing.
+#
+# It does NOT reuse the S3-refusal workflow's job and does not expand that
+# workflow's governed scope.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - integration/commercial-v1
+      - main
+
+jobs:
+  cl1-legal-acceptance-real-pg-gate:
+    name: Isolated CL-1 legal-acceptance disposable PostgreSQL proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # RLS/property proof on a throwaway container: T1/T2 read-open/
+      # write-closed, T3 self-scoped read/write, the append-only triggers,
+      # the I-T3-1/I-T3-4/I-T3-5 constraints, the org-less audit policy
+      # admission, and the currency-predicate SQL shape (empty/partial
+      # registry fail-closed, pre-effective non-refusal), plus the
+      # presentation-binding content-retrieval round trip.
+      - name: Real PostgreSQL — RLS and property probes
+        env:
+          UELLIX_PG_TESTS: '1'
+        run: pnpm exec vitest run tests/postgres/legal-acceptance.pg.test.ts
+
+      # U-1: the REAL exported deriveAccountAcceptanceCurrent and
+      # loadRequiredInstrumentsPendingAcceptance (lib/auth/legal-acceptance.ts),
+      # invoked through the REAL db/identity-context.ts withDatabaseIdentityContext
+      # against a real, authenticated uellix_app login — never a mocked unit
+      # test and never a hand-copied literal-SQL re-implementation.
+      # UELLIX_CL1_PG_REQUIRED=1 turns a SKIP into a FAILURE.
+      - name: Real PostgreSQL — production-function composition proof (U-1)
+        env:
+          UELLIX_PG_TESTS: '1'
+          UELLIX_CL1_PG_REQUIRED: '1'
+        run: pnpm exec vitest run tests/postgres/legal-acceptance-real-derivation.pg.test.ts

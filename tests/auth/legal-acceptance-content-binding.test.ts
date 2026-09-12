@@ -14,9 +14,18 @@
 //      content_digest. Both are the SAME fail-closed outcome as an
 //      unpublished key: nothing provably bound to that key is offered.
 //   3. A version whose content genuinely matches is included with the EXACT
-//      instrumentVersionId, locale and digest the row carries — so a
-//      submitted acceptance (app/(public)/accept-legal/actions.ts) can only
-//      ever reference a version whose displayed content was verified.
+//      instrumentVersionId, locale and digest the row carries.
+//
+// D-2 CORRECTION: point 3 previously stopped there, implying by proximity
+// that a submitted acceptance could only reference a verified version. That
+// was NOT enforced by anything in this file or by the resolver it tests —
+// this module has no visibility into what actions.ts does with the ids it
+// returns. The actual enforcement is D-1
+// (tests/auth/accept-legal-submission-binding.test.ts): actions.ts calls
+// this SAME resolver again at submission time and accepts only an
+// instrumentVersionId present in its result. Cite that control for the
+// submission-binding guarantee, not this one — this file proves only the
+// content-verification half.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 

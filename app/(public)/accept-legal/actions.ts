@@ -10,13 +10,12 @@
 // (AB-1.must_not_contain).
 
 import { redirect } from 'next/navigation'
-import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
-import { legalInstrumentVersions, accountLegalAcceptances } from '@/db/schema'
-import { withAuthenticatedDatabaseContext } from '@/lib/auth/database-context'
+import { accountLegalAcceptances } from '@/db/schema'
+import { withAccountAcceptanceDischargeContext } from '@/lib/auth/database-context'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
-import { ACCEPT_LEGAL_PATH } from '@/lib/auth/legal-acceptance'
+import { ACCEPT_LEGAL_PATH, loadRequiredInstrumentsPendingAcceptance } from '@/lib/auth/legal-acceptance'
 
 export async function acceptRequiredLegalInstruments(formData: FormData): Promise<void> {
   const nextParam = formData.get('next')
@@ -30,23 +29,35 @@ export async function acceptRequiredLegalInstruments(formData: FormData): Promis
     redirect(`${ACCEPT_LEGAL_PATH}?error=nothing_to_accept`)
   }
 
-  await withAuthenticatedDatabaseContext(async (ctx) => {
-    for (const instrumentVersionId of instrumentVersionIds) {
-      const [version] = await db
-        .select({
-          id: legalInstrumentVersions.id,
-          instrumentKey: legalInstrumentVersions.instrumentKey,
-          version: legalInstrumentVersions.version,
-          contentDigest: legalInstrumentVersions.contentDigest,
-        })
-        .from(legalInstrumentVersions)
-        .where(eq(legalInstrumentVersions.id, instrumentVersionId))
-        .limit(1)
+  // B-1 REPAIR: withAccountAcceptanceDischargeContext, NOT
+  // withAuthenticatedDatabaseContext — see its own doc comment. This is the
+  // write half of the same self-lock: a verified-but-unaccepted subject must
+  // be able to PERSIST the very acceptance that discharges L0.
+  await withAccountAcceptanceDischargeContext(async (ctx) => {
+    // D-1 REPAIR: a submitted instrumentVersionId is never trusted on its own
+    // — it must belong to the EXACT server-derived pending set for this
+    // subject, the SAME resolver CL1-S3 used to render the form
+    // (S-AO-PREDICATE-CARDINALITY), re-derived fresh at submission time. This
+    // is what makes a historical/superseded id, an already-accepted id, an
+    // id for a non-required or not-yet-effective version, or a plain forged
+    // UUID all refuse identically to an absent one: none of them can appear
+    // in this map. instrumentKey/version/contentDigest are read FROM this
+    // server-derived record, never from client-submitted form fields — the
+    // client only ever supplies the id.
+    const pendingById = new Map(
+      (await loadRequiredInstrumentsPendingAcceptance(ctx.user.id)).map((item) => [
+        item.instrumentVersionId,
+        item,
+      ])
+    )
 
-      // Absent or already-superseded version: the database trigger would
-      // refuse this anyway (I-T3-4/I-T3-5). Skipping here just avoids an
-      // avoidable thrown error for a version the caller can no longer see —
-      // the gate re-evaluates currency from scratch on the very next request.
+    for (const instrumentVersionId of instrumentVersionIds) {
+      const version = pendingById.get(instrumentVersionId)
+
+      // Not in the server-derived pending set: refused, not trusted. The
+      // database trigger (I-T3-4/I-T3-5) would refuse an already-superseded
+      // row anyway; this simply refuses BEFORE any insert is attempted, for
+      // every reason a submitted id could fail to belong to the set.
       if (!version) continue
 
       // I-T3-1: idempotent. A second identical acceptance is a no-op, not a
@@ -55,7 +66,7 @@ export async function acceptRequiredLegalInstruments(formData: FormData): Promis
         .insert(accountLegalAcceptances)
         .values({
           userId: ctx.user.id,
-          instrumentVersionId: version.id,
+          instrumentVersionId: version.instrumentVersionId,
           contentDigest: version.contentDigest,
         })
         .onConflictDoNothing({

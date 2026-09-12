@@ -234,6 +234,7 @@ const CONTEXT_OPENERS = [
   'withSuperAdminDatabaseContext',
   'withOptionalDatabaseIdentityContext',
   'withDatabaseIdentityContext',
+  'withAccountAcceptanceDischargeContext',
 ] as const
 
 const ALLOWLIST: Record<string, string> = {
