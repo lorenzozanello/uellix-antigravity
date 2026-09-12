@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 19/84: 0018_redundant_firebird.sql
+-- GENERATED — DO NOT EDIT. Unit 84/84: 0071_customer_lifecycle_cl1_content_bytes.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0018_redundant_firebird.sql
--- Source SHA256: 9705a5ae5bc2e49348cdfbcf22e4b3ab234b3e7f73f1cce48760f60c897ca1c4
+-- Includes:      db/migrations/0071_customer_lifecycle_cl1_content_bytes.sql
+-- Source SHA256: c776757286076cfbebb994b5dfc5da3c21fb7fca81a69211406eab990229f026
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/019_0018_redundant_firebird.sql
+--        -f db/prepared/journal/084_0071_customer_lifecycle_cl1_content_bytes.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0018_redundant_firebird.sql
+\ir ../../../db/migrations/0071_customer_lifecycle_cl1_content_bytes.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0018_redundant_firebird.sql', 'PHASE_BASELINE',
-   '9705a5ae5bc2e49348cdfbcf22e4b3ab234b3e7f73f1cce48760f60c897ca1c4', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0071_customer_lifecycle_cl1_content_bytes.sql', 'PHASE_BASELINE',
+   'c776757286076cfbebb994b5dfc5da3c21fb7fca81a69211406eab990229f026', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

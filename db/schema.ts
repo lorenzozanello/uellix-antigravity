@@ -1559,19 +1559,31 @@ export const legalInstruments = pgTable('legal_instruments', {
 // SELF-DESCRIBING digest ('sha256:<hex>'): this delivers HASH_VERIFIABILITY
 // (I-T2-4 R4) with no separately persisted algorithm column, which the
 // parent authority classifies IMPLEMENTATION_CHOICE / RECOMMENDED_NOT_REQUIRED
-// and forbids treating as an exit-gate requirement. No content_bytes column
-// either, for the same reason (RECOMMENDED_NOT_REQUIRED, LRF-01/LRF-04
-// COUNSEL_REQUIRED). reaccept_required has NO DEFAULT (I-T2-3) — a defaulting
-// flag is the fail-open shape Packet B X-B-03 forbids. published_by names the
-// platform principal that published the version; WHICH principal may do so
-// is a PLATFORM_PUBLISHER_DEPENDENCY (U-AO-2) this unit does not decide, and
-// there is deliberately no tenant-role write path onto this table at all.
+// and forbids treating as an exit-gate requirement. reaccept_required has NO
+// DEFAULT (I-T2-3) — a defaulting flag is the fail-open shape Packet B X-B-03
+// forbids. published_by names the platform principal that published the
+// version; WHICH principal may do so is a PLATFORM_PUBLISHER_DEPENDENCY
+// (U-AO-2) this unit does not decide, and there is deliberately no
+// tenant-role write path onto this table at all.
+//
+// content_bytes (added by 0071) is OPTIONAL retained content — RECOMMENDED_
+// NOT_REQUIRED per I-T2-4 R4 / WHY_RETENTION_IS_STILL_RECOMMENDED, never NOT
+// NULL. It exists so the acceptance surface (CL1-S4/S5, app/(public)/
+// accept-legal) can show the subject the EXACT bytes the digest identifies,
+// re-verified against content_digest at read time
+// (lib/auth/legal-acceptance.ts) — a digest alone lets you PROVE a candidate
+// document matches, not PRODUCE it. A version whose retained bytes fail that
+// re-verification, or which has none, is treated as NOT PRESENTABLE and is
+// excluded from the acceptance surface's pending list — fail-closed, not a
+// UI crash, and never a reason to weaken I-T2-4's floor for a version that
+// simply chose not to retain bytes.
 export const legalInstrumentVersions = pgTable('legal_instrument_versions', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   instrumentKey: varchar('instrument_key', { length: 100 }).references(() => legalInstruments.instrumentKey).notNull(),
   version: integer('version').notNull(),
   locale: varchar('locale', { length: 10 }).notNull(),
   contentDigest: text('content_digest').notNull(),
+  contentBytes: text('content_bytes'),
   reacceptRequired: boolean('reaccept_required').notNull(),
   effectiveAt: timestamp('effective_at'),
   publishedBy: uuid('published_by').references(() => users.id).notNull(),

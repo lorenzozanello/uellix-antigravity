@@ -797,7 +797,20 @@ describe('every entry point that can reach the database opens an identity contex
     // of which would redirect an unverified subject straight back to this
     // page. So it is `allowlisted`, not contextualized: +1 inventoried, +1
     // reaching, +1 allowlisted.
-    }).toEqual({ inventoried: 143, reaching: 118, contextualized: 101, allowlisted: 17 })
+    //
+    // 143 -> 145, 118 -> 120, contextualized 101 -> 103, allowlisted
+    // UNCHANGED at 17: CL-1 (docs/ops/compliance/
+    // CUSTOMER_LIFECYCLE_CL1_EXECUTION_AUTHORITY_v1.0.0.json, HPO-ODS-W2-28)
+    // adds two new entry points — app/(public)/accept-legal/{page.tsx,
+    // actions.ts}. Unlike verify-email/page.tsx (which reads
+    // loadRequestPrincipal() bare, because it must remain reachable by a
+    // subject who fails the gate it renders), both of these wrap their
+    // database-touching region in withAuthenticatedDatabaseContext — the
+    // page to resolve the pending-instrument list under RLS, the action to
+    // write the acceptance rows and their audit rows in one transaction — so
+    // both are `contextualized`, not allowlisted: +2 inventoried, +2
+    // reaching, +2 contextualized.
+    }).toEqual({ inventoried: 145, reaching: 120, contextualized: 103, allowlisted: 17 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

@@ -143,6 +143,15 @@ vi.mock('@/lib/auth/selected-organization', () => ({
   getSelectedOrganizationId: () => mockSelectedOrganizationId(),
 }))
 
+// CL-1 (HPO-ODS-W2-28) — this suite is about S3 tenancy refusal auditing, not
+// L0. The @/db/client double below has no SQL engine capable of evaluating
+// deriveAccountAcceptanceCurrent's raw query, and this suite has no business
+// exercising it: every fixture here is pinned explicitly acceptance-current.
+vi.mock('@/lib/auth/legal-acceptance', () => ({
+  deriveAccountAcceptanceCurrent: async () => true,
+  ACCEPT_LEGAL_PATH: '/accept-legal',
+}))
+
 /* -------------------------------------------------------------------------- */
 /* What the principal read finds in the database                              */
 /* -------------------------------------------------------------------------- */

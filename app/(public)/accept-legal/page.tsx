@@ -85,14 +85,16 @@ export default async function AcceptLegalPage({
   }
 
   return (
-    <Shell>
+    <Shell wide>
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Aceptación de términos requerida</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <p className="text-sm text-muted-foreground">
-            Antes de continuar, es necesario aceptar los siguientes documentos.
+            Antes de continuar, es necesario aceptar los siguientes documentos. El texto mostrado
+            a continuación es exactamente el contenido cuya huella digital quedará registrada con
+            tu aceptación.
           </p>
 
           {error === 'nothing_to_accept' && (
@@ -101,28 +103,30 @@ export default async function AcceptLegalPage({
             </p>
           )}
 
-          <form action={acceptRequiredLegalInstruments} className="space-y-4">
+          <form action={acceptRequiredLegalInstruments} className="space-y-6">
             {safeNext && <input type="hidden" name="next" value={safeNext} />}
-            <ul className="space-y-2">
+            <div className="space-y-4">
               {pending.map((item) => (
-                <li key={item.instrumentVersionId} className="text-sm">
+                <section key={item.instrumentVersionId} className="space-y-2 rounded-md border border-border p-3">
                   <input type="hidden" name="instrumentVersionId" value={item.instrumentVersionId} />
-                  {/* UX_REACHABILITY_FOLLOWUP: these public pages are static
-                      presentation, not yet wired to render FROM the T2 record
-                      (INSTRUMENT_MODEL.INSTRUMENT_OF_RECORD_VERSUS_PRESENTATION
-                      .what_the_presentation_surfaces_must_do_instead) — that
-                      wiring is a future allocation this unit does not make. */}
-                  <a
-                    href={LEGAL_INSTRUMENT_PRESENTATION_PATHS[item.instrumentKey] ?? '#'}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline underline-offset-4"
-                  >
-                    {LEGAL_INSTRUMENT_LABELS[item.instrumentKey] ?? item.instrumentKey}
-                  </a>
-                </li>
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <h2 className="text-sm font-semibold">
+                      {LEGAL_INSTRUMENT_LABELS[item.instrumentKey] ?? item.instrumentKey}
+                    </h2>
+                    <span className="text-xs text-muted-foreground">
+                      versión {item.version} · {item.locale}
+                    </span>
+                  </div>
+                  {/* The exact bytes lib/auth/legal-acceptance.ts re-verified
+                      against content_digest — never invented text, and never
+                      a route name that merely happens to correspond. */}
+                  <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded bg-muted/40 p-3 text-sm">
+                    {item.content}
+                  </div>
+                  <p className="break-all text-xs text-muted-foreground">{item.contentDigest}</p>
+                </section>
               ))}
-            </ul>
+            </div>
             <Button type="submit" className="w-full">
               Aceptar y continuar
             </Button>
@@ -141,20 +145,18 @@ export default async function AcceptLegalPage({
 
 // Display labels only — no instrument text is authored or stored here
 // (EMPTY_INSTRUMENT_REGISTRY.NO_INSTRUMENT_LEGAL_CONTENT_IS_AUTHORIZED_HERE).
+// The actual content rendered above comes from item.content, resolved by
+// lib/auth/legal-acceptance.ts loadRequiredInstrumentsPendingAcceptance and
+// re-verified there against content_digest before this page ever sees it.
 const LEGAL_INSTRUMENT_LABELS: Record<string, string> = {
   terms_of_service: 'Términos de Servicio',
   privacy_policy: 'Política de Privacidad',
 }
 
-const LEGAL_INSTRUMENT_PRESENTATION_PATHS: Record<string, string> = {
-  terms_of_service: '/terminos',
-  privacy_policy: '/privacidad',
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-background">
-      <div className="w-full max-w-md space-y-6">{children}</div>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-background">
+      <div className={wide ? 'w-full max-w-2xl space-y-6' : 'w-full max-w-md space-y-6'}>{children}</div>
     </div>
   )
 }

@@ -22,11 +22,18 @@
 //   - the L0 currency predicate (REACCEPTANCE.R2_CORRECTION_EFFECTIVE_AT),
 //     including the empty/partial-registry fail-closed cases and the
 //     pre-effective-version non-refusal case, evaluated as the identical SQL
-//     shape lib/auth/legal-acceptance.ts issues.
+//     shape lib/auth/legal-acceptance.ts issues;
+//   - presentation binding (independent-audit continuation): a version's
+//     retained content_bytes are genuinely retrievable byte-for-byte from a
+//     real row under RLS, and computeSelfDescribingDigest (the exact function
+//     the acceptance page uses to re-verify what it renders) recognizes those
+//     retrieved bytes as matching the row's own content_digest — a real
+//     round trip through Postgres, not an assumption about column shape.
 
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it, beforeAll } from 'vitest'
+import { computeSelfDescribingDigest } from '@/lib/auth/legal-acceptance'
 
 import { BASELINE_UNITS } from '@/db/hosted/baseline-manifest'
 import { runDisposableHarness, DEFAULT_IMAGE, type HarnessOutcome, type SetupManifest, type ProbeManifest } from '../../scripts/db-audit-disposable'
@@ -125,6 +132,14 @@ const DIGEST_PRIVACY_V1 = 'sha256:' + '4'.repeat(64)
 const DIGEST_WRONG = 'sha256:' + '9'.repeat(64)
 const DIGEST_ORG_V1 = 'sha256:' + '5'.repeat(64)
 
+// Presentation-binding fixture: SYNTHETIC placeholder text
+// (S-AO-NO-REAL-INSTRUMENT-TEXT-AND-NO-REAL-SECRETS), never real legal
+// content. The digest is computed by the SAME function the acceptance page
+// uses to re-verify what it renders, so a mismatch here would mean the
+// fixture itself is wrong, not just the probe.
+const SYNTHETIC_TERMS_V4_TEXT = 'CL-1 presentation-binding fixture — synthetic terms_of_service v4, not real legal content.'
+const SYNTHETIC_TERMS_V4_DIGEST = computeSelfDescribingDigest(SYNTHETIC_TERMS_V4_TEXT)
+
 /** Seeded AFTER the full baseline: super-admin seeds the fixture through RLS, honestly. */
 const TENANT_FIXTURE = `
 INSERT INTO auth.users (id, email) VALUES
@@ -143,16 +158,21 @@ INSERT INTO public.legal_instruments (instrument_key, instrument_class) VALUES
   ('commercial_terms', 'ORGANIZATION');
 
 -- T2: terms_of_service v1 (unmarked) -> v2 (marked, ALREADY effective) -> v3
--- (marked, NOT YET effective — pre-effective). privacy_policy has one
--- unmarked version. commercial_terms has one ORGANIZATION-class version.
+-- (marked, NOT YET effective — pre-effective) -> v4 (unmarked, effective,
+-- carries content_bytes for the presentation-binding probes). privacy_policy
+-- has one unmarked version. commercial_terms has one ORGANIZATION-class
+-- version. v4 being unmarked means it changes NO currency-predicate probe
+-- above: it never supersedes u2's accepted v2 (REACCEPTANCE requires the
+-- superseding version to be MARKED, not merely later).
 INSERT INTO public.legal_instrument_versions
-  (id, instrument_key, version, locale, content_digest, reaccept_required, effective_at, published_by, published_at)
+  (id, instrument_key, version, locale, content_digest, content_bytes, reaccept_required, effective_at, published_by, published_at)
 VALUES
-  ('0c110000-0000-4000-8000-0000000010a1', 'terms_of_service', 1, 'es', '${DIGEST_V1}', false, NULL, '${IDS.uSA}', now() - interval '30 days'),
-  ('0c110000-0000-4000-8000-0000000010a2', 'terms_of_service', 2, 'es', '${DIGEST_V2}', true, now() - interval '1 day', '${IDS.uSA}', now() - interval '10 days'),
-  ('0c110000-0000-4000-8000-0000000010a3', 'terms_of_service', 3, 'es', '${DIGEST_V3}', true, now() + interval '365 days', '${IDS.uSA}', now()),
-  ('0c110000-0000-4000-8000-0000000010b1', 'privacy_policy', 1, 'es', '${DIGEST_PRIVACY_V1}', false, NULL, '${IDS.uSA}', now() - interval '30 days'),
-  ('0c110000-0000-4000-8000-0000000010c1', 'commercial_terms', 1, 'es', '${DIGEST_ORG_V1}', false, NULL, '${IDS.uSA}', now() - interval '30 days');
+  ('0c110000-0000-4000-8000-0000000010a1', 'terms_of_service', 1, 'es', '${DIGEST_V1}', NULL, false, NULL, '${IDS.uSA}', now() - interval '30 days'),
+  ('0c110000-0000-4000-8000-0000000010a2', 'terms_of_service', 2, 'es', '${DIGEST_V2}', NULL, true, now() - interval '1 day', '${IDS.uSA}', now() - interval '10 days'),
+  ('0c110000-0000-4000-8000-0000000010a3', 'terms_of_service', 3, 'es', '${DIGEST_V3}', NULL, true, now() + interval '365 days', '${IDS.uSA}', now()),
+  ('0c110000-0000-4000-8000-0000000010a4', 'terms_of_service', 4, 'es', '${SYNTHETIC_TERMS_V4_DIGEST}', '${SYNTHETIC_TERMS_V4_TEXT}', false, now() - interval '1 day', '${IDS.uSA}', now() - interval '1 day'),
+  ('0c110000-0000-4000-8000-0000000010b1', 'privacy_policy', 1, 'es', '${DIGEST_PRIVACY_V1}', NULL, false, NULL, '${IDS.uSA}', now() - interval '30 days'),
+  ('0c110000-0000-4000-8000-0000000010c1', 'commercial_terms', 1, 'es', '${DIGEST_ORG_V1}', NULL, false, NULL, '${IDS.uSA}', now() - interval '30 days');
 
 -- T3, seeded through RLS as each subject themselves — proves the self-scoped
 -- INSERT policy works for the LEGITIMATE case before the negative probes try
@@ -233,7 +253,45 @@ export function buildProbeManifest(): ProbeManifest {
   SELECT count(*) INTO n1 FROM public.legal_instruments;
   SELECT count(*) INTO n2 FROM public.legal_instrument_versions;
   IF n1 <> 3 THEN RAISE EXCEPTION 'R-CL1-1a legal_instruments count=% expected=3', n1; END IF;
-  IF n2 <> 5 THEN RAISE EXCEPTION 'R-CL1-1a legal_instrument_versions count=% expected=5', n2; END IF;
+  IF n2 <> 6 THEN RAISE EXCEPTION 'R-CL1-1a legal_instrument_versions count=% expected=6', n2; END IF;
+END $w$;
+ROLLBACK;`)
+
+  // --- Presentation binding (independent-audit continuation) -----------------
+  add('PRESENTATION-BINDING-content-bytes-retrieved-byte-for-byte-and-verifies-against-content-digest',
+    asUser(IDS.u1) + `DO $w$ DECLARE bytes text; digest text; BEGIN
+  SELECT content_bytes, content_digest INTO bytes, digest
+    FROM public.legal_instrument_versions
+    WHERE instrument_key = 'terms_of_service' AND version = 4;
+  IF bytes IS DISTINCT FROM '${SYNTHETIC_TERMS_V4_TEXT.replace(/'/g, "''")}' THEN
+    RAISE EXCEPTION 'PRESENTATION-BINDING retrieved content_bytes does not match the fixture byte-for-byte: %', bytes;
+  END IF;
+  IF digest IS DISTINCT FROM '${SYNTHETIC_TERMS_V4_DIGEST}' THEN
+    RAISE EXCEPTION 'PRESENTATION-BINDING retrieved content_digest=% expected=${SYNTHETIC_TERMS_V4_DIGEST}', digest;
+  END IF;
+END $w$;
+ROLLBACK;`)
+
+  // The EXACT query shape lib/auth/legal-acceptance.ts loadRequiredInstrumentsPendingAcceptance
+  // issues (DISTINCT ON greatest effective version per required key, excluding
+  // already-accepted): for u1 (zero acceptances), terms_of_service resolves to
+  // v4 — the greatest EFFECTIVE version — carrying its own content_bytes, not
+  // v3's (pre-effective, correctly excluded) and not an older version's.
+  add('PRESENTATION-BINDING-pending-instrument-query-resolves-to-the-greatest-EFFECTIVE-version-with-its-own-bytes',
+    asUser(IDS.u1) + `DO $w$ DECLARE resolved_version int; bytes text; BEGIN
+  SELECT v.version, v.content_bytes INTO resolved_version, bytes
+    FROM (VALUES ('terms_of_service'::varchar), ('privacy_policy'::varchar)) AS required(instrument_key)
+    JOIN public.legal_instrument_versions v ON v.instrument_key = required.instrument_key
+    WHERE (v.effective_at IS NULL OR v.effective_at <= now())
+      AND NOT EXISTS (
+        SELECT 1 FROM public.account_legal_acceptances a
+        WHERE a.instrument_version_id = v.id AND a.user_id = '${IDS.u1}'::uuid
+      )
+      AND required.instrument_key = 'terms_of_service'
+    ORDER BY v.version DESC
+    LIMIT 1;
+  IF resolved_version <> 4 THEN RAISE EXCEPTION 'PRESENTATION-BINDING resolved version=% expected=4 (v3 is pre-effective and must be excluded)', resolved_version; END IF;
+  IF bytes IS DISTINCT FROM '${SYNTHETIC_TERMS_V4_TEXT.replace(/'/g, "''")}' THEN RAISE EXCEPTION 'PRESENTATION-BINDING resolved row carries the wrong bytes: %', bytes; END IF;
 END $w$;
 ROLLBACK;`)
 
@@ -449,9 +507,16 @@ describe.skipIf(!PG_TESTS_ENABLED)('CL-1 legal acceptance — real PostgreSQL (c
     })}`)
   }, 1_200_000)
 
-  it('the CL-1 unit is the LAST baseline unit', () => {
+  // FINAL-UNIT DISPLACEMENT: the CL-1 legal-acceptance unit (0070) is no
+  // longer last — 0071_customer_lifecycle_cl1_content_bytes.sql (the
+  // presentation-binding repair, same mission) was appended immediately
+  // above it. Retargeted the same way S1's own displacement control is
+  // (tests/tenancy/s1-founder-traceability.test.ts): to 0070's own position
+  // with the ONE displacing unit named, not to "the tail".
+  it('the CL-1 unit is displaced from the top by exactly the CL-1 content-bytes unit', () => {
     const index = BASELINE_UNITS.indexOf(CL1_UNIT!)
-    expect(index).toBe(BASELINE_UNITS.length - 1)
+    expect(index).toBe(BASELINE_UNITS.length - 2)
+    expect(BASELINE_UNITS[BASELINE_UNITS.length - 1].id).toBe('0071_customer_lifecycle_cl1_content_bytes.sql')
   })
 
   it(`the harness provisioned the full baseline (${BASELINE_UNITS.length} units, CL-1 included) and tore itself down with zero leftovers`, () => {

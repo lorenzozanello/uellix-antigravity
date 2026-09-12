@@ -239,7 +239,8 @@ describe('unit source verification', () => {
     // HPO-ODS-W2-26 (CE-1, CommercialAccount relation): + 0068 = 81.
     // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 = 82.
     // CL-1 (HPO-ODS-W2-28): + 0070_customer_lifecycle_cl1_legal_acceptance.sql = 83.
-    expect(BASELINE_UNITS).toHaveLength(83)
+    // CL-1 presentation-binding repair: + 0071_customer_lifecycle_cl1_content_bytes.sql = 84.
+    expect(BASELINE_UNITS).toHaveLength(84)
     for (const u of BASELINE_UNITS) expect(u.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 })

@@ -1525,6 +1525,33 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: '9b3a651e7e18f93fb8a12ccda6c2f45c04333efa11975884dbdfe93d71505231',
     },
   },
+  // CL-1 presentation-binding repair (independent-audit continuation,
+  // HPO-ODS-W2-28): ADD COLUMN legal_instrument_versions.content_bytes, text,
+  // nullable, no default. OPTIONAL retained content (I-T2-4 R4
+  // RECOMMENDED_NOT_REQUIRED) so the acceptance surface can show the subject
+  // the exact bytes the digest identifies, re-verified at read time. No RLS
+  // change -- 0070's existing read-open/write-closed posture on this table
+  // already covers the new column.
+  {
+    ordinal: 84,
+    id: '0071_customer_lifecycle_cl1_content_bytes.sql',
+    kind: D,
+    file: 'db/migrations/0071_customer_lifecycle_cl1_content_bytes.sql',
+    sha256: 'c776757286076cfbebb994b5dfc5da3c21fb7fca81a69211406eab990229f026',
+    dependsOn: ['0070_customer_lifecycle_cl1_legal_acceptance.sql'],
+    dml: 'none',
+    managed: 'A-hosted-compatible',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'CL-1: ADD COLUMN legal_instrument_versions.content_bytes (text, nullable, no default). No table, ' +
+      'no policy, no function, no trigger, no security surface. No RLS change -- the column is covered ' +
+      'by the existing read-open/write-closed posture 0070 already established on this table.',
+    rollback: 'Forward-only: ADD COLUMN has no IF NOT EXISTS guard and no reverse script. Dropping the column is safe and lossless (no dependent object references it).',
+    expect: {
+      dmlStatementCount: 0,
+      unguardedPolicyCreateCount: 0,
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

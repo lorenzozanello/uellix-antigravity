@@ -29,6 +29,7 @@
 // (ENFORCEMENT_TOPOLOGY.L0_ATTACHMENT.consequence_for_the_read) — the whole
 // conjunction is evaluated by a single round trip.
 
+import { createHash } from 'node:crypto'
 import { sql } from 'drizzle-orm'
 import { db } from '@/db/client'
 
@@ -102,21 +103,47 @@ export async function deriveAccountAcceptanceCurrent(userId: string): Promise<bo
   return row.all_current === true
 }
 
-/** One version the subject is being asked to accept, resolved for display. */
+/** `'sha256:' + hex` over the exact bytes, matching content_digest's format. */
+export function computeSelfDescribingDigest(bytes: string): string {
+  return 'sha256:' + createHash('sha256').update(bytes, 'utf8').digest('hex')
+}
+
+/**
+ * Whether `bytes` are verifiably the content `digest` identifies. Recomputed
+ * every time content is about to be shown — never trusted from the row alone
+ * — so a version whose retained bytes were tampered with, or corrupted, or
+ * simply never written, is detected here rather than silently rendered.
+ */
+export function contentMatchesDigest(bytes: string, digest: string): boolean {
+  return computeSelfDescribingDigest(bytes) === digest
+}
+
+/**
+ * One version the subject is being asked to accept, resolved for display.
+ * `content` is the EXACT retained bytes, already re-verified against
+ * `contentDigest` — this is what CL1-S4/S5 requires be shown: not a route
+ * name that happens to correspond, but content whose cryptographic identity
+ * IS the digest the acceptance will snapshot.
+ */
 export interface RequiredInstrumentForDisplay {
   readonly instrumentKey: string
   readonly instrumentVersionId: string
   readonly version: number
   readonly locale: string
   readonly contentDigest: string
+  readonly content: string
 }
 
 /**
  * The currently applicable version of every required key the subject has NOT
- * yet accepted, for rendering the acceptance page. A required key with no
- * currently applicable published version is OMITTED here — the caller must
- * treat that as EMPTY_INSTRUMENT_REGISTRY (fail closed, refuse, never a
- * partial accept) rather than rendering a partial form.
+ * yet accepted, for rendering the acceptance page. A required key is OMITTED
+ * here — never partially rendered — when it has no currently applicable
+ * published version, OR when that version's retained content is absent, OR
+ * when the retained bytes fail digest re-verification. All three are the
+ * SAME fail-closed outcome from the caller's perspective: nothing provably
+ * bound to that key can be shown, so nothing is offered for accept
+ * (EMPTY_INSTRUMENT_REGISTRY treats a key with no presentable content
+ * exactly like a key with no published version at all).
  *
  * "Currently applicable": the greatest published version of the key that is
  * already in effect (effective_at IS NULL OR effective_at <= now()).
@@ -135,7 +162,8 @@ export async function loadRequiredInstrumentsPendingAcceptance(
       v.id AS instrument_version_id,
       v.version,
       v.locale,
-      v.content_digest
+      v.content_digest,
+      v.content_bytes
     FROM (VALUES ${requiredKeys}) AS required(instrument_key)
     JOIN legal_instrument_versions v ON v.instrument_key = required.instrument_key
     WHERE (v.effective_at IS NULL OR v.effective_at <= now())
@@ -146,17 +174,29 @@ export async function loadRequiredInstrumentsPendingAcceptance(
     ORDER BY required.instrument_key, v.version DESC
   `)
 
-  return (rows as unknown as Array<{
+  const candidates = rows as unknown as Array<{
     instrument_key: string
     instrument_version_id: string
     version: number
     locale: string
     content_digest: string
-  }>).map((r) => ({
-    instrumentKey: r.instrument_key,
-    instrumentVersionId: r.instrument_version_id,
-    version: r.version,
-    locale: r.locale,
-    contentDigest: r.content_digest,
-  }))
+    content_bytes: string | null
+  }>
+
+  const presentable: RequiredInstrumentForDisplay[] = []
+  for (const r of candidates) {
+    // No fallback to an older version: an unpresentable LATEST version means
+    // this key is not offerable, full stop — never a silently-stale accept.
+    if (r.content_bytes === null) continue
+    if (!contentMatchesDigest(r.content_bytes, r.content_digest)) continue
+    presentable.push({
+      instrumentKey: r.instrument_key,
+      instrumentVersionId: r.instrument_version_id,
+      version: r.version,
+      locale: r.locale,
+      contentDigest: r.content_digest,
+      content: r.content_bytes,
+    })
+  }
+  return presentable
 }
