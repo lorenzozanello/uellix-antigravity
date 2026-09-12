@@ -1,0 +1,924 @@
+{
+  "package_id": "CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "BOUNDED_EXECUTION_CONTRACT",
+  "mission_id": "CUSTOMER-LIFECYCLE-L1-ORGANIZATION-COMMERCIAL-ACCEPTANCE-EXECUTION-AUTHORITY-R1",
+  "lane_id": "LANE_L1_EA",
+  "role": "L1_ORGANIZATION_COMMERCIAL_ACCEPTANCE_EXECUTION_AUTHORITY_WRITER",
+  "materialization_date": "2026-09-12",
+  "companion_allocation": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json",
+  "companion_manifest": "docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+
+  "PARENT_AUTHORITY": {
+    "primary": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json (R5, integrated via PR143 at merge d76fa3f2)",
+    "companion_manifest_of_the_parent": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_TEST_MANIFEST_v1.0.0.json",
+    "sibling_execution_authority": "docs/ops/compliance/CUSTOMER_LIFECYCLE_CL1_EXECUTION_AUTHORITY_v1.0.0.json (the L0 slice, integrated via PR148 at merge 975e5e48; its IMPLEMENTATION integrated via PR151 at merge cbd1eb82)",
+    "regulatory_baseline": "docs/ops/compliance/LC0_CANONICAL_REGULATORY_DATA_GOVERNANCE_BASELINE_v1.0.0.json",
+    "owner_ratifications": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json (HPO-A, RAT-AO-01, RAT-AO-02, RAT-AO-03, RAT-OP-01)",
+    "packet_b": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_AUTHORITY_v1.0.0.json and its no-session amendment",
+    "relationship": "This artifact ADDS NOTHING to the parent contract and CHANGES NOTHING in it. It BOUNDS the ORGANIZATION-class half of it for one implementation mission, closes the one UNKNOWN the parent deliberately left open because the surface was moving, carries the allocation the parent explicitly declined to make, and re-measures every parent fact that has gone stale. Where this artifact and the parent appear to differ, the parent governs and the difference is a defect in this artifact.",
+    "what_this_artifact_does_NOT_reopen": [
+      "Any clause of the parent authority. No parent key is edited, superseded or reinterpreted.",
+      "CUSTOMER_LIFECYCLE_CL1_EXECUTION_AUTHORITY_v1.0.0.json. The L0 slice is CLOSED and its artifact is byte-unchanged by this mission.",
+      "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.31.json. Byte-unchanged.",
+      "Controller42. CONTROLLER42_STATUS is accepted as CLOSED on the orchestration record, and this artifact independently re-measures the two facts that matter to it (IMMUTABLE_BY_CONVENTION length 42, final entry v1.0.31) rather than asserting the closure itself."
+    ]
+  },
+
+  "AS_OF": {
+    "branch": "codex/l1-organization-commercial-acceptance-authority-r1",
+    "START_HEAD": "975e5e48392b32ac24cf77f97154593774064c00",
+    "START_TREE": "e91524218dd646ccaf44d19e58cf75e1cad1a23e",
+    "origin_ref": "origin/integration/commercial-v1",
+    "origin_head_equals_start_head": true,
+    "ls_remote_agrees": true,
+    "working_tree_clean_at_prestate": true,
+    "LIVE_MOVED": "NO",
+    "prestate_method": "git fetch origin --prune, then rev-parse of HEAD, HEAD^{tree}, origin/integration/commercial-v1, plus git ls-remote on the target ref and git status --porcelain --untracked-files=all. The untracked-files=all form is used deliberately: a new untracked directory collapses to one status line without it."
+  },
+
+  "WHY_THIS_ARTIFACT_EXISTS": "The parent authority specifies L1_ATTACHMENT as SHAPE ONLY and records U-AO-4 as an UNKNOWN, on the explicit ground that the set of boundaries where an organization context becomes an effect was being moved by both the Packet A and the CommercialAccount/Entitlement lineages, so enumerating it then would have pinned it against a topology scheduled to change. Those lineages have since landed: Packet A R1..R5 are live in requireOrganizationAccess, CE-1 is live at 0068, Packet B is live, and the L0 slice is live at 0070/0071. The surface has stopped moving, so the enumeration is now both possible and stable. Something had to make L1 executable without letting the implementation writer choose its own enforcement placement. This artifact bounds; the companion addendum allocates.",
+
+  "BLOCKERS_THIS_ARTIFACT_CLOSES": {
+    "B-1": {
+      "as_stated_by_the_independent_L1_opening": "NO bounded L1 execution authority exists.",
+      "closure": "CLOSED BY THIS ARTIFACT. Sections L1_SCOPE through TERMINATION_AUTHORITY below constitute the bounded contract, and IMPLEMENTATION_AUTHORIZED is set on the basis of it.",
+      "what_closure_does_NOT_mean": "It does not mean L1 may be written today. See next_gate: this artifact requires independent certification, and the grant it declares requires a separate governed registration act."
+    },
+    "B-3_U_AO_4": {
+      "as_stated_by_the_parent": "U-AO-4: the full set of boundaries where an organization context becomes an effect, which L1 would need to enumerate to make a completeness claim.",
+      "closure": "CLOSED BY MEASUREMENT. See ATTACHMENT_TOPOLOGY.THE_CLOSED_WORLD.",
+      "why_it_is_closable_now_and_was_not_then": "The parent could not enumerate CALL SITES because they were moving and there are hundreds of them. The enumeration that actually answers the question is not of call sites but of the CHOKEPOINT at which an organization identity becomes an effect on the database session, and of the functions that reach it. That set is small, closed and mechanically verifiable, and it is stable under the addition of new call sites - which is exactly the property the parent needed and could not get from a call-site list."
+    }
+  },
+
+  "BLOCKERS_AND_UNKNOWNS_THIS_ARTIFACT_DOES_NOT_CLOSE": {
+    "U-AO-2_PLATFORM_PUBLISHER_DEPENDENCY": "REMAINS OPEN. See PLATFORM_PUBLISHER_DEPENDENCY.",
+    "U-AO-8_MEMBERSHIP_PROVENANCE": "REMAINS OPEN AS A DEPENDENCY. The parent measured it OPEN at 0031_rls_core.sql:126-134 (members_insert_admin carries an OR current_user_is_super_admin() disjunct, re-verified live at this head - see SECURITY_DEPENDENCIES). Acceptance authority is exactly as trustworthy as membership assignment, and this artifact states that rather than overstating its own guarantee.",
+    "U-AO-3_HOSTED_PROVIDER_EMAIL_CONFIRMATION": "REMAINS OPEN. B0 depends on it and so, transitively, does L1. No hosted observation was made by this lane.",
+    "F-AO-09_ERASURE_TENSION": "REMAINS OPEN. Append-only acceptance evidence versus erasure obligations is LC0 HPO-LC0-03 adjacency. I-X-3 authorizes no erasure path and this artifact authorizes none either.",
+    "F-AO-07": "RESOLVED BY THE PARENT AT R2 IN THE PROHIBITIVE DIRECTION (RAT-AO-02 AO2_C1). Recorded here only so a reader does not treat it as still open."
+  },
+
+  "L1_SCOPE": {
+    "THE_LABEL_IS_NOT_THE_OBJECT": "L1 is the parent authority's own gate name - CANONICAL_JOURNEY.GATE_NAMING.L1 reads ORGANIZATION_COMMERCIAL_ACCEPTANCE gate - so unlike CL-1 the label here IS drawn from frozen authority. The bounded object below is nonetheless defined by CONTENT, and where the label and the content diverge the content governs.",
+    "L1_DEFINITION": {
+      "gate_name": "ORGANIZATION_COMMERCIAL_ACCEPTANCE",
+      "predicate": "Every instrument in the CLOSED REQUIRED ORGANIZATION-CLASS INSTRUMENT SET is currently accepted for the organization in the request scope.",
+      "canonical_source": "Parent CANONICAL_JOURNEY.GATE_NAMING.L1, verbatim, plus FAIL_CLOSED.FC_7.THE_CORRECTED_DEFINITION for the closed-required-set formulation of the conjunction.",
+      "lifecycle_position": "B0 -> L0 -> Packet A R1..R5 (organization scope) -> L1 -> ENT",
+      "position_is_NORMATIVE": "Parent CANONICAL_JOURNEY.COMBINED_EVALUATION_ORDER.status: an implementation that evaluates these in a different order produces a different destination for the same principal, so the order is part of the contract.",
+      "L1_IS_A_SUFFIX_NOT_A_PREFIX": "Parent L0_IS_A_PREFIX_L1_IS_A_SUFFIX, DERIVED not chosen: L1's predicate names an organization, so before Packet A has resolved a scope there IS NO organization to name and L1 is UNDEFINED rather than merely badly placed."
+    },
+    "WHAT_L1_IS_NOT": [
+      "It is NOT account-class acceptance (L0). Different accepting principal, different relation, different uniqueness rule, opposite side of the tenancy question.",
+      "It is NOT email verification (B0).",
+      "It is NOT organization membership. Holding a membership neither satisfies nor discharges L1.",
+      "It is NOT CommercialAccount existence. CE-1 created the relation; L1 reads none of it.",
+      "It is NOT billing, subscription state, Stripe, or ACTIVE_WITHOUT_STRIPE.",
+      "It is NOT entitlement. L1 is a PRECONDITION of entitlement evaluation, never itself an entitlement and never itself an authorization. Ratifications CA-03 and CA-05 are preserved."
+    ],
+    "IN_SCOPE": [
+      {
+        "id": "L1-S1",
+        "object": "The organization-class acceptance evidence relation",
+        "parent_anchor": "FUTURE_DDL.T4_organization_commercial_acceptances",
+        "note": "ONE new relation. The instrument registry substrate it references (T1, T2) already EXISTS live - legal_instruments and legal_instrument_versions, created by 0070 - so L1 creates no registry and no second write path into one."
+      },
+      {
+        "id": "L1-S2",
+        "object": "The organization-class currency predicate - the resolver over the CLOSED REQUIRED ORGANIZATION-CLASS INSTRUMENT SET, for one organization",
+        "parent_anchor": "REACCEPTANCE.MULTI_INSTRUMENT_CONJUNCTION as corrected at R4, and FAIL_CLOSED.FC_7.THE_CORRECTED_DEFINITION",
+        "note": "A DISTINCT resolver from L0's. See SUBMISSION_BINDING.NO_WIDENING_OF_THE_L0_RESOLVER."
+      },
+      {
+        "id": "L1-S3",
+        "object": "The organization-class acceptance mutation - an active organization_admin writing one acceptance row for their organization",
+        "parent_anchor": "ATOMICITY_BOUNDARIES AB-3, invariants I-T4-6 and I-T4-7"
+      },
+      {
+        "id": "L1-S4",
+        "object": "L1 attachment at the measured organization-scope effect boundaries, and the bounded discharge boundary that deliberately omits L1",
+        "parent_anchor": "ENFORCEMENT_TOPOLOGY.L1_ATTACHMENT (SHAPE ONLY at the parent; TOPOLOGY PINNED here), FAIL_CLOSED.FC_5"
+      },
+      {
+        "id": "L1-S5",
+        "object": "The organization-scoped audit event for an organization-class acceptance",
+        "parent_anchor": "AUDIT.WHAT_MUST_BE_AUDITED entry 2, AUDIT.organization_class_scope"
+      },
+      {
+        "id": "L1-S6",
+        "object": "RLS for exactly the one new relation above",
+        "parent_anchor": "Invariant I-T4-9, plus I-T4-6 re-verified at the database boundary"
+      },
+      {
+        "id": "L1-S7",
+        "object": "The ordinary-member blocked state where L1 blocks downstream capability",
+        "parent_anchor": "RAT-AO-01 AO1_C1 through AO1_C5"
+      }
+    ],
+    "OUT_OF_SCOPE": [
+      { "object": "Account-class acceptance and its substrate (L0)", "reason": "CLOSED and LIVE. T1, T2, T3 exist at 0070/0071. L1 creates none of them and edits none of them." },
+      { "object": "Instrument version PUBLICATION", "reason": "No tenant write path exists to T2 and none is created. U-AO-2 owns the publisher identity." },
+      { "object": "Organization bootstrap", "parent_anchor": "ATOMICITY_BOUNDARIES AB-2" },
+      { "object": "CommercialAccount creation or mutation", "parent_anchor": "I-T4-8, I-T4-10, ATOMICITY_BOUNDARIES AB-3.must_not_contain" },
+      { "object": "Entitlement grants and the entitlement substrate", "parent_anchor": "BD-2, FUTURE_DDL.WHAT_THIS_SECTION_DELIBERATELY_DOES_NOT_DEFINE" },
+      { "object": "Billing, Stripe, subscription state, ACTIVE_WITHOUT_STRIPE materialization", "parent_anchor": "Not a subject of this authority at any point. RAT-AO-02 AO2_C3 forbids the conflation only." },
+      { "object": "Invitation and multi-org implementation", "parent_anchor": "AB-4, AB-5, MULTI_ORG, BD-5" },
+      { "object": "Any change to the single-active-membership index", "parent_anchor": "MULTI_ORG.WHAT_DECISION_8_DOES_NOT_AUTHORIZE" },
+      { "object": "Platform-admin, support, operator and impersonation surfaces", "parent_anchor": "PLATFORM_ADMIN_BOUNDARY, RAT-AO-02, U-AO-8" },
+      { "object": "Evaluate, Portfolio, Public Verification", "reason": "Separate lineages entirely." },
+      { "object": "Legal instrument TEXT and counsel approval", "parent_anchor": "LEGAL_REVIEW.FLAGS LRF-01, LRF-02" }
+    ]
+  },
+
+  "ATTACHMENT_TOPOLOGY": {
+    "status": "BINDING AS A TOPOLOGY, NOT MERELY AS A SHAPE. This is the section that closes U-AO-4 and the reason the artifact exists.",
+    "WHY_THE_PARENT_COULD_NOT_DO_THIS": "Parent ENFORCEMENT_TOPOLOGY.L1_ATTACHMENT.why_this_artifact_does_not_fix_L1_call_sites, verbatim in substance: the set of boundaries where an organization context becomes an effect was the surface Packet A and the CommercialAccount/Entitlement lineage were both still moving, and pinning L1 call sites then would have pinned them against a topology scheduled to change.",
+    "WHAT_HAS_LANDED_SINCE_MEASURED_AT_THIS_HEAD": [
+      "Packet A R1..R5 are LIVE inside lib/auth/session.ts requireOrganizationAccess, with R1 at the super-admin branch, R2 and R3 as named refusal-code branches and R4 as the excluded RETURN SITE 3 fallthrough.",
+      "Packet B B0 is LIVE. principal.emailVerified is consumed at lib/auth/session.ts inside requireOrganizationAccess and getCurrentOrganizationContext, and at lib/auth/database-context.ts assertEmailVerifiedPrincipal.",
+      "L0 is LIVE. principal.accountAcceptanceCurrent is consumed at the same three places plus withOptionalDatabaseIdentityContext, and asserted by assertAccountAcceptanceCurrentPrincipal inside assertPrincipalGates.",
+      "CE-1 is LIVE at db/migrations/0068_commercial_account_ce1.sql.",
+      "The L0 discharge boundary withAccountAcceptanceDischargeContext is LIVE at lib/auth/database-context.ts, with a deterministic call-site census at tests/auth/accept-legal-callsite-census.test.ts."
+    ],
+    "THE_CLOSED_WORLD": {
+      "the_question_restated_so_it_is_answerable": "An organization context BECOMES AN EFFECT when app.organization_id is set on the database session, because that is the value every tenant RLS predicate reads. The enumeration U-AO-4 asks for is therefore the enumeration of the places that set it, not the enumeration of the places that consume a resolved context.",
+      "THE_SINGLE_CHOKEPOINT": {
+        "site": "db/identity-context.ts:180",
+        "statement": "set_config('app.organization_id', identity.organizationId, true), executed only when identity.organizationId !== null (guarded at db/identity-context.ts:178).",
+        "function": "withDatabaseIdentityContext, declared at db/identity-context.ts:114",
+        "why_this_is_the_right_chokepoint": "There is no second writer of app.organization_id. A tenant-scoped effect cannot be produced without transiting this function, so a complete enumeration of its callers with a non-null organizationId is a complete enumeration of the organization-scope effect boundaries."
+      },
+      "IMPORTERS_OF_THE_CHOKEPOINT": {
+        "count": 2,
+        "sites": ["lib/auth/database-context.ts:51", "lib/auth/session.ts:36"],
+        "measured_by": "git grep on withDatabaseIdentityContext across lib/, app/, components/, db/ and scripts/, excluding .test. files and __tests__ directories."
+      },
+      "ALL_NON_TEST_CALL_SITES_CLASSIFIED": {
+        "total": 9,
+        "with_NON_NULL_organizationId": {
+          "count": 2,
+          "verdict": "THESE TWO ARE THE COMPLETE SET OF ORGANIZATION-SCOPE EFFECT BOUNDARIES. U-AO-4 IS CLOSED ON THEM.",
+          "sites": [
+            {
+              "call_site": "lib/auth/database-context.ts:935",
+              "argument": "organizationId: principal.organization.id",
+              "enclosing_function": "withOrganizationDatabaseContext, declared at lib/auth/database-context.ts:897",
+              "flavour": "THROWING. Refuses with AuthContextError.",
+              "L1_disposition": "L1 MUST BE ENFORCED HERE."
+            },
+            {
+              "call_site": "lib/auth/database-context.ts:1009",
+              "argument": "organizationId: principal.organization.id",
+              "enclosing_function": "withOptionalDatabaseIdentityContext, declared at lib/auth/database-context.ts:981",
+              "flavour": "NULL-YIELDING. Calls back with null instead of throwing.",
+              "L1_disposition": "L1 MUST BE ENFORCED HERE, in the NULL-YIELDING shape - an L1-failing subject receives callback(null), exactly as an unverified or unaccepted one already does.",
+              "the_sentinel_that_must_be_preserved": "This function carries Packet B point C7 and its own code comment states that NO CONTROL IN THIS REPOSITORY MAY DEPEND ON THIS LINE (S-IA-NO-CONTROL-DEPENDS-ON-C7), because all its call sites are preempted by C4 or C5. Adding the L1 conjunct here is DEFENSE IN DEPTH and inherits that sentinel: an L1 control MUST NOT be satisfied only by this line."
+            }
+          ]
+        },
+        "with_NULL_organizationId": {
+          "count": 7,
+          "verdict": "NO ORGANIZATION SCOPE IS PRODUCED. L1 MUST NOT BE ENFORCED AT ANY OF THESE.",
+          "sites": [
+            { "call_site": "lib/auth/database-context.ts:642", "enclosing": "principal resolution read (resolveRequestPrincipal region)", "why_L1_must_not_attach": "This is where the principal itself is resolved. Enforcing L1 here would require reading acceptance state for an organization that is not yet in scope - exactly the error parent L1_ATTACHMENT.derivation_point forbids at the bare principal path." },
+            { "call_site": "lib/auth/database-context.ts:660", "enclosing": "same principal-resolution region", "why_L1_must_not_attach": "As above." },
+            { "call_site": "lib/auth/database-context.ts:777", "enclosing": "listSelectableMemberships, declared at :767", "why_L1_must_not_attach": "S3 SELECTOR_DECIRCULARISATION: the enumerator must not require having already selected an organization. Enforcing L1 here would refuse the subject at the place they go to ACQUIRE a scope." },
+            { "call_site": "lib/auth/database-context.ts:796", "enclosing": "withAuthenticatedDatabaseContext, declared at :790", "why_L1_must_not_attach": "Explicitly unscoped: user-level work - onboarding, invitation acceptance, profile reads. It already enforces B0 then L0 through requirePrincipal, and that is the correct depth for it." },
+            { "call_site": "lib/auth/database-context.ts:864", "enclosing": "withAccountAcceptanceDischargeContext, declared at :844", "why_L1_must_not_attach": "It is the L0 DISCHARGE surface. Adding L1 here would create the L0 analogue of the CL-1 B-1 self-lock in reverse, and it is unscoped in any case." },
+            { "call_site": "lib/auth/database-context.ts:965", "enclosing": "withSuperAdminDatabaseContext, declared at :955", "why_L1_must_not_attach": "Deliberately unscoped: an administrator acts across tenants and pinning app.organization_id to whichever organization they happen to belong to would be misleading. It is also NOT an acceptance-writing capability - see SECURITY_PROHIBITIONS.X-L1-03." },
+            { "call_site": "lib/auth/session.ts:451", "enclosing": "syncUserProfile, declared at :432", "why_L1_must_not_attach": "The one place that cannot use withAuthenticatedDatabaseContext: on first login the public.users row is precisely what does not exist yet. It is pre-profile, let alone pre-tenancy." }
+          ]
+        }
+      },
+      "THE_TWO_ROUTING_SURFACES_THAT_PRODUCE_A_CONTEXT_WITHOUT_SETTING_A_GUC": {
+        "why_they_are_counted_separately": "requireOrganizationAccess and getCurrentOrganizationContext hand an OrganizationContext to a caller without themselves opening a database context. They are not effect boundaries in the GUC sense, but they ARE the routing surfaces where the destination for an L1-failing subject is decided, and an L1 enforced only at the GUC boundaries would throw where it should redirect.",
+        "completeness_measured": "git grep for the return-type annotation Promise<OrganizationContext> and Promise<OrganizationContext | null> across lib/, app/, db/ and components/, excluding tests, returns EXACTLY TWO production sites. Independently, the object-literal construction form (const context: OrganizationContext = {) returns EXACTLY TWO production sites, both inside the two GUC boundaries already enumerated (lib/auth/database-context.ts:929 and :1003). There is no third producer.",
+        "sites": [
+          {
+            "site": "lib/auth/session.ts:246",
+            "function": "requireOrganizationAccess",
+            "current_gate_sequence_measured": "loadRequestPrincipal -> redirect('/login') if absent -> B0: redirect(VERIFY_EMAIL_PATH) if !principal.emailVerified -> L0: redirect(ACCEPT_LEGAL_PATH) if !principal.accountAcceptanceCurrent -> Packet A R1 (super-admin, redirect /admin) -> R2 (TENANCY_NO_ORGANIZATION_SELECTED: enumerate, then /app/onboarding or /app/organizations/select) -> R3 (TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER: clear carrier THEN redirect to selector) -> R4 (RETURN SITE 3, redirect /app/onboarding) -> return { user, membership, organization }",
+            "WHERE_L1_ATTACHES": "AFTER the Packet A block, immediately BEFORE the return - that is, on the branch where principal.membership AND principal.organization are both non-null. This is the only point at which an organization is in scope and Packet A has already produced its destination.",
+            "WHERE_L1_MUST_NOT_ATTACH": "Anywhere at or above the B0 and L0 checks, and anywhere inside the R1..R4 block. An L1 check placed before R2 or R3 would evaluate a predicate with no argument and would refuse the subject at the selector.",
+            "flavour": "REDIRECT."
+          },
+          {
+            "site": "lib/auth/session.ts:329",
+            "function": "getCurrentOrganizationContext",
+            "current_gate_sequence_measured": "loadRequestPrincipal -> return null if any of: !principal, !principal.membership, !principal.organization, !principal.emailVerified, !principal.accountAcceptanceCurrent -> return { user, membership, organization }",
+            "WHERE_L1_ATTACHES": "As an additional conjunct in the SAME refusal shape. The function's own code comment records why this works: null already means no context can be built, and an unverified or unaccepted subject folds into the same shape, which is why every existing if (!ctx) caller refuses it for free.",
+            "WHERE_L1_MUST_NOT_ATTACH": "It must not be turned into a throwing or redirecting surface. Its contract is non-redirecting and four Route Handlers depend on that.",
+            "flavour": "NULL-YIELDING."
+          }
+        ]
+      },
+      "THE_TWO_COMPOSERS_THAT_INHERIT_AND_MUST_NOT_BE_GATED_TWICE": [
+        {
+          "site": "lib/auth/session.ts:370",
+          "function": "runWithOrganizationAccess",
+          "composition_measured": "await requireOrganizationAccess(); return withOrganizationDatabaseContext(callback)",
+          "disposition": "INHERITS L1 TWICE OVER. No separate L1 check is authorized here. Adding one would be a third place to keep in step for no additional guarantee."
+        },
+        {
+          "site": "lib/auth/session.ts:392",
+          "function": "runWithOptionalOrganizationAccess",
+          "composition_measured": "return withOptionalDatabaseIdentityContext(callback). It does NOT transit requireOrganizationAccess.",
+          "disposition": "INHERITS L1 from withOptionalDatabaseIdentityContext only. This is the one composer whose L1 posture rests on the C7 line, which is why the C7 sentinel is restated above."
+        }
+      ],
+      "ORGANIZATION_SCOPE_AVAILABILITY": {
+        "carrier": "The selected-organization carrier is read during principal resolution and yields principal.membership and principal.organization, or a named refusal code (TENANCY_NO_ORGANIZATION_SELECTED or TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER).",
+        "sole_permitted_writer": "app/(authenticated)/app/organizations/select/actions.ts. Packet A NO_CARRIER_WRITE_DURING_ROUTING. L1 adds NO exception and writes no carrier.",
+        "at_most_one_ACTIVE_membership_MEASURED": "db/schema.ts declares uniqueIndex('user_single_active_membership') on (user_id) WHERE status = 'active', created by db/migrations/0003_curvy_tempest.sql and NEVER dropped - measured across every db/migrations/*.sql, zero DROP INDEX statements naming it - and present in the materialized baseline at db/baseline/stella_g2_schema.sql:7071. A subject may hold SEVERAL organization_members rows (unique only on (organization_id, user_id)) but AT MOST ONE with status='active'.",
+        "why_that_measurement_is_load_bearing_here": "It constrains the multi-membership dimension of the termination contract. A control written as 'a subject with two ACTIVE memberships' is UNSATISFIABLE against the live schema and would be a vacuous or a failing test for the wrong reason. The satisfiable form is 'a subject with two membership ROWS of which exactly one is active', and the per-organization property N-AO-12 asserts is proven by ACCEPTING for one organization and then re-scoping, not by holding two live scopes at once. HPO-A decision 8 targets removing this ceiling and MULTI_ORG.REMOVAL_IS_NOT_A_DROP_INDEX governs that removal; L1 neither performs nor depends on it."
+      },
+      "WHERE_L1_MUST_RUN": [
+        "lib/auth/session.ts requireOrganizationAccess, after the Packet A block, on the both-non-null branch. REDIRECT flavour.",
+        "lib/auth/session.ts getCurrentOrganizationContext, as an added conjunct of the existing null-refusal. NULL flavour.",
+        "lib/auth/database-context.ts withOrganizationDatabaseContext, after the membership/organization refusal and after the options.organizationId equality check. THROW flavour.",
+        "lib/auth/database-context.ts withOptionalDatabaseIdentityContext, as an added conjunct of the existing callback(null) refusal. NULL flavour, DEFENSE IN DEPTH ONLY."
+      ],
+      "WHERE_L1_MUST_NOT_RUN": [
+        "requirePrincipal, assertPrincipalGates, or any principal-path assertion helper. L1 is not a property of a principal; it is a property of a principal AND an organization. Putting it on RequestPrincipal is prohibited - see COMMERCIALACCOUNT_AND_ENTITLEMENT_BOUNDARY.NO_BARE_PRINCIPAL_FIELD.",
+        "withAuthenticatedDatabaseContext. Unscoped.",
+        "withAccountAcceptanceDischargeContext. Unscoped, and it is L0's discharge surface.",
+        "withSuperAdminDatabaseContext. Unscoped by design.",
+        "listSelectableMemberships. The enumerator must not require a scope.",
+        "syncUserProfile. Pre-profile.",
+        "Packet A R1 through R4, and anywhere above the B0/L0 checks in requireOrganizationAccess.",
+        "runWithOrganizationAccess and runWithOptionalOrganizationAccess as separate checks. They inherit.",
+        "The L1 discharge boundary itself. See DISCHARGE_BOUNDARY."
+      ],
+      "REFUSAL_DESTINATION": {
+        "redirect_flavour": "A dedicated organization-commercial-acceptance destination path, distinct from ACCEPT_LEGAL_PATH. The L0 path is declared at lib/auth/legal-acceptance.ts:51 as ACCEPT_LEGAL_PATH = '/accept-legal' and VERIFY_EMAIL_PATH at lib/auth/email-verification.ts:12. The L1 destination MUST be a NEW named constant in the same shape, exported from one module, and MUST NOT reuse ACCEPT_LEGAL_PATH - the two gates have different accepting principals and different affordances, and a shared destination would present the wrong instrument to the wrong actor.",
+        "the_literal_path_string_is_IMPLEMENTATION_DEFINED": "The CONSTANT and its single-module export are BINDING. The literal route string is not pinned, because it is a product/UX choice and RAT-AO-01 authorizes no specific UI copy, route or component.",
+        "throw_flavour": "A NEW AuthContextErrorCode, distinct from AUTH_LEGAL_ACCEPTANCE_REQUIRED, mapped to HTTP 403 and never 401 - the same distinction lib/auth/database-context.ts authContextErrorStatus already draws for L0. The code name is IMPLEMENTATION_DEFINED; its distinctness from the L0 code and its 403 mapping are BINDING.",
+        "null_flavour": "callback(null) / return null. No new vocabulary.",
+        "PROHIBITED_SIDE_EFFECTS_OF_THE_REFUSAL": [
+          "No carrier write, clear or rotation. Parent L1_ATTACHMENT binding_properties.",
+          "No fallback to another membership. Packet A R3.fallback_prohibition applies with equal force.",
+          "No membership enumeration. listSelectableMemberships call count on the L1 refusal path MUST be ZERO.",
+          "No audit row. Parent AUDIT.WHAT_MUST_NOT_BE_AUDITED.refusals.",
+          "No entitlement evaluation. Parent the_ordering_within_step_4_and_5: evaluating and then discarding would leak the shape of the entitlement to a caller who has not passed the gate.",
+          "No disclosure of which instrument, which version, or which other organizations exist."
+        ]
+      },
+      "DISCHARGE_SURFACE_RELATION": "The L1 refusal destination is reachable by the subject standing in front of it, and is served by the bounded discharge boundary in DISCHARGE_BOUNDARY - never by any of the four enforcement surfaces above, because all four enforce L1 and the discharge surface must not.",
+      "WHAT_THIS_ENUMERATION_DOES_NOT_CLAIM": [
+        "It does not claim to enumerate CONSUMERS of an organization context. There are hundreds and they are irrelevant: a consumer that obtains its context from one of the four enforcement surfaces inherits L1, and a consumer cannot obtain one any other way because there is no third producer and no second writer of app.organization_id.",
+        "It does not claim the four surfaces will never grow. It claims the ENUMERATION METHOD is mechanical and re-runnable, and the implementation is required to carry an executable census that fails when a fifth producer or a third chokepoint importer appears. See TEST_AUTHORITY.",
+        "It does not claim any of the four line anchors is durable. Every anchor above is a RE-MEASUREMENT OBLIGATION on the implementing mission, matched on SYMBOL not on line number. The parent's own lineage has twice had anchors drift between authoring and implementation."
+      ]
+    },
+    "U_AO_4_STATUS": "CLOSED",
+    "U_AO_4_CLOSURE_BASIS": "The set is EXACTLY FOUR enforcement surfaces (two routing producers, two GUC effect boundaries), reached through EXACTLY ONE chokepoint imported by EXACTLY TWO modules, with EXACTLY TWO inheriting composers and SEVEN explicitly non-scoped call sites. Every figure is a measurement at 975e5e48 / tree e9152421, by structural enumeration rather than by sampling, and every non-scoped site carries its own reason for exclusion rather than being omitted."
+  },
+
+  "ACCEPTOR_AUTHORITY": {
+    "status": "RATIFIED, not derived. RAT-AO-01 AO1_C4 and AO1_C6; RAT-AO-02 AO2_C1 and AO2_C2.",
+    "AUTHORIZED_ACCEPTOR": "A subject holding an ACTIVE organization_members row in the AFFECTED organization whose role is EXACTLY the string organization_admin.",
+    "EXACT_EQUALITY_IS_BINDING": {
+      "requirement": "The accepting-role predicate MUST be EXACT EQUALITY on organization_admin. It MUST NOT be a hierarchy threshold and its role set MUST NOT contain super_admin.",
+      "prohibited_forms_named": [
+        "hasRole(role, 'organization_admin') - lib/auth/permissions.ts:24-26 defines hasRole as ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole], a RANGE predicate.",
+        "canManageUsers(role) - lib/auth/permissions.ts:33-35, which is exactly that shape.",
+        "canEditOrganization(role) - lib/auth/permissions.ts, same shape.",
+        "Any role-set membership test whose set contains super_admin.",
+        "Any '>=' or '+' notation over ROLE_HIERARCHY."
+      ],
+      "re_measured_at_this_head": {
+        "ROLES_declared": "lib/auth/roles.ts:13-20 declares SIX values: super_admin, organization_admin, impact_manager, analyst, reviewer, viewer.",
+        "ROLE_HIERARCHY_measured": "lib/auth/roles.ts assigns super_admin 100, organization_admin 80, impact_manager 60, analyst 40, reviewer 20, viewer 10. hasRole('super_admin','organization_admin') is therefore 100 >= 80 = TRUE.",
+        "schema_admits_super_admin_as_a_MEMBERSHIP_ROLE": "db/schema.ts:113 check('role_check', role IN ('super_admin','organization_admin','impact_manager','analyst','reviewer','viewer')). A membership row CAN carry role super_admin, so a range predicate would admit it as an accepting principal.",
+        "verdict": "F-AO-18 HOLDS UNCHANGED AT THIS HEAD. The parent's measurement is re-confirmed, not inherited."
+      },
+      "THE_REPOSITORY_ALREADY_CONTAINS_THE_CORRECT_PRIMITIVE": {
+        "measured": "db/migrations/0031_rls_core.sql:40-51 declares current_user_role_in_org(org_id uuid) RETURNS text, LANGUAGE sql, STABLE, SECURITY DEFINER, SET search_path = public, whose body is SELECT role FROM organization_members WHERE user_id = auth.uid() AND organization_id = org_id AND status = 'active' LIMIT 1.",
+        "why_it_is_the_right_primitive": "It filters on status = 'active' (satisfying the ratified word ACTIVE in AO2_C2), it takes the organization as a PARAMETER (so it can be applied to the ROW's organization_id rather than to an ambient scope), and it contains NO super_admin disjunct of any kind. Compared to EXACT EQUALITY it yields precisely the ratified predicate: current_user_role_in_org(organization_id) = 'organization_admin' is FALSE for a membership row carrying role super_admin, which is the one case the ambient idiom gets wrong.",
+        "CONTRAST_MEASURED_ON_THE_OTHER_SIDE": "db/identity-context.ts:217 DOES carry a super-admin exception - identity.organizationId !== null && check.is_member !== true && !check.is_super_admin - so a super-admin can BIND an organization-scoped context for an organization they are not a member of. That exception is MO-07 / X-AO-06 and is confirmed live at this head. It must NOT become an acceptance-writing capability, and the reason it cannot is that the T4 INSERT predicate goes through current_user_role_in_org, which has no such exception. The two facts are measured on both sides deliberately: the defense is structural, not a matter of the application being careful.",
+        "classification": "The POLICY TEXT is IMPLEMENTATION_DEFINED. The PREDICATE SEMANTICS above are BINDING. Naming the available primitive is guidance that the ratified semantics are CONSTRUCTIBLE, not a pin on how."
+      },
+      "controls_carried_from_the_frozen_census": ["N-AO-26", "N-AO-27", "M-AO-15"]
+    },
+    "NOT_AUTHORIZED_TO_ACCEPT": {
+      "ruling": "RAT-AO-02 AO2_C2 is a POSITIVE CLOSED CLAUSE - acceptance is performed ONLY by an active organization_admin of the affected organization - so every actor who is not that is excluded whether or not they are named.",
+      "named_for_the_avoidance_of_doubt": ["platform-admin", "super_admin (whether as a users.is_super_admin flag or as an organization_members.role value)", "support", "operator", "commercial team", "back-office tooling", "cron", "migration script", "impersonation of any kind", "any other member of the affected organization, at any role short of organization_admin"],
+      "the_precision_the_parent_forces_and_this_artifact_preserves": "RAT-AO-02 does NOT independently impose a NATURAL PERSON requirement (SERVICE_PRINCIPAL_PRECISION_R3). The test AO2_C2 applies is MEMBERSHIP AND ROLE, not principal kind. A service principal that somehow held a valid active organization_admin membership would satisfy AO2_C2 on its face. This artifact does not manufacture a principal-kind exclusion the ratification does not support, and records the real dependency instead: see SECURITY_DEPENDENCIES.U_AO_8.",
+      "no_assisted_path_is_created": "RAT-AO-02 explicit_non_authorizations forbids building any platform-side acceptance-recording tool, now or as a future convenience. None is authorized here."
+    },
+    "ACCEPTED_BY_ROLE_IS_SERVER_DERIVED": {
+      "binding": "accepted_by_role is a SERVER-DERIVED snapshot of the role the accepting subject actually held, read at the database boundary in the acceptance transaction. The client MAY NEVER supply, choose, influence or echo it.",
+      "grounds": "I-T4-6 (re-verified at the database boundary in the same transaction and NEVER taken from a client-supplied role) plus ratification MO-05 per-request revalidation.",
+      "a_forged_role_is_IGNORED_not_merely_refused": "If a submission carries a role field at all, the server MUST ignore it rather than validate it. A validated client role is still a client role, and a validation that happens to pass makes the client the source of the value."
+    },
+    "FORMER_ADMIN_ACCEPTANCE_BEHAVIOR": {
+      "binding": "An acceptance validly written by an ACTIVE organization_admin REMAINS HISTORICALLY VALID after that actor later loses the role, changes role, or leaves the organization. The acceptance is NOT re-required, NOT invalidated, and NOT recomputed on the current membership.",
+      "grounds": "I-T4-7: accepted_by_role IS RECORDED AND IS NOT DERIVED FROM CURRENT MEMBERSHIP; the role is the authority for the act and is not reconstructible later. Plus APPEND_ONLY: an acceptance is evidence of a past act, and evidence that can be edited is not evidence.",
+      "the_error_this_forbids": "Recomputing acceptance validity by joining the acceptance row back to the CURRENT membership. That join would silently un-accept an organization whenever its founding administrator left, which is an ordinary event and not a legal one.",
+      "what_DOES_reopen_L1": "Only a newly applicable required organization-class version that the organization is not current on. Reacceptance is a NEW ROW; the old rows remain immutable."
+    }
+  },
+
+  "ORDINARY_MEMBER_BEHAVIOR": {
+    "status": "RATIFIED. RAT-AO-01 AO1_C1 through AO1_C5.",
+    "BOTH_HALVES_ARE_BINDING": {
+      "half_one_cannot_satisfy": "An organization member whose role is not exactly organization_admin CANNOT discharge L1. The write is refused, at the database and not only in the application.",
+      "half_two_cannot_bypass": "That member ALSO cannot BYPASS the obligation. They do not get product access in lieu of acceptance. Refusing to let them accept is not the same as letting them through.",
+      "why_both_must_be_asserted_in_one_control": "Each half alone is satisfiable by an implementation that gets the other wrong. Control N-AO-36 exists precisely to assert them for the same subject in one place."
+    },
+    "NO_COMPLETION_AFFORDANCE": "ONLY organization_admin receives the completion call-to-action. AO1_C4. An ordinary member is not prompted to accept the organization's commercial instrument.",
+    "NO_ELEVATED_NON_ADMIN_BYPASS": {
+      "binding": "There is NO viewer, reviewer, analyst or impact_manager bypass for this blocking cause. Role elevation short of organization_admin does not lift the block. AO1_C5.",
+      "THE_FOUR_NAMED_ROLES_ARE_EXHAUSTIVE_RE_MEASURED": "6 declared roles = 1 accepting role (organization_admin) + 4 named non-admin roles (impact_manager, analyst, reviewer, viewer) + 1 platform-adjacent value (super_admin, governed by RAT-AO-02). CLOSED WORLD, no residue. Re-measured at this head against lib/auth/roles.ts:13-20 and db/schema.ts:113, which agree. A control may therefore assert refusal across the COMPLETE non-admin set rather than over a sample."
+    },
+    "THE_BLOCKED_STATE": {
+      "binding": "Where L1 blocks downstream capability for an ordinary member, they receive a NON-SENSITIVE blocked state: enough to explain that access is pending, and no more.",
+      "MUST_NOT_DISCLOSE": [
+        "Which instrument or which version is outstanding.",
+        "Any instrument text or excerpt.",
+        "Who the organization's administrators are.",
+        "Any other organization's existence, name or state.",
+        "Any commercial, billing or entitlement state.",
+        "Any acceptance history."
+      ],
+      "COPY_IS_IMPLEMENTATION_DEFINED": "RAT-AO-01.WHAT_RAT_AO_01_DOES_NOT_AUTHORIZE states in terms that no specific UI copy, route or component is authorized. The exact wording is therefore IMPLEMENTATION_DEFINED WITHIN THE NON-SENSITIVE CONSTRAINT above. The constraint is BINDING and testable by what the state does NOT contain; the wording is not pinned and is not an OPEN_DECISION being smuggled into implementation authority.",
+      "NO_AUTOMATIC_NOTIFICATION": "Canonical says the organization_admin RECEIVES the completion CTA. It does NOT say the system SENDS anything. No email, no in-app notification and no push is required or authorized. Control N-AO-34; mutation M-AO-21 exists because the notification makes the product BETTER and is therefore the mutation most likely to be introduced in good faith."
+    }
+  },
+
+  "NO_SCOPE_BEHAVIOR": {
+    "status": "BINDING. Parent FAIL_CLOSED.FC_5, consumed unchanged.",
+    "ruling": "With NO organization in request scope, L1 is NOT EVALUATED. It is UNDEFINED, not FALSE. It does NOT default to pass and does NOT default to fail: the question is not asked.",
+    "the_routing_decision_belongs_to_PACKET_A": "Answered by Packet A R2 or R3, unchanged and verbatim: R2 enumerates via listSelectableMemberships and routes zero candidates to /app/onboarding and one-or-more to /app/organizations/select INCLUDING exactly one; R3 clears the stale carrier THEN redirects to the selector, in that order; R4 RETURN SITE 3 remains excluded from both; NO_AUTO_SELECTION - the single-candidate case gets no shortcut.",
+    "THE_SELECTOR_MUST_REMAIN_REACHABLE": "This is the whole point of the case. An implementer reading the journey as a linear pipeline may make L1 refuse when there is no organization, reasoning that no organization means no acceptance. That would refuse every subject at the selector - the very place they go to acquire a scope - and would produce a lockout indistinguishable from a loop.",
+    "ASSERTED_BY_ABSENCE_NOT_BY_OUTCOME": "The control that catches this is N-AO-13, which asserts that NO acceptance query for organization-class instruments is issued on the no-scope path. An outcome-only control passes under a mutation that evaluates L1 and then ignores the answer; an absence control does not.",
+    "controls": ["P-AO-8", "N-AO-13", "M-AO-8"]
+  },
+
+  "PERSISTENCE_AUTHORITY_T4": {
+    "status": "AUTHORIZED AS ONE NEW RELATION. BINDING AS INVARIANTS, NOT AS DDL TEXT. NOTHING HERE IS DDL and no migration is written, authorized or implied.",
+    "NAMING_DISPOSITION": {
+      "question": "Whether this artifact should PIN the physical relation name or preserve it as a descriptive placeholder.",
+      "the_parent_settles_it": "FUTURE_DDL.HARD_PROHIBITIONS_ON_THIS_SECTION, final entry, verbatim in substance: the object and column names below are DESCRIPTIVE PLACEHOLDERS chosen for readability, they are NOT pinned identifiers, and an implementing lineage may rename freely provided the invariants survive.",
+      "disposition": "THE PHYSICAL NAME IS IMPLEMENTATION_DEFINED. It is NOT ratified nomenclature and this artifact does not make it so.",
+      "RECOMMENDED_NOT_REQUIRED": "organization_commercial_acceptances, on the measured ground that the live sibling implementation adopted the parent's placeholders verbatim - db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql creates legal_instruments, legal_instrument_versions and account_legal_acceptances, matching T1, T2 and T3 exactly. Consistency with three live siblings is a good reason to adopt it and is NOT a reason to treat it as pinned.",
+      "why_this_distinction_is_recorded_rather_than_glossed": "Converting a parent placeholder into ratified nomenclature by quietly repeating it is the exact failure mode the parent's prohibition anticipates. An auditor must be able to see that the recommendation is a recommendation."
+    },
+    "INVARIANT_CONTRACT": {
+      "provenance": "Every invariant below is the parent's FUTURE_DDL.T4 invariant, consumed UNCHANGED. This artifact adds no invariant to T4 and removes none. Where wording differs the parent governs.",
+      "columns_conceptual": [
+        "id",
+        "organization_id - FK organizations, NOT NULL",
+        "instrument_key - NOT NULL",
+        "instrument_version_id - FK to the live legal_instrument_versions relation (T2), NOT NULL",
+        "content_digest - NOT NULL, snapshotted",
+        "accepted_by_user_id - FK users, NOT NULL",
+        "accepted_by_role - NOT NULL, the role held AT ACCEPT TIME",
+        "accepted_at - NOT NULL",
+        "audit_log_id"
+      ],
+      "invariants": [
+        "I-T4-1: UNIQUE (organization_id, instrument_version_id). ORGANIZATION-level, not member-level. A second administrator accepting the same version adds no new fact. RE-VERIFIED AS CANONICAL: the parent states this dimension explicitly and the live sibling uses the analogous (user_id, instrument_version_id) unique index at db/migrations/0070:91, so the dimension is version-keyed in both relations and the only difference is the accepting principal. The version dimension is therefore justified, not assumed.",
+        "I-T4-2: APPEND-ONLY. No UPDATE of any column. No DELETE.",
+        "I-T4-3: NO is_current AND NO is_valid COLUMN. Currency is COMPUTED at read time from the registry and the acceptance rows.",
+        "I-T4-4: content_digest MUST EQUAL the referenced T2 digest AT WRITE TIME, enforced and not assumed, in the same transaction.",
+        "I-T4-5: the referenced instrument MUST be instrument_class ORGANIZATION. The class vocabulary is LIVE: db/migrations/0070:82 constrains legal_instruments.instrument_class to IN ('ACCOUNT','ORGANIZATION'), so ORGANIZATION already exists and no vocabulary extension is required or authorized.",
+        "I-T4-6: accepted_by_user_id MUST hold an ACTIVE organization_admin membership in organization_id AT WRITE TIME, re-verified at the DATABASE boundary in the same transaction and NEVER taken from a client-supplied role.",
+        "I-T4-7: accepted_by_role IS RECORDED AND IS NOT DERIVED FROM CURRENT MEMBERSHIP.",
+        "I-T4-8: NO commercial_account_id COLUMN and NO CommercialAccount-level uniqueness. See COMMERCIALACCOUNT_AND_ENTITLEMENT_BOUNDARY.",
+        "I-T4-9: IS tenant data. RLS ENABLED and FORCED, scoped by organization membership in the shape the repository already uses.",
+        "I-T4-10: writing this row grants NOTHING."
+      ],
+      "cross_relation_invariants_consumed_unchanged": [
+        "I-X-1: no stored currency flag on any relation.",
+        "I-X-2: no polymorphic acceptance relation. T4 is SEPARATE from the live T3, with a different accepting principal and a different uniqueness rule.",
+        "I-X-3: no application DELETE path. No erasure path is authorized.",
+        "I-X-4: no existing table is repurposed. invitations.acceptedAt is NOT acceptance evidence and audit_logs.ipAddress is not the acceptance metadata carrier.",
+        "I-X-5: NO column is added to organizations, users, organization_members or commercial_accounts to denormalize acceptance state."
+      ]
+    },
+    "DUPLICATE_ACCEPTANCE": {
+      "ruling": "An exact duplicate - the same organization accepting the same instrument_version_id again - is refused by the I-T4-1 unique constraint. Whether the APPLICATION presents that refusal as an idempotent no-op is IMPLEMENTATION_DEFINED; the DATABASE refusal is BINDING.",
+      "why_the_split": "Parent CROSS_BOUNDARY_RULE leaves the journey resumable at each step, which an idempotent presentation serves well. But an implementation that achieved idempotency by DROPPING the unique constraint, or by an ON CONFLICT DO NOTHING that hid a concurrent second writer, would defeat I-T4-1. The constraint is the concurrency control; the presentation is a UX choice layered above it.",
+      "control": "N-AO-17 asserts that two concurrent organization_admins accepting the same version yield EXACTLY ONE row."
+    },
+    "SUPERSEDED_VERSION_ACCEPTANCE": "A newly applicable version is accepted by ADDING A NEW ROW. Old rows remain immutable and are never rewritten, flagged or deleted. Currency is recomputed from registry plus rows.",
+    "SHAPES_EXPLICITLY_REJECTED_AND_NOT_TO_BE_REINTRODUCED": [
+      "A single polymorphic acceptance table with a nullable organization_id and a check constraint (I-X-2, TWO_ACCEPTANCE_RELATIONS_NOT_ONE).",
+      "A CommercialAccount-level acceptance row or a CommercialAccount-level unique index (I-T4-8).",
+      "An is_current or is_valid column, or any stored currency flag (I-T4-3, I-X-1).",
+      "A denormalized acceptance boolean on organizations (I-X-5).",
+      "A reuse of invitations.acceptedAt or of any existing timestamp as acceptance evidence (I-X-4, control N-AO-2).",
+      "An acceptance FK with no snapshotted digest (CONTENT_IDENTITY_IS_SNAPSHOTTED_ONTO_THE_ACCEPTANCE, mutation M-AO-2).",
+      "A separately persisted hash-algorithm column made MANDATORY (R4 withdrew it from the floor; mutation M-AO-24 exists to catch its reinstatement as a requirement).",
+      "Any application-reachable DELETE or UPDATE path (I-T4-2, I-X-3)."
+    ]
+  },
+
+  "RLS_AUTHORITY": {
+    "status": "BINDING AS A POSTURE. NO POLICY TEXT IS AUTHORED HERE. Parent FUTURE_DDL.WHAT_THIS_SECTION_DELIBERATELY_DOES_NOT_DEFINE, final entry: postures are stated as invariants; policies are the database lineage to write.",
+    "NOT_CLAIMED_TO_BE_ACHIEVABLE_WITHOUT_A_PROBE": "U-AO-1 asked whether the RLS posture required by I-T4-9 is achievable against the live role model, and the parent recorded it UNKNOWN for want of a PostgreSQL probe. It is now PARTLY ANSWERED: the live sibling 0070 demonstrates the analogous posture working for T3 (ENABLE plus FORCE plus a self-scoped INSERT WITH CHECK plus an append-only trigger plus a cross-table invariants trigger), and db/migrations/0031_rls_core.sql supplies current_user_role_in_org for the role half. But the ORGANIZATION-scoped variant has never been probed, so achievability for T4 specifically remains an obligation on the implementing mission and is NOT claimed here.",
+    "required_posture": {
+      "enable": "ENABLE ROW LEVEL SECURITY.",
+      "force": "FORCE ROW LEVEL SECURITY. Live precedent: db/migrations/0070:137-138 applies both to account_legal_acceptances, and applies ENABLE only to the platform-global registries. T4 is tenant data and takes both.",
+      "select": "Organization-member visibility, consistent with the tenant isolation shape the repository already uses. An acceptance row is visible to members of its own organization and to nobody else.",
+      "insert": [
+        "accepted_by_user_id = auth.uid() - the accepting subject only, no delegation.",
+        "An ACTIVE membership in the ROW's organization_id.",
+        "role EXACTLY organization_admin, by equality and not by threshold.",
+        "The three conditions are CONJUNCTIVE."
+      ],
+      "update": "NO POLICY. Append-only.",
+      "delete": "NO POLICY. Append-only.",
+      "append_only_is_ENFORCED_not_merely_UNPOLICIED": "Live precedent db/migrations/0070:156-158 attaches trg_account_legal_acceptances_append_only executing uellix_forbid_mutation(). An omitted policy is necessary but a trigger makes the refusal explicit and survives a future policy addition. The implementing mission MUST prove UPDATE and DELETE refusal against real PostgreSQL rather than inferring it from an absent policy."
+    },
+    "PROHIBITIONS": {
+      "NO_SUPERADMIN_DISJUNCT": "The T4 policies MUST NOT contain current_user_is_super_admin(), and MUST NOT contain any hasRole comparison or ROLE_HIERARCHY reference. This is X-AO-06, RATIFIED rather than derived since RAT-AO-02 AO2_C1.",
+      "NO_ROLE_HIERARCHY_SHORTCUT": "No policy or trigger may admit a role on the ground that it outranks organization_admin.",
+      "NO_COMMERCIALACCOUNT_INHERITANCE": "No policy, view, trigger or join may make an acceptance for organization A visible or valid for organization B on the ground that a CommercialAccount governs both.",
+      "NO_WIDENING_OF_ANY_EXISTING_POLICY": "0042's audit_logs_insert_member_or_admin, 0067's audit_logs_insert_tenancy_refusal and 0070's audit_logs_insert_legal_acceptance clauses MUST remain BYTE-UNCHANGED. See AUDIT_AUTHORITY.NO_NEW_AUDIT_POLICY_IS_REQUIRED.",
+      "CROSS_TENANT_INSERT_IS_REFUSED_AT_THE_DATABASE": "An organization_admin of Org-A MUST NOT be able to insert an acceptance for Org-B. The database must reject it even if the application code is bypassed entirely. This is the single most important property of the INSERT policy, because it is the one the application cannot be trusted to provide."
+    },
+    "TRIGGER_OBLIGATIONS": {
+      "determination": "A BEFORE INSERT trigger IS REQUIRED, because two of the invariants CROSS TABLES and therefore cannot be plain CHECK constraints.",
+      "what_it_must_enforce": [
+        "I-T4-5 class guard: the referenced version's instrument must be instrument_class ORGANIZATION.",
+        "I-T4-4 digest guard: the snapshotted content_digest must equal the referenced version's content_digest."
+      ],
+      "conceptual_precedent_only": "db/migrations/0070:163-206 enforces the ACCOUNT-side twins (I-T3-5 class guard, I-T3-4 digest guard) in one BEFORE INSERT trigger function that raises foreign_key_violation when the version does not resolve and check_violation for each guard. That is cited as a CONCEPTUAL PRECEDENT for the SHAPE. No SQL is written here, and the L1 trigger is not a copy: its class guard asserts ORGANIZATION where the sibling asserts ACCOUNT, which is the whole point of the guard existing in both directions (control N-AO-20).",
+      "a_function_created_after_0033_must_be_REVOKEd": "db/migrations/0033_public_api_grants.sql revoked EXECUTE on all then-existing public functions from PUBLIC, anon and authenticated, and PostgreSQL grants EXECUTE to PUBLIC by default at CREATE time. Any new trigger function therefore needs its own REVOKE, following the 0061 and 0070 precedent - one REVOKE, no re-GRANT, because a trigger invokes its function internally regardless of the triggering role's own grant. Recorded as an IMPLEMENTATION OBLIGATION, not as DDL."
+    },
+    "properties_L1_must_PROVE_against_real_PostgreSQL": [
+      "R-L1-1: FORCE RLS is in effect on T4.",
+      "R-L1-2: an active organization_admin of the row's organization may INSERT.",
+      "R-L1-3: each of the four named non-admin roles is REFUSED.",
+      "R-L1-4: a membership row carrying role super_admin is REFUSED (exact equality, not threshold).",
+      "R-L1-5: an organization_admin of Org-A is REFUSED an INSERT naming Org-B.",
+      "R-L1-6: UPDATE is refused.",
+      "R-L1-7: DELETE is refused.",
+      "R-L1-8: the I-T4-1 unique constraint refuses a duplicate with 23505.",
+      "R-L1-9: the class guard refuses an ACCOUNT-class version.",
+      "R-L1-10: the digest guard refuses a mismatched snapshot.",
+      "R-L1-11: SELECT is scoped to the organization; another organization's acceptance never leaks into a scoped read.",
+      "R-L1-12: the organization-scoped acceptance audit INSERT is ADMITTED by the pre-existing 0042 policy with NO new policy added."
+    ]
+  },
+
+  "ATOMICITY_AUTHORITY": {
+    "status": "BINDING. Parent ATOMICITY_BOUNDARIES.AB-3, consumed unchanged.",
+    "boundary": "AB-3 ORGANIZATION_COMMERCIAL_ACCEPTANCE. ONE transaction. A boundary is complete or it did not happen.",
+    "contents_EXHAUSTIVE": ["one organization-class acceptance row", "one audit row"],
+    "principal": "a subject with an ACTIVE organization_admin membership in the target organization, re-verified at the database boundary in the same transaction",
+    "MUST_NOT_CONTAIN": [
+      "any entitlement grant",
+      "any CommercialAccount mutation",
+      "any organizations.status change",
+      "any membership change",
+      "any selected-organization carrier mutation",
+      "any invitation state transition",
+      "any instrument version publication"
+    ],
+    "why_no_entitlement_in_here": "Parent AB-3.why_no_entitlement_in_here: acceptance is a precondition of entitlement, not a cause of it. Granting an entitlement in the acceptance transaction would make acceptance an entitlement source and would contradict ratification CA-03.",
+    "NOT_MERGED_WITH_AB_2": {
+      "binding": "AB-3 MUST NOT be folded into the AB-2 bootstrap transaction.",
+      "grounds": "Parent THE_WINDOW_THIS_CREATES.must_not_be_engineered_away: folding would contradict decision 2's separateness, would make acceptance a byproduct of founding rather than a discrete act, and would be impossible for any organization whose administrator later changes or whose instrument later requires reacceptance - both of which reopen the window anyway. The window ORGANIZATION_PENDING_COMMERCIAL_ACCEPTANCE is REAL, LEGITIMATE and UNAVOIDABLE and must be HANDLED, not eliminated.",
+      "control": "M-AO-14 asserts that folding the L1 write into AB-2 turns a control RED. N-AO-11 asserts the window is not a partial failure."
+    },
+    "CROSS_BOUNDARY_RULE": "No boundary depends on another having succeeded within the same request. A failure in AB-3 leaves the journey resumable at L1 and never leaves a half-built organization."
+  },
+
+  "AUDIT_AUTHORITY": {
+    "status": "BINDING. Parent AUDIT.WHAT_MUST_BE_AUDITED entry 2 and AUDIT.organization_class_scope.",
+    "WHAT_MUST_BE_AUDITED": "Exactly one event: the organization-class acceptance, at boundary AB-3.",
+    "WHAT_MUST_NOT_BE_AUDITED": {
+      "refusals": "A gate refusal emits NO audit row. Auditing blocked page views would flood audit_logs with non-events and would make the acceptance signal unfindable inside its own noise.",
+      "reads": "Evaluating the currency predicate is not an event.",
+      "exception_conditions": "NONE. This artifact authorizes no refusal auditing. If a future authority requires it, that is a separate act."
+    },
+    "AUDIT_VERB": {
+      "ALLOCATED_LITERAL": "legal.organization_instrument_accepted",
+      "suggested_key_name_NOT_PINNED": "LEGAL_ORGANIZATION_INSTRUMENT_ACCEPTED, by symmetry with the live LEGAL_ACCOUNT_INSTRUMENT_ACCEPTED. The KEY name is IMPLEMENTATION_DEFINED; the VALUE literal above is PINNED.",
+      "why_this_artifact_may_pin_it": "Parent AUDIT.action_name_disposition states the three conceptual names are CONCEPTUAL and that their literal string values are a FUTURE ALLOCATION by whichever mission extends AUDIT_ACTIONS, pinning that the events must be auditable and not what they are called. This artifact IS a governed allocation act in that lineage, and the sibling CL-1 authority deferred the same allocation to its implementer, which then allocated legal.account_instrument_accepted. Pinning it HERE rather than at implementation time is a deliberate tightening, because the POLICY PREDICATE and the VOCABULARY ENTRY must name the SAME literal, so the verb decision has to precede any policy text - CL-1's own ORGLESS_AUDIT_AUTHORITY.THE_ACTION_NAMES_ARE_NOT_PINNED.CARRY_FORWARD_HAZARD says exactly this.",
+      "CANONICAL_SHAPE_CONFORMANCE_MEASURED": {
+        "AUDIT_ACTIONS_keys_at_this_head": 112,
+        "declaration_site": "lib/audit/logger.ts:8",
+        "segment_count_distribution": "110 values carry TWO dot-separated segments; 2 carry THREE (tenancy.organization.selection_refused and tenancy.membership.revalidation_refused).",
+        "the_shape_pin": "TWO segments is the canonical shape by a 110-to-2 margin. legal.organization_instrument_accepted is TWO segments and CONFORMS.",
+        "first_segment_already_exists": "legal is an existing first segment, introduced live by LEGAL_ACCOUNT_INSTRUMENT_ACCEPTED = 'legal.account_instrument_accepted'. No new namespace is created.",
+        "collision_sweep": "The literal legal.organization_instrument_accepted occurs in EXACTLY ONE tracked file at this head - docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json, inside the parent's own conceptual_action field, which is the FORWARD REFERENCE this allocation discharges and not a competing allocation. ALLOCATION_POSITIONS matching it across 765 allocation positions in 305 parsed JSON files over 1994 tracked blobs: ZERO. Verdict FREE."
+      },
+      "LOCK_OBLIGATION_PRESERVED_AND_NOT_DISCHARGED": {
+        "lock": "LOCK-AUDIT-ACTION-VOCABULARY",
+        "what_it_holds": "The AUDIT_ACTIONS object literal in lib/audit/logger.ts. Declared at docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json:554 and restated at docs/ops/portfolio/PORTFOLIO_COMMERCIAL_V1_AUTHORITY_AMENDMENT_v1.0.1.json:265-270.",
+        "status_after_this_artifact": "NEITHER ACQUIRED NOR RELEASED NOR NARROWED NOR REINTERPRETED. This artifact allocates a LITERAL; it does not authorize a WRITE to lib/audit/logger.ts.",
+        "obligation_on_the_implementing_mission": "Re-measure the lock's release condition AT ITS OWN HEAD before writing that literal, and treat adding a key to AUDIT_ACTIONS as a governed and shape-pinned act rather than as ordinary work. The literal being allocated and collision-free does not make the write authorized.",
+        "why_the_split_is_stated_explicitly": "Pinning the name and authorizing the edit are two different acts, and an implementer who reads a pinned literal as permission to edit the locked literal would acquire a lock by inference."
+      }
+    },
+    "AUDIT_ROW_SHAPE": {
+      "organization_scope": "The L1 audit row IS organization-scoped and CARRIES the organization_id of the accepted organization, exactly as the existing membership and invitation verbs do. Parent AUDIT.organization_class_scope.",
+      "actor": "actor_user_id is the accepting subject, and must equal the database's own auth.uid().",
+      "payload_permitted": ["instrument_key", "version", "content_digest", "the organization identifier", "the timestamp"],
+      "NO_INSTRUMENT_TEXT": "An acceptance audit row MUST NOT carry instrument TEXT, body, excerpt or rendered markup, in before_json, after_json or any other column. The digest already identifies the document uniquely and the bytes are retained once in the registry. X-AO-05. Control N-AO-3 plants a canary in a synthetic instrument body and asserts it never reaches audit_logs.",
+      "NO_EXTRA_PERSONAL_DATA": "No IP address, user agent, device or fingerprint. LRF-03 is unanswered and this artifact does not answer it."
+    },
+    "NO_NEW_AUDIT_POLICY_IS_REQUIRED": {
+      "determination": "MEASURED. L1 requires NO addition to the audit_logs INSERT policy set, and none is authorized.",
+      "measurement": "db/migrations/0042_fib_audit_insert_policy.sql:28-37 creates policy audit_logs_insert_member_or_admin ON audit_logs FOR INSERT TO uellix_app WITH CHECK ( actor_user_id = auth.uid() AND ( (organization_id IS NOT NULL AND organization_id = ANY(current_user_org_ids())) OR current_user_is_super_admin() ) ). The predicate places NO constraint on the action string. An L1 acceptance audit row is organization-scoped, is attributed to the accepting subject, and names an organization the subject is an active member of, so it satisfies the first disjunct on its own.",
+      "why_CL_1_needed_a_new_policy_and_L1_does_not": "CL-1's acceptance audit row is ORG-LESS - organization_id NULL - which 0042's first disjunct excludes by construction and which 0067's tenancy-refusal policy excludes by its own pinned action/entity shape. That is the entire content of F-AO-15 and it is an ACCOUNT-class problem. L1's row is tenant-scoped and therefore falls inside the ordinary organization-oriented path the repository has had since 0042.",
+      "consequence_MATERIAL_NARROWING": "The L1 implementation surface is SMALLER than CL-1's by one policy and one migration concern. An implementer who copied CL-1's shape would add a fourth audit_logs INSERT policy that is not needed, which would widen the audit write surface for no gain and would move the policy-count assertion the CL-1 suite pins.",
+      "THE_HONEST_CAVEAT": "0042 carries an OR current_user_is_super_admin() disjunct, so the AUDIT policy is WIDER than the ACCEPTANCE policy: a super-admin could write an audit row naming an acceptance they cannot themselves perform. That is not a bypass - the T4 INSERT is the load-bearing gate and refuses them - but it does mean the AUDIT ROW ALONE IS NOT PROOF OF A VALID ACCEPTANCE. An auditor reconstructing acceptances must read T4, not audit_logs. Recorded rather than repaired: narrowing 0042 is outside this authority and is adjacent to U-AO-8.",
+      "obligation": "The implementing mission MUST PROVE admission against real PostgreSQL (control R-L1-12) rather than inferring it from the policy text, and MUST assert that the three existing audit_logs INSERT policies remain byte-unchanged and that the count stays at three."
+    }
+  },
+
+  "PRESENTATION_BINDING": {
+    "status": "BINDING. Written against the DEFECTS THE L0 IMPLEMENTATION ALREADY PAID FOR, not invented.",
+    "displayed_organization": "The organization TO BE ACCEPTED, server-derived from the resolved request scope. Never a client-supplied organization id, never a name echoed from a form field, and never another of the subject's memberships.",
+    "displayed_instrument_and_version": "The SERVER-DERIVED current required ORGANIZATION-class instrument and version, resolved from the live registry at render time.",
+    "content_bytes_must_match_the_digest": "The bytes presented to the accepting subject MUST correspond to the canonical content_digest of the version being presented. A presentation that cannot establish that correspondence is UNPRESENTABLE.",
+    "FAIL_CLOSED_ON_UNPRESENTABLE": {
+      "ruling": "An unpresentable or digest-invalid CURRENT version FAILS CLOSED. The surface refuses; it does not accept, and it does not present.",
+      "NO_FALLBACK_TO_AN_OLDER_VERSION": "There is NO fallback to an older presentable version. The parent authorizes none, and a fallback would obtain an acceptance of bytes that are not the ones currently required - an acceptance that looks like evidence and is not.",
+      "grounds": "FAIL_CLOSED.global_rule plus FC_7.THE_CORRECTED_DEFINITION: a required instrument with no currently applicable governed version yields a FALSE conjunct and the gate refuses."
+    },
+    "NO_VERSION_RESOLUTION_IN_APPLICATION_CODE": "The applicable version MUST be resolved from the live registry, never pinned in application code or in a constant. Mutation M-AO-4 exists for exactly this.",
+    "NOTICE_IS_NOT_ACCEPTANCE": "Displaying, dismissing or acknowledging a version - including a pre-effective one - creates NO acceptance row. Control N-AO-30."
+  },
+
+  "SUBMISSION_BINDING": {
+    "status": "BINDING.",
+    "WHAT_THE_CLIENT_MAY_SUPPLY": "At most the PRESENTED VERSION IDENTIFIER, and only as the selector of WHICH pending acceptance is being discharged. Nothing else.",
+    "WHAT_THE_SERVER_DERIVES_AND_NEVER_ACCEPTS_FROM_THE_CLIENT": ["organization_id", "accepted_by_user_id", "accepted_by_role", "instrument_key", "content_digest", "accepted_at", "the actor identity"],
+    "RE_DERIVATION_AT_SUBMISSION_TIME": "At submission the server MUST RE-DERIVE the exact current pending set for the SCOPED organization, and validate the submitted identifier against that freshly derived set. A page rendered minutes ago is not evidence of what is currently required.",
+    "NO_STALE_PAGE_WRITE": "A submission whose version is no longer in the current pending set is REFUSED, not accepted on the strength of what the page showed.",
+    "REFUSED_IDENTICALLY_AND_WITHOUT_AN_ORACLE": {
+      "ruling": "Every case below is refused, and the refusals MUST NOT be distinguishable from one another by message, status, timing or echoed value. An error that says WHICH way the input was wrong is an oracle.",
+      "cases": [
+        "a forged or fabricated version identifier",
+        "a random UUID",
+        "a version belonging to ANOTHER organization's pending set",
+        "a version whose instrument is ACCOUNT-class rather than ORGANIZATION-class",
+        "a stale version",
+        "a superseded version",
+        "a version already accepted by this organization",
+        "a version that is not in the CLOSED REQUIRED set",
+        "a version that is published but NOT YET EFFECTIVE",
+        "a submission whose digest does not match the referenced version"
+      ],
+      "the_id_is_not_echoed": "Live precedent: withOrganizationDatabaseContext refuses a mismatched options.organizationId with AUTH_ORGANIZATION_FORBIDDEN and its own code comment states the id is not echoed, because it is the thing the caller controls and echoing it turns the error message into an oracle. L1 inherits that discipline."
+    },
+    "NO_WIDENING_OF_THE_L0_RESOLVER": {
+      "binding": "L1 MUST NOT be implemented by widening L0's account-class resolver. A DISTINCT organization-commercial-acceptance resolver and read model is AUTHORIZED and REQUIRED.",
+      "grounds": "Parent TWO_ACCEPTANCE_RELATIONS_NOT_ONE.cost_accepted accepts two write paths and two currency predicates DELIBERATELY, in exchange for each relation having exactly one accepting principal and one uniqueness rule. Widening the L0 resolver to take an optional organization parameter would recreate the polymorphism I-X-2 rejects, at the query layer instead of the schema layer - where it is harder to see and impossible for the database to refuse.",
+      "the_live_L0_resolver_named_so_it_is_not_edited_by_accident": "lib/auth/legal-acceptance.ts is the L0 module and carries the account-class derivation and ACCEPT_LEGAL_PATH. L1's resolver is a NEW module. Editing the L0 derivation to serve L1 is SCOPE EXPANSION and a STOP."
+    },
+    "MUTATING_VERB": "The acceptance submission MUST be a mutating request. A safe-method request (GET, HEAD) MUST mutate nothing. The PROPERTY is binding, not the literal verb POST - mutation M-AO-22 exists because scoping the control to the literal string POST fails to distinguish a compliant PUT handler from a render-time GET write. Controls N-AO-8, N-AO-33."
+  },
+
+  "DISCHARGE_BOUNDARY": {
+    "status": "BINDING. This section exists to prevent the repetition of the CL-1 independent-certification BLOCKING B-1 self-lock.",
+    "THE_SELF_LOCK_THIS_PREVENTS": {
+      "what_happened_to_CL_1_measured_from_the_live_repair": "lib/auth/database-context.ts withAccountAcceptanceDischargeContext carries the repair and states the defect in its own words: a subject who was verified but not yet accepted could reach neither the acceptance PAGE nor the acceptance ACTION, because both transited withAuthenticatedDatabaseContext -> requirePrincipal -> assertPrincipalGates -> assertAccountAcceptanceCurrentPrincipal - a self-lock no subject could ever escape.",
+      "why_L1_is_exposed_to_the_identical_defect": "L1's discharge surface needs an ORGANIZATION SCOPE in order to write an organization-scoped row under RLS. The only two primitives that produce an organization scope are withOrganizationDatabaseContext and withOptionalDatabaseIdentityContext, and this artifact requires BOTH to enforce L1. So the L1 discharge surface cannot use either of them, for exactly the reason the L0 discharge surface could not use withAuthenticatedDatabaseContext.",
+      "why_the_L0_primitive_cannot_be_reused": "withAccountAcceptanceDischargeContext passes organizationId: null. It produces NO organization scope, so an insert into a FORCE-RLS tenant relation from inside it would be refused by the very isolation T4 requires. It is also census-pinned to exactly two callers and adding a third would fail tests/auth/accept-legal-callsite-census.test.ts."
+    },
+    "AUTHORIZED": {
+      "object": "ONE new bounded organization-scoped acceptance-discharge boundary.",
+      "suggested_name_NOT_PINNED": "withOrganizationAcceptanceDischargeContext, by symmetry with the live L0 primitive. The NAME is IMPLEMENTATION_DEFINED.",
+      "GATES_IT_MUST_ENFORCE": [
+        "authentication - a resolved principal, or the same refusal requirePrincipal raises",
+        "B0 - email verification, via the same assertion helper the rest of the path uses",
+        "L0 - account-class acceptance currency. L1's discharge surface is NOT exempt from L0: the parent's journey places L0 strictly before the tenancy question, and a subject who has not accepted their own terms has no business accepting on an organization's behalf",
+        "a RESOLVED ORGANIZATION SCOPE - membership and organization both non-null, refusing with the same named refusal codes withOrganizationDatabaseContext uses",
+        "the EXACT organization_admin eligibility, by equality",
+        "the organization-scoped database identity context, so the T4 insert runs under the correct app.organization_id"
+      ],
+      "THE_ONE_GATE_IT_MUST_OMIT": "L1 itself, and nothing else.",
+      "WHY_THE_OMISSION_IS_BOUNDED": "It grants nothing that withOrganizationDatabaseContext does not already grant to any verified, accepted, active member: the SAME organization-scoped identity context under the SAME RLS, scoped to the same organization. It does not bypass RLS - T4's INSERT predicate, including the exact-role and same-organization conditions, is entirely unaffected and is what actually authorizes the write. It does not touch entitlement, which does not exist on this path. It is STRICTLY MORE GATED than the L0 discharge primitive, because it additionally requires L0, a scope and a role.",
+      "THE_OMISSION_MUST_BE_STRUCTURALLY_FIXED": {
+        "binding": "The omitted gate is fixed in the function's own body and is NEVER PARAMETERISED.",
+        "PROHIBITED_SHAPES": ["a skipGates parameter", "a skipL1 flag", "a bypass option", "an optional gate array", "a gates: Gate[] argument", "an enforceL1 boolean defaulting to false", "any caller-controlled means of suppressing any gate"],
+        "why": "A caller-controlled list of gates to suppress is a general escape hatch whose blast radius is every call site that ever passes it. A single-purpose function with one hard-coded omission has a blast radius of its own census."
+      },
+      "AUTHORIZED_CALLERS": {
+        "rule": "EXACTLY the L1 discharge surfaces: the organization-commercial-acceptance page and its mutating action. Two call sites.",
+        "the_paths_are_IMPLEMENTATION_DEFINED": "The route location follows from the refusal destination, which is itself IMPLEMENTATION_DEFINED. The CARDINALITY (two) and the CENSUS are BINDING.",
+        "EXECUTABLE_CENSUS_REQUIRED": "The implementation MUST carry a deterministic call-site census that FAILS the moment a third call site appears, and that asserts the function is exported from exactly one module. tests/auth/accept-legal-callsite-census.test.ts is the measured precedent: it walks every non-test .ts/.tsx under app/ and lib/ by hand with no glob dependency, strips the declaration site so the definition is not misread as a call, and asserts the sorted caller list by EQUALITY rather than by containment. An L1 census MUST be equality-shaped for the same reason: a containment assertion cannot fail when a caller is added."
+      }
+    },
+    "THE_DISCHARGE_SURFACE_MUST_NOT_TRAP_A_PASSING_ADMIN": "For an organization_admin who has ALREADY discharged L1, the discharge destination MUST NOT be a dead end: it either renders a terminal state or routes onward. The same two-state behaviour the repository already requires of /verify-email and /accept-legal, and the same requirement that the destination sit OUTSIDE every enforcement point."
+  },
+
+  "TERMINATION_AUTHORITY": {
+    "status": "BINDING. A finite-state termination proof is REQUIRED, not optional.",
+    "requirement": "The combined routing graph B0, L0, R1..R5, L1 must TERMINATE for every principal state. No destination of any gate may re-enter the chain with the same principal state.",
+    "WHY_IT_MUST_BE_RE_DERIVED_AND_NOT_INHERITED": "Parent F-AO-12 and its R3_REFRESH: Packet B's own termination proof reasoned over a smaller state space, was re-derived over FOUR states by the no-session amendment, and L1 extends the space again. A proof over n states does not carry to n+1 states, and the parent records that this lineage has already had a stale termination argument once.",
+    "PRINCIPAL_STATES_THAT_MUST_BE_ENUMERATED": [
+      "unauthenticated",
+      "authenticated, B0 unverified",
+      "verified, L0 unmet",
+      "verified, L0 met, NO organization in scope",
+      "verified, L0 met, organization in scope, ordinary member (each of the four non-admin roles)",
+      "verified, L0 met, organization in scope, membership role super_admin",
+      "verified, L0 met, organization in scope, organization_admin, L1 UNMET",
+      "verified, L0 met, organization in scope, organization_admin, L1 MET",
+      "verified, L0 met, organization in scope, FORMER organization_admin whose earlier L1 acceptance stands",
+      "verified, L0 met, platform super-admin with no membership (Packet A R1)"
+    ],
+    "ORGANIZATION_DIMENSIONS": [
+      "zero candidate memberships",
+      "exactly one candidate membership (which gets NO auto-selection shortcut)",
+      "several membership rows of which exactly one is ACTIVE - the satisfiable form of the multi-membership dimension at this head; see ATTACHMENT_TOPOLOGY.ORGANIZATION_SCOPE_AVAILABILITY.at_most_one_ACTIVE_membership_MEASURED",
+      "a stale carrier naming an organization the subject is not a member of (Packet A R3)",
+      "a forged or wrong organization id supplied at submission",
+      "two organizations governed by the SAME CommercialAccount"
+    ],
+    "REGISTRY_DIMENSIONS": [
+      "EMPTY required organization-class registry - refuses, fail closed",
+      "PARTIAL registry, some required keys with no currently applicable governed version - refuses the WHOLE gate, fail closed, no vacuous truth",
+      "COMPLETE registry with an unpresentable current version - refuses, no fallback",
+      "COMPLETE registry, fully accepted - eligible to continue, subject to ENT"
+    ],
+    "REQUIRED_TOPOLOGY_PRINCIPLES": [
+      "NO organization scope -> L1 NOT EVALUATED -> Packet A remains able to resolve a scope, and the selector remains reachable.",
+      "L1-failing organization_admin -> the discharge destination RENDERS -> the subject can act -> NO SELF-LOCK.",
+      "L1-passing organization_admin -> the discharge surface does not trap them.",
+      "Ordinary member -> non-sensitive blocked state -> NO completion CTA -> NO bypass -> terminates without an actionable affordance, which is the correct outcome and not a defect.",
+      "Former admin with a standing acceptance -> passes L1 -> no re-acceptance is demanded.",
+      "Every refusal destination sits OUTSIDE every enforcement point it could otherwise re-enter."
+    ],
+    "NO_ENTITLEMENT_OUTCOMES_ARE_INVENTED": "The proof terminates AT the L1 boundary. ENT is the next node and belongs to the CommercialAccount/Entitlement lineage. A termination proof that asserted what happens after ENT would be claiming authority this artifact does not have.",
+    "control": "T-AO-1 asserts termination over the extended state space. It is carried from the frozen census and RE-SCOPED here to include the L1 states above."
+  },
+
+  "COMMERCIALACCOUNT_AND_ENTITLEMENT_BOUNDARY": {
+    "status": "BINDING. Parent I-T4-8, I-T4-10, MULTI_ORG.the_CommercialAccount_trap, ratifications CA-03, CA-05, CA-08.",
+    "L1_DOES_NOT": [
+      "create a CommercialAccount",
+      "mutate a CommercialAccount in any way",
+      "activate or alter subscription or commercial state",
+      "grant, imply or evaluate any entitlement",
+      "change organizations.status",
+      "change any membership",
+      "read or write commercial_accounts at all"
+    ],
+    "L1_PROVIDES": "EXACTLY ONE organization-scoped prerequisite FACT to later entitlement derivation: whether this organization is currently accepted on every required organization-class instrument. It grants nothing and authorizes nothing.",
+    "THE_COMMERCIALACCOUNT_TRAP": {
+      "forbidden": "Recording or resolving commercial acceptance at CommercialAccount level rather than per organization.",
+      "why_it_is_tempting_and_why_it_is_wrong": "One CommercialAccount may govern several organizations and the FK carrier exists at db/schema.ts:83, so a single row per CommercialAccount looks like a simplification. It would give an organization that never accepted anything a PASSING L1 by inheritance. HPO-A decision 2 says organization-level; CA-08 already establishes that CommercialAccount aggregation creates no implicit shared authorization or pooled runtime state.",
+      "control": "N-AO-12 asserts that discharging L1 for organization A leaves organization B refusing, INCLUDING when both are governed by the same CommercialAccount."
+    },
+    "ACTIVE_WITHOUT_STRIPE_IS_NOT_ACCEPTANCE": {
+      "prohibition": "ACTIVE_WITHOUT_STRIPE, and any other manual commercial activation state, MUST NOT be read as acceptance evidence and MUST NOT bypass L0 or L1. RAT-AO-02 AO2_C3.",
+      "state_does_not_exist_yet_RE_MEASURED": "commercial_accounts.commercial_status is constrained by commercial_status_check to exactly ('active','past_due','suspended','closed') at db/schema.ts:32. ACTIVE_WITHOUT_STRIPE is ratified vocabulary from HPO-B.7 and is NOT a materialized state at this head.",
+      "therefore": "This is a FORWARD prohibition on a state that does not exist yet, not the correction of a present defect. An auditor must not read the clause as evidence that a bypass exists today, and an implementer must not read the state's absence as permission to skip the constraint when the state lands.",
+      "the_shape_of_the_error_being_prevented": "Two facts about an organization will sit side by side - it is commercially active, and it has not accepted. The convenient move is to treat the first as implying the second, because an operator manually activated it and presumably knew what they were doing. That inference converts an OPERATIONAL decision into LEGAL EVIDENCE, and the operator who made it was never the organization's authorized representative.",
+      "controls": ["N-AO-28", "M-AO-16"]
+    },
+    "NO_BARE_PRINCIPAL_FIELD": {
+      "binding": "NO organizationAcceptanceCurrent field, or any equivalent, may be added to RequestPrincipal, to the bare principal path, or to any structure resolved before an organization is in scope.",
+      "grounds": "Parent L1_ATTACHMENT.derivation_point: deriving L1 on the bare principal path would require reading acceptance state for an organization that is not yet in scope. A principal-level field would also have to carry SOME value for a subject with no scope, and every available value is wrong - true is a bypass, false is the lockout FC_5 forbids, and null invites an implementer to coerce it.",
+      "where_the_derivation_belongs": "Organization-scoped, computed where an organization is resolved, at the four surfaces ATTACHMENT_TOPOLOGY enumerates.",
+      "related_mutation": "M-AO-9 catches the analogous L0 error - an optional acceptance field with a permissive default, relied upon by a preservation fixture."
+    }
+  },
+
+  "EMPTY_AND_PARTIAL_REGISTRY": {
+    "status": "BINDING. Parent FC_7.THE_CORRECTED_DEFINITION, consumed unchanged.",
+    "BEHAVIOUR": "REFUSE. FAIL CLOSED.",
+    "IT_IS_DERIVED_NOT_AN_OWNER_DECISION": "The conjunction is over the CLOSED REQUIRED INSTRUMENT SET fixed by ratification (HPO-A.1, .2, .3), NOT over whatever keys the registry happens to contain. A required instrument with no published applicable version cannot be current for anyone, so its conjunct is FALSE and the gate refuses. There is no empty set and therefore no vacuous truth. The R2 STOP_FOR_HPO framing was withdrawn at R3 because it defined the conjunction over the published set, which made an empty registry ambiguous - the ambiguity was an artifact of the definition, not a gap in the ratification.",
+    "THIS_IS_NOT_AN_IMPLEMENTATION_BUG": "A deployment with no published organization-class instrument cannot activate any organization. That is the CORRECT behaviour and it is detected immediately.",
+    "L1_MAY_MERGE_WITH_AN_EMPTY_REGISTRY": "The implementation may land and be certified against an empty or partial organization-class registry, because fail-closed is the specified behaviour in that state and is directly testable in it. What promotion additionally requires is in PLATFORM_PUBLISHER_DEPENDENCY.",
+    "NO_INSTRUMENT_LEGAL_CONTENT_IS_AUTHORIZED_HERE": "This artifact authors no instrument text, publishes nothing, and makes no claim about the legal sufficiency of any text. LRF-01 and LRF-02 are untouched.",
+    "controls": ["P-AO-15", "N-AO-37", "P-AO-21", "M-AO-4"]
+  },
+
+  "PLATFORM_PUBLISHER_DEPENDENCY": {
+    "item": "Which platform principal may publish an instrument version",
+    "status": "OPEN",
+    "unknown_id": "U-AO-2",
+    "owner": "The platform-roles lineage. Packet B section 6 forbids redesigning platform-admin identity from an adjacent lane and this artifact honours that.",
+    "PUBLISHER_BLOCKS_L1_IMPLEMENTATION": "NO",
+    "PUBLISHER_BLOCKS_L1_PROMOTION": "YES",
+    "l1_posture": "L1 creates NO write path into the instrument registry. The registry relations already exist live (created by 0070) with RLS enabled and no tenant write path, which is the fail-closed posture CL-1 established and L1 inherits without touching.",
+    "consequence_for_promotion": "Pilot Ready and any real use additionally require (a) actual publication of the applicable ORGANIZATION-class commercial instrument through whatever principal the platform-roles lineage authorizes, and (b) the counsel and legal closure LRF-01 and LRF-02 name. Neither is performed, implied or claimed here.",
+    "what_this_artifact_does_NOT_do": ["implement publisher functionality", "decide or invent the publisher identity", "author legal content", "claim legal approval or sufficiency", "create any tenant-role write path to T1 or T2"]
+  },
+
+  "SECURITY_DEPENDENCIES": {
+    "U_AO_8": {
+      "question": "Whether the standing platform-admin path capable of self-assigning tenant memberships is open.",
+      "parent_answer": "MEASURED OPEN at the parent's R3.",
+      "RE_VERIFIED_AT_THIS_HEAD": "db/migrations/0031_rls_core.sql:126-134 creates policy members_insert_admin ON organization_members FOR INSERT WITH CHECK ( current_user_role_in_org(organization_id) IN ('super_admin','organization_admin') OR current_user_is_super_admin() ). No later migration drops, replaces or narrows it - measured across every db/migrations/*.sql. The same policy is carried in materialized form in db/baseline/stella_g2_schema.sql.",
+      "why_it_matters_to_L1": "L1's accepting-role predicate is exact equality on organization_admin over an ACTIVE membership, and that predicate is CORRECT. But a MANUFACTURED membership passes it legitimately, because the principal genuinely holds the role. No predicate over membership can defend against an actor upstream of membership assignment.",
+      "disposition": "OUT OF SCOPE, NOT REPAIRED, RECORDED SO THE GUARANTEE IS NOT OVERSTATED. F-AO-23 and U-AO-8. RAT-OP-01 independently treats the closure of this path as an UNMET PREREQUISITE.",
+      "blocking_for_L1_implementation": false,
+      "blocking_for_promotion": "A PROMOTION CONSIDERATION for the platform-admin lineage, not for L1."
+    },
+    "MO_07_IDENTITY_CONTEXT_EXCEPTION": {
+      "measured_at_this_head": "db/identity-context.ts:217 refuses an organization-scoped context only when identity.organizationId !== null AND check.is_member !== true AND NOT check.is_super_admin. A confirmed super-admin can therefore BIND a context for an organization they are not a member of.",
+      "consequence_for_L1": "L1's DERIVATION may therefore be asked about an organization the caller is not a member of. That is acceptable for a READ; it must never become a WRITE capability.",
+      "why_it_cannot_become_one": "The T4 INSERT predicate routes through current_user_role_in_org, which filters on the caller's own ACTIVE membership and carries NO super-admin disjunct. The refusal is structural at the database, not a matter of application care. X-AO-06, RATIFIED.",
+      "disposition": "REPORTED, NOT REPAIRED. Changing db/identity-context.ts:217 is MO-07 REQUIRED_RESOLUTION and needs its own authority."
+    }
+  },
+
+  "SECURITY_PROHIBITIONS": {
+    "X-L1-01": "No acceptance may be captured before B0 and L0. Packet B PRE_VERIFICATION_WRITE_EXCEPTION enumerates any commercial acceptance record among the things a pre-verification write must not create, so frozen Packet B authority already forbids it.",
+    "X-L1-02": "No platform, support, operator, commercial-team or impersonation path may record an organization acceptance. RAT-AO-02 AO2_C1, ratified.",
+    "X-L1-03": "The super-admin exceptions measured at db/identity-context.ts:217 and at 0031's members_insert_admin MUST NOT become acceptance-writing capabilities, directly or by inheritance. X-AO-06, ratified.",
+    "X-L1-04": "Discharging L1 MUST NOT itself require an entitled capability. If it did, and inviting were also entitled, the graph would deadlock. Parent NO_DEADLOCK_PROOF.the_one_residual_cycle_risk and X-AO-04.",
+    "X-L1-05": "No refusal may disclose tenancy shape, membership lists, instrument identity, version identity, acceptance history or commercial state.",
+    "X-L1-06": "No general gate-suppression mechanism may be introduced on any path. DISCHARGE_BOUNDARY.THE_OMISSION_MUST_BE_STRUCTURALLY_FIXED.",
+    "X-L1-07": "No existing RLS policy may be widened, and no existing audit_logs INSERT policy clause may be edited."
+  },
+
+  "TEST_AUTHORITY": {
+    "MANIFEST_OBLIGATION": "The test contract is FROZEN BEFORE IMPLEMENTATION in the companion manifest docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json, validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json. The manifest is a COMMITMENT, not a report.",
+    "CONSUME_THE_FROZEN_CENSUS": {
+      "binding": "The parent's companion manifest already carries 22 positive, 37 negative and 24 mutation controls, of which a substantial subset is L1-specific. The L1 manifest CONSUMES those control ids and does NOT author a parallel numbering.",
+      "L1_relevant_ids_already_frozen": ["P-AO-3", "P-AO-8", "P-AO-16", "P-AO-21", "T-AO-1", "N-AO-11", "N-AO-12", "N-AO-13", "N-AO-17", "N-AO-19", "N-AO-20", "N-AO-21", "N-AO-23", "N-AO-26", "N-AO-27", "N-AO-28", "N-AO-29", "N-AO-30", "N-AO-31", "N-AO-33", "N-AO-34", "N-AO-35", "N-AO-36", "N-AO-37", "P-AO-15", "N-AO-3", "N-AO-2", "M-AO-2", "M-AO-4", "M-AO-8", "M-AO-9", "M-AO-13", "M-AO-14", "M-AO-15", "M-AO-16", "M-AO-20", "M-AO-21", "M-AO-22", "M-AO-24"],
+      "NEW_IDS_ARE_ONLY_FOR_GENUINELY_NEW_PROPERTIES": "The R-L1-* ids are new because no frozen control names the ORGANIZATION-scoped RLS properties (the parent's RLS obligations were recorded as invariants, and CL-1's R-CL1-* ids cover the ACCOUNT side). The topology ids are new because U-AO-4 was an UNKNOWN and therefore had no controls at all."
+    },
+    "POSTGRES_PROBE_IS_REQUIRED_AND_CANNOT_BE_SUBSTITUTED": {
+      "determination": "REQUIRED. A mocked client cannot prove any of R-L1-1 through R-L1-12.",
+      "why": "Append-only enforcement, the unique constraint as a concurrency control, exact-role verification, cross-tenant isolation, the two cross-table triggers and the audit INSERT admission are all properties that exist ONLY at the database boundary. A mocked client would happily accept every write the database refuses, so a unit test over a mock proves the opposite of what it appears to prove.",
+      "harness": "Exclusively via the canonical disposable harness (scripts/db-audit-disposable.ts, pnpm db:audit:disposable). NEVER staging, NEVER production, NEVER the canonical local stack."
+    },
+    "TWIN_ORACLE_REQUIRED": {
+      "binding": "Two independent oracles are BOTH required and neither substitutes for the other.",
+      "oracle_1": "LITERAL DATABASE INVARIANT PROBES - raw statements against the live relation asserting refusal codes and constraint violations.",
+      "oracle_2": "REAL PRODUCTION-FUNCTION COMPOSITION - the ACTUAL EXPORTED resolver and derivation functions the application ships, executed through a real application database identity.",
+      "why_both": "Oracle 1 proves the database is correct and says nothing about whether the application reaches it. Oracle 2 proves the composition is correct and, if the functions are stubbed or the context is faked, proves nothing about the database. CL-1's own MUT-CL1-1 records the failure mode: a permissive catch around a currency query converts a query failure into a pass, and only a real connection exposes it."
+    },
+    "EXECUTABLE_CENSUS_OBLIGATIONS": [
+      "The discharge-boundary call-site census, EQUALITY-shaped, failing on a third caller and asserting a single exporting module.",
+      "A topology census asserting that the number of production sites yielding an OrganizationContext is EXACTLY TWO, and that the number of non-test withDatabaseIdentityContext call sites passing a NON-NULL organizationId is EXACTLY TWO. This is what makes ATTACHMENT_TOPOLOGY's completeness claim falsifiable rather than a snapshot: it fails when a fifth surface appears.",
+      "A structural control asserting L1 is bound to the RESULT of organization-context resolution at all four surfaces, not to one resolution branch - the memo-trap class CL-1's MUT-CL1-2 guards on the principal path."
+    ],
+    "NON_VACUITY_IS_REQUIRED_OF_EVERY_NEGATIVE": {
+      "binding": "Every negative control must be shown capable of FAILING. A negative that cannot fail is not evidence.",
+      "specific_traps_named_from_measured_lineage_history": [
+        "A toContain over the test file's own source is satisfied by the literal inside the assertion itself. Assert by VALUE, not by self-referential text search.",
+        "A mutation that changes control flow rather than CONTENT can leave a negative green. Mutate the CONTENT the assertion reads.",
+        "An extensional set-equality over role sets makes every per-role test vacuous - it matches 6/6 rather than 5/6 and is therefore indifferent to the excluded role. Assert per-role refusal individually.",
+        "A near-correct super-admin variant gets 5 of 6 roles right and fails only on the excluded one. The super_admin case must be its own named control (N-AO-27), never folded into the four-role sweep."
+      ]
+    },
+    "CI_REQUIREMENTS": {
+      "dedicated_real_PG_workflow": "REQUIRED from the implementation lane. Not an addition to an existing generic job.",
+      "explicit_PG_environment_flag": "REQUIRED. The workflow must declare that PostgreSQL is available.",
+      "anti_skip_self_check": "REQUIRED. An explicit *_PG_REQUIRED self-check that FAILS when the PostgreSQL suite is skipped rather than reporting a pass. The measured hazard is that the disposable-harness setupStatus SKIPPED is the INITIALIZATION value, so a harness that bailed out before setup reports the same value as one that deliberately skipped.",
+      "no_passWithNoTests": "PROHIBITED. A run that matches zero test files must FAIL.",
+      "known_conditions_may_not_be_inherited": "The implementing mission derives its own known_conditions at its OWN head. docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json holds exactly two conditions at this head, both naming tests/eval/stella-release/hosted-baseline-gate.test.ts, and NEITHER may be relied upon as a waiver for any L1 control."
+    },
+    "FULL_REGRESSION": {
+      "determination": "REQUIRED AT FINAL CERTIFICATION, NOT AT EVERY IMPLEMENTATION CYCLE.",
+      "reasoning": "L1 edits four surfaces on the organization-context path, which a large share of the suite transits, so a full regression is genuinely load-bearing. But the controls are targeted and can be exercised directly during implementation. This determination is about WHEN, not WHETHER."
+    }
+  },
+
+  "IMPLEMENTATION_LOCKS": {
+    "status": "SPECIFIED HERE. NOT ACQUIRED HERE. This lane acquires no lock.",
+    "required_at_implementation": [
+      { "lock": "LOCK_MIGRATION_WRITER", "holder": "L1", "why": "L1 writes db/migrations and advances the journal tail. Two concurrent migration writers produce an ordinal collision the generate path cannot detect." },
+      { "lock": "LOCK_DEPENDENCY_INSTALL", "holder": "L1", "why": "The PostgreSQL probe and the targeted suites require node_modules, which is ABSENT at this head. Installation is a shared mutable surface." },
+      { "lock": "REAL_POSTGRESQL_EXCLUSIVE", "holder": "L1", "why": "The disposable-harness probe is required and is not safely concurrent. ONE heavy PostgreSQL job at a time." },
+      { "lock": "LOCK-AUDIT-ACTION-VOCABULARY", "holder": "NOT L1, AND NOT ACQUIRED HERE", "why": "It holds the AUDIT_ACTIONS literal in lib/audit/logger.ts. The implementing mission must re-measure its release condition at its own head before writing that literal. This artifact allocates the verb string and authorizes no write." }
+    ],
+    "ORDERING_AGAINST_SIBLING_LANES": "L1 must not hold LOCK_MIGRATION_WRITER concurrently with any other lane that writes db/migrations. Several sibling authorities are live and each has DISCLAIMED the next ordinal rather than taken it, which is precisely the situation in which two lanes can both believe the tail is free."
+  },
+
+  "COUNSEL_REQUIRED": [
+    "LRF-01: whether the ORGANIZATION-class commercial instrument text is legally sufficient and enforceable. NOT answered here and not answerable by an engineering lane.",
+    "LRF-02: which locale is controlling for the organization-class instrument.",
+    "LRF-03: whether any identifying metadata beyond the actor identity may be captured on an acceptance. UNANSWERED; nothing beyond the actor identity is authorized.",
+    "LRF-04 / F-AO-09: the interaction of append-only acceptance evidence with erasure obligations. UNRESOLVED; no erasure path is authorized.",
+    "Whether an acceptance recorded by an organization_admin binds the organization as a matter of law. CQ-06. The acceptance row asserts a RECORDED ACT, never legal effectiveness."
+  ],
+  "COUNSEL_ITEMS_ARE_NOT_OWNER_DECISIONS": "None of the above is convertible into implementation authority by an owner decision, and none is converted here. They are content and legal-effect questions that belong to counsel. An acceptance relation invites the reading that its rows prove consent; they prove a recorded act, and the parent's FORBIDDEN_CLAIMS prohibits the stronger reading being made on the strength of this lineage.",
+
+  "SECURITY_REVIEW_REQUIRED": [
+    "The exact-equality accepting-role predicate, as written, against the ambient hierarchy convention. F-AO-18 is a ratification-conformance hazard precisely because the wrong code looks idiomatic and passes review.",
+    "The T4 INSERT policy's cross-tenant refusal, proven at the database with the application bypassed.",
+    "The discharge boundary's omitted gate: that it is structurally fixed, census-pinned, and grants nothing withOrganizationDatabaseContext does not already grant.",
+    "The refusal surfaces, for absence of an oracle: no distinguishable message, status, timing or echoed value across the ten refused submission cases.",
+    "The blocked state, for absence of sensitive disclosure.",
+    "The audit payload, for absence of instrument text and of any personal data beyond the actor identity.",
+    "The interaction with the two live super-admin exceptions (U-AO-8 and MO-07), confirming neither becomes an acceptance-writing capability."
+  ],
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "class": "DOCS_ONLY_AUTHORITY",
+    "no_dependencies_installed": true,
+    "no_postgres": true,
+    "no_migration": true,
+    "no_runtime_edit": true,
+    "no_test_edit": true,
+    "no_hosted_mutation": true,
+    "performed": [
+      "Prestate: branch, HEAD, HEAD^{tree}, git fetch origin --prune, origin/integration/commercial-v1, git ls-remote on the target ref, and git status --porcelain --untracked-files=all. All four required equalities hold and the working tree is clean.",
+      "Collision check on the three target filenames against the tree: all three FREE, and no artifact matching _L1_ exists anywhere in git ls-files.",
+      "Controller prestate: IMMUTABLE_BY_CONVENTION extracted by structural bracket matching from scripts/ods-controller.ts:50 and evaluated - length 42, final entry ODS_V1_MAINTENANCE_ADDENDUM_v1.0.31.json, 31 addendum entries spanning v1.0.1 through v1.0.31 dense with no gap, v1.0.32 absent.",
+      "ODS lineage: directory enumeration of docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.<N>.json with numeric sort, and each file's parsed version field compared against its filename - filename and field agree for all 31.",
+      "Grant prestate: PROTECTED_GRANTS extracted from scripts/ods-scope.ts:208 and evaluated row by row - 16 rows, tail HPO-ODS-W2-28 bound to codex/customer-lifecycle-cl1-implementation-r1 with exactly three patterns.",
+      "Next grant id derived by enumerating the GRANT_ID field of ALL 31 addenda and taking the maximum (W2-28), NOT by incrementing the registry length - the registry is sparse and its length is not the allocation ceiling.",
+      "DEFAULT_PROTECTED_PATTERNS read directly from scripts/ods-scope.ts:82 - seven patterns, including db/migrations/**, db/prepared/** and db/baseline/**.",
+      "Structural collision sweep for five candidate identifiers against the tree at 975e5e48: FILES_EXAMINED 1994, JSON_FILES_PARSED 305, JSON_OBJECTS_EXAMINED 114021, ALLOCATION_POSITIONS_EXAMINED 765, CONFLICTS 0. Every literal hit classified.",
+      "Grant-pattern necessity re-derived from the ACTUAL CL-1 merge diff (cbd1eb82 against its first parent) by git diff --numstat: db/prepared/checkpoint-b0/observation.sql moved (6 insertions, 0 deletions); 84 db/prepared/journal paths touched in exactly two buckets, 82 at (1,1) and 2 at (65,0); five db/migrations paths.",
+      "observation.sql verified to carry one UNION ALL arm per governed relation, with the three CL-1 relations present at lines 91, 127 and 129.",
+      "U-AO-4 topology: every non-test call site of withDatabaseIdentityContext enumerated (9) and classified by its organizationId argument (2 non-null, 7 null); the single chokepoint located at db/identity-context.ts:178-180; its importers enumerated (2 modules); OrganizationContext producers enumerated by return-type annotation (2) and by object-literal construction (2).",
+      "Live gate sequences read directly from lib/auth/session.ts:246-305 and :329-350 and from lib/auth/database-context.ts:680-1018.",
+      "Role model re-measured: lib/auth/roles.ts ROLES and ROLE_HIERARCHY, lib/auth/permissions.ts:24-26 hasRole, db/schema.ts:113 role_check.",
+      "current_user_role_in_org read verbatim from db/migrations/0031_rls_core.sql:40-51; members_insert_admin read from :126-134 and confirmed never dropped.",
+      "user_single_active_membership confirmed live: created 0003, zero DROP INDEX statements naming it across all migrations, present in db/baseline/stella_g2_schema.sql:7071.",
+      "AUDIT_ACTIONS extracted from lib/audit/logger.ts:8 - 112 keys, segment distribution 110 two-segment and 2 three-segment, one existing legal.* value.",
+      "audit_logs INSERT policies enumerated across migrations (0030, 0031, 0042, 0044, 0067, 0070) and 0042's predicate read verbatim to establish that L1's org-scoped row is admitted with no new policy.",
+      "0070 read for the sibling RLS, trigger, constraint and unique-index shapes."
+    ],
+    "NOT_PERFORMED_AND_NOT_CLAIMED": [
+      "No PostgreSQL was executed. Every R-L1-* property remains an OBLIGATION, not a result. U-AO-1 is narrowed by the live sibling precedent, not closed.",
+      "No test suite was run. All structural facts above were established by READING, and that is stated rather than implied.",
+      "No hosted or staging observation. U-AO-3 is untouched.",
+      "No instrument text was read for content, by design.",
+      "No completeness claim about CONSUMERS of an organization context. The completeness claim is about PRODUCERS and about the GUC chokepoint, which is a different and smaller claim - and the one U-AO-4 actually requires."
+    ]
+  },
+
+  "OPEN_FINDINGS_OF_THIS_LANE": [
+    {
+      "id": "F-L1EA-1",
+      "class": "CONCURRENCY",
+      "finding": "Another lane may consume ODS ordinal v1.0.32, grant HPO-ODS-W2-29, the branch name, or the audit literal between this artifact and its integration.",
+      "mitigation": "The collision sweep is specified by method and re-runnable. An auditor or successor MUST re-run it at the merge base rather than trusting this record.",
+      "blocking": false
+    },
+    {
+      "id": "F-L1EA-2",
+      "class": "MEASUREMENT_METHOD_DEFECT",
+      "finding": "Two literal-search hazards were hit and corrected during this lane's own measurement, and both fail SILENTLY.",
+      "items": [
+        "A TypeScript array literal declared as `export const X: string[] = [` defeats an extractor that searches for the first '[' after the '=' sign, because `string[]` contains one. The extractor returned a ZERO-LENGTH array with no error. The fix is to anchor on the full declaration including its type annotation, and to ASSERT a non-zero length before using the result. A structural extraction that silently yields nothing is worse than one that throws.",
+        "git grep treats '.' as a regex wildcard, so a search for 1.0.32 matches the substring 1/0032 inside the text 0031/0032 and produced a phantom hit in docs/ops/security/PLATFORM_ADMIN_RLS_SUPERADMIN_POLICY_CENSUS_v1.0.0.json. git grep -F on the same file returns ZERO. The sweep reported in ALLOCATION_COLLISION_SWEEP uses fixed-string containment and is unaffected; the false positive is recorded because an auditor re-running the naive form will see it."
+      ],
+      "what_survived_unchanged": "Every allocation identity, every count and every topology conclusion. Both defects were caught before any figure entered this artifact.",
+      "blocking": false
+    },
+    {
+      "id": "F-L1EA-3",
+      "class": "SURFACE_WIDER_THAN_THE_GATE",
+      "finding": "0042's audit_logs INSERT policy carries an OR current_user_is_super_admin() disjunct and constrains no action string, so a super-admin can write an L1 acceptance audit row for an acceptance they cannot themselves perform.",
+      "consequence": "The audit row alone is NOT proof of a valid acceptance. T4 is the relation of record.",
+      "disposition": "REPORTED, NOT REPAIRED. Narrowing 0042 is outside this authority and is adjacent to U-AO-8. Recorded so a successor does not read L1's silence as a claim that the audit trail is self-certifying.",
+      "blocking": false
+    },
+    {
+      "id": "F-L1EA-4",
+      "class": "UNSATISFIABLE_TEST_DIMENSION_AS_NAIVELY_STATED",
+      "finding": "A control written as 'a subject holding two ACTIVE memberships' is UNSATISFIABLE against the live schema, because user_single_active_membership is a live unique index on (user_id) WHERE status='active'.",
+      "consequence": "The multi-membership dimension must be expressed as several membership rows with exactly one active, and the per-organization property N-AO-12 must be proven by accepting for one organization and re-scoping - not by holding two live scopes.",
+      "disposition": "CARRIED INTO THE MANIFEST as the satisfiable form. Recorded because the naive form would produce either a vacuous test or a failure attributed to the wrong cause.",
+      "blocking": false
+    },
+    {
+      "id": "F-L1EA-5",
+      "class": "REGISTRATION_SEQUENCING",
+      "finding": "HPO-ODS-W2-29 is DECLARED by the companion addendum and NOT REGISTERED. L1 cannot lawfully write a protected path until a separate governed act adds the row to scripts/ods-scope.ts and updates the corresponding pins in tests/ods/ods-scope.test.ts.",
+      "why_by_design": "Allocation and registration are separate governed acts throughout this lineage.",
+      "blocking": false
+    }
+  ],
+
+  "self_check": {
+    "SC-1_B_1_is_closed_by_content_not_by_assertion": "PASS. The bounded contract spans L1_SCOPE, ATTACHMENT_TOPOLOGY, ACCEPTOR_AUTHORITY, ORDINARY_MEMBER_BEHAVIOR, NO_SCOPE_BEHAVIOR, PERSISTENCE_AUTHORITY_T4, RLS_AUTHORITY, ATOMICITY_AUTHORITY, AUDIT_AUTHORITY, PRESENTATION_BINDING, SUBMISSION_BINDING, DISCHARGE_BOUNDARY, TERMINATION_AUTHORITY and COMMERCIALACCOUNT_AND_ENTITLEMENT_BOUNDARY. For each of the ten choices the mission brief names as forbidden to a future writer, a binding clause exists.",
+    "SC-2_U_AO_4_closure_is_a_measurement_not_a_sample": "PASS. The claim is over a CLOSED WORLD: one GUC chokepoint, two importing modules, nine classified call sites, two non-null, two OrganizationContext producers confirmed by two independent structural predicates that agree. Every excluded site carries its own reason. Denominators are stated for the collision sweep.",
+    "SC-3_no_OPEN_DECISION_was_converted_into_implementation_authority": "PASS. U-AO-2 remains OPEN with PUBLISHER_BLOCKS_L1_PROMOTION=YES. U-AO-3 and U-AO-8 remain open. LRF-01 through LRF-04 remain with counsel. Blocked-state COPY is left IMPLEMENTATION_DEFINED WITHIN A BINDING NON-SENSITIVE CONSTRAINT rather than decided. The refusal route string, the error-code name, the discharge-primitive name and the relation name are all IMPLEMENTATION_DEFINED, each with its binding property stated separately.",
+    "SC-4_no_parent_placeholder_was_promoted_to_ratified_nomenclature": "PASS. PERSISTENCE_AUTHORITY_T4.NAMING_DISPOSITION quotes the parent's own prohibition, classifies the physical name IMPLEMENTATION_DEFINED, and marks organization_commercial_acceptances RECOMMENDED_NOT_REQUIRED on a measured sibling-precedent ground.",
+    "SC-5_the_audit_verb_allocation_does_not_acquire_a_lock_by_inference": "PASS. The literal is PINNED with shape conformance and collision evidence; LOCK-AUDIT-ACTION-VOCABULARY is explicitly NEITHER ACQUIRED NOR RELEASED, and the obligation to re-measure its release condition at the implementing head is stated as a precondition of the write.",
+    "SC-6_the_discharge_boundary_cannot_become_a_general_bypass": "PASS. Six prohibited parameter shapes are named, the omission is required to be structurally fixed in the function body, and an EQUALITY-shaped executable census is required with the reason a containment assertion is insufficient.",
+    "SC-7_no_frozen_or_sealed_artifact_is_touched": "PASS. Three new files; zero existing files modified. Neither scripts/ods-scope.ts, scripts/ods-controller.ts, tests/ods/ods-controller.test.ts, the parent authority, the CL-1 execution authority nor ODS v1.0.31 is edited.",
+    "SC-8_the_frozen_census_is_consumed_rather_than_duplicated": "PASS. 39 frozen control ids are named for reuse and new ids are introduced only for the RLS and topology properties that had no frozen control, with the reason stated.",
+    "SC-9_negative_claims_are_non_vacuous": "PASS. Two silent-failure search hazards this lane actually hit are recorded as F-L1EA-2, including the regex false positive an auditor re-running the naive form will reproduce, and the sweep that grounds the allocation uses fixed-string containment with stated denominators.",
+    "SC-10_no_runtime_billing_or_entitlement_scope_leaked": "PASS. No clause authorizes a migration, a schema edit, a policy write, a route, an action, an entitlement, a subscription, Stripe or a publisher surface. SCOPE_EXCLUSIONS enumerates them as OUT.",
+    "SC-11_the_termination_proof_stops_at_the_authority_boundary": "PASS. TERMINATION_AUTHORITY.NO_ENTITLEMENT_OUTCOMES_ARE_INVENTED terminates the proof at L1 and names ENT as the next node belonging to another lineage.",
+    "SC-12_every_re_measured_parent_fact_is_re_measured_and_not_inherited": "PASS. F-AO-18's role-model measurement, U-AO-8's policy measurement, MO-07's identity-context measurement, the instrument_class vocabulary, the AUDIT_ACTIONS shape, the migration and prepared tails and the Controller/grant prestate were each read at this head. Where a parent figure has moved - AUDIT_ACTIONS 111 to 112, migration tail 0069 to 0071 - the live figure is used and the movement is visible."
+  },
+
+  "SCOPE_EXCLUSIONS": {
+    "status": "FROZEN AS OUT. Authorizing any of these is SCOPE EXPANSION and a STOP.",
+    "out": ["runtime implementation of any kind", "migrations", "schema changes", "RLS policy text", "audit logger implementation", "route, page or server-action implementation", "entitlement", "billing", "Stripe", "ACTIVE_WITHOUT_STRIPE implementation", "Evaluate", "Portfolio", "Public Verification", "invitations expansion", "multi-org redesign or any change to the single-active-membership ceiling", "platform-support redesign", "publisher UI or runtime", "legal text", "counsel approval", "support impersonation", "pricing or tier logic", "branch-protection remediation", "registration of the declared grant in scripts/ods-scope.ts", "any edit to scripts/ods-controller.ts or its test"]
+  },
+
+  "GRANT_REGISTRATION_PERFORMED": "NO",
+  "grant_registration_note": "The protected grant HPO-ODS-W2-29 is DECLARED by the companion addendum docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json and is NOT REGISTERED. scripts/ods-scope.ts is byte-unchanged by this mission. Registration is a SEPARATE governed act after this authority package is independently certified and integrated, and the implementation writer MAY NOT self-register its own grant.",
+
+  "IMPLEMENTATION_AUTHORIZED": true,
+  "IMPLEMENTATION_AUTHORIZED_NOTE": "TRUE means the AUTHORITY QUESTIONS are closed: BLOCKING_IMPLEMENTATION=0 and AUTHORITY_UNKNOWN=0 after this act, B-1 and U-AO-4/B-3 are closed, and a future implementation writer is left no architectural choice this artifact should have made. It does NOT mean L1 may be written now. Three preconditions stand, each external to this artifact: (1) this package must pass INDEPENDENT CERTIFICATION and be integrated; (2) HPO-ODS-W2-29 must be REGISTERED by a separate governed act and that registration INTEGRATED, so that a PROTECTED_GRANTS row with authorityId HPO-ODS-W2-29 and branch codex/l1-organization-commercial-acceptance-implementation-r1 resolves at the implementing mission's own head; (3) the implementing mission must re-derive its migration ordinal, its known_conditions and every line anchor in ATTACHMENT_TOPOLOGY at its own live head. Integration of this artifact confers none of the three.",
+
+  "final_state": "L1_EXECUTION_AUTHORITY_AUTHORED_B1_AND_U_AO_4_CLOSED_W2_29_DECLARED_NOT_REGISTERED",
+  "next_gate": "L1_EXECUTION_AUTHORITY_INDEPENDENT_CERTIFICATION"
+}
