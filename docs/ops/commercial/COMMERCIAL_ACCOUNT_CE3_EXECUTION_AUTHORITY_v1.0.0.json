@@ -1,0 +1,1289 @@
+{
+  "package_id": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "CE3_EXECUTABLE_TECHNICAL_AUTHORITY_FROZEN_WAITING_FOR_LINEAGE_ALLOCATION",
+  "document_class": "NODE_EXECUTION_AUTHORITY_DERIVED_FROM_A_FROZEN_PARENT",
+  "mission_id": "COMMERCIAL-ACCOUNT-CE3-EXECUTION-AUTHORITY-MATERIALIZATION-R1",
+  "materialization_date": "2026-09-13",
+  "companion_manifest": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+  "GRANT_ID": null,
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "AS_OF_HEAD": "46c50304a11d30c28a38ef0541fff4111aa17dbf",
+    "AS_OF_TREE": "066c706c5a4fdc130d9017030f3268295eabe42d",
+    "BRANCH": "codex/commercial-account-ce3-authority-r1",
+    "worktree_state": "CLEAN. git status --porcelain --untracked-files=all produced zero output at AS_OF_HEAD, before any mutation by this mission.",
+    "starting_ref_measurement": "git fetch origin --prune && git rev-parse origin/integration/commercial-v1 => 46c50304a11d30c28a38ef0541fff4111aa17dbf, byte-identical to the authoring branch HEAD and to the tree measured. Zero re-measurement drift to reconcile. Re-verified immediately before commit.",
+    "remeasurement_rule": "Every ordinal, ceiling and corpus count in this artifact is a MEASUREMENT AT AS_OF_HEAD, never a reservation. An implementing mission MUST re-measure each of them at its own base. A stale count consumed as a reservation is the exact defect this clause exists to prevent."
+  },
+  "NAMING_DERIVATION": "The repo-native convention, established by the parent package and already used once for a CE node, is <PACKAGE_STEM>_EXECUTION_AUTHORITY_v<semver>.json beside a companion manifest in the mission-named domain directory. Measured exemplars at AS_OF_HEAD: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json (the CE-1 sibling of this artifact), docs/ops/tenancy/MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json, and the parent pair COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json + COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json. The mission stem is COMMERCIAL_ACCOUNT_CE3 and the domain directory is docs/ops/commercial/**, which yields the two paths this mission writes without ambiguity. No STOP condition on naming arose.",
+  "PARENT_AUTHORITY": {
+    "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json",
+    "AS_OF_HEAD_of_parent": "ccd0680e27560c2dfe5c08e2f69d4f115014466f",
+    "ancestry_check": "git merge-base --is-ancestor ccd0680e27560c2dfe5c08e2f69d4f115014466f 46c50304a11d30c28a38ef0541fff4111aa17dbf => exit 0 (TRUE). The parent's frozen state is an ancestor of this mission's AS_OF_HEAD and has been neither superseded nor edited.",
+    "not_modified": "This mission does not open, edit or re-litigate the parent file. It is consumed exactly as frozen, byte-unchanged.",
+    "companion_test_manifest_of_parent": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json -- also byte-unchanged, and consumed below for the CE-3-relevant control ids only.",
+    "sibling_node_authority_consumed_as_precedent": [
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_IMPLEMENTATION_EVIDENCE_v1.0.0.json"
+    ],
+    "sibling_consumption_rule": "The CE-1 chain is consumed as MEASURED PRECEDENT for artifact form, corpus fan-out mechanics and protected-grant shape. It is NOT consumed as authority over CE-3 semantics: CE-1 amendment v1.0.1 states of its own forward note that nothing there is read forward onto the later nodes. Where the CE-1 chain and the parent MIGRATION_DAG disagree about CE-3, the parent controls. See OPEN_FINDINGS F-CE3-4."
+  },
+  "PURPOSE": {
+    "statement": "Deepen the parent authority's CE-3 node ('EntitlementGrant relation and explicit evaluator') into a self-contained, independently certifiable execution authority sufficient for a future lineage-granted writer to implement CE-3 without another design or discovery cycle: the exact relation and its thirteen provenance columns, the exact append-only lifecycle, the exact concurrency authority, the exact security boundary and its one unresolved sequencing decision, the exact evaluator contract including the fail-closed cross-organization refusal, the exact real-PostgreSQL future contract, and the exact boundary that forbids any consumer of the evaluator before CE-4. This artifact implements NOTHING and allocates NOTHING.",
+    "what_this_is": [
+      "A narrowing of the parent's DERIVED_ARCHITECTURE_DECISION-level ENTITLEMENT_GRANT section to implementation precision, with every field classified BINDING, IMPLEMENTATION_DEFINED or FUTURE_MEASUREMENT_REQUIRED, so that an implementer cannot mistake a choice for a decision or a decision for a choice.",
+      "A restatement, at implementation precision, of exactly what the parent already froze for CE-3: ENTITLEMENT_GRANT, CC-2, SEC-3, SEC-4, SEC-6, the grants half of SEC-12, MUT-2, MUT-4, PG-4, PG-7, and the MULTIORG_INTERSECTION ordering constraints against tenancy S3, S4 and S7.",
+      "A node-scoped derivation -- symbolic and unallocated -- of the future protected write surface, the future implementation branch and the next available migration ordinal that a SEPARATE, later ODS lineage mission will need.",
+      "A companion node-specific implementation test manifest, conformant to docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, in a control-id namespace deliberately disjoint from the parent batch manifest's."
+    ],
+    "what_this_is_not": [
+      "NOT an implementation. No db/schema.ts edit, no migration, no RLS policy, no evaluator and no test file is created or changed by this mission. Its entire diff is two new JSON documents under docs/ops/commercial/**.",
+      "NOT a re-opening of the parent authority's MIGRATION_DAG, ENTITLEMENT_GRANT, SECURITY_CONTROLS, MUTATION_CONTROLS, REAL_PG_FUTURE_CONTRACT or companion test manifest. CE-3's entries there CONTROL; this document narrows them and adds nothing that contradicts them.",
+      "NOT an ODS lineage allocation. This mission creates no ODS maintenance addendum, edits no file under docs/ops/ods/**, and edits neither scripts/ods-controller.ts nor scripts/ods-scope.ts nor either of their test files. See ODS_SPLIT_GOVERNANCE.",
+      "NOT an HPO protected-grant allocation and NOT a grant registration. It declares a SHAPE, never an identifier.",
+      "NOT a migration-ordinal allocation. It records a measured ceiling, never a reservation. See MIGRATION_ORDINAL.",
+      "NOT a re-opening of CA-01..CA-08, SS-01..SS-03 or any of the thirty integrated product ratifications. They are consumed exactly as ratified, through the parent."
+    ],
+    "fail_closed_rule": "Where this authority marks a fact UNKNOWN, IMPLEMENTATION_DEFINED or FUTURE_MEASUREMENT_REQUIRED, an implementing mission must measure, decide and prove it -- never assume it. Unknown required evidence fails closed. In particular an IMPLEMENTATION_DEFINED marking is permission to CHOOSE, not permission to SKIP: every such choice must be visible in the implementation diff and provable by at least one control of the companion manifest."
+  },
+  "CE3_EXECUTION_AUTHORITY_STATUS": {
+    "CE3_EXECUTION_AUTHORITY": "DECLARED_NOT_YET_IMPLEMENTABLE_UNTIL_ODS_LINEAGE_AND_GRANT_REGISTRATION",
+    "meaning": "The CE-3 execution contract is frozen and independently certifiable as of this artifact. It does NOT become implementable until, in this order and as SEPARATE governed acts: (1) this authority is independently certified and merged; (2) a dedicated CE-3 ODS lineage mission allocates the next ODS maintenance addendum ordinal and DECLARES the CE-3 protected grant; (3) a dedicated registration mission REGISTERS that grant in scripts/ods-scope.ts and its test; (4) a CE-3 implementation opening binds the implementation branch. Only then may a CE-3 implementation writer run.",
+    "runtime_authority_live": "NO. Nothing in this artifact is executable, applied, deployed or readable by any runtime path. The relation entitlement_grants does not exist at AS_OF_HEAD and this mission does not create it.",
+    "implements": "NOTHING",
+    "allocates_migration_ordinal": "NO",
+    "allocates_ods_addendum": "NO",
+    "allocates_hpo_grant": "NO",
+    "registers_grant": "NO",
+    "self_registration_prohibition": "The eventual CE-3 implementation writer MUST NEVER register its own grant. Declaration and registration are separate acts by separate missions -- the doctrine the W2-28 and W2-29 registration lanes established -- and this package does not relax it.",
+    "READY_FOR_CE3_IMPLEMENTATION": "NO_UNTIL_LINEAGE_GRANTED"
+  },
+  "SOURCE_CONSUMPTION": {
+    "consumed_from_parent_authority": [
+      "MIGRATION_DAG.nodes[CE-3] -- title, delivers, resolves, depends_on, touches, compatibility. Quoted where load-bearing.",
+      "ENTITLEMENT_GRANT -- classification, effective_key, distinctness_rule, target_shape (columns, constraints, append_only_rule, plan_snapshot_rule), provenance_sufficiency, prohibitions.",
+      "CURRENT_CONTRADICTIONS.CC-2 -- the contradiction CE-3 resolves.",
+      "SECURITY_CONTROLS SEC-3, SEC-4, SEC-6 (enforceable_from CE-3) and SEC-12 (grants half).",
+      "MUTATION_CONTROLS MUT-2 and MUT-4 (the two whose guarantee is a CE-3 relation invariant).",
+      "REAL_PG_FUTURE_CONTRACT -- rule, harness_shape, and probes PG-4 and PG-7 (the two whose node is CE-3).",
+      "USAGE_QUOTA_BOUNDARY.null_semantic_prohibition and PRESERVED_INVARIANTS PI-2 -- the scope limit on the Stella null semantic.",
+      "PLAN_ENTITLEMENT_BOUNDARY -- including the prohibited database trigger on commercial_accounts that writes entitlement_grants.",
+      "ORGANIZATION_RELATION.ungoverned_state -- NULL governance is never an implicit plan.",
+      "MULTIORG_INTERSECTION -- the S3, S4 and S7 ordering constraints that bind CE-3.",
+      "OPEN_FINDINGS F-5 -- the lib/capabilities scope limit, re-measured at AS_OF_HEAD by this mission."
+    ],
+    "consumed_from_parent_test_manifest": [
+      "positive_controls P-8 and P-9 -- the two positives whose text names CE-3.",
+      "negative_controls N-1, N-2, N-3, N-6 and N-8 -- the five negatives whose text names CE-3.",
+      "mutation_controls M-2 and M-4 -- the two mutations whose text names CE-3.",
+      "positive_control P-0 -- the batch-wide known-conditions precondition, binding on EVERY implementing node and therefore on CE-3. See PARENT_MANIFEST_SUBSET.divergence_from_the_upstream_summary.",
+      "sentinels SENTINEL_SIBLING_ORG_CANARY_ROW and SENTINEL_UNGOVERNED_ORG.",
+      "known_conditions KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02.",
+      "exit_gates -- the parent's closed set of nine, adopted whole."
+    ],
+    "consumption_rule": "Consumed text is narrowed, never widened, and never contradicted. Where this authority states something the parent does not, it is marked DERIVED and its derivation is shown from a named parent clause plus a measurement at AS_OF_HEAD. Where the parent leaves a detail unbound, this authority marks it IMPLEMENTATION_DEFINED or FUTURE_MEASUREMENT_REQUIRED rather than deciding it.",
+    "not_consumed_here": "CE-2, CE-4, CE-5, CE-6, CE-7, CE-8 and CE-9 semantics; TRANSFER_CONTRACT; STRIPE_BOUNDARY; SELF_SERVICE; PLATFORM_ADMIN_BOUNDARY; BACKFILL; LEGACY_RETIREMENT; RETIREMENT_LAST_RULE; and the parent's other seven SEC controls, eight MUT controls and ten PG probes. They are named here only where CE-3 has an ordering or boundary relationship to them, never re-litigated."
+  },
+  "CE3_NODE_RECONSTRUCTION": {
+    "classification": "RECONSTRUCTED FROM THE FROZEN PARENT, NOT INVENTED.",
+    "parent_node_quoted_verbatim": {
+      "id": "CE-3",
+      "title": "EntitlementGrant relation and explicit evaluator",
+      "delivers": [
+        "ENTITLEMENT_GRANT",
+        "effective entitlement read at Organization x capability"
+      ],
+      "resolves": [
+        "CC-2"
+      ],
+      "depends_on": [
+        "CE-1"
+      ],
+      "touches": [
+        "db/schema.ts",
+        "db/migrations/**",
+        "lib/capabilities/**"
+      ],
+      "compatibility": "ADDITIVE and UNREAD. The evaluator exists and NOTHING consumes it yet. It takes an EXPLICIT organization_id argument -- never an ambient principal -- which is what makes it safe to land before tenancy S3/S7 (see MULTIORG_INTERSECTION)."
+    },
+    "identity_check": "PASS. The parent node's identity is exactly the pair this mission was directed to reconstruct: the EntitlementGrant relation AND the explicit entitlement evaluator. Neither half is optional and neither may be split into a later node without a parent amendment this mission has no authority to write.",
+    "compatibility_posture_check": "PASS. ADDITIVE and UNREAD is reproduced verbatim above and is made mechanically assertable by ENFORCEMENT_BOUNDARY_CE4 and by companion-manifest control CE3-N-9.",
+    "nothing_consumes_the_evaluator_before_CE4": "CONFIRMED AND FROZEN. See ENFORCEMENT_BOUNDARY_CE4."
+  },
+  "CE3_DEPENDENCY_CERTIFICATION": {
+    "verdict": "PASS_CE1_ONLY",
+    "parent_depends_on_quoted": "MIGRATION_DAG.nodes[CE-3].depends_on = ['CE-1']. Exactly one predecessor.",
+    "CE1_status": {
+      "state": "DONE / INTEGRATED",
+      "evidence": [
+        "db/migrations/0068_commercial_account_ce1.sql present at AS_OF_HEAD.",
+        "db/schema.ts:23 exports commercialAccounts = pgTable('commercial_accounts', ...).",
+        "db/schema.ts:83 organizations.commercialAccountId uuid FK -> commercialAccounts.id with onDelete 'restrict'.",
+        "db/schema.ts:97 index('idx_organizations_commercial_account_id').",
+        "Merged to integration/commercial-v1 as PR #128, merge commit e7ee106dbd42eeb921d067fd675014e0a055a6dc; implementation commit 8ca2ff9b.",
+        "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_IMPLEMENTATION_EVIDENCE_v1.0.0.json present at AS_OF_HEAD."
+      ]
+    },
+    "CE2_is_not_a_prerequisite": "CONFIRMED against the parent, twice, from both directions. (1) MIGRATION_DAG.nodes[CE-3].depends_on contains CE-1 and does not contain CE-2. (2) MIGRATION_DAG.nodes[CE-2].depends_on contains CE-1, so CE-2 and CE-3 are SIBLINGS over the same single predecessor, not a chain. CE-2 is measured ABSENT at AS_OF_HEAD (no commercial_account_organization_history relation in db/schema.ts and no transfer verb anywhere), and that absence does not block CE-3.",
+    "CE4_comes_later": "CONFIRMED. MIGRATION_DAG.nodes[CE-4].depends_on = ['CE-1','CE-2','CE-3']. CE-4 is therefore strictly downstream of BOTH siblings, which is why CE-3 may be authored and implemented while CE-2 is still absent, and why no CE-3 row may be consumed by an enforcement path until CE-4 exists.",
+    "sequencing_disposition": "CE3_FIRST_EXECUTION_AUTHORITY_REQUIRED",
+    "coordination_disposition": "INDEPENDENT_BUT_SERIALIZED_AFTER_SELECTED_CE_NODE",
+    "material_change_check": "NONE. The parent authority's CE-3 node, ENTITLEMENT_GRANT section, SEC/MUT/PG entries and MULTIORG_INTERSECTION clauses are byte-identical at AS_OF_HEAD to their state at the parent's own AS_OF_HEAD ccd0680e (the file is unmodified since, and is an ancestor). No STOP condition on changed live authority arose."
+  },
+  "SEMANTIC_CONTRACT": {
+    "classification": "BINDING. Frozen from the parent without change. Every clause below is a narrowing or a verbatim restatement, never a new decision.",
+    "SC-1_entitlement_is_not_authorization": {
+      "binding": true,
+      "rule": "An EntitlementGrant answers: is this capability commercially or administratively granted to this Organization, and at what limit? It NEVER answers: may this subject perform this action?",
+      "parent_basis": "ENTITLEMENT_GRANT.distinctness_rule; SEC-3; SEC-4.",
+      "structural_consequence": "Authorization remains membership x role and is evaluated by a DIFFERENT code path. The two predicates MUST NOT be merged into one function, one query or one return value. A single call that answers both is a violation of this clause even if both of its answers are individually correct."
+    },
+    "SC-2_scope": {
+      "binding": true,
+      "rule": "The effective key is Organization x capability_key. Never CommercialAccount x capability_key, and never subject x capability_key.",
+      "parent_basis": "ENTITLEMENT_GRANT.effective_key; ENTITLEMENT_GRANT.prohibitions[3]: 'Is NOT keyed by CommercialAccount. A grant is always Organization-scoped even when its basis is commercial -- this is what makes CA-08 no pooled quota structurally true rather than merely intended.'",
+      "structural_consequence": "commercial_account_id is present on the row as PROVENANCE (the commercial basis), never as the key. No unique constraint, no index and no evaluator input may treat it as the scope."
+    },
+    "SC-3_explicit_organization_evaluator": {
+      "binding": true,
+      "rule": "The evaluator takes an EXPLICIT organization_id argument. It must NEVER resolve the Organization from an ambient principal, from a selected-first membership, from user_single_active_membership, or from any implicit tenant derived from an arbitrary membership.",
+      "parent_basis": "MIGRATION_DAG.nodes[CE-3].compatibility; parent manifest P-8; MULTIORG_INTERSECTION vs S3 and vs S7.",
+      "why_it_is_load_bearing_quoted_from_parent": "S7 removes the index that today makes 'the caller's single active membership' well-defined. Every entitlement read that resolves an Organization implicitly rather than explicitly breaks silently at S7 -- it does not fail, it evaluates the wrong tenant.",
+      "structural_consequence": "Explicitness is itself the assertion. An evaluator whose signature permits omitting the organization is non-conformant even if every current call site passes one."
+    },
+    "SC-4_commercial_account_is_never_tenant_scope": {
+      "binding": true,
+      "rule": "A CommercialAccount MUST NEVER become selected tenant scope. No commercial identifier is ever set as a database GUC, is ever part of the request principal, or is ever a term in an RLS predicate over tenant data.",
+      "parent_basis": "COMMERCIAL_ACCOUNT.never_a_tenant_scope; SEC-7; MUT-10.",
+      "ce3_specific_reading": "CE-3 adds a relation that CARRIES commercial_account_id. That makes CE-3 the first node at which a 'convenience' join from commercial basis to tenant visibility becomes writable. The prohibition is therefore restated here and made assertable by companion control CE3-N-11."
+    },
+    "SC-5_exactly_one_live_row": {
+      "binding": true,
+      "rule": "Exactly one LIVE row per (organization_id, capability_key), enforced by a PARTIAL UNIQUE mechanism whose predicate is WHERE effective_to IS NULL.",
+      "parent_basis": "ENTITLEMENT_GRANT.effective_key; target_shape.constraints[6]; MUT-2; parent manifest N-6 and M-2; PG-4.",
+      "final_authority": "THE DATABASE. See CONCURRENCY_CONTRACT."
+    },
+    "SC-6_append_only_lifecycle": {
+      "binding": true,
+      "rule": "Rows are INSERTed and CLOSED only. Closing means setting effective_to from NULL to a timestamp EXACTLY ONCE. No other UPDATE of any column. No DELETE of any row.",
+      "parent_basis": "ENTITLEMENT_GRANT.target_shape.append_only_rule (verbatim: 'Rows are INSERTed and CLOSED (effective_to set once, from NULL to a timestamp). No other UPDATE and no DELETE.'); SEC-12.",
+      "revocation": "Revocation is closing the live row, optionally followed by INSERTing a replacement. It is never an UPDATE of the live row's limit, source or basis.",
+      "no_status_column": "A 'status' column is DELIBERATELY ABSENT and its introduction is PROHIBITED. State derives from the effective period, so that a row cannot be simultaneously closed and active. Parent clause quoted: 'A status column is deliberately ABSENT: status is derived from the effective period, so a row cannot be simultaneously closed and active.'"
+    },
+    "SC-7_source_vocabulary": {
+      "binding": true,
+      "closed_set_exactly": [
+        "PLAN",
+        "PLATFORM_ADMIN",
+        "BOOTSTRAP_DEFAULT",
+        "COMMERCIAL_EXCEPTION"
+      ],
+      "rule": "Exactly these four values, spelled exactly this way. No fifth value, no synonym, no lowercase variant.",
+      "parent_basis": "ENTITLEMENT_GRANT.target_shape.columns[3]."
+    },
+    "SC-8_commercial_provenance_constraint": {
+      "binding": true,
+      "rule": "commercial_account_id IS NOT NULL when source IN ('PLAN','COMMERCIAL_EXCEPTION'); commercial_account_id IS NULL when source IN ('PLATFORM_ADMIN','BOOTSTRAP_DEFAULT').",
+      "parent_basis": "ENTITLEMENT_GRANT.target_shape.constraints[2] and [3], and columns[4].",
+      "biconditional_note": "The parent states BOTH directions as separate CHECKs, and both are BINDING. Implementing only the first would admit a PLATFORM_ADMIN grant carrying a commercial basis that never existed -- the exact fabrication parent manifest P-17 forbids for SENTINEL_MANUAL_QUOTA_ORG. Since the source set is closed at four, the two CHECKs together are a biconditional; an implementation MUST NOT collapse them into one and MUST NOT weaken either into a nullable-permissive form.",
+      "parent_override_check": "Searched the frozen parent for any clause saying otherwise. None exists. The mission directive's 'unless the frozen parent says otherwise' escape is therefore NOT triggered."
+    },
+    "SC-9_limit_vocabulary": {
+      "binding": true,
+      "closed_set_exactly": [
+        "UNMETERED",
+        "BLOCKED",
+        "CAPPED"
+      ],
+      "rule": "limit_kind IN ('UNMETERED','BLOCKED','CAPPED'), exactly three values. CAPPED requires limit_value NOT NULL AND limit_value >= 0. UNMETERED and BLOCKED require limit_value IS NULL.",
+      "parent_basis": "ENTITLEMENT_GRANT.target_shape.columns[6],[7] and constraints[0],[1]; MUT-4; parent manifest N-8 and M-4.",
+      "why_a_discriminator_quoted_from_parent": "The legacy column overloads NULL to mean 'unlimited'. Carrying that overload into a generic grant table would silently make every future capability unlimited-by-default the moment someone forgot to set a value. limit_kind makes the three states explicit and makes 'nobody decided yet' impossible to express as 'unlimited'.",
+      "null_semantic_prohibition_restated": "The Stella semantic (null = unlimited, 0 = blocked) is RETAINED FOR THE STELLA CAPABILITY ONLY and is NOT a general rule. CE-3 MUST NOT infer, for any other capability, that an absent limit means unlimited. Each capability's metered semantic is declared explicitly in the capability catalogue, and a capability with no declared semantic FAILS CLOSED."
+    },
+    "SC-10_effective_period_invariant": {
+      "binding": true,
+      "rule": "effective_to IS NULL OR effective_to > effective_from. Strict inequality; an equal pair is REFUSED.",
+      "parent_basis": "ENTITLEMENT_GRANT.target_shape.constraints[4]."
+    },
+    "SC-11_plan_ref_is_a_snapshot": {
+      "binding": true,
+      "rule": "plan_ref is a SNAPSHOT string, NOT a live foreign key into a plan catalogue. Editing a plan definition must never retroactively rewrite what an Organization was granted.",
+      "parent_basis": "ENTITLEMENT_GRANT.target_shape.plan_snapshot_rule.",
+      "structural_consequence": "A CE-3 implementation MUST NOT add an FK from plan_ref to any plans/catalogue relation, now or later, and MUST NOT resolve plan_ref through a join at evaluation time."
+    },
+    "SC-12_cross_organization_fails_closed": {
+      "binding": true,
+      "rule": "Asking for the effective entitlement of an Organization the caller is not scoped to is REFUSED with an explicit failure code. It is NEVER answered with an empty result set, NEVER with the caller's own Organization's entitlement, and NEVER with the first visible Organization's entitlement.",
+      "parent_basis": "SEC-6; parent manifest N-1; PG-7.",
+      "parent_note_quoted": "The distinction matters: an empty result and a refusal are indistinguishable to a test that asserts on absence, which is why the companion manifest asserts on the failure code.",
+      "DERIVED_ordering_consequence": {
+        "classification": "DERIVED -- BINDING",
+        "derivation": "SEC-6 requires a REFUSAL. Row-level security produces an EMPTY SET, never a refusal: a policy that does not match filters the row away silently. Therefore the cross-organization guard MUST be an explicit check that fires BEFORE any row-visibility outcome can be observed, and MUST NOT be left to RLS filtering. An implementation whose cross-organization behaviour is 'the policy returns no rows' satisfies neither SEC-6 nor parent manifest N-1, and is non-conformant even though its observable row count is the same as a correct implementation's.",
+        "why_it_must_be_said_here": "This is the single most plausible way a competent implementer lands a CE-3 that passes an absence-based test and still violates SEC-6. The parent states the requirement; this authority states the mechanism it forecloses."
+      }
+    },
+    "SC-13_membership_and_entitlement_are_independent": {
+      "binding": true,
+      "rules": [
+        "Membership does NOT imply entitlement. An organization_admin of an Organization with no live grant for a capability is REFUSED that capability, and the refusal is attributable to the MISSING GRANT, not to the role. (SEC-4, parent manifest N-2.)",
+        "Entitlement does NOT grant membership. A live grant for (OrgA, capability) gives a subject with no membership in OrgA no role, no membership and no tenant read in OrgA. (SEC-3, parent manifest N-3.)",
+        "A plan does NOT grant authorization and does not grant an entitlement. There is no read path from plan state to effective limit without an intervening grant row. (PLAN_ENTITLEMENT_BOUNDARY; SEC-5, whose enforcement point is CE-5 but whose structural precondition -- that a grant row is the only such path -- is created here.)"
+      ],
+      "relation_prohibitions_restated": [
+        "entitlement_grants creates no tenant membership.",
+        "entitlement_grants creates or implies no tenant authorization.",
+        "entitlement_grants references organization_members not at all, references no role value, and references no subject other than the RECORDING actor (actor_user_id).",
+        "entitlement_grants is not keyed by CommercialAccount."
+      ],
+      "parent_basis": "ENTITLEMENT_GRANT.prohibitions, verbatim."
+    },
+    "SC-14_ungoverned_is_not_permissive": {
+      "binding": true,
+      "rule": "organizations.commercial_account_id IS NULL means no CommercialAccount governs this Organization. It does NOT mean free, unlimited or trial. Entitlement in that state comes ONLY from grants whose source is BOOTSTRAP_DEFAULT or PLATFORM_ADMIN.",
+      "parent_basis": "ORGANIZATION_RELATION.ungoverned_state, verbatim.",
+      "ce3_consequence": "The evaluator MUST return NO LIVE GRANT for an ungoverned Organization with no grant row. An implementation that special-cases NULL governance as a permissive default violates CA-05 through the back door. Made assertable by companion control CE3-N-10 against SENTINEL_UNGOVERNED_ORG."
+    },
+    "SC-15_no_trigger_from_commercial_state_to_grants": {
+      "binding": true,
+      "rule": "A database trigger on commercial_accounts that writes entitlement_grants is PROHIBITED OUTRIGHT.",
+      "parent_basis": "PLAN_ENTITLEMENT_BOUNDARY.prohibited_shortcut, verbatim: 'It would recreate CC-3 in a new location: a commercial write silently becoming a runtime capability change, with no separate audit and no refusal point.'",
+      "ce3_consequence": "CE-3 creates the relation such a trigger would target. The prohibition therefore binds CE-3's own migration: the CE-3 diff must contain no trigger, rule or foreign-key action that causes a write to commercial_accounts to produce a row in, or a change to, entitlement_grants."
+    }
+  },
+  "PHYSICAL_TARGET_SHAPE": {
+    "relation": "entitlement_grants",
+    "classification": "NARROWED FROM ENTITLEMENT_GRANT.target_shape. The thirteen columns below are ENUMERATED FROM THE PARENT ARTIFACT at AS_OF_HEAD, not recalled: ENTITLEMENT_GRANT.target_shape.columns is a thirteen-element array and each element is quoted verbatim in parent_declaration_verbatim.",
+    "column_count": 13,
+    "provenance_sufficiency_quoted_from_parent": "The column set above is the MINIMUM that answers, for any grant, at any past instant: what capability, for which Organization, from what source, on whose commercial basis, under which plan identity, with what limit, over what period, for what stated reason, by which actor, with which audit row. An implementing node may add columns; it may not remove one of these and claim provenance.",
+    "addition_rule": "An implementing node MAY add columns beyond these thirteen. It MUST NOT remove, rename or weaken the nullability of any of them, and any added column must not reintroduce a derived 'status' (SC-6) or a live plan FK (SC-11).",
+    "classification_legend": {
+      "BINDING": "Fixed by the parent. An implementation that departs from it is non-conformant and the departure is a STOP, not a judgement call.",
+      "IMPLEMENTATION_DEFINED": "The parent leaves the choice open. The implementer CHOOSES and the choice must be visible in the diff and covered by a control. It is never permission to omit the field.",
+      "FUTURE_MEASUREMENT_REQUIRED": "Cannot be settled from frozen authority at AS_OF_HEAD. The implementing mission must measure or probe it and record the result; it fails closed until then."
+    },
+    "columns": [
+      {
+        "column": "id",
+        "parent_declaration_verbatim": "id uuid pk",
+        "type_family": "uuid",
+        "nullability": "NOT NULL (primary key)",
+        "fk_posture": "NONE -- it is the primary key.",
+        "check_posture": "NONE required by the parent.",
+        "classification": "BINDING for name, type family and primary-key status; IMPLEMENTATION_DEFINED for the default-generation mechanism.",
+        "note": "The parent binds 'uuid pk' and nothing more. Whether the value is produced by a database default (e.g. gen_random_uuid()) or supplied by the writer is IMPLEMENTATION_DEFINED; CE-1's own authority carried the same open question as note_on_drizzle_id_default and it is not resolved here."
+      },
+      {
+        "column": "organization_id",
+        "parent_declaration_verbatim": "organization_id uuid NOT NULL FK -> organizations(id) -- the effective scope, per CA-04",
+        "type_family": "uuid",
+        "nullability": "NOT NULL -- BINDING",
+        "fk_posture": "FK -> organizations(id) -- BINDING that the FK exists. ON DELETE action: see fk_on_delete_rule below.",
+        "check_posture": "NONE beyond the FK and the partial unique index.",
+        "classification": "BINDING",
+        "note": "This is the EFFECTIVE SCOPE. Half of the partial unique key. It is the column the evaluator's explicit argument resolves against."
+      },
+      {
+        "column": "capability_key",
+        "parent_declaration_verbatim": "capability_key varchar NOT NULL -- product-capability identity, from a closed catalogue owned by the implementing node",
+        "type_family": "varchar -- BINDING (the parent names varchar, not an enum type)",
+        "nullability": "NOT NULL -- BINDING",
+        "fk_posture": "NONE. There is no capability catalogue RELATION at AS_OF_HEAD and the parent does not require one.",
+        "check_posture": "IMPLEMENTATION_DEFINED whether a CHECK pins the catalogue in the database or the catalogue is enforced in application code; see capability_catalogue_rule.",
+        "classification": "BINDING for name, type family and nullability; IMPLEMENTATION_DEFINED for length and for catalogue enforcement mechanism.",
+        "note": "The catalogue is explicitly 'owned by the implementing node' -- i.e. by CE-3. Its CONTENTS are IMPLEMENTATION_DEFINED; the constraint that each entry declares its metered semantic explicitly, and that an undeclared capability fails closed, is BINDING (SC-9)."
+      },
+      {
+        "column": "source",
+        "parent_declaration_verbatim": "source varchar NOT NULL -- one of PLAN | PLATFORM_ADMIN | BOOTSTRAP_DEFAULT | COMMERCIAL_EXCEPTION",
+        "type_family": "varchar -- BINDING",
+        "nullability": "NOT NULL -- BINDING",
+        "fk_posture": "NONE directly, but participates in CHECK-3 and CHECK-4.",
+        "check_posture": "The four-value closed set is BINDING. Whether it is pinned by a CHECK constraint, a domain or a pg enum is IMPLEMENTATION_DEFINED, but it MUST be pinned in the DATABASE -- an application-only restriction is not a closed set.",
+        "classification": "BINDING for name, type family, nullability and the value set; IMPLEMENTATION_DEFINED for the pinning mechanism and length.",
+        "note": "SC-7. Repository precedent measured at AS_OF_HEAD: closed value sets on new relations are pinned by CHECK on a varchar (commercial_accounts.commercial_status, 0068). A CE-3 implementation following that precedent is conformant."
+      },
+      {
+        "column": "commercial_account_id",
+        "parent_declaration_verbatim": "commercial_account_id uuid NULL FK -> commercial_accounts(id) -- the commercial basis; NOT NULL when source IN (PLAN, COMMERCIAL_EXCEPTION), NULL when source IN (PLATFORM_ADMIN, BOOTSTRAP_DEFAULT)",
+        "type_family": "uuid",
+        "nullability": "NULL at the column level -- BINDING. Conditional nullability is enforced by CHECK-3 and CHECK-4, not by the column.",
+        "fk_posture": "FK -> commercial_accounts(id) -- BINDING that the FK exists. ON DELETE action: see fk_on_delete_rule below.",
+        "check_posture": "CHECK-3 and CHECK-4 -- BINDING, biconditional (SC-8).",
+        "classification": "BINDING",
+        "note": "PROVENANCE, NEVER SCOPE (SC-2). No unique constraint and no evaluator input may treat this column as the effective key."
+      },
+      {
+        "column": "plan_ref",
+        "parent_declaration_verbatim": "plan_ref varchar NULL -- plan/catalog identity SNAPSHOTTED at grant time",
+        "type_family": "varchar -- BINDING",
+        "nullability": "NULL -- BINDING",
+        "fk_posture": "NONE, and an FK here is PROHIBITED (SC-11).",
+        "check_posture": "NONE required.",
+        "classification": "BINDING for name, type family, nullability and snapshot semantics; IMPLEMENTATION_DEFINED for length.",
+        "note": "SC-11. The prohibition on an FK is the load-bearing half: it is what stops a later plan edit rewriting history."
+      },
+      {
+        "column": "limit_kind",
+        "parent_declaration_verbatim": "limit_kind varchar NOT NULL -- one of UNMETERED | BLOCKED | CAPPED",
+        "type_family": "varchar -- BINDING",
+        "nullability": "NOT NULL -- BINDING",
+        "fk_posture": "NONE directly, but participates in CHECK-1 and CHECK-2.",
+        "check_posture": "The three-value closed set is BINDING and MUST be pinned in the database, as for source.",
+        "classification": "BINDING for name, type family, nullability and the value set; IMPLEMENTATION_DEFINED for the pinning mechanism and length.",
+        "note": "SC-9. This column is the discriminator whose removal is parent mutation control M-4 / MUT-4. It may not be dropped, made nullable, or given a default."
+      },
+      {
+        "column": "limit_value",
+        "parent_declaration_verbatim": "limit_value integer NULL -- the cap when limit_kind = CAPPED",
+        "type_family": "integer -- BINDING",
+        "nullability": "NULL -- BINDING",
+        "fk_posture": "NONE.",
+        "check_posture": "CHECK-1 (CAPPED => NOT NULL AND >= 0) and CHECK-2 (UNMETERED/BLOCKED => IS NULL) -- BINDING.",
+        "classification": "BINDING",
+        "note": "Note the asymmetry the parent chose deliberately: BLOCKED is expressed by limit_kind, NOT by limit_value = 0. Writing BLOCKED as CAPPED with limit_value 0 is a DIFFERENT row and is not equivalent; the legacy column's 0-means-blocked overload is exactly what limit_kind exists to stop from generalising."
+      },
+      {
+        "column": "effective_from",
+        "parent_declaration_verbatim": "effective_from timestamptz NOT NULL",
+        "type_family": "timestamptz -- BINDING",
+        "nullability": "NOT NULL -- BINDING",
+        "fk_posture": "NONE.",
+        "check_posture": "Participates in CHECK-5 (SC-10).",
+        "classification": "BINDING for name, type family and nullability; IMPLEMENTATION_DEFINED for whether a database default (e.g. now()) is attached.",
+        "note": "See EVALUATOR_CONTRACT.evaluation_instant_semantics for the one unresolved question about how effective_from relates to liveness."
+      },
+      {
+        "column": "effective_to",
+        "parent_declaration_verbatim": "effective_to timestamptz NULL -- NULL means live",
+        "type_family": "timestamptz -- BINDING",
+        "nullability": "NULL -- BINDING. NULL is the LIVE marker and carries meaning; it is not an absence.",
+        "fk_posture": "NONE.",
+        "check_posture": "Participates in CHECK-5 (SC-10) and is the predicate of the partial unique index (SC-5).",
+        "classification": "BINDING",
+        "note": "The ONLY column an UPDATE may ever touch, and only once, NULL -> timestamp (SC-6)."
+      },
+      {
+        "column": "reason",
+        "parent_declaration_verbatim": "reason text NULL",
+        "type_family": "text -- BINDING",
+        "nullability": "NULL -- BINDING",
+        "fk_posture": "NONE.",
+        "check_posture": "NONE required.",
+        "classification": "BINDING",
+        "note": "Free text. Part of the provenance minimum: 'for what stated reason'."
+      },
+      {
+        "column": "actor_user_id",
+        "parent_declaration_verbatim": "actor_user_id uuid NULL FK -> users(id) -- NULL for a machine-originated grant, per PI-5",
+        "type_family": "uuid",
+        "nullability": "NULL -- BINDING. NULL is MEANINGFUL: it records a machine-originated grant and must not be backfilled with a service account.",
+        "fk_posture": "FK -> users(id) -- BINDING that the FK exists. ON DELETE action: see fk_on_delete_rule below.",
+        "check_posture": "NONE required.",
+        "classification": "BINDING",
+        "note": "PI-5 restated: a billing change made by a machine is audited with actor_user_id NULL -- a machine event is not attributed to a person. An implementation that makes this column NOT NULL breaks PI-5."
+      },
+      {
+        "column": "audit_log_id",
+        "parent_declaration_verbatim": "audit_log_id uuid NULL",
+        "type_family": "uuid",
+        "nullability": "NULL -- BINDING",
+        "fk_posture": "NOT BOUND BY THE PARENT. The parent writes an explicit 'FK -> ...' arrow for organization_id, commercial_account_id and actor_user_id, and writes NO arrow here. That omission is treated as deliberate and is NOT silently completed by this authority.",
+        "check_posture": "NONE required.",
+        "classification": "BINDING for name, type family and nullability; FUTURE_MEASUREMENT_REQUIRED for whether an FK to audit_logs(id) is added.",
+        "note": "The implementing mission must measure the audit_logs relation at its own base and decide, recording the decision and its reason. An FK here interacts with audit retention and with PI-8's organization_id-NULL audit rows, neither of which this authority adjudicates."
+      }
+    ],
+    "constraints": {
+      "classification": "BINDING. Exactly the parent's six, quoted verbatim from ENTITLEMENT_GRANT.target_shape.constraints. Constraint NAMES are IMPLEMENTATION_DEFINED.",
+      "CHECK-1": "limit_kind = 'CAPPED' => limit_value IS NOT NULL AND limit_value >= 0",
+      "CHECK-2": "limit_kind IN ('UNMETERED','BLOCKED') => limit_value IS NULL",
+      "CHECK-3": "source IN ('PLAN','COMMERCIAL_EXCEPTION') => commercial_account_id IS NOT NULL",
+      "CHECK-4": "source IN ('PLATFORM_ADMIN','BOOTSTRAP_DEFAULT') => commercial_account_id IS NULL",
+      "CHECK-5": "effective_to IS NULL OR effective_to > effective_from",
+      "PARTIAL-UNIQUE": "PARTIAL UNIQUE INDEX on (organization_id, capability_key) WHERE effective_to IS NULL",
+      "count": 6,
+      "value_set_pins_are_additional": "The closed-set pins for source (four values) and limit_kind (three values) are REQUIRED by SC-7 and SC-9 and are IN ADDITION to these six. The parent expresses them in the column declarations rather than in its constraints array; an implementation that pins them as two further CHECK constraints is conformant and is the measured repository precedent."
+    },
+    "fk_on_delete_rule": {
+      "classification": "DERIVED -- partially BINDING, partially IMPLEMENTATION_DEFINED.",
+      "BINDING_prohibition": "ON DELETE CASCADE is PROHIBITED on organization_id, commercial_account_id and actor_user_id. Derivation: SC-6 freezes 'no DELETE' of any grant row, and SEC-12 requires that history remain reconstructible from append-only rows. A cascading delete is a DELETE of grant rows performed by the database on behalf of an unrelated statement, which destroys exactly the rows SEC-12 requires to survive. ON DELETE SET NULL is likewise PROHIBITED on organization_id (NOT NULL) and would silently erase provenance on the other two.",
+      "IMPLEMENTATION_DEFINED_choice": "The specific non-destructive action -- RESTRICT or NO ACTION -- is the implementer's choice. Measured precedent at AS_OF_HEAD: db/schema.ts:83 uses onDelete 'restrict' for organizations.commercial_account_id, landed by CE-1.",
+      "note": "This is a derivation from two named parent clauses plus a measurement, not a new decision. It is recorded as BINDING only in its PROHIBITIVE half."
+    },
+    "indexes": {
+      "BINDING": "The partial unique index on (organization_id, capability_key) WHERE effective_to IS NULL. Its NAME is IMPLEMENTATION_DEFINED; its columns, order and predicate are not.",
+      "IMPLEMENTATION_DEFINED": "Any additional non-unique index (for example on commercial_account_id for commercial reporting reads, or on organization_id alone). The implementer chooses; an extra index may not carry a UNIQUE property that would create a second effective key (SC-2, SC-5)."
+    },
+    "effective_key_semantics": {
+      "key": "(organization_id, capability_key)",
+      "liveness_predicate": "effective_to IS NULL",
+      "BINDING": "LIVE is DEFINED by the parent as effective_to IS NULL -- this is the parent's own wording in effective_key and in target_shape.columns[9] ('NULL means live'). The partial unique index's predicate is unconditionally effective_to IS NULL and carries no effective_from term.",
+      "open_question": "See EVALUATOR_CONTRACT.evaluation_instant_semantics. The database key and the evaluator's notion of 'in force right now' are two different things and MUST NOT be conflated."
+    },
+    "capability_catalogue_rule": {
+      "classification": "IMPLEMENTATION_DEFINED contents, BINDING constraints.",
+      "owner": "CE-3. The parent says the catalogue is 'owned by the implementing node'.",
+      "BINDING_constraints": [
+        "Every catalogue entry declares its metered semantic EXPLICITLY (which of UNMETERED / BLOCKED / CAPPED is meaningful for it, and any default).",
+        "A capability with no declared metered semantic FAILS CLOSED -- it is refused, never defaulted to unlimited.",
+        "The Stella null-means-unlimited semantic is NOT inherited by any other capability."
+      ],
+      "measured_context": "lib/capabilities/** at AS_OF_HEAD contains exactly two files, contracts.ts and stripe-webhook.ts, and no capability_key catalogue of this kind exists anywhere in the repository. See OPEN_FINDINGS F-CE3-2 for the constraint this places on where CE-3 may write."
+    }
+  },
+  "RLS_SECURITY_CONTRACT": {
+    "classification": "EXECUTABLE_SECURITY_POSTURE derived from parent SEC-3, SEC-4, SEC-6, SEC-12, MULTIORG_INTERSECTION (S4) and PG-7. Derived FRESH for CE-3; NOT copied from CE-1 or from L1.",
+    "why_not_mechanical_reuse": "CE-1's posture (ENABLE + FORCE + ZERO policies) is correct for a relation NOTHING READS. CE-3's relation MUST BE READ -- the node's own deliverable is 'effective entitlement read at Organization x capability'. Copying CE-1's posture would produce a relation the evaluator cannot read. L1's posture (ENABLE + FORCE + a member SELECT policy + a conjunctive INSERT policy over current_user_role_in_org) is correct for TENANT DATA written by a tenant subject. An entitlement grant is neither: it is tenant-ADJACENT provenance written by a commercial or platform act, and its read must fail CLOSED cross-organization rather than filter silently. Neither sibling's policy set is transferable.",
+    "frozen_BINDING": [
+      "CREATE TABLE entitlement_grants is followed, in the SAME migration, by ALTER TABLE entitlement_grants ENABLE ROW LEVEL SECURITY.",
+      "ALTER TABLE entitlement_grants FORCE ROW LEVEL SECURITY is likewise required in the same migration.",
+      "No tenant role, and no commercial identifier, is ever added to an RLS predicate over TENANT data as a consequence of this node (SC-4 / MUT-10). db/identity-context.ts is NOT in CE-3's touches and stays out of its diff.",
+      "The cross-organization refusal is NOT delegated to RLS. See SEMANTIC_CONTRACT.SC-12.DERIVED_ordering_consequence -- an RLS filter produces an empty set, which SEC-6 rejects.",
+      "No policy, grant or role created by CE-3 may confer membership, a role, or any tenant read beyond entitlement_grants itself (SC-13).",
+      "No super-admin bypass is invented by CE-3, and no role hierarchy is inferred by CE-3. If a platform read of entitlement_grants is needed, it belongs to CE-8 under the platform predicate that tenancy S5 reshapes -- not here."
+    ],
+    "enable_and_force_derivation": {
+      "classification": "DERIVED -- BINDING",
+      "measurement_at_AS_OF_HEAD": "Census over db/migrations/**.sql and db/baseline/**/*.sql: 53 relations carry ENABLE ROW LEVEL SECURITY; 52 of them carry at least one CREATE POLICY; exactly ONE carries zero policies, and that one is commercial_accounts. Exactly THREE relations carry FORCE ROW LEVEL SECURITY, and all three are the newest relations in the corpus: account_legal_acceptances (CL-1), commercial_accounts (CE-1) and organization_commercial_acceptances (L1).",
+      "derivation": "ENABLE is required because a relation without RLS is PERMISSIVE by default, which fails open -- the wrong direction for a relation carrying commercial provenance. FORCE is required because it is the measured convention of every relation added to this corpus since CL-1, and because without it the table owner is exempt, which would make any policy CE-3 or a successor writes silently inert for a migration or application role that happens to own the table."
+    },
+    "POLICY_SET": {
+      "classification": "FUTURE_MEASUREMENT_REQUIRED -- and this is CE-3's single unresolved security decision.",
+      "why_unresolved": "The parent orders it: MULTIORG_INTERSECTION vs S4 states that entitlement_grants 'and commercial_account_organization_history are new tenant-adjacent relations and need RLS decided under the SAME conjunctive model S4 freezes', with ordering 'S4 BEFORE the RLS of the new relations is finalised. A relation whose policies were written under the pre-S4 model would have to be re-derived.' Tenancy S4 is NOT integrated at AS_OF_HEAD.",
+      "the_tension_stated_plainly": "ENABLE + FORCE + zero policies denies every ordinary role, INCLUDING the evaluator, so CE-3's own deliverable would be unreadable. Authoring a tenant-facing policy now is ordered after S4. These two facts are both true and the node cannot satisfy both by copying a sibling. The decision is therefore named here, fail-closed, rather than guessed.",
+      "admissible_resolutions_measured": [
+        "R-A -- A NON-tenant-facing read path: the evaluator is a SECURITY DEFINER function owned by a role for which a single narrow policy (or a BYPASSRLS posture) is granted on entitlement_grants, with NO policy addressed to any tenant role. This defers every tenant-facing policy decision to S4 while making the node's deliverable readable. Measured feasibility: db/migrations/** already creates SECURITY DEFINER functions in nine units (0032, 0060..0065, 0072) and already raises explicit SQLSTATEs via RAISE ... USING ERRCODE (0030, 0060, 0070), so this resolution needs no db/prepared/** capability unit and stays inside CE-3's frozen touches.",
+        "R-B -- Land the relation with ENABLE + FORCE + ZERO policies and defer the ENTIRE read path to a successor node after S4. Admissible only if the node's deliverable is re-scoped by a parent amendment, because the parent's CE-3 delivers the read. This authority does NOT perform that re-scoping and does not authorize it.",
+        "R-C -- Author the tenant-facing policy set now, before S4. PROHIBITED by MULTIORG_INTERSECTION's explicit ordering. Recorded so that it is refused by name rather than merely unlisted."
+      ],
+      "obligation_on_the_implementation_opening": "The CE-3 implementation opening MUST resolve this to exactly one of R-A or R-B, MUST record which parent clause authorizes the choice, and MUST prove the resulting posture on a disposable cluster with the probe named in REAL_PG_NODE_CONTRACT.PG-CE3-TENANT-ISOLATION. Proceeding without that resolution FAILS CLOSED. This authority's preference, recorded as a RECOMMENDATION and not an adjudication, is R-A, because it is the only one of the three that delivers the parent's CE-3 without either re-scoping the node or pre-empting S4."
+    },
+    "application_and_capability_identity_expectations": {
+      "classification": "FUTURE_MEASUREMENT_REQUIRED",
+      "rule": "The identity that reads entitlement_grants, the identity that writes a grant, and the tenant-facing runtime identity MUST be distinguishable, and the write identity must not be reachable from a tenant request path. Which concrete roles those are depends on the POLICY_SET resolution above and on the platform-admin ACL set (parent F-1), neither of which this authority adjudicates.",
+      "never_assume": "FORCE ROW LEVEL SECURITY is SILENTLY INERT for a BYPASSRLS role and for the table owner. Any claim that a role is denied must be measured on a cluster AS that role, never inferred from the migration text. This is CE-1's own PG-3 lesson, restated because it applies with full force to a table that DOES have policies as much as to one that does not."
+    },
+    "cross_org_refusal": "BINDING -- SC-12. Asserted on the FAILURE CODE, never on absence. PG-7 is the mandatory runtime proof.",
+    "append_only_mutation_restriction": {
+      "classification": "BINDING (SC-6); mechanism IMPLEMENTATION_DEFINED.",
+      "rule": "The storage boundary must REFUSE any UPDATE other than the single NULL -> timestamp transition of effective_to, and must refuse every DELETE.",
+      "measured_mechanisms_available": "db/migrations/0030_immutability.sql defines uellix_forbid_mutation() and RAISEs with ERRCODE 'insufficient_privilege'; L1's 0072 reuses it as an append-only trigger guard. A CE-3 implementation reusing that function is following measured precedent. Whether the guard is a trigger, a policy, a revoked privilege or a combination is IMPLEMENTATION_DEFINED; that it exists AT THE STORAGE BOUNDARY rather than only inside a verb body is BINDING -- parent manifest N-12 makes exactly this distinction for the sibling history relation.",
+      "note": "The parent's SENTINEL_CLOSED_HISTORY_ROW proves this for CE-2's relation. CE-3 has no history relation, so the companion manifest introduces a node-local analogue, SENTINEL_CLOSED_GRANT_ROW."
+    },
+    "separation_of_membership_and_entitlement": "BINDING -- SC-13. entitlement_grants references organization_members not at all. No policy on entitlement_grants may be written in terms of a ROLE value, because a role-conditioned read would make the relation's visibility an authorization statement, which is the merge SC-1 forbids.",
+    "prohibitions_restated": [
+      "No super-admin bypass invented here.",
+      "No role hierarchy inferred here.",
+      "No commercial identifier in a tenant GUC, request principal or tenant-data RLS predicate.",
+      "No trigger from commercial_accounts to entitlement_grants (SC-15).",
+      "No edit to db/identity-context.ts (MUT-10)."
+    ]
+  },
+  "EVALUATOR_CONTRACT": {
+    "classification": "BINDING where the parent binds it; IMPLEMENTATION_DEFINED for encoding and placement within the frozen touches.",
+    "inputs": {
+      "organization_id": "REQUIRED and EXPLICIT -- BINDING (SC-3). The signature must make it impossible to call the evaluator without naming an Organization.",
+      "capability_key": "REQUIRED -- BINDING. Derived directly from ENTITLEMENT_GRANT.effective_key ('Organization x product-capability') and from parent manifest P-8 ('answers at the Organization x product-capability boundary'). An evaluator keyed on Organization alone cannot answer the parent's question.",
+      "evaluation_instant": "IMPLEMENTATION_DEFINED whether it is an explicit parameter or the transaction instant. See evaluation_instant_semantics."
+    },
+    "evaluation_instant_semantics": {
+      "classification": "FUTURE_MEASUREMENT_REQUIRED -- an explicit decision the implementer must make and prove.",
+      "the_two_notions": "(1) The DATABASE key: LIVE is defined by the parent as effective_to IS NULL, unconditionally, and the partial unique index carries no effective_from term. (2) The EVALUATOR's answer: 'what is in force at instant T'. These coincide for every row whose effective_from is in the past, and DIVERGE for a row whose effective_to is NULL and whose effective_from is in the FUTURE -- which CHECK-5 permits.",
+      "binding_part": "The uniqueness key is effective_to IS NULL and MUST NOT be narrowed to add an effective_from term -- doing so would permit two rows the parent's SC-5 forbids.",
+      "decision_required": "Whether the evaluator additionally requires effective_from <= instant before reporting a grant as in force. The implementer MUST decide this explicitly, state it, and cover it with a control. It MUST NOT be left to emerge from whichever comparison the query happens to contain.",
+      "fail_closed_default": "Absent an explicit decision, the node fails closed. This authority does not pick for the implementer, because the parent binds neither reading and picking one here would convert an implementation choice into an authority decision."
+    },
+    "output_shape": {
+      "classification": "The DISTINCTIONS are BINDING; the ENCODING is IMPLEMENTATION_DEFINED.",
+      "BINDING_distinguishable_outcomes": [
+        "NO_LIVE_GRANT -- there is no live row for (organization_id, capability_key). This is an ANSWER, not a refusal, and not an error.",
+        "BLOCKED -- a live row exists with limit_kind BLOCKED. The capability is affirmatively denied by an entitlement decision.",
+        "CAPPED -- a live row exists with limit_kind CAPPED, carrying limit_value.",
+        "UNMETERED -- a live row exists with limit_kind UNMETERED.",
+        "REFUSED -- the request itself is refused, e.g. a cross-organization request (SC-12) or an undeclared capability_key (SC-9). This is NOT an answer about entitlement."
+      ],
+      "conflation_prohibitions": [
+        "NO_LIVE_GRANT and REFUSED MUST be distinguishable. Absence and refusal are different facts; SEC-6's whole point is that collapsing them makes an absence-based test unable to see a cross-tenant leak.",
+        "NO_LIVE_GRANT and BLOCKED MUST be distinguishable. 'Nobody decided' is not 'decided against', and collapsing them reintroduces the null-semantic overload SC-9 exists to prevent.",
+        "UNMETERED and CAPPED-with-a-large-value MUST be distinguishable (PI-2, restated at the evaluator boundary)."
+      ],
+      "measured_constraint_on_reuse": "lib/capabilities/contracts.ts already defines a CLOSED outcome vocabulary for CAP-01..CAP-05 (succeeded / idempotent / denied / contended / unavailable, over SQLSTATEs U0001/U0002/U0003). That module states of itself that it is owned by the CAPABILITIES workstream, that PRODUCT and RELEASE consume it and neither modifies it, and that every change there is a contract change going through docs/ops/contracts/. CE-3 therefore MUST NOT edit contracts.ts to add an entitlement outcome. Whether CE-3's evaluator defines its own outcome type in a NEW file under lib/capabilities/** or opens a contract change is IMPLEMENTATION_DEFINED; editing contracts.ts inside a CE-3 implementation diff without that contract change is a STOP. See OPEN_FINDINGS F-CE3-2."
+    },
+    "purity": {
+      "BINDING": "The evaluator MUTATES NOTHING. It writes no row, sets no GUC, creates no audit entry as a side effect of being asked, and does not lazily materialise a missing grant.",
+      "derivation": "SC-6 restricts writes to INSERT and the single close; PLAN_ENTITLEMENT_BOUNDARY forbids a plan read producing an effective limit without an intervening, separately audited grant write. An evaluator that created a grant on a cache miss would be exactly that forbidden path."
+    },
+    "entitlement_is_not_authorization_at_the_call_boundary": {
+      "BINDING": "A valid grant does NOT prove user authorization. The evaluator's return value MUST NOT be usable, on its own, as an authorization decision, and no caller may treat UNMETERED or CAPPED as permission for a subject to act.",
+      "enforcement": "Because nothing may consume the evaluator before CE-4 (ENFORCEMENT_BOUNDARY_CE4), this clause is enforced at CE-3 by the absence of consumers, and becomes a live integration constraint at CE-4."
+    },
+    "placement": {
+      "BINDING": "Within CE-3's frozen touches: db/schema.ts, db/migrations/** and lib/capabilities/**. No other directory.",
+      "IMPLEMENTATION_DEFINED": "Whether the evaluator is (a) a SQL SECURITY DEFINER function created in the CE-3 migration with a thin typed wrapper in lib/capabilities/**, or (b) a TypeScript-only reader in lib/capabilities/** over the relation. The choice is constrained, not free: PG-7 requires a REFUSAL observable as a SQLSTATE at the database boundary, and the RLS POLICY_SET resolution R-A presumes a definer. An implementer choosing (b) must show how PG-7's SQLSTATE requirement is met without one.",
+      "measured_feasibility_of_(a)": "db/migrations/** creates SECURITY DEFINER functions in nine units at AS_OF_HEAD and raises explicit ERRCODEs in at least three, so (a) requires no db/prepared/** capability unit and no widening of CE-3's touches."
+    }
+  },
+  "CONCURRENCY_CONTRACT": {
+    "classification": "BINDING.",
+    "final_authority": "THE DATABASE. The PARTIAL UNIQUE INDEX on (organization_id, capability_key) WHERE effective_to IS NULL is the sole and final mechanism ensuring exactly one live row per effective key.",
+    "parent_basis": "ENTITLEMENT_GRANT.effective_key; MUT-2; PG-4 ('the partial unique index actually refuses a second live grant under concurrent inserts', why_runtime: 'Partial-index/NULL interaction under concurrency').",
+    "proof_obligation": {
+      "BINDING": "A CE-3 implementation must prove CONCURRENCY, not merely sequential duplicate refusal.",
+      "required_shape": "TWO CONCURRENT transactions attempt to create a LIVE grant for the SAME effective key. EXACTLY ONE commits. The other is REFUSED BY THE DATABASE INVARIANT -- a unique-violation from the partial index -- and not by an application pre-check.",
+      "why_sequential_is_insufficient": "A sequential second insert is refused by any correct implementation, including one whose only guard is an application-side SELECT-then-INSERT. That guard is precisely what a concurrent pair defeats, so a sequential test cannot distinguish a correct implementation from the defective one MUT-2 describes.",
+      "additional_shape": "The same pair must also be proven for the CLOSE-then-INSERT sequence: closing the live row and inserting its replacement must not transiently admit two live rows, nor leave zero where one was expected."
+    },
+    "application_side_locks": {
+      "classification": "NOT PRESCRIBED.",
+      "rule": "This authority does NOT require an advisory lock, a row lock or any application-side serialization for CE-3. The parent requires none for this node: its per-organization advisory lock (PI-3) belongs to the quota LEDGER and its compare-and-set row lock (MUT-6) belongs to CE-2's transfer. Adding one to CE-3 is IMPLEMENTATION_DEFINED and may not be used as a SUBSTITUTE for the partial unique index.",
+      "prohibition": "An implementation that relies on an application lock INSTEAD of the database constraint is non-conformant, because dropping the index -- parent mutation M-2 -- would then not be caught."
+    }
+  },
+  "REAL_PG_NODE_CONTRACT": {
+    "classification": "NODE-SPECIFIC materialization of the parent REAL_PG_FUTURE_CONTRACT. MANDATORY before CE-3 may close.",
+    "no_postgres_in_this_mission": "This authority runs no container, no cluster and no probe. It compiles the contract only. Zero Docker, zero PostgreSQL, zero network.",
+    "rule_quoted_from_parent": "These properties are RUNTIME properties of PostgreSQL -- policy combination, definer GUC resolution, NULL-not-TRUE denial, concurrency serialization, constraint interaction. Static reading of SQL text is NOT proof for any of them.",
+    "harness": {
+      "cluster": "DISPOSABLE ONLY, via the repository's disposable-audit path (measured at AS_OF_HEAD: tests/postgres/disposable-db.ts, driven by scripts/db-audit-disposable.ts, gated on UELLIX_PG_TESTS=1). NEVER staging, NEVER production, NEVER the canonical local stack.",
+      "fixture": "TWO CommercialAccounts and THREE Organizations: account X governing OrgA and OrgB, account Y governing OrgC. BINDING -- the parent states that a single-account fixture cannot express CA-02 and therefore cannot falsify SEC-7 or SEC-8.",
+      "fixture_addition_for_CE3": "SENTINEL_UNGOVERNED_ORG requires an Organization whose commercial_account_id IS NULL. Whether that is a FOURTH Organization or OrgC re-purposed is IMPLEMENTATION_DEFINED, but the ungoverned state must be present in the fixture, because SC-14 is otherwise unfalsifiable.",
+      "canary_requirement": "The non-scoped Organizations must carry REAL rows, including real entitlement_grants rows. A probe that returns zero rows merely for want of data proves nothing.",
+      "separate_login_identities": "BINDING. The probes below distinguish a tenant-facing runtime role from the migration/owner role. They MUST be executed under separate logins. A probe run as the table owner cannot test FORCE ROW LEVEL SECURITY at all, and a probe run as a BYPASSRLS role cannot test RLS at all -- both roles' BYPASSRLS and ownership status must be ASSERTED, not assumed.",
+      "anti_skip": "A probe that cannot run because the gate is off must be reported SKIPPED, never silently passed. A harness whose setup fails must fail the gate, not initialise to a value that reads as success."
+    },
+    "inherited_parent_probes": [
+      {
+        "id": "PG-4",
+        "node_in_parent": "CE-3",
+        "proves": "MUT-2 -- the partial unique index actually refuses a second live grant under concurrent inserts.",
+        "why_runtime_quoted": "Partial-index/NULL interaction under concurrency.",
+        "shape": "See CONCURRENCY_CONTRACT.proof_obligation. Two concurrent transactions, same effective key, exactly one commits, the loser refused by the DATABASE."
+      },
+      {
+        "id": "PG-7",
+        "node_in_parent": "CE-3",
+        "proves": "SEC-6 -- a cross-organization entitlement request raises the refusal SQLSTATE rather than returning an empty set.",
+        "why_runtime_quoted": "Fail-closed versus empty-result is indistinguishable at the type level.",
+        "shape": "A principal scoped to OrgA asks for OrgC's entitlement. The observable outcome must be a RAISED SQLSTATE. A zero-row result FAILS this probe even though a naive assertion on emptiness would pass."
+      }
+    ],
+    "node_local_future_probes": [
+      {
+        "id": "PG-CE3-SEC3",
+        "proves": "SEC-3 -- a live grant for (OrgA, capability) confers no membership, no role and no tenant read in OrgA on a subject who is not a member. Measured as a row-count delta on organization_members across the grant insert (zero) plus a scoped read attempt by the non-member (denied)."
+      },
+      {
+        "id": "PG-CE3-SEC4",
+        "proves": "SEC-4 -- an organization_admin of an Organization with NO live grant is refused the capability, and the refusal is attributable to the MISSING GRANT rather than to the role. The fixture must hold the admin role so that a role-based explanation is actively excluded, not merely absent."
+      },
+      {
+        "id": "PG-CE3-TENANT-ISOLATION",
+        "proves": "A principal scoped to OrgA observes no entitlement_grants row of OrgB -- where OrgA and OrgB are governed by the SAME CommercialAccount X -- and SENTINEL_SIBLING_ORG_CANARY_ROW planted as an OrgB grant is absent from every result set, log line and error payload. This is also the probe that VERIFIES whichever RLS_SECURITY_CONTRACT.POLICY_SET resolution the implementation opening chose."
+      },
+      {
+        "id": "PG-CE3-APPEND-ONLY",
+        "proves": "Append-only close-only behaviour AT THE STORAGE BOUNDARY: the single NULL -> timestamp UPDATE of effective_to succeeds once; a SECOND close of the same row is refused; an UPDATE of any other column is refused; a DELETE of any row is refused. Asserted against SENTINEL_CLOSED_GRANT_ROW."
+      },
+      {
+        "id": "PG-CE3-SOURCE-VALIDATION",
+        "proves": "SC-7 and SC-8 in the database: a fifth source value is refused; source PLAN with commercial_account_id NULL is refused; source PLATFORM_ADMIN with a non-NULL commercial_account_id is refused. Both directions of the biconditional, because implementing only one admits a fabricated commercial basis."
+      },
+      {
+        "id": "PG-CE3-LIMIT-VALIDATION",
+        "proves": "SC-9 in the database: limit_kind CAPPED with limit_value NULL refused; CAPPED with limit_value < 0 refused; UNMETERED or BLOCKED with a non-NULL limit_value refused; a fourth limit_kind value refused."
+      },
+      {
+        "id": "PG-CE3-EFFECTIVE-PERIOD",
+        "proves": "SC-10 in the database: effective_to equal to effective_from is refused (strict inequality), and effective_to earlier than effective_from is refused."
+      },
+      {
+        "id": "PG-CE3-EXPLICIT-ORG",
+        "proves": "SC-3 at runtime: the evaluator answers for the Organization NAMED IN THE ARGUMENT and not for any Organization derivable from the connection's ambient state. Proven by asking, from a principal whose ambient membership is OrgA, for OrgB where the caller IS scoped to OrgB, and observing OrgB's answer -- so that an implementation silently substituting the ambient Organization is caught returning OrgA's."
+      },
+      {
+        "id": "PG-CE3-NO-CE4-CONSUMER",
+        "proves": "ENFORCEMENT_BOUNDARY_CE4 at the database boundary: no trigger, rule, view, policy, default or foreign-key action anywhere in the corpus causes entitlement_grants to be read by, or to alter the behaviour of, any pre-existing runtime path. Complements the static control CE3-N-9, which cannot see a trigger."
+      },
+      {
+        "id": "PG-CE3-UNGOVERNED",
+        "proves": "SC-14 -- SENTINEL_UNGOVERNED_ORG, whose commercial_account_id IS NULL and which holds no grant row, yields NO_LIVE_GRANT and never an implicit permissive answer."
+      }
+    ],
+    "probe_count_total": 12,
+    "gate": "postgres_disposable_probe. MANDATORY before CE-3 may close; a CE-3 that closes without it has proven none of the runtime properties above, whatever its static tests say."
+  },
+  "PARENT_MANIFEST_SUBSET": {
+    "classification": "VERIFIED AGAINST THE LIVE PARENT MANIFEST AT AS_OF_HEAD, not carried over from an upstream summary.",
+    "method": "Every control of docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json was read and its text searched for the token 'CE-3'. The subset below is the result of that search, plus the batch-wide precondition the manifest itself declares binding on every node.",
+    "positive_controls_naming_CE3": [
+      "P-8",
+      "P-9"
+    ],
+    "negative_controls_naming_CE3": [
+      "N-1",
+      "N-2",
+      "N-3",
+      "N-6",
+      "N-8"
+    ],
+    "mutation_controls_naming_CE3": [
+      "M-2",
+      "M-4"
+    ],
+    "pg_probes_whose_node_is_CE3": [
+      "PG-4",
+      "PG-7"
+    ],
+    "security_controls_enforceable_from_CE3": [
+      "SEC-3",
+      "SEC-4",
+      "SEC-6",
+      "SEC-12 (grants half -- the parent writes its enforceable_from as 'CE-2 (association) and CE-3 (grants)')"
+    ],
+    "mutation_controls_of_the_authority_bound_to_CE3": [
+      "MUT-2",
+      "MUT-4"
+    ],
+    "sentinels": [
+      "SENTINEL_SIBLING_ORG_CANARY_ROW",
+      "SENTINEL_UNGOVERNED_ORG"
+    ],
+    "exit_gates": [
+      "typecheck",
+      "secrets_scan",
+      "authority_seal_verify",
+      "ods_scope",
+      "ods_poststate",
+      "journal_verify",
+      "baseline_verify",
+      "postgres_disposable_probe",
+      "targeted_tests"
+    ],
+    "exit_gates_note": "The parent's closed set of nine, adopted WHOLE for CE-3. CE-3 touches db/schema.ts (typecheck), db/migrations/** (journal_verify, baseline_verify), creates a corpus table (baseline_verify), and requires a real cluster (postgres_disposable_probe). No gate of the nine is inapplicable and none is dropped.",
+    "divergence_from_the_upstream_summary": {
+      "rule": "The upstream sequencing summary this mission consumed was checked against the live parent manifest rather than preserved. Three divergences were found and are recorded rather than silently absorbed.",
+      "D-1_positive_controls": {
+        "upstream_said": "positive: P-8, P-9",
+        "measured": "P-8 and P-9 are indeed the only two positives whose text names CE-3 -- CONFIRMED. However the parent manifest ALSO carries P-0, whose own text states: 'Each implementing node MUST re-verify applicability with pnpm ops:test-diff at its own base.' P-0 is a batch-wide precondition binding on EVERY implementing node and therefore on CE-3.",
+        "disposition": "P-0 is INHERITED by CE-3 as a precondition. The upstream summary was correct about node-labelled positives and incomplete about node-binding ones. Carried into the companion manifest as CE3-P-3."
+      },
+      "D-2_sentinels": {
+        "upstream_said": "sentinel: SENTINEL_SIBLING_ORG_CANARY_ROW",
+        "measured": "SENTINEL_UNGOVERNED_ORG's own purpose text reads: 'If any EVALUATOR returns a capability for this fixture, the ungoverned_state rule of ORGANIZATION_RELATION has been violated.' The evaluator is CE-3's deliverable and exists at no earlier node, so this sentinel is evaluator-bound and therefore CE-3-bound.",
+        "disposition": "BOTH sentinels are inherited. The upstream summary was under-inclusive. Note that CE-1's own execution authority also claims both sentinels for CE-1; that is not a conflict, because a sentinel is a FIXTURE, not a control -- two nodes may plant the same fixture to prove different properties, and the companion manifest's node-local control ids keep the two nodes' assertions distinct."
+      },
+      "D-3_N16": {
+        "observation": "Parent negative control N-16 (SENTINEL_UNGOVERNED_ORG yields NO capability) is LABELLED '/ CE-1' in the parent manifest, and docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json MANIFEST_DISPOSITION claims N-16 among CE-1's ids. Its ASSERTION, however -- that an ungoverned Organization yields no CAPABILITY -- is only mechanically expressible once an evaluator exists, and no evaluator exists at CE-1 or at AS_OF_HEAD.",
+        "disposition": "This authority does NOT re-label, renumber or reassign N-16; it has no authority over a frozen sibling artifact and none over the frozen parent manifest. It records N-16 as SEMANTICALLY ADJACENT to CE-3 and carries its semantic content as the NODE-LOCAL control CE3-N-10, under a node-local id, so that the parent's N-16 remains exactly where and what it is.",
+        "class": "NON_BLOCKING_OBSERVATION. Recorded as OPEN_FINDINGS F-CE3-3."
+      }
+    },
+    "no_renumbering": "This authority performs NO renumbering of the parent manifest and edits it not at all. Every parent id above is cited as-is."
+  },
+  "ENFORCEMENT_BOUNDARY_CE4": {
+    "classification": "BINDING. CE3_ENFORCEMENT_BEFORE_CE4 = PROHIBITED.",
+    "parent_basis": "MIGRATION_DAG.nodes[CE-3].compatibility: 'ADDITIVE and UNREAD. The evaluator exists and NOTHING consumes it yet.' MIGRATION_DAG.nodes[CE-4].depends_on = ['CE-1','CE-2','CE-3'].",
+    "CE3_MAY": [
+      "Create the relation entitlement_grants with its constraints, indexes and RLS posture.",
+      "Create the evaluator and its outcome type.",
+      "Create the capability catalogue it owns.",
+      "Create its own tests, fixtures and probes."
+    ],
+    "CE3_MUST_NOT_WIRE_THE_EVALUATOR_INTO": [
+      "Stella quota enforcement (lib/stella/** and the prepared quota chain).",
+      "Measure access.",
+      "Portfolio access.",
+      "Organization access of any kind.",
+      "Any billing page or billing read path.",
+      "Any API route.",
+      "Generic capability gating.",
+      "Selected-organization authentication, the request principal, or the session carrier."
+    ],
+    "mechanical_statement": "At the end of a conformant CE-3 implementation, the set of files that reference the evaluator symbol is EXACTLY: the file that defines it, and CE-3's own test files. The count of NON-TEST consumers outside its defining module is ZERO. This is stated as a COUNT so that it is assertable, rather than as an intention.",
+    "negative_controls_required": [
+      "CE3-N-9 -- a static control that FAILS if any non-test consumer of the evaluator appears. It must sweep the repository, not only the implementer's working set, and must classify each hit rather than asserting a bare zero over an over-broad pattern.",
+      "PG-CE3-NO-CE4-CONSUMER -- the runtime half, because a trigger, rule, view or default can make the relation consumed without any source file naming the evaluator."
+    ],
+    "why_both_halves": "A static sweep cannot see a database trigger, and a runtime probe cannot see an unreferenced-but-imported module. Each half is blind exactly where the other sees.",
+    "not_a_temporary_convenience": "This boundary is not 'not yet wired up'. It is the property that makes CE-3 safe to land BEFORE tenancy S3 and S7: an unconsumed evaluator cannot evaluate the wrong tenant. Weakening it silently removes the justification for CE-3's ordering, not merely a test."
+  },
+  "FUTURE_PROTECTED_SURFACES_SYMBOLIC": {
+    "classification": "DERIVED_NOT_ALLOCATED. This section describes what a FUTURE, SEPARATE lineage mission will need. It reserves nothing and names no identifier as allocated.",
+    "allocated_by_this_mission": "NONE",
+    "DEFAULT_PROTECTED_PATTERNS_measured_at_AS_OF_HEAD": [
+      "docs/ops/fib/**",
+      "docs/ops/pc01b/**",
+      "docs/ops/im01b/**",
+      "db/migrations/**",
+      "db/prepared/**",
+      "db/baseline/**",
+      "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"
+    ],
+    "measurement_note": "Read directly from scripts/ods-scope.ts:82-90 at AS_OF_HEAD. Seven entries, unchanged from the set CE-1's amendment measured.",
+    "derived_patterns": [
+      {
+        "pattern": "db/migrations/**",
+        "necessity": "PROVEN. CE-3 creates a relation, so it writes db/migrations/<ordinal>_<slug>.sql, db/migrations/meta/<ordinal>_snapshot.json and db/migrations/meta/_journal.json. drizzle-kit writes all three in one act and all three fall inside this single pattern.",
+        "why_a_glob": "The concrete ordinal cannot be a literal because no ordinal is allocated. This is the established form for exactly this reason; measured precedent: the same glob is used by three existing registry entries whose ordinals were likewise unknown at declaration time."
+      },
+      {
+        "pattern": "db/prepared/journal/**",
+        "necessity": "PROVEN BY MEASUREMENT AT AS_OF_HEAD, not assumed. db/hosted/baseline-journal-wrapper.ts prints every wrapper header as 'Unit <ordinal>/<BASELINE_UNITS.length>'. BASELINE_UNITS.length is GLOBAL to every wrapper's bytes. Measured: db/prepared/journal/ holds 86 files = 1 bootstrap + 85 wrappers, and the last wrapper's header reads verbatim 'GENERATED -- DO NOT EDIT. Unit 85/85: 0072_customer_lifecycle_l1_organization_commercial_acceptance.sql'. Registering ONE CE-3 baseline unit therefore (a) adds one new wrapper AND (b) regenerates the bytes of all 85 existing wrappers, whose headers move from 'Unit N/85' to 'Unit N/86'.",
+        "why_directory_scoped_and_not_db_prepared": "A grant for db/prepared/journal/** must never authorize db/prepared/<sibling>.sql. classifyPaths checks the concrete path against the SUPPLIED grant's own patterns, never against the broader default pattern that made it protected -- scripts/ods-scope.ts states this in its own comment at lines 117-122. A blanket db/prepared/** would reach the hosted and local bootstrap packages, db/prepared/storage/**, db/prepared/README.md and db/prepared/checkpoint-a1/corroboration.sql, none of which CE-3 touches.",
+        "regeneration_is_header_only": "The regenerated wrappers' include target, Source SHA256 pin and spliced unit SQL are untouched; only the printed total changes. db/prepared/journal/000_journal_bootstrap.sql is unaffected -- it takes no dependency on BASELINE_UNITS.length."
+      },
+      {
+        "pattern": "db/prepared/checkpoint-b0/observation.sql",
+        "necessity": "PROVEN BY MEASUREMENT AT AS_OF_HEAD, and this is the pattern whose justification the mission directive singled out. The file's rowCounts block carries ONE ARM PER CORPUS TABLE. Measured verbatim at db/prepared/checkpoint-b0/observation.sql:97 -- \"SELECT 'public.commercial_accounts' AS t, count(*) AS n FROM \\\"public\\\".\\\"commercial_accounts\\\"\" -- i.e. CE-1's own table produced exactly such an arm when CE-1 registered its unit. CE-3 creates the TABLE entitlement_grants, which enters deriveExpectedBaselineState's CREATE TABLE scan the moment the unit is registered and therefore adds a 'public.entitlement_grants' arm. The file's own header states 'GENERATED -- DO NOT EDIT' and the gate compares bytes, so the file is stale BY CONSTRUCTION until regenerated.",
+        "why_one_exact_literal_and_not_a_directory": "db/prepared/checkpoint-b0/ holds exactly this one file at AS_OF_HEAD, so even a directory pattern would grant strictly more than the classifier can justify. Measured precedent for this exact literal exists in three prior registry entries."
+      }
+    ],
+    "pattern_count": 3,
+    "PROHIBITED_WIDENINGS": [
+      "db/prepared/** -- blanket. Rejected above with the mechanism that makes it dangerous.",
+      "db/prepared/checkpoint-b0/** -- a directory pattern where one literal suffices.",
+      "db/** -- absurdly wide; would reach db/baseline/** which CE-3 never touches.",
+      "db/baseline/** -- CE-3 touches nothing there. (Note the name collision hazard: db/hosted/baseline-manifest.ts is a DIFFERENT path and is NOT under db/baseline/**.)",
+      "docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** -- sealed corpora, never in a CE node grant.",
+      "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json -- never."
+    ],
+    "measured_NON_protected_surfaces_CE3_will_also_touch": {
+      "note": "These require an ordinary --allow but NO protected grant, because they are outside DEFAULT_PROTECTED_PATTERNS. Listing them prevents a future grant from being widened to cover paths that never needed covering.",
+      "paths": [
+        "db/schema.ts -- the Drizzle source of truth. NOT protected.",
+        "db/hosted/baseline-manifest.ts -- MANDATORY (registers the new migration as one BaselineUnit; without it the corpus verifier emits UNKNOWN_FILE). db/hosted/** is NOT in DEFAULT_PROTECTED_PATTERNS -- measured at AS_OF_HEAD.",
+        "lib/capabilities/<new file> -- the evaluator. NOT protected. Subject to F-CE3-2.",
+        "artifacts/hosted-a1-status.json -- regenerated corpus-derived count. NOT protected.",
+        "tests/** -- CE-3's own test files. NOT protected, but a CE-3 implementation opening must enumerate any EXISTING test it needs to retarget path-by-path, with no wildcard, per the CE-1 precedent."
+      ]
+    },
+    "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with an ordinary --allow pattern covering the same path. Both remain mandatory; neither substitutes for the other. Restated because it is the single most common misreading of the mechanism.",
+    "FUTURE_PROTECTED_GRANT_SHAPE": {
+      "authorityId": "UNALLOCATED",
+      "branch": "UNALLOCATED -- the CE-3 implementation branch, which does not exist at AS_OF_HEAD. A grant binds to exactly ONE branch.",
+      "patterns": [
+        "db/migrations/**",
+        "db/prepared/journal/**",
+        "db/prepared/checkpoint-b0/observation.sql"
+      ],
+      "registration_status": "NOT_DECLARED_NOT_REGISTERED. This artifact is not an ODS addendum and cannot declare a grant; declaration belongs to the CE-3 ODS lineage mission and registration to a separate registration mission after it.",
+      "no_placeholder": "This artifact contains NO placeholder to be filled in later. The future binding happens in the future ODS addendum and in scripts/ods-scope.ts, NEVER by editing this frozen artifact.",
+      "no_existing_grant_reused_or_widened": "No existing registered grant is reused, widened, rebranched or amended by this authority or by a future CE-3 implementation. If a CE-3 surface turns out not to be covered by its first grant, a SEPARATE registry entry is created rather than the first being widened."
+    },
+    "next_hpo_identifier": {
+      "status": "UNALLOCATED_UNREGISTERED_AND_EXPLICITLY_PROHIBITED_AT_AS_OF_HEAD",
+      "reconciliation_only": "The next symbolic HPO identifier after the highest registered one is named by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json in its NO_PREALLOCATION.explicitly_not_allocated list, as HPO-ODS-W2-30. It is cited here ONCE, for reconciliation, strictly as a PROHIBITION. Naming an id in a prohibition is never an allocation. This authority does NOT adopt it as its own id -- FUTURE_PROTECTED_GRANT_SHAPE.authorityId above is the string 'UNALLOCATED', deliberately.",
+      "measured": "grep across the repository at AS_OF_HEAD: that identifier appears only inside prohibition clauses of docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json, tests/ods/ods-controller.test.ts and tests/ods/ods-scope.test.ts, and zero times in scripts/ods-scope.ts. It resolves nowhere."
+    }
+  },
+  "FUTURE_IMPLEMENTATION_BRANCH": {
+    "classification": "DERIVED_NOT_CREATED.",
+    "string": "codex/commercial-account-ce3-implementation-r1",
+    "status": "DERIVED_NOT_CREATED",
+    "derivation": "The repo-native convention is codex/<mission-slug>-r<round>. Measured sibling at AS_OF_HEAD: CE-1's implementation landed from branch codex/commercial-account-ce1-implementation-r1 (merge commit e7ee106d, PR #128). Substituting ce3 for ce1 yields the string above without ambiguity.",
+    "not_created": "This mission does not create the branch, does not push it, and does not register it. git ls-remote at AS_OF_HEAD shows no such ref.",
+    "exact_string_equality_warning": "If the later ODS grant is bound to this branch, the binding is by EXACT STRING EQUALITY and is read from the WORKING DIRECTORY's current branch, not from a flag. Two consequences follow and both have bitten this repository before: (1) a single character of drift -- a different round suffix, a plural, a hyphen -- makes every protected path an unconditional violation; (2) running the scope gate from a MERGE worktree rather than from the implementation worktree reports every granted path as a violation even when the grant is correct. The implementation mission must run its scope gate from the implementation worktree and must validate its grant against a deliberate run WITHOUT the grant, so that a passing result is not vacuous.",
+    "no_binding_here": "This authority binds nothing to this string. It records the derivation so that the later lineage mission does not have to re-derive it, and so that a mismatch is visible as a mismatch."
+  },
+  "MIGRATION_ORDINAL": {
+    "classification": "DERIVED_NOT_ALLOCATED. This authority reserves NO ordinal.",
+    "allocated_by_this_authority": "NONE",
+    "CURRENT_MAX_MIGRATION_ORDINAL_at_AS_OF_HEAD": "0072",
+    "measurement": "db/migrations/ holds 73 .sql files; the highest ordinal is db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql. Corroborated independently against db/migrations/meta/_journal.json: 73 entries, highest idx = 72, last tag '0072_customer_lifecycle_l1_organization_commercial_acceptance'. The two measurements agree.",
+    "NEXT_AVAILABLE_AT_AUTHORITY_HEAD": "0073",
+    "status": "DERIVED_NOT_ALLOCATED",
+    "competitor_check": "Searched every ref, not only this branch: `git log --all -- 'db/migrations/0073*'` returns nothing at AS_OF_HEAD. No competing lane has allocated 0073 anywhere in the repository's history or on any open branch. Had one done so, this authority would record that fact and would NOT name 0073.",
+    "rule": "This is a MEASUREMENT OF THE CEILING AT AS_OF_HEAD, not a reservation of 0073 for CE-3. The CE-3 implementation opening and the CE-3 implementation writer MUST EACH re-measure the ceiling at their OWN base and take the next free ordinal there. db/migrations/** uses a single GLOBAL ordinal sequence, so every open lane contends for it; consuming this number as a reservation is precisely the collision the parent's ordinal_rule exists to prevent.",
+    "slug": "NOT FROZEN. The repository convention is a descriptive lowercase snake_case slug. No slug is fabricated here, because the slug propagates into the baseline unit id, the journal tag and the wrapper filename, and a fabricated slug would read as an allocation.",
+    "derived_downstream_predictions": {
+      "note": "PREDICTIONS OF A DERIVATION AT AS_OF_HEAD, NOT RESERVATIONS. Each moves if the ordinal or the corpus moves.",
+      "baseline_unit_ordinal": "86 (BASELINE_UNITS.length measured as 85 at AS_OF_HEAD, from 86 journal files minus the bootstrap, corroborated by the last wrapper header reading 'Unit 85/85').",
+      "journal_wrapper_filename": "db/prepared/journal/086_<baseline unit id>.sql, where the three-digit prefix IS the baseline ordinal and the suffix IS the unit id verbatim.",
+      "existing_wrappers_regenerated": 85,
+      "journal_directory_file_count_after": "87 (85 regenerated + 1 new + the unaffected bootstrap)."
+    }
+  },
+  "HOSTED_DISPOSITION": {
+    "CE3_HOSTED_UNIT_DISPOSITION": "NO_NEW_SEMANTIC_PREPARED_CAPABILITY_UNIT__BUT_MANDATORY_CORPUS_FAN_OUT",
+    "classification": "RESOLVES the parent's UNKNOWN for CE-3. Derived from the parent MIGRATION_DAG plus measurement at AS_OF_HEAD; NOT assumed from the absence of db/prepared/** in the node's touches.",
+    "the_two_things_deliberately_separated": {
+      "A_semantic_prepared_capability_unit": "A new db/prepared/** capability package with its own role, GRANT/REVOKE chain, SECURITY DEFINER verbs, idempotency ledger, apply-precondition and out-of-band credential. Measured exemplars: stella_0008 (Stripe webhook identity), stella_0010 (organization bootstrap), stella_0013..0018 (the quota/ticket chain).",
+      "B_corpus_fan_out": "The migration journal wrapper family and the CHECKPOINT B0 observation probe, which govern ORDINARY DDL and regenerate mechanically whenever the corpus gains a unit or a table.",
+      "why_they_must_not_be_conflated": "Conflating them produces one of two symmetrical errors: reading 'no capability unit' as 'db/prepared/** is out of scope' (which fails the hosted-baseline gates -- the error CE-1's amendment v1.0.1 exists to close), or reading 'the journal fans out into db/prepared/' as 'CE-3 needs a capability package' (which would invent a hosted unit the parent never authorized)."
+    },
+    "A_disposition": {
+      "value": "NO",
+      "rationale": "CE-3's touches in the frozen parent MIGRATION_DAG are exactly ['db/schema.ts','db/migrations/**','lib/capabilities/**'] -- db/prepared/** is NOT among them. The parent lists db/prepared/** explicitly for CE-2, CE-5, CE-6, CE-7, CE-8 and CE-9, and omits it for CE-3 and CE-4. That omission is a DISCRIMINATING choice, not an oversight: the parent uses the field consistently across nine nodes. CE-3 creates one ordinary table, its constraints, its indexes, its RLS posture and an evaluator -- no capability role, no GRANT/REVOKE chain of its own, no idempotency ledger, no apply-precondition, no out-of-band credential, and no entry in db/hosted/hosted-package-manifest.ts HOSTED_CHAIN.",
+      "feasibility_of_the_evaluator_without_a_prepared_unit": "MEASURED, because the objection 'but the evaluator must raise a SQLSTATE, so it must be a capability' is the obvious one. db/migrations/** already creates SECURITY DEFINER functions in NINE units at AS_OF_HEAD -- exactly 0031, 0032, 0060, 0061, 0062, 0063, 0064, 0065 and 0072 -- and already raises explicit SQLSTATEs via RAISE ... USING ERRCODE in exactly FOUR units -- 0030, 0060, 0070 and 0072. A definer-backed evaluator with an explicit refusal is therefore constructible inside db/migrations/**, with no db/prepared/** capability unit and no widening of CE-3's frozen touches.",
+      "if_an_implementer_concludes_otherwise": "A CE-3 implementation that finds it genuinely requires a db/prepared/** capability unit has discovered an AUTHORITY DELTA against the parent MIGRATION_DAG. It must STOP and escalate for a parent amendment. It must NOT infer the authority from the fact that its diff wanted to touch the path."
+    },
+    "B_disposition": {
+      "value": "MANDATORY",
+      "rationale": "CE-3 adds one ordinary migration creating one corpus TABLE. By the measured mechanisms in FUTURE_PROTECTED_SURFACES_SYMBOLIC.derived_patterns, that makes db/prepared/journal/** (85 wrappers regenerated + 1 new) and db/prepared/checkpoint-b0/observation.sql (a new rowCounts arm) stale BY CONSTRUCTION, and requires one new BaselineUnit in db/hosted/baseline-manifest.ts and a regenerated artifacts/hosted-a1-status.json.",
+      "false_inference_prohibited": "HOSTED_UNIT_REQUIRED=NO does NOT mean db/prepared/** and db/hosted/** are out of scope for CE-3. A mission that reads it that way will fail the hosted-baseline gates.",
+      "generators_never_hand_edited": "pnpm journal:generate / journal:verify; pnpm b0:observation:generate / b0:observation:verify; pnpm baseline:verify; pnpm a1:status:write / a1:status:verify. A hand-edited generated artifact is one the generator will overwrite and the verifier will reject."
+    },
+    "db_prepared_package_order": "CE-3 appends NOTHING to db/prepared-package-order.ts and registers no supersession. A later CE node may; CE-3 does not.",
+    "db_baseline": "db/baseline/** is never touched by CE-3.",
+    "db_policies": "Whether CE-3 produces a db/policies/** unit follows from the RLS_SECURITY_CONTRACT.POLICY_SET resolution and is FUTURE_MEASUREMENT_REQUIRED. CE-1 produced none because it wrote zero policies."
+  },
+  "LIVE_COMMERCIAL_STATE_REMEASUREMENT": {
+    "classification": "MEASURED AT AS_OF_HEAD BY THIS MISSION. Where a parent AS_OF fact and a current measurement differ, the CURRENT measurement is recorded and the difference is named. Stale parent evidence is NOT copied forward.",
+    "rule": "The CE-3 implementation writer MUST re-measure every line below at its own base. Each is a fact about a moving repository, not a constant.",
+    "facts": [
+      {
+        "fact": "commercial_accounts relation",
+        "state": "PRESENT",
+        "evidence": "db/schema.ts:23 exports commercialAccounts = pgTable('commercial_accounts', ...); created by db/migrations/0068_commercial_account_ce1.sql.",
+        "delta_vs_parent_AS_OF": "CHANGED. The parent measured it ABSENT (contradiction CC-1). CE-1 closed that."
+      },
+      {
+        "fact": "organizations.commercial_account_id",
+        "state": "PRESENT",
+        "evidence": "db/schema.ts:83, uuid FK -> commercialAccounts.id, onDelete 'restrict', nullable; index at db/schema.ts:97.",
+        "delta_vs_parent_AS_OF": "CHANGED. Parent measured it absent."
+      },
+      {
+        "fact": "commercial_account_organization_history relation",
+        "state": "ABSENT",
+        "evidence": "No such table in db/schema.ts and no migration creates it. CE-2 is NOT DONE.",
+        "delta_vs_parent_AS_OF": "UNCHANGED."
+      },
+      {
+        "fact": "entitlement_grants relation",
+        "state": "ABSENT",
+        "evidence": "No such table in db/schema.ts, no migration creates it, and the string 'entitlement' appears in db/schema.ts only inside two explanatory comments (lines 19 and 68), never as a table, column or type. Contradiction CC-2 is OPEN.",
+        "delta_vs_parent_AS_OF": "UNCHANGED. This is the relation CE-3 creates."
+      },
+      {
+        "fact": "commercial_accounts RLS posture",
+        "state": "ENABLE + FORCE, ZERO POLICIES",
+        "evidence": "db/migrations/0068_commercial_account_ce1.sql:44-46. Policy census across FOUR lineages -- db/migrations/**, db/policies/**, db/prepared/** and db/baseline/** -- returns ZERO CREATE POLICY statements naming commercial_accounts. Corpus-wide census: 53 RLS-enabled relations, 52 with at least one policy, and commercial_accounts is the ONLY one with none; exactly 3 relations carry FORCE (account_legal_acceptances, commercial_accounts, organization_commercial_acceptances).",
+        "delta_vs_parent_AS_OF": "NEW since the parent. Directly load-bearing for RLS_SECURITY_CONTRACT.why_not_mechanical_reuse."
+      },
+      {
+        "fact": "legacy commercial columns on organizations",
+        "state": "ALL FIVE STILL PRESENT",
+        "evidence": "db/schema.ts:46 stella_monthly_quota (integer, default 0), :47 stella_plan_label, :55 stripe_customer_id (unique), :56 stripe_subscription_id (unique), :57 stripe_price_id. CE-9 has not run and RETIREMENT_LAST_RULE is unsatisfied.",
+        "delta_vs_parent_AS_OF": "UNCHANGED."
+      },
+      {
+        "fact": "current entitlement evaluator",
+        "state": "ABSENT",
+        "evidence": "lib/capabilities/ contains exactly two files at AS_OF_HEAD -- contracts.ts and stripe-webhook.ts -- i.e. a capability-availability contract for the Stripe webhook, not an entitlement evaluator. This is a direct RE-MEASUREMENT of parent OPEN_FINDINGS F-5, which required exactly this rather than an assumption that the directory is empty of conflicting concepts.",
+        "delta_vs_parent_AS_OF": "UNCHANGED in substance; re-measured rather than copied. See OPEN_FINDINGS F-CE3-2 for the constraint the measurement revealed."
+      },
+      {
+        "fact": "CE-1",
+        "state": "DONE / INTEGRATED",
+        "evidence": "Migration 0068 present; PR #128, merge e7ee106d; implementation evidence artifact present."
+      },
+      {
+        "fact": "CE-2",
+        "state": "NOT DONE",
+        "evidence": "No history relation, no transfer verb. Not a CE-3 prerequisite."
+      },
+      {
+        "fact": "CE-3",
+        "state": "NOT DONE",
+        "evidence": "This authority is its execution contract, not its implementation."
+      },
+      {
+        "fact": "CE-4",
+        "state": "NOT DONE",
+        "evidence": "No backfill migration. Depends on CE-1, CE-2 and CE-3."
+      },
+      {
+        "fact": "migration ordinal ceiling",
+        "state": "0072",
+        "evidence": "See MIGRATION_ORDINAL."
+      },
+      {
+        "fact": "baseline corpus size",
+        "state": "85 units",
+        "evidence": "86 files in db/prepared/journal/ minus the bootstrap; corroborated by the last wrapper header 'Unit 85/85'."
+      },
+      {
+        "fact": "DEFAULT_PROTECTED_PATTERNS",
+        "state": "7 entries, unchanged",
+        "evidence": "scripts/ods-scope.ts:82-90."
+      },
+      {
+        "fact": "KNOWN_TEST_CONDITIONS registry",
+        "state": "exactly 2 conditions, both PRE_EXISTING_DEFERRED",
+        "evidence": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json holds KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02 and nothing else. Read directly, not recalled."
+      },
+      {
+        "fact": "tenancy S3 / S4 / S7",
+        "state": "NOT INTEGRATED",
+        "evidence": "Treated as fail-closed UNKNOWN for implementation status, exactly as the parent manifest's own dependencies clause does. S4 is the ordering constraint that leaves RLS_SECURITY_CONTRACT.POLICY_SET unresolved."
+      }
+    ]
+  },
+  "ODS_SPLIT_GOVERNANCE": {
+    "CE3_ODS_GOVERNANCE_FORM": "SPLIT",
+    "meaning": "This authority package contains NO ODS maintenance addendum, DECLARES no protected grant, REGISTERS no grant and advances no sentinel. Its entire diff is two new JSON documents under docs/ops/commercial/**.",
+    "why_split_measured_not_asserted": {
+      "the_mechanism": "Allocating the next ODS maintenance addendum necessarily crosses into ODS scope-control territory, because a FILESYSTEM-EXISTENCE SENTINEL asserts its absence. Measured verbatim at AS_OF_HEAD, tests/ods/ods-scope.test.ts:2473-2475: expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json'))).toBe(false). Creating that file turns this assertion RED. Turning it green again requires editing tests/ods/ods-scope.test.ts, which is FORBIDDEN to this lane.",
+      "the_second_sentinel": "tests/ods/ods-controller.test.ts:192 and :205 assert that IMMUTABLE_BY_CONVENTION contains no v1.0.33 entry and that its filtered length is exactly zero. Enumerating a new addendum requires editing scripts/ods-controller.ts and that test -- also forbidden to this lane.",
+      "the_conclusion": "Combining commercial execution authority + ODS lineage allocation + scope/registration surface mutation in ONE writer would widen this lane's authority across three distinct control surfaces at once. The governed form is therefore SPLIT, and this artifact is the first act of it.",
+      "the_negative_proof_that_this_lane_stays_clear": "Neither of the two files this mission writes is read by any ODS test. Every readFileSync and existsSync in tests/ods/ods-scope.test.ts and tests/ods/ods-controller.test.ts names an EXPLICIT path; none is a directory sweep, and none names docs/ops/commercial/**. Verified by direct enumeration of every such call at AS_OF_HEAD."
+    },
+    "this_artifact_is_not_ods": "Like its parent and its CE-1 sibling, this artifact and its companion manifest live under docs/ops/commercial/**, are NOT ODS artifacts, and are NOT candidates for the immutable-by-convention set. Publishing them creates no Controller obligation, which is why this docs-only authority may close while the CE-3 lineage is unallocated.",
+    "REQUIRED_NEXT_ACTS_IN_ORDER": [
+      "1. COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_INDEPENDENT_CERTIFICATION -- this package, audited by a lane that did not write it.",
+      "2. CONTROLLED AUTHORITY MERGE to integration/commercial-v1.",
+      "3. CE3 ODS LINEAGE ALLOCATION OPENING -- determines the exact write set needed to allocate the next addendum, DECLARE the CE-3 protected grant, and advance the filesystem-absence sentinel.",
+      "4. ODS LINEAGE WRITER.",
+      "5. INDEPENDENT LINEAGE CERTIFICATION.",
+      "6. LINEAGE MERGE.",
+      "7. PROTECTED GRANT REGISTRATION OPENING.",
+      "8. GRANT REGISTRATION WRITER.",
+      "9. INDEPENDENT REGISTRATION CERTIFICATION.",
+      "10. REGISTRATION MERGE.",
+      "11. CE3 IMPLEMENTATION OPENING.",
+      "12. CE3 IMPLEMENTATION WRITER."
+    ],
+    "do_not_compress": "These twelve acts are not to be compressed. Declaration and registration in particular remain separate acts by separate missions, and the implementation writer never self-registers.",
+    "FUTURE_ODS_ADDENDUM_STATUS": "NOT_CREATED",
+    "FUTURE_PROTECTED_GRANT_STATUS": "NOT_ALLOCATED"
+  },
+  "CROSS_LANE_CONSTRAINTS": {
+    "rule": "Named so that a CE-3 implementation cannot be planned as if it were alone on these surfaces. Every claim below is re-measured at the implementing base, never carried from here.",
+    "CE3_x_TENANCY_S3": {
+      "constraint_quoted_from_parent": "S3 BEFORE any entitlement evaluation reaches a request path that can see more than one membership. CE-3 may land earlier only if its evaluator takes an explicit organization_id argument rather than reading an ambient principal.",
+      "disposition": "CE-3 MAY land before S3, and the condition is SC-3. The condition is not a preference; it is the entire licence for the ordering."
+    },
+    "CE3_x_TENANCY_S4": {
+      "constraint_quoted_from_parent": "entitlement_grants and commercial_account_organization_history are new tenant-adjacent relations and need RLS decided under the SAME conjunctive model S4 freezes. S4 BEFORE the RLS of the new relations is finalised.",
+      "disposition": "UNRESOLVED AND NAMED. See RLS_SECURITY_CONTRACT.POLICY_SET and OPEN_FINDINGS F-CE3-1. This is the one place where CE-3's ordering is genuinely constrained by a lane outside this package."
+    },
+    "CE3_x_TENANCY_S7": {
+      "constraint_quoted_from_parent": "Every entitlement read path must take an EXPLICIT organization_id before S7 lands. This is a hard precondition of this package on that node.",
+      "disposition": "Satisfied by SC-3 at CE-3, and the reason a conformant CE-3 does not become a silent wrong-tenant evaluator when S7 removes user_single_active_membership."
+    },
+    "CE3_x_CHOKEPOINT_CP1_db_migrations": "db/migrations/** uses ONE global ordinal sequence. Every open lane contends. Serial; re-measure at the implementing base.",
+    "CE3_x_CHOKEPOINT_CP2_db_schema_ts": "db/schema.ts is a shared writer with the tenancy lane and others. Serial. CE-3 adds one pgTable and touches no existing table's columns.",
+    "CE3_x_CORPUS_FAN_OUT": "db/hosted/baseline-manifest.ts, db/prepared/journal/** and db/prepared/checkpoint-b0/observation.sql are regenerated by EVERY lane that adds a migration. Two lanes adding a unit concurrently will both regenerate all wrappers and will conflict. Serial by construction.",
+    "stale_claim_rule": "A CE-3 implementation must not claim a ceiling, a corpus count or a competitor's absence from THIS document. Every such fact is re-derived at its own base; a number consumed from here is a stale number."
+  },
+  "MANIFEST_DISPOSITION": {
+    "decision": "A node-specific companion implementation test manifest IS created: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json.",
+    "why_this_differs_from_CE1": "CE-1's execution authority declined a second manifest, and its stated reason was a FORK RISK: 'Materializing a second manifest naming CE-1 would either duplicate those ids under a new manifest_id (a fork risk -- two documents each claiming to be the test contract for the same control ids) or force a renumbering that this mission has no authority to perform on a sealed sibling artifact.' That reasoning is sound and is ACCEPTED here. It is answered, not overridden.",
+    "how_the_fork_risk_is_answered": "The CE-3 node manifest uses a control-id namespace DISJOINT from the parent batch manifest's: CE3-P-n, CE3-N-n and CE3-M-n, never P-n, N-n or M-n. No parent id is redefined, duplicated, renumbered or claimed. Each node-local control that derives from a parent control NAMES that parent id inside its own description, so the inheritance is explicit and one-directional. Two documents therefore never claim the same identifier, and the parent manifest remains the sole owner of P-n/N-n/M-n.",
+    "why_a_node_manifest_is_needed_at_all": [
+      "The parent manifest is a BATCH commitment over CE-1..CE-9 whose postgres_requirements leave both harness paths UNKNOWN for the batch as a whole. CE-3 needs a node-level real-PostgreSQL contract with node-specific probes; the batch document cannot carry twelve CE-3 probes without becoming a CE-3 document.",
+      "CE-3 has node-specific obligations the batch manifest does not express at all: the ENFORCEMENT_BOUNDARY_CE4 controls, the append-only storage-boundary control for a relation that has no history sibling, the source/limit/effective-period validation controls, and the evaluation-instant decision.",
+      "The mission that authored this authority was directed to produce one, and a node execution authority whose test contract lives only in a batch document cannot be independently certified at node granularity."
+    ],
+    "parent_manifest_not_edited": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json is byte-unchanged by this mission.",
+    "schema_conformance": "The node manifest conforms to docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, which is strict: additionalProperties false at the top level and inside every control object (only id, description and test_file are admitted), exit_gates drawn from a closed enum of nine, positive_controls and negative_controls each with minItems 1, and postgres_requirements requiring probe_manifest and rationale.",
+    "template_defect_noted": "docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json sets postgres_requirements to null, which the schema (type: object) does not admit. The CE-3 manifest does NOT copy that shape; it supplies a real object. Recorded as a non-blocking observation about the template, not a defect of this package, and NOT fixed here -- that file is outside this lane's write set."
+  },
+  "REQUIRED_NODE_CONTROLS": {
+    "classification": "BINDING. The EXHAUSTIVE, CLOSED set of control ids the companion node manifest must carry.",
+    "why_this_section_exists": "A manifest can be schema-valid and still have had a control quietly removed. Enumerating the required ids HERE, in the authority, makes removal mechanically detectable: the authority declares what must be present, the manifest carries it, and a checker can compare the two sets in BOTH directions. Without this section the only enforceable floor is the schema's minItems 1, which a manifest stripped to a single negative control still satisfies. This section was added after the mission's own non-vacuity battery demonstrated exactly that gap -- removing one required negative control left every check green -- rather than being asserted as adequate from the start.",
+    "closed_world": "EXHAUSTIVE IN BOTH DIRECTIONS. Every id below MUST appear in the companion manifest, and the companion manifest MUST carry no control id absent from this list. A CE-3 implementation that needs a further control has found an authority delta: the control is added HERE first, and the manifest follows.",
+    "positive": [
+      "CE3-P-1",
+      "CE3-P-2",
+      "CE3-P-3",
+      "CE3-P-4",
+      "CE3-P-5",
+      "CE3-P-6",
+      "CE3-P-7",
+      "CE3-P-8",
+      "CE3-P-9"
+    ],
+    "negative": [
+      "CE3-N-1",
+      "CE3-N-2",
+      "CE3-N-3",
+      "CE3-N-4",
+      "CE3-N-5",
+      "CE3-N-6",
+      "CE3-N-7",
+      "CE3-N-8",
+      "CE3-N-9",
+      "CE3-N-10",
+      "CE3-N-11",
+      "CE3-N-12"
+    ],
+    "mutation": [
+      "CE3-M-1",
+      "CE3-M-2",
+      "CE3-M-3",
+      "CE3-M-4",
+      "CE3-M-5",
+      "CE3-M-6",
+      "CE3-M-7"
+    ],
+    "ids": [
+      "CE3-P-1",
+      "CE3-P-2",
+      "CE3-P-3",
+      "CE3-P-4",
+      "CE3-P-5",
+      "CE3-P-6",
+      "CE3-P-7",
+      "CE3-P-8",
+      "CE3-P-9",
+      "CE3-N-1",
+      "CE3-N-2",
+      "CE3-N-3",
+      "CE3-N-4",
+      "CE3-N-5",
+      "CE3-N-6",
+      "CE3-N-7",
+      "CE3-N-8",
+      "CE3-N-9",
+      "CE3-N-10",
+      "CE3-N-11",
+      "CE3-N-12",
+      "CE3-M-1",
+      "CE3-M-2",
+      "CE3-M-3",
+      "CE3-M-4",
+      "CE3-M-5",
+      "CE3-M-6",
+      "CE3-M-7"
+    ],
+    "count": 28,
+    "counts_by_class": {
+      "positive": 9,
+      "negative": 12,
+      "mutation": 7
+    },
+    "inherited_from_the_parent_batch_manifest": {
+      "CE3-P-1": "P-8",
+      "CE3-P-2": "P-9",
+      "CE3-P-3": "P-0",
+      "CE3-N-1": "N-1",
+      "CE3-N-2": "N-2",
+      "CE3-N-3": "N-3",
+      "CE3-N-4": "N-6",
+      "CE3-N-5": "N-8",
+      "CE3-M-1": "M-2",
+      "CE3-M-2": "M-4"
+    },
+    "node_local_not_inherited": [
+      "CE3-P-4",
+      "CE3-P-5",
+      "CE3-P-6",
+      "CE3-P-7",
+      "CE3-P-8",
+      "CE3-P-9",
+      "CE3-N-6",
+      "CE3-N-7",
+      "CE3-N-8",
+      "CE3-N-9",
+      "CE3-N-10",
+      "CE3-N-11",
+      "CE3-N-12",
+      "CE3-M-3",
+      "CE3-M-4",
+      "CE3-M-5",
+      "CE3-M-6",
+      "CE3-M-7"
+    ],
+    "semantically_adjacent_not_claimed": {
+      "N-16": "Parent negative control N-16 is labelled CE-1 and claimed by CE-1's execution authority. Its SEMANTIC CONTENT is carried here as the node-local CE3-N-10, under a node-local id. The parent's N-16 is neither claimed, re-labelled nor renumbered. See OPEN_FINDINGS F-CE3-3."
+    },
+    "inherited_count": 10,
+    "node_local_count": 18
+  },
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "unknown": [],
+    "non_blocking": [
+      {
+        "id": "F-CE3-1",
+        "class": "UNRESOLVED_RLS_SEQUENCING",
+        "finding": "CE-3's relation must be READABLE (the node's own deliverable is the effective entitlement read), yet the parent orders tenant-facing RLS policy authorship for entitlement_grants AFTER tenancy S4, which is not integrated at AS_OF_HEAD. ENABLE + FORCE with zero policies -- the CE-1 posture -- denies every ordinary role including the evaluator. Copying either sibling's posture is therefore wrong in a different way.",
+        "disposition": "RECORDED AND BOUNDED, NOT RESOLVED. Non-blocking for THIS authority, whose job is to freeze the contract and name the unresolved decision fail-closed. BINDING on the CE-3 implementation opening, which must choose R-A or R-B from RLS_SECURITY_CONTRACT.POLICY_SET.admissible_resolutions_measured, state the authorizing parent clause, and prove the result with PG-CE3-TENANT-ISOLATION.",
+        "recommended_action": "R-A -- a non-tenant-facing definer read path, deferring every tenant-facing policy to S4. Recorded as a RECOMMENDATION, not an adjudication: it is the only one of the three resolutions that delivers the parent's CE-3 without either re-scoping the node or pre-empting S4."
+      },
+      {
+        "id": "F-CE3-2",
+        "class": "MEASURED_SCOPE_CONSTRAINT_ON_lib_capabilities",
+        "finding": "Parent OPEN_FINDINGS F-5 required an implementing node to re-measure lib/capabilities rather than assume it empty of conflicting concepts. Re-measured at AS_OF_HEAD: the directory holds exactly contracts.ts and stripe-webhook.ts. contracts.ts states of itself that it is owned by the CAPABILITIES workstream, that PRODUCT and RELEASE consume it and neither modifies it, and that every change there is a contract change going through docs/ops/contracts/. It also already defines a CLOSED outcome vocabulary (succeeded / idempotent / denied / contended / unavailable over U0001/U0002/U0003) for CAP-01..CAP-05.",
+        "disposition": "RECORDED. CE-3 places its evaluator in lib/capabilities/** on the parent's instruction, but MUST NOT edit contracts.ts to add an entitlement outcome without a contract change it does not hold. A new file under lib/capabilities/** is the conformant path. An edit to contracts.ts inside a CE-3 implementation diff is a STOP_FOR_AUTHORITY_DELTA, not ordinary work.",
+        "recommended_action": "None by this mission. Named so the implementation opening enumerates its lib/capabilities path explicitly rather than granting the directory."
+      },
+      {
+        "id": "F-CE3-3",
+        "class": "PARENT_MANIFEST_LABEL_ADJACENCY",
+        "finding": "Parent negative control N-16 is labelled '/ CE-1' and is claimed by CE-1's execution authority, but its assertion -- that an ungoverned Organization yields no CAPABILITY -- is only mechanically expressible once an evaluator exists, and no evaluator exists at CE-1 or at AS_OF_HEAD.",
+        "disposition": "RECORDED, NOT CORRECTED. This authority has no power over a frozen sibling artifact or the frozen parent manifest and does not re-label, renumber or reassign N-16. It carries the semantic content as node-local control CE3-N-10 so that the property becomes provable at the node where it is provable, without touching the parent's id.",
+        "recommended_action": "None required. If a future amendment ever reconciles the label, it is that mission's act, not this one's."
+      },
+      {
+        "id": "F-CE3-4",
+        "class": "SIBLING_FORWARD_NOTE_DISAGREES_WITH_THE_PARENT",
+        "finding": "COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json HOSTED_DISPOSITION.future_node_note asserts that 'CE-2's transfer verb, CE-3's evaluator, CE-5's projection writer, CE-6's recomposed Stripe apply, and CE-7's composed bootstrap ARE capability-shaped (they touch db/prepared/** per parent MIGRATION_DAG)'. Measured against the parent MIGRATION_DAG at AS_OF_HEAD, that attribution is correct for CE-2, CE-5, CE-6 and CE-7 and INCORRECT for CE-3: nodes[CE-3].touches is exactly ['db/schema.ts','db/migrations/**','lib/capabilities/**'] and contains no db/prepared/** entry.",
+        "disposition": "RECORDED, NOT ESCALATED. Non-blocking, for three independent reasons. (1) The clause is a FORWARD NOTE about other nodes, not a CE-1 decision, and CE-1's own amendment v1.0.1 disclaims it: 'Nothing here is read forward onto them.' (2) The base itself says the determination 'is scoped to CE-1 only and must not be read forward onto those nodes.' (3) Under the source-of-truth hierarchy the parent MIGRATION_DAG controls CE-3's touches. This authority therefore follows the parent and records the disagreement rather than inheriting it silently.",
+        "why_it_matters": "Had it been inherited, CE-3 would have been planned with a db/prepared/** capability unit the parent never authorized, and its future protected grant would have been widened to a blanket db/prepared/** -- the exact widening FUTURE_PROTECTED_SURFACES_SYMBOLIC.PROHIBITED_WIDENINGS rejects.",
+        "recommended_action": "None by this mission. Named so that an auditor reading the CE-1 chain and the parent side by side sees the disagreement adjudicated rather than unnoticed."
+      },
+      {
+        "id": "F-CE3-5",
+        "class": "TEMPLATE_SCHEMA_DISAGREEMENT_OUTSIDE_THIS_LANE",
+        "finding": "docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json sets postgres_requirements to null. The schema declares postgres_requirements as type object, which null does not satisfy. A manifest copying the template literally would be schema-invalid.",
+        "disposition": "RECORDED, NOT FIXED. docs/ops/ods/** is outside this lane's write set and the template is an ODS artifact. The CE-3 manifest simply does not copy that shape.",
+        "recommended_action": "None by this mission. A future ODS lane may reconcile the template with its own schema."
+      }
+    ]
+  },
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "json_valid": "Both new files parse as strict JSON (json.load, Python 3) and round-trip. Neither contains a trailing comma, a NaN, an Infinity or a duplicate key -- duplicate keys checked by an object_pairs_hook that fails on repetition, not by eye.",
+    "manifest_schema": "The companion manifest was validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json by a purpose-written checker enforcing: required top-level keys; additionalProperties false at the top level and inside every control object; node_or_batch enum; exit_gates enum membership and minItems 1; positive_controls and negative_controls minItems 1; control objects limited to id/description/test_file with id and description required; postgres_requirements additionalProperties false with probe_manifest and rationale required; sentinels items requiring id and purpose. No JSON-Schema library ships in this repository, so the checker is explicit rather than declarative, and it was itself falsified against mutated inputs -- see NEGATIVE_CONTROL_NON_VACUITY.",
+    "control_id_uniqueness": "All control ids across positive, negative and mutation arrays are unique, and none collides with any id of the parent batch manifest. Checked by set comparison against the parent's live id sets, not by inspection.",
+    "cross_references": "Every parent id cited by this authority (CC-2, SEC-3/4/6/12, MUT-2/4, PG-4/7, P-0/P-8/P-9, N-1/N-2/N-3/N-6/N-8, M-2/M-4, PI-2/PI-5, F-5, both sentinels, both known conditions) was resolved against the live parent files at AS_OF_HEAD. Zero dangling references.",
+    "secrets": "No credential, token, key or connection string is introduced. Both files are governance prose and identifiers. The two sentinel names are fixture descriptors, never real values.",
+    "authority_seal": "pnpm authority:seal:verify run at AS_OF_HEAD before mutation and again on the candidate. Result recorded in the report.",
+    "ods_scope": "This lane's diff is two NEW files under docs/ops/commercial/**, which is NOT in DEFAULT_PROTECTED_PATTERNS. No protected path is touched, so no protected grant is required and none is claimed. The scope gate is run with an --allow covering exactly the two paths, and deliberately NOT with a wide allowlist, because a wide allowlist would make a negative result look authorized.",
+    "focused_tests": "The ODS test suite (tests/ods/**) was run at AS_OF_HEAD before mutation to establish a baseline, and again on the candidate. It is the suite that could detect an ODS-surface disturbance by this lane. Results recorded in the report.",
+    "no_postgres": "No container, no cluster, no probe, no network. Zero Docker.",
+    "no_self_certification": "This mission does NOT certify the semantic correctness of its own authority. Machine facts are proven; semantic adequacy is for the independent certification lane named in ODS_SPLIT_GOVERNANCE."
+  },
+  "self_check": {
+    "note": "Independently derivable expectations. An auditor should be able to reproduce every number below from the repository at AS_OF_HEAD without consulting this document's prose.",
+    "expected_files_written_by_this_mission": 2,
+    "expected_file_paths": [
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json"
+    ],
+    "expected_entitlement_grants_column_count": 13,
+    "expected_parent_constraint_count": 6,
+    "expected_source_value_count": 4,
+    "expected_limit_kind_value_count": 3,
+    "expected_parent_positive_ids_naming_CE3": [
+      "P-8",
+      "P-9"
+    ],
+    "expected_parent_negative_ids_naming_CE3": [
+      "N-1",
+      "N-2",
+      "N-3",
+      "N-6",
+      "N-8"
+    ],
+    "expected_parent_mutation_ids_naming_CE3": [
+      "M-2",
+      "M-4"
+    ],
+    "expected_parent_pg_probes_for_CE3": [
+      "PG-4",
+      "PG-7"
+    ],
+    "expected_node_pg_probe_count_total": 12,
+    "expected_future_protected_pattern_count": 3,
+    "expected_current_max_migration_ordinal": "0072",
+    "expected_next_available_migration_ordinal": "0073",
+    "expected_migration_ordinal_allocated": "NONE",
+    "expected_baseline_units_at_AS_OF_HEAD": 85,
+    "expected_journal_files_at_AS_OF_HEAD": 86,
+    "expected_default_protected_pattern_count": 7,
+    "expected_rls_enabled_relation_count": 53,
+    "expected_rls_enabled_with_zero_policies": [
+      "commercial_accounts"
+    ],
+    "expected_force_rls_relation_count": 3,
+    "expected_lib_capabilities_file_count": 2,
+    "expected_known_condition_count": 2,
+    "expected_ods_addendum_allocated": "NONE",
+    "expected_hpo_grant_allocated": "NONE",
+    "expected_grants_registered_by_this_mission": 0,
+    "expected_ods_files_touched": 0,
+    "expected_blocking_findings": 0,
+    "expected_unknown_findings": 0,
+    "expected_non_blocking_findings": 5,
+    "expected_node_control_count": 28,
+    "expected_node_control_counts_by_class": {
+      "positive": 9,
+      "negative": 12,
+      "mutation": 7
+    },
+    "expected_inherited_control_count": 10,
+    "expected_node_local_control_count": 18,
+    "expected_nonvacuity_mutations_applied": 16,
+    "expected_nonvacuity_mutations_red": 16,
+    "checks": [
+      "C1 -- ENTITLEMENT_GRANT.target_shape.columns of the parent is a 13-element array; PHYSICAL_TARGET_SHAPE.columns is a 13-element array; the parent_declaration_verbatim of each element equals the corresponding parent element exactly.",
+      "C2 -- ENTITLEMENT_GRANT.target_shape.constraints of the parent is a 6-element array; all six appear verbatim in PHYSICAL_TARGET_SHAPE.constraints.",
+      "C3 -- Every control of the parent test manifest whose description contains the token 'CE-3' is listed in PARENT_MANIFEST_SUBSET, and no control absent that token is listed as node-labelled.",
+      "C4 -- Every probe of the parent REAL_PG_FUTURE_CONTRACT whose node field equals 'CE-3' appears in REAL_PG_NODE_CONTRACT.inherited_parent_probes; the parent has exactly two such probes.",
+      "C5 -- git diff --name-status against the base shows exactly two lines, both 'A', both under docs/ops/commercial/, and no third path.",
+      "C6 -- No file under docs/ops/ods/**, scripts/ods-controller.ts, scripts/ods-scope.ts, tests/ods/ods-controller.test.ts or tests/ods/ods-scope.test.ts appears in this mission's diff.",
+      "C7 -- docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json does NOT exist after this mission, so the filesystem-absence sentinel at tests/ods/ods-scope.test.ts:2473-2475 remains green.",
+      "C8 -- The next symbolic HPO identifier is never adopted as this package's id. Stated WITHOUT spelling that identifier, so that this assertion does not become its own counter-example: the literal occurs EXACTLY ONCE in this authority -- inside FUTURE_PROTECTED_SURFACES_SYMBOLIC.next_hpo_identifier.reconciliation_only, qualified there as a prohibition -- and ZERO times in the companion manifest; and FUTURE_PROTECTED_GRANT_SHAPE.authorityId is the literal string 'UNALLOCATED'. An auditor counting occurrences must expect ONE in this file, not zero, and must confirm that the one is the reconciliation clause. (This wording is itself the correction of a defect caught by this mission's own self-check: the first draft of C8 spelled the identifier and therefore asserted a count its own text falsified.)",
+      "C9 -- The companion manifest's control ids are pairwise disjoint from the parent batch manifest's control ids; the intersection is the empty set.",
+      "C10 -- The companion manifest validates against UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0, and removing any one required control, duplicating any id, or dropping the postgres_requirements object makes it invalid.",
+      "C11 -- db/migrations/ holds 73 .sql files with maximum ordinal 0072, and db/migrations/meta/_journal.json holds 73 entries with maximum idx 72. The two agree.",
+      "C12 -- db/prepared/journal/ holds 86 files and the highest-numbered wrapper's header reads 'Unit 85/85'.",
+      "C13 -- No migration named db/migrations/0073* exists on any ref."
+    ]
+  },
+  "final_state": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_CERTIFICATION_AND_LINEAGE_ALLOCATION",
+  "READY_FOR_CE3_IMPLEMENTATION": "NO_UNTIL_LINEAGE_GRANTED_AND_REGISTERED",
+  "next_gate": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_INDEPENDENT_CERTIFICATION. This package is NOT FOR MERGE until a lane that did not write it certifies it. The lineage allocation that follows is a SEPARATE act by a SEPARATE mission.",
+  "NEGATIVE_CONTROL_NON_VACUITY": {
+    "classification": "PERFORMED. Bounded temporary mutation checks, applied to COPIES in a scratch directory; the repository files were never mutated and their byte identity was asserted by SHA-256 before and after the battery.",
+    "why_this_section_is_not_a_formality": "A validator that never returns an error proves nothing, and a manifest whose checks cannot go red is decoration. The battery below exists to falsify this mission's OWN checkers, not to decorate them.",
+    "battery": {
+      "mutations_applied": 16,
+      "expected_RED": 16,
+      "observed_RED": 16,
+      "observed_GREEN_unsupported": 0,
+      "repository_files_mutated": 0,
+      "byte_identity_after": "CONFIRMED by SHA-256 over the CE-3 authority, the CE-3 manifest and the parent batch manifest, before and after."
+    },
+    "mutations": [
+      "M01 remove ALL negative controls -> RED (schema minItems 1).",
+      "M02 remove ONE authority-required control (CE3-N-1) -> RED (REQUIRED_NODE_CONTROLS comparison).",
+      "M03 duplicate a control id -> RED (uniqueness across arrays).",
+      "M04 drop the real-PG requirement, postgres_requirements -> null -> RED (schema type object; null not admitted).",
+      "M05 drop postgres_disposable_probe from exit_gates -> RED (real-PG requirement dropped).",
+      "M06 drop the required probe_manifest key -> RED (schema required).",
+      "M07 weaken the CE-4 boundary by removing the static control CE3-N-9 -> RED.",
+      "M08 weaken the CE-4 boundary by dropping the runtime probe requirement from postgres_requirements.rationale -> RED.",
+      "M09 widen protected_surfaces to blanket db/prepared/** -> RED.",
+      "M10 widen protected_surfaces to the checkpoint-b0 DIRECTORY -> RED.",
+      "M11 collide a control id with the parent batch manifest's namespace -> RED.",
+      "M12 add an exit gate outside the closed enum of nine -> RED.",
+      "M13 add an unschema'd top-level key -> RED (additionalProperties false).",
+      "M14 add an unschema'd key inside a control object -> RED (additionalProperties false).",
+      "M15 allocate an HPO identifier in FUTURE_PROTECTED_GRANT_SHAPE -> RED.",
+      "M16 declare a probe_count_total disagreeing with the enumeration -> RED."
+    ],
+    "two_vacuities_found_and_closed": {
+      "rule": "The battery's first run produced TWO GREEN results where RED was expected. Both were real defects in this mission's own checkers and BOTH were fixed rather than reported as passes. They are recorded because a battery that only ever reports success is itself the thing it exists to detect.",
+      "V-1": {
+        "mutation": "M02 -- removing one required negative control (CE3-N-1).",
+        "first_result": "GREEN, i.e. VACUOUS.",
+        "cause": "The only floor on control removal was the schema's minItems 1, which a manifest stripped to a single control still satisfies. The authority named some node control ids in prose but did not DECLARE a closed required set, so nothing could detect the removal of one it had not happened to mention.",
+        "fix": "Added REQUIRED_NODE_CONTROLS to this authority: a closed, exhaustive, bidirectional list of the 28 control ids the companion manifest must carry, checked in BOTH directions (no required control missing, and no undeclared control present).",
+        "after": "RED."
+      },
+      "V-2": {
+        "mutation": "M08 -- dropping the runtime CE-4 probe requirement from postgres_requirements.rationale.",
+        "first_result": "GREEN, i.e. VACUOUS.",
+        "cause": "The check searched the WHOLE manifest document for the probe identifier. The identifier also occurs incidentally inside mutation control CE3-M-5's own description, so the search was satisfied by a different occurrence than the one the mutation removed. This is the self-satisfying-search defect: a document-wide containment assertion cannot fail while any copy of the literal survives anywhere.",
+        "fix": "Scoped the assertion to postgres_requirements.rationale -- the field that actually carries the requirement -- rather than to the document.",
+        "after": "RED."
+      }
+    },
+    "honestly_unsupported": {
+      "rule": "Reported rather than manufactured. No fake red test was invented to fill a gap.",
+      "items": [
+        "The SEMANTIC adequacy of the frozen CE-3 contract is NOT self-certified by any mutation here. A mutation battery can prove a checker discriminates; it cannot prove the contract is the right contract. That judgement belongs to the independent certification lane.",
+        "No control here can prove a FUTURE implementation's behaviour. Every control of the companion manifest is a COMMITMENT about tests that do not yet exist, and its non-vacuity can only be demonstrated by the implementing mission, on a real cluster, against real code.",
+        "The checkers used are purpose-written for this mission and live in a scratch directory; they are NOT repository gates and this authority does not claim they are. No repository test validates a test manifest against UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0 at AS_OF_HEAD -- scripts/ods-controller.ts only lists the schema path as immutable-by-convention, it does not consume it. That absence is recorded as an observation about the repository, not as a claim about this package."
+      ]
+    }
+  }
+}
