@@ -1,0 +1,200 @@
+{
+  "manifest_id": "COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json -- the companion node execution authority frozen by mission COMMERCIAL-ACCOUNT-CE3-EXECUTION-AUTHORITY-MATERIALIZATION-R1 at AS_OF_HEAD 46c50304a11d30c28a38ef0541fff4111aa17dbf / tree 066c706c5a4fdc130d9017030f3268295eabe42d / ref origin/integration/commercial-v1. That authority derives from the frozen parent docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json (parent AS_OF_HEAD ccd0680e27560c2dfe5c08e2f69d4f115014466f, an ancestor) and its batch companion docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json, neither of which is edited. SCOPE: this manifest is a NODE commitment covering DAG node CE-3 ('EntitlementGrant relation and explicit evaluator') ONLY. ID NAMESPACE: every control id below is prefixed CE3- and is DISJOINT from the parent batch manifest's P-n / N-n / M-n namespace, so that two documents never claim the same identifier. Where a node control inherits a parent control, the parent id is named inside that control's own description and the inheritance is one-directional -- this manifest never redefines, renumbers or claims a parent id. PRE-IMPLEMENTATION COMMITMENT: no part of CE-3 exists at AS_OF_HEAD. The relation entitlement_grants is absent from db/schema.ts and from every migration; lib/capabilities/ holds exactly contracts.ts and stripe-webhook.ts and contains no entitlement evaluator. Every test_file below is therefore legitimately UNKNOWN, which is the schema's own sanctioned representation for a path that does not yet exist -- naming a file that does not exist would be a fabricated fact, not a stronger commitment. NOT IMPLEMENTABLE YET: this manifest does not become actionable until the CE-3 ODS lineage allocation and the separate protected-grant registration are both integrated. See the authority's ODS_SPLIT_GOVERNANCE.",
+  "dependencies": [
+    "CE-1 (COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0 MIGRATION_DAG node CE-1) -- CLOSED / INTEGRATED, and the ONLY node dependency of CE-3. Measured at AS_OF_HEAD: db/migrations/0068_commercial_account_ce1.sql present; db/schema.ts:23 commercialAccounts; db/schema.ts:83 organizations.commercialAccountId; merged as PR #128, merge commit e7ee106dbd42eeb921d067fd675014e0a055a6dc. Re-verify with pnpm ops:program-state at the implementing base rather than from this line.",
+    "CE-2 -- NOT a dependency of CE-3 and measured ABSENT. The parent DAG gives nodes[CE-3].depends_on = ['CE-1'] and nodes[CE-2].depends_on = ['CE-1'], so CE-2 and CE-3 are siblings over one predecessor. Named here so that CE-2's absence is not mistaken for a blocker.",
+    "CE-3 ODS LINEAGE ALLOCATION -- ABSENT, and BLOCKING for implementation. No ODS maintenance addendum allocating CE-3 exists at AS_OF_HEAD; docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json does not exist and tests/ods/ods-scope.test.ts:2473-2475 asserts that absence. Declaration is a SEPARATE mission's act.",
+    "CE-3 PROTECTED GRANT REGISTRATION -- ABSENT, and BLOCKING for implementation. No grant naming a CE-3 implementation branch is registered in scripts/ods-scope.ts at AS_OF_HEAD. Absent a resolved grant bound to the implementation branch by EXACT string equality, every path in protected_surfaces below is an unconditional protectedViolation. Registration is a SEPARATE mission's act and the implementation writer never self-registers.",
+    "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 (docs/ops/tenancy/) nodes S3, S4 and S7 -- FROZEN, implementation status treated as fail-closed UNKNOWN. S3 and S7 are satisfied for CE-3 by the explicit-organization evaluator (authority SC-3). S4 is the ordering constraint that leaves the RLS policy set unresolved -- see the authority's RLS_SECURITY_CONTRACT.POLICY_SET and OPEN_FINDINGS F-CE3-1. The implementation opening MUST resolve it before writing a policy.",
+    "PREPARED QUOTA CHAIN (db/prepared/stella_0013..stella_0018) -- PREPARED, NOT APPLIED. NOT touched, NOT modified and NOT consumed by CE-3. Named only because CE-5 later projects a grant onto the legacy column this chain reads; CE-3 creates no projection and no writer.",
+    "P1A_FULL_BOOTSTRAP -- UNKNOWN, not re-measured here. Named because the real-PostgreSQL contract of this node rides the hosted baseline chain P1A establishes."
+  ],
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/journal/**",
+    "db/prepared/checkpoint-b0/observation.sql"
+  ],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "A real PostgreSQL probe is MANDATORY for CE-3 and both harness paths are legitimately UNKNOWN, for a reason that is measured rather than asserted. The repository carries TWO admissible shapes at AS_OF_HEAD: some real-PG suites pair a *.pg.test.ts with an explicit *-harness.ts and *.probes.json (b3, b4, b5, fibdb052-p1-indexes, portfolio-aggregate, s3refusal), and others carry no probes.json at all -- including CE-1's own, tests/postgres/ce1-commercial-account.pg.test.ts, which ships with NEITHER a harness file NOR a probes.json. Guessing a path here would therefore have been WRONG for the closest sibling precedent, which is the concrete demonstration that a guess is not a stronger commitment than an honest UNKNOWN. What IS frozen, and what the implementer may not vary: the cluster is DISPOSABLE ONLY, via the repository's disposable-audit path (tests/postgres/disposable-db.ts driven by scripts/db-audit-disposable.ts, gated on UELLIX_PG_TESTS=1) -- NEVER staging, NEVER production, NEVER the canonical local stack; the fixture is TWO CommercialAccounts and THREE Organizations (account X governing OrgA and OrgB, account Y governing OrgC) plus an UNGOVERNED Organization whose commercial_account_id IS NULL, because a single-account fixture cannot express CA-02 and cannot falsify the sibling-visibility or ungoverned-state claims; the non-scoped Organizations must carry REAL entitlement_grants rows, since a probe returning zero rows for want of data proves nothing; probes are executed under SEPARATE LOGIN IDENTITIES and the tenant-facing role's BYPASSRLS and table-ownership status must be ASSERTED, because FORCE ROW LEVEL SECURITY is silently inert for a BYPASSRLS role and for the table owner; and a probe that cannot run is reported SKIPPED, never silently passed. TWELVE probes are required before CE-3 may close: the two the parent assigns to node CE-3 -- PG-4 (the partial unique index refuses a second live grant under CONCURRENT insert, not merely sequentially) and PG-7 (a cross-organization request raises the refusal SQLSTATE rather than returning an empty set) -- plus ten node-local probes enumerated in the authority's REAL_PG_NODE_CONTRACT.node_local_future_probes: PG-CE3-SEC3, PG-CE3-SEC4, PG-CE3-TENANT-ISOLATION, PG-CE3-APPEND-ONLY, PG-CE3-SOURCE-VALIDATION, PG-CE3-LIMIT-VALIDATION, PG-CE3-EFFECTIVE-PERIOD, PG-CE3-EXPLICIT-ORG, PG-CE3-NO-CE4-CONSUMER and PG-CE3-UNGOVERNED. Static reading of SQL text is NOT proof for any of the twelve: partial-index behaviour under concurrency, RLS policy combination, definer GUC resolution, NULL-not-TRUE denial and effective-privilege inheritance are runtime properties. The implementing mission MUST replace both UNKNOWNs with real paths once its harness exists, and MUST NOT close the node with either still UNKNOWN."
+  },
+  "sentinels": [
+    {
+      "id": "SENTINEL_SIBLING_ORG_CANARY_ROW",
+      "purpose": "INHERITED from the parent batch manifest and NARROWED to this node's relation. A uniquely-valued entitlement_grants row planted in OrgB, where OrgB is governed by the SAME CommercialAccount as OrgA. It must never appear in any result set, log line, error payload or aggregate produced by a request scoped to OrgA. Asserting by IDENTITY rather than by row count is the point: a count-based assertion cannot distinguish 'denied' from 'no such row'. The parent plants this fixture for tenant tables at CE-1; here it is planted for entitlement_grants, which did not exist then."
+    },
+    {
+      "id": "SENTINEL_UNGOVERNED_ORG",
+      "purpose": "INHERITED from the parent batch manifest. An Organization whose commercial_account_id IS NULL and which holds no live entitlement grant. Its purpose is to prove that NULL governance is never read as an implicit plan, trial or unlimited state. The parent's own wording makes this evaluator-bound -- 'If any evaluator returns a capability for this fixture, the ungoverned_state rule of ORGANIZATION_RELATION has been violated' -- and the evaluator is CE-3's deliverable, which is why this sentinel belongs to this node as well as to CE-1."
+    },
+    {
+      "id": "SENTINEL_CLOSED_GRANT_ROW",
+      "purpose": "NODE-LOCAL. An entitlement_grants row whose effective_to is already set. Its purpose is to make append-only behaviour assertable rather than merely asserted: any second close, any UPDATE of another column, and any DELETE reaching this row must be REFUSED AT THE STORAGE BOUNDARY, not merely absent from a verb body. It is the entitlement analogue of the parent's SENTINEL_CLOSED_HISTORY_ROW, introduced here because CE-3 creates no history relation and therefore cannot borrow that fixture."
+    }
+  ],
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+  "positive_controls": [
+    {
+      "id": "CE3-P-1",
+      "description": "INHERITS parent P-8 (CE-3 / CA-04). The effective entitlement evaluator answers at the Organization x product-capability boundary and takes an EXPLICIT organization_id argument rather than reading an ambient principal. The EXPLICITNESS is itself the assertion: a signature that permits omitting the Organization is non-conformant even if every current call site passes one, because an evaluator that resolves the Organization implicitly evaluates the wrong tenant the moment tenancy node S7 removes user_single_active_membership. Assert on the SIGNATURE and on a runtime answer for an Organization that is NOT the caller's ambient one.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-P-2",
+      "description": "INHERITS parent P-9 (CE-3). Grant provenance is complete and reconstructible: for any grant at any past instant, source, status-by-period, effective period, reason, actor, commercial-account basis, plan snapshot and metered limit are all readable. Asserted by RECONSTRUCTING A PAST INSTANT -- inserting a grant, closing it, inserting a replacement, then answering what was in force before the close -- and NOT by inspecting the column list. A column census passes on a table nobody can query historically.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-P-3",
+      "description": "INHERITS parent P-0, the batch-wide manifest precondition, which binds EVERY implementing node by its own words ('Each implementing node MUST re-verify applicability with pnpm ops:test-diff at its own base'). The two known_conditions declared above are the only entries in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json at authority time, read directly from that file; both are PRE_EXISTING_DEFERRED. CE-3 DOES add a hosted baseline unit and therefore DOES change the baseline-manifest digest these two fingerprint, so applicability must be re-verified, not assumed. A hosted-baseline-gate failure whose signature does NOT match these two fingerprints is a NEW failure and must fail closed rather than be classified as known. This node coins NO new condition identifier -- a condition is governed only if it exists in that registry.",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+    },
+    {
+      "id": "CE3-P-4",
+      "description": "NODE-LOCAL, derived from authority PHYSICAL_TARGET_SHAPE. The relation entitlement_grants exists with all THIRTEEN provenance columns of the frozen parent target shape -- id, organization_id, capability_key, source, commercial_account_id, plan_ref, limit_kind, limit_value, effective_from, effective_to, reason, actor_user_id, audit_log_id -- each with the parent's nullability, and with the parent's SIX constraints present: the two limit CHECKs, the two source/commercial-basis CHECKs, the effective-period CHECK, and the PARTIAL UNIQUE INDEX on (organization_id, capability_key) WHERE effective_to IS NULL. Assert the ABSENCE of a 'status' column as well as the presence of the thirteen: a relation carrying a status column is not the ratified concept, because status must derive from the effective period.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-P-5",
+      "description": "NODE-LOCAL, derived from authority SC-6. The append-only lifecycle works in its POSITIVE direction: a grant is INSERTed live (effective_to NULL), is CLOSED exactly once by setting effective_to from NULL to a timestamp, and a replacement grant for the same (organization_id, capability_key) is then accepted. This is the control that proves revocation-and-replacement is expressible WITHOUT any UPDATE of the original row's limit, source or basis, and without a DELETE.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-P-6",
+      "description": "NODE-LOCAL, derived from authority SC-9. All THREE metered states are expressible and distinguishable end to end: UNMETERED (limit_value IS NULL), BLOCKED (limit_value IS NULL), and CAPPED (limit_value NOT NULL, >= 0, including the boundary value 0). The evaluator returns them as three DISTINCT outcomes. Assert explicitly that BLOCKED and CAPPED-with-limit_value-0 are DIFFERENT rows and DIFFERENT answers -- collapsing them reintroduces the legacy column's 0-means-blocked overload that limit_kind exists to stop generalising.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-P-7",
+      "description": "NODE-LOCAL, derived from authority SC-7 and SC-8. All FOUR sources are expressible with their correct commercial basis: PLAN and COMMERCIAL_EXCEPTION each with a NOT NULL commercial_account_id, PLATFORM_ADMIN and BOOTSTRAP_DEFAULT each with a NULL one. Asserted as the positive half of the biconditional whose negative half is CE3-N-7, so that the pair pins both directions rather than only the one an implementer is likely to write.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-P-8",
+      "description": "NODE-LOCAL, derived from authority EVALUATOR_CONTRACT.output_shape. The evaluator distinguishes NO_LIVE_GRANT from BLOCKED, and both from REFUSED, as three separate observable outcomes for the same capability_key. NO_LIVE_GRANT is an ANSWER ('nobody decided'), BLOCKED is a DECISION ('decided against'), and REFUSED is not an answer about entitlement at all. Any two of the three collapsing into one outcome fails this control even when each individual answer looks correct.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-P-9",
+      "description": "NODE-LOCAL, derived from authority EVALUATOR_CONTRACT.purity. The evaluator MUTATES NOTHING. Asserted as a row-count and content delta across an evaluation: zero rows of entitlement_grants inserted, updated or deleted, zero audit rows written as a side effect of being asked, no GUC set, and no lazy materialisation of a missing grant. Measured as a DELTA over the whole fixture rather than as a spot check, because a lazily materialised grant would look like a correct answer.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "CE3-N-1",
+      "description": "INHERITS parent N-1 (SEC-6 / CE-3), and is the node's most load-bearing refusal. An entitlement request naming an Organization the caller is not scoped to is REFUSED WITH AN EXPLICIT FAILURE CODE. The assertion is on the FAILURE CODE, never on the absence of data: an empty result and a refusal are indistinguishable to a test that asserts on absence, and an evaluator that quietly substituted the caller's own Organization would return a non-empty and entirely wrong answer that an absence-based test would also pass. MECHANISM CONSTRAINT from the authority (SC-12): the refusal must be raised by an explicit guard, NOT produced by RLS filtering -- a policy that does not match yields an empty set, which does not satisfy this control however identical the visible row count.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-2",
+      "description": "INHERITS parent N-2 (SEC-4 / CE-3). An organization_admin of an Organization with NO live grant for a capability is REFUSED that capability, and the refusal is attributable to the MISSING GRANT rather than to the role. The fixture must actually hold the admin role, so that a role-based explanation is actively EXCLUDED rather than merely absent. Membership does not imply entitlement.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-3",
+      "description": "INHERITS parent N-3 (SEC-3 / CE-3). A live grant for (OrgA, capability) gives a subject with no membership in OrgA zero ability to act in OrgA: no role, no membership, no tenant read. Asserted as a row-count delta of zero on organization_members across the grant insert AND as a denied scoped read by the non-member. Entitlement does not imply authorization.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-4",
+      "description": "INHERITS parent N-6 (MUT-2 / CE-3). A second LIVE grant for the same (organization_id, capability_key) is REFUSED, INCLUDING UNDER CONCURRENT INSERTION, and the refusal comes from the database's partial unique index rather than from an application pre-check. A sequential-only assertion is INSUFFICIENT and does not satisfy this control: a sequential second insert is refused by any implementation, including one whose only guard is an application-side SELECT-then-INSERT, which is precisely what a concurrent pair defeats. Without this the evaluator's answer becomes dependent on row order.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-5",
+      "description": "INHERITS parent N-8 (MUT-4 / CE-3). A grant insert that omits an explicit metered semantic is REFUSED, not silently defaulted to unlimited. This keeps the Stella null-means-unlimited semantic capability-local instead of generalising it to every future capability -- the generalisation the parent prohibits under USAGE_QUOTA_BOUNDARY.null_semantic_prohibition. Extends to the capability catalogue: a capability_key with NO declared metered semantic is REFUSED, never defaulted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-6",
+      "description": "NODE-LOCAL, derived from authority SC-10. The effective-period invariant is enforced by the DATABASE: a grant whose effective_to EQUALS its effective_from is REFUSED (the parent's constraint is a STRICT inequality), and one whose effective_to precedes its effective_from is REFUSED. The equality case is named explicitly because it is the one a non-strict implementation silently admits.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-7",
+      "description": "NODE-LOCAL, derived from authority SC-8. BOTH directions of the commercial-provenance biconditional are enforced by the DATABASE: source PLAN or COMMERCIAL_EXCEPTION with commercial_account_id NULL is REFUSED, and source PLATFORM_ADMIN or BOOTSTRAP_DEFAULT with a NON-NULL commercial_account_id is REFUSED. Both halves are required: implementing only the first admits a PLATFORM_ADMIN grant carrying a commercial basis that never existed, which is the fabrication the parent's backfill control forbids for a manually-quota'd Organization. A fifth source value is also REFUSED.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-8",
+      "description": "NODE-LOCAL, derived from authority SC-6 and RLS_SECURITY_CONTRACT.append_only_mutation_restriction. Append-only is enforced AT THE STORAGE BOUNDARY, not merely by the absence of such a statement in a verb body. Against SENTINEL_CLOSED_GRANT_ROW: a SECOND close is REFUSED; an UPDATE of any column other than the single NULL-to-timestamp transition of effective_to is REFUSED; a DELETE of any grant row is REFUSED. Asserted by issuing the statements directly against the relation, not by calling a verb that declines to issue them.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-9",
+      "description": "NODE-LOCAL, and the mechanical form of the authority's ENFORCEMENT_BOUNDARY_CE4. NOTHING consumes the evaluator before CE-4. At the end of a conformant CE-3 implementation the set of files referencing the evaluator symbol is EXACTLY its defining module plus CE-3's own test files, and the count of NON-TEST consumers outside the defining module is ZERO. This control FAILS if a consumer appears in Stella quota enforcement, Measure access, Portfolio access, organization access, a billing page, an API route, generic capability gating, or selected-organization authentication. SCOPING REQUIREMENT: the sweep runs over the repository at the node's own base and CLASSIFIES each hit; it must not assert a bare zero over a pattern so broad that the zero is vacuous, and it must not be scoped to the implementer's working set.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-10",
+      "description": "NODE-LOCAL. Carries the SEMANTIC CONTENT of parent N-16 to the node where it is mechanically expressible, WITHOUT claiming, re-labelling or renumbering that parent id -- parent N-16 is labelled CE-1 and is claimed by CE-1's own execution authority, yet its assertion requires an evaluator, which exists at no node before CE-3 (authority OPEN_FINDINGS F-CE3-3). Against SENTINEL_UNGOVERNED_ORG, whose commercial_account_id IS NULL and which holds no grant row: the evaluator returns NO_LIVE_GRANT and never a permissive answer. NULL governance is not read as free, trial or unlimited. An implementation that treats an absent account as a permissive default reintroduces CA-05's violation through the back door.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-11",
+      "description": "NODE-LOCAL, derived from authority SC-4 and scoped to this node's NEW relation rather than to the tenant tables the parent's own sibling control covers. A principal scoped to OrgA observes ZERO entitlement_grants rows of OrgB -- including SENTINEL_SIBLING_ORG_CANARY_ROW -- despite OrgA and OrgB being governed by the SAME CommercialAccount, and no commercial identifier appears in any tenant RLS predicate, in the selected-organization carrier, or in the request principal as a result of this node. This falsifies the shared-governance-implies-shared-visibility misreading at the one relation that newly makes it writable, and it is also the control that verifies whichever RLS policy-set resolution the implementation opening chose.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-N-12",
+      "description": "NODE-LOCAL, derived from authority SC-15 and SC-11. Two prohibited couplings are absent from the CE-3 diff and from the resulting database: (a) NO trigger, rule or foreign-key action causes a write to commercial_accounts to create or change a row of entitlement_grants -- such a trigger would recreate the package's central contradiction in a new location, a commercial write silently becoming a runtime capability change with no separate audit and no refusal point; and (b) plan_ref carries NO foreign key to any plan or catalogue relation, so that editing a plan definition cannot retroactively rewrite what an Organization was granted.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "CE3-M-1",
+      "description": "INHERITS parent M-2 (MUT-2). Guarantee: exactly one live grant per (organization_id, capability_key). Mutation: DROP the partial unique index WHERE effective_to IS NULL. Must be caught by CE3-N-4 -- two concurrent grants both commit and the evaluator's answer becomes order-dependent. NON-VACUITY REQUIREMENT: because the mutation is only observable under concurrency, CE3-N-4 must go RED under the CONCURRENT shape, not merely under a sequential retry; a mutation that leaves a sequential-only test green has proven the test worthless rather than the guarantee held.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-M-2",
+      "description": "INHERITS parent M-4 (MUT-4). Guarantee: limit_kind discriminates UNMETERED, BLOCKED and CAPPED. Mutation: remove limit_kind and infer 'unlimited' from limit_value IS NULL. Must be caught by CE3-N-5 and CE3-P-6 -- a grant created without an explicit limit becomes unlimited instead of failing closed, which is precisely the null-semantic generalisation the ratifications forbid.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-M-3",
+      "description": "NODE-LOCAL. Guarantee: a cross-organization request FAILS CLOSED with an explicit failure code. Mutation: replace the explicit cross-organization guard with reliance on row-level security filtering, so the request returns an EMPTY SET instead of raising. Must be caught by CE3-N-1. This is the highest-value node-local mutation control, because the mutated implementation returns the same visible row count as the correct one and passes any assertion written on absence -- which is exactly why the parent's SEC-6 requires the assertion to be on the failure code.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-M-4",
+      "description": "NODE-LOCAL. Guarantee: the evaluator takes an EXPLICIT organization_id. Mutation: make the organization argument optional and fall back to the caller's ambient principal or first active membership when it is omitted. Must be caught by CE3-P-1 and PG-CE3-EXPLICIT-ORG. Recorded because the mutated form passes every single-membership fixture and breaks silently -- evaluating the wrong tenant rather than failing -- the moment tenancy S7 removes user_single_active_membership.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-M-5",
+      "description": "NODE-LOCAL. Guarantee: nothing consumes the evaluator before CE-4. Mutation: wire the evaluator into any one runtime path -- a quota check, an API route, a capability gate or the selected-organization principal. Must be caught by CE3-N-9 and by PG-CE3-NO-CE4-CONSUMER. Recorded because this is the most plausible 'helpful' edit an implementer would reach for on seeing a finished evaluator with no callers, and because the boundary is not incompleteness: it is the property that makes CE-3 safe to land before tenancy S3 and S7.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-M-6",
+      "description": "NODE-LOCAL. Guarantee: grant rows are append-only, closable exactly once. Mutation: permit an UPDATE of a closed row, or a DELETE of any row, by removing the storage-boundary guard and leaving only the verb's own restraint. Must be caught by CE3-N-8 against SENTINEL_CLOSED_GRANT_ROW. Recorded because a past entitlement state becomes rewritable while every other assertion in the suite still passes -- the reconstructibility requirement fails silently, which is the same failure shape the parent records for the sibling history relation.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "CE3-M-7",
+      "description": "NODE-LOCAL. Guarantee: commercial provenance is a biconditional -- a commercial basis is required exactly when the source is commercial, and prohibited otherwise. Mutation: delete the second CHECK, keeping only 'PLAN or COMMERCIAL_EXCEPTION implies commercial_account_id IS NOT NULL'. Must be caught by CE3-N-7's second half. Recorded because this is the half an implementer omits by default: the surviving constraint looks complete, the table still refuses the obvious bad row, and yet a PLATFORM_ADMIN grant can now carry a commercial basis that never existed.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
