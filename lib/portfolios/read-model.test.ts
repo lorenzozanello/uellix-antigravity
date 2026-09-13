@@ -235,6 +235,14 @@ const CONTEXT_OPENERS = [
   'withOptionalDatabaseIdentityContext',
   'withDatabaseIdentityContext',
   'withAccountAcceptanceDischargeContext',
+  // L1 (HPO-ODS-W2-29) -- the ORGANIZATION-scoped acceptance discharge
+  // boundary. THIS IS A SECOND, INDEPENDENT COPY of the opener list; the other
+  // lives in tests/database-runtime-entrypoints.test.ts. Registering an opener
+  // in one and not the other leaves the two scanners DISAGREEING about the
+  // same module -- which is exactly what happened here first: the regex layer
+  // counted these two modules as contextualized while this AST layer still
+  // counted them as merely database-reaching, and only the quadruple caught it.
+  'withOrganizationAcceptanceDischargeContext',
 ] as const
 
 const ALLOWLIST: Record<string, string> = {
@@ -383,7 +391,14 @@ describe('NEG-PF3-ARCH-1 — components/portfolios/** does not move the AST entr
   // testTimeout. An explicit per-test timeout is the correct fix: this is a
   // slow REAL scan, not a hang, and the assertions below are otherwise
   // unchanged.
-  it('the real scanner reports the 147/123/106/17 quadruple (CL-1 +2 checked/reaching/contextualized, allowlisted unchanged), with components/portfolios/** populated', () => {
+  // L1 (HPO-ODS-W2-29) adds app/(public)/accept-commercial-terms/{page.tsx,
+  // actions.ts}, both CONTEXTUALIZED through the L1 discharge boundary, which
+  // is registered in BOTH opener lists -- the one above and the one in
+  // tests/database-runtime-entrypoints.test.ts. The quadruple MOVES by
+  // +2/+2/+2/0; `allowlisted` is unchanged,
+  // which is the half of this control that matters here — NEG-PF3-ARCH-1 is
+  // about components/portfolios/** not moving the pins, and it still does not.
+  it('the real scanner reports the 149/125/108/17 quadruple (L1 +2 checked/reaching/contextualized, allowlisted unchanged), with components/portfolios/** populated', () => {
     const scanner = new EntrypointScanner({
       root: ROOT,
       scanDirs: ['app', 'components', 'lib', 'db'],
@@ -407,7 +422,7 @@ describe('NEG-PF3-ARCH-1 — components/portfolios/** does not move the AST entr
       databaseReaching: result.databaseReaching.length,
       contextualized,
       allowlisted,
-    }).toEqual({ checkedModules: 147, databaseReaching: 123, contextualized: 106, allowlisted: 17 })
+    }).toEqual({ checkedModules: 149, databaseReaching: 125, contextualized: 108, allowlisted: 17 })
 
     const portfoliosFiles = walkFiles(COMPONENTS_PORTFOLIOS_DIR)
     expect(portfoliosFiles.length).toBeGreaterThan(0)

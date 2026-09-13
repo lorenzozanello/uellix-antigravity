@@ -1552,6 +1552,68 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       unguardedPolicyCreateCount: 0,
     },
   },
+  // L1 ORGANIZATION_COMMERCIAL_ACCEPTANCE (HPO-ODS-W2-29): CREATE TABLE
+  // organization_commercial_acceptances (T4), the ORGANIZATION-class
+  // counterpart of 0070's account-class T3. TENANT DATA, so RLS is ENABLED
+  // AND FORCED and the SELECT predicate is organization membership rather
+  // than subject identity. TWO policies, TWO triggers (one reusing
+  // uellix_forbid_mutation() from 0030, one new cross-table invariants
+  // function), ONE new function.
+  //
+  // THE ONE THING THIS UNIT DELIBERATELY DOES NOT DO, and the material way
+  // its surface is SMALLER than its CL-1 sibling's: it adds NO audit_logs
+  // INSERT policy. L1's acceptance audit row is TENANT-SCOPED, so the
+  // PRE-EXISTING 0042 audit_logs_insert_member_or_admin policy admits it on
+  // its first disjunct. CL-1 needed a fourth policy only because ITS row is
+  // ORG-LESS. The audit_logs INSERT policy count stays at THREE and 0042,
+  // 0067 and 0070's clauses are byte-unchanged.
+  {
+    ordinal: 85,
+    id: '0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
+    kind: D,
+    file: 'db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
+    sha256: 'e012b971e4c034fc6a893d9093653d0c40d5aab036ceb3e942e5a8847653d084',
+    dependsOn: [
+      '0071_customer_lifecycle_cl1_content_bytes.sql',
+      '0070_customer_lifecycle_cl1_legal_acceptance.sql',
+      '0030_immutability.sql',
+      '0031_rls_core.sql',
+    ],
+    dml: 'none',
+    managed: 'A-hosted-compatible',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'L1: CREATE TABLE organization_commercial_acceptances (T4), tenant data. RLS ENABLED AND FORCED. ' +
+      'Two policies -- an organization-member SELECT through current_user_org_ids(), and an INSERT ' +
+      'whose three conjunctive conditions are accepted_by_user_id = auth.uid(), an ACTIVE membership ' +
+      'in the row own organization, and current_user_role_in_org(organization_id) = organization_admin ' +
+      'by EXACT EQUALITY. No UPDATE/DELETE policy (append-only). Two triggers: the append-only guard ' +
+      'reusing uellix_forbid_mutation() (0030), and one new BEFORE INSERT function enforcing the ' +
+      'cross-table invariants no CHECK constraint can express -- ORGANIZATION instrument class, ' +
+      'digest agreement, instrument_key agreement, and the acting subject exact active ' +
+      'organization_admin role. The new function is REVOKEd from PUBLIC per the 0033/0061/0070 ' +
+      'precedent. NO audit_logs policy is added and none is edited. NO current_user_is_super_admin(), ' +
+      'no hasRole comparison and no ROLE_HIERARCHY reference anywhere in the unit.',
+    rollback:
+      'Forward-only: CREATE TABLE/ADD CONSTRAINT/CREATE INDEX have no IF NOT EXISTS guard and no ' +
+      'reverse script, recovered by DESTROY_AND_REPROVISION. The two CREATE POLICY and two CREATE ' +
+      'TRIGGER statements are individually idempotent (guarded DROP IF EXISTS first).',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 2,
+      functionsCreatedCount: 1,
+      triggersCreatedCount: 2,
+      unguardedPolicyCreateCount: 0,
+      dmlStatementCount: 0,
+      // Pins the EXACT predicate TEXT of both policies. A later edit that
+      // introduced a super-admin disjunct, a hierarchy comparison, or an
+      // ambient (rather than row-parameterised) role lookup would move this
+      // digest -- which is what corroborates sentinel
+      // S-L1-NO-SUPERADMIN-DISJUNCT beyond reading the migration by eye.
+      securitySurfaceDigest: 'd869afc53842274b3707cfbd0d5d63c405593fe0c485b94654937bc1028a3237',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

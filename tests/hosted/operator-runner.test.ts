@@ -240,7 +240,9 @@ describe('unit source verification', () => {
     // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 = 82.
     // CL-1 (HPO-ODS-W2-28): + 0070_customer_lifecycle_cl1_legal_acceptance.sql = 83.
     // CL-1 presentation-binding repair: + 0071_customer_lifecycle_cl1_content_bytes.sql = 84.
-    expect(BASELINE_UNITS).toHaveLength(84)
+    // L1 organization commercial acceptance (HPO-ODS-W2-29): +
+    // 0072_customer_lifecycle_l1_organization_commercial_acceptance.sql = 85.
+    expect(BASELINE_UNITS).toHaveLength(85)
     for (const u of BASELINE_UNITS) expect(u.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 })

@@ -86,6 +86,21 @@ vi.mock('@/lib/auth/legal-acceptance', () => ({
   ACCEPT_LEGAL_PATH: '/accept-legal',
 }))
 
+// L1 (HPO-ODS-W2-29) — mocked at EXACTLY the seam the L0 mock above uses: the
+// DERIVATION, not the enforcement. The real session.ts / database-context.ts
+// wiring stays under test; only the organisation-scoped currency QUERY is
+// replaced, so this suite needs no organization_commercial_acceptances rows.
+// EXPLICIT, never defaulted — an L1 stub that resolved `true` by omission
+// would be the permissive-default shape X-B-03 forbids. L1's own refusal
+// behaviour is proven in
+// tests/auth/organization-commercial-acceptance-enforcement.test.ts.
+const mockDeriveOrganizationAcceptanceCurrent = vi.fn(async (_organizationId: string) => true)
+vi.mock('@/lib/auth/organization-commercial-acceptance', () => ({
+  deriveOrganizationAcceptanceCurrent: (organizationId: string) =>
+    mockDeriveOrganizationAcceptanceCurrent(organizationId),
+  ACCEPT_COMMERCIAL_TERMS_PATH: '/accept-commercial-terms',
+}))
+
 /* -------------------------------------------------------------------------- */
 /* The mechanism, mocked to a pass-through — real transaction/claims/rollback  */
 /* coverage lives in tests/authenticated-database-context.test.ts (LIVE-gated) */

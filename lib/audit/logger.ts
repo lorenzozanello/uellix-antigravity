@@ -47,6 +47,28 @@ export const AUDIT_ACTIONS = {
   // digest, the subject and the timestamp (AUDIT.THE_CONTENT_LEAK_PROHIBITION).
   LEGAL_ACCOUNT_INSTRUMENT_ACCEPTED: 'legal.account_instrument_accepted',
 
+  // L1 (HPO-ODS-W2-29) -- ORGANIZATION-class commercial-instrument acceptance
+  // (AB-3). The LITERAL is PINNED by
+  // docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0.json
+  // AUDIT_AUTHORITY.AUDIT_VERB; only this KEY name was implementation-defined,
+  // and it is chosen by symmetry with its account-class sibling above. TWO dot
+  // separated segments, conforming to the canonical shape by a 110-to-2 margin.
+  //
+  // Unlike the sibling, this row IS TENANT-SCOPED and CARRIES organization_id
+  // -- so it is admitted by the PRE-EXISTING 0042 audit_logs_insert_member_or_
+  // admin policy on its first disjunct, and db/migrations/0072 adds NO fourth
+  // audit_logs INSERT policy (R-L1-12, mutation MUT-L1-add-a-fourth-audit-policy).
+  //
+  // The row MUST NOT carry instrument text, body, excerpt or rendered markup
+  // in before_json, after_json or any other column -- only instrument_key, the
+  // version, the content digest, the organization and the timestamp (X-AO-05,
+  // sentinel S-L1-NO-INSTRUMENT-TEXT-IN-AUDIT). No IP address, user agent,
+  // device or fingerprint either.
+  //
+  // A GATE REFUSAL EMITS NO ROW AT ALL (AUDIT_AUTHORITY.WHAT_MUST_NOT_BE_
+  // AUDITED.refusals, exception_conditions NONE).
+  LEGAL_ORGANIZATION_INSTRUMENT_ACCEPTED: 'legal.organization_instrument_accepted',
+
   // Signup allowlist
   SIGNUP_ALLOWLIST_CREATED: 'signup_allowlist.created',
   SIGNUP_ALLOWLIST_REMOVED: 'signup_allowlist.removed',

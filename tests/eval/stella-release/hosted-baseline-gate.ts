@@ -420,7 +420,7 @@ export function buildHostedBaselineGateEvidence(
     // = 84 baseline units + 1 journal bootstrap step = 85.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 85 &&
+      firstProvisioning.steps.length === 86 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -448,7 +448,7 @@ export function evaluateHostedBaselineGates(
   // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 = 82.
   // CL-1 (HPO-ODS-W2-28): + 0070_customer_lifecycle_cl1_legal_acceptance.sql = 83.
   // CL-1 presentation-binding repair: + 0071_customer_lifecycle_cl1_content_bytes.sql = 84.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 84
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 85
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

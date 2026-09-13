@@ -105,25 +105,28 @@ describe('S1 migration — exactly the authorized DDL, one scanner-visible struc
   // followed it. The pin is RETARGETED to S1's own position with ALL FIVE
   // displacing units NAMED, so a SIXTH, unannounced displacement still fails
   // here. It is not relaxed into "somewhere in the list".
-  it('has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit, then exactly the CE-1 unit, then exactly the FIBDB-052 P1 index unit, then exactly the CL-1 legal-acceptance unit, then exactly the CL-1 content-bytes unit', () => {
-    const S3_UNIT_ID = '0067_tenancy_refusal_audit_insert_policy.sql'
-    const CE1_UNIT_ID = '0068_commercial_account_ce1.sql'
-    const P1_UNIT_ID = '0069_fib_fibdb052_p1_indexes.sql'
-    const CL1_UNIT_ID = '0070_customer_lifecycle_cl1_legal_acceptance.sql'
-    const CL1B_UNIT_ID = '0071_customer_lifecycle_cl1_content_bytes.sql'
+  // L1 (HPO-ODS-W2-29) adds a SIXTH displacing unit, 0072. Retargeted to S1's
+  // OWN position with every displacer NAMED IN ORDER, exactly as each prior
+  // wave did. Not loosened: the list is compared by EQUALITY, so a removed,
+  // reordered or renamed displacer still turns this RED.
+  it('has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit, then the CE-1 unit, then the FIBDB-052 P1 index unit, then the CL-1 legal-acceptance unit, then the CL-1 content-bytes unit, then the L1 organization-commercial-acceptance unit', () => {
+    const DISPLACERS = [
+      '0067_tenancy_refusal_audit_insert_policy.sql',
+      '0068_commercial_account_ce1.sql',
+      '0069_fib_fibdb052_p1_indexes.sql',
+      '0070_customer_lifecycle_cl1_legal_acceptance.sql',
+      '0071_customer_lifecycle_cl1_content_bytes.sql',
+      '0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
+    ]
     const files = readdirSync(path.join(ROOT, 'db/migrations')).filter((f) => f.endsWith('.sql')).sort()
-    expect(files[files.length - 6]).toBe(S1_UNIT.id)
-    expect(files[files.length - 5]).toBe(S3_UNIT_ID)
-    expect(files[files.length - 4]).toBe(CE1_UNIT_ID)
-    expect(files[files.length - 3]).toBe(P1_UNIT_ID)
-    expect(files[files.length - 2]).toBe(CL1_UNIT_ID)
-    expect(files[files.length - 1]).toBe(CL1B_UNIT_ID)
+    expect(files[files.length - DISPLACERS.length - 1]).toBe(S1_UNIT.id)
+    expect(files.slice(files.length - DISPLACERS.length)).toEqual(DISPLACERS)
     const journal = JSON.parse(read('db/migrations/meta/_journal.json')) as { entries: { idx: number; tag: string }[] }
     const own = journal.entries.find((e) => `${e.tag}.sql` === S1_UNIT.id)
     expect(own).toBeDefined()
     expect(existsSync(path.join(ROOT, `db/migrations/meta/${String(own!.idx).padStart(4, '0')}_snapshot.json`))).toBe(true)
     const last = journal.entries[journal.entries.length - 1]
-    expect(`${last.tag}.sql`).toBe(CL1B_UNIT_ID)
+    expect(`${last.tag}.sql`).toBe(DISPLACERS[DISPLACERS.length - 1])
     expect(last.idx).toBe(journal.entries.length - 1)
     expect(existsSync(path.join(ROOT, `db/migrations/meta/${String(last.idx).padStart(4, '0')}_snapshot.json`))).toBe(true)
   })

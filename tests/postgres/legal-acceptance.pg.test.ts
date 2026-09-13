@@ -360,10 +360,22 @@ describe.skipIf(!PG_TESTS_ENABLED)('CL-1 legal acceptance — real PostgreSQL (c
   // above it. Retargeted the same way S1's own displacement control is
   // (tests/tenancy/s1-founder-traceability.test.ts): to 0070's own position
   // with the ONE displacing unit named, not to "the tail".
-  it('the CL-1 unit is displaced from the top by exactly the CL-1 content-bytes unit', () => {
+  //
+  // L1 (HPO-ODS-W2-29) EXTENDS THE DISPLACEMENT BY ONE MORE UNIT:
+  // 0072_customer_lifecycle_l1_organization_commercial_acceptance.sql was
+  // appended above 0071. Retargeted the same way again — to 0070's OWN
+  // position with BOTH displacing units NAMED IN ORDER, never to "the tail"
+  // and never loosened to a containment or an inequality. The assertion is as
+  // exact after this move as before it: it still fails if 0070 drifts to any
+  // other position, and it now additionally fails if either displacing unit is
+  // removed, reordered or renamed.
+  it('the CL-1 unit is displaced from the top by exactly the CL-1 content-bytes unit and the L1 unit', () => {
     const index = BASELINE_UNITS.indexOf(CL1_UNIT!)
-    expect(index).toBe(BASELINE_UNITS.length - 2)
-    expect(BASELINE_UNITS[BASELINE_UNITS.length - 1].id).toBe('0071_customer_lifecycle_cl1_content_bytes.sql')
+    expect(index).toBe(BASELINE_UNITS.length - 3)
+    expect(BASELINE_UNITS.slice(index + 1).map((u) => u.id)).toEqual([
+      '0071_customer_lifecycle_cl1_content_bytes.sql',
+      '0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
+    ])
   })
 
   it(`the harness provisioned the full baseline (${BASELINE_UNITS.length} units, CL-1 included) and tore itself down with zero leftovers`, () => {

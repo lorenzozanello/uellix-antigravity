@@ -38,6 +38,7 @@ import { getVerifiedAuthIdentity } from './identity'
 import {
   loadRequestPrincipal,
   listSelectableMemberships,
+  isOrganizationAcceptanceCurrent,
   withOptionalDatabaseIdentityContext,
   withOrganizationDatabaseContext,
   withSuperAdminDatabaseContext,
@@ -51,6 +52,11 @@ import {
 import { clearSelectedOrganization } from './selected-organization'
 import { VERIFY_EMAIL_PATH } from './email-verification'
 import { ACCEPT_LEGAL_PATH } from './legal-acceptance'
+// L1 (HPO-ODS-W2-29) — a NEW named destination constant, exported from ONE
+// module and DISTINCT from ACCEPT_LEGAL_PATH above. The two gates have
+// different accepting principals and different affordances; reusing the L0
+// path would present the wrong instrument to the wrong actor.
+import { ACCEPT_COMMERCIAL_TERMS_PATH } from './organization-commercial-acceptance'
 import type { Role } from './roles'
 import { hasRole } from './permissions'
 
@@ -296,6 +302,34 @@ export const requireOrganizationAccess = cache(async (): Promise<OrganizationCon
     redirect('/app/onboarding')
   }
 
+  // ---------------------------------------------------------------------
+  // L1 — ENFORCEMENT SURFACE 1 of 4 (HPO-ODS-W2-29). REDIRECT flavour.
+  // ---------------------------------------------------------------------
+  // HERE and nowhere above: AFTER the whole Packet A block, on the branch
+  // where membership AND organization are both non-null, immediately before
+  // the return. This is the ONLY point at which an organisation is in scope
+  // AND Packet A has already produced its destination.
+  //
+  // L1 IS A SUFFIX, NOT A PREFIX — the opposite of B0 and L0 above. Its
+  // predicate NAMES an organisation, so before Packet A has resolved a scope
+  // there is no organisation to name and L1 is UNDEFINED, not false. A check
+  // placed above R2 or R3 would refuse every subject at the SELECTOR — the
+  // very place they go to ACQUIRE a scope — producing a lockout
+  // indistinguishable from a loop (NO_SCOPE_BEHAVIOUR / FC_5; mutation
+  // M-AO-8). With no organisation in scope this line is never reached and NO
+  // acceptance query is issued at all, which is what N-AO-13 asserts BY
+  // ABSENCE rather than by outcome.
+  //
+  // THE REFUSAL WRITES NOTHING. No carrier write, clear or rotation; no
+  // fallback to another membership; no listSelectableMemberships call; no
+  // audit row; no entitlement evaluation; and no disclosure of which
+  // instrument or version is outstanding (ATTACHMENT_TOPOLOGY
+  // .REFUSAL_DESTINATION.PROHIBITED_SIDE_EFFECTS_OF_THE_REFUSAL). `redirect`
+  // throws, so nothing after it runs.
+  if (!(await isOrganizationAcceptanceCurrent(principal))) {
+    redirect(ACCEPT_COMMERCIAL_TERMS_PATH)
+  }
+
   return {
     user: principal.user,
     membership: principal.membership,
@@ -341,6 +375,21 @@ export const getCurrentOrganizationContext = cache(
       !principal.emailVerified ||
       !principal.accountAcceptanceCurrent
     ) {
+      return null
+    }
+
+    // L1 — ENFORCEMENT SURFACE 2 of 4 (HPO-ODS-W2-29). NULL flavour.
+    //
+    // An ADDED CONJUNCT of the SAME refusal above, evaluated after it because
+    // it needs `principal.organization` to be non-null. `null` already means
+    // "no context can be built", so an organisation that is not current on
+    // its required commercial instruments folds into exactly that shape and
+    // every existing `if (!ctx)` caller — all four Route Handlers included —
+    // refuses it for free.
+    //
+    // THIS SURFACE IS NOT TURNED INTO A REDIRECTING OR THROWING ONE. Its
+    // contract is non-redirecting and those four Route Handlers depend on it.
+    if (!(await isOrganizationAcceptanceCurrent(principal))) {
       return null
     }
 

@@ -56,7 +56,12 @@ import { getVerifiedAuthIdentityResult, type AuthIdentityFailure } from './ident
 // acceptance currency (S-AO-PREDICATE-CARDINALITY). Consulted here, once,
 // alongside the emailVerified propagation, and never re-derived downstream.
 import { deriveAccountAcceptanceCurrent } from './legal-acceptance'
-import { isValidRole, type Role } from './roles'
+import { deriveOrganizationAcceptanceCurrent } from './organization-commercial-acceptance'
+// ROLES only — deliberately NOT `hasRole` from ./permissions, and never
+// ROLE_HIERARCHY. L1's accepting-role predicate is EXACT EQUALITY on the
+// literal; a threshold would admit a membership row carrying super_admin
+// (F-AO-18, RAT-AO-01 AO1_C6).
+import { isValidRole, ROLES, type Role } from './roles'
 // S3 (docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json
 // REQUEST_PRINCIPAL): the ONLY read of the S2 carrier's VALUE anywhere in the
 // authorization surface. Import direction is database-context -> carrier,
@@ -200,6 +205,21 @@ export type AuthContextErrorCode =
   // (B0_PRESERVATION.REQUIRED) — this is thrown only once emailVerified is
   // already true.
   | 'AUTH_LEGAL_ACCEPTANCE_REQUIRED'
+  // L1 (HPO-ODS-W2-29) — ORGANIZATION_COMMERCIAL_ACCEPTANCE. A verified,
+  // L0-accepted subject inside a RESOLVED organization scope whose
+  // ORGANIZATION is not current on every required ORGANIZATION-class
+  // instrument. DISTINCT from AUTH_LEGAL_ACCEPTANCE_REQUIRED — binding, per
+  // ATTACHMENT_TOPOLOGY.REFUSAL_DESTINATION.throw_flavour — because the two
+  // gates have different accepting principals and different destinations, and
+  // a shared code would route the wrong actor to the wrong instrument.
+  // Deliberately in the AUTH_ family and mapped to 403, never 401.
+  | 'AUTH_ORGANIZATION_LEGAL_ACCEPTANCE_REQUIRED'
+  // L1 (HPO-ODS-W2-29) — the L1 DISCHARGE boundary's eligibility refusal. The
+  // accepting principal is an ACTIVE membership whose role is EXACTLY
+  // organization_admin; every other role, INCLUDING a membership row carrying
+  // super_admin, is refused with this code. Never a hierarchy threshold
+  // (RAT-AO-01 AO1_C6, F-AO-18).
+  | 'AUTH_ORGANIZATION_ADMIN_REQUIRED'
 
 export class AuthContextError extends Error {
   readonly name = 'AuthContextError'
@@ -231,6 +251,11 @@ export function authContextErrorStatus(code: AuthContextErrorCode): number {
     case 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER':
     case 'AUTH_EMAIL_NOT_VERIFIED':
     case 'AUTH_LEGAL_ACCEPTANCE_REQUIRED':
+    // L1 — 403, NEVER 401: the session is valid and verified; what is missing
+    // is the organization's commercial acceptance, not the caller's identity.
+    // Telling a signed-in, verified subject to sign in again is a loop.
+    case 'AUTH_ORGANIZATION_LEGAL_ACCEPTANCE_REQUIRED':
+    case 'AUTH_ORGANIZATION_ADMIN_REQUIRED':
       return 403
   }
 }
@@ -732,6 +757,136 @@ function assertPrincipalGates(principal: RequestPrincipal): RequestPrincipal {
   return assertAccountAcceptanceCurrentPrincipal(assertEmailVerifiedPrincipal(principal))
 }
 
+/* -------------------------------------------------------------------------- */
+/* L1 — ORGANIZATION_COMMERCIAL_ACCEPTANCE (HPO-ODS-W2-29)                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Whether the SELECTED organization is current on every required
+ * ORGANIZATION-class instrument.
+ *
+ * L1 IS NOT A PROPERTY OF A PRINCIPAL, so this is NOT a field on
+ * RequestPrincipal and there is no `organizationAcceptanceCurrent` anywhere on
+ * the bare principal path (COMMERCIALACCOUNT_AND_ENTITLEMENT_BOUNDARY
+ * .NO_BARE_PRINCIPAL_FIELD, binding; control TOPO-no-bare-principal-field;
+ * mutation MUT-L1-attach-to-the-principal-path). It is a property of a
+ * principal AND an organization, so it is derived HERE, where an organization
+ * is already resolved, and nowhere earlier. A principal-level field would
+ * additionally have to carry SOME value for a subject with no scope, and
+ * every available value is wrong: `true` is a bypass, `false` is the FC_5
+ * lockout, `null` invites an implementer to coerce it.
+ *
+ * It opens (or reuses) an ORGANIZATION-SCOPED identity context so the
+ * currency read is RLS-scoped to that organization. Reusing an already-bound
+ * context matters: `withOrganizationDatabaseContext` evaluates L1 BEFORE it
+ * opens its own, and db/identity-context.ts refuses a nested context with a
+ * different identity rather than silently reusing or double-committing one.
+ *
+ * NOT MEMOISED, deliberately, when a custom client is supplied: `cache()` is
+ * keyed on arguments, and memoising across two different database clients
+ * would hand a test the other client's answer.
+ */
+async function resolveOrganizationAcceptanceCurrent(
+  principal: RequestPrincipal & { organization: Organization },
+  options: DatabaseContextOptions
+): Promise<boolean> {
+  const organizationId = principal.organization.id
+
+  const bound = getBoundDatabaseContext()
+  if (
+    bound !== undefined &&
+    bound.identity.userId === principal.user.id &&
+    bound.identity.organizationId === organizationId
+  ) {
+    return deriveOrganizationAcceptanceCurrent(organizationId)
+  }
+
+  if (options.client === undefined) {
+    return loadOrganizationAcceptanceCurrent(
+      principal.user.id,
+      organizationId,
+      principal.user.isSuperAdmin
+    )
+  }
+
+  return withDatabaseIdentityContext(
+    { userId: principal.user.id, organizationId, isSuperAdmin: principal.user.isSuperAdmin },
+    () => deriveOrganizationAcceptanceCurrent(organizationId),
+    options
+  )
+}
+
+/**
+ * The per-request memo for the default-client path, keyed on PRIMITIVES so
+ * React `cache()` can actually hit. A page that transits
+ * `requireOrganizationAccess` and then `withOrganizationDatabaseContext` asks
+ * the same question twice; this makes it one round trip.
+ *
+ * FAIL-CLOSED: nothing here catches. A currency-query failure propagates,
+ * exactly as it does on the account side (FAIL_CLOSED.FC_6) — a permissive
+ * catch converting a failure into `true` is the single most effective way to
+ * defeat this model and is invisible to every positive test.
+ */
+const loadOrganizationAcceptanceCurrent = cache(
+  async (userId: string, organizationId: string, isSuperAdmin: boolean): Promise<boolean> =>
+    withDatabaseIdentityContext(
+      { userId, organizationId, isSuperAdmin },
+      () => deriveOrganizationAcceptanceCurrent(organizationId)
+    )
+)
+
+/**
+ * L1 for a principal that already carries a resolved organization, as a
+ * BOOLEAN — the shape the two NULL-flavoured and the one REDIRECT-flavoured
+ * surfaces need. The THROW-flavoured surface uses
+ * `assertOrganizationAcceptanceCurrent` below.
+ *
+ * Exported so lib/auth/session.ts's two routing producers can evaluate the
+ * SAME predicate from the SAME module. There is exactly one L1 derivation
+ * (lib/auth/organization-commercial-acceptance.ts) and exactly one place that
+ * binds it to a resolved context — this one.
+ */
+export async function isOrganizationAcceptanceCurrent(
+  principal: RequestPrincipal,
+  options: DatabaseContextOptions = {}
+): Promise<boolean> {
+  if (!principal.organization) {
+    // NO ORGANIZATION IN SCOPE -> L1 IS NOT EVALUATED. This branch must never
+    // be reached with a null organization by any of the four surfaces, which
+    // all check membership/organization first; it exists so that a future
+    // caller cannot accidentally turn "undefined" into "false".
+    throw new Error(
+      'isOrganizationAcceptanceCurrent: called without a resolved organization. L1 is UNDEFINED ' +
+        'with no organization in scope (NO_SCOPE_BEHAVIOUR, FC_5) — it is NOT false, and the ' +
+        'question must not be asked here.'
+    )
+  }
+  return resolveOrganizationAcceptanceCurrent(
+    principal as RequestPrincipal & { organization: Organization },
+    options
+  )
+}
+
+/**
+ * THE THROW FLAVOUR. Bound to the RESULT of organization resolution, never to
+ * one resolution branch — the memo-trap class CL-1's MUT-CL1-2 guards on the
+ * principal path.
+ */
+async function assertOrganizationAcceptanceCurrent(
+  principal: RequestPrincipal & { organization: Organization },
+  options: DatabaseContextOptions
+): Promise<void> {
+  if (await resolveOrganizationAcceptanceCurrent(principal, options)) return
+  // The organization is NOT named in the message and neither is the
+  // instrument or the version: a refusal must disclose no tenancy shape,
+  // instrument identity, version identity or acceptance history (X-L1-05).
+  throw new AuthContextError(
+    'AUTH_ORGANIZATION_LEGAL_ACCEPTANCE_REQUIRED',
+    'The session is valid, verified and accepted, but the organisation in scope is not current ' +
+      'on every required organisation-class instrument.'
+  )
+}
+
 async function requirePrincipal(options: DatabaseContextOptions): Promise<RequestPrincipal> {
   // The memo is consulted first so a page that opens several contexts pays for
   // one GoTrue round trip and one unscoped transaction, not several.
@@ -926,6 +1081,19 @@ export async function withOrganizationDatabaseContext<T>(
     )
   }
 
+  // L1 — ENFORCEMENT SURFACE 3 of 4 (HPO-ODS-W2-29), THROW flavour.
+  //
+  // HERE and not earlier: AFTER the membership/organisation refusal and AFTER
+  // the explicit requested-organisation equality check, so the organisation
+  // L1's predicate names is the one this request is actually scoped to — and
+  // BEFORE the scoped context is opened, so an L1 refusal never opens and
+  // abandons a transaction. An L1 check placed above the refusal above would
+  // evaluate a predicate with no argument.
+  await assertOrganizationAcceptanceCurrent(
+    principal as RequestPrincipal & { organization: Organization },
+    options
+  )
+
   const context: OrganizationContext = {
     user: principal.user,
     membership: principal.membership,
@@ -998,6 +1166,131 @@ export async function withOptionalDatabaseIdentityContext<T>(
     !principal.accountAcceptanceCurrent
   ) {
     return callback(null)
+  }
+
+  // L1 — ENFORCEMENT SURFACE 4 of 4 (HPO-ODS-W2-29), NULL flavour, DEFENSE IN
+  // DEPTH ONLY. An added conjunct of the SAME callback(null) refusal above,
+  // evaluated after it because it needs `principal.organization` to be
+  // non-null. It INHERITS the C7 sentinel restated above and carries its own,
+  // S-L1-NO-CONTROL-DEPENDS-ON-C7: NO L1 CONTROL MAY BE SATISFIED ONLY BY
+  // THIS LINE. Every call site of this function is preempted by the earlier
+  // gates, so a control that passes only through here is proving nothing
+  // about the three surfaces that actually enforce L1.
+  if (
+    !(await resolveOrganizationAcceptanceCurrent(
+      principal as RequestPrincipal & { organization: Organization },
+      options
+    ))
+  ) {
+    return callback(null)
+  }
+
+  const context: OrganizationContext = {
+    user: principal.user,
+    membership: principal.membership,
+    organization: principal.organization,
+  }
+
+  return withDatabaseIdentityContext(
+    {
+      userId: principal.user.id,
+      organizationId: principal.organization.id,
+      isSuperAdmin: principal.user.isSuperAdmin,
+    },
+    () => callback(context),
+    options
+  )
+}
+
+/**
+ * L1 (HPO-ODS-W2-29) — THE ORGANIZATION-SCOPED L1 DISCHARGE BOUNDARY.
+ *
+ * THE SELF-LOCK THIS PREVENTS, one gate later than the CL-1 one. L1's
+ * discharge surface needs an ORGANIZATION SCOPE in order to write an
+ * organisation-scoped row under FORCE RLS. The only two primitives that
+ * produce one — `withOrganizationDatabaseContext` and
+ * `withOptionalDatabaseIdentityContext` — BOTH now enforce L1, so neither can
+ * serve the surface whose whole purpose is to let a subject discharge it.
+ * That is exactly the shape of CL-1's independent-certification BLOCKING B-1.
+ *
+ * AND THE L0 PRIMITIVE CANNOT BE REUSED EITHER.
+ * `withAccountAcceptanceDischargeContext` passes `organizationId: null`, so
+ * it produces NO organisation scope and an insert into a FORCE-RLS tenant
+ * relation from inside it would be refused by the very isolation T4 requires.
+ * It is also census-pinned to exactly two callers, and a third would fail
+ * tests/auth/accept-legal-callsite-census.test.ts.
+ *
+ * WHAT IT ENFORCES — everything the ordinary organisation context does,
+ * except one gate:
+ *   authentication          — via requirePrincipal, same refusals;
+ *   B0  email verification  — via the same assertion helper (assertPrincipalGates);
+ *   L0  account acceptance  — NOT exempt. The journey places L0 strictly
+ *                             before the tenancy question, and a subject who
+ *                             has not accepted their OWN terms has no business
+ *                             accepting on an organisation's behalf;
+ *   a RESOLVED organisation scope, refusing with the same named TENANCY_*
+ *                             codes withOrganizationDatabaseContext uses;
+ *   EXACT organization_admin eligibility, by EQUALITY — never hasRole(),
+ *                             never ROLE_HIERARCHY, and the role set does NOT
+ *                             contain super_admin (RAT-AO-01 AO1_C6). A
+ *                             membership row CAN carry role 'super_admin'
+ *                             (db/schema.ts role_check) and a threshold
+ *                             predicate would admit it;
+ *   the organisation-scoped identity context, so the T4 insert runs on the
+ *                             RESOLVED SELECTED organisation.
+ *
+ * THE ONE GATE IT OMITS IS L1, AND NOTHING ELSE.
+ *
+ * WHY THE OMISSION IS BOUNDED. It grants nothing
+ * `withOrganizationDatabaseContext` does not already grant to any verified,
+ * accepted, active member: the SAME organisation-scoped identity context
+ * under the SAME RLS, scoped to the same organisation. It does not bypass RLS
+ * — T4's INSERT predicate, including its exact-role and same-organisation
+ * conditions, is entirely unaffected and is what actually authorises the
+ * write. It touches no entitlement, which does not exist on this path. It is
+ * STRICTLY MORE GATED than the L0 discharge primitive, because it
+ * additionally requires L0, a scope and a role.
+ *
+ * THE OMISSION IS FIXED IN THIS FUNCTION'S BODY AND IS NEVER PARAMETERISED.
+ * No skipGates, no skipL1, no bypass option, no optional gate array, no
+ * `gates: Gate[]`, no `enforceL1` boolean — no caller-controlled means of
+ * suppressing any gate whatsoever (X-L1-06, DISCHARGE_BOUNDARY
+ * .THE_OMISSION_MUST_BE_STRUCTURALLY_FIXED). A caller-controlled skip list is
+ * a general escape hatch whose blast radius is every call site that ever
+ * passes it; a single-purpose function with one hard-coded omission has a
+ * blast radius of its own census, which is exactly two.
+ *
+ * The ONLY authorised callers are the L1 discharge surfaces:
+ * app/(public)/accept-commercial-terms/page.tsx and .../actions.ts.
+ * tests/auth/accept-commercial-terms-callsite-census.test.ts fails the moment
+ * a third appears.
+ */
+export async function withOrganizationAcceptanceDischargeContext<T>(
+  callback: (context: OrganizationContext) => Promise<T>,
+  options: DatabaseContextOptions = {}
+): Promise<T> {
+  // Authentication, B0 and L0 — the ordinary principal gates, unchanged.
+  const principal = await requirePrincipal(options)
+
+  if (!principal.membership || !principal.organization) {
+    throw new AuthContextError(
+      principal.organizationRefusalCode ?? 'TENANCY_NO_ORGANIZATION_SELECTED',
+      principal.organizationRefusalCode === 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'
+        ? 'The selected organisation is not one this account holds an active membership in.'
+        : 'No organisation is selected for this session.'
+    )
+  }
+
+  // EXACT EQUALITY. `principal.membership` is read from the database during
+  // principal resolution and is filtered to status = 'active' there; the role
+  // is compared to the literal, never ranked against it. The DATABASE refuses
+  // the write independently through T4's own INSERT predicate, so this is the
+  // affordance boundary, not the authorisation of record.
+  if (principal.membership.role !== ROLES.ORGANIZATION_ADMIN) {
+    throw new AuthContextError(
+      'AUTH_ORGANIZATION_ADMIN_REQUIRED',
+      'Only an active organisation administrator may discharge the organisation commercial acceptance.'
+    )
   }
 
   const context: OrganizationContext = {

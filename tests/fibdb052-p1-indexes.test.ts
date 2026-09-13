@@ -212,16 +212,25 @@ describe('FIBDB-052 P1 — P-6 schema / migration / snapshot agreement', () => {
   // control already applies (tests/tenancy/s1-founder-traceability.test.ts),
   // the pin moves to P1's own position with BOTH displacing units NAMED,
   // rather than to "the tail".
-  it('P-7: the journal gained exactly one entry and it is the P1 unit, displaced from the top by exactly the CL-1 legal-acceptance unit, then exactly the CL-1 content-bytes unit', () => {
+  // L1 (HPO-ODS-W2-29) EXTENDS THE DISPLACEMENT BY ONE MORE UNIT:
+  // 0072_customer_lifecycle_l1_organization_commercial_acceptance was appended
+  // above 0071. Retargeted to the P1 unit's OWN position with EVERY displacing
+  // unit NAMED IN ORDER — never to "the tail", and never loosened. The
+  // assertion is exactly as exact after the move as before it: it still fails
+  // if the P1 unit drifts to any other position, and it now additionally fails
+  // if any displacing unit is removed, reordered or renamed.
+  it('P-7: the journal gained exactly one entry and it is the P1 unit, displaced from the top by exactly the CL-1 legal-acceptance unit, then the CL-1 content-bytes unit, then the L1 organization-commercial-acceptance unit', () => {
     const journal = JSON.parse(read('db/migrations/meta/_journal.json')) as {
       entries: { idx: number; tag: string }[]
     }
-    const last = journal.entries[journal.entries.length - 1]
-    const middle = journal.entries[journal.entries.length - 2]
-    const own = journal.entries[journal.entries.length - 3]
+    const own = journal.entries[journal.entries.length - 4]
     expect(own.tag).toBe('0069_fib_fibdb052_p1_indexes')
-    expect(middle.tag).toBe('0070_customer_lifecycle_cl1_legal_acceptance')
-    expect(last.tag).toBe('0071_customer_lifecycle_cl1_content_bytes')
+    expect(journal.entries.slice(journal.entries.length - 3).map((e) => e.tag)).toEqual([
+      '0070_customer_lifecycle_cl1_legal_acceptance',
+      '0071_customer_lifecycle_cl1_content_bytes',
+      '0072_customer_lifecycle_l1_organization_commercial_acceptance',
+    ])
+    const last = journal.entries[journal.entries.length - 1]
     expect(last.idx).toBe(journal.entries.length - 1)
   })
 })

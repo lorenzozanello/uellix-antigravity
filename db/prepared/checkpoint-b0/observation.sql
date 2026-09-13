@@ -136,6 +136,8 @@ SELECT jsonb_pretty(jsonb_build_object(
     UNION ALL
     SELECT 'public.methodology_review_matrix_items' AS t, count(*) AS n FROM "public"."methodology_review_matrix_items"
     UNION ALL
+    SELECT 'public.organization_commercial_acceptances' AS t, count(*) AS n FROM "public"."organization_commercial_acceptances"
+    UNION ALL
     SELECT 'public.organization_members' AS t, count(*) AS n FROM "public"."organization_members"
     UNION ALL
     SELECT 'public.organizations' AS t, count(*) AS n FROM "public"."organizations"
