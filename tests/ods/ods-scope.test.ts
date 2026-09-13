@@ -2460,24 +2460,426 @@ describe('HPO-ODS-W2-29 — Customer Lifecycle L1 organization commercial accept
     // DECOUPLING_PRESERVED). This module does not import the Controller at all,
     // which is the decoupling made structural rather than merely asserted.
     expect(resolveProtectedGrant('HPO-ODS-W2-29', L1_BRANCH).grant).toBeDefined()
-    // THE NEXT ODS LINEAGE POSITION IS NOT ALLOCATED EITHER. v1.0.32
-    // NO_PREALLOCATION.explicitly_not_allocated names both ODS v1.0.33 and
-    // HPO-ODS-W2-30, and naming an id in a prohibition is never an allocation.
-    // A successor that allocates v1.0.33 must advance this sentinel in its own
-    // act, exactly as this act advanced its predecessor.
+    // THE NEXT ODS LINEAGE POSITION WAS NOT ALLOCATED BY THIS ROW EITHER, and
+    // that is what this test's title claims — registering W2-29 allocated no
+    // lineage position. v1.0.33 has since been allocated by a SEPARATE act,
+    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json, which is why the
+    // filesystem sentinel below is now a POSITIVE existence proof. The two
+    // toContain assertions are untouched: they are HISTORICAL claims about the
+    // FROZEN v1.0.32 artefact, which still says exactly what it said. v1.0.32's
+    // prohibition was true of v1.0.32's own act and did not become false when a
+    // later act allocated. Rewriting them to 'match reality' would rewrite
+    // evidence — a PAST-TENSE claim about a frozen document must never move,
+    // while a PRESENT-TENSE claim about the filesystem must.
     const addendumL1Frozen = JSON.parse(
       readFileSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json'), 'utf8'),
     ) as { NO_PREALLOCATION: { explicitly_not_allocated: string[] } }
     expect(addendumL1Frozen.NO_PREALLOCATION.explicitly_not_allocated).toContain('ODS v1.0.33')
     expect(addendumL1Frozen.NO_PREALLOCATION.explicitly_not_allocated).toContain('HPO-ODS-W2-30')
+    // LINEAGE-AXIS SENTINEL, ADVANCED. It asserted absence until v1.0.33 was
+    // allocated; it now proves presence. Deleting that artefact fails here.
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json')),
-    ).toBe(false)
-    // ...and the artefact this act DOES consume exists, so the negative above is
-    // a measured absence rather than a broken path.
+    ).toBe(true)
+    // ...and the artefact this act DOES consume still exists, so the positive
+    // above is an advance of the pair and not a replacement of it.
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json')),
     ).toBe(true)
+    // THE MECHANICALLY-NEXT ABSENCE SENTINEL. Without it the lineage axis would
+    // carry only positive assertions and an over-allocation would pass unnoticed.
+    // Naming v1.0.34 inside an ABSENCE assertion is a PROHIBITION, never an
+    // allocation: an assertion that a file does not exist cannot be a claim on it.
+    expect(
+      existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')),
+    ).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// ODS v1.0.33 / HPO-ODS-W2-30 — Commercial Account CE-3 LINEAGE ALLOCATION
+// controls.
+// docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json, protected_grant,
+// FILESYSTEM_SENTINEL_DISPOSITION, MIGRATION_ORDINAL_DISPOSITION and
+// NO_PREALLOCATION.
+//
+// THESE ARE ALLOCATION CONTROLS, NOT REGISTRATION CONTROLS, and the
+// difference is the whole point of the block. W2-30 is DECLARED and NOT
+// REGISTERED, so every control below asserts properties of the DECLARATION
+// artefact plus the continued ABSENCE of a registry row. Nothing here adds a
+// PROTECTED_GRANTS row, advances a registry-axis sentinel, or binds any count
+// to the live array — that is the REGISTRATION act's business, and doing any
+// of it here would assert that W2-30 is registered when it is not.
+// ---------------------------------------------------------------------------
+
+describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECLARATION (not registration)', () => {
+  const CE3_ADDENDUM = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json'
+  const CE3_BRANCH = 'codex/commercial-account-ce3-implementation-r1'
+  const OBSERVATION = 'db/prepared/checkpoint-b0/observation.sql'
+  const CE3_PATTERNS = [
+    'db/migrations/**',
+    'db/prepared/journal/**',
+    OBSERVATION,
+  ]
+
+  interface Ce3Addendum {
+    package_id: string
+    version: string
+    artifact_id: string
+    authority_class: string
+    materialization_step: string
+    GRANT_ID: string
+    succeeds: string
+    protected_grant: {
+      authorityId: string
+      branch: string
+      patterns: string[]
+      pattern_count: number
+      registration_status: string
+    }
+    MIGRATION_ORDINAL_DISPOSITION: {
+      allocated: boolean
+      reserved: boolean
+      implied: boolean
+      status: string
+      CURRENT_MAX_MIGRATION_ORDINAL_AT_THIS_HEAD: string
+      FIRST_FREE_CANDIDATE_AS_OF_THIS_HEAD: string
+    }
+    NO_PREALLOCATION: {
+      GRANT_REGISTERED: string
+      IMPLEMENTATION_BRANCH_CREATED: string
+      explicitly_not_allocated: string[]
+    }
+    PROTECTED_GRANTS_CHANGED: boolean
+    PROTECTED_GRANTS_COUNT_BEFORE: number
+    PROTECTED_GRANTS_COUNT_AFTER: number
+    PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_30: number
+    authorized_changed_paths_this_mission: string[]
+  }
+
+  const readCe3 = (): Ce3Addendum =>
+    JSON.parse(readFileSync(path.join(REPO_ROOT, CE3_ADDENDUM), 'utf8')) as Ce3Addendum
+
+  it('ALLOCATION (CE3-ALLOC-N1): the v1.0.33 artefact exists, parses, and its parsed version agrees with its FILENAME', () => {
+    // The filename/field agreement is the control that catches an artefact
+    // copied from its predecessor and renamed without its version being
+    // updated — a mutation that leaves valid JSON and a valid path, and that
+    // no existence check and no parse check can see.
+    expect(existsSync(path.join(REPO_ROOT, CE3_ADDENDUM))).toBe(true)
+    const a = readCe3()
+    expect(a.package_id).toBe('ODS_V1_MAINTENANCE_ADDENDUM')
+    expect(a.version).toBe('1.0.33')
+    expect(a.artifact_id).toBe('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33')
+    // Derived from the PATH rather than typed again, so the two cannot drift.
+    expect(CE3_ADDENDUM).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v' + a.version + '.json')
+    expect(a.artifact_id).toBe('ODS_V1_MAINTENANCE_ADDENDUM_v' + a.version)
+    // It SUCCEEDS v1.0.32 on the lineage axis, and v1.0.32 still exists.
+    expect(a.succeeds).toBe('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32')
+    expect(
+      existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json')),
+    ).toBe(true)
+    expect(a.authority_class).toBe('ODS_LINEAGE_AND_PROTECTED_GRANT_ALLOCATION')
+    // ALLOCATION_ONLY, and it says so about BOTH halves: implements nothing
+    // AND registers nothing.
+    expect(a.materialization_step).toContain('ALLOCATION_ONLY')
+    expect(a.materialization_step).toContain('registers nothing')
+  })
+
+  it('ALLOCATION (CE3-ALLOC-N2): the artefact allocates HPO-ODS-W2-30, and its own declaration agrees with its GRANT_ID', () => {
+    const a = readCe3()
+    expect(a.GRANT_ID).toBe('HPO-ODS-W2-30')
+    // INTERNAL CONSISTENCY. A file whose GRANT_ID and whose declaration
+    // disagree would allocate one id and declare another, and each half would
+    // pass a check that looked at it alone.
+    expect(a.protected_grant.authorityId).toBe(a.GRANT_ID)
+  })
+
+  it('BRANCH BINDING (CE3-ALLOC-N3): the declaration binds the exact CE-3 implementation branch string', () => {
+    const a = readCe3()
+    expect(a.protected_grant.branch).toBe(CE3_BRANCH)
+    // EXACT STRING EQUALITY. Near-misses are named so that a single character
+    // of drift — a round suffix, a plural, a hyphen, a case change — is a
+    // failure here rather than a silent unconditional scope violation later.
+    for (const nearMiss of [
+      'codex/commercial-account-ce3-implementation-r2',
+      'codex/commercial-account-ce3-implementation',
+      'codex/commercial-account-ce3-implementation-r1-fix',
+      'codex/commercial-account-ce3-implementations-r1',
+      ' codex/commercial-account-ce3-implementation-r1',
+      'Codex/Commercial-Account-CE3-Implementation-R1',
+      // The AUTHORING branch of the CE-3 execution authority, and THIS lane's
+      // own branch. Neither is the implementation branch.
+      'codex/commercial-account-ce3-authority-r1',
+      'codex/commercial-account-ce3-ods-lineage-allocation-r1',
+      // The sibling implementation branches carrying BYTE-IDENTICAL patterns.
+      'codex/customer-lifecycle-cl1-implementation-r1',
+      'codex/l1-organization-commercial-acceptance-implementation-r1',
+      'codex/commercial-account-ce1-implementation-r1',
+    ]) {
+      expect(a.protected_grant.branch).not.toBe(nearMiss)
+    }
+  })
+
+  it('NARROWNESS (CE3-ALLOC-N4): the declaration carries EXACTLY the three patterns, IN ORDER, with no widening', () => {
+    const a = readCe3()
+    // toEqual on an array is ORDER-SENSITIVE, which is what the authority's
+    // ORDER_IS_BINDING clause requires: order is part of the row identity
+    // because the future registration control asserts the row by whole-object
+    // equality and not by set comparison.
+    expect(a.protected_grant.patterns).toEqual(CE3_PATTERNS)
+    expect(a.protected_grant.pattern_count).toBe(3)
+    // The numeral must agree with its own list. A count that disagrees with
+    // the array it counts is two defects, not one.
+    expect(a.protected_grant.pattern_count).toBe(a.protected_grant.patterns.length)
+    // NO WIDENING. Each of these would authorize siblings the classifier
+    // cannot justify, and db/prepared/checkpoint-b0/ holds exactly one file so
+    // even the directory form grants strictly more than the literal does.
+    for (const widening of [
+      'db/**',
+      'db/prepared/**',
+      'db/prepared/checkpoint-b0/**',
+      'db/prepared/hosted/**',
+      'db/prepared/hosted/governed/**',
+      'db/baseline/**',
+      'db/policies/**',
+      'docs/ops/fib/**',
+      'docs/ops/pc01b/**',
+      'docs/ops/im01b/**',
+      'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
+    ]) {
+      expect(a.protected_grant.patterns).not.toContain(widening)
+    }
+    // ...and the declared patterns really do cover the CE-3 families, so the
+    // narrowness above is narrowness and not a broken declaration. Evaluated
+    // through the REAL matcher rather than by string comparison.
+    for (const covered of [
+      'db/migrations/0099_ce3_fixture.sql',
+      'db/migrations/meta/0099_snapshot.json',
+      'db/migrations/meta/_journal.json',
+      'db/prepared/journal/086_0099_ce3_fixture.sql',
+      OBSERVATION,
+    ]) {
+      expect(matchesAnyPattern(covered, a.protected_grant.patterns)).toBe(true)
+    }
+    // ...while the siblings a widening would have reached are NOT covered.
+    for (const notCovered of [
+      'db/prepared/checkpoint-b0/sibling.sql',
+      'db/prepared/checkpoint-a1/corroboration.sql',
+      'db/prepared/hosted/anything.sql',
+      'db/prepared/README.md',
+      'db/baseline/MANIFEST.sha256',
+      'db/policies/0001_anything.sql',
+      'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
+    ]) {
+      expect(matchesAnyPattern(notCovered, a.protected_grant.patterns)).toBe(false)
+    }
+  })
+
+  it('DECLARED NOT REGISTERED (CE3-ALLOC-N5): the declaration says so, and the LIVE registry agrees — W2-30 resolves NOWHERE', () => {
+    const a = readCe3()
+    expect(a.protected_grant.registration_status).toBe('DECLARED_NOT_REGISTERED')
+    expect(a.NO_PREALLOCATION.GRANT_REGISTERED).toBe('NO')
+    // THE LIVE REGISTRY IS THE EVALUATOR, not the artefact's own claim about
+    // itself. Key-position semantics, never a textual mention.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-30')
+    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-30')).toBe(false)
+    // ...and no row is bound to the CE-3 branch by ANY id, so the grant cannot
+    // arrive through a differently-named row either.
+    expect(PROTECTED_GRANTS.filter((g) => g.branch === CE3_BRANCH)).toEqual([])
+    // RESOLUTION IS THE OPERATIVE CONSEQUENCE. Before registration the id
+    // resolves on NO branch, including its own bound branch.
+    for (const branch of [
+      CE3_BRANCH,
+      'main',
+      'integration/commercial-v1',
+      'codex/commercial-account-ce3-authority-r1',
+      'codex/commercial-account-ce3-ods-lineage-allocation-r1',
+      'codex/commercial-account-ce1-implementation-r1',
+      'codex/l1-organization-commercial-acceptance-implementation-r1',
+    ]) {
+      expect(resolveProtectedGrant('HPO-ODS-W2-30', branch).grant).toBeUndefined()
+      expect(resolveProtectedGrants(['HPO-ODS-W2-30'], branch).grants).toEqual([])
+    }
+    // ...and OFFERING the id changes nothing about the paths: they stay
+    // protected violations, which is what an unregistered declaration means.
+    const paths = ['db/migrations/0099_ce3_fixture.sql', OBSERVATION]
+    const union = resolveProtectedGrants(['HPO-ODS-W2-30'], CE3_BRANCH)
+    expect(
+      classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, union.grants).protectedViolations,
+    ).toEqual(paths)
+    expect(classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, union.grants).grantAuthorized).toEqual([])
+    // NON-VACUITY: the undefined above is about REGISTRATION, not about the
+    // patterns being unusable. The BYTE-IDENTICAL three patterns DO resolve
+    // and DO authorize, for the id that is registered, on its own branch.
+    const w2_29 = resolveProtectedGrant(
+      'HPO-ODS-W2-29',
+      'codex/l1-organization-commercial-acceptance-implementation-r1',
+    )
+    expect(w2_29.grant).toBeDefined()
+    expect(w2_29.grant!.patterns).toEqual(a.protected_grant.patterns)
+    expect(
+      classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, [w2_29.grant!]).protectedViolations,
+    ).toEqual([])
+  })
+
+  it('NO REGISTRY MOVEMENT (CE3-ALLOC-N6): the declared counts are FROZEN LITERALS and the registry is unchanged at 17', () => {
+    const a = readCe3()
+    // The ALLOCATING artefact changes nothing: BEFORE === AFTER === 17.
+    expect(a.PROTECTED_GRANTS_CHANGED).toBe(false)
+    expect(a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(17)
+    expect(a.PROTECTED_GRANTS_COUNT_AFTER).toBe(17)
+    expect(a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(a.PROTECTED_GRANTS_COUNT_AFTER)
+    // The forward-looking figure moves the registry by EXACTLY ONE row, and it
+    // is asserted against a LITERAL — deliberately NOT against the live array.
+    // Binding it to the live array would be the REGISTRATION act's guard, and
+    // this file pins the number of such guards at exactly one; adding a second
+    // here would turn the two self-inspection controls above RED. An
+    // allocation act that bound its own declared count to the live registry
+    // would also be asserting that its grant is already registered.
+    expect(a.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_30).toBe(18)
+    expect(
+      a.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_30 - a.PROTECTED_GRANTS_COUNT_BEFORE,
+    ).toBe(1)
+    // THE LIVE REGISTRY IS STILL 17 WITH W2-29 AS ITS TAIL. This is the
+    // measured fact the frozen literals above are true of.
+    expect(PROTECTED_GRANTS.length).toBe(17)
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-29')
+    // ...and the forward figure does NOT equal the live count, which is what
+    // shows the artefact is describing an act that has not happened yet.
+    //
+    // THE CONVERSE ASSERTION IS DELIBERATELY ABSENT. Binding the declared
+    // BEFORE figure to the live array with a positive .toBe would create a
+    // SECOND live-count guard, and this file pins the number of those at
+    // exactly one. That single guard belongs to the REGISTRATION act, whose
+    // atomic demote-and-promote is the only lawful way to move it. Writing it
+    // here turned four self-inspection controls RED during this lane's own
+    // authoring, which is the mechanism working exactly as designed. The
+    // equality it would have asserted is covered without that shape: BEFORE is
+    // pinned to the literal 17 above, and PROTECTED_GRANTS.length is pinned to
+    // the literal 17 above, so the two are already tied together through a
+    // constant rather than through a guard.
+    expect(a.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_30).not.toBe(
+      PROTECTED_GRANTS.length,
+    )
+  })
+
+  it('NO MIGRATION ORDINAL IS RESERVED (CE3-ALLOC-N7): the declared patterns carry no ordinal literal, and the disposition says so in three fields', () => {
+    const a = readCe3()
+    // THE PATTERNS THEMSELVES. A four-digit ordinal under db/migrations/ would
+    // be a reservation by the back door; the glob is what makes one
+    // unnecessary.
+    expect(a.protected_grant.patterns.some((p) => /db\/migrations\/\d{4}/.test(p))).toBe(false)
+    expect(a.protected_grant.patterns).toContain('db/migrations/**')
+    // The glob authorizes ANY ordinal the implementing mission derives, which
+    // is precisely why no ordinal needs reserving — including the mechanically
+    // next one, which is therefore NOT special.
+    for (const ordinal of ['0072', '0073', '0074', '0099']) {
+      expect(matchesAnyPattern('db/migrations/' + ordinal + '_ce3_fixture.sql', a.protected_grant.patterns)).toBe(
+        true,
+      )
+    }
+    // THE DISPOSITION. All three flags false, and the status names the
+    // classification rather than leaving it to be inferred.
+    expect(a.MIGRATION_ORDINAL_DISPOSITION.allocated).toBe(false)
+    expect(a.MIGRATION_ORDINAL_DISPOSITION.reserved).toBe(false)
+    expect(a.MIGRATION_ORDINAL_DISPOSITION.implied).toBe(false)
+    expect(a.MIGRATION_ORDINAL_DISPOSITION.status).toBe('DERIVED_NOT_ALLOCATED')
+    expect(a.MIGRATION_ORDINAL_DISPOSITION.CURRENT_MAX_MIGRATION_ORDINAL_AT_THIS_HEAD).toBe('0072')
+    expect(a.MIGRATION_ORDINAL_DISPOSITION.FIRST_FREE_CANDIDATE_AS_OF_THIS_HEAD).toBe('0073')
+    // ...and 0073 is named in the PROHIBITION list, so the dated observation
+    // above cannot be read as a claim on the number.
+    expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain(
+      'migration ordinal 0073 or any other ordinal',
+    )
+    // DELIBERATELY NOT ASSERTED HERE: that db/migrations/0073* does not exist.
+    // It is true at this head and is recorded in the artefact as a DATED
+    // OBSERVATION, but the authority states that 0073 is NOT reserved and that
+    // any lane may land it first. Pinning its absence would convert a fact the
+    // authority declares free into a stale constant, and would turn RED for a
+    // lane that lawfully took the ordinal — punishing correct behaviour. What
+    // is durable, and is asserted above, is that THIS declaration reserves no
+    // ordinal at all.
+  })
+
+  it('THE CONTROLLER AXIS IS UNTOUCHED (CE3-ALLOC-N8): v1.0.33 exists on the FILESYSTEM and is still NOT enumerated by the Controller', () => {
+    // This is the normal, expected intermediate state of this lineage: every
+    // addendum passes through it. Allocation puts the file on disk; a
+    // SEPARATE Controller successor act enumerates it.
+    //
+    // READ AS TEXT, DELIBERATELY NOT IMPORTED. This module does not import the
+    // Controller at all, which is what makes the decoupling structural rather
+    // than merely asserted; importing IMMUTABLE_BY_CONVENTION here to check an
+    // absence would destroy the very property the surrounding tests claim.
+    const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
+    expect(existsSync(path.join(REPO_ROOT, CE3_ADDENDUM))).toBe(true)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json').length - 1).toBe(0)
+    // NON-VACUITY of that zero: the predecessor IS enumerated in the same
+    // file, so the path is right, the file is really being read, and the
+    // spelling of the literal is the one the Controller actually uses. A
+    // zero-occurrence negative with no positive beside it proves nothing.
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json').length - 1).toBeGreaterThan(0)
+  })
+
+  it('NO PREALLOCATION (CE3-ALLOC-N9): v1.0.34 and W2-31 are named ONLY in prohibitions, and the REGISTRY-axis sentinel is NOT advanced', () => {
+    const a = readCe3()
+    // THE NEXT LINEAGE POSITION AND THE NEXT GRANT ID ARE PROHIBITED, NOT
+    // ALLOCATED. Naming an id in a prohibition is never an allocation.
+    expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain('ODS v1.0.34')
+    expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain('HPO-ODS-W2-31')
+    expect(
+      existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')),
+    ).toBe(false)
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-31')
+    expect(resolveProtectedGrant('HPO-ODS-W2-31', CE3_BRANCH).grant).toBeUndefined()
+    // THE REGISTRY-AXIS SENTINEL STAYS AT W2-30 AND STAYS TRUE. This is the
+    // load-bearing separation: the LINEAGE axis sentinel is a filesystem
+    // assertion and THIS act advanced it, because it created a file. The
+    // REGISTRY axis sentinel is a membership assertion and this act did NOT
+    // advance it, because it added no row. Advancing the wrong one is how an
+    // unregistered grant comes to look registered.
+    const scopeSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-scope.ts'), 'utf8')
+    expect(scopeSource.split('HPO-ODS-W2-30').length - 1).toBe(0)
+    // NON-VACUITY of that zero: the id that IS registered has textual
+    // occurrences in the same file, so the zero above is a measured absence.
+    expect(scopeSource.split('HPO-ODS-W2-29').length - 1).toBeGreaterThan(0)
+    // NEITHER THE BRANCH NOR THE RUNTIME IS CREATED BY THIS ACT. Ref existence
+    // is proven in the artefact's own collision sweep rather than here: a unit
+    // assertion about a git ref would depend on fetch state and clone depth,
+    // and a brittle control that fails for environmental reasons teaches a
+    // reader to ignore it.
+    expect(a.NO_PREALLOCATION.IMPLEMENTATION_BRANCH_CREATED).toBe('NO')
+    expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain(
+      'the creation of the branch codex/commercial-account-ce3-implementation-r1',
+    )
+    expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain('the CE-3 implementation')
+  })
+
+  it('WRITE SURFACE (CE3-ALLOC-N10): the allocation declares EXACTLY TWO changed paths and neither is protected', () => {
+    const a = readCe3()
+    expect(a.authorized_changed_paths_this_mission).toEqual([
+      CE3_ADDENDUM,
+      'tests/ods/ods-scope.test.ts',
+    ])
+    // NEITHER PATH IS PROTECTED, so the allocation consumed NO protected
+    // authority and an ordinary --allow list was sufficient. Evaluated through
+    // the real matcher against the real default pattern list.
+    for (const p of a.authorized_changed_paths_this_mission) {
+      expect(matchesAnyPattern(p, DEFAULT_PROTECTED_PATTERNS)).toBe(false)
+    }
+    // NON-VACUITY: the matcher and the pattern list are live — a path that IS
+    // protected is reported as protected by the same call.
+    expect(matchesAnyPattern('docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json', DEFAULT_PROTECTED_PATTERNS)).toBe(true)
+    expect(matchesAnyPattern('db/migrations/0073_x.sql', DEFAULT_PROTECTED_PATTERNS)).toBe(true)
+    // NEITHER ODS SCRIPT AND NEITHER CONTROLLER SURFACE IS IN THE WRITE SET.
+    for (const forbidden of [
+      'scripts/ods-scope.ts',
+      'scripts/ods-controller.ts',
+      'tests/ods/ods-controller.test.ts',
+      'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json',
+    ]) {
+      expect(a.authorized_changed_paths_this_mission).not.toContain(forbidden)
+    }
   })
 })
 
