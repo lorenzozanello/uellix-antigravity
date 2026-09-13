@@ -727,6 +727,109 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/checkpoint-b0/observation.sql',
     ],
   },
+  // HPO-ODS-W2-29 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json):
+  // the Customer Lifecycle L1 ORGANIZATION-class commercial acceptance
+  // substrate and its enforcement. THREE patterns, carried field for field
+  // from that authority's own protected_grant declaration and in the order
+  // it states them — under v1.0.32 ORDER_IS_BINDING the order is part of the
+  // row's identity, because the registration control asserts the row as a
+  // whole-object equality rather than as a set comparison.
+  //
+  // THE SAME THREE PATTERNS AS W2-28, RE-DERIVED AND NOT INHERITED. The
+  // predecessor W2-28 directly above carries a byte-identical pattern list,
+  // so its rationale CANNOT be reused here. What justified W2-28 carrying a
+  // third pattern was a contrast with ITS predecessor W2-27, which
+  // deliberately EXCLUDED the observation literal; W2-29 has no such
+  // predecessor contrast, and restating one would be a false historical
+  // statement written to preserve comment symmetry. v1.0.32
+  // WHY_THESE_THREE_PATTERNS_RE_DERIVED_NOT_INHERITED therefore re-derives
+  // each pattern against the ACTUAL CL-1 merge diff at cbd1eb82, measured by
+  // git diff --numstat cbd1eb82^1 cbd1eb82 — never --stat, which abbreviates
+  // long paths (so a directory-prefix grep under-counts in silence) and sums
+  // insertions with deletions (so a one-line rewrite reads as 2):
+  //
+  //   1. db/migrations/** — FIVE paths moved: two SQL files, two per-ordinal
+  //      snapshots and the _journal.json append. A migration is never one
+  //      file, and the ordinal is not knowable in advance, so no literal-path
+  //      grant is constructible. L1 creates one relation with RLS and two
+  //      triggers and may emit more than one migration, as CL-1 in fact did.
+  //
+  //   2. db/prepared/journal/** — EIGHTY-FOUR wrapper paths moved, in exactly
+  //      two numstat buckets: 82 at (1 insertion, 1 deletion) and 2 at
+  //      (65, 0). Each wrapper header carries the literal
+  //      Unit <ordinal>/<BASELINE_UNITS.length>, so appending a baseline unit
+  //      increments the DENOMINATOR and rewrites that ONE header line in
+  //      every pre-existing wrapper; the two (65, 0) rows are the two NEW
+  //      wrappers CL-1 added. This is generated-artefact REGENERATION, not an
+  //      edit of unrelated files. A grant naming only the new wrapper would
+  //      refuse 82 regenerated siblings, and enumerating 84 literals that will
+  //      be 85 next time is a stale list rather than a grant.
+  //
+  //   3. db/prepared/checkpoint-b0/observation.sql — moved with (6, 0). The
+  //      file builds its rowCounts key from an explicit UNION ALL chain with
+  //      one arm per governed relation, so adding an arm changes the FILE
+  //      BYTES and not merely the query output. The discriminator is
+  //      validated in BOTH directions on real commits: a TABLE-creating
+  //      lineage moves the file and the line count scales with the relation
+  //      count (CL-1 created three relations and moved it by 6 lines), while
+  //      an INDEX-only lineage leaves the path absent from the commit
+  //      entirely (P1 at e9c84ff3 touches ZERO paths under
+  //      db/prepared/checkpoint-b0/). L1 creates ONE new governed relation,
+  //      so it adds ONE arm and falls on the SAME side of that discriminator
+  //      as CL-1 and the OPPOSITE side from P1. A LITERAL and never
+  //      db/prepared/checkpoint-b0/**: only this one file needs to move.
+  //
+  // NOT db/prepared/**. The DEFAULT protected pattern above is the broad
+  // db/prepared/**, but the breadth of the PROTECTION is not a licence for
+  // breadth in the GRANT: a blanket pattern would additionally authorize
+  // db/prepared/hosted/** and db/prepared/hosted/governed/**, which are
+  // G2-gated apply surfaces L1 has no business touching, and the separate
+  // db/prepared/stella_*.sql numbering family L1 does not extend. A sibling
+  // under db/prepared/ that matches the default pattern but not these two
+  // narrower ones is CORRECTLY refused (v1.0.32 NO_DB_PREPARED_WIDENING).
+  //
+  // NO EXISTING ROW CAN STAND IN — INCLUDING THE BYTE-IDENTICAL W2-28.
+  // MEASURED against this registry rather than asserted: NINE rows carry
+  // db/migrations/** and/or db/prepared/journal/** (W2-01, W2-12, W2-17,
+  // W2-20, W2-21, W2-25, W2-26, W2-27 and W2-28) and SIX carry the
+  // observation literal (W2-07, W2-08, W2-16, W2-17, W2-26 and W2-28 — W2-08
+  // carries it inside its 98-entry literal family). Every one of them is
+  // bound to a DIFFERENT branch, and resolution is by exact string equality,
+  // so on codex/l1-organization-commercial-acceptance-implementation-r1 all
+  // of them contribute ZERO patterns. W2-28 in particular, whose three
+  // patterns are byte-identical to this row's, is bound to
+  // codex/customer-lifecycle-cl1-implementation-r1 and resolves nowhere for
+  // L1. That is exactly why a duplicate-LOOKING row is doing real work: a
+  // grant is keyed on its BRANCH as well as its patterns, and this registry
+  // already contains valid same-branch pairs (W2-20 with W2-21 on
+  // codex/multiorg-s1-founder-traceability-r1, W2-12 with W2-16 on
+  // codex/w2-b4-r1) for the mirror-image structural reason.
+  //
+  // THIS ROW ALLOCATES NO ORDINAL AND NO CONTROLLER. The migration pattern is
+  // a GLOB and never a specific ordinal, so registering this row reserves no
+  // number and the implementing mission re-derives one at its OWN head. The
+  // Controller IMMUTABLE_BY_CONVENTION array gates the NEXT LINEAGE
+  // allocation and can never prevent a grant from resolving (v1.0.32
+  // DECOUPLING_PRESERVED) — two independent registries with independent
+  // controls.
+  //
+  // DECLARED BY v1.0.32, REGISTERED HERE. Declaring a grant and registering
+  // it are separate governed acts on separate surfaces; v1.0.32 names this
+  // very file under EXPLICITLY_NOT_AUTHORIZED for exactly that reason, and
+  // the L1 implementation mission is PROHIBITED from performing this act for
+  // itself — a node that registers the grant it is about to rely on has
+  // authorized its own diff. The bound branch does NOT exist at the time of
+  // this registration, which is correct and expected: the grant is declared
+  // and registered BEFORE the implementation branch is cut.
+  {
+    authorityId: 'HPO-ODS-W2-29',
+    branch: 'codex/l1-organization-commercial-acceptance-implementation-r1',
+    patterns: [
+      'db/migrations/**',
+      'db/prepared/journal/**',
+      'db/prepared/checkpoint-b0/observation.sql',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
