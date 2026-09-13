@@ -82,8 +82,12 @@ describe('the six baseline gates', () => {
     // CL-1 presentation-binding repair: + 0071_customer_lifecycle_cl1_content_bytes.sql
     // (one ADD COLUMN — no role, ownership or extension statement, so
     // superuserFreeUnits advances in lockstep) = 84.
-    expect(evidence.unitCount).toBe(84)
-    expect(evidence.superuserFreeUnits).toBe(84)
+    // L1 (HPO-ODS-W2-29): + 0072_customer_lifecycle_l1_organization_commercial_
+    // acceptance.sql (one CREATE TABLE plus RLS, two policies, two triggers and
+    // one REVOKE-only function grant change -- no role, ownership or extension
+    // statement, so superuserFreeUnits advances in lockstep) = 85.
+    expect(evidence.unitCount).toBe(85)
+    expect(evidence.superuserFreeUnits).toBe(85)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',

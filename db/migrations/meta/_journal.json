@@ -505,6 +505,13 @@
       "when": 1789214848476,
       "tag": "0071_customer_lifecycle_cl1_content_bytes",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1789264957469,
+      "tag": "0072_customer_lifecycle_l1_organization_commercial_acceptance",
+      "breakpoints": true
     }
   ]
 }

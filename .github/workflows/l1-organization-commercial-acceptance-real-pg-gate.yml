@@ -1,0 +1,104 @@
+name: L1 Organization Commercial Acceptance Real PostgreSQL Gate
+
+# Dedicated, isolated real-PostgreSQL proof of the L1
+# ORGANIZATION_COMMERCIAL_ACCEPTANCE contract (HPO-ODS-W2-29;
+# docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0.json).
+#
+# WHY A DEDICATED WORKFLOW AND NOT A LINE IN ci.yml. TEST_AUTHORITY
+# .CI_REQUIREMENTS.dedicated_real_PG_workflow is explicit: "REQUIRED from the
+# implementation lane. Not an addition to an existing generic job." A
+# Docker-heavy job folded into generic CI races or serialises against
+# unrelated work, and REAL_POSTGRESQL_EXCLUSIVE requires ONE heavy PostgreSQL
+# job at a time. Modeled structurally on
+# .github/workflows/cl1-legal-acceptance-real-pg-gate.yml — the sibling gate
+# for the same seam one gate earlier — with names derived for L1 rather than
+# copied.
+#
+# WHAT A BARE CHECKMARK CANNOT TELL YOU, and why each guard below exists:
+#
+#   * A SKIPPED SUITE IS INDISTINGUISHABLE FROM A PASSING ONE. Both suites
+#     below are describe.skipIf(!PG_TESTS_ENABLED), so without
+#     UELLIX_PG_TESTS=1 they report green having executed nothing. Setting it
+#     EXPLICITLY here — never inheriting it by luck — is what makes the run
+#     real.
+#
+#   * AND SETTING IT IS NOT SELF-VERIFYING EITHER. UELLIX_L1_PG_REQUIRED=1
+#     arms an UNGATED self-check inside
+#     organization-commercial-acceptance-real-derivation.pg.test.ts (the
+#     "L1 real-PostgreSQL gate self-check (never skipped)" describe block,
+#     sentinel S-L1-PG-REQUIRED-ANTI-SKIP) that FAILS if the gated suites were
+#     skipped rather than reporting a pass. The measured hazard it answers:
+#     the disposable-harness `setupStatus` value SKIPPED is ALSO its
+#     INITIALIZATION value, so a harness that bailed out BEFORE setup reports
+#     the same value as one that deliberately skipped.
+#
+#   * --passWithNoTests IS NOT SET, and must not be. A run that matches zero
+#     test files must FAIL, not exit 0.
+#
+# This gate must fail on each of:
+#   * either suite being skipped          -> the ungated self-check fails;
+#   * zero tests collected                -> vitest exits non-zero;
+#   * a real-PG setup/teardown failure    -> the setupStatus/teardownStatus/
+#                                            leftover assertions inside the
+#                                            suites themselves;
+#   * any probe or any real-function composition assertion failing.
+#
+# It does NOT reuse, extend or widen the CL-1 workflow's governed scope, and
+# it runs the two suites in SEPARATE STEPS so that ONE heavy PostgreSQL
+# lifecycle is alive at a time.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - integration/commercial-v1
+      - main
+
+jobs:
+  l1-organization-commercial-acceptance-real-pg-gate:
+    name: Isolated L1 organization-commercial-acceptance disposable PostgreSQL proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ORACLE 1 — literal database invariant probes on a throwaway container:
+      # FORCE RLS, the organisation-scoped SELECT, the three conjunctive INSERT
+      # conditions with EXACT-EQUALITY role, the cross-tenant refusal with the
+      # application bypassed, the append-only refusals (including against the
+      # table OWNER), the I-T4-1 unique constraint as a concurrency control,
+      # the two cross-table guards, the instrument_key agreement guard, the
+      # role snapshot, and admission of the acceptance audit row by the
+      # PRE-EXISTING 0042 policy with NO fourth policy added.
+      - name: Real PostgreSQL — ORACLE 1, RLS and invariant probes
+        env:
+          UELLIX_PG_TESTS: '1'
+          UELLIX_L1_PG_REQUIRED: '1'
+        run: pnpm exec vitest run tests/postgres/organization-commercial-acceptance.pg.test.ts
+
+      # ORACLE 2 — the REAL exported deriveOrganizationAcceptanceCurrent and
+      # loadRequiredOrganizationInstrumentsPendingAcceptance
+      # (lib/auth/organization-commercial-acceptance.ts), invoked through the
+      # REAL db/identity-context.ts withDatabaseIdentityContext against a real,
+      # AUTHENTICATED uellix_app login — never a mocked unit test and never a
+      # hand-copied literal-SQL re-implementation. Includes the FC_6
+      # non-vacuity proof: a currency query made to FAIL must THROW, never
+      # become a pass.
+      - name: Real PostgreSQL — ORACLE 2, production-function composition proof
+        env:
+          UELLIX_PG_TESTS: '1'
+          UELLIX_L1_PG_REQUIRED: '1'
+        run: pnpm exec vitest run tests/postgres/organization-commercial-acceptance-real-derivation.pg.test.ts

@@ -242,6 +242,17 @@ const CONTEXT_OPENERS = [
   // (CL-1 B-1 repair): app/(public)/accept-legal/{page.tsx,actions.ts} only,
   // enforced by tests/auth/accept-legal-callsite-census.test.ts.
   'withAccountAcceptanceDischargeContext',
+  // lib/auth/database-context.ts — the ONE surface exempt from the L1 gate
+  // (HPO-ODS-W2-29): app/(public)/accept-commercial-terms/{page.tsx,actions.ts}
+  // only, enforced by tests/auth/accept-commercial-terms-callsite-census.test.ts.
+  //
+  // IT BELONGS HERE FOR THE SAME REASON ITS L0 SIBLING DOES: it genuinely
+  // OPENS a database identity context — an ORGANISATION-SCOPED one — so a
+  // module that transits it is contextualized, not unguarded. Registering it
+  // is the CORRECT resolution; allowlisting the two callers instead would
+  // suppress the scanner on modules that really do reach the database and
+  // would hide any FUTURE unguarded reach inside them.
+  'withOrganizationAcceptanceDischargeContext',
   // db/identity-context.ts — the mechanism, for the auth layer itself
   'withDatabaseIdentityContext',
 ] as const
@@ -814,7 +825,30 @@ describe('every entry point that can reach the database opens an identity contex
     // write the acceptance rows and their audit rows in one transaction — so
     // both are `contextualized`, not allowlisted: +2 inventoried, +2
     // reaching, +2 contextualized.
-    }).toEqual({ inventoried: 145, reaching: 120, contextualized: 103, allowlisted: 17 })
+    //
+    // 145 -> 147, 120 -> 122, contextualized 103 -> 105, allowlisted
+    // UNCHANGED at 17: L1 (docs/ops/compliance/
+    // CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0.json, HPO-ODS-W2-29)
+    // adds two new entry points — app/(public)/accept-commercial-terms/
+    // {page.tsx,actions.ts}. Both wrap their database-touching region in
+    // withOrganizationAcceptanceDischargeContext — the page to resolve the
+    // pending ORGANIZATION-class instrument under RLS, the action to write the
+    // acceptance row and its audit row in ONE transaction — so both are
+    // `contextualized`, not allowlisted: +2 inventoried, +2 reaching, +2
+    // contextualized.
+    //
+    // THE DISCHARGE BOUNDARY IS REGISTERED IN CONTEXT_OPENERS ABOVE, which is
+    // what makes them contextualized rather than unguarded. That registration
+    // is the CORRECT resolution and an allowlist entry would not have been:
+    // allowlisting suppresses the scanner on modules that really do reach the
+    // database, and would hide any FUTURE unguarded reach added inside them.
+    //
+    // The quadruple is MOVED, never LOOSENED — the same thing W2-B1-R4, W2-B2,
+    // W2-B3, W2-B4, W2-B5, MULTIORG-S2, PF-2, Packet B and CL-1 each did
+    // above, and for the same reason: it is an EQUALITY assertion, so it
+    // cannot be satisfied by adding anything elsewhere, and recording the
+    // move beside it is how the count stays auditable.
+    }).toEqual({ inventoried: 147, reaching: 122, contextualized: 105, allowlisted: 17 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

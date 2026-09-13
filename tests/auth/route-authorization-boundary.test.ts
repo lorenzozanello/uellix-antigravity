@@ -58,9 +58,17 @@ const mockLoadRequestPrincipal = vi.fn()
 // default (never a silent []) so a test that forgets to arm it fails loudly
 // instead of quietly behaving like the zero-candidate case.
 const mockListSelectableMemberships = vi.fn()
+// L1 (HPO-ODS-W2-29) — this suite's subject is PACKET A ROUTING, so L1 is
+// held at its PASSING value here and its own refusal behaviour is proven
+// elsewhere (tests/auth/organization-commercial-acceptance-enforcement.test.ts).
+// EXPLICIT, never defaulted: an L1 stub that resolved `true` by omission would
+// be the permissive-default shape X-B-03 forbids — every fixture would keep
+// passing while silently measuring an unaccepted organisation as current.
+const mockIsOrganizationAcceptanceCurrent = vi.fn(async (_principal: any) => true)
 vi.mock('@/lib/auth/database-context', () => ({
   loadRequestPrincipal: () => mockLoadRequestPrincipal(),
   listSelectableMemberships: () => mockListSelectableMemberships(),
+  isOrganizationAcceptanceCurrent: (p: any) => mockIsOrganizationAcceptanceCurrent(p),
   withOptionalDatabaseIdentityContext: (cb: any) => cb(null),
   withOrganizationDatabaseContext: (cb: any) => cb(),
   withSuperAdminDatabaseContext: (cb: any) => cb(),

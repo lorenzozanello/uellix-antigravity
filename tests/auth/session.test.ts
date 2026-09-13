@@ -37,6 +37,14 @@ vi.mock('@/lib/auth/legal-acceptance', () => ({
   ACCEPT_LEGAL_PATH: '/accept-legal',
 }))
 
+// L1 (HPO-ODS-W2-29) — the same treatment, at the same seam, for the same
+// reason: the organisation-class currency predicate has its own suite, and
+// every fixture here is pinned explicitly L1-current. Never defaulted.
+vi.mock('@/lib/auth/organization-commercial-acceptance', () => ({
+  deriveOrganizationAcceptanceCurrent: async () => true,
+  ACCEPT_COMMERCIAL_TERMS_PATH: '/accept-commercial-terms',
+}))
+
 // S3 — lib/auth/database-context.ts now reads the S2 carrier
 // (lib/auth/selected-organization.ts, unmocked and exercised for real below)
 // to resolve which organization's membership to derive. That module's only

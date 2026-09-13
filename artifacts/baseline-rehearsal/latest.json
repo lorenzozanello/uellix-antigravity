@@ -1,7 +1,7 @@
 {
-  "manifestDigest": "65c254c37bc67557f4ea5008a41e150083cbf2583dd6047d2cf1055de64c5b00",
+  "manifestDigest": "ec9186f0509bc4e30df9de1467ef3b279051018c12aaaa90d8651359c88a93b9",
   "naiveFailedAt": "db/migrations/0039_grant_rls_helper_execution.sql",
-  "manifestApplied": 84,
+  "manifestApplied": 85,
   "manifestFailedAt": null,
   "postconditionsPassed": 18,
   "postconditionsTotal": 18,

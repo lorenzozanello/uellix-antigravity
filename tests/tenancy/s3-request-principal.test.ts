@@ -545,7 +545,14 @@ describe('S3-7: the selectable-memberships enumerator is exported from an EXISTI
     // CL-1 (HPO-ODS-W2-28) added lib/auth/legal-acceptance.ts — the ONE
     // derivation site for account-class acceptance currency
     // (S-AO-PREDICATE-CARDINALITY), analogous in shape and in the same
-    // reason it does not collapse S3-7's constraint. S3's OWN constraint —
+    // L1 (HPO-ODS-W2-29) added lib/auth/organization-commercial-acceptance.ts
+    // -- the ONE derivation site for ORGANIZATION-class acceptance currency,
+    // deliberately SEPARATE from its account-class sibling rather than a
+    // widening of it (SUBMISSION_BINDING.NO_WIDENING_OF_THE_L0_RESOLVER), for
+    // the same reason T4 is a separate relation from T3: a different accepting
+    // principal, a different uniqueness rule, and the opposite side of the
+    // tenancy question. It hosts no enumerator and derives no principal.
+    // reason it does not collapse S3-7's constraint. S3's OWN constraint --
     // that the enumerator was hosted in an existing module — is unchanged;
     // this list is widened because later, separately authorized lanes added
     // new modules, not because S3-7 was relaxed.
@@ -555,6 +562,7 @@ describe('S3-7: the selectable-memberships enumerator is exported from an EXISTI
       'email-verification.ts',
       'identity.ts',
       'legal-acceptance.ts',
+      'organization-commercial-acceptance.ts',
       'permissions.ts',
       'roles.ts',
       'safe-redirect.ts',

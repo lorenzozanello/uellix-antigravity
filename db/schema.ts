@@ -1620,3 +1620,54 @@ export const accountLegalAcceptances = pgTable('account_legal_acceptances', {
   uniqueIndex('uq_account_legal_acceptances_user_version').on(table.userId, table.instrumentVersionId),
   index('idx_account_legal_acceptances_user_id').on(table.userId),
 ])
+
+// T4 — evidence that one ORGANIZATION assented to one ORGANIZATION-class
+// instrument version (FUTURE_DDL.T4_organization_commercial_acceptances;
+// docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0.json,
+// HPO-ODS-W2-29). SEPARATE from T3, never a polymorphic widening of it
+// (I-X-2): a different accepting principal, a different uniqueness rule, and
+// the opposite side of the tenancy question.
+//
+// IS tenant data (I-T4-9), unlike T3 — hence organization_id, RLS ENABLED
+// AND FORCED, and an organization-scoped SELECT policy (see the migration).
+//
+// instrument_key IS PHYSICALLY PERSISTED HERE, and this is the one place T4
+// deliberately DIVERGES from its T3 sibling, which omits it. The parent's
+// FUTURE_DDL.T4 column list names it, and PRESENTATION/SUBMISSION binding
+// makes it a SNAPSHOT of what was accepted rather than a derivable
+// convenience: the acceptance must record WHICH instrument was assented to
+// even if a later read cannot resolve the version row. The drift risk T3
+// avoided by omitting it is closed here at the DATABASE boundary instead —
+// the BEFORE INSERT trigger refuses any row whose instrument_key disagrees
+// with the referenced version's own, so the duplicate cannot diverge.
+//
+// NO is_current, NO is_valid, NO revoked/superseded column and no stored
+// currency flag of any kind (I-T4-3, I-X-1): currency is COMPUTED at read
+// time from the registry and these rows. NO commercial_account_id and NO
+// CommercialAccount-level uniqueness (I-T4-8) — one CommercialAccount may
+// govern several organizations, and a row per account would give an
+// organization that never accepted anything a passing L1 by inheritance.
+//
+// accepted_by_role is a WRITE-TIME SNAPSHOT (I-T4-7), never recomputed from
+// the current membership: an acceptance validly written by an organization
+// admin stays valid after that actor loses the role or leaves, because the
+// role is the authority for a PAST act. audit_log_id is nullable, exactly as
+// on T3.
+export const organizationCommercialAcceptances = pgTable('organization_commercial_acceptances', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  instrumentKey: varchar('instrument_key', { length: 100 }).references(() => legalInstruments.instrumentKey).notNull(),
+  instrumentVersionId: uuid('instrument_version_id').references(() => legalInstrumentVersions.id).notNull(),
+  contentDigest: text('content_digest').notNull(),
+  acceptedByUserId: uuid('accepted_by_user_id').references(() => users.id).notNull(),
+  acceptedByRole: varchar('accepted_by_role', { length: 50 }).notNull(),
+  acceptedAt: timestamp('accepted_at').defaultNow().notNull(),
+  auditLogId: uuid('audit_log_id').references(() => auditLogs.id),
+}, (table) => [
+  check('organization_commercial_acceptances_content_digest_check', sql`${table.contentDigest} ~ '^sha256:[0-9a-f]{64}$'`),
+  // I-T4-1 — ORGANIZATION-level and VERSION-keyed. A second administrator
+  // accepting the same version adds no new fact, and this constraint IS the
+  // concurrency control for two admins accepting simultaneously (N-AO-17).
+  uniqueIndex('uq_organization_commercial_acceptances_org_version').on(table.organizationId, table.instrumentVersionId),
+  index('idx_organization_commercial_acceptances_organization_id').on(table.organizationId),
+])
