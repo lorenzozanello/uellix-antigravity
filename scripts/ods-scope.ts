@@ -830,6 +830,111 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/checkpoint-b0/observation.sql',
     ],
   },
+  // HPO-ODS-W2-30 — Commercial Account CE-3 entitlement-grant implementation.
+  //
+  // DECLARED BY docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json,
+  // REGISTERED HERE. Declaring a grant and registering it are separate
+  // governed acts on separate surfaces: v1.0.33 names THIS file under
+  // EXPLICITLY_NOT_AUTHORIZED for exactly that reason, and the CE-3
+  // implementation mission is PROHIBITED from performing this act for itself —
+  // a node that registers the grant it is about to rely on has authorized its
+  // own diff. The bound branch does NOT exist at the time of this
+  // registration, which is correct and expected: the grant is declared and
+  // registered BEFORE the implementation branch is cut, and appending a row
+  // creates no ref.
+  //
+  // THE THREE PATTERNS ARE RE-DERIVED AND NOT INHERITED. W2-28 and W2-29 carry
+  // these same three patterns in this same order, and byte-identical patterns
+  // are precisely the case where inheritance is invisible. v1.0.33
+  // WHY_THESE_THREE_PATTERNS_RE_DERIVED_NOT_INHERITED therefore re-measures
+  // each one against the L1 merge 0d5ea914 — a precedent one generation NEWER
+  // than the CL-1 merge the CE-3 execution authority itself used — by
+  // git diff --numstat 0d5ea914^1 0d5ea914, never --stat, which abbreviates
+  // long paths so a directory-prefix grep under-counts in silence and sums
+  // insertions with deletions so a one-line rewrite reads as 2:
+  //
+  //   1. db/migrations/** — THREE paths moved: the SQL file, its per-ordinal
+  //      snapshot and the _journal.json append, all emitted by one drizzle-kit
+  //      generate. CE-3 creates the relation entitlement_grants with RLS, so
+  //      it produces at least those three and may produce more than one
+  //      migration. The ordinal is not knowable in advance, so no literal-path
+  //      grant is constructible.
+  //
+  //   2. db/prepared/journal/** — EIGHTY-FIVE wrapper paths moved, in exactly
+  //      two numstat buckets: 84 at (1 insertion, 1 deletion) and 1 at
+  //      (65, 0). Each wrapper header carries the literal
+  //      Unit <ordinal>/<BASELINE_UNITS.length>, so appending a baseline unit
+  //      increments the DENOMINATOR and rewrites that ONE header line in every
+  //      pre-existing wrapper; the single (65, 0) row is the NEW wrapper. This
+  //      is generated-artefact REGENERATION and not an edit of unrelated
+  //      files, and the (1, 1) bucket has grown by exactly one per landed
+  //      migration across four consecutive precedents, so the mechanism is
+  //      understood rather than merely observed. A grant naming only the new
+  //      wrapper would refuse its regenerated siblings, and enumerating
+  //      literals that will be one longer next time is a stale list rather
+  //      than a grant.
+  //
+  //   3. db/prepared/checkpoint-b0/observation.sql — moved with (2, 0). The
+  //      file builds its rowCounts key from an explicit UNION ALL chain with
+  //      ONE ARM PER GOVERNED RELATION and is GENERATED -- DO NOT EDIT, so
+  //      adding an arm changes the FILE BYTES and not merely the query output.
+  //      W2-27 deliberately EXCLUDED this literal under a rule permitting
+  //      inclusion ONLY IF a live re-measurement proves the mission changes
+  //      the file; that rule is APPLIED here rather than assumed away. The
+  //      discriminator is validated in BOTH directions on real commits —
+  //      relation-creating lineages move the file by two lines per relation,
+  //      while the index-only P1 lineage leaves the path absent from its
+  //      commit entirely. CE-3 creates ONE relation and observation.sql
+  //      contains ZERO occurrences of entitlement_grants, so the arm is
+  //      genuinely absent and genuinely will be added. A LITERAL and never
+  //      db/prepared/checkpoint-b0/**: that directory holds exactly one file,
+  //      so even a directory pattern would grant strictly more than the
+  //      classifier can justify.
+  //
+  // NOT db/prepared/**. The DEFAULT protected pattern above IS the broad
+  // db/prepared/**, but the breadth of the PROTECTION is not a licence for
+  // breadth in the GRANT: a blanket pattern would additionally authorize
+  // db/prepared/hosted/** and db/prepared/hosted/governed/**, which are
+  // G2-gated apply surfaces CE-3 has no business touching, plus
+  // db/prepared/storage/**, db/prepared/checkpoint-a1/corroboration.sql and
+  // the separate db/prepared/stella_*.sql numbering family CE-3 does not
+  // extend. A sibling under db/prepared/ that matches the default pattern but
+  // not these two narrower ones is CORRECTLY refused (v1.0.33
+  // NO_DB_PREPARED_WIDENING).
+  //
+  // NO EXISTING ROW CAN STAND IN — INCLUDING THE BYTE-IDENTICAL W2-28 AND
+  // W2-29. MEASURED against this registry rather than asserted: of the
+  // SEVENTEEN predecessor rows, TEN carry db/migrations/** and/or
+  // db/prepared/journal/** (W2-01, W2-12, W2-17, W2-20, W2-21, W2-25, W2-26,
+  // W2-27, W2-28 and W2-29) and SEVEN carry the observation literal (W2-07,
+  // W2-08, W2-16, W2-17, W2-26, W2-28 and W2-29 — W2-08 carries it inside its
+  // 98-entry literal family). Every one of them is bound to a DIFFERENT
+  // branch, and resolution is by exact string equality, so on
+  // codex/commercial-account-ce3-implementation-r1 all seventeen contribute
+  // ZERO patterns. What separates this row from W2-28 and W2-29 is the BRANCH
+  // and nothing else, which is exactly why their pattern rationalisation is
+  // NOT reusable here, why the binding is stated as exact-string, and why a
+  // duplicate-LOOKING row is doing real work.
+  //
+  // THIS ROW ALLOCATES NO ORDINAL AND NO CONTROLLER ACT. The migration pattern
+  // is a GLOB and never a specific ordinal, so registering this row reserves
+  // no number and the implementing mission re-derives one at its OWN head. The
+  // Controller IMMUTABLE_BY_CONVENTION array gates the NEXT LINEAGE allocation
+  // and can never prevent a grant from resolving (v1.0.32
+  // DECOUPLING_PRESERVED) — two independent registries with independent
+  // controls, and this act leaves the Controller untouched. Nothing here
+  // implements CE-3 or authorizes it to be implemented: no CE-3 runtime
+  // exists, and a resolved grant still requires an ordinary --allow pattern
+  // covering the same path (v1.0.33 grant_does_not_replace_allow).
+  {
+    authorityId: 'HPO-ODS-W2-30',
+    branch: 'codex/commercial-account-ce3-implementation-r1',
+    patterns: [
+      'db/migrations/**',
+      'db/prepared/journal/**',
+      'db/prepared/checkpoint-b0/observation.sql',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
