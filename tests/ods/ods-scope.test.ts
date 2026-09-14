@@ -2881,10 +2881,18 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     // ordinal at all.
   })
 
-  it('THE CONTROLLER AXIS IS UNTOUCHED (CE3-ALLOC-N8): v1.0.33 exists on the FILESYSTEM and is still NOT enumerated by the Controller', () => {
-    // This is the normal, expected intermediate state of this lineage: every
-    // addendum passes through it. Allocation puts the file on disk; a
-    // SEPARATE Controller successor act enumerates it.
+  it('THE CONTROLLER AXIS HAS ADVANCED (CE3-ALLOC-N8): v1.0.33 exists on the FILESYSTEM and is now enumerated by the Controller, and the absence literal has moved to v1.0.34', () => {
+    // The intermediate state this control used to pin — on disk but not in the
+    // array — is the normal state of every addendum in this lineage, and it
+    // ENDS when the SEPARATE Controller successor act enumerates the file.
+    // That act has now happened, so the control ADVANCES one lineage step
+    // rather than being relaxed: the absence pin moves from v1.0.33 to
+    // v1.0.34, and the non-vacuity positive moves from v1.0.32 to v1.0.33.
+    // Both halves keep their exact shape, their exact matchers and their exact
+    // relationship — the absence literal and its immediate predecessor — so
+    // this is a one-step advance of a whole control, not a weakening of half
+    // of one. Nothing here allocates v1.0.34: naming an id in an absence
+    // assertion is a PROHIBITION, never an allocation.
     //
     // READ AS TEXT, DELIBERATELY NOT IMPORTED. This module does not import the
     // Controller at all, which is what makes the decoupling structural rather
@@ -2892,12 +2900,14 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     // absence would destroy the very property the surrounding tests claim.
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
     expect(existsSync(path.join(REPO_ROOT, CE3_ADDENDUM))).toBe(true)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBe(0)
     // NON-VACUITY of that zero: the predecessor IS enumerated in the same
     // file, so the path is right, the file is really being read, and the
     // spelling of the literal is the one the Controller actually uses. A
     // zero-occurrence negative with no positive beside it proves nothing.
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json').length - 1).toBeGreaterThan(0)
+    // That predecessor is now v1.0.33 — the entry this successor act appended
+    // — so the same assertion simultaneously proves the enumeration landed.
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json').length - 1).toBeGreaterThan(0)
   })
 
   it('NO PREALLOCATION (CE3-ALLOC-N9): v1.0.34 and W2-31 are named ONLY in prohibitions, the LINEAGE-axis sentinel is unmoved, and the REGISTRY-axis sentinel has advanced to W2-31', () => {
