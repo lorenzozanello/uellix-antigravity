@@ -1,0 +1,394 @@
+{
+  "package_id": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_PARENT_AUTHORITY",
+  "document_class": "EXECUTABLE_TECHNICAL_AUTHORITY_AMENDMENT",
+  "append_only": true,
+  "mission_id": "CE3-OWN-AM-W",
+  "source_opening": "CE3-OWN-AM-AO -- CE3_DEFINER_OWNERSHIP_AUTHORITY_AMENDMENT_OPENING_PASS, plus COORDINATOR_CORRECTION_C1 measured after the opening and discharged in FORWARD_ONLY_CONTRACT.",
+  "materialization_date": "2026-09-14",
+  "amends": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "companion_manifest": null,
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "BASE_SHA": "891f869f99453fc4b6453790b78ac1e7f85d8eb7",
+    "BASE_TREE": "077101e18d49bd4a7a2d0bb9fc8b6b881b7877d7",
+    "BRANCH": "codex/commercial-account-ce3-definer-ownership-authority-amendment-r1",
+    "TARGET": "integration/commercial-v1",
+    "INTERVENING_DELTA": "NONE at authoring time. Measured with `git fetch origin --prune` followed by `git rev-parse origin/integration/commercial-v1`, which equalled 891f869f99453fc4b6453790b78ac1e7f85d8eb7. PR #160 is MERGED at exactly this SHA. PR #159 is OPEN + DRAFT at head cdbdbdd741ce0e67b348a11eb18106f8d94ce93a and is NOT touched by this act.",
+    "base_authority_blob_sha": "610b21277686c7f97073d23ddda9470765c965d4",
+    "controller_state": "44 enumerated entries, final v1.0.33. ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json is ABSENT from disk. HPO-ODS-W2-31 is unallocated and unregistered.",
+    "remeasurement_rule": "Every count and every quotation in this amendment is bound to BASE_SHA 891f869f. A consuming mission whose base differs MUST re-measure and MUST NOT inherit a number from this document."
+  },
+
+  "NAMING_DERIVATION": "The repo-native convention for an append-only correction to a frozen authority is <BASE_PACKAGE_STEM>_AMENDMENT_v<semver>.json in the same directory as its base. Measured at BASE_SHA: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json and docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1.json. Applied to the base stem COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0 this yields exactly docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.1.json, which is the path this mission was directed to write. No STOP condition on naming arose.",
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json is left BYTE-UNCHANGED and remains HISTORICAL AND CONTROLLING authority for everything it says correctly. This artifact rewrites, deletes and reinterprets nothing in it, and its blob sha 610b21277686c7f97073d23ddda9470765c965d4 is asserted unchanged both before and after the commit that carries this file.",
+    "what_this_amendment_does": "It closes exactly ONE parent-level authority delta: the frozen parent does not authorize the governed hosted administrative ownership unit that the CE-3 SECURITY DEFINER evaluator measurably requires, and four of its own security controls rest on a premise it authorizes nobody to establish. The delta is closed NARROWLY -- one named future package, one named future SQL path, one destination owner -- and in no other direction.",
+    "what_this_amendment_is_not": [
+      "NOT an implementation. No SQL file, no registry entry, no migration, no schema edit, no test and no generated artifact is created or changed by this mission.",
+      "NOT a widening of CE-3 to db/prepared/** generally. See NARROWNESS_OF_THE_AUTHORIZATION, which states the prohibition as a closed literal rather than as a caution.",
+      "NOT an ODS lineage allocation. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json is NOT created by this act.",
+      "NOT a protected-grant registration. scripts/ods-scope.ts is not edited by this mission and HPO-ODS-W2-31 is not registered.",
+      "NOT a widening of HPO-ODS-W2-30. See W2_30_DISPOSITION.",
+      "NOT a re-opening of CA-01..CA-08, of ENTITLEMENT_GRANT, of the SS doctrine, of S4 ordering, of the R-C prohibition, of MIGRATION_DAG.ordinal_rule, of RETIREMENT_LAST_RULE, or of any DAG node other than CE-3.",
+      "NOT a parent test-manifest amendment. PARENT_COMPANION_MANIFEST_REQUIRED is NO and docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json is not edited.",
+      "NOT a replacement v1.0.0. This document is a successor artifact carrying a delta, never a re-issued base.",
+      "NOT a claim that the parent was defective in any respect other than the one named in DEFECT_CORRECTED. The parent could not have enumerated a hosted administrative unit whose necessity had not yet been measured; naming the delta is not a retrospective accusation, and no clause of the parent is represented as never having existed."
+    ],
+    "conflict_rule": "Where this amendment and the base disagree, the base controls for EVERY product, schema, compatibility, DAG, backfill, retirement and manifest semantic, and this amendment controls ONLY for the four clauses named by exact quotation in sections A, B, C and D -- MIGRATION_DAG.nodes[CE-3].touches, SHARED_WRITERS.not_a_commercial_chokepoint, the enforceability PREMISE (never the meaning) of SEC-3 / SEC-4 / SEC-6 / SEC-12, and REAL_PG_FUTURE_CONTRACT.harness_shape.cluster as a SUFFICIENCY claim. Nothing else.",
+    "history_rule": "No historical evidence is rewritten. Each refined clause is quoted verbatim from the base, so a reader sees what was said before and what is said now without consulting a diff."
+  },
+
+  "DEFECT_CORRECTED": {
+    "id": "CE-PARENT-A-1",
+    "class": "SECURITY_PREMISE_WITHOUT_AN_AUTHORIZED_MECHANISM",
+    "summary": "The parent freezes CE-3's touches as exactly ['db/schema.ts','db/migrations/**','lib/capabilities/**'] and authorizes no governed hosted administrative surface for the node. The CE-3 implementation resolved F-CE3-1 to R-A -- a SECURITY DEFINER read path -- which makes the ACTUAL PostgreSQL OWNER of public.entitlement_effective(uuid,varchar) a load-bearing security fact. An ordinary db/migrations/** unit is forbidden by the baseline unit's own global invariants from issuing ALTER FUNCTION ... OWNER TO. Under the frozen parent there therefore exists NO authorized mechanism by which the evaluator can come to be owned by a non-BYPASSRLS role, and SEC-3, SEC-4, SEC-6 and SEC-12 rest on a premise the parent authorizes nobody to establish.",
+    "why_it_is_a_delta_and_not_an_inference": "The parent uses the `touches` field DISCRIMINATINGLY across nine nodes -- db/prepared/** appears for CE-2, CE-5, CE-6, CE-7, CE-8 and CE-9 and is absent for CE-3 and CE-4. That omission is a choice, and the frozen CE-3 node authority says so in HOSTED_DISPOSITION.A_disposition.if_an_implementer_concludes_otherwise: 'A CE-3 implementation that finds it genuinely requires a db/prepared/** capability unit has discovered an AUTHORITY DELTA against the parent MIGRATION_DAG. It must STOP and escalate for a parent amendment. It must NOT infer the authority from the fact that its diff wanted to touch the path.' This amendment IS that escalation, taken by the named route rather than by inference.",
+    "measured_evidence": {
+      "R_A_is_the_chosen_resolution": "db/migrations/0073_commercial_account_ce3_entitlement_grants.sql at PR #159 head cdbdbdd741ce0e67b348a11eb18106f8d94ce93a, line 49: 'R-A is taken: the read path is a SECURITY DEFINER function owned by'. The candidate is NOT merged and is NOT relied on as authority -- it is cited only as the measurement establishing that the delta exists.",
+      "the_evaluator_is_definer_with_a_frozen_search_path": "Same file, lines 189-197: CREATE OR REPLACE FUNCTION public.entitlement_effective(p_organization_id uuid, p_capability_key varchar) RETURNS TABLE (kind text, limit_value integer) LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public.",
+      "the_ownership_fact_is_currently_manufactured_by_the_fixture": "tests/postgres/ce3-entitlement-grants-fixtures.ts at the same head, line 212: 'ALTER FUNCTION public.entitlement_effective(uuid, varchar) OWNER TO uellix_owner;'. A fixture that issues the transfer manufactures the exact security fact the suite then certifies. See FIXTURE_DECONTAMINATION_ORDER.",
+      "an_ordinary_migration_cannot_do_it": "The baseline unit's global invariants forbid ownershipStatements and roleStatements in db/migrations/**. The repository-native answer for an administrative ownership transfer is a prechain administrative unit -- measured exemplar db/prepared/stella_hosted_0003_storage_helper_ownership.sql, whose declaration in db/hosted/prechain-ownership.ts carries kind 'prechain-ownership', applyWindow 'prechain' and destinationOwner 'uellix_owner'.",
+      "next_free_hosted_ordinal": "db/prepared/ holds stella_hosted_0000 through stella_hosted_0008 at BASE_SHA, measured by directory listing. 0009 is the next free ordinal, and is frozen below as a FORWARD REFERENCE, not as an allocation."
+    }
+  },
+
+  "A__MIGRATION_DAG_NODE_CE3_TOUCHES": {
+    "clause_amended": "MIGRATION_DAG.nodes[id=CE-3].touches",
+    "base_clause_quoted_verbatim": "\"touches\": [\"db/schema.ts\",\"db/migrations/**\",\"lib/capabilities/**\"]",
+    "what_is_NOT_rewritten": "The three original touches stand, unmodified, in their original order, with their original meaning. This amendment removes none of them and reinterprets none of them. The base's compatibility prose for CE-3 -- 'ADDITIVE and UNREAD. The evaluator exists and NOTHING consumes it yet.' -- is likewise unchanged, as are the node's delivers, resolves and depends_on fields.",
+    "narrow_supersession": "The claim that CE-3 requires NO prepared/hosted administrative surface is SUPERSEDED, and only that claim. CE-3 additionally carries exactly ONE further responsibility: the governed hosted ADMINISTRATIVE OWNERSHIP unit that transfers the owner of public.entitlement_effective(uuid,varchar) to uellix_owner.",
+    "amended_touches_for_CE3": [
+      "db/schema.ts",
+      "db/migrations/**",
+      "lib/capabilities/**",
+      "db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql"
+    ],
+    "the_fourth_entry_is_a_LITERAL_not_a_GLOB": "This is the whole point of the clause. The fourth entry is an exact file path containing no wildcard character. It is NOT 'db/prepared/**', NOT 'db/prepared/stella_hosted_*' and NOT any pattern of any kind. A CE-3 diff that touches any OTHER file under db/prepared/** is outside this amendment and is a STOP_FOR_AUTHORITY_DELTA against this document, exactly as it was against the base.",
+    "db_prepared_README_note": "db/prepared/README.md is the index every db/prepared/ addition mechanically updates in this repository. It is named in FUTURE_HOSTED_IMPLEMENTATION_SURFACE as a second protected literal for the FUTURE implementation act. It is deliberately NOT added to CE-3's touches here, because it is a mechanical consequence of adding a file to that directory rather than an independent CE-3 responsibility, and the future hosted-implementation opening owns the exact write-set enumeration."
+  },
+
+  "NARROWNESS_OF_THE_AUTHORIZATION": {
+    "authorized": "EXACTLY ONE future administrative ownership mechanism, whose identity, path, destination owner, apply window, forward-only disposition and single permitted state mutation are all frozen in FUTURE_HOSTED_PACKAGE_CONTRACT below.",
+    "explicitly_NOT_authorized": [
+      "db/prepared/** generally, in any pattern form, for CE-3 or for any other node.",
+      "A semantic prepared CAPABILITY unit for CE-3. The frozen node authority's HOSTED_DISPOSITION.A_disposition value NO is PRESERVED and this amendment does not convert it to YES. The authorized unit is an ADMINISTRATIVE unit -- a third category, frozen in the companion node amendment's HOSTED_DISPOSITION_THIRD_CATEGORY.",
+      "Any role creation, membership mutation, policy creation, GRANT or REVOKE by the authorized unit.",
+      "Any second state-mutating statement in the authorized unit.",
+      "Any additional hosted unit for CE-4, or for any node whose touches the parent froze without db/prepared/**.",
+      "Any entry in db/hosted/hosted-package-manifest.ts HOSTED_CHAIN. The authorized unit is NOT a chain link.",
+      "Any edit to db/prepared-package-order.ts. The node authority's 'CE-3 appends NOTHING to db/prepared-package-order.ts and registers no supersession' is PRESERVED."
+    ],
+    "the_prohibition_is_the_load_bearing_half": "An amendment that authorizes a mechanism without closing the generalisation it invites has widened the node while appearing to narrow it. The closed literal above is that closure, and it is checkable by set comparison rather than by reading intent."
+  },
+
+  "B__SHARED_WRITERS_CE3_DISPOSITION": {
+    "clause_amended": "SHARED_WRITERS.not_a_commercial_chokepoint",
+    "base_clause_quoted_verbatim": "\"db/hosted/baseline-manifest.ts (tenancy CP-3) is a shared writer for lanes that add hosted units. This package adds none at authority time; whether CE-2/CE-5/CE-6/CE-7 produce hosted units is a per-node decision and is recorded here as UNKNOWN rather than assumed absent.\"",
+    "the_defect_in_this_clause": "CE-3 is not in the enumerated list at all. Its absence reads as a settled 'no', when in fact CE-3's hosted question had simply never been asked. This is a STRUCTURAL OMISSION, not a wrong answer, and the correction is to give CE-3 an explicit disposition rather than to leave it inferable from a list it never appeared on.",
+    "CE3_DISPOSITION": "REQUIRED_FOR_DEFINER_OWNERSHIP_ONLY",
+    "meaning": "CE-3 IS a lane that adds a hosted unit, and therefore IS a participant in the db/hosted/** shared-writer surface -- but exclusively for the administrative ownership unit named in FUTURE_HOSTED_PACKAGE_CONTRACT and for the two registry files that unit mechanically requires.",
+    "explicitly_not_permission": "REQUIRED_FOR_DEFINER_OWNERSHIP_ONLY is NOT permission for CE-3 to create arbitrary prepared capability units, and it is not a licence to edit db/hosted/** beyond the two registries the authorized unit forces. The per-node UNKNOWN the base records for CE-2/CE-5/CE-6/CE-7 is untouched and is NOT resolved by this amendment in either direction.",
+    "baseline_manifest_note": "Whether the authorized administrative unit produces a db/hosted/baseline-manifest.ts consequence is NOT decided here. db/prepared/** administrative units are not db/migrations/** baseline units, and the measured exemplar stella_hosted_0003 carries a PrechainOwnershipPackage declaration rather than a BaselineUnit entry. The future hosted-implementation opening measures this; this amendment does not guess it. Recorded as F-CE3-OWN-2.",
+    "chokepoint_ids_unchanged": "CP-1 through CP-8 are neither renumbered nor extended, and no new chokepoint id is minted by this amendment."
+  },
+
+  "C__SECURITY_CONTROLS_ENFORCEABILITY_PREMISE": {
+    "clause_amended": "SECURITY_CONTROLS -- the ENFORCEABILITY PREMISE of SEC-3, SEC-4, SEC-6 and SEC-12. NOT their semantic meaning.",
+    "what_is_expressly_NOT_changed": "The control TEXT of all twelve parent controls SEC-1..SEC-12 is unchanged, unrenumbered and unreinterpreted. SEC-3 still says an entitlement does not grant membership. SEC-4 still says membership does not imply entitlement and that the refusal is on the grant, not on the role. SEC-6 still says a cross-organization request fails CLOSED with a failure code rather than an empty result. SEC-12 still says history remains reconstructible from append-only rows, and its 'attacks' clause is untouched. Every control's `enforceable_from` node assignment is unchanged. This amendment adds a PRECONDITION under which four of them are enforceable at all; it does not touch what any of them asserts.",
+    "the_premise_made_explicit": "Under the R-A resolution, SEC-3, SEC-4, SEC-6 and SEC-12 are enforced THROUGH a SECURITY DEFINER evaluator reading a relation that carries FORCE ROW LEVEL SECURITY. A SECURITY DEFINER function executes with the privileges of its OWNER. If that owner bypasses row-level security, FORCE ROW LEVEL SECURITY is silently inert for every read the evaluator performs, and all four controls degrade from enforced properties to unverified intentions -- with no error, no failing test and no visible symptom.",
+    "the_required_property": "The CE-3 evaluator's SECURITY DEFINER ACTUAL PostgreSQL owner MUST be a role that does not bypass FORCE ROW LEVEL SECURITY.",
+    "the_exact_role_for_the_selected_R_A_implementation": {
+      "role": "uellix_owner",
+      "rolsuper": false,
+      "rolbypassrls": false
+    },
+    "no_alternative_is_admitted": "There is no 'or equivalent role', no 'or a BYPASSRLS posture', no 'or an implementation-defined owner' and no 'policy OR bypass' reading of this clause. A superuser owner fails it. A BYPASSRLS owner fails it. An owner that merely happens to behave correctly on the cluster under test fails it, because rolsuper and rolbypassrls are asserted as pg_roles catalog facts, never inferred from an observed row count.",
+    "why_both_flags_and_not_just_one": "rolbypassrls alone is insufficient: a superuser bypasses row-level security irrespective of rolbypassrls. Asserting only one flag leaves the other as an open door, so both are frozen.",
+    "SEC_12_specific_note": "SEC-12 is included because a definer evaluator owned by a bypassing role can answer from rows no policy would have shown it, making the reconstructed history a function of the owner's privilege rather than of the append-only rows. The control's own text is unchanged.",
+    "unchanged_controls": ["SEC-1", "SEC-2", "SEC-5", "SEC-7", "SEC-8", "SEC-9", "SEC-10", "SEC-11"],
+    "all_parent_security_control_ids_preserved": ["SEC-1", "SEC-2", "SEC-3", "SEC-4", "SEC-5", "SEC-6", "SEC-7", "SEC-8", "SEC-9", "SEC-10", "SEC-11", "SEC-12"]
+  },
+
+  "D__REAL_PG_FUTURE_CONTRACT_ORIGIN_CLARIFICATION": {
+    "clause_amended": "REAL_PG_FUTURE_CONTRACT.harness_shape.cluster, as a SUFFICIENCY claim.",
+    "base_clause_quoted_verbatim": "\"cluster\": \"A DISPOSABLE cluster only, via the repository's disposable-audit path -- NEVER staging, NEVER production, NEVER the canonical local stack.\"",
+    "what_is_NOT_changed": "The disposable-only rule is PRESERVED ABSOLUTELY. This amendment does not permit a probe against staging, production or the canonical local stack, and does not weaken the rule in any direction. The twelve parent probe ids PG-1..PG-12 are unchanged, unrenumbered and unreassigned, and no parent probe is added or removed by this amendment.",
+    "the_clarification": "A disposable baseline cluster ALONE cannot establish the production/hosted ownership ORIGIN. The disposable cluster can show what the owner IS; it cannot show HOW that owner came to be, because a fixture can set the owner to anything the test wants and the resulting pg_proc row is byte-indistinguishable from one produced by a governed package.",
+    "the_node_level_proof_must_establish_BOTH": [
+      "ACTUAL OWNER -- the pg_proc owner of public.entitlement_effective(uuid,varchar) is uellix_owner, with rolsuper=false and rolbypassrls=false read from pg_roles.",
+      "GOVERNED ORIGIN OF THAT OWNER -- the ownership transition was produced by the governed hosted administrative package, applied as the real package, and NOT by a direct ownership statement in the test fixture."
+    ],
+    "why_this_is_a_clarification_and_not_a_new_probe_here": "The parent's probe list governs the BATCH. The node-local probe family that discharges this obligation is PG-CE3-DEFINER-OWNER, and it is frozen in the CE-3 node amendment, not here. A parent amendment that minted a node-local probe id would be resolving at the wrong altitude.",
+    "the_falsifier": "If the ownership proof would still pass with the governed package absent, it has proven nothing about origin. That falsifier is discharged by mutation control CE3-OWN-M-1 in the companion manifest amendment."
+  },
+
+  "E__FAIL_CLOSED_RULE": {
+    "clause": "PURPOSE.fail_closed_rule",
+    "base_clause_quoted_verbatim": "\"Where this authority marks a decision UNKNOWN or FUTURE_MEASUREMENT_REQUIRED, an implementing mission must measure it, not assume it. Unknown required evidence fails closed.\"",
+    "disposition": "PRESERVED UNCHANGED, VERBATIM, AND BINDING ON THIS AMENDMENT ITSELF.",
+    "application_to_this_amendment": "Every field this amendment leaves for a later act to measure is marked explicitly -- DERIVED_NOT_ALLOCATED for the ODS identifiers, UNKNOWN for the manifest test hosts -- and none of them is a security decision. A security decision is never represented as UNKNOWN in this amendment or in either of its companions."
+  },
+
+  "F__PRESERVED_UNCHANGED": {
+    "rule": "Everything in the parent not named in A through E is PRESERVED VERBATIM. The list below is explicit because a preservation claim stated only as a generality is one nobody can check.",
+    "explicitly_preserved": {
+      "ENTITLEMENT_GRANT": "The 13-column target shape, effective_key, distinctness_rule, provenance_sufficiency, classification and prohibitions are ALL unchanged.",
+      "constraints": "Every constraint semantic of ENTITLEMENT_GRANT and of every other relation in the parent is unchanged.",
+      "CA_01_to_CA_08": "Unchanged. No CA is reopened, restated with different force, or reassigned to a different node.",
+      "SS_doctrine": "SELF_SERVICE and its target journey are unchanged.",
+      "S4_ordering": "MULTIORG_INTERSECTION's ordering -- tenancy S4 BEFORE the RLS of the new relations is finalised -- is unchanged and remains binding. This amendment does NOT pre-empt S4 and authorizes no tenant-facing policy.",
+      "R_C_prohibition": "R-C (author the tenant-facing policy set now, before S4) remains PROHIBITED. This amendment does not admit it, soften it, or create a route around it.",
+      "MIGRATION_DAG_ordinal_rule": "NO MIGRATION ORDINAL IS ALLOCATED. The base's ordinal_rule stands verbatim and this amendment allocates none.",
+      "RETIREMENT_LAST_RULE": "Unchanged, including every one of its preconditions.",
+      "node_touches_CE1_CE2_CE4_CE5_CE6_CE7_CE8_CE9": "Unchanged. Exactly one node's touches are amended by this document, and it is CE-3.",
+      "all_existing_parent_PG_ids": ["PG-1", "PG-2", "PG-3", "PG-4", "PG-5", "PG-6", "PG-7", "PG-8", "PG-9", "PG-10", "PG-11", "PG-12"],
+      "all_existing_parent_security_control_ids": ["SEC-1", "SEC-2", "SEC-3", "SEC-4", "SEC-5", "SEC-6", "SEC-7", "SEC-8", "SEC-9", "SEC-10", "SEC-11", "SEC-12"],
+      "other_parent_sections_untouched": ["COMMERCIAL_ACCOUNT", "ORGANIZATION_RELATION", "TRANSFER_CONTRACT", "PLAN_ENTITLEMENT_BOUNDARY", "USAGE_QUOTA_BOUNDARY", "PAYMENT_SUSPENSION", "SELF_SERVICE", "STRIPE_BOUNDARY", "PLATFORM_ADMIN_BOUNDARY", "MULTIORG_INTERSECTION", "PREPARED_CAPABILITY_DISPOSITIONS", "BACKFILL", "COMPATIBILITY", "LEGACY_RETIREMENT", "MUTATION_CONTROLS", "PRESERVED_INVARIANTS", "CURRENT_CONTRADICTIONS", "EVIDENCE_ANCHORS", "ALIGNMENT_REFERENCES", "FUTURE_ODS_NEEDS_SYMBOLIC", "OPEN_FINDINGS", "self_check", "final_state"]
+    }
+  },
+
+  "FUTURE_HOSTED_PACKAGE_CONTRACT": {
+    "classification": "FORWARD REFERENCE. Freezing an identity is not allocating it and is not implementing it. No file named below is created by this act.",
+    "FUTURE_HOSTED_PACKAGE_ID": "stella_hosted_0009_entitlement_evaluator_ownership",
+    "FUTURE_HOSTED_SQL_PATH": "db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql",
+    "FUTURE_REGISTRY": "db/hosted/prechain-ownership.ts",
+    "FUTURE_FORWARD_ONLY_REGISTRY": "db/hosted/forward-only-packages.ts",
+    "both_registries_are_REQUIRED": "YES. Neither is conditional. See FORWARD_ONLY_CONTRACT for why the forward-only registry is unconditional rather than 'required if forward-only'.",
+    "destination_owner": "uellix_owner",
+    "target_function": "public.entitlement_effective(uuid,varchar)",
+    "apply_window": "prechain",
+    "administrative_identity": "The governed administrative hosted session -- the same principal class that applies stella_hosted_0003..0008 through the repository's managed administrative channel. NOT uellix_migrator, and NOT the application runtime.",
+    "the_single_permitted_state_mutation": "ALTER FUNCTION public.entitlement_effective(uuid, varchar) OWNER TO uellix_owner;",
+    "one_statement_does_not_mean_one_line": "This constrains the number of STATE-MUTATING statements to exactly one. Guards, preconditions, RAISE EXCEPTION aborts, RAISE NOTICE lines and postcondition verification blocks are EXPECTED and are not second mutations. What is forbidden is a SECOND statement that changes database state.",
+    "ordinal_derivation": "db/prepared/ carries stella_hosted_0000 through stella_hosted_0008 at BASE_SHA 891f869f, measured by directory listing. 0009 is the next free ordinal. If a competing lane takes 0009 before this package is written, the future hosted-implementation opening re-derives the ordinal and re-freezes the identity by its own act -- the implementer does NOT renumber silently.",
+    "detailed_contract_location": "The preconditions, postconditions and prohibitions of this package are frozen in docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, which is where node-level execution semantics belong. This parent clause freezes the IDENTITY and the AUTHORIZATION; the node amendment freezes the BEHAVIOUR."
+  },
+
+  "FORWARD_ONLY_CONTRACT": {
+    "classification": "BINDING. Discharges COORDINATOR_CORRECTION_C1 and closes the only unresolved OR left by the opening.",
+    "FUTURE_PACKAGE_FORWARD_ONLY": "YES",
+    "not_implementation_defined": "This is NOT left to the implementer. A package whose forward-only disposition is decided at implementation time is one whose reversal semantics nobody adjudicated.",
+    "required_future_registry": "db/hosted/forward-only-packages.ts",
+    "required_future_package_fields": {
+      "rollbackFile": null,
+      "rollbackSha256": null,
+      "forwardOnlyNoRollbackReason": "REQUIRED. Substantive, non-empty, governed rationale. The measured registry mechanism rejects a thin one: db/hosted/forward-only-packages.ts states of its reason field 'Read by the registry tripwire, which asserts it is substantial. A short reason is the failure mode this field exists to make visible: \"no rollback\" is a decision, and a decision with a one-line justification is a decision nobody made.'"
+    },
+    "required_rationale_class": "Reverting the owner to postgres or to any other BYPASSRLS role recreates the state in which the evaluator executes under a role that bypasses FORCE ROW LEVEL SECURITY, which invalidates R-A and silently un-enforces SEC-3, SEC-4, SEC-6 and SEC-12. A rollback script here would be one whose only effect is to reopen the security defect the package closes.",
+    "semantic_class_derivation": "This unit is the same semantic class as stella_hosted_0003, which is forward-only because reversal reopens the defect it closes. It is NOT the class of stella_hosted_0008 or stella_0020, both of which ship a _rollback.sql because their effects admit exact governed reversal. The measured registry states the discriminator directly: 'A PRECHAIN UNIT IS NOT AUTOMATICALLY A MEMBER OF THIS LIST ... which is a fact about what those five units DO -- reopening any of them reopens an outage -- and never a property of the channel.'",
+    "ROLLBACK_FILE": "NONE",
+    "no_rollback_sql_file_is_authorized": "A db/prepared/stella_hosted_0009_rollback.sql is NOT authorized by this amendment, and writing one would be an act against it.",
+    "consistency_with_the_measured_registry_invariant": "db/hosted/prechain-ownership.ts states 'Exactly one of `rollbackFile` and `forwardOnlyNoRollbackReason` is non-null' and that forwardOnlyReasonOf 'throws rather than carrying a null into this registry'. rollbackFile=null plus rollbackSha256=null plus a substantive forwardOnlyNoRollbackReason is the exact shape that invariant requires, and is the shape stella_hosted_0003 already carries at BASE_SHA."
+  },
+
+  "FIXTURE_DECONTAMINATION_ORDER": {
+    "classification": "BINDING ON THE FUTURE CE-3 R4. Recorded here because it is the parent-level reason the governed package is REQUIRED rather than merely preferable.",
+    "the_contamination": "tests/postgres/ce3-entitlement-grants-fixtures.ts line 212 at PR #159 head cdbdbdd7 issues 'ALTER FUNCTION public.entitlement_effective(uuid, varchar) OWNER TO uellix_owner;'. The fixture manufactures the exact security fact the Real-PG suite then certifies, so the suite's ownership arm is circular.",
+    "the_order": "R4 MUST REMOVE that statement. The Real-PG suite must consume the real governed hosted package bytes and mechanism instead.",
+    "no_transcription_permitted": "A duplicated or transcribed copy of the ALTER OWNER statement anywhere in tests/** is equally contaminating and equally forbidden. Removing it from one file and retyping it in another is not decontamination.",
+    "scope_of_the_order": "EXACTLY the evaluator's ownership transfer. The same fixture's lines 213-215 re-home public.current_user_org_ids(), public.current_user_is_super_admin() and public.current_user_role_in_org(uuid), and its line 201 re-homes tables in a loop. Those are OUTSIDE this amendment and are neither ordered removed nor blessed by it. Widening the order to every ALTER ... OWNER TO in the fixture would be an authority expansion this amendment does not make.",
+    "not_performed_here": "This amendment performs no edit to tests/**. It records the order; R4 executes it."
+  },
+
+  "FUTURE_HOSTED_IMPLEMENTATION_SURFACE": {
+    "classification": "BOUNDARY, NOT ALLOCATION. This amendment implements nothing. It makes the future implementation boundary precise enough that the later opening cannot widen it by inference.",
+    "PROTECTED_LITERALS_EXPECTED": [
+      "db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql",
+      "db/prepared/README.md"
+    ],
+    "why_these_two_are_protected": "db/prepared/** is a member of DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts at BASE_SHA (scripts/ods-scope.ts:82-90). Both literals fall inside that protected surface and therefore require a protected grant. They are frozen here as EXACT LITERALS, never as the pattern itself.",
+    "UNPROTECTED_GOVERNANCE_RUNTIME_REGISTRY_EXPECTED": [
+      "db/hosted/prechain-ownership.ts",
+      "db/hosted/forward-only-packages.ts"
+    ],
+    "both_mandatory": "YES. db/hosted/** is not a member of DEFAULT_PROTECTED_PATTERNS, so these two need ordinary allows rather than a grant -- but they are no less REQUIRED for that.",
+    "mechanically_forced_test_certifier_hosts": {
+      "disposition": "NOT ENUMERATED HERE, DELIBERATELY.",
+      "why": "The exact hosts are mechanically forced by what the two registries already assert -- the forward-only registry tripwire, the prepared-sql source-of-truth test, the sha256 pins and the per-package failure injections -- and enumerating them from this base would be a guess that a later live-base remeasurement could falsify. A guessed path is not a stronger commitment than an honest deferral.",
+      "what_IS_frozen_instead": [
+        "Any mechanically forced host MUST prove that the package's sourceSha256 matches the real bytes on disk, through the repository's existing sha256OfPreparedSql mechanism rather than through a transcribed constant.",
+        "Any mechanically forced host MUST prove the forward-only declaration is internally consistent: rollbackFile null, rollbackSha256 null, forwardOnlyNoRollbackReason substantive and non-empty.",
+        "Any mechanically forced host MUST be enumerated by the later opening as EXACT paths, never as a tests/** pattern."
+      ],
+      "no_broad_tests_authorization": "A blanket tests/** authorization is NOT granted by this amendment and MUST NOT be inferred from the fact that a test file will have to change."
+    },
+    "ownership_of_final_enumeration": "The later hosted-implementation opening owns the final exact path enumeration and the final protected-grant pattern set. This amendment fixes the two protected literals and the two mandatory registries, and fixes nothing else about that write set."
+  },
+
+  "ODS_CONSEQUENCE": {
+    "this_amendment_act": {
+      "ODS_LINEAGE_REQUIRED": "NO",
+      "PROTECTED_GRANT_REQUIRED": "NO",
+      "why": "All three files written by this act are under docs/ops/commercial/**, which is NOT a member of DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts at BASE_SHA. Ordinary explicit allows are sufficient, and are the only thing used.",
+      "scope_invocation_shape": "pnpm ods:scope -- --base 891f869f99453fc4b6453790b78ac1e7f85d8eb7 --allow <each of the three exact paths>. No --protected-authority is passed, and none is needed."
+    },
+    "the_future_hosted_implementation": {
+      "ODS_LINEAGE_REQUIRED": "YES",
+      "PROTECTED_GRANT_REQUIRED": "YES",
+      "NEXT_ODS_ADDENDUM_EXPECTED": "v1.0.34",
+      "NEXT_HPO_ID_EXPECTED": "HPO-ODS-W2-31",
+      "both_dispositions": "DERIVED_NOT_ALLOCATED",
+      "derivation": "v1.0.34 is derived as the successor of ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json, the final enumerated entry of the live Controller's 44-entry EXACT-membership ledger at BASE_SHA. HPO-ODS-W2-31 is derived as the successor of HPO-ODS-W2-30. Both are DERIVATIONS of what the next identifier WOULD be. Neither is an allocation.",
+      "naming_an_id_is_not_allocating_it": "Both identifiers appear in this document only inside derivation and prohibition semantics. At BASE_SHA, HPO-ODS-W2-31 already appears in ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json and in tests/ods/ exclusively inside NO_PREALLOCATION prohibition semantics, and that did not allocate it either.",
+      "branch_binding": "NOT ALLOCATED HERE. The exact future branch binding of HPO-ODS-W2-31 is the later opening's act.",
+      "prohibitions_on_this_act": [
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json is NOT created.",
+        "HPO-ODS-W2-31 is NOT registered.",
+        "scripts/ods-scope.ts is NOT edited.",
+        "scripts/ods-controller.ts is NOT edited.",
+        "No ODS registry-axis or lineage-axis sentinel anywhere in tests/ods/ is advanced."
+      ]
+    }
+  },
+
+  "W2_30_DISPOSITION": {
+    "value": "UNCHANGED_NOT_WIDENED",
+    "binding": "HPO-ODS-W2-30 remains bound EXACTLY to branch codex/commercial-account-ce3-implementation-r1 with its existing three protected patterns, exactly as registered in scripts/ods-scope.ts at BASE_SHA. This amendment changes nothing about it.",
+    "no_union_by_branch": "HPO-ODS-W2-31 will be a DIFFERENT grant, for a DIFFERENT branch, with DIFFERENT protected literals. The two are not unioned, and W2-30's branch binding is not extended to cover the hosted implementation branch.",
+    "no_widening_to_db_prepared": "W2-30 is NOT widened to the db/prepared/** pattern, nor to any db/prepared/ literal, by this amendment. The two protected literals in FUTURE_HOSTED_IMPLEMENTATION_SURFACE belong to the FUTURE W2-31, not to W2-30.",
+    "why_this_is_stated_rather_than_left_silent": "The tempting shortcut is to observe that the hosted package serves CE-3, that W2-30 is the CE-3 grant, and to widen W2-30 rather than allocate W2-31. That shortcut would silently extend an integrated grant's branch binding, which the repository's grant-narrowness controls exist to prevent. It is refused by name here so that the refusal is checkable."
+  },
+
+  "PR159_CONTINUITY": {
+    "classification": "RECORDED, NOT PERFORMED. This amendment performs no operation of any kind on PR #159.",
+    "PR159_state_at_BASE_SHA": {
+      "number": 159,
+      "state": "OPEN",
+      "draft": true,
+      "head": "cdbdbdd741ce0e67b348a11eb18106f8d94ce93a",
+      "branch": "codex/commercial-account-ce3-implementation-r1"
+    },
+    "now": "PR #159 stays FROZEN. NO SYNC is performed by this act.",
+    "future_strategy": "After this authority amendment, the HPO-ODS-W2-31 grant and the hosted ownership implementation have all integrated: an ORDINARY MERGE of integration/commercial-v1 INTO codex/commercial-account-ce3-implementation-r1, followed by the bounded R4.",
+    "prohibited_in_that_future_act": ["NO REBASE", "NO FORCE PUSH", "NO HISTORY REWRITE", "NO SQUASH of R1/R2/R3"],
+    "why": "R1, R2 and R3 are the evidence trail of what was measured and when. A squash or rebase destroys the correspondence between a certification and the bytes it certified."
+  },
+
+  "R4_BOUNDARY": {
+    "classification": "RECORDED CONTRACT, NOT IMPLEMENTATION.",
+    "bytes_expected_preserved": [
+      "db/migrations/0073_commercial_account_ce3_entitlement_grants.sql",
+      "db/schema.ts",
+      "lib/capabilities/entitlement-catalogue.ts",
+      "lib/capabilities/entitlement-evaluator.ts",
+      "the migration journal corpus",
+      "the CHECKPOINT B0 observation",
+      "the baseline manifest"
+    ],
+    "R4_principally_owns": [
+      "fixture decontamination -- removal of the direct evaluator ownership re-home, per FIXTURE_DECONTAMINATION_ORDER",
+      "ownership proof re-grounding onto the governed package origin",
+      "the new ownership control host and its materialization",
+      "consumer-census definition-surface retarget, ONLY where mechanically required"
+    ],
+    "not_authorized": "Unrelated tail-debt cleanup is NOT authorized in R4 by this amendment.",
+    "frozen_manifest_rule": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json may be changed in R4 ONLY where its OWN text explicitly pre-authorized a materialization field. It may NOT receive new semantics in place. The new semantics live in the companion manifest amendment."
+  },
+
+  "ADVERSARIAL_SWEEP_DECLARATIONS": {
+    "classification": "Explicit refusals, so that a certifier can check for the presence of a refusal rather than for the absence of a phrase.",
+    "refused": {
+      "db_prepared_generally_authorized_for_CE3": "REFUSED. Exactly one literal .sql path is authorized. See NARROWNESS_OF_THE_AUTHORIZATION.",
+      "any_owner_equivalent_to_uellix_owner": "REFUSED. The owner is exactly uellix_owner. No equivalence class is admitted.",
+      "BYPASSRLS_acceptable": "REFUSED. rolbypassrls=false is frozen, and rolsuper=false with it.",
+      "fixture_ALTER_OWNER_acceptable": "REFUSED. See FIXTURE_DECONTAMINATION_ORDER.",
+      "R_A_optional": "REFUSED. F_CE3_1_DISPOSITION is R_A_NON_TENANT_FACING_DEFINER_READ and is preserved by the node amendment.",
+      "tenant_policy_before_S4": "REFUSED. R-C remains prohibited and S4 ordering is preserved.",
+      "W2_30_widened": "REFUSED. See W2_30_DISPOSITION.",
+      "W2_31_allocated": "REFUSED. DERIVED_NOT_ALLOCATED.",
+      "v1_0_34_allocated": "REFUSED. DERIVED_NOT_ALLOCATED.",
+      "hosted_package_implemented": "REFUSED. No SQL file is written by this act.",
+      "PR159_synchronized": "REFUSED. No operation is performed on PR #159.",
+      "CE4_consumer_authorized": "REFUSED. ENFORCEMENT_BOUNDARY_CE4 is untouched; nothing consumes the evaluator as a result of this amendment.",
+      "rollback_implementation_defined": "REFUSED. FORWARD_ONLY is YES and ROLLBACK_FILE is NONE. Both are frozen, not deferred."
+    },
+    "hedging_vocabulary_prohibition": "No load-bearing security or write-surface fact in this document is attached to 'as needed', 'if required', 'or similar', 'and related files', 'equivalent role', 'later decide' or 'implementation may choose'. Where a later act genuinely owns a decision, that decision is named, bounded and assigned -- never softened."
+  },
+
+  "PREDECESSOR_IMMUTABILITY": {
+    "rule": "No predecessor is mutated by this act. Byte identity is asserted by blob sha, measured at BASE_SHA before the write and re-measured after the commit.",
+    "asserted_unchanged": {
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json": "610b21277686c7f97073d23ddda9470765c965d4",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json": "fce743821a03ccc6aeac9511ca5465852ecae048",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json": "cfc098dd993519853fce6219f57cd77e159fa618",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json": "cf8e8b80459ca3d02a055436bd25aee54685c39e",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json": "2e0e360f20993712d3a4f07c924a3e9038f57ebd",
+      "scripts/ods-scope.ts": "49b10cfcbcdd44baf2fda133cef027c86085e2cb",
+      "scripts/ods-controller.ts": "112369ebcb5f89af141ca42d1c8f238708d893f5"
+    }
+  },
+
+  "self_check": {
+    "note": "Deterministic checks verifiable by inspection or a one-line node/grep command against this file and the repository at BASE_SHA. Not a script. Where an INDEPENDENT literal or set comparison against the base file was practical, it is used in preference to a check derived from the same structure it validates.",
+    "expected_files_written_by_this_mission": 3,
+    "expected_file_paths": [
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+    ],
+    "expected_artifact_ids_unique": 3,
+    "expected_existing_files_modified": 0,
+    "expected_base_authority_blob_sha": "610b21277686c7f97073d23ddda9470765c965d4",
+    "expected_parent_security_control_count": 12,
+    "expected_parent_probe_count": 12,
+    "expected_parent_probe_ids_added_by_this_amendment": 0,
+    "expected_parent_dag_nodes_amended": 1,
+    "expected_amended_CE3_touch_count": 4,
+    "expected_new_CE3_touch_entries": 1,
+    "expected_protected_literals_frozen": 2,
+    "expected_mandatory_registries_frozen": 2,
+    "expected_future_package_forward_only": "YES",
+    "expected_future_rollback_file": "NONE",
+    "expected_ods_addendum_created_by_this_act": "NONE",
+    "expected_hpo_id_registered_by_this_act": "NONE",
+    "expected_protected_grants_registered_by_this_act": 0,
+    "expected_migration_ordinal_allocated": "NONE",
+    "expected_blocking_findings": 0,
+    "expected_unknown_findings": 0,
+    "checks": [
+      "amends == 'docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json' and supersedes === null and append_only === true",
+      "A__MIGRATION_DAG_NODE_CE3_TOUCHES.amended_touches_for_CE3.length === 4; its first three entries are IDENTICAL AS AN ORDERED LIST to the base file's MIGRATION_DAG.nodes.find(n=>n.id==='CE-3').touches; its fourth entry contains no '*' character",
+      "F__PRESERVED_UNCHANGED.explicitly_preserved.all_existing_parent_security_control_ids is SET-EQUAL to the BASE FILE's SECURITY_CONTROLS.controls.map(c=>c.id) -- an INDEPENDENT comparison against the base, not a re-derivation of this file's own C block",
+      "F__PRESERVED_UNCHANGED.explicitly_preserved.all_existing_parent_PG_ids is SET-EQUAL to the BASE FILE's REAL_PG_FUTURE_CONTRACT.probes.map(p=>p.id), length 12, and this amendment introduces no PG-n id of its own",
+      "C__SECURITY_CONTROLS_ENFORCEABILITY_PREMISE.the_exact_role_for_the_selected_R_A_implementation deep-equals {role:'uellix_owner', rolsuper:false, rolbypassrls:false}, and no alternative owner appears anywhere in this file",
+      "FUTURE_HOSTED_PACKAGE_CONTRACT.FUTURE_HOSTED_PACKAGE_ID === 'stella_hosted_0009_entitlement_evaluator_ownership' and FUTURE_HOSTED_SQL_PATH === 'db/prepared/' + that id + '.sql'",
+      "FORWARD_ONLY_CONTRACT.FUTURE_PACKAGE_FORWARD_ONLY === 'YES', ROLLBACK_FILE === 'NONE', required_future_package_fields.rollbackFile === null and .rollbackSha256 === null",
+      "ODS_CONSEQUENCE.the_future_hosted_implementation.both_dispositions === 'DERIVED_NOT_ALLOCATED' and W2_30_DISPOSITION.value === 'UNCHANGED_NOT_WIDENED'",
+      "The literal 'db/prepared/**' occurs 11 times TEXTUALLY in this file, spread across 9 DISTINCT STRING VALUES -- the two counts differ because one value contains it twice, and a check that conflates them will disagree with itself. EVERY occurrence, on both counts, is a REFUSAL, a QUOTATION of the base or of the node authority, or an explanation of the pattern's membership in DEFAULT_PROTECTED_PATTERNS -- never an authorization. CLASSIFY STRUCTURALLY, BY ENCLOSING KEY PATH, NOT BY A TEXT WINDOW: the disambiguating words sit on either side of the hit and at arbitrary distance, so a window-based classifier misreads refusals as authorizations. The authorizing key shapes are touches / allow / pattern lists and literal-path fields; the measured result is ZERO occurrences in any of them",
+      "The only db/prepared path this file AUTHORIZES is the exact literal 'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql', plus 'db/prepared/README.md' as a future protected literal. Neither contains a wildcard character",
+      "PREDECESSOR_IMMUTABILITY.asserted_unchanged has exactly 7 entries, and every one is re-measured with `git hash-object` after the commit"
+    ]
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "unknown": [],
+    "non_blocking": [
+      {
+        "id": "F-CE3-OWN-1",
+        "class": "FORWARD_REFERENCE_ORDINAL_CONTENTION",
+        "finding": "stella_hosted_0009 is derived as the next free ordinal from a directory listing at BASE_SHA. A competing lane could take 0009 before the hosted implementation is written.",
+        "disposition": "NON-BLOCKING AND SELF-CORRECTING. FUTURE_HOSTED_PACKAGE_CONTRACT.ordinal_derivation requires the later opening to re-derive the ordinal and re-freeze the identity by its own act, rather than permitting the implementer to renumber silently.",
+        "recommended_action": "None by this mission."
+      },
+      {
+        "id": "F-CE3-OWN-2",
+        "class": "BASELINE_MANIFEST_CONSEQUENCE_UNMEASURED",
+        "finding": "Whether the authorized administrative unit produces a db/hosted/baseline-manifest.ts consequence is not measured by this act. The measured exemplar stella_hosted_0003 carries a PrechainOwnershipPackage declaration and no BaselineUnit entry, which suggests none -- but a suggestion is not a measurement.",
+        "disposition": "RECORDED AND BOUNDED. B__SHARED_WRITERS_CE3_DISPOSITION.baseline_manifest_note assigns the measurement to the future hosted-implementation opening and refuses to guess it here. This is a WRITE-SURFACE question, not a security decision, so deferring it does not violate fail_closed_rule.",
+        "recommended_action": "The hosted-implementation opening measures it before enumerating its write set."
+      }
+    ]
+  },
+
+  "final_state": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_FROZEN_AWAITING_INDEPENDENT_CERTIFICATION",
+  "next_gate": "CE3_DEFINER_OWNERSHIP_AUTHORITY_AMENDMENT_INDEPENDENT_CERTIFICATION. This amendment is NOT self-certified and MUST NOT be merged before an independent certification returns PASS with zero blocking and zero unknown findings."
+}
