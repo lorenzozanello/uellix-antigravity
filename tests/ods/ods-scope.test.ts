@@ -3043,7 +3043,7 @@ describe('HPO-ODS-W2-30 — Commercial Account CE-3 grant: registration, narrown
     // The live row type has EXACTLY three fields. Declaration-only keys must
     // be absent by NAME, not merely absent from a whole-object comparison
     // written elsewhere — a reader changing N2 must not silently lose this.
-    const row = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-30')! as Record<string, unknown>
+    const row = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-30')! as unknown as Record<string, unknown>
     for (const leaked of ['pattern_count', 'registration_status', 'ORDER_IS_BINDING', 'BRANCH_BINDING_IS_EXACT']) {
       expect(Object.keys(row)).not.toContain(leaked)
     }
