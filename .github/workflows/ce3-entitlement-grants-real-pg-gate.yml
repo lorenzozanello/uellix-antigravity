@@ -1,0 +1,104 @@
+name: CE-3 Entitlement Grants Real PostgreSQL Gate
+
+# Dedicated, isolated real-PostgreSQL proof of the Commercial Account CE-3
+# contract (HPO-ODS-W2-30;
+# docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json).
+#
+# WHY A DEDICATED WORKFLOW AND NOT A LINE IN ci.yml. The node's own
+# REAL_PG_NODE_CONTRACT requires ONE heavy PostgreSQL job at a time; a
+# Docker-heavy job folded into generic CI races or serialises against unrelated
+# work. Modeled structurally on
+# .github/workflows/l1-organization-commercial-acceptance-real-pg-gate.yml — the
+# sibling gate one seam earlier — with names derived for CE-3 rather than
+# copied.
+#
+# WHAT A BARE CHECKMARK CANNOT TELL YOU, and why each guard below exists:
+#
+#   * A SKIPPED SUITE IS INDISTINGUISHABLE FROM A PASSING ONE. The probe suite
+#     is describe.skipIf(!PG_TESTS_ENABLED), so without UELLIX_PG_TESTS=1 it
+#     reports green having executed nothing. Setting it EXPLICITLY here — never
+#     inheriting it by luck — is what makes the run real.
+#
+#   * AND SETTING IT IS NOT SELF-VERIFYING EITHER. UELLIX_CE3_PG_REQUIRED=1 arms
+#     an UNGATED self-check inside the same file (the "CE-3 real-PostgreSQL gate
+#     self-check (never skipped)" describe block) that FAILS if the gated suite
+#     was skipped rather than reporting a pass. The measured hazard it answers:
+#     the disposable-harness `setupStatus` value SKIPPED is ALSO its
+#     INITIALIZATION value, so a harness that bailed out BEFORE setup reports
+#     the same value as one that deliberately skipped.
+#
+#   * --passWithNoTests IS NOT SET, and must not be. A run that matches zero
+#     test files must FAIL, not exit 0.
+#
+# This gate must fail on each of:
+#   * the probe suite being skipped        -> the ungated self-check fails;
+#   * zero tests collected                 -> vitest exits non-zero;
+#   * a real-PG setup/teardown failure     -> the setupStatus/teardownStatus/
+#                                             leftoverDatabaseCount assertions
+#                                             inside the suite itself;
+#   * any of the twelve probe families being absent, any probe failing, or any
+#     DB-free control regressing.
+#
+# It does NOT reuse, extend or widen the L1 or CL-1 workflows' governed scope,
+# and it runs the DB-free and real-PostgreSQL steps SEPARATELY so that the heavy
+# lifecycle is alive for exactly one step.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - integration/commercial-v1
+      - main
+
+jobs:
+  ce3-entitlement-grants-real-pg-gate:
+    name: Isolated CE-3 entitlement-grants disposable PostgreSQL proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The project TypeScript, from pinned dependencies. A green vitest run is
+      # NOT a typecheck: vitest transpiles without type checking, so a type
+      # error can ride a fully green suite all the way to certification.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # DB-FREE controls first, and in their own step: the thirteen-column
+      # shape, the seven CHECK constraints and their predicates, the partial
+      # unique index and its predicate, the single uellix_owner policy with zero
+      # tenant-facing policies, the guard ORDER inside the evaluator, the
+      # REVOKE/GRANT posture, the append-only guard's NULL-safe twelve-column
+      # comparison, the capability catalogue, the exhaustive evaluator outcome
+      # mapping, and the CE-4 consumer census. These need no container, so a
+      # container failure can never be mistaken for one of them failing.
+      - name: DB-free CE-3 controls and the CE-4 consumer census
+        run: pnpm exec vitest run tests/commercial/ce3-entitlement-grants.test.ts tests/commercial/ce3-evaluator-consumer-census.test.ts
+
+      # The TWELVE required probe families on a throwaway container: the partial
+      # unique index under GENUINE concurrency (two dblink backends, the loser
+      # proven BLOCKED before the winner commits), the U0113 cross-organization
+      # raise with a uniform leak-free message, the U0114 undeclared-capability
+      # raise AT THE DATABASE, the guard ordering that stops the evaluator being
+      # a catalogue oracle, the R-A isolation arms A..G, append-only at the
+      # storage boundary against a superuser, the source/limit/period
+      # constraints, the explicit-organization wrong-tenant detector, the
+      # no-CE4-consumer boundary and the ungoverned sentinel.
+      - name: Real PostgreSQL — the twelve CE-3 probes
+        env:
+          UELLIX_PG_TESTS: '1'
+          UELLIX_CE3_PG_REQUIRED: '1'
+        run: pnpm exec vitest run tests/postgres/ce3-entitlement-grants.pg.test.ts

@@ -109,7 +109,11 @@ describe('S1 migration — exactly the authorized DDL, one scanner-visible struc
   // OWN position with every displacer NAMED IN ORDER, exactly as each prior
   // wave did. Not loosened: the list is compared by EQUALITY, so a removed,
   // reordered or renamed displacer still turns this RED.
-  it('has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit, then the CE-1 unit, then the FIBDB-052 P1 index unit, then the CL-1 legal-acceptance unit, then the CL-1 content-bytes unit, then the L1 organization-commercial-acceptance unit', () => {
+  // CE-3 (HPO-ODS-W2-30) adds a SEVENTH, 0073. Same retarget, same rule: S1's
+  // own position is re-derived from DISPLACERS.length rather than restated as a
+  // literal index, so this list is the ONLY thing that has to move each wave and
+  // the two can never disagree.
+  it('has its journal entry and snapshot, and is displaced from the top by exactly the S3 refusal unit, then the CE-1 unit, then the FIBDB-052 P1 index unit, then the CL-1 legal-acceptance unit, then the CL-1 content-bytes unit, then the L1 organization-commercial-acceptance unit, then the CE-3 entitlement-grants unit', () => {
     const DISPLACERS = [
       '0067_tenancy_refusal_audit_insert_policy.sql',
       '0068_commercial_account_ce1.sql',
@@ -117,6 +121,7 @@ describe('S1 migration — exactly the authorized DDL, one scanner-visible struc
       '0070_customer_lifecycle_cl1_legal_acceptance.sql',
       '0071_customer_lifecycle_cl1_content_bytes.sql',
       '0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
+      '0073_commercial_account_ce3_entitlement_grants.sql',
     ]
     const files = readdirSync(path.join(ROOT, 'db/migrations')).filter((f) => f.endsWith('.sql')).sort()
     expect(files[files.length - DISPLACERS.length - 1]).toBe(S1_UNIT.id)

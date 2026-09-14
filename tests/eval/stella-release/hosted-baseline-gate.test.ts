@@ -86,8 +86,14 @@ describe('the six baseline gates', () => {
     // acceptance.sql (one CREATE TABLE plus RLS, two policies, two triggers and
     // one REVOKE-only function grant change -- no role, ownership or extension
     // statement, so superuserFreeUnits advances in lockstep) = 85.
-    expect(evidence.unitCount).toBe(85)
-    expect(evidence.superuserFreeUnits).toBe(85)
+    // CE-3 (HPO-ODS-W2-30): + 0073_commercial_account_ce3_entitlement_grants.sql
+    // (one CREATE TABLE plus RLS, ONE policy, TWO functions, one trigger and two
+    // REVOKE-only function grant changes -- and, measured rather than assumed,
+    // NO role statement and NO ownership transfer, because
+    // BASELINE_GLOBAL_INVARIANTS pins both at zero for every unit with no
+    // per-unit opt-out, so superuserFreeUnits advances in lockstep) = 86.
+    expect(evidence.unitCount).toBe(86)
+    expect(evidence.superuserFreeUnits).toBe(86)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',
