@@ -238,7 +238,7 @@
       "both_dispositions": "DERIVED_NOT_ALLOCATED",
       "derivation": "v1.0.34 is derived as the successor of ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json, the final enumerated entry of the live Controller's 44-entry EXACT-membership ledger at BASE_SHA. HPO-ODS-W2-31 is derived as the successor of HPO-ODS-W2-30. Both are DERIVATIONS of what the next identifier WOULD be. Neither is an allocation.",
       "naming_an_id_is_not_allocating_it": "Both identifiers appear in this document only inside derivation and prohibition semantics. At BASE_SHA, HPO-ODS-W2-31 already appears in ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json and in tests/ods/ exclusively inside NO_PREALLOCATION prohibition semantics, and that did not allocate it either.",
-      "branch_binding": "NOT ALLOCATED HERE. The exact future branch binding of HPO-ODS-W2-31 is the later opening's act.",
+      "branch_binding": "FROZEN REQUIREMENT, NOT AN ALLOCATION. The future HPO-ODS-W2-31 grant MUST bind to branch codex/commercial-account-ce3-implementation-r1 -- the EXISTING PR #159 branch, which is the SAME branch HPO-ODS-W2-30 already binds. This constrains the LATER REGISTERING ACT, which still owns the registration itself; this amendment registers nothing and allocates nothing. The requirement is frozen rather than deferred because it is MEASURED, not stylistic: protected-grant resolution compares grant.branch to the CURRENT CHECKOUT BRANCH by exact string equality (scripts/ods-scope.ts:961), so a grant does NOT follow a commit across branches. HPO-ODS-W2-30 is bound to codex/commercial-account-ce3-implementation-r1, so moving the cumulative CE-3 work to a successor branch would leave W2-30 UNRESOLVABLE there and strand db/migrations/0073_commercial_account_ce3_entitlement_grants.sql outside any grant. Binding W2-31 to a separate hosted-implementation branch is therefore REFUSED, and so is relocating the cumulative candidate to any successor branch for aesthetic isolation.",
       "prohibitions_on_this_act": [
         "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json is NOT created.",
         "HPO-ODS-W2-31 is NOT registered.",
@@ -252,9 +252,9 @@
   "W2_30_DISPOSITION": {
     "value": "UNCHANGED_NOT_WIDENED",
     "binding": "HPO-ODS-W2-30 remains bound EXACTLY to branch codex/commercial-account-ce3-implementation-r1 with its existing three protected patterns, exactly as registered in scripts/ods-scope.ts at BASE_SHA. This amendment changes nothing about it.",
-    "no_union_by_branch": "HPO-ODS-W2-31 will be a DIFFERENT grant, for a DIFFERENT branch, with DIFFERENT protected literals. The two are not unioned, and W2-30's branch binding is not extended to cover the hosted implementation branch.",
+    "no_union_by_branch": "HPO-ODS-W2-31 will be a DIFFERENT grant id, carrying DIFFERENT protected literals, but bound to the SAME branch as HPO-ODS-W2-30: codex/commercial-account-ce3-implementation-r1. SAME BRANCH DOES NOT IMPLY UNION, and neither grant becomes ambient. Resolution is strictly per-id and per-pattern: resolveProtectedGrant looks the entry up by authorityId and then requires grant.branch === currentBranch (scripts/ods-scope.ts:957-964); resolveProtectedGrants resolves ONLY the ids actually supplied (scripts/ods-scope.ts:985); and classifyPaths unions the patterns of exactly those SUPPLIED grants and of nothing else. A grant sitting on the same branch but NOT named by --protected-authority contributes ZERO patterns. Consequently a consuming gate that requires BOTH protected surfaces MUST supply BOTH authority ids explicitly and may never rely on branch coincidence. Two grants on one branch is repository-native precedent rather than an exception: HPO-ODS-W2-12 and HPO-ODS-W2-16 both bind codex/w2-b4-r1, and HPO-ODS-W2-20 and HPO-ODS-W2-21 both bind codex/multiorg-s1-founder-traceability-r1. W2-30 itself is not widened, its three protected patterns are not extended, and it is not duplicated onto any successor branch.",
     "no_widening_to_db_prepared": "W2-30 is NOT widened to the db/prepared/** pattern, nor to any db/prepared/ literal, by this amendment. The two protected literals in FUTURE_HOSTED_IMPLEMENTATION_SURFACE belong to the FUTURE W2-31, not to W2-30.",
-    "why_this_is_stated_rather_than_left_silent": "The tempting shortcut is to observe that the hosted package serves CE-3, that W2-30 is the CE-3 grant, and to widen W2-30 rather than allocate W2-31. That shortcut would silently extend an integrated grant's branch binding, which the repository's grant-narrowness controls exist to prevent. It is refused by name here so that the refusal is checkable."
+    "why_this_is_stated_rather_than_left_silent": "The tempting shortcut is to observe that the hosted package serves CE-3, that W2-30 is the CE-3 grant, and to widen W2-30 rather than allocate W2-31. That shortcut would silently widen an integrated grant's protected pattern set, which the repository's grant-narrowness controls exist to prevent. A SECOND shortcut becomes tempting precisely because W2-31 is now required to bind the SAME branch: treating the two grants as automatically unioned because their branch strings match. That is refused just as firmly -- authorization follows the ids SUPPLIED, never the branch they happen to share. A third shortcut, duplicating W2-30 onto a successor branch so the hosted work can sit in isolation, is refused with them. All three are refused by name here so that each refusal is checkable rather than inferred from silence."
   },
 
   "PR159_CONTINUITY": {
@@ -267,7 +267,22 @@
       "branch": "codex/commercial-account-ce3-implementation-r1"
     },
     "now": "PR #159 stays FROZEN. NO SYNC is performed by this act.",
-    "future_strategy": "After this authority amendment, the HPO-ODS-W2-31 grant and the hosted ownership implementation have all integrated: an ORDINARY MERGE of integration/commercial-v1 INTO codex/commercial-account-ce3-implementation-r1, followed by the bounded R4.",
+    "future_strategy": [
+      "1. this authority amendment is independently certified and merged to integration/commercial-v1;",
+      "2. ODS v1.0.34 lineage allocation is independently authored, certified and merged;",
+      "3. HPO-ODS-W2-31 is separately registered, independently certified and merged, with branch binding codex/commercial-account-ce3-implementation-r1;",
+      "4. ordinary merge of integration/commercial-v1 INTO codex/commercial-account-ce3-implementation-r1;",
+      "5. no rebase, no force push, no history rewrite, no squash;",
+      "6. the hosted package stella_hosted_0009_entitlement_evaluator_ownership is authored ON THE PR #159 BRANCH, where migration 0073 exists in the baseline corpus;",
+      "7. the hosted package receives independent NON-CLOSING certification on that cumulative branch;",
+      "8. bounded R4 is authored on the same PR #159 branch by a separately bounded writer lane;",
+      "9. final independent differential CE-3 certification covers the FULL cumulative head, including 0073 + hosted 0009 + R4;",
+      "10. exactly ONE controlled final merge of PR #159 to integration/commercial-v1 closes the remediation."
+    ],
+    "future_strategy_step_count": 10,
+    "future_strategy_order_is_load_bearing": "The ten steps are an ORDERED topology, not a set. Each string carries its own ordinal so that a reordering is detectable by reading the values; a length check or a Set-size check is order-blind and would pass over a corrupted order.",
+    "no_intermediate_integration_merge_of_0009": "NOT REQUIRED AND NOT AUTHORIZED. The hosted package is never merged into integration/commercial-v1 on its own. integration/commercial-v1 at BASE_SHA carries a baseline that stops at migration 0072 and therefore does NOT create public.entitlement_effective(uuid,varchar); the package's preconditions and postconditions are only satisfiable in a tree that ALSO contains db/migrations/0073. Step 10 is the ONLY merge of this work into integration/commercial-v1.",
+    "why_the_R1_formulation_was_impossible": "R1 of this document required the hosted implementation to have INTEGRATED before integration/commercial-v1 was merged into PR #159. That ordering cannot be satisfied: 0009 cannot be certified against an integration baseline that stops at 0072 and never creates the function it re-homes. The defect is recorded as F-SEQ-1 and corrected here. It was not detectable by the R1 certification, which tested this document against its own authority chain rather than against the cross-lane merge topology.",
     "prohibited_in_that_future_act": ["NO REBASE", "NO FORCE PUSH", "NO HISTORY REWRITE", "NO SQUASH of R1/R2/R3"],
     "why": "R1, R2 and R3 are the evidence trail of what was measured and when. A squash or rebase destroys the correspondence between a certification and the bytes it certified."
   },
@@ -303,7 +318,10 @@
       "R_A_optional": "REFUSED. F_CE3_1_DISPOSITION is R_A_NON_TENANT_FACING_DEFINER_READ and is preserved by the node amendment.",
       "tenant_policy_before_S4": "REFUSED. R-C remains prohibited and S4 ordering is preserved.",
       "W2_30_widened": "REFUSED. See W2_30_DISPOSITION.",
-      "W2_31_allocated": "REFUSED. DERIVED_NOT_ALLOCATED.",
+      "W2_31_allocated": "REFUSED. DERIVED_NOT_ALLOCATED. Its REQUIRED branch binding is frozen by ODS_CONSEQUENCE.the_future_hosted_implementation.branch_binding, which is a requirement on the later registering act and not an allocation performed here.",
+      "W2_30_and_W2_31_auto_unioned_by_branch": "REFUSED. Two grants sharing a branch do NOT union. Authorization follows the ids SUPPLIED to --protected-authority, never the branch string they share. A gate needing both surfaces supplies both ids.",
+      "W2_30_duplicated_onto_a_successor_branch": "REFUSED. W2-30 is bound to codex/commercial-account-ce3-implementation-r1 and is neither copied nor re-bound.",
+      "cumulative_candidate_moved_to_a_new_branch": "REFUSED. Relocating the CE-3 cumulative work to a successor branch for aesthetic isolation would make HPO-ODS-W2-30 unresolvable there, because grant resolution is exact-string against the current checkout branch. The remediation stays on codex/commercial-account-ce3-implementation-r1.",
       "v1_0_34_allocated": "REFUSED. DERIVED_NOT_ALLOCATED.",
       "hosted_package_implemented": "REFUSED. No SQL file is written by this act.",
       "PR159_synchronized": "REFUSED. No operation is performed on PR #159.",
@@ -324,6 +342,60 @@
       "scripts/ods-scope.ts": "49b10cfcbcdd44baf2fda133cef027c86085e2cb",
       "scripts/ods-controller.ts": "112369ebcb5f89af141ca42d1c8f238708d893f5"
     }
+  },
+
+  "R2_SEQUENCING_CORRECTION": {
+    "revision": "R2",
+    "classification": "NARROW SEQUENCING CORRECTION OF THIS CANDIDATE. No predecessor authority is edited, no file is added or deleted, and no certified security, ownership, probe, control, write-surface or forward-only semantic is reopened.",
+    "why_R1_certification_does_not_carry_forward": "The R1 independent certification returned PASS with zero blocking and zero unknown findings, and remains valid HISTORICAL EVIDENCE of what it tested. It does NOT authorize merge of this R2 head: a later independent sequencing adjudication measured a cross-lane branch-binding property that the R1 certification did not test, and recorded it as F-SEQ-1 (BLOCKING). A new independent certification is required.",
+    "F_SEQ_1": {
+      "class": "CROSS_LANE_SEQUENCING_AND_BRANCH_BINDING",
+      "finding": "R1 asserted that HPO-ODS-W2-31 would bind a branch OTHER THAN the one HPO-ODS-W2-30 binds, and required the hosted ownership package to have landed in integration/commercial-v1 before integration/commercial-v1 was merged into PR #159. Both are false against the measured mechanism, and the second is unsatisfiable.",
+      "disposition": "CLOSED BY THIS REVISION."
+    },
+    "measured_facts_frozen_by_this_revision": {
+      "GRANT_FOLLOWS_COMMIT_ACROSS_BRANCHES": "NO -- resolveProtectedGrant requires grant.branch === currentBranch by exact string against the CURRENT CHECKOUT (scripts/ods-scope.ts:961).",
+      "MULTIPLE_GRANTS_SAME_BRANCH_ALLOWED": "YES -- repository precedent: HPO-ODS-W2-12 / HPO-ODS-W2-16 on codex/w2-b4-r1, and HPO-ODS-W2-20 / HPO-ODS-W2-21 on codex/multiorg-s1-founder-traceability-r1.",
+      "MULTIPLE_GRANTS_SAME_BRANCH_AUTO_UNION": "NO -- resolveProtectedGrants resolves only the SUPPLIED ids (scripts/ods-scope.ts:985) and classifyPaths unions only those supplied grants' patterns.",
+      "W2_30_BRANCH": "codex/commercial-account-ce3-implementation-r1",
+      "W2_31_REQUIRED_BRANCH": "codex/commercial-account-ce3-implementation-r1",
+      "SELECTED_STRATEGY": "CUMULATIVE_REMEDIATION_ON_THE_EXISTING_PR159_BRANCH"
+    },
+    "keys_corrected_by_this_revision": [
+      "ODS_CONSEQUENCE.the_future_hosted_implementation.branch_binding",
+      "W2_30_DISPOSITION.no_union_by_branch",
+      "W2_30_DISPOSITION.why_this_is_stated_rather_than_left_silent",
+      "PR159_CONTINUITY.future_strategy",
+      "ADVERSARIAL_SWEEP_DECLARATIONS.refused"
+    ],
+    "WRITER_SEPARATION": {
+      "rule": "SAME GIT BRANCH DOES NOT COLLAPSE SEPARATION OF DUTIES. Branch identity is never actor identity.",
+      "distinct_bounded_lanes_required": [
+        "authority writer",
+        "authority certifier",
+        "hosted implementation writer",
+        "hosted certifier",
+        "R4 writer",
+        "final CE-3 certifier",
+        "controlled merge closure"
+      ]
+    },
+    "INTERMEDIATE_CERTIFICATION_SEMANTICS": {
+      "value": "AUTHORIZED_NON_CLOSING",
+      "the_hosted_certification_is_a_real_independent_gate": true,
+      "it_authorizes_merge": false,
+      "it_survives_future_head_movement_as_final_certification": false,
+      "it_must_be_re_covered_by_the_final_differential_CE3_certification": true
+    },
+    "not_performed_by_this_revision": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json is NOT created.",
+      "HPO-ODS-W2-31 is NOT registered.",
+      "PR #159 is NOT modified.",
+      "stella_hosted_0009_entitlement_evaluator_ownership is NOT implemented.",
+      "No predecessor v1.0.0 authority is edited.",
+      "No v1.0.2 artifact is created.",
+      "Nothing is merged."
+    ]
   },
 
   "self_check": {

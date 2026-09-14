@@ -73,9 +73,10 @@
 
   "R_A_COMPLETION": {
     "clause_amended": "RLS_SECURITY_CONTRACT.POLICY_SET.admissible_resolutions_measured[0] -- the R-A description.",
-    "base_clause_quoted_verbatim": "\"R-A -- A NON-tenant-facing read path: the evaluator is a SECURITY DEFINER function owned by a role for which a single narrow policy (or a BYPASSRLS posture) is granted on entitlement_grants, with NO policy addressed to any tenant role. This defers every tenant-facing policy decision to S4 while making the node's deliverable readable.\"",
+    "base_clause_quoted_verbatim": "\"R-A -- A NON-tenant-facing read path: the evaluator is a SECURITY DEFINER function owned by a role for which a single narrow policy (or a BYPASSRLS posture) is granted on entitlement_grants, with NO policy addressed to any tenant role. This defers every tenant-facing policy decision to S4 while making the node's deliverable readable. Measured feasibility: db/migrations/** already creates SECURITY DEFINER functions in nine units (0032, 0060..0065, 0072) and already raises explicit SQLSTATEs via RAISE ... USING ERRCODE (0030, 0060, 0070), so this resolution needs no db/prepared/** capability unit and stays inside CE-3's frozen touches.\"",
+    "base_clause_quotation_is_complete": "YES. This field carries the ENTIRE base clause verbatim, character for character, including its trailing measured-feasibility sentence. R1 of this document carried an exact but TRUNCATED PREFIX of it under the same field name, asserting a completeness it did not have; that fidelity defect is recorded as D-2 and closed here. The value is verifiable by an exact string comparison against COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json RLS_SECURITY_CONTRACT.POLICY_SET.admissible_resolutions_measured[0], read from that file rather than restated from this one.",
     "the_incompleteness": "The parenthetical disjunction '(or a BYPASSRLS posture)' admits an implementation in which the definer's owner bypasses row-level security. Under such an owner, FORCE ROW LEVEL SECURITY on entitlement_grants is silently inert for every read the evaluator performs, the single narrow owner policy is never consulted, and SEC-3, SEC-4, SEC-6 and SEC-12 become unverifiable -- with no error and no failing test. The base offered the two arms as interchangeable; they are not. One enforces the node's security contract and the other dissolves it.",
-    "what_is_NOT_changed": "R-A's remaining content is preserved exactly: the read path is NON-tenant-facing; the evaluator is a SECURITY DEFINER function; a SINGLE NARROW POLICY is granted on entitlement_grants; NO policy is addressed to any tenant role; every tenant-facing policy decision is deferred to S4; and the measured feasibility argument (nine definer-creating migration units, four raising explicit SQLSTATEs) stands.",
+    "what_is_NOT_changed": "R-A's remaining content is preserved exactly: the read path is NON-tenant-facing; the evaluator is a SECURITY DEFINER function; a SINGLE NARROW POLICY is granted on entitlement_grants; NO policy is addressed to any tenant role; every tenant-facing policy decision is deferred to S4; and the measured feasibility argument (nine definer-creating migration units, three raising explicit SQLSTATEs (0030, 0060, 0070)) stands.",
     "narrow_supersession": "The DISJUNCTION is superseded. The 'or a BYPASSRLS posture' arm is REMOVED from the admissible set. R-A is now exactly the single-narrow-policy arm, under an owner that does not bypass FORCE RLS.",
     "amended_R_A_text": "R-A -- A NON-tenant-facing read path: the evaluator is a SECURITY DEFINER function whose ACTUAL PostgreSQL owner is uellix_owner, a role with rolsuper = false and rolbypassrls = false, for which a single narrow SELECT policy is granted on entitlement_grants, with NO policy addressed to any tenant role. This defers every tenant-facing policy decision to S4 while making the node's deliverable readable, AND keeps FORCE ROW LEVEL SECURITY live for the evaluator's own reads.",
     "DEFINER_FUNCTION": "public.entitlement_effective(uuid,varchar)",
@@ -443,14 +444,15 @@
       "NEXT_ODS_ADDENDUM_EXPECTED": "v1.0.34",
       "NEXT_HPO_ID_EXPECTED": "HPO-ODS-W2-31",
       "both_dispositions": "DERIVED_NOT_ALLOCATED",
+      "branch_binding": "FROZEN REQUIREMENT, NOT AN ALLOCATION. HPO-ODS-W2-31 MUST bind to branch codex/commercial-account-ce3-implementation-r1 -- the EXISTING PR #159 branch, the same branch HPO-ODS-W2-30 binds. Grant resolution is exact-string against the CURRENT CHECKOUT BRANCH (scripts/ods-scope.ts:961), so a grant does not follow a commit across branches; binding W2-31 elsewhere, or relocating the cumulative CE-3 candidate to a successor branch, would leave W2-30 unresolvable and strand db/migrations/0073. Both are REFUSED. Same branch does NOT mean the two grants union: a gate needing both protected surfaces must supply BOTH authority ids explicitly.",
       "prohibitions_on_this_act": [
         "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json is NOT created.",
-        "HPO-ODS-W2-31 is NOT registered and its branch binding is NOT allocated.",
+        "HPO-ODS-W2-31 is NOT registered by this act. Its REQUIRED branch binding is frozen as a REQUIREMENT on the later registering act -- see branch_binding -- which is a constraint on that act, not an allocation performed by this one.",
         "scripts/ods-scope.ts and scripts/ods-controller.ts are NOT edited.",
         "No ODS sentinel on either the lineage axis or the registry axis is advanced."
       ]
     },
-    "W2_30_DISPOSITION": "UNCHANGED_NOT_WIDENED. HPO-ODS-W2-30 remains bound exactly to codex/commercial-account-ce3-implementation-r1 with its existing three protected patterns. No union-by-branch, and no widening to db/prepared/**."
+    "W2_30_DISPOSITION": "UNCHANGED_NOT_WIDENED. HPO-ODS-W2-30 remains bound exactly to codex/commercial-account-ce3-implementation-r1 with its existing three protected patterns. HPO-ODS-W2-31 is REQUIRED to bind that SAME branch, and they still do NOT union: authorization follows the ids supplied, never the shared branch string. No widening to db/prepared/**, no duplication onto a successor branch."
   },
 
   "ADVERSARIAL_SWEEP_DECLARATIONS": {
@@ -470,6 +472,83 @@
       "rollback_implementation_defined": "REFUSED. FORWARD_ONLY is YES and ROLLBACK_FILE is NONE."
     },
     "hedging_vocabulary_prohibition": "No load-bearing security or write-surface fact in this document is attached to 'as needed', 'if required', 'or similar', 'and related files', 'equivalent role', 'later decide' or 'implementation may choose'."
+  },
+
+  "R2_SEQUENCING_CORRECTION": {
+    "revision": "R2",
+    "classification": "NARROW SEQUENCING AND FIDELITY CORRECTION OF THIS CANDIDATE. No predecessor authority is edited, no file is added or deleted, and no certified security, ownership, probe, control, write-surface or forward-only semantic is reopened.",
+    "why_R1_certification_does_not_carry_forward": "The R1 independent certification returned PASS with zero blocking and zero unknown findings and remains valid HISTORICAL EVIDENCE of what it tested. It does NOT authorize merge of this R2 head: a later independent sequencing adjudication measured a cross-lane branch-binding property the R1 certification did not test, recorded as F-SEQ-1 (BLOCKING). A new independent certification is required.",
+    "F_SEQ_1": {
+      "class": "CROSS_LANE_SEQUENCING_AND_BRANCH_BINDING",
+      "finding": "READY_FOR_CE3_R4 required the governed hosted ownership package to be implemented AND INTEGRATED, which under the measured merge topology is both ambiguous and unsatisfiable: integration/commercial-v1 stops at migration 0072 and never creates public.entitlement_effective(uuid,varchar), so 0009 cannot be certified there.",
+      "disposition": "CLOSED BY THIS REVISION. R4 is now gated on a cumulative-branch condition, not on an intermediate integration merge."
+    },
+    "D_1": {
+      "class": "FIDELITY_NUMERAL_DISAGREES_WITH_THE_BASE",
+      "finding": "R_A_COMPLETION.what_is_NOT_changed said four raising explicit SQLSTATEs where the base clause names THREE units: 0030, 0060, 0070.",
+      "disposition": "CLOSED. The numeral now reads three and names the three units, so the claim is checkable against the base rather than merely restated.",
+      "underlying_base_list_altered": false
+    },
+    "D_2": {
+      "class": "FIDELITY_TRUNCATED_QUOTE_LABELLED_VERBATIM",
+      "finding": "R_A_COMPLETION.base_clause_quoted_verbatim carried an exact but TRUNCATED PREFIX of the base clause (335 of 641 characters) while its field name asserted a complete verbatim quotation.",
+      "disposition": "CLOSED BY QUOTING THE ENTIRE CLAUSE VERBATIM -- the remedy preferred over relabelling the field, since the full bytes were mechanically available. The substantive R-A supersession is unchanged.",
+      "substantive_R_A_supersession_altered": false
+    },
+    "measured_facts_frozen_by_this_revision": {
+      "GRANT_FOLLOWS_COMMIT_ACROSS_BRANCHES": "NO -- scripts/ods-scope.ts:961 compares grant.branch to the CURRENT CHECKOUT branch by exact string.",
+      "MULTIPLE_GRANTS_SAME_BRANCH_ALLOWED": "YES -- HPO-ODS-W2-12 / HPO-ODS-W2-16 on codex/w2-b4-r1; HPO-ODS-W2-20 / HPO-ODS-W2-21 on codex/multiorg-s1-founder-traceability-r1.",
+      "MULTIPLE_GRANTS_SAME_BRANCH_AUTO_UNION": "NO -- only ids SUPPLIED to --protected-authority contribute patterns (scripts/ods-scope.ts:985).",
+      "SELECTED_STRATEGY": "CUMULATIVE_REMEDIATION_ON_THE_EXISTING_PR159_BRANCH"
+    },
+    "APPLY_WINDOW_PRESERVED": {
+      "value": "prechain",
+      "unchanged_by_this_revision": true,
+      "why_prechain_remains_correct": "Hosted certification applies BASELINE_UNITS before PRECHAIN_ADMINISTRATIVE_UNITS. Migration 0073 therefore creates public.entitlement_effective(uuid,varchar) before the 0009 preconditions evaluate, PROVIDED both exist in the SAME cumulative tree -- which is exactly what the corrected topology guarantees. The package is NOT converted to postchain."
+    },
+    "WRITER_SEPARATION": {
+      "rule": "SAME GIT BRANCH DOES NOT COLLAPSE SEPARATION OF DUTIES. Branch identity is never actor identity.",
+      "distinct_bounded_lanes_required": [
+        "authority writer",
+        "authority certifier",
+        "hosted implementation writer",
+        "hosted certifier",
+        "R4 writer",
+        "final CE-3 certifier",
+        "controlled merge closure"
+      ]
+    },
+    "INTERMEDIATE_CERTIFICATION_SEMANTICS": {
+      "value": "AUTHORIZED_NON_CLOSING",
+      "the_hosted_certification_is_a_real_independent_gate": true,
+      "it_authorizes_merge": false,
+      "it_survives_future_head_movement_as_final_certification": false,
+      "it_must_be_re_covered_by_the_final_differential_CE3_certification": true
+    },
+    "R4_MUTATION_POPULATION_NOT_CONTRADICTED": {
+      "note": "Recorded so that this revision cannot be read as reviving an obsolete narrative. This revision does NOT implement the R4 plan; it only must not contradict it.",
+      "frozen_base_manifest_mutation_controls": 7,
+      "added_by_this_ownership_amendment": 1,
+      "the_new_ownership_mutation": "CE3-OWN-M-1",
+      "later_differential_R4_plan": "6 existing controls re-executed as applicable + 1 new ownership mutation = 7 mutation recertifications, with CE3-M-5 preserved if its dependency closure remains unchanged.",
+      "obsolete_narrative_refused": "The 17 mutation controls narrative is obsolete and is NOT reintroduced."
+    },
+    "keys_corrected_by_this_revision": [
+      "R_A_COMPLETION.base_clause_quoted_verbatim",
+      "R_A_COMPLETION.what_is_NOT_changed",
+      "ODS_CONSEQUENCE.the_future_hosted_implementation.prohibitions_on_this_act[1]",
+      "ODS_CONSEQUENCE.W2_30_DISPOSITION",
+      "READY_FOR_CE3_R4"
+    ],
+    "not_performed_by_this_revision": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json is NOT created.",
+      "HPO-ODS-W2-31 is NOT registered.",
+      "PR #159 is NOT modified.",
+      "stella_hosted_0009_entitlement_evaluator_ownership is NOT implemented.",
+      "No predecessor v1.0.0 authority is edited.",
+      "No v1.0.2 artifact is created.",
+      "Nothing is merged."
+    ]
   },
 
   "self_check": {
@@ -539,6 +618,6 @@
   },
 
   "final_state": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_FROZEN_AWAITING_INDEPENDENT_CERTIFICATION",
-  "READY_FOR_CE3_R4": "NO. R4 is unblocked only after this amendment is certified and integrated, the HPO-ODS-W2-31 grant is allocated and registered, and the governed hosted ownership package is implemented and integrated. None of those three is performed by this act.",
+  "READY_FOR_CE3_R4": "NO. R4 is unblocked only after ALL SIX of the following, in this order: (1) this amendment is independently certified and merged to integration/commercial-v1; (2) ODS v1.0.34 is independently certified and merged; (3) HPO-ODS-W2-31 is registered, independently certified and merged, bound to codex/commercial-account-ce3-implementation-r1; (4) integration/commercial-v1 is ORDINARILY MERGED INTO ' + PR159B + ' -- no rebase, no force push, no history rewrite, no squash; (5) the real stella_hosted_0009_entitlement_evaluator_ownership package is implemented ON THAT PR #159 BRANCH, where db/migrations/0073 exists in the baseline corpus; (6) that hosted package PASSES its independent NON-CLOSING certification on the cumulative branch. R4 then continues on the SAME PR #159 branch. The hosted package is NOT required to have merged into integration/commercial-v1 first and no intermediate merge of it is authorized: integration's baseline stops at migration 0072 and does not create public.entitlement_effective(uuid,varchar), so 0009 is only provable in a tree that also contains 0073. NONE of the six is performed by this act.",
   "next_gate": "CE3_DEFINER_OWNERSHIP_AUTHORITY_AMENDMENT_INDEPENDENT_CERTIFICATION. This amendment is NOT self-certified and MUST NOT be merged before an independent certification returns PASS with zero blocking and zero unknown findings."
 }
