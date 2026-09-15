@@ -36,7 +36,7 @@
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../harness'
 import {
   GoldenAuthorityShapeError,
   REPO_ROOT,
@@ -54,10 +54,12 @@ import {
 } from '../registry'
 import {
   POSTURE_PROBES,
-  detectAnonymousReadBlocked,
   detectNoEvaluateRuntime,
-  detectNoRateLimitOnSurface,
+  detectNoRateLimitGoverningVerify,
   detectPlatformPrincipalAmbiguity,
+  detectProxyLimiterGovernsVerify,
+  detectPublicVerificationNotLive,
+  readPublicVerificationActivation,
 } from '../posture'
 import { scanForBypasses } from '../skip-patterns'
 import {
@@ -86,8 +88,31 @@ interface SkeletonPin {
   }
 }
 
-/** Every file the Golden runner collects, as (path, content). */
-function collectedGoldenFiles(): ReadonlyArray<readonly [string, string]> {
+/**
+ * EVERY TypeScript source under `tests/golden/`, as (path, content).
+ *
+ * ===========================================================================
+ * WHY THIS IS NOT KEYED ON PLAYWRIGHT'S testMatch
+ * ===========================================================================
+ * R1 scanned only `*.journey.ts` and `*.guard.ts` — the files Playwright
+ * collects. Independent review showed that leaves a hole: `contract-suite.ts`
+ * is where 23 of the 24 generated tests are actually REGISTERED, and it matches
+ * neither suffix. A `test.skip(` placed there would remove real steps from the
+ * run while the bypass scan stayed green.
+ *
+ * The consequence would still have been caught downstream — the run reconciler
+ * compares executed titles against the frozen step set — but "another control
+ * would have noticed" is not a reason for this one to be blind. Two independent
+ * controls that both fire is the design; one that cannot see the file is a gap
+ * that happens to be covered.
+ *
+ * So the scan set is now every `.ts` under the directory, whatever collects it.
+ * That deliberately includes helper modules, this guard, and
+ * `skip-patterns.ts` — whose regular-expression literals cannot self-match,
+ * because every pattern requires call position and a literal `(` that the
+ * escaped source spelling does not provide.
+ */
+function goldenSourceFiles(): ReadonlyArray<readonly [string, string]> {
   const root = join(REPO_ROOT, 'tests', 'golden')
   const files: Array<readonly [string, string]> = []
   const walk = (dir: string, relative: string): void => {
@@ -96,7 +121,7 @@ function collectedGoldenFiles(): ReadonlyArray<readonly [string, string]> {
       const childRelative = `${relative}/${entry.name}`
       if (entry.isDirectory()) {
         walk(childAbsolute, childRelative)
-      } else if (/\.(journey|guard)\.ts$/.test(entry.name)) {
+      } else if (/\.ts$/.test(entry.name)) {
         files.push([childRelative, readFileSync(childAbsolute, 'utf8')] as const)
       }
     }
@@ -109,17 +134,40 @@ test.describe('Golden meta guard — no silent skip', () => {
   // -------------------------------------------------------------------
   // 1. The scan set is real
   // -------------------------------------------------------------------
-  test('the bypass scan covers a non-empty set that includes this guard', () => {
-    const files = collectedGoldenFiles()
+  test('the bypass scan covers this guard AND the file that registers the steps', () => {
+    const files = goldenSourceFiles()
     expect(files.length, 'the Golden runner collects no files at all').toBeGreaterThan(0)
+    const paths = files.map(([path]) => path)
 
     // The guard must be inside its own scope. A policing file exempt from its
     // own policy is exactly where a bypass would be parked.
-    const selfPath = 'tests/golden/meta/no-silent-skip.guard.ts'
+    expect(paths, 'the meta guard is not covered by its own bypass scan').toContain(
+      'tests/golden/meta/no-silent-skip.guard.ts',
+    )
+
+    // The R1 hole, named so it cannot quietly reopen. `contract-suite.ts`
+    // registers 23 of the generated tests and matches NO Playwright testMatch
+    // suffix, so a scan keyed on collection could not see it at all.
     expect(
-      files.map(([path]) => path),
-      'the meta guard is not covered by its own bypass scan',
-    ).toContain(selfPath)
+      paths,
+      'contract-suite.ts is outside the bypass scan; it registers most of the battery',
+    ).toContain('tests/golden/contract-suite.ts')
+  })
+
+  test('no Golden file imports test() outside the guarded harness', () => {
+    // A file importing `test` straight from @playwright/test would run OUTSIDE
+    // the worker-scoped auto fixture, and therefore outside the Node egress
+    // guard. Not a style preference: it is precisely how the B-1 defect — a
+    // guard with nothing in front of it — would come back.
+    const offenders = goldenSourceFiles()
+      .filter(([path]) => path !== 'tests/golden/harness.ts')
+      .filter(([, content]) => /import\s+(?!type\b)[^;]*from\s+'@playwright\/test'/.test(content))
+      .map(([path]) => path)
+
+    expect(
+      offenders,
+      'these files bypass tests/golden/harness.ts and so run without the Node egress guard',
+    ).toEqual([])
   })
 
   // -------------------------------------------------------------------
@@ -148,8 +196,46 @@ test.describe('Golden meta guard — no silent skip', () => {
     )
   })
 
+  test('POSITIVE CONTROL — a real bypass in CODE is reported', () => {
+    const findings = scanForBypasses([['code', "test.skip('a real bypass', async () => {})"]])
+    expect(findings.map((f) => f.patternId)).toEqual(['test-skip'])
+  })
+
+  test('a bypass QUOTED IN A COMMENT OR A STRING is not reported', () => {
+    // Neither executes, so neither removes a test. This is why widening the
+    // scan to every .ts required reducing to executable text first: the initial
+    // findings were documentation quoting the patterns it defines, and this
+    // guard's own positive-control test DATA.
+    expect(scanForBypasses([['doc', '// explaining that test.skip( removes a test']])).toEqual([])
+    expect(scanForBypasses([['str', 'const sample = "test.skip(" ']])).toEqual([])
+  })
+
+  test('SAFETY CONTROL — a bypass inside a ${} interpolation IS still reported', () => {
+    // Template chunks are blanked, but interpolations are real code and are
+    // left intact. Blanking them wholesale would be the one way this reduction
+    // could hide a genuine bypass.
+    const source = ['const x = `prefix ${', "test.skip('inside an interpolation', () => {})", '}`'].join('')
+    expect(
+      scanForBypasses([['tpl', source]]).map((f) => f.patternId),
+      'a bypass written inside a template interpolation was blanked away',
+    ).toEqual(['test-skip'])
+  })
+
+  test('SAFETY CONTROL — comment stripping does not swallow code after a URL string', () => {
+    // The naive `replace(/\/\/.*$/gm, '')` truncates at the `//` inside
+    // 'https://…', taking the rest of the line — and any bypass on it — out of
+    // the scan. A bypass would then be invisible for a reason that has nothing
+    // to do with bypasses.
+    const source = "const u = 'https://example.invalid/x'; test.skip('hidden', () => {})"
+    const findings = scanForBypasses([['url', source]])
+    expect(
+      findings.map((f) => f.patternId),
+      'a bypass on the same line as a URL string was lost to comment stripping',
+    ).toEqual(['test-skip'])
+  })
+
   test('zero bypasses in the collected Golden files', () => {
-    const findings = scanForBypasses(collectedGoldenFiles())
+    const findings = scanForBypasses(goldenSourceFiles())
     expect(
       findings,
       `bypass markers found: ${findings.map((f) => `${f.file}:${f.patternId}(${f.matched})`).join(', ')}`,
@@ -259,16 +345,13 @@ test.describe('Golden meta guard — no silent skip', () => {
       'the ambiguity detector still reports a blocker with no super_admin role value',
     ).toBe(false)
 
-    // The anonymous read: a privileged escape appears.
+    // The rate limiter, wired on the route surface itself.
     expect(
-      detectAnonymousReadBlocked("import { db } from '@/db/client'\nconst c = service_role"),
-      'the anonymous-read detector still reports fail-closed with a service_role escape present',
-    ).toBe(false)
-
-    // The rate limiter: one file on the surface now references a limiter.
-    expect(
-      detectNoRateLimitOnSurface([['verify/page.tsx', 'await checkAndRecordRateLimit(key, opts)']]),
-      'the rate-limit detector still reports absence with a limiter present',
+      detectNoRateLimitGoverningVerify(
+        [['verify/page.tsx', 'await checkAndRecordRateLimit(key, opts)']],
+        'export async function proxy() { return sessionResponse }',
+      ),
+      'the rate-limit detector still reports absence with a limiter on the surface',
     ).toBe(false)
 
     // The evaluation runtime: a route segment now exists.
@@ -280,6 +363,124 @@ test.describe('Golden meta guard — no silent skip', () => {
       detectNoEvaluateRuntime([], true),
       'the evaluate-runtime detector still reports absence with a lib module present',
     ).toBe(false)
+  })
+
+  // -------------------------------------------------------------------
+  // 6b. J3 — the CAP-02 activation probe, and what it must NOT react to
+  // -------------------------------------------------------------------
+  test('the current tree reports CAP-02 designed but NOT live', () => {
+    const activation = readPublicVerificationActivation()
+
+    // The design IS present. Stating it positively matters: it is what makes
+    // the next two assertions non-trivial, and it is the exact condition a
+    // file-presence probe would have misread as remediation.
+    expect(
+      activation.designPackagePresent,
+      'the CAP-02 prepared package is absent; this probe is measuring a capability that does not exist',
+    ).toBe(true)
+
+    expect(activation.capabilityEnabled, 'CAP-02 is enabled at this base').toBe(false)
+    expect(
+      activation.verifierCallsCapability,
+      'the verifier already calls the capability function at this base',
+    ).toBe(false)
+    expect(detectPublicVerificationNotLive(activation)).toBe(true)
+  })
+
+  test('MUTATION CONTROL — CAP-02 going live flips the J3 probe', () => {
+    // The governed future posture: the capability is wired AND the verifier
+    // calls it. This is the transition CAP_02_PUBLIC_VERIFICATION.md describes
+    // — "Estado: DISEÑO. No aplicado. No habilitado." ceasing to be true.
+    expect(
+      detectPublicVerificationNotLive({
+        capabilityEnabled: true,
+        verifierCallsCapability: true,
+        designPackagePresent: true,
+      }),
+      'the J3 probe still reports blocked after CAP-02 is enabled AND wired',
+    ).toBe(false)
+  })
+
+  test('MUTATION CONTROL — DESIGN PRESENCE ALONE MUST NOT flip the J3 probe', () => {
+    // The defect this whole probe was rebuilt to avoid. The prepared SQL
+    // package is 58KB of real design that already sits in the tree; a probe
+    // keyed on its presence would report public verification remediated while
+    // nothing was enabled and nothing was wired.
+    //
+    // Each half alone is also insufficient, and both are asserted, because
+    // "enabled but unwired" and "wired but disabled" are both reachable
+    // intermediate states during the real rollout.
+    expect(
+      detectPublicVerificationNotLive({
+        capabilityEnabled: false,
+        verifierCallsCapability: false,
+        designPackagePresent: true,
+      }),
+      'design-file presence alone was treated as runtime remediation',
+    ).toBe(true)
+
+    expect(
+      detectPublicVerificationNotLive({
+        capabilityEnabled: true,
+        verifierCallsCapability: false,
+        designPackagePresent: true,
+      }),
+      'an enabled capability that the verifier never calls was treated as live',
+    ).toBe(true)
+
+    expect(
+      detectPublicVerificationNotLive({
+        capabilityEnabled: false,
+        verifierCallsCapability: true,
+        designPackagePresent: true,
+      }),
+      'a verifier calling a DISABLED capability was treated as live',
+    ).toBe(true)
+  })
+
+  // -------------------------------------------------------------------
+  // 6c. F-5 — the rate-limit probe must see the proxy, with route evidence
+  // -------------------------------------------------------------------
+  test('the proxy limiter does NOT currently govern /verify', () => {
+    // The limiter exists in proxy.ts today and is gated to /api/. Counting it
+    // would declare the blocker resolved on the strength of middleware that
+    // demonstrably never runs for this route.
+    const proxySource = readFileSync(join(REPO_ROOT, 'proxy.ts'), 'utf8')
+    expect(
+      detectProxyLimiterGovernsVerify(proxySource),
+      'the proxy limiter is being credited with governing /verify',
+    ).toBe(false)
+  })
+
+  test('MUTATION CONTROL — widening the proxy route gate to /verify flips the probe', () => {
+    const realistic = `
+      if (request.nextUrl.pathname.startsWith('/verify')) {
+        const rateLimit = new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, '1 m') })
+        const { success } = await rateLimit.limit(key)
+      }
+    `
+    expect(
+      detectProxyLimiterGovernsVerify(realistic),
+      'a proxy limiter gated ON /verify was not recognised as governing it',
+    ).toBe(true)
+
+    // And the composed probe agrees: nothing on the route surface, but the
+    // proxy now governs it, so the blocker is gone.
+    expect(
+      detectNoRateLimitGoverningVerify([['verify/page.tsx', 'export default function Page() {}']], realistic),
+      'the composed rate-limit probe ignored a proxy limiter that governs /verify',
+    ).toBe(false)
+  })
+
+  test('an UNRELATED proxy limiter is not credited without route evidence', () => {
+    // "Do not classify unrelated generic middleware as a verifier limiter
+    // without route evidence." A limiter gated to /api/ governs /api/.
+    const apiOnly = `
+      if (request.nextUrl.pathname.startsWith('/api/')) {
+        const rateLimit = new Ratelimit({ redis })
+      }
+    `
+    expect(detectProxyLimiterGovernsVerify(apiOnly)).toBe(false)
   })
 
   // -------------------------------------------------------------------

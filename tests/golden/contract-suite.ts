@@ -28,10 +28,10 @@
 //   * where no probe exists, that the target tier genuinely does not serve,
 //     and that this step is recorded as blocked by target absence ALONE. That
 //     is a weaker statement and it is labelled as one, in the test title, so a
-//     reader counting green ticks cannot mistake nineteen recorded absences
-//     for nineteen controls.
+//     reader counting green ticks cannot mistake twenty recorded absences
+//     for twenty controls.
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './harness'
 import { loadFrozenJourneys, type FrozenJourney } from './authority'
 import { STEP_CONTRACTS, contractKey, disposeStep, type StepContract } from './registry'
 import { resolveGoldenTarget, tierIsServed } from './target'

@@ -48,6 +48,10 @@
 import { existsSync, readFileSync, readdirSync, type Dirent } from 'node:fs'
 import { join } from 'node:path'
 import { REPO_ROOT } from './authority'
+// The CAP-02 descriptor is imported so `enabled` is read as a VALUE rather than
+// scraped out of source text. A relative path, not the `@/` alias: this module
+// runs under Playwright, which has no tsconfig-path resolution configured.
+import { PUBLIC_VERIFICATION_CAPABILITY } from '../../lib/capabilities/contracts'
 
 export interface PostureProbe {
   /** Stable identifier, referenced by the registry. */
@@ -124,44 +128,116 @@ export function probePlatformPrincipalAmbiguity(): PostureReading {
 // J3 — the public verification read is fail-closed for an anonymous caller
 // ---------------------------------------------------------------------------
 
-export const PROBE_J3_ANON_READ_BLOCKED: PostureProbe = {
-  id: 'J3-ANON-READ-BLOCKED',
+export const PROBE_J3_PUBLIC_VERIFICATION_NOT_LIVE: PostureProbe = {
+  id: 'J3-PUBLIC-VERIFICATION-NOT-LIVE',
   frozenBlocker:
-    'the public verification read returns zero rows for an anonymous caller after the runtime ' +
-    'cutover, so the positive leg of J3 cannot resolve a locator that does exist',
-  surface: 'lib/reports/public-verify.ts',
+    'public verification is not available to an anonymous caller: CAP-02 is designed but not ' +
+    'wired, so the positive leg of J3 cannot resolve a locator that does exist',
+  surface: 'lib/capabilities/contracts.ts (CAP-02 descriptor) + lib/reports/public-verify.ts',
   remediationMeaning:
-    'a SELECT policy now expresses the locator capability in the database, so J3 step 1 must ' +
-    'be converted from a blocked contract into a positive resolution assertion',
+    'CAP-02 is enabled AND the verifier calls the capability function, so J3 step 1 must be ' +
+    'converted from a blocked contract into a positive resolution assertion',
 }
 
 /**
- * True while the read goes through the ordinary, claim-scoped `db` client.
+ * The three facts that decide whether public verification is genuinely live.
  *
- * This is the property that makes the anonymous read return nothing: the
- * module has no privileged client and adds no claims, so row-level security
- * sees an anonymous principal and matches no member-scoped policy. If a
- * service-role or bypass client ever appears here, or the module stops using
- * the shared client, this returns false and the step must be re-examined —
- * which is the correct outcome either way, because both changes alter exactly
- * what J3 traverses.
+ * ===========================================================================
+ * WHY THE R1 VERSION OF THIS PROBE WAS BLIND
+ * ===========================================================================
+ * R1 watched `lib/reports/public-verify.ts` for a `service_role` escape and
+ * called that "the anonymous read is fail-closed". Independent review was right
+ * to reject it. The repository's design FORBIDS a service-role bypass — CAP-02
+ * exists precisely to avoid one — so the thing R1 watched for is a thing that
+ * must never happen. A detector whose trigger is a prohibited change is a
+ * detector that will never fire, and it named a remediation nobody intends to
+ * perform.
+ *
+ * ===========================================================================
+ * WHAT THE GOVERNED TRANSITION ACTUALLY IS
+ * ===========================================================================
+ * `docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md` states it: "Estado:
+ * DISEÑO. No aplicado. No habilitado." The capability is delivered by the
+ * prepared package `db/prepared/stella_0007_public_verification_capability.sql`,
+ * which installs `uellix_capability.verify_report` as a SECURITY DEFINER
+ * function owned by a zero-member role, and the runtime reaches it through the
+ * descriptor in `lib/capabilities/contracts.ts`, where `enabled` is `false`.
+ *
+ * So becoming live requires BOTH:
+ *
+ *   1. the capability is wired at runtime  (`enabled === true`), and
+ *   2. the verifier actually calls it      (`verify_report` on the read path).
+ *
+ * Either alone is insufficient, and the conjunction is what this returns.
+ *
+ * ===========================================================================
+ * DESIGN PRESENCE IS NOT REMEDIATION — ASSERTED, NOT ASSUMED
+ * ===========================================================================
+ * `designPackagePresent` is carried deliberately even though it does NOT
+ * participate in the verdict. The 58KB SQL package is already in the tree
+ * TODAY, so a probe keyed on file presence would report the blocker resolved
+ * while nothing had been enabled and nothing had been wired. Recording the flag
+ * without letting it vote is what makes that distinction inspectable — and the
+ * meta guard drives exactly that combination to prove it changes nothing.
  */
-export function detectAnonymousReadBlocked(publicVerifySource: string): boolean {
-  const usesSharedClient = /from\s+'@\/db\/client'/.test(publicVerifySource)
-  const hasPrivilegedEscape =
-    /service_role|serviceRole|SERVICE_ROLE|bypassRls|BYPASSRLS/.test(publicVerifySource)
-  return usesSharedClient && !hasPrivilegedEscape
+export interface PublicVerificationActivation {
+  /** `CapabilityDescriptor.enabled` for CAP-02 — the runtime wiring switch. */
+  readonly capabilityEnabled: boolean
+  /** Whether the verifier's read path calls the capability function. */
+  readonly verifierCallsCapability: boolean
+  /** Whether the prepared SQL package exists. DESIGN ONLY — never a vote. */
+  readonly designPackagePresent: boolean
 }
 
-export function probeAnonymousReadBlocked(): PostureReading {
-  const source = readRepoFile('lib/reports/public-verify.ts')
-  const present = detectAnonymousReadBlocked(source)
+/** True while public verification is NOT live. */
+export function detectPublicVerificationNotLive(activation: PublicVerificationActivation): boolean {
+  return !(activation.capabilityEnabled && activation.verifierCallsCapability)
+}
+
+/**
+ * Read the activation facts off the repository.
+ *
+ * The descriptor is IMPORTED, not text-matched. `enabled` is a real value in a
+ * frozen object; scraping it out of the source with a regular expression would
+ * make the probe sensitive to formatting rather than to the fact, which is the
+ * class of mistake that produced the R1 defect in the first place.
+ */
+export function readPublicVerificationActivation(): PublicVerificationActivation {
+  const descriptor = PUBLIC_VERIFICATION_CAPABILITY
+  const verifierSource = readRepoFile('lib/reports/public-verify.ts')
+
+  // Both the schema-qualified name and the bare function name, because the
+  // call site may reach it through either spelling.
+  const verifierCallsCapability = descriptor.functions.some((qualified) => {
+    const bare = qualified.split('.').pop() ?? qualified
+    return verifierSource.includes(qualified) || verifierSource.includes(bare)
+  })
+
+  // Read through a `boolean`-typed local rather than comparing to `true`.
+  // The descriptor is a frozen literal, so TypeScript narrows `enabled` to the
+  // literal type `false` and rejects `=== true` as a comparison with no
+  // overlap. That narrowing is a fact about today's value, not about the field,
+  // and the probe must keep compiling on the day the value becomes `true`.
+  const capabilityEnabled: boolean = descriptor.enabled
+
   return {
-    probe: PROBE_J3_ANON_READ_BLOCKED,
+    capabilityEnabled,
+    verifierCallsCapability,
+    designPackagePresent: existsSync(join(REPO_ROOT, descriptor.package)),
+  }
+}
+
+export function probePublicVerificationNotLive(): PostureReading {
+  const activation = readPublicVerificationActivation()
+  const present = detectPublicVerificationNotLive(activation)
+  return {
+    probe: PROBE_J3_PUBLIC_VERIFICATION_NOT_LIVE,
     blockerStillPresent: present,
     evidence: present
-      ? 'lib/reports/public-verify.ts reads through the shared @/db/client with no service-role or RLS-bypass escape'
-      : 'lib/reports/public-verify.ts no longer reads through the plain shared client, or has acquired a privileged escape',
+      ? `CAP-02 is not live: enabled=${activation.capabilityEnabled}, ` +
+        `verifier calls the capability=${activation.verifierCallsCapability} ` +
+        `(the prepared package IS present=${activation.designPackagePresent}, which is design, not activation)`
+      : 'CAP-02 is enabled AND the verifier calls the capability function; public verification is live',
   }
 }
 
@@ -197,20 +273,76 @@ export function readPublicVerifySurface(): ReadonlyArray<readonly [string, strin
   return collected
 }
 
+/** Any of the repository's three unrelated limiters, plus the generic spellings. */
+const LIMITER_REFERENCE = /checkAndRecordRateLimit|Ratelimit|rateLimit|rate-limit|rateLimiter/
+
 /**
- * True while NO file on the surface references a rate limiter.
+ * True while NO file on the route surface itself references a rate limiter.
  *
- * Deliberately broad on the symbol side — the repository has two unrelated
- * limiters (`lib/security/rate-limit.ts` and `lib/stella/rate-limit.ts`) plus
- * the Upstash one used by the proxy — because the blocker is "no rate limiting
- * of any kind", and a narrow matcher would report the blocker still present
- * after someone wired up whichever limiter this matcher did not know about.
+ * Deliberately broad on the symbol side — the repository has two in-process
+ * limiters (`lib/security/rate-limit.ts`, `lib/stella/rate-limit.ts`) plus the
+ * Upstash one in the proxy — because the blocker is "no rate limiting of any
+ * kind", and a narrow matcher would report the blocker still present after
+ * someone wired up whichever limiter this matcher did not know about.
  */
 export function detectNoRateLimitOnSurface(
   files: ReadonlyArray<readonly [string, string]>,
 ): boolean {
-  const limiterReference = /checkAndRecordRateLimit|Ratelimit|rateLimit|rate-limit|rateLimiter/
-  return !files.some(([, content]) => limiterReference.test(content))
+  return !files.some(([, content]) => LIMITER_REFERENCE.test(content))
+}
+
+/**
+ * Whether the proxy's limiter GOVERNS `/verify`.
+ *
+ * ===========================================================================
+ * WHY THE ROUTE SURFACE ALONE WAS THE WRONG PLACE TO LOOK
+ * ===========================================================================
+ * R1 scanned only `app/(public)/verify/**`. Independent review pointed out that
+ * the request path to `/verify` does not begin there: `proxy.ts` has a matcher
+ * covering every non-asset route and already constructs an Upstash limiter. A
+ * probe blind to the proxy would keep reporting "no rate limiting" after a
+ * limiter had been extended to cover the public surface — reporting a blocker
+ * that had in fact been remediated, which is the same class of error as missing
+ * one that had not.
+ *
+ * ===========================================================================
+ * WHY A LIMITER IN THE PROXY IS NOT AUTOMATICALLY A VERIFIER LIMITER
+ * ===========================================================================
+ * The proxy's limiter exists TODAY and does not govern `/verify`: it sits
+ * behind `request.nextUrl.pathname.startsWith('/api/')`. Counting it would
+ * declare the blocker resolved on the strength of middleware that demonstrably
+ * never runs for this route.
+ *
+ * So route evidence is REQUIRED. The path gates in the file are collected, and
+ * the limiter counts only when some gate actually admits `/verify` — or when
+ * there is no gate at all, in which case the limiter governs every route the
+ * matcher passes, `/verify` included.
+ *
+ * This is a heuristic over source text and is worth naming as one: it reads the
+ * gates in the file rather than proving which gate encloses the limiter block.
+ * It is calibrated so that the CURRENT tree reports "not governed" and the
+ * realistic remediation — widening the gate to the public surface — flips it.
+ */
+export function detectProxyLimiterGovernsVerify(proxySource: string): boolean {
+  if (!LIMITER_REFERENCE.test(proxySource)) return false
+
+  const gates = [...proxySource.matchAll(/pathname\s*\.\s*startsWith\(\s*['"]([^'"]+)['"]\s*\)/g)].map(
+    (match) => match[1],
+  )
+
+  // An ungated limiter in a proxy whose matcher covers every non-asset route
+  // governs `/verify` by construction.
+  if (gates.length === 0) return true
+
+  return gates.some((gate) => '/verify'.startsWith(gate) || gate.startsWith('/verify'))
+}
+
+/** True while NOTHING on the request path to `/verify` rate-limits it. */
+export function detectNoRateLimitGoverningVerify(
+  surfaceFiles: ReadonlyArray<readonly [string, string]>,
+  proxySource: string,
+): boolean {
+  return detectNoRateLimitOnSurface(surfaceFiles) && !detectProxyLimiterGovernsVerify(proxySource)
 }
 
 export function probeNoRateLimitOnVerifySurface(): PostureReading {
@@ -224,13 +356,18 @@ export function probeNoRateLimitOnVerifySurface(): PostureReading {
         'app/(public)/verify/** contains no TypeScript files; the surface this probe measures does not exist',
     }
   }
-  const present = detectNoRateLimitOnSurface(files)
+  const proxySource = readRepoFile('proxy.ts')
+  const present = detectNoRateLimitGoverningVerify(files, proxySource)
+  const proxyGoverns = detectProxyLimiterGovernsVerify(proxySource)
   return {
     probe: PROBE_J3_NO_RATE_LIMIT,
     blockerStillPresent: present,
     evidence: present
-      ? `no rate-limiter reference in ${files.length} file(s) under app/(public)/verify/**`
-      : `a rate-limiter reference now appears under app/(public)/verify/** (${files.length} file(s) scanned)`,
+      ? `no rate limiter governs /verify: none in ${files.length} file(s) under app/(public)/verify/**, ` +
+        'and the proxy limiter is gated to a path that does not admit /verify'
+      : proxyGoverns
+        ? 'the proxy rate limiter now governs /verify'
+        : `a rate-limiter reference now appears under app/(public)/verify/** (${files.length} file(s) scanned)`,
   }
 }
 
@@ -308,7 +445,7 @@ export const POSTURE_PROBES: ReadonlyArray<{
 }> = [
   { probe: PROBE_J1_NO_EVALUATE_RUNTIME, run: probeNoEvaluateRuntime },
   { probe: PROBE_J2_PLATFORM_PRINCIPAL, run: probePlatformPrincipalAmbiguity },
-  { probe: PROBE_J3_ANON_READ_BLOCKED, run: probeAnonymousReadBlocked },
+  { probe: PROBE_J3_PUBLIC_VERIFICATION_NOT_LIVE, run: probePublicVerificationNotLive },
   { probe: PROBE_J3_NO_RATE_LIMIT, run: probeNoRateLimitOnVerifySurface },
 ]
 

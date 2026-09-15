@@ -111,6 +111,31 @@ export function isHostAllowed(hostname: string, allowed: ReadonlySet<string>): b
  * UNCALLED. That is what "before a socket exists" means as an assertion rather
  * than as a claim about ordering.
  */
+/**
+ * Brand stamped on a guarded fetch.
+ *
+ * `Symbol.for` rather than a module-local symbol: the guard can be installed
+ * from one module instance and inspected from another (Playwright workers load
+ * the graph independently), and a module-local symbol would make the same
+ * function look unbranded to the inspector. The registry symbol is the same
+ * value everywhere in the process, which is the scope the question is asked at.
+ *
+ * This exists because "the guard was installed" and "the fetch in front of me
+ * is the guarded one" are different claims, and R1 shipped the first without
+ * the second — a guard with no call site at all. A boolean set by the installer
+ * could still be true while `globalThis.fetch` had been replaced by something
+ * else afterwards; the brand is read off the function that would actually run.
+ */
+export const GOLDEN_EGRESS_GUARD_BRAND = Symbol.for('uellix.golden.node-egress-guard')
+
+/** True when `fn` is a fetch this module guarded. */
+export function fetchIsGuarded(fn: unknown = globalThis.fetch): boolean {
+  return (
+    typeof fn === 'function' &&
+    (fn as unknown as Record<symbol, unknown>)[GOLDEN_EGRESS_GUARD_BRAND] === true
+  )
+}
+
 export function guardedFetch(originalFetch: typeof fetch, allowed: ReadonlySet<string>): typeof fetch {
   const guarded = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     let rawUrl: string | undefined
@@ -135,16 +160,61 @@ export function guardedFetch(originalFetch: typeof fetch, allowed: ReadonlySet<s
     }
     return originalFetch(input as RequestInfo, init)
   }
+  Object.defineProperty(guarded, GOLDEN_EGRESS_GUARD_BRAND, {
+    value: true,
+    enumerable: false,
+  })
   return guarded as typeof fetch
 }
 
-let nodeGuardInstalled = false
+/**
+ * Which process installed the guard, and whether it is still in front.
+ *
+ * `installedInPid` is the whole point. Playwright runs `globalSetup` in the
+ * RUNNER process and test files in WORKER processes, so a guard installed in
+ * the runner protects a process that issues none of the test code's requests.
+ * Recording the pid lets a test assert that the guard was installed in the very
+ * process that is asking — which is the only form of the claim that means
+ * anything.
+ */
+export interface NodeEgressGuardState {
+  readonly installed: boolean
+  readonly installedInPid: number | null
+  /** Read off `globalThis.fetch` NOW, not remembered from installation time. */
+  readonly fetchIsGuardedNow: boolean
+  readonly activeInThisProcess: boolean
+}
 
-/** Install the runner-process guard. Idempotent: re-importing must not double-wrap. */
+let nodeGuardInstalled = false
+let nodeGuardPid: number | null = null
+
+/** Install the worker-process guard. Idempotent: re-importing must not double-wrap. */
 export function installNodeEgressGuard(allowed: ReadonlySet<string>): void {
   if (nodeGuardInstalled) return
   nodeGuardInstalled = true
+  nodeGuardPid = process.pid
   globalThis.fetch = guardedFetch(globalThis.fetch, allowed)
+}
+
+export function nodeEgressGuardState(): NodeEgressGuardState {
+  const fetchIsGuardedNow = fetchIsGuarded()
+  return {
+    installed: nodeGuardInstalled,
+    installedInPid: nodeGuardPid,
+    fetchIsGuardedNow,
+    // BOTH halves, deliberately. `installed` alone is a memory of a past call
+    // in this module instance; `fetchIsGuardedNow` alone cannot tell this
+    // process's installation from one inherited some other way. The conjunction
+    // is the claim the reviewer asked to be made provable.
+    activeInThisProcess: nodeGuardInstalled && nodeGuardPid === process.pid && fetchIsGuardedNow,
+  }
+}
+
+/** Test-only: undo the installation so a control can prove its own absence is RED. */
+export function uninstallNodeEgressGuardForProof(originalFetch: typeof fetch): void {
+  nodeGuardInstalled = false
+  nodeGuardPid = null
+  globalThis.fetch = originalFetch
 }
 
 /**

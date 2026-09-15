@@ -35,10 +35,10 @@
 // The positive leg is not attempted. It needs a locator that resolves, which
 // needs the pilot fixture materialised, which this lane does not do.
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './harness'
 import { PILOT_UNKNOWN_LOCATOR } from './fixtures/pilot-fixture'
 import { installBrowserEgressGuard, allowedHostnames } from './network-guard'
-import { probeAnonymousReadBlocked } from './posture'
+import { probePublicVerificationNotLive } from './posture'
 import { resolveGoldenTarget } from './target'
 
 const target = resolveGoldenTarget()
@@ -73,7 +73,7 @@ test.describe('J3 — public verifier journey (browser)', () => {
   })
 
   test('J3 — the negative control is currently indistinguishable from the blocked positive', () => {
-    const reading = probeAnonymousReadBlocked()
+    const reading = probePublicVerificationNotLive()
 
     // While the anonymous read is fail-closed, a 404 proves only that nothing
     // was returned — it cannot separate "no such locator" from "this locator

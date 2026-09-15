@@ -28,7 +28,7 @@
 // rather than glossed, so the control is not recorded as satisfied by a
 // substitute that happens to be easier to arrange.
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './harness'
 import { PILOT_FOREIGN_PRINCIPAL } from './fixtures/pilot-fixture'
 import { installBrowserEgressGuard, allowedHostnames } from './network-guard'
 import { resolveGoldenTarget } from './target'

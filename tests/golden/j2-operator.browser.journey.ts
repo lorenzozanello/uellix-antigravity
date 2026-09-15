@@ -29,7 +29,7 @@
 // forces this control to be completed rather than left half-built behind a
 // green tick.
 
-import { expect, test } from '@playwright/test'
+import { expect, test } from './harness'
 import { installBrowserEgressGuard, allowedHostnames } from './network-guard'
 import { probePlatformPrincipalAmbiguity } from './posture'
 import { resolveGoldenTarget } from './target'

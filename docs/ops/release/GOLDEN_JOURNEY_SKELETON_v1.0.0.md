@@ -62,14 +62,16 @@ remediated, the contract turns RED and forces its step to be converted into a
 positive journey assertion.
 
 Four posture probes measure a current property of the source and are asserted
-live on every run, including in the default no-target tier:
+live on every run, including in the default no-target tier. They back **three**
+steps and one negative control — probe count and posture-backed step count are
+different numbers and must not be conflated:
 
 | Probe | Surface | Turns RED when |
 |---|---|---|
 | `J1-EVALUATE-RUNTIME-ABSENT` | `app/**`, `lib/evaluate` | an evaluation runtime appears |
 | `J2-PLATFORM-PRINCIPAL-AMBIGUOUS` | `db/schema.ts` | flag and tenant role stop sharing `super_admin` |
-| `J3-ANON-READ-BLOCKED` | `lib/reports/public-verify.ts` | an anonymous SELECT policy lands |
-| `J3-NO-RATE-LIMIT` | `app/(public)/verify/**` | a limiter is wired up |
+| `J3-PUBLIC-VERIFICATION-NOT-LIVE` | CAP-02 descriptor + the verifier read path | CAP-02 is enabled **and** the verifier calls it |
+| `J3-NO-RATE-LIMIT` | `app/(public)/verify/**` **and** `proxy.ts` | a limiter governs `/verify` |
 
 Each was verified to flip by mutating the real working tree, not only by an
 in-memory fixture.
@@ -101,8 +103,34 @@ nothing.
 
 What is asserted instead: the bogus locator is refused **and** the response
 carries none of the verified page's own markers, plus an explicit assertion
-that the indistinguishability still holds — which turns RED when an anonymous
-SELECT policy lands.
+that the indistinguishability still holds — which turns RED when CAP-02 goes
+live.
+
+### What "goes live" actually means (rebuilt in R2)
+
+R1 watched `lib/reports/public-verify.ts` for a `service_role` escape and called
+that "the anonymous read is fail-closed". Review was right to reject it: the
+repository's design **forbids** such an escape — CAP-02 exists precisely to
+avoid one — so the trigger was a change nobody intends to make. A detector whose
+trigger is a prohibited change will never fire.
+
+`docs/ops/capabilities/CAP_02_PUBLIC_VERIFICATION.md` states the real
+transition: *"Estado: DISEÑO. No aplicado. No habilitado."* Becoming live
+requires **both**:
+
+1. the capability is wired — `PUBLIC_VERIFICATION_CAPABILITY.enabled` in
+   `lib/capabilities/contracts.ts` (read as a *value* via import, not scraped
+   from source text);
+2. the verifier calls it — `uellix_capability.verify_report` on the read path.
+
+**Design presence is not remediation.** The 58KB prepared package
+`db/prepared/stella_0007_public_verification_capability.sql` is already in the
+tree. A probe keyed on file presence would report public verification
+remediated while nothing was enabled and nothing was wired. The flag is
+recorded, deliberately does **not** vote, and a dedicated control drives exactly
+that combination to prove it changes nothing. The two intermediate rollout
+states — enabled-but-unwired and wired-but-disabled — must also still report
+blocked, and both are asserted.
 
 ---
 
@@ -135,7 +163,7 @@ is installed through Vitest `setupFiles`.
 is absent in this runner by construction — not weakened, absent. So the harness
 carries its own, in two layers, because they cover different traffic:
 
-- **Node layer** — wraps `globalThis.fetch` in the runner process, throwing
+- **Node layer** — wraps `globalThis.fetch` in the **worker** process, throwing
   synchronously so an existing `.catch()` cannot convert a hard stop into a
   retry loop;
 - **Browser layer** — `context.route('**')` aborts anything outside the
@@ -146,6 +174,36 @@ The shape is an **allowlist** (declared target origin plus loopback), not a
 denylist: a denylist is always one new vendor out of date. Blocked requests are
 **aborted, never stubbed** — a stub would be a development-only workaround
 inserted into the journey path, which the frozen authority forbids.
+
+### Where R1 got this wrong, and why `globalSetup` would not have fixed it
+
+R1 **defined** `installNodeEgressGuard` and never called it. Review found zero
+call sites. A declared control with no call site answers "is egress guarded?"
+with a file.
+
+The obvious repair — a `globalSetup` that installs the guard once — would have
+been wrong in a way that still looked green. Playwright runs `globalSetup` in
+the **runner** process and test files in **worker** processes: different OS
+processes, different module registries, different `globalThis`. Measured on this
+tree, the config loaded in pid `27256` (runner) and pid `33160` (worker); the
+guard records `installedInPid = 33160`, the process that actually runs test
+code. A runner-side installation would have wrapped the wrong `fetch`.
+
+So the guard is installed by a **worker-scoped auto fixture** in
+`tests/golden/harness.ts`, every Golden file imports `test` from there, and the
+meta guard fails on any file that imports it from `@playwright/test` directly —
+because such a file would run outside the fixture, and therefore outside the
+guard.
+
+Five proofs, none of which emits a live request (the forbidden host is under
+`.invalid`, and delegation is observed through a spy rather than a socket):
+
+1. unguarded, the call reaches the transport spy — establishing the boundary;
+2. guarded, it throws **synchronously** and leaves the spy **uncalled**;
+3. allowed loopback traffic still delegates;
+4. the guard is active in *this* pid — the permanent control, verified RED when
+   the fixture is removed;
+5. no model-provider host is in the allowlist under the declared target.
 
 ---
 
@@ -162,21 +220,24 @@ breaking `pnpm test`, a gate every other lane depends on. The natural fix is a
 authorised write-set. The collision is avoided from the authorised side
 instead.
 
-**Playwright output under `tests/golden/.playwright-output/`.** `artifacts/` is
-the repository's conventional home for run records and is on this lane's
-forbidden list; Playwright's default `test-results/` is neither tracked nor
-ignored. Both would surface in the scope gate. The correct long-term fix is two
-`.gitignore` entries, and `.gitignore` is not in this lane's write-set.
+**Playwright output outside the repository** (`os.tmpdir()/uellix-golden-journey`,
+overridable via `GOLDEN_JOURNEY_OUTPUT_DIR`). `artifacts/` is the repository's
+conventional home for run records and is on this lane's forbidden list;
+Playwright's default `test-results/` is neither tracked nor ignored.
+
+R1 routed output to `tests/golden/.playwright-output/`, inside the authorised
+write-set. That passed the scope gate **for the wrong reason**: authorised bytes
+are still ordinary untracked repository files, and an allow-list cannot
+distinguish a generated trace from a source file someone forgot to commit.
+Writing outside the checkout removes the ambiguity at the source instead of
+asking a gate to adjudicate it — and needs no `.gitignore` entry, which this
+lane could not add anyway.
 
 ### Declared follow-up
 
-A lane authorised for those files should add:
-
-- `tests/golden/**` to `vitest.shared.ts`, after which the guard may be renamed
-  to `no-silent-skip.test.ts`;
-- `tests/golden/.playwright-output/` and `test-results/` to `.gitignore`.
-
-Neither is required for this skeleton to function.
+A lane authorised for `vitest.shared.ts` should add `tests/golden/**` to it,
+after which the guard may be renamed to `no-silent-skip.test.ts`. Not required
+for this skeleton to function.
 
 ---
 
@@ -255,6 +316,57 @@ unfamiliar row.
 
 ---
 
-## 11. Next authorized action
+## 11. R2 — what independent review found, and what changed
 
-`COMMERCIAL_PILOT_GOLDEN_JOURNEY_FOCUSED_INDEPENDENT_REVIEW`
+Review returned `FAIL`, `BLOCKING=2`. Both blockers were real and both are
+closed. The two were different in kind, and the difference is worth naming.
+
+**B-1 was an omission.** The guard was written, documented, and never wired.
+That is caught by grepping for call sites, which is exactly how review found it.
+The repair is a worker-scoped auto fixture plus a permanent control that goes
+RED if the installation is ever removed again — so the same omission cannot
+recur silently. See §6.
+
+**B-2 was a wrong model.** The probe ran, passed, and watched the wrong thing:
+it waited for a `service_role` bypass that repository design forbids. Nothing
+would have surfaced that — it was green, it was falsifiable in principle, and
+its trigger was a change nobody will ever make. Only reading the actual
+governed activation surface fixes it. See §4.
+
+A control that is absent is found by looking for it. A control that is present
+but aimed at the wrong signal looks identical to a working one from the outside.
+
+### Non-blocking findings, all inside the original write-set
+
+| # | Finding | Resolution |
+|---|---|---|
+| F-3 | `contract-suite.ts` could carry a bypass outside the scanner | scan widened to every `.ts` under `tests/golden/**`; cross-control mutation verified RED in both the meta guard and the reconciler |
+| F-4 | prose said 19 / four where measured truth is 20 / 3 | prose corrected to the measured values; **no machine classification was changed to suit prose** |
+| F-5 | rate-limit probe blind to the proxy | expanded to `proxy.ts`, with route evidence required so a limiter gated to `/api/` is not credited |
+| F-6 | generated output sat in the repo as ordinary untracked bytes | moved outside the checkout entirely |
+| F-7 | unrelated whitespace reindent in `package.json` | reverted; delta is 3 Golden scripts + the Playwright devDependency |
+
+Widening the scan for F-3 immediately produced findings that were all
+**non-executable** — documentation quoting `test.skip(`, and this guard's own
+positive-control test *data*, which necessarily contains a real-looking bypass.
+Call position separates a bypass from a bare mention of `.skip` but cannot
+separate it from a faithful quotation. Comments and string interiors are now
+blanked before matching; `${…}` interpolations are preserved, because they are
+real code and blanking them would be the one way the reduction could hide a
+genuine bypass. A control asserts exactly that, and another asserts that a
+bypass sharing a line with a `https://` string is still found — which the naive
+line-comment regex would have swallowed.
+
+### Preserved unchanged
+
+23 frozen steps (J1=13, J2=8, J3=2) · M9/J1/J2/J3 `ABSENT` · coverage honesty
+(20 target-absence-only, 3 posture-backed) · zero silent skips · Playwright and
+Vitest separation · the J3 404 non-proof principle · Playwright-only semantic
+package delta · workflow fail-closed semantics · no production target · no live
+Stella · no CE-3 overlap.
+
+---
+
+## 12. Next authorized action
+
+`COMMERCIAL_PILOT_GOLDEN_JOURNEY_R2_FOCUSED_INDEPENDENT_REVIEW`

@@ -51,6 +51,8 @@
 // traversed journey, and a missing browser project is visible as a missing
 // project rather than as an absent row.
 
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
 import { resolveGoldenTarget, tierIsServed } from './tests/golden/target'
 
@@ -61,11 +63,22 @@ const target = resolveGoldenTarget()
 
 /**
  * Every Playwright output — the JSON run record, traces, screenshots — lands
- * here. Overridable so CI can route it to the runner's own scratch space and
- * leave the checkout untouched. See the note on `outputDir` below for why the
- * default is inside `tests/golden/` rather than `artifacts/`.
+ * here, OUTSIDE the repository.
+ *
+ * R1 defaulted this to `tests/golden/.playwright-output/`, inside the authorised
+ * write-set. That kept the scope gate green for the wrong reason: the bytes were
+ * authorised, so `ods:scope` passed, but they were still ordinary untracked
+ * repository files indistinguishable from authored work. An allow-list cannot
+ * tell a generated trace from a source file someone forgot to commit.
+ *
+ * Writing outside the checkout removes the ambiguity at the source instead of
+ * asking a gate to adjudicate it, and it needs no `.gitignore` entry — which
+ * matters, because `.gitignore` is not in this lane's write-set. The path is
+ * deterministic rather than random so a developer can find the last run, and it
+ * is overridable so CI routes it to the runner's own scratch space.
  */
-const GOLDEN_OUTPUT_DIR = process.env.GOLDEN_JOURNEY_OUTPUT_DIR ?? 'tests/golden/.playwright-output'
+const GOLDEN_OUTPUT_DIR =
+  process.env.GOLDEN_JOURNEY_OUTPUT_DIR ?? join(tmpdir(), 'uellix-golden-journey')
 
 export default defineConfig({
   testDir: './tests/golden',
@@ -92,20 +105,19 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
 
-  // WHERE THE RUN RECORD GOES, AND WHY NOT THE OBVIOUS PLACE.
+  // WHERE THE RUN RECORD GOES, AND WHY IT LEAVES THE REPOSITORY ENTIRELY.
   //
   // `artifacts/` is the repository's conventional home for run records and is
-  // exactly where this belongs. It is also on this lane's FORBIDDEN list, and
-  // Playwright's default `test-results/` is untracked and unignored — neither
-  // is gitignored, so both would surface as changed paths in the scope gate,
-  // and one of them as a forbidden-surface violation.
+  // on this lane's FORBIDDEN list; Playwright's default `test-results/` is
+  // neither tracked nor ignored. Both would surface as changed paths in the
+  // scope gate, and one as a forbidden-surface violation.
   //
-  // The correct long-term fix is two `.gitignore` entries. `.gitignore` is not
-  // in this lane's authorised write-set, and adding it because it would be
-  // convenient is the "it changed anyway" scope inference the operating
-  // discipline forbids. So the output is routed inside `tests/golden/**`,
-  // which this lane does own, and the ignore entries are left as a declared
-  // follow-up rather than taken silently.
+  // R1 routed them into `tests/golden/`, which this lane owns. That passed the
+  // gate for the wrong reason — authorised bytes are still ordinary untracked
+  // repository files, and an allow-list cannot distinguish a generated trace
+  // from a source file someone forgot to commit. Writing outside the checkout
+  // removes the ambiguity rather than asking a gate to adjudicate it, and needs
+  // no `.gitignore` entry, which this lane could not add anyway.
   outputDir: GOLDEN_OUTPUT_DIR,
 
   reporter: [

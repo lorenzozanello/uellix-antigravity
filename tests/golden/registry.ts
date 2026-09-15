@@ -35,9 +35,12 @@
 // ===========================================================================
 // `blockedBy: TARGET_ONLY` means exactly what it says: the only reason this
 // step is not traversed is that no target was declared. It carries NO
-// substantive assertion about the product. Nineteen of the twenty-three steps
+// substantive assertion about the product. TWENTY of the twenty-three steps
 // are in that state at this base, and they are counted separately from the
-// four that carry a posture probe.
+// THREE that carry a posture probe. (Four probes exist; one of them,
+// J3-PUBLIC-VERIFICATION-NOT-LIVE, backs two steps, and J3-NO-RATE-LIMIT backs
+// a negative control rather than a step — which is why the probe count and the
+// posture-backed step count are different numbers and must not be conflated.)
 //
 // This distinction is the difference between a skeleton that reports its own
 // shape accurately and one that presents twenty-three placeholders as
@@ -155,12 +158,12 @@ export const STEP_CONTRACTS: readonly StepContract[] = [
   // --- J3, public verifier journey (2 frozen steps) ---------------------
   j3(
     'resolve-a-public-verification-locator-as-an-anonymous-caller',
-    probe('J3-ANON-READ-BLOCKED'),
+    probe('J3-PUBLIC-VERIFICATION-NOT-LIVE'),
     'an anonymous caller resolves a real locator and sees the verified report',
   ),
   j3(
     'its-document-rendering',
-    probe('J3-ANON-READ-BLOCKED'),
+    probe('J3-PUBLIC-VERIFICATION-NOT-LIVE'),
     'the same anonymous caller renders the verified document from that locator',
   ),
 ]

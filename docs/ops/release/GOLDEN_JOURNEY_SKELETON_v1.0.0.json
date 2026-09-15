@@ -100,20 +100,24 @@
       "turns_red_when": "the two stop sharing the literal, forcing J2 negative control to prove the distinction with two provisioned principals instead of recording it as unprovable"
     },
     {
-      "id": "J3-ANON-READ-BLOCKED",
+      "id": "J3-PUBLIC-VERIFICATION-NOT-LIVE",
       "journey": "J3",
-      "frozen_blocker": "the public verification read is fail-closed for an anonymous caller after the runtime cutover",
-      "surface": "lib/reports/public-verify.ts",
-      "measured_at_base": "the module reads through the shared @/db/client with no service-role or RLS-bypass escape, so an anonymous caller matches no member-scoped SELECT policy and the page answers 404",
-      "turns_red_when": "an anonymous SELECT policy expresses the locator capability in the database, forcing J3 step 1 to become a positive resolution assertion"
+      "frozen_blocker": "public verification is not available to an anonymous caller: CAP-02 is designed but not wired",
+      "surface": "lib/capabilities/contracts.ts (CAP-02 descriptor, read as a VALUE) + lib/reports/public-verify.ts",
+      "measured_at_base": "CAP-02 enabled=false and the verifier does not call uellix_capability.verify_report; the prepared package db/prepared/stella_0007_public_verification_capability.sql IS present, which is design, not activation",
+      "turns_red_when": "CAP-02 is enabled AND the verifier calls the capability function, forcing J3 step 1 to become a positive resolution assertion",
+      "r2_rebuild_reason": "R1 watched lib/reports/public-verify.ts for a service_role escape. Repository design FORBIDS such an escape — CAP-02 exists precisely to avoid one — so the trigger was a change nobody intends to make, and the probe was blind to the remediation it named. It now reads the governed activation surface instead.",
+      "design_presence_is_not_remediation": "designPackagePresent is recorded but deliberately does NOT vote. The 58KB SQL package is already in the tree, so a probe keyed on file presence would report remediation while nothing was enabled and nothing was wired. The meta guard drives that exact combination and asserts it changes nothing."
     },
     {
       "id": "J3-NO-RATE-LIMIT",
       "journey": "J3",
       "frozen_blocker": "the public verification surface has no rate limiting",
-      "surface": "app/(public)/verify/**",
-      "measured_at_base": "no rate-limiter reference of any kind on the surface",
-      "turns_red_when": "a limiter is wired up, making the J3 rate-limit disposition exercisable"
+      "surface": "app/(public)/verify/** AND proxy.ts, because the request path to /verify passes through the proxy before any page logic",
+      "measured_at_base": "no limiter on the route surface, and the proxy limiter is gated behind pathname.startsWith('/api/'), which does not admit /verify",
+      "turns_red_when": "a limiter is wired on the surface, or the proxy route gate is widened to admit /verify",
+      "r2_expansion_reason": "R1 scanned only app/(public)/verify/**. The proxy matcher covers every non-asset route and already constructs an Upstash limiter, so a probe blind to it would keep reporting 'no rate limiting' after a limiter had been extended to cover the public surface.",
+      "route_evidence_required": "A limiter in the proxy is NOT automatically a verifier limiter. The path gates in the file are collected and the limiter counts only when some gate admits /verify, or when there is no gate at all. This is a documented heuristic over source text, calibrated so the current tree reports NOT GOVERNED and the realistic remediation flips it."
     }
   ],
 
@@ -156,7 +160,10 @@
 
   "NETWORK_BOUNDARY": {
     "why_a_second_guard": "vitest.setup.network-guard.ts is installed through Vitest setupFiles. Playwright loads no Vitest setup file, so every protection it provides is absent in this runner by construction, not weakened.",
-    "node_layer": "globalThis.fetch wrapped in the runner process. Throws synchronously so an existing .catch() cannot turn a hard stop into a retry against a host that will never answer.",
+    "r1_defect_closed_in_r2": "R1 DEFINED installNodeEgressGuard and never called it. Independent review found zero call sites. A declared control with no call site answers 'is egress guarded?' with a file.",
+    "node_layer_installation": "A WORKER-SCOPED, AUTO fixture in tests/golden/harness.ts. Every Golden file imports test from that harness rather than from @playwright/test, and the meta guard fails on any file that does not.",
+    "why_not_globalsetup": "Playwright runs globalSetup in the RUNNER process and test files in WORKER processes. Measured on this tree: the config loaded in pid 27256 (runner) and pid 33160 (worker), and the guard recorded installedInPid=33160 — the process that actually runs test code. A globalSetup installation would have wrapped the runner's fetch and left the worker's untouched, while still reporting green.",
+    "node_layer": "globalThis.fetch wrapped in the WORKER process. Throws synchronously so an existing .catch() cannot turn a hard stop into a retry against a host that will never answer.",
     "browser_layer": "context.route('**') aborts any request outside the allowlist. Browser traffic never passes through the Node fetch, so the Node layer alone would be silent about the journey own requests.",
     "shape": "ALLOWLIST, being the declared target origin plus loopback. A denylist is one new vendor out of date; an allowlist states the property the frozen authority requires.",
     "stella": "no live model call is reachable from this harness. The provider hostnames are not in the allowlist, and no Golden test invokes the assistant.",
@@ -185,9 +192,12 @@
   "NO_SILENT_SKIP_GUARD": {
     "path": "tests/golden/meta/no-silent-skip.guard.ts",
     "filename_note": "The mission named tests/golden/meta/no-silent-skip.test.ts. The extension differs deliberately. vitest.config.ts sets no include, so the Vitest default **/*.{test,spec}.* glob would collect a .test.ts under tests/golden and fail on the @playwright/test import, breaking the default suite every other lane depends on. The natural fix is a tests/golden/** entry in vitest.shared.ts, which is OUTSIDE this lane authorised write-set, and widening a write-set because a change would be convenient is the scope inference the operating discipline forbids. The collision is therefore avoided from the authorised side.",
+    "r2_scan_widening": "R1 scanned only the files Playwright collects (*.journey.ts, *.guard.ts). That left contract-suite.ts — where 23 of the generated tests are actually REGISTERED — outside the scan, so a bypass there would remove real steps while the scan stayed green. The run reconciler would still have caught the consequence, but 'another control would have noticed' is not a reason for this one to be blind. The scan now covers EVERY .ts under tests/golden/**, whatever collects it.",
+    "r2_executable_text_reduction": "Widening the scan immediately produced findings that were all NON-EXECUTABLE: documentation quoting test.skip( while explaining it, and the guard's own positive-control test DATA, which necessarily contains a real-looking bypass. Call position separates a bypass from a bare mention of .skip but cannot separate it from a faithful quotation. Comments and string-literal interiors are therefore blanked before matching — strictly more accurate, never more permissive, since neither executes. Template ${...} interpolations are PRESERVED, because they are real code and blanking them would be the one way this reduction could hide a genuine bypass; a control asserts exactly that.",
     "proves": [
-      "zero .skip, .fixme, .only, bare skip() and testInfo.skip() across every collected Golden file",
-      "the scan covers the guard itself, with no self-exemption",
+      "zero .skip, .fixme, .only, bare skip() and testInfo.skip() across every .ts under tests/golden/**",
+      "the scan covers the guard itself AND contract-suite.ts, with no self-exemption",
+      "no Golden file imports test() from @playwright/test outside the guarded harness, which would run it outside the Node egress guard",
       "the derived step set equals the pinned set, compared in order",
       "every frozen step has exactly one contract, with no orphans and no duplicates",
       "every journey declares at least one negative control",
@@ -195,14 +205,51 @@
     ],
     "positive_and_mutation_controls": [
       "the bypass scanner is pointed at tests/golden/meta/fixtures/bypassed-suite.fixture.txt and must report the EXACT set of 8 pattern ids, not merely a non-zero count, which a silently broken pattern would still satisfy",
+      "a real bypass in CODE is reported; the same marker in a comment or a string is not; a bypass inside a ${} interpolation still IS",
+      "a bypass on the same line as a 'https://' string is still reported, which the naive line-comment regex would have swallowed",
       "removing one contract must be reported as an uncovered step",
       "adding a contract for an unknown step must be reported as orphaned",
       "a one-step path and a duplicated step phrase must both be refused by the parser",
       "every posture detector is fed remediated content and must flip to false",
-      "an invalid target tier must throw rather than degrade to the weakest tier"
+      "CAP-02 going live (enabled AND wired) flips the J3 probe; design-file presence alone, enabled-but-unwired, and wired-but-disabled must all still report BLOCKED",
+      "widening the proxy route gate to /verify flips the rate-limit probe; a limiter gated to /api/ does not",
+      "an invalid target tier must throw rather than degrade to the weakest tier",
+      "removing the worker-scoped guard installation turns the Node egress controls RED"
     ],
+    "r2_cross_control_mutation": "A test.skip( injected into contract-suite.ts was verified to turn BOTH controls RED independently: the meta guard named the file and pattern, and the run reconciler named every skipped frozen step. Two controls that both fire is the design; one that cannot see the file is a gap that happens to be covered.",
     "why_controls_are_mandatory": "This repository has shipped a duplicate-key checker built on a JSON.parse reviver that passed on input containing duplicates, and a grep -c that returned the expected count by matching a commented-out line. Both were green and both were vacuous. A check that has never been observed to fail is not yet a check.",
     "why_patterns_live_elsewhere": "The bypass patterns live in tests/golden/skip-patterns.ts so the guard source contains no marker literal and can therefore be scanned by its own scan. Holding them in the guard would force either a self-match on every run or an exemption, and an exempt policing file is exactly where a bypass would be parked."
+  },
+
+  "GENERATED_OUTPUT": {
+    "location": "os.tmpdir()/uellix-golden-journey, overridable via GOLDEN_JOURNEY_OUTPUT_DIR",
+    "r1_defect": "R1 wrote the run record and traces to tests/golden/.playwright-output/, inside the authorised write-set. That passed the scope gate for the wrong reason: authorised bytes are still ordinary untracked repository files, and an allow-list cannot distinguish a generated trace from a source file someone forgot to commit.",
+    "r2_resolution": "Output leaves the checkout entirely. This needs no .gitignore entry — which matters, because .gitignore is NOT in this lane's write-set — and removes the ambiguity at the source rather than asking a gate to adjudicate it. The path is deterministic so a developer can find the last run, and CI overrides it to the runner's own scratch space.",
+    "verified": "after a full local contract run, git status --porcelain --untracked-files=all contains zero generated Golden output"
+  },
+
+  "R2_REMEDIATION": {
+    "review_outcome_remediated": "REVIEW=FAIL, BLOCKING=2",
+    "B-1": {
+      "finding": "Node network guard declared but not active — installNodeEgressGuard had zero runtime call sites.",
+      "status": "CLOSED",
+      "resolution": "Installed by a worker-scoped auto fixture in tests/golden/harness.ts; every Golden file imports test from there, and the meta guard fails on any file that does not.",
+      "caller_process_proof": "config load pid 27256 (runner) vs pid 33160 (worker); guard installedInPid=33160 == the worker asking. PROOF 4 asserts installedInPid === process.pid, so a globalSetup installation could not satisfy it.",
+      "controls": "5 proofs: unguarded call reaches the transport spy; guarded call throws SYNCHRONOUSLY and leaves the spy UNCALLED; allowed loopback still delegates; the guard is active in this process (permanent control, RED when the fixture is removed — verified); no provider host is in the allowlist. No live external request is emitted by any proof: the forbidden host is under .invalid (RFC 2606) and delegation is observed through a spy, never a socket."
+    },
+    "B-2": {
+      "finding": "J3-ANON-READ-BLOCKED does not observe the real remediation it claims to watch.",
+      "status": "CLOSED",
+      "activation_signal": "CAP-02 runtime capability wiring: PUBLIC_VERIFICATION_CAPABILITY.enabled in lib/capabilities/contracts.ts, read as a VALUE via import rather than scraped from source text, AND whether lib/reports/public-verify.ts calls uellix_capability.verify_report. Both are required; either alone is an intermediate rollout state and still reports BLOCKED.",
+      "designed_vs_live": "db/prepared/stella_0007_public_verification_capability.sql is present TODAY. Presence is recorded and deliberately does not vote, and a dedicated control asserts that design presence alone does not flip the probe.",
+      "no_invented_token": "No source-text token was invented. enabled is a real field on a frozen descriptor and verify_report is the function the prepared package installs.",
+      "service_role_not_used_as_mutation": "A service_role bypass is forbidden by repository design and is not used as the mutation; the mutation is the governed future posture (enabled AND wired)."
+    },
+    "F-3": "CLOSED — scan widened to every .ts under tests/golden/**, plus an executable-text reduction and its safety controls. Cross-control mutation verified.",
+    "F-4": "CLOSED — prose now states 20 target-absence-only steps and 3 posture-backed steps against 4 probes. Machine classifications were NOT changed to satisfy prose; the prose was corrected to the measured values. The probe count and the posture-backed step count differ because J3-PUBLIC-VERIFICATION-NOT-LIVE backs two steps and J3-NO-RATE-LIMIT backs a negative control rather than a step.",
+    "F-5": "CLOSED — rate-limit detection expanded to proxy.ts with required route evidence.",
+    "F-6": "CLOSED — generated output moved outside the repository.",
+    "F-7": "CLOSED — the unrelated whitespace-only reindent in package.json was reverted; the delta is 3 Golden scripts plus the approved Playwright devDependency."
   },
 
   "WRITE_SET": [
@@ -215,5 +262,5 @@
     "docs/ops/release/GOLDEN_JOURNEY_SKELETON_v1.0.0.md"
   ],
 
-  "NEXT_AUTHORIZED_ACTION": "COMMERCIAL_PILOT_GOLDEN_JOURNEY_FOCUSED_INDEPENDENT_REVIEW"
+  "NEXT_AUTHORIZED_ACTION": "COMMERCIAL_PILOT_GOLDEN_JOURNEY_R2_FOCUSED_INDEPENDENT_REVIEW"
 }
