@@ -1,0 +1,508 @@
+{
+  "package_id": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0",
+  "authority_class": "CROSS_CUTTING_RUNTIME_ACL_SUCCESSOR_CONTRACT_FROZEN_AUTHORITY_ONLY_NOT_IMPLEMENTED",
+  "document_class": "SUCCESSOR_PACKAGE_AUTHORITY_DERIVED_FROM_AN_INDEPENDENTLY_ADJUDICATED_OPENING",
+  "mission_id": "CV1-RUNTIME-ACL-AW",
+  "materialization_date": "2026-09-15",
+  "companion_manifest": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_v1.0.0.json",
+  "GRANT_ID": null,
+  "OPENING_CONSUMED": {
+    "opening_lane": "CV1-RUNTIME-ACL-AO",
+    "opening_result": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_OPENING_PASS",
+    "BLOCKING_OPENING": 0,
+    "UNKNOWN_OPENING": 0,
+    "opening_base": "891f869f99453fc4b6453790b78ac1e7f85d8eb7",
+    "what_the_opening_measured_that_this_writer_re_derived_statically": "The opening reproduced the current schema in a disposable PostgreSQL 17 container (own container, --network none, pinned image, sequence stella_local_0000 -> the 85 BASELINE_UNITS of db/hosted/baseline-manifest.ts -> stella_0001 -> stella_0003) and observed 57 public tables, 146 policies, 19 triggers, 12 functions, stella_0004 REFUSING at its section-0 'unclassified table(s)' precondition with EXACTLY 19 names, uellix_writer/uellix_app holding table privilege on 1 of 57 (stella_suggestion_decisions, via stella_0003 line 543) and 0 of the 56 migration-created tables, and NO EXECUTE on the three RLS helpers. This writer did not re-run PostgreSQL. Every count below that this writer could re-derive from the repository WITHOUT a database was re-derived and is cited to its line; counts that exist only inside a running database (146 policies total, 19 triggers, 12 functions, the 42501 error codes) are carried from the opening and labelled OPENING_MEASURED.",
+    "what_this_writer_does_not_do": "It is not the implementation writer, not the ODS allocator, not the protected-grant registrar, not the Real-PG certifier and not the hosted operator. Nothing in this artifact is executable. No SQL, no registry entry, no test, no workflow and no lineage identifier is created by it."
+  },
+  "SECTION_0_FRESHNESS": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "AS_OF_HEAD": "891f869f99453fc4b6453790b78ac1e7f85d8eb7",
+    "AS_OF_TREE": "077101e18d49bd4a7a2d0bb9fc8b6b881b7877d7",
+    "BRANCH": "codex/current-schema-runtime-acl-authority-r1",
+    "opening_base_equals_authoritative_base": true,
+    "integration_at_open": "git fetch origin; git rev-parse origin/integration/commercial-v1 => 891f869f99453fc4b6453790b78ac1e7f85d8eb7, byte-identical to BASE. Worktree clean: git status --porcelain --untracked-files=all produced zero lines.",
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/current-schema-runtime-acl-authority-r1 --head 891f869f99453fc4b6453790b78ac1e7f85d8eb7 --tree 077101e18d49bd4a7a2d0bb9fc8b6b881b7877d7 --clean => PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS.",
+    "expected_concurrent_event": {
+      "event": "Certified PR #161 (R3, head 3f4286e6) may merge to integration/commercial-v1 while this writer runs.",
+      "classification_if_it_happens": "EXPECTED_DISJOINT_CE3_AUTHORITY_DRIFT",
+      "verification_rule": "git diff --name-only 891f869f <new-integration-head> must list EXACTLY the three PR #161 artifacts and nothing else: docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.1.json (measured at refs/pull/161/head: 3 files changed, 1153 insertions, 0 deletions, all under docs/ops/commercial/). That drift alone is NOT stale; it is disjoint from this write set by directory.",
+      "any_other_drift": "STOP. Never silently reconcile."
+    },
+    "final_integration_base_rule": "Re-measured immediately before commit (SECTION_19). FINAL_INTEGRATION_BASE is recorded in the mission report, never assumed from this section."
+  },
+  "SECTION_1_CURRENT_MEASURED_UNIVERSE": {
+    "CURRENT_PUBLIC_TABLE_COUNT": 57,
+    "CURRENT_CLASSIFIED_TABLE_COUNT": 38,
+    "CURRENT_UNCLASSIFIED_TABLE_COUNT": 19,
+    "arithmetic": "38 + 19 = 57",
+    "arithmetic_holds": true,
+    "how_57_was_re_derived_without_a_database": "Static census of db/migrations/*.sql (73 units): the regex 'CREATE TABLE (IF NOT EXISTS )?(public.)?<name>' yields 57 distinct names of which exactly ONE ('statements') is a false positive from a prose comment in db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql:6 and db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql:6 ('CREATE TABLE statements above ...'); zero DROP TABLE statements exist in db/migrations. That leaves 56 migration-created public tables, matching the 56 pgTable() declarations in db/schema.ts. The 57th, public.stella_suggestion_decisions, is created by NO migration and by NO baseline unit; it is created by db/prepared/stella_0003_suggestion_decisions.sql:369 (a Stella chain package) and, on a baseline-only provision, by the G2-ENVIRONMENT PREREQUISITE SHIM in tests/postgres/disposable-db.ts because db/migrations/0044_fib_audit_hardening_supersession.sql re-installs a trigger on it. 56 + 1 = 57, in agreement with the opening's live catalog count.",
+    "how_38_was_re_derived": "db/prepared/stella_0004_role_separation.sql lines 103-117: operational_tables (33 names) || append_only_tables (5 names: audit_logs, sroi_calculation_line_items, sroi_calculation_runs, stella_interactions, stella_suggestion_decisions) = all_tables (38). tests/database-role-safety.test.ts:186-190 pins exactly 38 = 5 + 33.",
+    "the_19_are_the_set_difference": "57 - 38, computed by name (comm -23 over sorted lists), equals the 19 names frozen in SECTION_2 with zero surplus and zero deficit. The same 19 names are the ones the opening observed in stella_0004's section-0 refusal message (db/prepared/stella_0004_role_separation.sql:227).",
+    "EXACT_19_TABLE_SET": [
+      "domain_object_versions",
+      "evidence_sufficiency_determinations",
+      "evidence_tombstones",
+      "readiness_assessments",
+      "sensitivity_scenarios",
+      "assumption_object_links",
+      "account_legal_acceptances",
+      "organization_commercial_acceptances",
+      "evidence_versions",
+      "financial_proxy_versions",
+      "outcome_monetization_dispositions",
+      "counterfactual_assessments",
+      "methodological_assumptions",
+      "sensitivity_candidates",
+      "governed_model_registry",
+      "proxy_material_fields_registry",
+      "legal_instruments",
+      "legal_instrument_versions",
+      "commercial_accounts"
+    ],
+    "runtime_privilege_on_the_19_at_AS_OF_HEAD": "ZERO. No GRANT to uellix_writer, uellix_app or uellix_auditor names any of the 19 anywhere in db/migrations/**, db/policies/** or db/prepared/** (grep over every GRANT ... TO uellix_* statement in the corpus; the only post-stella_0004 table grants to runtime roles are stella_0003:543 stella_suggestion_decisions, stella_0007:414 report_public_disclosures, grounding_0002:533-534 and grounding_0003:636-637). OPENING_MEASURED: the runtime therefore receives SQLSTATE 42501 on every one of the 19 after a clean current-schema build."
+  },
+  "SECTION_2_EXACT_CLASSIFICATION": {
+    "confidence": "HIGH on all 19. UNKNOWN=0.",
+    "classification_method": "Three independent repository signals per table, all re-derived by this writer: (a) the RLS policy commands the creating migration installs on the table (a multiline-aware census over db/migrations/** and db/policies/**, counting CREATE POLICY ... ON <table> ... FOR <cmd>); (b) the runtime consumer census in lib/** and app/** (non-test files) for db.insert()/db.update()/db.delete() against the table's db/schema.ts symbol, plus a raw 'DELETE FROM' sweep; (c) the opening's live measurement. Signal (a) and signal (b) agree with the opening on every table: the policy layer already authorises exactly the verb set the class grants, and no consumer issues a verb the class refuses. NO table in the 19 carries a DELETE policy and NO runtime consumer deletes from any of the 19 (0 db.delete() call sites, 0 raw DELETE FROM in lib/** and app/**).",
+    "APPEND_ONLY": {
+      "count": 8,
+      "privileges_for_uellix_writer": ["SELECT", "INSERT"],
+      "forbidden": ["UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"],
+      "tables": {
+        "domain_object_versions": {"created_by": "db/migrations/0045_fib_domain_object_version_lineage.sql", "policies": "SELECT, INSERT (2)", "runtime_consumers": "insert=1 (lib/pipeline/domain-object-versions.ts) update=0 delete=0"},
+        "evidence_sufficiency_determinations": {"created_by": "db/migrations/0050_fib_evidence_sufficiency_determinations.sql", "policies": "SELECT, INSERT (2)", "runtime_consumers": "insert=1 (lib/pipeline/evidence-sufficiency.ts) update=0 delete=0"},
+        "evidence_tombstones": {"created_by": "db/migrations/0051_fib_evidence_erasure_substrate.sql", "policies": "SELECT, INSERT (2)", "runtime_consumers": "insert=1 update=0 delete=0"},
+        "readiness_assessments": {"created_by": "db/migrations/0064_fib_readiness_assessments.sql", "policies": "SELECT, INSERT (2) -- lines 56 and 63", "runtime_consumers": "insert=1 (lib/pipeline/sroi-readiness.ts) update=0 delete=0"},
+        "sensitivity_scenarios": {"created_by": "db/migrations/0065_fib_sensitivity_model.sql", "policies": "SELECT, INSERT (2)", "runtime_consumers": "insert=1 (lib/pipeline/sroi-sensitivity.ts) update=0 delete=0"},
+        "assumption_object_links": {"created_by": "db/migrations/0062_fib_methodological_assumptions.sql", "policies": "SELECT, INSERT (2)", "runtime_consumers": "insert=1 update=0 delete=0"},
+        "account_legal_acceptances": {"created_by": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql", "policies": "SELECT, INSERT (2); ENABLE + FORCE ROW LEVEL SECURITY", "runtime_consumers": "insert=1 (app/(public)/accept-legal/actions.ts) update=0 delete=0"},
+        "organization_commercial_acceptances": {"created_by": "db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql", "policies": "SELECT, INSERT (2); ENABLE + FORCE ROW LEVEL SECURITY", "runtime_consumers": "insert=1 (app/(public)/accept-commercial-terms/actions.ts) update=0 delete=0"}
+      }
+    },
+    "OPERATIONAL_INSERT_UPDATE": {
+      "count": 6,
+      "privileges_for_uellix_writer": ["SELECT", "INSERT", "UPDATE"],
+      "forbidden": ["DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"],
+      "why_UPDATE_is_real_and_DELETE_is_not": "Each of the six carries a FOR UPDATE policy in its creating migration AND at least one db.update() runtime consumer; none carries a DELETE policy and none has a delete consumer. The verb set is therefore measured from two layers that were written independently (policy authors and service authors), not inferred from a name.",
+      "tables": {
+        "evidence_versions": {"created_by": "db/migrations/0048_fib_evidence_versions.sql", "policies": "SELECT, INSERT, UPDATE (3)", "runtime_consumers": "insert=1 update=3 (lib/pipeline/evidence-versions.ts, lib/pipeline/narratives.ts) delete=0"},
+        "financial_proxy_versions": {"created_by": "db/migrations/0053_fib_proxy_versions_provenance.sql", "policies": "SELECT, INSERT, UPDATE (3)", "runtime_consumers": "insert=1 update=1 (lib/pipeline/financial-proxy-versions.ts) delete=0"},
+        "outcome_monetization_dispositions": {"created_by": "db/migrations/0059_fib_outcome_monetization_dispositions.sql", "policies": "SELECT, INSERT, UPDATE (3)", "runtime_consumers": "insert=1 update=1 (lib/pipeline/sroi-calculation.ts) delete=0"},
+        "counterfactual_assessments": {"created_by": "db/migrations/0063_fib_counterfactual_assessments.sql", "policies": "SELECT, INSERT, UPDATE (3)", "runtime_consumers": "insert=1 update=1 delete=0"},
+        "methodological_assumptions": {"created_by": "db/migrations/0062_fib_methodological_assumptions.sql", "policies": "SELECT, INSERT, UPDATE (3)", "runtime_consumers": "insert=1 update=1 delete=0"},
+        "sensitivity_candidates": {"created_by": "db/migrations/0065_fib_sensitivity_model.sql", "policies": "SELECT, INSERT, UPDATE (3)", "runtime_consumers": "insert=1 update=1 (lib/pipeline/sroi-sensitivity.ts) delete=0"}
+      }
+    },
+    "READ_ONLY": {
+      "count": 4,
+      "privileges_for_uellix_writer": ["SELECT"],
+      "forbidden": ["INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"],
+      "tables": {
+        "governed_model_registry": {"created_by": "db/migrations/0040_governed_model_registry.sql", "policies": "SELECT (1) via db/policies/009_governed_model_registry_rls.sql", "seeded_by": "db/migrations/0040_governed_model_registry.sql:33 and db/migrations/0056_fib_proxy_material_fields_editability.sql:102 (migrator identity, never the runtime)", "runtime_consumers": "insert=0 on any request path; the exported registerGovernedModelVersion() in lib/pipeline/governed-model-registry.ts:96 has ZERO non-test call sites (only lib/pipeline/governed-model-registry.test.ts). update=0 delete=0. The live read path is getCurrentGovernedModelVersion() consumed by lib/pipeline/financial-proxy-rubric.ts:21.", "declared_consequence": "If a future request path ever invokes registerGovernedModelVersion() as uellix_app it will fail with 42501 by design; registry versioning is a governed administrative act (FIBC-003), not a runtime writer act. Widening this table is a separate authority act, never an inference."},
+        "proxy_material_fields_registry": {"created_by": "db/migrations/0055_fib_proxy_material_change_registry.sql", "policies": "SELECT (1) via db/policies/010_proxy_material_fields_registry_rls.sql", "seeded_by": "db/migrations/0055:43 and db/migrations/0056:28 (migrator identity)", "runtime_consumers": "insert=0 update=0 delete=0"},
+        "legal_instruments": {"created_by": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql", "policies": "SELECT (1) -- legal_instruments_select, line 103", "runtime_consumers": "insert=0 update=0 delete=0"},
+        "legal_instrument_versions": {"created_by": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql", "policies": "SELECT (1) -- legal_instrument_versions_select, line 121", "runtime_consumers": "insert=0 update=0 delete=0"}
+      }
+    },
+    "NO_RUNTIME_ACCESS": {
+      "count": 1,
+      "privileges_for_uellix_writer": [],
+      "privileges_for_uellix_auditor": [],
+      "forbidden": ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"],
+      "tables": {
+        "commercial_accounts": {"created_by": "db/migrations/0068_commercial_account_ce1.sql", "rls": "ENABLE ROW LEVEL SECURITY (line 44) + FORCE ROW LEVEL SECURITY (line 45), ZERO policies", "runtime_consumers": "0 references to the commercialAccounts symbol in any non-test file under lib/** or app/**", "existing_proof": "tests/postgres/ce1-commercial-account.pg.test.ts PG-3 already asserts uellix_app is denied SELECT/INSERT/UPDATE/DELETE on it; the successor package must leave that posture byte-identical and assert it, never grant on it."}
+      }
+    },
+    "DELETE_is_inferred_nowhere": "No class in this section carries DELETE. That is not a stylistic choice: zero DELETE policies and zero delete consumers exist for the 19, so a DELETE grant would be an authorisation waiting for a verb nobody issues."
+  },
+  "SECTION_2B_LEGACY_38_AMENDED_END_STATE": {
+    "why_this_section_exists": "The successor package is a CLOSED-WORLD contract over all 57 public tables (SECTION_7, SECTION_10), so it must also express the posture of the 38 stella_0004 tables. It must express their AMENDED end-state, not stella_0004's original text, because four later packages in the local chain and the hosted successor stella_hosted_0007 have already narrowed that text. Re-granting a privilege one of those packages revoked would be a silent widening -- the exact failure mode SECTION_7's convergence rule refuses.",
+    "OPERATIONAL_legacy": {
+      "count": 32,
+      "privileges_for_uellix_writer": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "derivation": "stella_0004 §6b's 33 operational tables (lines 667-680) MINUS marketing_leads (see CAPABILITY_ONLY_legacy).",
+      "note": "This is the ONLY class that carries DELETE, and it is inherited verbatim from stella_0004 §6b for tables that already hold it. It is NOT extended to any of the 19 (SECTION_8)."
+    },
+    "APPEND_ONLY_legacy": {
+      "count": 3,
+      "tables": ["audit_logs", "sroi_calculation_line_items", "sroi_calculation_runs"],
+      "privileges_for_uellix_writer": ["SELECT", "INSERT"],
+      "derivation": "stella_0004 §6a (lines 650-656) names 5; stella_interactions and stella_suggestion_decisions are re-classified below. stella_hosted_0007 header lines 79-82 names the same 3 as its APPEND_ONLY class."
+    },
+    "GOVERNED_READ_legacy": {
+      "count": 1,
+      "tables": ["stella_interactions"],
+      "privileges_for_uellix_writer": ["SELECT"],
+      "derivation": "db/prepared/stella_0017_governed_stella_consumption.sql:290-299 issues REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.stella_interactions FROM uellix_writer / uellix_app / uellix_reader / uellix_auditor; db/prepared-package-order.ts:224 states the end state ('uellix_writer holds no INSERT on stella_interactions'); stella_hosted_0007 amends the same table to GOVERNED_READ (header lines 60-64, grant at line 562). Writes reach it only through the stella_0017 SECURITY DEFINER capability. The successor MUST NOT re-grant INSERT here."
+    },
+    "CONDITIONAL_APPEND_ONLY_legacy": {
+      "count": 1,
+      "tables": ["stella_suggestion_decisions"],
+      "treatment": "See SECTION_3. Present on the current-schema local/CI build (stella_0003 or the G2 shim), absent on hosted today (stella_hosted_0007 header: PACKAGE_NOT_INSTALLED)."
+    },
+    "CAPABILITY_ONLY_legacy": {
+      "count": 1,
+      "tables": ["marketing_leads"],
+      "privileges_for_uellix_writer": [],
+      "privileges_for_uellix_auditor": ["SELECT"],
+      "derivation": "db/prepared/stella_0009_public_lead_capability.sql:265 issues REVOKE SELECT, INSERT, UPDATE, DELETE ON public.marketing_leads FROM uellix_writer; writes go through the uellix_cap_lead SECURITY DEFINER. Only the writer was revoked; the auditor's stella_0004 §6c SELECT stands. The successor MUST NOT re-grant DML to uellix_writer here.",
+      "arithmetic": "32 + 3 + 1 + 1 + 1 = 38"
+    },
+    "uellix_auditor_on_the_38": "SELECT on all 38 per stella_0004 §6c, unchanged by any local amendment EXCEPT stella_interactions where stella_0017:299 revoked only INSERT/UPDATE/DELETE/TRUNCATE (SELECT stands). No amendment revokes auditor SELECT on any of the 38."
+  },
+  "SECTION_3_CONDITIONAL_FUTURE_MEMBERS": {
+    "stella_suggestion_decisions": {
+      "class_if_present": "APPEND_ONLY",
+      "privileges_for_uellix_writer_if_present": ["SELECT", "INSERT"],
+      "privileges_for_uellix_auditor_if_present": ["SELECT"],
+      "why_conditional": "Created by db/prepared/stella_0003_suggestion_decisions.sql:369 (Stella chain) and by the G2 shim in tests/postgres/disposable-db.ts on baseline-only provisions; created by NO migration and NO baseline unit. Present in the opening's 57. stella_hosted_0007 classifies it PACKAGE_NOT_INSTALLED on hosted and grants the append-only pair IF AND ONLY IF the table exists (lines 582-583, fixed-literal EXECUTE) with a NOTICE when absent.",
+      "successor_rule": "The successor package MUST use the same if-present fixed-literal construct: grant SELECT, INSERT when the relation exists, RAISE NOTICE naming it when absent, never fail on absence, never pretend it does not exist. The closed-world guard (SECTION_10) counts it as a KNOWN CONDITIONAL member, so its absence is not an unknown relation and its presence is not a surplus.",
+      "consistency_with_stella_0003": "stella_0003:520-521 REVOKE ALL from uellix_app/uellix_writer then :543 GRANT SELECT, INSERT TO uellix_writer -- the same end-state; the successor converges to it rather than widening it."
+    },
+    "evidence_document_versions_and_evidence_chunks": {
+      "class": "CAPABILITY_ONLY_EXCLUDED_FROM_ORDINARY_WRITER_GRANTS",
+      "authority_that_says_so": "db/prepared/grounding_0002_document_versions.sql:513-515 and grounding_0003_evidence_chunks.sql:625-627 REVOKE ALL from uellix_app, uellix_writer AND uellix_auditor, then :533-534 / :636-637 GRANT SELECT TO uellix_app and uellix_auditor DIRECTLY (not through the writer); stella_hosted_0007 header lines 66-75 names them CAPABILITY-ONLY, grants NOTHING on them and asserts their posture in §0.7 and §5; its closed-world scan excludes them by name (lines 392 and 706).",
+      "successor_rule": "NOT members of the 57 (chain-created, not migration-created). The successor package grants NOTHING on them, names them in its closed-world exclusion list exactly as stella_hosted_0007 does, and asserts (when present) that uellix_writer holds nothing on them. Their direct uellix_app SELECT is the grounding capability's contract, not this package's."
+    },
+    "other_prepared_chain_created_public_tables": {
+      "tables": ["report_public_disclosures", "capability_verification_hits", "stripe_webhook_events", "capability_bootstrap_attempts"],
+      "created_by": "stella_0007:212/243, stella_0008:208, stella_0010:206",
+      "posture": "Each is REVOKE ALL FROM uellix_writer, uellix_auditor by its creating package (stella_0007:411-412, stella_0008:304, stella_0010:271); stella_0007:414 grants SELECT on report_public_disclosures to uellix_writer only.",
+      "successor_rule": "NOT members of the 57. Treated exactly like the grounding pair: excluded by name from the closed-world scan, granted nothing, posture asserted when present. The exclusion list is the closed set of the six names in this section plus nothing else; any other non-57 public table is UNKNOWN and refuses (SECTION_10)."
+    },
+    "entitlement_grants_once_0073_lands": {
+      "class": "NO_RUNTIME_ACCESS",
+      "privileges_for_uellix_writer": [],
+      "privileges_for_uellix_app": [],
+      "privileges_for_uellix_auditor": [],
+      "access_channel": "Only through the CE-3 governed SECURITY DEFINER evaluator, whose ACTUAL PostgreSQL owner is uellix_owner (rolsuper=false, rolbypassrls=false) under a single narrow policy on entitlement_grants -- PR #161 R3 amendment COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json (DEFINER_OWNER 'uellix_owner', DEFINER_OWNER_BYPASSRLS false, the 'or a BYPASSRLS posture' arm REMOVED). CE-3 SC-13: 'No policy, grant or role created by CE-3 may confer membership, a role, or any tenant read beyond entitlement_grants itself'; the relation is created with ENABLE + FORCE ROW LEVEL SECURITY in the same migration (CE-3 authority lines 442-443).",
+      "successor_rule": "When public.entitlement_grants is present the successor package grants NOTHING on it to any runtime role (writer, app, auditor) and asserts that posture; it never touches EXECUTE on the evaluator function (that EXECUTE contract belongs to CE-3 and stella_hosted_0009). When absent (implementation before 0073 merges is PROHIBITED by SECTION_11, so absence is only a fixture case), the closed-world guard treats the name as a KNOWN CONDITIONAL member, not an unknown.",
+      "no_contradiction_with_CE3": "CE-3's R-A read path is a definer owned by uellix_owner; nothing here grants, revokes, owns or policies anything CE-3 owns. This section is a NEGATIVE-space statement (nothing for the runtime) that is exactly CE-3's own requirement."
+    }
+  },
+  "SECTION_4_ROLE_CONTRACT": {
+    "runtime_request_identity": "uellix_app",
+    "inherits": "uellix_writer",
+    "inheritance_statement": "db/prepared/stella_0001_role_topology_bootstrap.sql:180 GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE, ADMIN FALSE. Hosted twin: stella_hosted_0001 §3 (asserted by stella_hosted_0006:267-271 and stella_hosted_0007 §5 as the EFFECTIVE privilege).",
+    "no_direct_table_grants_to_uellix_app": "BINDING. Every table privilege in the successor is granted TO uellix_writer (or, for the auditor class, TO uellix_auditor). uellix_app reaches tables only through the inherited membership. The single measured exception to this repository-wide rule -- the grounding capability's direct GRANT SELECT TO uellix_app on evidence_document_versions/evidence_chunks -- belongs to that capability and is outside the successor (SECTION_3).",
+    "prohibited_runtime_role_properties": {
+      "SUPERUSER": false,
+      "BYPASSRLS": false,
+      "evidence": "stella_0001:81 ALTER ROLE uellix_app LOGIN NOINHERIT NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION NOSUPERUSER; :82 uellix_writer NOLOGIN NOINHERIT NOBYPASSRLS ... NOSUPERUSER; :83 uellix_auditor LOGIN NOINHERIT NOBYPASSRLS ... NOSUPERUSER; :84 ALTER ROLE uellix_auditor SET default_transaction_read_only = on; :200 REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor.",
+      "successor_rule": "The successor package asserts rolsuper=false AND rolbypassrls=false for uellix_app, uellix_writer and uellix_auditor in its section 0 and refuses otherwise. It creates no role and alters no role attribute."
+    },
+    "uellix_auditor": {
+      "posture": "SELECT-only, where governed.",
+      "on_the_19": "SELECT on the 8 APPEND_ONLY, the 6 OPERATIONAL_INSERT_UPDATE and the 4 READ_ONLY (18 tables); NOTHING on commercial_accounts (its FORCE RLS + zero policies would return zero rows, but a grant on a NO_RUNTIME_ACCESS table is an authorisation waiting for a policy and is refused by construction); NOTHING on entitlement_grants when present (CE-3 SC-13).",
+      "on_the_38": "As SECTION_2B: SELECT on all 38, unchanged.",
+      "read_only_enforcement": "default_transaction_read_only = on (stella_0001:84) is a session default, not a grant; the successor additionally grants the auditor no INSERT/UPDATE/DELETE anywhere, so the property holds on the grant layer too."
+    },
+    "no_blanket_role_widening": "No GRANT ALL, no GRANT ... ON ALL TABLES IN SCHEMA, no ALTER DEFAULT PRIVILEGES, no schema-level privilege, no role membership change, no ownership change. Every grant names one table and one closed verb set. stella_0004's 'NOTHING HERE IS COMPOSED' invariant (header lines 22-28; enforced for every prepared stella_* file by tests/prepared-stella-sql.test.ts) applies to the successor unchanged."
+  },
+  "SECTION_5_RLS_HELPER_EXECUTE_HALF": {
+    "why_table_grants_alone_are_insufficient": "Evaluating a row-level-security policy requires the INVOKING role to hold EXECUTE on every function the policy expression calls. Almost every policy in this schema calls public.current_user_org_ids() or public.current_user_is_super_admin(). Without EXECUTE, a SELECT by uellix_app does not return zero rows -- it fails outright. Sources: db/prepared/stella_0004_role_separation.sql §6b-bis (lines 696-717, 'Measured in the disposable rehearsal, 2026-08-02'); docs/ops/DATABASE_ROLE_MODEL.md §3.5 ('permission denied for function current_user_org_ids'); stella_hosted_0006 header ('42501 permission denied for function current_user_is_super_admin', measured on hosted 2026-08-16). OPENING_MEASURED on the current schema: table grants alone still yield 42501 'permission denied for function current_user_org_ids'; table grants + EXECUTE on the three helpers yield 18 positive operations OK and every negative control 42501.",
+    "EXACT_HELPER_SIGNATURES_RE_DERIVED_FROM_THE_LIVE_REPOSITORY": [
+      "public.current_user_org_ids()",
+      "public.current_user_is_super_admin()",
+      "public.current_user_role_in_org(uuid)"
+    ],
+    "where_each_signature_is_named": {
+      "stella_0004_expected_functions_allowlist": "db/prepared/stella_0004_role_separation.sql:118-123 (8 functions, these three among them)",
+      "stella_0004_grant": "db/prepared/stella_0004_role_separation.sql:713-717 GRANT EXECUTE ON FUNCTION public.current_user_org_ids(), public.current_user_is_super_admin(), public.current_user_role_in_org(uuid) TO uellix_writer, uellix_auditor;",
+      "hosted_successor_precedent": "db/prepared/stella_hosted_0006_runtime_rls_helper_contract.sql:465-469 GRANT EXECUTE ON FUNCTION (same three signatures) TO uellix_writer, uellix_auditor; its §0 names the three at lines 202-204, 218-220, 237-239 and asserts each is SECURITY DEFINER (line 225) and created by baseline unit 0031_rls_core.sql (line 209).",
+      "role_model": "docs/ops/DATABASE_ROLE_MODEL.md §3.5 table: the three rows marked X for uellix_writer -> uellix_app and for uellix_auditor; the other five functions marked '-'.",
+      "registry_tripwire": "tests/hosted/prechain-ownership.test.ts:288-295 asserts stella_hosted_0006 republishes exactly 3 function bodies."
+    },
+    "REQUIRED_EXECUTE_POSTURE": {
+      "uellix_writer": "EXECUTE on exactly the three signatures above (reaches uellix_app by inheritance).",
+      "uellix_auditor": "EXECUTE on exactly the three signatures above.",
+      "proof_basis": "Both predecessor (stella_0004 §6b-bis) and hosted successor (stella_hosted_0006) grant to exactly these two roles; the role model documents the same. No wider grant is proven anywhere, so none is authorised."
+    },
+    "EXPLICITLY_EXCLUDED_FROM_EXECUTE": [
+      "public.handle_new_user()",
+      "public.handle_update_user()",
+      "public.can_read_evidence_object(text,uuid)",
+      "public.can_write_evidence_object(text,uuid)",
+      "public.uellix_forbid_mutation()"
+    ],
+    "exclusion_rationale": "stella_0004 lines 709-712: the two functions that WRITE are deliberately excluded so that 'no indirect write path through a function' is a checkable claim (asserted by name in its §9.8). The evidence-object helpers and the mutation guard are likewise not granted. The successor grants EXECUTE on no function outside the three.",
+    "NO_PUBLIC_EXECUTE_WIDENING": "The successor never grants EXECUTE TO PUBLIC, anon, authenticated or service_role, and asserts in its section 0 that PUBLIC holds no EXECUTE on the three helpers (stella_0004:563-568 REVOKE ... FROM PUBLIC; stella_hosted_0006 §0). acldefault('f') is EXECUTE TO PUBLIC for a NEW function (stella_0004 header item 4), which is why the assertion is on the live catalog, not on 'proacl IS NULL'.",
+    "why_the_local_path_never_receives_this_half_today": "OPENING_MEASURED: the sequence stella_local_0000 -> 85 baseline units -> stella_0001 -> stella_0003 never applies stella_0004 (it refuses at section 0) and never applies stella_hosted_0006 (hosted-only family), so uellix_writer/uellix_auditor hold NO EXECUTE on the three helpers on the current-schema local/CI build. The successor package carries the EXECUTE half itself (SECTION_7 HALF_1) rather than depending on a package that cannot run."
+  },
+  "SECTION_6_0004_IMMUTABILITY": {
+    "STELLA_0004_DISPOSITION": "0004_FROZEN_SUCCESSOR_REQUIRED",
+    "editing_stella_0004_is_forbidden": true,
+    "why": {
+      "digest_and_certification_pins": "sha256 of db/prepared/stella_0004_role_separation.sql at AS_OF_HEAD = 28646bff5f068b7b6676d9c03ddcd69c4d248869549425497c6514459e7d7b5a (re-computed by this writer from the HEAD blob and from the working tree; identical). That digest is pinned in THREE places: tests/prepared-stella-sql.test.ts:3097, tests/stella-r3-5-pg17-certification.test.ts:36 and db/r3-5-pg17-certification-inputs.ts (the PG17 engine certification inputs). Its rollback is pinned beside it (tests/stella-r3-5-pg17-certification.test.ts:38). Any byte change breaks a certified engine certification, not merely a unit test.",
+      "38_table_historical_taxonomy": "tests/database-role-safety.test.ts:186-190 pins exactly 38 = 5 append-only + 33 operational and :176-183 requires every one of the 38 to appear at least twice in the forward file. stella_0004 §0 (lines 103-124) is a CLOSED allowlist by design ('an unknown table must not silently receive operational grants', line 227). Editing the arrays would re-certify a package whose whole argument is that its inventory was measured on 2026-08-02.",
+      "hosted_successor_precedent": "The hosted path did not edit stella_0004 either: it published stella_hosted_0006 (EXECUTE half) and stella_hosted_0007 (table half) as forward-only prechain administrative units registered in db/hosted/prechain-ownership.ts (entries at lines 360 and 445), leaving stella_0004 LOCAL-ONLY and byte-identical. The current-schema successor follows the same shape.",
+      "current_schema_no_longer_matches_its_certified_prestate": "OPENING_MEASURED: stella_0004 section 0 refuses on 'unclassified table(s)' with exactly the 19 names, and would ALSO refuse on four further G2-prestate preconditions it asserts at line 470 (38 tables / 105 policies / 10 triggers / 8 functions; the current build measures 57 / 146 / 19 / 12) and on its view/type/relkind sweeps (lines 449, 458). It is a package written FOR a schema that no longer exists; the correct act is a successor, not an amendment."
+    },
+    "what_remains_true_of_stella_0004": "It stays the LOCAL predecessor for the G2 rehearsal it certified (scripts/stella-r3-4-local-runner.ts phase) and the textual source the successor cites for the 38-table posture (as amended, SECTION_2B). Nothing here retires, supersedes-in-place or re-pins it."
+  },
+  "SECTION_7_CANONICAL_SUCCESSOR": {
+    "PACKAGE_ID": "stella_0021_current_schema_runtime_acl_contract",
+    "PACKAGE_PATH": "db/prepared/stella_0021_current_schema_runtime_acl_contract.sql",
+    "ONE_canonical_SQL_package": true,
+    "FORWARD_ONLY": true,
+    "ROLLBACK": "NONE",
+    "rollback_disposition_detail": "No stella_0021_rollback.sql may exist (tests/prepared-sql-source-of-truth.test.ts:210-222 asserts a declared forward-only package must NOT ship a rollback). The package is declared in db/hosted/forward-only-packages.ts (FORWARD_ONLY_PACKAGES: id, reason > 200 chars, reversalPath > 40 chars, per the shape at lines 66-80 and the tripwire at lines 213-216). Precedent: stella_hosted_0006 and stella_hosted_0007 are forward-only for the identical reason (a grant contract whose 'undo' is a revoke that would recreate the measured outage). The reversalPath is a named operator act: revoke the successor's grants under the same administrative session, which re-opens 42501 on the 19 -- stated, not scripted.",
+    "kind": "GRANT-ONLY / ACL-contract only.",
+    "ordinal_derivation": "The tail of db/prepared/ at AS_OF_HEAD is stella_0020 (stella_0020_stella_interactions_model_default.sql); 0021 is the next unused ordinal in the stella_ family. NOT the stella_hosted_ family (SECTION_9). The ordinal is a DERIVED EXPECTATION: the implementing mission re-derives it from its own base and refuses if another stella_0021 has appeared.",
+    "TWO_HALVES_ONE_PACKAGE": {
+      "HALF_1_EXECUTE": "GRANT EXECUTE ON FUNCTION public.current_user_org_ids(), public.current_user_is_super_admin(), public.current_user_role_in_org(uuid) TO uellix_writer, uellix_auditor (SECTION_5). Nothing else on any function.",
+      "HALF_2_TABLES": "The per-table grant contract over all 57 (SECTION_2 for the 19, SECTION_2B for the 38, SECTION_3 if-present rules), each table named as a fixed literal, each class as one GRANT + one convergence REVOKE of the class's forbidden verbs, exactly the §6a/§6b idiom of stella_0004 (lines 650-694)."
+    },
+    "PROHIBITED_CONTENT": {
+      "schema_mutation": "NO CREATE/ALTER/DROP of any relation, column, index, type, function or schema.",
+      "table_mutation": "NO INSERT/UPDATE/DELETE/TRUNCATE of any business row.",
+      "RLS_policy_creation": "NO CREATE/ALTER/DROP POLICY, NO ENABLE/DISABLE/FORCE ROW LEVEL SECURITY. RLS remains the row boundary exactly as it was before the package ran (stella_hosted_0007 header: 'A table privilege is necessary and NOT sufficient').",
+      "business_data_write": "NONE.",
+      "ownership": "NO ALTER ... OWNER TO. (The hosted predecessor 0007 needed one SET LOCAL ROLE window for a uellix_owner-owned table; whether the current-schema successor needs any is a MEASUREMENT for the implementer -- on the local/CI build the 56 migration-created tables are owned by the migrator/owner identity stella_local_0000 establishes -- and if it does, the window must be LOCAL to the transaction and asserted closed, never a durable role change.)",
+      "role_or_default_privilege": "NO CREATE ROLE, NO GRANT <role> TO <role>, NO ALTER DEFAULT PRIVILEGES, NO schema privilege."
+    },
+    "CONVERGENT_APPLICATION_SEMANTICS": {
+      "definition": "For every table in the contract, the package's end state is exactly the class's privilege set for uellix_writer and exactly SELECT (or nothing, per class) for uellix_auditor. Application is idempotent: a second run changes nothing. Convergence is by REVOKE of the class's forbidden verbs after the GRANT, so an operator-widened or previously-wider posture is taken back (stella_0004 §6a comment, line 659).",
+      "precondition_per_table": "Before granting, each table's CURRENT posture for uellix_writer must be EMPTY or a SUBSET of the class contract. A posture that is a SUPERSET (e.g. DELETE already granted on an APPEND_ONLY table, or any grant on a NO_RUNTIME_ACCESS table) is an OVERPRIVILEGED PRESTATE and the package REFUSES rather than silently narrowing -- because that surplus was produced by something outside this repository and must be explained before it is normalised (the stella_hosted_0006:317 'mixed posture' doctrine).",
+      "postcondition": "Section 9-style end-state assertion over ALL of schema public, not only the named tables: no runtime role holds TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on any public table; uellix_app holds NO direct table grant; PUBLIC holds no EXECUTE on the three helpers; every named table's effective privilege for uellix_app (has_table_privilege, via inheritance) equals its class."
+    },
+    "MUST_FAIL_CLOSED_ON": {
+      "unknown_current_public_relation": "A relkind IN ('r','p') relation in schema public that is neither one of the 57 named tables, nor a KNOWN CONDITIONAL member (SECTION_3), nor a named CAPABILITY_ONLY exclusion (SECTION_3) => RAISE EXCEPTION naming it. Default for unknown: REFUSE, never auto-SELECT.",
+      "unclassified_relation": "Same test, stated from the contract side: every one of the 57 must be in EXACTLY ONE class array; a name missing from all arrays or present in two => RAISE EXCEPTION before any GRANT (a DO block over the arrays, the stella_0004 §0 idiom at lines 213-227).",
+      "unexpected_non_table_public_relkind": "A view, materialised view, sequence or foreign table in public that the contract does not classify => RAISE EXCEPTION (stella_0004:449 idiom). The contract classifies NO non-table relkind, so ANY such object refuses; a future authority may add a classified list.",
+      "overprivileged_pre_or_post_state": "Precondition per table (above) and the all-of-public postcondition; either failing => RAISE EXCEPTION inside the single transaction, leaving the database untouched.",
+      "role_topology_drift": "uellix_app not an inheriting member of uellix_writer, or any of the three runtime roles with rolsuper or rolbypassrls => RAISE EXCEPTION (stella_hosted_0006:267-271 idiom).",
+      "helper_absent_or_not_definer": "Any of the three helper signatures absent, or not SECURITY DEFINER => RAISE EXCEPTION (stella_hosted_0006:209, :225 idiom)."
+    },
+    "single_transaction": "Applied with -1 and ON_ERROR_STOP as a courtesy, but -- exactly as stella_0004 header lines 18-21 -- section 0 asserts the whole inventory before touching anything and the final section asserts the end state, both with RAISE EXCEPTION, so a forgotten flag still cannot leave a half-granted database."
+  },
+  "SECTION_8_TAXONOMY_EVOLUTION": {
+    "OPERATIONAL_INSERT_UPDATE_is_a_deliberate_new_class": true,
+    "why": "Six current tables (SECTION_2) require UPDATE but not DELETE: each carries a FOR UPDATE policy and an update consumer, none carries a DELETE policy or a delete consumer. The legacy OPERATIONAL class (stella_0004 §6b) is SELECT+INSERT+UPDATE+DELETE. Collapsing the six into it would grant DELETE to a runtime that never issues it -- an authorisation waiting for a verb, which is the pattern stella_0009's own comment calls out ('authorisation waiting for a role', line 262) and which stella_0004 header item 2 was written to remove. The class is therefore NEW, named for exactly what it grants, and never aliased to OPERATIONAL.",
+    "CLASS_PRIVILEGE_SETS_FROZEN": {
+      "APPEND_ONLY": {"writer_granted": ["SELECT", "INSERT"], "writer_forbidden": ["UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"], "auditor_granted": ["SELECT"]},
+      "OPERATIONAL_INSERT_UPDATE": {"writer_granted": ["SELECT", "INSERT", "UPDATE"], "writer_forbidden": ["DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"], "auditor_granted": ["SELECT"]},
+      "READ_ONLY": {"writer_granted": ["SELECT"], "writer_forbidden": ["INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"], "auditor_granted": ["SELECT"]},
+      "NO_RUNTIME_ACCESS": {"writer_granted": [], "writer_forbidden": ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"], "auditor_granted": []},
+      "OPERATIONAL_legacy": {"writer_granted": ["SELECT", "INSERT", "UPDATE", "DELETE"], "writer_forbidden": ["TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"], "auditor_granted": ["SELECT"], "membership": "CLOSED to the 32 stella_0004 §6b tables minus marketing_leads; no table may ENTER this class by successor, only by a separate authority act."},
+      "GOVERNED_READ_legacy": {"writer_granted": ["SELECT"], "writer_forbidden": ["INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"], "auditor_granted": ["SELECT"], "membership": "stella_interactions only."},
+      "CAPABILITY_ONLY_legacy": {"writer_granted": [], "writer_forbidden": ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"], "auditor_granted": ["SELECT"], "membership": "marketing_leads only (writer revoked by stella_0009:265; auditor SELECT retained from stella_0004 §6c)."}
+    },
+    "UNIVERSALLY_PROHIBITED_UNLESS_SEPARATELY_AUTHORIZED": ["TRUNCATE", "REFERENCES", "TRIGGER", "MAINTAIN"],
+    "universal_prohibition_scope": "For ALL classes and ALL runtime roles, on ALL public tables (asserted across the whole schema, not only the named ones -- stella_hosted_0007 header 'NOTHING STRUCTURAL, EVER'). TRUNCATE is NOT governed by RLS (stella_0004 header item 2), which is why it is on this list and not merely 'not granted'. MAINTAIN is PG17+ and is named so a PG17 default cannot leak it.",
+    "any_privilege_not_explicitly_class_authorized": "PROHIBITED. The class tables above are exhaustive; there is no 'and whatever else is convenient'."
+  },
+  "SECTION_9_HOSTED_PARITY": {
+    "HOSTED_PARITY_DISPOSITION": "SINGLE_CANONICAL_PACKAGE_REGISTERED_AS_HOSTED_ADMINISTRATIVE_UNIT",
+    "no_second_SQL_implementation": "BINDING. There is no stella_hosted_0021, no generated twin, no rewrite. The canonical prepared bytes at PACKAGE_PATH ARE the artefact on both targets. Precedent: stella_0020 is a stella_-family file registered in db/hosted/prechain-ownership.ts (PRECHAIN_LEDGER_MODEL_DEFAULT, lines 586-611) whose comment states 'the canonical file IS the artefact on both targets, which is why it takes a digest pin and not a generation rule'.",
+    "expected_registry_family": {
+      "prechain_ownership_registry": "db/hosted/prechain-ownership.ts -- a PrechainOwnershipPackage entry (fields at lines 89-160: id, kind 'prechain-ownership', sourceFile, sourceSha256, purpose, applyWindow, rollbackFile null, rollbackSha256 null, forwardOnlyNoRollbackReason non-null, normalisedFunctions [], destinationOwner, unblocks) appended to ADMINISTRATIVE_UNITS (line 625).",
+      "forward_only_registry": "db/hosted/forward-only-packages.ts -- a ForwardOnlyPackage entry {id, reason, reversalPath} (lines 66-80), required by tests/prepared-sql-source-of-truth.test.ts:210-222.",
+      "digest_pin_rule": "sourceSha256 MUST be the sha256 of the exact canonical prepared bytes at PACKAGE_PATH (LF, per .gitattributes db/prepared/** eol=lf), computed by the implementer at commit and re-verified by the certifier; never a digest of a copy."
+    },
+    "apply_window": {
+      "value": "prechain",
+      "derivation": "The 56 migration-created tables and the three helpers exist before any HOSTED_CHAIN package runs (baseline units create them); the package's own §0 excludes chain-created relations by name (SECTION_3) exactly as stella_hosted_0007 (lines 392, 706) does, so it is satisfiable in the PRECHAIN_CLEAN window. stella_suggestion_decisions is if-present. This is the measured topology the opening derived and the same window as stella_hosted_0006/0007. NOT postchain (stella_0020's window), because nothing in this contract depends on a chain outcome.",
+      "ordinal_in_ADMINISTRATIVE_UNITS": "DERIVED, NOT FROZEN: at AS_OF_HEAD the array holds 7 units (tests/hosted/prechain-ownership.test.ts:218 'declares all seven units'). CE-3's stella_hosted_0009_entitlement_evaluator_ownership (PR #161 amendment, FUTURE_HOSTED_PACKAGE_ID) is serialised BEFORE this package (SECTION_11), so if it lands first stella_0021 is the NINTH entry; if the implementing mission measures otherwise it re-derives. The registry tripwire's exact id list goes RED on either insertion and is advanced by the respective implementer, never pre-advanced here."
+    },
+    "hosted_application_is_a_later_operator_act": "Registering the unit does NOT apply it. Hosted application goes through the administrative hosted session (stella_hosted_0008 header: psql \"$UELLIX_STAGING_ADMIN_URL\" -X -1 -v ON_ERROR_STOP=1 -f <file>) and is gated by the staging prerequisites this artifact does not adjudicate: S1 schema parity in particular (the staging project measures 39 public tables where the current schema has 57; a grant on an absent table is an ERROR, so the package cannot even be attempted there until the baseline chain has advanced).",
+    "no_staging_readiness_claim": "This artifact makes NO claim that staging is ready, aligned, or able to receive the package. See SECTION_15."
+  },
+  "SECTION_10_FUTURE_COVERAGE_GUARD": {
+    "purpose": "Prevent recurrence: the 19-table gap existed because stella_0004's allowlist was closed and nothing DB-free turned RED when a migration added a public table. The guard makes 'every applicable public table is in exactly one ACL class' a repository invariant that a new migration breaks immediately.",
+    "closed_world_rule": "Let U = the set of public tables the governed schema sources create (derivation below). Let C = the multiset union of the successor package's class arrays plus its KNOWN CONDITIONAL members plus its named CAPABILITY_ONLY exclusions. Required: U as a set == C as a set, AND every name occurs in C exactly once. Any name in U \\ C => RED (unclassified). Any name in C \\ U => RED (phantom classification). Any duplicate in C => RED.",
+    "universe_must_derive_independently": "U is computed from db/migrations/** (CREATE TABLE minus DROP TABLE, with the comment false-positive filtered by requiring a real statement, not prose), cross-checked for equality against the pgTable() declarations in db/schema.ts, plus the prepared-chain creators enumerated in SECTION_3 (stella_0003, grounding_0002/0003, stella_0007, stella_0008, stella_0010). U is NEVER read from the package under test.",
+    "expected_class_set_must_not_self_derive": "C is read from the package SQL's fixed-literal arrays (or from a TypeScript mirror of them, if the implementer chooses one) -- and the test asserts C against U, never U against U. A test that derived its expectation from the same declaration it checks would be vacuous; the manifest's mutation controls (companion manifest M-CW-*) require the test to go RED when one name is removed from the package arrays and when one fixture table is added to U.",
+    "future_candidate_test": "tests/database-runtime-acl-closed-world.test.ts",
+    "test_file_is_authority_chosen_not_created": "Named here so the implementing mission has a fixed write surface; the file does NOT exist at AS_OF_HEAD and is not created by this artifact (grep -rn 'database-runtime-acl-closed-world' => 0 hits). The implementer may choose an exact equivalent path only with the certifier's written agreement; the DEFAULT is this path.",
+    "DB_free": "The guard is DB-free (vitest, no PostgreSQL), so it runs on every CI push; the Real-PG twin (SECTION_14 PG-04/PG-05) proves the same closed world against a live catalog.",
+    "new_migration_created_public_table_turns_the_guard_RED": "BINDING. Until the table is explicitly classified by an authority amendment AND a successor package (or an amendment to stella_0021 authorised by lineage), the guard fails. There is no auto-classification, no default class, no 'assume READ_ONLY'.",
+    "default_for_unknown_future_relation": "REFUSE. Never auto-SELECT. On the DB-free side: RED test. On the package side: RAISE EXCEPTION in section 0 (SECTION_7 MUST_FAIL_CLOSED_ON.unknown_current_public_relation)."
+  },
+  "SECTION_11_CE3_ORDERING": {
+    "CE3_SERIALIZATION": "CE3_FIRST_THEN_ACL_IMPLEMENTATION",
+    "CE3_owns_first": [
+      "ODS v1.0.34 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json -- absent at AS_OF_HEAD; tests/ods/ods-scope.test.ts asserts existsSync false at three sites)",
+      "HPO-ODS-W2-31 (absent from PROTECTED_GRANTS at AS_OF_HEAD; tests/ods/ods-scope.test.ts:467 asserts absence; live tail is W2-30 at index 17, :456-457)",
+      "db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql (PR #161 amendment FUTURE_HOSTED_SQL_PATH; absent at AS_OF_HEAD)",
+      "PR #159 final merge (db/migrations/0073_commercial_account_ce3_entitlement_grants.sql; candidate cdbdbdd7; OPEN draft at AS_OF_HEAD)"
+    ],
+    "why_CE3_is_first": "Two hard dependencies, not courtesy: (1) the successor must classify entitlement_grants (SECTION_3), which exists only after PR #159 merges; classifying a relation that no migration creates would be a phantom (SECTION_10). (2) Both CE-3's stella_hosted_0009 and stella_0021 append to the SAME array in db/hosted/prechain-ownership.ts and move the SAME registry tripwire; two lanes editing that file concurrently is a merge collision by construction, and CE-3 holds the earlier lineage.",
+    "Controller_state_at_AS_OF_HEAD": "scripts/ods-controller.ts enumerates 33 addenda (line 94 tail docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json; header line 49 lists through v1.0.33). v1.0.33's CONTROLLER_SUCCESSOR_RULE.NEXT_LINEAGE_ALLOCATION_BLOCKS blocked 'v1.0.34 and beyond until the next Controller successor act is integrated'; that act is PR #160 (merge 891f869f == AS_OF_HEAD), so v1.0.34 is UNBLOCKED and belongs to CE-3's ownership lineage (CE-3 lineage opening, read-only at this same base).",
+    "authority_writing_is_permitted_NOW": "This artifact touches no ODS file, no grant registry, no db/** path and no test; it is disjoint from everything CE-3 owns, which is why it may be written concurrently.",
+    "ACL_implementation_is_AFTER": "The implementing mission for stella_0021 may open only after: v1.0.34 integrated, HPO-ODS-W2-31 registered, stella_hosted_0009 registered in db/hosted/prechain-ownership.ts, and PR #159 merged. It measures each at its own base with pnpm ops:program-state / the ods-scope sentinels; none is assumed from this list.",
+    "symbolic_future_ACL_lineage": "NEXT_AFTER_CE3",
+    "EXPECTED_ODS_POSITION": "ODS v1.0.35",
+    "EXPECTED_HPO_ID": "HPO-ODS-W2-32",
+    "these_are_DERIVED_EXPECTATIONS_NOT_ALLOCATIONS": "BINDING. v1.0.35 and HPO-ODS-W2-32 are named here ONLY as the mechanically-next identifiers IF the dense sequence (v1.0.34 / W2-31 to CE-3) remains unchanged. Naming an id inside an expectation is not an allocation (the v1.0.33 NO_PREALLOCATION doctrine). Repository sweep at AS_OF_HEAD: 'v1.0.35', 'HPO-ODS-W2-32' and 'stella_0021' occur ZERO times outside this artifact and its companion.",
+    "allocator_must_re_derive": "If the Controller enumeration, the PROTECTED_GRANTS tail, the addendum filesystem tail or the CE-3 lineage differ when ODS allocation begins, the allocator derives the next free identifiers from the live registries and NEVER uses the numerals above blindly. A stale count frozen against another tree is a known failure mode in this repository and is refused."
+  },
+  "SECTION_12_FUTURE_ODS_BINDING": {
+    "EXPECTED_IMPLEMENTATION_BRANCH": "codex/current-schema-runtime-acl-implementation-r1",
+    "branch_binding_rule": "The future grant binds by EXACT string equality to this branch name (scripts/ods-scope.ts resolveProtectedGrant semantics); the implementation writer never self-registers and never infers the allowlist from what changed.",
+    "EXPECTED_PROTECTED_LITERALS": [
+      "db/prepared/stella_0021_current_schema_runtime_acl_contract.sql",
+      "db/prepared/README.md"
+    ],
+    "why_exactly_these_two": "Both fall under DEFAULT_PROTECTED_PATTERNS 'db/prepared/**' (scripts/ods-scope.ts). The README is TEST-FORCED: tests/prepared-sql-source-of-truth.test.ts:178-184 requires every non-rollback prepared .sql to be listed in db/prepared/README.md, so the README edit is not optional and its absence would be a RED gate, not a narrower diff. The identical two-literal shape was proven sufficient, minimal and non-widening for CE-3's stella_hosted_0009 grant at this same base.",
+    "EXPLICITLY_EXCLUDED_FROM_THE_FUTURE_GRANT": {
+      "db/prepared/**_wildcard": "A wildcard would authorise every other prepared package, including stella_0004; refused.",
+      "db/migrations/**": "The package is not a migration and creates nothing; refused.",
+      "rollback_file": "FORWARD-ONLY; no db/prepared/stella_0021_rollback.sql may exist (SECTION_7); a third literal for it would be a contradiction, not a convenience.",
+      "db/prepared/journal/**": "The journal is the hosted chain's ledger (W2-30's pattern), untouched by an unapplied prechain unit.",
+      "db/prepared/checkpoint-b0/observation.sql": "A chain checkpoint observation (W2-30's pattern); untouched."
+    },
+    "ordinary_allow_write_set_expected_beside_the_grant": "NOT protected, so NOT in the grant, but named so the implementer's --allow list is not inferred: db/hosted/prechain-ownership.ts (registry entry), db/hosted/forward-only-packages.ts (forward-only declaration), db/prepared-package-order.ts (only if its inventory test forces an entry), tests/database-runtime-acl-closed-world.test.ts (SECTION_10), the Real-PG suite and its fixtures under tests/postgres/ (SECTION_14), tests/hosted/prechain-ownership.test.ts (tripwire advance) and tests/prepared-stella-sql.test.ts / tests/prepared-sql-source-of-truth.test.ts if their inventories are pinned by count. Each is measured at the implementing base; this list is an expectation, not an allowlist.",
+    "do_not_register_W2_32_now": "BINDING. This artifact registers nothing. HPO-ODS-W2-32 is absent from scripts/ods-scope.ts at AS_OF_HEAD and stays absent through this PR."
+  },
+  "SECTION_13_MEASURE_E2E_UNBLOCK": {
+    "what_is_blocked_and_why": "OPENING_MEASURED: on the current-schema local/CI build uellix_app receives 42501 on every one of the 19 tables and on the three RLS helpers. The Measure pipeline services -- lib/pipeline/evidence-versions.ts, lib/pipeline/financial-proxy-versions.ts, lib/pipeline/sroi-calculation.ts, lib/pipeline/sroi-readiness.ts, lib/pipeline/sroi-sensitivity.ts, lib/pipeline/evidence-sufficiency.ts, lib/pipeline/domain-object-versions.ts, lib/pipeline/narratives.ts (the non-test importers of the 19 symbols measured by this writer) -- write to 14 of the 19. A Measure Golden E2E executed as uellix_app therefore cannot pass on a governed substrate today, and no such test exists at AS_OF_HEAD (tests/e2e/ holds g04-governed-evidence-journey, stella-ticket-journey and stella-multicategory-quota only).",
+    "REQUIRED_FUTURE_SUBSTRATE": [
+      "pinned disposable PostgreSQL (the opening's image pin, PostgreSQL 17 family; a throwaway container on 127.0.0.1 with an ephemeral port, no bind mounts, no network, teardown in finally, leftover check -- the scripts/db-audit-disposable.ts / tests/postgres/disposable-db.ts contract)",
+      "local role bootstrap via db/prepared/stella_local_0000_local_role_identity_bootstrap.sql (P1A phase P1A-P3-LOCAL-ROLE-IDENTITY-APPLIED, scripts/p1a-bootstrap-gate.ts:506)",
+      "all 85 BASELINE_UNITS of db/hosted/baseline-manifest.ts in governed order (BASELINE_ORDER), applied with the identities the P1A gate uses",
+      "db/prepared/stella_0001_role_topology_bootstrap.sql (role topology: uellix_app inherits uellix_writer; NOSUPERUSER/NOBYPASSRLS)",
+      "db/prepared/stella_0021_current_schema_runtime_acl_contract.sql (the successor, both halves)",
+      "the journey executed AS uellix_app through withDatabaseIdentityContext (db/identity-context.ts), the way tests/e2e/g04-governed-evidence-journey.e2e.test.ts already executes its writes"
+    ],
+    "PROHIBITED_IN_THE_SUBSTRATE": {
+      "ad_hoc_GRANT": "No GRANT issued by the test or its harness. The precedent tests/postgres/ce1-commercial-account.pg.test.ts:68-115 creates roles and grants USAGE inline; that shape is NOT admissible for the Measure E2E, whose whole point is to prove the GOVERNED grant path.",
+      "owner_execution_for_the_application_journey": "The journey never runs as postgres, uellix_owner, uellix_migrator or any table owner.",
+      "BYPASSRLS": "No role in the journey may hold it; asserted, not assumed.",
+      "manual_surgery": "No psql fix-ups between steps, no policy edits, no SET ROLE to escape a refusal."
+    },
+    "reopen_condition": "The blocked Measure Golden E2E may reopen ONLY after ALL of: (1) stella_0021 implemented on the expected branch under the registered grant; (2) independent Real-PG certification PASS of the SECTION_14 matrix; (3) integration of that implementation into integration/commercial-v1. Authority existence (this artifact) reopens nothing.",
+    "future_test_surface_named_not_created": "tests/e2e/measure-golden-journey.e2e.test.ts (default; the E2E lane may choose an exact equivalent with certifier agreement). Absent at AS_OF_HEAD."
+  },
+  "SECTION_14_REAL_PG_PROOF_MATRIX": {
+    "REAL_PG_CONTROL_COUNT": 22,
+    "harness_contract": "Disposable only (scripts/db-audit-disposable.ts or tests/postgres/disposable-db.ts gated by UELLIX_PG_TESTS=1, skipped never silently passed). Never staging, never production, never the canonical local stack. Substrate as SECTION_13.",
+    "families": {
+      "PG-01": "Clean current-schema build: stella_local_0000 -> 85 baseline units -> stella_0001 -> (stella_0003 or the G2 shim) yields exactly 57 public tables and the three helpers; recorded catalog counts match the opening (57 tables) before the package runs.",
+      "PG-02": "Package first apply PASS: stella_0021 applied in one transaction exits 0 with its section-0 preconditions and end-state assertions satisfied.",
+      "PG-03": "Package reapply convergent: a second apply exits 0 and the full pg_class/pg_proc ACL snapshot of schema public is byte-identical to the snapshot after the first apply (no unintended widening, no narrowing).",
+      "PG-04": "Every public table in exactly one class: after apply, for each of the 57 (and each conditional member present), has_table_privilege(uellix_app, t, v) is TRUE for exactly the class's verbs and FALSE for every other verb; the union of class arrays equals the live table set.",
+      "PG-05": "Unknown fixture relation causes refusal: CREATE TABLE public.zz_acl_unknown_fixture before apply => the package RAISES naming it and NO grant is made (transaction rolled back; ACL snapshot unchanged).",
+      "PG-06": "uellix_app allowed operations succeed: as uellix_app inside an identity context, INSERT on each of the 8 APPEND_ONLY and 6 OPERATIONAL_INSERT_UPDATE, UPDATE on each of the 6, SELECT on all 18 non-NO_RUNTIME_ACCESS tables (with a policy-satisfying fixture row) return without error.",
+      "PG-07": "All forbidden operations fail: every verb outside the class, on every one of the 19, as uellix_app => SQLSTATE 42501 (privilege), asserted by SQLSTATE not by message text.",
+      "PG-08": "DELETE refused on all 19 => 42501 on every one.",
+      "PG-09": "UPDATE refused on the 8 APPEND_ONLY => 42501 on every one.",
+      "PG-10": "INSERT refused on the 4 READ_ONLY => 42501 on every one.",
+      "PG-11": "Any direct access to commercial_accounts refused: SELECT/INSERT/UPDATE/DELETE as uellix_app and as uellix_auditor => 42501 (privilege layer; the pre-existing CE-1 PG-3 control must remain GREEN unchanged).",
+      "PG-12": "entitlement_grants ordinary runtime access refused when present: with 0073 applied, SELECT/INSERT/UPDATE/DELETE as uellix_app, uellix_writer and uellix_auditor => 42501; the CE-3 evaluator path is NOT exercised here (it is CE-3's own proof).",
+      "PG-13": "TRUNCATE/REFERENCES/TRIGGER/MAINTAIN refused: has_table_privilege(<role>, t, v) is FALSE for all four verbs, for uellix_app, uellix_writer and uellix_auditor, on ALL public tables (not only the 57).",
+      "PG-14": "uellix_auditor SELECT-only: has_table_privilege(uellix_auditor, t, 'SELECT') TRUE on the 18 + the 38 and FALSE on commercial_accounts and entitlement_grants; INSERT/UPDATE/DELETE FALSE everywhere; a SELECT succeeds and an INSERT fails 42501.",
+      "PG-15": "No direct app grants: pg_class.relacl of every public table contains no ACL item whose grantee is uellix_app (excluding the named grounding capability tables when present, whose direct app SELECT is asserted as EXACTLY SELECT and nothing else).",
+      "PG-16": "Helper EXECUTE posture exact: has_function_privilege TRUE for uellix_writer and uellix_auditor on exactly the three signatures; FALSE for PUBLIC/anon; FALSE for uellix_writer and uellix_auditor on handle_new_user(), handle_update_user(), can_read_evidence_object(text,uuid), can_write_evidence_object(text,uuid), uellix_forbid_mutation().",
+      "PG-17": "Cross-org RLS with at least two organizations: as uellix_app under ORG_A's identity context, a SELECT on each of the 18 readable tables returns only ORG_A rows and never the ORG_B sentinel row; the same as ORG_B in reverse.",
+      "PG-18": "No SUPERUSER/BYPASSRLS: pg_roles.rolsuper = false AND rolbypassrls = false for uellix_app, uellix_writer, uellix_auditor, before and after apply.",
+      "PG-19": "Real Measure service operations execute as uellix_app: at least one write path from each of lib/pipeline/evidence-versions.ts, lib/pipeline/financial-proxy-versions.ts, lib/pipeline/sroi-readiness.ts and lib/pipeline/sroi-sensitivity.ts, invoked through withDatabaseIdentityContext as uellix_app, persists its row (the real service module, not a re-implementation of its SQL).",
+      "PG-20": "Teardown verified clean: the container is destroyed in finally and the leftover check finds no container, volume or database with the harness prefix.",
+      "PG-21": "Legacy amended posture preserved: after apply, uellix_writer holds NO INSERT/UPDATE/DELETE on stella_interactions and NO privilege on marketing_leads; auditor SELECT on both stands (SECTION_2B). A package that re-widened either is RED here.",
+      "PG-22": "Capability-only exclusions untouched when present: with grounding_0002/0003 (and stella_0007/0008/0010) applied in the fixture, the package exits 0, grants nothing on their tables, and their pre-apply ACL rows are byte-identical post-apply."
+    },
+    "hosted_proof_is_separate": "Every family above is a DISPOSABLE proof. Hosted application (SECTION_9) is proven separately by the hosted operator's own witness -- the psql -X -1 transcript and a post-apply catalog observation on the target -- and NEVER by re-labelling a disposable run. A disposable PASS is necessary for AT-F-02 closure and not sufficient (SECTION_15)."
+  },
+  "SECTION_15_AT_F_02": {
+    "AT_F_02_AS_RECORDED": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json OPEN_FINDINGS AT-F-02: 'No successor ACL package exists for the tables added after the last hosted ACL package, so a schema-only apply produces a deployment where the runtime role is denied on those tables.' gates ['S3'], disposition BLOCKING_STAGING_ALIGNED.",
+    "AT_F_02_CONTRACT": "CLOSED_ONLY_AFTER_IMPLEMENTED_INDEPENDENTLY_PROVEN_AND_APPLIED_ON_THE_RELEVANT_TARGET",
+    "three_conditions_all_required": [
+      "IMPLEMENTED: stella_0021 exists at PACKAGE_PATH, registered (SECTION_9), under the registered grant on the expected branch (SECTION_12), integrated.",
+      "INDEPENDENTLY PROVEN: the SECTION_14 matrix PASS by a certifier who is not the implementation writer.",
+      "APPLIED/PROVEN ON THE RELEVANT TARGET: the package applied on the target the finding names (the hosted staging project) with its own hosted witness, after S1 schema parity makes that apply attemptable."
+    ],
+    "authority_existence_alone_does_not_close_it": "BINDING. This artifact changes AT-F-02's disposition by nothing. The release ledger is not edited by this mission.",
+    "this_package_does_NOT_close": {
+      "S1_schema_parity": "The staging project holds 39 public tables; parity to 57 is the baseline chain's act, not a grant's.",
+      "S2_chain": "HOSTED_CHAIN application and its witnesses are untouched.",
+      "S4": "Untouched (tenancy S4 ordering, per MULTI_ORG_TENANT_SCOPE_AUTHORITY).",
+      "S5": "Untouched.",
+      "S6": "Untouched.",
+      "staging_deploy": "No deploy is authorised, scheduled or implied.",
+      "onboarding": "Untouched.",
+      "backup_restore": "Untouched.",
+      "UAT": "Untouched.",
+      "PILOT_READY": "Remains NO; nothing here moves it."
+    }
+  },
+  "SECTION_16_TEST_MANIFEST_DISPOSITION": {
+    "companion": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_v1.0.0.json",
+    "schema": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json (draft-07; additionalProperties false at the root and per control; exit_gates a closed enum).",
+    "mapping": "positive (P-*), negative (N-*), mutation (M-*), closed-world (CW-*), Real-PG (PG-* mirroring SECTION_14 one-to-one), hosted parity (HP-*), future Measure E2E dependencies (E2E-*). Because the schema admits only three control arrays, CW-/PG-/HP-/E2E- controls are placed in the positive or negative array by POLARITY and carry their family in the id prefix.",
+    "no_control_is_PASS_because_the_implementation_is_absent": "BINDING. Every control's description opens with STATUS=FUTURE_MATERIALIZATION (the proof exists only once the package exists) or STATUS=UNKNOWN (a measurement the implementing base must make). test_file is 'UNKNOWN' throughout because no target file exists at AS_OF_HEAD; the intended path is stated inside the description so it is a commitment, not a fabricated fact.",
+    "future_test_file_write_surfaces_defined_not_created": [
+      "tests/database-runtime-acl-closed-world.test.ts",
+      "tests/postgres/current-schema-runtime-acl.pg.test.ts",
+      "tests/postgres/current-schema-runtime-acl.probes.json (only if the implementer adopts the harness+probes shape; CE-1's precedent shows a pg.test.ts without one is admissible)",
+      "tests/e2e/measure-golden-journey.e2e.test.ts (the E2E lane's, after reopen)"
+    ]
+  },
+  "SECTION_17_NO_IMPLEMENTATION": {
+    "IMPLEMENTATION_PERFORMED": "NO",
+    "REQUIRED_ABSENT_AT_THIS_PR_HEAD": {
+      "stella_0021_SQL": "db/prepared/stella_0021_current_schema_runtime_acl_contract.sql ABSENT (and no db/prepared/stella_0021_* of any name).",
+      "v1_0_35": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json ABSENT.",
+      "W2_32": "No PROTECTED_GRANTS entry with authorityId 'HPO-ODS-W2-32' in scripts/ods-scope.ts.",
+      "registry_entry": "No stella_0021 id in db/hosted/prechain-ownership.ts or db/hosted/forward-only-packages.ts.",
+      "new_Real_PG_test": "No new file under tests/postgres/ or tests/.",
+      "new_workflow": "No change under .github/workflows/.",
+      "Measure_E2E_reopen": "No change under tests/e2e/."
+    },
+    "this_PR_is_AUTHORITY_ONLY": "The diff base..HEAD is exactly two ADDED files under docs/ops/staging/ and nothing else (SECTION_18 diff check)."
+  },
+  "SECTION_18_CONSISTENCY_CHECKS": {
+    "note": "Each check was executed by this writer against the two artifacts as written; the machine result is recorded in the mission report's EVIDENCE block and the companion manifest names each as an exit gate where the schema enum allows. A check listed here is a DEFINITION plus its measured outcome at the candidate head; the certifier re-runs every one.",
+    "checks": {
+      "C-01_19_table_uniqueness": "EXACT_19_TABLE_SET has 19 entries and 19 distinct strings.",
+      "C-02_class_arithmetic": "APPEND_ONLY 8 + OPERATIONAL_INSERT_UPDATE 6 + READ_ONLY 4 + NO_RUNTIME_ACCESS 1 = 19, computed from the table maps, not from the count fields.",
+      "C-03_class_sets_disjoint": "Pairwise intersection of the four class table-name sets is empty; also disjoint from the 38 legacy names.",
+      "C-04_no_table_missing": "Union of the four class sets equals EXACT_19_TABLE_SET.",
+      "C-05_no_table_duplicated": "No name appears in two classes or twice in one.",
+      "C-06_universe_arithmetic": "38 + 19 = 57; legacy sub-classes 32 + 3 + 1 + 1 + 1 = 38.",
+      "C-07_package_identity_consistent": "PACKAGE_ID == basename(PACKAGE_PATH) without .sql; PACKAGE_PATH appears verbatim as the first EXPECTED_PROTECTED_LITERAL; the ONLY package-name spelling in either artifact is stella_0021_current_schema_runtime_acl_contract -- the only other stella_0021 tokens permitted are the bare ordinal prefix 'stella_0021', the absence glob 'stella_0021_*' and the FORBIDDEN rollback name 'stella_0021_rollback' (which SECTION_7 and SECTION_12 must name in order to forbid it). Any other stella_0021_<name> is a second package identity and fails.",
+      "C-08_forward_only_rollback_consistency": "FORWARD_ONLY true AND ROLLBACK 'NONE' AND no rollback literal in EXPECTED_PROTECTED_LITERALS AND the exclusion clause names the rollback file as forbidden.",
+      "C-09_branch_binding_consistent": "EXPECTED_IMPLEMENTATION_BRANCH is one exact string, used identically in the authority and the manifest; it differs from this authoring branch.",
+      "C-10_protected_literals_exact": "Exactly two literals, both under db/prepared/, neither a glob, neither db/migrations/**, neither the journal nor the checkpoint observation.",
+      "C-11_real_pg_controls_mapped": "SECTION_14 families PG-01..PG-22 each appear as a control id in the companion manifest (positive or negative by polarity), count 22 both sides.",
+      "C-12_manifest_schema_valid": "Companion manifest validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json with a draft-07 validator run by this writer, with a NEGATIVE control (the same validator rejects a copy carrying an extra root key and a copy with an out-of-enum exit gate).",
+      "C-13_duplicate_json_key_detector_with_positive_control": "A tokenising duplicate-key scanner (not a JSON.parse reviver, which is vacuous for duplicates) reports 0 duplicate keys in either artifact AND reports >=1 on a fixture string containing a duplicated key.",
+      "C-14_typecheck": "pnpm typecheck exit 0 (unchanged by a docs-only diff; run anyway, never assumed).",
+      "C-15_authority_seal": "pnpm authority:seal:verify PASS (this write set touches no sealed corpus member).",
+      "C-16_secrets_scan": "pnpm secrets:scan exit 0.",
+      "C-17_diff_check": "git diff --name-status <base>..HEAD lists exactly A docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and A docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_v1.0.0.json.",
+      "C-18_ods_scope_two_ordinary_allows_only": "pnpm ods:scope -- --base <base> --allow docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json --allow docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_v1.0.0.json => PASS with protectedViolations 0, unauthorized 0, grantAuthorized 0 (no --protected-authority)."
+    }
+  },
+  "SECTION_19_INTEGRATION_DRIFT_HANDLING": {
+    "immediately_before_commit": "git fetch origin --prune; measure origin/integration/commercial-v1.",
+    "if_still_BASE": "Commit normally.",
+    "if_advanced_exactly_through_PR161": "Classify EXPECTED_DISJOINT_CE3_AUTHORITY_DRIFT after verifying git diff --name-only 891f869f <head> == exactly the three PR #161 files (SECTION_0). Then: commit the two authority docs; ordinary merge (git merge --no-ff origin/integration/commercial-v1) into this branch; expect ZERO content conflicts (disjoint directories); re-run every SECTION_18 gate on the merge result; require the final PR diff against the new integration head to remain exactly the two new authority files.",
+    "prohibited": "No rebase. No force push. No history rewrite. No squash of the merge.",
+    "any_other_drift": "STOP and report; do not commit."
+  },
+  "SECTION_20_COMMIT_PR": {
+    "commit": "One narrow commit adding exactly the two files.",
+    "push": "git push -u origin codex/current-schema-runtime-acl-authority-r1 -- no force.",
+    "pull_request": "DRAFT against integration/commercial-v1. Title names the lane and the artifact; body carries the report contract. NOT marked Ready.",
+    "next_gate": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_INDEPENDENT_CERTIFICATION -- an independent certifier who re-derives SECTION_1/2/5 from the repository, re-runs SECTION_18, and adjudicates BLOCKING before any ODS allocation for this lineage is opened."
+  },
+  "RISKS_AND_OPEN_FINDINGS": [
+    {"id": "F-ACL-1", "severity": "NON_BLOCKING_RECORDED", "finding": "governed_model_registry is READ_ONLY although lib/pipeline/governed-model-registry.ts:96 exports an INSERT function; measured ZERO non-test call sites. If a future request path adopts it, the class refuses it by design (42501). Disposition: a widening is a separate authority act; recorded so the refusal is not mistaken for a defect."},
+    {"id": "F-ACL-2", "severity": "NON_BLOCKING_DERIVED", "finding": "The ADMINISTRATIVE_UNITS ordinal of stella_0021 depends on whether CE-3's stella_hosted_0009 lands first (SECTION_9). Disposition: derived at the implementing base; the tripwire is advanced by whichever implementer edits the array, never pre-advanced."},
+    {"id": "F-ACL-3", "severity": "NON_BLOCKING_MEASUREMENT_FOR_IMPLEMENTER", "finding": "Whether the package needs a SET LOCAL ROLE window to grant on any table owned by a role postgres cannot grant for (stella_hosted_0007's two-owner case) is a property of the target catalog, not of this contract. Disposition: measured by the implementer; if needed, LOCAL to the transaction and asserted closed (SECTION_7 PROHIBITED_CONTENT.ownership)."},
+    {"id": "F-ACL-4", "severity": "NON_BLOCKING_RECORDED", "finding": "OPENING_MEASURED counts that exist only in a running catalog (146 policies, 19 triggers, 12 functions, the 42501 codes) were carried from the opening, not re-measured by this writer. Disposition: the certifier's Real-PG rerun (PG-01) re-measures them; every DB-free count in this artifact was re-derived here and cited to a line."},
+    {"id": "F-ACL-5", "severity": "NON_BLOCKING_RECORDED", "finding": "The staging project measures 39 public tables; the package cannot be attempted there until S1 parity. Disposition: SECTION_9/15 -- not a defect of the contract, a sequencing fact the release ledger already owns."}
+  ],
+  "final_state": {
+    "RESULT": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_CANDIDATE_PASS",
+    "IMPLEMENTATION_PERFORMED": "NO",
+    "BLOCKING": 0,
+    "UNKNOWN": 0,
+    "what_is_frozen": "The 57/38/19 universe and its arithmetic; the exact 19-table classification with per-table evidence; the amended legacy 38 posture; the conditional members; the role contract; the three helper signatures and their EXECUTE posture; 0004's frozen disposition; the single canonical forward-only grant-only successor and its fail-closed semantics; the new OPERATIONAL_INSERT_UPDATE class and the universal prohibitions; hosted parity as a single registered administrative unit; the closed-world guard; CE-3-first serialisation with DERIVED (not allocated) v1.0.35 / W2-32; the expected implementation branch and its exactly-two protected literals; the Measure E2E substrate and reopen condition; the 22-family Real-PG matrix; the AT-F-02 three-condition closure contract."
+  },
+  "next_gate": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_INDEPENDENT_CERTIFICATION"
+}
