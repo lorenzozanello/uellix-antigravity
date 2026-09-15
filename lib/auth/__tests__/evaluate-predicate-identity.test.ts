@@ -21,6 +21,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
@@ -203,8 +204,6 @@ describe('N-22 (6) server-action binding — DEFERRED_TO_W_EV_5', () => {
 })
 
 function execGitTrackedPaths(): string[] {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { execFileSync } = require('node:child_process') as typeof import('node:child_process')
   return execFileSync('git', ['ls-files'], { encoding: 'utf8', cwd: process.cwd() })
     .split(/\r?\n/)
     .filter(Boolean)
