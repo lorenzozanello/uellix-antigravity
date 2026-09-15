@@ -32,9 +32,29 @@
     "START_HEAD": "a8acedfaaea891fa501db33f7b29ad6b29ac9b30",
     "START_TREE": "ff501f61da7319f17f7d65332dc7732ea427c53c",
     "origin_ref": "origin/integration/commercial-v1",
-    "origin_head_equals_start_head": true,
+    "origin_head_equals_start_head_AT_PRESTATE": true,
     "working_tree_clean_at_prestate": true,
-    "LIVE_MOVED": "NO"
+    "LIVE_MOVED": "YES - DURING THIS LANE, AFTER THE MEASUREMENTS ABOVE AND BEFORE COMMIT. Classified EXPECTED_DISJOINT_PRODUCT_DRIFT and recorded in full under BASE_DRIFT_DISPOSITION. This field is deliberately NOT left at NO: every predecessor in this lineage recorded NO because live genuinely did not move during its lane, and inheriting that phrasing here would state something false.",
+    "FINAL_BASE": "aeb46ec39663f0f3cb9d076945565b0149dacf2c"
+  },
+  "BASE_DRIFT_DISPOSITION": {
+    "classification": "EXPECTED_DISJOINT_PRODUCT_DRIFT",
+    "detected": "On the mandatory pre-commit re-fetch of origin, AFTER every measurement in PRESTATE_MEASURED had been taken at START_HEAD and after the candidate files were written.",
+    "what_moved": "origin/integration/commercial-v1 advanced from a8acedfaaea891fa501db33f7b29ad6b29ac9b30 to aeb46ec39663f0f3cb9d076945565b0149dacf2c by exactly TWO commits: 82e83e8a (feat(measure): expose organization-level Measure progress per project) and its controlled merge aeb46ec3 (Merge pull request #163).",
+    "paths_it_touched": [
+      "app/app/dashboard/page.tsx",
+      "app/app/projects/page.tsx",
+      "components/projects/MeasureProgressBadge.tsx",
+      "components/projects/ProjectCard.tsx",
+      "lib/projects/service.ts",
+      "tests/projects.service.test.ts"
+    ],
+    "why_it_is_DISJOINT_and_not_merely_unrelated_looking": "Measured by predicate rather than by inspection. The six changed paths were tested against docs/ops/ods/, docs/ops/commercial/, docs/ops/fib/, docs/ops/pc01b/, docs/ops/im01b/, db/, scripts/ods-* and tests/ods/. The intersection is EMPTY on every one of them, and the intersection with this lane's own two-path write set is also EMPTY. There is therefore no ODS drift, no CE-3 authority drift, no DB drift and no authority drift, which is the condition under which this lane continues rather than STOPS.",
+    "action_taken": "ORDINARY MERGE of origin/integration/commercial-v1 INTO this lane's branch. NO rebase, NO force, NO history rewrite, NO squash.",
+    "EVERY_LOAD_BEARING_MEASUREMENT_WAS_RE_TAKEN_AFTER_THE_MERGE": "Re-measured at the merged head and UNCHANGED: IMMUTABLE_BY_CONVENTION length 44 with final entry v1.0.33; PROTECTED_GRANTS 18 rows with tail HPO-ODS-W2-30; HPO-ODS-W2-31 absent from the registry; migration SQL count 73 with tail 0072; addendum corpus dense with this artifact as position 34. Not one figure stated in PRESTATE_MEASURED was invalidated by the drift, and that was CHECKED rather than assumed on the strength of the paths looking unrelated.",
+    "the_addendum_count_moved_by_exactly_one_and_that_is_THIS_ARTIFACT": "The addendum file count reads 34 after the merge against 33 at START_HEAD. The increment is this artifact itself, not drift: PR #163 touched no docs/ops/ods/ path. Reporting the figure without that attribution would invite a reader to conclude another lane had allocated a lineage position.",
+    "PR_DIFF_AFTER_THE_MERGE": "Measured with the three-dot form against the NEW integration tip: EXACTLY the two authorized paths, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json and tests/ods/ods-scope.test.ts. The merge imported the product drift into the branch without adding it to this lane's reviewable surface.",
+    "gates_after_the_merge": "Every gate was RE-RUN at the merged head rather than inherited from the pre-merge candidate."
   },
   "PRESTATE_MEASURED": {
     "method": "git fetch origin, then rev-parse of HEAD, HEAD^{tree} and origin/integration/commercial-v1, plus git status --porcelain --untracked-files=all. The untracked-files=all form is used deliberately: a new untracked directory collapses to a single status line without it.",
@@ -561,7 +581,8 @@
     "SC-13_no_second_live_count_guard": "PASS. The forward figure 19 is pinned to a literal in the test suite, never to PROTECTED_GRANTS.length, so the self-inspection guard count remains exactly one.",
     "SC-14_the_registration_axis_sentinel_is_NOT_advanced": "PASS. HPO-ODS-W2-31 remains DECLARED_NOT_REGISTERED, zero rows in PROTECTED_GRANTS carry it, zero textual occurrences exist in scripts/ods-scope.ts, and no existing control was changed from W2-31 to W2-32. HPO-ODS-W2-32 appears in this artifact only inside NO_PREALLOCATION prohibition semantics.",
     "SC-15_no_v1_0_35_artifact": "PASS. v1.0.35 appears only inside prohibition and absence semantics. No such file is created.",
-    "SC-16_allocation_only": "PASS. No registration, no hosted package, no PR #159 mutation, no merge, no R4, no Controller edit, no PROTECTED_GRANTS mutation."
+    "SC-16_allocation_only": "PASS. No registration, no hosted package, no PR #159 mutation, no merge into PR #159, no R4, no Controller edit, no PROTECTED_GRANTS mutation. The ONE merge this lane performed is integration INTO ITS OWN branch under BASE_DRIFT_DISPOSITION, which is a different act on a different branch and is recorded rather than elided.",
+    "SC-17_base_drift_is_classified_and_the_PR_surface_is_unchanged": "PASS. Live moved during the lane; it was classified EXPECTED_DISJOINT_PRODUCT_DRIFT by empty-intersection predicate against every protected and authority surface, merged ordinarily with no rebase or force, every load-bearing measurement re-taken and unchanged, and the PR diff against the NEW integration tip re-measured as exactly the two authorized paths."
   },
   "final_state": "ODS_V1_0_34_ALLOCATED_W2_31_DECLARED_NOT_REGISTERED_HOSTED_0009_NOT_AUTHORIZED",
   "next_gate": "CE3_W2_31_LINEAGE_ALLOCATION_INDEPENDENT_CERTIFICATION"
