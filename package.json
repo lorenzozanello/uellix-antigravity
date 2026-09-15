@@ -103,7 +103,7 @@
     "authority:repin": "tsx scripts/authority-repin.mts",
     "dry-run:runtime-helper": "bash scripts/runtime-helper-contract-dry-run.sh",
     "dry-run:runtime-table-acl": "bash scripts/runtime-table-acl-dry-run.sh",
-  "dry-run:audit-capability-identity": "bash scripts/audit-capability-identity-dry-run.sh",
+    "dry-run:audit-capability-identity": "bash scripts/audit-capability-identity-dry-run.sh",
     "authority:seal:verify": "tsx scripts/authority-seal-verify.ts",
     "ods:prestate": "tsx scripts/ods-prestate.ts",
     "ods:scope": "tsx scripts/ods-scope.ts",
@@ -112,7 +112,10 @@
     "ops:integration-plan": "tsx scripts/ods-integration-plan.ts",
     "ops:test-diff": "tsx scripts/ods-test-diff.ts",
     "ops:controller": "tsx scripts/ods-controller.ts",
-    "audit:batch": "tsx scripts/audit-batch.ts"
+    "audit:batch": "tsx scripts/audit-batch.ts",
+    "golden:list": "playwright test --list",
+    "golden:contract": "playwright test --project=contract",
+    "golden:browser": "playwright test --project=browser"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -142,6 +145,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
