@@ -47,7 +47,9 @@
 
 import { existsSync, readFileSync, readdirSync, type Dirent } from 'node:fs'
 import { join } from 'node:path'
+import ts from 'typescript'
 import { REPO_ROOT } from './authority'
+import { findModuleReferences } from './import-boundary'
 // The CAP-02 descriptor is imported so `enabled` is read as a VALUE rather than
 // scraped out of source text. A relative path, not the `@/` alias: this module
 // runs under Playwright, which has no tsconfig-path resolution configured.
@@ -378,15 +380,198 @@ export function probeNoRateLimitOnVerifySurface(): PostureReading {
 export const PROBE_J1_NO_EVALUATE_RUNTIME: PostureProbe = {
   id: 'J1-EVALUATE-RUNTIME-ABSENT',
   frozenBlocker: 'the evaluation surface has no runtime, so the evaluation leg has nothing to traverse',
-  surface: 'app/** route segments and lib/** modules named for evaluation',
+  surface: 'app/** application entrypoints wired to the Evaluate domain surface',
   remediationMeaning:
     'an evaluation runtime now exists, so J1 step 12 must be converted from a blocked contract ' +
     'into a positive traversal of the evaluation leg',
 }
 
-/** Route segment directories under `app/` whose name is an evaluation surface. */
-export function findEvaluateRouteSegments(): readonly string[] {
-  const found: string[] = []
+/**
+ * ===========================================================================
+ * WHAT FALSIFIES "THE EVALUATION SURFACE HAS NO RUNTIME" (B-4)
+ * ===========================================================================
+ * R3 read "runtime" as `a route segment named evaluate` OR `lib/evaluate
+ * exists`. The second disjunct is wrong, and wrong in the direction that
+ * silently CREDITS work that was never done.
+ *
+ * `EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json` defines write-set W-EV-2 as
+ * the "Pure scoring and DecisionPolicy engine" over exactly
+ * `lib/evaluate/{scoring,decision-policy,divergence,types}.ts`, constrained to
+ * "Pure functions only: no db import, no fetch, no Date.now, no Math.random,
+ * no process.env". A module that is structurally forbidden from touching the
+ * database, the network or the environment cannot be reached by a browser, and
+ * J1's own pass criteria require a BROWSER JOURNEY that "traverses ...
+ * evaluation". So the arrival of W-EV-2 — which is what landed in integration —
+ * falsifies nothing about traversal, yet flipped this probe to REMEDIATED and
+ * demanded J1 step 12 be rewritten as a positive traversal of a leg that still
+ * cannot be walked.
+ *
+ * The authority also names what a runtime IS: W-EV-5 "Server actions"
+ * (`app/actions/evaluate/**`) is the execution surface, and W-EV-6 "UI read
+ * model" is explicitly ordered "After W-EV-5" — the UI is downstream of the
+ * runtime, not a substitute for it.
+ *
+ * So the minimum repository fact that falsifies the blocker is a CONJUNCTION:
+ *
+ *   1. an application/runtime ENTRYPOINT the running app executes on request
+ *      — a server action, a route handler, or a routable page; AND
+ *   2. a PRODUCTION LINKAGE from that entrypoint to the Evaluate domain
+ *      surface — it actually references the engine or the Evaluate actions.
+ *
+ * Either half alone is exactly the false signal B-4 names: a pure engine with
+ * nothing in front of it, or an entrypoint that merely has "evaluate" in its
+ * name. Both halves are read from SYNTAX (module specifiers, directive
+ * prologues, export names), never from a path substring, so an unrelated
+ * action called `evaluateProxyRubric` and a comment mentioning the engine
+ * cannot vote.
+ */
+
+/** Files whose content must never vote: tests describe a runtime, they are not one. */
+function isTestPath(path: string): boolean {
+  return /(^|\/)__tests__\//.test(path) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(path)
+}
+
+/**
+ * Does this module specifier name the Evaluate PRODUCTION surface?
+ *
+ * Matches the engine (W-EV-2) and the Evaluate server-action group (W-EV-5),
+ * through the repository's `@/` alias, a bare path, or a relative path.
+ */
+export function isEvaluateDomainModule(specifier: string): boolean {
+  const normalized = specifier.replace(/\\/g, '/').replace(/^@\//, '')
+  return (
+    /(^|\/)lib\/(evaluate|evaluation)(\/|$)/.test(normalized) ||
+    /(^|\/)app\/actions\/(evaluate|evaluation)(\/|$)/.test(normalized)
+  )
+}
+
+export type EvaluateEntrypointKind = 'server-action' | 'route-handler' | 'page'
+
+function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean {
+  return ts.canHaveModifiers(node) ? (ts.getModifiers(node) ?? []).some((m) => m.kind === kind) : false
+}
+
+/** A `'use server'` directive prologue, at file level or opening a function body. */
+function hasUseServerDirective(sourceFile: ts.SourceFile): boolean {
+  const prologueHasUseServer = (statements: readonly ts.Statement[]): boolean => {
+    for (const statement of statements) {
+      // A directive prologue is a RUN of leading string-literal expression
+      // statements. The first statement that is anything else ends it, so a
+      // `'use server'` sitting further down the file is ordinary dead string
+      // data and is correctly not counted.
+      if (!ts.isExpressionStatement(statement) || !ts.isStringLiteralLike(statement.expression)) return false
+      if (statement.expression.text === 'use server') return true
+    }
+    return false
+  }
+
+  if (prologueHasUseServer(sourceFile.statements)) return true
+
+  // Next.js also allows an INLINE server action: a function whose own body
+  // opens with the directive. A page or component carrying one is a real
+  // execution surface, so the whole tree is walked, not just the file head.
+  let found = false
+  const visit = (node: ts.Node): void => {
+    if (found) return
+    if (ts.isBlock(node) && prologueHasUseServer(node.statements)) {
+      found = true
+      return
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(sourceFile)
+  return found
+}
+
+const HTTP_VERBS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'])
+
+function exportsHttpVerb(sourceFile: ts.SourceFile): boolean {
+  for (const statement of sourceFile.statements) {
+    if (!hasModifier(statement, ts.SyntaxKind.ExportKeyword)) continue
+    if (ts.isFunctionDeclaration(statement) && statement.name && HTTP_VERBS.has(statement.name.text)) return true
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name) && HTTP_VERBS.has(declaration.name.text)) return true
+      }
+    }
+  }
+  return false
+}
+
+function hasDefaultExport(sourceFile: ts.SourceFile): boolean {
+  for (const statement of sourceFile.statements) {
+    if (ts.isExportAssignment(statement) && !statement.isExportEquals) return true
+    if (hasModifier(statement, ts.SyntaxKind.DefaultKeyword)) return true
+  }
+  return false
+}
+
+/**
+ * The application/runtime entrypoint kind of a file, or `null` if the running
+ * application never executes it on request.
+ *
+ * Only files under `app/` can qualify: that is the application boundary in
+ * this repository. A module under `lib/` is library code by construction —
+ * which is the whole of B-4.
+ */
+export function evaluateEntrypointKind(path: string, content: string): EvaluateEntrypointKind | null {
+  const normalized = path.replace(/\\/g, '/')
+  if (!/^app\//.test(normalized) || isTestPath(normalized)) return null
+
+  const sourceFile = ts.createSourceFile(
+    normalized,
+    content,
+    ts.ScriptTarget.Latest,
+    /* setParentNodes */ false,
+    /\.tsx$/i.test(normalized) ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  )
+
+  if (hasUseServerDirective(sourceFile)) return 'server-action'
+  if (/(^|\/)route\.[cm]?tsx?$/i.test(normalized) && exportsHttpVerb(sourceFile)) return 'route-handler'
+  if (/(^|\/)page\.[cm]?tsx?$/i.test(normalized) && hasDefaultExport(sourceFile)) return 'page'
+  return null
+}
+
+/**
+ * Does this file actually reach the Evaluate production surface?
+ *
+ * Read from module specifiers via the shared syntax-aware walk, so a mention
+ * in a comment or a string cannot vote, and a type-only import — which erases
+ * at compile time and wires nothing — does not count as a runtime linkage.
+ */
+export function hasEvaluateProductionLinkage(path: string, content: string): boolean {
+  return findModuleReferences(path, content).some(
+    (reference) => !reference.typeOnly && isEvaluateDomainModule(reference.specifier),
+  )
+}
+
+export interface EvaluateRuntimeFile {
+  /** Repository-relative path, forward slashes. */
+  readonly path: string
+  readonly content: string
+}
+
+/** The files that are BOTH an application entrypoint AND wired to Evaluate. */
+export function findTraversableEvaluateRuntime(
+  files: readonly EvaluateRuntimeFile[],
+): readonly string[] {
+  return files
+    .filter(({ path }) => !isTestPath(path.replace(/\\/g, '/')))
+    .filter(
+      ({ path, content }) =>
+        evaluateEntrypointKind(path, content) !== null && hasEvaluateProductionLinkage(path, content),
+    )
+    .map(({ path }) => path.replace(/\\/g, '/'))
+}
+
+/** True while there is no TRAVERSABLE evaluation runtime. */
+export function detectNoEvaluateRuntime(files: readonly EvaluateRuntimeFile[]): boolean {
+  return findTraversableEvaluateRuntime(files).length === 0
+}
+
+/** Every `.ts`/`.tsx` source under `app/`, as (path, content). */
+export function collectAppSourceFiles(): readonly EvaluateRuntimeFile[] {
+  const files: EvaluateRuntimeFile[] = []
   const walk = (dir: string, relative: string): void => {
     let entries: Dirent[]
     try {
@@ -395,43 +580,33 @@ export function findEvaluateRouteSegments(): readonly string[] {
       return
     }
     for (const entry of entries) {
-      if (!entry.isDirectory()) continue
       const childRelative = `${relative}/${entry.name}`
-      if (/^evaluate$|^evaluation$|^evaluations$/i.test(entry.name)) found.push(childRelative)
-      walk(join(dir, entry.name), childRelative)
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules') continue
+        walk(join(dir, entry.name), childRelative)
+      } else if (/\.tsx?$/i.test(entry.name) && !isTestPath(childRelative)) {
+        files.push({ path: childRelative, content: readFileSync(join(dir, entry.name), 'utf8') })
+      }
     }
   }
   walk(join(REPO_ROOT, 'app'), 'app')
-  return found
-}
-
-/**
- * True while there is no evaluation runtime.
- *
- * "Runtime" is read as a routable surface or a dedicated library module, NOT as
- * any file whose name contains the word. `evaluateProxyRubric.action.ts` is a
- * server action belonging to the proxy leg and is not the evaluation surface
- * J1 step 12 names, so a probe that counted it would report the blocker
- * resolved while nothing had been built.
- */
-export function detectNoEvaluateRuntime(
-  routeSegments: readonly string[],
-  libModuleExists: boolean,
-): boolean {
-  return routeSegments.length === 0 && !libModuleExists
+  return files
 }
 
 export function probeNoEvaluateRuntime(): PostureReading {
-  const segments = findEvaluateRouteSegments()
-  const libModuleExists =
+  const runtimeFiles = findTraversableEvaluateRuntime(collectAppSourceFiles())
+  const present = runtimeFiles.length === 0
+  // Recorded for the evidence string only. The engine's PRESENCE is precisely
+  // what must not decide this probe, so it is reported and not counted.
+  const pureEngineExists =
     existsSync(join(REPO_ROOT, 'lib', 'evaluate')) || existsSync(join(REPO_ROOT, 'lib', 'evaluation'))
-  const present = detectNoEvaluateRuntime(segments, libModuleExists)
   return {
     probe: PROBE_J1_NO_EVALUATE_RUNTIME,
     blockerStillPresent: present,
     evidence: present
-      ? 'no app/** route segment named evaluate|evaluation|evaluations and no lib/evaluate or lib/evaluation module'
-      : `an evaluation runtime now exists (route segments: ${segments.join(', ') || 'none'}; lib module: ${libModuleExists})`,
+      ? `no app/** entrypoint (server action, route handler or page) is wired to the Evaluate domain surface ` +
+        `(pure lib/evaluate engine present: ${pureEngineExists} — a W-EV-2 pure engine is not a traversable runtime)`
+      : `an evaluation runtime now exists and is reachable: ${runtimeFiles.join(', ')}`,
   }
 }
 

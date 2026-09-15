@@ -54,15 +54,22 @@ import {
 } from '../registry'
 import {
   POSTURE_PROBES,
+  collectAppSourceFiles,
   detectNoEvaluateRuntime,
   detectNoRateLimitGoverningVerify,
   detectPlatformPrincipalAmbiguity,
   detectProxyLimiterGovernsVerify,
   detectPublicVerificationNotLive,
+  findTraversableEvaluateRuntime,
   readPublicVerificationActivation,
 } from '../posture'
 import { scanForBypasses } from '../skip-patterns'
-import { findPlaywrightTestReferences, scanForPlaywrightTestImportOffenses } from '../import-boundary'
+import {
+  GoldenSourceParseError,
+  findModuleReferences,
+  findPlaywrightTestReferences,
+  scanForPlaywrightTestImportOffenses,
+} from '../import-boundary'
 import {
   GoldenTargetDeclarationError,
   m9DisqualificationReason,
@@ -217,6 +224,30 @@ test.describe('Golden meta guard — no silent skip', () => {
     // cannot run a test outside the guarded harness.
     const offenses = findPlaywrightTestReferences('offender.ts', "import type { Page } from '@playwright/test'")
     expect(offenses).toEqual([])
+  })
+
+  test('N-4 — source that does not PARSE fails closed rather than reporting nothing', () => {
+    // `ts.createSourceFile` never throws: handed broken source it returns a
+    // best-effort recovery tree, and a walk over that tree can legitimately
+    // find no imports at all. A scanner that answered "no offenders" there
+    // would be green because it failed to read the file — the exact shape
+    // this meta surface exists to make impossible.
+    expect(() => findModuleReferences('broken.ts', "import { from '@playwright/test' ; const = (((")).toThrow(
+      GoldenSourceParseError,
+    )
+    expect(() =>
+      findPlaywrightTestReferences('broken.ts', "import { from '@playwright/test' ; const = ((("),
+    ).toThrow(GoldenSourceParseError)
+  })
+
+  test('N-4 — valid TSX is NOT mistaken for unparseable source', () => {
+    // The script kind is chosen from the extension. Parsing `.tsx` as TS would
+    // turn every JSX element into a parse diagnostic, so fail-closed parsing
+    // would raise on ordinary valid React source — a self-inflicted red that
+    // would get the whole check switched off.
+    expect(() =>
+      findModuleReferences('page.tsx', "import { x } from 'y'\nexport default function P() { return <main>hi</main> }"),
+    ).not.toThrow()
   })
 
   test('@playwright/test mentioned in a comment or a string is not reported', () => {
@@ -429,15 +460,192 @@ test.describe('Golden meta guard — no silent skip', () => {
       'the rate-limit detector still reports absence with a limiter on the surface',
     ).toBe(false)
 
-    // The evaluation runtime: a route segment now exists.
+    // The evaluation runtime: a real server action wired to the engine.
+    // The full A/B/C/D matrix is asserted separately below — this line is the
+    // "can it return false at all" half that every probe here must satisfy.
     expect(
-      detectNoEvaluateRuntime(['app/app/evaluate'], false),
-      'the evaluate-runtime detector still reports absence with a route segment present',
+      detectNoEvaluateRuntime([
+        {
+          path: 'app/actions/evaluate/decide.ts',
+          content: "'use server'\nimport { decide } from '@/lib/evaluate/decision-policy'\nexport async function decideEvaluation() { return decide() }",
+        },
+      ]),
+      'the evaluate-runtime detector still reports absence with a wired server action present',
     ).toBe(false)
+  })
+
+  // -------------------------------------------------------------------
+  // 6a-bis. B-4 — a PURE ENGINE IS NOT A TRAVERSABLE RUNTIME
+  // -------------------------------------------------------------------
+  // R3 flipped this probe on the mere existence of `lib/evaluate`. That
+  // directory is write-set W-EV-2, "Pure scoring and DecisionPolicy engine",
+  // constrained by its own authority to "Pure functions only: no db import,
+  // no fetch, no Date.now, no Math.random, no process.env" — code a browser
+  // cannot reach. J1 step 12 was therefore ordered to be rewritten as a
+  // positive traversal of a leg that still cannot be walked.
+  //
+  // Each case below is a FIXTURE written by hand, never derived from the
+  // production detector, so the matrix cannot agree with the implementation
+  // merely by sharing its logic.
+
+  test('B-4 CASE A — the pure lib/evaluate engine alone is NOT a runtime', () => {
+    // Exactly the W-EV-2 shape that landed in integration.
+    const files = [
+      {
+        path: 'lib/evaluate/scoring.ts',
+        content:
+          'import type { Criterion, Response } from "./types"\nexport function score(criteria: Criterion[], responses: Response[]) { return { score_status: "COMPLETE", score: 1 } }',
+      },
+      { path: 'lib/evaluate/decision-policy.ts', content: 'export function decide() { return "RECOMMEND" }' },
+      { path: 'lib/evaluate/types.ts', content: 'export type Criterion = { id: string }' },
+    ]
+    expect(findTraversableEvaluateRuntime(files)).toEqual([])
     expect(
-      detectNoEvaluateRuntime([], true),
-      'the evaluate-runtime detector still reports absence with a lib module present',
+      detectNoEvaluateRuntime(files),
+      'a pure computational engine under lib/ was credited as a traversable Evaluate runtime',
+    ).toBe(true)
+  })
+
+  test('B-4 CASE B — an UNRELATED app action whose name contains "evaluate" is NOT a runtime', () => {
+    // A real server action, on the proxy leg, that merely has the word in its
+    // name and its prose. It is an entrypoint; it reaches nothing Evaluate.
+    const files = [
+      {
+        path: 'app/actions/proxies.ts',
+        content: [
+          "'use server'",
+          '// Scores a proxy rubric. Nothing to do with lib/evaluate.',
+          "import { db } from '@/db/client'",
+          'export async function evaluateProxyRubric() { return db.query.proxies.findMany() }',
+        ].join('\n'),
+      },
+    ]
+    expect(
+      detectNoEvaluateRuntime(files),
+      'an unrelated action was credited as the Evaluate runtime because of its NAME',
+    ).toBe(true)
+  })
+
+  test('B-4 CASE C — a real server action WIRED to the engine flips the probe', () => {
+    const files = [
+      {
+        path: 'app/actions/evaluate/decide.ts',
+        content: [
+          "'use server'",
+          "import { decide } from '@/lib/evaluate/decision-policy'",
+          "import { requireOrganizationAccess } from '@/lib/auth/session'",
+          'export async function decideEvaluation(id: string) {',
+          '  await requireOrganizationAccess()',
+          '  return decide(id)',
+          '}',
+        ].join('\n'),
+      },
+    ]
+    expect(findTraversableEvaluateRuntime(files)).toEqual(['app/actions/evaluate/decide.ts'])
+    expect(
+      detectNoEvaluateRuntime(files),
+      'a real server action wired to the production engine did NOT flip the probe',
     ).toBe(false)
+  })
+
+  test('B-4 CASE C2 — a route handler wired to the engine also flips the probe', () => {
+    const files = [
+      {
+        path: 'app/api/evaluate/route.ts',
+        content: [
+          "import { NextResponse } from 'next/server'",
+          "import { score } from '@/lib/evaluate/scoring'",
+          'export async function POST(request: Request) { return NextResponse.json(score([], [])) }',
+        ].join('\n'),
+      },
+    ]
+    expect(
+      detectNoEvaluateRuntime(files),
+      'a route handler wired to the production engine did NOT flip the probe',
+    ).toBe(false)
+  })
+
+  test('B-4 CASE D — a UI page with NO Evaluate execution path is NOT a runtime', () => {
+    // A routable page that renders static copy. The authority orders the UI
+    // read model (W-EV-6) AFTER the server actions (W-EV-5), so a page that
+    // executes nothing is not what makes the leg traversable.
+    const files = [
+      {
+        path: 'app/app/projects/[projectId]/evaluate/page.tsx',
+        content: 'export default function EvaluatePage() { return <main>Evaluation coming soon</main> }',
+      },
+    ]
+    expect(
+      detectNoEvaluateRuntime(files),
+      'a static UI page with no Evaluate execution path was credited as a runtime',
+    ).toBe(true)
+  })
+
+  test('B-4 — a comment or a string mentioning the engine does NOT vote', () => {
+    const files = [
+      {
+        path: 'app/actions/notes.ts',
+        content: [
+          "'use server'",
+          "// TODO: wire this to '@/lib/evaluate/scoring' once W-EV-5 lands",
+          'const planned = "@/lib/evaluate/decision-policy"',
+          'export async function notes() { return planned }',
+        ].join('\n'),
+      },
+    ]
+    expect(
+      detectNoEvaluateRuntime(files),
+      'a commented-out or quoted module specifier was counted as a production linkage',
+    ).toBe(true)
+  })
+
+  test('B-4 — a TYPE-ONLY import of the engine does NOT vote', () => {
+    // Erased at compile time: it wires no runtime and traverses nothing.
+    const files = [
+      {
+        path: 'app/actions/evaluate/types-only.ts',
+        content: [
+          "'use server'",
+          "import type { EvaluateResult } from '@/lib/evaluate/types'",
+          'export async function shape(): Promise<EvaluateResult | null> { return null }',
+        ].join('\n'),
+      },
+    ]
+    expect(
+      detectNoEvaluateRuntime(files),
+      'a type-only import was counted as a runtime linkage',
+    ).toBe(true)
+  })
+
+  test('B-4 — a TEST file wired to the engine does NOT vote', () => {
+    const files = [
+      {
+        path: 'app/actions/evaluate/__tests__/decide.test.ts',
+        content: [
+          "'use server'",
+          "import { decide } from '@/lib/evaluate/decision-policy'",
+          'export async function decideEvaluation() { return decide() }',
+        ].join('\n'),
+      },
+      {
+        path: 'app/actions/evaluate/decide.spec.ts',
+        content: "'use server'\nimport { score } from '@/lib/evaluate/scoring'\nexport async function x() { return score([], []) }",
+      },
+    ]
+    expect(
+      detectNoEvaluateRuntime(files),
+      'a test file was credited as the production Evaluate runtime',
+    ).toBe(true)
+  })
+
+  test('B-4 — the CURRENT tree has a pure engine but no traversable runtime', () => {
+    // The live reading, against whatever tree this runs on — branch or
+    // synthetic merge. This is the assertion that would have caught B-4.
+    const runtime = findTraversableEvaluateRuntime(collectAppSourceFiles())
+    expect(
+      runtime,
+      `app/** entrypoints were found wired to Evaluate: ${runtime.join(', ')}`,
+    ).toEqual([])
   })
 
   // -------------------------------------------------------------------

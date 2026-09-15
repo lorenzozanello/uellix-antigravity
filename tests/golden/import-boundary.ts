@@ -58,22 +58,96 @@ export interface ImportBoundaryOffense {
   readonly matched: string
 }
 
-function isPlaywrightTestSpecifier(expr: ts.Expression | undefined): expr is ts.StringLiteralLike {
-  return !!expr && ts.isStringLiteralLike(expr) && expr.text === PLAYWRIGHT_TEST_MODULE
+/** One statically-resolvable module reference, whatever module it names. */
+export interface ModuleReference {
+  readonly kind: ImportBoundaryOffenseKind
+  /** The module specifier's TEXT — quote spelling already discarded by the parser. */
+  readonly specifier: string
+  /** `import type` / `export type`: erased at compile time, so no runtime binding. */
+  readonly typeOnly: boolean
+  /** The exact source text of the referencing node. */
+  readonly text: string
 }
 
 /**
- * Every direct reference to `@playwright/test` in one file, across the four
- * syntactic forms a module can be reached through. Returns the empty array
- * for a file with none.
+ * Raised when the source does not parse.
+ *
+ * ===========================================================================
+ * WHY PARSING FAILS CLOSED (N-4)
+ * ===========================================================================
+ * `ts.createSourceFile` NEVER throws. Handed `import { from 'x'` it returns a
+ * SourceFile whose tree is a best-effort recovery, and a walk over that tree
+ * finds whatever the recovery happened to salvage — very possibly nothing.
+ * The scan would then report zero references for a file that is simply
+ * unreadable, which is the "green because nothing was looked at" shape this
+ * whole meta surface exists to make impossible.
+ *
+ * Malformed source cannot execute today and `pnpm typecheck` would catch it,
+ * so this is defence in depth rather than a live hole. It is still wrong for a
+ * scanner to answer confidently about text it failed to read, so an
+ * unparseable file raises instead of silently answering "nothing here".
+ */
+export class GoldenSourceParseError extends Error {
+  constructor(file: string, readonly diagnosticCount: number, firstMessage: string) {
+    super(`${file} does not parse (${diagnosticCount} parse diagnostic(s)); first: ${firstMessage}`)
+    this.name = 'GoldenSourceParseError'
+  }
+}
+
+function scriptKindFor(file: string): ts.ScriptKind {
+  if (/\.tsx$/i.test(file)) return ts.ScriptKind.TSX
+  if (/\.jsx$/i.test(file)) return ts.ScriptKind.JSX
+  if (/\.[cm]?js$/i.test(file)) return ts.ScriptKind.JS
+  return ts.ScriptKind.TS
+}
+
+/**
+ * `parseDiagnostics` is populated by the parser but is not on the public
+ * `SourceFile` type, so it is read through a narrow structural cast rather
+ * than `any`.
+ */
+function assertParsed(file: string, sourceFile: ts.SourceFile): void {
+  const { parseDiagnostics } = sourceFile as unknown as {
+    parseDiagnostics?: readonly ts.Diagnostic[]
+  }
+  if (parseDiagnostics && parseDiagnostics.length > 0) {
+    const first = ts.flattenDiagnosticMessageText(parseDiagnostics[0].messageText, ' ')
+    throw new GoldenSourceParseError(file, parseDiagnostics.length, first)
+  }
+}
+
+/**
+ * EVERY statically-resolvable module reference in one file, across the four
+ * syntactic forms a module can be reached through: `import`, re-`export`,
+ * `require(...)`, and dynamic `import(...)` with a literal specifier.
+ *
+ * This is the single AST walk the whole Golden meta surface reads module
+ * identity through — both the `@playwright/test` harness boundary (N-2) and
+ * the Evaluate production-linkage probe (B-4) are predicates over its result,
+ * so neither can drift into matching quote spellings or path substrings.
  *
  * Pure — parses the given text, touches no filesystem — so callers can drive
- * it with a fixture as well as a real file, and this module can be unit
- * tested directly rather than only through the guard that consumes it.
+ * it with a fixture as well as a real file.
+ *
+ * Throws `GoldenSourceParseError` if the source does not parse; see above.
  */
-export function findPlaywrightTestReferences(file: string, content: string): readonly ImportBoundaryOffense[] {
-  const sourceFile = ts.createSourceFile(file, content, ts.ScriptTarget.Latest, /* setParentNodes */ false, ts.ScriptKind.TS)
-  const offenses: ImportBoundaryOffense[] = []
+export function findModuleReferences(file: string, content: string): readonly ModuleReference[] {
+  // The script kind is chosen from the EXTENSION, not fixed to TS. Parsing a
+  // `.tsx` file as TS turns every JSX element into parse diagnostics, which —
+  // now that parsing fails closed — would raise on ordinary, valid React
+  // source instead of on the malformed source this is meant to catch.
+  const sourceFile = ts.createSourceFile(
+    file,
+    content,
+    ts.ScriptTarget.Latest,
+    /* setParentNodes */ false,
+    scriptKindFor(file),
+  )
+  assertParsed(file, sourceFile)
+
+  const references: ModuleReference[] = []
+  const literal = (expr: ts.Expression | undefined): ts.StringLiteralLike | undefined =>
+    expr && ts.isStringLiteralLike(expr) ? expr : undefined
 
   const visit = (node: ts.Node): void => {
     if (ts.isImportDeclaration(node)) {
@@ -83,9 +157,14 @@ export function findPlaywrightTestReferences(file: string, content: string): rea
       // / `ImportEqualsDeclaration` and falls through to `false` for an
       // `ImportDeclaration` itself, which would silently defeat this check
       // (every import, type-only or not, would read as non-type-only).
-      const isTypeOnly = node.importClause?.phaseModifier === ts.SyntaxKind.TypeKeyword
-      if (!isTypeOnly && isPlaywrightTestSpecifier(node.moduleSpecifier as ts.Expression)) {
-        offenses.push({ file, kind: 'import', matched: node.getText(sourceFile) })
+      const specifier = literal(node.moduleSpecifier as ts.Expression)
+      if (specifier) {
+        references.push({
+          kind: 'import',
+          specifier: specifier.text,
+          typeOnly: node.importClause?.phaseModifier === ts.SyntaxKind.TypeKeyword,
+          text: node.getText(sourceFile),
+        })
       }
       return
     }
@@ -96,8 +175,14 @@ export function findPlaywrightTestReferences(file: string, content: string): rea
       // `ts.isTypeOnlyExportDeclaration`, which additionally requires
       // `!exportClause` and so reads `export type { test } from '...'` as
       // NOT type-only (it means something narrower: a bare `export type *`).
-      if (!node.isTypeOnly && node.moduleSpecifier && isPlaywrightTestSpecifier(node.moduleSpecifier)) {
-        offenses.push({ file, kind: 'export', matched: node.getText(sourceFile) })
+      const specifier = literal(node.moduleSpecifier)
+      if (specifier) {
+        references.push({
+          kind: 'export',
+          specifier: specifier.text,
+          typeOnly: node.isTypeOnly,
+          text: node.getText(sourceFile),
+        })
       }
       return
     }
@@ -107,12 +192,15 @@ export function findPlaywrightTestReferences(file: string, content: string): rea
       // A dynamic `import(...)` parses as a CallExpression whose `expression`
       // is the `import` keyword itself, not an identifier named `import`.
       const isDynamicImportCall = node.expression.kind === ts.SyntaxKind.ImportKeyword
+      const specifier = isRequireCall || isDynamicImportCall ? literal(node.arguments[0]) : undefined
 
-      if ((isRequireCall || isDynamicImportCall) && isPlaywrightTestSpecifier(node.arguments[0])) {
-        offenses.push({
-          file,
+      if (specifier) {
+        references.push({
           kind: isRequireCall ? 'require' : 'dynamic-import',
-          matched: node.getText(sourceFile),
+          specifier: specifier.text,
+          // A runtime call cannot be type-only.
+          typeOnly: false,
+          text: node.getText(sourceFile),
         })
       }
       // Fall through — a require()/import() can itself be nested inside an
@@ -123,7 +211,17 @@ export function findPlaywrightTestReferences(file: string, content: string): rea
   }
 
   visit(sourceFile)
-  return offenses
+  return references
+}
+
+/**
+ * Every direct reference to `@playwright/test` in one file. Returns the empty
+ * array for a file with none.
+ */
+export function findPlaywrightTestReferences(file: string, content: string): readonly ImportBoundaryOffense[] {
+  return findModuleReferences(file, content)
+    .filter((reference) => !reference.typeOnly && reference.specifier === PLAYWRIGHT_TEST_MODULE)
+    .map((reference) => ({ file, kind: reference.kind, matched: reference.text }))
 }
 
 /**
