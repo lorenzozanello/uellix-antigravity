@@ -308,6 +308,38 @@ export const AUDIT_ACTIONS = {
   EVIDENCE_TOMBSTONE_ERASURE_REQUESTED: 'evidence_tombstone.erasure_requested',
   EVIDENCE_TOMBSTONE_ERASURE_COMPLETED: 'evidence_tombstone.erasure_completed',
   EVIDENCE_TOMBSTONE_ERASURE_BLOCKED: 'evidence_tombstone.erasure_blocked',
+  // ---------------------------------------------------------------------
+  // Evaluate V1 (EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json AUDIT).
+  //
+  // Existing vocabulary could not express these: AUDIT_ACTIONS carried zero
+  // keys naming an evaluation OBJECT. What IS reused is the VERB morphology —
+  // every verb below already appears elsewhere in this object, following the
+  // established <object>.<verb> shape rather than inventing one.
+  //
+  // The two refusal keys are deliberate. A refused decision (wrong role, wrong
+  // designated role, or a non-computable score) and a refused criterion edit
+  // (a role outside the exact three-element set, or an evaluation past its
+  // governing lock) are AUDITED, not silently dropped: a refusal that leaves
+  // no trace is indistinguishable from an attempt that never happened, and
+  // RAT-EV-02 exclusions are only observable if enforcing them leaves one.
+  //
+  // These are vocabulary ONLY. logAuditAction is used unchanged and keeps its
+  // fail-closed contract (FIBC-040): no Evaluate caller may wrap it in a
+  // try/catch that swallows AuditContractViolationError, no Evaluate
+  // transition may commit when its audit write failed, and NO key below is
+  // exempt from the contentModifying/beforeJson requirement.
+  // ---------------------------------------------------------------------
+  EVALUATION_CREATED: 'evaluation.created',
+  EVALUATION_UPDATED: 'evaluation.updated',
+  EVALUATION_SUBMITTED_FOR_DECISION: 'evaluation.submitted_for_decision',
+  EVALUATION_DECISION_RECORDED: 'evaluation.decision_recorded',
+  EVALUATION_DECISION_REFUSED: 'evaluation.decision_refused',
+  EVALUATION_ARCHIVED: 'evaluation.archived',
+  EVALUATION_CRITERION_RESPONSE_RECORDED: 'evaluation_criterion_response.recorded',
+  EVALUATION_CRITERION_RESPONSE_EDIT_REFUSED: 'evaluation_criterion_response.edit_refused',
+  EVALUATION_TEMPLATE_VERSION_CREATED: 'evaluation_template_version.created',
+  EVALUATION_TEMPLATE_VERSION_PUBLISHED: 'evaluation_template_version.published',
+  EVALUATION_TEMPLATE_RETIRED: 'evaluation_template.retired',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

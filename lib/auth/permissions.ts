@@ -230,3 +230,116 @@ export function canPublishReportDisclosure(role: Role): boolean {
 export function canApproveRunMethodology(role: Role, isRunAuthor: boolean): boolean {
   return isInReviewSet(role) && !isRunAuthor
 }
+
+// ---------------------------------------------------------------------------
+// Evaluate V1 (EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json) — SEVEN closed
+// role sets and SEVEN predicates, one per distinct authority concept.
+//
+// EXTENSIONAL EQUALITY IS NOT AUTHORITY IDENTITY. Five of the seven sets
+// coincide in membership today (three distinct extensions across seven
+// concepts). They remain seven separate constants anyway: a future amendment
+// to HD-05 must not be able to move the RAT-EV-04 draft set, and a future
+// amendment to HD-08 must not be able to move the create set. R3 of the
+// authority declared this rule and then violated it twice by pointing
+// canArchiveEvaluation and canCreateEvaluation at EVALUATE_DECISION_ROLES —
+// independent audit CA-B-01. Sharing a constant IS the defect.
+//
+// hasRole() is FORBIDDEN for every predicate below. It is
+// ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole], and super_admin
+// is 100, so hasRole('super_admin', X) is true for every X. The specific
+// trap: hasRole(role, 'analyst') — the shape an implementer reaches for to
+// express the criterion-edit set, analyst being its lowest-ranked member —
+// returns the RIGHT answer for five of six roles and the wrong answer for
+// exactly the one role RAT-EV-02 excludes. A suite that only checks reviewer
+// and viewer denials passes. See lib/auth/tests/evaluate-predicate-identity.
+//
+// Deriving any of these from isInReviewSet / REVIEW_ROLES is likewise
+// forbidden: 'reviewer' is in the repository review set and is excluded from
+// EVERY Evaluate write set. Evaluate "feels like" review tooling, which is
+// precisely what makes that derivation attractive and wrong.
+// ---------------------------------------------------------------------------
+
+/**
+ * Who may CREATE an evaluation (EVALUATE_CREATE_ROLES).
+ *
+ * BOUNDED_IMPLEMENTATION_CHOICE, not owner-ratified — no canonical
+ * ratification addresses evaluation creation. Kept at the governance
+ * membership rather than widened, because widening is the only unsafe
+ * direction available absent a ratification.
+ */
+const EVALUATE_CREATE_ROLES: readonly Role[] = ['organization_admin', 'impact_manager']
+
+/** Who may EDIT a criterion response (EVALUATE_CRITERION_EDIT_ROLES). RAT-EV-02. */
+const EVALUATE_CRITERION_EDIT_ROLES: readonly Role[] = [
+  'analyst',
+  'impact_manager',
+  'organization_admin',
+]
+
+/** Who may be DESIGNATED and act as an evaluation's decider (EVALUATE_DECISION_ROLES). HD-05. */
+const EVALUATE_DECISION_ROLES: readonly Role[] = ['organization_admin', 'impact_manager']
+
+/** Who may ARCHIVE an evaluation (EVALUATE_ARCHIVE_ROLES). HD-08. */
+const EVALUATE_ARCHIVE_ROLES: readonly Role[] = ['impact_manager', 'organization_admin']
+
+/** Who may DRAFT an evaluation template version (EVALUATE_TEMPLATE_DRAFT_ROLES). RAT-EV-04. */
+const EVALUATE_TEMPLATE_DRAFT_ROLES: readonly Role[] = ['impact_manager', 'organization_admin']
+
+/** Who may PUBLISH an evaluation template version (EVALUATE_TEMPLATE_PUBLISH_ROLES). RAT-EV-04 / HD-09. */
+const EVALUATE_TEMPLATE_PUBLISH_ROLES: readonly Role[] = ['organization_admin']
+
+/** Who may RETIRE an evaluation template (EVALUATE_TEMPLATE_RETIRE_ROLES). RAT-EV-04 / HD-09. */
+const EVALUATE_TEMPLATE_RETIRE_ROLES: readonly Role[] = ['organization_admin']
+
+/** Can the user create an evaluation? Exact set inclusion over EVALUATE_CREATE_ROLES. */
+export function canCreateEvaluation(role: Role): boolean {
+  return EVALUATE_CREATE_ROLES.includes(role)
+}
+
+/**
+ * Can the user edit a criterion response? Exact set inclusion over
+ * EVALUATE_CRITERION_EDIT_ROLES AND the evaluation still being pre-lock.
+ *
+ * `isPreLock` must come from a server-authoritative read of the evaluation's
+ * state (false once DECIDED or ARCHIVED), never from a client-supplied flag —
+ * the same contract `canApproveRunMethodology`'s `isRunAuthor` carries.
+ */
+export function canEditEvaluationCriterionResponse(role: Role, isPreLock: boolean): boolean {
+  return EVALUATE_CRITERION_EDIT_ROLES.includes(role) && isPreLock
+}
+
+/**
+ * Can the user record this evaluation's decision? BOTH conditions (HD-05):
+ * exact set inclusion over EVALUATE_DECISION_ROLES, AND exact equality with
+ * the evaluation's own designated_decision_role. Membership alone would let
+ * an impact_manager decide an evaluation designated to organization_admin.
+ *
+ * `designatedDecisionRole` must be read from the evaluation row server-side.
+ */
+export function canDecideEvaluation(role: Role, designatedDecisionRole: Role): boolean {
+  return EVALUATE_DECISION_ROLES.includes(role) && role === designatedDecisionRole
+}
+
+/** Can the user archive an evaluation? Exact set inclusion over EVALUATE_ARCHIVE_ROLES. */
+export function canArchiveEvaluation(role: Role): boolean {
+  return EVALUATE_ARCHIVE_ROLES.includes(role)
+}
+
+/** Can the user draft an evaluation template version? Exact set inclusion over EVALUATE_TEMPLATE_DRAFT_ROLES. */
+export function canDraftEvaluationTemplate(role: Role): boolean {
+  return EVALUATE_TEMPLATE_DRAFT_ROLES.includes(role)
+}
+
+/**
+ * Can the user publish an evaluation template version? Exact set inclusion
+ * over EVALUATE_TEMPLATE_PUBLISH_ROLES. impact_manager is excluded: draft
+ * authority does not extend to publish (RAT-EV-04).
+ */
+export function canPublishEvaluateTemplateVersion(role: Role): boolean {
+  return EVALUATE_TEMPLATE_PUBLISH_ROLES.includes(role)
+}
+
+/** Can the user retire an evaluation template? Exact set inclusion over EVALUATE_TEMPLATE_RETIRE_ROLES. */
+export function canRetireEvaluateTemplate(role: Role): boolean {
+  return EVALUATE_TEMPLATE_RETIRE_ROLES.includes(role)
+}
