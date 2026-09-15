@@ -10,7 +10,7 @@ import {
   projectInvestments,
   outcomeProxyAssignments,
 } from '@/db/schema';
-import { eq, and, isNotNull, isNull } from 'drizzle-orm';
+import { eq, and, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { currentGovernanceRegime } from '@/lib/pipeline/governance-regime';
@@ -650,4 +650,255 @@ export async function moveProjectToPortfolioForCurrentOrganization(
   });
 
   return updated[0];
+}
+
+// ---------------------------------------------------------------------------
+// Organization-level Measure progress (LANE CV1-MEASURE-W3).
+//
+// F-MEASURE-W3-1 — getSroiCalculationReadiness/blockingReasons is REJECTED as
+// the source for this surface. Its authorize() gate
+// (lib/pipeline/sroi-calculation.ts) requires hasRole(role, 'analyst'), so it
+// throws 'Insufficient role' for `reviewer` (20) and `viewer` (10). This lane's
+// contract requires authorized read-only users to see progress, so a source
+// that is not role-universal cannot define it. Calling it only for privileged
+// roles was rejected too: that would make "where is this project in Measure"
+// mean two different things depending on who is looking.
+//
+// Everything below therefore derives from persisted artifacts that every
+// organization member can already read through the existing org-scoped access
+// model — SROI runs, run reviews, reports, and the project's own lifecycle
+// columns. No readiness model is recomputed here, no percentage is synthesized,
+// and no permission is consulted: the read-only progress source IS the
+// privileged progress source, because there is only one derivation.
+// ---------------------------------------------------------------------------
+
+export type MeasureProgressState =
+  | 'sin_iniciar'
+  | 'en_progreso'
+  | 'listo_para_revision'
+  | 'en_revision'
+  | 'aprobado'
+  | 'completado'
+  | 'bloqueado';
+
+/** Badge variants available in components/ui/badge.tsx. */
+type MeasureProgressVariant = 'neutral' | 'info' | 'success' | 'warning' | 'accent';
+
+/**
+ * The persisted facts the ladder reads. Every field is a plain column value or
+ * an existence check over a governed table — never a computed readiness score.
+ */
+export interface MeasureProgressFacts {
+  /** projects.status */
+  status: string;
+  /** projects.deletion_requested_at */
+  deletionRequestedAt: Date | string | null;
+  /** >= 1 sroi_calculation_runs row with status = 'calculated' */
+  hasCalculatedRun: boolean;
+  /** >= 1 sroi_run_reviews row with status = 'approved' */
+  hasApprovedReview: boolean;
+  /** >= 1 sroi_run_reviews row still in play: draft | reviewed | flagged */
+  hasOpenReview: boolean;
+  /** >= 1 sroi_reports row with status = 'locked' */
+  hasLockedReport: boolean;
+}
+
+export interface MeasureProgress {
+  state: MeasureProgressState;
+  /** Spanish label, drawn from vocabulary already used in the pipeline UI. */
+  label: string;
+  variant: MeasureProgressVariant;
+  /** What a human should do next. Never a mutation — always navigation. */
+  nextActionLabel: string;
+  /**
+   * Path suffix appended to `/app/projects/<id>`. Kept id-free so the ladder
+   * stays a pure function of the facts and can be unit-tested without a route.
+   * The empty string means "no navigable next action".
+   */
+  nextActionPath: string;
+}
+
+/**
+ * Derive one Measure state from persisted facts. Pure: no db, no session, no
+ * role. The branch order below is the whole contract, so it is spelled out
+ * rather than expressed as a lookup table.
+ *
+ * `completado` outranks `bloqueado` deliberately. A locked report is an
+ * immutable terminal artifact; pausing or requesting deletion of the project
+ * afterwards does not reopen Measure, so reporting such a project as blocked
+ * would be false.
+ *
+ * A review with status 'archived' counts as NEITHER approved nor open — an
+ * archived review has been withdrawn, so it must not hold a project in
+ * `en_revision` forever.
+ */
+export function deriveMeasureProgress(facts: MeasureProgressFacts): MeasureProgress {
+  if (facts.hasLockedReport) {
+    return {
+      state: 'completado',
+      label: 'Completado',
+      variant: 'success',
+      nextActionLabel: 'Ver reporte',
+      nextActionPath: '/report',
+    };
+  }
+
+  // The only two blocking conditions are persisted lifecycle facts already
+  // represented on the project row. No readiness predicate is reimplemented.
+  if (facts.deletionRequestedAt !== null && facts.deletionRequestedAt !== undefined) {
+    return {
+      state: 'bloqueado',
+      label: 'Bloqueado',
+      variant: 'warning',
+      nextActionLabel: 'Eliminación solicitada — requiere resolución',
+      nextActionPath: '',
+    };
+  }
+  if (facts.status === 'paused') {
+    return {
+      state: 'bloqueado',
+      label: 'Bloqueado',
+      variant: 'warning',
+      nextActionLabel: 'Proyecto en pausa — reanudar para continuar',
+      nextActionPath: '',
+    };
+  }
+
+  if (facts.hasApprovedReview) {
+    return {
+      state: 'aprobado',
+      label: 'Aprobado',
+      variant: 'success',
+      nextActionLabel: 'Generar reporte',
+      nextActionPath: '/report',
+    };
+  }
+  if (facts.hasOpenReview) {
+    return {
+      state: 'en_revision',
+      label: 'En revisión',
+      variant: 'info',
+      nextActionLabel: 'Continuar revisión',
+      nextActionPath: '/pipeline/calculation',
+    };
+  }
+  if (facts.hasCalculatedRun) {
+    return {
+      state: 'listo_para_revision',
+      label: 'Listo para revisión',
+      variant: 'accent',
+      nextActionLabel: 'Revisar cálculo',
+      nextActionPath: '/pipeline/calculation',
+    };
+  }
+
+  // No calculated run yet. `draft` vs anything else is the existing persisted
+  // lifecycle distinction between "nobody has started" and "work is underway";
+  // it costs no extra query and invents no new state.
+  if (facts.status === 'draft') {
+    return {
+      state: 'sin_iniciar',
+      label: 'Sin iniciar',
+      variant: 'neutral',
+      nextActionLabel: 'Comenzar con Narrativa',
+      nextActionPath: '/pipeline/narrative',
+    };
+  }
+  return {
+    state: 'en_progreso',
+    label: 'En progreso',
+    variant: 'info',
+    nextActionLabel: 'Continuar pipeline',
+    nextActionPath: '/pipeline',
+  };
+}
+
+export type ProjectWithMeasureProgress = Awaited<
+  ReturnType<typeof listProjectsForCurrentOrganization>
+>[number] & {
+  measureProgress: MeasureProgress;
+  /** projects.portfolio_id IS NULL. Informational only — see F-MEASURE-W3-2. */
+  unassignedToPortfolio: boolean;
+};
+
+/**
+ * Every project of the current organization, each carrying its Measure state.
+ *
+ * F-MEASURE-W3-2 — the project set comes from listProjectsForCurrentOrganization
+ * verbatim, which filters on organization_id ALONE. Reusing it rather than
+ * re-issuing a second query is the point: there is exactly one place a
+ * portfolio predicate could ever be introduced, so a project with
+ * portfolio_id IS NULL cannot silently fall out of one surface but not the
+ * other. `unassignedToPortfolio` only makes that already-correct state
+ * observable; it changes no filtering, no ordering and no portfolio membership.
+ *
+ * Cost is three set-based queries for the WHOLE organization, not per project.
+ * Each is correlated on organization_id on its own side as well as being
+ * restricted to this organization's project ids — the org correlation is
+ * required on both sides, never only on the project side.
+ */
+export async function listProjectsWithMeasureProgressForCurrentOrganization(): Promise<
+  ProjectWithMeasureProgress[]
+> {
+  const ctx = await getCurrentOrganizationContext();
+  if (!ctx) throw new Error('Unauthenticated');
+
+  const rows = await listProjectsForCurrentOrganization();
+  const projectIds = rows.map((p) => p.id);
+  if (projectIds.length === 0) return [];
+
+  const [calculatedRuns, reviewRows, reportRows] = await Promise.all([
+    db
+      .select({ projectId: sroiCalculationRuns.projectId })
+      .from(sroiCalculationRuns)
+      .where(
+        and(
+          inArray(sroiCalculationRuns.projectId, projectIds),
+          eq(sroiCalculationRuns.organizationId, ctx.organization.id),
+          eq(sroiCalculationRuns.status, 'calculated'),
+        ),
+      ),
+    db
+      .select({ projectId: sroiRunReviews.projectId, status: sroiRunReviews.status })
+      .from(sroiRunReviews)
+      .where(
+        and(
+          inArray(sroiRunReviews.projectId, projectIds),
+          eq(sroiRunReviews.organizationId, ctx.organization.id),
+        ),
+      ),
+    db
+      .select({ projectId: sroiReports.projectId, status: sroiReports.status })
+      .from(sroiReports)
+      .where(
+        and(
+          inArray(sroiReports.projectId, projectIds),
+          eq(sroiReports.organizationId, ctx.organization.id),
+        ),
+      ),
+  ]);
+
+  const withCalculatedRun = new Set(calculatedRuns.map((r) => r.projectId));
+  const withApprovedReview = new Set<string>();
+  const withOpenReview = new Set<string>();
+  for (const review of reviewRows) {
+    if (review.status === 'approved') withApprovedReview.add(review.projectId);
+    else if (review.status !== 'archived') withOpenReview.add(review.projectId);
+  }
+  const withLockedReport = new Set(
+    reportRows.filter((r) => r.status === 'locked').map((r) => r.projectId),
+  );
+
+  return rows.map((project) => ({
+    ...project,
+    measureProgress: deriveMeasureProgress({
+      status: project.status,
+      deletionRequestedAt: project.deletionRequestedAt,
+      hasCalculatedRun: withCalculatedRun.has(project.id),
+      hasApprovedReview: withApprovedReview.has(project.id),
+      hasOpenReview: withOpenReview.has(project.id),
+      hasLockedReport: withLockedReport.has(project.id),
+    }),
+    unassignedToPortfolio: project.portfolioId === null,
+  }));
 }
