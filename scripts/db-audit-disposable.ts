@@ -90,6 +90,109 @@ export function hasOnlyAcceptableMounts(mountsJson: string): boolean {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Serving-postmaster readiness — the ONE readiness contract every disposable
+// call site in this repository shares.
+//
+// THE DEFECT THIS REPLACES: `pg_isready -U postgres` succeeding does NOT mean
+// the container is ready. The official entrypoint (and the Supabase image
+// derived from it) runs a TEMPORARY postmaster during its init phase —
+// `docker_temp_server_start` in docker-entrypoint.sh — applies the image's
+// own bundled setup plus anything in /docker-entrypoint-initdb.d, then stops
+// it with `pg_ctl -m fast -w stop` and only afterwards `exec`s the postmaster
+// that actually serves the container. That temporary postmaster answers
+// `pg_isready` on the Unix socket exactly like the real one, so a harness
+// that took it for ready raced the shutdown and met, on byte-identical trees,
+// either `No such file or directory` for .s.PGSQL.5432 (the socket vanished
+// between the probe and the connection) or `terminating connection due to
+// administrator command` (the fast stop reached an already-open session).
+//
+// THE DISCRIMINATOR IS STRUCTURAL, NOT A SLEEP: the entrypoint `exec`s the
+// final postmaster, so it replaces the shell and becomes PID 1 inside the
+// container. The temporary one is a child of that shell and never is. This
+// was re-measured for this lane on BOTH images this repository starts —
+// postgres:16-alpine and the pinned public.ecr.aws/supabase/postgres — by
+// prolonging the init phase with a disposable init script: while it ran,
+// `pg_isready` exited 0 and the container log carried
+// "[43] LOG: database system is ready to accept connections" while
+// $PGDATA/postmaster.pid still read 43 and PID 1 was still
+// `docker-entrypoint.sh`; only after "shutting down" did the pid file read 1.
+//
+// A readiness decision therefore needs BOTH halves: the structural fact, and
+// then a real SQL round trip against the postmaster that fact identified.
+// `pg_isready` may remain as a cheap preliminary signal at a call site, but
+// it never votes READY on its own.
+// ---------------------------------------------------------------------------
+
+export interface ServingPostmasterProbe {
+  ready: boolean
+  /** Always specific, and never empty when `ready` is false — readiness failures are loud, never silent. */
+  reason: string
+}
+
+/**
+ * How the readiness SQL round trip is issued. Defaults to the Unix socket as
+ * `postgres`, which is what the proven implementations
+ * (scripts/pg176-certify.ts, scripts/remediation-certify.ts) use. A call site
+ * that will go on to speak TCP passes its own executor so the confirmation
+ * runs over the transport that call site actually uses — stronger than the
+ * default, never weaker.
+ */
+export type SqlReadinessCheck = (runner: DockerRunner, container: string) => ProcessResult
+
+export const socketSqlReadinessCheck: SqlReadinessCheck = (runner, container) =>
+  runner.run(['exec', container, 'psql', '-U', 'postgres', '-tAc', 'SELECT 1'])
+
+/**
+ * One shot, no waiting: is THIS container being served by the postmaster the
+ * entrypoint exec'd? Callers keep their own bounded retry loop (and their own
+ * wait mechanism) around this predicate.
+ *
+ * Every failure path returns `ready: false` with a reason. Nothing here can
+ * return `ready: true` because a probe was inconclusive — a container that
+ * disappears mid-probe makes `docker exec` exit non-zero, which is NOT READY.
+ */
+export function probeServingPostmaster(
+  runner: DockerRunner,
+  container: string,
+  sqlCheck: SqlReadinessCheck = socketSqlReadinessCheck,
+): ServingPostmasterProbe {
+  const pidRead = runner.run(['exec', container, 'sh', '-c', 'head -1 "$PGDATA/postmaster.pid" 2>/dev/null'])
+  if (pidRead.status !== 0) {
+    return {
+      ready: false,
+      reason: `could not read $PGDATA/postmaster.pid (docker exec exited ${pidRead.status}) — the container is not running, not yet accepting exec, or has no data directory: ${(pidRead.stderr || pidRead.stdout).trim()}`,
+    }
+  }
+
+  const pidLine = pidRead.stdout.trim()
+  if (pidLine === '') {
+    return { ready: false, reason: 'postmaster.pid is absent or empty — no postmaster has written its pid file yet' }
+  }
+  if (!/^\d+$/.test(pidLine)) {
+    return { ready: false, reason: `postmaster.pid first line is not a decimal pid: ${JSON.stringify(pidLine)}` }
+  }
+  if (pidLine !== '1') {
+    return {
+      ready: false,
+      reason: `postmaster.pid reports pid ${pidLine}, not 1 — this is the entrypoint's TEMPORARY init postmaster, which is stopped before the container's real postmaster starts`,
+    }
+  }
+
+  const sql = sqlCheck(runner, container)
+  if (sql.status !== 0) {
+    return {
+      ready: false,
+      reason: `the PID 1 postmaster did not answer SELECT 1 (psql exited ${sql.status}): ${(sql.stderr || sql.stdout).trim()}`,
+    }
+  }
+  if (sql.stdout.trim() !== '1') {
+    return { ready: false, reason: `SELECT 1 returned ${JSON.stringify(sql.stdout.trim())}, not "1"` }
+  }
+
+  return { ready: true, reason: 'serving postmaster confirmed: postmaster.pid reports PID 1 and it answered SELECT 1' }
+}
+
 export interface SetupManifest {
   statements: string[]
 }
@@ -250,18 +353,28 @@ export function runDisposableHarness(options: HarnessOptions, deps: HarnessDeps 
       return finish()
     }
 
+    // READY means the postmaster the entrypoint exec'd is serving, not merely
+    // that something answered pg_isready — see probeServingPostmaster above.
+    // pg_isready stays as the cheap preliminary signal it always was, but the
+    // structural PID 1 fact plus a real SELECT 1 is what votes.
     const attempts = options.containerReadyAttempts ?? 30
     let ready = false
+    let notReadyReason = 'no readiness attempt was made'
     for (let i = 0; i < attempts; i++) {
-      const check = runner.run(['exec', identity.containerName, 'pg_isready', '-U', 'postgres'])
-      if (check.status === 0) {
-        ready = true
-        break
+      if (runner.run(['exec', identity.containerName, 'pg_isready', '-U', 'postgres']).status === 0) {
+        const serving = probeServingPostmaster(runner, identity.containerName)
+        if (serving.ready) {
+          ready = true
+          break
+        }
+        notReadyReason = serving.reason
+      } else {
+        notReadyReason = 'pg_isready has not succeeded yet'
       }
       sleepMs(250)
     }
     if (!ready) {
-      fail('disposable container never reported ready (pg_isready did not succeed in time)')
+      fail(`disposable container never reached its serving postmaster: ${notReadyReason}`)
       return finish()
     }
 

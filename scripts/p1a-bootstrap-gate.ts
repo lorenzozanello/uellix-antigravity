@@ -112,6 +112,7 @@ import {
   realDockerRunner,
   parseAssignedPort,
   hasOnlyAcceptableMounts,
+  probeServingPostmaster,
   type DockerRunner,
 } from './db-audit-disposable'
 import {
@@ -385,12 +386,24 @@ async function createP1aContainer(runner: DockerRunner, phase: string): Promise<
   const mounts = runner.run(['inspect', '-f', '{{json .Mounts}}', name])
   if (!record(`${phase}:MOUNT-CHECK`, mounts.status === 0 && hasOnlyAcceptableMounts(mounts.stdout), 'anonymous volume mount only, no bind mount')) return handle
 
+  // READY is the postmaster the entrypoint exec'd (PID 1) answering SELECT 1
+  // over the SAME TCP transport every later statement uses, not merely
+  // pg_isready — which the entrypoint's temporary init postmaster answers on
+  // the Unix socket too, and which is stopped before the real postmaster
+  // starts. See probeServingPostmaster in scripts/db-audit-disposable.ts.
   let ready = false
+  let notReadyReason = 'no readiness attempt was made'
   for (let i = 0; i < 60; i++) {
-    if (runner.run(['exec', name, 'pg_isready', '-U', 'postgres']).status === 0) { ready = true; break }
+    if (runner.run(['exec', name, 'pg_isready', '-U', 'postgres']).status === 0) {
+      const serving = probeServingPostmaster(runner, name, (r, c) => psql(r, c, 'SELECT 1;'))
+      if (serving.ready) { ready = true; break }
+      notReadyReason = serving.reason
+    } else {
+      notReadyReason = 'pg_isready has not succeeded yet'
+    }
     await new Promise((r) => setTimeout(r, 500))
   }
-  if (!record(`${phase}:CONTAINER-READY`, ready)) return handle
+  if (!record(`${phase}:CONTAINER-READY`, ready, ready ? 'serving postmaster (PID 1) confirmed by SELECT 1' : notReadyReason)) return handle
 
   const portResult = runner.run(['port', name, '5432/tcp'])
   const assignedPort = portResult.status === 0 ? parseAssignedPort(portResult.stdout) : null

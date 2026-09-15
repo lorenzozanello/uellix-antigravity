@@ -1,0 +1,37 @@
+FIXTURE — NOT A TEST FILE. NOT COLLECTED BY ANY RUNNER.
+
+This is the positive control for scanForBypasses in tests/golden/skip-patterns.ts.
+
+A scanner that has only ever been run against a clean tree has never been shown
+capable of returning a finding. Pointing it at this file proves it can, and
+proves WHICH forms it recognises — the meta guard asserts the exact set of
+pattern ids found here, so a pattern that silently stopped matching would be
+caught by this fixture rather than by a future bypass slipping through.
+
+The extension is .txt deliberately. playwright.config.ts collects only
+*.journey.ts and *.guard.ts, and Vitest's default glob collects only
+*.test.* / *.spec.*, so nothing below is ever executed.
+
+--- begin fixture content ---
+
+test.skip('a step that was quietly removed', async () => {})
+
+test.fixme('a step marked expected-broken', async () => {})
+
+test.only('a step that reduces the battery to itself', async () => {})
+
+describe.skip('an entire journey removed', () => {})
+
+describe.fixme('an entire journey marked broken', () => {})
+
+describe.only('an entire journey isolated', () => {})
+
+test('a step abandoned mid-flight', async () => {
+  skip()
+})
+
+test('a step skipped from test info', async ({}, testInfo) => {
+  testInfo.skip()
+})
+
+--- end fixture content ---
