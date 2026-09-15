@@ -1,0 +1,391 @@
+{
+  "package_id": "STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_RELEASE_PROCESS_AUTHORITY_AMENDMENT",
+  "document_class": "AUTHORITY_ONLY__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT__NO_DATABASE_MUTATION__NO_DESTRUCTIVE_AUTHORIZATION",
+  "append_only": true,
+  "mission_id": "CV1-ENV-RAT-V11-W",
+  "lane": "CV1-ENV-RAT-V11-W",
+  "role": "ENVIRONMENT_CONVERGENCE_OWNER_RATIFICATION_WRITER",
+  "mode": "DOCS_ONLY_TIER_A_RELEASE_AUTHORITY_AMENDMENT",
+  "materialization_date": "2026-09-15",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "amends": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+  "companion_ledger": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+  "supersedes": null,
+  "binding_owner_ratification": "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json",
+  "companion_manifest": null,
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+
+  "AS_OF_BRANCH": "codex/environment-convergence-owner-ratification-v1-1-r1",
+  "AS_OF_HEAD": "c43067201d26cd1c13902812a46659655f0aa33f",
+  "AS_OF_TREE": "06f420b7d8d86544c79ff1a783890605c3c6fb94",
+  "AS_OF_BASE": "c43067201d26cd1c13902812a46659655f0aa33f",
+  "AS_OF_PRESTATE": "branch/HEAD/tree measured and clean at prestate; the ODS prestate gate output is recorded in the pull request body",
+  "as_of_measurement_note": "Every repository fact asserted here was measured at AS_OF_TREE. This lane wrote no runtime code, ran no migration, performed no hosted access, touched no Supabase or Vercel project, and mutated no environment.",
+
+  "NAMING_DERIVATION": "The parent carries append_only=true and the keys amends/supersedes, and the repository has an established convention for amending a frozen authority without editing it: a sibling artifact named <PARENT_PACKAGE_ID>_AMENDMENT_v1.0.1.json in the parent's own directory (precedents at AS_OF_TREE: docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_AMENDMENT_v1.0.1.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json, docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0.json). That convention is followed. No repository hierarchy rule requires the parent to be edited in place, so the mission's WRITESET_EXTENSION_REQUIRED stop condition was not reached.",
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. The parent docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json and its companion ledger docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json are left BYTE-UNCHANGED and remain historical and canonical for everything they carry. This artifact rewrites, deletes, retires or reinterprets none of their stages, gates, packets, rules or stop lines except in the single respect stated under SUPERSEDED_PARENT_CLAUSES.",
+    "how_to_read_the_three_together": "Where this amendment is silent, the parent and the ledger control verbatim. Where this amendment names a parent clause under SUPERSEDED_PARENT_CLAUSES, that clause is superseded ONLY in the respect this amendment states, and every other sentence of that same clause continues to control. Where this amendment names a parent or ledger clause under QUALIFIED_CLAUSES_NOT_SUPERSEDED, the clause continues to control in full and this amendment records only how it is to be read alongside the new definitions. A reader who has only the parent is reading a rule that was true when written and is now incomplete on one point; a reader who has only this amendment is reading a delta and not a contract. All three are required.",
+    "what_this_amendment_does": "It (1) materializes, as release-process authority, the owner decisions ENV-01..ENV-14 recorded in the binding owner ratification; (2) gives the parent's phrase 'a target holding data' a normative, machine-verifiable meaning that distinguishes LAB_FIXTURE_DATA from DURABLE_UAT_DATA and CUSTOMER_DATA; (3) carves out ONE bounded exception, DESTROY_AND_REPROVISION_CONSTRUCTION_EXCEPTION, for the construction of initial canonical staging on a RESET_ELIGIBLE_STAGING target, with a PRESERVATION_BUNDLE required before destruction; (4) records the further requirements the owner attached (three-surface backup/restore with tombstone reapplication, forward migration proof on a non-virgin durable database, environment variable contract, sequenceComplete closure, ledger re-derivation, provider boundary); and (5) authorizes no destructive action.",
+    "what_this_amendment_is_not": [
+      "NOT a recovery-posture change for any target holding DURABLE_UAT_DATA or CUSTOMER_DATA: for those, and for production unconditionally, recovery remains RESTORE_REQUIRED exactly as the parent states.",
+      "NOT a weakening, retirement, narrowing or conditioning of any ledger gate. D1, S8, D3, D5 and every other gate keep their criteria, their enforcement, their owner and their first_required_at_stage.",
+      "NOT a new canonical stage. The seven stages remain the only release vocabulary; the owner milestone COMMERCIAL_V1_READY is bound to them by an event rule, not added to them.",
+      "NOT an implementation. No fixture manifest, classifier, preservation-bundle tool, ledger epoch, backup/restore script, forward-migration harness or runtime fix is written or scoped as code here.",
+      "NOT a destructive authorization, a hosted-apply authorization, a PROD-MIG-AUTH instance, or an ODS/HPO allocation.",
+      "NOT an adoption of any diagnosis of the sequenceComplete defect."
+    ]
+  },
+
+  "BINDING_OWNER_RATIFICATIONS": {
+    "source": "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json",
+    "status": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY, materialized by the same lane as this amendment",
+    "consumed_ids": ["ENV-01", "ENV-02", "ENV-03", "ENV-04", "ENV-05", "ENV-06", "ENV-07", "ENV-08", "ENV-09", "ENV-10", "ENV-11", "ENV-12", "ENV-13", "ENV-14"],
+    "made_release_effective_by_this_amendment": {
+      "ENV-04": "DEFINITIONS.PRESERVATION_BUNDLE and precondition CX-5",
+      "ENV-05": "DEFINITIONS.RESET_ELIGIBLE_STAGING and DESTROY_AND_REPROVISION_CONSTRUCTION_EXCEPTION",
+      "ENV-06": "DESTROY_AND_REPROVISION_CONSTRUCTION_EXCEPTION.what_it_does_not_do and RECOVERY_RULE_PRESERVED",
+      "ENV-07": "BACKUP_RESTORE_SCOPE_REQUIREMENT",
+      "ENV-08": "DEFINITIONS.FORWARD_MIGRATION_PROOF and FORWARD_MIGRATION_REQUIREMENT",
+      "ENV-10": "ENVIRONMENT_VARIABLE_CONTRACT",
+      "ENV-11": "ENVIRONMENT_VARIABLE_CONTRACT",
+      "ENV-12": "SEQUENCE_COMPLETE_DISPOSITION",
+      "ENV-13": "LEDGER_REDERIVATION_REQUIREMENT",
+      "ENV-14": "PROVIDER_BOUNDARY and EXPLICIT_NON_AUTHORIZATIONS"
+    },
+    "consumed_as_given": {
+      "ENV-01": "topology fact; no release-process effect beyond naming the only staging target this amendment can ever concern",
+      "ENV-02": "topology fact; restated under PROVIDER_BOUNDARY.no_second_project_implied",
+      "ENV-03": "topology rule; restated under PROVIDER_BOUNDARY.no_second_project_implied",
+      "ENV-09": "topology fact; the production veto in the parent (SSL-09, PROD-MIG-AUTH production instance) is untouched"
+    },
+    "HPO-G_relationship": "HPO-G (docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json) is neither reopened nor weakened. HPO-G.2 requires, before hosted DDL, a backup/restore plan among five conjunctive preconditions; the parent materialized it as HOSTED_DDL_PRECONDITIONS HDP-1..HDP-5. This amendment leaves HDP-1..HDP-5 in force for every corpus apply against every hosted target, including the freshly reprovisioned target the exception produces, and adds to what a backup/restore proof must cover (BACKUP_RESTORE_SCOPE_REQUIREMENT). The exception concerns the destruction of a target whose entire content is proven LAB_FIXTURE_DATA, and it requires that content to be preserved in the same packet shapes HDP-2 uses."
+  },
+
+  "SOURCE_CONFLICT": {
+    "found_by": "Lane CV1-ENV-O2 (read-only feasibility review of a same-project return of the principal staging project to a Uellix-virgin state). The conflict was ESCALATED rather than resolved in that lane, which is the correct disposition under the fail-closed rule: a reviewer who resolves an authority contradiction by choosing one side has silently written authority.",
+    "the_clauses_in_tension": {
+      "owner_side": "ENV-05: initial canonical staging may be created by destructive reprovisioning of the existing project ONLY while the target contains no durable UAT/customer data under an explicit governed predicate.",
+      "release_authority_side": "Parent CANONICAL_STAGES ordinal 2 (STAGING_ALIGNED) required_rollback_recovery_evidence, last sentence; parent EVIDENCE_PACKETS RESTORE_PROOF doctrine_correction; ledger gate S8 note; ledger DUPLICATE_GATE_RESOLUTION DGR-06 frozen_correction; ledger OPEN_FINDINGS AT-F-06. All five say, in words that differ only slightly, that for a target holding data recovery is RESTORE_REQUIRED and destroy-and-reprovision is not a recovery posture.",
+      "hpo_g_side": "HPO-G.2 and HDP-2 require backup and restore capability before any hosted DDL; the principal staging project is not empty, so a naive reading treats its destruction as a data-loss event that only a D1-grade backup could precede."
+    },
+    "why_this_is_a_genuine_authority_gap_and_not_a_contradiction_of_intent": "The parent's rule was written against the binary EMPTY versus HOLDING DATA, and it says so itself: the destroy-and-reprovision doctrine 'was calibrated for an EMPTY target'. The principal staging project is not empty, but what it holds is provisioning state, sentinel rows, laboratory identities and synthetic rows that the repository's own recovery table already knows how to reason about: db/hosted/baseline-recovery.ts returns HALT_AND_ESCALATE when a project holdsIrreplaceableData and names as its revisit condition 'the data is exported and verified restorable'. The owner's decision supplies exactly the missing third category and the missing precondition: laboratory data that is preserved and verified restorable before destruction is not irreplaceable, and a target holding only such data is, for the recovery-posture rule, the empty target the doctrine was calibrated for. The parent did not consider that category; it did not reject it. Nothing in the owner's decision touches a target that holds durable or customer data.",
+    "what_the_resolution_must_preserve": [
+      "RESTORE_REQUIRED for any target holding DURABLE_UAT_DATA or CUSTOMER_DATA, verbatim.",
+      "RESTORE_REQUIRED for production, unconditionally, verbatim.",
+      "'destroy and reprovision is NOT a recovery posture', verbatim: the exception is a CONSTRUCTION posture invoked from a fresh observation under a separate authority, never a response to a failed apply.",
+      "D1, S8, D5 and every HOSTED_DDL_PRECONDITION for every corpus apply, unchanged.",
+      "Fail-closed classification: an unclassified row makes the target ineligible; a human label classifies nothing."
+    ]
+  },
+
+  "SUPERSEDED_PARENT_CLAUSES": {
+    "rule": "Each entry names one parent clause, quotes it verbatim, and states the SINGLE respect in which it no longer controls. Every other word of the clause continues to control.",
+    "entries": [
+      {
+        "id": "SPC-1",
+        "location": "CANONICAL_STAGES.stages[ordinal=2 STAGING_ALIGNED].required_rollback_recovery_evidence",
+        "verbatim_parent_text": "D1 as the backup and restore CAPABILITY with at least one proven restore, and S8 as a verified backup taken in the window immediately preceding the data-definition change. For a target holding data, recovery is RESTORE_REQUIRED: destroy and reprovision is NOT a recovery posture.",
+        "respect_in_which_superseded": "The phrase 'a target holding data' is given the normative meaning in DEFINITIONS.RESET_INELIGIBLE_STAGING: a target holds data, for this sentence, when it holds DURABLE_UAT_DATA or CUSTOMER_DATA, or holds any row a CLASSIFICATION_RUN cannot classify, or is production, or has not been freshly observed. A target proven RESET_ELIGIBLE_STAGING is, for this sentence ONLY and only while eligibility holds, treated as the EMPTY target the destroy-and-reprovision doctrine was calibrated for, subject to the additional preconditions of DESTROY_AND_REPROVISION_CONSTRUCTION_EXCEPTION.",
+        "everything_else_continues": "The first sentence (D1 and S8 as the required evidence at STAGING_ALIGNED) is untouched. The words 'destroy and reprovision is NOT a recovery posture' are untouched: the exception is a construction posture and is never citable as recovery. RESTORE_REQUIRED for a target holding DURABLE_UAT_DATA or CUSTOMER_DATA is untouched."
+      },
+      {
+        "id": "SPC-2",
+        "location": "EVIDENCE_PACKETS[packet=RESTORE_PROOF].doctrine_correction",
+        "verbatim_parent_text": "For a target holding data, recovery is RESTORE_REQUIRED. The destroy-and-reprovision doctrine was calibrated for an EMPTY target and is not a recovery path for staging or production.",
+        "respect_in_which_superseded": "Identical to SPC-1: 'a target holding data' takes the normative meaning in DEFINITIONS.RESET_INELIGIBLE_STAGING, and a RESET_ELIGIBLE_STAGING target is, for this sentence only, the EMPTY target the doctrine was calibrated for. The sentence's application to production is untouched and unconditional.",
+        "everything_else_continues": "The packet's contents list and its binding ('A backup that has never been restored from is an untested assumption') are untouched and are re-used by DEFINITIONS.PRESERVATION_BUNDLE, which must carry a RESTORE_PROOF of its own."
+      }
+    ]
+  },
+
+  "QUALIFIED_CLAUSES_NOT_SUPERSEDED": {
+    "rule": "These clauses continue to control in full. Each entry records only how the clause is to be read alongside this amendment, so that a successor does not mistake a companion restatement of the parent rule for an unamended contradiction, and does not mistake a measured fact for a rule.",
+    "entries": [
+      {
+        "id": "QC-1",
+        "artifact": "companion ledger",
+        "location": "GATES[id=S8].note",
+        "verbatim_text": "Staging is no longer an empty database, so the destroy-and-reprovision doctrine, which was calibrated for an empty target, no longer constitutes a recovery path. Recovery for staging is RESTORE_REQUIRED.",
+        "reading": "A restatement of SPC-1 in the ledger. It is read with the same normative meaning of 'holding data'. Gate S8 itself (criterion, enforcement, owner, first_required_at_stage, evidence_class) is untouched and remains required before any staging DDL, including the corpus apply on a reprovisioned target."
+      },
+      {
+        "id": "QC-2",
+        "artifact": "companion ledger",
+        "location": "DUPLICATE_GATE_RESOLUTION[id=DGR-06].frozen_correction",
+        "verbatim_text": "For any non-empty target, recovery is RESTORE_REQUIRED. Destroy and reprovision is NOT an acceptable recovery posture for a target holding data.",
+        "reading": "'Non-empty' and 'holding data' are read per DEFINITIONS.RESET_INELIGIBLE_STAGING. The canonicalization of D1, S8, D3, D5 as the backup gates is untouched."
+      },
+      {
+        "id": "QC-3",
+        "artifact": "companion ledger",
+        "location": "OPEN_FINDINGS[id=AT-F-06]",
+        "verbatim_text": "The destroy-and-reprovision doctrine is calibrated for an empty target and is not a recovery path for a target holding data.",
+        "reading": "The finding and its disposition RESOLVED_BY_FROZEN_CORRECTION_IN_DGR_06 stand. This amendment does not reopen the finding; it defines the boundary of 'empty' that the finding presupposed."
+      },
+      {
+        "id": "QC-4",
+        "artifact": "parent",
+        "location": "PRODUCTION_MIGRATION_AUTHORITY_PREREQUISITE.two_instances.staging.additional_constraint",
+        "verbatim_text": "The provisioning applier refuses a non-virgin target, and staging is not virgin, so the only resumable route is the operator applier. That applier pins a single expected branch name measured from the LOCAL branch, so the authority must resolve the pin WITHOUT pushing the branch: pushing it would deploy new code against the old database, the exact inverse of the required order.",
+        "reading": "A measured fact at the parent's AS_OF_HEAD, not a rule. If a future destructive packet, separately authorized, reprovisions a RESET_ELIGIBLE_STAGING target to a Uellix-virgin state, the provisioning applier's virginity refusal (db/hosted/hosted-provisioning-runner.ts, PROVISIONING_TARGET_NOT_VIRGIN) no longer fires and a second route exists. This amendment records that consequence; it does not choose the route, resolve the branch pin, or authorize the packet. The staging PROD-MIG-AUTH instance remains DOES NOT EXIST."
+      }
+    ]
+  },
+
+  "DEFINITIONS": {
+    "rule": "These are the NORMATIVE forms. Only these may be cited as predicates by a packet, gate, test or authority. A human label ('test data', 'demo org', a comment, a naming convention) classifies nothing on its own; classification is the output of a CLASSIFICATION_RUN under a STAGING_FIXTURE_MANIFEST. Every predicate here fails closed: anything not affirmatively proven to be in the permissive category is in the restrictive one.",
+
+    "STAGING_FIXTURE_MANIFEST": {
+      "kind": "SUPPORTING_TERM",
+      "definition": "A committed, machine-readable JSON artifact under docs/ops/staging/** (path and schema to be authored by a future governed lane; not authored here) that is digest-bound to one release SHA and enumerates the CLOSED WORLD of classification surfaces for one named target. For every relation observed in a closed-world catalog census of the target (every user relation in every non-system schema, including the provisioning journal schema, plus the provider's auth user and identity relations and the storage object relation) it carries exactly one rule from the closed set: FIXTURE_ALL_ROWS (every row is provisioning or laboratory state by construction, for example the provisioning journal and the sentinel), FIXTURE_BY_PREDICATE (a boolean predicate over the row, expressed as SQL, that is TRUE exactly for laboratory rows, for example membership of an organization id in an enumerated laboratory allowlist or a creator identity in the laboratory identity allowlist), EXPECTED_EMPTY (the relation must hold zero rows), or DURABLE (any row present is DURABLE_UAT_DATA by construction). It also carries the laboratory identity allowlist for the auth user relation (stable user identifiers and a one-way hash of each email; never raw PII beyond what the repository already carries), the storage bucket and object-prefix allowlist, the release SHA, and the digest of the manifest content.",
+      "fail_closed_rules": [
+        "A relation present in the census with no manifest rule is UNCLASSIFIED and makes the target RESET_INELIGIBLE.",
+        "A manifest rule naming a relation absent from the census is MANIFEST_STALE and makes the target RESET_INELIGIBLE.",
+        "A manifest whose bound SHA is not the SHA the CLASSIFICATION_RUN cites is MANIFEST_STALE.",
+        "A FIXTURE_BY_PREDICATE rule whose predicate is not a total boolean function of the row (for example one that consults wall-clock time or an external service) is INVALID and makes the target RESET_INELIGIBLE."
+      ]
+    },
+
+    "CLASSIFICATION_RUN": {
+      "kind": "SUPPORTING_TERM",
+      "definition": "A machine execution, over a fresh observation of the target that satisfies the parent's RULE_OBSERVATION_FRESHNESS, of every rule in a STAGING_FIXTURE_MANIFEST against every row of every relation in the census. It emits, per relation and in total, the counts of rows classified FIXTURE, DURABLE_UAT, CUSTOMER and UNCLASSIFIED, the manifest digest, the release SHA, the target identifier, the observation identifier and timestamp, and the flags MANIFEST_STALE and MANIFEST_INVALID. Its success predicate is: UNCLASSIFIED == 0 AND DURABLE_UAT == 0 AND CUSTOMER == 0 AND MANIFEST_STALE == false AND MANIFEST_INVALID == false AND every EXPECTED_EMPTY relation reports zero rows. The report is an observation artifact and expires the moment the target mutates. No numeral in this amendment describes the size of the population; every count is derived at run time.",
+      "customer_detection_is_conjunctive_with_the_manifest": "A row is CUSTOMER if the manifest classifies it so, OR if any of the CUSTOMER_DATA indicators below is present regardless of the manifest. The manifest may therefore never launder a customer row into FIXTURE."
+    },
+
+    "LAB_FIXTURE_DATA": {
+      "definition": "The set of rows (and storage objects) that a CLASSIFICATION_RUN classifies FIXTURE under a valid STAGING_FIXTURE_MANIFEST, AND that satisfy every one of the following necessary conditions: (a) the row exists only because governed provisioning, rehearsal or laboratory activity created it; (b) the row is reproducible from the repository corpus, from a committed fixture or seed source, or from a PRESERVATION_BUNDLE; (c) the row is not attributable to a real customer organization or to a real external person outside the laboratory identity allowlist; (d) the row carries no live payment-provider customer or subscription identity; (e) the row records no legal or commercial acceptance by a real party; (f) the row is not derived from production in any form (the staging provisioning requirement of zero production data, docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md P4).",
+      "categories": {
+        "PROVISIONING_STATE": "the provisioning journal, the sentinel, bootstrap markers, hosted package journal rows, and the role/grant/default-privilege inventory of the managed uellix_* roles as observed",
+        "LAB_IDENTITY": "auth user and identity rows enumerated by the laboratory identity allowlist, together with the application user rows they materialize",
+        "SYNTHETIC_BUSINESS_ROW": "organizations, memberships, projects, evidence, proxies, outcomes, reports and every other business row created for laboratory purposes and captured by a FIXTURE_BY_PREDICATE rule",
+        "STORAGE_FIXTURE_OBJECT": "storage objects under an allowlisted bucket and prefix, together with the names and definitions of the policies on the storage object relation as observed"
+      },
+      "consequence": "LAB_FIXTURE_DATA may be lost, but only AFTER it is captured in a verified PRESERVATION_BUNDLE (ENV-04). Its loss without a bundle is a governance failure, not an accepted outcome."
+    },
+
+    "DURABLE_UAT_DATA": {
+      "definition": "The union of (a) every row a CLASSIFICATION_RUN classifies DURABLE_UAT, which includes every row in a relation the manifest marks DURABLE and every row created by governed user-acceptance activity on the target after a DURABLE_DATA_DECLARATION for that target exists in the repository; and (b) BY FAIL-CLOSED RULE, every UNCLASSIFIED row and every row of a relation with no manifest rule, which are treated as DURABLE_UAT_DATA for every eligibility decision.",
+      "DURABLE_DATA_DECLARATION": "A committed repository artifact, owner-ratified, that names the target identifier, the release SHA, the timestamp from which user-acceptance activity on that target is durable, and the D1 evidence (per BACKUP_RESTORE_SCOPE_REQUIREMENT) that ENV-07 requires to exist before the first durable row. A target for which such a declaration exists is RESET_INELIGIBLE from that timestamp onward regardless of what any later CLASSIFICATION_RUN reports.",
+      "recovery_posture": "RESTORE_REQUIRED. Destroy and reprovision is not a posture for a target holding DURABLE_UAT_DATA, exactly as the parent states."
+    },
+
+    "CUSTOMER_DATA": {
+      "definition": "Any row or object attributable to a real customer organization or to a real external person outside the laboratory identity allowlist, and any row derived from production. Indicators, any one of which is sufficient regardless of the manifest: a legal or commercial acceptance binding a real party; a live payment-provider customer, subscription, invoice or webhook-event identity; an auth identity not in the laboratory identity allowlist; an evidence or report object uploaded by such an identity; a row whose provenance is a production observation, dump, copy or restore.",
+      "recovery_posture": "RESTORE_REQUIRED, unconditionally.",
+      "presence_on_staging_is_an_incident": "The staging provisioning requirement P4 forbids production and real data on staging. A CLASSIFICATION_RUN that reports CUSTOMER > 0 therefore does more than make the target RESET_INELIGIBLE: it is a finding to be escalated under the parent's security stop lines, not a state to be worked around."
+    },
+
+    "RESET_ELIGIBLE_STAGING": {
+      "definition": "A predicate over the triple (target T, observation O, release SHA S), TRUE only when every one of the following holds and evidenced by an ELIGIBILITY_PACKET that cites each item by identifier and digest: E1 IDENTITY: T's project reference equals KNOWN_STAGING_PROJECT_REF as exported by db/hosted/target-identity.ts, the production denylist of the same module is loaded, and T is not a known production identifier. E2 FRESHNESS: O satisfies the parent's RULE_OBSERVATION_FRESHNESS against T and includes the closed-world catalog census the manifest requires. E3 MANIFEST: a STAGING_FIXTURE_MANIFEST for T exists, is committed at S, and is digest-bound to S. E4 CLASSIFICATION: a CLASSIFICATION_RUN over O under that manifest reports success (UNCLASSIFIED == 0, DURABLE_UAT == 0, CUSTOMER == 0, not stale, not invalid, every EXPECTED_EMPTY relation empty). E5 NO_DURABLE_DECLARATION: no DURABLE_DATA_DECLARATION for T exists in the repository at S. E6 BUNDLE: a PRESERVATION_BUNDLE for T was produced AFTER O with no intervening mutation of T and its RESTORE_PROOF succeeded. E7 NO_MUTATION_SINCE: no mutation of T has occurred after O. The predicate is a property of the triple, never of T alone.",
+      "automatic_expiry": "Eligibility is FALSE the moment any of E1..E7 ceases to hold. In particular it becomes false automatically when any DURABLE_UAT_DATA or CUSTOMER_DATA row appears (E4), when any row becomes unclassifiable (E4), when a DURABLE_DATA_DECLARATION is committed (E5), or when T mutates for any reason including the destructive operation itself (E7). An ELIGIBILITY_PACKET is therefore valid for exactly one destructive window and never carries over.",
+      "what_eligibility_does_not_confer": "Eligibility is a NECESSARY condition of the exception, not authority to act. ENV-14 withholds all destructive authorization; a separate, owner-ratified, provider-cleared authority is required before any destructive packet (see DESTROY_AND_REPROVISION_CONSTRUCTION_EXCEPTION.preconditions CX-7 and CX-8)."
+    },
+
+    "RESET_INELIGIBLE_STAGING": {
+      "definition": "Every hosted target that is not proven RESET_ELIGIBLE_STAGING by a currently valid ELIGIBILITY_PACKET. This includes, without limitation: every production target unconditionally; every target holding DURABLE_UAT_DATA or CUSTOMER_DATA; every target for which any row is UNCLASSIFIED or the manifest is stale or invalid; every target for which a DURABLE_DATA_DECLARATION exists; every target not freshly observed; and every target for which no PRESERVATION_BUNDLE with a successful RESTORE_PROOF exists.",
+      "recovery_posture": "RESTORE_REQUIRED. For this category the parent's rule applies verbatim and this amendment changes nothing: destroy and reprovision is NOT a recovery posture and is NOT a construction posture either.",
+      "this_is_the_normative_meaning_of_the_parent_phrase": "'A target holding data' (SPC-1, SPC-2) and 'non-empty target' (QC-2) mean RESET_INELIGIBLE_STAGING. An actually empty target and a RESET_ELIGIBLE_STAGING target are the only two states the parent's EMPTY calibration covers."
+    },
+
+    "PRESERVATION_BUNDLE": {
+      "definition": "A digest-bound capture, stored in governed custody OUTSIDE the target and never committed to the repository as bytes, of everything on a RESET_ELIGIBLE_STAGING candidate that a CLASSIFICATION_RUN classified FIXTURE, produced after the qualifying observation with no intervening mutation, and accompanied by its own RESTORE_PROOF.",
+      "required_contents": [
+        "the observation packet and the CLASSIFICATION_RUN report it was produced from, by identifier and digest",
+        "a logical export of every FIXTURE_ALL_ROWS relation and of the FIXTURE-classified row set of every FIXTURE_BY_PREDICATE relation, with a per-relation row count and content digest",
+        "PROVISIONING_STATE: the provisioning journal, the sentinel, bootstrap markers and the hosted package journal, with digests",
+        "LAB_IDENTITY: the auth user and identity records of the laboratory identity allowlist in the form needed to re-create them; credential material, if any is needed at all, only inside the bundle's encrypted store and never in any repository artifact, log or report",
+        "STORAGE_FIXTURE_OBJECT: the object listing and bytes for every allowlisted bucket and prefix, and the names and definitions of the policies on the storage object relation as observed",
+        "the role, grant and default-privilege inventory of the managed uellix_* roles as observed, so that a reprovisioned target can be compared to it",
+        "a LEDGER_EPOCH_BOUNDARY record: the target reference, the epoch identifier that closes the pre-destruction history of every repository evidence ledger indexed by that reference, and the closing observation identifier (the epoch design itself is a future governed lane, see FUTURE_IMPLEMENTATION_SURFACE FIS-ENV-4)",
+        "BACKUP_PACKET fields exactly as the parent defines them: target identifier, bundle identifier, timestamp, method, scope, and confirmation that no mutation occurred between the observation and the bundle",
+        "RESTORE_PROOF exactly as the parent defines it, executed by restoring the bundle into a DISPOSABLE substrate (the local rehearsal substrate the repository already provides for baseline rehearsal, or a disposable provider project), with post-restore verification that every per-relation count and content digest equals the pre-destruction value",
+        "the release SHA, the manifest digest and the bundle's own digest"
+      ],
+      "what_it_is_not": "A PRESERVATION_BUNDLE is NOT a D1 backup, does NOT satisfy S8, D3 or D5, does NOT cover DURABLE_UAT_DATA or CUSTOMER_DATA (by construction none may be present), and is NOT the three-surface backup-and-restore proof with tombstone reapplication that ENV-07 requires before durable data and before RELEASE_CANDIDATE. It is the owner's condition for permitting the loss of laboratory data, and nothing more."
+    },
+
+    "FORWARD_MIGRATION_PROOF": {
+      "definition": "An evidence packet demonstrating that the governed forward migration from schema state N to schema state N+1 was executed against a NON-virgin database holding durable data, with that data intact afterwards. Required contents: (1) a source target at schema state N holding a durable population, either DURABLE_UAT_DATA on the staging target under a DURABLE_DATA_DECLARATION or a restored copy of such a population on a disposable target, proven by a fresh observation showing journal parity with the exact corpus of SHA_N (ledger gate S1 criterion, by unit count AND manifest digest, derived at evaluation time); (2) the exact corpus delta from N to N+1 derived from SHA_N+1, enumerated and digest-bound (parent HDP-4); (3) a pre-apply inventory of the durable population: per-relation row counts and content digests; (4) the apply executed in the forced order schema, then ACL, then code, with all five HOSTED_DDL_PRECONDITIONS satisfied; (5) a post-apply inventory demonstrating that the durable population is intact, meaning equality with (3) for every relation the delta does not transform and, for every relation it does transform, a transformation declared in advance in the delta's authority and verified row-for-row; (6) the successor ACL privilege sweep with zero permission-denied results (ledger gate S3 criterion); (7) the restore-then-roll-forward path (ledger gate D3) exercised at least once on the same delta; (8) if any restore occurred, tombstone reapplication proven per BACKUP_RESTORE_SCOPE_REQUIREMENT.",
+      "explicitly_not_satisfied_by": [
+        "any apply against a virgin or freshly reprovisioned target",
+        "any apply against a target whose population is entirely LAB_FIXTURE_DATA, unless a durable-shaped population restored from a governed source is present and inventoried",
+        "a local rehearsal that applies the full corpus from unit one",
+        "a schema-only diff or a dump comparison without the row-level inventory in (3) and (5)"
+      ]
+    }
+  },
+
+  "DESTROY_AND_REPROVISION_CONSTRUCTION_EXCEPTION": {
+    "scope": "The CONSTRUCTION of initial canonical staging on the principal staging project by destroying and reprovisioning it, ONLY while it is RESET_ELIGIBLE_STAGING. Nothing else. It applies to no production target, to no RESET_INELIGIBLE target, and to no operation other than the one construction it names.",
+    "not_a_recovery_posture": "The exception may be invoked ONLY by a construction packet planned from a fresh observation under a separate authority (CX-8). It may NEVER be invoked in response to a failed, partial, indeterminate or unauthorized apply on the target: that is recovery, and for a target holding data recovery is RESTORE_REQUIRED (SPC-1, verbatim). Once the target has been reprovisioned and is provably virgin, the parent's own EMPTY-target calibration and the repository's recovery table (db/hosted/baseline-recovery.ts) apply to it as written; this amendment adds no rule for that state.",
+    "preconditions": {
+      "rule": "All eight are CONJUNCTIVE and must hold immediately before the destructive operation. Seven of eight is zero authority. There is no partial credit and no emergency path.",
+      "entries": [
+        { "id": "CX-1", "name": "target identity", "criterion": "RESET_ELIGIBLE_STAGING E1: the target reference equals KNOWN_STAGING_PROJECT_REF, the production denylist is loaded, and the hosted apply confirmation token of the provisioning runner names exactly this reference." },
+        { "id": "CX-2", "name": "fresh closed-world observation", "criterion": "RESET_ELIGIBLE_STAGING E2: an observation packet satisfying RULE_OBSERVATION_FRESHNESS with the closed-world catalog census, taken after the last completed mutation and before this operation, with no intervening mutation." },
+        { "id": "CX-3", "name": "fixture manifest bound to the release SHA", "criterion": "RESET_ELIGIBLE_STAGING E3." },
+        { "id": "CX-4", "name": "classification success, fail closed", "criterion": "RESET_ELIGIBLE_STAGING E4 and E5: a CLASSIFICATION_RUN reporting zero UNCLASSIFIED, zero DURABLE_UAT and zero CUSTOMER rows, no stale or invalid manifest, every EXPECTED_EMPTY relation empty, and no DURABLE_DATA_DECLARATION for the target." },
+        { "id": "CX-5", "name": "preservation bundle verified", "criterion": "RESET_ELIGIBLE_STAGING E6: a PRESERVATION_BUNDLE produced after CX-2 with no intervening mutation, carrying the BACKUP_PACKET fields and a successful RESTORE_PROOF into a disposable substrate. This is the HDP-2 evidence for the destruction step: the same two packet shapes the parent requires, scoped to the classified population, which by CX-4 is the entire population. It marks no ledger gate satisfied." },
+        { "id": "CX-6", "name": "ledger epoch boundary recorded", "criterion": "The LEDGER_EPOCH_BOUNDARY record in the bundle is committed to the repository before destruction, so that every evidence ledger indexed by the target reference (artifacts/**, docs/ops/staging/evidence/**) can distinguish pre-destruction from post-reprovision history. The epoch mechanism is a future governed design (FIS-ENV-4); until it exists CX-6 cannot be satisfied and the exception cannot be invoked." },
+        { "id": "CX-7", "name": "provider boundary closed", "criterion": "Every provider-dependent surface listed under PROVIDER_BOUNDARY.unresolved_surfaces is resolved either by written provider confirmation or by a rehearsal on a disposable provider substrate that exercises the same surface, and the resolution is recorded as an evidence artifact. Until then the state is SAME_PROJECT_RESET_NOT_YET_AUTHORIZED and CX-7 fails." },
+        { "id": "CX-8", "name": "separate destructive packet authority", "criterion": "An owner-ratified authority, distinct from this amendment and from the binding owner ratification, exists BEFORE the attempt and names: the exact target identifier; the ELIGIBILITY_PACKET by digest; the PRESERVATION_BUNDLE by digest; the destructive steps in order; the exact corpus to be applied afterwards, digest-bound and derived from a named SHA (HDP-4); the successor ACL package (HDP-5); the compatibility plan and the forced ordering (HDP-3); the resolution of the applier's expected-branch pin; the batch boundary; and the recovery posture for the reprovisioned target. This is the staging instance of PROD-MIG-AUTH in its destructive-construction form. ENV-14 withholds it; this amendment does not create it." }
+      ]
+    },
+    "what_it_does_not_do": [
+      "It does not satisfy, waive, defer or narrow ledger gates D1, S8, D3 or D5. D1 (capability with at least one proven restore, scoped per BACKUP_RESTORE_SCOPE_REQUIREMENT) and S8 remain first required at STAGING_ALIGNED and remain preconditions (HDP-2) of the corpus apply on the reprovisioned target.",
+      "It does not declare STAGING_ALIGNED or any other stage. A reprovisioned target is a virgin target with nothing declared; every STAGING_ALIGNED gate, plus SEQUENCE_COMPLETE_DISPOSITION and LEDGER_REDERIVATION_REQUIREMENT, must still be satisfied.",
+      "It does not touch HOSTED_DDL_PRECONDITIONS HDP-1..HDP-5 for any corpus apply against any target.",
+      "It does not apply to production, to any RESET_INELIGIBLE target, or to any target after a DURABLE_DATA_DECLARATION.",
+      "It does not authorize the destructive operation. It defines the only conditions under which CX-8 could later authorize one.",
+      "It does not state or imply that a second Supabase project is required (ENV-02, ENV-03)."
+    ],
+    "automatic_termination": "The exception ceases to be available, without any further act, at the earliest of: the first DURABLE_DATA_DECLARATION for the target; the first CLASSIFICATION_RUN reporting DURABLE_UAT > 0, CUSTOMER > 0 or UNCLASSIFIED > 0; or the declaration of STAGING_ALIGNED on the reprovisioned target, after which the target is ordinary hosted staging under the parent's unamended rules."
+  },
+
+  "RECOVERY_RULE_PRESERVED": {
+    "statement": "For every target holding DURABLE_UAT_DATA or CUSTOMER_DATA, and for every production target, recovery is RESTORE_REQUIRED. Destroy and reprovision is NOT a recovery posture for any target, and is NOT a construction posture for any RESET_INELIGIBLE target. This amendment carves out exactly one construction case for laboratory-only staging with a verified preservation bundle, and nothing else.",
+    "production_untouched": "Nothing in this amendment applies to a production target. The parent's production instance of PROD-MIG-AUTH, its production observation requirement, its D5 rehearsal requirement, security stop line SSL-09 and the hosted tooling's known-production-identifier veto are all untouched."
+  },
+
+  "BACKUP_RESTORE_SCOPE_REQUIREMENT": {
+    "owner_source": "ENV-07",
+    "statement": "The backup-and-restore proof that ledger gates D1 and S8 require must cover three surfaces conjunctively: PostgreSQL, Auth, and Storage. A PostgreSQL-only proof is incomplete. The proof must additionally demonstrate TOMBSTONE REAPPLICATION: after a restore, every governed deletion or erasure recorded after the backup point is re-applied so that a restore cannot resurrect data that was lawfully erased. The evidence lives in the parent's BACKUP_PACKET and RESTORE_PROOF packets, whose contents lists are extended by this requirement, not replaced.",
+    "deadlines": "Both bind: before the first DURABLE_UAT_DATA row is created on any hosted target (the DURABLE_DATA_DECLARATION must cite this evidence), and before RELEASE_CANDIDATE is declared. D1's existing first_required_at_stage of STAGING_ALIGNED is earlier than both and is not moved.",
+    "effect_on_gates": "ADDITIVE ONLY. D1 and S8 gain scope; no gate loses any criterion."
+  },
+
+  "FORWARD_MIGRATION_REQUIREMENT": {
+    "owner_source": "ENV-08",
+    "statement": "FORWARD_MIGRATION_PROOF (DEFINITIONS) must exist and be evidenced before the first hosted apply of any corpus delta to any target holding DURABLE_UAT_DATA or CUSTOMER_DATA, and in every case no later than PRODUCTION_READY.",
+    "milestone_binding": "The owner names the deadline COMMERCIAL_V1_READY. That is a programme milestone, not one of the seven canonical stages, and this amendment adds no stage. The event-bound rule above controls every reachable case independently of where the milestone is later placed; its placement, if any, belongs to the ledger re-derivation that LEDGER_REDERIVATION_REQUIREMENT mandates.",
+    "no_gate_id_allocated": "This requirement is recorded by name. It allocates no ledger gate identifier, because the ledger's gate list is a shared registry that this lane does not edit; the re-derived ledger is the artifact that places it."
+  },
+
+  "ENVIRONMENT_VARIABLE_CONTRACT": {
+    "owner_source": ["ENV-10", "ENV-11"],
+    "names_only": "Every statement here is about a variable NAME and, where unavoidable, the literal environment name. No value, connection string, key, token or hostname is recorded, and none may be added by a successor citing this section.",
+    "governed_vercel_staging_must_set": [
+      { "variable": "UELLIX_APP_ENV", "requirement": "explicitly set to the literal environment name staging. Never left unset: the environment resolver treats an absent or unrecognized value as a hosted default that is not staging (db/safety/database-access.ts, resolveEnvironmentDecision), which the staging risk register records as an ambiguity hazard." },
+      { "variable": "NEXT_PUBLIC_SUPABASE_URL", "requirement": "carries the project reference of the principal staging project (ENV-01) and no other." },
+      { "variable": "UELLIX_RUNTIME_DATABASE_URL", "requirement": "the NORMATIVE Commercial V1 runtime database contract (db/safety/resolve-capability-database-url.ts, RUNTIME_DATABASE_URL_ENV_VAR), declaring the least-privileged runtime role, and proving by its own identity the same project reference as the previous two." }
+    ],
+    "coherence_binding": "UELLIX_APP_ENV staging pin == project reference in NEXT_PUBLIC_SUPABASE_URL == project identity proven by UELLIX_RUNTIME_DATABASE_URL. This is the SYS-03 invariant implemented by lib/supabase/project-coherence.ts (assertSupabaseProjectCoherence), which derives its expectation from db/safety/runtime-project-pins.ts and its Postgres identity from the database safety layer. Coherence is satisfied by that check passing at runtime start in the staging environment, evidenced by the deployment smoke (ledger gate M11) and the runtime identity gate (S6); it is not satisfied by documentation.",
+    "DATABASE_URL_disposition": "LEGACY_AND_INERT_ON_INTEGRATION. DATABASE_URL is the pre-cutover shared name (LEGACY_SHARED_DATABASE_URL_ENV_VAR in the same module): it is never read for a connection, only detected so that an operator who still exports it is warned that it is inert. Commercial V1 Vercel staging MUST NOT provision DATABASE_URL for runtime product connectivity, and no authority, runbook or checklist may instruct it to. Its continued presence in the repository's example environment file (recorded as risk B4 in docs/ops/staging/STELLA_STAGING_RISK_REGISTER.md) is a legacy residue owned by an integration-scoped reconciliation lane (FIS-ENV-11); it is not a provisioning instruction and must not be read as one.",
+    "UELLIX_RUNTIME_DATABASE_URL_disposition": "NORMATIVE_RUNTIME_CONTRACT."
+  },
+
+  "SEQUENCE_COMPLETE_DISPOSITION": {
+    "owner_source": "ENV-12",
+    "disposition": "MUST_CLOSE_BEFORE_STAGING_ALIGNED",
+    "required_sequence": [
+      "1. INDEPENDENT DEFECT ADJUDICATION: a read-only lane, independent of the lanes that produced the conflicting descriptions, establishes what the defect actually is by a reproducible executable case against the repository's own provisioning runner and its evidence surfaces, and records the adjudication as an artifact.",
+      "2. FIX under a separate governed implementation lane, authorized by that adjudication.",
+      "3. EXECUTABLE REGRESSION CONTROL committed with the fix: a test that fails against the pre-fix behaviour and passes against the post-fix behaviour, with the mutation demonstrated in the lane's evidence."
+    ],
+    "diagnosis_deliberately_not_frozen": "Lanes CV1-ENV-O1 and CV1-ENV-O2 produced conflicting descriptions of the defect (premature completion versus failure to report completion at the final apply). This amendment adopts NEITHER as fact and records neither as the mechanism. A successor lane may not cite this amendment as having established what the defect is.",
+    "surfaces_named_not_diagnosed": "The field is carried by db/hosted/hosted-provisioning-runner.ts, db/hosted/chain-evidence.ts and db/hosted/checkpoint-a1.ts, and its documented contract is docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md section 7.3. Naming them locates the adjudication and asserts nothing about which is defective.",
+    "interim_consequence": "Until step 3 closes, a reported sequenceComplete value is not creditable evidence for ledger gate S2. S2's own note already requires provenance-recording observation rather than a presence flag; that requirement is reaffirmed, not changed."
+  },
+
+  "LEDGER_REDERIVATION_REQUIREMENT": {
+    "owner_source": "ENV-13",
+    "statement": "Before STAGING_ALIGNED is declared, docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json must be re-derived from the exact release corpus bound to the release SHA. Re-derivation is APPEND-ONLY: a successor ledger revision or amendment, never an in-place rewrite of the frozen v1.0.0 record, and it must honour the ledger's own supersession_semantics and closed STATE_VOCABULARY.",
+    "exact_corpus": "The enumerated, digest-bound unit set derived from the release SHA (parent HDP-4; ledger gate S1 criterion by unit count AND manifest digest). Derived at evaluation time. Not a range, not a prior count plus planned units.",
+    "no_stale_numerals": "Every figure the ledger measured at its own AS_OF_HEAD (migration file counts, journal positions, baseline unit counts and digests, table counts, readiness ratios, staged-versus-total unit figures) is HISTORY at that head. None is pinned, repeated or updated by this amendment, and none is an input to any stage declaration until re-derived. This amendment itself contains no such figure, by design and by self_check."
+  },
+
+  "PROVIDER_BOUNDARY": {
+    "owner_source": "ENV-14",
+    "state": "SAME_PROJECT_RESET_NOT_YET_AUTHORIZED",
+    "input_result": "Lane CV1-ENV-O2 returned SAME_PROJECT_RESET_NOT_PROVEN_PROVIDER_CONFIRMATION_REQUIRED. Consumed as given; not re-measured here.",
+    "unresolved_surfaces": [
+      { "id": "PB-1", "surface": "Auth identities: deletion of auth user and identity rows has no repository mechanism and depends on provider administrative semantics." },
+      { "id": "PB-2", "surface": "Triggers on the auth user relation: dropping them requires ownership held by the provider's auth administrative role, which the operator role does not hold (measured by CV1-ENV-O2)." },
+      { "id": "PB-3", "surface": "Policies on the storage object relation: dropping them requires ownership held by the provider's storage administrative role, which the operator role does not hold (measured by CV1-ENV-O2)." },
+      { "id": "PB-4", "surface": "Pooler mappings: whether they persist, reset or must be re-created across a same-project reset." },
+      { "id": "PB-5", "surface": "Platform backup and restore semantics of the hosting plan (also the parent's AT-U-05)." },
+      { "id": "PB-6", "surface": "Project identity persistence: whether the project reference survives the reset, which decides whether the LEDGER_EPOCH_BOUNDARY (CX-6) is required at all or whether a new reference makes the pre-destruction ledgers self-separating." }
+    ],
+    "closure_rule": "Each surface closes by written provider confirmation recorded as an evidence artifact, or by a rehearsal on a DISPOSABLE provider substrate (a throwaway project, never the principal staging project and never production) that exercises the same surface end to end and is recorded as an evidence artifact. Closure of all six is precondition CX-7. Until then no destructive packet can be authorized.",
+    "no_second_project_implied": "This boundary does NOT state or imply that a second Supabase project is required. ENV-02 holds: no second project by default. ENV-03 holds: a second project may be considered only if a technical review PROVES the existing project cannot safely be returned to a Uellix-virgin state and reprovisioned; a not-yet-proven result is not such a proof. A disposable rehearsal project used to close PB-1..PB-6 is a throwaway laboratory substrate, not a second staging project, and must be deleted after the rehearsal is evidenced."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Enumerated so that a successor cannot read this amendment as conferring any of them. The presence of a detailed precondition list for an action is NOT authority to take it.",
+    "non_authorizations": [
+      "NO destructive action against any Supabase project, database, schema, bucket, auth tenant or Vercel project is authorized (ENV-14).",
+      "NO hosted access of any kind was performed or is authorized.",
+      "NO deployment to any environment is authorized.",
+      "NO database mutation, data-definition change, data change or grant change is authorized against any target.",
+      "NO migration is applied, and NO next migration ordinal is declared, reserved or implied.",
+      "NO secret value is chosen, recorded, rotated or compared. Every environment statement here is satisfied by NAMES only.",
+      "NO test, script, manifest, classifier, bundle tool, epoch design or runtime fix is written by this lane.",
+      "NO shared registry edited by parallel writers is touched: no ledger gate id, maintenance-addendum ordinal, program-state entry, protected-grant entry or package script is added.",
+      "NO protected surface is touched: docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/** and the frozen ODS authority artifact are untouched.",
+      "NO existing gate is weakened, retired, narrowed or made conditional. Two parent sentences are given a normative meaning for one phrase; every gate keeps its criterion.",
+      "NO canonical stage is added or removed.",
+      "NO readiness figure, corpus count, unit count, table count or journal position is pinned, repeated or updated.",
+      "NO historical evidence is rewritten, and no stale observation is refreshed by computation.",
+      "NO diagnosis of the sequenceComplete defect is adopted.",
+      "NO second Supabase project is declared required."
+    ]
+  },
+
+  "FUTURE_IMPLEMENTATION_SURFACE": {
+    "rule": "Named so that successor lanes can be opened against a stable identifier. Each is a governed lane of its own; none is scoped, sequenced or authorized here beyond being named. These are open work items, not UNKNOWNs of this artifact: every rule above is fully determined without them.",
+    "items": [
+      { "id": "FIS-ENV-1", "surface": "STAGING_FIXTURE_MANIFEST schema and first instance for the principal staging project, digest-bound to a release SHA." },
+      { "id": "FIS-ENV-2", "surface": "CLASSIFICATION_RUN executor producing the ELIGIBILITY_PACKET, with positive and negative controls (an unclassified row, a stale manifest, a customer indicator each forcing RESET_INELIGIBLE)." },
+      { "id": "FIS-ENV-3", "surface": "PRESERVATION_BUNDLE producer and its RESTORE_PROOF rehearsal into the disposable substrate." },
+      { "id": "FIS-ENV-4", "surface": "LEDGER_EPOCH_BOUNDARY design for repository evidence ledgers indexed by project reference (the CV1-ENV-O2 design gap)." },
+      { "id": "FIS-ENV-5", "surface": "Closure of PROVIDER_BOUNDARY PB-1..PB-6 by provider confirmation or disposable-provider rehearsal." },
+      { "id": "FIS-ENV-6", "surface": "Independent adjudication of the sequenceComplete defect (SEQUENCE_COMPLETE_DISPOSITION step 1)." },
+      { "id": "FIS-ENV-7", "surface": "sequenceComplete fix with executable regression control (steps 2 and 3)." },
+      { "id": "FIS-ENV-8", "surface": "Append-only re-derivation of the Release Gate Ledger from the exact release corpus (LEDGER_REDERIVATION_REQUIREMENT)." },
+      { "id": "FIS-ENV-9", "surface": "D1 three-surface backup and restore with tombstone reapplication (BACKUP_RESTORE_SCOPE_REQUIREMENT)." },
+      { "id": "FIS-ENV-10", "surface": "FORWARD_MIGRATION_PROOF harness on a durable-shaped non-virgin target." },
+      { "id": "FIS-ENV-11", "surface": "Integration-scoped reconciliation of the repository's example environment file with the capability-per-variable contract (removing the legacy DATABASE_URL declaration; risk B4)." },
+      { "id": "FIS-ENV-12", "surface": "The destructive-construction packet authority (CX-8), which may be authored only after FIS-ENV-1..FIS-ENV-5 close." }
+    ]
+  },
+
+  "self_check": {
+    "superseded_parent_clauses": 2,
+    "qualified_clauses_not_superseded": 4,
+    "of_which_in_parent": 1,
+    "of_which_in_companion_ledger": 3,
+    "normative_definitions": 7,
+    "supporting_terms": 2,
+    "exception_preconditions_conjunctive": 8,
+    "provider_boundary_surfaces": 6,
+    "future_implementation_surfaces": 12,
+    "owner_ratification_ids_consumed": 14,
+    "parent_byte_unchanged": true,
+    "companion_ledger_byte_unchanged": true,
+    "canonical_stages_added": 0,
+    "gates_added": 0,
+    "gates_weakened_retired_or_conditioned": 0,
+    "gate_ids_allocated": 0,
+    "next_migration_ordinal_declared": false,
+    "secret_value_present": false,
+    "hosted_access_performed": false,
+    "destructive_action_authorized": false,
+    "corpus_or_readiness_numeral_pinned": false,
+    "sequence_complete_diagnosis_adopted": false,
+    "second_project_declared_required": false,
+    "database_url_named_as_runtime_contract": false,
+    "protected_surfaces_touched": 0,
+    "validation_method": "JSON parse, structural duplicate-key detection with a positive control, authority seal verification, secrets scan, whitespace diff check, ODS scope with a negative control, and the targeted authority/governance test files, all recorded in the pull request body"
+  },
+
+  "final_state": "STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDED_v1_0_1__OWNER_ENV_V1_1_MATERIALIZED__HOLDING_DATA_GIVEN_NORMATIVE_MEANING__ONE_BOUNDED_LAB_ONLY_CONSTRUCTION_EXCEPTION_WITH_PRESERVATION_BUNDLE__RESTORE_REQUIRED_PRESERVED_FOR_DURABLE_CUSTOMER_AND_PRODUCTION__NO_GATE_WEAKENED__NO_STAGE_ADDED__NO_DESTRUCTIVE_AUTHORIZATION__SAME_PROJECT_RESET_NOT_YET_AUTHORIZED",
+  "next_gate": "ENV_V1_1_AUTHORITY_READY_FOR_INDEPENDENT_REVIEW: independent, read-only authority review of this amendment together with its binding owner ratification at the pull request head, with no hosted access, bounded to (a) faithfulness to ENV-01..ENV-14, (b) preservation of the parent's durable-data and production recovery rule, (c) tightness of the laboratory-only exception, (d) absence of any destructive authorization, stale numeral, wrong runtime variable or adopted sequenceComplete diagnosis."
+}

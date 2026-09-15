@@ -1,0 +1,277 @@
+{
+  "package_id": "ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS",
+  "version": "1.1.0",
+  "artifact_id": "ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT__NO_DATABASE_MUTATION__NO_DESTRUCTIVE_AUTHORIZATION",
+  "append_only": true,
+  "mission_id": "CV1-ENV-RAT-V11-W",
+  "lane": "CV1-ENV-RAT-V11-W",
+  "role": "ENVIRONMENT_CONVERGENCE_OWNER_RATIFICATION_WRITER",
+  "mode": "DOCS_ONLY_OWNER_RATIFICATION_MATERIALIZATION",
+  "materialization_date": "2026-09-15",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "amends": "NOTHING. This artifact is a NEW owner-ratification record. It does not edit, rewrite, re-seal or re-version docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json, any FIB/PC-01B/IM-01B authority, the frozen ODS authority artifact, or any release authority. The release-process effect of the decisions below is carried by the companion amendment named under companion_amendment, not by this record.",
+  "supersedes": null,
+  "companion_amendment": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+
+  "materialized_at_base": {
+    "branch": "codex/environment-convergence-owner-ratification-v1-1-r1",
+    "base_head": "c43067201d26cd1c13902812a46659655f0aa33f",
+    "base_tree": "06f420b7d8d86544c79ff1a783890605c3c6fb94",
+    "integration_head_observed_at_prestate": "c43067201d26cd1c13902812a46659655f0aa33f",
+    "prestate": "branch/HEAD/tree measured and clean at prestate; ODS prestate gate output recorded in the pull request body",
+    "as_of_measurement_note": "Every repository fact asserted here was measured at base_tree. This lane wrote no runtime code, ran no migration, touched no Supabase project, touched no Vercel project, and mutated no environment."
+  },
+
+  "owner_version_mapping": {
+    "owner_designation": "ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1",
+    "repository_version": "1.1.0",
+    "rule": "The owner numbers this decision set v1.1. The repository's artifact naming convention is three-component; v1.1 is therefore materialized as 1.1.0. No repository artifact named ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS v1.0 (or 1.0.0) exists at base_tree, measured by an exact-token search over docs/ and artifacts/ that returned zero matches for that package id. This record does NOT reconstruct, infer or back-fill a v1.0; the owner's v1.0 is a non-repository predecessor whose only repository-relevant content is whatever v1.1 restates."
+  },
+
+  "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_PRIOR_TO_THIS_MATERIALIZATION_LANE. The fourteen decisions below were ratified by the product/mission owner and supplied verbatim to this lane as its directing text. THIS FILE IS NOT A VERBATIM TRANSCRIPT of any chat, and it is not a new adjudication. It is the canonical normalized ratification record so that successor lanes can cite a stable repository artifact instead of re-deriving, re-litigating or informally re-summarizing decisions the owner has already made. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout: a ratification is binding product intent; a measurement is a falsifiable claim about the codebase that any successor lane may and should re-measure.",
+
+  "purpose": "Machine-citable, normalized ledger of the owner's Environment Convergence decisions ENV-01..ENV-14 for the Uellix staging and production Supabase projects, the Vercel staging environment contract, and the recovery posture that governs them. Records WHAT was ratified and its provenance. It grants no execution authority, allocates nothing, and authorizes no destructive action.",
+
+  "precedence_note": "This record is canonical for product-owner intent on ENV-01..ENV-14 only. It does NOT override executable FIB/ODS/database/security authority and it does NOT by itself amend docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json or its companion ledger. The repository hierarchy (CLAUDE.md section 2) places active release-process authority above conversation context and above an owner record of this class; a bare owner record therefore cannot resolve a conflict with release authority, which is exactly why Lane CV1-ENV-O2 failed closed. The companion amendment is the artifact that makes ENV-05, ENV-06, ENV-07, ENV-08, ENV-11, ENV-12 and ENV-13 release-effective. Where this record and the companion amendment are read together, the amendment's normative definitions and predicates control; where a decision here has no corresponding executable authority yet (for example the preservation bundle tooling), that is an open implementation gap for a future governed lane, not a contradiction to resolve here.",
+
+  "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen or re-adjudicate ENV-01..ENV-14, and do NOT reopen, rewrite or weaken HPO-A..HPO-G, HD-01..HD-16 or PVRI-01..PVRI-20. Do not re-litigate any decision below unless repository evidence proves an actual contradiction requiring escalation; absence of implementation is not a contradiction. A conflict between this record and active executable authority that the companion amendment does not resolve fails closed (STOP_FOR_AUTHORITY_CONFLICT); it is not silently resolved in either direction.",
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 14,
+    "expected_id_set": ["ENV-01", "ENV-02", "ENV-03", "ENV-04", "ENV-05", "ENV-06", "ENV-07", "ENV-08", "ENV-09", "ENV-10", "ENV-11", "ENV-12", "ENV-13", "ENV-14"],
+    "expected_defined_term_count": 7,
+    "expected_defined_terms": ["LAB_FIXTURE_DATA", "DURABLE_UAT_DATA", "CUSTOMER_DATA", "RESET_ELIGIBLE_STAGING", "RESET_INELIGIBLE_STAGING", "PRESERVATION_BUNDLE", "FORWARD_MIGRATION_PROOF"],
+    "checks": [
+      "ratifications.length == 14",
+      "every id in ratifications is unique",
+      "the set of ids in ratifications equals expected_id_set exactly",
+      "definitional_intent has exactly the seven keys in expected_defined_terms, and each names the companion amendment as the location of its normative form",
+      "no numeral that describes the size of the migration corpus, the prepared corpus, the journal, the table population or a readiness ratio appears anywhere in this file",
+      "the string DATABASE_URL appears only where it is described as legacy/inert, never as a runtime contract",
+      "sibling artifact docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json is byte-unchanged by this file's commit"
+    ]
+  },
+
+  "required_independent_review": {
+    "flagged": true,
+    "rationale": "ENV-05 carves a bounded exception out of a frozen recovery rule; ENV-14 withholds all destructive authorization; ENV-12 records a runtime defect whose diagnosis is contested. Independent authority review of this record together with its companion amendment is mandatory before either is cited as a precondition input by any hosted or destructive packet. Flagging is part of the ratification and is not satisfied by this materialization."
+  },
+
+  "explicit_non_authorizations": [
+    "NO destructive action against any Supabase project, database, schema, bucket, auth tenant or Vercel project is authorized by this record (ENV-14 is itself a ratified decision, restated here as a non-authorization).",
+    "NO hosted access of any kind was performed.",
+    "NO migration is applied, NO next migration ordinal is declared, reserved or implied, and NO hosted package is allocated.",
+    "NO ODS grant id, W2 allocation, Controller allocation or protected-surface grant is allocated or reserved.",
+    "NO second Supabase project is created, requested or declared necessary (ENV-02, ENV-03).",
+    "NO backup, restore, preservation-bundle, ledger-epoch or forward-migration tooling is implemented, scaffolded or scoped as code by this record.",
+    "NO fix to the sequenceComplete defect is made, and NO diagnosis of it is adopted as fact (ENV-12).",
+    "NO secret value, connection string, key or token is chosen, recorded, compared or referenced by value. Environment variables are named; their values are not.",
+    "NO existing release gate is weakened, retired, narrowed or made conditional by this record; the companion amendment states precisely which parent clause it qualifies and in what single respect.",
+    "NO release stage is added to the seven canonical stages; the owner's programme milestone COMMERCIAL_V1_READY is recorded as a milestone, not as a stage (see ENV-08.canonical_binding).",
+    "NO historical evidence, ledger row, observation or stale figure is rewritten or refreshed by computation."
+  ],
+
+  "known_input_lane_results": {
+    "CV1-ENV-O2": {
+      "result": "SAME_PROJECT_RESET_NOT_PROVEN_PROVIDER_CONFIRMATION_REQUIRED",
+      "measured_at": "read-only, base 6f1ac688 (an ancestor of this lane's base_head)",
+      "conflict_surfaced": "The owner's v1.1 decision set (then not materialized in the repository) admits a temporary destroy-and-reprovision construction of canonical staging, while docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json (CANONICAL_STAGES ordinal 2, required_rollback_recovery_evidence; EVIDENCE_PACKETS RESTORE_PROOF.doctrine_correction) and docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json (gate S8 note; DUPLICATE_GATE_RESOLUTION DGR-06 frozen_correction; OPEN_FINDINGS AT-F-06) state that for a target holding data recovery is RESTORE_REQUIRED and destroy-and-reprovision is not a recovery posture. Absent a materialized ratification the lane failed closed.",
+      "provider_dependent_surfaces_left_unresolved": [
+        "Auth identities (deletion of auth.users rows and their linked identities has no repository mechanism)",
+        "triggers on auth.users (ownership held by the provider's auth admin role, not by the operator role)",
+        "policies on storage.objects (ownership held by the provider's storage admin role, not by the operator role)",
+        "pooler mappings and their persistence across a same-project reset",
+        "platform backup/restore semantics of the hosting plan",
+        "project identity persistence (whether the same project ref survives the reset, which decides whether repository ledgers indexed by ref need an epoch boundary)"
+      ],
+      "design_gap_recorded": "Repository evidence ledgers under artifacts/ and docs/ops/staging/evidence/ are indexed by project ref without an epoch. A same-project reset would leave historical CONSUMED/INSTALLED rows attributed to the same ref. A governed ledger-epoch boundary is required before any destructive packet and is NOT designed here.",
+      "disposition": "Consumed as the read-only input that motivated this ratification. Not re-measured by this lane. Its provider-boundary result is preserved verbatim in ENV-14.provider_boundary."
+    },
+    "CV1-ENV-O1": {
+      "disposition": "Its description of the sequenceComplete defect is NOT adopted (see ENV-12). ENV-O1 and ENV-O2 produced conflicting descriptions of the same defect; neither is recorded as fact."
+    }
+  },
+
+  "definitional_intent": {
+    "rule": "Each entry below records the OWNER'S INTENT for a term. The NORMATIVE, machine-verifiable form of every term lives in the companion amendment under DEFINITIONS, and only that form is citable as a predicate by any packet, gate or test. Where this intent and the normative form differ, the normative form controls and the difference is an escalation item, not a silent reinterpretation.",
+    "LAB_FIXTURE_DATA": {
+      "owner_intent": "Data on the staging target that exists only because governed provisioning, rehearsal or laboratory activity put it there, that is reproducible from the repository or from a preservation bundle, and that belongs to no real customer and no real external person. It may be lost after preservation.",
+      "normative_form": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#DEFINITIONS.LAB_FIXTURE_DATA"
+    },
+    "DURABLE_UAT_DATA": {
+      "owner_intent": "Data produced by governed user-acceptance activity that the owner has declared must survive, plus any data whose classification cannot be established. It is never a destruction candidate; its recovery is restore.",
+      "normative_form": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#DEFINITIONS.DURABLE_UAT_DATA"
+    },
+    "CUSTOMER_DATA": {
+      "owner_intent": "Data attributable to a real customer organization or a real external person, or derived from production. Its presence anywhere on a target makes that target ineligible for reset, unconditionally.",
+      "normative_form": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#DEFINITIONS.CUSTOMER_DATA"
+    },
+    "RESET_ELIGIBLE_STAGING": {
+      "owner_intent": "The principal staging project, at a fresh observation, proven by a machine-verifiable fixture manifest to hold nothing but LAB_FIXTURE_DATA, with every row classified and none unclassified, and with a verified preservation bundle in hand. Eligibility is temporary and expires on any mutation or on the appearance of any durable or customer row.",
+      "normative_form": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#DEFINITIONS.RESET_ELIGIBLE_STAGING"
+    },
+    "RESET_INELIGIBLE_STAGING": {
+      "owner_intent": "Any hosted target not proven RESET_ELIGIBLE, and production always. For such a target the frozen rule stands unchanged: recovery is RESTORE_REQUIRED and destroy-and-reprovision is not a posture.",
+      "normative_form": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#DEFINITIONS.RESET_INELIGIBLE_STAGING"
+    },
+    "PRESERVATION_BUNDLE": {
+      "owner_intent": "A verified, digest-bound capture of every needed laboratory row, provisioning state, laboratory identity and storage object, taken before any destructive operation, stored outside the target and proven restorable. It is the owner's condition for ENV-04 and ENV-05; it is NOT a substitute for the backup-and-restore capability that ENV-07 requires before durable UAT data and before RC.",
+      "normative_form": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#DEFINITIONS.PRESERVATION_BUNDLE"
+    },
+    "FORWARD_MIGRATION_PROOF": {
+      "owner_intent": "Evidence that the governed forward migration from one schema state to its successor was executed against a NON-virgin database holding durable data, with that data intact afterwards. A rehearsal on a virgin target does not count.",
+      "normative_form": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json#DEFINITIONS.FORWARD_MIGRATION_PROOF"
+    }
+  },
+
+  "ratifications": [
+    {
+      "id": "ENV-01",
+      "domain": "PROJECT_TOPOLOGY",
+      "statement": "The Supabase project bvyzblhqymxruxdguaee remains the principal paid Uellix staging project.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "db/hosted/target-identity.ts exports KNOWN_STAGING_PROJECT_REF with this value; db/safety/runtime-project-pins.ts pins the staging environment to it. No change to either is made or required by this record."
+    },
+    {
+      "id": "ENV-02",
+      "domain": "PROJECT_TOPOLOGY",
+      "statement": "No second Supabase project is created by default.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER"
+    },
+    {
+      "id": "ENV-03",
+      "domain": "PROJECT_TOPOLOGY",
+      "statement": "A second project may only be considered if a technical review proves that the existing project cannot safely be returned to a Uellix-virgin state and reprovisioned.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "ENV-03.1", "text": "The trigger is a technical review that PROVES impossibility or unsafety of a same-project return to a Uellix-virgin state; a review that merely fails to prove possibility (the CV1-ENV-O2 result) does NOT trigger it." },
+        { "id": "ENV-03.2", "text": "Nothing in this record states or implies that a second project is required." }
+      ]
+    },
+    {
+      "id": "ENV-04",
+      "domain": "DATA_PRESERVATION",
+      "statement": "Needed laboratory data must be preserved before any destructive operation.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "ENV-04.1", "text": "Preservation precedes destruction; it is a precondition, not a parallel task." },
+        { "id": "ENV-04.2", "text": "The preserved form is the PRESERVATION_BUNDLE as normatively defined in the companion amendment." }
+      ]
+    },
+    {
+      "id": "ENV-05",
+      "domain": "CANONICAL_STAGING_CONSTRUCTION",
+      "statement": "Initial canonical staging may be created by destructive reprovisioning of the existing project ONLY while the target contains no durable UAT/customer data under an explicit governed predicate.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "clauses": [
+        { "id": "ENV-05.1", "text": "The exception applies to the CONSTRUCTION of initial canonical staging, and to nothing else. It is not a recovery posture and is never citable as one." },
+        { "id": "ENV-05.2", "text": "The governing predicate is RESET_ELIGIBLE_STAGING as normatively defined in the companion amendment: machine-verifiable fixture manifest, closed-world classification, fail-closed on any unclassified row, verified PRESERVATION_BUNDLE, fresh observation." },
+        { "id": "ENV-05.3", "text": "The predicate becomes false automatically the moment any DURABLE_UAT_DATA or CUSTOMER_DATA row is present, or any row is unclassified, or any mutation follows the observation." },
+        { "id": "ENV-05.4", "text": "This decision does not itself authorize the destructive packet (ENV-14). It defines the only conditions under which one could later be authorized by a separate, owner-ratified, provider-cleared authority." }
+      ]
+    },
+    {
+      "id": "ENV-06",
+      "domain": "RECOVERY",
+      "statement": "This temporary posture does NOT satisfy final recovery.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "ENV-06.1", "text": "A PRESERVATION_BUNDLE and a destroy-and-reprovision construction satisfy neither ledger gate D1 (backup and restore capability) nor S8 (verified backup before staging DDL) nor D5 (restore rehearsal). Those gates keep their criteria and their first_required_at_stage unchanged." }
+      ]
+    },
+    {
+      "id": "ENV-07",
+      "domain": "RECOVERY",
+      "statement": "Before durable UAT data and before RC: backup + restore must be proven for PostgreSQL, Auth and Storage, and tombstone reapplication must be proven.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "ENV-07.1", "text": "Scope of the proof is three surfaces conjunctively: PostgreSQL, Auth, Storage. A PostgreSQL-only restore proof does not satisfy this decision." },
+        { "id": "ENV-07.2", "text": "Tombstone reapplication (re-applying governed deletions/erasures after a restore so that a restore cannot resurrect data that was lawfully erased) must be proven as part of the same evidence." },
+        { "id": "ENV-07.3", "text": "Two deadlines, both binding: (a) before the first DURABLE_UAT_DATA row is created on any hosted target; (b) before RELEASE_CANDIDATE is declared. The earlier of the two governs." }
+      ],
+      "canonical_binding": "RC is the canonical stage RELEASE_CANDIDATE (ordinal 4). D1 is already first required at STAGING_ALIGNED (ordinal 2), which is earlier; this decision does not move D1 later, it adds the three-surface scope and the tombstone requirement to what the proof must cover."
+    },
+    {
+      "id": "ENV-08",
+      "domain": "MIGRATION",
+      "statement": "Before COMMERCIAL_V1_READY: governed forward migration SCHEMA_N to SCHEMA_N+1 on a non-virgin database containing durable data must exist and be proven.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "ENV-08.1", "text": "The evidence is FORWARD_MIGRATION_PROOF as normatively defined in the companion amendment." },
+        { "id": "ENV-08.2", "text": "A rehearsal against a virgin or freshly reprovisioned target is NOT this proof." }
+      ],
+      "canonical_binding": "COMMERCIAL_V1_READY is an owner programme milestone. It is NOT one of the seven canonical release stages and this record does not add it as one. The operative rule is event-bound and independent of the milestone's stage mapping: FORWARD_MIGRATION_PROOF is required before the first hosted apply of any corpus delta to any target holding DURABLE_UAT_DATA or CUSTOMER_DATA, and in every case no later than PRODUCTION_READY (ordinal 6). Any finer stage placement of the milestone is deferred to the ledger re-derivation ENV-13 requires and creates no UNKNOWN here, because the event-bound rule already controls every reachable case."
+    },
+    {
+      "id": "ENV-09",
+      "domain": "PROJECT_TOPOLOGY",
+      "statement": "The Supabase project ctaxtgujyyprgynmnvtq remains frozen/inactive and existing public production is marketing-only until certified RC cutover.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "db/hosted/target-identity.ts lists this ref among the known production identifiers that the hosted tooling vetoes by design. Nothing here relaxes that veto (see SSL-09 in the parent release authority)."
+    },
+    {
+      "id": "ENV-10",
+      "domain": "ENVIRONMENT_CONTRACT",
+      "statement": "Governed Vercel staging must explicitly set UELLIX_APP_ENV=staging.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "db/safety/database-access.ts resolves the deployment environment from UELLIX_APP_ENV as the explicit declaration; the staging risk register records that an absent or mistyped value resolves toward production, which is why the pin must be explicit. Names only: no value other than the literal environment name is recorded."
+    },
+    {
+      "id": "ENV-11",
+      "domain": "ENVIRONMENT_CONTRACT",
+      "statement": "Environment coherence must bind three identities as equal: the UELLIX_APP_ENV staging pin, the project ref carried by NEXT_PUBLIC_SUPABASE_URL, and the project identity proven by UELLIX_RUNTIME_DATABASE_URL. DATABASE_URL is NOT the Commercial V1 runtime contract; it is legacy and inert on integration.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "ENV-11.1", "text": "The normative runtime database variable is UELLIX_RUNTIME_DATABASE_URL (db/safety/resolve-capability-database-url.ts, RUNTIME_DATABASE_URL_ENV_VAR), declaring the least-privileged runtime role." },
+        { "id": "ENV-11.2", "text": "DATABASE_URL is the pre-cutover shared name (LEGACY_SHARED_DATABASE_URL_ENV_VAR in the same module): never read for a connection again, only detected so that an operator who still exports it is told it is inert." },
+        { "id": "ENV-11.3", "text": "Commercial V1 Vercel staging MUST NOT provision DATABASE_URL for runtime product connectivity. Its presence in an environment is at most a detected legacy residue, never a contract." },
+        { "id": "ENV-11.4", "text": "The three-way equality is the SYS-03 invariant implemented by lib/supabase/project-coherence.ts (assertSupabaseProjectCoherence); the coherence requirement is satisfied by that check passing at runtime start against the staging environment, not by documentation." }
+      ]
+    },
+    {
+      "id": "ENV-12",
+      "domain": "PROVISIONING_RUNTIME",
+      "statement": "sequenceComplete must be independently adjudicated, fixed and tested before STAGING_ALIGNED.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "disposition": "MUST_CLOSE_BEFORE_STAGING_ALIGNED",
+      "clauses": [
+        { "id": "ENV-12.1", "text": "An INDEPENDENT defect adjudication is required first: a read-only lane that determines, with a reproducible executable case, what the defect actually is." },
+        { "id": "ENV-12.2", "text": "A fix is authorized only after that adjudication, in a separate governed implementation lane, together with an executable regression control that fails on the pre-fix behaviour and passes on the post-fix behaviour." },
+        { "id": "ENV-12.3", "text": "The mechanism of the defect is deliberately NOT frozen here. Lanes CV1-ENV-O1 and CV1-ENV-O2 produced conflicting descriptions (one as premature completion, the other as failure to report completion at the final apply). Neither description is adopted as fact by this record, and a successor lane must not cite this record as having adopted either." }
+      ],
+      "repository_surface_named_not_diagnosed": "The field sequenceComplete is carried by db/hosted/hosted-provisioning-runner.ts, db/hosted/chain-evidence.ts and db/hosted/checkpoint-a1.ts; the documented contract is docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md section 7.3. Naming these surfaces locates the adjudication; it asserts nothing about which of them is defective."
+    },
+    {
+      "id": "ENV-13",
+      "domain": "RELEASE_GOVERNANCE",
+      "statement": "The Release Gate Ledger must be re-derived from the exact release corpus before STAGING_ALIGNED.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "clauses": [
+        { "id": "ENV-13.1", "text": "The exact release corpus is the enumerated, digest-bound unit set derived from the certified release SHA (parent release authority HOSTED_DDL_PRECONDITIONS HDP-4 and ledger gate S1). No count is pinned here; every count is derived at evaluation time from that SHA." },
+        { "id": "ENV-13.2", "text": "Re-derivation is append-only with respect to docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json: a successor ledger revision or amendment, never an in-place rewrite of the frozen v1.0.0 record." },
+        { "id": "ENV-13.3", "text": "Every ledger figure measured at the ledger's own AS_OF_HEAD (corpus sizes, unit counts, journal positions, readiness ratios) is history at that head and is not an input to any STAGING_ALIGNED declaration until re-derived." }
+      ]
+    },
+    {
+      "id": "ENV-14",
+      "domain": "AUTHORIZATION_BOUNDARY",
+      "statement": "No destructive action is authorized by this ratification.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "flag_for_independent_review": true,
+      "provider_boundary": {
+        "state": "SAME_PROJECT_RESET_NOT_YET_AUTHORIZED",
+        "rule": "Before any destructive packet against the principal staging project can be authorized, the provider-dependent surfaces listed under known_input_lane_results.CV1-ENV-O2 must be resolved by provider confirmation or by a rehearsal on a disposable provider substrate that exercises the same surfaces, and the ledger-epoch design gap must be closed. Until then the state is SAME_PROJECT_RESET_NOT_YET_AUTHORIZED. This state does not imply that a second project is required (ENV-02, ENV-03)."
+      }
+    }
+  ],
+
+  "final_state": "ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1_1_MATERIALIZED__14_RATIFICATIONS__7_DEFINED_TERMS_BY_INTENT__NORMATIVE_FORM_IN_COMPANION_AMENDMENT__NO_DESTRUCTIVE_AUTHORIZATION__SAME_PROJECT_RESET_NOT_YET_AUTHORIZED",
+  "next_gate": "ENV_V1_1_AUTHORITY_READY_FOR_INDEPENDENT_REVIEW: independent, read-only authority review of this record together with docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json at the pull request head, with no hosted access."
+}
