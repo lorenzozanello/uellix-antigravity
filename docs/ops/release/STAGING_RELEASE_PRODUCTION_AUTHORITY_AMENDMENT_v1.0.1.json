@@ -66,7 +66,7 @@
       "ENV-03": "topology rule; restated under PROVIDER_BOUNDARY.no_second_project_implied",
       "ENV-09": "topology fact; the production veto in the parent (SSL-09, PROD-MIG-AUTH production instance) is untouched"
     },
-    "HPO-G_relationship": "HPO-G (docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json) is neither reopened nor weakened. HPO-G.2 requires, before hosted DDL, a backup/restore plan among five conjunctive preconditions; the parent materialized it as HOSTED_DDL_PRECONDITIONS HDP-1..HDP-5. This amendment leaves HDP-1..HDP-5 in force for every corpus apply against every hosted target, including the freshly reprovisioned target the exception produces, and adds to what a backup/restore proof must cover (BACKUP_RESTORE_SCOPE_REQUIREMENT). The exception concerns the destruction of a target whose entire content is proven LAB_FIXTURE_DATA, and it requires that content to be preserved in the same packet shapes HDP-2 uses."
+    "HPO-G_relationship": "HPO-G (docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json) is neither reopened nor weakened. HPO-G.2 requires, before hosted DDL, a backup/restore plan among five conjunctive preconditions; the parent materialized it as HOSTED_DDL_PRECONDITIONS HDP-1..HDP-5. This amendment leaves HDP-1..HDP-5 in force for every corpus apply against every hosted target, including the freshly reprovisioned target the exception produces, and leaves D1 and S8 at their parent criteria, scope and first_required_at_stage; the owner's separate ENV-07 recovery-readiness requirement (BACKUP_RESTORE_SCOPE_REQUIREMENT) binds at its own event deadline and enlarges no gate. The exception concerns the destruction of a target whose entire content is proven LAB_FIXTURE_DATA, and it requires that content to be preserved in the same packet shapes HDP-2 uses."
   },
 
   "SOURCE_CONFLICT": {
@@ -173,7 +173,7 @@
 
     "DURABLE_UAT_DATA": {
       "definition": "The union of (a) every row a CLASSIFICATION_RUN classifies DURABLE_UAT, which includes every row in a relation the manifest marks DURABLE and every row created by governed user-acceptance activity on the target after a DURABLE_DATA_DECLARATION for that target exists in the repository; and (b) BY FAIL-CLOSED RULE, every UNCLASSIFIED row and every row of a relation with no manifest rule, which are treated as DURABLE_UAT_DATA for every eligibility decision.",
-      "DURABLE_DATA_DECLARATION": "A committed repository artifact, owner-ratified, that names the target identifier, the release SHA, the timestamp from which user-acceptance activity on that target is durable, and the D1 evidence (per BACKUP_RESTORE_SCOPE_REQUIREMENT) that ENV-07 requires to exist before the first durable row. A target for which such a declaration exists is RESET_INELIGIBLE from that timestamp onward regardless of what any later CLASSIFICATION_RUN reports.",
+      "DURABLE_DATA_DECLARATION": "A committed repository artifact, owner-ratified, that names the target identifier, the release SHA, the timestamp from which user-acceptance activity on that target is durable, and the ENV-07 recovery-readiness evidence (three surfaces plus tombstone reapplication, per BACKUP_RESTORE_SCOPE_REQUIREMENT) that must exist immediately before the first durable row. A target for which such a declaration exists is RESET_INELIGIBLE from that timestamp onward regardless of what any later CLASSIFICATION_RUN reports.",
       "recovery_posture": "RESTORE_REQUIRED. Destroy and reprovision is not a posture for a target holding DURABLE_UAT_DATA, exactly as the parent states."
     },
 
@@ -233,14 +233,14 @@
         { "id": "CX-2", "name": "fresh closed-world observation", "criterion": "RESET_ELIGIBLE_STAGING E2: an observation packet satisfying RULE_OBSERVATION_FRESHNESS with the closed-world catalog census, taken after the last completed mutation and before this operation, with no intervening mutation." },
         { "id": "CX-3", "name": "fixture manifest bound to the release SHA", "criterion": "RESET_ELIGIBLE_STAGING E3." },
         { "id": "CX-4", "name": "classification success, fail closed", "criterion": "RESET_ELIGIBLE_STAGING E4 and E5: a CLASSIFICATION_RUN reporting zero UNCLASSIFIED, zero DURABLE_UAT and zero CUSTOMER rows, no stale or invalid manifest, every EXPECTED_EMPTY relation empty, and no DURABLE_DATA_DECLARATION for the target." },
-        { "id": "CX-5", "name": "preservation bundle verified", "criterion": "RESET_ELIGIBLE_STAGING E6: a PRESERVATION_BUNDLE produced after CX-2 with no intervening mutation, carrying the BACKUP_PACKET fields and a successful RESTORE_PROOF into a disposable substrate. This is the HDP-2 evidence for the destruction step: the same two packet shapes the parent requires, scoped to the classified population, which by CX-4 is the entire population. It marks no ledger gate satisfied." },
+        { "id": "CX-5", "name": "preservation bundle verified", "criterion": "RESET_ELIGIBLE_STAGING E6: a PRESERVATION_BUNDLE produced after CX-2 with no intervening mutation, carrying the BACKUP_PACKET fields and a successful RESTORE_PROOF into a disposable substrate. This is HDP-2-SHAPED evidence for the destruction step only: the same two packet shapes the parent requires, scoped to the classified population, which by CX-4 is the entire population. It is not HDP-2 itself, it marks no ledger gate (D1, S8, D3, D5) satisfied, and it is not the ENV-07 recovery-readiness proof." },
         { "id": "CX-6", "name": "ledger epoch boundary recorded", "criterion": "The LEDGER_EPOCH_BOUNDARY record in the bundle is committed to the repository before destruction, so that every evidence ledger indexed by the target reference (artifacts/**, docs/ops/staging/evidence/**) can distinguish pre-destruction from post-reprovision history. The epoch mechanism is a future governed design (FIS-ENV-4); until it exists CX-6 cannot be satisfied and the exception cannot be invoked." },
         { "id": "CX-7", "name": "provider boundary closed", "criterion": "Every provider-dependent surface listed under PROVIDER_BOUNDARY.unresolved_surfaces is resolved either by written provider confirmation or by a rehearsal on a disposable provider substrate that exercises the same surface, and the resolution is recorded as an evidence artifact. Until then the state is SAME_PROJECT_RESET_NOT_YET_AUTHORIZED and CX-7 fails." },
         { "id": "CX-8", "name": "separate destructive packet authority", "criterion": "An owner-ratified authority, distinct from this amendment and from the binding owner ratification, exists BEFORE the attempt and names: the exact target identifier; the ELIGIBILITY_PACKET by digest; the PRESERVATION_BUNDLE by digest; the destructive steps in order; the exact corpus to be applied afterwards, digest-bound and derived from a named SHA (HDP-4); the successor ACL package (HDP-5); the compatibility plan and the forced ordering (HDP-3); the resolution of the applier's expected-branch pin; the batch boundary; and the recovery posture for the reprovisioned target. This is the staging instance of PROD-MIG-AUTH in its destructive-construction form. ENV-14 withholds it; this amendment does not create it." }
       ]
     },
     "what_it_does_not_do": [
-      "It does not satisfy, waive, defer or narrow ledger gates D1, S8, D3 or D5. D1 (capability with at least one proven restore, scoped per BACKUP_RESTORE_SCOPE_REQUIREMENT) and S8 remain first required at STAGING_ALIGNED and remain preconditions (HDP-2) of the corpus apply on the reprovisioned target.",
+      "It does not satisfy, waive, defer, narrow or enlarge ledger gates D1, S8, D3 or D5. D1 and S8 retain their PARENT criteria, their PARENT scope and their existing first_required_at_stage (STAGING_ALIGNED), and remain preconditions (HDP-2) of the corpus apply on the reprovisioned target. They inherit no ENV-07 scope; the ENV-07 recovery-readiness requirement is separate and event-bound (BACKUP_RESTORE_SCOPE_REQUIREMENT).",
       "It does not declare STAGING_ALIGNED or any other stage. A reprovisioned target is a virgin target with nothing declared; every STAGING_ALIGNED gate, plus SEQUENCE_COMPLETE_DISPOSITION and LEDGER_REDERIVATION_REQUIREMENT, must still be satisfied.",
       "It does not touch HOSTED_DDL_PRECONDITIONS HDP-1..HDP-5 for any corpus apply against any target.",
       "It does not apply to production, to any RESET_INELIGIBLE target, or to any target after a DURABLE_DATA_DECLARATION.",
@@ -257,9 +257,9 @@
 
   "BACKUP_RESTORE_SCOPE_REQUIREMENT": {
     "owner_source": "ENV-07",
-    "statement": "The backup-and-restore proof that ledger gates D1 and S8 require must cover three surfaces conjunctively: PostgreSQL, Auth, and Storage. A PostgreSQL-only proof is incomplete. The proof must additionally demonstrate TOMBSTONE REAPPLICATION: after a restore, every governed deletion or erasure recorded after the backup point is re-applied so that a restore cannot resurrect data that was lawfully erased. The evidence lives in the parent's BACKUP_PACKET and RESTORE_PROOF packets, whose contents lists are extended by this requirement, not replaced.",
-    "deadlines": "Both bind: before the first DURABLE_UAT_DATA row is created on any hosted target (the DURABLE_DATA_DECLARATION must cite this evidence), and before RELEASE_CANDIDATE is declared. D1's existing first_required_at_stage of STAGING_ALIGNED is earlier than both and is not moved.",
-    "effect_on_gates": "ADDITIVE ONLY. D1 and S8 gain scope; no gate loses any criterion."
+    "statement": "The separate ENV-07 recovery-readiness proof must cover three surfaces conjunctively: PostgreSQL, Auth, and Storage. A PostgreSQL-only proof is incomplete. The proof must additionally demonstrate TOMBSTONE REAPPLICATION: after a restore, every governed deletion or erasure recorded after the backup point is re-applied so that a restore cannot resurrect data that was lawfully erased. This is an ADDITIVE owner requirement standing beside the ledger's gates, not a change to any of them. The parent's BACKUP_PACKET and RESTORE_PROOF packet SHAPES may be reused as the evidence carriers for it.",
+    "deadlines": "The earlier of two events governs: (1) immediately BEFORE the creation of the first DURABLE_UAT_DATA row on any hosted target (the DURABLE_DATA_DECLARATION must cite this evidence); (2) immediately BEFORE RELEASE_CANDIDATE is declared. The requirement binds at that event and at no earlier stage. Evidence produced earlier (for example for D1 or S8) MAY be reused if it already satisfies this requirement, but it is not REQUIRED earlier merely because D1 or S8 are due.",
+    "effect_on_gates": "NO_GATE_MUTATION. D1 and S8 do NOT gain scope from ENV-07: they retain their parent criteria, their parent scope and their existing first_required_at_stage. No gate criterion, owner, enforcement or first_required_at_stage changes. If D1/S8 evidence already satisfies the ENV-07 extension it may be reused; otherwise additional ENV-07 evidence is required at the event deadline above."
   },
 
   "FORWARD_MIGRATION_REQUIREMENT": {
@@ -273,7 +273,7 @@
     "owner_source": ["ENV-10", "ENV-11"],
     "names_only": "Every statement here is about a variable NAME and, where unavoidable, the literal environment name. No value, connection string, key, token or hostname is recorded, and none may be added by a successor citing this section.",
     "governed_vercel_staging_must_set": [
-      { "variable": "UELLIX_APP_ENV", "requirement": "explicitly set to the literal environment name staging. Never left unset: the environment resolver treats an absent or unrecognized value as a hosted default that is not staging (db/safety/database-access.ts, resolveEnvironmentDecision), which the staging risk register records as an ambiguity hazard." },
+      { "variable": "UELLIX_APP_ENV", "requirement": "explicitly set to the literal environment name staging. Never left unset: when it is absent the environment resolver (db/safety/database-access.ts, resolveEnvironmentDecision) INFERS the environment from platform variables (a Vercel preview deployment infers staging), and a value no environment is called resolves to production and is refused for a managed remote. The owner requires staging to be DECLARED, not inferred; the explicit pin is therefore stricter than the resolver's inference, and the staging risk register's B4 ambiguity finding is closed by the pin, not by the inference." },
       { "variable": "NEXT_PUBLIC_SUPABASE_URL", "requirement": "carries the project reference of the principal staging project (ENV-01) and no other." },
       { "variable": "UELLIX_RUNTIME_DATABASE_URL", "requirement": "the NORMATIVE Commercial V1 runtime database contract (db/safety/resolve-capability-database-url.ts, RUNTIME_DATABASE_URL_ENV_VAR), declaring the least-privileged runtime role, and proving by its own identity the same project reference as the previous two." }
     ],
@@ -315,7 +315,7 @@
       { "id": "PB-6", "surface": "Project identity persistence: whether the project reference survives the reset, which decides whether the LEDGER_EPOCH_BOUNDARY (CX-6) is required at all or whether a new reference makes the pre-destruction ledgers self-separating." }
     ],
     "closure_rule": "Each surface closes by written provider confirmation recorded as an evidence artifact, or by a rehearsal on a DISPOSABLE provider substrate (a throwaway project, never the principal staging project and never production) that exercises the same surface end to end and is recorded as an evidence artifact. Closure of all six is precondition CX-7. Until then no destructive packet can be authorized.",
-    "no_second_project_implied": "This boundary does NOT state or imply that a second Supabase project is required. ENV-02 holds: no second project by default. ENV-03 holds: a second project may be considered only if a technical review PROVES the existing project cannot safely be returned to a Uellix-virgin state and reprovisioned; a not-yet-proven result is not such a proof. A disposable rehearsal project used to close PB-1..PB-6 is a throwaway laboratory substrate, not a second staging project, and must be deleted after the rehearsal is evidenced."
+    "no_second_project_implied": "This boundary does NOT state or imply that a second Supabase project is required. ENV-02 holds: no second project by default. ENV-03 holds: a second project may be considered only if a technical review PROVES the existing project cannot safely be returned to a Uellix-virgin state and reprovisioned; a not-yet-proven result is not such a proof. A disposable rehearsal project used to close PB-1..PB-6 is a throwaway laboratory substrate, not a second staging project, and must be deleted after the rehearsal is evidenced. Its creation is NOT silently permitted by ENV-02: it requires separate, explicit owner authorization and cost approval recorded before the project is created, and that authorization is scoped to the rehearsal and to nothing else."
   },
 
   "EXPLICIT_NON_AUTHORIZATIONS": {
@@ -350,7 +350,7 @@
       { "id": "FIS-ENV-6", "surface": "Independent adjudication of the sequenceComplete defect (SEQUENCE_COMPLETE_DISPOSITION step 1)." },
       { "id": "FIS-ENV-7", "surface": "sequenceComplete fix with executable regression control (steps 2 and 3)." },
       { "id": "FIS-ENV-8", "surface": "Append-only re-derivation of the Release Gate Ledger from the exact release corpus (LEDGER_REDERIVATION_REQUIREMENT)." },
-      { "id": "FIS-ENV-9", "surface": "D1 three-surface backup and restore with tombstone reapplication (BACKUP_RESTORE_SCOPE_REQUIREMENT)." },
+      { "id": "FIS-ENV-9", "surface": "ENV-07 three-surface backup and restore with tombstone reapplication (BACKUP_RESTORE_SCOPE_REQUIREMENT), due at the ENV-07 event deadline; D1 itself remains the ledger's own gate at its own stage." },
       { "id": "FIS-ENV-10", "surface": "FORWARD_MIGRATION_PROOF harness on a durable-shaped non-virgin target." },
       { "id": "FIS-ENV-11", "surface": "Integration-scoped reconciliation of the repository's example environment file with the capability-per-variable contract (removing the legacy DATABASE_URL declaration; risk B4)." },
       { "id": "FIS-ENV-12", "surface": "The destructive-construction packet authority (CX-8), which may be authored only after FIS-ENV-1..FIS-ENV-5 close." }
@@ -373,6 +373,8 @@
     "canonical_stages_added": 0,
     "gates_added": 0,
     "gates_weakened_retired_or_conditioned": 0,
+    "gates_enlarged_in_scope_or_rescheduled": 0,
+    "env07_scope_inherited_by_d1_or_s8": false,
     "gate_ids_allocated": 0,
     "next_migration_ordinal_declared": false,
     "secret_value_present": false,
