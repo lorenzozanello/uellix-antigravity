@@ -69,6 +69,7 @@ import {
   parseAssignedPort,
   redactSecret,
   hasOnlyAcceptableMounts,
+  probeServingPostmaster,
   type DockerRunner,
 } from './db-audit-disposable'
 import { BASELINE_POSTCONDITIONS } from '../db/hosted/baseline-postconditions'
@@ -415,12 +416,30 @@ async function createContainer(runner: DockerRunner, phase: string): Promise<Con
   const mounts = runner.run(['inspect', '-f', '{{json .Mounts}}', name])
   if (!record(`${phase}:MOUNT-CHECK`, mounts.status === 0 && hasOnlyAcceptableMounts(mounts.stdout), 'anonymous volume mount only, no bind mount')) return handle
 
+  // READY is the postmaster the entrypoint exec'd (PID 1) answering SELECT 1
+  // over the SAME TCP transport every later statement uses, not merely
+  // pg_isready. This image is derived from the official entrypoint and runs
+  // the same temporary init postmaster: re-measured for this lane against the
+  // pinned digest with a prolonged init phase, pg_isready exited 0 and the log
+  // read "[43] LOG: database system is ready to accept connections" while
+  // $PGDATA/postmaster.pid still said 43, and only after "shutting down" did
+  // it say 1. The SEMANTIC substrate probe below cannot discriminate this on
+  // its own — the auth/storage/extensions schemas this image ships already
+  // exist under that temporary postmaster, so it answers that probe too.
+  // See probeServingPostmaster in scripts/db-audit-disposable.ts.
   let ready = false
+  let notReadyReason = 'no readiness attempt was made'
   for (let i = 0; i < 60; i++) {
-    if (runner.run(['exec', name, 'pg_isready', '-U', 'postgres']).status === 0) { ready = true; break }
+    if (runner.run(['exec', name, 'pg_isready', '-U', 'postgres']).status === 0) {
+      const serving = probeServingPostmaster(runner, name, (r, c) => psql(r, c, 'SELECT 1;'))
+      if (serving.ready) { ready = true; break }
+      notReadyReason = serving.reason
+    } else {
+      notReadyReason = 'pg_isready has not succeeded yet'
+    }
     await new Promise((r) => setTimeout(r, 500))
   }
-  if (!record(`${phase}:CONTAINER-READY`, ready)) return handle
+  if (!record(`${phase}:CONTAINER-READY`, ready, ready ? 'serving postmaster (PID 1) confirmed by SELECT 1' : notReadyReason)) return handle
   // AUTHORITY v1.0.5: the fixed 750ms settle margin that used to sit here is
   // no longer load-bearing. It was a fixed-delay guess at how long
   // pg_isready-true takes to become "every catalog query succeeds" —

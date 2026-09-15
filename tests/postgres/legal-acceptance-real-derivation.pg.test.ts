@@ -18,9 +18,12 @@
 // postgres-js/drizzle connection open WHILE the container is alive, which the
 // synchronous harness's own CREATE -> APPLY -> PROBE -> DESTROY lifecycle
 // (torn down before runDisposableHarness() ever returns) has no way to hand
-// out. scripts/db-audit-disposable.ts itself is NOT modified — this is a
-// second, independent, equally-disposable lifecycle, not a change to the
-// shared one every other tests/postgres/*.pg.test.ts file also uses.
+// out. This suite's own lifecycle is a second, independent, equally-disposable
+// one — not a change to the shared harness every other tests/postgres/*.pg.test.ts
+// file also uses, whose CREATE -> APPLY -> PROBE -> DESTROY sequence is
+// untouched. It does import that harness's serving-postmaster readiness
+// predicate (probeServingPostmaster), so the two lifecycles decide "ready" by
+// one shared contract rather than two drifting copies.
 //
 // WHAT RUNS FOR REAL, THROUGH A REAL uellix_app LOGIN (not `SET LOCAL ROLE`
 // from a superuser session): lib/auth/legal-acceptance.ts's
@@ -50,6 +53,7 @@ import {
   realDockerRunner,
   parseAssignedPort,
   hasOnlyAcceptableMounts,
+  probeServingPostmaster,
   DEFAULT_IMAGE,
 } from '../../scripts/db-audit-disposable'
 import { generateDisposableIdentity, assertDisposableTargetSafe } from '../../db/safety/disposable-audit-target'
@@ -134,13 +138,24 @@ async function provisionDisposableContainer(setupStatements: string[]): Promise<
   expect(mounts.status).toBe(0)
   expect(hasOnlyAcceptableMounts(mounts.stdout), `unexpected mount: ${mounts.stdout}`).toBe(true)
 
+  // READY is the postmaster the entrypoint exec'd (PID 1) answering SELECT 1,
+  // not merely pg_isready — which the entrypoint's temporary init postmaster
+  // answers too, and which is stopped out from under the CREATE DATABASE
+  // below. See probeServingPostmaster in scripts/db-audit-disposable.ts.
   let ready = false
+  let notReadyReason = 'no readiness attempt was made'
   for (let i = 0; i < 40; i++) {
     const check = realDockerRunner.run(['exec', containerName, 'pg_isready', '-U', 'postgres'])
-    if (check.status === 0) { ready = true; break }
+    if (check.status === 0) {
+      const serving = probeServingPostmaster(realDockerRunner, containerName)
+      if (serving.ready) { ready = true; break }
+      notReadyReason = serving.reason
+    } else {
+      notReadyReason = 'pg_isready has not succeeded yet'
+    }
     await sleep(250)
   }
-  expect(ready, 'disposable container never reported ready').toBe(true)
+  expect(ready, `disposable container never reached its serving postmaster: ${notReadyReason}`).toBe(true)
 
   const portResult = realDockerRunner.run(['port', containerName, '5432/tcp'])
   expect(portResult.status).toBe(0)

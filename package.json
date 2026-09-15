@@ -112,7 +112,10 @@
     "ops:integration-plan": "tsx scripts/ods-integration-plan.ts",
     "ops:test-diff": "tsx scripts/ods-test-diff.ts",
     "ops:controller": "tsx scripts/ods-controller.ts",
-    "audit:batch": "tsx scripts/audit-batch.ts"
+    "audit:batch": "tsx scripts/audit-batch.ts",
+    "golden:list": "playwright test --list",
+    "golden:contract": "playwright test --project=contract",
+    "golden:browser": "playwright test --project=browser"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -142,6 +145,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
