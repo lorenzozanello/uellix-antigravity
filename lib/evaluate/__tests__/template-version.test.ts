@@ -30,7 +30,14 @@ import {
   validateDecisionPolicy,
 } from '../decision-policy'
 import { computeScore } from '../scoring'
-import type { Criterion, CriterionResponse, DecisionPolicy, TemplateVersionDefinition } from '../types'
+import type {
+  Criterion,
+  CriterionResponse,
+  DecisionBand,
+  DecisionPolicy,
+  TemplateVersionDefinition,
+  ValidatedDecisionPolicy,
+} from '../types'
 
 const POLICY_V1: DecisionPolicy = {
   bands: [
@@ -255,6 +262,188 @@ describe('P-09 (d) an evaluation pinned to version N is unaffected by version N+
       recommended: true,
       outcome: 'reject',
     })
+  })
+})
+
+/**
+ * W5-A HASH PROJECTION CONTROLS.
+ *
+ * The defect these close: `validateDecisionPolicy` returns a policy carrying an
+ * enumerable `__validated` brand, `ValidatedDecisionPolicy` is structurally
+ * assignable to `DecisionPolicy`, and the hashes canonicalized whatever object
+ * they were handed. A policy validated before its immutable hash was recorded
+ * therefore hashed DIFFERENTLY from the same policy read back out of the row.
+ *
+ * WHY THE EXPECTED DIGESTS ARE FROZEN LITERALS. These two constants were
+ * measured on the integrated implementation BEFORE the projection existed. An
+ * expectation written as computeDecisionPolicyHash(POLICY_V1) would be computed
+ * by the very helper under test: it would move with the implementation and
+ * report PASS for a digest that had silently changed for every row already
+ * stored under it. A literal cannot move. These are the lane's immutable
+ * evidence that hardening the hash boundary did NOT alter the identity of any
+ * declared payload.
+ */
+describe('W5-A the hashes cover the DECLARED payload, not the object supplied', () => {
+  const POLICY_RAW_DIGEST = 'da4b7858f4b0db49bea5b9ac929ddfd68e0c824b036a736cf9f90b7dfd1e8ea9'
+  const VERSION_RAW_DIGEST = '3c43ebe82ff528ed92107d11fc7d5fd78a8e104a3dcd18a44b1dc0e1ee5d275d'
+
+  /** The branded policy. Callers assert the brand is PRESENT, so nothing is vacuous. */
+  function validatedPolicyV1(): ValidatedDecisionPolicy {
+    const validation = validateDecisionPolicy(POLICY_V1)
+    expect(validation.valid).toBe(true)
+    if (!validation.valid) throw new Error('unreachable')
+    return validation.policy
+  }
+
+  it('A: leaves the raw POLICY_V1 digest identical to its pre-projection value', () => {
+    expect(computeDecisionPolicyHash(POLICY_V1)).toBe(POLICY_RAW_DIGEST)
+  })
+
+  it('B: leaves the raw VERSION_1 digest identical to its pre-projection value', () => {
+    expect(computeDefinitionHash(VERSION_1)).toBe(VERSION_RAW_DIGEST)
+  })
+
+  it('C: hashes a VALIDATED policy exactly as its raw declared policy', () => {
+    const validated = validatedPolicyV1()
+
+    // The brand is a real enumerable own property and the canonicalizer still
+    // serializes it. Asserting BOTH is what makes this control load-bearing: a
+    // future "fix" that deleted the brand, or one that taught canonicalize to
+    // skip keys beginning with a double underscore, would satisfy the digest
+    // equality below while destroying the guarantee it stands for. Here the
+    // brand survives untouched and is excluded by the PROJECTION alone.
+    expect(Object.keys(validated)).toContain('__validated')
+    expect(canonicalize(validated)).toContain('__validated')
+
+    expect(computeDecisionPolicyHash(validated)).toBe(POLICY_RAW_DIGEST)
+  })
+
+  it('C2: leaves definition_hash unmoved when the EMBEDDED policy is the validated one', () => {
+    // The brand sits at the policy's own top level, so validate-then-record
+    // would have moved definition_hash by exactly the same route.
+    const embedded: TemplateVersionDefinition = {
+      ...VERSION_1,
+      decision_policy_json: validatedPolicyV1(),
+    }
+    expect(computeDefinitionHash(embedded)).toBe(VERSION_RAW_DIGEST)
+  })
+
+  it('D: ignores an UNKNOWN enumerable property wherever it is attached', () => {
+    // A store round-tripping an extra column, a publication column, a debugging
+    // annotation: none are declared, so none may reach an identity digest.
+    // Attached at four different depths on purpose — a top-level-only guard
+    // would pass a shallower test and still let a nested extra through.
+    const policyPlusExtra = {
+      ...POLICY_V1,
+      round_tripped_by_a_store: 'not a declared field',
+    } as DecisionPolicy
+    expect(computeDecisionPolicyHash(policyPlusExtra)).toBe(POLICY_RAW_DIGEST)
+
+    const bandPlusExtra: DecisionPolicy = {
+      bands: [
+        { ...POLICY_V1.bands[0], label: 'Reject' } as DecisionBand,
+        POLICY_V1.bands[1],
+        POLICY_V1.bands[2],
+      ],
+    }
+    expect(computeDecisionPolicyHash(bandPlusExtra)).toBe(POLICY_RAW_DIGEST)
+
+    const definitionPlusExtra = {
+      ...VERSION_1,
+      published_at: '2026-09-02T09:00:00.000Z',
+      published_by: 'user-admin-1',
+    } as TemplateVersionDefinition
+    expect(computeDefinitionHash(definitionPlusExtra)).toBe(VERSION_RAW_DIGEST)
+
+    const criterionPlusExtra = {
+      ...VERSION_1,
+      criteria_json: [{ ...CRITERIA_V1[0], display_order: 1 } as Criterion, CRITERIA_V1[1]],
+    } as TemplateVersionDefinition
+    expect(computeDefinitionHash(criterionPlusExtra)).toBe(VERSION_RAW_DIGEST)
+  })
+
+  /**
+   * THE SENSITIVITY CONTROLS COMPARE AGAINST A LIVE BASELINE, NOT THE LITERAL.
+   *
+   * This is the opposite choice from controls A-D above, and deliberately so.
+   * A-D assert IDENTITY, so their expectation must be a frozen literal that
+   * cannot drift with the implementation. E-F2 assert SENSITIVITY — that every
+   * declared field is actually READ — and for that a frozen literal is the
+   * wrong comparand: delete a field from the projection and the mutation of
+   * that field silently collapses onto the unmutated digest, while the literal
+   * (which now matches nothing at all) keeps every inequality below trivially
+   * true. Measured, not assumed: dropping upper_bound_inclusive from the band
+   * projection turned A, B, C, C2 and D red and left a literal-based E GREEN.
+   *
+   * Comparing against the live baseline is not the self-referential expectation
+   * the frozen literals exist to avoid. Nothing here asserts WHICH digest the
+   * baseline is; it asserts only that a mutated payload cannot share it. A
+   * projection that ignored its input entirely would fail every line below.
+   */
+  it('E: moves the policy digest when ANY of the five declared band fields moves', () => {
+    const baseline = computeDecisionPolicyHash(POLICY_V1)
+    const mutatedBands: DecisionBand[] = [
+      { ...POLICY_V1.bands[0], outcome: 'approve_with_conditions' },
+      { ...POLICY_V1.bands[0], lower_bound: 0.01 },
+      { ...POLICY_V1.bands[0], lower_bound_inclusive: false },
+      { ...POLICY_V1.bands[0], upper_bound: 0.55 },
+      { ...POLICY_V1.bands[0], upper_bound_inclusive: true },
+    ]
+    const digests = mutatedBands.map((band) =>
+      computeDecisionPolicyHash({ bands: [band, POLICY_V1.bands[1], POLICY_V1.bands[2]] })
+    )
+    for (const digest of digests) expect(digest).not.toBe(baseline)
+    // Mutually distinct too: five assertions that all produced one digest would
+    // say nothing about WHICH field each mutation moved.
+    expect(new Set(digests).size).toBe(mutatedBands.length)
+  })
+
+  it('F: moves the definition digest when ANY of the ten declared version fields moves', () => {
+    const baseline = computeDefinitionHash(VERSION_1)
+    const mutations: TemplateVersionDefinition[] = [
+      { ...VERSION_1, organization_id: 'org-2' },
+      { ...VERSION_1, template_id: 'tpl-2' },
+      { ...VERSION_1, version: '1.0.1' },
+      { ...VERSION_1, ordinal: 2 },
+      { ...VERSION_1, criteria_json: [CRITERIA_V1[0]] },
+      { ...VERSION_1, decision_policy_json: { bands: [POLICY_V1.bands[0]] } },
+      { ...VERSION_1, supersedes_version_id: 'version-0-id' },
+      { ...VERSION_1, created_by: 'user-admin-2' },
+      { ...VERSION_1, created_by_role: 'impact_manager' },
+      { ...VERSION_1, created_at: '2026-09-01T09:00:01.000Z' },
+    ]
+    const digests = mutations.map(computeDefinitionHash)
+    for (const digest of digests) expect(digest).not.toBe(baseline)
+    expect(new Set(digests).size).toBe(mutations.length)
+  })
+
+  it('F2: moves the definition digest when ANY of the three declared criterion fields moves', () => {
+    const baseline = computeDefinitionHash(VERSION_1)
+    const mutatedCriteria: Criterion[][] = [
+      [{ ...CRITERIA_V1[0], criterion_key: 'governance_v2' }, CRITERIA_V1[1]],
+      [{ ...CRITERIA_V1[0], weight: 2 }, CRITERIA_V1[1]],
+      [{ ...CRITERIA_V1[0], max_score: 5 }, CRITERIA_V1[1]],
+    ]
+    const digests = mutatedCriteria.map((criteria_json) =>
+      computeDefinitionHash({ ...VERSION_1, criteria_json })
+    )
+    for (const digest of digests) expect(digest).not.toBe(baseline)
+    expect(new Set(digests).size).toBe(mutatedCriteria.length)
+  })
+
+  it('G: projects a declared array element-wise and never reorders it', () => {
+    // The projection maps; it must never sort. HD-03 makes band order
+    // load-bearing, and criterion order is stored as given.
+    const swappedBands: DecisionPolicy = {
+      bands: [POLICY_V1.bands[1], POLICY_V1.bands[0], POLICY_V1.bands[2]],
+    }
+    expect(computeDecisionPolicyHash(swappedBands)).not.toBe(POLICY_RAW_DIGEST)
+
+    const swappedCriteria: TemplateVersionDefinition = {
+      ...VERSION_1,
+      criteria_json: [CRITERIA_V1[1], CRITERIA_V1[0]],
+    }
+    expect(computeDefinitionHash(swappedCriteria)).not.toBe(VERSION_RAW_DIGEST)
   })
 })
 

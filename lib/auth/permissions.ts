@@ -235,9 +235,10 @@ export function canApproveRunMethodology(role: Role, isRunAuthor: boolean): bool
 // Evaluate V1 (EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json) — SEVEN closed
 // role sets and SEVEN predicates, one per distinct authority concept.
 //
-// EXTENSIONAL EQUALITY IS NOT AUTHORITY IDENTITY. Five of the seven sets
-// coincide in membership today (three distinct extensions across seven
-// concepts). They remain seven separate constants anyway: a future amendment
+// EXTENSIONAL EQUALITY IS NOT AUTHORITY IDENTITY. Distinct Evaluate authority
+// concepts may carry extensionally equal role sets — these seven concepts draw
+// on three distinct extensions today — and they must nevertheless remain
+// separately named, separately bound and non-aliased. A future amendment
 // to HD-05 must not be able to move the RAT-EV-04 draft set, and a future
 // amendment to HD-08 must not be able to move the create set. R3 of the
 // authority declared this rule and then violated it twice by pointing

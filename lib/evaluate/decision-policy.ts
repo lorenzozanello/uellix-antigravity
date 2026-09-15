@@ -47,6 +47,7 @@ import { createHash } from 'node:crypto'
 import { SCORE_DOMAIN_MAX, SCORE_DOMAIN_MIN } from './scoring'
 import {
   DECISION_OUTCOMES,
+  type Criterion,
   type DecisionBand,
   type DecisionPolicy,
   type PolicyValidationResult,
@@ -306,6 +307,109 @@ function sha256Hex(domain: string, payload: string): string {
 }
 
 /**
+ * ===========================================================================
+ * THE HASH IS TAKEN OVER THE DECLARED PAYLOAD, NOT OVER THE OBJECT SUPPLIED
+ * ===========================================================================
+ * `canonicalize` serializes every enumerable own property it is handed. That is
+ * correct for a canonicalizer and wrong as a hashing boundary. The two digests
+ * below are IDENTITY digests for a row OBJ-2 will store, so what they must
+ * depend on is the DECLARED PERSISTED SHAPE — not whatever an object happens to
+ * be carrying at the moment it reaches the call.
+ *
+ * The concrete case this closes: `validateDecisionPolicy` returns a BRANDED
+ * policy, and `ValidatedDecisionPolicy` is structurally assignable to
+ * `DecisionPolicy`, so no call site can be made to reject one by type. Hashing
+ * the object as supplied therefore made the digest depend on WHETHER THE POLICY
+ * HAD BEEN VALIDATED. That is harmless while nothing persists, and unsafe the
+ * moment W-EV-1 exists: the natural order at publication is validate-then-
+ * record, so the recorded hash would be one that no later reader, recomputing
+ * it from the stored row, could ever reproduce.
+ *
+ * The fix is a POSITIVE PROJECTION, never a blacklist. Deleting `__validated`,
+ * or skipping keys that begin with '__', would close this instance and leave
+ * the class open: the next field added to a validated wrapper, or any extra
+ * column a store round-trips back, would silently enter the digest again. A
+ * projection enumerates what IS hashed, so an unknown property is excluded by
+ * construction rather than by a rule someone has to remember to extend.
+ *
+ * The field lists below are the declared shapes in ./types — DecisionBand's
+ * five properties, Criterion's three, TemplateVersionDefinition's ten. Each is
+ * written as an exhaustive literal rather than a spread, because a spread is
+ * precisely what reintroduces the defect. The cost is real and accepted: adding
+ * a declared field to a type without adding it here leaves that field OUT of
+ * the identity digest.
+ */
+
+/**
+ * Project a declared array field element-wise, preserving STORED ORDER.
+ *
+ * `map` is not `sort`. Band order is load-bearing (HD-03) and criterion order
+ * is stored as given; nothing here may reorder what the row holds.
+ *
+ * The array guard is not defensive noise. These are boundary functions reached
+ * by payloads that originate outside the type system, and a payload that is not
+ * the shape its type claims must be refused by `canonicalize` — in one place —
+ * rather than dying inside whichever projection happened to touch it first.
+ */
+function projectDeclaredArray<T>(value: readonly T[], project: (item: T) => unknown): unknown {
+  return Array.isArray(value) ? value.map(project) : value
+}
+
+/** DecisionBand's five declared properties, and nothing else. */
+function projectBand(band: DecisionBand): unknown {
+  return {
+    outcome: band.outcome,
+    lower_bound: band.lower_bound,
+    lower_bound_inclusive: band.lower_bound_inclusive,
+    upper_bound: band.upper_bound,
+    upper_bound_inclusive: band.upper_bound_inclusive,
+  }
+}
+
+/** Criterion's three declared properties, and nothing else. */
+function projectCriterion(criterion: Criterion): unknown {
+  return {
+    criterion_key: criterion.criterion_key,
+    weight: criterion.weight,
+    max_score: criterion.max_score,
+  }
+}
+
+/** decision_policy_json's declared shape: an ordered array of projected bands. */
+function projectDecisionPolicy(policy: DecisionPolicy): unknown {
+  const bands = (policy as Partial<DecisionPolicy> | undefined)?.bands
+  if (bands === undefined) return policy
+  return { bands: projectDeclaredArray(bands, projectBand) }
+}
+
+/**
+ * TemplateVersionDefinition's ten declared properties, and nothing else.
+ *
+ * decision_policy_json is re-projected rather than copied by reference: the
+ * brand sits at the POLICY's own top level, so a validated policy embedded in a
+ * definition would otherwise perturb definition_hash by exactly the same route.
+ *
+ * Publication columns stay absent here for the reason OBJ-2 gives — they are
+ * the one write-once NULL-to-value transition permitted after insert, so
+ * admitting them would make definition_hash move at publication, and
+ * definition_hash exists to prove the version did NOT move.
+ */
+function projectTemplateVersionDefinition(definition: TemplateVersionDefinition): unknown {
+  return {
+    organization_id: definition.organization_id,
+    template_id: definition.template_id,
+    version: definition.version,
+    ordinal: definition.ordinal,
+    criteria_json: projectDeclaredArray(definition.criteria_json, projectCriterion),
+    decision_policy_json: projectDecisionPolicy(definition.decision_policy_json),
+    supersedes_version_id: definition.supersedes_version_id,
+    created_by: definition.created_by,
+    created_by_role: definition.created_by_role,
+    created_at: definition.created_at,
+  }
+}
+
+/**
  * definition_hash — over the WHOLE immutable version payload.
  *
  * Includes decision_policy_json, because the policy is part of the version.
@@ -313,10 +417,13 @@ function sha256Hex(domain: string, payload: string): string {
  * when the criteria move, so it cannot attribute a recommendation to a policy.
  */
 export function computeDefinitionHash(definition: TemplateVersionDefinition): string {
-  return sha256Hex(DEFINITION_HASH_DOMAIN, canonicalize(definition))
+  return sha256Hex(
+    DEFINITION_HASH_DOMAIN,
+    canonicalize(projectTemplateVersionDefinition(definition))
+  )
 }
 
 /** decision_policy_hash — over decision_policy_json ALONE. */
 export function computeDecisionPolicyHash(policy: DecisionPolicy): string {
-  return sha256Hex(DECISION_POLICY_HASH_DOMAIN, canonicalize(policy))
+  return sha256Hex(DECISION_POLICY_HASH_DOMAIN, canonicalize(projectDecisionPolicy(policy)))
 }
