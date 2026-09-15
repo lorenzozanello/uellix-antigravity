@@ -188,6 +188,47 @@ import { AUDIT_ACTIONS } from '@/lib/audit/logger'
 
 const SELECTION = 'tenancy.organization.selection_refused'
 const REVALIDATION = 'tenancy.membership.revalidation_refused'
+
+// The Evaluate V1 refusal verbs (EVALUATE_COMMERCIAL_V1_AUTHORITY_v1.0.0.json
+// AUDIT.new_keys). They are LITERALS here, never read back out of
+// AUDIT_ACTIONS: an expectation derived from the same production object it is
+// meant to pin cannot fail, and this guard is exactly the kind that must.
+const EVALUATION_DECISION_REFUSED = 'evaluation.decision_refused'
+const EVALUATION_CRITERION_RESPONSE_EDIT_REFUSED = 'evaluation_criterion_response.edit_refused'
+
+/**
+ * The CLOSED WORLD of audit verbs ending in _refused, across the whole
+ * repository vocabulary.
+ *
+ * F-EVAL-W2-DEPENDENT-1 (DEPENDENT_TEST_DISPLACEMENT, not
+ * SECURITY_GUARD_RELAXATION): this set was the two tenancy verbs until the
+ * authority-mandated Evaluate audit vocabulary landed and legitimately
+ * displaced it, 2 -> 4. The guard below still asserts EXACT SET EQUALITY, so
+ * a fifth _refused verb added by any future package fails here until it is
+ * admitted deliberately. Membership was re-derived from three independent
+ * sources: the BASE vocabulary, the frozen authority new_keys, and the live
+ * object — never from the numeral alone.
+ */
+const EXPECTED_REFUSAL_VOCABULARY = [
+  SELECTION,
+  REVALIDATION,
+  EVALUATION_DECISION_REFUSED,
+  EVALUATION_CRITERION_RESPONSE_EDIT_REFUSED,
+]
+
+/** The selector under test: every _refused verb in a vocabulary. */
+function refusalVerbsOf(vocabulary: Record<string, string>): string[] {
+  return Object.values(vocabulary).filter((a) => String(a).endsWith('_refused'))
+}
+
+/**
+ * The closed-world comparison itself, factored out so the non-vacuity controls
+ * below exercise THE SAME mechanism as the real assertion rather than a
+ * look-alike that could drift away from it.
+ */
+function assertClosedRefusalWorld(actual: string[], expected: string[]): void {
+  expect([...actual].sort()).toEqual([...expected].sort())
+}
 const REASON_A = 'TENANCY_NO_ORGANIZATION_SELECTED'
 const REASON_B = 'TENANCY_SELECTED_ORGANIZATION_NOT_A_MEMBER'
 
@@ -213,12 +254,36 @@ beforeEach(() => {
 
 /* -------------------------------------------------------------------------- */
 
-describe('the two audit verbs are registered, and nothing else was added', () => {
-  it('AUDIT_ACTIONS carries exactly the two refusal verbs, spelled as the policy expects', () => {
+describe('the refusal audit verbs are registered, and nothing else was added', () => {
+  it('the two S3 tenancy refusal verbs are spelled as the policy expects', () => {
     expect(AUDIT_ACTIONS.TENANCY_ORGANIZATION_SELECTION_REFUSED).toBe(SELECTION)
     expect(AUDIT_ACTIONS.TENANCY_MEMBERSHIP_REVALIDATION_REFUSED).toBe(REVALIDATION)
-    const refusalVerbs = Object.values(AUDIT_ACTIONS).filter((a) => String(a).endsWith('_refused'))
-    expect(refusalVerbs.sort()).toEqual([REVALIDATION, SELECTION].sort())
+  })
+
+  it('AUDIT_ACTIONS carries EXACTLY the expected closed set of _refused verbs', () => {
+    assertClosedRefusalWorld(refusalVerbsOf(AUDIT_ACTIONS), EXPECTED_REFUSAL_VOCABULARY)
+  })
+
+  // NON-VACUITY. An exact-equality pin that cannot be shown to fail is
+  // indistinguishable from one that is not running. Both directions are
+  // exercised through assertClosedRefusalWorld, the same function the real
+  // assertion above calls.
+  it('REJECTS an unauthorized extra _refused verb', () => {
+    const withExtra = [
+      ...refusalVerbsOf(AUDIT_ACTIONS),
+      'synthetic_object.unauthorized_refused',
+    ]
+    expect(() => assertClosedRefusalWorld(withExtra, EXPECTED_REFUSAL_VOCABULARY)).toThrow()
+  })
+
+  it('REJECTS a missing required _refused verb', () => {
+    const withMissing = refusalVerbsOf(AUDIT_ACTIONS).filter((v) => v !== SELECTION)
+    expect(() => assertClosedRefusalWorld(withMissing, EXPECTED_REFUSAL_VOCABULARY)).toThrow()
+  })
+
+  it('the expected set is the exact size derived from BASE plus the authority', () => {
+    expect(EXPECTED_REFUSAL_VOCABULARY).toHaveLength(4)
+    expect(new Set(EXPECTED_REFUSAL_VOCABULARY).size).toBe(4)
   })
 })
 

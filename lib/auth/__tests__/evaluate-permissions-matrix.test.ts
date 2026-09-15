@@ -1,5 +1,5 @@
 /**
- * lib/auth/tests/evaluate-permissions-matrix.test.ts
+ * lib/auth/__tests__/evaluate-permissions-matrix.test.ts
  *
  * EXHAUSTIVE ordered role/predicate behaviour matrix for Evaluate V1, plus the
  * audit-vocabulary poststate.

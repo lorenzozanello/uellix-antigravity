@@ -1,18 +1,18 @@
 /**
- * lib/auth/tests/evaluate-predicate-identity.test.ts
+ * lib/auth/__tests__/evaluate-predicate-identity.test.ts
  *
  * N-22 — PREDICATE IDENTITY over all SEVEN Evaluate authority concepts,
  * asserted STRUCTURALLY because it is undetectable behaviourally.
  * Plus M-12, M-13 and M-14, which prove N-22 is not vacuous.
  *
- * MANIFEST PATH DIVERGENCE (recorded, not silently reconciled)
- * ------------------------------------------------------------
- * EVALUATE_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json names this control's file
- * as lib/auth/__tests__/evaluate-predicate-identity.test.ts. The authorized
- * write-set ceiling for this package is lib/auth/tests/**, which does NOT
- * match lib/auth/__tests__/. The ceiling is binding, so the control lives
- * here. Its SUBSTANCE is unchanged; only its declared location differs. This
- * is an open finding for the certifier, not an authority expansion.
+ * MANIFEST PATH CONFORMANCE
+ * ------------------------
+ * EVALUATE_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json names this file as
+ * lib/auth/__tests__/evaluate-predicate-identity.test.ts, and that is where it
+ * lives. An earlier revision of this package placed it under lib/auth/tests/
+ * and recorded the mismatch as an open finding rather than silently widening
+ * scope; the coordinator write-set restatement resolved it to __tests__, which
+ * agrees with the manifest. Finding CLOSED.
  *
  * N-22 clause (6) — "each Evaluate server action calls the predicate matching
  * its own act" — is DEFERRED_TO_W_EV_5, not PASS. No Evaluate server action

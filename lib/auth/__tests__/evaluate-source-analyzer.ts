@@ -1,5 +1,5 @@
 /**
- * lib/auth/tests/evaluate-source-analyzer.ts
+ * lib/auth/__tests__/evaluate-source-analyzer.ts
  *
  * Structural analyzer backing N-22 (EVALUATE_COMMERCIAL_V1_TEST_MANIFEST
  * v1.0.0.json) and the M-12 / M-13 / M-14 mutation controls.

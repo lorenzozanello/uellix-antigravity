@@ -251,7 +251,7 @@ export function canApproveRunMethodology(role: Role, isRunAuthor: boolean): bool
 // express the criterion-edit set, analyst being its lowest-ranked member —
 // returns the RIGHT answer for five of six roles and the wrong answer for
 // exactly the one role RAT-EV-02 excludes. A suite that only checks reviewer
-// and viewer denials passes. See lib/auth/tests/evaluate-predicate-identity.
+// and viewer denials passes. See lib/auth/__tests__/evaluate-predicate-identity.
 //
 // Deriving any of these from isInReviewSet / REVIEW_ROLES is likewise
 // forbidden: 'reviewer' is in the repository review set and is excluded from
