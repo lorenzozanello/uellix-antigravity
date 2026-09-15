@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { FolderKanban, ShieldCheck, ArrowRight, Plus } from 'lucide-react'
 import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { ROLE_LABELS } from '@/lib/auth/roles'
-import { listProjectsForCurrentOrganization } from '@/lib/projects/service'
+import { listProjectsWithMeasureProgressForCurrentOrganization } from '@/lib/projects/service'
+import { MeasureProgressBadge } from '@/components/projects/MeasureProgressBadge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/states/EmptyState'
@@ -21,7 +22,7 @@ export default async function DashboardPage() {
     async ({ organization, membership }) => ({
       organization,
       membership,
-      projects: await listProjectsForCurrentOrganization(),
+      projects: await listProjectsWithMeasureProgressForCurrentOrganization(),
     })
   )
 
@@ -179,14 +180,18 @@ export default async function DashboardPage() {
                         {badge.label}
                       </Badge>
                     </div>
-                    <Link
-                      href={`/app/projects/${project.id}/pipeline`}
-                      className="mt-3 flex items-center gap-1 text-xs font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                      aria-label={`Abrir pipeline de ${project.name}`}
-                    >
-                      Abrir pipeline
-                      <ArrowRight className="h-3 w-3" aria-hidden="true" />
-                    </Link>
+                    {/* The next action is DERIVED from persisted Measure state
+                        rather than always pointing at the pipeline root, so the
+                        card answers "what do I do next" instead of "where is
+                        the pipeline". */}
+                    <div className="mt-3">
+                      <MeasureProgressBadge
+                        projectId={project.id}
+                        projectName={project.name}
+                        progress={project.measureProgress}
+                        unassignedToPortfolio={project.unassignedToPortfolio}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               )

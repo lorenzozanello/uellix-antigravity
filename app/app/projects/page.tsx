@@ -1,14 +1,14 @@
 import Link from 'next/link'
 import { Plus, FolderKanban } from 'lucide-react'
 import { runWithOptionalOrganizationAccess } from '@/lib/auth/session'
-import { listProjectsForCurrentOrganization } from '@/lib/projects/service'
+import { listProjectsWithMeasureProgressForCurrentOrganization } from '@/lib/projects/service'
 import { ProjectCard } from '@/components/projects/ProjectCard'
 import { EmptyState } from '@/components/states/EmptyState'
 
 export default async function ProjectsPage() {
   const data = await runWithOptionalOrganizationAccess(async (ctx) => {
     if (!ctx) return null
-    return { ctx, projects: await listProjectsForCurrentOrganization() }
+    return { ctx, projects: await listProjectsWithMeasureProgressForCurrentOrganization() }
   })
   if (!data) return <p>No autenticado. Por favor inicia sesión.</p>
   const { ctx, projects } = data
@@ -71,6 +71,8 @@ export default async function ProjectsPage() {
               country={project.country}
               startDate={project.startDate}
               userRole={ctx.membership.role}
+              measureProgress={project.measureProgress}
+              unassignedToPortfolio={project.unassignedToPortfolio}
             />
           ))}
           {canCreate && (

@@ -3,6 +3,8 @@ import { ArrowRight, Calendar, MapPin } from 'lucide-react'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ProjectActionsMenu } from './ProjectActionsMenu'
+import { MeasureProgressBadge } from './MeasureProgressBadge'
+import type { MeasureProgress } from '@/lib/projects/service'
 
 type ProjectStatus = 'draft' | 'active' | 'paused' | 'completed' | 'archived'
 
@@ -23,9 +25,28 @@ interface ProjectCardProps {
   country?: string | null
   startDate?: Date | string | null
   userRole?: string
+  /**
+   * Where this project stands in Measure, already derived from persisted
+   * state by lib/projects/service. Optional so callers that have not been
+   * migrated keep rendering exactly as before.
+   */
+  measureProgress?: MeasureProgress
+  /** projects.portfolio_id IS NULL — informational marker only. */
+  unassignedToPortfolio?: boolean
 }
 
-export function ProjectCard({ id, name, description, status, territory, country, startDate, userRole }: ProjectCardProps) {
+export function ProjectCard({
+  id,
+  name,
+  description,
+  status,
+  territory,
+  country,
+  startDate,
+  userRole,
+  measureProgress,
+  unassignedToPortfolio,
+}: ProjectCardProps) {
   const config = STATUS_CONFIG[status as ProjectStatus] ?? { variant: 'neutral' as const, label: status }
   const locationLabel = [territory, country].filter(Boolean).join(' · ')
   const dateLabel = startDate
@@ -66,6 +87,16 @@ export function ProjectCard({ id, name, description, status, territory, country,
             <Calendar className="h-3 w-3 shrink-0" aria-hidden="true" />
             Iniciado en {dateLabel}
           </p>
+        )}
+        {measureProgress && (
+          <div className="pt-1.5">
+            <MeasureProgressBadge
+              projectId={id}
+              projectName={name}
+              progress={measureProgress}
+              unassignedToPortfolio={unassignedToPortfolio}
+            />
+          </div>
         )}
       </CardContent>
 
