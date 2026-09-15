@@ -2,7 +2,7 @@
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { spawnSync } from 'node:child_process'
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync, existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import {
   matchesPattern,
@@ -1363,15 +1363,26 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     expect(resolveProtectedGrant('HPO-ODS-W2-26', CE1_BRANCH).grant).toBeDefined()
   })
 
-  it('ABSENCE (CE1-GRANT-N4, advanced by v1.0.33): HPO-ODS-W2-31 is unallocated and unregistered, and resolves nowhere', () => {
+  it('ABSENCE (CE1-GRANT-N4, advanced by v1.0.33): HPO-ODS-W2-31 is UNREGISTERED and resolves nowhere — allocation is a different axis and says nothing here', () => {
     // ADVANCED from W2-30 to W2-31 when W2-30 was registered under
     // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json, exactly as it
     // advanced from W2-29 to W2-30 when W2-29 was registered. This is one of
     // the two executable clusters that assert the next id absent; the other
     // lives in the frozen-registry test above and advanced in the same act.
-    // W2-31 is named here as a PROHIBITION — v1.0.33 NO_PREALLOCATION lists
-    // HPO-ODS-W2-31 among the ids it explicitly does NOT allocate, and derives
-    // it from the ODS ALLOCATION axis maximum rather than from registry length.
+    //
+    // THE TITLE IS SCOPED TO THE REGISTRY AXIS DELIBERATELY. W2-31 was named
+    // as a PROHIBITION by v1.0.33 — its NO_PREALLOCATION lists HPO-ODS-W2-31
+    // among the ids it explicitly does NOT allocate — but it has SINCE BEEN
+    // ALLOCATED, by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json,
+    // which carries it at GRANT_ID. Both statements are true: v1.0.33's
+    // prohibition was true of v1.0.33's own act, and a later act allocated it.
+    //
+    // NOT ONE ASSERTION BELOW CHANGED WHEN THAT HAPPENED, because every one of
+    // them is a REGISTRY-axis assertion — membership in PROTECTED_GRANTS and
+    // resolution against a branch — and allocation adds no row. Only the NAME
+    // of this control moved, from a claim about two axes to a claim about the
+    // one it actually tests. A control that passes while its own name asserts
+    // an unmeasured fact is worse than a red one.
     expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-31')).toBe(false)
     for (const branch of [CE1_BRANCH, 'main', 'codex/ce1-w2-26-registration-r1']) {
       expect(resolveProtectedGrant('HPO-ODS-W2-31', branch).grant).toBeUndefined()
@@ -2540,12 +2551,20 @@ describe('HPO-ODS-W2-29 — Customer Lifecycle L1 organization commercial accept
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json')),
     ).toBe(true)
-    // THE MECHANICALLY-NEXT ABSENCE SENTINEL. Without it the lineage axis would
-    // carry only positive assertions and an over-allocation would pass unnoticed.
-    // Naming v1.0.34 inside an ABSENCE assertion is a PROHIBITION, never an
-    // allocation: an assertion that a file does not exist cannot be a claim on it.
+    // ADVANCED by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json. This
+    // assertion pinned v1.0.34 ABSENT until that allocation act created it; it
+    // now proves PRESENCE. The advance is forced, not chosen: allocating a
+    // lineage position IS creating this file, so no allocation can leave the
+    // assertion standing.
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')),
+    ).toBe(true)
+    // THE MECHANICALLY-NEXT ABSENCE SENTINEL. Without it the lineage axis would
+    // carry only positive assertions and an over-allocation would pass unnoticed.
+    // Naming v1.0.35 inside an ABSENCE assertion is a PROHIBITION, never an
+    // allocation: an assertion that a file does not exist cannot be a claim on it.
+    expect(
+      existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json')),
     ).toBe(false)
   })
 })
@@ -2916,9 +2935,19 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     // ALLOCATED. Naming an id in a prohibition is never an allocation.
     expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain('ODS v1.0.34')
     expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain('HPO-ODS-W2-31')
+    // THOSE TWO toContain ASSERTIONS ARE HISTORICAL AND ARE LEFT BYTE-UNCHANGED.
+    // They are PAST-TENSE claims about what the FROZEN v1.0.33 document says,
+    // and v1.0.33 still says it. They did NOT become false when v1.0.34 was
+    // allocated, because v1.0.33's prohibition was true of v1.0.33's OWN act.
+    // Rewriting them to match the new reality would corrupt the historical
+    // record to satisfy a present-tense reading.
+    //
+    // The FILESYSTEM assertion below is the opposite kind of claim — present
+    // tense, about the world — so it MUST move when the world moves, and it
+    // has: v1.0.34 was allocated by its own governed act and now EXISTS.
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')),
-    ).toBe(false)
+    ).toBe(true)
     expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-31')
     expect(resolveProtectedGrant('HPO-ODS-W2-31', CE3_BRANCH).grant).toBeUndefined()
     // THE TWO SENTINEL AXES ARE DISTINCT, AND THEY MOVE ON DIFFERENT ACTS.
@@ -3335,10 +3364,16 @@ describe('HPO-ODS-W2-30 — Commercial Account CE-3 grant: registration, narrown
     for (const p of row.patterns) {
       expect(/\d{4}/.test(p)).toBe(false)
     }
-    // NO NEW ODS LINEAGE. v1.0.33 exists on the filesystem; v1.0.34 does not,
-    // and registration creates no addendum.
+    // NO NEW ODS LINEAGE WAS CREATED BY THE REGISTRATION. Both v1.0.33 and
+    // v1.0.34 now exist on the filesystem, but NEITHER was created by the
+    // registration act this control describes: v1.0.33 by its own allocation
+    // and v1.0.34 by the SEPARATE later allocation. The claim this control
+    // makes is about what REGISTRATION does, and registration creates no
+    // addendum — which is why the un-allocated successor is pinned absent
+    // below rather than here.
     expect(existsSync(path.join(REPO_ROOT, CE3_ADDENDUM))).toBe(true)
-    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json'))).toBe(false)
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json'))).toBe(true)
+    expect(existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json'))).toBe(false)
     // NO CONTROLLER MUTATION IS REQUIRED FOR THE GRANT TO RESOLVE. The two
     // registries are independent (v1.0.32 DECOUPLING_PRESERVED): the Controller
     // gates the next LINEAGE allocation and can never prevent a grant from
@@ -4460,5 +4495,394 @@ describe('ods:scope --protected-authority (repeated) — real CLI, M1-N1/M1-N2/M
     expect(failResult.status).toBe(1)
     expect(failResult.stdout).toContain('ODS_SCOPE=FAIL')
     expect(failResult.stdout).toContain('PROTECTED_PATH_VIOLATION=db/baseline/sibling.sql')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 DEFINER OWNERSHIP LINEAGE ALLOCATION.
+// docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json.
+//
+// THESE ARE ALLOCATION CONTROLS, NOT REGISTRATION CONTROLS. The distinction is
+// the whole point of the cluster and it is mechanical rather than stylistic:
+//
+//   LINEAGE axis    — a FILESYSTEM claim. Allocation creates a file, so this
+//                     axis moves. Advanced by this act.
+//   REGISTRY axis   — a MEMBERSHIP claim about PROTECTED_GRANTS. Allocation
+//                     adds no row, so this axis does NOT move. Left alone.
+//
+// Advancing the wrong one is how an unregistered grant comes to look
+// registered, which is the single failure this cluster exists to prevent.
+// ---------------------------------------------------------------------------
+describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (declared, NOT registered)', () => {
+  const ODS_DIR = 'docs/ops/ods'
+  const W2_31_ADDENDUM = `${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json`
+  const W2_30_ADDENDUM = `${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json`
+  const NEXT_UNALLOCATED = `${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json`
+  const CE3_IMPL_BRANCH = 'codex/commercial-account-ce3-implementation-r1'
+  const W2_31_PATTERNS = [
+    'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql',
+    'db/prepared/README.md',
+  ]
+
+  type Addendum = {
+    package_id: string
+    version: string
+    artifact_id: string
+    GRANT_ID?: string
+    succeeds: string | null
+    protected_grant: {
+      authorityId: string
+      branch: string
+      patterns: string[]
+      pattern_count: number
+      registration_status: string
+    }
+    PROTECTED_GRANTS_CHANGED: boolean
+    PROTECTED_GRANTS_COUNT_BEFORE: number
+    PROTECTED_GRANTS_COUNT_AFTER: number
+    PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_31: number
+    REGISTERED_GRANT_TAIL_BEFORE: string
+    REGISTERED_GRANT_TAIL_AFTER: string
+    NO_PREALLOCATION: {
+      GRANT_REGISTERED: string
+      HOSTED_PACKAGE_IMPLEMENTED: string
+      PR159_MUTATED: string
+      R4_CREATED: string
+      explicitly_not_allocated: string[]
+      NEXT_ODS_LINEAGE_VERSION_AFTER_THIS_ONE: { value: string; classification: string }
+      NEXT_PROTECTED_GRANT_AFTER_THIS_ONE: { value: string; classification: string }
+    }
+    authorized_changed_paths_this_mission: string[]
+  }
+
+  const readW2_31 = (): Addendum =>
+    JSON.parse(readFileSync(path.join(REPO_ROOT, W2_31_ADDENDUM), 'utf8')) as Addendum
+
+  // Enumerate the addendum corpus ONCE, by directory read rather than by a
+  // hardcoded range, so a stray artefact outside the expected span is still seen.
+  const addendumFiles = readdirSync(path.join(REPO_ROOT, ODS_DIR)).filter((f) =>
+    /^ODS_V1_MAINTENANCE_ADDENDUM_v1\.0\.\d+\.json$/.test(f),
+  )
+
+  it('ALLOCATION (W2-31-ALLOC-P1): the v1.0.34 artefact exists, parses, and its parsed version agrees with its FILENAME', () => {
+    // The filename/field agreement is the control that catches an artefact
+    // copied from its predecessor and renamed without its version being
+    // updated — a mutation that leaves valid JSON and a valid path, and that
+    // no existence check and no parse check can see.
+    expect(existsSync(path.join(REPO_ROOT, W2_31_ADDENDUM))).toBe(true)
+    const a = readW2_31()
+    expect(a.package_id).toBe('ODS_V1_MAINTENANCE_ADDENDUM')
+    expect(a.version).toBe('1.0.34')
+    expect(a.artifact_id).toBe('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34')
+    // Derived from the PATH rather than typed again, so the two cannot drift.
+    expect(W2_31_ADDENDUM).toBe(`${ODS_DIR}/ODS_V1_MAINTENANCE_ADDENDUM_v${a.version}.json`)
+    expect(a.artifact_id).toBe(`ODS_V1_MAINTENANCE_ADDENDUM_v${a.version}`)
+  })
+
+  it('LINEAGE (W2-31-ALLOC-P2): v1.0.34 SUCCEEDS v1.0.33, the sequence is dense 1..34, and v1.0.34 is allocated EXACTLY ONCE', () => {
+    const a = readW2_31()
+    expect(a.succeeds).toBe('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33')
+    // The predecessor it names must actually exist, or "succeeds" is a dangling
+    // citation rather than a lineage link.
+    expect(existsSync(path.join(REPO_ROOT, W2_30_ADDENDUM))).toBe(true)
+
+    // DENSITY, re-derived from the directory rather than asserted as a numeral.
+    const nums = addendumFiles
+      .map((f) => Number(/v1\.0\.(\d+)\.json$/.exec(f)![1]))
+      .sort((x, y) => x - y)
+    expect(nums.length).toBeGreaterThan(0)
+    nums.forEach((n, i) => expect(n).toBe(i + 1))
+    expect(nums[nums.length - 1]).toBe(34)
+
+    // EXACTLY ONE authoritative allocation of the version, measured at the
+    // KEY POSITION. A file merely MENTIONING "1.0.34" in prose is not an
+    // allocation, so a prose sweep would over-count; the version KEY is the
+    // predicate. Every addendum's version field is read and compared.
+    const carriers = addendumFiles.filter((f) => {
+      const parsed = JSON.parse(readFileSync(path.join(REPO_ROOT, ODS_DIR, f), 'utf8'))
+      return parsed.version === '1.0.34'
+    })
+    expect(carriers).toEqual(['ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json'])
+
+    // NON-VACUITY of that singleton: the SAME predicate applied to the
+    // predecessor also returns exactly one. A uniqueness check that has never
+    // been shown to return one for a known-present value proves nothing.
+    const prevCarriers = addendumFiles.filter((f) => {
+      const parsed = JSON.parse(readFileSync(path.join(REPO_ROOT, ODS_DIR, f), 'utf8'))
+      return parsed.version === '1.0.33'
+    })
+    expect(prevCarriers).toEqual(['ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json'])
+  })
+
+  it('GRANT DECLARATION (W2-31-ALLOC-P3): GRANT_ID is exactly HPO-ODS-W2-31, bound to the exact PR #159 branch, with EXACTLY the two frozen literals in order', () => {
+    const a = readW2_31()
+    expect(a.GRANT_ID).toBe('HPO-ODS-W2-31')
+    expect(a.protected_grant.authorityId).toBe('HPO-ODS-W2-31')
+    // The declaration's own id must agree with the artefact's GRANT_ID, or the
+    // document allocates one id and declares another.
+    expect(a.protected_grant.authorityId).toBe(a.GRANT_ID)
+
+    // BRANCH IS EXACT. Resolution is by exact string equality, so a prefix, a
+    // case variant or a trailing space is a DIFFERENT branch and the grant
+    // would contribute zero patterns.
+    expect(a.protected_grant.branch).toBe(CE3_IMPL_BRANCH)
+
+    // PATTERNS: exact set, exact ORDER, exact size. toEqual enforces order,
+    // which matters because the registration control asserts the row by whole
+    // object equality rather than by set comparison.
+    expect(a.protected_grant.patterns).toEqual(W2_31_PATTERNS)
+    expect(a.protected_grant.patterns.length).toBe(2)
+    // pattern_count is derived from the array rather than trusted on its own,
+    // so a numeral can never disagree with the list it counts.
+    expect(a.protected_grant.pattern_count).toBe(a.protected_grant.patterns.length)
+    expect(a.protected_grant.registration_status).toBe('DECLARED_NOT_REGISTERED')
+  })
+
+  it('NO WILDCARD BROADENING (W2-31-ALLOC-N1): both patterns are exact file literals, and no blanket or directory pattern appears', () => {
+    const a = readW2_31()
+    // ZERO wildcard characters. A single "*" anywhere would turn a two-file
+    // grant into an open-ended one.
+    for (const p of a.protected_grant.patterns) {
+      expect(p.includes('*')).toBe(false)
+      expect(p.endsWith('/')).toBe(false)
+    }
+    // The specific widenings that would be plausible here are each refused by
+    // name, so that a future edit adding one fails loudly rather than passing
+    // a generic "no star" check by using a different shape.
+    const forbidden = [
+      'db/prepared/**',
+      'db/prepared/*',
+      'db/prepared/hosted/**',
+      'db/prepared/hosted/governed/**',
+      'db/prepared/journal/**',
+      'db/prepared/checkpoint-b0/**',
+      'db/prepared/checkpoint-b0/observation.sql',
+      'db/prepared/checkpoint-a1/corroboration.sql',
+      'db/migrations/**',
+      'db/baseline/**',
+      'db/schema.ts',
+      'db/prepared/stella_hosted_0009_rollback.sql',
+    ]
+    for (const f of forbidden) {
+      expect(a.protected_grant.patterns).not.toContain(f)
+    }
+    // AND NO ROLLBACK PATH BY SHAPE, not merely by that one spelling: the
+    // integrated FORWARD_ONLY_CONTRACT forbids any rollback file for 0009, so
+    // a differently-named one must fail too.
+    expect(a.protected_grant.patterns.some((p) => p.includes('rollback'))).toBe(false)
+  })
+
+  it('THE DECLARED PATTERNS DO THE JOB AND NOTHING MORE (W2-31-ALLOC-N2): they authorize their two paths and REFUSE every db/prepared sibling', () => {
+    const a = readW2_31()
+    // Build the grant the registration act WOULD create, and run it through
+    // the REAL classifier. This proves the declaration is operationally
+    // correct rather than merely well-formed — a pattern list that looked
+    // right but matched nothing would pass every shape check above.
+    const asIfRegistered: ProtectedGrant = {
+      authorityId: a.protected_grant.authorityId,
+      branch: a.protected_grant.branch,
+      patterns: a.protected_grant.patterns,
+    }
+
+    // POSITIVE: both governed paths are grant-authorized, given an ordinary
+    // --allow covering them as well (grant_does_not_replace_allow).
+    const ok = classifyPaths(W2_31_PATTERNS, DEFAULT_PROTECTED_PATTERNS, W2_31_PATTERNS, asIfRegistered)
+    expect(ok.protectedViolations).toEqual([])
+    expect(ok.grantAuthorized.slice().sort()).toEqual(W2_31_PATTERNS.slice().sort())
+
+    // NEGATIVE: siblings that DO match the broad default protected pattern
+    // db/prepared/** but NOT these two literals are refused. This is the
+    // control that proves the grant is narrow: the protection is broad, and
+    // breadth of protection is not a licence for breadth in the grant.
+    const siblings = [
+      'db/prepared/stella_hosted_0008_audit_log_write_capability.sql',
+      'db/prepared/stella_hosted_0009_rollback.sql',
+      'db/prepared/journal/086_0073_commercial_account_ce3_entitlement_grants.sql',
+      'db/prepared/checkpoint-b0/observation.sql',
+      'db/migrations/0073_commercial_account_ce3_entitlement_grants.sql',
+    ]
+    for (const s of siblings) {
+      const res = classifyPaths([s], DEFAULT_PROTECTED_PATTERNS, [s], asIfRegistered)
+      expect(res.protectedViolations).toEqual([s])
+      expect(res.grantAuthorized).toEqual([])
+    }
+
+    // AND THE GRANT IS BRANCH-BOUND: on any other branch it contributes
+    // nothing at all, which is why relocating the work to a successor branch
+    // is refused by the artefact rather than accommodated.
+    expect(resolveProtectedGrant('HPO-ODS-W2-31', 'main').grant).toBeUndefined()
+  })
+
+  it('ALLOCATED BUT NOT REGISTERED (W2-31-ALLOC-N3): the REGISTRY axis is untouched — 18 rows, tail W2-30, W2-31 absent and resolving nowhere', () => {
+    const a = readW2_31()
+
+    // THE ALLOCATION AXIS HAS MOVED.
+    expect(a.GRANT_ID).toBe('HPO-ODS-W2-31')
+
+    // THE REGISTRY AXIS HAS NOT. These two facts are simultaneously true and
+    // their coexistence IS the state this act creates.
+    expect(PROTECTED_GRANTS.length).toBe(18)
+    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(18)
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-30')
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-31')
+    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-31')).toBe(false)
+
+    // It resolves NOWHERE — including on its own bound branch, which is the
+    // case that matters: a declared grant must not become usable merely
+    // because the checkout happens to sit on the branch it names.
+    for (const branch of [CE3_IMPL_BRANCH, 'main', 'integration/commercial-v1']) {
+      expect(resolveProtectedGrant('HPO-ODS-W2-31', branch).grant).toBeUndefined()
+    }
+
+    // NON-VACUITY: the id that IS registered resolves on that same branch. A
+    // blanket denial would satisfy the assertions above while proving nothing.
+    expect(resolveProtectedGrant('HPO-ODS-W2-30', CE3_IMPL_BRANCH).grant).toBeDefined()
+
+    // The artefact's own declared figures agree, and are pinned to LITERALS.
+    // They are deliberately NOT compared against PROTECTED_GRANTS.length: the
+    // suite pins the number of such live-count guards at exactly one, and that
+    // one belongs to the REGISTRATION act, not to an allocation.
+    expect(a.PROTECTED_GRANTS_CHANGED).toBe(false)
+    expect(a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(18)
+    expect(a.PROTECTED_GRANTS_COUNT_AFTER).toBe(18)
+    expect(a.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_31).toBe(19)
+    expect(a.REGISTERED_GRANT_TAIL_BEFORE).toBe('HPO-ODS-W2-30')
+    expect(a.REGISTERED_GRANT_TAIL_AFTER).toBe('HPO-ODS-W2-30')
+    expect(a.NO_PREALLOCATION.GRANT_REGISTERED).toBe('NO')
+
+    // TEXTUAL SEPARATION, mechanically enforced: the registration act is the
+    // one that puts this id into the scope source, and it has not run.
+    const scopeSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-scope.ts'), 'utf8')
+    expect(scopeSource.split('HPO-ODS-W2-31').length - 1).toBe(0)
+    // NON-VACUITY of that zero: an id that IS registered appears in the same
+    // file, so the zero is a measured absence rather than an artefact of
+    // reading the wrong file or misspelling the id.
+    expect(scopeSource.split('HPO-ODS-W2-30').length - 1).toBeGreaterThan(0)
+  })
+
+  it('W2-30 IS UNCHANGED AND NOT WIDENED (W2-31-ALLOC-N4): same branch, same three patterns, and the two pattern sets are DISJOINT', () => {
+    const a = readW2_31()
+    // WHOLE-OBJECT equality, so a reorder, a widening or an extra pattern all
+    // fail — not just a length change.
+    expect(PROTECTED_GRANTS[17]).toEqual({
+      authorityId: 'HPO-ODS-W2-30',
+      branch: CE3_IMPL_BRANCH,
+      patterns: [
+        'db/migrations/**',
+        'db/prepared/journal/**',
+        'db/prepared/checkpoint-b0/observation.sql',
+      ],
+    })
+    expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-30').length).toBe(1)
+
+    const w2_30 = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-30')!
+
+    // DISJOINT: W2-31 authorizes nothing W2-30 already authorizes, so neither
+    // widens the other and the new row is doing real work.
+    const overlap = a.protected_grant.patterns.filter((p) => w2_30.patterns.includes(p))
+    expect(overlap).toEqual([])
+
+    // STRICTLY NARROWER IN FORM on both measures a reader would use.
+    expect(a.protected_grant.patterns.length).toBeLessThan(w2_30.patterns.length)
+    const wild = (ps: string[]) => ps.filter((p) => p.includes('*')).length
+    expect(wild(a.protected_grant.patterns)).toBe(0)
+    expect(wild(w2_30.patterns)).toBeGreaterThan(0)
+
+    // NO AUTOMATIC UNION BY BRANCH. Both grants name the SAME branch, and that
+    // coincidence must confer nothing: supplying ONLY W2-30 must leave the
+    // W2-31 paths refused. This is the control that would catch a resolver
+    // that unioned by branch instead of by supplied id.
+    const w2_31_path = 'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql'
+    const onlyW2_30 = classifyPaths([w2_31_path], DEFAULT_PROTECTED_PATTERNS, [w2_31_path], w2_30)
+    expect(onlyW2_30.protectedViolations).toEqual([w2_31_path])
+    expect(onlyW2_30.grantAuthorized).toEqual([])
+  })
+
+  it('NO PREALLOCATION (W2-31-ALLOC-N5): v1.0.35 and W2-32 are named ONLY in prohibitions, and neither is created here', () => {
+    const a = readW2_31()
+    expect(a.NO_PREALLOCATION.NEXT_ODS_LINEAGE_VERSION_AFTER_THIS_ONE.value).toBe('ODS v1.0.35')
+    expect(a.NO_PREALLOCATION.NEXT_ODS_LINEAGE_VERSION_AFTER_THIS_ONE.classification).toBe(
+      'PROHIBITION_NOT_ALLOCATION',
+    )
+    expect(a.NO_PREALLOCATION.NEXT_PROTECTED_GRANT_AFTER_THIS_ONE.value).toBe('HPO-ODS-W2-32')
+    expect(a.NO_PREALLOCATION.NEXT_PROTECTED_GRANT_AFTER_THIS_ONE.classification).toBe(
+      'PROHIBITION_NOT_ALLOCATION',
+    )
+    expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain('ODS v1.0.35')
+    expect(a.NO_PREALLOCATION.explicitly_not_allocated).toContain('HPO-ODS-W2-32')
+
+    // THE NEXT UNALLOCATED POSITION IS v1.0.35 AND IT IS NOT ALLOCATED HERE.
+    // Naming it in an ABSENCE assertion is a prohibition, never a claim on it.
+    expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED))).toBe(false)
+    // ...and no addendum in the corpus carries it at the version KEY either,
+    // which is the predicate a stray renamed copy would fail.
+    const strays = addendumFiles.filter((f) => {
+      const parsed = JSON.parse(readFileSync(path.join(REPO_ROOT, ODS_DIR, f), 'utf8'))
+      return parsed.version === '1.0.35' || parsed.GRANT_ID === 'HPO-ODS-W2-32'
+    })
+    expect(strays).toEqual([])
+
+    // W2-32 IS NOT REGISTERED EITHER — the registry-axis sentinel is NOT
+    // advanced by an allocation, so it stays pinned at W2-31.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-32')
+    expect(resolveProtectedGrant('HPO-ODS-W2-32', CE3_IMPL_BRANCH).grant).toBeUndefined()
+  })
+
+  it('ALLOCATION ONLY (W2-31-ALLOC-N6): no registration, no hosted package, no PR #159 mutation, no R4 — and the write set is exactly two unprotected paths', () => {
+    const a = readW2_31()
+    expect(a.NO_PREALLOCATION.GRANT_REGISTERED).toBe('NO')
+    expect(a.NO_PREALLOCATION.HOSTED_PACKAGE_IMPLEMENTED).toBe('NO')
+    expect(a.NO_PREALLOCATION.PR159_MUTATED).toBe('NO')
+    expect(a.NO_PREALLOCATION.R4_CREATED).toBe('NO')
+
+    // THE HOSTED PACKAGE IS NOT IMPLEMENTED — proven against the filesystem
+    // rather than taken from the artefact's own say-so.
+    expect(
+      existsSync(path.join(REPO_ROOT, 'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql')),
+    ).toBe(false)
+    // ...and no rollback file exists, which the forward-only contract forbids.
+    expect(existsSync(path.join(REPO_ROOT, 'db/prepared/stella_hosted_0009_rollback.sql'))).toBe(false)
+    // NON-VACUITY: the predecessor hosted package DOES exist, so the two
+    // negatives above are measured absences and not a wrong directory.
+    expect(
+      existsSync(path.join(REPO_ROOT, 'db/prepared/stella_hosted_0008_audit_log_write_capability.sql')),
+    ).toBe(true)
+
+    // WRITE SET: exactly two paths, and NEITHER is protected — so this mission
+    // needs no protected-authority grant of its own. A third path, or a
+    // protected one, would mean the act exceeded its authority.
+    expect(a.authorized_changed_paths_this_mission).toEqual([
+      W2_31_ADDENDUM,
+      'tests/ods/ods-scope.test.ts',
+    ])
+    for (const p of a.authorized_changed_paths_this_mission) {
+      expect(matchesAnyPattern(p, DEFAULT_PROTECTED_PATTERNS)).toBe(false)
+    }
+    // The two surfaces a registration or a Controller act would touch are NOT
+    // in this mission's write set.
+    expect(a.authorized_changed_paths_this_mission).not.toContain('scripts/ods-scope.ts')
+    expect(a.authorized_changed_paths_this_mission).not.toContain('scripts/ods-controller.ts')
+    expect(a.authorized_changed_paths_this_mission).not.toContain('tests/ods/ods-controller.test.ts')
+  })
+
+  it('REGISTRATION REMAINS A SEPARATE GOVERNED ACT (W2-31-ALLOC-N7): the Controller has NOT enumerated v1.0.34, and that cannot block the grant', () => {
+    // The Controller is read as TEXT and deliberately NOT imported: importing
+    // IMMUTABLE_BY_CONVENTION here to check an absence would destroy the
+    // decoupling this control exists to demonstrate.
+    const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
+    // v1.0.34 EXISTS on the filesystem and is STILL ABSENT from the Controller
+    // array. That combination is the normal intermediate state of this
+    // lineage — every addendum has passed through it — and it is not a defect
+    // for a later lane to "repair" as a side effect of other work.
+    expect(existsSync(path.join(REPO_ROOT, W2_31_ADDENDUM))).toBe(true)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBe(0)
+    // NON-VACUITY: the predecessor IS enumerated in that same file, so the
+    // zero above proves the path is right, the file is really being read, and
+    // the literal is spelled the way the Controller spells it.
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json').length - 1).toBeGreaterThan(0)
+
+    // DECOUPLING: a missing Controller enumeration does not and cannot prevent
+    // a registered grant from resolving. Demonstrated on the live tail.
+    expect(resolveProtectedGrant('HPO-ODS-W2-30', CE3_IMPL_BRANCH).grant).toBeDefined()
   })
 })
