@@ -146,7 +146,7 @@ describe('N-22 (3) 42 ordered prohibition pairs', () => {
     }
   )
 
-  it('does NOT assert the seven role sets differ — five of seven coincide today', () => {
+  it('does NOT assert the seven role sets differ — extensional equality is permitted', () => {
     // Requiring the extensions to differ would contradict the ratified role
     // semantics. What must differ is CONSTANT IDENTITY, never extension.
     const extensions = EVALUATE_CONCEPTS.map((c) =>
