@@ -1,0 +1,165 @@
+# .github/workflows/golden-journey.yml
+#
+# THE BROWSER GOLDEN JOURNEY GATE (HPO-G-03, ledger gates M9 / J1 / J2 / J3).
+#
+# ---------------------------------------------------------------------------
+# WHAT THIS GATE DOES AND DOES NOT CLAIM
+# ---------------------------------------------------------------------------
+# It runs the Golden Journey CONTRACT battery and reconciles its run record
+# against the frozen step set. It does NOT satisfy M9, J1, J2 or J3. Those
+# require all three journeys green against a Preview deployment satisfying S4,
+# and S4 is not satisfied at this base, so this workflow declares the target
+# tier NONE and the harness refuses to claim otherwise.
+#
+# A green run here means: every frozen step is expressed, nothing was skipped,
+# and every upstream blocker still holds. It does not mean the product works.
+#
+# ---------------------------------------------------------------------------
+# WHY pull_request AND NOT push
+# ---------------------------------------------------------------------------
+# A push to integration/commercial-v1 triggers ZERO workflows in this
+# repository — the only push trigger in the corpus is ci.yml, scoped to main.
+# A push trigger here would therefore produce a gate that looks armed and never
+# fires, which is worse than no gate because it reports "0 runs" rather than a
+# failure. pull_request fires on the PR, which is where the evidence is needed.
+
+name: golden-journey
+
+on:
+  pull_request:
+    branches:
+      - integration/commercial-v1
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: golden-journey-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  golden-journey-contract:
+    name: Golden Journey contract battery
+    runs-on: ubuntu-latest
+
+    env:
+      # The tier is DECLARED, never inferred. `target.ts` throws on a tier it
+      # does not recognise rather than degrading to the one that asserts least,
+      # so a typo here fails the job instead of quietly emptying it.
+      GOLDEN_JOURNEY_TARGET_KIND: NONE
+      NEXT_TELEMETRY_DISABLED: '1'
+      # GOLDEN_JOURNEY_OUTPUT_DIR is NOT declared here (B-3). `runner` is not a
+      # valid context in `jobs.<job_id>.env` — only in a step's own `env`,
+      # `run`, or `with` — so `${{ runner.temp }}` here fails workflow
+      # instantiation itself (0 jobs, no run), not merely the job. It is set
+      # per step below, on every step that reads it directly or loads
+      # playwright.config.ts (which resolves it at import time).
+
+    steps:
+      # The EXACT head SHA, never the merge ref GitHub synthesises by default.
+      # The frozen TEST_EVIDENCE_MODEL requires "the exact SHA, with no
+      # merge-ref substitution"; evidence bound to a merge commit describes a
+      # tree that was never reviewed and will never be merged.
+      - name: Checkout the exact head SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind evidence to the exact SHA
+        id: sha
+        run: |
+          set -euo pipefail
+          EXPECTED="${{ github.event.pull_request.head.sha || github.sha }}"
+          ACTUAL="$(git rev-parse HEAD)"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "GOLDEN_SHA_BINDING=FAIL expected=$EXPECTED actual=$ACTUAL"
+            exit 1
+          fi
+          echo "sha=$ACTUAL" >> "$GITHUB_OUTPUT"
+          echo "GOLDEN_SHA_BINDING=PASS sha=$ACTUAL"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # --frozen-lockfile, so a lockfile that does not match package.json fails
+      # here rather than resolving to something nobody reviewed.
+      - name: Install with a frozen lockfile
+        run: pnpm install --frozen-lockfile
+
+      # Fail closed on missing deterministic configuration. An unset tier would
+      # default to NONE and still run, which is the right default for a
+      # developer and the wrong one for a gate: the gate must prove the tier was
+      # chosen, not inherited.
+      - name: Assert the deterministic configuration is declared
+        run: |
+          set -euo pipefail
+          if [ -z "${GOLDEN_JOURNEY_TARGET_KIND:-}" ]; then
+            echo "GOLDEN_CONFIG=FAIL GOLDEN_JOURNEY_TARGET_KIND is not declared"
+            exit 1
+          fi
+          if [ -n "${GOLDEN_JOURNEY_BASE_URL:-}" ] && [ "$GOLDEN_JOURNEY_TARGET_KIND" = "NONE" ]; then
+            echo "GOLDEN_CONFIG=FAIL a base URL is set while the tier is NONE"
+            exit 1
+          fi
+          echo "GOLDEN_CONFIG=PASS tier=$GOLDEN_JOURNEY_TARGET_KIND"
+
+      # Collection is checked BEFORE execution. A `testMatch` that matches
+      # nothing produces a zero exit from the runner, so "did it collect
+      # anything" has to be asked separately from "did it pass".
+      - name: Assert the battery collects the required tests
+        env:
+          # `playwright test --list` loads playwright.config.ts, which resolves
+          # this at import time — set here so listing and the run below agree.
+          GOLDEN_JOURNEY_OUTPUT_DIR: ${{ runner.temp }}/golden-journey
+        run: |
+          set -euo pipefail
+          pnpm exec playwright test --list > /tmp/golden-list.txt 2>&1 || {
+            cat /tmp/golden-list.txt
+            echo "GOLDEN_COLLECTION=FAIL the runner could not list tests"
+            exit 1
+          }
+          cat /tmp/golden-list.txt
+          TOTAL="$(grep -cE '^\s+\[contract\]' /tmp/golden-list.txt || true)"
+          if [ "${TOTAL:-0}" -lt 23 ]; then
+            echo "GOLDEN_COLLECTION=FAIL collected=$TOTAL, fewer than the 23 frozen steps"
+            exit 1
+          fi
+          echo "GOLDEN_COLLECTION=PASS collected=$TOTAL"
+
+      - name: Run the Golden Journey contract battery
+        env:
+          GOLDEN_JOURNEY_OUTPUT_DIR: ${{ runner.temp }}/golden-journey
+        run: pnpm exec playwright test --project=contract
+
+      # The verdict. The runner's exit code above is necessary and not
+      # sufficient: it cannot distinguish a passing run from one that collected
+      # nothing, and it says nothing about skips. This reconciles the executed
+      # set against the frozen step set and fails on any difference.
+      - name: Reconcile the run record against the frozen step set
+        env:
+          GOLDEN_JOURNEY_EVIDENCE_SHA: ${{ steps.sha.outputs.sha }}
+          GOLDEN_JOURNEY_OUTPUT_DIR: ${{ runner.temp }}/golden-journey
+        run: |
+          pnpm exec tsx tests/golden/reconcile-run.ts \
+            "${GOLDEN_JOURNEY_OUTPUT_DIR}/run.json" \
+            "${{ steps.sha.outputs.sha }}"
+
+      # Retained on failure AND on success: the run record is the evidence, and
+      # evidence that only exists for failures cannot support a green claim.
+      - name: Upload the run record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-journey-run-${{ steps.sha.outputs.sha }}
+          path: ${{ runner.temp }}/golden-journey
+          if-no-files-found: error
+          retention-days: 30
