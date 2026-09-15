@@ -23,7 +23,13 @@ import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
 
-/** The four modules W-EV-2 authorizes. The engine is exactly these. */
+/**
+ * The four modules W-EV-2 authorizes. The engine is exactly these.
+ *
+ * Loop variables over this list are named `modulePath`, never `module`:
+ * @next/next/no-assign-module-variable is an ERROR in this repository's eslint
+ * config, and it fires on the binding itself even inside a test file.
+ */
 const EVALUATE_MODULES = [
   'lib/evaluate/types.ts',
   'lib/evaluate/scoring.ts',
@@ -66,8 +72,8 @@ function normalizeSpecifier(specifier: string): string {
 describe('N-08 half 1 — broad Evaluate is structurally Wave3-independent', () => {
   it('scans a non-empty set of modules (denominator)', () => {
     expect(EVALUATE_MODULES).toHaveLength(4)
-    for (const module of EVALUATE_MODULES) {
-      expect(readSource(module).length).toBeGreaterThan(0)
+    for (const modulePath of EVALUATE_MODULES) {
+      expect(readSource(modulePath).length).toBeGreaterThan(0)
     }
   })
 
@@ -86,21 +92,21 @@ describe('N-08 half 1 — broad Evaluate is structurally Wave3-independent', () 
   })
 
   it('no Evaluate module imports lib/pipeline, db, app, auth, audit, stella or capabilities', () => {
-    for (const module of EVALUATE_MODULES) {
-      const specifiers = importSpecifiers(readSource(module)).map(normalizeSpecifier)
+    for (const modulePath of EVALUATE_MODULES) {
+      const specifiers = importSpecifiers(readSource(modulePath)).map(normalizeSpecifier)
       const violations = specifiers.filter((s) =>
         FORBIDDEN_PREFIXES.some((prefix) => s.startsWith(prefix))
       )
-      expect({ module, violations }).toEqual({ module, violations: [] })
+      expect({ modulePath, violations }).toEqual({ modulePath, violations: [] })
     }
   })
 
   it('the engine imports nothing but its own siblings and node:crypto', () => {
     const permitted = new Set(['./types', './scoring', './decision-policy', 'node:crypto'])
-    for (const module of EVALUATE_MODULES) {
-      for (const specifier of importSpecifiers(readSource(module))) {
-        expect({ module, specifier, permitted: permitted.has(specifier) }).toEqual({
-          module,
+    for (const modulePath of EVALUATE_MODULES) {
+      for (const specifier of importSpecifiers(readSource(modulePath))) {
+        expect({ modulePath, specifier, permitted: permitted.has(specifier) }).toEqual({
+          modulePath,
           specifier,
           permitted: true,
         })
@@ -113,15 +119,15 @@ describe('N-08 half 1 — broad Evaluate is structurally Wave3-independent', () 
     // SCORING.readiness_is_a_different_domain forbids refactoring the two into
     // a shared helper "on the assumption that they agree".
     const readinessSymbols = ['computeReadinessScore', 'SEVERITY_WEIGHT', 'STATUS_CREDIT', 'ScorableItem']
-    for (const module of EVALUATE_MODULES) {
-      const source = readSource(module)
+    for (const modulePath of EVALUATE_MODULES) {
+      const source = readSource(modulePath)
       for (const symbol of readinessSymbols) {
         // `computeReadinessScore` appears in scoring.ts PROSE, contrasting the
         // two domains. Only a code-shaped occurrence counts: an identifier in
         // an import, a call, or a type position — never a word in a comment.
         const codeShaped = new RegExp(`(?:import[^\\n]*\\b${symbol}\\b|\\b${symbol}\\s*[(<])`)
-        expect({ module, symbol, used: codeShaped.test(source) }).toEqual({
-          module,
+        expect({ modulePath, symbol, used: codeShaped.test(source) }).toEqual({
+          modulePath,
           symbol,
           used: false,
         })
@@ -212,8 +218,8 @@ describe('N-08 half 2 — the narrow FIB run-review surface was not annexed', ()
   })
 
   it('no Evaluate module names the sroi_run_reviews relation', () => {
-    for (const module of EVALUATE_MODULES) {
-      expect(readSource(module)).not.toMatch(/sroi_run_reviews/)
+    for (const modulePath of EVALUATE_MODULES) {
+      expect(readSource(modulePath)).not.toMatch(/sroi_run_reviews/)
     }
   })
 })
