@@ -49,10 +49,13 @@ jobs:
       # does not recognise rather than degrading to the one that asserts least,
       # so a typo here fails the job instead of quietly emptying it.
       GOLDEN_JOURNEY_TARGET_KIND: NONE
-      # Outputs go to the runner's scratch space so the checkout stays pristine
-      # and the scope gate sees no incidental paths.
-      GOLDEN_JOURNEY_OUTPUT_DIR: ${{ runner.temp }}/golden-journey
       NEXT_TELEMETRY_DISABLED: '1'
+      # GOLDEN_JOURNEY_OUTPUT_DIR is NOT declared here (B-3). `runner` is not a
+      # valid context in `jobs.<job_id>.env` — only in a step's own `env`,
+      # `run`, or `with` — so `${{ runner.temp }}` here fails workflow
+      # instantiation itself (0 jobs, no run), not merely the job. It is set
+      # per step below, on every step that reads it directly or loads
+      # playwright.config.ts (which resolves it at import time).
 
     steps:
       # The EXACT head SHA, never the merge ref GitHub synthesises by default.
@@ -113,6 +116,10 @@ jobs:
       # nothing produces a zero exit from the runner, so "did it collect
       # anything" has to be asked separately from "did it pass".
       - name: Assert the battery collects the required tests
+        env:
+          # `playwright test --list` loads playwright.config.ts, which resolves
+          # this at import time — set here so listing and the run below agree.
+          GOLDEN_JOURNEY_OUTPUT_DIR: ${{ runner.temp }}/golden-journey
         run: |
           set -euo pipefail
           pnpm exec playwright test --list > /tmp/golden-list.txt 2>&1 || {
@@ -129,6 +136,8 @@ jobs:
           echo "GOLDEN_COLLECTION=PASS collected=$TOTAL"
 
       - name: Run the Golden Journey contract battery
+        env:
+          GOLDEN_JOURNEY_OUTPUT_DIR: ${{ runner.temp }}/golden-journey
         run: pnpm exec playwright test --project=contract
 
       # The verdict. The runner's exit code above is necessary and not
@@ -138,6 +147,7 @@ jobs:
       - name: Reconcile the run record against the frozen step set
         env:
           GOLDEN_JOURNEY_EVIDENCE_SHA: ${{ steps.sha.outputs.sha }}
+          GOLDEN_JOURNEY_OUTPUT_DIR: ${{ runner.temp }}/golden-journey
         run: |
           pnpm exec tsx tests/golden/reconcile-run.ts \
             "${GOLDEN_JOURNEY_OUTPUT_DIR}/run.json" \

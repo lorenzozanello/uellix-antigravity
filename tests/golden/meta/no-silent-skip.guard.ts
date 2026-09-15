@@ -62,6 +62,7 @@ import {
   readPublicVerificationActivation,
 } from '../posture'
 import { scanForBypasses } from '../skip-patterns'
+import { findPlaywrightTestReferences, scanForPlaywrightTestImportOffenses } from '../import-boundary'
 import {
   GoldenTargetDeclarationError,
   m9DisqualificationReason,
@@ -155,19 +156,93 @@ test.describe('Golden meta guard — no silent skip', () => {
   })
 
   test('no Golden file imports test() outside the guarded harness', () => {
-    // A file importing `test` straight from @playwright/test would run OUTSIDE
-    // the worker-scoped auto fixture, and therefore outside the Node egress
-    // guard. Not a style preference: it is precisely how the B-1 defect — a
-    // guard with nothing in front of it — would come back.
-    const offenders = goldenSourceFiles()
-      .filter(([path]) => path !== 'tests/golden/harness.ts')
-      .filter(([, content]) => /import\s+(?!type\b)[^;]*from\s+'@playwright\/test'/.test(content))
-      .map(([path]) => path)
+    // A file referencing @playwright/test directly — import, re-export, or
+    // require — would run OUTSIDE the worker-scoped auto fixture, and
+    // therefore outside the Node egress guard. Not a style preference: it is
+    // precisely how the B-1 defect — a guard with nothing in front of it —
+    // would come back. Detection is syntax-aware (N-2): see
+    // `import-boundary.ts` for why a quote-anchored regex was not closed-world.
+    const offenses = scanForPlaywrightTestImportOffenses(
+      goldenSourceFiles().filter(([path]) => path !== 'tests/golden/harness.ts'),
+    )
 
     expect(
-      offenders,
-      'these files bypass tests/golden/harness.ts and so run without the Node egress guard',
+      offenses,
+      `these files bypass tests/golden/harness.ts and so run without the Node egress guard: ${offenses
+        .map((o) => `${o.file}:${o.kind}(${o.matched})`)
+        .join(', ')}`,
     ).toEqual([])
+  })
+
+  // -----------------------------------------------------------------
+  // 1b. N-2 — the import-boundary detector is syntax-aware, not quote-spelled
+  // -----------------------------------------------------------------
+  test('POSITIVE CONTROL — a single-quoted import from @playwright/test is reported', () => {
+    const offenses = findPlaywrightTestReferences('offender.ts', "import { test } from '@playwright/test'")
+    expect(offenses.map((o) => o.kind)).toEqual(['import'])
+  })
+
+  test('POSITIVE CONTROL — a double-quoted import from @playwright/test is reported', () => {
+    // The exact form the prior quote-anchored regex could not see.
+    const offenses = findPlaywrightTestReferences('offender.ts', 'import { test } from "@playwright/test"')
+    expect(offenses.map((o) => o.kind)).toEqual(['import'])
+  })
+
+  test('POSITIVE CONTROL — a re-export of @playwright/test is reported', () => {
+    const offenses = findPlaywrightTestReferences('offender.ts', "export { test } from '@playwright/test'")
+    expect(offenses.map((o) => o.kind)).toEqual(['export'])
+  })
+
+  test('POSITIVE CONTROL — require("@playwright/test") is reported regardless of quote style', () => {
+    const single = findPlaywrightTestReferences('offender.ts', "const { test } = require('@playwright/test')")
+    const double = findPlaywrightTestReferences('offender.ts', 'const { test } = require("@playwright/test")')
+    expect(single.map((o) => o.kind)).toEqual(['require'])
+    expect(double.map((o) => o.kind)).toEqual(['require'])
+  })
+
+  test('POSITIVE CONTROL — a statically-resolvable dynamic import(...) is reported', () => {
+    const offenses = findPlaywrightTestReferences('offender.ts', "void import('@playwright/test')")
+    expect(offenses.map((o) => o.kind)).toEqual(['dynamic-import'])
+  })
+
+  test('a dynamic import(...) that is NOT statically resolvable is not reported', () => {
+    // The module specifier is a variable, not a literal — the detector cannot
+    // know what it names without evaluating the program, so it must not guess.
+    const offenses = findPlaywrightTestReferences('offender.ts', 'void import(someModuleName)')
+    expect(offenses).toEqual([])
+  })
+
+  test('a type-only import from @playwright/test is not reported', () => {
+    // Erases at compile time; no runtime binding to `test` is produced, so it
+    // cannot run a test outside the guarded harness.
+    const offenses = findPlaywrightTestReferences('offender.ts', "import type { Page } from '@playwright/test'")
+    expect(offenses).toEqual([])
+  })
+
+  test('@playwright/test mentioned in a comment or a string is not reported', () => {
+    const commented = findPlaywrightTestReferences('offender.ts', "// import { test } from '@playwright/test'")
+    const stringed = findPlaywrightTestReferences('offender.ts', 'const s = "from \'@playwright/test\'"')
+    expect(commented).toEqual([])
+    expect(stringed).toEqual([])
+  })
+
+  test('GREEN — the real harness.ts legitimately imports @playwright/test, and is the only such file', () => {
+    // The authorised boundary crossing. harness.ts itself references the
+    // module (with single quotes, today) — that is expected and is why the
+    // guard excludes it by path rather than the detector exempting it.
+    const harness = goldenSourceFiles().find(([path]) => path === 'tests/golden/harness.ts')
+    expect(harness, 'tests/golden/harness.ts is missing from the scan set').toBeDefined()
+    const [, harnessContent] = harness!
+    expect(findPlaywrightTestReferences('tests/golden/harness.ts', harnessContent).map((o) => o.kind)).toEqual([
+      'import',
+    ])
+
+    // And with that one legitimate path excluded, the rest of the tree is
+    // clean — the same reconciliation the enforcement test above performs.
+    const offenses = scanForPlaywrightTestImportOffenses(
+      goldenSourceFiles().filter(([path]) => path !== 'tests/golden/harness.ts'),
+    )
+    expect(offenses).toEqual([])
   })
 
   // -------------------------------------------------------------------
