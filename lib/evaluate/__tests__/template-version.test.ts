@@ -1,0 +1,268 @@
+/**
+ * P-09 from docs/ops/evaluate/EVALUATE_COMMERCIAL_V1_TEST_MANIFEST_v1.0.0.json.
+ *
+ * P-09 has four clauses. Two are dischargeable by a pure engine at this HEAD
+ * and two are not, and they are labelled rather than blurred:
+ *
+ *   (a) UNIQUE (template_id, version) and UNIQUE (template_id, ordinal)
+ *       -> DEFERRED. These are OBJ-2 identity constraints. W-EV-2 is the pure
+ *          engine; it authors no DDL and no migration, so there is no relation
+ *          at this HEAD for a uniqueness violation to be refused BY. Asserting
+ *          uniqueness over an in-memory array here would be a test of the
+ *          array, dressed as a test of the constraint.
+ *   (b) definition_hash and decision_policy_hash computed over a canonical
+ *       serialization and stable across recomputation  -> DISCHARGED below.
+ *   (c) the two hashes are SEPARATE                    -> DISCHARGED below.
+ *   (d) an evaluation pinned to version N is unaffected by the publication of
+ *       version N+1 or by the retirement of its container -> DISCHARGED below
+ *          in its pure half: the observable the engine owns is the Score and
+ *          the recommended outcome. The persistence half (the pin is never
+ *          repointed by any statement) is DEFERRED with (a).
+ */
+
+import { describe, expect, it } from 'vitest'
+
+import {
+  canonicalize,
+  computeDecisionPolicyHash,
+  computeDefinitionHash,
+  recommendOutcome,
+  validateDecisionPolicy,
+} from '../decision-policy'
+import { computeScore } from '../scoring'
+import type { Criterion, CriterionResponse, DecisionPolicy, TemplateVersionDefinition } from '../types'
+
+const POLICY_V1: DecisionPolicy = {
+  bands: [
+    {
+      outcome: 'reject',
+      lower_bound: 0,
+      lower_bound_inclusive: true,
+      upper_bound: 0.5,
+      upper_bound_inclusive: false,
+    },
+    {
+      outcome: 'approve_with_conditions',
+      lower_bound: 0.5,
+      lower_bound_inclusive: true,
+      upper_bound: 0.8,
+      upper_bound_inclusive: false,
+    },
+    {
+      outcome: 'approve',
+      lower_bound: 0.8,
+      lower_bound_inclusive: true,
+      upper_bound: 1,
+      upper_bound_inclusive: true,
+    },
+  ],
+}
+
+const CRITERIA_V1: readonly Criterion[] = [
+  { criterion_key: 'governance', weight: 1, max_score: 10 },
+  { criterion_key: 'outcomes', weight: 3, max_score: 10 },
+]
+
+const VERSION_1: TemplateVersionDefinition = {
+  organization_id: 'org-1',
+  template_id: 'tpl-1',
+  version: '1.0.0',
+  ordinal: 1,
+  criteria_json: CRITERIA_V1,
+  decision_policy_json: POLICY_V1,
+  supersedes_version_id: null,
+  created_by: 'user-admin-1',
+  created_by_role: 'organization_admin',
+  created_at: '2026-09-01T09:00:00.000Z',
+}
+
+describe('P-09 (b) hashes are canonical and stable across recomputation', () => {
+  it('returns the same definition_hash for the same definition', () => {
+    expect(computeDefinitionHash(VERSION_1)).toBe(computeDefinitionHash(VERSION_1))
+    expect(computeDefinitionHash(VERSION_1)).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('is insensitive to the key ORDER of the payload, and only to that', () => {
+    // Same facts, different property insertion order. A JSON.stringify-based
+    // hash would produce a different digest here and the immutability proof
+    // would fail on a round trip through any store that reorders keys.
+    const reordered = {
+      created_at: VERSION_1.created_at,
+      created_by_role: VERSION_1.created_by_role,
+      created_by: VERSION_1.created_by,
+      supersedes_version_id: VERSION_1.supersedes_version_id,
+      decision_policy_json: VERSION_1.decision_policy_json,
+      criteria_json: VERSION_1.criteria_json,
+      ordinal: VERSION_1.ordinal,
+      version: VERSION_1.version,
+      template_id: VERSION_1.template_id,
+      organization_id: VERSION_1.organization_id,
+    } as TemplateVersionDefinition
+
+    expect(canonicalize(reordered)).toBe(canonicalize(VERSION_1))
+    expect(computeDefinitionHash(reordered)).toBe(computeDefinitionHash(VERSION_1))
+  })
+
+  it('preserves ARRAY order, which is meaningful where key order is not', () => {
+    // HD-03 makes band order load-bearing, so the canonicalizer must not sort
+    // arrays the way it sorts object keys.
+    const swapped: DecisionPolicy = {
+      bands: [POLICY_V1.bands[1], POLICY_V1.bands[0], POLICY_V1.bands[2]],
+    }
+    expect(canonicalize(swapped)).not.toBe(canonicalize(POLICY_V1))
+    expect(computeDecisionPolicyHash(swapped)).not.toBe(computeDecisionPolicyHash(POLICY_V1))
+  })
+
+  it('moves when any field of the payload moves (positive control)', () => {
+    const baseline = computeDefinitionHash(VERSION_1)
+    const mutations: TemplateVersionDefinition[] = [
+      { ...VERSION_1, version: '1.0.1' },
+      { ...VERSION_1, ordinal: 2 },
+      { ...VERSION_1, organization_id: 'org-2' },
+      { ...VERSION_1, criteria_json: [{ criterion_key: 'governance', weight: 2, max_score: 10 }] },
+      { ...VERSION_1, decision_policy_json: { bands: [POLICY_V1.bands[0]] } },
+    ]
+    for (const mutated of mutations) {
+      expect(computeDefinitionHash(mutated)).not.toBe(baseline)
+    }
+    // A hash function that ignored its input would satisfy "stable across
+    // recomputation" perfectly, so stability alone is not evidence.
+    expect(new Set(mutations.map(computeDefinitionHash)).size).toBe(mutations.length)
+  })
+
+  it('refuses a payload with no canonical form rather than inventing one', () => {
+    expect(() => canonicalize({ weight: Number.NaN })).toThrow(TypeError)
+    expect(() => canonicalize({ weight: Number.POSITIVE_INFINITY })).toThrow(TypeError)
+  })
+})
+
+describe('P-09 (c) definition_hash and decision_policy_hash stay SEPARATE', () => {
+  it('produces two different digests for one version', () => {
+    expect(computeDefinitionHash(VERSION_1)).not.toBe(computeDecisionPolicyHash(POLICY_V1))
+  })
+
+  it('moves definition_hash but NOT decision_policy_hash when only criteria change', () => {
+    const criteriaChanged: TemplateVersionDefinition = {
+      ...VERSION_1,
+      criteria_json: [...CRITERIA_V1, { criterion_key: 'safeguarding', weight: 2, max_score: 10 }],
+    }
+    expect(computeDefinitionHash(criteriaChanged)).not.toBe(computeDefinitionHash(VERSION_1))
+    // This is the guarantee a merged artifact hash would destroy: the
+    // recommendation snapshotted against this policy stays attributable to it.
+    expect(computeDecisionPolicyHash(criteriaChanged.decision_policy_json)).toBe(
+      computeDecisionPolicyHash(VERSION_1.decision_policy_json)
+    )
+  })
+
+  it('moves BOTH when the policy changes', () => {
+    const policyChanged: TemplateVersionDefinition = {
+      ...VERSION_1,
+      decision_policy_json: {
+        bands: [
+          { ...POLICY_V1.bands[0], upper_bound: 0.6 },
+          { ...POLICY_V1.bands[1], lower_bound: 0.6 },
+          POLICY_V1.bands[2],
+        ],
+      },
+    }
+    expect(computeDefinitionHash(policyChanged)).not.toBe(computeDefinitionHash(VERSION_1))
+    expect(computeDecisionPolicyHash(policyChanged.decision_policy_json)).not.toBe(
+      computeDecisionPolicyHash(VERSION_1.decision_policy_json)
+    )
+  })
+
+  it('keeps the two digests distinct even when the payloads would serialize alike', () => {
+    // Domain separation, asserted rather than assumed: without a tag, hashing
+    // "the whole payload" and "the policy alone" could collide for a payload
+    // that happened to equal its own policy.
+    const policyAsPayload = POLICY_V1 as unknown as TemplateVersionDefinition
+    expect(computeDefinitionHash(policyAsPayload)).not.toBe(computeDecisionPolicyHash(POLICY_V1))
+  })
+})
+
+describe('P-09 (d) an evaluation pinned to version N is unaffected by version N+1', () => {
+  const responses: readonly CriterionResponse[] = [
+    {
+      criterion_key: 'governance',
+      ordinal: 1,
+      response_kind: 'SCORED',
+      score_value: 9,
+      na_rationale: null,
+      recorded_by: 'user-analyst-1',
+      recorded_by_role: 'analyst',
+      recorded_at: '2026-09-02T09:00:00.000Z',
+    },
+    {
+      criterion_key: 'outcomes',
+      ordinal: 1,
+      response_kind: 'SCORED',
+      score_value: 9,
+      na_rationale: null,
+      recorded_by: 'user-analyst-1',
+      recorded_by_role: 'analyst',
+      recorded_at: '2026-09-02T09:05:00.000Z',
+    },
+  ]
+
+  it('yields an identical Score and recommendation after a successor is published', () => {
+    const validation = validateDecisionPolicy(VERSION_1.decision_policy_json)
+    expect(validation.valid).toBe(true)
+    if (!validation.valid) throw new Error('unreachable')
+
+    const scoreBefore = computeScore(VERSION_1.criteria_json, responses)
+    const recommendationBefore = recommendOutcome(validation.policy, scoreBefore)
+    expect(recommendationBefore).toEqual({ recommended: true, outcome: 'approve' })
+
+    // Version 2 is published: different criteria, a much stricter policy, and
+    // the container is retired. None of it is reachable from the pinned pair.
+    const VERSION_2: TemplateVersionDefinition = {
+      ...VERSION_1,
+      version: '2.0.0',
+      ordinal: 2,
+      supersedes_version_id: 'version-1-id',
+      criteria_json: [
+        { criterion_key: 'governance', weight: 1, max_score: 10 },
+        { criterion_key: 'outcomes', weight: 3, max_score: 10 },
+        { criterion_key: 'safeguarding', weight: 9, max_score: 10 },
+      ],
+      decision_policy_json: {
+        bands: [
+          {
+            outcome: 'reject',
+            lower_bound: 0,
+            lower_bound_inclusive: true,
+            upper_bound: 1,
+            upper_bound_inclusive: true,
+          },
+        ],
+      },
+    }
+    expect(computeDefinitionHash(VERSION_2)).not.toBe(computeDefinitionHash(VERSION_1))
+
+    const scoreAfter = computeScore(VERSION_1.criteria_json, responses)
+    const recommendationAfter = recommendOutcome(validation.policy, scoreAfter)
+
+    expect(JSON.stringify(scoreAfter)).toBe(JSON.stringify(scoreBefore))
+    expect(recommendationAfter).toEqual(recommendationBefore)
+
+    // And the successor really would have decided differently, so the
+    // invariance above is a fact about pinning and not about two policies that
+    // happen to agree.
+    const successorValidation = validateDecisionPolicy(VERSION_2.decision_policy_json)
+    expect(successorValidation.valid).toBe(true)
+    if (!successorValidation.valid) throw new Error('unreachable')
+    expect(recommendOutcome(successorValidation.policy, scoreAfter)).toEqual({
+      recommended: true,
+      outcome: 'reject',
+    })
+  })
+})
+
+/**
+ * DEFERRED, not discharged. See the header: these belong to the package that
+ * authors OBJ-2's DDL (W-EV-1) and to the one that performs T1's pin. Marking
+ * them todo keeps them visible in the runner's output instead of letting an
+ * absent assertion read as a satisfied one.
+ */
+describe.todo('P-09 (a) UNIQUE (template_id, version) and (template_id, ordinal) — requires OBJ-2 DDL')
+describe.todo('P-09 (d, persistence half) template_version_id is never repointed — requires T1')
