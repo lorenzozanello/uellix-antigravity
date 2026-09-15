@@ -36,6 +36,7 @@ import {
   realDockerRunner,
   parseAssignedPort,
   hasOnlyAcceptableMounts,
+  probeServingPostmaster,
   DEFAULT_IMAGE,
 } from '../../scripts/db-audit-disposable'
 import { generateDisposableIdentity, assertDisposableTargetSafe } from '../../db/safety/disposable-audit-target'
@@ -104,13 +105,24 @@ async function provisionDisposableContainer(setupStatements: string[]): Promise<
   expect(mounts.status).toBe(0)
   expect(hasOnlyAcceptableMounts(mounts.stdout), `unexpected mount: ${mounts.stdout}`).toBe(true)
 
+  // READY is the postmaster the entrypoint exec'd (PID 1) answering SELECT 1,
+  // not merely pg_isready — which the entrypoint's temporary init postmaster
+  // answers too, and which is stopped out from under the CREATE DATABASE
+  // below. See probeServingPostmaster in scripts/db-audit-disposable.ts.
   let ready = false
+  let notReadyReason = 'no readiness attempt was made'
   for (let i = 0; i < 40; i++) {
     const check = realDockerRunner.run(['exec', containerName, 'pg_isready', '-U', 'postgres'])
-    if (check.status === 0) { ready = true; break }
+    if (check.status === 0) {
+      const serving = probeServingPostmaster(realDockerRunner, containerName)
+      if (serving.ready) { ready = true; break }
+      notReadyReason = serving.reason
+    } else {
+      notReadyReason = 'pg_isready has not succeeded yet'
+    }
     await sleep(250)
   }
-  expect(ready, 'disposable container never reported ready').toBe(true)
+  expect(ready, `disposable container never reached its serving postmaster: ${notReadyReason}`).toBe(true)
 
   const portResult = realDockerRunner.run(['port', containerName, '5432/tcp'])
   expect(portResult.status).toBe(0)
