@@ -935,6 +935,40 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/checkpoint-b0/observation.sql',
     ],
   },
+  // HPO-ODS-W2-31 — Commercial Account CE-3 definer-ownership hosted package.
+  //
+  // DECLARED BY docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json,
+  // REGISTERED HERE, by a separate governed act exactly as W2-30 was. v1.0.34
+  // carries registration_status DECLARED_NOT_REGISTERED and states that the
+  // hosted-package mission MAY NOT register its own grant: a mission that can
+  // grant itself a protected surface has no protected surface. That frozen
+  // status is a fact about v1.0.34's OWN act and is NOT rewritten by this one.
+  //
+  // SAME BRANCH AS W2-30, AND THAT CONFERS NOTHING. Both rows name
+  // codex/commercial-account-ce3-implementation-r1, but resolution is by
+  // SUPPLIED ID and the authorized set is the union of the grants actually
+  // named on the command line — never the union of everything bound to the
+  // branch. Supplying W2-30 alone leaves both paths below refused, and
+  // supplying W2-31 alone leaves all three W2-30 families refused. The two
+  // pattern sets are disjoint, so neither row widens the other.
+  //
+  // TWO EXACT FILE LITERALS, NO GLOB. The filename is frozen in advance by the
+  // integrated amendment's FUTURE_HOSTED_SQL_PATH, so a literal is
+  // constructible and a glob would grant more than the evidence justifies. The
+  // README is the prepared-corpus index — measured across four prior hosted
+  // additions, every one of which also touched it. No journal, migration,
+  // checkpoint-b0, hosted/** or rollback path is granted; the rollback file in
+  // particular is FORBIDDEN by the amendment's FORWARD_ONLY_CONTRACT, so
+  // granting it would authorize an act the authority prohibits. As always, a
+  // resolved grant still requires an ordinary --allow covering the same path.
+  {
+    authorityId: 'HPO-ODS-W2-31',
+    branch: 'codex/commercial-account-ce3-implementation-r1',
+    patterns: [
+      'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql',
+      'db/prepared/README.md',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
