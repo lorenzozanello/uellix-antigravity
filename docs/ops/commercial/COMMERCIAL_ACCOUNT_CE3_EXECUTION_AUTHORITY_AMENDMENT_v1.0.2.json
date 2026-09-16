@@ -1,0 +1,681 @@
+{
+  "package_id": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_AMENDMENT_TO_A_FROZEN_NODE_AUTHORITY",
+  "document_class": "EXECUTABLE_TECHNICAL_AUTHORITY_AMENDMENT",
+  "append_only": true,
+  "mission_id": "CE3-ACL-AUTH-V102-W",
+  "source_opening": "CE3-ACL-HARDENING-AO -- PASS__CE3_ACL_SECURITY_AUTHORITY_DELTA_OPENED, re-derived against the bytes named in AS_OF by this act.",
+  "materialization_date": "2026-09-16",
+  "amends": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json",
+  "amends_amendment": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+  "amends_parent_amendment": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.2.json",
+  "supersedes": null,
+  "companion_manifest": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+
+  "AUTHORITY_CHAIN": {
+    "rule": "Read top-down. Each link names the exact artifact it narrows, so that no clause of this document is reachable except through an authorization stated above it.",
+    "chain": [
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json -- the frozen parent batch authority. UNCHANGED.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.1.json -- authorizes the governed hosted administrative OWNERSHIP unit stella_hosted_0009 for CE-3. UNCHANGED.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.2.json -- authorizes EXACTLY ONE further governed hosted administrative unit, stella_hosted_0010, REVOKE-only, and classifies service_role for this relation. It is what makes db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql an authorized CE-3 touch at all.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json -- the frozen node authority. UNCHANGED.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json -- completes R-A, freezes the definer owner, adds category C, freezes the hosted0009 contract, probe count 13, control count 31. UNCHANGED.",
+      "THIS DOCUMENT -- narrows the parent amendment v1.0.2 to exact CE-3 execution semantics: category D, the two closed ACL contracts, the hosted0010 behaviour, the grantor doctrine, probe count 14 and control count 37.",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.2.json -- the companion manifest amendment carrying the six new control ids."
+    ],
+    "no_link_may_be_skipped": "A future act that cites this document without the parent amendment v1.0.2 above it has cited an authorization that does not stand on its own."
+  },
+
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "BASE_SHA": "c8de1dabb225e3abce3e4e18422f03a38f3fb6e1",
+    "BASE_TREE": "d4428797f50d67a6a3a3f412dc7b6948fe2a16c1",
+    "BRANCH": "codex/commercial-account-ce3-acl-authority-amendments-v1-0-2-r1",
+    "TARGET": "integration/commercial-v1",
+    "base_node_authority_blob_sha": "cfc098dd993519853fce6219f57cd77e159fa618",
+    "prior_node_amendment_blob_sha": "c85425ad83c0e675b1e5a0947be83257dead3e89",
+    "CE3_CANDIDATE_MEASURED": {
+      "pr": 159,
+      "state": "OPEN",
+      "draft": true,
+      "head": "7c178862666209ab3f2ca686d92dbe8e37110f1f",
+      "tree": "34a4a67d882909309e61f4994ceeca46787a1e9e",
+      "branch": "codex/commercial-account-ce3-implementation-r1",
+      "integration_at_BASE_SHA_is_an_ancestor_of_head": true,
+      "blobs_read": {
+        "db/migrations/0073_commercial_account_ce3_entitlement_grants.sql": "d40a04425fd47dc7e14724e26dd9f66423f6bd0b",
+        "db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql": "80a9f1d88f6c69b79dc1dee55c3b84cc45b375c3",
+        "db/hosted/prechain-ownership.ts": "c9ad64c2dabd72a908b10b4059f54216d51ca9ff",
+        "db/hosted/forward-only-packages.ts": "60b3fa4c7ffc54c729689b8fdc4aea12fa8ea7c4",
+        "tests/postgres/ce3-entitlement-grants-fixtures.ts": "336c1f9c98f87a6513ba2fb6dcbab1578fb5552e",
+        "tests/postgres/ce3-entitlement-grants.pg.test.ts": "5ce469f5345fd63406aeba6f836076981d417cec"
+      },
+      "status_of_this_measurement": "The candidate is NOT merged and is NOT authority. It is read ONLY as the measurement that establishes what the node's R-A implementation and its hosted0009 package actually are, so that this amendment freezes contracts against real objects. Nothing in the candidate is ratified by being cited here, and PR #159 is not modified, synchronised, rebased or squashed by this act."
+    },
+    "remeasurement_rule": "Every count, signature, line number and quotation below is bound to BASE_SHA c8de1dab and to candidate head 7c178862. A consuming mission whose base or candidate differs MUST re-measure and MUST NOT inherit a number from this document."
+  },
+
+  "NAMING_DERIVATION": "Same repo-native convention as v1.0.1: <BASE_PACKAGE_STEM>_AMENDMENT_v<semver>.json alongside its base, semver advanced by one patch step from the immediately prior amendment. Applied to COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0 with prior amendment v1.0.1 this yields exactly docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json.",
+
+  "AMENDMENT_SEMANTICS": {
+    "rule": "APPEND-ONLY. docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json (blob cfc098dd993519853fce6219f57cd77e159fa618) and docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json (blob c85425ad83c0e675b1e5a0947be83257dead3e89) are left BYTE-UNCHANGED and remain HISTORICAL AND CONTROLLING for everything they say correctly.",
+    "what_this_amendment_does": "It narrows the parent amendment v1.0.2 to exact CE-3 execution semantics: it adds a FOURTH hosted-disposition category (D_PRECHAIN_ACL_HARDENING_UNIT, REVOKE-only); freezes an exact closed direct-privilege contract for public.entitlement_grants and an exact closed EXECUTE contract for public.entitlement_effective(uuid,varchar); materializes the relation-specific service_role classification; freezes the hosted0010 package contract, its measured-grantor / anti-seizure doctrine, its fail-closed preconditions and its postconditions; adds the hosted-shaped Real-PG family PG-CE3-ACL-HARDENING (13 -> 14); and adds six controls in the CE3-ACL- namespace (31 -> 37).",
+    "what_this_amendment_is_not": [
+      "NOT an implementation. No SQL, no registry entry, no test and no fixture edit is performed by this mission.",
+      "NOT a reopening of R-A, of the definer owner, or of category C. R_A_COMPLETION, FUTURE_HOSTED_PACKAGE_CONTRACT (0009), its 14 preconditions, its 13 postconditions, FORWARD_ONLY_CONTRACT (0009) and HOSTED_DISPOSITION_THIRD_CATEGORY are PRESERVED VERBATIM; see HOSTED0009_CONTRACT_PRESERVED.",
+      "NOT a widening of category C. Category C remains no_GRANT and no_REVOKE, and category_C_is_not_a_door_to_category_A still makes a REVOKE inside hosted0009 a STOP. REVOKE lives ONLY in category D.",
+      "NOT an authorization of R-B or R-C. R-B remains unavailable absent a parent re-scope; R-C remains prohibited before tenancy S4. Hardening is REVOKE of privilege, never a policy.",
+      "NOT an ODS allocation, a protected-grant registration or a Controller enumeration of any kind.",
+      "NOT a renumbering, redefinition or removal of any existing CE3-P, CE3-N, CE3-M, CE3-OWN-*, PG-CE3-* or inherited PG-n identifier.",
+      "NOT a widening of v1.0.1 FIXTURE_DECONTAMINATION. Its scope remains EXACTLY the evaluator re-home at fixture line 212. The ACL family's substrate requirement below is a SEPARATE requirement bound to the substrate used for PG-CE3-ACL-HARDENING only.",
+      "NOT an edit to the evaluator's body, signature, SECURITY DEFINER flag, volatility or search_path.",
+      "NOT a resumption of R4.",
+      "NOT a replacement v1.0.1 or v1.0.0, and not a claim that either was defective in any respect other than the ones named in DEFECTS_AT_NODE_LEVEL. The hosted default-privilege posture was first measured after v1.0.1 integrated."
+    ],
+    "conflict_rule": "THREE-LEVEL, FAIL-CLOSED. (1) Where this amendment and the NODE BASE v1.0.0 disagree, the base controls for EVERY semantic, physical-shape, concurrency, evaluator, enforcement-boundary and cross-lane clause, exactly as v1.0.1's conflict_rule already provides. (2) Where this amendment and v1.0.1 disagree, v1.0.1 controls for EVERYTHING EXCEPT the clauses this document names by exact quotation in HOSTED_DISPOSITION_FOURTH_CATEGORY (the exhaustiveness of the A/B/C taxonomy), IDENTITY_EXPECTATIONS_MEASURED (RLS_SECURITY_CONTRACT.application_and_capability_identity_expectations, as a FUTURE_MEASUREMENT_REQUIRED classification for THIS relation's direct-privilege surface only), REAL_PG_NODE_CONTRACT_AMENDED_V102 (probe_count_total 13) and REQUIRED_NODE_CONTROLS_AMENDED_V102 (amended_count 31). (3) This amendment controls ONLY for those named clauses and for the NEW clauses it introduces (TABLE_ACL_CONTRACT, FUNCTION_EXECUTE_CONTRACT, SERVICE_ROLE_CLASSIFICATION, HOSTED0010_CONTRACT, GRANTOR_ANTI_SEIZURE_CONTRACT, HOSTED0010_PRECONDITIONS, HOSTED0010_POSTCONDITIONS, ACL_FAMILY_SUBSTRATE_REQUIREMENT), which supersede nothing because nothing frozen spoke to them. Where a reader cannot decide which level controls, the HIGHER (older) level controls and the act STOPS."
+  },
+
+  "DEFECTS_AT_NODE_LEVEL": {
+    "D1": {
+      "id": "CE3-NODE-A-2",
+      "class": "GENUINE_FROZEN_CONTRACT_VIOLATION",
+      "disposition": "GENUINE_FROZEN_CONTRACT_VIOLATION",
+      "clause_contradicted_quoted_verbatim": "RLS_SECURITY_CONTRACT.append_only_mutation_restriction.rule: \"The storage boundary must REFUSE any UPDATE other than the single NULL -> timestamp transition of effective_to, and must refuse every DELETE.\" -- and SEMANTIC_CONTRACT SC-6_append_only_lifecycle.rule: \"Rows are INSERTed and CLOSED only. Closing means setting effective_to from NULL to a timestamp EXACTLY ONCE. No other UPDATE of any column. No DELETE of any row.\"",
+      "measured": "On the hosted-shaped substrate the role `authenticated` holds direct arwdDxtm on public.entitlement_grants through the platform's default privileges, and TRUNCATE -- the `D` bit -- is subject to neither row-level security nor the 0073 trigger, which is BEFORE UPDATE OR DELETE ... FOR EACH ROW (0073 lines 356-359 at 7c178862). The opening measured a tenant TRUNCATE taking the relation from 4 rows to 0 with no refusal. The node base's own measured_mechanisms_available names 'a revoked privilege' as an admissible storage-boundary mechanism; it is the only one that reaches TRUNCATE.",
+      "why_the_direct_SELECT_arm_is_also_closed": "The same default privilege gives authenticated direct SELECT. RLS then returns ZERO rows rather than refusing, so a tenant read of the raw relation is answered with an empty set. The node base's cross_org_refusal is BINDING and 'Asserted on the FAILURE CODE, never on absence'; the parent's SEC-6 note says absence and refusal are indistinguishable to a test that asserts on absence. The contract below therefore requires 42501 for a tenant role's direct SELECT as well, not an empty result."
+    },
+    "D2": {
+      "id": "CE3-NODE-A-3",
+      "class": "AUTHORITY_GAP_REQUIRING_EXPLICIT_CLASSIFICATION",
+      "disposition": "AUTHORITY_GAP_REQUIRING_EXPLICIT_CLASSIFICATION",
+      "measured": "service_role is BYPASSRLS on the hosted platform and holds ALL on the relation and EXECUTE on the evaluator through platform defaults; the opening measured it reading every row including SENTINEL_SIBLING_ORG_CANARY_ROW. The node base's application_and_capability_identity_expectations is classified FUTURE_MEASUREMENT_REQUIRED and names no concrete roles; v1.0.1 PRE-12 names service_role only as a role no policy may be addressed to. The direct-privilege question was never adjudicated.",
+      "closed_by": "SERVICE_ROLE_CLASSIFICATION and the two contracts below."
+    },
+    "not_caused_by_hosted0009": "The hosted0009 certification measured the non-owner grantee set of the relation IDENTICAL before and after the ownership transfer. hosted0009 neither causes nor worsens D1 or D2; it makes the evaluator correct, and D1 / D2 are about privileges that bypass the evaluator."
+  },
+
+  "R_A_PRESERVED": {
+    "F_CE3_1_DISPOSITION": "R_A_NON_TENANT_FACING_DEFINER_READ -- PRESERVED from v1.0.1, not reopened.",
+    "DEFINER_FUNCTION": "public.entitlement_effective(uuid,varchar)",
+    "DEFINER_OWNER": "uellix_owner",
+    "DEFINER_OWNER_SUPERUSER": false,
+    "DEFINER_OWNER_BYPASSRLS": false,
+    "FROZEN_SEARCH_PATH": "public",
+    "single_narrow_policy": "EXACTLY ONE SELECT policy on entitlement_grants, addressed TO uellix_owner (entitlement_grants_select_owner at 0073 lines 114-117). PRESERVED.",
+    "zero_tenant_facing_policies": "PRESERVED (PRE-12).",
+    "cross_org_refusal": "PRESERVED BINDING: asserted on the FAILURE CODE, never on absence.",
+    "the_choice_is_not_reopened": "A certifier reading this document should find no clause that treats R-A as provisional. This amendment adds a privilege contract AROUND the definer read; it does not change the read."
+  },
+
+  "HOSTED0009_CONTRACT_PRESERVED": {
+    "rule": "EVERY clause v1.0.1 froze for stella_hosted_0009_entitlement_evaluator_ownership is PRESERVED VERBATIM: FUTURE_HOSTED_PACKAGE_CONTRACT (id, path, both registries, category C, apply window prechain, destination owner uellix_owner, THE_SINGLE_SEMANTIC_MUTATION, no_second_state_mutation), FUTURE_HOSTED_PACKAGE_PRECONDITIONS PRE-1..PRE-14, FUTURE_HOSTED_PACKAGE_POSTCONDITIONS (13 items), FORWARD_ONLY_CONTRACT, BASELINE_MIGRATION_PROHIBITION and FIXTURE_DECONTAMINATION.",
+    "measured_state_at_candidate": "IMPLEMENTED at PR #159 head 7c178862 as db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql, sha256 0576f189765302d0d5cff8765d126c0574a9b3bc5cd862c6c1caeb26948b23a1, pinned at db/hosted/prechain-ownership.ts line 591 with kind 'prechain-ownership', applyWindow 'prechain', rollbackFile null, destinationOwner 'uellix_owner'; exactly one state-mutating statement at line 506; independently certified NON-CLOSING with PASS. Its category C characteristic no_REVOKE: true STANDS, and it is NOT edited by any act this document authorizes.",
+    "what_0009_leaves_that_0010_takes_up": "hosted0009's §2 asserts the NON-OWNER EXECUTE set identical before and after. On the hosted shape that set contains authenticated (0073 line 284), anon and service_role (platform function defaults); after the transfer those entries carry grantor uellix_owner. hosted0009 correctly leaves them; hosted0010 is the unit authorized to remove anon and service_role. The two units are sequential, not overlapping."
+  },
+
+  "HOSTED_DISPOSITION_FOURTH_CATEGORY": {
+    "clause_amended": "HOSTED_DISPOSITION -- the taxonomy's claim to exhaustiveness, as already extended once by v1.0.1 HOSTED_DISPOSITION_THIRD_CATEGORY.",
+    "v1_0_1_clause_quoted_verbatim": "\"category_C_is_not_a_door_to_category_A\": \"Membership in C is not a step toward, or a lesser form of, a capability unit. A future CE-3 act that adds a GRANT, a REVOKE, a policy, a role or a second state mutation to the unit has left category C and is a STOP_FOR_AUTHORITY_DELTA, not an expanded C unit.\"",
+    "the_incompleteness": "The A/B/C taxonomy is not exhaustive for a REVOKE-only ACL hardening. Such a unit is not A (it confers no capability, has no role, no definer verb, no ledger), not B (it is not a generated wrapper), and not C (C is exactly one ownership transfer with no REVOKE, and v1.0.1 correctly makes a REVOKE inside C a STOP). Forcing it into C would either widen C -- which invalidates hosted0009's certification of 'exactly one ALTER, zero GRANT / REVOKE' -- or require a REVOKE that the C definition forbids. It is a fourth thing.",
+    "A_disposition_PRESERVED": "HOSTED_DISPOSITION.A_disposition.value remains NO.",
+    "B_disposition_PRESERVED": "HOSTED_DISPOSITION.B_disposition.value remains MANDATORY, with all its consequences unchanged.",
+    "C_category_PRESERVED": "C_PRECHAIN_ADMINISTRATIVE_UNIT remains REQUIRED for hosted0009 with all 13 characteristics true, including no_GRANT and no_REVOKE. category_C_is_not_a_door_to_category_A is PRESERVED VERBATIM. The clause is NOT superseded: the REVOKE this amendment admits lives in D, and a REVOKE inside a C unit is still a STOP.",
+    "NEW_CATEGORY": {
+      "id": "D_PRECHAIN_ACL_HARDENING_UNIT",
+      "value": "REQUIRED",
+      "required_for_CE3": true,
+      "definition": "A governed hosted administrative unit whose ONLY state-changing statements are literal REVOKEs against a closed target ACL contract on a frozen set of exactly two objects, applied in the prechain window after stella_hosted_0009 by the governed administrative hosted session, carrying no semantic capability of any kind.",
+      "permitted_mutation_class": "REVOKE",
+      "characteristics": {
+        "prechain": true,
+        "administrative": true,
+        "not_a_semantic_capability_package": true,
+        "not_a_HOSTED_CHAIN_link": true,
+        "not_runtime": true,
+        "not_applied_by_uellix_migrator": true,
+        "not_a_migration": true,
+        "forward_only": true,
+        "no_audit_verb": true,
+        "no_application_runtime_consumer": true,
+        "no_idempotency_ledger": true,
+        "no_GRANT": true,
+        "no_CREATE": true,
+        "no_DROP": true,
+        "no_ALTER_OWNER": true,
+        "no_policy_mutation": true,
+        "no_table_DDL": true,
+        "no_role_creation": true,
+        "no_membership_mutation": true,
+        "no_function_body_replacement": true,
+        "no_DML": true,
+        "no_dynamic_SQL": true,
+        "REVOKE_only": true
+      },
+      "target_objects_EXACT": ["public.entitlement_grants", "public.entitlement_effective(uuid,varchar)"],
+      "no_other_object": "Unrelated tables and functions are NOT silently included. A REVOKE naming any object outside the two above, or any 'ALL TABLES IN SCHEMA' / 'ALL FUNCTIONS IN SCHEMA' form, is outside category D and is a STOP_FOR_AUTHORITY_DELTA.",
+      "why_it_exists": "Solely because (a) the storage-boundary append-only guard and the cross-organization refusal are BINDING and only a revoked privilege reaches TRUNCATE and a BYPASSRLS reader; (b) the ordinary baseline migration cannot measure or assume the hosted grantor and cannot refuse a no-op REVOKE; and (c) category C is frozen no_REVOKE. The category is the consequence of those three facts, not a preference.",
+      "repository_native_precedent": "db/prepared/stella_hosted_0007_runtime_table_acl_contract.sql -- a prechain, forward-only, table-ACL-contract unit that is NOT a HOSTED_CHAIN link, declared in db/hosted/prechain-ownership.ts ADMINISTRATIVE_UNITS and typed in db/hosted/forward-only-packages.ts, and whose §4 issues its owner-attributed statements under SET LOCAL ROLE uellix_owner ... RESET ROLE. hosted0007 GRANTs; hosted0010 REVOKEs; the administrative shape is the same.",
+      "category_D_is_not_a_door_to_category_A_or_C": "Membership in D is not a step toward a capability unit and is not a lesser form of C. A future CE-3 act that adds a GRANT, a CREATE, a DROP, an ALTER OWNER, a policy, a role, a DML statement, dynamic SQL, or a REVOKE against a third object to the unit has left category D and is a STOP_FOR_AUTHORITY_DELTA, not an expanded D unit."
+    }
+  },
+
+  "IDENTITY_EXPECTATIONS_MEASURED": {
+    "clause_amended": "RLS_SECURITY_CONTRACT.application_and_capability_identity_expectations -- its FUTURE_MEASUREMENT_REQUIRED classification, for the DIRECT-PRIVILEGE surface of public.entitlement_grants ONLY.",
+    "base_clause_quoted_verbatim": "\"The identity that reads entitlement_grants, the identity that writes a grant, and the tenant-facing runtime identity MUST be distinguishable, and the write identity must not be reachable from a tenant request path. Which concrete roles those are depends on the POLICY_SET resolution above and on the platform-admin ACL set (parent F-1), neither of which this authority adjudicates.\"",
+    "what_is_NOT_changed": "The rule is PRESERVED and is now MEASURED for this relation. The base's never_assume clause ('FORCE ROW LEVEL SECURITY is SILENTLY INERT for a BYPASSRLS role and for the table owner. Any claim that a role is denied must be measured on a cluster AS that role') is PRESERVED and is the doctrine every control below obeys. The platform-admin ACL set (parent F-1) for OTHER relations is NOT adjudicated here.",
+    "measured": {
+      "identity_that_reads_entitlement_grants": "uellix_owner, through the SECURITY DEFINER evaluator only, under FORCE RLS and the single owner SELECT policy. Direct SELECT by any non-owner role other than uellix_owner: NONE.",
+      "identity_that_writes_a_grant": "NOT a runtime identity and NOT tenant-reachable. Under this amendment no non-owner role holds INSERT, UPDATE, DELETE or TRUNCATE. Writes are an ADMINISTRATIVE act of the owner or of a future governed capability unit under a further authority; no such unit is authorized here.",
+      "tenant_facing_runtime_identity": "uellix_app (db/safety/database-role.ts RUNTIME_DATABASE_ROLE), which holds NOTHING on the relation; and the platform JWT role authenticated, which after hosted0010 holds NOTHING on the relation and EXECUTE on the evaluator only.",
+      "identities_forbidden_from_runtime": "postgres, supabase_admin, service_role, authenticator, uellix_owner, uellix_migrator (db/safety/database-role.ts FORBIDDEN_RUNTIME_DATABASE_ROLES lines 47-54). This is what makes the owner's ADMINISTRATIVE_RESIDUAL acceptable."
+    }
+  },
+
+  "TABLE_ACL_CONTRACT": {
+    "classification": "BINDING. Closed direct-privilege contract for public.entitlement_grants, expressed RELATIVE TO THE OBJECT OWNER. DEEP-EQUAL to the parent amendment v1.0.2 TARGET_ACL_CONTRACT_AUTHORIZED.TABLE.non_owner_direct_privileges_EXACT.",
+    "object": "public.entitlement_grants",
+    "why_relative_to_the_owner_and_never_a_relacl_literal": "PostgreSQL grants the table OWNER every privilege implicitly, and ALTER TABLE ... OWNER TO rewrites the owner's implicit entry and the grantor of every other entry. On the hosted platform the owner is the baseline applier `postgres` (relacl grantor postgres); on the CE-3 fixture at 7c178862 the owner is uellix_owner because line 201 re-homes every table. A frozen relacl literal would be true on one substrate and false on the other. The contract is therefore the set of NON-OWNER (grantee, privilege) pairs, and the owner is MEASURED from pg_class.relowner.",
+    "non_owner_direct_privileges_EXACT": {
+      "uellix_owner": ["SELECT"],
+      "authenticated": [],
+      "anon": [],
+      "uellix_app": [],
+      "uellix_writer": [],
+      "uellix_auditor": [],
+      "uellix_migrator": [],
+      "service_role": []
+    },
+    "reading_of_the_map": "A role whose array is EMPTY holds NO direct privilege of any kind -- no SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER or MAINTAIN. uellix_owner holds SELECT and nothing else (0073 line 129), which it needs to read through its policy when it is not the owner. uellix_auditor holds NO direct CE-3 privilege: its platform read posture on other relations is not adjudicated here. uellix_migrator holds NO direct privilege as a non-owner; on a substrate where it IS the owner (a corpus-only cluster applied as uellix_migrator) it is the owner and the map still holds.",
+    "any_other_non_owner_grantee": "REFUSED unless explicitly frozen by a later authority amendment. PUBLIC included. A third grantee found at apply time is a precondition REFUSAL (ACL-PRE-13), never a silent tolerance and never a silent REVOKE.",
+    "owner": {
+      "value": "IMPLICIT OWNER CAPABILITY, measured from pg_class.relowner.",
+      "do_not_pretend_otherwise": "The owner can SELECT, INSERT, UPDATE, DELETE and TRUNCATE the relation, is exempt from RLS unless FORCE applies, and is subject to the FOR EACH ROW append-only trigger only for UPDATE and DELETE. None of that is changed by this amendment and none of it can be revoked.",
+      "ADMINISTRATIVE_RESIDUAL": "The owner's implicit TRUNCATE, and every other owner power, is named ADMINISTRATIVE_RESIDUAL. It is NOT a tenant permission and NOT a runtime permission.",
+      "the_residual_is_acceptable_only_because": "NO Commercial V1 request path can execute as the owner or as the baseline applier. BINDING REQUIREMENT, measured at BASE_SHA: db/safety/database-role.ts FORBIDDEN_RUNTIME_DATABASE_ROLES = [postgres, supabase_admin, service_role, authenticator, uellix_owner, uellix_migrator]; RUNTIME_DATABASE_ROLE = uellix_app; db/safety/resolve-capability-database-url.ts refuses a capability URL whose role is forbidden (lines 33, 204); db/hosted/baseline-postconditions.ts B0-14-no-service-role-key. A future act that lets any request path execute as the owner or the applier has discovered an AUTHORITY DELTA against this clause and must STOP."
+    },
+    "RLS_and_trigger_unchanged": "ENABLE ROW LEVEL SECURITY, FORCE ROW LEVEL SECURITY, the single owner SELECT policy and trg_entitlement_grants_append_only are PRESERVED EXACTLY and are asserted unchanged by the hosted0010 postconditions. Hardening is additive to them, not a replacement of them."
+  },
+
+  "FUNCTION_EXECUTE_CONTRACT": {
+    "classification": "BINDING. Closed EXECUTE contract for public.entitlement_effective(uuid,varchar). DEEP-EQUAL to the parent amendment v1.0.2 TARGET_ACL_CONTRACT_AUTHORIZED.FUNCTION.non_owner_EXECUTE_EXACT.",
+    "object": "public.entitlement_effective(uuid,varchar)",
+    "non_owner_EXECUTE_EXACT": {
+      "PUBLIC": "PROHIBITED",
+      "authenticated": "REQUIRED",
+      "anon": "PROHIBITED",
+      "service_role": "PROHIBITED",
+      "uellix_app": "PROHIBITED",
+      "uellix_writer": "PROHIBITED",
+      "uellix_auditor": "PROHIBITED",
+      "uellix_migrator": "PROHIBITED"
+    },
+    "owner": "uellix_owner, after hosted0009. Its EXECUTE is implicit owner capability and is NOT a separate direct-grant requirement.",
+    "any_other_non_owner_grantee": "REFUSED.",
+    "authenticated_is_REQUIRED_not_merely_permitted": "0073 line 284 grants it and the typed wrapper in lib/capabilities/** depends on it. hosted0010 MUST NOT revoke it, and MUST REFUSE (ACL-PRE-11) if it is absent at apply time rather than GRANT it -- GRANT is prohibited in category D.",
+    "measured_hosted_state_before_hosted0010": "authenticated, anon, service_role and the owner hold EXECUTE; PUBLIC does not (0073 line 283). anon and service_role hold it through the platform's function default privileges, which 0033 line 16 did not and could not touch for a function created later. After hosted0009 those entries are attributed to grantor uellix_owner.",
+    "what_hosted0010_may_do_to_the_function": "REVOKE unwanted non-owner EXECUTE grants (anon, service_role, and any other PROHIBITED grantee found present). NOTHING ELSE: no body replacement, no CREATE OR REPLACE, no ALTER FUNCTION of any kind, no change to prosecdef, provolatile, proparallel, proleakproof or proconfig."
+  },
+
+  "SERVICE_ROLE_CLASSIFICATION": {
+    "classification": "BINDING AND RELATION-SPECIFIC. Node-side materialization of the parent amendment v1.0.2 SERVICE_ROLE_CLASSIFICATION; does not differ from it.",
+    "value": "UNUSED_PRIVILEGED_PLATFORM_ROLE",
+    "scope": "Commercial V1 CE-3 runtime, over EXACTLY public.entitlement_grants and public.entitlement_effective(uuid,varchar). NOT a global redefinition of service_role; every other table's posture under 0033 is untouched and unadjudicated here.",
+    "recorded_facts": [
+      "BYPASSRLS on the hosted platform; created NOLOGIN BYPASSRLS by the CE-3 fixture (line 138 at 7c178862).",
+      "Forbidden from normal application runtime by FORBIDDEN_RUNTIME_DATABASE_ROLES and by B0-14 (SUPABASE_SERVICE_ROLE_KEY absent).",
+      "Zero Commercial V1 runtime consumers of service_role in app/** and lib/** at BASE_SHA; no consumer requires direct entitlement_grants access.",
+      "Therefore the broad 0033 / platform-default privileges are NOT inherited for this relation or this function. Both are an EXPLICIT LEAST-PRIVILEGE EXCEPTION, enforced by REVOKE in hosted0010.",
+      "Consistent with v1.0.1 PRE-12 (no POLICY addressed to service_role) -- this clause adds no PRIVILEGE either. Recorded as F-CE3-ACL-4 in the parent amendment."
+    ],
+    "future_consumer_rule": "A future act introducing a service_role consumer of either object has found an AUTHORITY DELTA against this clause and STOPS; it does not infer permission from the platform default."
+  },
+
+  "HOSTED0010_CONTRACT": {
+    "classification": "FORWARD REFERENCE. Freezing a contract is not allocating an identifier and is not implementing a package. No file named below is created by this act.",
+    "ordinal_derived": "0010",
+    "FUTURE_HOSTED_PACKAGE_ID": "stella_hosted_0010_entitlement_grants_acl_hardening",
+    "FUTURE_HOSTED_SQL_PATH": "db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql",
+    "category": "D_PRECHAIN_ACL_HARDENING_UNIT",
+    "apply_window": "prechain, AFTER stella_hosted_0009_entitlement_evaluator_ownership",
+    "FORWARD_ONLY": "YES",
+    "ROLLBACK_FILE": "NONE",
+    "required_registries": ["db/hosted/prechain-ownership.ts", "db/hosted/forward-only-packages.ts"],
+    "required_registry_fields_for_forward_only": {
+      "rollbackFile": null,
+      "rollbackSha256": null,
+      "forwardOnlyNoRollbackReason": "REQUIRED, SUBSTANTIVE AND NON-EMPTY, carrying the security argument of the parent amendment v1.0.2 FORWARD_ONLY_CONTRACT_0010.required_rationale_class."
+    },
+    "administrative_identity": "The governed administrative hosted session -- the same principal class that applies stella_hosted_0003..0009. NOT uellix_migrator, and NOT the application runtime.",
+    "allowed_state_changing_statement_class": "REVOKE only",
+    "GRANT": "PROHIBITED",
+    "CREATE_DROP": "PROHIBITED",
+    "ALTER_OWNER": "PROHIBITED",
+    "policy_mutation": "PROHIBITED",
+    "table_DDL": "PROHIBITED",
+    "role_creation_or_membership": "PROHIBITED",
+    "function_body_replacement": "PROHIBITED",
+    "DML": "PROHIBITED",
+    "dynamic_SQL": "PROHIBITED",
+    "target_objects_EXACT": ["public.entitlement_grants", "public.entitlement_effective(uuid,varchar)"],
+    "REVOKE_statement_form": "Each REVOKE is a LITERAL statement naming exactly one of the two target objects and one or more grantees drawn from the PROHIBITED / empty-array rows of the two contracts. It is issued ONLY for a (grantee, privilege) pair MEASURED PRESENT in the pre-state capture. A pair measured absent is NOT revoked and is NOT a failure. A pair measured present that remains present after its REVOKE is FAILURE, whether PostgreSQL raised a WARNING or nothing at all.",
+    "SET_LOCAL_ROLE": {
+      "permitted": "ADMINISTRATIVELY ONLY, to act as the MEASURED ACL grantor of a target grant when the session's own identity is not that grantor.",
+      "guard": "pg_has_role(current_user, <measured grantor>, 'SET') MUST be verified TRUE before SET LOCAL ROLE is issued; if FALSE the package REFUSES before any mutation.",
+      "closure": "RESET ROLE inside the same transaction; a postcondition asserts current_user is the session's original identity and no role window remains open.",
+      "no_self_capability": "The package may NOT GRANT itself, or the session, any role membership, privilege or capability in order to make a SET ROLE or a REVOKE succeed. A session that cannot legitimately act as the grantor is a session the package refuses to serve.",
+      "precedent": "db/prepared/stella_hosted_0007_runtime_table_acl_contract.sql §4 (SET LOCAL ROLE uellix_owner; ... RESET ROLE;) and stella_hosted_0009 PRE-8 (pg_has_role(current_user, 'uellix_owner', 'SET')). The privilege name 'SET' in pg_has_role exists from PostgreSQL 16, which is the version floor in ACL-PRE-1."
+    },
+    "single_transaction": "Pre-state capture, every REVOKE, every SET LOCAL ROLE / RESET ROLE and every postcondition run in ONE transaction (psql -1). Any failure ABORTS and leaves the prior posture intact. The package does not warn, does not partially apply and does not record a success with caveats.",
+    "idempotency": "A second apply against a target already at the contract MUST CONVERGE: every precondition admits the ALREADY_HARDENED prestate, zero REVOKEs are issued, every postcondition holds, and the package exits successfully having changed nothing. This is a REQUIRED behaviour, proven by CE3-ACL-P-1, not an accident of PostgreSQL tolerating a redundant REVOKE.",
+    "ordinal_derivation": "0010 is the next free hosted ordinal, measured over every ref at BASE_SHA. If a competing lane takes 0010 first, the hosted0010 implementation opening re-derives and re-freezes by its own act; the implementer does NOT renumber silently."
+  },
+
+  "GRANTOR_ANTI_SEIZURE_CONTRACT": {
+    "classification": "BINDING. Materializes the opening's measured-grantor doctrine.",
+    "the_measured_fact": "A REVOKE only strips privileges that the CURRENT role (or a role it can act as) granted. Issued by any other role it raises 'WARNING: no privileges could be revoked' and changes NOTHING -- the transaction still commits. On the hosted shape the table's inherited grants carry grantor postgres (the baseline applier and owner), and after hosted0009 the evaluator's non-owner EXECUTE grants carry grantor uellix_owner. On the fixture shape the table's grants carry grantor uellix_owner. Neither postgres nor uellix_owner may therefore be ASSUMED as the revoking identity for either object.",
+    "doctrine": [
+      "The ACL grantor of EVERY target (grantee, privilege) pair is DERIVED from object state, per object, by aclexplode(COALESCE(relacl, acldefault('r', relowner))) for the table and aclexplode(COALESCE(proacl, acldefault('f', proowner))) for the function. Nothing is assumed.",
+      "The package acts as the measured grantor: if grantor = current_user it issues the REVOKE directly; otherwise it verifies pg_has_role(current_user, grantor, 'SET') and issues the REVOKE under SET LOCAL ROLE <grantor>, then RESET ROLE.",
+      "After EVERY REVOKE the package RE-READS the ACL of the object and asserts the (grantee, privilege) pair is ABSENT. A pair still present is FAILURE and aborts the transaction."
+    ],
+    "the_package_MUST_REFUSE_if": [
+      "a target grant has an UNAPPROVED grantor -- one that is neither the object's measured current owner nor uellix_owner. The approved grantor set is closed at those two; a grant attributed to any other role is an unexplained state the package does not adjudicate.",
+      "the administrative session cannot legitimately SET ROLE to the measured grantor: pg_has_role(current_user, grantor, 'SET') is false and grantor <> current_user.",
+      "a THIRD, unexpected non-owner grantee is present on either object (any grantee not enumerated in the two contracts), including PUBLIC on the function.",
+      "re-reading the ACL after a REVOKE shows the privilege remains."
+    ],
+    "WARNING_is_FAILURE": "A PostgreSQL WARNING with no effective mutation is FAILURE, not success. The package does not rely on the presence or absence of the WARNING to decide -- it decides by re-reading the ACL -- but a certifier who observes the WARNING in a run that reported success has found a defect.",
+    "no_seizure": "The package MUST NOT ALTER OWNER either object, MUST NOT GRANT itself or the session any membership, and MUST NOT create a role, in order to acquire the standing to revoke. Standing is measured, never manufactured."
+  },
+
+  "HOSTED0010_PRECONDITIONS": {
+    "rule": "FAIL-CLOSED AND EXHAUSTIVE AS A FLOOR. Every precondition MUST hold before any REVOKE is issued. The package MUST REFUSE -- RAISE EXCEPTION and abort -- on any failure. It is NEVER authorized to REPAIR an invalid precondition: it does not create a role, grant authenticated EXECUTE, enable FORCE RLS, create or drop a policy, transfer an owner, or revoke a third grantee's privilege in order to make a precondition true.",
+    "why_a_floor_and_not_a_ceiling": "A later opening may add preconditions. It may not remove one, and it may not weaken one into a warning.",
+    "preconditions": [
+      { "n": 1, "id": "ACL-PRE-1", "requires": "PostgreSQL major version posture: current_setting('server_version_num')::int >= 160000.", "why": "pg_has_role(..., 'SET') -- the guard the anti-seizure doctrine depends on -- exists from PostgreSQL 16. The repository's disposable default is 16 and the hosted platform is 17. A lower major is a substrate on which the guard cannot be evaluated and the package refuses rather than degrades." },
+      { "n": 2, "id": "ACL-PRE-2", "requires": "Every role named in TABLE_ACL_CONTRACT and FUNCTION_EXECUTE_CONTRACT exists in pg_roles: uellix_owner, authenticated, anon, service_role, uellix_app, uellix_writer, uellix_auditor, uellix_migrator.", "why": "A REVOKE FROM a non-existent role is an error, and a contract over roles that do not exist has not been measured. The package creates NO role to make this true." },
+      { "n": 3, "id": "ACL-PRE-3", "requires": "public.entitlement_grants exists as an ordinary relation (relkind 'r').", "why": "The target must be the object the contract names." },
+      { "n": 4, "id": "ACL-PRE-4", "requires": "public.entitlement_grants has relrowsecurity = true AND relforcerowsecurity = true.", "why": "Hardening a relation without FORCE RLS would leave the owner-policy arm of R-A unprotected; the package refuses rather than enabling it." },
+      { "n": 5, "id": "ACL-PRE-5", "requires": "EXACTLY ONE policy exists on public.entitlement_grants, it is FOR SELECT, and its roles are exactly {uellix_owner}.", "why": "R-A's single narrow policy. Zero or two is a relation nobody adjudicated." },
+      { "n": 6, "id": "ACL-PRE-6", "requires": "ZERO tenant-facing policies exist on public.entitlement_grants -- no policy whose roles include authenticated, anon, uellix_app, uellix_writer, service_role, PUBLIC or any role other than uellix_owner.", "why": "R-C is prohibited before tenancy S4; a tenant-facing policy at apply time means S4 was pre-empted and the package refuses rather than blesses it. Same refusal as hosted0009 PRE-12." },
+      { "n": 7, "id": "ACL-PRE-7", "requires": "EXACTLY ONE function named public.entitlement_effective exists, its regprocedure is public.entitlement_effective(uuid,varchar), and pg_proc.prosecdef = true.", "why": "The EXECUTE contract is about who may invoke the SECURITY DEFINER evaluator; an overload or an INVOKER function is not the object this contract was written for." },
+      { "n": 8, "id": "ACL-PRE-8", "requires": "The evaluator is ALREADY owned by uellix_owner (pg_get_userbyid(pg_proc.proowner) = 'uellix_owner').", "why": "This is the measurable form of 'hosted0009 precedes hosted0010'. It also guarantees the evaluator's non-owner EXECUTE grants carry grantor uellix_owner, so the REVOKE arm has a stable, measured grantor. The package does NOT transfer ownership to make this true." },
+      { "n": 9, "id": "ACL-PRE-9", "requires": "uellix_owner has rolsuper = false AND rolbypassrls = false, read from pg_roles.", "why": "Same two flags v1.0.1 froze. A bypassing owner makes the policy arm inert and the hardening pointless." },
+      { "n": 10, "id": "ACL-PRE-10", "requires": "The non-owner TABLE ACL of public.entitlement_grants, read through aclexplode, is in the ALLOWED FINITE PRESTATE FAMILY: the set of non-owner grantees is a SUBSET of {uellix_owner, authenticated, service_role}; uellix_owner's privileges are exactly {SELECT}; every privilege held by authenticated or service_role has an APPROVED grantor (ACL-PRE-12). Named members of the family: HOSTED_DEFAULTS (authenticated ALL + service_role ALL + uellix_owner SELECT), PARTIALLY_HARDENED (a strict subset of those extra grants), ALREADY_HARDENED (uellix_owner SELECT only).", "why": "A prestate outside the family is a state the opening never measured -- a fourth grantee, a uellix_owner with more than SELECT, an anon with anything -- and the package refuses it rather than guessing what to strip." },
+      { "n": 11, "id": "ACL-PRE-11", "requires": "The non-owner EXECUTE ACL of the evaluator is in the ALLOWED FINITE PRESTATE FAMILY: PUBLIC holds NOTHING; authenticated holds EXECUTE (REQUIRED, present); the set of other non-owner EXECUTE holders is a SUBSET of {anon, service_role}. Named members: HOSTED_DEFAULTS (authenticated + anon + service_role), PARTIALLY_HARDENED, ALREADY_HARDENED (authenticated only).", "why": "authenticated absent means 0073 did not apply as frozen and the package will not GRANT to repair it. PUBLIC present is the defect hosted0009 PRE-13 already refuses. A fourth EXECUTE holder is unmeasured and refused." },
+      { "n": 12, "id": "ACL-PRE-12", "requires": "For EVERY (grantee, privilege) pair the package will revoke, the grantor measured from aclexplode is APPROVED (the object's current owner or uellix_owner), and EITHER grantor = current_user OR pg_has_role(current_user, grantor, 'SET') is true.", "why": "GRANTOR_ANTI_SEIZURE_CONTRACT. A REVOKE the session cannot legitimately issue as the grantor would warn and do nothing; the package refuses before trying." },
+      { "n": 13, "id": "ACL-PRE-13", "requires": "NO unexpected non-owner grantee is present on either object: every non-owner grantee on the table is in {uellix_owner, authenticated, service_role} and every non-owner EXECUTE holder on the function is in {authenticated, anon, service_role}.", "why": "A third grantee is an unexplained state. The package neither tolerates nor silently revokes it; it refuses so that a human adjudicates it." },
+      { "n": 14, "id": "ACL-PRE-14", "requires": "The append-only trigger trg_entitlement_grants_append_only exists on public.entitlement_grants, is BEFORE UPDATE OR DELETE, FOR EACH ROW, and calls public.enforce_entitlement_grant_append_only().", "why": "The hardening is ADDITIVE to the row-level guard; a relation missing the guard has not had 0073 applied as frozen and the package refuses rather than proceeding on a half-applied node." },
+      { "n": 15, "id": "ACL-PRE-15", "requires": "The session's own identity is captured (current_user, session_user) and is one the package may serve: it is NOT uellix_app, uellix_writer, uellix_auditor, authenticated, anon or service_role.", "why": "An administrative unit applied by a runtime or tenant identity is applied by the wrong principal class; it would also be unable to act as any approved grantor, but the refusal is stated on identity so the message names the real defect." },
+      { "n": 16, "id": "ACL-PRE-16", "requires": "Pre-state capture: before any REVOKE the package captures, into transaction-local settings or a temporary structure, the table owner, the full non-owner table ACL with grantors, relrowsecurity, relforcerowsecurity, the complete policy set (identity and cardinality), the trigger set, the evaluator owner, its full non-owner EXECUTE ACL with grantors, and a digest of the evaluator's body / prosecdef / provolatile / proparallel / proleakproof / proconfig, exactly as hosted0009 §0 does for its own object.", "why": "A postcondition that asserts 'unchanged' without a captured pre-state is asserting against a value it just re-read. The capture is what makes HOSTED0010_POSTCONDITIONS falsifiable." }
+    ],
+    "precondition_count_floor": 16
+  },
+
+  "HOSTED0010_POSTCONDITIONS": {
+    "rule": "Verified INSIDE the same transaction as the REVOKEs, against the ACL-PRE-16 capture. ANY failure ABORTS the transaction, leaving the prior posture intact.",
+    "postconditions": [
+      "NON-OWNER TABLE ACL EXACTNESS: the set of non-owner (grantee, privilege) pairs on public.entitlement_grants, read through aclexplode, is EXACTLY {(uellix_owner, SELECT)}.",
+      "authenticated cannot SELECT, INSERT, UPDATE, DELETE or TRUNCATE public.entitlement_grants directly: has_table_privilege('authenticated', 'public.entitlement_grants', <each>) is false for all five.",
+      "service_role cannot directly read or mutate public.entitlement_grants: has_table_privilege('service_role', 'public.entitlement_grants', <each of SELECT, INSERT, UPDATE, DELETE, TRUNCATE>) is false.",
+      "anon, uellix_app, uellix_writer, uellix_auditor and uellix_migrator hold no direct privilege on public.entitlement_grants (has_table_privilege false for every privilege), except where one of them is the measured table owner, in which case it is the owner and the non-owner set above is still exact.",
+      "NON-OWNER EVALUATOR EXECUTE ACL EXACTNESS: the set of non-owner EXECUTE holders on public.entitlement_effective(uuid,varchar), read through aclexplode, is EXACTLY {authenticated}.",
+      "PUBLIC EXECUTE is ABSENT on the evaluator.",
+      "authenticated EXECUTE is RETAINED on the evaluator: has_function_privilege('authenticated', 'public.entitlement_effective(uuid,varchar)', 'EXECUTE') is true.",
+      "anon and service_role EXECUTE are ABSENT on the evaluator.",
+      "relrowsecurity and relforcerowsecurity on public.entitlement_grants are UNCHANGED (both still true).",
+      "The policy set on public.entitlement_grants is UNCHANGED by identity and by cardinality (exactly one, entitlement_grants_select_owner, FOR SELECT TO uellix_owner).",
+      "The table owner is UNCHANGED, measured against the capture.",
+      "The evaluator owner is UNCHANGED and is uellix_owner.",
+      "The evaluator body / prosecdef / provolatile / proparallel / proleakproof / proconfig digest is UNCHANGED, measured against the capture.",
+      "The trigger set on public.entitlement_grants is UNCHANGED, measured against the capture.",
+      "NO role window remains open: current_user equals the captured session identity and no SET ROLE is in force.",
+      "NO GRANT, CREATE, DROP, ALTER, policy, role, membership or table-row change occurred: the ONLY difference between the capture and the post-state is the ABSENCE of the revoked non-owner pairs.",
+      "IDEMPOTENT CONVERGENCE: a second application in a fresh transaction satisfies every precondition (prestate ALREADY_HARDENED), issues ZERO REVOKEs, satisfies every postcondition, and exits successfully."
+    ],
+    "abort_semantics": "Any failure raises and aborts. The package does not warn, does not partially apply and does not record a success with caveats."
+  },
+
+  "ACL_FAMILY_SUBSTRATE_REQUIREMENT": {
+    "classification": "BINDING ON THE SUBSTRATE USED FOR PG-CE3-ACL-HARDENING. SEPARATE from, and NOT a widening of, v1.0.1 FIXTURE_DECONTAMINATION.",
+    "requirement": "HOSTED-SHAPED. The disposable database used to discharge PG-CE3-ACL-HARDENING MUST (1) REPRODUCE the hosted platform's pg_default_acl rows for the baseline-applier role in schema public -- tables ALL to authenticated and service_role with anon revoked as 0033 line 8 leaves it, functions EXECUTE to anon, authenticated and service_role -- and MEASURE them by reading pg_default_acl back before the baseline is applied; (2) CREATE public.entitlement_grants by the ACTUAL baseline-applier identity, so that the table owner and the grantor of its inherited grants are the ones the hosted platform produces; (3) NOT re-home public.entitlement_grants to uellix_owner; (4) apply the REAL stella_hosted_0009 bytes BEFORE the REAL stella_hosted_0010 bytes.",
+    "why_non_vacuity_is_mandatory": "On a fresh postgres:16-alpine database (scripts/db-audit-disposable.ts DEFAULT_IMAGE at BASE_SHA) none of the platform's default ACL rows exist, so authenticated and service_role hold NOTHING on a new table and the defect is absent. On the CE-3 fixture at 7c178862 line 201 additionally re-homes every table to uellix_owner, which rewrites every grantor. A proof on that substrate would pass with hosted0010 absent, which is exactly what CE3-ACL-M-1 forbids.",
+    "relation_to_the_existing_fixture": "tests/postgres/ce3-entitlement-grants-fixtures.ts line 201 re-homes ALL public tables in a loop. v1.0.1 FIXTURE_DECONTAMINATION deliberately left that loop OUT OF SCOPE, and this amendment does NOT put it in scope of that order. Whether the ACL family's substrate is the existing fixture with its loop narrowed to exclude entitlement_grants, or a separate hosted-shaped fixture, is a WRITE-SURFACE decision of the act that lands the host (R4 or the hosted0010 implementation act). What is NOT a decision is the shape: a substrate that fails (1)-(4) does not discharge the family.",
+    "image_is_not_frozen_shape_is": "The container image is the implementation's choice. The opening used public.ecr.aws/supabase/postgres:17.6.1.143 with the defaults reproduced from that image's postgres database; a postgres:16-alpine database with the same pg_default_acl rows installed by the harness satisfies (1) equally. The requirement is on MEASURED pg_default_acl content, not on an image name."
+  },
+
+  "REAL_PG_NODE_CONTRACT_AMENDED_V102": {
+    "clause_amended": "REAL_PG_NODE_CONTRACT.probe_count_total and node_local_future_probes, as already amended once by v1.0.1 REAL_PG_NODE_CONTRACT_AMENDED.",
+    "v1_0_1_amended_probe_count_total_quoted": "13",
+    "base_probe_count_total": 12,
+    "v1_0_1_probe_count_total": 13,
+    "amended_probe_count_total": 14,
+    "arithmetic": "12 + 1 (v1.0.1) + 1 (this amendment) = 14. Exactly one probe family is added by this amendment.",
+    "all_original_13_preserved_by_identity": ["PG-4", "PG-7", "PG-CE3-SEC3", "PG-CE3-SEC4", "PG-CE3-TENANT-ISOLATION", "PG-CE3-APPEND-ONLY", "PG-CE3-SOURCE-VALIDATION", "PG-CE3-LIMIT-VALIDATION", "PG-CE3-EFFECTIVE-PERIOD", "PG-CE3-EXPLICIT-ORG", "PG-CE3-NO-CE4-CONSUMER", "PG-CE3-UNGOVERNED", "PG-CE3-DEFINER-OWNER"],
+    "no_renumbering": "None of the thirteen is renumbered, redefined or removed. PG-CE3-DEFINER-OWNER keeps its six minimum obligations exactly as v1.0.1 froze them.",
+    "NEW_PROBE_FAMILY": {
+      "id": "PG-CE3-ACL-HARDENING",
+      "node": "CE-3",
+      "proves": "On a HOSTED-SHAPED substrate, after the real stella_hosted_0009 and the real stella_hosted_0010 packages are applied in that order, the direct-privilege surface of public.entitlement_grants and the EXECUTE surface of public.entitlement_effective(uuid,varchar) are EXACTLY the two closed contracts; a tenant role's direct SELECT / INSERT / UPDATE / DELETE / TRUNCATE and a BYPASSRLS platform role's direct SELECT are each REFUSED with SQLSTATE 42501; the sibling canary is never disclosed; the package is idempotent; and the package's grantor, no-op-REVOKE and unexpected-grantee refusals are real.",
+      "why_runtime": "A privilege is a catalog fact; whether a REVOKE took effect is a catalog fact that depends on who issued it; whether TRUNCATE succeeds as a tenant is only knowable by attempting it AS that role. None of this is readable from SQL text, and all of it depends on the substrate carrying the hosted default ACLs -- which is why the substrate requirement is part of the family and not a separate concern.",
+      "substrate": "HOSTED-SHAPED per ACL_FAMILY_SUBSTRATE_REQUIREMENT. MANDATORY NON-VACUITY: pg_default_acl reproduced AND measured; entitlement_grants created by the actual baseline-applier identity; the fixture does NOT re-home the table to uellix_owner; hosted0009 applied before hosted0010, both from real bytes.",
+      "minimum_measurements": [
+        "authenticated SELECT refusal (42501, not an empty result), INSERT refusal, UPDATE refusal, DELETE refusal, TRUNCATE refusal, each attempted AS authenticated with pg_roles.rolbypassrls asserted false for it; row count unchanged after the attempts.",
+        "service_role direct SELECT refusal (42501) attempted AS service_role with pg_roles.rolbypassrls asserted TRUE for it -- the assertion that RLS would NOT have protected the relation is what makes the REVOKE load-bearing.",
+        "sibling canary non-disclosure: SENTINEL_SIBLING_ORG_CANARY_ROW absent from every result set, log line and error payload of every attempt above, including the service_role attempt.",
+        "exact TABLE ACL: non-owner (grantee, privilege) set read through aclexplode is EXACTLY {(uellix_owner, SELECT)}; table owner measured and reported.",
+        "exact evaluator EXECUTE ACL: non-owner EXECUTE holders EXACTLY {authenticated}; PUBLIC absent; anon and service_role absent; owner uellix_owner.",
+        "idempotency: a second application converges with zero REVOKEs issued and every postcondition holding.",
+        "wrong-grantor refusal: an application attempted by a session that cannot SET ROLE to the measured grantor is REFUSED with the governed message BEFORE any mutation, and the ACL is unchanged afterwards.",
+        "failed / no-op REVOKE detection: an arrangement in which a REVOKE would warn and do nothing (a target grant attributed to a grantor the session cannot assume) is detected as FAILURE by ACL re-read, not reported as success.",
+        "zero unexpected grantees: a planted third non-owner grantee (SENTINEL_ACL_UNEXPECTED_GRANTEE) on either object causes REFUSAL before any mutation, and after a conformant run no non-owner grantee outside the contracts exists."
+      ],
+      "harness_rule_unchanged": "DISPOSABLE cluster only, via the repository's disposable-audit path. NEVER staging, NEVER production, NEVER the canonical local stack. Separate login identities per the node base's harness.separate_login_identities: the tenant attempts run AS authenticated, the platform attempt runs AS service_role, and the package runs AS the administrative identity."
+    },
+    "PG_CE3_TENANT_ISOLATION_REGROUNDING": {
+      "identity": "UNCHANGED. The family keeps its id PG-CE3-TENANT-ISOLATION and its v1.0.1 ownership-arm regrounding.",
+      "what_changes": "Its DIRECT-ACCESS ARM only. The isolation result was previously meaningful for reads THROUGH the evaluator; it is now ALSO grounded for reads AROUND it, because after hosted0010 no tenant-reachable or BYPASSRLS role can read the relation directly. This is a grounding, not a redefinition: no id changes and no assertion is deleted."
+    },
+    "PG_CE3_APPEND_ONLY_REGROUNDING": {
+      "identity": "UNCHANGED. The family keeps its id PG-CE3-APPEND-ONLY.",
+      "what_changes": "Its TRUNCATE ARM is now grounded: the append-only guarantee previously rested on RLS plus the row trigger, neither of which reaches TRUNCATE. After hosted0010 it also rests on the absence of any non-owner TRUNCATE privilege. Grounding a premise differently is not redefining the control."
+    },
+    "gate_unchanged": "postgres_disposable_probe. MANDATORY before CE-3 may close."
+  },
+
+  "REQUIRED_NODE_CONTROLS_AMENDED_V102": {
+    "clause_amended": "REQUIRED_NODE_CONTROLS -- count, ids, and counts_by_class, as already amended once by v1.0.1 REQUIRED_NODE_CONTROLS_AMENDED.",
+    "closed_world_rule_PRESERVED": "EXHAUSTIVE IN BOTH DIRECTIONS, unchanged in force.",
+    "the_manifest_surface_is_now_THREE_documents": "The closed-world comparison is made against the UNION of docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json (28 ids), docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json (3 ids) and docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.2.json (6 ids) = 37. Neither prior manifest document is edited to carry the new six, and the new document does NOT restate the prior 31. A checker that compares against any one or two of the three documents will report a false gap; it must take the union of all three.",
+    "base_count": 28,
+    "v1_0_1_count": 31,
+    "amended_count": 37,
+    "arithmetic": "28 + 3 (v1.0.1) + 6 (this amendment) = 37. Exactly six ids are added by this amendment.",
+    "prior_ids_preserved_by_identity": ["CE3-P-1", "CE3-P-2", "CE3-P-3", "CE3-P-4", "CE3-P-5", "CE3-P-6", "CE3-P-7", "CE3-P-8", "CE3-P-9", "CE3-OWN-P-1", "CE3-N-1", "CE3-N-2", "CE3-N-3", "CE3-N-4", "CE3-N-5", "CE3-N-6", "CE3-N-7", "CE3-N-8", "CE3-N-9", "CE3-N-10", "CE3-N-11", "CE3-N-12", "CE3-OWN-N-1", "CE3-M-1", "CE3-M-2", "CE3-M-3", "CE3-M-4", "CE3-M-5", "CE3-M-6", "CE3-M-7", "CE3-OWN-M-1"],
+    "no_renumbering": "No existing CE3-P, CE3-N, CE3-M or CE3-OWN-* id is renumbered, redefined or removed. Not one word of their frozen descriptions is changed. CE3-OWN materialization semantics (v1.0.1 manifest amendment's rule that R4 may materialize exactly its three test_file fields and conditionally its two postgres paths) are PRESERVED and NOT modified.",
+    "no_absorption": "None of the six new obligations may be absorbed into an existing id. Folding the TRUNCATE refusal into CE3-N-1 or the service_role refusal into PG-CE3-TENANT-ISOLATION's host would leave the new semantics carried by a control whose frozen description does not mention them.",
+    "NEW_CONTROL_IDS": ["CE3-ACL-P-1", "CE3-ACL-N-1", "CE3-ACL-N-2", "CE3-ACL-N-3", "CE3-ACL-N-4", "CE3-ACL-M-1"],
+    "new_ids_namespace_rationale": "The CE3-ACL- prefix is disjoint from CE3-P-n / CE3-N-n / CE3-M-n however far those sequences are later extended, disjoint from CE3-OWN-*, and disjoint from the parent batch manifest's P-n / N-n / M-n namespace. A reader sees at a glance which controls came from this amendment.",
+    "no_UNKNOWN_host_materialized_here": "This document freezes obligations, not hosts. The six test_file fields are UNKNOWN in the companion manifest amendment and belong to the later act that lands the PG-CE3-ACL-HARDENING host.",
+    "new_controls": [
+      {
+        "id": "CE3-ACL-P-1",
+        "class": "positive",
+        "name": "HOSTED_SHAPED_ACL_HARDENING_PACKAGE_APPLIED_AND_EXACT",
+        "obligation": "Prove, on a substrate that satisfies ACL_FAMILY_SUBSTRATE_REQUIREMENT (pg_default_acl rows reproduced AND read back from pg_default_acl as a measured assertion; entitlement_grants owner read from pg_class.relowner and equal to the baseline-applier identity, NOT uellix_owner), that the REAL bytes of db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql applied AFTER the real bytes of stella_hosted_0009 leave: the non-owner TABLE ACL EXACTLY {(uellix_owner, SELECT)}; the non-owner evaluator EXECUTE ACL EXACTLY {authenticated}; RLS, FORCE RLS, the policy set, the trigger set, the table owner, the evaluator owner and the evaluator digest UNCHANGED against a pre-apply capture; and that a SECOND application converges with ZERO REVOKEs issued.",
+        "the_substrate_assertions_are_load_bearing": "The pg_default_acl read-back and the owner assertion are part of THIS control, not a separate concern: without them the exactness assertions are satisfiable on a fixture-shaped substrate where the defect never existed.",
+        "why": "Correct-by-absence-of-the-defect is indistinguishable in the post-state from correct-by-hardening. Only a substrate that carried the defect, and a real package that removed it, prove the contract."
+      },
+      {
+        "id": "CE3-ACL-N-1",
+        "class": "negative",
+        "name": "TENANT_ROLE_DIRECT_TABLE_ACCESS_REFUSED",
+        "obligation": "Prove that, after hosted0010 on the hosted-shaped substrate, a session running AS authenticated (rolbypassrls asserted false from pg_roles) has each of SELECT, INSERT, UPDATE, DELETE and TRUNCATE on public.entitlement_grants REFUSED with SQLSTATE 42501 -- asserted on the FAILURE CODE, never on an empty result or a zero row count -- and that the relation's row count is UNCHANGED after all five attempts.",
+        "known_positive_instrument": "The same five attempts on the same substrate WITHOUT hosted0010 applied must NOT all refuse (the TRUNCATE succeeds and SELECT returns zero rows rather than 42501); this is discharged by CE3-ACL-M-1 and is what proves the refusal is produced by the REVOKE and not by the fixture.",
+        "why": "D1. RLS does not reach TRUNCATE and returns an empty set on SELECT; only the absence of the privilege produces the refusal the frozen contracts require."
+      },
+      {
+        "id": "CE3-ACL-N-2",
+        "class": "negative",
+        "name": "PLATFORM_BYPASSRLS_ROLE_DIRECT_ACCESS_REFUSED_AND_CANARY_UNDISCLOSED",
+        "obligation": "Prove that, after hosted0010 on the hosted-shaped substrate, a session running AS service_role (rolbypassrls asserted TRUE from pg_roles, so that RLS is known NOT to be the protecting mechanism) has direct SELECT on public.entitlement_grants REFUSED with 42501, has INSERT / UPDATE / DELETE / TRUNCATE likewise refused, and holds NO EXECUTE on public.entitlement_effective(uuid,varchar) (has_function_privilege false); that anon holds no EXECUTE and PUBLIC holds no EXECUTE; and that SENTINEL_SIBLING_ORG_CANARY_ROW is ABSENT from every result set, log line and error payload of every attempt.",
+        "why": "D2. A BYPASSRLS role is protected against by nothing except the absence of the privilege. The rolbypassrls = true assertion is what makes this control non-vacuous: a service_role created without BYPASSRLS would be refused by RLS for the wrong reason."
+      },
+      {
+        "id": "CE3-ACL-N-3",
+        "class": "negative",
+        "name": "PACKAGE_REFUSES_WRONG_GRANTOR_NOOP_REVOKE_AND_UNEXPECTED_GRANTEE",
+        "obligation": "Prove THREE refusals of the real package, each from a controlled arrangement, each REFUSED with the governed message BEFORE any mutation and each leaving the ACL byte-identical: (a) WRONG GRANTOR -- an application attempted by a session for which pg_has_role(current_user, <measured grantor>, 'SET') is false and current_user <> grantor; (b) NO-OP REVOKE DETECTED -- an arrangement in which a target grant carries a grantor the session cannot assume, so that a naive REVOKE would raise 'no privileges could be revoked' and change nothing, is reported as FAILURE by the package's ACL re-read (never as success); (c) UNEXPECTED GRANTEE -- a planted third non-owner grantee (SENTINEL_ACL_UNEXPECTED_GRANTEE) on either target object, or PUBLIC EXECUTE on the evaluator, causes refusal.",
+        "detector_requirements": "Each arrangement is a KNOWN-POSITIVE for its refusal; the conformant run of CE3-ACL-P-1 is the KNOWN-NEGATIVE that none of the three fires on. The message asserted is the package's governed message, not a generic error.",
+        "why": "GRANTOR_ANTI_SEIZURE_CONTRACT. A package that cannot be shown to refuse has not been shown to measure."
+      },
+      {
+        "id": "CE3-ACL-N-4",
+        "class": "negative",
+        "name": "PACKAGE_STATEMENT_CLASS_CLOSED",
+        "obligation": "Prove, by static source reading of db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql over a CODE-ONLY projection (comments stripped, string literals blanked), that: every top-level or DO-block state-changing statement is a REVOKE; ZERO GRANT, CREATE, DROP, ALTER, INSERT, UPDATE, DELETE, TRUNCATE, CREATE POLICY / DROP POLICY, CREATE ROLE / GRANT <role> TO, and EXECUTE format(...) / dynamic-SQL forms are present; every REVOKE names exactly one of the two frozen target objects; no 'ALL TABLES IN SCHEMA' or 'ALL FUNCTIONS IN SCHEMA' form is present; every SET LOCAL ROLE is paired with a RESET ROLE; and the file's sha256 matches the registry pin through sha256OfPreparedSql.",
+        "detector_requirements": [
+          "The detector MUST read the file as ONE SEMANTIC STRING; a line-by-line grep is not an acceptable instrument.",
+          "The detector MUST have a KNOWN-POSITIVE control: SENTINEL_DETECTOR_POSITIVE_GRANT_STATEMENT (a synthetic, non-executed string carrying a GRANT on public.entitlement_grants) that the detector actually flags.",
+          "The detector MUST have a KNOWN-NEGATIVE control: a REVOKE-only string superficially similar to the package that the detector does NOT flag.",
+          "The detector MUST assert a NON-ZERO searched population."
+        ],
+        "why": "Category D is a statement-class restriction. A statement the database executes is a statement whether or not a scanner sees it; the projection and the instrument controls are what make 'REVOKE-only' a measurement rather than a description."
+      },
+      {
+        "id": "CE3-ACL-M-1",
+        "class": "mutation",
+        "name": "ACL_HARDENING_PACKAGE_OMISSION_MUTATION_GOES_RED",
+        "mutation": "REMOVE, OMIT or PREVENT THE APPLICATION OF stella_hosted_0010 on the hosted-shaped substrate, leaving stella_hosted_0009, the fixture and the candidate INTACT.",
+        "required_outcome": "CE3-ACL-P-1, CE3-ACL-N-1 and CE3-ACL-N-2 go RED.",
+        "required_failure_reason": "They must fail BECAUSE authenticated's TRUNCATE succeeds (or its SELECT returns rows-or-zero instead of 42501), BECAUSE service_role's direct SELECT succeeds and discloses the canary, and BECAUSE the non-owner ACLs are not the exact contracts. A RED produced by an unrelated crash, an import error, a missing-file exception or a harness timeout does NOT satisfy this control.",
+        "no_substitute_may_rescue_it": "No REVOKE issued by the fixture, transcribed into a helper, a constant, a template literal or a second fixture anywhere in tests/**, may make the mutated arrangement GREEN. If a fixture-level REVOKE turns the suite green again, the proof was never grounded on the package.",
+        "substrate_non_vacuity_arm": "A SECOND mutation in the same control: replace the hosted-shaped substrate with a fixture-shaped one (pg_default_acl rows absent, or entitlement_grants re-homed to uellix_owner) with hosted0010 STILL applied. CE3-ACL-P-1 must go RED on its substrate assertions. If it stays green, the substrate assertions are decorative.",
+        "why": "This is the non-vacuity control for the entire ACL contract. Without it, CE3-ACL-P-1 could be satisfied by a substrate on which the defect never existed."
+      }
+    ],
+    "amended_counts_by_class": {
+      "positive": 11,
+      "negative": 17,
+      "mutation": 9,
+      "total": 37,
+      "arithmetic": "11 + 17 + 9 = 37; from v1.0.1's {positive:10, negative:13, mutation:8} exactly +1, +4, +1."
+    },
+    "amended_ids": ["CE3-P-1", "CE3-P-2", "CE3-P-3", "CE3-P-4", "CE3-P-5", "CE3-P-6", "CE3-P-7", "CE3-P-8", "CE3-P-9", "CE3-OWN-P-1", "CE3-ACL-P-1", "CE3-N-1", "CE3-N-2", "CE3-N-3", "CE3-N-4", "CE3-N-5", "CE3-N-6", "CE3-N-7", "CE3-N-8", "CE3-N-9", "CE3-N-10", "CE3-N-11", "CE3-N-12", "CE3-OWN-N-1", "CE3-ACL-N-1", "CE3-ACL-N-2", "CE3-ACL-N-3", "CE3-ACL-N-4", "CE3-M-1", "CE3-M-2", "CE3-M-3", "CE3-M-4", "CE3-M-5", "CE3-M-6", "CE3-M-7", "CE3-OWN-M-1", "CE3-ACL-M-1"]
+  },
+
+  "NODE_SEMANTICS_PRESERVED": {
+    "rule": "Everything in the node base and in v1.0.1 not named in AMENDMENT_SEMANTICS.conflict_rule is PRESERVED VERBATIM.",
+    "explicitly_preserved": [
+      "SEMANTIC_CONTRACT in full, including SC-6 (D1 is a violation OF it, not a change TO it).",
+      "PHYSICAL_TARGET_SHAPE in full.",
+      "RLS_SECURITY_CONTRACT.frozen_BINDING, enable_and_force_derivation, POLICY_SET as amended by v1.0.1 R_A_COMPLETION, cross_org_refusal, append_only_mutation_restriction, separation_of_membership_and_entitlement and prohibitions_restated -- all unchanged. application_and_capability_identity_expectations is MEASURED for this relation by IDENTITY_EXPECTATIONS_MEASURED and its rule is unchanged.",
+      "EVALUATOR_CONTRACT in full.",
+      "CONCURRENCY_CONTRACT in full.",
+      "ENFORCEMENT_BOUNDARY_CE4 in full. Nothing consumes the evaluator as a result of this amendment.",
+      "MIGRATION_ORDINAL -- no ordinal is allocated.",
+      "PARENT_MANIFEST_SUBSET, MANIFEST_DISPOSITION, ODS_SPLIT_GOVERNANCE and CROSS_LANE_CONSTRAINTS.",
+      "FUTURE_IMPLEMENTATION_BRANCH and FUTURE_PROTECTED_SURFACES_SYMBOLIC, including PROHIBITED_WIDENINGS.",
+      "OPEN_FINDINGS F-CE3-1..F-CE3-4 and v1.0.1's F-CE3-OWN-3 / F-CE3-OWN-4, all as written.",
+      "NEGATIVE_CONTROL_NON_VACUITY.",
+      "HOSTED_DISPOSITION.A_disposition NO, B_disposition MANDATORY, C category REQUIRED with no_REVOKE, db_prepared_package_order, db_baseline and db_policies.",
+      "v1.0.1 R_A_COMPLETION, FUTURE_HOSTED_PACKAGE_CONTRACT, FUTURE_HOSTED_PACKAGE_PRECONDITIONS, FUTURE_HOSTED_PACKAGE_POSTCONDITIONS, FORWARD_ONLY_CONTRACT, BASELINE_MIGRATION_PROHIBITION, FIXTURE_DECONTAMINATION, R4_BOUNDARY, R2_SEQUENCING_CORRECTION (including WRITER_SEPARATION and INTERMEDIATE_CERTIFICATION_SEMANTICS), all in full."
+    ]
+  },
+
+  "BASELINE_MIGRATION_PROHIBITION_EXTENDED": {
+    "rule": "v1.0.1 BASELINE_MIGRATION_PROHIBITION is PRESERVED and extended: db/migrations/0073_commercial_account_ce3_entitlement_grants.sql MUST NOT gain, in R4 or in any later act, a REVOKE against authenticated, anon, service_role or any other role on entitlement_grants or the evaluator, and NO db/migrations/0074 (or later) unit is authorized to carry that REVOKE.",
+    "why": "A baseline unit runs as whichever identity applies the baseline and cannot measure the grantor or refuse a no-op. The remediation belongs to category D on the hosted channel. See the parent amendment's REMEDIATION_ALTERNATIVES_REFUSED."
+  },
+
+  "R4_BOUNDARY": {
+    "classification": "RECORDED CONTRACT, NOT IMPLEMENTATION. v1.0.1 R4_BOUNDARY is PRESERVED and extended only as stated.",
+    "R4_status": "VALID and SUSPENDED. R4 stopped at STOP__CE3_R4_AUTHORITY_DELTA_REQUIRED with zero edits; it resumes on the same PR #159 branch after the seven conditions in READY_FOR_CE3_R4.",
+    "bytes_expected_preserved": [
+      "db/migrations/0073_commercial_account_ce3_entitlement_grants.sql",
+      "db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql",
+      "db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql (once written and certified)",
+      "db/schema.ts",
+      "lib/capabilities/entitlement-catalogue.ts",
+      "lib/capabilities/entitlement-evaluator.ts",
+      "the migration journal corpus",
+      "the CHECKPOINT B0 observation",
+      "the baseline manifest"
+    ],
+    "R4_principally_owns": [
+      "fixture decontamination per v1.0.1 FIXTURE_DECONTAMINATION (evaluator re-home, line 212)",
+      "ownership proof re-grounding onto the governed package origin",
+      "the CE3-OWN control hosts and their materialization",
+      "consumer-census definition-surface retarget, ONLY where mechanically required",
+      "the CE3-ACL control hosts and their six test_file materializations, WHERE the PG-CE3-ACL-HARDENING host lands in the CE-3 Real-PG suite; where it lands in the hosted0010 package's own certification harness, the hosted0010 implementation act owns those materializations instead. Whichever act it is, it materializes exactly those six fields and nothing else in the manifest amendment v1.0.2."
+    ],
+    "not_authorized": "Unrelated tail-debt cleanup is NOT authorized in R4. R4 does NOT write hosted0010 and issues NO REVOKE anywhere, including in tests/**.",
+    "frozen_manifest_rule": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json and _AMENDMENT_v1.0.1.json may be changed in R4 ONLY where their OWN text explicitly pre-authorized a materialization field. They may NOT receive new semantics in place."
+  },
+
+  "ODS_CONSEQUENCE": {
+    "this_amendment_act": {
+      "ODS_LINEAGE_REQUIRED": "NO",
+      "PROTECTED_GRANT_REQUIRED": "NO",
+      "why": "This file and its two companions are under docs/ops/commercial/**, which is not a member of DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts at BASE_SHA."
+    },
+    "the_future_hosted0010_implementation": {
+      "NEXT_ODS_ADDENDUM_EXPECTED": "v1.0.35",
+      "NEXT_HPO_ID_EXPECTED": "HPO-ODS-W2-32",
+      "both_dispositions": "DERIVED_NOT_ALLOCATED",
+      "CONTROLLER_PREREQUISITE": "A Controller successor MUST FIRST enumerate docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json in scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION (44 entries, final v1.0.33 at BASE_SHA) before v1.0.35 may be allocated.",
+      "proposed_W2_32_branch": "codex/commercial-account-ce3-implementation-r1 -- FROZEN REQUIREMENT on the later registering act, not an allocation.",
+      "proposed_W2_32_protected_patterns_EXACT": [
+        "db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql",
+        "db/prepared/README.md"
+      ],
+      "README_overlap_with_W2_31": "EXPLICIT AND PERMITTED. No grant union by branch. A later hosted0010 gate MUST name HPO-ODS-W2-32 explicitly.",
+      "prohibitions_on_this_act": [
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json is NOT created.",
+        "HPO-ODS-W2-32 is NOT registered; scripts/ods-scope.ts is NOT edited.",
+        "scripts/ods-controller.ts is NOT edited; v1.0.34 is NOT enumerated by this act.",
+        "No ODS sentinel on either axis is advanced."
+      ]
+    },
+    "W2_30_AND_W2_31_DISPOSITION": "UNCHANGED_NOT_WIDENED, both. W2-31 is REGISTERED at BASE_SHA with exactly its two 0009 literals; it is not widened to the 0010 literal."
+  },
+
+  "ADVERSARIAL_SWEEP_DECLARATIONS": {
+    "refused": {
+      "db_prepared_generally_authorized_for_CE3": "REFUSED. Two literal .sql paths, and this document narrows to the second.",
+      "REVOKE_inside_hosted0009_or_any_C_unit": "REFUSED. category_C_is_not_a_door_to_category_A stands.",
+      "GRANT_inside_hosted0010": "REFUSED. REVOKE-only, and ACL-PRE-11 refuses rather than grants a missing authenticated EXECUTE.",
+      "REVOKE_against_a_third_object_or_ALL_IN_SCHEMA": "REFUSED.",
+      "dynamic_SQL_in_hosted0010": "REFUSED.",
+      "grantor_assumed_as_postgres_or_uellix_owner": "REFUSED. Measured per object.",
+      "WARNING_treated_as_success": "REFUSED. FAILURE by ACL re-read.",
+      "self_granted_standing": "REFUSED. No ALTER OWNER, no membership grant, no role creation to acquire standing.",
+      "fixture_shaped_substrate_for_the_ACL_family": "REFUSED. Hosted-shaped, measured, not re-homed, 0009 before 0010.",
+      "FIXTURE_DECONTAMINATION_widened_to_the_table_loop": "REFUSED. The v1.0.1 order is exactly line 212; the ACL family's substrate requirement is separate and binds only that family's substrate.",
+      "fixture_level_or_transcribed_REVOKE": "REFUSED. Contamination.",
+      "authenticated_direct_SELECT_tolerated_as_zero_rows": "REFUSED. 42501 required.",
+      "service_role_direct_privilege_tolerated": "REFUSED.",
+      "service_role_globally_redefined": "REFUSED. Relation-specific.",
+      "owner_powers_pretended_absent": "REFUSED. ADMINISTRATIVE_RESIDUAL, acceptable only because no runtime path executes as the owner.",
+      "evaluator_body_altered": "REFUSED.",
+      "R_A_optional_or_BYPASSRLS_owner": "REFUSED. Preserved from v1.0.1.",
+      "tenant_policy_before_S4": "REFUSED. ACL-PRE-6 refuses one at apply time.",
+      "probe_families_renumbered": "REFUSED. 13 preserved by identity; one added.",
+      "control_ids_renumbered_or_absorbed": "REFUSED. 31 preserved by identity; six added.",
+      "test_hosts_materialized_here": "REFUSED. All six UNKNOWN.",
+      "W2_32_allocated_or_registered_here": "REFUSED.",
+      "v1_0_35_allocated_here": "REFUSED.",
+      "Controller_edited_here": "REFUSED.",
+      "hosted0010_implemented_here": "REFUSED.",
+      "PR159_synchronized_here": "REFUSED.",
+      "R4_resumed_here": "REFUSED.",
+      "CE4_consumer_authorized": "REFUSED."
+    },
+    "hedging_vocabulary_prohibition": "No load-bearing security or write-surface fact in this document is attached to 'as needed', 'if required', 'or similar', 'and related files', 'equivalent role', 'later decide' or 'implementation may choose'."
+  },
+
+  "PREDECESSOR_IMMUTABILITY": {
+    "rule": "No predecessor is mutated by this act. Byte identity is asserted by blob sha, measured at BASE_SHA before the write and re-measured after the commit.",
+    "asserted_unchanged": {
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json": "610b21277686c7f97073d23ddda9470765c965d4",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.1.json": "c5e5625f1acc1b86740c8b2255fe9cf10164de00",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json": "fce743821a03ccc6aeac9511ca5465852ecae048",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json": "cfc098dd993519853fce6219f57cd77e159fa618",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json": "c85425ad83c0e675b1e5a0947be83257dead3e89",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json": "cf8e8b80459ca3d02a055436bd25aee54685c39e",
+      "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.1.json": "efa32e52722ed2b90080a844be92c6e8c634c898",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json": "da51e5f42b8295a059fb65737d42b7e1295a2c94",
+      "scripts/ods-scope.ts": "7a688207cb170118f1879c943f9319b1c091046c",
+      "scripts/ods-controller.ts": "112369ebcb5f89af141ca42d1c8f238708d893f5",
+      "db/migrations/0033_public_api_grants.sql": "04d7e3e545fd7efa56e70c4e92e30ac82f71b622"
+    }
+  },
+
+  "self_check": {
+    "note": "Deterministic checks verifiable by inspection or a one-line node command against this file, its companions and the repository at BASE_SHA. Where an INDEPENDENT literal or set comparison against a base file was practical, it is used in preference to a check derived from the same structure it validates.",
+    "expected_artifact_ids_unique": 3,
+    "expected_changed_path_count": 3,
+    "expected_existing_files_modified": 0,
+    "expected_base_node_authority_blob_sha": "cfc098dd993519853fce6219f57cd77e159fa618",
+    "expected_prior_node_amendment_blob_sha": "c85425ad83c0e675b1e5a0947be83257dead3e89",
+    "expected_parent_amendment_reference": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.2.json",
+    "expected_node_base_reference": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json",
+    "PRE_PROBE_COUNT": 13,
+    "POST_PROBE_COUNT": 14,
+    "expected_new_probe_families": 1,
+    "expected_removed_probe_families": 0,
+    "PRE_NODE_CONTROL_COUNT": 31,
+    "POST_NODE_CONTROL_COUNT": 37,
+    "expected_new_control_ids": 6,
+    "expected_removed_control_ids": 0,
+    "expected_renumbered_control_ids": 0,
+    "expected_definer_owner": "uellix_owner",
+    "expected_definer_owner_superuser": false,
+    "expected_definer_owner_bypassrls": false,
+    "expected_0010_forward_only": "YES",
+    "expected_0010_rollback_file": "NONE",
+    "expected_0010_statement_class": "REVOKE only",
+    "expected_0010_target_object_count": 2,
+    "expected_precondition_count_floor": 16,
+    "expected_postcondition_count": 17,
+    "expected_blocking_findings": 0,
+    "expected_unknown_findings": 0,
+    "checks": [
+      "amends === 'docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json'; amends_amendment === 'docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json'; amends_parent_amendment === 'docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.2.json'; companion_manifest === 'docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.2.json'; supersedes === null; append_only === true",
+      "REAL_PG_NODE_CONTRACT_AMENDED_V102.base_probe_count_total === the BASE NODE FILE's REAL_PG_NODE_CONTRACT.probe_count_total (12); v1_0_1_probe_count_total === the v1.0.1 FILE's REAL_PG_NODE_CONTRACT_AMENDED.amended_probe_count_total (13); amended_probe_count_total === 14",
+      "REAL_PG_NODE_CONTRACT_AMENDED_V102.all_original_13_preserved_by_identity has length 13 and is SET-EQUAL to the v1.0.1 FILE's all_original_12_preserved_by_identity concat [NEW_PROBE_FAMILY.id], read from that file",
+      "REAL_PG_NODE_CONTRACT_AMENDED_V102.NEW_PROBE_FAMILY.id === 'PG-CE3-ACL-HARDENING' and that id is ABSENT from all_original_13_preserved_by_identity; NEW_PROBE_FAMILY.minimum_measurements.length === 9",
+      "REQUIRED_NODE_CONTROLS_AMENDED_V102.prior_ids_preserved_by_identity has length 31 and is SET-EQUAL to the v1.0.1 FILE's REQUIRED_NODE_CONTROLS_AMENDED.amended_ids, read from that file",
+      "REQUIRED_NODE_CONTROLS_AMENDED_V102.amended_ids has length 37, new Set(...).size === 37, is a strict SUPERSET of prior_ids_preserved_by_identity, and amended_ids minus prior_ids_preserved_by_identity is EXACTLY ['CE3-ACL-P-1','CE3-ACL-N-1','CE3-ACL-N-2','CE3-ACL-N-3','CE3-ACL-N-4','CE3-ACL-M-1']",
+      "REQUIRED_NODE_CONTROLS_AMENDED_V102.amended_counts_by_class sums to 37 and equals the v1.0.1 FILE's amended_counts_by_class plus {positive:+1, negative:+4, mutation:+1}",
+      "REQUIRED_NODE_CONTROLS_AMENDED_V102.NEW_CONTROL_IDS is SET-EQUAL to the ids carried by the COMPANION MANIFEST v1.0.2 FILE's positive_controls + negative_controls + mutation_controls, and every test_file there === 'UNKNOWN'",
+      "TABLE_ACL_CONTRACT.non_owner_direct_privileges_EXACT deep-equals the PARENT AMENDMENT v1.0.2 FILE's TARGET_ACL_CONTRACT_AUTHORIZED.TABLE.non_owner_direct_privileges_EXACT; FUNCTION_EXECUTE_CONTRACT.non_owner_EXECUTE_EXACT deep-equals that file's TARGET_ACL_CONTRACT_AUTHORIZED.FUNCTION.non_owner_EXECUTE_EXACT",
+      "TABLE_ACL_CONTRACT.non_owner_direct_privileges_EXACT.authenticated.length === 0 and .service_role.length === 0 and .uellix_owner deep-equals ['SELECT']",
+      "FUNCTION_EXECUTE_CONTRACT.non_owner_EXECUTE_EXACT.authenticated === 'REQUIRED', PUBLIC === 'PROHIBITED', anon === 'PROHIBITED', service_role === 'PROHIBITED'",
+      "HOSTED_DISPOSITION_FOURTH_CATEGORY.NEW_CATEGORY.id === 'D_PRECHAIN_ACL_HARDENING_UNIT'; permitted_mutation_class === 'REVOKE'; every one of its 23 characteristics is boolean true; target_objects_EXACT deep-equals ['public.entitlement_grants','public.entitlement_effective(uuid,varchar)']",
+      "HOSTED0010_CONTRACT.FUTURE_HOSTED_PACKAGE_ID === 'stella_hosted_0010_entitlement_grants_acl_hardening'; FUTURE_HOSTED_SQL_PATH === 'db/prepared/' + that id + '.sql'; category === 'D_PRECHAIN_ACL_HARDENING_UNIT'; FORWARD_ONLY === 'YES'; ROLLBACK_FILE === 'NONE'; GRANT === 'PROHIBITED'; allowed_state_changing_statement_class === 'REVOKE only'",
+      "HOSTED0010_PRECONDITIONS.preconditions has 16 entries with ids ACL-PRE-1..ACL-PRE-16 and no gap; HOSTED0010_POSTCONDITIONS.postconditions has 17 entries",
+      "R_A_PRESERVED.DEFINER_OWNER === 'uellix_owner', DEFINER_OWNER_SUPERUSER === false, DEFINER_OWNER_BYPASSRLS === false -- identical to the v1.0.1 FILE's R_A_COMPLETION values",
+      "SERVICE_ROLE_CLASSIFICATION.value === 'UNUSED_PRIVILEGED_PLATFORM_ROLE' and equals the PARENT AMENDMENT v1.0.2 FILE's SERVICE_ROLE_CLASSIFICATION.value",
+      "ODS_CONSEQUENCE.the_future_hosted0010_implementation.both_dispositions === 'DERIVED_NOT_ALLOCATED'; proposed_W2_32_protected_patterns_EXACT deep-equals the PARENT AMENDMENT v1.0.2 FILE's ODS_CONSEQUENCE.the_future_hosted0010_implementation.proposed_W2_32_protected_patterns_EXACT",
+      "READY_FOR_CE3_R4 begins with 'NO' and names seven ordered conditions",
+      "No string value in this file names a test_file path for any CE3-ACL control"
+    ]
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "unknown": [],
+    "non_blocking": [
+      {
+        "id": "F-CE3-ACL-5",
+        "class": "CLOSED_WORLD_COMPARISON_NOW_SPANS_THREE_DOCUMENTS",
+        "finding": "The node's closed-world bidirectional control relationship now compares one authority section against the UNION of the base manifest (28), the v1.0.1 manifest amendment (3) and the v1.0.2 manifest amendment (6). A checker written against one or two of the three will report a false gap.",
+        "disposition": "RECORDED AND BOUNDED, NOT A DEFECT. REQUIRED_NODE_CONTROLS_AMENDED_V102.the_manifest_surface_is_now_THREE_documents states the union rule explicitly.",
+        "recommended_action": "R4, the hosted0010 implementation act and every certifier take the union of all three."
+      },
+      {
+        "id": "F-CE3-ACL-6",
+        "class": "TEST_HOST_NOT_YET_DETERMINABLE",
+        "finding": "The test hosts for the six CE3-ACL controls are not determinable from BASE_SHA: the hosted-shaped harness the family requires does not exist, and the registry mechanisms a stella_hosted_0010 entry will engage have no such entry.",
+        "disposition": "RECORDED. The companion manifest amendment carries test_file UNKNOWN for all six -- the schema's sanctioned representation for a path that does not yet exist -- and states exactly which fields the later act may materialize. DATA-LOCATION placeholders only; no security decision is UNKNOWN.",
+        "recommended_action": "The act that lands the PG-CE3-ACL-HARDENING host materializes the six test_file fields and nothing else in that document."
+      },
+      {
+        "id": "F-CE3-ACL-7",
+        "class": "APPROVED_GRANTOR_SET_CLOSED_AT_TWO",
+        "finding": "GRANTOR_ANTI_SEIZURE_CONTRACT closes the approved grantor set at {object's current owner, uellix_owner}. On the hosted shape both objects' grants are attributed to their current owner (postgres for the table; uellix_owner for the function after hosted0009), and on the fixture shape to uellix_owner, so both measured substrates are inside the set. A substrate whose grants are attributed to some third administrative identity would be REFUSED by ACL-PRE-12 rather than hardened.",
+        "disposition": "RECORDED AS INTENDED BEHAVIOUR. Refusing an unmeasured grantor topology is the fail-closed choice; widening the set is a later amendment's decision if such a substrate is ever measured.",
+        "recommended_action": "None."
+      }
+    ]
+  },
+
+  "final_state": "COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1_0_2_FROZEN_AWAITING_INDEPENDENT_CERTIFICATION",
+  "READY_FOR_CE3_R4": "NO. R4 remains VALID and SUSPENDED, and is unblocked only after ALL SEVEN of the following, in this order: (1) the three v1.0.2 authority successors are independently certified and merged to integration/commercial-v1; (2) a Controller successor enumerating docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json is independently certified and merged; (3) ODS v1.0.35 allocating HPO-ODS-W2-32 (DECLARED_NOT_REGISTERED; patterns exactly db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql and db/prepared/README.md; branch codex/commercial-account-ce3-implementation-r1) is independently certified and merged; (4) HPO-ODS-W2-32 is registered in scripts/ods-scope.ts by a separate governed act, independently certified and merged; (5) the then-current integration/commercial-v1 is ORDINARILY MERGED INTO codex/commercial-account-ce3-implementation-r1 -- no rebase, no force push, no history rewrite, no squash, no administrative bypass; (6) stella_hosted_0010_entitlement_grants_acl_hardening is written ON THAT PR #159 BRANCH and PASSES its independent NON-CLOSING certification there; (7) R4 resumes on the SAME PR #159 branch by a separately bounded writer lane. NONE of the seven is performed by this act.",
+  "next_gate": "CE3_ACL_AUTHORITY_V102_INDEPENDENT_CERTIFICATION. This amendment is NOT self-certified and MUST NOT be merged before an independent certification returns PASS with zero blocking and zero unknown findings."
+}
