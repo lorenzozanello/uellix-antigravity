@@ -557,9 +557,84 @@ export const PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY: PrechainOwnershipPackage = {
 }
 
 /**
+ * CE-3 — the ownership migration 0073 documents and is forbidden to perform.
+ *
+ * AN EIGHTH UNIT, AND THE FIRST WHOSE POSITION IN THIS LIST IS NOT LOAD-BEARING.
+ * Units 0004 and 0005 refuse unless 0003 ran; 0007 refuses unless 0006 ran;
+ * 0008 refuses unless 0007 ran. This one depends on NONE of them. Its
+ * preconditions are the destination role and that role's CREATE on schema
+ * public — both established by the BOOTSTRAP (stella_hosted_0000 for the role,
+ * stella_hosted_0001 §2b-bis for the schema privilege) — plus migration 0073,
+ * which is a baseline concern rather than a prechain one. It targets a function
+ * none of the other seven mention and a relation none of them touch.
+ *
+ * It is ordered here by NUMBER and not by dependency, and that is stated rather
+ * than dressed up: inventing a prose dependency on stella_hosted_0008 would
+ * make a reader believe an ordering the packages do not enforce, and the one
+ * thing this registry's comments consistently do is refuse to claim an
+ * ordering no guard would catch.
+ *
+ * PRECHAIN, not postchain. Its preconditions are satisfiable while every chain
+ * package still measures ABSENT — unlike stella_0020, whose dead-default proof
+ * needs stella_0017 to have run. Nothing it asserts mentions a chain package.
+ *
+ * FORWARD-ONLY, and in stella_hosted_0003's class rather than
+ * stella_hosted_0008's: 0008 ships a rollback because "create one policy" and
+ * "drop one policy" are exact inverses that a script can state. Here the
+ * inverse of the transfer is the reopening of the defect, which is why the
+ * reason field below argues the security consequence rather than labelling it.
+ */
+export const PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP: PrechainOwnershipPackage = {
+  id: 'stella_hosted_0009_entitlement_evaluator_ownership',
+  kind: 'prechain-ownership',
+  sourceFile: 'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql',
+  sourceSha256: '0576f189765302d0d5cff8765d126c0574a9b3bc5cd862c6c1caeb26948b23a1',
+  purpose:
+    'Transfers ownership of the CE-3 entitlement evaluator — public.entitlement_effective(uuid,varchar) ' +
+    '— from the role that created it on a managed project to uellix_owner, which is the owner ' +
+    'db/migrations/0073 names in its own banner and is forbidden to produce: BASELINE_GLOBAL_INVARIANTS ' +
+    'pins ownershipStatements = 0 across the whole baseline with no per-unit opt-out. MEASURED on ' +
+    'supabase/postgres:17.6.1.143 with 0073 applied verbatim, the evaluator is left owned by postgres, ' +
+    'whose rolsuper is FALSE but whose rolbypassrls is TRUE — so the SECURITY DEFINER body reads ' +
+    'entitlement_grants with row-level security bypassed, FORCE ROW LEVEL SECURITY silently inert and ' +
+    'the single policy entitlement_grants_select_owner never exercised. Measured end to end: with the ' +
+    'policy neutralised to USING (false), a postgres-owned evaluator still answers UNMETERED while a ' +
+    'uellix_owner-owned one answers NO_LIVE_GRANT. It changes no function body, no SECURITY DEFINER ' +
+    'flag, no volatility, no proconfig and no search_path; issues no GRANT or REVOKE; creates, drops ' +
+    'or alters no policy; does not touch RLS or FORCE RLS; creates and alters no role and no ' +
+    'membership; writes no row; and adds nothing to HOSTED_CHAIN. It performs exactly ONE ' +
+    'state-mutating statement and verifies every one of those absences against a pre-state captured ' +
+    'in the same transaction.',
+  applyWindow: 'prechain',
+  rollbackFile: null,
+  rollbackSha256: null,
+  forwardOnlyNoRollbackReason:
+    'FORWARD-ONLY, in stella_hosted_0003\'s class. Restoring the previous owner recreates the exact ' +
+    'state this package closes: the evaluator executes under a role that bypasses FORCE ROW LEVEL ' +
+    'SECURITY, so R-A is invalidated and SEC-3, SEC-4, SEC-6 and SEC-12 are silently un-enforced ' +
+    'while every CE-3 isolation probe continues to report green — because those probes would be ' +
+    'measuring the BYPASSRLS exemption rather than the policy. That is not a reversal an operator ' +
+    'can inspect after the fact: nothing in the schema changes shape, no object appears or ' +
+    'disappears, and the only visible difference is a role name in pg_proc.proowner. A rollback ' +
+    'script here would therefore be one whose sole effect is to reopen a security defect invisibly, ' +
+    'and whose correctness once the CE-3 runtime is live nobody has measured. Deliberate reversal, ' +
+    'if it were ever genuinely wanted, is a single administrative ALTER FUNCTION taken by the same ' +
+    'principal with the consequences visible at the time — the phrasing stella_hosted_0003 already ' +
+    'uses — and recording that is not authorizing a script.',
+  normalisedFunctions: ['public.entitlement_effective(uuid,varchar)'],
+  destinationOwner: 'uellix_owner',
+  unblocks:
+    'The CE-3 R-A security posture itself, and no chain package. 0073 resolves F-CE3-1 as R-A — "a ' +
+    'SECURITY DEFINER function owned by uellix_owner, for which EXACTLY ONE narrow SELECT policy ' +
+    'exists" — and that resolution is unmeasurable until the owner is what the migration says it is. ' +
+    'It unblocks a MEASUREMENT rather than an installation: no package refuses without it, which is ' +
+    'precisely why it needs its own unit. A defect that blocks nothing is one that ships.',
+}
+
+/**
  * G1-B — the column default that made the DATABASE choose Stella's model.
  *
- * A SEVENTH unit, and the one whose presence here is a JUDGEMENT rather than a
+ * A unit whose presence here is a JUDGEMENT rather than a
  * mechanical consequence. It is recorded because a later reader will ask why a
  * plain schema delta is not in db/hosted/hosted-package-manifest.ts.
  *
@@ -638,6 +713,14 @@ export const ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] = [
   // Applying it early is a refusal, not a silent reordering. MEASURED
   // pre-chain by scripts/pg176-certify.ts: exit 0.
   PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY,
+  // CE-3. Ordered here by NUMBER, and this is the one position in this list
+  // that is NOT enforced by a package guard — see its own doc comment. It
+  // depends on the bootstrap (the role, and that role's CREATE on public) and
+  // on migration 0073, never on units 0003..0008, and nothing it asserts
+  // mentions a chain package. Applying it earlier among the prechain units
+  // would change nothing; it is placed after 0008 so the list reads in the
+  // order the filenames do.
+  PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
   // G1-B, and the one whose WINDOW is not `prechain`. Its dead-default proof
   // refuses while authenticated and service_role still hold the baseline INSERT
   // grant on public.stella_interactions, and the package that withdraws that is

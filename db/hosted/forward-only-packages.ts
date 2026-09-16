@@ -56,6 +56,7 @@
 import { PRECHAIN_REMEDIATION } from './prechain-remediation'
 import {
   forwardOnlyReasonOf,
+  PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
   PRECHAIN_OWNERSHIP,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
   PRECHAIN_RUNTIME_TABLE_ACL,
@@ -180,6 +181,29 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'SET ROLE the forward package uses. It returns every authenticated request to 42501 ' +
       'permission denied for table users, which is the state the F1 retest measured and the one ' +
       'this package was written to leave behind.',
+  },
+  {
+    // CE-3. Derived from the prechain-ownership declaration, like every hosted
+    // entry above it: two files must not be able to give different reasons for
+    // one absence. The distinction this entry adds to the registry is that its
+    // reversal is INVISIBLE — every other reversalPath below describes an
+    // observable regression (a refused install, a 42501, a helper answering
+    // false). Here the schema keeps its exact shape and only a role name in
+    // pg_proc.proowner differs, while the probes that would catch it are the
+    // ones the reversal disables.
+    id: PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.id,
+    reason: forwardOnlyReasonOf(PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP),
+    reversalPath:
+      'There is none by script, and the consequence is one nothing would report. A single ' +
+      'administrative `ALTER FUNCTION public.entitlement_effective(uuid, varchar) OWNER TO ' +
+      '<the prior owner>`, issued by the principal that applied this package, restores the previous ' +
+      'owner — and with it the state in which the SECURITY DEFINER evaluator reads ' +
+      'public.entitlement_grants under a BYPASSRLS role, so FORCE ROW LEVEL SECURITY is inert and ' +
+      'the one policy CE-3 authored is never exercised. MEASURED on supabase/postgres:17.6.1.143: ' +
+      'with the policy neutralised to USING (false), the reverted evaluator still answers UNMETERED ' +
+      'while the uellix_owner-owned one answers NO_LIVE_GRANT. No object appears, none disappears, ' +
+      'no query starts failing, and every CE-3 isolation probe keeps reporting green — which is ' +
+      'exactly why this reversal is not something a script should make one command away.',
   },
   {
     // P1A. db/prepared/stella_local_0000_local_role_identity_bootstrap.sql's

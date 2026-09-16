@@ -453,6 +453,13 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // character for character — and grants nothing to anyone.
       'stella_hosted_0008_audit_log_write_capability.sql',
       'stella_hosted_0008_rollback.sql',
+      // CE-3. No stella_hosted_0009_rollback.sql sibling, and that absence is
+      // load-bearing rather than pending: the package is declared FORWARD-ONLY in
+      // db/hosted/prechain-ownership.ts and derived into
+      // db/hosted/forward-only-packages.ts, which is what satisfies the XOR in
+      // tests/prepared-sql-source-of-truth.test.ts. Adding the rollback file here
+      // would make that same XOR fail from the other side.
+      'stella_hosted_0009_entitlement_evaluator_ownership.sql',
       // P1A. The LOCAL/CI pre-baseline role IDENTITY bootstrap — see its own
       // file header. FORWARD-ONLY (db/hosted/forward-only-packages.ts): no
       // rollback ships for it, and the sweep this tripwire drives from

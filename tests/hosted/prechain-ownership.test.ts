@@ -20,6 +20,7 @@ import {
   POSTCHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY,
+  PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
   PRECHAIN_LEDGER_MODEL_DEFAULT,
   PRECHAIN_OWNERSHIP,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
@@ -216,7 +217,7 @@ describe('the registry states reasons, not shrugs', () => {
 describe('the prechain TRIO, and the order that is load-bearing', () => {
   const usageSql = readFileSync(path.join(ROOT, PRECHAIN_STORAGE_USAGE.sourceFile), 'utf8')
 
-  it('declares all seven units in application order', () => {
+  it('declares all eight units in application order', () => {
     expect(ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
       PRECHAIN_OWNERSHIP.id,
       PRECHAIN_STORAGE_USAGE.id,
@@ -235,11 +236,74 @@ describe('the prechain TRIO, and the order that is load-bearing', () => {
       // G1-B. After RT-02 and enforced by the package: its §0.3 refuses unless
       // uellix_app already holds the INSERT privilege RT-02 grants.
       PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY.id,
+      // CE-3. The one entry whose POSITION is not enforced by a package guard:
+      // it depends on the bootstrap and on migration 0073, never on 0003..0008,
+      // so it is ordered by filename rather than by dependency. Pinned here all
+      // the same — an unenforced order is still an order this list promises.
+      PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.id,
       // G1-B. Last, and the only member whose WINDOW is postchain: its
       // dead-default proof cannot pass until stella_0017 (T8) has withdrawn the
       // baseline INSERT grant from authenticated and service_role.
       PRECHAIN_LEDGER_MODEL_DEFAULT.id,
     ])
+  })
+
+  it('CE-3 — pins stella_hosted_0009, its forward-only shape and its single mutation', () => {
+    const u = PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP
+    const sql = readFileSync(path.join(ROOT, u.sourceFile), 'utf8')
+
+    // The digest, in BOTH line endings. db/prepared/** is pinned to LF by
+    // .gitattributes, but a Windows working tree checks out CRLF, and a pin
+    // that only holds for one of them is a pin that fails on somebody's laptop.
+    expect(existsSync(path.join(ROOT, u.sourceFile))).toBe(true)
+    expect(sha256OfPreparedSql(sql)).toBe(u.sourceSha256)
+    expect(sha256OfPreparedSql(sql.replace(/\r?\n/g, '\r\n'))).toBe(u.sourceSha256)
+
+    // The frozen contract, field by field.
+    expect(u.applyWindow).toBe('prechain')
+    expect(u.destinationOwner).toBe('uellix_owner')
+    expect(u.rollbackFile).toBeNull()
+    expect(u.rollbackSha256).toBeNull()
+    expect(u.normalisedFunctions).toEqual(['public.entitlement_effective(uuid,varchar)'])
+    // The reason is the whole exemption, so its SUBSTANCE is asserted — the
+    // same threshold tests/prepared-sql-source-of-truth.test.ts applies.
+    expect(u.forwardOnlyNoRollbackReason).not.toBeNull()
+    expect(u.forwardOnlyNoRollbackReason!.length).toBeGreaterThan(200)
+    // ...and it must argue the security consequence rather than label it.
+    expect(u.forwardOnlyNoRollbackReason).toMatch(/BYPASSRLS|ROW LEVEL SECURITY/)
+
+    // NO rollback sibling on disk. The XOR in the source-of-truth suite fails
+    // from the other side if one appears, and this says so where the unit is.
+    expect(existsSync(path.join(ROOT, 'db/prepared/stella_hosted_0009_rollback.sql'))).toBe(false)
+
+    // EXACTLY ONE state-mutating statement, measured on the EXECUTABLE surface
+    // and never on the file: the header names ALTER FUNCTION several times in
+    // prose and the refusal messages name it again inside dollar-quoted bodies,
+    // so a whole-file grep would count six and prove nothing.
+    const executable = stripSqlSurface(sql)
+    expect([...executable.matchAll(/^\s*ALTER\s+/gim)]).toHaveLength(1)
+    expect(executable).toMatch(
+      /ALTER FUNCTION public\.entitlement_effective\(uuid, varchar\) OWNER TO uellix_owner;/,
+    )
+    for (const forbidden of [
+      /^\s*GRANT\b/im,
+      /^\s*REVOKE\b/im,
+      /^\s*CREATE\b/im,
+      /^\s*DROP\b/im,
+      /^\s*INSERT\b/im,
+      /^\s*UPDATE\b/im,
+      /^\s*DELETE\b/im,
+    ]) {
+      expect(executable, `${forbidden} appears in an ownership-only package`).not.toMatch(forbidden)
+    }
+
+    // The two destination attributes the package refuses on, asserted as
+    // PRESENT in the guard rather than trusted. MEASURED on
+    // supabase/postgres:17.6.1.143: the managed installer `postgres` is
+    // rolsuper=false and rolbypassrls=TRUE, so a guard written only against
+    // rolsuper would accept precisely the role this package exists to displace.
+    expect(sql).toMatch(/rolsuper/)
+    expect(sql).toMatch(/rolbypassrls/)
   })
 
   it('pins the runtime helper contract and finds it on disk', () => {
@@ -993,7 +1057,7 @@ describe('the apply window is recorded, and the two lists are derived from it', 
     expect(POSTCHAIN_ADMINISTRATIVE_UNITS.every((u) => u.applyWindow === 'postchain')).toBe(true)
   })
 
-  it('the five installed units and stella_hosted_0008 are prechain', () => {
+  it('the five installed units, stella_hosted_0008 and stella_hosted_0009 are prechain', () => {
     // The window PRECHAIN_CLEAN describes. stella_hosted_0008 belongs here and
     // it is measured, not assumed: certify:pg176 applies it before T1, exit 0.
     expect(PRECHAIN_ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
@@ -1003,6 +1067,7 @@ describe('the apply window is recorded, and the two lists are derived from it', 
       PRECHAIN_RUNTIME_HELPER_CONTRACT.id,
       PRECHAIN_RUNTIME_TABLE_ACL.id,
       PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY.id,
+      PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.id,
     ])
   })
 

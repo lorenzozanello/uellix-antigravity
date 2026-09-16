@@ -1671,3 +1671,118 @@ export const organizationCommercialAcceptances = pgTable('organization_commercia
   uniqueIndex('uq_organization_commercial_acceptances_org_version').on(table.organizationId, table.instrumentVersionId),
   index('idx_organization_commercial_acceptances_organization_id').on(table.organizationId),
 ])
+
+// CE-3 (COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json, HPO-ODS-W2-30).
+// THE ENTITLEMENT GRANT RELATION — Organization x product-capability, with
+// full provenance and an append-only lifecycle.
+//
+// EXACTLY THE PARENT'S THIRTEEN COLUMNS (PHYSICAL_TARGET_SHAPE.column_count).
+// No 'status', no created_at/updated_at/deleted_at, no 'current' flag and no
+// soft-delete field. Status is DERIVED from the effective period (SC-6): a
+// stored status is a second source of truth for liveness that can disagree
+// with effective_to, and the partial unique index below could not keep it
+// honest. created_at is likewise absent because effective_from already records
+// when the grant took effect, and a separate row-creation timestamp would
+// invite exactly the "which one is liveness?" ambiguity SC-6 removes.
+//
+// ENTITLEMENT IS NOT AUTHORIZATION (SC-1 / SC-13). This relation references
+// organization_members not at all and carries no role value. The only subject
+// it names is actor_user_id — the actor who RECORDED the grant, never a
+// subject the grant empowers. A live grant gives nobody a membership, a role,
+// or any tenant read.
+//
+// commercial_account_id IS PROVENANCE, NEVER SCOPE (SC-2 / SC-4). The
+// effective scope is organization_id, and it alone. The partial unique key
+// deliberately excludes commercial_account_id: two Organizations governed by
+// one CommercialAccount hold two INDEPENDENT grants, and neither can see the
+// other's.
+//
+// timestamptz, NOT timestamp. Both period columns carry withTimezone: true.
+// An entitlement period is compared against transaction_timestamp() in the
+// evaluator and against a sibling column in CHECK-5; a timestamp WITHOUT time
+// zone would make both comparisons depend on the session TimeZone of whoever
+// happened to connect, so a grant could be live for one caller and not another
+// at the same instant. These are the first withTimezone columns in this file,
+// which is a deliberate divergence from the surrounding convention and not an
+// oversight.
+export const entitlementGrants = pgTable('entitlement_grants', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  // THE EFFECTIVE SCOPE (CA-04). Half of the live key.
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  // From the closed catalogue owned by this node,
+  // lib/capabilities/entitlement-catalogue.ts. Deliberately NOT an FK: there is
+  // no capability RELATION, and the parent requires none.
+  capabilityKey: varchar('capability_key', { length: 100 }).notNull(),
+  source: varchar('source', { length: 50 }).notNull(),
+  // PROVENANCE. NULL-able at the column level; the conditional nullability is
+  // the CHECK-3/CHECK-4 biconditional below, not a column property.
+  commercialAccountId: uuid('commercial_account_id').references(() => commercialAccounts.id),
+  // A SNAPSHOT of plan identity at grant time, with NO foreign key (SC-11).
+  // The absent FK is the load-bearing half: with one, editing or deleting a
+  // plan definition would retroactively rewrite what an Organization was
+  // granted, which is precisely the history rewrite append-only exists to stop.
+  planRef: varchar('plan_ref', { length: 255 }),
+  // THE METERED DISCRIMINATOR (SC-9). NOT NULL and deliberately WITHOUT a
+  // default: a grant that does not state its metered semantic must fail closed,
+  // and a default here would silently supply one (CE3-N-5, mutation CE3-M-2).
+  limitKind: varchar('limit_kind', { length: 50 }).notNull(),
+  limitValue: integer('limit_value'),
+  // NO defaultNow(). effective_from is a stated fact about when the grant takes
+  // effect, which is not always "now" — a future-dated grant is expressible and
+  // CHECK-5 permits it. A default would make back- and forward-dating look like
+  // an omission.
+  effectiveFrom: timestamp('effective_from', { withTimezone: true }).notNull(),
+  // NULL MEANS LIVE. This is the only column an UPDATE may ever touch, and only
+  // once, NULL -> timestamp (SC-6), enforced at the storage boundary by
+  // enforce_entitlement_grant_append_only() in migration 0073.
+  effectiveTo: timestamp('effective_to', { withTimezone: true }),
+  reason: text('reason'),
+  // NULL IS MEANINGFUL (PI-5): a machine-originated grant. It must not be
+  // backfilled with a service account — a machine act is not attributed to a
+  // person.
+  actorUserId: uuid('actor_user_id').references(() => users.id),
+  // The parent wrote no FK arrow here where it wrote one for the other three
+  // references, so the authority left this FUTURE_MEASUREMENT_REQUIRED. MEASURED
+  // at this base: audit_logs exists (db/schema.ts:116) and L1's 0072 already
+  // carries an audit_log_id FK to it with ON DELETE no action. The FK is added
+  // on that precedent, so a grant cannot cite an audit row that never existed.
+  auditLogId: uuid('audit_log_id').references(() => auditLogs.id),
+}, (table) => [
+  // The two closed value sets (SC-7, SC-9), pinned in the DATABASE. An
+  // application-only restriction is not a closed set. Following the measured
+  // repository precedent for new relations: CHECK on a varchar, as CE-1's
+  // commercial_accounts.commercial_status does.
+  check('entitlement_grants_source_check', sql`${table.source} IN ('PLAN', 'PLATFORM_ADMIN', 'BOOTSTRAP_DEFAULT', 'COMMERCIAL_EXCEPTION')`),
+  check('entitlement_grants_limit_kind_check', sql`${table.limitKind} IN ('UNMETERED', 'BLOCKED', 'CAPPED')`),
+  // CHECK-1 / CHECK-2 — the metered biconditional. CAPPED carries a
+  // non-negative cap; UNMETERED and BLOCKED carry none. limit_value 0 under
+  // CAPPED is VALID and is a cap of zero — it is NOT BLOCKED, and the two are
+  // different rows with different answers (CE3-P-6).
+  check('entitlement_grants_capped_limit_check', sql`${table.limitKind} <> 'CAPPED' OR (${table.limitValue} IS NOT NULL AND ${table.limitValue} >= 0)`),
+  check('entitlement_grants_unmetered_blocked_limit_check', sql`${table.limitKind} NOT IN ('UNMETERED', 'BLOCKED') OR ${table.limitValue} IS NULL`),
+  // CHECK-3 / CHECK-4 — the commercial-provenance biconditional (SC-8). BOTH
+  // halves are present. Keeping only the first would still refuse the obvious
+  // bad row while admitting a PLATFORM_ADMIN grant that carries a commercial
+  // basis which never existed — that omission is mutation CE3-M-7, and the
+  // second half is what catches it.
+  check('entitlement_grants_commercial_basis_required_check', sql`${table.source} NOT IN ('PLAN', 'COMMERCIAL_EXCEPTION') OR ${table.commercialAccountId} IS NOT NULL`),
+  check('entitlement_grants_commercial_basis_forbidden_check', sql`${table.source} NOT IN ('PLATFORM_ADMIN', 'BOOTSTRAP_DEFAULT') OR ${table.commercialAccountId} IS NULL`),
+  // CHECK-5 — the effective period (SC-10). STRICT inequality: a grant whose
+  // effective_to EQUALS its effective_from is REFUSED. The equality case is the
+  // one a non-strict implementation silently admits (CE3-N-6).
+  check('entitlement_grants_effective_period_check', sql`${table.effectiveTo} IS NULL OR ${table.effectiveTo} > ${table.effectiveFrom}`),
+  // SC-5 — EXACTLY ONE LIVE GRANT per (organization_id, capability_key). This
+  // index is the SOLE and FINAL mechanism (CONCURRENCY_CONTRACT): no
+  // application lock substitutes for it, because dropping it must be caught.
+  //
+  // THE PREDICATE CARRIES NO effective_from TERM, deliberately. Narrowing it to
+  // "live AND already started" would permit two rows the parent's SC-5 forbids.
+  // A future-dated row therefore OCCUPIES the unique key while the evaluator
+  // still answers NO_LIVE_GRANT for it — the database key and "in force right
+  // now" are two different notions and are kept apart on purpose.
+  uniqueIndex('uq_entitlement_grants_live_org_capability').on(table.organizationId, table.capabilityKey).where(sql`${table.effectiveTo} IS NULL`),
+  // Non-unique, for commercial reporting reads over a CommercialAccount's
+  // grants. UNIQUE here would create a second effective key and is forbidden
+  // (SC-2 / SC-5).
+  index('idx_entitlement_grants_commercial_account_id').on(table.commercialAccountId),
+])
