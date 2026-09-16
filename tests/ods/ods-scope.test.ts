@@ -2920,18 +2920,19 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     // ordinal at all.
   })
 
-  it('THE CONTROLLER AXIS HAS ADVANCED (CE3-ALLOC-N8): v1.0.33 exists on the FILESYSTEM and is now enumerated by the Controller, and the absence literal has moved to v1.0.34', () => {
+  it('THE CONTROLLER AXIS HAS ADVANCED (CE3-ALLOC-N8): v1.0.33 exists on the FILESYSTEM and is still enumerated by the Controller, and the absence literal has moved to v1.0.35', () => {
     // The intermediate state this control used to pin — on disk but not in the
     // array — is the normal state of every addendum in this lineage, and it
     // ENDS when the SEPARATE Controller successor act enumerates the file.
-    // That act has now happened, so the control ADVANCES one lineage step
-    // rather than being relaxed: the absence pin moves from v1.0.33 to
-    // v1.0.34, and the non-vacuity positive moves from v1.0.32 to v1.0.33.
-    // Both halves keep their exact shape, their exact matchers and their exact
-    // relationship — the absence literal and its immediate predecessor — so
-    // this is a one-step advance of a whole control, not a weakening of half
-    // of one. Nothing here allocates v1.0.34: naming an id in an absence
-    // assertion is a PROHIBITION, never an allocation.
+    // A FURTHER such act has now happened — the one enumerating v1.0.34 — so
+    // the control ADVANCES one more lineage step rather than being relaxed:
+    // the absence pin moves from v1.0.34 to v1.0.35, and the non-vacuity
+    // positive moves from v1.0.33 to v1.0.34. Both halves keep their exact
+    // shape, their exact matchers and their exact relationship — the absence
+    // literal and its immediate predecessor — so this is a one-step advance of
+    // a whole control, not a weakening of half of one. Nothing here allocates
+    // v1.0.35: naming an id in an absence assertion is a PROHIBITION, never an
+    // allocation.
     //
     // READ AS TEXT, DELIBERATELY NOT IMPORTED. This module does not import the
     // Controller at all, which is what makes the decoupling structural rather
@@ -2939,13 +2940,15 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     // absence would destroy the very property the surrounding tests claim.
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
     expect(existsSync(path.join(REPO_ROOT, CE3_ADDENDUM))).toBe(true)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBe(0)
     // NON-VACUITY of that zero: the predecessor IS enumerated in the same
     // file, so the path is right, the file is really being read, and the
     // spelling of the literal is the one the Controller actually uses. A
     // zero-occurrence negative with no positive beside it proves nothing.
-    // That predecessor is now v1.0.33 — the entry this successor act appended
-    // — so the same assertion simultaneously proves the enumeration landed.
+    // That predecessor is now v1.0.34 — the entry the latest successor act
+    // appended — so the same assertion simultaneously proves the enumeration
+    // landed. v1.0.33, this block's own subject, remains enumerated too.
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json').length - 1).toBeGreaterThan(0)
   })
 
@@ -4925,21 +4928,27 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
     expect(a.authorized_changed_paths_this_mission).not.toContain('tests/ods/ods-controller.test.ts')
   })
 
-  it('REGISTRATION REMAINS A SEPARATE GOVERNED ACT (W2-31-ALLOC-N7): the Controller has NOT enumerated v1.0.34, and that cannot block the grant', () => {
+  it('REGISTRATION REMAINS A SEPARATE GOVERNED ACT (W2-31-ALLOC-N7): the Controller has now enumerated v1.0.34 by its own separate act, the absence literal has advanced to v1.0.35, and neither state can block the grant', () => {
     // The Controller is read as TEXT and deliberately NOT imported: importing
     // IMMUTABLE_BY_CONVENTION here to check an absence would destroy the
     // decoupling this control exists to demonstrate.
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
-    // v1.0.34 EXISTS on the filesystem and is STILL ABSENT from the Controller
-    // array. That combination is the normal intermediate state of this
-    // lineage — every addendum has passed through it — and it is not a defect
-    // for a later lane to "repair" as a side effect of other work.
+    // v1.0.34 EXISTS on the filesystem and has since been ENUMERATED by the
+    // Controller. The intermediate state this control originally pinned — on
+    // disk but not in the array — is the normal state of every addendum in
+    // this lineage, and it ends ONLY when the SEPARATE, governed Controller
+    // successor act enumerates the file. That is what happened here: not a
+    // side-effect repair by an unrelated lane, which remains forbidden, but
+    // the dedicated act whose whole purpose is this enumeration. The control
+    // therefore ADVANCES one lineage step and keeps its exact shape — the
+    // absence pin moves to v1.0.35, and the enumerated positive it is measured
+    // against moves to v1.0.34. Naming v1.0.35 here allocates nothing.
     expect(existsSync(path.join(REPO_ROOT, W2_31_ADDENDUM))).toBe(true)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBe(0)
     // NON-VACUITY: the predecessor IS enumerated in that same file, so the
     // zero above proves the path is right, the file is really being read, and
     // the literal is spelled the way the Controller spells it.
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBeGreaterThan(0)
 
     // DECOUPLING: a missing Controller enumeration does not and cannot prevent
     // a registered grant from resolving. Demonstrated on the live tail.
