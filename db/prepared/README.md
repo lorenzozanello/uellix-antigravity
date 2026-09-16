@@ -1601,6 +1601,115 @@ prechain y la última prerequisito de los helpers de Storage.
 
 ---
 
+## CE-3 — el evaluador de entitlements pasa a `uellix_owner` (`stella_hosted_0009`)
+
+| Script | Rollback | Aplicado | Qué hace | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0009_entitlement_evaluator_ownership.sql` | **ninguno, a propósito** (`db/hosted/prechain-ownership.ts`; la razón se argumenta en `forwardOnlyNoRollbackReason`) | **ninguno todavía**; exige `db/migrations/0073` aplicado y la topología de roles gestionada (`uellix_owner` existente, `NOSUPERUSER`/`NOBYPASSRLS`, con `CREATE` sobre `public`, y una sesión administrativa que pueda `SET ROLE uellix_owner`) | **Ni un objeto, ni un `GRANT`, ni una policy.** **Una sola** sentencia que cambia estado: `ALTER FUNCTION public.entitlement_effective(uuid, varchar) OWNER TO uellix_owner`. No toca cuerpo, `SECURITY DEFINER`, volatilidad, `proconfig`/`search_path`, ACL de no-propietario, RLS/FORCE RLS, policies, roles, membresías ni filas | **DISEÑO — ensayado contra la imagen fijada desechable (`supabase/postgres:17.6.1.143`, `sha256:80d7b27c…`), no aplicado en hosted** |
+
+> **Canal:** unidad administrativa **prechain**, registrada y pinada por
+> SHA-256 en `db/hosted/prechain-ownership.ts`
+> (`PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP`), y declarada FORWARD-ONLY en
+> `db/hosted/forward-only-packages.ts`, que **deriva** su razón del registro
+> prechain en vez de repetirla. **No** es eslabón de `HOSTED_CHAIN` y no toma
+> testigo de cadena. Ejecutor: la **sesión administrativa hosted gobernada** —
+> la misma clase de principal que aplica `stella_hosted_0003..0008`, en Supabase
+> gestionado `postgres`. **No** `uellix_migrator` y **no** el runtime.
+>
+> **Por qué existe.** `db/migrations/0073` resuelve F-CE3-1 como **R-A** y
+> declara en su propio banner que la ruta de lectura es «a SECURITY DEFINER
+> function owned by `uellix_owner`» — y acto seguido explica que **no puede
+> producir ese dueño**: `BASELINE_GLOBAL_INVARIANTS` fija
+> `ownershipStatements = 0` en todo el baseline, «no per-unit opt-out». La
+> propiedad pertenece a la cadena hosted, nunca a una migración.
+>
+> **Qué mide el defecto, medido y no supuesto.** Sobre la imagen fijada, con
+> `0073` aplicado verbatim, el evaluador queda propiedad de `postgres`, cuyo
+> `rolsuper` es **false** pero cuyo `rolbypassrls` es **TRUE**. Es decir: el
+> instalador gestionado es exactamente un principal BYPASSRLS, y una guarda
+> escrita sólo contra `rolsuper` lo habría aceptado. Con ese dueño, el cuerpo
+> `SECURITY DEFINER` lee `entitlement_grants` con RLS puenteada, `FORCE ROW
+> LEVEL SECURITY` queda **inerte** y la única policy
+> (`entitlement_grants_select_owner`) no se ejercita nunca.
+>
+> **Matriz medida** (policy neutralizada a `USING (false)` dentro de una
+> transacción con `ROLLBACK`):
+>
+> | dueño | policy | respuesta |
+> |---|---|---|
+> | `uellix_owner` (NOBYPASSRLS) | `USING (true)` | `UNMETERED` |
+> | `uellix_owner` (NOBYPASSRLS) | `USING (false)` | `NO_LIVE_GRANT` |
+> | `postgres` (BYPASSRLS) | `USING (false)` | `UNMETERED` |
+>
+> La tercera fila **es** el defecto: la policy puede decir FALSE y el evaluador
+> sigue leyendo. La segunda es lo que compra este paquete — la policy pasa a ser
+> portante, con lo que R-A queda **demostrada** y no sólo afirmada.
+>
+> **Por qué no hay rollback.** Misma clase que `stella_hosted_0003`, y **no** la
+> de `stella_hosted_0008` o `stella_0020`, que sí lo llevan porque sus efectos
+> admiten reversión exacta. Aquí revertir reabre el defecto **de forma
+> invisible**: ningún objeto aparece ni desaparece, ninguna consulta empieza a
+> fallar, y las sondas que lo detectarían son justamente las que la reversión
+> desactiva. Una reversión deliberada, si alguna vez se quisiera, es un
+> `ALTER FUNCTION … OWNER TO <dueño previo>` administrativo con las
+> consecuencias visibles en ese momento — registrarlo no autoriza un script.
+>
+> **Idempotencia.** Convergente: la guarda anti-apropiación (§0.6) **reconoce**
+> `uellix_owner` como dueño actual válido, así que una segunda aplicación es
+> no-op y termina con el mismo dueño, el mismo cuerpo y un ACL de no-propietario
+> idéntico. La convergencia sale de la guarda, nunca de tragarse una excepción.
+>
+> **Precondiciones (fail-closed, nunca reparadas).** Rol destino existente y
+> `NOSUPERUSER`/`NOBYPASSRLS`; `regprocedure` exacta y **exactamente un**
+> `entitlement_effective`; `SECURITY DEFINER`; `search_path = public` congelado;
+> dueño actual medido de `pg_proc.proowner` y o bien `uellix_owner` o bien uno
+> del que la sesión ya es miembro (**anti-apropiación**, nunca `postgres`
+> hardcodeado); `SET` sobre `uellix_owner`; `CREATE` sobre `public`;
+> `entitlement_grants` con ENABLE+FORCE RLS; **exactamente una** policy SELECT a
+> `uellix_owner`; **cero** policies tenant-facing; `PUBLIC` sin privilegio. El
+> paquete **no crea el rol, no concede, no habilita RLS y no revoca** para hacer
+> cierta una precondición: se niega.
+>
+> **Sobre `anon`: medido, registrado y NO respondido.** En la forma gestionada,
+> `anon` y `service_role` conservan `EXECUTE` sobre el evaluador porque la
+> plataforma lleva `ALTER DEFAULT PRIVILEGES … GRANT EXECUTE ON FUNCTIONS` en
+> `public`, y el `REVOKE … FROM PUBLIC` de `0073` borra la entrada de `PUBLIC`
+> pero no esas concesiones explícitas. Este paquete **no lo revoca** — no le
+> corresponde y no emite ningún `REVOKE` — pero **lo declara por NOTICE en cada
+> ejecución** para que no quede absorbido: si CE-3 debe además revocar `EXECUTE`
+> a `anon` es una pregunta **separada y abierta**. A diferencia de
+> `stella_hosted_0003`, que se niega ante `PUBLIC` *o* `anon`, aquí la negativa
+> es **sólo sobre `PUBLIC`**: negarse ante `anon` rechazaría todo target
+> gestionado correctamente aprovisionado, y una guarda que nunca puede pasar no
+> es más estricta, es inaplicable.
+>
+> **Postcondiciones**, verificadas **en la misma transacción** y abortando la
+> transacción entera ante cualquier fallo: dueño = `uellix_owner`; rol destino
+> `NOSUPERUSER`/`NOBYPASSRLS` re-afirmado; cuerpo, `prosecdef`, volatilidad,
+> paralelismo, `leakproof` y `proconfig` idénticos al digest capturado en §0;
+> `search_path` afirmado además **por valor**; conjunto de privilegios de **no
+> propietario** idéntico; `authenticated` conserva `EXECUTE`; `PUBLIC` sigue sin
+> nada; RLS/FORCE RLS intactas; policies idénticas **por digest y por
+> cardinalidad**; cero policies tenant-facing; atributos de todo rol `uellix_*`
+> y todas las membresías (incluidas `admin/inherit/set_option`) sin cambio;
+> recuento de filas de `entitlement_grants` sin cambio; y
+> `current_user = session_user`, es decir ninguna ventana de rol abierta.
+>
+> **La consecuencia ACL que sí ocurre, declarada y no escondida.**
+> `ALTER … OWNER TO` reescribe la entrada implícita del **propietario**. Medido:
+>
+> ```
+> antes:   postgres=X/postgres      anon=X/postgres      authenticated=X/postgres      service_role=X/postgres
+> después: uellix_owner=X/uellix_owner anon=X/uellix_owner authenticated=X/uellix_owner service_role=X/uellix_owner
+> ```
+>
+> «El ACL no cambia» sería **falso** y fallaría en toda ejecución correcta. Lo
+> cierto, y lo que se afirma, es que el conjunto de pares (beneficiario,
+> privilegio) **de no propietario** es idéntico: la reescritura de *grantor* se
+> **mide** como consecuencia declarada en vez de ignorarse.
+
+---
+
 ## G1-B — el modelo del proveedor deja de ser un DEFAULT de columna (`stella_0020`)
 
 | Script | Rollback | Aplicado | Qué hace | Estado |
