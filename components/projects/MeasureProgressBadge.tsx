@@ -14,8 +14,10 @@ interface MeasureProgressBadgeProps {
    */
   unassignedToPortfolio?: boolean
   /**
-   * The dashboard cards are dense summaries and omit the next-action line; the
-   * projects page shows it. Both read the same `progress` object either way.
+   * Both current call sites (dashboard, projects page) render the next-action
+   * line — neither overrides this. It defaults to `true` and stays reachable
+   * so a future dense-summary consumer can opt out without a signature
+   * change; it renders nothing else in `progress` differently either way.
    */
   showNextAction?: boolean
 }

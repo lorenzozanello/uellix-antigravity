@@ -34,6 +34,7 @@ vi.mock('@/lib/audit/logger', async (importOriginal) => {
 import { createProjectForCurrentOrganization, listProjectsForPortfolio } from '@/lib/projects/service';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { db } from '@/db/client';
+import { projects, sroiCalculationRuns, sroiRunReviews, sroiReports } from '@/db/schema';
 
 describe('Project service - create', () => {
   beforeEach(() => {
@@ -336,6 +337,22 @@ describe('deriveMeasureProgress — governed state ladder', () => {
     expect(
       deriveMeasureProgress({ ...BASE_FACTS, status: 'paused', hasLockedReport: true }).state
     ).toBe('completado');
+
+    // The docstring on deriveMeasureProgress claims the SAME outranking for
+    // BOTH blocking conditions ("pausing OR requesting deletion... does not
+    // reopen Measure"), but only the pause combination was pinned above. A
+    // regression that reordered the two leading checks — running the
+    // deletionRequestedAt guard before hasLockedReport — would leave that
+    // assertion green while silently breaking this second, equally-promised
+    // combination.
+    expect(
+      deriveMeasureProgress({
+        ...BASE_FACTS,
+        status: 'active',
+        hasLockedReport: true,
+        deletionRequestedAt: new Date('2026-09-01T00:00:00Z'),
+      }).state
+    ).toBe('completado');
   });
 
   it('treats an ARCHIVED review as neither approved nor open', async () => {
@@ -447,6 +464,27 @@ describe('listProjectsWithMeasureProgressForCurrentOrganization', () => {
 
     // A draft report must NOT be mistaken for a locked one.
     expect(byId['p-approved']).not.toBe('completado');
+
+    // DIRECT query-cost evidence (replaces inferring cost from state
+    // correctness alone): exactly four queries ran for seven projects — the
+    // project list plus the three set-based Promise.all queries the docstring
+    // promises, each against the SPECIFIC governed collection it claims and
+    // in that fixed order. This fails if an extra query is introduced (count
+    // exceeds 4), if a required query disappears (count drops, or a
+    // position's table no longer matches), or if the measured collection is
+    // swapped for the wrong one (e.g. reviews queried where reports should
+    // be) — none of which the prior byId assertions alone would catch, since
+    // they only inspect the RESULT of a correct query sequence.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const from = vi.mocked((db as any).from);
+    expect(where).toHaveBeenCalledTimes(4);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(from.mock.calls.map((call: any[]) => call[0])).toEqual([
+      projects,
+      sroiCalculationRuns,
+      sroiRunReviews,
+      sroiReports,
+    ]);
   });
 
   it('short-circuits without querying runs, reviews or reports when the organization has no projects', async () => {
