@@ -460,6 +460,7 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // tests/prepared-sql-source-of-truth.test.ts. Adding the rollback file here
       // would make that same XOR fail from the other side.
       'stella_hosted_0009_entitlement_evaluator_ownership.sql',
+      'stella_hosted_0010_entitlement_grants_acl_hardening.sql',
       // P1A. The LOCAL/CI pre-baseline role IDENTITY bootstrap — see its own
       // file header. FORWARD-ONLY (db/hosted/forward-only-packages.ts): no
       // rollback ships for it, and the sweep this tripwire drives from

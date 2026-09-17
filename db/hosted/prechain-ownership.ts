@@ -632,6 +632,95 @@ export const PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP: PrechainOwnershipPackage 
 }
 
 /**
+ * CE-3 — the entitlement_grants / entitlement_effective ACL hardening unit.
+ *
+ * A NINTH UNIT, AND THE FIRST OF A FOURTH CATEGORY. Every unit above either
+ * normalises an OWNER or publishes a GRANT the runtime cannot serve a request
+ * without. This one does neither: its only state-changing statement class is
+ * REVOKE, and the authority names that disposition D_PRECHAIN_ACL_HARDENING_UNIT
+ * precisely so it is not read as a widening of the grant-publishing category C.
+ *
+ * `kind` STAYS 'prechain-ownership', and that is recorded rather than glossed.
+ * The field names the CHANNEL — an administrative unit applied by the governed
+ * hosted session, outside HOSTED_CHAIN, pinned by digest — and units 0006 and
+ * 0007 already stretched past "ownership" without anyone pretending the kind
+ * name still described the operation. Widening the union to add a fourth
+ * member would be a type change this act is not authorized to make, and it
+ * would buy nothing: the applyWindow, the digest and the contract assertion are
+ * what the harnesses read.
+ *
+ * ORDER IS LOAD-BEARING HERE, AND IT IS ENFORCED BY THE PACKAGE. Unlike
+ * stella_hosted_0009 — whose own doc comment says its position is by NUMBER and
+ * is not guarded — this unit's §0.8 REFUSES unless the evaluator is ALREADY
+ * owned by uellix_owner, which is exactly the state 0009 produces. Applying it
+ * before 0009 is a refusal, not a silent reordering, and the refusal is stated
+ * on the OWNER rather than on a journal entry because the owner is also what
+ * makes the REVOKE arm's grantor measured and stable.
+ *
+ * WHY IT CANNOT BE A MIGRATION, restated here because a reader will ask. The
+ * privileges it removes were never granted by a migration: they are inherited
+ * at CREATE time from the platform's own pg_default_acl rows, their grantor is
+ * the baseline applier, and BASELINE_GLOBAL_INVARIANTS pins every baseline unit
+ * at zero ownership statements. A migration cannot revoke a grant it did not
+ * make, and a REVOKE issued by the wrong role warns and changes nothing while
+ * still committing.
+ */
+export const PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING: PrechainOwnershipPackage = {
+  id: 'stella_hosted_0010_entitlement_grants_acl_hardening',
+  kind: 'prechain-ownership',
+  sourceFile: 'db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql',
+  sourceSha256: '00bc6a740411c15d7b8e7fa08bdeb2f7072b75d36101141b3a16ec73abdda137',
+  purpose:
+    'Withdraws the direct table privileges public.entitlement_grants INHERITS from the managed ' +
+    'platform default privileges, and the evaluator EXECUTE grants anon and service_role inherit ' +
+    'beside them, leaving the non-owner TABLE ACL EXACTLY {uellix_owner: SELECT} and the non-owner ' +
+    'EXECUTE ACL of public.entitlement_effective(uuid,varchar) EXACTLY {authenticated}. MEASURED on ' +
+    'public.ecr.aws/supabase/postgres:17.6.1.143 with the hosted pg_default_acl rows reproduced and ' +
+    'the real baseline applied as postgres: the relation is born carrying ' +
+    'authenticated=arwdDxtm and service_role=arwdDxtm. The `D` is TRUNCATE, which consults no policy ' +
+    'and fires no FOR EACH ROW trigger, so neither FORCE ROW LEVEL SECURITY nor ' +
+    'trg_entitlement_grants_append_only denies it; and service_role is BYPASSRLS, so only the ' +
+    'ABSENCE of the privilege denies it a cross-tenant read. Its ONLY state-changing statement class ' +
+    'is REVOKE: it issues no GRANT, creates and drops nothing, alters no owner and no function, ' +
+    'mutates no policy, writes no row, creates no role and no membership, and uses no dynamic SQL. ' +
+    'Every REVOKE is a LITERAL statement naming one of exactly two frozen objects, issued ONLY for a ' +
+    '(grantee, privilege) pair MEASURED PRESENT, under the grantor MEASURED from aclexplode rather ' +
+    'than assumed — and verified by RE-READING the ACL, because a REVOKE issued by a non-grantor ' +
+    'warns, changes nothing and still commits. It verifies every absence against a pre-state captured ' +
+    'in the same transaction, and a second application converges with ZERO REVOKEs issued.',
+  applyWindow: 'prechain',
+  rollbackFile: null,
+  rollbackSha256: null,
+  forwardOnlyNoRollbackReason:
+    'FORWARD-ONLY, and the prohibition is stronger here than anywhere else in this registry. The ' +
+    'exact inverse of this package is a script that GRANTs a tenant role TRUNCATE on ' +
+    'public.entitlement_grants and hands a BYPASSRLS platform role a direct cross-organization read ' +
+    'of every grant row — the two defects the unit exists to close, restored in one command. Those ' +
+    'are not privileges anything in Commercial V1 consumes: SERVICE_ROLE_CLASSIFICATION records ' +
+    'service_role as an UNUSED_PRIVILEGED_PLATFORM_ROLE for this relation, and every runtime path ' +
+    'reaches entitlement data through the SECURITY DEFINER evaluator as `authenticated`, whose ' +
+    'EXECUTE this package deliberately RETAINS. So "restore the previous state" and "reopen D1 and ' +
+    'D2" are the same sentence, and the reopening is INVISIBLE in the same way stella_hosted_0009\'s ' +
+    'is: no object appears or disappears, no query starts failing, the schema keeps its exact shape, ' +
+    'and the RLS and append-only controls that would otherwise catch a regression are the two ' +
+    'controls that never see a TRUNCATE or a BYPASSRLS read in the first place. A rollback script ' +
+    'here would be one whose only effect is to reopen a security defect silently, and whose ' +
+    'correctness once the CE-3 runtime is live nobody has measured. Deliberate reversal, if it were ' +
+    'ever genuinely wanted, is an administrative GRANT taken by the same principal with the ' +
+    'consequences visible at the time — and recording that is not authorizing a script.',
+  normalisedFunctions: [],
+  destinationOwner: 'uellix_owner',
+  unblocks:
+    'No chain package, and no installation. It unblocks a PROPERTY: the one db/migrations/0073 ' +
+    'asserts in its own prose — "a direct `SELECT * FROM entitlement_grants` as a tenant identity ' +
+    'must fail 42501 on PRIVILEGE, before RLS is ever consulted" — which is FALSE on the hosted ' +
+    'platform until this unit runs, and which no migration can make true because the grants are ' +
+    'inherited from a platform default rather than issued by the corpus. Like stella_hosted_0009 it ' +
+    'unblocks a MEASUREMENT rather than an install: nothing refuses without it, every CE-3 probe ' +
+    'keeps reporting green, and a defect that blocks nothing is one that ships.',
+}
+
+/**
  * G1-B — the column default that made the DATABASE choose Stella's model.
  *
  * A unit whose presence here is a JUDGEMENT rather than a
@@ -721,6 +810,14 @@ export const ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] = [
   // would change nothing; it is placed after 0008 so the list reads in the
   // order the filenames do.
   PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
+  // CE-3, the ACL half. AFTER stella_hosted_0009, and ENFORCED BY THE PACKAGE
+  // rather than by this list: its §0.8 refuses unless the evaluator is already
+  // owned by uellix_owner, which is the state 0009 produces and the state that
+  // makes the function's non-owner EXECUTE grants carry a measured, stable
+  // grantor. Applying it early is a refusal, not a silent reordering — the one
+  // respect in which its position here is stricter than 0009's, whose own
+  // ordering is by number and guarded by nothing.
+  PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING,
   // G1-B, and the one whose WINDOW is not `prechain`. Its dead-default proof
   // refuses while authenticated and service_role still hold the baseline INSERT
   // grant on public.stella_interactions, and the package that withdraws that is

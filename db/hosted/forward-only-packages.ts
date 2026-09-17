@@ -57,6 +57,7 @@ import { PRECHAIN_REMEDIATION } from './prechain-remediation'
 import {
   forwardOnlyReasonOf,
   PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
+  PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING,
   PRECHAIN_OWNERSHIP,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
   PRECHAIN_RUNTIME_TABLE_ACL,
@@ -204,6 +205,29 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'while the uellix_owner-owned one answers NO_LIVE_GRANT. No object appears, none disappears, ' +
       'no query starts failing, and every CE-3 isolation probe keeps reporting green — which is ' +
       'exactly why this reversal is not something a script should make one command away.',
+  },
+  {
+    // CE-3, the ACL half. Derived from the prechain-ownership declaration like
+    // every hosted entry above it. The distinction this entry adds is that its
+    // reversal is not merely invisible — it is a reversal that the two controls
+    // CE-3 relies on are STRUCTURALLY unable to observe. The entry above turns
+    // a policy inert; this one would restore a TRUNCATE that no policy and no
+    // FOR EACH ROW trigger ever sees, and a read by a role row-level security
+    // does not apply to at all.
+    id: PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING.id,
+    reason: forwardOnlyReasonOf(PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING),
+    reversalPath:
+      'There is none by script, and the two statements that would constitute one are the defect. ' +
+      'An administrative `GRANT ALL ON TABLE public.entitlement_grants TO authenticated, ' +
+      'service_role` and `GRANT EXECUTE ON FUNCTION public.entitlement_effective(uuid, varchar) TO ' +
+      'anon, service_role`, issued by the principal that applied this package — noting that the ' +
+      'evaluator is owned by uellix_owner after stella_hosted_0009 and needs the same SET ROLE the ' +
+      'forward package uses for its own arm — restores the previous posture. It also restores a ' +
+      'tenant role\'s ability to TRUNCATE the relation, which neither FORCE ROW LEVEL SECURITY nor ' +
+      'trg_entitlement_grants_append_only can refuse, and a BYPASSRLS platform role\'s direct read ' +
+      'of every organization\'s grants. Nothing would report it: no object changes shape, no query ' +
+      'starts failing, and the CE-3 isolation and append-only probes keep reporting green because ' +
+      'neither of them is a control over the privileges this package removes.',
   },
   {
     // P1A. db/prepared/stella_local_0000_local_role_identity_bootstrap.sql's

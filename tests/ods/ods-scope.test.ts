@@ -5796,11 +5796,30 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
 
   it('NO IMPLEMENTATION (W2-32-ALLOC-N4): the hosted0010 package does NOT exist, no rollback sibling exists, and the artefact says so', () => {
     const a = readW2_32()
-    expect(existsSync(path.join(REPO_ROOT, HOSTED_0010_SQL))).toBe(false)
+    // SUCCESSION, AND WHY THE LIVE FILESYSTEM FORM HAD TO GO. This control's
+    // claim is HISTORICAL — that the ALLOCATION act did not pre-implement the
+    // package it allocated — but it used to assert that claim as
+    // `existsSync(HOSTED_0010_SQL) === false` against the LIVE tree. A negative
+    // written as a live filesystem check does not measure the act it names: it
+    // measures whether ANYONE has implemented the package yet, and it expires
+    // the moment a LATER and entirely legitimate act does. The hosted0010
+    // implementation writer is that act, so the historical claim is now read
+    // from the FROZEN artefact — which records what v1.0.35's own act did and
+    // can never decay — and the live tree is asserted for what is true of it
+    // NOW. Deleting the assertion instead would have been a weakening; this is
+    // a succession. The frozen record is asserted at the foot of this test,
+    // where it always was: `NO_PREALLOCATION.HOSTED_PACKAGE_IMPLEMENTED === 'NO'`.
+    // THE PACKAGE EXISTS NOW, and saying so is the non-vacuity of the rollback
+    // absence directly below: a rollback sibling missing because NOTHING was
+    // implemented proves nothing about the forward-only contract, whereas a
+    // rollback sibling missing while the forward package is PRESENT is the
+    // contract being honoured.
+    expect(existsSync(path.join(REPO_ROOT, HOSTED_0010_SQL))).toBe(true)
     // THE ROLLBACK SIBLING IS NOT MERELY ABSENT, IT IS FORBIDDEN. The
     // integrated FORWARD_ONLY_CONTRACT_0010 states that writing one would be
     // an act against the amendment, and the grant deliberately does not cover
-    // its path, so a future writer cannot create it under this authority.
+    // its path, so no writer can create it under this authority. This stays a
+    // LIVE check, and it is the half of this control that never expires.
     expect(existsSync(path.join(REPO_ROOT, HOSTED_0010_ROLLBACK))).toBe(false)
     expect(a.protected_grant.EXPLICITLY_NOT_AUTHORIZED_BY_THIS_GRANT).toContain(HOSTED_0010_ROLLBACK)
     // NON-VACUITY: a hosted package that DOES exist on this branch is found by
@@ -6287,11 +6306,22 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
 
   it('NO IMPLEMENTATION (W2-32-REG-N6): registering the grant created neither the hosted0010 package nor the FORBIDDEN rollback sibling', () => {
     // Registering a grant appends bytes to an array; it cannot create the
-    // package the grant protects, and it does not.
-    expect(existsSync(path.join(REPO_ROOT, HOSTED_0010))).toBe(false)
+    // package the grant protects, and it did not.
+    //
+    // SUCCESSION, same reasoning as W2-32-ALLOC-N4 above. The claim is about
+    // what the REGISTRATION act did, and it used to be asserted as
+    // `existsSync(HOSTED_0010) === false` against the LIVE tree — a form that
+    // stops measuring the registration act the moment a later, authorized act
+    // implements the package. The hosted0010 implementation writer is that
+    // act. What survives unchanged is the half that never depended on the
+    // package being absent: the FORBIDDEN rollback sibling.
+    expect(existsSync(path.join(REPO_ROOT, HOSTED_0010))).toBe(true)
     // THE ROLLBACK SIBLING IS NOT MERELY ABSENT, IT IS FORBIDDEN by the
     // integrated FORWARD_ONLY_CONTRACT_0010, and this grant deliberately does
-    // not cover its path, so no future writer can create it under W2-32.
+    // not cover its path, so no writer can create it under W2-32. Now a
+    // STRONGER control than when it was written: the forward package is
+    // present and its rollback is still not, which is the forward-only
+    // contract being honoured rather than a file nobody had reached yet.
     expect(existsSync(path.join(REPO_ROOT, HOSTED_0010_RB))).toBe(false)
     // NON-VACUITY: the predecessor hosted packages DO exist, so the absences
     // above are measured and not a wrong directory.
@@ -6485,6 +6515,15 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     // entitlement runtime, migration or hosted package has appeared here.
     expect(existsSync(path.join(REPO_ROOT, 'lib/entitlements'))).toBe(false)
     expect(existsSync(path.join(REPO_ROOT, 'db/migrations/0073_ce3_entitlement_grants.sql'))).toBe(false)
-    expect(existsSync(path.join(REPO_ROOT, HOSTED_0010))).toBe(false)
+    // THE THIRD PROBE OF THAT TRIPLE IS RETIRED, and the reason is the whole
+    // point of this control rather than an exception to it. The triple asks
+    // "has a PR #159 surface appeared in the REGISTRATION lane's tree?" — and
+    // the hosted0010 package is precisely the PR #159 surface that a later,
+    // separately-authorized act was always going to create. Keeping it as a
+    // live `false` would mean this control went RED exactly when the
+    // implementation it was waiting for succeeded, which measures the
+    // implementer rather than the registrar. The two probes above it are
+    // surfaces NO authorized act creates on either lane, so they keep the
+    // triple's discriminating power intact.
   })
 })

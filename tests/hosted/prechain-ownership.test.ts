@@ -21,6 +21,7 @@ import {
   PRECHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY,
   PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
+  PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING,
   PRECHAIN_LEDGER_MODEL_DEFAULT,
   PRECHAIN_OWNERSHIP,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
@@ -241,6 +242,15 @@ describe('the prechain TRIO, and the order that is load-bearing', () => {
       // so it is ordered by filename rather than by dependency. Pinned here all
       // the same — an unenforced order is still an order this list promises.
       PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.id,
+      // CE-3, the ACL half, and the CONVERSE of the entry above it: its
+      // position IS enforced by a package guard. stella_hosted_0010 §0.8
+      // refuses unless the evaluator is ALREADY owned by uellix_owner, which
+      // is exactly what stella_hosted_0009 produces — so applying it early is
+      // a refusal rather than a silent reordering. Two adjacent CE-3 entries,
+      // one unenforced order and one enforced, and the distinction is recorded
+      // because a reader who saw only the comment above would generalise the
+      // wrong way.
+      PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING.id,
       // G1-B. Last, and the only member whose WINDOW is postchain: its
       // dead-default proof cannot pass until stella_0017 (T8) has withdrawn the
       // baseline INSERT grant from authenticated and service_role.
@@ -1068,6 +1078,7 @@ describe('the apply window is recorded, and the two lists are derived from it', 
       PRECHAIN_RUNTIME_TABLE_ACL.id,
       PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY.id,
       PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.id,
+      PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING.id,
     ])
   })
 

@@ -1710,6 +1710,165 @@ prechain y la última prerequisito de los helpers de Storage.
 
 ---
 
+## CE-3 — endurecimiento de ACL de `entitlement_grants` (`stella_hosted_0010`)
+
+| Script | Rollback | Aplicado | Qué hace | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0010_entitlement_grants_acl_hardening.sql` | **ninguno, y su ausencia es VINCULANTE** (`db/hosted/prechain-ownership.ts`; la razón se argumenta en `forwardOnlyNoRollbackReason`) | **ninguno todavía**; exige `db/migrations/0073` aplicado **y** `stella_hosted_0009` aplicado antes (§0.8 se niega si el evaluador no es ya de `uellix_owner`) | **Sólo `REVOKE`.** Retira los privilegios de tabla que `public.entitlement_grants` **hereda** de los default privileges de la plataforma, y el `EXECUTE` que `anon` y `service_role` heredan sobre el evaluador. Deja el ACL de **no propietario** de la tabla EXACTAMENTE `{uellix_owner: SELECT}` y el de `EXECUTE` EXACTAMENTE `{authenticated}`. Ni un `GRANT`, ni un `CREATE`/`DROP`, ni un `ALTER`, ni una policy, ni una fila, ni un rol, ni SQL dinámico | **DISEÑO — ensayado contra la imagen fijada desechable (`public.ecr.aws/supabase/postgres:17.6.1.143`) con los `pg_default_acl` hosted reproducidos y el baseline real aplicado como `postgres`; no aplicado en hosted** |
+
+> **Canal:** unidad administrativa **prechain**, registrada y pinada por SHA-256
+> en `db/hosted/prechain-ownership.ts`
+> (`PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING`), y declarada FORWARD-ONLY en
+> `db/hosted/forward-only-packages.ts`, que **deriva** su razón del registro
+> prechain en vez de repetirla. **No** es eslabón de `HOSTED_CHAIN`. Ejecutor:
+> la **sesión administrativa hosted gobernada** — la misma clase de principal
+> que aplica `stella_hosted_0003..0009`. **No** `uellix_migrator` y **no** el
+> runtime. Se aplica con `psql -1`.
+>
+> **Categoría D**, y deliberadamente **no** un ensanchamiento de la C. La C es
+> «unidad administrativa que normaliza un dueño»; aquí la única clase de
+> sentencia que cambia estado es `REVOKE`. El campo `kind` del registro sigue
+> siendo `prechain-ownership` porque nombra el **canal**, no la operación —
+> igual que `0006` y `0007`, que ya se estiraron más allá de «ownership» sin que
+> nadie fingiera que el nombre seguía describiendo lo que hacen.
+>
+> **Qué defecto cierra, medido y no supuesto.** `db/migrations/0073` afirma en
+> su propia prosa que «a direct `SELECT * FROM entitlement_grants` as a tenant
+> identity must fail 42501 on PRIVILEGE, before RLS is ever consulted». En
+> hosted esa frase es **falsa**, y no porque `0073` esté mal: porque no puede
+> alcanzar la causa. Supabase instala, **por base de datos**, default privileges
+> en `public` para el rol aplicador. Medido sobre la imagen fijada, `pg_default_acl`
+> lleva `{anon,authenticated,service_role}=arwdDxtm/postgres` para tablas, y una
+> tabla creada después por el aplicador **nace** con esas concesiones. Medido en
+> el sustrato hosted-shaped, tras los 86 units del baseline:
+>
+> ```
+> entitlement_grants dueño=postgres
+>   relacl = {postgres=arwdDxtm/postgres, authenticated=arwdDxtm/postgres,
+>             service_role=arwdDxtm/postgres, uellix_owner=r/postgres}
+> ```
+>
+> — `anon` ya no está porque la línea 8 de `0033`
+> (`ALTER DEFAULT PRIVILEGES … REVOKE ALL ON TABLES FROM anon`) lo quitó del
+> default **antes** de que `0073` creara la tabla. De ahí los dos defectos:
+>
+> | id | qué | por qué ningún control existente lo ve |
+> |---|---|---|
+> | **D1** | `authenticated` tiene `arwdDxtm`; la `D` es **TRUNCATE** | `TRUNCATE` no es una operación de fila: no consulta policy y **no dispara** un trigger `FOR EACH ROW`. La guarda append-only de `0073` es `BEFORE UPDATE OR DELETE … FOR EACH ROW`, así que tampoco la ve. Un rol tenant podía vaciar la relación |
+> | **D2** | `service_role` tiene `arwdDxtm` **y** `rolbypassrls = true` | RLS no es el mecanismo que protege nada frente a él. Sólo la **ausencia** del privilegio lo hace |
+>
+> **Por qué no puede ser una migración.** Los privilegios no los concedió el
+> corpus: se heredan en el `CREATE` desde un default de plataforma que el
+> baseline nunca escribió, y su *grantor* es el aplicador del baseline.
+> `BASELINE_GLOBAL_INVARIANTS` fija además `ownershipStatements = 0` en todo el
+> baseline. Y un `REVOKE` emitido por quien no concedió **avisa y no hace nada**.
+>
+> **Doctrina de *grantor* / anti-apropiación — la mitad portante del fichero.**
+> Un `REVOKE` sólo retira lo que concedió el rol **actual**. Emitido por otro,
+> PostgreSQL lanza `WARNING: no privileges could be revoked`, **no cambia nada**
+> y **la transacción igualmente hace COMMIT**. Medido sobre la imagen fijada: un
+> `REVOKE` como `postgres` de un `SELECT` concedido por `grantor_role` avisa y
+> deja `grantee_role=r/grantor_role` intacto, con exit code **0**. Por eso el
+> paquete **mide** el *grantor* de cada par con `aclexplode` — nunca supone
+> `postgres` ni supone `uellix_owner` — y **decide releyendo el ACL**, jamás por
+> la presencia o ausencia del WARNING. El conjunto aprobado está **cerrado** en
+> {dueño actual medido del objeto, `uellix_owner`}, y el fichero expresa
+> exactamente dos brazos:
+>
+> | brazo | condición | cómo actúa | en hosted aplica a |
+> |---|---|---|---|
+> | 1 | *grantor* = `current_user` | `REVOKE` directo, **sin abrir ventana de rol** | la **tabla**: sus concesiones heredadas llevan grantor `postgres`, que es el aplicador |
+> | 2 | *grantor* = `uellix_owner` ≠ `current_user` | exige `pg_has_role(current_user,'uellix_owner','SET')`, luego `SET LOCAL ROLE uellix_owner` … `RESET ROLE` en el **mismo bloque** | el **evaluador**: tras `stella_hosted_0009` sus `EXECUTE` de no propietario se reatribuyen a `uellix_owner` |
+>
+> Un tercer *grantor* se **rechaza antes de mutar**, y la razón se dice en
+> claro: la categoría D prohíbe SQL dinámico, así que el fichero no puede
+> nombrar un rol que no congeló, y un *grantor* que no puede nombrar es uno como
+> el que no actuará. El paquete **no se concede** membresías, no crea roles y no
+> transfiere propiedad para obtener legitimación: la legitimación se **mide**,
+> nunca se fabrica.
+>
+> **Idempotencia — requisito, no tolerancia.** Una segunda aplicación sobre un
+> target ya endurecido satisface todas las precondiciones (familia de prestate
+> `ALREADY_HARDENED`), emite **CERO** `REVOKE`, satisface todas las
+> postcondiciones y termina con éxito. Medido: `REVOKEs issued: 0` y catálogos
+> byte-idénticos. Es convergencia semántica, no que PostgreSQL tolere un
+> `REVOKE` redundante.
+>
+> **Precondiciones (fail-closed, nunca reparadas): 16.** Piso de PostgreSQL 16
+> (`pg_has_role(…,'SET')` no existe antes); los ocho roles del contrato
+> existentes; la relación con `relkind='r'`; ENABLE **y** FORCE RLS; **exactamente
+> una** policy y con forma `FOR SELECT TO uellix_owner`; **cero** policies
+> tenant-facing; **exactamente un** `entitlement_effective` con `regprocedure`
+> exacta y `SECURITY DEFINER`; evaluador **ya** propiedad de `uellix_owner` (la
+> forma medible de «`0009` precede a `0010`»); `uellix_owner` `NOSUPERUSER` y
+> `NOBYPASSRLS`; ACL de tabla dentro de la familia finita medida; ACL de
+> `EXECUTE` dentro de la suya, con `PUBLIC` sin nada y `authenticated`
+> **presente**; *grantor* aprobado **y** asumible para cada par; ningún
+> beneficiario tercero inesperado; guarda append-only presente **y con la forma
+> exacta** (`tgtype`, no sólo el nombre); identidad de sesión que no sea runtime
+> ni tenant; y la **captura** de pre-estado.
+>
+> El paquete **no repara ninguna**: no crea el rol que falta, no concede a
+> `authenticated` el `EXECUTE` que el contrato exige, no habilita FORCE RLS, no
+> escribe una policy y **no revoca en silencio** a un tercero inesperado. Todas
+> son **negativas**, para que sea un humano quien adjudique el estado.
+>
+> **Postcondiciones, verificadas en la MISMA transacción contra la captura de
+> §0**, abortando entera ante cualquier fallo: ACL de no propietario de la tabla
+> exacto; `authenticated` sin ninguno de los cinco verbos; `service_role` igual;
+> los demás roles del contrato sin nada; ACL de `EXECUTE` de no propietario
+> exacto; `PUBLIC` ausente; `authenticated` **conservado**; `anon` y
+> `service_role` ausentes; RLS/FORCE RLS **sin cambio contra la captura** (no
+> meramente «true», que también pasaría en un target que el propio paquete
+> hubiera habilitado); policies idénticas por digest **y** por cardinalidad;
+> dueño de la tabla sin cambio; dueño del evaluador sin cambio y `uellix_owner`;
+> digest de cuerpo/`prosecdef`/volatilidad/paralelismo/`leakproof`/`proconfig`
+> sin cambio; conjunto de triggers sin cambio por nombre **y** `tgtype`; ninguna
+> ventana de rol abierta; y atributos de rol, membresías y recuento de filas sin
+> cambio.
+>
+> **Por qué la captura importa.** Una postcondición que afirma «sin cambio» sin
+> un pre-estado capturado está comparando contra un valor que acaba de releer.
+> La captura vive en `set_config(…, true)` **transaccional**, así que un paquete
+> aplicado sentencia a sentencia la pierde y §2 **se niega** en vez de comparar
+> consigo mismo. Es lo que hace falsable a §2 en lugar de tautológico.
+>
+> **Por qué no hay rollback, y aquí la prohibición es más fuerte que en ninguna
+> otra entrada del registro.** El inverso exacto de este paquete es un script
+> que **concede** a un rol tenant `TRUNCATE` sobre `entitlement_grants` y a un
+> rol de plataforma BYPASSRLS una lectura directa y cross-tenant de todas las
+> concesiones. No son privilegios que Commercial V1 consuma:
+> `SERVICE_ROLE_CLASSIFICATION` registra `service_role` como
+> `UNUSED_PRIVILEGED_PLATFORM_ROLE` para esta relación, y toda ruta de runtime
+> llega al dato vía el evaluador `SECURITY DEFINER` como `authenticated`, cuyo
+> `EXECUTE` este paquete **conserva a propósito**. La reversión sería además
+> **invisible**: ningún objeto cambia de forma, ninguna consulta empieza a
+> fallar, y los dos controles que deberían atraparla —RLS y la guarda
+> append-only— son justamente los que **estructuralmente** no ven ni un
+> `TRUNCATE` ni una lectura BYPASSRLS.
+>
+> **Residual del propietario, declarado y no escondido.** Los privilegios
+> implícitos del dueño —`TRUNCATE` incluido— **no** se retiran y no pueden
+> retirarse. Son `ADMINISTRATIVE_RESIDUAL`: nunca permiso de tenant ni de
+> runtime. Es aceptable únicamente porque ninguna ruta de petición de Commercial
+> V1 se ejecuta como el dueño ni como el aplicador —
+> `db/safety/database-role.ts` prohíbe `postgres`, `supabase_admin`,
+> `service_role`, `authenticator`, `uellix_owner` y `uellix_migrator` como roles
+> de runtime, y `RUNTIME_DATABASE_ROLE` es `uellix_app`.
+>
+> **El sustrato de prueba es HOSTED-SHAPED, y eso está congelado.** Una base de
+> datos recién creada **no hereda** los `pg_default_acl` de otra: medido,
+> `template1` no los lleva y un `CREATE DATABASE` produce una base sin ninguno,
+> donde una tabla nueva nace con `relacl = NULL`. Sobre ese sustrato el defecto
+> **no existe** y una prueba pasaría con `stella_hosted_0010` **ausente**. Por
+> eso el harness debe (1) reproducir los `pg_default_acl` **y releerlos** de
+> `pg_default_acl` antes del baseline, (2) crear `entitlement_grants` con la
+> identidad **real** del aplicador, (3) **no** re-homear la tabla a
+> `uellix_owner`, y (4) aplicar los bytes **reales** de `stella_hosted_0009`
+> antes que los de `stella_hosted_0010`.
+
+---
+
 ## G1-B — el modelo del proveedor deja de ser un DEFAULT de columna (`stella_0020`)
 
 | Script | Rollback | Aplicado | Qué hace | Estado |
