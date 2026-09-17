@@ -56,6 +56,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { BASELINE_UNITS } from '@/db/hosted/baseline-manifest'
+import { PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP } from '@/db/hosted/prechain-ownership'
 import type { SetupManifest } from '../../scripts/db-audit-disposable'
 
 const ROOT = path.resolve(__dirname, '..', '..')
@@ -201,15 +202,36 @@ DO $o$ DECLARE r record; BEGIN
     EXECUTE format('ALTER TABLE public.%I OWNER TO uellix_owner', r.tablename);
   END LOOP;
 END $o$;
--- THE EVALUATOR IS RE-HOMED HERE, NOT IN THE MIGRATION. BASELINE_GLOBAL_INVARIANTS
--- pins ownershipStatements = 0 for every baseline unit with no per-unit opt-out,
--- so 0073 creates the SECURITY DEFINER function and says nothing about who owns
--- it -- exactly like the nine definer functions already in db/migrations/**.
--- Ownership is the hosted chain's job, and reproducing it is this substrate's
--- job. Without this line the function would run as the migrating role and the
--- one SELECT policy (TO uellix_owner) would not admit it, so the probes would be
--- measuring the wrong topology entirely.
-ALTER FUNCTION public.entitlement_effective(uuid, varchar) OWNER TO uellix_owner;
+-- THE EVALUATOR IS NOT RE-HOMED HERE, AND THAT ABSENCE IS THE POINT.
+--
+-- Until R4 this block carried a direct ownership transfer for the evaluator,
+-- and the suite then asserted the owner it had just assigned. That proves
+-- assignment works; it proves nothing about the system establishing the owner.
+-- COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1 clause
+-- FIXTURE_DECONTAMINATION ordered the statement removed, and CE3-OWN-N-1
+-- forbids retyping it anywhere under tests/** -- in a helper, a constant, a
+-- template literal or a second fixture.
+--
+-- The transition now arrives from the REAL bytes of the governed hosted
+-- administrative package (OWNERSHIP_PACKAGE_SQL below), applied AFTER the
+-- pre-state has been recorded, so the owner CE3-OWN-P-1 asserts is the one
+-- that application produced and not one this file manufactured.
+--
+-- THE TWO MEMBERSHIPS BELOW ARE PRECONDITIONS OF THAT PACKAGE, NOT A
+-- SUBSTITUTE FOR IT. stella_hosted_0000 establishes exactly this shape on a
+-- managed project: SET TRUE so an administrative session can act as the
+-- owner, INHERIT FALSE so it never does so implicitly; and CREATE on schema
+-- public, which PostgreSQL requires of the NEW owner of a function and which
+-- stella_hosted_0009 PRE-9 refuses without. Neither statement names the
+-- evaluator, and neither can transfer anything.
+GRANT uellix_owner TO postgres WITH INHERIT FALSE, SET TRUE;
+GRANT CREATE, USAGE ON SCHEMA public TO uellix_owner;
+
+-- The three helper re-homes below are OUT OF SCOPE of the decontamination
+-- order, which names the evaluator and only the evaluator. They reproduce G2,
+-- where uellix_owner owns every SECURITY DEFINER helper: on a corpus-only
+-- cluster 0031 creates them owned by the migrating role and 0033 revokes
+-- EXECUTE from PUBLIC, which would leave uellix_owner unable to call them.
 ALTER FUNCTION public.current_user_org_ids() OWNER TO uellix_owner;
 ALTER FUNCTION public.current_user_is_super_admin() OWNER TO uellix_owner;
 ALTER FUNCTION public.current_user_role_in_org(uuid) OWNER TO uellix_owner;
@@ -320,6 +342,98 @@ VALUES
    'BLOCKED', NULL, now() - interval '5 days', NULL, 'CE3 fixture: real grant in a non-scoped organization', '${IDS.adminC}');
 `
 
+/* -------------------------------------------------------------------------- */
+/* THE GOVERNED OWNERSHIP ORIGIN (CE3-OWN-P-1 / CE3-OWN-M-1)                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The governed hosted administrative package that performs the evaluator
+ * ownership transition, named through the REGISTRY rather than as a string
+ * literal, so a package that was moved or renamed cannot leave this substrate
+ * silently applying nothing.
+ */
+export const OWNERSHIP_PACKAGE_SQL = PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.sourceFile
+
+/** The evidence table the substrate writes into and the probes read back. */
+const OWNERSHIP_EVIDENCE_SCHEMA = `
+CREATE SCHEMA IF NOT EXISTS ce3_own;
+CREATE TABLE IF NOT EXISTS ce3_own.evidence (k text PRIMARY KEY, v text NOT NULL);
+`
+
+/**
+ * THE PRE-STATE, RECORDED BEFORE THE PACKAGE RUNS -- and the reason the whole
+ * arrangement can say anything about ORIGIN at all.
+ *
+ * A fixture-set owner and a package-set owner leave BYTE-IDENTICAL pg_proc
+ * rows, so no assertion taken after setup can tell them apart. Provenance is a
+ * TEMPORAL property: it is established by bracketing the candidate cause with a
+ * measurement on each side, in a substrate where nothing else could have
+ * produced the transition. This block is the near side of that bracket.
+ *
+ * IT RUNS IN BOTH ARMS, DELIBERATELY. The omission arm (CE3-OWN-M-1) records
+ * the same pre-state and simply never applies the package, so its RED comes
+ * from the owner still being the one recorded here -- not from a missing file,
+ * an import error or a harness crash.
+ *
+ * IT REFUSES A SUBSTRATE THAT IS ALREADY AT THE TARGET. If the evaluator were
+ * already owned by uellix_owner before the package ran, the transition would
+ * have no observable origin and every provenance assertion downstream would
+ * pass with the package absent -- exactly the vacuity R4 was ordered to end.
+ */
+const OWNERSHIP_PRE_MEASUREMENT = `
+DO $own$ DECLARE pre text; BEGIN
+  IF pg_catalog.to_regprocedure('public.entitlement_effective(uuid,varchar)') IS NULL THEN
+    RAISE EXCEPTION 'CE3-OWN SUBSTRATE INCOMPLETE: public.entitlement_effective(uuid,varchar) does not exist before the governed package runs, so migration 0073 did not apply and there is nothing to transfer.';
+  END IF;
+  SELECT pg_catalog.pg_get_userbyid(p.proowner) INTO pre
+  FROM pg_catalog.pg_proc p WHERE p.oid = 'public.entitlement_effective(uuid,varchar)'::regprocedure;
+  IF pre = 'uellix_owner' THEN
+    RAISE EXCEPTION 'CE3-OWN SUBSTRATE CONTAMINATED: the evaluator is ALREADY owned by uellix_owner before stella_hosted_0009 is applied. The transition would have no observable origin and CE3-OWN-P-1 would pass with the package absent. Owner=[%]', pre;
+  END IF;
+  INSERT INTO ce3_own.evidence(k, v) VALUES ('ENTITLEMENT_EFFECTIVE_OWNER_PRE', pre)
+    ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v;
+END $own$;
+`
+
+/**
+ * The far side of the bracket, recorded IMMEDIATELY after the package step in
+ * the conformant arm and at the same position in the omission arm. Nothing
+ * between the two captures touches ownership except the package itself, which
+ * the host asserts structurally against the setup manifest.
+ */
+const OWNERSHIP_POST_MEASUREMENT = `
+DO $own$ DECLARE post text; BEGIN
+  SELECT pg_catalog.pg_get_userbyid(p.proowner) INTO post
+  FROM pg_catalog.pg_proc p WHERE p.oid = 'public.entitlement_effective(uuid,varchar)'::regprocedure;
+  INSERT INTO ce3_own.evidence(k, v) VALUES ('ENTITLEMENT_EFFECTIVE_OWNER_POST', post)
+    ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v;
+END $own$;
+`
+
+/**
+ * Applies a prepared package from its REAL bytes with psql -1 semantics.
+ *
+ * The harness applies each setup statement separately and WITHOUT -1, while
+ * stella_hosted_0009 keeps its entire pre-state in transaction-local
+ * set_config(..., true) settings and REFUSES rather than comparing values it
+ * has just re-read. Wrapping the file in an explicit BEGIN/COMMIT is EXACTLY
+ * what psql -1 does; the package bytes themselves are passed through
+ * unmodified. This is a transaction boundary, not an edit. Same shape as
+ * tests/postgres/ce3-acl-hardening.pg.test.ts.
+ */
+export function applyPackage(relativePath: string): string {
+  return `BEGIN;\n${readFileSync(path.join(ROOT, relativePath), 'utf8')}\nCOMMIT;\n`
+}
+
+export interface SubstrateOptions {
+  /**
+   * false OMITS the governed ownership package entirely -- CE3-OWN-M-1.
+   * Everything else, including both evidence captures, is left intact, so the
+   * resulting RED is the ownership obligation failing and not a crash.
+   */
+  readonly applyOwnershipPackage?: boolean
+}
+
 function unitStatement(unit: (typeof BASELINE_UNITS)[number]): string {
   return `-- BASELINE UNIT ${unit.ordinal}/${BASELINE_UNITS.length}: ${unit.id}\n` + readFileSync(path.join(ROOT, unit.file), 'utf8')
 }
@@ -341,18 +455,31 @@ export const asAuthenticated = (id: string) =>
 export const asAppRole = (id: string) =>
   `BEGIN; SET LOCAL ROLE uellix_app; SELECT set_config('request.jwt.claims', '{"sub":"${id}","role":"authenticated"}', true);\n`
 
-/** Roles + baseline migration units (which now include 0073) + hosted-fidelity shims. */
-export function buildBaselineOnlyStatements(): string[] {
+/**
+ * Roles + baseline migration units (which now include 0073) + hosted-fidelity
+ * shims + the GOVERNED OWNERSHIP ORIGIN, bracketed by its two measurements.
+ *
+ * THE ORDER IS LOAD-BEARING AND IS ASSERTED BY THE HOST, not left to a reader:
+ * evidence schema -> PRE capture -> the real package bytes -> POST capture.
+ * A probe that applied the artifact itself would contaminate the arm that omits
+ * it, so the application lives in the SUBSTRATE and the probes only read back.
+ */
+export function buildBaselineOnlyStatements(options: SubstrateOptions = {}): string[] {
+  const applyOwnershipPackage = options.applyOwnershipPackage ?? true
   const statements: string[] = []
   statements.push(ROLE_PRELUDE)
   statements.push(readFileSync(path.join(ROOT, 'scripts/rehearsal/local-supabase-shim.sql'), 'utf8'))
   statements.push(G2_PREREQUISITE_SHIM)
   for (const unit of BASELINE_UNITS) statements.push(unitStatement(unit))
   statements.push(HOSTED_FIDELITY)
+  statements.push(OWNERSHIP_EVIDENCE_SCHEMA)
+  statements.push(OWNERSHIP_PRE_MEASUREMENT)
+  if (applyOwnershipPackage) statements.push(applyPackage(OWNERSHIP_PACKAGE_SQL))
+  statements.push(OWNERSHIP_POST_MEASUREMENT)
   return statements
 }
 
-/** Baseline + the commercial/tenant/grant fixture. */
-export function buildSetupManifest(): SetupManifest {
-  return { statements: [...buildBaselineOnlyStatements(), FIXTURE] }
+/** Baseline + the governed ownership origin + the commercial/tenant/grant fixture. */
+export function buildSetupManifest(options: SubstrateOptions = {}): SetupManifest {
+  return { statements: [...buildBaselineOnlyStatements(options), FIXTURE] }
 }

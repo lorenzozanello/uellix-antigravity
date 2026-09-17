@@ -32,7 +32,7 @@
 //      report a perfect score.
 
 import { createHash } from 'node:crypto'
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -75,16 +75,36 @@ interface Hit {
   readonly symbols: readonly string[]
 }
 
-const HITS: Hit[] = ALL_FILES.flatMap((file) => {
-  let content: string
+/** Reads a repository file, or null when it cannot be read. */
+type Reader = (file: string) => string | null
+
+const readFromDisk: Reader = (file) => {
   try {
-    content = readFileSync(path.join(ROOT, file), 'utf8')
+    return readFileSync(path.join(ROOT, file), 'utf8')
   } catch {
-    return []
+    return null
   }
-  const symbols = SYMBOLS.filter((s) => content.includes(s))
-  return symbols.length > 0 ? [{ file, symbols }] : []
-})
+}
+
+/**
+ * The sweep, as a FUNCTION over an injectable file list and reader.
+ *
+ * Extracted from a top-level constant for one reason: a detector that can only
+ * ever be run against the repository as it happens to be CANNOT BE SHOWN to
+ * fire. The mutation controls below re-run this exact pipeline over the REAL
+ * population plus one synthetic runtime consumer, which is the only way to
+ * prove the zero elsewhere is a measurement and not an artefact of the data.
+ */
+function sweep(files: readonly string[], read: Reader): Hit[] {
+  return files.flatMap((file) => {
+    const content = read(file)
+    if (content === null) return []
+    const symbols = SYMBOLS.filter((s) => content.includes(s))
+    return symbols.length > 0 ? [{ file, symbols }] : []
+  })
+}
+
+const HITS: Hit[] = sweep(ALL_FILES, readFromDisk)
 
 /* -------------------------------------------------------------------------- */
 /* Classification                                                             */
@@ -109,7 +129,42 @@ const DEFINITION_SURFACE = new Set([
   'db/prepared/journal/086_0073_commercial_account_ce3_entitlement_grants.sql',
   'db/prepared/checkpoint-b0/observation.sql',
   'docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json',
+
+  // ---------------------------------------------------------------------
+  // THE HOSTED ADMINISTRATIVE SURFACES, added by CE-3 R4 (CE3-N-9 closure).
+  //
+  // WHAT THEY ARE. stella_hosted_0009 transfers the evaluator's ownership and
+  // stella_hosted_0010 hardens the relation's ACL; the two db/hosted registries
+  // DECLARE those packages (id, source path, sha256 pin, forward-only reason)
+  // and db/prepared/README.md indexes them. Every one of the five NAMES the SQL
+  // function because it administers the object the node defined. None of them
+  // imports lib/capabilities/entitlement-evaluator, none is reachable from an
+  // application entrypoint, and none evaluates an entitlement for anybody: the
+  // ACTUAL_RUNTIME_CONSUMER count they belong in is ZERO.
+  //
+  // WHY THEY ARE ENUMERATED AND NOT IGNORED BY DIRECTORY. Excluding db/**,
+  // db/prepared/** or db/hosted/** as CATEGORIES would close CE3-N-9 by making
+  // the control blind: a real runtime consumer dropped into one of those trees
+  // afterwards would never be seen again. Naming five files keeps the census
+  // FAIL-CLOSED — a sixth file, anywhere, is a consumer until this array is
+  // deliberately edited, and that edit is visible in review. The control
+  // "an unenumerated file under db/prepared/ is still a consumer" below is the
+  // executable form of that claim.
+  'db/hosted/forward-only-packages.ts',
+  'db/hosted/prechain-ownership.ts',
+  'db/prepared/README.md',
+  'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql',
+  'db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql',
 ])
+
+/** The five R4 added, kept separately so their own controls cannot drift. */
+const R4_HOSTED_ADMINISTRATIVE_SURFACES = [
+  'db/hosted/forward-only-packages.ts',
+  'db/hosted/prechain-ownership.ts',
+  'db/prepared/README.md',
+  'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql',
+  'db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql',
+] as const
 
 /**
  * AUTHORITY PROSE IS NOT A CONSUMER. docs/ops/** contains the frozen artifacts
@@ -119,10 +174,54 @@ const DEFINITION_SURFACE = new Set([
  */
 const isAuthorityProse = (f: string) => f.startsWith('docs/')
 
+/**
+ * THE CLASSIFICATION, STATED AS A TOTAL FUNCTION.
+ *
+ * Every file that carries a symbol lands in exactly one of five classes, and
+ * the fifth is the one CE3-N-9 forbids. There is deliberately NO 'UNKNOWN'
+ * member: a file this function does not recognise is a RUNTIME_CONSUMER, not a
+ * definition surface and not a shrug. That is the fail-CLOSED direction, and it
+ * is the whole reason the definition surfaces are a closed enumeration rather
+ * than a pattern — a pattern grows silently, a list does not.
+ */
+type EvaluatorSurface =
+  | 'DEFINING_MODULE'
+  | 'TEST'
+  | 'DEFINITION_OR_ADMIN_SURFACE'
+  | 'AUTHORITY_PROSE'
+  | 'RUNTIME_CONSUMER'
+
+export function classifyEvaluatorSurface(file: string): EvaluatorSurface {
+  if (isDefining(file)) return 'DEFINING_MODULE'
+  if (isTest(file)) return 'TEST'
+  if (DEFINITION_SURFACE.has(file)) return 'DEFINITION_OR_ADMIN_SURFACE'
+  if (isAuthorityProse(file)) return 'AUTHORITY_PROSE'
+  return 'RUNTIME_CONSUMER'
+}
+
+/** The forbidden class, over any population. */
+const consumersIn = (hits: readonly Hit[]): Hit[] =>
+  hits.filter((h) => classifyEvaluatorSurface(h.file) === 'RUNTIME_CONSUMER')
+
 /** Anything left over is a real, non-test consumer — the thing CE3-N-9 forbids. */
-const CONSUMERS = HITS.filter(
-  (h) => !isDefining(h.file) && !isTest(h.file) && !DEFINITION_SURFACE.has(h.file) && !isAuthorityProse(h.file),
-)
+const CONSUMERS = consumersIn(HITS)
+
+/**
+ * A synthetic runtime consumer: a real import of the defining module and a real
+ * call. Used ONLY as the known-positive instrument, never written to disk.
+ */
+const SYNTHETIC_RUNTIME_CONSUMER =
+  "import { evaluateEntitlement } from '@/lib/capabilities/entitlement-evaluator'\n" +
+  'export async function gate(orgId: string) {\n' +
+  "  return evaluateEntitlement(orgId, 'stella.grounded_query')\n" +
+  '}\n'
+
+/** Re-runs the REAL sweep with one extra file planted at `at`. */
+function sweepWithInjectedConsumer(at: string): Hit[] {
+  return consumersIn(
+    sweep([...ALL_FILES, at], (file) => (file === at ? SYNTHETIC_RUNTIME_CONSUMER : readFromDisk(file))),
+  )
+}
 
 describe('CE3-N-9 — the census instrument is not vacuous', () => {
   it('the sweep actually walked the repository', () => {
@@ -152,6 +251,113 @@ describe('CE3-N-9 — the census instrument is not vacuous', () => {
       const matching = HITS.filter((h) => h.symbols.includes(symbol))
       expect(matching.length, `symbol ${symbol} matched nothing — the pattern is dead`).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('CE3-N-9 — the classifier discriminates rather than merely exempting', () => {
+  // KNOWN NEGATIVES. The five hosted administrative surfaces must be seen by
+  // the sweep AND classified out of the consumer count. Both halves matter: an
+  // exemption for a file the sweep never finds is a dead entry that would
+  // silently cover a real consumer appearing at that path later.
+  it.each(R4_HOSTED_ADMINISTRATIVE_SURFACES)(
+    '%s is a LIVE hit and classifies as a definition/admin surface',
+    (file) => {
+      expect(HITS.map((h) => h.file), `${file} is exempted but the sweep never found it`).toContain(file)
+      expect(classifyEvaluatorSurface(file)).toBe('DEFINITION_OR_ADMIN_SURFACE')
+    },
+  )
+
+  it('every enumerated definition surface EXISTS — no fabricated exemption', () => {
+    for (const file of DEFINITION_SURFACE) {
+      expect(existsSync(path.join(ROOT, file)), `${file} is exempted but does not exist`).toBe(true)
+    }
+  })
+
+  it('the defining module and this node own tests are NOT called consumers', () => {
+    expect(classifyEvaluatorSurface(DEFINING_MODULE)).toBe('DEFINING_MODULE')
+    expect(classifyEvaluatorSurface('tests/postgres/ce3-entitlement-grants.pg.test.ts')).toBe('TEST')
+    expect(classifyEvaluatorSurface('tests/postgres/ce3-acl-hardening.pg.test.ts')).toBe('TEST')
+  })
+
+  it('authority prose is NOT called a consumer', () => {
+    expect(
+      classifyEvaluatorSurface(
+        'docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json',
+      ),
+    ).toBe('AUTHORITY_PROSE')
+  })
+
+  // KNOWN POSITIVES. A classifier that only ever exempts has not been shown to
+  // discriminate.
+  it.each([
+    'lib/stella/grounded-query-quota.ts',
+    'app/api/entitlements/route.ts',
+    'components/billing/PlanBanner.tsx',
+    'lib/auth/selected-organization.ts',
+  ])('%s classifies as a RUNTIME CONSUMER', (file) => {
+    expect(classifyEvaluatorSurface(file)).toBe('RUNTIME_CONSUMER')
+  })
+
+  // THE ANTI-DIRECTORY-IGNORE CONTROL. CE3-N-9 was NOT closed by excluding
+  // db/**, db/prepared/** or db/hosted/** as categories, and this is the
+  // executable proof: an UNENUMERATED file in each of those trees is still a
+  // consumer. A future attempt to broaden the exemption into a directory rule
+  // turns these red.
+  it.each([
+    'db/prepared/stella_hosted_0011_not_enumerated.ts',
+    'db/hosted/some-new-runtime-helper.ts',
+    'db/runtime-entitlement-gate.ts',
+  ])('%s is NOT exempted just for living in an administrative tree', (file) => {
+    expect(classifyEvaluatorSurface(file)).toBe('RUNTIME_CONSUMER')
+  })
+
+  it('an unrecognised path is a CONSUMER, never an UNKNOWN and never a definition surface', () => {
+    // FAIL-CLOSED, asserted rather than described. The classifier has no
+    // 'UNKNOWN' member at all, so there is no value for an unclassified file to
+    // hide behind.
+    expect(classifyEvaluatorSurface('some/path/nobody/anticipated.ts')).toBe('RUNTIME_CONSUMER')
+    expect(classifyEvaluatorSurface('')).toBe('RUNTIME_CONSUMER')
+    const codomain = new Set(
+      [
+        DEFINING_MODULE,
+        'tests/x.test.ts',
+        'db/prepared/README.md',
+        'docs/anything.md',
+        'lib/anything.ts',
+      ].map(classifyEvaluatorSurface),
+    )
+    expect(codomain.has('UNKNOWN' as never)).toBe(false)
+    expect(codomain.size).toBe(5)
+  })
+})
+
+describe('CE3-N-9 — the census GOES RED when a real runtime consumer appears', () => {
+  // THE NON-VACUITY PROOF. Run over the REAL repository population plus one
+  // synthetic file that imports the defining module and calls it.
+  it('a runtime-shaped consumer under lib/ is DETECTED', () => {
+    expect(sweepWithInjectedConsumer('lib/stella/grounded-query-quota.ts').map((c) => c.file))
+      .toEqual(['lib/stella/grounded-query-quota.ts'])
+  })
+
+  it('an API route consumer is DETECTED', () => {
+    expect(sweepWithInjectedConsumer('app/api/entitlements/route.ts').map((c) => c.file))
+      .toEqual(['app/api/entitlements/route.ts'])
+  })
+
+  // The same injection placed INSIDE the administrative trees. If CE3-N-9 had
+  // been closed with a directory ignore, this consumer would escape; it does
+  // not, because the exemption is five named files.
+  it.each(['db/prepared/runtime-consumer.ts', 'db/hosted/runtime-consumer.ts', 'db/runtime-consumer.ts'])(
+    'a consumer planted at %s cannot hide behind the administrative exemption',
+    (at) => {
+      expect(sweepWithInjectedConsumer(at).map((c) => c.file)).toEqual([at])
+    },
+  )
+
+  it('and the same pipeline reports ZERO on the UNMUTATED repository', () => {
+    // Both directions from one instrument: the detector that just fired is the
+    // detector reporting the zero below.
+    expect(consumersIn(sweep(ALL_FILES, readFromDisk))).toEqual([])
   })
 })
 

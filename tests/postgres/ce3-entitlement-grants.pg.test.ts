@@ -26,8 +26,14 @@
 // is that they do not depend on any TypeScript being careful.
 
 import { describe, expect, it, beforeAll } from 'vitest'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import path from 'node:path'
 
 import { BASELINE_UNITS } from '@/db/hosted/baseline-manifest'
+import {
+  PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
+  sha256OfPreparedSql,
+} from '@/db/hosted/prechain-ownership'
 import {
   runDisposableHarness,
   DEFAULT_IMAGE,
@@ -41,7 +47,10 @@ import {
   UNDECLARED_CAPABILITY,
   asAuthenticated,
   asAppRole,
+  applyPackage,
+  buildBaselineOnlyStatements,
   buildSetupManifest,
+  OWNERSHIP_PACKAGE_SQL,
 } from './ce3-entitlement-grants-fixtures'
 
 export const PG_TESTS_ENABLED = process.env.UELLIX_PG_TESTS === '1'
@@ -930,6 +939,103 @@ END $w$;`)
     IDS.adminD, IDS.orgD, CAPABILITY, 'NO_LIVE_GRANT', 'NULL',
     'NULL governance must never be read as free, trial or unlimited')
 
+  // -------------------------------------------------------------------------
+  // PG-CE3-DEFINER-OWNER (CE3-OWN-P-1).
+  //
+  // THE THIRTEENTH FAMILY, added by
+  // COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1
+  // REAL_PG_NODE_CONTRACT_AMENDED. It proves the evaluator's SECURITY DEFINER
+  // ownership is both CORRECT and GOVERNED IN ORIGIN.
+  //
+  // WHY ORIGIN NEEDS ITS OWN PROBES AT ALL. A fixture-set owner and a
+  // package-set owner leave BYTE-IDENTICAL pg_proc rows, so no assertion taken
+  // after setup can tell the governed arrangement from the contaminated one it
+  // replaced. Provenance is TEMPORAL: the substrate records the owner BEFORE
+  // the governed package runs and again AFTER, and these probes read the two
+  // captures back. They APPLY NOTHING themselves -- a probe that applied the
+  // artifact would contaminate the very arm CE3-OWN-M-1 needs to omit it.
+  // -------------------------------------------------------------------------
+  add('PG-CE3-DEFINER-OWNER-a-a-pre-state-was-recorded-and-was-NOT-already-the-target',
+    `DO $w$ DECLARE pre text; BEGIN
+  SELECT v INTO pre FROM ce3_own.evidence WHERE k = 'ENTITLEMENT_EFFECTIVE_OWNER_PRE';
+  IF pre IS NULL THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-a no pre-state was recorded before the governed package step, so the transition has no measured origin and every assertion about it is satisfiable by a substrate that was already at the target';
+  END IF;
+  IF pre = 'uellix_owner' THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-a the evaluator was ALREADY owned by uellix_owner before the governed package step (pre=[%]) -- the proof would be vacuous', pre;
+  END IF;
+END $w$;`)
+
+  add('PG-CE3-DEFINER-OWNER-b-the-governed-package-is-the-SOURCE-of-the-ownership-transition',
+    `DO $w$ DECLARE pre text; post text; live text; BEGIN
+  SELECT v INTO pre  FROM ce3_own.evidence WHERE k = 'ENTITLEMENT_EFFECTIVE_OWNER_PRE';
+  SELECT v INTO post FROM ce3_own.evidence WHERE k = 'ENTITLEMENT_EFFECTIVE_OWNER_POST';
+  SELECT pg_get_userbyid(proowner) INTO live FROM pg_proc WHERE oid = '${FN_SIG}'::regprocedure;
+
+  IF post IS NULL THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-b no post-state was recorded, so the far side of the provenance bracket is missing';
+  END IF;
+  IF post <> 'uellix_owner' THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-b the ownership transition DID NOT HAPPEN: the evaluator is still owned by [%] after the step that applies stella_hosted_0009 (pre=[%]). Nothing else in this substrate transfers it, so the governed package was absent or did not run.', post, pre;
+  END IF;
+  IF pre = post THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-b pre and post are identical [%]: no transition was observed across the governed package step', post;
+  END IF;
+  IF live IS DISTINCT FROM post THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-b the owner moved AGAIN after the governed package: post=[%], live=[%]. Something later in the substrate re-homed the evaluator, so the package is not the source of the state under test.', post, live;
+  END IF;
+END $w$;`)
+
+  add('PG-CE3-DEFINER-OWNER-c-that-owner-is-NOSUPERUSER-and-NOBYPASSRLS',
+    `DO $w$ DECLARE su boolean; brls boolean; BEGIN
+  SELECT rolsuper, rolbypassrls INTO su, brls FROM pg_catalog.pg_roles WHERE rolname = 'uellix_owner';
+  IF NOT FOUND THEN RAISE EXCEPTION 'DEFINER-OWNER-c role uellix_owner does not exist'; END IF;
+  -- ASKED SEPARATELY, and that is the point: a SUPERUSER bypasses row-level
+  -- security regardless of rolbypassrls, so a check for BYPASSRLS alone would
+  -- accept the exact posture the transfer exists to prevent.
+  IF su THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-c uellix_owner has rolsuper = true: FORCE ROW LEVEL SECURITY is inert for every read the evaluator performs, so the ownership is correct in name and worthless in effect';
+  END IF;
+  IF brls THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-c uellix_owner has rolbypassrls = true: this is the arm 0073 refuses by name, and every CE-3 isolation probe would be measuring nothing';
+  END IF;
+END $w$;`)
+
+  add('PG-CE3-DEFINER-OWNER-d-R-A-is-MEASURED-UNDER-THAT-REAL-OWNER',
+    `DO $w$ DECLARE e boolean; f boolean; n int; roles text; sd boolean; cfg text[]; own text; post text; BEGIN
+  SELECT relrowsecurity, relforcerowsecurity INTO e, f FROM pg_class WHERE oid = 'public.${RELATION}'::regclass;
+  IF e IS NOT TRUE OR f IS NOT TRUE THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-d entitlement_grants is not ENABLE + FORCE ROW LEVEL SECURITY (enable=%, force=%), so the owner policy is inert for exactly the role the definer runs as', e, f;
+  END IF;
+
+  SELECT count(*) INTO n FROM pg_policy WHERE polrelid = 'public.${RELATION}'::regclass;
+  IF n <> 1 THEN RAISE EXCEPTION 'DEFINER-OWNER-d expected EXACTLY ONE policy on entitlement_grants, measured %', n; END IF;
+
+  SELECT string_agg(pg_get_userbyid(x), ',' ORDER BY pg_get_userbyid(x)) INTO roles
+    FROM pg_policy p, unnest(p.polroles) AS x WHERE p.polrelid = 'public.${RELATION}'::regclass;
+  IF roles IS DISTINCT FROM 'uellix_owner' THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-d the single policy addresses [%], expected uellix_owner alone', roles;
+  END IF;
+
+  SELECT p.prosecdef, p.proconfig, pg_get_userbyid(p.proowner) INTO sd, cfg, own
+    FROM pg_proc p WHERE p.oid = '${FN_SIG}'::regprocedure;
+  IF NOT sd THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-d the evaluator is not SECURITY DEFINER, so who owns it decides nothing at all';
+  END IF;
+  IF cfg IS NULL OR NOT ('search_path=public' = ANY(cfg)) THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-d the evaluator no longer carries the frozen SET search_path = public (proconfig=%)', coalesce(array_to_string(cfg, ','), '(none)');
+  END IF;
+
+  -- THE TIE-BACK. R-A must be measured under the owner the GOVERNED PACKAGE
+  -- produced, not merely under some role that happens to be called
+  -- uellix_owner: the live owner and the recorded post-package owner are the
+  -- same value, so this arm cannot pass on a topology the package did not make.
+  SELECT v INTO post FROM ce3_own.evidence WHERE k = 'ENTITLEMENT_EFFECTIVE_OWNER_POST';
+  IF own <> 'uellix_owner' OR own IS DISTINCT FROM post THEN
+    RAISE EXCEPTION 'DEFINER-OWNER-d R-A is being measured under owner [%] against a recorded post-package owner [%]', own, coalesce(post, '(absent)');
+  END IF;
+END $w$;`)
+
   return { probes }
 }
 
@@ -952,7 +1058,16 @@ const MUTATING =
 
 const EXPECTED_PROBE_IDS = buildProbeManifest().probes.map((p) => p.id)
 
-/** The twelve probe FAMILIES the authority requires, each matched by id prefix. */
+/**
+ * The THIRTEEN probe FAMILIES the authority requires, each matched by id prefix.
+ *
+ * Twelve are the base REAL_PG_NODE_CONTRACT set, preserved by identity and by
+ * semantics. PG-CE3-DEFINER-OWNER is the one family added by
+ * COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1
+ * (probe_count_total 12 -> 13). Cumulatively across CE-3 there are FOURTEEN:
+ * these thirteen plus PG-CE3-ACL-HARDENING, which lives in its own host,
+ * tests/postgres/ce3-acl-hardening.pg.test.ts.
+ */
 export const REQUIRED_PROBE_FAMILIES = [
   'PG-4',
   'PG-7',
@@ -966,18 +1081,275 @@ export const REQUIRED_PROBE_FAMILIES = [
   'PG-CE3-EXPLICIT-ORG',
   'PG-CE3-NO-CE4-CONSUMER',
   'PG-CE3-UNGOVERNED',
+  'PG-CE3-DEFINER-OWNER',
 ] as const
+
+/* -------------------------------------------------------------------------- */
+/* CE3-OWN-N-1 — FIXTURE_DIRECT_REHOME_ABSENT                                 */
+/*                                                                            */
+/* Static and UNGATED: it needs no container, so a lane without Docker still  */
+/* runs it. Hosted here because CE3-OWN-P-1 and CE3-OWN-M-1 live here and the */
+/* three controls are one argument — the absence is what makes the presence   */
+/* mean anything.                                                             */
+/* -------------------------------------------------------------------------- */
+
+const REPO_ROOT = path.resolve(__dirname, '..', '..')
+const TESTS_ROOT = path.resolve(__dirname, '..')
+
+/**
+ * THE FORBIDDEN SEMANTIC SEQUENCE, as one pattern over one semantic string.
+ *
+ * Read as a WHOLE FILE and not line by line, because a line-oriented grep is
+ * blind to a statement split across lines and is therefore not an acceptable
+ * instrument for this control. Whitespace is elastic everywhere PostgreSQL
+ * allows it, `character varying` is admitted beside `varchar` because they are
+ * the same type, and the match is case-insensitive because SQL keywords are.
+ *
+ * SCOPE DISCIPLINE IS PART OF THE PATTERN, not a caveat about it. The function
+ * name and the destination role are both PINNED, so the detector cannot reach
+ * the three helper re-homes and the table-ownership loop that
+ * FIXTURE_DECONTAMINATION explicitly leaves outside this order, and cannot
+ * reach the deliberate transfer the ACL suite makes to a DIFFERENT owner. A detector
+ * that flagged those would have exceeded its warrant.
+ */
+const DIRECT_EVALUATOR_REHOME =
+  /ALTER\s+FUNCTION\s+public\.entitlement_effective\s*\(\s*uuid\s*,\s*(?:varchar|character\s+varying)\s*\)\s+OWNER\s+TO\s+uellix_owner/i
+
+/** The detector, as a pure function so both the scan and its controls use it. */
+export function containsDirectEvaluatorRehome(content: string): boolean {
+  return DIRECT_EVALUATOR_REHOME.test(content)
+}
+
+/**
+ * SENTINEL_DETECTOR_POSITIVE_REHOME_FIXTURE — the known-positive instrument
+ * control declared by COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_
+ * AMENDMENT_v1.0.1.
+ *
+ * ASSEMBLED AT RUNTIME FROM FRAGMENTS, and that is load-bearing rather than
+ * coy. If the forbidden sequence appeared as contiguous BYTES anywhere in this
+ * file, the sweep below would find it HERE and CE3-OWN-N-1 would report the
+ * contamination it exists to disprove — a suite that inspects its own source
+ * cannot quote the token it forbids. No fragment is a statement on its own and
+ * the assembled string is never sent to any database.
+ */
+const SENTINEL_DETECTOR_POSITIVE_REHOME_FIXTURE = [
+  'ALTER',
+  'FUNCTION',
+  'public.entitlement_effective(uuid,',
+  'varchar)',
+  'OWNER',
+  'TO',
+  'uellix_owner;',
+].join(' ')
+
+/**
+ * The same sequence broken across LINES. Its only job is to prove requirement
+ * (a): the detector reads sufficient content as ONE semantic string. A
+ * line-by-line instrument reports zero on this input while the statement is
+ * plainly there.
+ */
+const SENTINEL_DETECTOR_POSITIVE_REHOME_MULTILINE = [
+  'ALTER',
+  'FUNCTION',
+  'public.entitlement_effective(uuid,',
+  'character varying)',
+  'OWNER',
+  'TO',
+  'uellix_owner;',
+].join('\n')
+
+const SCAN_EXT = new Set(['.ts', '.tsx', '.js', '.mjs', '.cjs', '.sql', '.json', '.md'])
+
+function walkTests(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const full = path.join(dir, entry)
+    let st
+    try {
+      st = statSync(full)
+    } catch {
+      continue
+    }
+    if (st.isDirectory()) walkTests(full, out)
+    else if (SCAN_EXT.has(path.extname(entry)))
+      out.push(path.relative(REPO_ROOT, full).split(path.sep).join('/'))
+  }
+  return out
+}
+
+/** The SEARCHED POPULATION. Asserted non-zero below — requirement (d). */
+const TESTS_POPULATION = walkTests(TESTS_ROOT)
+
+/**
+ * Files the sweep could not read. Collected rather than swallowed: a
+ * `catch { return false }` would let an unreadable file count as clean, which
+ * is the fail-OPEN direction for an absence control.
+ */
+const TESTS_UNREADABLE: string[] = []
+
+const DIRECT_REHOME_HITS = TESTS_POPULATION.filter((file) => {
+  let content: string
+  try {
+    content = readFileSync(path.join(REPO_ROOT, file), 'utf8')
+  } catch {
+    TESTS_UNREADABLE.push(file)
+    return false
+  }
+  return containsDirectEvaluatorRehome(content)
+})
+
+const OWNERSHIP_PACKAGE_BYTES = readFileSync(path.join(REPO_ROOT, OWNERSHIP_PACKAGE_SQL), 'utf8')
+
+describe('CE3-OWN-N-1 — the detector is an instrument before it is a verdict', () => {
+  it('the SEARCHED POPULATION is non-zero and contains the files it must', () => {
+    expect(TESTS_POPULATION.length).toBeGreaterThan(50)
+    expect(TESTS_POPULATION).toContain('tests/postgres/ce3-entitlement-grants-fixtures.ts')
+    expect(TESTS_POPULATION).toContain('tests/postgres/ce3-entitlement-grants.pg.test.ts')
+    expect(TESTS_POPULATION).toContain('tests/postgres/ce3-acl-hardening.pg.test.ts')
+    expect(TESTS_POPULATION).toContain('tests/hosted/prechain-ownership.test.ts')
+  })
+
+  it('every file in the population was actually READ — no unreadable file counted as clean', () => {
+    expect(TESTS_UNREADABLE).toEqual([])
+  })
+
+  it('KNOWN POSITIVE — the detector flags SENTINEL_DETECTOR_POSITIVE_REHOME_FIXTURE', () => {
+    expect(containsDirectEvaluatorRehome(SENTINEL_DETECTOR_POSITIVE_REHOME_FIXTURE)).toBe(true)
+  })
+
+  it('KNOWN POSITIVE — it flags the MULTILINE spelling, which a line grep cannot see', () => {
+    expect(containsDirectEvaluatorRehome(SENTINEL_DETECTOR_POSITIVE_REHOME_MULTILINE)).toBe(true)
+    // The instrument justification, stated as a measurement: the line-oriented
+    // reading of the SAME input reports nothing at all.
+    const lineByLine = SENTINEL_DETECTOR_POSITIVE_REHOME_MULTILINE.split('\n')
+      .some(containsDirectEvaluatorRehome)
+    expect(lineByLine).toBe(false)
+  })
+
+  it('KNOWN POSITIVE — it flags the real governed package, which does carry the transfer', () => {
+    // Proves the pattern matches the production spelling of the statement and
+    // not merely a sentinel written to suit it.
+    expect(containsDirectEvaluatorRehome(OWNERSHIP_PACKAGE_BYTES)).toBe(true)
+  })
+
+  it.each([
+    ['the out-of-scope helper current_user_org_ids', 'ALTER FUNCTION public.current_user_org_ids() OWNER TO uellix_owner;'],
+    ['the out-of-scope helper current_user_is_super_admin', 'ALTER FUNCTION public.current_user_is_super_admin() OWNER TO uellix_owner;'],
+    ['the out-of-scope helper current_user_role_in_org', 'ALTER FUNCTION public.current_user_role_in_org(uuid) OWNER TO uellix_owner;'],
+    ['the out-of-scope table-ownership loop', "EXECUTE format('ALTER TABLE public.%I OWNER TO uellix_owner', r.tablename);"],
+    ['a transfer to a DIFFERENT owner, which the ACL suite makes on purpose', 'ALTER FUNCTION public.entitlement_effective(uuid, varchar) OWNER TO ce3_probe_other_owner;'],
+    ['a transfer of a DIFFERENT overload', 'ALTER FUNCTION public.entitlement_effective(uuid) OWNER TO uellix_owner;'],
+  ])('KNOWN NEGATIVE — %s is NOT flagged', (_label, sample) => {
+    expect(containsDirectEvaluatorRehome(sample)).toBe(false)
+  })
+
+  it('KNOWN NEGATIVE — a regex-ESCAPED quotation of the statement is not a statement', () => {
+    // tests/hosted/prechain-ownership.test.ts asserts the governed package
+    // CONTAINS the transfer, by matching an escaped pattern. Quoting a
+    // statement in order to require it is the opposite of performing it.
+    const quoted = readFileSync(
+      path.join(REPO_ROOT, 'tests/hosted/prechain-ownership.test.ts'),
+      'utf8',
+    )
+    expect(containsDirectEvaluatorRehome(quoted)).toBe(false)
+  })
+
+  it('the detector is not blind to the very file it lives in', () => {
+    // A self-inspecting suite that could not see its own source would report a
+    // clean sweep for the wrong reason. Splicing the sentinel into the real content of this
+    // host must be caught.
+    const own = readFileSync(path.join(REPO_ROOT, 'tests/postgres/ce3-entitlement-grants.pg.test.ts'), 'utf8')
+    expect(containsDirectEvaluatorRehome(own)).toBe(false)
+    expect(containsDirectEvaluatorRehome(own + SENTINEL_DETECTOR_POSITIVE_REHOME_FIXTURE)).toBe(true)
+  })
+
+  it('THE ADVERSARIAL CHECK — reinstating a fixture re-home is DETECTED, not silently tolerated', () => {
+    // CE3-OWN-M-1 forbids any substitute rescuing the omission arm. This is the
+    // measurement behind that claim: the fixture WITH the statement put back is
+    // flagged, so the two controls cannot both be satisfied by a contaminated
+    // tree.
+    const fixture = readFileSync(
+      path.join(REPO_ROOT, 'tests/postgres/ce3-entitlement-grants-fixtures.ts'),
+      'utf8',
+    )
+    expect(containsDirectEvaluatorRehome(fixture)).toBe(false)
+    expect(containsDirectEvaluatorRehome(fixture + SENTINEL_DETECTOR_POSITIVE_REHOME_FIXTURE)).toBe(true)
+  })
+})
+
+describe('CE3-OWN-N-1 — ZERO direct evaluator re-homes under tests/**', () => {
+  it('FIXTURE_DIRECT_REHOME_ABSENT', () => {
+    expect(
+      DIRECT_REHOME_HITS,
+      'a direct evaluator ownership transfer exists under tests/**; removing it from one file and retyping it in another is not decontamination',
+    ).toEqual([])
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* CE3-OWN-P-1 — the PROVENANCE half, proven structurally and without Docker  */
+/* -------------------------------------------------------------------------- */
+
+describe('CE3-OWN-P-1 — the governed package is the ONLY thing in the substrate that can transfer the evaluator', () => {
+  it('the substrate applies the package named by the REGISTRY, not a path typed here', () => {
+    expect(OWNERSHIP_PACKAGE_SQL).toBe(PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.sourceFile)
+  })
+
+  it('the applied bytes are the REAL file, pinned by sha256 to the registry', () => {
+    expect(sha256OfPreparedSql(OWNERSHIP_PACKAGE_BYTES))
+      .toBe(PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.sourceSha256)
+  })
+
+  it('the two arms differ by EXACTLY ONE statement, and it is the real package bytes', () => {
+    const withPackage = buildBaselineOnlyStatements()
+    const without = buildBaselineOnlyStatements({ applyOwnershipPackage: false })
+    expect(withPackage.length).toBe(without.length + 1)
+
+    const extra = withPackage.filter((st) => !without.includes(st))
+    expect(extra).toHaveLength(1)
+    // Byte equality with the real file wrapped in the transaction boundary the
+    // package requires. Not a re-implementation of what the file does.
+    expect(extra[0]).toBe(applyPackage(OWNERSHIP_PACKAGE_SQL))
+    expect(extra[0]).toContain(OWNERSHIP_PACKAGE_BYTES)
+  })
+
+  it('NO OTHER setup statement can transfer the evaluator — the conformant arm', () => {
+    // THE MECHANICAL PROVENANCE CLAIM. The pre-state capture proves the owner
+    // was not the target before; this proves the ONLY statement between the two
+    // captures that could have changed it is the governed package.
+    const statements = buildSetupManifest().statements
+    const carriers = statements.filter(containsDirectEvaluatorRehome)
+    expect(carriers).toHaveLength(1)
+    expect(carriers[0]).toBe(applyPackage(OWNERSHIP_PACKAGE_SQL))
+  })
+
+  it('and ZERO such statements once the package is omitted — the mutation arm', () => {
+    const statements = buildSetupManifest({ applyOwnershipPackage: false }).statements
+    expect(statements.filter(containsDirectEvaluatorRehome)).toEqual([])
+  })
+})
 
 describe.skipIf(!PG_TESTS_ENABLED)(
   'CE-3 entitlement grants — real PostgreSQL (canonical disposable harness)',
   { timeout: 1_800_000 },
   () => {
     let outcome: HarnessOutcome
+    /** CE3-OWN-M-1: the same substrate with the governed package OMITTED. */
+    let ownershipOmitted: HarnessOutcome
 
     beforeAll(() => {
       outcome = runDisposableHarness({
         image: DEFAULT_IMAGE,
         setup: buildSetupManifest(),
+        probe: buildProbeManifest(),
+      })
+      // THE MUTATION ARM. Same image, same probes, same fixture, same two
+      // evidence captures -- the ONLY difference is that the statement applying
+      // the real stella_hosted_0009 bytes is absent. A RED here is therefore the
+      // ownership obligation failing, not a missing file, an import error or a
+      // harness timeout.
+      ownershipOmitted = runDisposableHarness({
+        image: DEFAULT_IMAGE,
+        setup: buildSetupManifest({ applyOwnershipPackage: false }),
         probe: buildProbeManifest(),
       })
       console.log(
@@ -1014,7 +1386,7 @@ describe.skipIf(!PG_TESTS_ENABLED)(
       expect(outcome.probeResults.map((p) => p.id)).toEqual(EXPECTED_PROBE_IDS)
     })
 
-    it('every one of the TWELVE required probe families is represented', () => {
+    it('every one of the THIRTEEN required probe families is represented', () => {
       // The family name may be followed by a '-' OR by a single lettered
       // sub-index ('PG-7a', 'PG-7b', ...). Requiring a literal `${family}-`
       // reported the PG-7 family as ABSENT while eight PG-7* probes were
@@ -1025,7 +1397,7 @@ describe.skipIf(!PG_TESTS_ENABLED)(
         const matching = EXPECTED_PROBE_IDS.filter((id) => pattern.test(id))
         expect(matching.length, `probe family ${family} has no probe`).toBeGreaterThan(0)
       }
-      expect(REQUIRED_PROBE_FAMILIES.length).toBe(12)
+      expect(REQUIRED_PROBE_FAMILIES.length).toBe(13)
     })
 
     it('the family matcher distinguishes a sub-indexed member from an unrelated id', () => {
@@ -1047,6 +1419,81 @@ describe.skipIf(!PG_TESTS_ENABLED)(
     it('POSTGRES_FAILURES=0 (harness verdict)', () => {
       expect(outcome.probeFailureCount).toBe(0)
       expect(outcome.harnessStatus).toBe('SUCCESS')
+    })
+
+    // ---------------------------------------------------------------------
+    // CE3-OWN-P-1 — REAL_GOVERNED_OWNERSHIP_PACKAGE_PRESENT.
+    // ---------------------------------------------------------------------
+    describe('CE3-OWN-P-1 — the ownership is CORRECT and GOVERNED IN ORIGIN', () => {
+      it.each([
+        'PG-CE3-DEFINER-OWNER-a-a-pre-state-was-recorded-and-was-NOT-already-the-target',
+        'PG-CE3-DEFINER-OWNER-b-the-governed-package-is-the-SOURCE-of-the-ownership-transition',
+        'PG-CE3-DEFINER-OWNER-c-that-owner-is-NOSUPERUSER-and-NOBYPASSRLS',
+        'PG-CE3-DEFINER-OWNER-d-R-A-is-MEASURED-UNDER-THAT-REAL-OWNER',
+      ])('%s', (id) => {
+        const probe = outcome.probeResults.find((p) => p.id === id)
+        expect(probe, `probe ${id} did not run`).toBeDefined()
+        expect(probe!.ok, `${id}: ${probe!.detail ?? ''}`).toBe(true)
+      })
+    })
+
+    // ---------------------------------------------------------------------
+    // CE3-OWN-M-1 — OWNERSHIP_PACKAGE_OMISSION_MUTATION_GOES_RED.
+    //
+    // The non-vacuity proof for the entire ownership contract. Without it,
+    // CE3-OWN-P-1 is satisfiable by an arrangement in which the governed
+    // package is decorative: present in the tree, never load-bearing.
+    // ---------------------------------------------------------------------
+    describe('CE3-OWN-M-1 — omitting the governed package turns the ownership proof RED', () => {
+      it('the mutated arrangement still PROVISIONED: the RED is not a crash, an import error or a timeout', () => {
+        // setupStatus SKIPPED is the harness INITIAL value, so "not FAILED"
+        // would pass on a run that never applied anything.
+        expect(ownershipOmitted.setupStatus).toBe('SUCCESS')
+        expect(ownershipOmitted.failureReason).toBeNull()
+        expect(ownershipOmitted.lifecycleState).toBe('VERIFIED_GONE')
+        expect(ownershipOmitted.probeCount).toBe(outcome.probeCount)
+      })
+
+      it.each([
+        'PG-CE3-DEFINER-OWNER-b-the-governed-package-is-the-SOURCE-of-the-ownership-transition',
+        'PG-CE3-DEFINER-OWNER-d-R-A-is-MEASURED-UNDER-THAT-REAL-OWNER',
+      ])('%s goes RED with stella_hosted_0009 omitted', (id) => {
+        const probe = ownershipOmitted.probeResults.find((p) => p.id === id)
+        expect(probe, `probe ${id} did not run in the mutated arm`).toBeDefined()
+        expect(
+          probe!.ok,
+          `${id} stayed GREEN without the governed package, so it was never grounded on it`,
+        ).toBe(false)
+      })
+
+      it('and RED for the REQUIRED REASON — the owner is still the pre-state one', () => {
+        const b = ownershipOmitted.probeResults.find(
+          (p) => p.id === 'PG-CE3-DEFINER-OWNER-b-the-governed-package-is-the-SOURCE-of-the-ownership-transition',
+        )
+        // The MESSAGE is asserted, not merely the redness. A layered proof that
+        // only asserts "it failed" is satisfied by ANY layer failing, including
+        // one that has nothing to do with ownership.
+        expect(b!.detail ?? '').toContain('the ownership transition DID NOT HAPPEN')
+        expect(b!.detail ?? '').toContain('stella_hosted_0009')
+      })
+
+      it('the pre-state capture STILL RAN in the mutated arm, so its RED is a measured absence', () => {
+        // Arm a asserts that a pre-state exists and was not already the target.
+        // It must stay GREEN with the package omitted: if it went red too, the
+        // mutation would be indistinguishable from a substrate that never got
+        // as far as recording anything.
+        const a = ownershipOmitted.probeResults.find(
+          (p) => p.id === 'PG-CE3-DEFINER-OWNER-a-a-pre-state-was-recorded-and-was-NOT-already-the-target',
+        )
+        expect(a!.ok, `the pre-state capture itself failed: ${a!.detail ?? ''}`).toBe(true)
+      })
+
+      it('NO SUBSTITUTE RESCUES IT — the mutated substrate carries no evaluator re-home anywhere', () => {
+        // If a transcribed ALTER OWNER had been left in the fixture, the omission
+        // arm would be GREEN and the decontamination would have been cosmetic.
+        const statements = buildSetupManifest({ applyOwnershipPackage: false }).statements
+        expect(statements.filter(containsDirectEvaluatorRehome)).toEqual([])
+      })
     })
   }
 )

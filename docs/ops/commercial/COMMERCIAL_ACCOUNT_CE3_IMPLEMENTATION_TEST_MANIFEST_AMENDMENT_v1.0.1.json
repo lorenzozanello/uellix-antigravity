@@ -32,7 +32,7 @@
     {
       "id": "CE3-OWN-P-1",
       "description": "REAL_GOVERNED_OWNERSHIP_PACKAGE_PRESENT. Proves FIVE things together, and the conjunction is the control: (1) the governed hosted administrative package stella_hosted_0009_entitlement_evaluator_ownership, applied from its REAL bytes at db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql, is the SOURCE of the ownership transition; (2) the exact function public.entitlement_effective(uuid,varchar) is owned by uellix_owner, read from pg_proc.proowner; (3) uellix_owner is NOSUPERUSER -- rolsuper false, read from pg_roles; (4) uellix_owner is NOBYPASSRLS -- rolbypassrls false, read from pg_roles; (5) the R-A posture is MEASURED UNDER THAT REAL OWNER, so the entitlement_grants FORCE ROW LEVEL SECURITY and the single narrow owner SELECT policy are live for the evaluator's own reads rather than bypassed. THE PROOF SOURCE IS LOAD-BEARING: a bare pg_proc owner assertion taken after fixture setup is NOT sufficient and does not satisfy this control. A fixture-set owner and a package-set owner produce byte-identical catalog rows, so an assertion that reads only the catalog cannot tell the governed arrangement from the contaminated one it replaced. The control must establish PROVENANCE -- that the real package was applied, and that the owner being asserted is the one that application produced. Authorized by COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1 REQUIRED_NODE_CONTROLS_AMENDED and discharged through probe family PG-CE3-DEFINER-OWNER.",
-      "test_file": "UNKNOWN"
+      "test_file": "tests/postgres/ce3-entitlement-grants.pg.test.ts"
     }
   ],
 
@@ -40,7 +40,7 @@
     {
       "id": "CE3-OWN-N-1",
       "description": "FIXTURE_DIRECT_REHOME_ABSENT. Proves that ZERO direct evaluator ownership re-homes exist anywhere under tests/**. THE FORBIDDEN SEMANTIC SEQUENCE is: ALTER FUNCTION public.entitlement_effective(uuid,varchar) OWNER TO uellix_owner -- INCLUDING whitespace-variant and multiline-equivalent spellings, and including any transcription of it into a helper, a constant, a template literal or a second fixture. Removing it from one file and retyping it in another is not decontamination. DETECTOR REQUIREMENTS, all four mandatory: (a) the detector MUST read sufficient file content as ONE SEMANTIC STRING -- a line-by-line grep is blind to a statement split across lines and is not an acceptable instrument for this control; (b) the detector MUST have a KNOWN-POSITIVE control that it actually flags -- SENTINEL_DETECTOR_POSITIVE_REHOME_FIXTURE exists for exactly this; (c) the detector MUST have a KNOWN-NEGATIVE control, superficially similar content that it does NOT flag, so that the instrument is shown to discriminate rather than merely to alarm; (d) the detector MUST report a NON-ZERO searched-file population and assert it as non-zero. A ZERO-HIT SCAN WITH NO INSTRUMENT PROOF IS NOT EVIDENCE: it is indistinguishable from a scan that searched nothing, matched nothing because its pattern was wrong, or was pointed at the wrong directory. SCOPE DISCIPLINE, binding: the forbidden sequence is the EVALUATOR's re-home specifically. The same fixture's re-homes of public.current_user_org_ids(), public.current_user_is_super_admin() and public.current_user_role_in_org(uuid), and its table-ownership loop, are OUT OF SCOPE of this control and of the amendment that created it; a detector that flags them has exceeded its warrant and must be narrowed, not celebrated.",
-      "test_file": "UNKNOWN"
+      "test_file": "tests/postgres/ce3-entitlement-grants.pg.test.ts"
     }
   ],
 
@@ -48,7 +48,7 @@
     {
       "id": "CE3-OWN-M-1",
       "description": "OWNERSHIP_PACKAGE_OMISSION_MUTATION_GOES_RED. MUTATION: remove, omit, or prevent the application of the governed ownership package stella_hosted_0009_entitlement_evaluator_ownership, while leaving the remainder of the fixture and candidate INTACT. REQUIRED OUTCOME: the ownership/security proof goes RED. REQUIRED FAILURE REASON: it must fail BECAUSE the owner remains wrong or bypassing -- or because an equivalent exact governed-owner obligation fails. A RED produced by an unrelated crash, an import error, a missing-file exception or a harness timeout does NOT satisfy this control, because such a RED would also appear if the ownership assertions had been deleted entirely. NO SUBSTITUTE MAY RESCUE IT: no substitute fixture re-home, and no transcribed ALTER OWNER anywhere in tests/**, may make the mutated arrangement GREEN. If reinstating a fixture-level ownership transfer turns the suite green again, then the proof was never grounded on the governed package and the decontamination ordered by the node amendment was cosmetic. WHY THIS CONTROL EXISTS: it is the non-vacuity proof for the entire ownership contract. Without it, CE3-OWN-P-1 is satisfiable by an arrangement in which the governed package is decorative -- present in the tree, never load-bearing -- which is exactly the failure mode the fixture decontamination was ordered to end.",
-      "test_file": "UNKNOWN"
+      "test_file": "tests/postgres/ce3-entitlement-grants.pg.test.ts"
     }
   ],
 
