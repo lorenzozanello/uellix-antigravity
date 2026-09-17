@@ -90,9 +90,9 @@ describe('E7: closed-world stop taxonomy and state model', () => {
 // ---------------------------------------------------------------------------
 
 describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
-  it('is the exact 45-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14 + v1.0.15 + v1.0.16 + v1.0.17 + v1.0.18 + v1.0.19 + v1.0.20 + v1.0.21 + v1.0.22 + v1.0.23 + v1.0.24 + v1.0.25 + v1.0.26 + v1.0.27 + v1.0.28 + v1.0.29 + v1.0.30 + v1.0.31 + v1.0.32 + v1.0.33 + v1.0.34)', () => {
-    expect(IMMUTABLE_BY_CONVENTION.length).toBe(45)
-    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(45)
+  it('is the exact 46-member closed world (20 pinned entries + v1.0.10 + v1.0.11 + v1.0.12 + v1.0.13 + v1.0.14 + v1.0.15 + v1.0.16 + v1.0.17 + v1.0.18 + v1.0.19 + v1.0.20 + v1.0.21 + v1.0.22 + v1.0.23 + v1.0.24 + v1.0.25 + v1.0.26 + v1.0.27 + v1.0.28 + v1.0.29 + v1.0.30 + v1.0.31 + v1.0.32 + v1.0.33 + v1.0.34 + v1.0.35)', () => {
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(46)
+    expect(new Set(IMMUTABLE_BY_CONVENTION).size).toBe(46)
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.10.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.11.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.12.json')
@@ -118,6 +118,7 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json')
     expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')
+    expect(IMMUTABLE_BY_CONVENTION).toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json')
   })
 
   it('excludes ODS_CARRY_FORWARD_BACKLOG.md by design (append-only working backlog)', () => {
@@ -135,87 +136,91 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
 
   // C8 (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.14.json test_contract, carried
   // forward through v1.0.30.json CONTROLLER_41_RULE, v1.0.31.json
-  // CONTROLLER_42_RULE, v1.0.32.json and v1.0.33.json CONTROLLER_SUCCESSOR_RULE
-  // and now v1.0.34.json CONTROLLER_SUCCESSOR_RULE): the closed world does not
-  // pre-include a later ODS successor artifact. The control ADVANCES with the
-  // list — v1.0.34 is now enumerated by this successor act, so the absence
-  // assertion moves to the mechanically-next version. This is exactly the act
-  // v1.0.34.json CONTROLLER_SUCCESSOR_RULE.requirement names in its own words:
+  // CONTROLLER_42_RULE, v1.0.32.json, v1.0.33.json and v1.0.34.json
+  // CONTROLLER_SUCCESSOR_RULE and now v1.0.35.json CONTROLLER_SUCCESSOR_RULE):
+  // the closed world does not pre-include a later ODS successor artifact. The
+  // control ADVANCES with the list — v1.0.35 is now enumerated by this
+  // successor act, so the absence assertion moves to the mechanically-next
+  // version. This is exactly the act v1.0.35.json
+  // CONTROLLER_SUCCESSOR_RULE.requirement names in its own words:
   // "The NEXT Controller successor act is REQUIRED to enumerate docs/ops/ods/
-  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json in IMMUTABLE_BY_CONVENTION after
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json in IMMUTABLE_BY_CONVENTION after
   // this artifact is integrated, taking the array from its then-live length to
-  // that length PLUS EXACTLY ONE, with v1.0.34 as the FINAL item, and advancing
-  // the absence-control literal from v1.0.34 to the mechanically-next lineage
+  // that length PLUS EXACTLY ONE, with v1.0.35 as the FINAL item, and advancing
+  // the absence-control literal from v1.0.35 to the mechanically-next lineage
   // version derived at that act's own head. It must also advance every length,
   // Set-size and index predicate that the Controller suite binds to the array."
   //
   // THE THEN-LIVE LENGTH WAS RE-DERIVED AT THIS ACT'S OWN HEAD, not inherited.
-  // v1.0.34 CONTROLLER_SUCCESSOR_RULE.NO_CONTROLLER_ORDINAL_RESERVED is binding
+  // v1.0.35 CONTROLLER_SUCCESSOR_RULE.NO_CONTROLLER_ORDINAL_RESERVED is binding
   // in its own words: "The successor act MUST RE-DERIVE its own position at its
   // OWN head from the then-live IMMUTABLE_BY_CONVENTION length", and records
-  // that the 44 it measured "is a MEASUREMENT of the present, not a reservation
+  // that the 45 it measured "is a MEASUREMENT of the present, not a reservation
   // of a future label". Measured here at BASE
-  // c8de1dabb225e3abce3e4e18422f03a38f3fb6e1 by structural bracket matching of
-  // scripts/ods-controller.ts — 44 entries, 44 unique, final entry v1.0.33 —
-  // which is what makes 45 below a derived figure rather than a remembered one.
+  // eafaaf57b0ad01031d9c61a985fbc6a2da817340 by structural bracket matching of
+  // scripts/ods-controller.ts — 45 entries, 45 unique, final entry v1.0.34 —
+  // which is what makes 46 below a derived figure rather than a remembered one.
   //
   // NO ORDINAL LABEL IS USED FOR THIS ACT, and that is deliberate rather than
-  // an omission, exactly as for the three acts before it. Historical constants
+  // an omission, exactly as for the four acts before it. Historical constants
   // below that carry a predecessor's ordinal KEEP it: those name acts that
   // really did bear that label, and renaming them would rewrite evidence
   // rather than clarify it.
   //
-  // THE ASSERTIONS WERE LOCATED BY PREDICATE, NEVER BY LINE NUMBER. v1.0.34
+  // THE ASSERTIONS WERE LOCATED BY PREDICATE, NEVER BY LINE NUMBER. v1.0.35
   // CONTROLLER_SUCCESSOR_RULE.SWEEP_BY_PREDICATE_NOT_BY_LINE_NUMBER makes this
   // binding and gives the reason: the line anchors recorded by v1.0.32 and
   // v1.0.33 had each already gone stale by the time the next act ran, because a
-  // Controller successor act adds commentary above them. v1.0.34 therefore
-  // records NO line numbers at all — "A convenience that is wrong more often
-  // than it is right is not a convenience". Every predicate it enumerates —
-  // length against a literal, Set size against a literal, a terminal index
-  // pinned to a path, the first out-of-range index pinned to undefined, and
-  // every not.toContain / filter-empty assertion naming the absence-control
-  // literal — was swept in this file by what it asserts, not by where it sat.
+  // Controller successor act adds commentary above them. v1.0.34 and v1.0.35
+  // therefore each record NO line numbers at all — "A convenience that is
+  // wrong more often than it is right is not a convenience". Every predicate
+  // it enumerates — length against a literal, Set size against a literal, a
+  // terminal index pinned to a path, the first out-of-range index pinned to
+  // undefined, and every not.toContain / filter-empty assertion naming the
+  // absence-control literal — was swept in this file by what it asserts, not
+  // by where it sat.
   //
-  // NON-ALLOCATION (load-bearing): the v1.0.35 literal below is ONLY the next
+  // NON-ALLOCATION (load-bearing): the v1.0.36 literal below is ONLY the next
   // mechanical absence-control literal.
-  //   - v1.0.35 is NOT allocated.
-  //   - v1.0.35 is NOT reserved.
-  //   - v1.0.35 is NOT an authority.
-  //   - v1.0.35 is ONLY the next mechanical absence-control literal.
+  //   - v1.0.36 is NOT allocated.
+  //   - v1.0.36 is NOT reserved.
+  //   - v1.0.36 is NOT an authority.
+  //   - v1.0.36 is ONLY the next mechanical absence-control literal.
   // It does NOT allocate, reserve, name-as-allocated, pre-create, grant or
-  // otherwise authorize any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35 artifact.
+  // otherwise authorize any ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36 artifact.
   // It asserts ABSENCE only. Naming an id in a sequencing/prohibition clause
-  // is a PROHIBITION, never an allocation — v1.0.34.json NO_PREALLOCATION
-  // states this in its own words, and v1.0.34
+  // is a PROHIBITION, never an allocation — v1.0.35.json NO_PREALLOCATION
+  // states this in its own words, and v1.0.35
   // CONTROLLER_SUCCESSOR_RULE.NEXT_LINEAGE_ALLOCATION_BLOCKS names "THE NEXT
-  // ODS LINEAGE ALLOCATION (v1.0.35 and beyond)" as BLOCKED until this very
+  // ODS LINEAGE ALLOCATION (v1.0.36 and beyond)" as BLOCKED until this very
   // act is integrated — a block is the opposite of an allocation.
   //
-  // Measured at THIS candidate's BASE c8de1dabb225e3abce3e4e18422f03a38f3fb6e1:
-  // v1.0.34.json is ALREADY integrated (this is the successor act enumerating
+  // Measured at THIS candidate's BASE eafaaf57b0ad01031d9c61a985fbc6a2da817340:
+  // v1.0.35.json is ALREADY integrated (this is the successor act enumerating
   // it, per CONTROLLER_SUCCESSOR_RULE.NOT_ALLOCATED_HERE, which confirms that
   // lane did NOT edit scripts/ods-controller.ts or this file). The grant
-  // HPO-ODS-W2-31 that v1.0.34 DECLARED has since been REGISTERED by its own
-  // separate governed act — measured at this base as 19 PROTECTED_GRANTS rows
-  // whose final row is HPO-ODS-W2-31 — so this successor inherits a REGISTERED
+  // HPO-ODS-W2-32 that v1.0.35 DECLARED has since been REGISTERED by its own
+  // separate governed act — measured at this base as 20 PROTECTED_GRANTS rows
+  // whose final row is HPO-ODS-W2-32 — so this successor inherits a REGISTERED
   // grant, not a pending one, and a "DECLARED_NOT_REGISTERED" phrasing would be
   // false here.
   //
   // THIS ACT DOES NOT TOUCH scripts/ods-scope.ts, but it DOES touch
-  // tests/ods/ods-scope.test.ts — for exactly TWO assertions, and that COUNT
+  // tests/ods/ods-scope.test.ts — for exactly FOUR assertions, and that COUNT
   // WAS MEASURED AT THIS HEAD, NOT INHERITED. The predecessor act recorded
-  // exactly ONE such assertion. The figure is TWO here because the HPO-ODS-W2-31
-  // REGISTRATION act that landed between the two Controller acts added a second
-  // CONTROLLER-AXIS control (W2-31-ALLOC-N7) alongside the inherited one
-  // (CE3-ALLOC-N8). Both read scripts/ods-controller.ts AS TEXT and pin the
-  // occurrence count of the absence-control literal to zero, so appending
-  // v1.0.34 to the array necessarily turns BOTH red. Inheriting the
-  // predecessor's "exactly one" would have understated the write and left a
-  // control red. Both are assertions about the ARRAY, so only a Controller act
-  // can move them, and this is that act. No registration act is performed and
-  // no registry-axis sentinel is touched: PROTECTED_GRANTS is unchanged at 19
-  // rows, HPO-ODS-W2-31 is unaltered, and HPO-ODS-W2-32 remains unallocated and
+  // exactly TWO such assertions. The figure is FOUR here because the v1.0.35
+  // ALLOCATION act and the HPO-ODS-W2-32 REGISTRATION act that both landed
+  // between the two Controller acts each added their own CONTROLLER-AXIS
+  // control (W2-32-ALLOC-N5 and W2-32-REG-N8 respectively) alongside the two
+  // inherited ones (CE3-ALLOC-N8 and W2-31-ALLOC-N7). All four read
+  // scripts/ods-controller.ts AS TEXT and pin the occurrence count of the
+  // absence-control literal to zero, so appending v1.0.35 to the array
+  // necessarily turns all four red. Inheriting the predecessor's "exactly two"
+  // would have understated the write and left two controls red. All four are
+  // assertions about the ARRAY, so only a Controller act can move them, and
+  // this is that act. No registration act is performed and no registry-axis
+  // sentinel is touched: PROTECTED_GRANTS is unchanged at 20 rows,
+  // HPO-ODS-W2-32 is unaltered, and HPO-ODS-W2-33 remains unallocated and
   // unregistered, with zero occurrences in the scope registry.
   //
   // The ODS-lineage axis and the HPO-grant axis remain decoupled: the
@@ -224,20 +229,20 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
   // which protected path, and a missing Controller enumeration does NOT and
   // CANNOT prevent a grant from resolving.
   it('does NOT pre-include the next unallocated ODS successor addendum (no automatic inclusion; the literal reserves nothing)', () => {
-    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json')
+    expect(IMMUTABLE_BY_CONVENTION).not.toContain('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json')
   })
 
-  // APPEND-OVERSHOOT CONTROL (the successor enumerating v1.0.34): the absence
+  // APPEND-OVERSHOOT CONTROL (the successor enumerating v1.0.35): the absence
   // assertion above is a membership test. This one pins the BOUNDARY, so an
-  // append beyond the forty-fifth entry cannot pass by simply not being
-  // v1.0.35. Length is exact and the final slot is pinned by index, so
+  // append beyond the forty-sixth entry cannot pass by simply not being
+  // v1.0.36. Length is exact and the final slot is pinned by index, so
   // appending ANY further entry fails here even if the absence literal above
   // were never updated.
-  it('APPEND OVERSHOOT: the list ends at exactly 45 entries with v1.0.34 in the final slot', () => {
-    expect(IMMUTABLE_BY_CONVENTION.length).toBe(45)
-    expect(IMMUTABLE_BY_CONVENTION[44]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')
-    expect(IMMUTABLE_BY_CONVENTION[45]).toBeUndefined()
-    expect(IMMUTABLE_BY_CONVENTION.filter((e) => e.includes('v1.0.35'))).toEqual([])
+  it('APPEND OVERSHOOT: the list ends at exactly 46 entries with v1.0.35 in the final slot', () => {
+    expect(IMMUTABLE_BY_CONVENTION.length).toBe(46)
+    expect(IMMUTABLE_BY_CONVENTION[45]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json')
+    expect(IMMUTABLE_BY_CONVENTION[46]).toBeUndefined()
+    expect(IMMUTABLE_BY_CONVENTION.filter((e) => e.includes('v1.0.36'))).toEqual([])
   })
 
   it('normalizeRepoPath canonicalizes backslashes and redundant "." segments', () => {
@@ -1025,14 +1030,80 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     expect(guard.nonCanonicalPaths).toEqual([])
   })
 
-  // NON-ALLOCATION BEHAVIOURAL CONTROL (the successor enumerating v1.0.34,
-  // ADVANCED from v1.0.34): the absence-control literal v1.0.35 is NOT
+  // ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json CONTROLLER_SUCCESSOR_RULE
+  // .requirement ("The NEXT Controller successor act is REQUIRED to enumerate
+  // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json in
+  // IMMUTABLE_BY_CONVENTION after this artifact is integrated, taking the array
+  // from its then-live length to that length PLUS EXACTLY ONE, with v1.0.35 as
+  // the FINAL item"): the Controller must enumerate its own governing addendum,
+  // and that enumeration is a SEPARATE governed maintenance mission from the
+  // addendum that allocated the lineage. v1.0.35 is explicitly NOT
+  // self-including, and its CONTROLLER_SUCCESSOR_RULE.NOT_ALLOCATED_HERE clause
+  // forbade that lane from touching scripts/ods-controller.ts or this file at
+  // all. These controls prove the newly appended entry is actually WIRED INTO
+  // decideSelection through the REAL guard, not merely present as a string —
+  // removing it from IMMUTABLE_BY_CONVENTION fails them independently of the
+  // length/Set/digest assertions elsewhere in this file.
+  //
+  // THIS BLOCK INVERTS TWO CONTROLS that stood here before this act. While
+  // v1.0.35 was the absence-control literal, the suite asserted it was NOT
+  // protected and that a node writing it remained SELECTABLE. Enumerating it
+  // necessarily makes it protected and unselectable, so those two controls
+  // ADVANCE to v1.0.36 (below) and these four take their place for v1.0.35.
+  // The inversion is the substance of the enumeration, not a regression in it:
+  // v1.0.35 CONTROLLER_SUCCESSOR_RULE
+  // .MATERIALIZING_THIS_FILE_MOVES_EXISTING_ASSERTIONS_AND_THEY_ARE_NOT_CONTROLLER
+  // _ONES named exactly this class of control in its own words — "Every
+  // Controller assertion naming v1.0.35 is an assertion about the ARRAY ...
+  // NONE of them is a filesystem-existence assertion, so creating this FILE
+  // moves none of them" — as the ones its own materialization did not move.
+  // Only a Controller act that changes the ARRAY can move them, and this is
+  // that act.
+  it('a node targeting v1.0.35 STOPs with PROTECTED_SURFACE_CHANGE via real decideSelection', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('PROTECTED_SURFACE_CHANGE')
+  })
+
+  it('a case-mutated spelling of the new entry (v1.0.35) is NONCANONICAL_PROTECTED_PATH, never PROTECTED_SURFACE_CHANGE', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.35.JSON'] })
+    const decision = decideSelection(unit, 'OPEN', {}, {})
+    expect(decision.selectable).toBe(false)
+    expect(decision.stopClass).toBe('NONCANONICAL_PROTECTED_PATH')
+  })
+
+  // GUARD-LEVEL COMPANION (M3 class): the same case mutation seen through
+  // checkImmutableGuard directly, so the case-sensitivity of the newly
+  // appended entry is pinned at the guard boundary as well as through
+  // decideSelection. A guard that silently lowercased would report
+  // violated=true here and fail.
+  it('checkImmutableGuard classifies the case-mutated v1.0.35 spelling as noncanonical, never as a violation', () => {
+    const guard = checkImmutableGuard(['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.35.JSON'])
+    expect(guard.violated).toBe(false)
+    expect(guard.violatingPaths).toEqual([])
+    expect(guard.nonCanonicalPaths).toEqual(['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_V1.0.35.JSON'])
+  })
+
+  // NON-VACUITY PAIR (M1 class): the canonical spelling of the SAME artifact
+  // must be a real violation at the guard boundary. Together with the control
+  // above this proves the guard distinguishes canonical from case-mutated
+  // rather than answering the same way to both.
+  it('checkImmutableGuard treats the canonical v1.0.35 spelling as a real protected-surface violation', () => {
+    const guard = checkImmutableGuard(['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json'])
+    expect(guard.violated).toBe(true)
+    expect(guard.violatingPaths).toEqual(['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json'])
+    expect(guard.nonCanonicalPaths).toEqual([])
+  })
+
+  // NON-ALLOCATION BEHAVIOURAL CONTROL (the successor enumerating v1.0.35,
+  // ADVANCED from v1.0.35): the absence-control literal v1.0.36 is NOT
   // protected merely by being named in this file. It is not in
   // IMMUTABLE_BY_CONVENTION, so the real guard must treat it as an ordinary
   // unprotected path — proving the absence literal reserves nothing and
   // confers no protected status.
-  it('v1.0.35 is NOT protected — being the absence-control literal confers no protected status', () => {
-    const guard = checkImmutableGuard(['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json'])
+  it('v1.0.36 is NOT protected — being the absence-control literal confers no protected status', () => {
+    const guard = checkImmutableGuard(['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json'])
     expect(guard.violated).toBe(false)
     expect(guard.violatingPaths).toEqual([])
     expect(guard.nonCanonicalPaths).toEqual([])
@@ -1041,11 +1112,11 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
   // The same non-protection proven through decideSelection rather than the
   // guard alone: a node whose ONLY declared write path is the absence-control
   // literal must remain SELECTABLE, with no stop class at all. That is the
-  // end-to-end demonstration that v1.0.35 is neither allocated, reserved nor
+  // end-to-end demonstration that v1.0.36 is neither allocated, reserved nor
   // protected by being named here — the whole selection pipeline lets it
   // through, exactly as it does for any ordinary unprotected path.
-  it('a node whose writePaths is exactly v1.0.35 remains SELECTABLE through real decideSelection (not reserved, not protected)', () => {
-    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json'] })
+  it('a node whose writePaths is exactly v1.0.36 remains SELECTABLE through real decideSelection (not reserved, not protected)', () => {
+    const unit = baseUnit({ writePaths: ['docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json'] })
     const decision = decideSelection(unit, 'OPEN', {}, {})
     expect(decision.selectable).toBe(true)
     expect(decision.stopClass).toBeUndefined()
@@ -1055,33 +1126,33 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
   // A second copy of the new entry would satisfy a naive toContain check and
   // would still be caught here, and by length === Set size, before it could
   // make the live count ambiguous as a successor precondition. Retargeting
-  // this control from v1.0.33 to v1.0.34 does not weaken it: v1.0.33 remains
-  // pinned by exact position inside the OLD44 literal and its ordered digest
-  // below, so a duplicated v1.0.33 still fails the reconstruction controls.
+  // this control from v1.0.34 to v1.0.35 does not weaken it: v1.0.34 remains
+  // pinned by exact position inside the OLD45 literal and its ordered digest
+  // below, so a duplicated v1.0.34 still fails the reconstruction controls.
   it('the new entry appears exactly once, and the list carries no duplicates at all', () => {
     const occurrences = IMMUTABLE_BY_CONVENTION.filter(
-      (entry) => entry === 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json',
+      (entry) => entry === 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json',
     ).length
     expect(occurrences).toBe(1)
     expect(IMMUTABLE_BY_CONVENTION.length).toBe(new Set(IMMUTABLE_BY_CONVENTION).size)
   })
 
   // ---------------------------------------------------------------------
-  // ORDER PROOF (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json
+  // ORDER PROOF (ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json
   // CONTROLLER_SUCCESSOR_RULE): an independently typed literal of the
-  // pre-append 44-entry closed world (OLD44 — never derived from the live
+  // pre-append 45-entry closed world (OLD45 — never derived from the live
   // IMMUTABLE_BY_CONVENTION import, and never copied from the candidate diff
-  // that appends v1.0.34) is hashed with an ordered digest. A remove-only
+  // that appends v1.0.35) is hashed with an ordered digest. A remove-only
   // reconstruction of the live, post-append list (dropping exactly the new
-  // final element) must reproduce OLD44 element-by-element AND by that same
+  // final element) must reproduce OLD45 element-by-element AND by that same
   // ordered digest. This catches a reorder of any predecessor entry that a
   // naive length/Set/toContain check would miss, because Set equality and
   // length are order-blind.
   // ---------------------------------------------------------------------
-  describe('ORDER PROOF: append-only reconstruction of OLD44', () => {
-    // Independently typed — extracted mechanically from the pre-v1.0.34
+  describe('ORDER PROOF: append-only reconstruction of OLD45', () => {
+    // Independently typed — extracted mechanically from the pre-v1.0.35
     // source (the BASE state of scripts/ods-controller.ts at
-    // c8de1dabb225e3abce3e4e18422f03a38f3fb6e1) via
+    // eafaaf57b0ad01031d9c61a985fbc6a2da817340) via
     // `git show <base>:scripts/ods-controller.ts`, never from the working
     // tree (which already carries this mission's own append) and never from
     // the live import.
@@ -1095,12 +1166,12 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
     // every extracted entry to start with `docs/ops/ods/` and a non-vacuity
     // guard rejecting a zero-length extraction outright.
     //
-    // CORROBORATION (independent of this lane): v1.0.34.json states the same
+    // CORROBORATION (independent of this lane): v1.0.35.json states the same
     // pre-append shape in its own words — CONTROLLER_SUCCESSOR_RULE
     // .NO_CONTROLLER_ORDINAL_RESERVED records that "The measured array length
-    // at START_HEAD is 44". The literal below reproduces exactly that: length
-    // 44, no duplicates, v1.0.33 last.
-    const OLD44: readonly string[] = [
+    // at START_HEAD is 45". The literal below reproduces exactly that: length
+    // 45, no duplicates, v1.0.34 last.
+    const OLD45: readonly string[] = [
       'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
       'docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json',
       'docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json',
@@ -1145,109 +1216,110 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.31.json',
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json',
       'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json',
+      'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json',
     ]
 
     // Independently computed and pinned as a literal. A mismatch here means
-    // either OLD44 above or the live pre-append 44 entries drifted — never
+    // either OLD45 above or the live pre-append 45 entries drifted — never
     // silently accepted. Computed under the SAME serialization convention
     // orderedDigest uses (sha256 over JSON.stringify of the array, never a
     // join — JSON quoting makes every element self-delimiting, so the digest
     // is injective over the ordered list). That convention was validated by
-    // reproducing BOTH inherited pins below from OLD44.slice(0, -1) and
-    // OLD44.slice(0, -2) before this value was pinned. Neither inherited
+    // reproducing BOTH inherited pins below from OLD45.slice(0, -1) and
+    // OLD45.slice(0, -2) before this value was pinned. Neither inherited
     // value was copied from its author's work on trust; each was re-derived
-    // here from OLD44 and only then compared against the inherited pin.
-    const OLD44_DIGEST_EXPECTED = '1248eb2ca1b03d49f0da68739e961770307187bd17251e611877319dfd8a4ce8'
+    // here from OLD45 and only then compared against the inherited pin.
+    const OLD45_DIGEST_EXPECTED = 'd6478a53bece2a6f9e29d97355c6080cbbfb9af4a45063755839a32f9b4fc4ee'
 
     function orderedDigest(entries: readonly string[]): string {
       return crypto.createHash('sha256').update(JSON.stringify(entries)).digest('hex')
     }
 
-    it('OLD44 literal has length 44, no duplicates, and matches the pinned OLD44_DIGEST', () => {
-      expect(OLD44.length).toBe(44)
-      expect(new Set(OLD44).size).toBe(44)
-      expect(orderedDigest(OLD44)).toBe(OLD44_DIGEST_EXPECTED)
+    it('OLD45 literal has length 45, no duplicates, and matches the pinned OLD45_DIGEST', () => {
+      expect(OLD45.length).toBe(45)
+      expect(new Set(OLD45).size).toBe(45)
+      expect(orderedDigest(OLD45)).toBe(OLD45_DIGEST_EXPECTED)
     })
 
-    it('the live list is exactly OLD44 with v1.0.34 appended as the sole new final element', () => {
-      expect(IMMUTABLE_BY_CONVENTION.length).toBe(45)
-      expect(IMMUTABLE_BY_CONVENTION[44]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')
+    it('the live list is exactly OLD45 with v1.0.35 appended as the sole new final element', () => {
+      expect(IMMUTABLE_BY_CONVENTION.length).toBe(46)
+      expect(IMMUTABLE_BY_CONVENTION[45]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json')
     })
 
-    it('REMOVE-ONLY RECONSTRUCTION: dropping the final element of the live list reproduces OLD44 element-by-element, in order', () => {
+    it('REMOVE-ONLY RECONSTRUCTION: dropping the final element of the live list reproduces OLD45 element-by-element, in order', () => {
       const reconstructed = IMMUTABLE_BY_CONVENTION.slice(0, -1)
-      expect(reconstructed).toEqual(OLD44)
-      expect(reconstructed.length).toBe(OLD44.length)
-      for (let i = 0; i < OLD44.length; i++) {
-        expect(reconstructed[i]).toBe(OLD44[i])
+      expect(reconstructed).toEqual(OLD45)
+      expect(reconstructed.length).toBe(OLD45.length)
+      for (let i = 0; i < OLD45.length; i++) {
+        expect(reconstructed[i]).toBe(OLD45[i])
       }
     })
 
-    it('REMOVE-ONLY RECONSTRUCTION: its ordered digest matches OLD44_DIGEST exactly (catches any predecessor reorder)', () => {
+    it('REMOVE-ONLY RECONSTRUCTION: its ordered digest matches OLD45_DIGEST exactly (catches any predecessor reorder)', () => {
       const reconstructed = IMMUTABLE_BY_CONVENTION.slice(0, -1)
-      expect(orderedDigest(reconstructed)).toBe(OLD44_DIGEST_EXPECTED)
+      expect(orderedDigest(reconstructed)).toBe(OLD45_DIGEST_EXPECTED)
     })
 
-    // CONTINUITY CONTROL (the successor enumerating v1.0.34): the immediately
-    // preceding pin must still be reproducible from OLD44 by remove-only
-    // reconstruction. This ties the new OLD44 literal back to the
-    // independently-audited predecessor pin, so OLD44 cannot have silently
-    // drifted in any of its 43 inherited entries while still satisfying its
+    // CONTINUITY CONTROL (the successor enumerating v1.0.35): the immediately
+    // preceding pin must still be reproducible from OLD45 by remove-only
+    // reconstruction. This ties the new OLD45 literal back to the
+    // independently-audited predecessor pin, so OLD45 cannot have silently
+    // drifted in any of its 44 inherited entries while still satisfying its
     // own freshly-pinned digest. The pin below is the value the predecessor
-    // act pinned as its own 43-entry digest constant; it is reproduced here,
+    // act pinned as its own 44-entry digest constant; it is reproduced here,
     // not inherited on trust.
     //
     // THIS CONSTANT CARRIES NO ORDINAL, AND THE ONE BELOW IT KEEPS ITS OWN.
-    // The act that pinned the 43-entry digest took no ordinal — v1.0.33
+    // The act that pinned the 44-entry digest took no ordinal — v1.0.34
     // CONTROLLER_SUCCESSOR_RULE.NO_CONTROLLER_ORDINAL_RESERVED forbade naming
     // it by one — so inventing a numeral for it here would fabricate evidence.
-    const OLD43_DIGEST_INHERITED_PIN = 'eaa18304b026e3cf4756f2d31d243ccf62ae800cdc771c05cd7c523fadc4b3fc'
+    const OLD44_DIGEST_INHERITED_PIN = '1248eb2ca1b03d49f0da68739e961770307187bd17251e611877319dfd8a4ce8'
 
-    it('CONTINUITY: OLD44 minus its final element reproduces the inherited OLD43 pin exactly', () => {
-      const priorClosedWorld = OLD44.slice(0, -1)
-      expect(priorClosedWorld.length).toBe(43)
-      expect(OLD44[43]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json')
-      expect(orderedDigest(priorClosedWorld)).toBe(OLD43_DIGEST_INHERITED_PIN)
+    it('CONTINUITY: OLD45 minus its final element reproduces the inherited OLD44 pin exactly', () => {
+      const priorClosedWorld = OLD45.slice(0, -1)
+      expect(priorClosedWorld.length).toBe(44)
+      expect(OLD45[44]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')
+      expect(orderedDigest(priorClosedWorld)).toBe(OLD44_DIGEST_INHERITED_PIN)
     })
 
     // DEEPER CONTINUITY (two generations back): the same remove-only walk
-    // reproduces the 42-entry pin. Chaining two inherited pins rather than one
+    // reproduces the 43-entry pin. Chaining two inherited pins rather than one
     // means a drifted inherited entry would have to satisfy BOTH
     // independently-audited historical digests to pass unnoticed.
-    const OLD42_DIGEST_INHERITED_PIN = 'f928268793641ea6fbeb2b698094bb7818e772d340378beabe221dd4dcbbfb48'
+    const OLD43_DIGEST_INHERITED_PIN = 'eaa18304b026e3cf4756f2d31d243ccf62ae800cdc771c05cd7c523fadc4b3fc'
 
-    it('CONTINUITY: OLD44 minus its final two elements reproduces the inherited OLD42 pin exactly', () => {
-      const twoBack = OLD44.slice(0, -2)
-      expect(twoBack.length).toBe(42)
-      expect(OLD44[42]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json')
-      expect(orderedDigest(twoBack)).toBe(OLD42_DIGEST_INHERITED_PIN)
+    it('CONTINUITY: OLD45 minus its final two elements reproduces the inherited OLD43 pin exactly', () => {
+      const twoBack = OLD45.slice(0, -2)
+      expect(twoBack.length).toBe(43)
+      expect(OLD45[43]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json')
+      expect(orderedDigest(twoBack)).toBe(OLD43_DIGEST_INHERITED_PIN)
     })
 
     // MUTATION CONTROL (M5 class, non-vacuous): proves the digest actually
     // detects a predecessor reorder rather than only ever matching by
-    // construction. Swapping two adjacent OLD44 entries must change the
+    // construction. Swapping two adjacent OLD45 entries must change the
     // digest even though length, Set size and membership are all unchanged.
     it('MUTATION CONTROL: reordering two predecessor entries changes the ordered digest (order-blind checks would miss this)', () => {
-      const reordered = [...OLD44]
+      const reordered = [...OLD45]
       const tmp = reordered[0]
       reordered[0] = reordered[1]
       reordered[1] = tmp
-      expect(reordered.length).toBe(OLD44.length)
-      expect(new Set(reordered)).toEqual(new Set(OLD44))
-      expect(orderedDigest(reordered)).not.toBe(OLD44_DIGEST_EXPECTED)
+      expect(reordered.length).toBe(OLD45.length)
+      expect(new Set(reordered)).toEqual(new Set(OLD45))
+      expect(orderedDigest(reordered)).not.toBe(OLD45_DIGEST_EXPECTED)
     })
 
     // ORDER-CONTINUITY CONTROL (M2 class, in-suite): the controls above are
-    // stated over OLD44. This one is stated over a SIMULATED LIVE list — the
+    // stated over OLD45. This one is stated over a SIMULATED LIVE list — the
     // exact shape a tampered scripts/ods-controller.ts would produce — so the
     // suite proves the reconstruction pipeline itself rejects a swap of two
     // INHERITED entries that preserves count, Set membership and the appended
     // final element. Both an adjacent swap and a maximally-distant swap are
     // exercised, and each is checked against BOTH the elementwise comparison
     // and the ordered digest, so neither check can be the only thing standing
-    // between a reorder and a green suite. Every index below is <= 43, i.e.
+    // between a reorder and a green suite. Every index below is <= 44, i.e.
     // strictly inside the INHERITED range, so the appended final element at
-    // index 44 is never the thing being moved.
+    // index 45 is never the thing being moved.
     function simulateLiveWithSwap(a: number, b: number): string[] {
       const live = [...IMMUTABLE_BY_CONVENTION]
       const tmp = live[a]
@@ -1258,8 +1330,8 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
 
     it.each([
       ['adjacent inherited entries', 0, 1],
-      ['maximally distant inherited entries', 0, 43],
-      ['two mid-list inherited addenda', 20, 42],
+      ['maximally distant inherited entries', 0, 44],
+      ['two mid-list inherited addenda', 20, 43],
     ])('ORDER CONTINUITY: a swap of %s in the live list still fails reconstruction, despite identical count and Set', (_label, a, b) => {
       const tampered = simulateLiveWithSwap(a as number, b as number)
 
@@ -1267,22 +1339,22 @@ describe('E2/CTRL-M3: immutableByConvention closed-world guard', () => {
       expect(tampered.length).toBe(IMMUTABLE_BY_CONVENTION.length)
       expect(new Set(tampered)).toEqual(new Set(IMMUTABLE_BY_CONVENTION))
       expect(tampered.length).toBe(new Set(tampered).size)
-      expect(tampered[44]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')
+      expect(tampered[45]).toBe('docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json')
 
       // The order-sensitive reconstruction is not.
       const reconstructed = tampered.slice(0, -1)
-      expect(reconstructed).not.toEqual(OLD44)
-      expect(orderedDigest(reconstructed)).not.toBe(OLD44_DIGEST_EXPECTED)
+      expect(reconstructed).not.toEqual(OLD45)
+      expect(orderedDigest(reconstructed)).not.toBe(OLD45_DIGEST_EXPECTED)
     })
 
     // NON-VACUITY for the control above: the identical pipeline applied with
     // NO swap must PASS. Without this, a simulateLiveWithSwap that silently
     // returned garbage would make every "not" assertion above trivially true.
-    it('ORDER CONTINUITY non-vacuity: the same pipeline with no swap reconstructs OLD44 and its digest', () => {
+    it('ORDER CONTINUITY non-vacuity: the same pipeline with no swap reconstructs OLD45 and its digest', () => {
       const untampered = [...IMMUTABLE_BY_CONVENTION]
       const reconstructed = untampered.slice(0, -1)
-      expect(reconstructed).toEqual(OLD44)
-      expect(orderedDigest(reconstructed)).toBe(OLD44_DIGEST_EXPECTED)
+      expect(reconstructed).toEqual(OLD45)
+      expect(orderedDigest(reconstructed)).toBe(OLD45_DIGEST_EXPECTED)
     })
   })
 
