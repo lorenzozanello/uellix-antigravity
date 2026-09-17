@@ -1,0 +1,2006 @@
+{
+  "package_id": "COMMERCIAL_CORE_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "COMMERCIAL_CORE_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "COMMERCIAL_CORE_EXECUTABLE_TECHNICAL_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_CERTIFICATION_AND_LINEAGE_ALLOCATION",
+  "document_class": "BATCH_EXECUTION_AUTHORITY_DERIVED_FROM_FROZEN_PARENTS",
+  "mission_id": "CV1-CORE-EXEC-AW",
+  "lane": "CV1-CORE-EXEC-AW",
+  "role": "COMMERCIAL_CORE_EXECUTION_AUTHORITY_WRITER",
+  "materialization_mode": "DOCS_ONLY",
+  "materialization_date": "2026-09-17",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/commercial/COMMERCIAL_CORE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+  "companion_ods_addendum": null,
+  "GRANT_ID": null,
+  "amends": "NOTHING. This is a NEW batch execution authority. It edits no frozen artifact and rewrites no historical evidence.",
+  "supersedes": null,
+  "AS_OF": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "BASE_SHA": "eafaaf57b0ad01031d9c61a985fbc6a2da817340",
+    "BASE_TREE": "95ade4b797fdc6fb3652fe05fd1e5e8a537acc03",
+    "BRANCH": "codex/commercial-core-execution-authority-r1",
+    "TARGET": "integration/commercial-v1",
+    "PORCELAIN": "clean, --untracked-files=all, measured before any write",
+    "INTERVENING_DELTA": "NONE at authoring time: origin/integration/commercial-v1 resolved to eafaaf57b0ad01031d9c61a985fbc6a2da817340 (merge of PR #170, Environment Authority v1.1). CE-3 is CLOSED and integrated (PR #159, merge 1d92a202). HPO-ODS-W2-32 is REGISTERED (PR #175).",
+    "remeasurement_rule": "Every count, path, line number and quotation in this artifact is bound to BASE_SHA. A consuming act whose base differs MUST re-measure and MUST NOT inherit a number from this document."
+  },
+  "NAMING_DERIVATION": "The repo-native convention for a node/batch execution authority and its companion is <STEM>_EXECUTION_AUTHORITY_v<semver>.json plus <STEM>_IMPLEMENTATION_TEST_MANIFEST_v<semver>.json in the same domain directory, measured at BASE_SHA on docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json + COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json and docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0.json + CUSTOMER_LIFECYCLE_L1_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json. The mission-named stem is COMMERCIAL_CORE_ and the domain directory is docs/ops/commercial/**. No index, seal or registry artifact is mechanically required: docs/ops/commercial/** is not a member of DEFAULT_PROTECTED_PATTERNS (scripts/ods-scope.ts:82-90), is not in the sealed corpus of docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json (authority_corpus.count 9, none under docs/ops/commercial), and no test under tests/** enumerates or counts the directory (the only literal references are header comments and the explicit DEFINITION_SURFACE set of tests/commercial/ce3-evaluator-consumer-census.test.ts). The write set is therefore EXACTLY the two files named in WRITE_SET.",
+  "PURPOSE": {
+    "statement": "Freeze the governed implementation chain that takes Commercial V1 from the integrated state at BASE_SHA (CE-1 done, CE-3 done, Environment Authority v1.1 integrated) to COMMERCIAL_CORE_USABLE: a tenant can self-register, be bootstrapped with a CommercialAccount and a deterministic default entitlement, bind Stripe and check out first-party, be activated by a normal webhook without any direct database edit, be metered by the entitlement-and-commercial-status gate at the Stella ticket boundary, and be suspended, cancelled and reactivated by the canonical state machine -- with every act decomposed, every write set ceilinged, every serialization boundary named, and no ODS position, migration ordinal or grant allocated.",
+    "COMMERCIAL_CORE_USABLE_definition": {
+      "rule": "A closed conjunction. The Commercial Core is USABLE when EVERY item below is IMPLEMENTED, independently certified and integrated. Partial satisfaction is NOT_USABLE.",
+      "items": [
+        "U-1 A verified subject on NO allowlist completes the self-service founding journey and receives, atomically, a CommercialAccount in BOOTSTRAP, a first Organization, a founder organization_admin membership and a BOOTSTRAP_DEFAULT grant for every catalogue capability (CE-7 composed successor + tenancy S6 ALLOWLIST_EXIT).",
+        "U-2 Every existing Organization is governed by exactly one CommercialAccount with an opening history row and a seed grant derived from its current column value (CE-4).",
+        "U-3 The live EntitlementGrant is the single source of the Stella limit and the legacy column is its projection with exactly one writer (CE-5).",
+        "U-4 An organization_admin binds a Stripe Customer first-party and idempotently, then checks out through a Stripe-hosted session that carries no identity (CB-3, CB-4).",
+        "U-5 A signature-verified subscription event, applied to an already-bound account in source order, transitions commercial_status and yields a PLAN grant through the governed writer, and cancellation closes state, subscription identity and PLAN grants in one transaction (CB-5, CB-6).",
+        "U-6 Stella ticket issuance is gated by rate limit (L1), then by the entitlement-and-commercial-status conjunction (L3), then quota is reserved at bind (L2), with three distinct refusal vocabularies (CB-7).",
+        "U-7 No write path can produce the legacy Free=10 value (CB-9).",
+        "U-8 Routine customer activation, suspension, cancellation and reactivation require NO developer or operator database edit and NO super_admin allowlist entry."
+      ],
+      "explicitly_outside": [
+        "Manual activation ACTIVE_WITHOUT_STRIPE (CB-8 / CE-8). Not claimable: tenancy S5 is absent at BASE_SHA. See SECTION_12.",
+        "Legacy column retirement (CE-9). RETIREMENT_LAST_RULE P4 is unresolved and usability does not require the drop.",
+        "Second-membership semantics, S7 index drop and S8 golden multi-org journey. Tenancy scope; only S6's ALLOWLIST_EXIT and bootstrap composition intersect the core.",
+        "Prices, discounts, plan catalogue amounts (OD-9 / HPO-B.9), grace windows and dunning schedules (PAYMENT_SUSPENSION.grace_period)."
+      ]
+    },
+    "what_this_is": [
+      "An execution authority over a BATCH of acts derived from three frozen parents -- COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0 (+ amendments v1.0.1, v1.0.2), COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0 and COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0 (+ amendments) -- reconciled against the owner ratifications, the tenancy authority, the customer-lifecycle authorities, the runtime ACL successor authority and Environment Authority v1.1.",
+      "A precedence and conflict map over that corpus, with every measured contradiction named and given a disposition.",
+      "An act decomposition with per-act write-set ceilings, serialization boundaries, required ODS acts, relative migration ordering, role/ACL constraints, refusal semantics, rollback posture, Real-PG families and a closed set of test-control identifiers carried by the companion manifest."
+    ],
+    "what_this_is_not": [
+      "NOT an implementation. No file under db/**, lib/**, app/**, tests/**, scripts/** or docs/ops/ods/** is created or changed.",
+      "NOT an ODS lineage allocation, NOT a protected-grant declaration or registration, NOT a Controller enumeration, NOT a migration-ordinal or hosted-ordinal allocation. Every future identifier is DERIVED_NOT_ALLOCATED.",
+      "NOT a Stripe call, NOT a Supabase or Vercel mutation, NOT an environment edit.",
+      "NOT a re-opening of any product ratification (CA-01..CA-08, SS-01..SS-03, MO-01..MO-12, HPO-A..HPO-G, RAT-*, ENV-01..ENV-14) and NOT a new product ratification.",
+      "NOT self-certified. Independent certification is mandatory before any act opens."
+    ],
+    "fail_closed_rule": "Where this authority marks a decision UNKNOWN, FUTURE_MEASUREMENT_REQUIRED, DERIVED_NOT_ALLOCATED or EXTERNAL_PREREQUISITE, an implementing act must measure or wait, never assume. Where two frozen parents disagree and this document names no disposition, the act STOPS."
+  },
+  "SECTION_1_CONTROLLING_AUTHORITY": {
+    "method": "Every artifact below was read at BASE_SHA by this lane (full text for the three frozen parents and their amendments; indexed sections for the rest). Orchestration summaries and memory notes were NOT used as authority; where a memory note disagreed with the tree (the audit-action shape pin, see SECTION_25), the tree controlled.",
+    "classes": {
+      "PRODUCT_TIER_A_OWNER_INTENT": "Canonical for product-owner intent only. Cannot by itself authorize implementation. Controls on any divergence about INTENT.",
+      "TIER_A_EXECUTABLE_AUTHORITY": "Executable reconciliation of owner intent with measured repository state. Controls on architecture, security and sequencing within its domain.",
+      "NODE_EXECUTION_AUTHORITY": "A frozen per-node narrowing of a Tier-A executable parent. Controls for its node; cannot widen its parent.",
+      "APPEND_ONLY_AMENDMENT": "Controls ONLY for the clauses it names by exact quotation; the base controls for everything else.",
+      "OWNER_RATIFICATION_RECORD": "PRODUCT_TIER_A_OWNER_INTENT materialized as a ledger (HPO-A..G, ENV-01..14, RAT-*).",
+      "TEST_MANIFEST": "A commitment about tests; not authority over semantics.",
+      "IMPLEMENTATION_EVIDENCE": "Measured outputs; not authority, not audit.",
+      "NON_AUTHORITATIVE_DOCUMENTATION": "Guidance, runbooks, capability design notes. Cited for measurement only."
+    },
+    "corpus": [
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_V1_PRODUCT_RATIFICATIONS_v1.0.0.json",
+        "class": "PRODUCT_TIER_A_OWNER_INTENT",
+        "consumed": "CA-01..CA-08, SS-01..SS-03, MO-01, MO-03, MO-07, MO-12, ratified_semantics_detail_ca06_ca08"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_V1_ALIGNMENT_BASELINE_v1.0.0.md",
+        "class": "PRODUCT_TIER_A_OWNER_INTENT",
+        "consumed": "Section 2 (Commercial V1 is not a manually operated pilot), Section 4 invariants, Section 8 alignment gate"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_V1_MICRO_RATIFICATIONS_v1.0.0.json",
+        "class": "OWNER_RATIFICATION_RECORD",
+        "consumed": "RAT-AO-01, RAT-AO-02 (manual activation is not acceptance), RAT-OP-01 (fail-closed platform support rule)"
+      },
+      {
+        "path": "docs/ops/owner-ratifications/HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json",
+        "class": "OWNER_RATIFICATION_RECORD",
+        "consumed": "HPO-A.6 (atomic bootstrap incl. CommercialAccount and initial entitlement), HPO-B.1..B.9 (the binding basis of the billing authority), HPO-D.5, HPO-E.1 (Stella dark in production), HPO-G.2"
+      },
+      {
+        "path": "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json",
+        "class": "OWNER_RATIFICATION_RECORD",
+        "consumed": "ENV-08 (forward migration proof before COMMERCIAL_V1_READY), ENV-10/ENV-11 (environment contract; UELLIX_RUNTIME_DATABASE_URL is the runtime contract), ENV-14 (no destructive action)"
+      },
+      {
+        "path": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "class": "APPEND_ONLY_AMENDMENT",
+        "consumed": "ENVIRONMENT_VARIABLE_CONTRACT, FORWARD_MIGRATION_REQUIREMENT, EXPLICIT_NON_AUTHORIZATIONS (no database mutation authorized by the environment authority)"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "IN FULL: CE-1..CE-9 DAG, TRANSFER_CONTRACT T-1..T-13, ENTITLEMENT_GRANT, PLAN_ENTITLEMENT_BOUNDARY, USAGE_QUOTA_BOUNDARY, PAYMENT_SUSPENSION, SELF_SERVICE, STRIPE_BOUNDARY, PLATFORM_ADMIN_BOUNDARY, MULTIORG_INTERSECTION, PREPARED_CAPABILITY_DISPOSITIONS, BACKFILL B1..B4, COMPATIBILITY.single_writer_rule, SEC-1..SEC-12, MUT-1..MUT-10, PG-1..PG-12, SHARED_WRITERS CP-1..CP-8, OPEN_FINDINGS F-1..F-5"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "class": "APPEND_ONLY_AMENDMENT",
+        "consumed": "Sections A-E (CE-3 touches fourth literal, definer-owner premise uellix_owner rolsuper=false rolbypassrls=false, FORWARD_ONLY_CONTRACT for hosted0009)"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "class": "APPEND_ONLY_AMENDMENT",
+        "consumed": "Sections G-K, TARGET_ACL_CONTRACT_AUTHORIZED (non-owner grantees on entitlement_grants EXACT: uellix_owner SELECT only; 'any_other_non_owner_grantee: REFUSED unless explicitly frozen by a later authority amendment'), SERVICE_ROLE_CLASSIFICATION, R4_RESUMPTION_ORDER (measured DISCHARGED at BASE_SHA)"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_TEST_MANIFEST_v1.0.0.json",
+        "class": "TEST_MANIFEST",
+        "consumed": "P-0..P-18, N-1..N-16, M-1..M-10, six sentinels. Batch commitment over CE-1..CE-9; inherited by id in the companion manifest."
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "IN FULL: OD-1..OD-9, R-01..R-13, MC-1..MC-5, COMMERCIAL_STATE_MACHINE (six states, 36-pair closure), EC-1..EC-7, STRIPE_FIRST_BINDING, CHECKOUT_BOUNDARY, WEBHOOK_ORDERING ORD-1..ORD-6, PAST_DUE, SUSPENSION, CANCELLATION (atomicity, INV_STALE_GRANT), REACTIVATION, MANUAL_ACTIVATION, STELLA_RECONCILIATION L1/L2/L3, RLS.decision (uellix_cap_commercial, policy pair P1/P2, ZERO_ROLE_MEMBERS), AUDIT, FUTURE_DDL D-1..D-8, FAILURE_AND_CONCURRENCY (Shape A / Shape B), IMPLEMENTATION_PACKAGES CB-1..CB-9, OPEN_FINDINGS OF-1..OF-11"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_TEST_MANIFEST_v1.0.0.json",
+        "class": "TEST_MANIFEST",
+        "consumed": "P-0, P-01..P-22, N-01..N-29, M-01..M-18, five sentinels. Inherited by id in the companion manifest."
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json",
+        "class": "NODE_EXECUTION_AUTHORITY",
+        "consumed": "SC-1..SC-15, EVALUATOR_CONTRACT, ENFORCEMENT_BOUNDARY_CE4 (the boundary this batch lifts at CB-7), RLS_SECURITY_CONTRACT (R-A taken), REQUIRED_NODE_CONTROLS (CE3-N-9 consumer census), ODS_SPLIT_GOVERNANCE (twelve-act shape)"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "class": "APPEND_ONLY_AMENDMENT",
+        "consumed": "HOSTED_DISPOSITION_THIRD_CATEGORY, FUTURE_HOSTED_PACKAGE_CONTRACT (hosted0009), R4_BOUNDARY"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "class": "APPEND_ONLY_AMENDMENT",
+        "consumed": "TABLE_ACL_CONTRACT, FUNCTION_EXECUTE_CONTRACT, HOSTED0010_CONTRACT, GRANTOR_ANTI_SEIZURE_CONTRACT, ACL_FAMILY_SUBSTRATE_REQUIREMENT (hosted-shaped substrate for ACL proofs)"
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json",
+        "class": "TEST_MANIFEST",
+        "consumed": "CE3-P-1..9, CE3-N-1..12, CE3-M-1..7; CE3-N-9 and CE3-M-5 are the controls this batch RETARGETS at CB-7."
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+        "class": "TEST_MANIFEST",
+        "consumed": "CE3-ACL family (exact non-owner posture control) -- retargeted by the parent-level admission in ACT CC-A00."
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_EXECUTION_AUTHORITY_v1.0.0.json",
+        "class": "NODE_EXECUTION_AUTHORITY",
+        "consumed": "TABLE_DEFINITION (four-value commercial_status, DEFAULT 'active'), SECURITY (ENABLE+FORCE, zero policies). Superseded in the status vocabulary by billing MC-1 / D-1."
+      },
+      {
+        "path": "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE1_IMPLEMENTATION_EVIDENCE_v1.0.0.json",
+        "class": "IMPLEMENTATION_EVIDENCE",
+        "consumed": "CE-1 DONE / INTEGRATED (migration 0068, PR #128)."
+      },
+      {
+        "path": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "S1_TO_S8_DAG, ALLOWLIST_EXIT (change_node S6), SELF_SERVICE_BOOTSTRAP, CAP05_INTERFACE I1..I4, INVITATIONS, SUPERADMIN_BOUNDARY (S5), SUSPENDED_ORG_BEHAVIOR (S5), ADMIN_CONTROL_PLANE, STELLA_S3C_SCOPE_WELD"
+      },
+      {
+        "path": "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "CANONICAL_JOURNEY (B0 -> L0 -> R1..R5 -> L1 -> ENT), RAT_AO_CONSUMPTION (ACTIVE_WITHOUT_STRIPE_IS_NOT_ACCEPTANCE), BLOCKING_DEPENDENCIES BD-2/BD-3, HPO_LC0_04 stage gates (commercial_activation GATED_ON_LEGAL_INSTRUMENTS)"
+      },
+      {
+        "path": "docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0.json",
+        "class": "NODE_EXECUTION_AUTHORITY",
+        "consumed": "COMMERCIALACCOUNT_AND_ENTITLEMENT_BOUNDARY (L1 grants nothing; NO_BARE_PRINCIPAL_FIELD), ACCEPTOR_AUTHORITY (exact organization_admin equality; current_user_role_in_org primitive)"
+      },
+      {
+        "path": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "SECTION_3 (entitlement_grants NO_RUNTIME_ACCESS; commercial_accounts NO_RUNTIME_ACCESS), SECTION_4_ROLE_CONTRACT (uellix_app inherits uellix_writer; no direct grants to uellix_app), SECTION_10 closed-world guard (a new migration-created public table turns it RED), SECTION_11 (CE-3 first, DISCHARGED at BASE_SHA)"
+      },
+      {
+        "path": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "authority_corpus (sealed set; docs/ops/commercial not a member), model_executor_routing"
+      },
+      {
+        "path": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "Highest lineage artifact on disk at BASE_SHA; declares HPO-ODS-W2-32 (registered since). Next lineage identifiers are derived from it, never from memory."
+      },
+      {
+        "path": "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "Strict schema the companion manifest conforms to."
+      },
+      {
+        "path": "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json",
+        "class": "TIER_A_EXECUTABLE_AUTHORITY",
+        "consumed": "Exactly two conditions, both PRE_EXISTING_DEFERRED; carried as known_conditions."
+      },
+      {
+        "path": "docs/ops/capabilities/CAP_03_STRIPE.md",
+        "class": "NON_AUTHORITATIVE_DOCUMENTATION",
+        "consumed": "§13 rollout posture (enablement is a separate reviewed act). Measurement only."
+      },
+      {
+        "path": "docs/ops/capabilities/CAP_05_ORGANIZATION_BOOTSTRAP.md",
+        "class": "NON_AUTHORITATIVE_DOCUMENTATION",
+        "consumed": "DP-CAP-12 / DP-CAP-13 open decision points; allowlist as the current anti-abuse default. Measurement only."
+      },
+      {
+        "path": "docs/ops/portfolio/PORTFOLIO_PF2_EXECUTION_AUTHORITY_v1.0.0.json",
+        "class": "NODE_EXECUTION_AUTHORITY",
+        "consumed": "LOCK-AUDIT-ACTION-VOCABULARY (release condition: PR #105 integrated -- measured integrated at 72de9f13, so the lock is RELEASED at BASE_SHA)."
+      }
+    ],
+    "PRECEDENCE_MODEL": {
+      "L1_sealed": "docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** -- not touched, not cited for any decision here.",
+      "L2_owner_intent": "PRODUCT_TIER_A_OWNER_INTENT and OWNER_RATIFICATION_RECORD artifacts. Control INTENT. A contradiction between owner intent and executable authority is an AUTHORITY_GAP resolved only by a governed executable successor, never by precedence.",
+      "L3_tier_a_executable": "The three commercial executable parents plus tenancy, customer-lifecycle, runtime-ACL and ODS authorities. Within L3, an artifact controls its own domain; on an intersection the OLDER frozen artifact controls unless a later APPEND_ONLY_AMENDMENT names the clause.",
+      "L4_node_execution": "Node execution authorities narrow L3 for one node and cannot widen it.",
+      "L5_this_document": "This batch authority derives from L3/L4. It controls ONLY for act decomposition, sequencing, write-set ceilings, control ids and the dispositions it names in the CONFLICT_MAP. Where it and any higher level disagree, the higher level controls and the act STOPS.",
+      "L6_code_tests_evidence": "Current repository state. Controls on MEASURED FACTS (what exists), never on what is authorized.",
+      "conflict_rule_between_L3_parents": "COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY consumes and AMENDS COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY exactly at MC-1..MC-4 (its own PRESERVED_AUTHORITY clause). For those four places the billing authority controls; everywhere else the entitlement authority controls. The CE-3 node authority and its amendments control the entitlement_grants relation, evaluator and ACL; the billing authority controls commercial_accounts, the state machine and the Stripe journey."
+    },
+    "CONFLICT_MAP": [
+      {
+        "id": "CM-1",
+        "between": "billing D-1 (six-state commercial_status, DEFAULT BOOTSTRAP) vs CE-1 TABLE_DEFINITION / db/schema.ts:28-32 (four lowercase values, DEFAULT 'active')",
+        "class": "MEASURED_CONTRADICTION_ALREADY_ADJUDICATED",
+        "disposition": "Billing MC-1 controls (it amends CE-1's status vocabulary). CB-1 delivers D-1 as a FORWARD migration; 0068 is never edited. Live reader count at BASE_SHA re-measured: ZERO runtime readers of commercial_status (grep over lib/**, app/** finds only db/schema.ts and the migration), so OF-3's 'free at AS_OF' still holds and MUST be re-measured by CB-1 at its own base."
+      },
+      {
+        "id": "CM-2",
+        "between": "billing D-6 / RLS.decision (P2 restrictive SELECT predicate id = app.commercial_account_id; PC-5 exactly three permissive + three restrictive policies TO uellix_cap_commercial) vs billing STRIPE_FIRST_BINDING.defence_in_depth D4 and STRIPE_BOUNDARY.identity_rule (the webhook resolves WHICH account an event addresses from the Stripe identity columns on commercial_accounts)",
+        "class": "MEASURED_CONTRADICTION_UNADJUDICATED_IN_THE_PARENT",
+        "statement": "Under the frozen pair, every SELECT on commercial_accounts by the capability role is bounded to the row whose id ALREADY equals the transaction-local GUC. A lookup BY stripe_customer_id or stripe_subscription_id -- the only admissible resolution of an inbound event (D4) and of a replacement (REACTIVATION.subscription_replacement) -- returns zero rows because the id is not yet known. FORCE RLS binds the owner too, so no owner-side definer can perform the lookup either. D4 is therefore unsatisfiable on the pair as frozen.",
+        "disposition": "REQUIRES A NARROW APPEND-ONLY AMENDMENT of the billing authority (ACT CC-A00, item AM-2). The amendment content is frozen in SECTION_14.RESOLVER_BOUND: the RESTRICTIVE SELECT policy's predicate gains ONE disjunct on the Stripe identity columns bound to two further transaction-local GUCs; INSERT and UPDATE predicates are unchanged; PC-5's counts (3+3) are unchanged; the one-row-per-transaction property is preserved by UNIQUE(stripe_customer_id) / UNIQUE(stripe_subscription_id) (D-2). This document does NOT perform the amendment and no act may implement the resolver before it is certified."
+      },
+      {
+        "id": "CM-3",
+        "between": "entitlement amendment v1.0.2 TARGET_ACL_CONTRACT_AUTHORIZED ('any_other_non_owner_grantee: REFUSED unless explicitly frozen by a later authority amendment'; after hosted0010 the only non-owner privilege on entitlement_grants is uellix_owner SELECT) vs the batch's writers (CE-4 seed, CE-5 governed writer, CE-2 transfer closure, CB-6 cancellation closure and BOOTSTRAP_DEFAULT replacement, CE-7 bootstrap grant)",
+        "class": "AUTHORITY_GAP_BY_DESIGN",
+        "disposition": "The CE-3 contract deliberately left the relation unwritten pending CE-4/CE-5. Admitting the closed set of writer grantees frozen in SECTION_14.ENTITLEMENT_GRANTS_WRITER_ADMISSIONS is a parent-level ACL decision and is performed by ACT CC-A00 (entitlement amendment v1.0.3 + CE-3 node amendment v1.0.3 + CE-3 manifest amendment v1.0.3, deep-equal). CE-4's seed INSERT runs as the baseline applier (the object OWNER on hosted; a re-measured owner-equivalent on the disposable harness) and needs no grant; every other writer is a capability role admitted by the amendment."
+      },
+      {
+        "id": "CM-4",
+        "between": "billing CB-6 ('the request relation D-4 and the atomic cancellation land in ONE package deliberately') vs entitlement CE-2 T-7 (transfer explicitly re-evaluates under the receiving account -- a request the CE-5 writer consumes)",
+        "class": "ORDERING_TENSION",
+        "disposition": "CE-2 is decomposed WITHOUT weakening into two acts: CC-A01 (history relation + append-only guard + RLS posture, everything CE-4 needs to write seed rows THROUGH the contract) and CC-A12 (the transfer verb, which emits a D-4 re-evaluation request and therefore lands AFTER CB-6). Node CE-2 closes only when both are integrated. This preserves CB-6's package composition verbatim and IMPLEMENTS CE-2 AS AUTHORED (SECTION_4)."
+      },
+      {
+        "id": "CM-5",
+        "between": "entitlement OPEN_FINDINGS F-1 (CP-4/CP-7: stella_0011+0012 application vs CE-5 supersession of admin_set_stella_service; recommended ACL-before-CE-5) vs measured state (stella_0011 is applied nowhere, is NOT a member of HOSTED_CHAIN in db/hosted/hosted-package-manifest.ts, and its uellix_writer column grant at db/prepared/stella_0011_organization_column_acl.sql:288-297 EXCLUDES stella_monthly_quota and stella_plan_label; the two lib/admin call sites raise 42883 today per F-4)",
+        "class": "OPEN_SEQUENCING_DECISION_ADJUDICATED_HERE",
+        "disposition": "CE-5 is SELF-SUFFICIENT and does NOT wait for stella_0011. CE-5 carries its own column-scoped REVOKE of UPDATE(stella_monthly_quota, stella_plan_label) from every non-capability role and repoints lib/admin/organization-administration.ts's quota write to the governed entitlement writer. CROSS-LANE CONSTRAINT (SECTION_26 XL-3): stella_0011 MUST NOT be applied after CE-5 with its uellix_cap_platform UPDATE grant on the two quota columns (stella_0011:332) unless admin_set_stella_service is superseded to call the entitlement writer -- the entitlement authority's phase two. This adjudicates a lane-sequencing question, not an owner question."
+      },
+      {
+        "id": "CM-6",
+        "between": "billing CB-5 note ('Also the package that adds invoice.* handling') vs the first sellable V1 needing only subscription-status events",
+        "class": "COUPLING_PRESERVED",
+        "disposition": "CURRENT_AUTHORITY_REQUIRES_FULL_CB5. Not split. See SECTION_11.DUNNING_COUPLING."
+      },
+      {
+        "id": "CM-7",
+        "between": "billing AUDIT verbs (three-segment names such as commercial.state.entered) vs the audit-action shape pin",
+        "class": "NO_CONTRADICTION_AFTER_MEASUREMENT",
+        "disposition": "lib/audit/__tests__/logger.test.ts:24 pins /^[a-z_]+(\\.[a-z_]+)+$/ (two OR MORE segments; the two-segment pin was superseded per its own comment at :18-19). The verbs are implementable verbatim. See SECTION_25."
+      },
+      {
+        "id": "CM-8",
+        "between": "entitlement CE-7 external_depends_on ['tenancy S1','tenancy S6'] and tenancy ALLOWLIST_EXIT.change_node S6 vs S6.depends_on ['S1','S3','S4','S5']",
+        "class": "EXTERNAL_PREREQUISITE_CHAIN",
+        "disposition": "S1 is INTEGRATED (docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json; migration 0066). S3 carries implementation evidence and a refusal-audit implementation (PR #105 merged at 72de9f13). S4 and S5 have NO implementation evidence at BASE_SHA. U-1 therefore has an external prerequisite on tenancy S4, S5 and S6 which this authority neither performs nor re-sequences. An alternative -- a tenancy amendment splitting S6's ALLOWLIST_EXIT and bootstrap composition from its second-membership contract -- is RECORDED AS AN OPTION for the lane coordinator (OPEN_FINDINGS OF-CC-2) and is NOT decided here."
+      },
+      {
+        "id": "CM-9",
+        "between": "customer-lifecycle HPO_LC0_04 stage gates (commercial_activation and self_service_onboarding GATED_ON_LEGAL_INSTRUMENTS, blocking_findings [HTF-11], counsel-required) vs U-1/U-4 usability",
+        "class": "EXTERNAL_PREREQUISITE",
+        "disposition": "Not an owner decision and not a repository act. The L0/L1 substrate is IMPLEMENTED (migrations 0070-0072); population with real instruments and counsel sufficiency remain outside this authority. Recorded in SECTION_27."
+      }
+    ]
+  },
+  "SECTION_2_LIVE_STATE_MEASURED": {
+    "rule": "Measured at BASE_SHA by this lane. Every implementing act re-measures at its own base.",
+    "facts": [
+      {
+        "fact": "CE-1",
+        "state": "DONE / INTEGRATED",
+        "evidence": "db/migrations/0068_commercial_account_ce1.sql; db/schema.ts:23-33 commercialAccounts with commercial_status DEFAULT 'active' and the four-value CHECK; ENABLE + FORCE RLS, zero policies."
+      },
+      {
+        "fact": "CE-2",
+        "state": "NOT DONE",
+        "evidence": "No commercial_account_organization_history relation in db/schema.ts; no transfer verb under db/prepared/**."
+      },
+      {
+        "fact": "CE-3",
+        "state": "DONE / INTEGRATED",
+        "evidence": "db/migrations/0073_commercial_account_ce3_entitlement_grants.sql; lib/capabilities/entitlement-catalogue.ts (ONE key: stella.grounded_query); lib/capabilities/entitlement-evaluator.ts (evaluateEntitlement, outcomes NO_LIVE_GRANT | BLOCKED | UNMETERED | CAPPED | REFUSED); public.entitlement_effective(uuid,varchar) SECURITY DEFINER owned by uellix_owner after db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql; ACL hardened by db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql; PR #159 merged at 1d92a202. Evaluation instant decided by the implementation: effective_from <= transaction_timestamp() (0073:229-245)."
+      },
+      {
+        "fact": "CE-3 consumer census",
+        "state": "ZERO non-test consumers, ASSERTED",
+        "evidence": "tests/commercial/ce3-evaluator-consumer-census.test.ts: DEFINING_MODULE lib/capabilities/entitlement-evaluator.ts; DEFINITION_SURFACE is an explicit 13-path set; any other file naming the evaluator is a consumer and turns the control RED (CE3-N-9 / CE3-M-5)."
+      },
+      {
+        "fact": "CE-4, CE-5, CE-6, CE-7, CE-8, CE-9",
+        "state": "NOT DONE",
+        "evidence": "No backfill migration; grep for insert(commercialAccounts) / insert(entitlementGrants) over app/**, lib/**, db/** returns zero; every organizations.commercial_account_id is NULL by construction (0068:13-15)."
+      },
+      {
+        "fact": "CB-1..CB-9",
+        "state": "NOT DONE",
+        "evidence": "commercial_status vocabulary is the four-value set; no policy on commercial_accounts; no uellix_cap_commercial role anywhere under db/**."
+      },
+      {
+        "fact": "Stripe runtime",
+        "state": "DISABLED BY CONSTANT",
+        "evidence": "app/api/webhooks/stripe/route.ts:58 WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false; lib/capabilities/stripe-webhook.ts planStripeEvent handles exactly customer.subscription.updated / .deleted / checkout.session.completed; db/prepared/stella_0008_stripe_webhook_identity.sql prepared, applied nowhere, NOT in HOSTED_CHAIN; app/app/organization/billing/actions.ts:36 throws 'No active subscription found. Please contact sales to upgrade.'; no customers.create / checkout.sessions.create anywhere."
+      },
+      {
+        "fact": "Stella enforcement chain",
+        "state": "L1 then ticket then L2 at bind; no L3",
+        "evidence": "Two issuance surfaces -- lib/stella/operation-ticket/issue-governed-ticket.ts:82 (six categories) and app/actions/stella/grounded-query.ts:1072 (grounded_query) -- both call consumeStellaRateLimit(organizationId) (lib/stella/rate-limit.ts:239) then the SINGLE shared chokepoint db/stella/operation-tickets.ts:409 issueOperationTicket(organizationId, projectId, category), which executes uellix_stella_ops.issue_operation_ticket. Quota is decided at BIND: db/stella/operation-tickets.ts:465 bindOperationTicket -> uellix_stella_ops.bind_operation_ticket (db/prepared/stella_0018_category_bound_operation_tickets.sql:182) under pg_advisory_xact_lock('stella/quota/<org>') reading uellix_stella.stella_capacity, whose limit is public.organizations.stella_monthly_quota (db/prepared/stella_0016_reserved_quota_semantics.sql:375) and whose consumed count is organization-wide ACROSS EVERY CATEGORY (stella_0016:388-393). Ticket categories: advisor, validator, composer, proxy_reviewer, evidence_reviewer, audit_assistant, grounded_query (lib/stella/operation-ticket/categories.ts:53-90)."
+      },
+      {
+        "fact": "Stella hosted chain",
+        "state": "stella_0013..stella_0019 are HOSTED_CHAIN members",
+        "evidence": "db/hosted/hosted-package-manifest.ts names stella_0013_grounded_query_quota .. stella_0018_category_bound_operation_tickets and stella_0019_storage_write_roles; stella_0008, stella_0010, stella_0011, stella_0012 are NOT members."
+      },
+      {
+        "fact": "signup_allowlist",
+        "state": "MANDATORY, DEFAULT-ON, UNSATISFIABLE FOR NON-SUPER_ADMIN",
+        "evidence": "app/(authenticated)/app/onboarding/actions.ts:95-100 redirects to ?error=not_allowlisted unless isEmailAllowlisted(email) is true; that read runs under the caller's own claims against signup_allowlist_select_super_admin (db/policies/003_signup_allowlist_rls.sql:21-23), so an ordinary subject reads zero rows. No feature flag exists. Invitations (lib/invitations/service.ts) bypass the allowlist entirely. No CAPTCHA anywhere (docs/ops/capabilities/CAP_05_ORGANIZATION_BOOTSTRAP.md:425 states the allowlist is the abuse default)."
+      },
+      {
+        "fact": "Bootstrap",
+        "state": "NON-ATOMIC over commercial state",
+        "evidence": "app/(authenticated)/app/onboarding/actions.ts:120-185 inserts organizations (foundedBy, foundingProvenance 'self_service'), organization_members (organization_admin) and two audit rows in one transaction; writes NO commercial_accounts row and NO entitlement_grants row. db/prepared/stella_0010_organization_bootstrap_capability.sql (CAP-05) is prepared, applied nowhere, blocked on DP-CAP-12 / DP-CAP-13."
+      },
+      {
+        "fact": "Tenancy S-nodes",
+        "state": "S1 INTEGRATED; S2, S3 implementation evidence present; S3c, S4, S5, S6, S7, S8 NO implementation evidence",
+        "evidence": "docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json, MULTI_ORG_S2_IMPLEMENTATION_EVIDENCE_v1.0.0.json, MULTI_ORG_S3_IMPLEMENTATION_EVIDENCE_v1.0.0.json, MULTI_ORG_S3_REFUSAL_AUDIT_IMPLEMENTATION_EVIDENCE_v1.0.0.json; no S4..S8 evidence file. Treated fail-closed as NOT INTEGRATED."
+      },
+      {
+        "fact": "Email verification (B0) and account acceptance (L0) and organization commercial acceptance (L1)",
+        "state": "IMPLEMENTED",
+        "evidence": "lib/auth/session.ts:252-278 requireOrganizationAccess redirects on !emailVerified and !accountAcceptanceCurrent; lib/auth/organization-commercial-acceptance.ts; migrations 0070..0072."
+      },
+      {
+        "fact": "Customer-facing capability catalogue",
+        "state": "EXACTLY ONE KEY",
+        "evidence": "lib/capabilities/entitlement-catalogue.ts:133-149: 'stella.grounded_query', admissibleLimitKinds ['UNMETERED','BLOCKED','CAPPED'], rationale binding it to the legacy organizations.stella_monthly_quota column."
+      },
+      {
+        "fact": "ODS lineage",
+        "state": "v1.0.35 on disk and UNENUMERATED; Controller enumerates through v1.0.34; PROTECTED_GRANTS has 22 entries with tail HPO-ODS-W2-32",
+        "evidence": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json present; scripts/ods-controller.ts:95 last entry v1.0.34; scripts/ods-scope.ts:1055 authorityId 'HPO-ODS-W2-32' bound to codex/commercial-account-ce3-implementation-r1. Every count is re-measured by the allocator."
+      },
+      {
+        "fact": "Migration ordinal ceiling",
+        "state": "0073",
+        "evidence": "db/migrations/0073_commercial_account_ce3_entitlement_grants.sql is the highest; git log --all -- 'db/migrations/0074*' returns nothing. NEXT = 0074, DERIVED_NOT_ALLOCATED."
+      },
+      {
+        "fact": "Prepared ordinal ceilings",
+        "state": "stella_ family 0020; stella_hosted_ family 0010",
+        "evidence": "db/prepared/ listing. stella_0021 is EXPECTED-CLAIMED by docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json SECTION_7. Commercial prepared packages are DERIVED_NOT_ALLOCATED and never assume 0021."
+      },
+      {
+        "fact": "Audit vocabulary",
+        "state": "LOCK-AUDIT-ACTION-VOCABULARY RELEASED; shape pin admits 2+ segments",
+        "evidence": "PR #105 integrated (72de9f13); lib/audit/__tests__/logger.test.ts:24 AUDIT_ACTION_VALUE_PATTERN = /^[a-z_]+(\\.[a-z_]+)+$/; tests/audit-action-contract.test.ts scans lib/** and app/** TypeScript only."
+      },
+      {
+        "fact": "Free=10",
+        "state": "PRESENT",
+        "evidence": "lib/stripe/client.ts:26 STRIPE_QUOTAS = { free: 10, pro: 250, enterprise: 1000 }; :53 mapStripePriceToQuota(null) returns 10."
+      }
+    ]
+  },
+  "SECTION_3_REQUIRED_CHAIN": {
+    "hypothesis_examined": "CE-2 -> commercial-account state expansion (D-1, D-6, DEFAULT BOOTSTRAP) -> CE-4 -> CE-5 -> runtime consumer (L3 before L2) -> sellability (first binding, checkout, webhook ordering, normal activation) -> onboarding (allowlist successor).",
+    "verdict": "CONFIRMED IN SUBSTANCE, CORRECTED IN THREE PLACES. (1) CE-2 splits into the relation (before CE-4) and the transfer verb (after CB-6) -- CM-4. (2) A parent-level ACL admission act (CC-A00) precedes every writer of entitlement_grants and every resolver on commercial_accounts -- CM-2, CM-3. (3) The state verb (CB-2) is needed before first binding and before the runtime consumer, and normal activation additionally requires the re-evaluation consumer and the atomic cancellation capability (CB-6) and the CAP-03 enablement act; onboarding (CE-7) is gated on tenancy S6 and lands after CE-5 so that its BOOTSTRAP_DEFAULT grant is projected by the single writer.",
+    "evidence_derived_order": [
+      "CC-A00 authority amendments (entitlement v1.0.3 writer admissions; billing v1.0.1 resolver bound; CE-3 node + manifest v1.0.3) -- docs only; precedes every act that writes entitlement_grants or resolves commercial_accounts by Stripe identity.",
+      "CC-A01 CE-2.R history relation (entitlement MIGRATION_DAG CE-2 depends_on CE-1; BACKFILL B3 requires seed rows to be written THROUGH the history contract, so the relation precedes CE-4).",
+      "CC-A02 CB-1 state vocabulary D-1 + capability role and policy pair D-6 (billing CB-1 depends_on CE-1; CE-4 seeds BOOTSTRAP, which exists only after D-1 -- billing BOOTSTRAP.enter_events names 'CE-4 backfill seeding' explicitly).",
+      "CC-A03 CB-2 canonical state verb, transition table and gate-read definer (billing CB-2 depends_on CB-1; OF-5 requires the EC-4 gate to be read through the definer CB-2 introduces).",
+      "CC-A04 CE-4 backfill (entitlement CE-4 depends_on CE-1, CE-2, CE-3; here CE-2.R suffices and CB-1 is added as a precondition by the six-state requirement).",
+      "CC-A05 CE-5 single writer, projection and plan catalogue (entitlement CE-5 depends_on CE-4; EC-6 forbids any enforcement change before CE-4).",
+      "CC-A06 CB-3 first binding + D-2 (billing CB-3 depends_on CB-1, CB-2).",
+      "CC-A07 CB-4 checkout journey and portal replacement (billing CB-4 depends_on CB-3).",
+      "CC-A08 CB-5 webhook ordering + D-3 + D-7 + CE-6 recomposition + invoice.* handling (billing CB-5 depends_on CB-1, CB-2, CE-5; CE-6 depends_on CE-1, CE-5).",
+      "CC-A09 CB-6 request relation D-4 + consumer (Shape A) + atomic cancellation D-8 (Shape B) + INV-STALE-GRANT (billing CB-6 depends_on CB-2, CE-3, CE-4, CE-5).",
+      "CC-A10 CB-7 runtime consumer: EC-4 conjunctive gate at the ticket boundary, three refusal vocabularies, consumer-census retarget (billing CB-7 depends_on CB-2, CE-5; gated on EC-6 / CE-4).",
+      "CC-A11 CAP-03 enablement (rollout of the recomposed Stripe capability; OF-4: never before CB-5; here additionally never before CB-6 because a PLAN grant needs the consumer).",
+      "CC-A12 CE-2.V transfer verb (T-1..T-13; emits a D-4 request; after CB-6).",
+      "CC-A13 CB-9 Free=10 retirement (billing CB-9 depends_on CB-5, CB-7; LAST of the billing packages).",
+      "CC-A14 CE-7 composed bootstrap successor + ALLOWLIST_EXIT (entitlement CE-7 depends_on CE-1, CE-3, CE-4 and externally tenancy S1, S6; ordered after CE-5 so its BOOTSTRAP_DEFAULT grant is projected by the single writer).",
+      "CC-A15 Commercial Golden acceptance evidence (tests only; after every act it traverses)."
+    ],
+    "dependency_proofs": {
+      "CE2_before_CE4": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json MIGRATION_DAG.nodes[CE-4].depends_on = ['CE-1','CE-2','CE-3']; BACKFILL.steps B3: 'INSERT the opening history row through the CE-2 contract ... Writing it through the contract rather than beside it is what makes every later transfer reconstructible back to the origin.'",
+      "D1_before_CE4": "COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json COMMERCIAL_STATE_MACHINE.states[BOOTSTRAP].enter_events[1]: 'CE-4 backfill seeding of a pre-existing Organization that has no Stripe identity.' BOOTSTRAP does not exist under the four-value CHECK (MC-1). Therefore D-1 (CB-1) precedes CE-4. The parent's CE-4 depends_on list is not contradicted; a precondition is added.",
+      "D6_before_CE4": "NOT REQUIRED for the seed writes (CE-4 runs as the baseline applier, which is the owner of commercial_accounts on the hosted platform and BYPASSRLS there; the disposable harness must prove the same writability under its real applier identity or REFUSE). D-6 is carried by CB-1 anyway because CB-1 is one package in the billing authority and is not split here.",
+      "CE4_before_CE5": "MIGRATION_DAG.nodes[CE-5].depends_on = ['CE-4']; billing EC-6.",
+      "CB2_before_CB3_and_CB7": "IMPLEMENTATION_PACKAGES: CB-3 depends_on CB-1, CB-2; CB-7 depends_on CB-2, CE-5.",
+      "CB6_before_normal_activation": "ENTITLEMENT_CONTRACT.EC-3: transitions other than cancellation EMIT a re-evaluation request consumed by the CE-5 writer in a separate transaction; FUTURE_DDL.D-4 is delivered by CB-6. Without CB-6 an ACTIVE_STRIPE entry produces no PLAN grant, so 'normal activation' is unreachable.",
+      "CB5_before_CAP03_enablement": "OPEN_FINDINGS OF-4: 'CAP-03 MUST NOT be enabled before CB-5.' and PREPARED_CAPABILITY_DISPOSITIONS[stella_0008].not_apply_as_is.",
+      "CE7_after_CE5": "SELF_SERVICE.frozen[3] requires the bootstrap to write a BOOTSTRAP_DEFAULT grant; USAGE_QUOTA_BOUNDARY.limit_projection requires the legacy column to be written by the projection and by nobody else. A bootstrap landing before CE-5 would either leave the column at its default without a projection or become a second writer (MUT-5).",
+      "CE7_requires_S6": "MIGRATION_DAG.nodes[CE-7].external_depends_on = ['tenancy S1','tenancy S6']; MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json ALLOWLIST_EXIT.change_node = 'S6', SELF_SERVICE_BOOTSTRAP.change_node = 'S6', S1_TO_S8_DAG.nodes[S6].depends_on = ['S1','S3','S4','S5'].",
+      "CB9_last": "IMPLEMENTATION_PACKAGES[CB-9].note: 'LAST, by the same reasoning as CE-9's RETIREMENT_LAST_RULE.'"
+    },
+    "what_is_NOT_in_the_chain_and_why": {
+      "CE-8 / CB-8": "Manual activation and the platform commercial control plane depend externally on tenancy S5 (superadmin boundary), absent at BASE_SHA. SECTION_12.",
+      "CE-9": "Legacy retirement; RETIREMENT_LAST_RULE P4 has no owner (F-3). Usability does not need the column drop because CE-5's projection keeps every reader correct.",
+      "S3c, S4, S5, S7, S8": "Tenancy nodes. This authority consumes their status as EXTERNAL_PREREQUISITE (S4, S5, S6 for CE-7) and does not perform them."
+    }
+  },
+  "SECTION_4_CE2_DISPOSITION": {
+    "CE2_DISPOSITION": "IMPLEMENT_CE2_AS_AUTHORED",
+    "basis": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json ORGANIZATION_RELATION.chosen_model (live FK + append-only history, single governed writer), TRANSFER_CONTRACT T-1..T-13, TRANSFER_AUDIT_SHAPE, MUT-3, MUT-6, MUT-8, PG-5, PG-6, PG-8, SEC-9, SEC-12; parent manifest P-4..P-7, N-7, N-10, N-12, M-3, M-6, M-8; sentinel SENTINEL_CLOSED_HISTORY_ROW.",
+    "contradiction_search": "Searched every consumed artifact for a clause that contradicts CE-2 as authored. NONE FOUND. The only tension is ordering (CM-4), resolved by decomposition into CC-A01 (relation) and CC-A12 (verb) without altering any invariant.",
+    "not_weakened": "CE-4 is NOT weakened to avoid CE-2: B3 writes seed history rows through the relation and its append-only guard (CC-A01), with reason 'BACKFILL_SEED', actor NULL, effective_from = the migration timestamp.",
+    "relation_contract_CC_A01": {
+      "relation": "commercial_account_organization_history",
+      "columns_minimum": "id uuid pk; organization_id uuid NOT NULL FK organizations(id) ON DELETE RESTRICT; commercial_account_id uuid NOT NULL FK commercial_accounts(id) ON DELETE RESTRICT; effective_from timestamptz NOT NULL; effective_to timestamptz NULL; transfer_reason text NULL; actor_user_id uuid NULL FK users(id) ON DELETE RESTRICT; audit_log_id uuid NULL. Parent-minimum columns MUST NOT be removed; additions permitted if they introduce no derived status and no live plan FK.",
+      "constraints": "CHECK (effective_to IS NULL OR effective_to > effective_from); PARTIAL UNIQUE INDEX (organization_id) WHERE effective_to IS NULL -- exactly one OPEN history row per Organization, mirroring the live FK; the consistency rule (column = open row) is asserted by a Real-PG family, never by a trigger that writes the column.",
+      "append_only": "INSERT and the single NULL -> timestamp close of effective_to only; UPDATE of any other column and DELETE refused AT THE STORAGE BOUNDARY (trigger reusing uellix_forbid_mutation() from db/migrations/0030_immutability.sql is the measured precedent; a revoked privilege is an admissible additional mechanism). Parent manifest N-12 / M-8.",
+      "rls_posture": "ENABLE + FORCE ROW LEVEL SECURITY in the same migration; ZERO tenant-facing policies (tenancy S4 ordering, CE-3 R-A precedent); the ONLY reader is a governed SECURITY DEFINER projection owned by uellix_owner (rolsuper=false, rolbypassrls=false) taking an EXPLICIT organization_id and refusing cross-organization with a SQLSTATE (SEC-6 shape). Runtime roles hold NO direct privilege (runtime ACL successor SECTION_10: the new table is classified NO_RUNTIME_ACCESS -- SECTION_26 XL-4).",
+      "writers": "CE-4 seed (baseline applier, migration); the transfer verb (uellix_cap_transfer, CC-A12); the composed bootstrap (uellix_cap_bootstrap successor, CC-A14) writes the opening row for a new Organization. No other writer."
+    },
+    "verb_contract_CC_A12": {
+      "verb": "governed transfer verb, SECURITY DEFINER owned by uellix_cap_transfer (NOLOGIN, NOBYPASSRLS, NOSUPERUSER, NOCREATEROLE, NOCREATEDB, ZERO role members; PC-3-shaped catalogue proof).",
+      "inputs": "organization_id, receiving_commercial_account_id, expected_current_commercial_account_id (compare-and-set, T-11), idempotency_key (T-11), transfer_reason; actor = auth.uid() re-derived inside the definer and REQUIRED non-NULL (Platform Admin initiator, TRANSFER_CONTRACT.initiator).",
+      "caller_predicate": "public.current_user_is_super_admin() = true, evaluated INSIDE the definer (PLATFORM_ADMIN_BOUNDARY: platform authority is the platform super_admin predicate exercised through a governed capability definer). The verb sets NO tenant GUC (SEC-11, PG-11). Its tenant-facing control plane (PA-2) is CE-8 and is NOT delivered here.",
+      "effects_in_one_transaction": "row lock on organizations (T-12); compare-and-set on commercial_account_id (T-11); refuse same-account transfer with a distinct code (T-13); close the open history row and append the new one (T-6); UPDATE organizations.commercial_account_id (the materialised cache); CLOSE every live PLAN grant whose commercial_account_id = outgoing account (T-8) -- PLATFORM_ADMIN and BOOTSTRAP_DEFAULT grants untouched; INSERT one D-4 re-evaluation request (cause_identity = the transfer's audit_log id) for the CE-5 writer (T-7); write the two audit rows of TRANSFER_AUDIT_SHAPE (organization-scoped entity_type 'organization' action 'commercial_account.transferred'; account-scoped organization_id NULL entity_type 'commercial_account'). Zero rows of organization_members touched (PG-6). No Stripe identity moved (T-9).",
+      "privileges_of_uellix_cap_transfer": "organizations: UPDATE(commercial_account_id, updated_at), SELECT(id, commercial_account_id) bounded by a policy pair to the ONE organization named in a transaction-local GUC app.transfer_organization_id; commercial_account_organization_history: INSERT, UPDATE(effective_to); entitlement_grants: UPDATE(effective_to) ONLY (CLOSING direction; no INSERT; admitted by CC-A00); re-evaluation request relation: INSERT; audit_logs: INSERT. Nothing on organization_members, users, evidence, reports."
+    }
+  },
+  "SECTION_5_CAPABILITY_KEY_DECISION": {
+    "CAPABILITY_CATALOGUE": "EXACTLY ONE production key at BASE_SHA: stella.grounded_query (lib/capabilities/entitlement-catalogue.ts:133-149). No key is invented, renamed or added by this authority.",
+    "STELLA_CAPABILITY_MAPPING": "A -- INTERNAL_OPERATIONS_OF_THE_EXISTING_CAPABILITY",
+    "OWNER_CAPABILITY_DECISION_REQUIRED": "NO",
+    "operations_inspected": "The seven ticket categories of lib/stella/operation-ticket/categories.ts:53-90 -- advisor, validator, composer, proxy_reviewer, evidence_reviewer, audit_assistant, grounded_query -- and the flag-readiness list of lib/stella/capability-readiness.ts:42 (the six plus decisions_persistence and grounded_query).",
+    "mechanical_derivation": [
+      "D1 ONE LEDGER. uellix_stella.stella_capacity counts consumed units 'organization-wide and across every category: the cap is sold per organization, and one unit is one row of this table' (db/prepared/stella_0016_reserved_quota_semantics.sql:388-393). Every category charges the same counter.",
+      "D2 ONE LIMIT. The only limit any category is compared against is public.organizations.stella_monthly_quota (stella_0016:375; stella_0013:474), a single column per Organization.",
+      "D3 ONE CAPABILITY IN THE FROZEN PARENTS. COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY USAGE_QUOTA_BOUNDARY.limit_projection speaks of 'the Stella capability' (singular) projecting onto that column; COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY STELLA_RECONCILIATION.L3 defines the entitlement as 'the live EntitlementGrant for (organization, stella capability)' (singular) whose projection is that same column.",
+      "D4 THE KEY IS DEFINED AS THAT COLUMN'S RESTATEMENT. The CE-3 catalogue rationale binds stella.grounded_query to exactly 'the capability the legacy organizations.stella_monthly_quota column approximates today' (entitlement-catalogue.ts:141-147).",
+      "D5 THEREFORE every ticket category that binds under bind_operation_ticket consumes the capability whose key is stella.grounded_query. The categories are internal OPERATIONS of one metered capability, distinguished for provenance and for feature-flag readiness, never for commercial availability or limit."
+    ],
+    "why_this_creates_no_new_commercial_product": "Nothing is sold, granted, limited or refused separately per category. One grant row per Organization carries the availability and the limit; the projection writes one column; bind reads one column; the ledger charges one counter. The plan catalogue (OD-9, outside this authority) prices one capability. Binding the seven categories to the one key changes no vocabulary, adds no row shape and creates no second grant.",
+    "binding_rule_for_CB7": "The L3 gate at ticket issuance evaluates (organization_id, 'stella.grounded_query') for EVERY category in STELLA_TICKET_CATEGORIES. The category is passed through for provenance only and MUST NOT select the capability key. A future catalogue entry for a category is a NEW KEY and requires an owner ratification (no such ratification exists at BASE_SHA).",
+    "naming_hazard_recorded": "The key's literal names one of the seven categories. The key is a persisted identifier (SC-9 exact-equality, 0073 U0114), not a product label; renaming it would be a new key and is PROHIBITED here. Recorded as OPEN_FINDINGS OF-CC-3 (non-blocking) so that a future product label is ratified rather than inferred from the identifier."
+  },
+  "SECTION_6_SINGLE_TRUTH": {
+    "three_carriers": {
+      "commercial_status": "commercial_accounts.commercial_status is THE commercial lifecycle carrier (OD-1). One state per CommercialAccount; applied per Organization through grants. Never duplicated into entitlement_grants, organizations, the session carrier, the request principal or any RLS predicate over tenant data.",
+      "entitlement_grants": "The capability availability/limit carrier (CE-3 SC-1..SC-15). Organization x capability_key. Never carries commercial_status; carries commercial_account_id as PROVENANCE only (SC-2).",
+      "role_permissions": "membership x role is the authorization CEILING (MO-06, lib/auth/permissions.ts canUseStella). Never merged with entitlement into one predicate (SC-1)."
+    },
+    "composition_rule": "The FUTURE runtime gate (CB-7) composes commercial_status and entitlement ONLY as EC-4: effective = live grant CONJOINED with the gate of the governing account's state, where the gate can only REDUCE (BOOTSTRAP / ACTIVE_STRIPE / ACTIVE_WITHOUT_STRIPE / PAST_DUE pass-through; SUSPENDED / CLOSED BLOCKED; a stale PLAN grant under BOOTSTRAP gated to BLOCKED). Fail closed: an unreadable state or an unreadable grant is a refusal, never a pass.",
+    "explicit_organization_id": "Every entitlement read and every gate read takes an EXPLICIT organization_id (SC-3, MULTIORG_INTERSECTION vs S3/S7). No ambient organization fallback, no selected-first membership, no default argument. The single consumer chokepoint already receives organizationId explicitly (db/stella/operation-tickets.ts:409).",
+    "ungoverned_organization": "organizations.commercial_account_id IS NULL -> gate PASS-THROUGH (there is no account state to reduce by) and entitlement from BOOTSTRAP_DEFAULT / PLATFORM_ADMIN grants only (SC-14). After CE-4 and CE-7 the ungoverned state is transitional and MUST NOT be special-cased as permissive.",
+    "prohibitions": [
+      "No trigger on commercial_accounts writes entitlement_grants (SC-15).",
+      "No commercial identifier in db/identity-context.ts, the selected-organization cookie, RequestPrincipal or any tenant RLS predicate (MUT-10; CP-5 NONE INTENDED).",
+      "No organizationAcceptanceCurrent-style field on the bare principal for commercial state either (L1 NO_BARE_PRINCIPAL_FIELD applied by analogy: commercial state is organization-scoped and read at the boundary that has an Organization).",
+      "Entitlement outcomes are never used as authorization; canUseStella(role) remains the ceiling and is evaluated BEFORE L1 (measured order at issue-governed-ticket.ts:107)."
+    ]
+  },
+  "SECTION_7_STELLA_ENFORCEMENT_BOUNDARY": {
+    "ENFORCEMENT_ORDER": [
+      "L0 membership x role ceiling: canUseStella(ctx.membership.role) -- unchanged, measured at lib/stella/operation-ticket/issue-governed-ticket.ts:107 and app/actions/stella/grounded-query.ts:1107.",
+      "L1 technical rate limit: consumeStellaRateLimit(organizationId) -- unchanged, measured at issue-governed-ticket.ts:116 and grounded-query.ts:1116; refuses RATE_LIMITED / RATE_LIMIT_UNAVAILABLE before any ticket exists.",
+      "L3 entitlement-and-commercial gate: NEW, inside the shared chokepoint db/stella/operation-tickets.ts issueOperationTicket(organizationId, projectId, category), BEFORE the SQL mint uellix_stella_ops.issue_operation_ticket. Evaluates evaluateEntitlement({organizationId, capabilityKey: 'stella.grounded_query'}) conjoined with the EC-4 gate read through the CB-2 definer. Refuses ENTITLEMENT_ABSENT (NO_LIVE_GRANT), ENTITLEMENT_BLOCKED (BLOCKED grant, or gate BLOCKED), ENTITLEMENT_UNAVAILABLE (evaluator or gate threw / REFUSED / shape fault -- fail closed). UNMETERED and CAPPED pass.",
+      "ticket mint: uellix_stella_ops.issue_operation_ticket -- unchanged.",
+      "L2 quota reservation: bind_operation_ticket under the per-organization advisory lock reading stella_capacity -- unchanged; after CE-5 its limit IS the projection of the live grant, so L2 is the database-side second layer of the same decision (no_quota for BLOCKED -> 0; quota_exceeded for an exhausted cap).",
+      "operation execution, then complete_operation_ticket charge -- unchanged."
+    ],
+    "locus_derivation": "The billing authority places L3 at 'ticket issuance / operation-ticket boundary' (STELLA_RECONCILIATION.L1.enforced_when: issuance precedes reservation; L3 gated by EC-4). Measured at BASE_SHA the two TypeScript issuance surfaces are DUPLICATED implementations that share exactly one downstream function, issueOperationTicket. A gate placed in only one surface leaves the other ungated; a gate placed in issueOperationTicket covers both and already receives organizationId explicitly. Therefore MUST_CALL is that function and nothing above it.",
+    "MUST_CALL_SURFACES": [
+      "db/stella/operation-tickets.ts issueOperationTicket(organizationId, projectId, category) -- the ONLY runtime consumer of lib/capabilities/entitlement-evaluator.ts evaluateEntitlement and of the CB-2 gate-read definer. The call is placed after the category guard and before withOrganizationDatabaseContext mints the ticket.",
+      "The CB-2 gate-read definer commercial_gate_for_organization(uuid) (name DERIVED, see SECTION_8) -- called by issueOperationTicket only, with the same explicit organizationId.",
+      "The billing/commercial read surface of CB-4 (app/app/organization/billing/**) reads the commercial state PROJECTION through the same definer family and reads capacity through lib/stella/quota.ts readStellaCapacity (STELLA_RECONCILIATION.display_consistency). It authorizes nothing."
+    ],
+    "MUST_NOT_CALL_SURFACES": [
+      "lib/auth/database-context.ts resolveRequestPrincipal / loadRequestPrincipal / RequestPrincipal (request principal).",
+      "lib/auth/selected-organization.ts and the uellix_selected_organization_id cookie (organization selection).",
+      "lib/auth/session.ts requireOrganizationAccess / requireAuth / requireAdminAccess / getCurrentOrganizationContext.",
+      "Every module-local verifyProjectAccess in lib/pipeline/** and the inline project check of app/actions/stella/grounded-query.ts:498-513 (generic project access).",
+      "Measure: lib/pipeline/**, app/app/projects/**.",
+      "Portfolio: lib/portfolios/**, app/app/portfolios/**.",
+      "Evaluate: any evaluate/evaluation module (absent at BASE_SHA).",
+      "Generic API middleware, middleware.ts, app/api/** except that nothing under app/api/** may import the evaluator.",
+      "app/api/webhooks/stripe/route.ts and lib/capabilities/stripe-webhook.ts (Stripe webhook): the webhook never evaluates an entitlement and never reads the gate.",
+      "lib/stella/operation-ticket/issue-governed-ticket.ts and app/actions/stella/grounded-query.ts ABOVE the chokepoint: they keep L0 and L1 and delegate L3 to issueOperationTicket; they MUST NOT import the evaluator themselves.",
+      "db/identity-context.ts (MUT-10).",
+      "lib/stella/quota.ts readStellaCapacity: remains an informational reader; it authorizes nothing and does not evaluate entitlement."
+    ],
+    "refusal_vocabulary_at_the_boundary": {
+      "rule": "Three layers, three distinct vocabularies, never collapsed (STELLA_RECONCILIATION.the_three_refusals_must_stay_three).",
+      "L1": "RATE_LIMITED, RATE_LIMIT_UNAVAILABLE (existing StellaTicketIssueResult codes).",
+      "L3": "ENTITLEMENT_ABSENT (billing 'entitlement_absent' -- no live grant), ENTITLEMENT_BLOCKED (billing 'entitlement_blocked' -- grant BLOCKED or gate BLOCKED), ENTITLEMENT_UNAVAILABLE (fail closed on evaluator REFUSED, shape fault or thrown error; distinct from RATE_LIMIT_UNAVAILABLE). Persisted spelling is UPPER_SNAKE in the TypeScript result union to match the existing codes; the billing authority's lowercase names are the semantic identifiers and map 1:1.",
+      "L2": "no_quota, quota_exceeded (existing bind outcomes).",
+      "REFUSED cross-organization from the evaluator": "cannot arise when organizationId is the validated context; if it does it is ENTITLEMENT_UNAVAILABLE plus an escalation log line naming no tenant data."
+    },
+    "consumer_census_change": {
+      "control_retargeted": "CE3-N-9 / CE3-M-5 in tests/commercial/ce3-evaluator-consumer-census.test.ts.",
+      "exact_change": "ACTUAL_RUNTIME_CONSUMER count moves from ZERO to EXACTLY ONE: db/stella/operation-tickets.ts. The file is added to an explicit AUTHORIZED_RUNTIME_CONSUMERS set of size 1; DEFINITION_SURFACE is unchanged; every other hit remains a consumer and turns the control RED. The mutation CE3-M-5 keeps its meaning with the wording 'any SECOND runtime path'.",
+      "prohibited": "Replacing the closed-world census with a directory exclusion, an allowlist wildcard, or a count >= 1. The census stays fail-closed.",
+      "ownership": "CC-A10 owns the retarget; the manifest amendment of CE-3 is NOT edited (its text pre-authorizes no such field), the retarget lives in the test and is declared by this authority (SECTION_22 CC-N-20)."
+    },
+    "direct_sql_path_note": "public.entitlement_effective has EXECUTE for authenticated (0073:284) and uellix_stella_ops.issue_operation_ticket is callable by the runtime identity. A caller that mints a ticket by direct SQL bypasses the TypeScript L3 gate; it does NOT bypass L2, because after CE-5 the bind limit is the projection of the live grant (BLOCKED -> 0 -> no_quota). The gate-BLOCKED window of Shape A (state SUSPENDED, grant closures not yet consumed, column not yet projected) is the one residual a direct SQL mint could exploit; it is bounded by the CB-6 consumer and recorded as OPEN_FINDINGS OF-CC-4. A SQL-side re-check inside issue_operation_ticket is NOT authorized here (it would recompose a HOSTED_CHAIN member outside this authority's parents)."
+  },
+  "SECTION_8_COMMERCIAL_STATUS_CONTRACT": {
+    "COMMERCIAL_STATUS_CONTRACT": "SIX_STATE_CLOSED_SET_DEFAULT_BOOTSTRAP_SINGLE_VERB_CONJUNCTIVE_CLOSURE",
+    "vocabulary": [
+      "BOOTSTRAP",
+      "ACTIVE_STRIPE",
+      "PAST_DUE",
+      "SUSPENDED",
+      "ACTIVE_WITHOUT_STRIPE",
+      "CLOSED"
+    ],
+    "basis": "COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json COMMERCIAL_STATE_MACHINE (six states, nine attributes each, 36-pair conjunctive closure: LEGAL 18, NO_OP 5, ILLEGAL 13), MC-1, FUTURE_DDL D-1, D-6, D-7; CB-1, CB-2.",
+    "D1_migration_CC_A02": "One forward db/migrations unit: DROP and re-CREATE commercial_status_check over the six uppercase values; ALTER COLUMN commercial_status SET DEFAULT 'BOOTSTRAP'; migrate every existing row forward by the deterministic map { 'active' -> BOOTSTRAP } (the only value any row can hold at BASE_SHA, since no writer exists -- R-02; the migration ASSERTS zero rows outside 'active' and REFUSES otherwise); db/schema.ts mirror. The lowercase vocabulary and the uppercase vocabulary MUST NOT coexist (D-1 note). 0068 is never edited.",
+    "D7_columns_CC_A08": "On commercial_accounts, added by CB-5's migration: stripe_subscription_status text NULL (observed Stripe status, an OBSERVED FACT never read as commercial state), cancel_at_period_end boolean NULL, current_period_end timestamptz NULL. Column names are IMPLEMENTATION_DEFINED; their existence, nullability and fact-not-state semantics are BINDING.",
+    "D6_capability_role_and_pair_CC_A02": "EXACTLY as frozen in RLS.decision: role uellix_cap_commercial (NOLOGIN, NOBYPASSRLS, NOCREATEDB, NOCREATEROLE, NOSUPERUSER, ZERO ROLE MEMBERS proved on pg_auth_members.roleid); three PERMISSIVE policies (SELECT USING true; INSERT WITH CHECK true; UPDATE USING true WITH CHECK true) and three RESTRICTIVE policies bound to app.commercial_account_id, all TO uellix_cap_commercial, none TO PUBLIC, no DELETE policy, no DELETE grant; column-scoped GRANTs (UPDATE on commercial_status, stripe_customer_id, stripe_subscription_id, the D-7 fact columns, updated_at; never on id or created_at); FORCE RLS preserved; PC-1..PC-5 asserted on apply. Delivered as a PREPARED CAPABILITY PACKAGE (db/prepared/stella_<NNNN>_commercial_account_capability.sql, DERIVED_NOT_ALLOCATED) because db/migrations/** units may carry no roleStatements (entitlement amendment v1.0.1 measured_evidence.an_ordinary_migration_cannot_do_it). The RESTRICTIVE SELECT predicate additionally carries the RESOLVER_BOUND disjunct of SECTION_14 once CC-A00 AM-2 is certified.",
+    "state_verb_CC_A03": {
+      "verb": "commercial_transition(commercial_account_id, target_state, cause) -- name IMPLEMENTATION_DEFINED; SECURITY DEFINER owned by uellix_cap_commercial; sets app.commercial_account_id transaction-locally to its ONE account before any read a write depends on; takes the per-account advisory lock FIRST (FAILURE_AND_CONCURRENCY.lock_ordering: account lock before any organization lock).",
+      "transition_table": "The 6x6 cross-product is EXECUTABLE DATA inside the verb, not prose: a LEGAL pair writes state and audit; a NO_OP pair writes nothing and raises nothing; an ILLEGAL pair raises illegal_transition. The rule is CONJUNCTIVE (exit_event AND enter_event) and stays so (M-16).",
+      "preconditions_per_target": "ACTIVE_STRIPE and ACTIVE_WITHOUT_STRIPE entry assert INV-STALE-GRANT (no unconsumed closure obligation) and refuse pending_closure_obligation (becomes live with CB-6's request relation; until then the obligation relation is absent and the verb REFUSES every entry into those two states -- fail closed, which is correct because before CB-6 no Stripe event can be applied anyway). CLOSED entry asserts stripe_subscription_id IS NULL. Stripe-caused transitions carry the ORD-1..ORD-6 preconditions evaluated INSIDE the lock (ORD-6) once CB-5 exists.",
+      "audit": "commercial.state.entered on every LEGAL transition with before_json/after_json = prior/new state, reason = cause; actor_user_id NULL for a Stripe-caused transition and non-NULL for a person-caused one (AUDIT.actor_rule). Written by the verb through its own INSERT on audit_logs.",
+      "idempotency": "Per-state keys as frozen (COMMERCIAL_STATE_MACHINE.states[*].idempotency_key). A NO_OP re-entry writes no audit row (M-17)."
+    },
+    "gate_read_definer_CC_A03": {
+      "definer": "commercial_gate_for_organization(p_organization_id uuid) RETURNS text -- name DERIVED (IMPLEMENTATION_DEFINED spelling, BINDING signature shape: explicit organization, no default).",
+      "returns": "PASS_THROUGH or BLOCKED, per EC-4.gate_values, computed from the governing account's commercial_status; PASS_THROUGH when organizations.commercial_account_id IS NULL (SECTION_6.ungoverned_organization). Never returns the state itself to a tenant path (OF-5: bounded projection, no tenant SELECT policy on commercial_accounts).",
+      "ownership": "SECURITY DEFINER owned by uellix_cap_commercial with app.commercial_account_id bound inside the body to the resolved account BEFORE the SELECT; STABLE; EXECUTE granted to authenticated and REVOKED from PUBLIC, anon, service_role (mirror of 0073:283-284 for the evaluator).",
+      "cross_organization": "Re-imposes the caller's boundary explicitly (p_organization_id = ANY(public.current_user_org_ids()) OR public.current_user_is_super_admin()) and raises a SQLSTATE on failure, never an empty result (SEC-6 shape). The SQLSTATE literal is DERIVED_NOT_ALLOCATED from the free U0 namespace at the implementing base (occupied at BASE_SHA: U0001..U0003, U0100..U0114)."
+    }
+  },
+  "SECTION_9_CE4_BACKFILL_CONTRACT": {
+    "CE4_PREREQUISITES": [
+      "CE-1 (done)",
+      "CE-3 (done)",
+      "CC-A00 (certified and integrated)",
+      "CC-A01 CE-2.R history relation",
+      "CC-A02 CB-1 six-state vocabulary with DEFAULT BOOTSTRAP",
+      "tenancy S1 founded_by (done; not read by the backfill but present so seeds are not rewritten by S1)"
+    ],
+    "basis": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json BACKFILL B1..B4 and prohibitions; MC-1 default amendment; billing BOOTSTRAP.enter_events; parent manifest P-17, N-16; sentinel SENTINEL_MANUAL_QUOTA_ORG.",
+    "shape": "ONE forward db/migrations unit (DML over commercial_accounts, organizations, commercial_account_organization_history, entitlement_grants, audit_logs), executed by the baseline applier identity, deterministic and idempotent (re-running on a seeded database inserts nothing).",
+    "steps_binding": [
+      "B1 -- for each organizations row with commercial_account_id IS NULL: INSERT ONE commercial_accounts row (1:1 seed, NEVER grouped by inference), legal_name = organizations.legal_name, billing_country = organizations.country, commercial_status = BOOTSTRAP (the DEFAULT; never a subscription-derived state -- see precondition PRE-CE4-1), stripe_customer_id / stripe_subscription_id COPIED (not moved) from the organizations columns where D-2 columns exist at the implementing base, else deferred to CB-3/CB-5.",
+      "B2 -- SET organizations.commercial_account_id to the seeded account.",
+      "B3 -- INSERT the opening history row THROUGH the CE-2.R relation: effective_from = the migration's transaction_timestamp(), effective_to NULL, actor_user_id NULL, transfer_reason 'BACKFILL_SEED'.",
+      "B4 -- INSERT one entitlement_grants row per Organization for capability_key 'stella.grounded_query' by the INVERTED projection: stella_monthly_quota NULL -> UNMETERED; 0 -> BLOCKED; N > 0 -> CAPPED limit_value N; plan_ref = current stella_plan_label; source = PLATFORM_ADMIN with commercial_account_id NULL (every quota at BASE_SHA is a manual super_admin assignment -- EA-04 / SENTINEL_MANUAL_QUOTA_ORG) UNLESS PRE-CE4-1 admits a subscription-bearing row; effective_from = transaction_timestamp(); reason 'BACKFILL_SEED'; actor_user_id NULL; audit row per grant (entitlement.grant.opened, actor NULL)."
+    ],
+    "preconditions_asserted_by_the_migration": [
+      "PRE-CE4-1 ZERO organizations rows with a non-NULL stripe_subscription_id. Measured basis: CAP-03 is applied nowhere and stella_apply_subscription is the only writer of that column, so the count is zero by construction; the migration RAISES and aborts otherwise, because a subscription-bearing Organization cannot be seeded BOOTSTRAP (stripe_subscription_id MUST be NULL there) and cannot be seeded ACTIVE_STRIPE (no persisted subscription status exists to observe). A non-zero count is an ESCALATION to the lane coordinator, not a guess.",
+      "PRE-CE4-2 ZERO existing entitlement_grants rows (the relation is UNREAD and unwritten at BASE_SHA); a non-zero count aborts.",
+      "PRE-CE4-3 The six-state CHECK is in force and the column DEFAULT is 'BOOTSTRAP' (reads pg_constraint / pg_attrdef); aborts otherwise.",
+      "PRE-CE4-4 The applier identity can INSERT into commercial_accounts under FORCE RLS (owner-equivalent or BYPASSRLS on the substrate); asserted by a probing INSERT inside a savepoint, rolled back, before the seed loop. The disposable harness MUST reproduce the hosted applier identity for this act (ACL_FAMILY_SUBSTRATE_REQUIREMENT applies by analogy)."
+    ],
+    "prohibitions": [
+      "No commercial owner invented; no grouping; no tenant row altered other than the nullable FK; no membership created; no Stripe API call; no PLAN grant seeded without a subscription id (PRE-CE4-1 makes this vacuous at BASE_SHA)."
+    ],
+    "reversibility": "CE-4 is the last reversible act (BACKFILL.reversibility). Its inverse -- clear the FK, delete the seeded rows in reverse order -- is authored as a governed rollback NOTE in the migration header, NOT as a rollback file (db/migrations/** is forward-only by construction). After CE-5 reversal requires a compatibility decision."
+  },
+  "SECTION_10_CE5_WRITER_CONTRACT": {
+    "CE5_WRITER_CONTRACT": "SINGLE_GOVERNED_WRITER_DEFINER_WITH_ATOMIC_PROJECTION",
+    "basis": "COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json CE-5, COMPATIBILITY.single_writer_rule, USAGE_QUOTA_BOUNDARY.limit_projection, PLAN_ENTITLEMENT_BOUNDARY, PREPARED_CAPABILITY_DISPOSITIONS[stella_0011].downstream_obligation SUPERSEDE_AT_CE5; billing EC-1, EC-2, EC-5, STELLA_RECONCILIATION.L3; parent manifest P-10, P-11, P-12, N-9, M-5; CE-3 SC-6, SC-7, SC-9.",
+    "writer": {
+      "role": "uellix_cap_entitlement (NOLOGIN, NOBYPASSRLS, NOSUPERUSER, NOCREATEROLE, NOCREATEDB, ZERO role members).",
+      "verbs": [
+        "entitlement_open(organization_id, capability_key, source, commercial_account_id, plan_ref, limit_kind, limit_value, reason, actor_user_id, cause_identity) -- closes the current live row for the key if any (effective_to = now), INSERTs the replacement, writes the projection, writes entitlement.grant.closed and entitlement.grant.opened audit rows, in ONE transaction. Idempotent by cause_identity: a replay returns the existing outcome and writes nothing (PLAN_ENTITLEMENT_BOUNDARY: re-evaluation is deterministic, a replay is a no-op).",
+        "entitlement_close(organization_id, capability_key, reason, actor_user_id, cause_identity) -- the single NULL -> timestamp close, the projection to the closed state (BLOCKED -> 0 unless a BOOTSTRAP_DEFAULT replacement is opened in the same call per the catalogue), one entitlement.grant.closed audit row."
+      ],
+      "projection_rule": "For capability_key 'stella.grounded_query' ONLY: UNMETERED -> organizations.stella_monthly_quota = NULL; BLOCKED -> 0; CAPPED -> limit_value; stella_plan_label = plan_ref (NULL for non-PLAN sources unless the catalogue declares a label). Written in the SAME statement scope as the grant write. No other capability projects anywhere (null_semantic_prohibition).",
+      "privileges": "entitlement_grants: SELECT, INSERT, UPDATE(effective_to); organizations: UPDATE(stella_monthly_quota, stella_plan_label, updated_at) bounded by a policy pair to the ONE organization named in a transaction-local GUC app.entitlement_organization_id; audit_logs: INSERT; the D-4 request relation (once present): SELECT, UPDATE(consumed_at, outcome, attempts). Nothing else. Admitted on entitlement_grants by CC-A00.",
+      "callers": "lib/admin/organization-administration.ts (super_admin quota path repointed from admin_set_stella_service to entitlement_open with source PLATFORM_ADMIN, commercial_account_id NULL, actor = the super_admin); the CB-6 re-evaluation consumer (source PLAN, commercial_account_id = the account, plan_ref snapshot); the CB-6 cancellation capability is NOT a caller (it closes under its own identity, Shape B); the transfer verb is NOT a caller (it emits a request). No other caller."
+    },
+    "single_writer_enforcement": "In the SAME act: (a) column-scoped REVOKE UPDATE(stella_monthly_quota, stella_plan_label) ON public.organizations FROM authenticated, uellix_writer, uellix_app, anon, PUBLIC, service_role (a hardening package, forward-only, see SECTION_20); (b) removal of every ORM write to those columns under lib/** and app/** proven by exhaustive grep at the implementing base INCLUDING db/prepared/**; (c) stella_apply_subscription (stella_0008) is superseded at CB-5 (CE-6) and stella_0011's admin_set_stella_service is never applied unsuperseded (SECTION_26 XL-3). The measurement obligation of COMPATIBILITY.single_writer_rule is discharged by a static control that fails on any second writer.",
+    "plan_catalogue": {
+      "classification": "MECHANISM FROZEN HERE; VALUES ARE CONFIGURATION PRESERVED FROM MEASURED CODE, NOT RATIFIED HERE.",
+      "mechanism": "A closed, versioned, in-repository plan catalogue (lib/capabilities/plan-catalogue.ts, DERIVED name) mapping plan_ref -> { capability_key -> (limit_kind, limit_value) } for exactly the catalogue's capability keys. plan_ref for a Stripe-backed plan is the configured Stripe price id resolved through the existing env-driven PRICE_ID_MAP of lib/stripe/client.ts (STRIPE_PRICE_PRO, STRIPE_PRICE_ENTERPRISE). An unconfigured or unrecognised price REFUSES (PI-6, SENTINEL_UNKNOWN_STRIPE_PRICE) and NEVER resolves to a quota; a NULL price is never resolved at all (EC-5). Re-evaluation is DETERMINISTIC given (plan_ref, catalogue version, organization); the catalogue version is snapshotted into plan_ref's audit row.",
+      "initial_values": "The two non-free entries measured in lib/stripe/client.ts:26 -- pro: CAPPED 250, enterprise: CAPPED 1000 -- carried forward as the catalogue's initial configuration for 'stella.grounded_query'. The free tier is NOT carried (EC-5 NO_LEGACY_FREE). These numbers are the repository's current product state, are not prices, and are NOT frozen by this authority; changing them is a configuration act under whatever authority governs the plan catalogue (OD-9 keeps prices and discounts outside). Recorded as OPEN_FINDINGS OF-CC-5 for owner visibility, non-blocking.",
+      "bootstrap_default": "The catalogue declares, per capability key, the BOOTSTRAP_DEFAULT limit written by the bootstrap and by cancellation's replacement. For 'stella.grounded_query' it is BLOCKED -- derived from the measured default (stella_monthly_quota DEFAULT 0 = blocked, EA-04) and from EC-5 (no free tier). A trial or free allowance would be a NEW product decision requiring an owner ratification and is NOT taken here."
+    },
+    "compatibility_window": "Readers of the legacy columns (bind_operation_ticket, stella_capacity, lib/auth/database-context.ts Organization.stellaMonthlyQuota, the billing page) continue to read them and observe the projection (COMPATIBILITY.read_compatibility). No reader changes at CE-5; no reader may write. CE-9 remains outside this authority."
+  },
+  "SECTION_11_BILLING_SELLABILITY": {
+    "CB3_DISPOSITION": "IMPLEMENT_AS_AUTHORED (CC-A06). First-party, idempotent by commercial_account_id, Stripe idempotency key derived from commercial_account_id, UNIQUE(stripe_customer_id) and UNIQUE(stripe_subscription_id) on commercial_accounts (D-2 migration), NO client-supplied id on any inbound path, collision -> refusal + escalation (defence-in-depth D1..D5). Caller precondition: authenticated organization_admin-or-above of an Organization governed by the account, PASSING requireOrganizationAccess (B0, L0) AND the L1 organization commercial acceptance gate for that Organization (customer-lifecycle CANONICAL_JOURNEY places ENT after L1; RAT-AO-02: activation never substitutes acceptance). Account state != CLOSED. Server action under app/app/organization/billing/**; persistence via a uellix_cap_commercial definer bound to the account (UPDATE stripe_customer_id WHERE id = GUC); audit commercial.stripe.bound with the person as actor.",
+    "CB4_DISPOSITION": "IMPLEMENT_AS_AUTHORED (CC-A07). Checkout admissible ONLY for an account with a bound stripe_customer_id; checkout.sessions.create with customer = the bound id, mode subscription, price = a configured PRICE_ID_MAP entry (SENTINEL_UNKNOWN_STRIPE_PRICE refused), success_url and cancel_url are REDIRECT TARGETS carrying no identity, plan or entitlement; the 'contact sales' throw at app/app/organization/billing/actions.ts:36 is replaced by the bind-then-checkout journey; the billing portal path is retained for a bound customer. The billing page reads commercial state through the CB-2 projection definer and capacity through readStellaCapacity (display_consistency). checkout.session.completed stays RECORDED, NEVER APPLIED (lib/capabilities/stripe-webhook.ts:261-273 disposition FROZEN).",
+    "CB5_DISPOSITION": "IMPLEMENT_AS_AUTHORED_IN_FULL (CC-A08). Delivers: D-3 source_event_created_at on stripe_webhook_events (never-rewritable, indexed per ordering scope), D-7 subscription facts on commercial_accounts, ORD-1..ORD-6 evaluated inside the per-account lock, the CE-6 recomposition of the Stripe capability (the apply verb writes ZERO columns of public.organizations and ZERO rows of entitlement_grants -- PG-9, MUT-1; it resolves the account through the RESOLVER_BOUND lookup, records the observed fact, invokes the CB-2 state verb and lets the state verb emit the D-4 request), the Stripe identity columns MOVED to commercial_accounts (D-2 done at CB-3; organizations' legacy Stripe columns stop being written), AND invoice.* handling (invoice.payment_failed -> PAST_DUE entry; invoice.paid -> recovery; invoice.payment_action_required treated as past_due-class; every other invoice.* recorded and terminally ignored). The recomposed package SUPERSEDES stella_0008 as a NEW prepared capability unit (DERIVED_NOT_ALLOCATED ordinal) registered in HOSTED_CHAIN; stella_0008's bytes are never edited; its ledger table, LOGIN identity uellix_stripe (no tenant reach, NOBYPASSRLS), capability role uellix_cap_stripe (NOLOGIN, zero members) and begin/fail verbs are COMPOSED, not rebuilt.",
+    "DUNNING_COUPLING": "CURRENT_AUTHORITY_REQUIRES_FULL_CB5. Exact clauses: IMPLEMENTATION_PACKAGES[CB-5].note ('Also the package that adds invoice.* handling, which does not exist at all today (R-11)'); COMMERCIAL_STATE_MACHINE.states[PAST_DUE].enter_events ('subscription observed past_due, or an invoice payment failure observed for the subscription'); states[ACTIVE_STRIPE].enter_events[1] ('recovery, i.e. a subscription observed active, or an invoice observed paid'). The first sellable V1 could be reached on subscription-status events alone, but the frozen package couples invoice.* into CB-5 and this authority does NOT split it. Uellix runs NO dunning clock (PAST_DUE.escalation); 'dunning' here is Stripe's, observed. A split would be an append-only amendment of the billing authority and is recorded as OPTIONAL in OPEN_FINDINGS OF-CC-6; it is not required and no owner decision is opened.",
+    "CB6_DISPOSITION": "IMPLEMENT_AS_AUTHORED (CC-A09). D-4 relation commercial_reevaluation_requests (name DERIVED; columns commercial_account_id, organization_id NULL-able for account-wide requests, cause_identity UNIQUE, requested_at, claimed_at, attempts, consumed_at, outcome; claim/lease/attempts shape copied from stripe_webhook_events; NOT an outbox); consumer = a governed server-side loop invoking entitlement_open/entitlement_close per governed Organization under the account lock then the organization lock, atomic across all N Organizations of the account (partial_multi_org_application), idempotent by cause_identity, escalating on repeated failure; D-8 cancellation capability = role uellix_cap_cancellation with a SECURITY DEFINER verb spanning commercial_accounts (UPDATE commercial_status, stripe_subscription_id, the fact columns), entitlement_grants (UPDATE effective_to; INSERT restricted by policy WITH CHECK source = 'BOOTSTRAP_DEFAULT') and audit_logs, performing steps 1-8 of CANCELLATION.effects_in_order in ONE transaction, with the CLOSING-DIRECTION-ONLY property asserted as a postcondition (it cannot insert a PLAN row: the policy refuses); INV-STALE-GRANT enforced in the state verb.",
+    "normal_activation_path": "bind (CC-A06) -> checkout (CC-A07) -> customer.subscription.created/updated status active|trialing (CC-A08, ORD guards) -> state verb BOOTSTRAP -> ACTIVE_STRIPE writes state, facts, audit and ONE D-4 request (Shape A T1) -> consumer opens PLAN grant(s) via entitlement_open with plan_ref = price id and the catalogue limit, projection writes stella_monthly_quota (T2) -> next Stella ticket passes L3 and L2. ZERO database edits by any human. ZERO super_admin action.",
+    "CAP03_enablement_CC_A11": "A SEPARATE rollout act after CC-A08 and CC-A09 are integrated: apply the recomposed Stripe package on the target through the hosted chain, provision UELLIX_STRIPE_DATABASE_URL (name only; never a value in any artifact) and STRIPE_WEBHOOK_SECRET / STRIPE_SECRET_KEY / STRIPE_PRICE_* out of band under the ENV-10/ENV-11 contract, then flip app/api/webhooks/stripe/route.ts WEBHOOK_DATABASE_IDENTITY_AVAILABLE to true in a reviewed diff. Prohibited before CC-A08 (OF-4) and before CC-A09 (an activation with no consumer opens no grant). Staging-first under HPO-E.1 / HPO-G.5 (provider capabilities dark until parity); production enablement is outside this authority (release authority)."
+  },
+  "SECTION_12_MANUAL_ACTIVATION": {
+    "MANUAL_ACTIVATION_DISPOSITION": "MANUAL_ACTIVATION_NOT_CLAIMABLE_FOR_COMMERCIAL_CORE",
+    "S5_STATUS": "ABSENT_AT_BASE_SHA -- no docs/ops/tenancy/MULTI_ORG_S5_* evidence; db/identity-context.ts:217 still carries the '!check.is_super_admin' exemption MO-07 contradicts; no S5 grant in scripts/ods-scope.ts.",
+    "consequence": "CB-8 (MANUAL_ACTIVATION) and CE-8 (PA-1..PA-6) are OUTSIDE this batch. The ACTIVE_WITHOUT_STRIPE state and its transitions exist in the CB-2 transition table (the table is total) but NO verb caller for manual activation, renewal, lapse or closure is delivered; the state verb REFUSES a transition into ACTIVE_WITHOUT_STRIPE from every caller because no authorization_reference source exists (fail closed). Sellability (U-4, U-5) is satisfied by the Stripe path ALONE; 'contact sales' is NOT self-service and an unaudited SQL activation is PROHIBITED (SELF_SERVICE.frozen[0]; RAT-AO-02).",
+    "what_would_unlock_it": "Tenancy S5 integrated + CE-8 execution authority + CB-8 act, each governed separately. Not sequenced here."
+  },
+  "SECTION_13_ONBOARDING_SUCCESSOR": {
+    "SIGNUP_ALLOWLIST_STATUS": "MANDATORY_DEFAULT_ON_UNSATISFIABLE_FOR_NON_SUPER_ADMIN -- incompatible with the Commercial V1 business test (SS-01, SS-03, ALIGNMENT_BASELINE section 2 and invariant 'Commercial V1 cannot require technical manual provisioning'). Founding today requires a super_admin to add an allowlist entry AND the read still fails for the subject; so the ONLY working entry is an invitation, which requires a pre-existing organization -- an extraordinary administrative intervention.",
+    "ONBOARDING_SUCCESSOR_REQUIRED": "YES -- ALREADY GOVERNED, COMPOSED HERE. The contract exists across three frozen artifacts and is NOT re-authored: entitlement SELF_SERVICE.target_journey + cap05_reconciliation (CE-7 composed successor over CAP-05), tenancy ALLOWLIST_EXIT + SELF_SERVICE_BOOTSTRAP + CAP05_INTERFACE I1..I4 (change node S6), HPO-A.6 (atomic bootstrap incl. CommercialAccount and initial entitlement/bootstrap state) and RAT-EV-01 / Packet B (verification). This section fixes only the composition and the anti-abuse floor.",
+    "CE7_composed_successor_CC_A14": {
+      "verb": "bootstrap_organization successor in a NEW prepared capability unit superseding db/prepared/stella_0010_organization_bootstrap_capability.sql (stella_0010 bytes untouched; its idempotency ledger capability_bootstrap_attempts keyed (user_id, idempotency_key), uniform refusal U0001/U0002, definer role uellix_cap_bootstrap NOLOGIN zero-members, schema auth USAGE and RETURNING id postconditions PRESERVED).",
+      "one_transaction": "commercial_accounts INSERT (state BOOTSTRAP by DEFAULT, id generated by the verb and bound to app.commercial_account_id before the insert -- RLS.insert_requires_the_verb_to_choose_the_id) -> organizations INSERT (founded_by = auth.uid(), founding_provenance 'self_service', commercial_account_id = the new account) -> organization_members INSERT (organization_admin, active) -> commercial_account_organization_history opening row -> entitlement_grants INSERT source BOOTSTRAP_DEFAULT, commercial_account_id NULL, limit from the catalogue's bootstrap_default (BLOCKED for stella.grounded_query) with the projection written by the SAME statement scope (the successor holds the projection privilege ONLY for the row it just created) -> audit rows (organization.created, membership.created, commercial.state.entered by DEFAULT, entitlement.grant.opened). No parameter for owner, role, plan, quota or Stripe (PI-4). Subject from auth.uid().",
+      "founder_cardinality": "I2: a second self-service founding by the same subject refuses TENANCY_FOUNDER_CARDINALITY_EXCEEDED (MO-01, S1 FOUNDER_CARDINALITY). I3: idempotency is by (subject, idempotency_key), never by returning an existing organization.",
+      "serialization": "I4: MUST NOT depend on user_single_active_membership; the idempotency ledger primary key plus a per-subject advisory lock serialize concurrent bootstraps (SELF_SERVICE_BOOTSTRAP.serialization_replacement).",
+      "atomicity_proof": "PG-10 inherited: an induced failure after the organization insert and before the grant insert leaves NO organization, NO membership, NO account, NO history row (parent N-11 / M-7)."
+    },
+    "allowlist_exit": {
+      "rule": "ALLOWLIST_EXIT exactly as frozen by the tenancy authority: the allowlist becomes an operator-controlled, FEATURE-FLAGGED, DEFAULT-OFF control; the table, its super-admin policies, lib/admin/signup-allowlist.ts and /admin/access are RETAINED. When the flag is ON the check runs inside the bootstrap definer (which CAN read the table -- CAP-05 step 7), never under the caller's claims (the measured unsatisfiable read at app/(authenticated)/app/onboarding/actions.ts:95-100 is removed). Flag name is IMPLEMENTATION_DEFINED; its DEFAULT-OFF at Commercial V1 exit is BINDING and is asserted by a control that founds an organization for SENTINEL_NO_ALLOWLIST_SUBJECT.",
+      "dp_cap_12_13": "DP-CAP-12 (who may create the first organization) is RESOLVED by SS-01/SS-02: any B0-verified, L0-accepted subject with no self-service-founded organization. DP-CAP-13 (one organization per subject) is RESOLVED by MO-01 / S1 FOUNDER_CARDINALITY (one self-service FOUNDING; multiple MEMBERSHIPS remain S6/S7's contract)."
+    },
+    "anti_abuse_floor": {
+      "rule": "The allowlist is removed as a MANDATORY gate; anti-abuse controls are NOT removed. The floor that replaces the allowlist's abuse function is the conjunction below; each item is an existing or frozen control, none is invented.",
+      "items": [
+        "B0 email verification before any founding (Packet B; measured live at lib/auth/session.ts:265).",
+        "L0 account legal acceptance before founding (CL-1; measured live at lib/auth/session.ts:278).",
+        "Founder cardinality: at most one self-service founding per subject (MO-01, S1 -- integrated).",
+        "A DISTRIBUTED founding rate limit keyed on the subject and on the source address, with the SAME environment posture as lib/stella/rate-limit.ts: distributed backend REQUIRED on staging and production, in-memory fallback only in development/test/ci, fail CLOSED ('unavailable' refuses founding) when the backend is absent where required. The existing in-memory lib/security/rate-limit.ts is NOT sufficient for staging/production (its own header says so).",
+        "The idempotency ledger (CAP-05) against double submission."
+      ],
+      "captcha": "NOT required by any resident authority (SS-02 names 'abuse/rate protection', satisfied above) and NOT prohibited. Adding one is an operator/product choice outside this authority; recorded in OPEN_FINDINGS OF-CC-7."
+    },
+    "external_prerequisites": "Tenancy S6 (and through it S4, S5) -- CM-8. The CC-A14 write set under app/(authenticated)/app/onboarding/** and db/prepared/** intersects S6's write set; CC-A14 is SERIAL after S6 and its opening must re-derive the composed verb against S6's integrated bootstrap interface. If the lane coordinator adopts the S6-split option (OF-CC-2), CC-A14 re-derives against that amendment instead."
+  },
+  "SECTION_14_ROLE_ACL_CONSTRAINTS": {
+    "rule": "Every capability role below is NOLOGIN, NOBYPASSRLS, NOSUPERUSER, NOCREATEROLE, NOCREATEDB and has ZERO ROLE MEMBERS, proved on every apply from pg_auth_members keyed on roleid (billing PC-1..PC-3 shape, applied to EVERY role here, not only uellix_cap_commercial). Capability roles never compose by membership; composition is by SECURITY DEFINER function call with EXECUTE granted to the calling capability role and to nothing else. No runtime role (uellix_app, uellix_writer, uellix_auditor), no tenant JWT role (authenticated, anon), no platform role (service_role, postgres, supabase_admin, authenticator) and no human ever holds membership in any of them. Names follow the measured convention uellix_cap_<purpose> (uellix_cap_stripe, uellix_cap_bootstrap, uellix_cap_platform, uellix_cap_stella_quota, uellix_cap_commercial).",
+    "closed_role_set": [
+      {
+        "role": "uellix_cap_commercial",
+        "status": "FROZEN by the billing authority (D-6). Introduced by CC-A02.",
+        "relations": "commercial_accounts SELECT/INSERT/UPDATE(column-scoped) under the P1/P2 pair; audit_logs INSERT; the D-4 request relation INSERT (state verb emits). NOTHING on entitlement_grants, organizations, organization_members."
+      },
+      {
+        "role": "uellix_cap_transfer",
+        "status": "DERIVED here for CE-2.V (CC-A12).",
+        "relations": "organizations SELECT(id, commercial_account_id) + UPDATE(commercial_account_id, updated_at) bounded to app.transfer_organization_id; commercial_account_organization_history INSERT + UPDATE(effective_to); entitlement_grants UPDATE(effective_to) ONLY; D-4 request relation INSERT; audit_logs INSERT."
+      },
+      {
+        "role": "uellix_cap_entitlement",
+        "status": "DERIVED here for CE-5 (CC-A05).",
+        "relations": "entitlement_grants SELECT + INSERT + UPDATE(effective_to); organizations UPDATE(stella_monthly_quota, stella_plan_label, updated_at) bounded to app.entitlement_organization_id; D-4 request relation SELECT + UPDATE(claimed_at, attempts, consumed_at, outcome); audit_logs INSERT."
+      },
+      {
+        "role": "uellix_cap_cancellation",
+        "status": "DERIVED here for D-8 (CC-A09).",
+        "relations": "commercial_accounts UPDATE(commercial_status, stripe_subscription_id, fact columns, updated_at) + SELECT bounded to app.commercial_account_id by its OWN policy pair (a fourth pair is NOT added to uellix_cap_commercial's; this role has its own permissive+restrictive pair on commercial_accounts, which is an addition to PC-5's count and is therefore part of the billing amendment AM-2's exact content); entitlement_grants UPDATE(effective_to) + INSERT with a RESTRICTIVE policy WITH CHECK (source = 'BOOTSTRAP_DEFAULT'); organizations UPDATE(stella_monthly_quota, stella_plan_label, updated_at) for the projection of the rows it closes/opens, bounded per organization; stripe_webhook_events UPDATE(status, completed_at) to mark the ledger row completed; audit_logs INSERT."
+      },
+      {
+        "role": "uellix_cap_bootstrap",
+        "status": "EXISTING name from stella_0010; the successor package (CC-A14) re-creates it if absent and WIDENS its grants exactly as SELF_SERVICE.cap05_reconciliation.properties_to_preserve[3] permits.",
+        "relations": "organizations INSERT (no UPDATE/DELETE); organization_members INSERT; commercial_accounts INSERT bounded by a restrictive INSERT policy WITH CHECK (id = app.commercial_account_id); commercial_account_organization_history INSERT; entitlement_grants INSERT with a RESTRICTIVE policy WITH CHECK (source = 'BOOTSTRAP_DEFAULT' AND commercial_account_id IS NULL); organizations UPDATE(stella_monthly_quota, stella_plan_label) ONLY for the row inserted in the same transaction (bounded by GUC); capability_bootstrap_attempts; signup_allowlist SELECT (flag-gated read inside the definer); audit_logs INSERT. STILL no grant on any legacy billing column beyond the bootstrap-default projection of its own new row."
+      },
+      {
+        "role": "uellix_cap_stripe",
+        "status": "EXISTING from stella_0008; COMPOSED by CC-A08.",
+        "relations": "stripe_webhook_events (ledger); EXECUTE on the uellix_cap_commercial fact-recording and state-transition definers; NOTHING on organizations, organization_members, entitlement_grants, commercial_accounts directly (PG-9). The LOGIN identity uellix_stripe remains NOBYPASSRLS, NOCREATEROLE, NOCREATEDB, NOSUPERUSER, member of no role."
+      }
+    ],
+    "ENTITLEMENT_GRANTS_WRITER_ADMISSIONS": {
+      "classification": "THE EXACT CONTENT of entitlement amendment v1.0.3's admission (CC-A00 AM-1). The amendment MUST be deep-equal to this map; a divergence is a defect of whichever was written second and the act STOPS.",
+      "non_owner_direct_privileges_EXACT_after_the_batch": {
+        "uellix_owner": [
+          "SELECT"
+        ],
+        "uellix_cap_entitlement": [
+          "SELECT",
+          "INSERT",
+          "UPDATE(effective_to)"
+        ],
+        "uellix_cap_transfer": [
+          "UPDATE(effective_to)"
+        ],
+        "uellix_cap_cancellation": [
+          "UPDATE(effective_to)",
+          "INSERT"
+        ],
+        "uellix_cap_bootstrap": [
+          "INSERT"
+        ],
+        "authenticated": [],
+        "anon": [],
+        "uellix_app": [],
+        "uellix_writer": [],
+        "uellix_auditor": [],
+        "uellix_migrator": [],
+        "service_role": [],
+        "uellix_cap_stripe": [],
+        "uellix_cap_commercial": []
+      },
+      "policies_on_entitlement_grants": "The relation keeps ENABLE + FORCE and the single existing SELECT policy TO uellix_owner (0073:114-117). Each admitted capability role receives its OWN PERMISSIVE + RESTRICTIVE pair, command-for-command, in ITS package: PERMISSIVE admits the role; RESTRICTIVE bounds INSERT by WITH CHECK on source (cancellation and bootstrap: source = 'BOOTSTRAP_DEFAULT'; bootstrap additionally commercial_account_id IS NULL; entitlement writer: source IN the four values -- no narrowing, it is the general writer) and bounds UPDATE by USING (effective_to IS NULL) AND WITH CHECK (effective_to IS NOT NULL) so that the ONLY admissible UPDATE is the single close (SC-6 at the policy layer, in addition to the storage-boundary trigger). No policy TO PUBLIC, authenticated, anon, service_role or any runtime role. No DELETE policy, no DELETE grant, no TRUNCATE grant, for any role.",
+      "evaluator_execute": "UNCHANGED: public.entitlement_effective(uuid,varchar) non-owner EXECUTE remains EXACTLY {authenticated: REQUIRED} (FUNCTION_EXECUTE_CONTRACT). The gate-read definer of CB-2 adopts the same EXECUTE posture.",
+      "consequence_for_CE3_controls": "The CE3-ACL exact-posture control (manifest amendment v1.0.2) asserts uellix_owner SELECT as the ONLY non-owner privilege. After CC-A05/A09/A12/A14 that assertion is RED by construction. CC-A00's CE-3 manifest amendment v1.0.3 pre-authorizes the retarget to the map above, and each admitting act materializes exactly its own grantee row. The hosted0010 REVOKE-only package is NOT edited; the new GRANTs live in the new packages, which apply AFTER hosted0010 in chain order."
+    },
+    "RESOLVER_BOUND": {
+      "classification": "THE EXACT CONTENT of billing amendment v1.0.1 (CC-A00 AM-2). Closes CM-2.",
+      "clause_amended": "COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json RLS.decision.policy_pair.P2_restrictive.SELECT (verbatim: \"USING (<predicate>).\" with predicate \"id = NULLIF(pg_catalog.current_setting('app.commercial_account_id', true), '')::uuid\") and FUTURE_DDL.D-6.mandatory_postconditions PC-5 count.",
+      "amended_SELECT_predicate": "id = NULLIF(pg_catalog.current_setting('app.commercial_account_id', true), '')::uuid OR (stripe_customer_id IS NOT NULL AND stripe_customer_id = NULLIF(pg_catalog.current_setting('app.stripe_customer_id', true), '')) OR (stripe_subscription_id IS NOT NULL AND stripe_subscription_id = NULLIF(pg_catalog.current_setting('app.stripe_subscription_id', true), ''))",
+      "unchanged": "P1 (all three commands), P2 INSERT WITH CHECK, P2 UPDATE USING/WITH CHECK, column grants, no DELETE, FORCE RLS, ZERO ROLE MEMBERS.",
+      "one_row_per_transaction_preserved": "UNIQUE(stripe_customer_id) and UNIQUE(stripe_subscription_id) (D-2) make each disjunct match at most one row; the verb sets EXACTLY ONE of the three GUCs for the lookup, reads id, then sets app.commercial_account_id and clears the other two before any write. The unset-GUC branches evaluate to NULL and deny (unset_guc_denies).",
+      "PC5_amended": "Exactly three PERMISSIVE and three RESTRICTIVE policies on commercial_accounts TO uellix_cap_commercial PLUS, from CC-A09, the cancellation role's own pair; the count assertion becomes per-role: 3+3 for uellix_cap_commercial, 2+2 (SELECT, UPDATE) for uellix_cap_cancellation, 1+1 (INSERT) for uellix_cap_bootstrap. No policy for DELETE for any role; none TO PUBLIC.",
+      "not_a_tenant_read": "Neither GUC is a tenant-scope carrier (context_binding.NOT_A_TENANT_SCOPE_CARRIER applies to all three). No tenant path sets them."
+    },
+    "commercial_accounts_writers_closed_set": "uellix_cap_commercial (state verb, first binding, fact recording), uellix_cap_cancellation (Shape B), uellix_cap_bootstrap (INSERT of the new account only), the baseline applier (CE-4 seed, D-1 forward migration). Nobody else. No tenant-facing SELECT policy is ever authored (RLS.decision.no_tenant_read_policy_is_authored_here).",
+    "organizations_legacy_columns_writers_closed_set_after_CE5": "uellix_cap_entitlement (projection), uellix_cap_cancellation (projection of closures/replacements), uellix_cap_bootstrap (bootstrap-default projection of its own new row). Every other UPDATE privilege on stella_monthly_quota and stella_plan_label is REVOKED (CC-A05). stella_apply_subscription's write is removed by CE-6 recomposition. admin_set_stella_service (stella_0011, unapplied) is a PROHIBITED second writer (XL-3).",
+    "runtime_roles": "uellix_app / uellix_writer / uellix_auditor hold NO direct privilege on commercial_accounts, entitlement_grants, commercial_account_organization_history or the D-4 relation (runtime ACL successor SECTION_3 posture extended to the two new relations; SECTION_26 XL-4). Every runtime read of commercial or entitlement state goes through the evaluator or the gate-read definer with authenticated EXECUTE."
+  },
+  "SECTION_15_ACT_DECOMPOSITION": {
+    "rule": "Every act is IMPLEMENTATION-SIZED, opens only after independent certification of this authority, its own lineage (where PROTECTED_GRANT_REQUIRED is YES) and its own opening, and closes only by independent certification. Write-set ceilings are MAXIMA: an act touching a path outside its ceiling has found an authority delta and STOPS. Protected patterns are the ONLY ones a future grant may carry for the act; ordinary allows are named so nobody infers them from what changed. Every ordinal, branch, package id and SQLSTATE is DERIVED_NOT_ALLOCATED; the strings <NNNN>, <MMMM> and <slug> are placeholders and never appear in an implemented file. Every test, fixture or module path named inside a write_set_ceiling that does not exist at BASE_SHA is a DERIVED FILE NAME (the act may choose an exact equivalent at its opening with certifier agreement); only paths that exist at BASE_SHA and are marked retarget/repoint are commitments about existing files.",
+    "common_ceiling_for_every_DDL_act": "db/schema.ts; db/migrations/** (one unit: <ordinal>_<slug>.sql + meta/<ordinal>_snapshot.json + meta/_journal.json); db/hosted/baseline-manifest.ts (one BaselineUnit); db/prepared/journal/** (regenerated wrappers + one new); db/prepared/checkpoint-b0/observation.sql (regenerated arm when a public table is created); artifacts/hosted-a1-status.json; tests/** as enumerated per act. Generators only: pnpm journal:generate / journal:verify, b0:observation:generate / b0:observation:verify, baseline:verify, a1:status:write / a1:status:verify.",
+    "common_ceiling_for_every_prepared_capability_act": "db/prepared/stella_<NNNN>_<slug>.sql (+ stella_<NNNN>_rollback.sql when ROLLBACK_FILE is REQUIRED); db/prepared/README.md (test-forced index); db/hosted/hosted-package-manifest.ts (HOSTED_CHAIN entry with dependsOn); db/hosted/forward-only-packages.ts (only when FORWARD_ONLY); tests/prepared-stella-sql.test.ts and tests/prepared-sql-source-of-truth.test.ts inventory pins (advanced, never weakened); db/prepared-package-order.ts only where a supersession is registered.",
+    "acts": [
+      {
+        "id": "CC-A00",
+        "title": "Authority amendments admitting the batch's writers and the resolver bound",
+        "class": "A -- authority act, docs only",
+        "delivers": [
+          "AM-1 docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.3.json (deep-equal to SECTION_14.ENTITLEMENT_GRANTS_WRITER_ADMISSIONS)",
+          "AM-2 docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_AMENDMENT_v1.0.1.json (deep-equal to SECTION_14.RESOLVER_BOUND, incl. PC5_amended)",
+          "AM-3 docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json + docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.3.json (TABLE_ACL_CONTRACT retarget pre-authorization; hosted0010 untouched)"
+        ],
+        "depends_on": [
+          "this authority certified and integrated"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_AMENDMENT_v1.0.3.json",
+            "docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_AMENDMENT_v1.0.1.json",
+            "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.3.json",
+            "docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_IMPLEMENTATION_TEST_MANIFEST_AMENDMENT_v1.0.3.json"
+          ],
+          "protected": []
+        },
+        "PROTECTED_GRANT_REQUIRED": "NO",
+        "ODS_LINEAGE_REQUIRED": "NO",
+        "rollback_posture": "N/A (append-only documents; base bytes asserted unchanged before and after)",
+        "real_pg_families": [],
+        "changes_enforcement": false
+      },
+      {
+        "id": "CC-A01",
+        "title": "CE-2.R -- commercial_account_organization_history relation",
+        "class": "B -- frozen, well-specified DDL",
+        "delivers": [
+          "ORGANIZATION_RELATION.history_relation per SECTION_4.relation_contract_CC_A01",
+          "append-only storage guard",
+          "ENABLE+FORCE, zero tenant policies",
+          "governed history projection definer (explicit organization_id, SQLSTATE refusal)"
+        ],
+        "depends_on": [
+          "CC-A00"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/schema.ts",
+            "db/hosted/baseline-manifest.ts",
+            "artifacts/hosted-a1-status.json",
+            "tests/commercial/ce2-history-relation.test.ts",
+            "tests/postgres/ce2-history-relation.pg.test.ts",
+            "tests/postgres/ce2-history-relation-fixtures.ts",
+            "tests/database-runtime-acl-closed-world.test.ts (XL-4 classification only, if present at the base)"
+          ],
+          "protected": [
+            "db/migrations/**",
+            "db/prepared/journal/**",
+            "db/prepared/checkpoint-b0/observation.sql"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES (three patterns, the CE-1/CE-3 shape)",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "FIRST DDL of the batch. Creates one public table; the closed-world guard of the runtime ACL successor classifies it NO_RUNTIME_ACCESS.",
+        "rollback_posture": "FORWARD_ONLY (db/migrations unit); header carries the governed reversal note.",
+        "real_pg_families": [
+          "PG-CC-HIST-APPEND-ONLY (parent PG-8-adjacent, N-12/M-8)",
+          "PG-CC-HIST-ONE-OPEN-ROW",
+          "PG-CC-HIST-NO-RUNTIME-READ",
+          "PG-CC-HIST-PROJECTION-REFUSES-CROSS-ORG"
+        ],
+        "changes_enforcement": false
+      },
+      {
+        "id": "CC-A02",
+        "title": "CB-1 -- six-state vocabulary (D-1) and commercial capability role + policy pair (D-6)",
+        "class": "B",
+        "delivers": [
+          "D-1 forward migration + db/schema.ts mirror",
+          "prepared capability package stella_<NNNN>_commercial_account_capability.sql: uellix_cap_commercial, P1/P2 pairs (with the AM-2 SELECT predicate), column grants, PC-1..PC-5 postconditions, ZERO_ROLE_MEMBERS proof",
+          "HOSTED_CHAIN registration"
+        ],
+        "depends_on": [
+          "CC-A00",
+          "CE-1"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/schema.ts",
+            "db/hosted/baseline-manifest.ts",
+            "db/hosted/hosted-package-manifest.ts",
+            "artifacts/hosted-a1-status.json",
+            "tests/commercial/cb1-commercial-status.test.ts",
+            "tests/postgres/cb1-commercial-capability.pg.test.ts",
+            "tests/postgres/cb1-commercial-capability-fixtures.ts",
+            "tests/prepared-stella-sql.test.ts (inventory pin advance)",
+            "tests/prepared-sql-source-of-truth.test.ts (only if a count pin forces it)"
+          ],
+          "protected": [
+            "db/migrations/**",
+            "db/prepared/journal/**",
+            "db/prepared/checkpoint-b0/observation.sql",
+            "db/prepared/stella_<NNNN>_commercial_account_capability.sql",
+            "db/prepared/stella_<NNNN>_rollback.sql",
+            "db/prepared/README.md"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES (six literals/globs; the rollback literal exists because ROLLBACK_FILE is REQUIRED)",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "D-1 after CC-A01's migration; the capability package applies AFTER the D-1 migration (it asserts the six-value CHECK in its §0 preconditions) and AFTER stella_hosted_0010 in chain order.",
+        "rollback_posture": "D-1: FORWARD_ONLY. Capability package: ROLLBACK_FILE REQUIRED (exact reversal: drop policies, revoke column grants, drop role -- the stella_0008 class, not the hosted0009/0010 class).",
+        "real_pg_families": [
+          "PG-CC-STATE-VOCAB (six-value CHECK, DEFAULT BOOTSTRAP, no lowercase survivor)",
+          "PG-CC-PAIR-ADMITS (billing P-16)",
+          "PG-CC-PAIR-BOUNDS (N-11, N-12, N-21..N-24 degenerate cases)",
+          "PG-CC-ROLE-ATTRS-ZERO-MEMBERS (N-13, N-29, M-18 both variants)",
+          "PG-CC-RESOLVER-BOUND (one row by customer id, one by subscription id, zero when unset)"
+        ],
+        "changes_enforcement": false
+      },
+      {
+        "id": "CC-A03",
+        "title": "CB-2 -- canonical state verb, executable transition table, gate-read definer",
+        "class": "B",
+        "delivers": [
+          "commercial_transition verb",
+          "36-pair executable closure (P-20, P-21, N-20, P-22)",
+          "commercial_gate_for_organization definer (SECTION_8)",
+          "INV-STALE-GRANT hook (refuses until CB-6's relation exists)"
+        ],
+        "depends_on": [
+          "CC-A02"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/hosted/hosted-package-manifest.ts",
+            "lib/capabilities/commercial-gate.ts (thin typed wrapper; NOT consumed by any runtime path until CC-A10 -- census-controlled)",
+            "tests/commercial/cb2-state-verb.test.ts",
+            "tests/postgres/cb2-state-verb.pg.test.ts",
+            "tests/postgres/cb2-state-verb-fixtures.ts",
+            "tests/prepared-stella-sql.test.ts",
+            "tests/commercial/ce3-evaluator-consumer-census.test.ts (ONLY to add the new wrapper to a gate-census with the same fail-closed shape; zero runtime consumers asserted)"
+          ],
+          "protected": [
+            "db/prepared/stella_<NNNN>_commercial_state_verb.sql",
+            "db/prepared/stella_<NNNN>_rollback.sql",
+            "db/prepared/README.md"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES (three literals)",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "No migration. Package applies after CC-A02's package.",
+        "rollback_posture": "ROLLBACK_FILE REQUIRED (drops the verbs; state rows are untouched).",
+        "real_pg_families": [
+          "PG-CC-TRANSITION-CLOSURE (18 LEGAL, 5 NO_OP, 13 ILLEGAL enumerated -- P-20, P-21, N-20, M-16, M-17)",
+          "PG-CC-GATE-READ (PASS_THROUGH/BLOCKED per state; ungoverned pass-through; cross-org SQLSTATE)",
+          "PG-CC-LOCK-ORDER (account lock before organization lock; concurrent transitions serialize)"
+        ],
+        "changes_enforcement": false
+      },
+      {
+        "id": "CC-A04",
+        "title": "CE-4 -- deterministic backfill",
+        "class": "B",
+        "delivers": [
+          "BACKFILL B1..B4 per SECTION_9",
+          "PRE-CE4-1..4 assertions"
+        ],
+        "depends_on": [
+          "CC-A01",
+          "CC-A02",
+          "CE-3"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/hosted/baseline-manifest.ts",
+            "artifacts/hosted-a1-status.json",
+            "tests/commercial/ce4-backfill.test.ts",
+            "tests/postgres/ce4-backfill.pg.test.ts",
+            "tests/postgres/ce4-backfill-fixtures.ts"
+          ],
+          "protected": [
+            "db/migrations/**",
+            "db/prepared/journal/**"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES (two patterns; no new table so no observation.sql arm -- re-measure)",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "After D-1. DML-only unit.",
+        "rollback_posture": "FORWARD_ONLY with governed reversal note (last reversible act).",
+        "real_pg_families": [
+          "PG-CC-BACKFILL-1TO1 (P-17; one account per org, no grouping)",
+          "PG-CC-BACKFILL-THROUGH-HISTORY (opening row per org via the relation)",
+          "PG-CC-BACKFILL-INVERTED-PROJECTION (P-10 inverse; SENTINEL_MANUAL_QUOTA_ORG -> PLATFORM_ADMIN)",
+          "PG-CC-BACKFILL-PRECONDITIONS-ABORT (a planted subscription id aborts the whole migration)",
+          "PG-CC-BACKFILL-IDEMPOTENT (second run inserts nothing)",
+          "PG-CC-BACKFILL-UNGOVERNED-SENTINEL (SENTINEL_UNGOVERNED_ORG excluded from seeding by fixture, still NO_LIVE_GRANT)"
+        ],
+        "changes_enforcement": false
+      },
+      {
+        "id": "CC-A05",
+        "title": "CE-5 -- single governed entitlement writer, projection, plan catalogue, quota-column hardening, admin repoint",
+        "class": "B, security-critical",
+        "delivers": [
+          "uellix_cap_entitlement + entitlement_open/entitlement_close (SECTION_10)",
+          "projection rule",
+          "quota-column REVOKE hardening package (forward-only)",
+          "lib/capabilities/plan-catalogue.ts",
+          "lib/admin/organization-administration.ts repoint",
+          "single-writer static control"
+        ],
+        "depends_on": [
+          "CC-A04"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/hosted/hosted-package-manifest.ts",
+            "db/hosted/forward-only-packages.ts",
+            "lib/capabilities/plan-catalogue.ts",
+            "lib/capabilities/entitlement-writer.ts",
+            "lib/admin/organization-administration.ts",
+            "lib/admin/stella-services.ts",
+            "app/admin/services/** (only the call-site repoint)",
+            "tests/commercial/ce5-entitlement-writer.test.ts",
+            "tests/commercial/ce5-single-writer-census.test.ts",
+            "tests/postgres/ce5-entitlement-writer.pg.test.ts",
+            "tests/postgres/ce5-entitlement-writer-fixtures.ts",
+            "tests/admin-organization-administration.test.ts (retarget of the dead 42883 path)",
+            "tests/prepared-stella-sql.test.ts",
+            "tests/prepared-sql-source-of-truth.test.ts",
+            "tests/commercial/ce3-evaluator-consumer-census.test.ts (ONLY to enumerate the writer package as definition surface if it names the evaluator; zero runtime consumers still asserted)"
+          ],
+          "protected": [
+            "db/prepared/stella_<NNNN>_entitlement_writer_capability.sql",
+            "db/prepared/stella_<NNNN>_rollback.sql",
+            "db/prepared/stella_<MMMM>_organizations_quota_column_hardening.sql",
+            "db/prepared/README.md"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES (four literals: writer package + its rollback + forward-only hardening package + README)",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "No migration. Writer package after CC-A03's; hardening package after the writer package (so the single writer exists before every other writer is revoked).",
+        "rollback_posture": "Writer package: ROLLBACK_FILE REQUIRED. Hardening package: FORWARD_ONLY (its reversal re-creates the dual-writer defect -- the stella_hosted_0007 class), declared in db/hosted/forward-only-packages.ts with a substantive reason.",
+        "real_pg_families": [
+          "PG-2 inherited (SEC-8 concurrent isolation)",
+          "PG-CC-PROJECTION-EXACT (P-10 both directions)",
+          "PG-CC-SINGLE-WRITER (N-9, M-5: every other UPDATE on the two columns refused 42501 as authenticated, uellix_app, uellix_writer, service_role)",
+          "PG-CC-WRITER-CLOSE-ONCE (close-then-insert never two live rows; second close refused)",
+          "PG-CC-WRITER-IDEMPOTENT (same cause_identity -> no second row)",
+          "PG-CC-UNKNOWN-PRICE-REFUSED (N-14 / SENTINEL_UNKNOWN_STRIPE_PRICE on the write path)"
+        ],
+        "changes_enforcement": true,
+        "enforcement_note": "The LIMIT source changes (the column becomes a projection). No new refusal appears at the ticket boundary yet."
+      },
+      {
+        "id": "CC-A06",
+        "title": "CB-3 -- first binding verb and D-2",
+        "class": "B, Tier-A attack surface",
+        "delivers": [
+          "D-2 migration (stripe_customer_id, stripe_subscription_id, stripe_price_id on commercial_accounts; UNIQUE on the first two)",
+          "bind_commercial_stripe_customer server action + definer (SECTION_11.CB3_DISPOSITION)",
+          "audit commercial.stripe.bound"
+        ],
+        "depends_on": [
+          "CC-A02",
+          "CC-A03"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/schema.ts",
+            "db/hosted/baseline-manifest.ts",
+            "db/hosted/hosted-package-manifest.ts",
+            "artifacts/hosted-a1-status.json",
+            "lib/stripe/client.ts (customers.create wrapper with idempotency key; NO change to the price map semantics)",
+            "lib/capabilities/stripe-binding.ts",
+            "app/app/organization/billing/actions.ts",
+            "tests/commercial/cb3-first-binding.test.ts",
+            "tests/postgres/cb3-first-binding.pg.test.ts",
+            "tests/postgres/cb3-first-binding-fixtures.ts",
+            "tests/billing-page.test.tsx",
+            "tests/prepared-stella-sql.test.ts"
+          ],
+          "protected": [
+            "db/migrations/**",
+            "db/prepared/journal/**",
+            "db/prepared/stella_<NNNN>_commercial_stripe_binding.sql",
+            "db/prepared/stella_<NNNN>_rollback.sql",
+            "db/prepared/README.md"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "D-2 after D-1 (CC-A02) and after CE-4 (so the seed copy of organizations' Stripe columns, if any, lands before UNIQUE is asserted; PRE-CE4-1 guarantees zero subscription ids).",
+        "rollback_posture": "D-2: FORWARD_ONLY. Binding package: ROLLBACK_FILE REQUIRED.",
+        "real_pg_families": [
+          "PG-CC-BIND-IDEMPOTENT-SEQ-AND-CONCURRENT (P-02, P-03: three bounds -- lock, UNIQUE, Stripe idempotency key stubbed at the API boundary)",
+          "PG-CC-BIND-NO-CLIENT-ID (N-01)",
+          "PG-CC-BIND-CROSS-TENANT-ATTACK (N-02 both layers; M-05 turns the second layer RED)",
+          "PG-CC-BIND-CLOSED-REFUSED",
+          "PG-CC-BIND-L1-GATE (an Organization whose commercial acceptance is not current cannot bind)"
+        ],
+        "changes_enforcement": false
+      },
+      {
+        "id": "CC-A07",
+        "title": "CB-4 -- checkout journey and portal replacement",
+        "class": "B",
+        "delivers": [
+          "checkout.sessions.create with the bound customer, identity-free success_url",
+          "contact-sales throw replaced",
+          "billing page reads commercial projection + readStellaCapacity"
+        ],
+        "depends_on": [
+          "CC-A06"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "app/app/organization/billing/**",
+            "lib/stripe/client.ts (checkout session wrapper)",
+            "lib/capabilities/stripe-binding.ts",
+            "components/billing/** (if present at the base)",
+            "tests/billing-page.test.tsx",
+            "tests/commercial/cb4-checkout.test.ts"
+          ],
+          "protected": []
+        },
+        "PROTECTED_GRANT_REQUIRED": "NO",
+        "ODS_LINEAGE_REQUIRED": "NO (ordinary allows; the act still opens under a governed opening and closes by certification)",
+        "migration_ordering": "None.",
+        "rollback_posture": "Ordinary code; revertible by revert commit.",
+        "real_pg_families": [
+          "PG-CC-BILLING-READ-BOUNDED (the billing page reads a projection; a tenant principal cannot SELECT commercial_accounts; SENTINEL_FOREIGN_ACCOUNT_ROW absent from every response)"
+        ],
+        "changes_enforcement": false
+      },
+      {
+        "id": "CC-A08",
+        "title": "CB-5 -- webhook ordering identity and guard, D-3, D-7, CE-6 recomposition, invoice.* handling",
+        "class": "A/B, security-critical (webhook identity)",
+        "delivers": [
+          "D-3 and D-7 migrations",
+          "recomposed Stripe capability package superseding stella_0008 (SECTION_11.CB5_DISPOSITION)",
+          "ORD-1..ORD-6",
+          "planStripeEvent extended with invoice.* cases and D-7 facts",
+          "organizations' legacy Stripe columns no longer written"
+        ],
+        "depends_on": [
+          "CC-A05",
+          "CC-A06"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/schema.ts",
+            "db/hosted/baseline-manifest.ts",
+            "db/hosted/hosted-package-manifest.ts",
+            "db/prepared-package-order.ts (supersession stella_0008 -> new)",
+            "artifacts/hosted-a1-status.json",
+            "lib/capabilities/stripe-webhook.ts",
+            "db/capabilities/stripe-capability-executor.ts",
+            "tests/commercial/cb5-webhook-ordering.test.ts",
+            "tests/postgres/cb5-webhook-ordering.pg.test.ts",
+            "tests/postgres/cb5-webhook-ordering-fixtures.ts",
+            "tests/prepared-stella-sql.test.ts",
+            "tests/prepared-sql-source-of-truth.test.ts",
+            "lib/capabilities/stripe-webhook tests already present under tests/** (retarget only)"
+          ],
+          "protected": [
+            "db/migrations/**",
+            "db/prepared/journal/**",
+            "db/prepared/stella_<NNNN>_stripe_webhook_identity_recomposed.sql",
+            "db/prepared/stella_<NNNN>_rollback.sql",
+            "db/prepared/README.md"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "D-3 ALTERs stripe_webhook_events, which is a chain-created table (stella_0008 successor), so D-3 lives INSIDE the recomposed prepared package, not in db/migrations/**; D-7 is an ordinary migration on commercial_accounts after D-2.",
+        "rollback_posture": "D-7: FORWARD_ONLY. Recomposed package: ROLLBACK_FILE REQUIRED (stella_0008 ships one; the class is unchanged).",
+        "real_pg_families": [
+          "PG-9 inherited (privilege census on uellix_stripe / uellix_cap_stripe: zero on organizations, organization_members, entitlement_grants, legacy quota columns)",
+          "PG-CC-ORD-STALE-REFUSED (N-04, M-01, M-02 with SENTINEL_ARRIVAL_ORDER, M-10)",
+          "PG-CC-ORD-EQUAL-TIMESTAMP (P-05, N-05)",
+          "PG-CC-ORD-INSIDE-LOCK (M-06 concurrent pair)",
+          "PG-CC-DUPLICATE-NOOP (P-04, N-16)",
+          "PG-CC-WEBHOOK-RESOLVES-BY-IDENTITY-ONLY (N-03)",
+          "PG-CC-WEBHOOK-WRITES-NO-GRANT-NO-LIMIT (N-5 parent, M-1/MUT-1, M-07)",
+          "PG-CC-PAST-DUE-NO-GRANT-TOUCH (P-06, P-07, N-06, M-03)",
+          "PG-CC-SUBSCRIPTION-CONFLICT (N-15)",
+          "PG-CC-CLOSED-TERMINAL (N-18)",
+          "PG-CC-MANUAL-BASIS-CONFLICT (N-19 -- state reachable only by fixture; asserted anyway)"
+        ],
+        "changes_enforcement": true
+      },
+      {
+        "id": "CC-A09",
+        "title": "CB-6 -- re-evaluation request relation and consumer (Shape A), atomic cancellation capability (Shape B), INV-STALE-GRANT",
+        "class": "A/B, security-critical (privilege concentration, OF-9)",
+        "delivers": [
+          "D-4 relation (migration)",
+          "consumer loop (server-side governed job invoked by the webhook completion path and by an operator-triggerable retry; no cron substrate invented)",
+          "uellix_cap_cancellation + D-8 verb",
+          "INV-STALE-GRANT live in the state verb",
+          "SUSPENSION closures (P-08) and reactivation reopen (P-11)"
+        ],
+        "depends_on": [
+          "CC-A03",
+          "CC-A05",
+          "CC-A08"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/schema.ts",
+            "db/hosted/baseline-manifest.ts",
+            "db/hosted/hosted-package-manifest.ts",
+            "artifacts/hosted-a1-status.json",
+            "lib/capabilities/entitlement-writer.ts (consumer)",
+            "lib/capabilities/commercial-reevaluation.ts",
+            "app/api/webhooks/stripe/route.ts (post-commit consumer trigger only; no identity change)",
+            "tests/commercial/cb6-reevaluation.test.ts",
+            "tests/postgres/cb6-reevaluation.pg.test.ts",
+            "tests/postgres/cb6-cancellation.pg.test.ts",
+            "tests/postgres/cb6-fixtures.ts",
+            "tests/prepared-stella-sql.test.ts",
+            "tests/database-runtime-acl-closed-world.test.ts (XL-4 classification of the D-4 relation)"
+          ],
+          "protected": [
+            "db/migrations/**",
+            "db/prepared/journal/**",
+            "db/prepared/checkpoint-b0/observation.sql",
+            "db/prepared/stella_<NNNN>_commercial_cancellation_capability.sql",
+            "db/prepared/stella_<NNNN>_rollback.sql",
+            "db/prepared/README.md"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "D-4 after D-7. Cancellation package after the writer package and the recomposed Stripe package.",
+        "rollback_posture": "D-4: FORWARD_ONLY. Cancellation package: ROLLBACK_FILE REQUIRED.",
+        "real_pg_families": [
+          "PG-CC-CANCEL-ATOMIC-COMMIT (P-19, P-10 all three conjuncts)",
+          "PG-CC-CANCEL-ROLLBACK-NOTHING-TORN (N-25, N-26 with SENTINEL_TORN_CANCELLATION, M-14)",
+          "PG-CC-CANCEL-CLOSING-ONLY (the role cannot insert a PLAN row: policy refusal asserted as the OF-9 postcondition)",
+          "PG-CC-CANCEL-ROLE-ZERO-MEMBERS (OF-10 propagation)",
+          "PG-CC-STALE-GRANT-REFUSED (N-27, N-28, M-15 with SENTINEL_CONDEMNED_GRANT)",
+          "PG-CC-SUSPENSION-CLOSES-PLAN-GRANTS (P-08) and SUSPENSION-IS-NOT-TENANT-SUSPENSION (N-07, SENTINEL_COMMERCIALLY_SUSPENDED_ACCOUNT)",
+          "PG-CC-REACTIVATION-NEW-ROWS (P-11, P-17)",
+          "PG-CC-MULTI-ORG-T2-ATOMIC (all N organizations or none)"
+        ],
+        "changes_enforcement": true
+      },
+      {
+        "id": "CC-A10",
+        "title": "CB-7 -- runtime consumer: L3 conjunctive gate at the ticket boundary, three refusal vocabularies, consumer-census retarget",
+        "class": "B",
+        "delivers": [
+          "L3 in db/stella/operation-tickets.ts issueOperationTicket (SECTION_7)",
+          "StellaTicketIssueResult codes ENTITLEMENT_ABSENT / ENTITLEMENT_BLOCKED / ENTITLEMENT_UNAVAILABLE and their user-facing copy",
+          "consumer census retarget (exactly one runtime consumer)",
+          "billing page / enforcement display consistency (STELLA_RECONCILIATION.display_consistency)"
+        ],
+        "depends_on": [
+          "CC-A03",
+          "CC-A05",
+          "CC-A04 (EC-6)"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/stella/operation-tickets.ts",
+            "components/stella/operation-ticket.ts (result union)",
+            "lib/stella/operation-ticket/issue-governed-ticket.ts (result mapping only; no evaluator import)",
+            "app/actions/stella/grounded-query.ts (result mapping only; no evaluator import)",
+            "lib/capabilities/commercial-gate.ts",
+            "tests/commercial/ce3-evaluator-consumer-census.test.ts (retarget to ONE authorized consumer)",
+            "tests/commercial/cb7-ticket-gate.test.ts",
+            "tests/postgres/cb7-ticket-gate.pg.test.ts",
+            "tests/e2e/stella-ticket-journey.e2e.test.ts and tests/e2e/stella-multicategory-quota.e2e.test.ts (extended with L3 negative legs)",
+            "messages/** or the i18n surface carrying the new refusal copy (measured at the base)"
+          ],
+          "protected": []
+        },
+        "PROTECTED_GRANT_REQUIRED": "NO",
+        "ODS_LINEAGE_REQUIRED": "NO",
+        "migration_ordering": "None.",
+        "rollback_posture": "Ordinary code.",
+        "real_pg_families": [
+          "PG-CC-L3-BEFORE-L2 (a BLOCKED grant refuses at issuance with ENTITLEMENT_BLOCKED and mints no ticket; a CAPPED grant mints and then bind reads the projected cap)",
+          "PG-CC-THREE-REFUSALS-DISTINCT (rate limit, absent/blocked, exhausted -- SC-7 of the billing self_check)",
+          "PG-CC-GATE-SUSPENDED-WINDOW (state SUSPENDED with grants not yet closed -> issuance refused ENTITLEMENT_BLOCKED)",
+          "PG-CC-ALL-CATEGORIES-ONE-KEY (each of the seven categories is refused identically under a BLOCKED grant)",
+          "PG-CC-DIRECT-SQL-MINT-STILL-BOUND (SENTINEL_DIRECT_SQL_MINT: a ticket minted by direct SQL under a BLOCKED grant is refused no_quota at bind)"
+        ],
+        "changes_enforcement": true
+      },
+      {
+        "id": "CC-A11",
+        "title": "CAP-03 enablement rollout (staging)",
+        "class": "C/operational under release authority",
+        "delivers": [
+          "hosted application of the recomposed Stripe package through the chain",
+          "environment names provisioned out of band",
+          "WEBHOOK_DATABASE_IDENTITY_AVAILABLE = true"
+        ],
+        "depends_on": [
+          "CC-A08",
+          "CC-A09",
+          "CC-A10"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "app/api/webhooks/stripe/route.ts (the one constant)",
+            "docs/ops/staging/evidence/** (application evidence)"
+          ],
+          "protected": []
+        },
+        "PROTECTED_GRANT_REQUIRED": "NO",
+        "ODS_LINEAGE_REQUIRED": "NO",
+        "migration_ordering": "None.",
+        "rollback_posture": "Flag revert; hosted package rollback per its rollback file.",
+        "real_pg_families": [],
+        "changes_enforcement": true,
+        "environment_rule": "Names only, never values, in any artifact (ENV-11 names_only). Never before HPO-G.5 staging parity. Production is outside this authority."
+      },
+      {
+        "id": "CC-A12",
+        "title": "CE-2.V -- governed transfer verb",
+        "class": "B",
+        "delivers": [
+          "uellix_cap_transfer + transfer verb (SECTION_4.verb_contract_CC_A12)",
+          "TRANSFER_AUDIT_SHAPE",
+          "T-1..T-13"
+        ],
+        "depends_on": [
+          "CC-A01",
+          "CC-A09"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/hosted/hosted-package-manifest.ts",
+            "lib/capabilities/commercial-transfer.ts (typed wrapper; no UI; no runtime caller until CE-8)",
+            "tests/commercial/ce2-transfer.test.ts",
+            "tests/postgres/ce2-transfer.pg.test.ts",
+            "tests/postgres/ce2-transfer-fixtures.ts",
+            "tests/prepared-stella-sql.test.ts"
+          ],
+          "protected": [
+            "db/prepared/stella_<NNNN>_commercial_transfer_capability.sql",
+            "db/prepared/stella_<NNNN>_rollback.sql",
+            "db/prepared/README.md"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES (three literals)",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "No migration.",
+        "rollback_posture": "ROLLBACK_FILE REQUIRED.",
+        "real_pg_families": [
+          "PG-5 inherited (compare-and-set serialization, N-10, M-6)",
+          "PG-6 inherited (zero organization_members rows, SEC-9)",
+          "PG-8 inherited (account-scoped audit row invisible to tenants)",
+          "PG-CC-TRANSFER-CLOSES-NOT-REPOINTS (N-7, M-3)",
+          "PG-CC-TRANSFER-NO-STRIPE-MOVE (T-9)",
+          "PG-CC-TRANSFER-SAME-ACCOUNT-REFUSED (T-13)",
+          "PG-CC-TRANSFER-EMITS-ONE-REQUEST (T-7 via D-4)"
+        ],
+        "changes_enforcement": false
+      },
+      {
+        "id": "CC-A13",
+        "title": "CB-9 -- legacy Free=10 retirement",
+        "class": "C",
+        "delivers": [
+          "STRIPE_QUOTAS.free and mapStripePriceToQuota's null branch removed from every write path (display-only residue permitted per unknown_price_rule, or removed entirely)",
+          "N-17 runtime instrumentation control",
+          "P-18"
+        ],
+        "depends_on": [
+          "CC-A08",
+          "CC-A10"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "lib/stripe/client.ts",
+            "lib/capabilities/stripe-webhook.ts",
+            "tests/commercial/cb9-no-legacy-free.test.ts",
+            "tests/postgres/cb9-no-legacy-free.pg.test.ts"
+          ],
+          "protected": []
+        },
+        "PROTECTED_GRANT_REQUIRED": "NO",
+        "ODS_LINEAGE_REQUIRED": "NO",
+        "migration_ordering": "None. LAST of the billing packages.",
+        "rollback_posture": "Ordinary code.",
+        "real_pg_families": [
+          "PG-CC-NO-FREE-TEN (P-18, N-08, N-17, M-04 with SENTINEL_FREE_TEN)"
+        ],
+        "changes_enforcement": true
+      },
+      {
+        "id": "CC-A14",
+        "title": "CE-7 -- composed bootstrap successor and ALLOWLIST_EXIT",
+        "class": "B, security-relevant (anti-abuse floor)",
+        "delivers": [
+          "successor bootstrap package superseding stella_0010 (SECTION_13)",
+          "feature-flagged default-off allowlist",
+          "distributed founding rate limit",
+          "onboarding action repointed to the definer",
+          "DP-CAP-12/13 discharged"
+        ],
+        "depends_on": [
+          "CC-A05",
+          "tenancy S1 (done)",
+          "tenancy S6 (EXTERNAL_PREREQUISITE)"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "db/hosted/hosted-package-manifest.ts",
+            "db/prepared-package-order.ts (supersession stella_0010 -> new)",
+            "app/(authenticated)/app/onboarding/**",
+            "lib/onboarding/** (DERIVED; or the module S6 establishes)",
+            "lib/security/rate-limit.ts (distributed founding limiter, same posture as lib/stella/rate-limit.ts)",
+            "lib/admin/signup-allowlist.ts (flag read only)",
+            "tests/commercial/ce7-bootstrap.test.ts",
+            "tests/postgres/ce7-bootstrap.pg.test.ts",
+            "tests/postgres/ce7-bootstrap-fixtures.ts",
+            "tests/prepared-stella-sql.test.ts",
+            "tests/admin-signup-allowlist.service.test.ts (flag semantics)",
+            "tests/database-runtime-entrypoints.test.ts (ONLY if the entry-point quadruple pin moves; advanced, never weakened)"
+          ],
+          "protected": [
+            "db/prepared/stella_<NNNN>_organization_bootstrap_capability_v2.sql",
+            "db/prepared/stella_<NNNN>_rollback.sql",
+            "db/prepared/README.md"
+          ]
+        },
+        "PROTECTED_GRANT_REQUIRED": "YES (three literals)",
+        "ODS_LINEAGE_REQUIRED": "YES",
+        "migration_ordering": "No migration.",
+        "rollback_posture": "ROLLBACK_FILE REQUIRED (stella_0010 ships one; same class).",
+        "real_pg_families": [
+          "PG-10 inherited (atomic rollback across five relations; N-11, M-7)",
+          "PG-CC-BOOTSTRAP-NO-ALLOWLIST (SENTINEL_NO_ALLOWLIST_SUBJECT founds successfully with the flag OFF; refused with the flag ON and no entry)",
+          "PG-CC-BOOTSTRAP-FOUNDER-CARDINALITY (I2)",
+          "PG-CC-BOOTSTRAP-IDEMPOTENT-CONCURRENT (I3, I4 without user_single_active_membership)",
+          "PG-CC-BOOTSTRAP-DEFAULT-GRANT (source BOOTSTRAP_DEFAULT, commercial_account_id NULL, BLOCKED, projected 0; P-13, P-14)",
+          "PG-CC-BOOTSTRAP-NO-PLAN-NO-STRIPE (PI-4; the definer cannot insert a PLAN row: policy refusal)"
+        ],
+        "changes_enforcement": true
+      },
+      {
+        "id": "CC-A15",
+        "title": "Commercial Golden acceptance evidence",
+        "class": "B/C -- tests only",
+        "delivers": [
+          "tests/e2e/commercial-golden-journey.e2e.test.ts (name DERIVED): signup -> B0 -> L0 -> found (no allowlist) -> L1 accept -> Stella ticket refused ENTITLEMENT_BLOCKED -> bind -> checkout (Stripe stub at the API boundary; no live Stripe in CI) -> signed webhook replay applied in source order -> ACTIVE_STRIPE -> PLAN grant projected -> Stella ticket issued and bound -> past_due (no change) -> unpaid (SUSPENDED, refused) -> reactivation -> cancellation (BOOTSTRAP, refused, no Free=10) -- executed AS uellix_app through the runtime identity, on the disposable substrate with the full baseline and the chain applied",
+          "GOLDEN_JOURNEY_SKELETON J2 step 'commercial-accounts' converted from target-only to posture-backed"
+        ],
+        "depends_on": [
+          "CC-A10",
+          "CC-A13",
+          "CC-A14"
+        ],
+        "write_set_ceiling": {
+          "ordinary_allow": [
+            "tests/e2e/commercial-golden-journey.e2e.test.ts",
+            "tests/e2e/commercial-golden-fixtures.ts",
+            "docs/ops/release/GOLDEN_JOURNEY_SKELETON_v1.0.0.json ONLY through its own governed amendment convention, if its pinned coverage must move (otherwise untouched)"
+          ],
+          "protected": []
+        },
+        "PROTECTED_GRANT_REQUIRED": "NO",
+        "ODS_LINEAGE_REQUIRED": "NO",
+        "migration_ordering": "None.",
+        "rollback_posture": "Ordinary tests.",
+        "real_pg_families": [
+          "PG-CC-GOLDEN (the whole journey as one probe family; every negative leg above is an assertion, not a skip)"
+        ],
+        "changes_enforcement": false
+      }
+    ],
+    "act_count": 16,
+    "acts_with_protected_grant": [
+      "CC-A01",
+      "CC-A02",
+      "CC-A03",
+      "CC-A04",
+      "CC-A05",
+      "CC-A06",
+      "CC-A08",
+      "CC-A09",
+      "CC-A12",
+      "CC-A14"
+    ],
+    "acts_without_protected_grant": [
+      "CC-A00",
+      "CC-A07",
+      "CC-A10",
+      "CC-A11",
+      "CC-A13",
+      "CC-A15"
+    ],
+    "node_closure_map": {
+      "CE-2": [
+        "CC-A01",
+        "CC-A12"
+      ],
+      "CE-4": [
+        "CC-A04"
+      ],
+      "CE-5": [
+        "CC-A05"
+      ],
+      "CE-6": [
+        "CC-A08 (recomposition + identity move)",
+        "CC-A11 (enablement)"
+      ],
+      "CE-7": [
+        "CC-A14"
+      ],
+      "CB-1": [
+        "CC-A02"
+      ],
+      "CB-2": [
+        "CC-A03"
+      ],
+      "CB-3": [
+        "CC-A06"
+      ],
+      "CB-4": [
+        "CC-A07"
+      ],
+      "CB-5": [
+        "CC-A08"
+      ],
+      "CB-6": [
+        "CC-A09"
+      ],
+      "CB-7": [
+        "CC-A10"
+      ],
+      "CB-9": [
+        "CC-A13"
+      ],
+      "not_closed_by_this_batch": [
+        "CE-8",
+        "CE-9",
+        "CB-8"
+      ]
+    }
+  },
+  "SECTION_16_SERIALIZATION_AND_CHOKEPOINTS": {
+    "topological_order": "CC-A00 -> CC-A01 -> CC-A02 -> CC-A03 -> CC-A04 -> CC-A05 -> CC-A06 -> CC-A07 -> CC-A08 -> CC-A09 -> CC-A10 -> CC-A11 -> CC-A12 -> CC-A13 -> CC-A14 (after tenancy S6) -> CC-A15. The chain is a LINE on the serial chokepoints below; only CC-A07 (no DDL, no prepared unit) and CC-A13 may overlap in time with a neighbour, and only if their write sets are measured disjoint at their bases.",
+    "serial_chokepoints_inherited": {
+      "CP-1 db/migrations ordinal": "CC-A01, CC-A02, CC-A04, CC-A06, CC-A08, CC-A09 each take ONE ordinal at their own base; two open at once collide. SERIAL.",
+      "CP-2 db/schema.ts": "CC-A01, CC-A02, CC-A06, CC-A08, CC-A09. SERIAL. Shared with tenancy S4/S7 and Wave3.",
+      "CP-4 db/prepared/stella_*": "CC-A02, CC-A03, CC-A05, CC-A06, CC-A08, CC-A09, CC-A12, CC-A14 each add a package; the runtime ACL successor adds stella_0021; every addition regenerates nothing but moves the inventory pins. SERIAL, and SERIAL with the ACL successor lane (XL-1).",
+      "CP-5 db/identity-context.ts": "NONE INTENDED by any act. An edit there by a commercial act is a deviation (MUT-10).",
+      "CP-6 Controller enumeration": "Every lineage act. The Controller enumerates one act behind; the allocator for CC-A01's lineage first needs the Controller successor enumerating v1.0.35 (SECTION_17).",
+      "CP-7 lib/admin/**": "CC-A05 only. Shared with the platform-admin lane; XL-3.",
+      "CP-8 organizations commercial columns as a surface": "CC-A04 (copy), CC-A05 (projection + hardening), CC-A08 (stop writing legacy Stripe columns). SERIAL."
+    },
+    "new_chokepoints_named_here": {
+      "CP-9 db/hosted/hosted-package-manifest.ts HOSTED_CHAIN": "Every prepared capability act appends a chain link with dependsOn; concurrent appends conflict. SERIAL.",
+      "CP-10 corpus fan-out (db/prepared/journal/**, checkpoint-b0/observation.sql, baseline-manifest.ts, hosted-a1-status.json)": "Every DDL act regenerates them (CE-3 CROSS_LANE_CONSTRAINTS.CE3_x_CORPUS_FAN_OUT). SERIAL by construction.",
+      "CP-11 tests/commercial/ce3-evaluator-consumer-census.test.ts": "CC-A03, CC-A05 (definition-surface additions) and CC-A10 (the ONE consumer). SERIAL; each edit keeps the census closed-world.",
+      "CP-12 app/(authenticated)/app/onboarding/** and the bootstrap prepared surface": "CC-A14 and tenancy S6 write the same files. SERIAL: S6 first (CM-8)."
+    },
+    "branch_and_grant_binding": "Each act with PROTECTED_GRANT_REQUIRED YES binds its grant to EXACTLY ONE branch, DERIVED per convention codex/commercial-core-<act-slug>-r1 (measured precedent: codex/commercial-account-ce3-implementation-r1). The scope gate is run from the implementation worktree, never a merge worktree; grants on one branch never union; every grant id is supplied explicitly (ods-scope no-union rule)."
+  },
+  "SECTION_17_ODS_AND_LINEAGE": {
+    "this_act": {
+      "ODS_LINEAGE_REQUIRED": "NO",
+      "PROTECTED_GRANT_REQUIRED": "NO",
+      "why": "Two new files under docs/ops/commercial/**, outside DEFAULT_PROTECTED_PATTERNS. Ordinary explicit allows only.",
+      "scope_invocation_shape": "pnpm ods:scope -- --base eafaaf57b0ad01031d9c61a985fbc6a2da817340 --allow docs/ops/commercial/COMMERCIAL_CORE_EXECUTION_AUTHORITY_v1.0.0.json --allow docs/ops/commercial/COMMERCIAL_CORE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0.json"
+    },
+    "required_ods_acts": {
+      "shape": "The CE-3 twelve-act SPLIT shape (ODS_SPLIT_GOVERNANCE.REQUIRED_NEXT_ACTS_IN_ORDER) applies to EVERY act with PROTECTED_GRANT_REQUIRED YES: (1) act opening, (2) ODS lineage allocation (addendum + DECLARED grant), (3) lineage certification and merge, (4) grant registration in scripts/ods-scope.ts by a SEPARATE mission, (5) registration certification and merge, (6) implementation writer, (7) implementation certification, (8) merge. The implementation writer NEVER self-registers.",
+      "Controller_lag_rule": "Allocating the next addendum requires the Controller to enumerate the current highest one first. Measured at BASE_SHA: v1.0.35 present, Controller tail v1.0.34 -> a Controller successor enumerating v1.0.35 precedes CC-A01's lineage allocation. Each subsequent act repeats the rule for its predecessor's addendum.",
+      "grant_count_symbolic": "Ten acts require a grant (SECTION_15.acts_with_protected_grant); CC-A05 may require TWO pattern sets in one grant (writer package + rollback + forward-only hardening + README), never two grants on one branch unless the coordinator decides so; CC-A08's D-7 migration and its recomposed package are ONE grant with the migration globs plus the package literals.",
+      "NEXT_AVAILABLE_ODS_LINEAGE": {
+        "symbolic": "the addendum ordinal after the highest present at the allocator's base",
+        "measured_highest_present_at_BASE_SHA": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json",
+        "derived_next": "v1.0.36",
+        "status": "DERIVED_NOT_ALLOCATED"
+      },
+      "NEXT_AVAILABLE_HPO_ID": {
+        "measured_tail_at_BASE_SHA": "HPO-ODS-W2-32 (scripts/ods-scope.ts:1055, registered)",
+        "derived_next": "HPO-ODS-W2-33",
+        "status": "DERIVED_NOT_ALLOCATED",
+        "collision_note": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json SECTION_11 expected v1.0.35 / W2-32 for its own node; both were consumed by hosted0010. That lane re-derives at its own head; so does every act here. Whichever lane allocates first takes v1.0.36 / W2-33; the other re-derives."
+      },
+      "prohibitions_on_this_act": [
+        "No ODS addendum is created.",
+        "scripts/ods-scope.ts and scripts/ods-controller.ts are not edited.",
+        "No sentinel under tests/ods/ is advanced.",
+        "No grant id, addendum ordinal, migration ordinal, hosted ordinal, prepared ordinal, branch or SQLSTATE is allocated."
+      ]
+    }
+  },
+  "SECTION_18_MIGRATION_ORDERING": {
+    "rule": "RELATIVE order of DDL items. Ordinals are taken at each act's base from the live ceiling (0073 at BASE_SHA -> 0074 DERIVED_NOT_ALLOCATED) and never from this list. Prepared packages apply in HOSTED_CHAIN order after stella_hosted_0010 and after the migrations they assert in their §0 preconditions.",
+    "order": [
+      "M1 (CC-A01) CREATE commercial_account_organization_history + guard + RLS + projection definer.",
+      "M2 (CC-A02) D-1 six-state CHECK, DEFAULT BOOTSTRAP, forward value migration.",
+      "P1 (CC-A02) commercial capability package (role, pairs, grants) -- asserts M2.",
+      "P2 (CC-A03) state verb + gate-read definer package -- asserts P1.",
+      "M3 (CC-A04) backfill DML -- asserts M1, M2, 0073.",
+      "P3 (CC-A05) entitlement writer package -- asserts M3 (seeded), 0073, hosted0010 posture, CC-A00 admission.",
+      "P4 (CC-A05) quota-column hardening package (forward-only) -- asserts P3.",
+      "M4 (CC-A06) D-2 Stripe identity columns + UNIQUE on commercial_accounts.",
+      "P5 (CC-A06) first-binding package -- asserts M4, P1.",
+      "M5 (CC-A08) D-7 subscription facts on commercial_accounts.",
+      "P6 (CC-A08) recomposed Stripe capability package (supersedes stella_0008; carries D-3 on its own ledger table) -- asserts M4, M5, P2, P3.",
+      "M6 (CC-A09) D-4 re-evaluation request relation.",
+      "P7 (CC-A09) cancellation capability package -- asserts M6, P3, P6.",
+      "P8 (CC-A12) transfer capability package -- asserts M1, M6, P3.",
+      "P9 (CC-A14) bootstrap successor package (supersedes stella_0010) -- asserts M1, M2, P1, P3, tenancy S1 columns, S6 interface."
+    ],
+    "never": [
+      "0068 and 0073 are never edited (MC-1 forward-only; CE-3 immutability).",
+      "stella_0008 and stella_0010 bytes are never edited; supersession is by a new package registered in db/prepared-package-order.ts.",
+      "No item drops a legacy column (CE-9 outside)."
+    ]
+  },
+  "SECTION_19_REFUSAL_SEMANTICS": {
+    "rule": "Every refusal is EXPLICIT, distinguishable and fail-closed. An empty result is never a refusal; a refusal is never an empty result (SEC-6 shape everywhere).",
+    "closed_vocabularies": {
+      "ticket_boundary_TS": [
+        "RATE_LIMITED",
+        "RATE_LIMIT_UNAVAILABLE",
+        "ENTITLEMENT_ABSENT",
+        "ENTITLEMENT_BLOCKED",
+        "ENTITLEMENT_UNAVAILABLE"
+      ],
+      "bind_boundary_SQL": [
+        "no_quota",
+        "quota_exceeded",
+        "plus the existing U0106..U0112 ticket-shape refusals (unchanged)"
+      ],
+      "state_verb_causes": [
+        "illegal_transition",
+        "stale_event",
+        "ambiguous_order",
+        "subscription_conflict",
+        "manual_basis_conflict",
+        "account_closed",
+        "pending_closure_obligation",
+        "binding_collision",
+        "closed_account_binding_refused"
+      ],
+      "transfer_verb_causes": [
+        "expected_account_mismatch",
+        "same_account_transfer",
+        "not_platform_admin",
+        "idempotent_replay (not an error)"
+      ],
+      "bootstrap_causes": [
+        "U0001 generic uniform refusal (preserved)",
+        "U0002 slug taken (preserved)",
+        "TENANCY_FOUNDER_CARDINALITY_EXCEEDED",
+        "founding_rate_limited",
+        "founding_rate_limit_unavailable",
+        "allowlist_refused (flag ON only)"
+      ],
+      "evaluator": [
+        "U0113 CROSS_ORGANIZATION",
+        "U0114 UNDECLARED_CAPABILITY (existing)"
+      ]
+    },
+    "sqlstate_allocation": "Every NEW SQLSTATE literal is DERIVED_NOT_ALLOCATED from the free U0 namespace at the implementing base (occupied at BASE_SHA: U0001..U0003, U0100..U0114); each new definer uses a FIXED message with no echoed argument, so the CODE is the whole signal (the 0073 precedent).",
+    "escalation": "ambiguous_order, subscription_conflict, manual_basis_conflict, binding_collision, repeated T2 failure, repeated TC failure, repeated pending_closure_obligation, a non-zero PRE-CE4-1 count and any REFUSED cross-organization at the ticket boundary ESCALATE: stop and surface, never auto-resolve (FAILURE_AND_CONCURRENCY.escalation_means)."
+  },
+  "SECTION_20_ROLLBACK_FORWARD_ONLY": {
+    "rule": "Per act, frozen in SECTION_15. Summary: every db/migrations unit is FORWARD_ONLY (governed reversal notes for CE-4 only); every capability package whose effects admit exact reversal ships a rollback file and is declared in neither forward-only registry; every hardening package whose reversal reopens a defect (CC-A05 quota-column hardening) is FORWARD_ONLY with rollbackFile null, rollbackSha256 null and a substantive forwardOnlyNoRollbackReason in db/hosted/forward-only-packages.ts; the XOR of tests/prepared-sql-source-of-truth.test.ts decides each act's grant pattern count and is settled at the act's opening.",
+    "batch_posture": "FORWARD-ONLY between acts: no act reverses a predecessor; a blocked act STOPS; CE-4 is the last reversible act; after CE-5 reversal is a compatibility decision by a new act, never a revert commit (COMPATIBILITY.rollback_posture)."
+  },
+  "SECTION_21_REAL_PG_FAMILIES": {
+    "harness": "DISPOSABLE cluster only via scripts/db-audit-disposable.ts / tests/postgres/disposable-db.ts, gated on UELLIX_PG_TESTS=1; NEVER staging, production or the canonical local stack. TWO-account, THREE-organization fixture (X governs OrgA, OrgB; Y governs OrgC) PLUS SENTINEL_UNGOVERNED_ORG PLUS a fourth account for the sentinels that need one (SENTINEL_FOREIGN_ACCOUNT_ROW). Separate LOGIN identities per probe (tenant runtime uellix_app, owner, applier); BYPASSRLS and ownership ASSERTED from pg_roles / pg_class, never assumed. ACL and privilege families run on the HOSTED-SHAPED substrate (pg_default_acl reproduced, tables created by the applier identity, hosted0009 then hosted0010 applied from real bytes) per ACL_FAMILY_SUBSTRATE_REQUIREMENT. Anti-skip: a probe that cannot run is SKIPPED loudly, never passed.",
+    "families_inherited_by_node": {
+      "PG-2": "CC-A05",
+      "PG-5": "CC-A12",
+      "PG-6": "CC-A12",
+      "PG-8": "CC-A12",
+      "PG-9": "CC-A08",
+      "PG-10": "CC-A14",
+      "PG-4, PG-7": "already discharged by CE-3; re-run unchanged by CC-A05 as regression"
+    },
+    "families_batch_local": "Enumerated per act in SECTION_15.acts[*].real_pg_families; 63 batch-local family ids in total, each named PG-CC-*, enumerated in families_batch_local_ids. Every family is mandatory before its act may close; an act that closes without its families has proven none of the runtime properties above.",
+    "count_rule": "The companion manifest's postgres_requirements.rationale names every family id; a family named here and absent there, or vice versa, is a defect of whichever was written second.",
+    "families_batch_local_ids": [
+      "PG-CC-HIST-APPEND-ONLY",
+      "PG-CC-HIST-ONE-OPEN-ROW",
+      "PG-CC-HIST-NO-RUNTIME-READ",
+      "PG-CC-HIST-PROJECTION-REFUSES-CROSS-ORG",
+      "PG-CC-STATE-VOCAB",
+      "PG-CC-PAIR-ADMITS",
+      "PG-CC-PAIR-BOUNDS",
+      "PG-CC-ROLE-ATTRS-ZERO-MEMBERS",
+      "PG-CC-RESOLVER-BOUND",
+      "PG-CC-TRANSITION-CLOSURE",
+      "PG-CC-GATE-READ",
+      "PG-CC-LOCK-ORDER",
+      "PG-CC-BACKFILL-1TO1",
+      "PG-CC-BACKFILL-THROUGH-HISTORY",
+      "PG-CC-BACKFILL-INVERTED-PROJECTION",
+      "PG-CC-BACKFILL-PRECONDITIONS-ABORT",
+      "PG-CC-BACKFILL-IDEMPOTENT",
+      "PG-CC-BACKFILL-UNGOVERNED-SENTINEL",
+      "PG-CC-PROJECTION-EXACT",
+      "PG-CC-SINGLE-WRITER",
+      "PG-CC-WRITER-CLOSE-ONCE",
+      "PG-CC-WRITER-IDEMPOTENT",
+      "PG-CC-UNKNOWN-PRICE-REFUSED",
+      "PG-CC-BIND-IDEMPOTENT-SEQ-AND-CONCURRENT",
+      "PG-CC-BIND-NO-CLIENT-ID",
+      "PG-CC-BIND-CROSS-TENANT-ATTACK",
+      "PG-CC-BIND-CLOSED-REFUSED",
+      "PG-CC-BIND-L1-GATE",
+      "PG-CC-BILLING-READ-BOUNDED",
+      "PG-CC-ORD-STALE-REFUSED",
+      "PG-CC-ORD-EQUAL-TIMESTAMP",
+      "PG-CC-ORD-INSIDE-LOCK",
+      "PG-CC-DUPLICATE-NOOP",
+      "PG-CC-WEBHOOK-RESOLVES-BY-IDENTITY-ONLY",
+      "PG-CC-WEBHOOK-WRITES-NO-GRANT-NO-LIMIT",
+      "PG-CC-PAST-DUE-NO-GRANT-TOUCH",
+      "PG-CC-SUBSCRIPTION-CONFLICT",
+      "PG-CC-CLOSED-TERMINAL",
+      "PG-CC-MANUAL-BASIS-CONFLICT",
+      "PG-CC-CANCEL-ATOMIC-COMMIT",
+      "PG-CC-CANCEL-ROLLBACK-NOTHING-TORN",
+      "PG-CC-CANCEL-CLOSING-ONLY",
+      "PG-CC-CANCEL-ROLE-ZERO-MEMBERS",
+      "PG-CC-STALE-GRANT-REFUSED",
+      "PG-CC-SUSPENSION-CLOSES-PLAN-GRANTS",
+      "PG-CC-REACTIVATION-NEW-ROWS",
+      "PG-CC-MULTI-ORG-T2-ATOMIC",
+      "PG-CC-L3-BEFORE-L2",
+      "PG-CC-THREE-REFUSALS-DISTINCT",
+      "PG-CC-GATE-SUSPENDED-WINDOW",
+      "PG-CC-ALL-CATEGORIES-ONE-KEY",
+      "PG-CC-DIRECT-SQL-MINT-STILL-BOUND",
+      "PG-CC-TRANSFER-CLOSES-NOT-REPOINTS",
+      "PG-CC-TRANSFER-NO-STRIPE-MOVE",
+      "PG-CC-TRANSFER-SAME-ACCOUNT-REFUSED",
+      "PG-CC-TRANSFER-EMITS-ONE-REQUEST",
+      "PG-CC-NO-FREE-TEN",
+      "PG-CC-BOOTSTRAP-NO-ALLOWLIST",
+      "PG-CC-BOOTSTRAP-FOUNDER-CARDINALITY",
+      "PG-CC-BOOTSTRAP-IDEMPOTENT-CONCURRENT",
+      "PG-CC-BOOTSTRAP-DEFAULT-GRANT",
+      "PG-CC-BOOTSTRAP-NO-PLAN-NO-STRIPE",
+      "PG-CC-GOLDEN"
+    ],
+    "families_batch_local_count": 63
+  },
+  "SECTION_22_REQUIRED_BATCH_CONTROLS": {
+    "classification": "BINDING. The EXHAUSTIVE, CLOSED set of control ids the companion manifest MUST carry, in BOTH directions (every id below present; no id absent from this list present there). Namespace CC-P-n / CC-N-n / CC-M-n, DISJOINT from the parent batch manifest (P-n/N-n/M-n), the billing manifest (P-0n/N-0n/M-0n) and the CE-3 node manifest (CE3-*). A control that derives from a parent control NAMES the parent id in its description; no parent id is redefined, renumbered or claimed.",
+    "positive": [
+      "CC-P-1",
+      "CC-P-2",
+      "CC-P-3",
+      "CC-P-4",
+      "CC-P-5",
+      "CC-P-6",
+      "CC-P-7",
+      "CC-P-8",
+      "CC-P-9",
+      "CC-P-10",
+      "CC-P-11",
+      "CC-P-12",
+      "CC-P-13",
+      "CC-P-14",
+      "CC-P-15",
+      "CC-P-16",
+      "CC-P-17",
+      "CC-P-18",
+      "CC-P-19",
+      "CC-P-20"
+    ],
+    "negative": [
+      "CC-N-1",
+      "CC-N-2",
+      "CC-N-3",
+      "CC-N-4",
+      "CC-N-5",
+      "CC-N-6",
+      "CC-N-7",
+      "CC-N-8",
+      "CC-N-9",
+      "CC-N-10",
+      "CC-N-11",
+      "CC-N-12",
+      "CC-N-13",
+      "CC-N-14",
+      "CC-N-15",
+      "CC-N-16",
+      "CC-N-17",
+      "CC-N-18",
+      "CC-N-19",
+      "CC-N-20",
+      "CC-N-21",
+      "CC-N-22",
+      "CC-N-23",
+      "CC-N-24",
+      "CC-N-25",
+      "CC-N-26"
+    ],
+    "mutation": [
+      "CC-M-1",
+      "CC-M-2",
+      "CC-M-3",
+      "CC-M-4",
+      "CC-M-5",
+      "CC-M-6",
+      "CC-M-7",
+      "CC-M-8",
+      "CC-M-9",
+      "CC-M-10",
+      "CC-M-11",
+      "CC-M-12",
+      "CC-M-13",
+      "CC-M-14",
+      "CC-M-15",
+      "CC-M-16"
+    ],
+    "counts_by_class": {
+      "positive": 20,
+      "negative": 26,
+      "mutation": 16
+    },
+    "count": 62,
+    "act_coverage_rule": "Every act CC-A01..CC-A15 is named by at least one positive and one negative control; CC-A00 is covered by CC-P-1 and CC-N-1 (deep-equality of the amendment content)."
+  },
+  "SECTION_23_MUTATION_REQUIREMENTS": {
+    "rule": "Each CC-M control names a guarantee, the mutation that removes it, and the control(s) that MUST turn RED. A guarantee whose deletion no control notices is not guaranteed. Inherited mutations (parent MUT-1..MUT-10, billing M-01..M-18, CE-3 CE3-M-1..7) keep their ids and are exercised by the act that makes them live; CC-M ids cover only what those do not.",
+    "non_vacuity_obligation": "The implementing act of each control demonstrates non-vacuity on real code and a real cluster; this authority's own checkers (VALIDATION_PERFORMED_BY_THIS_MISSION) prove only that its documents discriminate."
+  },
+  "SECTION_24_GOLDEN_COMMERCIAL_ACCEPTANCE_EVIDENCE": {
+    "artifact": "tests/e2e/commercial-golden-journey.e2e.test.ts (CC-A15), executed AS uellix_app through withDatabaseIdentityContext on the disposable substrate with all baseline units, the role bootstrap and the full HOSTED_CHAIN applied; Stripe stubbed at the SDK boundary with signed-event replay; NO live Stripe, NO staging.",
+    "legs_binding": [
+      "registration + B0 + L0",
+      "founding with the allowlist flag OFF for SENTINEL_NO_ALLOWLIST_SUBJECT",
+      "L1 acceptance by the organization_admin",
+      "ticket refused ENTITLEMENT_BLOCKED",
+      "bind idempotent",
+      "checkout session created identity-free",
+      "subscription active applied in source order -> ACTIVE_STRIPE -> PLAN grant projected",
+      "ticket issued, bound, completed",
+      "past_due -> no product change",
+      "unpaid -> SUSPENDED -> ticket refused ENTITLEMENT_BLOCKED, records readable",
+      "reactivation -> new PLAN rows",
+      "cancellation -> BOOTSTRAP, subscription id NULL, customer id retained, grants closed, ticket refused, no value 10 anywhere"
+    ],
+    "release_relationship": "This evidence is INPUT to the release ledger's Golden gates (HPO-G.3 browser journeys are Playwright and are NOT replaced by this database-driven journey). It converts GOLDEN_JOURNEY_SKELETON J2 step 'commercial-accounts' from target-only to posture-backed; it does not add a release stage and does not declare COMMERCIAL_V1_READY (ENV-08 milestone, outside)."
+  },
+  "SECTION_25_AUDIT_VERB_ENCODING": {
+    "finding": "The billing authority's verbs (commercial.state.entered, commercial.stripe.bound, commercial.stripe.subscription_replaced, commercial.account.closed, entitlement.grant.opened, entitlement.grant.closed) are three-segment. Measured at BASE_SHA: lib/audit/__tests__/logger.test.ts:24 AUDIT_ACTION_VALUE_PATTERN = /^[a-z_]+(\\.[a-z_]+)+$/ admits them; tests/audit-action-contract.test.ts scans TypeScript under lib/** and app/** only, and its verb/object correspondence check applies to logAuditAction call sites in CORRESPONDENCE_SCAN_ROOTS.",
+    "rule": "Verbs are implemented VERBATIM as frozen. Commercial and entitlement audit rows are written by the governed SQL definers (the stella_0008 precedent: INSERT INTO public.audit_logs inside the verb), never by a TypeScript logAuditAction call with these verbs; therefore no AUDIT_ACTIONS constant is required for them and the correspondence scan is not engaged. If an act DOES need a TypeScript call site, it adds the constant to lib/audit/logger.ts (LOCK-AUDIT-ACTION-VOCABULARY is RELEASED at BASE_SHA -- PR #105 integrated) and satisfies correspondence by entity_type = the verb's first segment; commercial_account.transferred with entity_type 'organization' (TRANSFER_AUDIT_SHAPE) is written by the transfer definer, never from TypeScript.",
+    "manual_activation_verbs": "commercial.manual_activation, .renewed, .lapsed are NOT emitted by any act of this batch (CB-8 outside)."
+  },
+  "SECTION_26_CROSS_LANE_CONSTRAINTS": {
+    "XL-1 runtime ACL successor (stella_0021)": "SERIAL on CP-4 and on db/hosted/prechain-ownership.ts / forward-only-packages.ts. Its closed-world guard (SECTION_10) turns RED on every new migration-created public table of this batch (history relation, D-4 relation); the adding act classifies each as NO_RUNTIME_ACCESS in that guard's universe (XL-4). Its v1.0.35 / W2-32 expectation was consumed; it re-derives.",
+    "XL-2 tenancy S4/S5/S6/S7": "CC-A14 after S6 (CM-8). No act here edits db/identity-context.ts. Every new relation keeps zero tenant-facing policies until S4 freezes the conjunctive model; the R-A definer form is used throughout.",
+    "XL-3 platform-admin lane (stella_0011 / stella_0012)": "stella_0011 MUST NOT be applied with its uellix_cap_platform UPDATE grant on stella_monthly_quota / stella_plan_label (stella_0011:332) after CC-A05, unless admin_set_stella_service is superseded to call entitlement_open (entitlement PREPARED_CAPABILITY_DISPOSITIONS[stella_0011].downstream_obligation SUPERSEDE_AT_CE5). CC-A05 repoints the lib/admin call sites; stella_0011's application (if ever) follows and re-derives.",
+    "XL-4 closed-world ACL guard": "tests/database-runtime-acl-closed-world.test.ts (if present at the base) and the successor's universe list receive commercial_account_organization_history and the D-4 relation as NO_RUNTIME_ACCESS; runtime roles hold nothing on them.",
+    "XL-5 portfolio PF2 / any lane editing lib/audit/logger.ts": "Only if an act adds a constant; append on top, never remove.",
+    "XL-6 release authority": "CC-A11 staging enablement and any production enablement follow docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json + amendment v1.0.1 (HDP-*, ENV-08 FORWARD_MIGRATION_PROOF before the first hosted apply to a target holding durable data). This authority sequences nothing there.",
+    "XL-7 CE-8 / CB-8 successor": "Consumes CC-A03's verb and CC-A12's transfer verb; does not exist until S5.",
+    "XL-8 customer-lifecycle L0/L1": "CB-3/CB-4 callers pass L0 and L1; CC-A14's bootstrap runs AFTER L0 (CANONICAL_JOURNEY) and before L1 (L1 needs an organization). No acceptance row is ever written by a commercial act (RAT-AO-02).",
+    "XL-9 Stella hosted surfaces (FIBDB-053 / S3c)": "CC-A10 edits db/stella/operation-tickets.ts only above the SQL boundary; the prepared quota chain stella_0013..0018 is APPLY_AS_IS and untouched."
+  },
+  "SECTION_27_EXTERNAL_PREREQUISITES": {
+    "rule": "Facts this batch waits on but does not perform. None is an owner decision.",
+    "items": [
+      {
+        "id": "EP-1",
+        "what": "Tenancy S4, S5, S6 integrated",
+        "gates": "CC-A14 (and through U-1 the usability verdict)",
+        "owner": "tenancy lane"
+      },
+      {
+        "id": "EP-2",
+        "what": "Legal instruments populated and counsel sufficiency (LC0 HTF-11; HPO-A.9; HPO-F.7)",
+        "gates": "commercial_activation and self_service_onboarding as PRODUCT stages; not the repository acts themselves",
+        "owner": "counsel / owner process, outside the repository"
+      },
+      {
+        "id": "EP-3",
+        "what": "Controller successor enumerating v1.0.35",
+        "gates": "CC-A01's lineage allocation",
+        "owner": "ODS Controller lane"
+      },
+      {
+        "id": "EP-4",
+        "what": "Stripe account configuration (prices, webhook endpoint, keys) under ENV-10/ENV-11 names-only contract; distributed rate-limit backend on staging",
+        "gates": "CC-A11 and CC-A14's founding limiter on staging",
+        "owner": "operator, out of band"
+      },
+      {
+        "id": "EP-5",
+        "what": "Staging schema/code parity (HPO-G.5) and FORWARD_MIGRATION_PROOF (ENV-08) before any hosted apply to a target holding durable data",
+        "gates": "every hosted application of this batch's DDL and packages",
+        "owner": "release lane"
+      }
+    ]
+  },
+  "EXPLICIT_NON_AUTHORIZATIONS": [
+    "NO implementation of any act. NO db/**, lib/**, app/**, tests/**, scripts/** change.",
+    "NO ODS addendum, NO HPO grant declaration or registration, NO Controller enumeration, NO migration ordinal, NO hosted or prepared ordinal, NO branch creation.",
+    "NO Stripe API call, NO Supabase or Vercel mutation, NO environment variable value, NO hosted access.",
+    "NO manual activation path (CB-8), NO platform commercial control plane (CE-8), NO legacy column retirement (CE-9), NO tenancy node (S3c..S8), NO S6 split -- recorded as an option only.",
+    "NO new capability key, NO catalogue rename, NO plan price or discount, NO free tier or trial, NO grace window, NO dunning schedule, NO CAPTCHA decision.",
+    "NO tenant-facing SELECT policy on commercial_accounts, entitlement_grants, the history relation or the D-4 relation.",
+    "NO edit to 0068, 0073, stella_0008, stella_0010, stella_hosted_0009, stella_hosted_0010, or any frozen authority; amendments are separate append-only acts (CC-A00).",
+    "NO certification of this authority by this lane; NO Ready-for-review; NO merge."
+  ],
+  "OWNER_DECISIONS_REQUIRED": {
+    "count": 0,
+    "candidates_examined_and_derived": [
+      {
+        "candidate": "Capability key for the six non-grounded categories",
+        "disposition": "DERIVED (SECTION_5, disposition A): one ledger, one limit, one capability in the frozen parents."
+      },
+      {
+        "candidate": "Plan -> limit values",
+        "disposition": "CONFIGURATION preserved from measured code (pro 250, enterprise 1000), not ratified here; mechanism frozen (SECTION_10.plan_catalogue); OF-CC-5 for visibility."
+      },
+      {
+        "candidate": "BOOTSTRAP_DEFAULT limit for stella.grounded_query",
+        "disposition": "DERIVED BLOCKED from the measured default (0 = blocked) and EC-5 NO_LEGACY_FREE."
+      },
+      {
+        "candidate": "Split invoice.* handling out of CB-5",
+        "disposition": "NOT REQUIRED; CURRENT_AUTHORITY_REQUIRES_FULL_CB5 (CM-6); an optional future amendment, OF-CC-6."
+      },
+      {
+        "candidate": "Onboarding before tenancy S4/S5/S6",
+        "disposition": "ORDERING FACT, not an owner decision; the S6-split option is a tenancy-authority amendment for the coordinator (OF-CC-2)."
+      },
+      {
+        "candidate": "stella_0011 before or after CE-5",
+        "disposition": "ADJUDICATED as lane sequencing (CM-5)."
+      },
+      {
+        "candidate": "Resolver bound on commercial_accounts",
+        "disposition": "TECHNICAL contradiction inside one Tier-A authority, closed by a narrow append-only amendment whose content is frozen here (CM-2)."
+      },
+      {
+        "candidate": "CAPTCHA on founding",
+        "disposition": "Not required by SS-02; not prohibited; operator choice, OF-CC-7."
+      }
+    ]
+  },
+  "OPEN_FINDINGS": {
+    "blocking": [],
+    "unknown": [],
+    "non_blocking": [
+      {
+        "id": "OF-CC-1",
+        "class": "REQUIRED_AMENDMENT_ACT",
+        "finding": "Three frozen documents must be amended (append-only) before any writer of entitlement_grants or any resolver on commercial_accounts is implemented: entitlement v1.0.3, billing v1.0.1, CE-3 node + manifest v1.0.3. Content frozen in SECTION_14; act CC-A00.",
+        "disposition": "RECORDED; the act is first in the chain."
+      },
+      {
+        "id": "OF-CC-2",
+        "class": "EXTERNAL_PREREQUISITE_OPTION",
+        "finding": "CE-7 depends on tenancy S6, which depends on S4 and S5 (neither implemented). An amendment of the tenancy authority splitting S6's ALLOWLIST_EXIT + bootstrap composition from its second-membership contract would shorten the path to U-1.",
+        "disposition": "OPTION for the lane coordinator; NOT decided here; NOT an owner decision (it changes executable sequencing, not product intent)."
+      },
+      {
+        "id": "OF-CC-3",
+        "class": "NAMING_HAZARD",
+        "finding": "The single capability key is spelled after one of seven ticket categories.",
+        "disposition": "Identifier, not label. Any future product label is ratified separately; the key is not renamed."
+      },
+      {
+        "id": "OF-CC-4",
+        "class": "BOUNDED_RESIDUAL",
+        "finding": "A direct SQL ticket mint bypasses the TypeScript L3 gate during the Shape-A window between a SUSPENDED state write and the projection of its grant closures.",
+        "disposition": "Bounded by the CB-6 consumer; L2 closes it as soon as the projection lands; a SQL-side L3 inside issue_operation_ticket would recompose a chain member outside this authority's parents and is NOT authorized here."
+      },
+      {
+        "id": "OF-CC-5",
+        "class": "CONFIGURATION_VISIBILITY",
+        "finding": "Initial plan catalogue values (pro 250, enterprise 1000 for stella.grounded_query) are carried from lib/stripe/client.ts as configuration.",
+        "disposition": "Recorded so the owner can change them by a configuration act; not frozen."
+      },
+      {
+        "id": "OF-CC-6",
+        "class": "OPTIONAL_AMENDMENT",
+        "finding": "invoice.* handling is coupled into CB-5 by the frozen package note.",
+        "disposition": "Implemented in full; an owner MAY later ratify a split; nothing here depends on it."
+      },
+      {
+        "id": "OF-CC-7",
+        "class": "OPERATOR_CHOICE",
+        "finding": "No CAPTCHA exists; SS-02's abuse protection is satisfied by the SECTION_13 floor.",
+        "disposition": "Neither required nor prohibited."
+      },
+      {
+        "id": "OF-CC-8",
+        "class": "STALE_EXPECTATION_IN_A_SIBLING",
+        "finding": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json SECTION_11 expects v1.0.35 / W2-32, both consumed by hosted0010 at BASE_SHA.",
+        "disposition": "That lane re-derives; recorded so the collision is visible."
+      },
+      {
+        "id": "OF-CC-9",
+        "class": "STALE_LINE_ANCHOR_IN_A_PARENT",
+        "finding": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json ALLOWLIST_EXIT.current_gate_to_supersede cites app/(authenticated)/app/onboarding/actions.ts:63-67; the gate is at :95-100 at BASE_SHA.",
+        "disposition": "Re-measured here; the parent is not edited."
+      }
+    ]
+  },
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "rule": "Recorded AFTER execution; every line below is a measured output of a command run in this worktree at BASE_SHA, or an explicit NOT_RUN.",
+    "items": "See the pull request body for the exact command lines and outputs. Fields: JSON strict parse (both files), raw duplicate-key detector with positive and negative controls, cross-file path references, JSON fragment anchors, self-check counts, precedence checks, pnpm authority:seal:verify, pnpm secrets:scan (on the staged tree), governance tests under tests/commercial/**, tests/ods/** scope tests, pnpm typecheck, git diff --check, pnpm ods:scope from BASE_SHA with the two ordinary allows."
+  },
+  "self_check": {
+    "note": "Deterministic, test-free checks verifiable by a one-line node command over this file and its companion.",
+    "expected_act_count": 16,
+    "expected_act_ids": [
+      "CC-A00",
+      "CC-A01",
+      "CC-A02",
+      "CC-A03",
+      "CC-A04",
+      "CC-A05",
+      "CC-A06",
+      "CC-A07",
+      "CC-A08",
+      "CC-A09",
+      "CC-A10",
+      "CC-A11",
+      "CC-A12",
+      "CC-A13",
+      "CC-A14",
+      "CC-A15"
+    ],
+    "expected_acts_with_protected_grant": 10,
+    "expected_conflict_map_count": 9,
+    "expected_corpus_count": 30,
+    "expected_capability_role_count": 6,
+    "expected_control_counts": {
+      "positive": 20,
+      "negative": 26,
+      "mutation": 16,
+      "total": 62
+    },
+    "expected_usable_items": 8,
+    "expected_external_prerequisites": 5,
+    "expected_open_findings_non_blocking": 9,
+    "expected_owner_decisions": 0,
+    "checks": [
+      "SECTION_15.acts.length == 16 and its id set equals expected_act_ids in order",
+      "every act's depends_on names only act ids from expected_act_ids, parent node ids (CE-1..CE-9, CB-1..CB-9), 'this authority certified and integrated', or an EXTERNAL_PREREQUISITE",
+      "SECTION_15.acts_with_protected_grant.length == 10 and equals the acts whose PROTECTED_GRANT_REQUIRED starts with 'YES'",
+      "SECTION_1.CONFLICT_MAP.length == 9 and every id is unique",
+      "SECTION_1.corpus.length == 30 and every path exists at BASE_SHA",
+      "SECTION_14.closed_role_set.length == 6",
+      "SECTION_22 id lists have the declared counts, are unique, and equal (as sets) the companion manifest's control ids in BOTH directions",
+      "PURPOSE.COMMERCIAL_CORE_USABLE_definition.items.length == 8",
+      "SECTION_27.items.length == 5",
+      "OPEN_FINDINGS.blocking.length == 0 and OPEN_FINDINGS.unknown.length == 0 and non_blocking.length == 9",
+      "OWNER_DECISIONS_REQUIRED.count == 0",
+      "no ODS addendum version, HPO id, migration ordinal, hosted ordinal, prepared ordinal, branch or SQLSTATE is stated as ALLOCATED anywhere in this file; every such identifier appears only inside a measurement, a derivation or a prohibition",
+      "every 'stella_<NNNN>' / 'stella_<MMMM>' placeholder appears only inside SECTION_15 write-set ceilings and SECTION_18, never as a registered id"
+    ]
+  },
+  "final_state": "COMMERCIAL_CORE_EXECUTION_AUTHORITY_FROZEN_WAITING_FOR_INDEPENDENT_CERTIFICATION_AND_LINEAGE_ALLOCATION",
+  "READY_FOR_IMPLEMENTATION": "NO_UNTIL_CERTIFIED_AND_CC_A00_INTEGRATED_AND_EACH_ACT_LINEAGE_GRANTED",
+  "next_gate": "COMMERCIAL_CORE_EXECUTION_AUTHORITY_INDEPENDENT_CERTIFICATION. This package is NOT self-certified and MUST NOT be merged before an independent lane certifies it against the frozen parents named in SECTION_1 and against the repository at the PR head."
+}

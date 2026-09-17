@@ -1,0 +1,414 @@
+{
+  "manifest_id": "COMMERCIAL_CORE_IMPLEMENTATION_TEST_MANIFEST_v1.0.0",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/commercial/COMMERCIAL_CORE_EXECUTION_AUTHORITY_v1.0.0.json -- the companion batch execution authority frozen by mission CV1-CORE-EXEC-AW at BASE_SHA eafaaf57b0ad01031d9c61a985fbc6a2da817340 / BASE_TREE 95ade4b797fdc6fb3652fe05fd1e5e8a537acc03 / ref origin/integration/commercial-v1. That authority derives from the frozen parents docs/ops/commercial/COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0.json (+ amendments v1.0.1, v1.0.2), docs/ops/commercial/COMMERCIAL_STATE_ENTITLEMENT_BILLING_AUTHORITY_v1.0.0.json and docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json (+ amendments), none of which is edited. SCOPE: a BATCH commitment covering acts CC-A00..CC-A15 (nodes CE-2, CE-4, CE-5, CE-6, CE-7 and packages CB-1..CB-7, CB-9). ID NAMESPACE: every control id below is prefixed CC- and is DISJOINT from the parent batch manifest (P-n/N-n/M-n), the billing batch manifest (P-0n/N-0n/M-0n) and the CE-3 node manifest (CE3-*); inherited parent controls are NAMED inside descriptions and never redefined. Every test_file is UNKNOWN except where the file already exists at BASE_SHA and is being RETARGETED (named exactly). PASS for this manifest means schema-valid with at least one positive and one negative control; it is never a claim that any act has passed anything.",
+  "dependencies": [
+    "COMMERCIAL_CORE_EXECUTION_AUTHORITY_v1.0.0 -- independently CERTIFIED and INTEGRATED (not at BASE_SHA; this is the commitment's own precondition).",
+    "CE-1 (COMMERCIAL_ACCOUNT_ENTITLEMENT_AUTHORITY_v1.0.0 MIGRATION_DAG node CE-1) -- CLOSED / INTEGRATED at BASE_SHA: db/migrations/0068_commercial_account_ce1.sql, PR #128.",
+    "CE-3 (node CE-3) -- CLOSED / INTEGRATED at BASE_SHA: db/migrations/0073_commercial_account_ce3_entitlement_grants.sql, db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql, db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql, PR #159 merged at 1d92a202; HPO-ODS-W2-30/31/32 registered.",
+    "tenancy S1 (MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 node S1) -- INTEGRATED at BASE_SHA (docs/ops/tenancy/MULTI_ORG_S1_IMPLEMENTATION_EVIDENCE_v1.0.0.json).",
+    "tenancy S6 (and through it S4, S5) -- NOT INTEGRATED at BASE_SHA; EXTERNAL_PREREQUISITE of CC-A14 only (authority CM-8, EP-1). Status UNKNOWN until measured at the implementing base; fail closed.",
+    "CC-A00 authority amendments (entitlement v1.0.3, billing v1.0.1, CE-3 node + manifest v1.0.3) -- ABSENT at BASE_SHA and BLOCKING for CC-A01..CC-A15.",
+    "ODS LINEAGE per act -- ABSENT and BLOCKING for every act with PROTECTED_GRANT_REQUIRED YES (authority SECTION_17). Controller successor enumerating docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json precedes the first allocation.",
+    "Environment Authority v1.1 (docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json + docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json) -- INTEGRATED at BASE_SHA (PR #170); binds CC-A11 and every hosted application (EP-5)."
+  ],
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/journal/**",
+    "db/prepared/checkpoint-b0/observation.sql",
+    "db/prepared/stella_<NNNN>_<slug>.sql (one exact literal per prepared-package act; DERIVED_NOT_ALLOCATED, never a glob)",
+    "db/prepared/stella_<NNNN>_rollback.sql (only for packages whose ROLLBACK_FILE is REQUIRED)",
+    "db/prepared/README.md"
+  ],
+  "protected_authority": null,
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "A real PostgreSQL probe is MANDATORY for every act with real_pg_families and both harness paths are legitimately UNKNOWN: no implementing act exists yet, and the repository carries two admissible shapes (a *.pg.test.ts with an explicit *-fixtures.ts, as CE-3 uses at tests/postgres/ce3-entitlement-grants.pg.test.ts / tests/postgres/ce3-entitlement-grants-fixtures.ts, and a bare *.pg.test.ts as CE-1 uses). Each act's opening names its own exact files. WHAT IS FROZEN: disposable cluster only via scripts/db-audit-disposable.ts / tests/postgres/disposable-db.ts gated on UELLIX_PG_TESTS=1 -- never staging, production or the canonical local stack; the two-account three-organization fixture plus SENTINEL_UNGOVERNED_ORG plus a fourth account for SENTINEL_FOREIGN_ACCOUNT_ROW; separate LOGIN identities per probe with BYPASSRLS and ownership asserted from pg_roles / pg_class; ACL and privilege families on the HOSTED-SHAPED substrate (pg_default_acl reproduced, tables created by the applier identity, stella_hosted_0009 then stella_hosted_0010 applied from their real bytes, then the batch's packages in HOSTED_CHAIN order); anti-skip (a probe that cannot run is SKIPPED loudly, never passed). INHERITED PARENT PROBES exercised by this batch: PG-2 (CC-A05), PG-5, PG-6, PG-8 (CC-A12), PG-9 (CC-A08), PG-10 (CC-A14), PG-4 and PG-7 re-run unchanged as regression at CC-A05. BATCH-LOCAL FAMILIES, EXACTLY the 63 ids of the authority's SECTION_21.families_batch_local_ids: PG-CC-HIST-APPEND-ONLY, PG-CC-HIST-ONE-OPEN-ROW, PG-CC-HIST-NO-RUNTIME-READ, PG-CC-HIST-PROJECTION-REFUSES-CROSS-ORG, PG-CC-STATE-VOCAB, PG-CC-PAIR-ADMITS, PG-CC-PAIR-BOUNDS, PG-CC-ROLE-ATTRS-ZERO-MEMBERS, PG-CC-RESOLVER-BOUND, PG-CC-TRANSITION-CLOSURE, PG-CC-GATE-READ, PG-CC-LOCK-ORDER, PG-CC-BACKFILL-1TO1, PG-CC-BACKFILL-THROUGH-HISTORY, PG-CC-BACKFILL-INVERTED-PROJECTION, PG-CC-BACKFILL-PRECONDITIONS-ABORT, PG-CC-BACKFILL-IDEMPOTENT, PG-CC-BACKFILL-UNGOVERNED-SENTINEL, PG-CC-PROJECTION-EXACT, PG-CC-SINGLE-WRITER, PG-CC-WRITER-CLOSE-ONCE, PG-CC-WRITER-IDEMPOTENT, PG-CC-UNKNOWN-PRICE-REFUSED, PG-CC-BIND-IDEMPOTENT-SEQ-AND-CONCURRENT, PG-CC-BIND-NO-CLIENT-ID, PG-CC-BIND-CROSS-TENANT-ATTACK, PG-CC-BIND-CLOSED-REFUSED, PG-CC-BIND-L1-GATE, PG-CC-BILLING-READ-BOUNDED, PG-CC-ORD-STALE-REFUSED, PG-CC-ORD-EQUAL-TIMESTAMP, PG-CC-ORD-INSIDE-LOCK, PG-CC-DUPLICATE-NOOP, PG-CC-WEBHOOK-RESOLVES-BY-IDENTITY-ONLY, PG-CC-WEBHOOK-WRITES-NO-GRANT-NO-LIMIT, PG-CC-PAST-DUE-NO-GRANT-TOUCH, PG-CC-SUBSCRIPTION-CONFLICT, PG-CC-CLOSED-TERMINAL, PG-CC-MANUAL-BASIS-CONFLICT, PG-CC-CANCEL-ATOMIC-COMMIT, PG-CC-CANCEL-ROLLBACK-NOTHING-TORN, PG-CC-CANCEL-CLOSING-ONLY, PG-CC-CANCEL-ROLE-ZERO-MEMBERS, PG-CC-STALE-GRANT-REFUSED, PG-CC-SUSPENSION-CLOSES-PLAN-GRANTS, PG-CC-REACTIVATION-NEW-ROWS, PG-CC-MULTI-ORG-T2-ATOMIC, PG-CC-L3-BEFORE-L2, PG-CC-THREE-REFUSALS-DISTINCT, PG-CC-GATE-SUSPENDED-WINDOW, PG-CC-ALL-CATEGORIES-ONE-KEY, PG-CC-DIRECT-SQL-MINT-STILL-BOUND, PG-CC-TRANSFER-CLOSES-NOT-REPOINTS, PG-CC-TRANSFER-NO-STRIPE-MOVE, PG-CC-TRANSFER-SAME-ACCOUNT-REFUSED, PG-CC-TRANSFER-EMITS-ONE-REQUEST, PG-CC-NO-FREE-TEN, PG-CC-BOOTSTRAP-NO-ALLOWLIST, PG-CC-BOOTSTRAP-FOUNDER-CARDINALITY, PG-CC-BOOTSTRAP-IDEMPOTENT-CONCURRENT, PG-CC-BOOTSTRAP-DEFAULT-GRANT, PG-CC-BOOTSTRAP-NO-PLAN-NO-STRIPE, PG-CC-GOLDEN. WHY STATIC READING IS INSUFFICIENT: policy applicability through role membership, PERMISSIVE-OR versus RESTRICTIVE-AND composition, FORCE RLS being silently inert for BYPASSRLS roles and owners, definer GUC resolution, NULL-not-TRUE denial, advisory-lock scope and ordering, partial-unique-index behaviour under concurrency, TRUNCATE escaping RLS and row triggers, and transaction atomicity across five relations are all runtime properties of PostgreSQL that SQL text cannot express."
+  },
+  "sentinels": [
+    {
+      "id": "SENTINEL_SIBLING_ORG_CANARY_ROW",
+      "purpose": "INHERITED (parent). A uniquely-valued tenant row and a uniquely-valued entitlement_grants row planted in OrgB, governed by the SAME CommercialAccount as OrgA; must never appear in any result, log line, error payload, billing projection or aggregate produced by a request scoped to OrgA. Asserted by IDENTITY, never by count."
+    },
+    {
+      "id": "SENTINEL_UNGOVERNED_ORG",
+      "purpose": "INHERITED (parent). An Organization with commercial_account_id NULL and no grant; excluded from CE-4 seeding by fixture; must yield NO_LIVE_GRANT and gate PASS_THROUGH, never an implicit permissive answer and never a seeded account it did not have."
+    },
+    {
+      "id": "SENTINEL_UNKNOWN_STRIPE_PRICE",
+      "purpose": "INHERITED (parent). A price id absent from PRICE_ID_MAP and from the plan catalogue; must be REFUSED on every write path (checkout creation, re-evaluation, backfill) and never resolved to a quota."
+    },
+    {
+      "id": "SENTINEL_CLOSED_HISTORY_ROW",
+      "purpose": "INHERITED (parent). A commercial_account_organization_history row with effective_to set; any UPDATE or DELETE reaching it must be refused at the storage boundary."
+    },
+    {
+      "id": "SENTINEL_COMMERCIALLY_SUSPENDED_ACCOUNT",
+      "purpose": "INHERITED (parent). A SUSPENDED account governing an Organization whose status is 'active'; proves PI-1 (no organizations.status write, no membership deletion, no loss of read access) across suspension."
+    },
+    {
+      "id": "SENTINEL_MANUAL_QUOTA_ORG",
+      "purpose": "INHERITED (parent). An Organization whose stella_monthly_quota was assigned manually with no Stripe identity; its CE-4 seed grant must be source PLATFORM_ADMIN with commercial_account_id NULL, never PLAN."
+    },
+    {
+      "id": "SENTINEL_FOREIGN_ACCOUNT_ROW",
+      "purpose": "INHERITED (billing). A commercial_accounts row of account B; unreachable by any capability transaction bound to account A by id, by stripe_customer_id or by stripe_subscription_id; also the row the MEMBERSHIP attack must fail to reach."
+    },
+    {
+      "id": "SENTINEL_FREE_TEN",
+      "purpose": "INHERITED (billing). A canary on the literal 10: any grant, projection, state effect, enforcement read or backfill that produces 10 trips it."
+    },
+    {
+      "id": "SENTINEL_ARRIVAL_ORDER",
+      "purpose": "INHERITED (billing). Proves stripe_webhook_events.received_at is absent from every ordering comparison."
+    },
+    {
+      "id": "SENTINEL_TORN_CANCELLATION",
+      "purpose": "INHERITED (billing). The impossible state: BOOTSTRAP with a live PLAN grant; a concurrent reader polling throughout a cancellation must never observe it."
+    },
+    {
+      "id": "SENTINEL_CONDEMNED_GRANT",
+      "purpose": "INHERITED (billing). A PLAN grant marked for closure by an unconsumed request; never the grant an account reactivates on."
+    },
+    {
+      "id": "SENTINEL_NO_ALLOWLIST_SUBJECT",
+      "purpose": "NEW. A B0-verified, L0-accepted subject whose email and domain appear in NO signup_allowlist row. With the allowlist flag OFF the subject MUST complete self-service founding; with the flag ON and no entry the subject MUST be refused inside the definer. Proves ALLOWLIST_EXIT.exit_criterion by a positive traversal rather than by the absence of a redirect."
+    },
+    {
+      "id": "SENTINEL_DIRECT_SQL_MINT",
+      "purpose": "NEW. An operation ticket minted by calling uellix_stella_ops.issue_operation_ticket directly (bypassing the TypeScript L3 gate) for an Organization whose live grant is BLOCKED. bind_operation_ticket MUST refuse it with no_quota because the projection is 0; if it binds, the projection or the single-writer rule has failed."
+    }
+  ],
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+  "positive_controls": [
+    {
+      "id": "CC-P-1",
+      "test_file": "UNKNOWN",
+      "description": "CC-A00. The three amendment documents are DEEP-EQUAL to the authority's frozen content: entitlement amendment v1.0.3's admission map equals SECTION_14.ENTITLEMENT_GRANTS_WRITER_ADMISSIONS.non_owner_direct_privileges_EXACT_after_the_batch; billing amendment v1.0.1's SELECT predicate and PC5_amended equal SECTION_14.RESOLVER_BOUND; the CE-3 node and manifest amendments v1.0.3 pre-authorize the exact-posture retarget. Base files (entitlement v1.0.0/v1.0.1/v1.0.2, billing v1.0.0, CE-3 v1.0.0/v1.0.1/v1.0.2) are byte-unchanged (blob sha before and after). Asserted by a one-line node comparison, not by reading."
+    },
+    {
+      "id": "CC-P-2",
+      "test_file": "UNKNOWN",
+      "description": "CC-A01 / parent P-5, SEC-12. commercial_account_organization_history exists with every parent-minimum column, the effective-period CHECK, the partial unique index on (organization_id) WHERE effective_to IS NULL, ENABLE + FORCE RLS and ZERO policies; for any Organization and any past instant the governing account is recoverable from history rows alone through the governed projection definer taking an EXPLICIT organization_id."
+    },
+    {
+      "id": "CC-P-3",
+      "test_file": "UNKNOWN",
+      "description": "CC-A02 (D-1). After the forward migration commercial_status_check admits exactly {BOOTSTRAP, ACTIVE_STRIPE, PAST_DUE, SUSPENDED, ACTIVE_WITHOUT_STRIPE, CLOSED}, the column DEFAULT is 'BOOTSTRAP', every pre-existing row reads BOOTSTRAP, and 0068 is byte-unchanged."
+    },
+    {
+      "id": "CC-P-4",
+      "test_file": "UNKNOWN",
+      "description": "CC-A02 (D-6) / billing P-16. uellix_cap_commercial with app.commercial_account_id set to account A can SELECT and UPDATE the permitted columns of A's row and can INSERT a row whose id it chose; PC-1..PC-5 hold on the catalogue (rolcanlogin false; no forbidden attribute; zero rows in pg_auth_members keyed on roleid; relforcerowsecurity true; three PERMISSIVE + three RESTRICTIVE policies TO uellix_cap_commercial, none TO PUBLIC, no DELETE policy)."
+    },
+    {
+      "id": "CC-P-5",
+      "test_file": "UNKNOWN",
+      "description": "CC-A02 (RESOLVER_BOUND). With ONLY app.stripe_customer_id set, the capability role's SELECT returns exactly the one row carrying that customer id (UNIQUE), and likewise for app.stripe_subscription_id; the verb then binds app.commercial_account_id to the resolved id and clears the identity GUCs before writing. Proves CM-2 is closed by the amendment, not by BYPASSRLS."
+    },
+    {
+      "id": "CC-P-6",
+      "test_file": "UNKNOWN",
+      "description": "CC-A03 / billing P-20, P-21, P-22. All 18 LEGAL pairs of the 6x6 cross-product are exercised through the state verb and succeed with exactly one commercial.state.entered audit row each; all 5 NO_OP pairs are absorbed with zero writes and zero audit rows; the verb's transition table, read as data, equals the authority's frozen cross_product_6x6 classification for every one of the 36 pairs."
+    },
+    {
+      "id": "CC-P-7",
+      "test_file": "UNKNOWN",
+      "description": "CC-A03 (gate-read definer). commercial_gate_for_organization returns PASS_THROUGH for BOOTSTRAP, ACTIVE_STRIPE, ACTIVE_WITHOUT_STRIPE and PAST_DUE, BLOCKED for SUSPENDED and CLOSED, PASS_THROUGH for SENTINEL_UNGOVERNED_ORG, with EXECUTE held by authenticated and by no other non-owner role."
+    },
+    {
+      "id": "CC-P-8",
+      "test_file": "UNKNOWN",
+      "description": "CC-A04 / parent P-17. The backfill seeds exactly ONE commercial_accounts row per existing governed-eligible Organization in BOOTSTRAP, sets the FK, writes the opening history row THROUGH the relation (reason 'BACKFILL_SEED', actor NULL) and one entitlement_grants row per Organization for 'stella.grounded_query' by the inverted projection (NULL -> UNMETERED, 0 -> BLOCKED, N -> CAPPED N; plan_ref = stella_plan_label; source PLATFORM_ADMIN, commercial_account_id NULL); SENTINEL_MANUAL_QUOTA_ORG comes out PLATFORM_ADMIN; a second run inserts nothing."
+    },
+    {
+      "id": "CC-P-9",
+      "test_file": "UNKNOWN",
+      "description": "CC-A05 / parent P-10, P-12. The projection is exact in both directions for 'stella.grounded_query' (UNMETERED -> NULL, BLOCKED -> 0, CAPPED -> limit_value) and is written in the same statement scope as the grant; entitlement_open closes the prior live row and inserts the replacement atomically; the same cause_identity replayed writes nothing; an account-level aggregate of usage is READ-ONLY with no path to an enforcement decision."
+    },
+    {
+      "id": "CC-P-10",
+      "test_file": "UNKNOWN",
+      "description": "CC-A05 / parent P-11 / PG-2 / SEC-8. OrgA exhausting its projected cap leaves OrgB's available capacity unchanged, where both are governed by the SAME account, with the two consumptions running CONCURRENTLY under bind_operation_ticket."
+    },
+    {
+      "id": "CC-P-11",
+      "test_file": "UNKNOWN",
+      "description": "CC-A05 (plan catalogue). Re-evaluation of (plan_ref = configured price id, catalogue version, organization) is deterministic: two evaluations yield identical (limit_kind, limit_value); the pro and enterprise entries yield CAPPED 250 and CAPPED 1000 as configured; the catalogue declares BOOTSTRAP_DEFAULT = BLOCKED for 'stella.grounded_query' and declares no free entry."
+    },
+    {
+      "id": "CC-P-12",
+      "test_file": "UNKNOWN",
+      "description": "CC-A06 / billing P-01, P-02, P-03. A first-party organization_admin call on an account with stripe_customer_id NULL creates exactly one Stripe Customer (stubbed at the SDK boundary) with an idempotency key derived from commercial_account_id, persists the RETURNED id through the capability definer and writes commercial.stripe.bound with the person as actor; two sequential and two concurrent calls yield one customer id (advisory lock, UNIQUE, idempotency key -- three bounds, each probed by disabling the others in a fixture branch)."
+    },
+    {
+      "id": "CC-P-13",
+      "test_file": "UNKNOWN",
+      "description": "CC-A07 / billing P-12. Checkout is created only for a bound account with customer = the bound id and a configured price; success_url and cancel_url carry no identity, plan or entitlement; the portal is reachable for a bound customer; an account in BOOTSTRAP re-subscribing REUSES the retained customer id and creates no second Stripe Customer; the billing page renders the commercial projection and readStellaCapacity and never a commercial_accounts row."
+    },
+    {
+      "id": "CC-P-14",
+      "test_file": "UNKNOWN",
+      "description": "CC-A08 / billing P-04, P-05, P-06, P-07, P-13. A duplicate event_id completes once; a newer event in scope is APPLIED; an observed past_due enters PAST_DUE with exactly one commercial.state.entered row and NO grant effect; recovery (subscription active OR invoice.paid) returns to ACTIVE_STRIPE with no grant write; a subscription replacement closes the outgoing and opens the incoming as one act under one lock with one audit row naming both ids; the recomposed apply verb writes ZERO columns of public.organizations and ZERO rows of entitlement_grants (PG-9 census plus behavioural delta). CC-A11 (enablement, staging only): with WEBHOOK_DATABASE_IDENTITY_AVAILABLE true and the Stripe identity provisioned by name, a signature-verified event reaches stripe_begin_event, is applied through the recomposed verb and is marked completed -- the first end-to-end activation with ZERO human database edits."
+    },
+    {
+      "id": "CC-P-15",
+      "test_file": "UNKNOWN",
+      "description": "CC-A09 / billing P-08, P-10, P-11, P-17, P-19. Observed unpaid enters SUSPENDED, sets the gate BLOCKED and the consumer closes every live PLAN grant with one audit row per closure atomically across all N governed Organizations; observed cancellation commits BOOTSTRAP + stripe_subscription_id NULL + customer id RETAINED + PLAN grants closed + BOOTSTRAP_DEFAULT replacements (BLOCKED) in ONE transaction, observed from a second concurrent connection as a single change; reactivation of the SAME subscription opens NEW grant rows (never un-closes); at every instant exactly one live row exists per key."
+    },
+    {
+      "id": "CC-P-16",
+      "test_file": "UNKNOWN",
+      "description": "CC-A10 (L3 before L2). With a CAPPED live grant and gate PASS_THROUGH, issueOperationTicket mints a ticket AFTER consumeStellaRateLimit and BEFORE any quota read; bind then reserves against the projected cap. With an UNMETERED grant the same holds with stella_capacity.available NULL. The evaluator and the gate definer are each called EXACTLY ONCE per issuance with the explicit organizationId, for every one of the seven ticket categories, always with capability_key 'stella.grounded_query'."
+    },
+    {
+      "id": "CC-P-17",
+      "test_file": "UNKNOWN",
+      "description": "CC-A12 / parent P-4, P-6, P-7. A completed transfer leaves the Organization id, tenant data, every organization_members row, every role and every evidence/report row byte-identical (before/after delta over counts AND content hashes); closes PLAN grants of the outgoing account and emits exactly ONE D-4 request that the CE-5 consumer turns into new PLAN grants under the receiving account; PLATFORM_ADMIN and BOOTSTRAP_DEFAULT grants are untouched; the same idempotency key replayed is a no-op returning the original outcome; both TRANSFER_AUDIT_SHAPE rows are present and the account-scoped one has organization_id NULL."
+    },
+    {
+      "id": "CC-P-18",
+      "test_file": "UNKNOWN",
+      "description": "CC-A13 / billing P-18. After a cancellation the projected stella_monthly_quota is 0 (BLOCKED) and a Stella ticket refuses ENTITLEMENT_BLOCKED; STRIPE_QUOTAS.free and the null-price branch of mapStripePriceToQuota are unreachable from every write path, proven by runtime instrumentation of the accessor across the full journey (SENTINEL_FREE_TEN never trips)."
+    },
+    {
+      "id": "CC-P-19",
+      "test_file": "UNKNOWN",
+      "description": "CC-A14 / parent P-13, P-14 / HPO-A.6 / ALLOWLIST_EXIT. SENTINEL_NO_ALLOWLIST_SUBJECT, B0-verified and L0-accepted, founds an organization with the allowlist flag OFF and receives, in ONE transaction, a commercial_accounts row in BOOTSTRAP, the Organization (founded_by = the subject, founding_provenance 'self_service', FK set), an organization_admin membership, the opening history row and a BOOTSTRAP_DEFAULT grant (commercial_account_id NULL, BLOCKED, projected 0), plus the audit rows; the verb refuses owner, role, plan, quota and Stripe parameters; a second founding by the same subject refuses TENANCY_FOUNDER_CARDINALITY_EXCEEDED; the same idempotency key replayed returns the original outcome; concurrent founding attempts serialize without user_single_active_membership."
+    },
+    {
+      "id": "CC-P-20",
+      "test_file": "UNKNOWN",
+      "description": "CC-A15. The commercial golden journey (authority SECTION_24.legs_binding) completes end to end AS uellix_app on the disposable substrate with the full chain applied and Stripe stubbed at the SDK boundary; every leg is an assertion and no leg is skipped; GOLDEN_JOURNEY_SKELETON J2 'commercial-accounts' is posture-backed."
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "CC-N-1",
+      "test_file": "UNKNOWN",
+      "description": "CC-A00. Any writer package that grants a privilege on entitlement_grants to a grantee NOT in the amendment's admission map, any privilege beyond the listed verb set (e.g. DELETE, TRUNCATE, UPDATE of a column other than effective_to), or any policy TO PUBLIC / authenticated / anon / service_role / a runtime role, is REFUSED by the exact-posture control (retargeted CE3-ACL family): the non-owner privilege set on entitlement_grants after the batch equals the map EXACTLY, and public.entitlement_effective's non-owner EXECUTE remains {authenticated} only."
+    },
+    {
+      "id": "CC-N-2",
+      "test_file": "UNKNOWN",
+      "description": "CC-A01 / parent N-12, SEC-12. An UPDATE of any column other than the single NULL -> timestamp close, a second close, or a DELETE reaching SENTINEL_CLOSED_HISTORY_ROW is REFUSED at the storage boundary; a second OPEN row for the same Organization is refused by the partial unique index under concurrent insertion."
+    },
+    {
+      "id": "CC-N-3",
+      "test_file": "UNKNOWN",
+      "description": "CC-A01. A tenant principal (uellix_app with a member's claims) holds NO direct privilege on commercial_account_organization_history (42501 on SELECT/INSERT/UPDATE/DELETE/TRUNCATE) and the projection definer REFUSES a cross-organization request with a SQLSTATE, never an empty set; SENTINEL_SIBLING_ORG_CANARY_ROW's history is invisible to OrgA."
+    },
+    {
+      "id": "CC-N-4",
+      "test_file": "UNKNOWN",
+      "description": "CC-A02 (D-1). An INSERT or UPDATE writing any lowercase legacy value ('active', 'past_due', 'suspended', 'closed') or any seventh value is REFUSED by the CHECK; the forward migration ABORTS if any pre-existing row holds a value other than 'active' (fail closed rather than mapping by guess)."
+    },
+    {
+      "id": "CC-N-5",
+      "test_file": "UNKNOWN",
+      "description": "CC-A02 / billing N-11, N-12, N-13, N-21, N-22, N-23, N-24, N-29. uellix_app can neither read nor write commercial_accounts before and after the pair; the capability role bound to account A reaches neither SENTINEL_FOREIGN_ACCOUNT_ROW by SELECT nor by UPDATE; with the RESTRICTIVE member absent it reaches every row and with the PERMISSIVE member absent it reaches nothing (both degenerate cases demonstrated on copies, never left in place); with every GUC unset it reaches no row; it cannot DELETE; granting ANY login or runtime role membership in uellix_cap_commercial makes the apply FAIL on PC-3 and, behaviourally, lets that role read SENTINEL_FOREIGN_ACCOUNT_ROW -- proving the membership boundary is load-bearing."
+    },
+    {
+      "id": "CC-N-6",
+      "test_file": "UNKNOWN",
+      "description": "CC-A02 (RESOLVER_BOUND). With app.stripe_customer_id set to a customer id that belongs to NO account the SELECT returns zero rows and the verb REFUSES (never inserts); with the identity GUC set AND app.commercial_account_id set to a DIFFERENT account, an UPDATE reaches only the row named by app.commercial_account_id (INSERT/UPDATE predicates unchanged); a tenant path that sets app.stripe_customer_id gains nothing (the role is not admitted)."
+    },
+    {
+      "id": "CC-N-7",
+      "test_file": "UNKNOWN",
+      "description": "CC-A03 / billing N-20, N-09 (five refusals), N-19. Every one of the 13 ILLEGAL pairs is REFUSED with cause illegal_transition, enumerated over the frozen table; a transition into ACTIVE_WITHOUT_STRIPE is REFUSED from EVERY state by EVERY caller (no authorization_reference source exists -- CB-8 outside); an entry into ACTIVE_STRIPE or ACTIVE_WITHOUT_STRIPE with an unconsumed closure obligation (or, before CB-6, at all) is REFUSED with pending_closure_obligation; a Stripe event carrying a subscription id for an ACTIVE_WITHOUT_STRIPE fixture account is REFUSED manual_basis_conflict."
+    },
+    {
+      "id": "CC-N-8",
+      "test_file": "UNKNOWN",
+      "description": "CC-A03 (gate definer). A cross-organization gate request raises a SQLSTATE rather than returning a row; anon and service_role hold no EXECUTE; the definer's owner is asserted from pg_proc / pg_roles as uellix_cap_commercial with rolbypassrls false and rolsuper false."
+    },
+    {
+      "id": "CC-N-9",
+      "test_file": "UNKNOWN",
+      "description": "CC-A04 (PRE-CE4-1..4). A planted organizations row with a non-NULL stripe_subscription_id aborts the ENTIRE backfill (zero rows seeded, verified by counts); a planted pre-existing entitlement_grants row aborts it; running against the four-value CHECK aborts it; an applier identity that cannot INSERT under FORCE RLS aborts it before the seed loop. SENTINEL_UNGOVERNED_ORG (fixture-excluded) receives no account and still yields NO_LIVE_GRANT (parent N-16 content)."
+    },
+    {
+      "id": "CC-N-10",
+      "test_file": "UNKNOWN",
+      "description": "CC-A05 / parent N-9, N-14, N-8. After CE-5 an UPDATE of stella_monthly_quota or stella_plan_label as authenticated, uellix_app, uellix_writer, anon or service_role is REFUSED 42501; a static census over lib/**, app/** and db/prepared/** finds no writer of those columns other than the three capability projections (uellix_cap_entitlement, uellix_cap_cancellation, uellix_cap_bootstrap) -- classified per hit, never a bare zero; SENTINEL_UNKNOWN_STRIPE_PRICE is REFUSED by re-evaluation; a grant insert omitting limit_kind is refused."
+    },
+    {
+      "id": "CC-N-11",
+      "test_file": "UNKNOWN",
+      "description": "CC-A05 (writer role bounds). uellix_cap_entitlement cannot DELETE or TRUNCATE entitlement_grants, cannot UPDATE any column other than effective_to, cannot re-close a closed row, cannot UPDATE organizations columns other than the two quota columns and updated_at, and cannot reach an Organization other than the one named in app.entitlement_organization_id; it has ZERO role members (PC-3 shape)."
+    },
+    {
+      "id": "CC-N-12",
+      "test_file": "UNKNOWN",
+      "description": "CC-A06 / billing N-01, N-02. A binding attempt supplying a Stripe customer id from the request (body, query, form, header) is REFUSED and no inbound field reaches the persisted value; an organization_admin of account B attempting to bind a customer id already held by account A is REFUSED at the application layer AND, with that layer disabled in a fixture branch, by UNIQUE(stripe_customer_id); a collision ESCALATES; a CLOSED account cannot bind; an Organization whose L1 commercial acceptance is not current cannot bind."
+    },
+    {
+      "id": "CC-N-13",
+      "test_file": "UNKNOWN",
+      "description": "CC-A07. Checkout is REFUSED for an unbound account (no customer id), for an unconfigured price (SENTINEL_UNKNOWN_STRIPE_PRICE) and for a caller below organization_admin; a checkout.session.completed event remains RECORDED and NEVER APPLIED (first_binding_requires_first_party_flow); a success_url carrying an account, organization or plan token is IGNORED by every reader."
+    },
+    {
+      "id": "CC-N-14",
+      "test_file": "UNKNOWN",
+      "description": "CC-A08 / billing N-03, N-04, N-05, N-15, N-16, N-18. An event is resolved to an account ONLY from the Stripe identity columns (a buyer-supplied client_reference_id naming another account is ignored); an event older than the last completed in scope is REFUSED stale_event, terminally ignored, answered 200 (SENTINEL_ARRIVAL_ORDER untouched); an equal-timestamp backward move is REFUSED ambiguous_order and escalates; a foreign subscription id on an account already holding one is REFUSED subscription_conflict; a duplicate delivery re-applies nothing (full table snapshots equal); any event for a CLOSED account is recorded and ignored with cause account_closed. CC-A11 (enablement): with WEBHOOK_DATABASE_IDENTITY_AVAILABLE true but UELLIX_STRIPE_DATABASE_URL absent, a signature-verified event is answered 503 database_identity_unavailable and NOTHING is written; with the flag false every event is refused feature_flag_disabled -- the two refusals stay distinct and neither reaches the ledger."
+    },
+    {
+      "id": "CC-N-15",
+      "test_file": "UNKNOWN",
+      "description": "CC-A08 / parent N-5, billing N-06, N-07 / PG-9. The webhook identities (uellix_stripe LOGIN, uellix_cap_stripe) hold NO privilege on organization_members, organizations, entitlement_grants or the legacy quota columns (privilege census) and a signature-verified event moves commercial state while moving ZERO entitlement rows (behavioural delta); entering PAST_DUE writes ZERO entitlement_grants rows and ZERO entitlement audit rows; entering SUSPENDED writes no organizations.status, deletes no membership and removes no read access (SENTINEL_COMMERCIALLY_SUSPENDED_ACCOUNT)."
+    },
+    {
+      "id": "CC-N-16",
+      "test_file": "UNKNOWN",
+      "description": "CC-A09 / billing N-25, N-26, N-27, N-28. An induced failure at each of the three cancellation conjunct boundaries rolls back ALL conjuncts (pre-cancellation truth intact, ledger row unfinished, 503 answered); a concurrent reader polling throughout never observes SENTINEL_TORN_CANCELLATION; with an unconsumed closure obligation outstanding, reactivation is REFUSED pending_closure_obligation and SENTINEL_CONDEMNED_GRANT never becomes live in an active state; a sweep over every ACTIVE_STRIPE / ACTIVE_WITHOUT_STRIPE account finds zero condemned PLAN grants."
+    },
+    {
+      "id": "CC-N-17",
+      "test_file": "UNKNOWN",
+      "description": "CC-A09 (cancellation role, OF-9, OF-10). uellix_cap_cancellation CANNOT insert an entitlement_grants row with source PLAN, PLATFORM_ADMIN or COMMERCIAL_EXCEPTION (policy WITH CHECK refuses), cannot UPDATE a grant column other than effective_to, cannot DELETE, and has ZERO role members proved on pg_auth_members.roleid; granting a login role membership makes the apply FAIL."
+    },
+    {
+      "id": "CC-N-18",
+      "test_file": "UNKNOWN",
+      "description": "CC-A09 (consumer). The consumer applies a request atomically across ALL N Organizations of an account: an induced failure on the Nth Organization leaves every Organization's grants unchanged; a request is consumed at most once (cause_identity UNIQUE); repeated failure increments attempts and ESCALATES rather than silently retrying into a different outcome."
+    },
+    {
+      "id": "CC-N-19",
+      "test_file": "UNKNOWN",
+      "description": "CC-A10 (L3 refusals). With NO live grant issuance refuses ENTITLEMENT_ABSENT; with a BLOCKED grant ENTITLEMENT_BLOCKED; with a CAPPED grant but gate BLOCKED (SUSPENDED, closures not yet consumed) ENTITLEMENT_BLOCKED; with the evaluator throwing or REFUSED ENTITLEMENT_UNAVAILABLE; in every refusal NO ticket row exists, NO quota unit is reserved, NO provider call is made; the three vocabularies (RATE_LIMITED / ENTITLEMENT_* / no_quota, quota_exceeded) are pairwise distinct and each is reachable by its own fixture; every one of the seven categories refuses identically."
+    },
+    {
+      "id": "CC-N-20",
+      "test_file": "tests/commercial/ce3-evaluator-consumer-census.test.ts",
+      "description": "CC-A10 (consumer census retarget of CE3-N-9). The census classifies EXACTLY ONE authorized runtime consumer of evaluateEntitlement -- db/stella/operation-tickets.ts -- and EXACTLY ONE authorized runtime consumer of the gate wrapper (the same file); DEFINITION_SURFACE is unchanged; lib/stella/operation-ticket/issue-governed-ticket.ts, app/actions/stella/grounded-query.ts, every MUST_NOT_CALL surface of authority SECTION_7 and any other file naming either symbol turns the control RED. The census remains a closed-world sweep of the repository, never a directory exclusion or a count >= 1."
+    },
+    {
+      "id": "CC-N-21",
+      "test_file": "UNKNOWN",
+      "description": "CC-A10 (SENTINEL_DIRECT_SQL_MINT). A ticket minted by calling uellix_stella_ops.issue_operation_ticket directly for an Organization whose live grant is BLOCKED is REFUSED no_quota at bind; a ticket minted the same way for an Organization whose account is SUSPENDED after the consumer has projected the closures is likewise refused; the bounded residual window before projection is recorded (OF-CC-4), not asserted green."
+    },
+    {
+      "id": "CC-N-22",
+      "test_file": "UNKNOWN",
+      "description": "CC-A12 / parent N-7, N-10 / T-9, T-13. A transfer that would repoint commercial_account_id on live grant rows instead of closing them is CAUGHT (grant rows inspected after the act); two concurrent transfers of one Organization serialize and the second is REFUSED expected_account_mismatch; a transfer to the account that already governs the Organization is REFUSED same_account_transfer with no zero-width history row; a caller who is not a platform super_admin is REFUSED inside the definer; no Stripe identity column changes; zero organization_members rows change (row-count delta); the account-scoped audit row is invisible to every tenant principal (PG-8)."
+    },
+    {
+      "id": "CC-N-23",
+      "test_file": "UNKNOWN",
+      "description": "CC-A13 / billing N-08, N-17. The cancellation path never calls mapStripePriceToQuota (instrumented), the value 10 appears in no write, grant or projection, and no commercial write path reaches STRIPE_QUOTAS.free at runtime (accessor instrumented for the whole golden journey). CC-A15: the golden journey (SECTION_24) carries these instrumented negative legs as assertions, and a journey that SKIPS any negative leg is RED (no-silent-skip guard)."
+    },
+    {
+      "id": "CC-N-24",
+      "test_file": "UNKNOWN",
+      "description": "CC-A14 / parent N-11 / PG-10. An induced failure after the Organization insert and before the grant insert leaves NO Organization, NO membership, NO account, NO history row and NO grant; with the allowlist flag ON and SENTINEL_NO_ALLOWLIST_SUBJECT absent from the table founding is REFUSED inside the definer with the uniform refusal; the definer cannot insert a PLAN, PLATFORM_ADMIN or COMMERCIAL_EXCEPTION grant (policy refuses) and holds no UPDATE on any legacy billing column of any row but its own new one; a second self-service founding refuses TENANCY_FOUNDER_CARDINALITY_EXCEEDED; an unverified or L0-unaccepted subject never reaches the definer."
+    },
+    {
+      "id": "CC-N-25",
+      "test_file": "UNKNOWN",
+      "description": "CC-A14 (anti-abuse floor). On staging/production the founding rate limiter REQUIRES the distributed backend and refuses founding_rate_limit_unavailable when it is absent (same posture and attestation shape as lib/stella/rate-limit.ts); over the limit it refuses founding_rate_limited; a founding never proceeds on the in-memory fallback outside development/test/ci."
+    },
+    {
+      "id": "CC-N-26",
+      "test_file": "UNKNOWN",
+      "description": "BATCH-WIDE (SC-4 / MUT-10 / SEC-7). At the end of every act: db/identity-context.ts is byte-unchanged; no commercial identifier (commercial_account_id, commercial_status, any app.commercial_* / app.stripe_* / app.transfer_* / app.entitlement_* GUC) appears in the selected-organization carrier, RequestPrincipal or any RLS predicate over tenant data; a subject scoped to OrgA reads zero rows of OrgB including SENTINEL_SIBLING_ORG_CANARY_ROW despite the shared account. Asserted by static sweep plus PG-1-shaped runtime read."
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "CC-M-1",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the amendment content is the admission. Mutation: implement a writer package granting INSERT on entitlement_grants to a role absent from the admission map, or widen a listed role's verb set. Must turn CC-N-1 RED (exact-posture comparison), not merely a review comment."
+    },
+    {
+      "id": "CC-M-2",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: exactly one OPEN history row per Organization. Mutation: drop the partial unique index on commercial_account_organization_history. Must turn CC-N-2's concurrent-insert arm RED."
+    },
+    {
+      "id": "CC-M-3",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the six-state vocabulary is closed and the DEFAULT is BOOTSTRAP. Mutation: keep the DEFAULT 'active' or admit a seventh value. Must turn CC-P-3 and CC-N-4 RED."
+    },
+    {
+      "id": "CC-M-4",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the resolver bound admits ONE row by identity and nothing more. Mutation A: replace the identity disjunct with USING (true) on the RESTRICTIVE SELECT. Mutation B: widen it to a LIKE / prefix match. Must turn CC-N-6 RED against SENTINEL_FOREIGN_ACCOUNT_ROW in both variants."
+    },
+    {
+      "id": "CC-M-5",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the transition closure is conjunctive and total (billing M-16, M-17 restated on the executable table). Mutation: relax the verb to accept a pair listed on one side only, or treat a NO_OP as illegal. Must turn CC-P-6 or CC-N-7 RED; the control compares the verb's table to the frozen 36-pair classification, so a silent edit to one pair is detected."
+    },
+    {
+      "id": "CC-M-6",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the backfill fails closed on a subscription-bearing Organization. Mutation: remove PRE-CE4-1 and seed such a row BOOTSTRAP (or ACTIVE_STRIPE). Must turn CC-N-9 RED."
+    },
+    {
+      "id": "CC-M-7",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: exactly one writer of the legacy quota columns (parent M-5 restated for the batch). Mutation: restore any second writer -- the ORM update in lib/admin, admin_set_stella_service's direct set, or the Stripe apply's stella_monthly_quota assignment. Must turn CC-N-10 RED both statically (census) and behaviourally (the effective limit diverges from the live grant)."
+    },
+    {
+      "id": "CC-M-8",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the plan catalogue refuses unknown and null prices and carries no free tier. Mutation: add a fallback entry, a default limit, or a null-price branch. Must turn CC-N-10's SENTINEL_UNKNOWN_STRIPE_PRICE arm and CC-N-23 RED."
+    },
+    {
+      "id": "CC-M-9",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the cross-tenant binding defence survives a refactor (billing M-05). Mutation: drop UNIQUE(stripe_customer_id). Must turn CC-N-12's second layer RED while its first layer stays green, proving the layers are independent."
+    },
+    {
+      "id": "CC-M-10",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: ordering uses SOURCE order inside the lock (billing M-01, M-02, M-06, M-10). Mutation A: remove the ORD-3 guard. Mutation B: order by received_at. Mutation C: evaluate ORD-3/ORD-4 before taking the account lock. Mutation D: answer 503 for a stale event. Each must turn CC-N-14 RED (B trips SENTINEL_ARRIVAL_ORDER; C is caught only by the concurrent pair)."
+    },
+    {
+      "id": "CC-M-11",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the webhook never writes a grant or a limit (parent MUT-1, billing M-07). Mutation: have the recomposed apply verb write stella_monthly_quota or an entitlement_grants row. Must turn CC-N-15 RED (privilege census AND behavioural delta)."
+    },
+    {
+      "id": "CC-M-12",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: cancellation is atomic and closing-only (billing M-14, M-15). Mutation A: split cancellation into two transactions. Mutation B: remove INV-STALE-GRANT from ACTIVE_STRIPE entry. Mutation C: give uellix_cap_cancellation an unrestricted INSERT policy. Must turn CC-N-16 RED (A, B) and CC-N-17 RED (C)."
+    },
+    {
+      "id": "CC-M-13",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: L3 is evaluated before the mint and refuses fail-closed. Mutation A: move the gate after issue_operation_ticket. Mutation B: map an evaluator throw or REFUSED to a pass. Mutation C: derive the capability key from the ticket category. Mutation D: read the organization from the ambient principal instead of the explicit argument. Must turn CC-N-19 RED (A, B), CC-P-16 RED (C, D)."
+    },
+    {
+      "id": "CC-M-14",
+      "test_file": "tests/commercial/ce3-evaluator-consumer-census.test.ts",
+      "description": "Guarantee: exactly one runtime consumer (retargeted CE3-M-5). Mutation: import the evaluator or the gate wrapper into any SECOND path -- issue-governed-ticket.ts, grounded-query.ts, requireOrganizationAccess, a Measure or Portfolio module, an API route, the Stripe webhook, the request principal. Must turn CC-N-20 RED."
+    },
+    {
+      "id": "CC-M-15",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: transfer closes grants and is a compare-and-set under a row lock (parent M-3, M-6). Mutation A: repoint commercial_account_id on live grants. Mutation B: remove the expected-current-account argument or the row lock. Must turn CC-N-22 RED (A by row inspection, B by the concurrent pair)."
+    },
+    {
+      "id": "CC-M-16",
+      "test_file": "UNKNOWN",
+      "description": "Guarantee: the bootstrap is atomic over five relations, defaults the allowlist flag OFF and enforces the anti-abuse floor (parent M-7). Mutation A: split the grant insert into a follow-up call. Mutation B: default the allowlist flag ON. Mutation C: let founding proceed on the in-memory limiter fallback in staging. Must turn CC-N-24 RED (A, B) and CC-N-25 RED (C); CC-P-19 additionally turns RED under B because SENTINEL_NO_ALLOWLIST_SUBJECT can no longer found."
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
