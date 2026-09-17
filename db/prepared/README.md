@@ -1771,21 +1771,54 @@ prechain y la última prerequisito de los helpers de Storage.
 > deja `grantee_role=r/grantor_role` intacto, con exit code **0**. Por eso el
 > paquete **mide** el *grantor* de cada par con `aclexplode` — nunca supone
 > `postgres` ni supone `uellix_owner` — y **decide releyendo el ACL**, jamás por
-> la presencia o ausencia del WARNING. El conjunto aprobado está **cerrado** en
-> {dueño actual medido del objeto, `uellix_owner`}, y el fichero expresa
-> exactamente dos brazos:
+> la presencia o ausencia del WARNING.
 >
-> | brazo | condición | cómo actúa | en hosted aplica a |
+> **APROBACIÓN y LEGITIMACIÓN son predicados INDEPENDIENTES**, y confundirlos
+> fue el defecto que la certificación independiente de R1 marcó como
+> BLOQUEANTE:
+>
+> | predicado | pregunta | regla |
+> |---|---|---|
+> | **aprobación** | ¿es un *grantor* que este paquete adjudica siquiera? | sólo el **dueño actual medido** del objeto, o `uellix_owner`. Cualquier otro se **rechaza**, aunque la sesión pudiera asumirlo trivialmente |
+> | **legitimación** | ¿puede esta sesión actuar como ese *grantor*? | `grantor = current_user`, o `pg_has_role(current_user, grantor, 'SET')`. Un *grantor* aprobado que la sesión no puede asumir se **rechaza antes de mutar** |
+>
+> El conjunto aprobado está **cerrado** en {dueño actual medido del objeto,
+> `uellix_owner`} — es un **predicado sobre estado medido**, no una lista de
+> nombres congelados, porque el dueño se lee de `pg_class.relowner` /
+> `pg_proc.proowner`. La **ejecución** sigue al *grantor* medido:
+>
+> | vía | condición | cómo actúa | en hosted aplica a |
 > |---|---|---|---|
-> | 1 | *grantor* = `current_user` | `REVOKE` directo, **sin abrir ventana de rol** | la **tabla**: sus concesiones heredadas llevan grantor `postgres`, que es el aplicador |
-> | 2 | *grantor* = `uellix_owner` ≠ `current_user` | exige `pg_has_role(current_user,'uellix_owner','SET')`, luego `SET LOCAL ROLE uellix_owner` … `RESET ROLE` en el **mismo bloque** | el **evaluador**: tras `stella_hosted_0009` sus `EXECUTE` de no propietario se reatribuyen a `uellix_owner` |
+> | directa | *grantor* = `current_user` | `REVOKE` directo, **sin abrir ventana de rol** | la **tabla** en la forma hosted: sus concesiones heredadas llevan grantor `postgres`, que es el aplicador |
+> | asumida | cualquier otro *grantor* aprobado y asumible | `set_config('role', <valor medido>, true)` → el mismo `REVOKE` literal → **relectura del ACL** → `set_config('role','none',true)` | el **evaluador**: tras `stella_hosted_0009` sus `EXECUTE` de no propietario se reatribuyen a `uellix_owner`, alcanzado por **medición**, no por estar congelado en el fichero |
 >
-> Un tercer *grantor* se **rechaza antes de mutar**, y la razón se dice en
-> claro: la categoría D prohíbe SQL dinámico, así que el fichero no puede
-> nombrar un rol que no congeló, y un *grantor* que no puede nombrar es uno como
-> el que no actuará. El paquete **no se concede** membresías, no crea roles y no
-> transfiere propiedad para obtener legitimación: la legitimación se **mide**,
-> nunca se fabrica.
+> **CORRECCIÓN R2 — la redacción anterior era FALSA.** R1 afirmaba aquí que el
+> fichero expresaba «exactamente dos brazos», que sólo `uellix_owner` literal
+> era asumible, y que un tercer *grantor* se rechazaba porque «la categoría D
+> prohíbe SQL dinámico, así que el fichero no puede nombrar un rol que no
+> congeló». **Eso no era cierto y era una infra-cobertura de una topología que
+> la autoridad SÍ admite.** `SET LOCAL ROLE <nombre>` toma un **IDENTIFICADOR**
+> y sí habría exigido SQL construido; `set_config('role', g, true)` es una
+> **llamada a función** cuyo primer argumento es un VALOR en tiempo de
+> ejecución, con el texto de la sentencia fijo. Medido: `current_user` recorre
+> `postgres → <grantor medido> → postgres` y el `REVOKE` literal sí retira la
+> concesión. Consecuencia práctica: una tabla cuyo dueño medido sea, por
+> ejemplo, `uellix_migrator`, con la sesión administrativa capaz de asumirlo,
+> **se endurece correctamente** — R1 la rechazaba.
+>
+> Lo que **no** cambia: las ocho sentencias `REVOKE` siguen siendo **literales**
+> y nombran sólo los dos objetos congelados; el SQL dinámico sigue
+> **prohibido** (`EXECUTE`, `format()`, `quote_ident()`, concatenación de
+> sentencias); el conjunto **aprobado** no se ensancha — R2 amplía el SOPORTE
+> DE EJECUCIÓN, nunca la aprobación; y un *grantor* no aprobado o no asumible
+> se sigue rechazando **antes de mutar**. El paquete **no se concede**
+> membresías, no crea roles y no transfiere propiedad para obtener
+> legitimación: la legitimación se **mide**, nunca se fabrica.
+>
+> **La tríada de frontera** (probada en el host dedicado): *grantor* aprobado
+> **con** legitimación ⇒ ÉXITO; aprobado **sin** legitimación ⇒ RECHAZO; **no
+> aprobado** aun con legitimación plena ⇒ RECHAZO. Es lo que demuestra que los
+> dos predicados son independientes y no uno solo con dos nombres.
 >
 > **Idempotencia — requisito, no tolerancia.** Una segunda aplicación sobre un
 > target ya endurecido satisface todas las precondiciones (familia de prestate

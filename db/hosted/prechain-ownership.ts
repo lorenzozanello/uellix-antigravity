@@ -669,7 +669,7 @@ export const PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING: PrechainOwnershipPackage
   id: 'stella_hosted_0010_entitlement_grants_acl_hardening',
   kind: 'prechain-ownership',
   sourceFile: 'db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql',
-  sourceSha256: '00bc6a740411c15d7b8e7fa08bdeb2f7072b75d36101141b3a16ec73abdda137',
+  sourceSha256: '8a3940921abf39ec81af72118de13fed507854997287960960820bf38fa59f71',
   purpose:
     'Withdraws the direct table privileges public.entitlement_grants INHERITS from the managed ' +
     'platform default privileges, and the evaluator EXECUTE grants anon and service_role inherit ' +

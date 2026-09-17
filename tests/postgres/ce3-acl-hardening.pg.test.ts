@@ -825,6 +825,145 @@ RESET ROLE;
 ${readFileSync(path.join(ROOT, HOSTED_0010_SQL), 'utf8')}
 COMMIT;`)
 
+  // -------------------------------------------------------------------------
+  // THE GRANTOR BOUNDARY TRIAD. APPROVAL and STANDING are INDEPENDENT
+  // predicates, and this triad is what proves it rather than asserting it:
+  //
+  //   A  approved (measured owner) + standing     => SUCCESS
+  //   B  approved (measured owner) + NO standing  => REFUSED on standing
+  //   C  UNAPPROVED + full standing               => REFUSED on approval
+  //
+  // Without A the package could refuse everything and still look correct.
+  // Without C the approval guard could be deleted and B would still pass. A
+  // revision that supported only current_user and a LITERAL uellix_owner
+  // passed B and C while failing A, which is exactly the defect A exists to
+  // catch.
+  //
+  // Each arrangement is wrapped in BEGIN ... and either the package's own RAISE
+  // or the closing ROLLBACK returns the database to the conformant state, so
+  // none of the three contaminates a later probe.
+  // -------------------------------------------------------------------------
+
+  // (A) POSITIVE: the table is owned by an authority-named administrative role
+  // that is NEITHER the applying session NOR uellix_owner, its vulnerable
+  // grants are attributed to that owner, and the session can legitimately act
+  // as it. The package must SUCCEED.
+  add('triadA-alternate-owner-with-standing-succeeds', `
+BEGIN;
+-- ARRANGEMENT (the TEST may grant; the PACKAGE may not). Standing is conferred
+-- here, by the operator's topology, and is then MEASURED by the package.
+GRANT uellix_migrator TO postgres WITH INHERIT FALSE, SET TRUE;
+GRANT CREATE, USAGE ON SCHEMA public TO uellix_migrator;
+ALTER TABLE public.entitlement_grants OWNER TO uellix_migrator;
+SET ROLE uellix_migrator;
+GRANT ALL PRIVILEGES ON TABLE public.entitlement_grants TO authenticated, service_role;
+RESET ROLE;
+DO $$ BEGIN
+  IF (SELECT pg_get_userbyid(c.relowner) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname='public' AND c.relname='entitlement_grants') <> 'uellix_migrator' THEN
+    RAISE EXCEPTION 'ARRANGEMENT INVALID: the table is not owned by uellix_migrator';
+  END IF;
+  IF NOT pg_has_role('postgres','uellix_migrator','SET') THEN
+    RAISE EXCEPTION 'ARRANGEMENT INVALID: the session has no SET standing to the measured owner, so this would be case B rather than case A';
+  END IF;
+  IF NOT has_table_privilege('authenticated','public.entitlement_grants','TRUNCATE') THEN
+    RAISE EXCEPTION 'ARRANGEMENT INVALID: the defect is absent, so a green result would prove nothing';
+  END IF;
+  -- Captured AFTER the arrangement and BEFORE the package, so the differential
+  -- below measures the PACKAGE rather than the arrangement's own two grants.
+  PERFORM set_config('ce3_probe.memberships_before',
+    (SELECT md5(coalesce(string_agg(pg_get_userbyid(m.member) || '->' || pg_get_userbyid(m.roleid),
+                                    E'\\n' ORDER BY m.member, m.roleid), ''))
+     FROM pg_auth_members m), true);
+END $$;
+${readFileSync(path.join(ROOT, HOSTED_0010_SQL), 'utf8')}
+DO $$ DECLARE observed text; owner_name text; BEGIN
+  SELECT pg_get_userbyid(c.relowner) INTO owner_name FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname='entitlement_grants';
+  IF owner_name <> 'uellix_migrator' THEN
+    RAISE EXCEPTION 'the package moved the table owner to %', owner_name;
+  END IF;
+  SELECT coalesce(string_agg(x.entry, ',' ORDER BY x.entry), '') INTO observed FROM (
+    SELECT coalesce(g.rolname,'PUBLIC') || ':' || a.privilege_type AS entry
+    FROM pg_class c CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+    LEFT JOIN pg_roles g ON g.oid=a.grantee JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname='entitlement_grants'
+      AND coalesce(g.rolname,'PUBLIC') <> owner_name) x;
+  IF observed <> 'uellix_owner:SELECT' THEN
+    RAISE EXCEPTION 'alternate-owner non-owner TABLE ACL is [%], not the frozen {(uellix_owner, SELECT)}', observed;
+  END IF;
+  IF has_table_privilege('authenticated','public.entitlement_grants','SELECT')
+     OR has_table_privilege('authenticated','public.entitlement_grants','TRUNCATE')
+     OR has_table_privilege('service_role','public.entitlement_grants','SELECT') THEN
+    RAISE EXCEPTION 'a tenant or platform role still holds a direct privilege after the alternate-owner apply';
+  END IF;
+  -- The evaluator contract is untouched by the table-owner topology.
+  SELECT coalesce(string_agg(x.entry, ',' ORDER BY x.entry), '') INTO observed FROM (
+    SELECT coalesce(g.rolname,'PUBLIC') || ':' || a.privilege_type AS entry
+    FROM pg_proc p CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+    LEFT JOIN pg_roles g ON g.oid=a.grantee
+    WHERE p.oid='${FN_SIG}'::regprocedure AND coalesce(g.rolname,'PUBLIC') <> pg_get_userbyid(p.proowner)) x;
+  IF observed <> 'authenticated:EXECUTE' THEN
+    RAISE EXCEPTION 'the evaluator EXECUTE contract moved to [%] during the alternate-owner apply', observed;
+  END IF;
+  -- ROLE-WINDOW CLOSURE on the variable-grantor path.
+  IF current_user <> session_user THEN
+    RAISE EXCEPTION 'a role window survived the alternate-owner apply: current_user=% session_user=%', current_user, session_user;
+  END IF;
+  -- NO MEMBERSHIP WAS MANUFACTURED, asserted DIFFERENTIALLY. An absolute
+  -- assertion is wrong here and was measured to be wrong: the platform already
+  -- grants the applying session ~20 memberships (anon, authenticated,
+  -- service_role, the pg_* predefined roles), so "the session holds only what
+  -- the arrangement gave it" is false on every real substrate. What must hold
+  -- is that the membership set did not MOVE across the package, which is the
+  -- same reason its own §0 capture exists.
+  IF (SELECT md5(coalesce(string_agg(pg_get_userbyid(m.member) || '->' || pg_get_userbyid(m.roleid),
+                                     E'\\n' ORDER BY m.member, m.roleid), ''))
+      FROM pg_auth_members m)
+     IS DISTINCT FROM current_setting('ce3_probe.memberships_before', true) THEN
+    RAISE EXCEPTION 'the role membership set changed across the alternate-owner apply; the package manufactures no standing';
+  END IF;
+END $$;
+ROLLBACK;`)
+
+  // (B) APPROVED measured owner, NO standing. The membership that made the
+  // ALTER possible is withdrawn before the package runs.
+  add('triadB-approved-owner-without-standing-refused', `
+BEGIN;
+GRANT uellix_migrator TO postgres WITH INHERIT FALSE, SET TRUE;
+GRANT CREATE, USAGE ON SCHEMA public TO uellix_migrator;
+ALTER TABLE public.entitlement_grants OWNER TO uellix_migrator;
+SET ROLE uellix_migrator;
+GRANT ALL PRIVILEGES ON TABLE public.entitlement_grants TO authenticated, service_role;
+RESET ROLE;
+REVOKE uellix_migrator FROM postgres;
+DO $$ BEGIN
+  IF pg_has_role('postgres','uellix_migrator','SET') THEN
+    RAISE EXCEPTION 'ARRANGEMENT INVALID: the session still has standing, so this would be case A';
+  END IF;
+END $$;
+${readFileSync(path.join(ROOT, HOSTED_0010_SQL), 'utf8')}
+COMMIT;`)
+
+  // (C) UNAPPROVED grantor, FULL standing. service_role is an ALLOWED GRANTEE,
+  // so the unexpected-grantee guard cannot fire first and mask the approval
+  // guard — the refusal has to come from provenance. The session is deliberately
+  // given SET standing to it, so standing cannot be what refuses either.
+  add('triadC-unapproved-grantor-with-standing-refused', `
+BEGIN;
+GRANT service_role TO postgres WITH INHERIT FALSE, SET TRUE;
+GRANT SELECT ON TABLE public.entitlement_grants TO service_role WITH GRANT OPTION;
+SET ROLE service_role;
+GRANT SELECT ON TABLE public.entitlement_grants TO authenticated;
+RESET ROLE;
+DO $$ BEGIN
+  IF NOT pg_has_role('postgres','service_role','SET') THEN
+    RAISE EXCEPTION 'ARRANGEMENT INVALID: no standing to the unapproved grantor, so a refusal could be the standing guard';
+  END IF;
+END $$;
+${readFileSync(path.join(ROOT, HOSTED_0010_SQL), 'utf8')}
+COMMIT;`)
+
   // THE KNOWN-NEGATIVE FOR ALL THREE: after every refusal above, the catalogs
   // are still the conformant ones. If an arrangement had leaked, this goes RED.
   add('n3-refusals-left-the-acl-untouched', `
@@ -858,6 +997,15 @@ const EXPECTED_REFUSALS: ReadonlyArray<{ id: string; mustContain: string }> = [
   { id: 'n3c-unexpected-grantee-refused', mustContain: 'UNEXPECTED non-owner grantee' },
   { id: 'n3c2-public-execute-refused', mustContain: 'UNEXPECTED non-owner grantee' },
   { id: 'n3d-hosted0009-precedence-refused', mustContain: 'rather than uellix_owner' },
+  // TRIAD B: approved measured owner, no standing. Asserted on the STANDING
+  // guard's own words, so deleting the approval guard cannot make this pass.
+  // The refusal lands in §0's standing guard, BEFORE any arm runs — which is
+  // the contract's "refuse before mutation" and is why the per-arm wording is
+  // not what this asserts.
+  { id: 'triadB-approved-owner-without-standing-refused', mustContain: 'nor legitimately act as that grantor' },
+  // TRIAD C: unapproved grantor with full standing. Asserted on the APPROVAL
+  // guard's own words, so deleting the standing guard cannot make this pass.
+  { id: 'triadC-unapproved-grantor-with-standing-refused', mustContain: 'not in the APPROVED grantor set' },
 ]
 
 const probeOf = (outcome: HarnessOutcome, id: string) => {
@@ -941,18 +1089,69 @@ const PROHIBITED_CLASSES: ReadonlyArray<{ name: string; re: RegExp }> = [
   { name: 'schema-wide FUNCTIONS wildcard', re: /\bALL\s+FUNCTIONS\s+IN\s+SCHEMA\b/i },
 ]
 
+/**
+ * Assembly forms, evaluated on the projection that RETAINS literals.
+ *
+ * THE MEASURED-GRANTOR MECHANISM MUST STAY A VALUE, NEVER A BUILT STATEMENT.
+ * set_config('role', g, true) passes the role as a runtime PARAMETER; each form
+ * below would instead ASSEMBLE SQL or an identifier, which category D
+ * prohibits. Naming them explicitly is what stops R2's widening of execution
+ * SUPPORT from becoming a widening of the statement CLASS.
+ *
+ * THESE CANNOT BE MEASURED ON THE CODE-ONLY PROJECTION, and that is the point:
+ * blanking literals erases the very fragment that makes `EXECUTE 'SET ROLE ' ||
+ * g` an assembled statement, leaving `EXECUTE || g`. A control aimed at
+ * assembled SQL has to read the text that still contains the fragment being
+ * assembled.
+ */
+const ASSEMBLY_FORMS: ReadonlyArray<{ name: string; re: RegExp }> = [
+  { name: 'identifier quoting helper', re: /\bquote_ident\s*\(/i },
+  { name: 'assembled SET ROLE statement', re: /'\s*SET\s+(LOCAL\s+)?ROLE\b[^']*'\s*\|\|/i },
+  { name: 'string-concatenated statement', re: /\|\|\s*'\s*(REVOKE|GRANT|SET\s+ROLE|ALTER|DROP)\b/i },
+  { name: 'dynamic SQL (EXECUTE of a built string)', re: /\bEXECUTE\s+(?!FUNCTION\b|PROCEDURE\b)[^;]*\|\|/i },
+]
+
 export interface DetectorReport {
   readonly searchedChars: number
   readonly flagged: string[]
   readonly revokeCount: number
   readonly offTargetRevokes: string[]
-  readonly setLocalRoleCount: number
-  readonly resetRoleCount: number
+  readonly roleSwitchCount: number
+  readonly roleRestoreCount: number
+}
+
+/**
+ * Comments removed, string literals KEPT.
+ *
+ * The code-only projection is the right instrument for a statement CLASS: it
+ * stops a RAISE message that quotes the word GRANT from being counted as one.
+ * It is the wrong instrument for the ROLE WINDOW, whose whole identity lives in
+ * two string literals — the GUC name and the restore sentinel. Two projections,
+ * two questions.
+ */
+export function stripCommentsOnly(sql: string): string {
+  return sql
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .split('\n')
+    .map((line) => {
+      // Only strip a `--` that is not inside a string literal on this line.
+      let inLiteral = false
+      for (let i = 0; i < line.length; i += 1) {
+        if (line[i] === "'") inLiteral = !inLiteral
+        if (!inLiteral && line[i] === '-' && line[i + 1] === '-') return line.slice(0, i)
+      }
+      return line
+    })
+    .join('\n')
 }
 
 export function detectStatementClasses(sql: string): DetectorReport {
   const code = codeOnlyProjection(sql)
-  const flagged = PROHIBITED_CLASSES.filter((c) => c.re.test(code)).map((c) => c.name)
+  const roleCode = stripCommentsOnly(sql)
+  const flagged = [
+    ...PROHIBITED_CLASSES.filter((c) => c.re.test(code)).map((c) => c.name),
+    ...ASSEMBLY_FORMS.filter((c) => c.re.test(roleCode)).map((c) => c.name),
+  ]
 
   // Every REVOKE, read as one semantic string so a statement wrapped across
   // lines is still one match.
@@ -968,8 +1167,17 @@ export function detectStatementClasses(sql: string): DetectorReport {
     flagged,
     revokeCount: revokes.length,
     offTargetRevokes: offTargetRevokes.map((r) => r.replace(/\s+/g, ' ').slice(0, 120)),
-    setLocalRoleCount: (code.match(/\bSET\s+LOCAL\s+ROLE\b/gi) ?? []).length,
-    resetRoleCount: (code.match(/\bRESET\s+ROLE\b/gi) ?? []).length,
+    // THE ROLE WINDOW, counted on a COMMENT-STRIPPED projection that RETAINS
+    // literals. The code-only projection above blanks every quoted literal
+    // including its quotes, so `set_config('role', g, true)` arrives there with
+    // its first argument erased and the two forms below become
+    // indistinguishable. Which GUC is being set, and whether the second
+    // argument is a measured value or the restore sentinel, is exactly what
+    // this control has to tell apart — so it reads the projection that keeps
+    // them. Comments are still removed, so the prose above that DISCUSSES
+    // set_config cannot inflate either count.
+    roleSwitchCount: (roleCode.match(/\bset_config\s*\(\s*'role'\s*,\s*(?!'none')[A-Za-z_][A-Za-z0-9_]*\s*,\s*true\s*\)/gi) ?? []).length,
+    roleRestoreCount: (roleCode.match(/\bset_config\s*\(\s*'role'\s*,\s*'none'\s*,\s*true\s*\)/gi) ?? []).length,
   }
 }
 
@@ -1007,9 +1215,43 @@ describe('CE3-ACL-N-4 — the package statement class is CLOSED (static, ungated
     expect(report.offTargetRevokes).toEqual([])
   })
 
-  it('every SET LOCAL ROLE is paired with a RESET ROLE', () => {
-    expect(report.setLocalRoleCount).toBeGreaterThan(0)
-    expect(report.resetRoleCount).toBeGreaterThanOrEqual(report.setLocalRoleCount)
+  it('every measured-grantor role window is paired with a restore', () => {
+    // The package enters an approved measured grantor with
+    // set_config('role', <value>, true) and leaves it with
+    // set_config('role', 'none', true). Both are counted, and a switch without
+    // a matching restore would leave a role window open across the rest of the
+    // transaction.
+    expect(report.roleSwitchCount).toBeGreaterThan(0)
+    expect(report.roleRestoreCount).toBeGreaterThanOrEqual(report.roleSwitchCount)
+  })
+
+  it('the measured grantor is entered as a VALUE, never as assembled SQL', () => {
+    // This is the R2 correction's whole safety argument, measured rather than
+    // asserted: the role name varies at runtime while the STATEMENT TEXT does
+    // not. `SET LOCAL ROLE <name>` would have needed an identifier — and an
+    // earlier revision refused an authorized topology rather than build one.
+    const raw = readFileSync(path.join(ROOT, HOSTED_0010_SQL), 'utf8')
+    const code = codeOnlyProjection(raw)
+    const withLiterals = stripCommentsOnly(raw)
+    expect(/\bEXECUTE\s+format\s*\(/i.test(withLiterals)).toBe(false)
+    expect(/\bquote_ident\s*\(/i.test(withLiterals)).toBe(false)
+    // NOT a blanket ban on `||`: the pre-state capture legitimately builds
+    // DIGEST strings with it. What is banned is concatenation that assembles a
+    // STATEMENT, which ASSEMBLY_FORMS measures and this asserts is absent.
+    expect(ASSEMBLY_FORMS.filter((f) => f.re.test(withLiterals)).map((f) => f.name)).toEqual([])
+    // ...and there is no executable SET ROLE / SET LOCAL ROLE statement left at
+    // all, so the mechanism cannot silently revert to the identifier form.
+    expect(/\bSET\s+(LOCAL\s+)?ROLE\b/i.test(code)).toBe(false)
+    expect(/\bRESET\s+ROLE\b/i.test(code)).toBe(false)
+  })
+
+  it('KNOWN POSITIVE: the detector FLAGS an assembled SET ROLE statement', () => {
+    // A detector that only counts set_config calls would not notice a package
+    // that ALSO built a statement. The sentinel is never executed.
+    const assembled = "DO $$ BEGIN EXECUTE 'SET ROLE ' || g; END $$;"
+    expect(detectStatementClasses(assembled).flagged).toContain('assembled SET ROLE statement')
+    expect(detectStatementClasses("DO $$ BEGIN PERFORM quote_ident(g); END $$;").flagged)
+      .toContain('identifier quoting helper')
   })
 
   it('the file sha256 matches the registry pin through sha256OfPreparedSql', () => {
@@ -1084,6 +1326,12 @@ describe.runIf(PG_TESTS_ENABLED)('PG-CE3-ACL-HARDENING — real PostgreSQL', () 
       'p1-evaluator-owner-and-definer-preserved',
       'p1-idempotent-second-apply-zero-revokes',
       'p1-idempotent-second-apply-counter-is-zero',
+      // TRIAD A. The alternate-owner topology is a POSITIVE case of the frozen
+      // contract, not a widening of it: the approved grantor set is expressed
+      // RELATIVE TO THE OWNER, so an authority-named administrative owner other
+      // than the applier is a topology the contract always admitted and an
+      // earlier revision merely failed to execute.
+      'triadA-alternate-owner-with-standing-succeeds',
     ])('%s', (id) => {
       const probe = probeOf(conformant!, id)
       expect(probe.ok, `${id}: ${probe.detail ?? ''}`).toBe(true)

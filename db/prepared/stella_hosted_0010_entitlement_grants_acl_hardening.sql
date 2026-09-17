@@ -80,28 +80,52 @@
 -- rather than by the presence or absence of the WARNING.
 --
 -- THE APPROVED GRANTOR SET IS CLOSED at the object's measured current owner
--- and uellix_owner, and this file can therefore express exactly two arms:
+-- and uellix_owner. It is expressed RELATIVE TO THE OWNER and the owner is
+-- read from pg_class.relowner / pg_proc.proowner, so the set is a PREDICATE
+-- over measured state and not a list of frozen names. Two things are decided
+-- separately, and conflating them is a defect:
 --
---   ARM 1   grantor = current_user. The REVOKE is issued directly and NO role
---           window is ever opened. This is the hosted TABLE arm: the
---           relation's inherited grants carry grantor `postgres`, which is
---           also the administrative applier.
+--   APPROVAL   is the grantor one this package will adjudicate at all? Only
+--              the object's measured current owner, or uellix_owner. Anything
+--              else is an unexplained provenance and is REFUSED — even if the
+--              session could trivially act as it.
 --
---   ARM 2   grantor = uellix_owner and uellix_owner <> current_user. The
---           session must ALREADY be able to act as it —
---           pg_has_role(current_user, 'uellix_owner', 'SET') — and the REVOKE
---           is issued under SET LOCAL ROLE uellix_owner, closed by RESET ROLE
---           in the same block. This is the hosted EVALUATOR arm: after
---           stella_hosted_0009 re-homes the function, its non-owner EXECUTE
---           grants are attributed to uellix_owner.
+--   STANDING   may this session act as that grantor? Either grantor =
+--              current_user, or pg_has_role(current_user, grantor, 'SET').
+--              An approved grantor the session cannot assume is REFUSED
+--              BEFORE any mutation, because the attempt would warn, change
+--              nothing and still commit.
 --
--- A grantor that is NEITHER is REFUSED before any mutation, and the refusal is
--- stated rather than dressed up: category D forbids dynamic SQL, so this file
--- cannot name a role it did not freeze, and a grantor it cannot name is one it
--- will not act as. Refusing is the fail-closed answer; manufacturing standing
--- is the answer this package is forbidden to give. It issues no GRANT, creates
--- no role, grants itself no membership and transfers no ownership — EVER, and
--- not merely "not by default".
+-- EXECUTION follows the measured grantor rather than a frozen name:
+--
+--   DIRECT     grantor = current_user. The REVOKE is issued as-is and NO role
+--              window is opened. On the hosted shape this is the TABLE arm:
+--              the relation's inherited grants carry grantor `postgres`,
+--              which is also the administrative applier.
+--
+--   ASSUMED    any other approved, assumable measured grantor. The session
+--              enters it with set_config('role', <measured value>, true),
+--              issues the same literal REVOKE, RE-READS the ACL to prove the
+--              pair is gone, and restores with set_config('role','none',true).
+--              On the hosted shape this is the EVALUATOR arm, where
+--              stella_hosted_0009 has re-attributed the non-owner EXECUTE
+--              grants to uellix_owner — reached because it is MEASURED there,
+--              not because this file named it in advance.
+--
+-- AN EARLIER REVISION REFUSED THE ASSUMED ARM FOR ANY GRANTOR OTHER THAN A
+-- LITERAL uellix_owner, on the stated ground that a category-D unit forbidding
+-- dynamic SQL could not act as a role it had not frozen. THAT GROUND WAS
+-- FALSE. `SET LOCAL ROLE <name>` takes an IDENTIFIER and would indeed have
+-- required constructed SQL; set_config('role', g, true) takes a VALUE and does
+-- not. The narrowing under-supported a topology the contract authorizes — a
+-- table owned by a measured administrative role other than the applier — and
+-- is corrected here. The APPROVED SET IS UNCHANGED: this widens execution
+-- support, never approval.
+--
+-- Refusing remains the fail-closed answer; manufacturing standing remains the
+-- answer this package is forbidden to give. It issues no GRANT, creates no
+-- role, grants itself no membership and transfers no ownership — EVER, and not
+-- merely "not by default".
 --
 -- ---------------------------------------------------------------------------
 -- WHAT THIS PACKAGE DOES NOT DO
@@ -424,9 +448,28 @@ BEGIN
     RAISE EXCEPTION 'stella_hosted_0010 aborted: a privilege this package would revoke was granted by [%], which is not in the APPROVED grantor set (the object''s measured current owner, or uellix_owner). An unapproved grantor is an unexplained provenance this package does not adjudicate, and it will not GRANT itself standing to strip it.', bad_grantor;
   END IF;
 
-  --      SECOND: standing. grantor = current_user, or a uellix_owner this
-  --      session may already SET ROLE to. Anything else is refused BEFORE the
+  --      SECOND: standing, and it is a SEPARATE PREDICATE from approval.
+  --      grantor = current_user, or ANY approved measured grantor this session
+  --      can already legitimately act as. Anything else is refused BEFORE the
   --      attempt, because the attempt would warn, change nothing and commit.
+  --
+  --      APPROVAL AND STANDING ARE INDEPENDENT, and conflating them is the
+  --      defect this clause was corrected for. The FIRST query above decides
+  --      whether a grantor is one this package will adjudicate at all; this one
+  --      decides only whether the session may act as it. A grantor can be
+  --      approved and unassumable (refused here), or assumable and unapproved
+  --      (refused above), and neither refusal substitutes for the other.
+  --
+  --      THE PREDICATE IS OVER THE MEASURED GRANTOR, NOT OVER A FROZEN NAME.
+  --      An earlier revision asked whether the grantor was literally
+  --      uellix_owner, on the stated ground that a category-D unit forbidding
+  --      dynamic SQL could not act as a role it had not named in advance. That
+  --      ground was FALSE and the narrowing was a defect: it refused an
+  --      approved measured OWNER -- a topology the contract explicitly admits,
+  --      since the approved set is expressed RELATIVE TO THE OWNER and the
+  --      owner is read from pg_class.relowner rather than frozen. §1 enters the
+  --      measured grantor with set_config('role', <value>, true), which is an
+  --      ordinary function call carrying a runtime VALUE, not constructed SQL.
   SELECT string_agg(DISTINCT x.grantor, ', ' ORDER BY x.grantor) INTO bad_grantor
   FROM (
     SELECT coalesce(gr.rolname, 'PUBLIC') AS grantor
@@ -446,9 +489,9 @@ BEGIN
       AND coalesce(g.rolname, 'PUBLIC') IN ('anon', 'service_role')
   ) AS x
   WHERE x.grantor <> current_user
-    AND NOT (x.grantor = 'uellix_owner' AND pg_catalog.pg_has_role(current_user, 'uellix_owner', 'SET'));
+    AND NOT pg_catalog.pg_has_role(current_user, x.grantor, 'SET');
   IF bad_grantor IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_hosted_0010 aborted: a privilege this package would revoke carries grantor [%], and this session (%) can neither issue the REVOKE as itself nor legitimately act as that grantor. A REVOKE issued by any other role raises "no privileges could be revoked", changes nothing and STILL COMMITS — so the package refuses BEFORE attempting it rather than reporting a hardening it did not perform. It does not GRANT itself a membership to manufacture the standing it lacks. Only two grantor arms are expressible in a category-D unit that forbids dynamic SQL: grantor = current_user, and grantor = uellix_owner reached through SET LOCAL ROLE.', bad_grantor, current_user;
+    RAISE EXCEPTION 'stella_hosted_0010 aborted: a privilege this package would revoke carries grantor [%], and this session (%) can neither issue the REVOKE as itself nor legitimately act as that grantor: pg_has_role(current_user, grantor, ''SET'') is false. A REVOKE issued by any other role raises "no privileges could be revoked", changes nothing and STILL COMMITS — so the package refuses BEFORE attempting it rather than reporting a hardening it did not perform. It does not GRANT itself a membership to manufacture the standing it lacks: standing is MEASURED, never manufactured.', bad_grantor, current_user;
   END IF;
 
   -- 0.15 ACL-PRE-16. THE CAPTURE. Transaction-local set_config(..., true), so
@@ -573,9 +616,13 @@ END $$;
 -- EACH REVOKE IS A LITERAL STATEMENT naming ONE of the two frozen objects. No
 -- identifier below is interpolated, no statement is assembled as a string and
 -- nothing is executed through EXECUTE format(...). That is what lets the
--- statement class be MEASURED by reading this file, and it is also why the
--- grantor arms are enumerated rather than derived: a category-D unit cannot
--- name a role it did not freeze.
+-- statement class be MEASURED by reading this file.
+--
+-- THE GRANTOR, BY CONTRAST, IS DERIVED AND NOT ENUMERATED. Each target has a
+-- direct arm (grantor = current_user) and a loop over every OTHER measured
+-- grantor, entered as a runtime VALUE through set_config('role', g, true).
+-- Statement text stays static while the acting identity is measured; the two
+-- are independent, and an earlier revision conflated them.
 --
 -- AFTER EVERY REVOKE THE ACL IS RE-READ AND THE PAIR ASSERTED ABSENT. A pair
 -- still present is FAILURE and aborts the transaction — whether PostgreSQL
@@ -589,15 +636,15 @@ DECLARE
   fn_owner           text;
   revokes_issued     int := 0;
   residual           text;
-  -- Per (object, grantee) x (grantor arm): is there at least one pair to strip?
+  sess               text;
+  g                  text;
+  left_over          int;
+  -- Per (object, grantee): is there at least one pair whose grantor is THIS
+  -- session? Those take the direct arm and open no role window at all.
   tbl_auth_self      boolean;
-  tbl_auth_owner     boolean;
   tbl_svc_self       boolean;
-  tbl_svc_owner      boolean;
   fn_anon_self       boolean;
-  fn_anon_owner      boolean;
   fn_svc_self        boolean;
-  fn_svc_owner       boolean;
 BEGIN
   tbl_owner := current_setting('stella_hosted_0010.table_owner', true);
   fn_owner  := current_setting('stella_hosted_0010.fn_owner', true);
@@ -611,16 +658,18 @@ BEGIN
   WHERE n.nspname = 'public' AND c.relname = 'entitlement_grants' AND c.relkind = 'r';
   fn_oid := pg_catalog.to_regprocedure('public.entitlement_effective(uuid,varchar)');
 
-  -- WHICH PAIRS EXIST, AND UNDER WHICH GRANTOR. Measured per (object, grantee,
-  -- arm) so that a grantee holding privileges from BOTH approved grantors is
-  -- stripped by BOTH arms rather than half-stripped by the first one that
-  -- matched.
+  sess := current_setting('stella_hosted_0010.session_user', true);
+
+  -- WHICH PAIRS EXIST, AND UNDER WHICH GRANTOR. Measured per (object, grantee)
+  -- so that a grantee holding privileges from SEVERAL approved grantors is
+  -- stripped under EACH of them rather than half-stripped by whichever matched
+  -- first. The self-arm booleans below are the "no role window at all" case;
+  -- every other measured grantor is walked as a VALUE by the loops further
+  -- down.
   SELECT
     bool_or(x.grantee = 'authenticated'  AND x.grantor = current_user),
-    bool_or(x.grantee = 'authenticated'  AND x.grantor = 'uellix_owner' AND x.grantor <> current_user),
-    bool_or(x.grantee = 'service_role'   AND x.grantor = current_user),
-    bool_or(x.grantee = 'service_role'   AND x.grantor = 'uellix_owner' AND x.grantor <> current_user)
-  INTO tbl_auth_self, tbl_auth_owner, tbl_svc_self, tbl_svc_owner
+    bool_or(x.grantee = 'service_role'   AND x.grantor = current_user)
+  INTO tbl_auth_self, tbl_svc_self
   FROM (
     SELECT coalesce(g.rolname, 'PUBLIC') AS grantee, coalesce(gr.rolname, 'PUBLIC') AS grantor
     FROM pg_catalog.pg_class c
@@ -632,10 +681,8 @@ BEGIN
 
   SELECT
     bool_or(x.grantee = 'anon'         AND x.grantor = current_user),
-    bool_or(x.grantee = 'anon'         AND x.grantor = 'uellix_owner' AND x.grantor <> current_user),
-    bool_or(x.grantee = 'service_role' AND x.grantor = current_user),
-    bool_or(x.grantee = 'service_role' AND x.grantor = 'uellix_owner' AND x.grantor <> current_user)
-  INTO fn_anon_self, fn_anon_owner, fn_svc_self, fn_svc_owner
+    bool_or(x.grantee = 'service_role' AND x.grantor = current_user)
+  INTO fn_anon_self, fn_svc_self
   FROM (
     SELECT coalesce(g.rolname, 'PUBLIC') AS grantee, coalesce(gr.rolname, 'PUBLIC') AS grantor
     FROM pg_catalog.pg_proc p
@@ -645,63 +692,216 @@ BEGIN
     WHERE p.oid = fn_oid AND coalesce(g.rolname, 'PUBLIC') <> fn_owner
   ) AS x;
 
-  -- ---- TABLE, ARM 1: grantor = current_user. No role window is opened. ----
+  -- ------------------------------------------------------------------------
+  -- HOW A MEASURED GRANTOR IS ENTERED, AND WHY THIS IS NOT DYNAMIC SQL
+  -- ------------------------------------------------------------------------
+  -- Each non-self arm below walks the DISTINCT measured grantors of one
+  -- (object, grantee) target and enters each with
+  --
+  --     PERFORM set_config('role', g, true);
+  --
+  -- That is an ordinary FUNCTION CALL. `g` is a runtime VALUE in a parameter;
+  -- the statement text is fixed and contains no identifier this file did not
+  -- write. Nothing is concatenated, nothing is passed to EXECUTE, format() or
+  -- quote_ident(), and no identifier is interpolated. `SET LOCAL ROLE <name>`
+  -- would have taken an IDENTIFIER and therefore genuinely would have required
+  -- constructed SQL for a measured role — which is exactly the confusion that
+  -- made an earlier revision refuse an approved measured OWNER it was
+  -- authorized to serve. The GUC, and its effect, are identical either way.
+  --
+  -- THE SWITCH IS TRANSACTION-LOCAL (third argument true) and is closed by
+  -- set_config('role', 'none', true), which restores the session identity.
+  -- MEASURED: current_user moves postgres -> <grantor> -> postgres, and a
+  -- COMMIT restores it even if a restore were somehow missed.
+  --
+  -- STANDING IS STILL MEASURED, NEVER MANUFACTURED. §0.14 already refused any
+  -- grantor that is unapproved OR unassumable; each arm re-asserts standing
+  -- immediately before switching, and PostgreSQL itself refuses the switch
+  -- with "permission denied to set role" if the session lacks it. The package
+  -- GRANTS itself no membership at any point.
+  --
+  -- EIGHT LITERAL REVOKE STATEMENTS REMAIN, four direct and four inside these
+  -- loops, each naming one of the two frozen objects and one frozen grantee.
+  -- A loop repeats a fixed statement under a different identity; it does not
+  -- build one.
+
+  -- ---- TABLE / authenticated, ARM 1: grantor = current_user. No role window.
   IF coalesce(tbl_auth_self, false) THEN
     REVOKE ALL PRIVILEGES ON TABLE public.entitlement_grants FROM authenticated;
     revokes_issued := revokes_issued + 1;
   END IF;
+
+  -- ---- TABLE / authenticated, ARM 2: every OTHER measured grantor. ----
+  FOR g IN
+    SELECT DISTINCT coalesce(gr.rolname, 'PUBLIC')
+    FROM pg_catalog.pg_class c
+    CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+    LEFT JOIN pg_catalog.pg_roles gg ON gg.oid = a.grantee
+    LEFT JOIN pg_catalog.pg_roles gr ON gr.oid = a.grantor
+    WHERE c.oid = tbl_oid
+      AND coalesce(gg.rolname, 'PUBLIC') = 'authenticated'
+      AND coalesce(gr.rolname, 'PUBLIC') <> current_user
+    ORDER BY 1
+  LOOP
+    IF NOT pg_catalog.pg_has_role(current_user, g, 'SET') THEN
+      RAISE EXCEPTION 'stella_hosted_0010 aborted: a TABLE privilege held by authenticated carries grantor % and this session (%) cannot act as it. Standing is MEASURED, never manufactured: this package does not GRANT itself the membership that would let it proceed.', g, current_user;
+    END IF;
+    PERFORM set_config('role', g, true);
+    IF current_user <> g THEN
+      RAISE EXCEPTION 'stella_hosted_0010 aborted: the session did not become the measured grantor % (it is %). The REVOKE is not attempted under an identity that was not entered.', g, current_user;
+    END IF;
+    REVOKE ALL PRIVILEGES ON TABLE public.entitlement_grants FROM authenticated;
+    revokes_issued := revokes_issued + 1;
+    SELECT count(*) INTO left_over
+    FROM pg_catalog.pg_class c
+    CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+    LEFT JOIN pg_catalog.pg_roles gg ON gg.oid = a.grantee
+    LEFT JOIN pg_catalog.pg_roles gr ON gr.oid = a.grantor
+    WHERE c.oid = tbl_oid AND coalesce(gg.rolname, 'PUBLIC') = 'authenticated'
+      AND coalesce(gr.rolname, 'PUBLIC') = g;
+    PERFORM set_config('role', 'none', true);
+    IF left_over > 0 THEN
+      RAISE EXCEPTION 'stella_hosted_0010 FAILED: % privilege(s) held by authenticated under grantor % survived the REVOKE issued AS that grantor. A REVOKE that leaves its target present did nothing.', left_over, g;
+    END IF;
+    IF current_user <> sess THEN
+      RAISE EXCEPTION 'stella_hosted_0010 FAILED: the role window opened for grantor % did not close (session is % rather than %).', g, current_user, sess;
+    END IF;
+  END LOOP;
+
+  -- ---- TABLE / service_role, ARM 1. ----
   IF coalesce(tbl_svc_self, false) THEN
     REVOKE ALL PRIVILEGES ON TABLE public.entitlement_grants FROM service_role;
     revokes_issued := revokes_issued + 1;
   END IF;
 
-  -- ---- TABLE, ARM 2: grantor = uellix_owner. ----
-  IF coalesce(tbl_auth_owner, false) OR coalesce(tbl_svc_owner, false) THEN
-    IF NOT pg_catalog.pg_has_role(current_user, 'uellix_owner', 'SET') THEN
-      RAISE EXCEPTION 'stella_hosted_0010 aborted: a TABLE privilege carries grantor uellix_owner and this session (%) cannot SET ROLE to it. Standing is MEASURED, never manufactured: this package does not GRANT itself the membership that would let it proceed.', current_user;
+  -- ---- TABLE / service_role, ARM 2. ----
+  FOR g IN
+    SELECT DISTINCT coalesce(gr.rolname, 'PUBLIC')
+    FROM pg_catalog.pg_class c
+    CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+    LEFT JOIN pg_catalog.pg_roles gg ON gg.oid = a.grantee
+    LEFT JOIN pg_catalog.pg_roles gr ON gr.oid = a.grantor
+    WHERE c.oid = tbl_oid
+      AND coalesce(gg.rolname, 'PUBLIC') = 'service_role'
+      AND coalesce(gr.rolname, 'PUBLIC') <> current_user
+    ORDER BY 1
+  LOOP
+    IF NOT pg_catalog.pg_has_role(current_user, g, 'SET') THEN
+      RAISE EXCEPTION 'stella_hosted_0010 aborted: a TABLE privilege held by service_role carries grantor % and this session (%) cannot act as it. Standing is MEASURED, never manufactured: this package does not GRANT itself the membership that would let it proceed.', g, current_user;
     END IF;
-    SET LOCAL ROLE uellix_owner;
-    IF coalesce(tbl_auth_owner, false) THEN
-      REVOKE ALL PRIVILEGES ON TABLE public.entitlement_grants FROM authenticated;
-      revokes_issued := revokes_issued + 1;
+    PERFORM set_config('role', g, true);
+    IF current_user <> g THEN
+      RAISE EXCEPTION 'stella_hosted_0010 aborted: the session did not become the measured grantor % (it is %). The REVOKE is not attempted under an identity that was not entered.', g, current_user;
     END IF;
-    IF coalesce(tbl_svc_owner, false) THEN
-      REVOKE ALL PRIVILEGES ON TABLE public.entitlement_grants FROM service_role;
-      revokes_issued := revokes_issued + 1;
+    REVOKE ALL PRIVILEGES ON TABLE public.entitlement_grants FROM service_role;
+    revokes_issued := revokes_issued + 1;
+    SELECT count(*) INTO left_over
+    FROM pg_catalog.pg_class c
+    CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+    LEFT JOIN pg_catalog.pg_roles gg ON gg.oid = a.grantee
+    LEFT JOIN pg_catalog.pg_roles gr ON gr.oid = a.grantor
+    WHERE c.oid = tbl_oid AND coalesce(gg.rolname, 'PUBLIC') = 'service_role'
+      AND coalesce(gr.rolname, 'PUBLIC') = g;
+    PERFORM set_config('role', 'none', true);
+    IF left_over > 0 THEN
+      RAISE EXCEPTION 'stella_hosted_0010 FAILED: % privilege(s) held by service_role under grantor % survived the REVOKE issued AS that grantor. A REVOKE that leaves its target present did nothing.', left_over, g;
     END IF;
-    RESET ROLE;
-  END IF;
+    IF current_user <> sess THEN
+      RAISE EXCEPTION 'stella_hosted_0010 FAILED: the role window opened for grantor % did not close (session is % rather than %).', g, current_user, sess;
+    END IF;
+  END LOOP;
 
-  -- ---- FUNCTION, ARM 1: grantor = current_user. ----
+  -- ---- FUNCTION / anon, ARM 1. ----
   IF coalesce(fn_anon_self, false) THEN
     REVOKE ALL PRIVILEGES ON FUNCTION public.entitlement_effective(uuid, varchar) FROM anon;
     revokes_issued := revokes_issued + 1;
   END IF;
+
+  -- ---- FUNCTION / anon, ARM 2. THE HOSTED ARM. ----
+  -- After stella_hosted_0009 the evaluator is owned by uellix_owner and every
+  -- non-owner EXECUTE entry is re-attributed to it, so on the hosted shape the
+  -- measured grantor this loop walks IS uellix_owner — reached now because it
+  -- is the measured grantor, not because it is a name this file froze.
+  -- `authenticated` is NEVER named in any arm: its EXECUTE is REQUIRED by the
+  -- frozen contract and §0 refuses if it is absent.
+  FOR g IN
+    SELECT DISTINCT coalesce(gr.rolname, 'PUBLIC')
+    FROM pg_catalog.pg_proc p
+    CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+    LEFT JOIN pg_catalog.pg_roles gg ON gg.oid = a.grantee
+    LEFT JOIN pg_catalog.pg_roles gr ON gr.oid = a.grantor
+    WHERE p.oid = fn_oid
+      AND coalesce(gg.rolname, 'PUBLIC') = 'anon'
+      AND coalesce(gr.rolname, 'PUBLIC') <> current_user
+    ORDER BY 1
+  LOOP
+    IF NOT pg_catalog.pg_has_role(current_user, g, 'SET') THEN
+      RAISE EXCEPTION 'stella_hosted_0010 aborted: an EXECUTE privilege held by anon carries grantor % and this session (%) cannot act as it. Standing is MEASURED, never manufactured: this package does not GRANT itself the membership that would let it proceed.', g, current_user;
+    END IF;
+    PERFORM set_config('role', g, true);
+    IF current_user <> g THEN
+      RAISE EXCEPTION 'stella_hosted_0010 aborted: the session did not become the measured grantor % (it is %). The REVOKE is not attempted under an identity that was not entered.', g, current_user;
+    END IF;
+    REVOKE ALL PRIVILEGES ON FUNCTION public.entitlement_effective(uuid, varchar) FROM anon;
+    revokes_issued := revokes_issued + 1;
+    SELECT count(*) INTO left_over
+    FROM pg_catalog.pg_proc p
+    CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+    LEFT JOIN pg_catalog.pg_roles gg ON gg.oid = a.grantee
+    LEFT JOIN pg_catalog.pg_roles gr ON gr.oid = a.grantor
+    WHERE p.oid = fn_oid AND coalesce(gg.rolname, 'PUBLIC') = 'anon'
+      AND coalesce(gr.rolname, 'PUBLIC') = g;
+    PERFORM set_config('role', 'none', true);
+    IF left_over > 0 THEN
+      RAISE EXCEPTION 'stella_hosted_0010 FAILED: % EXECUTE privilege(s) held by anon under grantor % survived the REVOKE issued AS that grantor. A REVOKE that leaves its target present did nothing.', left_over, g;
+    END IF;
+    IF current_user <> sess THEN
+      RAISE EXCEPTION 'stella_hosted_0010 FAILED: the role window opened for grantor % did not close (session is % rather than %).', g, current_user, sess;
+    END IF;
+  END LOOP;
+
+  -- ---- FUNCTION / service_role, ARM 1. ----
   IF coalesce(fn_svc_self, false) THEN
     REVOKE ALL PRIVILEGES ON FUNCTION public.entitlement_effective(uuid, varchar) FROM service_role;
     revokes_issued := revokes_issued + 1;
   END IF;
 
-  -- ---- FUNCTION, ARM 2: grantor = uellix_owner. THE HOSTED ARM. ----
-  -- After stella_hosted_0009 the evaluator is owned by uellix_owner and every
-  -- non-owner EXECUTE entry is re-attributed to it, so this is the arm the
-  -- hosted platform actually takes. `authenticated` is NEVER named here: its
-  -- EXECUTE is REQUIRED by the frozen contract and §0 refuses if it is absent.
-  IF coalesce(fn_anon_owner, false) OR coalesce(fn_svc_owner, false) THEN
-    IF NOT pg_catalog.pg_has_role(current_user, 'uellix_owner', 'SET') THEN
-      RAISE EXCEPTION 'stella_hosted_0010 aborted: an EXECUTE privilege on the evaluator carries grantor uellix_owner and this session (%) cannot SET ROLE to it. Standing is MEASURED, never manufactured: this package does not GRANT itself the membership that would let it proceed.', current_user;
+  -- ---- FUNCTION / service_role, ARM 2. ----
+  FOR g IN
+    SELECT DISTINCT coalesce(gr.rolname, 'PUBLIC')
+    FROM pg_catalog.pg_proc p
+    CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+    LEFT JOIN pg_catalog.pg_roles gg ON gg.oid = a.grantee
+    LEFT JOIN pg_catalog.pg_roles gr ON gr.oid = a.grantor
+    WHERE p.oid = fn_oid
+      AND coalesce(gg.rolname, 'PUBLIC') = 'service_role'
+      AND coalesce(gr.rolname, 'PUBLIC') <> current_user
+    ORDER BY 1
+  LOOP
+    IF NOT pg_catalog.pg_has_role(current_user, g, 'SET') THEN
+      RAISE EXCEPTION 'stella_hosted_0010 aborted: an EXECUTE privilege held by service_role carries grantor % and this session (%) cannot act as it. Standing is MEASURED, never manufactured: this package does not GRANT itself the membership that would let it proceed.', g, current_user;
     END IF;
-    SET LOCAL ROLE uellix_owner;
-    IF coalesce(fn_anon_owner, false) THEN
-      REVOKE ALL PRIVILEGES ON FUNCTION public.entitlement_effective(uuid, varchar) FROM anon;
-      revokes_issued := revokes_issued + 1;
+    PERFORM set_config('role', g, true);
+    IF current_user <> g THEN
+      RAISE EXCEPTION 'stella_hosted_0010 aborted: the session did not become the measured grantor % (it is %). The REVOKE is not attempted under an identity that was not entered.', g, current_user;
     END IF;
-    IF coalesce(fn_svc_owner, false) THEN
-      REVOKE ALL PRIVILEGES ON FUNCTION public.entitlement_effective(uuid, varchar) FROM service_role;
-      revokes_issued := revokes_issued + 1;
+    REVOKE ALL PRIVILEGES ON FUNCTION public.entitlement_effective(uuid, varchar) FROM service_role;
+    revokes_issued := revokes_issued + 1;
+    SELECT count(*) INTO left_over
+    FROM pg_catalog.pg_proc p
+    CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+    LEFT JOIN pg_catalog.pg_roles gg ON gg.oid = a.grantee
+    LEFT JOIN pg_catalog.pg_roles gr ON gr.oid = a.grantor
+    WHERE p.oid = fn_oid AND coalesce(gg.rolname, 'PUBLIC') = 'service_role'
+      AND coalesce(gr.rolname, 'PUBLIC') = g;
+    PERFORM set_config('role', 'none', true);
+    IF left_over > 0 THEN
+      RAISE EXCEPTION 'stella_hosted_0010 FAILED: % EXECUTE privilege(s) held by service_role under grantor % survived the REVOKE issued AS that grantor. A REVOKE that leaves its target present did nothing.', left_over, g;
     END IF;
-    RESET ROLE;
-  END IF;
+    IF current_user <> sess THEN
+      RAISE EXCEPTION 'stella_hosted_0010 FAILED: the role window opened for grantor % did not close (session is % rather than %).', g, current_user, sess;
+    END IF;
+  END LOOP;
 
   -- THE RE-READ. This is what decides, and it is deliberately NOT a check of
   -- the WARNING: a no-op REVOKE warns and commits, so a package that trusted
@@ -732,7 +932,7 @@ BEGIN
   -- the end of the transaction: a postcondition that only held because the
   -- transaction ended would not be measuring this package's discipline.
   IF current_user <> current_setting('stella_hosted_0010.session_user', true) THEN
-    RAISE EXCEPTION 'stella_hosted_0010 FAILED: a role window is still open — the session is running as % rather than the captured %. Every SET LOCAL ROLE in this package is closed by a RESET ROLE in the same block.',
+    RAISE EXCEPTION 'stella_hosted_0010 FAILED: a role window is still open — the session is running as % rather than the captured %. Every measured-grantor window this package opens with set_config(''role'', <value>, true) is closed by set_config(''role'', ''none'', true) in the same loop iteration.',
       current_user, current_setting('stella_hosted_0010.session_user', true);
   END IF;
 
@@ -934,7 +1134,7 @@ BEGIN
 
   -- POST-15. NO ROLE WINDOW REMAINS OPEN.
   IF current_user <> current_setting('stella_hosted_0010.session_user', true) THEN
-    RAISE EXCEPTION 'stella_hosted_0010 FAILED verification: the session is running as % rather than the captured %. Every SET LOCAL ROLE this package opens is closed by a RESET ROLE in the same block.',
+    RAISE EXCEPTION 'stella_hosted_0010 FAILED verification: the session is running as % rather than the captured %. Every measured-grantor window this package opens with set_config(''role'', <value>, true) is closed by set_config(''role'', ''none'', true) in the same loop iteration.',
       current_user, current_setting('stella_hosted_0010.session_user', true);
   END IF;
 
