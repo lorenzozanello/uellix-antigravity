@@ -1614,6 +1614,102 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: 'd869afc53842274b3707cfbd0d5d63c405593fe0c485b94654937bc1028a3237',
     },
   },
+  // CE-3 (COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json, HPO-ODS-W2-30).
+  // entitlement_grants -- the Organization x product-capability grant relation
+  // and its explicit evaluator.
+  //
+  // TENANT-ADJACENT, NOT TENANT DATA, and its RLS posture is neither sibling's.
+  // CE-1's commercial_accounts is ENABLE + FORCE with ZERO policies, which is
+  // right for a relation NOTHING reads; this relation MUST be read, because the
+  // node's own deliverable is the effective-entitlement answer. L1's T4 is
+  // ENABLE + FORCE with a member SELECT and a conjunctive INSERT, which is right
+  // for tenant data written by a tenant subject; an entitlement grant is written
+  // by a commercial or platform act and its cross-organization read must fail
+  // CLOSED rather than filter silently. So: ENABLE + FORCE + EXACTLY ONE SELECT
+  // policy addressed to uellix_owner, and ZERO tenant-facing policies, with the
+  // read delivered by a SECURITY DEFINER evaluator owned by that role
+  // (F-CE3-1 resolved as R-A). Every tenant-facing policy decision is DEFERRED
+  // to tenancy S4 rather than pre-empted.
+  //
+  // ONE new POLICY, TWO new FUNCTIONS, ONE new TRIGGER. The two functions are
+  // the evaluator (the only SECURITY DEFINER one) and a BESPOKE append-only
+  // guard -- bespoke because uellix_forbid_mutation() from 0030 refuses EVERY
+  // update, which would refuse the ONE legal transition this relation has
+  // (effective_to, NULL -> timestamp, once). Both are REVOKEd from PUBLIC per
+  // the 0033/0061/0070/0072 precedent, since 0033's historical blanket revoke
+  // cannot reach a function created later.
+  //
+  // THE securitySurfaceDigest BELOW PINS THE WHOLE EVALUATOR BODY, not just its
+  // signature -- the U0113 cross-organization raise, the U0114 undeclared-
+  // capability raise, THE ORDER OF THOSE TWO GUARDS, the literal production
+  // catalogue key, and the effective-grant predicate including
+  // effective_from <= transaction_timestamp(). Deleting the SQL-level catalogue
+  // check, dropping the explicit cross-organization raise in favour of row
+  // filtering, or widening the policy beyond uellix_owner all MOVE this digest,
+  // so `pnpm baseline:verify` is an independent detector for those mutations
+  // that needs no container. (The unit deliberately uses the corpus's plain
+  // $$ dollar quoting: the scanner extracts a definer body from the first `$$`,
+  // so a custom tag would have reduced this pin to a single character while
+  // still looking strict.)
+  {
+    ordinal: 86,
+    id: '0073_commercial_account_ce3_entitlement_grants.sql',
+    kind: D,
+    file: 'db/migrations/0073_commercial_account_ce3_entitlement_grants.sql',
+    sha256: '732e5fe033e67355b1ee8d6f5f1355f538703588120e030d7dc52fcf6bfe0dff',
+    dependsOn: [
+      '0068_commercial_account_ce1.sql',
+      '0031_rls_core.sql',
+      '0033_public_api_grants.sql',
+    ],
+    dml: 'none',
+    managed: 'A-hosted-compatible',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'CE-3: CREATE TABLE entitlement_grants, the Organization x product-capability grant relation, with ' +
+      'EXACTLY the parent thirteen provenance columns and no status/created_at/soft-delete column. Seven ' +
+      'CHECK constraints (the two closed value-set pins for source and limit_kind, the two limit checks, the ' +
+      'two commercial-basis checks, and the strict effective-period check), a PARTIAL UNIQUE INDEX on ' +
+      '(organization_id, capability_key) WHERE effective_to IS NULL, and a non-unique index on ' +
+      'commercial_account_id. RLS ENABLED AND FORCED with EXACTLY ONE SELECT policy TO uellix_owner and ZERO ' +
+      'tenant-facing policies. One SECURITY DEFINER evaluator, public.entitlement_effective(uuid, varchar), ' +
+      'owned by uellix_owner, which refuses a cross-organization request with SQLSTATE U0113 and an ' +
+      'undeclared capability_key with U0114 -- in that order, so an out-of-scope caller cannot use it as a ' +
+      'catalogue oracle -- both with the identical fixed message and no DETAIL, HINT or echoed argument. ' +
+      'EXECUTE is REVOKEd from PUBLIC and GRANTed only to authenticated. One bespoke BEFORE UPDATE OR DELETE ' +
+      'trigger enforces append-only at the storage boundary, permitting only the single NULL -> timestamp ' +
+      'close of effective_to and comparing the other twelve columns with NULL-safe row-wise IS DISTINCT ' +
+      'FROM. The unit NAMES uellix_owner and neither creates nor re-homes it: BASELINE_GLOBAL_INVARIANTS pins ' +
+      'roleStatements and ownershipStatements at 0 with no per-unit opt-out, so role topology and ownership ' +
+      'stay the hosted chain job, exactly as for the nine definer functions already in db/migrations/**. NO ' +
+      'BYPASSRLS anywhere, no super-admin disjunct, no role hierarchy reference, no trigger from ' +
+      'commercial_accounts, no FK on plan_ref, and no edit to db/identity-context.ts.',
+    rollback:
+      'Forward-only: CREATE TABLE/ADD CONSTRAINT/CREATE INDEX carry no IF NOT EXISTS guard and no reverse ' +
+      'script, recovered by DESTROY_AND_REPROVISION. The CREATE POLICY and CREATE TRIGGER statements are ' +
+      'individually idempotent (guarded DROP IF EXISTS first) and both functions are CREATE OR REPLACE.',
+    expect: {
+      // No auth.* reference: the evaluator reaches caller identity through
+      // public.current_user_org_ids(), which resolves auth.uid() on its own
+      // behalf. This unit names no auth schema object directly.
+      //
+      // usesAuthenticated is DECLARED, not defaulted: the unit carries
+      // GRANT EXECUTE ON FUNCTION ... TO authenticated, and the verifier
+      // defaults every unspecified scan field to false, so omitting it fails
+      // closed here -- which is the behaviour working, not an obstacle.
+      usesAuthenticated: true,
+      referencesAuthSchema: false,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 1,
+      functionsCreatedCount: 2,
+      securityDefinerCount: 1,
+      searchPathSettings: ['public'],
+      triggersCreatedCount: 1,
+      dmlStatementCount: 0,
+      unguardedPolicyCreateCount: 0,
+      securitySurfaceDigest: 'a9757944f9162aec43f810ccea4b48870fe16390397e23cddcb394b0962304b1',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

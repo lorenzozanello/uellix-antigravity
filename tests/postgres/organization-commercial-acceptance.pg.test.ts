@@ -730,10 +730,48 @@ describe.skipIf(!PG_TESTS_ENABLED)(
       )
     }, 1_200_000)
 
-    it('the L1 unit is the CURRENT TAIL of the baseline, immediately after the CL-1 content-bytes unit', () => {
+    // WHAT THIS CONTROL IS FOR, AND WHY IT NO LONGER MENTIONS THE TAIL.
+    //
+    // It used to assert `index === BASELINE_UNITS.length - 1` — that L1 was the
+    // CURRENT TAIL of the corpus. That was true when it was written, and it is a
+    // claim with a short shelf life: it is really a statement about how many
+    // units happen to exist, so EVERY future append breaks it whether or not
+    // anything about L1 changed. Commercial Account CE-3 appended
+    // 0073_commercial_account_ce3_entitlement_grants.sql after L1, and this
+    // assertion went RED at `expected 84 to be 85` while all fifty of this
+    // suite's real-PostgreSQL probes passed and the whole lifecycle succeeded.
+    // The corpus moved; L1 did not.
+    //
+    // Retargeted to L1's STABLE ADJACENCY in migration history rather than to
+    // its distance from the end:
+    //
+    //   0071_customer_lifecycle_cl1_content_bytes   (CL-1 presentation binding)
+    //   0072 ... L1 organization commercial acceptance
+    //   0073_commercial_account_ce3_entitlement_grants   (CE-3)
+    //
+    // THIS IS STRICTLY MORE FUTURE-STABLE AND NOT ONE BIT LOOSER. Both
+    // neighbours are compared by EXACT id equality, so the control still fails
+    // if L1 is moved, renumbered, or has a unit inserted on either side of it —
+    // the failures that actually mean something. What it no longer fails on is
+    // an append at the FAR END of the corpus, which says nothing about L1 at
+    // all. When CE-4 lands as 0074, L1's neighbours are still 0071 and 0073 and
+    // this control needs no edit; a tail assertion would have needed one again.
+    //
+    // Deliberately NOT a containment check, NOT a `>=`, NOT a regex, and NOT a
+    // bare numeric index: a hard-coded `index === 84` would be exactly the same
+    // brittleness wearing different clothes, and a containment check would stop
+    // detecting order at all.
+    it('the L1 unit sits immediately after the CL-1 content-bytes unit and immediately before the CE-3 entitlement-grants unit', () => {
       const index = BASELINE_UNITS.indexOf(L1_UNIT!)
-      expect(index).toBe(BASELINE_UNITS.length - 1)
+
+      // INTERIOR, asserted explicitly rather than assumed: it makes both array
+      // accesses below safe, and it states the real structural claim — L1 has a
+      // predecessor AND a successor, so it is neither the head nor the tail.
+      expect(index).toBeGreaterThan(0)
+      expect(index).toBeLessThan(BASELINE_UNITS.length - 1)
+
       expect(BASELINE_UNITS[index - 1].id).toBe('0071_customer_lifecycle_cl1_content_bytes.sql')
+      expect(BASELINE_UNITS[index + 1].id).toBe('0073_commercial_account_ce3_entitlement_grants.sql')
     })
 
     it(`the harness provisioned the full baseline (${BASELINE_UNITS.length} units, L1 included) and tore itself down with zero leftovers`, () => {

@@ -93,16 +93,39 @@ export class DisposableDb {
 
   /**
    * DROP/CREATE the disposable database, apply the shim, then EVERY baseline
-   * unit in manifest order. The corpus grants to the cluster role
-   * `uellix_app` (0042_fib_audit_insert_policy.sql), which a bare local stack
-   * does not have: it is created NOLOGIN if absent — roles are cluster-wide,
-   * so this is the one piece of state outside the disposable database, and
-   * it is a privilege-less shell in a throwaway local container.
+   * unit in manifest order. The corpus names TWO cluster roles that a bare
+   * local stack does not have, and each is created NOLOGIN if absent:
+   *
+   *   uellix_app    — 0042_fib_audit_insert_policy.sql addresses an audit_logs
+   *                   INSERT policy `TO uellix_app`.
+   *   uellix_owner  — 0073_commercial_account_ce3_entitlement_grants.sql
+   *                   addresses its single entitlement_grants SELECT policy
+   *                   `TO uellix_owner` and grants that role table SELECT.
+   *
+   * A policy's TO clause requires the role to EXIST, so without these the
+   * corpus stops mid-apply with `role "..." does not exist` — which is exactly
+   * how CE-3 was found to break this harness (F-CE3-IMP-1): unit 0073 failed
+   * with SQLSTATE 42704 and the suite could not provision at all.
+   *
+   * ROLES ARE CLUSTER-WIDE, so these two are the only state this harness
+   * creates OUTSIDE the disposable database. Both are privilege-minimal shells
+   * in a throwaway local container: NOLOGIN, and PostgreSQL's defaults leave
+   * them NOSUPERUSER and NOBYPASSRLS. That last part is load-bearing rather
+   * than incidental — a BYPASSRLS shell would make FORCE ROW LEVEL SECURITY
+   * silently inert for it and quietly hollow out every RLS assertion the
+   * corpus makes. Neither role is ALTERED if it already exists, and neither is
+   * dropped on teardown: `drop()` removes the database only.
+   *
+   * This is environment provisioning, NOT a role-topology decision. The real
+   * topology is established by db/prepared/hosted/**, and no migration creates
+   * or re-homes a role — db/hosted/baseline-manifest.ts BASELINE_GLOBAL_INVARIANTS
+   * pins roleStatements and ownershipStatements at 0 for every baseline unit.
    */
   provision(): void {
     this.admin(`DROP DATABASE IF EXISTS ${this.name}`)
     this.admin(`CREATE DATABASE ${this.name}`)
     this.admin(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_app') THEN CREATE ROLE uellix_app NOLOGIN; END IF; END $$;`)
+    this.admin(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_owner') THEN CREATE ROLE uellix_owner NOLOGIN; END IF; END $$;`)
     this.psql(readFileSync(SHIM, 'utf8'), false)
     this.psql(G2_PREREQUISITE_SHIM, false)
     for (const unit of BASELINE_UNITS) {

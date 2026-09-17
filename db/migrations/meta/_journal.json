@@ -512,6 +512,13 @@
       "when": 1789264957469,
       "tag": "0072_customer_lifecycle_l1_organization_commercial_acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1789390559123,
+      "tag": "0073_commercial_account_ce3_entitlement_grants",
+      "breakpoints": true
     }
   ]
 }
