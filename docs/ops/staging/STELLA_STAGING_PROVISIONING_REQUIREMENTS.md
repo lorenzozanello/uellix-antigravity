@@ -450,7 +450,8 @@ Esa regla y la frontera humana del centinela **no pueden cumplirse a la vez** en
 una sola invocación. La preocupación sigue siendo válida — un staging cuyos
 flags nombran tablas inexistentes está inacabado, no minimizado — así que la
 obligación no se retira: **se traslada** a la secuencia por fases. El runner no
-reporta `sequenceComplete` hasta que la cadena alcanza `stella_0018`.
+reporta `sequenceComplete` hasta que todos los paquetes gobernados por la cadena
+(`CHAIN_WRITE_ORDER`) están medidos como INSTALADOS.
 
 ### 7.4 Si algo falla — decidido de antemano
 

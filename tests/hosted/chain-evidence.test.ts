@@ -583,6 +583,9 @@ describe('the runner replans from each measured state, which is what proves it r
       expect(v.chainPlan?.ok, chainStepFor(n)).toBe(true)
       expect(v.chainPlan?.stepCount, chainStepFor(n)).toBe(CHAIN_PACKAGE_ORDER.length - n)
       expect(v.chainPlan?.steps).toEqual(CHAIN_PACKAGE_ORDER.slice(n))
+      // Passed through from the runner: complete only once nothing remains,
+      // regardless of which package this measurement is n packages into.
+      expect(v.chainPlan?.sequenceComplete, chainStepFor(n)).toBe(n === CHAIN_PACKAGE_ORDER.length)
       expect(v.resumable).toBe(true)
       expect(v.chainPlan?.writesPermitted).toBe(false)
     }

@@ -574,7 +574,7 @@ export type ProvisioningPlan =
       readonly steps: readonly ProvisioningStep[]
       /** What must happen next. `null` only when the whole sequence is done. */
       readonly nextAction: string | null
-      /** True only when the chain has reached stella_0018. */
+      /** True only when every package in CHAIN_WRITE_ORDER is measured INSTALLED. */
       readonly sequenceComplete: boolean
       readonly log: readonly string[]
     }
@@ -1222,7 +1222,6 @@ function planChainPhase(request: ProvisioningRequest): ProvisioningPlan {
       ? plan.steps
       : plan.steps.filter((s) => s.package === authorizedPackage)
 
-  const lastPackage = 'stella_0018_category_bound_operation_tickets'
   return finish(
     request,
     identity.projectRef,
@@ -1243,9 +1242,10 @@ function planChainPhase(request: ProvisioningRequest): ProvisioningPlan {
       ? 'CHECKPOINT C — verify every package postcondition; the flags stay false'
       : `apply ${authorizedPackage}, then OPEN A NEW ATTEMPT and re-measure before the next package. ` +
         `If this write's outcome is unknown, do not retry it: measure first.`,
-    authorizedPackage === null
-      ? remaining.includes(lastPackage)
-      : authorizedPackage === lastPackage,
+    // sequenceComplete defaults to false here. `remaining` is non-empty on this
+    // path by construction (the remaining.length === 0 case returns earlier,
+    // above) — some of CHAIN_WRITE_ORDER is not yet measured INSTALLED, so the
+    // sequence is not complete regardless of which package this plan authorises.
   )
 }
 
