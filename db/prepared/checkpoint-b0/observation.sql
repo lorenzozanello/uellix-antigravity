@@ -100,6 +100,8 @@ SELECT jsonb_pretty(jsonb_build_object(
     UNION ALL
     SELECT 'public.domain_object_versions' AS t, count(*) AS n FROM "public"."domain_object_versions"
     UNION ALL
+    SELECT 'public.entitlement_grants' AS t, count(*) AS n FROM "public"."entitlement_grants"
+    UNION ALL
     SELECT 'public.evidence_items' AS t, count(*) AS n FROM "public"."evidence_items"
     UNION ALL
     SELECT 'public.evidence_sufficiency_determinations' AS t, count(*) AS n FROM "public"."evidence_sufficiency_determinations"

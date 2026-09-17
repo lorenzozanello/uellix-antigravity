@@ -369,13 +369,21 @@ describe.skipIf(!PG_TESTS_ENABLED)('CL-1 legal acceptance — real PostgreSQL (c
   // exact after this move as before it: it still fails if 0070 drifts to any
   // other position, and it now additionally fails if either displacing unit is
   // removed, reordered or renamed.
-  it('the CL-1 unit is displaced from the top by exactly the CL-1 content-bytes unit and the L1 unit', () => {
-    const index = BASELINE_UNITS.indexOf(CL1_UNIT!)
-    expect(index).toBe(BASELINE_UNITS.length - 3)
-    expect(BASELINE_UNITS.slice(index + 1).map((u) => u.id)).toEqual([
+  // CE-3 (HPO-ODS-W2-30) EXTENDS IT BY ONE MORE AGAIN:
+  // 0073_commercial_account_ce3_entitlement_grants.sql was appended above 0072.
+  // Retargeted by the SAME rule for the fourth consecutive wave -- 0070's own
+  // position, with every displacing unit NAMED IN ORDER and compared by
+  // EQUALITY. Not loosened, and the index is derived from the list's own length
+  // so the two cannot disagree.
+  it('the CL-1 unit is displaced from the top by exactly the CL-1 content-bytes unit, the L1 unit and the CE-3 unit', () => {
+    const DISPLACERS = [
       '0071_customer_lifecycle_cl1_content_bytes.sql',
       '0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
-    ])
+      '0073_commercial_account_ce3_entitlement_grants.sql',
+    ]
+    const index = BASELINE_UNITS.indexOf(CL1_UNIT!)
+    expect(index).toBe(BASELINE_UNITS.length - DISPLACERS.length - 1)
+    expect(BASELINE_UNITS.slice(index + 1).map((u) => u.id)).toEqual(DISPLACERS)
   })
 
   it(`the harness provisioned the full baseline (${BASELINE_UNITS.length} units, CL-1 included) and tore itself down with zero leftovers`, () => {

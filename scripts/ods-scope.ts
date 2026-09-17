@@ -935,6 +935,130 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/checkpoint-b0/observation.sql',
     ],
   },
+  // HPO-ODS-W2-31 — Commercial Account CE-3 definer-ownership hosted package.
+  //
+  // DECLARED BY docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json,
+  // REGISTERED HERE, by a separate governed act exactly as W2-30 was. v1.0.34
+  // carries registration_status DECLARED_NOT_REGISTERED and states that the
+  // hosted-package mission MAY NOT register its own grant: a mission that can
+  // grant itself a protected surface has no protected surface. That frozen
+  // status is a fact about v1.0.34's OWN act and is NOT rewritten by this one.
+  //
+  // SAME BRANCH AS W2-30, AND THAT CONFERS NOTHING. Both rows name
+  // codex/commercial-account-ce3-implementation-r1, but resolution is by
+  // SUPPLIED ID and the authorized set is the union of the grants actually
+  // named on the command line — never the union of everything bound to the
+  // branch. Supplying W2-30 alone leaves both paths below refused, and
+  // supplying W2-31 alone leaves all three W2-30 families refused. The two
+  // pattern sets are disjoint, so neither row widens the other.
+  //
+  // TWO EXACT FILE LITERALS, NO GLOB. The filename is frozen in advance by the
+  // integrated amendment's FUTURE_HOSTED_SQL_PATH, so a literal is
+  // constructible and a glob would grant more than the evidence justifies. The
+  // README is the prepared-corpus index — measured across four prior hosted
+  // additions, every one of which also touched it. No journal, migration,
+  // checkpoint-b0, hosted/** or rollback path is granted; the rollback file in
+  // particular is FORBIDDEN by the amendment's FORWARD_ONLY_CONTRACT, so
+  // granting it would authorize an act the authority prohibits. As always, a
+  // resolved grant still requires an ordinary --allow covering the same path.
+  {
+    authorityId: 'HPO-ODS-W2-31',
+    branch: 'codex/commercial-account-ce3-implementation-r1',
+    patterns: [
+      'db/prepared/stella_hosted_0009_entitlement_evaluator_ownership.sql',
+      'db/prepared/README.md',
+    ],
+  },
+  // HPO-ODS-W2-32 — Commercial Account CE-3 entitlement-grants ACL-hardening
+  // hosted package.
+  //
+  // DECLARED BY docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json,
+  // REGISTERED HERE, by a separate governed act exactly as W2-30 and W2-31
+  // each were. v1.0.35 carries registration_status DECLARED_NOT_REGISTERED and
+  // states THE_IMPLEMENTATION_WRITER_MAY_NOT_SELF_REGISTER: a mission that
+  // could grant itself a protected surface has no protected surface, and a
+  // hosted0010 writer that finds this row absent must STOP rather than add it,
+  // not even if the row it would add is byte-identical. The gate is about
+  // PROVENANCE, not content. That frozen status is a historical fact about
+  // v1.0.35's OWN act and is NOT rewritten by this one: v1.0.35 still records
+  // PROTECTED_GRANTS_CHANGED false, count 19 before and 19 after, and tail
+  // W2-31 on both sides, all of which remain true of the act it describes.
+  //
+  // THIRD ROW ON THE CE-3 BRANCH, AND THAT CONFERS NOTHING. W2-30, W2-31 and
+  // this row all name codex/commercial-account-ce3-implementation-r1, and none
+  // of them becomes ambient on it. Resolution is by SUPPLIED ID and the
+  // authorized set is the union of the grants actually named on the command
+  // line — never the union of everything bound to the branch. Supplying W2-30
+  // or W2-31 alone leaves both patterns below refused; supplying this row
+  // alone leaves W2-30's three families and W2-31's 0009 package refused.
+  //
+  // TWO EXACT FILE LITERALS, NO GLOB, ORDER BINDING. The filename is frozen in
+  // advance and identically by the integrated amendment's FUTURE_HOSTED_SQL_PATH
+  // and the node amendment's HOSTED0010_CONTRACT, so a literal IS constructible
+  // and a glob would grant strictly more than the evidence justifies. Neither
+  // pattern contains a glob metacharacter, so this grant authorizes at most TWO
+  // concrete files however the repository grows. The package SQL is first and
+  // the README second, matching v1.0.35 ORDER_IS_BINDING, because the
+  // registration control asserts this row by whole-object equality and not by
+  // set comparison.
+  //
+  // THE README DUPLICATION IS THE ADJUDICATED OVERLAP AND IS NOT DEDUPLICATED.
+  // W2-31 and this row both carry db/prepared/README.md; the intersection is
+  // EXACTLY that one pattern, and the intersection with W2-30 is EMPTY. Both
+  // packages are hosted prepared packages and every hosted prepared package in
+  // this repository documents itself in the prepared-corpus index — four for
+  // four across the 0003, 0006, 0007 and 0008 additions. Collapsing the
+  // duplicate would silently strip a pattern one of the two packages needs.
+  // Sharing a pattern merges nothing: it does not make W2-31's 0009 package
+  // reachable through this id, and it does not make the README reachable
+  // without naming SOME grant that carries it plus an ordinary --allow.
+  //
+  // NO THIRD PATTERN. db/migrations/** and db/prepared/journal/** are absent:
+  // the journal-wrapper regeneration is driven by appending a BASELINE UNIT,
+  // which is what a MIGRATION does, and a hosted prechain package appends none
+  // — measured, none of the four precedent commits touched db/prepared/journal/.
+  // db/prepared/checkpoint-b0/observation.sql is absent: it gains an arm per
+  // governed RELATION and this package is REVOKE-only against two EXISTING
+  // objects, so it does not move. W2-30 already covers all three for the
+  // relation-creating half of CE-3. db/prepared/stella_hosted_0009_*.sql is
+  // absent: it belongs to W2-31, and including it would widen this row into
+  // W2-31's surface and defeat the separation that lets each package be
+  // certified independently. db/prepared/stella_hosted_0010_rollback.sql is
+  // absent and its absence is BINDING rather than an oversight — the integrated
+  // FORWARD_ONLY_CONTRACT_0010 fixes ROLLBACK_FILE = NONE and states that
+  // writing one would be an act against the amendment, so granting the path
+  // would authorize the forbidden act.
+  //
+  // NOT db/prepared/**. The DEFAULT protected pattern above IS the broad
+  // db/prepared/**, but the breadth of the PROTECTION is not a licence for
+  // breadth in the GRANT: classifyPaths checks a concrete path against the
+  // SUPPLIED grant's own patterns, never against the default that made it
+  // protected. A blanket pattern would additionally authorize
+  // db/prepared/hosted/** and db/prepared/hosted/governed/**,
+  // db/prepared/storage/**, db/prepared/journal/**,
+  // db/prepared/checkpoint-a1/corroboration.sql,
+  // db/prepared/checkpoint-b0/observation.sql, the rollback sibling the
+  // forward-only contract forbids, and the whole stella_NNNN and
+  // stella_hosted_NNNN families including W2-31's 0009 package. Measured: ZERO
+  // of the twenty rows here carry db/prepared/**, so a blanket grant would also
+  // be without precedent.
+  //
+  // THIS ACT DOES NOT CONSUME THE GRANT IT CREATES. The registration lane's own
+  // changed paths — this file and tests/ods/ods-scope.test.ts — are NOT members
+  // of DEFAULT_PROTECTED_PATTERNS, so its scope gate runs with an ordinary
+  // --allow list and PROTECTED_AUTHORITY=NONE. A registering act that supplied
+  // its own new id would have authorized its own diff. The future hosted0010
+  // writer MUST supply --protected-authority HPO-ODS-W2-32 explicitly, plus an
+  // ordinary --allow covering the same two paths: a resolved grant never
+  // replaces --allow.
+  {
+    authorityId: 'HPO-ODS-W2-32',
+    branch: 'codex/commercial-account-ce3-implementation-r1',
+    patterns: [
+      'db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql',
+      'db/prepared/README.md',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {

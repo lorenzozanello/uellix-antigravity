@@ -477,8 +477,10 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
     // CL-1 presentation-binding repair: + 0071_customer_lifecycle_cl1_content_bytes.sql = 84.
     // L1 organization commercial acceptance (HPO-ODS-W2-29): +
     // 0072_customer_lifecycle_l1_organization_commercial_acceptance.sql = 85.
-    expect(BASELINE_UNITS).toHaveLength(85)
-    expect(BASELINE_ORDER).toHaveLength(85)
+    // Commercial Account CE-3 (HPO-ODS-W2-30): +
+    // 0073_commercial_account_ce3_entitlement_grants.sql = 86.
+    expect(BASELINE_UNITS).toHaveLength(86)
+    expect(BASELINE_ORDER).toHaveLength(86)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {

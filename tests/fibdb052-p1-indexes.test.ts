@@ -219,16 +219,26 @@ describe('FIBDB-052 P1 — P-6 schema / migration / snapshot agreement', () => {
   // assertion is exactly as exact after the move as before it: it still fails
   // if the P1 unit drifts to any other position, and it now additionally fails
   // if any displacing unit is removed, reordered or renamed.
-  it('P-7: the journal gained exactly one entry and it is the P1 unit, displaced from the top by exactly the CL-1 legal-acceptance unit, then the CL-1 content-bytes unit, then the L1 organization-commercial-acceptance unit', () => {
+  //
+  // CE-3 (HPO-ODS-W2-30) EXTENDS IT BY ONE MORE AGAIN:
+  // 0073_commercial_account_ce3_entitlement_grants was appended above 0072, so
+  // the P1 unit sits FOUR from the top rather than three. The retarget follows
+  // the rule this control already established rather than inventing a new one —
+  // the displacing units stay NAMED IN ORDER, so the assertion still fails if
+  // P1 drifts, and now also fails if CE-3 is removed, reordered or renamed. It
+  // is NOT relaxed to "somewhere near the tail", which is the loosening that
+  // would make every future append silently free.
+  it('P-7: the journal gained exactly one entry and it is the P1 unit, displaced from the top by exactly the CL-1 legal-acceptance unit, then the CL-1 content-bytes unit, then the L1 organization-commercial-acceptance unit, then the CE-3 entitlement-grants unit', () => {
     const journal = JSON.parse(read('db/migrations/meta/_journal.json')) as {
       entries: { idx: number; tag: string }[]
     }
-    const own = journal.entries[journal.entries.length - 4]
+    const own = journal.entries[journal.entries.length - 5]
     expect(own.tag).toBe('0069_fib_fibdb052_p1_indexes')
-    expect(journal.entries.slice(journal.entries.length - 3).map((e) => e.tag)).toEqual([
+    expect(journal.entries.slice(journal.entries.length - 4).map((e) => e.tag)).toEqual([
       '0070_customer_lifecycle_cl1_legal_acceptance',
       '0071_customer_lifecycle_cl1_content_bytes',
       '0072_customer_lifecycle_l1_organization_commercial_acceptance',
+      '0073_commercial_account_ce3_entitlement_grants',
     ])
     const last = journal.entries[journal.entries.length - 1]
     expect(last.idx).toBe(journal.entries.length - 1)

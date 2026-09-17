@@ -418,9 +418,17 @@ export function buildHostedBaselineGateEvidence(
     // PREVIOUS N — while demanding 83 steps from a plan now producing 84.
     // CL-1 presentation-binding repair: + 0071_customer_lifecycle_cl1_content_bytes.sql
     // = 84 baseline units + 1 journal bootstrap step = 85.
+    // L1 (HPO-ODS-W2-29): + 0072 = 85 baseline units + 1 = 86.
+    // CE-3 (HPO-ODS-W2-30): + 0073_commercial_account_ce3_entitlement_grants.sql
+    // = 86 baseline units + 1 journal bootstrap step = 87. THE N+1 TRAP THIS
+    // COMMENT WARNS ABOUT IS LIVE HERE: the manifest gate one screen down pins
+    // the UNIT count (86) and this pins the STEP count (87), so a mechanical
+    // 85 -> 86 sweep over both literals would leave this one reading 86 --
+    // correct for the PREVIOUS N -- while the plan now produces 87. The two
+    // numbers are deliberately different and are derived separately.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 86 &&
+      firstProvisioning.steps.length === 87 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -448,7 +456,8 @@ export function evaluateHostedBaselineGates(
   // FIBDB-052 P1 (HPO-FIBP1-02, HPO-ODS-W2-27): + 0069 = 82.
   // CL-1 (HPO-ODS-W2-28): + 0070_customer_lifecycle_cl1_legal_acceptance.sql = 83.
   // CL-1 presentation-binding repair: + 0071_customer_lifecycle_cl1_content_bytes.sql = 84.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 85
+  // CE-3 (HPO-ODS-W2-30): + 0073_commercial_account_ce3_entitlement_grants.sql = 86.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 86
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,
