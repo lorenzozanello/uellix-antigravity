@@ -201,7 +201,8 @@ describe('the expected target: sentinel correct, three signals agreeing, eleven 
       // M-2's repair of a BASELINE function, authored after all ten.
       'stella_0019_storage_write_roles',
     ])
-    expect(v.chainPlan?.sequenceComplete).toBe(true)
+    // All eleven are ABSENT, not INSTALLED — the sequence is not complete.
+    expect(v.chainPlan?.sequenceComplete).toBe(false)
     // A1 IS READ-ONLY. It says the chain may be PLANNED, never that it may run.
     expect(v.chainPlan?.writesPermitted).toBe(false)
   })
