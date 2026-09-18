@@ -1,0 +1,230 @@
+{
+  "manifest_id": "TENANCY_S4_EXECUTION_TEST_MANIFEST_v1.0.0",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/tenancy/TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json (S4_SECURITY_CONTRACT, GUC_UNSET_SUBSTRATE, NULL_ORGANIZATION_DISPOSITIONS, ORGANIZATIONS_SELECTOR_DISPOSITION, STORAGE_WELD_CONTRACT, SUPERADMIN_COMPATIBILITY, REAL_PG_CONTRACT, MUTATION_CONTRACT), itself scoped under docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json node S4 (S1_TO_S8_DAG.nodes[S4]; DROP_LAST_RULE precondition DL-3, contributing to DL-6). Frozen at AS_OF_HEAD eec2cba201feb4adc4ae7ba6566f232f0eed37c4, AS_OF_TREE aa23d18eca419495712907b2a2921bef6505100e.",
+
+  "dependencies": [
+    "S3 (selected-organization request principal) — MEASURED INTEGRATED at this base: lib/auth/database-context.ts:395 loadSelectableMembershipsWithinContext and :922 listSelectableMemberships exist, db/identity-context.ts:217 carries the membership re-check, and db/migrations/0067_tenancy_refusal_audit_insert_policy.sql is applied. The parent DAG makes S4 depend on S3 only. Measured by direct file inspection, NOT by pnpm ops:program-state, which could NOT run in this worktree because node_modules is ABSENT — so this dependency is VERIFIED-BY-INSPECTION, not gate-verified.",
+    "ODS LINEAGE ALLOCATION — UNKNOWN/BLOCKING BY CONSTRUCTION. No ODS addendum and no HPO protected grant authorizing S4 implementation exists at this base. Measured: the Controller enumerates addenda through ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36 and scripts/ods-scope.ts registers through HPO-ODS-W2-33. The implementing node MUST NOT open until both are allocated by a later allocator that re-derives the identifiers at its own head. This manifest deliberately does NOT name the mechanically-next identifiers, because at this base they exist only inside prohibition and absence semantics.",
+    "S7 / user_single_active_membership — UNKNOWN, NOT re-measured as a node. Named because it is a HARD FIXTURE CONSTRAINT: the dual-member subject required by P-S4-1, P-S4-4 and N-S4-1 cannot be constructed while that partial unique index exists. It is NOT a prerequisite for S4 implementation; it is a prerequisite for two of S4's own probes, which is why the harness must be two-phase INSIDE the disposable cluster.",
+    "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0 — AUTHORITY-ONLY, NOT IMPLEMENTED at this base (its own authority_class states so). Named because S4's ACL posture is CONDITIONAL on it: S4 needs only an ACL compatibility proof provided it introduces no new policy-called function and changes no storage helper signature. db/prepared/stella_0021* is ABSENT at this base, so no code-level interaction exists here."
+  ],
+
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/**",
+    "db/hosted/baseline-manifest.ts"
+  ],
+
+  "protected_authority": null,
+
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "A real PostgreSQL probe is MANDATORY for this node and both harness paths are legitimately UNKNOWN, because no implementing node exists yet and naming a harness path that does not exist would be a fabricated fact. HARNESS SHAPE, frozen here: a disposable cluster ONLY, via pnpm db:audit:disposable — NEVER staging, NEVER production, NEVER the canonical local stack. FIXTURE SHAPE: TWO-TENANT carrying REAL rows in the NON-SELECTED organization, because a probe that returns zero rows merely for want of data proves nothing. CONSTRUCTION: TWO-PHASE and unavoidably so — the dual-member subject required by P-S4-1, P-S4-4 and N-S4-1 cannot exist while user_single_active_membership does, so it may be built ONLY in a post-S7 phase INSIDE the disposable cluster; dropping that index anywhere else to make a fixture buildable is prohibited by MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 DROP_LAST_RULE.prohibited_shortcuts. The authority's REAL_PG_CONTRACT freezes seven probes, PG-S4-1 through PG-S4-7, and each is runtime-only for a stated reason: policy combination (PERMISSIVE OR versus RESTRICTIVE AND), SECURITY DEFINER GUC visibility, NULL-is-not-TRUE denial, relation-owner RLS exemption where FORCE ROW LEVEL SECURITY is absent, and transitive policy evaluation through a subquery are ALL runtime properties that static SQL inspection cannot decide. OPERATIONAL NOTE, measured on this host and carried forward as a harness constraint rather than a finding: a docker exec round trip costs roughly 250 ms here, so a probe loop of a few dozen assertions exceeds the default per-test timeout and must set an explicit timeout rather than be reported as a failure."
+  },
+
+  "sentinels": [
+    {
+      "id": "SENTINEL_ORG_B_TENANT_ROW",
+      "purpose": "A uniquely-valued row planted in the NON-SELECTED organization B, in a WELDED_BY_S4 relation. It must never appear in any result set, error payload or log line produced by a transaction whose app.organization_id is organization A. It makes cross-tenant leakage assertable BY IDENTITY rather than by row count, because a count-based assertion cannot distinguish 'denied' from 'no such row'."
+    },
+    {
+      "id": "SENTINEL_SHARED_FX_RATE_POSITIVE_CANARY",
+      "purpose": "A uniquely-valued fx_rates row with organization_id IS NULL that MUST REMAIN READABLE from a tenant-scoped transaction after the weld. This is a POSITIVE canary and it is the ONLY construct that can detect OVER-DENIAL: negative controls prove a forbidden row is refused, and are blind by construction to a required row that has also been refused. Without it, a weld that hides every shared reference row passes every forbidden-access test."
+    },
+    {
+      "id": "SENTINEL_TENANTLESS_REFUSAL_AUDIT_ROW",
+      "purpose": "A uniquely-valued audit_logs row with organization_id IS NULL, written from an UNSCOPED transaction (app.organization_id never set), mirroring the tenancy refusal row of db/migrations/0067_tenancy_refusal_audit_insert_policy.sql. It must remain WRITABLE after the weld. It proves the worst-timing case: the refusal audit is emitted exactly when no organization is selected, which is exactly when the GUC is unset, so a naive equality weld would destroy the audit record of the refusal at the only moment it can be produced."
+    },
+    {
+      "id": "SENTINEL_ORG_B_EVIDENCE_OBJECT_NAME",
+      "purpose": "A uniquely-named storage object path whose leading path segment is a project id owned by organization B. A dual-member subject selected on organization A must be REFUSED when writing it. It makes the storage cross-tenant write assertable by object identity rather than by an error class, so that a refusal produced by the helper's EXCEPTION WHEN OTHERS handler cannot be mistaken for an intentional denial."
+    },
+    {
+      "id": "SENTINEL_SUPERADMIN_REACH_ROW",
+      "purpose": "A uniquely-valued row in organization B that a superadmin subject MUST still read after S4, with no organization selected. It is the positive canary for SUPERADMIN_COMPATIBILITY: it turns the unannounced-partial-S5 failure — a restrictive conjunct written without a superadmin escape — from an invisible behavioral regression into a RED test."
+    }
+  ],
+
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+
+  "positive_controls": [
+    {
+      "id": "P-S4-0",
+      "description": "[S4 | MANIFEST PRECONDITION, UNKNOWN BY CONSTRUCTION] The two known_conditions listed above are the ONLY entries in docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json at AS_OF_HEAD, read directly from that file. Both are pre-existing deferred failures of the hosted-baseline gate caused by a rehearsal artifact recorded against an older baseline manifest. Their applicability to the S4 implementing node is UNKNOWN and MUST be re-verified with pnpm ops:test-diff at that node's own base — it could NOT be run here because node_modules is ABSENT in this worktree. A node that observes a hosted-baseline-gate failure whose signature does NOT match these two fingerprints has found a NEW failure and MUST fail closed rather than classify it as known.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-1",
+      "description": "[S4 | REAL-PG, PG-S4-1] A dual-member subject with organization A selected READS and WRITES a row of organization A in a WELDED_BY_S4 relation. Then, symmetrically, with organization B selected, the same subject reads and writes a row of organization B. Both directions are required: a one-directional probe cannot distinguish a correct selected-org weld from a weld hard-coded to one organization.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-2",
+      "description": "[S4 | REAL-PG, PG-S4-6, OVER-DENIAL] SENTINEL_SHARED_FX_RATE_POSITIVE_CANARY remains READABLE from a tenant-scoped transaction after the weld, and the equivalent shared rows of proxy_sources, financial_proxies and financial_proxy_versions remain readable under their own per-relation dispositions. This is the over-denial control for the four SHARED_REFERENCE_NULL_ORG relations.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-3",
+      "description": "[S4 | REAL-PG, PG-S4-6, TENANTLESS WRITE] SENTINEL_TENANTLESS_REFUSAL_AUDIT_ROW is successfully INSERTED into audit_logs from a transaction in which app.organization_id was never set. Proves the audit_logs disposition preserves write reachability for tenantless rows without granting them blanket cross-tenant read visibility.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-4",
+      "description": "[S4 | REAL-PG, PG-S4-4, ENUMERATOR INTEGRITY] A dual-member subject running the selectable-membership enumerator with app.organization_id UNSET still enumerates BOTH organizations after S4. This is the load-bearing control of the whole node: it is the only control that catches the bootstrap deadlock in which a fail-closed weld on organizations or organization_members reduces the candidate list to ZERO and locks every subject out of selecting an organization. It MUST run with the GUC unset, because lib/auth/database-context.ts:933 opens that context with organizationId: null in production.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-5",
+      "description": "[S4 | REAL-PG, PG-S4-3, STORAGE DEFINER GUC] current_setting('app.organization_id', true) evaluated INSIDE the governed SECURITY DEFINER helper resolves to the CALLER's transaction-local value. Runtime-only: SECURITY DEFINER changes the effective user, not the transaction's GUC state, and SET search_path TO '' pins only search_path — but that must be demonstrated, not asserted, because the entire storage weld depends on it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-6",
+      "description": "[S4 | REAL-PG, SUPERADMIN COMPATIBILITY] SENTINEL_SUPERADMIN_REACH_ROW remains readable by a superadmin subject after S4, with no organization selected. Proves S4's restrictive conjunct carries its superadmin escape and did not silently execute a partial S5. Pre-S4 and post-S4 superadmin reach must be observably identical.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-7",
+      "description": "[S4 | REAL-PG, PG-S4-7, PARENT-SCOPED TRANSITIVITY] Under the ACTUAL invoking role, determine whether a restrictive weld on public.projects transitively scopes impact_narratives, indicators, outcomes and stakeholder_groups through their project_id subqueries. These four carry NO organization_id column, so an equality weld is not expressible on them. BOTH outcomes are acceptable and the control records which holds; leaving it undetermined is NOT, because the four would otherwise fall outside the census silently.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-8",
+      "description": "[S4 | REAL-PG, PG-S4-5, CLOSED-WORLD CENSUS] Every organization-scoped relation in the live catalog is in EXACTLY ONE class: WELDED_BY_S4 (34), SHARED_REFERENCE_NULL_ORG (4), TENANTLESS_AUDIT_OR_SYSTEM (1), EXCLUDED_WITH_REASON (4), PARENT_SCOPED_TRANSITIVE (4) or STORAGE (1). The census universe MUST be derived independently from the applied chain — db/baseline/stella_g2_schema.sql replayed with db/migrations/*.sql in order — and NEVER read from the S4 package under test, because a test whose expectation comes from the artifact it checks is vacuous.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-9",
+      "description": "[S4 | STATIC, GUC CARRIER] db/identity-context.ts still sets app.organization_id via set_config with the third argument true (transaction-local) and still only when identity.organizationId is non-null. Both halves are load-bearing: session scope would leak tenant scope across pooled connections, and setting the GUC unconditionally would silently change every unscoped entry point's behavior.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-S4-10",
+      "description": "[S4 | STATIC, ACL COMPATIBILITY] S4 introduces NO new function called from a policy expression, and changes NO signature of can_write_evidence_object(text, uuid) or can_read_evidence_object(text, uuid). This is the evidence that makes an ACL compatibility proof valid instead of requiring an ACL successor. Evaluating a policy requires the invoking role to hold EXECUTE on every function the expression calls, so a new function would demand new EXECUTE grants and break the ACL authority's posture of exactly three granted helper signatures.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "negative_controls": [
+    {
+      "id": "N-S4-1",
+      "description": "[S4 | REAL-PG, PG-S4-1, CROSS-TENANT READ] A dual-member subject with organization A selected is DENIED SENTINEL_ORG_B_TENANT_ROW. Asserted by sentinel identity, never by row count, because a count cannot distinguish 'denied' from 'no such row'. Symmetric assertion with B selected is required.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-S4-2",
+      "description": "[S4 | REAL-PG, PG-S4-1, CROSS-TENANT WRITE] A dual-member subject with organization A selected is REFUSED an INSERT and an UPDATE targeting organization B in a WELDED_BY_S4 relation. Read denial alone is insufficient: a WITH CHECK omission would leave writes open while every read control stays green.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-S4-3",
+      "description": "[S4 | REAL-PG, PG-S4-2, UNSET GUC READ] With app.organization_id UNSET, a WELDED_BY_S4 relation yields ZERO tenant rows. Scoped deliberately to the 34 welded relations: asserting this over the identity substrate would encode the bootstrap deadlock as a requirement rather than catching it.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-S4-4",
+      "description": "[S4 | REAL-PG, PG-S4-2, UNSET GUC WRITE] With app.organization_id UNSET, a tenant write to a WELDED_BY_S4 relation is REFUSED. Note that a live 42501 does not by itself attribute the refusal to the RLS layer: a WITH CHECK violation is also 42501 and is evaluated BEFORE NOT NULL and foreign-key constraints, so the control must attribute the denial to the intended policy rather than infer it from the error code.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-S4-5",
+      "description": "[S4 | REAL-PG, PG-S4-3, STORAGE CROSS-TENANT WRITE] A dual-member subject who is an active organization_admin or analyst of BOTH organizations, with organization A selected, is REFUSED when writing SENTINEL_ORG_B_EVIDENCE_OBJECT_NAME. This is the live gap S4 exists to close: the current helper authorizes on membership alone and never consults the selected organization. The refusal MUST be an explicit branch, not the helper's EXCEPTION WHEN OTHERS THEN RETURN false swallow, which would make a genuine fault indistinguishable from a correct denial.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-S4-6",
+      "description": "[S4 | REAL-PG, SET-CONFIG ECHO HAZARD] A negative RLS assertion must not be satisfied by the echo row that SELECT set_config(...) itself returns. A probe that scopes and asserts in one statement can read the set_config return value as data and report an empty result set as containing the organization, or report a non-empty one as empty. Scoping and assertion MUST be separate statements.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-S4-7",
+      "description": "[S4 | REAL-PG, PG-S4-6, TENANTLESS ROW IS NOT SHARED] A tenant-owned audit_logs row of organization B is NOT readable from a transaction scoped to organization A. Distinguishes the audit_logs disposition from the shared-reference disposition: audit_logs NULL means 'no owner', never 'every owner', and treating it as a fifth shared-reference relation would open a permanent cross-tenant read channel in the node that exists to close them.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-S4-8",
+      "description": "[S4 | STATIC/REAL-PG, SCOPE DISCIPLINE] S4 does NOT remove, narrow or rewrite any of the 131 effective policies carrying current_user_is_super_admin, and does NOT remove the superadmin exemption at db/identity-context.ts:217. An S4 diff that touches either has executed an unannounced partial S5 outside its grant.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "mutation_controls": [
+    {
+      "id": "M-S4-1",
+      "description": "[S4 | MUTATION] Change the selected-organization policy from AS RESTRICTIVE to PERMISSIVE. MUST go RED. PostgreSQL combines permissive policies with OR, so a permissive selected-org term is satisfied whenever the existing membership policy is — it would enforce nothing while every positive control stayed green.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-2",
+      "description": "[S4 | MUTATION] Remove the membership conjunct, leaving selected-organization equality alone. MUST go RED. It would move the tenant boundary out of the database into application code, which is the failure row-level security exists to prevent.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-3",
+      "description": "[S4 | MUTATION] Remove the selected-organization conjunct, leaving membership alone. MUST go RED. This is precisely the pre-S4 state; if the suite stays green, S4 proved nothing.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-4",
+      "description": "[S4 | MUTATION] Make an unset GUC PERMIT access on a welded relation, for example by adding an unconditional IS NULL escape to the selected-org term. MUST go RED via N-S4-3 and N-S4-4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-5",
+      "description": "[S4 | MUTATION] Add public.organizations or public.organization_members to the welded set. MUST go RED via the enumerator-integrity control P-S4-4, NOT merely via a census count. A census-only failure would misreport a total product lockout as a bookkeeping discrepancy.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-6",
+      "description": "[S4 | MUTATION] Reclassify public.audit_logs as a shared-reference relation, applying the generic IS NULL OR equality disjunct to it. MUST go RED via N-S4-7.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-7",
+      "description": "[S4 | MUTATION] Remove one relation from the closed-world census enumeration. MUST go RED. Proves the census notices a DELETION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-8",
+      "description": "[S4 | MUTATION] Add a new organization_id-carrying fixture relation to the universe without classifying it. MUST go RED. Deliberately separate from M-S4-7: one proves the census notices a removal, the other that it notices an ADDITION. A census that compares its own list against itself passes both while measuring nothing, which is exactly how the 34-relation welded set could silently stop being closed-world.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-9",
+      "description": "[S4 | MUTATION] Revert the storage helper body to its membership-only form, ignoring the selected organization. MUST go RED via N-S4-5.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-10",
+      "description": "[S4 | MUTATION] Drop the superadmin escape from S4's restrictive conjunct. MUST go RED via P-S4-6. This is the single most likely S4 defect and the hardest to see in review: it revokes superadmin reach on every welded relation while producing NO diff on any superadmin-related line, because a restrictive policy ANDs against permissive disjuncts it never names.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-11",
+      "description": "[S4 | MUTATION] Flip the third argument of set_config('app.organization_id', <id>, true) to false, making the GUC session-scoped. MUST go RED via P-S4-9. Transaction-locality is what stops tenant scope leaking across pooled connections.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-S4-12",
+      "description": "[S4 | MUTATION, CLOSURE] Add an eighth unscoped withDatabaseIdentityContext construction passing organizationId: null. MUST go RED. The seven-site GUC-unset caller set is an ENUMERATION over one base, not a structural guarantee; without this control the substrate-exclusion reasoning decays silently as the codebase grows.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
