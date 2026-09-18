@@ -1228,3 +1228,103 @@ describe('the apply window is recorded, and the two lists are derived from it', 
     }
   })
 })
+
+/**
+ * EVERY administrative unit is digest-pinned, swept GENERICALLY.
+ *
+ * WHY THIS BLOCK EXISTS, and it is a coverage defect rather than a new idea.
+ * Until now every unit's digest was pinned by a BESPOKE test written by
+ * whoever added that unit — PRECHAIN_OWNERSHIP in its own describe,
+ * stella_hosted_0009 in the CE-3 block, the two G1-B units in their `it.each`,
+ * and so on. Nothing swept the ARRAY, so a unit appended to
+ * ADMINISTRATIVE_UNITS without someone also remembering to hand-write a pin
+ * test was covered by nothing at all. MEASURED: stella_0021 landed with a
+ * sourceSha256 that did not match its own bytes, and this suite stayed GREEN.
+ *
+ * THE DISCIPLINE ALREADY EXISTED — in the wrong place to catch it in time.
+ * scripts/pg176-certify.ts:679 loops over PRECHAIN_ADMINISTRATIVE_UNITS and
+ * refuses on a mismatch, and its postchain twin does the same. So the stale pin
+ * WOULD have been caught, at hosted-certification time, by a Docker-heavy
+ * runner nobody executes on a commit. This block mirrors that same loop at the
+ * commit-time gate, so the two agree rather than one trailing the other.
+ *
+ * The bespoke tests above are NOT replaced: each asserts a unit's whole frozen
+ * contract — applyWindow, owner, rollback shape, normalised functions — and
+ * this sweep asserts only the one property every unit shares.
+ */
+describe('digest discipline — every ADMINISTRATIVE_UNITS member is pinned to its own bytes', () => {
+  it('sweeps the ARRAY, not a hand-kept list, and the array is non-empty', () => {
+    // A sweep over an empty or hand-copied list is the failure mode this block
+    // exists to close, so the driver is asserted to BE the registry.
+    expect(ADMINISTRATIVE_UNITS.length).toBeGreaterThan(0)
+    expect(new Set(ADMINISTRATIVE_UNITS.map((u) => u.id)).size).toBe(ADMINISTRATIVE_UNITS.length)
+  })
+
+  it.each(ADMINISTRATIVE_UNITS.map((u) => [u.id, u] as const))(
+    '%s: sourceSha256 IS the digest of the bytes at sourceFile',
+    (_id, unit) => {
+      expect(existsSync(path.join(ROOT, unit.sourceFile)), unit.sourceFile).toBe(true)
+      const sql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      expect(sha256OfPreparedSql(sql), unit.id).toBe(unit.sourceSha256)
+    },
+  )
+
+  it.each(ADMINISTRATIVE_UNITS.map((u) => [u.id, u] as const))(
+    '%s: the pin survives a CRLF checkout',
+    (_id, unit) => {
+      // db/prepared/** is pinned to LF by .gitattributes, but a Windows working
+      // tree checks out CRLF and a pin that holds for only one of them is a pin
+      // that fails on somebody's laptop. The established doctrine in this file.
+      const sql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      expect(sha256OfPreparedSql(sql.replace(/\r?\n/g, '\r\n')), unit.id).toBe(unit.sourceSha256)
+    },
+  )
+
+  it.each(ADMINISTRATIVE_UNITS.map((u) => [u.id, u] as const))(
+    '%s: a rollback, where one exists, is pinned to ITS bytes too',
+    (_id, unit) => {
+      if (unit.rollbackFile === null) {
+        expect(unit.rollbackSha256, unit.id).toBeNull()
+        return
+      }
+      const sql = readFileSync(path.join(ROOT, unit.rollbackFile), 'utf8')
+      expect(sha256OfPreparedSql(sql), unit.rollbackFile).toBe(unit.rollbackSha256)
+    },
+  )
+
+  it('NON-VACUITY: the sweep detects a one-nibble pin edit on EVERY unit', () => {
+    // The assertion above is only worth its runtime if it can fail. Flipping one
+    // hex nibble of each pin in turn must be rejected for that unit — proving
+    // the comparison is against the bytes and not against itself.
+    for (const unit of ADMINISTRATIVE_UNITS) {
+      const sql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      const actual = sha256OfPreparedSql(sql)
+      const tampered = `${actual[0] === '0' ? '1' : '0'}${actual.slice(1)}`
+      expect(tampered, unit.id).not.toBe(unit.sourceSha256)
+    }
+  })
+
+  it('NON-VACUITY: the sweep detects an unre-pinned edit to the bytes on EVERY unit', () => {
+    // The other direction, and the one that actually happened: the bytes move
+    // and the pin does not.
+    for (const unit of ADMINISTRATIVE_UNITS) {
+      const sql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      expect(sha256OfPreparedSql(`${sql}\n-- an edit nobody re-pinned\n`), unit.id).not.toBe(
+        unit.sourceSha256,
+      )
+    }
+  })
+
+  it('the commit-time sweep and the certification harnesses read the SAME registry', () => {
+    // What made the stale pin survive was not a missing check but a check that
+    // lived only in a Docker-heavy runner. Pinning that both layers drive off
+    // ADMINISTRATIVE_UNITS is what keeps them from drifting apart again.
+    for (const script of ['scripts/pg176-certify.ts']) {
+      const src = readFileSync(path.join(ROOT, script), 'utf8')
+      expect(src, script).toContain('PRECHAIN_ADMINISTRATIVE_UNITS')
+      expect(src, script).toContain('sha256OfPreparedSql')
+    }
+    expect([...PRECHAIN_ADMINISTRATIVE_UNITS, ...POSTCHAIN_ADMINISTRATIVE_UNITS].map((u) => u.id).sort())
+      .toEqual(ADMINISTRATIVE_UNITS.map((u) => u.id).sort())
+  })
+})

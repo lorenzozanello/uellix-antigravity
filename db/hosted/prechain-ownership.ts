@@ -769,7 +769,7 @@ export const PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL: PrechainOwnershipPackage = {
   id: 'stella_0021_current_schema_runtime_acl_contract',
   kind: 'prechain-ownership',
   sourceFile: 'db/prepared/stella_0021_current_schema_runtime_acl_contract.sql',
-  sourceSha256: '2669dd6a2a44cd23953f475cbc2ea8795571a5a42c7f8eb98e116e2fd2dd24e6',
+  sourceSha256: '7221627a61a6525a93fb94b0e41cd9d7f14ac203c0430d56f2ce0a3e9a464c19',
   purpose:
     'Publishes the runtime ACL contract for the CURRENT schema as a CLOSED WORLD over all fifty-eight ' +
     'public tables: the nineteen stella_0004 never classified (8 APPEND_ONLY, 6 ' +
