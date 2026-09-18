@@ -1,0 +1,430 @@
+{
+  "package_id": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_ROW_VISIBILITY_SEMANTIC_CORRECTION_TO_A_FROZEN_SUCCESSOR_AUTHORITY_NOT_IMPLEMENTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_SUPERSEDES_EXACTLY_ONE_DEFECTIVE_CLAUSE_OF_ITS_FROZEN_PARENT",
+  "mission_id": "CV1-RUNTIME-ACL-PG17-AW",
+  "materialization_date": "2026-09-18",
+  "GRANT_ID": null,
+
+  "BASE_AUTHORITY": {
+    "path": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json",
+    "blob_sha_at_this_base": "735617ff4adea0479010eb122dc38ea505bf2a56",
+    "disposition": "HISTORICALLY_FROZEN_BYTE_FOR_BYTE_NOT_EDITED_BY_THIS_ACT",
+    "form": "This document is a SEPARATE COMPANION AUTHORITY AMENDMENT, following the repository-native precedent docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json and docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0.json. It is NOT a replacement authority. No CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.1.json exists or is authorized. The parent remains controlling for every clause this amendment does not name.",
+    "why_no_parent_edit": "The parent is a frozen adjudicated artifact whose defect is part of the evidentiary record. Rewriting it would destroy the history of the defect and would be a prohibited historical-evidence rewrite (CLAUDE.md section 5). The defect is therefore adjudicated in place, in the open, by an append-only successor clause."
+  },
+
+  "COMPANION_MANIFEST_AMENDMENT": {
+    "path": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+    "base_manifest_path": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_v1.0.0.json",
+    "base_manifest_blob_sha_at_this_base": "e5575a1462a4100750ac03d4d39af9bb88aee2ed",
+    "base_manifest_disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT_REMAINS_CONTROLLING_FOR_ITS_OWN_59_CONTROLS"
+  },
+
+  "SECTION_A0_FRESHNESS": {
+    "BASE_REF": "origin/integration/commercial-v1",
+    "BASE_SHA": "eec2cba201feb4adc4ae7ba6566f232f0eed37c4",
+    "BASE_TREE": "aa23d18eca419495712907b2a2921bef6505100e",
+    "BRANCH": "codex/current-schema-runtime-acl-pg17-amendment-r1",
+    "worktree_clean_before_mutation": true,
+    "drift_rule": "If origin/integration/commercial-v1 is not eec2cba201feb4adc4ae7ba6566f232f0eed37c4 immediately before commit, the mission STOPS with BASE_DRIFT and this artifact is not committed. Never silently reconciled.",
+    "IMPLEMENTATION_PERFORMED": "NONE. This artifact is not executable. No SQL, no test, no registry entry, no ODS lineage identifier, no HPO id and no migration is created by it."
+  },
+
+  "SECTION_A1_DEFECT_ADJUDICATION": {
+    "DEFECTIVE_CLAUSE_AS_RECORDED": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json SECTION_14_REAL_PG_PROOF_MATRIX.families['PG-17'] = 'Cross-org RLS with at least two organizations: as uellix_app under ORG_A's identity context, a SELECT on each of the 18 readable tables returns only ORG_A rows and never the ORG_B sentinel row; the same as ORG_B in reverse.'",
+    "DEFECT_CLASS": "UNSATISFIABLE_AS_WRITTEN. The clause quantifies a two-sided ORGANIZATION ownership predicate over all 18 readable relations. Four of the 18 carry no tenant discriminator of any kind, a fifth is keyed on user_id and not on an organization, and a sixth deliberately publishes an approved global row class that ORG_A is designed to see. The clause is therefore not merely inconvenient to implement: for those six relations there exists no fixture that can satisfy it, so a literal PG-17 can only ever be RED, or GREEN by silently narrowing its own population.",
+    "THIS_AMENDMENT_DOES_NOT_PRETEND_THE_OLD_STATEMENT_WAS_VALID": "BINDING. The parent clause was false when written. This amendment records that it was false, records exactly why, and supersedes it. It does not reinterpret it as having meant something else all along, and it does not describe the correction as a clarification.",
+
+    "D_1": {
+      "id": "D-1",
+      "finding": "The four platform-global relations cannot carry ORG_A/ORG_B ownership because they have no tenant discriminator.",
+      "relations": ["governed_model_registry", "proxy_material_fields_registry", "legal_instruments", "legal_instrument_versions"],
+      "evidence": {
+        "governed_model_registry": "db/migrations/0040_governed_model_registry.sql CREATE TABLE governed_model_registry: columns are id, model_id, version, effective_from, definition_hash. No organization_id, no user_id. RLS enabled by db/policies/009_governed_model_registry_rls.sql:9; single policy governed_model_registry_select (line 12) is FOR SELECT USING (auth.uid() IS NOT NULL).",
+        "proxy_material_fields_registry": "db/migrations/0055_fib_proxy_material_change_registry.sql CREATE TABLE proxy_material_fields_registry: columns are id, registry_version, table_name, field_name, category, created_at (plus editability added by db/migrations/0056:26). No organization_id, no user_id. RLS enabled by db/policies/010_proxy_material_fields_registry_rls.sql:19; single policy (line 22) FOR SELECT USING (auth.uid() IS NOT NULL).",
+        "legal_instruments": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql CREATE TABLE legal_instruments: columns are instrument_key, instrument_class, created_at. No organization_id, no user_id. RLS enabled line 100; single policy legal_instruments_select (line 103) TO uellix_app USING (auth.uid() IS NOT NULL).",
+        "legal_instrument_versions": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql CREATE TABLE legal_instrument_versions: columns are id, instrument_key, version, locale, content_digest, reaccept_required, effective_at, published_by, published_at, audit_log_id (plus content_bytes added by db/migrations/0071:18). published_by is a users FK recording WHO PUBLISHED the version; it is provenance, not a visibility discriminator, and the policy does not read it. RLS enabled line 118; single policy legal_instrument_versions_select (line 121) TO uellix_app USING (auth.uid() IS NOT NULL)."
+      },
+      "sweep_completeness": "Verified that no later unit introduces a discriminator: every DROP POLICY over these four relations in db/migrations/**, db/policies/**, db/prepared/** and db/baseline/** is the idempotent guard immediately preceding its own CREATE POLICY in the same file, and no ALTER TABLE over these four adds an organization_id or user_id column (0056 adds only editability; 0071 adds only content_bytes).",
+      "consequence": "For these four, a SELECT as ORG_A and a SELECT as ORG_B are designed to return the SAME governed set. 'returns only ORG_A rows' has no referent, and 'never the ORG_B sentinel row' cannot be planted because no row can belong to ORG_B."
+    },
+
+    "D_2": {
+      "id": "D-2",
+      "finding": "account_legal_acceptances is per-subject evidence keyed by user_id and is not organization tenant data.",
+      "evidence": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql CREATE TABLE account_legal_acceptances: columns are id, user_id, instrument_version_id, content_digest, accepted_at, audit_log_id. There is NO organization_id column. RLS enabled line 137 and FORCE enabled line 138. Policy account_legal_acceptances_select (line 141) is TO uellix_app USING (user_id = auth.uid()); policy account_legal_acceptances_insert (line 149) is TO uellix_app WITH CHECK (user_id = auth.uid()).",
+      "consequence": "An ORG_A/ORG_B test over this relation is a category error. The isolation this relation actually enforces is SUBJECT isolation between two users, and a test that varied only the organization would pass or fail for reasons unrelated to the control it claims to be proving.",
+      "attribution_hazard_this_creates": "If USER_A and USER_B are placed in DIFFERENT organizations, a green result is ambiguous: the row could have been filtered by user_id = auth.uid() as the policy intends, or by an organization boundary somewhere else in the stack. The amended contract therefore REQUIRES USER_A and USER_B to be members of the SAME organization, so that the only surviving explanation for the isolation is the user_id predicate."
+    },
+
+    "D_3": {
+      "id": "D-3",
+      "finding": "financial_proxy_versions deliberately exposes approved global rows, therefore the phrase 'returns only ORG_A rows' is false for that relation as a whole.",
+      "evidence": "db/migrations/0053_fib_proxy_versions_provenance.sql: the column is declared 'organization_id uuid' with NO NOT NULL constraint -- it is NULLABLE, and that nullability is what makes the global row class reachable. Policy financial_proxy_versions_select (line 114) is FOR SELECT USING ( (auth.uid() IS NOT NULL AND organization_id IS NULL AND review_status = 'approved') OR organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() ). The first disjunct is an explicit, approved, platform-wide visibility arm.",
+      "corroborating_check_constraint": "financial_proxy_versions_review_status_check restricts review_status to ('draft','under_review','approved','rejected','archived'), so 'approved' is a real enumerated state and the global arm is not dead code.",
+      "consequence": "Under ORG_A's identity context, a correct implementation returns ORG_A's own rows AND every global approved row. A control asserting 'only ORG_A rows' would be RED against a CORRECT implementation, which inverts the control's meaning.",
+      "contrast_with_the_other_twelve_org_scoped_relations": "The other twelve org-scoped relations declare organization_id as uuid NOT NULL and carry no global disjunct in their SELECT policy, so for them -- and only for them -- a strict two-sided ownership assertion is both meaningful and satisfiable."
+    }
+  },
+
+  "SECTION_A2_REDERIVED_CENSUS": {
+    "method": "Re-derived independently at BASE_SHA eec2cba2 from db/migrations/**, db/policies/**, db/prepared/** and db/baseline/** (159 .sql files scanned) by extracting, for each of the 18 readable relations, its CREATE TABLE column list with balanced-parenthesis termination, its ALTER TABLE ... ROW LEVEL SECURITY statements, and every CREATE POLICY naming it. The parent's prior conclusions were NOT consumed as truth; they were treated as a hypothesis to attack, and the hypothesis survived.",
+    "derivation_hazard_encountered_and_corrected": "The first sweep returned ZERO relations and would have been a vacuous negative. Cause: every identifier in the Drizzle-generated migrations is DOUBLE-QUOTED (CREATE TABLE \"domain_object_versions\" (...)), and the initial pattern assumed bare identifiers. The pattern was corrected to admit optional double quotes and an optional \"public\". schema qualifier before any census figure below was recorded. A certifier re-deriving this census must admit the quoted form or it will reproduce the same false empty result.",
+    "POPULATION": "The 18 readable relations = the parent SECTION_1 EXACT_19_TABLE_SET minus commercial_accounts (the single NO_RUNTIME_ACCESS member, parent SECTION_2). 8 APPEND_ONLY + 6 OPERATIONAL_INSERT_UPDATE + 4 READ_ONLY = 18. This population is UNCHANGED by this amendment.",
+    "DISCRIMINATOR_PARTITION": {
+      "arithmetic": "13 ORG_SCOPED + 1 USER_SCOPED + 4 PLATFORM_GLOBAL = 18",
+      "arithmetic_holds": true,
+      "partition_is_exhaustive_and_disjoint": true,
+
+      "ORG_SCOPED": {
+        "count": 13,
+        "definition": "Carries an organization_id column AND a SELECT policy whose tenant predicate is organization_id = ANY(current_user_org_ids()).",
+        "relations": [
+          { "relation": "domain_object_versions", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0045_fib_domain_object_version_lineage.sql:73 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "evidence_sufficiency_determinations", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0050_fib_evidence_sufficiency_determinations.sql:34 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "evidence_tombstones", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0051_fib_evidence_erasure_substrate.sql:48 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "readiness_assessments", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0064_fib_readiness_assessments.sql:56 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "sensitivity_scenarios", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0065_fib_sensitivity_model.sql:128 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "assumption_object_links", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0062_fib_methodological_assumptions.sql:114 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "organization_commercial_acceptances", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql:75 TO uellix_app USING (organization_id = ANY (public.current_user_org_ids()))" },
+          { "relation": "evidence_versions", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0048_fib_evidence_versions.sql:97 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "financial_proxy_versions", "organization_id": "uuid NULLABLE -- deliberately, see D-3", "select_policy": "db/migrations/0053_fib_proxy_versions_provenance.sql:114 USING ( (auth.uid() IS NOT NULL AND organization_id IS NULL AND review_status = 'approved') OR organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )", "dual_membership": "THIS RELATION IS THE ONE MEMBER OF BOTH PG-17A AND PG-17B. Its tenant rows are governed by PG-17A under a mandatory organization_id IS NOT NULL fixture constraint; its approved global row class is governed by PG-17B." },
+          { "relation": "outcome_monetization_dispositions", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0059_fib_outcome_monetization_dispositions.sql:35 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "counterfactual_assessments", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0063_fib_counterfactual_assessments.sql:51 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "methodological_assumptions", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0062_fib_methodological_assumptions.sql:73 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" },
+          { "relation": "sensitivity_candidates", "organization_id": "uuid NOT NULL", "select_policy": "db/migrations/0065_fib_sensitivity_model.sql:89 USING ( organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin() )" }
+        ]
+      },
+
+      "USER_SCOPED": {
+        "count": 1,
+        "definition": "Carries NO organization_id column; the SELECT policy's only predicate is user_id = auth.uid().",
+        "relations": [
+          { "relation": "account_legal_acceptances", "discriminator_column": "user_id uuid NOT NULL", "organization_id": "ABSENT", "select_policy": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql:141 TO uellix_app USING (user_id = auth.uid())", "rls": "ENABLE (line 137) + FORCE (line 138)" }
+        ]
+      },
+
+      "PLATFORM_GLOBAL": {
+        "count": 4,
+        "definition": "Carries NO organization_id and NO visibility-bearing user column; the SELECT policy's only predicate is auth.uid() IS NOT NULL, i.e. presence of an authenticated identity and nothing else.",
+        "relations": [
+          { "relation": "governed_model_registry", "select_policy": "db/policies/009_governed_model_registry_rls.sql:12 USING (auth.uid() IS NOT NULL)" },
+          { "relation": "proxy_material_fields_registry", "select_policy": "db/policies/010_proxy_material_fields_registry_rls.sql:22 USING (auth.uid() IS NOT NULL)" },
+          { "relation": "legal_instruments", "select_policy": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql:103 TO uellix_app USING (auth.uid() IS NOT NULL)" },
+          { "relation": "legal_instrument_versions", "select_policy": "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql:121 TO uellix_app USING (auth.uid() IS NOT NULL)" }
+        ]
+      }
+    },
+    "HYPOTHESIS_DISPOSITION": "The measured hypothesis carried into this mission -- 13 ORG_SCOPED + 1 USER_SCOPED + 4 PLATFORM_GLOBAL = 18, with financial_proxy_versions additionally carrying an approved global-row visibility arm -- was independently re-derived and is CONFIRMED in full. No surplus and no deficit. No relation changed class. The confirmation is what licenses the correction below; had it failed, this amendment would not have been written."
+  },
+
+  "SECTION_A3_PG17_SUPERSEDED_CONTRACT": {
+    "TOP_LEVEL_FAMILY_PRESERVED": "PG-17 REMAINS a single top-level Real-PG family. It is NOT split into two top-level families, NOT renumbered, and NOT removed.",
+    "REAL_PG_CONTROL_COUNT": 22,
+    "REAL_PG_CONTROL_COUNT_UNCHANGED": "BINDING. The parent SECTION_14 REAL_PG_CONTROL_COUNT is 22 and remains 22 after this amendment. PG-17A and PG-17B are SUB-ARMS of the single PG-17 family, not new families. A certifier that recounts the families must still find exactly 22 (PG-01..PG-22).",
+    "SUPERSEDING_DEFINITION": "PG-17 = PG-17A AND PG-17B",
+    "CONJUNCTION_IS_BINDING": "A naked 'PG-17 PASS' is INVALID unless BOTH PG-17A and PG-17B carry substantive evidence in the certification record. PG-17 is RED if either arm is RED, and PG-17 is INSUFFICIENT_EVIDENCE (not PASS) if either arm is unreported, skipped, or reported without per-relation results.",
+    "WHAT_IS_SUPERSEDED": "EXACTLY ONE clause: SECTION_14_REAL_PG_PROOF_MATRIX.families['PG-17'] of the parent. Nothing else in the parent SECTION_14 is touched.",
+    "WHAT_IS_NOT_SUPERSEDED": "The parent's harness_contract (disposable only, UELLIX_PG_TESTS=1, skipped never silently passed, never staging/production/canonical local), its hosted_proof_is_separate clause, and every other family string PG-01..PG-16 and PG-18..PG-22, all remain controlling verbatim."
+  },
+
+  "SECTION_A4_PG17A": {
+    "arm_id": "PG-17A",
+    "arm_name": "TWO_SIDED_SUBJECT_ISOLATION",
+    "COVERAGE_COUNT": 14,
+    "coverage_arithmetic": "13 ORG_SCOPED + 1 USER_SCOPED = 14",
+    "COVERAGE_IS_BY_ACTUAL_DISCRIMINATOR_NOT_BY_ORGANIZATION_UNIFORMLY": "BINDING. Each relation is proven against the discriminator its own policy actually reads. A control that applies an organization predicate to account_legal_acceptances, or that applies any tenant predicate to the four PLATFORM_GLOBAL relations, does not satisfy this arm.",
+
+    "ORG_ARM": {
+      "relations_count": 13,
+      "subjects": "ORG_A and ORG_B, two distinct organizations.",
+      "contract": "As uellix_app under ORG_A's identity context, a SELECT on each of the 13 organization-scoped relations returns ORG_A's own fixture row and never SENTINEL_SIBLING_SUBJECT_ROW planted in ORG_B. Symmetrically, as uellix_app under ORG_B's identity context, the SELECT returns ORG_B's row and never ORG_A's."
+    },
+
+    "USER_ARM": {
+      "relations_count": 1,
+      "relation": "account_legal_acceptances",
+      "subjects": "USER_A and USER_B, two distinct users.",
+      "contract": "As uellix_app under USER_A's identity context, a SELECT on account_legal_acceptances returns USER_A's own acceptance row and never SENTINEL_SIBLING_SUBJECT_ROW planted for USER_B. Symmetrically for USER_B.",
+      "MANDATORY_ATTRIBUTION_GUARD": {
+        "requirement": "USER_A and USER_B MUST belong to the SAME organization.",
+        "binding": true,
+        "why": "The relation has no organization_id, so the only isolation under test is the user_id = auth.uid() predicate. If the two users sat in different organizations, a green result would be explainable by an organization boundary rather than by the user predicate, and the control would be proving something other than what it claims. Co-membership in one organization removes that alternative explanation and makes the control attribute its own result.",
+        "falsification": "See M-PG17-02: placing USER_A and USER_B in different organizations must turn this guard RED."
+      }
+    },
+
+    "FINANCIAL_PROXY_VERSIONS_FIXTURE_CONSTRAINT": {
+      "binding": true,
+      "requirement": "For financial_proxy_versions under PG-17A, the ORG_A and ORG_B tenant fixture rows MUST be written with organization_id IS NOT NULL.",
+      "why": "The relation's organization_id is nullable and its SELECT policy grants an unconditional approved-global arm to any authenticated identity. A tenant fixture row left with organization_id NULL would fall into the GLOBAL class, would be visible to both organizations by design, and would make the two-sided isolation assertion RED against a correct implementation. Pinning the tenant fixtures to organization_id IS NOT NULL is what keeps PG-17A's assertion about this relation about TENANT isolation.",
+      "separation_of_concerns": "The nullable/approved rows of this same relation are proven under PG-17B, never under PG-17A. The two arms must not be satisfied by the same fixture row."
+    },
+
+    "REQUIRED_PROPERTIES_FOR_EVERY_ONE_OF_THE_14": [
+      "OWN_ROW_PRESENT: the subject's own row is returned. Without this the negative half is vacuous.",
+      "SIBLING_ROW_ABSENT: the sibling subject's sentinel row is not returned.",
+      "SYMMETRIC_REVERSE_DIRECTION: the same two assertions hold with the subjects exchanged. One direction alone is not the control.",
+      "NO_EMPTY_RESULT_FALSE_GREEN: a result set that is EMPTY does not satisfy SIBLING_ROW_ABSENT. The assertion must establish that the own row IS present in the same result set in which the sibling row is absent, so that a connection which returned nothing at all -- because identity was never established, because the statement errored, or because the fixture never landed -- is RED and not GREEN.",
+      "ROW_IDENTITY_IS_ASSERTED_NOT_ROW_COUNT: the returned row must be matched by its sentinel-bearing value, not merely counted. A count of 1 does not distinguish the own row from the sibling row."
+    ],
+    "EMPTY_RESULT_HAZARD_NAMED": "A SELECT that establishes identity with set_config(...) in the same statement list can appear non-empty because set_config returns its own value as a row. An implementation must not accept an echo row as evidence that the relation under test returned the subject's row."
+  },
+
+  "SECTION_A5_PG17B": {
+    "arm_id": "PG-17B",
+    "arm_name": "GOVERNED_GLOBAL_VISIBILITY",
+    "COVERAGE_COUNT": 5,
+    "coverage_arithmetic": "4 PLATFORM_GLOBAL relations + 1 approved global row class of financial_proxy_versions = 5 covered surfaces",
+    "COVERED_RELATIONS": [
+      "governed_model_registry",
+      "proxy_material_fields_registry",
+      "legal_instruments",
+      "legal_instrument_versions"
+    ],
+    "COVERED_ROW_CLASS": {
+      "relation": "financial_proxy_versions",
+      "row_class_predicate": "organization_id IS NULL AND review_status = 'approved'",
+      "authority": "db/migrations/0053_fib_proxy_versions_provenance.sql:114, first disjunct of financial_proxy_versions_select",
+      "note": "Only this row class of the relation is governed by PG-17B. The relation's tenant rows are governed by PG-17A."
+    },
+
+    "REQUIRED_PROPERTIES": {
+      "B1_GOVERNED_GLOBAL_ROW_EXISTS": "A governed global sentinel/reference row ACTUALLY EXISTS on each covered surface before the assertions run. An empty registry makes every downstream visibility assertion vacuous: 'A and B see the same rows' is trivially satisfied by both seeing nothing. The existence of the row is itself an asserted precondition, not a setup assumption.",
+      "B2_IDENTITY_A_SEES_IT": "As uellix_app under authenticated identity A, a SELECT on each covered surface RETURNS the governed global sentinel row.",
+      "B3_IDENTITY_B_SEES_THE_SAME_GOVERNED_SET": "As uellix_app under authenticated identity B -- an identity belonging to a DIFFERENT organization from A -- a SELECT on each covered surface returns the SAME governed set. Equality of the two sets is the assertion. This is the arm that makes the correction meaningful: for these surfaces, cross-identity IDENTITY of the result set is the correct property, and the parent's cross-identity DIFFERENCE was the defect.",
+      "B4_IDENTITY_FREE_CONTEXT_SEES_ZERO_ROWS_AND_NO_SQLSTATE": "As uellix_app with NO identity established, a SELECT on each covered surface returns ZERO ROWS and raises NO SQLSTATE, wherever the policy semantics gate on auth.uid(). Returning zero rows is the policy correctly refusing; raising an error is a different failure with a different cause and must not be accepted as if it were the refusal. See SECTION_A6: this property carries an explicit, falsifiable, currently-UNDISCHARGED precondition and PG-17B MUST NOT be reported PASS until that precondition is discharged on the implementing base.",
+      "B5_RUNTIME_MUTATION_PRIVILEGES_ABSENT": "has_table_privilege(uellix_app, <relation>, v) is FALSE for INSERT, UPDATE and DELETE on all four PLATFORM_GLOBAL relations. Read from the catalog, per verb, per relation.",
+      "B6_LIVE_MUTATION_ATTEMPTS_REFUSED": "An ACTUAL INSERT, UPDATE and DELETE attempted as uellix_app against each of the four PLATFORM_GLOBAL relations is REFUSED. B5 and B6 are both required and neither substitutes for the other: a catalog predicate can be FALSE while a live path still succeeds through some other grant, and a live refusal can arise from a cause other than the privilege layer."
+    },
+
+    "REFUSAL_ATTRIBUTION_REQUIREMENT": {
+      "binding": true,
+      "requirement": "A live refusal asserted under B6 MUST be attributed to the privilege layer and not merely observed as SQLSTATE 42501.",
+      "why": "42501 is not a unique signature of a missing GRANT. An RLS WITH CHECK violation also raises 42501, and it is evaluated BEFORE NOT NULL and foreign-key constraints, so a fixture row that would have failed for an unrelated reason can produce the same code. A control that asserts only the code can be satisfied by a database in which the GRANT layer is wide open and the refusal came from somewhere else entirely.",
+      "how": "The implementation discharges this by pairing each live refusal with the catalog predicate of B5 on the same relation and verb, so that the absence of the privilege is established independently of the error code the attempt produced."
+    },
+
+    "VACUITY_PROHIBITIONS": [
+      "An empty covered surface does not satisfy B2 or B3.",
+      "Set equality in B3 must be asserted over a NON-EMPTY set whose membership includes the B1 sentinel.",
+      "B4 must distinguish zero-rows from error; a test that catches any throwable and reports 'refused' does not satisfy B4."
+    ]
+  },
+
+  "SECTION_A6_AUTH_UID_REACHABILITY_PRECONDITION": {
+    "DISPOSITION": "PRECONDITION_PRESERVED_AND_ESCALATED_NOT_PRE_ADJUDICATED",
+    "why_this_section_exists": "PG-17B and the USER_ARM of PG-17A both rest on policy expressions that call auth.uid() DIRECTLY. Whether uellix_app can call auth.uid() directly on a GOVERNED current-schema substrate is not established anywhere in the repository, and this amendment refuses to assume it either way.",
+
+    "FRESHLY_MEASURED_AT_THIS_BASE": {
+      "M1_direct_vs_indirect_auth_uid": "The three RLS helpers public.current_user_org_ids(), public.current_user_is_super_admin() and public.current_user_role_in_org(uuid) are each declared LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' in db/baseline/stella_g2_schema.sql, and each calls auth.uid() INTERNALLY. Because they are SECURITY DEFINER, their internal auth.uid() call executes with the definer's privileges. This is why the 13 organization-scoped relations can be read with nothing more than the parent SECTION_5 EXECUTE posture. The four PLATFORM_GLOBAL policies, the account_legal_acceptances policy, and the first disjunct of the financial_proxy_versions policy call auth.uid() in the POLICY EXPRESSION ITSELF, which is evaluated as the INVOKING role. Those calls are therefore NOT covered by the SECURITY DEFINER indirection.",
+      "M2_schema_auth_usage_grantees": "db/baseline/stella_g2_schema.sql:35 CREATE SCHEMA auth; :38 OWNER TO supabase_admin. The complete enumerated ACL at :9914-9920 grants USAGE ON SCHEMA auth to anon, authenticated, service_role, postgres and uellix_owner, and ALL to supabase_auth_admin and dashboard_user. There is NO grant to PUBLIC, and PostgreSQL grants no default schema USAGE to PUBLIC on a non-public schema.",
+      "M3_no_governed_grant_to_the_runtime_chain": "No unit in db/migrations/**, db/policies/**, db/prepared/** or db/baseline/** grants USAGE ON SCHEMA auth to uellix_writer, uellix_app or uellix_auditor. The only canonical GRANT USAGE ON SCHEMA auth statements outside the baseline name the capability roles (stella_0006:237 uellix_cap_invitation, stella_0010:190 uellix_cap_bootstrap, stella_0011:256 uellix_cap_platform, stella_0013:154 uellix_cap_stella_quota, stella_0014:235 uellix_cap_stella_ticket) and uellix_owner (stella_local_0000:306).",
+      "M4_no_inheritance_path": "The only membership touching the runtime chain is GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE (db/prepared/stella_0001_role_topology_bootstrap.sql:180, db/prepared/stella_local_0000:296, db/baseline/stella_g2_roles.sql:223). uellix_app is not a member of authenticated, anon, service_role or uellix_owner, so no auth-schema USAGE reaches it by inheritance.",
+      "M5_the_only_place_the_reach_exists_is_an_ad_hoc_harness_grant": "tests/postgres/legal-acceptance-fixtures.ts:89-91, under the harness's own comment '(3) Runtime reachability: schema usage, auth.uid() reach, RLS helper EXECUTE.', issues GRANT USAGE ON SCHEMA public TO uellix_writer, uellix_auditor, uellix_app; GRANT USAGE ON SCHEMA auth TO uellix_writer; GRANT EXECUTE ON FUNCTION auth.uid() TO uellix_writer. That the existing passing harness for account_legal_acceptances found it necessary to grant this explicitly is positive evidence that the reach is REQUIRED and is NOT present by default.",
+      "M6_that_harness_shape_is_inadmissible_for_this_proof": "The parent SECTION_13 PROHIBITED_IN_THE_SUBSTRATE forbids ad_hoc_GRANT: 'No GRANT issued by the test or its harness... that shape is NOT admissible for the Measure E2E, whose whole point is to prove the GOVERNED grant path.' The reachability that exists today therefore exists only in a form this proof may not use."
+    },
+
+    "TENSION_WITH_THE_PARENT_RECORDED_NOT_RESOLVED": {
+      "parent_claim": "Parent SECTION_5 records 'OPENING_MEASURED on the current schema: table grants alone still yield 42501 permission denied for function current_user_org_ids; table grants + EXECUTE on the three helpers yield 18 positive operations OK and every negative control 42501.'",
+      "parent_scope_of_what_was_actually_observed": "Parent OPENING_CONSUMED describes the opening as having reproduced the PRE-APPLY substrate and observed stella_0004 refusing, 1-of-57 table privilege and NO EXECUTE on the three helpers. No evidence file under docs/ops/staging/evidence/ records a post-apply probe, and no file in that directory mentions schema auth at all.",
+      "the_unresolved_question": "Whether the parent's '18 positive operations OK' was observed on a substrate that also carried an auth-schema reach (as the legal-acceptance harness does), or whether it covered only operations whose policies reach auth.uid() exclusively through the SECURITY DEFINER helpers. This amendment CANNOT settle that: the mission is docs-only and forbids running Docker, and the question is answerable only by a live probe.",
+      "fail_closed_posture": "Per CLAUDE.md section 5, where authority is UNKNOWN or ambiguous the posture is preserve, never guess. This amendment therefore neither asserts that the reach exists nor asserts that it is absent. It freezes the exact falsifiable test and blocks the PASS until that test is run."
+    },
+
+    "FALSIFIABLE_PRECONDITION": {
+      "id": "PRE-PG17B-AUTHUID",
+      "status": "OPEN_UNDISCHARGED_AT_THIS_BASE",
+      "binding": true,
+      "statement": "On the governed disposable substrate of parent SECTION_13, as uellix_app, with NO identity established, a SELECT from a PG-17B platform-global registry MUST return 0 rows and raise NO SQLSTATE.",
+      "the_failure_this_distinguishes": "It must NOT raise 'permission denied for schema auth'. A permission-denied error on schema auth is NOT the policy refusing the read; it is the invoking role being unable to evaluate the policy at all. The two outcomes are visually similar in a test that only asserts 'no rows came back' or 'it threw', and they have opposite meanings for whether the governed ACL contract is correct.",
+      "discharge_obligation": "The implementation/certification lane MUST run this probe on the implementing base BEFORE reporting any PG-17B result, and MUST record the observed outcome verbatim.",
+      "if_the_precondition_HOLDS": "PG-17B may proceed to be proven as specified in SECTION_A5 with no further authority act.",
+      "if_the_precondition_FAILS": "PG-17B is BLOCKED, not RED-by-implementation-defect. The implementation lane MUST STOP and escalate for a SECTION_5 authority successor. It MUST NOT self-authorize a GRANT USAGE ON SCHEMA auth or a GRANT EXECUTE ON FUNCTION auth.uid() to any of uellix_writer, uellix_app or uellix_auditor, and it MUST NOT reintroduce the ad-hoc harness grant of M5 into the governed substrate to obtain a green.",
+      "why_it_would_require_a_SECTION_5_SUCCESSOR_AND_NOT_A_PG17_EDIT": "Parent SECTION_5 REQUIRED_EXECUTE_POSTURE grants uellix_writer 'EXECUTE on exactly the three signatures above', all three in schema public. Extending the runtime chain's reach to schema auth and to auth.uid() is a change to the ROLE PRIVILEGE CONTRACT, which is SECTION_5's subject matter, not a change to ROW VISIBILITY SEMANTICS, which is the only thing this amendment is authorized to supersede (SECTION_A8). Carrying such a widening inside PG-17 would be exactly the concealment this amendment is forbidden to perform.",
+      "explicitly_not_done_here": "This amendment does NOT widen SECTION_5, does NOT author a SECTION_5 successor, and does NOT declare one necessary. It records the measured tension, freezes the discriminating test, and assigns the adjudication to the lane that can run it."
+    },
+
+    "SCOPE_NOTE_BEYOND_PG17": {
+      "observation": "The same direct-auth.uid() shape appears in INSERT policies of several organization-scoped relations (for example created_by = auth.uid() in domain_object_versions_insert at db/migrations/0045:80, and the WITH CHECK of organization_commercial_acceptances_insert at db/migrations/0072:116), which are the subject of parent family PG-06, not PG-17.",
+      "disposition": "OUT_OF_SCOPE_FOR_THIS_AMENDMENT_AND_DELIBERATELY_NOT_REPAIRED. PG-06 is not superseded here. The observation is recorded as an OPEN FINDING so that the same precondition is not rediscovered as a surprise by the PG-06 lane, but repairing PG-06 would be opportunistic scope expansion (SECTION_A8) and is refused."
+    }
+  },
+
+  "SECTION_A7_MUTATION_CONTRACT": {
+    "purpose": "A control that cannot be made to fail has proven nothing. These mutations are the falsification obligations of the amended PG-17. Each names the guarantee it removes and the arm that must go RED when it is removed.",
+    "ANCHOR_UNIQUENESS_REQUIREMENT": {
+      "binding": true,
+      "requirement": "Every mutation anchor MUST assert that it matches EXACTLY ONE site before the mutation is applied.",
+      "why": "An anchor that matches a sibling row, a sibling relation or a second occurrence mutates a surface other than the one under test, and the resulting RED is then attributed to the wrong control -- or, worse, the intended site is left unmutated and the resulting GREEN is read as the control being robust. A match count other than one is itself a failure of the mutation harness and must abort before mutating."
+    },
+    "mutations": {
+      "M-PG17-01": {
+        "guarantee_removed": "The real tenant discriminator on one organization-scoped relation.",
+        "action": "Break the organization discriminator on exactly one of the 13 ORG_SCOPED relations (for example by widening its SELECT policy's tenant predicate so it no longer restricts to the caller's organizations).",
+        "required_outcome": "PG-17A ORG_ARM RED on that relation, in both directions.",
+        "what_it_proves": "The ORG_ARM is actually reading the discriminator and is not passing for an incidental reason."
+      },
+      "M-PG17-02": {
+        "guarantee_removed": "The same-organization co-membership of USER_A and USER_B.",
+        "action": "Place USER_A and USER_B in DIFFERENT organizations for the account_legal_acceptances fixture.",
+        "required_outcome": "The PG-17A USER_ARM attribution guard RED.",
+        "what_it_proves": "The USER_ARM is proving user_id isolation specifically, and would notice if its result became attributable to an organization boundary instead. Without this mutation the co-membership requirement would be an unenforced stylistic preference."
+      },
+      "M-PG17-03": {
+        "guarantee_removed": "The existence of the governed global sentinel row.",
+        "action": "Remove SENTINEL_GOVERNED_GLOBAL_ROW from a PG-17B platform-global relation.",
+        "required_outcome": "PG-17B B1 and B2 RED for that relation.",
+        "what_it_proves": "PG-17B's positive arm is not vacuously satisfied by an empty registry, and its cross-identity set-equality assertion is not the trivial equality of two empty sets."
+      },
+      "M-PG17-04": {
+        "guarantee_removed": "The absence of runtime write capability on a global registry.",
+        "action": "Grant a forbidden write capability (INSERT, UPDATE or DELETE) to uellix_app on one of the four PLATFORM_GLOBAL relations.",
+        "required_outcome": "PG-17B B5 RED and PG-17B B6 RED for that relation and verb.",
+        "what_it_proves": "Both the catalog predicate and the live attempt are load-bearing; neither is decorative."
+      },
+      "M-PG17-05": {
+        "guarantee_removed": "The identity-free condition of the negative arm.",
+        "action": "Install an identity in the arm that is supposed to run WITHOUT one.",
+        "required_outcome": "PG-17B B4 RED.",
+        "what_it_proves": "B4 is genuinely measuring the identity-free context and would not stay green if an identity leaked into it -- which is the realistic contamination for a suite that establishes identity for most of its other assertions."
+      },
+      "M-PG17-06": {
+        "guarantee_removed": "The approved state of the global financial_proxy_versions sentinel.",
+        "action": "Change SENTINEL_GLOBAL_APPROVED_PROXY_VERSION to a non-approved review_status (for example 'draft').",
+        "required_outcome": "PG-17B global visibility control RED for financial_proxy_versions.",
+        "what_it_proves": "The control is reading review_status = 'approved' and not merely organization_id IS NULL. Without this mutation, a control that checked only nullability would pass while silently publishing unapproved global rows -- the exact governance failure the policy's two-term conjunction exists to prevent."
+      }
+    },
+    "coverage_statement": "The six mutations cover both arms and every required property class: ORG_ARM discriminator (01), USER_ARM attribution (02), PG-17B positive existence (03), PG-17B privilege absence in both layers (04), PG-17B identity-free negative (05), and PG-17B row-class predicate precision (06)."
+  },
+
+  "SECTION_A8_PRECEDENCE": {
+    "base_authority_remains_historically_frozen": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json is unchanged at blob 735617ff4adea0479010eb122dc38ea505bf2a56 and is not edited by this act.",
+    "this_amendment_controls_only": "The row-visibility semantics of Real-PG family PG-17, and nothing else.",
+    "all_unrelated_base_clauses_remain_controlling": true,
+    "EXPLICITLY_UNCHANGED": {
+      "PG_01_TO_PG_16": "UNCHANGED, controlling verbatim from the parent.",
+      "PG_18_TO_PG_22": "UNCHANGED, controlling verbatim from the parent.",
+      "REAL_PG_CONTROL_COUNT": "REMAINS 22. The top-level family model PG-01..PG-22 is complete and unchanged.",
+      "SECTION_1": "UNCHANGED -- 57/38/19 universe and the EXACT_19_TABLE_SET.",
+      "SECTION_2": "UNCHANGED -- the closed-world relation classification into APPEND_ONLY 8, OPERATIONAL_INSERT_UPDATE 6, READ_ONLY 4, NO_RUNTIME_ACCESS 1. No relation changes class. The PG-17A/PG-17B partition is a VISIBILITY-DISCRIMINATOR partition layered over that classification, orthogonal to it, and does not redefine it.",
+      "SECTION_2B": "UNCHANGED -- legacy 38 amended end-state.",
+      "SECTION_4": "UNCHANGED -- role contract.",
+      "SECTION_5": "UNCHANGED -- RLS helper EXECUTE half, including REQUIRED_EXECUTE_POSTURE and EXPLICITLY_EXCLUDED_FROM_EXECUTE. This amendment does NOT widen it. See SECTION_A6 for the recorded tension and the preserved precondition.",
+      "SECTION_7": "UNCHANGED -- canonical successor package identity, FORWARD_ONLY disposition, prohibited content, convergent application semantics.",
+      "SECTION_8": "UNCHANGED -- taxonomy evolution and class privilege sets.",
+      "SECTION_9": "UNCHANGED -- hosted parity disposition.",
+      "SECTION_10": "UNCHANGED -- future coverage guard and the closed-world rule.",
+      "SECTION_11": "UNCHANGED -- CE-3 ordering and serialization.",
+      "SECTION_12": "UNCHANGED -- future ODS binding and expected protected literals.",
+      "SECTION_13": "UNCHANGED -- Measure E2E unblock conditions, required substrate and PROHIBITED_IN_THE_SUBSTRATE.",
+      "SECTION_15": "UNCHANGED -- AT-F-02 semantics. This amendment changes AT-F-02's disposition by NOTHING and does not edit the release ledger.",
+      "closed_world_relation_classification": "UNCHANGED."
+    },
+    "NO_OPPORTUNISTIC_REPAIR": {
+      "binding": true,
+      "statement": "This act deliberately does NOT repair stale ODS anchor prose, does NOT repair the parent's expected-ODS-position or expected-HPO-id prose, does NOT repair PG-06 for the direct-auth.uid() INSERT-policy observation of SECTION_A6, and does NOT repair any other known issue in the parent.",
+      "why": "A correction mission that also fixes adjacent defects it noticed makes its own write set unreviewable: a certifier can no longer tell which edits the authority licensed from which the writer chose. Every unrepaired issue observed during this mission is recorded in RISKS_AND_OPEN_FINDINGS instead of being silently absorbed."
+    }
+  },
+
+  "SECTION_A9_ODS_DISPOSITION": {
+    "ODS_LINEAGE_REQUIRED": "NO",
+    "PROTECTED_GRANT_REQUIRED": "NO",
+    "measurement": "scripts/ods-scope.ts:82-90 DEFAULT_PROTECTED_PATTERNS = ['docs/ops/fib/**','docs/ops/pc01b/**','docs/ops/im01b/**','db/migrations/**','db/prepared/**','db/baseline/**','docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json']. Re-measured at BASE_SHA eec2cba2. docs/ops/staging/** matches NONE of the seven patterns, so neither of the two files in this write set is a protected surface.",
+    "consequence": "ODS scope is satisfied by an ordinary explicit --allow naming exactly the two new files. No grant is resolved and none is needed.",
+    "PROHIBITED_BY_THIS_MISSION": [
+      "Allocating ODS v1.0.37.",
+      "Allocating HPO-ODS-W2-34.",
+      "Consuming HPO-ODS-W2-33.",
+      "Modifying any file under docs/ops/ods/**.",
+      "Modifying scripts/ods-scope.ts.",
+      "Using a wide --allow pattern that would mask the narrowness of this write set."
+    ],
+    "protected_authority": null,
+    "protected_surfaces": []
+  },
+
+  "SECTION_A10_SELF_CHECKS": {
+    "note": "Each check is machine-verifiable at this base and is re-derivable by the certifier without trusting this document's prose.",
+    "checks": [
+      "C-01 Base authority blob unchanged at 735617ff4adea0479010eb122dc38ea505bf2a56.",
+      "C-02 Base test manifest blob unchanged at e5575a1462a4100750ac03d4d39af9bb88aee2ed.",
+      "C-03 This amendment authority is valid JSON.",
+      "C-04 The companion manifest amendment validates against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json.",
+      "C-05 Negative schema control: a copy of the companion manifest amendment carrying one illegal root key FAILS schema validation, proving the validator is actually enforcing additionalProperties=false rather than accepting anything.",
+      "C-06 Neither new file contains a duplicate JSON key, checked by a tokenizer that inspects keys BEFORE JSON.parse collapses a duplicate to its last occurrence.",
+      "C-07 The set of control ids introduced by the companion manifest amendment intersects the base manifest's control ids in the EMPTY SET.",
+      "C-08 The top-level Real-PG family model PG-01..PG-22 is still complete: 22 families, no gap, no duplicate, no renumbering.",
+      "C-09 REAL_PG_CONTROL_COUNT remains 22.",
+      "C-10 The companion manifest amendment carries protected_authority=null and protected_surfaces=[] , consistent with SECTION_A9.",
+      "C-11 The exact write set of this mission is TWO ADDITIONS and ZERO MODIFICATIONS."
+    ]
+  },
+
+  "SECTION_A11_WRITE_SET": {
+    "additions": [
+      "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json",
+      "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_AMENDMENT_v1.0.1.json"
+    ],
+    "modifications": [],
+    "deletions": [],
+    "binding": "No existing file may be modified by this mission. A diff containing any modification is out of contract regardless of gate results."
+  },
+
+  "RISKS_AND_OPEN_FINDINGS": [
+    {
+      "id": "R-PG17-01",
+      "severity": "BLOCKING_FOR_PG17B_CERTIFICATION",
+      "finding": "auth.uid() reachability for uellix_app on a governed substrate is UNDISCHARGED. No governed unit grants USAGE ON SCHEMA auth to uellix_writer, uellix_app or uellix_auditor, no inheritance path supplies it, and the only place the reach exists is the ad-hoc harness grant at tests/postgres/legal-acceptance-fixtures.ts:89-91 which parent SECTION_13 declares inadmissible for a governed proof.",
+      "disposition": "Frozen as falsifiable precondition PRE-PG17B-AUTHUID (SECTION_A6). PG-17B MUST NOT be reported PASS until it is discharged by a live probe on the implementing base.",
+      "escalation_if_it_fails": "STOP and escalate for a SECTION_5 authority successor. Do not self-authorize the grant and do not import the harness grant into the governed substrate."
+    },
+    {
+      "id": "R-PG17-02",
+      "severity": "OPEN_NOT_REPAIRED_BY_THIS_ACT",
+      "finding": "The parent SECTION_5 claim 'table grants + EXECUTE on the three helpers yield 18 positive operations OK' is labelled OPENING_MEASURED, but parent OPENING_CONSUMED describes an opening that measured the PRE-apply substrate, and no file under docs/ops/staging/evidence/ records a post-apply probe or mentions schema auth. The claim's provenance is therefore weaker than its label suggests.",
+      "disposition": "Recorded, not re-adjudicated. This amendment does not edit the parent and does not have the live substrate needed to settle it. The certifier should treat the parent's 18-positive figure as requiring re-measurement rather than as an established fact."
+    },
+    {
+      "id": "R-PG17-03",
+      "severity": "OPEN_OUT_OF_SCOPE",
+      "finding": "Family PG-06 (INSERT/UPDATE/SELECT positive operations) depends on INSERT policies that also call auth.uid() DIRECTLY in WITH CHECK -- for example db/migrations/0045:80 and db/migrations/0072:116 -- so PRE-PG17B-AUTHUID may bear on PG-06 as well.",
+      "disposition": "Deliberately NOT repaired here (SECTION_A8 NO_OPPORTUNISTIC_REPAIR). Recorded so the PG-06 lane does not rediscover it as a surprise."
+    },
+    {
+      "id": "R-PG17-04",
+      "severity": "INFORMATIONAL",
+      "finding": "The base manifest sentinel SENTINEL_SIBLING_ORG_ROW is defined as 'planted in ORG_B on each of the 18 readable tables', which inherits the same impossibility as the defective PG-17 clause for the four PLATFORM_GLOBAL relations and for account_legal_acceptances.",
+      "disposition": "The base manifest is NOT edited. The companion manifest amendment introduces SENTINEL_SIBLING_SUBJECT_ROW with a discriminator-correct population, which supersedes the base sentinel for the amended PG-17 arms only. The base sentinel remains as written in its own frozen artifact."
+    },
+    {
+      "id": "R-PG17-05",
+      "severity": "INFORMATIONAL",
+      "finding": "financial_proxy_versions is the single relation belonging to BOTH PG-17A and PG-17B. A fixture that satisfied both arms with the same row would make one of the two arms vacuous.",
+      "disposition": "Prohibited explicitly: SECTION_A4 FINANCIAL_PROXY_VERSIONS_FIXTURE_CONSTRAINT pins PG-17A's fixtures to organization_id IS NOT NULL, and SECTION_A5 confines PG-17B to the organization_id IS NULL AND review_status='approved' row class. M-PG17-06 falsifies the PG-17B side."
+    },
+    {
+      "id": "R-PG17-06",
+      "severity": "INFORMATIONAL",
+      "finding": "A re-derivation of this census using an identifier pattern that assumes BARE table names returns ZERO relations, because the Drizzle-generated migrations double-quote every identifier. That empty result is a vacuous negative and is indistinguishable from 'the relations do not exist' unless the sweep is instrumented.",
+      "disposition": "Recorded in SECTION_A2 derivation_hazard_encountered_and_corrected so an independent certifier does not reproduce the false negative and conclude the census is wrong."
+    }
+  ],
+
+  "final_state": {
+    "RESULT": "PG17_ROW_VISIBILITY_AUTHORITY_AMENDMENT_MATERIALIZED",
+    "IMPLEMENTATION_PERFORMED": "NONE",
+    "BLOCKING": 1,
+    "BLOCKING_DETAIL": "R-PG17-01 / PRE-PG17B-AUTHUID is BLOCKING for PG-17B certification and is preserved explicitly rather than concealed.",
+    "UNKNOWN": 1,
+    "UNKNOWN_DETAIL": "R-PG17-02: the provenance of the parent's post-apply 18-positive claim is UNKNOWN and is not re-adjudicated here.",
+    "what_is_frozen": "The defect adjudication D-1/D-2/D-3; the re-derived 13/1/4 discriminator partition of the 18 readable relations; the superseding contract PG-17 = PG-17A AND PG-17B with PG-17A covering 14 relations by their actual discriminator and PG-17B covering 4 platform-global relations plus the approved global row class of financial_proxy_versions; the six-mutation falsification contract; and the falsifiable auth.uid() reachability precondition."
+  },
+
+  "next_gate": "CURRENT_SCHEMA_RUNTIME_ACL_PG17_AUTHORITY_AMENDMENT_INDEPENDENT_CERTIFICATION"
+}
