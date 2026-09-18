@@ -49,6 +49,7 @@ import {
   DECISION_OUTCOMES,
   type Criterion,
   type DecisionBand,
+  type DecisionOutcome,
   type DecisionPolicy,
   type PolicyValidationResult,
   type PolicyViolation,
@@ -425,6 +426,24 @@ export type PersistedShapeViolationCode =
   | 'MISSING_DECLARED_FIELD'
   | 'WRONG_DECLARED_TYPE'
   | 'NOT_AN_ARRAY'
+  /**
+   * A declared array carries no OWN element at an index inside [0, length).
+   *
+   * A hole is not a stored value. `forEach` and `map` SKIP one, so a sparse
+   * array walked by either was validated at the indices that exist and then
+   * serialized with `join`, which renders the hole as the empty string — a
+   * payload that no OBJ-2 row can hold, wearing an authoritative digest.
+   */
+  | 'SPARSE_ARRAY'
+  /**
+   * Reading a declared field threw.
+   *
+   * Classified rather than propagated: a value whose declared property cannot
+   * even be read once is not a storable row, and the caller of a hashing
+   * boundary must learn that from the Evaluate refusal that names the FIELD,
+   * not from whatever an accessor happened to raise.
+   */
+  | 'UNREADABLE_DECLARED_FIELD'
 
 export type PersistedShapeViolation = {
   readonly code: PersistedShapeViolationCode
@@ -463,23 +482,108 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function checkString(
+/**
+ * ===========================================================================
+ * VALIDATION AND PROJECTION READ THE SAME FIELD ONCE, NOT TWICE
+ * ===========================================================================
+ * The functions below do not merely CHECK a payload, they MATERIALIZE it. Each
+ * one reads every declared property exactly once, into a plain local, and
+ * returns a fresh plain object built from those locals. The hashing boundary
+ * then consumes ONLY that snapshot.
+ *
+ * The defect this closes: validation used to read `value.version` and the
+ * projection used to read `value.version` AGAIN, from the same object. For a
+ * plain row those two reads agree. For an accessor-backed one they need not.
+ * Measured at this base before the change, a definition whose `version` getter
+ * returned '1.0.0' on its first read and '9.9.9' on its second was VALIDATED as
+ * '1.0.0' and HASHED as 423f195f74fe3c69… — byte-identical to the authoritative
+ * digest of an honest '9.9.9' row. The digest certified a value no check ever
+ * saw. The same route ran through every nested level: Criterion, DecisionPolicy
+ * and DecisionBand each had an independent second read.
+ *
+ * Accessor-backed input is still ACCEPTED — a store, an ORM or a proxy may
+ * legitimately present a row through getters, and rejecting those would refuse
+ * storable rows. What is foreclosed is the SECOND read: after materialization
+ * there is no live accessor left inside the authoritative payload to consult.
+ *
+ * Presence is tested with `in`, which is a HasProperty operation and cannot
+ * invoke an accessor, so it costs no read of the VALUE. `undefined` is the
+ * failure sentinel throughout, which is sound because no declared Evaluate
+ * field is typed `undefined`: a declared field is a string, a finite number, a
+ * boolean, `string | null`, an array or a nested object. An absent field is
+ * reported as absent; it never arrives as a present empty one.
+ */
+
+/** One declared read, or the reason there is no value to carry forward. */
+type DeclaredRead = { readonly read: true; readonly value: unknown } | { readonly read: false }
+
+function describeThrown(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : `a non-Error ${typeof error}`
+}
+
+/**
+ * THE ONE PLACE A THROW FROM READING A PAYLOAD IS CLASSIFIED.
+ *
+ * `read()` touches caller-supplied data — an accessor, a Proxy trap — so it can
+ * raise anything. Letting that escape would surface a raw TypeError from the
+ * hashing boundary, which is exactly the leak the error contract forbids.
+ * Classifying it as a persisted-shape violation is not swallowing: the failure
+ * is reported, with the field path, through the refusal callers already handle,
+ * and nothing downstream proceeds on a value that was never obtained.
+ *
+ * Errors raised by this package's OWN logic never pass through here — this
+ * wraps a single property access and nothing else.
+ */
+function readOnce(
+  read: () => unknown,
+  path: string,
+  out: PersistedShapeViolation[]
+): DeclaredRead {
+  try {
+    return { read: true, value: read() }
+  } catch (error) {
+    out.push({
+      code: 'UNREADABLE_DECLARED_FIELD',
+      path,
+      message: `reading the declared field threw ${describeThrown(error)}`,
+    })
+    return { read: false }
+  }
+}
+
+/** Presence, then EXACTLY ONE read of the value. */
+function readDeclaredField(
   record: Record<string, unknown>,
   key: string,
   path: string,
   out: PersistedShapeViolation[]
-): void {
-  if (!(key in record)) {
+): DeclaredRead {
+  const present = readOnce(() => key in record, path, out)
+  if (!present.read) return { read: false }
+  if (present.value !== true) {
     out.push({ code: 'MISSING_DECLARED_FIELD', path, message: 'declared field is absent' })
-    return
+    return { read: false }
   }
-  if (typeof record[key] !== 'string') {
+  return readOnce(() => record[key], path, out)
+}
+
+function snapshotString(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  out: PersistedShapeViolation[]
+): string | undefined {
+  const read = readDeclaredField(record, key, path, out)
+  if (!read.read) return undefined
+  if (typeof read.value !== 'string') {
     out.push({
       code: 'WRONG_DECLARED_TYPE',
       path,
-      message: `declared string, received ${typeof record[key]}`,
+      message: `declared string, received ${typeof read.value}`,
     })
+    return undefined
   }
+  return read.value
 }
 
 /**
@@ -489,121 +593,209 @@ function checkString(
  * no canonical form, so admitting one here would only move the same refusal to
  * a less informative throw further in.
  */
-function checkFiniteNumber(
+function snapshotFiniteNumber(
   record: Record<string, unknown>,
   key: string,
   path: string,
   out: PersistedShapeViolation[]
-): void {
-  if (!(key in record)) {
-    out.push({ code: 'MISSING_DECLARED_FIELD', path, message: 'declared field is absent' })
-    return
-  }
-  const value = record[key]
-  if (typeof value !== 'number') {
+): number | undefined {
+  const read = readDeclaredField(record, key, path, out)
+  if (!read.read) return undefined
+  if (typeof read.value !== 'number') {
     out.push({
       code: 'WRONG_DECLARED_TYPE',
       path,
-      message: `declared number, received ${typeof value}`,
+      message: `declared number, received ${typeof read.value}`,
     })
-    return
+    return undefined
   }
-  if (!Number.isFinite(value)) {
+  if (!Number.isFinite(read.value)) {
     out.push({ code: 'WRONG_DECLARED_TYPE', path, message: 'number has no canonical form' })
+    return undefined
   }
+  return read.value
 }
 
-function collectBandViolations(
+function snapshotBoolean(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  out: PersistedShapeViolation[]
+): boolean | undefined {
+  const read = readDeclaredField(record, key, path, out)
+  if (!read.read) return undefined
+  if (typeof read.value !== 'boolean') {
+    out.push({
+      code: 'WRONG_DECLARED_TYPE',
+      path,
+      message: `declared boolean, received ${typeof read.value}`,
+    })
+    return undefined
+  }
+  return read.value
+}
+
+/**
+ * Materialize a declared array, index by index, rejecting every HOLE.
+ *
+ * `forEach`/`map` are deliberately not used, and neither is `Object.keys`.
+ * Both of the first two SKIP a hole rather than report it, which is how a
+ * sparse array reached an authoritative digest: the elements that existed were
+ * validated, the hole survived `map`, and `join` rendered it as the empty
+ * string. `Object.keys(...).length === length` would be a heuristic, not a
+ * predicate — it is satisfied by a same-sized set of the WRONG keys.
+ *
+ * The predicate is OWN-INDEX: `Object.prototype.hasOwnProperty.call(value, i)`.
+ * `i in value` would be the wrong one, because HasProperty walks the prototype
+ * chain, so a numeric property planted on an array's prototype would FILL the
+ * hole and let the payload through carrying a value the stored row does not
+ * have. Measured at this base before the change, exactly that produced the
+ * authoritative digest a082bd9f49238f6c….
+ *
+ * STORED ORDER is preserved: this walks 0..length-1 and never sorts.
+ */
+function snapshotDeclaredArray<T>(
+  value: unknown,
+  path: string,
+  declaredElement: string,
+  snapshotItem: (item: unknown, itemPath: string, out: PersistedShapeViolation[]) => T | undefined,
+  out: PersistedShapeViolation[]
+): readonly T[] | undefined {
+  if (!Array.isArray(value)) {
+    out.push({
+      code: 'NOT_AN_ARRAY',
+      path,
+      message: `declared an array of ${declaredElement}, received ${typeof value}`,
+    })
+    return undefined
+  }
+  const length = value.length
+  const items: T[] = []
+  let intact = true
+  for (let i = 0; i < length; i += 1) {
+    const itemPath = `${path}[${i}]`
+    if (!Object.prototype.hasOwnProperty.call(value, i)) {
+      out.push({
+        code: 'SPARSE_ARRAY',
+        path: itemPath,
+        message: `declared array of length ${length} has no own element at this index; a hole is not a stored value`,
+      })
+      intact = false
+      continue
+    }
+    const element = readOnce(() => (value as readonly unknown[])[i], itemPath, out)
+    if (!element.read) {
+      intact = false
+      continue
+    }
+    const item = snapshotItem(element.value, itemPath, out)
+    if (item === undefined) intact = false
+    else items.push(item)
+  }
+  return intact ? items : undefined
+}
+
+function snapshotBand(
   value: unknown,
   path: string,
   out: PersistedShapeViolation[]
-): void {
+): DecisionBand | undefined {
   if (!isPlainRecord(value)) {
     out.push({
       code: 'NOT_AN_OBJECT',
       path,
       message: 'declared DecisionBand, received a non-object',
     })
-    return
+    return undefined
   }
   // `outcome` is declared DecisionOutcome, a CLOSED set of three (HD-04) — so
   // membership IS the declared type here, not an invented business rule.
-  if (!('outcome' in value)) {
-    out.push({
-      code: 'MISSING_DECLARED_FIELD',
-      path: `${path}.outcome`,
-      message: 'declared field is absent',
-    })
-  } else if (!DECISION_OUTCOMES.includes(value.outcome as never)) {
-    out.push({
-      code: 'WRONG_DECLARED_TYPE',
-      path: `${path}.outcome`,
-      message: 'not one of the three DECISION_OUTCOMES',
-    })
-  }
-  checkFiniteNumber(value, 'lower_bound', `${path}.lower_bound`, out)
-  checkFiniteNumber(value, 'upper_bound', `${path}.upper_bound`, out)
-  for (const key of ['lower_bound_inclusive', 'upper_bound_inclusive'] as const) {
-    if (!(key in value)) {
-      out.push({
-        code: 'MISSING_DECLARED_FIELD',
-        path: `${path}.${key}`,
-        message: 'declared field is absent',
-      })
-    } else if (typeof value[key] !== 'boolean') {
+  const outcomeRead = readDeclaredField(value, 'outcome', `${path}.outcome`, out)
+  let outcome: DecisionOutcome | undefined
+  if (outcomeRead.read) {
+    if (DECISION_OUTCOMES.includes(outcomeRead.value as never)) {
+      outcome = outcomeRead.value as DecisionOutcome
+    } else {
       out.push({
         code: 'WRONG_DECLARED_TYPE',
-        path: `${path}.${key}`,
-        message: `declared boolean, received ${typeof value[key]}`,
+        path: `${path}.outcome`,
+        message: 'not one of the three DECISION_OUTCOMES',
       })
     }
   }
+  const lowerBound = snapshotFiniteNumber(value, 'lower_bound', `${path}.lower_bound`, out)
+  const upperBound = snapshotFiniteNumber(value, 'upper_bound', `${path}.upper_bound`, out)
+  const lowerInclusive = snapshotBoolean(
+    value,
+    'lower_bound_inclusive',
+    `${path}.lower_bound_inclusive`,
+    out
+  )
+  const upperInclusive = snapshotBoolean(
+    value,
+    'upper_bound_inclusive',
+    `${path}.upper_bound_inclusive`,
+    out
+  )
+  if (
+    outcome === undefined ||
+    lowerBound === undefined ||
+    upperBound === undefined ||
+    lowerInclusive === undefined ||
+    upperInclusive === undefined
+  ) {
+    return undefined
+  }
+  return {
+    outcome,
+    lower_bound: lowerBound,
+    lower_bound_inclusive: lowerInclusive,
+    upper_bound: upperBound,
+    upper_bound_inclusive: upperInclusive,
+  }
 }
 
-function collectPolicyViolations(
+function snapshotPolicy(
   value: unknown,
   path: string,
   out: PersistedShapeViolation[]
-): void {
+): DecisionPolicy | undefined {
   if (!isPlainRecord(value)) {
     out.push({
       code: 'NOT_AN_OBJECT',
       path,
       message: 'declared DecisionPolicy, received a non-object',
     })
-    return
+    return undefined
   }
-  if (!('bands' in value)) {
-    out.push({
-      code: 'MISSING_DECLARED_FIELD',
-      path: `${path}.bands`,
-      message: 'declared field is absent',
-    })
-    return
-  }
-  if (!Array.isArray(value.bands)) {
-    out.push({
-      code: 'NOT_AN_ARRAY',
-      path: `${path}.bands`,
-      message: `declared an array of DecisionBand, received ${typeof value.bands}`,
-    })
-    return
-  }
-  value.bands.forEach((band, i) => collectBandViolations(band, `${path}.bands[${i}]`, out))
+  const bandsRead = readDeclaredField(value, 'bands', `${path}.bands`, out)
+  if (!bandsRead.read) return undefined
+  const bands = snapshotDeclaredArray(
+    bandsRead.value,
+    `${path}.bands`,
+    'DecisionBand',
+    snapshotBand,
+    out
+  )
+  return bands === undefined ? undefined : { bands }
 }
 
-function collectCriterionViolations(
+function snapshotCriterion(
   value: unknown,
   path: string,
   out: PersistedShapeViolation[]
-): void {
+): Criterion | undefined {
   if (!isPlainRecord(value)) {
     out.push({ code: 'NOT_AN_OBJECT', path, message: 'declared Criterion, received a non-object' })
-    return
+    return undefined
   }
-  checkString(value, 'criterion_key', `${path}.criterion_key`, out)
-  checkFiniteNumber(value, 'weight', `${path}.weight`, out)
-  checkFiniteNumber(value, 'max_score', `${path}.max_score`, out)
+  const criterionKey = snapshotString(value, 'criterion_key', `${path}.criterion_key`, out)
+  const weight = snapshotFiniteNumber(value, 'weight', `${path}.weight`, out)
+  const maxScore = snapshotFiniteNumber(value, 'max_score', `${path}.max_score`, out)
+  if (criterionKey === undefined || weight === undefined || maxScore === undefined) {
+    return undefined
+  }
+  return { criterion_key: criterionKey, weight, max_score: maxScore }
 }
 
 /**
@@ -618,9 +810,9 @@ export function validateDecisionPolicyShape(
   value: unknown
 ): PersistedShapeValidationResult<DecisionPolicy> {
   const violations: PersistedShapeViolation[] = []
-  collectPolicyViolations(value, 'decision_policy_json', violations)
-  return violations.length === 0
-    ? { valid: true, value: value as DecisionPolicy }
+  const snapshot = snapshotPolicy(value, 'decision_policy_json', violations)
+  return snapshot !== undefined && violations.length === 0
+    ? { valid: true, value: snapshot }
     : { valid: false, violations }
 }
 
@@ -647,63 +839,97 @@ export function validateTemplateVersionDefinition(
       ],
     }
   }
-  for (const key of [
-    'organization_id',
-    'template_id',
-    'version',
-    'created_by',
-    'created_by_role',
-    'created_at',
-  ] as const) {
-    checkString(value, key, key, violations)
+  // Written out one field at a time, in OBJ-2's declared order, for the same
+  // reason the projections below are exhaustive literals rather than spreads: a
+  // loop over a key list is a SECOND hand-maintained enumeration of the
+  // declared shape, and a second list is what falls out of step.
+  const organizationId = snapshotString(value, 'organization_id', 'organization_id', violations)
+  const templateId = snapshotString(value, 'template_id', 'template_id', violations)
+  const version = snapshotString(value, 'version', 'version', violations)
+  const ordinal = snapshotFiniteNumber(value, 'ordinal', 'ordinal', violations)
+
+  const criteriaRead = readDeclaredField(value, 'criteria_json', 'criteria_json', violations)
+  const criteria = criteriaRead.read
+    ? snapshotDeclaredArray(
+        criteriaRead.value,
+        'criteria_json',
+        'Criterion',
+        snapshotCriterion,
+        violations
+      )
+    : undefined
+
+  const policyRead = readDeclaredField(
+    value,
+    'decision_policy_json',
+    'decision_policy_json',
+    violations
+  )
+  const policy = policyRead.read
+    ? snapshotPolicy(policyRead.value, 'decision_policy_json', violations)
+    : undefined
+
+  // supersedes_version_id is declared `string | null`; NULLABLE in OBJ-2. `null`
+  // is a legitimate declared value here, so it cannot double as the failure
+  // sentinel — `read` carries the distinction instead.
+  const supersedesRead = readDeclaredField(
+    value,
+    'supersedes_version_id',
+    'supersedes_version_id',
+    violations
+  )
+  let supersedes: string | null | undefined
+  if (supersedesRead.read) {
+    if (supersedesRead.value === null || typeof supersedesRead.value === 'string') {
+      supersedes = supersedesRead.value
+    } else {
+      violations.push({
+        code: 'WRONG_DECLARED_TYPE',
+        path: 'supersedes_version_id',
+        message: `declared string | null, received ${typeof supersedesRead.value}`,
+      })
+    }
   }
-  checkFiniteNumber(value, 'ordinal', 'ordinal', violations)
-  // supersedes_version_id is declared `string | null`; NULLABLE in OBJ-2.
-  if (!('supersedes_version_id' in value)) {
-    violations.push({
-      code: 'MISSING_DECLARED_FIELD',
-      path: 'supersedes_version_id',
-      message: 'declared field is absent',
-    })
-  } else if (
-    value.supersedes_version_id !== null &&
-    typeof value.supersedes_version_id !== 'string'
+
+  const createdBy = snapshotString(value, 'created_by', 'created_by', violations)
+  const createdByRole = snapshotString(value, 'created_by_role', 'created_by_role', violations)
+  const createdAt = snapshotString(value, 'created_at', 'created_at', violations)
+
+  // The two conditions coincide by construction — every path that reports a
+  // violation also withholds its field — and both are checked because they are
+  // DIFFERENT claims: "nothing was reported wrong", and "every declared field
+  // was actually obtained". The second is also what narrows the locals below
+  // from `T | undefined` to `T`, so the snapshot literal needs no assertion.
+  if (
+    violations.length > 0 ||
+    organizationId === undefined ||
+    templateId === undefined ||
+    version === undefined ||
+    createdBy === undefined ||
+    createdByRole === undefined ||
+    createdAt === undefined ||
+    ordinal === undefined ||
+    supersedes === undefined ||
+    criteria === undefined ||
+    policy === undefined
   ) {
-    violations.push({
-      code: 'WRONG_DECLARED_TYPE',
-      path: 'supersedes_version_id',
-      message: `declared string | null, received ${typeof value.supersedes_version_id}`,
-    })
+    return { valid: false, violations }
   }
-  if (!('criteria_json' in value)) {
-    violations.push({
-      code: 'MISSING_DECLARED_FIELD',
-      path: 'criteria_json',
-      message: 'declared field is absent',
-    })
-  } else if (!Array.isArray(value.criteria_json)) {
-    violations.push({
-      code: 'NOT_AN_ARRAY',
-      path: 'criteria_json',
-      message: `declared an array of Criterion, received ${typeof value.criteria_json}`,
-    })
-  } else {
-    value.criteria_json.forEach((criterion, i) =>
-      collectCriterionViolations(criterion, `criteria_json[${i}]`, violations)
-    )
+  return {
+    valid: true,
+    value: {
+      organization_id: organizationId,
+      template_id: templateId,
+      version,
+      ordinal,
+      criteria_json: criteria,
+      decision_policy_json: policy,
+      supersedes_version_id: supersedes,
+      created_by: createdBy,
+      created_by_role: createdByRole,
+      created_at: createdAt,
+    },
   }
-  if (!('decision_policy_json' in value)) {
-    violations.push({
-      code: 'MISSING_DECLARED_FIELD',
-      path: 'decision_policy_json',
-      message: 'declared field is absent',
-    })
-  } else {
-    collectPolicyViolations(value.decision_policy_json, 'decision_policy_json', violations)
-  }
-  return violations.length === 0
-    ? { valid: true, value: value as TemplateVersionDefinition }
-    : { valid: false, violations }
 }
 
 /**

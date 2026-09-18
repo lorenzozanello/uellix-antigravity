@@ -354,3 +354,379 @@ describe('C — exactly ONE authoritative persisted/hashed row shape', () => {
     expect(body.match(/throw new EvaluatePersistedShapeError/g)).toHaveLength(2)
   })
 })
+
+/**
+ * ===========================================================================
+ * D — A HOLE IN A DECLARED ARRAY IS NOT A STORED VALUE
+ * ===========================================================================
+ * The A-1 defect the independent preaudit of this lane found. `forEach` and
+ * `map` SKIP a hole rather than visit it, so a sparse array was validated at
+ * the indices that happened to exist, survived the projection with its hole
+ * intact, and was serialized by `join` — which renders a hole as the empty
+ * string. Every measured digest below was produced at
+ * ef61e5a387484e576fd81fcb150896f4c3855c29 and is a well-formed 64-hex value
+ * indistinguishable from an authoritative one.
+ */
+describe('D — a HOLE in a declared array receives no authoritative hash', () => {
+  /**
+   * A genuine hole at `index`, built by assignment past a gap.
+   *
+   * Never `delete arr[i]`, and never a mutation of the global Array prototype:
+   * a control that pollutes a shared prototype leaks into every later test in
+   * the process, and a leak is how a suite starts proving the wrong thing.
+   */
+  function withHole<T>(items: readonly T[], index: number): T[] {
+    const sparse: T[] = []
+    items.forEach((item, i) => {
+      if (i !== index) sparse[i] = item
+    })
+    sparse.length = items.length
+    return sparse
+  }
+
+  const CRITERIA: readonly Criterion[] = [
+    { criterion_key: 'governance', weight: 1, max_score: 10 },
+    { criterion_key: 'impact', weight: 2, max_score: 10 },
+    { criterion_key: 'evidence', weight: 3, max_score: 10 },
+  ]
+
+  it('D-0: the DENSE forms of every payload below DO hash, so nothing here is vacuous', () => {
+    // The positive half. Without it, every refusal in this block could be
+    // satisfied by a validator that rejects multi-element arrays outright.
+    expect(computeDefinitionHash({ ...VALID, criteria_json: CRITERIA })).toMatch(/^[0-9a-f]{64}$/)
+    expect(computeDecisionPolicyHash(POLICY)).toMatch(/^[0-9a-f]{64}$/)
+    expect(withHole(CRITERIA, 1)).toHaveLength(3)
+    expect(Object.prototype.hasOwnProperty.call(withHole(CRITERIA, 1), 1)).toBe(false)
+  })
+
+  it('D-1: refuses a criteria_json with a HOLE, naming the index', () => {
+    // Measured before: 6b83977562d35bc7… for a two-element criteria_json holed
+    // at index 1 — hashed as authoritative.
+    expect(
+      violationsOf(() =>
+        computeDefinitionHash({
+          ...VALID,
+          criteria_json: withHole(CRITERIA, 1),
+        } as TemplateVersionDefinition)
+      )
+    ).toEqual(['SPARSE_ARRAY@criteria_json[1]'])
+  })
+
+  it('D-2: refuses a decision policy whose BANDS array has a hole', () => {
+    // Measured before: f109e34561b6ceb5….
+    expect(
+      violationsOf(() =>
+        computeDecisionPolicyHash({ bands: withHole(POLICY.bands, 1) } as DecisionPolicy)
+      )
+    ).toEqual(['SPARSE_ARRAY@decision_policy_json.bands[1]'])
+  })
+
+  it('D-3: refuses the same hole NESTED inside a definition, not only at the top level', () => {
+    // criteria_json is depth 1; decision_policy_json.bands is depth 2. A guard
+    // applied only where the walk starts would pass D-1 and still let this one
+    // reach a digest.
+    expect(
+      violationsOf(() =>
+        computeDefinitionHash({
+          ...VALID,
+          decision_policy_json: { bands: withHole(POLICY.bands, 0) },
+        } as TemplateVersionDefinition)
+      )
+    ).toEqual(['SPARSE_ARRAY@decision_policy_json.bands[0]'])
+  })
+
+  it('D-4: a TRAILING hole is a hole too', () => {
+    // `length` past the last own index. Nothing iterates it, so a predicate
+    // written as "every element I visited was well formed" never sees it.
+    const trailing = CRITERIA.slice()
+    trailing.length = 4
+    expect(
+      violationsOf(() =>
+        computeDefinitionHash({ ...VALID, criteria_json: trailing } as TemplateVersionDefinition)
+      )
+    ).toEqual(['SPARSE_ARRAY@criteria_json[3]'])
+  })
+
+  it('D-5: a PROTOTYPE-INHERITED numeric property does not fill the hole', () => {
+    // The own-index predicate is load-bearing and `i in array` is the wrong
+    // one: HasProperty walks the prototype chain, so a numeric property planted
+    // on the array's own prototype makes the hole LOOK occupied while the
+    // stored row still has nothing there.
+    //
+    // Measured before: a082bd9f49238f6c… — byte-identical to the authoritative
+    // digest of the honest two-band policy, so the planted value was not merely
+    // admitted, it was CERTIFIED as the stored one.
+    const holed = withHole(POLICY.bands, 1)
+    const planted = Object.create(Array.prototype) as Record<number, DecisionBand>
+    planted[1] = POLICY.bands[1]
+    Object.setPrototypeOf(holed, planted)
+
+    // The premise of the control, asserted rather than assumed: this array is
+    // still an array, index 1 answers `in`, and index 1 is still not OWN.
+    expect(Array.isArray(holed)).toBe(true)
+    expect(1 in holed).toBe(true)
+    expect(Object.prototype.hasOwnProperty.call(holed, 1)).toBe(false)
+
+    expect(violationsOf(() => computeDecisionPolicyHash({ bands: holed } as DecisionPolicy))).toEqual(
+      ['SPARSE_ARRAY@decision_policy_json.bands[1]']
+    )
+  })
+
+  it('D-6: reports EVERY hole, and reports holes alongside ordinary violations', () => {
+    const holed: Criterion[] = []
+    holed[1] = { criterion_key: 'impact', weight: '2' as unknown as number, max_score: 10 }
+    holed.length = 3
+    expect(
+      violationsOf(() =>
+        computeDefinitionHash({ ...VALID, criteria_json: holed } as TemplateVersionDefinition)
+      )
+    ).toEqual([
+      'SPARSE_ARRAY@criteria_json[0]',
+      'WRONG_DECLARED_TYPE@criteria_json[1].weight',
+      'SPARSE_ARRAY@criteria_json[2]',
+    ])
+  })
+})
+
+/**
+ * ===========================================================================
+ * E — WHAT IS VALIDATED IS EXACTLY WHAT IS HASHED
+ * ===========================================================================
+ * The A-2 defect. Validation and the hash projection used to read the same
+ * declared property INDEPENDENTLY, from the same object. For a plain row the
+ * two reads agree; for an accessor-backed one they need not, and the digest
+ * then certifies a value no check ever saw.
+ *
+ * Accessor-backed input stays ACCEPTED — a store, an ORM or a proxy may
+ * legitimately present a row through getters, and refusing those would refuse
+ * storable rows. What is foreclosed is the SECOND read.
+ */
+describe('E — a validated value is the value that gets hashed', () => {
+  /** A property that answers `first` once and `then` on every later read. */
+  function divergent<T extends object>(
+    base: T,
+    key: string,
+    first: unknown,
+    then: unknown
+  ): { readonly object: T; reads: () => number } {
+    let reads = 0
+    const object = { ...base } as Record<string, unknown>
+    Object.defineProperty(object, key, {
+      enumerable: true,
+      configurable: true,
+      get() {
+        reads += 1
+        return reads === 1 ? first : then
+      },
+    })
+    return { object: object as T, reads: () => reads }
+  }
+
+  it('E-0: an honestly accessor-backed row is still ACCEPTED and hashes as its plain twin', () => {
+    // The positive half: the remediation must not turn "reached us through
+    // getters" into "unstorable". Without this, every control below could be
+    // satisfied by refusing accessors outright.
+    const stable = divergent(VALID, 'version', '1.0.0', '1.0.0')
+    expect(computeDefinitionHash(stable.object)).toBe(computeDefinitionHash(VALID))
+  })
+
+  it('E-1: a DIVERGENT top-level field hashes its FIRST read, and is read only once', () => {
+    // Measured before: this hashed 423f195f74fe3c69… — byte-identical to the
+    // authoritative digest of an honest '9.9.9' row, while validation had
+    // approved '1.0.0'.
+    const evil = divergent(VALID, 'version', '1.0.0', '9.9.9')
+    const digest = computeDefinitionHash(evil.object)
+
+    expect(digest).toBe(computeDefinitionHash(VALID))
+    expect(digest).not.toBe(computeDefinitionHash({ ...VALID, version: '9.9.9' }))
+    expect(evil.reads()).toBe(1)
+  })
+
+  it('E-2: a DIVERGENT nested Criterion field hashes its FIRST read', () => {
+    const evil = divergent(VALID.criteria_json[0], 'weight', 1, 99)
+    const digest = computeDefinitionHash({ ...VALID, criteria_json: [evil.object] })
+
+    expect(digest).toBe(computeDefinitionHash(VALID))
+    expect(digest).not.toBe(
+      computeDefinitionHash({
+        ...VALID,
+        criteria_json: [{ criterion_key: 'governance', weight: 99, max_score: 10 }],
+      })
+    )
+    expect(evil.reads()).toBe(1)
+  })
+
+  it('E-3: a DIVERGENT nested DecisionBand bound hashes its FIRST read', () => {
+    // The deepest declared level: definition -> decision_policy_json -> bands[i]
+    // -> upper_bound. A snapshot taken only at the top would leave this live.
+    const evil = divergent(POLICY.bands[0], 'upper_bound', 0.5, 0.75)
+    const policy = { bands: [evil.object, POLICY.bands[1]] }
+
+    expect(computeDecisionPolicyHash(policy)).toBe(computeDecisionPolicyHash(POLICY))
+    expect(evil.reads()).toBe(1)
+
+    const nestedEvil = divergent(POLICY.bands[0], 'upper_bound', 0.5, 0.75)
+    expect(
+      computeDefinitionHash({
+        ...VALID,
+        decision_policy_json: { bands: [nestedEvil.object, POLICY.bands[1]] },
+      })
+    ).toBe(computeDefinitionHash(VALID))
+    expect(nestedEvil.reads()).toBe(1)
+  })
+
+  it('E-4: the second read cannot substitute a value with NO canonical form', () => {
+    // THE ERROR CONTRACT. Measured before, this exact payload escaped as a raw
+    // `TypeError: canonicalize: non-finite numbers have no canonical form` —
+    // from a function whose documented failure mode is an Evaluate refusal
+    // naming the field. A caller catching EvaluatePersistedShapeError saw an
+    // uncaught TypeError instead.
+    const evil = divergent(VALID.criteria_json[0], 'weight', 1, Number.NaN)
+    let thrown: unknown = null
+    let digest = ''
+    try {
+      digest = computeDefinitionHash({ ...VALID, criteria_json: [evil.object] })
+    } catch (error) {
+      thrown = error
+    }
+    expect(thrown).toBeNull()
+    expect(digest).toBe(computeDefinitionHash(VALID))
+  })
+
+  it('E-5: a declared field that THROWS on read is classified, never leaked raw', () => {
+    // The other half of the contract: a throw from caller-supplied data must
+    // surface as the Evaluate persisted-shape refusal that names the FIELD, and
+    // must not be broadly swallowed — the violation is reported, with its path.
+    const hostile = { ...VALID } as Record<string, unknown>
+    Object.defineProperty(hostile, 'created_at', {
+      enumerable: true,
+      get() {
+        throw new TypeError('the store could not materialize this column')
+      },
+    })
+
+    let thrown: unknown = null
+    try {
+      computeDefinitionHash(hostile as unknown as TemplateVersionDefinition)
+    } catch (error) {
+      thrown = error
+    }
+    expect(thrown).toBeInstanceOf(EvaluatePersistedShapeError)
+    expect(thrown).not.toBeInstanceOf(TypeError)
+    expect(violationsOf(() => computeDefinitionHash(hostile as unknown as TemplateVersionDefinition)))
+      .toEqual(['UNREADABLE_DECLARED_FIELD@created_at'])
+  })
+
+  it('E-6: the accepted value is a fresh PLAIN snapshot, live at no declared depth', () => {
+    // What makes E-1..E-4 structural rather than incidental: after validation
+    // there is no original reference and no accessor left inside the
+    // authoritative payload for a later read to consult.
+    const accepted = validateTemplateVersionDefinition(VALID)
+    expect(accepted.valid).toBe(true)
+    if (!accepted.valid) throw new Error('unreachable')
+
+    // Depth 1: the definition itself. Depth 2: criteria_json[i] and
+    // decision_policy_json. Depth 3: decision_policy_json.bands[i].
+    expect(accepted.value).not.toBe(VALID)
+    expect(accepted.value.criteria_json).not.toBe(VALID.criteria_json)
+    expect(accepted.value.criteria_json[0]).not.toBe(VALID.criteria_json[0])
+    expect(accepted.value.decision_policy_json).not.toBe(VALID.decision_policy_json)
+    expect(accepted.value.decision_policy_json.bands).not.toBe(POLICY.bands)
+    expect(accepted.value.decision_policy_json.bands[0]).not.toBe(POLICY.bands[0])
+
+    // ...and every own property, at every depth, is DATA. An accessor anywhere
+    // in here would be a second read waiting to happen.
+    const accessorFreeAtEveryDepth = (value: unknown): boolean => {
+      if (value === null || typeof value !== 'object') return true
+      return Reflect.ownKeys(value).every((key) => {
+        const descriptor = Object.getOwnPropertyDescriptor(value, key)
+        if (descriptor === undefined || !('value' in descriptor)) return false
+        return accessorFreeAtEveryDepth(descriptor.value)
+      })
+    }
+    expect(accessorFreeAtEveryDepth(accepted.value)).toBe(true)
+
+    // The same for the policy entrypoint, which callers reach on its own.
+    const policySnapshot = validateDecisionPolicyShape(POLICY)
+    expect(policySnapshot.valid).toBe(true)
+    if (!policySnapshot.valid) throw new Error('unreachable')
+    expect(policySnapshot.value).not.toBe(POLICY)
+    expect(policySnapshot.value.bands[0]).not.toBe(POLICY.bands[0])
+    expect(accessorFreeAtEveryDepth(policySnapshot.value)).toBe(true)
+
+    // And the snapshot still hashes to exactly what the raw row does.
+    expect(computeDefinitionHash(accepted.value)).toBe(computeDefinitionHash(VALID))
+    expect(computeDecisionPolicyHash(policySnapshot.value)).toBe(computeDecisionPolicyHash(POLICY))
+  })
+})
+
+/**
+ * ===========================================================================
+ * F — THE UNDECLARED OBJ-2 COLUMNS MUST KEEP ROUND-TRIPPING
+ * ===========================================================================
+ * The tolerance asserted in A is not laxity and the remediation must not
+ * narrow it. These six are the conceptual columns an OBJ-2 row carries that
+ * are NOT part of definition identity: the surrogate key, the two identity
+ * digests themselves, and the three write-once publication columns. A row read
+ * back out of the store carries all six, and definition_hash must not move —
+ * definition_hash exists to prove the version did NOT move.
+ *
+ * Note the two digests in particular: definition_hash cannot be an input to
+ * definition_hash, so a validator that rejected undeclared keys would make the
+ * stored row unhashable by the very function that produced its hash.
+ */
+describe('F — the six undeclared OBJ-2 columns leave definition_hash unmoved', () => {
+  const EXTRAS = {
+    id: '6f1d2c30-0000-4000-8000-000000000001',
+    definition_hash: 'f'.repeat(64),
+    decision_policy_hash: 'e'.repeat(64),
+    published_at: '2026-09-02T09:00:00.000Z',
+    published_by: 'user-admin-1',
+    published_by_role: 'organization_admin',
+  } as const
+
+  it('F-1: each extra ALONE leaves the digest and the acceptance unchanged', () => {
+    // One at a time, so a failure names the column rather than the set.
+    for (const [key, extra] of Object.entries(EXTRAS)) {
+      const roundTripped = { ...VALID, [key]: extra } as TemplateVersionDefinition
+      expect(validateTemplateVersionDefinition(roundTripped).valid).toBe(true)
+      expect(computeDefinitionHash(roundTripped)).toBe(computeDefinitionHash(VALID))
+    }
+  })
+
+  it('F-2: all six TOGETHER, on a fully storage-shaped row, leave the digest unchanged', () => {
+    const storageShaped = { ...VALID, ...EXTRAS } as TemplateVersionDefinition
+    expect(Object.keys(storageShaped)).toHaveLength(Object.keys(VALID).length + 6)
+    expect(validateTemplateVersionDefinition(storageShaped).valid).toBe(true)
+    expect(computeDefinitionHash(storageShaped)).toBe(computeDefinitionHash(VALID))
+  })
+
+  it('F-3: the tolerance is EXCLUSION, not acceptance-into-the-digest', () => {
+    // Two storage-shaped rows whose declared content is identical but whose
+    // undeclared columns differ must share one identity. If the extras were
+    // merely tolerated and then hashed, these would diverge.
+    const rowA = { ...VALID, ...EXTRAS } as TemplateVersionDefinition
+    const rowB = {
+      ...VALID,
+      ...EXTRAS,
+      id: '6f1d2c30-0000-4000-8000-000000000002',
+      published_by: 'user-admin-2',
+    } as TemplateVersionDefinition
+    expect(computeDefinitionHash(rowA)).toBe(computeDefinitionHash(rowB))
+  })
+
+  it('F-4: no allow-list or deny-list of extras is hard-coded anywhere in the engine', () => {
+    // The exclusion is structural — a POSITIVE projection of the declared
+    // fields — so an extra nobody anticipated is excluded by construction. A
+    // named list would close this instance and leave the class open.
+    const engine = readFileSync(join(process.cwd(), 'lib', 'evaluate', 'decision-policy.ts'), 'utf8')
+    const code = engine
+      .split('\n')
+      .filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line))
+      .join('\n')
+    for (const columnName of Object.keys(EXTRAS)) {
+      expect(code).not.toContain(`'${columnName}'`)
+      expect(code).not.toContain(`"${columnName}"`)
+    }
+  })
+})
