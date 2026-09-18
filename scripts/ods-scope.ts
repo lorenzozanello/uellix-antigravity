@@ -1059,6 +1059,22 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/README.md',
     ],
   },
+  // HPO-ODS-W2-33 — registration of the grant DECLARED by
+  // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json for the future
+  // current-schema runtime ACL successor implementation node. This is a
+  // SEPARATE governed registration act, distinct from the allocation act
+  // that declared the grant: the allocation writer may never register its
+  // own grant, so that the later implementation writer can never grant
+  // itself authority. Registers exactly the row the allocation declared,
+  // byte-for-byte: authority id, branch, pattern order and pattern count.
+  {
+    authorityId: 'HPO-ODS-W2-33',
+    branch: 'codex/current-schema-runtime-acl-implementation-r1',
+    patterns: [
+      'db/prepared/stella_0021_current_schema_runtime_acl_contract.sql',
+      'db/prepared/README.md',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
