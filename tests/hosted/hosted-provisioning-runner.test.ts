@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest'
 
 import { BASELINE_ORDER, BASELINE_UNITS, verifyBaselineOrder } from '@/db/hosted/baseline-manifest'
 import { HOSTED_CHAIN, sha256OfSql } from '@/db/hosted/hosted-package-manifest'
+import { CHAIN_WRITE_ORDER } from '@/db/hosted/fresh-observation'
 import { planHostedApply } from '@/db/hosted/hosted-migrator'
 import { wrapperPathFor } from '@/db/hosted/baseline-journal-wrapper'
 import { BASELINE_POSTCONDITIONS } from '@/db/hosted/baseline-postconditions'
@@ -229,7 +230,10 @@ describe('the three phases, in sequence', () => {
     // chain is an application order, so the tail moves whenever a link is
     // added and this line is where that has to be read by a person.
     expect(result.steps.at(-1)!.id).toBe('stella_0019_storage_write_roles')
-    expect(result.sequenceComplete).toBe(true)
+    // All eleven are still REMAINING (none measured INSTALLED yet) — the plan
+    // reaches the tail package but has not applied it, so the sequence is not
+    // complete. See the prefix sweep below for every other k.
+    expect(result.sequenceComplete).toBe(false)
   })
 
   it('PHASE_STELLA_CHAIN applies the GOVERNED artefact, never the middle one', () => {
@@ -1015,6 +1019,35 @@ describe('phase sequencing', () => {
     expect(done.sequenceComplete).toBe(true)
     expect(done.steps).toEqual([])
     expect(done.nextAction).toBeNull()
+  })
+
+  it('sequenceComplete is exactly "nothing remains", for every prefix of CHAIN_WRITE_ORDER', () => {
+    // Discriminating sweep, derived from CHAIN_WRITE_ORDER rather than a
+    // transcribed package list: a terminal-package literal (e.g. hard-coding
+    // stella_0018, or any other single name) reports true for every k where
+    // that package is not yet installed, which is most of the prefixes below.
+    // The correct rule has exactly one true: k === CHAIN_WRITE_ORDER.length.
+    for (let k = 0; k <= CHAIN_WRITE_ORDER.length; k++) {
+      const installed = new Set(CHAIN_WRITE_ORDER.slice(0, k))
+      const result = plan(
+        planProvisioningPhase(
+          request({
+            phase: 'PHASE_STELLA_CHAIN',
+            state: {
+              ...BOOTSTRAPPED,
+              stellaPackagesInstalled: {
+                ...Object.fromEntries(HOSTED_CHAIN.map((n) => [n, installed.has(n)])),
+                stella_hosted_0001_managed_role_bootstrap: true,
+              },
+            },
+            target: { ...target, sentinel: { environment: 'staging', projectRef: REF } },
+          }),
+        ),
+      )
+      const remainingCount = CHAIN_WRITE_ORDER.length - k
+      expect(result.steps.length, `k=${k}`).toBe(remainingCount)
+      expect(result.sequenceComplete, `k=${k}`).toBe(remainingCount === 0)
+    }
   })
 })
 
