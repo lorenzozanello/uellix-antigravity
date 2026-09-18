@@ -1,0 +1,136 @@
+{
+  "manifest_id": "FIBDB053-RUNTIME-COMPANION",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json",
+  "dependencies": [],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "known_conditions": [],
+  "postgres_requirements": {
+    "setup_manifest": "UNKNOWN",
+    "probe_manifest": "UNKNOWN",
+    "rationale": "The catalog probe cannot be proven against a mock. Its correctness is a question about what pg_catalog.to_regprocedure returns for a specific signature grapheme, and the only falsifiable answer comes from a real PostgreSQL catalog holding first the seven-argument completion verb and then the nine-argument one. A disposable container is required to install both shapes in sequence and observe the probe inverting. Always via pnpm db:audit:disposable against a fresh throwaway container, destroyed afterwards; never staging, never production, never the canonical local Supabase stack. Both manifest paths are UNKNOWN because they are pre-implementation commitments, and because the nine-argument signature does not exist in any artifact at the base this manifest was frozen against — see the authority's finding F-RC-5."
+  },
+  "positive_controls": [
+    {
+      "id": "T1",
+      "description": "Type and exhaustiveness. The execution result type and the interaction payload carry riskLevel and riskFlags as REQUIRED-and-nullable, not optional. Every one of the six interaction categories states a position: validator, proxy_reviewer, evidence_reviewer and audit_assistant derive values; advisor and composer supply explicit nulls. Adding a seventh category without stating its risk disposition must fail to compile. Catches MUT-RC-11, which typechecks under an optional field and is therefore invisible to the compiler alone.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "T3",
+      "description": "Risk payload propagation. Both riskLevel AND riskFlags travel from the validator and reviewer results, through the governed execution result, into the interaction payload, and reach the completion call as arguments 8 and 9 in NEW_DB. Asserted per-field and not as a single object identity, so that dropping one field while keeping the other is caught. Catches MUT-RC-05.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "T4",
+      "description": "Same-transaction persistence with Stage-A. In NEW_DB the risk values are filed on the stella_interactions row inside the SAME transaction that charges the quota — never a second statement, never a follow-up UPDATE. Also pins the fail-closed reconciliation: a NEW_DB completion that fails to persist risk returns a rejected outcome and the governed operation withholds the answer. FUTURE-DEPENDENT: the NEW_DB half cannot execute until stella_0017b exists and is installed in a disposable container. Declared explicitly as future-dependent rather than written as a silently-skipped test.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "T5",
+      "description": "Idempotent replay. A replayed delivery is charged once and the ledger row is NOT overwritten with the second delivery's payload, in BOTH database states. Specifically: a replay must not overwrite a previously-filed risk_level with a null from a later delivery. The (organization_id, idempotency_key) ON CONFLICT DO NOTHING contract is unchanged by the bridge. FUTURE-DEPENDENT for the NEW_DB half.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "T7",
+      "description": "Rollback and probe inversion. After the nine-argument signature is dropped and the seven-argument form restored, the probe — once invalidated — returns OLD_DB and completion succeeds through seven arguments with no redeploy and no configuration change. Proves ROLLBACK_CONTRACT R-1, and proves it is the catalog and not a cached constant that drives the return. FUTURE-DEPENDENT: requires a disposable container in which both shapes can be installed and reverted.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "T9",
+      "description": "Observable signature-mismatch reason. A refusal caused by the connected database not matching the arity the bridge expects is distinguishable, in the wrapper's own refusal reason, from an ordinary unavailability. Proves the authority's CATALOG_PROBE_CONTRACT.observability rule, without which the deployment contract is unenforceable in practice because its most likely violation presents as generic noise.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "T2",
+      "description": "Old/new signature mismatch negatives. A seven-argument call issued against a database holding only the nine-argument form is REFUSED, and a nine-argument call issued against a database holding only the seven-argument form is REFUSED. Neither silently succeeds, neither silently degrades, and neither is retried into the other arity within the same transaction. Together with N-RC-01 and N-RC-02 this is what makes the bridge falsifiable in both directions.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "T6",
+      "description": "Deployment-order guard. The prohibited cell D-3 — an old runtime without the bridge against a new nine-argument database — is REFUSED and is observably attributed to a signature mismatch rather than to unavailability. Proves the deployment contract has a detectable violation rather than only a documented one. Catches MUT-RC-09 in its deployment aspect.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "T8",
+      "description": "No audit-log source-of-truth fallback. No code path reads a risk level from audit_logs, and a successful audit_logs write does not satisfy any risk-persistence obligation. Asserted as an absence over the slice's surface, not as a single call-site check, because the defect this forbids is a plausible shortcut that would appear to close the gap. The existing best-effort audit write must still be present — the control proves it is not the SOURCE OF TRUTH, not that it was deleted. Catches MUT-RC-06.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-01",
+      "description": "Removing the seven-argument branch is CAUGHT. A bridge that can only call nine arguments fails against an un-applied database. Catches MUT-RC-02.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-02",
+      "description": "Removing the nine-argument branch is CAUGHT. A bridge that can only call seven arguments never feeds Stage-A's parameters, silently restoring the original defect while appearing to succeed. Catches MUT-RC-03.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-03",
+      "description": "The prohibited fallback shape is CAUGHT, and is caught EXHIBITING SQLSTATE 25P02 in_failed_sql_transaction. A mutant that issues the nine-argument call first and attempts a seven-argument fallback after it fails, inside the same transaction, must be observed producing 25P02 — not merely observed being slower or returning a generic rejection. A control that only asserts 'the fallback did not succeed' is vacuous here, because the fallback cannot succeed for reasons unrelated to the guarantee being tested. Catches MUT-RC-04 and proves CATALOG_PROBE_CONTRACT P-1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-04",
+      "description": "No manual flag. The arity is not selectable by any environment variable, configuration value or build flag. Asserted as an absence over the slice's surface: a mutant that introduces a flag and reads it to choose the branch is CAUGHT even if the flag's default preserves correct behavior — the defect is the existence of a second source of truth, not a wrong value. Catches MUT-RC-01 and proves RC-06.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-05",
+      "description": "FIBIU-19 disjointness. The slice's diff touches no path in FIBIU-19's write surface — lib/pipeline/sroi-calculation.ts, lib/pipeline/sroi-results.ts, app/app/projects/[projectId]/pipeline/calculation/**, db/migrations/**. lib/pipeline/sroi-results.ts is the sharpest case because it is chokepoint SW-6, the domain authority's own stated reason for serializing FIBIU-19 before FIBIU-20. Re-derived against the implementing lane's own base, never inherited from this manifest, because FIBIU-19's surface can grow. Catches MUT-RC-07 and is the mechanical condition on which the owner's sequencing exception depends.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-06",
+      "description": "No premature apply. Nothing in the slice applies, schedules, triggers or authorizes an application of stella_0017b to any database that is not a disposable throwaway container. No artifact claims the FIBDB-053 external G2 gate is resolved. Additionally: the bridge is not readable as permission for validator or reviewer to be production-ready against an un-applied database. Catches MUT-RC-09.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-07",
+      "description": "Advisor readiness edge is untouched. The slice's edit to app/actions/stella/advisor.ts is confined to the explicit-null risk fields. The import of getSroiCalculationReadiness from lib/pipeline/sroi-calculation.ts and its call site are not modified, re-typed, re-ordered, wrapped or re-scoped. This is the single read edge between the slice and FIBIU-19; the constraint keeps a sequencing exception granted on disjointness from being spent on an incidental refactor.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-08",
+      "description": "No protected path. The slice's diff contains no path matching ods-scope's DEFAULT_PROTECTED_PATTERNS — db/prepared/**, db/migrations/**, db/baseline/**, docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json — and no non-canonically-cased variant of one. db/prepared/** is the likeliest violation because the Stage-A SQL lives there and merging the two nodes would look like convenience. Catches MUT-RC-08 and sustains NEW_ODS_REQUIRED=NO.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-09",
+      "description": "Stage-A reference reconciliation. Before final implementation, the nine-argument signature this slice probes for is reconciled against the INTEGRATED Stage-A authority — argument names, types and order — and a divergence STOPS the lane rather than being silently absorbed. Guards the runtime-first hazard that the probe is written against a contract whose counterpart does not yet exist.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-RC-10",
+      "description": "Probe grapheme. The probe literal uses the to_regprocedure INPUT grapheme, not the pg_catalog grapheme (bpchar/varchar/int4/_text) and not the SQL declaration grapheme. A probe in the wrong grapheme returns NULL forever, pinning the bridge to OLD_DB on a database that is already NEW_DB — filing no risk while reporting success. This mutant FAILS SILENT, so a control asserting only 'the bridge works' passes it; the control must assert the probe returns TRUE against a real catalog holding the nine-argument function. Catches MUT-RC-12.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    { "id": "MUT-RC-01", "description": "Replace the catalog probe with a manual environment flag or configuration value selecting the arity. Must be caught by N-RC-04.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-02", "description": "Remove the seven-argument branch, leaving only the nine-argument call. Must be caught by T2 and N-RC-01.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-03", "description": "Remove the nine-argument branch, leaving only the seven-argument call. Must be caught by T2 and N-RC-02.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-04", "description": "Issue the nine-argument call first and fall back to seven arguments after it fails, inside the same transaction. Must be caught by N-RC-03, exhibiting 25P02.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-05", "description": "Omit riskFlags from the propagation chain while keeping riskLevel. Must be caught by T3, whose assertions are per-field for exactly this reason.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-06", "description": "Source the risk value from audit_logs instead of from the validator or reviewer result. Must be caught by T8.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-07", "description": "Touch a FIBIU-19 path, lib/pipeline/sroi-results.ts being the sharpest case. Must be caught by N-RC-05.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-08", "description": "Add a protected path, db/prepared/** being the likeliest, to the slice's diff. Must be caught by N-RC-08 and by the ods_scope exit gate.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-09", "description": "Allow Stage-A apply before the companion is integrated and deployed. Must be caught by T6 and N-RC-06.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-10", "description": "Roll the runtime back before the SQL rollback, manufacturing the prohibited old-runtime-against-new-database cell. Must be caught by T7.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-11", "description": "Make riskLevel or riskFlags optional on the execution result type instead of required-and-nullable. The mutant typechecks, so the compiler alone does not catch it. Must be caught by T1.", "test_file": "UNKNOWN" },
+    { "id": "MUT-RC-12", "description": "Write the probe literal in the pg_catalog grapheme instead of the to_regprocedure input grapheme. Fails silent. Must be caught by N-RC-10.", "test_file": "UNKNOWN" }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}
