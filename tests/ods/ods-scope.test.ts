@@ -313,9 +313,9 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant, plus the HPO-ODS-W2-12 Wave 2 batch B4 grant, plus the HPO-ODS-W2-16 W2-B4 remediation checkpoint-b0 probe grant, plus the HPO-ODS-W2-17 Wave 2 batch B5 grant, plus the HPO-ODS-W2-20 multi-org S1 migration grant and the HPO-ODS-W2-21 multi-org S1 journal grant, plus the HPO-ODS-W2-25 multi-org S3 refusal-audit grant, plus the HPO-ODS-W2-26 Commercial Account CE-1 grant, plus the HPO-ODS-W2-27 FIBDB-052 P1 index grant, plus the HPO-ODS-W2-28 Customer Lifecycle CL-1 grant, plus the HPO-ODS-W2-29 Customer Lifecycle L1 organization commercial acceptance grant, plus the HPO-ODS-W2-30 Commercial Account CE-3 entitlement-grant registration, plus the HPO-ODS-W2-31 Commercial Account CE-3 definer-ownership hosted-package registration, plus the HPO-ODS-W2-32 Commercial Account CE-3 entitlement-grants ACL-hardening hosted-package registration', () => {
-    expect(PROTECTED_GRANTS.length).toBe(20)
-    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(20)
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant, plus the HPO-ODS-W2-08 Commercial V1 / Wave2 reconciliation grant, plus the HPO-ODS-W2-09 0061 security-successor grant, plus the HPO-ODS-W2-11 P1A canonical local/CI bootstrap grant, plus the HPO-ODS-W2-12 Wave 2 batch B4 grant, plus the HPO-ODS-W2-16 W2-B4 remediation checkpoint-b0 probe grant, plus the HPO-ODS-W2-17 Wave 2 batch B5 grant, plus the HPO-ODS-W2-20 multi-org S1 migration grant and the HPO-ODS-W2-21 multi-org S1 journal grant, plus the HPO-ODS-W2-25 multi-org S3 refusal-audit grant, plus the HPO-ODS-W2-26 Commercial Account CE-1 grant, plus the HPO-ODS-W2-27 FIBDB-052 P1 index grant, plus the HPO-ODS-W2-28 Customer Lifecycle CL-1 grant, plus the HPO-ODS-W2-29 Customer Lifecycle L1 organization commercial acceptance grant, plus the HPO-ODS-W2-30 Commercial Account CE-3 entitlement-grant registration, plus the HPO-ODS-W2-31 Commercial Account CE-3 definer-ownership hosted-package registration, plus the HPO-ODS-W2-32 Commercial Account CE-3 entitlement-grants ACL-hardening hosted-package registration, plus the HPO-ODS-W2-33 current-schema runtime ACL grant registration', () => {
+    expect(PROTECTED_GRANTS.length).toBe(21)
+    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(21)
     // HPO-ODS-W2-25 (multi-org S3 refusal audit). ONE row, TWO patterns, bound
     // to the implementation branch by exact string equality. The set-size
     // assertion above is what forbids a duplicate id from being registered
@@ -461,21 +461,29 @@ describe('resolveProtectedGrant — pure', () => {
     // earlier. It was registered under
     // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json.
     expect(PROTECTED_GRANTS[18].authorityId).toBe('HPO-ODS-W2-31')
-    // W2-32 IS THE LIVE TAIL, registered under
-    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json, and it sits at the
-    // index immediately after W2-31, so the growth was an APPEND not an insert.
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-32')
+    // W2-32 IS NO LONGER THE LIVE TAIL EITHER. Its pin is DEMOTED to a
+    // POSITION assertion, the same operation the W2-31 pin underwent one turn
+    // earlier. It was registered under
+    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json.
     expect(PROTECTED_GRANTS[19].authorityId).toBe('HPO-ODS-W2-32')
-    // W2-33 is NOT allocated by this node. Registering one would be a silent
-    // grant-lineage advance. This literal ADVANCED from W2-32 to W2-33 when
-    // W2-32 was registered above, exactly as it advanced from W2-31 to W2-32
-    // when W2-31 was registered, and v1.0.35 NO_PREALLOCATION lists
-    // HPO-ODS-W2-33 among the ids it explicitly does NOT allocate. Registering
-    // W2-32 allocates W2-33 no more than registering W2-31 allocated W2-32.
+    // W2-33 IS THE LIVE TAIL, registered by THIS act under the grant DECLARED
+    // by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json, and it sits at
+    // the index immediately after W2-32, so the growth was an APPEND not an
+    // insert.
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
+    expect(PROTECTED_GRANTS[20].authorityId).toBe('HPO-ODS-W2-33')
+    // W2-34 is NOT allocated by this node. Registering W2-33 would be a silent
+    // grant-lineage advance if it also preallocated its successor. This
+    // literal ADVANCED from W2-33 to W2-34 when W2-33 was registered above,
+    // exactly as it advanced from W2-32 to W2-33 when W2-32 was registered,
+    // and v1.0.36 NO_PREALLOCATION lists HPO-ODS-W2-34 among the ids it
+    // explicitly does NOT allocate. Registering W2-33 allocates W2-34 no more
+    // than registering W2-32 allocated W2-33.
     // The id is derived from the ODS ALLOCATION axis maximum and never from
-    // PROTECTED_GRANTS.length, which is 20 against a maximum allocated id of
-    // 32 — the registry is sparse, so length is not the allocation ceiling.
-    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-33')).toBe(false)
+    // PROTECTED_GRANTS.length, which is 21 against a maximum allocated id of
+    // 33 — the registry is sparse, so length is not the allocation ceiling.
+    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-33')).toBe(true)
+    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-34')).toBe(false)
     const w2_03 = PROTECTED_GRANTS[2]
     expect(w2_03.authorityId).toBe('HPO-ODS-W2-03')
     expect(w2_03.branch).toBe('codex/u0-u9-reengineering-resume-r1')
@@ -1378,32 +1386,32 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     expect(resolveProtectedGrant('HPO-ODS-W2-26', CE1_BRANCH).grant).toBeDefined()
   })
 
-  it('ABSENCE (CE1-GRANT-N4, advanced by v1.0.35): HPO-ODS-W2-33 is UNREGISTERED and resolves nowhere — allocation is a different axis and says nothing here', () => {
-    // ADVANCED from W2-32 to W2-33 when W2-32 was registered under
-    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json, exactly as it
-    // advanced from W2-31 to W2-32 when W2-31 was registered. This is one of
-    // the two executable clusters that assert the next id absent; the other
-    // lives in the frozen-registry test above and advanced in the same act.
+  it('ABSENCE (CE1-GRANT-N4, advanced by v1.0.36): HPO-ODS-W2-34 is UNREGISTERED and resolves nowhere — allocation is a different axis and says nothing here', () => {
+    // ADVANCED from W2-33 to W2-34 when W2-33 was registered under this act,
+    // exactly as it advanced from W2-32 to W2-33 when W2-32 was registered.
+    // This is one of the two executable clusters that assert the next id
+    // absent; the other lives in the frozen-registry test above and advanced
+    // in the same act.
     //
-    // THE TITLE IS SCOPED TO THE REGISTRY AXIS DELIBERATELY. W2-33 is named as
-    // a PROHIBITION by v1.0.35 — its NO_PREALLOCATION lists HPO-ODS-W2-33
-    // among the ids it explicitly does NOT allocate — and unlike W2-32 before
-    // it, W2-33 has NOT since been allocated by any artefact. This control
-    // nevertheless tests only the REGISTRY axis, so an allocation of W2-33
+    // THE TITLE IS SCOPED TO THE REGISTRY AXIS DELIBERATELY. W2-34 is named as
+    // a PROHIBITION by v1.0.36 — its NO_PREALLOCATION lists HPO-ODS-W2-34
+    // among the ids it explicitly does NOT allocate — and unlike W2-33 before
+    // it, W2-34 has NOT since been allocated by any artefact. This control
+    // nevertheless tests only the REGISTRY axis, so an allocation of W2-34
     // would not move it; only a registration would.
     //
     // NOT ONE ASSERTION BELOW IS ABOUT ALLOCATION, because every one of them is
     // a REGISTRY-axis assertion — membership in PROTECTED_GRANTS and resolution
     // against a branch — and allocation adds no row. A control that passes
     // while its own name asserts an unmeasured fact is worse than a red one.
-    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-33')).toBe(false)
+    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-34')).toBe(false)
     for (const branch of [CE1_BRANCH, 'main', 'codex/ce1-w2-26-registration-r1']) {
-      expect(resolveProtectedGrant('HPO-ODS-W2-33', branch).grant).toBeUndefined()
+      expect(resolveProtectedGrant('HPO-ODS-W2-34', branch).grant).toBeUndefined()
     }
     // ...and the id that JUST became live resolves on its own exact branch, so
     // the absence above is a measured absence and not a blanket denial.
     expect(
-      resolveProtectedGrant('HPO-ODS-W2-32', 'codex/commercial-account-ce3-implementation-r1')
+      resolveProtectedGrant('HPO-ODS-W2-33', 'codex/current-schema-runtime-acl-implementation-r1')
         .grant,
     ).toBeDefined()
   })
@@ -1483,12 +1491,12 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     const liveGuard = /expect\(\s*([A-Za-z0-9_.]*PROTECTED_GRANTS_COUNT[A-Za-z0-9_]*)\s*\)\s*\.toBe\(\s*PROTECTED_GRANTS\.length\s*,?\s*\)/g
     const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
     expect(bound.length).toBe(1)
-    // ADVANCED under docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json,
+    // ADVANCED under docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json,
     // in the form v1.0.30 RC-13 established: advancing the count without
     // advancing the pinned NAME would leave a control that passes while
-    // guarding the wrong field — 20 === 20 would be true of the stale W2-31
+    // guarding the wrong field — 21 === 21 would be true of the stale W2-32
     // field too, so the count alone cannot tell the two apart.
-    expect(bound[0]).toBe('addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32')
+    expect(bound[0]).toBe('addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33')
   })
 
   it('LIVE_COUNT_GUARD_TRANSFER (CE1-GRANT-N7): PROMOTE-WITHOUT-DEMOTE would be red — the v1.0.25 frozen figure no longer equals the live count', () => {
@@ -1510,7 +1518,7 @@ describe('HPO-ODS-W2-26 — CE-1 grant: narrowness, branch binding and mutation 
     // fails if anyone does it. The live literal is re-derived, not inherited:
     // it advanced 14 -> 15 when W2-27 was registered and 15 -> 16 when W2-28
     // was registered.
-    expect(PROTECTED_GRANTS.length).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
   })
 
   it('SEPARATION (CE1-GRANT-N8): no OTHER registered grant authorizes the CE-1 families on the CE-1 branch', () => {
@@ -1677,7 +1685,7 @@ describe('HPO-ODS-W2-27 — FIBDB-052 P1 grant: narrowness, branch binding and m
     // the newest registration (CL1-GRANT-N5), exactly as the live-count guard
     // does.
     expect(PROTECTED_GRANTS[14].authorityId).toBe('HPO-ODS-W2-27')
-    expect(PROTECTED_GRANTS.length).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
     // The checkpoint-b0 observation literal did not leak sideways onto W2-27.
     // Across the WHOLE registry the carriers are the five that already carried
     // it before the P1 registration, plus W2-28 which was measured to need it
@@ -1719,7 +1727,7 @@ describe('HPO-ODS-W2-27 — FIBDB-052 P1 grant: narrowness, branch binding and m
     // PROHIBITED (v1.0.30 THE_THIRD_WAY_IS_PROHIBITED) — it would corrupt the
     // historical record to satisfy a present-tense guard. This assertion fails
     // if anyone does it.
-    expect(PROTECTED_GRANTS.length).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
   })
 
   it('ATOMICITY (P1-GRANT-N7, RC-14): the demoted literal and the promoted live binding are both present in this file, and the live binding is unique', () => {
@@ -1731,7 +1739,7 @@ describe('HPO-ODS-W2-27 — FIBDB-052 P1 grant: narrowness, branch binding and m
     const liveGuard =
       /expect\(\s*([A-Za-z0-9_.]*PROTECTED_GRANTS_COUNT[A-Za-z0-9_]*)\s*\)\s*\.toBe\(\s*PROTECTED_GRANTS\.length\s*,?\s*\)/g
     const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
-    expect(bound).toEqual(['addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32'])
+    expect(bound).toEqual(['addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33'])
     // THE DEMOTE landed: the v1.0.28 field is pinned to its exact historical
     // literal, not to the live array and not to an inequality.
     expect(selfSource).toContain(
@@ -1777,7 +1785,7 @@ describe('HPO-ODS-W2-27 — FIBDB-052 P1 grant: narrowness, branch binding and m
     // KEY-POSITIONAL: the evaluated array object, not the text of the file.
     const registeredByKeyPosition = PROTECTED_GRANTS.map((g) => g.authorityId)
     expect(registeredByKeyPosition).toContain('HPO-ODS-W2-27')
-    expect(registeredByKeyPosition).not.toContain('HPO-ODS-W2-33')
+    expect(registeredByKeyPosition).not.toContain('HPO-ODS-W2-34')
     expect(registeredByKeyPosition.filter((id) => id === 'HPO-ODS-W2-27').length).toBe(1)
     // The bound branch resolves; that is the operative consequence of the
     // predicate being TRUE.
@@ -1788,13 +1796,13 @@ describe('HPO-ODS-W2-27 — FIBDB-052 P1 grant: narrowness, branch binding and m
     // why the authority forbids the textual one.
     const textualHits = scopeSource.split('HPO-ODS-W2-27').length - 1
     expect(textualHits).toBeGreaterThan(1)
-    // And the converse trap, ADVANCED to W2-33 now that W2-32 is registered
-    // and therefore appears in the text: W2-33 has textual occurrences nowhere
+    // And the converse trap, ADVANCED to W2-34 now that W2-33 is registered
+    // and therefore appears in the text: W2-34 has textual occurrences nowhere
     // in that file, but the load-bearing fact is its absence from the KEY
     // POSITION, which is asserted above rather than inferred from the text.
-    // Leaving this pinned to W2-32 would have gone RED the moment the row
+    // Leaving this pinned to W2-33 would have gone RED the moment the row
     // landed — which is exactly what makes the sentinel non-vacuous.
-    expect(scopeSource.split('HPO-ODS-W2-33').length - 1).toBe(0)
+    expect(scopeSource.split('HPO-ODS-W2-34').length - 1).toBe(0)
     // ...and the id that JUST became registered now has MORE than one textual
     // occurrence, because its explanatory comment block names it too. Stating
     // both halves is what shows the textual method and the key-position method
@@ -1999,7 +2007,7 @@ describe('HPO-ODS-W2-28 — Customer Lifecycle CL-1 grant: narrowness, branch bi
     // become an assertion about whichever row happens to be last. The LIVE
     // last-row binding moves to the newest registration (L1-GRANT-N5).
     expect(PROTECTED_GRANTS[15].authorityId).toBe('HPO-ODS-W2-28')
-    expect(PROTECTED_GRANTS.length).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
     // The predecessors' PATTERNS are byte-unchanged too, not merely their ids
     // and branches — a widening of an existing row would pass an id/branch
     // comparison untouched.
@@ -2030,7 +2038,7 @@ describe('HPO-ODS-W2-28 — Customer Lifecycle CL-1 grant: narrowness, branch bi
     // Editing that frozen artefact away from 15 to match the live count is
     // PROHIBITED — it would corrupt the historical record to satisfy a
     // present-tense guard. This assertion fails if anyone does it.
-    expect(PROTECTED_GRANTS.length).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
     // And the v1.0.31 artefact, which this act DOES consume, declares 15
     // before and 16 after — so the registry moved by exactly one row.
     const addendumCl1Frozen = JSON.parse(
@@ -2058,7 +2066,7 @@ describe('HPO-ODS-W2-28 — Customer Lifecycle CL-1 grant: narrowness, branch bi
     const liveGuard =
       /expect\(\s*([A-Za-z0-9_.]*PROTECTED_GRANTS_COUNT[A-Za-z0-9_]*)\s*\)\s*\.toBe\(\s*PROTECTED_GRANTS\.length\s*,?\s*\)/g
     const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
-    expect(bound).toEqual(['addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32'])
+    expect(bound).toEqual(['addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33'])
     // The v1.0.31 artefact is still READ by this file — its demoted literal
     // survives rather than being deleted. The LIVE promote has moved on to
     // v1.0.32 and is pinned by L1-GRANT-N7.
@@ -2082,7 +2090,7 @@ describe('HPO-ODS-W2-28 — Customer Lifecycle CL-1 grant: narrowness, branch bi
     // derived from the live registry rather than typed out, so a future row
     // cannot escape it.
     const ceiling = PROTECTED_GRANTS.map((g) => g.authorityId).filter((id) => id !== 'HPO-ODS-W2-28')
-    expect(ceiling.length).toBe(19)
+    expect(ceiling.length).toBe(20)
     const resolved = resolveProtectedGrants(ceiling, CL1_BRANCH)
     expect(resolved.grants).toEqual([])
     const paths = [
@@ -2345,7 +2353,7 @@ describe('HPO-ODS-W2-29 — Customer Lifecycle L1 organization commercial accept
     // become an assertion about whichever row happens to be last. The LIVE
     // last-row binding moves to the newest registration (CE3-GRANT-N8).
     expect(PROTECTED_GRANTS[16].authorityId).toBe('HPO-ODS-W2-29')
-    expect(PROTECTED_GRANTS.length).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
     // The predecessors' PATTERNS are byte-unchanged too, not merely their ids
     // and branches — a widening of an existing row would pass an id/branch
     // comparison untouched. This is the shape pin the authority requires: a
@@ -2402,7 +2410,7 @@ describe('HPO-ODS-W2-29 — Customer Lifecycle L1 organization commercial accept
     // Editing that frozen artefact away from 16 to match the live count is
     // PROHIBITED — it would corrupt the historical record to satisfy a
     // present-tense guard. This assertion fails if anyone does it.
-    expect(PROTECTED_GRANTS.length).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
     // And the v1.0.32 artefact, which this act DOES consume, declares 16 before
     // and 17 after — so the registry moved by exactly one row.
     const addendumL1Frozen = JSON.parse(
@@ -2435,7 +2443,7 @@ describe('HPO-ODS-W2-29 — Customer Lifecycle L1 organization commercial accept
       /expect\(\s*([A-Za-z0-9_.]*PROTECTED_GRANTS_COUNT[A-Za-z0-9_]*)\s*\)\s*\.toBe\(\s*PROTECTED_GRANTS\.length\s*,?\s*\)/g
     const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
     expect(bound.length).toBe(1)
-    expect(bound).toEqual(['addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32'])
+    expect(bound).toEqual(['addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33'])
     // THE PROMOTE landed against the v1.0.32 artefact specifically.
     expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.32.json')
     // THE DEMOTE landed, asserted by VALUE rather than by a text search for the
@@ -2460,7 +2468,7 @@ describe('HPO-ODS-W2-29 — Customer Lifecycle L1 organization commercial accept
     // ceiling is derived from the live registry rather than typed out, so a
     // future row cannot escape it.
     const ceiling = PROTECTED_GRANTS.map((g) => g.authorityId).filter((id) => id !== 'HPO-ODS-W2-29')
-    expect(ceiling.length).toBe(19)
+    expect(ceiling.length).toBe(20)
     // THE OTHER SEVENTEEN GRANTS YIELD NO GRANT AUTHORITY on the L1 branch.
     // The ceiling grew by one when W2-30 was registered, and it still resolves
     // to nothing here: W2-30 is bound to the CE-3 branch, not the L1 one.
@@ -2876,24 +2884,24 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     expect(
       a.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_30 - a.PROTECTED_GRANTS_COUNT_BEFORE,
     ).toBe(1)
-    // THE LIVE REGISTRY IS NOW 20 WITH W2-32 AS ITS TAIL, advanced by THREE
+    // THE LIVE REGISTRY IS NOW 21 WITH W2-33 AS ITS TAIL, advanced by FOUR
     // SEPARATE registration acts since this artefact was written — W2-30's,
-    // then W2-31's, then W2-32's. The frozen literals above are unchanged and
-    // remain true of the allocation head; the registry moved underneath them,
-    // which is exactly what "a future mission registers W2-30" described.
-    // W2-30 itself is still present and is now pinned by POSITION rather than
-    // as the tail.
-    expect(PROTECTED_GRANTS.length).toBe(20)
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-32')
+    // then W2-31's, then W2-32's, then W2-33's. The frozen literals above are
+    // unchanged and remain true of the allocation head; the registry moved
+    // underneath them, which is exactly what "a future mission registers
+    // W2-30" described. W2-30 itself is still present and is now pinned by
+    // POSITION rather than as the tail.
+    expect(PROTECTED_GRANTS.length).toBe(21)
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
     expect(PROTECTED_GRANTS[17].authorityId).toBe('HPO-ODS-W2-30')
     // The allocation-time BEFORE figure is now STRICTLY BELOW the live count,
-    // by exactly the THREE rows the three registrations appended. Asserted
+    // by exactly the FOUR rows the four registrations appended. Asserted
     // against the frozen literal difference rather than by binding a declared
     // field to the live array: the latter shape is the LIVE-COUNT GUARD, this
     // file pins the number of those at exactly one, and that one belongs to the
     // NEWEST registration act, whose atomic demote-and-promote is the only
     // lawful way to move it.
-    expect(PROTECTED_GRANTS.length - a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(3)
+    expect(PROTECTED_GRANTS.length - a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(4)
     //
     // THE CONVERSE ASSERTION WAS DELETED, NOT INVERTED. Until the registration
     // landed this block carried
@@ -2978,7 +2986,7 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json').length - 1).toBeGreaterThan(0)
   })
 
-  it('NO PREALLOCATION (CE3-ALLOC-N9): v1.0.34 and W2-31 are named ONLY in prohibitions, the LINEAGE-axis sentinel is unmoved, and the REGISTRY-axis sentinel has advanced to W2-32', () => {
+  it('NO PREALLOCATION (CE3-ALLOC-N9): v1.0.34 and W2-31 are named ONLY in prohibitions, the LINEAGE-axis sentinel is unmoved, and the REGISTRY-axis sentinel has advanced to W2-34', () => {
     const a = readCe3()
     // THE NEXT LINEAGE POSITION AND THE NEXT GRANT ID ARE PROHIBITED, NOT
     // ALLOCATED. Naming an id in a prohibition is never an allocation.
@@ -2997,26 +3005,25 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     expect(
       existsSync(path.join(REPO_ROOT, 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')),
     ).toBe(true)
-    // THE REGISTRY-AXIS SENTINEL ADVANCED AGAIN, from W2-32 to W2-33, when
-    // W2-32 was registered under
-    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json. Leaving it pinned
-    // at W2-32 would have gone RED the moment that row landed, which is what
-    // makes it a sentinel rather than decoration.
-    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-33')
-    expect(resolveProtectedGrant('HPO-ODS-W2-33', CE3_BRANCH).grant).toBeUndefined()
+    // THE REGISTRY-AXIS SENTINEL ADVANCED AGAIN, from W2-33 to W2-34, when
+    // W2-33 was registered under this act. Leaving it pinned at W2-33 would
+    // have gone RED the moment that row landed, which is what makes it a
+    // sentinel rather than decoration.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
+    expect(resolveProtectedGrant('HPO-ODS-W2-34', CE3_BRANCH).grant).toBeUndefined()
     // THE TWO SENTINEL AXES ARE DISTINCT, AND THEY MOVE ON DIFFERENT ACTS.
     // The LINEAGE axis sentinel is a filesystem assertion and the ALLOCATION
     // act advanced it, because it created a file — it is still pinned at
     // v1.0.34 above and is UNMOVED by registration, which creates no file. The
     // REGISTRY axis sentinel is a membership assertion and the SEPARATE
-    // REGISTRATION act has advanced it again, from W2-31 to W2-32, because it
+    // REGISTRATION act has advanced it again, from W2-33 to W2-34, because it
     // added a row. The two axes are now pinned at DIFFERENT ids — v1.0.34 and
-    // W2-33 — which is the clearest possible demonstration that they are not
+    // W2-34 — which is the clearest possible demonstration that they are not
     // one sentinel: an act moved one and left the other exactly where it was.
     // Advancing the wrong one is how an unregistered grant comes to look
     // registered, and holding them apart is what makes each one mean something.
     const scopeSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-scope.ts'), 'utf8')
-    expect(scopeSource.split('HPO-ODS-W2-33').length - 1).toBe(0)
+    expect(scopeSource.split('HPO-ODS-W2-34').length - 1).toBe(0)
     // NON-VACUITY of that zero: the ids that ARE registered have textual
     // occurrences in the same file, so the zero above is a measured absence
     // and not an artefact of reading the wrong file or misspelling the id.
@@ -3100,8 +3107,8 @@ describe('HPO-ODS-W2-30 — Commercial Account CE-3 grant: registration, narrown
     expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-30').length).toBe(1)
     // A duplicate id registered BESIDE the row rather than replacing it would
     // pass a toContain; the set-size equality is what forbids it.
-    expect(PROTECTED_GRANTS.length).toBe(20)
-    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
+    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(21)
     // AT THE INDEX IMMEDIATELY AFTER THE 17 PREDECESSORS, so ITS growth was an
     // APPEND and not an insert. DEMOTED from the LIVE last-row binding to this
     // POSITION pin when W2-31 was registered under
@@ -3110,7 +3117,7 @@ describe('HPO-ODS-W2-30 — Commercial Account CE-3 grant: registration, narrown
     // the durable claim: it still fails on an insert, a reorder or a drop.
     expect(PROTECTED_GRANTS[17].authorityId).toBe('HPO-ODS-W2-30')
     // The LIVE last-row binding has moved on to the newest registration.
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-32')
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
   })
 
   it('DECLARATION EQUALITY (CE3-GRANT-N2): the registered row equals the v1.0.33 protected_grant projection as a WHOLE OBJECT, with pattern ORDER enforced', () => {
@@ -3387,7 +3394,7 @@ describe('HPO-ODS-W2-30 — Commercial Account CE-3 grant: registration, narrown
     // binding moves to the newest registration (W2-31-REG-N1), exactly as the
     // live-count guard does.
     expect(PROTECTED_GRANTS[17].authorityId).toBe('HPO-ODS-W2-30')
-    expect(PROTECTED_GRANTS.length).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
     // The predecessors PATTERNS are byte-unchanged too, not merely their ids
     // and branches — a widening of an existing row would pass an id/branch
     // comparison untouched.
@@ -3421,7 +3428,7 @@ describe('HPO-ODS-W2-30 — Commercial Account CE-3 grant: registration, narrown
     // NONE of W2-30's surfaces — a ceiling derived from the live array so a
     // future row cannot escape it.
     const ceiling = PROTECTED_GRANTS.map((g) => g.authorityId).filter((id) => id !== 'HPO-ODS-W2-30')
-    expect(ceiling.length).toBe(19)
+    expect(ceiling.length).toBe(20)
     const paths = ['db/migrations/0099_ce3_fixture.sql', OBSERVATION]
     expect(classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, others.grants).protectedViolations).toEqual(paths)
     // ONE MEMBER OF THAT CEILING NOW RESOLVES, AND IT CHANGES NOTHING HERE.
@@ -3490,12 +3497,11 @@ describe('HPO-ODS-W2-30 — Commercial Account CE-3 grant: registration, narrown
     // Controller surface at all.
     expect(resolveProtectedGrant('HPO-ODS-W2-30', CE3_BRANCH).grant).toBeDefined()
     // NO REGISTRY-AXIS PREALLOCATION. The next id is derived from the ODS
-    // ALLOCATION axis maximum, NOT from registry length. ADVANCED from W2-32
-    // to W2-33 when W2-32 was registered under
-    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json.
-    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-33')
-    expect(resolveProtectedGrant('HPO-ODS-W2-33', CE3_BRANCH).grant).toBeUndefined()
-    expect(scopeSource.split('HPO-ODS-W2-33').length - 1).toBe(0)
+    // ALLOCATION axis maximum, NOT from registry length. ADVANCED from W2-33
+    // to W2-34 when W2-33 was registered under this act.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
+    expect(resolveProtectedGrant('HPO-ODS-W2-34', CE3_BRANCH).grant).toBeUndefined()
+    expect(scopeSource.split('HPO-ODS-W2-34').length - 1).toBe(0)
     // TEXTUAL SWEEP IS STILL NOT THE EVALUATOR, and after registration the two
     // methods disagree in the OTHER direction: W2-30 now has MORE than one
     // textual occurrence, because its explanatory comment names it as well as
@@ -4859,33 +4865,36 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
     // live registry and by the W2-31-REG-* controls, never by editing v1.0.34.
     expect(a.NO_PREALLOCATION.GRANT_REGISTERED).toBe('NO')
 
-    // THE LIVE REGISTRY IS NOW 20 WITH W2-32 AS ITS TAIL, advanced by TWO
-    // SEPARATE registration acts — W2-31's and then W2-32's. The forward figure
-    // this artefact declared is bound to the LIVE array in W2-32-REG-N7 — the
-    // promote half of the atomic transfer, which moved there from W2-31-REG-N3
-    // when W2-32 was registered — and deliberately NOT here: this file pins the
-    // number of such live-count guards at exactly one, and a second one in an
-    // ALLOCATION block would also be asserting that the grant was registered by
-    // its own allocation.
-    expect(PROTECTED_GRANTS.length).toBe(20)
-    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(20)
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-32')
+    // THE LIVE REGISTRY IS NOW 21 WITH W2-33 AS ITS TAIL, advanced by THREE
+    // SEPARATE registration acts — W2-31's, then W2-32's, then W2-33's. The
+    // forward figure this artefact declared is bound to the LIVE array in
+    // W2-32-REG-N7 — the promote half of the atomic transfer, which moved
+    // there from W2-31-REG-N3 when W2-32 was registered, and has since moved
+    // AGAIN to W2-33-REG-N7 when W2-33 was registered — and deliberately NOT
+    // here: this file pins the number of such live-count guards at exactly
+    // one, and a second one in an ALLOCATION block would also be asserting
+    // that the grant was registered by its own allocation.
+    expect(PROTECTED_GRANTS.length).toBe(21)
+    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(21)
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
     // The allocation-time BEFORE figure is now STRICTLY BELOW the live count,
-    // by exactly the TWO rows the two registrations appended. Asserted as a
-    // literal difference rather than by binding a declared field to the live
-    // array.
-    expect(PROTECTED_GRANTS.length - a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(2)
+    // by exactly the THREE rows the three registrations appended. Asserted as
+    // a literal difference rather than by binding a declared field to the
+    // live array.
+    expect(PROTECTED_GRANTS.length - a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(3)
 
-    // TEXTUAL SEPARATION, ADVANCED. The zero-occurrence sentinel over the scope
-    // source moves to the id the registration did NOT allocate: W2-32 is in
-    // that file now, and leaving this pinned at W2-32 would have gone RED the
-    // moment the row landed — which is precisely what makes the sentinel
-    // non-vacuous rather than decorative.
+    // TEXTUAL SEPARATION, ADVANCED AGAIN. The zero-occurrence sentinel over
+    // the scope source moves to the id NO registration has allocated: W2-34
+    // is not in that file, while W2-32 and W2-33 both are now, and leaving
+    // this pinned at W2-33 would have gone RED the moment that row landed —
+    // which is precisely what makes the sentinel non-vacuous rather than
+    // decorative.
     const scopeSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-scope.ts'), 'utf8')
-    expect(scopeSource.split('HPO-ODS-W2-33').length - 1).toBe(0)
+    expect(scopeSource.split('HPO-ODS-W2-34').length - 1).toBe(0)
     // NON-VACUITY of that zero: the ids that ARE registered appear in the same
     // file, so the zero is a measured absence rather than an artefact of
     // reading the wrong file or misspelling the id.
+    expect(scopeSource.split('HPO-ODS-W2-33').length - 1).toBeGreaterThan(0)
     expect(scopeSource.split('HPO-ODS-W2-31').length - 1).toBeGreaterThan(0)
     expect(scopeSource.split('HPO-ODS-W2-30').length - 1).toBeGreaterThan(0)
   })
@@ -4984,12 +4993,11 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
     })
     expect(allocatedCarriers).toEqual(['ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json'])
 
-    // W2-33 IS NOT REGISTERED — the registry-axis sentinel is NOT advanced by
-    // an allocation, and it ADVANCED from W2-32 to W2-33 only when W2-32 was
-    // REGISTERED by its own separate governed act under
-    // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json.
-    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-33')
-    expect(resolveProtectedGrant('HPO-ODS-W2-33', CE3_IMPL_BRANCH).grant).toBeUndefined()
+    // W2-34 IS NOT REGISTERED — the registry-axis sentinel is NOT advanced by
+    // an allocation, and it ADVANCED from W2-33 to W2-34 only when W2-33 was
+    // REGISTERED by its own separate governed act under this act.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
+    expect(resolveProtectedGrant('HPO-ODS-W2-34', CE3_IMPL_BRANCH).grant).toBeUndefined()
   })
 
   it('ALLOCATION ONLY (W2-31-ALLOC-N6): the allocation act registered nothing, implemented no hosted package, mutated no PR #159 and created no R4 — and its write set is exactly two unprotected paths', () => {
@@ -5126,16 +5134,17 @@ describe('HPO-ODS-W2-31 — CE-3 definer ownership grant REGISTRATION', () => {
     expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-31').length).toBe(1)
     // A duplicate id registered BESIDE the row rather than replacing it would
     // pass a toContain; the set-size equality is what forbids it.
-    expect(PROTECTED_GRANTS.length).toBe(20)
-    expect(new Set(ids).size).toBe(20)
+    expect(PROTECTED_GRANTS.length).toBe(21)
+    expect(new Set(ids).size).toBe(21)
     // ITS POSITION, at the index immediately after the 18 predecessors, so the
     // growth was an APPEND and not an insert. W2-31 is NO LONGER THE TAIL —
-    // W2-32 was appended beside it by its own separate registration act — so
-    // the pin is DEMOTED to the POSITION form, which still fails on an insert,
-    // a reorder or a drop and, unlike "is the last row", does not silently
-    // become a claim about whichever row happens to be last.
+    // W2-32 and then W2-33 were appended beside it by their own separate
+    // registration acts — so the pin is DEMOTED to the POSITION form, which
+    // still fails on an insert, a reorder or a drop and, unlike "is the last
+    // row", does not silently become a claim about whichever row happens to
+    // be last.
     expect(PROTECTED_GRANTS[18].authorityId).toBe('HPO-ODS-W2-31')
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-32')
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
     // EXACTLY THREE KEYS. A fourth key — a note, a flag, an expiry — would be
     // an unauthorized extension of the grant shape that no id, branch or
     // pattern assertion would catch.
@@ -5303,13 +5312,16 @@ describe('HPO-ODS-W2-31 — CE-3 definer ownership grant REGISTRATION', () => {
     const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
     expect(bound.length).toBe(1)
     expect(bound).toEqual([
-      'addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32',
+      'addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33',
     ])
     // This control's OWN field is no longer among the live bindings — the
     // demote is asserted as an ABSENCE from the measured set, not merely by
     // the value assertion above.
     expect(bound).not.toContain(
       'addendumCe3Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_31',
+    )
+    expect(bound).not.toContain(
+      'addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32',
     )
 
     // THE OLDER DEMOTE still holds, asserted by VALUE rather than by a text
@@ -5421,10 +5433,11 @@ describe('HPO-ODS-W2-31 — CE-3 definer ownership grant REGISTRATION', () => {
     // addendum and reserved no id. The registry-axis sentinel advanced to
     // W2-32 precisely because W2-31 stopped being the next unregistered id —
     // not because W2-32 acquired any status — and it advanced AGAIN to W2-33
-    // when W2-32 was in turn registered by its own separate governed act.
-    // Neither advance was caused by an allocation.
-    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-33')
-    expect(resolveProtectedGrant('HPO-ODS-W2-33', CE3_IMPL).grant).toBeUndefined()
+    // when W2-32 was in turn registered, and AGAIN to W2-34 when W2-33 was
+    // registered by its own separate governed act. None of those advances was
+    // caused by an allocation.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
+    expect(resolveProtectedGrant('HPO-ODS-W2-34', CE3_IMPL).grant).toBeUndefined()
     // v1.0.35 has since been created by a SEPARATE governed allocation act, so
     // this half advances from absence to presence. The control's own claim is
     // unaffected: the REGISTRATION it describes still created no addendum, and
@@ -5796,13 +5809,16 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
     // would be asserting that its grant is already registered.
     expect(a.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32).toBe(20)
 
-    // THE LIVE REGISTRY HAS SINCE MOVED, by a SEPARATE governed registration
-    // act under the same artefact's authority. The frozen literals above are
-    // untouched and remain true of the ALLOCATION head; the registry advanced
-    // underneath them, which is exactly what "a future mission registers W2-32"
-    // described. Measured here rather than inferred.
-    expect(PROTECTED_GRANTS.length).toBe(20)
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-32')
+    // THE LIVE REGISTRY HAS SINCE MOVED TWICE, by two SEPARATE governed
+    // registration acts under the same artefact's authority: W2-32's own
+    // registration, and then the SEPARATE later HPO-ODS-W2-33 registration.
+    // The frozen literals above are untouched and remain true of the
+    // ALLOCATION head; the registry advanced underneath them, which is exactly
+    // what "a future mission registers W2-32" described, plus one further
+    // registration this allocation never named. Measured here rather than
+    // inferred.
+    expect(PROTECTED_GRANTS.length).toBe(21)
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
     expect(PROTECTED_GRANTS.map((g) => g.authorityId)).toContain('HPO-ODS-W2-32')
     expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-32').length).toBe(1)
     // THE FORWARD FIGURE THE ALLOCATION DECLARED IS THE FIGURE THAT LANDED —
@@ -5811,8 +5827,12 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
     // shape is the LIVE-COUNT GUARD; this file pins the number of those at
     // exactly one, it belongs to the newest REGISTRATION act, and a second one
     // sitting in an ALLOCATION block would also be asserting that the grant was
-    // registered by its own allocation.
-    expect(PROTECTED_GRANTS.length - a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(1)
+    // registered by its own allocation. The live difference against THIS
+    // artefact's own BEFORE count is now TWO, not one — W2-32's own
+    // registration plus the separate W2-33 registration that landed after it —
+    // while the FROZEN forward figure this artefact declared for its own
+    // registration is unchanged at a difference of one.
+    expect(PROTECTED_GRANTS.length - a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(2)
     expect(
       a.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32 -
         a.PROTECTED_GRANTS_COUNT_BEFORE,
@@ -5821,16 +5841,18 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
     // resolve on the bound branch, and STILL resolve nowhere else.
     expect(resolveProtectedGrant('HPO-ODS-W2-32', CE3_IMPL_BRANCH_35).grant).toBeDefined()
     expect(resolveProtectedGrant('HPO-ODS-W2-32', 'integration/commercial-v1').grant).toBeUndefined()
-    // TEXTUAL OCCURRENCES in the registry SOURCE, ADVANCED. This artefact wrote
-    // the id into docs/ only; the separate REGISTRATION act is what wrote it
-    // into scripts/ods-scope.ts. The sentinel therefore moves to the id that no
-    // act has registered — leaving it pinned at W2-32 would have gone RED the
-    // moment the row landed, which is what makes it non-vacuous.
+    // TEXTUAL OCCURRENCES in the registry SOURCE, ADVANCED AGAIN. This
+    // artefact wrote the id into docs/ only; the separate REGISTRATION act is
+    // what wrote it into scripts/ods-scope.ts. The sentinel therefore moves to
+    // the id that no act has registered — leaving it pinned at W2-33 would
+    // have gone RED the moment that row landed, which is what makes it
+    // non-vacuous.
     const scopeSource35 = readFileSync(path.join(REPO_ROOT, 'scripts/ods-scope.ts'), 'utf8')
-    expect(scopeSource35.split('HPO-ODS-W2-33').length - 1).toBe(0)
+    expect(scopeSource35.split('HPO-ODS-W2-34').length - 1).toBe(0)
     // NON-VACUITY of that zero: ids that ARE registered do occur in the same
     // file, so the zero is a measured absence and not a misspelling or the
     // wrong file.
+    expect(scopeSource35.split('HPO-ODS-W2-33').length - 1).toBeGreaterThan(0)
     expect(scopeSource35.split('HPO-ODS-W2-32').length - 1).toBeGreaterThan(0)
     expect(scopeSource35.split('HPO-ODS-W2-31').length - 1).toBeGreaterThan(0)
     expect(scopeSource35.split('HPO-ODS-W2-30').length - 1).toBeGreaterThan(0)
@@ -5963,12 +5985,17 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
       return parsed.version === '1.0.37' || parsed.GRANT_ID === 'HPO-ODS-W2-34'
     })
     expect(strays35).toEqual([])
-    // AND THE REGISTRY-AXIS SENTINEL IS NOT PRE-ADVANCED. W2-33 is not
-    // registered either, and this act does not advance any control from W2-32
-    // to W2-33 — that advance belongs to the REGISTRATION act, and performing
-    // it here would assert that W2-32 is registered when it is not.
-    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-33')
+    // AND THE REGISTRY-AXIS SENTINEL HAS SINCE ADVANCED AGAIN. THIS ALLOCATION
+    // ACT did not advance any control from W2-32 to W2-33 — that advance
+    // belonged to the SEPARATE later REGISTRATION act, and it has since landed.
+    // W2-34 is what is not registered now.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).toContain('HPO-ODS-W2-33')
     expect(resolveProtectedGrant('HPO-ODS-W2-33', CE3_IMPL_BRANCH_35).grant).toBeUndefined()
+    expect(
+      resolveProtectedGrant('HPO-ODS-W2-33', 'codex/current-schema-runtime-acl-implementation-r1').grant,
+    ).toBeDefined()
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
+    expect(resolveProtectedGrant('HPO-ODS-W2-34', 'codex/current-schema-runtime-acl-implementation-r1').grant).toBeUndefined()
   })
 
   it('WRITE SET (W2-32-ALLOC-N8): exactly TWO authorized paths, neither protected, and no protected authority is consumed', () => {
@@ -6135,17 +6162,21 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     expect(a.REGISTERED_GRANT_TAIL_AFTER).toBe('HPO-ODS-W2-31')
   })
 
-  it('REGISTRY POSTSTATE (W2-32-REG-P3): the registry is 20 rows, 20 unique ids, and W2-32 is the append-only TAIL at index 19', () => {
-    expect(PROTECTED_GRANTS.length).toBe(20)
-    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(20)
-    // THE TAIL, at the index immediately after the 19 predecessors, so the
-    // growth was an APPEND and not an insert. Both forms are asserted: the
-    // POSITION form still fails on an insert, a reorder or a drop, and the
-    // tail form fails if anything is appended after it.
+  it('REGISTRY POSTSTATE (W2-32-REG-P3): the registry is 21 rows, 21 unique ids, and W2-32 sits at its append-only POSITION 19 — no longer the tail since the SEPARATE later W2-33 registration', () => {
+    expect(PROTECTED_GRANTS.length).toBe(21)
+    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(21)
+    // THE POSITION, at the index immediately after the 19 predecessors, so the
+    // growth was an APPEND and not an insert. DEMOTED from the LIVE last-row
+    // binding when W2-33 was registered by its own separate governed act: the
+    // POSITION form still fails on an insert, a reorder or a drop, unlike "is
+    // the last row" which would silently become a claim about whichever row
+    // happens to be last.
     expect(PROTECTED_GRANTS[19].authorityId).toBe('HPO-ODS-W2-32')
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-32')
-    // THE CE-3 BRANCH NOW CARRIES THREE ROWS, pinned in ORDER, so a fourth
-    // arrival, a reorder or a rebranding of any of them fails here.
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
+    // THE CE-3 BRANCH STILL CARRIES EXACTLY THREE ROWS, pinned in ORDER, so a
+    // fourth arrival, a reorder or a rebranding of any of them fails here. The
+    // new W2-33 row binds an entirely different branch, so it is not a fourth
+    // CE-3 member.
     expect(PROTECTED_GRANTS.filter((g) => g.branch === CE3_REG).map((g) => g.authorityId)).toEqual([
       'HPO-ODS-W2-30',
       'HPO-ODS-W2-31',
@@ -6393,19 +6424,26 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     expect(existsSync(path.join(REPO_ROOT, README_REG))).toBe(true)
   })
 
-  it('LIVE_COUNT_GUARD_TRANSFER (W2-32-REG-N7): the transfer was ATOMIC — exactly ONE live binding, it is the v1.0.35 field, and the v1.0.34 predecessor is demoted but not deleted', () => {
-    // THE PROMOTE. The forward figure v1.0.35 declared for "a future mission
-    // registers W2-32" is bound to the LIVE array, because that mission is
-    // this one. A registry that grew by more or fewer than the one authorized
-    // entry fails here.
+  it('LIVE_COUNT_GUARD_TRANSFER (W2-32-REG-N7, demoted by v1.0.36): PROMOTE-WITHOUT-DEMOTE would be red — the v1.0.35 frozen figure no longer equals the live count, and the single live binding has moved to the v1.0.36 field', () => {
+    // THE DEMOTE. This control HELD the live binding until W2-33 was
+    // registered. Had the v1.0.35 guard been left bound to the live array it
+    // would now evaluate 20 against 21 and fail. That divergence is asserted
+    // DIRECTLY, which is what makes the demotion NECESSARY rather than
+    // cosmetic — and it pins that the demoted literal is the figure the frozen
+    // artefact actually asserts, not the live count.
     const addendumW2_32Own = readW2_32Own()
     expect(addendumW2_32Own.GRANT_ID).toBe('HPO-ODS-W2-32')
-    expect(addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32).toBe(
+    expect(addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32).toBe(20)
+    expect(addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32).not.toBe(
       PROTECTED_GRANTS.length,
     )
-    // ...and it moved by EXACTLY ONE row against the allocation-time figure,
-    // asserted through the frozen literals rather than by adding a second
-    // live binding.
+    // Editing that frozen artefact away from 20 to match the live count is
+    // PROHIBITED — it would corrupt the historical record to satisfy a
+    // present-tense guard. This assertion fails if anyone does it.
+    //
+    // THE HISTORICAL CLAIM IS UNCHANGED. v1.0.35's act really did move the
+    // registry by EXACTLY ONE row against its own allocation-time figure, and
+    // that remains true however far the registry has since advanced.
     expect(addendumW2_32Own.PROTECTED_GRANTS_COUNT_BEFORE).toBe(19)
     expect(
       addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32 -
@@ -6418,17 +6456,24 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     // the dangerous half precisely because it looks fine. PROMOTE-WITHOUT-
     // DEMOTE would leave TWO, and the stale one would fail on the NEXT
     // registration for a reason the next lane did not cause. Both halves fail
-    // here, and the NAME is pinned as well as the count: 20 === 20 would be
-    // true of the stale v1.0.34 field too, so the count alone cannot tell the
-    // two apart.
+    // here, and the NAME is pinned as well as the count: 21 === 21 would be
+    // true of the stale v1.0.35 field too, so the count alone cannot tell the
+    // two apart. The single live binding now belongs to the v1.0.36 field,
+    // promoted by W2-33-REG-N7 in the SAME change that demoted this one.
     const selfSource = readFileSync(path.join(REPO_ROOT, 'tests/ods/ods-scope.test.ts'), 'utf8')
     const liveGuard =
       /expect\(\s*([A-Za-z0-9_.]*PROTECTED_GRANTS_COUNT[A-Za-z0-9_]*)\s*\)\s*\.toBe\(\s*PROTECTED_GRANTS\.length\s*,?\s*\)/g
     const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
     expect(bound.length).toBe(1)
     expect(bound).toEqual([
-      'addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32',
+      'addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33',
     ])
+    // This control's OWN field is no longer among the live bindings — the
+    // demote is asserted as an ABSENCE from the measured set, not merely by
+    // the value assertion above.
+    expect(bound).not.toContain(
+      'addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32',
+    )
 
     // THE DEMOTE landed, asserted by VALUE rather than by a text search for
     // the assertion's own source line — a toContain whose argument is itself
@@ -6441,14 +6486,12 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     expect(
       addendumW2_31Frozen.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_31,
     ).not.toBe(PROTECTED_GRANTS.length)
-    expect(bound).not.toContain(
-      'addendumCe3Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_31',
-    )
-    // The demoted predecessors are NOT deleted: v1.0.33 and v1.0.34 are both
-    // still read by this file, and their fields are still pinned — just no
-    // longer to the live array.
+    // The demoted predecessors are NOT deleted: v1.0.33, v1.0.34 and v1.0.35
+    // are all still read by this file, and their fields are still pinned —
+    // just no longer to the live array.
     expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.33.json')
     expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json')
+    expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json')
   })
 
   it('CONTROLLER AXIS (W2-32-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.34 and v1.0.35 are enumerated by their own separate acts, and v1.0.36 is STILL NOT enumerated', () => {
@@ -6473,14 +6516,15 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     expect(resolveProtectedGrant('HPO-ODS-W2-32', CE3_REG).grant).toBeDefined()
   })
 
-  it('THIS ACT ALLOCATED NOTHING (W2-32-REG-N9): no v1.0.36, no W2-33, and the v1.0.35 allocation artefact is not rewritten', () => {
+  it('THIS ACT ALLOCATED NOTHING (W2-32-REG-N9): no v1.0.36, no W2-34, and the v1.0.35 allocation artefact is not rewritten', () => {
     // REGISTRATION IS NOT ALLOCATION. This act appended a row; it created no
     // addendum and reserved no id. The registry-axis sentinel advanced to
     // W2-33 precisely because W2-32 stopped being the next unregistered id —
-    // not because W2-33 acquired any status. Naming an id in a prohibition is
-    // never an allocation.
-    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-33')
-    expect(resolveProtectedGrant('HPO-ODS-W2-33', CE3_REG).grant).toBeUndefined()
+    // not because W2-33 acquired any status — and it has since advanced AGAIN
+    // to W2-34, by the SEPARATE later W2-33 registration act. Naming an id in
+    // a prohibition is never an allocation.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
+    expect(resolveProtectedGrant('HPO-ODS-W2-34', CE3_REG).grant).toBeUndefined()
     expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_REG))).toBe(false)
     // v1.0.36 HAS since been allocated, by a later and entirely separate act.
     // That is asserted POSITIVELY rather than left unstated, so that this
@@ -6788,38 +6832,49 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     expect(a.protected_grant.EXPLICITLY_NOT_AUTHORIZED_BY_THIS_GRANT).toContain(STELLA_0021_ROLLBACK)
   })
 
-  it('NO SAME-BRANCH NEIGHBOUR (W2-33-ALLOC-P4): ZERO registered rows bind the runtime-ACL branch, so neither declared pattern is redundant and no grant union is possible', () => {
-    // THIS IS THE STRUCTURAL CLAIM OF THIS ALLOCATION, and it is measured
-    // against the REAL registry and the REAL resolver rather than asserted as
-    // prose. Resolution is by EXACT branch equality, so a pattern carried by
-    // some other row on some other branch authorizes nothing here.
+  it('SAME-BRANCH NEIGHBOUR, SINCE REGISTERED (W2-33-ALLOC-P4): the runtime-ACL branch now carries EXACTLY the W2-33 row registered by a SEPARATE later governed act, and neither declared pattern is redundant with any OTHER row', () => {
+    // AT ALLOCATION TIME, ZERO registered rows bound this branch — that was
+    // the structural claim this ALLOCATION act measured. THE LIVE REGISTRY IS
+    // THE EVALUATOR, not this artefact's own frozen claim, and it has since
+    // moved: a SEPARATE governed registration act added EXACTLY the row this
+    // allocation declared, and no other row binds this branch.
     const onBranch = PROTECTED_GRANTS.filter((g) => g.branch === ACL_IMPL_BRANCH)
-    expect(onBranch).toEqual([])
+    expect(onBranch.length).toBe(1)
+    expect(onBranch[0].authorityId).toBe('HPO-ODS-W2-33')
 
-    // NON-VACUITY of that empty result: the SAME predicate applied to a branch
-    // that DOES carry rows returns a non-empty list, so the emptiness above is
-    // a measured absence and not a filter that matches nothing.
+    // NON-VACUITY: the SAME predicate applied to a branch that carries MORE
+    // than one row returns a longer list, so the singleton above is a
+    // measured fact and not a filter that always returns one.
     expect(
       PROTECTED_GRANTS.filter((g) => g.branch === 'codex/commercial-account-ce3-implementation-r1').length,
-    ).toBeGreaterThan(0)
+    ).toBeGreaterThan(1)
 
-    // THE README LITERAL IS CARRIED ELSEWHERE AND STILL AUTHORIZES NOTHING
-    // HERE. This is the trap the control exists for: a reader who sees the
-    // literal already registered could conclude the second pattern is
-    // redundant. It is not — every row carrying it binds another branch.
+    // THE README LITERAL IS CARRIED ELSEWHERE TOO, and every one of those
+    // OTHER rows still authorizes nothing on this branch — resolution is by
+    // EXACT branch equality, so a pattern carried by some other row on some
+    // other branch authorizes nothing here. Only the W2-33 row itself
+    // resolves.
     const readmeCarriers = PROTECTED_GRANTS.filter((g) => g.patterns.includes(PREPARED_README_36))
-    expect(readmeCarriers.length).toBeGreaterThan(0)
+    expect(readmeCarriers.length).toBeGreaterThan(1)
     for (const g of readmeCarriers) {
+      if (g.authorityId === 'HPO-ODS-W2-33') continue
       expect(g.branch).not.toBe(ACL_IMPL_BRANCH)
       expect(resolveProtectedGrant(g.authorityId, ACL_IMPL_BRANCH).grant).toBeUndefined()
     }
 
-    // AND NO REGISTERED ROW CARRIES THE PACKAGE LITERAL AT ALL, on any branch.
-    expect(PROTECTED_GRANTS.filter((g) => g.patterns.includes(STELLA_0021_SQL))).toEqual([])
+    // AND EXACTLY ONE REGISTERED ROW CARRIES THE PACKAGE LITERAL — the one
+    // this SEPARATE registration act itself added.
+    expect(
+      PROTECTED_GRANTS.filter((g) => g.patterns.includes(STELLA_0021_SQL)).map((g) => g.authorityId),
+    ).toEqual(['HPO-ODS-W2-33'])
   })
 
-  it('DECLARED NOT REGISTERED (W2-33-ALLOC-N1): W2-33 resolves NOWHERE, the live registry is unchanged at 20 with tail W2-32, and every count figure is a LITERAL', () => {
+  it('DECLARED AT ALLOCATION, REGISTERED SINCE (W2-33-ALLOC-N1): the allocation-time fields still read DECLARED_NOT_REGISTERED, and the LIVE registry now resolves W2-33 on its exact branch', () => {
     const a = readW2_33()
+    // FROZEN HALF — UNCHANGED. Statements about the bytes of the ALLOCATION
+    // artefact at ITS candidate head, true forever: registration state is
+    // expressed by CURRENT registry membership, never by rewriting the
+    // declaration.
     expect(a.protected_grant.registration_status).toBe('DECLARED_NOT_REGISTERED')
     expect(a.PROTECTED_GRANTS_CHANGED).toBe(false)
 
@@ -6834,22 +6889,29 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     expect(a.REGISTERED_GRANT_TAIL_AFTER).toBe('HPO-ODS-W2-32')
     expect(a.REGISTERED_GRANT_TAIL_BEFORE).toBe(a.REGISTERED_GRANT_TAIL_AFTER)
 
-    // THE REGISTRY AXIS IS MEASURED THREE WAYS, because a defect in any one
-    // mechanism alone must not be able to produce a false negative: the real
-    // registry, the real resolver, and the raw source text.
-    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-33')
-    expect(resolveProtectedGrant('HPO-ODS-W2-33', ACL_IMPL_BRANCH).grant).toBeUndefined()
+    // LIVE HALF — INVERTED BY THE REGISTRATION ACT. THE LIVE REGISTRY IS THE
+    // EVALUATOR, not the artefact's own claim about itself, measured THREE
+    // ways so a defect in any one mechanism alone cannot produce a false
+    // negative: the real registry, the real resolver, and the raw source text.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).toContain('HPO-ODS-W2-33')
+    expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-33').length).toBe(1)
+    expect(resolveProtectedGrant('HPO-ODS-W2-33', ACL_IMPL_BRANCH).grant).toEqual({
+      authorityId: 'HPO-ODS-W2-33',
+      branch: ACL_IMPL_BRANCH,
+      patterns: W2_33_PATTERNS,
+    })
     const scopeSource36 = readFileSync(path.join(REPO_ROOT, 'scripts/ods-scope.ts'), 'utf8')
-    expect(scopeSource36.split('HPO-ODS-W2-33').length - 1).toBe(0)
+    expect(scopeSource36.split('HPO-ODS-W2-33').length - 1).toBeGreaterThan(0)
 
-    // NON-VACUITY of that zero: the SAME textual predicate applied to the id
-    // that IS registered returns a positive count, so the zero above measures
-    // an absence rather than a mis-spelled needle.
-    expect(scopeSource36.split('HPO-ODS-W2-32').length - 1).toBeGreaterThan(0)
+    // NON-VACUITY: the id that is STILL NOT registered, W2-34, has zero
+    // textual occurrences and zero key-position membership in the same file.
+    expect(scopeSource36.split('HPO-ODS-W2-34').length - 1).toBe(0)
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
+    expect(resolveProtectedGrant('HPO-ODS-W2-34', ACL_IMPL_BRANCH).grant).toBeUndefined()
 
-    // AND THE LIVE TAIL IS STILL W2-32 — asserted against the array itself, so
-    // that a row appended by any other lane is caught here too.
-    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-32')
+    // AND THE LIVE TAIL HAS MOVED TO W2-33 — asserted against the array
+    // itself, so that a row appended by any other lane is caught here too.
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
   })
 
   it('GRANT DOES NOT REPLACE ALLOW (W2-33-ALLOC-N2): a SIMULATED W2-33 refuses its own literals without an --allow, refuses a prepared sibling entirely, and authorizes nothing outside its two patterns', () => {
@@ -6972,7 +7034,7 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     expect(a.CONTROLLER_SUCCESSOR_RULE.requirement).toContain('length + EXACTLY ONE')
   })
 
-  it('SEPARATION OF POWERS (W2-33-ALLOC-N5): the future stella_0021 writer is FORBIDDEN from self-registering W2-33, and may not touch any existing row', () => {
+  it('SEPARATION OF POWERS (W2-33-ALLOC-N5): W2-33 was registered by a SEPARATE governed act, not self-registered by the stella_0021 implementation writer, and every predecessor row is untouched', () => {
     const a = readW2_33()
     expect(a.GRANT_REGISTRATION_IS_A_SEPARATE_GOVERNED_ACT.THE_IMPLEMENTATION_WRITER_MAY_NOT_SELF_REGISTER).toContain(
       'may NOT add its own PROTECTED_GRANTS row in the same act',
@@ -6984,9 +7046,24 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
       'Allocate the ODS lineage position v1.0.36.',
       'Declare the protected grant HPO-ODS-W2-33.',
     ])
-    // THE PROHIBITION IS MEASURED AT THE CANDIDATE, not merely written down:
-    // scripts/ods-scope.ts carries no row and no occurrence of the id.
-    expect(PROTECTED_GRANTS.some((g) => g.authorityId === 'HPO-ODS-W2-33')).toBe(false)
+    // THE SEPARATION IS MEASURED AT THE CANDIDATE, not merely written down.
+    // W2-33 IS now registered — by the SEPARATE registration act this
+    // allocation always required, not by the stella_0021 implementation
+    // writer, which still does not exist as a branch and has written nothing.
+    // The registered row is byte-identical to the DECLARATION, proving the
+    // registering act appended exactly what was declared and altered nothing
+    // else — the observable signature of a governed registration rather than
+    // a self-serving one.
+    const live = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-33')
+    expect(live).toEqual({
+      authorityId: a.protected_grant.authorityId,
+      branch: a.protected_grant.branch,
+      patterns: a.protected_grant.patterns,
+    })
+    expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-33').length).toBe(1)
+    // NO IMPLEMENTATION BRANCH EXISTS to have performed a self-registration
+    // from: the package this grant protects is still absent.
+    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL))).toBe(false)
   })
 
   it('NO PREALLOCATION (W2-33-ALLOC-N6): v1.0.37, W2-34 and migration 0074 are named ONLY in prohibitions, and NONE of them is created, reserved or registered here', () => {
@@ -7033,11 +7110,13 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
       readdirSync(path.join(REPO_ROOT, 'db/migrations')).filter((f) => f.startsWith('0074')),
     ).toEqual([])
 
-    // AND THE REGISTRY-AXIS SENTINEL IS NOT PRE-ADVANCED. This act allocates
-    // W2-33; it does not register it, so the absence controls stay pinned at
-    // W2-33 and are NOT advanced to W2-34. Advancing them here would assert
-    // that W2-33 is registered when it is not.
-    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-33')
+    // THE REGISTRY-AXIS SENTINEL HAS SINCE ADVANCED. This ALLOCATION act did
+    // not register W2-33 — its own frozen NO_PREALLOCATION.GRANT_REGISTERED
+    // field below still and forever reads 'NO', a true historical claim about
+    // THIS act. The SEPARATE later registration act has since added the row,
+    // so the LIVE absence control now pins W2-34, not W2-33.
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).toContain('HPO-ODS-W2-33')
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
     expect(a.NO_PREALLOCATION.GRANT_REGISTERED).toBe('NO')
   })
 
@@ -7076,5 +7155,342 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     // mutation among the things it does not do.
     expect(a.NO_PREALLOCATION.PR178_MUTATED).toBe('NO')
     expect(a.NO_PREALLOCATION.STAGING_MUTATED).toBe('NO')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-W2-33 — CURRENT-SCHEMA RUNTIME ACL GRANT REGISTRATION.
+//
+// This is the SEPARATE governed registration act v1.0.36 required: it
+// REGISTERS exactly the row that artefact DECLARED and did not itself add.
+// The allocation writer never registers its own grant, so that the later
+// stella_0021 implementation writer can never grant itself authority — see
+// W2-33-ALLOC-N5 above, which now proves this act happened SEPARATELY.
+// ---------------------------------------------------------------------------
+
+describe('HPO-ODS-W2-33 — current-schema runtime ACL grant REGISTRATION', () => {
+  const W2_33_ADDENDUM_PATH = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json'
+  const W2_32_ADDENDUM_PATH_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json'
+  // ADVANCED from v1.0.37 by this act's own allocation predecessor — the
+  // NEXT unallocated lineage position after v1.0.36, still absent.
+  const NEXT_UNALLOCATED_REG = 'docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json'
+  const ACL_REG = 'codex/current-schema-runtime-acl-implementation-r1'
+  const STELLA_0021_SQL_REG = 'db/prepared/stella_0021_current_schema_runtime_acl_contract.sql'
+  const STELLA_0021_ROLLBACK_REG = 'db/prepared/stella_0021_rollback.sql'
+  const README_REG_33 = 'db/prepared/README.md'
+  const W2_33_GRANTED = [STELLA_0021_SQL_REG, README_REG_33]
+
+  type W2_33Addendum = {
+    GRANT_ID: string
+    protected_grant: {
+      authorityId: string
+      branch: string
+      patterns: string[]
+      pattern_count: number
+      registration_status: string
+    }
+    PROTECTED_GRANTS_CHANGED: boolean
+    PROTECTED_GRANTS_COUNT_BEFORE: number
+    PROTECTED_GRANTS_COUNT_AFTER: number
+    PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33: number
+    REGISTERED_GRANT_TAIL_BEFORE: string
+    REGISTERED_GRANT_TAIL_AFTER: string
+    GRANT_REGISTRATION_IS_A_SEPARATE_GOVERNED_ACT: Record<string, string>
+  }
+
+  const readW2_33Own = (): W2_33Addendum =>
+    JSON.parse(readFileSync(path.join(REPO_ROOT, W2_33_ADDENDUM_PATH), 'utf8')) as W2_33Addendum
+
+  it('DECLARATION SOURCE (W2-33-REG-P1): the v1.0.36 allocation artefact exists and declares HPO-ODS-W2-33 with EXACTLY the two literals in EXACTLY that order', () => {
+    expect(existsSync(path.join(REPO_ROOT, W2_33_ADDENDUM_PATH))).toBe(true)
+    const a = readW2_33Own()
+    expect(a.GRANT_ID).toBe('HPO-ODS-W2-33')
+    expect(a.protected_grant.authorityId).toBe('HPO-ODS-W2-33')
+    expect(a.protected_grant.branch).toBe(ACL_REG)
+    expect(a.protected_grant.patterns).toEqual(W2_33_GRANTED)
+    expect(a.protected_grant.pattern_count).toBe(2)
+    for (const p of a.protected_grant.patterns) {
+      expect(p.includes('*')).toBe(false)
+      expect(p.includes('?')).toBe(false)
+      expect(p.includes('[')).toBe(false)
+      expect(p.endsWith('/')).toBe(false)
+    }
+    expect(a.GRANT_REGISTRATION_IS_A_SEPARATE_GOVERNED_ACT.binding).toContain('SEPARATE governed act')
+    expect(
+      a.GRANT_REGISTRATION_IS_A_SEPARATE_GOVERNED_ACT.THE_IMPLEMENTATION_WRITER_MAY_NOT_SELF_REGISTER,
+    ).toContain('may NOT add its own PROTECTED_GRANTS row in the same act')
+  })
+
+  it('REGISTERED EXACTLY ONCE (W2-33-REG-P2): the live row equals the v1.0.36 declaration as a WHOLE OBJECT, appears once, and carries exactly three keys', () => {
+    const a = readW2_33Own()
+    const ids = PROTECTED_GRANTS.map((g) => g.authorityId)
+    expect(ids).toContain('HPO-ODS-W2-33')
+    expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-33').length).toBe(1)
+    const live = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-33')!
+    expect(live).toEqual({
+      authorityId: a.protected_grant.authorityId,
+      branch: a.protected_grant.branch,
+      patterns: a.protected_grant.patterns,
+    })
+    expect(live.authorityId).toBe('HPO-ODS-W2-33')
+    expect(live.branch).toBe(ACL_REG)
+    expect(live.patterns).toEqual(W2_33_GRANTED)
+    expect(live.patterns).toEqual([STELLA_0021_SQL_REG, README_REG_33])
+    expect(live.patterns.length).toBe(2)
+    expect(live.patterns).not.toContain('db/prepared/**')
+    expect(live.patterns).not.toContain(STELLA_0021_ROLLBACK_REG)
+    expect(live.patterns).not.toContain('db/migrations/**')
+    expect(live.patterns).not.toContain('db/prepared/journal/**')
+    expect(Object.keys(live).sort()).toEqual(['authorityId', 'branch', 'patterns'])
+    // THE FROZEN DECLARATION STATUS IS NOT REWRITTEN.
+    expect(a.protected_grant.registration_status).toBe('DECLARED_NOT_REGISTERED')
+    expect(a.PROTECTED_GRANTS_CHANGED).toBe(false)
+    expect(a.PROTECTED_GRANTS_COUNT_BEFORE).toBe(20)
+    expect(a.PROTECTED_GRANTS_COUNT_AFTER).toBe(20)
+    expect(a.REGISTERED_GRANT_TAIL_BEFORE).toBe('HPO-ODS-W2-32')
+    expect(a.REGISTERED_GRANT_TAIL_AFTER).toBe('HPO-ODS-W2-32')
+  })
+
+  it('REGISTRY POSTSTATE (W2-33-REG-P3): the registry is 21 rows, 21 unique ids, and W2-33 is the append-only TAIL at index 20', () => {
+    expect(PROTECTED_GRANTS.length).toBe(21)
+    expect(new Set(PROTECTED_GRANTS.map((g) => g.authorityId)).size).toBe(21)
+    expect(PROTECTED_GRANTS[20].authorityId).toBe('HPO-ODS-W2-33')
+    expect(PROTECTED_GRANTS[PROTECTED_GRANTS.length - 1].authorityId).toBe('HPO-ODS-W2-33')
+    // NO OTHER ROW BINDS THIS BRANCH — the structural novelty of this
+    // registration relative to W2-30/31/32, which shared the CE-3 branch.
+    expect(PROTECTED_GRANTS.filter((g) => g.branch === ACL_REG).map((g) => g.authorityId)).toEqual([
+      'HPO-ODS-W2-33',
+    ])
+  })
+
+  it('BOUND-BRANCH RESOLUTION (W2-33-REG-P4): W2-33 resolves on its exact branch and returns EXACTLY the registered row', () => {
+    const resolved = resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG)
+    expect(resolved.grant).toBeDefined()
+    expect(resolved.grant).toEqual({
+      authorityId: 'HPO-ODS-W2-33',
+      branch: ACL_REG,
+      patterns: [STELLA_0021_SQL_REG, README_REG_33],
+    })
+    expect(resolved.grant!.patterns.length).toBe(2)
+    expect(resolveProtectedGrants(['HPO-ODS-W2-33'], ACL_REG).grants).toEqual([resolved.grant])
+    const cls = classifyPaths(W2_33_GRANTED, DEFAULT_PROTECTED_PATTERNS, W2_33_GRANTED, [
+      resolved.grant!,
+    ])
+    expect(cls.grantAuthorized.slice().sort()).toEqual(W2_33_GRANTED.slice().sort())
+    expect(cls.protectedViolations).toEqual([])
+  })
+
+  it('EXACT BRANCH BINDING (W2-33-REG-N1): W2-33 resolves on its exact branch and NOTHING near it resolves, and an unknown id fails identically', () => {
+    expect(resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG).grant).toBeDefined()
+    const nearMissBranches = [
+      ACL_REG + ' ',
+      ' ' + ACL_REG,
+      ACL_REG.toUpperCase(),
+      ACL_REG + '-r2',
+      ACL_REG.replace('-r1', ''),
+      'codex/ods-w2-33-registration-r1',
+      'codex/ods-v1-0-36-w2-33-allocation-r1',
+      'integration/commercial-v1',
+      'main',
+      '',
+    ]
+    for (const b of nearMissBranches) {
+      expect(resolveProtectedGrant('HPO-ODS-W2-33', b).grant).toBeUndefined()
+      const union = resolveProtectedGrants(['HPO-ODS-W2-33'], b)
+      expect(union.grants).toEqual([])
+      expect(
+        classifyPaths(W2_33_GRANTED, DEFAULT_PROTECTED_PATTERNS, W2_33_GRANTED, union.grants)
+          .protectedViolations.slice().sort(),
+      ).toEqual(W2_33_GRANTED.slice().sort())
+    }
+    for (const id of ['HPO-ODS-W2-33 ', 'hpo-ods-w2-33', 'HPO-ODS-W2-3', 'HPO-ODS-W2-333', 'HPO-ODS-W2-34', '']) {
+      expect(resolveProtectedGrant(id, ACL_REG).grant).toBeUndefined()
+    }
+    expect(resolveProtectedGrant(undefined, ACL_REG).grant).toBeUndefined()
+  })
+
+  it('NO OTHER GRANT AUTHORIZES THIS BRANCH (W2-33-REG-N2): the WHOLE remaining registry, offered at once, resolves to nothing on the runtime-ACL branch', () => {
+    // MEASURED, not asserted from prose: unlike W2-30/31/32, which shared the
+    // CE-3 branch and had to adjudicate an overlap, W2-33 binds a branch NO
+    // other row has ever bound. Offering every OTHER registered id at once
+    // still authorizes nothing here.
+    const ceiling = PROTECTED_GRANTS.map((g) => g.authorityId).filter((id) => id !== 'HPO-ODS-W2-33')
+    expect(ceiling.length).toBe(20)
+    const resolved = resolveProtectedGrants(ceiling, ACL_REG)
+    expect(resolved.grants).toEqual([])
+    const paths = W2_33_GRANTED
+    expect(classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, resolved.grants).protectedViolations).toEqual(
+      paths,
+    )
+    // ...and WITH W2-33 added to the union, both paths are authorized.
+    const withW2_33 = resolveProtectedGrants([...ceiling, 'HPO-ODS-W2-33'], ACL_REG)
+    expect(withW2_33.grants.map((g) => g.authorityId)).toEqual(['HPO-ODS-W2-33'])
+    expect(
+      classifyPaths(paths, DEFAULT_PROTECTED_PATTERNS, paths, withW2_33.grants).protectedViolations,
+    ).toEqual([])
+  })
+
+  it('REFUSES EVERY PREPARED SIBLING AND THE FORBIDDEN ROLLBACK (W2-33-REG-N3): the literal is not a prefix, and no sibling package or family is reached', () => {
+    const w2_33 = resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG).grant
+    expect(w2_33).toBeDefined()
+    const refused = [
+      STELLA_0021_ROLLBACK_REG,
+      'db/prepared/stella_0022_future_package.sql',
+      'db/prepared/stella_0020_stella_interactions_model_default.sql',
+      'db/prepared/stella_hosted_0010_entitlement_grants_acl_hardening.sql',
+      'db/prepared/journal/001_fixture.sql',
+      'db/prepared/hosted/governed/fixture.sql',
+      'db/prepared/checkpoint-b0/observation.sql',
+      'db/migrations/0074_future.sql',
+    ]
+    for (const p of refused) {
+      const c = classifyPaths([p], DEFAULT_PROTECTED_PATTERNS, [p], [w2_33!])
+      expect(c.grantAuthorized).toEqual([])
+      expect(c.protectedViolations).toEqual([p])
+    }
+  })
+
+  it('GRANT DOES NOT REPLACE ALLOW (W2-33-REG-N4): the README is refused under the RESOLVED grant when the ordinary allow list does not name it', () => {
+    const w2_33 = resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG).grant!
+    const withoutAllow = classifyPaths([README_REG_33], DEFAULT_PROTECTED_PATTERNS, [], [w2_33])
+    expect(withoutAllow.grantAuthorized).toEqual([])
+    const emptyAllow = classifyPaths(W2_33_GRANTED, DEFAULT_PROTECTED_PATTERNS, [], [w2_33])
+    expect(emptyAllow.grantAuthorized).toEqual([])
+    const withAllow = classifyPaths([README_REG_33], DEFAULT_PROTECTED_PATTERNS, [README_REG_33], [w2_33])
+    expect(withAllow.grantAuthorized).toEqual([README_REG_33])
+    expect(withAllow.protectedViolations).toEqual([])
+  })
+
+  it('APPEND-ONLY (W2-33-REG-N5): the 20 predecessor rows are preserved, in order, with their branches AND pattern counts unchanged, and W2-33 sits at its append POSITION', () => {
+    const PREDECESSORS: ReadonlyArray<readonly [string, string]> = [
+      ['HPO-ODS-W2-01', 'codex/w2-methodology-objects-r1'],
+      ['HPO-ODS-W2-02', 'codex/u0-u9-reengineering-resume-r1'],
+      ['HPO-ODS-W2-03', 'codex/u0-u9-reengineering-resume-r1'],
+      ['HPO-ODS-W2-07', 'codex/product-commercial-v1-pr-r1'],
+      ['HPO-ODS-W2-08', 'codex/commercial-v1-wave2-reconciliation-r1'],
+      ['HPO-ODS-W2-09', 'codex/commercial-v1-wave2-reconciliation-r1'],
+      ['HPO-ODS-W2-11', 'codex/p1a-full-bootstrap-r1'],
+      ['HPO-ODS-W2-12', 'codex/w2-b4-r1'],
+      ['HPO-ODS-W2-16', 'codex/w2-b4-r1'],
+      ['HPO-ODS-W2-17', 'codex/w2-b5-r1'],
+      ['HPO-ODS-W2-20', 'codex/multiorg-s1-founder-traceability-r1'],
+      ['HPO-ODS-W2-21', 'codex/multiorg-s1-founder-traceability-r1'],
+      ['HPO-ODS-W2-25', 'codex/multiorg-s3-refusal-audit-implementation-r1'],
+      ['HPO-ODS-W2-26', 'codex/commercial-account-ce1-implementation-r1'],
+      ['HPO-ODS-W2-27', 'codex/fibdb052-p1-implementation-r1'],
+      ['HPO-ODS-W2-28', 'codex/customer-lifecycle-cl1-implementation-r1'],
+      ['HPO-ODS-W2-29', 'codex/l1-organization-commercial-acceptance-implementation-r1'],
+      ['HPO-ODS-W2-30', 'codex/commercial-account-ce3-implementation-r1'],
+      ['HPO-ODS-W2-31', 'codex/commercial-account-ce3-implementation-r1'],
+      ['HPO-ODS-W2-32', 'codex/commercial-account-ce3-implementation-r1'],
+    ]
+    expect(PREDECESSORS.length).toBe(20)
+    expect(PROTECTED_GRANTS.slice(0, 20).map((g) => [g.authorityId, g.branch])).toEqual(
+      PREDECESSORS.map(([id, branch]) => [id, branch]),
+    )
+    expect(PROTECTED_GRANTS.slice(0, 20).map((g) => g.patterns.length)).toEqual([
+      2, 75, 8, 1, 98, 4, 3, 2, 1, 3, 1, 1, 2, 3, 2, 3, 3, 3, 2, 2,
+    ])
+    for (const g of PROTECTED_GRANTS) {
+      expect(g.patterns).not.toContain('db/prepared/**')
+    }
+  })
+
+  it('NO IMPLEMENTATION (W2-33-REG-N6): registering the grant created neither the stella_0021 package nor the FORBIDDEN rollback sibling, and did not create the implementation branch', () => {
+    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL_REG))).toBe(false)
+    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_ROLLBACK_REG))).toBe(false)
+    const strays0021 = readdirSync(path.join(REPO_ROOT, 'db/prepared')).filter((f) =>
+      f.startsWith('stella_0021'),
+    )
+    expect(strays0021).toEqual([])
+    // NON-VACUITY: the predecessor package DOES exist.
+    expect(
+      readdirSync(path.join(REPO_ROOT, 'db/prepared')).filter((f) => f.startsWith('stella_0020')).length,
+    ).toBeGreaterThan(0)
+    // AND THE README IS UNTOUCHED BY THIS ACT — it is a GRANTED surface, not
+    // one this mission writes.
+    expect(existsSync(path.join(REPO_ROOT, README_REG_33))).toBe(true)
+  })
+
+  it('LIVE_COUNT_GUARD_TRANSFER (W2-33-REG-N7): the transfer was ATOMIC — exactly ONE live binding, it is the v1.0.36 field, and the v1.0.35 predecessor is demoted but not deleted', () => {
+    const addendumW2_33Own = readW2_33Own()
+    expect(addendumW2_33Own.GRANT_ID).toBe('HPO-ODS-W2-33')
+    // THE PROMOTE.
+    expect(addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33).toBe(
+      PROTECTED_GRANTS.length,
+    )
+    expect(addendumW2_33Own.PROTECTED_GRANTS_COUNT_BEFORE).toBe(20)
+    expect(
+      addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33 -
+        addendumW2_33Own.PROTECTED_GRANTS_COUNT_BEFORE,
+    ).toBe(1)
+
+    // ATOMICITY, made executable by reading THIS file's own source. Exactly
+    // ONE assertion in this file may bind a frozen addendum field to the LIVE
+    // PROTECTED_GRANTS.length, and it is this one.
+    const selfSource = readFileSync(path.join(REPO_ROOT, 'tests/ods/ods-scope.test.ts'), 'utf8')
+    const liveGuard =
+      /expect\(\s*([A-Za-z0-9_.]*PROTECTED_GRANTS_COUNT[A-Za-z0-9_]*)\s*\)\s*\.toBe\(\s*PROTECTED_GRANTS\.length\s*,?\s*\)/g
+    const bound = [...selfSource.matchAll(liveGuard)].map((m) => m[1])
+    expect(bound.length).toBe(1)
+    expect(bound).toEqual([
+      'addendumW2_33Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_33',
+    ])
+
+    // THE DEMOTE landed: the v1.0.35 field is pinned to its own historical
+    // literal, not to the live array.
+    const addendumW2_32Frozen = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, W2_32_ADDENDUM_PATH_REG), 'utf8'),
+    ) as { PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32: number }
+    expect(addendumW2_32Frozen.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32).toBe(20)
+    expect(
+      addendumW2_32Frozen.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32,
+    ).not.toBe(PROTECTED_GRANTS.length)
+    expect(bound).not.toContain(
+      'addendumW2_32Own.PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_32',
+    )
+    // The demoted predecessors are NOT deleted: earlier addenda are still
+    // read by this file, and their fields are still pinned.
+    expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json')
+    expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json')
+  })
+
+  it('CONTROLLER AXIS (W2-33-REG-N8): this REGISTRATION act itself edited no Controller surface, and v1.0.36 is STILL NOT enumerated', () => {
+    const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBe(0)
+    // NO CONTROLLER MUTATION IS REQUIRED FOR THE GRANT TO RESOLVE.
+    expect(resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG).grant).toBeDefined()
+  })
+
+  it('THIS ACT ALLOCATED NOTHING (W2-33-REG-N9): no v1.0.37, no W2-34, and the v1.0.36 allocation artefact is not rewritten', () => {
+    expect(PROTECTED_GRANTS.map((g) => g.authorityId)).not.toContain('HPO-ODS-W2-34')
+    expect(resolveProtectedGrant('HPO-ODS-W2-34', ACL_REG).grant).toBeUndefined()
+    expect(existsSync(path.join(REPO_ROOT, NEXT_UNALLOCATED_REG))).toBe(false)
+    // NON-VACUITY: the addendum this act CONSUMES does exist.
+    expect(existsSync(path.join(REPO_ROOT, W2_33_ADDENDUM_PATH))).toBe(true)
+    const a = readW2_33Own()
+    expect(a.protected_grant.registration_status).toBe('DECLARED_NOT_REGISTERED')
+    expect(a.PROTECTED_GRANTS_CHANGED).toBe(false)
+    expect(a.PROTECTED_GRANTS_COUNT_AFTER).toBe(20)
+    expect(a.REGISTERED_GRANT_TAIL_AFTER).toBe('HPO-ODS-W2-32')
+  })
+
+  it('THE REGISTRATION DOES NOT CONSUME THE GRANT IT CREATES (W2-33-REG-N10): the changed paths of this lane are UNPROTECTED, and W2-33 resolves on the implementation branch and not on this registration lane\'s own branch', () => {
+    const ownWriteSet = ['scripts/ods-scope.ts', 'tests/ods/ods-scope.test.ts']
+    const own = classifyPaths(ownWriteSet, DEFAULT_PROTECTED_PATTERNS, ownWriteSet, [])
+    expect(own.protectedViolations).toEqual([])
+    expect(own.grantAuthorized).toEqual([])
+    expect(own.unauthorized).toEqual([])
+    // NON-VACUITY: a path that IS protected is refused by the same call with
+    // the same empty grant list.
+    expect(
+      classifyPaths([STELLA_0021_SQL_REG], DEFAULT_PROTECTED_PATTERNS, [STELLA_0021_SQL_REG], [])
+        .protectedViolations,
+    ).toEqual([STELLA_0021_SQL_REG])
+    expect(resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG).grant).toBeDefined()
+    expect(resolveProtectedGrant('HPO-ODS-W2-33', 'codex/ods-w2-33-registration-r1').grant).toBeUndefined()
+    // NO IMPLEMENTATION SURFACE HAS APPEARED IN THIS LANE'S TREE.
+    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL_REG))).toBe(false)
   })
 })
