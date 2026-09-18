@@ -11,7 +11,6 @@
   "AS_OF_REF": "origin/integration/commercial-v1",
   "AS_OF_HEAD": "4a6308e3d1ce5a282e11055087148a142f642dce",
   "AS_OF_TREE": "6d7e5765576d010126436a5c2620d56ae178f8ad",
-
   "PURPOSE": {
     "what_this_is": "The NODE-level execution authority for FIBDB-053 Stage-A. It exists because the ODS allocator consumes a branch plus an exact ordered list of protected literals from a NODE authority, and no such artifact existed for FIBDB-053 at AS_OF_HEAD.",
     "what_this_is_not": [
@@ -23,7 +22,6 @@
     ],
     "relationship_to_the_domain_authority": "WAVE3_AUTHORITY_v1.0.0.json already froze FIBDB053_STAGE_A_CONTRACT, CP4_SEQUENCE and G2_BOUNDARY at the DOMAIN level. This artifact does not restate them and does not compete with them. It adds exactly what a domain authority cannot carry: the implementation BRANCH, the exact ORDERED protected literal list, the ordinary write surface measured from precedent, and the disposition of two defects the domain authority does not record."
   },
-
   "CONTROLLING_AUTHORITY_STACK": {
     "order": "Highest first. A conflict between levels fails closed.",
     "levels": [
@@ -74,21 +72,37 @@
       }
     ]
   },
-
   "INDEPENDENT_REDERIVATION": {
     "rule": "Every value below was re-derived from the sealed index and the executable tree at AS_OF_HEAD. The prior audit report was NOT trusted and is NOT cited as a source.",
     "FIBDB-053": {
       "object": "stella_governed_completion_risk_parameters",
       "change_type": "PREPARED_FUNCTION_REVISION",
       "source_of_truth_track": "PREPARED_G2",
-      "owning_fibiu": ["FIBIU-20"],
-      "migration_stage": ["A", "E"],
+      "owning_fibiu": [
+        "FIBIU-20"
+      ],
+      "migration_stage": [
+        "A",
+        "E"
+      ],
       "source": "FIB index fibdb entry for FIBDB-053; corroborated by the long-form block at FIB:385-403."
     },
     "FIBIU-20": {
-      "contracts_served": ["FIBC-024", "FIBC-025"],
-      "db_changes": ["FIBDB-019", "FIBDB-020", "FIBDB-040", "FIBDB-049", "FIBDB-053"],
-      "hard_dependencies_in_index": ["FIBIU-19", "FIBIU-29"],
+      "contracts_served": [
+        "FIBC-024",
+        "FIBC-025"
+      ],
+      "db_changes": [
+        "FIBDB-019",
+        "FIBDB-020",
+        "FIBDB-040",
+        "FIBDB-049",
+        "FIBDB-053"
+      ],
+      "hard_dependencies_in_index": [
+        "FIBIU-19",
+        "FIBIU-29"
+      ],
       "wave": 3,
       "topological_level": "3.2",
       "prose_only_edge": "FIB:785 states HARD_DEPENDENCIES: FIBIU-19, FIBIU-29, and FIBDB-053 applied. The index hard_dependencies field carries only FIBIU-to-FIBIU edges, so the FIBDB-053 edge exists in prose only. Recorded as a measured asymmetry, not resolved here; it is load-bearing for RUNTIME_APPLY_COUPLING."
@@ -119,7 +133,6 @@
       "this_authority_adds_no_permission": "Nothing here widens the permitted_before_G2 list."
     }
   },
-
   "CURRENT_STATE_AT_AS_OF_HEAD": {
     "verdict": "FIBDB-053 = AUTHORITY_ONLY. Every implementation surface is ABSENT.",
     "measurements": [
@@ -179,9 +192,8 @@
       "db/prepared/stella_0018_category_bound_operation_tickets.sql": "NOT in this node's write set despite carrying an inverting preflight. See INSTALLED_PROBE_AND_WITNESS_SUCCESSION.stella_0018_preflight for the reasoned disposition."
     }
   },
-
   "ORDINARY_WRITE_SET": {
-    "status": "FROZEN as an exact enumerated list. No open write surface and no 'probably' survives this authority.",
+    "status": "FROZEN as an exact enumerated list. No open write surface and no \"probably\" survives this authority. Corrected at R2 by F-PC-2: R1 called the set exact while omitting a mandatory pin.",
     "derivation": "The UNION of two measured precedents, because stella_0017b is BOTH a governed-chain append and a ticket-chain append, and neither precedent alone covers it.",
     "precedent_A_governed_chain_append": {
       "commit": "56707d56",
@@ -286,7 +298,8 @@
       "tests/eval/stella-release/hosted-release-gate.ts",
       "scripts/stella-ticket-e2e.sh",
       "scripts/stella-multicategory-quota-e2e.sh",
-      "scripts/stella-governed-consumption-dry-run.sh"
+      "scripts/stella-governed-consumption-dry-run.sh",
+      "tests/hosted/authority/remediation-certification.test.ts"
     ],
     "new_files_the_implementing_mission_may_create": {
       "rule": "Bounded by precedent B, which created a dry-run script plus gates/mutations helpers plus a mutation test for the new package.",
@@ -302,6 +315,26 @@
     "explicitly_excluded_from_the_ordinary_write_set": {
       "runtime_directories": "db/stella/**, lib/stella/**, app/actions/stella/** are EXCLUDED from this node. See RUNTIME_APPLY_COUPLING for the reasoned disposition and the companion node this exclusion requires.",
       "historical_evidence": "docs/ops/staging/evidence/**.json carries ten dated observation artifacts that record the OLD signatures as they were observed at their observation dates. These are historical evidence and are NEVER rewritten. A mission that 'fixes' them to mention the new signatures has falsified a past measurement."
+    },
+    "transfer_segment_count_pin": {
+      "finding_id": "F-PC-2",
+      "status": "CLOSED AT R2 — the pin is MANDATORY and is now enumerated.",
+      "path": "tests/hosted/authority/remediation-certification.test.ts",
+      "the_pin": "Line 454 asserts expect(deriveTransferSegmentCount()).toBe(11) — a hardcoded literal, not a derived comparison.",
+      "derivation": "deriveTransferSegmentCount() (db/hosted/authority/certification/chain-postconditions.ts:164) counts buildAuthorityPlan().segments whose authorityClass is OWNER_TRANSFER. MEASURED at this base: 62 segments total, of which 11 are OWNER_TRANSFER, distributed T1:1 T2:1 T3:1 T4:1 T5:1 T6:1 T7:2 T8:2 T9:1.",
+      "does_stella_0017b_move_it": "YES.",
+      "why": {
+        "t8_is_stella_0017": "T8 contributes TWO of the eleven, as window W46 (authorityClass OWNER_TRANSFER, 3 structural statements, segments W46.S1 -> uellix_cap_stella_quota with 2 statements and W46.S2 -> uellix_cap_stella_ticket with 1).",
+        "w46_boundaries_are_the_dropped_signatures": "W46.startStatementIdentity is owner-transfer:function:uellix_stella.settle_reserved_quota(uuid,uuid,varchar,bpchar,bpchar,varchar,bpchar,varchar,int4,jsonb):uellix_cap_stella_quota and W46.endStatementIdentity is owner-transfer:function:uellix_stella_ops.complete_operation_ticket(bpchar,uuid,bpchar,varchar,varchar,int4,jsonb):uellix_cap_stella_ticket. Those are EXACTLY the ten-argument settle and seven-argument complete this node must DROP.",
+        "consequence": "stella_0017b publishes the twelve-argument settle and the nine-argument complete, which are SECURITY DEFINER functions that must end up owned by the same two capability roles. T12 therefore needs its own OWNER_TRANSFER window mirroring W46, and the count moves from 11 to an EXPECTED 13."
+      },
+      "count_not_frozen_here": "The authority mandates that the pin be RE-DERIVED and updated, and states 13 as the expected value derived from mirroring W46. It does NOT freeze 13 as a literal, because the exact segment count follows from how the implementing mission authors the unit's owner-transfer window. A frozen number here could contradict a legitimately different but correct window split.",
+      "why_the_R1_precedent_missed_it": {
+        "class": "PRECEDENT_BLINDNESS — the reason R1 believed its ordinary set was complete.",
+        "measurement": "T10 (grounding_0005) and T11 (stella_0019) contribute ZERO OWNER_TRANSFER segments.",
+        "consequence": "Commit 56707d56, the nearest governed-chain append and R1's primary precedent, therefore never touched this pin. A write set derived purely from a transfer-neutral precedent cannot see a transfer-count pin. The general lesson is recorded in census_method_warning: a precedent proves what it touched, never what it did not need."
+      },
+      "also_consuming_this_derivation": "scripts/remediation-certify.ts:1036,1038 already appears in the ordinary set and consumes deriveTransferSegmentCount() for its report."
     }
   },
   "FUNCTION_SUCCESSION_CONTRACT": {
@@ -342,7 +375,6 @@
     ],
     "reciprocal_prohibition_carried_from_CP4": "FIBDB-053 must NOT anticipate or implement S3c. It adds no organization-scope recheck, does not change how organization_id is derived, and does not touch the selected-organization carrier."
   },
-
   "RISK_DURABILITY_CONTRACT": {
     "defect_proven_independently": {
       "claim": "risk_level and risk_flags are audit metadata only and are not durably written through the governed completion path.",
@@ -361,7 +393,6 @@
     },
     "explicitly_not_in_scope": "Making the parameters MANDATORY for validator and reviewer is HARDENING_STAGE E and belongs to FIBIU-20 in production. Stage-A makes them WRITABLE, not mandatory."
   },
-
   "INSTALLED_PROBE_AND_WITNESS_SUCCESSION": {
     "status": "MANDATORY. This is the defect class most likely to be missed, because every inverted sentinel is GREEN today and turns RED only after a CORRECT supersession.",
     "the_defect": "stella_0017 is detected by the presence of the very signatures FIBDB-053 must DROP. After stella_0017b correctly removes them, predecessor evidence concludes stella_0017 is NOT installed. The failure is an inversion, not a break: the probes keep working exactly as written and report the opposite of the truth.",
@@ -429,11 +460,16 @@
     },
     "census_method_warning": {
       "class": "METHODOLOGICAL, and load-bearing for any re-audit.",
-      "finding": "The two old signatures are spelled in TWO different ways in this repository - with a space after each comma (db/prepared-package-order.ts, the SQL packages) and with NO space (db/hosted/package-witnesses.ts, db/prepared/checkpoint-a1/corroboration.sql). A census run in only one spelling MISSES the witness registry and the checkpoint corroboration entirely - that is, it misses exactly the two sentinels that matter most.",
-      "required": "Any completeness claim about sentinel coverage must be run spelling-robustly, and must additionally cover the T-number naming system used by db/hosted/authority/**, where stella_0017 is called T8 and a package-id grep returns zero."
+      "finding": "The two old signatures are spelled in THREE different ways in this repository - with a space after each comma (db/prepared-package-order.ts, the SQL packages) and with NO space (db/hosted/package-witnesses.ts, db/prepared/checkpoint-a1/corroboration.sql). A census run in only one spelling MISSES the witness registry and the checkpoint corroboration entirely - that is, it misses exactly the two sentinels that matter most.",
+      "required": "Any completeness claim about sentinel coverage must be run spelling-robustly, and must additionally cover the T-number naming system used by db/hosted/authority/**, where stella_0017 is called T8 and a package-id grep returns zero.",
+      "third_spelling_found_at_R2": {
+        "spelling": "pg_catalog internal short names — bpchar, varchar, int4 — with NO spaces after commas.",
+        "where": "The classification windows. W46.startStatementIdentity and W46.endStatementIdentity in the authority plan name the ten-argument settle and the seven-argument complete in this spelling.",
+        "why_it_matters": "Those statement identities feed GOVERNED_PLAN_DIGEST, so they are load-bearing and not merely descriptive. A census run in the two prose spellings finds neither, so the R1 warning — already stating that a single-spelling census is unsafe — was itself understated.",
+        "updated_rule": "A completeness claim about sentinel coverage must cover THREE signature spellings (spaced, unspaced, pg_catalog-short) AND the T-number naming system, and must additionally not infer absence from a precedent commit that had no reason to touch the surface."
+      }
     }
   },
-
   "ROLLBACK_CONTRACT": {
     "predecessor_rollback_is_not_valid_for_the_successor": {
       "status": "PROVEN, not assumed.",
@@ -506,7 +542,6 @@
       "explicitly_not_authored_here": "This authority names the companion node and its obligation. It does not author it, does not scope its write set beyond the surfaces measured above, and does not allocate it."
     }
   },
-
   "G2_BOUNDARY": {
     "status": "CONSUMED BY REFERENCE from WAVE3_AUTHORITY_v1.0.0.json -> G2_BOUNDARY. Not restated as a competing list.",
     "pre_G2_allowed": [
@@ -526,20 +561,53 @@
     "authoring_does_not_resolve_G2": "Explicit: producing the artifacts SUBMITS an object to the gate. It does not pass it. At AS_OF_HEAD the gate has no submitted object at all, because none of the four artifacts exists.",
     "additional_apply_precondition_added_by_this_node": "RUNTIME_APPLY_COUPLING. Even after a human G2 act, an apply remains unsafe until the companion runtime node closes. This is an ADDITIONAL constraint on apply, never a relaxation of the G2 rule."
   },
-
   "PR184_SERIALIZATION": {
     "status": "FROZEN as a PHYSICAL WRITE-SET SEQUENCING RULE.",
     "rule": "FIBDB-053 implementation may NOT begin until PR #184 is integrated and its protected W2-33 act is closed.",
     "the_node_authority_itself_is_exempt": "This artifact is docs-only, writes nothing under db/prepared/**, and MAY integrate before PR #184.",
     "measured_collision": {
-      "pr": "PR #184, head 989849734e39b4600350c963b782f514dcef8d2b, state OPEN, isDraft true, title 'feat(db): stella_0021 current-schema runtime ACL contract (CV1-RUNTIME-ACL-W233-W, HPO-ODS-W2-33)'.",
-      "overlapping_protected_literal": "db/prepared/README.md - protected literal 5 of this node's set. PR #184 modifies it and also adds db/prepared/stella_0021_current_schema_runtime_acl_contract.sql.",
-      "why_it_is_a_real_collision": "Both acts append a package section and a table row to the same inventory document. This is a physical write-set overlap, resolvable only by serialization."
+      "finding_id": "F-PC-3",
+      "status": "CORRECTED AT R2. R1 recorded only db/prepared/README.md; the true overlap is THREE paths.",
+      "pr": "PR #184, head 989849734e39b4600350c963b782f514dcef8d2b, state OPEN, isDraft true, title \"feat(db): stella_0021 current-schema runtime ACL contract (CV1-RUNTIME-ACL-W233-W, HPO-ODS-W2-33)\". Re-measured fresh at R2; unchanged from R1.",
+      "pr184_full_changed_surface": [
+        "db/hosted/forward-only-packages.ts",
+        "db/hosted/prechain-ownership.ts",
+        "db/prepared/README.md",
+        "db/prepared/stella_0021_current_schema_runtime_acl_contract.sql",
+        "tests/database-runtime-acl-closed-world.test.ts",
+        "tests/hosted/prechain-ownership.test.ts",
+        "tests/ods/ods-scope.test.ts",
+        "tests/postgres/current-schema-runtime-acl-harness.ts",
+        "tests/postgres/current-schema-runtime-acl-measure.pg.test.ts",
+        "tests/postgres/current-schema-runtime-acl.pg.test.ts",
+        "tests/prepared-stella-sql.test.ts"
+      ],
+      "overlapping_paths": [
+        {
+          "path": "db/prepared/README.md",
+          "class": "PROTECTED — literal 5 of this node's six.",
+          "why": "Both acts append a package section and a table row to the same inventory document."
+        },
+        {
+          "path": "tests/prepared-stella-sql.test.ts",
+          "class": "ORDINARY",
+          "why": "The prepared-SQL contract suite. Both acts add a new prepared unit that this suite enumerates."
+        },
+        {
+          "path": "tests/hosted/prechain-ownership.test.ts",
+          "class": "ORDINARY",
+          "why": "PR #184 edits db/hosted/prechain-ownership.ts and its suite; this node's ordinary set already enumerates the same test."
+        }
+      ],
+      "tested_and_excluded": {
+        "db/hosted/forward-only-packages.ts": "NOT a collision. The file registers exactly two forward-only packages, grounding_0005_claim_advisory_lock and stella_local_0000_local_role_identity_bootstrap. stella_0017 is NOT an entry — it appears only inside grounding_0005's prose rationale — and stella_0017b ships a rollback, so it is reversible and not forward-only. This path is therefore absent from this node's write set and cannot collide.",
+        "the seven remaining PR184 paths": "Disjoint from this node's write set: the stella_0021 unit itself, db/hosted/prechain-ownership.ts, tests/ods/ods-scope.test.ts, tests/database-runtime-acl-closed-world.test.ts and the three current-schema-runtime-acl PostgreSQL harness/test files."
+      },
+      "ordering_unchanged": "PR #184's protected W2-33 act closes FIRST; FIBDB-053 physical implementation SECOND. R2 widens the measured surface; it does not change the direction."
     },
-    "explicitly_not_a_semantic_dependency": "There is NO semantic dependency between the stella_0021 runtime ACL contract and FIBDB-053. The serialization exists solely because the two acts write the same protected file. A reader must not infer that FIBDB-053 depends on the ACL work.",
+    "explicitly_not_a_semantic_dependency": "There is NO semantic dependency between the stella_0021 runtime ACL contract and FIBDB-053. All three overlaps are PHYSICAL write-set collisions — one inventory document and two enumerating test suites — resolvable only by serialization. R2 states this again precisely because widening the surface from one path to three could otherwise be misread as evidence of coupling. It is not.",
     "known_state_not_adjudicated_here": "PR #184 was independently certified FAIL_BLOCKING on 2026-09-18 by a separate lane. This authority does not adjudicate that certification; it only records that the serialization is keyed on INTEGRATION and CLOSURE of the W2-33 act, whatever path that takes."
   },
-
   "S3C_SERIALIZATION": {
     "status": "CONSUMED BY REFERENCE from WAVE3_AUTHORITY_v1.0.0.json -> CP4_SEQUENCE.",
     "rule": "FIBDB-053 physical Stage-A work FIRST. S3c physical work SECOND. They MUST NOT be parallel writers.",
@@ -553,7 +621,6 @@
     "why_a_merge_cannot_reconcile": "Both change the ARITY and body of the same SECURITY DEFINER functions in the same schemas. A textual merge of two independent DROP+CREATE revisions of complete_operation_ticket applies cleanly and installs a function neither author designed, and two concurrent revisions that each believe they preserved the count of eight can jointly break it - surfacing only at apply time in a G2 window neither author controls.",
     "s3c_implementation_not_included": "No part of S3c is authored, scoped or anticipated by this node."
   },
-
   "REAL_PG_CONTRACT": {
     "status": "FROZEN as the minimum load-bearing proof surface for the IMPLEMENTATION node.",
     "harness_rule": "Via pnpm db:audit:disposable against a fresh throwaway PostgreSQL container that is destroyed afterwards. NEVER staging, NEVER production, NEVER the canonical local Supabase stack.",
@@ -583,31 +650,140 @@
     "status": "FROZEN minimum. The implementation node may add controls; it may not remove one.",
     "relationship_to_domain_controls": "MUT-W3-6, MUT-W3-7 and MUT-W3-8 already exist in WAVE3_AUTHORITY_v1.0.0.json -> MUTATION_CONTROLS and are CONSUMED, not restated. The controls below are node-scoped and additional.",
     "controls": [
-      { "id": "MUT-053-1", "guarantee": "The protected write set is complete.", "mutation": "Omit db/prepared/stella_0017b_governed_risk_parameters.sql.", "must_be_caught_by": "A control asserting all six protected literals are present and non-empty." },
-      { "id": "MUT-053-2", "guarantee": "The protected write set is complete.", "mutation": "Omit db/prepared/stella_0017b_rollback.sql.", "must_be_caught_by": "The same six-literal presence control, plus a rollback-specific existence assertion." },
-      { "id": "MUT-053-3", "guarantee": "Hosted parity.", "mutation": "Omit the .hosted.sql variant.", "must_be_caught_by": "A hosted-manifest parity control that refuses a chain member with no hosted artifact." },
-      { "id": "MUT-053-4", "guarantee": "Governed parity.", "mutation": "Omit the .governed.sql variant.", "must_be_caught_by": "A governed-generation control that regenerates and byte-compares." },
-      { "id": "MUT-053-5", "guarantee": "The prepared track describes its own contents.", "mutation": "Omit the db/prepared/README.md section and table row.", "must_be_caught_by": "A control asserting every member of STELLA_TICKET_PACKAGE_CHAIN appears in the README inventory." },
-      { "id": "MUT-053-6", "guarantee": "The A1 corroboration cannot drift from the witness registry.", "mutation": "Edit db/prepared/checkpoint-a1/corroboration.sql by hand, or fail to regenerate it.", "must_be_caught_by": "pnpm a1:observation:verify, which regenerates and compares BYTES." },
-      { "id": "MUT-053-7", "guarantee": "The grant is narrow.", "mutation": "Request db/prepared/** as a wildcard instead of the six ordered literals.", "must_be_caught_by": "ods:scope with the exact literal allowlist. A wildcard grant makes a negative result vacuous and must be refused at allocation." },
-      { "id": "MUT-053-8", "guarantee": "The supersession names the right predecessor.", "mutation": "Register packageName as stella_0018_category_bound_operation_tickets, or as stella_0016.", "must_be_caught_by": "A control pinning packageName to stella_0017_governed_stella_consumption and supersededBy to stella_0017b_governed_risk_parameters." },
-      { "id": "MUT-053-9", "guarantee": "The chain position is the tail.", "mutation": "Interleave stella_0017b between stella_0017 and stella_0018.", "must_be_caught_by": "A control asserting the LAST element of STELLA_TICKET_PACKAGE_CHAIN is stella_0017b, and that stella_0018 retains its index." },
-      { "id": "MUT-053-10", "guarantee": "The old completion signature is gone.", "mutation": "Retain the 7-arg complete_operation_ticket alongside the 9-arg one.", "must_be_caught_by": "A Real-PG absence assertion on the 7-arg signature plus the equality count of 8." },
-      { "id": "MUT-053-11", "guarantee": "The old conversion signature is gone.", "mutation": "Retain the 10-arg settle_reserved_quota alongside the 12-arg one.", "must_be_caught_by": "A Real-PG absence assertion on the 10-arg signature." },
-      { "id": "MUT-053-12", "guarantee": "No DEFAULT parameters.", "mutation": "Add p_risk_level and p_risk_flags with DEFAULTs via CREATE OR REPLACE, producing an overload.", "must_be_caught_by": "pronargdefaults = 0 plus the count equality. Already carried as MUT-W3-7." },
-      { "id": "MUT-053-13", "guarantee": "One ledger writer reached by two arities.", "mutation": "Give the 5-arg delegator a self-contained body containing its own INSERT.", "must_be_caught_by": "A probe asserting the delegator body contains no INSERT INTO public.stella_interactions. Already carried as MUT-W3-6." },
-      { "id": "MUT-053-14", "guarantee": "Risk data reaches the durable row.", "mutation": "Satisfy the contract by continuing to write risk values only to audit_logs.", "must_be_caught_by": "A Real-PG control that reads risk_level back off the stella_interactions row in the same transaction. Already carried as MUT-W3-8." },
-      { "id": "MUT-053-15", "guarantee": "Idempotent replay preserves originals.", "mutation": "Change ON CONFLICT DO NOTHING to DO UPDATE so a replay refreshes the risk values.", "must_be_caught_by": "A replay control asserting the SECOND call leaves the FIRST call's risk values byte-identical." },
-      { "id": "MUT-053-16", "guarantee": "Hosted and governed artifacts do not diverge from the canonical unit.", "mutation": "Hand-edit the generated hosted or governed variant.", "must_be_caught_by": "pnpm authority:verify regeneration and byte comparison, plus the source/generated digest pins." },
-      { "id": "MUT-053-17", "guarantee": "The predecessor installed probe does not invert.", "mutation": "Leave STELLA_0017_INSTALLED_PROBE written over the dropped 7-arg signature.", "must_be_caught_by": "A Real-PG control asserting the stella_0017 probe returns TRUE against a database holding stella_0017b. This control FAILS today by construction and is the point." },
-      { "id": "MUT-053-18", "guarantee": "The predecessor package witness does not invert.", "mutation": "Leave the PACKAGE_WITNESSES entry for stella_0017 naming the two dropped signatures.", "must_be_caught_by": "A witness-resolution control asserting stella_0017 resolves INSTALLED against a database holding stella_0017b, and that stella_0017b resolves INSTALLED by its own 9-arg discriminator." },
-      { "id": "MUT-053-19", "guarantee": "CHECKPOINT A1 stays coherent.", "mutation": "Regenerate corroboration.sql while the witness registry still carries the inverted arms.", "must_be_caught_by": "An A1 coherence control asserting no installed package reports absent." },
-      { "id": "MUT-053-20", "guarantee": "The runtime and the database never disagree silently.", "mutation": "Apply stella_0017b while the deployed runtime still calls the 7-arg signature.", "must_be_caught_by": "An apply-gate control that refuses when the companion runtime node is not closed. This control is the machine form of RUNTIME_APPLY_COUPLING." },
-      { "id": "MUT-053-21", "guarantee": "No remote apply before G2.", "mutation": "Apply the unit to staging or hosted under any framing, including 'rehearsal'.", "must_be_caught_by": "The disposable-harness constraint plus the G2_BOUNDARY refusal. A rehearsal is a throwaway container that is destroyed, never a remote target." },
-      { "id": "MUT-053-22", "guarantee": "The applied predecessor is never edited.", "mutation": "Repair INV-5 by editing db/prepared/stella_0018_...sql, or INV-6 by editing stella_hosted_0001_rollback.sql.", "must_be_caught_by": "A scope control asserting neither file appears in the implementation diff." }
+      {
+        "id": "MUT-053-1",
+        "guarantee": "The protected write set is complete.",
+        "mutation": "Omit db/prepared/stella_0017b_governed_risk_parameters.sql.",
+        "must_be_caught_by": "A control asserting all six protected literals are present and non-empty."
+      },
+      {
+        "id": "MUT-053-2",
+        "guarantee": "The protected write set is complete.",
+        "mutation": "Omit db/prepared/stella_0017b_rollback.sql.",
+        "must_be_caught_by": "The same six-literal presence control, plus a rollback-specific existence assertion."
+      },
+      {
+        "id": "MUT-053-3",
+        "guarantee": "Hosted parity.",
+        "mutation": "Omit the .hosted.sql variant.",
+        "must_be_caught_by": "A hosted-manifest parity control that refuses a chain member with no hosted artifact."
+      },
+      {
+        "id": "MUT-053-4",
+        "guarantee": "Governed parity.",
+        "mutation": "Omit the .governed.sql variant.",
+        "must_be_caught_by": "A governed-generation control that regenerates and byte-compares."
+      },
+      {
+        "id": "MUT-053-5",
+        "guarantee": "The prepared track describes its own contents.",
+        "mutation": "Omit the db/prepared/README.md section and table row.",
+        "must_be_caught_by": "A control asserting every member of STELLA_TICKET_PACKAGE_CHAIN appears in the README inventory."
+      },
+      {
+        "id": "MUT-053-6",
+        "guarantee": "The A1 corroboration cannot drift from the witness registry.",
+        "mutation": "Edit db/prepared/checkpoint-a1/corroboration.sql by hand, or fail to regenerate it.",
+        "must_be_caught_by": "pnpm a1:observation:verify, which regenerates and compares BYTES."
+      },
+      {
+        "id": "MUT-053-7",
+        "guarantee": "The grant is narrow.",
+        "mutation": "Request db/prepared/** as a wildcard instead of the six ordered literals.",
+        "must_be_caught_by": "ods:scope with the exact literal allowlist. A wildcard grant makes a negative result vacuous and must be refused at allocation."
+      },
+      {
+        "id": "MUT-053-8",
+        "guarantee": "The supersession names the right predecessor.",
+        "mutation": "Register packageName as stella_0018_category_bound_operation_tickets, or as stella_0016.",
+        "must_be_caught_by": "A control pinning packageName to stella_0017_governed_stella_consumption and supersededBy to stella_0017b_governed_risk_parameters."
+      },
+      {
+        "id": "MUT-053-9",
+        "guarantee": "The chain position is the tail.",
+        "mutation": "Interleave stella_0017b between stella_0017 and stella_0018.",
+        "must_be_caught_by": "A control asserting the LAST element of STELLA_TICKET_PACKAGE_CHAIN is stella_0017b, and that stella_0018 retains its index."
+      },
+      {
+        "id": "MUT-053-10",
+        "guarantee": "The old completion signature is gone.",
+        "mutation": "Retain the 7-arg complete_operation_ticket alongside the 9-arg one.",
+        "must_be_caught_by": "A Real-PG absence assertion on the 7-arg signature plus the equality count of 8."
+      },
+      {
+        "id": "MUT-053-11",
+        "guarantee": "The old conversion signature is gone.",
+        "mutation": "Retain the 10-arg settle_reserved_quota alongside the 12-arg one.",
+        "must_be_caught_by": "A Real-PG absence assertion on the 10-arg signature."
+      },
+      {
+        "id": "MUT-053-12",
+        "guarantee": "No DEFAULT parameters.",
+        "mutation": "Add p_risk_level and p_risk_flags with DEFAULTs via CREATE OR REPLACE, producing an overload.",
+        "must_be_caught_by": "pronargdefaults = 0 plus the count equality. Already carried as MUT-W3-7."
+      },
+      {
+        "id": "MUT-053-13",
+        "guarantee": "One ledger writer reached by two arities.",
+        "mutation": "Give the 5-arg delegator a self-contained body containing its own INSERT.",
+        "must_be_caught_by": "A probe asserting the delegator body contains no INSERT INTO public.stella_interactions. Already carried as MUT-W3-6."
+      },
+      {
+        "id": "MUT-053-14",
+        "guarantee": "Risk data reaches the durable row.",
+        "mutation": "Satisfy the contract by continuing to write risk values only to audit_logs.",
+        "must_be_caught_by": "A Real-PG control that reads risk_level back off the stella_interactions row in the same transaction. Already carried as MUT-W3-8."
+      },
+      {
+        "id": "MUT-053-15",
+        "guarantee": "Idempotent replay preserves originals.",
+        "mutation": "Change ON CONFLICT DO NOTHING to DO UPDATE so a replay refreshes the risk values.",
+        "must_be_caught_by": "A replay control asserting the SECOND call leaves the FIRST call's risk values byte-identical."
+      },
+      {
+        "id": "MUT-053-16",
+        "guarantee": "Hosted and governed artifacts do not diverge from the canonical unit.",
+        "mutation": "Hand-edit the generated hosted or governed variant.",
+        "must_be_caught_by": "pnpm authority:verify regeneration and byte comparison, plus the source/generated digest pins."
+      },
+      {
+        "id": "MUT-053-17",
+        "guarantee": "The predecessor installed probe does not invert.",
+        "mutation": "Leave STELLA_0017_INSTALLED_PROBE written over the dropped 7-arg signature.",
+        "must_be_caught_by": "A Real-PG control asserting the stella_0017 probe returns TRUE against a database holding stella_0017b. This control FAILS today by construction and is the point."
+      },
+      {
+        "id": "MUT-053-18",
+        "guarantee": "The predecessor package witness does not invert.",
+        "mutation": "Leave the PACKAGE_WITNESSES entry for stella_0017 naming the two dropped signatures.",
+        "must_be_caught_by": "A witness-resolution control asserting stella_0017 resolves INSTALLED against a database holding stella_0017b, and that stella_0017b resolves INSTALLED by its own 9-arg discriminator."
+      },
+      {
+        "id": "MUT-053-19",
+        "guarantee": "CHECKPOINT A1 stays coherent.",
+        "mutation": "Regenerate corroboration.sql while the witness registry still carries the inverted arms.",
+        "must_be_caught_by": "An A1 coherence control asserting no installed package reports absent."
+      },
+      {
+        "id": "MUT-053-20",
+        "guarantee": "The runtime and the database never disagree silently.",
+        "mutation": "Apply stella_0017b while the deployed runtime still calls the 7-arg signature.",
+        "must_be_caught_by": "An apply-gate control that refuses when the companion runtime node is not closed. This control is the machine form of RUNTIME_APPLY_COUPLING."
+      },
+      {
+        "id": "MUT-053-21",
+        "guarantee": "No remote apply before G2.",
+        "mutation": "Apply the unit to staging or hosted under any framing, including 'rehearsal'.",
+        "must_be_caught_by": "The disposable-harness constraint plus the G2_BOUNDARY refusal. A rehearsal is a throwaway container that is destroyed, never a remote target."
+      },
+      {
+        "id": "MUT-053-22",
+        "guarantee": "The applied predecessor is never edited.",
+        "mutation": "Repair INV-5 by editing db/prepared/stella_0018_...sql, or INV-6 by editing stella_hosted_0001_rollback.sql.",
+        "must_be_caught_by": "A scope control asserting neither file appears in the implementation diff."
+      }
     ]
   },
-
   "FUTURE_ODS_INPUT": {
     "rule": "THIS AUTHORITY ALLOCATES NOTHING. The values below are CONSUMED by a later allocator; they are not chosen by it and not reserved here.",
     "EXPECTED_IMPLEMENTATION_BRANCH": "codex/fibdb053-stage-a-implementation-r1",
@@ -633,7 +809,6 @@
     },
     "ordinary_allows_the_allocator_will_also_need": "The ordinary write surface enumerated in ORDINARY_WRITE_SET. It is large because appending to the governed chain touches the witness registry, the pins, the plan digest and their tests. It is enumerated rather than wildcarded so the allocator can issue bounded allows."
   },
-
   "OPEN_FINDINGS": {
     "blocking_for_this_docs_only_authority": [],
     "blocking_for_the_implementation_node": [
@@ -676,10 +851,33 @@
         "class": "T_NUMBER_ORDINAL_IS_NOT_THE_PACKAGE_NUMERAL",
         "finding": "Governed pins are ordinal by order of entry: T10 is grounding_0005 and T11 is stella_0019. stella_0017b is therefore T12 and does not sort between T8 and T9.",
         "disposition": "RECORDED in ORDINARY_WRITE_SET.t_number_allocation to prevent an unauthorized renumbering of eleven existing pins."
+      },
+      {
+        "id": "F-053-7",
+        "class": "VACUOUS_GATE_IN_R1_OF_THIS_ARTIFACT",
+        "finding": "The R1 schema validation of the companion manifest implemented required, additionalProperties and minItems but never enum and never $ref, so it could not fail on the two properties that were actually invalid.",
+        "disposition": "CLOSED AT R2 by validating with ajv-cli 5 under --spec=draft7 and PROVING non-vacuity by mutation. Recorded rather than quietly corrected, because an unrecorded vacuous gate is indistinguishable from a passing one."
+      },
+      {
+        "id": "F-053-8",
+        "class": "SCHEMA_CANNOT_VALIDATE_REGISTRY_MEMBERSHIP",
+        "finding": "known_conditions.items is typed only as string. MEASURED at R2: a mutant carrying the invented id KTC-TOTALLY-INVENTED-99 PASSES ajv, while mutants breaking the exit_gates enum, the item type, additionalProperties and minItems are all rejected.",
+        "disposition": "RECORDED. Schema validity is necessary and NOT sufficient for known_conditions. Membership is verifiable only by cross-checking docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json, or by pnpm ops:test-diff as the schema description directs. A re-audit that validates the manifest and stops has not checked this field."
+      },
+      {
+        "id": "F-053-9",
+        "class": "SIBLING_MANIFESTS_DECLARE_CONDITIONS_THAT_NO_LONGER_REPRODUCE",
+        "finding": "WAVE3_TEST_MANIFEST_v1.0.0.json and TENANCY_S4_EXECUTION_TEST_MANIFEST_v1.0.0.json both declare KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02, but tests/eval/stella-release/hosted-baseline-gate.test.ts passes 7 of 7 at this base and the artefact KTC-01 fingerprints has drifted from the blob the registry records.",
+        "disposition": "RECORDED, NOT CHANGED. Neither artifact belongs to this lane. Reported so a future reader does not treat this node's empty known_conditions as an omission relative to its siblings — it is the siblings that now look stale."
+      },
+      {
+        "id": "F-053-10",
+        "class": "SUPERSESSION_GUARDS_SILENCED_BY_A_CORRECT_SUPERSESSION",
+        "finding": "Two supersession entries probed on STELLA_0017_INSTALLED_PROBE stop refusing once stella_0017b drops the seven-argument signature, so re-applying stella_0015 or stella_0016 over a stella_0017b database would be permitted.",
+        "disposition": "CLOSED BY CONTRACT at SUPERSESSION_CONTRACT.relationship_3_guards_that_go_silent, which freezes the property (no guard that refuses today may stop refusing) and leaves the repair form to the implementing mission."
       }
     ]
   },
-
   "self_check": {
     "docs_only": "PASS - the write set of this act is two files under docs/ops/wave3/ and nothing else.",
     "no_ods_allocation": "PASS - no addendum ordinal and no grant id is allocated, and no specific future identifier is named as assigned.",
@@ -693,9 +891,13 @@
     "ordinary_write_set_is_enumerated": "PASS - no open write surface; the one conditional entry (forward-boundaries.ts) is stated as conditional with the measurement that decides it.",
     "runtime_disposition_is_exactly_one": "PASS - disposition B, with the companion node named and its surfaces measured.",
     "authoring_does_not_imply_G2": "PASS - stated explicitly in G2_BOUNDARY.authoring_does_not_resolve_G2.",
-    "non_vacuity": "The controls in MUTATION_CONTRACT are falsifiable against the measured tree: MUT-053-17 and MUT-053-18 FAIL today by construction, because the probe and the witness are written over signatures the node must drop. A mutation contract whose controls all pass before the work begins would be vacuous; these do not."
+    "non_vacuity": "The controls in MUTATION_CONTRACT are falsifiable against the measured tree: MUT-053-17 and MUT-053-18 FAIL today by construction, because the probe and the witness are written over signatures the node must drop. A mutation contract whose controls all pass before the work begins would be vacuous; these do not.",
+    "r2_manifest_schema_valid": "PASS — ajv-cli 5 (--spec=draft7) reports the companion manifest valid.",
+    "r2_schema_controls_non_vacuous": "PASS — four mutants (exit_gates enum, item type, control additionalProperties, negative_controls minItems) are REJECTED; a fifth, a well-typed but unregistered condition id, PASSES ajv and is caught only by the registry cross-check. Both the firing and the boundary are proven.",
+    "r2_runtime_blocker_preserved": "PASS — RUNTIME_APPLY_COUPLING is unmodified by R2. No apply prohibition is relaxed and no companion node is authored.",
+    "r2_protected_set_unchanged": "PASS — the six ordered protected literals are unchanged. No fresh evidence displaced them, and the T11 precedent that established them remains valid for the protected track even though it proved blind to an ordinary-set pin.",
+    "r2_write_set": "PASS — the R2 semantic write set is exactly the two docs/ops/wave3/ FIBDB053 files. The two docs/ops/tenancy/ files enter through merge history only and are PR186's act, not this one's."
   },
-
   "final_state": {
     "authority_status": "COMPLETE FOR ITS OWN SCOPE, PENDING INDEPENDENT CERTIFICATION.",
     "design_blockers_closed_by_this_artifact": [
@@ -705,10 +907,138 @@
       "The risk durability contract, with the replay-preservation rule stated as a preservation of ON CONFLICT DO NOTHING.",
       "The installed-probe and package-witness succession, with six measured inversion sites and a historical/live split.",
       "A dedicated rollback contract, with the proof that the predecessor rollback is not valid for the successor.",
-      "The T12 ordinal and the plan-digest re-pin obligation."
+      "The T12 ordinal and the plan-digest re-pin obligation.",
+      "The transfer-segment count pin, with the precedent-blindness that hid it from R1.",
+      "The complete PR184 collision surface: three paths, not one.",
+      "The supersession contract as TWO distinct relationships plus the silenced-guard defect, replacing R1's singular wording."
     ],
     "design_blocker_NOT_closed": "RUNTIME_APPLY_COUPLING. It is not closable inside FIBDB-053's delegated authority, and it is recorded rather than absorbed.",
-    "next_authorized_action": "STOP_FOR_AUTHORITY_DELTA__COMPANION_RUNTIME_NODE_REQUIRED",
-    "what_may_proceed_meanwhile": "Independent certification of this docs-only authority, and ODS allocation for the Stage-A authoring act when separately authorized, since authoring is permitted before G2 and the coupling blocks APPLY rather than AUTHORING."
+    "next_authorized_action": "PR187_R2_READY_FOR_NEW_INDEPENDENT_CERTIFICATION",
+    "what_may_proceed_meanwhile": "Independent certification of this docs-only authority, and ODS allocation for the Stage-A authoring act when separately authorized, since authoring is permitted before G2 and the coupling blocks APPLY rather than AUTHORING.",
+    "revision": "R2",
+    "precertification_status": "R1 returned PRECERT_FAIL_BLOCKING on F-PC-1 with the authority semantics surviving. R2 closes F-PC-1, F-PC-2, F-PC-3 and F-PC-4. The runtime/apply blocker is deliberately NOT closed and is NOT a precertification defect.",
+    "next_authorized_action_after_certification": "STOP_FOR_AUTHORITY_DELTA__COMPANION_RUNTIME_NODE_REQUIRED — unchanged by R2. Certification of this docs-only authority does not close the runtime/apply coupling, and no apply is authorized by either."
+  },
+  "revision": "R2",
+  "AMENDMENT_HISTORY": [
+    {
+      "revision": "R1",
+      "head": "33e4dc04b706ce19163a91a86a49754bbf1bac90",
+      "base": "4a6308e3d1ce5a282e11055087148a142f642dce",
+      "outcome": "Independently precertified PRECERT_FAIL_BLOCKING. The authority SEMANTICS survived precertification; the companion test manifest was SCHEMA_INVALID."
+    },
+    {
+      "revision": "R2",
+      "base": "0d94b54856c701419ba32bdd844245213fd4aeed",
+      "integration_delta_absorbed": "PR #186 tenancy S4 authority docs only (2 files under docs/ops/tenancy/). Path intersection with this node is EMPTY; absorbed by a single normal merge, no rebase, no conflict.",
+      "closes": [
+        "F-PC-1",
+        "F-PC-2",
+        "F-PC-3",
+        "F-PC-4"
+      ],
+      "does_not_touch": "RUNTIME_APPLY_COUPLING is preserved verbatim. R2 does not resolve it, does not author the companion node, and does not relax any apply prohibition."
+    }
+  ],
+  "TEST_MANIFEST_SCHEMA_DISPOSITION": {
+    "finding": "F-PC-1 — the R1 manifest was SCHEMA_INVALID and the R1 gate that cleared it was VACUOUS.",
+    "what_was_wrong": [
+      "exit_gates carried 12 prose sentences. The schema constrains exit_gates.items to a CLOSED ENUM of nine command tokens: typecheck, secrets_scan, authority_seal_verify, ods_scope, ods_poststate, journal_verify, baseline_verify, postgres_disposable_probe, targeted_tests. Its own description says each entry names an existing command and never prose describing what a gate should do.",
+      "known_conditions carried 15 prose sentences. The schema requires condition_ids drawn from docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json, verified via pnpm ops:test-diff and never re-adjudicated by prose."
+    ],
+    "why_the_R1_check_did_not_catch_it": {
+      "class": "VACUOUS_GATE. Recorded plainly rather than minimised, because it is the same failure class this authority warns about elsewhere.",
+      "cause": "The R1 validation was hand-rolled and implemented only required, additionalProperties and minItems. It never implemented enum, and it never resolved $ref. A property whose constraint lives entirely in items.enum was therefore unconstrained by construction, and the manifest passed a check that could not fail.",
+      "correction": "R2 validates with ajv-cli 5 under --spec=draft7, an independent implementation that supports $ref, enum, required, additionalProperties, minItems and types. Non-vacuity is then PROVEN by mutation rather than asserted."
+    },
+    "exit_gates_disposition": {
+      "value": "All nine enum tokens.",
+      "why_all_nine": "The implementation node touches the prepared track including its journal region (journal_verify), the hosted baseline manifest region (baseline_verify), and needs a real PostgreSQL probe (postgres_disposable_probe). The three known-valid sibling manifests — FIBDB052_P1, WAVE3 and TENANCY_S4 — all declare the same nine, so this is the house norm rather than an inflation.",
+      "where_the_prose_went": "Into EXIT_GATE_RATIONALE below. Nothing was discarded; it was moved from a schema-constrained array into this authority, which carries no schema."
+    },
+    "known_conditions_disposition": {
+      "value": "EMPTY ARRAY — an explicit, measured \"none applicable\", never an omitted key.",
+      "measurement": "The registry holds exactly two condition_ids, KTC-HOSTED-BASELINE-REHEARSAL-STALE-01 and -02. Both are PRE_EXISTING_DEFERRED failures in tests/eval/stella-release/hosted-baseline-gate.test.ts. That file was RUN at this base and passes 7 of 7.",
+      "corroboration": "KTC-01 fingerprints the evidence artefact artifacts/baseline-rehearsal/latest.json at git blob 42a68ccd5cf701189ebb85e65330ebfeb361467f. At this base the blob is 1c59c65f6c1994e5ad1825107471e4a9674ad8da. The rehearsal was refreshed, which is consistent with the gate now passing.",
+      "consequence": "Declaring either id would assert that this node's baseline still carries a failure that does not occur here. An empty list is the measured answer, not the cautious one.",
+      "non_blocking_observation": "WAVE3_TEST_MANIFEST_v1.0.0.json and TENANCY_S4_EXECUTION_TEST_MANIFEST_v1.0.0.json both still declare those two ids. Since the gate passes at this base, those declarations now appear stale. NOT this lane's artifacts and NOT modified here. Recorded as F-053-9."
+    }
+  },
+  "EXIT_GATE_RATIONALE": {
+    "rule": "The manifest names the gate TOKENS. The reasoning lives here, where prose is legal.",
+    "per_gate": {
+      "typecheck": "tsc --noEmit. A green Vitest run is not a typecheck; the two answer different questions.",
+      "secrets_scan": "No credential material enters the tree.",
+      "authority_seal_verify": "Proves no sealed artifact was modified. Load-bearing here because the node sits directly beneath the sealed FIB baseline it must never edit.",
+      "ods_scope": "Run with the SIX exact protected literals plus the enumerated ordinary allows. A run with db/prepared/** as the allow is refused at allocation, because a wide allow makes every negative control vacuous.",
+      "ods_poststate": "The post-act composite, re-running the battery against the recorded base.",
+      "journal_verify": "The prepared track carries db/prepared/journal/**; a new chain member must leave it coherent.",
+      "baseline_verify": "The node edits db/hosted/hosted-package-manifest.ts, which is baseline manifest surface.",
+      "postgres_disposable_probe": "See REAL_PG_CONTRACT. Every semantic claim of this node is a PostgreSQL catalog or transaction fact. Always a throwaway container, destroyed afterwards.",
+      "targeted_tests": "The enumerated test surface in ORDINARY_WRITE_SET, including the succession controls that FAIL today by construction."
+    },
+    "gate_that_no_command_can_express": "RUNTIME_APPLY_COUPLING. No token in the enum names it, because it is not a repository gate — it is a precondition on APPLY that lives outside this node. It is carried as MUT-053-20 and as an exit obligation in the manifest's authority_reference chain, never as a fabricated enum token."
+  },
+  "IMPLEMENTATION_NODE_PREFLIGHT_CONDITIONS": {
+    "rule": "Conditions the implementing mission must hold in view. These are NOT registry condition_ids — the registry holds only two, and neither applies here. They were previously mis-encoded as manifest known_conditions and are relocated to this authority, where prose is legal.",
+    "conditions": [
+      "STELLA_0017_INSTALLED_PROBE (db/prepared-package-order.ts:229-230) is written over the seven-argument complete_operation_ticket this node must DROP, and inverts to false after a CORRECT supersession.",
+      "GOVERNED_CONSUMPTION_OBJECTS (db/prepared-package-order.ts:199-210) names both old shapes; both cease to exist.",
+      "The PACKAGE_WITNESSES entry for stella_0017 (db/hosted/package-witnesses.ts:212-225) lists three witnesses, two of which are dropped signatures. Only the CHECK constraint survives.",
+      "db/prepared/checkpoint-a1/corroboration.sql:222-227 mirrors the same three arms and is GENERATED; regenerate with pnpm a1:observation:generate, never hand-edit.",
+      "db/prepared/stella_0018_...sql:150-152 aborts with \"stella_0017 is not installed\" once the seven-argument form is dropped. An APPLIED unit; never edited.",
+      "db/prepared/stella_hosted_0001_rollback.sql:53 witnesses stella_0017 by the same dropped signature. Also applied; never edited.",
+      "The old signatures exist in THREE spellings. See census_method_warning.",
+      "Governed pins are ordinal by order of entry: T10 is grounding_0005, T11 is stella_0019, so stella_0017b is T12.",
+      "GOVERNED_PLAN_DIGEST digests the WHOLE chain, so appending a package moves it while existing per-package pins stay byte-identical.",
+      "The five-argument delegator passes an explicit ten-argument NULL tail (stella_0017:573-575) and breaks mechanically once settle becomes twelve-argument.",
+      "stella_0017 section 4 item 12 already asserts pronargdefaults = 0, so a DEFAULT is refused by the predecessor rather than merely by policy.",
+      "db/stella/operation-tickets.ts:691-699 calls the seven-argument form and breaks at apply. Runtime is OUT OF SCOPE for this node.",
+      "lib/pipeline/sroi-readiness.ts:464-466 already reads risk_level off the durable row; the consumer is correctly aimed and currently vacuous.",
+      "Historical evidence under docs/ops/staging/evidence/ and the three artifacts/*.json certification outputs name the old signatures and are NEVER rewritten."
+    ]
+  },
+  "SUPERSESSION_CONTRACT": {
+    "finding_id": "F-PC-4",
+    "status": "CLOSED AT R2. R1 used SINGULAR wording (\"the supersession registry entry\"), which is incomplete: the registry is keyed per PAIR, and two DISTINCT relationships must be frozen.",
+    "measured_registry_shape": {
+      "interface": "PreparedPackageSupersession has FIVE required fields: packageName, supersededBy, probe, wouldRepublish, why.",
+      "keying": "The registry is ONE ENTRY PER (predecessor, successor) PAIR, never one per package. Measured at this base: stella_0016 registers ONE entry (vs stella_0015); stella_0017 registers TWO (vs stella_0015 and vs stella_0016); stella_0018 registers THREE (vs stella_0015, stella_0016 and stella_0017). A successor registers against EVERY earlier package whose re-application would clobber it.",
+      "consequence": "A mission that writes a single entry for stella_0017b has followed the FIB baseline's sentence and broken the registry's actual pattern."
+    },
+    "relationship_1_superseding_stella_0017_callable_state": {
+      "required_entry": {
+        "packageName": "stella_0017_governed_stella_consumption",
+        "supersededBy": "stella_0017b_governed_risk_parameters",
+        "probe": "A fixed literal SQL string, never composed at runtime, TRUE when the NINE-argument complete_operation_ticket exists — the discriminator no prior unit publishes.",
+        "wouldRepublish": "A named const array mapped to .signature, listing the SEVEN-argument complete_operation_ticket and the TEN-argument settle_reserved_quota, because those are precisely what re-applying stella_0017 would put back.",
+        "why": "Named by the FIB baseline. Re-applying stella_0017 over stella_0017b restores a completion verb without the risk parameters, silently returning V-18 governance data to the best-effort audit_logs trail."
+      },
+      "additional_predecessors_to_derive": "The implementing mission MUST derive whether stella_0015 and stella_0016 also require their own entries against stella_0017b, exactly as both required one against stella_0017. Re-applying stella_0016 over stella_0017b would republish the five-argument settle with a SELF-CONTAINED body, destroying the delegator contract — the MUT-W3-6 shape arriving by re-application instead of by authoring."
+    },
+    "relationship_2_preserving_stella_0018_installed_and_preflight_semantics": {
+      "class": "DISTINCT FROM RELATIONSHIP 1, and this is why singular wording fails.",
+      "the_problem": "stella_0018 section 0 (db/prepared/stella_0018_...sql:150-152) proves its predecessor is installed by testing to_regprocedure over the SEVEN-argument complete_operation_ticket, and aborts with \"stella_0017 is not installed\" when it is NULL. After a CORRECT supersession that abort fires on a true statement about a false premise.",
+      "why_it_cannot_be_fixed_in_place": "stella_0018 is an APPLIED prepared unit. Editing it is forbidden by the same rule that protects stella_0017, and the prohibition is carried as MUT-053-22.",
+      "what_must_be_frozen": "The registry, not the applied file, must carry the correction: a stella_0018 re-application over a stella_0017b database must be REFUSED with a NAMED reason before the preflight can produce its misleading abort. The implementing mission must PROVE this refusal fires; if it does not, that is a BLOCKING finding for the implementation node.",
+      "what_survives_untouched": "The EXISTING stella_0017 -> stella_0018 entry is probed on STELLA_0018_INSTALLED_PROBE, which tests the FOUR-argument bind_operation_ticket. stella_0017b does not touch bind, so that guard keeps firing. Measured, not assumed."
+    },
+    "relationship_3_guards_that_go_silent": {
+      "class": "MATERIAL_DERIVATION_THIS_AUTHORITY_ADDS at R2. Not named by the precertification; found while deriving F-PC-4.",
+      "measurement": "EXACTLY TWO registry entries use STELLA_0017_INSTALLED_PROBE as their probe: db/prepared-package-order.ts:354 (stella_0015 -> stella_0017) and :368 (stella_0016 -> stella_0017).",
+      "the_defect": "A supersession entry refuses only when its probe returns TRUE. That probe is written over the seven-argument signature stella_0017b DROPs, so after a correct supersession BOTH entries go SILENT — and re-applying stella_0015 or stella_0016 over a stella_0017b database would be ALLOWED. This is strictly worse than the probe inversion reported in isolation: an inverted probe misreports state, but a silenced supersession guard stops refusing a destructive act.",
+      "admissible_repairs": [
+        "Advance STELLA_0017_INSTALLED_PROBE to successor-aware semantics (TRUE when the seven-argument OR the nine-argument form is present), so both existing entries keep firing, and add the new stella_0017 -> stella_0017b entry.",
+        "Leave the probe alone and add parallel entries probed on stella_0017b for every predecessor currently probed on stella_0017."
+      ],
+      "frozen_requirement": "The FORM is the implementing mission's choice. What is FROZEN is the property: after stella_0017b, no supersession guard that refuses today may stop refusing. It must be proven by running the registry against a database in SUCCESSION-SENTINEL-0017 state, never by inspection."
+    },
+    "the_guard_that_survives_and_why": {
+      "entry": "stella_0005c_rollback -> stella_0017_governed_stella_consumption (db/prepared-package-order.ts:432).",
+      "measurement": "Its probe is NOT a signature. It is EXISTS over the constraint stella_interactions_governed_identity_check on public.stella_interactions.",
+      "why_it_survives": "A function-signature revision does not drop a table constraint, so this guard is untouched by stella_0017b. Its own comment explains the choice — what that rollback would undo is a privilege and not a signature — and that reasoning, made for an unrelated purpose, is exactly what made it succession-proof.",
+      "the_transferable_lesson": "A probe written over a CONSTRAINT survives a signature supersession; a probe written over a SIGNATURE does not. This is the same discriminator rule db/hosted/package-witnesses.ts:28-40 states for witnesses, and it is the surviving third arm of the stella_0017 witness for the same reason."
+    },
+    "wording_rule": "Every reference in this authority to the supersession work is PLURAL. A later reader must not be able to satisfy it with one entry."
   }
 }
