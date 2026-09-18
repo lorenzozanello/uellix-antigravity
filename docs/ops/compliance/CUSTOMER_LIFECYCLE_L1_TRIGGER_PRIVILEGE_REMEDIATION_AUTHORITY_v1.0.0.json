@@ -1,0 +1,367 @@
+{
+  "ARTIFACT": "CUSTOMER_LIFECYCLE_L1_TRIGGER_PRIVILEGE_REMEDIATION_AUTHORITY_v1.0.0",
+  "ARTIFACT_CLASS": "NODE_LEVEL_IMPLEMENTATION_REMEDIATION_AUTHORITY",
+  "LANE": "CV1-PG06-L1-TRIGGER-REMEDIATION-AW",
+  "STATUS": "FROZEN_PENDING_INDEPENDENT_CERTIFICATION",
+  "PURPOSE": "Make PG-06 satisfiable for organization_commercial_acceptances by correcting the IMPLEMENTATION defect in db/migrations/0072, without weakening PG-06 and without widening any runtime privilege. This artifact is AUTHORITY-ONLY: it creates no SQL, no test, no registry entry, no ODS lineage and no HPO decision, and it modifies no predecessor authority.",
+
+  "WHAT_THIS_ARTIFACT_DOES_NOT_DO": {
+    "does_not_modify_0072": "No byte of db/migrations/0072 is changed by this act. This artifact AUTHORIZES a future change and freezes its exact shape; it does not perform it.",
+    "does_not_allocate_ODS": "No lineage, no addendum, no protected grant. SECTION_12 freezes only a SYMBOLIC requirement.",
+    "does_not_allocate_HPO": "No HPO decision is taken or implied.",
+    "does_not_touch_PR184_or_stella_0021": "SECTION_13. stella_0021 remains byte-identical and is absent from this base.",
+    "does_not_weaken_PG06": "SECTION_3. A 13/14 disposition is PROHIBITED.",
+    "does_not_access_hosted_staging": "Every hosted claim in SECTION_6 is derived from repository evidence only.",
+    "does_not_modify_FIBDB_053": "SECTION_14 orders the critical path and edits no FIBDB-053 artifact.",
+    "does_not_rewrite_predecessors": "CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY, CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY, the current-schema Runtime ACL authority and its PG-17 amendment are consumed as controlling and are edited by zero bytes."
+  },
+
+  "SECTION_0_FRESHNESS": {
+    "AS_OF_REF": "origin/integration/commercial-v1",
+    "AS_OF_HEAD": "0d94b54856c701419ba32bdd844245213fd4aeed",
+    "AS_OF_TREE": "34ac5599c6cc11dec5b22213c255c6d14cb845b8",
+    "BRANCH": "codex/customer-lifecycle-l1-trigger-privilege-remediation-authority-r1",
+    "opening_base_equals_authoritative_base": true,
+    "integration_at_open": "git fetch origin --prune; git rev-parse origin/integration/commercial-v1 => 0d94b54856c701419ba32bdd844245213fd4aeed, byte-identical to BASE (tip: merge of PR #186, codex/tenancy-s4-execution-authority-r1).",
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/customer-lifecycle-l1-trigger-privilege-remediation-authority-r1 --head 0d94b548 --tree 34ac5599 --clean => PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS.",
+    "PROVISIONING_PRECONDITION_MEASURED": "The worktree opened git-CLEAN but UNPROVISIONED (node_modules absent), and every subprocess gate failed with 'tsx is not recognized' until pnpm install --frozen-lockfile ran. git-cleanliness and provisioning are ORTHOGONAL: a prestate gate that only asks git whether the tree is clean passes on a worktree that cannot execute a single subsequent check. The implementing mission MUST provision before reading its gates as evidence.",
+    "final_integration_base_rule": "Re-measured immediately before commit. FINAL_INTEGRATION_BASE is recorded in the mission report, never assumed from this section."
+  },
+
+  "SECTION_1_CONTROLLING_AUTHORITY_STACK": {
+    "consumed_as_controlling": [
+      "docs/ops/compliance/CUSTOMER_LIFECYCLE_LEGAL_ACCEPTANCE_AUTHORITY_v1.0.0.json -- the bounding legal-acceptance authority (I-T4-* invariant family).",
+      "docs/ops/compliance/CUSTOMER_LIFECYCLE_L1_EXECUTION_AUTHORITY_v1.0.0.json -- HPO-ODS-W2-29, the authority 0072 was written under.",
+      "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json -- PG-06 at line 406; the 19-table universe and the 8/6/4/1 classification at SECTION_1/SECTION_2.",
+      "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_v1.0.0.json -- the companion pre-implementation commitment.",
+      "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json -- the PG-17 amendment; line 252 explicitly assigns the direct-auth.uid() INSERT shape to PARENT FAMILY PG-06, not PG-17.",
+      "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+      "db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql",
+      "db/migrations/0031_rls_core.sql -- the identity doorway definitions.",
+      "db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql -- the in-repo SECURITY DEFINER trigger precedent.",
+      "db/migrations/0070_customer_lifecycle_cl1_legal_acceptance.sql -- the T3 sibling.",
+      "tests/postgres/organization-commercial-acceptance-fixtures.ts -- the L1 Real-PG fixtures.",
+      "db/hosted/baseline-manifest.ts, db/prepared/journal/085_*.sql -- the migration vehicle surface.",
+      "scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (lines 82-90) -- the protected-surface definition."
+    ],
+    "INDEPENDENTLY_DERIVED": {
+      "I_T4_6": "accepted_by_user_id must equal auth.uid() AND that subject must hold an ACTIVE membership in organization_id whose role is EXACTLY organization_admin, re-verified at the database boundary in the same transaction. Re-derived from 0072:198-214 (v_actor := auth.uid(); the IS DISTINCT FROM guard; v_role := public.current_user_role_in_org(NEW.organization_id); the exact-equality guard).",
+      "I_T4_7": "accepted_by_role must BE that server-verified role -- a forged or stale value is refused, not stored. Re-derived from 0072:216-219.",
+      "PG_06": "VERBATIM at CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json:406. See SECTION_3.",
+      "current_runtime_role": "uellix_app, which holds uellix_writer by membership. MEASURED in the L1 fixture at tests/postgres/organization-commercial-acceptance-fixtures.ts:88 -- GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE.",
+      "trigger_privilege_mode": "INVOKER. db/migrations/0072:163-223 declares CREATE OR REPLACE FUNCTION ... RETURNS trigger AS $$ ... $$ LANGUAGE plpgsql with NO SECURITY DEFINER and NO SET clause. Confirmed in a live catalog read: prosecdef=f, proconfig=NULL, lanname=plpgsql (SECTION_2 evidence P1A).",
+      "auth_uid_reachability": "uellix_app holds EXECUTE on auth.uid() but NOT USAGE on schema auth. db/baseline/stella_g2_schema.sql grants USAGE ON SCHEMA auth to anon, authenticated, service_role, postgres and uellix_owner (lines 9914-9920) and to NO uellix runtime role; it carries no REVOKE of EXECUTE on auth.uid() from PUBLIC, so EXECUTE reaches every role by the CREATE-time PUBLIC default. Confirmed live: has_schema_privilege(app,auth,USAGE)=f, has_function_privilege(app,auth.uid(),EXECUTE)=t.",
+      "hosted_baseline_state": "0072 is baseline unit ordinal 85 of 86 (db/hosted/baseline-manifest.ts:1570-1575). The authoritative hosted journal records 50/50 base units APPLIED against staging as of 2026-08-11 (docs/ops/staging/STELLA_HOSTED_MIGRATION_JOURNAL.md banner; corroborated at docs/ops/staging/STELLA_STAGING_POST_INSTALL_GATE.md:169). 85 > 50, therefore 0072 is COMMITTED AND UNAPPLIED HOSTED. Derived from repository evidence only; no hosted access was made."
+    }
+  },
+
+  "SECTION_2_FAILURE_REDERIVATION": {
+    "method": "The controlling adjudication was NOT inherited. Every claim below was re-derived at this base: statically from the corpus, and dynamically in a DISPOSABLE PostgreSQL 17.6 container built from the pinned image public.ecr.aws/supabase/postgres:17.6.1.143, started with no bind mounts, populated with a MINIMAL FAITHFUL substrate (schema auth + auth.uid() copied verbatim from db/baseline/stella_g2_schema.sql:486-497; the two 0031 identity doorways verbatim; the 0072 trigger function, its REVOKE, its trigger and both its RLS policies verbatim; ownership mirrored onto an owner role; stella_0021-shaped runtime grants), and DESTROYED at the end of the mission. The canonical local Supabase stack was never touched. The substrate is minimal BY DESIGN: it isolates the mechanism under test instead of reproducing a full baseline in which several privileges could each explain a refusal.",
+    "SUBSTRATE_CAVEAT": "A minimal substrate can only falsify or confirm a MECHANISM. It is not a PG-06 pass. SECTION_10 therefore requires the implementation to re-prove every claim on the governed substrate, where the role topology, ownership and the full 86-unit baseline are real.",
+    "CLAIM_1_runtime_writable": {
+      "claim": "organization_commercial_acceptances is genuinely runtime-writable -- it is an INSERT relation of PG-06, not a no-runtime-access table.",
+      "verdict": "CONFIRMED",
+      "evidence": "CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json SECTION_2 classifies it APPEND_ONLY (one of 8), privileges_for_uellix_writer [SELECT, INSERT], runtime_consumers insert=1 (app/(public)/accept-commercial-terms/actions.ts). It is one of the 14 INSERT relations PG-06 enumerates."
+    },
+    "CLAIM_2_table_privileges": {
+      "claim": "uellix_app has the required table privileges (once the ACL contract is installed).",
+      "verdict": "CONFIRMED_CONDITIONAL",
+      "evidence": "The grants are carried by the successor package stella_0021, which is ABSENT at this base (highest prepared package is stella_0020; db/prepared/ carries no stella_0021). At this base runtime privilege on all 19 is ZERO, so PG-06 cannot run at all yet. The defect this authority corrects is the one that remains AFTER stella_0021 lands -- it is not masked by, and does not depend on, the missing grants.",
+      "consequence": "The remediation is NOT blocked by PR184, and PR184 is not blocked by discovering it. SECTION_13."
+    },
+    "CLAIM_3_rls_satisfiable": {
+      "claim": "The RLS predicates are satisfiable by a legitimate actor.",
+      "verdict": "CONFIRMED",
+      "evidence": "P2A. With the BEFORE INSERT trigger DISABLED and both 0072 policies fully armed, a valid INSERT by the runtime role in a policy-satisfying identity context returned INSERT 0 1. All three WITH CHECK conjuncts were satisfied by a real actor."
+    },
+    "CLAIM_4_trigger_fires": {
+      "claim": "The BEFORE INSERT trigger fires on the runtime INSERT path.",
+      "verdict": "CONFIRMED",
+      "evidence": "P1C. The failure CONTEXT reads 'PL/pgSQL function enforce_organization_commercial_acceptance_invariants() line 22 at assignment', which can only be produced by the trigger executing."
+    },
+    "CLAIM_5_invoker_rights": {
+      "claim": "The trigger function is INVOKER-rights.",
+      "verdict": "CONFIRMED",
+      "evidence": "Static: 0072:163-223 carries no SECURITY DEFINER. Live (P1A): prosecdef=f, proconfig=NULL, lanname=plpgsql. The two 0031 doorways in the same catalog read show prosecdef=t, proconfig={search_path=public} -- so the reading discriminates, it is not a constant."
+    },
+    "CLAIM_6_body_names_auth_uid": {
+      "claim": "Its PL/pgSQL body names auth.uid().",
+      "verdict": "CONFIRMED",
+      "evidence": "db/migrations/0072:198 -- v_actor := auth.uid();",
+      "UNIQUENESS_MEASURED": "A parse of every CREATE FUNCTION in db/migrations/** and db/policies/** (13 real declarations; a 14th grep hit at 0060:26 is explanatory prose inside a comment, not a declaration) yields exactly ONE INVOKER-rights function that names auth.uid() anywhere in the corpus: enforce_organization_commercial_acceptance_invariants. Every other auth.uid() caller -- current_user_is_super_admin, current_user_org_ids, current_user_role_in_org, in both 0031 and db/policies/001 -- is SECURITY DEFINER. The defect is a population of ONE."
+    },
+    "CLAIM_7_no_auth_usage": {
+      "claim": "uellix_app lacks USAGE ON SCHEMA auth.",
+      "verdict": "CONFIRMED",
+      "evidence": "Static: no GRANT ... ON SCHEMA auth TO uellix_app / uellix_writer / uellix_auditor exists anywhere in db/**. The five auth-schema grants in db/prepared/** all target a DEDICATED capability role (uellix_cap_invitation, uellix_cap_bootstrap, uellix_cap_platform, uellix_cap_stella_quota, uellix_cap_stella_ticket), never a broad runtime role. Live (P1B): has_schema_privilege(app,auth,USAGE)=f while has_schema_privilege(owner,auth,USAGE)=t.",
+      "REPOSITORY_DOCTRINE": "Reaching schema auth is a CAPABILITY the repository mints a narrow role for. It has never been granted to a runtime role. That is a decided posture, not an omission -- which is why option A in SECTION_4 is refused."
+    },
+    "CLAIM_8_42501_at_trigger_execution": {
+      "claim": "The failure is SQLSTATE 42501 raised at trigger execution.",
+      "verdict": "CONFIRMED",
+      "evidence": "P1C verbatim: 'ERROR: 42501: permission denied for schema auth / LINE 1: v_actor := auth.uid() / QUERY: v_actor := auth.uid() / CONTEXT: PL/pgSQL function enforce_organization_commercial_acceptance_invariants() line 22 at assignment'.",
+      "WHY_THE_POLICY_SURVIVES_WHAT_THE_BODY_DOES_NOT": "MEASURED ASYMMETRY, and the single most important finding in this section. The INSERT policy's WITH CHECK contains a DIRECT auth.uid() (0072:116). If THAT expression also required schema USAGE, the defect would not be trigger-scoped and no trigger-scoped remediation could make PG-06 satisfiable. P2A proves it does not: with the trigger disabled and the policy fully armed, the same runtime role in the same identity context inserted successfully. A STORED policy expression was name-resolved at CREATE time and is executed against stored OIDs, so at run time PostgreSQL checks EXECUTE on the function and never re-checks USAGE on the schema. A PL/pgSQL body parses its SQL expressions at RUNTIME in the calling session, so name resolution -- and therefore schema USAGE -- IS checked against the invoker. P8C isolates the other half: after REVOKE EXECUTE ON FUNCTION auth.uid() FROM PUBLIC the stored policy fails with '42501: permission denied for function uid'. EXECUTE is what a stored policy needs; USAGE is what a PL/pgSQL body additionally needs.",
+      "CONSEQUENCE_BINDING": "The defect is TRIGGER-SCOPED. A remediation confined to the trigger function is SUFFICIENT, and no policy, no grant and no role needs to change."
+    },
+    "CLAIM_9_other_13_unaffected": {
+      "claim": "The other 13 PG-06 INSERT relations do not share this defect.",
+      "verdict": "CONFIRMED",
+      "evidence": "A trigger census over db/migrations/**, db/policies/** and db/prepared/** for all 14 PG-06 INSERT relations returns exactly THREE triggers that can fire on INSERT: (a) account_legal_acceptances BEFORE INSERT -> enforce_account_legal_acceptance_invariants (0070:205) -- INVOKER, but its body names NO auth.uid(); it reads only legal_instrument_versions and legal_instruments, which the runtime holds SELECT on, so it is correct as INVOKER; (b) organization_commercial_acceptances BEFORE INSERT -> enforce_organization_commercial_acceptance_invariants (0072:234) -- THE DEFECT; (c) outcome_monetization_dispositions BEFORE INSERT OR UPDATE OR DELETE -> uellix_guard_disposition_run_approval (0060:107) -- ALREADY SECURITY DEFINER SET search_path = public (0060:67-72). The remaining 11 relations carry no INSERT-firing trigger at all (only BEFORE UPDATE OR DELETE append-only guards on two of them).",
+      "note": "0070 is the instructive near-miss: same authorship idiom, same INVOKER mode, same two registry reads -- and CORRECT, because it never reaches schema auth. The discriminator is the auth reach, not the privilege mode in isolation."
+    }
+  },
+
+  "SECTION_3_PG06_SEMANTICS": {
+    "DISPOSITION": "PG-06 IS SEMANTICALLY CORRECT AND REMAINS UNCHANGED BY THIS ARTIFACT.",
+    "verbatim_source": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json:406",
+    "what_it_still_requires": {
+      "INSERT": "14 = 8 APPEND_ONLY + 6 OPERATIONAL_INSERT_UPDATE",
+      "UPDATE": "6 (the OPERATIONAL_INSERT_UPDATE set)",
+      "SELECT": "18 (all non-NO_RUNTIME_ACCESS tables)",
+      "actor": "as uellix_app, inside a policy-satisfying identity context, returning without error"
+    },
+    "THE_8_APPEND_ONLY": ["domain_object_versions", "evidence_sufficiency_determinations", "evidence_tombstones", "readiness_assessments", "sensitivity_scenarios", "assumption_object_links", "account_legal_acceptances", "organization_commercial_acceptances"],
+    "THE_6_OPERATIONAL_INSERT_UPDATE": ["evidence_versions", "financial_proxy_versions", "outcome_monetization_dispositions", "counterfactual_assessments", "methodological_assumptions", "sensitivity_candidates"],
+    "A_13_OF_14_WEAKENING_IS_PROHIBITED": "BINDING. No future act may narrow PG-06 to 13 INSERT relations, exempt organization_commercial_acceptances, mark it conditional, or re-express it as 'satisfiable where the substrate permits'. PG-06 measured a real, correct requirement and the implementation failed it. The contract is not the thing that moves.",
+    "why_the_control_was_right_to_fire": "PG-06 detected a defect that the L1 unit's OWN Real-PG suite could not detect, because that suite grants the runtime the exact privilege the production posture withholds (SECTION_8 FIXTURE_MASKING). A control that fires where a sibling suite is green is doing precisely what it exists for."
+  },
+
+  "SECTION_4_REMEDIATION_SELECTION": {
+    "evaluation_axes": ["privilege_expansion", "spoofability", "tenant_isolation", "owner_topology", "search_path_risk", "EXECUTE_exposure", "hosted_compatibility", "effect_on_ACL_authority", "migration_ordering"],
+    "OPTION_A_grant_usage_on_schema_auth_to_runtime": {
+      "verdict": "REFUSED",
+      "privilege_expansion": "MAXIMAL of the five. Grants the runtime role name-resolution reach into the entire auth schema, not merely auth.uid(). Every present and FUTURE object in auth becomes reachable by name.",
+      "spoofability": "Unchanged directly, but it widens the surface on which a future auth-schema object could be misused.",
+      "tenant_isolation": "Unchanged.",
+      "owner_topology": "Unchanged.",
+      "search_path_risk": "Unchanged.",
+      "EXECUTE_exposure": "No new EXECUTE, but USAGE is the gate that makes every PUBLIC-executable auth function reachable by the runtime.",
+      "hosted_compatibility": "Would require a new hosted grant against the managed baseline, i.e. a hosted privilege act.",
+      "effect_on_ACL_authority": "MATERIAL. It changes the frozen runtime privilege contract and would force an ACL authority successor.",
+      "migration_ordering": "Would have to land as a prepared-package act, not a migration.",
+      "decisive_reason": "It contradicts a measured repository doctrine. Every one of the five GRANT USAGE ON SCHEMA auth statements in db/prepared/** targets a dedicated single-purpose capability role; not one targets a runtime role. Widening uellix_app to fix a single function inverts that doctrine to repair a one-line defect."
+    },
+    "OPTION_B_security_definer_plus_pinned_search_path": {
+      "verdict": "SELECTED",
+      "privilege_expansion": "ZERO for every runtime role. MEASURED after remediation (P3B): has_schema_privilege(app,auth,USAGE)=f and has_function_privilege(app,trigger_fn,EXECUTE)=f. The function executes at its OWNER's rights, which the owner already had.",
+      "spoofability": "UNCHANGED OR BETTER. Every I-T4-6/I-T4-7 guard is preserved verbatim; the actor is still auth.uid(), never a client-supplied value. MEASURED (P4A-P4D): spoofed actor, cross-tenant org, forged accepted_by_role and absent identity are each refused with SQLSTATE 23514 and a distinct message.",
+      "tenant_isolation": "PRESERVED AND INDEPENDENTLY DOUBLE-WALLED. MEASURED (P2B): with the trigger disabled, a cross-tenant INSERT is still refused by RLS alone with 42501.",
+      "owner_topology": "LOAD-BEARING. See SECTION_5.",
+      "search_path_risk": "CLOSED BY THE PIN, and the pin is not cosmetic. See the measurement below.",
+      "EXECUTE_exposure": "NONE ADDED. 0072:231 already carries REVOKE EXECUTE ... FROM PUBLIC, and a trigger invokes its function internally regardless of the triggering role's own EXECUTE grant. MEASURED: the positive insert succeeds while has_function_privilege(app, trigger_fn, EXECUTE)=f.",
+      "hosted_compatibility": "FULL. 0072 is unapplied hosted (SECTION_6), so the amended text is what hosted will apply the first time. No hosted privilege act is required, and uellix_owner already holds USAGE ON SCHEMA auth on the hosted baseline (db/baseline/stella_g2_schema.sql:9920).",
+      "effect_on_ACL_authority": "NONE. The runtime privilege contract is byte-unchanged, so no ACL authority successor is required (SECTION_13).",
+      "migration_ordering": "None introduced. The change is confined to a migration that is already committed and already ordered.",
+      "in_repo_precedent": "db/migrations/0060:67-72 -- CREATE OR REPLACE FUNCTION uellix_guard_disposition_run_approval() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public. A BEFORE INSERT trigger function on another PG-06 relation, in the same corpus, already in exactly this form.",
+      "WHY_THE_search_path_PIN_IS_LOAD_BEARING_MEASURED": "This was tested rather than asserted, and the first result contradicted the generic rationale. With the pin REMOVED and SECURITY DEFINER kept, a caller-controlled search_path did NOT shadow the registries (P6D, P7A) -- because search_path resolution SILENTLY SKIPS schemas the EFFECTIVE user lacks USAGE on, and inside a DEFINER function the effective user is the OWNER. Granting the OWNER usage on the attacker-writable schema flipped it: with the pin still removed, the shadowed registry WAS used and a FORGED content_digest was accepted and stored, defeating I-T4-4 (P7B, INSERT 0 1 with content_digest sha256:dead...). Restoring the pin refused the identical attack (P7C). CONCLUSION: the pin is the decisive barrier, with the precise precondition that the owner can see a schema the attacker can write to. A second, independent barrier was also measured: the runtime role holds no CREATE on schema public (P6A, has_schema_privilege(app,public,CREATE)=f). Both are real; neither is a reason to omit the other."
+    },
+    "OPTION_C_use_an_existing_identity_doorway": {
+      "verdict": "REFUSED_AS_INSUFFICIENT",
+      "reason": "MEASURED: a census of every SECURITY DEFINER function in db/migrations/** and db/policies/** returns ZERO that return the acting subject's scalar uuid. The three existing doorways return uuid[] (current_user_org_ids), text (current_user_role_in_org) and boolean (current_user_is_super_admin). I-T4-6 requires the SUBJECT IDENTITY ITSELF for the accepted_by_user_id equality, which none of them yields. Note that the trigger ALREADY uses a doorway correctly for the role half -- public.current_user_role_in_org(NEW.organization_id) at 0072:209 never fails, because it is SECURITY DEFINER. The defect is confined to the one obligation no existing doorway can serve.",
+      "residual_value": "This option is not merely rejected: it explains the defect. The author reached for a doorway where one existed and reached for auth.uid() directly where none did."
+    },
+    "OPTION_D_create_a_new_identity_helper": {
+      "verdict": "REFUSED_AS_BROADER",
+      "privilege_expansion": "Creates a NEW persistent public function, which then needs its own REVOKE, its own EXECUTE posture, its own ownership and its own closed-world accounting.",
+      "effect_on_ACL_authority": "MATERIAL. A new public function is a new surface the current-schema closed-world guard and the runtime ACL contract must both account for.",
+      "decisive_reason": "It achieves exactly what option B achieves, at the cost of a new permanent object in the public schema and a wider write set. Option B changes the privilege mode of a function that already exists; option D adds one. Narrowest wins."
+    },
+    "OPTION_E_remove_the_actor_invariant": {
+      "verdict": "REFUSED_AS_PROHIBITED",
+      "decisive_reason": "It deletes I-T4-6 and I-T4-7 -- the obligations the unit exists to enforce -- to make a privilege error disappear. It would leave accepted_by_user_id and accepted_by_role client-supplied and unverified at the database boundary, which is precisely the property 0072's own prose calls the reason the trigger exists at all ('a trigger binds every writer, including the table owner and a superuser'). This is weakening a control to obtain a PASS and is refused under the fail-closed rule."
+    },
+    "SELECTION": {
+      "SELECTED_REMEDIATION": "B -- SECURITY DEFINER + SET search_path = public on enforce_organization_commercial_acceptance_invariants(), in the db/migrations/0060:67-72 precedent form, with NO grant of USAGE ON SCHEMA auth to any runtime role.",
+      "fresh_evidence_supports_B": true,
+      "STOP_FOR_AUTHORITY_DELTA": "NOT TRIGGERED."
+    }
+  },
+
+  "SECTION_5_OWNER_TOPOLOGY": {
+    "status": "LOAD-BEARING",
+    "NO_ALTER_OWNER_IS_PINNED": "BINDING. This authority does NOT pin any ALTER FUNCTION ... OWNER TO statement, and the remediation MUST NOT introduce one. MEASURED (P3A): CREATE OR REPLACE FUNCTION on an existing function PRESERVES its owner -- owner_before and owner_after were identical across the remediation -- so the correct owner is inherited from whoever applied the migration, exactly as today.",
+    "REQUIRED_OWNER_CAPABILITY": {
+      "must_resolve_auth_uid": "The effective owner/applier context must hold USAGE ON SCHEMA auth. On the hosted baseline uellix_owner already does (db/baseline/stella_g2_schema.sql:9920).",
+      "must_read_legal_instruments": "SELECT or ownership.",
+      "must_read_legal_instrument_versions": "SELECT or ownership.",
+      "must_preserve_I_T4_6_and_I_T4_7": "The guards are carried verbatim; the owner change of mode must not alter which values are accepted."
+    },
+    "BOTH_REACHES_ARE_REQUIRED_AND_THE_FIRST_FAILURE_IS_THE_TABLE": "MEASURED. Re-homing the repaired DEFINER function to an owner holding NEITHER auth USAGE nor registry SELECT turned the positive insert RED with '42501: permission denied for table legal_instrument_versions' at PL/pgSQL line 5 (P5A). Granting that owner auth USAGE and NOTHING else left it RED with the SAME table error (P5B). The registry read at 0072:167-171 executes BEFORE the auth.uid() assignment at 0072:198, so an owner-capability defect surfaces as a TABLE error, never as an auth error. A proof that only checks the owner's auth reach is therefore INSUFFICIENT, and a mutation that re-homes the function will not produce the error an auth-focused assertion is waiting for.",
+    "A_TEST_SUBSTRATE_THAT_WIDENS_RUNTIME_IS_INVALID": "BINDING. The owner capability must be satisfied by granting the OWNER what the hosted baseline already gives it -- never by granting a runtime role anything. Any fixture that makes the positive control pass by widening uellix_app, uellix_writer or uellix_auditor is INVALID EVIDENCE and must be refused by the certifier, whatever colour it produces.",
+    "REAL_PG_PROOF_REQUIRED": "The implementation must prove the owner capability on the governed substrate, not assume it. See SECTION_10 FUNCTION and SECTION_8 FIXTURE_DELTA."
+  },
+
+  "SECTION_6_MIGRATION_VEHICLE": {
+    "DERIVED_STATE_OF_0072": {
+      "committed": "YES. Present at BASE in db/migrations/, sha256 e012b971e4c034fc6a893d9093653d0c40d5aab036ceb3e942e5a8847653d084.",
+      "unapplied_to_hosted_baseline": "YES. Ordinal 85 of 86; hosted journal records 50/50 units APPLIED. SECTION_1 INDEPENDENTLY_DERIVED.hosted_baseline_state.",
+      "unsealed": "YES. The seal covers docs/ops/fib/**, docs/ops/pc01b/** and docs/ops/im01b/**. A search of all three for the 0072 unit name returns zero hits. 0072 is PROTECTED by DEFAULT_PROTECTED_PATTERNS (db/migrations/**) but is NOT SEALED -- those are different mechanisms with different remedies: a protected path is openable by an ODS grant, a sealed artifact is not.",
+      "legally_amendable_in_place": "YES, UNDER AN EXPLICIT PROTECTED GRANT, by repository precedent."
+    },
+    "PRECEDENT_REPRODUCED": {
+      "precedent": "HPO-ODS-W2-03, commit cc3ef567c9ae82970550a7dbaaa521279c1e56a1 (2026-09-01), 'fix(db): split managed-role bootstrap and repair baseline prerequisites', item D4.",
+      "what_it_did": "It AMENDED a committed migration IN PLACE -- db/migrations/0044_fib_audit_hardening_supersession.sql -- rather than adding a successor. Its own wording: 'journal wrapper 055 regenerated; sha repinned'.",
+      "measured_write_set_of_the_precedent": ["db/migrations/0044_fib_audit_hardening_supersession.sql", "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql", "db/hosted/baseline-manifest.ts"],
+      "why_it_is_on_point": "Same class of act (correct a committed, hosted-unapplied migration), same era, same governance regime, and the write set is the exact three-file shape SECTION_7 and SECTION_8 freeze -- two protected files plus the ordinary manifest repin. The shape below is DERIVED from this precedent, not assumed.",
+      "second_instance": "db/migrations/0033_public_api_grants.sql was also amended in place (commit f90de915, 2026-07-22), establishing that W2-03 was not a one-off.",
+      "counter_precedent_considered": "Baseline unit 64 (db/migrations/0052_fib_evidence_sufficiency_run_binding.sql) corrected an unapplied sibling by APPENDING a successor migration. It is a real precedent for the successor route and is why SECTION_6 states the comparison explicitly rather than assuming in-place is the only option."
+    },
+    "FROZEN_VEHICLE": "IN_PLACE_AMENDMENT_OF_0072",
+    "WHY_NOT_A_SUCCESSOR_MIGRATION": "BROADER, and broader in a way that persists. A successor would add a permanent unit (ordinal 87) to the baseline order, would leave the DEFECTIVE text of 0072 in the chain to be applied first on every fresh provision, and would make the correct end-state depend on two units applying in order instead of one being right. Because 0072 has never been applied hosted, there is no historical application the in-place amendment could contradict -- the precise condition baseline unit 64's own managedNote relies on for its safety argument.",
+    "WHY_NOT_A_PREPARED_PACKAGE": "It would leave the DRIZZLE CHAIN DEFECTIVE. db/migrations is the Drizzle-generated lineage that local provisioning and the baseline units both consume; a prepared package sits on a different chain and would not repair the migration itself. Every fresh local or CI build from db/migrations would keep installing the INVOKER function, and the repository would carry two disagreeing statements of the same object.",
+    "LEGALITY_IS_NOT_INFERRED": "BINDING. In-place amendment of a committed migration is legal ONLY under an explicit ODS protected grant naming the exact literals of SECTION_7 and bound to the branch of SECTION_9. Precedent establishes the SHAPE of a legal act; it does not itself authorize this one. Absent that grant the implementation must STOP -- ods:scope will refuse the diff, and that refusal is correct."
+  },
+
+  "SECTION_7_EXACT_PROTECTED_WRITE_SET": {
+    "derivation": "Re-derived against scripts/ods-scope.ts DEFAULT_PROTECTED_PATTERNS (lines 82-90: docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json). Both literals below fall inside a protected pattern; no other file the remediation must touch does.",
+    "LITERALS": [
+      "db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql",
+      "db/prepared/journal/085_0072_customer_lifecycle_l1_organization_commercial_acceptance.sql"
+    ],
+    "NO_WILDCARD": "BINDING. The grant must name these two exact paths. Neither db/migrations/** nor db/prepared/** nor db/prepared/journal/** may be used. A pattern grant would authorize every migration and every prepared package in the repository to fix one function.",
+    "why_the_journal_wrapper_is_in_the_set": "db/prepared/journal/085_*.sql pins the migration's digest TWICE -- at line 6 ('Source SHA256: e012b971...') and at line 56, inside the journal INSERT that records the unit as APPLIED. Amending 0072 changes its sha256, so the wrapper MUST be regenerated with pnpm journal:generate or pnpm journal:verify goes RED. The wrapper is GENERATED -- DO NOT EDIT (its own line 2); it must be regenerated, never hand-edited.",
+    "CASING": "Canonical casing exactly as written. scripts/ods-scope.ts treats a path that enters a protected surface only case-insensitively as an UNCONDITIONAL failure that no grant can authorize (HPO-ODS-C4-CASE-01).",
+    "sibling_hazard": "db/prepared/journal/** is a narrower surface than db/prepared/**. A grant written for the journal path alone does NOT authorize any sibling under db/prepared/, which is the correct and intended narrowness."
+  },
+
+  "SECTION_8_ORDINARY_WRITE_SET": {
+    "REQUIRED": {
+      "db/hosted/baseline-manifest.ts": "The third pin of the 0072 digest lives at line 1575 (sha256: 'e012b971...'). It MUST be repinned or pnpm baseline:verify goes RED. This is the ordinary-surface half of the W2-03 precedent triad.",
+      "tests/postgres/organization-commercial-acceptance-fixtures.ts": "The FIXTURE DELTA below. Required, and the most consequential ordinary edit in the set.",
+      "tests/postgres/organization-commercial-acceptance.pg.test.ts": "The Real-PG controls of SECTION_10 land here (or in a sibling named by the implementer).",
+      "tests/postgres/organization-commercial-acceptance-real-derivation.pg.test.ts": "Re-measured by the implementer; listed because it consumes the same fixtures and may move with them."
+    },
+    "CONDITIONAL": {
+      "digest_pinning_tests": "ANY test that pins the 0072 sha256 or a baseline digest must be repinned. MEASURED AT THIS BASE: the digest e012b971 occurs in exactly THREE places across the repository -- journal lines 6 and 56, and baseline-manifest.ts:1575 -- so NO test file pins it today. The implementer MUST re-measure at the implementing base rather than inherit this count, because an intervening lane can add a pin.",
+      "journal_or_baseline_validation_files": "Only if the implementing base has added one."
+    },
+    "FIXTURE_MASKING": {
+      "finding": "CONFIRMED, WITH THE MECHANISM MEASURED END TO END. The L1 Real-PG fixture grants the runtime the exact privilege the production posture withholds, which is why the L1 suite is green against a unit that cannot work on the governed substrate.",
+      "the_two_lines": "tests/postgres/organization-commercial-acceptance-fixtures.ts:125 -- GRANT USAGE ON SCHEMA auth TO uellix_writer; and :88 -- GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE.",
+      "proof_that_inheritance_carries_it": "P8A: for a member granted WITH INHERIT TRUE, has_schema_privilege(member,'auth','USAGE') = TRUE. P8B: with the INVOKER defect in place and the member inheriting auth USAGE, the INSERT that fails on the governed posture returned INSERT 0 1. The masking is reproduced, not inferred.",
+      "FIXTURE_DELTA_FROZEN": {
+        "REMOVE": "GRANT USAGE ON SCHEMA auth TO uellix_writer (line 125). This is the masking grant and its removal is part of the implementation proof.",
+        "RETAIN": "GRANT EXECUTE ON FUNCTION auth.uid() TO uellix_writer (line 126). MEASURED NECESSARY (P8C): after REVOKE EXECUTE ON FUNCTION auth.uid() FROM PUBLIC the STORED INSERT policy fails with '42501: permission denied for function uid'. On the hosted baseline that EXECUTE arrives via the PUBLIC default, so retaining it is FIDELITY to hosted, not indulgence. Removing it would make the fixture stricter than production and would turn a correct implementation RED.",
+        "ADD": "USAGE ON SCHEMA auth for the FUNCTION OWNER, mirroring db/baseline/stella_g2_schema.sql:9920 (GRANT USAGE ON SCHEMA auth TO uellix_owner). The fixture re-owns every public table to uellix_owner but grants uellix_owner no auth reach, so without this the repaired DEFINER function would fail in the fixture while succeeding hosted -- a FALSE RED against a correct implementation. This grants the OWNER, never a runtime role, and therefore does not re-create the masking (SECTION_5).",
+        "binding_note": "REMOVE and ADD are a PAIR. Doing only the REMOVE produces a false red; doing only the ADD leaves the defect masked. The certifier must verify both."
+      }
+    },
+    "NOT_IN_THE_WRITE_SET": ["db/schema.ts -- no column, constraint or index changes.", "Any RLS policy, in 0072 or elsewhere.", "Any role, grant or prepared package.", "db/prepared/stella_0021_* -- absent, and outside this lane (SECTION_13).", "Any predecessor authority artifact."]
+  },
+
+  "SECTION_9_FUTURE_IMPLEMENTATION_BRANCH": {
+    "BRANCH": "codex/customer-lifecycle-l1-trigger-privilege-remediation-r1",
+    "availability": "MEASURED ABSENT at BASE: the only branch matching *trigger-privilege-remediation* is this authority branch.",
+    "precedent_conformance": "The repository carries both forms -- an authority branch with the -authority- token and an implementation branch without it (for example origin/codex/w2-b4-remediation-authority-r1 beside origin/codex/w2-b4-r1; and origin/codex/tenancy-selector-packet-a-implementation-r1). Dropping -authority- and retaining the -r1 revision suffix is a bounded, precedent-consistent form.",
+    "THE_ALLOCATOR_CONSUMES_THESE": "BINDING. The later ODS allocator MUST consume this branch name and the two exact protected literals of SECTION_7 from THIS artifact. It must NOT choose them independently, infer them from the diff, or widen them to a pattern. An allocator that derives its own literals has removed the authority from the loop that exists to bound it."
+  },
+
+  "SECTION_10_REAL_PG_CONTRACT": {
+    "substrate_rule": "DISPOSABLE cluster only, pinned image, gated, torn down in finally. NEVER hosted staging, NEVER production, NEVER the canonical local stack. The governed role topology and the full baseline order are REQUIRED -- the minimal substrate of SECTION_2 is sufficient to prove a mechanism and is NOT sufficient to discharge this contract.",
+    "POSITIVE": [
+      "A valid organization commercial acceptance INSERT succeeds as uellix_app in a policy-satisfying identity context.",
+      "The stored accepted_by_user_id equals the authenticated subject.",
+      "PG-06 passes 14/14 INSERT, with organization_commercial_acceptances among them, on the amended baseline unit."
+    ],
+    "NEGATIVE": [
+      "Spoofed actor (accepted_by_user_id is not the authenticated subject) REFUSED.",
+      "Cross-tenant organization REFUSED.",
+      "Forged accepted_by_role REFUSED.",
+      "Non-admin actor REFUSED.",
+      "Absent identity REFUSED."
+    ],
+    "NEGATIVE_CONTROLS_MUST_DISCRIMINATE_BY_MESSAGE": "BINDING, and measured. Before remediation the trigger fails with 42501 and a cross-tenant RLS refusal ALSO fails with 42501 (P1C and P2B) -- so a control asserting only the SQLSTATE cannot tell a REPAIRED cross-tenant refusal from a BROKEN trigger, and a broken trigger would shadow it as a false green. After remediation these five refusals arrive as 23514 from the trigger with distinct messages (P4A-P4D), while the RLS refusal remains 42501. Every negative control MUST assert the message or the specific invariant token, never the SQLSTATE alone.",
+    "PRIVILEGE": [
+      "uellix_app still lacks USAGE ON SCHEMA auth.",
+      "uellix_writer still lacks USAGE ON SCHEMA auth.",
+      "uellix_auditor still lacks USAGE ON SCHEMA auth.",
+      "A direct SELECT auth.uid() as the runtime role still REFUSES.",
+      "The runtime holds NO direct EXECUTE on the trigger function."
+    ],
+    "FUNCTION": [
+      "prosecdef = true.",
+      "proconfig contains exactly search_path=public.",
+      "NO ALTER OWNER was introduced by the amendment; the owner is the applier context, unchanged.",
+      "The owner holds BOTH the auth reach AND SELECT/ownership on legal_instruments and legal_instrument_versions (SECTION_5 -- both, and the table reach is the one that fails first)."
+    ],
+    "RLS_INDEPENDENCE": "With the trigger DISABLED BY THE OWNER, a cross-tenant INSERT must STILL fail via RLS. MEASURED SATISFIABLE (P2B: 42501, new row violates row-level security policy). This control is not optional decoration: once the trigger is repaired it refuses cross-tenant rows FIRST, so without disabling it the test proves the trigger twice and the RLS wall never once.",
+    "REGRESSION": [
+      "The other 13 PG-06 INSERT relations unchanged.",
+      "The 6 UPDATE relations unchanged.",
+      "The 18 SELECT relations unchanged.",
+      "PG-17A / PG-17B unchanged.",
+      "stella_0021 digest unchanged (and, at this base, stella_0021 absent -- see SECTION_13)."
+    ]
+  },
+
+  "SECTION_11_MUTATION_CONTRACT": {
+    "requirement": "Every mutation below must have a UNIQUE ANCHOR: applying it must turn RED a control that no other mutation in this table turns RED, so a green suite cannot be explained by a different control catching it. The implementer must record the anchor per mutation.",
+    "M1": {"mutation": "Remove SECURITY DEFINER from the trigger function.", "expected": "The POSITIVE insert goes RED with 42501 permission denied for SCHEMA AUTH, raised inside the PL/pgSQL body.", "falsifiability_premeasured": "This is exactly the pre-remediation state measured at P1C, so M1 is known to be a real, reachable mutation and not a hypothetical."},
+    "M2": {"mutation": "Remove SET search_path = public, keeping SECURITY DEFINER.", "expected": "The proconfig control goes RED.", "SEMANTIC_ARM_REQUIRED": "BINDING. A catalog-shape assertion alone is weak. MEASURED (P7A vs P7B): the shadowing attack only succeeds when the function OWNER can see the attacker-writable schema, so a naive semantic arm SILENTLY PASSES for the wrong reason and would read as 'the pin is unnecessary'. The semantic arm must therefore grant the owner USAGE on the shadow schema before asserting that the forged content_digest is accepted without the pin (P7B) and refused with it (P7C)."},
+    "M3": {"mutation": "Weaken the accepted_by_user_id equality (for example IS DISTINCT FROM to a nullable comparison, or drop the v_actor IS NULL arm).", "expected": "The SPOOFED-ACTOR control and the ABSENT-IDENTITY control go RED.", "note": "Both arms live in one IF at 0072:200; a mutation dropping only the NULL arm must still be caught, which is why absent-identity is a separate control."},
+    "M4": {"mutation": "Remove the role-in-org invariant (the current_user_role_in_org exact-equality guard).", "expected": "The NON-ADMIN-ACTOR and CROSS-TENANT controls go RED."},
+    "M5": {"mutation": "Re-home the function to an owner lacking dependent-table reach in the test substrate.", "expected": "The POSITIVE control goes RED.", "the_observed_error_is_the_TABLE_one": "MEASURED (P5A, P5B): the failure is '42501: permission denied for table legal_instrument_versions' at PL/pgSQL line 5, NOT an auth-schema error -- and it stays the table error even after the thin owner is granted auth USAGE. A control written to expect an auth error under M5 will not fire."},
+    "M6": {"mutation": "GRANT EXECUTE on the trigger function to a runtime role.", "expected": "The direct-EXECUTE-exposure control goes RED.", "note": "The baseline is has_function_privilege(app, trigger_fn, EXECUTE)=f, measured at P3B while the positive insert succeeded -- so the control is falsifiable and the privilege is genuinely unnecessary."},
+    "M7": {"mutation": "Restore the fixture GRANT USAGE ON SCHEMA auth TO uellix_writer (fixtures line 125).", "expected": "The NO-NEW-RUNTIME-REACH control goes RED.", "note": "This is the masking grant itself. P8A/P8B measured that restoring it makes even the UNREMEDIATED function pass, so this mutation guards the integrity of the whole suite, not one assertion."},
+    "M8": {"mutation": "Skip journal SHA regeneration after amending 0072.", "expected": "pnpm journal:verify goes RED.", "note": "The generator hashes WORKTREE bytes (scripts/journal-artifacts.ts reads with readFileSync utf8), so this mutation is detectable locally and in CI."},
+    "M9": {"mutation": "Skip the db/hosted/baseline-manifest.ts repin.", "expected": "pnpm baseline:verify goes RED."},
+    "M10_RECOMMENDED": {"mutation": "Re-introduce a direct auth.uid() call inside any INVOKER-rights function in db/migrations/** or db/policies/**.", "expected": "A static corpus guard goes RED.", "rationale": "NON-BINDING but strongly indicated. SECTION_2 CLAIM_6 measured that the corpus contains exactly ONE such function and that the correct population is ZERO after remediation. That is a cheap, DB-free, whole-corpus invariant which would have caught this defect at authoring time, and it generalises the fix instead of patching one instance."}
+  },
+
+  "SECTION_12_ODS_INPUT": {
+    "NEW_ODS_LINEAGE_REQUIRED": "YES",
+    "NEW_PROTECTED_GRANT_REQUIRED": "YES",
+    "NO_LITERAL_IS_ALLOCATED_HERE": "BINDING. This artifact deliberately names NO addendum version and NO HPO-ODS identifier. Writing the currently-next-looking pair into a frozen authority would freeze a guess: allocation is dense and sequential, and any lane merging first consumes the slot, after which a literal frozen here would be WRONG while still looking authoritative.",
+    "DERIVATION_RULE_FOR_THE_ALLOCATOR": "Re-derive the next available lineage FRESH at the implementing base, from the live Controller enumeration (scripts/ods-controller.ts) and the live PROTECTED_GRANTS tail (scripts/ods-scope.ts). Never inherit a literal from this artifact, from a sibling authority, or from conversation.",
+    "WHAT_THE_GRANT_MUST_BIND": {"branch": "SECTION_9 -- codex/customer-lifecycle-l1-trigger-privilege-remediation-r1", "literals": "SECTION_7 -- the two exact paths, no wildcard", "purpose": "In-place amendment of a committed, hosted-unapplied migration, per the HPO-ODS-W2-03 precedent."},
+    "self_registration_prohibited": "The implementation writer never self-registers its own grant."
+  },
+
+  "SECTION_13_PR184_INTERACTION": {
+    "this_remediation_is_OUTSIDE_W2_33": "BINDING. It touches no file of the stella_0021 write set and changes no runtime privilege.",
+    "stella_0021_remains_byte_identical": "Nothing here edits it. MEASURED at BASE: stella_0021 does not exist in db/prepared/ (highest prepared package is stella_0020), so PR184 is the act that will create it.",
+    "PR184_remains_blocked": "PR184 cannot demonstrate PG-06 14/14 until this remediation integrates, because the 14th INSERT relation fails for a reason PR184 neither causes nor can fix: the grants stella_0021 adds are necessary for PG-06 and are not sufficient for this relation.",
+    "no_ACL_authority_successor_required": "CONDITION AND VERDICT. A successor would be required only if the runtime privilege contract changed. It does not: after remediation the runtime holds no new schema USAGE, no new EXECUTE and no new table privilege (SECTION_10 PRIVILEGE, measured at P3B). VERDICT: NOT REQUIRED.",
+    "after_remediation_integrates": "PR184 must sync ONCE onto the integrated base and re-run PG-06 against the AMENDED baseline unit. Re-running against the pre-amendment unit measures the old defect and is not evidence."
+  },
+
+  "SECTION_14_FIBDB053_PRIORITY": {
+    "CRITICAL_PATH_ORDER": ["PG-06 trigger remediation AUTHORITY (this artifact)", "independent CERTIFICATION", "MERGE", "ODS ALLOCATION (lineage + protected grant)", "IMPLEMENTATION on the SECTION_9 branch", "independent Real-PG CERTIFICATION", "MERGE", "PR184 RESUME (sync once, re-run PG-06)"],
+    "ordering_constraint": "This sequence completes BEFORE FIBDB-053 consumes a later lineage.",
+    "rationale": "FIBDB-053 Stage-A is itself in precert and its lineage allocation is downstream. Letting it take the next slot while this remediation waits would leave a KNOWN-BROKEN INSERT path on the integration branch and would keep PR184 blocked behind an unrelated node.",
+    "no_FIBDB_053_artifact_is_modified": "BINDING. This section orders work; it edits nothing belonging to FIBDB-053."
+  },
+
+  "SECTION_15_KNOWN_HAZARDS_FOR_THE_IMPLEMENTER": {
+    "H1_CRLF_ON_THE_MIGRATION": "db/migrations/** is NOT pinned to LF in .gitattributes (which pins only db/baseline/**, db/prepared/**, *.sh and docs/**). The journal generator hashes WORKTREE BYTES. In a worktree with core.autocrlf=true, 0072 materializes CRLF, its sha256 differs from the committed blob, and journal:verify / baseline:verify disagree for a reason that has nothing to do with the remediation. MEASURED in THIS worktree: core.autocrlf=false, 0 CR bytes in 0072, and worktree sha256 == git blob sha256 == e012b971... The implementer MUST verify this equality before and after the amendment.",
+    "H2_42501_IS_AMBIGUOUS": "Both the broken trigger and a correct cross-tenant RLS refusal raise 42501. See SECTION_10 NEGATIVE_CONTROLS_MUST_DISCRIMINATE_BY_MESSAGE.",
+    "H3_THE_HEADER_IS_RESTRUCTURED_NOT_APPENDED": "0072 currently reads 'RETURNS trigger AS $$ ... $$ LANGUAGE plpgsql;' with the LANGUAGE clause AFTER the body (lines 164 and 223). The 0060 precedent form places LANGUAGE, SECURITY DEFINER and SET before AS $$. The amendment is a header/footer restructure, not a two-line insertion, and the diff will touch both ends of the function.",
+    "H4_THE_FIXTURE_DELTA_IS_A_PAIR": "SECTION_8. Removing the masking grant without adding the owner grant produces a FALSE RED that looks exactly like a failed remediation.",
+    "H5_PROVISION_BEFORE_TRUSTING_A_GATE": "SECTION_0. An unprovisioned worktree fails every subprocess gate with an error that resembles neither a gate failure nor a code defect."
+  },
+
+  "SECTION_16_EVIDENCE_LEDGER": {
+    "note": "Probe ids are the mission's own; the disposable cluster was destroyed at mission end. Each is reproducible from the recipe in SECTION_2 method.",
+    "P1A": "prosecdef=f, proconfig=NULL, lanname=plpgsql, owner=<owner> for the trigger function; prosecdef=t, proconfig={search_path=public} for both 0031 doorways.",
+    "P1B": "app USAGE auth=f; owner USAGE auth=t; app EXECUTE auth.uid()=t.",
+    "P1C": "ERROR 42501 permission denied for schema auth, QUERY 'v_actor := auth.uid()', CONTEXT PL/pgSQL function ... line 22 at assignment.",
+    "P1D": "Direct SELECT auth.uid() as the runtime role: ERROR 42501 permission denied for schema auth.",
+    "P2A": "Trigger DISABLED, policies armed, valid insert as runtime: INSERT 0 1. The stored policy's direct auth.uid() needs no schema USAGE.",
+    "P2B": "Trigger DISABLED, cross-tenant insert: ERROR 42501 new row violates row-level security policy. RLS independence.",
+    "P3A": "After the 0060-form amendment: prosecdef=t, proconfig={search_path=public}, owner IDENTICAL to owner_before. No ALTER OWNER issued.",
+    "P3B": "app EXECUTE trigger_fn=f; app USAGE auth=f -- after remediation.",
+    "P3C": "Valid insert as runtime: INSERT 0 1, accepted_by_user_id == authenticated subject.",
+    "P4A_P4D": "Spoofed actor / cross-tenant / forged role / absent identity: all ERROR 23514 with distinct invariant-bearing messages.",
+    "P5A": "Owner with neither auth USAGE nor registry SELECT: ERROR 42501 permission denied for table legal_instrument_versions at line 5.",
+    "P5B": "Same owner granted auth USAGE only: STILL ERROR 42501 on legal_instrument_versions.",
+    "P6A": "has_schema_privilege(runtime,'public','CREATE') = f.",
+    "P7A": "Pin removed, owner WITHOUT usage on the shadow schema: attack FAILS (schema silently skipped during resolution).",
+    "P7B": "Pin removed, owner WITH usage on the shadow schema: attack SUCCEEDS -- INSERT 0 1 and a forged content_digest sha256:dead... stored. I-T4-4 defeated.",
+    "P7C": "Pin restored, owner WITH usage on the shadow schema: identical attack REFUSED (digest mismatch, 23514).",
+    "P8A": "GRANT <role> TO <member> WITH INHERIT TRUE: has_schema_privilege(member,'auth','USAGE') = t.",
+    "P8B": "INVOKER function + member inheriting auth USAGE: INSERT 0 1. The fixture masking reproduced.",
+    "P8C": "REVOKE EXECUTE ON FUNCTION auth.uid() FROM PUBLIC: the stored INSERT policy fails with 42501 permission denied for function uid."
+  },
+
+  "NEXT_AUTHORIZED_ACTION": "PG06_TRIGGER_REMEDIATION_AUTHORITY_READY_FOR_INDEPENDENT_CERTIFICATION"
+}
