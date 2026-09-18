@@ -1,0 +1,688 @@
+{
+  "package_id": "TENANCY_S4_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "revision": "R2",
+  "artifact_id": "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "EXECUTABLE_TENANCY_NODE_AUTHORITY_FROZEN_AUTHORITY_ONLY_NOT_IMPLEMENTED",
+  "document_class": "SINGLE_NODE_EXECUTION_AUTHORITY",
+  "mission_id": "TENANCY_S4_AUTHORITY_WRITER",
+  "lane_id": "CV1-TENANCY-S4-R2",
+  "role": "TENANCY_S4_AUTHORITY_WRITER",
+  "materialization_date": "2026-09-18",
+  "companion_manifest": "docs/ops/tenancy/TENANCY_S4_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "AS_OF_HEAD": "4a6308e3d1ce5a282e11055087148a142f642dce",
+  "R1_AS_OF_HEAD": "eec2cba201feb4adc4ae7ba6566f232f0eed37c4",
+
+  "REMEDIATION_R2": {
+    "why_this_revision_exists": "R1 of this artifact (candidate head fade5922) returned PRECERT_FAIL_BLOCKING from independent precertification. The overall S4 model survived; two blocking defects did not. This revision closes both, plus the substantive non-blocking defects. The artifact was never certified and never merged, so it is REVISED IN PLACE rather than superseded by a new version.",
+    "B1_CLOSED": "Storage. R1 required the governed storage helper to read the caller's app.organization_id. Re-derived here: production storage never runs on the connection that owns that GUC, so the requirement was unimplementable and, if implemented fail-closed, would have denied 100% of uploads, downloads and deletes. See STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF.",
+    "B2_CLOSED": "Bootstrap audit. R1's audit_logs disposition covered only organization_id IS NULL rows. Re-derived here: organization founding and invitation acceptance both write TENANT-OWNED (non-NULL) audit rows from intentionally unscoped contexts. See BOOTSTRAP_AUDIT_DISPOSITION.",
+    "additional_defects_closed": [
+      "The canonical GUC expression was wrong and threw instead of denying — see GUC_CANONICAL_EXPRESSION.",
+      "The membership conjunct had no non-vacuity control — see MEMBERSHIP_NONVACUITY.",
+      "The unscoped-caller property was frozen as a COUNT rather than as disposition completeness — see UNSCOPED_CALLER_CLOSED_WORLD.",
+      "Parent-scoped relations had a census entry but no substantive cross-org negative — see PARENT_SCOPED_TRANSITIVE.",
+      "The closed-world property was stated in a way that could be read as 'must always equal 34' — see CLOSED_WORLD_DERIVATION.",
+      "R1 open finding F-S4-9 (can_read_evidence_object not measured) is now CLOSED by direct measurement."
+    ],
+    "what_R2_does_not_change": "The S4 -> S5 hard ordering, the superadmin compatibility rule, the NULL-organization per-relation dispositions for the four shared-reference relations, and the closed-world census partition are all PRESERVED. Their measurements were re-taken at this head and are unchanged."
+  },
+
+  "PURPOSE": {
+    "node": "S4 — DATABASE_SELECTED_ORG_WELD.",
+    "scope_narrowed_in_R2": "S4 is now the DATABASE selected-organization weld ONLY. Storage selected-organization enforcement is a SEPARATE required node. See DAG_DECOMPOSITION_CORRECTION.",
+    "delivers": "The frozen, independently certifiable execution contract for the database half of tenancy node S4.",
+    "IMPLEMENTATION_AUTHORIZED": false,
+    "GRANT_ID": null,
+    "this_artifact_writes": "Authority and test-manifest JSON only. It implements no SQL, no migration, no TypeScript, and allocates no lineage.",
+    "explicitly_not_this_node": [
+      "The STORAGE selected-organization transport mechanism — a separate node owns it, and this artifact is FORBIDDEN from pre-selecting one.",
+      "S5 (superadmin boundary, suspended-organization behavior).",
+      "S6 (second membership, invitations, bootstrap, allowlist exit).",
+      "Any ODS addendum allocation.",
+      "Any HPO grant allocation.",
+      "Any migration ordinal allocation."
+    ]
+  },
+
+  "DAG_DECOMPOSITION_CORRECTION": {
+    "status": "OWNER-DECIDED. Recorded as an explicit authority correction, APPEND-ONLY. The parent authority file is NOT edited.",
+    "decision_owner": "Repository owner, 2026-09-18, in response to the B1 storage re-derivation.",
+    "what_the_parent_says": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0 S1_TO_S8_DAG.nodes[S4] delivers GUC_CONTRACT, RLS_TARGET, STORAGE_V1_BOUNDARY and PROJECT_AUTHORIZATION in ONE node, and STORAGE_V1_BOUNDARY.V1_DECISION states 'S4 welds it; S7 may not proceed until it is welded and proven.'",
+    "why_the_single_node_is_not_executable": "The two halves require the same security property but CANNOT share a transport. The database half is enforced by a transaction-local GUC on the application's PostgreSQL pool. The storage half is evaluated by the Supabase Storage API on a DIFFERENT database connection that never executes set_config. One node cannot deliver both with one mechanism, and R1 failed precisely by assuming it could.",
+    "the_correction": {
+      "S4": "DATABASE_SELECTED_ORG_WELD — the restrictive selected-organization conjunct over the database relation universe. THIS artifact.",
+      "STORAGE_SELECTED_ORG_BOUNDARY": "A SEPARATE, REQUIRED node. It independently derives and freezes a production-faithful transport mechanism. NOT owned by this artifact.",
+      "S7_gate": "S7 requires BOTH nodes welded and proven. DROP_LAST_RULE precondition DL-3 is now discharged by the CONJUNCTION of the two, not by S4 alone."
+    },
+    "THIS_DECOMPOSITION_DOES_NOT_WEAKEN_STORAGE": "BINDING. Storage remains a HARD precondition of S7, exactly as the parent's V1_DECISION requires. Splitting the node changes WHICH node owns the mechanism and WHEN it is proven relative to S4; it does not make storage optional, deferred past S7, or out of scope. A later lane that reads this split as permission to reach S7 with storage unwelded has misread it, and DL-3 remains unsatisfied in that state.",
+    "why_a_split_rather_than_a_mechanism_choice_here": "Selecting a storage transport requires a product and security decision that repository authority does not already carry at this base: a JWT selected-organization claim needs Supabase Auth custom-claims configuration and introduces a stale-claim window on organization switch; a server-issued signed capability needs service-role credentials, which collides with an existing repository control forbidding service_role and admin clients on the evidence ingest path; revoking direct authenticated reach changes the ACL posture of storage.objects and collides with the stella_0019 invariant that it recreates NO policy there. Inventing one inside an S4 authority lane would be an unauthorized product decision.",
+    "prohibition": "This artifact MUST NOT pre-select a JWT-claim, signed-capability, or server-mediated-only architecture, and MUST NOT be cited by the storage node as having chosen one."
+  },
+
+  "PARENT_AUTHORITY": {
+    "path": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+    "artifact_id": "MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0",
+    "relationship": "CONTROLLING for the S1..S8 decomposition and DROP_LAST_RULE. This artifact REFINES the parent's S4 sections with measurement at THIS base and CORRECTS three parent claims that fresh measurement falsifies. It does not amend the parent file.",
+    "parent_claims_corrected_by_fresh_measurement": [
+      {
+        "parent_location": "STORAGE_V1_BOUNDARY.implementation_constraint.definer_hazard",
+        "parent_claim": "A SECURITY DEFINER function does NOT reset session GUCs, so current_setting('app.organization_id', true) inside it resolves to the CALLER's value — which is the desired behavior here.",
+        "why_false": "The PREMISE is true and the CONCLUSION does not follow. SECURITY DEFINER indeed does not reset GUCs, but 'the caller' of can_write_evidence_object during real storage evaluation is the Supabase Storage API's own database session, not the application transaction that ran set_config. The two are different connections on different transports. The parent conflated the DATABASE caller with the APPLICATION request.",
+        "measured_disproof": "See STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF.B1_REDERIVATION.",
+        "disposition": "The GUC mechanism is REJECTED for storage. The storage node must derive a transport that is visible on the Storage API's connection."
+      },
+      {
+        "parent_location": "RLS_TARGET.superadmin_interaction and S1_TO_S8_DAG.nodes[S5].note",
+        "parent_claim": "S5 is independent of S4; existing superadmin disjuncts are out of scope for S4 and S4 must not alter them.",
+        "why_false": "A RESTRICTIVE policy is a global AND-conjunct. Adding one without a superadmin escape revokes superadmin reach on every welded relation WITHOUT editing a single existing disjunct.",
+        "disposition": "PRESERVED FROM R1. S4 carries the superadmin escape inside its own restrictive conjunct; S4 -> S5 is a HARD ordering."
+      },
+      {
+        "parent_location": "RLS_TARGET.scope_of_the_weld.cardinality",
+        "parent_claim": "45 textual occurrences of current_user_org_ids in db/baseline/stella_g2_schema.sql bound the weld surface.",
+        "why_insufficient": "The figure counts one file. The applied chain adds 68 further occurrences in db/migrations/**, and occurrences are neither policies nor relations.",
+        "disposition": "REJECTED as a weld cardinality. Replaced by the replayed closed-world census."
+      }
+    ]
+  },
+
+  "MEASUREMENT_METHOD": {
+    "why_a_replay_and_not_a_grep": "db/migrations/** contains 147 CREATE POLICY and 148 DROP POLICY statements. A grep counts statements, not surviving policies. Every census here is derived by REPLAYING the applied chain in order.",
+    "replay_definition": "db/baseline/stella_g2_schema.sql followed by db/migrations/*.sql in lexicographic filename order, tracking (schema.table, policyname) create/drop, ALTER TABLE ENABLE/FORCE ROW LEVEL SECURITY, and organization_id column presence and nullability.",
+    "db_prepared_is_excluded_and_why": "db/prepared/** is UNAPPLIED. It carries 18 AS RESTRICTIVE occurrences and 9 app.organization_id occurrences that do NOT exist in the running schema. Counting them would fabricate an applied state.",
+    "measured_totals_at_AS_OF_HEAD": {
+      "effective_policies_after_replay": 149,
+      "relations_carrying_organization_id": 42,
+      "relations_with_row_level_security_enabled": 83,
+      "relations_with_FORCE_ROW_LEVEL_SECURITY": 4,
+      "AS_RESTRICTIVE_policies_in_the_applied_chain": 0,
+      "app_organization_id_occurrences_in_the_applied_chain": 0,
+      "re_measured_at_R2": "YES. Integration advanced from eec2cba2 to 4a6308e3, adding only two docs/ops/staging artifacts. Every figure above was re-derived at the merged head and is unchanged."
+    },
+    "S4_ESTABLISHES_THE_RESTRICTIVE_PRECEDENT": "The applied chain contains ZERO restrictive policies. S4 is the FIRST node to publish one. Citing A2-F02 as an APPLIED precedent would be false: its AS RESTRICTIVE statements live only in unapplied db/prepared units."
+  },
+
+  "CURRENT_NODE_STATE_S1_S6": {
+    "method": "Derived from the applied chain and from lib/**, not inherited.",
+    "S1": { "state": "INTEGRATED", "evidence": "founded_by in db/schema.ts:71, created by db/migrations/0066_multiorg_s1_founder_traceability.sql; absent from baseline." },
+    "S2": { "state": "INTEGRATED", "evidence": "Selected-organization carrier live; principal.organization.id passed at three scoped call sites." },
+    "S3": { "state": "INTEGRATED", "evidence": "lib/auth/database-context.ts:395 and :922; db/identity-context.ts:217 membership re-check; db/migrations/0067 refusal-audit surface." },
+    "S4": { "state": "ABSENT", "evidence": "ZERO AS RESTRICTIVE policies and ZERO app.organization_id references in the applied chain. The GUC is set at db/identity-context.ts:178 but consumed by NO applied policy." },
+    "S5": { "state": "ABSENT", "evidence": "131 effective policies still carry current_user_is_super_admin disjuncts." },
+    "S6": { "state": "ABSENT", "evidence": "user_single_active_membership still ceilings membership to one active row per subject." }
+  },
+
+  "GUC_CANONICAL_EXPRESSION": {
+    "finding_id": "F-S4-10",
+    "severity": "BLOCKING (closed in R2)",
+    "R1_defect": "R1 froze the predicate organization_id = current_setting('app.organization_id', true)::uuid and asserted that an unset GUC yields NULL and therefore denies. That is true ONLY on a connection that has never had the placeholder set.",
+    "MEASURED_ON_REAL_POSTGRESQL": {
+      "harness": "postgres:17-alpine, disposable container, single psql session piped via stdin so that every statement runs on ONE connection in autocommit — which is what reproduces the pooled-reuse case.",
+      "step_1_virgin_connection": "current_setting('app.organization_id', true) IS NULL => TRUE. Denies correctly.",
+      "step_2_after_tx_local_set_config_and_COMMIT_same_connection": "IS NULL => FALSE, = '' => TRUE, length => 0. The custom GUC placeholder now EXISTS on that connection with an EMPTY STRING value.",
+      "step_3_R1_predicate_on_that_connection": "current_setting('app.organization_id', true)::uuid raises ERROR: invalid input syntax for type uuid: \"\" (SQLSTATE 22P02).",
+      "step_4_corrected_predicate": "nullif(current_setting('app.organization_id', true), '')::uuid IS NULL => TRUE. Denies correctly."
+    },
+    "why_this_is_blocking_and_not_cosmetic": "postgres-js pools and reuses connections. A connection that previously served an organization-scoped transaction carries the empty-string placeholder forever after. An unscoped transaction on that connection does NOT get a clean denial — it RAISES. An exception is a 500, not a refusal. Worse, the failure is NON-DETERMINISTIC across pool state: a probe on a fresh connection passes and production intermittently errors, so the defect is invisible to any test that does not deliberately reuse a connection.",
+    "interaction_with_the_exception_swallow": "Inside can_read_evidence_object and can_write_evidence_object the 22P02 would be caught by the existing EXCEPTION WHEN OTHERS THEN RETURN false and converted into a silent false — a denial produced by accident of error handling, indistinguishable from a genuine fault. R1 warned against exactly this hazard and then introduced it through its own predicate.",
+    "FROZEN_CANONICAL_EXPRESSION": "nullif(current_setting('app.organization_id', true), '')::uuid",
+    "rules": [
+      "The two-argument current_setting form is MANDATORY; the one-argument form raises on an undefined placeholder.",
+      "The nullif wrapper is MANDATORY and is not stylistic; without it the predicate throws instead of denying on a reused connection.",
+      "NO new SQL helper function may be introduced to encapsulate this. The inline expression is sufficient, and a new function would require EXECUTE grants and re-adjudication of the current-schema runtime ACL authority. See ACL_INTERACTION.",
+      "Any equivalent expression must be independently justified AND proven by the same reused-connection probe. Equivalence is a runtime claim, not a syntactic one."
+    ]
+  },
+
+  "S4_SECURITY_CONTRACT": {
+    "target_authorization_shape": "membership-set inclusion AND selected-organization equality.",
+    "membership_conjunct": {
+      "rule": "UNCHANGED. The existing PERMISSIVE membership policies are not edited, widened or narrowed by S4.",
+      "prohibition": "The GUC MUST NOT replace the membership proof. A relation authorized by selected-organization equality ALONE moves the tenant boundary out of the database into application code."
+    },
+    "selected_org_conjunct": {
+      "rule": "NEW. Published as a RESTRICTIVE policy carrying the frozen canonical expression.",
+      "why_restrictive_is_the_correct_mechanism": "PostgreSQL combines PERMISSIVE policies with OR and RESTRICTIVE policies with AND, then combines the groups with AND. A PERMISSIVE selected-organization policy would be satisfied whenever ANY other permissive policy on the relation is satisfied, and every welded relation already has one. Only a RESTRICTIVE policy yields a conjunct that cannot be satisfied around.",
+      "prohibition": "No disjunctive or permissive widening."
+    },
+    "GUC_CONTRACT": {
+      "guc_name": "app.organization_id",
+      "set_where": "db/identity-context.ts:178-180, via SELECT set_config('app.organization_id', <id>, true). Measured closed world: this is the ONLY site in the repository that sets it.",
+      "lifetime": "TRANSACTION-LOCAL. The third argument true is LOAD-BEARING; a session-scoped GUC would leak tenant scope across pooled connections.",
+      "set_only_when_scoped": "MEASURED: guarded by if (identity.organizationId !== null). When a context is opened unscoped the GUC is not set to empty — it is never set at all in THAT transaction. The empty-string residual is a property of the CONNECTION, not of the transaction; see GUC_CANONICAL_EXPRESSION.",
+      "absence_behavior": "With the canonical expression, an absent selection yields NULL, which is not TRUE, which denies — on both a virgin and a reused connection.",
+      "fail_closed_requirement": "With no selection, a WELDED relation MUST yield zero rows and permit no writes, and MUST NOT raise. Proven by PG-S4-2 and PG-S4-8."
+    },
+    "the_fail_closed_rule_is_scoped_not_global": {
+      "statement": "Fail-closed-on-absent-selection applies to the WELDED relation set. It MUST NOT be applied to the identity substrate, and it MUST NOT deny the narrow bootstrap audit arm.",
+      "why": "See GUC_UNSET_SUBSTRATE and BOOTSTRAP_AUDIT_DISPOSITION. Production deliberately opens unscoped contexts, and two of them legitimately write tenant-owned rows."
+    }
+  },
+
+  "GUC_UNSET_SUBSTRATE": {
+    "finding_id": "F-S4-1",
+    "severity": "CRITICAL",
+    "statement": "Applying the fail-closed rule to the identity substrate is a BOOTSTRAP DEADLOCK: no subject can ever select an organization, because selecting one requires reading relations the weld would hide until one is already selected.",
+    "measured_mechanism": "listSelectableMemberships (lib/auth/database-context.ts:933) opens its context with organizationId: null BY DESIGN, so no selection exists during enumeration. loadSelectableMembershipsWithinContext (:395) reads organization_members FIRST, then calls loadOrganizationWithinContext once per candidate and executes if (!organization) continue — silently DISCARDING unreadable candidates. A weld on either relation therefore yields ZERO candidates for every subject, including one with a single membership, and it fails GREEN because the discard path neither throws nor logs.",
+    "disposition": "public.organizations, public.organization_members and public.invitations are EXCLUDED from the S4 weld, explicitly and with controls, never by omission. They remain governed by their existing membership-scoped PERMISSIVE policies, which already restrict a subject to organizations it belongs to. Excluding them from the SELECTION conjunct does not make them world-readable; it declines to add a selection-based conjunct to relations whose purpose is to be readable BEFORE a selection exists.",
+    "prohibited_resolution": "Weakening organizations-row security generally is PROHIBITED. The fix is a scoped exclusion of the selection conjunct, never a relaxation of the membership conjunct."
+  },
+
+  "UNSCOPED_CALLER_CLOSED_WORLD": {
+    "finding_id": "F-S4-7",
+    "R1_defect": "R1 froze the cardinality 7 as if the number were the security property. A count is not an invariant: it is satisfied by any seven callers, and it says nothing about whether an eighth is safe.",
+    "THE_SECURITY_INVARIANT_IS_DISPOSITION_COMPLETENESS": "Every production call site that opens an identity context with organizationId: null MUST carry an explicit S4 disposition. The invariant is that the set of unscoped callers and the set of dispositioned callers are EQUAL — not that either has a particular size.",
+    "measured_at_this_head": {
+      "method": "Enumerated from every non-test construction of withDatabaseIdentityContext, classified by the organizationId argument. Re-derived at the merged head, not inherited from R1.",
+      "unscoped_sites": [
+        { "site": "lib/auth/database-context.ts:668", "function": "resolveRequestPrincipal", "disposition": "PRINCIPAL RESOLUTION. Reads identity substrate only. Substrate is excluded from the weld." },
+        { "site": "lib/auth/database-context.ts:686", "function": "resolveRequestPrincipal", "disposition": "As above." },
+        { "site": "lib/auth/database-context.ts:933", "function": "listSelectableMemberships", "disposition": "ENUMERATOR. Substrate excluded; proven by PG-S4-4." },
+        { "site": "lib/auth/database-context.ts:954", "function": "withAuthenticatedDatabaseContext", "disposition": "USER-OWNED WORK: onboarding, invitation acceptance, profile reads. Writes TENANT-OWNED audit rows — governed by the narrow bootstrap arm, not by a generic escape." },
+        { "site": "lib/auth/database-context.ts:1022", "function": "withAccountAcceptanceDischargeContext", "disposition": "ACCOUNT-CLASS acceptance. Writes audit rows with organization_id IS NULL, already governed by the 0070 narrow arm. No tenant-owned write." },
+        { "site": "lib/auth/database-context.ts:1134", "function": "withSuperAdminDatabaseContext", "disposition": "SUPERADMIN control plane. Reaches welded relations through the superadmin escape in S4's restrictive conjunct, not through an unscoped exemption." },
+        { "site": "lib/auth/session.ts:501", "function": "syncUserProfile", "disposition": "PROFILE SYNC. Touches no welded relation." }
+      ],
+      "scoped_sites_for_contrast": "lib/auth/database-context.ts:813, :833, :1106, :1197 and :1305 pass a non-null organization id. :1305 is withOrganizationAcceptanceDischargeContext, measured in R2 — it is SCOPED, so public.organization_commercial_acceptances is safely welded and is NOT a bootstrap case.",
+      "count_is_evidence_not_contract": "Seven unscoped sites were measured at this head. That number is RECORDED AS EVIDENCE of the measurement, and is explicitly NOT the property under test."
+    },
+    "required_control": "A mechanical closed-world control that enumerates unscoped constructions from source and fails when one appears WITHOUT a disposition entry. It must go RED on a NEW unscoped caller and also RED on a disposition entry naming a caller that no longer exists, so the two sets are proven equal rather than merely overlapping."
+  },
+
+  "BOOTSTRAP_AUDIT_DISPOSITION": {
+    "finding_id": "F-S4-11 (blocker B2, closed in R2)",
+    "severity": "BLOCKING (closed)",
+    "B2_REDERIVATION": {
+      "independent_method": "Read the two acquisition paths and their transaction ordering directly, not from the precert report.",
+      "onboarding_founding": "app/(authenticated)/app/onboarding/actions.ts:120 opens ONE withAuthenticatedDatabaseContext (organizationId: null). Inside it, in order: INSERT organizations (:131), INSERT organizationMembers (:154), then TWO logAuditAction calls (:166, :175) each carrying organizationId: org.id — NON-NULL, tenant-owned.",
+      "invitation_acceptance": "app/invite/accept/page.tsx:53 runs acceptInvitation inside withAuthenticatedDatabaseContext (organizationId: null). lib/invitations/service.ts:159 then INSERTs organizationMembers (:193), UPDATEs the invitation (:205), and writes TWO logAuditAction rows (:210, :218) carrying organizationId: invitation.organizationId — NON-NULL, tenant-owned.",
+      "state_at_audit_write_time": {
+        "organization": "EXISTS. Pre-existing for invitation acceptance; created earlier in the SAME transaction for founding.",
+        "membership": "EXISTS and is active. Inserted earlier in the SAME transaction in both paths, so it is visible to current_user_org_ids() within that transaction.",
+        "selected_organization": "ABSENT, and STRUCTURALLY SO. A subject cannot have selected an organization it is creating in this very transaction, nor one it is only now joining. This is not an oversight in the call sites; it is a property of acquisition.",
+        "audit_row": "Written with a NON-NULL organization_id."
+      },
+      "why_R1_missed_it": "R1's audit_logs disposition reasoned only about organization_id IS NULL rows and concluded that tenantless rows must stay writable from unscoped contexts. That is correct and insufficient: these four rows are tenant-OWNED. Under R1's weld they would be denied, breaking organization founding and invitation acceptance outright."
+    },
+    "THE_NARROW_ARM": {
+      "applies_to": "public.audit_logs, INSERT ONLY. It grants no SELECT and touches no other relation.",
+      "frozen_premises_ALL_REQUIRED": [
+        "organization_id IS NOT NULL — the arm exists for tenant-owned rows; tenantless rows are already governed by the 0067 and 0070 arms.",
+        "actor_user_id = auth.uid() — the writer is the subject itself, never a third party.",
+        "organization_id = ANY(current_user_org_ids()) — membership is PROVEN AT WRITE TIME. Both paths insert the membership earlier in the same transaction, so this is satisfiable exactly when the acquisition genuinely happened.",
+        "action IN ('organization.created', 'membership.created', 'invitation.accepted') — a FROZEN, closed vocabulary of acquisition verbs.",
+        "nullif(current_setting('app.organization_id', true), '') IS NULL — the arm is reachable ONLY when NO organization is selected."
+      ],
+      "why_the_last_premise_closes_the_escape": "It is the conjunct that prevents 'GUC missing => membership-only access everywhere'. While any organization IS selected, the arm is unreachable, so it can never be used to write a cross-tenant audit row during normal operation. Combined with the frozen verb list, the arm is confined to one relation, one command, three actions, the actor's own proven membership, and the genuinely unselected state.",
+      "action_vocabulary_provenance": "The three literals are the values of AUDIT_ACTIONS.ORGANIZATION_CREATED, AUDIT_ACTIONS.MEMBERSHIP_CREATED and AUDIT_ACTIONS.INVITATION_ACCEPTED in lib/audit/logger.ts:10, :15, :22. Note that the onboarding path writes the raw string literals while the invitation path writes the constants; the VALUES are identical, and the implementing node MUST pin the values, not the symbol names.",
+      "widening_is_the_failure_mode": "Adding a fourth verb, dropping the membership premise, or dropping the unselected premise each converts this narrow arm into the generic escape it exists to avoid. Each must be a RED mutation."
+    },
+    "shape_precedent": "This is the SAME shape the applied chain already uses twice: audit_logs_insert_tenancy_refusal (db/migrations/0067) and audit_logs_insert_legal_acceptance (db/migrations/0070) are both narrow, action-literal-gated INSERT arms with explicit premise conjunctions. S4 follows an established pattern rather than inventing one. The difference is that those are PERMISSIVE policies adding a path, whereas S4's arm must live INSIDE the RESTRICTIVE conjunct, because a restrictive policy ANDs over everything and would otherwise deny what those permissive arms grant.",
+    "read_side_unchanged": "audit_logs SELECT remains welded to the selected organization plus the superadmin escape. The bootstrap arm grants no read. A subject cannot use acquisition to read another tenant's audit history."
+  },
+
+  "S4_CLOSED_WORLD_CENSUS": {
+    "rule": "CLOSED-WORLD. Every relation in the tenant universe is placed in EXACTLY ONE class. A relation carrying organization_id that is absent from the welded set is a FINDING with an explicit disposition, never a silent omission.",
+    "universe_cardinality": {
+      "relations_carrying_organization_id": 42,
+      "relations_tenant_scoped_WITHOUT_an_organization_id_column": 5,
+      "total_database_relations_in_the_S4_closed_world": 47,
+      "storage_objects": "MOVED OUT of this census in R2. It belongs to the STORAGE_SELECTED_ORG_BOUNDARY node."
+    },
+    "partition_completeness_proof": "34 WELDED + 5 nullable + 2 excluded identity substrate carrying organization_id (organization_members, invitations) + 1 excluded owner-only (entitlement_grants) = 42. No remainder. public.organizations is the fifth relation without an organization_id column and is classified under EXCLUDED_WITH_REASON.",
+
+    "WELDED_BY_S4": {
+      "cardinality_measured_at_this_head": 34,
+      "predicate": "organization_id NOT NULL, carrying at least one membership-based policy, and reached ONLY from organization-scoped contexts.",
+      "relations": [
+        "public.assumption_object_links",
+        "public.counterfactual_assessments",
+        "public.domain_object_versions",
+        "public.evidence_items",
+        "public.evidence_sufficiency_determinations",
+        "public.evidence_tombstones",
+        "public.evidence_versions",
+        "public.funders",
+        "public.methodological_assumptions",
+        "public.methodology_review_matrix",
+        "public.methodology_review_matrix_items",
+        "public.organization_commercial_acceptances",
+        "public.outcome_funder_allocations",
+        "public.outcome_monetization_dispositions",
+        "public.outcome_proxy_assignments",
+        "public.outcome_taxonomy_mappings",
+        "public.portfolios",
+        "public.project_investments",
+        "public.projects",
+        "public.readiness_assessments",
+        "public.sensitivity_candidates",
+        "public.sensitivity_scenarios",
+        "public.sroi_assignment_inputs",
+        "public.sroi_calculation_line_items",
+        "public.sroi_calculation_runs",
+        "public.sroi_filter_sets",
+        "public.sroi_report_sections",
+        "public.sroi_reports",
+        "public.sroi_run_review_items",
+        "public.sroi_run_reviews",
+        "public.stella_interactions",
+        "public.stella_suggestion_decisions",
+        "public.theory_of_change_links",
+        "public.theory_of_change_nodes"
+      ]
+    },
+
+    "PARENT_SCOPED_TRANSITIVE": {
+      "cardinality_measured_at_this_head": 4,
+      "relations": ["public.impact_narratives", "public.indicators", "public.outcomes", "public.stakeholder_groups"],
+      "finding": "These four are tenant-scoped but carry NO organization_id column. Every policy scopes them as project_id IN (SELECT id FROM public.projects WHERE organization_id = ...). A selected-organization equality predicate is NOT EVEN EXPRESSIBLE on them.",
+      "hypothesis_that_MUST_NOT_be_assumed": "That welding public.projects restrictively transitively scopes these four through their policy subqueries.",
+      "why_it_must_be_proven": "Whether a relation referenced inside another relation's policy expression is itself subject to row-level security is a RUNTIME property, and it interacts with ownership: public.projects is owned by uellix_owner and does NOT carry FORCE ROW LEVEL SECURITY, so an evaluation path running as the owner is exempt from its policies. A transitive weld that holds for one invoking role and not another is not a weld.",
+      "R2_STRENGTHENING": "R1 gave these four a census entry and a single determination probe. That is insufficient: a census entry proves only that the relation was CLASSIFIED, not that it is ISOLATED. R2 requires a SUBSTANTIVE cross-organization negative PER RELATION — a real row of organization B, denied to a dual-member subject scoped to organization A, under the actual invoking role — in addition to the transitivity determination. Four relations, four negatives, not one aggregate assertion.",
+      "disposition": "PG-S4-7 determines transitivity; PG-S4-9 proves isolation per relation. If transitivity does NOT hold, each relation requires its own restrictive conjunct written against the projects subquery. Either outcome is acceptable; leaving it undetermined is NOT."
+    },
+
+    "SHARED_REFERENCE_NULL_ORG": {
+      "cardinality": 4,
+      "relations": ["public.fx_rates", "public.proxy_sources", "public.financial_proxies", "public.financial_proxy_versions"],
+      "see": "NULL_ORGANIZATION_DISPOSITIONS"
+    },
+
+    "TENANTLESS_AUDIT_OR_SYSTEM": {
+      "cardinality": 1,
+      "relations": ["public.audit_logs"],
+      "see": "NULL_ORGANIZATION_DISPOSITIONS and BOOTSTRAP_AUDIT_DISPOSITION"
+    },
+
+    "EXCLUDED_WITH_REASON": {
+      "cardinality": 4,
+      "entries": [
+        {
+          "relation": "public.organizations",
+          "reason": "ENUMERATOR SUBSTRATE. Welding it collapses the organization selector to zero candidates. Carries no organization_id column; scoped by id = ANY(current_user_org_ids())."
+        },
+        {
+          "relation": "public.organization_members",
+          "reason": "ENUMERATOR SUBSTRATE. The selector's FIRST query reads this relation with no selection, so a weld here empties the candidate list one step earlier than a weld on organizations would."
+        },
+        {
+          "relation": "public.invitations",
+          "reason": "REACHED FROM AN UNSCOPED CONTEXT. app/invite/accept/page.tsx:53 runs acceptInvitation inside withAuthenticatedDatabaseContext. A weld would make invitation acceptance unreachable — and acceptance is precisely the act by which a subject acquires the membership that would later satisfy the weld.",
+          "residual_risk": "Remains membership-scoped only. Closing it belongs to S6, which owns INVITATIONS, and MUST NOT be silently absorbed by S4."
+        },
+        {
+          "relation": "public.entitlement_grants",
+          "reason": "NO TENANT-FACING POLICY. Its single effective policy is entitlement_grants_select_owner FOR SELECT TO uellix_owner USING (true) — owner-only, no membership predicate, no uellix_app reach.",
+          "tripwire_required": "If any later node grants the application role reach, it MUST re-enter the welded set. PG-S4-5 makes that re-entry mandatory."
+        }
+      ]
+    },
+
+    "FUTURE_NODE": {
+      "entries": [
+        "STORAGE_SELECTED_ORG_BOUNDARY — storage.objects and the two governed helpers. Separate required node.",
+        "Removal or narrowing of the 131 policy-level superadmin disjuncts — S5.",
+        "Tenant-scope enforcement on public.invitations — S6."
+      ]
+    }
+  },
+
+  "CLOSED_WORLD_DERIVATION": {
+    "R1_defect": "R1 stated the welded set as a fixed list of 34 relations in a way that could be read as 'correctness means this equals 34 forever'. A later authorized node may legitimately add an organization-scoped relation, and a control pinned to 34 would go RED for a lawful change while a control pinned to the list alone would go GREEN for an unclassified one.",
+    "WHAT_IS_FROZEN_IS_THE_MECHANISM_NOT_THE_NUMBER": {
+      "derivation": "U = the set of organization-scoped relations, derived INDEPENDENTLY by replaying the applied chain (baseline then migrations in order), cross-checked against the pgTable declarations in db/schema.ts. U is NEVER read from the S4 package under test.",
+      "classification": "C = the union of the S4 class arrays: WELDED_BY_S4, SHARED_REFERENCE_NULL_ORG, TENANTLESS_AUDIT_OR_SYSTEM, EXCLUDED_WITH_REASON and PARENT_SCOPED_TRANSITIVE.",
+      "required_property": "U as a set == C as a set, AND every name occurs in C exactly once. Any name in U minus C is RED (unclassified). Any name in C minus U is RED (phantom classification). Any duplicate in C is RED.",
+      "counts_are_evidence": "34 welded and 42 organization_id relations are RECORDED AS MEASURED EVIDENCE at this head. They are NOT the correctness criterion. A future authorized relation extends U and MUST receive an explicit disposition; that is a lawful growth of the universe, and it is caught by the U-minus-C arm rather than by an equality-to-34 assertion.",
+      "why_a_test_must_not_self_derive": "A control whose expectation comes from the same declaration it checks is vacuous. The mutation controls require it to go RED both when a name is removed from the package arrays and when a fixture relation is added to U."
+    }
+  },
+
+  "NULL_ORGANIZATION_DISPOSITIONS": {
+    "finding_id": "F-S4-3",
+    "cardinality_rederived": 5,
+    "method": "Derived by replaying column nullability across the applied chain. Re-measured at the merged head and unchanged.",
+    "why_organization_id_IS_NULL_encodes_TWO_different_things": "In some relations NULL means SHARED — a globally-valid reference row owned by no tenant. In others NULL means TENANTLESS — a row that structurally cannot have an owning tenant. A single uniform rule cannot serve both.",
+    "BOTH_BLANKET_FORMS_ARE_PROHIBITED": {
+      "prohibited_form_1": "The bare selected-organization equality applied uniformly. NULL = anything yields NULL, not TRUE, so every shared reference row and every tenantless audit row becomes invisible.",
+      "prohibited_form_2": "organization_id IS NULL OR <equality> applied uniformly. It declares on EVERY welded relation that a NULL organization_id means visible-to-all, opening a permanent cross-tenant read channel on tenantless security relations."
+    },
+    "PER_TABLE_DISPOSITIONS": [
+      {
+        "relation": "public.fx_rates",
+        "null_semantics": "SHARED reference. Global exchange rates carry organization_id IS NULL and are legitimately readable by every tenant.",
+        "evidence": "The baseline policy fx_rates_select already carries an EXPLICIT shared disjunct of the form auth.uid() IS NOT NULL AND organization_id IS NULL. The shared-row concept predates S4.",
+        "disposition": "WELD WITH AN EXPLICIT SHARED-ROW DISJUNCT, scoped to this relation only.",
+        "over_denial_canary_required": true
+      },
+      {
+        "relation": "public.proxy_sources",
+        "null_semantics": "SHARED reference.",
+        "disposition": "WELD WITH AN EXPLICIT SHARED-ROW DISJUNCT, per-relation.",
+        "over_denial_canary_required": true
+      },
+      {
+        "relation": "public.financial_proxies",
+        "null_semantics": "SHARED reference.",
+        "disposition": "WELD WITH AN EXPLICIT SHARED-ROW DISJUNCT, per-relation.",
+        "over_denial_canary_required": true
+      },
+      {
+        "relation": "public.financial_proxy_versions",
+        "null_semantics": "SHARED reference, inherited from its parent proxy.",
+        "disposition": "WELD WITH AN EXPLICIT SHARED-ROW DISJUNCT, per-relation. The implementing node MUST confirm a version row's shared status agrees with its parent's; a version whose parent is tenant-owned MUST NOT be reachable as shared.",
+        "over_denial_canary_required": true
+      },
+      {
+        "relation": "public.audit_logs",
+        "null_semantics": "TENANTLESS for NULL rows, and SEPARATELY tenant-owned for the acquisition rows — see BOOTSTRAP_AUDIT_DISPOSITION.",
+        "disposition": "THREE-PART and per-command. (1) NULL-organization rows remain writable from unscoped contexts, as already governed by the 0067 and 0070 narrow arms. (2) Tenant-owned acquisition rows are writable ONLY through the narrow bootstrap arm. (3) SELECT remains welded to the selected organization plus superadmin.",
+        "over_denial_canary_required": true,
+        "prohibition": "Treating audit_logs as a fifth shared-reference relation is a DEFECT. It is the one relation in this class where IS NULL means 'no owner', not 'every owner'."
+      }
+    ],
+    "over_denial_is_invisible_to_negative_controls": "A negative control proves a forbidden row is DENIED. It cannot detect that a REQUIRED row has also been denied. Each disposition therefore requires a POSITIVE canary, or the over-denial failure mode is untested by construction."
+  },
+
+  "MEMBERSHIP_NONVACUITY": {
+    "finding_id": "F-S4-12",
+    "R1_defect": "R1's mutation M-S4-2 declared that removing the membership conjunct must go RED, but the manifest carried no control capable of detecting it. Every R1 positive used a subject who WAS a member, and every R1 negative used a non-selected organization. In that fixture space, membership inclusion and selected-organization equality are satisfied and violated together, so deleting the membership conjunct changes no observable outcome and the suite stays GREEN.",
+    "required_control": "A subject whose selected organization GUC is set to ORG_A but who is NOT a member of ORG_A must read nothing and write nothing on a welded relation.",
+    "why_this_state_is_reachable_at_the_RLS_layer": "db/identity-context.ts:217 refuses a non-member organization at the CONTEXT layer, so the application cannot normally produce it. That guard is application-layer defense; the RLS layer must hold independently of it, because the weld's entire purpose is to be the boundary that survives an application-layer mistake. The probe therefore sets the GUC directly in the harness rather than going through the context constructor.",
+    "load_bearing_property": "This control MUST go RED if the membership conjunct is removed while selected-organization equality remains. It is the only control in the manifest with that discriminating power."
+  },
+
+  "STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF": {
+    "status": "HANDED OFF TO A SEPARATE REQUIRED NODE. Not owned, not designed and not implemented by this artifact.",
+    "B1_REDERIVATION": {
+      "independent_method": "Traced the actual production storage path rather than reading the precert report.",
+      "finding": "The application transaction that owns app.organization_id and the database session that evaluates storage.objects policies are DIFFERENT CONNECTIONS ON DIFFERENT TRANSPORTS. The GUC cannot propagate between them.",
+      "evidence": [
+        "lib/pipeline/evidence.ts:375 obtains the storage client AFTER closing the database transaction. Its own header comment at :316-339 states the design explicitly: 'Phase 2: the upload, with NO transaction open', because holding a pooled connection for a 25 MB upload is unacceptable. The separation is deliberate and documented, not incidental.",
+        "lib/supabase/server.ts createClient() returns an @supabase/ssr createServerClient — an HTTP client to the Supabase project URL authenticated with the anon key plus the user's session cookie. Storage calls traverse the Storage API service, which evaluates storage.objects RLS on its OWN database connections.",
+        "db/client.ts is a drizzle-orm/postgres-js pool — a direct PostgreSQL connection pool, entirely separate from the HTTP transport.",
+        "set_config('app.organization_id', ...) occurs at EXACTLY ONE site in the repository, db/identity-context.ts:180, on the postgres-js pool and transaction-locally.",
+        "The three storage.objects policies (insert_evidence, delete_evidence, select_evidence) are TO authenticated and delegate to the two governed helpers."
+      ],
+      "consequence": "Inside can_write_evidence_object and can_read_evidence_object during real Storage API evaluation, current_setting('app.organization_id', true) is NEVER the application transaction's value. R1's requirement R2 was therefore unimplementable, and implementing it fail-closed would have denied every upload, download and delete in the product.",
+      "why_R1_believed_otherwise": "R1 inherited the parent authority's reasoning that a SECURITY DEFINER function does not reset GUCs and therefore sees the caller's value. The premise is true; the conclusion conflates the DATABASE caller with the APPLICATION request.",
+      "THE_R1_PROBE_WOULD_NOT_HAVE_CAUGHT_IT": "R1's PG-S4-3 asked to observe the GUC inside the definer under a real PostgreSQL probe. A probe that opens one psql session, sets the GUC itself, and calls the helper would PASS — and prove nothing, because it fabricates on one connection exactly the propagation production lacks. A probe must reproduce the CONNECTION BOUNDARY, not just the function boundary. This is recorded as a control-design lesson for the storage node."
+    },
+    "MEASURED_STATE_OF_THE_TWO_HELPERS": {
+      "can_write_evidence_object": "db/baseline/stella_g2_schema.sql:892-928. SECURITY DEFINER, SET search_path TO '', OWNER uellix_owner. Authorizes on membership alone: the caller must be an active member of the organization owning the path's project, with role in (organization_admin, analyst). Never consults any selected-organization signal.",
+      "can_read_evidence_object": "db/baseline/stella_g2_schema.sql:850-884. MEASURED IN R2, closing R1 open finding F-S4-9. Structurally identical to the write helper EXCEPT that it imposes NO role filter — any active member of the owning organization may read. The read surface is therefore BROADER than the write surface, so the read side is the larger exposure, not the smaller one. R1's assumption of symmetry would have understated it.",
+      "owner_exemption": "Both helpers run as uellix_owner, which is NOBYPASSRLS but OWNS public.projects and public.organization_members, neither of which carries FORCE ROW LEVEL SECURITY (the applied chain FORCEs exactly 4 relations, none of them these two). A relation owner is exempt from its own relation's row-level security unless FORCE is set, so the helpers read past ANY policy the database weld adds. Reasoning from NOBYPASSRLS alone would reach the opposite, wrong conclusion."
+    },
+    "THE_SECURITY_PROPERTY_THE_STORAGE_NODE_MUST_DELIVER": "A dual-member subject may access evidence storage objects ONLY for the currently selected organization, with SYMMETRIC cross-organization denial, across upload, read/download, delete and the evidence erasure path. This property is UNCHANGED from what S4 originally intended; only the transport is undetermined.",
+    "EVALUATION_CRITERIA_THE_STORAGE_NODE_MUST_DISCHARGE": [
+      "Direct Supabase Storage API reach — the browser holds the anon key and the user's JWT, so any policy-layer design must assume a subject can call the Storage API directly, bypassing the server's checks.",
+      "Selected-organization propagation to the Storage API connection.",
+      "Token and claim freshness, including the window after an organization switch.",
+      "Replay and TOCTOU.",
+      "Upload, read/download, delete, and evidence erasure.",
+      "Service-role implications, including the existing repository control that forbids service_role and admin clients on the evidence ingest path.",
+      "ACL implications, including EXECUTE posture and the stella_0019 invariant that it recreates NO policy on storage.objects.",
+      "Direct-client bypass."
+    ],
+    "MEASURED_CONTEXT_THE_STORAGE_NODE_INHERITS": {
+      "server_already_enforces_selection": "Every storage call in the repository is server-mediated. createFileEvidenceForProject calls requireOrganizationAccess(), which yields the SELECTED organization, then verifyProjectOwnership(projectId, organization.id) before uploading. So the selected-organization boundary IS enforced today in the application layer — it is simply not enforced at the policy layer.",
+      "no_client_side_storage_call_exists": "MEASURED: no 'use client' module in the repository calls .storage. The residual exposure is a DELIBERATE direct Storage API call by a member, not an accidental path in product code.",
+      "severity_calibration": "Because the helpers already enforce MEMBERSHIP, the gap is a SELECTED-ORGANIZATION discipline gap, not a membership-isolation gap. A subject can only reach organizations it genuinely belongs to. This calibration must not be used to downgrade the node: the parent's V1_DECISION makes storage a hard S7 precondition, and post-S7 dual membership is exactly when the gap becomes reachable."
+    },
+    "PROHIBITIONS_ON_THIS_ARTIFACT": [
+      "MUST NOT select a transport mechanism.",
+      "MUST NOT require app.organization_id to cross the Storage API connection boundary.",
+      "MUST NOT be cited by the storage node as having chosen an architecture.",
+      "MUST NOT weaken storage as a hard precondition of S7."
+    ]
+  },
+
+  "SUPERADMIN_COMPATIBILITY": {
+    "rule": "S4 MUST preserve pre-S4 superadmin reach EXACTLY in observable behavior, until S5 owns its removal.",
+    "the_trap": "S4 can satisfy the parent's literal instruction not to alter the superadmin disjuncts while destroying superadmin reach entirely, because a RESTRICTIVE policy ANDs against the whole permissive group including that disjunct. Textual and semantic non-alteration are different properties, and only the second matters.",
+    "frozen_compatibility_rule": "S4's restrictive conjunct MUST itself carry a superadmin escape, so the conjunct is satisfied for a superadmin regardless of the selected-organization term.",
+    "why_omitting_the_escape_is_NOT_merely_stricter": "Omitting it is an UNANNOUNCED PARTIAL S5 executed inside S4's grant, with NO diff on any superadmin-related line.",
+    "preserved_unchanged_by_S4": [
+      "The superadmin exemption in db/identity-context.ts:217.",
+      "Policy-level superadmin semantics — all 131 effective policies carrying current_user_is_super_admin.",
+      "Admin control-plane reach."
+    ],
+    "F_AU_4_rederived": {
+      "claim": "The db/identity-context.ts:217 superadmin exemption is UNREACHABLE through the measured production caller set at this base.",
+      "measurement": "Of the non-test constructions of withDatabaseIdentityContext, 7 pass organizationId: null and cannot reach a guard conditioned on organizationId !== null. Those passing a non-null value derive it from principal.organization.id, already membership-proven by S3.",
+      "consequence_for_S5_not_S4": "S5 must report removing it as DEFENSE_IN_DEPTH, never as closing a live hole."
+    }
+  },
+
+  "S4_TO_S5_ORDERING": {
+    "finding_id": "F-S4-2",
+    "decision": "S4 MUST PRECEDE S5. HARD DEPENDENCY, preserved from R1 and re-measured at this head.",
+    "postgresql_composition_premise": "Row visibility = (OR over PERMISSIVE) AND (AND over RESTRICTIVE). A restrictive policy is a GLOBAL conjunct: it constrains every permissive disjunct simultaneously, including ones it does not name.",
+    "coupling_measured_at_THIS_head": {
+      "effective_policies": 149,
+      "naming_a_membership_helper": 127,
+      "naming_current_user_is_super_admin": 131,
+      "naming_BOTH": 125,
+      "membership_WITHOUT_superadmin": 2,
+      "relations_carrying_a_both_policy": 45,
+      "the_two_uncoupled_policies": [
+        "public.organization_commercial_acceptances / organization_commercial_acceptances_select (db/migrations/0072)",
+        "public.organization_commercial_acceptances / organization_commercial_acceptances_insert (db/migrations/0072)"
+      ]
+    },
+    "why_the_two_exceptions_do_NOT_weaken_the_conclusion": "Both sit on ONE relation. 125 of the 127 membership policies still cannot be welded without deciding S5's question.",
+    "the_ordering_argument": "Because S4 must preserve superadmin reach inside its OWN restrictive conjunct, the superadmin escape becomes part of S4's frozen output. S5 then removes superadmin reach from a surface that is already conjunctively welded, and its diff is auditable as a boundary change alone.",
+    "prohibition": "S4 and S5 MUST NOT be implemented in one node, and S5 MUST NOT be implemented before S4."
+  },
+
+  "ACL_INTERACTION": {
+    "re_evaluated_in_R2": "YES, after the storage split. The conclusion is now STRONGER and its conditions are narrower.",
+    "authority_consulted": "docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and its v1.0.1 amendment, both present at this merged head. NOT amended by this artifact.",
+    "what_S4_changes_after_the_split": {
+      "privileges": "NONE. A row-level-security policy is not a privilege. S4 issues no GRANT and no REVOKE.",
+      "grants": "NONE.",
+      "relation_universe": "UNCHANGED. S4 creates and drops no relation, so the ACL closed-world universe U is untouched.",
+      "functions": "NONE. GUC_CANONICAL_EXPRESSION forbids introducing a helper; the canonical expression uses only the built-ins current_setting and nullif, which need no EXECUTE grant. The existing policy helpers current_user_org_ids(), current_user_is_super_admin() and current_user_role_in_org(uuid) are already granted to uellix_writer and uellix_auditor.",
+      "storage_helper_signatures": "NOT TOUCHED BY S4 AT ALL after the split. can_write_evidence_object and can_read_evidence_object now belong to the storage node.",
+      "rls_policy_semantics": "CHANGED. This is the whole of S4's effect."
+    },
+    "conclusion": "ACL COMPATIBILITY PROOF ONLY. No ACL successor is required for S4. The split STRENGTHENS this conclusion: R1's conditional hinged mainly on the storage helper bodies and signatures, and S4 no longer touches them.",
+    "the_single_remaining_condition": "If an implementer introduces ANY new SQL function called from a policy expression — for example a convenience wrapper around the canonical expression — the conclusion INVERTS and an ACL successor becomes mandatory, because evaluating a policy requires the invoking role to hold EXECUTE on every function the expression calls, and a new function would break the ACL authority's posture of exactly three granted helper signatures. GUC_CANONICAL_EXPRESSION forbids this precisely to keep S4 ACL-neutral.",
+    "storage_node_inherits_the_open_ACL_question": "The storage node's ACL posture is UNDETERMINED and depends on the transport it selects. If it changes helper signatures, adds a callable, or alters the TO authenticated grants on storage.objects, it MUST raise STOP_FOR_ACL_AUTHORITY_SUCCESSOR. That determination is explicitly NOT made here.",
+    "obligation_on_the_implementing_node": "State that no new function was introduced and no signature changed, and prove it — an ACL compatibility proof is only valid alongside that evidence."
+  },
+
+  "FUTURE_IMPLEMENTATION_WRITE_SURFACE": {
+    "status": "SYMBOLIC. No file in this list is created, modified or reserved by this artifact.",
+    "categories": [
+      {
+        "category": "db/migrations/**",
+        "expected": "ONE new forward migration publishing the restrictive weld and the narrow bootstrap audit arm.",
+        "ordinal": "SYMBOLIC — re-derive at the implementing node's own base. Ordinals 0000..0073 are OCCUPIED at this head; the mechanically next free ordinal is 0074, which is NOT allocated or reserved by this artifact.",
+        "protected": true
+      },
+      {
+        "category": "db/schema.ts",
+        "expected": "NONE. S4 changes policies only, not the Drizzle relation shape. A diff here signals scope growth."
+      },
+      {
+        "category": "db/prepared/** and db/hosted/**",
+        "expected": "NONE EXPECTED after the storage split. The storage helper republication that would have required a prepared or hosted successor now belongs to the storage node.",
+        "protected": true
+      },
+      {
+        "category": "identity and runtime tests",
+        "expected": "The unscoped-caller disposition-completeness control, and a control pinning the transaction-local set_config form."
+      },
+      {
+        "category": "Real-PG harness and probe manifests",
+        "expected": "A two-phase disposable-cluster harness with an explicitly REUSED connection phase."
+      },
+      {
+        "category": "docs implementation evidence",
+        "expected": "One evidence artifact under docs/ops/tenancy/."
+      }
+    ],
+    "closure_obligation": "The implementing node MUST re-derive this surface at its own base and MUST NOT treat this list as an allowlist."
+  },
+
+  "SYMBOLIC_ODS_HPO_NEED": {
+    "THIS_LANE_ALLOCATES_NOTHING": "BINDING. No ODS addendum, HPO grant, migration ordinal or branch binding is allocated.",
+    "live_ODS_state_measured_at_this_head": {
+      "controller_enumerates_addenda_through": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36",
+      "highest_grant_registered_in_scripts_ods_scope": "HPO-ODS-W2-33",
+      "method": "Read from scripts/ods-controller.ts and scripts/ods-scope.ts at this head."
+    },
+    "NEXT_IDENTIFIERS_ARE_DELIBERATELY_NOT_NAMED_AS_ALLOCATED": {
+      "rule": "BINDING. This artifact does NOT declare, reserve or treat as allocated the mechanically-next ODS version or W2 grant id. Those identifiers appear in the repository only inside prohibition and absence semantics.",
+      "consequence": "The later allocator MUST derive both freshly after this authority is certified."
+    },
+    "symbolic_future_need": [
+      "ONE fresh ODS maintenance addendum authorizing S4 implementation — version SYMBOLIC.",
+      "ONE narrow protected grant — id SYMBOLIC.",
+      "A branch binding for that grant, bound to the branch the implementing node actually runs on.",
+      "Protected path patterns derived from the FINAL frozen S4 implementation surface — narrow, never a wide db/** or a bare wildcard.",
+      "A SEPARATE allocation for the STORAGE_SELECTED_ORG_BOUNDARY node, which is NOT covered by S4's grant."
+    ],
+    "ordering": "Authority certification FIRST, then allocation, then implementation."
+  },
+
+  "REAL_PG_CONTRACT": {
+    "principle": "NO STATIC SQL INSPECTION MAY SUBSTITUTE FOR POSTGRESQL SEMANTICS. Policy combination, NULL-is-not-TRUE denial, GUC placeholder residuals, owner RLS exemption and transitive policy evaluation are ALL runtime properties.",
+    "harness": "Disposable cluster only, via pnpm db:audit:disposable. NEVER staging, NEVER production, NEVER the canonical local stack.",
+    "fixture_shape": "TWO-TENANT with REAL ROWS in the non-selected organization. A probe returning zero rows for want of data proves nothing.",
+    "two_phase_construction_is_forced": "The dual-member subject required by PG-S4-1, PG-S4-4 and PG-S4-9 is unbuildable while user_single_active_membership exists, and may be constructed ONLY in a post-S7 phase INSIDE the disposable cluster. Dropping the index elsewhere is prohibited by DROP_LAST_RULE.prohibited_shortcuts.",
+    "connection_reuse_is_a_first_class_harness_requirement": "At least one probe MUST run on a connection that previously served an organization-scoped transaction. A harness that opens a fresh connection per assertion CANNOT observe the empty-string residual, and would have passed R1's defective predicate.",
+    "probes": [
+      {
+        "id": "PG-S4-1",
+        "requirement": "Dual-member subject, selected organization A: a row of A is visible and writable, a row of B is DENIED. Then symmetrically with B selected.",
+        "why_runtime": "Proves the RESTRICTIVE conjunct actually ANDs against the permissive membership disjunct."
+      },
+      {
+        "id": "PG-S4-2",
+        "requirement": "With no selection, a WELDED relation yields ZERO tenant rows and permits ZERO tenant writes.",
+        "scope_limit": "The WELDED set ONLY. Asserting it over the identity substrate would encode the bootstrap deadlock as a requirement."
+      },
+      {
+        "id": "PG-S4-4",
+        "requirement": "ENUMERATOR INTEGRITY. A dual-member subject running the selector with NO selection still enumerates BOTH organizations.",
+        "why_it_is_load_bearing": "The only control that catches the bootstrap deadlock. It must run with no selection, because that is how the enumerator runs in production."
+      },
+      {
+        "id": "PG-S4-5",
+        "requirement": "CLOSED-WORLD CENSUS per CLOSED_WORLD_DERIVATION: U == C, each name once, RED on U minus C and on C minus U.",
+        "derivation_rule": "U derived independently from the applied chain, NEVER read from the package under test."
+      },
+      {
+        "id": "PG-S4-6",
+        "requirement": "Shared NULL-organization reference data remains visible per its per-relation disposition, while no tenant-owned row leaks cross-tenant.",
+        "why_a_positive_canary_is_mandatory": "Negative controls cannot detect over-denial."
+      },
+      {
+        "id": "PG-S4-7",
+        "requirement": "PARENT-SCOPED TRANSITIVITY DETERMINATION under the ACTUAL invoking role.",
+        "both_outcomes_are_acceptable": "Determines whether the four parent-scoped relations need their own conjuncts. Silence is not acceptable."
+      },
+      {
+        "id": "PG-S4-8",
+        "requirement": "REUSED-CONNECTION EMPTY-GUC. On a connection that previously served an organization-scoped transaction and committed, a subsequent unscoped transaction must yield ZERO tenant rows and NO writes, and MUST NOT raise SQLSTATE 22P02.",
+        "why_runtime": "The empty-string placeholder residual is a per-connection property invisible to any single-transaction or fresh-connection probe. This probe is what distinguishes a denial from an exception.",
+        "measured_basis": "Reproduced during authorship on postgres:17-alpine; see GUC_CANONICAL_EXPRESSION.MEASURED_ON_REAL_POSTGRESQL."
+      },
+      {
+        "id": "PG-S4-9",
+        "requirement": "PARENT-SCOPED CROSS-ORG ISOLATION, PER RELATION. For each of impact_narratives, indicators, outcomes and stakeholder_groups, a real row belonging to organization B is DENIED to a dual-member subject scoped to organization A, and symmetrically.",
+        "distinct_from_PG_S4_7": "PG-S4-7 determines the MECHANISM; PG-S4-9 proves the OUTCOME. A census entry proves only that a relation was classified, never that it is isolated."
+      },
+      {
+        "id": "PG-S4-10",
+        "requirement": "MEMBERSHIP NON-VACUITY. A subject whose selection is set to ORG_A but who is NOT a member of ORG_A reads nothing and writes nothing on a welded relation.",
+        "why_it_exists": "Without it, membership inclusion and selected-organization equality are never independently varied, and deleting the membership conjunct leaves the suite green."
+      },
+      {
+        "id": "PG-S4-11",
+        "requirement": "BOOTSTRAP AUDIT POSITIVE. With no selection, a subject that has just acquired an active membership in ORG_A within the same transaction successfully INSERTs an audit_logs row carrying organization_id = ORG_A and one of the three frozen acquisition actions.",
+        "why_runtime": "Reproduces the founding and invitation-acceptance orderings, in which membership exists and selection structurally cannot."
+      },
+      {
+        "id": "PG-S4-12",
+        "requirement": "BOOTSTRAP AUDIT WIDENING NEGATIVES, all of which must DENY: (a) the same insert while an organization IS selected; (b) an action outside the frozen three-verb vocabulary with no selection; (c) an organization the subject is not a member of; (d) actor_user_id different from auth.uid(); (e) any SELECT of another tenant's audit rows through the arm.",
+        "why_runtime": "Each corresponds to one premise of the narrow arm. Omitting any one converts the arm into the generic membership-only escape."
+      }
+    ],
+    "PG_S4_3_RETIRED": "R1's PG-S4-3 required observing app.organization_id inside the governed SECURITY DEFINER storage helper. It is RETIRED as VACUOUS AND MISLEADING: a probe that sets the GUC on the same connection it then reads proves only that a definer does not reset GUCs, which is true and irrelevant, while fabricating the cross-connection propagation production lacks. Storage proof obligations move to the storage node and MUST reproduce the CONNECTION boundary, not merely the function boundary."
+  },
+
+  "MUTATION_CONTRACT": {
+    "principle": "Each mutation MUST turn the suite RED. A mutation that leaves it green means the corresponding guarantee is untested, regardless of how many tests pass.",
+    "mutations": [
+      { "id": "M-S4-1", "mutation": "Change the selected-organization policy from RESTRICTIVE to PERMISSIVE.", "must": "RED" },
+      { "id": "M-S4-2", "mutation": "Remove the membership conjunct, leaving selected-organization equality alone.", "must": "RED via PG-S4-10", "note": "R1 declared this mutation but had no control able to detect it." },
+      { "id": "M-S4-3", "mutation": "Remove the selected-organization conjunct, leaving membership alone.", "must": "RED" },
+      { "id": "M-S4-4", "mutation": "Make an absent selection permit access on a welded relation.", "must": "RED" },
+      { "id": "M-S4-5", "mutation": "Add public.organizations or public.organization_members to the welded set.", "must": "RED via PG-S4-4, not merely via a census count." },
+      { "id": "M-S4-6", "mutation": "Reclassify public.audit_logs as a shared-reference relation.", "must": "RED" },
+      { "id": "M-S4-7", "mutation": "Remove one relation from the closed-world census enumeration.", "must": "RED" },
+      { "id": "M-S4-8", "mutation": "Add a new organization_id-carrying fixture relation to U without classifying it.", "must": "RED", "why": "Separate from M-S4-7: one proves the census notices a removal, the other an addition." },
+      { "id": "M-S4-10", "mutation": "Drop the superadmin escape from S4's restrictive conjunct.", "must": "RED", "why": "The unannounced-partial-S5 failure, invisible in review." },
+      { "id": "M-S4-11", "mutation": "Flip the third argument of set_config to false, making the GUC session-scoped.", "must": "RED" },
+      { "id": "M-S4-12", "mutation": "Add a new unscoped identity-context construction with no disposition entry.", "must": "RED via the disposition-completeness control." },
+      { "id": "M-S4-13", "mutation": "Remove the nullif wrapper from the canonical expression, restoring R1's bare cast.", "must": "RED via PG-S4-8", "why": "On a reused connection the bare cast raises 22P02 instead of denying. A fresh-connection-only harness would stay green, which is exactly how R1 shipped the defect." },
+      { "id": "M-S4-14", "mutation": "Add a fourth action literal to the bootstrap arm's frozen vocabulary.", "must": "RED via PG-S4-12(b)" },
+      { "id": "M-S4-15", "mutation": "Drop the unselected premise from the bootstrap arm, making it reachable while an organization is selected.", "must": "RED via PG-S4-12(a)", "why": "This single deletion converts the narrow arm into the generic 'GUC missing => membership-only everywhere' escape." },
+      { "id": "M-S4-16", "mutation": "Drop the membership premise from the bootstrap arm.", "must": "RED via PG-S4-12(c)" },
+      { "id": "M-S4-17", "mutation": "Weld only one of the four parent-scoped relations, leaving the other three unisolated.", "must": "RED via PG-S4-9", "why": "An aggregate assertion would pass; per-relation negatives are what catch it." }
+    ],
+    "M_S4_9_RETIRED": "R1's M-S4-9 mutated the storage helper body. It moves to the storage node with the rest of the storage surface."
+  },
+
+  "BOUNDARIES_NOT_ABSORBED": {
+    "rule": "Each item is DELIBERATELY left open. S4 MUST NOT absorb any of them, and a later lane MUST NOT read S4's silence as closure.",
+    "items": [
+      "The STORAGE_SELECTED_ORG_BOUNDARY transport mechanism — a separate required node, explicitly not chosen here.",
+      "S5's boundary decision — whether the 131 policy-level superadmin disjuncts are removed, narrowed, or replaced by an application-layer control.",
+      "Tenant-scope enforcement on public.invitations — S6.",
+      "Database-layer enforcement of organization suspension.",
+      "The organizations.status versus commercial_accounts.commercial_status collision on the literal 'suspended' — S5.",
+      "DROP_LAST_RULE preconditions DL-1, DL-4 and DL-5. S4 contributes to DL-3 and DL-6; DL-3 is now discharged only by S4 AND the storage node together."
+    ]
+  },
+
+  "OPEN_FINDINGS": [
+    { "id": "F-S4-1", "severity": "CRITICAL", "finding": "Applying the fail-closed rule to the identity substrate is a total bootstrap deadlock; the enumerator runs unscoped, so a weld on organizations or organization_members returns ZERO candidates.", "disposition": "RESOLVED. Substrate explicitly excluded; PG-S4-4 keeps the exclusion honest." },
+    { "id": "F-S4-2", "severity": "HIGH", "finding": "S4/S5 independence is measured false at 125 of 127 membership policies across 45 relations.", "disposition": "RESOLVED. S4 carries the superadmin escape; S4 -> S5 frozen as hard ordering." },
+    { "id": "F-S4-3", "severity": "HIGH", "finding": "organization_id IS NULL encodes two incompatible meanings and both uniform predicates are unsafe.", "disposition": "RESOLVED via five per-relation dispositions plus mandatory positive canaries." },
+    { "id": "F-S4-4", "severity": "BLOCKING", "finding": "B1. The governed storage helpers authorize on membership alone, and the GUC weld cannot reach them because the Storage API evaluates policies on a different connection.", "disposition": "CLOSED BY SPLIT. Storage becomes a separate required node with the security property and evaluation criteria frozen; mechanism deliberately unchosen. Storage remains a hard S7 precondition." },
+    { "id": "F-S4-5", "severity": "MEDIUM", "finding": "Four tenant-scoped relations carry no organization_id column; transitivity through projects is undetermined at authority time.", "disposition": "OPEN BY DESIGN with mandatory resolution: PG-S4-7 determines the mechanism and PG-S4-9 proves per-relation isolation." },
+    { "id": "F-S4-6", "severity": "MEDIUM", "finding": "public.entitlement_grants carries organization_id but has only an owner-only policy.", "disposition": "EXCLUDED WITH REASON plus a standing tripwire via PG-S4-5." },
+    { "id": "F-S4-7", "severity": "MEDIUM", "finding": "R1 froze the unscoped-caller cardinality as if the count were the security property.", "disposition": "RESOLVED. The invariant is disposition completeness (U == C), with the count retained only as evidence." },
+    { "id": "F-S4-8", "severity": "LOW", "finding": "S4 is the FIRST node to publish a restrictive policy into the applied chain.", "disposition": "RECORDED. S4 establishes the precedent rather than following one." },
+    { "id": "F-S4-9", "severity": "CLOSED", "finding": "R1 did not measure can_read_evidence_object.", "disposition": "CLOSED IN R2 BY MEASUREMENT. It is structurally identical to the write helper but imposes NO role filter, so the read surface is BROADER. The asymmetry is recorded for the storage node; R1's assumption of symmetry would have understated the exposure." },
+    { "id": "F-S4-10", "severity": "BLOCKING", "finding": "R1's canonical GUC expression raises SQLSTATE 22P02 instead of denying, on any pooled connection that previously served a scoped transaction.", "disposition": "CLOSED. Canonical expression corrected to nullif(current_setting('app.organization_id', true), '')::uuid, proven on real PostgreSQL, and guarded by PG-S4-8 and M-S4-13." },
+    { "id": "F-S4-11", "severity": "BLOCKING", "finding": "B2. Organization founding and invitation acceptance write TENANT-OWNED audit rows from intentionally unscoped contexts; R1's disposition covered only NULL-organization rows and would have broken both paths.", "disposition": "CLOSED by the narrow bootstrap arm with five frozen premises, gated on a closed three-verb vocabulary and on the genuinely-unselected state." },
+    { "id": "F-S4-12", "severity": "HIGH", "finding": "R1's manifest could not detect removal of the membership conjunct; its fixtures never varied membership and selection independently.", "disposition": "CLOSED by PG-S4-10." },
+    { "id": "F-S4-13", "severity": "OPEN", "finding": "The bootstrap arm's action vocabulary is pinned to three literal VALUES, but the onboarding path writes raw string literals while the invitation path writes AUDIT_ACTIONS constants. A future rename of a constant would leave the policy correct and the call site drifting, or vice versa.", "disposition": "OPEN, ASSIGNED TO THE IMPLEMENTING NODE. It must pin the VALUES in the policy and add a control asserting the constants still evaluate to those values, so the two cannot diverge silently." }
+  ],
+
+  "self_check": {
+    "SC-1_S4_only": "PASS. No S5 or S6 behavior is specified. Storage is handed off, not designed.",
+    "SC-2_no_implementation": "PASS. No SQL, migration or TypeScript is written. The semantic diff is two JSON artifacts under docs/ops/tenancy/.",
+    "SC-3_no_lineage_allocation": "PASS. No ODS version, HPO grant, migration ordinal or branch binding allocated; the mechanically-next identifiers are not named as allocated.",
+    "SC-4_no_abandoned_artifact_resurrected": "PASS. The TENANCY_S4_S5_* pair is not created or restored.",
+    "SC-5_no_stale_value_carried": "PASS. Every figure was re-derived at the merged head 4a6308e3.",
+    "SC-6_storage_mechanism_not_preselected": "PASS. No JWT-claim, signed-capability or server-mediated-only architecture is selected, required or implied as chosen.",
+    "SC-7_closed_world_partition_complete": "PASS. 34 + 5 + 2 + 1 = 42, equal to the measured organization_id relation count, no remainder — recorded as evidence, with the correctness criterion stated as U == C.",
+    "SC-8_storage_not_weakened_as_S7_precondition": "PASS. The split reassigns ownership and explicitly preserves storage as a hard precondition of S7; DL-3 now requires both nodes.",
+    "SC-9_positive_canaries_required": "PASS. Over-denial is unobservable to negative controls, so positive canaries are mandated.",
+    "SC-10_real_pg_not_substitutable": "PASS. Every probe is declared runtime-only with a stated reason, and the retired PG-S4-3 is documented as vacuous rather than silently dropped.",
+    "SC-11_parent_not_amended": "PASS. The parent file is not edited; three claims are corrected by measurement and the DAG correction is recorded append-only.",
+    "SC-12_acl_authority_not_amended": "PASS. The ACL authority and its v1.0.1 amendment are read and cited only."
+  },
+
+  "final_state": "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 R2 FROZEN. Authority-only, not implemented, no lineage allocated. Scope narrowed to DATABASE_SELECTED_ORG_WELD; storage handed to a separate required node by owner decision.",
+  "next_gate": "INDEPENDENT_CERTIFICATION"
+}
