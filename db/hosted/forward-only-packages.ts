@@ -56,6 +56,7 @@
 import { PRECHAIN_REMEDIATION } from './prechain-remediation'
 import {
   forwardOnlyReasonOf,
+  PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL,
   PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
   PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING,
   PRECHAIN_OWNERSHIP,
@@ -228,6 +229,34 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'of every organization\'s grants. Nothing would report it: no object changes shape, no query ' +
       'starts failing, and the CE-3 isolation and append-only probes keep reporting green because ' +
       'neither of them is a control over the privileges this package removes.',
+  },
+  {
+    // CV1-RUNTIME-ACL. Derived from the prechain-ownership declaration like
+    // every hosted entry above it. What this entry adds to the others is that
+    // its reversal is not invisible at all — it is LOUD, and that is precisely
+    // why no script may own it: withdrawing this contract takes a running
+    // product down with a privilege error on nineteen tables and on the three
+    // RLS helpers every policy predicate calls. The entries above describe
+    // reversals nothing would report; this one describes a reversal that
+    // reports itself immediately, as an outage, which is a decision a human
+    // takes with the consequences in front of them rather than one a file
+    // encodes in advance.
+    id: PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL.id,
+    reason: forwardOnlyReasonOf(PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL),
+    reversalPath:
+      'There is none by script. An operator who genuinely wants the contract withdrawn issues the ' +
+      'class REVOKEs by hand — REVOKE on each class\'s table list FROM uellix_writer and ' +
+      'uellix_auditor, and REVOKE EXECUTE ON FUNCTION public.current_user_org_ids(), ' +
+      'public.current_user_is_super_admin() and public.current_user_role_in_org(uuid) — under the ' +
+      'same administrative session that applied it, with the consequences visible at the time. That ' +
+      're-opens SQLSTATE 42501 on the nineteen tables and on the three helpers, which is the exact ' +
+      'state this package was written to close, so it is a decision rather than a repair. It must ' +
+      'also NOT touch the thirty-eight legacy tables, whose grants predate this package and which it ' +
+      'converges rather than creates: a blind revoke there would break a database that worked before ' +
+      'this file existed, and no script can make that distinction from the catalog alone because the ' +
+      'package is convergent and its end state is indistinguishable from an operator\'s. A ' +
+      'CORRECTION, as opposed to a withdrawal, is a new forward-only successor authorised by its own ' +
+      'authority artifact — never an edit to these bytes, which are digest-pinned.',
   },
   {
     // P1A. db/prepared/stella_local_0000_local_role_identity_bootstrap.sql's
