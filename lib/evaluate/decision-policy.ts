@@ -335,10 +335,376 @@ function sha256Hex(domain: string, payload: string): string {
  * The field lists below are the declared shapes in ./types — DecisionBand's
  * five properties, Criterion's three, TemplateVersionDefinition's ten. Each is
  * written as an exhaustive literal rather than a spread, because a spread is
- * precisely what reintroduces the defect. The cost is real and accepted: adding
- * a declared field to a type without adding it here leaves that field OUT of
- * the identity digest.
+ * precisely what reintroduces the defect.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THE RETURN TYPES ARE `HashProjection<T>` AND NOT `unknown`
+ * ---------------------------------------------------------------------------
+ * A positive projection closes the UNKNOWN-field class. It does NOT, on its
+ * own, close the NEWLY-DECLARED-field class: a projection that returns
+ * `unknown` has nothing for TypeScript to compare its literal against, so
+ * adding a field to a declared shape and forgetting it here compiles clean and
+ * leaves the digest byte-identical. Measured at this base before the change:
+ * two new declared persisted fields, `tsc --noEmit` exit 0 across the repo, and
+ * definition_hash unmoved.
+ *
+ * The aggravating half is that the IDENTITY controls hide it. A frozen-literal
+ * digest assertion stays GREEN precisely BECAUSE the new field was excluded —
+ * the control that exists to prove "identity did not move" is what conceals the
+ * omission.
+ *
+ * `HashProjection<T>` is a mapped type over `keyof T`, so exactness is checked
+ * in BOTH directions by the compiler and no second hand-maintained list exists:
+ *   - add or rename a declared field  -> the literal is MISSING a property
+ *   - remove a declared field         -> the literal has an EXCESS property
+ *   - change a field's representation -> the value is no longer CanonicalValue
+ * See __tests__/persisted-shape.test.ts for the type-level controls that prove
+ * each direction actually fails to compile.
  */
+
+/**
+ * Every value `canonicalize` has a canonical form for, and nothing else.
+ *
+ * This is the second half of the compile-time mechanism. Typing a projected
+ * field as `unknown` would satisfy `HashProjection` while re-admitting a value
+ * the canonicalizer refuses at runtime, which would move a structural defect
+ * back to a throw at publication time.
+ */
+export type CanonicalValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly CanonicalValue[]
+  | { readonly [key: string]: CanonicalValue }
+
+/**
+ * EXACTLY the declared keys of T, each carrying a canonicalizable value.
+ *
+ * `-?` strips optionality on purpose: an optional declared field is still a
+ * declared field, so it must be named here rather than silently absent.
+ */
+export type HashProjection<T> = { readonly [K in keyof T]-?: CanonicalValue }
+
+/**
+ * ===========================================================================
+ * A STRUCTURALLY INVALID PAYLOAD RECEIVES NO AUTHORITATIVE HASH
+ * ===========================================================================
+ * TEMPLATE_LIFECYCLE.publication_guards[2] makes definition_hash and
+ * decision_policy_hash SERVER-computed over a canonical serialization. A digest
+ * is therefore an assertion about a row OBJ-2 can actually store, and the only
+ * honest answer for a payload that is not such a row is a refusal.
+ *
+ * Measured at this base before the change, every one of these returned a
+ * well-formed 64-hex digest indistinguishable from an authoritative one:
+ *   - a definition with `version` absent entirely
+ *   - a definition whose `criteria_json` was an object, not an array
+ *   - a criterion whose `weight` was the STRING "1"
+ *   - the bare string 'nope' as the whole definition
+ *
+ * WHAT THIS DELIBERATELY DOES NOT REJECT: undeclared extra properties.
+ * That tolerance is not laxity, it is required. published_at, published_by and
+ * published_by_role are real OBJ-2 columns and the one write-once transition
+ * permitted after insert, so a row read back from the store CARRIES them and
+ * definition_hash must not move at publication — definition_hash exists to
+ * prove the version did NOT move. An undeclared key is, by construction, not a
+ * declared persisted field; what guarantees no SECOND semantic row can share an
+ * authoritative projection is that every DECLARED field is in the projection,
+ * and that is now the compiler's job (`HashProjection<T>`), not a reviewer's.
+ *
+ * The checks are STRUCTURAL ONLY — "is this the shape its type claims, and does
+ * it have a canonical form". Band totality, score-domain coverage and
+ * weight > 0 stay where they already live (validateDecisionPolicy, computeScore).
+ * Hashing must not require a PUBLISHED policy: a single-band draft policy is
+ * hashable and is not yet total.
+ */
+
+/** Why a payload cannot be hashed as authoritative. */
+export type PersistedShapeViolationCode =
+  | 'NOT_AN_OBJECT'
+  | 'MISSING_DECLARED_FIELD'
+  | 'WRONG_DECLARED_TYPE'
+  | 'NOT_AN_ARRAY'
+
+export type PersistedShapeViolation = {
+  readonly code: PersistedShapeViolationCode
+  /** Dotted path to the offending field, e.g. `criteria_json[0].weight`. */
+  readonly path: string
+  readonly message: string
+}
+
+/** Discriminated, like PolicyValidationResult. Never a boolean plus a nullable. */
+export type PersistedShapeValidationResult<T> =
+  | { readonly valid: true; readonly value: T }
+  | { readonly valid: false; readonly violations: readonly PersistedShapeViolation[] }
+
+/**
+ * Raised when an authoritative hash is requested for a payload that is not a
+ * storable row.
+ *
+ * A throw rather than a sentinel digest: ZD-03 already establishes that this
+ * package does not answer an unanswerable question with a placeholder value,
+ * and a caller that forgot to check would otherwise persist the placeholder.
+ */
+export class EvaluatePersistedShapeError extends Error {
+  readonly violations: readonly PersistedShapeViolation[]
+
+  constructor(what: string, violations: readonly PersistedShapeViolation[]) {
+    super(
+      `${what} is not a storable Evaluate row and has no authoritative hash: ` +
+        violations.map((v) => `${v.path}: ${v.message}`).join('; ')
+    )
+    this.name = 'EvaluatePersistedShapeError'
+    this.violations = violations
+  }
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function checkString(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  out: PersistedShapeViolation[]
+): void {
+  if (!(key in record)) {
+    out.push({ code: 'MISSING_DECLARED_FIELD', path, message: 'declared field is absent' })
+    return
+  }
+  if (typeof record[key] !== 'string') {
+    out.push({
+      code: 'WRONG_DECLARED_TYPE',
+      path,
+      message: `declared string, received ${typeof record[key]}`,
+    })
+  }
+}
+
+/**
+ * A declared `number` must also be FINITE.
+ *
+ * Not an extra rule: `canonicalize` refuses NaN and Infinity because they have
+ * no canonical form, so admitting one here would only move the same refusal to
+ * a less informative throw further in.
+ */
+function checkFiniteNumber(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  out: PersistedShapeViolation[]
+): void {
+  if (!(key in record)) {
+    out.push({ code: 'MISSING_DECLARED_FIELD', path, message: 'declared field is absent' })
+    return
+  }
+  const value = record[key]
+  if (typeof value !== 'number') {
+    out.push({
+      code: 'WRONG_DECLARED_TYPE',
+      path,
+      message: `declared number, received ${typeof value}`,
+    })
+    return
+  }
+  if (!Number.isFinite(value)) {
+    out.push({ code: 'WRONG_DECLARED_TYPE', path, message: 'number has no canonical form' })
+  }
+}
+
+function collectBandViolations(
+  value: unknown,
+  path: string,
+  out: PersistedShapeViolation[]
+): void {
+  if (!isPlainRecord(value)) {
+    out.push({
+      code: 'NOT_AN_OBJECT',
+      path,
+      message: 'declared DecisionBand, received a non-object',
+    })
+    return
+  }
+  // `outcome` is declared DecisionOutcome, a CLOSED set of three (HD-04) — so
+  // membership IS the declared type here, not an invented business rule.
+  if (!('outcome' in value)) {
+    out.push({
+      code: 'MISSING_DECLARED_FIELD',
+      path: `${path}.outcome`,
+      message: 'declared field is absent',
+    })
+  } else if (!DECISION_OUTCOMES.includes(value.outcome as never)) {
+    out.push({
+      code: 'WRONG_DECLARED_TYPE',
+      path: `${path}.outcome`,
+      message: 'not one of the three DECISION_OUTCOMES',
+    })
+  }
+  checkFiniteNumber(value, 'lower_bound', `${path}.lower_bound`, out)
+  checkFiniteNumber(value, 'upper_bound', `${path}.upper_bound`, out)
+  for (const key of ['lower_bound_inclusive', 'upper_bound_inclusive'] as const) {
+    if (!(key in value)) {
+      out.push({
+        code: 'MISSING_DECLARED_FIELD',
+        path: `${path}.${key}`,
+        message: 'declared field is absent',
+      })
+    } else if (typeof value[key] !== 'boolean') {
+      out.push({
+        code: 'WRONG_DECLARED_TYPE',
+        path: `${path}.${key}`,
+        message: `declared boolean, received ${typeof value[key]}`,
+      })
+    }
+  }
+}
+
+function collectPolicyViolations(
+  value: unknown,
+  path: string,
+  out: PersistedShapeViolation[]
+): void {
+  if (!isPlainRecord(value)) {
+    out.push({
+      code: 'NOT_AN_OBJECT',
+      path,
+      message: 'declared DecisionPolicy, received a non-object',
+    })
+    return
+  }
+  if (!('bands' in value)) {
+    out.push({
+      code: 'MISSING_DECLARED_FIELD',
+      path: `${path}.bands`,
+      message: 'declared field is absent',
+    })
+    return
+  }
+  if (!Array.isArray(value.bands)) {
+    out.push({
+      code: 'NOT_AN_ARRAY',
+      path: `${path}.bands`,
+      message: `declared an array of DecisionBand, received ${typeof value.bands}`,
+    })
+    return
+  }
+  value.bands.forEach((band, i) => collectBandViolations(band, `${path}.bands[${i}]`, out))
+}
+
+function collectCriterionViolations(
+  value: unknown,
+  path: string,
+  out: PersistedShapeViolation[]
+): void {
+  if (!isPlainRecord(value)) {
+    out.push({ code: 'NOT_AN_OBJECT', path, message: 'declared Criterion, received a non-object' })
+    return
+  }
+  checkString(value, 'criterion_key', `${path}.criterion_key`, out)
+  checkFiniteNumber(value, 'weight', `${path}.weight`, out)
+  checkFiniteNumber(value, 'max_score', `${path}.max_score`, out)
+}
+
+/**
+ * Structural validation of decision_policy_json, as a reportable result.
+ *
+ * Distinct from `validateDecisionPolicy`, and both are needed: this one asks
+ * "is this a storable policy value", that one asks "is this policy PUBLISHABLE"
+ * (ordered, gapless, exhaustive — HD-03). A draft policy passes this and fails
+ * that, which is the correct pair of answers.
+ */
+export function validateDecisionPolicyShape(
+  value: unknown
+): PersistedShapeValidationResult<DecisionPolicy> {
+  const violations: PersistedShapeViolation[] = []
+  collectPolicyViolations(value, 'decision_policy_json', violations)
+  return violations.length === 0
+    ? { valid: true, value: value as DecisionPolicy }
+    : { valid: false, violations }
+}
+
+/**
+ * Structural validation of the immutable OBJ-2 payload, as a reportable result.
+ *
+ * Takes `unknown` on purpose: this is the boundary a payload crosses on its way
+ * in from a request body or a store row, and a parameter typed
+ * `TemplateVersionDefinition` would be asserting the very thing being checked.
+ */
+export function validateTemplateVersionDefinition(
+  value: unknown
+): PersistedShapeValidationResult<TemplateVersionDefinition> {
+  const violations: PersistedShapeViolation[] = []
+  if (!isPlainRecord(value)) {
+    return {
+      valid: false,
+      violations: [
+        {
+          code: 'NOT_AN_OBJECT',
+          path: 'definition',
+          message: 'declared TemplateVersionDefinition, received a non-object',
+        },
+      ],
+    }
+  }
+  for (const key of [
+    'organization_id',
+    'template_id',
+    'version',
+    'created_by',
+    'created_by_role',
+    'created_at',
+  ] as const) {
+    checkString(value, key, key, violations)
+  }
+  checkFiniteNumber(value, 'ordinal', 'ordinal', violations)
+  // supersedes_version_id is declared `string | null`; NULLABLE in OBJ-2.
+  if (!('supersedes_version_id' in value)) {
+    violations.push({
+      code: 'MISSING_DECLARED_FIELD',
+      path: 'supersedes_version_id',
+      message: 'declared field is absent',
+    })
+  } else if (
+    value.supersedes_version_id !== null &&
+    typeof value.supersedes_version_id !== 'string'
+  ) {
+    violations.push({
+      code: 'WRONG_DECLARED_TYPE',
+      path: 'supersedes_version_id',
+      message: `declared string | null, received ${typeof value.supersedes_version_id}`,
+    })
+  }
+  if (!('criteria_json' in value)) {
+    violations.push({
+      code: 'MISSING_DECLARED_FIELD',
+      path: 'criteria_json',
+      message: 'declared field is absent',
+    })
+  } else if (!Array.isArray(value.criteria_json)) {
+    violations.push({
+      code: 'NOT_AN_ARRAY',
+      path: 'criteria_json',
+      message: `declared an array of Criterion, received ${typeof value.criteria_json}`,
+    })
+  } else {
+    value.criteria_json.forEach((criterion, i) =>
+      collectCriterionViolations(criterion, `criteria_json[${i}]`, violations)
+    )
+  }
+  if (!('decision_policy_json' in value)) {
+    violations.push({
+      code: 'MISSING_DECLARED_FIELD',
+      path: 'decision_policy_json',
+      message: 'declared field is absent',
+    })
+  } else {
+    collectPolicyViolations(value.decision_policy_json, 'decision_policy_json', violations)
+  }
+  return violations.length === 0
+    ? { valid: true, value: value as TemplateVersionDefinition }
+    : { valid: false, violations }
+}
 
 /**
  * Project a declared array field element-wise, preserving STORED ORDER.
@@ -346,17 +712,20 @@ function sha256Hex(domain: string, payload: string): string {
  * `map` is not `sort`. Band order is load-bearing (HD-03) and criterion order
  * is stored as given; nothing here may reorder what the row holds.
  *
- * The array guard is not defensive noise. These are boundary functions reached
- * by payloads that originate outside the type system, and a payload that is not
- * the shape its type claims must be refused by `canonicalize` — in one place —
- * rather than dying inside whichever projection happened to touch it first.
+ * There is no non-array fallthrough. There used to be one — `Array.isArray(v) ?
+ * v.map(project) : v` — and it was not defensive noise, it was a HOLE: a
+ * `criteria_json` that was an object rather than an array was returned
+ * UNPROJECTED, so every enumerable property it carried entered the digest and
+ * reopened exactly the class the positive projection exists to close. Structural
+ * validity is now established ONCE, at the hashing boundary, so by the time a
+ * projection runs the array is an array.
  */
-function projectDeclaredArray<T>(value: readonly T[], project: (item: T) => unknown): unknown {
-  return Array.isArray(value) ? value.map(project) : value
+function projectDeclaredArray<T, P>(value: readonly T[], project: (item: T) => P): readonly P[] {
+  return value.map(project)
 }
 
 /** DecisionBand's five declared properties, and nothing else. */
-function projectBand(band: DecisionBand): unknown {
+function projectBand(band: DecisionBand): HashProjection<DecisionBand> {
   return {
     outcome: band.outcome,
     lower_bound: band.lower_bound,
@@ -367,7 +736,7 @@ function projectBand(band: DecisionBand): unknown {
 }
 
 /** Criterion's three declared properties, and nothing else. */
-function projectCriterion(criterion: Criterion): unknown {
+function projectCriterion(criterion: Criterion): HashProjection<Criterion> {
   return {
     criterion_key: criterion.criterion_key,
     weight: criterion.weight,
@@ -375,11 +744,18 @@ function projectCriterion(criterion: Criterion): unknown {
   }
 }
 
-/** decision_policy_json's declared shape: an ordered array of projected bands. */
-function projectDecisionPolicy(policy: DecisionPolicy): unknown {
-  const bands = (policy as Partial<DecisionPolicy> | undefined)?.bands
-  if (bands === undefined) return policy
-  return { bands: projectDeclaredArray(bands, projectBand) }
+/**
+ * decision_policy_json's declared shape: an ordered array of projected bands.
+ *
+ * There is no `bands === undefined` fallthrough returning `policy` either. That
+ * one was the sharpest instance of the same hole: a policy object WITHOUT bands
+ * was returned whole, so a `__validated` brand — or any column a store round-
+ * tripped — became load-bearing in decision_policy_hash. Measured before the
+ * change: `{ __validated: 'X' }` and `{ zzz: 'leak' }` produced two DIFFERENT
+ * authoritative digests, both from the same absent-bands path.
+ */
+function projectDecisionPolicy(policy: DecisionPolicy): HashProjection<DecisionPolicy> {
+  return { bands: projectDeclaredArray(policy.bands, projectBand) }
 }
 
 /**
@@ -394,7 +770,9 @@ function projectDecisionPolicy(policy: DecisionPolicy): unknown {
  * admitting them would make definition_hash move at publication, and
  * definition_hash exists to prove the version did NOT move.
  */
-function projectTemplateVersionDefinition(definition: TemplateVersionDefinition): unknown {
+function projectTemplateVersionDefinition(
+  definition: TemplateVersionDefinition
+): HashProjection<TemplateVersionDefinition> {
   return {
     organization_id: definition.organization_id,
     template_id: definition.template_id,
@@ -417,13 +795,24 @@ function projectTemplateVersionDefinition(definition: TemplateVersionDefinition)
  * when the criteria move, so it cannot attribute a recommendation to a policy.
  */
 export function computeDefinitionHash(definition: TemplateVersionDefinition): string {
+  const validation = validateTemplateVersionDefinition(definition)
+  if (!validation.valid) {
+    throw new EvaluatePersistedShapeError('definition', validation.violations)
+  }
   return sha256Hex(
     DEFINITION_HASH_DOMAIN,
-    canonicalize(projectTemplateVersionDefinition(definition))
+    canonicalize(projectTemplateVersionDefinition(validation.value))
   )
 }
 
 /** decision_policy_hash — over decision_policy_json ALONE. */
 export function computeDecisionPolicyHash(policy: DecisionPolicy): string {
-  return sha256Hex(DECISION_POLICY_HASH_DOMAIN, canonicalize(projectDecisionPolicy(policy)))
+  const validation = validateDecisionPolicyShape(policy)
+  if (!validation.valid) {
+    throw new EvaluatePersistedShapeError('decision_policy_json', validation.violations)
+  }
+  return sha256Hex(
+    DECISION_POLICY_HASH_DOMAIN,
+    canonicalize(projectDecisionPolicy(validation.value))
+  )
 }
