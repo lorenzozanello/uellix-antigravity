@@ -61,6 +61,8 @@ export const IMAGE =
 
 const CONTAINER_PREFIX = 'uellix-acl-pgtest'
 const DB_NAME = 'uellix_acl_contract'
+/** The application runtime role. Named once; never created by this harness. */
+const RUNTIME_ROLE = 'uellix_app'
 const SHIM = path.join(ROOT, 'scripts', 'rehearsal', 'local-supabase-shim.sql')
 const LOCAL_ROLE_IDENTITY = path.join(ROOT, 'db', 'prepared', 'stella_local_0000_local_role_identity_bootstrap.sql')
 const ROLE_TOPOLOGY = path.join(ROOT, 'db', 'prepared', 'stella_0001_role_topology_bootstrap.sql')
@@ -111,7 +113,22 @@ export function dockerAvailable(): boolean {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export class AclCluster {
-  private constructor(readonly container: string) {}
+  private constructor(
+    readonly container: string,
+    /**
+     * The loopback port PostgreSQL is published on, or null when the cluster
+     * was created without one.
+     *
+     * MOST OF THIS SUITE NEEDS NO PORT: every catalog probe and every refusal
+     * travels through `docker exec`, which is strictly safer — nothing is
+     * reachable from the host network at all. PG-19 is the one family that
+     * cannot work that way, because it must reach the database through the
+     * REPOSITORY'S OWN client (postgres-js over TCP) rather than through a
+     * psql the test drives. So the port is OPT-IN per cluster: a caller that
+     * does not ask for one gets the closed configuration.
+     */
+    readonly port: number | null,
+  ) {}
 
   /**
    * Create the container and build the governed substrate on it.
@@ -120,21 +137,40 @@ export class AclCluster {
    * SKIP — never as a pass. A silently-green real-PostgreSQL suite is the
    * failure mode the gating exists to prevent.
    */
-  static async create(): Promise<AclCluster | null> {
+  static async create(options: { publishPort?: boolean } = {}): Promise<AclCluster | null> {
     if (!dockerAvailable()) return null
     const name = `${CONTAINER_PREFIX}-${randomUUID().slice(0, 8)}`
 
-    // NO published port: every statement goes through `docker exec`, so this
-    // container is not reachable from the host network at all.
+    // By default NO published port: every statement goes through `docker exec`,
+    // so the container is not reachable from the host network at all. When a
+    // port IS published it is bound to 127.0.0.1 on an EPHEMERAL port chosen by
+    // the kernel (`:0`), never a fixed one — a fixed port is how a test ends up
+    // silently talking to whatever else was already listening, and the whole
+    // safety argument of this harness is that its target cannot be anything but
+    // the container it just created.
     const created = docker([
       'run', '-d', '--name', name,
+      ...(options.publishPort === true ? ['-p', '127.0.0.1:0:5432'] : []),
       '-e', 'POSTGRES_PASSWORD=postgres',
       '-e', 'POSTGRES_DB=postgres',
       IMAGE,
     ])
     if (created.status !== 0) return null
 
-    const cluster = new AclCluster(name)
+    let port: number | null = null
+    if (options.publishPort === true) {
+      const printed = docker(['port', name, '5432/tcp'])
+      // "127.0.0.1:54821" — and 0.0.0.0 is REFUSED rather than accepted, so a
+      // misconfigured publish can never widen the binding past loopback.
+      const m = /^127\.0\.0\.1:(\d+)$/m.exec(printed.stdout.trim())
+      if (m === null) {
+        docker(['rm', '-f', '-v', name])
+        throw new Error(`the disposable cluster did not publish a loopback port: ${printed.stdout.trim() || printed.stderr.trim()}`)
+      }
+      port = Number(m[1])
+    }
+
+    const cluster = new AclCluster(name, port)
     try {
       if (!(await cluster.waitReady())) {
         cluster.destroy()
@@ -146,6 +182,68 @@ export class AclCluster {
       cluster.destroy()
       throw error
     }
+  }
+
+  /** The ephemeral password issued to the runtime role, if one was needed. */
+  private runtimePassword: string | null = null
+
+  /**
+   * Give the runtime role an EPHEMERAL password and return the connection
+   * string the repository's own client uses to reach this cluster.
+   *
+   * WHY A PASSWORD IS NEEDED AT ALL, measured rather than assumed. A `psql`
+   * driven through `docker exec` reaches 127.0.0.1 from INSIDE the container
+   * and matches a trusted pg_hba line, so it connects with no password. The
+   * application client dials the PUBLISHED port from the host, and that
+   * connection arrives over the Docker bridge — a different source address,
+   * matching a different pg_hba line, which demands a password. The failure is
+   * `password authentication failed`, and it is the only thing standing
+   * between the real client and the real database.
+   *
+   * WHY IT IS NOT "MANUAL SURGERY". A password is a CREDENTIAL, not a
+   * privilege: it confers nothing, revokes nothing, and changes no row of
+   * pg_class.relacl, no role attribute and no membership. The substrate
+   * contract forbids an ad-hoc GRANT, owner execution of the journey,
+   * BYPASSRLS and psql fix-ups that make a service work — this is none of
+   * those, and the authority-named precedent
+   * tests/e2e/g04-governed-evidence-journey.e2e.test.ts issues exactly this
+   * ALTER ROLE for exactly this reason.
+   *
+   * AND THE CLAIM IS PROVEN, NOT ASSERTED: `privilegeFingerprint()` is
+   * captured either side of the statement by the caller, so "the credential
+   * act changed no privilege" is a measurement in the suite rather than a
+   * sentence in this comment.
+   */
+  grantRuntimeCredential(): string {
+    if (this.port === null) {
+      throw new Error('this cluster was created without a published port; pass { publishPort: true }')
+    }
+    if (this.runtimePassword === null) {
+      // Ephemeral and per-container: it never leaves this process, and the
+      // container it authenticates against is destroyed in afterAll.
+      this.runtimePassword = randomUUID().replace(/-/g, '')
+      this.fixture(`ALTER ROLE ${RUNTIME_ROLE} WITH PASSWORD '${this.runtimePassword}'`, 'supabase_admin')
+    }
+    return `postgresql://${RUNTIME_ROLE}:${this.runtimePassword}@127.0.0.1:${this.port}/${DB_NAME}`
+  }
+
+  /**
+   * Everything about the runtime roles that a privilege change would move:
+   * their attributes, their memberships, and the whole public ACL.
+   *
+   * Exists so a credential act can be shown to be privilege-NEUTRAL by
+   * comparison rather than by argument.
+   */
+  privilegeFingerprint(): string {
+    const attrs = this.scalar(
+      `SELECT coalesce(string_agg(rolname||'|'||rolsuper::text||rolbypassrls::text||rolcreaterole::text||rolinherit::text||rolcanlogin::text, E'\\n' ORDER BY rolname),'')
+       FROM pg_roles WHERE rolname LIKE 'uellix\\_%' ESCAPE '\\'`,
+    ) ?? ''
+    const members = this.scalar(
+      `SELECT coalesce(string_agg(m.member::regrole::text||'->'||m.roleid::regrole::text||'|'||m.inherit_option::text||m.set_option::text, E'\\n' ORDER BY 1),'')
+       FROM pg_auth_members m`,
+    ) ?? ''
+    return `${attrs}\n--\n${members}\n--\n${this.tableAclSnapshot()}\n--\n${this.functionAclSnapshot()}`
   }
 
   /**
@@ -190,6 +288,46 @@ export class AclCluster {
     // The local Supabase shim establishes the auth/storage/extensions schemas
     // the baseline units and stella_local_0000 both reference.
     this.must(this.applySqlAs('postgres', readFileSync(SHIM, 'utf8'), false), 'local-supabase-shim')
+
+    // auth.uid() IS CONVERGED TO THE MEASURED PRODUCTION DEFINITION, and this
+    // is substrate FIDELITY rather than a fix-up. Three forms exist and they
+    // are not the same function:
+    //
+    //   the PINNED IMAGE ships  nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+    //   the REHEARSAL SHIM ships the same singular-GUC form (faithful to the image)
+    //   the MEASURED G2 SCHEMA ships the COALESCE form below
+    //     — db/baseline/stella_g2_schema.sql:486-494, which is the schema the
+    //       application actually runs against, and which db/identity-context.ts:14
+    //       names as the contract it relies on.
+    //
+    // db/identity-context.ts sets `request.jwt.claims` (the PLURAL JSON blob)
+    // and nothing else, because that is what the deployed auth.uid() reads via
+    // its second COALESCE arm. Against the singular-only form it resolves to
+    // NULL, so current_user_org_ids() returns an empty array and EVERY policy
+    // evaluates false — the application connects successfully and sees zero
+    // rows. MEASURED here: without this statement, PG-19 fails with
+    // DB_IDENTITY_ORGANIZATION_NOT_A_MEMBER for a user who IS an active
+    // member, because the database cannot see who is asking.
+    //
+    // Installing the measured production definition makes the substrate MORE
+    // like the target, not less. It is applied after the shim so the shim
+    // stays untouched — other suites depend on it, and stella_hosted_0006
+    // documents the same two-form history at its line 523.
+    this.must(
+      this.applySqlAs(
+        'postgres',
+        `CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
+           LANGUAGE sql STABLE
+           AS $$
+             SELECT coalesce(
+               nullif(current_setting('request.jwt.claim.sub', true), ''),
+               (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+             )::uuid
+           $$;`,
+        false,
+      ),
+      'auth.uid() converged to the measured G2 definition',
+    )
 
     // stella_local_0000 — the five canonical role identities and the two
     // controlled memberships. It performs its OWN self-verification and
