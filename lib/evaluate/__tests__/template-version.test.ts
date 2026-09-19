@@ -20,12 +20,15 @@
  *          repointed by any statement) is DEFERRED with (a).
  */
 
+import { createHash } from 'node:crypto'
+
 import { describe, expect, it } from 'vitest'
 
 import {
   canonicalize,
   computeDecisionPolicyHash,
   computeDefinitionHash,
+  EvaluatePersistedShapeError,
   recommendOutcome,
   validateDecisionPolicy,
 } from '../decision-policy'
@@ -178,12 +181,41 @@ describe('P-09 (c) definition_hash and decision_policy_hash stay SEPARATE', () =
     )
   })
 
-  it('keeps the two digests distinct even when the payloads would serialize alike', () => {
-    // Domain separation, asserted rather than assumed: without a tag, hashing
-    // "the whole payload" and "the policy alone" could collide for a payload
-    // that happened to equal its own policy.
+  /**
+   * THE COLLISION CASE IS NOW STRUCTURALLY UNREACHABLE, AND THE TAG IS STILL
+   * ASSERTED SEPARATELY.
+   *
+   * This control used to feed POLICY_V1 to computeDefinitionHash and assert the
+   * two digests differed. That payload is not a storable OBJ-2 row, so it is now
+   * REFUSED — a strictly stronger answer for that input, but one that would have
+   * silently taken the DOMAIN TAG's only dedicated control with it: every other
+   * definition-vs-policy inequality in this file compares payloads that already
+   * differ, so deleting the tag entirely would leave them all green. The tag is
+   * therefore asserted directly below, against frozen literals (an IDENTITY
+   * control, so the comparand must not drift with the implementation).
+   */
+  it('refuses a policy supplied as a definition instead of digesting it', () => {
     const policyAsPayload = POLICY_V1 as unknown as TemplateVersionDefinition
-    expect(computeDefinitionHash(policyAsPayload)).not.toBe(computeDecisionPolicyHash(POLICY_V1))
+    expect(() => computeDefinitionHash(policyAsPayload)).toThrow(EvaluatePersistedShapeError)
+  })
+
+  it('applies its DOMAIN TAG, so neither digest is the untagged payload digest', () => {
+    const canonicalPolicy = canonicalize(POLICY_V1)
+    const untagged = createHash('sha256').update(canonicalPolicy, 'utf8').digest('hex')
+    const underPolicyDomain = createHash('sha256')
+      .update(`uellix.evaluate.decision_policy_hash.v1:${canonicalPolicy}`, 'utf8')
+      .digest('hex')
+    const underDefinitionDomain = createHash('sha256')
+      .update(`uellix.evaluate.definition_hash.v1:${canonicalPolicy}`, 'utf8')
+      .digest('hex')
+
+    // The tag is APPLIED, and it is the policy tag rather than the other one.
+    expect(computeDecisionPolicyHash(POLICY_V1)).toBe(underPolicyDomain)
+    expect(computeDecisionPolicyHash(POLICY_V1)).not.toBe(untagged)
+    expect(computeDecisionPolicyHash(POLICY_V1)).not.toBe(underDefinitionDomain)
+    // And the two tags are prefix-free over the same payload, which is the
+    // property that makes ':' a sound separator rather than a habit.
+    expect(underPolicyDomain).not.toBe(underDefinitionDomain)
   })
 })
 
