@@ -146,6 +146,25 @@ afterAll(() => {
   }
 }, 120_000)
 
+/**
+ * Per-test ceiling for the controls that probe the closed world ONE RELATION AT
+ * A TIME.
+ *
+ * MEASURED, not precautionary. A `docker exec psql` round trip costs ~250ms on
+ * this host, and the controls below deliberately refuse to collapse their loop
+ * into a single set-returning query -- naming every one of the 25, 33, 37 or 58
+ * members is the whole point of PG-04, PG-08 and PG-21. At 58 probes that is
+ * ~15s against vitest's 5s default, so those five controls failed here with
+ * "Test timed out in 5000ms" while asserting nothing at all: a RED that carried
+ * no information about the contract.
+ *
+ * A timeout is not an assertion. Raising it changes no predicate, no census and
+ * no expected value; it only lets the assertions that were already written
+ * actually run to completion. The sibling PG-06/PG-17 suite reached the same
+ * conclusion independently and uses the same figure.
+ */
+const PROBE_TIMEOUT = 120_000
+
 /** Fails loudly rather than passing when the cluster is absent but expected. */
 function db(): AclCluster {
   if (cluster === null) throw new Error(`no cluster: ${skipReason}`)
@@ -245,13 +264,13 @@ maybe('the contract holds, per table and per role (PG-04, PG-06, PG-14, PG-15)',
     const wrong = [...CONTRACT].filter(([t, want]) => db().privileges('uellix_writer', t) !== want)
       .map(([t, want]) => `${t}: got "${db().privileges('uellix_writer', t)}" want "${want}"`)
     expect(wrong).toEqual([])
-  })
+  }, PROBE_TIMEOUT)
 
   it('PG-04 uellix_app holds EXACTLY the same, by inheritance and no direct grant', () => {
     const wrong = [...CONTRACT].filter(([t, want]) => db().privileges('uellix_app', t) !== want)
       .map(([t, want]) => `${t}: got "${db().privileges('uellix_app', t)}" want "${want}"`)
     expect(wrong).toEqual([])
-  })
+  }, PROBE_TIMEOUT)
 
   it('PG-15 uellix_app holds NO direct table grant anywhere in public', () => {
     const direct = db().query(
@@ -290,7 +309,7 @@ maybe('the contract holds, per table and per role (PG-04, PG-06, PG-14, PG-15)',
     for (const t of [...APPEND_ONLY, ...OPERATIONAL_IU, ...READ_ONLY, 'users', 'marketing_leads']) {
       expect(db().sqlstate(`SELECT count(*) FROM public.${t}`, 'uellix_app'), t).toBeNull()
     }
-  })
+  }, PROBE_TIMEOUT)
 
   it('PG-13 no runtime role holds a STRUCTURAL privilege, anywhere in public', () => {
     const structural = db().query(
@@ -346,7 +365,7 @@ maybe('every forbidden operation is refused, live (PG-07..PG-12, N-11)', () => {
     for (const t of deletable) {
       expect(db().sqlstate(`DELETE FROM public.${t}`, 'uellix_app'), t).toBe('42501')
     }
-  })
+  }, PROBE_TIMEOUT)
 
   it('PG-09 UPDATE is refused on every APPEND_ONLY table', () => {
     const appendOnly = [...APPEND_ONLY, ...APPEND_ONLY_LEGACY, ...CONDITIONAL]
@@ -421,7 +440,7 @@ maybe('PG-21 the legacy posture is preserved in BOTH directions', () => {
   it('all 33 OPERATIONAL_legacy tables keep SIUD', () => {
     const wrong = OPERATIONAL_LEGACY.filter((t) => db().privileges('uellix_writer', t) !== 'SIUD')
     expect(wrong).toEqual([])
-  })
+  }, PROBE_TIMEOUT)
 })
 
 maybe('PG-17 RLS remains the row boundary, with two organizations', () => {

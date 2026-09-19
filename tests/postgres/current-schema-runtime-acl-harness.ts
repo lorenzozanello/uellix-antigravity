@@ -63,6 +63,12 @@ const CONTAINER_PREFIX = 'uellix-acl-pgtest'
 const DB_NAME = 'uellix_acl_contract'
 /** The application runtime role. Named once; never created by this harness. */
 const RUNTIME_ROLE = 'uellix_app'
+/**
+ * Cuts the psql output stream between the identity statements and the query
+ * under test. Deliberately improbable: a marker a relation could plausibly
+ * contain would reintroduce the very ambiguity it exists to remove.
+ */
+const ROW_MARKER = '__UELLIX_ACL_ROWS__'
 const SHIM = path.join(ROOT, 'scripts', 'rehearsal', 'local-supabase-shim.sql')
 const LOCAL_ROLE_IDENTITY = path.join(ROOT, 'db', 'prepared', 'stella_local_0000_local_role_identity_bootstrap.sql')
 const ROLE_TOPOLOGY = path.join(ROOT, 'db', 'prepared', 'stella_0001_role_topology_bootstrap.sql')
@@ -386,6 +392,119 @@ export class AclCluster {
     const r = docker(['exec', '-i', this.container, 'psql', '-h', '127.0.0.1', '-U', role, '-d', DB_NAME, '-v', 'ON_ERROR_STOP=1', '-q', '-c', sql])
     if (r.status !== 0) {
       throw new Error(`fixture statement FAILED as ${role} — the control it sets up would be VACUOUS:\n  ${sql}\n  ${(r.stderr || '').split('\n')[0]}`)
+    }
+  }
+
+  /**
+   * Run `sql` as `role` inside a transaction that carries a SUBJECT identity,
+   * and return ONLY the rows of `sql`.
+   *
+   * THE ECHO ROW IS WHY THIS EXISTS, and it is a measured hazard rather than a
+   * theoretical one. `SELECT set_config('request.jwt.claims', …, true)` RETURNS
+   * ITS OWN VALUE AS A ROW. A helper that simply concatenates the output of the
+   * statement list therefore hands back at least one row no matter what the
+   * relation under test returned — so an isolation assertion of the shape
+   * "ORG_B's sentinel is not in the result" passes against a result set that is
+   * actually EMPTY, and "the own row is present" can be satisfied by a claims
+   * string that happens to contain the organisation's uuid. The marker below
+   * cuts the stream at the identity statements so the caller can only ever see
+   * the rows the target query produced.
+   *
+   * The claim is set with `is_local => true`, so it is discarded at COMMIT and
+   * cannot leak onto a pooled connection — the same scope
+   * db/identity-context.ts uses in production.
+   */
+  identityQuery(
+    claims: { sub: string } | null,
+    sql: string,
+    role = 'uellix_app',
+  ): { rows: string[][]; sqlstate: string | null; message: string } {
+    const setClaims =
+      claims === null
+        ? ''
+        : `SELECT set_config('request.jwt.claims', '${JSON.stringify(claims)}', true);\n`
+    const script =
+      `\\set VERBOSITY verbose\n` +
+      `BEGIN;\n` +
+      setClaims +
+      `\\echo ${ROW_MARKER}\n` +
+      `${sql};\n` +
+      `COMMIT;\n`
+
+    const r = docker(
+      ['exec', '-i', this.container, 'psql', '-h', '127.0.0.1', '-U', role, '-d', DB_NAME,
+        '-v', 'ON_ERROR_STOP=1', '-tAq', '-F', '|', '-f', '-'],
+      script,
+    )
+    if (r.status !== 0) {
+      const m = /ERROR:\s+([0-9A-Z]{5}):/.exec(r.stderr)
+      // The MESSAGE travels with the code, because a SQLSTATE alone does not
+      // name the clause that refused: 42501 is raised by a missing GRANT, by an
+      // RLS WITH CHECK violation, AND by any trigger that raises with
+      // ERRCODE = 'insufficient_privilege'. A control that reported only the
+      // code sent this lane looking at the wrong clause.
+      const msg = r.stderr
+        .split('\n')
+        .filter((l) => /ERROR:|DETAIL:/.test(l))
+        .join(' | ')
+        .trim()
+      return {
+        rows: [],
+        sqlstate: m ? m[1] : `UNPARSED:${r.stderr.split('\n')[0]}`,
+        message: msg,
+      }
+    }
+    const cut = r.stdout.indexOf(ROW_MARKER)
+    if (cut < 0) {
+      throw new Error(`the row marker never appeared — the identity statements did not run:\n${r.stdout}`)
+    }
+    const rows = r.stdout
+      .slice(cut + ROW_MARKER.length)
+      .split('\n')
+      .map((s) => s.trimEnd())
+      .filter((s) => s.length > 0)
+      .map((l) => l.split('|'))
+    return { rows, sqlstate: null, message: '' }
+  }
+
+  /**
+   * A fixture statement that must succeed, run WITH a subject identity set.
+   *
+   * MEASURED NECESSITY, not convenience. Several of the relations under test
+   * carry BEFORE INSERT triggers that compare a column to auth.uid() — for
+   * example organization_commercial_acceptances refuses with
+   * "accepted_by_user_id must be the acting subject (I-T4-6)". In a claim-free
+   * administrative session auth.uid() is NULL, so those rows cannot be seeded
+   * at all without establishing the same identity the product establishes.
+   *
+   * This sets ONLY the transaction-local claim, exactly as
+   * db/identity-context.ts does. It grants nothing, alters no role and changes
+   * no privilege, so it stays inside SECTION_13's prohibition on ad-hoc GRANTs.
+   */
+  fixtureAs(subject: string, sql: string, role = 'postgres'): void {
+    const script =
+      `BEGIN;
+` +
+      `SELECT set_config('request.jwt.claims', '${JSON.stringify({ sub: subject })}', true);
+` +
+      `${sql}
+` +
+      `COMMIT;
+`
+    const r = docker(
+      ['exec', '-i', this.container, 'psql', '-h', '127.0.0.1', '-U', role, '-d', DB_NAME,
+        '-v', 'ON_ERROR_STOP=1', '-q', '-f', '-'],
+      script,
+    )
+    if (r.status !== 0) {
+      const why = (r.stderr || '')
+        .split('\n')
+        .filter((l) => l.trim() && !/NOTICE:/.test(l))
+        .slice(0, 3)
+        .join(' | ')
+      throw new Error(
+        `fixture statement FAILED as ${role} for subject ${subject} — the control it sets up would be VACUOUS: ${why}`,
+      )
     }
   }
 
