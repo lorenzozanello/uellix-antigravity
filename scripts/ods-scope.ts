@@ -1075,6 +1075,23 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/README.md',
     ],
   },
+  // HPO-ODS-W2-34 — registration of the grant DECLARED by
+  // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json for the future
+  // PG-06 (customer-lifecycle L1 trigger privilege remediation) in-place
+  // migration amendment. This is a SEPARATE governed registration act,
+  // distinct from the allocation act that declared the grant: the allocation
+  // writer may never register its own grant, so that the later implementation
+  // writer can never grant itself authority. Registers exactly the row the
+  // allocation declared, byte-for-byte: authority id, branch, pattern order
+  // and pattern count.
+  {
+    authorityId: 'HPO-ODS-W2-34',
+    branch: 'codex/customer-lifecycle-l1-trigger-privilege-remediation-r1',
+    patterns: [
+      'db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
+      'db/prepared/journal/085_0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
