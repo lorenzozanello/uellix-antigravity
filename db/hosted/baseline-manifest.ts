@@ -1572,7 +1572,7 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
     id: '0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
     kind: D,
     file: 'db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
-    sha256: 'e012b971e4c034fc6a893d9093653d0c40d5aab036ceb3e942e5a8847653d084',
+    sha256: '0bfc5ba80dfbeab50fdf8859f24a379006fc8bcc0cefbe9e1b710b696c6dee8d',
     dependsOn: [
       '0071_customer_lifecycle_cl1_content_bytes.sql',
       '0070_customer_lifecycle_cl1_legal_acceptance.sql',
@@ -1606,12 +1606,34 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       triggersCreatedCount: 2,
       unguardedPolicyCreateCount: 0,
       dmlStatementCount: 0,
+      // The trigger function is SECURITY DEFINER with a pinned search_path
+      // (PG-06 remediation, HPO-ODS-W2-34). Both keys were ABSENT here before
+      // the amendment, and an absent key is an ASSERTION OF THE DEFAULT --
+      // verifyBaselineManifest defaults securityDefinerCount to 0 and
+      // searchPathSettings to [] and then compares every key -- so they are
+      // stated rather than omitted.
+      //
+      // WHY THE PRIVILEGE MODE IS LOAD-BEARING HERE AND NOT DECORATION. The
+      // body reads auth.uid(); under INVOKER rights that read runs as the
+      // triggering runtime role, which holds no USAGE ON SCHEMA auth on the
+      // governed topology, so the INSERT dies 42501 before any invariant is
+      // reached. DEFINER moves the auth reach to the function OWNER and the
+      // pinned search_path is what stops that elevated context resolving the
+      // two registries through an attacker-controlled schema (I-T4-4).
+      securityDefinerCount: 1,
+      searchPathSettings: ['public'],
       // Pins the EXACT predicate TEXT of both policies. A later edit that
       // introduced a super-admin disjunct, a hierarchy comparison, or an
       // ambient (rather than row-parameterised) role lookup would move this
       // digest -- which is what corroborates sentinel
       // S-L1-NO-SUPERADMIN-DISJUNCT beyond reading the migration by eye.
-      securitySurfaceDigest: 'd869afc53842274b3707cfbd0d5d63c405593fe0c485b94654937bc1028a3237',
+      //
+      // RE-DERIVED for the amendment: db/hosted/baseline-scanner.ts appends a
+      // function BODY to the security surface only when the declaration
+      // matches SECURITY DEFINER, so this unit contributed no body before and
+      // contributes the whole trigger body now. Harvested from the actual
+      // bytes by the verifier, never predicted.
+      securitySurfaceDigest: '1d9f53819b4dd31ca6538c8623ac07c36fe1bec113c37ac079217b66b4a67a59',
     },
   },
   // CE-3 (COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_v1.0.0.json, HPO-ODS-W2-30).

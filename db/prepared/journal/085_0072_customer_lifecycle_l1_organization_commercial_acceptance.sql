@@ -3,7 +3,7 @@
 -- ============================================================================
 --
 -- Includes:      db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql
--- Source SHA256: e012b971e4c034fc6a893d9093653d0c40d5aab036ceb3e942e5a8847653d084
+-- Source SHA256: 0bfc5ba80dfbeab50fdf8859f24a379006fc8bcc0cefbe9e1b710b696c6dee8d
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -53,7 +53,7 @@ INSERT INTO uellix_provisioning.applied_units
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
   ('staging', :'uellix_project_ref', '0072_customer_lifecycle_l1_organization_commercial_acceptance.sql', 'PHASE_BASELINE',
-   'e012b971e4c034fc6a893d9093653d0c40d5aab036ceb3e942e5a8847653d084', NULL, NULL, 'APPLIED');
+   '0bfc5ba80dfbeab50fdf8859f24a379006fc8bcc0cefbe9e1b710b696c6dee8d', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'
