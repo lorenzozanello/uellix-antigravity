@@ -1,0 +1,152 @@
+{
+  "package_id": "FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0",
+  "authority_class": "PRODUCT_ALIGNMENT_REFERENCE_NOT_EXECUTABLE_AUTHORITY",
+  "document_class": "OWNER_RATIFICATION_RECORD__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DEPLOYMENT__NO_DATABASE_MUTATION__NO_DESTRUCTIVE_AUTHORIZATION",
+  "append_only": true,
+  "mission_id": "CV1-FIBDB053-RUNTIME-COMPANION-AW",
+  "lane": "codex/fibdb053-runtime-companion-authority-r1",
+  "role": "FIBDB053_RUNTIME_COMPANION_AUTHORITY_WRITER",
+  "mode": "DOCS_ONLY_AUTHORITY_MATERIALIZATION",
+  "materialization_date": "2026-09-18",
+  "repository": "lorenzozanello/uellix-antigravity",
+
+  "materialized_at_base": {
+    "base_branch": "integration/commercial-v1",
+    "BASE_SHA": "0d94b54856c701419ba32bdd844245213fd4aeed",
+    "BASE_TREE": "34ac5599c6cc11dec5b22213c255c6d14cb845b8",
+    "worktree_state": "CLEAN at materialization (git status --porcelain --untracked-files=all empty)."
+  },
+
+  "companion_authority": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json",
+
+  "provenance_classification": "OWNER_RATIFIED_OUTSIDE_THE_REPOSITORY_PRIOR_TO_THIS_MATERIALIZATION_LANE. The decisions below were ratified by the product/mission owner and supplied verbatim to this lane as its directing text (OWNER_DECISION=APPROVED). THIS FILE IS NOT A VERBATIM TRANSCRIPT of any chat and it is not a new adjudication. It is the canonical normalized ratification record so that successor lanes can cite a stable repository artifact instead of re-deriving or informally re-summarizing a decision the owner has already made. OWNER_RATIFICATION and REPOSITORY_MEASUREMENT remain distinct categories throughout: a ratification is binding product intent; a measurement is a falsifiable claim about the codebase that any successor lane may and should re-measure.",
+
+  "precedence_note": "This record is canonical for product-owner intent on RC-01..RC-10 only. It does NOT override executable FIB/ODS/database/security authority. The repository hierarchy (CLAUDE.md section 2) places sealed FIB authority ABOVE an owner record of this class, and the serialization this record creates an exception to (FIBIU-20 hard_dependencies = [FIBIU-19, FIBIU-29]) lives in the FORMALLY_SEALED FIB baseline. A bare owner record therefore cannot by itself make the exception effective — this is the precedent lesson recorded at docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json#precedence_note, where Lane CV1-ENV-O2 failed closed for exactly this reason. The companion authority named above is the artifact that makes RC-02, RC-03 and RC-04 execution-effective, and it does so by BOUNDING them, not by widening them. Read together, the companion authority's normative definitions govern.",
+
+  "reopening_rule": "THIS IS NOT A NEW HPO. Do NOT reopen or re-adjudicate the FIB baseline's wave topology, the FIBIU-19 -> FIBIU-20 serialization for any scope other than the bounded slice defined in RC-02, the G2 boundary, or the FIBDB-053 Stage-A contract. Absence of implementation is not a contradiction. A conflict between this record and active executable authority that the companion authority does not resolve fails closed (STOP_FOR_AUTHORITY_CONFLICT); it is not silently resolved in either direction.",
+
+  "why_this_record_exists": {
+    "problem": "FIBDB-053 Stage-A cannot be safely applied while the only runtime caller of the completion verb is hard-coded to the signature Stage-A drops. The remedy lives in files the FIB baseline assigns to FIBIU-20, whose hard dependency on FIBIU-19 has not been discharged. Authoring the remedy therefore requires either a sequencing exception or an indefinite block.",
+    "measured_contradiction": "See the companion authority's COMPATIBILITY_CONTRADICTION block. Restated in one line: the FIB baseline simultaneously requires FIBDB-053 to DROP the seven-argument completion signature without a DEFAULT, and claims its Stage-A is additive so that the existing path keeps functioning. Both cannot be true, and the collision lands on the runtime callsite.",
+    "owner_choice": "The owner elected a bounded sequencing exception over an indefinite block, and selected the runtime-first, catalog-driven bridge architecture over a manual feature flag."
+  },
+
+  "definitional_intent": {
+    "COMPATIBILITY_SLICE": "The narrow, enumerated subset of FIBIU-20 whose ONLY purpose is to make FIBDB-053 Stage-A safely deployable: the catalog-probed dual-signature bridge in the completion wrapper and the risk payload plumbing that feeds it. Its exact, closed write surface is frozen by the companion authority's FUTURE_RUNTIME_WRITE_SURFACE. Normative definition lives in the companion authority, not here.",
+    "REMAINING_FIBIU20_SCOPE": "Everything in FIBIU-20 that is NOT the compatibility slice: segregation of duties, the reviewer/author independence rule, stella_findings and stella_finding_dispositions as first-class rows, the high-risk finding disposition gate, and every UI and report change FIBIU-20 names. This scope remains SERIAL behind FIBIU-19 and is untouched by RC-02.",
+    "SEQUENCING_EXCEPTION": "A bounded permission for the COMPATIBILITY_SLICE alone to be authored, implemented, tested and deployed before FIBIU-19 completes. It is not a re-ordering of the wave topology and it does not discharge FIBIU-20's hard dependency on FIBIU-19."
+  },
+
+  "ratifications": [
+    {
+      "id": "RC-01",
+      "domain": "PROBLEM_ACCEPTANCE",
+      "statement": "The runtime/apply coupling on FIBDB-053 is accepted as a real blocking defect for APPLY, not as an authoring defect and not as a documentation gap. A runtime companion node is required before Stage-A may be applied.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Consistent with the STOP raised by the FIBDB-053 Stage-A authoring lane (PR #187, NON-INTEGRATED at this base). This record does not depend on that PR; the underlying facts are re-derived from the sealed FIB baseline and WAVE3_AUTHORITY_v1.0.0.json by the companion authority."
+    },
+    {
+      "id": "RC-02",
+      "domain": "SEQUENCING_EXCEPTION",
+      "statement": "The COMPATIBILITY_SLICE of FIBIU-20 is exempted from the usual FIBIU-19 -> FIBIU-20 serialization. The exception is bounded to the runtime compatibility work needed to make FIBDB-053 Stage-A safely deployable, and to nothing else.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The serialization being excepted is FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json#fibiu[FIBIU-20].hard_dependencies = ['FIBIU-19','FIBIU-29'], topological_level 3.2 behind 3.1, restated at WAVE3_AUTHORITY_v1.0.0.json#SHARED_WRITERS.intra_wave_rule. The FIB baseline is FORMALLY_SEALED and is NOT edited by this record or by its companion; the exception is materialized as a successor artifact, never as an edit."
+    },
+    {
+      "id": "RC-03",
+      "domain": "SEQUENCING_EXCEPTION_LIMIT",
+      "statement": "The exception does NOT waive FIBIU-19 -> FIBIU-20 serialization for the REMAINING_FIBIU20_SCOPE. That scope stays serial behind FIBIU-19.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Enforced by the companion authority's FIBIU19_DISJOINTNESS, which makes the exception conditional on a mechanically re-derivable empty intersection. The companion authority states that any overlap invalidates the exception rather than widening it."
+    },
+    {
+      "id": "RC-04",
+      "domain": "SEQUENCING_EXCEPTION_LIMIT",
+      "statement": "FIBIU-20's hard dependency on FIBIU-29 is NOT excepted and is not addressed by this record.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "FIBIU-20 hard_dependencies lists FIBIU-19 and FIBIU-29. The owner decision addressed the FIBIU-19 serialization only. This record deliberately makes no claim about FIBIU-29 rather than silently treating an unmentioned dependency as waived."
+    },
+    {
+      "id": "RC-05",
+      "domain": "ARCHITECTURE",
+      "statement": "The selected architecture is RUNTIME_FIRST_WITH_CATALOG_DRIVEN_COMPATIBILITY_BRIDGE. The runtime ships first and discovers which database state is installed by probing the catalog.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Normative contract frozen at the companion authority's RUNTIME_COMPATIBILITY_CONTRACT and CATALOG_PROBE_CONTRACT."
+    },
+    {
+      "id": "RC-06",
+      "domain": "ARCHITECTURE",
+      "statement": "NO manual feature flag. The installed database state is never declared by a human-set environment variable or configuration value.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Enforced as a refusal, not merely an absence: the companion authority carries negative control N-RC-04 and mutation control MUT-RC-01 aimed at a manual flag replacing the probe."
+    },
+    {
+      "id": "RC-07",
+      "domain": "ODS",
+      "statement": "NO protected ODS surface is expected for the compatibility slice, and no ODS lineage is to be allocated for this node merely for traceability.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Independently re-derived, not assumed: the companion authority's NEW_ODS_REQUIRED block records the mechanical classification of the full future write surface against ods-scope's DEFAULT_PROTECTED_PATTERNS, returning zero protected violations. If fresh evidence ever contradicts it, the companion authority requires STOP_FOR_AUTHORITY_DELTA."
+    },
+    {
+      "id": "RC-08",
+      "domain": "APPLY_BOUNDARY",
+      "statement": "This decision authorizes the runtime companion. It does NOT authorize applying FIBDB-053 Stage-A anywhere, and it does not resolve the G2 external gate.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "WAVE3_AUTHORITY_v1.0.0.json#G2_BOUNDARY.no_bypass_clause remains in force verbatim. The companion authority restates it and adds no exception to it."
+    },
+    {
+      "id": "RC-09",
+      "domain": "DEPLOYMENT_ORDER",
+      "statement": "Runtime before SQL, never the reverse. An old runtime operating against a new database is PROHIBITED, and a runtime rollback after the new database is installed is PROHIBITED unless the SQL rollback happens first.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "Frozen as a four-cell matrix at the companion authority's DEPLOYMENT_CONTRACT and ROLLBACK_CONTRACT, with mutation controls MUT-RC-09 and MUT-RC-10 aimed at each prohibited order."
+    },
+    {
+      "id": "RC-10",
+      "domain": "LANE_BOUNDARY",
+      "statement": "This lane authors authority only. It does not implement the runtime, does not modify the FIBDB-053 Stage-A authoring lane, and does not certify its own output.",
+      "status": "RATIFIED_BY_PRODUCT_OWNER",
+      "repository_binding": "The lane's write set is three docs-only artifacts. Its terminal state is FIBDB053_RUNTIME_COMPANION_AUTHORITY_READY_FOR_INDEPENDENT_CERTIFICATION."
+    }
+  ],
+
+  "explicit_non_authorizations": [
+    "NO runtime implementation is performed or authorized to begin by THIS record; the companion authority is the artifact that scopes implementation, and independent certification is its stated next gate.",
+    "NO application of stella_0017b — local canonical stack, staging, hosted or production — is authorized under any framing.",
+    "NO declaration that the FIBDB-053 external G2 gate is resolved.",
+    "NO edit to any FORMALLY_SEALED artifact. The FIB baseline and its index are cited by hash and left byte-identical.",
+    "NO ODS grant id, addendum ordinal, Controller allocation or protected-surface grant is allocated, reserved or implied.",
+    "NO migration ordinal is declared or reserved.",
+    "NO modification to PR #187 or to its branch.",
+    "NO waiver of FIBIU-20's hard dependency on FIBIU-29 (RC-04).",
+    "NO waiver of FIBIU-19 -> FIBIU-20 serialization for REMAINING_FIBIU20_SCOPE (RC-03).",
+    "NO hosted access of any kind was performed by this lane."
+  ],
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_ratification_count": 10,
+    "expected_id_set": ["RC-01", "RC-02", "RC-03", "RC-04", "RC-05", "RC-06", "RC-07", "RC-08", "RC-09", "RC-10"],
+    "expected_defined_term_count": 3,
+    "expected_defined_terms": ["COMPATIBILITY_SLICE", "REMAINING_FIBIU20_SCOPE", "SEQUENCING_EXCEPTION"],
+    "checks": [
+      "ratifications.length == 10",
+      "every id in ratifications is unique",
+      "the set of ids in ratifications equals expected_id_set exactly",
+      "definitional_intent has exactly the three keys in expected_defined_terms",
+      "every ratification carries all four of id, domain, statement, status",
+      "every ratification.status == 'RATIFIED_BY_PRODUCT_OWNER'",
+      "companion_authority names a path that exists in the same commit",
+      "no ratification statement authorizes an apply, a deployment or an allocation",
+      "RC-03 and RC-04 are both present — an exception record that states only what is permitted and never what is withheld is incomplete by construction"
+    ]
+  },
+
+  "required_independent_review": "This record and its companion authority require INDEPENDENT certification before any implementation lane opens. The writing lane does not certify its own output.",
+
+  "final_state": "FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1_0_0_FROZEN",
+
+  "next_gate": "FIBDB053_RUNTIME_COMPANION_AUTHORITY_READY_FOR_INDEPENDENT_CERTIFICATION"
+}
