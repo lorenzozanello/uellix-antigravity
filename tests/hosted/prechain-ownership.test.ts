@@ -21,6 +21,7 @@ import {
   PRECHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY,
   PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP,
+  PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL,
   PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING,
   PRECHAIN_LEDGER_MODEL_DEFAULT,
   PRECHAIN_OWNERSHIP,
@@ -218,7 +219,7 @@ describe('the registry states reasons, not shrugs', () => {
 describe('the prechain TRIO, and the order that is load-bearing', () => {
   const usageSql = readFileSync(path.join(ROOT, PRECHAIN_STORAGE_USAGE.sourceFile), 'utf8')
 
-  it('declares all eight units in application order', () => {
+  it('declares all ten units in application order', () => {
     expect(ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
       PRECHAIN_OWNERSHIP.id,
       PRECHAIN_STORAGE_USAGE.id,
@@ -251,6 +252,15 @@ describe('the prechain TRIO, and the order that is load-bearing', () => {
       // because a reader who saw only the comment above would generalise the
       // wrong way.
       PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING.id,
+      // CV1-RUNTIME-ACL. Last among the PRECHAIN units, and a THIRD kind of
+      // ordering claim beside the two above it: partly enforced. Its §0.6
+      // refuses unless public.entitlement_grants exists, so it can never
+      // precede CE-3's migration 0073 — that much is guarded. Its position
+      // relative to units 0003..0010 is not, and it is last because it is the
+      // BROADEST contract rather than because a package would refuse
+      // otherwise. Recorded explicitly so a reader does not generalise either
+      // neighbouring comment onto it.
+      PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL.id,
       // G1-B. Last, and the only member whose WINDOW is postchain: its
       // dead-default proof cannot pass until stella_0017 (T8) has withdrawn the
       // baseline INSERT grant from authenticated and service_role.
@@ -1067,7 +1077,7 @@ describe('the apply window is recorded, and the two lists are derived from it', 
     expect(POSTCHAIN_ADMINISTRATIVE_UNITS.every((u) => u.applyWindow === 'postchain')).toBe(true)
   })
 
-  it('the five installed units, stella_hosted_0008 and stella_hosted_0009 are prechain', () => {
+  it('every unit but stella_0020 is prechain, in application order', () => {
     // The window PRECHAIN_CLEAN describes. stella_hosted_0008 belongs here and
     // it is measured, not assumed: certify:pg176 applies it before T1, exit 0.
     expect(PRECHAIN_ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
@@ -1079,6 +1089,7 @@ describe('the apply window is recorded, and the two lists are derived from it', 
       PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY.id,
       PRECHAIN_ENTITLEMENT_EVALUATOR_OWNERSHIP.id,
       PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING.id,
+      PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL.id,
     ])
   })
 

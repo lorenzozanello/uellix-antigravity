@@ -1971,3 +1971,172 @@ prechain y la última prerequisito de los helpers de Storage.
 > lo que había; no lo mejora. Por eso `stella_0020_rollback.sql` escribe
 > `gemini-2.0-flash` y **nunca** `gemini-3.6-flash`, y por eso no debe leerse
 > como una recomendación de modelo.
+
+---
+
+## CV1-RUNTIME-ACL — el contrato de ACL de runtime del esquema ACTUAL (`stella_0021`)
+
+| Script | Rollback | Aplicado | Qué hace | Estado |
+|---|---|---|---|---|
+| `stella_0021_current_schema_runtime_acl_contract.sql` | **ninguno, y su ausencia es VINCULANTE** (`db/hosted/prechain-ownership.ts`; la razón se argumenta en `forwardOnlyNoRollbackReason` y se deriva a `db/hosted/forward-only-packages.ts`) | **ninguno todavía**; exige los roles de `stella_0001`/`stella_hosted_0001`, las unidades baseline (las tres helpers de RLS las crea `db/migrations/0031_rls_core.sql`) y `db/migrations/0073` aplicada — su §0.6 se niega si `public.entitlement_grants` no existe | **Sólo `GRANT`/`REVOKE`.** Publica el contrato de privilegios de runtime sobre las **58** tablas de `public` como un **MUNDO CERRADO**, más la mitad de `EXECUTE` (exactamente tres firmas, a exactamente dos roles). Ni un `CREATE`/`ALTER`/`DROP`, ni una fila de negocio, ni una policy, ni `ENABLE`/`DISABLE`/`FORCE ROW LEVEL SECURITY`, ni un rol, ni una membresía, ni `ALTER DEFAULT PRIVILEGES`, ni privilegio de esquema, ni `ALTER ... OWNER TO` | **DISEÑO — no aplicado** |
+
+> ### Por qué es un SUCESOR y no una edición de `stella_0004`
+>
+> `stella_0004_role_separation.sql` clasifica **38** tablas de `public`. Desde que
+> se escribió, las migraciones han añadido **20** más, y su §0 es una allowlist
+> **CERRADA por diseño** — «an unknown table must not silently receive
+> operational grants», su propia línea 227. Así que sobre el esquema actual **no
+> concede** las que faltan: **se niega**, en su precondición de tablas sin
+> clasificar, y el runtime recibe `42501` en cada una de ellas.
+>
+> Editarlo está **prohibido** y no sólo desaconsejado: su `sha256` está fijado en
+> `tests/prepared-stella-sql.test.ts`, `tests/stella-r3-5-pg17-certification.test.ts`
+> y `db/r3-5-pg17-certification-inputs.ts`, así que un cambio de un byte rompe una
+> **certificación de motor PG17 certificada**, no un test unitario. La ruta hosted
+> llegó a la misma conclusión y publicó `stella_hosted_0006` (mitad `EXECUTE`) y
+> `stella_hosted_0007` (mitad tablas) dejando `stella_0004` byte a byte idéntico.
+> Este paquete es el sucesor del esquema **actual** con esa misma forma.
+
+> ### El contrato: nueve clases, un condicional y seis exclusiones
+>
+> **Las 19 que nadie había clasificado** (autoridad `SECTION_2`)
+>
+> | Clase | `uellix_writer` | Tablas |
+> |---|---|---|
+> | `APPEND_ONLY` | `SELECT, INSERT` | 8 |
+> | `OPERATIONAL_INSERT_UPDATE` | `SELECT, INSERT, UPDATE` | 6 |
+> | `READ_ONLY` | `SELECT` | 4 |
+> | `NO_RUNTIME_ACCESS` | *(nada)* | 1 |
+>
+> **Las 38 heredadas, en su estado final ENMENDADO** (autoridad `SECTION_2B`)
+>
+> | Clase | `uellix_writer` | Tablas |
+> |---|---|---|
+> | `OPERATIONAL_legacy` | `SELECT, INSERT, UPDATE, DELETE` | 33 |
+> | `APPEND_ONLY_legacy` | `SELECT, INSERT` | 3 |
+> | `GOVERNED_READ_legacy` | `SELECT` | 1 |
+> | `CONDITIONAL_APPEND_ONLY` | `SELECT, INSERT` *(si existe)* | 1 |
+>
+> **Añadida por `db/migrations/0073`** (autoridad `SECTION_3`)
+>
+> | Clase | `uellix_writer` | Tablas |
+> |---|---|---|
+> | `NO_RUNTIME_ACCESS_CE3` | *(nada)* | 1 |
+>
+> La aritmética se **comprueba en la §0.8 del propio paquete**, no se afirma aquí:
+> `8 + 6 + 4 + 1 = 19`, `33 + 3 + 1 + 1 = 38`, `19 + 38 + 1 = 58`.
+>
+> `uellix_auditor` tiene `SELECT` en **55** de las 58 (56 con la condicional
+> presente) y **nada** en las tres `NO_RUNTIME_ACCESS`: un grant sobre una tabla
+> cuya RLS no admite ninguna fila es *una autorización esperando una policy*.
+>
+> `uellix_app` **no recibe ningún grant directo**. Alcanza todo por la membresía
+> heredada (`stella_0001`:180), y la §12 afirma el privilegio **EFECTIVO**, no
+> solamente el grant.
+
+> ### `OPERATIONAL_INSERT_UPDATE` es una clase NUEVA, y no un alias de `OPERATIONAL`
+>
+> Seis tablas actuales necesitan `UPDATE` y **no** necesitan `DELETE`: cada una
+> lleva una policy `FOR UPDATE` en su migración creadora **y** al menos un
+> consumidor `db.update()`; ninguna lleva policy de `DELETE` ni consumidor que
+> borre. La clase heredada `OPERATIONAL` es `SIUD`, así que meterlas ahí
+> concedería `DELETE` a un runtime que nunca lo emite — *una autorización
+> esperando un verbo*.
+>
+> **Ninguna clase de las 19 lleva `DELETE`.** Es una medición, no una preferencia:
+> hay **cero** policies de `DELETE` y **cero** consumidores que borren.
+
+> ### `marketing_leads` se queda en `OPERATIONAL`, y eso es deliberado
+>
+> `stella_0009_public_lead_capability.sql`:265 **revocaría** los cuatro
+> privilegios **si estuviera aplicado**. Es **DISEÑO y NO está instalado**: esta
+> misma README lo registra como «DISEÑO — no aplicado», está ausente de
+> `db/hosted/hosted-package-manifest.ts`, ausente de toda cadena de
+> `db/prepared-package-order.ts` y ausente de la tabla `AMENDMENTS` de
+> `tests/hosted/prechain-ownership.test.ts`. **Un `REVOKE` dentro de un fichero no
+> aplicado es un no-op.** Congelar la postura revocada falsificaría la derivación
+> **y** haría que este paquete se **negara** en su §0.10 en todo destino donde
+> `stella_hosted_0007` esté aplicado, porque allí encontraría `SIUD` donde su
+> propio contrato declaraba nada. **ENMENDADO significa INSTALADO.**
+
+> ### Converge hacia abajo y se NIEGA hacia arriba
+>
+> Cada clase es `GRANT` + un `REVOKE` de convergencia de exactamente los verbos
+> prohibidos de esa clase — el idioma §6a/§6b de `stella_0004`. Una postura **más
+> estrecha** se amplía al contrato; una postura más ancha **dejada por una
+> ejecución anterior de este mismo paquete** se retira.
+>
+> Una postura **más ancha que el contrato** NO se estrecha en silencio. La §0.10
+> se niega con `OVERPRIVILEGED PRESTATE`, nombrando la tabla, lo que el writer
+> tiene y lo que el contrato dice.
+>
+> La distinción importa: un excedente que este paquete no creó lo puso algo
+> **fuera de este repositorio**. Revocarlo en silencio **borra la evidencia**;
+> conservarlo en silencio **embarca una ampliación que nadie revisó**.
+
+> ### Un privilegio de tabla es necesario y NO suficiente
+>
+> Evaluar una policy de RLS exige que el rol **invocante** tenga `EXECUTE` sobre
+> cada función que nombre el predicado, y casi todas las policies de este esquema
+> llaman a `public.current_user_org_ids()` o `public.current_user_is_super_admin()`.
+> Sin `EXECUTE`, un `SELECT` de `uellix_app` **no devuelve cero filas**: falla con
+> `permission denied for function current_user_org_ids`.
+>
+> Por eso la §11 lleva la mitad de `EXECUTE` **ella misma** en vez de depender de
+> un paquete que aquí no puede correr: sobre el build local/CI del esquema actual
+> `stella_0004` se niega y `stella_hosted_0006` es de familia hosted, así que hoy
+> el runtime **no tiene `EXECUTE` sobre ninguna de las tres**.
+>
+> **Exactamente tres firmas, a exactamente dos roles.** `handle_new_user()`,
+> `handle_update_user()`, `can_read_evidence_object(text,uuid)`,
+> `can_write_evidence_object(text,uuid)` y `uellix_forbid_mutation()` quedan
+> **excluidas** — las dos que **escriben** sobre todo — que es lo que convierte
+> «no hay ruta de escritura indirecta por una función» en una afirmación
+> **comprobable**. La §12 afirma la exclusión por nombre y afirma que `PUBLIC` no
+> tiene `EXECUTE` sobre las tres: `acldefault('f')` es `EXECUTE TO PUBLIC` para
+> una función nueva, así que esa afirmación se hace contra el catálogo vivo y
+> nunca contra `proacl IS NULL`.
+
+> ### Un mundo CERRADO, que es justamente el punto
+>
+> El hueco de 20 tablas existió porque una migración podía añadir una tabla de
+> `public` y **nada se ponía rojo**. Así que este paquete no concede sobre «las
+> tablas que conoce» dejando el resto sin examinar: la §0.7 **barre todas** las
+> relaciones de `public` y se niega ante cualquiera que no sea miembro
+> clasificado, miembro condicional declarado o exclusión nombrada. **No hay clase
+> por defecto, ni auto-`SELECT`, ni «asume READ_ONLY».** El gemelo sin base de
+> datos de la misma afirmación es `tests/database-runtime-acl-closed-world.test.ts`,
+> que deriva el universo de `db/migrations/**` y `db/schema.ts` y **nunca** de
+> este fichero.
+
+> ### La RLS sigue siendo la frontera de fila
+>
+> Este paquete no crea, altera ni borra ninguna policy, y no habilita, deshabilita
+> ni fuerza RLS en ningún sitio, así que la respuesta a nivel de fila para cada
+> principal es **exactamente** la que era antes de ejecutarlo. La §12 lo **mide**:
+> compara el digest de `pg_policies`, los flags `relrowsecurity`/`relforcerowsecurity`,
+> los propietarios, el conjunto de roles y la ACL proyectada sobre todo principal
+> que este paquete **no** nombra, contra la captura que tomó la §0.13.
+
+> ### Un solo fichero canónico en ambos destinos
+>
+> No hay `stella_hosted_0021`, ni gemelo generado, ni reescritura: **los bytes
+> preparados canónicos SON el artefacto**, que es por lo que la entrada de
+> `db/hosted/prechain-ownership.ts` lleva un **pin de digest** y no una regla de
+> generación — el mismo razonamiento que ya usa `stella_0020`. Su `applyWindow` es
+> `prechain` y está **derivado**, no preferido: toda relación que nombra la crea
+> una unidad baseline o es el miembro condicional declarado, y su propia §0
+> excluye por nombre las seis tablas de capability creadas por la cadena, así que
+> es satisfacible en la ventana que describe `PRECHAIN_CLEAN`.
+
+> ### Lo que este paquete NO cierra
+>
+> Registrar la unidad **no es aplicarla**. La aplicación hosted es un acto de
+> operador posterior y está condicionada a la paridad de esquema **S1** que este
+> paquete no adjudica: el proyecto de staging mide 39 tablas de `public` donde el
+> esquema actual tiene 58, y un `GRANT` sobre una tabla ausente es un ERROR.
+>
+> El hallazgo **AT-F-02** del `RELEASE_GATE_LEDGER` exige **tres** condiciones y
+> este paquete es sólo la primera: IMPLEMENTADO, luego PROBADO
+> INDEPENDIENTEMENTE, luego APLICADO SOBRE EL DESTINO QUE EL HALLAZGO NOMBRA.
+> Existir no cierra ninguna de las tres.
