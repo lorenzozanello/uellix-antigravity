@@ -161,7 +161,11 @@ CREATE TRIGGER trg_organization_commercial_acceptances_append_only
 -- entirely" property is a property of the DATABASE and not of which role
 -- happened to connect.
 CREATE OR REPLACE FUNCTION enforce_organization_commercial_acceptance_invariants()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   v_digest text;
   v_key    varchar(100);
@@ -220,7 +224,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;--> statement-breakpoint
+$$;--> statement-breakpoint
 
 -- 0033_public_api_grants.sql revoked EXECUTE on all THEN-EXISTING public
 -- functions from PUBLIC, anon and authenticated, and PostgreSQL grants

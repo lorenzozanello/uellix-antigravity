@@ -36,7 +36,7 @@ name: L1 Organization Commercial Acceptance Real PostgreSQL Gate
 #     test files must FAIL, not exit 0.
 #
 # This gate must fail on each of:
-#   * either suite being skipped          -> the ungated self-check fails;
+#   * any suite being skipped             -> the ungated self-check fails;
 #   * zero tests collected                -> vitest exits non-zero;
 #   * a real-PG setup/teardown failure    -> the setupStatus/teardownStatus/
 #                                            leftover assertions inside the
@@ -44,8 +44,30 @@ name: L1 Organization Commercial Acceptance Real PostgreSQL Gate
 #   * any probe or any real-function composition assertion failing.
 #
 # It does NOT reuse, extend or widen the CL-1 workflow's governed scope, and
-# it runs the two suites in SEPARATE STEPS so that ONE heavy PostgreSQL
+# it runs the suites in SEPARATE STEPS so that ONE heavy PostgreSQL
 # lifecycle is alive at a time.
+#
+# ---------------------------------------------------------------------------
+# PG-06 REMEDIATION (HPO-ODS-W2-34) — WHY A THIRD STEP WAS ADDED
+# ---------------------------------------------------------------------------
+# The remediation adds tests/postgres/organization-commercial-acceptance-owner-
+# topology.pg.test.ts, which proves the owner-capability closed world the
+# SECURITY DEFINER change creates. That file MUST be named here.
+#
+# MEASURED, and the reason this comment exists: before this edit the workflow
+# invoked vitest on exactly TWO named paths. vitest does not discover the rest
+# of tests/postgres/** on its own, so a new suite would have been created,
+# committed, reviewed and NEVER EXECUTED — reporting green by never running.
+# A frozen test CI never runs is not a control, it is a document. Removing the
+# third step while leaving the file in the tree turns nothing else red, which
+# is exactly what makes the omission invisible and the explicit step necessary.
+#
+# It is its OWN step, not an extra path on step one, for the same reason the
+# first two are separate: each drives its own disposable PostgreSQL lifecycle,
+# and REAL_POSTGRESQL_EXCLUSIVE wants one heavy cluster alive at a time. The
+# two purposes also need DIFFERENT substrates — the canonical fixture's
+# function owner is a superuser there, which would make every owner-capability
+# assertion vacuous — so they could not share a run even if we wanted them to.
 
 on:
   workflow_dispatch:
@@ -102,3 +124,21 @@ jobs:
           UELLIX_PG_TESTS: '1'
           UELLIX_L1_PG_REQUIRED: '1'
         run: pnpm exec vitest run tests/postgres/organization-commercial-acceptance-real-derivation.pg.test.ts
+
+      # ORACLE 3 — the OWNER-CAPABILITY CLOSED WORLD created by the PG-06
+      # remediation (HPO-ODS-W2-34). Making the trigger function SECURITY
+      # DEFINER moves its auth reach from the caller to the OWNER, which
+      # creates an obligation nothing proved before: the deployed function
+      # owner must hold C1..C7 and NOTHING MORE.
+      #
+      # It runs on a CERTIFICATION-ONLY substrate with a deliberately
+      # NON-SUPERUSER function owner. That is not a preference: in the
+      # canonical fixture the function is owned by `postgres`, which is a
+      # superuser on postgres:16-alpine, and a superuser satisfies every
+      # capability trivially — so the same assertions run there would be GREEN
+      # against an owner holding nothing.
+      - name: Real PostgreSQL — ORACLE 3, owner-capability closed world (C1..C7)
+        env:
+          UELLIX_PG_TESTS: '1'
+          UELLIX_L1_PG_REQUIRED: '1'
+        run: pnpm exec vitest run tests/postgres/organization-commercial-acceptance-owner-topology.pg.test.ts

@@ -106,7 +106,109 @@ CREATE TABLE IF NOT EXISTS public.stella_suggestion_decisions (
 );
 `
 
-const HOSTED_FIDELITY = `
+/**
+ * PG-06 REMEDIATION (HPO-ODS-W2-34) — THE FIXTURE PARAMETERS.
+ *
+ * Every default below is the CERTIFIED POSTURE. An option exists only so a
+ * named control or mutation can depart from it deliberately, and every
+ * departure is a RED-producing act somewhere in the suite.
+ */
+export interface FixtureOptions {
+  /**
+   * `GRANT USAGE ON SCHEMA auth TO uellix_writer` — THE MASKING GRANT.
+   *
+   * DEFAULT false, which is the whole of the certified fixture delta
+   * (authority SECTION_8 FIXTURE_DELTA_FROZEN). It is the privilege the
+   * governed runtime posture WITHHOLDS, and while the fixture granted it the
+   * L1 suite was green against a unit that could not work on the governed
+   * substrate: uellix_app inherits uellix_writer (ROLE_PRELUDE, WITH INHERIT
+   * TRUE), and a membership DOES carry schema USAGE to the member.
+   *
+   * NOTE WHAT IS *NOT* PARAMETERISED: the `GRANT EXECUTE ON FUNCTION
+   * auth.uid()` on the following line is RETAINED unconditionally. It is
+   * MEASURED NECESSARY -- the STORED INSERT policy calls auth.uid() and is
+   * evaluated for the INVOKER -- and on the hosted baseline that EXECUTE
+   * arrives via the PUBLIC default, so retaining it is FIDELITY to hosted.
+   * The masking privilege is schema USAGE, never function EXECUTE, and
+   * over-removing would make the fixture stricter than production and turn a
+   * CORRECT implementation red.
+   */
+  maskingAuthSchemaGrantPresent?: boolean
+  /**
+   * Which privilege mode the trigger function carries.
+   *
+   * 'amended' (DEFAULT) leaves whatever db/migrations/0072 installs, which is
+   * the remediated SECURITY DEFINER SET search_path = public form.
+   *
+   * 'shipped-invoker' re-creates the SAME BODY with the pre-remediation
+   * INVOKER header, for the two defect-reproduction arms. See
+   * shippedInvokerVariantStatement() for why it is DERIVED and not copied.
+   */
+  functionVariant?: 'amended' | 'shipped-invoker'
+  /**
+   * `GRANT USAGE ON SCHEMA auth TO uellix_owner` — THE R1 FALSE ADD.
+   *
+   * DEFAULT false and it must stay false: uellix_owner is NOT the function
+   * owner in this fixture (the harness applies every statement as postgres and
+   * the HOSTED_FIDELITY re-home loop moves only what pg_tables returns, i.e.
+   * TABLES), so the grant is INERT here. Exposed ONLY so mutation M-11 can add
+   * it and the suite can prove it is unnecessary rather than required.
+   */
+  ownerAuthSchemaGrantPresent?: boolean
+}
+
+const L1_UNIT_FILE = 'db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql'
+const L1_FUNCTION = 'enforce_organization_commercial_acceptance_invariants'
+
+/**
+ * The SHIPPED (pre-remediation) INVOKER form of the trigger function, DERIVED
+ * from the live migration rather than copied into this file.
+ *
+ * WHY DERIVED. The two defect-reproduction arms exist to isolate ONE variable:
+ * the privilege mode. A hand-copied body would drift the moment the migration
+ * body changed, and the arms would silently stop comparing like with like --
+ * they would be proving something about a stale body instead of about INVOKER
+ * rights. Deriving keeps "same body, different rights" true BY CONSTRUCTION.
+ *
+ * WHY IT FAILS LOUDLY. Each anchor is asserted to occur exactly once. If the
+ * migration is restructured, this throws during setup instead of emitting a
+ * statement that quietly does not swap the function -- which would make arm C
+ * report a green "defect not reproduced" for a harness reason.
+ *
+ * CREATE OR REPLACE preserves the owner, so the swapped function is owned by
+ * the same applier as the amended one and the arms differ in NOTHING else.
+ */
+export function shippedInvokerVariantStatement(): string {
+  const sql = readFileSync(path.join(ROOT, L1_UNIT_FILE), 'utf8')
+  const open = `CREATE OR REPLACE FUNCTION ${L1_FUNCTION}()`
+  if (sql.split(open).length - 1 !== 1) {
+    throw new Error(`${L1_UNIT_FILE}: expected exactly one "${open}"; the fixture's INVOKER variant can no longer be derived`)
+  }
+  const header = `${open}
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+`
+  const start = sql.indexOf(header)
+  if (start < 0) {
+    throw new Error(`${L1_UNIT_FILE}: the remediated SECURITY DEFINER header is absent; refusing to derive an INVOKER variant from an unknown shape`)
+  }
+  const bodyStart = start + header.length
+  const footer = `
+$$;`
+  const bodyEnd = sql.indexOf(footer, bodyStart)
+  if (bodyEnd < 0) throw new Error(`${L1_UNIT_FILE}: the remediated function footer "$$;" is absent`)
+  const body = sql.slice(bodyStart, bodyEnd)
+  return `CREATE OR REPLACE FUNCTION ${L1_FUNCTION}()
+RETURNS trigger AS $$
+${body}
+$$ LANGUAGE plpgsql;`
+}
+
+function hostedFidelity(opts: FixtureOptions): string {
+  return `
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
     LANGUAGE sql STABLE
     AS $f$
@@ -122,7 +224,8 @@ DO $o$ DECLARE r record; BEGIN
   END LOOP;
 END $o$;
 GRANT USAGE ON SCHEMA public TO uellix_writer, uellix_auditor, uellix_app;
-GRANT USAGE ON SCHEMA auth TO uellix_writer;
+${opts.maskingAuthSchemaGrantPresent ? 'GRANT USAGE ON SCHEMA auth TO uellix_writer;' : '-- THE MASKING GRANT IS DELIBERATELY ABSENT (authority SECTION_8 FIXTURE_DELTA_FROZEN).'}
+${opts.ownerAuthSchemaGrantPresent ? 'GRANT USAGE ON SCHEMA auth TO uellix_owner;' : '-- No owner-side auth grant: MEASURED INERT here (FN-06), present only under M-11.'}
 GRANT EXECUTE ON FUNCTION auth.uid() TO uellix_writer;
 GRANT EXECUTE ON FUNCTION public.current_user_org_ids(), public.current_user_is_super_admin(), public.current_user_role_in_org(uuid) TO uellix_writer, uellix_auditor;
 -- The ordinary ACL floor the runtime writer role needs to exercise T1/T2/T4
@@ -136,6 +239,7 @@ GRANT UPDATE, DELETE ON public.organization_commercial_acceptances TO uellix_wri
 GRANT INSERT ON public.audit_logs TO uellix_writer;
 GRANT SELECT ON public.users, public.organizations, public.organization_members, public.commercial_accounts, public.audit_logs TO uellix_writer;
 `
+}
 
 function unitStatement(unit: (typeof BASELINE_UNITS)[number]): string {
   return `-- BASELINE UNIT ${unit.ordinal}/${BASELINE_UNITS.length}: ${unit.id}\n` + readFileSync(path.join(ROOT, unit.file), 'utf8')
@@ -241,19 +345,31 @@ VALUES
  * BEFORE UPDATE OR DELETE trigger that binds even the owner), so a registry
  * that starts populated can never be emptied again on the same database.
  */
-export function buildBaselineOnlyStatements(): string[] {
+export function buildBaselineOnlyStatements(opts: FixtureOptions = {}): string[] {
   const statements: string[] = []
   statements.push(ROLE_PRELUDE)
   statements.push(readFileSync(path.join(ROOT, 'scripts/rehearsal/local-supabase-shim.sql'), 'utf8'))
   statements.push(G2_PREREQUISITE_SHIM)
   for (const unit of BASELINE_UNITS) statements.push(unitStatement(unit))
-  statements.push(HOSTED_FIDELITY)
+  statements.push(hostedFidelity(opts))
+  // AFTER the units, so the swap replaces what 0072 installed rather than
+  // being overwritten by it. CREATE OR REPLACE keeps the owner, so the only
+  // thing that differs between the arms is the privilege mode.
+  if (opts.functionVariant === 'shipped-invoker') statements.push(shippedInvokerVariantStatement())
   return statements
 }
 
-/** Baseline + tenant/registry fixture, with NO acceptance row yet. */
-export function buildSetupManifest(): SetupManifest {
-  return { statements: [...buildBaselineOnlyStatements(), TENANT_FIXTURE] }
+/**
+ * Baseline + tenant/registry fixture, with NO acceptance row yet.
+ *
+ * THIS IS THE ENTRY POINT THE DEFECT-REPRODUCTION ARMS MUST USE. Its sibling
+ * below seeds an acceptance THROUGH the very trigger under test, so pairing
+ * that sibling with the shipped INVOKER function and no masking grant would
+ * die during SETUP -- and a setup crash proves only that setup failed, never
+ * that the defect reproduced (authority SECTION_22).
+ */
+export function buildSetupManifest(opts: FixtureOptions = {}): SetupManifest {
+  return { statements: [...buildBaselineOnlyStatements(opts), TENANT_FIXTURE] }
 }
 
 /**
@@ -261,8 +377,8 @@ export function buildSetupManifest(): SetupManifest {
  * THROUGH RLS as the accepting admins themselves -- the only way this table is
  * ever legitimately written.
  */
-export function buildSetupManifestWithAcceptances(): SetupManifest {
-  const statements = [...buildBaselineOnlyStatements(), TENANT_FIXTURE]
+export function buildSetupManifestWithAcceptances(opts: FixtureOptions = {}): SetupManifest {
+  const statements = [...buildBaselineOnlyStatements(opts), TENANT_FIXTURE]
 
   // Org C's founding admin accepts, and then loses the role entirely. The
   // acceptance must survive (I-T4-7, HISTORY-former-admin-passes).
