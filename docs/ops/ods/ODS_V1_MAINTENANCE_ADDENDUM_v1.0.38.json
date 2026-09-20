@@ -1,0 +1,473 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.38",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38",
+  "authority_class": "ODS_LINEAGE_AND_PROTECTED_GRANT_ALLOCATION",
+  "materialization_step": "ALLOCATION_ONLY. This artifact allocates ONE ODS lineage position and DECLARES ONE protected-surface grant. It registers nothing, implements nothing, edits no Stage-A authority, and reserves no ordinal of any other kind.",
+  "GRANT_ID": "HPO-ODS-W2-35",
+  "hpo_mission_id": "FIBDB053-STAGE-A-W2-35-ODS-LINEAGE-ALLOCATION-R1",
+  "predecessor_hpo_mission_id": "CV1-FIBDB053-STAGEA-R2-IC",
+  "lineage_predecessor_hpo_mission_id": "CUSTOMER-LIFECYCLE-L1-TRIGGER-REMEDIATION-W2-34-ODS-LINEAGE-ALLOCATION-R1",
+  "PREDECESSOR_AXES_ARE_DISTINCT_AND_BOTH_ARE_RECORDED": {
+    "why_two_keys": "The predecessor relation is TWO different relations in this repository and they do not coincide for this artifact. Recording only one of them would make the other unrecoverable from the artifact alone.",
+    "MISSION_CHAIN_PREDECESSOR": "predecessor_hpo_mission_id. The act immediately preceding THIS one in governed sequence is the independent certification of PR #187 R2 (implementation/authority commit 26459a16, merged into integration as part of PR #187 -- merge commit 89022a9bf22a06276996a5a9214b344916be84aa) -- lane CV1-FIBDB053-STAGEA-R2-IC, CERTIFIED_PASS. That certified authority is FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json (mission_id CV1-FIBDB053-STAGEA-AW), and its own FUTURE_ODS_INPUT section explicitly WITHHOLDS the lineage id and the grant id and defers them to this act -- it is the act that FREEZES the implementation branch and the six protected literals this allocation consumes, and it is the act that UNBLOCKS this one.",
+    "ODS_LINEAGE_PREDECESSOR": "lineage_predecessor_hpo_mission_id. The act immediately preceding THIS one on the ODS LINEAGE axis is the mission that allocated v1.0.37 and declared HPO-ODS-W2-34 (the PG-06 customer-lifecycle L1 trigger remediation lineage allocation). That is a different mission from the mission-chain predecessor above.",
+    "why_they_differ_here": "The lineage axis (v1.0.36 -> v1.0.37 -> v1.0.38) and the governed authority sequence that actually produced this mission's opening (PR #187 FIBDB-053 Stage-A authority, R1 and R2) are two unrelated chains of acts that happen to interleave in the same integration branch. Neither chain is a subsequence of the other.",
+    "THE_CONTROLLER_BLOCK_v1_0_37_DECLARED_IS_ALREADY_DISCHARGED_BEFORE_THIS_MISSION_OPENED": "MEASURED. v1.0.37's own CONTROLLER_SUCCESSOR_RULE.NEXT_LINEAGE_ALLOCATION_BLOCKS blocked v1.0.38 and beyond until the Controller successor act enumerating v1.0.37 integrated. That act is the ODS v1.0.37 Controller successor mission (lane CV1-ODS-V1037-CONTROLLER-SUCCESSOR-IC, PR #194, merge commit d122a90b), which advanced IMMUTABLE_BY_CONVENTION from 47 entries (terminal v1.0.36) to 48 entries (terminal v1.0.37). That merge is an ANCESTOR of this mission's own START_HEAD. This mission therefore opens with the block already discharged, not as an act that discharges it. See CONTROLLER_PREREQUISITE_STATE for the live measurement.",
+    "NEITHER_IS_AN_ALLOCATION": "Naming a predecessor records a relation. It allocates nothing, reopens nothing, and confers no claim on any identifier either predecessor named."
+  },
+  "lane_id": "LANE_CV1_FIBDB053_STAGEA_ODS_ALLOCATION_W",
+  "materialization_date": "2026-09-20",
+  "supersedes": null,
+  "refines": null,
+  "succeeds": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37",
+  "succeeds_note": "Succession on the ODS LINEAGE axis only. v1.0.37 allocated the PG-06 customer-lifecycle L1 trigger remediation line and declared HPO-ODS-W2-34. This artifact neither reopens, edits, widens nor reinterprets it. v1.0.37 remains in force exactly as written; its own declared grant is now LIVE_REGISTERED (a separate later act), which this artifact only reads, never mutates.",
+  "governed_by": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+  "CURRENT_REVISION": "R1",
+  "purpose": "Allocate the ODS lineage position and DECLARE the protected-surface grant required by the certified FIBDB-053 Stage-A execution authority's future implementation node, so that the later implementation writer has a governed grant to consume and can never self-register one.",
+  "scope_note": "Allocation only. The Stage-A implementation itself -- authoring stella_0017b_governed_risk_parameters.sql and its rollback, the hosted and governed package variants, the README update and the checkpoint-a1 corroboration regeneration -- is frozen elsewhere in docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json and is neither restated, amended nor implemented here. This artifact carries the two identifiers and the grant declaration, nothing more.",
+  "AS_OF": {
+    "branch": "codex/fibdb053-stage-a-ods-allocation-r1",
+    "START_HEAD": "89022a9bf22a06276996a5a9214b344916be84aa",
+    "START_TREE": "b94d5c1d69080b13670ff1d69becd47fdc402113",
+    "origin_ref": "origin/integration/commercial-v1",
+    "origin_head_equals_start_head_AT_PRESTATE": true,
+    "working_tree_clean_at_prestate": true,
+    "prestate_gate": "pnpm ods:prestate -- --branch codex/fibdb053-stage-a-ods-allocation-r1 --head 89022a9bf22a06276996a5a9214b344916be84aa --tree b94d5c1d69080b13670ff1d69becd47fdc402113 --clean => PRESTATE_BRANCH=PASS PRESTATE_HEAD=PASS PRESTATE_TREE=PASS PRESTATE_CLEAN=PASS ODS_PRESTATE=PASS.",
+    "FINAL_BASE": "89022a9bf22a06276996a5a9214b344916be84aa"
+  },
+  "PRESTATE_MEASURED": {
+    "method": "git fetch --prune --all, then rev-parse of HEAD, HEAD^{tree} and origin/integration/commercial-v1; directory enumeration for the lineage axis; structural array extraction for the Controller and registry axes; exhaustive per-ref (658 refs over refs/heads and refs/remotes) object-existence and source-content sweep for the collision scan. No figure is inherited from the mission opening, from a predecessor artifact, or from a checkpoint.",
+    "migration_tail": {
+      "CURRENT_APPLIED_REPO_TAIL": "db/migrations/0073_commercial_account_ce3_entitlement_grants.sql",
+      "sql_file_count": 74,
+      "ordinal_range": "0000 through 0073, dense",
+      "journal": "db/migrations/meta/_journal.json holds 74 entries, max idx 73, tail tag 0073_commercial_account_ce3_entitlement_grants",
+      "NOT_ALLOCATED_HERE": "FIBDB-053 Stage-A touches no db/migrations/ file at all -- every one of its six protected literals sits under db/prepared/**. 0074 remains the first free migration ordinal and is left free."
+    },
+    "prepared_state": {
+      "CURRENT_PREPARED_JOURNAL_TAIL": "db/prepared/journal/086_0073_commercial_account_ce3_entitlement_grants.sql",
+      "prepared_journal_file_count": 87,
+      "composition": "1 bootstrap (000_journal_bootstrap.sql) + 86 generated wrappers. Unaffected by this node: none of the six frozen Stage-A literals is a journal wrapper.",
+      "THE_SIX_PROTECTED_LITERALS_DO_NOT_YET_EXIST": "MEASURED. None of the six literals frozen by docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json PROTECTED_WRITE_SET.ordered_literals exists at START_HEAD, EXCEPT db/prepared/README.md, which exists and is shared with six other registered rows (see grant_state and WHY_EXACTLY_THESE_SIX_PATTERNS below). Unlike an in-place amendment, five of the six literals are new files the Stage-A implementation node will CREATE under the grant; the sixth is an existing shared file the node will amend."
+    },
+    "ods_lineage": {
+      "addendum_versions_present": "v1.0.1 through v1.0.37, dense, no gap",
+      "CURRENT_ODS_VERSION_AT_START_HEAD": "1.0.37",
+      "measurement_method": "Directory enumeration of docs/ops/ods/ matched against /^ODS_V1_MAINTENANCE_ADDENDUM_v1\\.0\\.(\\d+)\\.json$/, numeric sort, gap scan across the whole closed interval [min, max]. 37 files, min 1, max 37, zero gaps, zero duplicates.",
+      "NEXT_ODS_LINEAGE_VERSION_DERIVED": "1.0.38",
+      "why_it_is_DERIVED_and_not_inherited": "The dense 1..37 sequence was enumerated at THIS head. The mission opening explicitly declined to name it (FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json FUTURE_ODS_INPUT.explicit_non_allocation.re_derivation_rule) and required fresh re-derivation. It is re-derived here rather than trusted -- and independently cross-checked against v1.0.37's own SC-16 self-check, which already disclosed that v1.0.38 and HPO-ODS-W2-35 appear in its text ONLY inside prohibition and absence semantics, never as an allocation."
+    },
+    "controller_state": {
+      "IMMUTABLE_BY_CONVENTION_length": 48,
+      "IMMUTABLE_BY_CONVENTION_Set_size": 48,
+      "IMMUTABLE_BY_CONVENTION_final_item": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json",
+      "terminal_index_47_is_that_path": true,
+      "first_out_of_range_index_48_is_undefined": true,
+      "v1_0_38_entries_in_the_array": 0,
+      "extraction_method": "The array literal was located by anchoring on the DECLARATION text \"export const IMMUTABLE_BY_CONVENTION: readonly string[] = [\" and closed on the first subsequent \"\\n] as const\" (never the first bare \"]\", which the declaration's own \"string[]\" token would close on prematurely). The count, the Set size, the terminal item and the duplicate scan were all taken from the same single structural extraction.",
+      "composition_measured": "37 ODS_V1_MAINTENANCE_ADDENDUM entries spanning v1.0.1 through v1.0.37, plus 11 non-addendum ODS authority and standard documents. 37 + 11 = 48, and the extraction reported zero duplicates so length equals Set size.",
+      "CONTROLLER_PREREQUISITE_STATE": "DISCHARGED, AND ALREADY DISCHARGED BEFORE THIS MISSION OPENED. v1.0.37's own CONTROLLER_SUCCESSOR_RULE.NEXT_LINEAGE_ALLOCATION_BLOCKS blocked v1.0.38 until a Controller successor act enumerating v1.0.37 integrated. The ODS v1.0.37 Controller successor mission (lane CV1-ODS-V1037-CONTROLLER-SUCCESSOR-IC, merge commit d122a90b) is that act: it advanced IMMUTABLE_BY_CONVENTION from 47 entries (terminal v1.0.36) to 48 entries (terminal v1.0.37). That merge is an ANCESTOR of this mission's own START_HEAD, so the block is discharged at this mission's own opening, not by this mission."
+    },
+    "grant_state": {
+      "PROTECTED_GRANTS_rows_at_START_HEAD": 22,
+      "TAIL_IDENTITY": "HPO-ODS-W2-34, registered by the separate later PG-06 registration act, bound to branch codex/customer-lifecycle-l1-trigger-privilege-remediation-r1, carrying db/migrations/0072_customer_lifecycle_l1_organization_commercial_acceptance.sql and db/prepared/journal/085_0072_customer_lifecycle_l1_organization_commercial_acceptance.sql.",
+      "MOVEMENT_SINCE_THE_LINEAGE_PREDECESSOR": "v1.0.37 measured 21 rows live and DECLARED (not registered) HPO-ODS-W2-34 as a future figure. That registration act landed separately, so 22 is now the LIVE count with W2-34 as the LIVE tail. The figure above is the live enumeration at this head, not the v1.0.37 forward literal read back.",
+      "HIGHEST_ALLOCATED_GRANT_ID": "HPO-ODS-W2-34",
+      "allocated_in": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json",
+      "HOW_THE_NEXT_GRANT_ID_WAS_ACTUALLY_DERIVED": "By enumerating the GRANT_ID key of EVERY docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.N.json in the dense lineage -- the ALLOCATION axis -- taking the numeric maximum of the W2-NN suffix, and adding one. The maximum is 34, carried by v1.0.37. The next free id is therefore HPO-ODS-W2-35.",
+      "THE_REGISTRY_IS_SPARSE_AND_THIS_IS_LOAD_BEARING": "The REGISTRY (scripts/ods-scope.ts PROTECTED_GRANTS) is not the allocation axis. It happens to be DENSE from HPO-ODS-W2-01 through HPO-ODS-W2-34 in this specific census (22 rows drawn from a 34-wide numeric range, several ids such as 04,05,06,10,13,14,15,18,19,22,23,24 never appearing as registered rows), so the registry maximum and the allocation-axis maximum coincide here, but coincidence is not derivation: the binding rule reads the allocation axis (the addenda), never PROTECTED_GRANTS.length or the registry's own tail, precisely because a future lane could allocate an id without ever registering it, exactly as HPO-ODS-W2-34 sat DECLARED_NOT_REGISTERED between the v1.0.37 allocation and its own registration act.",
+      "THE_TAIL_PLUS_ONE_COINCIDENCE_IS_DISCLOSED_AND_IS_STILL_NOT_THE_DERIVATION": {
+        "finding": "Tail-plus-one over the REGISTRY tail (HPO-ODS-W2-34 + 1) yields HPO-ODS-W2-35, the same answer as the allocation-axis derivation, at THIS head.",
+        "why_it_is_still_disclosed": "It coincides here only because the most recently allocated id (v1.0.37's W2-34) also happens to be the most recently registered one, which is an accident of registration timing, not a property of the two axes -- the very same disclosure v1.0.37 made about W2-33/W2-34.",
+        "WHICH_DERIVATION_IS_BINDING": "The allocation-axis maximum over the GRANT_ID keys. The registry-tail coincidence is recorded as corroboration and is explicitly NOT the rule."
+      },
+      "W2_35_STATE_AT_START_HEAD": {
+        "rows_in_PROTECTED_GRANTS_carrying_it": 0,
+        "textual_occurrences_in_scripts_ods_scope_ts": 0,
+        "resolveProtectedGrant_result": "UNDEFINED on codex/fibdb053-stage-a-implementation-r1 and on every other branch, because no row carries the id at all.",
+        "note": "The three figures are measured by three different mechanisms -- structural row extraction, raw substring count over the source text, and the real resolver -- deliberately, so that a defect in any one of them cannot alone produce a false negative."
+      },
+      "NO_EXISTING_GRANT_BINDS_THE_TARGET_BRANCH": {
+        "measured": "ZERO of the 22 registered rows bind the branch codex/fibdb053-stage-a-implementation-r1.",
+        "why_this_is_the_load_bearing_measurement": "resolveProtectedGrant matches the branch by EXACT string equality. A pattern carried by some other row on some other branch cannot authorize anything on this branch, however identical the literal. Five of the six Stage-A literals appear in NO existing row's patterns on any branch; the sixth (db/prepared/README.md) is carried by six existing rows (HPO-ODS-W2-03, W2-08, W2-11, W2-31, W2-32, W2-33), none of which is bound to this branch, so it disambiguates the same way the shared README literal always has in this lineage: by exact branch match, not by pattern uniqueness."
+      },
+      "why_a_NEW_grant_and_not_a_widening_of_an_existing_one": "No existing row binds the target branch. There is nothing to widen: a new grant is the only change that is purely additive."
+    }
+  },
+  "CONTROLLER_SUCCESSOR_RULE": {
+    "requirement": "The NEXT Controller successor act is REQUIRED to enumerate docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json in scripts/ods-controller.ts IMMUTABLE_BY_CONVENTION, taking the THEN-LIVE array length to length + EXACTLY ONE, making v1.0.38 FINAL, and preserving the existing order of every predecessor entry.",
+    "SPECIFIED_BY_ARRAY_STATE": "The requirement above is stated entirely in terms of the ARRAY STATE that act must produce -- a length that is the then-live length plus one, a terminal item that is this artifact path, preserved predecessor order -- and never in terms of a line number, a diff hunk, or a count frozen against THIS tree. The future act measures the live length at its own head; if another lineage member has landed in between, \"plus exactly one\" is relative to what that act measures, not to 48.",
+    "THE_ABSENCE_LITERAL_IS_ADVANCED_BY_THE_SUCCESSOR_NOT_BY_THIS_ACT": "That act must advance the Controller-axis absence literal to the mechanically-next lineage version DERIVED AT ITS OWN HEAD -- not to a version this artifact names. This artifact does not name it, because naming it here would be exactly the pre-allocation the doctrine forbids.",
+    "NO_CONTROLLER_ORDINAL_RESERVED": "YES -- nothing is reserved. This artifact does not name, number, label or otherwise reserve the future Controller successor act. The act is identified only by the array state it must produce.",
+    "IT_MUST_NOT_ALLOCATE_A_LATER_ODS_VERSION": "The Controller successor act enumerates an EXISTING file. It does not create an addendum, does not allocate v1.0.39, and does not declare a grant. Advancing its own absence-control literal to the mechanically-next version is a PROHIBITION, exactly as it is here, and confers no claim on that version.",
+    "SWEEP_BY_PREDICATE_NOT_BY_LINE_NUMBER": {
+      "binding": "The future Controller mission MUST locate every assertion it has to move by PREDICATE, evaluating the suite, never by a remembered line number and never by a diff position recorded in any artifact.",
+      "why": "Line anchors in this lineage have already gone stale more than once, and a stale anchor produces a mutation that lands in a sibling row or lands nowhere, either of which reads as a pass. The predicate is stable across every intervening edit; the line number is not.",
+      "the_predicates_to_sweep": [
+        "every assertion of IMMUTABLE_BY_CONVENTION.length",
+        "every assertion of new Set(IMMUTABLE_BY_CONVENTION).size",
+        "every assertion indexing the terminal entry or the first out-of-range index",
+        "every not.toContain naming an ODS addendum path",
+        "every filter-to-empty over the array",
+        "every source-text sentinel counting occurrences of an addendum path in scripts/ods-controller.ts"
+      ],
+      "NO_LINE_NUMBERS_ARE_RECORDED_BY_THIS_ARTIFACT": "This artifact deliberately records no line number for any assertion in any file, so that no successor can mistake one for an anchor."
+    },
+    "NOT_ALLOCATED_HERE": "This addendum does NOT allocate the next Controller act, does NOT enumerate v1.0.38 in IMMUTABLE_BY_CONVENTION, does NOT edit scripts/ods-controller.ts, and does NOT edit tests/ods/ods-controller.test.ts. All three of those surfaces, plus every other file not named in authorized_changed_paths_this_mission, are byte-unchanged.",
+    "V1_0_38_IS_ON_THE_FILESYSTEM_AND_NOT_IN_THE_ARRAY": "After this artifact is integrated, docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json EXISTS on disk and is ABSENT from IMMUTABLE_BY_CONVENTION. That is the intended and only correct intermediate state, and it is the same state v1.0.37 occupied between its own allocation and its Controller successor act.",
+    "FILESYSTEM_EXISTENCE_AND_CONTROLLER_PROTECTED_STATUS_ARE_DIFFERENT_AXES": {
+      "binding": "Creating the file changes the FILESYSTEM axis. It does not change the CONTROLLER axis. A test that asserts the file exists and a test that asserts the Controller does not enumerate it are asserting different things, and exactly one of them moves in this act.",
+      "why_this_matters_for_the_test_edit": "The lineage-axis sentinels in tests/ods/ods-scope.test.ts must advance because the file now exists. The Controller-axis sentinels in the same file must NOT advance, because the Controller still does not enumerate it. Advancing the second set would assert a Controller state that does not hold."
+    },
+    "NEXT_LINEAGE_ALLOCATION_BLOCKS": [
+      "THE NEXT ODS LINEAGE ALLOCATION (v1.0.39 and beyond), until the next Controller successor act is integrated"
+    ],
+    "WHAT_IS_NOT_BLOCKED": [
+      "The HPO-ODS-W2-35 registration act this artifact declares but does not perform. Registration is a registry-axis act and the Controller array does not gate it.",
+      "The future FIBDB-053 Stage-A implementation, once W2-35 is registered -- subject to its own authority (already frozen and certified) and its own independent certification, neither of which this artifact grants."
+    ],
+    "DECOUPLING_PRESERVED": "The Controller's IMMUTABLE_BY_CONVENTION array gates the NEXT LINEAGE ALLOCATION and nothing else. It does not gate registration, does not gate implementation, and does not gate any act on any other axis."
+  },
+  "ALLOCATION_COLLISION_SWEEP": {
+    "method": "Two independent sweeps, both re-run at THIS head after git fetch --prune --all. (1) A per-ref OBJECT-EXISTENCE sweep over all 658 refs returned by git for-each-ref over refs/heads and refs/remotes: git cat-file -e <ref>:docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json and, separately, a source inspection of <ref>:scripts/ods-scope.ts for a row literally carrying authorityId: 'HPO-ODS-W2-35' or any of the six candidate literals. (2) A tracked-file CONTENT sweep at this head classifying every textual occurrence of each candidate.",
+    "why_the_two_sweeps_are_both_needed": "The content sweep sees text at THIS head only and cannot see a sibling candidate branch. The per-ref sweep sees every ref but sees only the allocating FORM -- a blob at the addendum path, a registry row with the id. Together they close both \"someone else already allocated it elsewhere\" and \"something at this head is an allocation I misread as prose\".",
+    "SWEEP_REF": "89022a9bf22a06276996a5a9214b344916be84aa plus every ref reachable from git for-each-ref over refs/heads and refs/remotes (658 refs), re-fetched with git fetch --prune --all immediately before the sweep, and repeated immediately before commit.",
+    "CANDIDATE_1_ODS_v1_0_38": {
+      "filesystem_at_START_HEAD": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json ABSENT.",
+      "every_ref": "ABSENT from EVERY one of the 658 refs. The exhaustive per-ref cat-file sweep (git cat-file -e <sha>:docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json over every branch/remote tip) returned zero hits, and a full git log --all over that path plus a full-history tree walk both returned zero commits that ever touched it.",
+      "no_addendum_carries_the_version_key": "Every docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.N.json at this head was parsed and none carries version === \"1.0.38\".",
+      "classification_of_every_textual_occurrence": "NON-ALLOCATION. Every textual occurrence of the string \"v1.0.38\" at this head lives inside docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json (its own forward prohibition/absence semantics, explicitly labelled PROHIBITION_NOT_ALLOCATION in its own NO_PREALLOCATION block and confirmed clear by its own SC-16 self-check) and tests/ods/ods-scope.test.ts (absence sentinels, dense-maximum forward pins and the corpus collision sweep). Not one of them is a file at the addendum path or a version key.",
+      "ZERO_PRIOR_ALLOCATION": "No occurrence is an allocation. This artifact is the first."
+    },
+    "CANDIDATE_2_HPO_ODS_W2_35": {
+      "rows_in_PROTECTED_GRANTS": 0,
+      "textual_occurrences_in_scripts_ods_scope_ts": 0,
+      "every_ref": "UNREGISTERED on EVERY one of the 658 refs. The exhaustive per-ref source sweep of scripts/ods-scope.ts for a row carrying the id returned zero hits.",
+      "no_addendum_carries_the_GRANT_ID_key": "Every addendum at this head was parsed and none carries GRANT_ID === \"HPO-ODS-W2-35\".",
+      "resolution": "resolveProtectedGrant('HPO-ODS-W2-35', <any branch>) is UNDEFINED, because no row carries the id.",
+      "classification_of_every_textual_occurrence": "NON-ALLOCATION. Occurrences live in v1.0.37 (NO_PREALLOCATION prohibition semantics and self-check prose) and tests/ods/ods-scope.test.ts (registry-axis absence sentinels and the corpus sweep). None is a registry row.",
+      "ZERO_PRIOR_ROW": "No registry row carries it, at this head or at any ref. This artifact ALLOCATES it and still does not register it."
+    },
+    "CANDIDATE_3_THE_SIX_PROTECTED_LITERALS": {
+      "measured_present_or_absent": "Five of the six literals do NOT yet exist at START_HEAD: db/prepared/stella_0017b_governed_risk_parameters.sql, db/prepared/stella_0017b_rollback.sql, db/prepared/hosted/stella_0017b_governed_risk_parameters.hosted.sql, db/prepared/hosted/governed/stella_0017b_governed_risk_parameters.governed.sql and db/prepared/checkpoint-a1/corroboration.sql are all ABSENT. The sixth, db/prepared/README.md, EXISTS (it is the shared package-order document every hosted package registers in).",
+      "no_row_carries_five_of_the_six_literals": "Measured by exact-string search across every patterns array of all 22 PROTECTED_GRANTS rows at this head: zero rows carry any of the five absent literals, on any branch.",
+      "the_shared_README_literal_is_disambiguated_by_branch": "db/prepared/README.md is carried by six existing rows (HPO-ODS-W2-03, W2-08, W2-11, W2-31, W2-32, W2-33), none of which binds codex/fibdb053-stage-a-implementation-r1. resolveProtectedGrant matches by exact branch equality, so none of those six rows can ever authorize anything on this branch, and this new row authorizes nothing on theirs.",
+      "no_wildcard_is_used": "docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json PROTECTED_WRITE_SET.no_wildcard_rule explicitly REFUSES db/prepared/** as a grant for this node, because it would admit the applied stella_0017 package the baseline forbids editing. This allocation consumes that refusal: all six patterns are exact literals."
+    },
+    "CANDIDATE_4_THE_NEXT_MIGRATION_ORDINAL": {
+      "census": "db/migrations/ is dense 0000..0073 at START_HEAD, 74 files, journal max idx 73.",
+      "next_free": "0074.",
+      "NOT_ALLOCATED_BY_THIS_ARTIFACT": "The ordinal is named here ONLY so that a reader can see it was measured and deliberately left free. This artifact allocates no migration ordinal, reserves none, and implies none. FIBDB-053 Stage-A touches no db/migrations/ file at all."
+    },
+    "CANDIDATE_5_THE_STILL_UNCONSUMED_W2_33_AND_W2_34_GRANTS": {
+      "finding": "HPO-ODS-W2-33 and HPO-ODS-W2-34 are both LIVE_REGISTERED and bound to their own respective implementation branches. Their declared packages remain at whatever completion state their own independent implementation lanes have reached; this allocation takes no position on either.",
+      "why_it_is_not_a_collision": "Collision is determined by branch AND protected literals/scope AND allocation semantics, not by mere liveness. Neither W2-33's branch nor W2-34's branch is codex/fibdb053-stage-a-implementation-r1, and neither of their pattern sets shares any literal with the six Stage-A literals except the universally shared db/prepared/README.md, which disambiguates by branch as stated in CANDIDATE_3. Zero collision on both axes.",
+      "allocation_axis_is_unaffected": "Neither grant's liveness changes the allocation-axis maximum (still 34, carried by v1.0.37) or the next free lineage version (still 38, the dense successor of 37)."
+    },
+    "CANDIDATE_6_A_COMPETING_DERIVATION_ON_THE_SAME_TWO_IDS": {
+      "method": "The same broad per-ref sweep used for Candidates 1 and 2 (grep for the literal strings \"v1.0.38\" and \"HPO-ODS-W2-35\" across all 658 refs) additionally classifies every OTHER file that mentions either string, to catch a draft authority elsewhere deriving the same pair as its own \"derived_next\" expectation.",
+      "finding": "NO SUCH CANDIDATE EXISTS AT THIS HEAD. Every textual occurrence of either string across all 658 refs resolves to v1.0.37's own forward-prohibition prose or to tests/ods/ods-scope.test.ts's absence sentinels, replicated only across refs carrying an equal-or-earlier base state. No docs/ops/** authority document at any ref, other than this one, names v1.0.38 or HPO-ODS-W2-35 as an expected or derived-next identifier.",
+      "disposition": "No competing-allocation declaration is required for this act."
+    },
+    "CANDIDATE_7_SIBLING_BRANCH_ALLOCATING_THE_SAME_PAIR": {
+      "measured": "git for-each-ref over refs/heads and refs/remotes was searched for any branch naming fibdb053, stage-a or ods-alloc. Four matches: codex/fibdb053-runtime-companion-authority-r1, codex/fibdb053-runtime-companion-implementation-r1, codex/fibdb053-stage-a-authority-r1 (the authority branch this act's controlling authority was itself written on) and this mission's own branch codex/fibdb053-stage-a-ods-allocation-r1. None of the other three carries an ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json blob or a PROTECTED_GRANTS row for HPO-ODS-W2-35 (confirmed by the per-ref sweeps in Candidates 1 and 2).",
+      "disposition": "No sibling branch allocates this pair. This mission's own branch is the only one carrying the new addendum, and only after this commit."
+    }
+  },
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-35",
+    "branch": "codex/fibdb053-stage-a-implementation-r1",
+    "patterns": [
+      "db/prepared/stella_0017b_governed_risk_parameters.sql",
+      "db/prepared/stella_0017b_rollback.sql",
+      "db/prepared/hosted/stella_0017b_governed_risk_parameters.hosted.sql",
+      "db/prepared/hosted/governed/stella_0017b_governed_risk_parameters.governed.sql",
+      "db/prepared/README.md",
+      "db/prepared/checkpoint-a1/corroboration.sql"
+    ],
+    "pattern_count": 6,
+    "registration_status": "DECLARED_NOT_REGISTERED",
+    "THIS_IS_A_DECLARATION_AND_NOT_A_REGISTRY_ROW": "BINDING. The object above is a DECLARATION recorded in authority. It is NOT a row in scripts/ods-scope.ts PROTECTED_GRANTS, and scripts/ods-scope.ts is byte-unchanged by this mission. Until a SEPARATE governed registration act adds the row, resolveProtectedGrant('HPO-ODS-W2-35', <any branch>) stays UNDEFINED and the grant authorizes nothing at all.",
+    "ORDER_IS_BINDING": "The six patterns are stated in the order above, which is the exact order frozen by docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json PROTECTED_WRITE_SET.ordered_literals, and MUST be registered in that order. A registration that reverses it has not registered what was declared.",
+    "BRANCH_BINDING_IS_EXACT": "The bound branch is the exact string codex/fibdb053-stage-a-implementation-r1. resolveProtectedGrant matches by exact string equality on the branch, so any other spelling -- a prefix, a suffix, a differing case, a trailing space, the sibling '-authority-' or '-ods-allocation-' branches this authority and this allocation were themselves written on -- resolves to nothing.",
+    "BRANCH_NAME_IS_CONSUMED_NOT_CHOSEN_HERE": "This allocation does NOT choose the branch name. It is frozen as FUTURE_ODS_INPUT.EXPECTED_IMPLEMENTATION_BRANCH in docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json and was read from that live file at this head and reproduced byte-identically. Choosing a different name here would silently detach the grant from the node it exists to serve.",
+    "THE_BRANCH_IS_NOT_CREATED_BY_THIS_ACT": "The branch string is BOUND. The ref is NOT created, NOT moved and NOT modified by this mission. Measured ABSENT at every one of the 658 swept refs. Binding a grant to a branch name that does not yet exist is the normal and correct shape: the grant resolves only when a gate runs FROM that branch, and until the implementation lane creates it, the grant resolves nowhere.",
+    "THE_GATE_READS_THE_BRANCH_FROM_THE_WORKING_DIRECTORY_NOT_FROM_A_FLAG": "Running the scope gate from a detached HEAD, or from a worktree on any other branch, resolves NO grant regardless of what --protected-authority names. There is no flag and no environment variable that overrides the branch the gate reads from the working directory. The implementation lane must therefore actually be on the bound branch.",
+    "grant_does_not_replace_allow": "A resolved protected grant authorizes a protected path ONLY in combination with the ordinary --allow for that same path. The grant removes the PROTECTED violation; it does not remove the UNAUTHORIZED classification. The implementation writer must supply both --protected-authority HPO-ODS-W2-35 and an exact --allow for each of the six literals.",
+    "ALL_SIX_PATTERNS_NAME_GENUINELY_PROTECTED_PATHS": "MEASURED. DEFAULT_PROTECTED_PATTERNS in scripts/ods-scope.ts contains db/prepared/**, and each of the six literals sits underneath it. None is a path that would have passed without a grant, so none of the six is decorative.",
+    "WHY_EXACTLY_THESE_SIX_PATTERNS_AND_NO_SEVENTH": {
+      "method": "The six literals are FROZEN by docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json PROTECTED_WRITE_SET.ordered_literals. They were re-read from the live file at this head rather than copied from any summary, and each was independently re-justified as necessary.",
+      "PATTERNS_1_TO_4_the_stella_0017b_package_variants": {
+        "patterns": [
+          "db/prepared/stella_0017b_governed_risk_parameters.sql",
+          "db/prepared/stella_0017b_rollback.sql",
+          "db/prepared/hosted/stella_0017b_governed_risk_parameters.hosted.sql",
+          "db/prepared/hosted/governed/stella_0017b_governed_risk_parameters.governed.sql"
+        ],
+        "necessary": true,
+        "why": "PROTECTED_WRITE_SET.derivation_of_literals_1_to_4 states these are FROZEN, not chosen by the allocator: FIB:387-391 enumerates the four artifacts verbatim as replicating the stella_0017 set exactly, and WAVE3_AUTHORITY_v1.0.0.json's FIBDB053_STAGE_A_CONTRACT.required_artifacts.paths repeats the same four. A package missing the hosted or governed variant is incomplete, not merely unpolished.",
+        "a_LITERAL_and_not_a_glob": "Each pattern is an exact file path. None contains a wildcard, so together they authorize only these four new files and cannot drift to any other stella_0017b* or stella_00* file."
+      },
+      "PATTERN_5_db_prepared_README": {
+        "pattern": "db/prepared/README.md",
+        "necessary": true,
+        "why": "The package-order document that every hosted package registers in. Adding stella_0017b requires updating it, exactly as every prior stella_hosted_* package registration has.",
+        "it_IS_shared_with_six_other_registered_grants": "MEASURED. Unlike patterns 1-4 and 6, db/prepared/README.md is carried by six existing rows (HPO-ODS-W2-03, W2-08, W2-11, W2-31, W2-32, W2-33). Sharing the literal grants nothing extra: resolveProtectedGrant still requires an EXACT branch match, so none of those six rows authorizes anything on codex/fibdb053-stage-a-implementation-r1, and this row authorizes nothing on theirs."
+      },
+      "PATTERN_6_the_checkpoint_a1_corroboration": {
+        "pattern": "db/prepared/checkpoint-a1/corroboration.sql",
+        "necessary": true,
+        "why": "PROTECTED_WRITE_SET.derivation_of_literals_5_and_6 derives this EMPIRICALLY from the nearest mechanical precedent (the most recent act that appended a package to the governed chain) rather than from inference: appending stella_0017b to the CHECKPOINT A1 witness registry requires regenerating this corroboration file, or the A1 coherence control would go stale against the new package.",
+        "removing_it": "The implementer would have to leave CHECKPOINT A1 unable to witness stella_0017b's installation, or take an unauthorized path, and the scope gate would fail on the file.",
+        "it_is_NOT_shared_with_any_other_registered_grant": "MEASURED. Zero of the 22 existing rows carry this literal on any branch, so there is no disambiguation question here at all -- it is authorized by W2-35 or by nothing, on any branch."
+      },
+      "NO_SEVENTH_PATTERN_IS_JUSTIFIED": {
+        "db_prepared_wildcard": "NOT INCLUDED, and EXPLICITLY REFUSED by the controlling authority's PROTECTED_WRITE_SET.no_wildcard_rule: db/prepared/** would authorize editing every prepared unit in the repository, including the APPLIED stella_0017 package the baseline forbids editing (FIB:399, FIB:601).",
+        "db_prepared_journal_wildcard_or_wrapper": "NOT INCLUDED. This node introduces no migration and consumes no journal wrapper; db/prepared/journal/** is untouched by the Stage-A implementation and is not a pattern of this grant.",
+        "the_domain_note_four_file_undercounted_list": "NOT USED. WAVE3_AUTHORITY_v1.0.0.json's FUTURE_ODS_NEEDS_SYMBOLIC.narrowest_grant describes 'four files under db/prepared/** and db/prepared/hosted/**, plus one non-protected edit' -- a DOMAIN-level note that undercounts the protected surface by two, per the controlling authority's own F-053-3 finding (CLOSED BY THIS ARTIFACT'S CONTROLLING AUTHORITY via its PROTECTED_WRITE_SET). This allocation consumes the six-literal PROTECTED_WRITE_SET, never the four-file note.",
+        "test_and_fixture_files": "NOT INCLUDED. Any test, fixture or documentation file the Stage-A implementation lane needs is not a protected surface at all and remains an ordinary allow for that lane.",
+        "db_migrations_or_db_baseline": "NOT INCLUDED. The node touches neither."
+      }
+    },
+    "NO_DB_PREPARED_WIDENING": "BINDING. The protected-surface patterns are six exact literals -- NEVER a directory glob, never a prefix glob, never a family glob.",
+    "ZERO_WILDCARD_CHARACTERS": "All six patterns are exact file literals. None contains '*', '?', '[' or any other glob metacharacter. This is asserted rather than assumed because a single metacharacter would silently widen the grant across the whole prepared surface -- precisely what the controlling authority's no_wildcard_rule forbids.",
+    "EXPLICITLY_NOT_AUTHORIZED_BY_THIS_GRANT": [
+      "db/prepared/**",
+      "db/prepared/journal/**",
+      "db/prepared/stella_0017_*",
+      "db/prepared/stella_0017.sql",
+      "db/prepared/stella_0017_rollback.sql",
+      "db/migrations/**",
+      "db/migrations/0074*",
+      "db/baseline/**",
+      "docs/ops/fib/**",
+      "docs/ops/pc01b/**",
+      "docs/ops/im01b/**",
+      "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"
+    ],
+    "TWO_DIFFERENT_PROHIBITIONS_ARE_NOT_TO_BE_CONFLATED": {
+      "what_the_list_above_means": "EXPLICITLY_NOT_AUTHORIZED_BY_THIS_GRANT names paths that the FUTURE implementation lane may not write UNDER W2-35. It is a statement about the reach of the grant.",
+      "what_it_does_not_mean": "It is NOT this mission's write-set ceiling. This mission writes two paths and neither appears in that list, because neither is protected at all."
+    },
+    "UNPROTECTED_SURFACES_THE_IMPLEMENTATION_NODE_WILL_ALSO_TOUCH": {
+      "status": "INFORMATIVE, NOT A GRANT. The paths below are NOT protected, so they need ordinary --allow entries from the implementation lane and cannot be authorized by any grant -- including this one.",
+      "expected": [
+        "docs/** files belonging to the Stage-A implementation node",
+        "test and fixture files the implementation lane derives at its own head, per docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json ORDINARY_WRITE_SET"
+      ],
+      "THE_EXACT_SET_IS_DELIBERATELY_NOT_FROZEN": "The implementation lane derives its own ordinary allow-set at its own head, per the controlling authority's ORDINARY_WRITE_SET. Freezing it here would either over-authorize or force a needless amendment.",
+      "NOT_AN_AUTHORIZATION": "This list authorizes nothing. It exists so that a reader does not mistake the six protected literals for the whole write set of the future node."
+    },
+    "TESTS_AND_DOCS_REMAIN_ORDINARY_ALLOWS": "BINDING. No test file and no documentation file is a protected pattern of this grant. During implementation they are ordinary allows. Adding a test or doc path to a protected grant would misclassify an unprotected surface and would make the grant appear to authorize more than the protected surface actually requires.",
+    "why_existing_grants_cannot_be_reused": {
+      "determination": "MEASURED AT THIS HEAD by structural extraction of all 22 rows and inspection of their branch bindings and patterns.",
+      "rows_bound_to_the_target_branch": 0,
+      "consequence": "There is no existing grant on this branch to reuse, widen or rebranch. Every one of the 22 rows resolves to nothing on codex/fibdb053-stage-a-implementation-r1.",
+      "rows_carrying_any_of_the_five_non_README_literals": 0,
+      "no_existing_grant_is_reused_widened_rebranched_or_amended": "No existing registered grant is reused, widened, rebranched or amended by this artifact. scripts/ods-scope.ts is byte-unchanged."
+    }
+  },
+  "ALLOCATION_ONLY": {
+    "binding": "This artifact is ALLOCATION_ONLY. It performs exactly two allocations and nothing else.",
+    "IT_DOES": [
+      "Allocate the ODS lineage position v1.0.38.",
+      "Declare the protected grant HPO-ODS-W2-35."
+    ],
+    "IT_DOES_NOT": [
+      "Register HPO-ODS-W2-35. scripts/ods-scope.ts is not edited and no registry row is added, removed or altered.",
+      "Author, create or edit db/prepared/stella_0017b_governed_risk_parameters.sql, its rollback, its hosted or governed variants, db/prepared/README.md or db/prepared/checkpoint-a1/corroboration.sql.",
+      "Create, move or modify the branch codex/fibdb053-stage-a-implementation-r1.",
+      "Modify scripts/ods-controller.ts, tests/ods/ods-controller.test.ts, or the Controller authority.",
+      "Enumerate v1.0.38 in IMMUTABLE_BY_CONVENTION.",
+      "Mutate PROTECTED_GRANTS.",
+      "Edit docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json, docs/ops/wave3/FIBDB053_STAGE_A_TEST_MANIFEST_v1.0.0.json, or any other Stage-A authority or manifest.",
+      "Create, reserve or extend any migration ordinal, baseline unit, journal wrapper or prepared-package ordinal beyond the six frozen literals.",
+      "Create the v1.0.39 addendum or allocate the v1.0.39 position.",
+      "Allocate HPO-ODS-W2-36 or any later grant id.",
+      "Apply any SQL, mutate any staging or hosted environment, or touch any Real-PostgreSQL substrate."
+    ],
+    "REGISTRATION_REMAINS_A_SEPARATE_GOVERNED_ACT": "The allocation half and the registration half are deliberately separate acts with separate certifications. This is the same separation the entire v1.0.9..v1.0.37 lineage has observed, and it exists so that the writer who benefits from a grant is never the writer who grants it.",
+    "THE_SEPARATION_IS_VERIFIED_AT_THE_CANDIDATE_HEAD_NOT_ONLY_INTENDED": "After materialization, scripts/ods-scope.ts is byte-identical to its blob at 89022a9bf22a06276996a5a9214b344916be84aa, PROTECTED_GRANTS still holds 22 rows with tail HPO-ODS-W2-34, and the string HPO-ODS-W2-35 occurs zero times in that file. The separation is measurable at the candidate, not merely asserted here."
+  },
+  "IMPLEMENTATION_SEQUENCING": {
+    "source": "CONSUMED from docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json -- its own FUTURE_ODS_INPUT, PROTECTED_WRITE_SET and IMPLEMENTATION_NODE_PREFLIGHT_CONDITIONS -- and from the live repository state at this head. Not invented by this artifact.",
+    "WHERE_THIS_ACT_SITS": "The controlling authority requires, before implementation may open: an independent certification of the authority itself (CERTIFIED_PASS, lane CV1-FIBDB053-STAGEA-R2-IC), and a governed ODS lineage position and protected grant available for the node. The first precondition is satisfied at this head. This act supplies the remaining precondition -- the lineage position and the grant declaration -- and supplies ONLY that.",
+    "THE_NEXT_ACT_AFTER_THIS_ONE": "Independent certification of this allocation candidate, then merge. After that, the HPO-ODS-W2-35 REGISTRATION act -- a separate governed mission that adds one row to PROTECTED_GRANTS and is separately certified.",
+    "THE_ORDER_AFTER_REGISTRATION": [
+      "1. HPO-ODS-W2-35 registration is independently certified and merged into integration/commercial-v1.",
+      "2. The implementation lane creates and works on codex/fibdb053-stage-a-implementation-r1.",
+      "3. db/prepared/stella_0017b_governed_risk_parameters.sql and its rollback, hosted and governed variants are authored, db/prepared/README.md is updated, and db/prepared/checkpoint-a1/corroboration.sql is regenerated, under the registered grant, with --protected-authority HPO-ODS-W2-35 and an exact ordinary --allow for each of the six literals.",
+      "4. The Stage-A implementation passes its own independent certification, including whatever real-PostgreSQL contract and mutation contract its own authority specifies, and closes any OPEN_FINDINGS the controlling authority marks as blocking for the implementation node (F-053-1, F-053-2).",
+      "5. The implementation is integrated."
+    ],
+    "NOT_PERFORMED_BY_THIS_ACT": "NONE of the five acts above is performed, authorized or pre-approved by this artifact. Each requires its own governed opening and its own certification. Listing them records the sequence; it does not schedule or permit them."
+  },
+  "MIGRATION_ORDINAL_DISPOSITION": {
+    "allocated": false,
+    "reserved": false,
+    "implied": false,
+    "status": "NO_MIGRATION_ORDINAL_IS_ALLOCATED_RESERVED_OR_IMPLIED_BY_THIS_ARTIFACT",
+    "CURRENT_MAX_MIGRATION_ORDINAL_AT_THIS_HEAD": "0073",
+    "the_first_free_ordinal_is_0074_and_it_is_NOT_ALLOCATED_HERE": "Migration 0074 is the mechanically next free ordinal at this head. It is named ONLY so that a reader can see it was measured and left free. No migration file is created, no ordinal is reserved, no journal entry is added, and nothing in this artifact gives any future mission a claim on 0074.",
+    "why_this_node_needs_no_migration_ordinal_at_all": "FIBDB-053 Stage-A is a db/prepared/-only node: all six protected literals sit under db/prepared/**, and none is a db/migrations/ file. This artifact takes no independent position on that vehicle choice -- it is consumed as controlling, not re-derived here."
+  },
+  "NO_PREALLOCATION": {
+    "binding": "Beyond the ONE lineage position and the ONE grant this artifact allocates, NOTHING is allocated, reserved or implied. Naming an identifier inside a prohibition is not an allocation of it -- that is the doctrine v1.0.33 established and every successor, including v1.0.37, has observed.",
+    "MIGRATION_ORDINAL_ALLOCATED": "NO",
+    "HOSTED_ORDINAL_ALLOCATED": "NO",
+    "PREPARED_ORDINAL_ALLOCATED": "NO. This node's six literals are exact filenames FROZEN by the controlling authority, not a numbered ordinal family this act chooses or advances.",
+    "NEXT_CONTROLLER_ACT_ALLOCATED": "NO",
+    "NO_CONTROLLER_ORDINAL_RESERVED": "YES -- nothing reserved, and the successor act is not named by any label or numeral.",
+    "GRANT_REGISTERED": "NO",
+    "STAGE_A_AUTHORED": "NO",
+    "IMPLEMENTATION_BRANCH_CREATED": "NO. The bound branch string is bound; the ref is neither created nor moved.",
+    "STAGING_MUTATED": "NO",
+    "NEXT_ODS_LINEAGE_VERSION_AFTER_THIS_ONE": {
+      "value": "ODS v1.0.39",
+      "classification": "PROHIBITION_NOT_ALLOCATION",
+      "derivation": "Derived mechanically from the live lineage axis at this head -- dense 1..37, this act adds 38, so the next position is 39. It is stated so that the corpus collision sweep in the test suite has a correct forward disjunct.",
+      "NO_v1_0_39_ARTIFACT_IS_CREATED": "BINDING. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json is NOT created by this act and does not exist at the candidate head.",
+      "it_is_also_BLOCKED_independently": "Beyond not being allocated, v1.0.39 is BLOCKED until the next Controller successor act integrates -- see CONTROLLER_SUCCESSOR_RULE.NEXT_LINEAGE_ALLOCATION_BLOCKS. Two independent reasons, neither of which is a reservation."
+    },
+    "NEXT_PROTECTED_GRANT_AFTER_THIS_ONE": {
+      "value": "HPO-ODS-W2-36",
+      "classification": "PROHIBITION_NOT_ALLOCATION",
+      "derivation": "Derived from the LIVE allocation axis by the same method used for this artifact's own id: numeric maximum of the GRANT_ID key across the dense addendum lineage, which becomes 35 once this artifact exists, plus one.",
+      "WHY_IT_IS_NAMED_AT_ALL": "Only because the repository corpus collision sweep asserts that no addendum carries the NEXT unallocated version or the NEXT unallocated grant id. That sweep needs a forward value to be non-vacuous. Supplying it is the whole reason the identifier appears.",
+      "REGISTRATION_AXIS_IS_NOT_ADVANCED_BY_THIS_ACT": "BINDING AND LOAD-BEARING. The existing registry-axis absence controls in tests/ods/ods-scope.test.ts are pinned to HPO-ODS-W2-35 and remain TRUE throughout this lane, because W2-35 is DECLARED and NOT REGISTERED. This artifact does NOT advance any registry-axis sentinel from W2-35 to W2-36, and the mission that authored it does not either. That advance belongs to the later REGISTRATION act, and performing it here would assert that W2-35 is registered when it is not.",
+      "the_two_sentinel_axes_are_distinct": "The LINEAGE axis sentinel advances when a FILE is created. The REGISTRY axis sentinel advances when a ROW is added. This act creates a file and adds no row, so exactly one of the two axes moves."
+    },
+    "explicitly_not_allocated": [
+      "ODS v1.0.39",
+      "HPO-ODS-W2-36",
+      "migration ordinal 0074 or any other migration ordinal",
+      "any hosted ordinal",
+      "any prepared package ordinal beyond the six frozen literals",
+      "any migration tag",
+      "any migration slug",
+      "any baseline unit index",
+      "any journal wrapper prefix",
+      "any second protected grant",
+      "the next Controller successor act, by any label or numeral",
+      "the branch codex/fibdb053-stage-a-implementation-r1 as a ref",
+      "any authoring of db/prepared/stella_0017b_governed_risk_parameters.sql or any of its rollback, hosted or governed variants",
+      "any regeneration of db/prepared/checkpoint-a1/corroboration.sql",
+      "the HPO-ODS-W2-35 registration act"
+    ]
+  },
+  "FILESYSTEM_SENTINEL_DISPOSITION": {
+    "why_this_section_exists": "This act modifies one existing file, and the reason must be stated in terms of which predicates the new artifact falsifies -- not in terms of a diff.",
+    "PRESTATE": "tests/ods/ods-scope.test.ts carries the live LINEAGE-axis sentinels for this position: assertions that docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json does NOT exist, a dense-maximum pin at 37, and a corpus collision sweep asserting that no addendum carries version 1.0.38 or GRANT_ID HPO-ODS-W2-35. Creating this artifact makes every one of them FALSE.",
+    "THE_RED_POPULATION_IS_MEASURED_NOT_INHERITED": "BINDING METHOD. This artifact is materialized FIRST and the existing suite is run against it UNCHANGED, so that the set of controls the new lineage member actually breaks is OBSERVED rather than predicted from a read-only opening. Predicting it is unreliable in this suite: the lineage axis is carried by at least three different predicate shapes -- a bare existsSync, a dense-maximum pin with no path literal, and a JSON corpus scan re-derived from a live directory read -- and a textual sweep for the path literal alone is blind to the latter two.",
+    "WHY_THEY_MUST_MOVE": "There is no way to allocate this lineage position without falsifying them. Leaving them would leave the suite red; deleting them would remove the only mechanism that catches an over-allocation.",
+    "POSTSTATE": "Each existence assertion becomes a POSITIVE EXISTENCE PROOF: existsSync of the v1.0.38 path is TRUE. The predecessor existence proof for v1.0.37 is RETAINED alongside it in every case, so each pair reads as an advance rather than a replacement, and a deletion of either file is caught. The dense maximum advances from 37 to 38. The corpus scan is advanced to the NEXT unallocated pair -- version 1.0.39 and HPO-ODS-W2-36 -- which preserves its exact shape and its exact purpose while making it true again.",
+    "THE_CORPUS_SCAN_IS_ADVANCED_NOT_DELETED": "BINDING. The stray-copy predicate is the only control that would catch a second file carrying this version, or an addendum that quietly carries the next grant id. Deleting it to obtain a green would remove the control entirely. It is advanced, both disjuncts together, and remains a scan over every addendum in the directory.",
+    "THE_MECHANICALLY_NEXT_ABSENCE_SENTINEL_IS_ADDED": "existsSync of docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.39.json is asserted FALSE. Without it the lineage axis would carry only positive assertions and a future over-allocation would pass unnoticed.",
+    "V1_0_39_IS_NOT_THEREBY_ALLOCATED": "Naming v1.0.39 inside an ABSENCE assertion is a PROHIBITION, never an allocation -- the identical form v1.0.37 used when it named v1.0.38. An assertion that something does not exist cannot be a claim on it.",
+    "THE_HISTORICAL_FROZEN_ASSERTIONS_ARE_LEFT_BYTE_UNCHANGED": {
+      "binding": "Assertions that record what was true at a PREDECESSOR head -- the historical evidence blocks belonging to earlier lanes, and every read of a frozen addendum's own JSON fields (its own succeeds/NO_PREALLOCATION/self_check literals) -- are left byte-unchanged even where a live re-reading would now differ.",
+      "why": "They are HISTORICAL assertions about a past state, not live assertions about the current one. Advancing them would rewrite evidence rather than advance a sentinel.",
+      "the_distinction_that_matters": "A live assertion reads the repository (the filesystem, PROTECTED_GRANTS, or a live readdirSync of the corpus) as it is now; a historical assertion pins what a named past act's OWN frozen document says about itself. Only the first kind moves. Live corpus-scan tests that call readdirSync(docs/ops/ods) at run time and derive a dense-maximum or a stray-copy predicate from it are LIVE, even when they live inside a describe block named after an older lineage member, because the directory they read is the real one and now contains this artifact too."
+    },
+    "REGISTRATION_AXIS_SENTINELS_ARE_NOT_TOUCHED": "Every existing control asserting that HPO-ODS-W2-35 is absent from PROTECTED_GRANTS, resolves nowhere, and has zero textual occurrences in scripts/ods-scope.ts remains TRUE and is left exactly as it is. This act allocates the id; it does not register it, so none of those controls changes truth value.",
+    "THE_CONTROLLER_AXIS_SENTINELS_ARE_NOT_TOUCHED_EITHER": "The assertions that scripts/ods-controller.ts does NOT enumerate v1.0.38 remain TRUE and are left exactly as they are. The Controller is byte-unchanged by this act.",
+    "NO_SECOND_LIVE_COUNT_GUARD_IS_INTRODUCED": {
+      "binding": "This act does NOT add an assertion that derives a forward grant count from the live PROTECTED_GRANTS array. The forward figure 23 is pinned as a LITERAL in this artifact and, where the test suite refers to it, as a literal there too.",
+      "why": "A second live-derived count guard would go RED the moment the registration act adds its row, and would have to be found and advanced by a mission that has no reason to look for it. A literal goes red only where it is meant to.",
+      "the_transfer_belongs_to_the_REGISTRATION_act": "The atomic handover of the live-count guard -- retiring the old live figure and installing the new one in one act -- belongs to the registration mission. Performing any part of it here would assert a registry state that does not hold."
+    },
+    "THE_FROZEN_DECLARED_COUNT_FIGURES_DO_NOT_PRETEND_REGISTRATION": "PROTECTED_GRANTS_COUNT_BEFORE and PROTECTED_GRANTS_COUNT_AFTER are both 22 and both describe the LIVE registry, which this act does not change. The figure 23 is explicitly labelled as what a FUTURE registration would produce and is not a claim about any present state."
+  },
+  "MINIMALITY": {
+    "claim": "This is the minimum allocation that lets the certified FIBDB-053 Stage-A implementation node proceed, and no more.",
+    "one_lineage_ordinal": "v1.0.38. A successor WITHIN the v1.0.37 lineage was considered and REJECTED: v1.0.37 is a frozen, integrated allocation for a different node and a different grant, and amending it would rewrite closed evidence to save one file.",
+    "one_grant": "HPO-ODS-W2-35. A second grant was considered and REJECTED: all six patterns are reachable from one branch binding, so one grant covers the whole protected surface of the node.",
+    "six_patterns": "All six are frozen by the controlling authority's PROTECTED_WRITE_SET and each was re-verified as necessary and non-redundant at THIS head.",
+    "two_written_paths": "The write set is EXACTLY TWO paths: this artifact, and the single existing test file that carries the lineage-axis sentinels this artifact falsifies.",
+    "no_controller_allocation": "The next Controller act is a separate governed act and is not performed, labelled or numbered here.",
+    "no_registration": "The grant is DECLARED and not REGISTERED. scripts/ods-scope.ts is not edited and no registry row is added.",
+    "no_migration_ordinal": "None is allocated, reserved or implied.",
+    "no_branch_creation": "The bound branch string is BOUND and the ref is NOT created, modified or moved.",
+    "no_runtime_and_no_sql": "This mission is docs-and-test-only. No prepared SQL is authored, no schema change, no staging mutation."
+  },
+  "PROTECTED_GRANTS_CHANGED": false,
+  "PROTECTED_GRANTS_COUNT_BEFORE": 22,
+  "PROTECTED_GRANTS_COUNT_AFTER": 22,
+  "PROTECTED_GRANTS_COUNT_AFTER_A_FUTURE_MISSION_REGISTERS_W2_35": 23,
+  "REGISTERED_GRANT_TAIL_BEFORE": "HPO-ODS-W2-34",
+  "REGISTERED_GRANT_TAIL_AFTER": "HPO-ODS-W2-34",
+  "protected_grants_count_rule": "This artifact DECLARES the grant and does not REGISTER it. scripts/ods-scope.ts is not edited, so the live count is 22 before and 22 after and the registered tail is HPO-ODS-W2-34 before and after. The figure 23 is a LITERAL describing what a future registration act would produce; it is NOT computed from PROTECTED_GRANTS.length, because a computed figure would silently track any other row a different lane adds and would stop describing this grant registration at all.",
+  "GRANT_REGISTRATION_IS_A_SEPARATE_GOVERNED_ACT": {
+    "binding": "Registration of HPO-ODS-W2-35 in scripts/ods-scope.ts is a SEPARATE governed act with its own opening, its own write set and its own independent certification. It is not performed here and is not pre-approved here.",
+    "THE_IMPLEMENTATION_WRITER_MAY_NOT_SELF_REGISTER": "BINDING. The mission that authors db/prepared/stella_0017b_governed_risk_parameters.sql and its companions may NOT add its own PROTECTED_GRANTS row in the same act. A writer that grants itself the authority it then consumes has removed the only independent step in the chain, and the fact that the resulting row would be byte-identical to the declared one is not an excuse: identity of the artifact is not identity of the act, and what the separation protects is the act.",
+    "IT_MUST_ADVANCE_THE_REGISTRY_AXIS_SENTINELS_THIS_ACT_DELIBERATELY_LEAVES_ALONE": "The registration act -- and only it -- advances the registry-axis absence controls from HPO-ODS-W2-35 to HPO-ODS-W2-36, and performs the atomic live-count guard handover. Doing any of that here would assert a registry state that does not hold.",
+    "IT_MUST_NOT_TOUCH_ANY_EXISTING_ROW": "All 22 existing rows are live registered grants bound to live branches. The registration act appends exactly one row and alters none."
+  },
+  "authorized_changed_paths_this_mission": [
+    "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json",
+    "tests/ods/ods-scope.test.ts"
+  ],
+  "authorized_changed_paths_note": "EXACTLY TWO PATHS: one NEW file (this artifact) and one MODIFIED file (the lineage-axis sentinels this artifact falsifies). Neither path is protected: docs/ops/ods/ is protected only at ODS_V1_AUTHORITY_v1.0.0.json, and tests/** is not a protected surface at all. Both are therefore ordinary --allow entries.",
+  "PROTECTED_AUTHORITY_CONSUMED_BY_THIS_MISSION": "NONE. This mission runs its scope gate with two ordinary exact --allow entries and no --protected-authority flag. PROTECTED_AUTHORIZED_PATH_COUNT is 0 and PROTECTED_PATH_VIOLATIONS is 0.",
+  "DIFFERENTIAL_INTEGRITY": {
+    "binding": "Every predecessor surface this act could have disturbed was verified UNCHANGED by blob comparison against 89022a9bf22a06276996a5a9214b344916be84aa, not by inspection.",
+    "verified_byte_unchanged": [
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json",
+      "every other docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.N.json in the dense lineage",
+      "scripts/ods-controller.ts",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-controller.test.ts",
+      "docs/ops/wave3/FIBDB053_STAGE_A_EXECUTION_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave3/FIBDB053_STAGE_A_TEST_MANIFEST_v1.0.0.json",
+      "db/** in its entirety",
+      "docs/ops/staging/** in its entirety"
+    ],
+    "method": "git diff --name-status against 89022a9bf22a06276996a5a9214b344916be84aa, cross-checked against git status --untracked-files=all, and a per-path blob SHA comparison for each surface listed above."
+  },
+  "risks_and_open_findings": [
+    {
+      "id": "F-FIBDB053-W2-35-1",
+      "severity": "INFORMATIVE",
+      "finding": "Tail-plus-one over the REGISTRY tail yields HPO-ODS-W2-35, the same answer as the binding allocation-axis derivation, at this head.",
+      "disposition": "DISCLOSED AND REJECTED AS A DERIVATION. It coincides only because the most recently allocated id also happens to be the most recently registered one. The binding derivation is the numeric maximum of the GRANT_ID key across the dense addendum lineage."
+    },
+    {
+      "id": "F-FIBDB053-W2-35-2",
+      "severity": "NONBLOCKING_FOR_THIS_ACT_OPEN_FOR_THE_IMPLEMENTATION_NODE",
+      "finding": "The controlling authority's own OPEN_FINDINGS.blocking_for_the_implementation_node lists F-053-1 (RUNTIME_APPLY_COUPLING_UNRESOLVED) and F-053-2 (APPLIED_UNIT_CARRIES_AN_INVERTING_PREFLIGHT), both scoped to APPLY and to the implementation node's own certification.",
+      "disposition": "NOT CLOSED BY THIS ARTIFACT and not required to be: this act is allocation-only and performs no apply, no authoring and no certification of the implementation node. Both findings remain open for whichever later act performs the Stage-A implementation."
+    },
+    {
+      "id": "F-FIBDB053-W2-35-3",
+      "severity": "INFORMATIVE",
+      "finding": "db/prepared/README.md is shared by six existing registered rows (HPO-ODS-W2-03, W2-08, W2-11, W2-31, W2-32, W2-33), and this act declares a seventh grant carrying the same literal.",
+      "disposition": "DISCLOSED IN FULL in ALLOCATION_COLLISION_SWEEP.CANDIDATE_3 and protected_grant.WHY_EXACTLY_THESE_SIX_PATTERNS.PATTERN_5. No collision: resolveProtectedGrant disambiguates by exact branch match, and none of the six existing rows binds codex/fibdb053-stage-a-implementation-r1."
+    }
+  ],
+  "self_check": {
+    "SC-1_version_and_filename_agree": "PASS. version = 1.0.38, artifact_id = ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38, filename ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json, package_id = ODS_V1_MAINTENANCE_ADDENDUM. All four agree.",
+    "SC-2_succeeds_the_measured_tail": "PASS. succeeds = ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37, which is the maximum of the dense lineage enumerated at this head.",
+    "SC-3_lineage_is_dense_and_this_is_the_next_position": "PASS. 1..37 dense with zero gaps and zero duplicates; 38 is the next position.",
+    "SC-4_grant_id_derived_from_the_allocation_axis": "PASS. Numeric maximum of the GRANT_ID key across the dense addendum lineage is 34; next is 35.",
+    "SC-5_grant_is_declared_not_registered": "PASS. registration_status = DECLARED_NOT_REGISTERED, PROTECTED_GRANTS_CHANGED = false, scripts/ods-scope.ts byte-unchanged, zero rows and zero textual occurrences of the id in that file.",
+    "SC-6_branch_binding_is_the_frozen_string": "PASS. codex/fibdb053-stage-a-implementation-r1, byte-identical to FUTURE_ODS_INPUT.EXPECTED_IMPLEMENTATION_BRANCH read from the live controlling authority at this head.",
+    "SC-7_exactly_six_patterns_in_the_frozen_order_and_no_wildcard": "PASS. pattern_count = 6, order matches PROTECTED_WRITE_SET.ordered_literals exactly, all six are exact file literals, zero glob metacharacters.",
+    "SC-8_no_existing_grant_binds_the_target_branch": "PASS. Zero of the 22 rows bind it, so there is no overlap in either direction and no grant union to adjudicate.",
+    "SC-9_no_prohibited_pattern_appears": "PASS. No db/prepared/**, no db/migrations/**, no db/prepared/journal/**, no test path, no docs path among the patterns.",
+    "SC-10_controller_prerequisite_is_discharged": "PASS. IMMUTABLE_BY_CONVENTION length 48, Set size 48, final item v1.0.37, index 48 undefined -- and this state was already reached, by the ODS v1.0.37 Controller successor act, before this mission's own opening.",
+    "SC-11_controller_is_not_advanced_by_this_act": "PASS. scripts/ods-controller.ts is byte-unchanged and v1.0.38 occurs zero times in IMMUTABLE_BY_CONVENTION.",
+    "SC-12_the_two_predecessor_axes_are_both_recorded": "PASS. Mission-chain predecessor CV1-FIBDB053-STAGEA-R2-IC and lineage predecessor the v1.0.37 allocation mission are recorded in separate keys, and they differ.",
+    "SC-13_write_set_is_exactly_two_paths": "PASS. authorized_changed_paths_this_mission has length 2, neither path is protected, and the scope gate consumes no protected authority.",
+    "SC-14_no_second_live_count_guard": "PASS. The forward figure 23 is a literal here and a literal in the test suite; nothing derives a forward grant count from the live array.",
+    "SC-15_the_registration_axis_sentinel_is_NOT_advanced": "PASS. HPO-ODS-W2-35 is DECLARED_NOT_REGISTERED, zero rows carry it, zero textual occurrences exist in scripts/ods-scope.ts, and no existing control was changed from W2-35 to W2-36.",
+    "SC-16_no_v1_0_39_artifact_and_no_W2_36_allocation": "PASS. v1.0.39 and HPO-ODS-W2-36 appear only inside prohibition and absence semantics. No such file is created and no such grant is declared.",
+    "SC-17_allocation_only": "PASS. No registration, no package authoring, no journal or corroboration regeneration, no branch creation, no Controller edit, no staging mutation.",
+    "SC-18_no_third_write_path_was_required": "PASS. The full write set (this artifact plus tests/ods/ods-scope.test.ts) matched the conceptual write set derived from the immediate ODS allocation precedent exactly; no PHASE 7 write-set-expansion stop was triggered.",
+    "SC-19_predecessors_are_byte_unchanged": "PASS. v1.0.37 and every earlier addendum, both ODS scripts, the Controller test, the controlling FIBDB-053 Stage-A authority and its test manifest, all of db/** and all of docs/ops/staging/** are byte-identical to their blobs at the base.",
+    "SC-20_README_overlap_is_declared_not_absorbed": "PASS. ALLOCATION_COLLISION_SWEEP.CANDIDATE_3 states the shared db/prepared/README.md literal, states it shares no OTHER literal or branch with any existing row, and confirms no collision on either axis.",
+    "SC-21_no_glob_grant_was_substituted_for_the_authoritys_refusal": "PASS. The controlling authority's PROTECTED_WRITE_SET.no_wildcard_rule explicitly refuses db/prepared/** for this node, and this artifact's patterns array contains zero wildcard characters and zero glob patterns."
+  },
+  "final_state": "ODS_V1_0_38_ALLOCATED_W2_35_DECLARED_NOT_REGISTERED_FIBDB053_STAGEA_IMPLEMENTATION_NOT_AUTHORIZED",
+  "next_gate": "ODS_V1038_W2_35_ALLOCATION_INDEPENDENT_CERTIFICATION"
+}
