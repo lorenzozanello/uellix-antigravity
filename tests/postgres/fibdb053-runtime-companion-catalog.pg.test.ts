@@ -48,7 +48,7 @@
 // container can be resolved. With two containers running, name one in
 // UELLIX_REHEARSAL_CONTAINER.
 
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import postgres from 'postgres'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -203,31 +203,39 @@ function scalar(sqlText: string): string | null {
 }
 
 /**
- * Run a SCRIPT with ON_ERROR_STOP OFF and verbose errors, and return stderr.
+ * Run a SCRIPT with ON_ERROR_STOP OFF and verbose errors, returning BOTH streams.
  *
  * The only way to observe what happens to the SECOND statement after the first
  * one has poisoned the transaction. `\set VERBOSITY verbose` is what puts the
  * SQLSTATE in the message — N-RC-03 is explicit that observing "the fallback
  * did not succeed" is vacuous, because the fallback cannot succeed for reasons
  * unrelated to the guarantee under test. The SQLSTATE is the guarantee.
+ *
+ * `spawnSync` AND NOT `execFileSync`, and the difference is the whole reason
+ * this helper exists in the shape it does. With `ON_ERROR_STOP=0` psql reports
+ * every error and then EXITS ZERO, so `execFileSync` does not throw — and its
+ * return value is stdout ALONE. The ERROR lines live on stderr, so the
+ * exception branch that reads them is never taken and the caller receives an
+ * empty string. Measured: three controls here failed with
+ * `expected '' to contain '42883'` against a catalog that was raising 42883
+ * correctly. That is an instrument defect, and an instrument that returns ''
+ * cannot distinguish "no error" from "errors I did not collect".
  */
 function runScriptCapturingErrors(script: string): string {
-  const args = [
-    'exec', '-i', container as string, 'psql', '-U', 'postgres', '-d', DB_NAME,
-    '-v', 'ON_ERROR_STOP=0', '-tAq', '-f', '-',
-  ]
-  try {
-    const out = execFileSync('docker', args, {
+  const result = spawnSync(
+    'docker',
+    [
+      'exec', '-i', container as string, 'psql', '-U', 'postgres', '-d', DB_NAME,
+      '-v', 'ON_ERROR_STOP=0', '-tAq', '-f', '-',
+    ],
+    {
       input: `\\set VERBOSITY verbose\n${script}`,
       encoding: 'utf8',
       maxBuffer: 16 * 1024 * 1024,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    })
-    return out
-  } catch (error) {
-    const e = error as { stderr?: string | Buffer; stdout?: string | Buffer }
-    return `${e.stdout ? String(e.stdout) : ''}\n${e.stderr ? String(e.stderr) : ''}`
-  }
+    },
+  )
+  if (result.error !== undefined) throw result.error
+  return `${result.stdout ?? ''}\n${result.stderr ?? ''}`
 }
 
 function installOldDb(): void {
@@ -443,10 +451,15 @@ describeIf('FIBDB-053 runtime companion — real PostgreSQL catalog', () => {
       // would be explained equally well by the seven-argument form being wrong
       // on this catalog, which is the OPPOSITE of what §4 claims.
       installOldDb()
-      const stderr = runScriptCapturingErrors(
+      const output = runScriptCapturingErrors(
         `SELECT * FROM uellix_stella_ops.complete_operation_ticket(${sevenArgumentCallArguments()});`,
       )
-      expect(stderr).not.toContain('ERROR')
+      // POSITIVE FIRST, and the order is the point. `not.toContain('ERROR')` is
+      // satisfied by an empty string, which is exactly what this instrument
+      // returned before it was fixed — so the absence of an error is only
+      // evidence once the presence of the OUTCOME ROW has been established.
+      expect(output).toContain('completed')
+      expect(output).not.toContain('ERROR')
       expect(scalar('SELECT count(*) FROM public.fibdb053_received WHERE arity = 7')).toBe('1')
     }, 120_000)
   })
