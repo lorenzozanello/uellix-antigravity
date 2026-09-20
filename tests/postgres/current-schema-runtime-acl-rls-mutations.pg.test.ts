@@ -286,36 +286,61 @@ maybe('M-PG17-03 — remove the governed global rows from one registry', () => {
 
 maybe('M-PG17-04 — grant the runtime a forbidden write on a global registry', () => {
   it('B5 AND B6 both go RED — neither layer is a restatement of the other', () => {
+    // VERB CHOICE: INSERT is not usable here. governed_model_registry carries
+    // only a SELECT policy (db/policies/009_governed_model_registry_rls.sql);
+    // under RLS with no INSERT policy, a granted INSERT is refused by the
+    // WITH CHECK default-deny (42501) before it ever reaches the table, so
+    // the live arm of B6 never fires and the control would be measuring only
+    // the catalog layer. UPDATE is granted instead: measured on this exact
+    // substrate, a granted UPDATE with no applicable RLS policy is a REAL
+    // live success (default-deny filters it to zero rows via USING, not an
+    // error) — both B5 and B6 are independently observable, per SECTION_A7.
     requireExactlyOne(
       `SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
        WHERE n.nspname = 'public' AND c.relname = '${M03_RELATION}'`,
       `the relation public.${M03_RELATION}`,
     )
-    expect(db().bool(`SELECT has_table_privilege('uellix_app','public.${M03_RELATION}','INSERT')`),
+    expect(db().bool(`SELECT has_table_privilege('uellix_app','public.${M03_RELATION}','UPDATE')`),
       'the privilege is already held — the mutation would be vacuous').toBe(false)
 
+    // Fingerprint taken BEFORE the grant: the live probe below carries a real
+    // SET clause, and this control does not get to assume RLS filters it to
+    // zero rows — that must be demonstrated, not presumed. A row count alone
+    // would not notice a row that came back with different values than it had.
+    const contentBefore = contentDigest(M03_RELATION)
     expect(globalWriteCatalogFailures(db())).toEqual([])
     expect(globalWriteLiveFailures(db())).toEqual([])
 
-    db().fixture(`GRANT INSERT ON public.${M03_RELATION} TO uellix_app;`)
+    const catalogSignal = `${M03_RELATION}.UPDATE: the catalog says the privilege is HELD`
+    const liveSignal = `${M03_RELATION}.UPDATE: the live mutation SUCCEEDED`
+
+    db().fixture(`GRANT UPDATE ON public.${M03_RELATION} TO uellix_app;`)
     try {
       const b5 = globalWriteCatalogFailures(db())
       const b6 = globalWriteLiveFailures(db())
-      expect(b5, 'B5 stayed green against a real widening of the runtime capability').not.toEqual([])
-      expect(b5.join(' ')).toContain(`${M03_RELATION}.INSERT`)
+      // B5 is the catalog predicate alone, and only for this relation/verb.
+      expect(b5, 'B5 stayed green against a real widening of the runtime capability').toEqual([catalogSignal])
+      // B6 must carry BOTH independent signals literally — not merely a
+      // non-empty array, and not merely a substring either signal could
+      // satisfy on its own. Each is asserted by exact string membership so
+      // that only the catalog predicate firing (without the live branch, or
+      // the reverse) is provably insufficient to pass this control.
       expect(b6, 'B6 stayed green against a real widening of the runtime capability').not.toEqual([])
-      expect(b6.join(' ')).toContain(`${M03_RELATION}.INSERT`)
+      expect(b6, 'the catalog signal did not fire in B6').toContain(catalogSignal)
+      expect(b6, 'the LIVE-SUCCEEDED branch did not fire — B6 would be decorative').toContain(liveSignal)
       // BOTH RED IS THE CLAIM. If only one moved, the other would be decorative
       // — and SECTION_A7 M-PG17-04 exists precisely to refuse that reading.
-      // Only the INSERT verb of only this relation moved, in both.
-      expect(b5.filter((f) => !f.startsWith(`${M03_RELATION}.INSERT`))).toEqual([])
-      expect(b6.filter((f) => !f.startsWith(`${M03_RELATION}.INSERT`))).toEqual([])
+      // Only the UPDATE verb of only this relation moved, in both.
+      expect(b5.filter((f) => f !== catalogSignal)).toEqual([])
+      expect(b6.filter((f) => f !== catalogSignal && f !== liveSignal)).toEqual([])
     } finally {
-      db().fixture(`REVOKE INSERT ON public.${M03_RELATION} FROM uellix_app;`)
+      db().fixture(`REVOKE UPDATE ON public.${M03_RELATION} FROM uellix_app;`)
     }
 
-    // Restored, proven against the ACL snapshot taken before any mutation ran.
+    // Restored, proven against the ACL snapshot AND the content fingerprint
+    // taken before any mutation ran — not merely against a row count.
     expect(db().tableAclSnapshot()).toBe(baseline.tableAcl)
+    expect(contentDigest(M03_RELATION), 'the live UPDATE probe altered registry content').toBe(contentBefore)
     expect(globalWriteCatalogFailures(db())).toEqual([])
     expect(globalWriteLiveFailures(db())).toEqual([])
   }, PROBE_TIMEOUT)
