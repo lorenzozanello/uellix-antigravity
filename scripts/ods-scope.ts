@@ -1092,6 +1092,27 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/journal/085_0072_customer_lifecycle_l1_organization_commercial_acceptance.sql',
     ],
   },
+  // HPO-ODS-W2-35 — registration of the grant DECLARED by
+  // docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json for the future
+  // FIBDB-053 Stage-A (stella_0017b governed risk parameters) prepared-package
+  // authoring node. This is a SEPARATE governed registration act, distinct
+  // from the allocation act that declared the grant: the allocation writer
+  // may never register its own grant, so that the later implementation writer
+  // can never grant itself authority. Registers exactly the row the
+  // allocation declared, byte-for-byte: authority id, branch, pattern order
+  // and pattern count.
+  {
+    authorityId: 'HPO-ODS-W2-35',
+    branch: 'codex/fibdb053-stage-a-implementation-r1',
+    patterns: [
+      'db/prepared/stella_0017b_governed_risk_parameters.sql',
+      'db/prepared/stella_0017b_rollback.sql',
+      'db/prepared/hosted/stella_0017b_governed_risk_parameters.hosted.sql',
+      'db/prepared/hosted/governed/stella_0017b_governed_risk_parameters.governed.sql',
+      'db/prepared/README.md',
+      'db/prepared/checkpoint-a1/corroboration.sql',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
