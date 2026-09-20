@@ -2968,16 +2968,17 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     // ordinal at all.
   })
 
-  it('THE CONTROLLER AXIS HAS ADVANCED (CE3-ALLOC-N8): v1.0.33 exists on the FILESYSTEM and is still enumerated by the Controller, and the absence literal has moved to v1.0.37', () => {
+  it('THE CONTROLLER AXIS HAS ADVANCED (CE3-ALLOC-N8): v1.0.33 exists on the FILESYSTEM and is still enumerated by the Controller, and the absence literal has moved to v1.0.38', () => {
     // The intermediate state this control used to pin — on disk but not in the
     // array — is the normal state of every addendum in this lineage, and it
     // ENDS when the SEPARATE Controller successor act enumerates the file.
-    // A FURTHER such act has now happened — the one enumerating v1.0.36 — so
+    // A FURTHER such act has now happened — the one enumerating v1.0.37 — so
     // the control ADVANCES one more lineage step rather than being relaxed:
-    // the absence pin moves from v1.0.36 to v1.0.37, and a new non-vacuity
-    // positive is added for v1.0.36 alongside the ones already kept for
-    // v1.0.35, v1.0.34 and v1.0.33. Nothing here allocates v1.0.37: naming an
-    // id in an absence assertion is a PROHIBITION, never an allocation.
+    // the absence pin moves from v1.0.37 to v1.0.38, and a new non-vacuity
+    // positive is added for v1.0.37 alongside the ones already kept for
+    // v1.0.36, v1.0.35, v1.0.34 and v1.0.33. Nothing here allocates v1.0.38:
+    // naming an id in an absence assertion is a PROHIBITION, never an
+    // allocation.
     //
     // READ AS TEXT, DELIBERATELY NOT IMPORTED. This module does not import the
     // Controller at all, which is what makes the decoupling structural rather
@@ -2985,16 +2986,17 @@ describe('ODS v1.0.33 / HPO-ODS-W2-30 — CE-3 lineage allocation and grant DECL
     // absence would destroy the very property the surrounding tests claim.
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
     expect(existsSync(path.join(REPO_ROOT, CE3_ADDENDUM))).toBe(true)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBe(0)
     // NON-VACUITY of that zero: the predecessor IS enumerated in the same
     // file, so the path is right, the file is really being read, and the
     // spelling of the literal is the one the Controller actually uses. A
     // zero-occurrence negative with no positive beside it proves nothing.
-    // That predecessor is now v1.0.36 — the entry the latest successor act
-    // (CV1-CTRL-V1036-W) appended — so the same assertion simultaneously
-    // proves the enumeration landed. v1.0.35, v1.0.34 and v1.0.33, kept from
-    // earlier acts, remain enumerated too — this block's own subject
-    // (v1.0.33) is never dropped.
+    // That predecessor is now v1.0.37 — the entry the latest successor act
+    // (CV1-CTRL-V1037-W) appended — so the same assertion simultaneously
+    // proves the enumeration landed. v1.0.36, v1.0.35, v1.0.34 and v1.0.33,
+    // kept from earlier acts, remain enumerated too — this block's own
+    // subject (v1.0.33) is never dropped.
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBeGreaterThan(0)
@@ -5094,7 +5096,7 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
     expect(a.authorized_changed_paths_this_mission).not.toContain('tests/ods/ods-controller.test.ts')
   })
 
-  it('REGISTRATION REMAINS A SEPARATE GOVERNED ACT (W2-31-ALLOC-N7): the Controller has now enumerated v1.0.34, v1.0.35 and v1.0.36 by their own separate acts, the absence literal has advanced to v1.0.37, and neither state can block the grant', () => {
+  it('REGISTRATION REMAINS A SEPARATE GOVERNED ACT (W2-31-ALLOC-N7): the Controller has now enumerated v1.0.34, v1.0.35, v1.0.36 and v1.0.37 by their own separate acts, the absence literal has advanced to v1.0.38, and neither state can block the grant', () => {
     // The Controller is read as TEXT and deliberately NOT imported: importing
     // IMMUTABLE_BY_CONVENTION here to check an absence would destroy the
     // decoupling this control exists to demonstrate.
@@ -5104,16 +5106,18 @@ describe('ODS v1.0.34 / HPO-ODS-W2-31 — CE-3 definer ownership ALLOCATION (dec
     // disk but not in the array — is the normal state of every addendum in
     // this lineage, and it ends ONLY when the SEPARATE, governed Controller
     // successor act enumerates the file. FURTHER such acts (CV1-CTRL-V1035-W,
-    // then CV1-CTRL-V1036-W) have now enumerated v1.0.35 and v1.0.36 too, so
-    // the control ADVANCES two more lineage steps: the absence pin moves to
-    // v1.0.37, new non-vacuity positives are added for v1.0.35 and v1.0.36,
-    // and the v1.0.34 check this block's own subject depends on is kept,
-    // never dropped. Naming v1.0.37 here allocates nothing.
+    // then CV1-CTRL-V1036-W, then CV1-CTRL-V1037-W) have now enumerated
+    // v1.0.35, v1.0.36 and v1.0.37 too, so the control ADVANCES three more
+    // lineage steps: the absence pin moves to v1.0.38, new non-vacuity
+    // positives are added for v1.0.35, v1.0.36 and v1.0.37, and the v1.0.34
+    // check this block's own subject depends on is kept, never dropped.
+    // Naming v1.0.38 here allocates nothing.
     expect(existsSync(path.join(REPO_ROOT, W2_31_ADDENDUM))).toBe(true)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBe(0)
     // NON-VACUITY: the predecessor IS enumerated in that same file, so the
     // zero above proves the path is right, the file is really being read, and
     // the literal is spelled the way the Controller spells it.
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBeGreaterThan(0)
@@ -5956,7 +5960,7 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
     expect(a.NO_PREALLOCATION.R4_CREATED).toBe('NO')
   })
 
-  it('CONTROLLER AXIS (W2-32-ALLOC-N5): the Controller enumerates v1.0.34, v1.0.35 and v1.0.36 and does NOT enumerate v1.0.37; this ALLOCATION act itself edited neither Controller surface', () => {
+  it('CONTROLLER AXIS (W2-32-ALLOC-N5): the Controller enumerates v1.0.34, v1.0.35, v1.0.36 and v1.0.37 and does NOT enumerate v1.0.38; this ALLOCATION act itself edited neither Controller surface', () => {
     // READ AS TEXT, DELIBERATELY NOT IMPORTED. This module imports no
     // Controller surface at all, which is what makes the decoupling structural
     // rather than merely asserted.
@@ -5968,14 +5972,15 @@ describe('ODS v1.0.35 / HPO-ODS-W2-32 — CE-3 ACL-hardening ALLOCATION (declare
     expect(
       controllerSource35.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1,
     ).toBeGreaterThan(0)
-    // AND v1.0.35 AND v1.0.36 ARE NOW ALSO ENUMERATED — by their own SEPARATE,
-    // governed Controller successor acts (CV1-CTRL-V1035-W, then
-    // CV1-CTRL-V1036-W) whose whole purpose is this enumeration, not by this
-    // ALLOCATION act, which performed neither edit. v1.0.37 takes v1.0.36's
-    // former place as the absence-control literal.
+    // AND v1.0.35, v1.0.36 AND v1.0.37 ARE NOW ALSO ENUMERATED — by their own
+    // SEPARATE, governed Controller successor acts (CV1-CTRL-V1035-W, then
+    // CV1-CTRL-V1036-W, then CV1-CTRL-V1037-W) whose whole purpose is this
+    // enumeration, not by this ALLOCATION act, which performed neither edit.
+    // v1.0.38 takes v1.0.37's former place as the absence-control literal.
     expect(controllerSource35.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource35.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBeGreaterThan(0)
-    expect(controllerSource35.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBe(0)
+    expect(controllerSource35.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource35.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBe(0)
     // FILESYSTEM EXISTENCE AND CONTROLLER ENUMERATION ARE DIFFERENT AXES.
     // v1.0.35 legitimately disagreed with them for a time — on disk but not in
     // the array — which is the normal intermediate state of every addendum in
@@ -6570,22 +6575,23 @@ describe('HPO-ODS-W2-32 — CE-3 ACL-hardening grant REGISTRATION', () => {
     expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json')
   })
 
-  it('CONTROLLER AXIS (W2-32-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.34, v1.0.35 and v1.0.36 are enumerated by their own separate acts, and v1.0.37 is STILL NOT enumerated', () => {
+  it('CONTROLLER AXIS (W2-32-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.34, v1.0.35, v1.0.36 and v1.0.37 are enumerated by their own separate acts, and v1.0.38 is STILL NOT enumerated', () => {
     // READ AS TEXT, DELIBERATELY NOT IMPORTED. This module imports no
     // Controller surface at all, which is what makes the decoupling structural
     // rather than merely asserted.
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
-    // v1.0.34, v1.0.35 and v1.0.36 ARE all enumerated — the latter two by
-    // their own SEPARATE, governed Controller successor acts
-    // (CV1-CTRL-V1035-W, then CV1-CTRL-V1036-W) whose whole purpose is this
-    // enumeration, landing AFTER this registration act. Registering a grant
-    // adds a row to a DIFFERENT registry; the Controller enumerates behind the
-    // lineage by design, and advancing it is a separate governed act that this
-    // registration act deliberately does not perform.
+    // v1.0.34, v1.0.35, v1.0.36 and v1.0.37 ARE all enumerated — the latter
+    // three by their own SEPARATE, governed Controller successor acts
+    // (CV1-CTRL-V1035-W, then CV1-CTRL-V1036-W, then CV1-CTRL-V1037-W) whose
+    // whole purpose is this enumeration, landing AFTER this registration act.
+    // Registering a grant adds a row to a DIFFERENT registry; the Controller
+    // enumerates behind the lineage by design, and advancing it is a separate
+    // governed act that this registration act deliberately does not perform.
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBeGreaterThan(0)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBe(0)
     // NO CONTROLLER MUTATION IS REQUIRED FOR THE GRANT TO RESOLVE. The two
     // registries are independent (v1.0.32 DECOUPLING_PRESERVED): the Controller
     // gates the next LINEAGE allocation and can never prevent a grant from
@@ -7132,19 +7138,21 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     expect(a.NO_PREALLOCATION.IMPLEMENTATION_BRANCH_CREATED).toContain('NO')
   })
 
-  it('CONTROLLER AXIS (W2-33-ALLOC-N4): the Controller enumerates v1.0.34, v1.0.35 and v1.0.36 and does NOT enumerate v1.0.37 — filesystem existence and Controller protection are different axes', () => {
+  it('CONTROLLER AXIS (W2-33-ALLOC-N4): the Controller enumerates v1.0.34, v1.0.35, v1.0.36 and v1.0.37 and does NOT enumerate v1.0.38 — filesystem existence and Controller protection are different axes', () => {
     // THE SENTINEL THAT WAS PINNED AT ZERO WHEN THIS ALLOCATION ACT RAN.
     // Creating the v1.0.36 file changed the FILESYSTEM axis only; it did not
-    // change the CONTROLLER axis at that time. A SEPARATE, later Controller
-    // successor act (CV1-CTRL-V1036-W) has since enumerated v1.0.36, which is
-    // exactly the state transition CONTROLLER_SUCCESSOR_RULE describes — so
-    // this control ADVANCES to the mechanically-next literal, v1.0.37, and a
-    // new non-vacuity positive is added for v1.0.36.
+    // change the CONTROLLER axis at that time. SEPARATE, later Controller
+    // successor acts (CV1-CTRL-V1036-W, then CV1-CTRL-V1037-W) have since
+    // enumerated v1.0.36 and v1.0.37, which is exactly the state transition
+    // CONTROLLER_SUCCESSOR_RULE describes — so this control ADVANCES to the
+    // mechanically-next literal, v1.0.38, and new non-vacuity positives are
+    // added for v1.0.36 and v1.0.37.
     const controllerSource36 = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
     expect(controllerSource36.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.34.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource36.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBeGreaterThan(0)
     expect(controllerSource36.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBeGreaterThan(0)
-    expect(controllerSource36.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBe(0)
+    expect(controllerSource36.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource36.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBe(0)
 
     // ...while the file itself DOES exist. Asserting both together is what
     // makes the pair a statement about two axes rather than about one.
@@ -7653,15 +7661,17 @@ describe('HPO-ODS-W2-33 — current-schema runtime ACL grant REGISTRATION', () =
     expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json')
   })
 
-  it('CONTROLLER AXIS (W2-33-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.36 has SINCE been enumerated by its own separate act, and v1.0.37 is STILL NOT enumerated', () => {
+  it('CONTROLLER AXIS (W2-33-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.36 and v1.0.37 have SINCE been enumerated by their own separate acts, and v1.0.38 is STILL NOT enumerated', () => {
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.35.json').length - 1).toBeGreaterThan(0)
-    // v1.0.36 was NOT enumerated when this registration act ran — enumerating
-    // it is the SEPARATE governed Controller successor act (CV1-CTRL-V1036-W)
-    // that has since landed, so this control ADVANCES to a positive here and
-    // the absence pin moves to v1.0.37.
+    // v1.0.36 and v1.0.37 were NOT enumerated when this registration act ran
+    // — enumerating them is the SEPARATE governed Controller successor acts
+    // (CV1-CTRL-V1036-W, then CV1-CTRL-V1037-W) that have since landed, so
+    // this control ADVANCES to a positive here and the absence pin moves to
+    // v1.0.38.
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBeGreaterThan(0)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBe(0)
     // NO CONTROLLER MUTATION IS REQUIRED FOR THE GRANT TO RESOLVE.
     expect(resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG).grant).toBeDefined()
   })
@@ -8039,13 +8049,17 @@ describe('ODS v1.0.37 / HPO-ODS-W2-34 — PG-06 lineage ALLOCATION (declared, NO
     expect(a.PROTECTED_AUTHORITY_CONSUMED_BY_THIS_MISSION.startsWith('NONE')).toBe(true)
   })
 
-  it('CONTROLLER PREREQUISITE ALREADY DISCHARGED, NOT RE-DISCHARGED HERE (W2-34-ALLOC-N4): the Controller enumerates v1.0.36 and does NOT enumerate v1.0.37 — this act edits neither Controller surface', () => {
+  it('CONTROLLER PREREQUISITE ALREADY DISCHARGED, NOT RE-DISCHARGED HERE (W2-34-ALLOC-N4): the Controller enumerates v1.0.36 and v1.0.37 and does NOT enumerate v1.0.38 — this act edits neither Controller surface', () => {
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
     // v1.0.36's OWN Controller successor act (PR #183) already integrated
-    // before this mission opened. This act does not re-perform, re-declare or
-    // depend on discharging it a second time.
+    // before this mission opened. v1.0.37's OWN Controller successor act
+    // (CV1-CTRL-V1037-W) has SINCE integrated too, by its own separate
+    // governed act — not by this W2-34 allocation, which edits neither
+    // Controller surface and does not re-perform, re-declare or depend on
+    // discharging either enumeration a second time.
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBeGreaterThan(0)
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBe(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBe(0)
     const a = readW2_34()
     expect(a.CONTROLLER_SUCCESSOR_RULE.NEXT_LINEAGE_ALLOCATION_BLOCKS).toEqual([
       'THE NEXT ODS LINEAGE ALLOCATION (v1.0.38 and beyond), until the next Controller successor act is integrated',
@@ -8444,14 +8458,16 @@ describe('HPO-ODS-W2-34 — PG-06 lineage grant REGISTRATION', () => {
     expect(selfSource).toContain('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.30.json')
   })
 
-  it('CONTROLLER AXIS (W2-34-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.36 is enumerated by its own separate act, and v1.0.37 is STILL NOT enumerated', () => {
+  it('CONTROLLER AXIS (W2-34-REG-N8): this REGISTRATION act itself edited no Controller surface; v1.0.36 and v1.0.37 are enumerated by their own separate acts, and v1.0.38 is STILL NOT enumerated', () => {
     const controllerSource = readFileSync(path.join(REPO_ROOT, 'scripts/ods-controller.ts'), 'utf8')
     expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.36.json').length - 1).toBeGreaterThan(0)
-    // v1.0.37 is NOT enumerated by this registration act. Enumerating it is a
-    // SEPARATE governed Controller successor act that this registration
-    // neither performs nor requires: the Controller gates only the NEXT
-    // lineage allocation (v1.0.38+), never a registration.
-    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBe(0)
+    // v1.0.37 was NOT enumerated when this registration act ran. Enumerating
+    // it is the SEPARATE governed Controller successor act (CV1-CTRL-V1037-W)
+    // that has since landed, so this control ADVANCES to a positive here and
+    // the absence pin moves to v1.0.38 — the Controller gates only the NEXT
+    // lineage allocation, never a registration.
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.37.json').length - 1).toBeGreaterThan(0)
+    expect(controllerSource.split('ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json').length - 1).toBe(0)
     // NO CONTROLLER MUTATION IS REQUIRED FOR THE GRANT TO RESOLVE.
     expect(resolveProtectedGrant('HPO-ODS-W2-34', PG06_REG).grant).toBeDefined()
   })
