@@ -38,8 +38,11 @@ import {
   ORG_V2_DIGEST,
   WRONG_DIGEST,
   asUser,
+  buildSetupManifest,
   buildSetupManifestWithAcceptances,
 } from './organization-commercial-acceptance-fixtures'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 
 export const PG_TESTS_ENABLED = process.env.UELLIX_PG_TESTS === '1'
 
@@ -504,7 +507,24 @@ ROLLBACK;`)
   -- and auth.uid() reads request.jwt.claims, so this IS a different acting
   -- subject as far as every policy and every trigger is concerned.
   PERFORM set_config('request.jwt.claims', '{"sub":"${IDS.adminA2}","role":"authenticated"}', true);
-  IF auth.uid() <> '${IDS.adminA2}'::uuid THEN RAISE EXCEPTION 'N-AO-17 the identity switch did not take effect'; END IF;
+
+  -- THE SWITCH IS READ FROM THE IDENTITY CONTEXT, NOT FROM auth.uid().
+  --
+  -- This assertion used to call auth.uid() directly. This DO block runs with
+  -- SET LOCAL ROLE uellix_app, and the runtime role holds NO USAGE ON SCHEMA
+  -- auth on the governed posture -- which PRIV-04 asserts, by name, MUST stay
+  -- true. So the direct call would fail 42501 here and the suite would be
+  -- claiming both that the call works and that it must refuse. The masking
+  -- fixture grant hid that contradiction; removing it exposed it.
+  --
+  -- current_setting reads the SAME claims blob auth.uid() itself reads, so
+  -- this is the identical fact via a doorway the runtime legitimately has.
+  -- DELETING the assertion would NOT have been an acceptable repair: without
+  -- it N-AO-17 degenerates into the same admin inserting twice, which the
+  -- unique index refuses for an entirely unrelated reason, and the control
+  -- stops testing the thing its name promises.
+  IF (current_setting('request.jwt.claims', true)::jsonb ->> 'sub')::uuid <> '${IDS.adminA2}'::uuid
+    THEN RAISE EXCEPTION 'N-AO-17 the identity switch did not take effect'; END IF;
 
   -- A DIFFERENT eligible organization_admin of the SAME organisation. The
   -- LOSER receives a constraint violation, never a silent success, and the
@@ -698,7 +718,313 @@ END $w$;`)
   IF n <> 0 THEN RAISE EXCEPTION 'M-AO-14 founding produced an acceptance row (%)', n; END IF;
 END $w$;`)
 
+  /* ---------------------------------------------------------------------- */
+  /* PG-06 REMEDIATION (HPO-ODS-W2-34)                                       */
+  /*                                                                          */
+  /* The controls the trigger-privilege remediation adds. They live in ARM A  */
+  /* -- amended function, masking grant REMOVED -- and every one of them was  */
+  /* either unsatisfiable or vacuous before the amendment.                    */
+  /*                                                                          */
+  /* WHY THESE DO NOT REUSE refuses(). That helper compares SQLSTATE alone,   */
+  /* which is right for the pre-existing controls but NOT for N-01 and N-05.  */
+  /* Measured: deleting the whole actor guard moves the spoof case to 42501   */
+  /* RLS and the absent-identity case to the ROLE guard -- which raises       */
+  /* 23514 CARRYING THE SAME I-T4-6 TOKEN. A control matching the SQLSTATE,   */
+  /* or even the token, stays GREEN while the invariant is gone. Only the     */
+  /* literal message falsifies it.                                            */
+  /* ---------------------------------------------------------------------- */
+
+  const ACTOR_GUARD_MESSAGE =
+    'organization_commercial_acceptances: accepted_by_user_id must be the acting subject (I-T4-6)'
+  const ROLE_GUARD_MESSAGE =
+    'organization_commercial_acceptances: the acting subject does not hold an ACTIVE organization_admin membership in this organization (I-T4-6)'
+  const ROLE_SNAPSHOT_MESSAGE =
+    'organization_commercial_acceptances: accepted_by_role must be the server-verified role held at accept time (I-T4-7)'
+
+  /**
+   * Asserts `body` is refused with BOTH the given SQLSTATE and the EXACT
+   * message text. The message is compared with `=`, never LIKE and never a
+   * token match — see the block comment above for the measured reason.
+   */
+  const refusesWithMessage = (
+    id: string,
+    actor: string | null,
+    body: string,
+    code: string,
+    message: string
+  ) => {
+    const prelude = actor === null ? `BEGIN; SET LOCAL ROLE uellix_app;\n` : asUser(actor)
+    add(id, prelude + `DO $w$ DECLARE caught text := 'none'; msg text := ''; BEGIN
+  BEGIN
+    ${body};
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; GET STACKED DIAGNOSTICS msg = MESSAGE_TEXT; END;
+  IF caught <> '${code}' THEN RAISE EXCEPTION '${id}: caught=% expected=${code} (msg=%)', caught, msg; END IF;
+  IF msg <> '${message.replace(/'/g, "''")}' THEN
+    RAISE EXCEPTION '${id}: refused on the RIGHT code but the WRONG guard -- measured message=%', msg;
+  END IF;
+END $w$;
+ROLLBACK;`)
+  }
+
+  // P-01/P-02/P-03 — the positive, and the two VALUES it stored. Asserted by
+  // value against the subject and role the identity context established, never
+  // by row count and never by re-reading whatever the insert happened to write.
+  add('PG06-P-01-P-02-P-03-the-valid-acceptance-SUCCEEDS-and-stores-the-authenticated-subject-and-the-server-verified-role',
+    asUser(IDS.adminA) + `DO $w$ DECLARE v_actor uuid; v_role text; BEGIN
+  ${insertAcceptance({ org: IDS.orgA, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.adminA })};
+  SELECT accepted_by_user_id, accepted_by_role INTO v_actor, v_role
+    FROM public.${RELATION} WHERE organization_id = '${IDS.orgA}';
+  IF v_actor <> '${IDS.adminA}'::uuid THEN RAISE EXCEPTION 'PG06-P-02 stored actor % is not the authenticated subject', v_actor; END IF;
+  IF v_role <> 'organization_admin' THEN RAISE EXCEPTION 'PG06-P-03 stored role % is not the server-verified role', v_role; END IF;
+END $w$;
+ROLLBACK;`)
+
+  refusesWithMessage(
+    'PG06-N-01-SPOOFED-ACTOR-refused-on-the-LITERAL-actor-guard-message',
+    IDS.adminA,
+    insertAcceptance({ org: IDS.orgA, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.adminA2 }),
+    '23514',
+    ACTOR_GUARD_MESSAGE
+  )
+
+  refusesWithMessage(
+    'PG06-N-02-CROSS-TENANT-organization-refused-by-the-TRIGGER-with-the-trigger-enabled',
+    IDS.adminA,
+    insertAcceptance({ org: IDS.orgB, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.adminA }),
+    '23514',
+    ROLE_GUARD_MESSAGE
+  )
+
+  refusesWithMessage(
+    'PG06-N-03-FORGED-accepted_by_role-refused-on-the-I-T4-7-message',
+    IDS.adminA,
+    insertAcceptance({ org: IDS.orgA, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.adminA, role: 'super_admin' }),
+    '23514',
+    ROLE_SNAPSHOT_MESSAGE
+  )
+
+  refusesWithMessage(
+    'PG06-N-04-NON-ADMIN-ACTOR-in-the-CORRECT-organization-refused-on-the-role-guard-message',
+    IDS.viewer,
+    insertAcceptance({ org: IDS.orgA, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.viewer, role: 'viewer' }),
+    '23514',
+    ROLE_GUARD_MESSAGE
+  )
+
+  // N-05 — ABSENT IDENTITY. `actor: null` opens the transaction as the runtime
+  // role WITHOUT set_config, so no claims blob exists at all. This is the most
+  // deceptive shape in the contract: under the deleted-actor-guard mutation it
+  // does NOT stop failing, it falls into the ROLE guard and returns 23514 with
+  // the SAME I-T4-6 token. The literal message is the only thing that tells
+  // the two apart.
+  refusesWithMessage(
+    'PG06-N-05-ABSENT-IDENTITY-refused-on-the-LITERAL-actor-guard-message-not-merely-refused',
+    null,
+    insertAcceptance({ org: IDS.orgA, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.adminA }),
+    '23514',
+    ACTOR_GUARD_MESSAGE
+  )
+
+  // PRIV-01..03 — SENTINEL_MASKING_GRANT_ABSENT, read from the catalog rather
+  // than grepped out of the fixture text. uellix_writer is a SEPARATE assertion
+  // from uellix_app and is load-bearing: uellix_app INHERITS uellix_writer, so
+  // a writer-side grant alone re-creates the mask while an app-only check stays
+  // green.
+  // THREE PROBES, NOT ONE LOOP. They are three separate controls and folding
+  // them together would destroy the distinction the contract rests on:
+  // uellix_app INHERITS uellix_writer, so a WRITER-side grant re-creates the
+  // whole mask. A single combined probe trips on whichever role it happens to
+  // test first and can no longer say WHICH grant came back — and PRIV-02 is
+  // precisely the control that has to be independently observable, because it
+  // is the one the masking mutation anchors on.
+  for (const [control, role] of [
+    ['PRIV-01', 'uellix_app'],
+    ['PRIV-02', 'uellix_writer'],
+    ['PRIV-03', 'uellix_auditor'],
+  ] as const) {
+    add(`PG06-${control}-${role}-holds-NO-USAGE-ON-SCHEMA-auth-after-the-remediation`,
+      `DO $w$ BEGIN
+  IF has_schema_privilege('${role}', 'auth', 'USAGE') THEN
+    RAISE EXCEPTION 'PG06-${control}: ${role} holds USAGE ON SCHEMA auth -- the mask has been re-created';
+  END IF;
+END $w$;`)
+  }
+
+  add('PG06-PRIV-04-a-DIRECT-auth-uid-call-AS-the-runtime-role-still-REFUSES-42501',
+    asUser(IDS.adminA) + `DO $w$ DECLARE caught text := 'none'; v uuid; BEGIN
+  BEGIN
+    SELECT auth.uid() INTO v;
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; END;
+  IF caught <> '42501' THEN RAISE EXCEPTION 'PG06-PRIV-04 the runtime role reached auth.uid() directly -- caught=% expected=42501', caught; END IF;
+END $w$;
+ROLLBACK;`)
+
+  // PRIV-05 — the CONJUNCTION is the control. Proving the runtime holds no
+  // EXECUTE is worth nothing on its own (an unreachable function holds none
+  // either); proving it IN THE SAME RUN in which the insert SUCCEEDS is what
+  // shows the REVOKE still holds and that a trigger invokes its function
+  // irrespective of the triggering role's grant.
+  add('PG06-PRIV-05-no-runtime-role-holds-EXECUTE-on-the-trigger-function-WHILE-the-positive-insert-succeeds',
+    asUser(IDS.adminA) + `DO $w$ DECLARE r record; BEGIN
+  ${insertAcceptance({ org: IDS.orgA, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.adminA })};
+  FOR r IN SELECT unnest(ARRAY['uellix_app','uellix_writer','uellix_auditor']) AS rolname LOOP
+    IF has_function_privilege(r.rolname, 'public.enforce_organization_commercial_acceptance_invariants()', 'EXECUTE') THEN
+      RAISE EXCEPTION 'PG06-PRIV-05 % holds direct EXECUTE on the trigger function', r.rolname;
+    END IF;
+  END LOOP;
+END $w$;
+ROLLBACK;`)
+
+  // FN-01/FN-02 — read from pg_proc on the LIVE cluster, never from the SQL
+  // text. The text is what M-01 and M-02 mutate, so a text assertion would be
+  // testing the mutation instead of the installed object.
+  add('PG06-FN-01-FN-02-the-installed-function-is-prosecdef-with-proconfig-EXACTLY-search_path-public',
+    `DO $w$ DECLARE secdef boolean; cfg text[]; BEGIN
+  SELECT p.prosecdef, p.proconfig INTO secdef, cfg
+    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'enforce_organization_commercial_acceptance_invariants';
+  IF secdef IS NOT TRUE THEN RAISE EXCEPTION 'PG06-FN-01 prosecdef is not true'; END IF;
+  -- EXACTLY one entry, that value. Not "contains search_path", which a
+  -- multi-entry or caller-poisoned config would also satisfy.
+  IF cfg IS DISTINCT FROM ARRAY['search_path=public'] THEN
+    RAISE EXCEPTION 'PG06-FN-02 proconfig is %, expected exactly {search_path=public}', cfg;
+  END IF;
+END $w$;`)
+
+  // FN-03 — CREATE OR REPLACE preserves the owner, so the CORRECT behaviour is
+  // that the function owner still equals the applier context WITHOUT the
+  // migration carrying any ownership statement. The static half of this
+  // control (zero ALTER FUNCTION ... OWNER TO in the amended text) is a
+  // DB-free assertion and lives in the describe block below.
+  add('PG06-FN-03-the-amendment-introduced-NO-owner-change-the-function-owner-is-still-the-applier',
+    `DO $w$ DECLARE fn_owner name; applier name; BEGIN
+  SELECT pg_get_userbyid(p.proowner) INTO fn_owner
+    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'enforce_organization_commercial_acceptance_invariants';
+  -- The comparable object installed by the SAME migration run: the append-only
+  -- guard function 0030 created, which nothing in this lane touches.
+  SELECT pg_get_userbyid(p.proowner) INTO applier
+    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'uellix_forbid_mutation';
+  IF fn_owner IS DISTINCT FROM applier THEN
+    RAISE EXCEPTION 'PG06-FN-03 the trigger function owner is % but the applier context owns % -- an ownership change was introduced', fn_owner, applier;
+  END IF;
+END $w$;`)
+
+  // FN-06 — the R1 false pair, turned into a standing guard. uellix_owner is
+  // NOT the function owner here (the harness applies as postgres and the
+  // HOSTED_FIDELITY re-home loop moves only TABLES), so granting it auth USAGE
+  // is INERT. Falsified by M-11, which adds the grant and asserts it necessary.
+  add('PG06-FN-06-uellix_owner-is-NOT-the-function-owner-here-and-holds-NO-auth-USAGE-while-the-positive-is-GREEN',
+    asUser(IDS.adminA) + `DO $w$ DECLARE fn_owner name; owner_has_auth boolean; BEGIN
+  SELECT pg_get_userbyid(p.proowner) INTO fn_owner
+    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND p.proname = 'enforce_organization_commercial_acceptance_invariants';
+  IF fn_owner = 'uellix_owner' THEN
+    RAISE EXCEPTION 'PG06-FN-06 the canonical fixture re-homed the FUNCTION; this control and the owner-capability proof would be conflated';
+  END IF;
+  SELECT has_schema_privilege('uellix_owner', 'auth', 'USAGE') INTO owner_has_auth;
+  IF owner_has_auth THEN
+    RAISE EXCEPTION 'PG06-FN-06 uellix_owner holds auth USAGE -- the inert R1 grant has been reintroduced';
+  END IF;
+  -- ... and the positive is GREEN in the SAME transaction, which is what makes
+  -- "inert" a measurement rather than an assertion.
+  ${insertAcceptance({ org: IDS.orgA, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.adminA })};
+END $w$;
+ROLLBACK;`)
+
+  // RLS-01 — NOT decoration. Once the trigger is repaired it refuses a
+  // cross-tenant row FIRST, so without disabling it this suite would prove the
+  // trigger twice and the RLS wall never once. DISABLE TRIGGER is done as the
+  // owner and RE-ENABLED in the same probe.
+  add('PG06-RLS-01-with-the-trigger-DISABLED-BY-THE-OWNER-a-cross-tenant-INSERT-still-fails-via-RLS',
+    `ALTER TABLE public.${RELATION} DISABLE TRIGGER trg_organization_commercial_acceptances_invariants;
+` + asUser(IDS.adminA) + `DO $w$ DECLARE caught text := 'none'; msg text := ''; BEGIN
+  BEGIN
+    ${insertAcceptance({ org: IDS.orgB, version: IDS.orgVersionV1, digest: ORG_V1_DIGEST, actor: IDS.adminA })};
+  EXCEPTION WHEN OTHERS THEN caught := SQLSTATE; GET STACKED DIAGNOSTICS msg = MESSAGE_TEXT; END;
+  IF caught <> '42501' THEN RAISE EXCEPTION 'PG06-RLS-01 caught=% expected=42501 (msg=%)', caught, msg; END IF;
+  IF msg NOT LIKE '%row-level security%' THEN
+    RAISE EXCEPTION 'PG06-RLS-01 refused 42501 but NOT by RLS -- measured message=%', msg;
+  END IF;
+END $w$;
+ROLLBACK;
+ALTER TABLE public.${RELATION} ENABLE TRIGGER trg_organization_commercial_acceptances_invariants;`)
+
   return { probes }
+}
+
+/**
+ * ARM B / ARM C — the defect-reproduction probe.
+ *
+ * ONE probe, deliberately. These arms exist to observe a single statement: the
+ * probe's OWN INSERT. Everything else they could assert is already asserted in
+ * arm A against the amended function, and adding probes here would only make
+ * it harder to see which statement produced the colour.
+ */
+function buildDefectArmProbeManifest(expectation: 'MASK_REPRODUCES' | 'DEFECT_VISIBLE'): ProbeManifest {
+  const insert = insertAcceptance({
+    org: IDS.orgA,
+    version: IDS.orgVersionV1,
+    digest: ORG_V1_DIGEST,
+    actor: IDS.adminA,
+  })
+
+  if (expectation === 'MASK_REPRODUCES') {
+    return {
+      probes: [
+        {
+          id: 'ARM-B-MASK_REPRODUCES-the-SHIPPED-INVOKER-function-inserts-successfully-while-the-masking-grant-is-present',
+          sql:
+            asUser(IDS.adminA) +
+            `DO $w$ DECLARE n int; BEGIN
+  -- The fixture GRANTed uellix_writer USAGE ON SCHEMA auth and uellix_app
+  -- INHERITS uellix_writer, so the INVOKER-rights body reaches auth.uid().
+  -- THIS SUCCEEDING IS THE POINT: it is why a broken unit survived a green
+  -- Real-PG suite for an entire lane.
+  ${insert};
+  SELECT count(*) INTO n FROM public.${RELATION} WHERE organization_id = '${IDS.orgA}';
+  IF n <> 1 THEN RAISE EXCEPTION 'ARM-B expected the masked insert to succeed; measured % rows', n; END IF;
+END $w$;
+ROLLBACK;`,
+        },
+      ],
+    }
+  }
+
+  return {
+    probes: [
+      {
+        id: 'ARM-C-DEFECT_VISIBLE-the-SHIPPED-INVOKER-function-fails-42501-permission-denied-for-schema-auth-AT-THE-PROBE',
+        sql:
+          asUser(IDS.adminA) +
+          `DO $w$ DECLARE caught text := 'none'; msg text := ''; ctx text := ''; BEGIN
+  BEGIN
+    ${insert};
+  EXCEPTION WHEN OTHERS THEN
+    caught := SQLSTATE;
+    GET STACKED DIAGNOSTICS msg = MESSAGE_TEXT, ctx = PG_EXCEPTION_CONTEXT;
+  END;
+  IF caught <> '42501' THEN RAISE EXCEPTION 'ARM-C expected 42501, caught=% (msg=%)', caught, msg; END IF;
+  IF msg <> 'permission denied for schema auth' THEN
+    RAISE EXCEPTION 'ARM-C refused 42501 but for the WRONG reason -- measured message=%', msg;
+  END IF;
+  -- THE FUNCTION IS NAMED, THE LINE NUMBER IS NOT. A PL/pgSQL body-relative
+  -- line is substrate-dependent and pinning it would make this control fail on
+  -- a different server for no semantic reason. The STATEMENT KIND is pinned
+  -- instead: the failure is the v_actor := auth.uid() ASSIGNMENT, not the
+  -- registry SELECT that precedes it and not the helper call that follows.
+  IF ctx NOT LIKE '%enforce_organization_commercial_acceptance_invariants%' THEN
+    RAISE EXCEPTION 'ARM-C the 42501 did not arise inside the trigger function -- context=%', ctx;
+  END IF;
+  IF ctx NOT LIKE '%at assignment%' THEN
+    RAISE EXCEPTION 'ARM-C the 42501 did not arise at the auth.uid() assignment -- context=%', ctx;
+  END IF;
+END $w$;
+ROLLBACK;`,
+      },
+    ],
+  }
 }
 
 const EXPECTED_PROBE_IDS = buildProbeManifest().probes.map((p) => p.id)
@@ -800,3 +1126,133 @@ describe.skipIf(!PG_TESTS_ENABLED)(
     })
   }
 )
+
+/* -------------------------------------------------------------------------- */
+/* PG-06 REMEDIATION — THE TWO DEFECT-REPRODUCTION ARMS (HPO-ODS-W2-34)        */
+/*                                                                            */
+/* WHY SEPARATE HARNESS RUNS AND NOT MORE PROBES IN ARM A. The three arms      */
+/* differ in the SUBSTRATE, not in what they ask: arm A carries the amended    */
+/* function with the masking grant gone, arm B the shipped INVOKER function    */
+/* with the mask present, arm C the shipped INVOKER function with the mask     */
+/* gone. A privilege posture is a property of the cluster, so the only honest  */
+/* way to compare three postures is three clusters. Precedent for the shape:   */
+/* tests/postgres/ce3-entitlement-grants.pg.test.ts drives several             */
+/* runDisposableHarness invocations from one parameterised setup builder.      */
+/*                                                                            */
+/* WHY BOTH ARMS USE buildSetupManifest AND NOT ITS ...WithAcceptances SIBLING.*/
+/* That sibling seeds an acceptance THROUGH the very trigger under test. Arm C */
+/* pairs the broken function with no mask, so the seeding statement would die  */
+/* during SETUP -- and a setup crash proves only that setup failed. The 42501  */
+/* has to be captured BY THE PROBE, on the statement the control names, or the */
+/* control is not evidence. Both arms therefore run acceptance-free, and each  */
+/* asserts setupStatus === 'SUCCESS' so a regression into setup-crash          */
+/* territory is a RED rather than a differently-shaped green.                  */
+/* -------------------------------------------------------------------------- */
+
+describe.skipIf(!PG_TESTS_ENABLED)(
+  'L1 PG-06 remediation — ARM B (MASK_REPRODUCES) and ARM C (DEFECT_VISIBLE)',
+  { timeout: 2_400_000 },
+  () => {
+    let armB: HarnessOutcome
+    let armC: HarnessOutcome
+
+    beforeAll(() => {
+      // ARM B — shipped INVOKER function, masking grant PRESENT.
+      armB = runDisposableHarness({
+        image: DEFAULT_IMAGE,
+        setup: buildSetupManifest({
+          functionVariant: 'shipped-invoker',
+          maskingAuthSchemaGrantPresent: true,
+        }),
+        probe: buildDefectArmProbeManifest('MASK_REPRODUCES'),
+      })
+      // ARM C — shipped INVOKER function, masking grant ABSENT.
+      armC = runDisposableHarness({
+        image: DEFAULT_IMAGE,
+        setup: buildSetupManifest({ functionVariant: 'shipped-invoker' }),
+        probe: buildDefectArmProbeManifest('DEFECT_VISIBLE'),
+      })
+      console.log(
+        `L1_PG06_ARMS=${JSON.stringify({
+          armB: { setup: armB.setupStatus, probes: armB.probeResults, failureReason: armB.failureReason },
+          armC: { setup: armC.setupStatus, probes: armC.probeResults, failureReason: armC.failureReason },
+        })}`
+      )
+    }, 2_400_000)
+
+    describe('ARM B — the mask reproduces', () => {
+      it('setup COMPLETED, so the arm observed a probe and not a setup crash', () => {
+        expect(armB.setupStatus).toBe('SUCCESS')
+        expect(armB.failureReason).toBeNull()
+      })
+
+      it('the SHIPPED INVOKER function inserts successfully while uellix_writer holds auth USAGE', () => {
+        expect(armB.probeResults).toHaveLength(1)
+        expect(armB.probeResults[0].detail ?? '').toBe('')
+        expect(armB.probeResults[0].ok).toBe(true)
+      })
+
+      it('tore itself down with zero leftovers', () => {
+        expect(armB.teardownStatus).toBe('SUCCESS')
+        expect(armB.leftoverDatabaseCount).toBe(0)
+        expect(armB.lifecycleState).toBe('VERIFIED_GONE')
+        expect(armB.targetLocality).toBe('LOCAL')
+      })
+    })
+
+    describe('ARM C — the defect is visible', () => {
+      // ARM-01, the control M-13 falsifies. If a future editor points these
+      // arms at the acceptance-seeding setup, this assertion — not a probe —
+      // is what goes red, and it says exactly why.
+      it('setup COMPLETED: the 42501 was captured BY THE PROBE, never by a setup crash', () => {
+        expect(armC.setupStatus).toBe('SUCCESS')
+        expect(armC.failureReason).toBeNull()
+      })
+
+      it('the SHIPPED INVOKER function fails 42501 permission denied for schema auth at the auth.uid() assignment', () => {
+        expect(armC.probeResults).toHaveLength(1)
+        expect(armC.probeResults[0].detail ?? '').toBe('')
+        expect(armC.probeResults[0].ok).toBe(true)
+      })
+
+      it('tore itself down with zero leftovers', () => {
+        expect(armC.teardownStatus).toBe('SUCCESS')
+        expect(armC.leftoverDatabaseCount).toBe(0)
+        expect(armC.lifecycleState).toBe('VERIFIED_GONE')
+        expect(armC.targetLocality).toBe('LOCAL')
+      })
+    })
+  }
+)
+
+/* -------------------------------------------------------------------------- */
+/* FN-03 (static half) — DB-free, and therefore NEVER SKIPPED.                */
+/*                                                                            */
+/* The catalog half of FN-03 lives in arm A's probe set and proves the owner   */
+/* did not move. This half proves the MIGRATION contains no instruction that   */
+/* could move it, which is the claim that has to survive into production:      */
+/* CREATE OR REPLACE preserves the owner, so a correct remediation needs no    */
+/* ownership statement at all, and an ALTER ... OWNER TO smuggled in here      */
+/* would be a privilege change wearing a remediation's clothes.                */
+/* -------------------------------------------------------------------------- */
+describe('L1 PG-06 remediation — the amended migration introduces no ownership change (static)', () => {
+  const L1_SQL = readFileSync(path.resolve(__dirname, '..', '..', L1_UNIT!.file), 'utf8')
+
+  it('contains ZERO occurrences of ALTER FUNCTION ... OWNER TO', () => {
+    expect(L1_SQL).not.toMatch(/ALTER\s+FUNCTION[\s\S]*?OWNER\s+TO/i)
+  })
+
+  it('contains ZERO ownership statements of any kind', () => {
+    expect(L1_SQL).not.toMatch(/\bALTER\s+\w+[\s\S]{0,200}?\bOWNER\s+TO\b/i)
+  })
+
+  it('declares the function SECURITY DEFINER with the search_path pinned to public', () => {
+    expect(L1_SQL).toMatch(
+      /CREATE OR REPLACE FUNCTION enforce_organization_commercial_acceptance_invariants\(\)\nRETURNS trigger\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path = public\nAS \$\$\n/
+    )
+  })
+
+  it('grants nothing: the amendment widens no runtime privilege', () => {
+    expect(L1_SQL).not.toMatch(/^\s*GRANT\b/im)
+  })
+})

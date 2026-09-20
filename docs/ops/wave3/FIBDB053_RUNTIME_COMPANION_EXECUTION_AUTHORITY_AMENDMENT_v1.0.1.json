@@ -1,0 +1,332 @@
+{
+  "package_id": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.1",
+  "artifact_id": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1",
+  "authority_class": "APPEND_ONLY_CATALOG_PROBE_SEMANTIC_CORRECTION_TO_A_FROZEN_NODE_AUTHORITY_NOT_IMPLEMENTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_SUPERSEDES_EXACTLY_TWO_DEFECTIVE_CLAUSES_OF_ITS_FROZEN_PARENT_PLUS_ONE_NON_SEMANTIC_ANCHOR",
+  "append_only": true,
+  "mission_id": "CV1-PR189-FIC1-APPEND-ONLY-CORRECTION-W",
+  "lane": "codex/fibdb053-runtime-companion-authority-r1",
+  "role": "AUTHORITY_CORRECTION_WRITER",
+  "materialization_date": "2026-09-20",
+  "GRANT_ID": null,
+  "BASE_AUTHORITY": {
+    "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json",
+    "blob_sha_at_this_base": "9a806f3110a40f1453608c58fc69db983d680864",
+    "disposition": "HISTORICALLY_FROZEN_BYTE_FOR_BYTE_NOT_EDITED_BY_THIS_ACT",
+    "form": "This document is a SEPARATE COMPANION AUTHORITY AMENDMENT, following the repository-native precedent docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json and docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0.json. It is NOT a replacement authority. No FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.1.json exists or is authorized. The parent remains controlling for every clause this amendment does not name.",
+    "why_no_parent_edit": "The parent is a frozen artifact that has already been read by an independent certification refresh, and its defect is part of the evidentiary record that produced F-IC-1. Rewriting it would destroy the history of the defect and would be a prohibited historical-evidence rewrite (CLAUDE.md section 5). The defect is therefore adjudicated in place, in the open, by an append-only successor clause.",
+    "naming_derivation": "Derived mechanically from repository precedent, not from the mission prompt. Every append-only authority correction in this repository is named <BASE_PACKAGE_ID>_AMENDMENT_v<next>.json and is placed in the SAME directory as its base, paired with a <BASE_MANIFEST_ID>_AMENDMENT_v<next>.json. The base is FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0 under docs/ops/wave3/, so this artifact is FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json under docs/ops/wave3/."
+  },
+  "COMPANION_MANIFEST_AMENDMENT": {
+    "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+    "base_manifest_path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_v1.0.0.json",
+    "base_manifest_blob_sha_at_this_base": "137a931ca22c965a413e1194b3929537e23018fb",
+    "base_manifest_disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT_REMAINS_CONTROLLING_FOR_ITS_OWN_31_CONTROLS"
+  },
+  "OWNER_RATIFICATION": {
+    "path": "docs/ops/owner-ratifications/FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0.json",
+    "blob_sha_at_this_base": "c59b30a965b3b8652046f2010faf5bf084ec0686",
+    "disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT. RC-01..RC-10 are untouched. This amendment asks the owner for nothing and grants itself nothing."
+  },
+  "SECTION_A0_FRESHNESS": {
+    "BASE_REF": "origin/codex/fibdb053-runtime-companion-authority-r1",
+    "BASE_SHA": "e4f648992d3ca295022eba06bd8ea335cc7bd780",
+    "BASE_TREE": "fa3ddfe390a6bfcf734a6deb3a48c347b2c3ab4b",
+    "BRANCH": "codex/fibdb053-runtime-companion-authority-r1",
+    "WORKTREE_MODE": "DETACHED_WRITER_PUSHING_FAST_FORWARD_TO_PR_BRANCH",
+    "INTEGRATION_AT_THIS_BASE_FOR_FRESHNESS_ONLY": "ae79807fd5096736c37bad0ac799305aacbea7e3",
+    "integration_sync_disposition": "NOT PERFORMED AND NOT AUTHORIZED. This lane is correction-only. The base of this amendment is PR #189 head e4f64899, not integration. Integration is recorded here solely so a reader can see which integration state this correction was authored against.",
+    "worktree_clean_before_mutation": true,
+    "drift_rule": "If origin/codex/fibdb053-runtime-companion-authority-r1 is not e4f648992d3ca295022eba06bd8ea335cc7bd780 immediately before commit, the mission STOPS with BASE_DRIFT and this artifact is not committed. Never silently reconciled.",
+    "IMPLEMENTATION_PERFORMED": "NONE. This artifact is not executable. No TypeScript, no SQL, no test, no registry entry, no ODS lineage identifier, no HPO id and no migration is created by it. The runtime bridge remains unimplemented."
+  },
+  "SECTION_A1_DEFECT_ADJUDICATION": {
+    "FINDING_ID": "F-IC-1",
+    "SOURCE": "Independent certification refresh of PR #189. That refresh independently confirmed that the compatibility contradiction still exists, that the runtime architecture is otherwise sound, that no ODS is required, and that the defect is internal to the authority/test contract rather than to the selected architecture.",
+    "DEFECT_SUMMARY": "The frozen parent asserts that the three textual spellings of the same PostgreSQL function signature are not interchangeable, and that a probe written in the wrong spelling is silently and permanently FALSE. That assertion is false. pg_catalog.to_regprocedure normalizes type aliases and discards type modifiers before performing an exact type-identity lookup, so all three spellings resolve to the SAME pg_proc OID. Because the mutation MUT-RC-12 consists of rewriting the literal in one of those interchangeable spellings, the mutant is INDISTINGUISHABLE from the original: N-RC-10 can never go RED for it. MUT-RC-12 and N-RC-10 are therefore VACUOUS as formulated - they name a mutation that does not mutate anything.",
+    "DEFECTIVE_CLAUSES": [
+      {
+        "locus": "AUTHORITY docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json :: CATALOG_PROBE_CONTRACT.signature_graphemes.warning",
+        "OLD_verbatim": "The same signature has THREE spellings in this repository, and they are not interchangeable. A probe written in the wrong grapheme can be silently and permanently FALSE, which would pin the bridge to OLD_DB forever on a database that is already NEW_DB — a fail-silent inversion, not a fail-closed one.",
+        "defect": "FALSE PREMISE. Both of its two claims are false. (a) \"they are not interchangeable\" - measured: all three resolve to one OID. (b) \"A probe written in the wrong grapheme can be silently and permanently FALSE\" - measured: a probe written in any of the three recorded graphemes is permanently TRUE on NEW_DB. The hazard it names does not exist in the form it names it.",
+        "disposition": "SUPERSEDED by SECTION_A3 of this amendment."
+      },
+      {
+        "locus": "AUTHORITY docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json :: MUTATION_CONTROLS.controls[MUT-RC-12].guarantee_broken",
+        "OLD_verbatim": "CATALOG_PROBE_CONTRACT.signature_graphemes. This mutant FAILS SILENT — the probe returns NULL forever and the bridge pins itself to OLD_DB on a NEW_DB database, filing no risk while reporting success.",
+        "defect": "VACUOUS. It asserts the mutant \"FAILS SILENT - the probe returns NULL forever\". Measured: the mutant returns the SAME non-NULL OID as the canonical literal. The mutation is not merely hard to catch, it is not a mutation at all.",
+        "disposition": "SUPERSEDED by SECTION_A4 of this amendment, together with the MUT-RC-12 mutation string it describes."
+      },
+      {
+        "locus": "MANIFEST docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_v1.0.0.json :: negative_controls[N-RC-10].description",
+        "OLD_verbatim": "Probe grapheme. The probe literal uses the to_regprocedure INPUT grapheme, not the pg_catalog grapheme (bpchar/varchar/int4/_text) and not the SQL declaration grapheme. A probe in the wrong grapheme returns NULL forever, pinning the bridge to OLD_DB on a database that is already NEW_DB — filing no risk while reporting success. This mutant FAILS SILENT, so a control asserting only 'the bridge works' passes it; the control must assert the probe returns TRUE against a real catalog holding the nine-argument function. Catches MUT-RC-12.",
+        "defect": "VACUOUS AND SELF-DEFEATING. It instructs the control to assert that the probe returns TRUE against a real catalog holding the nine-argument function - which the pg_catalog-grapheme mutant ALSO satisfies. A control whose assertion is satisfied by its own declared mutant proves nothing about that mutant.",
+        "disposition": "SUPERSEDED by SECTION_A5 of this amendment and re-expressed in the companion manifest amendment."
+      },
+      {
+        "locus": "MANIFEST docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_v1.0.0.json :: mutation_controls[MUT-RC-12].description",
+        "OLD_verbatim": "Write the probe literal in the pg_catalog grapheme instead of the to_regprocedure input grapheme. Fails silent. Must be caught by N-RC-10.",
+        "defect": "VACUOUS. Same false premise, restated in the manifest. \"Fails silent\" is measured to be \"does not fail at all\".",
+        "disposition": "SUPERSEDED by SECTION_A4 of this amendment and re-expressed in the companion manifest amendment."
+      }
+    ],
+    "THIS_AMENDMENT_DOES_NOT_PRETEND_THE_OLD_STATEMENT_WAS_VALID": "BINDING. The parent clauses were false when written. This amendment records that they were false, records how that was measured, and replaces them. It does not reinterpret them charitably, does not describe the correction as a clarification, and does not claim the parent meant something other than what it says.",
+    "WHAT_THE_PARENT_GOT_RIGHT_AND_THIS_AMENDMENT_KEEPS": "The parent chose to_regprocedure for a correct and measured reason (why_to_regprocedure: totality), imposed a FIXED LITERAL rule on the probe argument, named the to_regprocedure input form as the one the probe uses, and recorded the other two spellings as reader aids against db/hosted/authority/recovered-boundaries.ts and the Stage-A package. All four of those survive this amendment unchanged. The defect is confined to WHY a fixed literal is required, and to the mutation that was built on the wrong why."
+  },
+  "SECTION_A2_REAL_PG_REPRODUCTION": {
+    "disposition": "MEASURED, NOT ASSERTED. Every row below was produced by executing the stated SQL against a real PostgreSQL catalog in a disposable container, which was destroyed afterwards.",
+    "substrate": {
+      "image": "supabase/postgres:17.6.1.143",
+      "reason_for_this_image": "It is the image this repository already pins for disposable PostgreSQL proofs, so the measurement is taken on the same major and build family as the governed substrate rather than on a convenience image.",
+      "server_version": "PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+      "role_used": "supabase_admin (rolsuper=t). Recorded because on this image the postgres role is NOT a superuser and cannot create the schema, which is a measured property of the disposable substrate rather than of this contract.",
+      "lifecycle": "Created for this proof, used for this proof, destroyed immediately afterwards. Never staging, never production, never the canonical local Supabase stack."
+    },
+    "OLD_DB_STATE": {
+      "installed": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb) - created as (char(64), uuid, char(64), varchar(100), varchar(100), integer, jsonb) and rendered by the catalog in exactly the predecessor form the parent authority records.",
+      "probe": "pg_catalog.to_regprocedure(<canonical nine-argument literal>)",
+      "result": "NULL",
+      "verdict": "OLD_DB. The canonical nine-argument literal resolves FALSE against a catalog holding only the seven-argument form, exactly as CATALOG_PROBE_CONTRACT.rule requires."
+    },
+    "NEW_DB_STATE": {
+      "transition": "DROP FUNCTION ...(char(64), uuid, char(64), varchar(100), varchar(100), integer, jsonb); CREATE FUNCTION ...(char(64), uuid, char(64), varchar(100), varchar(100), integer, jsonb, varchar(50), text[]). This is the Stage-A shape: the seven-argument signature is dropped, not kept alongside.",
+      "installed_oid": 16670,
+      "GRAPHEME_MATRIX": [
+        {
+          "grapheme": "G1 to_regprocedure_input_form",
+          "literal": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb,character varying,text[])",
+          "resolved_oid": 16670
+        },
+        {
+          "grapheme": "G2 sql_declaration_form",
+          "literal": "uellix_stella_ops.complete_operation_ticket(char(64), uuid, char(64), varchar(100), varchar(100), integer, jsonb, varchar(50), text[])",
+          "resolved_oid": 16670
+        },
+        {
+          "grapheme": "G3 pg_catalog_form",
+          "literal": "uellix_stella_ops.complete_operation_ticket(bpchar,uuid,bpchar,varchar,varchar,int4,jsonb,varchar,_text)",
+          "resolved_oid": 16670
+        }
+      ],
+      "GRAPHEME_MATRIX_VERDICT": "ALL THREE RESOLVE TO THE SAME OID 16670. The parent clause \"they are not interchangeable\" is FALSE. to_regprocedure parses the signature, normalizes type aliases (character/bpchar, character varying/varchar, integer/int4, text[]/_text) and DISCARDS type modifiers (char(64) and character are the same type for signature identity), then performs an exact type-identity lookup. Spelling is therefore not a degree of freedom the probe can get wrong."
+    },
+    "TOTALITY_MEASUREMENT": {
+      "question": "Can a wrong probe literal fail by raising, rather than by returning NULL?",
+      "inputs_tested": [
+        "a literal naming a type that does not exist (nosuchtype at position 6)",
+        "a literal with unbalanced parentheses",
+        "the string \"!!!not a signature at all!!!\"",
+        "the empty string"
+      ],
+      "result": "Every one returned NULL with psql exit code 0 and no SQLSTATE.",
+      "verdict": "to_regprocedure is TOTAL over arbitrary input, not merely over absent functions. This is BROADER than the parent authority own why_to_regprocedure note, and it is load-bearing for this amendment in two ways. (a) It confirms that NO probe literal can ever fail by query error, so the distinction \"fails for semantic signature mismatch rather than query error\" is satisfied by every candidate mutant and is not a discriminator between them. (b) It is precisely why a dedicated control is genuinely required: the probe cannot self-detect its own typo, and nothing in the query layer will."
+    },
+    "IMPLICIT_CAST_ASYMMETRY": {
+      "question": "Does to_regprocedure apply the implicit casts that ordinary function-call resolution applies?",
+      "measured": [
+        "pg_cast holds integer -> bigint with castcontext = i (implicit).",
+        "An ordinary call resolves through it: with only castdemo(bigint) installed, SELECT castdemo(42::integer) succeeds and returns the bigint function result.",
+        "to_regprocedure of castdemo(bigint) resolves; to_regprocedure of castdemo(integer) returns NULL."
+      ],
+      "verdict": "to_regprocedure does EXACT type matching and does NOT apply implicit casts. This is the exact semantic OPPOSITE of the alias case: an alternate SPELLING of the same type resolves identically, while a DIFFERENT type that is implicitly castable does not resolve at all. That asymmetry is what the re-scoped MUT-RC-12 is built on, and it is the reason the re-scoped mutant is non-obvious enough to deserve a control."
+    },
+    "CONCLUSION": "F-IC-1 REPRODUCED. The parent signature_graphemes warning is false; MUT-RC-12 and N-RC-10 are vacuous in their v1.0.0 formulation."
+  },
+  "SECTION_A3_SUPERSEDING_CATALOG_PROBE_CLAUSE": {
+    "supersedes": "CATALOG_PROBE_CONTRACT.signature_graphemes.warning of the frozen parent, and that clause only.",
+    "NEW_warning": "The same signature has THREE spellings in this repository and they ARE interchangeable for the probe: measured on a real PostgreSQL 17.6 catalog, all three resolve to the SAME pg_proc OID, because pg_catalog.to_regprocedure normalizes type aliases and discards type modifiers before an exact type-identity lookup. The three forms are recorded so that a reader comparing this contract against db/hosted/authority/recovered-boundaries.ts (pg_catalog form) or against the Stage-A package (SQL declaration form) does not mistake a spelling difference for a signature difference. The real hazard is NOT spelling. It is SEMANTIC SIGNATURE IDENTITY: a literal naming a different type, a different argument order, a different arity or a different function name resolves to NULL, and because to_regprocedure is total over arbitrary input it does so without raising - so a wrong signature is silently indistinguishable, at the query layer, from a function that is legitimately absent.",
+    "RETAINED_UNCHANGED_AND_STILL_BINDING": {
+      "literal_rule": "The probe argument is a FIXED LITERAL string. It is never composed, never interpolated, and never built from a variable holding a type name. The nine-argument signature is a constant of this contract.",
+      "literal_rule_disposition": "NOT WEAKENED. The production probe MUST use ONE fixed, canonical literal. This amendment corrects only the JUSTIFICATION: the reason is not that a rival spelling would resolve differently (it would not), but that a fixed literal is the only form that is auditable against the Stage-A declaration, cannot be composed from a variable holding a type name, and gives N-RC-10 a single frozen comparand to assert against.",
+      "which_one_the_probe_uses": "to_regprocedure_input_form. The other two are recorded so that a reader comparing this contract against db/hosted/authority/recovered-boundaries.ts (pg_catalog form) or against the Stage-A package (SQL declaration form) does not mistake a spelling difference for a signature difference.",
+      "three_recorded_graphemes_disposition": "RETAINED verbatim as reader aids. Their recorded VALUES were never in error; only the warning attached to them was.",
+      "predecessor_seven_argument_form_for_reference": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb) — measured at db/prepared/checkpoint-a1/corroboration.sql."
+    },
+    "CANONICAL_PROBE_LITERAL": {
+      "value": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb,character varying,text[])",
+      "status": "FROZEN BY THIS AMENDMENT. This exact string is the single canonical fixed literal the production probe uses.",
+      "required_resolution": [
+        "Against NEW_DB (the nine-argument signature installed): to_regprocedure(<canonical literal>) IS NOT NULL must be TRUE.",
+        "Against OLD_DB (only the seven-argument signature installed): to_regprocedure(<canonical literal>) IS NOT NULL must be FALSE."
+      ],
+      "correctness_criterion": "Correctness is about SEMANTIC SIGNATURE IDENTITY - schema, function name, argument arity, argument order and argument type identity - and NOT about textual alias spelling."
+    }
+  },
+  "SECTION_A4_SUPERSEDING_MUT_RC_12": {
+    "supersedes": "MUTATION_CONTROLS.controls[MUT-RC-12].mutation and .guarantee_broken of the frozen parent, and the companion manifest mutation_controls[MUT-RC-12].description.",
+    "id_preserved": "MUT-RC-12",
+    "must_be_caught_by_preserved": "N-RC-10",
+    "NEW_mutation": "Change the SIXTH argument type of the probe literal from integer to bigint, leaving the schema, the function name, the argument order, the arity and every other argument type byte-unchanged.",
+    "NEW_mutant_literal": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,bigint,jsonb,character varying,text[])",
+    "NEW_guarantee_broken": "CATALOG_PROBE_CONTRACT as amended by SECTION_A3: the probe literal must name the signature by SEMANTIC IDENTITY. This mutant FAILS SILENT in the only sense that is measurable - pg_catalog.to_regprocedure returns NULL with no SQLSTATE and psql exit code 0, so the probe query itself reports nothing wrong. The bridge then pins itself to OLD_DB on a database that is already NEW_DB.",
+    "WHY_THIS_MUTANT_AND_NOT_ANOTHER": {
+      "smallest": "It is a ONE-TOKEN substitution. No argument is added, removed or moved, and no other token changes. Among the seven candidates measured (wrong type at position 6, wrong type at position 7, swapped argument order, eight-argument arity, wrong function name, the predecessor seven-argument literal, and text in place of character varying at position 8) every one resolved NULL, so all were equally CAPABLE of failing the control; this one is the smallest.",
+      "genuinely_wrong_not_an_alias": "integer (int4) and bigint (int8) are DIFFERENT TYPES with different OIDs, not two spellings of one type. This is exactly the distinction the parent authority got backwards.",
+      "non_obvious_and_therefore_worth_a_control": "integer -> bigint is an IMPLICIT cast in PostgreSQL (pg_cast castcontext = i), and ordinary function-call resolution DOES apply it - measured in SECTION_A2. A reader who knows that, and who also knows that character and bpchar resolve identically, could reasonably expect to_regprocedure to resolve the bigint spelling too. Measured, it does not. The mutant therefore tests a real belief a real implementer could hold, rather than an obvious typo.",
+      "syntactically_valid": "MEASURED: the mutant literal is accepted by to_regprocedure, returns NULL, raises no SQLSTATE and leaves psql exit code 0. It fails for semantic signature mismatch, not for query error. Per SECTION_A2.TOTALITY_MEASUREMENT this is true of every possible probe literal, which is why the control cannot lean on an error to catch it.",
+      "deterministic": "to_regprocedure performs exact type-identity matching with no cast application, so this mutant resolves NULL on every catalog whose installed sixth argument type is integer. It is not timing-, ordering- or role-dependent.",
+      "not_an_alternate_alias": "EXPLICIT. This amendment forbids re-expressing MUT-RC-12 as any alternate spelling of the SAME type. The three recorded graphemes, and any other alias pair, resolve identically and would reinstate the vacuity this amendment exists to remove."
+    }
+  },
+  "SECTION_A5_SUPERSEDING_N_RC_10": {
+    "supersedes": "The companion manifest negative_controls[N-RC-10].description of the frozen parent manifest, and that control only.",
+    "id_preserved": "N-RC-10",
+    "PROOF_OBLIGATION": "N-RC-10 must prove, against ONE real PostgreSQL catalog in the NEW_DB state (the nine-argument signature installed and the seven-argument signature dropped), all three arms below. A naked \"the probe works\" assertion is INVALID.",
+    "ARMS": [
+      {
+        "arm": "N-RC-10-A",
+        "assertion": "to_regprocedure(<canonical literal>) IS NOT NULL is TRUE.",
+        "measured_expected": "TRUE",
+        "purpose": "The canonical literal resolves. Without this arm the mutant arm could pass on a catalog where nothing resolves."
+      },
+      {
+        "arm": "N-RC-10-B",
+        "assertion": "to_regprocedure(<MUT-RC-12 mutant literal, sixth argument bigint>) IS NOT NULL is FALSE.",
+        "measured_expected": "FALSE",
+        "purpose": "The load-bearing arm. A and B taken together in the SAME catalog state are what make MUT-RC-12 a real mutation: the only difference between the two literals is the mutated token, so a divergence in the verdict can only be attributed to it."
+      },
+      {
+        "arm": "N-RC-10-C",
+        "assertion": "to_regprocedure(<pg_catalog grapheme>) resolves to the SAME OID as to_regprocedure(<canonical literal>).",
+        "measured_expected": "EQUAL",
+        "purpose": "VACUITY GUARD. It pins the measured fact that alternate spellings are interchangeable, so a future lane cannot reintroduce the withdrawn grapheme mutation as if it were load-bearing. This arm goes RED only if a future PostgreSQL stops normalizing aliases, which would itself be a finding."
+      }
+    ],
+    "ANTI_VACUITY_RULE": "N-RC-10 must assert the mutant literal as a FROZEN STRING, not by re-deriving it from the canonical literal with the same substitution the implementation uses. A control that re-expresses its subject own transformation proves only that the copy behaves like the copy.",
+    "substrate": "Real PostgreSQL via pnpm db:audit:disposable against a fresh throwaway container, destroyed afterwards. Never a mock: the whole question is what a real catalog returns."
+  },
+  "SECTION_A6_R1_ANCHOR_CORRECTION": {
+    "ANCHOR_CORRECTION_ONLY": true,
+    "scope": "NON-SEMANTIC. This section corrects a cross-reference PATH and nothing else. No rollback behaviour, order, state or prohibition changes.",
+    "locus": "ROLLBACK_CONTRACT.cases[R-1].path_dependency of the frozen parent.",
+    "OLD_verbatim": "The seven-argument form must be restored by stella_0017b_rollback.sql specifically. Per WAVE3_AUTHORITY's ROLLBACK_CONTRACT.interaction_with_stella_0017_rollback, running stella_0017_rollback.sql is NOT a valid reversal once 0017b is installed. This authority does not author that rollback; it records that the bridge's return path depends on it existing and being correct.",
+    "imprecision": "The citation \"Per WAVE3_AUTHORITY ROLLBACK_CONTRACT.interaction_with_stella_0017_rollback\" reads as a TOP-LEVEL ROLLBACK_CONTRACT of docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json. Measured at that file blob 1f78f175694cf0f89d976caa02931ea52dd4f06d: there is NO top-level ROLLBACK_CONTRACT key. The key exists at FIBDB053_STAGE_A_CONTRACT.ROLLBACK_CONTRACT.interaction_with_stella_0017_rollback.",
+    "CORRECTED_ANCHOR": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json :: FIBDB053_STAGE_A_CONTRACT.ROLLBACK_CONTRACT.interaction_with_stella_0017_rollback",
+    "CITED_TEXT_AT_THE_CORRECTED_ANCHOR": "stella_0017_rollback.sql restores the five-argument settle as a SELF-CONTAINED body and drops the ten-argument function. After stella_0017b is installed, running stella_0017_rollback.sql is therefore NOT a valid reversal path — it would drop a function stella_0017b's forward unit replaced with a wider one. This is exactly what the mandatory supersession entry exists to refuse. Recorded so an operator is not left to discover it at apply time.",
+    "semantic_effect": "NONE. The cited clause says exactly what R-1 says it says: running stella_0017_rollback.sql is not a valid reversal once 0017b is installed. R-1 dependency on stella_0017b_rollback.sql, its SUPPORTED state, its behaviour, its note, the required_order and the controls T7 and MUT-RC-10 are all unchanged.",
+    "why_included_here": "The refresh audit raised this alongside F-IC-1 and it is expressible append-only, as a pure path correction, without touching rollback semantics. It is recorded in this amendment rather than deferred so that a reader chasing the citation lands on the clause rather than on a key that does not exist. Had it required any change to rollback behaviour it would have been left to a separate amendment act."
+  },
+  "SECTION_A7_BOUNDED_ONCE_COVERAGE": {
+    "STATUS": "CLOSED_BY_THIS_AMENDMENT_IN_THE_COMPANION_MANIFEST",
+    "finding": "The refresh audit found that CATALOG_PROBE_CONTRACT.invalidation_and_reprobe.bounded_once_rule is a binding runtime rule with NO manifest control proving its cardinality. Re-derived here: of the parent manifest 31 controls, none asserts how many times the probe is re-run. T5 is about idempotent replay and T7 is about probe inversion after rollback; neither counts probe invocations. The rule was therefore unfalsifiable.",
+    "runtime_semantics_changed": "NONE. The rule below is quoted from the frozen parent and is NOT altered by this amendment. Only its falsifiability changes.",
+    "bounded_once_rule_verbatim": "Exactly one re-probe and at most one retry. There is no loop, no backoff ladder and no second invalidation. An unbounded re-probe turns a deterministic contract into a retry storm against the catalog during precisely the window when the database is being changed.",
+    "coverage_added": "The companion manifest amendment adds negative control N-RC-11 (cardinality) and mutation control MUT-RC-13 (three mutants: a second re-probe, a retry loop, a backoff ladder). N-RC-11 must go RED for each.",
+    "governance_check": "PERMITTED, not forced. Verified against the frozen surfaces rather than assumed. (a) The parent manifest carries no self-check and pins no control count, so adding ids breaks no frozen count. (b) The parent AUTHORITY self_check pins MUTATION_CONTROLS.controls.length == 12 for ITS OWN section; this amendment adds NO authority-level mutation control, so that count remains true of the untouched v1.0.0 file. (c) The parent authority self-check \"every MUTATION_CONTROLS entry names a must_be_caught_by that appears in the companion manifest\" is one-directional authority-to-manifest and is unaffected by a manifest-only addition. (d) Repository precedent permits it: docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_TEST_MANIFEST_AMENDMENT_v1.0.1.json introduced new control ids into an amendment manifest while its base kept its own counts. No separate amendment act is required, so BOUNDED_ONCE_COVERAGE does not remain open.",
+    "id_derivation": "Mechanical, from the parent manifest namespace, not from any prompt. Its ids are T1..T9, N-RC-01..N-RC-10 and MUT-RC-01..MUT-RC-12. Next free negative id = N-RC-11; next free mutation id = MUT-RC-13; next free T id = T10, used for this amendment positive control. Intersection with the parent 31 ids is the EMPTY SET."
+  },
+  "SECTION_A8_CONTROL_COUNT_PRESERVATION": {
+    "rule": "This amendment RE-SCOPES the existing MUT-RC-12 / N-RC-10 pair. It does not remove a control.",
+    "MUT_RC_12": "Id retained, must_be_caught_by retained as N-RC-10, mutation and guarantee_broken superseded.",
+    "N_RC_10": "Id retained, description superseded and split into three named arms. Still exactly one control.",
+    "frozen_v1_0_0_self_check_counts": "UNCHANGED AND UNTOUCHED. expected_mutation_control_count remains 12 and expected_mutation_id_set remains MUT-RC-01..MUT-RC-12 in the frozen file, which this act does not edit. Both statements remain TRUE of that file.",
+    "net_effect_on_the_effective_test_contract": "The parent manifest 31 controls remain 31, two of them re-scoped. This amendment adds 3 delta controls (T10, N-RC-11, MUT-RC-13). The effective contract is therefore 34 controls, of which this amendment authors 3 and re-scopes 2."
+  },
+  "SECTION_A9_NO_OTHER_SEMANTIC_CHANGE": {
+    "disposition": "BINDING. Every item below is carried from the frozen parent UNCHANGED. This amendment names them explicitly so that a certifier can check the negative claim by comparison rather than by reading the whole parent.",
+    "unchanged": [
+      "SELECTED_RUNTIME_STRATEGY - RUNTIME_FIRST_WITH_CATALOG_DRIVEN_COMPATIBILITY_BRIDGE.",
+      "DEPLOYMENT_CONTRACT - the four cells D-1..D-4, the runtime-first order, and D-3 as the single PROHIBITED cell.",
+      "ROLLBACK_CONTRACT - R-1/R-2/R-3, their states, the required_order, and R-2 as the single PROHIBITED case. SECTION_A6 corrects a citation path inside R-1 and nothing else.",
+      "CATALOG_PROBE_CONTRACT.prohibited_shapes P-1..P-5, including the 25P02 in_failed_sql_transaction prohibition on same-transaction arity fallback.",
+      "CATALOG_PROBE_CONTRACT.caching - cache-per-process permitted, never across a state transition without invalidation.",
+      "CATALOG_PROBE_CONTRACT.invalidation_and_reprobe - 42883 trigger, invalidate, re-probe exactly once, at most one retry in a NEW transaction, otherwise FAIL CLOSED. Quoted in SECTION_A7 and not altered there.",
+      "RISK_PAYLOAD_CONTRACT - riskLevel and riskFlags REQUIRED-and-nullable, the explicit_null_rule, and no_audit_log_source_of_truth.",
+      "FIBIU19_DISJOINTNESS - the four-method proof and the lib/pipeline/sroi-results.ts (SW-6) exclusion that makes the owner exception bounded.",
+      "owner_decision_record RC-01..RC-10 - untouched, unre-interpreted, and asked for nothing.",
+      "G2_BOUNDARY_RESTATEMENT.",
+      "NEW_ODS_REQUIRED.verdict = NO and its executed-classifier evidence.",
+      "PR187_RELATIONSHIP - PR #187 is not touched, not cited as a source of any frozen value, and not integrated by this act.",
+      "COMPATIBILITY_CONTRADICTION, CONTROLLING_AUTHORITY and its 14 anchors, STAGE_A_INTERACTION, FUTURE_RUNTIME_WRITE_SURFACE, OPEN_FINDINGS F-RC-1..F-RC-5, and observability/T9."
+    ],
+    "no_ods_surface": "This amendment creates no ODS surface, allocates no ODS lineage, claims no protected authority and touches no protected path. Its entire write set is under docs/ops/wave3/**."
+  },
+  "SECTION_A10_PRECEDENCE": {
+    "rule": "For the two clauses named in SECTION_A3 and SECTION_A4, and for the control named in SECTION_A5, THIS AMENDMENT CONTROLS. For the citation path named in SECTION_A6, this amendment controls as a pure anchor correction. For everything else, the frozen parent v1.0.0 and its frozen manifest v1.0.0 control verbatim.",
+    "conflict_rule": "A reader who finds this amendment and the parent in conflict on any clause NOT named above must treat that as a defect in this amendment and STOP, not choose. Under CLAUDE.md section 5 an unresolved conflict fails closed.",
+    "relation_to_the_domain_authority": "Unchanged. The parent refines docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json and this amendment refines the parent. It does not amend WAVE3_AUTHORITY, does not amend the FIBDB-053 Stage-A authority, and does not amend PR #187."
+  },
+  "SECTION_A11_ODS_DISPOSITION": {
+    "NEW_ODS_REQUIRED": "NO",
+    "basis": "Inherited from the parent executed-classifier verdict and re-checked for THIS write set. This amendment writes two files, both under docs/ops/wave3/**, which is not a DEFAULT_PROTECTED_PATTERN. It authorizes no implementation, no apply, no deployment, no certification and no allocation.",
+    "ods_scope_expectation": "ods:scope over this write set must report 0 protected violations, 0 non-canonical protected paths and 0 unauthorized paths.",
+    "what_this_amendment_does_not_do": [
+      "It does not implement the bridge.",
+      "It does not sync integration.",
+      "It does not merge.",
+      "It does not allocate an ODS grant or an HPO id.",
+      "It does not mark PR #189 ready; PR #189 remains DRAFT.",
+      "It does not certify itself. Independent certification is still required, and now has a smaller, measured surface to re-derive."
+    ]
+  },
+  "SECTION_A12_SELF_CHECK": {
+    "note": "Deterministic, test-free self-check for THIS amendment. It does not restate and does not replace the frozen parent own self_check, which remains true of the unedited parent file.",
+    "expected_defective_clause_count": 4,
+    "expected_defective_clause_loci": [
+      "AUTHORITY CATALOG_PROBE_CONTRACT.signature_graphemes.warning",
+      "AUTHORITY MUTATION_CONTROLS[MUT-RC-12].guarantee_broken",
+      "MANIFEST negative_controls[N-RC-10].description",
+      "MANIFEST mutation_controls[MUT-RC-12].description"
+    ],
+    "expected_grapheme_matrix_count": 3,
+    "expected_n_rc_10_arm_count": 3,
+    "expected_delta_control_ids": [
+      "T10",
+      "N-RC-11",
+      "MUT-RC-13"
+    ],
+    "expected_rescoped_control_ids": [
+      "MUT-RC-12",
+      "N-RC-10"
+    ],
+    "expected_write_set_size": 2,
+    "checks": [
+      "SECTION_A1_DEFECT_ADJUDICATION.DEFECTIVE_CLAUSES.length == 4 and every OLD_verbatim is byte-identical to the string at its stated locus in the frozen parent files at blobs 9a806f3110a40f1453608c58fc69db983d680864 and 137a931ca22c965a413e1194b3929537e23018fb.",
+      "SECTION_A2 GRAPHEME_MATRIX has 3 rows and all 3 carry the SAME resolved_oid - if they ever differ, F-IC-1 was misdiagnosed and this amendment is void.",
+      "SECTION_A3.CANONICAL_PROBE_LITERAL.value is byte-identical to the frozen parent CATALOG_PROBE_CONTRACT.signature_graphemes.to_regprocedure_input_form.",
+      "SECTION_A4.NEW_mutant_literal differs from SECTION_A3.CANONICAL_PROBE_LITERAL.value in EXACTLY ONE token, and that token is a TYPE NAME, not an alias of the type it replaces.",
+      "SECTION_A4 preserves MUT-RC-12 as the id and N-RC-10 as must_be_caught_by.",
+      "SECTION_A5.ARMS.length == 3 and includes both a TRUE arm for the canonical literal and a FALSE arm for the exact mutant literal of SECTION_A4, asserted in the SAME catalog state.",
+      "SECTION_A6.ANCHOR_CORRECTION_ONLY == true and SECTION_A6 changes no rollback state, order or prohibition.",
+      "SECTION_A6.CITED_TEXT_AT_THE_CORRECTED_ANCHOR is byte-identical to the string at that path in WAVE3_AUTHORITY_v1.0.0.json blob 1f78f175694cf0f89d976caa02931ea52dd4f06d.",
+      "SECTION_A7 quotes bounded_once_rule verbatim from the parent and alters no runtime semantics.",
+      "every delta control id in expected_delta_control_ids intersects the parent manifest 31 ids in the EMPTY SET.",
+      "SECTION_A8 removes no control and edits no frozen count.",
+      "SECTION_A13_WRITE_SET.length == 2 and contains neither the parent authority, the parent manifest, nor the owner ratification.",
+      "no section of this artifact authorizes an apply, a deployment, a certification, a merge, an integration sync or an ODS allocation."
+    ]
+  },
+  "SECTION_A13_WRITE_SET": [
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json (this file, ADDED)",
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json (ADDED)"
+  ],
+  "RISKS_AND_OPEN_FINDINGS": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "id": "F-AM-1",
+        "finding": "The re-scoped MUT-RC-12 mutant is wrong only while the installed sixth argument type is integer. If a future Stage-A revision widens that argument to bigint, the mutant literal becomes the canonical one and MUT-RC-12 silently turns vacuous again.",
+        "mitigation": "The parent manifest N-RC-09 already requires the nine-argument signature to be reconciled against the INTEGRATED Stage-A authority before final implementation, and requires a divergence to STOP the lane. N-RC-10-A also goes RED immediately if the canonical literal stops resolving. The residual is recorded rather than engineered away because no fixed literal can be immune to a change in the thing it names."
+      },
+      {
+        "id": "F-AM-2",
+        "finding": "The parent MUT-RC-12 also claimed the mutant would leave the bridge \"filing no risk while reporting success\". On a NEW_DB database Stage-A has DROPPED the seven-argument signature, so an OLD_DB-pinned bridge would issue a seven-argument call that raises 42883 - which triggers invalidation and re-probe, and under bounded_once_rule ends at FAIL CLOSED rather than at a silent success. The \"reporting success\" half of the parent claim was therefore also unsound, independently of the grapheme defect.",
+        "disposition": "NOT SILENTLY ABSORBED. SECTION_A4.NEW_guarantee_broken deliberately does NOT repeat that claim: it confines \"fails silent\" to the measurable sense - the probe query returns NULL with no SQLSTATE, so nothing at the query layer reports a problem. The downstream call-time behaviour is governed by invalidation_and_reprobe, which this amendment leaves unchanged."
+      },
+      {
+        "id": "F-AM-3",
+        "finding": "N-RC-10 and N-RC-11 are both FUTURE_MATERIALIZATION. Nothing they name exists at this base: there is no bridge module, no probe literal in code, and the nine-argument signature exists in no artifact (the parent F-RC-5). This amendment makes the test contract correct; it does not make it green.",
+        "disposition": "Expected and inherited. The parent manifest is a pre-implementation commitment throughout and its test_file values are UNKNOWN by the schema own sanctioned representation."
+      },
+      {
+        "id": "F-AM-4",
+        "finding": "SECTION_A2 was measured on supabase/postgres:17.6.1.143 (PostgreSQL 17.6). Alias normalization and typmod discarding in to_regprocedure are long-standing core PostgreSQL behaviour and are not expected to differ on another PostgreSQL 17 build, but this amendment measured one build, not a matrix.",
+        "disposition": "Recorded rather than generalized. N-RC-10-C is the standing guard: if a future substrate ever resolves the pg_catalog grapheme to a different OID, that arm goes RED and the question is reopened by evidence rather than by assumption."
+      }
+    ]
+  },
+  "required_independent_review": "INDEPENDENT certification is still required before any implementation lane opens, and this amendment does not certify itself or its parent. A certifier should RE-MEASURE rather than re-read: SECTION_A2 is reproducible in full by installing the seven-argument signature, probing, transitioning to the nine-argument signature, and re-probing all three graphemes plus the mutant literal in a disposable container.",
+  "final_state": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1_0_1_FROZEN_F_IC_1_CORRECTED_AWAITING_INDEPENDENT_CERTIFICATION",
+  "next_gate": "PR189_FIC1_APPEND_ONLY_CORRECTED__WAIT_FOR_LATEST_INTEGRATION_SYNC"
+}

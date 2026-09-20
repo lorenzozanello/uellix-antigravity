@@ -1,0 +1,684 @@
+{
+  "package_id": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0",
+  "authority_class": "NODE_LEVEL_EXECUTION_AUTHORITY__DOCS_ONLY_FREEZE",
+  "document_class": "EXECUTION_AUTHORITY__NO_IMPLEMENTATION__NO_ALLOCATION__NO_APPLY__NO_DEPLOYMENT__NO_CERTIFICATION",
+  "append_only": true,
+  "refines": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json",
+  "supersedes": null,
+  "owner_decision_record": "docs/ops/owner-ratifications/FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0.json",
+  "companion_manifest": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_v1.0.0.json",
+
+  "mission_id": "CV1-FIBDB053-RUNTIME-COMPANION-AW",
+  "lane": "codex/fibdb053-runtime-companion-authority-r1",
+  "role": "FIBDB053_RUNTIME_COMPANION_AUTHORITY_WRITER",
+  "materialization_date": "2026-09-18",
+
+  "AS_OF_REF": "integration/commercial-v1",
+  "AS_OF_HEAD": "0d94b54856c701419ba32bdd844245213fd4aeed",
+  "AS_OF_TREE": "34ac5599c6cc11dec5b22213c255c6d14cb845b8",
+
+  "NAMING_DERIVATION": "Named for the NODE it governs (the FIBDB-053 runtime companion), placed under docs/ops/wave3/** beside the Wave 3 domain authority it refines. It is a sibling of, not a successor to, the FIBDB-053 Stage-A authoring authority: Stage-A authors SQL, this node authors the runtime that must exist before that SQL may be applied.",
+
+  "PURPOSE": {
+    "statement": "Freeze the execution authority for the narrow runtime compatibility slice that must exist before FIBDB-053 Stage-A may be applied. The slice makes the single runtime caller of the governed completion verb tolerate BOTH the pre-Stage-A and post-Stage-A database states, discovered by catalog probe, and threads the risk payload that Stage-A's new parameters exist to carry.",
+    "what_this_is": [
+      "A node-level execution authority for a bounded runtime slice of FIBIU-20.",
+      "The artifact that makes the owner's bounded sequencing exception EXECUTION-EFFECTIVE, by bounding it against a mechanically re-derivable disjointness proof.",
+      "A frozen behavioral contract for the compatibility bridge, its probe, its risk payload, its deployment order and its rollback order."
+    ],
+    "what_this_is_not": [
+      "NOT an implementation. No runtime code is written by the lane that produced this artifact.",
+      "NOT an authorization to apply FIBDB-053 Stage-A anywhere. See G2_BOUNDARY_RESTATEMENT.",
+      "NOT a re-ordering of the FIB wave topology, and NOT a discharge of FIBIU-20's hard dependencies.",
+      "NOT a modification of, or a dependency on, PR #187. See PR187_RELATIONSHIP.",
+      "NOT a certification. Independent certification is the stated next gate."
+    ]
+  },
+
+  "CONTROLLING_AUTHORITY": {
+    "retrieval_note": "Read via the index form first, per CLAUDE.md section 3. Long-form FIB prose was read only for the exact blocks cited below.",
+    "anchors": [
+      {
+        "id": "A1",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.seal.json",
+        "fact": "seal_state = FORMALLY_SEALED; baseline_sha256 = 5db735e572cee2aada48d22caa40b2fbfb172c58bda58875074fe8a6ec490d86; index_sha256 = 55177a953b7e7705fe56317a4912eabb668d41e6473cdd0e0ec4c6f868d345b6.",
+        "verification": "RE-MEASURED at AS_OF_HEAD. Both live files hash to exactly those values. The baseline is byte-identical to its seal and is NOT edited by this authority."
+      },
+      {
+        "id": "A2",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json#fibiu[FIBIU-20]",
+        "fact": "hard_dependencies = ['FIBIU-19','FIBIU-29']; wave 3; topological_level '3.2'. FIBIU-19 is level '3.1'. db_changes includes FIBDB-053.",
+        "verification": "Read directly from the index at AS_OF_HEAD."
+      },
+      {
+        "id": "A3",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md — FIBDB-053 block, 'Required form of the change'",
+        "fact": "CREATE OR REPLACE cannot alter the argument list, and a DEFAULT-parameter addition would create an overload raising the function count and breaking downstream self-verifications in stella_0016/0017/0018. The unit therefore DROPs the prior signature of the completion verb and CREATEs the new one in the same transaction.",
+        "verification": "Read verbatim at AS_OF_HEAD."
+      },
+      {
+        "id": "A4",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md — FIBDB-053 block, 'LINEAGE'",
+        "fact": "MIGRATION_STAGE: A — additive; the parameters are optional and the existing path keeps functioning without them.",
+        "verification": "Read verbatim at AS_OF_HEAD."
+      },
+      {
+        "id": "A5",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md section 6.4, window 1",
+        "fact": "'Old runtime broken before the new one exists' is claimed PREVENTED because 'the entirety of stage A is additive and nullable'.",
+        "verification": "Read verbatim at AS_OF_HEAD."
+      },
+      {
+        "id": "A6",
+        "source": "db/stella/operation-tickets.ts — completeStellaInteractionTicket",
+        "fact": "The single runtime caller of the governed completion verb issues a SEVEN-argument call with explicit per-argument casts: char(64), uuid, char(64), varchar(100), varchar(100), integer, jsonb. The argument list is a literal in a tagged SQL template; there is no arity branch and no probe.",
+        "verification": "Read at AS_OF_HEAD."
+      },
+      {
+        "id": "A7",
+        "source": "db/stella/operation-tickets.ts — StellaInteractionPayload doc comment",
+        "fact": "'riskLevel and riskFlags have no parameter in prepared stella_0017 and are therefore NOT filed by this path. Declared, not silently dropped ... closing that gap means a new package argument rather than a runtime workaround.'",
+        "verification": "Read verbatim at AS_OF_HEAD. This is the runtime's own acknowledgement of the gap FIBDB-053 closes."
+      },
+      {
+        "id": "A8",
+        "source": "app/actions/stella/validator.ts and app/actions/stella/reviewer.ts",
+        "fact": "riskLevel and riskFlags are computed and passed ONLY into logStellaAudit's afterJson payload — validator at the lines the FIB pins as 263-280, reviewer likewise. The surrounding comment states that a trail failure must never change what the reviewer sees, i.e. the write is best-effort and its failure is swallowed.",
+        "verification": "Read at AS_OF_HEAD. Confirms the FIBDB-053 premise that the derived values today travel only through audit_logs."
+      },
+      {
+        "id": "A9",
+        "source": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json#SHARED_WRITERS",
+        "fact": "SW-6 names lib/pipeline/sroi-results.ts as a serial choke point whose writers are Wave3 FIBIU-19 (eligibility composition) and Wave3 FIBIU-20 (review/SoD), resolved 'Serial WITHIN Wave 3 by the frozen topology: 19 -> 20'. intra_wave_rule restates that FIBIU-19 and FIBIU-20 are themselves serial.",
+        "verification": "Read at AS_OF_HEAD. This is the DOMAIN AUTHORITY'S OWN STATED REASON for the serialization the owner excepts, and it is the pivot of FIBIU19_DISJOINTNESS below."
+      },
+      {
+        "id": "A10",
+        "source": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json#FIBDB053_STAGE_A_CONTRACT.TWO_FUNCTION_DERIVATION",
+        "fact": "Stage-A revises a CHAIN of three functions. Order 3 is: DROP the seven-argument uellix_stella_ops.complete_operation_ticket and CREATE a nine-argument one adding p_risk_level varchar(50) and p_risk_flags text[]. no_overload_rule: every one of the three is a DROP-then-CREATE inside one transaction, never a CREATE OR REPLACE with a longer argument list and never a DEFAULT.",
+        "verification": "Read at AS_OF_HEAD. Supplies the exact new parameter names and types this authority's probe and call contract depend on."
+      },
+      {
+        "id": "A11",
+        "source": "docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json#G2_BOUNDARY",
+        "fact": "permitted_before_G2 includes 'Beginning FIBIU-20 Stage-A development'. requires_an_explicit_human_G2_action includes any remote, staging, hosted or production application of stella_0017b and declaring the external gate RESOLVED. FIBIU20_PRODUCTION_READINESS_RULE: FIBIU-20 MAY begin Stage-A development before G2 but may NOT become production ready until FIBDB-053 is APPLIED. no_bypass_clause is absolute.",
+        "verification": "Read at AS_OF_HEAD. Carried into G2_BOUNDARY_RESTATEMENT unweakened."
+      },
+      {
+        "id": "A12",
+        "source": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md — FIBIU-19 and FIBIU-20 unit blocks, FILES_OR_DOMAINS",
+        "fact": "FIBIU-19 FILES_OR_DOMAINS = lib/pipeline/sroi-calculation.ts:363-486, lib/pipeline/sroi-results.ts:286-372, app/app/projects/[projectId]/pipeline/calculation/**; DB_CHANGES FIBDB-052. FIBIU-20 FILES_OR_DOMAINS = lib/pipeline/sroi-results.ts:286-372,646-687, lib/pipeline/methodology-review.ts:192-202, db/migrations/0031_rls_core.sql:671-690, app/actions/stella/{reviewer,validator}.ts:263-280, db/stella/operation-tickets.ts:598-625.",
+        "verification": "Read verbatim at AS_OF_HEAD. The two units SHARE lib/pipeline/sroi-results.ts at the SAME line range 286-372 — which is precisely why the serialization exists and precisely why the exception must exclude that file."
+      },
+      {
+        "id": "A13",
+        "source": "scripts/ods-scope.ts — DEFAULT_PROTECTED_PATTERNS",
+        "fact": "The protected set is exactly: docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json.",
+        "verification": "Read at AS_OF_HEAD and EXECUTED against both write sets — see NEW_ODS_REQUIRED."
+      },
+      {
+        "id": "A14",
+        "source": "db/stella/operation-tickets.ts — 'ONE TRANSACTION PER CALL' header comment, and lib/auth/database-context.ts#withOrganizationDatabaseContext",
+        "fact": "Every ticket function opens its OWN withOrganizationDatabaseContext, which opens a scoped transaction. The completion call therefore executes INSIDE a transaction.",
+        "verification": "Read at AS_OF_HEAD. This is the measured basis for the 25P02 prohibition in CATALOG_PROBE_CONTRACT — without it the prohibition would be speculative."
+      }
+    ]
+  },
+
+  "COMPATIBILITY_CONTRADICTION": {
+    "class": "RE_DERIVED_BY_THIS_AUTHORITY_FROM_SEALED_SOURCES",
+    "independence_note": "Re-derived from A3, A4, A5, A6 and A10 at AS_OF_HEAD. It is NOT imported from PR #187, which is NOT INTEGRATED at this base and is not controlling. The derivation would stand if PR #187 did not exist.",
+    "statement": "The sealed FIB baseline asserts two things about FIBDB-053 Stage-A that cannot both be true, and the collision lands on the runtime callsite.",
+    "the_two_claims": [
+      {
+        "claim": "DROP_WITHOUT_DEFAULT",
+        "source": "A3, reinforced by A10's no_overload_rule",
+        "content": "Stage-A DROPs the seven-argument completion signature and CREATEs a nine-argument one. A DEFAULT is explicitly forbidden because it would create an overload and raise the function count that stella_0018 self-verifies."
+      },
+      {
+        "claim": "ADDITIVE_EXISTING_PATH_KEEPS_WORKING",
+        "source": "A4, reinforced by A5",
+        "content": "MIGRATION_STAGE A is 'additive; the parameters are optional and the existing path keeps functioning without them', and the 'old runtime broken before the new one exists' window is claimed PREVENTED because stage A is 'additive and nullable'."
+      }
+    ],
+    "why_they_cannot_both_hold": "Optionality of a PostgreSQL parameter is expressed by a DEFAULT. DROP_WITHOUT_DEFAULT forbids the only mechanism that could make ADDITIVE_EXISTING_PATH_KEEPS_WORKING true. With the seven-argument signature dropped and no defaulted overload standing in for it, there is NO OVERLAP WINDOW: at the instant Stage-A commits, every caller of the seven-argument form receives SQLSTATE 42883 undefined_function. The claimed prevention at A5 therefore does not cover this item.",
+    "where_it_lands": "A6 — db/stella/operation-tickets.ts#completeStellaInteractionTicket is the sole runtime caller and issues a literal seven-argument list with explicit casts. It has no arity branch. At Stage-A apply it breaks unconditionally for every Stella interaction category that settles through the seven-argument verb.",
+    "the_arithmetic": "7 -> 9. The seven arguments are (p_ticket_id char(64), p_expected_project_id uuid, p_query_hash char(64), p_pipeline_step varchar(100), p_model_used varchar(100), p_tokens_used integer, p_response_json jsonb). Stage-A appends exactly two: p_risk_level varchar(50) and p_risk_flags text[] (A10).",
+    "why_the_usual_escape_is_closed": "The ordinary additive escape — ship the new signature with DEFAULTs so both arities resolve — is closed twice over: once by A3's reasoning about the function count, and once mechanically by stella_0018, which asserts that none of the four ticket verbs declares pronargdefaults greater than zero. A future lane that 'solves' this by adding a DEFAULT has not found a loophole; it has broken a machine-verified invariant.",
+    "consequence_for_sequencing": "Because the remedy lives in files the FIB assigns to FIBIU-20 (A12), and FIBIU-20 is serialized behind FIBIU-19 (A2, A9), the remedy is unreachable without either a bounded sequencing exception or an indefinite block on FIBDB-053. The owner elected the bounded exception (RC-02).",
+    "disposition": "This authority does NOT resolve the contradiction by editing the sealed baseline, and does not declare either claim withdrawn. It treats DROP_WITHOUT_DEFAULT as the operative engineering fact — because it is the one the machine enforces — and builds the compatibility bridge that makes ADDITIVE_EXISTING_PATH_KEEPS_WORKING true AT THE RUNTIME LAYER, which is the only layer where it can still be made true."
+  },
+
+  "SELECTED_RUNTIME_STRATEGY": {
+    "id": "RUNTIME_FIRST_WITH_CATALOG_DRIVEN_COMPATIBILITY_BRIDGE",
+    "source": "Owner ratification RC-05.",
+    "summary": "The runtime ships BEFORE the SQL. It supports both database states simultaneously and discovers which one is installed by asking the PostgreSQL catalog, never a human.",
+    "why_runtime_first": "It is the only order that has no broken window. Runtime-first means the new runtime meets an old database (supported) and later meets a new database (supported). SQL-first means the old runtime meets a new database, which is exactly the 42883 break COMPATIBILITY_CONTRADICTION identifies.",
+    "why_catalog_and_not_a_flag": "RC-06. A manual flag is a second source of truth about a fact the database already knows exactly. A flag can be wrong, can be forgotten across environments, and turns a deterministic property into an operational one. The catalog cannot disagree with the database it describes.",
+    "rejected_alternatives": [
+      {
+        "alternative": "DEFAULT-parameter overload so both arities resolve",
+        "rejected_because": "Forbidden by A3 and mechanically refused by stella_0018's pronargdefaults assertion. See COMPATIBILITY_CONTRADICTION.why_the_usual_escape_is_closed."
+      },
+      {
+        "alternative": "Manual environment flag selecting the arity",
+        "rejected_because": "RC-06. Carried as an explicit refusal, not merely an omission: N-RC-04 and MUT-RC-01."
+      },
+      {
+        "alternative": "Optimistic nine-argument call with seven-argument fallback on 42883",
+        "rejected_because": "A14 — the call runs inside a transaction, so the failed nine-argument attempt poisons it and the fallback returns 25P02 in_failed_sql_transaction rather than succeeding. Frozen as a prohibition at CATALOG_PROBE_CONTRACT.prohibited_shapes and mutated at MUT-RC-04."
+      },
+      {
+        "alternative": "Block FIBDB-053 until FIBIU-19 completes",
+        "rejected_because": "Owner elected the bounded exception (RC-02). Recorded so the alternative is visible rather than implied away."
+      }
+    ]
+  },
+
+  "RUNTIME_COMPATIBILITY_CONTRACT": {
+    "binding_surface": "db/stella/operation-tickets.ts#completeStellaInteractionTicket",
+    "rule": "completeStellaInteractionTicket MUST support BOTH database states. Neither is a degraded mode and neither may be reached by accident.",
+    "states": [
+      {
+        "id": "OLD_DB",
+        "condition": "The seven-argument uellix_stella_ops.complete_operation_ticket is installed and the nine-argument form is NOT.",
+        "behavior": "Issue the SEVEN-argument call exactly as it is issued at AS_OF_HEAD (A6). riskLevel and riskFlags are accepted by the wrapper's payload type but are NOT transmitted, because there is no parameter to carry them.",
+        "risk_disposition": "Unchanged from AS_OF_HEAD. The values continue to reach audit_logs only (A8). This is NOT a new regression introduced by the bridge; it is the measured status quo, and it is the reason OLD_DB cannot be a production state for validator/reviewer — see STAGE_A_INTERACTION.fail_closed_reconciliation."
+      },
+      {
+        "id": "NEW_DB",
+        "condition": "The nine-argument uellix_stella_ops.complete_operation_ticket is installed.",
+        "behavior": "Issue the NINE-argument call, passing p_risk_level and p_risk_flags through from the governed execution payload.",
+        "risk_disposition": "The risk values are filed on the durable stella_interactions row, in the same transaction that charges the quota. This is the state FIBDB-053 exists to create."
+      }
+    ],
+    "selection_rule": "The state is determined SOLELY by the catalog probe defined in CATALOG_PROBE_CONTRACT. It is never determined by an environment variable, a configuration value, a build flag, a migration-ordinal inspection, a package-order constant, or an inference from a previous call's outcome.",
+    "invariants_preserved_in_both_states": [
+      "The wrapper's Node-side refusals are unchanged and run BEFORE any probe or call: malformed ticketId or operationHash, non-project expectedProjectId, non-integer tokensUsed, negative tokensUsed.",
+      "The four absent columns stay absent in both states — organization_id, project_id, created_by, stella_role, context_hash and idempotency_key remain derived inside the function and are never parameters. The bridge adds two parameters and removes no security property.",
+      "The CompleteTicketResult union is unchanged: completed, replayed, quota_refused, rejected. The bridge introduces no new outcome kind visible to callers.",
+      "Outcome-row reading and the outcome switch are shared by both arities; a divergence in outcome interpretation between the two branches is a defect, not a design choice.",
+      "One transaction per call (A14) is preserved. The bridge does not open a second transaction and does not extend the existing one."
+    ],
+    "explicitly_not_in_scope": [
+      "The three-argument grounded-query completion verb. It carries no stella_interactions payload, is not revised by Stage-A, and is untouched by this slice.",
+      "uellix_stella.settle_reserved_quota in either arity. It is reached only from inside SQL; no runtime code names it."
+    ]
+  },
+
+  "CATALOG_PROBE_CONTRACT": {
+    "rule": "The probe asks the catalog whether the NINE-argument signature exists. Presence selects NEW_DB; absence selects OLD_DB.",
+    "mechanism": "pg_catalog.to_regprocedure(<fixed literal>) IS NOT NULL, or an equivalent safe catalog lookup that (a) returns NULL rather than raising when the function is absent, and (b) requires no DDL and no write.",
+    "why_to_regprocedure": "It is the pattern the repository already uses for exactly this question — db/prepared-package-order.ts's STELLA_0017_INSTALLED_PROBE and STELLA_0018_INSTALLED_PROBE, and db/prepared/checkpoint-a1/corroboration.sql — and it is total: an absent function yields NULL instead of an error, so the probe itself can never be the thing that fails.",
+    "literal_rule": "The probe argument is a FIXED LITERAL string. It is never composed, never interpolated, and never built from a variable holding a type name. The nine-argument signature is a constant of this contract.",
+    "signature_graphemes": {
+      "warning": "The same signature has THREE spellings in this repository, and they are not interchangeable. A probe written in the wrong grapheme can be silently and permanently FALSE, which would pin the bridge to OLD_DB forever on a database that is already NEW_DB — a fail-silent inversion, not a fail-closed one.",
+      "to_regprocedure_input_form": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb,character varying,text[])",
+      "sql_declaration_form": "uellix_stella_ops.complete_operation_ticket(char(64), uuid, char(64), varchar(100), varchar(100), integer, jsonb, varchar(50), text[])",
+      "pg_catalog_form": "uellix_stella_ops.complete_operation_ticket(bpchar,uuid,bpchar,varchar,varchar,int4,jsonb,varchar,_text)",
+      "which_one_the_probe_uses": "to_regprocedure_input_form. The other two are recorded so that a reader comparing this contract against db/hosted/authority/recovered-boundaries.ts (pg_catalog form) or against the Stage-A package (SQL declaration form) does not mistake a spelling difference for a signature difference.",
+      "predecessor_seven_argument_form_for_reference": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb) — measured at db/prepared/checkpoint-a1/corroboration.sql."
+    },
+    "caching": {
+      "rule": "The probe result MAY be cached once per process where that is safe. It MUST NOT be cached across a state transition without invalidation.",
+      "why_caching_is_permitted": "The installed signature changes only when a prepared package is applied, which is a deliberate human G2 act, not a runtime event. Probing on every completion would add a catalog round-trip to the hot governed path for a fact that is stable for the life of a deployment.",
+      "why_caching_is_bounded": "A process that started before Stage-A was applied holds a stale OLD_DB verdict. The invalidation rule below is what keeps that from being permanent."
+    },
+    "invalidation_and_reprobe": {
+      "trigger": "SQLSTATE 42883 (undefined_function) returned by a completion call.",
+      "required_sequence": [
+        "1. Invalidate the cached probe verdict.",
+        "2. Re-probe EXACTLY ONCE.",
+        "3. If the re-probe yields a different state than the one just attempted, the call MAY be retried once in that state, in a NEW transaction.",
+        "4. If the re-probe yields the same state, or a second 42883 follows, FAIL CLOSED: return the wrapper's existing rejected outcome and withhold the answer."
+      ],
+      "bounded_once_rule": "Exactly one re-probe and at most one retry. There is no loop, no backoff ladder and no second invalidation. An unbounded re-probe turns a deterministic contract into a retry storm against the catalog during precisely the window when the database is being changed.",
+      "fail_closed_meaning": "Fail closed here means the caller does NOT receive the model's answer. It does not mean 'fall back to the other arity inside the same transaction' — that is prohibited below."
+    },
+    "prohibited_shapes": [
+      {
+        "id": "P-1",
+        "prohibition": "MUST NOT issue a nine-argument call first and, upon its failure, attempt a seven-argument call as a fallback within the SAME transaction.",
+        "measured_reason": "A14 — the completion call runs inside the transaction withOrganizationDatabaseContext opens. A failed statement puts that transaction into the aborted state, so the fallback does not return 42883 and does not succeed; it returns SQLSTATE 25P02 in_failed_sql_transaction. The fallback is not merely inelegant, it is non-functional, and its failure mode masks the real cause.",
+        "corollary": "Any retry permitted by invalidation_and_reprobe step 3 happens in a NEW transaction. The bridge must avoid 25P02, and the only way to avoid it is to know the arity BEFORE issuing the call."
+      },
+      {
+        "id": "P-2",
+        "prohibition": "MUST NOT select the arity from an environment variable, configuration value, build-time flag or any human-set switch.",
+        "source": "RC-06."
+      },
+      {
+        "id": "P-3",
+        "prohibition": "MUST NOT infer the database state from the presence, absence or ordering of entries in db/prepared-package-order.ts, from a migration ordinal, or from any repository artifact.",
+        "reason": "Those describe what the REPOSITORY contains, not what the CONNECTED DATABASE has installed. The two diverge exactly during the deployment window the bridge exists to cover."
+      },
+      {
+        "id": "P-4",
+        "prohibition": "MUST NOT probe by calling the function speculatively and interpreting the error.",
+        "reason": "That is P-1 in a different costume: it consumes a transaction and, on the governed path, a speculative call to a completion verb risks a charge."
+      },
+      {
+        "id": "P-5",
+        "prohibition": "MUST NOT treat a probe that ERRORS (as opposed to returning NULL) as evidence of OLD_DB.",
+        "reason": "An error is an unknown state, not a known-old one. Under CLAUDE.md section 5, an UNKNOWN fails closed."
+      }
+    ],
+    "observability": {
+      "rule": "A signature-mismatch refusal MUST be distinguishable, in the wrapper's own refusal reason, from an ordinary unavailability. An operator who sees the failure must be able to tell 'the database is not the shape this build expects' from 'the database is unreachable'.",
+      "why": "Without it, the single most likely deployment-order mistake — old runtime meeting new database — presents as generic noise, and the deployment contract below becomes unenforceable in practice.",
+      "control": "T9 in the companion manifest."
+    }
+  },
+
+  "RISK_PAYLOAD_CONTRACT": {
+    "goal": "Carry riskLevel and riskFlags from where they are DERIVED to the durable row, through the governed execution payload, with no best-effort hop in between.",
+    "measured_starting_point": "A8 — today the values are computed in validator and reviewer and handed ONLY to logStellaAudit's afterJson. A7 — the completion wrapper's own documentation states they are not filed by that path. Between derivation and durability there is currently no governed carrier at all.",
+    "required_propagation_chain": [
+      {
+        "order": 1,
+        "surface": "app/actions/stella/validator.ts, app/actions/stella/reviewer.ts",
+        "obligation": "The already-derived risk_level and the already-built risk flags become part of the value returned to the governed operation, in addition to — never instead of — whatever the audit trail receives."
+      },
+      {
+        "order": 2,
+        "surface": "lib/stella/operation-ticket/governed-operation.ts — the StellaOperationExecution result type",
+        "obligation": "The execution result gains riskLevel and riskFlags alongside the existing pipelineStep, modelUsed and tokensUsed. These are the fields the governed operation already threads; risk joins them rather than travelling beside them."
+      },
+      {
+        "order": 3,
+        "surface": "lib/stella/operation-ticket/governed-operation.ts — the completion call",
+        "obligation": "The values are placed into the StellaInteractionPayload handed to completeStellaInteractionTicket, next to the four fields already passed."
+      },
+      {
+        "order": 4,
+        "surface": "db/stella/operation-tickets.ts — StellaInteractionPayload and the completion call",
+        "obligation": "The payload interface gains riskLevel and riskFlags. In NEW_DB they are transmitted as arguments 8 and 9; in OLD_DB they are accepted and not transmitted."
+      }
+    ],
+    "explicit_null_rule": {
+      "rule": "Categories that derive no risk supply EXPLICIT NULLS. The fields are required by the type and satisfied by null — never omitted, never defaulted, never left optional.",
+      "why_explicit_and_not_optional": "An optional field lets a category that SHOULD carry risk silently omit it and typecheck. A required-but-nullable field makes every category state its position, so adding a seventh category is a compile error until someone decides what its risk disposition is. This is the same reasoning the repository already applies to the category registry, where a name added in one place and not another is a fail-closed runtime refusal.",
+      "per_category_disposition": [
+        { "category": "validator", "riskLevel": "DERIVED", "riskFlags": "DERIVED", "source": "A8 — risk_level from the validated output; flags from proxy_risks, attribution_risks and claim_risks." },
+        { "category": "proxy_reviewer", "riskLevel": "DERIVED", "riskFlags": "DERIVED", "source": "A8 — reviewer action; flags carry 'finding' when findings are present." },
+        { "category": "evidence_reviewer", "riskLevel": "DERIVED", "riskFlags": "DERIVED", "source": "A8 — same reviewer action, parameterized by category." },
+        { "category": "audit_assistant", "riskLevel": "DERIVED", "riskFlags": "DERIVED", "source": "A8 — same reviewer action, parameterized by category." },
+        { "category": "advisor", "riskLevel": "EXPLICIT_NULL", "riskFlags": "EXPLICIT_NULL", "source": "Derives no risk verdict." },
+        { "category": "composer", "riskLevel": "EXPLICIT_NULL", "riskFlags": "EXPLICIT_NULL", "source": "Derives no risk verdict." },
+        { "category": "grounded_query", "riskLevel": "NOT_APPLICABLE", "riskFlags": "NOT_APPLICABLE", "source": "Settles through the three-argument verb, which files no stella_interactions row at all. Outside this contract entirely." }
+      ],
+      "reviewer_category_note": {
+        "class": "MATERIAL_DERIVATION_THIS_AUTHORITY_ADDS",
+        "finding": "The FIB baseline and WAVE3_AUTHORITY both speak of 'the validator and reviewer categories' as though 'reviewer' were a category. It is NOT. The measured category registry holds six interaction categories, and 'reviewer' is an ACTION that may act as three of them: proxy_reviewer, evidence_reviewer and audit_assistant.",
+        "consequence": "An implementing lane that hardens 'validator and reviewer' literally will harden two names, one of which does not exist, and will leave three real categories unhardened. The correct expansion is FOUR categories: validator, proxy_reviewer, evidence_reviewer, audit_assistant.",
+        "disposition": "Recorded as a naming divergence resolved by expansion, not as a conflict. The referent is unambiguous. Carried as non-blocking finding F-RC-2."
+      }
+    },
+    "no_audit_log_source_of_truth": {
+      "rule": "audit_logs is NEVER the source of truth for a risk value. No consumer may read a risk level from audit_logs, and the governed path may not treat a successful audit write as satisfying a risk-persistence obligation.",
+      "source": "The FIB FAIL_CLOSED_TEST for FIBDB-053 states it directly: FIBIU-20's gate never reads audit_logs to obtain risk level. Restated here as an obligation on the RUNTIME, which is the layer that would be tempted to do it.",
+      "why_it_is_tempting": "The values are already there (A8) and reading them would appear to close the gap without waiting for Stage-A. It is precisely the 'runtime workaround' that A7 names and refuses.",
+      "retained_not_removed": "The existing audit_logs write STAYS. It is a trail, and a trail is not made wrong by the arrival of a durable row. What changes is that it stops being the ONLY destination — it was never permitted to be the authoritative one.",
+      "control": "T8 and MUT-RC-06."
+    }
+  },
+
+  "FUTURE_RUNTIME_WRITE_SURFACE": {
+    "class": "INDEPENDENTLY_DERIVED_BY_THIS_AUTHORITY",
+    "derivation_method": "Derived from the propagation chain in RISK_PAYLOAD_CONTRACT and the binding surface in RUNTIME_COMPATIBILITY_CONTRACT, then cross-checked against the FIB's own FIBIU-20 FILES_OR_DOMAINS (A12) and against the measured import graph. It is NOT copied from the mission prompt's expectation list; where the two agree, that is corroboration.",
+    "rule": "This is a CLOSED enumeration. A future implementation lane that needs a path not listed here has exceeded the slice and must STOP_FOR_AUTHORITY_DELTA rather than widen it silently.",
+    "paths": [
+      { "path": "db/stella/operation-tickets.ts", "why": "The bridge itself: the probe, the arity branch, the payload interface. Named by FIBIU-20's own FILES_OR_DOMAINS (A12).", "protected": false },
+      { "path": "lib/stella/operation-ticket/governed-operation.ts", "why": "Threads risk from execution result into the completion payload — orders 2 and 3 of the propagation chain.", "protected": false },
+      { "path": "app/actions/stella/validator.ts", "why": "Order 1 for the validator category. Named by FIBIU-20's FILES_OR_DOMAINS at the exact lines the FIB pins (A12).", "protected": false },
+      { "path": "app/actions/stella/reviewer.ts", "why": "Order 1 for the three reviewer categories. Named by FIBIU-20's FILES_OR_DOMAINS (A12).", "protected": false },
+      { "path": "app/actions/stella/advisor.ts", "why": "Explicit nulls only, because the type contract requires every category to state its position. CONSTRAINED — see advisor_constraint below.", "protected": false },
+      { "path": "app/actions/stella/composer.ts", "why": "Explicit nulls only.", "protected": false },
+      { "path": "lib/stella/operation-ticket/categories.ts", "why": "ONLY if commentary or a per-category risk-disposition pin is required. No category name is added, removed or reordered by this slice.", "protected": false, "conditional": true },
+      { "path": "docs/ops/contracts/CONTRACT_LEDGER.md", "why": "Entry 2 of 'Cambios de semantica DECLARADOS' currently records that risk_level and risk_flags stopped being archived in the ledger and that closing it 'requiere un argumento nuevo del paquete, no un rodeo de runtime'. When the bridge lands, that entry must be amended to state the new two-state reality. Leaving a declared gap declared after it is closed is itself a defect.", "protected": false },
+      { "path": "tests — bounded, per the companion manifest", "why": "The nine controls T1..T9 and the mutation controls. Test paths are UNKNOWN until written and are declared so rather than guessed.", "protected": false }
+    ],
+    "advisor_constraint": {
+      "class": "MATERIAL_DERIVATION_THIS_AUTHORITY_ADDS",
+      "measured_fact": "app/actions/stella/advisor.ts imports getSroiCalculationReadiness from @/lib/pipeline/sroi-calculation and calls it. lib/pipeline/sroi-calculation.ts is a FIBIU-19 file (A12). This is the ONLY edge of any kind between the compatibility slice and FIBIU-19's surface, and it exists only in advisor.ts — validator, reviewer and composer have none.",
+      "constraint": "The slice's edit to advisor.ts is confined to the explicit-null risk fields. It MUST NOT modify, re-type, re-order, wrap or re-scope the readiness import or its call site.",
+      "why_this_constraint_exists": "The edge is a READ, not a write, so it does not breach write-surface disjointness. But an implementation lane editing advisor.ts is one careless refactor away from changing FIBIU-19 semantics from inside a sequencing exception that was granted on the strength of not doing that. The constraint converts a latent hazard into a stated boundary.",
+      "control": "N-RC-07."
+    },
+    "forbidden_paths": {
+      "rule": "The following are OUT OF SCOPE. Touching any of them invalidates the slice and requires STOP_FOR_AUTHORITY_DELTA.",
+      "paths": [
+        "db/migrations/** — protected, and FIBIU-19's FIBDB-052 lives there.",
+        "db/prepared/** — protected, and the whole of FIBDB-053 Stage-A lives there. The companion is the RUNTIME node; authoring SQL here would merge two nodes.",
+        "db/baseline/** — protected.",
+        "docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** — protected and sealed.",
+        "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json — protected.",
+        "lib/pipeline/sroi-results.ts — SW-6 (A9), the shared choke point. This is the single most important exclusion in this authority; see FIBIU19_DISJOINTNESS.",
+        "lib/pipeline/sroi-calculation.ts — FIBIU-19 (A12).",
+        "app/app/projects/[projectId]/pipeline/calculation/** — FIBIU-19 (A12).",
+        "lib/pipeline/methodology-review.ts — FIBIU-20 but NOT the slice; it is segregation-of-duties work and stays serial behind FIBIU-19 (RC-03).",
+        "db/schema.ts — the slice adds no column. risk_level and risk_flags already exist on stella_interactions."
+      ]
+    }
+  },
+
+  "FIBIU19_DISJOINTNESS": {
+    "status": "MECHANICALLY_PROVEN_AT_AS_OF_HEAD",
+    "why_this_block_is_load_bearing": "The owner's exception (RC-02) is granted on a condition, and this is the condition. If the compatibility slice touched FIBIU-19's write surface, the exception would be a re-ordering of the wave topology rather than a bounded carve-out, and RC-03 would be unenforceable. Disjointness is therefore not a nice property of the slice — it is the slice's definition.",
+    "fibiu19_write_surface": {
+      "source": "A12 plus FIBDB-052's track.",
+      "paths": [
+        "lib/pipeline/sroi-calculation.ts",
+        "lib/pipeline/sroi-results.ts",
+        "app/app/projects/[projectId]/pipeline/calculation/**",
+        "db/migrations/** (FIBDB-052, the index package, DRIZZLE track)"
+      ]
+    },
+    "slice_write_surface": {
+      "source": "FUTURE_RUNTIME_WRITE_SURFACE.paths, excluding the conditional and the test entry.",
+      "paths": [
+        "db/stella/operation-tickets.ts",
+        "lib/stella/operation-ticket/governed-operation.ts",
+        "lib/stella/operation-ticket/categories.ts",
+        "app/actions/stella/validator.ts",
+        "app/actions/stella/reviewer.ts",
+        "app/actions/stella/advisor.ts",
+        "app/actions/stella/composer.ts",
+        "docs/ops/contracts/CONTRACT_LEDGER.md"
+      ]
+    },
+    "proof": {
+      "method_1_glob_intersection": {
+        "computation": "Each of the 4 FIBIU-19 patterns matched against each of the 8 slice paths, treating ** as a glob.",
+        "result": "EMPTY. Zero pairs match."
+      },
+      "method_2_directory_intersection": {
+        "rationale": "A glob test alone can miss a shared directory that a future file would land in. The directory sets are therefore compared independently.",
+        "fibiu19_dirs": ["lib/pipeline", "app/app/projects/[projectId]/pipeline", "db"],
+        "slice_dirs": ["db/stella", "lib/stella/operation-ticket", "app/actions/stella", "docs/ops/contracts"],
+        "result": "EMPTY. No directory is shared. Note that db/migrations and db/stella share only the top-level db segment, which is not a containment relation in either direction."
+      },
+      "method_3_import_graph": {
+        "rationale": "Zero path intersection is not zero semantic coupling. The import graph was measured in BOTH directions rather than assumed.",
+        "slice_to_fibiu19": "EXACTLY ONE edge — app/actions/stella/advisor.ts imports getSroiCalculationReadiness from @/lib/pipeline/sroi-calculation. See FUTURE_RUNTIME_WRITE_SURFACE.advisor_constraint.",
+        "fibiu19_to_slice": "NONE. lib/pipeline/sroi-results.ts and lib/pipeline/sroi-calculation.ts reference neither the operation-ticket modules, nor db/stella, nor app/actions/stella.",
+        "verdict": "The one edge is a READ from a slice file into a FIBIU-19 file. It creates no write coupling, it predates this slice, and it is constrained against modification. FIBIU-19 has no dependency on the slice in the other direction, so FIBIU-19 work cannot be broken by the slice landing first."
+      },
+      "method_4_shared_state": {
+        "rationale": "Two units can be path-disjoint and import-disjoint and still collide on a database object.",
+        "measurement": "lib/pipeline/sroi-results.ts and lib/pipeline/sroi-calculation.ts contain zero references to stella_interactions or stella_findings at AS_OF_HEAD. The slice writes stella_interactions.risk_level and .risk_flags and nothing else new.",
+        "distinguished_tables": "FIBIU-19's eligibility gate will eventually consume STELLA_HIGH_FINDING_UNDISPOSED, which is derived from stella_findings (FIBDB-019) — a table that does not exist at AS_OF_HEAD and is owned by FIBIU-20's REMAINING scope, not by the slice. The slice writes stella_interactions. These are different tables and the confusion between them is the most plausible way a reader could wrongly believe the slice and FIBIU-19 collide.",
+        "verdict": "No shared mutable state."
+      }
+    },
+    "the_decisive_argument": {
+      "statement": "The exception is safe precisely because the slice EXCLUDES the surface that made the serialization necessary in the first place.",
+      "elaboration": "A9 records that the domain authority's own stated reason for serializing FIBIU-19 before FIBIU-20 is SW-6: both units write lib/pipeline/sroi-results.ts, and A12 shows they write the SAME line range, 286-372. That is a genuine choke point and this authority does not dispute it. The compatibility slice does not write lib/pipeline/sroi-results.ts at all — it is on the forbidden list. The slice therefore sits entirely outside the collision the serialization was designed to prevent, which is a stronger justification than 'the paths happen not to overlap': the exception does not weaken SW-6, it never comes near it.",
+      "corollary": "This is also why RC-03 must hold. The REMAINING_FIBIU20_SCOPE — segregation of duties, findings, dispositions — is exactly the part of FIBIU-20 that DOES write sroi-results.ts and methodology-review.ts. Exempting it would walk straight into SW-6. The line the owner drew and the line SW-6 draws are the same line."
+    },
+    "invalidation_rule": "Any overlap invalidates the exception. If a future measurement finds the slice touching any path in fibiu19_write_surface, or finds a new import edge from FIBIU-19 into the slice, the implementing lane STOPS and escalates. It does not widen the slice, does not re-scope FIBIU-19, and does not argue the overlap is immaterial.",
+    "re_derivation_obligation": "This proof is measured at AS_OF_HEAD and is not eternal. An implementing lane re-derives it against its own base before committing, because FIBIU-19's surface can grow. Controls N-RC-05 and MUT-RC-07 exist to catch a lane that skips this."
+  },
+
+  "STAGE_A_INTERACTION": {
+    "rule": "The runtime companion and FIBDB-053 Stage-A are SEPARATE nodes with separate authorities. This artifact governs the runtime only.",
+    "companion_may_proceed_before_stage_a_apply": {
+      "permitted": ["Authored", "Implemented", "Tested", "Deployed"],
+      "basis": "The bridge's OLD_DB branch is behaviorally identical to AS_OF_HEAD (RUNTIME_COMPATIBILITY_CONTRACT.states[OLD_DB]). A deployment carrying the bridge onto an un-applied database changes nothing observable, which is exactly what makes runtime-first safe. Deployment remains subject to the normal release process; this authority does not create a deployment permission, it removes the reason to withhold one.",
+      "not_implied": "Permission to deploy the runtime is NOT permission to apply the SQL, and shipping the bridge does not make the external gate any closer to resolved."
+    },
+    "stage_a_authoring_remains_separate": "Stage-A AUTHORING is a different node with a different write surface (db/prepared/**, protected). This authority neither performs it, blesses it, nor depends on its current state. See PR187_RELATIONSHIP.",
+    "stage_a_apply_preconditions": {
+      "rule": "ALL of the following must hold before FIBDB-053 Stage-A may be applied anywhere. This authority states them; it does NOT satisfy any of them and does NOT authorize the apply.",
+      "preconditions": [
+        "The runtime companion implementation is INTEGRATED — merged into the integration line, not merely written or open in a PR.",
+        "A build carrying the compatibility bridge is DEPLOYED to the target environment. Integrated-but-not-deployed is the old-runtime-meets-new-database case and is prohibited (RC-09).",
+        "The FIBDB-053 Stage-A authority, implementation and certification are CLOSED.",
+        "The G2 conditions are satisfied by an explicit human action (A11)."
+      ],
+      "this_authority_does_not_authorize_apply": "There is no reading of this artifact under which Stage-A may be applied. A future lane that believes it has found one has misread this section — the same construction WAVE3_AUTHORITY's no_bypass_clause uses, and for the same reason."
+    },
+    "fail_closed_reconciliation": {
+      "class": "MATERIAL_DERIVATION_THIS_AUTHORITY_ADDS",
+      "the_apparent_conflict": "The FIB FAIL_CLOSED_TEST for FIBDB-053 requires that a validator or reviewer interaction which produces a risk_level and fails to persist it to the durable row is NOT DELIVERED (F-16). But in OLD_DB the bridge cannot persist risk at all — there is no parameter. Read naively, the bridge would have to refuse every validator and reviewer interaction on an un-applied database, which would make runtime-first deployment impossible and would be a severe regression against AS_OF_HEAD.",
+      "resolution": "F-16's obligation binds at HARDENING_STAGE E, not at MIGRATION_STAGE A. The FIB's own lineage block states that the parameters 'become mandatory for the validator and reviewer categories once FIBIU-20 is in production', and A11's FIBIU20_PRODUCTION_READINESS_RULE states that FIBIU-20 may not become production ready until FIBDB-053 is APPLIED. Those two clauses together mean the production state in which F-16 is testable is, by construction, a NEW_DB state. OLD_DB is a transitional state that FIBIU-20 is forbidden to be production-ready in.",
+      "what_the_bridge_therefore_must_not_do": "It must NOT be read as permission to run validator or reviewer in production against an un-applied database. The bridge makes that state SURVIVABLE for deployment ordering; it does not make it ACCEPTABLE as a production end state.",
+      "what_the_bridge_therefore_must_do": "In NEW_DB, a failure to persist risk on a validator or reviewer interaction is a failed completion and the answer is withheld — which the existing wrapper already achieves, because a failed completion returns rejected and the governed operation withholds the answer on rejection. The bridge inherits fail-closed rather than re-implementing it.",
+      "why_this_is_recorded_rather_than_assumed": "Without this reconciliation an implementing lane faces a contract that appears to forbid the very deployment order the owner selected, and would plausibly resolve it by weakening F-16. Weakening a fail-closed test to obtain a workable design is exactly what CLAUDE.md section 5 forbids. The conflict is apparent, not real, and the resolution is grounded in the FIB's own staging language.",
+      "control": "T4 and N-RC-06."
+    }
+  },
+
+  "DEPLOYMENT_CONTRACT": {
+    "rule": "Frozen as a four-cell matrix. Two cells are supported states, one is a transitional state, one is PROHIBITED.",
+    "matrix": [
+      {
+        "id": "D-1",
+        "runtime": "NEW (carries the bridge)",
+        "database": "OLD (seven-argument)",
+        "state": "SUPPORTED",
+        "behavior": "The probe finds no nine-argument signature and selects OLD_DB. Completion proceeds through seven arguments. Behaviorally identical to AS_OF_HEAD.",
+        "qualification": "Supported as a TRANSITIONAL state. Not a permitted production end state for validator or reviewer — see STAGE_A_INTERACTION.fail_closed_reconciliation."
+      },
+      {
+        "id": "D-2",
+        "runtime": "NEW (carries the bridge)",
+        "database": "NEW (nine-argument)",
+        "state": "SUPPORTED",
+        "behavior": "The probe finds the nine-argument signature and selects NEW_DB. Risk values are filed on the durable row in the charging transaction. This is the target end state."
+      },
+      {
+        "id": "D-3",
+        "runtime": "OLD (no bridge)",
+        "database": "NEW (nine-argument)",
+        "state": "PROHIBITED",
+        "source": "RC-09.",
+        "why": "The old runtime issues a seven-argument call against a database where that signature no longer exists. Every governed Stella completion returns 42883. This is the exact window COMPATIBILITY_CONTRADICTION identifies and the entire reason this node exists.",
+        "severity": "Not a degraded mode. A total outage of the governed Stella completion path for every affected category."
+      },
+      {
+        "id": "D-4",
+        "runtime": "OLD (no bridge)",
+        "database": "OLD (seven-argument)",
+        "state": "SUPPORTED",
+        "behavior": "The state at AS_OF_HEAD. Listed for completeness so the matrix is total rather than three-quarters stated."
+      }
+    ],
+    "ordering_rule": "RUNTIME FIRST, ALWAYS. The bridge must be deployed and live in an environment BEFORE Stage-A is applied to that environment's database. The two acts are ordered per environment, not globally: an environment that has the bridge does not authorize applying Stage-A to a different environment that does not.",
+    "forward_order": ["1. Deploy the bridge-carrying runtime.", "2. Verify D-1 — the deployment is healthy against the un-applied database.", "3. Apply Stage-A under explicit human G2 action.", "4. The probe transitions the running processes to NEW_DB via the invalidation path, reaching D-2."],
+    "controls": ["T6", "MUT-RC-09"]
+  },
+
+  "ROLLBACK_CONTRACT": {
+    "rule": "Rollback is the forward order reversed. SQL unwinds before runtime, never after.",
+    "cases": [
+      {
+        "id": "R-1",
+        "scenario": "SQL rollback after the new runtime is deployed.",
+        "state": "SUPPORTED",
+        "behavior": "stella_0017b_rollback.sql restores the seven-argument signature and drops the nine-argument one. The bridge's probe, on its next invalidation, finds no nine-argument signature and returns to OLD_DB. The runtime needs no redeploy and no flag change.",
+        "note": "This is the property the catalog probe buys that a manual flag would not: the rollback is observed rather than announced. A flag-driven bridge would require a coordinated configuration change during a rollback, which is the worst possible time to require one.",
+        "path_dependency": "The seven-argument form must be restored by stella_0017b_rollback.sql specifically. Per WAVE3_AUTHORITY's ROLLBACK_CONTRACT.interaction_with_stella_0017_rollback, running stella_0017_rollback.sql is NOT a valid reversal once 0017b is installed. This authority does not author that rollback; it records that the bridge's return path depends on it existing and being correct."
+      },
+      {
+        "id": "R-2",
+        "scenario": "Runtime rollback after the new database is installed, without an SQL rollback first.",
+        "state": "PROHIBITED",
+        "source": "RC-09.",
+        "why": "It manufactures D-3. Rolling the runtime back to a build without the bridge, while the database holds only the nine-argument signature, breaks every governed completion.",
+        "operational_consequence": "This is the most dangerous cell in the contract, because rolling back a runtime is normally the SAFE reflex during an incident. After Stage-A is applied, that reflex is inverted. It must be stated where an operator will find it rather than left to be discovered."
+      },
+      {
+        "id": "R-3",
+        "scenario": "Runtime rollback after an SQL rollback has already restored the seven-argument form.",
+        "state": "SUPPORTED",
+        "behavior": "Returns to D-4, the AS_OF_HEAD state. This is the fully-unwound position."
+      }
+    ],
+    "required_order": ["1. Roll back the SQL (restore the seven-argument signature).", "2. Verify the bridge has returned to OLD_DB.", "3. Only then, if still desired, roll back the runtime."],
+    "data_rollback_note": "Rollback is BEHAVIORAL ONLY. Risk values already written to stella_interactions rows are NOT deleted or modified — trg_stella_interactions_append_only forbids it in G2. Reverting means ceasing to write new ones. Carried unchanged from the FIB's ROLLBACK_CONSIDERATION.",
+    "controls": ["T7", "MUT-RC-10"]
+  },
+
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NO",
+    "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+    "method": "The full FUTURE_RUNTIME_WRITE_SURFACE path list, plus representative test paths, was classified by EXECUTING scripts/ods-scope.ts's own classifyPaths against its own DEFAULT_PROTECTED_PATTERNS (A13) at AS_OF_HEAD. The classifier was run rather than the pattern list read, so the verdict does not depend on a human matching globs by eye.",
+    "result": {
+      "future_runtime_write_surface": "protectedViolations: 0, nonCanonicalProtectedPaths: 0, unauthorized: 0, ok: 10 of 10.",
+      "this_lanes_own_authoring_write_set": "protectedViolations: 0, nonCanonicalProtectedPaths: 0, unauthorized: 0, ok: 3 of 3."
+    },
+    "conclusion": "Every path the compatibility slice will touch is ORDINARY. An ordinary --allow authorizes the future implementation diff in full. No protected-surface grant, no HPO-ODS grant, no ODS maintenance addendum and no Controller entry is required.",
+    "no_traceability_allocation": {
+      "rule": "No ODS lineage is allocated for this node merely so that it can be traced.",
+      "source": "RC-07.",
+      "why": "Allocating an identifier to a node that needs none consumes a scarce ordinal, creates an entry the Controller must then enumerate, and misrepresents an ordinary diff as a governed exception. The node is traceable through this authority, its manifest and its PR."
+    },
+    "explicit_non_allocation": [
+      "NO ODS maintenance addendum ordinal is allocated, reserved or implied by this artifact. The highest present at AS_OF_HEAD is recorded nowhere here precisely so that it cannot be mistaken for a reservation.",
+      "NO HPO-ODS grant id is allocated or reserved.",
+      "NO migration ordinal is allocated or reserved.",
+      "NO Controller entry is claimed. This artifact produces nothing that lands in the ODS immutable-by-convention set."
+    ],
+    "reversal_condition": "If a future measurement finds the slice requires ANY protected path, NEW_ODS_REQUIRED becomes YES and the implementing lane STOPS with STOP_FOR_AUTHORITY_DELTA. It does not proceed under the ordinary allow and reconcile afterwards — that is the 'it changed anyway' scope inference CLAUDE.md section 5 forbids.",
+    "control": "N-RC-08 and MUT-RC-08."
+  },
+
+  "PR187_RELATIONSHIP": {
+    "measured_state_at_AS_OF_HEAD": {
+      "pr": "lorenzozanello/uellix-antigravity#187",
+      "title": "docs(wave3): FIBDB-053 Stage-A node execution authority (CV1-FIBDB053-STAGEA-AW)",
+      "state": "OPEN",
+      "isDraft": true,
+      "headRefName": "codex/fibdb053-stage-a-authority-r1",
+      "headRefOid": "26459a16783f200b4eab8d7c00b975fa36f6e8ac",
+      "baseRefName": "integration/commercial-v1",
+      "integration_proof": "git merge-base --is-ancestor 26459a16 HEAD returns NON-ZERO. PR #187's head is NOT an ancestor of this lane's base. It is NON-INTEGRATED candidate authority."
+    },
+    "dependency_rule": "This companion does NOT depend on PR #187's SHA as controlling authority, and does not cite it as a source for any frozen fact.",
+    "why_this_matters": "PR #187 is a DRAFT on an open branch. Its content can change, and it can be closed without merging. An authority that pinned its contract to an unmerged SHA would be frozen against something that does not exist in the integration line, and would silently decay if that branch moved.",
+    "how_shared_facts_were_obtained": "Every fact this companion shares with the Stage-A node — the seven-to-nine arithmetic, the new parameter names and types, the DROP-without-DEFAULT requirement, the chain position, the rollback semantics — was re-derived from the SEALED FIB baseline (A3, A4, A5, A10 via WAVE3_AUTHORITY) and from the executable state at AS_OF_HEAD (A6, A7, A8, A14). WAVE3_AUTHORITY_v1.0.0.json is INTEGRATED at this base and is a legitimate source; PR #187 is not.",
+    "corroboration_not_dependency": "Where this companion's derivations agree with PR #187's, that agreement is corroboration between two independent derivations from the same sealed sources. It is not evidence that either is correct, and it is not a dependency.",
+    "post_integration_obligation": {
+      "rule": "After PR #187 (or whatever artifact ultimately carries the Stage-A node authority) INTEGRATES, this companion must be reconciled against the integrated Stage-A reference BEFORE final implementation and before any apply.",
+      "what_must_be_reconciled": [
+        "The exact final nine-argument signature — argument names, types and ORDER. CATALOG_PROBE_CONTRACT's probe literal is a fixed string and a single divergence in type or order makes it permanently FALSE, which fails silent rather than closed.",
+        "Whether the integrated Stage-A retains DROP-without-DEFAULT. If it were ever revised to publish a defaulted overload, the bridge's premise changes and this authority must be re-derived, not merely re-read.",
+        "The rollback artifact's name and the exact signature it restores, on which R-1's return path depends."
+      ],
+      "if_reconciliation_finds_divergence": "STOP_FOR_AUTHORITY_DELTA. The companion is amended by a successor artifact; it is not silently edited to match.",
+      "control": "N-RC-09."
+    },
+    "no_modification_rule": "This lane makes NO modification to PR #187, to its branch, or to any artifact on it."
+  },
+
+  "G2_BOUNDARY_RESTATEMENT": {
+    "rule": "Carried from WAVE3_AUTHORITY_v1.0.0.json#G2_BOUNDARY (A11) UNWEAKENED. This authority adds a permission for the runtime and adds NO permission for the database.",
+    "permitted_before_G2": [
+      "Authoring this companion authority and its manifest.",
+      "Implementing the compatibility bridge and the risk payload propagation, within FUTURE_RUNTIME_WRITE_SURFACE.",
+      "Local tests, including targeted tests and the typecheck.",
+      "Disposable Real-PostgreSQL rehearsal via pnpm db:audit:disposable against a fresh throwaway container, destroyed afterwards. Never staging, never production, never the canonical local Supabase stack.",
+      "Deploying the bridge-carrying runtime, IF and ONLY IF otherwise authorized by the normal release process. This authority does not itself grant a deployment permission; it removes the compatibility objection to one."
+    ],
+    "forbidden_before_G2": [
+      "Any remote, staging, hosted or production application of stella_0017b, under any framing.",
+      "Applying the .hosted.sql or .governed.sql variants anywhere.",
+      "Claiming or implying that the FIBDB-053 external G2 gate is RESOLVED.",
+      "Treating a successful disposable rehearsal as evidence that the gate may be resolved."
+    ],
+    "no_bypass_clause": "There is no condition under which this authority authorizes a hosted or remote apply. A future mission that believes it has found one has misread this section.",
+    "relationship_to_the_sequencing_exception": "The owner's exception moves a RUNTIME slice earlier in the wave topology. It does not move the G2 gate, does not shorten it, and does not create a second path to it. The exception and the gate are orthogonal, and this artifact deliberately keeps them in separate sections so that neither can be read as implying the other."
+  },
+
+  "MUTATION_CONTROLS": {
+    "rule": "Each mutation below is a specific, deliberate breakage of a guarantee this authority freezes. The companion manifest's controls must CATCH each one. A mutation that no control catches is a gap in the test contract, not an acceptable residual risk.",
+    "controls": [
+      { "id": "MUT-RC-01", "mutation": "Replace the catalog probe with a manual environment flag or configuration value selecting the arity.", "must_be_caught_by": "N-RC-04", "guarantee_broken": "RC-06 and CATALOG_PROBE_CONTRACT P-2." },
+      { "id": "MUT-RC-02", "mutation": "Delete the seven-argument branch, leaving only the nine-argument call.", "must_be_caught_by": "T2, N-RC-01", "guarantee_broken": "OLD_DB support. The bridge stops being a bridge and D-1 breaks." },
+      { "id": "MUT-RC-03", "mutation": "Delete the nine-argument branch, leaving only the seven-argument call.", "must_be_caught_by": "T2, N-RC-02", "guarantee_broken": "NEW_DB support. The slice silently becomes a no-op and Stage-A's parameters are never fed — the original defect, restored." },
+      { "id": "MUT-RC-04", "mutation": "Issue the nine-argument call first and fall back to seven arguments after it fails, inside the same transaction.", "must_be_caught_by": "N-RC-03", "guarantee_broken": "CATALOG_PROBE_CONTRACT P-1. The mutant must be caught EXHIBITING 25P02, not merely caught being slow — a control that only observes the fallback succeeding proves nothing, because it cannot succeed." },
+      { "id": "MUT-RC-05", "mutation": "Omit riskFlags from the propagation chain while keeping riskLevel.", "must_be_caught_by": "T3", "guarantee_broken": "RISK_PAYLOAD_CONTRACT. The asymmetry is the point: a control that only checks riskLevel passes this mutant." },
+      { "id": "MUT-RC-06", "mutation": "Source the risk value from audit_logs instead of from the validator or reviewer result.", "must_be_caught_by": "T8", "guarantee_broken": "RISK_PAYLOAD_CONTRACT.no_audit_log_source_of_truth and the FIB FAIL_CLOSED_TEST." },
+      { "id": "MUT-RC-07", "mutation": "Add a FIBIU-19 path — lib/pipeline/sroi-results.ts being the sharpest case — to the slice's diff.", "must_be_caught_by": "N-RC-05", "guarantee_broken": "FIBIU19_DISJOINTNESS, and with it the owner's exception itself (RC-02, RC-03)." },
+      { "id": "MUT-RC-08", "mutation": "Add a protected path, db/prepared/** being the likeliest, to the slice's diff.", "must_be_caught_by": "N-RC-08", "guarantee_broken": "NEW_ODS_REQUIRED=NO. Caught by ods:scope, which is why ods_scope is a declared exit gate rather than a recommendation." },
+      { "id": "MUT-RC-09", "mutation": "Permit Stage-A apply before the companion is integrated and deployed.", "must_be_caught_by": "T6, N-RC-06", "guarantee_broken": "DEPLOYMENT_CONTRACT D-3 and STAGE_A_INTERACTION.stage_a_apply_preconditions." },
+      { "id": "MUT-RC-10", "mutation": "Roll the runtime back before the SQL rollback.", "must_be_caught_by": "T7", "guarantee_broken": "ROLLBACK_CONTRACT R-2." },
+      { "id": "MUT-RC-11", "mutation": "Make riskLevel or riskFlags optional on the execution result type instead of required-and-nullable.", "must_be_caught_by": "T1", "guarantee_broken": "RISK_PAYLOAD_CONTRACT.explicit_null_rule. The mutant typechecks, which is precisely why a dedicated exhaustiveness control is needed rather than reliance on the compiler." },
+      { "id": "MUT-RC-12", "mutation": "Write the probe literal in the pg_catalog grapheme (bpchar/varchar/int4/_text) instead of the to_regprocedure input grapheme.", "must_be_caught_by": "N-RC-10", "guarantee_broken": "CATALOG_PROBE_CONTRACT.signature_graphemes. This mutant FAILS SILENT — the probe returns NULL forever and the bridge pins itself to OLD_DB on a NEW_DB database, filing no risk while reporting success." }
+    ]
+  },
+
+  "OPEN_FINDINGS": {
+    "blocking_for_this_docs_only_freeze": [],
+    "blocking_for_implementation": [],
+    "non_blocking": [
+      {
+        "id": "F-RC-1",
+        "finding": "The sealed FIB baseline contains an internal contradiction (COMPATIBILITY_CONTRADICTION) that this authority works around at the runtime layer rather than resolves.",
+        "why_not_blocking": "The contradiction is in a FORMALLY_SEALED artifact that this lane may not edit, and the operative half of it (DROP_WITHOUT_DEFAULT) is machine-enforced by stella_0018 regardless of what the prose claims. The bridge makes the additive claim true where it can still be made true.",
+        "disposition": "RECORDED, NOT RESOLVED. A future authority delta may wish to amend the FIB's section 6.4 window-1 claim so that it no longer asserts a prevention it does not provide. That is outside this lane's scope."
+      },
+      {
+        "id": "F-RC-2",
+        "finding": "Both the FIB baseline and WAVE3_AUTHORITY refer to 'the validator and reviewer categories', but 'reviewer' is not a category. The measured registry holds six interaction categories and the reviewer ACTION covers three of them.",
+        "why_not_blocking": "The referent is unambiguous and the correct expansion is derivable. Recorded so an implementing lane hardens four real categories rather than two names.",
+        "disposition": "RESOLVED BY EXPANSION in RISK_PAYLOAD_CONTRACT.explicit_null_rule.reviewer_category_note."
+      },
+      {
+        "id": "F-RC-3",
+        "finding": "One import edge exists from the slice into FIBIU-19's surface: advisor.ts imports getSroiCalculationReadiness from lib/pipeline/sroi-calculation.ts.",
+        "why_not_blocking": "It is a pre-existing READ, not a write, and it does not breach write-surface disjointness. FIBIU-19 has no reciprocal dependency on the slice.",
+        "disposition": "CONSTRAINED, not merely noted — see FUTURE_RUNTIME_WRITE_SURFACE.advisor_constraint and control N-RC-07."
+      },
+      {
+        "id": "F-RC-4",
+        "finding": "RC-04 records that FIBIU-20's hard dependency on FIBIU-29 is NOT excepted, and this authority makes no claim about whether FIBIU-29 is satisfied.",
+        "why_not_blocking": "The compatibility slice's write surface does not obviously implicate FIBIU-29 (discrete permissions and tenancy boundary), and the owner decision addressed the FIBIU-19 serialization only.",
+        "disposition": "OPEN AND DELIBERATELY UNRESOLVED. An implementing lane must confirm that the slice does not require FIBIU-29 work before proceeding, and STOPS if it does. Silence here is a stated gap, not an implied waiver."
+      },
+      {
+        "id": "F-RC-5",
+        "finding": "The probe's correctness depends on a signature that does not yet exist anywhere — the nine-argument form is specified by authority, not observable in any database or file at AS_OF_HEAD.",
+        "why_not_blocking": "It is inherent to runtime-first: the runtime is built against a contract before its counterpart exists. The three-grapheme hazard and the reconciliation obligation are the mitigations.",
+        "disposition": "MITIGATED by PR187_RELATIONSHIP.post_integration_obligation and MUT-RC-12. A disposable Real-PostgreSQL rehearsal that installs both shapes is the only way to test the probe against a real catalog, which is why postgres_disposable_probe is a declared exit gate."
+      }
+    ]
+  },
+
+  "self_check": {
+    "note": "Deterministic, test-free self-check to run by inspection before any commit that edits this file. Not a script.",
+    "expected_anchor_count": 14,
+    "expected_anchor_id_set": ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10","A11","A12","A13","A14"],
+    "expected_mutation_control_count": 12,
+    "expected_mutation_id_set": ["MUT-RC-01","MUT-RC-02","MUT-RC-03","MUT-RC-04","MUT-RC-05","MUT-RC-06","MUT-RC-07","MUT-RC-08","MUT-RC-09","MUT-RC-10","MUT-RC-11","MUT-RC-12"],
+    "expected_deployment_cell_count": 4,
+    "expected_rollback_case_count": 3,
+    "expected_prohibited_shape_count": 5,
+    "expected_non_blocking_finding_count": 5,
+    "checks": [
+      "CONTROLLING_AUTHORITY.anchors.length == 14 and its id set equals expected_anchor_id_set",
+      "MUTATION_CONTROLS.controls.length == 12 and its id set equals expected_mutation_id_set",
+      "every MUTATION_CONTROLS entry names a must_be_caught_by that appears in the companion manifest",
+      "DEPLOYMENT_CONTRACT.matrix.length == 4 and covers all four (runtime, database) combinations exactly once",
+      "exactly one DEPLOYMENT_CONTRACT cell has state PROHIBITED, and it is D-3",
+      "ROLLBACK_CONTRACT.cases.length == 3 and exactly one has state PROHIBITED, and it is R-2",
+      "CATALOG_PROBE_CONTRACT.prohibited_shapes.length == 5",
+      "OPEN_FINDINGS.blocking_for_this_docs_only_freeze == [] and blocking_for_implementation == []",
+      "FIBIU19_DISJOINTNESS.proof contains four independent methods and every one returns EMPTY or NONE in the slice-to-FIBIU-19 write direction",
+      "FUTURE_RUNTIME_WRITE_SURFACE.forbidden_paths includes lib/pipeline/sroi-results.ts — the SW-6 exclusion is the load-bearing one and its absence would void the exception",
+      "NEW_ODS_REQUIRED.verdict == 'NO' and is accompanied by an executed classifier result, never by an assertion alone",
+      "no section of this artifact authorizes an apply, a deployment, a certification or an ODS allocation",
+      "PR187_RELATIONSHIP cites no PR #187 SHA as a source for any frozen contract value",
+      "every category in RISK_PAYLOAD_CONTRACT.per_category_disposition appears in the measured STELLA_TICKET_CATEGORIES registry, and the list is exhaustive over it (6 interaction categories + grounded_query)"
+    ]
+  },
+
+  "required_independent_review": "INDEPENDENT certification is required before any implementation lane opens. The writing lane does not certify its own output. A certifier should re-measure, not re-read: the disjointness proof, the protected-path classification and the PR #187 non-integration are all mechanically re-derivable.",
+
+  "final_state": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1_0_0_FROZEN_AWAITING_INDEPENDENT_CERTIFICATION",
+
+  "next_gate": "FIBDB053_RUNTIME_COMPANION_AUTHORITY_READY_FOR_INDEPENDENT_CERTIFICATION"
+}

@@ -1,0 +1,515 @@
+{
+  "package_id": "TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT",
+  "version": "1.0.0",
+  "artifact_id": "TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0",
+  "authority_class": "APPEND_ONLY_TENANCY_PARENT_DAG_AUTHORITY_AMENDMENT",
+  "document_class": "PARENT_DAG_CORRECTION_AND_OWNER_RATIFICATION__NO_IMPLEMENTATION__NO_ALLOCATION__NO_DATABASE_MUTATION__NO_POLICY_CHANGE",
+  "append_only": true,
+  "mission_id": "CV1-TENANCY-STORAGE-DAG-AMENDMENT-AW",
+  "lane_id": "CV1-TENANCY-STORAGE-DAG-AMENDMENT-AW",
+  "role": "TENANCY_PARENT_DAG_AUTHORITY_WRITER",
+  "mode": "DOCS_ONLY_APPEND_ONLY_AUTHORITY_AMENDMENT",
+  "materialization_date": "2026-09-18",
+  "materialized_by": "Claude Code Desktop/CLI (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/tenancy/TENANCY_STORAGE_SELECTED_ORG_DAG_TEST_MANIFEST_AMENDMENT_v1.0.0.json",
+  "AS_OF_REF": "codex/tenancy-storage-selected-org-dag-amendment-r1",
+  "AS_OF_HEAD": "0d94b54856c701419ba32bdd844245213fd4aeed",
+  "AS_OF_TREE": "34ac5599c6cc11dec5b22213c255c6d14cb845b8",
+  "as_of_measurement_note": "Every repository fact asserted here was measured at AS_OF_TREE in the worktree C:/Users/Lorenzo/Documents/uellix-storage-selected-org-dag-amendment, branch codex/tenancy-storage-selected-org-dag-amendment-r1, working tree clean at prestate (pnpm ods:prestate PASS on branch, HEAD, tree and clean). This lane wrote no application code, no SQL, no migration and no script; it ran no migration and mutated no environment. AS_OF_HEAD is the integration merge of PR #186 (certified S4 R2).",
+
+  "AMENDS": {
+    "parent_authority": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json",
+    "parent_manifest": "docs/ops/tenancy/MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json",
+    "parent_status": "INTEGRATED AND FROZEN. The parent authority and its companion manifest are the controlling record of the multi-organization tenancy package as decided at their own materialization.",
+    "amendment_mode": "APPEND_ONLY. This artifact does not edit, rewrite, reformat, re-seal or re-version the parent authority, the parent test manifest, TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json or TENANCY_S4_EXECUTION_TEST_MANIFEST_v1.0.0.json. None of those four files appears in this lane's diff.",
+    "how_to_read_the_two_together": "Where this amendment is silent, the parent controls verbatim. Where this amendment names a parent clause under SUPERSEDED_CLAUSES, that clause is superseded ONLY in the respect this amendment states, and every other sentence of the same clause continues to control. EFFECTIVE_DAG below is the fully resolved composition of the two and is the single machine-readable endpoint a control may assert against; a reader or a test that asserts against the parent's S1_TO_S8_DAG alone is reading a pre-amendment DAG.",
+    "relationship_to_the_certified_S4_R2": "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 revision R2 (merged at AS_OF_HEAD via PR #186) already recorded the owner's DECOMPOSITION decision at DAG_DECOMPOSITION_CORRECTION and handed the storage half off at STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF. That artifact is a NODE authority: it could correct its own scope and name the sibling, but it could not amend the PARENT DAG, and it explicitly did not. This amendment is the parent-level materialization the S4 artifact deliberately left open. It adds no new decomposition decision; it makes the existing one machine-readable at the parent, and it adds the MECHANISM decision the S4 artifact was prohibited from making."
+  },
+
+  "OWNER_RATIFICATION": {
+    "decision_id": "RAT-STG-01",
+    "status": "RATIFIED BY THE HUMAN PRODUCT OWNER. BINDING.",
+    "ratified_on": "2026-09-18",
+    "instrument": "LANE CV1-TENANCY-STORAGE-DAG-AMENDMENT-AW mission packet, section OWNER DECISION - BINDING, issued by the owner to this lane, carrying OWNER_DECISION=APPROVED and APPROVED_STORAGE_MECHANISM=DB_SIDE_SESSION_MIRROR_KEYED_BY_AUTHENTICATED_SESSION_ID.",
+    "materialization_form": {
+      "form_selected": "B - an explicit owner-decided clause inside this amendment. NO separate owner-ratification artifact was written.",
+      "precedent_that_makes_form_B_sufficient": "docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0.json carries OWNER_RATIFICATION.decision_id RAT-EV-01 inline. It is an APPEND_ONLY authority amendment, in the SAME docs/ops/tenancy family, recording a single owner security-posture decision consumed by a single successor lane - structurally identical to this one. docs/ops/tenancy/TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json DAG_DECOMPOSITION_CORRECTION does the same for the decomposition half of this very decision and was independently certified.",
+      "why_a_dedicated_artifact_was_NOT_written": "docs/ops/owner-ratifications/ exists and is a real precedent, but both files in it (HPO_A_G_OWNER_RATIFICATIONS_v1.0.0.json, ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json) are MULTI-DECISION normalized records whose stated purpose is to let MANY successor lanes cite a stable artifact instead of re-deriving decisions made across sessions. This is ONE decision consumed by ONE named successor node. A third file would add an indirection without adding durability, which the mission packet forbids as a redundant artifact.",
+      "durability_requirement_discharged": "The decision is machine-readable at RAT-STG-01 below and is reachable from the parent DAG through EFFECTIVE_DAG.nodes[S4s].mechanism_decision, which names RAT-STG-01 by id. A successor cites the pair (this artifact_id, RAT-STG-01)."
+    },
+    "the_decision": "A DB-side, SERVER-CONTROLLED mirror of the shape (user_id, session_id) -> organization_id is APPROVED as the transport by which the selected-organization boundary is enforced ACROSS the Supabase Storage API connection boundary, and for that purpose alone.",
+    "binding_constraints": [
+      {
+        "id": "RAT-STG-01-C1",
+        "constraint": "Only governed server-side selection, clear and sign-out flows may create, update or remove a mirror row. No client-writable path, and no path that writes the mirror as a side effect of reading it."
+      },
+      {
+        "id": "RAT-STG-01-C2",
+        "constraint": "Storage helpers must read the mirror LIVE, per operation. A value cached, memoised, or captured at connection start is not a live read."
+      },
+      {
+        "id": "RAT-STG-01-C3",
+        "constraint": "Membership remains a SEPARATE LIVE CONJUNCT. The mirror narrows authorization; it never supplies it. A mirror row naming an organization in which the subject is not an active member must REFUSE, not permit."
+      },
+      {
+        "id": "RAT-STG-01-C4",
+        "constraint": "NO service_role. The existing repository control forbidding service_role and admin clients on the evidence ingest path is preserved without exception."
+      },
+      {
+        "id": "RAT-STG-01-C5",
+        "constraint": "NO JWT custom-claim dependency. The mechanism must not require Supabase Auth custom-claims configuration, and must not inherit the stale-claim window on organization switch that a claim-based design carries."
+      },
+      {
+        "id": "RAT-STG-01-C6",
+        "constraint": "NO signed-capability shared secret."
+      },
+      {
+        "id": "RAT-STG-01-C7",
+        "constraint": "NO widening of storage policy TEXT unless separately authorized. The stella_0019 invariant that it recreates NO policy on storage.objects is preserved by this ratification and is not pre-authorized to change."
+      },
+      {
+        "id": "RAT-STG-01-C8",
+        "constraint": "Stale session rows require BOUNDED cleanup or expiry. An unbounded-growth mirror with no expiry is not the approved mechanism."
+      },
+      {
+        "id": "RAT-STG-01-C9",
+        "constraint": "S7 remains BLOCKED until the separate storage selected-organization node closes. This ratification does not shorten the S7 gate; it makes it satisfiable."
+      }
+    ],
+    "what_the_owner_did_NOT_decide": "The owner did not decide the relation name, its uniqueness or primary key, the expiry horizon or its enforcement mechanism, the writer call sites, the helper read path, the GRANT/REVOKE posture, the cleanup schedule, the anti-spoofing derivation of session_id, or the cross-organization switch behaviour. The owner did not authorize any implementation, any migration, any prepared package, any policy edit, or any ODS allocation. Those limits are recorded at NON_AUTHORIZATIONS and are as binding as the grant.",
+    "why_a_ratification_and_not_a_lane_derivation": "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 DAG_DECOMPOSITION_CORRECTION.why_a_split_rather_than_a_mechanism_choice_here states that selecting a storage transport is a PRODUCT AND SECURITY decision repository authority did not already carry, and prohibits an S4-class artifact from pre-selecting one. Measurement establishes only that the GUC cannot cross the connection boundary; WHICH replacement transport is acceptable trades a new relation and a new durable-state surface against a claims or capability design, and the fail-closed rule sends that to the owner. This lane records the decision and derives its consequences; it did not make it."
+  },
+
+  "PARENT_DAG_DEFECT_REDERIVATION": {
+    "method": "Re-derived INDEPENDENTLY of the S4 artifact's prose, by parsing the parent authority and the parent test manifest as JSON at AS_OF_TREE and reading the named fields. Each item below records the field path and the value actually observed, so a certifier can re-run the same reads rather than trust this narrative.",
+    "not_a_defect_of_the_parent_as_written": "Every clause below was CORRECT when the parent was materialized. They became stale on 2026-09-18 when the owner-decided decomposition landed at AS_OF_HEAD. This section records staleness, never error.",
+    "findings": [
+      {
+        "id": "D-1",
+        "field_path": "S1_TO_S8_DAG.nodes[id=S4].delivers",
+        "observed": ["GUC_CONTRACT", "RLS_TARGET", "STORAGE_V1_BOUNDARY", "PROJECT_AUTHORIZATION"],
+        "stale_because": "The certified S4 R2 narrows S4 to DATABASE_SELECTED_ORG_WELD. S4 no longer delivers STORAGE_V1_BOUNDARY and its ACL_INTERACTION records that it does not touch can_write_evidence_object or can_read_evidence_object at all.",
+        "corrected_at": "EFFECTIVE_DAG.nodes[S4].delivers"
+      },
+      {
+        "id": "D-2",
+        "field_path": "S1_TO_S8_DAG.nodes[id=S7].depends_on",
+        "observed": ["S1", "S2", "S3", "S3c", "S4", "S5", "S6"],
+        "stale_because": "No storage node is named. Composed with D-1, the parent DAG as written permits a lane to reach S7 with every named predecessor closed and the storage boundary unwelded - the precise state DROP_LAST_RULE exists to forbid.",
+        "corrected_at": "EFFECTIVE_DAG.nodes[S7].depends_on"
+      },
+      {
+        "id": "D-3",
+        "field_path": "DROP_LAST_RULE.preconditions_all_of[id=DL-3].node",
+        "observed": "S4",
+        "stale_because": "DL-3's requirement text itself says 'closed-world across the tenant policy surface INCLUDING storage', but attributes discharge to S4 alone. After the split no single node can discharge it.",
+        "corrected_at": "SUPERSEDED_CLAUSES.AM-STG-S1"
+      },
+      {
+        "id": "D-4",
+        "field_path": "self_check.expected_dag_node_count / self_check.expected_dag_node_ids",
+        "observed_count": 9,
+        "observed_ids": ["S1", "S2", "S3", "S3c", "S4", "S5", "S6", "S7", "S8"],
+        "stale_because": "The corrected DAG carries ten nodes. A self-check frozen at nine would go RED against the corrected DAG and GREEN against the defective one - an inverted sentinel.",
+        "corrected_at": "EFFECTIVE_DAG.expected_dag_node_count / EFFECTIVE_DAG.expected_dag_node_ids"
+      },
+      {
+        "id": "D-5",
+        "field_path": "S1_TO_S8_DAG.topological_order",
+        "observed": "S1, S2 (parallel) -> S3 -> {S3c, S4, S5} (parallel among themselves) -> S6 -> S7 -> S8",
+        "stale_because": "The parallel set after S3 omits the storage node.",
+        "corrected_at": "EFFECTIVE_DAG.topological_order"
+      },
+      {
+        "id": "D-6",
+        "field_path": "STORAGE_V1_BOUNDARY.V1_DECISION.node",
+        "observed": "S4 welds it; S7 may not proceed until it is welded and proven.",
+        "stale_because": "The first clause is now false; the second remains TRUE and is reaffirmed, not weakened.",
+        "corrected_at": "SUPERSEDED_CLAUSES.AM-STG-S2"
+      },
+      {
+        "id": "D-7",
+        "field_path": "REAL_PG_CONTRACT.required_probes[id=PG-2]",
+        "observed": {
+          "proves": "current_setting('app.organization_id', true) resolves to the CALLER's value inside can_write_evidence_object (SECURITY DEFINER).",
+          "node": "S4"
+        },
+        "stale_because": "TWO independent defects, not one. (a) NODE: S4 no longer owns the helper. (b) PREMISE: the certified B1 re-derivation measured that the application transaction owning app.organization_id and the connection evaluating storage.objects policies are different connections on different transports, so the GUC is NEVER the application's value there. The probe as written would be satisfied by a single-session harness that sets the GUC itself and calls the helper - it would PASS and prove nothing, because it fabricates on one connection exactly the propagation production lacks.",
+        "corrected_at": "SUPERSEDED_CLAUSES.AM-STG-S3 and REAL_PG_CONTRACT_AMENDMENT"
+      },
+      {
+        "id": "D-8",
+        "field_path": "MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.positive_controls[id=P-9].description",
+        "observed_fragment": "S4 / STORAGE_V1_BOUNDARY. An evidence-object write permitted for the selected organization still succeeds after can_write_evidence_object is welded to the selected-org conjunct ... Requires PG-2.",
+        "stale_because": "Carries D-1's node attribution AND D-7's retired probe dependency, and additionally presumes the weld mechanism is a selected-org conjunct reading the GUC - the mechanism RAT-STG-01 replaces.",
+        "corrected_at": "companion manifest amendment, control P-STG-1"
+      },
+      {
+        "id": "D-9",
+        "field_path": "SECURITY_CONTROLS.controls[id=SC-4]",
+        "observed": {
+          "control": "A row, project or evidence object of a NON-SELECTED organization is unreachable to a subject who is a member of both.",
+          "node": "S4"
+        },
+        "stale_because": "A THREE-part control attributed wholly to S4. Rows and projects are S4's after the split; evidence objects are not. Found by this lane's own scan of the parent for storage-coupled clauses, NOT named by the S4 artifact's handoff. Recorded as an independently discovered defect.",
+        "corrected_at": "SUPERSEDED_CLAUSES.AM-STG-S4, which splits SC-4 and appends SC-8"
+      },
+      {
+        "id": "D-10",
+        "field_path": "SESSION_SCOPE.session_scoped_means",
+        "observed_verbatim": "The selection lives for the duration of the browser session and no longer. It is not persisted to the user row, not persisted to a database preference, and not restored across sessions. A new session starts with no selection.",
+        "stale_because": "Not stale by the DAG split, but DIRECTLY CONTRADICTED by RAT-STG-01, which puts a database row in the selection path. Without a narrow, explicit exception this amendment would silently contradict a frozen parent clause - the fail-closed rule forbids that.",
+        "corrected_at": "SUPERSEDED_CLAUSES.AM-STG-S5 and SESSION_SCOPE_RECONCILIATION"
+      }
+    ],
+    "clauses_scanned_and_found_NOT_stale": [
+      "SELECTED_ORG_CARRIER in its entirety, including prohibited_carriers and trust_model. The carrier remains the session cookie; the mirror is not a carrier and does not become one. See SESSION_SCOPE_RECONCILIATION.the_mirror_is_not_a_carrier.",
+      "S1_TO_S8_DAG.nodes[id=S6].depends_on ([S1, S3, S4, S5]). S6 delivers second membership, invitations, bootstrap and allowlist exit; none of it traverses evidence storage. Deliberately left UNCHANGED rather than padded with S4s.",
+      "GUC_CONTRACT and RLS_TARGET. Both are database-transport clauses and survive the split intact as S4's content.",
+      "REAL_PG_CONTRACT probes PG-1, PG-3, PG-4, PG-5, PG-6. None depends on the storage connection boundary.",
+      "EVIDENCE_ANCHORS.anchors[13] (stella_0019 lines :261, :427, :680, :689). A measured fact about the helper as it exists, unaffected by which node owns the weld.",
+      "DROP_LAST_RULE preconditions DL-1, DL-2, DL-4, DL-5, DL-6, the ALL SIX conjunction, and prohibited_shortcuts.",
+      "SECURITY_CONTROLS SC-1, SC-2, SC-3, SC-5, SC-6, SC-7."
+    ]
+  },
+
+  "NEW_STORAGE_NODE_ID": {
+    "node_id": "S4s",
+    "title": "Storage selected-organization boundary",
+    "delivers_capability": "STORAGE_V1_BOUNDARY",
+    "concept": "STORAGE_SELECTED_ORG_BOUNDARY - the name already frozen by TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF. This amendment does not rename the concept; it allocates the DAG node id that carries it.",
+    "derivation": {
+      "rule_applied": "Use the naming convention the parent DAG already evidences, and never renumber under append-only.",
+      "evidence_1_the_only_letter_suffixed_precedent": "S3c is the sole letter-suffixed node in the parent DAG (S1_TO_S8_DAG.nodes[3], id S3c, title 'Stella selected-organization scope weld'). It was inserted as a derivative of S3 WITHOUT renumbering S4..S8. The form is therefore S<parent-number><lowercase-letter>.",
+      "evidence_2_the_letter_is_not_a_sequence_position": "MEASURED: no node S3a and no node S3b exists anywhere in docs/ops/tenancy. The only occurrences of those tokens are an exclusion list (MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_AMENDMENT_v1.0.2.json:287) and an explicit REPUDIATION of informal numbering (MULTI_ORG_S1_S2_EXECUTION_SCOPE_AUTHORITY_v1.0.0.json:98). Since S3c exists with no S3a or S3b before it, the letter is a stable tag, not an ordinal. A mnemonic letter is therefore precedent-supported, and 'S4s' is not a blind guess.",
+      "evidence_3_why_not_a_new_integer": "A new integer id would have to be S9 to avoid renumbering, and S9 would read as following S8 - the terminal node - which inverts the topology. Renumbering S5..S8 to insert S5 is forbidden: it would edit the frozen parent and invalidate every artifact that cites the existing ids.",
+      "evidence_4_why_not_S4_prime_or_S4_2": "Neither form appears anywhere in the repository. Introducing an unprecedented id form in an append-only amendment adds a second naming convention to a DAG that has exactly one.",
+      "the_letter_chosen": "'s' for storage. The node is the storage half split out of the original S4, exactly as S3c is a weld hanging off S3.",
+      "distinctness_from_S4": "S4s is a DISTINCT NODE, not a revision, sub-task or phase of S4. It has its own delivers set, its own predecessor set, its own execution authority (not yet authored), its own test manifest, and its own ODS allocation. S4 may close without S4s; S7 may not."
+    }
+  },
+
+  "EFFECTIVE_DAG": {
+    "status": "NORMATIVE. This is the parent's S1_TO_S8_DAG composed with this amendment, fully resolved. It is the endpoint a conformance control asserts against.",
+    "composition_rule": "For every node id present here, this object controls. The parent's S1_TO_S8_DAG remains the record of the pre-amendment DAG and is NOT edited. Where a node appears here with a field identical to the parent's, it is reproduced for resolvability, not re-decided.",
+    "allocation_note_inherited": "S-ids are LOCAL to the tenancy authority. They are not ODS unit ids, not FIB node ids and not HPO grants. S4s, like every other node, requires its own lineage allocation before implementation. THIS AMENDMENT ALLOCATES NOTHING.",
+    "nodes": {
+      "S1": { "delivers": ["FOUNDED_BY", "FOUNDER_CARDINALITY", "BACKFILL"], "depends_on": [], "amended_by_this_artifact": false },
+      "S2": { "delivers": ["SESSION_SCOPE", "SELECTED_ORG_CARRIER"], "depends_on": [], "amended_by_this_artifact": false },
+      "S3": { "delivers": ["REQUEST_PRINCIPAL", "REQUEST_REVALIDATION", "ROLE_CEILING"], "depends_on": ["S2"], "amended_by_this_artifact": false },
+      "S3c": { "delivers": ["STELLA_S3C_SCOPE_WELD"], "depends_on": ["S3"], "amended_by_this_artifact": false },
+      "S4": {
+        "title": "Database selected-organization weld (GUC conjunctive weld and RLS target)",
+        "delivers": ["GUC_CONTRACT", "RLS_TARGET", "PROJECT_AUTHORIZATION"],
+        "depends_on": ["S3"],
+        "amended_by_this_artifact": true,
+        "amendment": "STORAGE_V1_BOUNDARY REMOVED from delivers. Everything else in the parent's S4 node - resolves C-6, supersedes SI-4, depends_on S3, and the severity note that S7 is unsafe without it - is UNCHANGED and reaffirmed.",
+        "severity_reaffirmed": "The security-critical database node of the package. S7 remains unsafe without it."
+      },
+      "S4s": {
+        "title": "Storage selected-organization boundary",
+        "delivers": ["STORAGE_V1_BOUNDARY"],
+        "depends_on": ["S3"],
+        "amended_by_this_artifact": true,
+        "amendment": "NEW NODE. Added by this amendment.",
+        "resolves": ["C-6, in the respect that C-6 reaches evidence storage objects. The database respect of C-6 is resolved by S4. Neither node resolves C-6 alone."],
+        "supersedes": ["SI-4, in the storage respect only. S4 supersedes it in the database respect."],
+        "why_it_depends_on_S3_and_not_on_S4": "S4s needs a server-controlled, revalidated selected-organization principal to mirror - that is S3's REQUEST_PRINCIPAL and REQUEST_REVALIDATION. It does NOT need S4's database weld: the two enforce the same property on different transports and, per TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF, 'S4 may be implemented and certified independently'. Declaring a dependency on S4 would be padding, and padding a DAG edge is not conservatism - it fabricates an ordering constraint a certifier would then have to honour.",
+        "parallelism": "S4s runs in the post-S3 parallel set alongside S3c, S4 and S5. It is NOT a serial successor of S4.",
+        "mechanism_decision": {
+          "decided_by": "RAT-STG-01 in this artifact.",
+          "mechanism": "DB_SIDE_SESSION_MIRROR_KEYED_BY_AUTHENTICATED_SESSION_ID",
+          "shape": "(user_id, session_id) -> organization_id",
+          "purpose_limitation": "Enforcing selected-organization authorization across the Supabase Storage API connection boundary, and nothing else."
+        },
+        "security_property_it_must_deliver": "Inherited VERBATIM from TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF.THE_SECURITY_PROPERTY_THE_STORAGE_NODE_MUST_DELIVER: a dual-member subject may access evidence storage objects ONLY for the currently selected organization, with SYMMETRIC cross-organization denial, across upload, read/download, delete and the evidence erasure path.",
+        "execution_authority": "NOT YET AUTHORED. See NEXT_AUTHORITY_TOPOLOGY. This amendment is a parent DAG correction and a mechanism ratification; it is NOT the S4s execution authority and must not be cited as one."
+      },
+      "S5": { "delivers": ["SUPERADMIN_BOUNDARY", "ADMIN_CONTROL_PLANE", "SUSPENDED_ORG_BEHAVIOR"], "depends_on": ["S3"], "amended_by_this_artifact": false },
+      "S6": {
+        "delivers": ["SECOND_ORG_MEMBERSHIP", "INVITATIONS", "SELF_SERVICE_BOOTSTRAP", "CAP05_INTERFACE", "ALLOWLIST_EXIT"],
+        "depends_on": ["S1", "S3", "S4", "S5"],
+        "amended_by_this_artifact": false,
+        "deliberately_not_amended": "S6 does NOT gain a dependency on S4s. Its second-membership behavioural contract is meaningful once the database scope and the superadmin boundary are enforced; none of B1..B5 traverses evidence storage. Adding the edge would over-constrain S6 without adding a security property."
+      },
+      "S7": {
+        "delivers": ["MEMBERSHIP_CARDINALITY"],
+        "depends_on": ["S1", "S2", "S3", "S3c", "S4", "S4s", "S5", "S6"],
+        "amended_by_this_artifact": true,
+        "amendment": "S4s ADDED to depends_on. NOTHING REMOVED. All seven pre-existing predecessors remain, each at full strength.",
+        "gate_reaffirmed": "DROP_LAST_RULE. This node still has NO other content - it drops one index and nothing else, so that its blast radius is exactly the invariant it removes."
+      },
+      "S8": { "delivers": ["GOLDEN_S8_CONTRACT", "SECURITY_CONTROLS", "MUTATION_CONTROLS"], "depends_on": ["S7"], "amended_by_this_artifact": false }
+    },
+    "topological_order": "S1, S2 (parallel) -> S3 -> {S3c, S4, S4s, S5} (parallel among themselves) -> S6 -> S7 -> S8",
+    "expected_dag_node_count": 10,
+    "expected_dag_node_ids": ["S1", "S2", "S3", "S3c", "S4", "S4s", "S5", "S6", "S7", "S8"],
+    "parent_count_superseded": {
+      "parent_field": "self_check.expected_dag_node_count",
+      "parent_value": 9,
+      "note": "The parent's 9 remains TRUE of the parent's own DAG and is not edited. A conformance control must read EFFECTIVE_DAG.expected_dag_node_count, never the parent's self_check, or it will invert."
+    },
+    "program_precondition_unchanged": "S1_TO_S8_DAG.program_precondition (the E16 lineage-sequencing gate) applies to EVERY node including S4s, verbatim and unweakened. This amendment allocates nothing and is therefore not subject to its stop, exactly as the parent's own this_mission_compliance clause states of the parent."
+  },
+
+  "SUPERSEDED_CLAUSES": {
+    "supersession_is_narrow_and_enumerated": "Exactly FIVE frozen items are superseded, each in exactly one respect, each quoted verbatim so the supersession cannot later be read more broadly than written. Nothing else in the parent authority or the parent manifest is superseded, weakened, re-scoped or re-opened by this artifact.",
+    "count": 5,
+    "AM-STG-S1": {
+      "target": "DROP_LAST_RULE.preconditions_all_of[id=DL-3]",
+      "OLD_verbatim": { "id": "DL-3", "requirement": "selected-organization RLS materialized and proven, closed-world across the tenant policy surface INCLUDING storage", "node": "S4" },
+      "NEW": { "id": "DL-3", "requirement": "UNCHANGED, verbatim.", "node": "S4 AND S4s - BOTH. DL-3 is discharged only by the CONJUNCTION of the database selected-organization weld (S4) and the storage selected-organization boundary (S4s). Neither node discharges it alone, and a lane that closes one and reads DL-3 as satisfied has misread this amendment." },
+      "the_respect_in_which_it_is_superseded": "ONLY the node attribution. The requirement text is NOT touched: 'INCLUDING storage' was always the right requirement and is reaffirmed. The ALL SIX conjunction over DL-1..DL-6 is untouched.",
+      "does_this_weaken_the_gate": "NO. It STRENGTHENS it. Before: one node closes, DL-3 is satisfied, and storage may be unwelded. After: two nodes must close. A precondition that requires strictly more cannot be a weakening."
+    },
+    "AM-STG-S2": {
+      "target": "STORAGE_V1_BOUNDARY.V1_DECISION.node",
+      "OLD_verbatim": "S4 welds it; S7 may not proceed until it is welded and proven.",
+      "NEW": "S4s welds it; S7 may not proceed until it is welded and proven.",
+      "the_respect_in_which_it_is_superseded": "ONLY which node welds. The second clause is reproduced UNCHANGED and is the operative one.",
+      "what_is_NOT_superseded_in_STORAGE_V1_BOUNDARY": [
+        "V1_DECISION.decision: 'Storage IS IN SCOPE for the weld and is a HARD PRECONDITION of S7.' UNCHANGED and reaffirmed.",
+        "V1_DECISION.classification: DERIVED_SECURITY_DECISION. UNCHANGED.",
+        "V1_DECISION.rationale, including 'A tenant boundary that holds for rows and not for evidence objects is not a tenant boundary.' UNCHANGED and reaffirmed.",
+        "current_state and the_boundary_problem. Both are measured statements about the helper as it exists and remain true.",
+        "implementation_constraint.package_invariant_to_preserve - the stella_0019 assertions that it recreates NO policy on storage.objects and that the named policies still call the helper. UNCHANGED, and reinforced by RAT-STG-01-C7."
+      ],
+      "partial_supersession_inside_implementation_constraint": "STORAGE_V1_BOUNDARY.implementation_constraint.definer_hazard and .requirement rest on the premise that the GUC inside the definer resolves to the desired caller value. That premise is superseded by AM-STG-S3 as applied to the STORAGE API path. The definer_hazard's general warning - that a SECURITY DEFINER function does not reset session GUCs - remains a TRUE statement about PostgreSQL and is not withdrawn; it simply no longer implies what the clause drew from it, because the caller it describes is the DATABASE caller and not the APPLICATION request."
+    },
+    "AM-STG-S3": {
+      "target": "REAL_PG_CONTRACT.required_probes[id=PG-2]",
+      "OLD_verbatim": { "id": "PG-2", "proves": "current_setting('app.organization_id', true) resolves to the CALLER's value inside can_write_evidence_object (SECURITY DEFINER).", "node": "S4", "why_real_pg": "Definer GUC/session semantics are the exact mechanism that produced A2-F02. It must be observed, not inferred." },
+      "NEW": "RETIRED. PG-2 is withdrawn as a required probe and is replaced by PG-S4s-1..PG-S4s-5 at REAL_PG_CONTRACT_AMENDMENT.",
+      "why_retired_rather_than_re_attributed": "Re-attributing it to S4s would carry the false premise across with the node. The probe asks to observe the application's GUC value inside the helper during storage evaluation; the certified B1 re-derivation measured that this value is NEVER there, so a faithful S4s implementation makes the probe UNSATISFIABLE, and a harness that satisfies it has fabricated the propagation on one connection. A probe that can only pass by being wrong is worse than no probe.",
+      "what_is_NOT_retired": "The REAL_PG_CONTRACT rule itself, its disposable-harness constraint, its two_tenant_fixture_requirement and its dual_member_fixture_requirement (including the two-phase harness) all apply to the replacement probes verbatim. PG-1, PG-3, PG-4, PG-5 and PG-6 are untouched.",
+      "the_control_design_lesson_this_records": "A probe must reproduce the CONNECTION BOUNDARY, not merely the function boundary. Stated as a lesson by TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF.B1_REDERIVATION.THE_R1_PROBE_WOULD_NOT_HAVE_CAUGHT_IT; materialized here as PG-S4s-1, which makes the non-propagation itself the observable."
+    },
+    "AM-STG-S4": {
+      "target": "SECURITY_CONTROLS.controls[id=SC-4]",
+      "OLD_verbatim": { "id": "SC-4", "control": "A row, project or evidence object of a NON-SELECTED organization is unreachable to a subject who is a member of both.", "node": "S4", "attacks": "C-6 / E8 — the silent-widening failure. THE PRIMARY CONTROL OF THE PACKAGE." },
+      "NEW": {
+        "SC-4": { "control": "A row or project of a NON-SELECTED organization is unreachable to a subject who is a member of both.", "node": "S4", "attacks": "UNCHANGED. Still THE PRIMARY DATABASE CONTROL OF THE PACKAGE." },
+        "SC-8": { "control": "An evidence STORAGE OBJECT of a NON-SELECTED organization is unreachable to a subject who is a member of both, SYMMETRICALLY across upload, read/download, delete and the evidence erasure path, and it remains unreachable when the subject calls the Supabase Storage API DIRECTLY rather than through the server.", "node": "S4s", "attacks": "C-6 / E8 reaching the storage transport, plus the direct-Storage-API reach that the server-mediated application check does not cover." }
+      },
+      "the_respect_in_which_it_is_superseded": "ONLY the partition of the three-part subject (row, project, evidence object) across two nodes. The conjunction SC-4 AND SC-8 is exactly the original SC-4 and is strictly stronger than it, because SC-8 adds the direct-API reach and the symmetry-across-four-verbs requirement the original did not state.",
+      "provenance": "Found by THIS lane's own scan of the parent for storage-coupled clauses. It is NOT named in TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0's handoff, and a lane that amended only the clauses that artifact enumerated would have left SC-4 attributing an evidence-object control to a node that no longer touches evidence objects.",
+      "SC-8_is_an_append_not_a_reallocation": "SC ids are LOCAL to the tenancy authority, like the S-ids. SC-8 is the next free ordinal after the parent's SC-1..SC-7, appended by this amendment. It is not an ODS identifier, not an HPO grant and not a reservation of anything."
+    },
+    "AM-STG-S5": {
+      "target": "SESSION_SCOPE.session_scoped_means",
+      "OLD_verbatim": "The selection lives for the duration of the browser session and no longer. It is not persisted to the user row, not persisted to a database preference, and not restored across sessions. A new session starts with no selection.",
+      "NEW": "UNCHANGED as a statement about the SELECTION. One narrow exception is added for ENFORCEMENT STATE: a server-controlled mirror row of the shape (user_id, session_id) -> organization_id, written only by governed selection/clear/sign-out flows and bounded by expiry, is PERMITTED for the sole purpose of carrying the selected-organization boundary across the Supabase Storage API connection boundary. See SESSION_SCOPE_RECONCILIATION for the full reconciliation and its prohibitions.",
+      "the_respect_in_which_it_is_superseded": "ONLY the phrase 'not persisted to a database preference', and only as it would otherwise forbid an enforcement mirror. 'Not persisted to the user row' is NOT superseded. 'Not restored across sessions' is NOT superseded. 'A new session starts with no selection' is NOT superseded and is load-bearing: a new session has a new session_id and therefore no mirror row.",
+      "why_this_supersession_is_required_rather_than_convenient": "Without it, RAT-STG-01 and a frozen parent clause would both control and would contradict. The fail-closed rule forbids leaving that unresolved, and it forbids resolving it silently by implementing against the newer of the two."
+    }
+  },
+
+  "SESSION_SCOPE_RECONCILIATION": {
+    "status": "NORMATIVE. Companion to AM-STG-S5.",
+    "the_user_facing_selection_remains_session_scoped": "UNCHANGED and reaffirmed. From the subject's product perspective nothing moves: the selection is made in a session, lives for that session, is not restored into the next one, and a new session starts with no selection. No product behaviour visible to a user changes because of the mirror.",
+    "the_mirror_is_not_a_durable_user_preference": "A mirror row is keyed by (user_id, session_id). It is addressable only by a session that already exists. It is not addressable by user_id alone, so it cannot answer the question a preference answers - 'which organization does this user usually want' - and must never be read as if it could.",
+    "the_mirror_is_enforcement_state_derived_from_the_carrier": "The cookie remains the CARRIER (SELECTED_ORG_CARRIER, unamended). The mirror is a server-written projection of a selection that was already made and already revalidated. It is downstream of the carrier, never a second carrier and never an alternative one.",
+    "the_mirror_is_not_a_carrier": "SELECTED_ORG_CARRIER.prohibited_carriers is NOT superseded. Its fourth item forbids 'a persisted database column on users (violates SESSION_SCOPE - it would survive the session)'. The mirror is not a column on users, is not written by the client, is not read as the subject's assertion of intent, and does not survive the session. Nothing in this amendment authorizes the mirror to be consulted in place of the carrier on the database request path.",
+    "the_trust_model_extends_to_it_unchanged": "SELECTED_ORG_CARRIER.trust_model - 'THE CARRIER IS AN ASSERTION, NEVER A GRANT' - applies to the mirror with equal force, and RAT-STG-01-C3 is its restatement: a mirror row naming an organization is not authorization to act in it. Membership must be proven live, separately, on every operation. A mirror row naming an organization the subject was removed from five minutes ago is perfectly authentic and must still be refused.",
+    "expiry_clear_and_sign_out_make_it_transient": "RAT-STG-01-C8 requires bounded cleanup or expiry, and RAT-STG-01-C1 requires that clear and sign-out remove the row. The combination is what makes the row transient operational state rather than durable storage. An implementation that writes rows and never removes or expires them has not implemented the approved mechanism, however correct its read path.",
+    "prohibited_uses_that_remain_prohibited": [
+      "Reading the mirror to restore a selection into a NEW session. This is the 'not restored across sessions' clause, which is not superseded.",
+      "Reading the mirror to DEFAULT a request that has no selection. NO_AUTO_SELECTION and SESSION_SCOPE.no_selection_behavior are untouched: a request with no selected organization is still not silently defaulted, and inference at request time is still SI-2 re-created under a new name.",
+      "Writing a per-user 'last organization' row, with or without a session key, for convenience, analytics or UX.",
+      "Keying the mirror by user_id alone, or by any key that outlives the authenticated session.",
+      "Treating the mirror as the source of truth for the DATABASE request path, which remains app.organization_id per GUC_CONTRACT."
+    ],
+    "the_distinction_is_observable_not_merely_stated": "A durable preference is readable by a session that never made a selection; the mirror is not, because that session's session_id has no row. A conformance control can therefore falsify a preference-shaped implementation rather than take its word - see the companion manifest, control N-STG-4."
+  },
+
+  "REAL_PG_CONTRACT_AMENDMENT": {
+    "status": "APPENDS five probes and retires one (AM-STG-S3). The parent's REAL_PG_CONTRACT rule, harness constraint and fixture requirements apply to all five verbatim.",
+    "harness_reaffirmed": "pnpm db:audit:disposable - a disposable cluster only. NEVER staging, NEVER production, NEVER the canonical local stack.",
+    "required_probes_added": [
+      {
+        "id": "PG-S4s-1",
+        "proves": "NON-PROPAGATION ACROSS THE CONNECTION BOUNDARY. With app.organization_id set transaction-locally on connection A, a call to the storage helper made on a SEPARATE connection B observes NO value for it - current_setting('app.organization_id', true) is not A's value.",
+        "node": "S4s",
+        "why_real_pg": "This is the fact the retired PG-2 assumed the opposite of. It is a property of connection scope, not of the function declaration, so it cannot be read off the SQL text. Making the non-propagation itself the observable is what prevents a future lane from re-deriving PG-2's premise.",
+        "design_constraint": "The probe MUST use two distinct connections. A single-session harness cannot express it and would silently pass a fabricated propagation."
+      },
+      {
+        "id": "PG-S4s-2",
+        "proves": "LIVE MIRROR READ ON THE EVALUATING CONNECTION. A storage helper invoked on a connection that carries only the subject's authenticated identity resolves the selected organization by reading the mirror live, per operation.",
+        "node": "S4s",
+        "why_real_pg": "Discharges RAT-STG-01-C2. Whether a read is live or captured at connection start is a runtime property; a value that changes mid-connection must be observed to change."
+      },
+      {
+        "id": "PG-S4s-3",
+        "proves": "SYMMETRIC CROSS-ORGANIZATION DENIAL. A dual-member subject with the mirror naming organization A is denied every evidence-object operation against organization B - insert, select/download, delete and the erasure path - and permitted them for A.",
+        "node": "S4s",
+        "why_real_pg": "Policy combination over storage.objects is a planner property. SYMMETRY is stated explicitly because the certified R2 measurement found the READ surface BROADER than the write surface (can_read_evidence_object imposes no role filter), so a probe that tested writes alone would understate the exposure.",
+        "fixture_constraint": "Requires the dual-member subject, which is impossible to construct while user_single_active_membership exists. Per the parent's dual_member_fixture_requirement this runs in a TWO-PHASE harness inside the disposable cluster. The index must NOT be dropped early outside it (DROP_LAST_RULE.prohibited_shortcuts)."
+      },
+      {
+        "id": "PG-S4s-4",
+        "proves": "MEMBERSHIP IS AN INDEPENDENT LIVE CONJUNCT. A mirror row naming an organization in which the subject is NOT an active member REFUSES every evidence-object operation.",
+        "node": "S4s",
+        "why_real_pg": "Discharges RAT-STG-01-C3 and the trust_model extension. A mirror row is server-written and therefore authentic; only a runtime probe shows whether authenticity was mistaken for authorization. Note that the helpers run as uellix_owner, which OWNS public.projects and public.organization_members and is exempt from their row-level security absent FORCE - so the membership conjunct must be proven, never inferred from a policy that the helper reads past."
+      },
+      {
+        "id": "PG-S4s-5",
+        "proves": "FAIL-CLOSED ON ABSENT OR EXPIRED MIRROR. With no mirror row for the session - never written, cleared at sign-out, or expired - every evidence-object operation is refused, and none is silently defaulted to any membership.",
+        "node": "S4s",
+        "why_real_pg": "The storage analogue of PG-3. NULL-not-TRUE denial semantics must be observed, not asserted from the standard. This is also the probe that catches an implementation which falls back to a membership when the mirror is missing, re-creating SI-2 on the storage transport."
+      }
+    ],
+    "probe_count_after_amendment": {
+      "parent_required_probes": 6,
+      "retired": ["PG-2"],
+      "added": ["PG-S4s-1", "PG-S4s-2", "PG-S4s-3", "PG-S4s-4", "PG-S4s-5"],
+      "effective_total": 10,
+      "effective_ids": ["PG-1", "PG-3", "PG-4", "PG-5", "PG-6", "PG-S4s-1", "PG-S4s-2", "PG-S4s-3", "PG-S4s-4", "PG-S4s-5"]
+    }
+  },
+
+  "STORAGE_V1_MECHANISM_DELEGATION": {
+    "what_this_amendment_freezes": "The TRANSPORT SEMANTICS and nothing below them: a DB-side, server-controlled mirror keyed by the authenticated session id, read live by the storage helpers, conjoined with a live membership check, without service_role, without a JWT custom claim, and without a signed-capability secret.",
+    "what_this_amendment_deliberately_does_NOT_invent": {
+      "rule": "The items below are DELEGATED to the S4s execution authority. This amendment states that each MUST be defined there; it does not define any of them, and a successor that cites this artifact as having defined one has misread it.",
+      "delegated_items": [
+        "relation - name, schema, columns, types, and whether it is a table or another relation kind",
+        "uniqueness - primary key and any unique constraint, including whether a session may hold more than one row",
+        "expiry - the horizon, where it is stored, and whether it is enforced by predicate, by cleanup, or by both",
+        "writer path - the exact governed server call sites for selection, clear and sign-out, and how they are prevented from being reachable any other way",
+        "helper read path - how can_write_evidence_object and can_read_evidence_object consult the mirror, and whether their bodies or signatures change",
+        "grants - the GRANT/REVOKE posture on the new relation and on anything callable that reads it",
+        "cleanup - schedule, owner, and what proves it ran",
+        "anti-spoofing - how session_id is derived from the authenticated session such that a subject cannot name another subject's session, and what makes that derivation unforgeable on the evaluating connection",
+        "cross-org behavior - what happens to storage operations in flight across an organization switch, and the switch's effect on the mirror row"
+      ]
+    },
+    "evaluation_criteria_the_S4s_authority_must_still_discharge": "The eight criteria enumerated at TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 STORAGE_SELECTED_ORG_BOUNDARY_HANDOFF.EVALUATION_CRITERIA_THE_STORAGE_NODE_MUST_DISCHARGE are inherited UNCHANGED. Choosing the transport does not discharge them; it determines the form each answer takes. Direct-client bypass in particular remains live, because the browser holds the anon key and the user's JWT and can call the Storage API without traversing the server.",
+    "measured_context_the_S4s_authority_inherits": "The MEASURED_CONTEXT_THE_STORAGE_NODE_INHERITS block of the same artifact is inherited UNCHANGED, including its severity_calibration - the gap is a selected-organization discipline gap rather than a membership-isolation gap, and that calibration MUST NOT be used to downgrade the node, because post-S7 dual membership is exactly when the gap becomes reachable.",
+    "prohibition_carried_forward": "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 prohibits being cited as having chosen an architecture. That prohibition is preserved: the architecture is chosen HERE, by RAT-STG-01, and the S4s authority cites THIS artifact for it - never the S4 artifact."
+  },
+
+  "ACL_CONSEQUENCE_SYMBOLIC": {
+    "status": "RECORDED SYMBOLICALLY. This amendment neither performs nor authorizes any ACL adjudication, and authors no successor.",
+    "expected_consequence": "The approved mechanism is expected to CREATE A NEW RELATION (the mirror) and to CHANGE HELPER READ REACH (the storage helpers acquire a new relation in their read set). Both are ACL-relevant in a way S4 is not.",
+    "why_S4_was_ACL_neutral_and_S4s_will_not_be": "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 ACL_INTERACTION concludes ACL COMPATIBILITY PROOF ONLY, on the measured grounds that S4 issues no GRANT, creates and drops no relation - so the closed-world universe U is untouched - and introduces no new policy-called function. RAT-STG-01 breaks the second of those three grounds by construction, and probably the first.",
+    "the_open_question_the_S4s_authority_inherits": "TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0 ACL_INTERACTION.storage_node_inherits_the_open_ACL_question already states that the storage node's ACL posture is UNDETERMINED and depends on the transport it selects. This amendment SELECTS the transport and therefore CLOSES the conditional: the S4s execution authority MUST re-adjudicate current-schema ACL interaction against docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_v1.0.0.json and its v1.0.1 amendment BEFORE implementation, rather than inheriting a compatibility-only conclusion.",
+    "specific_re_adjudication_required_at_S4s": [
+      "Whether the new relation enters the ACL closed-world universe U, and what its GRANT posture must be for each governed role.",
+      "Whether the storage helpers' owner (uellix_owner) holds the privileges needed to read the mirror - a SECURITY DEFINER helper that reads a relation requires its OWNER to reach that relation, and an owner-exemption argument that holds for public.projects does not automatically hold for a relation created later under different ownership.",
+      "Whether any new callable is introduced. If the mirror is read through a function rather than inline, the invoking role needs EXECUTE on it, and the ACL authority's posture of exactly three granted helper signatures no longer holds.",
+      "Whether the TO authenticated grants on storage.objects change, which would collide with the stella_0019 invariant preserved by RAT-STG-01-C7."
+    ],
+    "explicitly_not_authored_here": "No ACL successor authority, no amendment to the current-schema ACL authority, and no prepared package. Authoring one in this lane would be the unauthorized successor the mission packet forbids."
+  },
+
+  "NEXT_AUTHORITY_TOPOLOGY": {
+    "status": "FROZEN SEQUENCE. Each step is a precondition of the next; none may be skipped or run in parallel with its predecessor.",
+    "sequence": [
+      { "step": 1, "act": "Parent DAG amendment (THIS artifact) + companion manifest amendment, docs-only.", "state": "MATERIALIZED by this lane." },
+      { "step": 2, "act": "INDEPENDENT CERTIFICATION of this amendment, in a clean conversation, by a lane that did not write it.", "state": "REQUIRED. NOT performed by this lane." },
+      { "step": 3, "act": "Controlled merge to integration/commercial-v1.", "state": "BLOCKED on step 2." },
+      { "step": 4, "act": "Author the S4s STORAGE SELECTED-ORG EXECUTION AUTHORITY and its test manifest, defining every item delegated at STORAGE_V1_MECHANISM_DELEGATION and re-adjudicating ACL per ACL_CONSEQUENCE_SYMBOLIC.", "state": "BLOCKED on step 3." },
+      { "step": 5, "act": "INDEPENDENT CERTIFICATION of the S4s execution authority.", "state": "BLOCKED on step 4." },
+      { "step": 6, "act": "ODS ALLOCATION as required for S4s implementation, by an allocator that re-derives the identifiers at its own head.", "state": "BLOCKED on step 5 and on the E16 lineage-sequencing gate." },
+      { "step": 7, "act": "S4s implementation.", "state": "BLOCKED on step 6." }
+    ],
+    "this_amendment_allocates_no_ODS": "THIS ARTIFACT ALLOCATES NOTHING. No ODS maintenance addendum ordinal and no HPO-ODS grant is allocated, reserved, named-as-allocated or prepared. S4s is a LOCAL tenancy DAG id, in the same class as S1..S8 and S3c, and naming it is not an allocation - this mirrors the form the parent's FUTURE_ODS_NEEDS_SYMBOLIC establishes, where naming a successor is a PROHIBITION rather than a reservation.",
+    "why_the_ODS_allocation_is_step_6_and_not_earlier": "The parent's program_precondition (E16) applies to every node including S4s, and the identifiers must be re-derived at the allocator's own head rather than copied from any artifact's measurement. An allocation made before the S4s authority is certified would fix a protected-surface allowlist against a write set that is not yet determined."
+  },
+
+  "NON_AUTHORIZATIONS": {
+    "rule": "The following are NOT authorized by this amendment. This list is as binding as the grant, and nothing in the grant may be read to imply any item on it.",
+    "items": [
+      "NO implementation of any kind. This lane wrote no application code, no SQL, no migration, no prepared package and no script.",
+      "NO ODS allocation, no HPO grant allocation, and no reservation of either.",
+      "NO modification of S4's implementation, its execution authority or its test manifest.",
+      "NO modification of any storage policy, of storage.objects, or of either storage helper.",
+      "NO authoring of the S4s execution authority. The delegated items at STORAGE_V1_MECHANISM_DELEGATION are named as required, not defined.",
+      "NO ACL adjudication and no ACL successor authority.",
+      "NO edit to the frozen parent authority or the frozen parent test manifest.",
+      "NO schema change, no migration, no prepared package, no hosted baseline change.",
+      "NO relaxation of NO_AUTO_SELECTION, and no exception to SESSION_SCOPE.no_selection_behavior.",
+      "NO amendment of SELECTED_ORG_CARRIER in any respect, including its prohibited_carriers list.",
+      "NO weakening of any S7 prerequisite. S4s is ADDED to S7.depends_on; nothing is removed from it.",
+      "NO shortening of the DROP_LAST_RULE conjunction. DL-1, DL-2, DL-4, DL-5 and DL-6 are untouched and the ALL SIX rule stands.",
+      "NO authorization for service_role or an admin client on the evidence ingest path.",
+      "NO pre-authorization of a JWT custom claim, a signed capability, or a server-mediated-only architecture as a fallback if the mirror proves difficult.",
+      "NO deployment and no environment mutation.",
+      "NO certification. This artifact is written by the authoring lane and certifies nothing, least of all itself."
+    ]
+  },
+
+  "VALIDATION_PERFORMED_BY_THIS_MISSION": {
+    "prestate": "pnpm ods:prestate --branch codex/tenancy-storage-selected-org-dag-amendment-r1 --head 0d94b54856c701419ba32bdd844245213fd4aeed --tree 34ac5599c6cc11dec5b22213c255c6d14cb845b8 --clean => ODS_PRESTATE=PASS (branch, head, tree, clean all PASS).",
+    "worktree_provisioning": "node_modules was ABSENT at lane start, which fails every subprocess gate. Provisioned with pnpm install --frozen-lockfile before any gate was run, so no gate result in this artifact was produced by an unprovisioned worktree.",
+    "defect_rederivation": "Performed by parsing the parent authority and parent manifest as JSON at AS_OF_TREE and reading the named field paths. Recorded at PARENT_DAG_DEFECT_REDERIVATION with the observed values, not paraphrases.",
+    "storage_clause_sweep": "The entire parent authority was walked for string values matching /storage/i to find stale clauses the S4 handoff did not enumerate. That sweep is what produced D-9 (SC-4). Its results are recorded in full, including the clauses found NOT stale.",
+    "schema_validation": "The companion manifest amendment was validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json - required keys, additionalProperties:false at the manifest and control levels, the exit_gates enum, and duplicate-key detection over the raw bytes. Reported in the pull request body.",
+    "gates_run": "typecheck, secrets:scan, authority:seal:verify, ods:scope, ods:poststate, git diff --check. Results reported in the pull request body."
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "F-STG-1",
+      "severity": "NON-BLOCKING, SEQUENCING",
+      "finding": "S4 and S4s are declared parallel, but whichever integrates SECOND introduces a relation or a policy surface that the first one's closed-world census did not enumerate. S4's CLOSED_WORLD_CENSUS is frozen against the relation universe at its own base; the mirror relation does not exist there.",
+      "consequence": "If S4s integrates after S4, the mirror relation sits OUTSIDE S4's certified census and must carry its own weld adjudication. If S4s integrates first, S4's census must be re-derived to include it.",
+      "disposition": "RECORDED AS AN OPEN SEQUENCING DECISION, NOT RESOLVED. This amendment deliberately does not impose an order, because imposing one would fabricate a DAG edge the security property does not require. The S4s execution authority MUST re-derive the census interaction at its own head. Recorded in the same form the parent uses for CP-4 (the S3c / FIBDB-053 ordering), which is likewise an open sequencing decision rather than a resolved one."
+    },
+    {
+      "id": "F-STG-2",
+      "severity": "NON-BLOCKING, FORM",
+      "finding": "The owner decision is materialized inline (form B) rather than as a dedicated artifact under docs/ops/owner-ratifications/. Precedent supports both; the reasoning is recorded at OWNER_RATIFICATION.materialization_form.",
+      "disposition": "Flagged for the certifier. If the certifier judges that a MECHANISM ratification belongs in the owner-ratifications directory even when consumed by a single successor, the remedy is an additional append-only record citing RAT-STG-01, not an edit to this artifact."
+    },
+    {
+      "id": "F-STG-3",
+      "severity": "NON-BLOCKING, CONTROL DESIGN",
+      "finding": "Because the parent is append-only and still legitimately states the pre-amendment DAG, a conformance control worded against the parent file would be either permanently RED (asserting the parent no longer claims storage) or vacuous (reading the amendment's own assertion back to itself).",
+      "disposition": "MITIGATED IN THIS ARTIFACT by publishing EFFECTIVE_DAG as a fully resolved composition, so a control has one well-defined endpoint and a mutation that removes S4s from it actually flips the control. Recorded because a successor amending this DAG again must preserve the same property, and because a certifier should check the companion manifest's controls address EFFECTIVE_DAG rather than the parent."
+    },
+    {
+      "id": "F-STG-4",
+      "severity": "NON-BLOCKING, INHERITED",
+      "finding": "The mirror introduces a DURABLE-STATE surface that the tenancy package did not previously have, and SESSION_SCOPE_RECONCILIATION distinguishes it from a preference by KEY SHAPE and by expiry, not by storage medium. An implementation that keyed the mirror by user_id alone would satisfy the letter of 'a mirror' while being a preference.",
+      "disposition": "Control N-STG-4 in the companion manifest makes the distinction falsifiable rather than declarative. The S4s execution authority must additionally freeze the key shape as a hard constraint, not as a recommendation."
+    },
+    {
+      "id": "F-STG-5",
+      "severity": "NON-BLOCKING, INHERITED FROM THE PARENT",
+      "finding": "The E16 lineage-sequencing gate recorded at the parent's program_precondition was measured at the PARENT's AS_OF_HEAD (v1.0.17 unenumerated, 0 occurrences in scripts/ods-controller.ts). The S4 test manifest measured at its own head that the Controller enumerates through v1.0.36 and ods-scope registers through HPO-ODS-W2-33, so the parent's specific measurement is stale even though the RULE is not.",
+      "disposition": "NOT re-measured by this lane, because this lane allocates nothing and is not subject to the stop. The step-6 allocator MUST re-derive both identifiers at its own head rather than cite any figure from this artifact, the parent, or the S4 manifest."
+    }
+  ],
+
+  "self_check": {
+    "did_this_lane_edit_frozen_authority": "NO. The expected diff is exactly TWO ADDED files and ZERO modified files. MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json, MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0.json, TENANCY_S4_EXECUTION_AUTHORITY_v1.0.0.json and TENANCY_S4_EXECUTION_TEST_MANIFEST_v1.0.0.json must NOT appear in the diff.",
+    "did_this_lane_allocate_anything": "NO. S4s, SC-8 and PG-S4s-1..5 are LOCAL tenancy-authority identifiers in the same class as the parent's own S-ids, SC-ids and PG-ids. No ODS ordinal and no HPO grant is allocated, reserved or named-as-allocated.",
+    "did_this_lane_write_authority_the_owner_did_not_ratify": "RAT-STG-01 is the ratified decision. This lane DERIVED consequences from it: the S4s node id and its derivation, the S4s predecessor set, the SC-4/SC-8 split, the retirement of PG-2 and its five replacements, the SESSION_SCOPE reconciliation and its prohibited-uses list, and the ACL re-adjudication requirement. Each derivation is marked as a derivation and grounded in a frozen clause or a measured fact. Where this lane could NOT derive - whether S4 or S4s integrates first - it recorded an open finding (F-STG-1) rather than reasoning to an answer.",
+    "is_the_supersession_narrow": "YES. Exactly five items, each quoted verbatim, each superseded in exactly one named respect, with the surviving parts of the same clauses enumerated so the supersession cannot be read more broadly than written.",
+    "was_any_S7_prerequisite_weakened": "NO. S7.depends_on GAINS S4s and loses nothing: the amended list is a strict superset of the parent's. DL-3 requires strictly more than before. DL-1, DL-2, DL-4, DL-5, DL-6 and the ALL SIX conjunction are untouched. SC-4 AND SC-8 is strictly stronger than the original SC-4.",
+    "did_this_lane_invent_implementation_detail": "NO, and the boundary is enumerated rather than asserted: the nine delegated items at STORAGE_V1_MECHANISM_DELEGATION.delegated_items are named as REQUIRED OF THE SUCCESSOR and left undefined here. The transport SEMANTICS are frozen because RAT-STG-01 decided them; nothing below the semantics is.",
+    "could_a_conformance_control_written_against_this_artifact_be_vacuous": "Addressed at F-STG-3. EFFECTIVE_DAG exists precisely so controls assert against a resolved composition whose mutation is applicable and detectable, rather than against a frozen parent that legitimately still states the pre-amendment DAG.",
+    "the_temptation_this_lane_had_to_refuse": "The cheapest way to make the DAG consistent would have been to attribute PG-2 to S4s and move on - one field, no retirement, no replacement probes. It was refused because PG-2's premise is measurably false on the storage transport, so a faithful S4s implementation makes it UNSATISFIABLE while a fabricated single-connection harness makes it PASS. Carrying it forward would have converted a detectable authority defect into a green probe that proves the opposite of its name.",
+    "expected_superseded_clause_count": 5,
+    "expected_superseded_clause_ids": ["AM-STG-S1", "AM-STG-S2", "AM-STG-S3", "AM-STG-S4", "AM-STG-S5"],
+    "expected_defect_finding_count": 10,
+    "expected_defect_finding_ids": ["D-1", "D-2", "D-3", "D-4", "D-5", "D-6", "D-7", "D-8", "D-9", "D-10"],
+    "expected_amended_dag_node_count": 10,
+    "expected_amended_dag_node_ids": ["S1", "S2", "S3", "S3c", "S4", "S4s", "S5", "S6", "S7", "S8"],
+    "expected_new_probe_count": 5,
+    "expected_retired_probe_ids": ["PG-2"],
+    "expected_open_finding_count": 5,
+    "expected_open_finding_ids": ["F-STG-1", "F-STG-2", "F-STG-3", "F-STG-4", "F-STG-5"],
+    "expected_write_set_size": 2,
+    "expected_write_set": [
+      "docs/ops/tenancy/TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json",
+      "docs/ops/tenancy/TENANCY_STORAGE_SELECTED_ORG_DAG_TEST_MANIFEST_AMENDMENT_v1.0.0.json"
+    ]
+  },
+
+  "final_state": "PARENT_DAG_AUTHORITY_AMENDMENT_MATERIALIZED_DOCS_ONLY_AWAITING_INDEPENDENT_CERTIFICATION",
+  "next_gate": "STORAGE_PARENT_DAG_AMENDMENT_INDEPENDENT_CERTIFICATION"
+}
