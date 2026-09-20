@@ -721,6 +721,103 @@ export const PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING: PrechainOwnershipPackage
 }
 
 /**
+ * CV1-RUNTIME-ACL — the runtime ACL contract for the CURRENT schema.
+ *
+ * THE TENTH UNIT, and the one with the widest blast radius, which is exactly
+ * why it is a single canonical file and not a hosted twin.
+ *
+ * WHAT IT REPAIRS. stella_0004_role_separation.sql classifies THIRTY-EIGHT
+ * public tables. Migrations have since added twenty more, and stella_0004's §0
+ * allowlist is CLOSED by design — "an unknown table must not silently receive
+ * operational grants", its own line 227. So on the current schema it does not
+ * grant the missing twenty: it REFUSES at its unclassified-table precondition
+ * and the runtime takes 42501 on every one of them. Editing stella_0004 is
+ * forbidden — its sha256 is pinned by a CERTIFIED PG17 engine certification in
+ * three places — so the repair is a successor, exactly as the hosted path did
+ * with stella_hosted_0006 and stella_hosted_0007.
+ *
+ * ONE FILE ON BOTH TARGETS. There is no stella_hosted_0021, no generated twin
+ * and no rewrite: the canonical prepared bytes ARE the artefact, which is why
+ * this entry takes a digest pin and not a generation rule — the phrasing
+ * stella_0020 already uses, and for the same reason.
+ *
+ * `applyWindow` IS 'prechain', AND IT IS DERIVED RATHER THAN PREFERRED. Every
+ * relation it names is created by a baseline unit (the fifty-seven) or is the
+ * declared conditional member, and its own §0 excludes the six chain-created
+ * capability tables by name, so it is satisfiable in the window
+ * `PRECHAIN_CLEAN` describes. Nothing in the contract depends on a chain
+ * outcome, which is what keeps it out of stella_0020's postchain window.
+ *
+ * ORDERED LAST AMONG THE PRECHAIN UNITS, and the position is honest about what
+ * enforces it. Its §0.6 refuses unless public.entitlement_grants exists, which
+ * db/migrations/0073 creates, so it cannot precede CE-3's migration. Beyond
+ * that its position relative to units 0003..0010 is NOT guarded by a package
+ * refusal — like stella_hosted_0009's, and unlike stella_hosted_0010's. It is
+ * placed last because it is the BROADEST contract: it converges the whole
+ * schema, so a unit that runs after it would be changing a posture this one
+ * has already asserted end-to-end.
+ *
+ * IT IS COMPATIBLE WITH stella_hosted_0007 IN BOTH ORDERS, and that is
+ * measured rather than hoped. After 0007 the writer holds SIUD on the
+ * thirty-three and SELECT on stella_interactions, which is a SUBSET of this
+ * package's contract for those tables and therefore converges; after this
+ * package 0007's own §0.7 classifies the thirty-seven CANONICAL_RUNTIME_ACL
+ * and is a no-op. Neither issues a structural grant, so neither trips the
+ * other's security refusals.
+ */
+export const PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL: PrechainOwnershipPackage = {
+  id: 'stella_0021_current_schema_runtime_acl_contract',
+  kind: 'prechain-ownership',
+  sourceFile: 'db/prepared/stella_0021_current_schema_runtime_acl_contract.sql',
+  sourceSha256: '7221627a61a6525a93fb94b0e41cd9d7f14ac203c0430d56f2ce0a3e9a464c19',
+  purpose:
+    'Publishes the runtime ACL contract for the CURRENT schema as a CLOSED WORLD over all fifty-eight ' +
+    'public tables: the nineteen stella_0004 never classified (8 APPEND_ONLY, 6 ' +
+    'OPERATIONAL_INSERT_UPDATE, 4 READ_ONLY, 1 NO_RUNTIME_ACCESS), the thirty-eight legacy tables at ' +
+    'their AMENDED end-state (33 OPERATIONAL with marketing_leads INCLUDED, 3 APPEND_ONLY, ' +
+    'stella_interactions GOVERNED_READ per the installed stella_0017, and stella_suggestion_decisions ' +
+    'conditional), and public.entitlement_grants as NO_RUNTIME_ACCESS per CE-3 SC-13. It also carries ' +
+    'the EXECUTE half itself — exactly public.current_user_org_ids(), ' +
+    'public.current_user_is_super_admin() and public.current_user_role_in_org(uuid), to uellix_writer ' +
+    'and uellix_auditor only — because on the current-schema local/CI build stella_0004 refuses and ' +
+    'stella_hosted_0006 is hosted-family, so the runtime holds no EXECUTE on them at all and a table ' +
+    'privilege without them buys nothing. It is GRANT-ONLY: no CREATE, ALTER or DROP of any relation, ' +
+    'column, index, type, function or schema; no business row; no policy created, altered or dropped ' +
+    'and no ENABLE/DISABLE/FORCE ROW LEVEL SECURITY; no role, no membership, no ALTER DEFAULT ' +
+    'PRIVILEGES, no schema privilege and no ALTER ... OWNER TO. Every grant names one table and one ' +
+    'closed verb set as a fixed literal, and uellix_app receives NO direct grant anywhere — it ' +
+    'reaches every privilege through the inherited membership, which the package asserts as an ' +
+    'EFFECTIVE privilege rather than merely as a grant. It REFUSES rather than normalising: on any ' +
+    'unclassified public relation, on any non-table relkind, on an OVERPRIVILEGED PRESTATE, on role ' +
+    'topology drift, on SUPERUSER or BYPASSRLS, and on a missing or non-DEFINER RLS helper.',
+  applyWindow: 'prechain',
+  rollbackFile: null,
+  rollbackSha256: null,
+  forwardOnlyNoRollbackReason:
+    'FORWARD-ONLY, in the shape stella_hosted_0006 and stella_hosted_0007 already record for the ' +
+    'hosted half of the same contract. What this package removes is a live outage: without it the ' +
+    'application runtime receives SQLSTATE 42501 on nineteen public tables and on the three RLS ' +
+    'helpers every policy predicate in the schema calls, so "restore the previous privileges" and ' +
+    '"re-open the outage" are the same sentence. A rollback script would revoke grants the running ' +
+    'product depends on, and it would do so from a state nobody has measured: the package is ' +
+    'CONVERGENT, so after it has run the posture it produced is indistinguishable from one an ' +
+    'operator produced by other means, and a blind revoke could not tell which privileges it was ' +
+    'entitled to take back. Worse, it would have to decide what to do about the thirty-eight legacy ' +
+    'tables whose grants predate this package entirely and which it converges rather than creates — ' +
+    'revoking those would break a database that worked before this file existed. The reversal is ' +
+    'therefore a NAMED OPERATOR ACT and not a script, and recording that is not authorizing one.',
+  normalisedFunctions: [],
+  destinationOwner: 'uellix_owner',
+  unblocks:
+    'No chain package, and that is the point: it unblocks the APPLICATION. The Measure pipeline ' +
+    'services write to fourteen of the nineteen tables the current runtime cannot touch, so a ' +
+    'Measure journey executed as uellix_app cannot pass on a governed substrate until this package ' +
+    'has run. It is also the first of the three conditions release-ledger finding AT-F-02 requires — ' +
+    'IMPLEMENTED, then INDEPENDENTLY PROVEN, then APPLIED ON THE RELEVANT TARGET — and it closes ' +
+    'none of them on its own.',
+}
+
+/**
  * G1-B — the column default that made the DATABASE choose Stella's model.
  *
  * A unit whose presence here is a JUDGEMENT rather than a
@@ -818,6 +915,16 @@ export const ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] = [
   // respect in which its position here is stricter than 0009's, whose own
   // ordering is by number and guarded by nothing.
   PRECHAIN_ENTITLEMENT_GRANTS_ACL_HARDENING,
+  // CV1-RUNTIME-ACL. LAST among the prechain units, and its position is only
+  // PARTLY enforced by a package guard — see its own doc comment. Its §0.6
+  // refuses unless public.entitlement_grants exists, so it cannot precede
+  // CE-3's migration 0073; beyond that it is ordered last because it is the
+  // BROADEST contract, converging the whole schema rather than one object, so
+  // a unit running after it would change a posture it has already asserted
+  // end-to-end. It is compatible with stella_hosted_0007 in BOTH orders: after
+  // 0007 the writer's posture is a SUBSET of this contract and converges;
+  // after this package 0007's §0.7 reads CANONICAL_RUNTIME_ACL and is a no-op.
+  PRECHAIN_CURRENT_SCHEMA_RUNTIME_ACL,
   // G1-B, and the one whose WINDOW is not `prechain`. Its dead-default proof
   // refuses while authenticated and service_role still hold the baseline INSERT
   // grant on public.stella_interactions, and the package that withdraws that is
