@@ -1016,10 +1016,45 @@ reservas y explícitamente incapaz de autorizar nada.
 | # | Qué cambió | Por qué | Dónde vive ahora |
 |---|---|---|---|
 | 1 | `stella_interactions.context_hash` deja de ser la huella del CONTEXTO y pasa a ser el **digest de la PETICIÓN** fijado en `bind` | Lo impone `stella_0017`: el verbo de cierre archiva el digest al que el ticket quedó atado, y nada que envíe el llamante puede moverlo. Un digest del contexto no serviría de todos modos — depende de datos vivos del proyecto, así que un reintento legítimo treinta segundos después chocaría con `U0107` | La huella del contexto se registra en la entrada de `audit_logs` (`contextHash`), que también es append-only |
-| 2 | `risk_level` y `risk_flags` dejan de archivarse en el ledger para validator y reviewer | `stella_0017` no publica parámetros para esas dos columnas, y editar un paquete de CAPABILITIES desde la línea de integración no es una opción | Se registran en `audit_logs`. Siguen siendo derivables de `response_json`. Cerrarlo requiere **un argumento nuevo del paquete**, no un rodeo de runtime |
+| 2 | `risk_level` y `risk_flags` dejan de archivarse en el ledger para validator y reviewer | `stella_0017` no publica parámetros para esas dos columnas, y editar un paquete de CAPABILITIES desde la línea de integración no es una opción | **ENMENDADO — FIBDB-053, puente de runtime.** Ya no es un hueco de un solo estado: ver la nota inmediatamente debajo de esta tabla |
 | 3 | El límite por hora se consume en la **emisión**, no en la ejecución | Emitir no reserva nada, así que sin límite ahí no era autolimitante; y un reintento no debe volver a gastar el presupuesto de una operación ya contada | `lib/stella/operation-ticket/issue-governed-ticket.ts` |
 | 4 | `AUDIT_ERROR` deja de ser alcanzable en las cinco acciones | «Cobrado pero sin auditar» ya no es representable: la fila y el cargo ocurren en la MISMA transacción. Un fallo de liquidación retiene la respuesta bajo `UNKNOWN_ERROR` porque el cargo es **desconocido** | Se conserva en la unión de códigos por compatibilidad de clientes ya compilados |
 | 5 | Las cinco acciones ganan `ALREADY_COMPLETED_RESULT_UNAVAILABLE` | Mismo código operacional que ya usaba `grounded-query`. **No** es reintentable: reintentar acuñaría un ticket nuevo y cobraría una segunda unidad | `components/stella/error-messages.ts` ya lo renderizaba |
+
+#### Enmienda a la entrada 2 — FIBDB-053, puente de compatibilidad de runtime
+
+La entrada 2 se escribió contra **un solo estado de base de datos** y decía, con
+razón para ese estado, que cerrar el hueco exigía «un argumento nuevo del
+paquete, no un rodeo de runtime». Eso sigue siendo cierto: el argumento nuevo es
+exactamente lo que FIBDB-053 Stage-A añade. Lo que ha cambiado es que ahora hay
+**dos** estados, y la entrada tenía que decirlo — dejar declarado un hueco
+después de cerrarlo es en sí mismo un defecto.
+
+`db/stella/operation-tickets.ts#completeStellaInteractionTicket` sondea el
+catálogo conectado y elige la aridad **antes** de llamar:
+
+| Estado | Catálogo | Qué pasa con `risk_level` / `risk_flags` |
+|---|---|---|
+| `OLD_DB` | está la firma de **siete** argumentos | Se **aceptan y no se transmiten**: no hay parámetro que los lleve. Siguen llegando sólo a `audit_logs`, que es el statu quo medido y **no** una regresión que introduzca el puente |
+| `NEW_DB` | está la firma de **nueve** argumentos | Se archivan en la fila durable de `stella_interactions`, en la **misma transacción** que cobra la cuota y bajo el mismo cerrojo consultivo |
+
+Tres propiedades que la enmienda **no** relaja:
+
+* `audit_logs` **nunca** es fuente de verdad de un valor de riesgo. La escritura
+  del rastro se conserva — un rastro no queda mal por la llegada de una fila
+  durable — pero ningún consumidor puede leer de ahí un nivel de riesgo, y una
+  escritura de auditoría exitosa no satisface ninguna obligación de persistencia.
+* El estado lo decide **sólo** el sondeo del catálogo. Nunca una variable de
+  entorno, un valor de configuración, una bandera de build, un ordinal de
+  migración ni una inferencia del resultado de una llamada anterior.
+* `OLD_DB` no es un modo degradado *autorizado en producción* para validator ni
+  reviewer: es el estado que existe durante la ventana de despliegue, y el orden
+  —runtime antes que SQL, nunca al revés— sigue siendo el de RC-09.
+
+Autoridad: `docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json`
+y su enmienda `..._AMENDMENT_v1.0.1.json`. Esta entrada registra el estado del
+**runtime**; no declara aplicado Stage-A en ningún entorno, y la puerta externa
+G2 sigue sin resolverse.
 
 ### Riesgos residuales nuevos
 

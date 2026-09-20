@@ -916,9 +916,19 @@ describe('getStellaValidator server action', () => {
       expect(digest).toMatch(/^[0-9a-f]{64}$/)
       // No organization, no actor, no category, no idempotency key: the payload
       // carries only what the model produced.
+      //
+      // FIBDB-053 adds `riskLevel` and `riskFlags`, and they belong to the same
+      // population as the four that were already here: things only the CALLER
+      // knows about the work it just ran. The security property this assertion
+      // exists for is untouched — the values SQL reads off the ticket row still
+      // have no parameter on this path, and the negative below says so by name
+      // rather than leaving it to a key count.
       expect(Object.keys(payload).sort()).toEqual(
-        ['modelUsed', 'pipelineStep', 'responseJson', 'tokensUsed'].sort()
+        ['modelUsed', 'pipelineStep', 'responseJson', 'riskFlags', 'riskLevel', 'tokensUsed'].sort()
       )
+      for (const forbidden of ['organizationId', 'createdBy', 'stellaRole', 'idempotencyKey', 'contextHash', 'projectId']) {
+        expect(Object.keys(payload)).not.toContain(forbidden)
+      }
     })
 
     it('carries the pipeline step, the model and the token count of THIS run', async () => {

@@ -76,6 +76,17 @@
 
 import { sql } from 'drizzle-orm'
 import { db } from '@/db/client'
+// READ ONLY, and only to ask whether a transaction is already open around this
+// adapter. The FIBDB-053 bridge's one permitted retry has to happen in a NEW
+// transaction, and `withDatabaseIdentityContext` reuses an ambient context
+// instead of nesting one — so "is there an ambient context?" is precisely the
+// question that decides whether a new transaction is available at all.
+//
+// From `identity-store` and NOT from `identity-context`, which re-exports the
+// same symbol: the store deliberately imports nothing from `db/client.ts`, so
+// this edge adds no transitive dependency on the connection chokepoint to a
+// module that already imports `{ db }` on its own terms.
+import { getBoundDatabaseContext } from '@/db/identity-store'
 import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { isCanonicalQueryHash } from '@/lib/stella/operation-ticket/canonical-query-hash'
 import {
@@ -217,6 +228,29 @@ export type OperationTicketRejection =
    * running a grounded query and being charged as `advisor`.
    */
   | 'category_mismatch'
+  /**
+   * FIBDB-053 RUNTIME COMPANION. The connected database does not hold the
+   * completion signature this build resolved, and the bridge refused rather
+   * than guessing an arity.
+   *
+   * NOT `unavailable`, and the distinction is the whole point of carrying a
+   * seventh reason rather than a sixth. `unavailable` says "the database
+   * refused or could not be reached" — an operator reads it and looks at
+   * connectivity, credentials, or a missing prepared package. This one says
+   * "the database is not the SHAPE this build expects", which has exactly one
+   * remedy: deploy the runtime and the SQL in the order RC-09 fixes. Collapsing
+   * the two would make the single most likely deployment-order mistake — an old
+   * runtime meeting a new database — present as generic noise, and the
+   * deployment contract unenforceable in practice.
+   *
+   * Reached from THREE places, all of them fail-closed: an UNKNOWN probe
+   * verdict (a probe that errored rather than answering), a `42883` whose
+   * bounded re-probe reports the same state, and a `42883` on the one permitted
+   * retry. It is never reached by inference from a previous call's outcome.
+   *
+   * Companion authority CATALOG_PROBE_CONTRACT.observability; control T9.
+   */
+  | 'signature_mismatch'
   | 'unavailable'
 
 /* -------------------------------------------------------------------------- */
@@ -589,6 +623,297 @@ export async function completeOperationTicket(
 }
 
 /* -------------------------------------------------------------------------- */
+/* 3a. FIBDB-053 — the runtime compatibility bridge                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The risk vocabulary, mirrored from `stella_interactions_risk_level_check`.
+ *
+ * NOT widened to `string`, and not re-declared as a Zod enum: this is the
+ * TypeScript counterpart of a CHECK constraint that already exists on both
+ * tracks, and FIBDB-053 Stage-A explicitly neither recreates, widens nor
+ * weakens it.
+ */
+export type StellaInteractionRiskLevel = 'low' | 'medium' | 'high'
+
+/**
+ * Which completion signature the CONNECTED DATABASE holds.
+ *
+ * Neither state is a degraded mode and neither is reachable by accident. The
+ * value is produced by the catalog probe below and by nothing else.
+ */
+export type CompletionSignatureState = 'OLD_DB' | 'NEW_DB'
+
+/**
+ * THE canonical probe literal — one fixed string, frozen by authority.
+ *
+ * Byte-identical to
+ * docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json
+ * SECTION_A3.CANONICAL_PROBE_LITERAL.value, and asserted against that frozen
+ * string by control T10 rather than re-derived from this constant.
+ *
+ * NEVER COMPOSED, never interpolated, never assembled from a variable holding a
+ * type name. The reason is not the one the parent authority gave — a rival
+ * SPELLING would resolve identically, which was measured and is pinned by
+ * N-RC-10-C — but that a fixed literal is the only form that can be compared
+ * byte-for-byte against the Stage-A declaration and handed to N-RC-10 as a
+ * single frozen comparand.
+ *
+ * What a wrong literal costs is why the control exists: `to_regprocedure` is
+ * TOTAL over arbitrary input, so a literal naming a different type, order,
+ * arity or name returns NULL with no SQLSTATE and psql exit code 0. At the
+ * query layer a WRONG signature is indistinguishable from an ABSENT one, and
+ * the bridge would pin itself to OLD_DB on a database that is already NEW_DB —
+ * filing no risk while reporting success. That is MUT-RC-12, whose frozen
+ * mutant differs from this string in exactly one token (`integer` -> `bigint`
+ * at argument six).
+ */
+export const NINE_ARGUMENT_COMPLETION_SIGNATURE =
+  'uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb,character varying,text[])'
+
+/**
+ * The per-process cached verdict. `null` means "not yet known", never "OLD_DB".
+ *
+ * Caching is permitted because the installed signature changes only when a
+ * prepared package is applied — a deliberate human G2 act, not a runtime event
+ * — and probing on every completion would put a catalog round trip on the hot
+ * governed path for a fact that is stable for the life of a deployment. It is
+ * BOUNDED by the 42883 invalidation below, which is what keeps a process that
+ * started before Stage-A from holding a stale OLD_DB verdict forever.
+ */
+let cachedCompletionSignatureState: CompletionSignatureState | null = null
+
+/**
+ * How many times the catalog has actually been asked, this process.
+ *
+ * Exists so that the bounded-once rule is FALSIFIABLE. N-RC-11 reads this
+ * before and after driving a 42883 and asserts the DELTA, because "did it
+ * re-probe?" as a boolean cannot tell one re-probe from a retry storm — and a
+ * retry storm against the catalog during the exact window the database is being
+ * changed is what the rule exists to forbid.
+ */
+let completionSignatureProbeInvocations = 0
+
+/** Read the probe counter. A READ ONLY — there is deliberately no way to set it. */
+export function completionSignatureProbeCount(): number {
+  return completionSignatureProbeInvocations
+}
+
+/**
+ * Discard the cached verdict.
+ *
+ * EXPORTED, and the asymmetry with the absent setter is the security property.
+ * This function can make the bridge ASK the catalog again; nothing anywhere can
+ * make it BELIEVE a state it did not measure. A setter — or an environment
+ * variable, or a config value, or a build flag — would be a second source of
+ * truth for the arity, which is exactly what RC-06 forbids and what N-RC-04
+ * asserts the absence of.
+ */
+export function invalidateCompletionSignatureState(): void {
+  cachedCompletionSignatureState = null
+}
+
+/**
+ * Ask the catalog, exactly once, and answer `null` when it will not say.
+ *
+ * `pg_catalog.to_regprocedure` rather than a `pg_proc` join, and the repository
+ * already uses it for this very question (`db/prepared-package-order.ts`'s
+ * installed probes, `db/prepared/checkpoint-a1/corroboration.sql`). It is
+ * TOTAL: an absent function yields NULL instead of raising, so the probe itself
+ * can never be the thing that fails.
+ *
+ * `null` IS NOT `OLD_DB`. A probe that ERRORS — a dropped connection, a refused
+ * privilege, a row shape nobody expected — reports an UNKNOWN state, and under
+ * CLAUDE.md section 5 an UNKNOWN fails closed. Treating it as OLD_DB is
+ * prohibited shape P-5, and it is the one that would look harmless: OLD_DB
+ * "works", it just silently stops filing risk.
+ */
+async function probeCompletionSignature(): Promise<CompletionSignatureState | null> {
+  completionSignatureProbeInvocations += 1
+  try {
+    const rows = await withOrganizationDatabaseContext(() =>
+      db.execute(sql`
+        SELECT pg_catalog.to_regprocedure(${NINE_ARGUMENT_COMPLETION_SIGNATURE}) IS NOT NULL
+          AS installed
+      `),
+    )
+    const row = Array.isArray(rows) ? (rows[0] as Record<string, unknown> | undefined) : undefined
+    if (row === undefined || typeof row.installed !== 'boolean') return null
+    return row.installed ? 'NEW_DB' : 'OLD_DB'
+  } catch {
+    // P-5. Swallowed rather than rethrown because the CALLER's obligation is
+    // identical either way — refuse and say why — and because letting a probe
+    // failure escape as an exception would reach the action as a thrown error
+    // rather than the typed `signature_mismatch` refusal T9 requires.
+    return null
+  }
+}
+
+/** The cached verdict, or one fresh probe. A successful probe fills the cache. */
+async function resolveCompletionSignatureState(): Promise<CompletionSignatureState | null> {
+  if (cachedCompletionSignatureState !== null) return cachedCompletionSignatureState
+  const probed = await probeCompletionSignature()
+  if (probed !== null) cachedCompletionSignatureState = probed
+  return probed
+}
+
+/**
+ * The completion statement for ONE state. The arity is decided BEFORE the call.
+ *
+ * Two statements, not one with a conditional tail, because the argument order
+ * must mirror the function each calls and a reader comparing this file against
+ * the package should be comparing two lists in the same order.
+ *
+ * In `OLD_DB` the risk values are ACCEPTED AND NOT TRANSMITTED — there is no
+ * parameter to carry them. That is the measured status quo (they continue to
+ * reach `audit_logs` only) and not a regression the bridge introduces; it is
+ * also why OLD_DB cannot be a production state for validator and reviewer.
+ */
+function completionStatement(
+  state: CompletionSignatureState,
+  ticketId: string,
+  expectedProjectId: string,
+  operationHash: string,
+  payload: StellaInteractionPayload,
+) {
+  const responseJson = JSON.stringify(payload.responseJson ?? null)
+  // `sql.param`, NEVER a bare `${array}` — MEASURED, not stylistic. Drizzle's
+  // template EXPANDS an interpolated JS array into a parameter LIST, so
+  // `${flags}::text[]` compiles to `($9, $10, $11)::text[]` and the server
+  // answers `cannot cast type record to text[]`. The failure is at least loud;
+  // what makes it worth a comment is that the expansion is invisible in the
+  // source, and the shape that looks obviously correct is the broken one.
+  // `sql.param` forces ONE parameter, and postgres-js then serialises the array
+  // itself — commas, quotes, braces, empty strings, the empty array and NULL
+  // all round-trip.
+  const riskFlags = payload.riskFlags === null ? null : [...payload.riskFlags]
+
+  if (state === 'NEW_DB') {
+    return sql`
+      SELECT outcome, used, quota
+      FROM uellix_stella_ops.complete_operation_ticket(
+        ${ticketId}::char(64),
+        ${expectedProjectId}::uuid,
+        ${operationHash}::char(64),
+        ${payload.pipelineStep}::varchar(100),
+        ${payload.modelUsed}::varchar(100),
+        ${payload.tokensUsed}::integer,
+        ${responseJson}::jsonb,
+        ${payload.riskLevel}::varchar(50),
+        ${sql.param(riskFlags)}::text[]
+      )
+    `
+  }
+
+  return sql`
+    SELECT outcome, used, quota
+    FROM uellix_stella_ops.complete_operation_ticket(
+      ${ticketId}::char(64),
+      ${expectedProjectId}::uuid,
+      ${operationHash}::char(64),
+      ${payload.pipelineStep}::varchar(100),
+      ${payload.modelUsed}::varchar(100),
+      ${payload.tokensUsed}::integer,
+      ${responseJson}::jsonb
+    )
+  `
+}
+
+/** SQLSTATE `undefined_function` — the one error the bridge treats as a state question. */
+const UNDEFINED_FUNCTION = '42883'
+
+/**
+ * Issue the completion in `state`, in ITS OWN transaction.
+ *
+ * Every function in this file opens its own `withOrganizationDatabaseContext`,
+ * and that is what makes the one permitted retry a NEW transaction rather than
+ * a second statement inside a poisoned one — see `assertNoAmbientTransaction`.
+ */
+async function issueCompletion(
+  state: CompletionSignatureState,
+  ticketId: string,
+  expectedProjectId: string,
+  operationHash: string,
+  payload: StellaInteractionPayload,
+): Promise<unknown> {
+  return withOrganizationDatabaseContext(() =>
+    db.execute(completionStatement(state, ticketId, expectedProjectId, operationHash, payload)),
+  )
+}
+
+/**
+ * Can this process still open a NEW transaction, or is one already open around
+ * us?
+ *
+ * MEASURED, not assumed. `withDatabaseIdentityContext` REUSES an already-bound
+ * context rather than nesting a second `BEGIN` — correctly, because a nested
+ * BEGIN would deadlock against its own parent's locks. The consequence for the
+ * bridge is exact: if a caller has wrapped this adapter in a context of its
+ * own, the failed nine-argument statement has aborted THAT transaction, and the
+ * "retry in a new transaction" the contract permits would in fact be a second
+ * statement in the aborted one — `25P02`, the very shape P-1 prohibits.
+ *
+ * At every call site measured today there is no ambient context: the driver
+ * runs `execute` OUTSIDE both transactions, and each ticket verb opens its own.
+ * This guard is for the caller that does not exist yet. It does not CONCEAL
+ * 25P02 — it declines to manufacture it, and refuses with the reason that names
+ * what actually happened.
+ */
+function canOpenNewTransaction(): boolean {
+  return getBoundDatabaseContext() === undefined
+}
+
+/**
+ * The bounded-once recovery from `42883`, and the only retry this file has.
+ *
+ * ONE re-probe. AT MOST ONE retry, and only when the re-probe reports a
+ * DIFFERENT state than the one just attempted. No loop, no second invalidation,
+ * no backoff ladder: an unbounded re-probe turns a deterministic contract into
+ * a retry storm against the catalog during precisely the window when the
+ * database is being changed.
+ *
+ * Fail closed means the caller does NOT receive the model's answer. It does not
+ * mean "fall back to the other arity inside the same transaction" — that is
+ * P-1, it returns 25P02 rather than 42883, and its failure mode hides the real
+ * cause.
+ */
+async function recoverFromUndefinedFunction(
+  attempted: CompletionSignatureState,
+  ticketId: string,
+  expectedProjectId: string,
+  operationHash: string,
+  payload: StellaInteractionPayload,
+): Promise<{ readonly ok: true; readonly rows: unknown } | { readonly ok: false; readonly reason: OperationTicketRejection }> {
+  // 1. Invalidate. 2. Re-probe EXACTLY ONCE.
+  invalidateCompletionSignatureState()
+  const reprobed = await probeCompletionSignature()
+  if (reprobed !== null) cachedCompletionSignatureState = reprobed
+
+  // 4 (and the UNKNOWN case). Same state, or no answer at all: FAIL CLOSED.
+  // There is no second invalidation and no second probe on this path.
+  if (reprobed === null || reprobed === attempted) {
+    return { ok: false, reason: 'signature_mismatch' }
+  }
+
+  // 3. The state changed. ONE retry, in a NEW transaction.
+  if (!canOpenNewTransaction()) {
+    return { ok: false, reason: 'signature_mismatch' }
+  }
+
+  try {
+    return { ok: true, rows: await issueCompletion(reprobed, ticketId, expectedProjectId, operationHash, payload) }
+  } catch (error) {
+    // A second 42883 is the contract's own terminal case: fail closed, named.
+    // Anything else classifies normally — a retry is not a licence to relabel
+    // an ordinary refusal as a signature problem.
+    if (sqlStateOf(error) === UNDEFINED_FUNCTION) {
+      return { ok: false, reason: 'signature_mismatch' }
+    }
+    return { ok: false, reason: classifyTicketError(error) }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* 3b. complete (sibling) — settle, charge AND file the interaction row       */
 /* -------------------------------------------------------------------------- */
 
@@ -617,12 +942,14 @@ export async function completeOperationTicket(
  * the model was asked to do, which model answered, how much it cost, and what
  * it said.
  *
- * `riskLevel` and `riskFlags` have no parameter in prepared stella_0017 and are
- * therefore NOT filed by this path. Declared, not silently dropped: see
- * docs/ops/contracts/CONTRACT_LEDGER.md — the validator and reviewer rows lose
- * two derived columns whose values remain fully recoverable from
- * `response_json`, and closing that gap means a new package argument rather
- * than a runtime workaround.
+ * `riskLevel` and `riskFlags` ARE now carried by this payload, and whether they
+ * are TRANSMITTED depends on which completion signature the connected database
+ * holds — see the FIBDB-053 compatibility bridge below. The package argument
+ * this file's earlier revision said the gap needed is exactly what Stage-A
+ * adds; until it is applied the two values are accepted and not transmitted,
+ * which is the measured status quo and not a new regression. Declared, not
+ * silently dropped: docs/ops/contracts/CONTRACT_LEDGER.md carries the two-state
+ * entry.
  */
 export interface StellaInteractionPayload {
   /** `stella_interactions.pipeline_step`. Defaults to the category in SQL when null. */
@@ -633,6 +960,28 @@ export interface StellaInteractionPayload {
   readonly tokensUsed: number | null
   /** `stella_interactions.response_json` — the parsed, schema-validated output. */
   readonly responseJson: unknown
+  /**
+   * `stella_interactions.risk_level`. REQUIRED AND NULLABLE — never optional.
+   *
+   * The vocabulary is `stella_interactions_risk_level_check`'s own
+   * (`NULL | low | medium | high`), mirrored here rather than widened to
+   * `string`: a value the CHECK would refuse is a compile error instead of a
+   * `U0100` after the work has already run.
+   *
+   * Required-and-nullable is the load-bearing half. An OPTIONAL field lets a
+   * category that SHOULD carry risk omit it and still typecheck, which is the
+   * precise defect MUT-RC-11 mutates into. Required means every caller states a
+   * position, and a seventh interaction category cannot compile until someone
+   * decides what its risk disposition is.
+   */
+  readonly riskLevel: StellaInteractionRiskLevel | null
+  /**
+   * `stella_interactions.risk_flags`. REQUIRED AND NULLABLE, for the same
+   * reason as `riskLevel` and asserted separately from it: dropping one while
+   * keeping the other is MUT-RC-05, and a single object-identity assertion
+   * would not see it.
+   */
+  readonly riskFlags: readonly string[] | null
 }
 
 /**
@@ -648,6 +997,24 @@ export interface StellaInteractionPayload {
  * representation to file and would have to pass four NULLs to say so. Two
  * shapes, two wrappers, and a reader comparing this file against the package is
  * comparing two lists in the same order.
+ *
+ * ---------------------------------------------------------------------------
+ * FIBDB-053 — TWO DATABASE STATES, ONE WRAPPER
+ * ---------------------------------------------------------------------------
+ * Stage-A DROPs the seven-argument signature and CREATEs a nine-argument one;
+ * it does not publish an overload and it does not give the new parameters a
+ * DEFAULT. This wrapper therefore has to work against BOTH catalogs, and it
+ * chooses between them by asking the catalog — never by an environment
+ * variable, a configuration value, a build flag, a migration ordinal, an entry
+ * in `db/prepared-package-order.ts`, or an inference from a previous call's
+ * outcome. Those describe what the REPOSITORY holds; the question is what the
+ * CONNECTED DATABASE has installed, and the two diverge during exactly the
+ * deployment window this bridge exists to cover.
+ *
+ * NEITHER STATE IS DEGRADED. In `NEW_DB` the risk values are filed on the
+ * durable row in the same transaction that charges the quota. In `OLD_DB` they
+ * are accepted and not transmitted, because there is no parameter to carry
+ * them — the measured status quo, unchanged by the bridge.
  *
  * ---------------------------------------------------------------------------
  * WHAT THE RESULT MEANS
@@ -684,37 +1051,53 @@ export async function completeStellaInteractionTicket(
     return { kind: 'rejected', reason: 'malformed' }
   }
 
-  try {
-    const rows = await withOrganizationDatabaseContext(() =>
-      db.execute(sql`
-        SELECT outcome, used, quota
-        FROM uellix_stella_ops.complete_operation_ticket(
-          ${ticketId}::char(64),
-          ${expectedProjectId}::uuid,
-          ${operationHash}::char(64),
-          ${payload.pipelineStep}::varchar(100),
-          ${payload.modelUsed}::varchar(100),
-          ${payload.tokensUsed}::integer,
-          ${JSON.stringify(payload.responseJson ?? null)}::jsonb
-        )
-      `),
-    )
-    const row = readOutcomeRow(rows)
-    if (!row) return { kind: 'rejected', reason: 'unavailable' }
+  // FIBDB-053. THE ARITY IS DECIDED BEFORE THE CALL, and that ordering is the
+  // security property rather than an optimisation. Issuing nine arguments
+  // speculatively and reading the error is prohibited shape P-4: it consumes a
+  // transaction, and on the governed path a speculative call to a COMPLETION
+  // verb risks a charge.
+  const state = await resolveCompletionSignatureState()
+  if (state === null) {
+    // P-5. The probe did not answer. UNKNOWN is not OLD_DB.
+    return { kind: 'rejected', reason: 'signature_mismatch' }
+  }
 
-    switch (row.outcome) {
-      case 'completed':
-        return { kind: 'completed', used: row.used, quota: row.quota }
-      case 'replayed':
-        return { kind: 'replayed' }
-      case 'quota_exceeded':
-      case 'no_quota':
-        return { kind: 'quota_refused', used: row.used, quota: row.quota }
-      default:
-        return { kind: 'rejected', reason: 'unavailable' }
-    }
+  let rows: unknown
+  try {
+    rows = await issueCompletion(state, ticketId, expectedProjectId, operationHash, payload)
   } catch (error) {
-    return { kind: 'rejected', reason: classifyTicketError(error) }
+    if (sqlStateOf(error) !== UNDEFINED_FUNCTION) {
+      return { kind: 'rejected', reason: classifyTicketError(error) }
+    }
+    // The catalog disagreed with the cached verdict — the deployment window the
+    // bridge exists to cover. Bounded-once recovery, and nothing else.
+    const recovered = await recoverFromUndefinedFunction(
+      state,
+      ticketId,
+      expectedProjectId,
+      operationHash,
+      payload,
+    )
+    if (!recovered.ok) return { kind: 'rejected', reason: recovered.reason }
+    rows = recovered.rows
+  }
+
+  // OUTCOME READING IS SHARED BY BOTH ARITIES. A divergence in how the two
+  // branches interpret `outcome` would be a defect, not a design choice, so
+  // there is exactly one switch and both paths arrive at it.
+  const row = readOutcomeRow(rows)
+  if (!row) return { kind: 'rejected', reason: 'unavailable' }
+
+  switch (row.outcome) {
+    case 'completed':
+      return { kind: 'completed', used: row.used, quota: row.quota }
+    case 'replayed':
+      return { kind: 'replayed' }
+    case 'quota_exceeded':
+    case 'no_quota':
+      return { kind: 'quota_refused', used: row.used, quota: row.quota }
+    default:
+      return { kind: 'rejected', reason: 'unavailable' }
   }
 }
 

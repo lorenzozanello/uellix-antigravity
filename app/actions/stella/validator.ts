@@ -240,6 +240,13 @@ export async function getStellaValidator(
           pipelineStep: 'Calculation',
           modelUsed: response.modelUsed,
           tokensUsed: response.tokensUsed ?? null,
+          // FIBDB-053, propagation order 1. The SAME two values the audit entry
+          // below carries, computed from the SAME parsed output by the SAME
+          // helper — IN ADDITION to the trail, never instead of it. The
+          // governed payload is the durable destination; `audit_logs` stays a
+          // trail, and a trail is not made wrong by the arrival of a row.
+          riskLevel: data.risk_level,
+          riskFlags: buildRiskFlags(data),
         }
       } catch (error) {
         // Every failure of the work is reported to the driver as a RELEASE, so

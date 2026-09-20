@@ -245,6 +245,14 @@ export async function getStellaContextualAdvisor(
           pipelineStep: step,
           modelUsed: result.modelUsed ?? null,
           tokensUsed: result.tokensUsed ?? null,
+          // FIBDB-053. EXPLICIT NULLS, not omission. The advisor category
+          // derives no risk verdict, and `STELLA_CATEGORY_RISK_DISPOSITIONS`
+          // records that as a position rather than as an absence. Writing the
+          // fields out is what makes the position auditable: if the fields were
+          // optional, a category that SHOULD carry risk could omit them and
+          // still typecheck.
+          riskLevel: null,
+          riskFlags: null,
         }
       } catch (error) {
         return {
@@ -446,6 +454,12 @@ export async function getStellaAdvisor(
           pipelineStep: step,
           modelUsed: response.modelUsed,
           tokensUsed: response.tokensUsed ?? null,
+          // FIBDB-053. EXPLICIT NULLS — the advisor category derives no risk
+          // verdict. Stated at BOTH advisor call sites rather than at one,
+          // because both settle under the `advisor` category and a position
+          // declared at only one of them is not a position.
+          riskLevel: null,
+          riskFlags: null,
         }
       } catch (error) {
         return {

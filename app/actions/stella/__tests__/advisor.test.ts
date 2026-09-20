@@ -389,9 +389,19 @@ describe('getStellaAdvisor server action', () => {
       const payload = mockCompleteStellaInteractionTicket.mock.calls[0][3]
       // No organization, no actor, no category, no identity: SQL reads all four
       // off the ticket row and this path has no parameter for any of them.
+      //
+      // FIBDB-053 adds `riskLevel` and `riskFlags`. This category derives no
+      // risk verdict, so both arrive as EXPLICIT NULLS — present as keys and
+      // null as values, which is not the same thing as being omitted. The four
+      // SQL reads off the ticket row are still absent, named below.
       expect(Object.keys(payload).sort()).toEqual(
-        ['modelUsed', 'pipelineStep', 'responseJson', 'tokensUsed'].sort()
+        ['modelUsed', 'pipelineStep', 'responseJson', 'riskFlags', 'riskLevel', 'tokensUsed'].sort()
       )
+      expect(payload.riskLevel).toBeNull()
+      expect(payload.riskFlags).toBeNull()
+      for (const forbidden of ['organizationId', 'createdBy', 'stellaRole', 'idempotencyKey', 'contextHash', 'projectId']) {
+        expect(Object.keys(payload)).not.toContain(forbidden)
+      }
     })
   })
 

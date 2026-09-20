@@ -62,6 +62,62 @@ export const STELLA_INTERACTION_CATEGORIES = [
 export type StellaInteractionCategory = (typeof STELLA_INTERACTION_CATEGORIES)[number]
 
 /**
+ * Whether a category DERIVES a risk verdict, or supplies EXPLICIT NULLS.
+ *
+ * FIBDB-053. `DERIVED` means the action computes `risk_level` and risk flags
+ * from its own validated output and must carry them to the durable row.
+ * `EXPLICIT_NULL` means the category derives no risk verdict, so it states
+ * `null` — which is not the same thing as omitting the field, and the
+ * distinction is the entire reason this registry exists.
+ */
+export type StellaCategoryRiskDisposition = 'DERIVED' | 'EXPLICIT_NULL'
+
+/**
+ * ONE POSITION PER CATEGORY — the pin that makes a seventh category a compile
+ * error instead of a silent omission.
+ *
+ * `Record<StellaInteractionCategory, ...>` is load-bearing rather than
+ * decorative: adding a name to `STELLA_INTERACTION_CATEGORIES` without adding a
+ * disposition here fails to typecheck, which is the same fail-closed shape this
+ * module already applies to the category vocabulary itself. It is the registry
+ * half of T1; the type half lives on `StellaOperationExecution` and
+ * `StellaInteractionPayload`, where the fields are required-and-nullable.
+ *
+ * ---------------------------------------------------------------------------
+ * "VALIDATOR AND REVIEWER" IS FOUR CATEGORIES, NOT TWO
+ * ---------------------------------------------------------------------------
+ * The FIB baseline and WAVE3_AUTHORITY both speak of "the validator and
+ * reviewer categories" as though `reviewer` were one. It is NOT: `reviewer` is
+ * an ACTION that may act as three of the six categories — `proxy_reviewer`,
+ * `evidence_reviewer` and `audit_assistant`. An implementation that hardened
+ * the phrase literally would harden two names, one of which does not exist, and
+ * leave three real categories unhardened. Expanded here so the expansion is
+ * stated once, in the registry, rather than re-derived at four call sites.
+ *
+ * `grounded_query` is absent ON PURPOSE and not by oversight: it is not a
+ * `StellaInteractionCategory`, it settles through the three-argument verb, and
+ * it files no `stella_interactions` row at all. It is outside this contract
+ * rather than a seventh position in it.
+ */
+export const STELLA_CATEGORY_RISK_DISPOSITIONS: Record<
+  StellaInteractionCategory,
+  StellaCategoryRiskDisposition
+> = {
+  /** Derives no risk verdict. */
+  advisor: 'EXPLICIT_NULL',
+  /** `risk_level` from the validated output; flags from the evidence, proxy, attribution and claim risk sets. */
+  validator: 'DERIVED',
+  /** Derives no risk verdict. */
+  composer: 'EXPLICIT_NULL',
+  /** Reviewer action, parameterized by category. `finding` flag when findings are present. */
+  proxy_reviewer: 'DERIVED',
+  /** Reviewer action, parameterized by category. */
+  evidence_reviewer: 'DERIVED',
+  /** Reviewer action, parameterized by category. */
+  audit_assistant: 'DERIVED',
+}
+
+/**
  * The three reviewer categories one parameterized action can act as.
  *
  * This is the ONLY place in the product where a single server action may issue

@@ -237,6 +237,17 @@ export async function getStellaReviewer(
           pipelineStep,
           modelUsed: response.modelUsed,
           tokensUsed: response.tokensUsed ?? null,
+          // FIBDB-053, propagation order 1, for ALL THREE reviewer categories.
+          // `role` is `proxy_reviewer`, `evidence_reviewer` or
+          // `audit_assistant`, and every one of them derives a verdict — the
+          // FIB's "validator and reviewer" is four categories, not two.
+          //
+          // The flag expression is the SAME one the audit entry below uses. It
+          // is repeated rather than hoisted because `data` is in scope here and
+          // `outcome.data` there, and a shared closure over two different
+          // bindings is how the two copies would silently diverge.
+          riskLevel: data.risk_level,
+          riskFlags: data.findings.length > 0 ? ['finding'] : [],
         }
       } catch (error) {
         return {

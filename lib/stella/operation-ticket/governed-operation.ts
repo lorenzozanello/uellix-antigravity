@@ -68,6 +68,7 @@ import {
   inspectOperationTicket,
   type OperationTicketAbortReason,
   type OperationTicketRejection,
+  type StellaInteractionRiskLevel,
 } from '@/db/stella/operation-tickets'
 import { emitTicketEvent, type TicketEventScope } from './ticket-observability'
 import { normalizeStellaProjectId } from './normalize-project-id'
@@ -98,6 +99,38 @@ export type StellaOperationExecution<T, F> =
       readonly modelUsed: string | null
       /** `stella_interactions.tokens_used`. */
       readonly tokensUsed: number | null
+      /**
+       * FIBDB-053, propagation order 2. `stella_interactions.risk_level`.
+       *
+       * REQUIRED AND NULLABLE, never optional, and it travels HERE rather than
+       * beside the three fields above because these are the fields the driver
+       * already threads to the completion payload. Risk joins them instead of
+       * acquiring a second carrier.
+       *
+       * Until now there was no governed carrier at all: validator and reviewer
+       * derived the value and handed it ONLY to the fire-and-forget
+       * `audit_logs` write, whose failures are caught and swallowed. That is
+       * why `lib/pipeline/sroi-readiness.ts` can already filter
+       * `riskLevel === 'high'` off the durable column and still never fire —
+       * the consumer is correctly aimed and the column is always NULL.
+       *
+       * AUDIT LOGS ARE NEVER THE SOURCE. The existing trail write stays; what
+       * changes is that it stops being the only destination. It was never
+       * permitted to be the authoritative one, and reading a risk level back
+       * out of it is forbidden rather than merely discouraged.
+       *
+       * Every category states a position — see
+       * `STELLA_CATEGORY_RISK_DISPOSITIONS` in `./categories`.
+       */
+      readonly riskLevel: StellaInteractionRiskLevel | null
+      /**
+       * FIBDB-053, propagation order 2. `stella_interactions.risk_flags`.
+       *
+       * Separate from `riskLevel` and asserted separately: carrying one while
+       * dropping the other is MUT-RC-05, and it is invisible to any control
+       * that compares the payload as a single object.
+       */
+      readonly riskFlags: readonly string[] | null
     }
   | {
       readonly ok: false
@@ -347,6 +380,12 @@ export async function runGovernedStellaOperation<T, F>(
     modelUsed: executed.modelUsed,
     tokensUsed: executed.tokensUsed,
     responseJson: executed.data,
+    // FIBDB-053, propagation order 3. Placed in the payload NEXT TO the four
+    // fields already passed, never re-derived here and never sourced from the
+    // audit trail: the values are whatever the action that ran the work
+    // reported, and this driver's job is to carry them, not to compute them.
+    riskLevel: executed.riskLevel,
+    riskFlags: executed.riskFlags,
   })
 
   if (settled.kind === 'quota_refused') {
@@ -416,7 +455,19 @@ export async function runGovernedStellaOperation<T, F>(
 export function governedRejectionPresentation(
   reason: OperationTicketRejection,
 ): { readonly code: 'UNAUTHORIZED' | 'UNKNOWN_ERROR'; readonly message: string } {
-  if (reason === 'unavailable') {
+  if (reason === 'unavailable' || reason === 'signature_mismatch') {
+    // FIBDB-053. `signature_mismatch` joins `unavailable` on the PRODUCT side
+    // and stays distinct on the OPERATOR side, and both halves are deliberate.
+    //
+    // It must not present as UNAUTHORIZED: a deployment-order mistake is not a
+    // statement about the caller, and telling a reviewer "this operation is no
+    // longer valid" would send them to re-do work that only an operator can
+    // unblock. It must not present with its own SENTENCE either — the product
+    // boundary is one sentence for every scope failure and one for every
+    // database failure, and a third would be a new oracle.
+    //
+    // The distinguishability T9 requires lives in the WRAPPER'S OWN refusal
+    // reason, which is where an operator reads it and where no caller can.
     return { code: 'UNKNOWN_ERROR', message: 'Stella no pudo completar la operación.' }
   }
   return {
