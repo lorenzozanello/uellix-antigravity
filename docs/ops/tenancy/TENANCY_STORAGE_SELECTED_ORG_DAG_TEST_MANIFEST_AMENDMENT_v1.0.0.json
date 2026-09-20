@@ -1,0 +1,181 @@
+{
+  "manifest_id": "TENANCY-STORAGE-SELECTED-ORG-DAG-AMENDMENT",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/tenancy/TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json",
+  "dependencies": [
+    "MULTI_ORG_TENANT_SCOPE_TEST_MANIFEST_v1.0.0 - the parent BATCH manifest this artifact amends. APPEND-ONLY: the parent file is not edited by this lane and remains the controlling record of every control it declares except P-9, which is re-attributed by P-STG-7 below.",
+    "TENANCY_S4_EXECUTION_TEST_MANIFEST_v1.0.0 - MEASURED PRESENT at AS_OF_HEAD 0d94b54856c701419ba32bdd844245213fd4aeed (the integration merge of PR #186). Its node S4 is narrowed to DATABASE_SELECTED_ORG_WELD, which is the premise of this amendment. NOT amended by this lane.",
+    "S4s STORAGE SELECTED-ORG EXECUTION TEST MANIFEST - NOT YET AUTHORED, and BLOCKED behind independent certification and merge of the companion authority amendment. Every RUNTIME control over the storage transport - the five probes PG-S4s-1..PG-S4s-5 frozen at REAL_PG_CONTRACT_AMENDMENT - is DELEGATED to it and is deliberately NOT declared here. This manifest declares AUTHORITY-CONFORMANCE controls only.",
+    "ODS LINEAGE ALLOCATION - NOT APPLICABLE TO THIS LANE, which allocates nothing and is therefore not subject to the E16 stop. It IS blocking for S4s implementation, and the allocator must re-derive both the ODS ordinal and the HPO grant at its own head rather than cite any figure from this manifest, the companion authority, the parent, or the S4 manifest (see finding F-STG-5)."
+  ],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "sentinels": [
+    {
+      "id": "S-STG-EFFECTIVE-DAG-IS-THE-ENDPOINT",
+      "purpose": "A conformance test that resolves the tenancy DAG MUST read TENANCY_STORAGE_SELECTED_ORG_DAG_AUTHORITY_AMENDMENT_v1.0.0.json EFFECTIVE_DAG, never MULTI_ORG_TENANT_SCOPE_AUTHORITY_v1.0.0.json S1_TO_S8_DAG alone. The sentinel is the marker node id 'S4s': it is ABSENT from the frozen parent by construction and PRESENT in EFFECTIVE_DAG. A resolver that reads only the parent therefore cannot see it, and any control depending on it goes RED - which is the intended detection, not a failure of the control. This exists because the append-only rule guarantees the parent will state the pre-amendment DAG forever, so 'the parent no longer says X' is permanently false and can never be a valid assertion."
+    },
+    {
+      "id": "S-STG-MIRROR-KEY-SHAPE",
+      "purpose": "The literal pair of key columns (user_id, session_id) is the marker that distinguishes the approved ENFORCEMENT MIRROR from a prohibited DURABLE PREFERENCE. A mirror keyed by user_id alone is a preference wearing the mirror's name, and is prohibited by SESSION_SCOPE_RECONCILIATION.prohibited_uses_that_remain_prohibited. The sentinel is planted so the distinction is checked against the KEY SHAPE rather than against the storage medium, which is the axis on which the two are actually different."
+    },
+    {
+      "id": "S-STG-NO-SERVICE-ROLE-ON-EVIDENCE-INGEST",
+      "purpose": "The tokens 'service_role' and any admin-client constructor must be ABSENT from whatever the S4s execution authority declares as the required mechanism and from any implementation discharging it. RAT-STG-01-C4 preserves the existing repository control forbidding service_role and admin clients on the evidence ingest path without exception, and the certified S4 R2 named service-role implications as one of the eight criteria the storage node must discharge. The sentinel proves the absence as a property of the declared mechanism, not of the code path an implementation happens to take."
+    }
+  ],
+  "positive_controls": [
+    {
+      "id": "P-STG-1",
+      "description": "THE CORRECTED DAG RESOLVES. Resolving the tenancy DAG from EFFECTIVE_DAG yields exactly TEN nodes with ids [S1, S2, S3, S3c, S4, S4s, S5, S6, S7, S8]; node S4s is PRESENT, delivers exactly [STORAGE_V1_BOUNDARY], and depends_on exactly [S3]; node S4 delivers exactly [GUC_CONTRACT, RLS_TARGET, PROJECT_AUTHORIZATION] and does NOT contain STORAGE_V1_BOUNDARY; and topological_order names S4s inside the post-S3 parallel set alongside S3c, S4 and S5. ASSERT ALL FIVE SEPARATELY, not as one composite: a test that asserts only the node count would stay GREEN against a DAG that had ten nodes with storage still welded to S4. Authority EFFECTIVE_DAG, NEW_STORAGE_NODE_ID, defects D-1, D-4, D-5.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-STG-2",
+      "description": "S7 GAINS A PREDECESSOR AND LOSES NONE. EFFECTIVE_DAG.nodes.S7.depends_on contains S4s, AND is a STRICT SUPERSET of the parent's frozen [S1, S2, S3, S3c, S4, S5, S6]. Asserted as a superset rather than as an exact list on purpose: an exact-list assertion would go RED if a LATER legitimate amendment added a further predecessor, which is the opposite of what this control is for. The superset form fails only on REMOVAL, which is the thing forbidden. Authority EFFECTIVE_DAG.nodes.S7, defect D-2, self_check.was_any_S7_prerequisite_weakened.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-STG-3",
+      "description": "DL-3 REQUIRES BOTH NODES. The DROP_LAST_RULE precondition DL-3, resolved through AM-STG-S1, is discharged only by the CONJUNCTION of S4 and S4s, and its requirement text is unchanged verbatim including 'closed-world across the tenant policy surface INCLUDING storage'. ADDITIONALLY assert that DL-1, DL-2, DL-4, DL-5 and DL-6 are untouched and that the ALL SIX conjunction still stands - a correction to one precondition must be shown not to have disturbed the other five. Authority SUPERSEDED_CLAUSES.AM-STG-S1, defect D-3.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-STG-4",
+      "description": "THE SPLIT SECURITY CONTROL IS STRICTLY STRONGER. SC-4 (rows and projects, node S4) AND SC-8 (evidence storage objects, node S4s) TOGETHER cover all three subjects of the original SC-4; SC-8 additionally requires SYMMETRY across upload, read/download, delete and the evidence erasure path, and requires the denial to hold when the subject calls the Supabase Storage API DIRECTLY rather than through the server. Assert the symmetry clause explicitly: the certified R2 measurement found can_read_evidence_object imposes NO role filter while can_write_evidence_object does, so the READ surface is the broader exposure and a control that pinned writes alone would understate it. Authority SUPERSEDED_CLAUSES.AM-STG-S4, defect D-9.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-STG-5",
+      "description": "THE OWNER DECISION IS MACHINE-REACHABLE AND COMPLETE. RAT-STG-01 is reachable by id from EFFECTIVE_DAG.nodes.S4s.mechanism_decision; its mechanism is DB_SIDE_SESSION_MIRROR_KEYED_BY_AUTHENTICATED_SESSION_ID with shape (user_id, session_id) -> organization_id; and ALL NINE binding constraints RAT-STG-01-C1..C9 are present, each with a non-empty constraint text. The count is asserted because the constraints are the whole of the grant's limits: a stack carrying the decision with seven of them is not carrying the decision. Authority OWNER_RATIFICATION.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-STG-6",
+      "description": "THE DELEGATION IS DISCHARGED BY THE SUCCESSOR, NOT BY THIS AMENDMENT. When the S4s execution authority exists, it defines ALL NINE items enumerated at STORAGE_V1_MECHANISM_DELEGATION.delegated_items - relation, uniqueness, expiry, writer path, helper read path, grants, cleanup, anti-spoofing, cross-org behavior - and it re-adjudicates current-schema ACL interaction per ACL_CONSEQUENCE_SYMBOLIC rather than inheriting S4's compatibility-only conclusion. UNTIL that authority exists this control is legitimately PENDING, and PENDING must be represented explicitly rather than as a pass. Authority STORAGE_V1_MECHANISM_DELEGATION, ACL_CONSEQUENCE_SYMBOLIC, NEXT_AUTHORITY_TOPOLOGY step 4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "P-STG-7",
+      "description": "RE-ATTRIBUTION OF THE PARENT'S P-9. The parent manifest's P-9 - an evidence-object write permitted for the selected organization still succeeds after the weld, with stella_0019's own verification assertions preserved rather than weakened - remains REQUIRED, but belongs to node S4s and NOT to S4, and its stated dependency on PG-2 is VOID because PG-2 is retired (AM-STG-S3). Its runtime discharge is DELEGATED to the S4s execution test manifest under probes PG-S4s-1..PG-S4s-5. What this control asserts HERE is the re-attribution itself: no artifact in the stack may present P-9 as an S4 obligation or as satisfiable by PG-2. The preserved stella_0019 assertions - that it recreates NO policy on storage.objects and that insert_evidence and delete_evidence still call the helper - are UNCHANGED and reinforced by RAT-STG-01-C7. Authority defects D-7 and D-8, SUPERSEDED_CLAUSES.AM-STG-S2 and AM-STG-S3.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-STG-1",
+      "description": "REFUSE A DAG IN WHICH S7 DOES NOT DEPEND ON THE STORAGE NODE. A resolved DAG whose S7.depends_on omits S4s - whether because the node was never added, was removed, or was renamed without updating the edge - MUST FAIL. This is the control that makes the whole amendment load-bearing: without the edge, every other corrected clause is decoration, because a lane could close S1..S6 plus S4 and reach the index drop with the storage boundary unwelded. Authority defect D-2, EFFECTIVE_DAG.nodes.S7.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-2",
+      "description": "REFUSE A DAG IN WHICH S4 STILL CLAIMS STORAGE_V1_BOUNDARY. A resolved DAG whose S4.delivers contains STORAGE_V1_BOUNDARY MUST FAIL, INCLUDING the case where S4s also exists and also delivers it. The inclusive case is stated because DOUBLE attribution is the likelier regression than reversion: an editor adding the new node without removing the old claim produces a DAG in which two nodes own one capability, DL-3 appears dischargeable by S4 alone, and the node count is nevertheless correct. Authority defect D-1, EFFECTIVE_DAG.nodes.S4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-3",
+      "description": "REFUSE A STALE NODE COUNT OR A STALE TOPOLOGICAL ORDER. A resolved DAG asserting expected_dag_node_count 9, or an expected_dag_node_ids list omitting S4s, or a topological_order string whose post-S3 parallel set does not name S4s, MUST FAIL. Assert count AND ids AND order independently: the parent's frozen self_check legitimately still says 9 of its OWN DAG, so a test that read the parent's counter instead of EFFECTIVE_DAG's would be GREEN on the defect and RED on the correction - an inverted sentinel. Authority defect D-4 and D-5, EFFECTIVE_DAG.parent_count_superseded.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-4",
+      "description": "REFUSE A PREFERENCE-SHAPED MIRROR. A declared or implemented mirror keyed by user_id ALONE, or by any key that outlives the authenticated session, MUST FAIL - even when it is named a mirror, documented as session-scoped and written only by server code. Falsified on the OBSERVABLE distinction rather than on the name: a durable preference is readable by a session that never made a selection, and the approved mirror is not, because that session's session_id has no row. Sentinel S-STG-MIRROR-KEY-SHAPE. Authority SESSION_SCOPE_RECONCILIATION, finding F-STG-4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-5",
+      "description": "REFUSE DL-3 NAMING S4 ALONE. A resolved DROP_LAST_RULE whose DL-3 is discharged by S4 without S4s MUST FAIL, and so MUST a DL-3 whose requirement text has been narrowed to drop 'INCLUDING storage' - the second case matters because narrowing the requirement would make the single-node attribution self-consistent and therefore invisible to a control that only compared node ids. Authority defect D-3, SUPERSEDED_CLAUSES.AM-STG-S1.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-6",
+      "description": "REFUSE A MECHANISM OTHER THAN THE APPROVED MIRROR. Any successor authority or implementation whose REQUIRED mechanism for carrying the selected organization across the Storage API connection boundary is a JWT custom claim, a signed capability with a shared secret, a server-mediated-only architecture, or a propagation of app.organization_id across the connection boundary, MUST FAIL. All four are named explicitly because each was a live candidate that the certified S4 R2 enumerated and RAT-STG-01 closed, and a control naming only 'not the mirror' would not distinguish a fallback introduced under pressure from a deliberate re-decision. Authority RAT-STG-01 constraints C5 and C6, STORAGE_V1_MECHANISM_DELEGATION, SUPERSEDED_CLAUSES.AM-STG-S2.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-7",
+      "description": "REFUSE service_role AS A REQUIRED MECHANISM. Any successor authority or implementation that requires service_role, a Supabase admin client, or any credential bypassing row-level security on the evidence ingest or storage authorization path MUST FAIL. Sentinel S-STG-NO-SERVICE-ROLE-ON-EVIDENCE-INGEST. Authority RAT-STG-01-C4.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-8",
+      "description": "REFUSE STORAGE BECOMING OPTIONAL BEFORE S7. Any artifact that reads the S4/S4s split as permission to reach S7 with the storage boundary unwelded - by marking S4s optional, deferred, post-S7, advisory, or best-effort, or by declaring DL-3 satisfied on S4 alone - MUST FAIL. The certified S4 R2 anticipated exactly this misreading and stated it as BINDING at THIS_DECOMPOSITION_DOES_NOT_WEAKEN_STORAGE; this control is that clause made falsifiable. Authority SUPERSEDED_CLAUSES.AM-STG-S2.what_is_NOT_superseded_in_STORAGE_V1_BOUNDARY, RAT-STG-01-C9.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-9",
+      "description": "REFUSE A STACK THAT CARRIES THE MIRROR WITHOUT THE SESSION_SCOPE EXCEPTION. A stack in which the approved DB-side mirror is required but AM-STG-S5 is absent, deleted or narrowed to nothing MUST FAIL, because SESSION_SCOPE.session_scoped_means forbids persisting the selection to a database preference and the mirror would then contradict a frozen parent clause with no adjudication between them. ALSO FAIL the opposite error - an exception written broadly enough to permit restoring a selection into a NEW session, to default a request that has no selection, or to amend SELECTED_ORG_CARRIER.prohibited_carriers. Both directions are checked because a silent contradiction and an over-broad exception are the two ways this reconciliation can fail, and they are not each other's opposite in any way a single assertion would catch. Authority SUPERSEDED_CLAUSES.AM-STG-S5, SESSION_SCOPE_RECONCILIATION, defect D-10.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "N-STG-10",
+      "description": "REFUSE THE RETIRED PROBE AND ITS SINGLE-CONNECTION HARNESS. A stack that still lists PG-2 as a required probe MUST FAIL. So MUST any storage probe satisfied by a harness that opens ONE connection, sets app.organization_id itself and then calls the helper: that harness fabricates on one connection exactly the propagation production lacks, so it PASSES while proving the opposite of its own name. The second clause is the substantive one - deleting the PG-2 entry is easy and a successor could re-derive its premise under a new id. Authority SUPERSEDED_CLAUSES.AM-STG-S3, REAL_PG_CONTRACT_AMENDMENT probe PG-S4s-1 and its design_constraint.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-STG-1",
+      "description": "MUTATION: DELETE S4s FROM THE RESOLVED DAG. Remove the S4s node from EFFECTIVE_DAG.nodes and from expected_dag_node_ids, and set expected_dag_node_count back to 9. REQUIRED OUTCOME: P-STG-1, P-STG-2, N-STG-1 and N-STG-3 MUST go RED. NON-VACUITY: P-STG-5, N-STG-4 and N-STG-9 MUST SURVIVE - the owner decision and the SESSION_SCOPE reconciliation are untouched by this mutation, so a run in which they also fail indicates the harness broke rather than that the mutation was caught. THIS IS THE PRIMARY MUTATION OF THE AMENDMENT.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-2",
+      "description": "MUTATION: REVERT S7.depends_on TO THE PARENT'S SEVEN PREDECESSORS. Remove S4s from EFFECTIVE_DAG.nodes.S7.depends_on while LEAVING the S4s node itself in place. REQUIRED OUTCOME: P-STG-2 and N-STG-1 MUST go RED. NON-VACUITY: P-STG-1 MUST SURVIVE - the node still exists and still delivers STORAGE_V1_BOUNDARY, so a control that also failed here would be asserting the edge and the node as one fact. This mutation is distinct from M-STG-1 precisely because an orphan node is the more plausible regression: it looks correct in every listing and satisfies every count.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-3",
+      "description": "MUTATION: RESTORE STORAGE_V1_BOUNDARY TO S4.delivers WITHOUT REMOVING S4s. Produce the double-attribution state. REQUIRED OUTCOME: P-STG-1 and N-STG-2 MUST go RED. NON-VACUITY: P-STG-2 and N-STG-1 MUST SURVIVE - the S7 edge is untouched. This pins the inclusive clause of N-STG-2: a control written as 'exactly one node delivers it' would pass here if it counted only S4s.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-4",
+      "description": "MUTATION: REVERT DL-3 TO S4 ALONE. Set the resolved DL-3 node attribution back to S4 while leaving its requirement text verbatim. REQUIRED OUTCOME: P-STG-3, N-STG-5 and N-STG-8 MUST go RED. NON-VACUITY: P-STG-1 and P-STG-2 MUST SURVIVE - the DAG shape is untouched, which is exactly why this mutation is dangerous: the drop gate weakens while the node graph still looks correct.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-5",
+      "description": "MUTATION: DELETE THE SESSION_SCOPE EXCEPTION. Remove SUPERSEDED_CLAUSES.AM-STG-S5 while leaving RAT-STG-01 and its mirror mechanism in place, producing a stack that requires a database row AND carries a frozen clause forbidding one. REQUIRED OUTCOME: N-STG-9 MUST go RED. NON-VACUITY: P-STG-1, P-STG-2 and P-STG-5 MUST SURVIVE. THIS IS THE CONTROL THAT PINS THE FAIL-CLOSED RULE: without it the contradiction would be resolved silently by whichever artifact an implementer happened to read second, which is precisely the guessing the rule forbids.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-6",
+      "description": "MUTATION: REPLACE THE MECHANISM WITH A JWT CUSTOM CLAIM. Rewrite the resolved mechanism to a Supabase Auth custom claim carrying the selected organization. REQUIRED OUTCOME: N-STG-6 MUST go RED, and P-STG-5 MUST go RED because the mechanism no longer matches RAT-STG-01. NON-VACUITY: P-STG-1, P-STG-2 and P-STG-3 MUST SURVIVE - the DAG and the drop gate are transport-agnostic, and a mutation of the transport that broke them would show the controls were entangled.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-7",
+      "description": "MUTATION: RE-KEY THE MIRROR BY user_id ALONE. Drop session_id from the declared key while keeping the relation, the server-only writer path and the session-scoped documentation. REQUIRED OUTCOME: N-STG-4 MUST go RED. NON-VACUITY: N-STG-6 and N-STG-7 MUST SURVIVE - the mechanism is still a DB-side mirror and still uses no service_role, so a control that also failed here would be detecting 'something changed' rather than detecting the preference shape. This is the mutation that proves S-STG-MIRROR-KEY-SHAPE discriminates on the key rather than on the storage medium.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-8",
+      "description": "MUTATION: RE-DERIVE PG-2 UNDER A NEW ID. Add a required probe, named anything, that asks to observe app.organization_id inside a storage helper, and satisfy it with a single-connection harness that sets the GUC itself. REQUIRED OUTCOME: N-STG-10 MUST go RED. NON-VACUITY: every other control MUST SURVIVE - nothing else in the stack changes. This mutation exists because deleting PG-2's entry is trivial and reinstating its PREMISE under a fresh name is the actual risk; a control that only grepped for the literal string 'PG-2' would pass this mutation while the stack once again required a probe that can only pass by being wrong.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-9",
+      "description": "MUTATION: COLLAPSE SC-8 BACK INTO SC-4. Restore the single three-part control at node S4 and delete SC-8, OR keep SC-8 but strip its two ADDED clauses - the four-verb symmetry and the direct-Storage-API reach - leaving only what the original SC-4 said about evidence objects. REQUIRED OUTCOME: P-STG-4 MUST go RED in both variants. NON-VACUITY: P-STG-1, P-STG-2 and P-STG-3 MUST SURVIVE - the DAG and the drop gate are untouched. The stripped variant is the one that matters: a split that merely moves the evidence-object clause to a new node without adding the symmetry and the direct-API reach would be a relabelling, and the certified R2 measurement (can_read_evidence_object imposes NO role filter, so the read surface is the broader exposure) is exactly what a relabelling would leave unproven.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-10",
+      "description": "MUTATION: UNDER-DISCHARGE THE DELEGATION IN THE SUCCESSOR. Author an S4s execution authority that defines EIGHT of the nine delegated items - omitting anti-spoofing, the derivation of session_id from the authenticated session - and that inherits S4's ACL 'compatibility proof only' conclusion instead of re-adjudicating current-schema ACL interaction. REQUIRED OUTCOME: P-STG-6 MUST go RED on both halves independently, so assert them separately. NON-VACUITY: P-STG-5, N-STG-6 and N-STG-7 MUST SURVIVE - the ratified mechanism is unchanged. Anti-spoofing is the omitted item on purpose: it is the one whose absence is invisible in a document that otherwise reads as complete, and without it a subject who can name another subject's session_id defeats the whole mirror.",
+      "test_file": "UNKNOWN"
+    },
+    {
+      "id": "M-STG-11",
+      "description": "MUTATION: RE-ATTRIBUTE P-9 BACK TO S4. Present the parent manifest's P-9 as an obligation of node S4, and/or restore its stated dependency on the retired PG-2. REQUIRED OUTCOME: P-STG-7 MUST go RED. NON-VACUITY: P-STG-1 and N-STG-2 MUST SURVIVE if the DAG itself is left alone - which is what makes this mutation worth pinning separately from M-STG-3: the node graph can be fully corrected while the manifest still hands an evidence-object obligation to a node that no longer touches evidence objects, and nothing in the DAG controls would notice.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "targeted_tests"
+  ]
+}
