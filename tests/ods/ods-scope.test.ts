@@ -7085,22 +7085,48 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     ])
   })
 
-  it('NO IMPLEMENTATION (W2-33-ALLOC-N3): the stella_0021 package does NOT exist, no rollback sibling exists, and no db/prepared/stella_0021_* of any name has appeared', () => {
-    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL))).toBe(false)
+  it('NO IMPLEMENTATION (W2-33-ALLOC-N3): the ALLOCATION act implemented nothing, the package now EXISTS by a later authorized act, and the forbidden rollback sibling still does not', () => {
+    // SUCCESSION, AND WHY THE LIVE FILESYSTEM FORM HAD TO GO — the identical
+    // reasoning already integrated for W2-32-ALLOC-N4, applied to the one
+    // predicate that expired here. This control's claim is HISTORICAL: that
+    // the ALLOCATION act did not pre-implement the package it allocated. It
+    // used to assert that claim as `existsSync(STELLA_0021_SQL) === false`
+    // against the LIVE tree, and a negative written as a live filesystem check
+    // does not measure the act it names — it measures whether ANYONE has
+    // implemented the package yet, and it expires the moment a LATER and
+    // entirely legitimate act does. Lane CV1-RUNTIME-ACL-W233-W, writing under
+    // the registered HPO-ODS-W2-33 grant, is that act. So the historical claim
+    // is read from the FROZEN artefact, which records what v1.0.36's own act
+    // did and can never decay, and the live tree is asserted for what is true
+    // of it NOW. Deleting the assertion would have been a weakening; this is a
+    // succession.
+    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL))).toBe(true)
+    // THE ROLLBACK SIBLING IS NOT MERELY ABSENT, IT IS FORBIDDEN. The runtime
+    // ACL authority declares the package FORWARD-ONLY and the grant
+    // deliberately does not cover this path, so no writer can create it under
+    // W2-33. This stays a LIVE check, it is the half of this control that
+    // never expires, and it is now STRONGER than when it was written: a
+    // rollback missing because NOTHING was implemented proves nothing about
+    // the forward-only contract, whereas a rollback missing while the forward
+    // package is PRESENT is that contract being honoured.
     expect(existsSync(path.join(REPO_ROOT, STELLA_0021_ROLLBACK))).toBe(false)
     // THE GLOB FORM, not just the two literals: a package written under any
     // other spelling of the same ordinal would be just as much an
-    // implementation, and two existsSync calls would not see it.
+    // implementation, and two existsSync calls would not see it. Advanced with
+    // the succession rather than dropped — the authorized ordinal is now
+    // EXACTLY ONE file, so a second spelling is still caught.
     const strays0021 = readdirSync(path.join(REPO_ROOT, 'db/prepared')).filter((f) =>
       f.startsWith('stella_0021'),
     )
-    expect(strays0021).toEqual([])
+    expect(strays0021).toEqual(['stella_0021_current_schema_runtime_acl_contract.sql'])
     // NON-VACUITY: the SAME enumeration finds the predecessor ordinal, so the
-    // empty result above is a measured absence and not a wrong directory.
+    // result above is a measured directory and not a wrong one.
     expect(
       readdirSync(path.join(REPO_ROOT, 'db/prepared')).filter((f) => f.startsWith('stella_0020')).length,
     ).toBeGreaterThan(0)
 
+    // THE HISTORICAL CLAIM, from the frozen record — unchanged, and the reason
+    // this control still says what its name says.
     const a = readW2_33()
     expect(a.NO_PREALLOCATION.PACKAGE_IMPLEMENTED).toBe('NO')
     expect(a.NO_PREALLOCATION.IMPLEMENTATION_BRANCH_CREATED).toContain('NO')
@@ -7152,11 +7178,10 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
     // THE SEPARATION IS MEASURED AT THE CANDIDATE, not merely written down.
     // W2-33 IS now registered — by the SEPARATE registration act this
     // allocation always required, not by the stella_0021 implementation
-    // writer, which still does not exist as a branch and has written nothing.
-    // The registered row is byte-identical to the DECLARATION, proving the
-    // registering act appended exactly what was declared and altered nothing
-    // else — the observable signature of a governed registration rather than
-    // a self-serving one.
+    // writer. The registered row is byte-identical to the DECLARATION, proving
+    // the registering act appended exactly what was declared and altered
+    // nothing else — the observable signature of a governed registration
+    // rather than a self-serving one.
     const live = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-33')
     expect(live).toEqual({
       authorityId: a.protected_grant.authorityId,
@@ -7164,9 +7189,33 @@ describe('ODS v1.0.36 / HPO-ODS-W2-33 — current-schema runtime ACL ALLOCATION 
       patterns: a.protected_grant.patterns,
     })
     expect(PROTECTED_GRANTS.filter((g) => g.authorityId === 'HPO-ODS-W2-33').length).toBe(1)
-    // NO IMPLEMENTATION BRANCH EXISTS to have performed a self-registration
-    // from: the package this grant protects is still absent.
-    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL))).toBe(false)
+    // SUCCESSION (same doctrine as W2-32-ALLOC-N4). This clause used to read
+    // "no implementation branch exists to have self-registered from: the
+    // package is still absent", asserted as a LIVE existsSync === false. That
+    // form measured whether ANYONE had implemented yet, not whether the
+    // IMPLEMENTATION WRITER had registered its own grant — and it expired the
+    // moment the authorized implementation lane created the package.
+    //
+    // The claim that actually matters is unchanged and is asserted DIRECTLY
+    // above and below rather than inferred from an absence: the live row EQUALS
+    // the frozen declaration byte for byte, so whoever registered it appended
+    // exactly what the allocation declared. A self-registering implementation
+    // writer would have had to widen the grant to cover the surfaces it also
+    // writes — db/hosted/**, tests/** — and the pattern equality below is what
+    // refuses that, now that the package exists and the comparison is live.
+    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL))).toBe(true)
+    expect(live?.patterns).toEqual(W2_33_PATTERNS)
+    expect(live?.patterns).toHaveLength(2)
+    // The implementation lane demonstrably touched surfaces OUTSIDE the grant;
+    // none of them was added to it. That is the separation, measured at the
+    // candidate rather than asserted from a file that no longer is absent.
+    for (const alsoTouched of [
+      'db/hosted/prechain-ownership.ts',
+      'db/hosted/forward-only-packages.ts',
+      'tests/ods/ods-scope.test.ts',
+    ]) {
+      expect(live?.patterns, `${alsoTouched} must never enter W2-33`).not.toContain(alsoTouched)
+    }
   })
 
   it('NO PREALLOCATION (W2-33-ALLOC-N6): v1.0.37, W2-34 and migration 0074 are named ONLY in prohibitions, and NONE of them is created, reserved or registered here', () => {
@@ -7510,19 +7559,42 @@ describe('HPO-ODS-W2-33 — current-schema runtime ACL grant REGISTRATION', () =
     }
   })
 
-  it('NO IMPLEMENTATION (W2-33-REG-N6): registering the grant created neither the stella_0021 package nor the FORBIDDEN rollback sibling, and did not create the implementation branch', () => {
-    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL_REG))).toBe(false)
+  it('NO IMPLEMENTATION (W2-33-REG-N6): registering the grant created neither the stella_0021 package nor the FORBIDDEN rollback sibling — the package exists now by a LATER act', () => {
+    // Registering a grant appends bytes to an array; it cannot create the
+    // package the grant protects, and it did not.
+    //
+    // SUCCESSION, the identical reasoning already integrated for W2-32-REG-N6.
+    // The claim is about what the REGISTRATION act did, and it used to be
+    // asserted as `existsSync(STELLA_0021_SQL_REG) === false` against the LIVE
+    // tree — a form that stops measuring the registration act the moment a
+    // later, authorized act implements the package. Lane
+    // CV1-RUNTIME-ACL-W233-W is that act. What survives unchanged is the half
+    // that never depended on the package being absent: the FORBIDDEN rollback
+    // sibling.
+    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL_REG))).toBe(true)
+    // FORBIDDEN, not merely absent: the runtime ACL authority declares the
+    // package FORWARD-ONLY and W2-33 deliberately does not cover this path, so
+    // no writer can create it under this grant. Now a STRONGER control than
+    // when it was written — the forward package is present and its rollback is
+    // still not, which is the forward-only contract being honoured rather than
+    // a file nobody had reached yet.
     expect(existsSync(path.join(REPO_ROOT, STELLA_0021_ROLLBACK_REG))).toBe(false)
+    // THE GLOB FORM, advanced with the succession: the authorized ordinal is
+    // EXACTLY ONE file, so any second spelling of stella_0021_* is still
+    // caught — including the rollback, by a predicate independent of the
+    // literal above.
     const strays0021 = readdirSync(path.join(REPO_ROOT, 'db/prepared')).filter((f) =>
       f.startsWith('stella_0021'),
     )
-    expect(strays0021).toEqual([])
+    expect(strays0021).toEqual(['stella_0021_current_schema_runtime_acl_contract.sql'])
     // NON-VACUITY: the predecessor package DOES exist.
     expect(
       readdirSync(path.join(REPO_ROOT, 'db/prepared')).filter((f) => f.startsWith('stella_0020')).length,
     ).toBeGreaterThan(0)
     // AND THE README IS UNTOUCHED BY THIS ACT — it is a GRANTED surface, not
-    // one this mission writes.
+    // one this mission writes. Granting a path and writing it are separate
+    // acts, and conflating them is how a registration quietly becomes an
+    // implementation.
     expect(existsSync(path.join(REPO_ROOT, README_REG_33))).toBe(true)
   })
 
@@ -7631,8 +7703,26 @@ describe('HPO-ODS-W2-33 — current-schema runtime ACL grant REGISTRATION', () =
     ).toEqual([STELLA_0021_SQL_REG])
     expect(resolveProtectedGrant('HPO-ODS-W2-33', ACL_REG).grant).toBeDefined()
     expect(resolveProtectedGrant('HPO-ODS-W2-33', 'codex/ods-w2-33-registration-r1').grant).toBeUndefined()
-    // NO IMPLEMENTATION SURFACE HAS APPEARED IN THIS LANE'S TREE.
-    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL_REG))).toBe(false)
+    // SUCCESSION. This clause used to read "no implementation surface has
+    // appeared in this lane's tree", asserted as a LIVE existsSync === false.
+    // That form could only ever be true until the implementation lane ran, and
+    // it measured the WRONG THING even then: "the package does not exist
+    // anywhere" is not "the registration lane did not write it". The claim the
+    // control's name makes — that the REGISTRATION did not CONSUME the grant —
+    // is asserted directly above, by the branch binding, and is strengthened
+    // here now that the package exists: the grant resolves ONLY on the
+    // implementation branch, so the registration lane could not have written
+    // the file under it even had it tried.
+    expect(existsSync(path.join(REPO_ROOT, STELLA_0021_SQL_REG))).toBe(true)
+    expect(resolveProtectedGrant('HPO-ODS-W2-33', 'codex/ods-w2-33-registration-r1').reason).toMatch(
+      /is granted on branch "codex\/current-schema-runtime-acl-implementation-r1"/,
+    )
+    // AND THE REGISTRATION LANE'S OWN WRITE SET IS STILL UNPROTECTED, which is
+    // what "does not consume the grant it creates" means operationally: the
+    // two protected literals are not among the paths that lane changed.
+    for (const literal of [STELLA_0021_SQL_REG, README_REG_33]) {
+      expect(ownWriteSet, `${literal} must not be in the registration lane's write set`).not.toContain(literal)
+    }
   })
 })
 

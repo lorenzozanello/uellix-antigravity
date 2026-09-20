@@ -373,6 +373,24 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // left exactly one writer) before touching anything.
       'stella_0020_rollback.sql',
       'stella_0020_stella_interactions_model_default.sql',
+      // CV1-RUNTIME-ACL. The CURRENT-schema successor to stella_0004 §6, and
+      // the reason it is a successor rather than an edit: stella_0004's §0
+      // allowlist is CLOSED by design, so on the current schema it does not
+      // grant the twenty tables migrations have added since — it REFUSES, and
+      // the runtime takes 42501 on every one of them. Its sha256 is pinned by
+      // a CERTIFIED PG17 engine certification, so the repair is a new file.
+      //
+      // FORWARD-ONLY, so there is no stella_0021_rollback.sql sibling and that
+      // absence is load-bearing: the declaration lives in
+      // db/hosted/prechain-ownership.ts and is derived into
+      // db/hosted/forward-only-packages.ts, which is what satisfies the XOR in
+      // tests/prepared-sql-source-of-truth.test.ts. Adding the rollback file
+      // would make that same XOR fail from the other side.
+      //
+      // GRANT-ONLY and a CLOSED WORLD over all 58 public tables: it creates
+      // nothing, writes no business row, touches no policy and moves no owner,
+      // and it REFUSES on any public relation no authority has classified.
+      'stella_0021_current_schema_runtime_acl_contract.sql',
       // TRAIN 5B. The managed-Supabase counterpart of stella_0004: same five
       // roles, no superuser anywhere, an auth shim in place of a grant that
       // `postgres` cannot issue (RR-09). It is a `stella_*` script and is swept
