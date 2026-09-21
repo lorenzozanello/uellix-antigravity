@@ -1,0 +1,829 @@
+{
+  "package_id": "FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_AUTHORITY_v1.0.0.json",
+  "authority_class": "EXECUTION_AUTHORITY",
+  "document_class": "BOUNDED_HOSTED_CONFIGURATION_AND_DEPLOYMENT_GRANT",
+  "append_only": true,
+  "mission_id": "CV1-FIBDB053-RUNTIME-STAGING-BINDING-EXECUTION-AUTHORITY-W",
+  "lane": "CV1-FIBDB053-RUNTIME-STAGING-BINDING-EXECUTION-AUTHORITY-W",
+  "role": "HOSTED_RUNTIME_BINDING_EXECUTION_AUTHORITY_WRITER",
+  "mode": "AUTHORING_ONLY",
+  "materialization_date": "2026-09-20",
+  "materialized_by": "Claude Opus 5 under Claude Code Desktop (HPO-ODS-01)",
+  "repository": "lorenzozanello/uellix-antigravity",
+  "companion_manifest": "docs/ops/release/FIBDB053_RUNTIME_STAGING_BINDING_EXECUTION_TEST_MANIFEST_v1.0.0.json",
+
+  "AS_OF_BRANCH": "codex/fibdb053-runtime-staging-binding-execution-authority-r1",
+  "AS_OF_BASE": "96a87611db0567e3399f9294113f96eab127771a",
+  "AS_OF_HEAD": "96a87611db0567e3399f9294113f96eab127771a",
+  "AS_OF_TREE": "36cb106481dcf22ac01edadba1c2c6d8a8d0c632",
+  "AS_OF_INTEGRATION_REF": "origin/integration/commercial-v1 = 96a87611db0567e3399f9294113f96eab127771a, measured by git fetch origin --prune followed by git rev-parse at materialization.",
+
+  "NAMING_DERIVATION": {
+    "rule_followed": "The repository's stated convention, quoted from docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json NAMING_DERIVATION: an artifact is named for the NODE it governs and placed beside the domain authority it refines.",
+    "node": "The FIBDB-053 D-1 rehearsal — the runtime-first state in which the bridge-carrying runtime runs against an un-applied (OLD_DB) hosted database. The FIBDB053 prefix is retained so the node lineage stays traceable.",
+    "placement_rationale": "Placed under docs/ops/release/** rather than docs/ops/wave3/** because the OPERATIVE ACT this artifact authorizes is a release-domain act (a hosted environment-variable binding and one deployment), and every controlling clause it refines lives in docs/ops/release/: the ENVIRONMENT_VARIABLE_CONTRACT of STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json, the GOLDEN_JOURNEY_RUNNER.target of STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json, and gates S4, S6 and M11 of RELEASE_GATE_LEDGER_v1.0.0.json. The wave3 FIBDB-053 authority states the ORDERING requirement; it explicitly does not confer the permission, so the permission is authored where the permission was withheld.",
+    "first_fibdb_prefixed_artifact_outside_wave3": "ACKNOWLEDGED AND DELIBERATE. The prefix names the node; the directory names the domain. Where the two point in different directions the convention's own words — 'beside the domain authority it refines' — decide the directory, and the prefix preserves the lineage. This is recorded rather than left for a reader to rediscover.",
+    "neither_parent_is_edited": "Both parents carry append_only=true. Neither is opened. This artifact is a NEW sibling, not an amendment, because it does not correct or supersede any parent clause: it supplies a permission both parents deliberately withheld."
+  },
+
+  "PURPOSE": {
+    "statement": "To author the narrow, bounded execution authority required BEFORE any Vercel environment mutation or redeployment, so that ONE coherent Preview deployment of the integration line can be produced and the FIBDB-053 D-1 state can be measured rather than assumed.",
+    "what_this_artifact_is_not": "It is not a deployment, not a configuration change, not an observation of any hosted system, and not a grant of any authority beyond the surfaces enumerated in DEPLOYMENT_AUTHORIZATION_BOUNDARY. The presence of a detailed plan here is not authority to execute it — the future execution lane is a separate lane with a separate freshness gate and a separate human confirmation.",
+    "why_it_is_needed": "See AUTHORITY_GAP_ADJUDICATED. Two frozen authorities describe the required end state and each explicitly declines to authorize the act that reaches it. The gap is real, not a misreading, and it is closed here by a grant scoped to exactly the act the rehearsal needs."
+  },
+
+  "CONTROLLING_AUTHORITY": {
+    "precedence": "CLAUDE.md section 2. Nothing here supersedes a frozen artifact; where this artifact and a parent disagree, the parent controls and the execution lane STOPS.",
+    "consumed": [
+      {
+        "artifact": "docs/ops/owner-ratifications/ENVIRONMENT_CONVERGENCE_OWNER_DECISIONS_v1.1.0.json",
+        "clauses": ["ENV-01", "ENV-10", "ENV-11 (11.1-11.4)", "ENV-14"],
+        "disposition": "CONSUMED AS GIVEN. Not extended by inference."
+      },
+      {
+        "artifact": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+        "clauses": ["CANONICAL_STAGES.STAGING_ALIGNED", "GOLDEN_JOURNEY_RUNNER.target", "HOSTED_DDL_PRECONDITIONS", "SECURITY_STOP_LINES", "EXPLICIT_NON_AUTHORIZATIONS"],
+        "disposition": "CONSUMED AS GIVEN."
+      },
+      {
+        "artifact": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "clauses": ["ENVIRONMENT_VARIABLE_CONTRACT", "PROVIDER_BOUNDARY"],
+        "disposition": "CONSUMED AS GIVEN. ENVIRONMENT_VARIABLE_CONTRACT is the direct parent of EXECUTION_OBJECTIVE."
+      },
+      {
+        "artifact": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json",
+        "clauses": ["S4", "S6", "M11"],
+        "disposition": "CONSUMED AS GIVEN. No gate state is changed, advanced or declared by this artifact."
+      },
+      {
+        "artifact": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json",
+        "clauses": ["DEPLOYMENT_CONTRACT (D-1..D-4)", "STAGE_A_INTERACTION", "CATALOG_PROBE_CONTRACT"],
+        "disposition": "CONSUMED AS GIVEN, as corrected by its amendments."
+      },
+      {
+        "artifact": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+        "clauses": ["SECTION_A3_SUPERSEDING_CATALOG_PROBE_CLAUSE.CANONICAL_PROBE_LITERAL", "SECTION_A9_NO_OTHER_SEMANTIC_CHANGE"],
+        "disposition": "CONSUMED AS GIVEN. A9 confirms DEPLOYMENT_CONTRACT is carried from the frozen parent UNCHANGED."
+      },
+      {
+        "artifact": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json",
+        "clauses": ["SECTION_B12_NO_OTHER_SEMANTIC_CHANGE"],
+        "disposition": "CONSUMED AS GIVEN. B12 lists STAGE_A_INTERACTION and DEPLOYMENT_CONTRACT among the explicitly unchanged."
+      }
+    ]
+  },
+
+  "CONSUMED_AUDIT_EVIDENCE": {
+    "rule": "The prior rehearsal audit is consumed as EVIDENCE, never as AUTHORITY. Its hosted observations are external to this repository and are NOT re-derived here, because re-deriving them would require reading hosted Vercel state, which this lane does not do. What IS re-derived is the repository half of every finding, so that no claim rests only on a previous report.",
+    "audit_result_consumed": "RUNTIME_DEPLOYMENT_REHEARSAL_BLOCKED__RELEASE_AUTHORITY_REQUIRED",
+    "findings": [
+      {
+        "id": "AF-1",
+        "finding": "The deployed integration SHA is 96a87611db0567e3399f9294113f96eab127771a and an automatic deployment for it exists and is READY as infrastructure state.",
+        "class": "EXTERNAL_OBSERVATION_NOT_RE_DERIVED",
+        "repository_half_re_derived": "origin/integration/commercial-v1 == 96a87611db0567e3399f9294113f96eab127771a at materialization, measured by git fetch origin --prune then git rev-parse. The SHA the audit names is the SHA the integration line currently carries.",
+        "consequence": "READY is an infrastructure state, not a health verdict. A deployment that built successfully and refuses every request at runtime is READY."
+      },
+      {
+        "id": "AF-2",
+        "finding": "Runtime health = FAIL, with failure SUPABASE_AUTH_PROJECT_MISMATCH.",
+        "class": "EXTERNAL_OBSERVATION_NOT_RE_DERIVED",
+        "repository_half_re_derived": "SUPABASE_AUTH_PROJECT_MISMATCH is a real, reachable refusal code in this tree: lib/supabase/project-coherence.ts declares it in SupabaseCoherenceCode and raises it at step 4, when authIdentity.projectRef !== pin. The failure the audit reports is the failure this tree is written to produce, with the detail 'a self-consistent identity for the wrong project is still the wrong project'. It is raised BEFORE any Supabase client is constructed and before any socket is opened.",
+        "consequence": "The deployment is not partially working. assertSupabaseProjectCoherence throws ahead of client construction, so the failure is total for every path that constructs a Supabase client."
+      },
+      {
+        "id": "AF-3",
+        "finding": "UELLIX_APP_ENV is absent for the integration/commercial-v1 scope.",
+        "class": "EXTERNAL_OBSERVATION_NOT_RE_DERIVED",
+        "repository_half_re_derived": "db/safety/database-access.ts resolveEnvironmentDecision reads env.UELLIX_APP_ENV as the EXPLICIT declaration; absent, the environment is INFERRED from platform variables. ENV-10 and ENVIRONMENT_VARIABLE_CONTRACT.governed_vercel_staging_must_set both require the literal staging to be DECLARED, not inferred. An absent variable therefore fails the owner contract even in the case where the inference happens to land on staging.",
+        "consequence": "Inference landing on the right answer is not the contract being satisfied. This is why D1_PROOF_CONTRACT point 3 demands provenance and not merely the resolved value."
+      },
+      {
+        "id": "AF-4",
+        "finding": "UELLIX_RUNTIME_DATABASE_URL is absent for that scope.",
+        "class": "EXTERNAL_OBSERVATION_NOT_RE_DERIVED",
+        "repository_half_re_derived": "db/safety/resolve-capability-database-url.ts exports RUNTIME_DATABASE_URL_ENV_VAR = 'UELLIX_RUNTIME_DATABASE_URL'. lib/supabase/project-coherence.ts provenDatabaseIdentity resolves it and returns null on ANY failure including absence, which the caller converts into SUPABASE_DB_IDENTITY_UNPROVEN. ENV-11.1 names it the normative Commercial V1 runtime database contract.",
+        "consequence": "With it absent the coherence check cannot reach its database comparison at all, so the Auth mismatch is the first failure observed rather than the only one present. Correcting Auth alone would reveal a second refusal, not a healthy deployment."
+      },
+      {
+        "id": "AF-5",
+        "finding": "NEXT_PUBLIC_SUPABASE_URL is inherited from a wider Preview/Production row and does not satisfy the staging pin.",
+        "class": "EXTERNAL_OBSERVATION_NOT_RE_DERIVED",
+        "repository_half_re_derived": "db/safety/runtime-project-pins.ts pins staging to KNOWN_STAGING_PROJECT_REF and production to KNOWN_PRODUCTION_IDENTIFIERS.projectRefs[0]; db/hosted/target-identity.ts fixes those to bvyzblhqymxruxdguaee and ctaxtgujyyprgynmnvtq respectively, and records in prose that the July audit calling the latter staging was wrong and was corrected in place. ENV-01 ratifies bvyzblhqymxruxdguaee as the principal staging project.",
+        "consequence": "A single row serving both Production and Preview cannot satisfy two different pins. This is the structural reason ENVIRONMENT_SCOPE_CORRECTION forbids editing it in place."
+      },
+      {
+        "id": "AF-6",
+        "finding": "DATABASE_URL exists but is not normative runtime connectivity.",
+        "class": "EXTERNAL_OBSERVATION_NOT_RE_DERIVED",
+        "repository_half_re_derived": "ENV-11.2 and ENVIRONMENT_VARIABLE_CONTRACT.DATABASE_URL_disposition = LEGACY_AND_INERT_ON_INTEGRATION: it is never read for a connection, only detected so an operator who still exports it is warned it is inert. ENV-11.3 forbids provisioning it for runtime product connectivity.",
+        "consequence": "Its presence explains nothing and repairs nothing. It must not be read as a partial binding, and it must not be repurposed."
+      },
+      {
+        "id": "AF-7",
+        "finding": "D-1 = NOT VERIFIED.",
+        "class": "DERIVED_VERDICT",
+        "repository_half_re_derived": "D-1 requires a HEALTHY bridge-carrying runtime against an OLD_DB database (DEPLOYMENT_CONTRACT D-1 and forward_order step 2, 'Verify D-1 — the deployment is healthy against the un-applied database'). AF-2 establishes the deployment is not healthy. The verdict follows from the contract, not from the auditor's judgement.",
+        "consequence": "Because D-1 is step 2 of forward_order, Stage-A apply has an unsatisfied precondition regardless of Stage-A's own readiness."
+      }
+    ],
+    "what_the_audit_did_not_establish": [
+      "The hosted staging database's catalog state. Nothing in the audit observed whether the nine-argument completion signature is absent. OLD_DB is ASSUMED by everyone and MEASURED by no one — see HOSTED_CATALOG_OBSERVATION_DISPOSITION.",
+      "Whether the wider NEXT_PUBLIC_SUPABASE_URL row is a project-level row targeting both Production and Preview, or a team-level shared variable. The two are overridden by different mechanisms — see ENVIRONMENT_SCOPE_CORRECTION.required_pre_mutation_verification."
+    ]
+  },
+
+  "AUTHORITY_GAP_ADJUDICATED": {
+    "finding": "REAL_GAP_CONFIRMED. Two frozen authorities describe the required end state and each explicitly declines to authorize reaching it. Neither omission is an oversight; both are written as deliberate refusals.",
+    "the_two_refusals": [
+      {
+        "artifact": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json",
+        "clause": "STAGE_A_INTERACTION.companion_may_proceed_before_stage_a_apply.basis",
+        "quoted": "Deployment remains subject to the normal release process; this authority does not create a deployment permission, it removes the reason to withhold one.",
+        "reading": "The runtime-first strategy makes deployment SAFE. It does not make it PERMITTED. The permission was explicitly deferred to the release process."
+      },
+      {
+        "artifact": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json",
+        "clause": "EXPLICIT_NON_AUTHORIZATIONS.non_authorizations",
+        "quoted": "NO deployment to any environment is authorized.",
+        "reading": "The release process itself, at its own materialization, withheld the permission. So 'subject to the normal release process' pointed at an authority that does not grant it either."
+      }
+    ],
+    "conclusion": "The permission exists nowhere. A lane that deployed on the strength of either artifact would be inferring an authority both artifacts deny. That is the silent authority expansion CLAUDE.md section 5 forbids, and it is why the prior audit correctly returned RELEASE_AUTHORITY_REQUIRED rather than proceeding.",
+    "what_this_artifact_therefore_does": "Creates the missing permission, and creates it at the narrowest scope that makes D-1 measurable — three branch-scoped Preview variables and exactly one deployment. It does not widen either parent, does not advance any gate, and does not touch production.",
+    "what_this_artifact_therefore_must_not_be_read_as": "It is NOT a general deployment permission, NOT a standing permission, and NOT transferable to another branch, another environment, another SHA or another lane. It is consumed by the single execution it describes and expires per EXPIRY."
+  },
+
+  "EXECUTION_OBJECTIVE": {
+    "frozen_objective": "Create ONE coherent Vercel Preview deployment carrying the exact integration/commercial-v1 code and bound to the principal staging Supabase project, solely so that D-1 can be MEASURED.",
+    "not_the_objective": [
+      "Making staging generally usable.",
+      "Satisfying S4, S6 or M11.",
+      "Running any Golden Journey.",
+      "Preparing for, enabling or shortening Stage-A."
+    ],
+    "required_environment_contract": {
+      "source": "STAGING_RELEASE_PRODUCTION_AUTHORITY_AMENDMENT_v1.0.1.ENVIRONMENT_VARIABLE_CONTRACT.governed_vercel_staging_must_set, restated here by NAME only.",
+      "variables": [
+        {
+          "variable": "UELLIX_APP_ENV",
+          "required_value_class": "the literal environment name staging",
+          "value_recorded_here": "staging",
+          "why_the_literal_is_recordable": "It is an environment NAME, not a value, a hostname, a key or a credential. ENVIRONMENT_VARIABLE_CONTRACT.names_only permits the literal environment name and nothing else.",
+          "binding": "ENV-10"
+        },
+        {
+          "variable": "NEXT_PUBLIC_SUPABASE_URL",
+          "required_value_class": "a URL whose structurally derived project ref equals the principal staging project ref",
+          "required_project_ref": "bvyzblhqymxruxdguaee",
+          "why_the_ref_is_recordable": "A Supabase project ref is public in every URL the project serves. db/hosted/target-identity.ts states this explicitly and KNOWN_STAGING_PROJECT_REF already carries the literal in tracked code. ENV-01 ratifies it. Recording it here adds no disclosure.",
+          "binding": "ENV-01, ENV-11"
+        },
+        {
+          "variable": "UELLIX_RUNTIME_DATABASE_URL",
+          "required_value_class": "a securely provisioned runtime DSN whose structurally proven project identity is the same staging project and whose database role is the intended least-privileged runtime role",
+          "value_recorded_here": "NONE. SECRET_BEARING — see SECRET_CUSTODY_CONTRACT.",
+          "binding": "ENV-11.1"
+        },
+        {
+          "variable": "DATABASE_URL",
+          "required_disposition": "NOT USED AS RUNTIME CONNECTIVITY. Not created, not edited, not deleted, not repurposed by this grant.",
+          "binding": "ENV-11.2, ENV-11.3"
+        }
+      ]
+    },
+    "coherence_binding": "UELLIX_APP_ENV staging pin == project ref carried by NEXT_PUBLIC_SUPABASE_URL == project identity proven by UELLIX_RUNTIME_DATABASE_URL. This is the SYS-03 invariant implemented by lib/supabase/project-coherence.ts assertSupabaseProjectCoherence. Per ENV-11.4 it is satisfied by that check PASSING AT RUNTIME START, not by this document."
+  },
+
+  "GOVERNED_STAGING_TARGET_ADJUDICATION": {
+    "question": "May the governed staging execution target be a branch-scoped Vercel Preview deployment for integration/commercial-v1, identified by exact deployment id plus exact Git SHA, WITHOUT a custom domain or alias?",
+    "verdict": "YES. A Preview deployment bound by exact SHA and exact deployment id IS the governed staging execution target under the effective authority. This interpretation is FROZEN by this artifact.",
+    "method": "The three clauses that could have required a stable address were read for what they actually name as the target's identity. None names a domain, an alias, a hostname or a stable address. All three name a Preview deployment plus an identifier.",
+    "evidence": [
+      {
+        "source": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json GOLDEN_JOURNEY_RUNNER.target",
+        "quoted": "A Preview deployment satisfying S4, so that the journey exercises the certified SHA against the matching schema.",
+        "reading": "The target is constituted as a Preview deployment. No address is mentioned."
+      },
+      {
+        "source": "docs/ops/release/RELEASE_GATE_LEDGER_v1.0.0.json GATES[S4].pass_criteria",
+        "quoted": "The Preview deployment pointed at staging was built from the EXACT SHA whose migration corpus is applied to staging, confirmed by a build identity and a runtime identity endpoint that agree.",
+        "reading": "Identity is a build identity plus a runtime identity endpoint. Both are reachable on a Preview deployment URL. Neither is a domain."
+      },
+      {
+        "source": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json CANONICAL_STAGES.STAGING_ALIGNED.exact_sha_evidence_identity",
+        "quoted": "Every staging gate cites the exact SHA whose corpus was applied AND the exact target identifier. An observation that cannot name its target is not an observation of that target.",
+        "reading": "The requirement is an IDENTIFIER, not an ADDRESS. A Vercel deployment id is an exact, immutable, non-reassignable identifier; a domain or alias is a mutable POINTER that can be repointed at another deployment without changing its own name. The deployment id is therefore the STRICTER identity, not a weaker substitute for a domain."
+      },
+      {
+        "source": "docs/ops/release/STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json CANONICAL_STAGES.FEATURE_COMPLETE_STAGING.exact_sha_evidence_identity",
+        "quoted": "Every browser journey run is bound to the exact SHA that produced the Preview deployment it ran against, and to that deployment's identifier.",
+        "reading": "Corroborates the same pair (SHA + deployment identifier) at the next stage, which is where a stable address would have been needed if the model required one."
+      }
+    ],
+    "negative_check": "A search of the effective release authority for a required custom domain, alias, or stable staging hostname returns nothing. No clause conditions any staging gate on an address. The absence is not read as permission to invent one — it is read as the model identifying deployments by identifier, which the positive clauses above independently confirm.",
+    "custom_alias_required": "NO",
+    "no_alias_may_be_invented": "This grant does NOT authorize creating, assigning, changing or removing any alias or domain. If a future lane believes the rehearsal needs a stable address, that is an owner decision and a separate grant, and it STOPS with STOP_FOR_OWNER_STAGING_TARGET_DECISION rather than creating one.",
+    "frozen_target_identity_form": {
+      "rule": "The target is named by BOTH of the following in every evidence artifact, always together, never one alone.",
+      "components": [
+        "the exact Vercel deployment id of the deployment this grant authorizes",
+        "the exact Git commit SHA that deployment was built from"
+      ],
+      "why_both": "A deployment id alone does not prove which code it carries to a reader who cannot query the platform. A SHA alone does not distinguish the authorized deployment from the failed one, which carries the SAME SHA — see BUILD_TIME_INVALIDATION. The pair is the minimum that identifies one deployment unambiguously."
+    }
+  },
+
+  "ENVIRONMENT_SCOPE_CORRECTION": {
+    "authorized_surface": "Branch-scoped Vercel Preview environment variables for the Git branch integration/commercial-v1, on the project that serves this repository, for EXACTLY the three variable names below and no others.",
+    "variables": ["UELLIX_APP_ENV", "NEXT_PUBLIC_SUPABASE_URL", "UELLIX_RUNTIME_DATABASE_URL"],
+    "operations_permitted": ["create a branch-scoped Preview binding", "update a branch-scoped Preview binding created under this grant"],
+    "operations_forbidden": [
+      "editing the existing shared Production+Preview NEXT_PUBLIC_SUPABASE_URL row in place",
+      "deleting, disabling or narrowing any existing row",
+      "creating, editing or deleting any Production-scoped row",
+      "creating, editing or deleting any Development-scoped row",
+      "creating, editing or deleting any team-level shared variable",
+      "touching any variable name not in the list of three",
+      "touching any branch other than integration/commercial-v1"
+    ],
+    "mechanism": {
+      "rule": "The staging Auth correction is an ADDITIVE, NARROWER-SCOPE OVERRIDE. A new branch-scoped Preview row is created alongside the existing wider row; the existing row is not opened.",
+      "platform_basis_verified": "Verified against Vercel's published documentation at https://vercel.com/docs/environment-variables (page last_updated 2026-09-17) rather than asserted from model memory. The documented rule, quoted: 'Any branch-specific variables will override other preview environment variables with the same name.' The same page states the override is additive in intent: 'you only need to add the values you wish to override.'",
+      "cli_form_documented": "vercel env add <NAME> preview --git-branch=integration/commercial-v1",
+      "why_this_mechanism_and_not_an_edit": "Editing the shared row would change the value Production reads. Production is outside this grant, outside this lane's scope and outside the rehearsal's purpose. A configuration change whose blast radius includes production in order to fix staging is not a narrower fix — it is the widest possible one. The additive override changes the value for exactly one branch's Preview deployments and leaves the production-facing value byte-identical."
+    },
+    "required_pre_mutation_verification": {
+      "rule": "MANDATORY. Performed read-only, BEFORE the human confirmation of HUMAN_CONFIRMATION, and recorded as pre-execution state for ROLLBACK.",
+      "checks": [
+        {
+          "id": "PMV-1",
+          "check": "Enumerate the existing rows for all four names (the three authorized plus DATABASE_URL) with their scopes. Record NAME, TARGET SCOPE, GIT BRANCH SCOPE and PRESENCE only.",
+          "purpose": "This enumeration IS the rollback record. Without it there is no defined pre-execution state to restore."
+        },
+        {
+          "id": "PMV-2",
+          "check": "Determine whether the wider NEXT_PUBLIC_SUPABASE_URL row is a PROJECT-level row targeting Production and Preview, or a TEAM-level shared variable.",
+          "why_load_bearing": "The verified Vercel rule states that a branch-specific variable overrides other PREVIEW environment variables with the same name. This lane did NOT verify that the same precedence holds against a TEAM-LEVEL shared variable, and does not assert it. If PMV-2 finds a team-level shared variable, the override mechanism is UNPROVEN for this case.",
+          "on_unproven": "STOP_FOR_ENV_PRECEDENCE_ADJUDICATION. Do not mutate. Do not test the precedence by deploying and observing, because a deployment is the scarce authorized act this grant confers exactly once."
+        },
+        {
+          "id": "PMV-3",
+          "check": "Confirm no branch-scoped Preview row already exists for any of the three names on integration/commercial-v1.",
+          "on_unexpected_presence": "STOP. A pre-existing binding nobody recorded is an unknown, and CLAUDE.md section 5 preserves an unknown rather than overwriting it."
+        }
+      ]
+    },
+    "production_safety_assertion": "After the authorized mutation, the value Production resolves for NEXT_PUBLIC_SUPABASE_URL must be UNCHANGED. This is asserted by comparing the production-scoped row's identity and last-modified state before and after, without reading or recording its value."
+  },
+
+  "SECRET_CUSTODY_CONTRACT": {
+    "classification": "UELLIX_RUNTIME_DATABASE_URL IS SECRET-BEARING. It carries a database password.",
+    "absolute_rule": "Its VALUE is not contained in this artifact, must not be added to it by any successor citing it, and must not be written into any repository authority, manifest, evidence artifact, commit message, PR body, log line or test fixture.",
+    "provisioning": {
+      "rule": "The future execution lane consumes or provisions this variable THROUGH VERCEL'S OWN SECRET CONFIGURATION MECHANISM ONLY.",
+      "permitted": [
+        "adding the value through the Vercel environment-variable interface or CLI, where the value is transmitted to the platform and encrypted at rest",
+        "marking it sensitive where the platform offers that classification"
+      ],
+      "forbidden": [
+        "writing the value to any file inside the repository working tree",
+        "writing the value into .env, .env.local or any tracked or untracked file under the repository root",
+        "passing the value as a shell argument that a process table or shell history would capture",
+        "echoing, printing, or including the value in any command output that is retained"
+      ],
+      "note_on_env_pull": "vercel env pull writes real values to .env.local. It is NOT authorized by this grant. If a successor believes it needs it, that is a separate adjudication, not an implied convenience."
+    },
+    "evidence_emission_allowlist": {
+      "rule": "Evidence about this variable emits ONLY the following derived, non-reversing facts.",
+      "permitted_fields": [
+        "variable NAME",
+        "scope (target environment and git branch)",
+        "presence (boolean)",
+        "derived project ref",
+        "database role",
+        "host class (for example: supabase direct, supavisor pooler)",
+        "port",
+        "TLS posture"
+      ],
+      "forbidden_fields": ["password", "full DSN", "any token", "any key", "any query string containing a credential"],
+      "why_these_are_safe": "Each permitted field is either public (project ref, port), a compile-time constant of this repository (the role name, per db/safety/database-role.ts, which db/runtime-identity-report.ts already returns to authenticated callers on purpose), or a boolean. None of them, alone or combined, reconstructs the credential."
+    },
+    "local_inspection_protocol": {
+      "when": "ONLY if the execution lane must structurally parse the DSN to prove its project ref and role before provisioning it.",
+      "rules": [
+        "a temporary scratch location OUTSIDE the repository working tree",
+        "no logging of the value at any verbosity",
+        "STRUCTURAL PARSE ONLY: derive project ref, role, host class, port and TLS posture; derive nothing else",
+        "delete the scratch artifact immediately after the parse",
+        "POSITIVE ABSENCE VERIFICATION: after deletion, affirmatively verify the artifact no longer exists and record that verification. Absence is asserted from a check, never from the fact that a delete command was issued"
+      ],
+      "scratch_dir_hazard": "The scratch location must not be inside the worktree even if gitignored. A scratch directory inside the worktree has been MEASURED in this programme to inflate ods:scope and redden the untracked arm.",
+      "on_any_doubt": "If the lane cannot satisfy every rule above, it does not perform the local inspection. It provisions through the platform and proves identity from the runtime side instead."
+    },
+    "ssl_06_relationship": "SECURITY_STOP_LINES SSL-06 requires an inventory recording who and what holds a privileged credential. This grant does NOT satisfy SSL-06 and does not claim to. The runtime role is least-privileged by design, not privileged, so SSL-06 is not engaged by this grant; if the lane finds itself holding an OPERATOR credential for any reason, SSL-06 is engaged and the lane STOPS."
+  },
+
+  "PUBLIC_AUTH_URL_CONTRACT": {
+    "classification": "NEXT_PUBLIC_SUPABASE_URL is PUBLIC configuration. It is inlined into the browser bundle by construction and is not a secret. It is nevertheless SECURITY-RELEVANT, because it decides which project issues the verified subject that every row-level-security policy reads through auth.uid().",
+    "required_proof": {
+      "rule": "The future execution must prove MECHANICALLY — by structural derivation, never by eye and never by string comparison of a whole URL — that the project ref carried by the value equals the staging pin.",
+      "must_equal": "bvyzblhqymxruxdguaee",
+      "must_not_be": "ctaxtgujyyprgynmnvtq",
+      "why_both_directions": "Equality to the staging pin already excludes the production ref. The explicit negative is stated anyway because the two refs have been CONFUSED IN THIS PROGRAMME BEFORE: db/hosted/target-identity.ts records that a July audit called ctaxtgujyyprgynmnvtq staging and that the dashboard settled it as PRODUCTION. A control that only asserts the positive would pass on a tree where the pin itself had been mis-set; asserting both makes the confusion detectable.",
+      "derivation_authority": "lib/supabase/project-identity.ts deriveSupabaseApiIdentity is the repository's one parser for an HTTPS Supabase API URL. The proof uses that derivation. It does not introduce a second parser, which is the drift db/safety/runtime-project-pins.ts exists to refuse."
+    },
+    "the_current_incorrect_value": {
+      "rule": "The CURRENT incorrect value is NOT frozen here, NOT recorded here, and must NOT be preserved anywhere merely to compare against.",
+      "why": "Freezing a wrong value gives a successor something to restore. Recording it for comparison creates a second, stale answer to a question that has exactly one correct answer — the pin — which is already in tracked code. The comparison is against the PIN, not against history."
+    },
+    "build_time_note": "Because this value is inlined at build time (see BUILD_TIME_INVALIDATION), the value that matters is the one present AT BUILD, not the one present in the environment afterwards. Any proof taken from the running deployment must be taken from the deployment's own served output, not from the platform's current configuration state."
+  },
+
+  "BUILD_TIME_INVALIDATION": {
+    "measured_behavior": {
+      "statement": "NEXT_PUBLIC_SUPABASE_URL is inlined at BUILD time.",
+      "repository_evidence": "lib/supabase/project-coherence.ts readInlinedAuthUrl documents the measurement against next@16.2.9: getDefineEnv spreads every NEXT_PUBLIC_* variable into the DefinePlugin map unconditionally, for the client, the Node server and the edge compilations alike, so a literal process.env.NEXT_PUBLIC_SUPABASE_URL is replaced with a BUILD-TIME constant in all three bundles.",
+      "why_the_guard_reads_the_inlined_form": "Quoted from the same module: a guard that validated the runtime value while createServerClient dialled the inlined one 'would be checking a string nobody uses'. The guard therefore reads the inlined form and the factories consume decision.authUrl. One read, one validation, one destination.",
+      "platform_corroboration": "Independently corroborated at the platform layer by Vercel's published documentation (https://vercel.com/docs/environment-variables, last_updated 2026-09-17), quoted: 'Any change you make to environment variables are not applied to previous deployments, they only apply to new deployments.' The repository measurement and the platform rule agree."
+    },
+    "consequence": {
+      "rule": "Changing Vercel environment configuration does NOT rehabilitate the existing deployment. There is no configuration-only path to a healthy deployment.",
+      "therefore": "Exactly ONE new build/redeployment is authorized after the configuration correction — see DEPLOYMENT_AUTHORIZATION_BOUNDARY."
+    },
+    "the_failed_deployment": {
+      "deployment_id": "dpl_96J3t4LxRYArRqAKWGxmBHE6gMNi",
+      "status": "OBSERVATION EVIDENCE ONLY",
+      "rules": [
+        "It must NOT be promoted.",
+        "It must NOT be aliased.",
+        "It must NOT be treated as corrected by any configuration change.",
+        "It must NOT be cited as the target of any D-1 measurement.",
+        "It must NOT be redeployed with the 'use existing build cache' semantics, because reusing the build reuses the inlined constant that caused SUPABASE_AUTH_PROJECT_MISMATCH."
+      ],
+      "why_it_is_recorded_at_all": "So that the control 'new deployment id != failed deployment id' has a concrete comparand, and so that a successor cannot mistake it for the rehearsal target. It is named here for exclusion, not for use."
+    }
+  },
+
+  "DEPLOYMENT_AUTHORIZATION_BOUNDARY": {
+    "authorized": [
+      {
+        "id": "AUTH-1",
+        "act": "Create branch-scoped Preview bindings for exactly UELLIX_APP_ENV, NEXT_PUBLIC_SUPABASE_URL and UELLIX_RUNTIME_DATABASE_URL on the Git branch integration/commercial-v1, by the additive narrower-scope mechanism of ENVIRONMENT_SCOPE_CORRECTION.",
+        "count": "one create (or one update of a binding this grant itself created) per variable"
+      },
+      {
+        "id": "AUTH-2",
+        "act": "Trigger ONE deployment/rebuild of the exact then-current integration SHA, producing a NEW Preview deployment with a NEW deployment id and a FRESH build.",
+        "count": "EXACTLY ONE, subject to BOUNDED_RETRY_RULE"
+      },
+      {
+        "id": "AUTH-3",
+        "act": "Read-only smoke observation of that one deployment, and read-only observation of its runtime logs.",
+        "count": "unbounded, because it is read-only and mutates nothing"
+      },
+      {
+        "id": "AUTH-4",
+        "act": "Authenticated health observation of that one deployment where Deployment Protection or the endpoint's own boundary requires a verified session.",
+        "constraint": "The session is a staging test principal. Creating, promoting or elevating a principal is NOT authorized by this grant — see MEASUREMENT_GAPS_RECORDED.MG-4."
+      }
+    ],
+    "not_authorized": [
+      "ANY production deployment",
+      "ANY Production-scope environment mutation",
+      "ANY deployment of the default branch",
+      "ANY promotion of any deployment to production",
+      "ANY alias or custom domain creation, assignment, change or removal",
+      "ANY Supabase configuration mutation of any kind",
+      "ANY database DDL",
+      "ANY database DML",
+      "ANY application of FIBDB-053 Stage-A, in whole or in part",
+      "ANY resolution, advancement or partial satisfaction of G2",
+      "ANY arbitrary repeated redeployment",
+      "ANY change to a variable name outside the authorized three",
+      "ANY change to DATABASE_URL",
+      "ANY synchronization, rebase, merge or modification of PR195",
+      "ANY repository code change"
+    ],
+    "BOUNDED_RETRY_RULE": {
+      "default": "A second deployment after a failed first attempt requires a FRESH ADJUDICATION. The default is STOP.",
+      "single_narrow_exception": {
+        "rule": "At most ONE retry is permitted, and only when ALL of the following hold conjunctively. Four of five satisfied is zero authority.",
+        "conditions": [
+          "BR-1: the first attempt produced NO deployment that reached READY",
+          "BR-2: the failure is attributable to platform infrastructure (build machine error, registry or network timeout, platform-side internal error) and NOT to application code, NOT to configuration, and NOT to any coherence refusal",
+          "BR-3: NO environment variable was created, edited or deleted between the two attempts",
+          "BR-4: the exact Git SHA is byte-identical between the two attempts",
+          "BR-5: the human confirmation of HUMAN_CONFIRMATION is re-obtained for the retry"
+        ],
+        "explicitly_not_transient": [
+          "SUPABASE_AUTH_PROJECT_MISMATCH or any other SupabaseCoherenceCode",
+          "a build failure caused by a missing or malformed environment variable",
+          "any runtime 503 from a health endpoint",
+          "a deployment that reached READY and then failed health"
+        ],
+        "why_the_exception_is_this_narrow": "A retry rule that admits configuration failures becomes a licence to iterate on production infrastructure until something works, which is exactly the unbounded redeployment this boundary forbids. A build machine dying is the only class of failure that carries no information about whether the configuration is correct."
+      }
+    },
+    "EXPIRY": {
+      "rule": "This grant is consumed by the single execution it describes. It expires on the FIRST of: the authorized deployment reaching a terminal state (READY or ERROR) and its smoke observation completing; any STOP condition in FAILURE_ROLLBACK_CONTRACT firing; or the integration line advancing past the SHA frozen under AUTHORIZED_SHA_BINDING_RULE without the deployment having been triggered.",
+      "after_expiry": "No further Vercel mutation is authorized. A further act requires a successor authority."
+    }
+  },
+
+  "AUTHORIZED_SHA_BINDING_RULE": {
+    "rule": "The deployment is bound to ONE exact Git commit SHA, frozen before mutation and re-verified immediately before the deployment is triggered.",
+    "procedure": [
+      "SB-1: immediately before the pre-mutation human confirmation, run git fetch origin --prune and record SHA_FROZEN = the exact commit id of origin/integration/commercial-v1.",
+      "SB-2: SHA_FROZEN is stated verbatim in the human confirmation prompt. The human confirms that SHA, not a branch name.",
+      "SB-3: immediately before triggering the deployment, re-derive the exact commit id of origin/integration/commercial-v1. If it is not byte-identical to SHA_FROZEN, STOP_STALE. Do not deploy the newer SHA, and do not deploy the older one.",
+      "SB-4: after the deployment exists, record its deployment id and the SHA the platform reports it was built from. If the platform-reported SHA is not byte-identical to SHA_FROZEN, the deployment is NOT the authorized deployment and no D-1 measurement may cite it."
+    ],
+    "sha_at_authoring": {
+      "value": "96a87611db0567e3399f9294113f96eab127771a",
+      "status": "NOT FROZEN BY THIS ARTIFACT AS THE DEPLOYMENT TARGET. Recorded as the integration head at materialization, and as the SHA whose bridge presence was verified here. The execution lane freezes its own SHA under SB-1, because PR198, PR199 and further integration activity may advance the line before execution opens.",
+      "bridge_presence_verified_at_this_sha": "db/stella/operation-tickets.ts declares NINE_ARGUMENT_COMPLETION_SIGNATURE with the canonical probe literal frozen by FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1 SECTION_A3, and CompletionSignatureState with the OLD_DB and NEW_DB members. Verified by direct read at AS_OF_TREE."
+    },
+    "branch_only_is_void": "A deployment authorized by branch name rather than by SHA is void under this grant. The release authority's own language is followed: an authorization that cannot name the SHA it authorizes is not an authorization."
+  },
+
+  "D1_PROOF_CONTRACT": {
+    "rule": "D-1 may be declared VERIFIED only when ALL EIGHT criteria below are measured ON THE SAME EXACT DEPLOYMENT. They are conjunctive. Seven of eight is not D-1.",
+    "same_deployment_rule": "Every criterion cites the SAME deployment id and the SAME Git SHA. A measurement taken against a different deployment, or against the platform's current configuration rather than the deployment's own behaviour, does not contribute to D-1.",
+    "criteria": [
+      {
+        "id": "D1-1",
+        "criterion": "Git SHA equals the authorized integration SHA.",
+        "measured_by": "the platform's deployment metadata for the authorized deployment, compared byte-for-byte against SHA_FROZEN",
+        "disposition": "MEASURABLE_UNDER_THIS_AUTHORITY"
+      },
+      {
+        "id": "D1-2",
+        "criterion": "The bridge-carrying runtime is present.",
+        "measured_by": "the identity of the deployed SHA. D1-1 establishes which commit was built; the commit's tree is verified in the repository to contain db/stella/operation-tickets.ts NINE_ARGUMENT_COMPLETION_SIGNATURE and CompletionSignatureState. Bridge presence is a property of the SOURCE, proven in the repository, and bound to the deployment by D1-1.",
+        "disposition": "MEASURABLE_UNDER_THIS_AUTHORITY",
+        "explicit_limitation": "No health endpoint reports bridge presence — see MEASUREMENT_GAPS_RECORDED.MG-2. D1-2 is therefore a source-plus-binding proof, not a runtime observation, and must be stated as such. It must NOT be claimed as a runtime observation."
+      },
+      {
+        "id": "D1-3",
+        "criterion": "UELLIX_APP_ENV is EXPLICITLY staging, not inferred.",
+        "measured_by": "the branch-scoped binding's presence and literal value at build time, plus the deployment's own resolved environment",
+        "disposition": "PARTIALLY_MEASURABLE_UNDER_THIS_AUTHORITY",
+        "explicit_limitation": "app/api/health/stella-preconditions reports the RESOLVED environment (via lib/stella/rate-limit.ts stellaRateLimitAttestation, which calls resolveEnvironmentDecision) but does NOT report the PROVENANCE field that distinguishes an explicit declaration from an inference. See MEASUREMENT_GAPS_RECORDED.MG-1. D1-3 is therefore proven by the CONJUNCTION of the configuration-side presence proof and the runtime-side resolved value; neither alone establishes it, and the endpoint alone establishes only the resolved value."
+      },
+      {
+        "id": "D1-4",
+        "criterion": "NEXT_PUBLIC_SUPABASE_URL proves the staging project ref.",
+        "measured_by": "structural derivation per PUBLIC_AUTH_URL_CONTRACT against the value the DEPLOYMENT carries, not against the platform's current configuration",
+        "disposition": "MEASURABLE_UNDER_THIS_AUTHORITY",
+        "note": "Because the value is build-time inlined and public, it is observable in the deployment's own served client bundle. If Deployment Protection blocks unauthenticated asset access, the observation is taken under AUTH-4 instead."
+      },
+      {
+        "id": "D1-5",
+        "criterion": "UELLIX_RUNTIME_DATABASE_URL proves the SAME project ref and the intended least-privileged role.",
+        "measured_by": "the deployment's own /api/health/runtime-identity response: runtime.currentUser and runtime.sessionUser give the role; verified:true with target.projectRefProven:true gives the project equality",
+        "disposition": "MEASURABLE_UNDER_THIS_AUTHORITY",
+        "why_the_ref_is_not_echoed": "db/runtime-identity-report.ts deliberately omits the project ref from the payload and returns a boolean instead, documenting that naming it 'would put an infrastructure identifier in a response the safety layer keeps out of its own error messages'. The boolean is sufficient: verified:true requires targetFailures to be empty, which requires the proven identity to equal the expectation resolved from the environment. Combined with D1-3 fixing the environment to staging, this transitively proves the ref without echoing it.",
+        "role_and_rls": "The same payload carries bypassesRls and isSuperuser. Both must be false. A role that can bypass row-level security is not least-privileged however it is named."
+      },
+      {
+        "id": "D1-6",
+        "criterion": "Runtime project coherence passes.",
+        "measured_by": "the absence of SupabaseProjectCoherenceError on the request path. assertSupabaseProjectCoherence throws before any Supabase client is constructed, so any endpoint that serves a Supabase-backed response at all has passed it.",
+        "disposition": "MEASURABLE_UNDER_THIS_AUTHORITY",
+        "note": "This is the criterion whose FAILURE produced SUPABASE_AUTH_PROJECT_MISMATCH in the prior audit. It is the single most direct signal that the binding correction worked."
+      },
+      {
+        "id": "D1-7",
+        "criterion": "Deployment health is green under the adjudicated smoke contract.",
+        "measured_by": "the three health endpoints app/api/health/auth, app/api/health/runtime-identity, app/api/health/stella-preconditions",
+        "disposition": "BLOCKED_PENDING_ADJUDICATION",
+        "blocking_reason": "RELEASE_GATE_LEDGER GATES[M11].measured_at_base records a blocking_contract_conflict: the auth endpoint is documented to answer 200 with an unauthenticated body for an anonymous caller, while production was observed answering 503, and 'either behaviour could be encoded as expected, so automating the smoke before adjudication would freeze an arbitrary choice'. There is therefore NO adjudicated smoke contract at AS_OF_BASE.",
+        "what_this_authority_does_about_it": "NOTHING. It does not adjudicate the health contract, because doing so would freeze the arbitrary choice M11 refuses to freeze, and it would be authority expansion into a gate this lane does not own. D1-7 stays BLOCKED and D-1 stays undeclarable until a competent authority adjudicates the contract.",
+        "what_the_execution_lane_may_still_do": "It may RECORD the observed responses verbatim (status codes and non-secret bodies) as raw evidence for the future adjudication. Recording an observation is not declaring a contract."
+      },
+      {
+        "id": "D1-8",
+        "criterion": "The hosted database is INDEPENDENTLY observed to be OLD_DB: the nine-argument signature ABSENT and the seven-argument signature PRESENT.",
+        "measured_by": "a read-only hosted catalog observation",
+        "disposition": "SEPARATE_AUTHORITY_REQUIRED — see HOSTED_CATALOG_OBSERVATION_DISPOSITION",
+        "must_not_be_inferred": "OLD_DB must NOT be inferred from repository state. The repository proves what the Stage-A package WOULD install, not what the hosted catalog CURRENTLY holds. Those are different propositions, and the gap between them is precisely the sequence risk that FAILURE_ROLLBACK_CONTRACT.new_db_unexpected exists to catch.",
+        "must_not_be_inferred_from_the_bridge_either": "The running bridge probes the catalog and selects a state, but its verdict is reached inside a governed Stella completion — a product mutation no part of this grant authorizes. A probe result obtained by exercising the product is not a read-only observation."
+      }
+    ],
+    "consequence_for_this_execution_lane": {
+      "verdict": "D-1 IS NOT DECLARABLE BY THE EXECUTION LANE THIS AUTHORITY OPENS, ACTING ALONE.",
+      "why": "D1-7 is blocked on an adjudication this authority refuses to perform, and D1-8 requires a hosted-observation authority this artifact declines to absorb. Both refusals are deliberate.",
+      "what_the_lane_may_declare_instead": {
+        "token": "D1_RUNTIME_COHERENCE_VERIFIED",
+        "meaning": "Criteria D1-1 through D1-6 measured green on one named deployment. It states that the binding correction worked and the bridge-carrying runtime runs coherently against the staging project.",
+        "what_it_explicitly_does_not_mean": [
+          "It is NOT D-1 verified.",
+          "It is NOT evidence that the hosted database is OLD_DB.",
+          "It does NOT satisfy DEPLOYMENT_CONTRACT.forward_order step 2.",
+          "It does NOT advance any Stage-A precondition.",
+          "It does NOT satisfy S4, S6 or M11."
+        ]
+      },
+      "why_this_is_not_gate_weakening": "A weaker token is not a weaker gate. D-1's eight criteria are untouched and no criterion is redefined, dropped or made conditional. What is added is an honest name for the partial result, so that the lane is not forced to choose between overclaiming D-1 and discarding six real measurements. CLAUDE.md section 5 forbids weakening a gate to obtain a PASS; naming a partial result a partial result is the opposite act."
+    }
+  },
+
+  "HOSTED_CATALOG_OBSERVATION_DISPOSITION": {
+    "question": "May THIS authority safely authorize a read-only catalog probe against the staging database, so that D1-8 becomes measurable?",
+    "verdict": "NO.",
+    "D1_DATABASE_STATE_PROBE": "SEPARATE_AUTHORITY_REQUIRED",
+    "grounds": [
+      {
+        "id": "HC-1",
+        "ground": "The parent release authority forecloses it by its own words. STAGING_RELEASE_PRODUCTION_AUTHORITY_v1.0.0.json EXPLICIT_NON_AUTHORIZATIONS states: 'NO hosted access of any kind was performed or is authorized by this artifact.' This artifact is a release-domain child. A child that granted hosted database access would be conferring, by inference, an authority its parent enumerated specifically so a successor could not read it in."
+      },
+      {
+        "id": "HC-2",
+        "ground": "A hosted catalog probe requires an operator-class credential this grant does not hold and must not acquire. SECURITY_STOP_LINES SSL-06: 'No privileged credential may be held without an inventory recording who and what holds it.' Absorbing the probe would either engage SSL-06 or require this lane to create a custody inventory it has no authority to create."
+      },
+      {
+        "id": "HC-3",
+        "ground": "A hosted staging observation already has a home and an evidence class. HOSTED_DDL_PRECONDITIONS HDP-1 names the STAGING_OBSERVATION_PACKET and binds it to gates S1, G12 and S9. Routing a second, differently-shaped observation through a Vercel-binding authority would create a second answer to a question that already has an owner — the drift the repository refuses elsewhere."
+      },
+      {
+        "id": "HC-4",
+        "ground": "The hosted connection path is governed by a different contract. db/hosted/target-identity.ts requires three positive signals per invocation via verifyStagingTarget and records that KNOWN_STAGING_PROJECT_REF 'is NOT authority to connect'. That contract belongs to the hosted operator domain, not to the release-binding domain this artifact occupies."
+      }
+    ],
+    "not_absorbed_silently": "Recorded explicitly, as required, rather than quietly folded in. A reader who expected this authority to cover the probe is told plainly that it does not.",
+    "shape_a_successor_authority_would_need": {
+      "note": "Recorded as a SPECIFICATION FOR A FUTURE AUTHORITY, not as a grant. Nothing here authorizes any of it.",
+      "scope": [
+        "pg_catalog observations only, via pg_catalog.to_regprocedure",
+        "ZERO DDL",
+        "ZERO DML",
+        "an exact target identity gate FIRST, before any query, per the three-positive-signal contract",
+        "least privilege",
+        "no secret in any emitted evidence"
+      ],
+      "the_two_literals_it_would_compare": {
+        "source": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json SECTION_A3, quoted so a successor does not recompose them",
+        "nine_argument_must_be_ABSENT": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb,character varying,text[])",
+        "seven_argument_must_be_PRESENT": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb)",
+        "fixed_literal_rule": "Both are FIXED LITERALS. Never composed, never interpolated, never built from a variable holding a type name. A wrong signature resolves to NULL without raising, so a composed literal is silently indistinguishable from a legitimately absent function.",
+        "both_directions_required": "Asserting only the nine-argument absence would pass against a database where the function does not exist at all, or where the schema is missing. The seven-argument presence is what makes the absence meaningful."
+      }
+    }
+  },
+
+  "M11_S6_BOUNDARY": {
+    "rule": "D-1, and a fortiori D1_RUNTIME_COHERENCE_VERIFIED, is a BRIDGE DEPLOYMENT REHEARSAL. It is NOT STAGING_ALIGNED and it closes neither M11 nor S6. No gate is weakened, narrowed or made conditional by this artifact.",
+    "M11_RELATIONSHIP": {
+      "gate_state_at_base": "ABSENT",
+      "pass_criteria_quoted": "After every deployment each health endpoint answers in conformance with an ADJUDICATED contract, recorded against the deployment identifier and the exact SHA deployed.",
+      "why_D1_does_not_close_it": "The contract is NOT adjudicated. RELEASE_GATE_LEDGER GATES[M11].measured_at_base records automation: none and a blocking_contract_conflict between a documented 200 and an observed 503 on the auth endpoint. A smoke observation against an unadjudicated contract is a recording, not a conformance result.",
+      "what_D1_does_contribute": "A smoke observation bound to a deployment identifier and an exact SHA — the evidence SHAPE M11 requires (SMOKE_LOG_BOUND_TO_DEPLOYMENT_ID_AND_SHA). The shape is not the gate.",
+      "residual_requirement": "M11 still requires health-contract adjudication, which this authority does not perform and does not authorize."
+    },
+    "S6_RELATIONSHIP": {
+      "gate_state_at_base": "PARTIAL",
+      "pass_criteria_quoted": "The runtime identity endpoint reports the intended application role, with no row-level-security bypass attribute, and the runtime gate armed deny-by-default.",
+      "dependency": "S6 depends on S4 (RELEASE_GATE_LEDGER GATES[S6].dependencies = [S4]).",
+      "why_D1_does_not_close_it": "S4 is NOT_SATISFIED and cannot be satisfied by this rehearsal. S4 requires the deployment to be built from 'the EXACT SHA whose migration corpus is APPLIED to staging'. In D-1 the corpus is by definition NOT applied — that is what makes it D-1 rather than D-2. The rehearsal is structurally incapable of satisfying S4, and therefore S6's dependency is unmet no matter how green the runtime identity endpoint is.",
+      "what_D1_does_contribute": "A FRESH_STAGING_OBSERVATION of the role identity — evidence S6 will need later, on a deployment that does satisfy S4.",
+      "residual_requirement": "S6 still requires S4, which requires Stage-A applied, which this authority explicitly does not authorize."
+    },
+    "S4_RELATIONSHIP": {
+      "explicitly_not_satisfied": "This grant does not satisfy, advance or partially satisfy S4, and no evidence produced under it may be cited as S4 evidence.",
+      "the_structural_reason": "STAGING_ALIGNED.forced_ordering: 'Schema, then ACL, then code. Code first is IMPOSSIBLE.' D-1 is deliberately code-before-schema, which the bridge makes SURVIVABLE. Survivable is not aligned."
+    },
+    "stage_boundary_statement": "The deployment this grant authorizes does NOT enter STAGING_ALIGNED. STAGING_ALIGNED has entry preconditions this rehearsal does not meet — DEVELOPMENT_COMPLETE declared at the same SHA, all five HOSTED_DDL_PRECONDITIONS satisfied, and RULE_NO_APPLY_ON_DRIFT_ALONE satisfied — and this artifact asserts none of them."
+  },
+
+  "FAILURE_ROLLBACK_CONTRACT": {
+    "general_rule": "Every branch below is a STOP. None is a diagnosis to be worked around. The lane does not edit another variable opportunistically, and does not deploy again outside BOUNDED_RETRY_RULE.",
+    "branches": [
+      {
+        "id": "FR-1",
+        "condition": "The new deployment fails environment coherence (any SupabaseCoherenceCode raised).",
+        "action": "STOP. Record the code. Do not mutate any further variable.",
+        "why": "A coherence refusal means the three-way equality is unmet. Editing one more variable to see if it helps is guessing at a configuration whose correct state is fully specified; the specification is re-read, not probed."
+      },
+      {
+        "id": "FR-2",
+        "condition": "The deployed SHA is correct but the database identity is wrong (SUPABASE_DB_PROJECT_MISMATCH, or a role that is not the intended least-privileged role).",
+        "action": "SECURITY STOP.",
+        "why": "A correct build pointed at the wrong database is the worst of the failure modes: it looks healthy from the outside while reading and writing somewhere it must not."
+      },
+      {
+        "id": "FR-3",
+        "condition": "Auth and database project identities disagree (SUPABASE_AUTH_DB_PROJECT_DIVERGENCE).",
+        "action": "SECURITY STOP.",
+        "why": "Quoted from lib/supabase/project-coherence.ts: 'Sessions verified by one project would be used as row-level-security subjects in another.' The policies are not bypassed; they are evaluated correctly for a subject belonging to a different database."
+      },
+      {
+        "id": "FR-4",
+        "condition": "The hosted database is already NEW_DB, unexpectedly.",
+        "action": "STOP_FOR_SEQUENCE_ADJUDICATION.",
+        "rules": ["Do NOT apply SQL.", "Do NOT roll back SQL.", "Do NOT attempt to restore a prior schema state.", "Do NOT treat it as a happy accident that skips a step."],
+        "why": "An unexpected NEW_DB means the sequence the entire runtime-first strategy is built on has already been violated somewhere. It also means the window between then and now was D-3 — the single PROHIBITED cell of DEPLOYMENT_CONTRACT, described there as 'a total outage of the governed Stella completion path for every affected category'. That is an incident to adjudicate, not a state to build on.",
+        "note": "This branch is only reachable once D1-8 is measurable, which requires the separate authority. Until then an unexpected NEW_DB is undetectable by this lane — which is itself part of why D1-8 is required rather than optional."
+      },
+      {
+        "id": "FR-5",
+        "condition": "PMV-2 finds the wider NEXT_PUBLIC_SUPABASE_URL row is a team-level shared variable.",
+        "action": "STOP_FOR_ENV_PRECEDENCE_ADJUDICATION. See ENVIRONMENT_SCOPE_CORRECTION.required_pre_mutation_verification."
+      },
+      {
+        "id": "FR-6",
+        "condition": "origin/integration/commercial-v1 advances between SB-1 and SB-3.",
+        "action": "STOP_STALE. Do not deploy either SHA."
+      }
+    ],
+    "configuration_rollback": {
+      "scope": "STRICTLY LIMITED to restoring the pre-execution Vercel BRANCH-SCOPED bindings recorded under PMV-1, for exactly the three authorized variable names, on exactly the branch integration/commercial-v1.",
+      "shape": "Where PMV-1 recorded a binding as ABSENT, rollback removes the binding this grant created. Where PMV-1 recorded a binding as PRESENT, rollback restores that binding's prior state.",
+      "absolutely_forbidden_as_rollback": [
+        "altering ANY Production-scoped row",
+        "altering the shared Production+Preview row",
+        "altering any team-level shared variable",
+        "deleting a row this grant did not create",
+        "deploying again to 'undo' the state",
+        "promoting the previously failed deployment dpl_96J3t4LxRYArRqAKWGxmBHE6gMNi as a way back"
+      ],
+      "why_production_is_never_a_rollback_surface": "The forward act never touched production. A rollback that touches production has a strictly larger blast radius than the change it is undoing, which makes it a new mutation wearing the word rollback.",
+      "deployment_is_not_rolled_back": "The deployment produced under this grant is not deleted, not promoted and not aliased. It stays as evidence. A Preview deployment that is not aliased serves no production traffic, so leaving it in place costs nothing and destroys no evidence."
+    }
+  },
+
+  "HUMAN_CONFIRMATION": {
+    "rule": "MANDATORY. The future execution lane MUST obtain explicit human confirmation IMMEDIATELY BEFORE the first Vercel mutation. No mutation may occur before an affirmative answer.",
+    "placement": "After PMV-1, PMV-2 and PMV-3 are complete and recorded, and after SB-1 has frozen the SHA. Before AUTH-1.",
+    "prompt_concept": "¿Confirmas aplicar el binding de staging autorizado y generar una nueva Preview deployment del SHA <exact-sha>? Sí / No",
+    "prompt_requirements": [
+      "The exact SHA frozen under SB-1 appears verbatim in the prompt. A branch name does not substitute for it.",
+      "The prompt names the three variables and states that they are branch-scoped to integration/commercial-v1.",
+      "The prompt states that no Production-scoped row is edited.",
+      "The prompt states that exactly one deployment will be produced.",
+      "No secret value appears in the prompt."
+    ],
+    "silence_is_not_consent": "An absent answer, an ambiguous answer, or an answer to a different question is NOT confirmation. The lane waits or stops.",
+    "confirmation_is_not_transferable": "Confirmation covers the ONE mutation sequence it was asked about. It does not cover a retry (which needs BR-5), a second deployment, a later session, or a different SHA."
+  },
+
+  "MEASUREMENT_GAPS_RECORDED": {
+    "rule": "Recorded so the execution lane does not discover them at the end, and so that no criterion is silently claimed from an endpoint that does not carry it. Each gap is MEASURED in this tree at AS_OF_TREE, not supposed. None is repaired here: repairing any of them would require a code change, which this lane does not make.",
+    "gaps": [
+      {
+        "id": "MG-1",
+        "gap": "No health endpoint reports the PROVENANCE of the resolved environment.",
+        "measured": "db/safety/database-access.ts resolveEnvironmentDecision returns both an environment and a provenance (including the value explicit_declaration and the value unrecognised_declaration). app/api/health/stella-preconditions/route.ts emits environment: rateLimit.environment and no provenance field; lib/stella/rate-limit.ts stellaRateLimitAttestation carries environment only.",
+        "consequence": "ENV-10's requirement that staging be DECLARED rather than INFERRED is not runtime-observable. D1-3 is therefore proven by conjunction, as stated there.",
+        "disposition": "RECORDED, NOT REPAIRED. A successor may propose surfacing provenance; this grant does not authorize the code change."
+      },
+      {
+        "id": "MG-2",
+        "gap": "No health endpoint reports bridge presence or the probe's selected CompletionSignatureState.",
+        "measured": "The three routes under app/api/health/ were read at AS_OF_TREE. None imports from db/stella/operation-tickets.ts and none emits a completion-signature field.",
+        "consequence": "D1-2 is a source-plus-binding proof rather than a runtime observation, and D1-8 cannot be satisfied by asking the deployment.",
+        "disposition": "RECORDED, NOT REPAIRED."
+      },
+      {
+        "id": "MG-3",
+        "gap": "No health endpoint reports the deployed Git SHA.",
+        "measured": "lib/pipeline/build-identity.ts resolveBuildIdentity reads VERCEL_GIT_COMMIT_SHA, but its only non-test consumer is lib/pipeline/run-version-identity.ts. No route under app/api/health/ consumes it.",
+        "consequence": "D1-1 is satisfied from PLATFORM deployment metadata, not from the application. S4's future requirement of 'a build identity and a runtime identity endpoint that agree' is therefore not yet mechanically satisfiable from the application side — a finding that belongs to S4's owner, not to this grant.",
+        "disposition": "RECORDED, NOT REPAIRED. Flagged as materially relevant to S4."
+      },
+      {
+        "id": "MG-4",
+        "gap": "Both /api/health/runtime-identity and /api/health/stella-preconditions require a VERIFIED AUTH SESSION.",
+        "measured": "Both routes call getVerifiedAuthIdentityResult and answer 401 or 503 without an identity. Their prose states the boundary is deliberate and identical.",
+        "consequence": "A circularity: proving the Auth binding is correct requires authenticating against the very project whose binding is under test. The execution lane therefore needs a staging test principal that ALREADY EXISTS in project bvyzblhqymxruxdguaee before it can read D1-3 or D1-5.",
+        "disposition": "RECORDED. Creating, promoting or elevating a principal is NOT authorized by this grant. If no suitable principal exists, the lane STOPS rather than creating one, and the criteria that depend on an authenticated read stay unmeasured.",
+        "not_a_reason_to_lower_the_boundary": "The endpoints' auth requirement must NOT be relaxed to make measurement convenient. db/runtime-identity-report.ts is explicit that the boundary was chosen to survive the failure it observes."
+      },
+      {
+        "id": "MG-5",
+        "gap": "Deployment Protection may gate even unauthenticated static asset reads of the Preview deployment.",
+        "measured": "NOT MEASURED — this is a hosted platform property and this lane performs no hosted observation. Recorded as an UNKNOWN, not as a fact.",
+        "consequence": "D1-4's preferred measurement (structural derivation from the deployment's own served client bundle) may be unavailable, in which case it falls back to AUTH-4 and inherits MG-4's circularity.",
+        "disposition": "RECORDED AS UNKNOWN. The execution lane measures it rather than assuming either answer."
+      }
+    ]
+  },
+
+  "NEW_ODS_REQUIRED": {
+    "verdict": "NO",
+    "confidence": "MECHANICALLY_MEASURED_NOT_ASSERTED",
+    "method": "The two paths of this lane's write set were classified by EXECUTING scripts/ods-scope.ts's own classifyPaths against its own DEFAULT_PROTECTED_PATTERNS at AS_OF_TREE. The classifier was run rather than the pattern list matched by eye, following the method NEW_ODS_REQUIRED of the FIBDB-053 runtime companion authority established.",
+    "result": {
+      "write_set": "protectedViolations: 0, nonCanonicalProtectedPaths: 0, unauthorized: 0, ok: 2 of 2.",
+      "why": "docs/ops/release/** appears in none of the seven DEFAULT_PROTECTED_PATTERNS (docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/**, db/migrations/**, db/prepared/**, db/baseline/**, docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json)."
+    },
+    "PROTECTED_AUTHORITY": "NONE",
+    "conclusion": "Both paths are ORDINARY. An ordinary --allow authorizes this diff in full. No protected-surface grant, no HPO-ODS grant, no ODS maintenance addendum and no Controller entry is required.",
+    "explicit_non_allocation": [
+      "NO ODS maintenance addendum ordinal is allocated, reserved or implied.",
+      "NO HPO-ODS grant id is allocated or reserved.",
+      "NO migration ordinal is allocated or reserved.",
+      "NO Controller entry is claimed.",
+      "NO program-state registry entry is added.",
+      "NO package script is registered."
+    ],
+    "no_traceability_allocation": "No ODS lineage is allocated for this node merely so that it can be traced. The node is traceable through this authority, its manifest and its PR.",
+    "reversal_condition": "If a future measurement finds this lane's write set requires ANY protected path, NEW_ODS_REQUIRED becomes YES and the lane STOPS with STOP_FOR_AUTHORITY_WRITE_SET_EXPANSION. It does not proceed under the ordinary allow and reconcile afterwards."
+  },
+
+  "EXPLICIT_NON_AUTHORIZATIONS": {
+    "rule": "Enumerated so that a successor cannot read this artifact as conferring any of them. The presence of a detailed plan for an action is NOT authority to take it.",
+    "non_authorizations": [
+      "NO Vercel mutation was performed by the authoring lane. No environment variable was created, read, edited or deleted. No deployment was triggered, promoted or deleted. No alias or domain was touched.",
+      "NO hosted access of any kind was performed by the authoring lane, and none is authorized to it.",
+      "NO connection to hosted PostgreSQL is authorized by this artifact, to any lane, for any purpose, including read-only observation.",
+      "NO Supabase configuration is read, chosen, recorded or mutated.",
+      "NO secret value is chosen, recorded, rotated, materialized, printed or compared.",
+      "NO FIBDB-053 Stage-A authority is created, blessed, advanced or implied. Stage-A is not applied and not authorized to be applied.",
+      "NO G2 condition is resolved, advanced or partially satisfied.",
+      "NO gate state is changed. S4, S6 and M11 are read and left exactly as the ledger records them.",
+      "NO stage is declared. STAGING_ALIGNED is not entered.",
+      "NO health-contract adjudication is performed. M11's blocking_contract_conflict is left open.",
+      "NO custom domain or alias is created, and none is required — see GOVERNED_STAGING_TARGET_ADJUDICATION.",
+      "NO production deployment, promotion or Production-scoped configuration change is authorized in any circumstance, including as rollback.",
+      "NO PR195 synchronization, rebase, merge or modification is performed or authorized.",
+      "NO code, test, migration, prepared SQL or baseline artifact is written or modified.",
+      "NO existing gate, stop line or fail-closed test is weakened, narrowed or made conditional.",
+      "NO historical evidence is rewritten and no stale observation is refreshed by computation.",
+      "NO frozen parent is edited. Both parents remain append_only and untouched.",
+      "NO standing or transferable deployment permission is created. The grant is single-use and expires per EXPIRY."
+    ]
+  },
+
+  "OPEN_FINDINGS": [
+    {
+      "id": "OF-1",
+      "severity": "BLOCKING_FOR_D1_ONLY",
+      "finding": "D-1 cannot be fully declared by the execution lane this authority opens. D1-7 is blocked on the unadjudicated M11 health contract and D1-8 requires a separate hosted-observation authority.",
+      "disposition": "Deliberate and recorded. The lane declares D1_RUNTIME_COHERENCE_VERIFIED at most. Two successor authorities are required to reach D-1: a health-contract adjudication and a read-only hosted catalog observation authority."
+    },
+    {
+      "id": "OF-2",
+      "severity": "NON_BLOCKING",
+      "finding": "Whether a branch-scoped Preview variable overrides a TEAM-LEVEL shared variable of the same name is not established by the documentation this lane verified.",
+      "disposition": "Converted into mandatory pre-mutation check PMV-2 with stop branch FR-5, rather than assumed in either direction."
+    },
+    {
+      "id": "OF-3",
+      "severity": "NON_BLOCKING",
+      "finding": "MG-3: no application surface reports the deployed Git SHA, so S4's future requirement that 'a build identity and a runtime identity endpoint agree' is not yet mechanically satisfiable from the application side.",
+      "disposition": "Recorded for S4's owner. Out of scope for this grant, which neither repairs it nor depends on it."
+    },
+    {
+      "id": "OF-4",
+      "severity": "NON_BLOCKING",
+      "finding": "MG-4: the circularity by which proving the staging Auth binding requires an already-existing staging principal to authenticate with.",
+      "disposition": "Recorded. The lane stops rather than creating a principal."
+    },
+    {
+      "id": "OF-5",
+      "severity": "NON_BLOCKING",
+      "finding": "This is the first FIBDB-prefixed artifact placed outside docs/ops/wave3/**.",
+      "disposition": "Deliberate, justified under NAMING_DERIVATION.placement_rationale, and flagged for the independent certifier to confirm or reject."
+    }
+  ],
+
+  "self_check": {
+    "write_set_is_exactly_two_documents": true,
+    "no_code_written": true,
+    "no_test_written": true,
+    "no_vercel_configuration_touched": true,
+    "no_supabase_configuration_touched": true,
+    "no_ods_artifact_touched": true,
+    "no_db_path_touched": true,
+    "no_protected_path_touched": true,
+    "no_secret_value_present": true,
+    "no_secret_value_recorded_anywhere_in_this_lane": true,
+    "project_refs_present_are_public_and_already_in_tracked_code": true,
+    "current_incorrect_auth_value_not_recorded": true,
+    "both_parents_left_append_only_and_unedited": true,
+    "every_quoted_clause_re_read_at_AS_OF_TREE_not_recalled": true,
+    "vercel_platform_rule_verified_against_published_documentation_not_memory": true,
+    "no_gate_state_changed": true,
+    "no_stage_declared": true,
+    "D1_not_declared": true
+  },
+
+  "required_independent_review": {
+    "required": true,
+    "reason": "This artifact creates a hosted mutation permission that two frozen authorities withheld. A permission authored by the same lane that identified the gap must be certified by a lane that did not.",
+    "adversarial_questions_the_certifier_should_press": [
+      "Is GOVERNED_STAGING_TARGET_ADJUDICATION's negative check sound, or does some clause outside the four quoted require a stable address?",
+      "Does the additive-override mechanism actually leave the production-resolved value untouched in the specific configuration this project has, or does PMV-2 need to be stronger?",
+      "Is D1_RUNTIME_COHERENCE_VERIFIED genuinely not a weakened D-1 in disguise?",
+      "Is HOSTED_CATALOG_OBSERVATION_DISPOSITION's refusal correct, or is it over-cautious in a way that makes D-1 permanently unreachable?",
+      "Does BOUNDED_RETRY_RULE's exception admit any failure class that carries information about configuration correctness?",
+      "Is the docs/ops/release/** placement right, or does repository precedent require docs/ops/wave3/**?"
+    ]
+  },
+
+  "final_state": "FIBDB053_RUNTIME_STAGING_BINDING_AUTHORITY_AUTHORED__NOT_EXECUTED",
+  "next_gate": "INDEPENDENT_CERTIFICATION_OF_THIS_PAIR. No Vercel mutation, no deployment and no hosted observation is authorized until that certification returns PASS and a future execution lane opens with its own freshness gate and its own human confirmation."
+}
