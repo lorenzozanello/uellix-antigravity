@@ -1,0 +1,385 @@
+{
+  "package_id": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT",
+  "version": "1.0.2",
+  "artifact_id": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2",
+  "authority_class": "APPEND_ONLY_POST_CERTIFICATION_LIFECYCLE_CLARIFICATION_REBINDING_ONE_HISTORICAL_CANARY_MEASUREMENT_ENDPOINT_NOT_IMPLEMENTED",
+  "document_class": "SEPARATE_COMPANION_AUTHORITY_AMENDMENT_THAT_ADJUDICATES_THE_LIFECYCLE_SEMANTICS_OF_THE_SECTION_6_HISTORICAL_DIFF_CANARY_AFTER_INDEPENDENT_CERTIFICATION_AND_WIDENS_NO_SURFACE",
+  "append_only": true,
+  "mission_id": "CV1-PR197-POSTCERT-SYNC-CANARY-AUTHORITY-DELTA-W",
+  "lane": "codex/fibdb053-runtime-postcert-sync-authority-delta-r1",
+  "role": "AUTHORITY_SUCCESSOR_WRITER",
+  "materialization_date": "2026-09-20",
+
+  "GRANT_ID": null,
+
+  "AS_OF_REF": "origin/integration/commercial-v1",
+  "AS_OF_HEAD": "4680ae9c31269c9711edfd29b714990fae244db3",
+  "AS_OF_TREE": "571cf824d8492aa681c9649a2c98d7b58c81ee36",
+
+  "BASE_AUTHORITY": {
+    "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.0.json",
+    "blob_sha_at_this_base": "9a806f3110a40f1453608c58fc69db983d680864",
+    "disposition": "HISTORICALLY_FROZEN_BYTE_FOR_BYTE_NOT_EDITED_BY_THIS_ACT",
+    "form": "This document is a SEPARATE COMPANION AUTHORITY AMENDMENT, following the same repository-native precedent its own predecessor v1.0.1 derived and cited: docs/ops/staging/CURRENT_SCHEMA_RUNTIME_ACL_SUCCESSOR_AUTHORITY_AMENDMENT_v1.0.1.json, docs/ops/commercial/COMMERCIAL_ACCOUNT_CE3_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json and docs/ops/tenancy/TENANCY_EMAIL_VERIFICATION_PACKET_B_NO_SESSION_AUTHORITY_AMENDMENT_v1.0.0.json. It is NOT a replacement authority. No FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_v1.0.1.json or _v1.0.2.json exists or is authorized. The parent remains controlling for every clause this amendment does not name, and v1.0.1 remains controlling for the three clauses IT names.",
+    "why_no_parent_edit": "The parent is frozen and has been read by an independent certification that produced the CERTIFIED_PASS disposition of PR #197. Rewriting it would destroy the evidentiary record and is a prohibited historical-evidence rewrite (CLAUDE.md section 5). The lifecycle defect is therefore adjudicated in the open, by an append-only successor clause.",
+    "naming_derivation": "Derived mechanically from live repository state, not from the mission prompt. Every append-only authority correction in this repository is named <BASE_PACKAGE_ID>_AMENDMENT_v<next>.json in the SAME directory as its base, paired with <BASE_MANIFEST_ID>_AMENDMENT_v<next>.json. It was MEASURED at AS_OF_HEAD that docs/ops/wave3/ contains exactly FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json and FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json for this package and NO v1.0.2 of either, so v1.0.2 is the next free ordinal and no STOP_FOR_AUTHORITY_SHAPE_ADJUDICATION arises."
+  },
+
+  "PRIOR_AMENDMENT": {
+    "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.1.json",
+    "blob_sha_at_this_base": "9753fe615f5c1b71fb58036fbb39990728a83ed5",
+    "disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT. Its SECTION_A3, SECTION_A4, SECTION_A5 and SECTION_A6 remain controlling verbatim. This amendment supersedes NOTHING in v1.0.1 and contradicts nothing in it: v1.0.1 adjudicates catalog-probe grapheme semantics, this one adjudicates the lifecycle of a diff-measurement endpoint. The two are disjoint."
+  },
+
+  "COMPANION_MANIFEST_AMENDMENT": {
+    "path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.2.json",
+    "base_manifest_path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_v1.0.0.json",
+    "base_manifest_blob_sha_at_this_base": "137a931ca22c965a413e1194b3929537e23018fb",
+    "base_manifest_disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT_REMAINS_CONTROLLING_FOR_ITS_OWN_31_CONTROLS",
+    "prior_manifest_amendment_path": "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.1.json",
+    "prior_manifest_amendment_blob_sha_at_this_base": "4463a09b756710f88161c0f4927ba1867d141390",
+    "prior_manifest_amendment_disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT. Its re-scoped N-RC-10 and MUT-RC-12 and its delta controls T10, N-RC-11 and MUT-RC-13 remain controlling verbatim."
+  },
+
+  "OWNER_RATIFICATION": {
+    "path": "docs/ops/owner-ratifications/FIBDB053_RUNTIME_COMPANION_OWNER_DECISIONS_v1.0.0.json",
+    "blob_sha_at_this_base": "c59b30a965b3b8652046f2010faf5bf084ec0686",
+    "disposition": "BYTE_UNCHANGED_NOT_EDITED_BY_THIS_ACT. RC-01..RC-10 are untouched. This amendment asks the owner for nothing and grants itself nothing."
+  },
+
+  "SECTION_B0_FRESHNESS": {
+    "fetched": "git fetch origin --prune at materialization.",
+    "origin_integration_commercial_v1": "4680ae9c31269c9711edfd29b714990fae244db3",
+    "origin_codex_fibdb053_runtime_companion_implementation_r1": "b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c",
+    "pr_197": "OPEN, DRAFT, base integration/commercial-v1, headRefOid b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c -- read from the forge, not asserted.",
+    "authoring_worktree": "codex/fibdb053-runtime-postcert-sync-authority-delta-r1 at 4680ae9c, tree 571cf824d8492aa681c9649a2c98d7b58c81ee36, CLEAN. pnpm ods:prestate reported ODS_PRESTATE=PASS on all four axes."
+  },
+
+  "SECTION_B1_CONTRADICTION_REPRODUCED": {
+    "status": "MECHANICALLY_REPRODUCED_BY_THIS_LANE_NOT_INHERITED_FROM_A_PRIOR_WRITER_REPORT",
+    "why_reproduced_rather_than_cited": "A prior writer's report of a red canary is a claim about a measurement, not the measurement. CLAUDE.md section 5 forbids acting on an unverified premise, and the whole point of this adjudication is that a measurement can be true of its own base and false of another.",
+    "state_A_certified_candidate": {
+      "worktree": "C:/uc97, detached at b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c, git status --porcelain --untracked-files=all EMPTY.",
+      "tracked_measurement": "git diff --name-only 89022a9bf22a06276996a5a9214b344916be84aa -> 13 paths.",
+      "untracked_measurement": "git ls-files --others --exclude-standard -> 0 paths.",
+      "changedPaths_result": "exactly the 13 certified runtime-companion paths.",
+      "section_6_verdict": "GREEN. N-RC-05, N-RC-06, N-RC-08 and the exact-write-set control all hold."
+    },
+    "state_B_pure_union_sync": {
+      "construction": "git merge-tree --write-tree b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c 4680ae9c31269c9711edfd29b714990fae244db3 -> merged tree 00b8aa34b919ac39b74dbf04833730ec01e06619, produced WITHOUT a commit, WITHOUT a push and WITHOUT touching PR #197. The merge reported no conflict.",
+      "why_merge_tree_and_not_a_commit": "The mission forbids pushing a sync commit or syncing PR #197. merge-tree --write-tree yields the identical union tree read-only, so the contradiction is reproduced without performing the forbidden act.",
+      "measurement": "git diff --name-only 89022a9bf22a06276996a5a9214b344916be84aa 00b8aa34b919ac39b74dbf04833730ec01e06619 -> 18 paths.",
+      "inherited_paths_that_enter_the_slice_measurement": [
+        "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json",
+        "scripts/ods-controller.ts",
+        "scripts/ods-scope.ts",
+        "tests/ods/ods-controller.test.ts",
+        "tests/ods/ods-scope.test.ts"
+      ],
+      "section_6_verdict": "RED, on exactly two controls, named precisely rather than in bulk.",
+      "N_RC_08": "RED. docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json satisfies lower.startsWith('docs/ops/ods/'), so the assertion expecting false fails. The path is inherited from integration; the runtime slice authored no byte of it.",
+      "exact_write_set_control": "RED. Five paths are not members of the CLOSED authorised enumeration.",
+      "N_RC_05": "GREEN at this integration state -- none of the five inherited paths intersects the FIBIU-19 surface. Stated explicitly so that no reader infers a blanket failure the measurement does not support.",
+      "N_RC_06": "GREEN at this integration state -- none of the five inherited paths is under db/prepared/."
+    },
+    "pure_union_corroboration": {
+      "certified_runtime_blobs": "13 of 13 blob SHAs in merged tree 00b8aa34 are IDENTICAL to their blob SHAs at b1d26b26.",
+      "inherited_integration_blobs": "5 of 5 blob SHAs in merged tree 00b8aa34 are IDENTICAL to their blob SHAs at 4680ae9c.",
+      "direct_authored_path_overlap": "ZERO. The certified 13 and the inherited 5 intersect in the EMPTY SET.",
+      "what_this_proves": "The sync is mechanically clean and semantically empty of authored change. The canary nevertheless goes RED. A control that reddens on a change that introduced no authored byte is measuring the wrong object, and that -- not the sync -- is the defect."
+    }
+  },
+
+  "SECTION_B2_ORIGINAL_CANARY_SEMANTICS": {
+    "location": "tests/cross-workstream/fibdb053-runtime-companion.test.ts, blob 70546c474f83757739905c3b629e2dcf6d153439 at b1d26b26, describe('\u00a76 the diff at THIS base'), helper changedPaths().",
+    "verbatim_tracked_endpoint": "execFileSync('git', ['diff', '--name-only', base], { encoding: 'utf8', cwd: ROOT }) with base = '89022a9bf22a06276996a5a9214b344916be84aa'.",
+    "verbatim_untracked_endpoint": "execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { encoding: 'utf8', cwd: ROOT }).",
+    "MATERIAL_CORRECTION_TO_THE_STATED_PREMISE": {
+      "the_premise_this_lane_was_handed": "that changedPaths() computes `git diff --name-only 89022a9b HEAD`.",
+      "what_was_measured": "It does NOT. The helper passes a SINGLE endpoint. `git diff --name-only <commit>` compares that commit against the WORKING TREE (index and worktree), not against HEAD.",
+      "independent_proof": "Reproduced in a disposable throwaway repository, not argued from documentation: with base B, one commit on top adding f2, and a staged-but-unshipped f3, `git diff --name-only B` returned [f2, f3] while `git diff --name-only B HEAD` returned [f2]. The one-endpoint form admits working-tree state; the two-endpoint form does not.",
+      "why_this_correction_is_load_bearing_and_not_pedantry": "CLAUDE.md section 9 records this exact Windows/git hazard as MEASURED: `git diff <ref> -- <path>` semantics have previously diffed against the working tree unexpectedly, and the two-endpoint form must be verified. A correction lane that merely substituted a constant for the literal `HEAD` would find no `HEAD` to substitute, and a correction lane that added a second endpoint without understanding WHICH endpoint was mutable could rebind the wrong one. The mutable endpoint here is the WORKING TREE, and the fixed endpoint is already correct.",
+      "does_it_change_the_adjudication": "No. It sharpens it. Both HEAD and the working tree are mutable objects; the defect class -- a historical control bound to a mutable endpoint -- is identical. Only the mechanics of the authorized correction change, and SECTION_B6 states them against the MEASURED form."
+    },
+    "what_the_canary_was_correct_to_do_at_authoring_time": "At the implementing lane, the worktree was the slice under construction and nothing else existed in it. base-vs-worktree was then a FAITHFUL measurement of the governed predicate, and the untracked arm was load-bearing: a newly authored file not yet added is exactly the way a lane accidentally exceeds its surface without git noticing. The control was not sloppy. It was correct for a lifecycle stage that has now ended."
+  },
+
+  "SECTION_B3_WHY_IT_BECOMES_STALE": {
+    "the_governed_predicate": "The parent authority FUTURE_RUNTIME_WRITE_SURFACE states the rule as a property of a LANE and a SLICE: 'This is a CLOSED enumeration. A future implementation lane that needs a path not listed here has exceeded the slice and must STOP_FOR_AUTHORITY_DELTA rather than widen it silently.' NEW_ODS_REQUIRED.reversal_condition states it as 'if a future measurement finds the slice REQUIRES any protected path'. FIBIU19_DISJOINTNESS.re_derivation_obligation states it as 'An implementing lane re-derives it against its own base BEFORE COMMITTING'.",
+    "what_the_predicate_quantifies_over": "The slice's own authored diff. Every wording is about what the lane NEEDS, REQUIRES or AUTHORS -- never about every file that will ever be present in the branch's history.",
+    "the_defect": "After independent certification, the slice stopped being a thing under construction and became an immutable historical object. The helper's endpoints did not. From the first integration sync onward, base-vs-worktree stops answering 'what did this slice author?' and starts answering 'what does this branch differ by, from a base that is now several merges behind?' -- a different question, whose answer necessarily grows without bound as integration advances.",
+    "the_falsity_it_produces": "It causes the suite to assert that the FIBDB-053 runtime slice authored docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json. That is FALSE. That file was authored by the ODS v1.0.38 lane and merged through PR #199. Attributing it to the runtime slice is not a conservative over-reading; it is a factually wrong provenance claim that a governed control is asserting under its own authority.",
+    "the_asymmetry_that_makes_it_unsafe_rather_than_merely_noisy": "A control that reddens on inherited content is not fail-closed in any useful direction. It creates standing pressure to widen `authorised` to make a green appear -- and widening it would import integration content into the runtime slice's authority. The defect's natural remedy is the very act the closed-world contract forbids. That is why it is adjudicated here instead of being worked around."
+  },
+
+  "SECTION_B4_BINDING_ADJUDICATION": {
+    "status": "FROZEN_BY_THIS_AMENDMENT. Phase 2 did not disprove the interpretation; the parent's own wording corroborates it.",
+    "A_the_governed_object": {
+      "rule": "The governed runtime slice is the object that was independently certified. It is identified by three immutable anchors and by nothing else.",
+      "CERTIFICATION_BASE": "89022a9bf22a06276996a5a9214b344916be84aa",
+      "CERTIFIED_CANDIDATE": "b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c",
+      "CERTIFIED_TREE": "671a032553bbecfcc2824c0e4c5f22607b646295",
+      "verification": "git rev-parse b1d26b26^{tree} was executed and returned 671a0325, so the candidate and the tree anchor are proven to correspond rather than merely co-quoted."
+    },
+    "B_the_measurement_endpoint": {
+      "rule": "The persistent historical canary for that slice MUST measure the immutable certified object: `git diff --name-only <CERTIFICATION_BASE> <CERTIFIED_CANDIDATE>` -- the TWO-ENDPOINT form, with both endpoints fixed commit identifiers.",
+      "explicitly_not": "NOT the mutable branch HEAD, and NOT the working tree, which per SECTION_B2 is what the original one-endpoint form actually read.",
+      "why_two_endpoints_is_stated_as_a_requirement_and_not_an_implementation_detail": "Because the original defect is precisely that one endpoint was left implicit and therefore mutable. A correction that names only the far endpoint and leaves the near one implicit would reproduce the defect in a new spelling."
+    },
+    "C_no_surface_widening": "Inherited integration paths are NOT added to FUTURE_RUNTIME_WRITE_SURFACE. That enumeration remains CLOSED and remains exactly the paths the parent authority derived.",
+    "D_no_N_RC_08_exception": "Inherited integration paths are NOT exceptions to N-RC-08. No protected-path rule is relaxed, narrowed, conditioned or given a carve-out by this amendment.",
+    "E_they_are_outside_the_slice_entirely": {
+      "statement": "An inherited integration path is not an authorized member of the slice and not an exception to a rule about the slice. It is not a member of the domain the slice's controls quantify over.",
+      "why_this_framing_and_not_an_exception_list": "An exception list is a widening with extra steps: it concedes that the path is inside the domain and then excuses it, which means the next inherited path needs another excuse and the list grows with integration. Placing the paths outside the domain is the only formulation that does not grow."
+    },
+    "F_where_integration_correctness_is_governed_instead": {
+      "statement": "The post-certification sync is certified SEPARATELY, by comparing the synchronized PR head against its integration parent -- not by the slice's historical canary.",
+      "why_this_is_not_a_gap": "The two questions are different and each keeps a control. 'Did the slice author only its authorized surface?' is answered forever by the immutable historical canary. 'Did this sync inherit integration faithfully and author nothing extra?' is answered by the sync evidence in SECTION_B9 and the focused recert in SECTION_B10. Nothing that was proven stops being proven; the proofs are simply asked of the object each one is actually about."
+    },
+    "classification": {
+      "this_is": "A LIFECYCLE CLARIFICATION. It rebinds one measurement endpoint to the object the governed predicate was always about.",
+      "this_is_not": "A SURFACE WIDENING. Zero paths are added to any authorised enumeration. The closed 13-path surface is byte-identical before and after. No control is removed, suppressed, weakened or made conditional.",
+      "falsifiable_statement_of_the_distinction": "After the authorized correction, the set of paths the exact-write-set control accepts is UNCHANGED (13). Only the set of paths it is shown is changed -- from 'whatever the branch currently differs by' to 'what the certified slice authored'. A reviewer can verify this claim by diffing the `authorised` array before and after and finding it identical."
+    }
+  },
+
+  "SECTION_B5_UNSAFE_ALTERNATIVES_REJECTED": {
+    "rule": "This STOP may NOT be resolved by any of the following. Each is PROHIBITED by this amendment, and a lane that proposes one has misread the adjudication rather than found a shortcut.",
+    "prohibited": [
+      {
+        "alternative": "Adding the five currently-inherited ODS/scripts/tests paths to the `authorised` enumeration.",
+        "why_prohibited": "It converts integration-authored content into runtime-slice authority. It is also self-defeating: the five are the five inherited AT THIS BASE. The next integration commit produces a different five, so the list would have to be re-widened at every sync, and the enumeration would stop being closed in any meaningful sense."
+      },
+      {
+        "alternative": "Filtering a path merely because it came from integration.",
+        "why_prohibited": "'Came from integration' is a claim about provenance that the filter would have to trust rather than prove. A slice path that was ALSO touched by integration would be silently exonerated, which is exactly the overlap case the closed-world contract exists to catch."
+      },
+      {
+        "alternative": "Allowing docs/ops/ods/** generally.",
+        "why_prohibited": "It is a protected-path relaxation wearing the costume of a scoping fix. N-RC-08's whole content is that this prefix is refused."
+      },
+      {
+        "alternative": "Changing the protected-path rules or the protected-prefix list.",
+        "why_prohibited": "The defect is in WHAT the control is shown, not in WHAT it refuses. Editing the refusal to accommodate a bad input is weakening a gate to obtain a PASS, forbidden by CLAUDE.md section 5."
+      },
+      {
+        "alternative": "Suppressing, skipping or conditioning N-RC-08.",
+        "why_prohibited": "Same. A skipped control is a removed control with a comment."
+      },
+      {
+        "alternative": "Making changedPaths ignore arbitrary unfamiliar paths.",
+        "why_prohibited": "It inverts the closed world into an open one. The control's entire strength is that an UNRECOGNISED path is a failure; a filter that drops unrecognised paths cannot ever fail, which is vacuity, not a fix."
+      },
+      {
+        "alternative": "Asserting that a clean merge-tree, zero path overlap or a green CI proves authority.",
+        "why_prohibited": "Mechanical cleanliness is evidence about a merge, never a grant. This lane MEASURED a perfectly clean pure union -- 13/13 and 5/5 identical blobs, zero overlap, no conflict -- and that cleanliness is precisely what did NOT resolve the authority question. Treating it as if it had would be the 'it changed anyway' scope inference CLAUDE.md section 5 forbids."
+      }
+    ],
+    "consolidated_reason": "Every rejected alternative reaches green by making the runtime slice's authority absorb content it never authored, or by making a control unable to fail. The adjudication in SECTION_B4 reaches green by asking the control about the object it was always about. Only the latter leaves the closed-world contract intact."
+  },
+
+  "SECTION_B6_AUTHORIZED_CANARY_SUCCESSOR_SURFACE": {
+    "authorized_write_surface": ["tests/cross-workstream/fibdb053-runtime-companion.test.ts"],
+    "closed": true,
+    "explicitly_no_production_file": "No production file may change. The runtime bridge, the governed operation module, the category module and the four Stella actions are untouched by this correction.",
+    "second_test_file": "NOT authorized. A second test file may be added ONLY if live evidence proves it necessary, and that evidence must be exhibited, not asserted. Absent it, a second file is a write-set expansion and requires STOP_FOR_WRITE_SET_EXPANSION.",
+    "the_correction_MAY": [
+      "1. Introduce named constants for CERTIFICATION_BASE = '89022a9bf22a06276996a5a9214b344916be84aa' and CERTIFIED_CANDIDATE = 'b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c', asserted as FROZEN STRING LITERALS in the test file and never derived from git state, an environment variable or a config file. A constant re-derived from the repository at run time is not immutable; it is the same defect with an indirection.",
+      "2. Change the section 6 historical-diff helper so BOTH endpoints are fixed: execFileSync('git', ['diff', '--name-only', CERTIFICATION_BASE, CERTIFIED_CANDIDATE], ...). Per SECTION_B2 this is the addition of a second explicit endpoint, not the substitution of a literal HEAD -- no literal HEAD exists in the certified blob.",
+      "3. Handle untracked files per SECTION_B7, which adjudicates them explicitly rather than leaving the existing arm to be deleted or kept by taste.",
+      "4. Update comments, the describe title and helper names so the file STATES the new lifecycle semantics. The certified title 'the diff at THIS base' becomes actively misleading once the endpoints are immutable and must not be left standing.",
+      "5. Add the non-vacuity controls required by SECTION_B8 (M1..M4), proving the historical canary is genuinely bound to the certified object."
+    ],
+    "the_correction_MAY_NOT": [
+      "Change the closed 13-path authorised surface, in content or in count.",
+      "Remove, rename, skip, weaken or condition N-RC-05.",
+      "Remove, rename, skip, weaken or condition N-RC-08.",
+      "Remove or narrow the protected-path classification or its prefix list.",
+      "Make any production-runtime blob differ from the certified candidate.",
+      "Modify tests/postgres/fibdb053-runtime-companion-catalog.pg.test.ts, whose certified blob is ef0ea6450e8123d0911fae8400e42f03bb37c2b0 and must remain byte-identical.",
+      "Touch any of the other 11 certified paths."
+    ],
+    "certified_blob_of_the_authorized_file": "70546c474f83757739905c3b629e2dcf6d153439 at b1d26b26. This is the ONE blob among the certified 13 that the correction may cause to differ."
+  },
+
+  "SECTION_B7_UNTRACKED_FILE_DISPOSITION": {
+    "the_question": "The certified helper unions `git ls-files --others --exclude-standard` into changedPaths(). Once the tracked endpoints become immutable commits, what happens to that arm?",
+    "why_it_cannot_simply_be_kept": "An untracked file in some future worktree is definitionally NOT part of commit b1d26b26. Unioning present-tense worktree state into a measurement of an immutable historical object reintroduces exactly the mutable endpoint this amendment removes -- and would do so silently, since the tracked half would look correct.",
+    "why_it_cannot_simply_be_deleted": "The arm has real content: it is how a lane that authors a new file and forgets to `git add` it is caught. Deleting it outright would remove a protection, which SECTION_B4's own classification forbids this correction from doing.",
+    "ADJUDICATION": {
+      "historical_arm": "The section 6 historical controls -- N-RC-05, N-RC-06, N-RC-08 and the exact-write-set control -- run over the IMMUTABLE two-endpoint tracked diff ONLY. No untracked union. Their subject is a commit, and a commit has no untracked files.",
+      "present_tense_arm": "Untracked-file detection is RETAINED as a SEPARATE, EXPLICITLY NAMED control whose stated subject is the CORRECTION LANE'S OWN WORKING TREE, not the certified slice. It must assert that the lane's own worktree introduces no untracked path outside the single-file authorized surface of SECTION_B6.",
+      "why_split_rather_than_merged": "The two arms answer different questions about different objects and now have different lifetimes. Merging them is what made the original helper unable to state which object it was measuring. Separating them makes each one's subject nameable, and therefore falsifiable.",
+      "non_vacuity_obligation_on_the_present_tense_arm": "It must be proven capable of going RED -- an assertion over a worktree that is clean in CI is otherwise green forever and proves nothing. The proof must exhibit the arm reddening on an introduced untracked path, and must assert SETUP=SUCCESS so that a setup failure producing zero paths cannot satisfy it vacuously."
+    }
+  },
+
+  "SECTION_B8_REQUIRED_NON_VACUITY": {
+    "binding_on": "The future correction lane AND its independent recertifier. A correction that lands without these is NOT certifiable under this amendment.",
+    "anti_vacuity_rule_inherited": "Restated from the v1.0.1 manifest amendment and binding here: a control must assert its comparands as FROZEN STRINGS and must not re-derive them from the subject using the subject's own transformation. A battery that re-expresses its subject's predicate proves only that the copy behaves like the copy.",
+    "mutation_harness_requirement": "Each mutant must be driven against a module identity the transform cache has not already served. It is MEASURED in this repository that vi.resetModules() does not invalidate vite's transform, so an on-disk mutation re-imported under the SAME module id executes the ORIGINAL and the battery is vacuous. Each mutant therefore needs a fresh module id and a witness assertion exclusive to that mutant.",
+    "M1": {
+      "name": "The endpoint rebinding is load-bearing.",
+      "obligation": "At the lane's OWN synchronized head, replace the immutable CERTIFIED_CANDIDATE endpoint with a mutable one (HEAD, or the one-endpoint working-tree form the certified blob actually used) and prove the section 6 suite turns RED because inherited integration paths re-enter the slice measurement.",
+      "required_assertion": "The RED must be attributed to at least one NAMED inherited path that the mutant admits and the immutable form excludes -- never to a bare non-zero failure count.",
+      "re_derivation_obligation": "The inherited path set MUST be re-derived at the lane's own synchronized head. It is NOT frozen here. The five paths measured in SECTION_B1 are the five inherited at AS_OF_HEAD 4680ae9c ONLY, and integration will have advanced. Copying them forward as an expectation would be the stale-count defect this repository has already measured once.",
+      "corroboration_at_this_base_only": "At 4680ae9c the mutant admits docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.38.json and drives N-RC-08 RED, plus four further paths driving the exact-write-set control RED. This is a SHAPE corroboration, not a value to assert."
+    },
+    "M2": {
+      "name": "The exact-write-set control still closes.",
+      "obligation": "Add one 14th path to the immutable certified slice measurement and prove the exact-write-set control turns RED.",
+      "required_assertion": "The RED must name the injected 14th path. A control that reddens without naming what exceeded the surface cannot distinguish a widening from a crash."
+    },
+    "M3": {
+      "name": "N-RC-08 still refuses protected paths.",
+      "obligation": "Substitute a protected path into the certified slice measurement and prove N-RC-08 turns RED.",
+      "required_coverage": "At least one path under a db/** protected prefix AND one under docs/ops/ods/, because the certified control refuses them through two structurally different assertions and a single mutant would leave one of them unproven."
+    },
+    "M4": {
+      "name": "N-RC-05 still refuses FIBIU-19 paths.",
+      "obligation": "Substitute a FIBIU-19 path into the certified slice measurement and prove N-RC-05 turns RED.",
+      "required_coverage": "lib/pipeline/sroi-results.ts specifically. It is chokepoint SW-6 and the domain authority's own stated reason for serialising FIBIU-19 before FIBIU-20; a mutant that exercises a lesser FIBIU-19 path leaves the load-bearing one unproven."
+    },
+    "what_M1_to_M4_jointly_establish": "That the change is a REBINDING OF THE MEASUREMENT ENDPOINT and not a weakening. M1 proves the new endpoint is the reason the suite is green -- that green was earned, not inherited from a control that stopped being able to fail. M2, M3 and M4 prove that every refusal the certified control performed, it still performs, on the rebound input. A correction landing M1 without M2..M4 would have proven only that it changed something."
+  },
+
+  "SECTION_B9_SYNC_CONTRACT": {
+    "shape": "The future retry is a SINGLE integration sync. Not a rebase, not a cherry-pick, not a manual reconstruction.",
+    "sequencing": "This authority delta is integrated FIRST. The integration SHA the retry merges is then derived FRESH at that time.",
+    "explicit_non_freezing": "NO future integration SHA, merge SHA or resulting tree is frozen, reserved or predicted by this artifact. 4680ae9c is recorded as THIS lane's base and as the corroboration point for SECTION_B1 -- it is NOT a retry target, and a reader who treats it as one has misread this clause.",
+    "the_retry_MUST": [
+      "Start from the remote PR #197 certified lineage, with b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c an ancestor.",
+      "Perform EXACTLY ONE normal merge of the then-current integration into PR #197.",
+      "Contain NO manual conflict resolution. A conflict is a STOP, not a thing to resolve by hand -- hand resolution authors bytes that no authority granted.",
+      "Preserve the certified production runtime blobs byte-identically.",
+      "Inherit every integration blob byte-identically from the integration parent.",
+      "Keep direct authored path overlap at ZERO, with the single exception of tests/cross-workstream/fibdb053-runtime-companion.test.ts, the canary successor correction separately authorized by SECTION_B6.",
+      "Keep NEW_ODS_REQUIRED=NO, re-derived by EXECUTING the classifier at the retry's own base, never inherited from this artifact's verdict."
+    ],
+    "topology_of_the_correction_commit": {
+      "rule": "The canary successor correction MAY be committed as a DISTINCT successor commit associated with the sync. It may equally precede it. What is forbidden is leaving the order implicit.",
+      "obligation": "The topology and ordering MUST be stated explicitly in the retry's own evidence and MUST be independently certified. A correction folded invisibly into a merge commit is indistinguishable from a manual conflict resolution, which the clause above prohibits.",
+      "why_this_matters_more_than_it_looks": "The correction edits a file that is also one of the certified 13. If it is authored inside the merge, a certifier cannot separate 'the merge preserved the certified blob' from 'the merge changed it', because both statements would be about the same commit."
+    }
+  },
+
+  "SECTION_B10_FOCUSED_RECERT_CONTRACT": {
+    "binding_on": "The future focused recertification of the synchronized PR #197 head.",
+    "class": "RE-MEASUREMENT, not re-reading. Every item below is a command whose output is the evidence; a certifier who quotes this artifact instead of re-running has certified nothing.",
+    "required_proofs": [
+      "1. ANCESTRY -- b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c remains an ancestor of the synchronized head.",
+      "2. SLICE RE-DERIVATION -- the certified 13-path set is re-derived from 89022a9bf22a06276996a5a9214b344916be84aa..b1d26b26ac4a9f3e3ecad138b85ed604e3c2ac1c and is exactly 13.",
+      "3. PRODUCTION BLOB IDENTITY -- every production runtime blob at the synchronized head is byte-identical to its blob at b1d26b26, compared by blob SHA and not by diff emptiness.",
+      "4. SINGLE PERMITTED DIVERGENCE -- among the certified 13, ONLY tests/cross-workstream/fibdb053-runtime-companion.test.ts may differ from blob 70546c474f83757739905c3b629e2dcf6d153439. Any second divergence is a STOP.",
+      "5. POST-SYNC PR DELTA -- the synchronized head measured against its INTEGRATION PARENT contains exactly the same 13 PATHS. No 14th path. This is the control that catches a sync which authored something extra, and it is measured against the integration parent precisely because that is the endpoint pair the question is about.",
+      "6. INHERITED BLOB IDENTITY -- every inherited integration path at the synchronized head matches the integration parent byte-for-byte.",
+      "7. REAL-PG CRITICAL SUITE -- green. Run SERIALLY: it is MEASURED in this repository that concurrent Real-PG suites produce a non-zero exit from afterAll leftovers even when every test passes.",
+      "8. RECOVERY SEMANTICS -- 42883 / 25P02 / new-transaction recovery remains green.",
+      "9. text[] REAL-DRIVER COVERAGE -- remains green.",
+      "10. ODS CLASSIFIER -- NEW_ODS_REQUIRED=NO, by EXECUTING scripts/ods-scope.ts's classifier over the measured write set, not by reading its pattern list.",
+      "11. BUILD AND LIVE CI -- both green, read from the forge at the synchronized head."
+    ],
+    "additional_proof_this_amendment_adds": "12. NON-VACUITY -- M1..M4 of SECTION_B8 are exhibited RED under mutation. Items 1..11 can all pass against a canary that has been made unable to fail; only M1..M4 exclude that."
+  },
+
+  "SECTION_B11_POST_MERGE_DURABILITY": {
+    "claim": "Binding the historical section 6 canary to the immutable certified candidate is durable after the PR sync, after the PR merge, and after arbitrarily many later unrelated integration commits.",
+    "why": "Both endpoints are fixed commit identifiers. `git diff --name-only 89022a9b b1d26b26` returns the same 13 paths regardless of where HEAD is, what the working tree contains, how many merges have landed, or whether the branch still exists -- because both commits are immutable and remain reachable once merged. The measurement has no dependency on present state at all, so there is no present state whose change can perturb it.",
+    "the_durability_statement": "The historical canary keeps testing the HISTORICAL CERTIFIED SLICE OBJECT. Later integration correctness is governed by later merge and recert evidence -- SECTION_B9 and SECTION_B10 -- which measure the synchronized head against its integration parent, the endpoint pair that question is actually about.",
+    "what_it_must_NOT_do": "It must NOT continue redefining the old slice whenever HEAD changes. A historical control whose subject moves is not a historical control; it is a present-tense control with a misleading name, which is exactly the artifact this amendment exists to retire.",
+    "the_objection_answered": {
+      "objection": "Does a canary that can never see present state stop protecting anything?",
+      "answer": "No, because it never protected present state. Its four controls assert properties of what the slice AUTHORED -- no FIBIU-19 path, no protected path, no Stage-A apply, nothing outside the closed surface. Those are properties of a finished object and they are either true of it or not, permanently. Present-state protection is a different job, held by the sync contract, the focused recert, the ODS classifier at each lane's own base, and the present-tense untracked arm of SECTION_B7. Every one of those survives this amendment untouched.",
+      "residual_risk_stated_rather_than_denied": "A control bound to immutable anchors cannot detect a NEW defect introduced after certification. That is not a regression -- the certified control could not do so either, since it reddened indiscriminately on inherited content and would have drowned any real signal. But it means the historical canary must never be cited as evidence about a present head, and SECTION_B10 item 5 exists so that the present head has its own 13-path control."
+    }
+  },
+
+  "SECTION_B12_NO_OTHER_SEMANTIC_CHANGE": {
+    "statement": "This amendment changes NOTHING except the lifecycle binding of the section 6 historical-diff measurement endpoint, the explicit disposition of the untracked arm, and the non-vacuity, sync and recert obligations that keep that rebinding honest.",
+    "explicitly_unchanged": [
+      "FUTURE_RUNTIME_WRITE_SURFACE -- the closed enumeration and its forbidden_paths list, verbatim.",
+      "The advisor_constraint and N-RC-07.",
+      "FIBIU19_DISJOINTNESS and its four proof methods.",
+      "RUNTIME_COMPATIBILITY_CONTRACT, CATALOG_PROBE_CONTRACT (as corrected by v1.0.1), RISK_PAYLOAD_CONTRACT.",
+      "STAGE_A_INTERACTION, DEPLOYMENT_CONTRACT, ROLLBACK_CONTRACT, G2_BOUNDARY_RESTATEMENT.",
+      "NEW_ODS_REQUIRED = NO, and its reversal_condition verbatim.",
+      "All 31 base manifest controls and the five v1.0.1 controls.",
+      "RC-01..RC-10 owner decisions."
+    ],
+    "control_count_preservation": "No control is removed. The correction ADDS controls (M1..M4 and the SECTION_B7 present-tense arm) and REMOVES none. Any future reader finding a control absent has found a defect in the correction, not a licence granted here."
+  },
+
+  "SECTION_B13_PRECEDENCE": {
+    "rule": "For the lifecycle semantics of the section 6 historical-diff measurement and the disposition of its untracked arm, THIS AMENDMENT CONTROLS. For the catalog-probe grapheme clauses, MUT-RC-12, N-RC-10 and the ROLLBACK_CONTRACT R-1 anchor, v1.0.1 CONTROLS. For everything else, the frozen parent v1.0.0 and the frozen manifest v1.0.0 control verbatim.",
+    "conflict_rule": "A reader who finds this amendment and the parent, or this amendment and v1.0.1, in conflict on any clause NOT named above must treat that as a defect in THIS amendment and STOP, not choose. Under CLAUDE.md section 5 an unresolved conflict fails closed.",
+    "relation_to_the_domain_authority": "Unchanged. It does not amend docs/ops/wave3/WAVE3_AUTHORITY_v1.0.0.json, does not amend the FIBDB-053 Stage-A authority, does not amend HPO-ODS-W2-35, does not amend the ODS Controller, and does not amend PR #187, #195, #198 or #199.",
+    "relation_to_PR197_certification": "The CERTIFIED_PASS disposition of PR #197 at b1d26b26 stands. This amendment does not decertify it, does not reopen it and does not add a finding against it. The defect adjudicated here is in the canary's LIFECYCLE, and it was not reachable at certification time because no sync had yet occurred."
+  },
+
+  "SECTION_B14_ODS_DISPOSITION": {
+    "NEW_ODS_REQUIRED": "NO",
+    "basis": "Re-checked by EXECUTING the classifier for THIS write set, not inherited. This amendment writes two files, both under docs/ops/wave3/**, which is not a DEFAULT_PROTECTED_PATTERN.",
+    "ods_scope_expectation": "ods:scope over this write set reports 0 protected violations, 0 non-canonical protected paths and 0 unauthorized paths.",
+    "PROTECTED_AUTHORITY": "NONE",
+    "what_this_amendment_does_not_do": [
+      "It does not implement the canary correction.",
+      "It does not sync PR #197.",
+      "It does not push a sync commit.",
+      "It does not merge anything.",
+      "It does not edit PR #197 or change its draft status.",
+      "It does not allocate or reserve an ODS ordinal, an HPO-ODS grant id, a migration ordinal or a Controller entry.",
+      "It does not implement or apply FIBDB-053 Stage-A.",
+      "It does not deploy.",
+      "It does not certify itself."
+    ]
+  },
+
+  "SECTION_B15_SELF_CHECK": {
+    "did_this_lane_reproduce_rather_than_inherit": "YES. State A measured at C:/uc97; state B constructed by merge-tree --write-tree. Neither was taken from the prior writer's report.",
+    "did_this_lane_verify_the_stated_premise": "YES, and it was WRONG. The premise that the helper diffs against HEAD did not survive measurement; SECTION_B2 records the correction and the disposable-repo proof of the one-endpoint semantics.",
+    "did_this_lane_widen_any_surface": "NO. Zero paths added to any authorised enumeration. The closed 13 are unchanged in content and count.",
+    "did_this_lane_remove_or_weaken_any_control": "NO. It adds obligations (M1..M4, the SECTION_B7 present-tense arm, recert item 12) and removes nothing.",
+    "did_this_lane_freeze_a_future_sha": "NO. SECTION_B9 explicitly forbids it and records 4680ae9c as a corroboration point only.",
+    "did_this_lane_freeze_a_count_that_will_go_stale": "NO. The five inherited paths are marked CORROBORATION AT THIS BASE ONLY, with an explicit re-derivation obligation in M1. This is the stale-count defect this repository has measured before, and it is refused by construction.",
+    "is_the_v1_0_2_ordinal_free": "YES, measured: docs/ops/wave3/ contains no FIBDB053_RUNTIME_COMPANION_*_v1.0.2.json at AS_OF_HEAD.",
+    "does_this_amendment_certify_itself": "NO. Independent certification is required."
+  },
+
+  "SECTION_B16_WRITE_SET": [
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1.0.2.json (this file, ADDED)",
+    "docs/ops/wave3/FIBDB053_RUNTIME_COMPANION_TEST_MANIFEST_AMENDMENT_v1.0.2.json (ADDED)"
+  ],
+
+  "RISKS_AND_OPEN_FINDINGS": [
+    {
+      "id": "F-PCS-1",
+      "class": "NON_BLOCKING_PREMISE_CORRECTION",
+      "finding": "The mission premise that changedPaths() computes `git diff --name-only 89022a9b HEAD` is FALSE. The certified helper passes one endpoint and therefore compares the base against the WORKING TREE.",
+      "impact": "The adjudication is unaffected -- both forms have a mutable endpoint. The AUTHORIZED CORRECTION is affected: a lane looking for a literal HEAD to replace will not find one and must ADD a second endpoint instead. SECTION_B6 item 2 states the correction against the measured form."
+    },
+    {
+      "id": "F-PCS-2",
+      "class": "NON_BLOCKING_SCOPE_OF_THE_RED",
+      "finding": "At AS_OF_HEAD the synchronized measurement reddens exactly TWO of the four section 6 controls -- N-RC-08 and the exact-write-set control. N-RC-05 and N-RC-06 remain green.",
+      "impact": "Recorded so no reader infers a blanket section 6 failure. The set that reddens is a function of WHAT integration happens to have changed and will differ at the retry; M1 therefore requires re-derivation and forbids asserting this pair."
+    },
+    {
+      "id": "F-PCS-3",
+      "class": "NON_BLOCKING_RESIDUAL_RISK_ACCEPTED_AND_STATED",
+      "finding": "A canary bound to immutable anchors cannot detect a defect introduced into the slice's paths AFTER certification.",
+      "impact": "Accepted, and compensated rather than denied: SECTION_B10 item 5 gives the present head its own exact-13-path control measured against the integration parent, and SECTION_B7 retains a present-tense untracked arm. Stated here so a future reader does not discover it as a surprise and mistake it for an oversight."
+    },
+    {
+      "id": "F-PCS-4",
+      "class": "NON_BLOCKING_TOPOLOGY_HAZARD",
+      "finding": "The authorized correction edits a file that is simultaneously one of the certified 13, so a merge commit that also carried the correction would make 'the merge preserved the certified blob' and 'the merge changed it' claims about the same commit.",
+      "impact": "Mitigated by SECTION_B9's requirement that the correction's topology and ordering be explicit and independently certified. Not eliminated -- it depends on the retry lane honouring that clause."
+    }
+  ],
+
+  "required_independent_review": "INDEPENDENT certification is required before the canary successor correction lane opens. This amendment does not certify itself, does not certify its own reproduction, and does not certify PR #197's sync. A certifier should RE-MEASURE rather than re-read: SECTION_B1 is reproducible in full from the three frozen anchors -- check out b1d26b26 detached for state A, and reconstruct state B with `git merge-tree --write-tree b1d26b26 <then-current integration>`, expecting the certified 13 to appear in both and the inherited set to appear only in the second.",
+
+  "final_state": "FIBDB053_RUNTIME_COMPANION_EXECUTION_AUTHORITY_AMENDMENT_v1_0_2_FROZEN_POSTCERT_CANARY_LIFECYCLE_ADJUDICATED_AWAITING_INDEPENDENT_CERTIFICATION",
+
+  "next_gate": "PR197_POSTCERT_SYNC_CANARY_AUTHORITY_DELTA__AWAIT_INDEPENDENT_CERTIFICATION_THEN_INTEGRATE_BEFORE_ANY_SYNC_RETRY"
+}
