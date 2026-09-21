@@ -295,6 +295,12 @@ export async function getStellaComposer(
           pipelineStep: sectionType,
           modelUsed: response.modelUsed,
           tokensUsed: response.tokensUsed ?? null,
+          // FIBDB-053. EXPLICIT NULLS — the composer category derives no risk
+          // verdict. Its numeric guard refuses content; it does not produce a
+          // methodological risk level, and inventing one here to fill the field
+          // would put a fabricated value on an append-only row.
+          riskLevel: null,
+          riskFlags: null,
         }
       } catch (error) {
         return {
